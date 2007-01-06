@@ -53,6 +53,14 @@ SWITCH_BEGIN_EXTERN_C
 
 
 /*!
+  \brief Parse command from an event
+  \param session the session to send the message to
+  \param event the event to send
+  \return SWITCH_STATUS_SUCCESS if successful
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *session, switch_event_t *event);
+
+/*!
   \brief Wait for time to pass for a specified number of milliseconds
   \param session the session to wait for.
   \param ms the number of milliseconds

@@ -86,7 +86,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 }
 
 
-static void switch_ivr_parse_event(switch_core_session_t *session, switch_event_t *event)
+SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *session, switch_event_t *event)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *cmd = switch_event_get_header(event, "call-command");
@@ -97,40 +97,47 @@ static void switch_ivr_parse_event(switch_core_session_t *session, switch_event_
 	unsigned long CMD_NOMEDIA = apr_hashfunc_default("nomedia", &hlen);
 	
     assert(channel != NULL);
+
+	if (switch_strlen_zero(cmd)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Command!\n");
+        return SWITCH_STATUS_FALSE;
+    }
+
 	hlen = (switch_size_t) strlen(cmd);
 	cmd_hash = apr_hashfunc_default(cmd, &hlen);
 
 	switch_channel_set_flag(channel, CF_EVENT_PARSE);
 	
-	if (!switch_strlen_zero(cmd)) {
-		if (cmd_hash == CMD_EXECUTE) {
-			const switch_application_interface_t *application_interface;
-			char *app_name = switch_event_get_header(event, "execute-app-name");
-			char *app_arg = switch_event_get_header(event, "execute-app-arg");
+
+    if (cmd_hash == CMD_EXECUTE) {
+        const switch_application_interface_t *application_interface;
+        char *app_name = switch_event_get_header(event, "execute-app-name");
+        char *app_arg = switch_event_get_header(event, "execute-app-arg");
 						
-			if (app_name && app_arg) {
-				if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
-					if (application_interface->application_function) {
-						application_interface->application_function(session, app_arg);
-					}
-				}
-			}
-		} else if (cmd_hash == CMD_HANGUP) {
-			char *cause_name = switch_event_get_header(event, "hangup-cause");
-			switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
+        if (app_name && app_arg) {
+            if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
+                if (application_interface->application_function) {
+                    application_interface->application_function(session, app_arg);
+                }
+            }
+        }
+    } else if (cmd_hash == CMD_HANGUP) {
+        char *cause_name = switch_event_get_header(event, "hangup-cause");
+        switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
-			if (cause_name) {
-				cause = switch_channel_str2cause(cause_name);
-			}
+        if (cause_name) {
+            cause = switch_channel_str2cause(cause_name);
+        }
 
-			switch_channel_hangup(channel, cause);
-		} else if (cmd_hash == CMD_NOMEDIA) {
-			char *uuid = switch_event_get_header(event, "nomedia-uuid");
-			switch_ivr_nomedia(uuid, SMF_REBRIDGE);
-		} 
-	}
+        switch_channel_hangup(channel, cause);
+    } else if (cmd_hash == CMD_NOMEDIA) {
+        char *uuid = switch_event_get_header(event, "nomedia-uuid");
+        switch_ivr_nomedia(uuid, SMF_REBRIDGE);
+    } 
+	
 
 	switch_channel_clear_flag(channel, CF_EVENT_PARSE);
+    return SWITCH_STATUS_SUCCESS;
 
 }
 
@@ -153,7 +160,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session)
 	}
 
 	switch_channel_set_flag(channel, CF_CONTROLLED);
-	while (switch_channel_ready(channel)) {
+	while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_CONTROLLED)) {
         
         if ((status = switch_core_session_read_frame(session, &frame, -1, stream_id)) == SWITCH_STATUS_SUCCESS) {
             if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -163,6 +170,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session)
             if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
                 switch_ivr_parse_event(session, event);
                 switch_event_destroy(&event);
+            }
+
+			if (switch_channel_has_dtmf(channel)) {
+                char dtmf[128];
+                switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
+            }
+
+            if (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+                switch_channel_event_set_data(channel, event);
+                switch_event_fire(&event);
             }
         }
 		
@@ -4597,27 +4614,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
                         done = 1;
                         break;
                     } else if (!strcasecmp(func, "execute")) {
-                        const switch_application_interface_t *application_interface;
-                        char *app_name = NULL;
-                        char *app_arg = NULL;
 
-                        if ((app_name = strdup(odata))) {
-                            char *e = NULL;
-                            if ((app_arg = strchr(app_name, '('))) {
-                                *app_arg++ = '\0';
-                                if ((e = strchr(app_arg, ')'))) {
-                                    *e = '\0';
-                                }
-                                if (app_name && app_arg && e && (application_interface = switch_loadable_module_get_application_interface(app_name))) {
-                                    if (application_interface->application_function) {
-                                        application_interface->application_function(session, app_arg);
-                                    }
-                                } else {
-                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Application!\n");
-                                }
-                            }
-                            switch_safe_free(app_name);
-                        } 
                     } else if (!strcasecmp(func, "say")) {
                         switch_say_interface_t *si;
                         if ((si = switch_loadable_module_get_say_interface(lang))) {

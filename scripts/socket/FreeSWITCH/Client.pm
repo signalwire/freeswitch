@@ -13,8 +13,11 @@ sub init($;$) {
   $self->{_host} = $args->{-host} || "localhost";
   $self->{_port} = $args->{-port} || 8021;
   $self->{_password} = $args->{-password} || undef; 
-
+  $self->{events} = [];
   my $me = bless $self,$class;
+  if (!$self->{_password}) {
+    return $me;
+  }
   if ($me->connect()) {
     return $me;
   } else {
@@ -22,61 +25,62 @@ sub init($;$) {
   }
 }
 
-sub input($;$) {
+sub readhash($;$) {
   my ($self,$to) = @_;
-  my $i;
-  my @r;
-  my $s = $self->{_sock};
-  my $x = 0;
-  my $done = 0;
-  my $start = time;
+  my ($can_read) = IO::Select::select($self->{_sel}, undef, undef, $to ? to : undef);
+  my $s = shift @{$can_read};
+  my @r = ();
+  my $crc = 0;
+  my $h;
 
-  while(!$done) {
-    if ($to and time - $start > $to) {
-      last;
-    }
-    @ready = $self->{_sel}->can_read($to);
-    if (@ready) {
-      $x=0;
-      foreach my $s (@ready) {
-	while ($i = <$s>) {
-	  $x++;
-	  return @r if($i eq "\n");
-	  $i =~ s/[\n]+$//g;
-	  push @r,$i;
-	  
+  if ($s) {
+    for (;;) {
+      my $line;
+      for (;;) {
+	my $i = 0;
+	recv $s, $i, 1, 0;
+	if ($i eq "") {	  
+	  $h->{socketerror} = "yes";
+	  return $h;
+	  last;
+	} elsif ($i eq "\n") {
+	  $crc++;
+	  last;
+	} else {
+	  $crc = 0;
 	}
-	unless($x) {
-	  return ("SocketError: yes");
-	}
+	$line .= $i;      
       }
+      if (!$line) {
+	last;
+      }
+      push @r, $line;
     }
+    
+    if (!@r) {
+      return undef;
+    }
+
+    foreach(@r) {
+      my ($var, $val) = /^([^:]+):[\s\t]*(.*)$/;
+      $h->{lc $var} = $val;
+    }
+    
+    if ($h->{'content-length'}) {
+      recv $s, $h->{body}, $h->{'content-length'}, 0;
+    }
+
+    if ($h->{'content-type'} eq "text/event-plain") {
+      my $e = $self->extract_event($h);
+      $h->{has_event} = 1;
+      $h->{event} = $e;
+    }    
   }
-  return @r;
+    
 
-}
 
-sub readhash($$) {
-  my $self = shift;
-  my $arg = shift;
+  return $h;
 
-  my @r = $self->input($arg);
-
-  my $data = join "\n", @r;
-  my %h = $data =~ /^([^:]+)\s*:\s*([^\n]*)/mg;
-
-  foreach (keys %h) {
-    my $new = lc $_;
-    $h{$new} = $h{$_};
-    delete $h{$_};
-  }
-
-  if ($h{'content-length'}) {
-    my $s = $self->{_sock};
-    read $s, $h{body}, $h{'content-length'};
-  }
-
-  return \%h;
 }
 
 sub error($$) {
@@ -92,30 +96,146 @@ sub output($$) {
   print $s $data ;
 }
 
-sub cmd($$$) {
+sub get_events($) {
   my $self = shift;
-  my $cmd = shift;
+  my $e = $self->{events};
+  $self->{events} = [];
+  return $e;
+}
+
+sub sendmsg($$$) {
+  my $self = shift;
+  my $sendmsg = shift;
   my $to = shift;
+  my $e;
 
-  $self->output($cmd->{command});
-  foreach(keys %{$cmd}) {
-    next if ($_ eq "command");
-    $self->output($cmd->{$_});
+  for(;;) {
+    $e = $self->readhash(.1);
+    if ($e && !$e->{socketerror}) {
+      #print Dumper $e;
+      push @{$self->{events}}, $e;
+    } else  {
+      last;
+    }
   }
-  $self->output("\n\n");
 
-  my $h = $self->readhash($to);
+  $self->output($sendmsg->{command} . "\n");
+  foreach(keys %{$sendmsg}) {
+    next if ($_ eq "command");
+    $self->output("$_" . ": " . $sendmsg->{$_} . "\n");
+  }
+  $self->output("\n");
 
-  $h;
+  return $self->readhash($to);
+}
+
+sub command($$) {
+  my $self = shift;
+  my $reply;
+
+  my $r = $self->sendmsg({ 'command' => "api " . shift });
+
+  if ($r->{body}) {
+    $reply = $r->{body};
+  } else {
+    $reply = "socketerror";
+  }
+
+  return $reply;
 }
 
 sub disconnect($) {
   my $self = shift;
-  $self->{_sock}->shutdown(2);
-  $self->{_sock}->close();
+  if ($self->{_sock}) {
+    $self->{_sock}->shutdown(2);
+    $self->{_sock}->close();
+  }
   undef $self->{_sock};
   delete $self->{_sock};
 }
+
+sub raw_command($) {
+  my $self = shift;
+  return $self->sendmsg({ 'command' => shift });
+}
+
+sub htdecode($;$) {
+  my $urlin = shift;
+  my $url = (ref $urlin) ? \$$urlin : \$urlin;
+  $$url =~ s/%([0-9A-Z]{2})/chr hex $1/ieg;
+  $$url;
+}
+
+
+sub extract_event($$) {
+  my $self = shift;
+  my $r = shift;
+
+
+  my %h = $r->{body} =~ /^([^:]+)\s*:\s*([^\n]*)/mg;
+
+  foreach (keys %h) {
+    my $new = lc $_;
+    $h{$new} = $h{$_};
+    delete $h{$_};
+  }
+  foreach(keys %h) {
+    htdecode(\$h{$_});
+  }
+  return \%h;
+}
+
+
+sub call_command($$$) {
+  my $self = shift;
+  my $app = shift;
+  my $arg = shift;
+
+  my $hash = {
+	      'command' => "sendmsg",
+	      'call-command' => "execute",
+	      'execute-app-name' => $app,
+	      'execute-app-arg' => $arg 
+	     };
+
+  return $self->sendmsg($hash);
+}
+
+sub call_data($) {
+  my $self = shift;
+
+  return $self->{call_data};
+}
+
+sub accept($;$$) {
+  my $self = shift;
+  my $ip = shift;
+  my $port = shift || 8084;
+
+  if (!$self->{_lsock}) {
+    $self->{_lsock} = IO::Socket::INET->new(Listen => 10000,
+					    LocalAddr => $ip,
+					    LocalPort => $port,
+					    Reuse => 1,
+					    Proto     => "tcp") or return $self->error("Cannot listen");
+
+  }
+  
+  $self->{_sock} = $self->{_lsock}->accept();
+  $self->{_sock}->autoflush(1);
+  $self->{_sel} = new IO::Select( $self->{_sock} );
+
+  $self->{call_data} = $self->sendmsg({ 'command' => "connect"});
+  foreach(keys %{$self->{call_data}}) {
+    htdecode(\$self->{call_data}->{$_});
+  }
+  if ($self->{call_data} =~ /socketerror/) {
+    return 0;
+  }
+
+  return 1;
+
+};
 
 sub connect($) {
   my $self = shift;
@@ -134,7 +254,7 @@ sub connect($) {
 
   if ($h->{"content-type"} eq "auth/request") {
     my $pass = $self->{"_password"};
-    $h = $self->cmd({command => "auth $pass"});
+    $h = $self->sendmsg({command => "auth $pass"});
   }
 
   if ($h->{'reply-text'} =~ "OK") {
