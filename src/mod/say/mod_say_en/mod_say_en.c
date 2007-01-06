@@ -291,13 +291,16 @@ static switch_status_t en_say_time(switch_core_session_t *session,
 			if ((p = strrchr(tme, ':'))) {
 				*p++ = '\0';
 				seconds = atoi(p);
-				if ((p = strrchr(tme, ':'))) {
+				if ((p = strchr(tme, ':'))) {
 					*p++ = '\0';
 					minutes = atoi(p);
 					if (tme) {
 						hours = atoi(tme);
 					}
 				}
+                else {
+                     minutes = atoi(tme);
+                }
 			}
 		} else {
 			if ((seconds = atoi(tosay)) <= 0) {
@@ -319,18 +322,45 @@ static switch_status_t en_say_time(switch_core_session_t *session,
 
 		if (hours) {
 			say_num(hours, SSM_PRONOUNCED);
-			say_file("digits/hours.wav");
+            if (hours == 1) {
+                say_file("digits/hour.wav");  //TODO -- NEED TO GET "hour.wav" recorded
+            }
+            else {
+                say_file("digits/hours.wav");
+            }
 		}
+        else {
+            say_file("digits/0.wav");
+            say_file("digits/hours.wav");
+        }
 
 		if (minutes) {
 			say_num(minutes, SSM_PRONOUNCED);
-			say_file("digits/minutes.wav");
+            if (minutes == 1) {
+                say_file("digits/minute.wav");
+            }
+            else {
+                say_file("digits/minutes.wav");
+            }
 		}
+        else {
+            say_file("digits/0.wav");
+            say_file("digits/minutes.wav");
+        }
 
 		if (seconds) {
 			say_num(seconds, SSM_PRONOUNCED);
-			say_file("digits/seconds.wav");
+            if (seconds == 1) {
+                say_file("digits/second.wav");
+            }
+            else {
+                say_file("digits/seconds.wav");
+            }
 		}
+        else {
+            say_file("digits/0.wav");
+            say_file("digits/seconds.wav");
+        }
 
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -419,6 +449,9 @@ static switch_status_t en_say_money(switch_core_session_t *session,
 
 	if ((cents = strchr(sbuf, '.'))) {
 		*cents++ = '\0';
+        if (strlen(cents) > 2) {
+            cents[2] = '\0';
+        }
 	}
 
     /* If positive sign - skip over" */
