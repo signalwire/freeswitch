@@ -64,16 +64,13 @@ SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle
 		
 		if ((remaining < need) && handle->alloc_len) {
 			switch_size_t new_len;
-			
-			if (need < handle->alloc_chunk) {
-				need = handle->alloc_chunk;
-			}
+			void *new_data;
 
-			new_len = handle->data_size + need;
-			if ((handle->data = realloc(handle->data, new_len))) {
+			new_len = handle->data_size + need + handle->alloc_chunk;
+			if ((new_data = realloc(handle->data, new_len))) {
 				handle->data_size = handle->alloc_len = new_len;
+                handle->data = new_data;
 				buf = handle->data;
-
 				remaining = handle->data_size - handle->data_len;
 				handle->end = (uint8_t *)(handle->data) + handle->data_len;
 				end = handle->end;
