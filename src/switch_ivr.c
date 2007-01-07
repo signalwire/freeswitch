@@ -4492,7 +4492,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	switch_xml_t cfg, xml = NULL, language, macros, macro, input, action;
     char *lname = NULL, *mname = NULL, hint_data[1024] = "", enc_hint[1024] = "";
     switch_status_t status = SWITCH_STATUS_GENERR;
-    char *old_sound_prefix, *sound_path = NULL, *tts_engine = NULL, *tts_voice = NULL;
+    char *old_sound_prefix = NULL, *sound_path = NULL, *tts_engine = NULL, *tts_voice = NULL;
     switch_channel_t *channel;
     uint8_t done = 0;
 

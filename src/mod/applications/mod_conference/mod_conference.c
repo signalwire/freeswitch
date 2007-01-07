@@ -3828,7 +3828,7 @@ static switch_api_interface_t conf_api_interface = {
 
 static switch_status_t chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint)
 {
-    char name[512] = "", *p, *lbuf;
+    char name[512] = "", *p, *lbuf = NULL;
     switch_chat_interface_t *ci;
     conference_obj_t *conference = NULL;
     switch_stream_handle_t stream = {0};
