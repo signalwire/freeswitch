@@ -207,7 +207,6 @@ struct conference_member {
 	uint32_t id;
 	switch_core_session_t *session;
 	conference_obj_t *conference;
-	conference_obj_t *last_conference;
 	switch_memory_pool_t *pool;
 	switch_buffer_t *audio_buffer;
 	switch_buffer_t *mux_buffer;
@@ -461,7 +460,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
     switch_mutex_lock(member->audio_in_mutex);
     switch_mutex_lock(member->audio_out_mutex);
     switch_mutex_lock(member->flag_mutex);
-    member->conference = member->last_conference = conference;
+    member->conference = conference;
     member->next = conference->members;
     member->energy_level = conference->energy_level;
     conference->members = member;
@@ -2548,10 +2547,12 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
             switch_hash_this(hi, NULL, NULL, &val);
             conference = (conference_obj_t *) val;
 
-            stream->write_function(stream, "Conference %s (%u member%s)\n", 
+            stream->write_function(stream, "Conference %s (%u member%s%s)\n", 
                                    conference->name, 
                                    conference->count, 
-                                   conference->count == 1 ? "" : "s");
+                                   conference->count == 1 ? "" : "s",
+                                   switch_test_flag(conference, CFLAG_LOCKED) ? " locked" : ""
+                                   );
             if (pretty) {
                 conference_list_pretty(conference, stream);
             } else {
@@ -2896,7 +2897,7 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
             char *profile_name;
             switch_xml_t cxml = NULL, cfg = NULL, profiles = NULL;
 
-            if (!(member = conference_member_get(conference, id))) {								
+            if (!id || !(member = conference_member_get(conference, id))) {								
                 stream->write_function(stream, "No Member %u in conference %s.\n", id, conference->name);
                 continue;
             }
@@ -2919,21 +2920,23 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 
                 if ((profile_name = strchr(conf_name, '@'))) {
                     *profile_name++ = '\0';
+                } else {
+                    profile_name = "default";
+                }
+                
+                /* Open the config from the xml registry  */
+                if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, NULL))) {
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
+                    goto done;
+                }
 
-                    /* Open the config from the xml registry  */
-                    if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, NULL))) {
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
-                        goto done;
-                    }
-
-                    if ((profiles = switch_xml_child(cfg, "profiles"))) {
-                        xml_cfg.profile = switch_xml_find_child(profiles, "profile", "name", profile_name);
-                    }
-                    xml_cfg.controls = switch_xml_child(cfg, "caller-controls");
+                if ((profiles = switch_xml_child(cfg, "profiles"))) {
+                    xml_cfg.profile = switch_xml_find_child(profiles, "profile", "name", profile_name);
+                }
+                xml_cfg.controls = switch_xml_child(cfg, "caller-controls");
 #ifdef OPTION_IVR_MENU_SUPPORT
-                    xml_cfg.menus = switch_xml_child(cfg, "menus");
+                xml_cfg.menus = switch_xml_child(cfg, "menus");
 #endif
-                } 
 
                 /* Release the config registry handle */
                 if (cxml) {
@@ -2958,13 +2961,18 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
                 /* Indicate the conference is dynamic */
                 switch_set_flag_locked(new_conference, CFLAG_DYNAMIC);
 
+                switch_mutex_lock(new_conference->mutex);
+
                 /* Start the conference thread for this conference */
                 launch_conference_thread(new_conference);
+            } else {
+                switch_mutex_lock(new_conference->mutex);
             }
 
             /* move the member from the old conference to the new one */
-            conference_del_member(member->last_conference, member);
+            conference_del_member(conference, member);
             conference_add_member(new_conference, member);
+            switch_mutex_unlock(new_conference->mutex);
 
             stream->write_function(stream, "OK Members sent to conference %s.\n", argv[2]);
 
@@ -3204,13 +3212,13 @@ static switch_status_t conf_api_main(char *buf, switch_core_session_t *session, 
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Fail\n");
                 goto done;
             }
-
+            switch_mutex_lock(conference->mutex);
             if (argc >= 2) {
                 conf_api_dispatch(conference, stream, argc, argv, (const char *)buf, 1);
             } else {
                 stream->write_function(stream, "Conference command, not specified.\nTry 'help'\n");
             }
-
+            switch_mutex_unlock(conference->mutex);
             switch_thread_rwlock_unlock(conference->rwlock);
 
         } else {
@@ -3464,22 +3472,24 @@ static void conference_function(switch_core_session_t *session, char *data)
     /* is there profile specification ? */
     if ((profile_name = strchr(conf_name, '@'))) {
         *profile_name++ = '\0';
+    } else {
+        profile_name = "default";
+    }
 
-        /* Open the config from the xml registry */
-        if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, NULL))) {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
-            goto done;
-        }
+    /* Open the config from the xml registry */
+    if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, NULL))) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
+        goto done;
+    }
 
-        if ((profiles = switch_xml_child(cfg, "profiles"))) {
-            xml_cfg.profile = switch_xml_find_child(profiles, "profile", "name", profile_name);
-        }
+    if ((profiles = switch_xml_child(cfg, "profiles"))) {
+        xml_cfg.profile = switch_xml_find_child(profiles, "profile", "name", profile_name);
+    }
 
-        xml_cfg.controls = switch_xml_child(cfg, "caller-controls");
+    xml_cfg.controls = switch_xml_child(cfg, "caller-controls");
 #ifdef OPTION_IVR_MENU_SUPPORT
-        xml_cfg.menus = switch_xml_child(cfg, "menus");
-#endif
-    } 
+    xml_cfg.menus = switch_xml_child(cfg, "menus");
+#endif 
 
     /* if this is a bridging call, and it's not a duplicate, build a */
     /* conference object, and skip pin handling, and locked checking */
@@ -3730,7 +3740,7 @@ static void conference_function(switch_core_session_t *session, char *data)
     switch_core_session_receive_message(session, &msg);
 
     /* Remove the caller from the conference */
-    conference_del_member(member.last_conference, &member);
+    conference_del_member(member.conference, &member);
 
     /* Put the original codec back */
     switch_core_session_set_read_codec(member.session, read_codec);
