@@ -613,6 +613,9 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 
 
     if (listener->session) {
+        switch_channel_t *channel = switch_core_session_get_channel(listener->session);
+        assert(channel != NULL);
+
         if (!strncasecmp(cmd, "connect", 7)) {
             snprintf(reply, reply_len, "+OK");
             goto done;
@@ -627,6 +630,21 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
                 switch_ivr_parse_event(listener->session, event);
                 snprintf(reply, reply_len, "+OK");
             }
+            goto done;
+        } else if (!strncasecmp(cmd, "getvar", 6)) {
+            char *arg;
+            char *val = "";
+            
+            strip_cr(cmd);
+
+            if ((arg = strchr(cmd, ' '))) {
+                *arg++ = '\0';
+                if (!(val = switch_channel_get_variable(channel, arg))) {
+                    val = "";
+                }
+
+            }
+            snprintf(reply, reply_len, val);
             goto done;
         } else if (!strncasecmp(cmd, "myevents", 8)) {
             listener->event_list[SWITCH_EVENT_CHANNEL_CREATE] = 1;
