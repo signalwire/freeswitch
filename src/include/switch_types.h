@@ -302,6 +302,7 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_NOMEDIA	  - indicate no-media is required
 	SWITCH_MESSAGE_INDICATE_HOLD      - indicate hold
 	SWITCH_MESSAGE_INDICATE_UNHOLD    - indicate unhold
+	SWITCH_MESSAGE_INDICATE_REDIRECT  - indicate redirect
 </pre>
  */
 typedef enum {
@@ -316,6 +317,7 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_NOMEDIA,
 	SWITCH_MESSAGE_INDICATE_HOLD,
 	SWITCH_MESSAGE_INDICATE_UNHOLD,
+	SWITCH_MESSAGE_INDICATE_REDIRECT
 } switch_core_session_message_types_t;
 
 

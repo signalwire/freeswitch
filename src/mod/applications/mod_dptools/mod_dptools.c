@@ -153,6 +153,20 @@ static void answer_function(switch_core_session_t *session, char *data)
 	switch_channel_answer(channel);
 }
 
+static void redirect_function(switch_core_session_t *session, char *data)
+{
+    switch_core_session_message_t msg = {0};
+
+    /* Tell the channel to redirect */
+	msg.from = __FILE__;
+	msg.string_arg = data;
+    msg.message_id = SWITCH_MESSAGE_INDICATE_REDIRECT;
+	switch_core_session_receive_message(session, &msg);
+
+}
+
+
+
 static void set_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
@@ -455,13 +469,22 @@ static switch_api_interface_t presence_api_interface = {
 	/*.next */ &dptools_api_interface
 };
 
+static const switch_application_interface_t redirect_application_interface = {
+	/*.interface_name */ "redirect",
+	/*.application_function */ redirect_function,	
+	/* long_desc */ "Send a redirect message to a session.",
+	/* short_desc */ "Send session redirect",
+	/* syntax */ "<redirect_data>",
+	/*.next */ NULL
+};
+
 static const switch_application_interface_t ivr_application_interface = {
 	/*.interface_name */ "ivr",
 	/*.application_function */ ivr_application_function,	
 	/* long_desc */ "Run an ivr menu.",
 	/* short_desc */ "Run an ivr menu",
 	/* syntax */ "<menu_name>",
-	/*.next */ NULL
+	/*.next */ &redirect_application_interface
 };
 
 static const switch_application_interface_t detect_speech_application_interface = {

@@ -1885,6 +1885,12 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-activate timed RTP!\n");
 		}
 		break;
+	case SWITCH_MESSAGE_INDICATE_REDIRECT:
+		if(msg->string_arg) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-directing to %s\n", msg->string_arg);
+			nua_respond(tech_pvt->nh, SIP_302_MOVED_TEMPORARILY, SIPTAG_CONTACT_STR(msg->string_arg), TAG_END());
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_RINGING:
 		nua_respond(tech_pvt->nh, SIP_180_RINGING, SIPTAG_CONTACT_STR(tech_pvt->profile->url), TAG_END());
 		break;
