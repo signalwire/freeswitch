@@ -148,7 +148,7 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(char *in)
 
         if (proceed > 3) {
             pcre_copy_substring(in, ovector, proceed, 3, replace, sizeof(replace));
-            tm.tm_mday = atoi(replace)-1;
+            tm.tm_mday = atoi(replace);
         }
         
         if (proceed > 4) {
