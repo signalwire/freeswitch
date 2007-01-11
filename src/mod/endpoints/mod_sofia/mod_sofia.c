@@ -3980,7 +3980,7 @@ static void sip_i_invite(nua_t *nua,
     sip_from_t const *from = sip->sip_from;
     sip_to_t const *to = sip->sip_to;
     char *displayname;
-    char *username, *to_username = NULL;
+    char *username, *req_username = NULL;
     char *url_user = (char *) from->a_url->url_user;
     char *to_user, *to_host, *to_port;
     char *req_user, *req_host, *req_port;
@@ -4056,14 +4056,6 @@ static void sip_i_invite(nua_t *nua,
         return;
     }
 
-    if (profile->pflags & PFLAG_FULL_ID)  {
-        if (!(to_username = switch_mprintf("%s@%s:%s", (char *) to_user, (char *) to_host, to_port))) {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-            switch_safe_free(username);
-            return;
-        }
-    }
-
     attach_private(session, profile, tech_pvt, username);
 
 
@@ -4115,6 +4107,14 @@ static void sip_i_invite(nua_t *nua,
     switch_channel_set_variable(channel, "sip_req_host", req_host);
     switch_channel_set_variable(channel, "sip_req_port", req_port);
 
+    if (profile->pflags & PFLAG_FULL_ID)  {
+        if (!(req_username = switch_mprintf("%s@%s:%s", (char *) req_user, (char *) req_host, req_port))) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+            switch_safe_free(username);
+            return;
+        }
+    }
+
     contact_user = (char *) sip->sip_contact->m_url->url_user;
     contact_host = (char *) sip->sip_contact->m_url->url_host;
     if (!(contact_port = (char *) sip->sip_contact->m_url->url_port)) {
@@ -4154,7 +4154,7 @@ static void sip_i_invite(nua_t *nua,
                                                               (char *)modname,
                                                               (profile->context && !strcasecmp(profile->context, "_domain_")) ? 
                                                               (char *) from->a_url->url_host : profile->context,
-                                                              to_username ? to_username : (char *) to_user
+                                                              req_username ? req_username : (char *) req_user
                                                               )) != 0) {
 
 				
@@ -4213,7 +4213,7 @@ static void sip_i_invite(nua_t *nua,
 
         switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
         switch_safe_free(username);
-        switch_safe_free(to_username);
+        switch_safe_free(req_username);
     }
 
     if (!(tech_pvt->sofia_private = malloc(sizeof(*tech_pvt->sofia_private)))) {
