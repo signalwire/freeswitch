@@ -4108,11 +4108,19 @@ static void sip_i_invite(nua_t *nua,
     switch_channel_set_variable(channel, "sip_req_port", req_port);
 
     if (profile->pflags & PFLAG_FULL_ID)  {
-        if (!(req_username = switch_mprintf("%s@%s:%s", (char *) req_user, (char *) req_host, req_port))) {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-            switch_safe_free(username);
-            return;
-        }
+		if (req_user) {
+			if (!(req_username = switch_mprintf("%s@%s:%s", (char *) req_user, (char *) req_host, req_port))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+				switch_safe_free(username);
+				return;
+			}
+		} else {
+			if (!(req_username = switch_mprintf("%s:%s", (char *) req_host, req_port))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+				switch_safe_free(username);
+				return;
+			}
+		}
     }
 
     contact_user = (char *) sip->sip_contact->m_url->url_user;
@@ -4154,7 +4162,7 @@ static void sip_i_invite(nua_t *nua,
                                                               (char *)modname,
                                                               (profile->context && !strcasecmp(profile->context, "_domain_")) ? 
                                                               (char *) from->a_url->url_host : profile->context,
-                                                              req_username ? req_username : (char *) req_user
+															  req_username ? req_username : req_user ? (char *) req_user : ""
                                                               )) != 0) {
 
 				
