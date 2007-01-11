@@ -170,9 +170,12 @@ typedef struct conference_obj {
 	char *muted_sound;
 	char *unmuted_sound;
 	char *locked_sound;
+	char *is_locked_sound;
+	char *is_unlocked_sound;
 	char *kicked_sound;
 	char *caller_id_name;
 	char *caller_id_number;
+    char *sound_prefix;
 	switch_ivr_digit_stream_parser_t *dtmf_parser;
 	char *pin;
 	char *pin_sound;
@@ -1805,7 +1808,7 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
     conference_file_node_t *fnode, *nptr;
     switch_memory_pool_t *pool;
     uint32_t count;
-    char *expanded = NULL;
+    char *dfile = NULL, *expanded = NULL;
 
     assert(conference != NULL);
 
@@ -1828,16 +1831,22 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
         }
     }
 
-    if 
-#ifdef WIN32
-        (*(file +1) != ':' && *file != '/')
-#else
-        (*file != '/')
-#endif
-            {
-                status = conference_say(conference, file, leadin);
+    if (!strncasecmp(file, "say:", 4)) {
+        status = conference_say(conference, file + 4, leadin);
+        goto done;
+    } 
+
+    if (!switch_is_file_path(file)) {
+        if (conference->sound_prefix) {
+            if (!(dfile = switch_mprintf("%s/%s", conference->sound_prefix, file))) {
                 goto done;
             }
+            file = dfile;
+        } else {
+            status = conference_say(conference, file + 4, leadin);
+            goto done;  
+        }
+    }
 
     /* Setup a memory pool to use. */
     if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
@@ -1884,6 +1893,7 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 
 
     switch_safe_free(expanded);
+    switch_safe_free(dfile);
 
 	
 
@@ -2831,6 +2841,10 @@ static switch_status_t conf_api_sub_lock(conference_obj_t *conference, switch_st
     assert(conference != NULL);
     assert(stream != NULL);
 
+    if (conference->is_locked_sound) {
+        conference_play_file(conference, conference->is_locked_sound, CONF_DEFAULT_LEADIN, NULL);
+    }
+
     switch_set_flag_locked(conference, CFLAG_LOCKED);
     stream->write_function(stream, "OK %s locked\n", argv[0]);
     if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
@@ -2848,6 +2862,10 @@ static switch_status_t conf_api_sub_unlock(conference_obj_t *conference, switch_
 
     assert(conference != NULL);
     assert(stream != NULL);
+
+    if (conference->is_unlocked_sound) {
+        conference_play_file(conference, conference->is_unlocked_sound, CONF_DEFAULT_LEADIN, NULL);
+    }
 
     switch_clear_flag_locked(conference, CFLAG_LOCKED);
     stream->write_function(stream, "OK %s unlocked\n", argv[0]);
@@ -4187,6 +4205,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
     char *tts_engine = NULL;
     char *tts_voice = NULL;
     char *enter_sound = NULL;
+    char *sound_prefix = NULL;
     char *exit_sound = NULL;
     char *alone_sound = NULL;
     char *ack_sound = NULL;
@@ -4194,6 +4213,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
     char *muted_sound = NULL;
     char *unmuted_sound = NULL;
     char *locked_sound = NULL;
+    char *is_locked_sound = NULL;
+    char *is_unlocked_sound = NULL;
     char *kicked_sound = NULL;
     char *pin = NULL;
     char *pin_sound = NULL; 
@@ -4256,6 +4277,10 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
             unmuted_sound = val;
         } else if (!strcasecmp(var, "locked-sound")) {
             locked_sound = val;
+        } else if (!strcasecmp(var, "is-locked-sound")) {
+            is_locked_sound = val;
+        } else if (!strcasecmp(var, "is-unlocked-sound")) {
+            is_unlocked_sound = val;
         } else if (!strcasecmp(var, "kicked-sound")) {
             kicked_sound = val;
         } else if (!strcasecmp(var, "pin")) {
@@ -4272,6 +4297,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
             caller_id_number = val;
         } else if (!strcasecmp(var, "caller-controls")) {
             caller_controls = val;
+        } else if (!strcasecmp(var, "sound-prefix")) {
+            sound_prefix = val;
         }
     }
 
@@ -4333,6 +4360,11 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
     conference->caller_id_name = switch_core_strdup(conference->pool, caller_id_name);
     conference->caller_id_number = switch_core_strdup(conference->pool, caller_id_number);
 
+
+    if (sound_prefix) {
+        conference->sound_prefix = switch_core_strdup(conference->pool, sound_prefix);
+    }
+
     if (!switch_strlen_zero(enter_sound)) {
         conference->enter_sound = switch_core_strdup(conference->pool, enter_sound);
     }
@@ -4379,6 +4411,14 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 
     if (!switch_strlen_zero(locked_sound)) {
         conference->locked_sound = switch_core_strdup(conference->pool, locked_sound);
+    }
+
+    if (!switch_strlen_zero(is_locked_sound)) {
+        conference->is_locked_sound = switch_core_strdup(conference->pool, is_locked_sound);
+    }
+
+    if (!switch_strlen_zero(is_unlocked_sound)) {
+        conference->is_unlocked_sound = switch_core_strdup(conference->pool, is_unlocked_sound);
     }
 
     if (!switch_strlen_zero(energy_level)) {

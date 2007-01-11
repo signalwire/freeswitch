@@ -62,6 +62,12 @@ SWITCH_DECLARE(apr_status_t) switch_socket_recvfrom(apr_sockaddr_t *from, apr_so
 									apr_size_t *len);
 
 
+#ifdef WIN32
+#define switch_is_file_path(file) (*(file +1) == ':' || *file == '/')
+#else
+#define switch_is_file_path(file) (*file == '/')
+#endif
+
 /*!
   \brief Evaluate the truthfullness of a string expression
   \param expr a string expression

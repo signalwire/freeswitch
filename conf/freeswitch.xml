@@ -397,6 +397,7 @@
 
       <!-- Profiles are collections of settings you can reference by name. -->
       <profiles>
+	<!--If no profile is specified it will default to "default"-->
 	<profile name="default">
 	  <!-- Domain (for presence) -->
 	  <param name="domain" value="sub.mydomain.com"/>
@@ -406,38 +407,43 @@
 	  <param name="interval" value="20"/>
 	  <!-- Energy level required for audio to be sent to the other users -->
 	  <param name="energy-level" value="300"/>
-		<!-- Name of the caller control group to use for this profile -->
-		<!-- <param name="caller-controls" value="some name"/> -->
+	  <!-- Name of the caller control group to use for this profile -->
+	  <!-- <param name="caller-controls" value="some name"/> -->
 	  <!-- TTS Engine to use -->
 	  <!--<param name="tts-engine" value="cepstral"/>-->
 	  <!-- TTS Voice to use -->
 	  <!--<param name="tts-voice" value="david"/>-->
 
-	  <!-- If TTS is enabled all audio-file params not beginning with -->
-	  <!-- '/' or with drive: (i.e. c:) will be considered text to say with TTS -->
-
+	  <!-- If TTS is enabled all audio-file params beginning with -->
+	  <!-- 'say:' will be considered text to say with TTS -->
+	  <!-- Set a default path here so you can use relative paths in the other sound params-->
+	  <!--<param name="sound-prefix" value="/soundfiles"/>-->
 	  <!-- File to play to acknowledge succees -->
-	  <!--<param name="ack-sound" value="/soundfiles/beep.wav"/>-->
+	  <!--<param name="ack-sound" value="beep.wav"/>-->
 	  <!-- File to play to acknowledge failure -->
-	  <!--<param name="nack-sound" value="/soundfiles/beeperr.wav"/>-->
+	  <!--<param name="nack-sound" value="beeperr.wav"/>-->
 	  <!-- File to play to acknowledge muted -->
-	  <!--<param name="muted-sound" value="/soundfiles/muted.wav"/>-->
+	  <!--<param name="muted-sound" value="muted.wav"/>-->
 	  <!-- File to play to acknowledge unmuted -->
-	  <!--<param name="unmuted-sound" value="/soundfiles/unmuted.wav"/>-->
+	  <!--<param name="unmuted-sound" value="unmuted.wav"/>-->
 	  <!-- File to play if you are alone in the conference -->
-	  <!--<param name="alone-sound" value="/soundfiles/yactopitc.wav"/>-->
+	  <!--<param name="alone-sound" value="yactopitc.wav"/>-->
 	  <!-- File to play when you join the conference -->
-	  <!--<param name="enter-sound" value="/soundfiles/welcome.wav"/>-->
+	  <!--<param name="enter-sound" value="welcome.wav"/>-->
 	  <!-- File to play when you leave the conference -->
-	  <!--<param name="exit-sound" value="/soundfiles/exit.wav"/>-->
+	  <!--<param name="exit-sound" value="exit.wav"/>-->
 	  <!-- File to play when you ae ejected from the conference -->
-	  <!--<param name="kicked-sound" value="/soundfiles/kicked.wav"/>-->
+	  <!--<param name="kicked-sound" value="kicked.wav"/>-->
 	  <!-- File to play when the conference is locked -->
-	  <!--<param name="locked-sound" value="/soundfiles/locked.wav"/>-->
+	  <!--<param name="locked-sound" value="locked.wav"/>-->
+	  <!-- File to play when the conference is locked during the call-->
+	  <!--<param name="is-locked-sound" value="is-locked.wav"/>-->
+	  <!-- File to play when the conference is unlocked during the call-->
+	  <!--<param name="is-unlocked-sound" value="is-unlocked.wav"/>-->
 	  <!-- File to play to prompt for a pin -->
-	  <!--<param name="pin-sound" value="/soundfiles/pin.wav"/>-->
+	  <!--<param name="pin-sound" value="pin.wav"/>-->
 	  <!-- File to play to when the pin is invalid -->
-	  <!--<param name="bad-pin-sound" value="/soundfiles/invalid-pin.wav"/>-->
+	  <!--<param name="bad-pin-sound" value="invalid-pin.wav"/>-->
 	  <!-- Conference pin -->
 	  <!--<param name="pin" value="12345"/>-->
 	  <!-- Default Caller ID Name for outbound calls -->
