@@ -190,7 +190,7 @@ typedef struct conference_obj {
 	uint32_t interval;
 	switch_mutex_t *mutex;
 	conference_member_t *members;
-	switch_thread_rwlock_t *member_rwlock;
+    switch_mutex_t *member_mutex;
 	conference_file_node_t *fnode;
 	switch_memory_pool_t *pool;
 	switch_thread_rwlock_t *rwlock;
@@ -373,7 +373,7 @@ static conference_member_t *conference_member_get(conference_obj_t *conference, 
     assert(conference != NULL);
     assert(id != 0);
 
-    switch_thread_rwlock_rdlock(conference->member_rwlock);
+    switch_mutex_lock(conference->member_mutex);
     for(member = conference->members; member; member = member->next) {
         
         if (switch_test_flag(member, MFLAG_NOCHANNEL)) {
@@ -389,7 +389,7 @@ static conference_member_t *conference_member_get(conference_obj_t *conference, 
         member = NULL;
     }
 
-    switch_thread_rwlock_unlock(conference->member_rwlock);
+    switch_mutex_unlock(conference->member_mutex);
 
 	return member;
 }
@@ -401,14 +401,14 @@ static switch_status_t conference_record_stop(conference_obj_t *conference, char
 	int count = 0;
 
 	assert (conference != NULL);
-    switch_thread_rwlock_rdlock(conference->member_rwlock);
+    switch_mutex_lock(conference->member_mutex);
     for(member = conference->members; member; member = member->next) {
         if (switch_test_flag(member, MFLAG_NOCHANNEL) && (!path || !strcmp(path, member->rec_path))) {
             switch_clear_flag_locked(member, MFLAG_RUNNING);
             count++;
         }
     }
-    switch_thread_rwlock_unlock(conference->member_rwlock);
+    switch_mutex_unlock(conference->member_mutex);
 	return count;
 }
 
@@ -470,13 +470,13 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
     switch_mutex_lock(member->audio_out_mutex);
     switch_mutex_lock(member->flag_mutex);
     
-    switch_thread_rwlock_wrlock(conference->member_rwlock);
+    switch_mutex_lock(conference->member_mutex);
     member->conference = conference;
     member->next = conference->members;
     member->energy_level = conference->energy_level;
     conference->members = member;
     switch_set_flag(member, MFLAG_INTREE);
-    switch_thread_rwlock_unlock(conference->member_rwlock);
+    switch_mutex_unlock(conference->member_mutex);
 
     if (!switch_test_flag(member, MFLAG_NOCHANNEL)) {
         conference->count++;
@@ -534,7 +534,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
     assert(member != NULL);
     
     switch_mutex_lock(conference->mutex);
-    switch_thread_rwlock_wrlock(conference->member_rwlock);
+    switch_mutex_lock(conference->member_mutex);
     switch_mutex_lock(member->audio_in_mutex);
     switch_mutex_lock(member->audio_out_mutex);
     switch_mutex_lock(member->flag_mutex);
@@ -609,7 +609,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
             switch_event_fire(&event);
         }
     }
-    switch_thread_rwlock_unlock(conference->member_rwlock);
+    switch_mutex_unlock(conference->member_mutex);
     switch_mutex_unlock(member->flag_mutex);
     switch_mutex_unlock(member->audio_out_mutex);
     switch_mutex_unlock(member->audio_in_mutex);
@@ -854,7 +854,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			conference->fnode = NULL; 
 		} 
 
-        switch_thread_rwlock_rdlock(conference->member_rwlock);
+        switch_mutex_lock(conference->member_mutex);
 		for(imember = conference->members; imember; imember = imember->next) {
 			switch_channel_t *channel;
 
@@ -873,7 +873,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 
 			switch_clear_flag_locked(imember, MFLAG_RUNNING);
 		}
-        switch_thread_rwlock_unlock(conference->member_rwlock);
+        switch_mutex_unlock(conference->member_mutex);
 
 		switch_mutex_unlock(conference->mutex);
 
@@ -1821,9 +1821,9 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
     assert(conference != NULL);
 
     switch_mutex_lock(conference->mutex);
-    switch_thread_rwlock_rdlock(conference->member_rwlock);
+    switch_mutex_lock(conference->member_mutex);
     count = conference->count;
-    switch_thread_rwlock_unlock(conference->member_rwlock);
+    switch_mutex_unlock(conference->member_mutex);
     switch_mutex_unlock(conference->mutex);	
 
     if (!count) {
@@ -2049,12 +2049,12 @@ static switch_status_t conference_say(conference_obj_t *conference, const char *
     }
 
     switch_mutex_lock(conference->mutex);
-    switch_thread_rwlock_rdlock(conference->member_rwlock);
+    switch_mutex_lock(conference->member_mutex);
     count = conference->count;
     if (!(conference->tts_engine && conference->tts_voice)) {
         count = 0;
     }
-    switch_thread_rwlock_unlock(conference->member_rwlock);
+    switch_mutex_unlock(conference->member_mutex);
     switch_mutex_unlock(conference->mutex);	
 
     if (!count) {
@@ -2119,11 +2119,11 @@ static void conference_member_itterator(conference_obj_t *conference, switch_str
     assert(stream != NULL);
     assert(pfncallback != NULL);
 
-    switch_thread_rwlock_rdlock(conference->member_rwlock);
+    switch_mutex_lock(conference->member_mutex);
     for (member = conference->members; member; member = member->next) {
         pfncallback(member, stream, data);
     }
-    switch_thread_rwlock_unlock(conference->member_rwlock);
+    switch_mutex_unlock(conference->member_mutex);
 	
 }
 
@@ -2134,7 +2134,7 @@ static void conference_list_pretty(conference_obj_t *conference, switch_stream_h
     assert(conference != NULL);
     assert(stream != NULL);
 
-    switch_thread_rwlock_rdlock(conference->member_rwlock);
+    switch_mutex_lock(conference->member_mutex);
     //		stream->write_function(stream, "<pre>Current Callers:\n");
 
     for (member = conference->members; member; member = member->next) {
@@ -2156,7 +2156,7 @@ static void conference_list_pretty(conference_obj_t *conference, switch_stream_h
 
     }
 
-    switch_thread_rwlock_unlock(conference->member_rwlock);
+    switch_mutex_unlock(conference->member_mutex);
 	
 }
 
@@ -2169,7 +2169,7 @@ static void conference_list(conference_obj_t *conference, switch_stream_handle_t
     assert(delim != NULL);
 
 
-    switch_thread_rwlock_rdlock(conference->member_rwlock);
+    switch_mutex_lock(conference->member_mutex);
 
     for (member = conference->members; member; member = member->next) {
         switch_channel_t *channel;
@@ -2213,7 +2213,7 @@ static void conference_list(conference_obj_t *conference, switch_stream_handle_t
                                member->energy_level);
     }
 
-    switch_thread_rwlock_unlock(conference->member_rwlock);
+    switch_mutex_unlock(conference->member_mutex);
 	
 }
 
@@ -3115,7 +3115,7 @@ switch_status_t conf_api_dispatch(conference_obj_t *conference, switch_stream_ha
                         conference_member_t *member = NULL;
                         conference_member_t *last_member = NULL;
 
-                        switch_thread_rwlock_rdlock(conference->member_rwlock);
+                        switch_mutex_lock(conference->member_mutex);
 
                         /* find last (oldest) member */
                         member = conference->members;
@@ -3132,7 +3132,7 @@ switch_status_t conf_api_dispatch(conference_obj_t *conference, switch_stream_ha
                             pfn(last_member, stream, argv[argn+2]);
                         }
 
-                        switch_thread_rwlock_unlock(conference->member_rwlock);
+                        switch_mutex_unlock(conference->member_mutex);
                     } else {
                         conf_api_member_cmd_t pfn = (conf_api_member_cmd_t)conf_api_sub_commands[i].pfnapicmd;
                         conference_member_t *member = conference_member_get(conference, id);
@@ -4459,7 +4459,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
     switch_mutex_init(&conference->mutex, SWITCH_MUTEX_NESTED, conference->pool);
     switch_mutex_init(&conference->flag_mutex, SWITCH_MUTEX_NESTED, conference->pool);
     switch_thread_rwlock_create(&conference->rwlock, conference->pool);
-    switch_thread_rwlock_create(&conference->member_rwlock, conference->pool);
+	switch_mutex_init(&conference->member_mutex, SWITCH_MUTEX_NESTED, conference->pool);
 
     return conference;
 }
