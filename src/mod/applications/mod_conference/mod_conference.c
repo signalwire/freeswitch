@@ -466,15 +466,17 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
     assert(member != NULL);
 
     switch_mutex_lock(conference->mutex);
-    switch_thread_rwlock_wrlock(conference->member_rwlock);
     switch_mutex_lock(member->audio_in_mutex);
     switch_mutex_lock(member->audio_out_mutex);
     switch_mutex_lock(member->flag_mutex);
+    
+    switch_thread_rwlock_wrlock(conference->member_rwlock);
     member->conference = conference;
     member->next = conference->members;
     member->energy_level = conference->energy_level;
     conference->members = member;
     switch_set_flag(member, MFLAG_INTREE);
+    switch_thread_rwlock_unlock(conference->member_rwlock);
 
     if (!switch_test_flag(member, MFLAG_NOCHANNEL)) {
         conference->count++;
@@ -513,7 +515,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
     switch_mutex_unlock(member->flag_mutex);
     switch_mutex_unlock(member->audio_out_mutex);
     switch_mutex_unlock(member->audio_in_mutex);
-    switch_thread_rwlock_unlock(conference->member_rwlock);
+
     switch_mutex_unlock(conference->mutex);
     status = SWITCH_STATUS_SUCCESS;
 	
@@ -607,11 +609,10 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
             switch_event_fire(&event);
         }
     }
-
+    switch_thread_rwlock_unlock(conference->member_rwlock);
     switch_mutex_unlock(member->flag_mutex);
     switch_mutex_unlock(member->audio_out_mutex);
     switch_mutex_unlock(member->audio_in_mutex);
-    switch_thread_rwlock_unlock(conference->member_rwlock);
     switch_mutex_unlock(conference->mutex);
     status = SWITCH_STATUS_SUCCESS;
 	
@@ -784,6 +785,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 					}
 				}
 			}
+            switch_thread_rwlock_unlock(conference->member_rwlock);
 
 			/* Go back and write each member his dedicated copy of the audio frame that does not contain his own audio. */
 			for (imember = conference->members; imember; imember = imember->next) {
@@ -792,7 +794,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				switch_mutex_unlock(imember->audio_out_mutex);
 			}
 		}
-        switch_thread_rwlock_unlock(conference->member_rwlock);
 
 		if (conference->fnode && conference->fnode->done) {
 			conference_file_node_t *fnode;
