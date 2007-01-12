@@ -654,7 +654,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		ready = 0;
 
 		/* Read one frame of audio from each member channel and save it for redistribution */
-        switch_thread_rwlock_rdlock(conference->member_rwlock);
 		for (imember = conference->members; imember; imember = imember->next) {
 			if (imember->buflen) {
 				memset(imember->frame, 255, imember->buflen);
@@ -693,7 +692,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			}
 			switch_mutex_unlock(imember->audio_in_mutex);
 		}
-        switch_thread_rwlock_unlock(conference->member_rwlock);
 		/* If a file or speech event is being played */
 		if (conference->fnode) {
 			/* Lead in time */
@@ -726,7 +724,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 
 		if (ready) {
 			/* Build a muxed frame for every member that contains the mixed audio of everyone else */
-            switch_thread_rwlock_rdlock(conference->member_rwlock);
 			for (omember = conference->members; omember; omember = omember->next) {
 				omember->len = bytes;
 				if (conference->fnode) {
@@ -785,7 +782,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 					}
 				}
 			}
-            switch_thread_rwlock_unlock(conference->member_rwlock);
 
 			/* Go back and write each member his dedicated copy of the audio frame that does not contain his own audio. */
 			for (imember = conference->members; imember; imember = imember->next) {
