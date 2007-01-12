@@ -39,6 +39,7 @@ static const switch_state_handler_table_t noop_state_handler = {0};
 static const char modname[] = "mod_commands";
 static switch_api_interface_t ctl_api_interface;
 static switch_api_interface_t uuid_bridge_api_interface;
+static switch_api_interface_t session_record_api_interface;
 static switch_api_interface_t status_api_interface;
 static switch_api_interface_t show_api_interface;
 static switch_api_interface_t pause_api_interface;
@@ -360,6 +361,62 @@ static switch_status_t uuid_bridge_function(char *cmd, switch_core_session_t *is
 	}
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t session_record_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+{
+    switch_core_session_t *session = NULL;
+	char *argv[4] = {0};
+    char *uuid = NULL, *action = NULL, *path = NULL;
+	int argc = 0;
+
+	if (isession) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	if (switch_strlen_zero(cmd)) {
+        goto usage;
+    }
+
+	if ((argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) != 3) {
+        goto usage;
+    }
+
+    uuid = argv[0];
+    action = argv[1];
+    action = argv[2];
+    
+    if (!(session = switch_core_session_locate(uuid))) {
+		stream->write_function(stream, "-Error Cannot locate session!\n");
+        return SWITCH_STATUS_SUCCESS;
+    }
+    
+    if (switch_strlen_zero(action) || switch_strlen_zero(path)) {
+        goto usage;
+    }
+
+    if (!strcasecmp(action, "start")) {
+        switch_ivr_record_session(session, path, NULL);
+    } else if (!strcasecmp(action, "stop")) {
+        switch_ivr_stop_record_session(session, path);
+    } else {
+        goto usage;
+    }
+
+    goto done;
+
+ usage:
+
+    stream->write_function(stream, "USAGE: %s\n", session_record_api_interface.syntax);
+    return SWITCH_STATUS_SUCCESS;
+
+ done:
+
+    if (session) {
+        switch_core_session_rwunlock(session);
+    }
+
+    return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t pause_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
@@ -694,12 +751,20 @@ static switch_api_interface_t broadcast_api_interface = {
 	/*.next */ &hold_api_interface
 };
 
+static switch_api_interface_t session_record_api_interface = {
+	/*.interface_name */ "session_record",
+	/*.desc */ "session record",
+	/*.function */ session_record_function,
+	/*.syntax */ "<uuid> [start|stop] <path>",
+	/*.next */ &broadcast_api_interface
+};
+
 static switch_api_interface_t uuid_bridge_api_interface = {
 	/*.interface_name */ "uuid_bridge",
 	/*.desc */ "uuid_bridge",
 	/*.function */ uuid_bridge_function,
 	/*.syntax */ "<uuid> <other_uuid>",
-	/*.next */ &broadcast_api_interface
+	/*.next */ &session_record_api_interface
 };
 
 static switch_api_interface_t status_api_interface = {
