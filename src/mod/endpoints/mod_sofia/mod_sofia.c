@@ -2152,6 +2152,11 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 
 	channel = switch_core_session_get_channel(session);
 	
+    if (!sdp->sdp_connection) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find a c= line in the sdp!\n");
+        return 0;
+    }
+
 	if ((tech_pvt->origin = switch_core_session_strdup(session, (char *) sdp->sdp_origin->o_username))) {
 		if (strstr(tech_pvt->origin, "CiscoSystemsSIP-GW-UserAgent")) {
 			switch_set_flag_locked(tech_pvt, TFLAG_BUGGY_2833);
