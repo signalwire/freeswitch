@@ -5,6 +5,7 @@ applications/mod_commands
 applications/mod_conference
 applications/mod_dptools
 applications/mod_echo
+applications/mod_enum
 #applications/mod_ivrtest
 #applications/mod_park
 applications/mod_playback
