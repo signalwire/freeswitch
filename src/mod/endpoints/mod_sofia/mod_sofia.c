@@ -227,6 +227,7 @@ struct sofia_profile {
 	char *extsipip;
 	char *username;
 	char *url;
+	char *bindurl;
 	char *sipdomain;
 	char *timer_name;
 	int sip_port;
@@ -4633,7 +4634,7 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 	profile->nua = nua_create(profile->s_root, /* Event loop */
 							  event_callback, /* Callback for processing events */
 							  profile, /* Additional data to pass to callback */
-							  NUTAG_URL(profile->url),
+							  NUTAG_URL(profile->bindurl),
 							  NTATAG_UDP_MTU(65536),
 							  TAG_END()); /* Last tag should always finish the sequence */
 
@@ -4779,7 +4780,7 @@ static switch_status_t config_sofia(int reload)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	sofia_profile_t *profile = NULL;
 	char url[512] = "";
-
+	char bindurl[512] ="";
 	switch_mutex_lock(globals.mutex);
 	globals.running = 1;
 	switch_mutex_unlock(globals.mutex);
@@ -4954,10 +4955,14 @@ static switch_status_t config_sofia(int reload)
 				}
 				if (profile->extsipip) {
 					snprintf(url, sizeof(url), "sip:mod_sofia@%s:%d", profile->extsipip, profile->sip_port);
+					snprintf(bindurl, sizeof(url), "sip:mod_sofia@%s:%d", profile->sipip, profile->sip_port);
+					profile->url = switch_core_strdup(profile->pool, url);
+					profile->bindurl = switch_core_strdup(profile->pool, bindurl);
 				} else {
 					snprintf(url, sizeof(url), "sip:mod_sofia@%s:%d", profile->sipip, profile->sip_port);
+					profile->url = switch_core_strdup(profile->pool, url);
+					profile->bindurl = profile->url;
 				}
-				profile->url = switch_core_strdup(profile->pool, url);
 			}
 			if (profile) {
 				if ((registrations = switch_xml_child(xprofile, "registrations"))) {
