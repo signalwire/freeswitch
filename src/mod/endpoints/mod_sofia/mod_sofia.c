@@ -4952,8 +4952,11 @@ static switch_status_t config_sofia(int reload)
 				if (!profile->sipdomain) {
 					profile->sipdomain = switch_core_strdup(profile->pool, profile->sipip);
 				}
-
-				snprintf(url, sizeof(url), "sip:mod_sofia@%s:%d", profile->sipip, profile->sip_port);
+				if (profile->extsipip) {
+					snprintf(url, sizeof(url), "sip:mod_sofia@%s:%d", profile->extsipip, profile->sip_port);
+				} else {
+					snprintf(url, sizeof(url), "sip:mod_sofia@%s:%d", profile->sipip, profile->sip_port);
+				}
 				profile->url = switch_core_strdup(profile->pool, url);
 			}
 			if (profile) {
