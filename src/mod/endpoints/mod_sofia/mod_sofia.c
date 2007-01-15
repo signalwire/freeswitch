@@ -2959,7 +2959,7 @@ static uint8_t handle_register(nua_t *nua,
 	char *rpid = "unknown";
 	const char *display = "\"user\"";
 
-	if (contact) {
+	if (contact && contact->m_url) {
 		char *port = (char *) contact->m_url->url_port;
 		display = contact->m_display;
 
@@ -2989,7 +2989,7 @@ static uint8_t handle_register(nua_t *nua,
 	
 	if (expires) {
 		exptime = expires->ex_delta;
-	} else if (contact->m_expires) {
+	} else if (contact && contact->m_expires) {
 		exptime = atol(contact->m_expires);
 	} 
 
