@@ -945,7 +945,10 @@ static void do_invite(switch_core_session_t *session)
 			snprintf(alert_info, sizeof(alert_info) - 1, "Alert-Info: %s", alertbuf);
 		}
 
-		tech_choose_port(tech_pvt);
+		if (tech_choose_port(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+            return;
+        }
+        
 		set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 
 		switch_set_flag_locked(tech_pvt, TFLAG_READY);
@@ -1495,7 +1498,8 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt;
 	switch_channel_t *channel = NULL;
-	
+	switch_status_t status;
+
 	assert(session != NULL);
 
 	channel = switch_core_session_get_channel(session);
@@ -1513,7 +1517,10 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		switch_set_flag_locked(tech_pvt, TFLAG_ANS);
 
 
-		tech_choose_port(tech_pvt);
+		if ((status = tech_choose_port(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
+            return status;
+        }
+
 		set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 		activate_rtp(tech_pvt);
 		
@@ -1790,7 +1797,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 {
 	switch_channel_t *channel;
 	private_object_t *tech_pvt;
-			
+    switch_status_t status;
+
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 			
@@ -1827,7 +1835,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		tech_pvt->local_sdp_str = NULL;
 		if (!switch_rtp_ready(tech_pvt->rtp_session)) {
 			tech_set_codecs(tech_pvt);
-			tech_choose_port(tech_pvt);
+			if ((status=tech_choose_port(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
+                return status;
+            }
 		}
 		set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
 		do_invite(session);
@@ -1915,7 +1925,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 
 			/* Transmit 183 Progress with SDP */
-			tech_choose_port(tech_pvt);
+			if ((status=tech_choose_port(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
+                return status;
+            }
 			set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 			activate_rtp(tech_pvt);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Ring SDP:\n%s\n", tech_pvt->local_sdp_str);
@@ -2620,7 +2632,9 @@ static void sip_i_state(int status,
 					}
 
 					if (match) {
-						tech_choose_port(tech_pvt);
+						if (tech_choose_port(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+                            goto done;
+                        }
 						activate_rtp(tech_pvt);
 						switch_channel_set_variable(channel, "endpoint_disposition", "EARLY MEDIA");
 						switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
@@ -2730,7 +2744,9 @@ static void sip_i_state(int status,
 						}
 					}
 					if (match) {
-						tech_choose_port(tech_pvt);
+						if (tech_choose_port(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+                            goto done;
+                        }
 						set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 						switch_set_flag_locked(tech_pvt, TFLAG_REINVITE);
 						activate_rtp(tech_pvt);
@@ -2749,8 +2765,9 @@ static void sip_i_state(int status,
 			switch_set_flag_locked(tech_pvt, TFLAG_REINVITE);
 			tech_pvt->nh = tech_pvt->nh2;
 			tech_pvt->nh2 = NULL;
-			tech_choose_port(tech_pvt);
-			activate_rtp(tech_pvt);
+			if (tech_choose_port(tech_pvt) == SWITCH_STATUS_SUCCESS) {
+                activate_rtp(tech_pvt);
+            }
 			goto done;
 		}
 
@@ -2784,10 +2801,11 @@ static void sip_i_state(int status,
 					if (match) {
 						switch_set_flag_locked(tech_pvt, TFLAG_ANS);
 						switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
-						tech_choose_port(tech_pvt);
-						activate_rtp(tech_pvt);
-                        switch_channel_mark_answered(channel);
-						goto done;
+						if (tech_choose_port(tech_pvt) == SWITCH_STATUS_SUCCESS) {
+                            activate_rtp(tech_pvt);
+                            switch_channel_mark_answered(channel);
+                            goto done;
+                        }
 					}
 					
 					switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
