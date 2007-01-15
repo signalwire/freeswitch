@@ -5056,8 +5056,12 @@ static switch_status_t config_sofia(int reload)
 					}
 				}
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Started Profile %s [%s]\n", profile->name, url);
-				launch_profile_thread(profile);
+				if (profile->sipip) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Started Profile %s [%s]\n", profile->name, url);
+					launch_profile_thread(profile);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Unable to start Profile %s due to no configured sip-ip\n", profile->name);
+				}
 				profile = NULL;
 			}
 		}
