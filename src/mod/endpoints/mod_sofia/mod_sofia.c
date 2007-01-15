@@ -4155,8 +4155,10 @@ static void sip_i_invite(nua_t *nua,
     snprintf(uri, sizeof(uri), "%s@%s:%s", req_user, req_host, req_port);
     switch_channel_set_variable(channel, "sip_req_uri", uri);
 
-    snprintf(uri, sizeof(uri), "%u", sip->sip_max_forwards->mf_count);
-    switch_channel_set_variable(channel, "max_forwards", uri);
+	if (sip->sip_max_forwards) {
+		snprintf(uri, sizeof(uri), "%u", sip->sip_max_forwards->mf_count);
+		switch_channel_set_variable(channel, "max_forwards", uri);
+	}
 
 	if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
                                                               (char *) from->a_url->url_user,
