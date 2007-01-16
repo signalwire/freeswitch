@@ -1851,7 +1851,7 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
             }
             file = dfile;
         } else {
-            status = conference_say(conference, file + 4, leadin);
+            status = conference_say(conference, file, leadin);
             goto done;  
         }
     }
@@ -1912,26 +1912,48 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 static switch_status_t conference_member_play_file(conference_member_t *member, char *file, uint32_t leadin)
 {
     switch_status_t status = SWITCH_STATUS_FALSE;
+    char *dfile = NULL, *expanded = NULL;
 
     if (member != NULL && file != NULL) {
         conference_file_node_t *fnode, *nptr;
         switch_memory_pool_t *pool;
 
-        if (*file != '/') {
-            return conference_member_say(member, file, leadin);
+        if ((expanded = switch_channel_expand_variables(switch_core_session_get_channel(member->session), file)) != file) {
+            file = expanded;
+        } else {
+            expanded = NULL;
+        }
+
+        if (!strncasecmp(file, "say:", 4)) {
+            status = conference_say(member->conference, file + 4, leadin);
+            goto done;
+        } 
+
+        if (!switch_is_file_path(file)) {
+            if (member->conference->sound_prefix) {
+                if (!(dfile = switch_mprintf("%s/%s", member->conference->sound_prefix, file))) {
+                    goto done;
+                }
+                file = dfile;
+            } else {
+                status = conference_say(member->conference, file, leadin);
+                goto done;  
+            }
         }
 
         /* Setup a memory pool to use. */
         if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
-            return SWITCH_STATUS_MEMERR;
+            status = SWITCH_STATUS_MEMERR;
+            goto done;
         }
 
         /* Create a node object*/
         if (!(fnode = switch_core_alloc(pool, sizeof(*fnode)))) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Alloc Failure\n");
             switch_core_destroy_memory_pool(&pool);
-            return SWITCH_STATUS_MEMERR;
+            status = SWITCH_STATUS_MEMERR;
+            goto done;
         }
 
         fnode->type = NODE_TYPE_FILE;
@@ -1943,7 +1965,8 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
                                   SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, 
                                   pool) != SWITCH_STATUS_SUCCESS) {
             switch_core_destroy_memory_pool(&pool);
-            return SWITCH_STATUS_NOTFOUND;
+            status = SWITCH_STATUS_NOTFOUND;
+            goto done;
         }
 
         fnode->pool = pool;
@@ -1962,6 +1985,11 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 
         status = SWITCH_STATUS_SUCCESS;
     }
+
+ done:
+
+    switch_safe_free(expanded);
+    switch_safe_free(dfile);
 
     return status;
 }
