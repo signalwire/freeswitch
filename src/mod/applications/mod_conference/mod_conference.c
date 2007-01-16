@@ -3414,7 +3414,6 @@ static switch_status_t conference_local_play_file(switch_core_session_t *session
 static void conference_function(switch_core_session_t *session, char *data)
 {
     switch_codec_t *read_codec = NULL;
-    switch_memory_pool_t *pool = NULL, *freepool = NULL;
     uint32_t flags = 0;
     conference_member_t member = {0};
     conference_obj_t *conference = NULL;
@@ -3437,12 +3436,6 @@ static void conference_function(switch_core_session_t *session, char *data)
     assert(channel != NULL);
 
     if (!mydata) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
-        return;
-    }
-
-    /* Setup a memory pool to use. */
-    if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
         return;
     }
@@ -3505,6 +3498,7 @@ static void conference_function(switch_core_session_t *session, char *data)
     xml_cfg.menus = switch_xml_child(cfg, "menus");
 #endif 
 
+
     /* if this is a bridging call, and it's not a duplicate, build a */
     /* conference object, and skip pin handling, and locked checking */
     if (isbr) {
@@ -3520,7 +3514,7 @@ static void conference_function(switch_core_session_t *session, char *data)
         }
 
         /* Create the conference object. */
-        conference = conference_new(conf_name, xml_cfg, pool);
+        conference = conference_new(conf_name, xml_cfg, NULL);
 
         if (!conference) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
@@ -3543,11 +3537,9 @@ static void conference_function(switch_core_session_t *session, char *data)
 
     } else {
         /* if the conference exists, get the pointer to it */
-        if ((conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, conf_name))) {
-            freepool = pool;
+        if (!(conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, conf_name))) {
             /* couldn't find the conference, create one */
-        } else {
-            conference = conference_new(conf_name, xml_cfg, pool);
+            conference = conference_new(conf_name, xml_cfg, NULL);
 
             if (!conference) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
@@ -3655,6 +3647,7 @@ static void conference_function(switch_core_session_t *session, char *data)
     /* Save the original read codec. */
     read_codec = switch_core_session_get_read_codec(session);
     member.native_rate = read_codec->implementation->samples_per_second;
+    member.pool = switch_core_session_get_pool(session);
 
     /* Setup a Signed Linear codec for reading audio. */
     if (switch_core_codec_init(&member.read_codec, 
@@ -3665,7 +3658,7 @@ static void conference_function(switch_core_session_t *session, char *data)
                                1, 
                                SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, 
                                NULL, 
-                               pool) == SWITCH_STATUS_SUCCESS) {
+                               member.pool) == SWITCH_STATUS_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Success L16@%uhz 1 channel %dms\n", 
                           conference->rate, conference->interval);
     } else {
@@ -3684,7 +3677,7 @@ static void conference_function(switch_core_session_t *session, char *data)
                                read_codec->implementation->samples_per_second * 20, 
                                conference->rate, 
                                conference->rate * 20, 
-                               switch_core_session_get_pool(session));
+                               member.pool);
 
         /* Setup an audio buffer for the resampled audio */
         if (switch_buffer_create_dynamic(&member.resample_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX) != SWITCH_STATUS_SUCCESS) {
@@ -3701,7 +3694,7 @@ static void conference_function(switch_core_session_t *session, char *data)
                                1, 
                                SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, 
                                NULL, 
-                               pool) == SWITCH_STATUS_SUCCESS) {
+                               member.pool) == SWITCH_STATUS_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Success L16@%uhz 1 channel %dms\n", 
                           conference->rate, conference->interval);
     } else {
@@ -3725,11 +3718,10 @@ static void conference_function(switch_core_session_t *session, char *data)
 
     /* Prepare MUTEXS */
     member.id = next_member_id();
-    member.pool = pool;
     member.session = session;
-    switch_mutex_init(&member.flag_mutex, SWITCH_MUTEX_NESTED, pool);
-    switch_mutex_init(&member.audio_in_mutex, SWITCH_MUTEX_NESTED, pool);
-    switch_mutex_init(&member.audio_out_mutex, SWITCH_MUTEX_NESTED, pool);
+    switch_mutex_init(&member.flag_mutex, SWITCH_MUTEX_NESTED, member.pool);
+    switch_mutex_init(&member.audio_in_mutex, SWITCH_MUTEX_NESTED, member.pool);
+    switch_mutex_init(&member.audio_out_mutex, SWITCH_MUTEX_NESTED, member.pool);
 
     /* Install our Signed Linear codec so we get the audio in that format */
     switch_core_session_set_read_codec(member.session, &member.read_codec);
@@ -3773,10 +3765,6 @@ static void conference_function(switch_core_session_t *session, char *data)
     /* Release the config registry handle */
     if (cxml) {
         switch_xml_free(cxml);
-    }
-
-    if (freepool) {
-        switch_core_destroy_memory_pool(&freepool);
     }
 
     if (switch_test_flag(&member, MFLAG_KICKED) && conference->kicked_sound) {
