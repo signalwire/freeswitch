@@ -2952,6 +2952,7 @@ static uint8_t handle_register(nua_t *nua,
 	char contact_str[1024] = "";
 	char buf[512];
 	char *passwd = NULL;
+	char *a1_hash = NULL;
 	uint8_t stale = 0, ret = 0, forbidden = 0;
 	auth_res_t auth_res;
 	long exptime = 60;
@@ -3059,9 +3060,13 @@ static uint8_t handle_register(nua_t *nua,
 			if (!strcasecmp(var, "password")) {
 				passwd = val;
 			}
+
+			if (!strcasecmp(var, "a1-hash")) {
+                a1_hash = val;
+			}
 		}
 	
-		if (passwd) {
+		if (passwd || a1_hash) {
 			switch_uuid_t uuid;
 			char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 			char *sql, *auth_str;
@@ -3070,15 +3075,18 @@ static uint8_t handle_register(nua_t *nua,
 			char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1];
 			char *input;
 
-			input = switch_mprintf("%s:%s:%s", from_user, from_host, passwd);
-			su_md5_init(&ctx);
-			su_md5_strupdate(&ctx, input);
-			su_md5_hexdigest(&ctx, hexdigest);
-			su_md5_deinit(&ctx);
-			switch_safe_free(input);
+            if (!a1_hash) {
+                input = switch_mprintf("%s:%s:%s", from_user, from_host, passwd);
+                su_md5_init(&ctx);
+                su_md5_strupdate(&ctx, input);
+                su_md5_hexdigest(&ctx, hexdigest);
+                su_md5_deinit(&ctx);
+                switch_safe_free(input);
 
-			switch_uuid_get(&uuid);
-			switch_uuid_format(uuid_str, &uuid);
+                switch_uuid_get(&uuid);
+                switch_uuid_format(uuid_str, &uuid);
+                a1_hash = hexdigest;
+            }
 
 			sql = switch_mprintf("delete from sip_authentication where user='%q' and host='%q';\n"
                                  "insert into sip_authentication values('%q','%q','%q','%q', %ld)",
@@ -3086,7 +3094,7 @@ static uint8_t handle_register(nua_t *nua,
                                  from_host,
                                  from_user,
                                  from_host,
-                                 hexdigest,
+                                 a1_hash,
                                  uuid_str,
                                  time(NULL) + 60);
 			auth_str = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", from_host, uuid_str, 
