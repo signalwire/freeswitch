@@ -766,12 +766,22 @@ static int auc_digest_challenge(auth_client_t *ca, msg_auth_t const *ch)
   if (ac->ac_qop && (cda->cda_cnonce == NULL || ac->ac_stale)) {
     su_guid_t guid[1];
     char *cnonce;
+    char *e;
+
     if (cda->cda_cnonce != NULL)
       /* Free the old one if we are updating after stale=true */
       su_free(home, (void *)cda->cda_cnonce);
     su_guid_generate(guid);
     cda->cda_cnonce = cnonce = su_alloc(home, BASE64_SIZE(sizeof(guid)) + 1);
     base64_e(cnonce, BASE64_SIZE(sizeof(guid)) + 1, guid, sizeof(guid));
+    /* somewhere else in the code the '=' chars are stripped in the header 
+       we need to strip it now before the digest is created or we're in trouble
+       cos they won't match.....
+    */
+    e = cnonce + strlen(cnonce) - 1;
+    while(*e == '=') {
+       *e-- = '\0';
+    }
     cda->cda_ncount = 0;
   }
 
