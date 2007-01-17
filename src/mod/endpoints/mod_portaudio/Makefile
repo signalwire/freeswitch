@@ -1,10 +1,11 @@
-LDFLAGS += -lportaudio -L$(PREFIX)
-MYOBJS = pablio.o ringbuffer.o
+CFLAGS += -I.
+LDFLAGS += -lportaudio -L$(PREFIX) 
+MYOBJS = pablio.o pa_ringbuffer.o
 
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install portaudio.tar.gz --prefix=$(PREFIX)
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install portaudio --prefix=$(PREFIX) --with-pic
 %.o:  %.c
 	$(CC) -fPIC $(CFLAGS) -c -o $@ $<
 
