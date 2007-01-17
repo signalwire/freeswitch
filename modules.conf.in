@@ -48,5 +48,6 @@ formats/mod_sndfile
 #languages/mod_spidermonkey_etpan
 timers/mod_softtimer
 #xml_int/mod_xml_rpc
+#xml_int/mod_xml_curl
 say/mod_say_en
 

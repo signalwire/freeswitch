@@ -77,7 +77,7 @@ static switch_xml_t xml_url_fetch(char *section,
                                 tag_name ? tag_name : "",
                                 key_name ? key_name : "",
                                 key_value ? key_value : "",
-                                params ? "&" : "", params ? params : ""))) {
+                                params ? index(params,'=') ? "&" : "&params=" : "", params ? params : ""))) {
 
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
         return NULL;
