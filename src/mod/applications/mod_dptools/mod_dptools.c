@@ -405,7 +405,6 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 
 		// Open the config from the xml registry
 		if ((cxml = switch_xml_open_cfg(ivr_cf_name, &cfg, NULL)) != NULL) {
-			switch_xml_free(cxml);
 			if ((xml_menus = switch_xml_child(cfg, "menus"))) {
 				xml_menu = switch_xml_find_child(xml_menus, "menu", "name", params);
 
@@ -431,6 +430,7 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to find menu '%s'\n", params);
 				}
 			}
+			switch_xml_free(cxml);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", ivr_cf_name);
 		}
