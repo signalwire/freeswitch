@@ -3965,7 +3965,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_action(switch_ivr_menu_t *m
 		action->bind = switch_core_strdup(menu->pool, bind);
 		action->next = menu->actions;
 		action->arg = switch_core_strdup(menu->pool, arg);
-		len = (uint32_t)strlen(action->bind);
+		len = (uint32_t)strlen(action->bind) + 1;
 		if (len > menu->inlen) {
 			menu->inlen = len;
 		}
@@ -3986,7 +3986,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_function(switch_ivr_menu_t 
 		action->bind = bind;
 		action->next = menu->actions;
 		action->arg = switch_core_strdup(menu->pool, arg);
-		len = (uint32_t)strlen(action->bind);
+		len = (uint32_t)strlen(action->bind) + 1;
 		if (len > menu->inlen) {
 			menu->inlen = len;
 		}
@@ -4029,7 +4029,7 @@ static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_me
 			len = 1;
 			ptr = NULL;
 		} else {
-			len = menu->inlen + 1;
+			len = menu->inlen;
 			ptr = menu->ptr;
 		}
 
