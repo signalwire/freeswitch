@@ -49,7 +49,7 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int fam
     int l_address_len;
     struct addrinfo *address_info;
 #else
-#ifdef __APPLE_CC__
+#ifdef __Darwin__
     int ilen;
 #else
     unsigned int ilen;
