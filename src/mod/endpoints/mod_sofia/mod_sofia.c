@@ -177,6 +177,7 @@ static struct {
 	uint32_t callid;
 	int32_t running;
 	switch_mutex_t *mutex;
+    char guess_ip[80];
 } globals;
 
 typedef enum {
@@ -4891,11 +4892,11 @@ static switch_status_t config_sofia(int reload)
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invald option %s for VAD\n", val);
 						}
 					} else if (!strcasecmp(var, "ext-rtp-ip")) {
-						profile->extrtpip = switch_core_strdup(profile->pool, val);
+						profile->extrtpip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : globals.guess_ip);
 					} else if (!strcasecmp(var, "rtp-ip")) {
-						profile->rtpip = switch_core_strdup(profile->pool, val);
+						profile->rtpip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : globals.guess_ip);
 					} else if (!strcasecmp(var, "sip-ip")) {
-						profile->sipip = switch_core_strdup(profile->pool, val);
+						profile->sipip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : globals.guess_ip);
 					} else if (!strcasecmp(var, "sip-domain")) {
 						profile->sipdomain = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "rtp-timer-name")) {
@@ -4921,7 +4922,7 @@ static switch_status_t config_sofia(int reload)
 							profile->pflags |= PFLAG_FULL_ID;
 						}
 					} else if (!strcasecmp(var, "ext-sip-ip")) {
-						profile->extsipip = switch_core_strdup(profile->pool, val);
+						profile->extsipip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : globals.guess_ip);
 					} else if (!strcasecmp(var, "bitpacking")) {
 						if (!strcasecmp(val, "aal2")) {
 							profile->codec_flags = SWITCH_CODEC_FLAG_AAL2;
@@ -5495,7 +5496,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
-	
+
+    switch_find_local_ip(globals.guess_ip, sizeof(globals.guess_ip), AF_INET);
 
 	if (switch_event_bind((char *) modname, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");

@@ -155,8 +155,8 @@
 	    <param name="codec-ms" value="20"/>
 	    <param name="use-rtp-timer" value="true"/>
 	    <param name="rtp-timer-name" value="soft"/>
-	    <param name="rtp-ip" value="192.168.1.20"/>
-	    <param name="sip-ip" value="mydomain1.com"/>
+	    <param name="rtp-ip" value="auto"/>
+	    <param name="sip-ip" value="auto"/>
 
 	    <!--Uncomment to set all inbound calls to no media mode-->
 	    <!--<param name="inbound-no-media" value="true"/>-->
@@ -319,7 +319,7 @@
 	<param name="password" value="mypass"/>
 	<param name="dialplan" value="XML"/>
 	<param name="message" value="Jingle all the way"/>
-	<param name="rtp-ip" value="10.0.0.1"/>
+	<param name="rtp-ip" value="auto"/>
 	<param name="auto-login" value="true"/>
 	<param name="auto-reply" value="Press *Call* to call FreeSWITCH and be sure to come to ClueCon! http://www.cluecon.com"/>
 	<!-- SASL "plain" or "md5" -->
@@ -331,7 +331,7 @@
 	<!-- disable to trade async for more calls -->
 	<param name="use-rtp-timer" value="true"/>
 	<!-- or -->
-	<!-- <param name="rtp-ip" value="my_lan_ip"/> -->
+	<!-- <param name="rtp-ip" value="auto"/> -->
 	<!-- <param name="ext-rtp-ip" value="stun:stun.server.com"/> -->
 	<!-- default extension (if one cannot be determined) -->
 	<param name="exten" value="888"/>
@@ -347,7 +347,7 @@
 	<param name="name" value="sub.mydomain.com"/>
 	<param name="password" value="secret"/>
 	<param name="dialplan" value="XML"/>
-	<param name="rtp-ip" value="208.64.200.42"/>
+	<param name="rtp-ip" value="auto"/>
 	<param name="server" value="jabber.server.org:5347"/>
 	<!-- disable to trade async for more calls -->
 	<param name="use-rtp-timer" value="true"/>

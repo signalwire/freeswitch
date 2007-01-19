@@ -97,6 +97,7 @@ static struct {
 	switch_hash_t *profile_hash;
 	int running;
 	int handles;
+    char guess_ip[80];
 } globals;
 
 struct mdl_profile {
@@ -1800,9 +1801,9 @@ static void set_profile_val(struct mdl_profile *profile, char *var, char *val)
 	} else if (!strcasecmp(var, "message")) {
 		profile->message = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "rtp-ip")) {
-		profile->ip = switch_core_strdup(module_pool, val);
+		profile->ip = switch_core_strdup(module_pool, strcasecmp(val, "auto") ? val : globals.guess_ip);
 	} else if (!strcasecmp(var, "ext-rtp-ip")) {
-		profile->extip = switch_core_strdup(module_pool, val);
+		profile->extip = switch_core_strdup(module_pool, strcasecmp(val, "auto") ? val : globals.guess_ip);
 	} else if (!strcasecmp(var, "server")) {
 		profile->server = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "rtp-timer-name")) {
@@ -1933,7 +1934,8 @@ static switch_status_t load_config(void)
 
 	memset(&globals, 0, sizeof(globals));
 	globals.running = 1;
-
+    
+    switch_find_local_ip(globals.guess_ip, sizeof(globals.guess_ip), AF_INET);
 
 	switch_core_hash_init(&globals.profile_hash, module_pool);	
 

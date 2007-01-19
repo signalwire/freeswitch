@@ -33,8 +33,163 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#ifndef WIN32
+#include <arpa/inet.h>
+#endif
+static char *get_addr(char *buf, switch_size_t len, struct in_addr *in);
+
+SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int family)
+{
+    switch_status_t status = SWITCH_STATUS_FALSE;
+    char *base;
+
+#ifdef WIN32
+    SOCKET tmp_socket;
+    SOCKADDR_STORAGE l_address;
+    int l_address_len;
+    struct addrinfo *address_info;
+#else
+#ifdef __APPLE_CC__
+    int ilen;
+#else
+    unsigned int ilen;
+#endif
+    int tmp_socket = -1, on = 1;
+    char abuf[25] = "";
+#endif
+
+    switch_copy_string(buf, "127.0.0.1", len);
+
+    switch(family) {
+    case AF_INET:
+        base = "82.45.148.209";
+        break;
+    case AF_INET6:
+        base = "52.2d.94.d1";
+        break;
+    }
 
 
+#ifdef WIN32
+    tmp_socket = socket(family, SOCK_DGRAM, 0);
+
+    getaddrinfo(base, NULL, NULL, &address_info);
+  
+    if (WSAIoctl(tmp_socket,
+                 SIO_ROUTING_INTERFACE_QUERY,
+                 address_info->ai_addr,
+                 address_info->ai_addrlen,
+                 &l_address,
+                 sizeof(l_address),
+                 &l_address_len,
+                 NULL,
+                 NULL)) {
+        
+        closesocket(tmp_socket);
+        freeaddrinfo(address_info);
+        return status;
+    }
+  
+    closesocket(tmp_socket);
+    freeaddrinfo(address_info);
+  
+    if(!getnameinfo((const struct sockaddr*)&l_address,
+                    l_address_len,
+                    buf,
+                    len,
+                    NULL,
+                    0,
+                    NI_NUMERICHOST)) {
+
+        status = SWITCH_STATUS_SUCCESS;
+        
+    }
+
+#else
+
+    switch(family) {
+    case AF_INET:
+        {
+            struct sockaddr_in iface_out;
+            struct sockaddr_in remote;          
+            memset (&remote, 0, sizeof (struct sockaddr_in));
+
+            remote.sin_family = AF_INET;
+            remote.sin_addr.s_addr = inet_addr (base);
+            remote.sin_port = htons (4242);
+
+            memset (&iface_out, 0, sizeof (iface_out));
+            tmp_socket = socket (AF_INET, SOCK_DGRAM, 0);
+            
+            if (setsockopt (tmp_socket, SOL_SOCKET, SO_BROADCAST, &on, sizeof (on)) == -1) {
+                goto doh;
+            }
+
+            if (connect (tmp_socket, (struct sockaddr *) &remote, sizeof (struct sockaddr_in)) == -1) {
+                goto doh;
+            }
+
+            ilen = sizeof (iface_out);
+            if (getsockname (tmp_socket, (struct sockaddr *) &iface_out, &ilen) == -1) {
+                goto doh;
+            }
+
+            if (iface_out.sin_addr.s_addr == 0) {
+                goto doh;
+            }
+            
+            switch_copy_string(buf, get_addr(abuf, sizeof(abuf), &iface_out.sin_addr), len);
+            status = SWITCH_STATUS_SUCCESS;
+        }
+        break;
+        case AF_INET6:
+        {
+            struct sockaddr_in6 iface_out;
+            struct sockaddr_in6 remote;
+            memset (&remote, 0, sizeof (struct sockaddr_in6));
+
+            remote.sin6_family = AF_INET6;
+            inet_pton (AF_INET6, buf, &remote.sin6_addr);
+            remote.sin6_port = htons (4242);
+
+            memset (&iface_out, 0, sizeof (iface_out));
+            tmp_socket = socket (AF_INET6, SOCK_DGRAM, 0);
+
+            if (setsockopt (tmp_socket, SOL_SOCKET, SO_BROADCAST, &on, sizeof (on)) == -1) {
+                goto doh;
+            }
+
+            if (connect (tmp_socket, (struct sockaddr *) &remote, sizeof (struct sockaddr_in)) == -1) {
+                goto doh;
+            }
+
+            ilen = sizeof (iface_out);
+            if (getsockname (tmp_socket, (struct sockaddr *) &iface_out, &ilen) == -1) {
+                goto doh;
+            }
+            
+            if (iface_out.sin6_addr.s6_addr == 0) {
+                goto doh;
+            }
+
+            inet_ntop (AF_INET6, (const void *) &iface_out.sin6_addr, buf, len - 1);
+            status = SWITCH_STATUS_SUCCESS;
+        }
+        break;
+    }
+
+
+ doh:
+    if (tmp_socket > 0) {
+        close (tmp_socket);
+        tmp_socket = -1;
+    }
+
+#endif
+
+    return status;
+ 
+}
 
 SWITCH_DECLARE(int) switch_perform_regex(char *field, char *expression, pcre **new_re, int *ovector, uint32_t olen)
 {
@@ -190,15 +345,13 @@ SWITCH_DECLARE(char *) switch_priority_name(switch_priority_t priority)
 
 static char RFC2833_CHARS[] = "0123456789*#ABCDF";
 
-
-
-SWITCH_DECLARE(char *) switch_get_addr(char *buf, switch_size_t len, switch_sockaddr_t *in)
+static char *get_addr(char *buf, switch_size_t len, struct in_addr *in)
 {
 	uint8_t x, *i;
 	char *p = buf;
 
 
-	i = (uint8_t *) &in->sa.sin.sin_addr;
+	i = (uint8_t *) in;
 
 	memset(buf, 0, len);
 	for(x =0; x < 4; x++) {
@@ -208,9 +361,14 @@ SWITCH_DECLARE(char *) switch_get_addr(char *buf, switch_size_t len, switch_sock
 	return buf;
 }
 
+SWITCH_DECLARE(char *) switch_get_addr(char *buf, switch_size_t len, switch_sockaddr_t *in)
+{
+    return get_addr(buf, len, &in->sa.sin.sin_addr);
+}
+
 SWITCH_DECLARE(apr_status_t) switch_socket_recvfrom(apr_sockaddr_t *from, apr_socket_t *sock,
-									apr_int32_t flags, char *buf, 
-									apr_size_t *len)
+                                                    apr_int32_t flags, char *buf, 
+                                                    apr_size_t *len)
 {
 	apr_status_t r;
 
@@ -355,7 +513,7 @@ SWITCH_DECLARE(char *) switch_cut_path(char *in)
 }
 
 SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t *poll, switch_socket_t *sock,
-														  switch_int16_t flags, switch_memory_pool_t *pool)
+                                                            switch_int16_t flags, switch_memory_pool_t *pool)
 {
 	switch_pollset_t *pollset;
 
