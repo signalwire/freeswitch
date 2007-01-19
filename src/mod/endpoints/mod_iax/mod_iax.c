@@ -1033,8 +1033,12 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 			case IAX_EVENT_TIMEOUT:
 				break;
 			case IAX_EVENT_ACCEPT:
-				if (tech_pvt) {
-                    tech_media(tech_pvt, iaxevent);
+				if (channel && !switch_channel_test_flag(channel, CF_ANSWERED)) {
+                    if (tech_media(tech_pvt, iaxevent) == SWITCH_STATUS_SUCCESS) {
+                        switch_channel_set_flag(channel, CF_EARLY_MEDIA);
+                    } else {
+                        switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+                    }
 				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Call accepted.\n");
 				break;
@@ -1047,17 +1051,18 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 			case IAX_EVENT_ANSWER:
 				// the other side answered our call
 				if (channel) {
-                    tech_media(tech_pvt, iaxevent);
-
-                    if (switch_channel_test_flag(channel, CF_ANSWERED)) {
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "WTF Mutiple Answer %s?\n", switch_channel_get_name(channel));
+                    if (tech_media(tech_pvt, iaxevent) == SWITCH_STATUS_SUCCESS) {
+                        if (switch_channel_test_flag(channel, CF_ANSWERED)) {
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "WTF Mutiple Answer %s?\n", switch_channel_get_name(channel));
 						
+                        } else {
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Answer %s\n", switch_channel_get_name(channel));
+                            switch_channel_mark_answered(channel);
+                        }
                     } else {
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Answer %s\n", switch_channel_get_name(channel));
-                        switch_channel_mark_answered(channel);
+                        switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
                     }
-					
-				}
+                }
 				break;
 			case IAX_EVENT_CONNECT:
 				// incoming call detected
