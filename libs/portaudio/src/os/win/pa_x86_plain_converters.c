@@ -124,7 +124,7 @@ static const double ditheredInt16Scaler_ = 0x7FFE;
 
 #define PA_DITHER_BITS_   (15)
 /* Multiply by PA_FLOAT_DITHER_SCALE_ to get a float between -2.0 and +1.99999 */
-#define PA_FLOAT_DITHER_SCALE_  (1.0 / ((1<<PA_DITHER_BITS_)-1))
+#define PA_FLOAT_DITHER_SCALE_  (1.0f / ((1<<PA_DITHER_BITS_)-1))
 static const float const_float_dither_scale_ = PA_FLOAT_DITHER_SCALE_;
 #define PA_DITHER_SHIFT_  ((32 - PA_DITHER_BITS_) + 1)
 

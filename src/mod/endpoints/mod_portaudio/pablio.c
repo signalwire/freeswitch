@@ -204,8 +204,6 @@ PaError OpenAudioStream( PABLIO_Stream **rwblPtr,
 						 PaStreamFlags streamFlags)
 {
     long   bytesPerSample;
-    long   doRead = 0;
-    long   doWrite = 0;
     PaError err;
     PABLIO_Stream *aStream;
     long   minNumBuffers;

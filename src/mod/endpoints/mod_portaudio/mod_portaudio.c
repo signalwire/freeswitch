@@ -258,7 +258,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
                         if (olen == 0) {
                             break;
                         }
-                        WriteAudioStream(globals.ring_stream, abuf, olen);
+                        WriteAudioStream(globals.ring_stream, abuf, (long)olen);
                     }
                 }
             }
@@ -628,8 +628,8 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
             }
             
             
-            tech_pvt->hold_frame.datalen = olen * sizeof(int16_t);
-            tech_pvt->hold_frame.samples = olen;
+            tech_pvt->hold_frame.datalen = (uint32_t)(olen * sizeof(int16_t));
+            tech_pvt->hold_frame.samples = (uint32_t)olen;
             *frame = &tech_pvt->hold_frame;
             
         }
@@ -1313,8 +1313,8 @@ static switch_status_t engage_device(int sample_rate, int codec_ms)
 
 static switch_status_t engage_ring_device(int sample_rate, int channels)
 {
-	int codec_ms = 20;
-    PaStreamParameters inputParameters, outputParameters;
+	//int codec_ms = 20;
+    PaStreamParameters outputParameters;
 	PaError err;
 
     if (!globals.ring_stream) {
@@ -1367,7 +1367,7 @@ static switch_status_t dtmf_call(char **argv, int argc, switch_stream_handle_t *
 
 static switch_status_t switch_call(char **argv, int argc, switch_stream_handle_t *stream)
 {
-    private_t *tp,*tech_pvt;
+    private_t *tp,*tech_pvt = NULL;
     char *callid = argv[0];
     uint8_t one_call = 0;
 
@@ -1490,9 +1490,10 @@ static switch_status_t list_calls(char **argv, int argc, switch_stream_handle_t 
     
     switch_mutex_lock(globals.pvt_lock);
     for (tp = globals.call_list; tp; tp = tp->next) {
-        x++;
-        switch_channel_t *channel = switch_core_session_get_channel(tp->session);        
+		switch_channel_t *channel;
         switch_caller_profile_t *profile;
+        x++;
+        channel = switch_core_session_get_channel(tp->session);        
         
         if ((profile = switch_channel_get_caller_profile(channel))) {
             if (profile->originatee_caller_profile) {
@@ -1534,9 +1535,22 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 		switch_channel_t *channel;
         char *dialplan = globals.dialplan;
         char *cid_name = globals.cid_name;
-        char *cid_num = globals.cid_num;
-        
-        if (!switch_strlen_zero(argv[1])) {
+        char *cid_num = globals.cid_num;        
+
+		switch_core_session_add_stream(session, NULL);
+		if ((tech_pvt = (private_t *) switch_core_session_alloc(session, sizeof(private_t))) != 0) {
+			memset(tech_pvt, 0, sizeof(*tech_pvt));
+			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+			channel = switch_core_session_get_channel(session);
+			switch_core_session_set_private(session, tech_pvt);
+			tech_pvt->session = session;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
+			switch_core_session_destroy(&session);
+			return SWITCH_STATUS_MEMERR;
+		}
+
+		if (!switch_strlen_zero(argv[1])) {
             dialplan = argv[1];
         }
 
@@ -1555,20 +1569,6 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
         if (!switch_strlen_zero(argv[4])) {
             tech_pvt->codec_ms = atoi(argv[5]);
         }
-        
-
-		switch_core_session_add_stream(session, NULL);
-		if ((tech_pvt = (private_t *) switch_core_session_alloc(session, sizeof(private_t))) != 0) {
-			memset(tech_pvt, 0, sizeof(*tech_pvt));
-			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
-			channel = switch_core_session_get_channel(session);
-			switch_core_session_set_private(session, tech_pvt);
-			tech_pvt->session = session;
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
-			switch_core_session_destroy(&session);
-			return SWITCH_STATUS_MEMERR;
-		}
 
 		if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																  NULL,

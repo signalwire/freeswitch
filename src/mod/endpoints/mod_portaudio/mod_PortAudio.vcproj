@@ -42,8 +42,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\portaudio_v18_1\pa_common&quot;;&quot;$(InputDir)..\..\..\..\libs\portaudio_v18_1\pa_win_wmme&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\portaudio\include&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;ALLOW_SMP_DANGERS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -52,6 +52,7 @@
 				WarnAsError="true"
 				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
+				DisableSpecificWarnings="4100;4101"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -126,14 +127,15 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\portaudio_v18_1\pa_common&quot;;&quot;$(InputDir)..\..\..\..\libs\portaudio_v18_1\pa_win_wmme&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\portaudio\include&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;ALLOW_SMP_DANGERS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				WarnAsError="true"
 				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
+				DisableSpecificWarnings="4100;4101"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -197,11 +199,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\pablio.c"
+				RelativePath=".\pa_ringbuffer.c"
 				>
 			</File>
 			<File
-				RelativePath=".\ringbuffer.c"
+				RelativePath=".\pablio.c"
 				>
 			</File>
 		</Filter>
@@ -211,11 +213,11 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\pablio.h"
+				RelativePath=".\pa_ringbuffer.h"
 				>
 			</File>
 			<File
-				RelativePath=".\ringbuffer.h"
+				RelativePath=".\pablio.h"
 				>
 			</File>
 		</Filter>

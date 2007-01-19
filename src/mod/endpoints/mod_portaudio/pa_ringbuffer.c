@@ -102,8 +102,10 @@
 #   endif
 #else
 #   ifdef ALLOW_SMP_DANGERS
+#	ifndef _MSC_VER
 #      warning Memory barriers not defined on this system or system unknown
 #      warning For SMP safety, you should fix this.
+#	endif
 #      define PaUtil_FullMemoryBarrier()
 #      define PaUtil_ReadMemoryBarrier()
 #      define PaUtil_WriteMemoryBarrier()
