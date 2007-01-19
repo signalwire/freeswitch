@@ -79,7 +79,13 @@ SWITCH_DECLARE(apr_status_t) switch_socket_recvfrom(apr_sockaddr_t *from, apr_so
 !strcasecmp(expr, "true") ||\
 atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE
 
-
+/*!
+  \brief find local ip of the box
+  \param buf the buffer to write the ip adress found into
+  \param len the length of the buf
+  \param family the address family to return (AF_INET or AF_INET6)
+  \return SWITCH_STATUS_SUCCESSS for success, otherwise failure
+*/
 SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int family);
 
 #define SWITCH_STATUS_IS_BREAK(x) (x == SWITCH_STATUS_BREAK || x == 730035 || x == 35)
