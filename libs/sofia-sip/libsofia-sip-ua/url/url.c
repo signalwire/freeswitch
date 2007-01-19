@@ -555,7 +555,7 @@ enum url_type_e url_get_type(char const *scheme, size_t len)
 static
 int _url_d(url_t *url, char *s)
 {
-  size_t n;
+  size_t n, p;
   char *s0, rest_c, *host;
   int net_path = 1;
 
@@ -592,14 +592,23 @@ int _url_d(url_t *url, char *s)
 
   if (url->url_type == url_sip || url->url_type == url_sips) {
     /* SIP URL may have /; in user part */
-    n = strcspn(s, "@");	/* Opaque part */
-	if (n == strlen(s)) {
-		if ((strchr(s, '#')))
-			n = 0;
-	} else {
-		if (strchr(s + n, '#'))
-			n = 0;
+#if 1
+	n = strcspn(s, "@#");   /* Opaque part */
+	if ((p = strcspn(s, "#")) == n) {
+	  n = strcspn(s, "@");
+      if (s[n] != '@')
+        n = 0;
 	}
+#else
+    n = strcspn(s, "@");/* Opaque part */
+    if (n == strlen(s)) {
+        if ((strchr(s, '#')))
+            n = 0;
+    } else {
+        if (strchr(s + n, '#'))
+            n = 0;
+    }
+#endif
     n += strcspn(s + n, "/;?#");
   }
   else if (url->url_type == url_wv) {
