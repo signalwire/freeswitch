@@ -92,9 +92,21 @@ INCLUDES = -I$(top_srcdir)/include
 
 lib_LTLIBRARIES = libiksemel.la
 
-@DO_POSIX_TRUE@posix_c = io-posix.c
+@DO_POSIX_TRUE@posix_c = @DO_POSIX_TRUE@io-posix.c
 
-libiksemel_la_SOURCES =  	ikstack.c 	utility.c 	iks.c 	sax.c 	dom.c 	$(posix_c) 	stream.c 	sha.c 	jabber.c 	filter.c 	md5.c 	base64.c
+libiksemel_la_SOURCES = \
+	ikstack.c \
+	utility.c \
+	iks.c \
+	sax.c \
+	dom.c \
+	$(posix_c) \
+	stream.c \
+	sha.c \
+	jabber.c \
+	filter.c \
+	md5.c \
+	base64.c
 
 
 libiksemel_la_LDFLAGS = -version-info 3:0:0 -no-undefined
@@ -127,7 +139,7 @@ DIST_COMMON =  Makefile.am Makefile.in
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
-TAR = tar
+TAR = gtar
 GZIP_ENV = --best
 SOURCES = $(libiksemel_la_SOURCES)
 OBJECTS = $(libiksemel_la_OBJECTS)
@@ -233,7 +245,7 @@ TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
 	  awk '    { files[$$0] = 1; } \
 	       END { for (i in files) print i; }'`; \
 	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
-	  || (cd $(srcdir) && etags -o $$here/TAGS $(ETAGS_ARGS) $$tags  $$unique $(LISP))
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
 
 mostlyclean-tags:
 

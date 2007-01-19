@@ -311,7 +311,7 @@ function SpeechObtainer(asr, req, wait_time) {
 			if (!files[x] || files[x] == "noop") {
 				continue;
 			}
-			rv = this.asr.session.streamFile(this.audio_base + files[x] + this.audio_ext , "", this.asr.onInput, this.asr);
+			rv = this.asr.session.streamFile(this.audio_base + files[x] + this.audio_ext , this.asr.onInput, this.asr);
 			if (rv) {
 				break;
 			}

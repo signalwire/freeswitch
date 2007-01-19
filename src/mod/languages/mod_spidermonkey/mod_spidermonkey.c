@@ -402,11 +402,36 @@ JSClass event_class = {
 
 static void js_error(JSContext *cx, const char *message, JSErrorReport *report)
 {
-	if (message) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, report->filename ? (char *)report->filename : "mod_spidermonkey.c", modname, report->lineno, SWITCH_LOG_ERROR,
-						  "%s %s%s\n", message, report->linebuf ? "near " : "", report->linebuf ? report->linebuf : "");
+    const char *filename = __FILE__;
+    int line = __LINE__;
+    const char *text = "";
+    char *ex = "";
+    
+	if (message && report) {
+        if (report->filename) {
+            filename = report->filename;
+        }
+        line = report->lineno;
+        if (report->linebuf) {
+            text = report->linebuf;
+            ex = "near ";
+        }
 	}
-	
+    
+    if (!message) {
+        message = "(N/A)";
+    }
+    
+    switch_log_printf(SWITCH_CHANNEL_ID_LOG, 
+                      filename,
+                      modname,
+                      line,
+                      SWITCH_LOG_ERROR,
+                      "%s %s%s\n",
+                      ex,
+                      message,
+                      text);
+
 }
 
 

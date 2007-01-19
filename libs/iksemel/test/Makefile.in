@@ -164,7 +164,7 @@ DIST_COMMON =  Makefile.am Makefile.in
 
 DISTFILES = $(DIST_COMMON) $(SOURCES) $(HEADERS) $(TEXINFOS) $(EXTRA_DIST)
 
-TAR = tar
+TAR = gtar
 GZIP_ENV = --best
 SOURCES = $(tst_ikstack_SOURCES) $(tst_iks_SOURCES) $(tst_sax_SOURCES) $(tst_dom_SOURCES) $(tst_sha_SOURCES) $(tst_md5_SOURCES) $(tst_filter_SOURCES) $(tst_jid_SOURCES)
 OBJECTS = $(tst_ikstack_OBJECTS) $(tst_iks_OBJECTS) $(tst_sax_OBJECTS) $(tst_dom_OBJECTS) $(tst_sha_OBJECTS) $(tst_md5_OBJECTS) $(tst_filter_OBJECTS) $(tst_jid_OBJECTS)
@@ -283,7 +283,7 @@ TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) $(LISP)
 	  awk '    { files[$$0] = 1; } \
 	       END { for (i in files) print i; }'`; \
 	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
-	  || (cd $(srcdir) && etags -o $$here/TAGS $(ETAGS_ARGS) $$tags  $$unique $(LISP))
+	  || (cd $(srcdir) && etags $(ETAGS_ARGS) $$tags  $$unique $(LISP) -o $$here/TAGS)
 
 mostlyclean-tags:
 
