@@ -349,7 +349,9 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 									session->payloads[session->payload_len].id = atoi(id);
 									if (rate) {
 										session->payloads[session->payload_len].rate = atoi(rate);
-									}
+									} else {
+                                        session->payloads[session->payload_len].rate = 8000;
+                                    }
 									session->payload_len++;
 								
 									if (globals.debug) {

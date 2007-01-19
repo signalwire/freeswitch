@@ -2472,7 +2472,9 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						if (!strncasecmp(name, "ilbc", 4)) {
 							name = "ilbc";
 						}
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "compare %s %d to %s %d\n", payloads[x].name, payloads[x].id, name, tech_pvt->codecs[y]->ianacode);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "compare %s %d/%d to %s %d/%d\n", 
+                                          payloads[x].name, payloads[x].id, payloads[x].rate,
+                                          name, tech_pvt->codecs[y]->ianacode, tech_pvt->codecs[y]->samples_per_second);
 						if (tech_pvt->codecs[y]->ianacode > 95) {
 							match = strcasecmp(name, payloads[x].name) ? 0 : 1;
 						} else {
