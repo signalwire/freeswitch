@@ -153,6 +153,7 @@ static void deactivate_ring_device(void);
 static int dump_info(void);
 static switch_status_t load_config(void);
 static int get_dev_by_name(char *name, int in);
+static int get_dev_by_number(int number, int in);
 static switch_status_t pa_cmd(char *dest, switch_core_session_t *session, switch_stream_handle_t *stream);
 static switch_status_t padep(char *dest, switch_core_session_t *session, switch_stream_handle_t *stream);
 
@@ -637,6 +638,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
     }
 
 	switch_mutex_lock(globals.device_lock);
+
     if ((samples = ReadAudioStream(globals.audio_stream, globals.read_frame.data, globals.read_codec.implementation->samples_per_frame)) != 0) {
 		globals.read_frame.datalen = samples * 2;
 		globals.read_frame.samples = samples;
@@ -862,26 +864,28 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 
+    switch_status_t status;
+
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
 		return SWITCH_STATUS_TERM;
 	}
 
 	Pa_Initialize();
+
 	if (dump_info()) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't load!\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't find any audio devices!\n");
+		return SWITCH_STATUS_TERM;
     }
 
-	load_config();
+	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
+        return status;
+    }
+
 
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Input Device: %d, Output Device: %d, Ring Device: %d Sample Rate: %d MS: %d\n", 
                       globals.indev, globals.outdev, globals.ringdev, globals.sample_rate, globals.codec_ms);
 
-
-    if (globals.indev < 0 || globals.outdev < 0) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't find a suitable device!\n");
-		return SWITCH_STATUS_GENERR;
-    }
 
 	switch_core_hash_init(&globals.call_hash, module_pool);
 	switch_mutex_init(&globals.device_lock, SWITCH_MUTEX_NESTED, module_pool);
@@ -898,6 +902,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	globals.read_frame.buflen = sizeof(globals.databuf);
 	globals.cng_frame.data = globals.cngbuf;
 	globals.cng_frame.buflen = sizeof(globals.cngbuf);
+	globals.cng_frame.datalen = sizeof(globals.cngbuf);
     switch_set_flag((&globals.cng_frame), SFF_CNG);
 
 	/* connect my internal structure to the blank pointer passed to me */
@@ -912,13 +917,15 @@ static switch_status_t load_config(void)
 {
 	char *cf = "portaudio.conf";
 	switch_xml_t cfg, xml, settings, param;
-
-	memset(&globals, 0, sizeof(globals));
+    switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
+
+	memset(&globals, 0, sizeof(globals));
+    globals.indev = globals.outdev = globals.ringdev = -1;
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -947,19 +954,19 @@ static switch_status_t load_config(void)
 				set_global_cid_num(val);
 			} else if (!strcmp(var, "indev")) {
 				if (*val == '#') {
-					globals.indev = atoi(val + 1);
+					globals.indev = get_dev_by_number(atoi(val + 1), 1);
 				} else {
 					globals.indev = get_dev_by_name(val, 1);
 				}
 			} else if (!strcmp(var, "outdev")) {
 				if (*val == '#') {
-					globals.outdev = atoi(val + 1);
+					globals.outdev = get_dev_by_number(atoi(val + 1), 0);
 				} else {
 					globals.outdev = get_dev_by_name(val, 0);
 				}
 			} else if (!strcmp(var, "ringdev")) {
 				if (*val == '#') {
-					globals.ringdev = atoi(val + 1);
+					globals.ringdev = get_dev_by_number(atoi(val + 1), 0);
 				} else {
 					globals.ringdev = get_dev_by_name(val, 0);
 				}
@@ -987,9 +994,36 @@ static switch_status_t load_config(void)
         set_global_timer_name("soft");
     }
 
+    if (globals.indev < 0) {
+        globals.indev = get_dev_by_name(NULL, 1);
+        if (globals.indev > -1) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Switching to default input device!\n");
+        } else {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find an input device!\n");
+            status = SWITCH_STATUS_GENERR;            
+        }
+    }
+
+    if (globals.outdev < 0) {
+        globals.outdev = get_dev_by_name(NULL, 0);
+        if (globals.outdev > -1) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Switching to default output device!\n");
+        } else {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find an input device!\n");
+            status = SWITCH_STATUS_GENERR;            
+        }
+    }
+
+    if (globals.ringdev < 0) {
+        if (globals.outdev > -1) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid ring device configured using output device!\n");
+            globals.ringdev = globals.outdev;
+        } 
+    }
+
 	switch_xml_free(xml);
 
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
@@ -1002,6 +1036,22 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+static int get_dev_by_number(int number, int in)
+{
+    int numDevices = Pa_GetDeviceCount();
+	const PaDeviceInfo *pdi;
+
+    if (number > -1 && number < numDevices && (pdi = Pa_GetDeviceInfo(number))) {
+        if (in && pdi->maxInputChannels) {
+            return number;
+        } else if (!in && pdi->maxOutputChannels) {
+            return number;
+        }
+    }
+    
+    return -1;
+}
 
 static int get_dev_by_name(char *name, int in)
 {
@@ -1113,14 +1163,12 @@ static int dump_info(void)
         }
         
         if (i == Pa_GetDefaultOutputDevice()) {
-            switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,  (defaultDisplayed ? "," : "["));
             switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,  "**Default Output");
             defaultDisplayed = 1;
 
         } else if (i == Pa_GetHostApiInfo(deviceInfo->hostApi)->defaultOutputDevice) {
 
             const PaHostApiInfo *hostInfo = Pa_GetHostApiInfo(deviceInfo->hostApi);
-            switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,  (defaultDisplayed ? "," : "["));                
             switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,  "**Default %s Output", hostInfo->name);
             defaultDisplayed = 1;
         }
