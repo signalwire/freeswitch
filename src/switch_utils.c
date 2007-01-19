@@ -67,6 +67,9 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int fam
     case AF_INET6:
         base = "52.2d.94.d1";
         break;
+	default:
+		base = "127.0.0.1";
+		break;
     }
 
 
@@ -78,10 +81,10 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int fam
     if (WSAIoctl(tmp_socket,
                  SIO_ROUTING_INTERFACE_QUERY,
                  address_info->ai_addr,
-                 address_info->ai_addrlen,
+                 (DWORD)address_info->ai_addrlen,
                  &l_address,
                  sizeof(l_address),
-                 &l_address_len,
+                 (LPDWORD)&l_address_len,
                  NULL,
                  NULL)) {
         
