@@ -25,6 +25,7 @@
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
  * Michael Jerris <mike@jerris.com>
+ * Pawel Pierscionek <pawel@voiceworks.pl>
  *
  *
  * switch.c -- Main
@@ -194,7 +195,10 @@ int main(int argc, char *argv[])
 {
 	char pid_path[256] = "";	// full path to the pid file
 	const char *err = NULL;		// error value for return from freeswitch initialization
-	int bg = 0;					// TRUE if we are running in background mode
+#ifndef WIN32
+	int nf = 0;					// TRUE if we are running in nofork mode
+#endif
+	int nc = 0;					// TRUE if we are running in noconsole mode
 	int vg = 0;					// TRUE if we are running in vg mode
 	FILE *f;					// file handle to the pid file
 	pid_t pid = 0;				// 
@@ -254,6 +258,11 @@ int main(int argc, char *argv[])
 				exit(0);
 			}
 		}
+#else
+
+		if (argv[x] && !strcmp(argv[x], "-nf")) {
+			nf++;
+		}
 #endif
 		if (argv[x] && !strcmp(argv[x], "-hp")) {
 			set_high_priority();
@@ -264,7 +273,7 @@ int main(int argc, char *argv[])
 		}
 
 		if (argv[x] && !strcmp(argv[x], "-nc")) {
-			bg++;
+			nc++;
 		}
 
 		if (argv[x] && !strcmp(argv[x], "-vg")) {
@@ -276,7 +285,7 @@ int main(int argc, char *argv[])
 		return freeswitch_kill_background();
 	}
 
-	if (bg) {
+	if (nc) {
 
 		signal(SIGHUP, handle_SIGHUP);
 		signal(SIGTERM, handle_SIGHUP);
@@ -284,14 +293,14 @@ int main(int argc, char *argv[])
 #ifdef WIN32
 		FreeConsole();
 #else
-		if ((pid = fork())) {
+		if (!nf && (pid = fork())) {
 			fprintf(stderr, "%d Backgrounding.\n", (int)pid);
 			exit(0);
 		}
 #endif
 	}
 
-	if (switch_core_init_and_modload(bg ? lfile : NULL, &err) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_init_and_modload(nc ? lfile : NULL, &err) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Cannot Initilize [%s]\n", err);
 		return 255;
 	}
@@ -305,7 +314,7 @@ int main(int argc, char *argv[])
 	fprintf(f, "%d", pid = getpid());
 	fclose(f);
 
-	switch_core_runtime_loop(bg);
+	switch_core_runtime_loop(nc);
 
 	return switch_core_destroy(vg);
 }
