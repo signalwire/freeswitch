@@ -2574,7 +2574,7 @@ static void sip_i_state(int status,
 						tagi_t tags[])
 	 
 {
-	char const *l_sdp = NULL, *r_sdp = NULL;
+	char *l_sdp = NULL, *r_sdp = NULL;
 	int offer_recv = 0, answer_recv = 0, offer_sent = 0, answer_sent = 0;
 	int ss_state = nua_callstate_init;
 	switch_channel_t *channel = NULL;
@@ -2627,9 +2627,9 @@ static void sip_i_state(int status,
 
 		if (r_sdp) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote SDP:\n%s\n", r_sdp);			
-			tech_pvt->remote_sdp_str = switch_core_session_strdup(session, (char *)r_sdp);
-			switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, (char *) r_sdp);
-			pass_sdp(tech_pvt, (char *) r_sdp);
+			tech_pvt->remote_sdp_str = switch_core_session_strdup(session, r_sdp);
+			switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
+			pass_sdp(tech_pvt, r_sdp);
 
 		}
 	}
