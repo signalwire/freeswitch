@@ -168,7 +168,8 @@ typedef enum {
 	TFLAG_NOMEDIA = (1 << 20),
 	TFLAG_BUGGY_2833 = (1 << 21),
 	TFLAG_SIP_HOLD = (1 << 22),
-	TFLAG_INB_NOMEDIA = (1 << 23)
+	TFLAG_INB_NOMEDIA = (1 << 23),
+	TFLAG_LATE_NEGOTIATION = (1 << 24)
 } TFLAGS;
 
 static struct {
@@ -1495,6 +1496,45 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t tech_media(private_object_t *tech_pvt, char *r_sdp)
+{
+    sdp_parser_t *parser = sdp_parse(tech_pvt->home, r_sdp, (int)strlen(r_sdp), 0);
+    sdp_session_t *sdp;
+    uint8_t match = 0;
+    switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
+
+    assert(tech_pvt != NULL);
+
+    if (switch_strlen_zero(r_sdp)) {
+        return SWITCH_STATUS_FALSE;
+    }
+
+    if (tech_pvt->num_codecs) {
+        if ((sdp = sdp_session(parser))) {
+            match = negotiate_sdp(tech_pvt->session, sdp);
+        }
+    }
+
+    if (parser) {
+        sdp_parser_free(parser);
+    }
+
+    if (match) {
+        if (tech_choose_port(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+            return SWITCH_STATUS_FALSE;
+        }
+        activate_rtp(tech_pvt);
+        switch_channel_set_variable(channel, "endpoint_disposition", "EARLY MEDIA");
+        switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
+        switch_channel_set_flag(channel, CF_EARLY_MEDIA);
+        return SWITCH_STATUS_SUCCESS;
+    }
+    
+    return SWITCH_STATUS_FALSE;
+}
+
+
+
 static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt;
@@ -1508,6 +1548,17 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
+    
+
+    if (switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
+        char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
+        if (tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
+            switch_channel_set_variable(channel, "endpoint_disposition", "CODEC NEGOTIATION ERROR");
+            nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+            return SWITCH_STATUS_FALSE;
+        }
+        switch_clear_flag_locked(tech_pvt, TFLAG_LATE_NEGOTIATION);
+    }
 
 	if (switch_channel_test_flag(channel, CF_NOMEDIA)) {
 		switch_set_flag_locked(tech_pvt, TFLAG_NOMEDIA);
@@ -1915,6 +1966,17 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	    tech_pvt = switch_core_session_get_private(session);
 	    assert(tech_pvt != NULL);
+
+
+        if (switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
+            char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
+            if (tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
+                switch_channel_set_variable(channel, "endpoint_disposition", "CODEC NEGOTIATION ERROR");
+                nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+                return SWITCH_STATUS_FALSE;
+            }
+            switch_clear_flag_locked(tech_pvt, TFLAG_LATE_NEGOTIATION);
+        }
 
 	    if (!switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA) && !switch_test_flag(tech_pvt, TFLAG_ANS)) {
 			switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
@@ -2502,7 +2564,6 @@ static void pass_sdp(private_object_t *tech_pvt, char *sdp)
 	}
 }
 
-
 static void sip_i_state(int status,
 						char const *phrase, 
 						nua_t *nua,
@@ -2617,35 +2678,15 @@ static void sip_i_state(int status,
 						switch_core_session_rwunlock(other_session);
 					}
                     goto done;
-				} else {
-					sdp_parser_t *parser = sdp_parse(tech_pvt->home, r_sdp, (int)strlen(r_sdp), 0);
-					sdp_session_t *sdp;
-					uint8_t match = 0;
-
-					if (tech_pvt->num_codecs) {
-						if ((sdp = sdp_session(parser))) {
-							match = negotiate_sdp(session, sdp);
-						}
-					}
-
-					if (parser) {
-						sdp_parser_free(parser);
-					}
-
-					if (match) {
-						if (tech_choose_port(tech_pvt) != SWITCH_STATUS_SUCCESS) {
-                            goto done;
-                        }
-						activate_rtp(tech_pvt);
-						switch_channel_set_variable(channel, "endpoint_disposition", "EARLY MEDIA");
-						switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
-						switch_channel_set_flag(channel, CF_EARLY_MEDIA);
-                        goto done;
-					}
-					switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
-					nua_respond(nh, SIP_488_NOT_ACCEPTABLE, 
-								TAG_END());
-				}
+				} else if (!switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
+                    if (tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
+                        switch_channel_set_variable(channel, "endpoint_disposition", "CODEC NEGOTIATION ERROR");
+                        nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+                    }
+                    goto done;
+                } else {
+                    switch_channel_set_variable(channel, "endpoint_disposition", "DELAYED NEGOTIATION");
+                }
 			}
 		}
 		break;
@@ -4876,6 +4917,8 @@ static switch_status_t config_sofia(int reload)
 						switch_set_flag(profile, TFLAG_TIMER);
 					} else if (!strcasecmp(var, "inbound-no-media") && switch_true(val)) {
 						switch_set_flag(profile, TFLAG_INB_NOMEDIA);
+					} else if (!strcasecmp(var, "inbound-late-negotiation") && switch_true(val)) {
+						switch_set_flag(profile, TFLAG_LATE_NEGOTIATION);
 					} else if (!strcasecmp(var, "rfc2833-pt")) {
 						profile->te = (switch_payload_t) atoi(val);
 					} else if (!strcasecmp(var, "sip-port")) {
