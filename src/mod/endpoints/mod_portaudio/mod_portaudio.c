@@ -1623,7 +1623,7 @@ static switch_status_t pa_cmd(char *cmd, switch_core_session_t *isession, switch
         "pa hangup [<call_id>]\n"
         "pa list\n"
         "pa switch [<call_id>|none]\n"
-        "pa_dtmf <digit string>\n"
+        "pa dtmf <digit string>\n"
         "--------------------------------------------------------------------------------\n";
 
     if (switch_strlen_zero(cmd)) {
