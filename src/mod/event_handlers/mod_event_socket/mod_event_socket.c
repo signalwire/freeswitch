@@ -760,6 +760,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 		struct api_command_struct *acs;
 		char *api_cmd = cmd + 6;
 		char *arg = NULL;
+        char *uuid_str = NULL;
 		strip_cr(api_cmd);
 
 		if ((arg = strchr(api_cmd, ' '))) {
@@ -784,8 +785,12 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 			switch_threadattr_detach_set(thd_attr, 1);
 			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 			switch_thread_create(&thread, thd_attr, api_exec, acs, listener->pool);
-			switch_uuid_get(&uuid);
-			switch_uuid_format(acs->uuid_str, &uuid);
+			if ((uuid_str = switch_event_get_header(event, "job-uuid"))) {
+                switch_copy_string(acs->uuid_str, uuid_str, sizeof(acs->uuid_str));
+            } else {
+                switch_uuid_get(&uuid);
+                switch_uuid_format(acs->uuid_str, &uuid);
+            }
 			snprintf(reply, reply_len, "+OK Job-UUID: %s", acs->uuid_str);
 		} else {
 			snprintf(reply, reply_len, "-ERR memory error!");
