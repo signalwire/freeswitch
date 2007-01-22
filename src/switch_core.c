@@ -4237,13 +4237,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(int vg)
 
     switch_yield(1000000);
 
-	if (runtime.memory_pool) {
-		apr_pool_destroy(runtime.memory_pool);
-		if (!vg) {
-			apr_terminate();
-		}
-	}
-
 #ifdef WIN32
 	free(SWITCH_GLOBAL_dirs.base_dir);
 	free(SWITCH_GLOBAL_dirs.mod_dir);
@@ -4255,6 +4248,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(int vg)
 	free(SWITCH_GLOBAL_dirs.grammar_dir);
 	free(SWITCH_GLOBAL_dirs.temp_dir);
 #endif
+
+	if (runtime.memory_pool) {
+		apr_pool_destroy(runtime.memory_pool);
+		if (!vg) {
+			apr_terminate();
+		}
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
