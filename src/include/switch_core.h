@@ -473,6 +473,13 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(char *uuid_st
 SWITCH_DECLARE(char *) switch_core_get_variable(char *varname);
 
 /*! 
+  \brief Add a global variable to the core
+  \param varname the name of the variable
+  \param value the value of the variable
+*/
+SWITCH_DECLARE(void) switch_core_set_variable(char *varname, char *value);
+
+/*! 
   \brief Hangup All Sessions
   \param cause the hangup cause to apply to the hungup channels
 */

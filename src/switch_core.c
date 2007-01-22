@@ -610,6 +610,11 @@ SWITCH_DECLARE(char *) switch_core_get_variable(char *varname)
 	return (char *) switch_core_hash_find(runtime.global_vars, varname);
 }
 
+SWITCH_DECLARE(void) switch_core_set_variable(char *varname, char *value)
+{
+    switch_core_hash_insert(runtime.global_vars, switch_core_strdup(runtime.memory_pool, varname), switch_core_strdup(runtime.memory_pool, value));
+}
+
 
 #ifdef SWITCH_DEBUG_RWLOCKS
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(char *uuid_str,
@@ -2881,7 +2886,7 @@ static void print_trace (void)
 #endif
 
 
-static int handle_fatality(int sig)
+static void handle_fatality(int sig)
 {
 	switch_thread_id_t thread_id;
 	jmp_buf *env;
@@ -2909,10 +2914,10 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 	jmp_buf env;
 	int sig;
 
-	signal(SIGSEGV, (void *) handle_fatality);
-	signal(SIGFPE, (void *) handle_fatality);
+	signal(SIGSEGV, handle_fatality);
+	signal(SIGFPE, handle_fatality);
 #ifndef WIN32
-	signal(SIGBUS, (void *) handle_fatality);
+	signal(SIGBUS, handle_fatality);
 #endif
 
 	if ((sig = setjmp(env)) != 0) {
