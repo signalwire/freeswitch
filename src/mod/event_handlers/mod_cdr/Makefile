@@ -1,6 +1,6 @@
 
 CFLAGS  += $(shell mysql_config --include) 
-CFLAGS  += -DSWITCH_QUEUE_ENHANCED
+#CFLAGS  += -DSWITCH_QUEUE_ENHANCED
 LDFLAGS += $(shell mysql_config --libs)
 #LDFLAGS += -lcurl
 
