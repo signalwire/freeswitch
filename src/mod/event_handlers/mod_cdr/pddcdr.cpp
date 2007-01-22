@@ -79,8 +79,9 @@ PddCDR::PddCDR(switch_mod_cdr_newchannel_t *newchannel) : BaseCDR(newchannel)
 		outputfile_name.append(".");
 		outputfile_name.append(myuuid);  // The goal is to have a resulting filename of "/path/to/myuuid"
 		outputfile_name.append(".pdd");  // .pdd - "perl data dumper"	
-		bool repeat = 1;
-		process_channel_variables(chanvars_supp_list,chanvars_fixed_list,newchannel->channel,repeat);
+		bool repeat_fixed_in_supp = 1;
+		if(chanvars_supp_list.size() > 0)
+			process_channel_variables(chanvars_supp_list,chanvars_fixed_list,newchannel->channel,repeat_fixed_in_supp);
 	}
 }
 

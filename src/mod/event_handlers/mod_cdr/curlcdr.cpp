@@ -79,8 +79,11 @@ CurlCDR::CurlCDR(switch_mod_cdr_newchannel_t *newchannel) : BaseCDR(newchannel)
 		switch_strftime(formattedcalltransferdate,&retsizectd,sizeof(formattedcalltransferdate),format,&tempcalltransfer);
 		switch_strftime(formattedcallenddate,&retsizeced,sizeof(formattedcallenddate),format,&tempcallend);
 
-		process_channel_variables(chanvars_fixed_list,newchannel->channel);
-		process_channel_variables(chanvars_supp_list,chanvars_fixed_list,newchannel->channel,0);
+		if(chanvars_fixed_list.size() > 0)
+			process_channel_variables(chanvars_fixed_list,newchannel->channel);
+		
+		if(chanvars_supp_list.size() > 0)
+			process_channel_variables(chanvars_supp_list,chanvars_fixed_list,newchannel->channel,0);
 	}
 }
 

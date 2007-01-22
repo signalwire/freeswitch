@@ -324,7 +324,7 @@ void BaseCDR::process_channel_variables(const std::list<std::string>& stringlist
 			temppair.second = tempvariable;
 		
 		chanvars_fixed.push_back(temppair);
-	}	
+	}
 }
 
 // This one is for processing of supplemental chanvars
