@@ -235,6 +235,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
     registryP = xmlrpc_registry_new(&env);
 	
     xmlrpc_registry_add_method(&env, registryP, NULL, "freeswitch.api", &freeswitch_api, NULL);
+	xmlrpc_registry_add_method(&env, registryP, NULL,"freeswitch_api", &freeswitch_api, NULL);
 
     MIMETypeInit();
 	MIMETypeAdd("text/html", "html");
