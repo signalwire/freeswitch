@@ -222,7 +222,7 @@ void OdbcCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settin
 		{
 			tmp_sql_query = "INSERT INTO ";
 			tmp_sql_query.append(tablename);
-			tmp_sql_query.append(" (callstartdate,callanswerdate,calltransferdate,callenddate,originated,clid,src,dst,ani,aniii,dialplan,myuuid,destuuid,srcchannel,dstchannel,lastapp,lastdata,billusec,disposition,hangupcause,amaflags");
+			tmp_sql_query.append(" (callstartdate,callanswerdate,calltransferdate,callenddate,originated,clid,src,dst,ani,aniii,dialplan,myuuid,destuuid,srcchannel,dstchannel,network_addr,lastapp,lastdata,billusec,disposition,hangupcause,amaflags");
 			
 			int items_appended = 0;
 			
@@ -240,7 +240,7 @@ void OdbcCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settin
 				}
 			}
 			
-			tmp_sql_query.append(") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?");
+			tmp_sql_query.append(") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?");
 			
 			if(chanvars_fixed_list.size() > 0 )
 			{
@@ -422,6 +422,7 @@ bool OdbcCDR::process_record()
 	SQLBindParameter(ODBC_stmt, index++, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_CHAR, sizeof(destuuid), 0, destuuid, 0, 0);
 	SQLBindParameter(ODBC_stmt, index++, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_VARCHAR, sizeof(srcchannel), 0, srcchannel, 0, 0);
 	SQLBindParameter(ODBC_stmt, index++, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_VARCHAR, sizeof(dstchannel), 0, dstchannel, 0, 0);
+	SQLBindParameter(ODBC_stmt, index++, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_VARCHAR, sizeof(network_addr), 0, network_addr, 0, 0);
 	SQLBindParameter(ODBC_stmt, index++, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_VARCHAR, sizeof(lastapp), 0, lastapp, 0, 0);
 	SQLBindParameter(ODBC_stmt, index++, SQL_PARAM_INPUT, SQL_C_CHAR, SQL_VARCHAR, sizeof(lastdata), 0, lastdata, 0, 0);
 	SQLBindParameter(ODBC_stmt, index++, SQL_PARAM_INPUT, SQL_C_UBIGINT, SQL_BIGINT, 0, 0, &billusec, 0, 0);

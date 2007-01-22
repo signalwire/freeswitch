@@ -179,7 +179,7 @@ void CsvCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setting
 			if(outputfile.good())
 			{
 				activated = 1;
-				switch_console_printf(SWITCH_CHANNEL_LOG,"CsvCDR activated, log rotation will occur at or after %d MB",(filesize_limit/1024/1024));
+				switch_console_printf(SWITCH_CHANNEL_LOG,"CsvCDR activated, log rotation will occur at or after %d MB\n",(filesize_limit/1024/1024));
 			}
 		}
 		else
@@ -228,7 +228,21 @@ void CsvCDR::open_file()
 		switch_console_printf(SWITCH_CHANNEL_LOG,"Could not open the CSV file %s .  CsvCDR logger will not be functional until this is resolved and a reload is issued.  Failbit is set to %d.\n",filename.c_str(),outputfile.fail());
 		activated = 0;
 	}
+	else
+	{
+		outputfile << "callstartdate,formattedcallstartdate,callanswerdate,formattedcallanswerdate,calltransferdate,formattedcalltransferdate,callendate,formattedcallenddate,hangupcause_text,hangupcause,clid,originated,dialplan,myuuid,destuuid,src,dst,srcchannel,dstchannel,ani,aniii,network_address,lastapp,lastdata,billusec,disposition,amaflags";
+		if(chanvars_fixed_list.size())
+		{
+			std::list<std::string>::iterator iItr, iEnd;
+			for(iItr = chanvars_fixed_list.begin(),iEnd = chanvars_fixed_list.end(); iItr != iEnd; iItr++)
+				outputfile << "," << *iItr;
+		}
 	
+		if(logchanvars)
+			outputfile << ",chanvars_supp";
+	
+		outputfile << std::endl;
+	}
 }
 
 bool CsvCDR::process_record()
@@ -315,7 +329,7 @@ void CsvCDR::disconnect()
 	chanvars_fixed_list.clear();
 	chanvars_supp_list.clear();
 	connectionstate = 0;
-	switch_console_printf(SWITCH_CHANNEL_LOG,"Shutting down CsvCDR...  Done!");	
+	switch_console_printf(SWITCH_CHANNEL_LOG,"Shutting down CsvCDR...  Done!\n");	
 }
 
 AUTO_REGISTER_BASECDR(CsvCDR);

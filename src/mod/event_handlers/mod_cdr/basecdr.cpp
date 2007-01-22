@@ -60,6 +60,7 @@ BaseCDR::BaseCDR(switch_mod_cdr_newchannel_t *newchannel)
 	if(newchannel != 0)
 	{
 		errorstate = 0;
+		originated=1; // One-legged calls are always considered the originator
 		memset(clid,0,80);
 		memset(dialplan,0,80);
 		memset(myuuid,0,37);
@@ -132,7 +133,6 @@ BaseCDR::BaseCDR(switch_mod_cdr_newchannel_t *newchannel)
 			// Or were we maybe we were the caller?
 			if(newchannel->callerprofile->originatee_caller_profile)
 			{
-				originated = 1;
 				if (newchannel->callerprofile) {
 					if(newchannel->callerprofile->caller_id_number != 0)
 						strncpy(src,newchannel->callerprofile->caller_id_number,strlen(newchannel->callerprofile->caller_id_number));
@@ -376,6 +376,35 @@ void BaseCDR::process_channel_variables(const std::list<std::string>& stringlist
 		}
 	}
 }
+
+void BaseCDR::escape_string(std::string& src)
+{
+	std::string::size_type pos = 0;
+	
+	// find all occurences of ' and replace them with \'
+	while ( ( pos = src.find( "'", pos ) ) != std::string::npos ) 
+	{
+		src.replace( pos, 1, "\\'" );
+		pos += 2;
+	}
+}
+
+std::string BaseCDR::escape_chararray(char* src)
+{
+	std::string src_string = src;
+	
+	std::string::size_type pos = 0;
+	
+	// find all occurences of ' and replace them with \'
+	while ( ( pos = src_string.find( "'", pos ) ) != std::string::npos ) 
+	{
+		src_string.replace( pos, 1, "\\'" );
+		pos += 2;
+	}
+	
+	return src_string;
+}
+
 
 /* For Emacs:
  * Local Variables:

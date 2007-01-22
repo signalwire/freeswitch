@@ -95,6 +95,7 @@ class MysqlCDR : public BaseCDR {
 		long unsigned int aniii_length;
 		long unsigned int lastapp_length;
 		long unsigned int lastdata_length;
+		long unsigned int network_addr_length;
 		// Now a couple internal methods
 		template <typename T> void add_parameter(T& param, enum_field_types type, bool *is_null=0);
 		void add_string_parameter(char* param, long unsigned int& param_length, enum_field_types type, bool* is_null=0);

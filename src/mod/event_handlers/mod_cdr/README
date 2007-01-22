@@ -82,6 +82,14 @@ Configuration:  Section <odbccdr>
 		<param name="chanvars_supp" value=""/> value is a comma separated list of supplemental channel variables to log.  Can be a wildcard (*) (optional)
 		<param name="chanvars_supp_repeat_fixed" value=""/> value is 0 for no, 1 for yes, and determines whether or not to repeat any of the fixed channel variables as key / value pairs in the chanvars table.
 		<param name="timezone" value=""/> value is utc for utc time, local for localtime.  If not specified or incorrectly specified, localtime is assumed.
+				
+Class:	SqliteCDR, located in sqlitecdr.h and sqlitecdr.cpp
+		This class uses the Sqlite3 library as included with FreeSWITCH's core.  Sqlite is not strict in its handling of column types, and in theory you can toss any sort of data at any sort of column.  That being said, this logger was designed to at least attempt to match the column types to the type of data being sent to it.  It will warn you if the schema does not match what chanvars_fixed types you specify, but it will not fail on them.  However, due to the use of prepared statements, it is likely that you will have unexpected results if you mismatch your chanvars_fixed logging to db schema.  The is the first SQL logger to automatically create the db schema and even update it on its own.
+Configuration: Section <sqlitecdr>
+		<param name="path" value=""/> value is the path to the database to open or create  (required)
+		<param name="chanvars_fixed" value=""/> Is a comma separated list of key=type pairs.  Types are x for decimal, s for string (varchar), d for double, i for integer, t for tiny.  If no type is provided, it defaults that column to string (varchar).  It cannot accept wildcards (*).  You must have a matching column of matching type in the main freeswitchcdr table. The logger will attempt to automatically update the schema, but it cannot if a column by that name already exists.(optional)
+		<param name="chanvars_supp" value=""/> value is a comma separated list of supplemental channel variables to log.  Can be a wildcard (*) (optional)
+		<param name="chanvars_supp_repeat_fixed" value=""/> value is 0 for no, 1 for yes, and determines whether or not to repeat any of the fixed channel variables as key / value pairs in the chanvars table.
 		
 FAQ:
 

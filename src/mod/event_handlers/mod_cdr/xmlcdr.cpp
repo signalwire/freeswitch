@@ -171,7 +171,7 @@ bool XmlCDR::process_record()
 		switch_console_printf(SWITCH_CHANNEL_LOG, "XmlCDR::process_record():  Unable to open file  %s to commit the call record to.  Invalid path name, invalid permissions, or no space available?\n",outputfile_name.c_str());
 	else
 	{
-		switch_console_printf(SWITCH_CHANNEL_LOG, "XmlCDR::process_record():  Preping the CDR to %s.\n",outputfile_name.c_str());
+		//switch_console_printf(SWITCH_CHANNEL_LOG, "XmlCDR::process_record():  Preping the CDR to %s.\n",outputfile_name.c_str());
 		// Format the call record and proceed from here...
 		outputfile << "<?xml version=\"1.0\"?>" << std::endl;
 		outputfile << "<document type=\"freeswitch-cdr/xml\">" << std::endl;
@@ -213,7 +213,7 @@ bool XmlCDR::process_record()
 		}
 		outputfile << "\t</chanvars>" << std::endl << "</document>" << std::endl << std::endl;
 
-		switch_console_printf(SWITCH_CHANNEL_LOG, "XmlCDR::process_record():  Dumping the CDR to %s.\n",outputfile_name.c_str());
+		//switch_console_printf(SWITCH_CHANNEL_LOG, "XmlCDR::process_record():  Dumping the CDR to %s.\n",outputfile_name.c_str());
 		retval = 1;
 	}
 	

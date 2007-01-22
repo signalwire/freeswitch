@@ -84,6 +84,8 @@ class BaseCDR {
 		void parse_channel_variables_xconfig(std::string& unparsed,std::list<std::string>& chanvarslist,std::vector<switch_mod_cdr_sql_types_t>& chanvars_fixed_types);  // Typically used for SQL types
 		void process_channel_variables(const std::list<std::string>& stringlist,const std::list<std::string>& fixedlist,switch_channel_t *channel,bool repeat = 1); //This is used for supplemental chanvars
 		void process_channel_variables(const std::list<std::string>& stringlist,switch_channel_t *channel); // This is used for fixed chanvars
+		void escape_string(std::string& src);
+		std::string escape_chararray(char* src);
 		switch_time_t callstartdate;
 		switch_time_t callanswerdate;
 		switch_time_t callenddate;

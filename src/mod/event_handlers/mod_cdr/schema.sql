@@ -15,6 +15,7 @@ create table freeswitchcdr (
 	destuuid char(36) NOT NULL,
 	srcchannel varchar(80) NOT NULL,
 	dstchannel varchar(80) NOT NULL, /* Need to decide - this might be redundant as you can link the records via uuid */
+	network_addr varchar(40) default "",
 	lastapp varchar(80) default "",
 	lastdata varchar(255) default "",
 	billusec bigint default 0,

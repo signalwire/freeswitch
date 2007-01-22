@@ -1,6 +1,8 @@
 
 CFLAGS  += $(shell mysql_config --include) 
+CFLAGS  += -DSWITCH_QUEUE_ENHANCED
 LDFLAGS += $(shell mysql_config --libs)
+#LDFLAGS += -lcurl
 
 CPPCC = g++
 OBJS=cdrcontainer.o basecdr.o baseregistry.o mysqlcdr.o pddcdr.o csvcdr.o xmlcdr.o

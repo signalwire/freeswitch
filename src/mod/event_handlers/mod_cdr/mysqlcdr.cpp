@@ -62,6 +62,7 @@ MysqlCDR::MysqlCDR(switch_mod_cdr_newchannel_t *newchannel) : BaseCDR(newchannel
 		dstchannel_length = (long unsigned int)strlen(dstchannel);
 		lastapp_length = (long unsigned int)strlen(lastapp);
 		lastdata_length = (long unsigned int)strlen(lastdata);
+		network_addr_length = (long unsigned int)strlen(network_addr);
 		
 		if(chanvars_fixed_list.size() > 0)
 			process_channel_variables(chanvars_fixed_list,newchannel->channel);
@@ -195,7 +196,7 @@ void MysqlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setti
 		
 		if(activated)
 		{
-			tmp_sql_query = "INSERT INTO freeswitchcdr  (callstartdate,callanswerdate,calltransferdate,callenddate,originated,clid,src,dst,ani,aniii,dialplan,myuuid,destuuid,srcchannel,dstchannel,lastapp,lastdata,billusec,disposition,hangupcause,amaflags";
+			tmp_sql_query = "INSERT INTO freeswitchcdr  (callstartdate,callanswerdate,calltransferdate,callenddate,originated,clid,src,dst,ani,aniii,dialplan,myuuid,destuuid,srcchannel,dstchannel,network_addr,lastapp,lastdata,billusec,disposition,hangupcause,amaflags";
 			
 			int items_appended = 0;
 			
@@ -213,7 +214,7 @@ void MysqlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setti
 				}
 			}
 			
-			tmp_sql_query.append(") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?");
+			tmp_sql_query.append(") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?");
 			
 			if(chanvars_fixed_list.size() > 0 )
 			{
@@ -334,13 +335,13 @@ bool MysqlCDR::process_record()
 	set_mysql_time(tm1,my_callstartdate);
 	set_mysql_time(tm2,my_callanswerdate);
 	set_mysql_time(tm3,my_calltransferdate);
-	set_mysql_time(tm4,my_calltransferdate);
+	set_mysql_time(tm4,my_callenddate);
 	
 	// Why is this out of order?  I don't know, it doesn't make sense.
 	add_parameter(my_callstartdate,MYSQL_TYPE_DATETIME);
 	add_parameter(my_callanswerdate,MYSQL_TYPE_DATETIME);
-	add_parameter(my_callenddate,MYSQL_TYPE_DATETIME);
 	add_parameter(my_calltransferdate,MYSQL_TYPE_DATETIME);
+	add_parameter(my_callenddate,MYSQL_TYPE_DATETIME);
 	
 	add_parameter(originated,MYSQL_TYPE_TINY);
 	add_string_parameter(clid,clid_length,MYSQL_TYPE_VAR_STRING,0);
@@ -353,6 +354,7 @@ bool MysqlCDR::process_record()
 	add_string_parameter(destuuid,destuuid_length,MYSQL_TYPE_VAR_STRING,0);
 	add_string_parameter(srcchannel,srcchannel_length,MYSQL_TYPE_VAR_STRING,0);
 	add_string_parameter(dstchannel,dstchannel_length,MYSQL_TYPE_VAR_STRING,0);
+	add_string_parameter(network_addr,network_addr_length,MYSQL_TYPE_VAR_STRING,0);
 	add_string_parameter(lastapp,lastapp_length,MYSQL_TYPE_VAR_STRING,0);
 	add_string_parameter(lastdata,lastdata_length,MYSQL_TYPE_VAR_STRING,0);
 	add_parameter(billusec,MYSQL_TYPE_LONGLONG,0);

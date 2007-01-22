@@ -24,52 +24,58 @@
  * Contributor(s):
  * 
  * Yossi Neiman <freeswitch AT cartissolutions.com>
- * Bret McDanel <trixter AT 0xdecafbad.com>
  *
- * Description: This C++ header file describes the PddCDR class which handles formatting a CDR out to
- * individual text files in a Perl Data Dumper format.
+ * Description: This C++ header file describes the SqliteCDR class which handles formatting a CDR out to
+ * a SQLite database using prepared statements.
  *
- * pddcdr.h
+ * sqlitecdr.h
  *
  */
 
 #include "baseregistry.h"
-#include <switch.h>
-#include <iostream>
-#include <sstream>
-#include <fstream>
 #include <list>
+#include <sstream>
 
-#ifndef PDDCDR
-#define PDDMCDR
+#ifndef SQLITECDR
+#define SQLITECDR
 
-class PddCDR : public BaseCDR {
+class SqliteCDR : public BaseCDR {
 	public:
-		PddCDR();
-		PddCDR(switch_mod_cdr_newchannel_t *newchannel);
-		virtual ~PddCDR();
+		SqliteCDR();
+		SqliteCDR(switch_mod_cdr_newchannel_t *newchannel);
+		//SqliteCDR(const SqliteCDR& copyFrom);
+		virtual ~SqliteCDR();
 		virtual bool process_record();
-		virtual void connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settings, switch_xml_t& param); // connect and disconnect need to be static because we're persisting connections until shutdown
+		virtual void connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settings, switch_xml_t& param);
 		virtual void disconnect();
 		virtual bool is_activated();
 		virtual void tempdump_record();
 		virtual void reread_tempdumped_records();
 		virtual std::string get_display_name();
+
 	private:
-		static bool activated; // Is this module activated?
-		static bool connectionstate; // What is the status of the connection?
+		static bool activated;
+		static char sql_query[1024];
+		static std::string tmp_sql_query; // Object must exist to bind the statement, this used for generating the sql
+		static char sql_query_chanvars[100];
+		static std::string db_filename;
+		static bool use_utc_time;
+		switch_time_t sqlite_callstartdate;
+		switch_time_t sqlite_callanswerdate;
+		switch_time_t sqlite_calltransferdate;
+		switch_time_t sqlite_callenddate;
+		static switch_core_db_t *db;
+		static switch_core_db_stmt_t *stmt;
+		static switch_core_db_stmt_t *stmt_chanvars;
+		static switch_core_db_stmt_t *stmt_begin;
+		static switch_core_db_stmt_t *stmt_commit;
+		static bool connectionstate;
 		static bool logchanvars;
-		static modcdr_time_convert_t convert_time;
-		static std::string outputfile_path; // The directory we'll dump these into
-		static std::list<std::string> chanvars_fixed_list; // Normally this would be used, but not in this class
-		static std::list<std::string> chanvars_supp_list; // This will hold the list for all chanvars here
+		static std::list<std::string> chanvars_fixed_list;
+		static std::vector<switch_mod_cdr_sql_types_t> chanvars_fixed_types;
+		static std::list<std::string> chanvars_supp_list; // The supplemental list
+		static bool repeat_fixed_in_supp;
 		static std::string display_name;
-		char formattedcallstartdate[100];
-		char formattedcallanswerdate[100];
-		char formattedcalltransferdate[100];
-		char formattedcallenddate[100];
-		std::string outputfile_name;
-		std::ofstream outputfile;
 };
 
 #endif

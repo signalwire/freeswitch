@@ -172,41 +172,45 @@ bool PddCDR::process_record()
 	{
 		// Format the call record and proceed from here...
 		outputfile << "$VAR1 = {" << std::endl;
-		outputfile << "\t\'callstartdate\' = \'" << callstartdate << "\'," << std::endl;
-		outputfile <<  "\t\'formattedcallstartdate\' = \'" << formattedcallstartdate << "\'," << std::endl;
-		outputfile << "\t\'callanswerdate\' = \'" << callanswerdate << "\'," << std::endl;
-		outputfile << "\t\'formattedcallanswerdate\' = \'" << formattedcallanswerdate << "\'," << std::endl;
-		outputfile << "\t\'calltransferdate\' = \'" << calltransferdate << "\'," << std::endl;
-		outputfile << "\t\'formattedcalltransferdate\' = \'" << formattedcalltransferdate << "\'," << std::endl;
-		outputfile << "\t\'callenddate\' = \'" << callenddate << "\'," << std::endl;
-		outputfile << "\t\'formatcallenddate\' = \'" << formattedcallenddate << "\'," << std::endl;
-		outputfile << "\t\'hangupcause\' = \'" << hangupcause_text << "\'," << std::endl;
-		outputfile << "\t\'hangupcausecode\' = \'" << hangupcause << "\'," << std::endl;
-		outputfile << "\t\'clid\' = \'" << clid << "\'," << std::endl;
-		outputfile << "\t\'originated\' = \'" << originated << "\'," << std::endl;
-		outputfile << "\t\'dialplan\' = \'" << dialplan << "\'," << std::endl;
-		outputfile << "\t\'myuuid\' = \'" << myuuid << "\'," << std::endl;
-		outputfile << "\t\'destuuid\' = \'" << destuuid << "\'," << std::endl;
-		outputfile << "\t\'src\' = \'" << src << "\'," << std::endl;
-		outputfile << "\t\'dst\' = \'" << dst << "\'," << std::endl;
-		outputfile << "\t\'srcchannel\' = \'" << srcchannel << "\'," << std::endl;
-		outputfile << "\t\'dstchannel\' = \'" << dstchannel << "\'," << std::endl;
-		outputfile << "\t\'ani\' = \'" << ani << "\'," << std::endl;
-		outputfile << "\t\'aniii\' = \'" << aniii << "\'," << std::endl;
-		outputfile << "\t\'network_addr\' = \'" << network_addr << "\'," << std::endl;
-		outputfile << "\t\'lastapp\' = \'" << lastapp << "\'," << std::endl;
-		outputfile << "\t\'lastdata\' = \'" << lastdata << "\'," << std::endl;
-		outputfile << "\t\'billusec\' = \'" << billusec << "\'," << std::endl;
-		outputfile << "\t\'disposition\' = \'" << disposition << "\'," << std::endl;
-		outputfile << "\t\'amaflags\' = \'" << amaflags << "\'," << std::endl;
+		outputfile << "\t\'callstartdate\' => \'" << callstartdate << "\'," << std::endl;
+		outputfile << "\t\'formattedcallstartdate\' => \'" << formattedcallstartdate << "\'," << std::endl;
+		outputfile << "\t\'callanswerdate\' => \'" << callanswerdate << "\'," << std::endl;
+		outputfile << "\t\'formattedcallanswerdate\' => \'" << formattedcallanswerdate << "\'," << std::endl;
+		outputfile << "\t\'calltransferdate\' => \'" << calltransferdate << "\'," << std::endl;
+		outputfile << "\t\'formattedcalltransferdate\' => \'" << formattedcalltransferdate << "\'," << std::endl;
+		outputfile << "\t\'callenddate\' => \'" << callenddate << "\'," << std::endl;
+		outputfile << "\t\'formattedcallenddate\' => \'" << formattedcallenddate << "\'," << std::endl;
+		outputfile << "\t\'hangupcause\' => \'" << hangupcause_text << "\'," << std::endl;
+		outputfile << "\t\'hangupcausecode\' => \'" << hangupcause << "\'," << std::endl;
+		outputfile << "\t\'clid\' => \'" << escape_chararray(clid) << "\'," << std::endl;
+		outputfile << "\t\'originated\' => \'" << originated << "\'," << std::endl;
+		outputfile << "\t\'dialplan\' => \'" << dialplan << "\'," << std::endl;
+		outputfile << "\t\'myuuid\' => \'" << myuuid << "\'," << std::endl;
+		outputfile << "\t\'destuuid\' => \'" << destuuid << "\'," << std::endl;
+		outputfile << "\t\'src\' => \'" << src << "\'," << std::endl;
+		outputfile << "\t\'dst\' => \'" << dst << "\'," << std::endl;
+		outputfile << "\t\'srcchannel\' => \'" << srcchannel << "\'," << std::endl;
+		outputfile << "\t\'dstchannel\' => \'" << dstchannel << "\'," << std::endl;
+		outputfile << "\t\'ani\' => \'" << ani << "\'," << std::endl;
+		outputfile << "\t\'aniii\' => \'" << aniii << "\'," << std::endl;
+		outputfile << "\t\'network_addr\' => \'" << network_addr << "\'," << std::endl;
+		outputfile << "\t\'lastapp\' => \'" << lastapp << "\'," << std::endl;
+		outputfile << "\t\'lastdata\' => \'" << lastdata << "\'," << std::endl;
+		outputfile << "\t\'billusec\' => \'" << billusec << "\'," << std::endl;
+		outputfile << "\t\'disposition\' => \'" << disposition << "\'," << std::endl;
+		outputfile << "\t\'amaflags\' => \'" << amaflags << "\'," << std::endl;
 		
 		// Now to process chanvars
 		outputfile << "\t\'chanvars\' => {" << std::endl;
 		if(chanvars_supp.size() > 0 )
 		{
-			std::map<std::string,std::string>::iterator iItr,iEnd;
+			std::map< std::string,std::string >::iterator iItr,iEnd;
 			for(iItr = chanvars_supp.begin(), iEnd = chanvars_supp.end() ; iItr != iEnd; iItr++)
-				outputfile << "\t\t\'" << iItr->first << "\' = \'" << iItr->second << "\'," << std::endl;
+			{
+				escape_string(iItr->second);
+				outputfile << "\t\t\'" << iItr->first;
+				outputfile << "\' => \'" << iItr->second << "\'," << std::endl;
+			}
 		}
 		outputfile << "\t}," << std::endl << "};" << std::endl << std::endl;
 		retval = 1;
