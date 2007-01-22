@@ -41,9 +41,7 @@
 /*
  * JS File object
  */
-#if defined(JS_HAS_FILE_OBJECT) && (JS_HAS_FILE_OBJECT - 0) /* OSSP BUGFIX */
-
-#ifdef OSSP
+#ifdef OSSP_HACK
 #include "../config.h"
 #endif
 
@@ -52,7 +50,7 @@
 /* ----------------- Platform-specific includes and defines ----------------- */
 #if defined(XP_WIN) || defined(XP_OS2)
 #   include <direct.h>
-#ifdef OSSP
+#ifdef OSSP_HACK
 #   include <dirent.h>
 #   include <fcntl.h>
 #   include <time.h>
@@ -65,7 +63,7 @@
 #   define CURRENT_DIR          "c:\\"
 #   define POPEN                _popen
 #   define PCLOSE               _pclose
-#ifdef OSSP
+#ifdef OSSP_HACK
 #   undef mkdir
 #   define mkdir(file, mode)    _mkdir(file)
 #endif
@@ -74,7 +72,7 @@
 #   include <stdio.h>
 #   include <stdlib.h>
 #   include <unistd.h>
-#ifdef OSSP
+#ifdef OSSP_HACK
 #   include <sys/types.h>
 #   include <sys/stat.h>
 #   include <dirent.h>
@@ -104,13 +102,13 @@
 #include "jsscript.h"
 #include "jsstr.h"
 #include "jsutil.h" /* Added by JSIFY */
-#ifdef OSSP /* CLEANUP */
+#ifdef OSSP_HACK /* CLEANUP */
 #include "jsfile.h"
 #endif
 #include <string.h>
 
 /* NSPR dependencies */
-#ifdef OSSP
+#ifdef OSSP_HACK
 #define PR_RDONLY       0x01
 #define PR_WRONLY       0x02
 #define PR_RDWR         0x04
@@ -174,7 +172,7 @@ JSErrorFormatString JSFile_ErrorFormatString[JSFileErr_Limit] = {
 #undef MSG_DEF
 };
 
-#ifdef OSSP
+#ifdef OSSP_HACK
 static
 #endif
 const JSErrorFormatString *
@@ -270,7 +268,7 @@ typedef struct JSFile {
     JSBool      hasAutoflush;   /* should we force a flush for each line break? */
     JSBool      isNative;       /* if the file is using OS-specific file FILE type */
     /* We can actually put the following two in a union since they should never be used at the same time */
-#ifdef OSSP
+#ifdef OSSP_HACK
     FILE        *handle;        /* the handle for the file, if open.  */
 #else
     PRFileDesc  *handle;        /* the handle for the file, if open.  */
@@ -823,7 +821,7 @@ js_FileOpen(JSContext *cx, JSObject *obj, JSFile *file, char *mode){
 
 /* Buffered version of PR_Read. Used by js_FileRead */
 static int32
-#ifdef OSSP
+#ifdef OSSP_HACK
 js_BufferedRead(JSFile * f, unsigned char *buf, int32 len)
 #else
 js_BufferedRead(JSFile * f, char *buf, int32 len)
@@ -842,7 +840,7 @@ js_BufferedRead(JSFile * f, char *buf, int32 len)
     }
 
     if (len>0) {
-#ifdef OSSP
+#ifdef OSSP_HACK
         count += (!f->isNative)
                  ? fread(buf, 1, len, f->handle)
                  : fread(buf, 1, len, f->nativehandle);
@@ -921,7 +919,7 @@ js_FileRead(JSContext *cx, JSFile *file, jschar *buf, int32 len, int32 mode)
         break;
 
       case UCS2:
-#ifdef OSSP
+#ifdef OSSP_HACK
         count = js_BufferedRead(file, (unsigned char*)buf, len*2) >> 1;
 #else
         count = js_BufferedRead(file, (char*)buf, len*2) >> 1;
@@ -954,7 +952,7 @@ js_FileSeek(JSContext *cx, JSFile *file, int32 len, int32 mode)
 
     switch (mode) {
       case ASCII:
-#ifdef OSSP
+#ifdef OSSP_HACK
         count = fseek(file->handle, len, SEEK_CUR);
 #else
         count = PR_Seek(file->handle, len, PR_SEEK_CUR);
@@ -994,7 +992,7 @@ js_FileSeek(JSContext *cx, JSFile *file, int32 len, int32 mode)
         break;
 
       case UCS2:
-#ifdef OSSP
+#ifdef OSSP_HACK
         count = fseek(file->handle, len*2, SEEK_CUR)/2;
 #else
         count = PR_Seek(file->handle, len*2, PR_SEEK_CUR)/2;
@@ -1030,7 +1028,7 @@ js_FileWrite(JSContext *cx, JSFile *file, jschar *buf, int32 len, int32 mode)
         for (i = 0; i<len; i++)
             aux[i] = buf[i] % 256;
 
-#ifdef OSSP
+#ifdef OSSP_HACK
         count = (!file->isNative)
                 ? fwrite(aux, 1, len, file->handle)
                 : fwrite(aux, 1, len, file->nativehandle);
@@ -1060,7 +1058,7 @@ js_FileWrite(JSContext *cx, JSFile *file, jschar *buf, int32 len, int32 mode)
             }
             i+=j;
         }
-#ifdef OSSP
+#ifdef OSSP_HACK
         j = (!file->isNative) 
             ? fwrite(utfbuf, 1, i, file->handle)
             : fwrite(utfbuf, 1, i, file->nativehandle);
@@ -1078,7 +1076,7 @@ js_FileWrite(JSContext *cx, JSFile *file, jschar *buf, int32 len, int32 mode)
         break;
 
       case UCS2:
-#ifdef OSSP
+#ifdef OSSP_HACK
         count = (!file->isNative) 
                 ? fwrite(buf, 1, len*2, file->handle) >> 1
                 : fwrite(buf, 1, len*2, file->nativehandle) >> 1;
@@ -1114,7 +1112,7 @@ js_exists(JSContext *cx, JSFile *file)
         return JS_FALSE;
     }
 
-#ifdef OSSP
+#ifdef OSSP_HACK
     return access(file->path, F_OK) == 0;
 #else
     return PR_Access(file->path, PR_ACCESS_EXISTS) == PR_SUCCESS;
@@ -1127,7 +1125,7 @@ js_canRead(JSContext *cx, JSFile *file)
     if (!file->isNative) {
         if (file->isOpen && !(file->mode & PR_RDONLY))
             return JS_FALSE;
-#ifdef OSSP
+#ifdef OSSP_HACK
         return access(file->path, R_OK) == 0;
 #else
         return PR_Access(file->path, PR_ACCESS_READ_OK) == PR_SUCCESS;
@@ -1148,7 +1146,7 @@ js_canWrite(JSContext *cx, JSFile *file)
     if (!file->isNative) {
         if (file->isOpen && !(file->mode & PR_WRONLY))
             return JS_FALSE;
-#ifdef OSSP
+#ifdef OSSP_HACK
         return access(file->path, W_OK) == 0;
 #else
         return PR_Access(file->path, PR_ACCESS_WRITE_OK) == PR_SUCCESS;
@@ -1168,7 +1166,7 @@ static JSBool
 js_isFile(JSContext *cx, JSFile *file)
 {
     if (!file->isNative) {
-#ifdef OSSP
+#ifdef OSSP_HACK
         struct stat info;
 
         if (file->isOpen
@@ -1203,7 +1201,7 @@ static JSBool
 js_isDirectory(JSContext *cx, JSFile *file)
 {
     if(!file->isNative){
-#ifdef OSSP
+#ifdef OSSP_HACK
         struct stat info;
 #else
         PRFileInfo info;
@@ -1213,7 +1211,7 @@ js_isDirectory(JSContext *cx, JSFile *file)
         if (!js_exists(cx, file))
             return JS_FALSE;
 
-#ifdef OSSP
+#ifdef OSSP_HACK
         if (file->isOpen
             ? fstat(fileno(file->handle), &info) != 0
             : stat(file->path, &info) != 0) {
@@ -1243,7 +1241,7 @@ js_isDirectory(JSContext *cx, JSFile *file)
 static jsval
 js_size(JSContext *cx, JSFile *file)
 {
-#ifdef OSSP
+#ifdef OSSP_HACK
     struct stat info;
 #else
     PRFileInfo info;
@@ -1251,7 +1249,7 @@ js_size(JSContext *cx, JSFile *file)
 
     JSFILE_CHECK_NATIVE("size");
 
-#ifdef OSSP
+#ifdef OSSP_HACK
     if (file->isOpen
         ? fstat(fileno(file->handle), &info) != 0
         : stat(file->path, &info) != 0) {
@@ -1495,7 +1493,7 @@ file_open(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
         }
     } else {
         /* TODO: what about the permissions?? Java ignores the problem... */
-#ifdef OSSP
+#ifdef OSSP_HACK
         {
             int my_fd;
             int my_fd_mode = 0;
@@ -1562,7 +1560,7 @@ file_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
             JS_ReportWarning(cx, "Unable to close a native file, proceeding", file->path);
             goto out;
         }else{
-#ifdef OSSP
+#ifdef OSSP_HACK
             if (file->handle && fclose(file->handle) != 0) {
 #else
             if(file->handle && PR_Close(file->handle)){
@@ -1599,7 +1597,7 @@ file_remove(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     JSFILE_CHECK_NATIVE("remove");
     JSFILE_CHECK_CLOSED("remove");
 
-#ifdef OSSP
+#ifdef OSSP_HACK
     if (remove(file->path) == 0) {
 #else
     if ((js_isDirectory(cx, file) ?
@@ -1624,7 +1622,7 @@ file_copyTo(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
     JSFile      *file = JS_GetInstancePrivate(cx, obj, &file_class, NULL);
     char        *dest = NULL;
-#ifdef OSSP
+#ifdef OSSP_HACK
     FILE        *handle = NULL;
 #else
     PRFileDesc  *handle = NULL;
@@ -1655,7 +1653,7 @@ file_copyTo(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
         goto out;
     }
 
-#ifdef OSSP
+#ifdef OSSP_HACK
     {
         int my_fd;
         if ((my_fd = open(file->path, O_WRONLY|O_CREAT|O_TRUNC, 0644)) != -1)
@@ -1677,7 +1675,7 @@ file_copyTo(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 
     buffer = JS_malloc(cx, size);
 
-#ifdef OSSP
+#ifdef OSSP_HACK
     count = INT_TO_JSVAL((int)fread(buffer, 1, (size_t)size, file->handle));
 #else
     count = INT_TO_JSVAL(PR_Read(file->handle, buffer, size));
@@ -1691,7 +1689,7 @@ file_copyTo(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
         goto out;
     }
 
-#ifdef OSSP
+#ifdef OSSP_HACK
     count = INT_TO_JSVAL((int)fwrite(buffer, 1, (size_t)JSVAL_TO_INT(size), handle));
 #else
     count = INT_TO_JSVAL(PR_Write(handle, buffer, JSVAL_TO_INT(size)));
@@ -1711,7 +1709,7 @@ file_copyTo(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 		if(!file_close(cx, obj, 0, NULL, rval)) goto out;
 	}
 
-#ifdef OSSP
+#ifdef OSSP_HACK
     if (fclose(handle) != 0) {
 #else
     if(PR_Close(handle)!=PR_SUCCESS){
@@ -1725,7 +1723,7 @@ file_copyTo(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     return JS_TRUE;
 out:
     if(file->isOpen && !fileInitiallyOpen){
-#ifdef OSSP
+#ifdef OSSP_HACK
         if (fclose(file->handle) != 0) {
 #else
         if(PR_Close(file->handle)!=PR_SUCCESS){
@@ -1734,7 +1732,7 @@ out:
         }
     }
 
-#ifdef OSSP
+#ifdef OSSP_HACK
     if (handle && fclose(handle) != 0) {
 #else
     if(handle && PR_Close(handle)!=PR_SUCCESS){
@@ -1759,7 +1757,7 @@ file_renameTo(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval
 
     dest = RESOLVE_PATH(cx, JS_GetStringBytes(JS_ValueToString(cx, argv[0])));
 
-#ifdef OSSP
+#ifdef OSSP_HACK
     if (rename(file->path, dest) == 0){
 #else
     if (PR_Rename(file->path, dest)==PR_SUCCESS){
@@ -1788,7 +1786,7 @@ file_flush(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     JSFILE_CHECK_NATIVE("flush");
     JSFILE_CHECK_OPEN("flush");
 
-#ifdef OSSP
+#ifdef OSSP_HACK
     if (fflush(file->handle) == 0){
 #else
     if (PR_Sync(file->handle)==PR_SUCCESS){
@@ -2096,7 +2094,7 @@ out:
 static JSBool
 file_list(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-#ifdef OSSP
+#ifdef OSSP_HACK
     DIR           *dir;
     struct dirent *entry;
 #else
@@ -2136,7 +2134,7 @@ file_list(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
         goto out;
     }
 
-#ifdef OSSP
+#ifdef OSSP_HACK
     dir = opendir(file->path);
 #else
     dir = PR_OpenDir(file->path);
@@ -2151,12 +2149,12 @@ file_list(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     array = JS_NewArrayObject(cx, 0, NULL);
     len = 0;
 
-#ifdef OSSP
+#ifdef OSSP_HACK
     while ((entry = readdir(dir))!=NULL) {
 #else
     while ((entry = PR_ReadDir(dir, PR_SKIP_BOTH))!=NULL) {
 #endif
-#ifdef OSSP
+#ifdef OSSP_HACK
         if (   strcmp(entry->d_name, ".")  == 0
             || strcmp(entry->d_name, "..") == 0)
             continue;
@@ -2165,7 +2163,7 @@ file_list(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
         if (re!=NULL) {
             size_t index = 0;
 
-#ifdef OSSP
+#ifdef OSSP_HACK
             str = JS_NewStringCopyZ(cx, entry->d_name);
 #else
             str = JS_NewStringCopyZ(cx, entry->name);
@@ -2180,7 +2178,7 @@ file_list(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
             }
         }else
         if (func!=NULL) {
-#ifdef OSSP
+#ifdef OSSP_HACK
             str = JS_NewStringCopyZ(cx, entry->d_name);
 #else
             str = JS_NewStringCopyZ(cx, entry->name);
@@ -2195,7 +2193,7 @@ file_list(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
             }
         }
 
-#ifdef OSSP
+#ifdef OSSP_HACK
         filePath = js_combinePath(cx, file->path, (char*)entry->d_name);
 #else
         filePath = js_combinePath(cx, file->path, (char*)entry->name);
@@ -2209,7 +2207,7 @@ file_list(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
         }
         v = OBJECT_TO_JSVAL(eachFile);
         JS_SetElement(cx, array, len, &v);
-#ifdef OSSP
+#ifdef OSSP_HACK
         JS_SetProperty(cx, array, entry->d_name, &v);
 #else
         JS_SetProperty(cx, array, entry->name, &v);
@@ -2217,7 +2215,7 @@ file_list(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
         len++;
     }
 
-#ifdef OSSP
+#ifdef OSSP_HACK
     if (closedir(dir) != 0) {
 #else
     if(PR_CloseDir(dir)!=PR_SUCCESS){
@@ -2259,7 +2257,7 @@ file_mkdir(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
         char *fullName;
 
         fullName = js_combinePath(cx, file->path, dirName);
-#ifdef OSSP
+#ifdef OSSP_HACK
         if (mkdir(fullName, 0755) == 0) {
 #else
         if (PR_MkDir(fullName, 0755)==PR_SUCCESS){
@@ -2283,7 +2281,7 @@ static JSBool
 file_toString(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval*rval)
 {
     JSFile *file = JS_GetInstancePrivate(cx, obj, &file_class, NULL);
-#ifdef OSSP
+#ifdef OSSP_HACK
     JSString *str;
 
     if ((str = JS_NewStringCopyZ(cx, file->path)) == NULL)
@@ -2301,8 +2299,8 @@ file_toURL(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     JSFile *file = JS_GetInstancePrivate(cx, obj, &file_class, NULL);
     char url[MAX_PATH_LENGTH];
     jschar *urlChars;
-#ifdef OSSP
     size_t len;
+#ifdef OSSP_HACK
     JSString *str;
 #endif
 
@@ -2311,7 +2309,7 @@ file_toURL(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     sprintf(url, "file://%s", file->path);
     /* TODO: js_escape in jsstr.h may go away at some point */
 
-#ifdef OSSP /* BUGFIX */
+#ifdef OSSP_HACK /* BUGFIX */
     len = strlen(url);
     if ((urlChars = js_InflateString(cx, url, &len)) == NULL)
         return JS_FALSE;
@@ -2321,7 +2319,8 @@ file_toURL(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     }
     *rval = STRING_TO_JSVAL(str);
 #else
-    urlChars = js_InflateString(cx, url, strlen(url));
+	len = strlen(url);
+    urlChars = js_InflateString(cx, url, &len);
     if (urlChars == NULL) return JS_FALSE;
     *rval = STRING_TO_JSVAL(js_NewString(cx, urlChars, strlen(url), 0));
 #endif
@@ -2399,7 +2398,7 @@ js_NewFileObject(JSContext *cx, char *filename)
 }
 
 /* Internal function, used for cases which NSPR file support doesn't cover */
-#ifdef OSSP /* CLEANUP */
+#ifdef OSSP_HACK /* CLEANUP */
 static
 #endif
 JSObject*
@@ -2514,7 +2513,7 @@ enum file_tinyid {
     FILE_APPEND             = -19,
     FILE_REPLACE            = -20,
     FILE_AUTOFLUSH          = -21,
-#ifdef OSSP /* BUGFIX */
+#ifdef OSSP_HACK /* BUGFIX */
     FILE_ISNATIVE           = -22
 #else
     FILE_ISNATIVE           = -22,
@@ -2554,13 +2553,13 @@ file_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
     char        *bytes;
     JSString    *str;
     jsint       tiny;
-#ifdef OSSP
+#ifdef OSSP_HACK
     struct stat info;
 #else
     PRFileInfo  info;
 #endif
     JSBool      flag;
-#ifdef OSSP
+#ifdef OSSP_HACK
     struct tm   *tm;
     time_t      t;
 #else
@@ -2703,7 +2702,7 @@ file_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
     case FILE_CREATED:
         SECURITY_CHECK(cx, NULL, "creationTime", file);
         JSFILE_CHECK_NATIVE("creationTime");
-#ifdef OSSP
+#ifdef OSSP_HACK
         if (file->isOpen
             ? fstat(fileno(file->handle), &info) != 0
             : stat(file->path, &info) != 0) {
@@ -2749,7 +2748,7 @@ file_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
     case FILE_MODIFIED:
         SECURITY_CHECK(cx, NULL, "lastModified", file);
         JSFILE_CHECK_NATIVE("lastModified");
-#ifdef OSSP
+#ifdef OSSP_HACK
         if (file->isOpen
             ? fstat(fileno(file->handle), &info) != 0
             : stat(file->path, &info) != 0) {
@@ -2793,7 +2792,7 @@ file_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
         JSFILE_CHECK_NATIVE("length");
 
         if (js_isDirectory(cx, file)) { /* XXX debug me */
-#ifdef OSSP
+#ifdef OSSP_HACK
             DIR           *dir;
             struct dirent *entry;
 #else
@@ -2802,7 +2801,7 @@ file_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 #endif
             jsint       count = 0;
 
-#ifdef OSSP
+#ifdef OSSP_HACK
             if(!(dir = opendir(file->path))){
 #else
             if(!(dir = PR_OpenDir(file->path))){
@@ -2812,7 +2811,7 @@ file_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
                 goto out;
             }
 
-#ifdef OSSP
+#ifdef OSSP_HACK
             while ((entry = readdir(dir))) {
                 if (   strcmp(entry->d_name, ".")  == 0
                     || strcmp(entry->d_name, "..") == 0)
@@ -2824,7 +2823,7 @@ file_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
                 count++;
             }
 
-#ifdef OSSP
+#ifdef OSSP_HACK
             if(closedir(dir) != 0){
 #else
             if(!PR_CloseDir(dir)){
@@ -2859,7 +2858,7 @@ file_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
         }
 
         if (file->isOpen && js_isFile(cx, file)) {
-#ifdef OSSP
+#ifdef OSSP_HACK
             int pos = fseek(file->handle, 0, SEEK_CUR);
 #else
             int pos = PR_Seek(file->handle, 0, PR_SEEK_CUR);
@@ -2882,7 +2881,7 @@ file_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 
         /* this is some other property -- try to use the dir["file"] syntax */
         if (js_isDirectory(cx, file)) {
-#ifdef OSSP
+#ifdef OSSP_HACK
             DIR *dir = NULL;
             struct dirent *entry = NULL;
 #else
@@ -2898,7 +2897,7 @@ file_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
             prop_name = JS_GetStringBytes(str);
 
             /* no native files past this point */
-#ifdef OSSP
+#ifdef OSSP_HACK
             dir = opendir(file->path);
 #else
             dir = PR_OpenDir(file->path);
@@ -2909,7 +2908,7 @@ file_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
                 return JS_FALSE;
             }
 
-#ifdef OSSP
+#ifdef OSSP_HACK
             while ((entry = readdir(dir)) != NULL) {
                 if (   strcmp(entry->d_name, ".")  == 0
                     || strcmp(entry->d_name, "..") == 0)
@@ -2922,7 +2921,7 @@ file_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
                     bytes = js_combinePath(cx, file->path, prop_name);
                     *vp = OBJECT_TO_JSVAL(js_NewFileObject(cx, bytes));
                     JS_free(cx, bytes);
-#ifdef OSSP /* BUGFIX */
+#ifdef OSSP_HACK /* BUGFIX */
                     closedir(dir);
 #else
                     PR_CloseDir(dir);
@@ -2930,7 +2929,7 @@ file_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
                     return JS_TRUE;
                 }
             }
-#ifdef OSSP /* BUGFIX */
+#ifdef OSSP_HACK /* BUGFIX */
             closedir(dir);
 #else
             PR_CloseDir(dir);
@@ -2977,7 +2976,7 @@ file_setProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 				goto out;
 			}
 
-#ifdef OSSP
+#ifdef OSSP_HACK
 			pos = fseek(file->handle, offset, SEEK_SET);
 #else
 			pos = PR_Seek(file->handle, offset, PR_SEEK_SET);
@@ -3108,4 +3107,3 @@ js_InitFileClass(JSContext *cx, JSObject* obj)
                 JSPROP_ENUMERATE | JSPROP_READONLY );
     return file;
 }
-#endif /* JS_HAS_FILE_OBJECT */
