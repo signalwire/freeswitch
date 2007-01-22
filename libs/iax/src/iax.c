@@ -949,7 +949,7 @@ int iax_init(char *ip, int preferredportno)
 #ifdef	WIN32
 	    flags = 1;
 	    if (ioctlsocket(netfd,FIONBIO,(unsigned long *) &flags)) {
-		    _close(netfd);
+		    closesocket(netfd);
 		    netfd = -1;
 		    DEBU(G "Unable to set non-blocking mode.");
 		    IAXERROR "Unable to set non-blocking mode.");
