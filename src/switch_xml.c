@@ -856,11 +856,11 @@ static int preprocess(const char *file, int new_fd, int rlevel)
     }
 
     if (new_fd < 0) {
-        if (!(new_file = switch_mprintf("%s/freeswitch.registry", SWITCH_GLOBAL_dirs.log_dir))) {
+        if (!(new_file = switch_mprintf("%s%sfreeswitch.registry", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR))) {
             goto done;
         }
 
-        if ((new_fd = open(new_file, O_WRONLY | O_CREAT | O_TRUNC, 0)) < 0) {
+        if ((new_fd = open(new_file, O_WRONLY | O_CREAT | O_TRUNC, 700)) < 0) {
             goto done;
         }
         close_fd = new_fd;
