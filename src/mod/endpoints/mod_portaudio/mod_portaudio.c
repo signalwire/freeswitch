@@ -1502,7 +1502,7 @@ static switch_status_t do_flags(char **argv, int argc, switch_stream_handle_t *s
     for (x = 1; x < argc; x++) {
         flag_str = argv[x];
         for(p = flag_str; *p; p++) {
-            *p = tolower(*p);
+            *p = (char)tolower(*p);
         }
     
         if (strstr(flag_str, "ear")) {
