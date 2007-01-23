@@ -59,6 +59,14 @@
 #ifdef HAVE_MMAP
 #include <sys/mman.h>
 #endif
+#ifdef WIN32
+#ifndef S_IRUSR
+#define S_IRUSR _S_IREAD
+#endif
+#ifndef S_IWUSR
+#define S_IWUSR _S_IWRITE
+#endif
+#endif
 
 #define SWITCH_XML_WS   "\t\r\n "  // whitespace
 #define SWITCH_XML_ERRL 128        // maximum error string length
@@ -860,7 +868,7 @@ static int preprocess(const char *file, int new_fd, int rlevel)
             goto done;
         }
 
-        if ((new_fd = open(new_file, O_WRONLY | O_CREAT | O_TRUNC, 700)) < 0) {
+		if ((new_fd = open(new_file, O_WRONLY | O_CREAT | O_TRUNC,  S_IRUSR | S_IWUSR)) < 0) {
             goto done;
         }
         close_fd = new_fd;
