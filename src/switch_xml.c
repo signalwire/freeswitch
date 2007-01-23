@@ -781,13 +781,204 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
     return &root->xml;
 }
 
+static switch_size_t read_line(int fd, char *buf, switch_size_t len) {
+    char c, *p;
+    int cur;
+    switch_size_t total = 0;
+    
+    p = buf;
+    while (total + sizeof(c) < len && (cur = read(fd, &c, sizeof(c))) > 0) {
+        total += cur;
+        *p++ = c;
+        if (c == '\n') {
+            break;
+        }
+    }
+
+    *p++ = '\0';
+    return total;
+}
+
+static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_t *newlen)
+{
+    char *var, *val;
+    char *rp = buf;
+    char *wp = ebuf;
+    char *ep = ebuf + elen - 1;
+
+    if (!(var = strstr(rp, "$${"))) {
+        *newlen = strlen(buf);
+        return buf;
+    }
+
+    while(*rp && wp < ep) {
+
+        if (*rp == '$' && *(rp+1) == '$' && *(rp+2) == '{') {
+            char *e = strchr(rp, '}');
+
+            if (e) {
+                rp += 3;
+                var = rp;
+                *e++ = '\0';
+                rp = e;
+                if ((val = switch_core_get_variable(var))) {
+                    char *p;
+                    for(p = val; p && *p && wp <= ep; p++) {
+                        *wp++ = *p;
+                    }
+                }
+            }
+
+        }
+
+        *wp++ = *rp++;
+    }
+    *wp++ = '\0';
+    *newlen = strlen(ebuf);
+
+    return ebuf;
+    
+}
+
+static int preprocess(const char *file, int new_fd, int rlevel)
+{
+    int old_fd, close_fd = -1;
+    char *new_file = NULL;
+    switch_size_t cur = 0, ml = 0;
+    char *q, *cmd, buf[2048], ebuf[8192];
+
+    if ((old_fd = open(file, O_RDONLY, 0)) < 0) {
+        return old_fd;
+    }
+
+    if (rlevel > 100) {
+        return -1;
+    }
+
+    if (new_fd < 0) {
+        if (!(new_file = switch_mprintf("%s/freeswitch.registry", SWITCH_GLOBAL_dirs.log_dir))) {
+            goto done;
+        }
+
+        if ((new_fd = open(new_file, O_WRONLY | O_CREAT | O_TRUNC, 0)) < 0) {
+            goto done;
+        }
+        close_fd = new_fd;
+    }
+
+    while((cur = read_line(old_fd, buf, sizeof(buf))) > 0) {
+        char *arg, *e;
+        char *bp = expand_vars(buf, ebuf, sizeof(ebuf), &cur);
+
+        /* we ignore <include> or </include> for the sake of validators */
+        if (strstr(buf, "<include>") || strstr(buf, "</include>")) {
+            continue;
+        }
+
+        if (ml) {
+            if ((e = strstr(buf, "-->"))) {
+                ml = 0;
+                bp = e + 3;
+                cur = strlen(bp);
+            } else {
+                continue;
+            }
+        }
+
+        if ((cmd = strstr(bp, "<!--#"))) {
+            write(new_fd, bp, cmd - bp);
+            if ((e = strstr(cmd, "-->"))) {
+                *e = '\0';
+                e += 3;
+                write(new_fd, e, strlen(e));
+            } else {
+                ml++;
+            }
+            
+            cmd += 5;
+            if ((e = strchr(cmd, '\r')) || (e = strchr(cmd, '\n'))) {
+                *e = '\0';
+            }
+
+            if ((arg = strchr(cmd, ' '))) {
+                *arg++ = '\0';
+                if ((q = strchr(arg, '"'))) {
+                    char *qq = q+1;
+
+                    if ((qq = strchr(qq, '"'))) {
+                        *qq = '\0';
+                        arg = q+1;
+                    }
+                }
+
+                if (!strcasecmp(cmd, "set")) {
+                    char *name = arg;
+                    char *val = strchr(name, '=');
+
+                    if (val) {
+                        char *ve = val++;
+                        while(*val && *val == ' ') {
+                            val++;
+                        }
+                        *ve-- = '\0';
+                        while(*ve && *ve == ' ') {
+                            *ve-- = '\0';
+                        }
+                    }
+                
+                    if (name && val) {
+                        switch_core_set_variable(name, val);
+                    }
+                
+                } else if (!strcasecmp(cmd, "include")) {
+                    char *fme = NULL, *ifile = arg;
+                
+                    if (!switch_is_file_path(ifile)) {
+                        fme = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, arg);
+                        ifile = fme;
+                    }
+                    if (preprocess(ifile, new_fd, rlevel + 1) < 0) {
+                        fprintf(stderr, "Error including %s (%s)\n", ifile, strerror(errno));
+                    }
+                    switch_safe_free(fme);
+                } /* else NO OP */
+            }
+
+            continue;
+        }
+
+        write(new_fd, bp, cur);
+    }
+
+    close(old_fd);
+
+    if (close_fd > -1) {
+        close(close_fd);
+        new_fd = open(new_file, O_RDONLY, 0);
+    }
+
+ done:
+    
+    switch_safe_free(new_file);
+
+    if (new_fd < 0) {
+        return old_fd;
+    }
+
+    return new_fd;
+}
+
 // a wrapper for switch_xml_parse_fd that accepts a file name
 SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 {
-    int fd = open(file, O_RDONLY, 0);
-    switch_xml_t xml = switch_xml_parse_fd(fd);
+    int fd = -1;
+    switch_xml_t xml = NULL;
+
+    if ((fd = preprocess(file, -1, 0)) > -1) {
+        xml = switch_xml_parse_fd(fd);
+        close(fd);
+    }
     
-    if (fd >= 0) close(fd);
     return xml;
 }
 

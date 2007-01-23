@@ -1,0 +1,105 @@
+<!-- Valid fields in conditions: -->
+<!-- "dialplan, caller_id_name, ani, ani2, caller_id_number, -->
+<!-- rdnis, destination_number, uuid, source, context, chan_name" -->
+
+<!-- *NOTE* The special context name 'any' will match any context -->
+<context name="default">
+  <extension name="556"> <!-- demo phrases -->
+    <condition field="destination_number" expression="^556$">
+      <action application="answer"/>
+      <action application="sleep" data="1000"/>
+      <action application="phrase" data="spell,${caller_id_name}"/>
+      <action application="phrase" data="spell-phonetic,${caller_id_name}"/>
+      <action application="phrase" data="timespec,12:45:15"/>
+      <action application="phrase" data="saydate,0"/>
+      <action application="phrase" data="msgcount,130"/>
+      <action application="phrase" data="ip-addr,66.250.68.194"/>
+      <action application="phrase" data="saydate,$strepoch(2006-03-23 7:23)"/>
+      <!--<action application="phrase" data="timeleft,3:30"/>-->
+    </condition>
+  </extension>
+
+  <extension name="tollfree">
+    <condition field="destination_number" expression="^(18(0{2}|8{2}|7{2}|6{2})\d{7})$">
+      <action application="enum" data="$1"/>
+      <action application="bridge" data="${enum_auto_route}"/>
+    </condition>
+  </extension>
+
+  <!-- Call the FreeSWITCH conference via SIP -->
+  <!--<extension name="FreeSWITCH Conference SIP">-->
+  <!--<condition field="destination_number" expression="^888$">-->
+  <!--<action application="bridge" data="sofia/test/888@conference.freeswitch.org"/>-->
+  <!--</condition>-->
+  <!--</extension> -->
+
+  <!-- Call the FreeSWITCH conference via IAX -->
+  <!--<extension name="FreeSWITCH Conference IAX">-->
+  <!--<condition field="destination_number" expression="^8888$">-->
+  <!--<action application="bridge" data="iax/guest@conference.freeswitch.org/888"/>-->
+  <!--</condition>-->
+  <!--</extension>-->
+
+  <extension name="testmusic">
+    <condition field="destination_number" expression="^1234$">
+      <!-- Request a certain tone/file to be played while you wait for the call to be answered-->
+      <action application="set" data="ringback=${us-ring}"/>
+      <!--<action application="set" data="ringback=/home/ring.wav"/>-->
+      <action application="bridge" data="sofia/test/1234@conference.freeswitch.org"/>
+    </condition>
+  </extension>
+
+  <!-- Enter an existing conference -->
+  <extension name="1000">
+    <condition field="destination_number" expression="^1000$">
+      <action application="conference" data="freeswitch"/>
+    </condition>
+  </extension>
+
+  <!-- Start a dynamic conference and call someone at the same time -->
+  <extension name="2000">
+    <condition field="destination_number" expression="^2000$">
+      <action application="conference" data="bridge:mydynaconf:sofia/test/1234@conference.freeswitch.org"/>
+    </condition>
+  </extension>
+
+  <!-- extensions starting with 4, all the numbers after 4 form a numeric filename -->
+  <!-- continue="true" means keep looking for more extensions to match -->
+  <!-- *NOTE* The entire dialplan is parsed ONCE when the call starts -->
+  <!-- so any call info acquired after the various actions cannot -->
+  <!-- be taken into consideration. -->
+
+  <!-- The first match will play a beep and the second one plays -->
+  <!-- the desired file.  This is for demo purposes both actions -->
+  <!-- could have been under the same <extension> tag as well. -->
+  <extension name="playsound1" continue="true">
+    <condition field="source" expression="mod_sofia"/>
+    <condition field="destination_number" expression="^4(\d+)">
+      <action application="playback" data="/var/sounds/beep.gsm"/>
+    </condition>
+  </extension>
+
+  <extension name="playsound2">
+    <condition field="source" expression="mod_sofia"/>
+    <condition field="destination_number" expression="^4(\d+)">
+      <action application="playback" data="/root/$1.raw"/>
+    </condition>
+  </extension>
+
+  <!-- send everything with a certian RDNIS to Wanpipe ISDN -->
+  <extension name="To PRI">
+    <condition field="rdnis" expression="8881231234"/>
+    <condition field="destination_number" expression="(.*)">
+      <action application="bridge" data="wanpipe/a/a/$1"/>
+    </condition>
+  </extension>
+
+  <!-- Call *MUST* originate from mod_iax and also be dialing ext 9999-->
+  <extension name="9999">
+    <condition field="source" expression="mod_iax"/>
+    <condition field="destination_number" expression="9999">
+      <action application="playback" data="/var/sounds/beep.gsm"/>
+    </condition>
+  </extension>
+
+</context>

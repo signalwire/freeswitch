@@ -1,0 +1,8 @@
+<configuration name="console.conf" description="Console Logger">
+  <!-- pick a file name, a function name or 'all' -->
+  <!-- map as many as you need for specific debugging -->
+  <mappings>
+    <!-- <param name="log_event" value="DEBUG"/> -->
+    <param name="all" value="DEBUG"/>
+  </mappings>
+</configuration>

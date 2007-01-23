@@ -1,0 +1,59 @@
+<!--the domain or ip (the right hand side of the @ in the addr-->
+<domain name="jabber.org">
+  <!--the user id (the left hand side of the @ in the addr-->
+  <user id="stpeter">
+    <params>
+      <!-- omit password for authless registration -->
+      <param name="password" value="mypass"/>
+    </params>
+    
+    <vcard xmlns='vcard-temp'>
+      <FN>Peter Saint-Andre</FN>
+      <N>
+	<FAMILY>Saint-Andre</FAMILY>
+	<GIVEN>Peter</GIVEN>
+	<MIDDLE/>
+      </N>
+      <NICKNAME>stpeter</NICKNAME>
+      <URL>http://www.jabber.org/people/stpeter.php</URL>
+      <BDAY>1966-08-06</BDAY>
+      <ORG>
+	<ORGNAME>Jabber Software Foundation</ORGNAME>
+	<ORGUNIT>Jabber Software Foundation</ORGUNIT>
+      </ORG>
+      <TITLE>Executive Director</TITLE>
+      <ROLE>Patron Saint</ROLE>
+      <TEL><WORK/><VOICE/><NUMBER>303-308-3282</NUMBER></TEL>
+      <TEL><WORK/><FAX/><NUMBER/></TEL>
+      <TEL><WORK/><MSG/><NUMBER/></TEL>
+      <ADR>
+	<WORK/>
+	<EXTADD>Suite 600</EXTADD>
+	<STREET>1899 Wynkoop Street</STREET>
+	<LOCALITY>Denver</LOCALITY>
+	<REGION>CO</REGION>
+	<PCODE>80202</PCODE>
+	<CTRY>USA</CTRY>
+      </ADR>
+      <TEL><HOME/><VOICE/><NUMBER>303-555-1212</NUMBER></TEL>
+      <TEL><HOME/><FAX/><NUMBER/></TEL>
+      <TEL><HOME/><MSG/><NUMBER/></TEL>
+      <ADR>
+	<HOME/>
+	<EXTADD/>
+	<STREET/>
+	<LOCALITY>Denver</LOCALITY>
+	<REGION>CO</REGION>
+	<PCODE>80209</PCODE>
+	<CTRY>USA</CTRY>
+      </ADR>
+      <EMAIL><INTERNET/><PREF/><USERID>stpeter@jabber.org</USERID></EMAIL>
+      <JABBERID>stpeter@jabber.org</JABBERID>
+      <DESC>
+	More information about me is located on my 
+	personal website: http://www.saint-andre.com/
+      </DESC>
+    </vcard>
+
+  </user>
+</domain>
