@@ -242,6 +242,7 @@ struct sofia_profile {
 	unsigned int flags;
 	unsigned int pflags;
 	uint32_t max_calls;
+    uint32_t nonce_ttl;
 	nua_t *nua;
 	switch_memory_pool_t *pool;
 	su_root_t *s_root;
@@ -2574,7 +2575,7 @@ static void sip_i_state(int status,
 						tagi_t tags[])
 	 
 {
-	char *l_sdp = NULL, *r_sdp = NULL;
+	const char *l_sdp = NULL, *r_sdp = NULL;
 	int offer_recv = 0, answer_recv = 0, offer_sent = 0, answer_sent = 0;
 	int ss_state = nua_callstate_init;
 	switch_channel_t *channel = NULL;
@@ -2627,9 +2628,9 @@ static void sip_i_state(int status,
 
 		if (r_sdp) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote SDP:\n%s\n", r_sdp);			
-			tech_pvt->remote_sdp_str = switch_core_session_strdup(session, r_sdp);
-			switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
-			pass_sdp(tech_pvt, r_sdp);
+			tech_pvt->remote_sdp_str = switch_core_session_strdup(session, (char *)r_sdp);
+			switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, (char *)r_sdp);
+			pass_sdp(tech_pvt, (char *)r_sdp);
 
 		}
 	}
@@ -2679,7 +2680,7 @@ static void sip_i_state(int status,
 					}
                     goto done;
 				} else if (!switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
-                    if (tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
+                    if (tech_media(tech_pvt, (char *)r_sdp) != SWITCH_STATUS_SUCCESS) {
                         switch_channel_set_variable(channel, "endpoint_disposition", "CODEC NEGOTIATION ERROR");
                         nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
                     }
@@ -3138,7 +3139,7 @@ static uint8_t handle_register(nua_t *nua,
                                  from_host,
                                  a1_hash,
                                  uuid_str,
-                                 time(NULL) + 60);
+                                 time(NULL) + profile->nonce_ttl);
 			auth_str = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", from_host, uuid_str, 
 											  stale ? " stale=\"true\"," : "");
 
@@ -4952,6 +4953,8 @@ static switch_status_t config_sofia(int reload)
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_AUTH_CALLS;
 						}
+					} else if (!strcasecmp(var, "nonce-ttl")) {
+                        profile->nonce_ttl = atoi(val);
 					} else if (!strcasecmp(var, "accept-blind-reg")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_BLIND_REG;
@@ -5000,6 +5003,11 @@ static switch_status_t config_sofia(int reload)
 						}
 					}
 				}
+
+                if (profile->nonce_ttl < 60) {
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting nonce TTL to 60 seconds\n");
+                    profile->nonce_ttl = 60;
+                }
 
 				if (switch_test_flag(profile, TFLAG_TIMER) && !profile->timer_name) {
 					profile->timer_name = switch_core_strdup(profile->pool, "soft");			

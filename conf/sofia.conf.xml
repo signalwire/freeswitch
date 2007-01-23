@@ -36,6 +36,9 @@
 	<!--  comment the next line and uncomment one or both of the other 2 lines for call authentication -->
 	<param name="accept-blind-reg" value="true"/>
 
+	<!--TTL for nonce in sip auth-->
+	<param name="nonce-ttl" value="60"/>
+
 	<!--<param name="auth-calls" value="true"/>-->
 	<!-- on authed calls, authenticate *all* the packets not just invite -->
 	<!--<param name="auth-all-packets" value="true"/>-->
