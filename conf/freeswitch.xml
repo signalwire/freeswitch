@@ -15,7 +15,7 @@
 
   <!--#set "domain=mydomain.com"-->
   <!--#set "subdomain=sub.mydomain.com"-->
-  <!--#set "default_codecs=PCUM@20i"-->
+  <!--#set "default_codecs=PCMU@20i"-->
   <!--my domain is $${domain}-->
   <section name="configuration" description="Various Configuration">
     <!--#include "switch.conf.xml"-->
