@@ -2898,8 +2898,6 @@ static void handle_fatality(int sig)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Caught signal %d for unmapped thread!", sig);
 		abort();
 	}
-
-	return 0;
 }
 #endif
 
