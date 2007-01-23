@@ -51,6 +51,12 @@ typedef short SAMPLE;
 typedef switch_status_t (*pa_command_t)(char **argv, int argc, switch_stream_handle_t *stream);
 
 typedef enum {
+    GFLAG_NONE = 0,
+    GFLAG_EAR = (1 << 0),
+    GFLAG_MOUTH = (1 << 1)
+} GFLAGS;
+
+typedef enum {
 	TFLAG_IO = (1 << 0),
 	TFLAG_INBOUND = (1 << 1),
 	TFLAG_OUTBOUND = (1 << 2),
@@ -62,11 +68,6 @@ typedef enum {
 	TFLAG_HUP = (1 << 8),
 	TFLAG_MASTER = (1 << 9)
 } TFLAGS;
-
-typedef enum {
-	GFLAG_MY_CODEC_PREFS = (1 << 0)
-} GFLAGS;
-
 
 struct private_object {
 	unsigned int flags;
@@ -97,7 +98,6 @@ static struct {
     char *ring_file;
     char *hold_file;
     char *timer_name;
-	unsigned int flags;
 	int ringdev;
 	int indev;
 	int outdev;
@@ -117,6 +117,7 @@ static struct {
 	unsigned char cngbuf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
     private_t *call_list;
     int ring_interval;
+    GFLAGS flags;
 } globals;
 
 
@@ -550,9 +551,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
     }
     
     if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
-        switch_yield(globals.read_codec.implementation->microseconds_per_frame);
-        *frame = &globals.cng_frame;
-		return SWITCH_STATUS_SUCCESS;        
+        goto cng;
     }
 
     if (!is_master(tech_pvt)) {
@@ -643,6 +642,11 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		globals.read_frame.datalen = samples * 2;
 		globals.read_frame.samples = samples;
 		*frame = &globals.read_frame;
+
+        if (!switch_test_flag((&globals), GFLAG_MOUTH)) {
+            memset(globals.read_frame.data, 255, globals.read_frame.datalen);
+        }
+
 		status = SWITCH_STATUS_SUCCESS;
 	}
 	switch_mutex_unlock(globals.device_lock);
@@ -675,7 +679,9 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
     }
 
 	if (globals.audio_stream) {
-		WriteAudioStream(globals.audio_stream, (short *) frame->data, (int) (frame->datalen / sizeof(SAMPLE)));
+        if (switch_test_flag((&globals), GFLAG_EAR)) {
+            WriteAudioStream(globals.audio_stream, (short *) frame->data, (int) (frame->datalen / sizeof(SAMPLE)));
+        }
 		status = SWITCH_STATUS_SUCCESS;
 	}
 
@@ -821,13 +827,13 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		switch_caller_profile_t *caller_profile;
 
 		switch_core_session_add_stream(*new_session, NULL);
-		if ((tech_pvt =
-			 (private_t *) switch_core_session_alloc(*new_session, sizeof(private_t))) != 0) {
-			memset(tech_pvt, 0, sizeof(*tech_pvt));
+		if ((tech_pvt = (private_t *) switch_core_session_alloc(*new_session, sizeof(private_t))) != 0) {
+			memset(tech_pvt, 0, sizeof(*tech_pvt));            
 			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(*new_session));
 			channel = switch_core_session_get_channel(*new_session);
 			switch_core_session_set_private(*new_session, tech_pvt);
 			tech_pvt->session = *new_session;
+            globals.flags = GFLAG_EAR | GFLAG_MOUTH;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(new_session);
@@ -1481,6 +1487,73 @@ static switch_status_t answer_call(char **argv, int argc, switch_stream_handle_t
 
 }
 
+static switch_status_t do_flags(char **argv, int argc, switch_stream_handle_t *stream)
+{
+    char *action = argv[0];
+    char *flag_str = argv[1];
+    GFLAGS flags = GFLAG_NONE;
+    char *p;
+    int x = 0;
+
+    if (argc < 2) {
+        goto desc;
+    }
+
+    for (x = 1; x < argc; x++) {
+        flag_str = argv[x];
+        for(p = flag_str; *p; p++) {
+            *p = tolower(*p);
+        }
+    
+        if (strstr(flag_str, "ear")) {
+            flags |= GFLAG_EAR;
+        } 
+        if (strstr(flag_str, "mouth")) {
+            flags |= GFLAG_MOUTH;
+        }
+    }
+
+    if (!strcasecmp(action, "on")) {
+        if (flags & GFLAG_EAR) {
+            switch_set_flag((&globals), GFLAG_EAR);
+        }
+        if (flags & GFLAG_MOUTH) {
+            switch_set_flag((&globals), GFLAG_MOUTH);
+        }
+    } else if (!strcasecmp(action, "off")) {
+        if (flags & GFLAG_EAR) {
+            switch_clear_flag((&globals), GFLAG_EAR);
+        }
+        if (flags & GFLAG_MOUTH) {
+            switch_clear_flag((&globals), GFLAG_MOUTH);
+        }
+    } else {
+        goto bad;
+    }
+
+ desc:
+    x = 0;
+    stream->write_function(stream, "FLAGS: ");
+    if (switch_test_flag((&globals), GFLAG_EAR)) {
+        stream->write_function(stream, "ear");
+        x++;
+    }
+    if (switch_test_flag((&globals), GFLAG_MOUTH)) {
+        stream->write_function(stream, "%smouth", x ? "|" : "");
+        x++;
+    }
+    if (!x) {
+        stream->write_function(stream, "none");
+    }
+
+    goto done;
+
+ bad:
+    stream->write_function(stream, "Usage: flags [on|off] <flags>\n");    
+ done:
+    return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t list_calls(char **argv, int argc, switch_stream_handle_t *stream)
 {
     private_t *tp;
@@ -1544,6 +1617,7 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 			channel = switch_core_session_get_channel(session);
 			switch_core_session_set_private(session, tech_pvt);
 			tech_pvt->session = session;
+            globals.flags = GFLAG_EAR | GFLAG_MOUTH;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(&session);
@@ -1624,6 +1698,7 @@ static switch_status_t pa_cmd(char *cmd, switch_core_session_t *isession, switch
         "pa list\n"
         "pa switch [<call_id>|none]\n"
         "pa dtmf <digit string>\n"
+        "pa flags [on|off] [ear] [mouth]\n"
         "--------------------------------------------------------------------------------\n";
 
     if (switch_strlen_zero(cmd)) {
@@ -1651,6 +1726,8 @@ static switch_status_t pa_cmd(char *cmd, switch_core_session_t *isession, switch
         goto done;
     } else if (!strcasecmp(argv[0], "list")) {
         func = list_calls;
+    } else if (!strcasecmp(argv[0], "flags")) {
+        func = do_flags;
     } else if (!strcasecmp(argv[0], "hangup")) {
         func = hangup_call;
     } else if (!strcasecmp(argv[0], "answer")) {
