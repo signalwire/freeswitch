@@ -886,11 +886,11 @@ static int preprocess(const char *file, int new_fd, int rlevel)
         }
 
         if ((cmd = strstr(bp, "<!--#"))) {
-            write(new_fd, bp, cmd - bp);
+            write(new_fd, bp, (unsigned)(cmd - bp));
             if ((e = strstr(cmd, "-->"))) {
                 *e = '\0';
                 e += 3;
-                write(new_fd, e, strlen(e));
+                write(new_fd, e, (unsigned)strlen(e));
             } else {
                 ml++;
             }
@@ -947,7 +947,7 @@ static int preprocess(const char *file, int new_fd, int rlevel)
             continue;
         }
 
-        write(new_fd, bp, cur);
+        write(new_fd, bp, (unsigned)cur);
     }
 
     close(old_fd);

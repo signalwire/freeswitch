@@ -199,7 +199,7 @@ modwipe:
 install_mod: modules
 	@echo Installing $(NAME)
 	@mkdir -p $(PREFIX) $(PREFIX)/conf $(PREFIX)/mod $(PREFIX)/db $(PREFIX)/log $(PREFIX)/bin $(PREFIX)/scripts $(PREFIX)/htdocs $(PREFIX)/grammar
-	@if [ ! -f $(PREFIX)/conf/freeswitch.xml ] ; then /bin/cp -p conf/freeswitch.xml $(PREFIX)/conf/; fi
+	@if [ ! -f $(PREFIX)/conf/freeswitch.xml ] ; then /bin/cp -p conf/*.xml $(PREFIX)/conf/; fi
 	@if [ -f .libs/$(NAME) ] ; then /bin/cp -p .libs/$(NAME) $(PREFIX)/bin ; else /bin/cp -p ./$(NAME) $(PREFIX)/bin ; fi
 	@echo Installing Modules
 	@rm -f build/freeswitch.env
