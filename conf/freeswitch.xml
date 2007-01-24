@@ -9,7 +9,7 @@
                    (note the double $$ which denotes preprocessor variables)
       #comment ==> A general comment such as this
       
-      The preprocessor will compuile the full xml document to ${prefix}/log/freeswitch.registry
+      The preprocessor will compile the full xml document to ${prefix}/log/freeswitch.registry
       Don't modify it while freeswitch is running cos it is mem mapped in most cases =D
   -->
 
