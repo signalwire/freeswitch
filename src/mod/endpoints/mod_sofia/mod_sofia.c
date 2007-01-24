@@ -1587,7 +1587,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 						SOATAG_AUDIO_AUX("cn telephone-event"),
 						NUTAG_INCLUDE_EXTRA_SDP(1),
 						TAG_END());
-			
+            switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");			
 		}
 	} 
 
@@ -2002,7 +2002,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 						SOATAG_AUDIO_AUX("cn telephone-event"),
 						TAG_END());
-			
+            switch_channel_set_variable(channel, "endpoint_disposition", "PROGRESS");
 	    }
 	}
 		break;
@@ -2819,6 +2819,7 @@ static void sip_i_state(int status,
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 					switch_set_flag_locked(tech_pvt, TFLAG_ANS);
                     switch_channel_mark_answered(channel);
+                    switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
 					if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
 						other_channel = switch_core_session_get_channel(other_session);
 						switch_channel_answer(other_channel);
