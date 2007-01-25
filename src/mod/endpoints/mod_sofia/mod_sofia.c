@@ -5109,7 +5109,12 @@ static switch_status_t config_sofia(int reload)
 								oreg->expires_str = switch_core_strdup(oreg->pool, "300");
 							}
 
-							oreg->freq = atoi(oreg->expires_str);
+							if ((oreg->freq = atoi(oreg->expires_str)) < 5) {
+                                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid Freq: %d.  Setting Register-Frequency to 5\n", oreg->freq);
+                                oreg->freq = 5;
+                            }
+                            oreg->freq -= 2;
+
 							oreg->next = profile->registrations;
 							profile->registrations = oreg;
 
