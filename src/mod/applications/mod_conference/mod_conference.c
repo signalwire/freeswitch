@@ -287,7 +287,8 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 static void conference_function(switch_core_session_t *session, char *data);
 static void launch_conference_thread(conference_obj_t *conference);
 static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *obj);
-static switch_status_t conference_local_play_file(switch_core_session_t *session, char *path, uint32_t leadin, char *buf, switch_size_t len);
+static switch_status_t conference_local_play_file(conference_obj_t *conference,
+                                                  switch_core_session_t *session, char *path, uint32_t leadin, char *buf, switch_size_t len);
 static switch_status_t conference_member_play_file(conference_member_t *member, char *file, uint32_t leadin);
 static switch_status_t conference_member_say(conference_member_t *member, char *text, uint32_t leadin);
 static uint32_t conference_member_stop_file(conference_member_t *member, file_stop_t stop);
@@ -3415,7 +3416,8 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 }
 
 /* Play a file */
-static switch_status_t conference_local_play_file(switch_core_session_t *session, char *path, uint32_t leadin, char *buf, switch_size_t len)
+static switch_status_t conference_local_play_file(conference_obj_t *conference, 
+                                                  switch_core_session_t *session, char *path, uint32_t leadin, char *buf, switch_size_t len)
 {
     uint32_t x = 0;
     switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -3432,7 +3434,17 @@ static switch_status_t conference_local_play_file(switch_core_session_t *session
 
     /* if all is well, really play the file */
     if (status == SWITCH_STATUS_SUCCESS) {
+        char *dpath = NULL;
+
+        if (conference->sound_prefix) {
+            if (!(dpath = switch_mprintf("%s/%s", conference->sound_prefix, path))) {
+                return SWITCH_STATUS_MEMERR;
+            }
+            path = dpath;
+        }
+
         status = switch_ivr_play_file(session, NULL, path, NULL);
+        switch_safe_free(dpath);
     }
 
     return status;
@@ -3610,7 +3622,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 
                 /* be friendly */
                 if (conference->pin_sound) {
-                    conference_local_play_file(session, conference->pin_sound, 20, pin_buf, sizeof(pin_buf));
+                    conference_local_play_file(conference, session, conference->pin_sound, 20, pin_buf, sizeof(pin_buf));
                 } 
                 /* wait for them if neccessary */
                 if (strlen(pin_buf) < strlen(conference->pin)) {
@@ -3631,7 +3643,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 
                     /* more friendliness */
                     if (conference->bad_pin_sound) {
-                        conference_local_play_file(session, conference->bad_pin_sound, 20, pin_buf, sizeof(pin_buf));
+                        conference_local_play_file(conference, session, conference->bad_pin_sound, 20, pin_buf, sizeof(pin_buf));
                     }
                 }
                 pin_retries --;
@@ -3648,7 +3660,7 @@ static void conference_function(switch_core_session_t *session, char *data)
             if (conference->locked_sound) {
                 /* Answer the channel */
                 switch_channel_answer(channel);
-                conference_local_play_file(session, conference->locked_sound, 20, NULL, 0);
+                conference_local_play_file(conference, session, conference->locked_sound, 20, NULL, 0);
             }
             goto done;
         }

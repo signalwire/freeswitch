@@ -2223,6 +2223,7 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 	sdp_media_t *m;
 	sdp_attribute_t *a;
 	switch_channel_t *channel;
+    int ptime = 0, dptime = 0;
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);                                                                                                                               
@@ -2246,10 +2247,19 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 			switch_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 		} else if (!strcasecmp(a->a_name, "sendrecv")) {
 			switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+		} else if (!strcasecmp(a->a_name, "ptime")) {
+            dptime = atoi(a->a_value);
 		}
 	}
 
 	for (m = sdp->sdp_media; m ; m = m->m_next) {
+        ptime = dptime;
+        for (a = m->m_attributes; a; a = a->a_next) {
+            if (!strcasecmp(a->a_name, "ptime")) {
+                ptime = atoi(a->a_value);
+            }
+        }
+
 		if (m->m_type == sdp_media_audio) {
 			sdp_rtpmap_t *map;
 
