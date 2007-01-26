@@ -1006,6 +1006,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Pre-Answer %s!\n", channel->name);
 		switch_channel_set_flag(channel, CF_EARLY_MEDIA);
+        switch_channel_set_variable(channel, "endpoint_disposition", "EARLY MEDIA");
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_PROGRESS) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
 			switch_event_fire(&event);
@@ -1078,7 +1079,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
         switch_channel_event_set_data(channel, event);
         switch_event_fire(&event);
     }
-
+    switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
     switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Channel [%s] has been answered\n", channel->name);
     
     return SWITCH_STATUS_SUCCESS;

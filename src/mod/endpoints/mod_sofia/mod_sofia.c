@@ -1124,8 +1124,6 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 
 	tech_pvt->read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
 
-
-	switch_channel_set_variable(channel, "endpoint_disposition", "INIT");
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SOFIA INIT\n");
 	if (switch_channel_test_flag(channel, CF_NOMEDIA)) {
 		switch_set_flag_locked(tech_pvt, TFLAG_NOMEDIA);
@@ -1152,7 +1150,6 @@ static switch_status_t sofia_on_ring(switch_core_session_t *session)
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_channel_set_variable(channel, "endpoint_disposition", "RING");
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SOFIA RING\n");
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1170,7 +1167,6 @@ static switch_status_t sofia_on_execute(switch_core_session_t *session)
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_channel_set_variable(channel, "endpoint_disposition", "EXECUTE");
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SOFIA EXECUTE\n");
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1587,7 +1583,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 						SOATAG_AUDIO_AUX("cn telephone-event"),
 						NUTAG_INCLUDE_EXTRA_SDP(1),
 						TAG_END());
-            switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");			
+
 		}
 	} 
 
@@ -2002,7 +1998,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 						SOATAG_AUDIO_AUX("cn telephone-event"),
 						TAG_END());
-            switch_channel_set_variable(channel, "endpoint_disposition", "PROGRESS");
 	    }
 	}
 		break;
@@ -2202,7 +2197,6 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 	switch_channel_set_flag(nchannel, CF_OUTBOUND);
 	switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 	switch_channel_set_state(nchannel, CS_INIT);
-	switch_channel_set_variable(nchannel, "endpoint_disposition", "OUTBOUND");
 	*new_session = nsession;
 	status = SWITCH_STATUS_SUCCESS;
 	if (session) {
@@ -2264,8 +2258,9 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 			sdp_rtpmap_t *map;
 
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
-				int32_t i;
-				
+				int32_t i, btn = 0;
+                const switch_codec_implementation_t *mimp = NULL, *better_than_nothing[10] = {0};
+
 				if (!strcasecmp(map->rm_encoding, "telephone-event")) {
 					tech_pvt->te = (switch_payload_t)map->rm_pt;
 				}
@@ -2281,23 +2276,36 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 					}
 
 					if (match && (map->rm_rate == imp->samples_per_second)) {
-						char tmp[50];
-						tech_pvt->rm_encoding = switch_core_session_strdup(session, (char *)map->rm_encoding);
-						tech_pvt->pt = (switch_payload_t)map->rm_pt;
-						tech_pvt->rm_rate = map->rm_rate;
-						tech_pvt->codec_ms = imp->microseconds_per_frame / 1000;
-						tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(session, (char *)sdp->sdp_connection->c_address);
-						tech_pvt->rm_fmtp = switch_core_session_strdup(session, (char *)map->rm_fmtp);
-						tech_pvt->remote_sdp_audio_port = (switch_port_t)m->m_port;
-						tech_pvt->agreed_pt = (switch_payload_t)map->rm_pt;
-						snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
-						switch_channel_set_variable(channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
-						switch_channel_set_variable(channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
+                        if (ptime && ptime * 1000 != imp->microseconds_per_frame && btn < 10) {
+                            better_than_nothing[btn++] = imp;
+                            continue;
+                        }
+                        mimp = imp;
 						break;
 					} else {
 						match = 0;
 					}
-				}
+                }
+                
+                if (!match && btn) {
+                    match = 1;
+                    mimp = better_than_nothing[0];
+                }
+
+                if (mimp) {
+                    char tmp[50];
+                    tech_pvt->rm_encoding = switch_core_session_strdup(session, (char *)map->rm_encoding);
+                    tech_pvt->pt = (switch_payload_t)map->rm_pt;
+                    tech_pvt->rm_rate = map->rm_rate;
+                    tech_pvt->codec_ms = mimp->microseconds_per_frame / 1000;
+                    tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(session, (char *)sdp->sdp_connection->c_address);
+                    tech_pvt->rm_fmtp = switch_core_session_strdup(session, (char *)map->rm_fmtp);
+                    tech_pvt->remote_sdp_audio_port = (switch_port_t)m->m_port;
+                    tech_pvt->agreed_pt = (switch_payload_t)map->rm_pt;
+                    snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
+                    switch_channel_set_variable(channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
+                    switch_channel_set_variable(channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
+                }
 
 				if (match) {
 					if (tech_set_codec(tech_pvt, 1) != SWITCH_STATUS_SUCCESS) {
@@ -2829,7 +2837,6 @@ static void sip_i_state(int status,
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 					switch_set_flag_locked(tech_pvt, TFLAG_ANS);
                     switch_channel_mark_answered(channel);
-                    switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
 					if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
 						other_channel = switch_core_session_get_channel(other_session);
 						switch_channel_answer(other_channel);
@@ -2854,7 +2861,6 @@ static void sip_i_state(int status,
 
 					if (match) {
 						switch_set_flag_locked(tech_pvt, TFLAG_ANS);
-						switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
 						if (tech_choose_port(tech_pvt) == SWITCH_STATUS_SUCCESS) {
                             activate_rtp(tech_pvt);
                             switch_channel_mark_answered(channel);
@@ -2867,7 +2873,6 @@ static void sip_i_state(int status,
 				}
 			} else if (switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
 				switch_set_flag_locked(tech_pvt, TFLAG_ANS);
-				switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
                 switch_channel_mark_answered(channel);
                 if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
                     other_channel = switch_core_session_get_channel(other_session);
