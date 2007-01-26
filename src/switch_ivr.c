@@ -2881,8 +2881,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 
 	done:
-		*cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-
+		*cause = SWITCH_CAUSE_UNALLOCATED;
+        
         if (var_event) {
             switch_event_destroy(&var_event);
         }
@@ -2900,18 +2900,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					if (!peer_channels[i]) {
 						continue;
 					}
-				
-					*cause = switch_channel_get_cause(peer_channels[i]);
+                    *cause = switch_channel_get_cause(peer_channels[i]);
 					break;
 				}
 			}
 
-            if (reason != SWITCH_CAUSE_UNALLOCATED) {
-                *cause = reason;
-            } else if (caller_channel) {
-                *cause = switch_channel_get_cause(caller_channel);
-            } else {
-                *cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+            if (!*cause) {
+                if (reason) {
+                    *cause = reason;
+                } else if (caller_channel) {
+                    *cause = switch_channel_get_cause(caller_channel);
+                } else {
+                    *cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+                }
             }
 
 			if (idx == IDX_CANCEL) {

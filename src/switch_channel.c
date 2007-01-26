@@ -120,7 +120,7 @@ struct switch_channel {
 SWITCH_DECLARE(char *) switch_channel_cause2str(switch_call_cause_t cause)
 {
 	uint8_t x;
-	char *str = "UNALLOCATED";
+	char *str = "UNKNOWN";
 
 	for(x = 0; CAUSE_CHART[x].name; x++) {
 		if (CAUSE_CHART[x].cause == cause) {
@@ -620,7 +620,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		channel->state = state;
 		switch_mutex_unlock(channel->flag_mutex);
 
-		if (state == CS_HANGUP && channel->hangup_cause == SWITCH_CAUSE_UNALLOCATED) {
+		if (state == CS_HANGUP && !channel->hangup_cause) {
 			channel->hangup_cause = SWITCH_CAUSE_NORMAL_CLEARING;
 		}
 		if (state < CS_HANGUP) {

@@ -1175,7 +1175,6 @@ static switch_status_t sofia_on_execute(switch_core_session_t *session)
 // map QSIG cause codes to SIP from RFC4497 section 8.4.1
 static int hangup_cause_to_sip(switch_call_cause_t cause) {
 	switch (cause) {
-	case SWITCH_CAUSE_UNALLOCATED: 
 	case SWITCH_CAUSE_NO_ROUTE_TRANSIT_NET:
 	case SWITCH_CAUSE_NO_ROUTE_DESTINATION:
 		return 404;
@@ -2334,7 +2333,7 @@ static switch_call_cause_t sip_cause_to_freeswitch(int status) {
 	case 404:
 	case 485:
 	case 604:	
-		return SWITCH_CAUSE_UNALLOCATED;
+		return SWITCH_CAUSE_NO_ROUTE_DESTINATION;
 	case 408: 
 	case 504:
 		return SWITCH_CAUSE_RECOVERY_ON_TIMER_EXPIRE;
