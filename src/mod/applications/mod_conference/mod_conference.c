@@ -2966,7 +2966,7 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
                 } else {
                     profile_name = "default";
                 }
-                params = switch_mprintf("conf_name=%s&profile_name=%s");
+                params = switch_mprintf("conf_name=%s&profile_name=%s", conf_name, profile_name);
                 /* Open the config from the xml registry  */
                 if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, params))) {
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
@@ -3525,7 +3525,7 @@ static void conference_function(switch_core_session_t *session, char *data)
         profile_name = "default";
     }
 
-    params = switch_mprintf("conf_name=%s&profile_name=%s");
+    params = switch_mprintf("conf_name=%s&profile_name=%s", conf_name, profile_name);
 
     /* Open the config from the xml registry */
     if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, params))) {
