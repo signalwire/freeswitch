@@ -848,33 +848,21 @@ static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_
     
 }
 
-static int preprocess(const char *file, int new_fd, int rlevel)
+static int preprocess(const char *file, int write_fd, int rlevel)
 {
-    int old_fd, close_fd = -1;
-    char *new_file = NULL;
+    int read_fd = -1;
     switch_size_t cur = 0, ml = 0;
     char *q, *cmd, buf[2048], ebuf[8192];
 
-    if ((old_fd = open(file, O_RDONLY, 0)) < 0) {
-        return old_fd;
+    if ((read_fd = open(file, O_RDONLY, 0)) < 0) {
+        return read_fd;
     }
 
     if (rlevel > 100) {
         return -1;
     }
 
-    if (new_fd < 0) {
-        if (!(new_file = switch_mprintf("%s%sfreeswitch.registry", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR))) {
-            goto done;
-        }
-
-		if ((new_fd = open(new_file, O_WRONLY | O_CREAT | O_TRUNC,  S_IRUSR | S_IWUSR)) < 0) {
-            goto done;
-        }
-        close_fd = new_fd;
-    }
-
-    while((cur = read_line(old_fd, buf, sizeof(buf))) > 0) {
+    while((cur = read_line(read_fd, buf, sizeof(buf))) > 0) {
         char *arg, *e;
         char *bp = expand_vars(buf, ebuf, sizeof(ebuf), &cur);
 
@@ -894,11 +882,11 @@ static int preprocess(const char *file, int new_fd, int rlevel)
         }
 
         if ((cmd = strstr(bp, "<!--#"))) {
-            write(new_fd, bp, (unsigned)(cmd - bp));
+            write(write_fd, bp, (unsigned)(cmd - bp));
             if ((e = strstr(cmd, "-->"))) {
                 *e = '\0';
                 e += 3;
-                write(new_fd, e, (unsigned)strlen(e));
+                write(write_fd, e, (unsigned)strlen(e));
             } else {
                 ml++;
             }
@@ -945,7 +933,7 @@ static int preprocess(const char *file, int new_fd, int rlevel)
                         fme = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, arg);
                         ifile = fme;
                     }
-                    if (preprocess(ifile, new_fd, rlevel + 1) < 0) {
+                    if (preprocess(ifile, write_fd, rlevel + 1) < 0) {
                         fprintf(stderr, "Error including %s (%s)\n", ifile, strerror(errno));
                     }
                     switch_safe_free(fme);
@@ -955,38 +943,56 @@ static int preprocess(const char *file, int new_fd, int rlevel)
             continue;
         }
 
-        write(new_fd, bp, (unsigned)cur);
+        write(write_fd, bp, (unsigned)cur);
     }
 
-    close(old_fd);
-
-    if (close_fd > -1) {
-        close(close_fd);
-        new_fd = open(new_file, O_RDONLY, 0);
-    }
-
- done:
-    
-    switch_safe_free(new_file);
-
-    if (new_fd < 0) {
-        return old_fd;
-    }
-
-    return new_fd;
+    close(read_fd);
+    return write_fd;
 }
 
 // a wrapper for switch_xml_parse_fd that accepts a file name
 SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 {
-    int fd = -1;
+    int fd = -1, write_fd = -1;
     switch_xml_t xml = NULL;
+    char *new_file = NULL;
+    char *abs;
 
-    if ((fd = preprocess(file, -1, 0)) > -1) {
-        xml = switch_xml_parse_fd(fd);
-        close(fd);
+    if ((abs = strrchr(file, '/')) || (abs = strrchr(file, '\\'))) {
+        abs++;
+    } else {
+        abs = file;
     }
     
+    if (!(new_file = switch_mprintf("%s%s%s.fsxml", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, abs))) {
+        return NULL;
+    }
+
+    if ((write_fd = open(new_file, O_WRONLY | O_CREAT | O_TRUNC,  S_IRUSR | S_IWUSR)) < 0) {
+        goto done;
+    }
+
+    if (preprocess(file, write_fd, 0) > -1) {
+        close(write_fd);
+        write_fd = -1;
+        if ((fd = open(new_file, O_RDONLY, 0)) > -1) {
+            if ((xml = switch_xml_parse_fd(fd))) {
+                xml->free_path = new_file;
+                new_file = NULL;
+            }
+            close(fd);
+            fd = -1;
+        }
+    }
+
+ done:
+    if (write_fd > -1) {
+        close(write_fd);
+    }
+    if (fd > -1) {
+        close(fd);
+    }
+    switch_safe_free(new_file);
     return xml;
 }
 
@@ -1339,6 +1345,11 @@ SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
 	if (xml == MAIN_XML_ROOT) {
 		return;
 	} 
+
+    if (xml->free_path) {
+        unlink(xml->free_path);
+        switch_safe_free(xml->free_path);
+    }
 
     switch_xml_free(xml->child);
     switch_xml_free(xml->ordered);

@@ -84,6 +84,8 @@ struct switch_xml {
     char **attr;
 	/*! tag character content, empty string if none */
     char *txt;
+    /*! path to free on destroy*/
+    char *free_path;
 	/*! tag offset from start of parent tag character content */
     switch_size_t off;
 	/*! next tag with same name in this section at this depth */
