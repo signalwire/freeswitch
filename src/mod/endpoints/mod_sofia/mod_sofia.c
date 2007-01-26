@@ -306,6 +306,7 @@ struct private_object {
 	char *chat_from;
 	char *chat_to;
 	char *e_dest;
+    char *call_id;
 	unsigned long rm_rate;
 	switch_payload_t pt;
 	switch_mutex_t *flag_mutex;
@@ -800,6 +801,7 @@ static void tech_set_codecs(private_object_t *tech_pvt)
 	}
 }
 
+
 static void attach_private(switch_core_session_t *session,
 						   sofia_profile_t *profile,
 						   private_object_t *tech_pvt,
@@ -829,6 +831,7 @@ static void attach_private(switch_core_session_t *session,
 	tech_set_codecs(tech_pvt);
 	snprintf(name, sizeof(name), "sofia/%s/%s", profile->name, channame);
     switch_channel_set_name(channel, name);
+
 }
 
 static void terminate_session(switch_core_session_t **session, switch_call_cause_t cause, int line)
@@ -2632,9 +2635,8 @@ static void sip_i_state(int status,
 
 		tech_pvt = switch_core_session_get_private(session);
 		assert(tech_pvt != NULL);
-		
-		tech_pvt->nh = nh;
-		
+        assert(tech_pvt->nh != NULL);
+
 		if (switch_channel_test_flag(channel, CF_NOMEDIA)) {
             switch_set_flag(tech_pvt, TFLAG_NOMEDIA);
         }
@@ -4223,6 +4225,11 @@ static void sip_i_invite(nua_t *nua,
     switch_channel_set_variable(channel, "sip_contact_host", contact_host);
     switch_channel_set_variable(channel, "sip_contact_port", contact_port);
 
+    if (!tech_pvt->call_id && sip && sip->sip_call_id && sip->sip_call_id->i_id) {
+        tech_pvt->call_id = switch_core_session_strdup(session, (char *)sip->sip_call_id->i_id);
+        switch_channel_set_variable(channel, "sip_call_id", tech_pvt->call_id);
+    }
+
     via_host = (char *) sip->sip_via->v_host;
     if (!(via_port = (char *) sip->sip_via->v_port)) {
         via_port = "5060";
@@ -4324,7 +4331,7 @@ static void sip_i_invite(nua_t *nua,
     memset(tech_pvt->sofia_private, 0, sizeof(*tech_pvt->sofia_private));
     switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));
     nua_handle_bind(nh, tech_pvt->sofia_private);
-
+    tech_pvt->nh = nh;
 }
 
 static void sip_i_register(nua_t *nua,
@@ -4500,7 +4507,10 @@ static void event_callback(nua_event_t event,
                 if (switch_channel_test_flag(channel, CF_NOMEDIA)) {
                     switch_set_flag(tech_pvt, TFLAG_NOMEDIA);
                 }
-
+                if (!tech_pvt->call_id && sip && sip->sip_call_id && sip->sip_call_id->i_id) {
+                    tech_pvt->call_id = switch_core_session_strdup(session, (char *)sip->sip_call_id->i_id);
+                    switch_channel_set_variable(channel, "sip_call_id", tech_pvt->call_id);
+                }
             } else {
                 /* too late */
                 return;            
