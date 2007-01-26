@@ -2924,7 +2924,7 @@ static switch_status_t conf_api_sub_dial(conference_obj_t *conference, switch_st
 static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char**argv)
 {
     switch_status_t ret_status = SWITCH_STATUS_SUCCESS;
-
+    char *params = NULL;
     assert(conference != NULL);
     assert(stream != NULL);
 
@@ -2966,9 +2966,9 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
                 } else {
                     profile_name = "default";
                 }
-                
+                params = switch_mprintf("conf_name=%s&profile_name=%s");
                 /* Open the config from the xml registry  */
-                if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, NULL))) {
+                if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, params))) {
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
                     goto done;
                 }
@@ -3034,6 +3034,7 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
     }
 
  done:
+    switch_safe_free(params);
     return ret_status;
 }
 
@@ -3471,6 +3472,7 @@ static void conference_function(switch_core_session_t *session, char *data)
     uint8_t rl = 0, isbr = 0;
     char *dpin = NULL;
     conf_xml_cfg_t xml_cfg = {0};
+    char *params = NULL;
 
     channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
@@ -3523,8 +3525,10 @@ static void conference_function(switch_core_session_t *session, char *data)
         profile_name = "default";
     }
 
+    params = switch_mprintf("conf_name=%s&profile_name=%s");
+
     /* Open the config from the xml registry */
-    if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, NULL))) {
+    if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, params))) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
         goto done;
     }
@@ -3797,7 +3801,7 @@ static void conference_function(switch_core_session_t *session, char *data)
  codec_done2:
     switch_core_codec_destroy(&member.write_codec);
  done:
-
+    switch_safe_free(params);
     switch_buffer_destroy(&member.resample_buffer);
     switch_buffer_destroy(&member.audio_buffer);
     switch_buffer_destroy(&member.mux_buffer);
@@ -4541,7 +4545,7 @@ static void send_presence(switch_event_types_t id)
     switch_xml_t cxml, cfg, advertise, room; 
 
     /* Open the config from the xml registry */ 
-    if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, NULL))) { 
+    if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, "presence"))) { 
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name); 
         goto done; 
     } 
