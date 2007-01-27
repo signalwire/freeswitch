@@ -2701,13 +2701,21 @@ static void switch_core_standard_on_ring(switch_core_session_t *session)
             if ((dpstr = switch_core_session_strdup(session, caller_profile->dialplan))) {
                 argc = switch_separate_string(dpstr, ',', dp, (sizeof(dp) / sizeof(dp[0]))); 
                 for (x = 0; x < argc; x++) {
-                    if (!(dialplan_interface = switch_loadable_module_get_dialplan_interface(dp[x]))) {
+                    char *dpname = dp[x];
+                    char *dparg = NULL;
+
+                    if (dpname) {
+                        if ((dparg = strchr(dpname, ':'))) {
+                            *dparg++ = '\0';
+                        }
+                    }
+                    if (!(dialplan_interface = switch_loadable_module_get_dialplan_interface(dpname))) {
                         continue;
                     }
 
                     count++;
 
-                    if ((extension = dialplan_interface->hunt_function(session)) != 0) {
+                    if ((extension = dialplan_interface->hunt_function(session, dparg)) != 0) {
                         switch_channel_set_caller_extension(session->channel, extension);
                         return;
                     }

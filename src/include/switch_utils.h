@@ -182,7 +182,7 @@ switch_mutex_unlock(obj->flag_mutex);
   \param s the string to test
   \return true value if the string is NULL or zero length
 */
-#define switch_strlen_zero(s) (s && *s != '\0') ? 0 : 1
+#define switch_strlen_zero(s) (!s || *s == '\0')
 
 /*!
   \brief Wait a desired number of microseconds and yield the CPU

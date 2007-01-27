@@ -93,6 +93,7 @@ char *SWITCH_XML_NIL[] = { NULL }; // empty, null terminated array of strings
 struct switch_xml_binding {
 	switch_xml_search_function_t function;
 	switch_xml_section_t sections;
+    void *user_data;
 	struct switch_xml_binding *next;
 };
 
@@ -141,7 +142,7 @@ SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(char *str)
 	return sections;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_search_function_t function, switch_xml_section_t sections)
+SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_search_function_t function, switch_xml_section_t sections, void *user_data)
 {
 	switch_xml_binding_t *binding = NULL, *ptr = NULL;
 	assert(function != NULL);
@@ -152,6 +153,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_searc
 
 	binding->function = function;
 	binding->sections = sections;
+    binding->user_data = user_data;
 
 	switch_mutex_lock(XML_LOCK);
 	for (ptr = BINDINGS; ptr && ptr->next; ptr = ptr->next);
@@ -1020,7 +1022,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(char *section,
 			continue;
 		}
 
-		if ((xml = binding->function(section, tag_name, key_name, key_value, params))) {
+		if ((xml = binding->function(section, tag_name, key_name, key_value, params, binding->user_data))) {
 			const char *err = NULL;
 			
 			err = switch_xml_error(xml);

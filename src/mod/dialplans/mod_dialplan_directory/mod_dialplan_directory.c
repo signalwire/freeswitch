@@ -83,7 +83,7 @@ static void load_config(void)
 	switch_xml_free(xml);
 }
 
-static switch_caller_extension_t *directory_dialplan_hunt(switch_core_session_t *session)
+static switch_caller_extension_t *directory_dialplan_hunt(switch_core_session_t *session, void *arg)
 {
 	switch_caller_profile_t *caller_profile;
 	switch_caller_extension_t *extension = NULL;

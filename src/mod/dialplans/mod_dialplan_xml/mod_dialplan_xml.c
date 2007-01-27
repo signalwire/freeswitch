@@ -193,12 +193,12 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 	return proceed;
 }
 
-static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
+static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, void *arg)
 {
 	switch_caller_profile_t *caller_profile;
 	switch_caller_extension_t *extension = NULL;
 	switch_channel_t *channel;
-	switch_xml_t cfg, xml, xcontext, xexten;
+	switch_xml_t alt_root = NULL, cfg, xml, xcontext, xexten;
 	char *context = NULL;
     switch_stream_handle_t stream = {0};
     switch_size_t encode_len = 1024, new_len = 0;
@@ -206,6 +206,7 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
     char *prof[11] = {0}, *prof_names[11] = {0}, *e = NULL;
     switch_hash_index_t *hi;
     uint32_t x = 0;
+    char *alt_path = (char *) arg;
 
 	channel = switch_core_session_get_channel(session);
 	if ((caller_profile = switch_channel_get_caller_profile(channel))) {
@@ -296,11 +297,28 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
     if (e && *e == '&') {
         *e = '\0';
     }
+
+    if (!switch_strlen_zero(alt_path)) {
+        switch_xml_t conf = NULL, tag = NULL;
+        if (!(alt_root = switch_xml_parse_file(alt_path))) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of [%s] failed\n", alt_path);
+            return NULL;
+        }
         
-	if (switch_xml_locate("dialplan", NULL, NULL, NULL, &xml, &cfg, stream.data) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of dialplan failed\n");
-		return NULL;
-	}
+		if ((conf = switch_xml_find_child(alt_root, "section", "name", "dialplan")) && 
+			(tag = switch_xml_find_child(conf, "dialplan", NULL, NULL))) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Getting dialplan from alternate path: %s\n", alt_path);
+            xml = alt_root;
+            cfg = tag;
+        } else {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of dialplan failed\n");
+            return NULL;
+        }
+    } else if (switch_xml_locate("dialplan", NULL, NULL, NULL, &xml, &cfg, stream.data) != SWITCH_STATUS_SUCCESS) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of dialplan failed\n");
+        return NULL;
+    }
+    
 	
     switch_safe_free(stream.data);
     switch_safe_free(encode_buf);
