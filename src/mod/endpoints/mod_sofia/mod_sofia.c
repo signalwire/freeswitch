@@ -1348,6 +1348,12 @@ static switch_status_t tech_set_codec(private_object_t *tech_pvt, int force)
 	channel = switch_core_session_get_channel(tech_pvt->session);
 	assert(channel != NULL);
 
+	if (!tech_pvt->rm_encoding) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec with no name?\n");
+		terminate_session(&tech_pvt->session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (switch_core_codec_init(&tech_pvt->read_codec,  
 							   tech_pvt->rm_encoding,
 							   tech_pvt->rm_fmtp,
