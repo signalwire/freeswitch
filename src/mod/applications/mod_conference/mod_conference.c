@@ -911,6 +911,9 @@ static void conference_loop_fn_mute_toggle(conference_member_t *member, void *da
 			conf_api_sub_mute(member, NULL, NULL);
 		} else {
 			conf_api_sub_unmute(member, NULL, NULL);
+            if (!switch_test_flag(member, MFLAG_CAN_HEAR)) {
+                conf_api_sub_undeaf(member, NULL, NULL);
+            }
 		}
 	}
 }
@@ -920,10 +923,14 @@ static void conference_loop_fn_deafmute_toggle(conference_member_t *member, void
 	if (member != NULL) {
 		if (switch_test_flag(member, MFLAG_CAN_SPEAK)) {
 			conf_api_sub_mute(member, NULL, NULL);
-			conf_api_sub_deaf(member, NULL, NULL);
+            if (switch_test_flag(member, MFLAG_CAN_HEAR)) {
+                conf_api_sub_deaf(member, NULL, NULL);
+            }
 		} else {
 			conf_api_sub_unmute(member, NULL, NULL);
-			conf_api_sub_undeaf(member, NULL, NULL);
+            if (!switch_test_flag(member, MFLAG_CAN_HEAR)) {
+                conf_api_sub_undeaf(member, NULL, NULL);
+            }
 		}
 	}
 }
