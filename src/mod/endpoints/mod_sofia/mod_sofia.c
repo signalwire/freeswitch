@@ -2301,20 +2301,23 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
                 }
 
                 if (mimp) {
-                    char tmp[50];
-                    tech_pvt->rm_encoding = switch_core_session_strdup(session, (char *)map->rm_encoding);
-                    tech_pvt->pt = (switch_payload_t)map->rm_pt;
-                    tech_pvt->rm_rate = map->rm_rate;
-                    tech_pvt->codec_ms = mimp->microseconds_per_frame / 1000;
-                    tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(session, (char *)sdp->sdp_connection->c_address);
-                    tech_pvt->rm_fmtp = switch_core_session_strdup(session, (char *)map->rm_fmtp);
-                    tech_pvt->remote_sdp_audio_port = (switch_port_t)m->m_port;
-                    tech_pvt->agreed_pt = (switch_payload_t)map->rm_pt;
-                    snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
-                    switch_channel_set_variable(channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
-                    switch_channel_set_variable(channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
+                    if ((tech_pvt->rm_encoding = switch_core_session_strdup(session, (char *)mimp->rm_encoding))) {
+                        char tmp[50];
+                        tech_pvt->pt = (switch_payload_t)mimp->rm_pt;
+                        tech_pvt->rm_rate = mimp->rm_rate;
+                        tech_pvt->codec_ms = mimp->microseconds_per_frame / 1000;
+                        tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(session, (char *)sdp->sdp_connection->c_address);
+                        tech_pvt->rm_fmtp = switch_core_session_strdup(session, (char *)mimp->rm_fmtp);
+                        tech_pvt->remote_sdp_audio_port = (switch_port_t)m->m_port;
+                        tech_pvt->agreed_pt = (switch_payload_t)mimp->rm_pt;
+                        snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
+                        switch_channel_set_variable(channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
+                        switch_channel_set_variable(channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
+                    } else {
+                        match = 0;
+                    }
                 }
-
+                
 				if (match) {
 					if (tech_set_codec(tech_pvt, 1) != SWITCH_STATUS_SUCCESS) {
 						match = 0;
