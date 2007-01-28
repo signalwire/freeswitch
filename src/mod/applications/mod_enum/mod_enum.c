@@ -521,6 +521,7 @@ static switch_caller_extension_t *enum_dialplan_hunt(switch_core_session_t *sess
 	enum_record_t *results, *rp;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	enum_route_t *rtp;
+	char *dp = (char *) arg;
 
     assert(channel != NULL);
 
@@ -528,7 +529,7 @@ static switch_caller_extension_t *enum_dialplan_hunt(switch_core_session_t *sess
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ENUM Lookup on %s\n", caller_profile->destination_number);
 
-	if (enum_lookup(globals.root, caller_profile->destination_number, &results) == SWITCH_STATUS_SUCCESS) {
+	if (enum_lookup(switch_strlen_zero(dp) ? globals.root : dp, caller_profile->destination_number, &results) == SWITCH_STATUS_SUCCESS) {
 		if ((extension = switch_caller_extension_new(session, caller_profile->destination_number, caller_profile->destination_number)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
 			free_results(&results);	
