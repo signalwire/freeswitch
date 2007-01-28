@@ -29,7 +29,7 @@
   <!-- Call the FreeSWITCH conference via SIP -->
   <!--<extension name="FreeSWITCH Conference SIP">-->
   <!--<condition field="destination_number" expression="^888$">-->
-  <!--<action application="bridge" data="sofia/test/888@conference.freeswitch.org"/>-->
+  <!--<action application="bridge" data="sofia/$${domain}/888@conference.freeswitch.org"/>-->
   <!--</condition>-->
   <!--</extension> -->
 
@@ -45,7 +45,7 @@
       <!-- Request a certain tone/file to be played while you wait for the call to be answered-->
       <action application="set" data="ringback=${us-ring}"/>
       <!--<action application="set" data="ringback=/home/ring.wav"/>-->
-      <action application="bridge" data="sofia/test/1234@conference.freeswitch.org"/>
+      <action application="bridge" data="sofia/$${domain}/1234@conference.freeswitch.org"/>
     </condition>
   </extension>
 
@@ -59,7 +59,7 @@
   <!-- Start a dynamic conference and call someone at the same time -->
   <extension name="2000">
     <condition field="destination_number" expression="^2000$">
-      <action application="conference" data="bridge:mydynaconf:sofia/test/1234@conference.freeswitch.org"/>
+      <action application="conference" data="bridge:mydynaconf:sofia/$${domain}/1234@conference.freeswitch.org"/>
     </condition>
   </extension>
 
