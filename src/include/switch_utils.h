@@ -62,6 +62,11 @@ SWITCH_DECLARE(apr_status_t) switch_socket_recvfrom(apr_sockaddr_t *from, apr_so
 									apr_size_t *len);
 
 
+#define switch_codec2str(codec,buf,len) snprintf(buf, len, "%s@%uk@%ui", \
+                                                 codec->implementation->iananame, \
+                                                 codec->implementation->samples_per_second, \
+                                                 codec->implementation->microseconds_per_frame / 1000)
+
 #ifdef WIN32
 #define switch_is_file_path(file) (*(file +1) == ':' || *file == '/')
 #else

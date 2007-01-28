@@ -142,7 +142,8 @@ typedef enum {
 	PFLAG_AUTH_ALL = (1 << 2),
 	PFLAG_FULL_ID = (1 << 3),
 	PFLAG_PRESENCE = (1 << 4),
-	PFLAG_PASS_RFC2833 = (1 << 5)
+	PFLAG_PASS_RFC2833 = (1 << 5),
+    PFLAG_DISABLE_TRANSCODING = (1 << 6)
 } PFLAGS;
 
 typedef enum {
@@ -772,6 +773,8 @@ static void tech_set_codecs(private_object_t *tech_pvt)
 {
     switch_channel_t *channel;
     char *codec_string = NULL;
+    char *csdyn = NULL;
+    char *ocodec = NULL;
 
 	if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 		return;
@@ -786,11 +789,25 @@ static void tech_set_codecs(private_object_t *tech_pvt)
     channel = switch_core_session_get_channel(tech_pvt->session);
     assert (channel != NULL);
 
+
     if (!(codec_string = switch_channel_get_variable(channel, "codec_string"))) {
         codec_string = tech_pvt->profile->codec_string;
     }
 
+    if ((ocodec = switch_channel_get_variable(channel, SWITCH_ORIGINATOR_CODEC_VARIABLE))) {
+        if (!codec_string || (tech_pvt->profile->pflags & PFLAG_DISABLE_TRANSCODING)) {
+            codec_string = ocodec;
+        } else {
+            if ((csdyn = switch_mprintf("%s,%s", ocodec, codec_string))) {
+                codec_string = csdyn;
+            } else {
+                codec_string = ocodec;
+            }
+        }
+    }
+
 	if (codec_string) {
+        tech_pvt->profile->codec_order_last = switch_separate_string(codec_string, ',', tech_pvt->profile->codec_order, SWITCH_MAX_CODECS);
 		tech_pvt->num_codecs = switch_loadable_module_get_codecs_sorted(tech_pvt->codecs,
 																		SWITCH_MAX_CODECS,
 																		tech_pvt->profile->codec_order,
@@ -800,6 +817,8 @@ static void tech_set_codecs(private_object_t *tech_pvt)
 		tech_pvt->num_codecs = switch_loadable_module_get_codecs(switch_core_session_get_pool(tech_pvt->session), tech_pvt->codecs,
 																 sizeof(tech_pvt->codecs) / sizeof(tech_pvt->codecs[0]));
 	}
+
+    switch_safe_free(csdyn);
 }
 
 
@@ -829,9 +848,10 @@ static void attach_private(switch_core_session_t *session,
 
 	switch_core_session_set_private(session, tech_pvt);
 
-	tech_set_codecs(tech_pvt);
+
 	snprintf(name, sizeof(name), "sofia/%s/%s", profile->name, channame);
     switch_channel_set_name(channel, name);
+	//tech_set_codecs(tech_pvt);
 
 }
 
@@ -939,7 +959,8 @@ static void do_invite(switch_core_session_t *session)
 
 	cid_name = (char *) caller_profile->caller_id_name;
 	cid_num = (char *) caller_profile->caller_id_number;
-	
+    tech_set_codecs(tech_pvt);
+
 	if ((tech_pvt->from_str = switch_mprintf("\"%s\" <sip:%s@%s>", 
 													 cid_name,
 													 cid_num,
@@ -1433,7 +1454,7 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 		flags |= SWITCH_RTP_FLAG_BUGGY_2833;
 	}
 
-    if (tech_pvt->profile->flags & PFLAG_PASS_RFC2833 || ((val = switch_channel_get_variable(channel, "pass_rfc2833")) && switch_true(val))) {
+    if ((tech_pvt->profile->pflags & PFLAG_PASS_RFC2833) || ((val = switch_channel_get_variable(channel, "pass_rfc2833")) && switch_true(val))) {
         flags |= SWITCH_RTP_FLAG_PASS_RFC2833;
     }
 
@@ -2204,6 +2225,7 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 	}
 
 	attach_private(nsession, profile, tech_pvt, dest);
+
 
 	nchannel = switch_core_session_get_channel(nsession);
 	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
@@ -4164,7 +4186,7 @@ static void sip_i_invite(nua_t *nua,
     }
 
     attach_private(session, profile, tech_pvt, username);
-
+    tech_set_codecs(tech_pvt);
 
     channel = switch_core_session_get_channel(session);
     switch_channel_set_variable(channel, "endpoint_disposition", "INBOUND CALL");
@@ -4993,6 +5015,10 @@ static switch_status_t config_sofia(int reload)
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_PASS_RFC2833;
 						}
+					} else if (!strcasecmp(var, "disable-transcoding")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_DISABLE_TRANSCODING;
+						}
 					} else if (!strcasecmp(var, "auth-calls")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_AUTH_CALLS;
@@ -5035,7 +5061,6 @@ static switch_status_t config_sofia(int reload)
 						profile->max_calls = atoi(val);
 					} else if (!strcasecmp(var, "codec-prefs")) {
 						profile->codec_string = switch_core_strdup(profile->pool, val);
-						profile->codec_order_last = switch_separate_string(profile->codec_string, ',', profile->codec_order, SWITCH_MAX_CODECS);
 					} else if (!strcasecmp(var, "codec-ms")) {
 						profile->codec_ms = atoi(val);
 					} else if (!strcasecmp(var, "dtmf-duration")) {

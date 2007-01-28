@@ -82,6 +82,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_BRIDGE_VARIABLE "_bridge_to_"
 #define SWITCH_SIGNAL_BRIDGE_VARIABLE "_signal_bridge_to_"
 #define SWITCH_ORIGINATOR_VARIABLE "_originator_"
+#define SWITCH_ORIGINATOR_CODEC_VARIABLE "_originator_codec_"
 #define SWITCH_LOCAL_MEDIA_IP_VARIABLE "_local_media_ip_"
 #define SWITCH_LOCAL_MEDIA_PORT_VARIABLE "_local_media_port_"
 #define SWITCH_REMOTE_MEDIA_IP_VARIABLE "_remote_media_ip_"

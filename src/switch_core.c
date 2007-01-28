@@ -1577,10 +1577,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core
 
 		if (channel && peer_channel) {
 			char *export_vars, *val;
+            switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
 
-			switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_VARIABLE, switch_core_session_get_uuid(session));
-			
-			/* A comma (,) separated list of variable names that should ne propagated from originator to originatee */
+            if (read_codec) {
+                char tmp[80];
+                switch_codec2str(read_codec, tmp, sizeof(tmp));
+                switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_CODEC_VARIABLE, tmp);
+            }
+
+			switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_VARIABLE, switch_core_session_get_uuid(session));            
+
+            /* A comma (,) separated list of variable names that should ne propagated from originator to originatee */
 			if ((export_vars = switch_channel_get_variable(channel, "export_vars"))) {
 				char *cptmp = switch_core_session_strdup(session, export_vars);
 				int argc;
