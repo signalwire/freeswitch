@@ -840,7 +840,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 		/* RFC2833 ... TBD try harder to honor the duration etc.*/
-		if (rtp_session->recv_msg.header.pt == rtp_session->te) {
+		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833) && rtp_session->recv_msg.header.pt == rtp_session->te) {
 			unsigned char *packet = (unsigned char *) rtp_session->recv_msg.body;
 			int end = packet[1]&0x80;
 			int duration = (packet[2]<<8) + packet[3];

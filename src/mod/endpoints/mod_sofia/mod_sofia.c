@@ -141,7 +141,8 @@ typedef enum {
 	PFLAG_BLIND_REG = (1 << 1),
 	PFLAG_AUTH_ALL = (1 << 2),
 	PFLAG_FULL_ID = (1 << 3),
-	PFLAG_PRESENCE = (1 << 4)
+	PFLAG_PRESENCE = (1 << 4),
+	PFLAG_PASS_RFC2833 = (1 << 5)
 } PFLAGS;
 
 typedef enum {
@@ -1402,6 +1403,7 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 	int bw, ms;
 	switch_channel_t *channel;
 	const char *err = NULL;
+    char *val = NULL;
 	switch_rtp_flag_t flags;
 	switch_status_t status;
 	char tmp[50];
@@ -1430,6 +1432,10 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 	if (switch_test_flag(tech_pvt, TFLAG_BUGGY_2833)) {
 		flags |= SWITCH_RTP_FLAG_BUGGY_2833;
 	}
+
+    if (tech_pvt->profile->flags & PFLAG_PASS_RFC2833 || ((val = switch_channel_get_variable(channel, "pass_rfc2833")) && switch_true(val))) {
+        flags |= SWITCH_RTP_FLAG_PASS_RFC2833;
+    }
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "RTP [%s] %s:%d->%s:%d codec: %u ms: %d\n",
 					  switch_channel_get_name(channel),
@@ -4982,6 +4988,10 @@ static switch_status_t config_sofia(int reload)
 					} else if (!strcasecmp(var, "manage-presence")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_PRESENCE;
+						}
+					} else if (!strcasecmp(var, "pass-rfc2833")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_PASS_RFC2833;
 						}
 					} else if (!strcasecmp(var, "auth-calls")) {
 						if (switch_true(val)) {

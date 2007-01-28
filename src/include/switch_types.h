@@ -240,6 +240,7 @@ typedef enum {
 	SWITCH_RTP_FLAG_MINI		  - Use mini RTP when possible
 	SWITCH_RTP_FLAG_DATAWAIT	  - Do not return from reads unless there is data even when non blocking
 	SWITCH_RTP_FLAG_BUGGY_2833    - Emulate the bug in cisco equipment to allow interop
+	SWITCH_RTP_FLAG_PASS_RFC2833     - Pass 2833 (ignore it)
 </pre>
  */
 typedef enum {
@@ -255,7 +256,8 @@ typedef enum {
 	SWITCH_RTP_FLAG_BREAK = ( 1 << 9),
 	SWITCH_RTP_FLAG_MINI = ( 1 << 10),
 	SWITCH_RTP_FLAG_DATAWAIT = (1 << 11),
-	SWITCH_RTP_FLAG_BUGGY_2833 = (1 << 12)
+	SWITCH_RTP_FLAG_BUGGY_2833 = (1 << 12),
+	SWITCH_RTP_FLAG_PASS_RFC2833 = (1 << 13)
 } switch_rtp_flag_t;
 
 /*!
