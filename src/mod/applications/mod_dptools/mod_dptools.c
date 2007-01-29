@@ -71,6 +71,16 @@ static void ringback_function(switch_core_session_t *session, char *data)
 	switch_channel_ringback(channel);
 }
 
+static void queue_dtmf_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+	if (!switch_strlen_zero(data)) {
+		channel = switch_core_session_get_channel(session);
+		assert(channel != NULL);
+		switch_channel_queue_dtmf(channel, data);
+	}
+}
+
 static void transfer_function(switch_core_session_t *session, char *data)
 {
 	int argc;
@@ -469,13 +479,22 @@ static switch_api_interface_t presence_api_interface = {
 	/*.next */ &dptools_api_interface
 };
 
+static const switch_application_interface_t queuedtmf_application_interface = {
+	/*.interface_name */ "queue_dtmf",
+	/*.application_function */ queue_dtmf_function,	
+	/* long_desc */ "Queue dtmf to be sent from a session",
+	/* short_desc */ "Queue dtmf to be sent",
+	/* syntax */ "<dtmf_data>",
+	/*.next */ NULL
+};
+
 static const switch_application_interface_t redirect_application_interface = {
 	/*.interface_name */ "redirect",
 	/*.application_function */ redirect_function,	
 	/* long_desc */ "Send a redirect message to a session.",
 	/* short_desc */ "Send session redirect",
 	/* syntax */ "<redirect_data>",
-	/*.next */ NULL
+	/*.next */ &queuedtmf_application_interface
 };
 
 static const switch_application_interface_t ivr_application_interface = {
