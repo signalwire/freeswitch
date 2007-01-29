@@ -34,7 +34,7 @@
 #include "switch.h"
 
 #ifndef G723_PASSTHROUGH
-#include "g723_1.h"
+#include "g723/g723.h"
 
 #define TYPE_HIGH 0x0
 #define TYPE_LOW 0x1

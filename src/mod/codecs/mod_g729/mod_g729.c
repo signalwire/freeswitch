@@ -37,7 +37,7 @@ static const char modname[] = "mod_g729";
 #include "switch.h"
 
 #ifndef G729_PASSTHROUGH
-#include "g729.h"
+#include "g729/g729.h"
 
 struct g729_context {
 	struct dec_state decoder_object;

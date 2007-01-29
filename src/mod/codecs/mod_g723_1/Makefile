@@ -1,7 +1,7 @@
 ifeq ($(shell ls -d $(BASE)/libs/libg723_1),$(BASE)/libs/libg723_1)
 
-CFLAGS += -I$(PREFIX)/include/libg723_1
-LDFLAGS +=-lg723_1
+CFLAGS += -I$(PREFIX)/include/g723
+LDFLAGS +=-lg723
 
 else
 
