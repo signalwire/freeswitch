@@ -3145,7 +3145,6 @@ switch_status_t conf_api_dispatch(conference_obj_t *conference, switch_stream_ha
                         }                        
                     }
 
-
                     if (all) {
                         conference_member_itterator(conference, stream, conf_api_sub_commands[i].pfnapicmd, argv[argn+2]);
                     } else if (last) {
@@ -3170,19 +3169,17 @@ switch_status_t conf_api_dispatch(conference_obj_t *conference, switch_stream_ha
                         }
 
                         switch_mutex_unlock(conference->member_mutex);
-                    } else {
+                    } else if (id) {
                         conf_api_member_cmd_t pfn = (conf_api_member_cmd_t)conf_api_sub_commands[i].pfnapicmd;
                         conference_member_t *member = conference_member_get(conference, id);
-
+                        
                         if (member != NULL) {
                             pfn(conference_member_get(conference, id), stream, argv[argn+2]);
                         } else {
-                            if (id == 0) {
-                                stream->write_function(stream, conf_api_sub_commands[i].psyntax);
-                            } else {
-                                stream->write_function(stream, "Non-Existant ID %u\n", id);
-                            }
+                            stream->write_function(stream, "Non-Existant ID %u\n", id);
                         }
+                    } else {
+                        stream->write_function(stream, conf_api_sub_commands[i].psyntax);
                     }
                 }
                 break;
