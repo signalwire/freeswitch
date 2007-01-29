@@ -2338,6 +2338,8 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
                         mimp = near_match;
                     }
 
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Substituting codec %s@%ums\n", 
+                                      mimp->iananame, mimp->microseconds_per_frame / 1000 );
                     match = 1;
                 }
 
@@ -3711,6 +3713,7 @@ static void sip_i_refer(nua_t *nua,
 
     if (switch_channel_test_flag(channel_a, CF_NOMEDIA)) {
         nua_notify(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+                   NUTAG_SUBSTATE(nua_substate_terminated),
                    SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"),
                    SIPTAG_EVENT_STR(etmp),
                    TAG_END());
@@ -3772,6 +3775,7 @@ static void sip_i_refer(nua_t *nua,
                             switch_set_flag_locked(tech_pvt, TFLAG_BYE);
                             switch_set_flag_locked(b_tech_pvt, TFLAG_BYE);
                             nua_notify(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+                                       NUTAG_SUBSTATE(nua_substate_terminated),
                                        SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"),
                                        SIPTAG_EVENT_STR(etmp),
                                        TAG_END());
@@ -3812,6 +3816,7 @@ static void sip_i_refer(nua_t *nua,
                             }
                             switch_set_flag_locked(tech_pvt, TFLAG_BYE);
                             nua_notify(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+                                       NUTAG_SUBSTATE(nua_substate_terminated),
                                        SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"),
                                        SIPTAG_EVENT_STR(etmp),
                                        TAG_END());
@@ -3855,6 +3860,7 @@ static void sip_i_refer(nua_t *nua,
                                                      NULL) != SWITCH_STATUS_SUCCESS) {
                                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! [%s]\n", exten);
                                 nua_notify(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+                                           NUTAG_SUBSTATE(nua_substate_terminated),
                                            SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"),
                                            SIPTAG_EVENT_STR(etmp),
                                            TAG_END());
@@ -3867,6 +3873,7 @@ static void sip_i_refer(nua_t *nua,
                             switch_channel_set_variable(channel_a, "endpoint_disposition", "ATTENDED_TRANSFER");
                             switch_set_flag_locked(tech_pvt, TFLAG_BYE);
                             nua_notify(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+                                       NUTAG_SUBSTATE(nua_substate_terminated),
                                        SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"),
                                        SIPTAG_EVENT_STR(etmp),
                                        TAG_END());
@@ -3878,6 +3885,7 @@ static void sip_i_refer(nua_t *nua,
                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Transfer! [%s]\n", br_a);
                         switch_channel_set_variable(channel_a, "endpoint_disposition", "ATTENDED_TRANSFER_ERROR");
                         nua_notify(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+                                   NUTAG_SUBSTATE(nua_substate_terminated),
                                    SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"),
                                    SIPTAG_EVENT_STR(etmp),
                                    TAG_END());
@@ -3911,6 +3919,7 @@ static void sip_i_refer(nua_t *nua,
                 
             /*
               nua_notify(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+              NUTAG_SUBSTATE(nua_substate_terminated),
               SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"),
               SIPTAG_EVENT_STR(etmp),
               TAG_END());
@@ -3927,6 +3936,7 @@ static void sip_i_refer(nua_t *nua,
 
             /*
               nua_notify(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+              NUTAG_SUBSTATE(nua_substate_terminated),
               SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"),
               SIPTAG_EVENT_STR(etmp),
               TAG_END());
