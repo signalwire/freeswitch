@@ -11,7 +11,7 @@
       <entry action="menu-play-sound" digits="4" param="/soundfiles/4.wav"/>
       <entry action="menu-back" digits="5"/>
       <entry action="menu-call-transfer" digits="7" param="888"/>
-      <entry action="menu-sub" digits="8" param="menu8"/>>
+      <entry action="menu-sub" digits="8" param="menu8"/>
     </menu>
     <menu name="menu8"
 	  greet-long="/soundfiles/greet-long.wav"
