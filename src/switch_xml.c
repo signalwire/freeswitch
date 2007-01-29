@@ -28,10 +28,10 @@
  *
  * switch_xml.c -- XML PARSER
  *
- * Derived from EZXML http://ezxml.sourceforge.net
+ * Derived from switch_xml http://switch_xml.sourceforge.net
  * Original Copyright
  *
- * Copyright 2004, 2005 Aaron Voisine <aaron@voisine.org>
+ * Copyright 2004, 2006 Aaron Voisine <aaron@voisine.org>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -696,7 +696,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
             if (switch_xml_close_tag(root, d, s)) return &root->xml;
             if (isspace((int)(*s = q))) s += strspn(s, SWITCH_XML_WS);
         }
-        else if (! strncmp(s, "!--", 3)) { // comment
+        else if (! strncmp(s, "!--", 3)) { // xml comment
             if (! (s = strstr(s + 3, "--")) || (*(s += 2) != '>' && *s) ||
                 (! *s && e != '>')) return switch_xml_err(root, d, "unclosed <!--");
         }
@@ -1286,8 +1286,8 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 	}
 }
 
-// converts an switch_xml structure back to xml, returning it as a string that must
-// be freed
+// converts an switch_xml structure back to xml, returning a string of xml date that
+// must be freed
 SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml)
 {
     switch_xml_t p = (xml) ? xml->parent : NULL, o = (xml) ? xml->ordered : NULL;
@@ -1410,11 +1410,53 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_new(const char *name)
     return &root->xml;
 }
 
+// inserts an existing tag into an switch_xml structure
+SWITCH_DECLARE(switch_xml_t) switch_xml_insert(switch_xml_t xml, switch_xml_t dest, switch_size_t off)
+{
+    switch_xml_t cur, prev, head;
+
+    xml->next = xml->sibling = xml->ordered = NULL;
+    xml->off = off;
+    xml->parent = dest;
+
+    if ((head = dest->child)) { // already have sub tags
+        if (head->off <= off) { // not first subtag
+            for (cur = head; cur->ordered && cur->ordered->off <= off;
+                 cur = cur->ordered);
+            xml->ordered = cur->ordered;
+            cur->ordered = xml;
+        }
+        else { // first subtag
+            xml->ordered = head;
+            dest->child = xml;
+        }
+
+        for (cur = head, prev = NULL; cur && strcmp(cur->name, xml->name);
+             prev = cur, cur = cur->sibling); // find tag type
+        if (cur && cur->off <= off) { // not first of type
+            while (cur->next && cur->next->off <= off) cur = cur->next;
+            xml->next = cur->next;
+            cur->next = xml;
+        }
+        else { // first tag of this type
+            if (prev && cur) prev->sibling = cur->sibling; // remove old first
+            xml->next = cur; // old first tag is now next
+            for (cur = head, prev = NULL; cur && cur->off <= off;
+                 prev = cur, cur = cur->sibling); // new sibling insert point
+            xml->sibling = cur;
+            if (prev) prev->sibling = xml;
+        }
+    }
+    else dest->child = xml; // only sub tag
+
+    return xml;
+}
+
 // Adds a child tag. off is the offset of the child tag relative to the start
-// of the parent tag's character content. returns the child tag
+// of the parent tag's character content. Returns the child tag
 switch_xml_t switch_xml_add_child(switch_xml_t xml, const char *name, switch_size_t off)
 {
-    switch_xml_t cur, head, child;
+    switch_xml_t child;
 
     if (! xml) return NULL;
     child = (switch_xml_t)memset(malloc(sizeof(struct switch_xml)), '\0',
@@ -1425,36 +1467,7 @@ switch_xml_t switch_xml_add_child(switch_xml_t xml, const char *name, switch_siz
     child->parent = xml;
     child->txt = "";
 
-    if ((head = xml->child)) { // already have sub tags
-        if (head->off <= off) { // not first subtag
-            for (cur = head; cur->ordered && cur->ordered->off <= off;
-                 cur = cur->ordered);
-            child->ordered = cur->ordered;
-            cur->ordered = child;
-        }
-        else { // first subtag
-            child->ordered = head;
-            xml->child = child;
-        }
-
-        for (cur = head; cur->sibling && strcmp(cur->name, name);
-             cur = cur->sibling); // find tag type
-        if (! strcmp(cur->name, name) && cur->off <= off) { //not first of type
-            while (cur->next && cur->next->off <= off) cur = cur->next;
-            child->next = cur->next;
-            cur->next = child;
-        }
-        else { // first tag of this type
-            if (cur->off > off) child->next = cur; // not only tag of this type
-            for (cur = head; cur->sibling && cur->sibling->off <= off;
-                 cur = cur->sibling);
-            child->sibling = cur->sibling;
-            cur->sibling = child;
-        }
-    }
-    else xml->child = child; // only sub tag
-    
-    return child;
+    return switch_xml_insert(child, xml, off);
 }
 
 // sets the character content for the given tag and returns the tag
@@ -1468,15 +1481,15 @@ switch_xml_t switch_xml_set_txt(switch_xml_t xml, const char *txt)
 }
 
 // Sets the given tag attribute or adds a new attribute if not found. A value
-// of NULL will remove the specified attribute.
-SWITCH_DECLARE(void) switch_xml_set_attr(switch_xml_t xml, const char *name, const char *value)
+// of NULL will remove the specified attribute.  Returns the tag given
+SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *name, const char *value)
 {
     int l = 0, c;
 
-    if (! xml) return;
+    if (! xml) return NULL;
     while (xml->attr[l] && strcmp(xml->attr[l], name)) l += 2;
     if (! xml->attr[l]) { // not found, add as new attribute
-        if (! value) return; // nothing to do
+        if (! value) return xml; // nothing to do
         if (xml->attr == SWITCH_XML_NIL) { // first attribute
             xml->attr = malloc(4 * sizeof(char *));
             xml->attr[1] = strdup(""); // empty list of malloced names/vals
@@ -1506,6 +1519,8 @@ SWITCH_DECLARE(void) switch_xml_set_attr(switch_xml_t xml, const char *name, con
                 (c / 2) - (l / 2)); // fix list of which name/vals are malloced
     }
     xml->flags &= ~SWITCH_XML_DUP; // clear strdup() flag
+
+	return xml;
 }
 
 // sets a flag for the given tag and returns the tag
@@ -1515,12 +1530,12 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_flag(switch_xml_t xml, switch_xml_fl
     return xml;
 }
 
-// removes a tag along with all its subtags
-SWITCH_DECLARE(void) switch_xml_remove(switch_xml_t xml)
+// removes a tag along with its subtags without freeing its memory
+SWITCH_DECLARE(switch_xml_t) switch_xml_cut(switch_xml_t xml)
 {
     switch_xml_t cur;
 
-    if (! xml) return; // nothing to do
+    if (! xml) return NULL; // nothing to do
     if (xml->next) xml->next->sibling = xml->sibling; // patch sibling list
 
     if (xml->parent) { // not root tag
@@ -1545,8 +1560,8 @@ SWITCH_DECLARE(void) switch_xml_remove(switch_xml_t xml)
             if (cur->next) cur->next = cur->next->next; // patch next list
         }        
     }
-    xml->ordered = NULL; // prevent switch_xml_free() from clobbering ordered list
-    switch_xml_free(xml);
+	xml->ordered = xml->sibling = xml->next =  NULL; // prevent switch_xml_free() from clobbering ordered list
+    return xml;
 }
 
 /* For Emacs:

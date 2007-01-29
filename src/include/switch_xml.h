@@ -256,9 +256,10 @@ switch_xml_t switch_xml_set_txt(switch_xml_t xml, const char *txt);
 ///\param xml the xml node
 ///\param name the attribute name
 ///\param value the attribute value
-SWITCH_DECLARE(void) switch_xml_set_attr(switch_xml_t xml, const char *name, const char *value);
+///\return the tag given
+SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *name, const char *value);
 
-///\ Wrapper for switch_xml_set_attr() that strdup()s name/value. Value cannot be NULL
+///\brief Wrapper for switch_xml_set_attr() that strdup()s name/value. Value cannot be NULL
 ///\param xml the xml node
 ///\param name the attribute name
 ///\param value the attribute value
@@ -272,10 +273,19 @@ SWITCH_DECLARE(void) switch_xml_set_attr(switch_xml_t xml, const char *name, con
 ///\return an xml node or NULL
 SWITCH_DECLARE(switch_xml_t) switch_xml_set_flag(switch_xml_t xml, switch_xml_flag_t flag);
 
+///\brief removes a tag along with its subtags without freeing its memory
+///\param xml the xml node
+SWITCH_DECLARE(switch_xml_t) switch_xml_cut(switch_xml_t xml);
+
+///\brief inserts an existing tag into an ezxml structure
+SWITCH_DECLARE(switch_xml_t) switch_xml_insert(switch_xml_t xml, switch_xml_t dest, switch_size_t off);
+
+///\brief Moves an existing tag to become a subtag of dest at the given offset from
+///\ the start of dest's character content. Returns the moved tag.
+#define switch_xml_move(xml, dest, off) switch_xml_insert(switch_xml_cut(xml), dest, off)
 
 ///\brief removes a tag along with all its subtags
-///\param xml the xml node
-SWITCH_DECLARE(void) switch_xml_remove(switch_xml_t xml);
+#define switch_xml_remove(xml) switch_xml_free(switch_xml_cut(xml))
 
 ///\brief open the Core xml root
 ///\param reload if it's is already open close it and open it again as soon as permissable (blocking)
