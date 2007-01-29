@@ -758,6 +758,27 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 		}
 
         if ((codec_interface = switch_loadable_module_get_codec_interface(name)) != 0 ) {
+            /* If no specific codec interval is requested opt for 20ms above all else because lots of stuff assumes it */
+            if (!interval) {
+                for (imp = codec_interface->implementations; imp; imp = imp->next) {
+                    uint8_t match = 1;
+
+                    if ((uint32_t)(imp->microseconds_per_frame / 1000) != 20) {
+                        match = 0;
+                    }
+
+                    if (match && rate && (uint32_t)imp->samples_per_second != rate) {
+                        match = 0;
+                    }
+
+                    if (match) {
+                        array[i++] = imp;
+                        goto found;
+                    }
+                }
+            }
+
+            /* Either looking for a specific interval or there was no interval specified and there wasn't one @20ms available*/
 			for (imp = codec_interface->implementations; imp; imp = imp->next) {
 				uint8_t match = 1;
 
@@ -771,8 +792,12 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 
 				if (match) {
 					array[i++] = imp;
+                    goto found;
 				}
 			}
+
+        found:
+
             if (i > arraylen) {
                 break;
             }
