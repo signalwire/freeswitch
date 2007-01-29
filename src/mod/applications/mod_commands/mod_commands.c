@@ -384,7 +384,7 @@ static switch_status_t session_record_function(char *cmd, switch_core_session_t 
 
     uuid = argv[0];
     action = argv[1];
-    action = argv[2];
+    path = argv[2];
     
     if (!(session = switch_core_session_locate(uuid))) {
 		stream->write_function(stream, "-Error Cannot locate session!\n");
