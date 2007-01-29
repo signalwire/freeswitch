@@ -543,12 +543,8 @@ static auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const
 	}
 
  end:
-	if (input) {
-		switch_safe_free(input);
-	}
-	if (input2) {
-		switch_safe_free(input2);
-	}
+    switch_safe_free(input);
+    switch_safe_free(input2);
 	switch_safe_free(nonce);
 	switch_safe_free(uri);
 	switch_safe_free(qop);
@@ -5072,6 +5068,14 @@ static switch_status_t config_sofia(int reload)
 						}
 					}
 				}
+
+                if (!profile->sipip) {
+                    profile->sipip = switch_core_strdup(profile->pool, globals.guess_ip);
+                }
+
+                if (!profile->rtpip) {
+                    profile->rtpip = switch_core_strdup(profile->pool, globals.guess_ip);
+                }
 
                 if (profile->nonce_ttl < 60) {
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting nonce TTL to 60 seconds\n");
