@@ -366,6 +366,8 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 				}
 			} else if (!strcasecmp(type, "transport-accept")) {
 				dl_signal = LDL_SIGNAL_TRANSPORT_ACCEPT;
+			} else if (!strcasecmp(type, "reject")) {
+				dl_signal = LDL_SIGNAL_REJECT;
 			} else if (!strcasecmp(type, "transport-info")) {
 				char *tid = iks_find_attrib(xml, "id");
 				dl_signal = LDL_SIGNAL_CANDIDATES;

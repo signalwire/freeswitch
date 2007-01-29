@@ -1616,10 +1616,10 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 
 		switch_channel_set_flag(channel, CF_OUTBOUND);
 		switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
-		
+
 		switch_stun_random_string(sess_id, 10, "0123456789");
-		tech_pvt->us = switch_core_session_strdup(session, user);
-		tech_pvt->them = switch_core_session_strdup(session, full_id);
+		tech_pvt->us = switch_core_session_strdup(*new_session, user);
+		tech_pvt->them = switch_core_session_strdup(*new_session, full_id);
 		ldl_session_create(&dlsession, mdl_profile->handle, sess_id, full_id, user, LDL_FLAG_OUTBOUND);
 		tech_pvt->profile = mdl_profile;
 		ldl_session_set_private(dlsession, *new_session);
@@ -2685,11 +2685,18 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			}
 		}
 		break;
+	case LDL_SIGNAL_REJECT:
+        if (channel) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "reject %s\n", switch_channel_get_name(channel));
+			terminate_session(&session,  __LINE__, SWITCH_CAUSE_CALL_REJECTED);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "End Call (Rejected)\n");
+			goto done;
+		}
+        break;
 	case LDL_SIGNAL_ERROR:
 	case LDL_SIGNAL_TERMINATE:
 		if (channel) {
-			switch_channel_state_t state = switch_channel_get_state(channel);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hungup %s %u %d\n", switch_channel_get_name(channel), state, CS_INIT);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hungup %s %u %d\n", switch_channel_get_name(channel));
 			terminate_session(&session,  __LINE__, SWITCH_CAUSE_NORMAL_CLEARING);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "End Call\n");
 			goto done;
