@@ -2469,13 +2469,35 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (session->endpoint_interface->io_routines->send_dtmf) {
-		if ((status = session->endpoint_interface->io_routines->send_dtmf(session, dtmf)) == SWITCH_STATUS_SUCCESS) {
-			for (ptr = session->event_hooks.send_dtmf; ptr; ptr = ptr->next) {
-				if ((status = ptr->send_dtmf(session, dtmf)) != SWITCH_STATUS_SUCCESS) {
-					break;
-				}
-			}
-		}
+        if (strchr(dtmf, 'w') || strchr(dtmf, 'W')) {
+            char *d;
+            for (d = dtmf; d && *d; d++) {
+                char digit[2] = "";
+                
+                if (*d == 'w') {
+                    switch_yield(500000);
+                    continue;
+                } else if (*d == 'W') {
+                    switch_yield(1000000);
+                    continue;
+                }
+
+                digit[0] = *d;
+                if ((status = session->endpoint_interface->io_routines->send_dtmf(session, digit)) != SWITCH_STATUS_SUCCESS) {
+                    return status;
+                }
+            }
+        } else {
+            status = session->endpoint_interface->io_routines->send_dtmf(session, dtmf);
+        }
+
+        if (status == SWITCH_STATUS_SUCCESS) {
+            for (ptr = session->event_hooks.send_dtmf; ptr; ptr = ptr->next) {
+                if ((status = ptr->send_dtmf(session, dtmf)) != SWITCH_STATUS_SUCCESS) {
+                    break;
+                }
+            }
+        }
 	}
 
 	return status;
