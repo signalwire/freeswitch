@@ -711,11 +711,23 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool
 	void *val;
 	switch_codec_interface_t *codec_interface;
 	int i = 0;
+    const switch_codec_implementation_t *imp;
 
 	for (hi = switch_hash_first(pool, loadable_modules.codec_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		codec_interface = (switch_codec_interface_t *) val;
+        /* Look for a 20ms implementation because it's the safest choice */
+        for (imp = codec_interface->implementations; imp; imp = imp->next) {
+            if (imp->microseconds_per_frame / 1000 == 20) {
+                array[i++] = imp;
+                goto found;
+            }
+        }
+        /* oh well we will use what we have */
 		array[i++] = codec_interface->implementations;
+
+    found:
+
 		if (i > arraylen) {
 			break;
 		}
