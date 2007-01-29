@@ -2290,8 +2290,8 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 			sdp_rtpmap_t *map;
 
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
-				int32_t i, btn = 0;
-                const switch_codec_implementation_t *mimp = NULL, *better_than_nothing[10] = {0};
+				int32_t i;
+                const switch_codec_implementation_t *mimp = NULL, *near_match = NULL;
 
 				if (!strcasecmp(map->rm_encoding, "telephone-event")) {
 					tech_pvt->te = (switch_payload_t)map->rm_pt;
@@ -2308,8 +2308,8 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 					}
 
 					if (match && (map->rm_rate == imp->samples_per_second)) {
-                        if (ptime && ptime * 1000 != imp->microseconds_per_frame && btn < 10) {
-                            better_than_nothing[btn++] = imp;
+                        if (ptime && ptime * 1000 != imp->microseconds_per_frame) {
+                            near_match = imp;
                             continue;
                         }
                         mimp = imp;
@@ -2319,9 +2319,26 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 					}
                 }
                 
-                if (!match && btn) {
+                if (!match && near_match) {
+                    const switch_codec_implementation_t *search[1];
+                    char *prefs[1];
+                    char tmp[80];
+                    int num;
+                    
+                    snprintf(tmp, sizeof(tmp), "%s@%uk@%ui",
+                             near_match->iananame,
+                             near_match->samples_per_second,
+                             ptime);
+                    
+                    num = switch_loadable_module_get_codecs_sorted(search, 1, prefs, 1);
+
+                    if (num) {
+                        mimp = search[0];
+                    } else {
+                        mimp = near_match;
+                    }
+
                     match = 1;
-                    mimp = better_than_nothing[0];
                 }
 
                 if (mimp) {
