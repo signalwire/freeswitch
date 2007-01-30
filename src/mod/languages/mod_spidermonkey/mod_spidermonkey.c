@@ -2411,6 +2411,8 @@ static void js_parse_and_execute(switch_core_session_t *session, char *input_cod
 
 	if (cx) {
 		eval_some_js(script, cx, javascript_global_object, &rval);
+		JS_EndRequest(cx);
+		JS_MaybeGC(cx);
 		JS_DestroyContext(cx);
 	}
 }
