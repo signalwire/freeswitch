@@ -1230,7 +1230,7 @@ static void conference_loop_fn_dial(conference_member_t *member, void *data)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "dial argc %u 1 '%s' 2 '%s' 3 '%s' 4 '%s'\n", 
                               argc, argv[0], argv[1], argv[2], argv[3]);
 			if (argc >= 4) {
-                switch_call_cause_t *cause;
+                switch_call_cause_t cause;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "executing conference outcall\n");
 				conference_outcall(member->conference, NULL, argv[0], atoi(argv[1]), NULL, argv[3], argv[2], &cause);
 			} else {
@@ -3466,9 +3466,9 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, 
     
     if (call) {
         switch_call_cause_t cause;
+        switch_event_t *event;
 
         conference_outcall(call->conference, call->session, call->bridgeto, call->timeout, call->flags, call->cid_name, call->cid_num, &cause);
-        switch_event_t *event;
 
         if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
             switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", call->conference->name);
@@ -3523,7 +3523,11 @@ static switch_status_t conference_outcall_bg(conference_obj_t *conference,
         switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
         switch_thread_create(&thread, thd_attr, conference_outcall_run, call, conference->pool);
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Lanuching BG Thread for outcall\n");
+
+		return SWITCH_STATUS_SUCCESS;
     }
+
+	return SWITCH_STATUS_MEMERR;
 }
 
 /* Play a file */
