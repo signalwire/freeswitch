@@ -2893,6 +2893,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				switch_channel_set_variable(caller_channel, "originate_disposition", "call accepted");
 			}
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Resulted in Success: [%s]\n", switch_channel_get_name(peer_channel));
+            *cause = SWITCH_CAUSE_SUCCESS;
 		} else {
 			if (peer_channel) {
 				*cause = switch_channel_get_cause(peer_channel);
