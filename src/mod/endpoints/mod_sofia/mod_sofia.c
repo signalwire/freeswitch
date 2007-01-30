@@ -2310,6 +2310,7 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 					if (match && (map->rm_rate == imp->samples_per_second)) {
                         if (ptime && ptime * 1000 != imp->microseconds_per_frame) {
                             near_match = imp;
+                            match = 0;
                             continue;
                         }
                         mimp = imp;
@@ -2329,7 +2330,8 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
                              near_match->iananame,
                              near_match->samples_per_second,
                              ptime);
-                    
+
+                    prefs[0] = tmp;
                     num = switch_loadable_module_get_codecs_sorted(search, 1, prefs, 1);
 
                     if (num) {
