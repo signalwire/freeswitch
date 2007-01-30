@@ -283,7 +283,15 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 										  uint32_t timeout, 
 										  char *flags, 
 										  char *cid_name, 
-										  char *cid_num);
+										  char *cid_num,
+                                          switch_call_cause_t *cause);
+static switch_status_t conference_outcall_bg(conference_obj_t *conference, 
+                                             switch_core_session_t *session, 
+                                             char *bridgeto, 
+                                             uint32_t timeout, 
+                                             char *flags, 
+                                             char *cid_name, 
+                                             char *cid_num);
 static void conference_function(switch_core_session_t *session, char *data);
 static void launch_conference_thread(conference_obj_t *conference);
 static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *obj);
@@ -1222,8 +1230,9 @@ static void conference_loop_fn_dial(conference_member_t *member, void *data)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "dial argc %u 1 '%s' 2 '%s' 3 '%s' 4 '%s'\n", 
                               argc, argv[0], argv[1], argv[2], argv[3]);
 			if (argc >= 4) {
+                switch_call_cause_t *cause;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "executing conference outcall\n");
-				conference_outcall(member->conference, NULL, argv[0], atoi(argv[1]), NULL, argv[3], argv[2]);
+				conference_outcall(member->conference, NULL, argv[0], atoi(argv[1]), NULL, argv[3], argv[2], &cause);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "conference outcall not executed\n");
 			}
@@ -2919,7 +2928,26 @@ static switch_status_t conf_api_sub_dial(conference_obj_t *conference, switch_st
     assert(stream != NULL);
 
     if (argc > 2) {
-        conference_outcall(conference, NULL, argv[2], 60, NULL, argv[4], argv[3]);
+        switch_call_cause_t cause;
+        conference_outcall(conference, NULL, argv[2], 60, NULL, argv[4], argv[3], &cause);
+        stream->write_function(stream, "Call Requested: result: [%s]\n", switch_channel_cause2str(cause));
+    } else {
+        ret_status = SWITCH_STATUS_GENERR;
+    }
+
+    return ret_status;
+}
+
+
+static switch_status_t conf_api_sub_bgdial(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char**argv)
+{
+    switch_status_t ret_status = SWITCH_STATUS_SUCCESS;
+
+    assert(conference != NULL);
+    assert(stream != NULL);
+
+    if (argc > 2) {
+        conference_outcall_bg(conference, NULL, argv[2], 60, NULL, argv[4], argv[3]);
         stream->write_function(stream, "OK\n");
     } else {
         ret_status = SWITCH_STATUS_GENERR;
@@ -3100,6 +3128,7 @@ static api_command_t conf_api_sub_commands[] = {
 	{"lock", &conf_api_sub_lock, CONF_API_SUB_ARGS_SPLIT, "<confname> lock"}, 
 	{"unlock", &conf_api_sub_unlock, CONF_API_SUB_ARGS_SPLIT, "<confname> unlock"}, 
 	{"dial", &conf_api_sub_dial, CONF_API_SUB_ARGS_SPLIT, "<confname> dial <endpoint_module_name>/<destination> <callerid number> <callerid name>"}, 
+	{"bgdial", &conf_api_sub_bgdial, CONF_API_SUB_ARGS_SPLIT, "<confname> bgdial <endpoint_module_name>/<destination> <callerid number> <callerid name>"}, 
 	{"transfer", &conf_api_sub_transfer, CONF_API_SUB_ARGS_SPLIT, "<confname> transfer <conference_name> <member id> [...<member id>]"}, 
 	{"record", &conf_api_sub_record, CONF_API_SUB_ARGS_SPLIT, "<confname> record <filename>"}, 
 	{"norecord", &conf_api_sub_norecord, CONF_API_SUB_ARGS_SPLIT, "<confname> norecord <[filename|all]>"}, 
@@ -3260,13 +3289,11 @@ static switch_status_t conf_api_main(char *buf, switch_core_session_t *session, 
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Fail\n");
                 goto done;
             }
-            switch_mutex_lock(conference->mutex);
             if (argc >= 2) {
                 conf_api_dispatch(conference, stream, argc, argv, (const char *)buf, 1);
             } else {
                 stream->write_function(stream, "Conference command, not specified.\nTry 'help'\n");
             }
-            switch_mutex_unlock(conference->mutex);
             switch_thread_rwlock_unlock(conference->rwlock);
 
         } else {
@@ -3317,6 +3344,7 @@ static const switch_state_handler_table_t audio_bridge_peer_state_handlers = {
     /*.on_hold */ NULL, 
 };
 
+
 /* generate an outbound call from the conference */
 static switch_status_t conference_outcall(conference_obj_t *conference, 
                                           switch_core_session_t *session, 
@@ -3324,14 +3352,16 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
                                           uint32_t timeout, 
                                           char *flags, 
                                           char *cid_name, 
-                                          char *cid_num)
+                                          char *cid_num,
+                                          switch_call_cause_t *cause)
 {
     switch_core_session_t *peer_session;
     switch_channel_t *peer_channel;
     switch_status_t status = SWITCH_STATUS_SUCCESS;
     switch_channel_t *caller_channel = NULL;
     char appdata[512];
-    switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
+
+    *cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
 
     if (switch_thread_rwlock_tryrdlock(conference->rwlock) != SWITCH_STATUS_SUCCESS) {
@@ -3355,7 +3385,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
     /* establish an outbound call leg */
     if (switch_ivr_originate(session, 
                              &peer_session, 
-                             &cause, 
+                             cause, 
                              bridgeto, 
                              timeout, 
                              &audio_bridge_peer_state_handlers, 
@@ -3363,9 +3393,9 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
                              cid_num, 
                              NULL) != SWITCH_STATUS_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot create outgoing channel, cause: %s\n", 
-                          switch_channel_cause2str(cause));
+                          switch_channel_cause2str(*cause));
         if (caller_channel) {
-            switch_channel_hangup(caller_channel, cause);
+            switch_channel_hangup(caller_channel, *cause);
         }
         goto done;
     } 
@@ -3418,6 +3448,82 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
  done:
     switch_thread_rwlock_unlock(conference->rwlock);
     return status;
+}
+
+struct bg_call {
+    conference_obj_t *conference;
+    switch_core_session_t *session;
+    char *bridgeto;
+    uint32_t timeout;
+    char *flags;
+    char *cid_name;
+    char *cid_num;
+};
+
+static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, void *obj)
+{
+    struct bg_call *call = (struct bg_call *) obj;
+    
+    if (call) {
+        switch_call_cause_t cause;
+
+        conference_outcall(call->conference, call->session, call->bridgeto, call->timeout, call->flags, call->cid_name, call->cid_num, &cause);
+        switch_event_t *event;
+
+        if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", call->conference->name);
+            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "bgdial-result");
+            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Result", switch_channel_cause2str(cause));
+            switch_event_fire(&event);
+        }
+        switch_safe_free(call->bridgeto);
+        switch_safe_free(call->flags);
+        switch_safe_free(call->cid_name);
+        switch_safe_free(call->cid_num);
+        switch_safe_free(call);
+    }
+
+    return NULL;
+}
+
+static switch_status_t conference_outcall_bg(conference_obj_t *conference, 
+                                             switch_core_session_t *session, 
+                                             char *bridgeto, 
+                                             uint32_t timeout, 
+                                             char *flags, 
+                                             char *cid_name, 
+                                             char *cid_num)
+{
+    struct bg_call *call = NULL;
+    
+    if ((call = malloc(sizeof(*call)))) {
+        switch_thread_t *thread;
+        switch_threadattr_t *thd_attr = NULL;
+
+        memset(call, 0, sizeof(*call));
+        call->conference = conference;
+        call->session = session;
+        call->timeout = timeout;
+
+        if (bridgeto) {
+            call->bridgeto = strdup(bridgeto);
+        }
+        if (flags) {
+            call->flags = strdup(flags);
+        }
+        if (cid_name) {
+            call->cid_name = strdup(cid_name);
+        }
+        if (cid_num) {
+            call->cid_num = strdup(cid_num);
+        }
+        
+        switch_threadattr_create(&thd_attr, conference->pool);
+        switch_threadattr_detach_set(thd_attr, 1);
+        switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+        switch_thread_create(&thread, thd_attr, conference_outcall_run, call, conference->pool);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Lanuching BG Thread for outcall\n");
+    }
 }
 
 /* Play a file */
@@ -3682,7 +3788,8 @@ static void conference_function(switch_core_session_t *session, char *data)
 
     /* if we're using "bridge:" make an outbound call and bridge it in */
     if (!switch_strlen_zero(bridgeto) && strcasecmp(bridgeto, "none")) {
-        if (conference_outcall(conference, session, bridgeto, 60, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+        switch_call_cause_t cause;
+        if (conference_outcall(conference, session, bridgeto, 60, NULL, NULL, NULL, &cause) != SWITCH_STATUS_SUCCESS) {
             goto done;
         }
     } else {	
