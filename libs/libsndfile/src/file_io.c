@@ -858,10 +858,8 @@ psf_set_stdio (SF_PRIVATE *psf, int mode)
 /* USE_WINDOWS_API */ void
 psf_set_file (SF_PRIVATE *psf, int fd)
 {	HANDLE handle ;
-	long osfhandle ;
 
-	osfhandle = _get_osfhandle (fd) ;
-	handle = (HANDLE) osfhandle ;
+	handle = (HANDLE) _get_osfhandle (fd) ;
 
 	psf->hfile = handle ;
 } /* psf_set_file */
