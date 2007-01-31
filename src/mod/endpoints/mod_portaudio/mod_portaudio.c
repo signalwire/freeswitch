@@ -53,7 +53,8 @@ typedef switch_status_t (*pa_command_t)(char **argv, int argc, switch_stream_han
 typedef enum {
     GFLAG_NONE = 0,
     GFLAG_EAR = (1 << 0),
-    GFLAG_MOUTH = (1 << 1)
+    GFLAG_MOUTH = (1 << 1),
+    GFLAG_RING = (1 << 2)
 } GFLAGS;
 
 typedef enum {
@@ -105,6 +106,7 @@ static struct {
 	switch_hash_t *call_hash;
 	switch_mutex_t *device_lock;
 	switch_mutex_t *pvt_lock;
+	switch_mutex_t *flag_mutex;
 	int sample_rate;
 	int codec_ms;
 	PABLIO_Stream *audio_stream;
@@ -215,6 +217,10 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
                 ring_file = val;
             }
 
+            if (switch_test_flag((&globals), GFLAG_RING)) {
+                ring_file = NULL;
+            }
+            switch_set_flag_locked((&globals), GFLAG_RING);
             if (ring_file) {
                 if (switch_core_file_open(&fh,
                                           ring_file,
@@ -267,6 +273,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
             switch_yield(globals.read_codec.implementation->microseconds_per_frame);
 
         }
+        switch_clear_flag_locked((&globals), GFLAG_RING);
     }
 
     if (ring_file) {
@@ -896,6 +903,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	switch_core_hash_init(&globals.call_hash, module_pool);
 	switch_mutex_init(&globals.device_lock, SWITCH_MUTEX_NESTED, module_pool);
 	switch_mutex_init(&globals.pvt_lock, SWITCH_MUTEX_NESTED, module_pool);
+	switch_mutex_init(&globals.flag_mutex, SWITCH_MUTEX_NESTED, module_pool);
 
 
 
