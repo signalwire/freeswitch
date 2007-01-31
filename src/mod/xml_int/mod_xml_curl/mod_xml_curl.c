@@ -184,7 +184,7 @@ static switch_status_t do_config(void)
                     url = val;
                 }
 			} else if (!strcasecmp(var, "gateway-credentials")) {
-                bind_cred = var;
+                bind_cred = val;
             }
 		}
         
