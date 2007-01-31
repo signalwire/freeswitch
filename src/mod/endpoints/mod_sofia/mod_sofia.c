@@ -1032,7 +1032,7 @@ static void do_invite(switch_core_session_t *session)
 
 		holdstr = switch_test_flag(tech_pvt, TFLAG_SIP_HOLD) ? "*" : "";
 		nua_invite(tech_pvt->nh,
-				   TAG_IF(rpid, SIPTAG_HEADER_STR(rpid)),
+				   TAG_IF(!switch_strlen_zero(rpid), SIPTAG_HEADER_STR(rpid)),
 				   TAG_IF(alert_info, SIPTAG_HEADER_STR(alert_info)),
 				   //SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 				   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
