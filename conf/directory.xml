@@ -1,12 +1,15 @@
 <!--the domain or ip (the right hand side of the @ in the addr-->
-<domain name="jabber.org">
+<domain name="$${domain}">
   <!--the user id (the left hand side of the @ in the addr-->
   <user id="stpeter">
     <params>
       <!-- omit password for authless registration -->
       <param name="password" value="mypass"/>
+      <!-- optionally use this instead if you want to store the hash of user:domain:pass-->
+      <!--<param name="a1-hash" value="c6440e5de50b403206989679159de89a"/>-->
     </params>
-    
+
+    <!-- This is only for mod_dingaling so it can deliver vcards in component mode-->
     <vcard xmlns='vcard-temp'>
       <FN>Peter Saint-Andre</FN>
       <N>
