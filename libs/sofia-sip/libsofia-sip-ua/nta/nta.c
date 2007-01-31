@@ -369,8 +369,8 @@ nta_agent_t *nta_agent_create(su_root_t *root,
     agent->sa_flags = MSG_DO_CANONIC;
 
     agent->sa_maxsize         = 2 * 1024 * 1024; /* 2 MB */
-    agent->sa_bad_req_mask    = ~(sip_mask_response | sip_mask_proxy);
-    agent->sa_bad_resp_mask   = ~(sip_mask_request | sip_mask_proxy);
+    agent->sa_bad_req_mask    = (unsigned)(~(sip_mask_response | sip_mask_proxy));
+    agent->sa_bad_resp_mask   = (unsigned)(~(sip_mask_request | sip_mask_proxy));
     agent->sa_t1 	      = NTA_SIP_T1;
     agent->sa_t2 	      = NTA_SIP_T2;
     agent->sa_t4              = NTA_SIP_T4;
@@ -4153,7 +4153,7 @@ static inline void incoming_queue(incoming_queue_t *queue, nta_incoming_t *);
 static inline void incoming_remove(nta_incoming_t *irq);
 static inline void incoming_set_timer(nta_incoming_t *, unsigned interval);
 static inline void incoming_reset_timer(nta_incoming_t *);
-static inline int incoming_mass_destroy(nta_agent_t *sa, incoming_queue_t *q);
+static inline size_t incoming_mass_destroy(nta_agent_t *sa, incoming_queue_t *q);
 
 static int incoming_set_params(nta_incoming_t *irq, tagi_t const *tags);
 static inline
@@ -5955,7 +5955,7 @@ int incoming_timer(nta_agent_t *sa, su_duration_t now)
 
 /** Mass destroy server transactions */
 static inline
-int incoming_mass_destroy(nta_agent_t *sa, incoming_queue_t *q)
+size_t incoming_mass_destroy(nta_agent_t *sa, incoming_queue_t *q)
 {
   size_t destroyed = q->q_length;
 
@@ -10154,7 +10154,7 @@ int nta_tport_keepalive(nta_outgoing_t *orq)
 /** Close all transports. @since Experimental in @VERSION_1_12_2. */
 int nta_agent_close_tports(nta_agent_t *agent)
 {
-  int i;
+  size_t i;
   outgoing_htable_t *oht = agent->sa_outgoing;
   incoming_htable_t *iht = agent->sa_incoming;
 

@@ -292,7 +292,7 @@ int tport_is_connected(tport_t const *self)
 }
 
 /** MTU for transport  */
-static inline unsigned tport_mtu(tport_t const *self)
+static inline usize_t tport_mtu(tport_t const *self)
 {
   return self->tp_params->tpp_mtu;
 }
