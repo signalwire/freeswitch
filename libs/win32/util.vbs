@@ -231,7 +231,7 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 	MyFile.WriteLine("@" & "cd " & quote & tmpFolder & quote )
 	MyFile.WriteLine("@" & VersionCmd)
 	MyFile.Close
-	Set oExec = WshShell.Exec(tmpFolder & "tmpVersion.Bat")
+	Set oExec = WshShell.Exec("cmd /C " & quote & tmpFolder & "tmpVersion.Bat" & quote)
 	Do
 		strFromProc = OExec.StdOut.ReadLine()
 		VERSION=strFromProc

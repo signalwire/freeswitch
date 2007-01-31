@@ -106,7 +106,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy $(SolutionDir)conf\*.* $(SolutionDir)$(OutDir)\conf\ /C /D /Y&#x0D;&#x0A;if not exist $(SolutionDir)$(OutDir)\db md  $(SolutionDir)$(OutDir)\db&#x0D;&#x0A;if not exist $(SolutionDir)$(OutDir)\log md  $(SolutionDir)$(OutDir)\log&#x0D;&#x0A;if not exist $(SolutionDir)$(OutDir)\log md  $(SolutionDir)$(OutDir)\htdocs&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="xcopy &quot;$(SolutionDir)conf\*.*&quot; &quot;$(SolutionDir)$(OutDir)\conf\&quot; /C /D /Y&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(OutDir)\db&quot; md  &quot;$(SolutionDir)$(OutDir)\db&quot;&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(OutDir)\log&quot; md  &quot;$(SolutionDir)$(OutDir)\log&quot;&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(OutDir)\htdocs&quot; md  &quot;$(SolutionDir)$(OutDir)\htdocs&quot;&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -195,7 +195,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy $(SolutionDir)conf\*.* $(SolutionDir)$(OutDir)\conf\ /C /D /Y&#x0D;&#x0A;if not exist $(SolutionDir)$(OutDir)\db md  $(SolutionDir)$(OutDir)\db&#x0D;&#x0A;if not exist $(SolutionDir)$(OutDir)\log md  $(SolutionDir)$(OutDir)\log&#x0D;&#x0A;if not exist $(SolutionDir)$(OutDir)\log md  $(SolutionDir)$(OutDir)\htdocs&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="xcopy &quot;$(SolutionDir)conf\*.*&quot; &quot;$(SolutionDir)$(OutDir)\conf\&quot; /C /D /Y&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(OutDir)\db&quot; md  &quot;$(SolutionDir)$(OutDir)\db&quot;&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(OutDir)\log&quot; md  &quot;$(SolutionDir)$(OutDir)\log&quot;&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(OutDir)\htdocs&quot; md  &quot;$(SolutionDir)$(OutDir)\htdocs&quot;&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

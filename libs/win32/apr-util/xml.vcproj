@@ -346,7 +346,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating expat.h from expat.h.in"
-						CommandLine="if not exist $(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h type $(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h.in &gt; $(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h&#x0D;&#x0A;"
+						CommandLine="if not exist &quot;$(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h&quot; type &quot;$(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h.in&quot; &gt; &quot;$(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h&quot;&#x0D;&#x0A;"
 						Outputs="$(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h"
 					/>
 				</FileConfiguration>
@@ -356,7 +356,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating expat.h from expat.h.in"
-						CommandLine="if not exist $(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h type $(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h.in &gt; $(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h&#x0D;&#x0A;"
+						CommandLine="if not exist &quot;$(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h&quot; type &quot;$(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h.in&quot; &gt; &quot;$(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h&quot;&#x0D;&#x0A;"
 						Outputs="$(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h"
 					/>
 				</FileConfiguration>
@@ -370,7 +370,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating config.h from winconfig.h"
-						CommandLine="if not exist $(ProjectDir)..\..\apr-util\xml\expat\lib\config.h type $(ProjectDir)..\..\apr-util\xml\expat\lib\winconfig.h &gt; $(ProjectDir)..\..\apr-util\xml\expat\lib\config.h&#x0D;&#x0A;"
+						CommandLine="if not exist &quot;$(ProjectDir)..\..\apr-util\xml\expat\lib\config.h&quot; type &quot;$(ProjectDir)..\..\apr-util\xml\expat\lib\winconfig.h&quot; &gt; &quot;$(ProjectDir)..\..\apr-util\xml\expat\lib\config.h&quot;&#x0D;&#x0A;"
 						Outputs="$(ProjectDir)..\..\apr-util\xml\expat\lib\config.h"
 					/>
 				</FileConfiguration>
@@ -380,7 +380,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating config.h from winconfig.h"
-						CommandLine="if not exist $(ProjectDir)..\..\apr-util\xml\expat\lib\config.h type $(ProjectDir)..\..\apr-util\xml\expat\lib\winconfig.h &gt; $(ProjectDir)..\..\apr-util\xml\expat\lib\config.h&#x0D;&#x0A;"
+						CommandLine="if not exist &quot;$(ProjectDir)..\..\apr-util\xml\expat\lib\config.h&quot; type &quot;$(ProjectDir)..\..\apr-util\xml\expat\lib\winconfig.h&quot; &gt; &quot;$(ProjectDir)..\..\apr-util\xml\expat\lib\config.h&quot;&#x0D;&#x0A;"
 						Outputs="$(ProjectDir)..\..\apr-util\xml\expat\lib\config.h"
 					/>
 				</FileConfiguration>
