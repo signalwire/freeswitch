@@ -231,6 +231,39 @@ static void tts_function(switch_core_session_t *session, char *data)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Done\n");
 }
 
+static void bug_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+{
+    switch_frame_t *frame;
+
+    switch(type) {
+	case SWITCH_ABC_TYPE_WRITE_REPLACE:
+        frame = switch_core_media_bug_get_replace_frame(bug);
+        switch_core_media_bug_set_replace_frame(bug, frame);
+        printf("W00t\n");
+        break;
+    default:
+        break;
+    }
+
+}
+
+static void bugtest_function(switch_core_session_t *session, char *data)
+{
+	switch_media_bug_t *bug;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+    switch_status_t status;
+
+	if ((status = switch_core_media_bug_add(session,
+											bug_callback,
+											NULL,
+											SMBF_WRITE_REPLACE,
+											&bug)) != SWITCH_STATUS_SUCCESS) {
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+        return;
+	}
+    switch_ivr_play_file(session, NULL, data, NULL);
+}
+
 #if 1
 static void asrtest_function(switch_core_session_t *session, char *data)
 {
@@ -423,11 +456,18 @@ static const switch_state_handler_table_t state_handlers = {
 
 
 
+static const switch_application_interface_t bug_application_interface = {
+	/*.interface_name */ "bugtest",
+	/*.application_function */ bugtest_function,
+	NULL, NULL, NULL,
+	/*.next*/ NULL
+};
+
 static const switch_application_interface_t ivr_application_interface = {
 	/*.interface_name */ "ivrmenu",
 	/*.application_function */ ivr_application_function,
 	NULL, NULL, NULL,
-	/*.next*/ NULL
+	/*.next*/ &bug_application_interface
 };
 
 static const switch_application_interface_t xml_application_interface = {

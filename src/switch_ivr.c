@@ -563,6 +563,7 @@ static void record_callback(switch_media_bug_t *bug, void *user_data, switch_abc
 		}
 		break;
 	case SWITCH_ABC_TYPE_WRITE:
+    default:
 		break;
 	}
 }
@@ -787,6 +788,7 @@ static void speech_callback(switch_media_bug_t *bug, void *user_data, switch_abc
 		}
 		break;
 	case SWITCH_ABC_TYPE_WRITE:
+    default:
 		break;
 	}
 }

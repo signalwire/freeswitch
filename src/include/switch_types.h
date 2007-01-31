@@ -140,6 +140,7 @@ typedef enum {
 	SWITCH_ABC_TYPE_INIT,
 	SWITCH_ABC_TYPE_READ,
 	SWITCH_ABC_TYPE_WRITE,
+	SWITCH_ABC_TYPE_WRITE_REPLACE,
 	SWITCH_ABC_TYPE_CLOSE,
 } switch_abc_type_t;
 
@@ -654,12 +655,14 @@ typedef enum {
 <pre>
 SMBF_READ_STREAM - Include the Read Stream
 SMBF_WRITE_STREAM - Include the Write Stream
+SMBF_WRITE_STREAM - Replace the Write Stream
 </pre>
 */
 typedef enum {
 	SMBF_BOTH = 0,
 	SMBF_READ_STREAM = (1 << 0),
-	SMBF_WRITE_STREAM = (1 << 1)
+	SMBF_WRITE_STREAM = (1 << 1),
+	SMBF_WRITE_REPLACE = (1 << 2)
 } switch_media_bug_flag_t;
 
 /*!

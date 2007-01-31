@@ -137,6 +137,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 SWITCH_DECLARE(void *) switch_core_media_bug_get_user_data(switch_media_bug_t *bug);
 
 /*!
+  \brief Obtain a replace frame from a media bug
+  \param bug the bug to get the data from
+*/
+SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_replace_frame(switch_media_bug_t *bug);
+
+/*!
+  \brief Set a return replace frame
+  \param bug the bug to set the frame on
+  \param frame the frame to set
+*/
+SWITCH_DECLARE(void) switch_core_media_bug_set_replace_frame(switch_media_bug_t *bug, switch_frame_t *frame);
+
+/*!
   \brief Remove a media bug from the session
   \param session the session to remove the bug from
   \param bug bug to remove

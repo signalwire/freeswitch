@@ -59,6 +59,8 @@
 struct switch_media_bug {
 	switch_buffer_t *raw_write_buffer;
 	switch_buffer_t *raw_read_buffer;
+    switch_frame_t *replace_frame_in;
+    switch_frame_t *replace_frame_out;
 	switch_media_bug_callback_t callback;
 	switch_mutex_t *read_mutex;
 	switch_mutex_t *write_mutex;
@@ -176,6 +178,17 @@ static void switch_core_media_bug_destroy(switch_media_bug_t *bug)
 	switch_buffer_destroy(&bug->raw_write_buffer);
 }
 
+
+SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_replace_frame(switch_media_bug_t *bug)
+{
+    return bug->replace_frame_in;
+}
+
+SWITCH_DECLARE(void) switch_core_media_bug_set_replace_frame(switch_media_bug_t *bug, switch_frame_t *frame)
+{
+    bug->replace_frame_out = frame;
+}
+
 SWITCH_DECLARE(void *) switch_core_media_bug_get_user_data(switch_media_bug_t *bug)
 {
 	return bug->user_data;
@@ -277,8 +290,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 														  switch_media_bug_t **new_bug)
 
 {
-	switch_media_bug_t *bug;
+	switch_media_bug_t *bug, *bp;
 	switch_size_t bytes;
+
+    if (flags & SMBF_WRITE_REPLACE) {
+        switch_thread_rwlock_wrlock(session->bug_rwlock);
+        for (bp = session->bugs; bp; bp = bp->next) {
+            if (switch_test_flag(bp, SMBF_WRITE_REPLACE)) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Only one bug of this type allowed!\n");
+                switch_thread_rwlock_unlock(session->bug_rwlock);
+                return SWITCH_STATUS_GENERR;
+            }
+        }
+        switch_thread_rwlock_unlock(session->bug_rwlock);
+    }
 
 	if (!(bug = switch_core_session_alloc(session, sizeof(*bug)))) {
 		return SWITCH_STATUS_MEMERR;
@@ -2087,6 +2112,7 @@ static switch_status_t perform_write(switch_core_session_t *session, switch_fram
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (session->endpoint_interface->io_routines->write_frame) {
+
 		if ((status =
 			 session->endpoint_interface->io_routines->write_frame(session, frame, timeout, flags,
 																   stream_id)) == SWITCH_STATUS_SUCCESS) {
@@ -2230,15 +2256,25 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					if (bp->callback) {
 						bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_WRITE);
 					}
+				} else if (switch_test_flag(bp, SMBF_WRITE_REPLACE)) {
+                    do_bugs = 0;
+					if (bp->callback) {
+                        bp->replace_frame_in = frame;
+                        bp->replace_frame_out = NULL;
+						bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_WRITE_REPLACE);
+                        write_frame = bp->replace_frame_out;
+					}
 				}
 			}
 			switch_thread_rwlock_unlock(session->bug_rwlock);
 		}
+
 		if (do_bugs) {
-			do_write = 1;
-			write_frame = frame;
-			goto done;
+            do_write = 1;
+            write_frame = frame;
+            goto done;
 		}
+
 		if (session->write_codec) {
 			if (write_frame->datalen == session->write_codec->implementation->bytes_per_frame) {
 				perfect = TRUE;
