@@ -757,7 +757,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 												 tech_pvt->remote_ip,
 												 tech_pvt->remote_port,
 												 tech_pvt->codec_num,
-												 0,
+                                                 tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
 												 tech_pvt->read_codec.implementation->microseconds_per_frame,
 												 flags,
 												 NULL,
@@ -1527,6 +1527,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 
 		switch_copy_string(workspace, outbound_profile->destination_number, sizeof(workspace));
 		profile_name = workspace;
+
 		if ((callto = strchr(profile_name, '/'))) {
 			*callto++ = '\0';
 		} else {
@@ -1539,6 +1540,9 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 			*dnis++ = '\0';
 		}
 
+        for (p = callto; p && *p; p++) {
+            *p = (char) tolower(*p);
+        }
 
 		if ((p = strchr(profile_name, '@'))) {
 			*p++ = '\0';
@@ -1623,9 +1627,9 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		ldl_session_create(&dlsession, mdl_profile->handle, sess_id, full_id, user, LDL_FLAG_OUTBOUND);
 		tech_pvt->profile = mdl_profile;
 		ldl_session_set_private(dlsession, *new_session);
-		//ldl_session_set_value(dlsession, "dnis", dnis);
-		//ldl_session_set_value(dlsession, "caller_id_name", outbound_profile->caller_id_name);
-		//ldl_session_set_value(dlsession, "caller_id_number", outbound_profile->caller_id_number);
+		ldl_session_set_value(dlsession, "dnis", dnis);
+		ldl_session_set_value(dlsession, "caller_id_name", outbound_profile->caller_id_name);
+		ldl_session_set_value(dlsession, "caller_id_number", outbound_profile->caller_id_number);
 		tech_pvt->dlsession = dlsession;
 		if (!get_codecs(tech_pvt)) {
 			terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);

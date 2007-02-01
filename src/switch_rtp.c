@@ -758,9 +758,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			bytes = sbytes;
 		} 
 
-		if (bytes > 0) {
+		if (bytes > 0 && rtp_session->recv_msg.header.version == 2) {
 			uint32_t effective_size = (uint32_t)(bytes - rtp_header_len);
-            if (rtp_session->recv_msg.header.pt == rtp_session->payload && effective_size != rtp_session->packet_size) {
+            if (effective_size && rtp_session->packet_size && rtp_session->recv_msg.header.pt == rtp_session->payload && 
+                effective_size != rtp_session->packet_size) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Configured packet size %u != inbound packet size %u: auto-correcting..\n",
                                   rtp_session->packet_size,
                                   effective_size
