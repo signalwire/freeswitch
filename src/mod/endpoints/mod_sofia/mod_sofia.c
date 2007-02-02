@@ -4143,7 +4143,12 @@ static void sip_i_invite(nua_t *nua,
     char *from_port;
     char uri[1024];
 
-		
+    
+    if (!(sip && sip->sip_contact && sip->sip_contact->m_url)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO CONTACT!\n");
+        return;
+    }
+
     if ((profile->pflags & PFLAG_AUTH_CALLS)) {
         if (handle_register(nua, profile, nh, sip, REG_INVITE, key, sizeof(key))) {
             return;
