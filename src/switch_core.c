@@ -67,6 +67,7 @@ struct switch_media_bug {
 	switch_core_session_t *session;
 	void *user_data;
 	uint32_t flags;
+    uint8_t ready;
 	struct switch_media_bug *next;
 };
 
@@ -313,6 +314,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	bug->user_data = user_data;
 	bug->session = session;
 	bug->flags = flags;
+    bug->ready = 1;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attaching BUG to %s\n", switch_channel_get_name(session->channel));
 	bytes = session->read_codec->implementation->bytes_per_frame;
 
@@ -374,6 +376,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 	if (session->bugs) {
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
+            if (!bp->ready) {
+                continue;
+            }
 			if (bp == *bug) {
 				if (last) {
 					last->next = bp->next;
@@ -389,6 +394,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 		if (bp) {
 			if (bp->callback) {
 				bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_CLOSE);
+                bp->ready = 0;
 			}
 			switch_core_media_bug_destroy(bp);
 			*bug = NULL;
@@ -2012,7 +2018,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_media_bug_t *bp;
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			for (bp = session->bugs; bp; bp = bp->next) {
-				if (switch_test_flag(bp, SMBF_READ_STREAM)) {
+				if (bp->ready && switch_test_flag(bp, SMBF_READ_STREAM)) {
 					switch_mutex_lock(bp->read_mutex);
 					switch_buffer_write(bp->raw_read_buffer, read_frame->data, read_frame->datalen);
 					if (bp->callback) {
@@ -2249,6 +2255,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			switch_media_bug_t *bp;
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			for (bp = session->bugs; bp; bp = bp->next) {
+                if (!bp->ready) {
+                    continue;
+                }
 				if (switch_test_flag(bp, SMBF_WRITE_STREAM)) {
 					switch_mutex_lock(bp->write_mutex);
 					switch_buffer_write(bp->raw_write_buffer, write_frame->data, write_frame->datalen);

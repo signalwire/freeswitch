@@ -551,7 +551,10 @@ static void record_callback(switch_media_bug_t *bug, void *user_data, switch_abc
 	case SWITCH_ABC_TYPE_INIT:
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
-		switch_core_file_close(fh);
+        if (fh) {
+            switch_core_file_close(fh);
+        }
+        break;
 	case SWITCH_ABC_TYPE_READ:
 		if (fh) {
 			switch_size_t len;
@@ -767,11 +770,13 @@ static void speech_callback(switch_media_bug_t *bug, void *user_data, switch_abc
 		
 	}
 		break;
-	case SWITCH_ABC_TYPE_CLOSE:
+	case SWITCH_ABC_TYPE_CLOSE: {
 		switch_core_asr_close(sth->ah, &flags);
 		switch_mutex_lock(sth->mutex);
 		switch_thread_cond_signal(sth->cond);
 		switch_mutex_unlock(sth->mutex);
+    }
+        break;
 	case SWITCH_ABC_TYPE_READ:
 		if (sth->ah) {
 			if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
