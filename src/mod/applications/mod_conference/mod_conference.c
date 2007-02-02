@@ -634,8 +634,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 {
 	conference_obj_t *conference = (conference_obj_t *) obj;
 	conference_member_t *imember, *omember;
-	uint32_t divider = 1000 / conference->interval;
-	uint32_t samples = (conference->rate / divider);
+	uint32_t samples = switch_bytes_per_frame(conference->rate, conference->interval);
 	uint32_t bytes = samples * 2;
 	uint8_t ready = 0;
 	switch_timer_t timer = {0};
@@ -1419,8 +1418,7 @@ static void conference_loop_output(conference_member_t *member)
 	switch_frame_t write_frame = {0};
 	uint8_t data[SWITCH_RECCOMMENDED_BUFFER_SIZE];
 	switch_timer_t timer = {0};
-	uint32_t divider = 1000 / member->conference->interval;
-	uint32_t samples = (member->conference->rate / divider);
+	uint32_t samples = switch_bytes_per_frame(member->conference->rate, member->conference->interval);
 	uint32_t bytes = samples * 2;
 
 	channel = switch_core_session_get_channel(member->session);
@@ -1666,8 +1664,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	switch_file_handle_t fh = {0};
 	conference_member_t smember = {0}, *member;
 	conference_record_t *rec = (conference_record_t *) obj;
-	uint32_t divider = 1000 / rec->conference->interval;
-	uint32_t samples = (rec->conference->rate / divider);
+	uint32_t samples = switch_bytes_per_frame(rec->conference->rate, rec->conference->interval);
 	uint32_t bytes = samples * 2;
 	uint32_t mux_used;
 	char *vval;

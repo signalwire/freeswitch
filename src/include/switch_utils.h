@@ -50,6 +50,7 @@ SWITCH_BEGIN_EXTERN_C
 #define vsnprintf apr_vsnprintf
 #endif
 
+#define switch_bytes_per_frame(rate, interval) (uint32_t)((float)rate / (1000.0f / (float)interval));
 
 #define SWITCH_SMAX 32767
 #define SWITCH_SMIN -32768
