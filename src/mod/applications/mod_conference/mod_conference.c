@@ -25,6 +25,7 @@
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
  * Neal Horman <neal at wanlink dot com>
+ * Bret McDanel <trixter at 0xdecafbad dot com>
  *
  *
  * mod_conference.c -- Software Conference Bridge
@@ -177,6 +178,9 @@ typedef struct conference_obj {
 	char *caller_id_name;
 	char *caller_id_number;
     char *sound_prefix;
+    uint32_t max_members;
+    char *maxmember_sound;
+    uint32_t anounce_count;
 	switch_ivr_digit_stream_parser_t *dtmf_parser;
 	char *pin;
 	char *pin_sound;
@@ -470,6 +474,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
     switch_event_t *event;
+    char msg[512]; // for conference count anouncement
 
     assert(conference != NULL);
     assert(member != NULL);
@@ -498,19 +503,27 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
             switch_event_fire(&event);
         }
 
-
-        if (conference->enter_sound) {
+        if (conference->count > 1 && conference->enter_sound) {
             conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session));
         }
 
-        if (conference->count == 1 && conference->alone_sound) {
-            conference_play_file(conference, conference->alone_sound, 0, switch_core_session_get_channel(member->session));
+        // anounce the total number of members in the conference
+        if (conference->count >= conference->anounce_count && conference->anounce_count > 1) {
+            snprintf(msg, sizeof(msg), "There are %d callers", conference->count);
+            conference_member_say(member, msg, 0);
+        } else if (conference->count == 1) {
+            if (conference->alone_sound) {
+                conference_play_file(conference, conference->alone_sound, 0, switch_core_session_get_channel(member->session));
+            } else {
+                snprintf(msg, sizeof(msg), "You are currently the only person in this conference.", conference->count);
+                conference_member_say(member, msg, 0);
+            }
         }
 
         if (conference->min && conference->count >= conference->min) {
             switch_set_flag(conference, CFLAG_ENFORCE_MIN);	
         }
-
+        
         if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
             switch_channel_t *channel = switch_core_session_get_channel(member->session);
             switch_channel_event_set_data(channel, event);
@@ -3779,6 +3792,21 @@ static void conference_function(switch_core_session_t *session, char *data)
             }
             goto done;
         }
+
+        /* dont allow more callers than the max_members allows for -- I explicitly didnt allow outbound calls
+         * someone else can add that (see above) if they feel that outbound calls should be able to violate the
+         * max_members limit -- TRX
+         */
+        if((conference->max_members > 0) && (conference->count >= conference->max_members)) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Conference %s is full.\n",conf_name);
+            if(conference->maxmember_sound) {
+                /* Answer the channel */
+                switch_channel_answer(channel);
+                conference_local_play_file(conference, session, conference->maxmember_sound, 20, NULL, 0);
+            }
+            goto done;
+        }
+
     }
 
     /* Release the config registry handle */
@@ -4363,6 +4391,9 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
     char *caller_id_name = NULL;
     char *caller_id_number = NULL;
     char *caller_controls = NULL;
+    uint32_t max_members = 0;
+    uint32_t anounce_count = 0;
+    char *maxmember_sound = NULL;
     uint32_t rate = 8000, interval = 20;
     switch_status_t status;
 
@@ -4439,6 +4470,24 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
             caller_controls = val;
         } else if (!strcasecmp(var, "sound-prefix")) {
             sound_prefix = val;
+        } else if (!strcasecmp(var, "max-members")) {
+            errno = 0; // sanity first
+            max_members = strtol(val,NULL,0); // base 0 lets 0x... for hex 0... for octal and base 10 otherwise through
+            if(errno == ERANGE || errno == EINVAL || max_members < 0 || max_members == 1) {
+                // a negative wont work well, and its foolish to have a conference limited to 1 person unless the outbound 
+                // stuff is added, see comments above
+                max_members = 0; // set to 0 to disable max counts
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "max-members %s is invalid, not setting a limit\n",val);
+            }
+        } else if(!strcasecmp(var, "max-members-sound")) {
+            maxmember_sound = val;
+        } else if(!strcasecmp(var, "anounce-count")) {
+            errno = 0; // safety first
+            anounce_count = strtol(val,NULL,0);
+            if(errno == ERANGE || errno == EINVAL) {
+                anounce_count = 0;
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "anounce-count is invalid, not anouncing member counts\n");
+            }
         }
     }
 
@@ -4564,6 +4613,14 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
     if (!switch_strlen_zero(energy_level)) {
         conference->energy_level = atoi(energy_level);
     }
+
+    if (!switch_strlen_zero(maxmember_sound)) {
+        conference->maxmember_sound = switch_core_strdup(conference->pool, maxmember_sound);
+    }
+
+    // its going to be 0 by default, set to a value otherwise so this should be safe
+    conference->max_members = max_members;
+    conference->anounce_count = anounce_count;
 
     conference->name = switch_core_strdup(conference->pool, name);
     if (domain) {
