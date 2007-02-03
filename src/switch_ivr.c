@@ -27,6 +27,7 @@
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Neal Horman <neal at wanlink dot com>
  * Matt Klein <mklein@nmedia.net>
+ * Michael Jerris <mike@jerris.com>
  *
  * switch_ivr.c -- IVR Library
  *
@@ -675,6 +676,96 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+typedef struct {
+	switch_core_session_t *session;
+	teletone_dtmf_detect_state_t dtmf_detect;
+} switch_inband_dtmf_t;
+
+static void inband_dtmf_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+{
+	switch_inband_dtmf_t *pvt = (switch_inband_dtmf_t *) user_data;
+	uint8_t data[SWITCH_RECCOMMENDED_BUFFER_SIZE];
+	switch_frame_t frame = {0};
+	char digit_str[80];
+	switch_channel_t *channel = switch_core_session_get_channel(pvt->session);
+
+	assert(channel != NULL);
+	frame.data = data;
+	frame.buflen = SWITCH_RECCOMMENDED_BUFFER_SIZE;
+
+	switch(type) {
+		case SWITCH_ABC_TYPE_INIT:
+			break;
+		case SWITCH_ABC_TYPE_CLOSE:
+			break;
+		case SWITCH_ABC_TYPE_READ:
+			if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
+				teletone_dtmf_detect(&pvt->dtmf_detect, frame.data, frame.samples);
+				teletone_dtmf_get(&pvt->dtmf_detect, digit_str, sizeof(digit_str));
+				if(digit_str[0]) {
+					switch_channel_queue_dtmf(channel, digit_str);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF DETECTED: [%s]\n", digit_str);
+				}
+			}
+			break;
+		case SWITCH_ABC_TYPE_WRITE:
+		default:
+			break;
+	}
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_stop_inband_dtmf_session(switch_core_session_t *session) 
+{
+	switch_media_bug_t *bug;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	assert(channel != NULL);
+	if ((bug = switch_channel_get_private(channel, "dtmf"))) {
+		switch_channel_set_private(channel, "dtmf", NULL);
+		switch_core_media_bug_remove(session, &bug);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_session(switch_core_session_t *session)
+{
+	switch_channel_t *channel;
+	switch_codec_t *read_codec;
+	switch_media_bug_t *bug;
+	switch_status_t status;
+	switch_inband_dtmf_t *pvt;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	read_codec = switch_core_session_get_read_codec(session);
+	assert(read_codec != NULL);
+
+	if (!(pvt = switch_core_session_alloc(session, sizeof(*pvt)))) {
+		return SWITCH_STATUS_MEMERR;
+	}
+
+	teletone_dtmf_detect_init(&pvt->dtmf_detect, read_codec->implementation->samples_per_second);
+
+	pvt->session = session;
+
+	switch_channel_answer(channel);	
+
+	if ((status = switch_core_media_bug_add(session,
+		inband_dtmf_callback,
+		pvt,
+		SMBF_READ_STREAM,
+		&bug)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+	}
+
+	switch_channel_set_private(channel, "dtmf", bug);
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 struct speech_thread_handle {
 	switch_core_session_t *session;
