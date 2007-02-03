@@ -519,19 +519,24 @@ SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, s
 SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, char *fmt, ...)
 {
 	int ret = 0;
-	char data[2048];
+	char *data;
 
 	va_list ap;
 	if (fmt) {
 		va_start(ap, fmt);
-		ret = vsnprintf(data, sizeof(data), fmt, ap);
+#ifdef HAVE_VASPRINTF
+		ret = vasprintf(&data, fmt, ap);
+#else
+		data = (char *) malloc(2048);
+		ret = vsnprintf(data, 2048, fmt, ap);
+#endif
 		va_end(ap);
 	}
 
 	if (ret == -1) {
 		return SWITCH_STATUS_GENERR;
 	} else {
-		event->body = DUP(data);
+		event->body = data;
 		return SWITCH_STATUS_SUCCESS;
 	}
 }
