@@ -150,7 +150,6 @@ struct switch_rtp {
 	uint32_t ms_per_packet;
 	uint32_t remote_port;
 	uint8_t stuncount;
-	switch_buffer_t *packet_buffer;
 	struct switch_rtp_vad_data vad_data;
 	struct switch_rtp_rfc2833_data dtmf_data;
 	switch_payload_t te;
@@ -551,9 +550,6 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 
 	switch_mutex_lock((*rtp_session)->flag_mutex);
 	
-	if ((*rtp_session)->packet_buffer) {
-		switch_buffer_destroy(&(*rtp_session)->packet_buffer);
-	}
 	if ((*rtp_session)->dtmf_data.dtmf_buffer) {
 		switch_buffer_destroy(&(*rtp_session)->dtmf_data.dtmf_buffer);
 	}
@@ -1073,7 +1069,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_sessi
 static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t datalen, uint8_t m, switch_payload_t payload, switch_frame_flag_t *flags)
 {
 	switch_size_t bytes;
-	uint8_t packetize = (rtp_session->packet_size > datalen && (payload == rtp_session->payload)) ? 1 : 0;
 	uint8_t fwd = (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE) && (*flags & SFF_RAW_RTP)) ? 1 : 0;
 	rtp_msg_t *send_msg;
 	uint8_t send = 1;
@@ -1085,24 +1080,8 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 		send_msg = &rtp_session->send_msg;
 		send_msg->header.pt = payload;
 		send_msg->header.m = m ? 1 : 0;
-		if (packetize) {
-			if (!rtp_session->packet_buffer) {
-				if (switch_buffer_create_dynamic(&rtp_session->packet_buffer, rtp_session->packet_size, rtp_session->packet_size * 2, 0) 
-					!= SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Buffer memory error\n");
-					return -1;
-				}
-			}
-			switch_buffer_write(rtp_session->packet_buffer, data, datalen);
-			if (switch_buffer_inuse(rtp_session->packet_buffer) >= rtp_session->packet_size) {
-				switch_buffer_read(rtp_session->packet_buffer, send_msg->body, rtp_session->packet_size);
-				datalen = rtp_session->packet_size;
-			} else {
-				return datalen;
-			}
-		} else {
-			memcpy(send_msg->body, data, datalen);
-		}
+        memcpy(send_msg->body, data, datalen);
+
 		bytes = datalen + rtp_header_len;	
 	}
 
