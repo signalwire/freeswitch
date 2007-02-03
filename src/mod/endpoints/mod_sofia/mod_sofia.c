@@ -684,6 +684,7 @@ static void set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, c
 {
 	char buf[1024];
 	switch_time_t now = switch_time_now();
+    uint32_t ptime = 0;
 
 	if (!force && !ip && !sr && switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 		return;
@@ -727,7 +728,11 @@ static void set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, c
 		int i;
 		for (i = 0; i < tech_pvt->num_codecs; i++) {
 			const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
+
 			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", imp->ianacode);
+            if (!ptime) {
+                ptime = imp->microseconds_per_frame / 1000;
+            }
 		}
 	}
 
@@ -742,25 +747,31 @@ static void set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, c
 		if (tech_pvt->fmtp_out) {
 			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->pt, tech_pvt->fmtp_out);
 		}
-		if (tech_pvt->read_codec.implementation) {
-			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=ptime:%d\n", tech_pvt->read_codec.implementation->microseconds_per_frame / 1000);
+		if (tech_pvt->read_codec.implementation && ! ptime) {
+            ptime = tech_pvt->read_codec.implementation->microseconds_per_frame / 1000;
 		}
 
 	} else if (tech_pvt->num_codecs) {
 		int i;
 		for (i = 0; i < tech_pvt->num_codecs; i++) {
 			const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
+            if (ptime && ptime != imp->microseconds_per_frame / 1000) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ptime %u != advertised ptime %u\n", imp->microseconds_per_frame / 1000, ptime);
+            }
 			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", imp->ianacode, imp->iananame, imp->samples_per_second);
 			if (imp->fmtp) {
 				snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", imp->ianacode, imp->fmtp);
 			}
-			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=ptime:%d\n", imp->microseconds_per_frame / 1000);
 		}
 	}
 	
 	if (tech_pvt->te > 95) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
 	}
+
+    if (ptime) {
+        snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=ptime:%d\n", ptime);
+    }
 
 	tech_pvt->local_sdp_str = switch_core_session_strdup(tech_pvt->session, buf);
 }

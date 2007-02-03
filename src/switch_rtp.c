@@ -141,6 +141,7 @@ struct switch_rtp {
 
 	char *ice_user;
 	char *user_ice;
+    char *timer_name;
 	switch_time_t last_stun;
 	uint32_t packet_size;
 	uint32_t conf_packet_size;
@@ -428,6 +429,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	rtp_session->payload = payload;
 	rtp_session->ms_per_packet = ms_per_packet;
 	rtp_session->packet_size = rtp_session->conf_packet_size = packet_size;
+    rtp_session->timer_name = switch_core_strdup(rtp_session->pool, timer_name);
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
 		err_status_t stat;
@@ -760,15 +762,36 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		if (bytes > 0 && rtp_session->recv_msg.header.version == 2) {
 			uint32_t effective_size = (uint32_t)(bytes - rtp_header_len);
+            uint32_t new_ms = 0, old_size = 0;
+
             if (effective_size && rtp_session->packet_size && rtp_session->recv_msg.header.pt == rtp_session->payload && 
                 effective_size != rtp_session->packet_size) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Configured packet size %u != inbound packet size %u: auto-correcting..\n",
                                   rtp_session->packet_size,
                                   effective_size
                                   );
+                
+                old_size = rtp_session->packet_size;
+                new_ms = (((rtp_session->ms_per_packet / 1000) * effective_size) / old_size);
+
+                rtp_session->ms_per_packet = new_ms * 1000;
                 rtp_session->packet_size = effective_size;
+                
+                if (rtp_session->timer.timer_interface) {
+                    switch_core_timer_destroy(&rtp_session->timer);
+                    if (!switch_strlen_zero(rtp_session->timer_name)) {
+                        if (switch_core_timer_init(&rtp_session->timer,
+                                                   rtp_session->timer_name,
+                                                   rtp_session->ms_per_packet / 1000,
+                                                   rtp_session->packet_size,
+                                                   rtp_session->pool) == SWITCH_STATUS_SUCCESS) {
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting timer [%s] %d bytes per %dms\n",
+                                              rtp_session->timer_name, rtp_session->packet_size, rtp_session->ms_per_packet / 1000);
+                        }
+                    }
+                }
             }
-		}
+        }
 
 		if (rtp_session->timer.interval) {
 			check = (uint8_t)(switch_core_timer_check(&rtp_session->timer) == SWITCH_STATUS_SUCCESS);
