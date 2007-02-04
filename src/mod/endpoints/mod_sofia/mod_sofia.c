@@ -684,7 +684,7 @@ static void set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, c
 {
 	char buf[1024];
 	switch_time_t now = switch_time_now();
-    uint32_t ptime = 0;
+    int ptime = 0;
 
 	if (!force && !ip && !sr && switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 		return;
