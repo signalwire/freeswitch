@@ -4121,6 +4121,7 @@ static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_me
 	uint32_t len;
 	char *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
+    switch_input_args_t args= {0};
 
 	if (session != NULL && menu != NULL && !switch_strlen_zero(sound)) {
 		memset(menu->buf, 0, menu->inlen);
@@ -4133,17 +4134,13 @@ static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_me
 			len = menu->inlen;
 			ptr = menu->ptr;
 		}
+        args.buf = ptr;
+        args.buflen = len;
 
 		if (*sound == '/' || *sound == '\\') {
-            switch_input_args_t args = {0};
-            args.buf = ptr;
-            args.buflen = need ? 1 : 0;
 			status = switch_ivr_play_file(session, NULL, sound, &args);
 		} else {
 			if (menu->tts_engine && menu->tts_voice) {
-                switch_input_args_t args = {0};
-                args.buf = ptr;
-                args.buflen = len;
 				status = switch_ivr_speak_text(session, menu->tts_engine, menu->tts_voice, 0, sound, &args);
 			}
 		}
