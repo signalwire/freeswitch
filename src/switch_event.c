@@ -531,13 +531,15 @@ SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, cha
 		ret = vsnprintf(data, 2048, fmt, ap);
 #endif
 		va_end(ap);
-	}
 
-	if (ret == -1) {
-		return SWITCH_STATUS_GENERR;
+		if (ret == -1) {
+			return SWITCH_STATUS_GENERR;
+		} else {
+			event->body = data;
+			return SWITCH_STATUS_SUCCESS;
+		}
 	} else {
-		event->body = data;
-		return SWITCH_STATUS_SUCCESS;
+		return SWITCH_STATUS_GENERR;
 	}
 }
 
