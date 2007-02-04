@@ -4209,7 +4209,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 		memset(arg, 0, sizeof(arg));
 
 		memset(menu->buf, 0, menu->inlen);
-		status = play_or_say(session, menu, greeting_sound, menu->inlen);
+		status = play_or_say(session, menu, greeting_sound, menu->inlen - 1);
 
 		if (!switch_strlen_zero(menu->buf)) {
 			for(ap = menu->actions; ap ; ap = ap->next) {
