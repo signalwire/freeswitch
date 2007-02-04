@@ -2267,11 +2267,6 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 
 	channel = switch_core_session_get_channel(session);
 	
-    if (!sdp->sdp_connection) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find a c= line in the sdp!\n");
-        return 0;
-    }
-
 	if ((tech_pvt->origin = switch_core_session_strdup(session, (char *) sdp->sdp_origin->o_username))) {
 		if (strstr(tech_pvt->origin, "CiscoSystemsSIP-GW-UserAgent")) {
 			switch_set_flag_locked(tech_pvt, TFLAG_BUGGY_2833);
@@ -2290,6 +2285,19 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 	}
 
 	for (m = sdp->sdp_media; m ; m = m->m_next) {
+        sdp_connection_t *connection;
+
+        connection = sdp->sdp_connection;
+        if (m->m_connections) {
+            connection = m->m_connections;
+        }
+
+        if (!connection) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find a c= line in the sdp at media or session level!\n");
+            match = 0;
+            break;
+        }
+
         ptime = dptime;
         for (a = m->m_attributes; a; a = a->a_next) {
             if (!strcasecmp(a->a_name, "ptime")) {
@@ -2362,7 +2370,7 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
                         tech_pvt->pt = (switch_payload_t)map->rm_pt;
                         tech_pvt->rm_rate = map->rm_rate;
                         tech_pvt->codec_ms = mimp->microseconds_per_frame / 1000;
-                        tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(session, (char *)sdp->sdp_connection->c_address);
+                        tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(session, (char *)connection->c_address);
                         tech_pvt->rm_fmtp = switch_core_session_strdup(session, (char *)map->rm_fmtp);
                         tech_pvt->remote_sdp_audio_port = (switch_port_t)m->m_port;
                         tech_pvt->agreed_pt = (switch_payload_t)map->rm_pt;
