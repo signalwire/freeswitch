@@ -2555,6 +2555,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
         early_ok = 0;
     }
 
+    if (!cid_name_override) {
+        cid_name_override = switch_event_get_header(var_event, "origination_caller_id_name");
+    }
+
+    if (!cid_num_override) {
+        cid_num_override = switch_event_get_header(var_event, "origination_caller_id_number");
+    }
+                                                        
+
 	or_argc = switch_separate_string(data, '|', pipe_names, (sizeof(pipe_names) / sizeof(pipe_names[0])));
 
 	if (caller_channel && or_argc > 1 && !ringback_data) {
@@ -2603,7 +2612,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 
 				caller_caller_profile = caller_profile_override ? caller_profile_override : switch_channel_get_caller_profile(caller_channel);
-			
+                
 				if (!cid_name_override) {
 					cid_name_override = caller_caller_profile->caller_id_name;
 				}
@@ -2616,9 +2625,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 															   caller_caller_profile->dialplan,
 															   cid_name_override,
 															   cid_num_override,
-															   caller_caller_profile->network_addr, 
+															   caller_caller_profile->network_addr,
 															   NULL,
-															   NULL, 
+															   NULL,
 															   caller_caller_profile->rdnis,
 															   caller_caller_profile->source,
 															   caller_caller_profile->context,
@@ -2983,15 +2992,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		*cause = SWITCH_CAUSE_UNALLOCATED;
         
         if (var_event) {
+			if (!caller_channel) { /* install the vars from the {} params */
+                switch_event_header_t *header;
+                for (header = var_event->headers; header; header = header->next) {
+                    switch_channel_set_variable(peer_channel, header->name, header->value);
+                }
+            }
             switch_event_destroy(&var_event);
         }
 
 		if (status == SWITCH_STATUS_SUCCESS) {
 			if (caller_channel) {
 				switch_channel_set_variable(caller_channel, "originate_disposition", "call accepted");
-			}
+			} 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Resulted in Success: [%s]\n", switch_channel_get_name(peer_channel));
             *cause = SWITCH_CAUSE_SUCCESS;
+            
 		} else {
 			if (peer_channel) {
 				*cause = switch_channel_get_cause(peer_channel);

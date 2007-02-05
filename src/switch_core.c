@@ -1567,8 +1567,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core
 
 				ecaller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name");
 				ecaller_id_number = switch_channel_get_variable(channel, "effective_caller_id_number");
-			
+
 				if (ecaller_id_name || ecaller_id_number) {
+                    if (!ecaller_id_name) {
+                        ecaller_id_name = caller_profile->caller_id_name;
+                    }
+                    if (!ecaller_id_number) {
+                        ecaller_id_number = caller_profile->caller_id_number;
+                    }
 					outgoing_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																 caller_profile->username,
 																 caller_profile->dialplan,
