@@ -2992,7 +2992,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		*cause = SWITCH_CAUSE_UNALLOCATED;
         
         if (var_event) {
-			if (!caller_channel) { /* install the vars from the {} params */
+			if (peer_channel && !caller_channel) { /* install the vars from the {} params */
                 switch_event_header_t *header;
                 for (header = var_event->headers; header; header = header->next) {
                     switch_channel_set_variable(peer_channel, header->name, header->value);
