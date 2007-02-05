@@ -779,7 +779,7 @@ static void set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, c
 static void tech_set_codecs(private_object_t *tech_pvt)
 {
     switch_channel_t *channel;
-    char *codec_string = NULL;
+    char *abs, *codec_string = NULL;
     char *csdyn = NULL;
     char *ocodec = NULL;
 
@@ -797,18 +797,22 @@ static void tech_set_codecs(private_object_t *tech_pvt)
     assert (channel != NULL);
 
 
-    if (!(codec_string = switch_channel_get_variable(channel, "codec_string"))) {
-        codec_string = tech_pvt->profile->codec_string;
-    }
-
-    if ((ocodec = switch_channel_get_variable(channel, SWITCH_ORIGINATOR_CODEC_VARIABLE))) {
-        if (!codec_string || (tech_pvt->profile->pflags & PFLAG_DISABLE_TRANSCODING)) {
-            codec_string = ocodec;
-        } else {
-            if ((csdyn = switch_mprintf("%s,%s", ocodec, codec_string))) {
-                codec_string = csdyn;
-            } else {
+    if ((abs = switch_channel_get_variable(channel, "absolute_codec_string"))) {
+        codec_string = abs;
+    } else {
+        if (!(codec_string = switch_channel_get_variable(channel, "codec_string"))) {
+            codec_string = tech_pvt->profile->codec_string;
+        }
+        
+        if ((ocodec = switch_channel_get_variable(channel, SWITCH_ORIGINATOR_CODEC_VARIABLE))) {
+            if (!codec_string || (tech_pvt->profile->pflags & PFLAG_DISABLE_TRANSCODING)) {
                 codec_string = ocodec;
+            } else {
+                if ((csdyn = switch_mprintf("%s,%s", ocodec, codec_string))) {
+                    codec_string = csdyn;
+                } else {
+                    codec_string = ocodec;
+                }
             }
         }
     }
