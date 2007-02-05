@@ -76,21 +76,21 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_GRAMMAR_DIR SWITCH_PREFIX_DIR SWITCH_PATH_SEPARATOR "grammar"
 #endif
 
-#define SWITCH_R_SDP_VARIABLE "_switch_r_sdp_"
-#define SWITCH_L_SDP_VARIABLE "_switch_l_sdp_"
-#define SWITCH_B_SDP_VARIABLE "_switch_m_sdp_"
-#define SWITCH_BRIDGE_VARIABLE "_bridge_to_"
-#define SWITCH_SIGNAL_BRIDGE_VARIABLE "_signal_bridge_to_"
-#define SWITCH_ORIGINATOR_VARIABLE "_originator_"
-#define SWITCH_ORIGINATOR_CODEC_VARIABLE "_originator_codec_"
-#define SWITCH_LOCAL_MEDIA_IP_VARIABLE "_local_media_ip_"
-#define SWITCH_LOCAL_MEDIA_PORT_VARIABLE "_local_media_port_"
-#define SWITCH_REMOTE_MEDIA_IP_VARIABLE "_remote_media_ip_"
-#define SWITCH_REMOTE_MEDIA_PORT_VARIABLE "_remote_media_port_"
+#define SWITCH_R_SDP_VARIABLE "switch_r_sdp"
+#define SWITCH_L_SDP_VARIABLE "switch_l_sdp"
+#define SWITCH_B_SDP_VARIABLE "switch_m_sdp"
+#define SWITCH_BRIDGE_VARIABLE "bridge_to"
+#define SWITCH_SIGNAL_BRIDGE_VARIABLE "signal_bridge_to"
+#define SWITCH_ORIGINATOR_VARIABLE "originator"
+#define SWITCH_ORIGINATOR_CODEC_VARIABLE "originator_codec"
+#define SWITCH_LOCAL_MEDIA_IP_VARIABLE "local_media_ip"
+#define SWITCH_LOCAL_MEDIA_PORT_VARIABLE "local_media_port"
+#define SWITCH_REMOTE_MEDIA_IP_VARIABLE "remote_media_ip"
+#define SWITCH_REMOTE_MEDIA_PORT_VARIABLE "remote_media_port"
 #define SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE "hangup_after_bridge"
 
-#define SWITCH_SPEECH_KEY "_speech_"
-#define SWITCH_UUID_BRIDGE "_uuid_bridge_"
+#define SWITCH_SPEECH_KEY "speech"
+#define SWITCH_UUID_BRIDGE "uuid_bridge"
 #define SWITCH_BITS_PER_BYTE 8
 typedef uint8_t switch_byte_t;
 

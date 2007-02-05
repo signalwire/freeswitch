@@ -176,7 +176,6 @@ static void redirect_function(switch_core_session_t *session, char *data)
 }
 
 
-
 static void set_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
@@ -193,13 +192,29 @@ static void set_function(switch_core_session_t *session, char *data)
 
 		if (val) {
 			*val++ = '\0';
-			if (!strcmp(val, "_UNDEF_")) {
-				val = NULL;
-			}
+            if (switch_strlen_zero(val)) {
+                val = NULL;
+            }
 		}
 		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SET [%s]=[%s]\n", var, val ? val : "UNDEF");
 		switch_channel_set_variable(channel, var, val);
+	}
+}
+
+
+static void unset_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+	if (switch_strlen_zero(data)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "UNSET [%s]\n", (char *) data);
+		switch_channel_set_variable(channel, (char *) data, NULL);
 	}
 }
 
@@ -524,13 +539,22 @@ static const switch_application_interface_t ringback_application_interface = {
 	/*.next */ &detect_speech_application_interface
 };
 
+static const switch_application_interface_t unset_application_interface = {
+	/*.interface_name */ "unset",
+	/*.application_function */ unset_function,
+	/* long_desc */ "Unset a channel varaible for the channel calling the application.",
+	/* short_desc */ "Unset a channel varaible",
+	/* syntax */ "<varname>",
+	/*.next */ &ringback_application_interface
+};
+
 static const switch_application_interface_t set_application_interface = {
 	/*.interface_name */ "set",
 	/*.application_function */ set_function,
 	/* long_desc */ "Set a channel varaible for the channel calling the application.",
 	/* short_desc */ "Set a channel varaible",
-	/* syntax */ "<varname>=[<value>|_UNDEF_]",
-	/*.next */ &ringback_application_interface
+	/* syntax */ "<varname>=<value>",
+	/*.next */ &unset_application_interface
 };
 
 static const switch_application_interface_t info_application_interface = {

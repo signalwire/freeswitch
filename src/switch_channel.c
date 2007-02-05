@@ -363,7 +363,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *ch
 
 	if (varname) {
 		switch_core_hash_delete(channel->variables, varname);
-		if (value) {
+		if (!switch_strlen_zero(value)) {
 			switch_core_hash_insert_dup(channel->variables, varname, switch_core_session_strdup(channel->session, value));
 		} else {
 			switch_core_hash_delete(channel->variables, varname);
