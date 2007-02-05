@@ -1677,12 +1677,13 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	switch_file_handle_t fh = {0};
 	conference_member_t smember = {0}, *member;
 	conference_record_t *rec = (conference_record_t *) obj;
-	uint32_t samples = switch_bytes_per_frame(rec->conference->rate, rec->conference->interval);
+	conference_obj_t *conference = rec->conference;
+	uint32_t samples = switch_bytes_per_frame(conference->rate, conference->interval);
 	uint32_t bytes = samples * 2;
 	uint32_t mux_used;
 	char *vval;
 
-	if (switch_thread_rwlock_tryrdlock(rec->conference->rwlock) != SWITCH_STATUS_SUCCESS) {
+	if (switch_thread_rwlock_tryrdlock(conference->rwlock) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Fail\n");
 		return NULL;
 	}
@@ -1697,13 +1698,12 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 
 	write_frame.data = data;
 	write_frame.buflen = sizeof(data);
-	assert(rec->conference != NULL);
 
-	member->conference = rec->conference;
-	member->native_rate = rec->conference->rate;
+	member->conference = conference;
+	member->native_rate = conference->rate;
 	member->rec_path = rec->path;
 	fh.channels = 1;
-	fh.samplerate = rec->conference->rate;
+	fh.samplerate = conference->rate;
 	member->id = next_member_id();
 	member->pool = rec->pool;
 
@@ -1723,7 +1723,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		goto end;
 	}
 
-	if (conference_add_member(rec->conference, member) != SWITCH_STATUS_SUCCESS) {
+	if (conference_add_member(conference, member) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Joining Conference\n");
 		goto end;
 	}
@@ -1736,12 +1736,12 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		goto end;
 	}
 
-	if ((vval = switch_mprintf("Conference %s", rec->conference->name))) {
+	if ((vval = switch_mprintf("Conference %s", conference->name))) {
 		switch_core_file_set_string(&fh, SWITCH_AUDIO_COL_STR_TITLE, vval);
 		switch_safe_free(vval);
 	}
 
-	while(switch_test_flag(member, MFLAG_RUNNING) && switch_test_flag(rec->conference, CFLAG_RUNNING) && rec->conference->count) {
+	while(switch_test_flag(member, MFLAG_RUNNING) && switch_test_flag(conference, CFLAG_RUNNING) && conference->count) {
 		if ((mux_used = (uint32_t) switch_buffer_inuse(member->mux_buffer)) >= bytes) {
 			/* Flush the output buffer and write all the data (presumably muxed) to the file */
 			switch_mutex_lock(member->audio_out_mutex);
@@ -1758,14 +1758,16 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		}
 	} /* Rinse ... Repeat */
 
-	conference_del_member(rec->conference, member);
+ end:
+
+	conference_del_member(conference, member);
 	switch_buffer_destroy(&member->audio_buffer);
 	switch_buffer_destroy(&member->mux_buffer);
 	switch_clear_flag_locked(member, MFLAG_RUNNING);
-	switch_core_file_close(&fh);
+	if (fh.fd) {
+		switch_core_file_close(&fh);
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recording Stopped\n");
-
- end:
 
 	if (rec->pool) {
 		switch_memory_pool_t *pool = rec->pool;
@@ -1777,7 +1779,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	globals.threads--;
 	switch_mutex_unlock(globals.hash_mutex);
 
-	switch_thread_rwlock_unlock(rec->conference->rwlock);
+	switch_thread_rwlock_unlock(conference->rwlock);
 	return NULL;
 }
 
