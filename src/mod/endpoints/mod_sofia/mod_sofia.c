@@ -975,7 +975,7 @@ static void do_invite(switch_core_session_t *session)
 	if ((tech_pvt->from_str = switch_mprintf("\"%s\" <sip:%s@%s>", 
 													 cid_name,
 													 cid_num,
-													 tech_pvt->profile->sipip
+													 tech_pvt->profile->extsipip ? tech_pvt->profile->extsipip : tech_pvt->profile->sipip
 													 ))) {
 
 		char *rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
@@ -1085,7 +1085,7 @@ static void do_xfer_invite(switch_core_session_t *session)
 	if ((tech_pvt->from_str = switch_mprintf("\"%s\" <sip:%s@%s>", 
 													 (char *) caller_profile->caller_id_name, 
 													 (char *) caller_profile->caller_id_number,
-													 tech_pvt->profile->sipip
+													 tech_pvt->profile->extsipip ? tech_pvt->profile->extsipip : tech_pvt->profile->sipip
 													 ))) {
 
 		char *rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
