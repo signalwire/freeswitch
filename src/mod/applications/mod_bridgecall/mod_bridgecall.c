@@ -81,6 +81,25 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 		return;
 	} else {
 		if (no_media_bridge) {
+            switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
+            switch_frame_t *read_frame;
+
+            /* SIP won't let us redir media until the call has been answered #$^#%& so we will proxy any early media until they do */
+            while(switch_channel_ready(caller_channel) && switch_channel_ready(peer_channel) && !switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
+                switch_status_t status = switch_core_session_read_frame(peer_session, &read_frame, -1, 0);
+                uint8_t bad = 1;
+
+                if (SWITCH_READ_ACCEPTABLE(status) && switch_core_session_write_frame(session, read_frame, -1, 0) == SWITCH_STATUS_SUCCESS) {
+                    bad = 0;
+                }
+                
+                if (bad) {
+                    switch_channel_hangup(caller_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+                    switch_channel_hangup(peer_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+                    return;
+                }
+            }
+
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Redirecting media to point-to-point mode.\n");
 			switch_ivr_nomedia(switch_core_session_get_uuid(session), SMF_FORCE);
 			switch_ivr_nomedia(switch_core_session_get_uuid(peer_session), SMF_FORCE);
