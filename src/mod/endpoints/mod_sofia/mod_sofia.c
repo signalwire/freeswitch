@@ -1630,9 +1630,11 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		activate_rtp(tech_pvt);
 		
 		if (tech_pvt->nh) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local SDP %s:\n%s\n",
-							  switch_channel_get_name(channel),
-							  tech_pvt->local_sdp_str);
+			if (tech_pvt->local_sdp_str) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local SDP %s:\n%s\n",
+								  switch_channel_get_name(channel),
+								  tech_pvt->local_sdp_str);
+			}
 			nua_respond(tech_pvt->nh, SIP_200_OK, 
 						SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
