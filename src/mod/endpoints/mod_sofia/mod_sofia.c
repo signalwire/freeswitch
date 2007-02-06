@@ -2048,7 +2048,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
             }
 			set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 			activate_rtp(tech_pvt);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Ring SDP:\n%s\n", tech_pvt->local_sdp_str);
+			if (tech_pvt->local_sdp_str) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Ring SDP:\n%s\n", tech_pvt->local_sdp_str);
+			}
 
 			nua_respond(tech_pvt->nh,
 						SIP_183_SESSION_PROGRESS,
@@ -2172,9 +2174,10 @@ static void logger(void *logarg, char const *fmt, va_list ap)
 		}
 #endif
 	}
-	
-	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, (char*) "%s", data);
-	free(data);
+	if (data) {
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, (char*) "%s", data);
+		free(data);
+	}
 }
 
 
@@ -2630,7 +2633,7 @@ static void sip_i_message(int status,
 				if ((ci = switch_loadable_module_get_chat_interface(proto))) {
 					ci->chat_send(SOFIA_CHAT_PROTO, from_addr, to_addr, "", msg, full_from);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invaid Chat Interface [%s]!\n", proto);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invaid Chat Interface [%s]!\n", proto ? proto : "(none)");
 				}
 				
 			}
@@ -3022,6 +3025,10 @@ static char *get_auth_data(char *dbname, char *nonce, char *npassword, size_t le
 
 	if (mutex) {
 		switch_mutex_lock(mutex);
+	}
+
+	if (!dbname) {
+		goto end;
 	}
 
 	if (!(db = switch_core_db_open_file(dbname))) {
