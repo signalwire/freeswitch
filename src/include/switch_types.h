@@ -88,6 +88,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_REMOTE_MEDIA_IP_VARIABLE "remote_media_ip"
 #define SWITCH_REMOTE_MEDIA_PORT_VARIABLE "remote_media_port"
 #define SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE "hangup_after_bridge"
+#define SWITCH_MAX_FORWARDS_VARIABLE "max_forwards"
 
 #define SWITCH_SPEECH_KEY "speech"
 #define SWITCH_UUID_BRIDGE "uuid_bridge"

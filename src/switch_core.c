@@ -1660,6 +1660,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core
 			if ((val = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE))) {
 				switch_channel_set_variable(peer_channel, SWITCH_B_SDP_VARIABLE, val);
 			}
+
+			if ((val = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE))) {
+				switch_channel_set_variable(peer_channel, SWITCH_MAX_FORWARDS_VARIABLE, val);
+			}
 			
 			if (switch_channel_test_flag(channel, CF_NOMEDIA)) {
 				switch_channel_set_flag(peer_channel, CF_NOMEDIA);

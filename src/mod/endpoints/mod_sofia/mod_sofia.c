@@ -952,7 +952,10 @@ static void do_invite(switch_core_session_t *session)
 {
 	char rpid[1024] = { 0 };
 	char alert_info[1024] = { 0 };
+	char max_forwards[8] = { 0 };
 	char *alertbuf;
+	char *forwardbuf;
+	int forwardval;
 	private_object_t *tech_pvt;
     switch_channel_t *channel = NULL;
 	switch_caller_profile_t *caller_profile;
@@ -982,6 +985,11 @@ static void do_invite(switch_core_session_t *session)
 
 		if ((alertbuf = switch_channel_get_variable(channel, "alert_info"))) {
 			snprintf(alert_info, sizeof(alert_info) - 1, "Alert-Info: %s", alertbuf);
+		}
+
+		if ((forwardbuf = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE))) {
+			forwardval = atoi(forwardbuf) - 1;
+			snprintf(max_forwards, sizeof(max_forwards) - 1, "%d", forwardval);
 		}
 
 		if (tech_choose_port(tech_pvt) != SWITCH_STATUS_SUCCESS) {
@@ -1046,9 +1054,11 @@ static void do_invite(switch_core_session_t *session)
 		}
 
 		holdstr = switch_test_flag(tech_pvt, TFLAG_SIP_HOLD) ? "*" : "";
+
 		nua_invite(tech_pvt->nh,
 				   TAG_IF(!switch_strlen_zero(rpid), SIPTAG_HEADER_STR(rpid)),
-				   TAG_IF(alert_info, SIPTAG_HEADER_STR(alert_info)),
+				   TAG_IF(!switch_strlen_zero(alert_info), SIPTAG_HEADER_STR(alert_info)),
+				   TAG_IF(!switch_strlen_zero(max_forwards),SIPTAG_MAX_FORWARDS_STR(max_forwards)),
 				   //SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 				   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 				   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
@@ -4338,7 +4348,7 @@ static void sip_i_invite(nua_t *nua,
 
 	if (sip->sip_max_forwards) {
 		snprintf(uri, sizeof(uri), "%u", sip->sip_max_forwards->mf_count);
-		switch_channel_set_variable(channel, "max_forwards", uri);
+		switch_channel_set_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE, uri);
 	}
 
 	if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
