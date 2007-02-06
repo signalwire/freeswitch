@@ -1119,7 +1119,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 			switch_set_flag(MAIN_XML_ROOT, SWITCH_XML_ROOT);
 		}
 	} else {
-		*err = "Cannot Open XML Root!";
+		*err = "Cannot Open log directory or XML Root!";
 	}
 
 	if (hasmain) {
