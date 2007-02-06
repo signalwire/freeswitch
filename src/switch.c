@@ -198,9 +198,9 @@ int main(int argc, char *argv[])
 	const char *err = NULL;		// error value for return from freeswitch initialization
 #ifndef WIN32
 	int nf = 0;					// TRUE if we are running in nofork mode
-	int vg = 1;					// Allways TRUE on windows to not do apr_terminate
+	int vg = 0;					// Allways TRUE on windows to not do apr_terminate
 #else
-	int vg = 0;					// TRUE if we are running in vg mode
+	int vg = 1;					// TRUE if we are running in vg mode
 #endif
 	int nc = 0;					// TRUE if we are running in noconsole mode
 	FILE *f;					// file handle to the pid file
