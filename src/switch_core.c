@@ -3936,9 +3936,9 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 #else
 	SWITCH_GLOBAL_dirs.base_dir = SWITCH_PREFIX_DIR;
 	SWITCH_GLOBAL_dirs.mod_dir = SWITCH_MOD_DIR;
-	SWITCH_GLOBAL_dirs.conf_dir = SWITCH_CONF_DIR;
-	SWITCH_GLOBAL_dirs.log_dir = SWITCH_LOG_DIR;
-	SWITCH_GLOBAL_dirs.db_dir = SWITCH_DB_DIR;
+	if(!SWITCH_GLOBAL_dirs.conf_dir) SWITCH_GLOBAL_dirs.conf_dir = SWITCH_CONF_DIR;
+	if(!SWITCH_GLOBAL_dirs.log_dir) SWITCH_GLOBAL_dirs.log_dir = SWITCH_LOG_DIR;
+	if(!SWITCH_GLOBAL_dirs.db_dir) SWITCH_GLOBAL_dirs.db_dir = SWITCH_DB_DIR;
 	SWITCH_GLOBAL_dirs.script_dir = SWITCH_SCRIPT_DIR;
 	SWITCH_GLOBAL_dirs.htdocs_dir = SWITCH_HTDOCS_DIR;
 	SWITCH_GLOBAL_dirs.grammar_dir = SWITCH_GRAMMAR_DIR;

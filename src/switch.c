@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  * Michael Jerris <mike@jerris.com>
  * Pawel Pierscionek <pawel@voiceworks.pl>
+ * Bret McDanel <trixter AT 0xdecafbad.com>
  *
  *
  * switch.c -- Main
@@ -206,6 +207,8 @@ int main(int argc, char *argv[])
 	pid_t pid = 0;				// 
 	int x;						//
 	int die = 0;				//
+    char *usageDesc;
+	int alt_dirs = 0;
 
 #ifdef WIN32
 	SERVICE_TABLE_ENTRY dispatchTable[] =
@@ -213,9 +216,35 @@ int main(int argc, char *argv[])
 		{ SERVICENAME, &service_main },
 		{ NULL, NULL }
 	};
+    usageDesc = "these are the optional arguments you can pass to freeswitch\n"
+        "\t-service         -- start freeswitch as a service, cannot be used if loaded as a console app\n"
+        "\t-install         -- install freeswitch as a service\n"
+        "\t-uninstall       -- remove freeswitch as a service\n"
+        "\t-hp              -- enable high priority settings\n"
+        "\t-stop            -- stop freeswitch\n"
+        "\t-nc              -- do not output to a console and background\n"
+        "\t-conf [confdir]  -- specify an alternate config dir\n"
+        "\t-log [logdir]    -- specify an alternate log dir\n"
+        "\t-db [dbdir]      -- specify an alternate db dir\n";
+#else
+    usageDesc = "these are the optional arguments you can pass to freeswitch\n"
+        "\t-help            -- this message\n"
+        "\t-nf              -- no forking\n"
+        "\t-hp              -- enable high priority settings\n"
+        "\t-stop            -- stop freeswitch\n"
+        "\t-nc              -- do not output to a console and background\n"
+        "\t-vg              -- enable valgrind mode\n"
+        "\t-conf [confdir]  -- specify an alternate config dir\n"
+        "\t-log [logdir]    -- specify an alternate log dir\n"
+        "\t-db [dbdir]      -- specify an alternate db dir\n";
+
 #endif
 
 	for (x = 1; x < argc; x++) {
+		if (argv[x] && !strcmp(argv[x], "-help")) {
+			printf("%s\n",usageDesc);
+            exit(0);
+		}
 #ifdef WIN32
 		if (x == 1) {
 			if (argv[x] && !strcmp(argv[x], "-service")) {
@@ -281,10 +310,52 @@ int main(int argc, char *argv[])
 		if (argv[x] && !strcmp(argv[x], "-vg")) {
 			vg++;
 		}
+
+        if (argv[x] && !strcmp(argv[x], "-conf")) {
+            x++;
+            if (argv[x] && strlen(argv[x])) {
+                SWITCH_GLOBAL_dirs.conf_dir = (char *) malloc(strlen(argv[x])+1);
+                strcpy(SWITCH_GLOBAL_dirs.conf_dir,argv[x]);
+				alt_dirs++;
+            } else {
+                fprintf(stderr, "When using -conf you must specify a config directory\n");
+                return 255;
+            }
+        }
+
+        if (argv[x] && !strcmp(argv[x], "-log")) {
+            x++;
+            if (argv[x] && strlen(argv[x])) {
+                SWITCH_GLOBAL_dirs.log_dir = (char *) malloc(strlen(argv[x])+1);
+                strcpy(SWITCH_GLOBAL_dirs.log_dir,argv[x]);
+				alt_dirs++;
+            } else {
+                fprintf(stderr, "When using -log you must specify a log directory\n");
+                return 255;
+            }
+        }
+
+        if (argv[x] && !strcmp(argv[x], "-db")) {
+            x++;
+            if (argv[x] && strlen(argv[x])) {
+                SWITCH_GLOBAL_dirs.db_dir = (char *) malloc(strlen(argv[x])+1);
+                strcpy(SWITCH_GLOBAL_dirs.db_dir,argv[x]);
+				alt_dirs++;
+            } else {
+                fprintf(stderr, "When using -db you must specify a db directory\n");
+                return 255;
+            }
+        }
+            
 	}
 
 	if (die) {
 		return freeswitch_kill_background();
+	}
+
+	if (alt_dirs && alt_dirs !=3) {
+		fprintf(stderr, "You must use -conf, -log, and -db together\n");
+		return 255;
 	}
 
 	if (nc) {
