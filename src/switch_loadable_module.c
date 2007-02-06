@@ -837,7 +837,7 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_
 			switch_event_add_header(stream->event, SWITCH_STACK_BOTTOM, "API-Command", cmd);
 		}
 		if (arg) {
-			switch_event_add_header(stream->event, SWITCH_STACK_BOTTOM, "API-Command-Arguement", arg);
+			switch_event_add_header(stream->event, SWITCH_STACK_BOTTOM, "API-Command-Argument", arg);
 		}
 	}
 
