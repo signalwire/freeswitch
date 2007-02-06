@@ -523,6 +523,8 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 
 	struct api_command_struct *acs = (struct api_command_struct *) obj;
 	switch_stream_handle_t stream = {0};
+    char *reply, *freply = NULL;
+    switch_status_t status;
 
 	if (switch_thread_rwlock_tryrdlock(acs->listener->rwlock) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! cannot get read lock.\n");
@@ -532,34 +534,38 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 
 	SWITCH_STANDARD_STREAM(stream);
 
-	if (stream.data) {
-		if (switch_api_execute(acs->api_cmd, acs->arg, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
-            if (!stream.data) {
-                stream.write_function(&stream, "Command returned no output!\n");
-            }
-			if (acs->bg) {
-				switch_event_t *event;
-
-				if (switch_event_create(&event, SWITCH_EVENT_BACKGROUND_JOB) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-UUID", acs->uuid_str);
-					switch_event_add_body(event, stream.data);
-					switch_event_fire(&event);
-				}
-			} else {
-				switch_size_t len;
-				char buf[1024];
-				len = strlen(stream.data);			
-				snprintf(buf, sizeof(buf), "Content-Type: api/response\nContent-Length: %"APR_SSIZE_T_FMT"\n\n", len);
-				len = strlen(buf);
-				switch_socket_send(acs->listener->sock, buf, &len);
-				len = strlen(stream.data);
-				switch_socket_send(acs->listener->sock, stream.data, &len);
-			}
-		}
-		free(stream.data);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-	}
+    if ((status = switch_api_execute(acs->api_cmd, acs->arg, NULL, &stream)) == SWITCH_STATUS_SUCCESS) {
+        reply = stream.data;
+    } else {
+        freply = switch_mprintf("%s: Command not found!", acs->api_cmd);
+        reply = freply;
+    }
+        
+    if (!reply) {
+        reply = "Command returned no output!";
+    }
+    
+    if (acs->bg) {
+        switch_event_t *event;
+        
+        if (switch_event_create(&event, SWITCH_EVENT_BACKGROUND_JOB) == SWITCH_STATUS_SUCCESS) {
+            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-UUID", acs->uuid_str);
+            switch_event_add_body(event, reply);
+            switch_event_fire(&event);
+        }
+    } else {
+        switch_size_t len;
+        char buf[1024];
+        len = strlen(reply);			
+        snprintf(buf, sizeof(buf), "Content-Type: api/response\nContent-Length: %"APR_SSIZE_T_FMT"\n\n", len);
+        len = strlen(buf);
+        switch_socket_send(acs->listener->sock, buf, &len);
+        len = strlen(reply);
+        switch_socket_send(acs->listener->sock, reply, &len);
+    }
+		
+    switch_safe_free(stream.data);
+    switch_safe_free(freply);
 
 	switch_thread_rwlock_unlock(acs->listener->rwlock);
 	
