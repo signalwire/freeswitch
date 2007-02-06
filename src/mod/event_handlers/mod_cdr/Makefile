@@ -1,11 +1,13 @@
-
-#CFLAGS  += $(shell mysql_config --include) 
 #CFLAGS  += -DSWITCH_QUEUE_ENHANCED
-#LDFLAGS += $(shell mysql_config --libs)
 #LDFLAGS += -lcurl
-
 CPPCC = g++
-OBJS=cdrcontainer.o basecdr.o baseregistry.o mysqlcdr.o pddcdr.o csvcdr.o xmlcdr.o sqlitecdr.o
+OBJS=cdrcontainer.o basecdr.o baseregistry.o pddcdr.o csvcdr.o xmlcdr.o sqlitecdr.o
+
+ifneq ($(shell which mysql_config),)
+  CFLAGS  += $(shell mysql_config --include)
+  LDFLAGS += $(shell mysql_config --libs)
+  OBJS    += mysqlcdr.o
+endif
 
 all:	depends $(OBJS) $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
