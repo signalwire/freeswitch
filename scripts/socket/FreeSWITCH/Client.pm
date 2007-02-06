@@ -112,7 +112,6 @@ sub sendmsg($$$) {
   for(;;) {
     $e = $self->readhash(.1);
     if ($e && !$e->{socketerror}) {
-      #print Dumper $e;
       push @{$self->{events}}, $e;
     } else  {
       last;

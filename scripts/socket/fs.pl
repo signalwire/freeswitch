@@ -6,8 +6,9 @@ my $password = "ClueCon";
 
 my $fs = init FreeSWITCH::Client {-password => $password} or die "Error $@";
 my $term = new Term::ReadLine "FreeSWITCH CLI";
-my $prompt = "FS>";
+my $prompt = "[mFreeSWITCH>";
 my $OUT = $term->OUT .. \*STDOUT;
+my $pid;
 
 my $log = shift;
 
@@ -19,44 +20,38 @@ if ($log) {
     my $fs2 = init FreeSWITCH::Client {-password => $password} or die "Error $@";
     
 
-    $fs2->cmd({ command => "log $log" });
+    $fs2->sendmsg({ 'command' => "log $log" });
     while (1) {
       my $reply = $fs2->readhash(undef);
       if ($reply->{socketerror}) {
 	die "socket error";
       }
+      
       if ($reply->{body}) {
-	print $reply->{body} . "\n";
-      } elsif ($reply->{'reply-text'}) {
-	print $reply->{'reply-text'} . "\n";
-      }
+	print $reply->{body};
+      } 
     }
     exit;
   }
 
 }
 
-
-
 while ( defined ($_ = $term->readline($prompt)) ) {
-  my $reply;
-
   if ($_) {
-    my $reply = $fs->cmd({command => "api $_"});
+    if ($_ =~ /exit/) {
+      last;
+    }
+    my $reply = $fs->command($_);
     if ($reply->{socketerror}) {
       $fs2->disconnect();
       die "socket error";
     }
-    if ($reply->{body}) {
-      print $reply->{body};
-    } elsif ($reply->{'reply-text'}) {
-      print $reply->{'reply-text'};
-    }
-    print "\n";
-    if ($_ =~ /exit/) {
-      last;
-    }
+    print "$reply\n";
+    
   }
   $term->addhistory($_) if /\S/;
 }
   
+if ($pid) {
+  kill 9 => $pid;
+}
