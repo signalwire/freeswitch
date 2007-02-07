@@ -45,9 +45,6 @@
 #include <sofia-sip/sip_protos.h>
 #include <sofia-sip/sip_status.h>
 
-#define NTA_LEG_MAGIC_T      struct nua_handle_s
-#define NTA_OUTGOING_MAGIC_T struct nua_handle_s
-
 #include "nua_stack.h"
 
 /* ====================================================================== */
@@ -55,6 +52,7 @@
 
 struct publish_usage {
   sip_etag_t *pu_etag;
+  int pu_published;
 };
 
 static char const *nua_publish_usage_name(nua_dialog_usage_t const *du);
@@ -115,14 +113,6 @@ void nua_publish_usage_remove(nua_handle_t *nh,
 
 /* ======================================================================== */
 /* PUBLISH */
-
-static int nua_stack_publish2(nua_t *nua, nua_handle_t *nh, nua_event_t e,
-			      int refresh, tagi_t const *tags);
-
-static int process_response_to_publish(nua_handle_t *nh,
-				       nta_outgoing_t *orq,
-				       sip_t const *sip);
-
 
 /**@fn \
  * void nua_publish(nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...);
@@ -237,212 +227,216 @@ void nua_unpublish(nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...);
  * @END_NUA_EVENT
  */
 
-int nua_stack_publish(nua_t *nua, nua_handle_t *nh, nua_event_t e,
-		      tagi_t const *tags)
+static int nua_publish_client_template(nua_client_request_t *cr,
+				       msg_t **return_msg,
+				       tagi_t const *tags);
+static int nua_publish_client_init(nua_client_request_t *cr,
+				   msg_t *, sip_t *,
+				   tagi_t const *tags);
+static int nua_publish_client_request(nua_client_request_t *cr,
+				      msg_t *, sip_t *,
+				      tagi_t const *tags);
+static int nua_publish_client_response(nua_client_request_t *cr,
+				       int status, char const *phrase,
+				       sip_t const *sip);
+
+static nua_client_methods_t const nua_publish_client_methods = {
+  SIP_METHOD_PUBLISH,
+  0,
+  {
+    /* create_dialog */ 0,
+    /* in_dialog */ 0,
+    /* target refresh */ 0
+  },
+  nua_publish_client_template,
+  nua_publish_client_init,
+  nua_publish_client_request,
+  /* nua_publish_client_check_restart */ NULL,
+  nua_publish_client_response,
+  /* nua_publish_client_preliminary */ NULL
+};
+
+/**@internal Send PUBLISH. */
+int nua_stack_publish(nua_t *nua,
+		     nua_handle_t *nh,
+		     nua_event_t e,
+		     tagi_t const *tags)
 {
-  return nua_stack_publish2(nua, nh, e, 0, tags);
+  return nua_client_create(nh, e, &nua_publish_client_methods, tags);
 }
 
-static
-int nua_stack_publish2(nua_t *nua, nua_handle_t *nh, nua_event_t e,
-		       int refresh,
-		       tagi_t const *tags)
+static int nua_publish_client_template(nua_client_request_t *cr,
+				       msg_t **return_msg,
+				       tagi_t const *tags)
 {
   nua_dialog_usage_t *du;
+
+  if (cr->cr_event == nua_r_publish)
+    return 0;
+
+  du = nua_dialog_usage_get(cr->cr_owner->nh_ds, nua_publish_usage, NULL);
+  if (du && du->du_cr) {
+    if (nua_client_set_target(cr, du->du_cr->cr_target) < 0)
+      return -1;
+    *return_msg = msg_copy(du->du_cr->cr_msg);
+    return 1;
+  }
+
+  return 0;
+}
+
+static int nua_publish_client_init(nua_client_request_t *cr,
+				   msg_t *msg, sip_t *sip,
+				   tagi_t const *tags)
+{
+  nua_handle_t *nh = cr->cr_owner;
+  nua_dialog_usage_t *du;
   struct publish_usage *pu;
-  nua_client_request_t *cr = nh->nh_ds->ds_cr;
-  msg_t *msg = NULL;
-  sip_t *sip;
-  int remove_body = 0;
 
-  if (nua_stack_set_handle_special(nh, nh_has_nothing, nua_r_publish) < 0)
-    return UA_EVENT2(e, 900, "Invalid handle for PUBLISH");
-
-  if (cr->cr_orq) {
-    return UA_EVENT2(e, 900, "Request already in progress");
-  }
-
-  nua_stack_init_handle(nua, nh, TAG_NEXT(tags));
-
-  if (e == nua_r_unpublish) {
-    du = nua_dialog_usage_get(nh->nh_ds, nua_publish_usage, NULL);
-    if (du)
-      refresh = 1;
-    else
-      du = nua_dialog_usage_add(nh, nh->nh_ds, nua_publish_usage, NULL);
-  }
-  else if (!refresh)
+  if (cr->cr_event == nua_r_publish) {
     du = nua_dialog_usage_add(nh, nh->nh_ds, nua_publish_usage, NULL);
+    if (!du)
+      return -1;
+    pu = nua_dialog_usage_private(du);
+    pu->pu_published = 0;
+    if (sip->sip_if_match) {
+      pu->pu_etag = sip_etag_dup(nh->nh_home, sip->sip_if_match);
+      if (!pu->pu_etag)
+	return -1;
+      sip_header_remove(msg, sip, (sip_header_t *)sip->sip_if_match);
+    }
+  }
   else
     du = nua_dialog_usage_get(nh->nh_ds, nua_publish_usage, NULL);
 
-  if (!du)
-    return UA_EVENT1(e, NUA_INTERNAL_ERROR);
-
-  nua_dialog_usage_reset_refresh(du);
-  pu = nua_dialog_usage_private(du); assert(pu);
-
-  if (refresh) {
-    if (cr->cr_msg)
-      msg_destroy(cr->cr_msg);
-    cr->cr_msg = msg_copy(du->du_msg);
-    remove_body = pu->pu_etag != NULL;
-  }
-
-  msg = nua_creq_msg(nua, nh, cr, cr->cr_retry_count || refresh,
-		     SIP_METHOD_PUBLISH,
-		     NUTAG_ADD_CONTACT(0),
-		     TAG_NEXT(tags));
-  sip = sip_object(msg);
-
-  if (!msg || !sip) 
-    goto error;
-
-  du->du_terminating =
-    e != nua_r_publish ||
-    (sip->sip_expires && sip->sip_expires->ex_delta == 0);
-
-  if (!du->du_terminating && !refresh) {
-    /* Save template */
-    if (du->du_msg)
-      msg_destroy(du->du_msg);
-    du->du_msg = msg_ref_create(cr->cr_msg);
-  }
-
-  cr->cr_orq =
-    nta_outgoing_mcreate(nua->nua_nta,
-			 process_response_to_publish, nh, NULL,
-			 msg,
-			 SIPTAG_IF_MATCH(pu->pu_etag),
-			 TAG_IF(remove_body, SIPTAG_PAYLOAD(NONE)),
-			 TAG_IF(remove_body, SIPTAG_CONTENT_TYPE(NONE)),
-			 TAG_IF(e != nua_r_publish,
-				SIPTAG_EXPIRES_STR("0")),
-			 SIPTAG_END(), TAG_NEXT(tags));
-  if (!cr->cr_orq)
-    goto error;
-
   cr->cr_usage = du;
 
-  return cr->cr_event = e;
-
- error:
-  msg_destroy(msg);
-  if (!du->du_ready == 0)
-    nua_dialog_usage_remove(nh, nh->nh_ds, du);
-  return UA_EVENT1(e, NUA_INTERNAL_ERROR);
+  return 0;
 }
-
-
-static void
-restart_publish(nua_handle_t *nh, tagi_t *tags)
-{
-  nua_creq_restart(nh, nh->nh_ds->ds_cr, process_response_to_publish, tags);
-}
-
 
 static
-int process_response_to_publish(nua_handle_t *nh,
-				nta_outgoing_t *orq,
-				sip_t const *sip)
+int nua_publish_client_request(nua_client_request_t *cr,
+			       msg_t *msg, sip_t *sip,
+			       tagi_t const *tags)
 {
-  int status = sip->sip_status->st_status;
-  nua_client_request_t *cr = nh->nh_ds->ds_cr;
   nua_dialog_usage_t *du = cr->cr_usage;
-  struct publish_usage *pu = nua_dialog_usage_private(du);
-  unsigned saved_retry_count = cr->cr_retry_count + 1;
+  int un, done;
+  sip_etag_t const *etag = NULL;
 
-  if (nua_creq_check_restart(nh, cr, orq, sip, restart_publish))
-    return 0;
+  un = cr->cr_terminating ||
+    cr->cr_event != nua_r_publish ||
+    (du && du->du_shutdown) ||
+    (sip->sip_expires && sip->sip_expires->ex_delta == 0);
+  cr->cr_terminating = un;
+  done = un;
 
-  if (status < 200 || pu == NULL)
-    return nua_stack_process_response(nh, cr, orq, sip, TAG_END());
+  if (du) {
+    struct publish_usage *pu = nua_dialog_usage_private(du);
 
-  if (pu->pu_etag)
-    su_free(nh->nh_home, pu->pu_etag), pu->pu_etag = NULL;
+    if (nua_client_bind(cr, du) < 0)
+      return -1;
+    if (pu->pu_published)
+      done = 1;
+    etag = pu->pu_etag;
+  }
 
-  if (!du->du_terminating) {
-    int retry = 0, invalid_expiration = 0;
+  return nua_base_client_trequest(cr, msg, sip,
+				  SIPTAG_IF_MATCH(etag),
+				  TAG_IF(done, SIPTAG_PAYLOAD(NONE)),
+				  TAG_IF(done, SIPTAG_CONTENT_TYPE(NONE)),
+				  TAG_IF(un, SIPTAG_EXPIRES_STR("0")),
+				  TAG_NEXT(tags));
+}
 
-    if (status < 300) {
-      if (!sip->sip_expires)
-	invalid_expiration = 1;
-      else if (sip->sip_expires->ex_delta == 0)
-	retry = 1, invalid_expiration = 1;
+static int nua_publish_client_response(nua_client_request_t *cr,
+				       int status, char const *phrase,
+				       sip_t const *sip)
+{
+  nua_handle_t *nh = cr->cr_owner;
+  nua_dialog_usage_t *du = cr->cr_usage;
+
+  if (!cr->cr_terminated && du && sip) {
+    struct publish_usage *pu = nua_dialog_usage_private(du);
+    sip_expires_t const *ex = sip->sip_expires;
+
+    /* Reset state */
+    pu->pu_published = 0;
+    if (pu->pu_etag)
+      su_free(nh->nh_home, pu->pu_etag), pu->pu_etag = NULL;
+
+    if (status == 412) {
+      if (nua_client_restart(cr, 100, phrase))
+	return 0;
     }
-    else if (status == 412)
-      retry = 1;
+    else if (status < 300) {
+      if (ex && ex->ex_delta == 0 &&
+	  nua_client_restart(cr, 100, "Trying re-PUBLISH"))
+	return 0;
 
-    if (status < 300 && !invalid_expiration && !retry) {
+      pu->pu_published = 1;
       pu->pu_etag = sip_etag_dup(nh->nh_home, sip->sip_etag);
-      du->du_ready = 1;
-      nua_dialog_usage_set_expires(du, sip->sip_expires->ex_delta);
-    }
-    else if (retry && saved_retry_count < NH_PGET(nh, retry_count)) {
-      msg_t *response = nta_outgoing_getresponse(orq);
-      nua_stack_event(nh->nh_nua, nh, response, cr->cr_event,
-      		100, "Trying re-PUBLISH",
-      		TAG_END());
-      nua_creq_deinit(cr, orq);
-      nua_stack_publish2(nh->nh_nua, nh, cr->cr_event, 1, NULL);
-      cr->cr_retry_count = saved_retry_count;
-      return 0;
-    }
-    else if (invalid_expiration) {
-      msg_t *response = nta_outgoing_getresponse(orq);
-      nua_stack_event(nh->nh_nua, nh, response, cr->cr_event,
-      		900, "Received Invalid Expiration Time",
-      		TAG_END());
-      nua_dialog_usage_remove(nh, nh->nh_ds, cr->cr_usage);
-      nua_creq_deinit(cr, orq);
-      cr->cr_usage = NULL;
-      return 0;
+
+      if (!ex || ex->ex_delta == 0 || !pu->pu_etag) {
+	cr->cr_terminated = 1;
+
+	if (!ex || ex->ex_delta == 0)
+	  SET_STATUS(900, "Received Invalid Expiration Time");
+	else
+	  SET_STATUS1(NUA_INTERNAL_ERROR);
+      }
     }
   }
 
-  return nua_stack_process_response(nh, cr, orq, sip, TAG_END());
+  return nua_base_client_response(cr, status, phrase, sip, NULL);
 }
-
 
 static void nua_publish_usage_refresh(nua_handle_t *nh,
-				      nua_dialog_state_t *ds,
-				      nua_dialog_usage_t *du,
-				      sip_time_t now)
+				     nua_dialog_state_t *ds,
+				     nua_dialog_usage_t *du,
+				     sip_time_t now)
 {
-  if (ds->ds_cr->cr_usage == du) /* Already publishing. */
-    return;
-  nua_stack_publish2(nh->nh_nua, nh, nua_r_publish, 1, NULL);
+  nua_client_request_t *cr = du->du_cr;
+
+  if (cr) {
+    if (nua_client_is_queued(cr) /* Already publishing. */
+	|| nua_client_resend_request(cr, 0, NULL) >= 0)
+      return;
+  }
+
+  nua_stack_event(nh->nh_nua, nh, NULL,
+		  nua_r_publish, NUA_INTERNAL_ERROR,
+		  NULL);
+
+  nua_dialog_usage_remove(nh, ds, du);
 }
 
-/** @interal Shut down PUBLISH usage. 
+/** @interal Shut down PUBLISH usage.
  *
  * @retval >0  shutdown done
  * @retval 0   shutdown in progress
  * @retval <0  try again later
  */
 static int nua_publish_usage_shutdown(nua_handle_t *nh,
-				      nua_dialog_state_t *ds,
-				      nua_dialog_usage_t *du)
+				     nua_dialog_state_t *ds,
+				     nua_dialog_usage_t *du)
 {
-  nua_client_request_t *cr = ds->ds_cr;
+  nua_client_request_t *cr = du->du_cr;
 
-  if (!cr->cr_usage) {
-    /* Unpublish */
-    nua_stack_publish2(nh->nh_nua, nh, nua_r_destroy, 1, NULL);
-    return cr->cr_usage != du;
+  if (cr) {
+    if (nua_client_is_queued(cr)) /* Already publishing. */
+      return -1;
+
+    if (nua_client_resend_request(cr, 1, NULL) >= 0)
+      return 0;
   }
 
-  if (!du->du_ready && !cr->cr_orq)
-    return 1;			/* had unauthenticated initial request */
-
-  return -1;  /* Request in progress */
+  /* XXX - report to user */
+  nua_dialog_usage_remove(nh, ds, du);
+  return 200;
 }
 
 /* ---------------------------------------------------------------------- */
 /* Server side */
-
-static
-int respond_to_publish(nua_server_request_t *sr, tagi_t const *tags);
 
 /** @NUA_EVENT nua_i_publish
  *
@@ -481,48 +475,35 @@ int respond_to_publish(nua_server_request_t *sr, tagi_t const *tags);
  * @END_NUA_EVENT
  */
 
-int nua_stack_process_publish(nua_t *nua,
-			      nua_handle_t *nh,
-			      nta_incoming_t *irq,
-			      sip_t const *sip)
+int nua_publish_server_init(nua_server_request_t *sr);
+
+nua_server_methods_t const nua_publish_server_methods = 
+  {
+    SIP_METHOD_PUBLISH,
+    nua_i_publish,		/* Event */
+    { 
+      0,			/* Do not create dialog */
+      0,			/* Initial request */
+      0,			/* Not a target refresh request  */
+      1,			/* Add Contact */
+    },
+    nua_publish_server_init,
+    nua_base_server_preprocess,
+    nua_base_server_params,
+    nua_base_server_respond,
+    nua_base_server_report,
+  };
+
+int nua_publish_server_init(nua_server_request_t *sr)
 {
-  nua_server_request_t *sr, sr0[1];
-  sip_allow_events_t *allow_events = NUA_PGET(nua, nh, allow_events);
-  sip_event_t *o = sip->sip_event;
+  sip_allow_events_t *allow_events = NH_PGET(sr->sr_owner, allow_events);
+  sip_event_t *o = sr->sr_request.sip->sip_event;
   char const *event = o ? o->o_type : NULL;
   
-  sr = SR_INIT(sr0);
-  
   if (!allow_events)
-    SR_STATUS1(sr, SIP_501_NOT_IMPLEMENTED);
+    return SR_STATUS1(sr, SIP_501_NOT_IMPLEMENTED);
   else if (!event || !msg_header_find_param(allow_events->k_common, event))
-    SR_STATUS1(sr, SIP_489_BAD_EVENT);
+    return SR_STATUS1(sr, SIP_489_BAD_EVENT);
 
-  sr = nua_server_request(nua, nh, irq, sip, sr, sizeof *sr,
-			  respond_to_publish, 0);
-
-  return nua_stack_server_event(nua, sr, nua_i_publish, TAG_END());
-}
-
-static
-int respond_to_publish(nua_server_request_t *sr, tagi_t const *tags)
-{
-  nua_handle_t *nh = sr->sr_owner;
-  nua_t *nua = nh->nh_nua;
-  msg_t *msg;
-
-  msg = nua_server_response(sr, sr->sr_status, sr->sr_phrase, TAG_NEXT(tags));
-
-  if (msg) {
-    nta_incoming_mreply(sr->sr_irq, msg);
-  }
-  else {
-    SR_STATUS1(sr, SIP_500_INTERNAL_SERVER_ERROR);
-    nta_incoming_treply(sr->sr_irq, sr->sr_status, sr->sr_phrase, TAG_END());
-    nua_stack_event(nua, nh, NULL,
-		    nua_i_error, 900, "PUBLISH Response Fails",
-		    TAG_END());
-  }
-  
-  return sr->sr_status >= 200 ? sr->sr_status : 0;
+  return 0;
 }

@@ -295,13 +295,13 @@ int su_timer_set_interval(su_timer_t *t,
   su_timer_t **timers;
 
   if (t == NULL) {
-    SU_DEBUG_1(("%s(%p): %s\n", func, t, "NULL argument"));
+    SU_DEBUG_1(("%s(%p): %s\n", func, (void *)t, "NULL argument"));
     return -1;
   }
 
   timers = su_task_timers(t->sut_task);
   if (timers == NULL) {
-    SU_DEBUG_1(("%s(%p): %s\n", func, t, "invalid timer"));
+    SU_DEBUG_1(("%s(%p): %s\n", func, (void *)t, "invalid timer"));
     return -1;
   }
 
@@ -333,7 +333,8 @@ int su_timer_set(su_timer_t *t,
 
   assert(t->sut_duration > 0);
   if (t->sut_duration == 0) {
-    SU_DEBUG_0(("%s(%p): %s\n", func, t, "timer without default duration"));
+    SU_DEBUG_0(("%s(%p): %s\n", func, (void *)t,
+		"timer without default duration"));
     return -1;
   }
 
@@ -360,13 +361,13 @@ int su_timer_set_at(su_timer_t *t,
   su_timer_t **timers;
 
   if (t == NULL) {
-    SU_DEBUG_1(("%s(%p): %s\n", func, t, "NULL argument"));
+    SU_DEBUG_1(("%s(%p): %s\n", func, (void *)t, "NULL argument"));
     return -1;
   }
 
   timers = su_task_timers(t->sut_task);
   if (timers == NULL) {
-    SU_DEBUG_1(("%s(%p): %s\n", func, t, "invalid timer"));
+    SU_DEBUG_1(("%s(%p): %s\n", func, (void *)t, "invalid timer"));
     return -1;
   }
 
@@ -402,19 +403,20 @@ int su_timer_run(su_timer_t *t,
   su_time_t now = su_now();
 
   if (t == NULL) {
-    SU_DEBUG_1(("%s(%p): %s\n", func, t, "NULL argument"));
+    SU_DEBUG_1(("%s(%p): %s\n", func, (void *)t, "NULL argument"));
     return -1;
   }
 
   assert(t->sut_duration > 0);
   if (t->sut_duration == 0) {
-    SU_DEBUG_1(("%s(%p): %s\n", func, t, "timer without default duration"));
+    SU_DEBUG_1(("%s(%p): %s\n", func, (void *)t,
+		"timer without default duration"));
     return -1;
   }
 
   timers = su_task_timers(t->sut_task);
   if (timers == NULL) {
-    SU_DEBUG_1(("%s(%p): %s\n", func, t, "invalid timer"));
+    SU_DEBUG_1(("%s(%p): %s\n", func, (void *)t, "invalid timer"));
     return -1;
   }
 
@@ -447,24 +449,25 @@ int su_timer_set_for_ever(su_timer_t *t,
 			  su_timer_f wakeup,
 			  su_timer_arg_t *arg)
 {
-  char const *func = "su_timer_run";
+  char const *func = "su_timer_set_for_ever";
   su_timer_t **timers;
   su_time_t now = su_now();
 
   if (t == NULL) {
-    SU_DEBUG_1(("%s(%p): %s\n", func, t, "NULL argument"));
+    SU_DEBUG_1(("%s(%p): %s\n", func, (void *)t, "NULL argument"));
     return -1;
   }
 
   assert(t->sut_duration > 0);
   if (t->sut_duration == 0) {
-    SU_DEBUG_1(("%s(%p): %s\n", func, t, "timer without default duration"));
+    SU_DEBUG_1(("%s(%p): %s\n", func, (void *)t,
+		"timer without default duration"));
     return -1;
   }
 
   timers = su_task_timers(t->sut_task);
   if (timers == NULL) {
-    SU_DEBUG_1(("%s(%p): %s\n", func, t, "invalid timer"));
+    SU_DEBUG_1(("%s(%p): %s\n", func, (void *)t, "invalid timer"));
     return -1;
   }
 
@@ -476,7 +479,6 @@ int su_timer_set_for_ever(su_timer_t *t,
 
   return 0;
 }
-
 
 /**Reset the timer.
  *
@@ -492,7 +494,7 @@ int su_timer_reset(su_timer_t *t)
   su_timer_t **timers;
 
   if (t == NULL) {
-    SU_DEBUG_1(("%s(%p): %s\n", func, t, "NULL argument"));
+    SU_DEBUG_1(("%s(%p): %s\n", func, (void *)t, "NULL argument"));
     return -1;
   }
 

@@ -58,4 +58,4 @@ AUTOMAKE_OPTIONS = 	foreign
 # ----------------------------------------------------------------------
 # Sofia specific rules
 
-include ../../libsofia-sip-ua/sofia.am
+include $(top_srcdir)/rules/sofia.am

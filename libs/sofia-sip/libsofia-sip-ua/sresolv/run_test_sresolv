@@ -56,7 +56,10 @@ if netstat --ip >/dev/null 2>&1 ; then
 fi
 
 # No named, no fun
-type -p named >/dev/null || exit 77
+type -p named >/dev/null || {
+echo test_sresolv: there is no BIND named installed, skipping
+exit 77
+} 
 
 if eval $ipv6
 then

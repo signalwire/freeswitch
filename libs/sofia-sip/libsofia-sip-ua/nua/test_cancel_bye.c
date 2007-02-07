@@ -496,13 +496,13 @@ int destroy_when_early(CONDITION_PARAMS)
     return 0;
   case nua_callstate_early:
     if (call)
-      nua_handle_destroy(call->nh), call->nh = NULL;
+      DESTROY(ep, call, nh), call->nh = NULL;
     return 1;
   case nua_callstate_completed:
   case nua_callstate_ready:
   case nua_callstate_terminated:
     if (call)
-      nua_handle_destroy(call->nh), call->nh = NULL;
+      DESTROY(ep, call, nh), call->nh = NULL;
     return 1;
   default:
     return 0;
@@ -594,7 +594,7 @@ int destroy_when_completed(CONDITION_PARAMS)
   case nua_callstate_ready:
   case nua_callstate_terminated:
     if (call)
-      nua_handle_destroy(call->nh), call->nh = NULL;
+      DESTROY(ep, call, nh), call->nh = NULL;
     return 1;
   default:
     return 0;

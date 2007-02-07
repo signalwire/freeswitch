@@ -230,7 +230,7 @@ test_proxy_init(su_root_t *root, struct proxy *proxy)
 				  NTATAG_UA(0),
 				  NTATAG_SERVER_RPORT(1),
 				  NTATAG_CLIENT_RPORT(1),
-				  TAG_END());
+				  TAG_NEXT(proxy->tags));
 
   proxy->transport_contacts = create_transport_contacts(proxy);
 
@@ -308,7 +308,7 @@ test_proxy_deinit(su_root_t *root, struct proxy *proxy)
   free(proxy->tags);
 }
 
-/* Create tst proxy object */
+/* Create test proxy object */
 struct proxy *test_proxy_create(su_root_t *root,
 				tag_type_t tag, tag_value_t value, ...)
 {

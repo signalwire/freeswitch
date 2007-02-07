@@ -464,43 +464,43 @@ NTA_DLL extern tag_typedef_t ntatag_rseq_ref;
 /* Tags for statistics. */
 
 NTA_DLL extern tag_typedef_t ntatag_s_irq_hash;
-#define NTATAG_S_IRQ_HASH(x) ntatag_s_irq_hash, tag_uint_v(x)
+#define NTATAG_S_IRQ_HASH(x) ntatag_s_irq_hash, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_irq_hash_ref;
-#define NTATAG_S_IRQ_HASH_REF(x) ntatag_s_irq_hash_ref, tag_uint_vr(&(x))
+#define NTATAG_S_IRQ_HASH_REF(x) ntatag_s_irq_hash_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_orq_hash;
-#define NTATAG_S_ORQ_HASH(x) ntatag_s_orq_hash, tag_uint_v(x)
+#define NTATAG_S_ORQ_HASH(x) ntatag_s_orq_hash, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_orq_hash_ref;
-#define NTATAG_S_ORQ_HASH_REF(x) ntatag_s_orq_hash_ref, tag_uint_vr(&(x))
+#define NTATAG_S_ORQ_HASH_REF(x) ntatag_s_orq_hash_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_leg_hash;
-#define NTATAG_S_LEG_HASH(x) ntatag_s_leg_hash, tag_uint_v(x)
+#define NTATAG_S_LEG_HASH(x) ntatag_s_leg_hash, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_leg_hash_ref;
-#define NTATAG_S_LEG_HASH_REF(x) ntatag_s_leg_hash_ref, tag_uint_vr(&(x))
+#define NTATAG_S_LEG_HASH_REF(x) ntatag_s_leg_hash_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_irq_hash_used;
-#define NTATAG_S_IRQ_HASH_USED(x) ntatag_s_irq_hash_used, tag_uint_v(x)
+#define NTATAG_S_IRQ_HASH_USED(x) ntatag_s_irq_hash_used, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_irq_hash_used_ref;
 #define NTATAG_S_IRQ_HASH_USED_REF(x) \
-ntatag_s_irq_hash_used_ref, tag_uint_vr(&(x))
+ntatag_s_irq_hash_used_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_orq_hash_used;
-#define NTATAG_S_ORQ_HASH_USED(x) ntatag_s_orq_hash_used, tag_uint_v(x)
+#define NTATAG_S_ORQ_HASH_USED(x) ntatag_s_orq_hash_used, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_orq_hash_used_ref;
 #define NTATAG_S_ORQ_HASH_USED_REF(x) \
-ntatag_s_orq_hash_used_ref, tag_uint_vr(&(x))
+ntatag_s_orq_hash_used_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_leg_hash_used;
-#define NTATAG_S_LEG_HASH_USED(x) ntatag_s_leg_hash_used, tag_uint_v(x)
+#define NTATAG_S_LEG_HASH_USED(x) ntatag_s_leg_hash_used, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_leg_hash_used_ref;
 #define NTATAG_S_LEG_HASH_USED_REF(x) \
-ntatag_s_leg_hash_used_ref, tag_uint_vr(&(x))
+ntatag_s_leg_hash_used_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_recv_msg;
 #define NTATAG_S_RECV_MSG(x) ntatag_s_recv_msg, tag_uint_v(x)

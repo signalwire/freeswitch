@@ -73,7 +73,7 @@ EXTRA_DIST =		Doxyfile nta.docs sl_utils.docs \
 # ----------------------------------------------------------------------
 # Sofia specific rules
 
-include ../sofia.am
+include $(top_srcdir)/rules/sofia.am
 
 # Generate list of nta tags
 TAG_DLL_FLAGS = 	LIST=nta_tag_list

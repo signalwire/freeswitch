@@ -269,7 +269,7 @@ nua_dialog_usage_t *nua_dialog_usage_add(nua_owner_t *own,
     du = *prev_du;
     if (du) {		/* Already exists */
       SU_DEBUG_5(("nua(%p): adding already existing %s usage%s%s\n",
-		  own, nua_dialog_usage_name(du), 
+		  (void *)own, nua_dialog_usage_name(du), 
 		  event ? "  with event " : "", event ? event->o_type : ""));
       
       if (prev_du != &ds->ds_usage) {
@@ -297,7 +297,7 @@ nua_dialog_usage_t *nua_dialog_usage_add(nua_owner_t *own,
       }
 	
       SU_DEBUG_5(("nua(%p): adding %s usage%s%s\n",
-		  own, nua_dialog_usage_name(du), 
+		  (void *)own, nua_dialog_usage_name(du), 
 		  o ? " with event " : "", o ? o->o_type :""));
 
       su_home_ref(own);
@@ -345,6 +345,15 @@ void nua_dialog_usage_remove_at(nua_owner_t *own,
     nua_client_request_t *cr, *cr_next;
     nua_server_request_t *sr, *sr_next;
 
+    /* Destroy saved client request */
+    if (nua_client_is_bound(du->du_cr)) {
+      nua_client_bind(cr = du->du_cr, NULL);
+      if (!nua_client_is_queued(cr) &&
+	  !nua_client_is_reporting(cr))
+	nua_client_request_destroy(cr);
+    }
+
+    /* Clean references from queued client requests */
     for (cr = ds->ds_cr; cr; cr = cr_next) {
       cr_next = cr->cr_next;
       if (cr->cr_usage == du)
@@ -362,10 +371,9 @@ void nua_dialog_usage_remove_at(nua_owner_t *own,
     o = du->du_event;
 
     SU_DEBUG_5(("nua(%p): removing %s usage%s%s\n",
-		own, nua_dialog_usage_name(du), 
+		(void *)own, nua_dialog_usage_name(du), 
 		o ? " with event " : "", o ? o->o_type :""));
     du->du_class->usage_remove(own, ds, du);
-    msg_destroy(du->du_msg), du->du_msg = NULL;
     su_home_unref(own);
     su_free(own, du);
   }
@@ -412,7 +420,7 @@ void nua_dialog_log_usage(nua_owner_t *own, nua_dialog_state_t *ds)
       }
     }
     
-    SU_DEBUG_3(("nua(%p): handle with %s%s%s\n", own,
+    SU_DEBUG_3(("nua(%p): handle with %s%s%s\n", (void *)own,
 		ds->ds_has_session ? "session and " : "", 
 		ds->ds_has_events ? "events " : "",
 		buffer));
@@ -430,12 +438,11 @@ void nua_dialog_deinit(nua_owner_t *own,
 
 
 /** @internal Dialog has been terminated. Remove all usages. */
-void nua_dialog_terminated(nua_owner_t *own,
-			   struct nua_dialog_state *ds,
-			   int status,
-			   char const *phrase)
+void nua_dialog_remove_usages(nua_owner_t *own,
+			      struct nua_dialog_state *ds,
+			      int status,
+			      char const *phrase)
 {
-
   ds->ds_terminated = 1;
 
   while (ds->ds_usage) {
@@ -449,6 +456,8 @@ void nua_dialog_terminated(nua_owner_t *own,
 #endif
     nua_dialog_usage_remove_at(own, ds, &ds->ds_usage);
   }
+
+  nua_dialog_remove(own, ds, NULL);
 }
 
 /**@internal
@@ -524,7 +533,8 @@ void nua_dialog_usage_refresh_range(nua_dialog_usage_t *du,
 /**@internal Do not refresh. */
 void nua_dialog_usage_reset_refresh(nua_dialog_usage_t *du)
 {
-  du->du_refresh = 0;
+  if (du)
+    du->du_refresh = 0;
 }
 
 /** @internal Refresh usage or shutdown usage if @a now is 0. */
@@ -537,18 +547,43 @@ void nua_dialog_usage_refresh(nua_owner_t *owner,
     du->du_refresh = 0;
 
     if (now > 0) {
-      if (du->du_class->usage_refresh) {
-	du->du_class->usage_refresh(owner, ds, du, now);
-	return;
-      }
+      assert(du->du_class->usage_refresh);
+      du->du_class->usage_refresh(owner, ds, du, now);
     }
     else {
       du->du_shutdown = 1;
-      if (du->du_class->usage_shutdown) {
-	du->du_class->usage_shutdown(owner, ds, du);
-	return;
-      }
+      assert(du->du_class->usage_shutdown);
+      du->du_class->usage_shutdown(owner, ds, du);
     }
   }
 }
 
+/** Terminate all dialog usages gracefully. */
+int nua_dialog_shutdown(nua_owner_t *owner, nua_dialog_state_t *ds)
+{
+  nua_dialog_usage_t *du;
+
+  do {
+    for (du = ds->ds_usage; du; du = du->du_next) {
+      if (!du->du_shutdown) {
+	nua_dialog_usage_shutdown(owner, ds, du);
+	break;
+      }
+    }
+  } while (du);
+
+  return 1;
+}
+
+/** (Gracefully) terminate usage */
+void nua_dialog_usage_shutdown(nua_owner_t *owner,
+				nua_dialog_state_t *ds,
+				nua_dialog_usage_t *du)
+{
+  if (du) {
+    du->du_refresh = 0;
+    du->du_shutdown = 1;
+    assert(du->du_class->usage_shutdown);
+    du->du_class->usage_shutdown(owner, ds, du);
+  }
+}

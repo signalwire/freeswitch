@@ -57,7 +57,7 @@
 #include <ws2tcpip.h>
 #endif
 
-#if defined(HAVE_OPENSSL)
+#if HAVE_OPENSSL
 #include <openssl/opensslv.h>
 #endif
 
@@ -218,7 +218,7 @@ struct stun_handle_s
   stun_discovery_magic_t *sh_dns_pend_ctx;
   tagi_t             *sh_dns_pend_tags;
 
-#if defined(HAVE_OPENSSL)
+#if HAVE_OPENSSL
   SSL_CTX        *sh_ctx;           /**< SSL context for TLS */
   SSL            *sh_ssl;           /**< SSL handle for TLS */
 #else
@@ -316,7 +316,7 @@ int stun_lifetime(stun_discovery_t *sd)
 }
 
 
-#if defined(HAVE_OPENSSL)
+#if HAVE_OPENSSL
 char const stun_version[] = 
  "sofia-sip-stun using " OPENSSL_VERSION_TEXT;
 #else
@@ -325,7 +325,9 @@ char const stun_version[] =
 #endif
 
 static int do_action(stun_handle_t *sh, stun_msg_t *binding_response);
+#if HAVE_OPENSSL
 static int stun_tls_callback(su_root_magic_t *m, su_wait_t *w, su_wakeup_arg_t *arg);
+#endif
 static int process_binding_request(stun_request_t *req, stun_msg_t *binding_response);
 static stun_discovery_t *stun_discovery_create(stun_handle_t *sh,
 					       stun_action_t action,
@@ -349,9 +351,11 @@ static int get_localinfo(int family, su_sockaddr_t *su, socklen_t *return_len);
 static void stun_sendto_timer_cb(su_root_magic_t *magic, 
 				 su_timer_t *t,
 				 su_timer_arg_t *arg);
+#if HAVE_OPENSSL
 static void stun_tls_connect_timer_cb(su_root_magic_t *magic, 
 				      su_timer_t *t,
 				      su_timer_arg_t *arg);
+#endif
 static void stun_test_lifetime_timer_cb(su_root_magic_t *magic, 
 					su_timer_t *t,
 					su_timer_arg_t *arg);
@@ -526,7 +530,7 @@ int stun_obtain_shared_secret(stun_handle_t *sh,
 			      stun_discovery_magic_t *magic,
 			      tag_type_t tag, tag_value_t value, ...)
 {
-#if defined(HAVE_OPENSSL)
+#if HAVE_OPENSSL
   int events = -1;
   int one, err = -1;
   su_wait_t wait[1] = { SU_WAIT_INIT };
@@ -1280,8 +1284,9 @@ int stun_test_nattype(stun_handle_t *sh,
  * Internal functions
  *******************************************************************/
 
-#if defined(HAVE_OPENSSL)
-static int stun_tls_callback(su_root_magic_t *m, su_wait_t *w, su_wakeup_arg_t *arg)
+#if HAVE_OPENSSL
+static 
+int stun_tls_callback(su_root_magic_t *m, su_wait_t *w, su_wakeup_arg_t *arg)
 {
   stun_discovery_t *sd = arg;
   stun_handle_t *self = sd->sd_handle;
@@ -1298,7 +1303,7 @@ static int stun_tls_callback(su_root_magic_t *m, su_wait_t *w, su_wakeup_arg_t *
 
   enter;
 
-  SU_DEBUG_7(("%s(%p): events%s%s%s%s\n", __func__, self,
+  SU_DEBUG_7(("%s(%p): events%s%s%s%s\n", __func__, (void *)self,
 	      events & SU_WAIT_CONNECT ? " CONNECTED" : "",
 	      events & SU_WAIT_ERR     ? " ERR"       : "",
 	      events & SU_WAIT_IN      ? " IN"        : "",
@@ -1528,15 +1533,11 @@ static int stun_tls_callback(su_root_magic_t *m, su_wait_t *w, su_wakeup_arg_t *
 
   return 0;
 }
-#else
-static int stun_tls_callback(su_root_magic_t *m, su_wait_t *w, su_wakeup_arg_t *arg)
-{
-  return 0;
-}
+
 #endif /* HAVE_OPENSSL */
 
 
-#if defined(HAVE_OPENSSL)
+#if HAVE_OPENSSL
 static void stun_tls_connect_timer_cb(su_root_magic_t *magic, 
 				      su_timer_t *t,
 				      su_timer_arg_t *arg)
@@ -1566,12 +1567,7 @@ static void stun_tls_connect_timer_cb(su_root_magic_t *magic,
 
   return;
 }
-#else
-static void stun_tls_connect_timer_cb(su_root_magic_t *magic, 
-				      su_timer_t *t,
-				      su_timer_arg_t *arg)
-{
-}
+
 #endif /* HAVE_OPENSSL */
 
 /** Compose a STUN message of the format defined by stun_msg_t
@@ -1664,7 +1660,7 @@ static int stun_bind_callback(stun_magic_t *m, su_wait_t *w, su_wakeup_arg_t *ar
 
   enter;
 
-  SU_DEBUG_7(("%s(%p): events%s%s%s\n", __func__, self,
+  SU_DEBUG_7(("%s(%p): events%s%s%s\n", __func__, (void *)self,
 	      events & SU_WAIT_IN ? " IN" : "",
 	      events & SU_WAIT_OUT ? " OUT" : "",
 	      events & SU_WAIT_ERR ? " ERR" : ""));

@@ -105,7 +105,7 @@ struct auth_scheme
 typedef struct
 {
   unsigned        apw_index;	/**< Key to hash table */
-  void const     *apw_type;	/**< Magic pointer */
+  void const     *apw_type;	/**< Magic identifier */
 
   char const   	 *apw_user;	/**< Username */
   char const     *apw_realm;	/**< Realm */
@@ -124,7 +124,7 @@ struct stat;
 struct auth_mod_t
 {
   su_home_t      am_home[1];
-  unsigned       am_refcount;	/**< Number of references to this module */
+  unsigned       _am_refcount;	/**< Not used */
 
   /* User database / cache */
   char const    *am_db;		/**< User database file name */

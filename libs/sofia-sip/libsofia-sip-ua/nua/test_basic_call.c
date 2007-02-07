@@ -117,6 +117,8 @@ int accept_call_with_early_sdp(CONDITION_PARAMS)
   case nua_callstate_received:
     RESPOND(ep, call, nh, SIP_180_RINGING, 
 	    TAG_IF(call->sdp, SOATAG_USER_SDP_STR(call->sdp)),
+	    NUTAG_M_DISPLAY("Bob"),
+	    NUTAG_M_USERNAME("b+b"),
 	    TAG_END());
     return 0;
   case nua_callstate_early:
@@ -217,6 +219,8 @@ int test_basic_call_1(struct context *ctx)
   INVITE(a, a_call, a_call->nh,
 	 TAG_IF(!ctx->proxy_tests, NUTAG_URL(b->contact->m_url)),
 	 SOATAG_USER_SDP_STR(a_call->sdp),
+	 NUTAG_M_USERNAME("a+a"),
+	 NUTAG_M_DISPLAY("Alice"),
 	 TAG_END());
 
   run_ab_until(ctx, -1, until_ready, -1, accept_call_with_early_sdp);
@@ -263,8 +267,11 @@ int test_basic_call_1(struct context *ctx)
   TEST_1(is_answer_recv(e->data->e_tags));
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
   TEST(e->data->e_status, 200);
-  TEST_1(sip->sip_payload);
   TEST_1(sip = sip_object(e->data->e_msg));
+  TEST_1(sip->sip_payload);
+  TEST_1(sip->sip_contact);
+  TEST_S(sip->sip_contact->m_display, "Bob");
+  TEST_S(sip->sip_contact->m_url->url_user, "b+b");
   /* Test that B uses application-specific contact */
   if (ctx->proxy_tests)
     TEST_1(sip->sip_contact->m_url->url_user);
@@ -282,6 +289,10 @@ int test_basic_call_1(struct context *ctx)
   */
   TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_invite);
   TEST(e->data->e_status, 100);
+  TEST_1(sip = sip_object(e->data->e_msg));
+  TEST_1(sip->sip_contact);
+  TEST_S(sip->sip_contact->m_display, "Alice");
+  TEST_S(sip->sip_contact->m_url->url_user, "a+a");
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_received); /* RECEIVED */
   TEST_1(is_offer_recv(e->data->e_tags));
@@ -404,6 +415,7 @@ int test_basic_call_2(struct context *ctx)
   INVITE(a, a_call, a_call->nh,
 	 NUTAG_URL(b->contact->m_url),
 	 SOATAG_USER_SDP_STR(a_call->sdp),
+	 NUTAG_ALLOW("INFO"),
 	 TAG_END());
 
   run_ab_until(ctx, -1, until_ready, -1, accept_early_answer);
@@ -466,32 +478,55 @@ int test_basic_call_2(struct context *ctx)
   TEST_1(nua_handle_has_active_call(b_call->nh));
   TEST_1(!nua_handle_has_call_on_hold(b_call->nh));
 
+  INFO(b, b_call, b_call->nh, TAG_END());
   BYE(b, b_call, b_call->nh, TAG_END());
+  INFO(b, b_call, b_call->nh, TAG_END());
+
   run_ab_until(ctx, -1, until_terminated, -1, until_terminated);
 
+  while (!b->events->head || /* r_info */
+	 !b->events->head->next || /* r_bye */
+	 !b->events->head->next->next || /* i_state */
+	 !b->events->head->next->next->next) /* r_info */
+    run_ab_until(ctx, -1, save_events, -1, save_until_final_response);
+
   /* B transitions:
+   nua_info()
    READY --(T2)--> TERMINATING: nua_bye()
+   nua_r_info with 200
    TERMINATING --(T3)--> TERMINATED: nua_r_bye, nua_i_state
+   nua_r_info with 481/900
   */
-  TEST_1(e = b->events->head);  TEST_E(e->data->e_event, nua_r_bye);
+  TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_r_info);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_bye);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_terminated); /* TERMINATED */
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_info);
+  TEST_1(e->data->e_status >= 900 || e->data->e_status == 481);
   TEST_1(!e->next);
   free_events_in_list(ctx, b->events);
 
   TEST_1(!nua_handle_has_active_call(b_call->nh));
 
   /* A transitions:
+     nua_i_info
      READY -(T1)-> TERMINATED: nua_i_bye, nua_i_state
   */
-  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_i_bye);
+  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_i_info);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_bye);
   TEST(e->data->e_status, 200);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_terminated); /* TERMINATED */
   TEST_1(!e->next);
   free_events_in_list(ctx, a->events);
 
-  TEST_1(!nua_handle_has_active_call(a_call->nh));
+  BYE(a, a_call, a_call->nh, TAG_END());
+  run_a_until(ctx, -1, save_until_final_response);
+
+  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_r_bye);
+  TEST_1(e->data->e_status >= 900);
+  TEST_1(!e->next);
+  free_events_in_list(ctx, a->events);
 
   nua_handle_destroy(a_call->nh), a_call->nh = NULL;
   nua_handle_destroy(b_call->nh), b_call->nh = NULL;

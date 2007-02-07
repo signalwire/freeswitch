@@ -187,7 +187,7 @@ static int tport_tls_init_master(tport_primary_t *pri,
     ti.CAfile = su_sprintf(autohome, "%s/%s", path, "cafile.pem");
     ti.version = tls_version;
 
-    SU_DEBUG_9(("%s(%p): tls key = %s\n", __func__, pri, ti.key));
+    SU_DEBUG_9(("%s(%p): tls key = %s\n", __func__, (void *)pri, ti.key));
 
     if (ti.key && ti.CAfile && ti.randFile) {
       tlspri->tlspri_master = tls_init_master(&ti);
@@ -271,7 +271,7 @@ int tport_tls_set_events(tport_t const *self)
   int mask = tls_events(tlstp->tlstp_context, self->tp_events);
 
   SU_DEBUG_7(("%s(%p): logical events%s%s real%s%s\n",
-	      "tport_tls_set_events", self, 
+	      "tport_tls_set_events", (void *)self, 
 	      (self->tp_events & SU_WAIT_IN) ? " IN" : "",
 	      (self->tp_events & SU_WAIT_OUT) ? " OUT" : "",
 	      (mask & SU_WAIT_IN) ? " IN" : "",
@@ -325,7 +325,7 @@ int tport_tls_events(tport_t *self, int events)
     return 0;
 
   SU_DEBUG_7(("%s(%p): logical events%s%s real%s%s\n",
-	      "tport_tls_events", self, 
+	      "tport_tls_events", (void *)self, 
 	      (events & SU_WAIT_IN) ? " IN" : "",
 	      (events & SU_WAIT_OUT) ? " OUT" : "",
 	      (mask & SU_WAIT_IN) ? " IN" : "",
@@ -358,7 +358,7 @@ int tport_tls_recv(tport_t *self)
 
   N = tls_read(tlstp->tlstp_context);
 
-  SU_DEBUG_7(("%s(%p): tls_read() returned "MOD_ZD"\n", __func__, self, N));
+  SU_DEBUG_7(("%s(%p): tls_read() returned "MOD_ZD"\n", __func__, (void *)self, N));
 
   if (N == 0) /* End-of-stream */
     return 0;
@@ -462,7 +462,7 @@ ssize_t tport_tls_send(tport_t const *self,
 #endif
 
     SU_DEBUG_9(("tport_tls_writevec: vec %p %p %lu ("MOD_ZD")\n",  
-		tlstp->tlstp_context, iov[i].siv_base, (LU)iov[i].siv_len, 
+		(void *)tlstp->tlstp_context, (void *)iov[i].siv_base, (LU)iov[i].siv_len, 
 		nerror));
 
     if (nerror == -1) {

@@ -496,14 +496,14 @@ nea_server_t *nea_server_create(nta_agent_t *agent,
 	nes->nes_eventity_uri &&
 	(nes->nes_leg || leg == NULL) &&
 	nes->nes_timer) {
-      SU_DEBUG_5(("nea_server_create(%p): success\n", nes));
+      SU_DEBUG_5(("nea_server_create(%p): success\n", (void *)nes));
       su_timer_set(nes->nes_timer, nes_event_timer, nes);
 
       nes->nes_callback = callback;
       nes->nes_context = context;
     }
     else {
-      SU_DEBUG_5(("nea_server_create(%p): failed\n", nes));
+      SU_DEBUG_5(("nea_server_create(%p): failed\n", (void *)nes));
       nea_server_destroy(nes), nes = NULL;
     }
   }
@@ -551,11 +551,11 @@ int nea_server_shutdown(nea_server_t *nes,
     return 500;
 
   if (nes->nes_in_callback) {
-    SU_DEBUG_5(("nea_server_shutdown(%p) while in callback\n", nes));
+    SU_DEBUG_5(("nea_server_shutdown(%p) while in callback\n", (void *)nes));
     return 100;
   }
   
-  SU_DEBUG_5(("nea_server_shutdown(%p)\n", nes));
+  SU_DEBUG_5(("nea_server_shutdown(%p)\n", (void *)nes));
 
   in_callback = nes->nes_in_callback; nes->nes_in_callback = 1;
 
@@ -585,12 +585,12 @@ void nea_server_destroy(nea_server_t *nes)
     return;
 
   if (nes->nes_in_callback) {
-    SU_DEBUG_5(("nea_server_destroy(%p) while in callback\n", nes));
+    SU_DEBUG_5(("nea_server_destroy(%p) while in callback\n", (void *)nes));
     nes->nes_pending_destroy = 1;
     return;
   }
   
-  SU_DEBUG_5(("nea_server_destroy(%p)\n", nes));
+  SU_DEBUG_5(("nea_server_destroy(%p)\n", (void *)nes));
   
   nta_leg_destroy(nes->nes_leg), nes->nes_leg = NULL;
   
@@ -837,8 +837,8 @@ int nea_view_update(nea_server_t *nes,
   if (evq->evq_content_type)
     nea_view_queue(nes, evv, evq);
 
-  SU_DEBUG_7(("nea_server_update(%p): %s (%s)\n", 
-	      nes, ev->ev_event->o_type, evv->evv_content_type->c_type));
+  SU_DEBUG_7(("nea_server_update(%p): %s (%s)\n", (void *)nes,
+	      ev->ev_event->o_type, evv->evv_content_type->c_type));
 
   return 1;
 }
@@ -1019,7 +1019,8 @@ int nea_server_notify(nea_server_t *nes, nea_event_t *ev)
   nea_sub_t *s;
   int notified = 0, throttled = nes->nes_throttled;
 
-  SU_DEBUG_7(("nea_server_notify(%p): %s\n", nes, ev ? ev->ev_event->o_type: ""));
+  SU_DEBUG_7(("nea_server_notify(%p): %s\n", (void *)nes,
+	      ev ? ev->ev_event->o_type: ""));
 
   ++nes->nes_in_list;
 

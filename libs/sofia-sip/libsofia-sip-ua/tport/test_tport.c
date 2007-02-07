@@ -381,7 +381,7 @@ static void tp_test_error(tp_test_t *tt,
 {
   tt->tt_status = -1;
   fprintf(stderr, "tp_test_error(%p): error %d (%s) from %s\n", 
-	  tp, errcode, su_strerror(errcode), 
+	  (void *)tp, errcode, su_strerror(errcode), 
 	  remote ? remote : "<unknown destination>");
 }
 

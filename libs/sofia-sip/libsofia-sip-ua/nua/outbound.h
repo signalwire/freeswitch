@@ -72,15 +72,11 @@ int outbound_set_options(outbound_t *ob,
 
 int outbound_set_features(outbound_t *ob, char *features);
 
-nta_outgoing_t *outbound_register_request(outbound_t *ob, int terminating, 
-					  sip_contact_t *stack_contact,
-					  nta_agent_t *nta,
-					  nta_response_f *callback,
-					  nta_outgoing_magic_t *magic,
-					  url_string_t *next_hop,
-					  msg_t *msg,
-					  tag_type_t tag, tag_value_t value,
-					  ...);
+int outbound_get_contacts(outbound_t *ob, 
+			  sip_contact_t **return_current_contact, 
+			  sip_contact_t **return_previous_contact);
+
+int outbound_start_registering(outbound_t *ob);
 
 int outbound_register_response(outbound_t *ob,
 			       int terminating,

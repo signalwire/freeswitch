@@ -55,7 +55,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#if HAVE_SIGPIPE
 #include <signal.h>
+#endif
 
 #include "tport_tls.h"
 
@@ -162,8 +165,10 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
     }
   }
 
+#if HAVE_SIGPIPE
   /* Avoid possible SIGPIPE when sending close_notify */
   signal(SIGPIPE, SIG_IGN);
+#endif
 
   if (tls->bio_err == NULL)
     tls->bio_err = BIO_new_fp(stderr, BIO_NOCLOSE);
@@ -295,7 +300,9 @@ tls_t *tls_init_master(tls_issues_t *ti)
   unsigned char sessionId[32] = "sofia/tls"; 
   tls_t *tls;
 
+#if HAVE_SIGPIPE
   signal(SIGPIPE, SIG_IGN);  /* Ignore spurios SIGPIPE from OpenSSL */
+#endif
 
   tls_set_default(ti);
 
@@ -611,7 +618,7 @@ ssize_t tls_read(tls_t *tls)
   }
 
   if (0)
-    fprintf(stderr, "tls_read(%p) called on %s (events %u)\n", tls,
+    fprintf(stderr, "tls_read(%p) called on %s (events %u)\n", (void *)tls,
 	    tls->type == tls_slave ? "server" : "client",
 	    tls->read_events);
 
@@ -674,7 +681,7 @@ ssize_t tls_write(tls_t *tls, void *buf, size_t size)
 
   if (0) 
     fprintf(stderr, "tls_write(%p, %p, "MOD_ZU") called on %s\n", 
-	    tls, buf, size,
+	    (void *)tls, buf, size,
 	    tls && tls->type == tls_slave ? "server" : "client");
 
   if (tls == NULL || buf == NULL) {

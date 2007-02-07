@@ -46,6 +46,14 @@ else
   SAC_SU_DEFINE([SU_HAVE_PTHREADS], 1, [Sofia SU uses pthreads])
 fi
 
+AC_ARG_ENABLE(experimental,
+[  --enable-experimental       enable experimental features (disabled)],
+ , enable_experimental=no)
+
+if test $enable_experimental = yes ; then
+  SAC_SU_DEFINE([SU_HAVE_EXPERIMENTAL], 1, [Enable experimental features])
+fi
+
 dnl ===========================================================================
 dnl Checks for typedefs, headers, structures, and compiler characteristics.
 dnl ===========================================================================
@@ -119,21 +127,17 @@ fi
 ### Test if we have stack suitable for handling tags directly
 ###
 
-test -z "$ac_cv_tagstack" && 
-case "$target" in 
-i?86-*-* ) ac_cv_tagstack=yes ;;
-esac
-
 AC_CACHE_CHECK([for stack suitable for tags],[ac_cv_tagstack],[
 ac_cv_tagstack=no
 
-AC_RUN_IFELSE([
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #if HAVE_INTTYPES_H
 #include <inttypes.h>
 #endif
 #if HAVE_STDINT_H
 #include <stdint.h>
 #endif
+
 #include <stdarg.h>
 
 typedef void *tp;
@@ -169,7 +173,12 @@ int main(int avc, char **av)
 	       (tv)1, (tv)2, (tv)3, (tv)4, (tv)5,
 	       (tv)6, (tv)7, (tv)8, (tv)9, (tv)10);
 }
-],[ac_cv_tagstack=yes],[ac_cv_tagstack=no],[ac_cv_tagstack=no])])
+]])],[ac_cv_tagstack=yes],[ac_cv_tagstack=no],[
+case "$target" in 
+i?86-*-* ) ac_cv_tagstack=yes ;;
+* ) ac_cv_tagstack=no ;;
+esac
+])])
 
 if test $ac_cv_tagstack = yes ; then
 SAC_SU_DEFINE([SU_HAVE_TAGSTACK], 1, [
@@ -227,9 +236,10 @@ AC_CHECK_HEADERS([winsock2.h], [
      GetSystemTimeAsFileTime().])
 ],[
 dnl no winsock2
+
 SAC_SU_DEFINE([SU_HAVE_BSDSOCK], 1, [Define to 1 if you have BSD socket interface])
 AC_CHECK_HEADERS([sys/socket.h sys/ioctl.h sys/filio.h sys/sockio.h \
-		  sys/select.h])
+		  sys/select.h sys/epoll.h])
 AC_CHECK_HEADERS([netinet/in.h arpa/inet.h netdb.h \
                   net/if.h net/if_types.h ifaddr.h netpacket/packet.h],,,
 		[
@@ -429,9 +439,12 @@ AC_SEARCH_LIBS(getipnodebyname, xnet socket nsl)
 AC_SEARCH_LIBS(gethostbyname, xnet nsl)
 AC_SEARCH_LIBS(getaddrinfo, xnet socket nsl)
 
-AC_CHECK_FUNCS([gettimeofday strerror random initstate tcsetattr flock alarm \
+AC_FUNC_ALLOCA
+
+AC_CHECK_FUNCS([gettimeofday strerror random initstate tcsetattr flock \
                 socketpair gethostname gethostbyname getipnodebyname \
                 poll epoll_create select if_nameindex \
+		signal alarm \
 	        getaddrinfo getnameinfo freeaddrinfo gai_strerror getifaddrs \
                 getline getdelim getpass])
 # getline getdelim getpass are _GNU_SOURCE stuff
@@ -440,7 +453,8 @@ if test $ac_cv_func_poll = yes ; then
   SAC_SU_DEFINE([SU_HAVE_POLL], 1, [Define to 1 if you have poll().])
 fi
 
-if test $ac_cv_func_epoll_create = yes ; then
+if test $ac_cv_func_epoll_create = yes && test $ac_cv_header_sys_epoll_h = yes
+then
   AC_DEFINE([HAVE_EPOLL], 1, [Define to 1 if you have epoll interface.])
 fi
 
@@ -455,8 +469,32 @@ if test "${with_rt}" != no; then
 fi
 
 SAC_REPLACE_FUNCS([memmem memccpy memspn memcspn strcasestr strtoull \
-		   inet_ntop inet_pton])
+		   inet_ntop inet_pton poll])
 
+if test $ac_cv_func_signal = yes ; then
+AC_CHECK_DECL([SIGPIPE], [
+AC_DEFINE([HAVE_SIGPIPE], 1, [Define to 1 if you have SIGPIPE])],,[
+#include <signal.h>
+])
+dnl add SIGHUP SIGQUIT if needed
+fi
+
+# ===========================================================================
+# Check how to implement su_port
+# ===========================================================================
+
+AC_ARG_ENABLE(poll-port,
+[  --disable-poll-port              disable su_poll_port (enabled)
+                                   Use this option in systems emulating poll
+                                   with select], , enable_poll_port=maybe)
+
+if test $enable_poll_port = maybe ; then
+  if test $ac_cv_func_poll = yes ; then
+    AC_DEFINE([HAVE_POLL_PORT], 1, [Define to 1 if you use poll in su_port.])
+  fi
+elif test $enable_poll_port = yes ; then
+    AC_DEFINE([HAVE_POLL_PORT], 1, [Define to 1 if you use poll in su_port.])
+fi
 
 # ===========================================================================
 # Check pthread_rwlock_unlock()

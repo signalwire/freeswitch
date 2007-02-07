@@ -108,7 +108,7 @@ int test_quote(void)
   TEST_S(url_escape(unreserved, UNRESERVED, NULL), UNRESERVED);
   TEST_S(url_unescape(unreserved, UNRESERVED), UNRESERVED);
 
-  d = "%73ip:%55@%68";
+  d = "%53ip:%75@%48";		/* Sip:u@H */
   u = url_hdup(home, (url_t *)d); TEST_1(u);
   url_digest(hash1, sizeof(hash1), u, NULL);
   url_digest(hash2, sizeof(hash2), (url_t const *)d, NULL);
@@ -125,9 +125,11 @@ int test_quote(void)
   d = url_as_string(home, u); TEST_1(d);
   TEST_S(d, c);
 
-  d = "sip:&=+$,;?/:&=+$,@host:56001;param=+$,/:@&;another=@"
+  d = "sip:&=+$,;?/:&=+$,@[::1]:56001;param=+$,/:@&;another=@"
     "?header=" RESERVED "&%3b%2f%3f%3a%40%26%3d%2b%24%2c";
   u = url_hdup(home, (url_t *)d); TEST_1(u);
+  TEST_S(u->url_user, "&=+$,;?/");
+  TEST_S(u->url_host, "[::1]");
   TEST_S(u->url_headers, "header=" RESERVED "&%3B%2F%3F%3A%40%26%3D%2B%24%2C");
   url_digest(hash1, sizeof(hash1), u, NULL);
   url_digest(hash2, sizeof(hash2), (url_t const *)d, NULL);
@@ -137,8 +139,10 @@ int test_quote(void)
   d = url_as_string(home, u); TEST_1(d);
   TEST_S(d, c);
 
-  d = "http://&=+$,;:&=+$,;@host:8080/foo;param=+$,/:@&;another=@?query=" RESERVED;
+  d = "http://&=+$,;:&=+$,;@host:8080/foo;param=+$,/:@&;another=@"
+    "?query=" RESERVED;
   u = url_hdup(home, (url_t *)d); TEST_1(u);
+  TEST_S(u->url_user, "&=+$,;"); TEST_S(u->url_password, "&=+$,;");
   url_digest(hash1, sizeof(hash1), u, NULL);
   url_digest(hash2, sizeof(hash2), (url_t const *)d, NULL);
   TEST(memcmp(hash1, hash2, sizeof(hash1)), 0);
@@ -332,6 +336,13 @@ int test_sip(void)
   TEST_P(url_hdup(home, (url_t*)"sip:test@127.0.0.1::55"), NULL);
   TEST_P(url_hdup(home, (url_t*)"sip:test@127.0.0.1:55:"), NULL);
   TEST_P(url_hdup(home, (url_t*)"sip:test@127.0.0.1:sip"), NULL);
+
+  u = url_hdup(home, (url_t*)"SIP:#**00**#;foo=/bar@127.0.0.1"); TEST_1(u);
+  TEST(u->url_type, url_sip);
+  TEST_S(u->url_user, "#**00**#;foo=/bar");
+
+  TEST_1(!url_hdup(home, (url_t*)"SIP:#**00**#;foo=/bar@#127.0.0.1"));
+  TEST_1(!url_hdup(home, (url_t*)"SIP:#**00**#;foo=/bar;127.0.0.1"));
 
   for (i = 32; i <= 256; i++) {
     char pu[512];
@@ -827,6 +838,16 @@ int test_http(void)
   TEST_S(url->url_host, "some.host");
   TEST_S(url->url_headers, "query");
   TEST_S(url->url_params, NULL);
+
+  TEST_1(u = url_hdup(home, (void *)"http://[::1]/test;ing?here"));
+  TEST_S(u->url_host, "[::1]");
+  TEST_S(u->url_path, "test;ing");
+  TEST_S(u->url_headers, "here");
+
+  url_digest(hash1, sizeof(hash1), u, NULL);
+  url_digest(hash2, sizeof(hash2), (url_t *)"http://[::1]/test;ing?here", 
+	     NULL);
+  TEST(memcmp(hash1, hash2, sizeof(hash1)), 0);
     
   su_home_deinit(home);
 

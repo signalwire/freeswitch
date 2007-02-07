@@ -47,7 +47,7 @@ int tstflags;
 #define TSTFLAGS tstflags
 #include <sofia-sip/tstdef.h>
 
-char const *name = "su_torture";
+char const *name = "torture_su";
 
 static int test_sockaddr(void);
 

@@ -108,7 +108,7 @@ bm_memmem_study(char const *needle, size_t nlen)
 /** Search for a substring using Boyer-Moore algorithm.
  * @ingroup su_bm
  */
-char const*
+char *
 bm_memmem(char const *haystack, size_t hlen,
 	  char const *needle, size_t nlen,
 	  bm_fwd_table_t *fwd)
@@ -117,14 +117,14 @@ bm_memmem(char const *haystack, size_t hlen,
   bm_fwd_table_t fwd0[1];
 
   if (nlen == 0)
-    return haystack;
+    return (char *)haystack;
   if (needle == NULL || haystack == NULL || nlen > hlen)
     return NULL;
 
   if (nlen == 1) {
     for (i = 0; i < hlen; i++)
       if (haystack[i] == needle[0])
-	return haystack + i;
+	return (char *)haystack + i;
     return NULL;
   }
 
@@ -139,7 +139,7 @@ bm_memmem(char const *haystack, size_t hlen,
 		  (int)(i - j), "", (int)j, needle, needle + j + 1, 
 		  j == 0 ? "match!" : "back by 1"));
       if (j == 0)
-	return haystack + i;
+	return (char *)haystack + i;
       i--, j--;
     }
     else {
@@ -207,7 +207,7 @@ bm_memcasemem_study(char const *needle, size_t nlen)
 /** Search for substring using Boyer-Moore algorithm.
  * @ingroup su_bm
  */
-char const*
+char *
 bm_memcasemem(char const *haystack, size_t hlen,
 	      char const *needle, size_t nlen,
 	      bm_fwd_table_t *fwd)
@@ -216,14 +216,14 @@ bm_memcasemem(char const *haystack, size_t hlen,
   bm_fwd_table_t fwd0[1];
 
   if (nlen == 0)
-    return haystack;
+    return (char *)haystack;
   if (needle == 0 || haystack == 0 || nlen > hlen)
     return NULL;
 
   if (nlen == 1) {
     for (i = 0; i < hlen; i++)
       if (haystack[i] == needle[0])
-	return haystack + i;
+	return (char *)haystack + i;
     return NULL;
   }
 
@@ -245,7 +245,7 @@ bm_memcasemem(char const *haystack, size_t hlen,
 		  (int)(i - j), "", (int)j, needle, needle + j + 1, 
 		  j == 0 ? "match!" : "back by 1"));
       if (j == 0)
-	return haystack + i;
+	return (char *)haystack + i;
       i--, j--;
     }
     else {

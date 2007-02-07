@@ -58,6 +58,6 @@ EXTRA_DIST =		Doxyfile soa.docs $(BUILT_SOURCES)
 # ----------------------------------------------------------------------
 # Sofia specific rules
 
-include ../sofia.am
+include $(top_srcdir)/rules/sofia.am
 
 TAG_DLL_FLAGS =		LIST=soa_tag_list

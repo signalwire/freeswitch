@@ -32,13 +32,15 @@
 
 #include "config.h" 
 
-#include <stdio.h>
-#include <string.h>
-#include <signal.h>
-
 #include "sofia-sip/su.h"
 #include "sofia-sip/su_log.h"
 #include "sofia-sip/su_alloc.h"
+
+#include <stdio.h>
+#include <string.h>
+#if HAVE_SIGNAL
+#include <signal.h>
+#endif
 
 #if !SU_HAVE_BSDSOCK && !SU_HAVE_WINSOCK
 #error Bad configuration
@@ -67,7 +69,9 @@ int su_init(void)
 {
   su_home_threadsafe(NULL);
 
+#if HAVE_SIGPIPE
   signal(SIGPIPE, SIG_IGN);	/* we want to get EPIPE instead */
+#endif
 
   su_log_init(su_log_default);
   su_log_init(su_log_global);

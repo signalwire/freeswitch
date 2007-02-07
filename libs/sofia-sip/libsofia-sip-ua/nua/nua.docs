@@ -1124,7 +1124,7 @@ follows:
     <td>terminating</td>
     <td>Process answer</td>
     <td>
-   If there was an failure in SDP negotiation or other failure with media,
+   If there was a failure in SDP negotiation or other failure with media,
    the stack will automatically terminate the call. The BYE follows
    immediatelhy after the ACK.
 </td></tr>
@@ -1262,7 +1262,7 @@ does not include the extensions like @b 100rel or @b UPDATE.
      |    +---------------|            |    :         |     :
      |    |               +------------+    :         |     :
      |    |                           |     :         |     :
-     |    |          nua_respond/18X (2)    :         |     :
+     |    |          nua_respond/18X (2a)   :         |     :
      |    |                           |     :         |     :
      |    |                           V     V         |     :
      |    |                          +------------+   |     :
@@ -2219,7 +2219,7 @@ NUTAG_AUTOANSWER(0) on B side, NUTAG_AUTOACK(0) on A side.
  * @param nh     operation handle associated with the notifier
  * @param hmagic operation magic associated with the notifier
  * @param sip    response to MESSAGE request or NULL upon an error
- *               (error code and message are in status an phrase parameters)
+ *               (error code and message are in status and phrase parameters)
  * @param tags   empty
  *
  * @sa nua_chat(), #nua_r_message

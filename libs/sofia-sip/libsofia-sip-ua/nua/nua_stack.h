@@ -103,6 +103,32 @@ typedef struct register_usage nua_registration_t;
   TAG_IF((include) && (soa) && soa_is_remote_chat_active(soa) >= 0,	\
 	 SOATAG_ACTIVE_CHAT(soa_is_remote_chat_active(soa)))
 
+#if HAVE_NUA_HANDLE_DEBUG
+
+#define nua_handle_ref(nh) nua_handle_ref_by((nh), __func__)
+#define nua_handle_unref(nh) nua_handle_unref_by((nh), __func__)
+
+static inline nua_handle_t *nua_handle_ref_by(nua_handle_t *nh,
+					      char const *by)
+{
+  if (nh)
+    SU_DEBUG_0(("nua_handle_ref(%p) => "MOD_ZU" by %s\n", nh, 
+		su_home_refcount((su_home_t *)nh) + 1,
+		by));
+  return (nua_handle_t *)su_home_ref((su_home_t *)nh);
+}
+
+static inline int nua_handle_unref_by(nua_handle_t *nh, char const *by)
+{
+  if (nh)
+    SU_DEBUG_0(("nua_handle_unref(%p) => "MOD_ZU" by %s\n", nh, 
+		su_home_refcount((su_home_t *)nh) - 1,
+		by));
+  return su_home_unref((su_home_t *)nh);
+}
+
+#endif
+
 /** NUA handle. 
  *
  */
@@ -113,7 +139,8 @@ struct nua_handle_s
   nua_handle_t  **nh_prev;
 
   nua_t        	 *nh_nua;	/**< Pointer to NUA object  */
-  void           *nh_valid;
+  void           *nh_valid;	/**< Cookie */
+#define nua_valid_handle_cookie ((void *)(intptr_t)nua_handle)
   nua_hmagic_t 	 *nh_magic;	/**< Application context */
 
   tagi_t         *nh_tags;	/**< Initial tags */
@@ -154,7 +181,8 @@ struct nua_handle_s
   nea_server_t   *nh_notifier;	/**< SIP notifier */
 };
 
-#define NH_IS_VALID(nh) ((nh) && (nh)->nh_valid)
+#define NH_IS_VALID(nh) \
+  ((nh) && (nh)->nh_valid == nua_valid_handle_cookie)
 
 #define NH_STATUS(nh) \
   (nh)->nh_status, \
@@ -285,20 +313,23 @@ nua_stack_signal_handler
   nua_stack_method;
 
 #define UA_EVENT1(e, statusphrase) \
-  nua_stack_event(nua, nh, NULL, e, statusphrase, TAG_END())
+  nua_stack_event(nua, nh, NULL, e, statusphrase, NULL)
 
 #define UA_EVENT2(e, status, phrase)			\
-  nua_stack_event(nua, nh, NULL, e, status, phrase, TAG_END())
+  nua_stack_event(nua, nh, NULL, e, status, phrase, NULL)
 
 #define UA_EVENT3(e, status, phrase, tag)			\
-  nua_stack_event(nua, nh, NULL, e, status, phrase, tag, TAG_END())
+  nua_stack_event(nua, nh, NULL, e, status, phrase, tag, NULL)
+
+int nua_stack_tevent(nua_t *nua, nua_handle_t *nh, msg_t *msg,
+		     nua_event_t event, int status, char const *phrase,
+		     tag_type_t tag, tag_value_t value, ...);
 
 int nua_stack_event(nua_t *nua, nua_handle_t *nh, msg_t *msg,
 		    nua_event_t event, int status, char const *phrase,
-		    tag_type_t tag, tag_value_t value, ...);
+		    tagi_t const *tags);
 
-nua_handle_t *nh_create_handle(nua_t *nua, nua_hmagic_t *hmagic,
-			       tagi_t *tags);
+nua_handle_t *nh_create_handle(nua_t *nua, nua_hmagic_t *hmagic, tagi_t *tags);
 
 nua_handle_t *nua_stack_incoming_handle(nua_t *nua,
 					nta_incoming_t *irq,
@@ -349,47 +380,7 @@ int nua_stack_process_request(nua_handle_t *nh,
 			      nta_incoming_t *irq,
 			      sip_t const *sip);
 
-int nua_stack_process_response(nua_handle_t *nh,
-			       nua_client_request_t *cr,
-			       nta_outgoing_t *orq,
-			       sip_t const *sip,
-			       tag_type_t tag, tag_value_t value, ...);
-
 int nua_stack_launch_network_change_detector(nua_t *nua);
-
-msg_t *nua_creq_msg(nua_t *nua, nua_handle_t *nh,
-		    nua_client_request_t *cr,
-		    int restart, 
-		    sip_method_t method, char const *name,
-		    tag_type_t tag, tag_value_t value, ...);
-
-int nua_tagis_have_contact_tag(tagi_t const *t);
-
-int nua_creq_check_restart(nua_handle_t *nh,
-			   nua_client_request_t *cr,
-			   nta_outgoing_t *orq,
-			   sip_t const *sip,
-			   nua_creq_restart_f *f);
-
-int nua_creq_restart_with(nua_handle_t *nh,
-			  nua_client_request_t *cr,
-			  nta_outgoing_t *orq,
-			  int status, char const *phrase,
-			  nua_creq_restart_f *f, 
-			  tag_type_t tag, tag_value_t value, ...);
-
-int nua_creq_save_restart(nua_handle_t *nh,
-			  nua_client_request_t *cr,
-			  nta_outgoing_t *orq,
-			  int status, char const *phrase,
-			  nua_creq_restart_f *f);
-
-int nua_creq_restart(nua_handle_t *nh,
-		     nua_client_request_t *cr,
-		     nta_response_f *cb,
-		     tagi_t *tags);
-
-void nua_creq_deinit(nua_client_request_t *cr, nta_outgoing_t *orq);
 
 sip_contact_t const *nua_stack_get_contact(nua_registration_t const *nr);
 
@@ -404,51 +395,6 @@ int nua_registration_add_contact_to_response(nua_handle_t *nh,
 					     sip_t *sip,
 					     sip_record_route_t const *,
 					     sip_contact_t const *remote);
-
-msg_t *nh_make_response(nua_t *nua, nua_handle_t *nh, 
-			nta_incoming_t *irq,
-			int status, char const *phrase,
-			tag_type_t tag, tag_value_t value, ...);
-
-
-typedef int nua_stack_process_request_t(nua_t *nua,
-					nua_handle_t *nh,
-					nta_incoming_t *irq,
-					sip_t const *sip);
-
-nua_stack_process_request_t nua_stack_process_invite;
-nua_stack_process_request_t nua_stack_process_info;
-nua_stack_process_request_t nua_stack_process_update;
-nua_stack_process_request_t nua_stack_process_bye;
-nua_stack_process_request_t nua_stack_process_message;
-nua_stack_process_request_t nua_stack_process_options;
-nua_stack_process_request_t nua_stack_process_publish;
-nua_stack_process_request_t nua_stack_process_subscribe;
-nua_stack_process_request_t nua_stack_process_notify;
-nua_stack_process_request_t nua_stack_process_refer;
-nua_stack_process_request_t nua_stack_process_unknown;
-nua_stack_process_request_t nua_stack_process_register;
-nua_stack_process_request_t nua_stack_process_method;
-
-nua_client_request_t
-  *nua_client_request_pending(nua_client_request_t const *),
-  *nua_client_request_restarting(nua_client_request_t const *),
-  *nua_client_request_by_orq(nua_client_request_t const *cr,
-			     nta_outgoing_t const *orq);
-
-nua_server_request_t *nua_server_request(nua_t *nua,
-					 nua_handle_t *nh,
-					 nta_incoming_t *irq,
-					 sip_t const *sip,
-					 nua_server_request_t *sr,
-					 size_t size,
-					 nua_server_respond_f *respond,
-					 int create_dialog);
-
-int nua_stack_server_event(nua_t *nua,
-			   nua_server_request_t *sr,
-			   nua_event_t event,
-			   tag_type_t tag, tag_value_t value, ...);
 
 /* ---------------------------------------------------------------------- */
 
@@ -465,15 +411,6 @@ extern char const nua_application_sdp[];
 /* Private tags */
 #define NUTAG_ADD_CONTACT(v) _nutag_add_contact, tag_bool_v(v)
 extern tag_typedef_t _nutag_add_contact;
-
-#define NUTAG_ADD_CONTACT_REF(v) _nutag_add_contact_ref, tag_bool_vr(&v)
-extern tag_typedef_t _nutag_add_contact_ref;
-
-#define NUTAG_COPY(v) _nutag_copy, tag_bool_v(v)
-extern tag_typedef_t _nutag_copy;
-
-#define NUTAG_COPY_REF(v) _nutag_copy_ref, tag_bool_vr(&v)
-extern tag_typedef_t _nutag_copy_ref;
 
 /* ---------------------------------------------------------------------- */
 

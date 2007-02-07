@@ -1590,5 +1590,25 @@ int test_100rel(struct context *ctx)
   retval = test_preconditions2(ctx); RETURN_ON_SINGLE_FAILURE(retval);
   retval = test_update_by_uas(ctx); RETURN_ON_SINGLE_FAILURE(retval);
 
+  nua_set_params(ctx->a.nua,
+		 NUTAG_EARLY_MEDIA(0),
+		 SIPTAG_SUPPORTED(ctx->a.supported),
+		 TAG_END());
+  run_a_until(ctx, nua_r_set_params, until_final_response);
+
+  nua_set_params(ctx->b.nua,
+		 NUTAG_EARLY_MEDIA(0),
+		 NUTAG_ONLY183_100REL(0),
+		 SIPTAG_SUPPORTED(ctx->b.supported),
+		 TAG_END());
+  run_b_until(ctx, nua_r_set_params, until_final_response);
+
+  nua_set_params(ctx->c.nua,
+		 NUTAG_EARLY_MEDIA(0),
+		 NUTAG_ONLY183_100REL(0),
+		 SIPTAG_SUPPORTED(ctx->c.supported),
+		 TAG_END());
+  run_c_until(ctx, nua_r_set_params, until_final_response);
+
   return retval;
 }

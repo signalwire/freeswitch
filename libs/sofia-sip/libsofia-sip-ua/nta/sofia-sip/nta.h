@@ -300,6 +300,9 @@ int nta_incoming_complete_response(nta_incoming_t *irq,
 				   tag_type_t tag, tag_value_t value, ...);
 
 SOFIAPUBFUN
+msg_t *nta_incoming_create_response(nta_incoming_t *irq, int status, char const *phrase);
+
+SOFIAPUBFUN
 int nta_incoming_treply(nta_incoming_t *ireq, 
 			int status, char const *phrase, 
 			tag_type_t tag, tag_value_t value, ...);

@@ -1,5 +1,13 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
+   systems. This function is required for `alloca.c' support on those systems.
+   */
+#undef CRAY_STACKSEG_END
+
+/* Define to 1 if using `alloca.c'. */
+#undef C_ALLOCA
+
 /* Define to the random number source name. */
 #undef DEV_URANDOM
 
@@ -8,6 +16,13 @@
 
 /* Define to 1 if you have the `alarm' function. */
 #undef HAVE_ALARM
+
+/* Define to 1 if you have `alloca', as a function or macro. */
+#undef HAVE_ALLOCA
+
+/* Define to 1 if you have <alloca.h> and it should be used (not on Ultrix).
+   */
+#undef HAVE_ALLOCA_H
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
@@ -193,6 +208,9 @@
 /* Define to 1 if you have the `poll' function. */
 #undef HAVE_POLL
 
+/* Define to 1 if you use poll in su_port. */
+#undef HAVE_POLL_PORT
+
 /* Define to 1 if you have /proc/net/if_inet6 control file */
 #undef HAVE_PROC_NET_IF_INET6
 
@@ -221,6 +239,9 @@
 /* Define to 1 if you have the <sigcomp.h> header file. */
 #undef HAVE_SIGCOMP_H
 
+/* Define to 1 if you have the `signal' function. */
+#undef HAVE_SIGNAL
+
 /* Define to 1 if you have SIGPIPE */
 #undef HAVE_SIGPIPE
 
@@ -232,6 +253,9 @@
 
 /* Define to 1 if you have the `socketpair' function. */
 #undef HAVE_SOCKETPAIR
+
+/* Define to 1 if we use NTH library */
+#undef HAVE_SOFIA_NTH
 
 /* Define to 1 if we use NTLM library */
 #undef HAVE_SOFIA_NTLM
@@ -277,6 +301,9 @@
 
 /* Define to 1 if your CC supports C99 struct initialization */
 #undef HAVE_STRUCT_KEYWORDS
+
+/* Define to 1 if you have the <sys/epoll.h> header file. */
+#undef HAVE_SYS_EPOLL_H
 
 /* Define to 1 if you have the <sys/filio.h> header file. */
 #undef HAVE_SYS_FILIO_H
@@ -361,6 +388,14 @@
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #undef RETSIGTYPE
+
+/* If using the C implementation of alloca, define if you know the
+   direction of stack growth for your system; otherwise it will be
+   automatically deduced at run-time.
+	STACK_DIRECTION > 0 => grows toward higher addresses
+	STACK_DIRECTION < 0 => grows toward lower addresses
+	STACK_DIRECTION = 0 => direction of growth unknown */
+#undef STACK_DIRECTION
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

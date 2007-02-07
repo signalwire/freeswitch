@@ -22,6 +22,9 @@
 # Licensed under LGPL. See file COPYING.
 #
 
+# Recursive Makefile targets
+# --------------------------
+
 SOURCES = $(libsofia_sip_ua_glib_la_SOURCES)
 
 srcdir = @srcdir@
@@ -48,8 +51,9 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 @HAVE_GLIB_TRUE@am__append_1 = libsofia-sip-ua-glib.la
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(top_srcdir)/rules/recursive.am ChangeLog
 subdir = libsofia-sip-ua-glib
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in ChangeLog
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/sac-general.m4 \
 	$(top_srcdir)/m4/sac-openssl.m4 $(top_srcdir)/m4/sac-su.m4 \
@@ -100,6 +104,7 @@ DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ACLOCAL_AMFLAGS = @ACLOCAL_AMFLAGS@
+ALLOCA = @ALLOCA@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
@@ -146,8 +151,12 @@ HAVE_GLIB_FALSE = @HAVE_GLIB_FALSE@
 HAVE_GLIB_TRUE = @HAVE_GLIB_TRUE@
 HAVE_MINGW32_FALSE = @HAVE_MINGW32_FALSE@
 HAVE_MINGW32_TRUE = @HAVE_MINGW32_TRUE@
+HAVE_NTH_FALSE = @HAVE_NTH_FALSE@
+HAVE_NTH_TRUE = @HAVE_NTH_TRUE@
 HAVE_NTLM_FALSE = @HAVE_NTLM_FALSE@
 HAVE_NTLM_TRUE = @HAVE_NTLM_TRUE@
+HAVE_STUN_FALSE = @HAVE_STUN_FALSE@
+HAVE_STUN_TRUE = @HAVE_STUN_TRUE@
 HAVE_TLS_FALSE = @HAVE_TLS_FALSE@
 HAVE_TLS_TRUE = @HAVE_TLS_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
@@ -191,6 +200,7 @@ REPLACE_LIBADD = @REPLACE_LIBADD@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SOFIA_CFLAGS = @SOFIA_CFLAGS@
+SOFIA_COVERAGE = @SOFIA_COVERAGE@
 SOFIA_GLIB_PKG_REQUIRES = @SOFIA_GLIB_PKG_REQUIRES@
 STRIP = @STRIP@
 TESTS_ENVIRONMENT = @TESTS_ENVIRONMENT@
@@ -261,10 +271,19 @@ EXTRA_DIST = docs/Doxyfile.aliases \
 	     docs/Doxyfile.conf \
 	     docs/Doxyfile.version
 
+@ENABLE_COVERAGE_TRUE@COVERAGE_RECURSIVE = coverage-recursive
+SOFIA_RECURSIVE = \
+	valcheck-recursive \
+	$(COVERAGE_RECURSIVE)
+
+SOFIA_DIST_RECURSIVE = \
+	built-sources-recursive \
+	clean-built-sources-recursive
+
 all: all-recursive
 
 .SUFFIXES:
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/rules/recursive.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -460,7 +479,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/docs
+	$(mkdir_p) $(distdir)/../rules $(distdir)/docs
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -602,16 +621,6 @@ uninstall-info: uninstall-info-recursive
 	uninstall-info-am uninstall-libLTLIBRARIES
 
 
-built-sources: built-sources-recursive 
-clean-built-sources: clean-built-sources-recursive
-
-built-sources-recursive clean-built-sources-recursive:
-	target=`echo $@ | sed s/-recursive//`; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  echo "Making $@ in $$subdir"; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$target) \
-	done;
-
 doxygen: built-sources
 	@cd ${srcdir} ;\
 	mkdir -p docs docs/html &&\
@@ -623,6 +632,44 @@ doxygen: built-sources
           && popd > /dev/null ; \
 	done
 	cd ${srcdir}/docs/html && ../../${top_srcdir}/libsofia-sip-ua/docs/hide_emails.sh
+@ENABLE_COVERAGE_TRUE@coverage: $(COVERAGE_RECURSIVE)
+
+all-recursive: built-sources-recursive
+built-sources: built-sources-recursive 
+clean-built-sources: clean-built-sources-recursive
+valcheck: valcheck-recursive
+
+$(SOFIA_RECURSIVE):
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
+	target=`echo $@ | sed s/-recursive//`; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  echo "Making $$target in $$subdir"; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$target) \
+	  || eval $$failcom; \
+	done; \
+	test -z "$$fail"
+
+$(SOFIA_DIST_RECURSIVE):
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
+	target=`echo $@ | sed s/-recursive//`; \
+	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
+	  echo "Making $$target in $$subdir"; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$target) \
+	  || eval $$failcom; \
+	done; \
+	test -z "$$fail"
 
 .PHONY: built-sources built-sources-am doxygen 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

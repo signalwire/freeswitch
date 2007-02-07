@@ -38,15 +38,6 @@
 
 #include "config.h"
 
-/* React to multiple events per one poll() to make sure 
- * that high-priority events can never completely mask other events.
- * Enabled by default on all platforms except WIN32 */
-#ifndef WIN32
-#define SU_ENABLE_MULTISHOT_POLL 1
-#else
-#define SU_ENABLE_MULTISHOT_POLL 0
-#endif
-
 #include <stdlib.h>
 #include <assert.h>
 #include <stdarg.h>

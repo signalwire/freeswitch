@@ -31,16 +31,6 @@ EXTRA_DIST = docs/Doxyfile.aliases \
 	     docs/Doxyfile.conf \
 	     docs/Doxyfile.version
 
-built-sources: built-sources-recursive 
-clean-built-sources: clean-built-sources-recursive
-
-built-sources-recursive clean-built-sources-recursive:
-	target=`echo $@ | sed s/-recursive//`; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  echo "Making $@ in $$subdir"; \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$target) \
-	done;
-
 doxygen: built-sources
 	@cd ${srcdir} ;\
 	mkdir -p docs docs/html &&\
@@ -52,5 +42,7 @@ doxygen: built-sources
           && popd > /dev/null ; \
 	done
 	cd ${srcdir}/docs/html && ../../${top_srcdir}/libsofia-sip-ua/docs/hide_emails.sh
+
+include $(top_srcdir)/rules/recursive.am
 
 .PHONY: built-sources built-sources-am doxygen 

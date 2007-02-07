@@ -23,6 +23,9 @@
 #
 # ref: http://www.gnu.org/software/automake/manual/automake.html
 
+# Recursive Makefile targets
+# --------------------------
+
 SOURCES = $(libsofia_sip_ua_la_SOURCES)
 
 srcdir = @srcdir@
@@ -48,8 +51,13 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
+@HAVE_STUN_TRUE@am__append_1 = stun/libstun.la 
+@HAVE_STUN_TRUE@am__append_2 = stun
+@HAVE_NTH_TRUE@am__append_3 = nth/libnth.la http/libhttp.la
+@HAVE_NTH_TRUE@am__append_4 = nth http
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(top_srcdir)/rules/recursive.am ChangeLog
 subdir = libsofia-sip-ua
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in ChangeLog
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/sac-general.m4 \
 	$(top_srcdir)/m4/sac-openssl.m4 $(top_srcdir)/m4/sac-su.m4 \
@@ -70,12 +78,15 @@ am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 am__installdirs = "$(DESTDIR)$(libdir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
+@HAVE_STUN_TRUE@am__DEPENDENCIES_1 = stun/libstun.la
+@HAVE_NTH_TRUE@am__DEPENDENCIES_2 = nth/libnth.la http/libhttp.la
+am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
 libsofia_sip_ua_la_DEPENDENCIES = bnf/libbnf.la \
 	features/libfeatures.la ipt/libipt.la iptsec/libiptsec.la \
-	msg/libmsg.la nea/libnea.la nta/libnta.la nth/libnth.la \
-	nua/libnua.la http/libhttp.la sdp/libsdp.la sip/libsip.la \
-	soa/libsoa.la sresolv/libsresolv.la su/libsu.la \
-	stun/libstun.la tport/libtport.la url/liburl.la
+	msg/libmsg.la nea/libnea.la nta/libnta.la nua/libnua.la \
+	sdp/libsdp.la sip/libsip.la soa/libsoa.la \
+	sresolv/libsresolv.la su/libsu.la tport/libtport.la \
+	url/liburl.la $(am__DEPENDENCIES_3)
 am_libsofia_sip_ua_la_OBJECTS =
 libsofia_sip_ua_la_OBJECTS = $(am_libsofia_sip_ua_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir) -I$(top_builddir)/libsofia-sip-ua/su/sofia-sip
@@ -99,6 +110,7 @@ CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ACLOCAL_AMFLAGS = @ACLOCAL_AMFLAGS@
+ALLOCA = @ALLOCA@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
@@ -145,8 +157,12 @@ HAVE_GLIB_FALSE = @HAVE_GLIB_FALSE@
 HAVE_GLIB_TRUE = @HAVE_GLIB_TRUE@
 HAVE_MINGW32_FALSE = @HAVE_MINGW32_FALSE@
 HAVE_MINGW32_TRUE = @HAVE_MINGW32_TRUE@
+HAVE_NTH_FALSE = @HAVE_NTH_FALSE@
+HAVE_NTH_TRUE = @HAVE_NTH_TRUE@
 HAVE_NTLM_FALSE = @HAVE_NTLM_FALSE@
 HAVE_NTLM_TRUE = @HAVE_NTLM_TRUE@
+HAVE_STUN_FALSE = @HAVE_STUN_FALSE@
+HAVE_STUN_TRUE = @HAVE_STUN_TRUE@
 HAVE_TLS_FALSE = @HAVE_TLS_FALSE@
 HAVE_TLS_TRUE = @HAVE_TLS_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
@@ -190,6 +206,7 @@ REPLACE_LIBADD = @REPLACE_LIBADD@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SOFIA_CFLAGS = @SOFIA_CFLAGS@
+SOFIA_COVERAGE = @SOFIA_COVERAGE@
 SOFIA_GLIB_PKG_REQUIRES = @SOFIA_GLIB_PKG_REQUIRES@
 STRIP = @STRIP@
 TESTS_ENVIRONMENT = @TESTS_ENVIRONMENT@
@@ -246,12 +263,17 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 AUTOMAKE_OPTIONS = foreign
 
+# select whicn optional sofia-sip modules have been enabled
+# in the build
+OPT_LIBADD = $(am__append_1) $(am__append_3)
+OPT_SUBDIRS_STUN = $(am__append_2)
+OPT_SUBDIRS_NTH = $(am__append_4)
+
 # note: order does matter in the subdir list
-SUBDIRS = su features bnf sresolv sdp url msg sip stun ipt soa \
-	  tport http nta nea iptsec nth nua
+SUBDIRS = su features bnf sresolv sdp url msg sip $(OPT_SUBDIRS_STUN) ipt soa \
+	  tport nta nea iptsec $(OPT_SUBDIRS_NTH) nua
 
 DIST_SUBDIRS = $(SUBDIRS) docs
-EXTRA_DIST = sofia.am
 lib_LTLIBRARIES = libsofia-sip-ua.la
 libsofia_sip_ua_la_SOURCES = 
 libsofia_sip_ua_la_LIBADD = bnf/libbnf.la \
@@ -261,17 +283,16 @@ libsofia_sip_ua_la_LIBADD = bnf/libbnf.la \
 				msg/libmsg.la \
 				nea/libnea.la \
 				nta/libnta.la \
-				nth/libnth.la \
 				nua/libnua.la \
-				http/libhttp.la \
 				sdp/libsdp.la \
 				sip/libsip.la \
 				soa/libsoa.la \
 				sresolv/libsresolv.la \
 				su/libsu.la \
-				stun/libstun.la \
 				tport/libtport.la \
-				url/liburl.la
+				url/liburl.la \
+				$(OPT_LIBADD)
+
 
 # set the libtool version info version:revision:age for libsofia-sip-ua
 # - soname to 'libsofia-sip-ua.so.(CUR-AGE)'
@@ -279,10 +300,18 @@ libsofia_sip_ua_la_LDFLAGS = \
 	-version-info $(LIBVER_SOFIA_SIP_UA_CUR):$(LIBVER_SOFIA_SIP_UA_REV):$(LIBVER_SOFIA_SIP_UA_AGE)
 
 @ENABLE_COVERAGE_TRUE@COVERAGE_RECURSIVE = coverage-recursive
+SOFIA_RECURSIVE = \
+	valcheck-recursive \
+	$(COVERAGE_RECURSIVE)
+
+SOFIA_DIST_RECURSIVE = \
+	built-sources-recursive \
+	clean-built-sources-recursive
+
 all: all-recursive
 
 .SUFFIXES:
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/rules/recursive.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -478,6 +507,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/../rules
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -623,13 +653,39 @@ uninstall-info: uninstall-info-recursive
 all-recursive: built-sources-recursive
 built-sources: built-sources-recursive 
 clean-built-sources: clean-built-sources-recursive
+valcheck: valcheck-recursive
 
-built-sources-recursive clean-built-sources-recursive $(COVERAGE_RECURSIVE):
+$(SOFIA_RECURSIVE):
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
+	target=`echo $@ | sed s/-recursive//`; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  echo "Making $$target in $$subdir"; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$target) \
+	  || eval $$failcom; \
+	done; \
+	test -z "$$fail"
+
+$(SOFIA_DIST_RECURSIVE):
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
 	target=`echo $@ | sed s/-recursive//`; \
 	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
-	  echo "Making $@ in $$subdir"; \
+	  echo "Making $$target in $$subdir"; \
 	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$target) \
-	done;
+	  || eval $$failcom; \
+	done; \
+	test -z "$$fail"
 
 doxygen: built-sources
 	@echo Generating empty doxytags
@@ -662,7 +718,7 @@ doxygen: built-sources
 	for d in $(DIST_SUBDIRS); do \
 	  test -r $$d/Doxyfile \
 	  && pushd $$d > /dev/null \
-	  && echo running ${DOXYGEN} in second time in $$d \
+	  && echo running ${DOXYGEN} second time in $$d \
           && ${DOXYGEN} 2>&1 \
 	   | egrep -v -i -e 'Warning: Unsupported (xml/)?html tag' \
           ; popd > /dev/null ; \

@@ -101,35 +101,71 @@ SOFIA_BEGIN_DECLS
 #define SU_WAIT_MAX    (64)
 
 #else
-#define SU_WAIT_CMP(x, y) 
-#define SU_WAIT_IN      
-#define SU_WAIT_OUT     
-#define SU_WAIT_ERR     
-#define SU_WAIT_HUP     
-#define SU_WAIT_ACCEPT  
-#define SU_WAIT_FOREVER 
-#define SU_WAIT_TIMEOUT 
+/* If nothing works, try these */
 
-#define SU_WAIT_INIT
+#define	POLLIN		0x001
+#define	POLLPRI		0x002
+#define	POLLOUT		0x004
+
+#ifdef __USE_XOPEN
+#define	POLLRDNORM	0x040
+#define	POLLRDBAND	0x080
+#define	POLLWRNORM	0x100
+#define	POLLWRBAND	0x200
+#endif
+
+/* These for pollfd.revents */
+#define POLLERR         0x008
+#define POLLHUP         0x010
+#define POLLNVAL        0x020
+
+#define SU_WAIT_CMP(x, y) \
+ (((x).fd - (y).fd) ? ((x).fd - (y).fd) : ((x).events - (y).events))
+
+#define SU_WAIT_IN      POLLIN
+#define SU_WAIT_OUT     POLLOUT
+#define SU_WAIT_CONNECT POLLOUT
+#define SU_WAIT_ERR     POLLERR
+#define SU_WAIT_HUP     POLLHUP
+#define SU_WAIT_ACCEPT  POLLIN
+#define SU_WAIT_FOREVER (-1)
+#define SU_WAIT_TIMEOUT (-2)
+
+#define SU_WAIT_INIT    { INVALID_SOCKET, 0, 0 }
+
+/** Maximum number of sources supported by su_wait() */
+#define SU_WAIT_MAX    (0x7fffffff)
 
 #endif
 
 /* ---------------------------------------------------------------------- */
 /* Types */
 
-#if 0
-typedef struct _pollfd {
-  su_socket_t fd;           /* file descriptor */
-  short events;     /* requested events */
-  short revents;    /* returned events */
-} su_wait_t;
-#elif SU_HAVE_POLL
+/** Wait object. */
+#if SU_HAVE_POLL
 typedef struct pollfd su_wait_t;
 #elif SU_HAVE_WINSOCK
 typedef HANDLE su_wait_t;
 #else
-/** Wait object. */
-typedef struct os_specific su_wait_t;
+/* typedef struct os_specific su_wait_t; */
+typedef struct pollfd su_wait_t;
+struct pollfd {
+  su_socket_t fd;   /* file descriptor */
+  short events;     /* requested events */
+  short revents;    /* returned events */
+};
+
+
+/* Type used for the number of file descriptors.  */
+typedef unsigned long int nfds_t;
+
+/* Poll the file descriptors described by the NFDS structures starting at
+   FDS.  If TIMEOUT is nonzero and not -1, allow TIMEOUT milliseconds for
+   an event to occur; if TIMEOUT is -1, block until an event occurs.
+   Returns the number of file descriptors with events, zero if timed out,
+   or -1 for errors.  */
+int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout);
+
 #endif
 
 /* Used by AD */
@@ -191,7 +227,7 @@ typedef SU_ROOT_MAGIC_T su_root_magic_t;
  */
 typedef SU_WAKEUP_ARG_T su_wakeup_arg_t;
 
-/** Wakeup callback function prototype. 
+/** Wakeup callback function pointer type. 
  *
  * Whenever a registered wait object receives an event, the @link
  * ::su_wakeup_f callback function @endlink is invoked.
@@ -316,9 +352,13 @@ typedef su_msg_t * const su_msg_cr[1];
 #define SU_MSG_R_INIT   { NULL }
 
 /** Message delivery function type. */
-typedef void (*su_msg_f)(su_root_magic_t *magic, 
-			 su_msg_r msg,
-			 su_msg_arg_t *arg);
+typedef void su_msg_function(su_root_magic_t *magic, 
+			     su_msg_r msg,
+			     su_msg_arg_t *arg);
+
+/** Message delivery function pointer type. */
+typedef su_msg_function *su_msg_f;
+
 
 /* ---------------------------------------------------------------------- */
 
@@ -350,7 +390,7 @@ SOFIAPUBFUN int su_wait(su_wait_t waits[], unsigned n, su_duration_t timeout);
 SOFIAPUBFUN int su_wait_events(su_wait_t *wait, su_socket_t s);
 SOFIAPUBFUN int su_wait_mask(su_wait_t *dst, su_socket_t s, int events);
 
-#if SU_HAVE_POLL
+#if !HAVE_WIN32 && (SU_HAVE_POLL || HAVE_SELECT)
 static inline
 su_socket_t su_wait_socket(su_wait_t *wait)
 {

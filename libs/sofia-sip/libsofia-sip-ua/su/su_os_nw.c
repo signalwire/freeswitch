@@ -46,10 +46,14 @@
 #include "sofia-sip/su_os_nw.h"
 #include "sofia-sip/su_debug.h"
 
-/* Works only with pthreads */
-#if SU_HAVE_PTHREADS
+#if defined(__APPLE_CC__)
+# define SU_NW_CHANGE_PTHREAD 1
+#endif
 
-#include <pthread.h>
+#if defined (SU_NW_CHANGE_PTHREAD)
+# define SU_HAVE_NW_CHANGE 1
+# include <pthread.h>
+#endif
 
 #if defined(__APPLE_CC__)
 #include <AvailabilityMacros.h>
@@ -68,8 +72,9 @@ struct su_network_changed_s {
   SCDynamicStoreRef           su_storeRef[1];
   CFRunLoopSourceRef          su_sourceRef[1];
 #endif
-
+#if defined (SU_NW_CHANGE_PTHREAD)
   pthread_t                   su_os_thread;
+#endif
 
   su_network_changed_f       *su_network_changed_cb;
   su_network_changed_magic_t *su_network_changed_magic;
@@ -109,7 +114,7 @@ void nw_changed_cb(SCDynamicStoreRef store,
 		    sizeof *snc) == SU_FAILURE) {
 
     return;
-  }    
+  }
 
   snc2 = su_msg_data(rmsg); assert(snc2);
   snc2->su_root = snc->su_root;
@@ -119,7 +124,7 @@ void nw_changed_cb(SCDynamicStoreRef store,
   snc2->su_os_thread = snc->su_os_thread;
   snc2->su_network_changed_cb = snc->su_network_changed_cb;
   snc2->su_network_changed_magic = snc->su_network_changed_magic;
-  
+
   if (su_msg_send(rmsg) == SU_FAILURE) {
     su_msg_destroy(rmsg);
     return;
@@ -219,10 +224,7 @@ CreateIPAddressListChangeCallbackSCF(SCDynamicStoreCallBack callback,
 
     return err;
 }
-#endif /* __APPLE_CC__ */
 
-
-#if defined(__APPLE_CC__)
 static void *su_start_nw_os_thread(void *ptr)
 {
   su_network_changed_t *snc = (su_network_changed_t *) ptr;
@@ -249,19 +251,13 @@ su_network_changed_t
 			     su_network_changed_f *network_changed_cb,
 			     su_network_changed_magic_t *magic)
 {
-#if defined (__APPLE_CC__)
   su_network_changed_t *snc = NULL;
-#endif
 
   assert(home && root && network_changed_cb && magic);
 
-  /* Not implemented for others than OSX */
-#if !defined (__APPLE_CC__)
-  return NULL;
-#else
-
+#if defined (SU_HAVE_NW_CHANGE)
   snc = su_zalloc(home, sizeof *snc);
-  
+
   if (!snc)
     return NULL;
 
@@ -269,15 +265,16 @@ su_network_changed_t
   snc->su_root = root;
   snc->su_network_changed_cb = network_changed_cb;
   snc->su_network_changed_magic = magic;
-  
+
+# if defined (SU_NW_CHANGE_PTHREAD)
   if ((pthread_create(&(snc->su_os_thread), NULL,
 		      su_start_nw_os_thread,
 		      (void *) snc)) != 0) {
     return NULL;
   }
-
-  return snc;
+# endif
 #endif
+  return snc;
 }
 
 /** Remove a callback registered for the network change event.
@@ -288,20 +285,3 @@ int su_root_remove_network_changed(su_network_changed_t *snc)
 {
   return -1;
 }
-
-#else
-
-su_network_changed_t
-*su_root_add_network_changed(su_home_t *home, su_root_t *root,
-			     su_network_changed_f *network_changed_cb,
-			     su_network_changed_magic_t *magic)
-{
-  return NULL;
-}
-
-int su_root_remove_network_changed(su_network_changed_t *snc)
-{
-  return -1;
-}
-
-#endif /* SU_HAVE_PTHREADS */

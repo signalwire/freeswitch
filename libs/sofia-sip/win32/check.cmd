@@ -63,5 +63,5 @@ tests\torture_rbtree\Debug\torture_rbtree.exe
 tests\torture_su_bm\Debug\torture_su_bm.exe
 @if errorlevel 1 ( echo torture_su_bm: FAIL ) else echo torture_su_bm: PASS
 
-tests\torture_su_port\Debug\torture_su_port.exe
-@if errorlevel 1 ( echo torture_su_port: FAIL ) else echo torture_su_port: PASS
+:: tests\torture_su_port\Debug\torture_su_port.exe
+:: @if errorlevel 1 ( echo torture_su_port: FAIL ) else echo torture_su_port: PASS

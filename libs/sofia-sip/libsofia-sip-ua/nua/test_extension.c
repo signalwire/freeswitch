@@ -167,6 +167,13 @@ int test_extension(struct context *ctx)
   free_events_in_list(ctx, b->events);
   nua_handle_destroy(b_call->nh), b_call->nh = NULL;
 
+  nua_set_params(b->nua,
+		 SIPTAG_ALLOW(b->allow),
+		 NUTAG_APPL_METHOD(NULL),
+		 NUTAG_APPL_METHOD(b->appl_method),
+		 TAG_END());
+  run_b_until(ctx, nua_r_set_params, until_final_response);
+
   if (print_headings)
     printf("TEST NUA-13.1: PASSED\n");
   END();

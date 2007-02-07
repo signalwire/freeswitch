@@ -71,6 +71,7 @@ CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ACLOCAL_AMFLAGS = @ACLOCAL_AMFLAGS@
+ALLOCA = @ALLOCA@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
@@ -117,8 +118,12 @@ HAVE_GLIB_FALSE = @HAVE_GLIB_FALSE@
 HAVE_GLIB_TRUE = @HAVE_GLIB_TRUE@
 HAVE_MINGW32_FALSE = @HAVE_MINGW32_FALSE@
 HAVE_MINGW32_TRUE = @HAVE_MINGW32_TRUE@
+HAVE_NTH_FALSE = @HAVE_NTH_FALSE@
+HAVE_NTH_TRUE = @HAVE_NTH_TRUE@
 HAVE_NTLM_FALSE = @HAVE_NTLM_FALSE@
 HAVE_NTLM_TRUE = @HAVE_NTLM_TRUE@
+HAVE_STUN_FALSE = @HAVE_STUN_FALSE@
+HAVE_STUN_TRUE = @HAVE_STUN_TRUE@
 HAVE_TLS_FALSE = @HAVE_TLS_FALSE@
 HAVE_TLS_TRUE = @HAVE_TLS_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
@@ -162,6 +167,7 @@ REPLACE_LIBADD = @REPLACE_LIBADD@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SOFIA_CFLAGS = @SOFIA_CFLAGS@
+SOFIA_COVERAGE = @SOFIA_COVERAGE@
 SOFIA_GLIB_PKG_REQUIRES = @SOFIA_GLIB_PKG_REQUIRES@
 STRIP = @STRIP@
 TESTS_ENVIRONMENT = @TESTS_ENVIRONMENT@
@@ -217,14 +223,13 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 noinst_HEADERS = sofia-sip/su_configure.h unistd.h config.h
-EXTRA_DIST = SofiaSIP.dsw \
-	libsofia-sip-ua/libsofia_sip_ua.dsp \
+
+# VC2005 Project files
+EXTRA_DIST = SofiaSIP.dsw libsofia-sip-ua/libsofia_sip_ua.dsp \
 	libsofia-sip-ua/sofia-sip-ua.def \
 	libsofia-sip-ua-static/libsofia_sip_ua_static.dsp \
-	tests/test_nua/test_nua.dsp \
-	tests/test_nua/test_nat_tags.cpp \
-	tests/test_nta/test_nta.dsp \
-	tests/test_tport/test_tport.dsp \
+	tests/test_nua/test_nua.dsp tests/test_nua/test_nat_tags.cpp \
+	tests/test_nta/test_nta.dsp tests/test_tport/test_tport.dsp \
 	tests/test_tport/test_class.cpp \
 	tests/test_tport/test_table.cpp \
 	tests/torture_su_alloc/torture_su_alloc.dsp \
@@ -240,14 +245,30 @@ EXTRA_DIST = SofiaSIP.dsw \
 	tests/torture_su_bm/torture_su_bm.dsp \
 	tests/torture_su_port/torture_su_port.dsp \
 	utils/localinfo/localinfo.dsp \
-	utils/sip_options/sip_options.dsp \
-	utils/sip_dig/sip_dig.dsp \
-	utils/stunc/stunc.dsp \
-	$(PTHREAD_DIST) \
-	README.txt \
-	autogen.cmd build_sources.cmd version_files.cmd version.awk \
-	install.cmd check.cmd
-
+	utils/sip_options/sip_options.dsp utils/sip_dig/sip_dig.dsp \
+	utils/stunc/stunc.dsp $(PTHREAD_DIST) README.txt autogen.cmd \
+	build_sources.cmd version_files.cmd version.awk install.cmd \
+	check.cmd SofiaSIP.sln \
+	libsofia-sip-ua-static/libsofia_sip_ua_static.vcproj \
+	libsofia-sip-ua/libsofia_sip_ua.vcproj \
+	tests/test_htable/test_htable.vcproj \
+	tests/test_memmem/test_memmem.vcproj \
+	tests/test_nta/test_nta.vcproj tests/test_nua/test_nua.vcproj \
+	tests/test_su/test_su.vcproj \
+	tests/test_tport/test_tport.vcproj \
+	tests/torture_rbtree/torture_rbtree.vcproj \
+	tests/torture_su/torture_su.vcproj \
+	tests/torture_su_alloc/torture_su_alloc.vcproj \
+	tests/torture_su_bm/torture_su_bm.vcproj \
+	tests/torture_su_port/torture_su_port.vcproj \
+	tests/torture_su_root/torture_su_root.vcproj \
+	tests/torture_su_tag/torture_su_tag.vcproj \
+	tests/torture_su_time/torture_su_time.vcproj \
+	tests/torture_su_timer/torture_su_timer.vcproj \
+	utils/localinfo/localinfo.vcproj utils/sip_dig/sip_dig.vcproj \
+	utils/sip_options/sip_options.vcproj \
+	utils/sip_options_static/sip_options_static.vcproj \
+	utils/stunc/stunc.vcproj
 PTHREAD_DIST = \
 	pthread/ChangeLog \
 	pthread/md5.sum.txt \
@@ -351,7 +372,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/libsofia-sip-ua $(distdir)/libsofia-sip-ua-static $(distdir)/pthread $(distdir)/sofia-sip $(distdir)/tests/test_htable $(distdir)/tests/test_memmem $(distdir)/tests/test_nta $(distdir)/tests/test_nua $(distdir)/tests/test_su $(distdir)/tests/test_tport $(distdir)/tests/torture_rbtree $(distdir)/tests/torture_su $(distdir)/tests/torture_su_alloc $(distdir)/tests/torture_su_bm $(distdir)/tests/torture_su_port $(distdir)/tests/torture_su_root $(distdir)/tests/torture_su_tag $(distdir)/tests/torture_su_time $(distdir)/tests/torture_su_timer $(distdir)/utils/localinfo $(distdir)/utils/sip_dig $(distdir)/utils/sip_options $(distdir)/utils/stunc
+	$(mkdir_p) $(distdir)/libsofia-sip-ua $(distdir)/libsofia-sip-ua-static $(distdir)/pthread $(distdir)/sofia-sip $(distdir)/tests/test_htable $(distdir)/tests/test_memmem $(distdir)/tests/test_nta $(distdir)/tests/test_nua $(distdir)/tests/test_su $(distdir)/tests/test_tport $(distdir)/tests/torture_rbtree $(distdir)/tests/torture_su $(distdir)/tests/torture_su_alloc $(distdir)/tests/torture_su_bm $(distdir)/tests/torture_su_port $(distdir)/tests/torture_su_root $(distdir)/tests/torture_su_tag $(distdir)/tests/torture_su_time $(distdir)/tests/torture_su_timer $(distdir)/utils/localinfo $(distdir)/utils/sip_dig $(distdir)/utils/sip_options $(distdir)/utils/sip_options_static $(distdir)/utils/stunc
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

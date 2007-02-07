@@ -262,6 +262,12 @@ SOFIAPUBFUN char const *nua_event_name(nua_event_t event);
 /** Get name for NUA callstate. */
 SOFIAPUBFUN char const *nua_callstate_name(enum nua_callstate state);
 
+/** Return name of subscription state. @NEW_1_12_5. */
+SOFIAPUBFUN char const *nua_substate_name(enum nua_substate substate);
+
+/** Convert string to enum nua_substate. @NEW_1_12_5. */
+SOFIAPUBFUN enum nua_substate nua_substate_make(char const *sip_substate);
+
 /** Send SIP REGISTER request to the registrar. */ 
 SOFIAPUBFUN void nua_register(nua_handle_t *nh, tag_type_t, tag_value_t, ...);
 

@@ -91,6 +91,7 @@ distuninstallcheck_listfiles = find . -type f -print
 distcleancheck_listfiles = find . -type f -print
 ACLOCAL = @ACLOCAL@
 ACLOCAL_AMFLAGS = -I m4
+ALLOCA = @ALLOCA@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
@@ -137,8 +138,12 @@ HAVE_GLIB_FALSE = @HAVE_GLIB_FALSE@
 HAVE_GLIB_TRUE = @HAVE_GLIB_TRUE@
 HAVE_MINGW32_FALSE = @HAVE_MINGW32_FALSE@
 HAVE_MINGW32_TRUE = @HAVE_MINGW32_TRUE@
+HAVE_NTH_FALSE = @HAVE_NTH_FALSE@
+HAVE_NTH_TRUE = @HAVE_NTH_TRUE@
 HAVE_NTLM_FALSE = @HAVE_NTLM_FALSE@
 HAVE_NTLM_TRUE = @HAVE_NTLM_TRUE@
+HAVE_STUN_FALSE = @HAVE_STUN_FALSE@
+HAVE_STUN_TRUE = @HAVE_STUN_TRUE@
 HAVE_TLS_FALSE = @HAVE_TLS_FALSE@
 HAVE_TLS_TRUE = @HAVE_TLS_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
@@ -182,6 +187,7 @@ REPLACE_LIBADD = @REPLACE_LIBADD@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SOFIA_CFLAGS = @SOFIA_CFLAGS@
+SOFIA_COVERAGE = @SOFIA_COVERAGE@
 SOFIA_GLIB_PKG_REQUIRES = @SOFIA_GLIB_PKG_REQUIRES@
 STRIP = @STRIP@
 TESTS_ENVIRONMENT = @TESTS_ENVIRONMENT@
@@ -245,7 +251,9 @@ DIST_SUBDIRS = libsofia-sip-ua libsofia-sip-ua-glib utils packages win32
 @HAVE_GLIB_TRUE@GLIB_SUBDIRS = libsofia-sip-ua-glib
 EXTRA_DIST = AUTHORS COPYING COPYRIGHTS ChangeLog.ext-trees README \
 	README.developers RELEASE TODO m4/sac-general.m4 m4/sac-su.m4 \
-	m4/sac-su2.m4 m4/sac-tport.m4 m4/sac-openssl.m4
+	m4/sac-su2.m4 m4/sac-tport.m4 m4/sac-openssl.m4 \
+	docs/build_system.txt docs/devel_platform_notes.txt \
+	docs/release_management.txt
 dist_man_MANS = man/man1/sip-date.1 man/man1/sip-options.1 \
 		man/man1/localinfo.1 man/man1/addrinfo.1 \
 		man/man1/stunc.1 man/man1/sip-dig.1
@@ -496,7 +504,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/libsofia-sip-ua/docs $(distdir)/libsofia-sip-ua/features/sofia-sip $(distdir)/libsofia-sip-ua/su/sofia-sip $(distdir)/m4 $(distdir)/man/man1 $(distdir)/packages $(distdir)/utils $(distdir)/win32
+	$(mkdir_p) $(distdir)/docs $(distdir)/libsofia-sip-ua/docs $(distdir)/libsofia-sip-ua/features/sofia-sip $(distdir)/libsofia-sip-ua/su/sofia-sip $(distdir)/m4 $(distdir)/man/man1 $(distdir)/packages $(distdir)/utils $(distdir)/win32
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -749,7 +757,7 @@ manpages: built-sources
 @HAVE_DOXYGEN_TRUE@	@rm -f man/man1/_*.1
 @HAVE_DOXYGEN_FALSE@	-touch $(dist_man_MANS)
 
-coverage built-sources clean-built-sources doxygen:
+coverage built-sources clean-built-sources valcheck doxygen:
 	for i in libsofia-sip-ua $(GLIB_SUBDIRS) ; do $(MAKE) $(AM_MAKEFLAGS) -C $$i $@ ; done
 
 .PHONY: coverage built-sources clean-built-sources doxygen manpages

@@ -59,6 +59,12 @@ void exdestructor(void *arg)
   (*ex->p)++;
 }
 
+void test_destructor(void *a)
+{
+  su_home_t *h = a;
+  h->suh_size = 13;
+}
+
 /** Test basic memory home operations  */
 static int test_alloc(void)
 {
@@ -78,8 +84,8 @@ static int test_alloc(void)
 
   d0 = d1a = d1 = d2 = d3 = 0;
   h0->p = &d0; h1->p = &d1a;
-  TEST(su_home_desctructor(h0->home, exdestructor), 0);
-  TEST(su_home_desctructor(h1->home, exdestructor), 0);
+  TEST(su_home_destructor(h0->home, exdestructor), 0);
+  TEST(su_home_destructor(h1->home, exdestructor), 0);
 
   TEST_1(h2 = su_home_ref(h0->home));
   su_home_unref(h0->home);
@@ -95,7 +101,7 @@ static int test_alloc(void)
   TEST(d1a, destructed_once);
 
   TEST_1(h1 = su_home_clone(h0->home, sizeof(*h1)));
-  TEST(su_home_desctructor(h1->home, exdestructor), 0);
+  TEST(su_home_destructor(h1->home, exdestructor), 0);
   h1->p = &d1;
 
   for (i = 0; i < 128; i++)
@@ -125,7 +131,7 @@ static int test_alloc(void)
 
   TEST_1(su_in_home(h2->home, m));
   TEST_1(!su_in_home(h2->home, (char *)m + 1));
-  TEST_1(!su_in_home(h2->home, su_in_home));
+  TEST_1(!su_in_home(h2->home, (void *)(intptr_t)su_in_home));
   TEST_1(!su_in_home(h3->home, m));
   TEST_1(!su_in_home(NULL, m));
   TEST_1(!su_in_home(h3->home, NULL));
@@ -160,6 +166,25 @@ static int test_alloc(void)
   su_home_zap(h2->home);
   su_home_check(h0->home);
   su_home_zap(h0->home);
+
+  {
+    su_home_t h1[1];
+
+    memset(h1, 0, sizeof h1);
+
+    TEST(su_home_init(h1), 0);
+    TEST(su_home_threadsafe(h1), 0);
+
+    TEST_1(su_home_ref(h1));
+    TEST_1(su_home_ref(h1));
+
+    TEST(su_home_destructor(h1, test_destructor), 0);
+
+    TEST_1(!su_home_unref(h1));
+    TEST_1(!su_home_unref(h1));
+    TEST_1(su_home_unref(h1));
+    TEST(h1->suh_size, 13);
+  }
 
   END();
 }

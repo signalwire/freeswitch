@@ -77,7 +77,10 @@ libsu_la_SOURCES = \
 	su_alloc.c su_alloc_lock.c su_strdup.c su_sprintf.c \
 	su_strlst.c su_vector.c \
 	su_time.c su_time0.c \
-	su_wait.c su_root.c su_timer.c su_port.c su_port.h \
+	su_wait.c su_root.c su_timer.c \
+	su_port.c  su_port.h \
+	su_base_port.c su_pthread_port.c \
+	su_poll_port.c su_epoll_port.c su_select_port.c \
 	su_localinfo.c \
 	su_os_nw.c \
 	su_taglist.c su_tag.c su_tag_io.c \
@@ -88,8 +91,8 @@ libsu_la_SOURCES = \
 EXTRA_libsu_la_SOURCES = \
 			memmem.c strtoull.c strcasestr.c \
 			memspn.c memcspn.c memccpy.c \
-			inet_ntop.c inet_pton.c getopt.c \
-			su_tag_ref.c
+			inet_ntop.c inet_pton.c poll.c getopt.c \
+			su_tag_ref.c su_win32_port.c
 
 libsu_la_LIBADD = 	$(REPLACE_LIBADD)
 libsu_la_DEPENDENCIES = $(REPLACE_LIBADD)
@@ -116,4 +119,4 @@ AUTOMAKE_OPTIONS = 	foreign
 # ----------------------------------------------------------------------
 # Sofia specific rules
 
-include ../sofia.am
+include $(top_srcdir)/rules/sofia.am

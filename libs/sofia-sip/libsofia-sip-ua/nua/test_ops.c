@@ -44,7 +44,7 @@
 
 int save_events(CONDITION_PARAMS)
 {
-  return save_event_in_list(ctx, event, ep, ep->call) == event_is_normal;
+  return save_event_in_list(ctx, event, ep, call) == event_is_normal;
 }
 
 int until_final_response(CONDITION_PARAMS)
@@ -54,7 +54,7 @@ int until_final_response(CONDITION_PARAMS)
 
 int save_until_final_response(CONDITION_PARAMS)
 {
-  save_event_in_list(ctx, event, ep, ep->call);
+  save_event_in_list(ctx, event, ep, call);
   return event >= nua_r_set_params && status >= 200;
 }
 
@@ -64,13 +64,13 @@ int save_until_final_response(CONDITION_PARAMS)
  */
 int save_until_received(CONDITION_PARAMS)
 {
-  return save_event_in_list(ctx, event, ep, ep->call) == event_is_normal;
+  return save_event_in_list(ctx, event, ep, call) == event_is_normal;
 }
 
 /** Save events until nua_i_outbound is received.  */
 int save_until_special(CONDITION_PARAMS)
 {
-  return save_event_in_list(ctx, event, ep, ep->call) == event_is_special;
+  return save_event_in_list(ctx, event, ep, call) == event_is_special;
 }
 
 /* Return call state from event tag list */
@@ -143,34 +143,49 @@ void print_event(nua_event_t event,
 		 sip_t const *sip,
 		 tagi_t tags[])
 {
+  tagi_t const *t;
+
   if (event == nua_i_state) {
     fprintf(stderr, "%s.nua(%p): event %s %s\n",
-	    ep->name, nh, nua_event_name(event),
+	    ep->name, (void *)nh, nua_event_name(event),
 	    nua_callstate_name(callstate(tags)));
   }
   else if ((int)event >= nua_r_set_params) {
-    fprintf(stderr, "%s.nua(%p): event %s status %u %s\n",
-	    ep->name, nh, nua_event_name(event), status, phrase);
+    t = tl_find(tags, nutag_substate);
+    if (t) {
+      fprintf(stderr, "%s.nua(%p): event %s status %u %s (%s)\n",
+	      ep->name, (void*)nh, nua_event_name(event), status, phrase,
+	      nua_substate_name(t->t_value));
+    }
+    else {
+      fprintf(stderr, "%s.nua(%p): event %s status %u %s\n",
+	      ep->name, (void *)nh, nua_event_name(event), status, phrase);
+    }
+  }
+  else if (event == nua_i_notify) {
+    t = tl_find(tags, nutag_substate);
+    fprintf(stderr, "%s.nua(%p): event %s %s (%s)\n",
+	    ep->name, (void *)nh, nua_event_name(event), phrase,
+	    nua_substate_name(t ? t->t_value : 0));
   }
   else if ((int)event >= 0) {
     fprintf(stderr, "%s.nua(%p): event %s %s\n",
-	    ep->name, nh, nua_event_name(event), phrase);
+	    ep->name, (void *)nh, nua_event_name(event), phrase);
   }
   else if (status > 0) {
     fprintf(stderr, "%s.nua(%p): call %s() with status %u %s\n",
-	    ep->name, nh, operation, status, phrase);
+	    ep->name, (void *)nh, operation, status, phrase);
   }
   else {
-    tagi_t const *t;
     t = tl_find(tags, siptag_subject_str);
     if (t && t->t_value) {
       char const *subject = (char const *)t->t_value;
       fprintf(stderr, "%s.nua(%p): call %s() \"%s\"\n",
-	      ep->name, nh, operation, subject);
+	      ep->name, (void *)nh, operation, subject);
     }
     else
       fprintf(stderr, "%s.nua(%p): call %s()\n",
-	      ep->name, nh, operation);
+	      ep->name, (void *)nh, operation);
   }
 
   if ((tstflags & tst_verbatim) && tags)
@@ -202,10 +217,11 @@ void ep_callback(nua_event_t event,
     }
   }
 
-  if ((ep->next_event == -1 || ep->next_event == event) &&
-      (ep->next_condition == NULL ||
+  if ((ep->next_condition == NULL ||
        ep->next_condition(event, status, phrase,
-			  nua, ctx, ep, nh, call, sip, tags)))
+			  nua, ctx, ep, nh, call, sip, tags))
+      &&
+      (ep->next_event == -1 || ep->next_event == event))
     ep->running = 0;
 
   ep->last_event = event;
@@ -379,7 +395,7 @@ int RESPOND(struct endpoint *ep,
   return 0;
 }
 
-/* Destroy an handle */
+/* Destroy a handle */
 int DESTROY(struct endpoint *ep,
 	    struct call *call,
 	    nua_handle_t *nh)
@@ -450,7 +466,7 @@ int save_event_in_list(struct context *ctx,
   return action;
 }
 
-/* Save nua event in endpoint list */
+/* Free nua events from endpoint list */
 void free_events_in_list(struct context *ctx,
 			 struct eventlist *list)
 {
@@ -465,6 +481,21 @@ void free_events_in_list(struct context *ctx,
 
   list->tail = &list->head;
 }
+
+void free_event_in_list(struct context *ctx,
+			struct eventlist *list,
+			struct event *e)
+{
+  if (e) {
+    if ((*e->prev = e->next))
+      e->next->prev = e->prev;
+    nua_destroy_event(e->saved_event);
+    su_free(ctx->home, e);
+
+    if (list->head == NULL)
+      list->tail = &list->head;
+  }
+}			      
 
 int is_special(nua_event_t e)
 {

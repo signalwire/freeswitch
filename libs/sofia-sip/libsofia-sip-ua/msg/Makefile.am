@@ -77,7 +77,7 @@ TESTS = 		test_msg
 # ----------------------------------------------------------------------
 # Sofia specific rules
 
-include ../sofia.am
+include $(top_srcdir)/rules/sofia.am
 
 MSG_PARSER_AWK = $(srcdir)/msg_parser.awk
 

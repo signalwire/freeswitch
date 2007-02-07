@@ -35,6 +35,8 @@
 
 #include "test_nua.h"
 
+#include <sofia-sip/tport_tag.h>
+
 #if HAVE_FUNC
 #elif HAVE_FUNCTION
 #define __func__ __FUNCTION__
@@ -65,6 +67,9 @@ int test_nua_init(struct context *ctx,
   struct event *e;
   sip_contact_t const *m = NULL;
   sip_from_t const *sipaddress = NULL;
+  sip_allow_t const *allow = NULL;
+  sip_supported_t const *supported = NULL;
+  char const *appl_method = NULL;
   url_t const *p_uri, *a_uri;		/* Proxy URI */
   char const *a_bind, *a_bind2;
 
@@ -106,6 +111,7 @@ int test_nua_init(struct context *ctx,
 			       AUTHTAG_DB(passwd_name),
 			       AUTHTAG_QOP("auth-int"),
 			       AUTHTAG_ALGORITHM("md5-sess"),
+			       TAG_IF(ctx->proxy_logging, TPTAG_LOG(1)),
 			       TAG_END());
 
     ctx->proxy_tests = ctx->p != NULL;
@@ -218,22 +224,29 @@ int test_nua_init(struct context *ctx,
 			  NUTAG_URL(a_bind),
 			  TAG_IF(a_bind != a_bind2, NUTAG_SIPS_URL(a_bind2)),
 			  SOATAG_USER_SDP_STR("m=audio 5004 RTP/AVP 0 8"),
-			  NTATAG_SIP_T1X64(4000),
+			  NTATAG_SIP_T1X64(2000),
 			  NUTAG_INSTANCE(ctx->a.instance),
+			  TAG_IF(ctx->a.logging, TPTAG_LOG(1)),
 			  TAG_END());
   TEST_1(ctx->a.nua);
 
   nua_get_params(ctx->a.nua, TAG_ANY(), TAG_END());
   run_a_until(ctx, nua_r_get_params, save_until_final_response);
-  TEST_1(e = ctx->a.events->head);
+  TEST_1(e = ctx->a.specials->head);
   TEST(tl_gets(e->data->e_tags,
 	       NTATAG_CONTACT_REF(m),
 	       SIPTAG_FROM_REF(sipaddress),
-	       TAG_END()), 2); TEST_1(m);
+	       SIPTAG_ALLOW_REF(allow),
+	       NUTAG_APPL_METHOD_REF(appl_method),
+	       SIPTAG_SUPPORTED_REF(supported),
+	       TAG_END()), 5); TEST_1(m);
   TEST_1(ctx->a.contact = sip_contact_dup(ctx->home, m));
   TEST_1(ctx->a.to = sip_to_dup(ctx->home, sipaddress));
+  TEST_1(ctx->a.allow = sip_allow_dup(ctx->home, allow));
+  TEST_1(ctx->a.appl_method = su_strdup(ctx->home, appl_method));
+  TEST_1(ctx->a.supported = sip_supported_dup(ctx->home, supported));
 
-  free_events_in_list(ctx, ctx->a.events);
+  free_events_in_list(ctx, ctx->a.specials);
 
   if (print_headings)
     printf("TEST NUA-2.2.1: PASSED\n");
@@ -249,19 +262,30 @@ int test_nua_init(struct context *ctx,
 			  NUTAG_URL("sip:0.0.0.0:*"),
 			  SOATAG_USER_SDP_STR("m=audio 5006 RTP/AVP 8 0"),
 			  NUTAG_INSTANCE(ctx->b.instance),
+			  /* Quicker timeout */
+			  NTATAG_SIP_T1X64(2000),
+			  TAG_IF(ctx->b.logging, TPTAG_LOG(1)),
 			  TAG_END());
   TEST_1(ctx->b.nua);
 
   nua_get_params(ctx->b.nua, TAG_ANY(), TAG_END());
   run_b_until(ctx, nua_r_get_params, save_until_final_response);
-  TEST_1(e = ctx->b.events->head);
+  TEST_1(e = ctx->b.specials->head);
   TEST(tl_gets(e->data->e_tags,
 	       NTATAG_CONTACT_REF(m),
 	       SIPTAG_FROM_REF(sipaddress),
-	       TAG_END()), 2); TEST_1(m);
+	       SIPTAG_ALLOW_REF(allow),
+	       NUTAG_APPL_METHOD_REF(appl_method),
+	       SIPTAG_SUPPORTED_REF(supported),
+	       TAG_END()), 5); TEST_1(m);
+
   TEST_1(ctx->b.contact = sip_contact_dup(ctx->home, m));
   TEST_1(ctx->b.to = sip_to_dup(ctx->home, sipaddress));
-  free_events_in_list(ctx, ctx->b.events);
+  TEST_1(ctx->b.allow = sip_allow_dup(ctx->home, allow));
+  TEST_1(ctx->b.appl_method = su_strdup(ctx->home, appl_method));
+  TEST_1(ctx->b.supported = sip_supported_dup(ctx->home, supported));
+
+  free_events_in_list(ctx, ctx->b.specials);
 
   if (print_headings)
     printf("TEST NUA-2.2.2: PASSED\n");
@@ -277,19 +301,26 @@ int test_nua_init(struct context *ctx,
 			  NUTAG_URL("sip:0.0.0.0:*"),
 			  SOATAG_USER_SDP_STR("m=audio 5400 RTP/AVP 8 0"),
 			  NUTAG_INSTANCE(ctx->c.instance),
+			  TAG_IF(ctx->c.logging, TPTAG_LOG(1)),
 			  TAG_END());
   TEST_1(ctx->c.nua);
 
   nua_get_params(ctx->c.nua, TAG_ANY(), TAG_END());
   run_c_until(ctx, nua_r_get_params, save_until_final_response);
-  TEST_1(e = ctx->c.events->head);
+  TEST_1(e = ctx->c.specials->head);
   TEST(tl_gets(e->data->e_tags,
 	       NTATAG_CONTACT_REF(m),
 	       SIPTAG_FROM_REF(sipaddress),
-	       TAG_END()), 2); TEST_1(m);
+	       SIPTAG_ALLOW_REF(allow),
+	       NUTAG_APPL_METHOD_REF(appl_method),
+	       SIPTAG_SUPPORTED_REF(supported),
+	       TAG_END()), 5); TEST_1(m);
   TEST_1(ctx->c.contact = sip_contact_dup(ctx->home, m));
   TEST_1(ctx->c.to = sip_to_dup(ctx->home, sipaddress));
-  free_events_in_list(ctx, ctx->c.events);
+  TEST_1(ctx->c.allow = sip_allow_dup(ctx->home, allow));
+  TEST_1(ctx->c.appl_method = su_strdup(ctx->home, appl_method));
+  TEST_1(ctx->c.supported = sip_supported_dup(ctx->home, supported));
+  free_events_in_list(ctx, ctx->c.specials);
 
   if (print_headings)
     printf("TEST NUA-2.2.3: PASSED\n");

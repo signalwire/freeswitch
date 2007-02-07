@@ -58,6 +58,6 @@ EXTRA_DIST =		Doxyfile stun.docs cert.pem key.pem
 # ----------------------------------------------------------------------
 # Sofia specific rules
 
-include ../sofia.am
+include $(top_srcdir)/rules/sofia.am
 
 TAG_DLL_FLAGS =		LIST=stun_tag_list

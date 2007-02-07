@@ -825,9 +825,9 @@ static size_t convert_ip_address(char const *s,
 {
   size_t len;
   int canonize = 0;
+  char buf[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"];
 
 #if SU_HAVE_IN6
-  char buf[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"];
 
   len = span_ip6_reference(s);
   if (len) {

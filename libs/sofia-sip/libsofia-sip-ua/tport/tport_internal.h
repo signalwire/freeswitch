@@ -91,7 +91,7 @@ typedef long unsigned LU; 	/* for printf() and friends */
 
 /** Transport parameters */
 typedef struct {
-  usize_t  tpp_mtu;		/**< Maximum packet size */
+  unsigned tpp_mtu;		/**< Maximum packet size */
   unsigned tpp_idle;		/**< Allowed connection idle time. */
   unsigned tpp_timeout;		/**< Allowed idle time for message. */
   unsigned tpp_sigcomp_lifetime;  /**< SigComp compartment lifetime  */

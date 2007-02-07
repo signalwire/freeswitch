@@ -192,6 +192,8 @@ char const Needle[] =
 
     s = bm_memmem(hs, strlen(hs), needle, nlen, fwd);
 
+    free(fwd);
+
     TEST_S(s, hs + 1919);
 
     TEST_1(bm_memmem(hs, strlen(hs), Needle, nlen, NULL) == 0);

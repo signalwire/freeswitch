@@ -83,6 +83,15 @@ elif test x${HAVE_OPENSSL} != x1 ; then
 else
   AC_DEFINE([HAVE_SOFIA_STUN], 1, [Define to 1 if we use STUN library])
 fi
+AM_CONDITIONAL([HAVE_STUN], [test "x$enable_stun" = xyes])
+
+AC_ARG_ENABLE(nth,
+[  --disable-nth              disable nth and http modules (enabled)],
+ , enable_nth=yes)
+AM_CONDITIONAL([HAVE_NTH], [test "x$enable_nth" = xyes])
+if test x$enable_nth = xyes ; then
+  AC_DEFINE([HAVE_SOFIA_NTH], 1, [Define to 1 if we use NTH library])
+fi
 
 dnl Disable NTLM support by default
 AC_ARG_ENABLE(ntlm,
@@ -104,10 +113,6 @@ AC_HEADER_STDC
 
 ### checks for declarations
 ### -----------------------
-AC_CHECK_DECL([SIGPIPE], [
-AC_DEFINE([HAVE_SIGPIPE], 1, [Define to 1 if you have SIGPIPE])],,[
-#include <signal.h>
-])
 
 ### checks for types
 ### ----------------

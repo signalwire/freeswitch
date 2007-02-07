@@ -769,8 +769,6 @@ int test_digest_client()
     {
       char const *nonce1, *nextnonce, *nonce2;
 
-      reinit_as(as); auth_mod_destroy(am); aucs = NULL;
-
       TEST_1(am = auth_mod_create(NULL, 
 				  AUTHTAG_METHOD("Digest"),
 				  AUTHTAG_REALM("ims3.so.noklab.net"),

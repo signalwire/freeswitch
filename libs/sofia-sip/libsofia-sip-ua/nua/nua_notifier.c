@@ -44,12 +44,12 @@
 
 #include <sofia-sip/string0.h>
 #include <sofia-sip/sip_protos.h>
+#include <sofia-sip/sip_extra.h>
 #include <sofia-sip/sip_status.h>
 #include <sofia-sip/sip_util.h>
 #include <sofia-sip/su_uniqueid.h>
-
-#define NTA_LEG_MAGIC_T      struct nua_handle_s
-#define NTA_OUTGOING_MAGIC_T struct nua_handle_s
+#include <sofia-sip/su_md5.h>
+#include <sofia-sip/token64.h>
 
 #include "nua_stack.h"
 
@@ -59,7 +59,14 @@
 struct notifier_usage
 {
   enum nua_substate  nu_substate;	/**< Subscription state */
-  sip_time_t         nu_expires;
+  sip_time_t         nu_expires; 	/**< Expiration time */
+  sip_time_t         nu_requested;      /**< Requested expiration time */
+#if SU_HAVE_EXPERIMENTAL
+  char              *nu_tag;	        /**< @ETag in last NOTIFY */
+  unsigned           nu_etags:1;	/**< Subscriber supports etags */
+  unsigned           nu_appl_etags:1;   /**< Application generates etags */
+  unsigned           nu_no_body:1;      /**< Suppress body */
+#endif
 };
 
 static char const *nua_notify_usage_name(nua_dialog_usage_t const *du);
@@ -115,8 +122,6 @@ void nua_notify_usage_remove(nua_handle_t *nh,
 /* ====================================================================== */
 /* SUBSCRIBE server */
 
-static int respond_to_subscribe(nua_server_request_t *sr, tagi_t const *tags);
-
 /** @NUA_EVENT nua_i_subscribe
  *
  * Incoming @b SUBSCRIBE request.
@@ -160,152 +165,185 @@ static int respond_to_subscribe(nua_server_request_t *sr, tagi_t const *tags);
  * @END_NUA_EVENT
  */
 
+static int nua_subscribe_server_init(nua_server_request_t *sr);
+static int nua_subscribe_server_preprocess(nua_server_request_t *sr);
+static int nua_subscribe_server_respond(nua_server_request_t*, tagi_t const *);
+static int nua_subscribe_server_report(nua_server_request_t*, tagi_t const *);
 
-/** @internal Process incoming SUBSCRIBE. */
-int nua_stack_process_subscribe(nua_t *nua,
-				nua_handle_t *nh,
-				nta_incoming_t *irq,
-				sip_t const *sip)
+nua_server_methods_t const nua_subscribe_server_methods = 
+  {
+    SIP_METHOD_SUBSCRIBE,
+    nua_i_subscribe,		/* Event */
+    { 
+      1,			/* Create dialog */
+      0,			/* Initial request */
+      1,			/* Target refresh request  */
+      1,			/* Add Contact */
+    },
+    nua_subscribe_server_init,
+    nua_subscribe_server_preprocess,
+    nua_base_server_params,
+    nua_subscribe_server_respond,
+    nua_subscribe_server_report,
+  };
+
+int nua_subscribe_server_init(nua_server_request_t *sr)
 {
-  nua_server_request_t *sr, sr0[1];
-  nua_dialog_state_t *ds;
-  nua_dialog_usage_t *du = NULL;
+  nua_handle_t *nh = sr->sr_owner;
+  nua_dialog_state_t *ds = nh->nh_ds;
+  sip_allow_events_t const *allow_events = NH_PGET(nh, allow_events);
+  sip_t const *sip = sr->sr_request.sip;
   sip_event_t *o = sip->sip_event;
   char const *event = o ? o->o_type : NULL;
   
-  enum nua_substate substate = nua_substate_terminated;
-
-  enter;
-
-  if (nh)
-    du = nua_dialog_usage_get(ds = nh->nh_ds, nua_notify_usage, o);
-
-  sr = SR_INIT(sr0);
-  
-  if (nh == NULL || du == NULL) {
-    sip_allow_events_t *allow_events = NUA_PGET(nua, nh, allow_events);
-
+  if (sr->sr_initial || !nua_dialog_usage_get(ds, nua_notify_usage, o)) {
     if (event && str0cmp(event, "refer") == 0)
       /* refer event subscription should be initiated with REFER */
-      SR_STATUS1(sr, SIP_403_FORBIDDEN);
-    else if (!event || !msg_header_find_param(allow_events->k_common, event))
-      SR_STATUS1(sr, SIP_489_BAD_EVENT);
-    else
-      substate = nua_substate_embryonic;
+      return SR_STATUS1(sr, SIP_403_FORBIDDEN);
+
+    /* XXX - event is case-sensitive, should use msg_header_find_item() */
+    if (!event || !msg_header_find_param(allow_events->k_common, event))
+      return SR_STATUS1(sr, SIP_489_BAD_EVENT);
+  }
+
+  return 0;
+}
+
+int nua_subscribe_server_preprocess(nua_server_request_t *sr)
+{
+  nua_handle_t *nh = sr->sr_owner;
+  nua_dialog_state_t *ds = nh->nh_ds;
+  nua_dialog_usage_t *du;
+  struct notifier_usage *nu;
+  sip_t const *sip = sr->sr_request.sip;
+  sip_event_t *o = sip->sip_event;
+  char const *event = o ? o->o_type : NULL;
+  /* Maximum expiration time */
+  unsigned long expires = 3600;
+
+  assert(nh && nh->nh_nua->nua_dhandle != nh);
+  
+  du = nua_dialog_usage_get(ds, nua_notify_usage, o);
+
+  if (du == NULL) {
+    /* Create a new subscription */
+    du = nua_dialog_usage_add(nh, ds, nua_notify_usage, o);
+    if (du == NULL)
+      return SR_STATUS1(sr, SIP_500_INTERNAL_SERVER_ERROR);
   }
   else {
     /* Refresh existing subscription */
-    struct notifier_usage *nu = nua_dialog_usage_private(du);
-    unsigned long expires;
-
-    assert(nh && du && nu);
-
-    expires = str0cmp(event, "refer") ? 3600 : NH_PGET(nh, refer_expires);
-
-    if (sip->sip_expires && sip->sip_expires->ex_delta < expires)
-      expires = sip->sip_expires->ex_delta;
-
-    if (expires == 0)
-      nu->nu_substate = nua_substate_terminated;
-
-    nu->nu_expires = sip_now() + expires;
-    substate = nu->nu_substate;
-
-    /* XXX - send notify */
+    if (str0cmp(event, "refer") == 0)
+      expires = NH_PGET(nh, refer_expires);
 
     SR_STATUS1(sr, SIP_200_OK);
   }
 
-  sr = nua_server_request(nua, nh, irq, sip, sr, sizeof *sr,
-			  respond_to_subscribe, 1);
+  nu = nua_dialog_usage_private(du);
 
-  if (!du && substate == nua_substate_embryonic && sr->sr_status < 300) {
-    nh = sr->sr_owner; assert(nh && nh != nua->nua_dhandle);
-    du = nua_dialog_usage_add(nh, nh->nh_ds, nua_notify_usage, sip->sip_event);
-    if (du) {
-      struct notifier_usage *nu = nua_dialog_usage_private(du);
-      unsigned long expires = 3600; /* XXX */
-      
-      if (sip->sip_expires && sip->sip_expires->ex_delta < expires)
-	expires = sip->sip_expires->ex_delta;
+  if (sip->sip_expires && sip->sip_expires->ex_delta < expires)
+    expires = sip->sip_expires->ex_delta;
+  nu->nu_requested = sip_now() + expires;
 
-      nu->nu_expires = sip_now() + expires;
-      nu->nu_substate = substate;
-    }
-    else 
-      SR_STATUS1(sr, SIP_500_INTERNAL_SERVER_ERROR);
-  }
-
-  if (substate == nua_substate_embryonic && sr->sr_status >= 300)
-    substate = nua_substate_terminated;
+#if SU_HAVE_EXPERIMENTAL
+  nu->nu_etags = 
+    sip_suppress_body_if_match(sip) ||
+    sip_suppress_notify_if_match(sip) ||
+    sip_has_feature(sr->sr_request.sip->sip_supported, "etags");
+#endif
 
   sr->sr_usage = du;
 
-  return nua_stack_server_event(nua, sr, nua_i_subscribe,
-				NUTAG_SUBSTATE(substate), TAG_END());
+  return sr->sr_status <= 100 ? 0 : sr->sr_status;
 }
 
-/** @internal Respond to an SUBSCRIBE request.
+/** @internal Respond to a SUBSCRIBE request.
  *
  */
 static
-int respond_to_subscribe(nua_server_request_t *sr, tagi_t const *tags)
+int nua_subscribe_server_respond(nua_server_request_t *sr, tagi_t const *tags)
+{
+  struct notifier_usage *nu = nua_dialog_usage_private(sr->sr_usage);
+
+  msg_t *msg = sr->sr_response.msg;
+  sip_t *sip = sr->sr_response.sip;
+
+  if (200 <= sr->sr_status && sr->sr_status < 300) {
+    sip_expires_t ex[1]; 
+
+    sip_expires_init(ex);
+
+    if (nu) {
+      sip_time_t now = sip_now();
+
+      if (nu->nu_requested) {
+	if (nu->nu_requested > nu->nu_expires)
+	  nu->nu_expires = nu->nu_requested;
+	else if (nu->nu_expires <= now || nu->nu_requested <= now)
+	  nu->nu_substate = nua_substate_terminated;
+      }
+
+      if (nu->nu_expires > now)
+	ex->ex_delta = nu->nu_expires - now;
+    }
+    else {
+      /* Add header Expires: 0 */
+    }
+
+    if (!sip->sip_expires || sip->sip_expires->ex_delta > ex->ex_delta)
+      sip_add_dup(msg, sip, (sip_header_t *)ex);
+  }
+
+  return nua_base_server_respond(sr, tags);
+}
+
+static
+int nua_subscribe_server_report(nua_server_request_t *sr, tagi_t const *tags)
 {
   nua_handle_t *nh = sr->sr_owner;
   nua_dialog_state_t *ds = nh->nh_ds;
-  nua_t *nua = nh->nh_nua;
-  struct notifier_usage *nu;
-  sip_allow_events_t *allow_events = NUA_PGET(nua, nh, allow_events);
-  sip_expires_t ex[1]; 
-  sip_time_t now = sip_now();
-  msg_t *msg;
+  struct notifier_usage *nu = nua_dialog_usage_private(sr->sr_usage);
+  enum nua_substate substate = nua_substate_terminated;
+  int notify = 0;
+  int retval;
 
-  sip_expires_init(ex);
-
-  nu = nua_dialog_usage_private(sr->sr_usage);
-  if (nu && nu->nu_expires > now)
-    ex->ex_delta = nu->nu_expires - now;
-
-  msg = nua_server_response(sr,
-			    sr->sr_status, sr->sr_phrase,
-			    NUTAG_ADD_CONTACT(sr->sr_status < 300),
-			    TAG_IF(nu, SIPTAG_EXPIRES(ex)),
-			    SIPTAG_SUPPORTED(NH_PGET(nh, supported)),
-			    SIPTAG_ALLOW_EVENTS(allow_events),
-			    TAG_NEXT(tags));
-
-  if (msg) {
-    sip_t *sip = sip_object(msg);
-
-    if (nu && sip->sip_expires && sr->sr_status < 300)
-      nu->nu_expires = now + sip->sip_expires->ex_delta;
-
-    nta_incoming_mreply(sr->sr_irq, msg);
-
-    if (nu && nu->nu_substate != nua_substate_embryonic)
-      /* Send NOTIFY (and terminate subscription, when needed) */
-      nua_dialog_usage_refresh(nh, ds, sr->sr_usage, sip_now());
+  if (nu && !sr->sr_terminating) {
+    substate = nu->nu_substate;
   }
-  else {
-    /* XXX - send nua_i_error */
-    SR_STATUS1(sr, SIP_500_INTERNAL_SERVER_ERROR);
-    nta_incoming_treply(sr->sr_irq, sr->sr_status, sr->sr_phrase, TAG_END());
+
+  /* nu_requested is set by SUBSCRIBE and cleared when NOTIFY is sent */
+  if (nu && nu->nu_requested && substate != nua_substate_embryonic) {
+#if SU_HAVE_EXPERIMENTAL
+    sip_t const *sip = sr->sr_request.sip;
+    sip_suppress_notify_if_match_t *snim = sip_suppress_notify_if_match(sip);
+    sip_suppress_body_if_match_t *sbim = sip_suppress_body_if_match(sip);
+    
+    if (!nu->nu_tag)
+      notify = 1;
+    else if (snim && !strcasecmp(snim->snim_tag, nu->nu_tag))
+      notify = 0;
+    else if (sbim && !strcasecmp(snim->snim_tag, nu->nu_tag))
+      notify = 1, nu->nu_no_body = 1;
+    else 
+#endif
+      notify = 1;
+  }
+
+  retval = nua_base_server_treport(sr, NUTAG_SUBSTATE(substate), TAG_END());
+
+  if (retval >= 2 || nu == NULL)
+    return retval;
+  
+  if (notify) {
+    /* Send NOTIFY (and terminate subscription, when needed) */
+    nua_dialog_usage_refresh(nh, ds, sr->sr_usage, sip_now());
   }
   
-  return sr->sr_status >= 200 ? sr->sr_status : 0;
+  return retval;
 }
 
 /* ======================================================================== */
-/* NOTIFY */
-
-static int process_response_to_notify(nua_handle_t *nh,
-				      nta_outgoing_t *orq,
-				      sip_t const *sip);
-
-static int nua_stack_notify2(nua_t *, nua_handle_t *, nua_event_t, 
-			     nua_dialog_usage_t *du,
-			     tagi_t const *tags);
-
+/* NOTIFY client */
 
 /**@fn void nua_notify(nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...);
  *
@@ -336,175 +374,271 @@ static int nua_stack_notify2(nua_t *, nua_handle_t *, nua_event_t,
  * @sa @RFC3265, #nua_i_subscribe, #nua_i_refer, NUTAG_ALLOW_EVENTS()
  */
 
+static int nua_notify_client_init(nua_client_request_t *cr, 
+				  msg_t *, sip_t *,
+				  tagi_t const *tags);
+static int nua_notify_client_init_etag(nua_client_request_t *cr,
+				       msg_t *msg, sip_t *sip,
+				       tagi_t const *tags);
+static int nua_notify_client_request(nua_client_request_t *cr,
+				     msg_t *, sip_t *,
+				     tagi_t const *tags);
+static int nua_notify_client_report(nua_client_request_t *cr,
+				    int status, char const *phrase,
+				    sip_t const *sip,
+				    nta_outgoing_t *orq,
+				    tagi_t const *tags);
+
+static nua_client_methods_t const nua_notify_client_methods = {
+  SIP_METHOD_NOTIFY,
+  0,
+  { 
+    /* create_dialog */ 1,
+    /* in_dialog */ 1,
+    /* target refresh */ 1
+  },
+  /* nua_notify_client_template */ NULL,
+  nua_notify_client_init,
+  nua_notify_client_request,
+  /* nua_notify_client_check_restart */ NULL,
+  /* nua_notify_client_response */ NULL,
+  /* nua_notify_client_preliminary */ NULL,
+  nua_notify_client_report
+};
+
 /**@internal Send NOTIFY. */
 int nua_stack_notify(nua_t *nua,
 		     nua_handle_t *nh,
 		     nua_event_t e,
 		     tagi_t const *tags)
 {
-  return nua_stack_notify2(nua, nh, e, NULL, tags);
+  return nua_client_create(nh, e, &nua_notify_client_methods, tags);
 }
 
-
-int nua_stack_notify2(nua_t *nua,
-		      nua_handle_t *nh,
-		      nua_event_t e,
-		      nua_dialog_usage_t *du,
-		      tagi_t const *tags)
+static int nua_notify_client_init(nua_client_request_t *cr,
+				  msg_t *msg, sip_t *sip,
+				  tagi_t const *tags)
 {
-  nua_client_request_t *cr = nh->nh_ds->ds_cr;
+  nua_handle_t *nh = cr->cr_owner;
+  nua_dialog_usage_t *du;
   struct notifier_usage *nu;
-  msg_t *msg;
-  sip_t *sip;
-  sip_event_t const *o;
-  sip_time_t now;
-  int refresh = du != NULL;
-
-  if (cr->cr_orq) {
-    return UA_EVENT2(e, 900, "Request already in progress");
-  }
-
-  nua_stack_init_handle(nua, nh, TAG_NEXT(tags));
-
-  if (refresh) {
-    assert(!cr->cr_msg);
-    if (cr->cr_msg)
-      msg_destroy(cr->cr_msg);
-    cr->cr_msg = msg_copy(du->du_msg);
-  }
-
-  msg = nua_creq_msg(nua, nh, cr, cr->cr_retry_count || refresh,
-		     SIP_METHOD_NOTIFY,
-		     NUTAG_ADD_CONTACT(1),
-		     TAG_NEXT(tags));
-  sip = sip_object(msg);
-  if (!sip)
-    return UA_EVENT1(e, NUA_INTERNAL_ERROR);
-
-  if (nh->nh_ds->ds_has_notifys == 1 && !sip->sip_event)
+  sip_event_t const *o = sip->sip_event;
+  sip_subscription_state_t *ss = sip->sip_subscription_state;
+  sip_time_t now = sip_now();
+    
+  if (o == NULL && nh->nh_ds->ds_has_notifys == 1)
     o = NONE;
-  else
-    o = sip->sip_event;
 
   du = nua_dialog_usage_get(nh->nh_ds, nua_notify_usage, o);
-  nu = nua_dialog_usage_private(du);
 
-  if (du && du->du_event && !sip->sip_event)
-    sip_add_dup(msg, sip, (sip_header_t *)du->du_event);
+  if (!du) {
+    tagi_t const *newsub = tl_find_last(tags, nutag_newsub);
 
-  now = sip_now();
+    if (!newsub || !newsub->t_value)
+      return 0; /* Rejected eventually by nua_notify_client_request() */
 
-  if (!du)
-    ;
-  else if (sip->sip_subscription_state) {
+    /* Create new notifier */
+    du = nua_dialog_usage_add(nh, nh->nh_ds, nua_notify_usage, o);
+    if (du == NULL)
+      return -1;
+
+    nu = nua_dialog_usage_private(du);
+    nu->nu_expires = now;
+  }
+  else
+    nu = nua_dialog_usage_private(du);
+
+
+  if (nu->nu_substate == nua_substate_terminated) {
+    /*Xyzzy*/;
+  }
+  else if (ss != NULL) {
     /* SIPTAG_SUBSCRIPTION_STATE() overrides NUTAG_SUBSTATE() */
-    char const *ss_substate = sip->sip_subscription_state->ss_substate;
+    nu->nu_substate = nua_substate_make(ss->ss_substate);
 
-    if (strcasecmp(ss_substate, "terminated") == 0)
-      nu->nu_substate = nua_substate_terminated;
-    else if (strcasecmp(ss_substate, "pending") == 0)
-      nu->nu_substate = nua_substate_pending;
-    else /* if (strcasecmp(subs->ss_substate, "active") == 0) */ 
-      nu->nu_substate = nua_substate_active;
+    if (ss->ss_expires) {
+      unsigned long expires = strtoul(ss->ss_expires, NULL, 10);
+      if (now + expires < now)
+	expires = SIP_TIME_MAX - now - 1;
 
-    if (sip->sip_subscription_state->ss_expires) {
-      unsigned long expires;
-      expires = strtoul(sip->sip_subscription_state->ss_expires, NULL, 10);
-      if (expires > 3600)
-        expires = 3600;
-      nu->nu_expires = now + expires;
-    }
-    else if (nu->nu_substate != nua_substate_terminated) {
-      sip_subscription_state_t *ss = sip->sip_subscription_state;
-      char *param;
-
-      if (now < nu->nu_expires)
-        param = su_sprintf(msg_home(msg), "expires=%lu", nu->nu_expires - now);
-      else
-        param = "expires=0";
-
-      msg_header_add_param(msg_home(msg), ss->ss_common, param);
+      /* Notifier can only shorten the subscription time */ 
+      if (nu->nu_requested == 0 || nu->nu_requested >= now + expires)
+	nu->nu_expires = nu->nu_requested = now + expires;
     }
   }
   else {
-    sip_subscription_state_t *ss;
-    enum nua_substate substate;
-    char const *name;
+    enum nua_substate substate = nu->nu_substate;
 
-    substate = nu->nu_substate;
-
-    if (nu->nu_expires <= now)
-      substate = nua_substate_terminated;
-
-    if (substate != nua_substate_terminated) {
+    if (nu->nu_expires > now) {
       tagi_t const *t = tl_find_last(tags, nutag_substate);
       if (t)
-	substate = (enum nua_substate)t->t_value;
+        substate = (enum nua_substate)t->t_value;
     }
+    else
+      substate = nua_substate_terminated;
 
     switch (substate) {
     case nua_substate_embryonic:
       /*FALLTHROUGH*/
     case nua_substate_pending:
-      name = "pending";
       nu->nu_substate = nua_substate_pending;
       break;
     case nua_substate_active:
     default:
-      name = "active";
       nu->nu_substate = nua_substate_active;
       break;
     case nua_substate_terminated:
-      name = "terminated";
       nu->nu_substate = nua_substate_terminated;
       break;
     }
-
-    if (nu->nu_substate != nua_substate_terminated) {
-      unsigned long expires = nu->nu_expires - now;
-      ss = sip_subscription_state_format(msg_home(msg), "%s;expires=%lu",
-					 name, expires);
-    }
-    else {
-      ss = sip_subscription_state_make(msg_home(msg), "terminated; "
-				       "reason=noresource");
-    }
-
-    msg_header_insert(msg, (void *)sip, (void *)ss);
   }
 
-  if (du) {
-    if (nu->nu_substate == nua_substate_terminated)
-      du->du_terminating = 1;
-
-    if (!du->du_terminating && !refresh) {
-      /* Save template */
-      if (du->du_msg)
-        msg_destroy(du->du_msg);
-      du->du_msg = msg_ref_create(cr->cr_msg);
-    }
-  }
-
-  /* NOTIFY outside a dialog */
-  cr->cr_orq = nta_outgoing_mcreate(nua->nua_nta,
-				    process_response_to_notify, nh, NULL,
-				    msg,
-				    SIPTAG_END(), TAG_NEXT(tags));
-
-  if (!cr->cr_orq) {
-    msg_destroy(msg);
-    return UA_EVENT1(e, NUA_INTERNAL_ERROR);
-  }
+  if (nu->nu_substate == nua_substate_terminated)
+    cr->cr_terminating = 1;
 
   cr->cr_usage = du;
 
-  return cr->cr_event = e;
+  return nua_notify_client_init_etag(cr, msg, sip, tags);
+}
+
+static int nua_notify_client_init_etag(nua_client_request_t *cr,
+				       msg_t *msg, sip_t *sip,
+				       tagi_t const *tags)
+{
+#if SU_HAVE_EXPERIMENTAL
+  nua_handle_t *nh = cr->cr_owner;
+  struct notifier_usage *nu = nua_dialog_usage_private(cr->cr_usage);
+  nua_server_request_t *sr;
+
+  if (nu->nu_tag)
+    su_free(nh->nh_home, nu->nu_tag), nu->nu_tag = NULL;
+    nu->nu_no_body = 0;
+
+  if (sip->sip_etag) {
+    nu->nu_appl_etags = 1;
+    nu->nu_tag = su_strdup(nh->nh_home, sip->sip_etag->g_string);
+  }
+  else if (!nu->nu_appl_etags && nu->nu_etags) {
+    su_md5_t md5[1];
+    unsigned char digest[SU_MD5_DIGEST_SIZE];
+    sip_payload_t pl[1] = { SIP_PAYLOAD_INIT() };
+    char token[2 * 16];
+
+    su_md5_init(md5);
+
+    if (sip->sip_payload) *pl = *sip->sip_payload;
+
+    if (pl->pl_len)
+      su_md5_update(md5, pl->pl_data, pl->pl_len);
+    su_md5_update(md5, &pl->pl_len, sizeof(pl->pl_len));
+
+    if (sip->sip_content_type)
+      su_md5_striupdate(md5, sip->sip_content_type->c_type);
+
+    su_md5_digest(md5, digest);
+    token64_e(token, sizeof token, digest, sizeof digest);
+    token[(sizeof token) - 1] = '\0';
+    nu->nu_tag = su_strdup(nh->nh_home, token);
+  }
+
+  if (!nu->nu_requested || !nu->nu_tag)
+    return 0;
+
+  /* Check if SUBSCRIBE had matching suppression */
+  for (sr = nh->nh_ds->ds_sr; sr; sr = sr->sr_next)
+    if (sr->sr_usage == cr->cr_usage && sr->sr_method == sip_method_subscribe)
+      break;
+
+  if (sr) {
+    sip_t const *sip = sr->sr_request.sip;
+
+    sip_suppress_body_if_match_t *sbim;
+    sip_suppress_notify_if_match_t *snim;
+    
+    if (cr->cr_usage->du_ready) {
+      snim = sip_suppress_notify_if_match(sip);
+
+      if (snim && !strcasecmp(snim->snim_tag, nu->nu_tag)) {
+	if (nu->nu_requested > nu->nu_expires)
+	  nu->nu_expires = nu->nu_requested;
+	nu->nu_requested = 0;
+	return nua_client_return(cr, 202, "NOTIFY Suppressed", msg);
+      }
+    }
+
+    sbim = sip_suppress_body_if_match(sip);
+    if (sbim && !strcasecmp(sbim->sbim_tag, nu->nu_tag))
+      nu->nu_no_body = 1;
+  }
+#endif
+
+  return 0;
 }
 
 static
-void restart_notify(nua_handle_t *nh, tagi_t *tags)
+int nua_notify_client_request(nua_client_request_t *cr,
+			      msg_t *msg, sip_t *sip,
+			      tagi_t const *tags)
 {
-  nua_creq_restart(nh, nh->nh_ds->ds_cr, process_response_to_notify, tags);
+  nua_dialog_usage_t *du = cr->cr_usage; 
+  struct notifier_usage *nu = nua_dialog_usage_private(du);
+  su_home_t *home = msg_home(msg);
+  sip_time_t now = sip_now();
+  sip_subscription_state_t *ss = sip->sip_subscription_state;
+  char const *expires;
+
+  if (du == NULL)		/* Subscription has been terminated */
+    return nua_client_return(cr, SIP_481_NO_TRANSACTION, msg);
+
+  assert(du && nu);
+
+  if (du && nua_client_bind(cr, du) < 0)
+    return -1;
+
+  if (nu->nu_requested)
+    nu->nu_expires = nu->nu_requested;
+  nu->nu_requested = 0;
+
+  if (nu->nu_expires <= now || du->du_shutdown) {
+    nu->nu_substate = nua_substate_terminated;
+    expires = "expires=0";
+  }
+  else {
+    expires = su_sprintf(home, "expires=%lu", nu->nu_expires - now);
+  }
+
+  if (ss == NULL || nua_substate_make(ss->ss_substate) != nu->nu_substate) {
+    if (nu->nu_substate == nua_substate_terminated)
+      expires = nu->nu_expires > now ? "noresource" : "timeout";
+
+    ss = sip_subscription_state_format(home, "%s;%s", 
+				       nua_substate_name(nu->nu_substate),
+				       expires);
+
+    msg_header_insert(msg, (void *)sip, (void *)ss);
+  }
+  else if (nu->nu_substate != nua_substate_terminated) {
+    msg_header_replace_param(home, ss->ss_common, expires);
+  }
+
+#if SU_HAVE_EXPERIMENTAL
+  if (nu->nu_tag && !sip->sip_etag)
+    msg_header_add_make(msg, (void *)sip, sip_etag_class, nu->nu_tag);
+
+  if (nu->nu_no_body) {
+    nu->nu_no_body = 0;
+    msg_header_remove(msg, (void *)sip, (void *)sip->sip_payload);
+    msg_header_remove(msg, (void *)sip, (void *)sip->sip_content_length);
+  }
+#endif
+
+  if (nu->nu_substate == nua_substate_terminated)
+    cr->cr_terminating = 1;
+
+  if (du->du_event && !sip->sip_event)
+    sip_add_dup(cr->cr_msg, sip, (sip_header_t *)du->du_event);
+
+  return nua_base_client_request(cr, msg, sip, tags);
 }
 
 /** @NUA_EVENT nua_r_notify
@@ -527,30 +661,36 @@ void restart_notify(nua_handle_t *nh, tagi_t *tags)
  *               (status code is in @a status and 
  *               descriptive message in @a phrase parameters)
  * @param tags   NUTAG_SUBSTATE() indicating subscription state
+ *               SIPTAG_EVENT() indicating subscription event
  *
  * @sa nua_notify(), @RFC3265, #nua_i_subscribe, #nua_i_refer
  *
  * @END_NUA_EVENT
  */
 
-static int process_response_to_notify(nua_handle_t *nh,
-				      nta_outgoing_t *orq,
-				      sip_t const *sip)
+static int nua_notify_client_report(nua_client_request_t *cr,
+				    int status, char const *phrase,
+				    sip_t const *sip,
+				    nta_outgoing_t *orq,
+				    tagi_t const *tags)
 {
+  nua_handle_t *nh = cr->cr_owner;
+  nua_dialog_usage_t *du = cr->cr_usage;
+  struct notifier_usage *nu = nua_dialog_usage_private(du);
   enum nua_substate substate = nua_substate_terminated;
 
-  if (nua_creq_check_restart(nh, nh->nh_ds->ds_cr, orq, sip, restart_notify))
-    return 0;
-
-  if (nh->nh_ds->ds_cr->cr_usage) {
-    struct notifier_usage *nu = nua_dialog_usage_private(nh->nh_ds->ds_cr->cr_usage);
+  if (nu && !cr->cr_terminated)
     substate = nu->nu_substate;
-    assert(substate != nua_substate_embryonic);
-  }
 
-  return nua_stack_process_response(nh, nh->nh_ds->ds_cr, orq, sip, 
-				    NUTAG_SUBSTATE(substate),
-				    TAG_END());
+  nua_stack_tevent(nh->nh_nua, nh, 
+		   nta_outgoing_getresponse(orq),
+		   cr->cr_event,
+		   status, phrase,
+		   NUTAG_SUBSTATE(substate),
+		   SIPTAG_EVENT(du ? du->du_event : NULL),
+		   TAG_NEXT(tags));
+
+  return 0;
 }
 
 
@@ -559,30 +699,30 @@ static void nua_notify_usage_refresh(nua_handle_t *nh,
 				     nua_dialog_usage_t *du,
 				     sip_time_t now)
 {
-  struct notifier_usage *nu = nua_dialog_usage_private(du);
+  nua_client_request_t *cr = du->du_cr;
+  nua_event_t e = nua_r_notify;
 
-  if (nh->nh_ds->ds_cr->cr_usage == du) /* Already notifying. */
-    return;
+  if (cr) {
+    int terminating;
 
-  if (now >= nu->nu_expires) {
-    sip_subscription_state_t ss[1];
-    char const *params[] = { NULL, NULL };
-    tagi_t tags[2] = {
-      { SIPTAG_SUBSCRIPTION_STATE(ss) }, { TAG_END() }
-    };
+    if (nua_client_is_queued(cr)) /* Already notifying. */
+      return;
 
-    sip_subscription_state_init(ss);
+    terminating = du->du_expires && du->du_expires <= now;
 
-    ss->ss_substate = "terminated";
-    ss->ss_params = params;
-    params[0] = "reason=timeout";
-    ss->ss_reason = "timeout";
-
-    nua_stack_notify2(nh->nh_nua, nh, nua_r_notify, du, tags);
+    if (nua_client_resend_request(cr, terminating, NULL) >= 0)
+      return;
   }
   else {
-    nua_stack_notify2(nh->nh_nua, nh, nua_r_notify, du, NULL);
+    if (nua_client_create(nh, e, &nua_notify_client_methods, NULL) >= 0)
+      return;
   }
+
+  nua_stack_tevent(nh->nh_nua, nh, NULL, e, NUA_INTERNAL_ERROR,
+		   NUTAG_SUBSTATE(nua_substate_terminated),
+		   TAG_END());
+
+  nua_dialog_usage_remove(nh, ds, du);
 }
 
 /** @interal Shut down NOTIFY usage. 
@@ -595,25 +735,112 @@ static int nua_notify_usage_shutdown(nua_handle_t *nh,
 				     nua_dialog_state_t *ds,
 				     nua_dialog_usage_t *du)
 {
-  nua_client_request_t *cr = nh->nh_ds->ds_cr;
+  struct notifier_usage *nu = nua_dialog_usage_private(du);
+  nua_client_request_t *cr = du->du_cr;
 
-  if (!cr->cr_usage) {
-    /* Unnotify */
-	/* Commenting this line out to supress an attended transfer bug (awaiting fix from pessi) */
-    //nua_stack_notify2(nh->nh_nua, nh, nua_r_destroy, du, NULL);
-    return cr->cr_usage != du;
+  if (nua_client_is_queued(cr)) /* Already notifying. */
+    return -1;  /* Request in progress */
+
+  nu->nu_substate = nua_substate_terminated;
+
+  if (cr) {
+    if (nua_client_resend_request(cr, 1, NULL) >= 0)
+      return 0;
+  }
+  else {
+    if (nua_client_create(nh, nua_r_notify, 
+			  &nua_notify_client_methods, NULL) >= 0)
+      return 0;
   }
 
-  if (!du->du_ready && !cr->cr_orq)
-    return 1;			/* Unauthenticated NOTIFY? */
-
-  return -1;  /* Request in progress */
+  nua_dialog_usage_remove(nh, ds, du);
+  return 200;
 }
-
 
 /* ======================================================================== */
 /* REFER */
 /* RFC 3515 */
+
+static int nua_refer_server_init(nua_server_request_t *sr);
+static int nua_refer_server_preprocess(nua_server_request_t *sr);
+static int nua_refer_server_respond(nua_server_request_t*, tagi_t const *);
+static int nua_refer_server_report(nua_server_request_t*, tagi_t const *);
+
+nua_server_methods_t const nua_refer_server_methods = 
+  {
+    SIP_METHOD_REFER,
+    nua_i_refer,		/* Event */
+    { 
+      1,			/* Create dialog */
+      0,			/* Initial request */
+      1,			/* Target refresh request  */
+      1,			/* Add Contact */
+    },
+    nua_refer_server_init,
+    nua_refer_server_preprocess,
+    nua_base_server_params,
+    nua_refer_server_respond,
+    nua_refer_server_report,
+  };
+
+static int nua_refer_server_init(nua_server_request_t *sr)
+{
+  return 0;
+}
+
+static int nua_refer_server_preprocess(nua_server_request_t *sr)
+{
+  nua_handle_t *nh = sr->sr_owner;
+  sip_t const *sip = sr->sr_request.sip;
+  struct notifier_usage *nu;
+  sip_event_t *o;
+
+  if (nh->nh_ds->ds_got_referrals || NH_PGET(nh, refer_with_id))
+    o = sip_event_format(nh->nh_home, "refer;id=%u", sip->sip_cseq->cs_seq);
+  else
+    o = sip_event_make(nh->nh_home, "refer");
+
+  if (o) {
+    sr->sr_usage = nua_dialog_usage_add(nh, nh->nh_ds, nua_notify_usage, o);
+    msg_header_free(nh->nh_home, (msg_header_t *)o);
+  }
+
+  if (!sr->sr_usage)
+    return SR_STATUS1(sr, SIP_500_INTERNAL_SERVER_ERROR);
+
+  nu = nua_dialog_usage_private(sr->sr_usage);
+  nu->nu_requested = sip_now() + NH_PGET(nh, refer_expires);
+
+  return 0;
+}
+
+static
+int nua_refer_server_respond(nua_server_request_t *sr, tagi_t const *tags)
+{
+  nua_handle_t *nh = sr->sr_owner;
+  struct notifier_usage *nu = nua_dialog_usage_private(sr->sr_usage);
+  sip_refer_sub_t const *rs = sip_refer_sub(sr->sr_response.sip);
+
+  if (sr->sr_status < 200 || nu == NULL) {
+  }
+  else if (sr->sr_status < 300 && 
+	   /* Application included Refer-Sub: false in response */
+	   (rs == NULL || str0casecmp("false", rs->rs_value))) {
+    sr->sr_usage->du_ready = 1;
+
+    nu->nu_expires = sip_now() + NH_PGET(nh, refer_expires);
+
+    if (sr->sr_application)	/* Application responded to REFER */
+      nu->nu_substate = nua_substate_active;
+  }
+  else {
+    /* Destroy the implicit subscription usage */
+    sr->sr_terminating = 1;
+  }
+
+  return nua_base_server_respond(sr, tags);
+}
+
 
 /** @NUA_EVENT nua_i_refer
  *
@@ -635,89 +862,45 @@ static int nua_notify_usage_shutdown(nua_handle_t *nh,
  * @END_NUA_EVENT
  */
 
-/** @internal Process incoming REFER. */
-int nua_stack_process_refer(nua_t *nua,
-			    nua_handle_t *nh,
-			    nta_incoming_t *irq,
-			    sip_t const *sip)
+static
+int nua_refer_server_report(nua_server_request_t *sr, tagi_t const *tags)
 {
-  nua_dialog_usage_t *du = NULL;
-  struct notifier_usage *nu;
-  sip_event_t *event;
-  sip_referred_by_t *by = NULL, default_by[1];
-  msg_t *response;
-  sip_time_t expires;
-  int created = 0;
+  nua_handle_t *nh = sr->sr_owner;
+  struct notifier_usage *nu = nua_dialog_usage_private(sr->sr_usage);
+  sip_t const *sip = sr->sr_request.sip;
+  sip_referred_by_t *by = sip->sip_referred_by, default_by[1];
+  sip_event_t const *o = sr->sr_usage->du_event;
+  enum nua_substate substate = nua_substate_terminated;
+  int initial = sr->sr_initial, retval;
 
-  if (nh == NULL) {
-    if (!(nh = nua_stack_incoming_handle(nua, irq, sip, 1)))
-      return 500;
-    created = 1;
+  if (nu) {
+    if (!sr->sr_terminating)
+      substate = nu->nu_substate;
   }
 
-  if (nh->nh_ds->ds_has_referrals || NH_PGET(nh, refer_with_id))
-    event = sip_event_format(nh->nh_home, "refer;id=%u", sip->sip_cseq->cs_seq);
-  else
-    event = sip_event_make(nh->nh_home, "refer");
+  if (by == NULL) {
+     by = sip_referred_by_init(default_by);
 
-  if (event)
-    du = nua_dialog_usage_add(nh, nh->nh_ds, nua_notify_usage, event);
-
-  if (!du || du->du_ready) {
-    if (du->du_ready) {
-      SU_DEBUG_1(("nua(%p): REFER with existing refer;id=%u\n", nh,
-		  sip->sip_cseq->cs_seq));
-    }
-    if (created) 
-      nh_destroy(nua, nh);
-    return 500;
+    by->b_display = sip->sip_from->a_display;
+    *by->b_url = *sip->sip_from->a_url;
   }
 
-  nu = nua_dialog_usage_private(du);
-  du->du_ready = 1;
-  nh->nh_ds->ds_has_referrals = 1;
+  retval = nua_base_server_treport(sr,
+				   NUTAG_SUBSTATE(substate),
+				   NUTAG_REFER_EVENT(o),
+				   TAG_IF(by, SIPTAG_REFERRED_BY(by)),
+				   TAG_END());
 
-  nua_dialog_uas_route(nh, nh->nh_ds, sip, 1);	/* Set route and tags */
+  if (retval >= 2 || nu == NULL)
+    return retval;
 
-  if (!sip->sip_referred_by) {
-    sip_from_t *a = sip->sip_from;
-
-    sip_referred_by_init(by = default_by);
-
-    *by->b_url = *a->a_url;
-    by->b_display = a->a_display;
-  }
-
-  response = nh_make_response(nua, nh, irq, 
-			      SIP_202_ACCEPTED, 
-			      NUTAG_ADD_CONTACT(1),
-			      TAG_END());
-
-  nta_incoming_mreply(irq, response);
-
-  expires = NH_PGET(nh, refer_expires);
-
-  if (sip->sip_expires && sip->sip_expires->ex_delta < expires)
-    expires = sip->sip_expires->ex_delta;
-  nu->nu_substate = nua_substate_pending;
-  nu->nu_expires = sip_now() + expires;
-
-  /* Immediate notify in order to establish the dialog */
-  if (!sip->sip_to->a_tag)
+  if (initial)
     nua_stack_post_signal(nh,
 			  nua_r_notify,
-			  SIPTAG_EVENT(event),
+			  SIPTAG_EVENT(o),
 			  SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 			  SIPTAG_PAYLOAD_STR("SIP/2.0 100 Trying\r\n"),
 			  TAG_END());
-  
-  nua_stack_event(nh->nh_nua, nh, nta_incoming_getrequest(irq),
-		  nua_i_refer, SIP_202_ACCEPTED, 
-		  NUTAG_REFER_EVENT(event),
-		  TAG_IF(by, SIPTAG_REFERRED_BY(by)),
-		  TAG_END());
-  
-  su_free(nh->nh_home, event);
 
-  return 500;   
+  return retval;
 }

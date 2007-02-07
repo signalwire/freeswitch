@@ -20,15 +20,36 @@ API/ABI changes and versioning
    other important information to developers; 
  - and should be updated _continuously_! />
 
-**template**: New features in API are marked with Doxytag macro @VERSION_1_XX_X.
+New features in API are marked with Doxytag macro @NEW_1_12_5.
+Experimental features are marked with Doxytag macro @EXP_1_12_5.
+
+**template**: New features in API are marked with Doxytag macro @NEW_1_XX_X.
 
 libsofia-sip-ua:
 - **template**: Added foobar() function (sofia-sip/foobar.h).
+- Added nua tags NUTAG_APPL_METHOD() and NUTAG_NEWSUB()
+- Added nua_substate_make(), nua_substate_name()
+- Added nta_incoming_create_response() function
+- Added tport tags TPTAG_TOS(), TPTAG_DUMP(), TPTAG_LOG()
+- Added tport predicate function tport_is_connected()
+- Added authentication functions auc_info() and auc_has_authorization(),
+  added type msg_auth_info_t for Authentication-Info header
+- Added msg_header_join_items() function
 - Added sip_is_allowed() function and k_bitmap field to the 
   sip_allow_t structure 
+- Added sl_header_log implementation, updated its prototype
+- Added experimental SIP headers and related functions, 
+  enabled with ./configure option --enable-experimental 
 - Added SIP header Refer-Sub and related functions
 - Added <sofia-sip/sip_extra.h> include file
 - Added auc_info() function (sofia-sip/auth_client.h)
+- Added alternative implementations to event reactor object (su_port_t,
+  referenced by su_root_t) that can be changed at runtime using SU_PORT
+  environment variable, for instance
+  - Internal semantics of su_port_t reference counting have changed:
+    now su_port_create() has one reference, and su_root_create_with_port()
+    always consumes one reference
+- Changed return type of bm_memmem() and bm_memcasemem() to non-const
 - This release is ABI/API compatible with applications linked against 
   any 1.12.x release. However, applications built against this release won't 
   work against an older library. The ABI has been tested with the nua module 
@@ -41,6 +62,8 @@ libsofia-sip-ua-glib:
   releases in the 1.12.x series.
 - ABI has been modified and applications built against 1.12.4 and earlier 
   releases need to be rebuilt.
+- Added su_glib_prefer_gsource() which makes glib-based su_port_t
+  implementation the default choice when su_root_create() is called
 
 Contributors to this release
 ----------------------------
@@ -56,21 +79,41 @@ Contributors to this release
 - **template**: First Surname (patch to nua/soa/msg)
 - Petteri Puolakka (patch to stun)
 - Mikhail Zabluev (patch to su-glib mainloop integration)
+- Michael Jerris (patch to url parsing # in sip/sips userpart)
+- Colin Whittaker (TPTAG_TOS())
+- Roman Filonenko (TPTAG_LOG(), TPTAG_DUMP(), 
+	           patch to query DNS-servers with IP-Helper on win32)
 
 See the AUTHORS file in the distribution package.
 
 Notes on new features
 ---------------------
 
-RFC 4488 defines the Refer-Sub header. Its datatypes, related functions and
-methods declared in <sofia-sip/sip_extra.h> include file. The Refer-Sub
-header structure can be accessed from sip_t structure with sip_refer_sub()
-method, e.g.,
+- nua now supports request queuing, for instance, an application can send
+  overlapping BYE and NOTIFY requests. The stack engine takes care of
+  sending the new request only after the previous one has been responded.
+
+- RFC 4488 defines the Refer-Sub header. Its datatypes, related functions and
+  methods declared in <sofia-sip/sip_extra.h> include file. The Refer-Sub
+  header structure can be accessed from sip_t structure with sip_refer_sub()
+  method, e.g.,
 
   if (sip_refer_sub(sip) && 
       strcasecmp("false", sip_refer_sub(sip)->rs_value) == 0) {
      /* Do not create implicit subscription */ 
   }
+
+- Unsolicited NOTIFYs are now supported. The application can accept incoming
+  NOTIFYs and send NOTIFYs without existing subscription.
+
+- Transport connections used for client registrations are now maintained 
+  in a persistent fashion. For example a TCP connection used for
+  registration is not closed until client is unregisters, or the whole stack
+  is shut down.
+
+- New build time options have been added: ability to build without 
+  STUN and HTTP support. See 'docs/devel_platform_notes.txt' for some
+  additional notes to distributors.
 
 <information about major new features
  - new/changed/removed functionality
@@ -88,7 +131,13 @@ Bugs fixed in this release
 />
 
 - **template**: #9499652 sf.net bug item title
-
+- Fixed problem in dialog matching. Problem reported by Fabio Margarido.
+- Fixed #1624446 - su_wait_clone() (and nua_destroy()) blocking for ever if
+  the root object was created using su_glib
+- Fixed #1626330 - leak in nta.c which happened if INVITE never got a final
+  response nor timed out.
+- Fixed handle leak (pthread_*_init without pthread_*_destroy). Problem
+  reported by Maxim Zaikin.
 - Fixed crash when nua_bye() was called while a NOTIFY client transaction
   was in progress. Problem reported by Anthony Minnessale.
 - Not using close() with sockets in sres.c. Problem reported by
@@ -100,3 +149,6 @@ Bugs fixed in this release
 - Improved glib mainloop integration to avoid warnings about already
   active mainloop context, and potentially other issue. Patch by 
   Mikhail Zabaluev. Closes sf.net item #1606786.
+- Ignore harmless syntax errors in incoming requests/responses by default
+- If a TCP connection cannot be made within SIP T4 (because of a
+  firewall, for instance) nta now tries to use UDP instead.

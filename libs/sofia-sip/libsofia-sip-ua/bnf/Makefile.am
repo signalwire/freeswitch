@@ -43,4 +43,5 @@ TESTS = torture_bnf
 # ----------------------------------------------------------------------
 # Sofia specific rules
 
-include ../sofia.am
+include $(top_srcdir)/rules/sofia.am
+
