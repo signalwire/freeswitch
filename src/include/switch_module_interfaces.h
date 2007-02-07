@@ -245,7 +245,7 @@ struct switch_timer_interface {
 	/*! function to step the timer one step */
 	switch_status_t (*timer_step)(switch_timer_t *);
 	/*! function to check if the current step has expired */
-	switch_status_t (*timer_check)(switch_timer_t *, uint32_t *);
+	switch_status_t (*timer_check)(switch_timer_t *);
 	/*! function to deallocate the timer */
 	switch_status_t (*timer_destroy)(switch_timer_t *);
 	const struct switch_timer_interface *next;

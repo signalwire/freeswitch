@@ -78,11 +78,8 @@ static inline switch_status_t timer_step(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
 
-    while(private_info->reference <= TIMER_MATRIX[timer->interval].tick) {
-        private_info->reference += timer->interval;
-    }
-    
-	return SWITCH_STATUS_SUCCESS;
+    private_info->reference += timer->interval;
+    return SWITCH_STATUS_SUCCESS;
 }
 
 
@@ -93,40 +90,30 @@ static inline switch_status_t timer_next(switch_timer_t *timer)
 	timer_step(timer);
 	while (TIMER_MATRIX[timer->interval].tick < private_info->reference) {
         uint64_t diff;
-
-        if ((diff = (private_info->reference - TIMER_MATRIX[timer->interval].tick))) {
-            if (diff == timer->interval) {
-                switch_yield(diff * 500);
-            } else {
-                switch_yield(1000);
-            }
-        } else {
-            break;
-        }
+        switch_yield(timer->interval * 500);
 	}
 	timer->samplecount += timer->samples;
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static inline switch_status_t timer_check(switch_timer_t *timer, uint32_t *diff)
+static inline switch_status_t timer_check(switch_timer_t *timer)
 
 {
 	timer_private_t *private_info = timer->private_info;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+    uint64_t diff;
 
 	if (TIMER_MATRIX[timer->interval].tick < private_info->reference) {
-        uint64_t _diff = private_info->reference - TIMER_MATRIX[timer->interval].tick;
-        *diff = (uint32_t) _diff;
+        diff = private_info->reference - TIMER_MATRIX[timer->interval].tick;
 	} else {
-        *diff = 0;
+        diff = 0;
 	}
 
-    if (*diff) {
+    if (diff) {
         status = SWITCH_STATUS_FALSE;
     } else {
         timer_step(timer);
     }
-
 
 	return status;
 }
