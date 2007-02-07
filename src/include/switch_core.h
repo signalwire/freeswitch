@@ -905,9 +905,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_step(switch_timer_t *timer);
 /*! 
   \brief Check if the current step has been exceeded
   \param timer the timer to wait on
+  \param diff the remaining number of ms
   \return the newest sample count
 */
-SWITCH_DECLARE(switch_status_t) switch_core_timer_check(switch_timer_t *timer);
+SWITCH_DECLARE(switch_status_t) switch_core_timer_check(switch_timer_t *timer, uint32_t *diff);
 
 /*! 
   \brief Destroy an allocated timer

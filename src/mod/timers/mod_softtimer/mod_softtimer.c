@@ -78,8 +78,10 @@ static inline switch_status_t timer_step(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
 
-	private_info->reference += timer->interval;
-
+    while(private_info->reference <= TIMER_MATRIX[timer->interval].tick) {
+        private_info->reference += timer->interval;
+    }
+    
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -87,27 +89,38 @@ static inline switch_status_t timer_step(switch_timer_t *timer)
 static inline switch_status_t timer_next(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
-
+    
 	timer_step(timer);
 	while (TIMER_MATRIX[timer->interval].tick < private_info->reference) {
-		switch_yield(1000);
+        uint64_t diff;
+
+        if ((diff = (private_info->reference - TIMER_MATRIX[timer->interval].tick))) {
+            switch_yield(diff * 1000);
+        }
 	}
 	timer->samplecount += timer->samples;
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static inline switch_status_t timer_check(switch_timer_t *timer)
+static inline switch_status_t timer_check(switch_timer_t *timer, uint32_t *diff)
 
 {
 	timer_private_t *private_info = timer->private_info;
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (TIMER_MATRIX[timer->interval].tick < private_info->reference) {
-		status = SWITCH_STATUS_FALSE;
+        uint64_t _diff = private_info->reference - TIMER_MATRIX[timer->interval].tick;
+        *diff = (uint32_t) _diff;
 	} else {
-		private_info->reference += timer->interval;
-		status = SWITCH_STATUS_SUCCESS;
+        *diff = 0;
 	}
+
+    if (*diff) {
+        status = SWITCH_STATUS_FALSE;
+    } else {
+        timer_step(timer);
+    }
+
 
 	return status;
 }
@@ -159,8 +172,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
    twice the granularity we need, we'll change it if we need anything smaller
 */
 
-#define STEP_MS 10
-#define STEP_MIC 10000
+#define STEP_MS 1
+#define STEP_MIC 1000
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 {
 	switch_time_t reference = switch_time_now();

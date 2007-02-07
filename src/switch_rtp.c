@@ -711,6 +711,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	switch_size_t bytes = 0;
 	switch_status_t status;
 	uint8_t check = 1;
+    uint32_t diff = 0;
 
 	if (!rtp_session->timer.interval) {
 		rtp_session->last_time = switch_time_now();
@@ -757,7 +758,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		} 
 
 		if (rtp_session->timer.interval) {
-			check = (uint8_t)(switch_core_timer_check(&rtp_session->timer) == SWITCH_STATUS_SUCCESS);
+			check = (uint8_t)(switch_core_timer_check(&rtp_session->timer, &diff) == SWITCH_STATUS_SUCCESS);
 		}
 
 		if (check) {
@@ -780,7 +781,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		
 		if (status == SWITCH_STATUS_BREAK || bytes == 0) {
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_DATAWAIT)) {
-				switch_yield(rtp_session->ms_per_packet/2);
+
+				switch_yield(diff  * 1000);
 				continue;
 			}
 			return 0;
