@@ -1414,7 +1414,7 @@ static void pri_thread_launch(struct sangoma_pri *spri)
 static switch_status_t config_wanpipe(int reload)
 {
 	char *cf = "wanpipe.conf";
-	int current_span = 0;
+	int current_span = 0, min_span = 0, max_span = 0;
 	switch_xml_t cfg, xml, settings, param, span;
 
 	globals.mtu = DEFAULT_MTU;
@@ -1450,31 +1450,52 @@ static switch_status_t config_wanpipe(int reload)
 
 	
 	for (span = switch_xml_child(cfg, "span"); span; span = span->next) {
-		for (param = switch_xml_child(span, "param"); param; param = param->next) {
-			char *var = (char *) switch_xml_attr_soft(param, "name");
-			char *val = (char *) switch_xml_attr_soft(param, "value");
+		char *id = switch_xml_attr(span, "id");
+		int32_t i = 0;
 
-			if (!strcmp(var, "span")) {
-				current_span = atoi(val);
-				if (current_span <= 0 || current_span > MAX_SPANS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid SPAN!\n");
-					current_span = 0;
-					continue;
-				}
-				if (!SPANS[current_span]) {
-					if (!(SPANS[current_span] = switch_core_alloc(module_pool, sizeof(*SPANS[current_span])))) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "MEMORY ERROR\n");
-						break;;
-					}
-					SPANS[current_span]->span = current_span;
-				}
-				
+		current_span = 0;
+		
+		if (id) {
+			char *p;
+			
+			min_span = atoi(id);
+			if ((p = strchr(id, '-'))) {
+				p++;
+				max_span = atoi(p);
 			} else {
-				if (!current_span) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid option %s when no span defined.\n", var);
-					continue;
+				max_span = min_span;
+			}
+			if (min_span < 1 || max_span < min_span) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid Span Config! [%s]\n", id);
+				continue;
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing SPAN ID!\n");
+			continue;
+		}
+		
+		for (i = min_span; i <= max_span; i++) {
+			current_span = i;
+			
+			if (current_span <= 0 || current_span > MAX_SPANS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid SPAN %d!\n", current_span);
+				current_span = 0;
+				continue;
+			}
+			
+			if (!SPANS[current_span]) {
+				if (!(SPANS[current_span] = switch_core_alloc(module_pool, sizeof(*SPANS[current_span])))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "MEMORY ERROR\n");
+					break;
 				}
-				
+				SPANS[current_span]->span = current_span;
+			}
+			
+
+			for (param = switch_xml_child(span, "param"); param; param = param->next) {
+				char *var = (char *) switch_xml_attr_soft(param, "name");
+				char *val = (char *) switch_xml_attr_soft(param, "value");
+			
 				if (!strcmp(var, "dchan")) {
 					SPANS[current_span]->dchan = atoi(val);
 				} else if (!strcmp(var, "bchan")) {

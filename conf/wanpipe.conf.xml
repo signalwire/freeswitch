@@ -1,17 +1,17 @@
 <configuration name="wanpipe.conf" description="Sangoma Wanpipe Endpoint">
   <settings>
-    <param name="debug" value="1"/>
+    <param name="debug" value="0"/>
     <param name="dialplan" value="XML"/>
     <param name="mtu" value="320"/>
     <param name="dtmf-on" value="800"/>
     <param name="dtmf-off" value="100"/>
     <param name="supress-dtmf-tone" value="yes"/>
   </settings>
-  <span>
-    <param name="span" value="1"/>
+  <!-- may be any single digit or a range of digits separated by a '-' e.g "1-4" -->
+  <span id="1">
     <param name="node" value="cpe"/>
-    <!-- <param name="switch" value="ni2"/> -->
-    <param name="switch" value="dms100"/>
+    <param name="switch" value="ni2"/>
+    <!--<param name="switch" value="dms100"/>-->
     <!-- <param name="switch" value="lucent5e"/> -->
     <!-- <param name="switch" value="att4ess"/> -->
     <!-- <param name="switch" value="euroisdn"/> -->
