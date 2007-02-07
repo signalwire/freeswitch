@@ -40,6 +40,14 @@
   <!--</condition>-->
   <!--</extension>-->
 
+  <extension name="set_codec" continue="true">
+    <condition field="source" expression="mod_portaudio">
+      <action application="set" data="absolute_codec_string=PCMU"/>
+      <action application="set" data="export_vars=absolute_codec_string"/>
+    </condition>
+  </extension>
+
+
   <extension name="testmusic">
     <condition field="destination_number" expression="^1234$">
       <!-- Request a certain tone/file to be played while you wait for the call to be answered-->
