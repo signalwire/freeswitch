@@ -1775,9 +1775,6 @@ int nua_invite_server_preprocess(nua_server_request_t *sr)
   nua_handle_t *nh = sr->sr_owner;
   nua_dialog_state_t *ds = nh->nh_ds;
   nua_session_usage_t *ss;
-#ifndef NDEBUG
-  nua_t *nua = nh->nh_nua;
-#endif
 
   sip_t const *request = sr->sr_request.sip;
 

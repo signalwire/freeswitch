@@ -1273,7 +1273,7 @@ void *su_realloc(su_home_t *home, void *data, isize_t size)
       }
 
       sub->sub_prused = (unsigned)p2;
-      sua->sua_size = size;
+      sua->sua_size = (unsigned)size;
 
 #if MEMCHECK_EXTRA
       memcpy((char *)data + size, &term, sizeof (term));
