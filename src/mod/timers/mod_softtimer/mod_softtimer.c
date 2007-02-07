@@ -95,7 +95,13 @@ static inline switch_status_t timer_next(switch_timer_t *timer)
         uint64_t diff;
 
         if ((diff = (private_info->reference - TIMER_MATRIX[timer->interval].tick))) {
-            switch_yield(diff * 1000);
+            if (diff == timer->interval) {
+                switch_yield(diff * 500);
+            } else {
+                switch_yield(1000);
+            }
+        } else {
+            break;
         }
 	}
 	timer->samplecount += timer->samples;

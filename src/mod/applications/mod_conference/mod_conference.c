@@ -510,13 +510,13 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
         // anounce the total number of members in the conference
         if (conference->count >= conference->anounce_count && conference->anounce_count > 1) {
             snprintf(msg, sizeof(msg), "There are %d callers", conference->count);
-            conference_member_say(member, msg, 0);
+            conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
         } else if (conference->count == 1) {
             if (conference->alone_sound) {
-                conference_play_file(conference, conference->alone_sound, 0, switch_core_session_get_channel(member->session));
+                conference_play_file(conference, conference->alone_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session));
             } else {
                 snprintf(msg, sizeof(msg), "You are currently the only person in this conference.", conference->count);
-                conference_member_say(member, msg, 0);
+                conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
             }
         }
 
@@ -1555,6 +1555,7 @@ static void conference_loop_output(conference_member_t *member)
 
 		/* handle file and TTS frames */
 		if (member->fnode) {
+            switch_mutex_lock(member->flag_mutex);
 			/* if we are done, clean it up */
 			if (member->fnode->done) {
 				conference_file_node_t *fnode;
@@ -1567,15 +1568,13 @@ static void conference_loop_output(conference_member_t *member)
 					switch_core_file_close(&member->fnode->fh);
 				}
 
-				switch_mutex_lock(member->flag_mutex);
+
 				fnode = member->fnode;
 				member->fnode = member->fnode->next;
-				switch_mutex_unlock(member->flag_mutex);
 
 				pool = fnode->pool;
 				fnode = NULL;
 				switch_core_destroy_memory_pool(&pool);
-
 			} else {
 				/* skip this frame until leadin time has expired */
 				if (member->fnode->leadin) {
@@ -1618,6 +1617,7 @@ static void conference_loop_output(conference_member_t *member)
 					}
 				}
 			}
+            switch_mutex_unlock(member->flag_mutex);
 		} else {	/* send the conferecne frame to the call leg */
 			switch_buffer_t *use_buffer = NULL;
 			uint32_t mux_used = (uint32_t)switch_buffer_inuse(member->mux_buffer);
@@ -2055,6 +2055,7 @@ static switch_status_t conference_member_say(conference_member_t *member, char *
 
         fnode->type = NODE_TYPE_SPEECH;
         fnode->leadin = leadin;
+        fnode->pool = pool;
 
         memset(&fnode->sh, 0, sizeof(fnode->sh));
         if (switch_core_speech_open(&fnode->sh, 
@@ -2062,12 +2063,10 @@ static switch_status_t conference_member_say(conference_member_t *member, char *
                                     conference->tts_voice, 
                                     conference->rate, 
                                     &flags, 
-                                    conference->pool) != SWITCH_STATUS_SUCCESS) {
+                                    fnode->pool) != SWITCH_STATUS_SUCCESS) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module [%s]!\n", conference->tts_engine);
             return SWITCH_STATUS_FALSE;
         }
-
-        fnode->pool = pool;
 
         /* Queue the node */
         switch_mutex_lock(member->flag_mutex);
