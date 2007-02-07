@@ -109,7 +109,6 @@ struct switch_channel {
 	uint32_t flags;
 	uint32_t state_flags;
 	switch_caller_profile_t *caller_profile;
-	switch_caller_extension_t *caller_extension;
 	const switch_state_handler_table_t *state_handlers[SWITCH_MAX_STATE_HANDLERS];
 	int state_handler_index;
 	switch_hash_t *variables;
@@ -921,17 +920,21 @@ SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel_t *chann
 	assert(channel != NULL);
 
 	switch_mutex_lock(channel->profile_mutex);
-	caller_extension->next = channel->caller_extension;
-	channel->caller_extension = caller_extension;
+	caller_extension->next = channel->caller_profile->caller_extension;
+	channel->caller_profile->caller_extension = caller_extension;
 	switch_mutex_unlock(channel->profile_mutex);
 }
 
 
 SWITCH_DECLARE(switch_caller_extension_t *) switch_channel_get_caller_extension(switch_channel_t *channel)
 {
+    switch_caller_extension_t *extension;
 
 	assert(channel != NULL);
-	return channel->caller_extension;
+	switch_mutex_lock(channel->profile_mutex);
+	extension = channel->caller_profile->caller_extension;
+    switch_mutex_unlock(channel->profile_mutex);
+    return extension;
 }
 
 

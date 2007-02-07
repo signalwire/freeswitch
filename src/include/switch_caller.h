@@ -91,6 +91,7 @@ struct switch_caller_profile {
 	struct switch_caller_profile *originator_caller_profile;
 	struct switch_caller_profile *originatee_caller_profile;
 	struct switch_channel_timetable *times;
+	struct switch_caller_extension *caller_extension;
 	struct switch_caller_profile *next;
 };
 
