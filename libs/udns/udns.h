@@ -62,7 +62,7 @@ struct sockaddr;
 #include "winsock2.h"
 typedef SOCKET dns_socket;
 #else
-typedef int dns_socket
+typedef int dns_socket;
 #endif
 
 UDNS_API const char *
