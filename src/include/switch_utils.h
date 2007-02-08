@@ -94,6 +94,15 @@ atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE
 */
 SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int family);
 
+/*!
+  \brief find the char representation of an ip adress
+  \param buf the buffer to write the ip adress found into
+  \param len the length of the buf
+  \param the struct in_addr * to get the adress from
+  \return the ip adress string
+*/
+SWITCH_DECLARE(char *) get_addr(char *buf, switch_size_t len, struct in_addr *in);
+
 #define SWITCH_STATUS_IS_BREAK(x) (x == SWITCH_STATUS_BREAK || x == 730035 || x == 35)
 
 /*!

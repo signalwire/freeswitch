@@ -36,7 +36,6 @@
 #ifndef WIN32
 #include <arpa/inet.h>
 #endif
-static char *get_addr(char *buf, switch_size_t len, struct in_addr *in);
 
 SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int family)
 {
@@ -348,7 +347,7 @@ SWITCH_DECLARE(char *) switch_priority_name(switch_priority_t priority)
 
 static char RFC2833_CHARS[] = "0123456789*#ABCDF";
 
-static char *get_addr(char *buf, switch_size_t len, struct in_addr *in)
+SWITCH_DECLARE(char *) get_addr(char *buf, switch_size_t len, struct in_addr *in)
 {
 	uint8_t x, *i;
 	char *p = buf;

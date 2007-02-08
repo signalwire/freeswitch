@@ -74,6 +74,7 @@ typedef struct private_object private_object_t;
 #include <sofia-sip/su_md5.h>
 #include <sofia-sip/su_log.h>
 #include <sofia-sip/nea.h>
+#include <sofia-sip/msg_addr.h>
 
 extern su_log_t tport_log[];
 
@@ -4173,7 +4174,7 @@ static void sip_i_invite(nua_t *nua,
 	sip_unknown_t *un;
     private_object_t *tech_pvt = NULL;
     switch_channel_t *channel = NULL;
-    sip_from_t const *from = sip->sip_from;
+	sip_from_t const *from = sip->sip_from;
     sip_to_t const *to = sip->sip_to;
     char *displayname;
     char *username, *req_username = NULL;
@@ -4184,8 +4185,9 @@ static void sip_i_invite(nua_t *nua,
     char *via_rport, *via_host, *via_port;
     char *from_port;
     char uri[1024];
+	char network_ip[80];
 
-    
+
     if (!(sip && sip->sip_contact && sip->sip_contact->m_url)) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO CONTACT!\n");
         return;
@@ -4211,6 +4213,9 @@ static void sip_i_invite(nua_t *nua,
     if (!switch_strlen_zero(key)) {
         tech_pvt->key = switch_core_session_strdup(session, key);
     }
+
+	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *)msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_addr);
+	
 
     to_user = (char *) to->a_url->url_user;
     to_host = (char *) to->a_url->url_host;
@@ -4365,7 +4370,7 @@ static void sip_i_invite(nua_t *nua,
                                                               profile->dialplan,
                                                               displayname,
                                                               (char *) from->a_url->url_user,
-                                                              (char *) from->a_url->url_host,
+                                                              network_ip,
                                                               NULL,
                                                               NULL,
                                                               NULL,
