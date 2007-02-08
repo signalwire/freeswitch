@@ -2551,6 +2551,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					 (strncasecmp(candidates[x].address, "10.", 3) && 
 					  strncasecmp(candidates[x].address, "192.168.", 8) &&
 					  strncasecmp(candidates[x].address, "127.", 4) &&
+					  strncasecmp(candidates[x].address, "255.", 4) &&
+					  strncasecmp(candidates[x].address, "0.", 2) &&
 					  strncasecmp(candidates[x].address, "1.", 2) &&
 					  strncasecmp(candidates[x].address, "2.", 2) &&
 					  strncasecmp(candidates[x].address, "172.16.", 7) &&
@@ -2560,6 +2562,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					  strncasecmp(candidates[x].address, "172.2", 5) &&
 					  strncasecmp(candidates[x].address, "172.30.", 7) &&
 					  strncasecmp(candidates[x].address, "172.31.", 7)  &&
+					  strncasecmp(candidates[x].address, "192.0.2.", 8)  && // 192.0.0.0 - 192.0.127.255 is marked as reserved, should we filter all of them?
 					  strncasecmp(candidates[x].address, "169.254.", 8)
 					  ))) {
 					ldl_payload_t payloads[5];
