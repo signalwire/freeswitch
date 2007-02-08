@@ -2296,7 +2296,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			if ((ci = switch_loadable_module_get_chat_interface(proto))) {
 				ci->chat_send(MDL_CHAT_PROTO, from, to, subject, msg, hint);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invaid Chat Interface [%s]!\n", proto);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Chat Interface [%s]!\n", proto);
 			}
 
 			switch_safe_free(pproto);

@@ -4740,7 +4740,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
                             
                             si->say_function(session, odata, get_say_type_by_name(say_type), get_say_method_by_name(say_method), args);
                         } else {
-                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invaid SAY Interface [%s]!\n", lang);
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid SAY Interface [%s]!\n", lang);
                         }
                     } else if (!strcasecmp(func, "speak-text")) {
                         switch_codec_t *read_codec;

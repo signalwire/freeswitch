@@ -396,7 +396,7 @@ static switch_status_t chat_api_function(char *fmt, switch_core_session_t *sessi
 			ci->chat_send("dp", argv[1], argv[2], "", argv[3], "");
 			stream->write_function(stream, "Sent");
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invaid Chat Interface [%s]!\n", argv[0]);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Chat Interface [%s]!\n", argv[0]);
 		}
 	} else {
 		stream->write_function(stream, "Invalid");

@@ -4039,7 +4039,7 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
     }
 
     if (!(ci = switch_loadable_module_get_chat_interface(proto))) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invaid Chat Interface [%s]!\n", proto);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Chat Interface [%s]!\n", proto);
     }
 
 
