@@ -3022,6 +3022,14 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
                 if ((profiles = switch_xml_child(cfg, "profiles"))) {
                     xml_cfg.profile = switch_xml_find_child(profiles, "profile", "name", profile_name);
                 }
+
+                if (!xml_cfg.profile) {
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile: %s\n", profile_name);
+                    switch_xml_free(cxml);
+                    cxml = NULL;
+                    goto done;
+                }
+
                 xml_cfg.controls = switch_xml_child(cfg, "caller-controls");
 #ifdef OPTION_IVR_MENU_SUPPORT
                 xml_cfg.menus = switch_xml_child(cfg, "menus");
@@ -3660,6 +3668,13 @@ static void conference_function(switch_core_session_t *session, char *data)
 
     if ((profiles = switch_xml_child(cfg, "profiles"))) {
         xml_cfg.profile = switch_xml_find_child(profiles, "profile", "name", profile_name);
+    }
+
+    if (!xml_cfg.profile) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile: %s\n", profile_name);
+        switch_xml_free(cxml);
+        cxml = NULL;
+        goto done;
     }
 
     xml_cfg.controls = switch_xml_child(cfg, "caller-controls");
