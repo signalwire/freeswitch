@@ -3014,6 +3014,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 	const switch_endpoint_interface_t *endpoint_interface;
 	const switch_state_handler_table_t *driver_state_handler = NULL;
 	const switch_state_handler_table_t *application_state_handler = NULL;
+
 #ifdef CRASH_PROT
 	switch_thread_id_t thread_id = switch_thread_self();
 	jmp_buf env;
@@ -3065,7 +3066,12 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 	switch_mutex_lock(session->mutex);
 
 	while ((state = switch_channel_get_state(session->channel)) != CS_DONE) {
-		if (state != laststate) {
+        uint8_t exception = 0;        
+        if (switch_channel_test_flag(session->channel, CF_REPEAT_STATE)) {
+            switch_channel_clear_flag(session->channel, CF_REPEAT_STATE);
+            exception = 1;
+        }
+		if (state != laststate || state == CS_HANGUP || exception) {
 			int index = 0;
 			int proceed = 1;
 			midstate = state;
