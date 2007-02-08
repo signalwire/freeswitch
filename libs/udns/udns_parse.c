@@ -60,7 +60,7 @@ dns_getdn(dnscc_t *pkt, dnscc_t **cur, dnscc_t *end,
       *dp++ = 0;
       /* return next pos: either after the first jump or current */
       *cur = jump ? jump : pp;
-      return dp - dn;
+      return (int)(dp - dn);
     }
     if (c & 192) {		/* jump */
       if (pp >= end)		/* eop instead of jump pos */

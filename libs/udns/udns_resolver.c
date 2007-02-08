@@ -22,6 +22,18 @@
  */
 
 #ifdef WIN32
+#ifdef _MSC_VER
+#if (_MSC_VER >= 1400) // VC8+
+#ifndef _CRT_SECURE_NO_DEPRECATE
+#define _CRT_SECURE_NO_DEPRECATE
+#endif
+#ifndef _CRT_NONSTDC_NO_DEPRECATE
+#define _CRT_NONSTDC_NO_DEPRECATE
+#endif
+#endif // VC8+
+#include "inet_pton.h"
+#include "process.h"
+#endif
 # include <winsock2.h>          /* includes <windows.h> */
 # include <ws2tcpip.h>          /* needed for struct in6_addr */
 # include <iphlpapi.h>		/* for dns server addresses etc */
@@ -187,7 +199,7 @@ struct dns_ctx {		/* resolver context */
 
   /* dynamic data */
   unsigned short dnsc_nextid;		/* next queue ID to use */
-  int dnsc_udpsock;			/* UDP socket */
+  dns_socket dnsc_udpsock;			/* UDP socket */
   struct dns_qlink dnsc_qactive;	/* active list sorted by deadline */
   int dnsc_nactive;			/* number entries in dnsc_qactive */
   dnsc_t *dnsc_pbuf;			/* packet buffer (udpbuf size) */
@@ -225,7 +237,14 @@ struct dns_ctx dns_defctx;
 #define SETCTXFRESH(ctx) SETCTXINITED(ctx); assert(!CTXOPEN(ctx))
 #define SETCTXINACTIVE(ctx) SETCTXINITED(ctx); assert(qlist_empty(&ctx->dnsc_qactive))
 #define SETCTXOPEN(ctx) SETCTXINITED(ctx); assert(CTXOPEN(ctx))
+#ifdef WIN32
+#define CTXOPEN(ctx) (ctx->dnsc_udpsock != INVALID_SOCKET )
+#else
 #define CTXOPEN(ctx) (ctx->dnsc_udpsock >= 0)
+#ifndef INVALID_SOCKET
+#define INVALID_SOCKET -1
+#endif
+#endif
 
 #if defined(NDEBUG) || !defined(DEBUG)
 #define dns_assert_ctx(ctx)
@@ -321,7 +340,7 @@ int dns_add_serv_s(struct dns_ctx *ctx, const struct sockaddr *sa) {
 }
 
 static void dns_set_opts_internal(struct dns_ctx *ctx, const char *opts) {
-  unsigned i, v;
+  size_t i, v;
   for(;;) {
     while(ISSPACE(*opts)) ++opts;
     if (!*opts) break;
@@ -337,7 +356,7 @@ static void dns_set_opts_internal(struct dns_ctx *ctx, const char *opts) {
       while (*opts >= '0' && *opts <= '9');
       if (dns_opts[i].min && v < dns_opts[i].min) v = dns_opts[i].min;
       else if (v > dns_opts[i].max) v = dns_opts[i].max;
-      dns_ctxopt(ctx, dns_opts[i].offset) = v;
+      dns_ctxopt(ctx, dns_opts[i].offset) = (unsigned)v;
       break;
     }
     while(*opts && !ISSPACE(*opts)) ++opts;
@@ -420,7 +439,7 @@ dns_request_utm(struct dns_ctx *ctx, time_t now) {
   else if (!now || q->dnsq_deadline <= now)
     deadline = 0, timeout = 0;
   else
-    deadline = q->dnsq_deadline, timeout = deadline - now;
+    deadline = q->dnsq_deadline, timeout = (int)(deadline - now);
   if (ctx->dnsc_utmexp == deadline)
     return;
   ctx->dnsc_utmfn(ctx, timeout, ctx->dnsc_utmctx);
@@ -608,10 +627,10 @@ static int dns_init_internal(struct dns_ctx *ctx) {
 static void dns_firstid(struct dns_ctx *ctx) {
   struct timeval tv;
   gettimeofday(&tv, NULL);
-  ctx->dnsc_nextid = (tv.tv_usec ^ getpid()) & 0xffff;
+  ctx->dnsc_nextid = (unsigned short)((tv.tv_usec ^ getpid()) & 0xffff);
 }
 
-int dns_init(int do_open) {
+dns_socket dns_init(int do_open) {
   struct dns_ctx *ctx = &dns_defctx;
   assert(!CTXINITED(ctx));
   memset(ctx, 0, sizeof(*ctx));
@@ -620,7 +639,7 @@ int dns_init(int do_open) {
   ctx->dnsc_ndots = 1;
   ctx->dnsc_udpbuf = DNS_EDNS0PACKET;
   ctx->dnsc_port = DNS_PORT;
-  ctx->dnsc_udpsock = -1;
+  ctx->dnsc_udpsock = INVALID_SOCKET;
   qlist_init(&ctx->dnsc_qactive);
   if (dns_init_internal(ctx) != 0)
     return -1;
@@ -637,7 +656,7 @@ struct dns_ctx *dns_new(const struct dns_ctx *ctx) {
   if (!n)
     return NULL;
   *n = *ctx;
-  n->dnsc_udpsock = -1;
+  n->dnsc_udpsock = INVALID_SOCKET;
   qlist_init(&n->dnsc_qactive);
   n->dnsc_nactive = 0;
   n->dnsc_pbuf = NULL;
@@ -665,8 +684,8 @@ void dns_free(struct dns_ctx *ctx) {
     memset(ctx, 0, sizeof(*ctx));
 }
 
-int dns_open(struct dns_ctx *ctx) {
-  int sock;
+dns_socket dns_open(struct dns_ctx *ctx) {
+  dns_socket sock;
   unsigned i;
   int port;
   union sockaddr_ns *sns;
@@ -768,12 +787,12 @@ void dns_close(struct dns_ctx *ctx) {
   SETCTXINITED(ctx);
   if (ctx->dnsc_udpsock < 0) return;
   closesocket(ctx->dnsc_udpsock);
-  ctx->dnsc_udpsock = -1;
+  ctx->dnsc_udpsock = INVALID_SOCKET;
   free(ctx->dnsc_pbuf);
   ctx->dnsc_pbuf = NULL;
 }
 
-int dns_sock(const struct dns_ctx *ctx) {
+dns_socket dns_sock(const struct dns_ctx *ctx) {
   SETCTXINITED(ctx);
   return ctx->dnsc_udpsock;
 }
@@ -983,7 +1002,7 @@ dns_submit_dn(struct dns_ctx *ctx,
     q->dnsq_buf[DNS_H_ARCNT2] = 1;
   }
   assert(p <= q->dnsq_buf + DNS_QBUF);
-  q->dnsq_len = p - q->dnsq_buf;
+  q->dnsq_len = (unsigned)(p - q->dnsq_buf);
 
   qlist_add_head(q, &ctx->dnsc_qactive);
   ++ctx->dnsc_nactive;
@@ -1248,7 +1267,7 @@ int dns_timeouts(struct dns_ctx *ctx, int maxwait, time_t now) {
   dns_request_utm(ctx, now);
   if (!q)
     return maxwait;
-  w = q->dnsq_deadline - now;
+  w = (int)(q->dnsq_deadline - now);
   return maxwait < 0 || maxwait > w ? w : maxwait;
 }
 
@@ -1306,7 +1325,7 @@ void *dns_resolve(struct dns_ctx *ctx, struct dns_query *q) {
     tv.tv_sec = n;
     tv.tv_usec = 0;
     FD_SET(ctx->dnsc_udpsock, &rfd);
-    n = select(ctx->dnsc_udpsock + 1, &rfd, NULL, NULL, &tv);
+    n = select((int)(ctx->dnsc_udpsock + 1), &rfd, NULL, NULL, &tv);
 #endif
     now = time(NULL);
     if (n > 0)

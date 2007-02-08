@@ -58,6 +58,13 @@ struct sockaddr;
 /**************************************************************************/
 /**************** Common definitions **************************************/
 
+#ifdef WIN32
+#include "winsock2.h"
+typedef SOCKET dns_socket;
+#else
+typedef int dns_socket
+#endif
+
 UDNS_API const char *
 dns_version(void);
 
@@ -352,7 +359,7 @@ UDNS_DATA_API extern struct dns_ctx dns_defctx;
 
 /* initialize default resolver context and open it if do_open is true.
  * <0 on failure. */
-UDNS_API int
+UDNS_API dns_socket
 dns_init(int do_open);
 
 /* return new resolver context with the same settings as copy */
@@ -408,11 +415,11 @@ UDNS_API void
 dns_set_dbgfn(struct dns_ctx *ctx, dns_dbgfn *dbgfn);
 
 /* open and return UDP socket */
-UDNS_API int
+UDNS_API dns_socket
 dns_open(struct dns_ctx *ctx);
 
 /* return UDP socket or -1 if not open */
-UDNS_API int
+UDNS_API dns_socket
 dns_sock(const struct dns_ctx *ctx);
 
 /* close the UDP socket */

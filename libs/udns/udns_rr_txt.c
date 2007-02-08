@@ -75,7 +75,7 @@ dns_parse_txt(dnscc_t *qdn, dnscc_t *pkt, dnscc_t *cur, dnscc_t *end,
       sp += l;
       cp += l;
     }
-    ret->dnstxt_txt[r].len = sp - ret->dnstxt_txt[r].txt;
+    ret->dnstxt_txt[r].len = (int)(sp - ret->dnstxt_txt[r].txt);
     *sp++ = '\0';
   }
   dns_stdrr_finish((struct dns_rr_null *)ret, (char*)sp, &p);

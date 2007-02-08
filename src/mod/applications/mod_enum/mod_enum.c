@@ -423,7 +423,8 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results
 	char *name = NULL;
 	enum_query_t query = {0};
 	enum dns_type l_qtyp = DNS_T_NAPTR;
-	int i = 0, fd = -1, abs = 0;
+	int i = 0, abs = 0;
+	dns_socket fd = (dns_socket)-1;
 	fd_set fds;
 	struct timeval tv = {0};
 	time_t now = 0;
@@ -484,7 +485,7 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results
 #endif
 		tv.tv_sec = i;
 		tv.tv_usec = 0;
-		i = select(fd+1, &fds, 0, 0, &tv);
+		i = select((int)(fd+1), &fds, 0, 0, &tv);
 		now = time(NULL);
 		if (i > 0) dns_ioevent(nctx, now);
 	}
@@ -500,7 +501,7 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results
 
 	if (fd > -1) {
 		closesocket(fd);
-		fd = -1;
+		fd = (dns_socket)-1;
 	}
 
 	if (nctx) {

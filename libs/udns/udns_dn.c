@@ -82,7 +82,7 @@ dns_ptodn(const char *name, unsigned namelen,
   while(np < ne) {
 
     if (*np == '.') {	/* label delimiter */
-      c = dp - llab;		/* length of the label */
+      c = (unsigned)(dp - llab);		/* length of the label */
       if (!c) {			/* empty label */
         if (np == (dnscc_t *)name && np + 1 == ne) {
           /* special case for root dn, aka `.' */
@@ -131,7 +131,7 @@ dns_ptodn(const char *name, unsigned namelen,
     *dp++ = (dnsc_t)c;	/* place next out byte */
   }
 
-  if ((c = dp - llab) > DNS_MAXLABEL)
+  if ((c = (unsigned)(dp - llab)) > DNS_MAXLABEL)
     return -1;				/* label too long */
   if ((llab[-1] = (dnsc_t)c) != 0) {
     *dp++ = 0;
@@ -141,7 +141,7 @@ dns_ptodn(const char *name, unsigned namelen,
   else if (isabs)
     *isabs = 1;
 
-  return dp - dn;
+  return (int)(dp - dn);
 }
 
 dnscc_t dns_inaddr_arpa_dn[14] = "\07in-addr\04arpa";
@@ -169,7 +169,7 @@ dns_a4todn_(const struct in_addr *addr, dnsc_t *dn, dnsc_t *dne) {
       if (p > dne) return 0;
       *p = n + '0';
     }
-    *dn = p - dn;
+    *dn = (dnsc_t)(p - dn);
     dn = p + 1;
   }
   return dn;
@@ -187,7 +187,7 @@ int dns_a4todn(const struct in_addr *addr, dnscc_t *tdn,
   l = dns_dnlen(tdn);
   if (p + l > dne) return dnsiz >= DNS_MAXDN ? -1 : 0;
   memcpy(p, tdn, l);
-  return (p + l) - dn;
+  return (int)((p + l) - dn);
 }
 
 int dns_a4ptodn(const struct in_addr *addr, const char *tname,
@@ -232,7 +232,7 @@ int dns_a6todn(const struct in6_addr *addr, dnscc_t *tdn,
   l = dns_dnlen(tdn);
   if (p + l > dne) return dnsiz >= DNS_MAXDN ? -1 : 0;
   memcpy(p, tdn, l);
-  return (p + l) - dn;
+  return (int)((p + l) - dn);
 }
 
 int dns_a6ptodn(const struct in6_addr *addr, const char *tname,
@@ -331,7 +331,7 @@ int dns_dntop(dnscc_t *dn, char *name, unsigned namesiz) {
   }
   if (np >= ne) goto toolong;
   *np++ = '\0';
-  return np - name;
+  return (int)(np - name);
 toolong:
   return namesiz >= DNS_MAXNAME ? -1 : 0;
 }
