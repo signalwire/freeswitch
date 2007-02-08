@@ -590,9 +590,9 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames){
 	for(x = 0; x < argc; x++) {
 		if (holder->http) {
 			holder->stream->write_function(holder->stream, "<td>");
-			holder->stream->write_function(holder->stream, "%s%s", argv[x], x == (argc - 1) ? "</td></tr>\n" : "</td><td>");
+			holder->stream->write_function(holder->stream, "%s%s", argv[x] ? argv[x] : "", x == (argc - 1) ? "</td></tr>\n" : "</td><td>");
 		} else {
-			holder->stream->write_function(holder->stream, "%s%s", argv[x], x == (argc - 1) ? "\n" : ",");
+			holder->stream->write_function(holder->stream, "%s%s", argv[x] ? argv[x] : "", x == (argc - 1) ? "\n" : ",");
 		}
 	}
 
