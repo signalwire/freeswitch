@@ -144,10 +144,9 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_toss(switch_buffer_t *buffer, switch
 		reading = buffer->used;
 	}
 
-	memmove(buffer->data, buffer->data + reading, reading);
-	buffer->head = buffer->data;
-	buffer->used -= reading;
-	buffer->actually_used = buffer->used;
+    buffer->used -= reading;
+    buffer->head += reading;
+
 	return buffer->used;
 }
 
