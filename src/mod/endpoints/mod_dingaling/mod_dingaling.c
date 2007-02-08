@@ -703,6 +703,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 	}
 
     if (!(tech_pvt->remote_ip && tech_pvt->remote_port)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No valid candidates received!\n");
         return 0;
     }
 
