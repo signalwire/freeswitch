@@ -599,7 +599,16 @@ SWITCH_DECLARE(size_t) switch_url_encode(char *url, char *buf, size_t len)
     const char urlunsafe[] = "\r\n \"#%&+:;<=>?@[\\]^`{|}";
     const char hex[] = "0123456789ABCDEF";
 
+	if (!buf) {
+		return 0;
+	}
+
     memset(buf, 0, len);
+
+	if (!url) {
+		return 0;
+	}
+
     for( p = url ; *p ; p++) {
         if (*p < ' ' || *p > '~' || strchr(urlunsafe, *p)) {
             if ((x + 3) > len) {
