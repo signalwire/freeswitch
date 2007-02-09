@@ -2043,8 +2043,20 @@ int nua_invite_server_report(nua_server_request_t *sr, tagi_t const *tags)
   }
 
   assert(ss);
+#if 1
   assert(ss->ss_state != nua_callstate_calling);
   assert(ss->ss_state != nua_callstate_proceeding);
+#else
+//  assert(ss->ss_state != nua_callstate_calling);
+//  assert(ss->ss_state != nua_callstate_proceeding);
+  if(ss->ss_state == nua_callstate_calling || ss->ss_state != nua_callstate_proceeding) {
+	  /* somthing is badly wrong here.  Lets kill it gracefully for now */
+		sr_status(sr, SIP_500_INTERNAL_SERVER_ERROR);
+        signal_call_state_change(nh, NULL, status, phrase,
+			       nua_callstate_terminated);
+		return retval;
+  }
+#endif
 
   /* Update session state */
   if (status < 300 || application != 0)

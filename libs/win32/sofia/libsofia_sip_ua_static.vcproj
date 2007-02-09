@@ -257,6 +257,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_socket_port.c"
+					>
+				</File>
+				<File
 					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_sprintf.c"
 					>
 				</File>

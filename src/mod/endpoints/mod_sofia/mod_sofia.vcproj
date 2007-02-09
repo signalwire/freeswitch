@@ -65,7 +65,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib"
+				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
 				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;..\..\..\..\w32\vsnet\$(OutDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\win32\pthread&quot;"
@@ -147,7 +147,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib"
+				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
 				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;..\..\..\..\w32\vsnet\$(OutDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\win32\pthread&quot;"
