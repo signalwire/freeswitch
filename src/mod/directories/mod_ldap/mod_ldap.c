@@ -232,7 +232,7 @@ switch_status_t switch_module_load(const switch_loadable_module_interface_t **mo
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:

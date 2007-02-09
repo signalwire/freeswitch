@@ -229,7 +229,7 @@ teletone_process_t teletone_goertzel_result (teletone_goertzel_state_t *goertzel
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:

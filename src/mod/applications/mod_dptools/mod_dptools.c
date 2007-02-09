@@ -684,7 +684,7 @@ if it returns anything but SWITCH_STATUS_TERM it will be called again automaticl
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:

@@ -167,7 +167,7 @@ int teletone_run(teletone_generation_session_t *ts, char *cmd);
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:

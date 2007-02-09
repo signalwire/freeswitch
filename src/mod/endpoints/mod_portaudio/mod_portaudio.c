@@ -1763,7 +1763,7 @@ static switch_status_t pa_cmd(char *cmd, switch_core_session_t *isession, switch
 /* For Emacs:
  * Local Variables:
  * mode:c
- * indent-tabs-mode:nil
+ * indent-tabs-mode:t
  * tab-width:4
  * c-basic-offset:4
  * End:
