@@ -1542,21 +1542,22 @@ SWITCH_DECLARE(int) switch_core_session_get_stream_count(switch_core_session_t *
 	return session->stream_count;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core_session_t *session,
-																   char *endpoint_name,
-																   switch_caller_profile_t *caller_profile,
-																   switch_core_session_t **new_session,
-																   switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_core_session_t *session,
+																		 char *endpoint_name,
+																		 switch_caller_profile_t *caller_profile,
+																		 switch_core_session_t **new_session,
+																		 switch_memory_pool_t *pool)
 {
 	switch_io_event_hook_outgoing_channel_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	const switch_endpoint_interface_t *endpoint_interface;
 	switch_channel_t *channel = NULL;
 	switch_caller_profile_t *outgoing_profile = caller_profile;
+	switch_call_cause_t cause = SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL;
 
 	if ((endpoint_interface = switch_loadable_module_get_endpoint_interface(endpoint_name)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not locate channel type %s\n", endpoint_name);
-		return SWITCH_STATUS_FALSE;
+		return SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED;
 	}
 
 	if (endpoint_interface->io_routines->outgoing_channel) {
@@ -1595,10 +1596,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core
 			}
 		}
 		
-		if ((status = endpoint_interface->io_routines->outgoing_channel(session,
-																		outgoing_profile,
-																		new_session,
-																		pool)) == SWITCH_STATUS_SUCCESS) {
+		if ((cause = endpoint_interface->io_routines->outgoing_channel(session,
+																	   outgoing_profile,
+																	   new_session,
+																	   pool)) == SWITCH_CAUSE_SUCCESS) {
 			if (session) {
 				for (ptr = session->event_hooks.outgoing_channel; ptr; ptr = ptr->next) {
 					if ((status = ptr->outgoing_channel(session, caller_profile, *new_session)) != SWITCH_STATUS_SUCCESS) {
@@ -1607,11 +1608,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core
 				}
 			}
 		} else {
-			return status;
+			return cause;
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not locate outgoing channel interface for %s\n", endpoint_name);
-		return SWITCH_STATUS_FALSE;
+		return SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED;
 	}
 
 	if (*new_session) {
@@ -1688,7 +1689,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core
 		}
 	}
 
-	return status;
+	return cause;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_answer_channel(switch_core_session_t *session)

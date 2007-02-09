@@ -330,8 +330,8 @@ static switch_status_t sofia_on_loopback(switch_core_session_t *session);
 
 static switch_status_t sofia_on_transmit(switch_core_session_t *session);
 
-static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
-											  switch_core_session_t **new_session, switch_memory_pool_t *pool);
+static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
+												  switch_core_session_t **new_session, switch_memory_pool_t *pool);
 
 static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
 										switch_io_flag_t flags, int stream_id);
@@ -1246,6 +1246,7 @@ static int hangup_cause_to_sip(switch_call_cause_t cause) {
 		return 501;
 	case SWITCH_CAUSE_NORMAL_UNSPECIFIED:
 		return 480;
+	case SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL:
 	case SWITCH_CAUSE_NORMAL_CIRCUIT_CONGESTION:
 	case SWITCH_CAUSE_NETWORK_OUT_OF_ORDER:
 	case SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE:
@@ -2182,10 +2183,10 @@ static void logger(void *logarg, char const *fmt, va_list ap)
 }
 
 
-static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
-											  switch_core_session_t **new_session, switch_memory_pool_t *pool)
+static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
+												  switch_core_session_t **new_session, switch_memory_pool_t *pool)
 {
-	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	switch_core_session_t *nsession;
 	char *data, *profile_name, *dest;
 	sofia_profile_t *profile;
@@ -2213,6 +2214,7 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 	if (!(dest = strchr(profile_name, '/'))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
         terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+		cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
         goto done;
 	}
 
@@ -2221,6 +2223,7 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 	if (!(profile = (sofia_profile_t *) switch_core_hash_find(globals.profile_hash, profile_name))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile\n");
         terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+		cause =  SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
         goto done;
 	}
 
@@ -2233,7 +2236,8 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 			tech_pvt->dest = switch_core_session_strdup(nsession, buf);
 			
 		} else {
-			terminate_session(&nsession, SWITCH_CAUSE_NO_ROUTE_DESTINATION, __LINE__);
+			cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
+			terminate_session(&nsession, cause, __LINE__);
 			goto done;
 		}
 	} else if (!strchr(dest, '@')) {
@@ -2243,7 +2247,8 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
             tech_pvt->dest = switch_core_session_strdup(nsession, buf);
 
         } else {
-            terminate_session(&nsession, SWITCH_CAUSE_NO_ROUTE_DESTINATION, __LINE__);
+			cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
+            terminate_session(&nsession, cause, __LINE__);
             goto done;
         }
 	} else {
@@ -2261,7 +2266,7 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 	switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 	switch_channel_set_state(nchannel, CS_INIT);
 	*new_session = nsession;
-	status = SWITCH_STATUS_SUCCESS;
+	cause = SWITCH_CAUSE_SUCCESS;
 	if (session) {
 		//char *val;
 		//switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -2269,7 +2274,7 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 	}
 
  done:
-	return status;
+	return cause;
 }
 
 

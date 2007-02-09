@@ -2,7 +2,7 @@
   <settings>
     <param name="debug" value="0"/>
     <param name="dialplan" value="XML"/>
-    <param name="mtu" value="320"/>
+    <param name="ms-per-frame" value="20"/>
     <param name="dtmf-on" value="800"/>
     <param name="dtmf-off" value="100"/>
     <param name="supress-dtmf-tone" value="yes"/>

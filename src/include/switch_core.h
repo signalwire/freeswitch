@@ -612,13 +612,13 @@ SWITCH_DECLARE(void) switch_core_service_session(switch_core_session_t *session,
   \param caller_profile the originator's caller profile
   \param new_session a NULL pointer to aim at the newly created session
   \param pool optional existing memory pool to donate to the session
-  \return SWITCH_STATUS_SUCCESS if the session was created
+  \return the cause code of the attempted call
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core_session_t *session,
-																   char *endpoint_name,
-																   switch_caller_profile_t *caller_profile,
-																   switch_core_session_t **new_session,
-																   switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_core_session_t *session,
+																		 char *endpoint_name,
+																		 switch_caller_profile_t *caller_profile,
+																		 switch_core_session_t **new_session,
+																		 switch_memory_pool_t *pool);
 
 /*! 
   \brief Answer the channel of a given session

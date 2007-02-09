@@ -180,8 +180,8 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session);
 static switch_status_t channel_on_ring(switch_core_session_t *session);
 static switch_status_t channel_on_loopback(switch_core_session_t *session);
 static switch_status_t channel_on_transmit(switch_core_session_t *session);
-static switch_status_t channel_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
-												switch_core_session_t **new_session, switch_memory_pool_t *pool);
+static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
+													switch_core_session_t **new_session, switch_memory_pool_t *pool);
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
 										  switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
@@ -1508,8 +1508,8 @@ static const switch_loadable_module_interface_t channel_module_interface = {
 /* Make sure when you have 2 sessions in the same scope that you pass the appropriate one to the routines
    that allocate memory or you will have 1 channel with memory allocated from another channel's pool!
 */
-static switch_status_t channel_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
-												switch_core_session_t **new_session, switch_memory_pool_t *pool)
+static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
+													switch_core_session_t **new_session, switch_memory_pool_t *pool)
 {
 	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, pool)) != 0) {
 		struct private_object *tech_pvt;
@@ -1534,7 +1534,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid URL!\n");
 			terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			return SWITCH_STATUS_GENERR;
+			return SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
 		}
 
 		if ((dnis = strchr(callto, ':'))) {
@@ -1571,17 +1571,17 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 			if (!ldl_handle_ready(mdl_profile->handle)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Doh! we are not logged in yet!\n");
 				terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-				return SWITCH_STATUS_GENERR;
+				return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 			}
 			if (!(full_id = ldl_handle_probe(mdl_profile->handle, callto, user, idbuf, sizeof(idbuf)))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unknown Recipient!\n");
-				terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-				return SWITCH_STATUS_GENERR;
+				terminate_session(new_session,  __LINE__, SWITCH_CAUSE_NO_USER_RESPONSE);
+				return SWITCH_CAUSE_NO_USER_RESPONSE;
 			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unknown Profile!\n");
 			terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			return SWITCH_STATUS_GENERR;
+			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		}
 		
 		
@@ -1601,7 +1601,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 			terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			return SWITCH_STATUS_GENERR;
+			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		}
 
 		if (outbound_profile) {
@@ -1616,7 +1616,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Doh! no caller profile\n");
 			terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			return SWITCH_STATUS_GENERR;
+			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		}
 
 		switch_channel_set_flag(channel, CF_OUTBOUND);
@@ -1633,15 +1633,15 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		ldl_session_set_value(dlsession, "caller_id_number", outbound_profile->caller_id_number);
 		tech_pvt->dlsession = dlsession;
 		if (!get_codecs(tech_pvt)) {
-			terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-            return SWITCH_STATUS_GENERR;
+			terminate_session(new_session,  __LINE__, SWITCH_CAUSE_BEARERCAPABILITY_NOTAVAIL);
+            return SWITCH_CAUSE_BEARERCAPABILITY_NOTAVAIL;
 		}
 		switch_channel_set_state(channel, CS_INIT);
-		return SWITCH_STATUS_SUCCESS;
+		return SWITCH_CAUSE_SUCCESS;
 
 	}
 
-	return SWITCH_STATUS_GENERR;
+	return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 
 }
 
