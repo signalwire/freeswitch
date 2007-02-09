@@ -245,6 +245,8 @@ static int str2node(char *node)
 
 static int str2switch(char *swtype)
 {
+	if (!strcasecmp(swtype, "ni1"))
+		return PRI_SWITCH_NI1;
 	if (!strcasecmp(swtype, "ni2"))
 		return PRI_SWITCH_NI2;
 	if (!strcasecmp(swtype, "dms100"))
