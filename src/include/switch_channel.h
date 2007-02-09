@@ -294,6 +294,13 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 */
 #define switch_channel_mark_answered(channel) switch_channel_perform_mark_answered(channel, __FILE__, __SWITCH_FUNC__, __LINE__)
 
+/*!
+  \brief Mark a channel pre_answered (early media) with no indication (for outbound calls)
+  \param channel channel to mark pre_answered
+  \return SWITCH_STATUS_SUCCESS if channel was pre_answered successfully
+*/
+#define switch_channel_mark_pre_answered(channel) switch_channel_perform_mark_pre_answered(channel, __FILE__, __SWITCH_FUNC__, __LINE__)
+
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_ringback(switch_channel_t *channel,
 																const char *file,
 																const char *func,
@@ -310,6 +317,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
                                                                   const char *file,
                                                                   const char *func,
                                                                   int line);
+
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_channel_t *channel,
+                                                                       const char *file,
+                                                                       const char *func,
+                                                                       int line);
+
 /*!
   \brief Indicate progress on a channel to attempt early media
   \param channel channel to pre-answer

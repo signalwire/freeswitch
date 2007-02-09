@@ -1035,7 +1035,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 			case IAX_EVENT_ACCEPT:
 				if (channel && !switch_channel_test_flag(channel, CF_ANSWERED)) {
                     if (tech_media(tech_pvt, iaxevent) == SWITCH_STATUS_SUCCESS) {
-                        switch_channel_set_flag(channel, CF_EARLY_MEDIA);
+                        switch_channel_mark_pre_answered(channel);
                     } else {
                         switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
                     }

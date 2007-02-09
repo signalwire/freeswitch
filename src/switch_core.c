@@ -1766,6 +1766,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_message(switch_core_
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_flush_message(switch_core_session_t *session)
+{
+    switch_core_session_message_t *message;
+
+    if (switch_core_session_dequeue_message(session, &message) == SWITCH_STATUS_SUCCESS) {
+        if (switch_test_flag(message, SCSMF_DYNAMIC)) {
+            switch_safe_free(message);
+        } else {
+            message = NULL;
+        }
+    }
+    
+    return SWITCH_STATUS_SUCCESS;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_receive_event(switch_core_session_t *session, switch_event_t **event)
 	 
 {
@@ -2150,6 +2166,9 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session)
 
 	session->read_resampler = NULL;
 	session->write_resampler = NULL;
+
+    /* clear indications */
+    switch_core_session_flush_message(session);
 
 	/* wipe theese, they will be recreated if need be */
 	switch_buffer_destroy(&session->raw_read_buffer);

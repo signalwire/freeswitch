@@ -1580,7 +1580,7 @@ static switch_status_t tech_media(private_object_t *tech_pvt, char *r_sdp)
         activate_rtp(tech_pvt);
         switch_channel_set_variable(channel, "endpoint_disposition", "EARLY MEDIA");
         switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
-        switch_channel_set_flag(channel, CF_EARLY_MEDIA);
+        switch_channel_mark_pre_answered(channel);
         return SWITCH_STATUS_SUCCESS;
     }
     
@@ -2784,7 +2784,7 @@ static void sip_i_state(int status,
 			if (r_sdp) {
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 					switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
-					switch_channel_set_flag(channel, CF_EARLY_MEDIA);
+                    switch_channel_mark_pre_answered(channel);
 					if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
 						other_channel = switch_core_session_get_channel(other_session);
 						switch_channel_pre_answer(other_channel);

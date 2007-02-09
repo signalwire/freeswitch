@@ -523,6 +523,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_message(switch_core_se
 SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_message(switch_core_session_t *session, switch_core_session_message_t **message);
 
 /*! 
+  \brief Flush a message queue on a given session
+  \param session the session to de-queue the message on
+  \return the  SWITCH_STATUS_SUCCESS if the message was de-queued
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_flush_message(switch_core_session_t *session);
+
+/*! 
   \brief Queue an event on another session using its uuid
   \param uuid_str the unique id of the session you want to send a message to
   \param event the event to send

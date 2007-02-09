@@ -2021,8 +2021,9 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				message = NULL;
 			}
 		}
- 
+
 		if (!ans_a && originator) {
+
 			if (!ans_b && switch_channel_test_flag(chan_b, CF_ANSWERED)) {
 				switch_channel_answer(chan_a);
 				ans_a++;

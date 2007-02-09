@@ -978,6 +978,38 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 	return channel->state;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_channel_t *channel,
+                                                                       const char *file,
+                                                                       const char *func,
+                                                                       int line)
+{
+    switch_event_t *event;
+
+    if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
+        char *uuid;
+        switch_core_session_t *other_session;
+
+        switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Pre-Answer %s!\n", channel->name);
+        switch_channel_set_flag(channel, CF_EARLY_MEDIA);
+        switch_channel_set_variable(channel, "endpoint_disposition", "EARLY MEDIA");
+        if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_PROGRESS) == SWITCH_STATUS_SUCCESS) {
+            switch_channel_event_set_data(channel, event);
+            switch_event_fire(&event);
+        }
+
+        /* if we're in a bridge and the other channel is in a blocking read they will never realize we have answered so send 
+           a SWITCH_SIG_BREAK to interrupt any blocking reads on that channel
+        */
+        if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+            switch_core_session_kill_channel(other_session, SWITCH_SIG_BREAK);
+            switch_core_session_rwunlock(other_session);
+        }
+        return SWITCH_STATUS_SUCCESS;
+    }
+    
+    return SWITCH_STATUS_FALSE;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel_t *channel,
                                                                   const char *file,
                                                                   const char *func,
@@ -1006,15 +1038,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 	status = switch_core_session_message_send(uuid, &msg);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
-		switch_event_t *event;
-
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Pre-Answer %s!\n", channel->name);
-		switch_channel_set_flag(channel, CF_EARLY_MEDIA);
-        switch_channel_set_variable(channel, "endpoint_disposition", "EARLY MEDIA");
-		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_PROGRESS) == SWITCH_STATUS_SUCCESS) {
-			switch_channel_event_set_data(channel, event);
-			switch_event_fire(&event);
-		}
+        status = switch_channel_perform_mark_pre_answered(channel, file, func, line);
 	}
 
 	return status;
@@ -1060,6 +1084,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
                                                                      int line)
 {
     switch_event_t *event;
+    char *uuid;
+    switch_core_session_t *other_session;
 
     assert(channel != NULL);
 
@@ -1083,6 +1109,15 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
         switch_channel_event_set_data(channel, event);
         switch_event_fire(&event);
     }
+
+    /* if we're in a bridge and the other channel is in a blocking read they will never realize we have answered so send 
+       a SWITCH_SIG_BREAK to interrupt any blocking reads on that channel
+     */
+    if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+        switch_core_session_kill_channel(other_session, SWITCH_SIG_BREAK);
+        switch_core_session_rwunlock(other_session);
+    }
+
     switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
     switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Channel [%s] has been answered\n", channel->name);
     
