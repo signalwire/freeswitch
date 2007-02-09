@@ -58,7 +58,7 @@
 SOFIA_BEGIN_DECLS
 
 /** Return built-in SIP parser object. */
-SOFIAPUBFUN msg_mclass_t *sip_default_mclass(void);
+SOFIAPUBFUN msg_mclass_t const *sip_default_mclass(void);
 
 /** Check that sip_t is a SIP structure (not RTSP or HTTP). @HIDE */
 #define sip_is_sip(sip) ((sip) && (sip)->sip_ident == SIP_PROTOCOL_TAG)

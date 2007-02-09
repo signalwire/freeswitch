@@ -117,7 +117,6 @@ struct outbound {
 
   char const *ob_instance;	/**< Our instance ID */
   int32_t ob_reg_id;		/**< Flow-id */
-  char const *ob_features;	/**< Feature parameters for rcontact */
   sip_contact_t *ob_rcontact;	/**< Our contact */
   sip_contact_t *ob_dcontact;	/**< Contact for dialogs */
   sip_contact_t *ob_previous;	/**< Stale contact */
@@ -324,20 +323,6 @@ int outbound_set_options(outbound_t *ob,
   ob->ob_prefs = *prefs;
   ob->ob_reg_id = prefs->outbound ? 1 : 0;
 
-  return 0;
-}
-
-/** Set the feature string (added to the Contact header when registering). */
-int outbound_set_features(outbound_t *ob, char *features)
-{
-  char *old_features = (char *)ob->ob_features;
-  char *new_features = su_strdup(ob->ob_home, features);
-
-  if (features && !new_features)
-    return -1;
-
-  ob->ob_features = new_features;
-  su_free(ob->ob_home, old_features);
   return 0;
 }
 
@@ -698,21 +683,32 @@ static int create_keepalive_message(outbound_t *ob, sip_t const *regsip)
 {
   msg_t *msg = nta_msg_create(ob->ob_nta, MSG_FLG_COMPACT), *previous;
   sip_t *osip = sip_object(msg);
-  sip_accept_contact_t *ac;
-
-  char const *p1 = ob->ob_instance;
-  char const *p2 = ob->ob_features;
+  sip_contact_t *m = ob->ob_rcontact;
 
   unsigned d = ob->ob_keepalive.interval;
 
   assert(regsip); assert(regsip->sip_request);
 
-  if (p1 || p2) {
-    ac = sip_accept_contact_format(msg_home(msg), "*;require;explicit;%s%s%s",
-				   p1 ? p1 : "",
-				   p2 && p2 ? ";" : "",
-				   p2 ? p2 : "");
-    msg_header_insert(msg, NULL, (void *)ac);
+  if (m && m->m_params) {
+    sip_accept_contact_t *ac;
+    size_t i;
+    int features = 0;
+
+    ac = sip_accept_contact_make(msg_home(msg), "*;require;explicit");
+
+    for (i = 0; m->m_params[i]; i++) {
+      char const *s = m->m_params[i];
+      if (!sip_is_callerpref(s))
+	continue;
+      features++;
+      s = su_strdup(msg_home(msg), s);
+      msg_header_add_param(msg_home(msg), ac->cp_common, s);
+    }
+    
+    if (features)
+      msg_header_insert(msg, NULL, (void *)ac);
+    else
+      msg_header_free(msg_home(msg), (void *)ac);
   }
 
   if (0 >
@@ -1008,46 +1004,16 @@ int outbound_contacts_from_via(outbound_t *ob, sip_via_t const *via)
 
   v = v0; *v0 = *via; v0->v_next = NULL;
 
-  dcontact = ob->ob_oo->oo_contact(ob->ob_owner, home,
+  dcontact = ob->ob_oo->oo_contact(ob->ob_owner, home, 1,
 				   NULL, v, v->v_protocol, NULL);
 
   if (ob->ob_instance && ob->ob_reg_id != 0)
     snprintf(reg_id_param, sizeof reg_id_param, ";reg-id=%u", ob->ob_reg_id);
 
-  rcontact = ob->ob_oo->oo_contact(ob->ob_owner, home,
+  rcontact = ob->ob_oo->oo_contact(ob->ob_owner, home, 0,
 				   NULL, v, v->v_protocol, 
-				   ob->ob_features ? ob->ob_features : "",
 				   ob->ob_instance, reg_id_param, NULL);
     
-#if 0
-  char *uri;
-
-  /* uri contains < > */
-  uri = sip_contact_string_from_via(NULL, via, NULL, v->v_protocol);
-
-  dcontact = sip_contact_make(home, uri);
-
-  if (ob->ob_instance) {
-    char reg_id[20];
-
-    if (ob->ob_instance && ob->ob_reg_id)
-      snprintf(reg_id, sizeof reg_id, ";reg-id=%u", ob->ob_reg_id);
-    else
-      strcpy(reg_id, "");
-
-    rcontact = sip_contact_format(home, "%s;%s%s%s%s",
-				  uri, ob->ob_instance, reg_id,
-				  ob->ob_features ? ";" : "",
-				  ob->ob_features ? ob->ob_features : "");
-  }
-  else if (ob->ob_features)
-    rcontact = sip_contact_format(home, "%s;%s", uri, ob->ob_features);
-  else
-    rcontact = dcontact;
-
-  free(uri);
-#endif
-
   v = sip_via_dup(home, v);
 
   if (!rcontact || !dcontact || !v) {
@@ -1139,7 +1105,7 @@ int outbound_set_contact(outbound_t *ob,
     char const *tport = !v->v_next ? v->v_protocol : NULL; 
     char reg_id_param[20];
 
-    dcontact = ob->ob_oo->oo_contact(ob->ob_owner, home,
+    dcontact = ob->ob_oo->oo_contact(ob->ob_owner, home, 1, 
 				     NULL, v, tport, NULL);
     if (!dcontact)
       return -1;
@@ -1147,9 +1113,8 @@ int outbound_set_contact(outbound_t *ob,
     if (ob->ob_instance && ob->ob_reg_id != 0)
       snprintf(reg_id_param, sizeof reg_id_param, ";reg-id=%u", ob->ob_reg_id);
 
-    rcontact = ob->ob_oo->oo_contact(ob->ob_owner, home,
+    rcontact = ob->ob_oo->oo_contact(ob->ob_owner, home, 0,
 				     NULL, v, v->v_protocol, 
-				     ob->ob_features ? ob->ob_features : "",
 				     ob->ob_instance, reg_id_param, NULL);
     if (!rcontact)
       return -1;
@@ -1193,6 +1158,11 @@ sip_contact_t const *outbound_dialog_contact(outbound_t const *ob)
     return ob->ob_gruu;
   else
     return ob->ob_dcontact;
+}
+
+sip_contact_t const *outbound_dialog_gruu(outbound_t const *ob)
+{
+  return ob ? ob->ob_gruu : NULL;
 }
 
 /* ---------------------------------------------------------------------- */

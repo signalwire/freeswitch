@@ -1199,7 +1199,7 @@ static
 int win_localinfo(su_localinfo_t const hints[1], su_localinfo_t **rresult)
 {
   /* This is Windows XP code, for both IPv6 and IPv4. */
-  size_t iaa_size = 2048;
+  ULONG iaa_size = 2048;
   IP_ADAPTER_ADDRESSES *iaa0, *iaa;
   int error, loopback_seen = 0;
   int v4_mapped = (hints->li_flags & LI_V4MAPPED) != 0;
@@ -1208,7 +1208,7 @@ int win_localinfo(su_localinfo_t const hints[1], su_localinfo_t **rresult)
   int flags = GAA_FLAG_SKIP_MULTICAST;
   *rresult = NULL; next = rresult;
 
-  iaa0 = malloc(iaa_size);
+  iaa0 = malloc((size_t)iaa_size);
   if (!iaa0) {
     SU_DEBUG_1(("su_localinfo: memory exhausted\n"));
     error = ELI_MEMORY;
@@ -1229,7 +1229,7 @@ int win_localinfo(su_localinfo_t const hints[1], su_localinfo_t **rresult)
     IP_ADAPTER_UNICAST_ADDRESS *ua;
     IP_ADAPTER_UNICAST_ADDRESS lua[1];
     int if_index = iaa->IfIndex;
-    int ifnamelen = 0;
+    size_t ifnamelen = 0;
     char ifname[16];
 
     for (ua = iaa->FirstUnicastAddress; ;ua = ua->Next) {

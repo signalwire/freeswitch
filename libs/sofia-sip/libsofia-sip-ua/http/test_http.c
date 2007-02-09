@@ -76,7 +76,7 @@ static int http_tag_test(void);
 static int test_query_parser(void);
 
 static msg_t *read_message(char const string[]);
-msg_mclass_t *test_mclass = NULL;
+msg_mclass_t const *test_mclass = NULL;
 
 void usage(void)
 {

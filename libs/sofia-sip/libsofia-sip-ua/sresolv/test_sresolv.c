@@ -64,7 +64,6 @@ typedef unsigned _int32 uint32_t;
 #include <sofia-resolv/sres_async.h>
 #include <sofia-resolv/sres_record.h>
 
-#include <sofia-sip/su.h>
 #include <sofia-sip/su_alloc.h>
 
 #include <assert.h>
@@ -120,6 +119,84 @@ static void test_answer_multi(sres_context_t *ctx, sres_query_t *query,
 
 static int tstflags = 0;
 
+#if HAVE_WINSOCK2_H
+
+/* Posix send() */
+static inline 
+ssize_t sres_send(sres_socket_t s, void *b, size_t length, int flags)
+{
+  if (length > INT_MAX)
+    length = INT_MAX;
+  return (ssize_t)send(s, b, (int)length, flags);
+}
+
+static inline 
+ssize_t sres_sendto(sres_socket_t s, void *b, size_t length, int flags,
+		    struct sockaddr const *sa, socklen_t salen)
+{
+  if (length > INT_MAX)
+    length = INT_MAX;
+  return (ssize_t)sendto(s, b, (int)length, flags, (void *)sa, (int)salen);
+}
+
+/* Posix recvfrom() */
+static inline 
+ssize_t sres_recvfrom(sres_socket_t s, void *buffer, size_t length, int flags,
+		      struct sockaddr *from, socklen_t *fromlen)
+{
+  int retval, ilen;
+
+  if (fromlen)
+    ilen = *fromlen;
+
+  if (length > INT_MAX)
+    length = INT_MAX;
+
+  retval = recvfrom(s, buffer, (int)length, flags, 
+		    (void *)from, fromlen ? &ilen : NULL);
+
+  if (fromlen)
+    *fromlen = ilen;
+
+  return (ssize_t)retval;
+}
+
+static sres_socket_t sres_socket(int af, int socktype, int protocol)
+{
+  return socket(af, socktype, protocol);
+}
+
+static inline
+int sres_close(sres_socket_t s)
+{
+  return closesocket(s);
+}
+
+#if !defined(IPPROTO_IPV6)
+#if HAVE_SIN6
+#include <tpipv6.h>
+#else
+#if !defined(__MINGW32__)
+struct sockaddr_storage {
+    short ss_family;
+    char ss_pad[126];
+};
+#endif
+#endif
+#endif
+#else
+
+#define sres_send(s,b,len,flags) send((s),(b),(len),(flags))
+#define sres_sendto(s,b,len,flags,a,alen) \
+  sendto((s),(b),(len),(flags),(a),(alen))
+#define sres_recvfrom(s,b,len,flags,a,alen) \
+  recvfrom((s),(b),(len),(flags),(a),(alen))
+#define sres_close(s) close((s))
+#define SOCKET_ERROR   (-1)
+#define INVALID_SOCKET ((sres_socket_t)-1)
+#define sres_socket(x,y,z) socket((x),(y),(z))
+#endif
+
 #if 1
 
 #if HAVE_POLL && 0
@@ -145,7 +222,7 @@ static
 int test_socket(sres_context_t *ctx)
 {
   int af;
-  su_sockeet_t s1, s2, s3, s4;
+  sres_socket_t s1, s2, s3, s4;
   struct sockaddr_storage a[1];
   struct sockaddr_storage a1[1], a2[1], a3[1], a4[1];
   struct sockaddr_in *sin = (void *)a;
@@ -160,10 +237,10 @@ int test_socket(sres_context_t *ctx)
   af = AF_INET;
 
   for (;;) {
-    TEST_1((s1 = su_socket(af, SOCK_DGRAM, 0)) != INVALID_SOCKET);
-    TEST_1((s2 = su_socket(af, SOCK_DGRAM, 0)) != INVALID_SOCKET);
-    TEST_1((s3 = su_socket(af, SOCK_DGRAM, 0)) != INVALID_SOCKET);
-    TEST_1((s4 = su_socket(af, SOCK_DGRAM, 0)) != INVALID_SOCKET);
+    TEST_1((s1 = sres_socket(af, SOCK_DGRAM, 0)) != INVALID_SOCKET);
+    TEST_1((s2 = sres_socket(af, SOCK_DGRAM, 0)) != INVALID_SOCKET);
+    TEST_1((s3 = sres_socket(af, SOCK_DGRAM, 0)) != INVALID_SOCKET);
+    TEST_1((s4 = sres_socket(af, SOCK_DGRAM, 0)) != INVALID_SOCKET);
 
     TEST_1(setblocking(s1, 0) == 0);
     TEST_1(setblocking(s2, 0) == 0);
@@ -212,13 +289,13 @@ int test_socket(sres_context_t *ctx)
     TEST(connect(s2, sa4, a4len), 0);
     TEST(getsockname(s2, (struct sockaddr *)a2, &a2len), 0);
 
-    TEST(sendto(s1, "foo", 3, 0, sa4, a4len), 3);
-    TEST(recvfrom(s4, buf, sizeof buf, 0, sa, &alen), 3);
-    TEST(sendto(s4, "bar", 3, 0, sa, alen), 3);
-    TEST(recvfrom(s2, buf, sizeof buf, 0, sa, &alen), -1);
-    TEST(recvfrom(s1, buf, sizeof buf, 0, sa, &alen), 3);
+    TEST(sres_sendto(s1, "foo", 3, 0, sa4, a4len), 3);
+    TEST(sres_recvfrom(s4, buf, sizeof buf, 0, sa, &alen), 3);
+    TEST(sres_sendto(s4, "bar", 3, 0, sa, alen), 3);
+    TEST(sres_recvfrom(s2, buf, sizeof buf, 0, sa, &alen), -1);
+    TEST(sres_recvfrom(s1, buf, sizeof buf, 0, sa, &alen), 3);
 
-    su_close(s1), su_close(s2), su_close(s3), su_close(s4);
+    sres_close(s1), sres_close(s2), sres_close(s3), sres_close(s4);
 
     break;
   }
@@ -1428,7 +1505,7 @@ int sink_deinit(sres_context_t *ctx)
   if (ctx->sinkidx)
     su_root_deregister(ctx->root, ctx->sinkidx);
   ctx->sinkidx = 0;
-  su_close(ctx->sink), ctx->sink = INVALID_SOCKET;
+  sres_close(ctx->sink), ctx->sink = INVALID_SOCKET;
 
   END();
 }
@@ -1453,7 +1530,7 @@ int test_timeout(sres_context_t *ctx)
 
   result = sres_cached_answers(res, sres_type_a, domain);
 
-#if 0
+#if 0  /* Currently, we do not create error records */
   TEST_1(result); TEST_1(result[0] != NULL);
 
   rr_soa = result[0]->sr_soa;
@@ -1464,7 +1541,6 @@ int test_timeout(sres_context_t *ctx)
 
   sres_free_answers(res, result);
 #else
-  /* Currently, we do not create error records */
   TEST_1(result == NULL);
 #endif
 
@@ -1625,7 +1701,8 @@ int test_net(sres_context_t *ctx)
   struct sockaddr *sa = (void *)ss;
   socklen_t salen = sizeof ss;
   char *bin;
-  size_t i, n, binlen;
+  size_t i, binlen;
+  ssize_t n;
   char const *domain = "example.com";
   char query[512];
 
@@ -1647,14 +1724,14 @@ int test_net(sres_context_t *ctx)
       /* We got an error => make new query */
       TEST_1(q = sres_query(res, test_answer, ctx, /* Send query */
 				 sres_type_naptr, domain));
-      TEST_1((n = recvfrom(c, query, sizeof query, 0, sa, &salen)) != -1);
+      TEST_1((n = sres_recvfrom(c, query, sizeof query, 0, sa, &salen)) != -1);
       memcpy(bin, query, 2); /* Copy ID */
     }
     if (i != 1)
       bin[i] ^= 0xff;
     else
       bin[3] ^= SRES_FORMAT_ERR; /* format error -> EDNS0 failure */
-    n = su_sendto(c, bin, binlen, 0, sa, salen);
+    n = sres_sendto(c, bin, binlen, 0, sa, salen);
     if (i != 1)
       bin[i] ^= 0xff;
     else
@@ -1675,10 +1752,10 @@ int test_net(sres_context_t *ctx)
       /* We got an error => make new query */
       TEST_1(q = sres_query(res, test_answer, ctx, /* Send query */
 				 sres_type_naptr, domain));
-      TEST_1((n = su_recvfrom(c, query, sizeof query, 0, sa, &salen)) != -1);
+      TEST_1((n = sres_recvfrom(c, query, sizeof query, 0, sa, &salen)) != -1);
       memcpy(bin, query, 2); /* Copy ID */
     }
-    n = su_sendto(c, bin, i, 0, sa, salen);
+    n = sres_sendto(c, bin, i, 0, sa, salen);
     if (n == -1)
       perror("sendto");
     while (!poll_sockets(ctx))

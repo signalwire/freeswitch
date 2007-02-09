@@ -63,6 +63,7 @@
 				SuppressStartupBanner="true"
 				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"
+				CompileAs="1"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -77,7 +78,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib advapi32.lib"
+				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
 				OutputFile=".\Debug/libsofia_sip_ua.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -164,6 +165,7 @@
 				WarnAsError="true"
 				SuppressStartupBanner="true"
 				Detect64BitPortabilityProblems="true"
+				CompileAs="1"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -178,7 +180,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib"
+				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
 				OutputFile=".\Release/libsofia_sip_ua.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -584,6 +586,10 @@
 							PreprocessorDefinitions=""
 						/>
 					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\libsofia-sip-ua\su\su_socket_port.c"
+					>
 				</File>
 				<File
 					RelativePath="..\..\libsofia-sip-ua\su\su_sprintf.c"

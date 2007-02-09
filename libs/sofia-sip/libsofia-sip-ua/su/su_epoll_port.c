@@ -1,7 +1,7 @@
 /*
  * This file is part of the Sofia-SIP package
  *
- * Copyright (C) 2005 Nokia Corporation.
+ * Copyright (C) 2005, 2006, 2007 Nokia Corporation.
  *
  * Contact: Pekka Pessi <pekka.pessi@nokia.com>
  *
@@ -23,17 +23,27 @@
  */
 
 /**@ingroup su_wait
- * @CFILE su_poll_port.c
+ * @CFILE su_epoll_port.c
  *
- * Port implementation using poll()
+ * Port implementation using epoll(7)
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @author Kai Vehmanen <kai.vehmanen@nokia.com>
  *
- * @date Created: Tue Sep 14 15:51:04 1999 ppessi
+ * @date Created: Fri Jan 26 20:44:14 2007 ppessi
+ * @date Original: Tue Sep 14 15:51:04 1999 ppessi
  */
 
 #include "config.h"
+
+#define su_port_s su_epoll_port_s
+
+#include "su_port.h"
+
+#if HAVE_EPOLL
+
+#include "sofia-sip/su.h"
+#include "sofia-sip/su_alloc.h"
 
 #include <stdlib.h>
 #include <assert.h>
@@ -42,14 +52,6 @@
 #include <string.h>
 #include <limits.h>
 #include <errno.h>
-
-#define su_port_s su_poll_port_s
-
-#include "sofia-sip/su.h"
-#include "su_port.h"
-#include "sofia-sip/su_alloc.h"
-
-#if HAVE_EPOLL
 
 #include <sys/epoll.h>
 
@@ -62,8 +64,8 @@
 
 /** Port based on epoll(). */
 
-struct su_poll_port_s {
-  su_pthread_port_t sup_base[1];
+struct su_epoll_port_s {
+  su_socket_port_t sup_base[1];
 
   /** epoll fd */
   int              sup_epoll;
@@ -88,7 +90,9 @@ struct su_poll_port_s {
   } **sup_indices;
 };
 
-static void su_epoll_port_decref(su_port_t *self, int blocking, char const *who);
+static void su_epoll_port_decref(su_port_t *self,
+				 int blocking,
+				 char const *who);
 static int su_epoll_port_register(su_port_t *self,
 				  su_root_t *root, 
 				  su_wait_t *wait, 
@@ -118,7 +122,7 @@ su_port_vtable_t const su_epoll_port_vtable[1] =
       su_base_port_incref,
       su_epoll_port_decref,
       su_base_port_gsource,
-      su_pthread_port_send,
+      su_socket_port_send,
       su_epoll_port_register,
       su_epoll_port_unregister,
       su_epoll_port_deregister,
@@ -159,7 +163,7 @@ static void su_epoll_port_deinit(void *arg)
 
   SU_DEBUG_9(("%s(%p) called\n", "su_epoll_port_deinit", (void* )self));
 
-  su_pthread_port_deinit(self);
+  su_socket_port_deinit(self->sup_base);
 
   close(self->sup_epoll), self->sup_epoll = -1;
 }
@@ -434,9 +438,9 @@ int su_epoll_port_eventmask(su_port_t *self, int index, int socket, int events)
   ev.data.u64 = (uint64_t)0;
   ev.data.u32 = (uint32_t)index;
 
-  if (epoll_ctl(self->sup_epoll, EPOLL_CTL_MOD, ser->ser_wait->fd, &ev) == -1) {
+  if (epoll_ctl(self->sup_epoll, EPOLL_CTL_MOD, socket, &ev) == -1) {
     SU_DEBUG_1(("su_port(%p): EPOLL_CTL_MOD(%u): %s\n", (void *)self, 
-		ser->ser_wait->fd, su_strerror(su_errno())));
+		socket, su_strerror(su_errno())));
     return -1;
   }
 
@@ -449,7 +453,7 @@ int su_epoll_port_eventmask(su_port_t *self, int index, int socket, int events)
  * multishot mode determines how the events are scheduled by port. If
  * multishot mode is enabled, port serves all the sockets that have received
  * network events. If it is disabled, only first socket event is served.
-p *
+ *
  * @param self      pointer to port object
  * @param multishot multishot mode (0 => disables, 1 => enables, -1 => query)
  * 
@@ -547,7 +551,7 @@ su_port_t *su_epoll_port_create(void)
   self->sup_epoll = epoll;
   self->sup_multishot = SU_ENABLE_MULTISHOT_POLL;
 
-  if (su_pthread_port_init(self, su_epoll_port_vtable) < 0)
+  if (su_socket_port_init(self->sup_base, su_epoll_port_vtable) < 0)
     return su_home_unref(su_port_home(self)), NULL;
 
   return self;
@@ -562,22 +566,21 @@ int su_epoll_clone_start(su_root_t *parent,
   return su_pthreaded_port_start(su_epoll_port_create, 
 				 parent, return_clone, magic, init, deinit);
 }
+
 #else
 
 su_port_t *su_epoll_port_create(void)
 {
-  return su_poll_port_create();
+  return su_default_port_create();
 }
 
 int su_epoll_clone_start(su_root_t *parent,
-			su_clone_r return_clone,
-			su_root_magic_t *magic,
-			su_root_init_f init,
-			su_root_deinit_f deinit)
+			 su_clone_r return_clone,
+			 su_root_magic_t *magic,
+			 su_root_init_f init,
+			 su_root_deinit_f deinit)
 {
-  return su_pthreaded_port_start(su_poll_port_create, 
-				 parent, return_clone, magic, init, deinit);
+  return su_default_clone_start(parent, return_clone, magic, init, deinit);
 }
 
 #endif  /* HAVE_EPOLL */
-

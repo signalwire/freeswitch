@@ -2,18 +2,33 @@
 
 rc=0
 
+run=no
+
+for SU_PORT in select epoll poll ; do
+
+export SU_PORT
+
+grep -q -i '^#define have_'$SU_PORT ../../config.h ||
+continue
+
+run=yes
+
 if $VALGRIND ./test_su ; then
-    echo PASS: multithread test_su
+    echo PASS: multithread test_su with $SU_PORT
 else
-    echo FAIL: multithread test_su failed
+    echo FAIL: multithread test_su with $SU_PORT failed
     rc=1
 fi
 
 if $VALGRIND ./test_su -s ; then
-    echo PASS: singlethread test_su
+    echo PASS: singlethread test_su with $SU_PORT
 else
-    echo FAIL: singlethread test_su failed
+    echo FAIL: singlethread test_su with $SU_PORT failed
     rc=1
 fi
+
+done
+
+test $run = no && exit 77
 
 exit $rc

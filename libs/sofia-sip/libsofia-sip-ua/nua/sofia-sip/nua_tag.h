@@ -1074,7 +1074,7 @@ SOFIAPUBVAR tag_typedef_t nutag_registrar_ref;
  *
  * The outbound option string can specify how the NAT traversal is handled.
  * The option tokens are as follows:
- * - "gruuize": try to generate a GRUU
+ * - "gruuize": try to generate a GRUU contact from REGISTER response
  * - "outbound": use SIP outbound extension (off by default)
  * - "validate": validate registration behind a NAT by sending OPTIONS to self
  * - "natify": try to traverse NAT
@@ -1084,6 +1084,10 @@ SOFIAPUBVAR tag_typedef_t nutag_registrar_ref;
  * An option token with "no-" or "not-" prefix turns the option off. For
  * example, if you want to try to traverse NATs but not to use OPTIONS
  * keepalive, use NUTAG_OUTBOUND("natify no-options-keepalive").
+ * 
+ * An empty string can be passed to let the stack choose the
+ * default values for outbound usage (in the 1.12.5 release, the
+ * defaults are: "gruuize no-outbound validate use-port options-keepalive").
  *
  * @note
  * Options string is used so that no new tags need to be added when the
@@ -1207,7 +1211,7 @@ SOFIAPUBVAR tag_typedef_t nutag_outbound_set4_ref;
  *    nua_create()
  *
  * @par Parameter type
- *    msg_mclass_t *
+ *    msg_mclass_t const *
  *
  * @par Values
  *    Pointer to an extended SIP parser.
@@ -1244,6 +1248,9 @@ SOFIAPUBVAR tag_typedef_t nutag_auth_ref;
 
 /** Keepalive interval in milliseconds.
  *
+ * This setting applies to OPTIONS/STUN keepalives. See documentation 
+ * for nua_register() for more detailed information.
+ *
  * @par Used with
  *    nua_register()   \n
  *    nua_set_params() \n
@@ -1268,6 +1275,8 @@ SOFIAPUBVAR tag_typedef_t nutag_keepalive;
 SOFIAPUBVAR tag_typedef_t nutag_keepalive_ref;
 
 /** Transport-level keepalive interval for streams.
+ *
+ * See documentation for nua_register() for more detailed information.
  *
  * @par Used with
  *    nua_register()   \n

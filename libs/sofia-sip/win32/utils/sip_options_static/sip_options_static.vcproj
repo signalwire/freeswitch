@@ -76,7 +76,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib"
+				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
 				OutputFile=".\Release/sip_options_static.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -173,7 +173,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib advapi32.lib"
+				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
 				OutputFile=".\Debug/sip_options_static.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"

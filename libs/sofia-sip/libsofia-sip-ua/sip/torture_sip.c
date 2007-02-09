@@ -412,7 +412,12 @@ int test_basic(void)
     TEST_1(sip_from_tag(home, f, "tag=jxahudsf") == 0);
     su_free(home, f);
 
+    TEST_1(f = sip_from_create(home, (void *)"<sip:joe@bar;tag=bar> (joe)"));
+    TEST_1(sip_is_from((sip_header_t*)f));
+    su_free(home, f);
+
     TEST_1(t = sip_to_create(home, (void *)"<sip:joe@bar;tag=bar> (joe)"));
+    TEST_1(sip_is_to((sip_header_t*)f));
     TEST_1(sip_to_tag(home, t, "tag=jxahudsf") == 0);
     TEST_S(t->a_tag, "jxahudsf");
     TEST(msg_header_replace_param(home, t->a_common, "tag=bar"), 1);

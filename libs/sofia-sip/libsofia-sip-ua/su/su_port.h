@@ -152,26 +152,6 @@ SOFIAPUBFUN su_port_t *su_port_create(void)
 
 /* Extension from >= 1.12.5 */
 
-typedef su_port_t *su_port_create_f(void);
-typedef int su_clone_start_f(su_root_t *parent,
-			    su_clone_r return_clone,
-			    su_root_magic_t *magic,
-			    su_root_init_f init,
-			    su_root_deinit_f deinit);
-
-SOFIAPUBFUN void su_port_prefer(su_port_create_f *f, su_clone_start_f *);
-
-SOFIAPUBFUN su_port_t *su_epoll_port_create(void)
-     __attribute__((__malloc__));
-SOFIAPUBFUN su_port_t *su_poll_port_create(void)
-     __attribute__((__malloc__));
-SOFIAPUBFUN su_port_t *su_select_port_create(void)
-     __attribute__((__malloc__));
-
-SOFIAPUBFUN su_clone_start_f su_epoll_clone_start;
-SOFIAPUBFUN su_clone_start_f su_poll_clone_start;
-SOFIAPUBFUN su_clone_start_f su_select_clone_start;
-
 SOFIAPUBFUN void su_msg_delivery_report(su_msg_r msg);
 SOFIAPUBFUN su_duration_t su_timer_next_expires(su_timer_t const * t,
 						su_time_t now);
@@ -518,22 +498,18 @@ SOFIAPUBFUN void su_base_port_wait(su_clone_r rclone);
 
 #include <pthread.h>
 
-#define SU_MBOX_SIZE 2
-
 /** Pthread port object */ 
 typedef struct su_pthread_port_s {
   su_base_port_t   sup_base[1];
   struct su_pthread_port_waiting_parent 
                   *sup_waiting_parent;
   pthread_t        sup_tid;
-  pthread_mutex_t  sup_runlock[1];
 #if 0
+  pthread_mutex_t  sup_runlock[1];
   pthread_cond_t   sup_resume[1];
   short            sup_paused;	/**< True if thread is paused */
 #endif
   short            sup_thread;	/**< True if thread is active */
-  short            sup_mbox_index;
-  su_socket_t      sup_mbox[SU_MBOX_SIZE];
 } su_pthread_port_t;
 
 /* Pthread methods */
@@ -546,9 +522,9 @@ SOFIAPUBFUN void su_pthread_port_unlock(su_port_t *self, char const *who);
 
 SOFIAPUBFUN int su_pthread_port_own_thread(su_port_t const *self);
 
+#if 0				/* not yet  */
 SOFIAPUBFUN int su_pthread_port_send(su_port_t *self, su_msg_r rmsg);
 
-#if 0				/* not yet  */
 SOFIAPUBFUN su_port_t *su_pthread_port_create(void);
 SOFIAPUBFUN su_port_t *su_pthread_port_start(su_root_t *parent,
 					     su_clone_r return_clone,
@@ -584,11 +560,26 @@ typedef su_base_port_t su_pthread_port_t;
 #define su_pthread_port_lock   su_base_port_lock
 #define su_pthread_port_unlock su_base_port_unlock
 #define su_pthread_port_own_thread su_base_port_own_thread
-#define su_pthread_port_send   su_base_port_send
 #define su_pthread_port_wait   su_base_port_wait
 #define su_pthread_port_execute  su_base_port_execute
 
 #endif
+
+/* ====================================================================== */
+/* Mailbox port using sockets */
+
+#define SU_MBOX_SIZE 2
+
+typedef struct su_socket_port_s {
+  su_pthread_port_t sup_base[1];
+  int               sup_mbox_index;
+  su_socket_t       sup_mbox[SU_MBOX_SIZE];
+} su_socket_port_t;
+
+SOFIAPUBFUN int su_socket_port_init(su_socket_port_t *, 
+				    su_port_vtable_t const *);
+SOFIAPUBFUN void su_socket_port_deinit(su_socket_port_t *self);
+SOFIAPUBFUN int su_socket_port_send(su_port_t *self, su_msg_r rmsg);
 
 SOFIA_END_DECLS
 

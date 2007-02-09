@@ -59,10 +59,10 @@ NTA_DLL extern tag_typedef_t ntatag_any;
 
 NTA_DLL extern tag_typedef_t ntatag_mclass;
 /** Message class used by NTA. @HI */
-#define NTATAG_MCLASS(x) ntatag_mclass, tag_ptr_v((x))
+#define NTATAG_MCLASS(x) ntatag_mclass, tag_cptr_v((x))
 
 NTA_DLL extern tag_typedef_t ntatag_mclass_ref;
-#define NTATAG_MCLASS_REF(x) ntatag_mclass_ref, tag_ptr_vr(&(x), (x))
+#define NTATAG_MCLASS_REF(x) ntatag_mclass_ref, tag_cptr_vr(&(x), (x))
 
 NTA_DLL extern tag_typedef_t ntatag_bad_req_mask;
 /** Mask for bad request messages. 
@@ -503,184 +503,184 @@ NTA_DLL extern tag_typedef_t ntatag_s_leg_hash_used_ref;
 ntatag_s_leg_hash_used_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_recv_msg;
-#define NTATAG_S_RECV_MSG(x) ntatag_s_recv_msg, tag_uint_v(x)
+#define NTATAG_S_RECV_MSG(x) ntatag_s_recv_msg, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_recv_msg_ref;
-#define NTATAG_S_RECV_MSG_REF(x) ntatag_s_recv_msg_ref, tag_uint_vr(&(x))
+#define NTATAG_S_RECV_MSG_REF(x) ntatag_s_recv_msg_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_recv_request;
-#define NTATAG_S_RECV_REQUEST(x) ntatag_s_recv_request, tag_uint_v(x)
+#define NTATAG_S_RECV_REQUEST(x) ntatag_s_recv_request, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_recv_request_ref;
 #define NTATAG_S_RECV_REQUEST_REF(x)\
- ntatag_s_recv_request_ref, tag_uint_vr(&(x))
+ ntatag_s_recv_request_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_recv_response;
-#define NTATAG_S_RECV_RESPONSE(x) ntatag_s_recv_response, tag_uint_v(x)
+#define NTATAG_S_RECV_RESPONSE(x) ntatag_s_recv_response, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_recv_response_ref;
 #define NTATAG_S_RECV_RESPONSE_REF(x)\
- ntatag_s_recv_response_ref, tag_uint_vr(&(x))
+ ntatag_s_recv_response_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_bad_message;
-#define NTATAG_S_BAD_MESSAGE(x) ntatag_s_bad_message, tag_uint_v(x)
+#define NTATAG_S_BAD_MESSAGE(x) ntatag_s_bad_message, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_bad_message_ref;
 #define NTATAG_S_BAD_MESSAGE_REF(x)\
- ntatag_s_bad_message_ref, tag_uint_vr(&(x))
+ ntatag_s_bad_message_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_bad_request;
-#define NTATAG_S_BAD_REQUEST(x) ntatag_s_bad_request, tag_uint_v(x)
+#define NTATAG_S_BAD_REQUEST(x) ntatag_s_bad_request, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_bad_request_ref;
 #define NTATAG_S_BAD_REQUEST_REF(x)\
- ntatag_s_bad_request_ref, tag_uint_vr(&(x))
+ ntatag_s_bad_request_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_bad_response;
-#define NTATAG_S_BAD_RESPONSE(x) ntatag_s_bad_response, tag_uint_v(x)
+#define NTATAG_S_BAD_RESPONSE(x) ntatag_s_bad_response, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_bad_response_ref;
 #define NTATAG_S_BAD_RESPONSE_REF(x)\
- ntatag_s_bad_response_ref, tag_uint_vr(&(x))
+ ntatag_s_bad_response_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_drop_request;
-#define NTATAG_S_DROP_REQUEST(x) ntatag_s_drop_request, tag_uint_v(x)
+#define NTATAG_S_DROP_REQUEST(x) ntatag_s_drop_request, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_drop_request_ref;
 #define NTATAG_S_DROP_REQUEST_REF(x)\
- ntatag_s_drop_request_ref, tag_uint_vr(&(x))
+ ntatag_s_drop_request_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_drop_response;
-#define NTATAG_S_DROP_RESPONSE(x) ntatag_s_drop_response, tag_uint_v(x)
+#define NTATAG_S_DROP_RESPONSE(x) ntatag_s_drop_response, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_drop_response_ref;
 #define NTATAG_S_DROP_RESPONSE_REF(x)\
- ntatag_s_drop_response_ref, tag_uint_vr(&(x))
+ ntatag_s_drop_response_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_client_tr;
-#define NTATAG_S_CLIENT_TR(x) ntatag_s_client_tr, tag_uint_v(x)
+#define NTATAG_S_CLIENT_TR(x) ntatag_s_client_tr, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_client_tr_ref;
 #define NTATAG_S_CLIENT_TR_REF(x)\
- ntatag_s_client_tr_ref, tag_uint_vr(&(x))
+ ntatag_s_client_tr_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_server_tr;
-#define NTATAG_S_SERVER_TR(x) ntatag_s_server_tr, tag_uint_v(x)
+#define NTATAG_S_SERVER_TR(x) ntatag_s_server_tr, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_server_tr_ref;
 #define NTATAG_S_SERVER_TR_REF(x)\
- ntatag_s_server_tr_ref, tag_uint_vr(&(x))
+ ntatag_s_server_tr_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_dialog_tr;
-#define NTATAG_S_DIALOG_TR(x) ntatag_s_dialog_tr, tag_uint_v(x)
+#define NTATAG_S_DIALOG_TR(x) ntatag_s_dialog_tr, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_dialog_tr_ref;
 #define NTATAG_S_DIALOG_TR_REF(x)\
- ntatag_s_dialog_tr_ref, tag_uint_vr(&(x))
+ ntatag_s_dialog_tr_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_acked_tr;
-#define NTATAG_S_ACKED_TR(x) ntatag_s_acked_tr, tag_uint_v(x)
+#define NTATAG_S_ACKED_TR(x) ntatag_s_acked_tr, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_acked_tr_ref;
-#define NTATAG_S_ACKED_TR_REF(x) ntatag_s_acked_tr_ref, tag_uint_vr(&(x))
+#define NTATAG_S_ACKED_TR_REF(x) ntatag_s_acked_tr_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_canceled_tr;
-#define NTATAG_S_CANCELED_TR(x) ntatag_s_canceled_tr, tag_uint_v(x)
+#define NTATAG_S_CANCELED_TR(x) ntatag_s_canceled_tr, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_canceled_tr_ref;
 #define NTATAG_S_CANCELED_TR_REF(x)  \
- ntatag_s_canceled_tr_ref, tag_uint_vr(&(x))
+ ntatag_s_canceled_tr_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_trless_request;
-#define NTATAG_S_TRLESS_REQUEST(x) ntatag_s_trless_request, tag_uint_v(x)
+#define NTATAG_S_TRLESS_REQUEST(x) ntatag_s_trless_request, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_trless_request_ref;
 #define NTATAG_S_TRLESS_REQUEST_REF(x)\
- ntatag_s_trless_request_ref, tag_uint_vr(&(x))
+ ntatag_s_trless_request_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_trless_to_tr;
-#define NTATAG_S_TRLESS_TO_TR(x) ntatag_s_trless_to_tr, tag_uint_v(x)
+#define NTATAG_S_TRLESS_TO_TR(x) ntatag_s_trless_to_tr, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_trless_to_tr_ref;
 #define NTATAG_S_TRLESS_TO_TR_REF(x)\
- ntatag_s_trless_to_tr_ref, tag_uint_vr(&(x))
+ ntatag_s_trless_to_tr_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_trless_response;
-#define NTATAG_S_TRLESS_RESPONSE(x) ntatag_s_trless_response, tag_uint_v(x)
+#define NTATAG_S_TRLESS_RESPONSE(x) ntatag_s_trless_response, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_trless_response_ref;
 #define NTATAG_S_TRLESS_RESPONSE_REF(x)\
- ntatag_s_trless_response_ref, tag_uint_vr(&(x))
+ ntatag_s_trless_response_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_trless_200;
-#define NTATAG_S_TRLESS_200(x) ntatag_s_trless_200, tag_uint_v(x)
+#define NTATAG_S_TRLESS_200(x) ntatag_s_trless_200, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_trless_200_ref;
 #define NTATAG_S_TRLESS_200_REF(x)\
- ntatag_s_trless_200_ref, tag_uint_vr(&(x))
+ ntatag_s_trless_200_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_merged_request;
-#define NTATAG_S_MERGED_REQUEST(x) ntatag_s_merged_request, tag_uint_v(x)
+#define NTATAG_S_MERGED_REQUEST(x) ntatag_s_merged_request, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_merged_request_ref;
 #define NTATAG_S_MERGED_REQUEST_REF(x)\
- ntatag_s_merged_request_ref, tag_uint_vr(&(x))
+ ntatag_s_merged_request_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_sent_msg;
-#define NTATAG_S_SENT_MSG(x) ntatag_s_sent_msg, tag_uint_v(x)
+#define NTATAG_S_SENT_MSG(x) ntatag_s_sent_msg, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_sent_msg_ref;
 #define NTATAG_S_SENT_MSG_REF(x)\
- ntatag_s_sent_msg_ref, tag_uint_vr(&(x))
+ ntatag_s_sent_msg_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_sent_request;
-#define NTATAG_S_SENT_REQUEST(x) ntatag_s_sent_request, tag_uint_v(x)
+#define NTATAG_S_SENT_REQUEST(x) ntatag_s_sent_request, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_sent_request_ref;
 #define NTATAG_S_SENT_REQUEST_REF(x)\
- ntatag_s_sent_request_ref, tag_uint_vr(&(x))
+ ntatag_s_sent_request_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_sent_response;
-#define NTATAG_S_SENT_RESPONSE(x) ntatag_s_sent_response, tag_uint_v(x)
+#define NTATAG_S_SENT_RESPONSE(x) ntatag_s_sent_response, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_sent_response_ref;
 #define NTATAG_S_SENT_RESPONSE_REF(x)\
- ntatag_s_sent_response_ref, tag_uint_vr(&(x))
+ ntatag_s_sent_response_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_retry_request;
-#define NTATAG_S_RETRY_REQUEST(x) ntatag_s_retry_request, tag_uint_v(x)
+#define NTATAG_S_RETRY_REQUEST(x) ntatag_s_retry_request, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_retry_request_ref;
 #define NTATAG_S_RETRY_REQUEST_REF(x)\
- ntatag_s_retry_request_ref, tag_uint_vr(&(x))
+ ntatag_s_retry_request_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_retry_response;
-#define NTATAG_S_RETRY_RESPONSE(x) ntatag_s_retry_response, tag_uint_v(x)
+#define NTATAG_S_RETRY_RESPONSE(x) ntatag_s_retry_response, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_retry_response_ref;
 #define NTATAG_S_RETRY_RESPONSE_REF(x)\
- ntatag_s_retry_response_ref, tag_uint_vr(&(x))
+ ntatag_s_retry_response_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_recv_retry;
-#define NTATAG_S_RECV_RETRY(x) ntatag_s_recv_retry, tag_uint_v(x)
+#define NTATAG_S_RECV_RETRY(x) ntatag_s_recv_retry, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_recv_retry_ref;
 #define NTATAG_S_RECV_RETRY_REF(x)\
- ntatag_s_recv_retry_ref, tag_uint_vr(&(x))
+ ntatag_s_recv_retry_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_tout_request;
-#define NTATAG_S_TOUT_REQUEST(x) ntatag_s_tout_request, tag_uint_v(x)
+#define NTATAG_S_TOUT_REQUEST(x) ntatag_s_tout_request, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_tout_request_ref;
 #define NTATAG_S_TOUT_REQUEST_REF(x)\
- ntatag_s_tout_request_ref, tag_uint_vr(&(x))
+ ntatag_s_tout_request_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_s_tout_response;
-#define NTATAG_S_TOUT_RESPONSE(x) ntatag_s_tout_response, tag_uint_v(x)
+#define NTATAG_S_TOUT_RESPONSE(x) ntatag_s_tout_response, tag_usize_v(x)
 
 NTA_DLL extern tag_typedef_t ntatag_s_tout_response_ref;
 #define NTATAG_S_TOUT_RESPONSE_REF(x)\
- ntatag_s_tout_response_ref, tag_uint_vr(&(x))
+ ntatag_s_tout_response_ref, tag_usize_vr(&(x))
 
 SOFIA_END_DECLS
 

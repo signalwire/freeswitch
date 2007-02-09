@@ -216,6 +216,8 @@ int until_terminated(CONDITION_PARAMS);
 int until_ready(CONDITION_PARAMS);
 int accept_call(CONDITION_PARAMS);
 
+int accept_notify(CONDITION_PARAMS);
+
 void a_callback(nua_event_t event,
 		int status, char const *phrase,
 		nua_t *nua, struct context *ctx,

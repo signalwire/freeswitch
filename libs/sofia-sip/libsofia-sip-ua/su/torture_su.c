@@ -100,7 +100,7 @@ int test_sockaddr(void)
   TEST(su_setblocking(s, 1), 0);
   TEST(su_close(s), 0);
 
-  su_freelocalinfo(res);
+  su_freelocalinfo(res), res = NULL;
 
 #if SU_HAVE_IN6
   hints->li_family = AF_INET6;
@@ -111,16 +111,17 @@ int test_sockaddr(void)
   for (li = res; li; li = li->li_next)
     TEST(li->li_family, AF_INET6);
 
-  su_freelocalinfo(res);
+  su_freelocalinfo(res), res = NULL;
 #endif
 
   hints->li_flags |= LI_NUMERIC;
   TEST(su_getlocalinfo(hints, &res), 0);
+  su_freelocalinfo(res), res = NULL;
 
-  hints->li_flags |= LI_NAMEREQD;
   res = NULL;
+  hints->li_flags |= LI_NAMEREQD;
   su_getlocalinfo(hints, &res);
-  su_freelocalinfo(res);
+  su_freelocalinfo(res), res = NULL;
 
   memset(a, 0, sizeof *a); 
   memset(b, 0, sizeof *b); 
@@ -161,7 +162,7 @@ int test_sockaddr(void)
 
 int test_sendrecv(void)
 {
-  int s, l, a;
+  su_socket_t s, l, a;
   int n;
   su_sockaddr_t su, csu;
   socklen_t sulen = sizeof su.su_sin, csulen = sizeof csu.su_sin;
@@ -259,6 +260,120 @@ int test_sendrecv(void)
 
   END();
 }
+
+#if HAVE_SELECT 
+
+#if HAVE_WIN32
+int test_select(void)
+{
+  return 0;
+}
+#else
+
+#if HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#elif HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+
+#include <sys/types.h>
+#include <unistd.h>
+
+#ifndef __NFDBITS
+#define __NFDBITS (8 * sizeof (long int))
+#endif
+
+#undef howmany
+/* Size of fd set in bytes. Sorry, octets. */
+#define howmany(n) (((n) + __NFDBITS - 1) / __NFDBITS * (__NFDBITS / 8))
+
+#define FD_ZERO_TO(maxfd, set) \
+  memset((set), 0, howmany(maxfd))
+
+/* Test assumptions in su_select_port implementation */
+int test_select(void)
+{
+  su_socket_t s;
+  su_sockaddr_t su;
+  socklen_t sulen = sizeof su.su_sin;
+  size_t bytes;
+  fd_set *rset, *wset;
+  struct timeval tv;
+
+  BEGIN();
+
+  s = su_socket(AF_INET, SOCK_DGRAM, 0); TEST_1(s != -1);
+
+  memset(&su, 0, sulen);
+  su.su_len = sulen;
+  su.su_family = AF_INET;
+  TEST(inet_pton(AF_INET, "127.0.0.1", &su.su_sin.sin_addr), 1);
+  TEST(bind(s, &su.su_sa, sulen), 0);
+  TEST(getsockname(s, &su.su_sa, &sulen), 0);
+  
+  tv.tv_sec = 0; tv.tv_usec = 1000;
+  TEST(select(0, NULL, NULL, NULL, &tv), 0);
+
+  bytes = howmany(s);
+  TEST_1(rset = malloc(bytes));
+  TEST_1(wset = malloc(bytes));
+
+  FD_ZERO_TO(s, rset); FD_ZERO_TO(s, wset); FD_SET(s, wset);
+  tv.tv_sec = 0, tv.tv_usec = 1000;
+  TEST(select(s + 1, NULL, wset, NULL, &tv), 1);
+  TEST_1(FD_ISSET(s, wset));
+
+  FD_ZERO_TO(s, rset); FD_ZERO_TO(s, wset); 
+  FD_SET(s, rset); FD_SET(s, wset);
+  tv.tv_sec = 0, tv.tv_usec = 1000;
+  TEST(select(s + 1, rset, wset, NULL, &tv), 1);
+  TEST_1(!FD_ISSET(s, rset));
+  TEST_1(FD_ISSET(s, wset));
+
+  FD_ZERO_TO(s, rset); FD_ZERO_TO(s, wset); 
+  FD_SET(s, rset); FD_SET(s, wset);
+  tv.tv_sec = 0, tv.tv_usec = 1000;
+  TEST(select(s + 1, rset, NULL, NULL, &tv), 0);
+  TEST_1(!FD_ISSET(s, rset));
+
+  FD_ZERO_TO(s, rset); FD_ZERO_TO(s, wset); 
+  FD_SET(s, rset); FD_CLR(s, wset);
+  tv.tv_sec = 0, tv.tv_usec = 1000;
+  TEST(select(s + 1, rset, wset, NULL, &tv), 0);
+  TEST_1(!FD_ISSET(s, rset));
+  TEST_1(!FD_ISSET(s, wset));
+
+  TEST(su_sendto(s, "foo", 3, 0, &su, sulen), 3);
+
+  FD_ZERO_TO(s, rset); FD_ZERO_TO(s, wset); 
+  FD_SET(s, rset); FD_CLR(s, wset);
+  tv.tv_sec = 0, tv.tv_usec = 1000;
+  TEST(select(s + 1, rset, wset, NULL, &tv), 1);
+  TEST_1(FD_ISSET(s, rset));
+  TEST_1(!FD_ISSET(s, wset));
+
+  FD_ZERO_TO(s, rset); FD_ZERO_TO(s, wset); 
+  FD_SET(s, rset); FD_SET(s, wset);
+  tv.tv_sec = 0, tv.tv_usec = 1000;
+  TEST(select(s + 1, rset, wset, NULL, &tv), 2);
+  TEST_1(FD_ISSET(s, rset));
+  TEST_1(FD_ISSET(s, wset));
+
+  su_close(s);
+
+  free(wset);
+  free(rset);
+
+  END();
+}
+#endif
+
+#else
+int test_select(void)
+{
+  return 0;
+}
+#endif
 
 #include <sofia-sip/su_md5.h>
 
@@ -395,10 +510,10 @@ int main(int argc, char *argv[])
   
   retval |= test_sockaddr();
   retval |= test_sendrecv();
+  retval |= test_select();
   retval |= test_md5(); fflush(stdout);
 
   su_deinit();
 
   return retval;
 }
-

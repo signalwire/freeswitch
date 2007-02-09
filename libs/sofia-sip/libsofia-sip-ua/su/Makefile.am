@@ -79,7 +79,7 @@ libsu_la_SOURCES = \
 	su_time.c su_time0.c \
 	su_wait.c su_root.c su_timer.c \
 	su_port.c  su_port.h \
-	su_base_port.c su_pthread_port.c \
+	su_base_port.c su_pthread_port.c su_socket_port.c \
 	su_poll_port.c su_epoll_port.c su_select_port.c \
 	su_localinfo.c \
 	su_os_nw.c \
@@ -94,6 +94,7 @@ EXTRA_libsu_la_SOURCES = \
 			inet_ntop.c inet_pton.c poll.c getopt.c \
 			su_tag_ref.c su_win32_port.c
 
+libsu_la_CFLAGS = 	$(AM_CFLAGS) $(SOFIA_CFLAGS)
 libsu_la_LIBADD = 	$(REPLACE_LIBADD)
 libsu_la_DEPENDENCIES = $(REPLACE_LIBADD)
 

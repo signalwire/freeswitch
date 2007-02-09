@@ -60,9 +60,9 @@ char const sip_parser_version[] = VERSION;
 char const sip_version_2_0[] = "SIP/2.0";
 
 /** Default message class */
-extern msg_mclass_t sip_mclass[];
+extern msg_mclass_t const sip_mclass[];
 
-msg_mclass_t *sip_default_mclass(void)
+msg_mclass_t const *sip_default_mclass(void)
 {
   return sip_mclass;
 }

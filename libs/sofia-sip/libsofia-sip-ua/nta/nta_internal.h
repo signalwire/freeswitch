@@ -108,7 +108,7 @@ struct nta_agent_s
   uint32_t              sa_nw_updates; /* Shall we enable network detector? */
 
   uint32_t              sa_flags;	/**< Message flags */
-  msg_mclass_t         *sa_mclass;
+  msg_mclass_t const   *sa_mclass;
 
   sip_contact_t        *sa_contact;
   sip_via_t            *sa_vias;   /**< @Via headers for all transports */

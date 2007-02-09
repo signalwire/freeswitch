@@ -133,6 +133,8 @@ int test_register_to_proxy(struct context *ctx)
 	   NUTAG_KEEPALIVE(1000),
 	   NUTAG_M_DISPLAY("A&A"),
 	   NUTAG_M_USERNAME("a"),
+	   NUTAG_M_PARAMS("foo=bar"),
+	   NUTAG_M_FEATURES("q=0.9"),
 	   SIPTAG_CSEQ(cseq),
 	   TAG_END());
   run_a_until(ctx, -1, save_until_final_response);
@@ -161,6 +163,8 @@ int test_register_to_proxy(struct context *ctx)
     /* VC does not dig \" with TEST_S() */
   TEST_S(sip->sip_contact->m_display, expect_m_display); }
   TEST_S(sip->sip_contact->m_url->url_user, "a");
+  TEST_1(strstr(sip->sip_contact->m_url->url_params, "foo=bar"));
+  TEST_S(sip->sip_contact->m_q, "0.9");
   TEST(sip->sip_cseq->cs_seq, 14);
 
   if (ctx->nat) {
@@ -222,8 +226,12 @@ int test_register_to_proxy(struct context *ctx)
   TEST_1(c_reg->nh = nua_handle(c->nua, c_reg, TAG_END()));
 
   REGISTER(c, c_reg, c_reg->nh, SIPTAG_TO(c->to), 
+	   NUTAG_OUTBOUND(NULL),
 	   NUTAG_M_DISPLAY("C"),
 	   NUTAG_M_USERNAME("c"),
+	   NUTAG_M_PARAMS("c=1"),
+	   NUTAG_M_FEATURES("q=0.987;expires=5"),
+	   NUTAG_CALLEE_CAPS(1),
 	   SIPTAG_EXPIRES_STR("5"), /* Test 423 negotiation */
 	   TAG_END());
   run_abc_until(ctx, -1, save_events, -1, save_events, 
@@ -254,6 +262,9 @@ int test_register_to_proxy(struct context *ctx)
   TEST_1(sip->sip_contact);
   TEST_S(sip->sip_contact->m_display, "C");
   TEST_S(sip->sip_contact->m_url->url_user, "c");
+  TEST_1(strstr(sip->sip_contact->m_url->url_params, "c=1"));
+  TEST_S(sip->sip_contact->m_q, "0.987");
+  TEST_1(msg_header_find_param(sip->sip_contact->m_common, "methods="));
   TEST_1(!e->next);
   free_events_in_list(ctx, c->events);
 
@@ -688,6 +699,7 @@ int test_unregister(struct context *ctx)
   UNREGISTER(c, c->call, c->call->nh, SIPTAG_TO(c->to), 
 	     NUTAG_M_DISPLAY("C"),
 	     NUTAG_M_USERNAME("c"),
+	     NUTAG_M_PARAMS("c=1"),
 	     TAG_END());
   run_c_until(ctx, -1, save_until_final_response);
 

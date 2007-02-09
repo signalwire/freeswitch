@@ -23,19 +23,24 @@
  */
 
 /**@ingroup su_wait
- * @CFILE su_poll_port.c
+ * @CFILE su_win32_port.c
  *
- * Port implementation using poll()
+ * Port implementation using WSAEVENTs
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @author Kai Vehmanen <kai.vehmanen@nokia.com>
  *
- * @date Created: Tue Sep 14 15:51:04 1999 ppessi
+ * @date Created: Mon Feb  5 20:29:21 2007 ppessi
+ * @date Original: Tue Sep 14 15:51:04 1999 ppessi
  */
 
 #include "config.h"
 
-#if HAVE_POLL || HAVE_WIN32
+#define su_port_s su_wsaevent_port_s
+
+#include "sofia-sip/su.h"
+#include "su_port.h"
+#include "sofia-sip/su_alloc.h"
 
 #include <stdlib.h>
 #include <assert.h>
@@ -45,18 +50,14 @@
 #include <limits.h>
 #include <errno.h>
 
-#define su_port_s su_poll_port_s
+/** Port based on su_wait() aka WSAWaitForMultipleEvents. */
 
-#include "sofia-sip/su.h"
-#include "su_port.h"
-#include "sofia-sip/su_alloc.h"
+#define INDEX_MAX (64)
 
-/** Port based on poll(). */
+struct su_wsaevent_port_s {
+  su_socket_port_t sup_base[1];
 
-struct su_poll_port_s {
-  su_pthread_port_t sup_base[1];
-
-#define sup_home sup_base->sup_base->sup_home
+#define sup_home sup_base->sup_base->sup_base->sup_home
 
   unsigned         sup_multishot; /**< Multishot operation? */
 
@@ -68,13 +69,6 @@ struct su_poll_port_s {
   int              sup_n_waits; /**< Active su_wait_t in su_waits */
   int              sup_size_waits; /**< Size of allocated su_waits */
   int              sup_pri_offset; /**< Offset to prioritized waits */
-
-#if !SU_HAVE_WINSOCK
-#define INDEX_MAX (0x7fffffff)
-#else 
-  /* We use WSAWaitForMultipleEvents() */
-#define INDEX_MAX (64)
-#endif
 
   /** Indices from index returned by su_root_register() to tables below. 
    *
@@ -93,43 +87,43 @@ struct su_poll_port_s {
 
 };
 
-static void su_poll_port_decref(su_port_t *, int blocking, char const *who);
+static void su_wsevent_port_decref(su_port_t *, int blocking, char const *who);
 
-static int su_poll_port_register(su_port_t *self,
+static int su_wsevent_port_register(su_port_t *self,
 				 su_root_t *root, 
 				 su_wait_t *wait, 
 				 su_wakeup_f callback,
 				 su_wakeup_arg_t *arg,
 				 int priority);
-static int su_poll_port_unregister(su_port_t *port,
+static int su_wsevent_port_unregister(su_port_t *port,
 				   su_root_t *root, 
 				   su_wait_t *wait,	
 				   su_wakeup_f callback, 
 				   su_wakeup_arg_t *arg);
-static int su_poll_port_deregister(su_port_t *self, int i);
-static int su_poll_port_unregister_all(su_port_t *self, su_root_t *root);
-static int su_poll_port_eventmask(su_port_t *self, 
+static int su_wsevent_port_deregister(su_port_t *self, int i);
+static int su_wsevent_port_unregister_all(su_port_t *self, su_root_t *root);
+static int su_wsevent_port_eventmask(su_port_t *self, 
 				  int index,
 				  int socket,
 				  int events);
-static int su_poll_port_multishot(su_port_t *self, int multishot);
-static int su_poll_port_wait_events(su_port_t *self, su_duration_t tout);
-static char const *su_poll_port_name(su_port_t const *self);
+static int su_wsevent_port_multishot(su_port_t *self, int multishot);
+static int su_wsevent_port_wait_events(su_port_t *self, su_duration_t tout);
+static char const *su_wsevent_port_name(su_port_t const *self);
 
-su_port_vtable_t const su_poll_port_vtable[1] =
+su_port_vtable_t const su_wsevent_port_vtable[1] =
   {{
-      /* su_vtable_size: */ sizeof su_poll_port_vtable,
+      /* su_vtable_size: */ sizeof su_wsevent_port_vtable,
       su_pthread_port_lock,
       su_pthread_port_unlock,
       su_base_port_incref,
-      su_poll_port_decref,
+      su_wsevent_port_decref,
       su_base_port_gsource,
-      su_pthread_port_send,
-      su_poll_port_register,
-      su_poll_port_unregister,
-      su_poll_port_deregister,
-      su_poll_port_unregister_all,
-      su_poll_port_eventmask,
+      su_socket_port_send,
+      su_wsevent_port_register,
+      su_wsevent_port_unregister,
+      su_wsevent_port_deregister,
+      su_wsevent_port_unregister_all,
+      su_wsevent_port_eventmask,
       su_base_port_run,
       su_base_port_break,
       su_base_port_step,
@@ -137,33 +131,33 @@ su_port_vtable_t const su_poll_port_vtable[1] =
       su_base_port_add_prepoll,
       su_base_port_remove_prepoll,
       su_base_port_timers,
-      su_poll_port_multishot,
+      su_wsevent_port_multishot,
       su_base_port_threadsafe,
       su_base_port_yield,
-      su_poll_port_wait_events,
+      su_wsevent_port_wait_events,
       su_base_port_getmsgs,
       su_base_port_getmsgs_from,
-      su_poll_port_name,
+      su_wsevent_port_name,
       su_base_port_start_shared,
       su_pthread_port_wait,
       su_pthread_port_execute,
     }};
 
-static char const *su_poll_port_name(su_port_t const *self)
+static char const *su_wsevent_port_name(su_port_t const *self)
 {
   return "poll";
 }
 
-static void su_poll_port_deinit(void *arg)
+static void su_wsevent_port_deinit(void *arg)
 {
   su_port_t *self = arg;
 
-  SU_DEBUG_9(("%s(%p) called\n", "su_poll_port_deinit", self));
+  SU_DEBUG_9(("%s(%p) called\n", "su_wsevent_port_deinit", self));
 
-  su_pthread_port_deinit(self);
+  su_socket_port_deinit(self->sup_base);
 }
 
-static void su_poll_port_decref(su_port_t *self, int blocking, char const *who)
+static void su_wsevent_port_decref(su_port_t *self, int blocking, char const *who)
 {
   su_base_port_decref(self, blocking, who);
 }
@@ -189,7 +183,7 @@ static void su_poll_port_decref(su_port_t *self, int blocking, char const *who)
  *   Positive index of the wait object, 
  *   or -1 upon an error.
  */
-int su_poll_port_register(su_port_t *self,
+int su_wsevent_port_register(su_port_t *self,
 			  su_root_t *root, 
 			  su_wait_t *wait, 
 			  su_wakeup_f callback,
@@ -311,7 +305,7 @@ int su_poll_port_register(su_port_t *self,
 }
 
 /** Deregister a su_wait_t object. */
-static int su_poll_port_deregister0(su_port_t *self, int i, int destroy_wait)
+static int su_wsevent_port_deregister0(su_port_t *self, int i, int destroy_wait)
 {
   int n, N, *indices, *reverses;
 
@@ -372,9 +366,8 @@ static int su_poll_port_deregister0(su_port_t *self, int i, int destroy_wait)
 
 /** Unregister a su_wait_t object.
  *  
- *  The function su_poll_port_unregister() unregisters a su_wait_t object. The
- *  wait object, a callback function and a argument are removed from the
- *  port object.
+ * Unregisters a su_wait_t object. The wait object, a callback function and
+ * a argument are removed from the port object.
  * 
  * @param self     - pointer to port object
  * @param root     - pointer to root object
@@ -383,11 +376,11 @@ static int su_poll_port_deregister0(su_port_t *self, int i, int destroy_wait)
  * @param arg      - argument given to callback function when it is invoked 
  *                   (may be NULL)
  *
- * @deprecated Use su_poll_port_deregister() instead. 
+ * @deprecated Use su_wsevent_port_deregister() instead. 
  *
  * @return Nonzero index of the wait object, or -1 upon an error.
  */
-int su_poll_port_unregister(su_port_t *self,
+int su_wsevent_port_unregister(su_port_t *self,
 			    su_root_t *root, 
 			    su_wait_t *wait,	
 			    su_wakeup_f callback, /* XXX - ignored */
@@ -402,7 +395,7 @@ int su_poll_port_unregister(su_port_t *self,
 
   for (n = 0; n < N; n++) {
     if (SU_WAIT_CMP(wait[0], self->sup_waits[n]) == 0) {
-      return su_poll_port_deregister0(self, self->sup_reverses[n], 0);
+      return su_wsevent_port_deregister0(self, self->sup_reverses[n], 0);
     }
   }
 
@@ -422,7 +415,7 @@ int su_poll_port_unregister(su_port_t *self,
  * 
  * @return Index of the wait object, or -1 upon an error.
  */
-int su_poll_port_deregister(su_port_t *self, int i)
+int su_wsevent_port_deregister(su_port_t *self, int i)
 {
   su_wait_t wait[1] = { SU_WAIT_INIT };
   int retval;
@@ -436,7 +429,7 @@ int su_poll_port_deregister(su_port_t *self, int i)
   if (self->sup_indices[i] < 0)
     return su_seterrno(EBADF);
     
-  retval = su_poll_port_deregister0(self, i, 1);
+  retval = su_wsevent_port_deregister0(self, i, 1);
 
   su_wait_destroy(wait);
 
@@ -447,15 +440,15 @@ int su_poll_port_deregister(su_port_t *self, int i)
 /** @internal
  * Unregister all su_wait_t objects.
  *
- * The function su_poll_port_unregister_all() unregisters all su_wait_t objects
- * and destroys all queued timers associated with given root object.
+ * Unregisters all su_wait_t objects and destroys all queued timers
+ * associated with given root object.
  * 
  * @param  self     - pointer to port object
  * @param  root     - pointer to root object
  * 
  * @return Number of wait objects removed.
  */
-int su_poll_port_unregister_all(su_port_t *self, 
+int su_wsevent_port_unregister_all(su_port_t *self, 
 				su_root_t *root)
 {
   int i, j, index, N;
@@ -516,8 +509,7 @@ int su_poll_port_unregister_all(su_port_t *self,
 
 /**Set mask for a registered event. @internal
  *
- * The function su_poll_port_eventmask() sets the mask describing events that can
- * signal the registered callback.
+ * Sets the mask describing events that can signal the registered callback.
  *
  * @param port   pointer to port object
  * @param index  registration index
@@ -527,7 +519,7 @@ int su_poll_port_unregister_all(su_port_t *self,
  * @retval 0 when successful,
  * @retval -1 upon an error.
  */
-int su_poll_port_eventmask(su_port_t *self, int index, int socket, int events)
+int su_wsevent_port_eventmask(su_port_t *self, int index, int socket, int events)
 {
   int n;
   assert(self);
@@ -557,7 +549,7 @@ int su_poll_port_eventmask(su_port_t *self, int index, int socket, int events)
  * @retval -1 an error occurred
  */
 static
-int su_poll_port_multishot(su_port_t *self, int multishot)
+int su_wsevent_port_multishot(su_port_t *self, int multishot)
 {
   if (multishot < 0)
     return self->sup_multishot;
@@ -577,7 +569,7 @@ int su_poll_port_multishot(su_port_t *self, int multishot)
  * @return number of events handled
  */
 static
-int su_poll_port_wait_events(su_port_t *self, su_duration_t tout)
+int su_wsevent_port_wait_events(su_port_t *self, su_duration_t tout)
 {
   int i, events = 0;
   su_wait_t *waits = self->sup_waits;
@@ -620,68 +612,32 @@ int su_poll_port_wait_events(su_port_t *self, su_duration_t tout)
   return events;
 }
 
-#if 0
-/** @internal
- *  Prints out the contents of the port.
- *
- * @param self pointer to a port
- * @param f    pointer to a file (if @c NULL, uses @c stdout).
- */
-void su_port_dump(su_port_t const *self, FILE *f)
-{
-  int i;
-#define IS_WAIT_IN(x) (((x)->events & SU_WAIT_IN) ? "IN" : "")
-#define IS_WAIT_OUT(x) (((x)->events & SU_WAIT_OUT) ? "OUT" : "")
-#define IS_WAIT_ACCEPT(x) (((x)->events & SU_WAIT_ACCEPT) ? "ACCEPT" : "")
-
-  if (f == NULL)
-    f = stdout;
-
-  fprintf(f, "su_port_t at %p:\n", self);
-  fprintf(f, "\tport is%s running\n", self->sup_running ? "" : "not ");
-#if SU_HAVE_PTHREADS
-  fprintf(f, "\tport tid %p\n", (void *)self->sup_tid);
-  fprintf(f, "\tport mbox %d (%s%s%s)\n", self->sup_mbox[0],
-	  IS_WAIT_IN(&self->sup_mbox_wait),
-	  IS_WAIT_OUT(&self->sup_mbox_wait),
-	  IS_WAIT_ACCEPT(&self->sup_mbox_wait));
-#endif
-  fprintf(f, "\t%d wait objects\n", self->sup_n_waits);
-  for (i = 0; i < self->sup_n_waits; i++) {
-    
-  }
-}
-
-#endif
-
-/** Create a port using epoll() or poll().
- */
-su_port_t *su_poll_port_create(void)
+/** Create a port using WSAEVENTs and WSAWaitForMultipleEvents. */
+su_port_t *su_wsaevent_port_create(void)
 {
   su_port_t *self = su_home_new(sizeof *self);
 
   if (!self)
     return self;
 
-  if (su_home_destructor(su_port_home(self), su_poll_port_deinit) < 0)
+  if (su_home_destructor(su_port_home(self), su_wsevent_port_deinit) < 0)
     return su_home_unref(su_port_home(self)), NULL;
 
   self->sup_multishot = SU_ENABLE_MULTISHOT_POLL;
 
-  if (su_pthread_port_init(self, su_poll_port_vtable) < 0)
+  if (su_socket_port_init(self->sup_base, su_wsevent_port_vtable) < 0)
     return su_home_unref(su_port_home(self)), NULL;
 
   return self;
 }
 
-int su_poll_clone_start(su_root_t *parent,
-			su_clone_r return_clone,
-			su_root_magic_t *magic,
-			su_root_init_f init,
-			su_root_deinit_f deinit)
+int su_wsaevent_clone_start(su_root_t *parent,
+			    su_clone_r return_clone,
+			    su_root_magic_t *magic,
+			    su_root_init_f init,
+			    su_root_deinit_f deinit)
 {
-  return su_pthreaded_port_start(su_poll_port_create, 
+  return su_pthreaded_port_start(su_wsaevent_port_create, 
 				 parent, return_clone, magic, init, deinit);
 }
 
-#endif  /* HAVE_POLL */

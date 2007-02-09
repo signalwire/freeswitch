@@ -5,20 +5,16 @@ Release notes for current version of Sofia-SIP
 Changes since last release
 --------------------------
 
-<changes since last written in freshmeat.net "Changes:" style;
- and in less than 10 lines />
-
-Bugs in blaa and foo have been fixed. The stack now supports
-use of foobar...
+Support for request queuing has been added to the high-level user-agent 
+API. Various portability improvements have been made related to Linux, 
+Mac OS X, Windows and Solaris ports. SIP registrations have been 
+modified to utilize persistent transport connections. The GObject 
+interface to 'nua' (nua-glib) has been dropped from the package and is 
+now distributed separately. Severe bugs in 'su', 'nua', 'nta', 'stun' and 
+'su-glib' modules have been fixed.
 
 API/ABI changes and versioning
 ------------------------------
-
-<see previous release notes at
- http://sofia-sip.sourceforge.net/relnotes/ for examples ;
- - should include all changes to public headers, and 
-   other important information to developers; 
- - and should be updated _continuously_! />
 
 New features in API are marked with Doxytag macro @NEW_1_12_5.
 Experimental features are marked with Doxytag macro @EXP_1_12_5.
@@ -38,8 +34,9 @@ libsofia-sip-ua:
 - Added sip_is_allowed() function and k_bitmap field to the 
   sip_allow_t structure 
 - Added sl_header_log implementation, updated its prototype
-- Added experimental SIP headers and related functions, 
-  enabled with ./configure option --enable-experimental 
+- Added experimental SIP headers Suppress-Notify-If-Match and
+  Suppress-Body-If-Match and functions related to them,
+  enabled with ./configure option --enable-experimental
 - Added SIP header Refer-Sub and related functions
 - Added <sofia-sip/sip_extra.h> include file
 - Added auc_info() function (sofia-sip/auth_client.h)
@@ -61,33 +58,31 @@ libsofia-sip-ua-glib:
   is now considered stable and will be API/ABI compatible with later 
   releases in the 1.12.x series.
 - ABI has been modified and applications built against 1.12.4 and earlier 
-  releases need to be rebuilt.
+  releases, need to be rebuilt.
 - Added su_glib_prefer_gsource() which makes glib-based su_port_t
   implementation the default choice when su_root_create() is called
 
 Contributors to this release
 ----------------------------
 
-<list of people who contributed to _this_ release
- - update as people's patches are added, or when you commit stuff
- - current development team members (see AUTHORS) may be omitted
- - name of the contributor should be enough (email addresses in AUTHORS),
-   plus a brief description of what was contributed
- - roughly sorted by number of patches accepted
-/> 
-
-- **template**: First Surname (patch to nua/soa/msg)
 - Petteri Puolakka (patch to stun)
-- Mikhail Zabluev (patch to su-glib mainloop integration)
+- Mikhail Zabaluev (patch to su-glib mainloop integration)
 - Michael Jerris (patch to url parsing # in sip/sips userpart)
 - Colin Whittaker (TPTAG_TOS())
 - Roman Filonenko (TPTAG_LOG(), TPTAG_DUMP(), 
 	           patch to query DNS-servers with IP-Helper on win32)
+- Remi Denis-Courmont (patch to network change API)
+- Martti Mela (poll() emulation with select(), IPv6 and OS X fixes)
+- Kai Vehmanen (persistent registrations, release management)
+- Pekka Pessi (all the rest)
 
 See the AUTHORS file in the distribution package.
 
 Notes on new features
 ---------------------
+
+- The su_root_t reactor uses different implementation (epoll, poll or select
+  on Linux), depending on SU_PORT environment variable.
 
 - nua now supports request queuing, for instance, an application can send
   overlapping BYE and NOTIFY requests. The stack engine takes care of
@@ -115,22 +110,12 @@ Notes on new features
   STUN and HTTP support. See 'docs/devel_platform_notes.txt' for some
   additional notes to distributors.
 
-<information about major new features
- - new/changed/removed functionality
- - links to further documentation
- - section may be omitted for minor releases
-/> 
-
 Bugs fixed in this release
 --------------------------
 
-< notable bugs fixed in this release
- - check the sf.net bug tracker; see closed bugs,
-   sorted by closing date
- - other bugs as fixed in CVS/darcs
-/>
-
-- **template**: #9499652 sf.net bug item title
+- Fixed su_from_create() returning a sip_to_t instance. Problem reported by
+  Ludovico Cavedon.
+- Partially fixed problem #1633969 with too frequent timer
 - Fixed problem in dialog matching. Problem reported by Fabio Margarido.
 - Fixed #1624446 - su_wait_clone() (and nua_destroy()) blocking for ever if
   the root object was created using su_glib

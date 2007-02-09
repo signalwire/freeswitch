@@ -559,18 +559,18 @@ int api_test_stats(agent_t *ag)
 
   nta_agent_t *nta;
 
-  uint32_t irq_hash = -1, orq_hash = -1, leg_hash = -1;
-  uint32_t recv_msg = -1, sent_msg = -1;
-  uint32_t recv_request = -1, recv_response = -1;
-  uint32_t bad_message = -1, bad_request = -1, bad_response = -1;
-  uint32_t drop_request = -1, drop_response = -1;
-  uint32_t client_tr = -1, server_tr = -1, dialog_tr = -1;
-  uint32_t acked_tr = -1, canceled_tr = -1;
-  uint32_t trless_request = -1, trless_to_tr = -1, trless_response = -1;
-  uint32_t trless_200 = -1, merged_request = -1;
-  uint32_t sent_request = -1, sent_response = -1;
-  uint32_t retry_request = -1, retry_response = -1, recv_retry = -1;
-  uint32_t tout_request = -1, tout_response = -1;
+  usize_t irq_hash = -1, orq_hash = -1, leg_hash = -1;
+  usize_t recv_msg = -1, sent_msg = -1;
+  usize_t recv_request = -1, recv_response = -1;
+  usize_t bad_message = -1, bad_request = -1, bad_response = -1;
+  usize_t drop_request = -1, drop_response = -1;
+  usize_t client_tr = -1, server_tr = -1, dialog_tr = -1;
+  usize_t acked_tr = -1, canceled_tr = -1;
+  usize_t trless_request = -1, trless_to_tr = -1, trless_response = -1;
+  usize_t trless_200 = -1, merged_request = -1;
+  usize_t sent_request = -1, sent_response = -1;
+  usize_t retry_request = -1, retry_response = -1, recv_retry = -1;
+  usize_t tout_request = -1, tout_response = -1;
 
   TEST_1(nta = nta_agent_create(ag->ag_root, (url_string_t *)"sip:*:*",
 				NULL, NULL, TAG_END()));
@@ -1301,10 +1301,10 @@ int main(int argc, char *argv[])
   }
 
   if (o_attach) {
-    char line[10];
+    char *response, line[10];
     printf("nua_test: pid %lu\n", (unsigned long)getpid());
     printf("<Press RETURN to continue>\n");
-    fgets(line, sizeof line, stdin);
+    response = fgets(line, sizeof line, stdin);
   }
 #if HAVE_ALARM
   else if (o_alarm) {

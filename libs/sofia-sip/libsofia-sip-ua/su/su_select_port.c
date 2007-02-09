@@ -25,12 +25,12 @@
 /**@ingroup su_wait
  * @CFILE su_select_port.c
  *
- * Port implementation using select(). NOT IMPLEMENTED YET!
+ * Port implementation using select().
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @author Kai Vehmanen <kai.vehmanen@nokia.com>
  *
- * @date Created: Tue Sep 14 15:51:04 1999 ppessi
+ * @date Created: Fri Jan 26 17:56:34 2007 ppessi
  */
 
 #include "config.h"
@@ -51,63 +51,82 @@
 #include <limits.h>
 #include <errno.h>
 
+#if HAVE_WIN32
+#error winsock select() not supported yet
+#else
 #if HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #elif HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
 
+#include <sys/types.h>
+#include <unistd.h>
+
+#ifndef __NFDBITS
+#define __NFDBITS (8 * sizeof (long int))
+#endif
+
+#undef FDSETSIZE
+/* Size of fd set in bytes */
+#define FDSETSIZE(n) (((n) + __NFDBITS - 1) / __NFDBITS * (__NFDBITS / 8))
+#endif
+
 /** Port based on select(). */
 
 struct su_select_port_s {
-  su_pthread_port_t sup_base[1];
+  su_socket_port_t sup_base[1];
 
+#define sup_home sup_base->sup_base->sup_base->sup_home
+
+  /** epoll fd */
+  int              sup_epoll;
   unsigned         sup_multishot; /**< Multishot operation? */
 
   unsigned         sup_registers; /** Counter incremented by 
 				      su_port_register() or 
 				      su_port_unregister()
 				   */
+  int              sup_n_registrations;
+  int              sup_max_index; /**< Indexes are equal or smaller than this */
+  int              sup_size_indices; /**< Size of allocated index table */
 
-  int              sup_n_waits; /**< Active su_wait_t in su_waits */
-  int              sup_size_waits; /**< Size of allocated su_waits */
-  int              sup_pri_offset; /**< Offset to prioritized waits */
+  /** Structure containing registration data */
+  struct su_select_register {
+    struct su_select_register *ser_next; /* Next in free list */
+    su_wakeup_f     ser_cb; 
+    su_wakeup_arg_t*ser_arg; 
+    su_root_t      *ser_root; 
+    int             ser_id; /** registration identifier */
+    su_wait_t       ser_wait[1];
+  } **sup_indices;
 
-  /** Indices from index returned by su_root_register() to tables below. 
-   *
-   * Free elements are negative. Free elements form a list, value of free
-   * element is (0 - index of next free element).
-   *
-   * First element sup_indices[0] points to first free element. 
-   */
-  int             *sup_indices;
-
-  int             *sup_reverses; /** Reverse index */
-  su_wakeup_f     *sup_wait_cbs; 
-  su_wakeup_arg_t**sup_wait_args; 
-  su_root_t      **sup_wait_roots; 
-  su_wait_t       *sup_waits; 
+  int               sup_maxfd, sup_allocfd;
+  
+  fd_set           *sup_readfds, *sup_readfds2;
+  fd_set           *sup_writefds, *sup_writefds2;
 };
 
-static void su_select_port_decref(su_port_t *, int blocking, char const *who);
-
+static void su_select_port_decref(su_port_t *self,
+				 int blocking,
+				 char const *who);
 static int su_select_port_register(su_port_t *self,
-				 su_root_t *root, 
-				 su_wait_t *wait, 
-				 su_wakeup_f callback,
-				 su_wakeup_arg_t *arg,
-				 int priority);
+				  su_root_t *root, 
+				  su_wait_t *wait, 
+				  su_wakeup_f callback,
+				  su_wakeup_arg_t *arg,
+				  int priority);
 static int su_select_port_unregister(su_port_t *port,
-				   su_root_t *root, 
-				   su_wait_t *wait,	
-				   su_wakeup_f callback, 
-				   su_wakeup_arg_t *arg);
+				    su_root_t *root, 
+				    su_wait_t *wait,	
+				    su_wakeup_f callback, 
+				    su_wakeup_arg_t *arg);
 static int su_select_port_deregister(su_port_t *self, int i);
 static int su_select_port_unregister_all(su_port_t *self, su_root_t *root);
 static int su_select_port_eventmask(su_port_t *self, 
-				    int index,
-				    int socket,
-				    int events);
+				   int index,
+				   int socket,
+				   int events);
 static int su_select_port_multishot(su_port_t *self, int multishot);
 static int su_select_port_wait_events(su_port_t *self, su_duration_t tout);
 static char const *su_select_port_name(su_port_t const *self);
@@ -120,7 +139,7 @@ su_port_vtable_t const su_select_port_vtable[1] =
       su_base_port_incref,
       su_select_port_decref,
       su_base_port_gsource,
-      su_pthread_port_send,
+      su_socket_port_send,
       su_select_port_register,
       su_select_port_unregister,
       su_select_port_deregister,
@@ -142,12 +161,17 @@ su_port_vtable_t const su_select_port_vtable[1] =
       su_select_port_name,
       su_base_port_start_shared,
       su_pthread_port_wait,
-      su_pthread_port_execute
+      su_pthread_port_execute,
     }};
 
 static char const *su_select_port_name(su_port_t const *self)
 {
   return "select";
+}
+
+static void su_select_port_decref(su_port_t *self, int blocking, char const *who)
+{
+  (void)su_base_port_decref(self, blocking, who);
 }
 
 static void su_select_port_deinit(void *arg)
@@ -156,33 +180,12 @@ static void su_select_port_deinit(void *arg)
 
   SU_DEBUG_9(("%s(%p) called\n", "su_select_port_deinit", (void *)self));
 
-  su_pthread_port_deinit(self);
-
-  if (self->sup_waits) 
-    free(self->sup_waits), self->sup_waits = NULL;
-  if (self->sup_wait_cbs)
-    free(self->sup_wait_cbs), self->sup_wait_cbs = NULL;
-  if (self->sup_wait_args)
-    free(self->sup_wait_args), self->sup_wait_args = NULL;
-  if (self->sup_wait_roots)
-    free(self->sup_wait_roots), self->sup_wait_roots = NULL;
-  if (self->sup_reverses)
-    free(self->sup_reverses), self->sup_reverses = NULL;
-  if (self->sup_indices)
-    free(self->sup_indices), self->sup_indices = NULL;
-
-  SU_DEBUG_9(("%s(%p) freed registrations\n",
-	      "su_select_port_deinit", (void *)self));
-}
-
-static void su_select_port_decref(su_port_t *self, int blocking, char const *who)
-{
-  su_base_port_decref(self, blocking, who);
+  su_socket_port_deinit(self->sup_base);
 }
 
 /** @internal
  *
- *  Register a @c su_wait_t object. The wait object, a callback function and
+ *  Register a #su_wait_t object. The wait object, a callback function and
  *  an argument pointer is stored in the port object.  The callback function
  *  will be called when the wait object is signaled.
  *
@@ -202,179 +205,154 @@ static void su_select_port_decref(su_port_t *self, int blocking, char const *who
  *   or -1 upon an error.
  */
 int su_select_port_register(su_port_t *self,
-			  su_root_t *root, 
-			  su_wait_t *wait, 
-			  su_wakeup_f callback,
-			  su_wakeup_arg_t *arg,
-			  int priority)
+			   su_root_t *root, 
+			   su_wait_t *wait, 
+			   su_wakeup_f callback,
+			   su_wakeup_arg_t *arg,
+			   int priority)
 {
   int i, j, n;
+  struct su_select_register *ser;
+  struct su_select_register **indices = self->sup_indices;
+  int allocfd = self->sup_allocfd;
+  fd_set *readfds = self->sup_readfds, *readfds2 = self->sup_readfds2;
+  fd_set *writefds = self->sup_writefds, *writefds2 = self->sup_writefds2;
 
   assert(su_port_own_thread(self));
 
-  n = self->sup_n_waits;
+  n = self->sup_size_indices;
 
   if (n >= SU_WAIT_MAX)
     return su_seterrno(ENOMEM);
 
-  if (n >= self->sup_size_waits) {
-    /* Reallocate size arrays */
-    int size;
-    int *indices;
-    int *reverses;
-    su_wait_t *waits;
-    su_wakeup_f *wait_cbs;
-    su_wakeup_arg_t **wait_args;
-    su_root_t **wait_tasks;
-
-    if (self->sup_size_waits == 0)
-      size = su_root_size_hint;
-    else 
-      size = 2 * self->sup_size_waits;
-
-    if (size < SU_WAIT_MIN)
-      size = SU_WAIT_MIN;
-
-    /* Too large */
-    if (-3 - size > 0)
-      return (errno = ENOMEM), -1;
-
-    indices = realloc(self->sup_indices, (size + 1) * sizeof(*indices));
-    if (indices) {
-      self->sup_indices = indices;
-
-      if (self->sup_size_waits == 0)
-	indices[0] = -1;
-
-      for (i = self->sup_size_waits + 1; i <= size; i++)
-	indices[i] = -1 - i;
-    }
-
-    reverses = realloc(self->sup_reverses, size * sizeof(*waits));
-    if (reverses) {
-      for (i = self->sup_size_waits; i < size; i++)
-	reverses[i] = -1;
-      self->sup_reverses = reverses;
-    }
-      
-    waits = realloc(self->sup_waits, size * sizeof(*waits));
-    if (waits)
-      self->sup_waits = waits;
-
-    wait_cbs = realloc(self->sup_wait_cbs, size * sizeof(*wait_cbs));
-    if (wait_cbs)
-      self->sup_wait_cbs = wait_cbs;
-
-    wait_args = realloc(self->sup_wait_args, size * sizeof(*wait_args));
-    if (wait_args)
-      self->sup_wait_args = wait_args;
-
-    /* Add sup_wait_roots array, if needed */
-    wait_tasks = realloc(self->sup_wait_roots, size * sizeof(*wait_tasks));
-    if (wait_tasks) 
-      self->sup_wait_roots = wait_tasks;
-
-    if (!(indices && 
-	  reverses && waits && wait_cbs && wait_args && wait_tasks)) {
-      return -1;
-    }
-
-    self->sup_size_waits = size;
-  }
-
-  i = -self->sup_indices[0]; assert(i <= self->sup_size_waits);
-
-  if (priority > 0) {
-    /* Insert */
-    for (n = self->sup_n_waits; n > 0; n--) {
-      j = self->sup_reverses[n-1]; assert(self->sup_indices[j] == n - 1);
-      self->sup_indices[j] = n;
-      self->sup_reverses[n] = j;
-      self->sup_waits[n] = self->sup_waits[n-1];
-      self->sup_wait_cbs[n] = self->sup_wait_cbs[n-1];
-      self->sup_wait_args[n] = self->sup_wait_args[n-1];
-      self->sup_wait_roots[n] = self->sup_wait_roots[n-1];	
-    }
-
-    self->sup_pri_offset++;
-  }
-  else {
-    /* Append - no need to move anything */
-    n = self->sup_n_waits;
-  }
-
-  self->sup_n_waits++;
-
-  self->sup_indices[0] = self->sup_indices[i];  /* Free index */
-  self->sup_indices[i] = n;
-
-  self->sup_reverses[n] = i;
-  self->sup_waits[n] = *wait;
-  self->sup_wait_cbs[n] = callback;
-  self->sup_wait_args[n] = arg;
-  self->sup_wait_roots[n] = root;
-
   self->sup_registers++;
 
-  /* We return -1 or positive integer */
+  if (wait->fd >= allocfd) 
+    allocfd += __NFDBITS;		/* long at a time */
 
-  return i;
+  if (allocfd >= self->sup_allocfd) {
+    size_t bytes = FDSETSIZE(allocfd);
+    size_t bytes0 = FDSETSIZE(self->sup_allocfd);
+    /* (Re)allocate fd_sets  */
+
+    readfds = su_realloc(self->sup_home, readfds, bytes);
+    if (readfds) self->sup_readfds = readfds;
+    readfds2 = su_realloc(self->sup_home, readfds2, bytes);
+    if (readfds2) self->sup_readfds2 = readfds2;
+    if (!readfds || !readfds2)
+      return -1;
+
+    writefds = su_realloc(self->sup_home, writefds, bytes);
+    if (writefds) self->sup_writefds = writefds;
+    writefds2 = su_realloc(self->sup_home, writefds2, bytes);
+    if (writefds2) self->sup_writefds2 = writefds2;
+    if (!writefds || !writefds2)
+      return -1;
+
+    memset((char *)readfds + bytes0, 0, bytes - bytes0);
+    memset((char *)writefds + bytes0, 0, bytes - bytes0);
+
+    self->sup_allocfd = allocfd;
+  }
+
+  ser = indices[0];
+
+  if (!ser) {
+    su_home_t *h = su_port_home(self);
+
+    i = self->sup_max_index, j = i == 0 ? 15 : i + 16;
+    
+    if (j >= self->sup_size_indices) {
+      /* Reallocate index table */
+      n = n < 1024 ? 2 * n : n + 1024;
+      indices = su_realloc(h, indices, n * sizeof(indices[0]));
+      if (!indices)
+	return -1;
+      self->sup_indices = indices;
+      self->sup_size_indices = n;
+    }
+
+    /* Allocate registrations */
+    ser = su_zalloc(h, (j - i) * (sizeof *ser));
+    if (!ser)
+      return -1;
+
+    indices[0] = ser;
+
+    for (i++; i <= j; i++) {
+      ser->ser_id = i;
+      ser->ser_next = i < j ? ser + 1 : NULL;
+      indices[i] = ser++;
+    }
+
+    self->sup_max_index = j;
+
+    ser = indices[0];
+  }
+
+  i = ser->ser_id;
+
+  indices[0] = ser->ser_next;
+  
+  ser->ser_next = NULL;
+  *ser->ser_wait = *wait;
+  ser->ser_cb = callback;
+  ser->ser_arg = arg;
+  ser->ser_root = root;
+
+  if (wait->events & SU_WAIT_IN)
+    FD_SET(wait->fd, readfds);
+  if (wait->events & SU_WAIT_OUT)
+    FD_SET(wait->fd, writefds);
+
+  if (wait->fd >= self->sup_maxfd)
+    self->sup_maxfd = wait->fd + 1;
+
+  self->sup_n_registrations++;
+
+  return i;			/* return index */
+}
+
+static void su_select_port_update_maxfd(su_port_t *self)
+{
+  int i;
+  su_socket_t maxfd = 0;
+
+  for (i = 1; i <= self->sup_max_index; i++) {
+    if (!self->sup_indices[i]->ser_cb)
+      continue;
+    if (maxfd <= self->sup_indices[i]->ser_wait->fd)
+      maxfd = self->sup_indices[i]->ser_wait->fd + 1;
+  }
+
+  self->sup_maxfd = maxfd;
 }
 
 /** Deregister a su_wait_t object. */
 static int su_select_port_deregister0(su_port_t *self, int i, int destroy_wait)
 {
-  int n, N, *indices, *reverses;
+  struct su_select_register **indices = self->sup_indices;
+  struct su_select_register *ser;
 
-  indices = self->sup_indices;
-  reverses = self->sup_reverses;
-
-  n = indices[i]; assert(n >= 0);
-
-  if (destroy_wait)
-    su_wait_destroy(&self->sup_waits[n]);
-  
-  N = --self->sup_n_waits;
-  
-  if (n < self->sup_pri_offset) {
-    int j = --self->sup_pri_offset;
-    if (n != j) {
-      assert(reverses[j] > 0);
-      assert(indices[reverses[j]] == j);
-      indices[reverses[j]] = n;
-      reverses[n] = reverses[j];
-
-      self->sup_waits[n] = self->sup_waits[j];
-      self->sup_wait_cbs[n] = self->sup_wait_cbs[j];
-      self->sup_wait_args[n] = self->sup_wait_args[j];
-      self->sup_wait_roots[n] = self->sup_wait_roots[j];
-      n = j;
-    }
+  ser = self->sup_indices[i];
+  if (ser == NULL || ser->ser_cb == NULL) {
+    su_seterrno(ENOENT);
+    return -1;
   }
 
-  if (n < N) {
-    assert(reverses[N] > 0);
-    assert(indices[reverses[N]] == N);
+  assert(ser->ser_id == i);
 
-    indices[reverses[N]] = n;
-    reverses[n] = reverses[N];
+  FD_CLR(ser->ser_wait->fd, self->sup_readfds);
+  FD_CLR(ser->ser_wait->fd, self->sup_writefds);
 
-    self->sup_waits[n] = self->sup_waits[N];
-    self->sup_wait_cbs[n] = self->sup_wait_cbs[N];
-    self->sup_wait_args[n] = self->sup_wait_args[N];
-    self->sup_wait_roots[n] = self->sup_wait_roots[N];
-    n = N;
-  }
+  if (ser->ser_wait->fd + 1 >= self->sup_maxfd)
+    self->sup_maxfd = 0;
 
-  reverses[n] = -1;
-  memset(&self->sup_waits[n], 0, sizeof self->sup_waits[n]);
-  self->sup_wait_cbs[n] = NULL;
-  self->sup_wait_args[n] = NULL;
-  self->sup_wait_roots[n] = NULL;
-  
-  indices[i] = indices[0];
-  indices[0] = -i;
+  memset(ser, 0, sizeof *ser);
+  ser->ser_id = i;
+  ser->ser_next = indices[0], indices[0] = ser;
 
+  self->sup_n_registrations--;
   self->sup_registers++;
 
   return i;
@@ -383,9 +361,9 @@ static int su_select_port_deregister0(su_port_t *self, int i, int destroy_wait)
 
 /** Unregister a su_wait_t object.
  *  
- *  The function su_select_port_unregister() unregisters a su_wait_t object. The
- *  wait object, a callback function and a argument are removed from the
- *  port object.
+ * The function su_select_port_unregister() unregisters a su_wait_t object. 
+ * The registration defined by the wait object, the callback function and
+ * the argument pointer are removed from the port object.
  * 
  * @param self     - pointer to port object
  * @param root     - pointer to root object
@@ -399,22 +377,27 @@ static int su_select_port_deregister0(su_port_t *self, int i, int destroy_wait)
  * @return Nonzero index of the wait object, or -1 upon an error.
  */
 int su_select_port_unregister(su_port_t *self,
-			    su_root_t *root, 
-			    su_wait_t *wait,	
-			    su_wakeup_f callback, /* XXX - ignored */
-			    su_wakeup_arg_t *arg)
+			     su_root_t *root, 
+			     su_wait_t *wait,	
+			     su_wakeup_f callback, /* XXX - ignored */
+			     su_wakeup_arg_t *arg)
 {
-  int n, N;
+  int i, I;
+
+  struct su_select_register *ser;
 
   assert(self);
   assert(su_port_own_thread(self));
 
-  N = self->sup_n_waits;
+  I = self->sup_max_index;
 
-  for (n = 0; n < N; n++) {
-    if (SU_WAIT_CMP(wait[0], self->sup_waits[n]) == 0) {
-      return su_select_port_deregister0(self, self->sup_reverses[n], 0);
-    }
+  for (i = 1; i <= I; i++) {
+    ser = self->sup_indices[i];
+
+    if (ser->ser_cb &&
+	arg == ser->ser_arg &&
+	SU_WAIT_CMP(wait[0], ser->ser_wait[0]) == 0)
+      return su_select_port_deregister0(self, ser->ser_id, 0);
   }
 
   su_seterrno(ENOENT);
@@ -435,100 +418,56 @@ int su_select_port_unregister(su_port_t *self,
  */
 int su_select_port_deregister(su_port_t *self, int i)
 {
-  su_wait_t wait[1] = { SU_WAIT_INIT };
-  int retval;
+  struct su_select_register *ser;
 
-  assert(self);
-  assert(su_port_own_thread(self));
-
-  if (i <= 0 || i > self->sup_size_waits)
+  if (i <= 0 || i > self->sup_max_index)
     return su_seterrno(EBADF);
 
-  if (self->sup_indices[i] < 0)
+  ser = self->sup_indices[i];
+  if (!ser->ser_cb)
     return su_seterrno(EBADF);
-    
-  retval = su_select_port_deregister0(self, i, 1);
 
-  su_wait_destroy(wait);
-
-  return retval;
+  return su_select_port_deregister0(self, i, 1);
 }
 
 
 /** @internal
- * Unregister all su_wait_t objects.
+ * Unregister all su_wait_t objects of given su_root_t instance.
  *
- * The function su_select_port_unregister_all() unregisters all su_wait_t objects
- * and destroys all queued timers associated with given root object.
+ * The function su_select_port_unregister_all() unregisters all su_wait_t
+ * objects associated with given root object.
  * 
  * @param  self     - pointer to port object
  * @param  root     - pointer to root object
  * 
  * @return Number of wait objects removed.
  */
-int su_select_port_unregister_all(su_port_t *self, 
-				su_root_t *root)
+int su_select_port_unregister_all(su_port_t *self, su_root_t *root)
 {
-  int i, j, index, N;
-  int             *indices, *reverses;
-  su_wait_t       *waits;
-  su_wakeup_f     *wait_cbs;
-  su_wakeup_arg_t**wait_args;
-  su_root_t      **wait_roots;
+  int i, I, n;
 
+  struct su_select_register *ser;
+
+  assert(self); assert(root);
   assert(su_port_own_thread(self));
 
-  N          = self->sup_n_waits;
-  indices    = self->sup_indices;
-  reverses   = self->sup_reverses;
-  waits      = self->sup_waits; 
-  wait_cbs   = self->sup_wait_cbs; 
-  wait_args  = self->sup_wait_args;
-  wait_roots = self->sup_wait_roots; 
-  
-  for (i = j = 0; i < N; i++) {
-    index = reverses[i]; assert(index > 0 && indices[index] == i);
+  I = self->sup_max_index;
 
-    if (wait_roots[i] == root) {
-      /* XXX - we should free all resources associated with this, too */
-      if (i < self->sup_pri_offset)
-	self->sup_pri_offset--;
-
-      indices[index] = indices[0];
-      indices[0] = -index;
+  for (i = 1, n = 0; i <= I; i++) {
+    ser = self->sup_indices[i];
+    if (ser->ser_root != root)
       continue;
-    }
-
-    if (i != j) {
-      indices[index] = j;
-      reverses[j]   = reverses[i];
-      waits[j]      = waits[i];
-      wait_cbs[j]   = wait_cbs[i];
-      wait_args[j]  = wait_args[i];
-      wait_roots[j] = wait_roots[i];
-    }
-    
-    j++;
+    su_select_port_deregister0(self, ser->ser_id, 0);
+    n++;
   }
-  
-  for (i = j; i < N; i++) {
-    reverses[i] = -1;
-    wait_cbs[i] = NULL;
-    wait_args[i] = NULL;
-    wait_roots[i] = NULL;
-  }
-  memset(&waits[j], 0, (char *)&waits[N] - (char *)&waits[j]);
 
-  self->sup_n_waits = j;
-  self->sup_registers++;
-
-  return N - j;
+  return n;
 }
 
 /**Set mask for a registered event. @internal
  *
- * The function su_select_port_eventmask() sets the mask describing events that can
- * signal the registered callback.
+ * The function su_select_port_eventmask() sets the mask describing events
+ * that can signal the registered callback.
  *
  * @param port   pointer to port object
  * @param index  registration index
@@ -538,19 +477,41 @@ int su_select_port_unregister_all(su_port_t *self,
  * @retval 0 when successful,
  * @retval -1 upon an error.
  */
-int su_select_port_eventmask(su_port_t *self, int index, int socket, int events)
+int su_select_port_eventmask(su_port_t *self,
+			     int index,
+			     int socket, int events)
 {
-  int n;
-  assert(self);
-  assert(su_port_own_thread(self));
+  struct su_select_register *ser;
 
-  if (index <= 0 || index > self->sup_size_waits)
-    return su_seterrno(EBADF);
-  n = self->sup_indices[index];
-  if (n < 0)
+  if (index <= 0 || index > self->sup_max_index)
     return su_seterrno(EBADF);
 
-  return su_wait_mask(&self->sup_waits[n], socket, events);
+  ser = self->sup_indices[index];
+  if (!ser->ser_cb)
+    return su_seterrno(EBADF);
+
+  if (self->sup_maxfd == 0)
+    su_select_port_update_maxfd(self);
+
+  if (socket >= self->sup_maxfd)
+    return su_seterrno(EBADF);
+
+  if (su_wait_mask(ser->ser_wait, socket, events) < 0)
+    return -1;
+
+  assert(socket < self->sup_maxfd);
+  
+  if (events & SU_WAIT_IN)
+    FD_SET(socket, self->sup_readfds);
+  else
+    FD_CLR(socket, self->sup_readfds);
+
+  if (events & SU_WAIT_OUT)
+    FD_SET(socket, self->sup_writefds);
+  else
+    FD_CLR(socket, self->sup_writefds);
+
+  return 0;
 }
 
 /** @internal Enable multishot mode.
@@ -580,7 +541,7 @@ int su_select_port_multishot(su_port_t *self, int multishot)
 
 
 /** @internal
- * Wait (select()) for wait objects in port.
+ * Wait (poll()) for wait objects in port.
  *
  * @param self     pointer to port
  * @param tout     timeout in milliseconds
@@ -590,78 +551,107 @@ int su_select_port_multishot(su_port_t *self, int multishot)
 static
 int su_select_port_wait_events(su_port_t *self, su_duration_t tout)
 {
-  /* NOT IMPLEMENTED */
-  (void)su_select_port_deinit;
+  int j, n, events = 0;
+  unsigned version = self->sup_registers;
+  size_t bytes;
+  struct timeval tv;
+  fd_set *rset = NULL, *wset = NULL;
 
-  return -1;
-}
+  if (self->sup_maxfd == 0)
+    su_select_port_update_maxfd(self);
 
-#if 0
-/** @internal
- *  Prints out the contents of the port.
- *
- * @param self pointer to a port
- * @param f    pointer to a file (if @c NULL, uses @c stdout).
- */
-void su_port_dump(su_port_t const *self, FILE *f)
-{
-  int i;
-#define IS_WAIT_IN(x) (((x)->events & SU_WAIT_IN) ? "IN" : "")
-#define IS_WAIT_OUT(x) (((x)->events & SU_WAIT_OUT) ? "OUT" : "")
-#define IS_WAIT_ACCEPT(x) (((x)->events & SU_WAIT_ACCEPT) ? "ACCEPT" : "")
+  bytes = self->sup_maxfd ? FDSETSIZE(self->sup_maxfd - 1) : 0;
 
-  if (f == NULL)
-    f = stdout;
+  if (bytes) {
+    rset = memcpy(self->sup_readfds2, self->sup_readfds, bytes);
+    wset = memcpy(self->sup_writefds2, self->sup_writefds, bytes);
+  }  
 
-  fprintf(f, "su_port_t at %p:\n", self);
-  fprintf(f, "\tport is%s running\n", self->sup_running ? "" : "not ");
-#if SU_HAVE_PTHREADS
-  fprintf(f, "\tport tid %p\n", (void *)self->sup_tid);
-  fprintf(f, "\tport mbox %d (%s%s%s)\n", self->sup_mbox[0],
-	  IS_WAIT_IN(&self->sup_mbox_wait),
-	  IS_WAIT_OUT(&self->sup_mbox_wait),
-	  IS_WAIT_ACCEPT(&self->sup_mbox_wait));
-#endif
-  fprintf(f, "\t%d wait objects\n", self->sup_n_waits);
-  for (i = 0; i < self->sup_n_waits; i++) {
-    
+  tv.tv_sec = tout / 1000;
+  tv.tv_usec = (tout % 1000) * 1000;
+
+  n = select(self->sup_maxfd, rset, wset, NULL, &tv);
+
+  if (n <= 0) {
+    SU_DEBUG_0(("su_select_port_wait_events(%p): %s (%d)\n",
+		(void *)self, su_strerror(su_errno()), su_errno()));
+    return 0;
   }
+
+  for (j = 1; j < self->sup_max_index; j++) {
+    struct su_select_register *ser;
+    su_root_magic_t *magic;
+    int fd;
+
+    ser = self->sup_indices[j];
+    if (!ser->ser_cb)
+      continue;
+
+    fd = ser->ser_wait->fd;
+    ser->ser_wait->revents = 0;
+
+    if (ser->ser_wait->events & SU_WAIT_IN)
+      if (FD_ISSET(fd, rset)) ser->ser_wait->revents |= SU_WAIT_IN, n--;
+    if (ser->ser_wait->events & SU_WAIT_OUT)
+      if (FD_ISSET(fd, wset)) ser->ser_wait->revents |= SU_WAIT_OUT, n--;
+
+    if (ser->ser_wait->revents) {
+      magic = ser->ser_root ? su_root_magic(ser->ser_root) : NULL;
+      ser->ser_cb(magic, ser->ser_wait, ser->ser_arg);
+      events++;
+      if (version != self->sup_registers)
+	/* Callback function used su_register()/su_deregister() */
+	return events;
+      if (!self->sup_multishot)
+	/* Callback function used su_register()/su_deregister() */
+	return events;
+    }
+
+    if (n == 0)
+      break;
+  }    
+
+  assert(n == 0);
+
+  return events;
 }
 
-#endif
-
-/** Create a port using select().
+/** Create a port using epoll() or poll().
  */
 su_port_t *su_select_port_create(void)
 {
-#if notyet
-  su_port_t *self = su_home_new(sizeof *self);
+  su_port_t *self;
 
+  self = su_home_new(sizeof *self);
   if (!self)
-    return self;
+    return NULL;
 
-  if (su_home_destructor(su_port_home(self), su_select_port_deinit) < 0)
-    return su_home_unref(su_port_home(self)), NULL;
+  if (su_home_destructor(su_port_home(self), su_select_port_deinit) < 0 ||
+      !(self->sup_indices = 
+	su_zalloc(su_port_home(self),
+		  (sizeof self->sup_indices[0]) * 
+		  (self->sup_size_indices = __NFDBITS)))) {
+    su_home_unref(su_port_home(self));
+    return NULL;
+  }
 
   self->sup_multishot = SU_ENABLE_MULTISHOT_POLL;
 
-  if (su_pthread_port_init(self, su_select_port_vtable) < 0)
+  if (su_socket_port_init(self->sup_base, su_select_port_vtable) < 0)
     return su_home_unref(su_port_home(self)), NULL;
 
   return self;
-#else
-  return NULL;
-#endif
 }
 
 int su_select_clone_start(su_root_t *parent,
-			  su_clone_r return_clone,
-			  su_root_magic_t *magic,
-			  su_root_init_f init,
-			  su_root_deinit_f deinit)
+			 su_clone_r return_clone,
+			 su_root_magic_t *magic,
+			 su_root_init_f init,
+			 su_root_deinit_f deinit)
 {
   return su_pthreaded_port_start(su_select_port_create, 
 				 parent, return_clone, magic, init, deinit);
 }
+
 
 #endif

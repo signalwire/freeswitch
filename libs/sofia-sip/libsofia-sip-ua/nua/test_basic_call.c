@@ -478,6 +478,47 @@ int test_basic_call_2(struct context *ctx)
   TEST_1(nua_handle_has_active_call(b_call->nh));
   TEST_1(!nua_handle_has_call_on_hold(b_call->nh));
 
+  /* Send a NOTIFY from B to A */
+  if (print_headings)
+    printf("TEST NUA-3.2.2: send a NOTIFY within a dialog\n");
+
+  /* Make A to accept NOTIFY */
+  nua_set_params(a->nua, NUTAG_APPL_METHOD("NOTIFY"), TAG_END());
+  run_a_until(ctx, nua_r_set_params, until_final_response);
+
+  NOTIFY(b, b_call, b_call->nh,
+	 NUTAG_NEWSUB(1),
+	 SIPTAG_SUBJECT_STR("NUA-3.2.2"),
+	 SIPTAG_EVENT_STR("message-summary"),
+	 SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"),
+	 SIPTAG_PAYLOAD_STR("Messages-Waiting: no"),
+	 TAG_END());
+
+  run_ab_until(ctx, -1, accept_notify, -1, save_until_final_response);
+
+  /* Notifier events: nua_r_notify */
+  TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_r_notify);
+  TEST(e->data->e_status, 200);
+  TEST_1(tl_find(e->data->e_tags, nutag_substate));
+  TEST(tl_find(e->data->e_tags, nutag_substate)->t_value,
+       nua_substate_terminated);
+
+  /* watcher events: nua_i_notify */
+  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_i_notify);
+  TEST_1(sip = sip_object(e->data->e_msg));
+  TEST_1(sip->sip_subscription_state);
+  TEST_S(sip->sip_subscription_state->ss_substate, "terminated");
+  TEST_1(tl_find(e->data->e_tags, nutag_substate));
+  TEST(tl_find(e->data->e_tags, nutag_substate)->t_value, 
+       nua_substate_terminated);
+  TEST_1(!e->next);
+
+  free_events_in_list(ctx, a->events);
+  free_events_in_list(ctx, b->events);
+
+  if (print_headings)
+    printf("TEST NUA-3.2.2: PASSED\n");
+
   INFO(b, b_call, b_call->nh, TAG_END());
   BYE(b, b_call, b_call->nh, TAG_END());
   INFO(b, b_call, b_call->nh, TAG_END());

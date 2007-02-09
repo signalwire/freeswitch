@@ -92,6 +92,9 @@ static char const options_usage[] =
   "   --no-alarm        don't ask for guard ALARM\n"
   "   -p uri            specify uri of outbound proxy (implies --no-proxy)\n"
   "   --proxy-tests     run tests involving proxy, too\n"
+#if SU_HAVE_OSX_CF_API /* If compiled with CoreFoundation events */
+  "   --osx-runloop     use OSX CoreFoundation runloop instead of poll() loop\n"
+#endif
   "   -k                do not exit after first error\n"
   ;
 

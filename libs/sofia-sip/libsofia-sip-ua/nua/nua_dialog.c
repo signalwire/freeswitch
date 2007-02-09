@@ -378,11 +378,9 @@ void nua_dialog_usage_remove_at(nua_owner_t *own,
     su_free(own, du);
   }
 
-  /* Zap dialog if there is no more usages */
+  /* Zap dialog if there are no more usages */
   if (ds->ds_usage == NULL) {
-    nta_leg_destroy(ds->ds_leg), ds->ds_leg = NULL;
-    su_free(own, (void *)ds->ds_remote_tag), ds->ds_remote_tag = NULL;
-    ds->ds_route = 0;
+    nua_dialog_remove(own, ds, NULL);
     ds->ds_has_events = 0;
     ds->ds_terminated = 0;
     return;

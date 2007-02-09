@@ -1117,7 +1117,7 @@ int tport_get_params(tport_t const *self,
     || !tport_is_primary(self) || !tport_is_dgram(self);
 
   n = tl_tgets(ta_args(ta),
-	       TPTAG_MTU(tpp->tpp_mtu),
+	       TPTAG_MTU((usize_t)tpp->tpp_mtu),
 	       TPTAG_REUSE(self->tp_reusable),
 	       TPTAG_CONNECT(connect),
 	       TPTAG_QUEUESIZE(tpp->tpp_qsize),
@@ -1153,14 +1153,16 @@ int tport_set_params(tport_t *self,
   ta_list ta;
   int n;
   tport_params_t tpp[1], *tpp0;
-
+  
+  usize_t mtu;
   int connect, sdwn_error, reusable, stun_server;
-
+  
   if (self == NULL)
     return su_seterrno(EINVAL);
 
   memcpy(tpp, tpp0 = self->tp_params, sizeof *tpp);
 
+  mtu = tpp->tpp_mtu;
   connect = tpp->tpp_conn_orient;
   sdwn_error = tpp->tpp_sdwn_error;
   reusable = self->tp_reusable;
@@ -1169,7 +1171,7 @@ int tport_set_params(tport_t *self,
   ta_start(ta, tag, value);
 
   n = tl_gets(ta_args(ta),
-	      TPTAG_MTU_REF(tpp->tpp_mtu),
+	      TPTAG_MTU_REF(mtu),
 	      TAG_IF(!self->tp_queue, TPTAG_QUEUESIZE_REF(tpp->tpp_qsize)),
 	      TPTAG_IDLE_REF(tpp->tpp_idle),
 	      TPTAG_TIMEOUT_REF(tpp->tpp_timeout),
@@ -1202,6 +1204,9 @@ int tport_set_params(tport_t *self,
   if (tpp->tpp_qsize >= 1000)
     tpp->tpp_qsize = 1000;
 
+  if (mtu > UINT_MAX)
+    mtu = UINT_MAX;
+  tpp->tpp_mtu = (unsigned)mtu;
   /* Currently only primary UDP transport can *not* be connection oriented */ 
   tpp->tpp_conn_orient = connect; 
   tpp->tpp_sdwn_error = sdwn_error;

@@ -95,7 +95,7 @@ SOFIAPUBVAR char const http_version_1_1[];
  */
 
 /** HTTP parser description. */
-SOFIAPUBFUN msg_mclass_t *http_default_mclass(void);
+SOFIAPUBFUN msg_mclass_t const *http_default_mclass(void);
 
 /** Complete a HTTP request. */
 SOFIAPUBFUN int http_request_complete(msg_t *msg);

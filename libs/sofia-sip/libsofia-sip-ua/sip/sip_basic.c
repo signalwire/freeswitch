@@ -899,7 +899,7 @@ sip_addr_make_url(su_home_t *home, msg_hclass_t *hc, url_string_t const *us)
   sip_header_t *h;
 
   n = url_xtra(us->us_url);
-  h = sip_header_alloc(home, sip_to_class, n);    
+  h = sip_header_alloc(home, hc, n);    
 
   if (h) {
     sip_addr_t *a = h->sh_to;

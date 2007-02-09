@@ -151,8 +151,12 @@
 #undef HAVE_INTTYPES_H
 
 /* Define to 1 if you have the <iphlpapi.h> header file. */
-// XXX: vehmanek-win32-fix:
+#if _MSC_VER > 1200 
+#define HAVE_IPHLPAPI_H 1
+#else
+// XXX: vehmanek-win32-fix for VC6
 #undef HAVE_IPHLPAPI_H
+#endif
 
 /* Define to 1 if you have IPV6_RECVERR in <netinet/in6.h> */
 #undef HAVE_IPV6_RECVERR
@@ -224,7 +228,7 @@
 #undef HAVE_POLL
 
 /* Define to 1 if you use poll in su_port. */
-#define HAVE_POLL_PORT 1
+#undef HAVE_POLL_PORT
 
 /* Define to 1 if you have /proc/net/if_inet6 control file */
 #undef HAVE_PROC_NET_IF_INET6

@@ -30,12 +30,19 @@
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @author Kai Vehmanen <kai.vehmanen@nokia.com>
  *
- * @date Created: Tue Sep 14 15:51:04 1999 ppessi
+ * @date Create: Fri Jan 26 20:44:14 2007 ppessi
+ * @date Original: Tue Sep 14 15:51:04 1999 ppessi
  */
 
 #include "config.h"
 
-#if HAVE_POLL || HAVE_SELECT
+#define su_port_s su_poll_port_s
+
+#include "su_port.h"
+#include "sofia-sip/su_alloc.h"
+#include "sofia-sip/su.h"
+
+#if HAVE_POLL_PORT
 
 #include <stdlib.h>
 #include <assert.h>
@@ -45,18 +52,12 @@
 #include <limits.h>
 #include <errno.h>
 
-#define su_port_s su_poll_port_s
-
-#include "sofia-sip/su.h"
-#include "su_port.h"
-#include "sofia-sip/su_alloc.h"
-
 /** Port based on poll(). */
 
 struct su_poll_port_s {
-  su_pthread_port_t sup_base[1];
+  su_socket_port_t sup_base[1];
 
-#define sup_home sup_base->sup_base->sup_home
+#define sup_home sup_base->sup_base->sup_base->sup_home
 
   unsigned         sup_multishot; /**< Multishot operation? */
 
@@ -69,12 +70,7 @@ struct su_poll_port_s {
   int              sup_size_waits; /**< Size of allocated su_waits */
   int              sup_pri_offset; /**< Offset to prioritized waits */
 
-#if !SU_HAVE_WINSOCK
 #define INDEX_MAX (0x7fffffff)
-#else 
-  /* We use WSAWaitForMultipleEvents() */
-#define INDEX_MAX (64)
-#endif
 
   /** Indices from index returned by su_root_register() to tables below. 
    *
@@ -124,7 +120,7 @@ su_port_vtable_t const su_poll_port_vtable[1] =
       su_base_port_incref,
       su_poll_port_decref,
       su_base_port_gsource,
-      su_pthread_port_send,
+      su_socket_port_send,
       su_poll_port_register,
       su_poll_port_unregister,
       su_poll_port_deregister,
@@ -160,7 +156,7 @@ static void su_poll_port_deinit(void *arg)
 
   SU_DEBUG_9(("%s(%p) called\n", "su_poll_port_deinit", (void *)self));
 
-  su_pthread_port_deinit(self);
+  su_socket_port_deinit(self->sup_base);
 }
 
 static void su_poll_port_decref(su_port_t *self, int blocking, char const *who)
@@ -516,8 +512,8 @@ int su_poll_port_unregister_all(su_port_t *self,
 
 /**Set mask for a registered event. @internal
  *
- * The function su_poll_port_eventmask() sets the mask describing events that can
- * signal the registered callback.
+ * The function su_poll_port_eventmask() sets the mask describing events
+ * that can signal the registered callback.
  *
  * @param port   pointer to port object
  * @param index  registration index
@@ -663,7 +659,7 @@ su_port_t *su_poll_port_create(void)
 
   self->sup_multishot = SU_ENABLE_MULTISHOT_POLL;
 
-  if (su_pthread_port_init(self, su_poll_port_vtable) < 0)
+  if (su_socket_port_init(self->sup_base, su_poll_port_vtable) < 0)
     return su_home_unref(su_port_home(self)), NULL;
 
   return self;
@@ -675,8 +671,25 @@ int su_poll_clone_start(su_root_t *parent,
 			su_root_init_f init,
 			su_root_deinit_f deinit)
 {
-  return su_pthreaded_port_start(su_poll_port_create, 
+  return su_pthreaded_port_start(su_default_port_create, 
 				 parent, return_clone, magic, init, deinit);
 }
 
-#endif  /* HAVE_POLL || HAVE_SELECT */
+#else
+
+su_port_t *su_poll_port_create(void)
+{
+  return su_default_port_create();
+}
+
+int su_poll_clone_start(su_root_t *parent,
+			su_clone_r return_clone,
+			su_root_magic_t *magic,
+			su_root_init_f init,
+			su_root_deinit_f deinit)
+{
+  return su_default_clone_start(parent, return_clone, magic, init, deinit);
+}
+
+#endif  /* HAVE_POLL_PORT */
+

@@ -48,7 +48,43 @@
 #include <string.h>
 #include <stdlib.h>
 
-static su_port_create_f *preferred_su_port_create;
+/** Create the default su_port_t implementation. */
+su_port_t *su_default_port_create(void)
+{
+#if HAVE_EPOLL
+  return su_epoll_port_create();
+#elif HAVE_POLL_PORT
+  return su_poll_port_create();
+#elif HAVE_WIN32
+  return su_wsaevent_port_create();
+#elif HAVE_SELECT
+  return su_select_port_create();
+#else
+  return NULL;
+#endif
+}
+
+int su_default_clone_start(su_root_t *parent,
+			   su_clone_r return_clone,
+			   su_root_magic_t *magic,
+			   su_root_init_f init,
+			   su_root_deinit_f deinit)
+{
+#if HAVE_EPOLL
+  return su_epoll_clone_start(parent, return_clone, magic, init, deinit);;
+#elif HAVE_POLL_PORT
+  return su_poll_clone_start(parent, return_clone, magic, init, deinit);;
+#elif HAVE_WIN32
+  return su_wsaevent_clone_start(parent, return_clone, magic, init, deinit);;
+#elif HAVE_SELECT
+  return su_select_clone_start(parent, return_clone, magic, init, deinit);;
+#else
+  errno = ENOSYS;
+  return -1;
+#endif
+}
+
+static su_port_create_f *preferred_su_port_create = su_default_port_create;
 static su_clone_start_f *preferred_su_clone_start;
 
 /** Explicitly set the preferred su_port_t implementation.
@@ -69,45 +105,44 @@ void su_port_set_system_preferences(char const *name)
 
   if (name == NULL)
       ;
-#if HAVE_POLL_PORT
 #if HAVE_EPOLL
   else if (strcmp(name, "epoll") == 0) {
     create = su_epoll_port_create;
     start = su_epoll_clone_start;
   }
 #endif
+#if HAVE_POLL_PORT
   else if (strcmp(name, "poll") == 0) {
     create = su_poll_port_create;
     start = su_poll_clone_start;
   }
-#else
-  /* select port does not work yet */
-#error no poll!
 #endif
-#if HAVE_SELECT
+#if HAVE_WIN32
+  else if (strcasecmp(name, "wsaevent") == 0) {
+    create = su_wsaevent_port_create;
+    start = su_wsaevent_clone_start;
+  }
+#endif
+#if HAVE_SELECT && !HAVE_WIN32
   else if (strcmp(name, "select") == 0) {
     create = su_select_port_create;
     start = su_select_clone_start;
   }
 #endif
 
-#if HAVE_POLL_PORT
-#if HAVE_EPOLL
-  if (create == NULL) create = su_epoll_port_create;
-  if (start == NULL) start = su_epoll_clone_start;
-#else
-  if (create == NULL) create = su_poll_port_create;
-  if (start == NULL) start = su_poll_clone_start;
-#endif
-#else
-#if HAVE_SELECT
-  if (create == NULL) create = su_select_port_create;
-  if (start == NULL) start = su_select_clone_start;
-#endif
-#endif
+  if (create == NULL) 
+    create = su_default_port_create;
 
-  if (preferred_su_port_create == NULL) preferred_su_port_create = create;
-  if (preferred_su_clone_start == NULL) preferred_su_clone_start = start;
+  if (!preferred_su_port_create ||
+      preferred_su_port_create == su_default_port_create) 
+    preferred_su_port_create = create;
+
+  if (start == NULL)
+    start = su_default_clone_start;
+
+  if (!preferred_su_clone_start || 
+      preferred_su_clone_start == su_default_clone_start)
+    preferred_su_clone_start = start;
 }
 
 /** Create the preferred su_port_t implementation. */
@@ -116,10 +151,7 @@ su_port_t *su_port_create(void)
   if (preferred_su_port_create == NULL)
     su_port_set_system_preferences(getenv("SU_PORT"));
 
-  if (preferred_su_port_create)
-    return preferred_su_port_create();
-
-  return NULL;
+  return preferred_su_port_create();
 }
 
 /* ========================================================================
@@ -244,8 +276,6 @@ int su_clone_start(su_root_t *parent,
   if (parent == NULL || parent->sur_threading) {
     if (preferred_su_clone_start == NULL)
       su_port_set_system_preferences(getenv("SU_PORT"));
-    if (preferred_su_clone_start == NULL)
-      return -1;
     return preferred_su_clone_start(parent, return_clone, magic, init, deinit);
   }
 

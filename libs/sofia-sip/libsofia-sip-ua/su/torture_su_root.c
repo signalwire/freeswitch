@@ -533,10 +533,30 @@ void usage(void)
 
 int main(int argc, char *argv[])
 {
-  root_test_t rt[1] = {{{ SU_HOME_INIT(rt) }}};
+  root_test_t *rt, rt0[1] = {{{ SU_HOME_INIT(rt0) }}}, rt1[1];
   int retval = 0;
   int i;
 
+  struct {
+    su_port_create_f *create;
+    su_clone_start_f *start;
+    char const *preference;
+  } prefer[] =
+      {
+	{ NULL, NULL, "default" },
+#if HAVE_POLL_PORT
+#if HAVE_EPOLL
+	{ su_epoll_port_create, su_epoll_clone_start, "epoll", },
+#endif
+	{ su_poll_port_create, su_poll_clone_start, "poll" },
+#endif
+#if HAVE_SELECT
+	{ su_select_port_create, su_select_clone_start, "select" },
+#endif
+	{ NULL, NULL }
+      };
+
+  rt = rt0;
   rt->rt_family = AF_INET;
 
   for (i = 1; argv[i]; i++) {
@@ -550,14 +570,23 @@ int main(int argc, char *argv[])
       usage();
   }
 
-  retval |= init_test(rt);
-  retval |= register_test(rt);
-  retval |= event_test(rt);
-  su_root_threading(rt->rt_root, 1);
-  retval |= clone_test(rt);
-  su_root_threading(rt->rt_root, 0);
-  retval |= clone_test(rt);
-  retval |= deinit_test(rt);
+  i = 0;
+
+  do {
+    rt = rt1, *rt = *rt0;
+    printf("%s: testing %s implementation\n",
+	   name, prefer[i].preference);
+    su_port_prefer(prefer[i].create, prefer[i].start);
+
+    retval |= init_test(rt);
+    retval |= register_test(rt);
+    retval |= event_test(rt);
+    su_root_threading(rt->rt_root, 1);
+    retval |= clone_test(rt);
+    su_root_threading(rt->rt_root, 0);
+    retval |= clone_test(rt);
+    retval |= deinit_test(rt);
+  } while (prefer[++i].create);
 
   return retval;
 }
