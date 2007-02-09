@@ -71,7 +71,17 @@
  *
  ****************/
 
-#if defined(__APPLE__) || defined(__FreeBSD__)
+#if defined(__VIA_HACK__)
+#define NO_BARRIER
+#endif
+
+#if defined(NO_BARRIER)
+#   define PaUtil_FullMemoryBarrier()
+#   define PaUtil_ReadMemoryBarrier()
+#   define PaUtil_WriteMemoryBarrier()
+#else
+
+#if defined(__APPLE__) //|| defined(__FreeBSD__)
 #   include <libkern/OSAtomic.h>
     /* Here are the memory barrier functions. Mac OS X and FreeBSD only provide
        full memory barriers, so the three types of barriers are the same. */
@@ -85,39 +95,29 @@
 #      define PaUtil_FullMemoryBarrier()  asm volatile("sync":::"memory")
 #      define PaUtil_ReadMemoryBarrier()  asm volatile("sync":::"memory")
 #      define PaUtil_WriteMemoryBarrier() asm volatile("sync":::"memory")
-#   elif defined(__VIA_HACK__)
-#         define PaUtil_FullMemoryBarrier()
-#         define PaUtil_ReadMemoryBarrier()
-#         define PaUtil_WriteMemoryBarrier()
 #   elif defined( __i386__ ) || defined( __i486__ ) || defined( __i586__ ) || defined( __i686__ ) || defined(__x86_64__)
 #      define PaUtil_FullMemoryBarrier()  asm volatile("mfence":::"memory")
 #      define PaUtil_ReadMemoryBarrier()  asm volatile("lfence":::"memory")
 #      define PaUtil_WriteMemoryBarrier() asm volatile("sfence":::"memory")
 #   else
-#      ifdef ALLOW_SMP_DANGERS
-#         warning Memory barriers not defined on this system or system unknown
-#         warning For SMP safety, you should fix this.
-#         define PaUtil_FullMemoryBarrier()
-#         define PaUtil_ReadMemoryBarrier()
-#         define PaUtil_WriteMemoryBarrier()
-#      else
-#         error Memory barriers are not defined on this system. You can still compile by defining ALLOW_SMP_DANGERS, but SMP safety will not be guaranteed.
-#      endif
-#   endif
-#else
-#   ifdef ALLOW_SMP_DANGERS
-#	ifndef _MSC_VER
-#      warning Memory barriers not defined on this system or system unknown
-#      warning For SMP safety, you should fix this.
-#	endif
 #      define PaUtil_FullMemoryBarrier()
 #      define PaUtil_ReadMemoryBarrier()
 #      define PaUtil_WriteMemoryBarrier()
-#   else
-#      error Memory barriers are not defined on this system. You can still compile by defining ALLOW_SMP_DANGERS, but SMP safety will not be guaranteed.
 #   endif
+#elif defined(_MSC_VER)
+#   include <intrin.h>
+#   pragma intrinsic(_ReadWriteBarrier)
+#   pragma intrinsic(_ReadBarrier)
+#   pragma intrinsic(_WriteBarrier)
+#   define PaUtil_FullMemoryBarrier()  _ReadWriteBarrier()
+#   define PaUtil_ReadMemoryBarrier()  _ReadBarrier()
+#   define PaUtil_WriteMemoryBarrier() _WriteBarrier()
+#else
+#   define PaUtil_FullMemoryBarrier()
+#   define PaUtil_ReadMemoryBarrier()
+#   define PaUtil_WriteMemoryBarrier()
 #endif
-
+#endif
 /***************************************************************************
  * Initialize FIFO.
  * numBytes must be power of 2, returns -1 if not.
