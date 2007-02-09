@@ -117,20 +117,27 @@ am__libsu_la_SOURCES_DIST = su.c su_errno.c su_addrinfo.c su_alloc.c \
 	su_alloc_lock.c su_strdup.c su_sprintf.c su_strlst.c \
 	su_vector.c su_time.c su_time0.c su_wait.c su_root.c \
 	su_timer.c su_port.c su_port.h su_base_port.c \
-	su_pthread_port.c su_poll_port.c su_epoll_port.c \
-	su_select_port.c su_localinfo.c su_os_nw.c su_taglist.c \
-	su_tag.c su_tag_io.c su_log.c su_global_log.c su_default_log.c \
-	su_module_debug.h su_md5.c su_uniqueid.c su_bm.c \
-	su_osx_runloop.c
-@COREFOUNDATION_TRUE@am__objects_1 = su_osx_runloop.lo
-am_libsu_la_OBJECTS = su.lo su_errno.lo su_addrinfo.lo su_alloc.lo \
-	su_alloc_lock.lo su_strdup.lo su_sprintf.lo su_strlst.lo \
-	su_vector.lo su_time.lo su_time0.lo su_wait.lo su_root.lo \
-	su_timer.lo su_port.lo su_base_port.lo su_pthread_port.lo \
-	su_poll_port.lo su_epoll_port.lo su_select_port.lo \
-	su_localinfo.lo su_os_nw.lo su_taglist.lo su_tag.lo \
-	su_tag_io.lo su_log.lo su_global_log.lo su_default_log.lo \
-	su_md5.lo su_uniqueid.lo su_bm.lo $(am__objects_1)
+	su_pthread_port.c su_socket_port.c su_poll_port.c \
+	su_epoll_port.c su_select_port.c su_localinfo.c su_os_nw.c \
+	su_taglist.c su_tag.c su_tag_io.c su_log.c su_global_log.c \
+	su_default_log.c su_module_debug.h su_md5.c su_uniqueid.c \
+	su_bm.c su_osx_runloop.c
+@COREFOUNDATION_TRUE@am__objects_1 = libsu_la-su_osx_runloop.lo
+am_libsu_la_OBJECTS = libsu_la-su.lo libsu_la-su_errno.lo \
+	libsu_la-su_addrinfo.lo libsu_la-su_alloc.lo \
+	libsu_la-su_alloc_lock.lo libsu_la-su_strdup.lo \
+	libsu_la-su_sprintf.lo libsu_la-su_strlst.lo \
+	libsu_la-su_vector.lo libsu_la-su_time.lo libsu_la-su_time0.lo \
+	libsu_la-su_wait.lo libsu_la-su_root.lo libsu_la-su_timer.lo \
+	libsu_la-su_port.lo libsu_la-su_base_port.lo \
+	libsu_la-su_pthread_port.lo libsu_la-su_socket_port.lo \
+	libsu_la-su_poll_port.lo libsu_la-su_epoll_port.lo \
+	libsu_la-su_select_port.lo libsu_la-su_localinfo.lo \
+	libsu_la-su_os_nw.lo libsu_la-su_taglist.lo libsu_la-su_tag.lo \
+	libsu_la-su_tag_io.lo libsu_la-su_log.lo \
+	libsu_la-su_global_log.lo libsu_la-su_default_log.lo \
+	libsu_la-su_md5.lo libsu_la-su_uniqueid.lo libsu_la-su_bm.lo \
+	$(am__objects_1)
 libsu_la_OBJECTS = $(am_libsu_la_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(pkgdatadir)" \
 	"$(DESTDIR)$(include_sofiadir)" \
@@ -469,7 +476,7 @@ libsu_la_SOURCES = \
 	su_time.c su_time0.c \
 	su_wait.c su_root.c su_timer.c \
 	su_port.c  su_port.h \
-	su_base_port.c su_pthread_port.c \
+	su_base_port.c su_pthread_port.c su_socket_port.c \
 	su_poll_port.c su_epoll_port.c su_select_port.c \
 	su_localinfo.c \
 	su_os_nw.c \
@@ -483,6 +490,7 @@ EXTRA_libsu_la_SOURCES = \
 			inet_ntop.c inet_pton.c poll.c getopt.c \
 			su_tag_ref.c su_win32_port.c
 
+libsu_la_CFLAGS = $(AM_CFLAGS) $(SOFIA_CFLAGS)
 libsu_la_LIBADD = $(REPLACE_LIBADD)
 libsu_la_DEPENDENCIES = $(REPLACE_LIBADD)
 COVERAGE_INPUT = $(libsu_la_SOURCES) $(include_sofia_HEADERS)
@@ -498,7 +506,8 @@ dist_pkgdata_SCRIPTS = tag_dll.awk
 # ----------------------------------------------------------------------
 # Automake options
 AUTOMAKE_OPTIONS = foreign
-AM_CFLAGS = $(CWFLAG) $(SOFIA_COVERAGE) $(am__append_1)
+AM_CFLAGS = $(CWFLAG) $(SOFIA_COVERAGE) $(SOFIA_CFLAGS) \
+	$(am__append_1)
 DISTCLEANFILES = $(BUILT_SOURCES)
 
 # rules for building tag files
@@ -687,52 +696,53 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/addrinfo.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getopt.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inet_ntop.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inet_pton.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-getopt.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-inet_ntop.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-inet_pton.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-memccpy.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-memcspn.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-memmem.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-memspn.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-poll.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-strcasestr.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-strtoull.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_addrinfo.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_alloc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_alloc_lock.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_base_port.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_bm.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_default_log.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_epoll_port.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_errno.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_global_log.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_localinfo.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_log.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_md5.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_os_nw.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_osx_runloop.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_poll_port.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_port.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_pthread_port.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_root.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_select_port.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_socket_port.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_sprintf.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_strdup.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_strlst.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_tag.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_tag_io.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_tag_ref.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_taglist.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_time.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_time0.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_timer.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_uniqueid.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_vector.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_wait.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsu_la-su_win32_port.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/localinfo.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memccpy.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memcspn.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memmem.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memspn.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/poll.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strcasestr.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strtoull.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_addrinfo.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_alloc.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_alloc_lock.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_base_port.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_bm.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_default_log.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_epoll_port.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_errno.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_global_log.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_localinfo.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_log.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_md5.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_os_nw.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_osx_runloop.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_poll_port.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_port.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_proxy.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_pthread_port.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_root.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_select_port.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_sprintf.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_strdup.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_strlst.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_tag.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_tag_io.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_tag_ref.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_taglist.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_time.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_time0.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_timer.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_uniqueid.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_vector.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_wait.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_win32_port.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_htable.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_memmem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_poll.Po@am__quote@
@@ -769,6 +779,321 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+
+libsu_la-su.lo: su.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su.Tpo" -c -o libsu_la-su.lo `test -f 'su.c' || echo '$(srcdir)/'`su.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su.Tpo" "$(DEPDIR)/libsu_la-su.Plo"; else rm -f "$(DEPDIR)/libsu_la-su.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su.c' object='libsu_la-su.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su.lo `test -f 'su.c' || echo '$(srcdir)/'`su.c
+
+libsu_la-su_errno.lo: su_errno.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_errno.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_errno.Tpo" -c -o libsu_la-su_errno.lo `test -f 'su_errno.c' || echo '$(srcdir)/'`su_errno.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_errno.Tpo" "$(DEPDIR)/libsu_la-su_errno.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_errno.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_errno.c' object='libsu_la-su_errno.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_errno.lo `test -f 'su_errno.c' || echo '$(srcdir)/'`su_errno.c
+
+libsu_la-su_addrinfo.lo: su_addrinfo.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_addrinfo.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_addrinfo.Tpo" -c -o libsu_la-su_addrinfo.lo `test -f 'su_addrinfo.c' || echo '$(srcdir)/'`su_addrinfo.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_addrinfo.Tpo" "$(DEPDIR)/libsu_la-su_addrinfo.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_addrinfo.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_addrinfo.c' object='libsu_la-su_addrinfo.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_addrinfo.lo `test -f 'su_addrinfo.c' || echo '$(srcdir)/'`su_addrinfo.c
+
+libsu_la-su_alloc.lo: su_alloc.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_alloc.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_alloc.Tpo" -c -o libsu_la-su_alloc.lo `test -f 'su_alloc.c' || echo '$(srcdir)/'`su_alloc.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_alloc.Tpo" "$(DEPDIR)/libsu_la-su_alloc.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_alloc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_alloc.c' object='libsu_la-su_alloc.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_alloc.lo `test -f 'su_alloc.c' || echo '$(srcdir)/'`su_alloc.c
+
+libsu_la-su_alloc_lock.lo: su_alloc_lock.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_alloc_lock.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_alloc_lock.Tpo" -c -o libsu_la-su_alloc_lock.lo `test -f 'su_alloc_lock.c' || echo '$(srcdir)/'`su_alloc_lock.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_alloc_lock.Tpo" "$(DEPDIR)/libsu_la-su_alloc_lock.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_alloc_lock.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_alloc_lock.c' object='libsu_la-su_alloc_lock.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_alloc_lock.lo `test -f 'su_alloc_lock.c' || echo '$(srcdir)/'`su_alloc_lock.c
+
+libsu_la-su_strdup.lo: su_strdup.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_strdup.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_strdup.Tpo" -c -o libsu_la-su_strdup.lo `test -f 'su_strdup.c' || echo '$(srcdir)/'`su_strdup.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_strdup.Tpo" "$(DEPDIR)/libsu_la-su_strdup.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_strdup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_strdup.c' object='libsu_la-su_strdup.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_strdup.lo `test -f 'su_strdup.c' || echo '$(srcdir)/'`su_strdup.c
+
+libsu_la-su_sprintf.lo: su_sprintf.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_sprintf.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_sprintf.Tpo" -c -o libsu_la-su_sprintf.lo `test -f 'su_sprintf.c' || echo '$(srcdir)/'`su_sprintf.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_sprintf.Tpo" "$(DEPDIR)/libsu_la-su_sprintf.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_sprintf.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_sprintf.c' object='libsu_la-su_sprintf.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_sprintf.lo `test -f 'su_sprintf.c' || echo '$(srcdir)/'`su_sprintf.c
+
+libsu_la-su_strlst.lo: su_strlst.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_strlst.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_strlst.Tpo" -c -o libsu_la-su_strlst.lo `test -f 'su_strlst.c' || echo '$(srcdir)/'`su_strlst.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_strlst.Tpo" "$(DEPDIR)/libsu_la-su_strlst.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_strlst.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_strlst.c' object='libsu_la-su_strlst.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_strlst.lo `test -f 'su_strlst.c' || echo '$(srcdir)/'`su_strlst.c
+
+libsu_la-su_vector.lo: su_vector.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_vector.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_vector.Tpo" -c -o libsu_la-su_vector.lo `test -f 'su_vector.c' || echo '$(srcdir)/'`su_vector.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_vector.Tpo" "$(DEPDIR)/libsu_la-su_vector.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_vector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_vector.c' object='libsu_la-su_vector.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_vector.lo `test -f 'su_vector.c' || echo '$(srcdir)/'`su_vector.c
+
+libsu_la-su_time.lo: su_time.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_time.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_time.Tpo" -c -o libsu_la-su_time.lo `test -f 'su_time.c' || echo '$(srcdir)/'`su_time.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_time.Tpo" "$(DEPDIR)/libsu_la-su_time.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_time.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_time.c' object='libsu_la-su_time.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_time.lo `test -f 'su_time.c' || echo '$(srcdir)/'`su_time.c
+
+libsu_la-su_time0.lo: su_time0.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_time0.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_time0.Tpo" -c -o libsu_la-su_time0.lo `test -f 'su_time0.c' || echo '$(srcdir)/'`su_time0.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_time0.Tpo" "$(DEPDIR)/libsu_la-su_time0.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_time0.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_time0.c' object='libsu_la-su_time0.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_time0.lo `test -f 'su_time0.c' || echo '$(srcdir)/'`su_time0.c
+
+libsu_la-su_wait.lo: su_wait.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_wait.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_wait.Tpo" -c -o libsu_la-su_wait.lo `test -f 'su_wait.c' || echo '$(srcdir)/'`su_wait.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_wait.Tpo" "$(DEPDIR)/libsu_la-su_wait.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_wait.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_wait.c' object='libsu_la-su_wait.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_wait.lo `test -f 'su_wait.c' || echo '$(srcdir)/'`su_wait.c
+
+libsu_la-su_root.lo: su_root.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_root.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_root.Tpo" -c -o libsu_la-su_root.lo `test -f 'su_root.c' || echo '$(srcdir)/'`su_root.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_root.Tpo" "$(DEPDIR)/libsu_la-su_root.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_root.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_root.c' object='libsu_la-su_root.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_root.lo `test -f 'su_root.c' || echo '$(srcdir)/'`su_root.c
+
+libsu_la-su_timer.lo: su_timer.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_timer.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_timer.Tpo" -c -o libsu_la-su_timer.lo `test -f 'su_timer.c' || echo '$(srcdir)/'`su_timer.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_timer.Tpo" "$(DEPDIR)/libsu_la-su_timer.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_timer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_timer.c' object='libsu_la-su_timer.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_timer.lo `test -f 'su_timer.c' || echo '$(srcdir)/'`su_timer.c
+
+libsu_la-su_port.lo: su_port.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_port.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_port.Tpo" -c -o libsu_la-su_port.lo `test -f 'su_port.c' || echo '$(srcdir)/'`su_port.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_port.Tpo" "$(DEPDIR)/libsu_la-su_port.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_port.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_port.c' object='libsu_la-su_port.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_port.lo `test -f 'su_port.c' || echo '$(srcdir)/'`su_port.c
+
+libsu_la-su_base_port.lo: su_base_port.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_base_port.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_base_port.Tpo" -c -o libsu_la-su_base_port.lo `test -f 'su_base_port.c' || echo '$(srcdir)/'`su_base_port.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_base_port.Tpo" "$(DEPDIR)/libsu_la-su_base_port.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_base_port.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_base_port.c' object='libsu_la-su_base_port.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_base_port.lo `test -f 'su_base_port.c' || echo '$(srcdir)/'`su_base_port.c
+
+libsu_la-su_pthread_port.lo: su_pthread_port.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_pthread_port.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_pthread_port.Tpo" -c -o libsu_la-su_pthread_port.lo `test -f 'su_pthread_port.c' || echo '$(srcdir)/'`su_pthread_port.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_pthread_port.Tpo" "$(DEPDIR)/libsu_la-su_pthread_port.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_pthread_port.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_pthread_port.c' object='libsu_la-su_pthread_port.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_pthread_port.lo `test -f 'su_pthread_port.c' || echo '$(srcdir)/'`su_pthread_port.c
+
+libsu_la-su_socket_port.lo: su_socket_port.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_socket_port.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_socket_port.Tpo" -c -o libsu_la-su_socket_port.lo `test -f 'su_socket_port.c' || echo '$(srcdir)/'`su_socket_port.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_socket_port.Tpo" "$(DEPDIR)/libsu_la-su_socket_port.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_socket_port.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_socket_port.c' object='libsu_la-su_socket_port.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_socket_port.lo `test -f 'su_socket_port.c' || echo '$(srcdir)/'`su_socket_port.c
+
+libsu_la-su_poll_port.lo: su_poll_port.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_poll_port.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_poll_port.Tpo" -c -o libsu_la-su_poll_port.lo `test -f 'su_poll_port.c' || echo '$(srcdir)/'`su_poll_port.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_poll_port.Tpo" "$(DEPDIR)/libsu_la-su_poll_port.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_poll_port.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_poll_port.c' object='libsu_la-su_poll_port.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_poll_port.lo `test -f 'su_poll_port.c' || echo '$(srcdir)/'`su_poll_port.c
+
+libsu_la-su_epoll_port.lo: su_epoll_port.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_epoll_port.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_epoll_port.Tpo" -c -o libsu_la-su_epoll_port.lo `test -f 'su_epoll_port.c' || echo '$(srcdir)/'`su_epoll_port.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_epoll_port.Tpo" "$(DEPDIR)/libsu_la-su_epoll_port.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_epoll_port.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_epoll_port.c' object='libsu_la-su_epoll_port.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_epoll_port.lo `test -f 'su_epoll_port.c' || echo '$(srcdir)/'`su_epoll_port.c
+
+libsu_la-su_select_port.lo: su_select_port.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_select_port.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_select_port.Tpo" -c -o libsu_la-su_select_port.lo `test -f 'su_select_port.c' || echo '$(srcdir)/'`su_select_port.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_select_port.Tpo" "$(DEPDIR)/libsu_la-su_select_port.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_select_port.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_select_port.c' object='libsu_la-su_select_port.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_select_port.lo `test -f 'su_select_port.c' || echo '$(srcdir)/'`su_select_port.c
+
+libsu_la-su_localinfo.lo: su_localinfo.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_localinfo.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_localinfo.Tpo" -c -o libsu_la-su_localinfo.lo `test -f 'su_localinfo.c' || echo '$(srcdir)/'`su_localinfo.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_localinfo.Tpo" "$(DEPDIR)/libsu_la-su_localinfo.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_localinfo.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_localinfo.c' object='libsu_la-su_localinfo.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_localinfo.lo `test -f 'su_localinfo.c' || echo '$(srcdir)/'`su_localinfo.c
+
+libsu_la-su_os_nw.lo: su_os_nw.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_os_nw.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_os_nw.Tpo" -c -o libsu_la-su_os_nw.lo `test -f 'su_os_nw.c' || echo '$(srcdir)/'`su_os_nw.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_os_nw.Tpo" "$(DEPDIR)/libsu_la-su_os_nw.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_os_nw.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_os_nw.c' object='libsu_la-su_os_nw.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_os_nw.lo `test -f 'su_os_nw.c' || echo '$(srcdir)/'`su_os_nw.c
+
+libsu_la-su_taglist.lo: su_taglist.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_taglist.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_taglist.Tpo" -c -o libsu_la-su_taglist.lo `test -f 'su_taglist.c' || echo '$(srcdir)/'`su_taglist.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_taglist.Tpo" "$(DEPDIR)/libsu_la-su_taglist.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_taglist.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_taglist.c' object='libsu_la-su_taglist.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_taglist.lo `test -f 'su_taglist.c' || echo '$(srcdir)/'`su_taglist.c
+
+libsu_la-su_tag.lo: su_tag.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_tag.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_tag.Tpo" -c -o libsu_la-su_tag.lo `test -f 'su_tag.c' || echo '$(srcdir)/'`su_tag.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_tag.Tpo" "$(DEPDIR)/libsu_la-su_tag.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_tag.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_tag.c' object='libsu_la-su_tag.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_tag.lo `test -f 'su_tag.c' || echo '$(srcdir)/'`su_tag.c
+
+libsu_la-su_tag_io.lo: su_tag_io.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_tag_io.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_tag_io.Tpo" -c -o libsu_la-su_tag_io.lo `test -f 'su_tag_io.c' || echo '$(srcdir)/'`su_tag_io.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_tag_io.Tpo" "$(DEPDIR)/libsu_la-su_tag_io.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_tag_io.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_tag_io.c' object='libsu_la-su_tag_io.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_tag_io.lo `test -f 'su_tag_io.c' || echo '$(srcdir)/'`su_tag_io.c
+
+libsu_la-su_log.lo: su_log.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_log.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_log.Tpo" -c -o libsu_la-su_log.lo `test -f 'su_log.c' || echo '$(srcdir)/'`su_log.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_log.Tpo" "$(DEPDIR)/libsu_la-su_log.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_log.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_log.c' object='libsu_la-su_log.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_log.lo `test -f 'su_log.c' || echo '$(srcdir)/'`su_log.c
+
+libsu_la-su_global_log.lo: su_global_log.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_global_log.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_global_log.Tpo" -c -o libsu_la-su_global_log.lo `test -f 'su_global_log.c' || echo '$(srcdir)/'`su_global_log.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_global_log.Tpo" "$(DEPDIR)/libsu_la-su_global_log.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_global_log.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_global_log.c' object='libsu_la-su_global_log.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_global_log.lo `test -f 'su_global_log.c' || echo '$(srcdir)/'`su_global_log.c
+
+libsu_la-su_default_log.lo: su_default_log.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_default_log.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_default_log.Tpo" -c -o libsu_la-su_default_log.lo `test -f 'su_default_log.c' || echo '$(srcdir)/'`su_default_log.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_default_log.Tpo" "$(DEPDIR)/libsu_la-su_default_log.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_default_log.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_default_log.c' object='libsu_la-su_default_log.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_default_log.lo `test -f 'su_default_log.c' || echo '$(srcdir)/'`su_default_log.c
+
+libsu_la-su_md5.lo: su_md5.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_md5.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_md5.Tpo" -c -o libsu_la-su_md5.lo `test -f 'su_md5.c' || echo '$(srcdir)/'`su_md5.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_md5.Tpo" "$(DEPDIR)/libsu_la-su_md5.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_md5.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_md5.c' object='libsu_la-su_md5.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_md5.lo `test -f 'su_md5.c' || echo '$(srcdir)/'`su_md5.c
+
+libsu_la-su_uniqueid.lo: su_uniqueid.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_uniqueid.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_uniqueid.Tpo" -c -o libsu_la-su_uniqueid.lo `test -f 'su_uniqueid.c' || echo '$(srcdir)/'`su_uniqueid.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_uniqueid.Tpo" "$(DEPDIR)/libsu_la-su_uniqueid.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_uniqueid.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_uniqueid.c' object='libsu_la-su_uniqueid.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_uniqueid.lo `test -f 'su_uniqueid.c' || echo '$(srcdir)/'`su_uniqueid.c
+
+libsu_la-su_bm.lo: su_bm.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_bm.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_bm.Tpo" -c -o libsu_la-su_bm.lo `test -f 'su_bm.c' || echo '$(srcdir)/'`su_bm.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_bm.Tpo" "$(DEPDIR)/libsu_la-su_bm.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_bm.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_bm.c' object='libsu_la-su_bm.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_bm.lo `test -f 'su_bm.c' || echo '$(srcdir)/'`su_bm.c
+
+libsu_la-su_osx_runloop.lo: su_osx_runloop.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_osx_runloop.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_osx_runloop.Tpo" -c -o libsu_la-su_osx_runloop.lo `test -f 'su_osx_runloop.c' || echo '$(srcdir)/'`su_osx_runloop.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_osx_runloop.Tpo" "$(DEPDIR)/libsu_la-su_osx_runloop.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_osx_runloop.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_osx_runloop.c' object='libsu_la-su_osx_runloop.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_osx_runloop.lo `test -f 'su_osx_runloop.c' || echo '$(srcdir)/'`su_osx_runloop.c
+
+libsu_la-memmem.lo: memmem.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-memmem.lo -MD -MP -MF "$(DEPDIR)/libsu_la-memmem.Tpo" -c -o libsu_la-memmem.lo `test -f 'memmem.c' || echo '$(srcdir)/'`memmem.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-memmem.Tpo" "$(DEPDIR)/libsu_la-memmem.Plo"; else rm -f "$(DEPDIR)/libsu_la-memmem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='memmem.c' object='libsu_la-memmem.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-memmem.lo `test -f 'memmem.c' || echo '$(srcdir)/'`memmem.c
+
+libsu_la-strtoull.lo: strtoull.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-strtoull.lo -MD -MP -MF "$(DEPDIR)/libsu_la-strtoull.Tpo" -c -o libsu_la-strtoull.lo `test -f 'strtoull.c' || echo '$(srcdir)/'`strtoull.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-strtoull.Tpo" "$(DEPDIR)/libsu_la-strtoull.Plo"; else rm -f "$(DEPDIR)/libsu_la-strtoull.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='strtoull.c' object='libsu_la-strtoull.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-strtoull.lo `test -f 'strtoull.c' || echo '$(srcdir)/'`strtoull.c
+
+libsu_la-strcasestr.lo: strcasestr.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-strcasestr.lo -MD -MP -MF "$(DEPDIR)/libsu_la-strcasestr.Tpo" -c -o libsu_la-strcasestr.lo `test -f 'strcasestr.c' || echo '$(srcdir)/'`strcasestr.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-strcasestr.Tpo" "$(DEPDIR)/libsu_la-strcasestr.Plo"; else rm -f "$(DEPDIR)/libsu_la-strcasestr.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='strcasestr.c' object='libsu_la-strcasestr.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-strcasestr.lo `test -f 'strcasestr.c' || echo '$(srcdir)/'`strcasestr.c
+
+libsu_la-memspn.lo: memspn.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-memspn.lo -MD -MP -MF "$(DEPDIR)/libsu_la-memspn.Tpo" -c -o libsu_la-memspn.lo `test -f 'memspn.c' || echo '$(srcdir)/'`memspn.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-memspn.Tpo" "$(DEPDIR)/libsu_la-memspn.Plo"; else rm -f "$(DEPDIR)/libsu_la-memspn.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='memspn.c' object='libsu_la-memspn.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-memspn.lo `test -f 'memspn.c' || echo '$(srcdir)/'`memspn.c
+
+libsu_la-memcspn.lo: memcspn.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-memcspn.lo -MD -MP -MF "$(DEPDIR)/libsu_la-memcspn.Tpo" -c -o libsu_la-memcspn.lo `test -f 'memcspn.c' || echo '$(srcdir)/'`memcspn.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-memcspn.Tpo" "$(DEPDIR)/libsu_la-memcspn.Plo"; else rm -f "$(DEPDIR)/libsu_la-memcspn.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='memcspn.c' object='libsu_la-memcspn.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-memcspn.lo `test -f 'memcspn.c' || echo '$(srcdir)/'`memcspn.c
+
+libsu_la-memccpy.lo: memccpy.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-memccpy.lo -MD -MP -MF "$(DEPDIR)/libsu_la-memccpy.Tpo" -c -o libsu_la-memccpy.lo `test -f 'memccpy.c' || echo '$(srcdir)/'`memccpy.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-memccpy.Tpo" "$(DEPDIR)/libsu_la-memccpy.Plo"; else rm -f "$(DEPDIR)/libsu_la-memccpy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='memccpy.c' object='libsu_la-memccpy.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-memccpy.lo `test -f 'memccpy.c' || echo '$(srcdir)/'`memccpy.c
+
+libsu_la-inet_ntop.lo: inet_ntop.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-inet_ntop.lo -MD -MP -MF "$(DEPDIR)/libsu_la-inet_ntop.Tpo" -c -o libsu_la-inet_ntop.lo `test -f 'inet_ntop.c' || echo '$(srcdir)/'`inet_ntop.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-inet_ntop.Tpo" "$(DEPDIR)/libsu_la-inet_ntop.Plo"; else rm -f "$(DEPDIR)/libsu_la-inet_ntop.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='inet_ntop.c' object='libsu_la-inet_ntop.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-inet_ntop.lo `test -f 'inet_ntop.c' || echo '$(srcdir)/'`inet_ntop.c
+
+libsu_la-inet_pton.lo: inet_pton.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-inet_pton.lo -MD -MP -MF "$(DEPDIR)/libsu_la-inet_pton.Tpo" -c -o libsu_la-inet_pton.lo `test -f 'inet_pton.c' || echo '$(srcdir)/'`inet_pton.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-inet_pton.Tpo" "$(DEPDIR)/libsu_la-inet_pton.Plo"; else rm -f "$(DEPDIR)/libsu_la-inet_pton.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='inet_pton.c' object='libsu_la-inet_pton.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-inet_pton.lo `test -f 'inet_pton.c' || echo '$(srcdir)/'`inet_pton.c
+
+libsu_la-poll.lo: poll.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-poll.lo -MD -MP -MF "$(DEPDIR)/libsu_la-poll.Tpo" -c -o libsu_la-poll.lo `test -f 'poll.c' || echo '$(srcdir)/'`poll.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-poll.Tpo" "$(DEPDIR)/libsu_la-poll.Plo"; else rm -f "$(DEPDIR)/libsu_la-poll.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='poll.c' object='libsu_la-poll.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-poll.lo `test -f 'poll.c' || echo '$(srcdir)/'`poll.c
+
+libsu_la-getopt.lo: getopt.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-getopt.lo -MD -MP -MF "$(DEPDIR)/libsu_la-getopt.Tpo" -c -o libsu_la-getopt.lo `test -f 'getopt.c' || echo '$(srcdir)/'`getopt.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-getopt.Tpo" "$(DEPDIR)/libsu_la-getopt.Plo"; else rm -f "$(DEPDIR)/libsu_la-getopt.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='getopt.c' object='libsu_la-getopt.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-getopt.lo `test -f 'getopt.c' || echo '$(srcdir)/'`getopt.c
+
+libsu_la-su_tag_ref.lo: su_tag_ref.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_tag_ref.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_tag_ref.Tpo" -c -o libsu_la-su_tag_ref.lo `test -f 'su_tag_ref.c' || echo '$(srcdir)/'`su_tag_ref.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_tag_ref.Tpo" "$(DEPDIR)/libsu_la-su_tag_ref.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_tag_ref.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_tag_ref.c' object='libsu_la-su_tag_ref.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_tag_ref.lo `test -f 'su_tag_ref.c' || echo '$(srcdir)/'`su_tag_ref.c
+
+libsu_la-su_win32_port.lo: su_win32_port.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -MT libsu_la-su_win32_port.lo -MD -MP -MF "$(DEPDIR)/libsu_la-su_win32_port.Tpo" -c -o libsu_la-su_win32_port.lo `test -f 'su_win32_port.c' || echo '$(srcdir)/'`su_win32_port.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsu_la-su_win32_port.Tpo" "$(DEPDIR)/libsu_la-su_win32_port.Plo"; else rm -f "$(DEPDIR)/libsu_la-su_win32_port.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='su_win32_port.c' object='libsu_la-su_win32_port.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsu_la_CFLAGS) $(CFLAGS) -c -o libsu_la-su_win32_port.lo `test -f 'su_win32_port.c' || echo '$(srcdir)/'`su_win32_port.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

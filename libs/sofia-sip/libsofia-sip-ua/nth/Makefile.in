@@ -349,7 +349,8 @@ test_nth_LDFLAGS = -static
 EXTRA_DIST = Doxyfile nth.docs $(BUILT_SOURCES) \
 			agent.pem cafile.pem
 
-AM_CFLAGS = $(CWFLAG) $(SOFIA_COVERAGE) $(am__append_1)
+AM_CFLAGS = $(CWFLAG) $(SOFIA_COVERAGE) $(SOFIA_CFLAGS) \
+	$(am__append_1)
 DISTCLEANFILES = $(BUILT_SOURCES)
 
 # rules for building tag files

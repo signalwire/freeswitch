@@ -356,7 +356,8 @@ test_auth_digest_LDFLAGS = -static
 EXTRA_DIST = Doxyfile iptsec.docs testpasswd \
 			auth_module_sip.c $(HTTP_SRC) $(BUILT_SOURCES)
 
-AM_CFLAGS = $(CWFLAG) $(SOFIA_COVERAGE) $(am__append_1)
+AM_CFLAGS = $(CWFLAG) $(SOFIA_COVERAGE) $(SOFIA_CFLAGS) \
+	$(am__append_1)
 DISTCLEANFILES = $(BUILT_SOURCES)
 
 # rules for building tag files

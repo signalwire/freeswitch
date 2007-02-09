@@ -319,7 +319,8 @@ EXTRA_DIST = Doxyfile url.docs $(BUILT_SOURCES)
 # ----------------------------------------------------------------------
 # Tests
 TESTS = torture_url test_urlmap
-AM_CFLAGS = $(CWFLAG) $(SOFIA_COVERAGE) $(am__append_1)
+AM_CFLAGS = $(CWFLAG) $(SOFIA_COVERAGE) $(SOFIA_CFLAGS) \
+	$(am__append_1)
 DISTCLEANFILES = $(BUILT_SOURCES)
 
 # rules for building tag files

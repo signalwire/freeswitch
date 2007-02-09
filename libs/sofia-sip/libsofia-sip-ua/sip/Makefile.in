@@ -380,7 +380,8 @@ EXTRA_DIST = Doxyfile sip.docs sip_parser.docs sip.doxyaliases \
 	tests/test35.txt tests/test36.txt tests/test37.txt tests/test38.txt  \
 	tests/test39.txt tests/test40.txt tests/test41.txt tests/test42.txt
 
-AM_CFLAGS = $(CWFLAG) $(SOFIA_COVERAGE) $(am__append_1)
+AM_CFLAGS = $(CWFLAG) $(SOFIA_COVERAGE) $(SOFIA_CFLAGS) \
+	$(am__append_1)
 DISTCLEANFILES = $(BUILT_SOURCES)
 
 # rules for building tag files

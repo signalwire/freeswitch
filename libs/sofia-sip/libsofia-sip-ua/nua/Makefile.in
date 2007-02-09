@@ -376,7 +376,8 @@ test_nua_SOURCES = test_nua.c test_nua.h test_ops.c \
 # ----------------------------------------------------------------------
 # Install and distribution rules
 EXTRA_DIST = Doxyfile nua.docs $(BUILT_SOURCES)
-AM_CFLAGS = $(CWFLAG) $(SOFIA_COVERAGE) $(am__append_1)
+AM_CFLAGS = $(CWFLAG) $(SOFIA_COVERAGE) $(SOFIA_CFLAGS) \
+	$(am__append_1)
 DISTCLEANFILES = $(BUILT_SOURCES)
 
 # rules for building tag files

@@ -330,7 +330,8 @@ EXTRA_DIST = Doxyfile http.docs \
 			http_parser_table.c.in \
 			http_tag.c.in
 
-AM_CFLAGS = $(CWFLAG) $(SOFIA_COVERAGE) $(am__append_1)
+AM_CFLAGS = $(CWFLAG) $(SOFIA_COVERAGE) $(SOFIA_CFLAGS) \
+	$(am__append_1)
 DISTCLEANFILES = $(BUILT_SOURCES)
 
 # rules for building tag files
