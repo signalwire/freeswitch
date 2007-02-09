@@ -997,6 +997,80 @@ static JSBool session_collect_input(JSContext *cx, JSObject *obj, uintN argc, js
 	return JS_TRUE;
 }
 
+/* session.sayphrase(phrase_name, phrase_data, language, dtmf_callback, dtmf_callback_args)*/
+
+static JSBool session_sayphrase(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct js_session *jss = JS_GetPrivate(cx, obj);
+	switch_channel_t *channel;
+	char *phrase_name = NULL;
+    char *phrase_data = NULL;
+    char *phrase_lang = NULL;
+	//char *input_callback = NULL;
+	void *bp = NULL;
+	int len = 0;
+	switch_input_callback_function_t dtmf_func = NULL;
+	struct input_callback_state cb_state = {0};
+	JSFunction *function;
+    switch_input_args_t args = {0};
+
+	channel = switch_core_session_get_channel(jss->session);
+	assert(channel != NULL);
+
+    if (!switch_channel_ready(channel)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
+        *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+        return JS_TRUE;
+    }
+
+	
+	if (argc > 0) {
+		phrase_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		if (switch_strlen_zero(phrase_name)) {
+			return JS_FALSE;
+		}
+	}
+
+    if (argc > 1) {
+        phrase_data = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+    }
+
+    if (argc > 2) {
+        phrase_lang = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
+    }
+
+	if (argc > 3) {
+		if ((function = JS_ValueToFunction(cx, argv[3]))) {
+			memset(&cb_state, 0, sizeof(cb_state));
+			cb_state.function = function;
+
+			if (argc > 4) {
+				cb_state.arg = argv[4];
+			}
+
+			cb_state.session_state = jss;
+			cb_state.cx = cx;
+			cb_state.obj = obj;
+			dtmf_func = js_stream_input_callback;
+			bp = &cb_state;
+			len = sizeof(cb_state);
+		}
+	}
+
+	cb_state.ret = BOOLEAN_TO_JSVAL( JS_FALSE );
+    cb_state.saveDepth = JS_SuspendRequest(cx);
+    args.input_callback = dtmf_func;
+    args.buf = bp;
+    args.buflen = len;
+
+    switch_ivr_phrase_macro(jss->session, phrase_name, phrase_data, phrase_lang, &args);
+
+    JS_ResumeRequest(cx, cb_state.saveDepth);
+	*rval = cb_state.ret;
+	
+	return JS_TRUE;
+}
+
 static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
@@ -1623,7 +1697,8 @@ enum session_tinyid {
 };
 
 static JSFunctionSpec session_methods[] = {
-	{"streamFile", session_streamfile, 1}, 
+    {"sayPhrase", session_sayphrase, 1}, 
+    {"streamFile", session_streamfile, 1}, 
 	{"collectInput", session_collect_input, 1}, 
 	{"recordFile", session_recordfile, 1}, 
 	{"flushEvents", session_flush_events, 1}, 
