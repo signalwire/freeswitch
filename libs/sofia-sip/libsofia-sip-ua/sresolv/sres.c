@@ -930,8 +930,10 @@ sres_query(sres_resolver_t *res,
   SU_DEBUG_9(("sres_query(%p, %p, %s, \"%s\") called\n",
 			  (void *)res, (void *)context, sres_record_type(type, b), domain));
 
-  if (res == NULL || domain == NULL)
-    return su_seterrno(EFAULT), (void *)NULL;
+  if (res == NULL || domain == NULL) {
+    su_seterrno(EFAULT);
+	return NULL;
+  }
 
   dlen = strlen(domain);
   if (dlen > SRES_MAXDNAME ||
@@ -943,8 +945,10 @@ sres_query(sres_resolver_t *res,
   /* Reread resolv.conf if needed */
   sres_resolver_update(res, 0);
 
-  if (res->res_n_servers == 0)
-    return (void)su_seterrno(ENETDOWN), (sres_query_t *)NULL;
+  if (res->res_n_servers == 0) {
+    su_seterrno(ENETDOWN);
+	return NULL;
+  }
 
   query = sres_query_alloc(res, callback, context, type, domain);
 
