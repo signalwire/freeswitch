@@ -4617,6 +4617,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
     channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
 
+	if (!macro_name) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No phrase macro specified.\n");
+		return status;
+	}
+
+	if (!lang) {
+		lang = "en";
+	}
+
+	if (!data) {
+		data = "";
+	}
+
     switch_url_encode(data, enc_hint, sizeof(enc_hint));
     snprintf(hint_data, sizeof(hint_data), "macro_name=%s&lang=%s&data=%s", macro_name, lang, enc_hint);
     

@@ -128,9 +128,8 @@ static void phrase_function(switch_core_session_t *session, char *data)
         if ((mdata = strchr(macro, ','))) {
             *mdata++ = '\0';
         }
-        if (!(lang = switch_channel_get_variable(channel, "language"))) {
-            lang = "en";
-        }
+
+        lang = switch_channel_get_variable(channel, "language");
         
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Execute %s(%s) lang %s\n", macro, mdata, lang);
         switch_ivr_phrase_macro(session, macro, mdata, lang, NULL);

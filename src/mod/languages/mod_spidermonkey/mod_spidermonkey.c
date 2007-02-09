@@ -1029,7 +1029,10 @@ static JSBool session_sayphrase(JSContext *cx, JSObject *obj, uintN argc, jsval 
 		if (switch_strlen_zero(phrase_name)) {
 			return JS_FALSE;
 		}
+	} else {
+		return JS_FALSE;
 	}
+
 
     if (argc > 1) {
         phrase_data = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
