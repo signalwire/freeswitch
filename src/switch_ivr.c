@@ -4697,7 +4697,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
             }
 
             if (match) {
-                for (action = switch_xml_child(match, "action"); action; action = action->next) {
+				status = SWITCH_STATUS_SUCCESS;
+                for (action = switch_xml_child(match, "action"); action && status == SWITCH_STATUS_SUCCESS; action = action->next) {
                     char *adata = (char *) switch_xml_attr_soft(action, "data");
                     char *func = (char *) switch_xml_attr_soft(action, "function");
 
@@ -4739,7 +4740,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
                             char *say_type = (char *) switch_xml_attr_soft(action, "type");
                             char *say_method = (char *) switch_xml_attr_soft(action, "method");
                             
-                            si->say_function(session, odata, get_say_type_by_name(say_type), get_say_method_by_name(say_method), args);
+                            status = si->say_function(session, odata, get_say_type_by_name(say_type), get_say_method_by_name(say_method), args);
                         } else {
                             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid SAY Interface [%s]!\n", lang);
                         }
@@ -4747,12 +4748,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
                         switch_codec_t *read_codec;
                         if ((read_codec = switch_core_session_get_read_codec(session))) {
                             
-                            switch_ivr_speak_text(session,
-                                                  tts_engine,
-                                                  tts_voice,
-                                                  read_codec->implementation->samples_per_second,
-                                                  odata,
-                                                  args);
+                            status = switch_ivr_speak_text(session,
+														   tts_engine,
+														   tts_voice,
+														   read_codec->implementation->samples_per_second,
+														   odata,
+														   args);
                         }
                     }
                 }
@@ -4762,6 +4763,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
             switch_safe_free(expanded);
             switch_safe_free(substituted);
         }
+
+		if (status != SWITCH_STATUS_SUCCESS) {
+			break;
+		}
 
         input = input->next;
     }

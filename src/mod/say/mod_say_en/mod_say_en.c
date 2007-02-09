@@ -46,8 +46,11 @@ static const char modname[] = "mod_say_en";
 
 #define say_file(...) {\
 		char tmp[80];\
+		switch_status_t status;\
 		snprintf(tmp, sizeof(tmp), __VA_ARGS__);\
-		switch_ivr_play_file(session, NULL, tmp, args); \
+		if ((status = switch_ivr_play_file(session, NULL, tmp, args)) != SWITCH_STATUS_SUCCESS){ \
+			return status;\
+		}\
 		if (!switch_channel_ready(switch_core_session_get_channel(session))) {\
 			return SWITCH_STATUS_FALSE;\
 		}}\
@@ -540,10 +543,10 @@ static switch_status_t en_say(switch_core_session_t *session,
 	}
 	
 	if (say_cb) {
-		say_cb(session, tosay, type, method, args);
+		return say_cb(session, tosay, type, method, args);
 	} 
 
-	return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_FALSE;
 }
 
 static const switch_say_interface_t en_say_interface= {
