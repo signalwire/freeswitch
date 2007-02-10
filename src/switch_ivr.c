@@ -1893,7 +1893,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 		}
 	}
 
-	switch_ivr_speak_text_handle(session, &sh, &codec, timer_name ? &timer : NULL, text, args);
+	status = switch_ivr_speak_text_handle(session, &sh, &codec, timer_name ? &timer : NULL, text, args);
 	flags = 0;	
 	switch_core_speech_close(&sh, &flags);
 	switch_core_codec_destroy(&codec);
@@ -4741,7 +4741,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Handle %s:[%s] (%s)\n", func, odata, lang);
 
                     if (!strcasecmp(func, "play-file")) {
-                        switch_ivr_play_file(session, NULL, odata, args);
+                        status = switch_ivr_play_file(session, NULL, odata, args);
                     } else if (!strcasecmp(func, "break")) {
                         done = 1;
                         break;
@@ -4778,6 +4778,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
         }
 
 		if (status != SWITCH_STATUS_SUCCESS) {
+            done = 1;
 			break;
 		}
 
