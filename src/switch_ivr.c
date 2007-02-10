@@ -2339,21 +2339,22 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 									switch_core_session_t **peer_sessions,
 									uint32_t len,
 									int32_t *idx,
+									uint32_t *hups,
 									char *file,
 									char *key,
 									uint8_t early_ok)
 {
 
 	uint32_t i;
-	uint32_t hups = 0;	
-	*idx = -1;
+	*hups = 0;
+	*idx = IDX_NADA;
 	
 	for (i = 0; i < len; i++) {
 		if (!peer_channels[i]) {
 			continue;
 		}
 		if (switch_channel_get_state(peer_channels[i]) >= CS_HANGUP) {
-			hups++;
+			(*hups)++;
 		} else if ((switch_channel_test_flag(peer_channels[i], CF_ANSWERED) || 
                     (early_ok && len == 1 && switch_channel_test_flag(peer_channels[i], CF_EARLY_MEDIA))) && 
 				   !switch_channel_test_flag(peer_channels[i], CF_TAGGED)) {
@@ -2382,7 +2383,7 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 		}
 	}
 
-	if (hups == len) {
+	if (*hups == len) {
 		return 0;
 	} else {
 		return 1;
@@ -2454,6 +2455,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	uint8_t sent_ring = 0, early_ok = 1;
 	switch_core_session_message_t *message = NULL;
     switch_event_t *var_event = NULL;
+	uint8_t fail_on_single_reject = 0;
 
 	write_frame.data = fdata;
 	
@@ -2548,6 +2550,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
         }
     }
 
+	// When using the AND operator, the fail_on_single_reject flage may be set in order to indicate that a single
+	// rejections should terminate the attempt rather than a timeout, answer, or rejection by all.
+	if ((var = switch_event_get_header(var_event, "fail_on_single_reject")) && switch_true(var)) {
+		fail_on_single_reject = 1;
+	}
+
 	if (file && !strcmp(file, "undef")) {
 		file = NULL;
 	}
@@ -2573,6 +2581,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	for (r = 0; r < or_argc; r++) {
+		uint32_t hups;
         reason = SWITCH_CAUSE_UNALLOCATED;
 		memset(peer_names, 0, sizeof(peer_names));
 		peer_session = NULL;
@@ -2841,9 +2850,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
         }
 
         while ((!caller_channel || switch_channel_ready(caller_channel)) && 
-			   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, file, key, early_ok)) {
+			   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, &hups, file, key, early_ok)) {
 
-			if ((to = (uint8_t)((time(NULL) - start) >= (time_t)timelimit_sec))) {
+			// When the AND operator is being used, and fail_on_single_reject is set, a hangup indicates that the call should fail.
+			if ((to = (uint8_t)((time(NULL) - start) >= (time_t)timelimit_sec)) || (fail_on_single_reject && hups)) {
 				idx = IDX_CANCEL;
 				goto notready;
 			}
