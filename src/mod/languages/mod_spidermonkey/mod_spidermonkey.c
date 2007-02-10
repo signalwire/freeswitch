@@ -1054,7 +1054,7 @@ static JSBool session_sayphrase(JSContext *cx, JSObject *obj, uintN argc, jsval 
 			cb_state.session_state = jss;
 			cb_state.cx = cx;
 			cb_state.obj = obj;
-			dtmf_func = js_stream_input_callback;
+			dtmf_func = js_collect_input_callback;
 			bp = &cb_state;
 			len = sizeof(cb_state);
 		}
