@@ -4215,6 +4215,7 @@ static void sip_i_invite(nua_t *nua,
 
     if (!(sip && sip->sip_contact && sip->sip_contact->m_url)) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO CONTACT!\n");
+		nua_respond(nh, 400, "Missing Contact Header", TAG_END());
         return;
     }
 
@@ -4226,12 +4227,13 @@ static void sip_i_invite(nua_t *nua,
 
     if (!(session = switch_core_session_request(&sofia_endpoint_interface, NULL))) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Session Alloc Failed!\n");
-        return;
+		nua_respond(nh, SIP_503_SERVICE_UNAVAILABLE, TAG_END());
+		return;
     }
 
     if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
-        terminate_session(&session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+        terminate_session(&session, SWITCH_CAUSE_SWITCH_CONGESTION, __LINE__);
         return;
     }
 
