@@ -1282,7 +1282,7 @@ static JSBool session_get_digits(JSContext *cx, JSObject *obj, uintN argc, jsval
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 	char *terminators = NULL;
-	char *buf;
+	char buf[128] = "";
 	int digits;
 	int32 timeout = 5000;
 	switch_channel_t *channel;
@@ -1307,8 +1307,8 @@ static JSBool session_get_digits(JSContext *cx, JSObject *obj, uintN argc, jsval
 			JS_ValueToInt32(cx, argv[2], &timeout);
 		}
 
-		buf = switch_core_session_alloc(jss->session, digits);
-		switch_ivr_collect_digits_count(jss->session, buf, digits, digits, terminators, &term, timeout);
+
+		switch_ivr_collect_digits_count(jss->session, buf, sizeof(buf), digits, terminators, &term, timeout);
 		*rval = STRING_TO_JSVAL ( JS_NewStringCopyZ(cx, buf) );
 		return JS_TRUE;
 	}

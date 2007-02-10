@@ -314,7 +314,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 		if (switch_channel_has_dtmf(channel)) {
 			char dtmf[128];
 
-			switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
+			switch_channel_dequeue_dtmf(channel, dtmf, maxdigits);
 			for(i =0 ; i < (uint32_t) strlen(dtmf); i++) {
 
 				if (!switch_strlen_zero(terminators) && strchr(terminators, dtmf[i]) && terminator != NULL) {

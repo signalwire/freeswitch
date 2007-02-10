@@ -838,6 +838,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				rtp_session->dtmf_data.last_digit = 0;
 				rtp_session->dtmf_data.dc = 0;
 			}
+
 			if (duration && end) {
 				if (key != rtp_session->dtmf_data.last_digit) {
 					char digit_str[] = {key, 0};
@@ -917,6 +918,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_queue_dtmf(switch_rtp_t *rtp_session,
 		}
 		p++;
 	}
+
 	status = switch_buffer_write(rtp_session->dtmf_data.dtmf_buffer, dtmf, wr) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_MEMERR;
 	switch_mutex_unlock(rtp_session->dtmf_data.dtmf_mutex);
 
