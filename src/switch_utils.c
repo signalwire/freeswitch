@@ -397,6 +397,7 @@ SWITCH_DECLARE(unsigned char) switch_char_to_rfc2833(char key)
     char *c;
 	unsigned char counter = 0;
 
+    key = (char)toupper(key);
     for (c = RFC2833_CHARS; *c ; c++) {
         if (*c == key) {
             return counter;
