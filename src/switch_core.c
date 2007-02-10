@@ -2547,7 +2547,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
         if (strchr(dtmf, 'w') || strchr(dtmf, 'W')) {
             char *d;
             for (d = dtmf; d && *d; d++) {
-                char digit[2] = "";
+				char digit[2] = {0};
                 
                 if (*d == 'w') {
                     switch_yield(500000);
