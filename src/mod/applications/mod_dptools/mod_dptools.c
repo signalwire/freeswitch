@@ -162,6 +162,15 @@ static void answer_function(switch_core_session_t *session, char *data)
 	switch_channel_answer(channel);
 }
 
+static void pre_answer_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+	channel = switch_core_session_get_channel(session);
+
+    assert(channel != NULL);
+	switch_channel_pre_answer(channel);
+}
+
 static void redirect_function(switch_core_session_t *session, char *data)
 {
     switch_core_session_message_t msg = {0};
@@ -595,13 +604,23 @@ static const switch_application_interface_t answer_application_interface = {
 
 };
 
+static const switch_application_interface_t pre_answer_application_interface = {
+	/*.interface_name */ "pre_answer",
+	/*.application_function */ pre_answer_function,
+	/* long_desc */ "Pre-Answer the call for a channel.",
+	/* short_desc */ "Pre-Answer the call",
+	/* syntax */ "",
+	/*.next */ &hangup_application_interface
+
+};
+
 static const switch_application_interface_t eval_application_interface = {
 	/*.interface_name */ "eval",
 	/*.application_function */ eval_function,
 	/* long_desc */ "Do Nothing",
 	/* short_desc */ "Do Nothing",
 	/* syntax */ "",
-	/*.next */ &answer_application_interface
+	/*.next */ &pre_answer_application_interface
 
 };
 

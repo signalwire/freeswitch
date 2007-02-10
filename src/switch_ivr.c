@@ -2552,7 +2552,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		file = NULL;
 	}
 
-    if ((var_val = switch_event_get_header(var_event, "noanswer_early_media")) && switch_true(var_val)) {
+    if ((var_val = switch_event_get_header(var_event, "ignore_early_media")) && switch_true(var_val)) {
         early_ok = 0;
     }
 
@@ -2755,9 +2755,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			switch_channel_pre_answer(caller_channel);
 		}
 
-		if (session && (ringback_data || !switch_channel_test_flag(caller_channel, CF_NOMEDIA))) {
-			read_codec = switch_core_session_get_read_codec(session);
-			assert(read_codec != NULL);
+		if (session && (read_codec = switch_core_session_get_read_codec(session)) && 
+			(ringback_data || !switch_channel_test_flag(caller_channel, CF_NOMEDIA))) {
 
 			if (!(pass = (uint8_t)switch_test_flag(read_codec, SWITCH_CODEC_FLAG_PASSTHROUGH))) {
 				if (switch_core_codec_init(&write_codec,

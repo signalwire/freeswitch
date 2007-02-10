@@ -1604,47 +1604,47 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
     
-
-    if (switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
-        char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
-        if (tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
-            switch_channel_set_variable(channel, "endpoint_disposition", "CODEC NEGOTIATION ERROR");
-            nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
-            return SWITCH_STATUS_FALSE;
-        }
-        switch_clear_flag_locked(tech_pvt, TFLAG_LATE_NEGOTIATION);
-    }
-
-	if (switch_channel_test_flag(channel, CF_NOMEDIA)) {
-		switch_set_flag_locked(tech_pvt, TFLAG_NOMEDIA);
-		tech_absorb_sdp(tech_pvt);
-	}
-
 	if (!switch_test_flag(tech_pvt, TFLAG_ANS) && !switch_channel_test_flag(channel, CF_OUTBOUND)) {
 		switch_set_flag_locked(tech_pvt, TFLAG_ANS);
 
-
-		if ((status = tech_choose_port(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
-            return status;
-        }
-
-		set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
-		activate_rtp(tech_pvt);
-		
-		if (tech_pvt->nh) {
-			if (tech_pvt->local_sdp_str) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local SDP %s:\n%s\n",
-								  switch_channel_get_name(channel),
-								  tech_pvt->local_sdp_str);
+		if (switch_channel_test_flag(channel, CF_NOMEDIA)) {
+			char *sdp = NULL;
+			switch_set_flag_locked(tech_pvt, TFLAG_NOMEDIA);
+			if ((sdp = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE))) {
+				tech_pvt->local_sdp_str = switch_core_session_strdup(session, sdp);
 			}
-			nua_respond(tech_pvt->nh, SIP_200_OK, 
-						SIPTAG_CONTACT_STR(tech_pvt->profile->url),
-						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-						SOATAG_AUDIO_AUX("cn telephone-event"),
-						NUTAG_INCLUDE_EXTRA_SDP(1),
-						TAG_END());
+		} else {
+			if (switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
+				char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
+				if (tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
+					switch_channel_set_variable(channel, "endpoint_disposition", "CODEC NEGOTIATION ERROR");
+					nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+					return SWITCH_STATUS_FALSE;
+				}
+				switch_clear_flag_locked(tech_pvt, TFLAG_LATE_NEGOTIATION);
+			}
 
+			if ((status = tech_choose_port(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
+				return status;
+			}
+
+			set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
+			activate_rtp(tech_pvt);
+		
+			if (tech_pvt->nh) {
+				if (tech_pvt->local_sdp_str) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local SDP %s:\n%s\n",
+									  switch_channel_get_name(channel),
+								  tech_pvt->local_sdp_str);
+				}
+			}
 		}
+		nua_respond(tech_pvt->nh, SIP_200_OK, 
+					SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+					SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+					SOATAG_AUDIO_AUX("cn telephone-event"),
+					NUTAG_INCLUDE_EXTRA_SDP(1),
+					TAG_END());
 	} 
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1842,7 +1842,9 @@ static switch_status_t sofia_kill_channel(switch_core_session_t *session, int si
 
     switch(sig) {
     case SWITCH_SIG_BREAK:
-        switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_BREAK);
+        if (switch_rtp_ready(tech_pvt->rtp_session)) {
+			switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_BREAK);
+		}
         break;
     case SWITCH_SIG_KILL:
     default:
@@ -2024,36 +2026,38 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	    tech_pvt = switch_core_session_get_private(session);
 	    assert(tech_pvt != NULL);
 
-
-        if (switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
-            char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
-            if (tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
-                switch_channel_set_variable(channel, "endpoint_disposition", "CODEC NEGOTIATION ERROR");
-                nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
-                return SWITCH_STATUS_FALSE;
-            }
-            switch_clear_flag_locked(tech_pvt, TFLAG_LATE_NEGOTIATION);
-        }
-
-	    if (!switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA) && !switch_test_flag(tech_pvt, TFLAG_ANS)) {
+		if (!switch_test_flag(tech_pvt, TFLAG_ANS)) {
 			switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Asked to send early media by %s\n", msg->from);
 
-
-			if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
-				tech_absorb_sdp(tech_pvt);
-			}
-
 			/* Transmit 183 Progress with SDP */
-			if ((status=tech_choose_port(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
-                return status;
-            }
-			set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
-			activate_rtp(tech_pvt);
-			if (tech_pvt->local_sdp_str) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Ring SDP:\n%s\n", tech_pvt->local_sdp_str);
-			}
+			if (switch_channel_test_flag(channel, CF_NOMEDIA)) {
+				char *sdp = NULL;
+				switch_set_flag_locked(tech_pvt, TFLAG_NOMEDIA);
+				if ((sdp = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE))) {
+					tech_pvt->local_sdp_str = switch_core_session_strdup(session, sdp);
+				}
+			} else {
+				if (switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
+					char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
+					if (tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
+						switch_channel_set_variable(channel, "endpoint_disposition", "CODEC NEGOTIATION ERROR");
+						nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+						return SWITCH_STATUS_FALSE;
+					}
+					switch_clear_flag_locked(tech_pvt, TFLAG_LATE_NEGOTIATION);
+				}
 
+				if ((status=tech_choose_port(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
+					return status;
+				}
+				set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
+				activate_rtp(tech_pvt);
+				if (tech_pvt->local_sdp_str) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Ring SDP:\n%s\n", tech_pvt->local_sdp_str);
+				}
+			}
+			
 			nua_respond(tech_pvt->nh,
 						SIP_183_SESSION_PROGRESS,
 						SIPTAG_CONTACT_STR(tech_pvt->profile->url),
@@ -2786,24 +2790,31 @@ static void sip_i_state(int status,
 					}
 				}
 			}
+
 			if (r_sdp) {
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 					switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
                     switch_channel_mark_pre_answered(channel);
 					if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
 						other_channel = switch_core_session_get_channel(other_session);
+						if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
+							switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, (char *)r_sdp);
+						}
+
 						switch_channel_pre_answer(other_channel);
 						switch_core_session_rwunlock(other_session);
 					}
                     goto done;
-				} else if (!switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
-                    if (tech_media(tech_pvt, (char *)r_sdp) != SWITCH_STATUS_SUCCESS) {
-                        switch_channel_set_variable(channel, "endpoint_disposition", "CODEC NEGOTIATION ERROR");
-                        nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
-                    }
-                    goto done;
-                } else {
-                    switch_channel_set_variable(channel, "endpoint_disposition", "DELAYED NEGOTIATION");
+				} else {
+					if (switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
+						switch_channel_set_variable(channel, "endpoint_disposition", "DELAYED NEGOTIATION");
+					} else {
+						if (tech_media(tech_pvt, (char *)r_sdp) != SWITCH_STATUS_SUCCESS) {
+							switch_channel_set_variable(channel, "endpoint_disposition", "CODEC NEGOTIATION ERROR");
+							nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+						}
+					}
+					goto done;
                 }
 			}
 		}
@@ -2932,12 +2943,29 @@ static void sip_i_state(int status,
 		}
 
 		if (channel) {
+			if (switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
+				switch_set_flag_locked(tech_pvt, TFLAG_ANS);
+                switch_channel_mark_answered(channel);
+                if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+                    other_channel = switch_core_session_get_channel(other_session);
+                    switch_channel_answer(other_channel);
+                    switch_core_session_rwunlock(other_session);
+                }
+				goto done;
+			}
+
+			if (!r_sdp) {
+				r_sdp = (const char *) switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
+			}
 			if (r_sdp) {
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 					switch_set_flag_locked(tech_pvt, TFLAG_ANS);
                     switch_channel_mark_answered(channel);
 					if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
 						other_channel = switch_core_session_get_channel(other_session);
+						if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
+							switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, (char *)r_sdp);
+						}
 						switch_channel_answer(other_channel);
 						switch_core_session_rwunlock(other_session);
 					}
@@ -2970,16 +2998,8 @@ static void sip_i_state(int status,
 					switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
 					nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
 				}
-			} else if (switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
-				switch_set_flag_locked(tech_pvt, TFLAG_ANS);
-                switch_channel_mark_answered(channel);
-                if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
-                    other_channel = switch_core_session_get_channel(other_session);
-                    switch_channel_answer(other_channel);
-                    switch_core_session_rwunlock(other_session);
-                }
-				goto done;
-			} //else probably an ack
+			}
+			
 		}
 		
 		break;
