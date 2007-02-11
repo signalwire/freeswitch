@@ -1282,9 +1282,8 @@ static JSBool session_get_digits(JSContext *cx, JSObject *obj, uintN argc, jsval
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 	char *terminators = NULL;
-	char buf[128] = "";
-	int digits;
-	int32 timeout = 5000;
+	char buf[513] = {0};
+	int32 digits = 0, timeout = 5000;
 	switch_channel_t *channel;
 
 	channel = switch_core_session_get_channel(jss->session);
@@ -1299,7 +1298,13 @@ static JSBool session_get_digits(JSContext *cx, JSObject *obj, uintN argc, jsval
 	
 	if (argc > 0) {
 		char term;
-		digits = atoi(JS_GetStringBytes(JS_ValueToString(cx, argv[0])));
+		JS_ValueToInt32(cx, argv[0], &digits);
+
+		if (digits > sizeof(buf) - 1) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Exceeded max digits of %d\n",  sizeof(buf) - 1);
+			return JS_FALSE;
+		}
+		
 		if (argc > 1) {
 			terminators = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 		}
