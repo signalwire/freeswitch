@@ -119,6 +119,7 @@ struct private_object {
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
 	unsigned char databuf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
+	unsigned char auxbuf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
 	struct sangoma_pri *spri;
 	sangoma_api_hdr_t hdrframe;
 	switch_caller_profile_t *caller_profile;
@@ -554,14 +555,14 @@ static switch_status_t wanpipe_read_frame(switch_core_session_t *session, switch
 
 	teletone_dtmf_detect (&tech_pvt->dtmf_detect, tech_pvt->read_frame.data, tech_pvt->read_frame.samples);
 	teletone_dtmf_get(&tech_pvt->dtmf_detect, digit_str, sizeof(digit_str));
-
+	
 	if(digit_str[0]) {
 		switch_channel_queue_dtmf(channel, digit_str);
 		if (globals.debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF DETECTED: [%s]\n", digit_str);
 		}
 		if (globals.supress_dtmf_tone) {
-			memset(tech_pvt->read_frame.data, 0, tech_pvt->read_frame.datalen);
+			tech_pvt->skip_read_frames = 20;
 		}
 	}
 
@@ -582,110 +583,43 @@ static switch_status_t wanpipe_write_frame(switch_core_session_t *session, switc
 										 switch_io_flag_t flags, int stream_id)
 {
 	private_object_t *tech_pvt;
-	switch_channel_t *channel = NULL;
-	uint32_t result = 0;
-	uint32_t bytes = frame->datalen;
-	uint8_t *bp = frame->data;
-	unsigned char dtmf[1024];
-	uint32_t bwrote = 0;
-	size_t bread;
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
-
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	uint32_t dtmf_blen;
+	void *data = frame->data;
+	int result = 0;
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
-
-
-	while (tech_pvt->dtmf_buffer && bwrote < frame->datalen && bytes > 0 && switch_buffer_inuse(tech_pvt->dtmf_buffer) > 0) {
-		if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->wpsock->fd < 0) {
-			return SWITCH_STATUS_GENERR;
-		}
-
-		if ((bread = switch_buffer_read(tech_pvt->dtmf_buffer, dtmf, tech_pvt->frame_size)) < tech_pvt->frame_size) {
-			while (bread < tech_pvt->frame_size) {
-				dtmf[bread++] = 0;
-			}
-		}
-
-		if (sangoma_socket_waitfor(tech_pvt->wpsock->fd, 1000, POLLOUT | POLLERR | POLLHUP) <= 0) {
-			return SWITCH_STATUS_GENERR;
-		}
-
-#ifdef DOTRACE	
-		write(tech_pvt->fd, dtmf, (int) bread);
-#endif
-		result = sangoma_sendmsg_socket(tech_pvt->wpsock->fd,
-									 &tech_pvt->hdrframe, sizeof(tech_pvt->hdrframe), dtmf, (unsigned short)bread, 0);
-		if (result < 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-								  "Bad Write %d bytes returned %d (%s)!\n", bread,
-								  result, strerror(errno));
-			if (errno == EBUSY) {
-				continue;
-			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Write Failed!\n");
-			status = SWITCH_STATUS_GENERR;
-			break;
-		} else {
-			bytes -= result;
-			bwrote += result;
-			bp += result;
-			result = 0;
-		}
-	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->wpsock->fd < 0) {
 		return SWITCH_STATUS_GENERR;
 	}
 
+	if (tech_pvt->dtmf_buffer && (dtmf_blen = switch_buffer_inuse(tech_pvt->dtmf_buffer))) {
+		uint32_t len = dtmf_blen > frame->datalen ? frame->datalen : dtmf_blen;
+
+		switch_buffer_read(tech_pvt->dtmf_buffer, tech_pvt->auxbuf, len);		
+		if (len < frame->datalen) {
+			memcpy(frame->data + len, tech_pvt->auxbuf + len, frame->datalen - len);
+		}
+		data= tech_pvt->auxbuf;
+	} 
+	
 	if (tech_pvt->skip_write_frames) {
 		tech_pvt->skip_write_frames--;
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	while (bytes > 0) {
-		uint32_t towrite;
-
-#if 1
-		if (sangoma_socket_waitfor(tech_pvt->wpsock->fd, 1000, POLLOUT | POLLERR | POLLHUP) <= 0) {
-			return SWITCH_STATUS_GENERR;
-		}
+#ifdef DOTRACE
+	write(tech_pvt->fd, data, frame->datalen);
 #endif
 
-#ifdef DOTRACE	
-		write(tech_pvt->fd, bp, (int) tech_pvt->frame_size);
-#endif
-		towrite = bytes >= tech_pvt->frame_size ? tech_pvt->frame_size : bytes;
-
-		if (towrite < tech_pvt->frame_size) {
-			int diff = tech_pvt->frame_size - towrite;
-			memset(bp + towrite, 0, diff);
-			towrite = tech_pvt->frame_size;
-		}
-
-		result = sangoma_sendmsg_socket(tech_pvt->wpsock->fd,
-									 &tech_pvt->hdrframe, sizeof(tech_pvt->hdrframe), bp, (unsigned short)towrite, 0);
-		if (result < 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-								  "Bad Write frame len %u write %d bytes returned %d (%s)!\n", towrite,
-								  tech_pvt->frame_size, result, strerror(errno));
-			if (errno == EBUSY) {
-				continue;
-			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Write Failed!\n");
-			status = SWITCH_STATUS_GENERR;
-			break;
-		} else {
-			bytes -= result;
-			bp += result;
-			result = 0;
-		}
-	}
+	result = sangoma_sendmsg_socket(tech_pvt->wpsock->fd, &tech_pvt->hdrframe, sizeof(tech_pvt->hdrframe), data, frame->datalen, 0);
 	
-	//printf("write %d %d\n", frame->datalen, status);	
-	return status;
+	if (result < 0 && errno != EBUSY) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t wanpipe_send_dtmf(switch_core_session_t *session, char *digits)
