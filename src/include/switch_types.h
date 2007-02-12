@@ -682,6 +682,7 @@ SWITCH_FILE_DATA_FLOAT =        (1 <<  5) - Read data in floats
 SWITCH_FILE_DATA_DOUBLE =       (1 <<  6) - Read data in doubles
 SWITCH_FILE_DATA_RAW =          (1 <<  7) - Read data as is
 SWITCH_FILE_PAUSE =             (1 <<  8) - Pause
+SWITCH_FILE_NATIVE =            (1 <<  8) - File is in native format (no transcoding)
 </pre>
  */
 typedef enum {
@@ -693,7 +694,8 @@ typedef enum {
 	SWITCH_FILE_DATA_FLOAT =		(1 <<  5),
 	SWITCH_FILE_DATA_DOUBLE =		(1 <<  6),
 	SWITCH_FILE_DATA_RAW =			(1 <<  7),
-	SWITCH_FILE_PAUSE =				(1 <<  8)
+	SWITCH_FILE_PAUSE =				(1 <<  8),
+	SWITCH_FILE_NATIVE = 			(1 <<  9)
 } switch_file_flag_t;
 
 typedef enum {

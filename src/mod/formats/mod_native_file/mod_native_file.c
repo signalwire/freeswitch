@@ -78,6 +78,7 @@ static switch_status_t native_file_file_open(switch_file_handle_t *handle, char 
 	handle->seekable = 1;
 	handle->speed = 0;
 	handle->private_info = context;
+	handle->flags |=  SWITCH_FILE_NATIVE;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File [%s] %dhz\n", path, handle->samplerate);
 
 

@@ -1142,6 +1142,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_core_session_reset(session);
 		return SWITCH_STATUS_NOTFOUND;
 	}
+	if (switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
+		asis = 1;
+	}
 
 
 	write_frame.data = abuf;
