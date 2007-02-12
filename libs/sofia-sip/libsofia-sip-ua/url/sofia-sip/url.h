@@ -34,29 +34,32 @@
 #ifndef URL_H_TYPES
 #define URL_H_TYPES
 
-/** Recognized URL schemes (value of url_t.url_type). */
+/** Recognized URL schemes (value of url_t.url_type). 
+ *
+ * @sa &lt;<a href="http://www.iana.org/assignments/uri-schemes.html">http://www.iana.org/assignments/uri-schemes.html</a>&gt;
+ */
 enum url_type_e {
-  url_invalid = -2,		/**< Invalid url. */
-  url_unknown = -1,		/**< Unknown scheme. */
-  url_any = 0,			/**< @c "*" */
-  url_sip,			/**< @c "sip:" */
-  url_sips,			/**< @c "sips:" */
-  url_tel,			/**< @c "tel:" */
-  url_fax,			/**< @c "fax:" */
-  url_modem,			/**< @c "modem:" */
-  url_http,			/**< @c "http:" */
-  url_https,			/**< @c "https:" */
-  url_ftp,			/**< @c "ftp:" */
-  url_file,			/**< @c "file:" */
-  url_rtsp,			/**< @c "rtsp:" */
-  url_rtspu,			/**< @c "rtspu:" */
-  url_mailto,			/**< @c "mailto:" */
-  url_im,			/**< @c "im:" (simple instant messaging) */
-  url_pres,			/**< @c "pres:" (simple presence) */
-  url_cid,			/**< @c "cid:" (Content-ID) */
-  url_msrp,			/**< @c "msrp:" (message session relay)  */
-  url_msrps,			/**< @c "msrps:" (new in @VERSION_1_12_2) */
-  url_wv,			/**< @c "wv:" (Wireless village) */
+  url_invalid = -2,	/**< Invalid url. */
+  url_unknown = -1,	/**< Unknown scheme. */
+  url_any = 0,		/**< "*" */
+  url_sip,		/**< "sip:". @sa @RFC3261 */
+  url_sips,		/**< "sips:". @sa @RFC3261 */
+  url_tel,		/**< "tel:" @sa RFC3966 */
+  url_fax,		/**< "fax:". @note Obsolete. @sa @RFC2806 */
+  url_modem,		/**< "modem:". @note Obsolete. @sa @RFC2806  */
+  url_http,		/**< "http:". @sa @RFC2616, @RFC3986 */
+  url_https,		/**< "https:". @sa @RFC2618, @RFC3986 */
+  url_ftp,		/**< "ftp:". @sa @RFC1738 */
+  url_file,		/**< "file:" @sa @RFC1738 */
+  url_rtsp,		/**< "rtsp:" @sa @RFC2326 */
+  url_rtspu,		/**< "rtspu:" @sa @RFC2326 */
+  url_mailto,		/**< "mailto:" @sa @RFC2368 */
+  url_im,		/**< "im:" (simple instant messaging). @sa @RFC3860 */
+  url_pres,		/**< "pres:" (simple presence). @sa @RFC3859  */
+  url_cid,		/**< "cid:" (Content-ID). @sa @RFC2392 */
+  url_msrp,		/**< "msrp:" (message session relay)  */
+  url_msrps,		/**< "msrps:" (new in @VERSION_1_12_2) */
+  url_wv,		/**< "wv:" (Wireless village) */
   _url_none
 };
 

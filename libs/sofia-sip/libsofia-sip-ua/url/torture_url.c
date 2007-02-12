@@ -639,7 +639,7 @@ int test_modem(void)
 int test_file(void)
 {
   /* Test a url with path like file:/foo/bar  */
-  char fileurl[] = "file:/foo/bar";
+  char fileurl[] = "file:///foo/bar";
   url_t file[1] = { URL_INIT_AS(file) };
   su_home_t home[1] = { SU_HOME_INIT(home) };
   char *tst;
@@ -653,7 +653,9 @@ int test_file(void)
 
   TEST_1(tst = su_strdup(home, fileurl));
   TEST(url_d(url, tst), 0);
+  TEST_S(url->url_host, "");
   file->url_root = '/';
+  file->url_host = "";
   file->url_path = "foo/bar";
   TEST(url_cmp(file, url), 0);
   TEST(url->url_type, url_file);

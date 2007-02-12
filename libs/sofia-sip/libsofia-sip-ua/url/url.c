@@ -669,10 +669,18 @@ int _url_d(url_t *url, char *s)
     else {
       n = strcspn(host, ":");
     }
-    
-    if (n == 0 && url->url_type != url_unknown)
-      return -1;
 
+    /* We allow empty host by default */
+    if (n == 0) switch (url->url_type) {
+    case url_sip:
+    case url_sips:
+    case url_im:
+    case url_pres:
+      return -1;
+    default:
+      break;
+    }
+    
     if (host[n] == ':') {
       char *port = host + n + 1;
       url->url_port = port;

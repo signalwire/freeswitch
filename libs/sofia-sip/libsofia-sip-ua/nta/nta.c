@@ -9651,8 +9651,9 @@ int reliable_recv(nta_incoming_t *irq, msg_t *msg, sip_t *sip, tport_t *tp)
   status = rel->rel_callback(rel->rel_magic, rel, pr_irq, sip); rel = NULL;
   irq->irq_in_callback = pr_irq->irq_in_callback = 0;
 
-  if (pr_irq->irq_destroyed && pr_irq->irq_terminated) {
-    incoming_free(pr_irq);
+  if (pr_irq->irq_completed) {	/* Already sent final response */
+    if (pr_irq->irq_terminated && pr_irq->irq_destroyed)
+      incoming_free(pr_irq);
   }
   else if (status != 0) {
     if (status < 200 || status > 299) {
@@ -9915,6 +9916,9 @@ nta_outgoing_t *nta_outgoing_tagged(nta_outgoing_t *orq,
 
   tagged->orq_prev = NULL, tagged->orq_next = NULL, tagged->orq_queue = NULL;
   tagged->orq_rprev = NULL, tagged->orq_rnext = NULL;
+#if HAVE_SOFIA_SRESOLV
+  tagged->orq_resolver = NULL;
+#endif
 
   if (tagged->orq_cc)
     nta_compartment_ref(tagged->orq_cc);

@@ -284,10 +284,11 @@ su_port_t *su_osx_runloop_create(void)
       CFRunLoopObserverCreate(NULL, 
 			      kCFRunLoopAfterWaiting | kCFRunLoopBeforeWaiting,
 			      TRUE, 0, cf_observer_cb, self->sup_observer_cntx);
-    
+#if 0
     CFRunLoopAddObserver(CFRunLoopGetCurrent(),
 			 self->sup_observer,
 			 kCFRunLoopDefaultMode);
+#endif
   }
   else
     return su_home_unref(su_port_home(self)), NULL;
@@ -1234,8 +1235,6 @@ su_duration_t su_osx_port_step(su_port_t *self, su_duration_t tout)
   CFAbsoluteTime start;
   int ret, timeout = tout > INT32_MAX ? INT32_MAX : tout;
 
-  // XXX - mela assert(SU_OSX_PORT_OWN_THREAD(self));
-
   rl = CFRunLoopGetCurrent();
 
   if (!rl)
@@ -1259,27 +1258,12 @@ su_duration_t su_osx_port_step(su_port_t *self, su_duration_t tout)
   if (self->sup_base->sup_head)
     tout = 0;
 
-  start = CFAbsoluteTimeGetCurrent();
-  for (;;) {
-    /* Run loop with only one pass, indicate if a source was processed */
-    ret = CFRunLoopRunInMode(kCFRunLoopDefaultMode,
-			     0,
-			     TRUE);
+  ret = CFRunLoopRunInMode(kCFRunLoopDefaultMode,
+			   tout/1000000.0,
+			   true);
 
-    /* Ok, one of our sources was fired */
-    if (self->sup_source_fired == 1) {
-      self->sup_source_fired = 0;
-      break;
-    }
+  CFRunLoopWakeUp(rl);
 
-#if 0
-    /* Check how long to run this loop */
-    if (CFAbsoluteTimeGetCurrent() >= start + timeout / 10000)
-#else
-      break;
-#endif
-  }
-  
   if (self->sup_base->sup_head)
     su_base_port_getmsgs(self);
 

@@ -2465,7 +2465,7 @@ int nua_prack_server_report(nua_server_request_t *sr, tagi_t const *tags)
 	break;
 
     if (sri) {
-      SR_STATUS1(sr, SIP_180_RINGING);
+      SR_STATUS1(sri, SIP_180_RINGING);
       nua_server_respond(sri, NULL);
       nua_server_report(sri);
     }
