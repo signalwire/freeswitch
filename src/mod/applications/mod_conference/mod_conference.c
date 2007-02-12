@@ -4357,7 +4357,7 @@ static switch_status_t conference_new_install_caller_controls_custom(conference_
                         action = (caller_control_action_t *)switch_core_alloc(conference->pool, sizeof(caller_control_action_t));
                         if (action != NULL) {
                             action->fndesc = &ccfntbl[i];
-                            action->data = (void *)data;
+                            action->data = (void *)switch_core_strdup(conference->pool, data);
                             status = switch_ivr_digit_stream_parser_set_event(conference->dtmf_parser, val, action);
                         } else {
                             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unable to alloc memory for caller control binding '%s' to '%s'\n", ccfntbl[i].key, ccfntbl[i].digits);
