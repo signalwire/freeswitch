@@ -12,15 +12,15 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 BuildRequires: pkgconfig
 
-%{!?bcond_with:%define bcond_with() %{expand:%%{?_with_%{1}:%%global with_%{1} 1}}}
-%{!?bcond_without:%define bcond_without() %{expand:%%{!?_without_%{1}:%%global with_%{1} 1}}}
+%define opt_with() %{expand:%%global with_%{1} %%{?_with_%{1}:1}%%{?!_with_%{1}:0}}
+%define opt_without() %{expand:%%global with_%{1} %%{!?_without_%{1}:1}%%{?_without_%{1}:0}}
 
 # Options: 
-%bcond_with doxygen	- Generate documents using doxygen and dot
-%bcond_with check	- Run tests
-%bcond_with openssl	- Always use OpenSSL (TLS)
-%bcond_with glib	- Always use glib-2.0 (>= 2.2)
-%bcond_with sctp	- Include SCTP transport
+%opt_with doxygen	- Generate documents using doxygen and dot
+%opt_with check		- Run tests
+%opt_with openssl	- Always use OpenSSL (TLS)
+%opt_with glib		- Always use glib-2.0 (>= 2.2)
+%opt_with sctp		- Include SCTP transport
 
 %define have_doxygen %{?_with_doxygen:1}%{!?_with_doxygen:0}
 %define have_openssl %(%{?!_with_openssl:pkg-config 'openssl >= 0.9.7'&&}echo 1||echo 0)
@@ -49,7 +49,7 @@ options="$options --with-pic --enable-shared --disable-static"
 %if !%{have_glib}
 options="$options --without-glib"
 %endif
-%if %{with sctp}
+%if %{with_sctp}
 options="$options --enable-sctp"
 %endif
 
@@ -62,7 +62,7 @@ make doxygen
 
 # XXX comment next line to build with non-check aware rpmbuild.
 %check
-%if %{with check}
+%if %{with_check}
 make check
 %endif
 
@@ -126,7 +126,7 @@ Requires:	pkgconfig
 Development package for Sofia SIP UA library. This package includes 
 static libraries and include files.
 
-%if %{without doxygen}
+%if !%{with_doxygen}
 The reference documentation for Sofia SIP UA library is available at 
 <http://sofia-sip.sourceforge.net/development.html>
 %endif
