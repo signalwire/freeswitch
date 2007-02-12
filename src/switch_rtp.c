@@ -135,6 +135,8 @@ struct switch_rtp {
 	void *private_data;
 
 	uint32_t ts;
+	uint32_t last_write_ts;
+	uint16_t last_write_seq;
 	uint32_t flags;
 	switch_memory_pool_t *pool;
 	switch_sockaddr_t *from_addr;
@@ -655,13 +657,16 @@ static void do_2833(switch_rtp_t *rtp_session)
 		for (x = 0; x < loops; x++) {
 			switch_rtp_write_manual(rtp_session, 
 									rtp_session->dtmf_data.out_digit_packet, 4, 0, rtp_session->te, rtp_session->dtmf_data.timestamp_dtmf,
-									rtp_session->dtmf_data.out_digit_seq++, &flags);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s packet for [%c] ts=%d sofar=%u dur=%d\n", 
+									rtp_session->dtmf_data.out_digit_seq, &flags);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s packet for [%c] ts=%d sofar=%u dur=%d seq=%d\n", 
 							  loops == 1 ? "middle" : "end",
 							  rtp_session->dtmf_data.out_digit,
 							  rtp_session->dtmf_data.timestamp_dtmf, 
 							  rtp_session->dtmf_data.out_digit_sofar,
-							  duration);
+							  duration,
+							  rtp_session->dtmf_data.out_digit_seq);
+
+			rtp_session->dtmf_data.out_digit_seq++;
 		}
 	}
 
@@ -680,8 +685,11 @@ static void do_2833(switch_rtp_t *rtp_session)
 			rtp_session->dtmf_data.out_digit_packet[1] = 7;
 
 			//ts = rtp_session->dtmf_data.timestamp_dtmf += samples;
-			rtp_session->dtmf_data.timestamp_dtmf++;
+			//rtp_session->dtmf_data.timestamp_dtmf++;
 
+			rtp_session->dtmf_data.timestamp_dtmf = rtp_session->last_write_ts;
+			rtp_session->dtmf_data.out_digit_seq = rtp_session->last_write_seq;
+			
 
 			for (x = 0; x < 3; x++) {
 				switch_rtp_write_manual(rtp_session,
@@ -690,15 +698,17 @@ static void do_2833(switch_rtp_t *rtp_session)
  										switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BUGGY_2833) ? 0 : 1,
 										rtp_session->te,
 										rtp_session->dtmf_data.timestamp_dtmf,
-										rtp_session->dtmf_data.out_digit_seq++,
+										rtp_session->dtmf_data.out_digit_seq,
 										&flags);
 				switch_log_printf(SWITCH_CHANNEL_LOG,
 								  SWITCH_LOG_DEBUG,
-								  "Send start packet for [%c] ts=%d sofar=%u dur=%d\n",
+								  "Send start packet for [%c] ts=%d sofar=%u dur=%d seq=%d\n",
 								  rtp_session->dtmf_data.out_digit,
 								  rtp_session->dtmf_data.timestamp_dtmf,
 								  rtp_session->dtmf_data.out_digit_sofar,
-								  0);
+								  0,
+								  rtp_session->dtmf_data.out_digit_seq);
+				rtp_session->dtmf_data.out_digit_seq++;
 			}
 
 			free(rdigit);
@@ -1183,6 +1193,9 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 		}
 	}
 
+	rtp_session->last_write_ts = ntohl(send_msg->header.ts);
+	rtp_session->last_write_seq = ntohs(send_msg->header.seq);
+
 	if (send) {
         switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)send_msg, &bytes);
 	}
@@ -1299,7 +1312,6 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session, void *dat
 		return -1;
 	}
 
-	rtp_session->ts += ts;
 	rtp_session->send_msg.header.seq = htons(mseq);
 	rtp_session->send_msg.header.ts = htonl(ts);
 
