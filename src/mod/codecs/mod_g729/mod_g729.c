@@ -264,7 +264,7 @@ static const switch_codec_implementation_t g729_8k_implementation = {
 
 static const switch_codec_interface_t g729_codec_interface = {
 	/*.interface_name */ "g729",
-	/*.implementations */ &g729a_8k_implementation,
+	/*.implementations */ &g729_8k_implementation,
 	/*.next */ NULL
 };
 
