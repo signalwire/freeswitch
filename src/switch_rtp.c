@@ -1194,7 +1194,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 	}
 
 	rtp_session->last_write_ts = ntohl(send_msg->header.ts);
-	rtp_session->last_write_seq = ntohs(send_msg->header.seq);
+	rtp_session->last_write_seq = ntohs((u_short)send_msg->header.seq);
 
 	if (send) {
         switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)send_msg, &bytes);
