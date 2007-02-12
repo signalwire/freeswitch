@@ -34,6 +34,18 @@
 
 static const char modname[] = "mod_sndfile";
 
+static switch_memory_pool_t *module_pool = NULL;
+
+static struct {
+	switch_hash_t *format_hash;
+} globals;
+
+struct format_map {
+	char *ext;
+	char *uext;
+	uint32_t format;
+};
+
 struct sndfile_context {
 	SF_INFO sfinfo;
 	SNDFILE *handle;
@@ -46,8 +58,9 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, char *pat
 	sndfile_context *context;
 	int mode = 0;
 	char *ext;
-	int ready = 1;
-	
+	int ready = 0;
+	struct format_map *map = NULL;
+
 	if ((ext = strrchr(path, '.')) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Format\n");
 		return SWITCH_STATUS_GENERR;
@@ -72,9 +85,11 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, char *pat
 		return SWITCH_STATUS_MEMERR;
 	}
 
+	map = switch_core_hash_find(globals.format_hash, ext);
+
 	if (mode & SFM_WRITE) {
 		sf_count_t  frames = 0 ;
-
+		
 		context->sfinfo.channels = handle->channels;
 		context->sfinfo.samplerate = handle->samplerate;
 		if (handle->samplerate == 8000 || handle->samplerate == 16000) {
@@ -85,20 +100,19 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, char *pat
 			context->sfinfo.format |= SF_FORMAT_PCM_32;
 		}
 
-        sf_command (context->handle, SFC_FILE_TRUNCATE, &frames, sizeof (frames)) ;
+        sf_command (context->handle, SFC_FILE_TRUNCATE, &frames, sizeof (frames));
 
-		/* Could add more else if() but i am too lazy atm.. */
-		if (!strcasecmp(ext, "wav")) {
-			context->sfinfo.format |= SF_FORMAT_WAV;
-		} else {
-			ready = 0;
+		if (map) {
+			context->sfinfo.format |= map->format;
+			ready = 1;
 		}
-	} else {
-		ready = 0;
+	} else if (map) {
+		ready = 1;
 	}
 
 
 	if (!ready) {
+		ready = 1;
 		if (!strcmp(ext, "r8") || !strcmp(ext, "raw")) {
 			context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
 			context->sfinfo.channels = 1;
@@ -119,16 +133,29 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, char *pat
 			context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_GSM610;
 			context->sfinfo.channels = 1;
 			context->sfinfo.samplerate = 8000;
+		} else if (!strcmp(ext, "ul")) {
+			context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_ULAW;
+			context->sfinfo.channels = 1;
+			context->sfinfo.samplerate = 8000;
+		} else if (!strcmp(ext, "al")) {
+			context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_ALAW;
+			context->sfinfo.channels = 1;
+			context->sfinfo.samplerate = 8000;
+		} else {
+			ready = 0;
 		}
 	}
 
-
+	if (!ready) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s] [%s]\n", path);
+		return SWITCH_STATUS_GENERR;
+	}
+	
 	if ((mode & SFM_WRITE) && sf_format_check (&context->sfinfo) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error : file format is invalid (0x%08X).\n", context->sfinfo.format);
 		return SWITCH_STATUS_GENERR;
 	};
-
-
+	
 	if ((context->handle = sf_open(path, mode, &context->sfinfo)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s] [%s]\n", path,
 							  sf_strerror(context->handle));
@@ -272,7 +299,7 @@ static switch_status_t setup_formats(void)
 	char buffer[128];
 	int format, major_count, subtype_count, m, s;
 	int len, x, skip;
-	char *extras[] = { "r8", "r16", "r24", "r32", "gsm", NULL };
+	char *extras[] = { "r8", "r16", "r24", "r32", "gsm", "ul", "al", NULL };
 	int exlen = (sizeof(extras) / sizeof(extras[0]));
 	buffer[0] = 0;
 	
@@ -306,11 +333,28 @@ static switch_status_t setup_formats(void)
 			}
 		}
 		if (!skip) {
+			char *p;
+			struct format_map *map = switch_core_permanent_alloc(sizeof(*map));
+			if (!map) {
+				abort();
+			}
+
+			map->ext = switch_core_permanent_strdup(info.extension);
+			map->uext = switch_core_permanent_strdup(info.extension);
+			map->format = info.format;
+			for(p = map->ext; *p; p++) {
+				*p = tolower(*p);
+			}
+			for(p = map->uext; *p; p++) {
+				*p = toupper(*p);
+			}
+			switch_core_hash_insert(globals.format_hash, map->ext, map);
+			switch_core_hash_insert(globals.format_hash, map->uext, map);
 			supported_formats[len++] = (char *) info.extension;
 		}
 		format = info.format;
 
-		for (s = 0; s < subtype_count; s++) {
+		for (s = 0; s < subtype_count; s++) {			
 			info.format = s;
 			sf_command(NULL, SFC_GET_FORMAT_SUBTYPE, &info, sizeof(info));
 			format = (format & SF_FORMAT_TYPEMASK) | info.format;
@@ -338,7 +382,13 @@ static switch_status_t setup_formats(void)
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 
+	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
+		return SWITCH_STATUS_TERM;
+	}
 
+	switch_core_hash_init(&globals.format_hash, module_pool);
+	
 	if (setup_formats() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
