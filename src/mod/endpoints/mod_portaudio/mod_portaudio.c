@@ -849,7 +849,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		if (outbound_profile) {
 			char name[128];
-            char *id = outbound_profile->caller_id_number ? outbound_profile->caller_id_number : "na";
+            char *id = !switch_strlen_zero(outbound_profile->caller_id_number) ? outbound_profile->caller_id_number : "na";
 			snprintf(name, sizeof(name), "PortAudio/%s", id);
 					 
 			switch_channel_set_name(channel, name);

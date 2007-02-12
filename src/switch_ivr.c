@@ -3642,13 +3642,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		new_profile = switch_caller_profile_clone(session, profile);
 		new_profile->destination_number = switch_core_session_strdup(session, extension);
 
-		if (dialplan) {
+		if (!switch_strlen_zero(dialplan)) {
 			new_profile->dialplan = switch_core_session_strdup(session, dialplan);
 		} else {
 			dialplan = new_profile->dialplan;
 		}
 
-		if (context) {
+		if (!switch_strlen_zero(context)) {
 			new_profile->context = switch_core_session_strdup(session, context);
 		} else {
 			context = new_profile->context;

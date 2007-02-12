@@ -53,17 +53,17 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 		if (!context) {
 			context = "default";
 		}
-		profile->username = switch_core_strdup(pool, username);
-		profile->dialplan = switch_core_strdup(pool, dialplan);
-		profile->caller_id_name = switch_core_strdup(pool, caller_id_name);
-		profile->caller_id_number = switch_core_strdup(pool, caller_id_number);
-		profile->network_addr = switch_core_strdup(pool, network_addr);
-		profile->ani = switch_core_strdup(pool, ani);
-		profile->aniii = switch_core_strdup(pool, aniii);
-		profile->rdnis = switch_core_strdup(pool, rdnis);
-		profile->source = switch_core_strdup(pool, source);
-		profile->context = switch_core_strdup(pool, context);
-		profile->destination_number = switch_core_strdup(pool, destination_number);
+		profile->username = switch_core_strdup(pool, switch_str_nil(username));
+		profile->dialplan = switch_core_strdup(pool, switch_str_nil(dialplan));
+		profile->caller_id_name = switch_core_strdup(pool, switch_str_nil(caller_id_name));
+		profile->caller_id_number = switch_core_strdup(pool, switch_str_nil(caller_id_number));
+		profile->network_addr = switch_core_strdup(pool, switch_str_nil(network_addr));
+		profile->ani = switch_core_strdup(pool, switch_str_nil(ani));
+		profile->aniii = switch_core_strdup(pool, switch_str_nil(aniii));
+		profile->rdnis = switch_core_strdup(pool, switch_str_nil(rdnis));
+		profile->source = switch_core_strdup(pool, switch_str_nil(source));
+		profile->context = switch_core_strdup(pool, switch_str_nil(context));
+		profile->destination_number = switch_core_strdup(pool, switch_str_nil(destination_number));
 		switch_set_flag(profile, SWITCH_CPF_SCREEN);
 	}
 
@@ -145,55 +145,55 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 	char header_name[1024];
 
 
-	if (caller_profile->username) {
+	if (!switch_strlen_zero(caller_profile->username)) {
 		snprintf(header_name, sizeof(header_name), "%s-Username", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->username);
 	}
-	if (caller_profile->dialplan) {
+	if (!switch_strlen_zero(caller_profile->dialplan)) {
 		snprintf(header_name, sizeof(header_name), "%s-Dialplan", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->dialplan);
 	}
-	if (caller_profile->caller_id_name) {
+	if (!switch_strlen_zero(caller_profile->caller_id_name)) {
 		snprintf(header_name, sizeof(header_name), "%s-Caller-ID-Name", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->caller_id_name);
 	}
-	if (caller_profile->caller_id_number) {
+	if (!switch_strlen_zero(caller_profile->caller_id_number)) {
 		snprintf(header_name, sizeof(header_name), "%s-Caller-ID-Number", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->caller_id_number);
 	}
-	if (caller_profile->network_addr) {
+	if (!switch_strlen_zero(caller_profile->network_addr)) {
 		snprintf(header_name, sizeof(header_name), "%s-Network-Addr", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->network_addr);
 	}
-	if (caller_profile->ani) {
+	if (!switch_strlen_zero(caller_profile->ani)) {
 		snprintf(header_name, sizeof(header_name), "%s-ANI", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->ani);
 	}
-	if (caller_profile->aniii) {
+	if (!switch_strlen_zero(caller_profile->aniii)) {
 		snprintf(header_name, sizeof(header_name), "%s-ANI-II", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->aniii);
 	}
-	if (caller_profile->destination_number) {
+	if (!switch_strlen_zero(caller_profile->destination_number)) {
 		snprintf(header_name, sizeof(header_name), "%s-Destination-Number", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->destination_number);
 	}
-	if (caller_profile->uuid) {
+	if (!switch_strlen_zero(caller_profile->uuid)) {
 		snprintf(header_name, sizeof(header_name), "%s-Unique-ID", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->uuid);
 	}
-	if (caller_profile->source) {
+	if (!switch_strlen_zero(caller_profile->source)) {
 		snprintf(header_name, sizeof(header_name), "%s-Source", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->source);
 	}
-	if (caller_profile->context) {
+	if (!switch_strlen_zero(caller_profile->context)) {
 		snprintf(header_name, sizeof(header_name), "%s-Context", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->context);
 	}
-	if (caller_profile->rdnis) {
+	if (!switch_strlen_zero(caller_profile->rdnis)) {
 		snprintf(header_name, sizeof(header_name), "%s-RDNIS", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->rdnis);
 	}
-	if (caller_profile->chan_name) {
+	if (!switch_strlen_zero(caller_profile->chan_name)) {
 		snprintf(header_name, sizeof(header_name), "%s-Channel-Name", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->chan_name);
 	}

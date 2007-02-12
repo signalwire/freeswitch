@@ -200,6 +200,13 @@ switch_mutex_unlock(obj->flag_mutex);
 #define switch_strlen_zero(s) (!s || *s == '\0')
 
 /*!
+  \brief Make a null string a blank string instead
+  \param s the string to test
+  \return the original string or blank string.
+*/
+#define switch_str_nil(s) (s ? s : "")
+
+/*!
   \brief Wait a desired number of microseconds and yield the CPU
 */
 #if defined(HAVE_USLEEP)
