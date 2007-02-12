@@ -89,7 +89,7 @@ static inline switch_status_t timer_next(switch_timer_t *timer)
     
 	timer_step(timer);
 	while (TIMER_MATRIX[timer->interval].tick < private_info->reference) {
-        switch_yield(timer->interval * 750);
+        switch_yield(1000);
 	}
 	timer->samplecount += timer->samples;
 	return SWITCH_STATUS_SUCCESS;
