@@ -35,7 +35,7 @@
 #define SWITCH_TYPES_H
 
 #include <switch.h>
-
+#include <ctype.h>
 SWITCH_BEGIN_EXTERN_C
 
 #ifdef WIN32

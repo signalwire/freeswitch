@@ -610,7 +610,7 @@ static const switch_application_interface_t pre_answer_application_interface = {
 	/* long_desc */ "Pre-Answer the call for a channel.",
 	/* short_desc */ "Pre-Answer the call",
 	/* syntax */ "",
-	/*.next */ &hangup_application_interface
+	/*.next */ &answer_application_interface
 
 };
 
