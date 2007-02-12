@@ -203,7 +203,7 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, 
     switch_stream_handle_t stream = {0};
     switch_size_t encode_len = 1024, new_len = 0;
     char *encode_buf = NULL;
-    char *prof[11] = {0}, *prof_names[11] = {0}, *e = NULL;
+    char *prof[12] = {0}, *prof_names[12] = {0}, *e = NULL;
     switch_hash_index_t *hi;
     uint32_t x = 0;
     char *alt_path = (char *) arg;
