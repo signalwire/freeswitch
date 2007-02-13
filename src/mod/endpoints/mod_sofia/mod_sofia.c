@@ -65,6 +65,8 @@ typedef struct private_object private_object_t;
 #define SOFIA_REPLACES_HEADER "_sofia_replaces_"
 #define SOFIA_USER_AGENT "FreeSWITCH(mod_sofia)"
 #define SOFIA_CHAT_PROTO "sip"
+#define SOFIA_SIP_HEADER_PREFIX "sip_h_"
+#define SOFIA_SIP_HEADER_PREFIX_T "~sip_h_"
 
 #include <sofia-sip/nua.h>
 #include <sofia-sip/sip_status.h>
@@ -301,6 +303,7 @@ struct private_object {
 	char *remote_sdp_str;
 	char *local_sdp_str;
 	char *dest;
+	char *dest_to;
 	char *key;
 	char *xferto;
 	char *kick;
@@ -963,6 +966,11 @@ static void do_invite(switch_core_session_t *session)
 	char *cid_name, *cid_num;
 	char *e_dest = NULL;
 	char *holdstr = "";
+	switch_stream_handle_t stream = {0};
+	switch_hash_index_t *hi;
+	void *vval;
+	char *extra_headers;
+	const void *vvar;
 
     channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
@@ -1023,7 +1031,8 @@ static void do_invite(switch_core_session_t *session)
 
 		if (!tech_pvt->nh) {
 			tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
-									  SIPTAG_TO_STR(tech_pvt->dest),
+									  NUTAG_URL(tech_pvt->dest),
+									  SIPTAG_TO_STR(tech_pvt->dest_to),
 									  SIPTAG_FROM_STR(tech_pvt->from_str),
 									  SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 									  TAG_END());
@@ -1056,9 +1065,29 @@ static void do_invite(switch_core_session_t *session)
 
 		holdstr = switch_test_flag(tech_pvt, TFLAG_SIP_HOLD) ? "*" : "";
 
+
+		SWITCH_STANDARD_STREAM(stream);
+		for (hi = switch_channel_variable_first(channel, switch_core_session_get_pool(tech_pvt->session)); hi; hi = switch_hash_next(hi)) {
+            switch_hash_this(hi, &vvar, NULL, &vval);
+            if (vvar && vval) {
+				char *name = (char *) vvar;
+				char *value = (char *) vval;
+
+				if (!strncasecmp(name, SOFIA_SIP_HEADER_PREFIX, strlen(SOFIA_SIP_HEADER_PREFIX))) {
+					char *hname = name + strlen(SOFIA_SIP_HEADER_PREFIX);
+					stream.write_function(&stream, "%s: %s\r\n", hname, value);
+				}
+			}
+		}
+		
+		if (stream.data) {
+			extra_headers = stream.data;
+		}
+
 		nua_invite(tech_pvt->nh,
 				   TAG_IF(!switch_strlen_zero(rpid), SIPTAG_HEADER_STR(rpid)),
 				   TAG_IF(!switch_strlen_zero(alert_info), SIPTAG_HEADER_STR(alert_info)),
+				   TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 				   TAG_IF(!switch_strlen_zero(max_forwards),SIPTAG_MAX_FORWARDS_STR(max_forwards)),
 				   //SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 				   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
@@ -1067,7 +1096,8 @@ static void do_invite(switch_core_session_t *session)
 				   TAG_IF(rep, SIPTAG_REPLACES_STR(rep)),
 				   SOATAG_HOLD(holdstr),
 				   TAG_END());
-
+		
+		switch_safe_free(stream.data);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
 	}
@@ -2197,7 +2227,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	switch_caller_profile_t *caller_profile = NULL;
 	private_object_t *tech_pvt = NULL;
 	switch_channel_t *nchannel;
-	char *host;
+	char *host, *dest_to;
 
 	*new_session = NULL;
 
@@ -2231,6 +2261,12 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
         goto done;
 	}
 
+	if ((dest_to = strchr(dest, ':'))) {
+		*dest_to++ = '\0';
+		tech_pvt->dest_to = switch_core_session_alloc(nsession, strlen(dest_to) + 5);
+		snprintf(tech_pvt->dest_to, strlen(dest_to) + 5, "sip:%s", dest_to);
+	}
+
 	if ((host = strchr(dest, '%'))) {
 		char buf[128];
 		*host = '@';
@@ -2260,8 +2296,11 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		snprintf(tech_pvt->dest, strlen(dest) + 5, "sip:%s", dest);
 	}
 
-	attach_private(nsession, profile, tech_pvt, dest);
+	if (!tech_pvt->dest_to) {
+		tech_pvt->dest_to = tech_pvt->dest;
+	}
 
+	attach_private(nsession, profile, tech_pvt, dest);
 
 	nchannel = switch_core_session_get_channel(nsession);
 	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
@@ -2275,6 +2314,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		//char *val;
 		//switch_channel_t *channel = switch_core_session_get_channel(session);
 		switch_ivr_transfer_variable(session, nsession, SOFIA_REPLACES_HEADER);
+		switch_ivr_transfer_variable(session, nsession, SOFIA_SIP_HEADER_PREFIX_T);
+
 	}
 
  done:
@@ -4457,8 +4498,15 @@ static void sip_i_invite(nua_t *nua,
                         free(mydata);
                     }
                 }
-                break;
-            }
+			} else if (!strncasecmp(un->un_name, "X-", 2)) {
+				if (!switch_strlen_zero(un->un_value)) { 
+					char *new_name;
+					if ((new_name = switch_mprintf("%s%s", SOFIA_SIP_HEADER_PREFIX, (char *)un->un_name))) {
+						switch_channel_set_variable(channel, new_name, (char *)un->un_value);
+						free(new_name);
+					}
+				}
+			}
         }
 
         switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);

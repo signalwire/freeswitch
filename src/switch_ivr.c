@@ -3693,8 +3693,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session
 	switch_channel_t *chana = switch_core_session_get_channel(sessa);
 	switch_channel_t *chanb = switch_core_session_get_channel(sessb);
 	char *val = NULL;
+	uint8_t prefix = 0;
 
-	if (var) {
+	if (var && *var == '~') {
+		var++;
+		prefix = 1;
+	}
+
+
+	if (var && !prefix) {
 		if ((val = switch_channel_get_variable(chana, var))) {
 			switch_channel_set_variable(chanb, var, val);
 		}
@@ -3705,7 +3712,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session
 
 		for (hi = switch_channel_variable_first(chana, switch_core_session_get_pool(sessa)); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, &vvar, NULL, &vval);
-			if (vvar && vval) {
+			if (vvar && vval && (!prefix || (var && !strncmp((char *)vvar, var, strlen(var))))) {
 				switch_channel_set_variable(chanb, (char *) vvar, (char *) vval);
 			}
 		}
