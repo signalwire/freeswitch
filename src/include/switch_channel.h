@@ -301,16 +301,16 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 */
 #define switch_channel_mark_pre_answered(channel) switch_channel_perform_mark_pre_answered(channel, __FILE__, __SWITCH_FUNC__, __LINE__)
 
-SWITCH_DECLARE(switch_status_t) switch_channel_perform_ringback(switch_channel_t *channel,
-																const char *file,
-																const char *func,
-																int line);
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready(switch_channel_t *channel,
+																  const char *file,
+																  const char *func,
+																  int line);
 /*!
   \brief Send Ringing message to a channel
   \param channel channel to ring
   \return SWITCH_STATUS_SUCCESS if successful
 */
-#define switch_channel_ringback(channel) switch_channel_perform_ringback(channel, __FILE__, __SWITCH_FUNC__, __LINE__)
+#define switch_channel_ring_ready(channel) switch_channel_perform_ring_ready(channel, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel_t *channel,

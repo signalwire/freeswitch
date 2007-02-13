@@ -63,12 +63,12 @@ static void detect_speech_function(switch_core_session_t *session, char *data)
 	
 }
 
-static void ringback_function(switch_core_session_t *session, char *data)
+static void ring_ready_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
-	switch_channel_ringback(channel);
+	switch_channel_ring_ready(channel);
 }
 
 static void queue_dtmf_function(switch_core_session_t *session, char *data)
@@ -538,11 +538,11 @@ static const switch_application_interface_t detect_speech_application_interface 
 	/*.next */ &ivr_application_interface
 };
 
-static const switch_application_interface_t ringback_application_interface = {
-	/*.interface_name */ "ringback",
-	/*.application_function */ ringback_function,
-	/* long_desc */ "Indicate Ringback on a channel.",
-	/* short_desc */ "Indicate Ringback",
+static const switch_application_interface_t ring_ready_application_interface = {
+	/*.interface_name */ "ring_ready",
+	/*.application_function */ ring_ready_function,
+	/* long_desc */ "Indicate Ring_Ready on a channel.",
+	/* short_desc */ "Indicate Ring_Ready",
 	/* syntax */ "",
 	/*.next */ &detect_speech_application_interface
 };
@@ -553,7 +553,7 @@ static const switch_application_interface_t unset_application_interface = {
 	/* long_desc */ "Unset a channel varaible for the channel calling the application.",
 	/* short_desc */ "Unset a channel varaible",
 	/* syntax */ "<varname>",
-	/*.next */ &ringback_application_interface
+	/*.next */ &ring_ready_application_interface
 };
 
 static const switch_application_interface_t set_application_interface = {

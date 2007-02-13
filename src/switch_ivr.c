@@ -1533,7 +1533,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
         args.buflen = digit_buffer_length;
 		//Play the file
 		status = switch_ivr_play_file(session, NULL, prompt_audio_file, &args);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "play gave up %s", digit_buffer);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "play gave up %s", (char *) digit_buffer);
 
 		//Make sure we made it out alive
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
@@ -1545,7 +1545,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 		if (max_digits == 1 && status == SWITCH_STATUS_BREAK) {
 			//Check the digit if we have a regex
 			if (digits_regex != NULL) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking regex [%s] on [%s]\n", digits_regex, digit_buffer);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking regex [%s] on [%s]\n", digits_regex, (char *) digit_buffer);
 
 				//Make sure the digit is allowed
 				if (switch_regex_match(digit_buffer, digits_regex) == SWITCH_STATUS_SUCCESS) {
@@ -1586,7 +1586,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 		if (min_digits <= strlen(digit_buffer)) {
 			//See if we need to test a regex
 			if (digits_regex != NULL) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking regex [%s] on [%s]\n", digits_regex, digit_buffer);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking regex [%s] on [%s]\n", digits_regex, (char *) digit_buffer);
 				//Test the regex
 				if (switch_regex_match(digit_buffer, digits_regex) == SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Match found!\n");
@@ -2579,7 +2579,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	or_argc = switch_separate_string(data, '|', pipe_names, (sizeof(pipe_names) / sizeof(pipe_names[0])));
 
 	if (caller_channel && or_argc > 1 && !ringback_data) {
-		switch_channel_ringback(caller_channel);
+		switch_channel_ring_ready(caller_channel);
 		sent_ring = 1;
 	}
 
@@ -2606,7 +2606,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		and_argc = switch_separate_string(pipe_names[r], ',', peer_names, (sizeof(peer_names) / sizeof(peer_names[0])));
 	
 		if (caller_channel && !sent_ring && and_argc > 1 && !ringback_data) {
-			switch_channel_ringback(caller_channel);
+			switch_channel_ring_ready(caller_channel);
 			sent_ring = 1;
 		}
 
@@ -2746,7 +2746,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				if (caller_channel && !switch_channel_ready(caller_channel)) {
 					goto notready;
 				}
-		
+				
 				if ((time(NULL) - start) > (time_t)timelimit_sec) {
 					to++;
 					idx = IDX_CANCEL;
@@ -3839,11 +3839,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_event(switch_
 			if (parser->terminator == '\0') {
 				if (len > parser->maxlen) {
 					parser->maxlen = len;
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "max len %u\n",parser->maxlen);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "max len %u\n", (uint32_t) parser->maxlen);
 				}
 				if (parser->minlen == 0 || len < parser->minlen) {
 					parser->minlen = len;
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "min len %u\n",parser->minlen);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "min len %u\n", (uint32_t) parser->minlen);
 				}
 			} else {
 				// since we have a terminator, reset min and max

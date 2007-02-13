@@ -1063,10 +1063,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_channel_perform_ringback(switch_channel_t *channel,
-																const char *file,
-																const char *func,
-																int line)
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready(switch_channel_t *channel,
+																  const char *file,
+																  const char *func,
+																  int line)
 {
 	switch_core_session_message_t msg;
 	char *uuid = switch_core_session_get_uuid(channel->session);
@@ -1091,7 +1091,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_ringback(switch_channel_t
 	status = switch_core_session_message_send(uuid, &msg);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Ringback %s!\n", channel->name);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Ring Ready %s!\n", channel->name);
 	}
 
 	return status;

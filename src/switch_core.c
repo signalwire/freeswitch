@@ -2067,7 +2067,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			} else {
 				if (!session->raw_read_buffer) {
 					switch_size_t bytes = session->read_codec->implementation->bytes_per_frame;
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Engaging Read Buffer at %u bytes\n", bytes);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Engaging Read Buffer at %u bytes\n", (uint32_t)bytes);
 					switch_buffer_create_dynamic(&session->raw_read_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES, bytes * SWITCH_BUFFER_START_FRAMES, 0);
 				}
 				if (!switch_buffer_write(session->raw_read_buffer, read_frame->data, read_frame->datalen)) {
@@ -2321,9 +2321,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				if (!session->raw_write_buffer) {
 					switch_size_t bytes = session->write_codec->implementation->bytes_per_frame;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-										  "Engaging Write Buffer at %u bytes to accomodate %u->%u\n",
-										  bytes,
-										  write_frame->datalen, session->write_codec->implementation->bytes_per_frame);
+									  "Engaging Write Buffer at %u bytes to accomodate %u->%u\n",
+									  (uint32_t)bytes,
+									  write_frame->datalen, session->write_codec->implementation->bytes_per_frame);
 					if ((status =switch_buffer_create_dynamic(&session->raw_write_buffer,
 															  bytes * SWITCH_BUFFER_BLOCK_FRAMES,
 															  bytes * SWITCH_BUFFER_START_FRAMES,
@@ -4132,7 +4132,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 	switch_core_sql_thread_launch();
 #endif
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Allocated memory pool. Sessions are %u bytes\n", sizeof(switch_core_session_t));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Allocated memory pool. Sessions are %u bytes\n", (uint32_t)sizeof(switch_core_session_t));
 	switch_event_init(runtime.memory_pool);
 	switch_rtp_init(runtime.memory_pool);
 

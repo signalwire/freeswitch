@@ -2810,25 +2810,27 @@ static void sip_i_state(int status,
 		break;
 	case nua_callstate_proceeding:
 		if (channel) {
-			if (status == 180 && !(switch_channel_test_flag(channel, CF_NO_INDICATE))) {
+			if (status == 180) {
 				switch_channel_mark_ring_ready(channel);
-				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
-					if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
-						switch_core_session_message_t msg;
-						msg.message_id = SWITCH_MESSAGE_INDICATE_RINGING;
-						msg.from = __FILE__;
-						switch_core_session_receive_message(other_session, &msg);
-						switch_core_session_rwunlock(other_session);
-					}
-					
-				} else {
-					switch_core_session_message_t *msg;
-					if ((msg = malloc(sizeof(*msg)))) {
-						memset(msg, 0, sizeof(*msg));
-						msg->message_id = SWITCH_MESSAGE_INDICATE_RINGING;
-						msg->from = __FILE__;
-						switch_core_session_queue_message(session, msg);
-						switch_set_flag(msg, SCSMF_DYNAMIC);
+				if (!switch_channel_test_flag(channel, CF_GEN_RINGBACK)) {
+					if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
+						if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+							switch_core_session_message_t msg;
+							msg.message_id = SWITCH_MESSAGE_INDICATE_RINGING;
+							msg.from = __FILE__;
+							switch_core_session_receive_message(other_session, &msg);
+							switch_core_session_rwunlock(other_session);
+						}
+						
+					} else {
+						switch_core_session_message_t *msg;
+						if ((msg = malloc(sizeof(*msg)))) {
+							memset(msg, 0, sizeof(*msg));
+							msg->message_id = SWITCH_MESSAGE_INDICATE_RINGING;
+							msg->from = __FILE__;
+							switch_core_session_queue_message(session, msg);
+							switch_set_flag(msg, SCSMF_DYNAMIC);
+						}
 					}
 				}
 			}
@@ -2837,12 +2839,13 @@ static void sip_i_state(int status,
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 					switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
                     switch_channel_mark_pre_answered(channel);
-					if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+					if (!switch_channel_test_flag(channel, CF_GEN_RINGBACK) && 
+						(uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
 						other_channel = switch_core_session_get_channel(other_session);
 						if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
 							switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, (char *)r_sdp);
 						}
-
+						
 						switch_channel_pre_answer(other_channel);
 						switch_core_session_rwunlock(other_session);
 					}
