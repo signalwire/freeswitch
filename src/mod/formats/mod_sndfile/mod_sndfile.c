@@ -58,7 +58,6 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, char *pat
 	sndfile_context *context;
 	int mode = 0;
 	char *ext;
-	int ready = 0;
 	struct format_map *map = NULL;
 
 	if ((ext = strrchr(path, '.')) == 0) {
@@ -101,54 +100,41 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, char *pat
 		}
 
         sf_command (context->handle, SFC_FILE_TRUNCATE, &frames, sizeof (frames));
-
-		if (map) {
-			context->sfinfo.format |= map->format;
-			ready = 1;
-		}
-	} else {
-		ready = 0;
+	} 
+	
+	if (map) {
+		context->sfinfo.format |= map->format;
 	}
 
-	if (!ready) {
-		ready = 1;
-		if (!strcmp(ext, "r8") || !strcmp(ext, "raw")) {
-			context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
-			context->sfinfo.channels = 1;
-			context->sfinfo.samplerate = 8000;
-		} else if (!strcmp(ext, "r16")) {
-			context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
-			context->sfinfo.channels = 1;
-			context->sfinfo.samplerate = 16000;
-		} else if (!strcmp(ext, "r24")) {
-			context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_24;
-			context->sfinfo.channels = 1;
-			context->sfinfo.samplerate = 24000;
-		} else if (!strcmp(ext, "r32")) {
-			context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_32;
-			context->sfinfo.channels = 1;
-			context->sfinfo.samplerate = 32000;
-		} else if (!strcmp(ext, "gsm")) {
-			context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_GSM610;
-			context->sfinfo.channels = 1;
-			context->sfinfo.samplerate = 8000;
-		} else if (!strcmp(ext, "ul")) {
-			context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_ULAW;
-			context->sfinfo.channels = 1;
-			context->sfinfo.samplerate = 8000;
-		} else if (!strcmp(ext, "al")) {
-			context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_ALAW;
-			context->sfinfo.channels = 1;
-			context->sfinfo.samplerate = 8000;
-		} else {
-			ready = 0;
-		}
-	}
-
-	if (!ready) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s] [%s]\n", path);
-		return SWITCH_STATUS_GENERR;
-	}
+	if (!strcmp(ext, "r8") || !strcmp(ext, "raw")) {
+		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
+		context->sfinfo.channels = 1;
+		context->sfinfo.samplerate = 8000;
+	} else if (!strcmp(ext, "r16")) {
+		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
+		context->sfinfo.channels = 1;
+		context->sfinfo.samplerate = 16000;
+	} else if (!strcmp(ext, "r24")) {
+		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_24;
+		context->sfinfo.channels = 1;
+		context->sfinfo.samplerate = 24000;
+	} else if (!strcmp(ext, "r32")) {
+		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_32;
+		context->sfinfo.channels = 1;
+		context->sfinfo.samplerate = 32000;
+	} else if (!strcmp(ext, "gsm")) {
+		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_GSM610;
+		context->sfinfo.channels = 1;
+		context->sfinfo.samplerate = 8000;
+	} else if (!strcmp(ext, "ul")) {
+		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_ULAW;
+		context->sfinfo.channels = 1;
+		context->sfinfo.samplerate = 8000;
+	} else if (!strcmp(ext, "al")) {
+		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_ALAW;
+		context->sfinfo.channels = 1;
+		context->sfinfo.samplerate = 8000;
+	} 
 	
 	if ((mode & SFM_WRITE) && sf_format_check (&context->sfinfo) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error : file format is invalid (0x%08X).\n", context->sfinfo.format);
