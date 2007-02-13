@@ -192,7 +192,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 {
 	char hostname[256];
 	char cmd[2048];
-	uint32_t activity = 1, running = 1;
+	int32_t activity = 1, running = 1;
 	switch_size_t x = 0;
 
 	gethostname(hostname, sizeof(hostname));
