@@ -3420,7 +3420,7 @@ static uint8_t handle_register(nua_t *nua,
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s+%s@%s", SOFIA_CHAT_PROTO, from_user, from_host);
 		
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "unavailable");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "%s", rpid);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 			switch_event_fire(&event);
 		}
@@ -3483,7 +3483,7 @@ static int resub_callback(void *pArg, int argc, char **argv, char **columnNames)
 	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", proto ? proto : SOFIA_CHAT_PROTO);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "%s", proto ? proto : SOFIA_CHAT_PROTO);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->url);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", user, host);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "%s", status);

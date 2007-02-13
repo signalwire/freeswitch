@@ -2531,7 +2531,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
                 if ((inner_var_count = 
                      switch_separate_string(var_array[x], '=', inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
                     
-                    switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, inner_var_array[0], inner_var_array[1]);
+                    switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, inner_var_array[0], "%s", inner_var_array[1]);
                     if (caller_channel) {
                         switch_channel_set_variable(caller_channel, inner_var_array[0], inner_var_array[1]);
                     }
@@ -3186,7 +3186,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
 			&& (other_session = switch_core_session_locate(other_uuid))) {
 			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-name", "%s", app);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-arg", "%s", path);
 				switch_core_session_queue_private_event(other_session, &event);
 			}
@@ -3198,7 +3198,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
 		if ((flags & SMF_ECHO_ALEG)) {
 			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-name", "%s", app);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-arg", "%s", path);
 				switch_core_session_queue_private_event(session, &event);
 			}

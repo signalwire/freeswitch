@@ -245,7 +245,7 @@ SWITCH_DECLARE(switch_size_t) switch_channel_dequeue_dtmf(switch_channel_t *chan
 
 	if (bytes && switch_event_create(&event, SWITCH_EVENT_DTMF) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-String", dtmf);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-String", "%s", dtmf);
 		switch_event_fire(&event);
 	}
 
@@ -284,7 +284,7 @@ SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, char *rp
 	}
 
 	if (switch_event_create(&event, type) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", __FILE__);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "%s", __FILE__);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", __FILE__);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", id);
 		if (type == SWITCH_EVENT_PRESENCE_IN) {
@@ -631,10 +631,10 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 				} else {
 					char state_num[25];
 					snprintf(state_num, sizeof(state_num), "%d", channel->state);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State", (char *) switch_channel_state_name(channel->state));
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", (char *) state_num);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", switch_channel_get_name(channel));
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(channel->session));
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State", "%s", (char *) switch_channel_state_name(channel->state));
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", "%s", (char *) state_num);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", "%s", switch_channel_get_name(channel));
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID", "%s", switch_core_session_get_uuid(channel->session));
 				}
 				switch_event_fire(&event);
 			}
@@ -681,19 +681,19 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
         originatee_caller_profile = caller_profile->originatee_caller_profile;
     }
 
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State", (char *) switch_channel_state_name(channel->state));
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State", "%s", (char *) switch_channel_state_name(channel->state));
 	snprintf(state_num, sizeof(state_num), "%d", channel->state);
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", (char *) state_num);
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", switch_channel_get_name(channel));
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(channel->session));
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", "%s", (char *) state_num);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", "%s", switch_channel_get_name(channel));
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID", "%s", switch_core_session_get_uuid(channel->session));
 	
 	if ((codec = switch_core_session_get_read_codec(channel->session))) {
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Name", codec->implementation->iananame);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Name", "%s", codec->implementation->iananame);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Rate", "%u", codec->implementation->samples_per_second);
 	}
 	
 	if ((codec = switch_core_session_get_write_codec(channel->session))) {
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Name", codec->implementation->iananame);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Name", "%s", codec->implementation->iananame);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Rate", "%u", codec->implementation->samples_per_second);
 	}
 
@@ -718,7 +718,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 		char buf[1024];
 		switch_hash_this(hi, &var, NULL, &val);
 		snprintf(buf, sizeof(buf), "variable_%s", (char *) var);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, buf, (char *) val);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, buf, "%s", (char *) val);
 	}
 
 
@@ -962,7 +962,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 						  channel->name,
 						  state_names[last_state], switch_channel_cause2str(channel->hangup_cause));
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_HANGUP) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Hangup-Cause", switch_channel_cause2str(channel->hangup_cause));
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Hangup-Cause", "%s", switch_channel_cause2str(channel->hangup_cause));
 			switch_channel_event_set_data(channel, event);
 			switch_event_fire(&event);
 		}

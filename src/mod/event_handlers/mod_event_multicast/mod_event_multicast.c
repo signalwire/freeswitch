@@ -163,7 +163,7 @@ static void event_handler(switch_event_t *event)
 		case SWITCH_EVENT_LOG:
 			return;
 		default:
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Multicast-Sender", globals.hostname);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Multicast-Sender", "%s", globals.hostname);
 			if (switch_event_serialize(event, &packet) == SWITCH_STATUS_SUCCESS) {
 				memcpy(buf, &globals.host_hash, sizeof(globals.host_hash));
 				switch_copy_string(buf + sizeof(globals.host_hash), packet, sizeof(buf) - sizeof(globals.host_hash));
@@ -310,7 +310,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 							}
 						}
 						snprintf(tmpname, sizeof(tmpname), "Orig-%s", var);
-						switch_event_add_header(local_event, SWITCH_STACK_BOTTOM, tmpname, val);
+						switch_event_add_header(local_event, SWITCH_STACK_BOTTOM, tmpname, "%s", val);
 						var = term + 1;
 					} else {
 						break;

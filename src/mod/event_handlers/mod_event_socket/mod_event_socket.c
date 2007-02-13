@@ -409,7 +409,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 					count++;
 					if (count == 1) {
 						switch_event_create(event, SWITCH_EVENT_MESSAGE);
-						switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Command", mbuf);
+						switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Command", "%s", mbuf);
 					} else if (cur) {
 						char *var, *val;
 						var = cur;
@@ -422,7 +422,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 								}
 							} 
 							if (var && val) {
-								switch_event_add_header(*event, SWITCH_STACK_BOTTOM, var, val);
+								switch_event_add_header(*event, SWITCH_STACK_BOTTOM, var, "%s", val);
 							}
 						}
 					}
@@ -549,7 +549,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
         switch_event_t *event;
         
         if (switch_event_create(&event, SWITCH_EVENT_BACKGROUND_JOB) == SWITCH_STATUS_SUCCESS) {
-            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-UUID", acs->uuid_str);
+            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-UUID", "%s", acs->uuid_str);
             switch_event_add_body(event, reply);
             switch_event_fire(&event);
         }

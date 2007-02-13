@@ -834,10 +834,10 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_
 
 	if (stream->event) {
 		if (cmd) {
-			switch_event_add_header(stream->event, SWITCH_STACK_BOTTOM, "API-Command", cmd);
+			switch_event_add_header(stream->event, SWITCH_STACK_BOTTOM, "API-Command", "%s", cmd);
 		}
 		if (arg) {
-			switch_event_add_header(stream->event, SWITCH_STACK_BOTTOM, "API-Command-Argument", arg);
+			switch_event_add_header(stream->event, SWITCH_STACK_BOTTOM, "API-Command-Argument", "%s", arg);
 		}
 	}
 
