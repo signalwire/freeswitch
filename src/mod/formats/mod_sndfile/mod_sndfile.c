@@ -343,10 +343,10 @@ static switch_status_t setup_formats(void)
 			map->uext = switch_core_permanent_strdup(info.extension);
 			map->format = info.format;
 			for(p = map->ext; *p; p++) {
-				*p = tolower(*p);
+				*p = (char)tolower(*p);
 			}
 			for(p = map->uext; *p; p++) {
-				*p = toupper(*p);
+				*p = (char)toupper(*p);
 			}
 			switch_core_hash_insert(globals.format_hash, map->ext, map);
 			switch_core_hash_insert(globals.format_hash, map->uext, map);
