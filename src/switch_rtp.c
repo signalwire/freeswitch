@@ -138,7 +138,7 @@ struct switch_rtp {
 	uint32_t ts;
 	uint32_t last_write_ts;
 	uint16_t last_write_seq;
-	uint16_t last_write_ssrc;
+	uint32_t last_write_ssrc;
 	uint32_t flags;
 	switch_memory_pool_t *pool;
 	switch_sockaddr_t *from_addr;
@@ -1058,7 +1058,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_sessi
 static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t datalen, uint8_t m, switch_payload_t payload, switch_frame_flag_t *flags)
 {
 	switch_size_t bytes;
-	uint8_t fwd = (!flags || (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE) && (*flags & SFF_RAW_RTP)));
+	uint8_t fwd = (uint8_t)(!flags || (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE) && (*flags & SFF_RAW_RTP)));
 	rtp_msg_t *send_msg;
 	uint8_t send = 1;
 
