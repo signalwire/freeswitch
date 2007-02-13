@@ -2789,7 +2789,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					write_frame.datalen = read_codec->implementation->bytes_per_frame;
 					write_frame.samples = write_frame.datalen / 2;
 					memset(write_frame.data, 255, write_frame.datalen);
-
+					
 					if (ringback_data) {
 						char *tmp_data = NULL;
 						
@@ -2882,7 +2882,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					break;
 				}
 
-				if (read_frame && !pass && !switch_test_flag(read_frame, SFF_CNG) && read_frame->datalen > 1) {
+				if (switch_channel_test_flag(caller_channel, CF_RING_READY) && 
+					read_frame && !pass && !switch_test_flag(read_frame, SFF_CNG) && read_frame->datalen > 1) {
 					if (ringback.fh) {
 						uint8_t abuf[1024];
 						switch_size_t mlen, olen;

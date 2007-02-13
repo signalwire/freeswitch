@@ -487,6 +487,7 @@ CF_SUSPEND		= (1 << 14) - Suspend i/o
 CF_EVENT_PARSE  = (1 << 15) - Suspend control events
 CF_NO_INDICATE  = (1 << 16) - Disable Indications
 CF_REPEAT_STATE = (1 << 17) - Tell the state machine to repeat a state
+CF_RING_READY   = (1 << 18) - Channel is ready to send ringback
 </pre>
  */
 
@@ -508,7 +509,8 @@ typedef enum {
 	CF_SUSPEND		= (1 << 14),
 	CF_EVENT_PARSE	= (1 << 15),
 	CF_NO_INDICATE	= (1 << 16),
-    CF_REPEAT_STATE = (1 << 17)
+    CF_REPEAT_STATE = (1 << 17),
+	CF_RING_READY   = (1 << 18)
 } switch_channel_flag_t;
 
 

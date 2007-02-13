@@ -331,6 +331,13 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 #define switch_channel_pre_answer(channel) switch_channel_perform_pre_answer(channel, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 /*!
+  \brief Indicate a channel is ready to provide ringback
+  \param channel channel
+  \return SWITCH_STATUS_SUCCESS
+*/								
+#define switch_channel_mark_ring_ready(channel) switch_channel_perform_mark_ring_ready(channel, __FILE__, __SWITCH_FUNC__, __LINE__)
+
+/*!
   \brief add a state handler table to a given channel
   \param channel channel on which to add the state handler table
   \param state_handler table of state handler functions

@@ -978,12 +978,31 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 	return channel->state;
 }
 
+
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_channel_t *channel,
+																	   const char *file,
+																	   const char *func,
+																	   int line)
+{
+	if (!switch_channel_test_flag(channel, CF_RING_READY)) {
+        switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Ring-Ready %s!\n", channel->name);
+		switch_channel_set_flag(channel, CF_RING_READY);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+
+
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_channel_t *channel,
-                                                                       const char *file,
-                                                                       const char *func,
-                                                                       int line)
+																		 const char *file,
+																		 const char *func,
+																		 int line)
 {
     switch_event_t *event;
+
+	switch_channel_mark_ring_ready(channel);
 
     if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
         char *uuid;

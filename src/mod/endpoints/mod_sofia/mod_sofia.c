@@ -2811,6 +2811,7 @@ static void sip_i_state(int status,
 	case nua_callstate_proceeding:
 		if (channel) {
 			if (status == 180 && !(switch_channel_test_flag(channel, CF_NO_INDICATE))) {
+				switch_channel_mark_ring_ready(channel);
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 					if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
 						switch_core_session_message_t msg;
