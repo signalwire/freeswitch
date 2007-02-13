@@ -111,12 +111,12 @@ void CDRContainer::reload(switch_stream_handle_t *stream)
 	switch_xml_t xml_root;
 	
 	if ((xml_root = switch_xml_open_root(1, &err))) {
-		switch_console_printf(SWITCH_CHANNEL_LOG,"Reloading the XML file...\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Reloading the XML file...\n");
 		switch_xml_free(xml_root);
 	}
 	
 	if (!(xml = switch_xml_open_cfg(configfile, &cfg, NULL))) 
-		switch_console_printf(SWITCH_CHANNEL_LOG,"open of %s failed\n", configfile);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "open of %s failed\n", configfile);
 	else
 	{
 		BaseRegistry& registry(BaseRegistry::get());
@@ -144,7 +144,7 @@ void CDRContainer::reload(switch_stream_handle_t *stream)
 	
 	switch_xml_free(xml);
 	switch_queue_unblockpop(cdrqueue);
-	switch_console_printf(SWITCH_CHANNEL_LOG,"mod_cdr configuration reloaded.");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mod_cdr configuration reloaded.");
 }
 
 void CDRContainer::queue_pause(switch_stream_handle_t *stream)
