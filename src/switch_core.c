@@ -1443,7 +1443,7 @@ SWITCH_DECLARE(void *) switch_core_permanent_alloc(switch_size_t memory)
 	return ptr;
 }
 
-SWITCH_DECLARE(char *) switch_core_permanent_strdup(char *todup)
+SWITCH_DECLARE(char *) switch_core_permanent_strdup(const char *todup)
 {
 	char *duped = NULL;
 	switch_size_t len;

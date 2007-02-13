@@ -375,7 +375,7 @@ SWITCH_DECLARE(void *) switch_core_session_alloc(switch_core_session_t *session,
   \param todup the string to duplicate
   \return a pointer to the newly duplicated string
 */
-SWITCH_DECLARE(char *) switch_core_permanent_strdup(char *todup);
+SWITCH_DECLARE(char *) switch_core_permanent_strdup(const char *todup);
 
 /*! 
   \brief Copy a string using memory allocation from a session's pool
