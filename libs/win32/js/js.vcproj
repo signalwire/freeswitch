@@ -58,7 +58,7 @@
 				AssemblerListingLocation=""
 				ObjectFile="$(IntDir)\"
 				ProgramDataBaseFileName="$(IntDir)\vc80.pdb"
-				WarningLevel="3"
+				WarningLevel="0"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -156,7 +156,7 @@
 				AssemblerListingLocation=""
 				ObjectFile="$(IntDir)\"
 				ProgramDataBaseFileName="$(IntDir)\vc80.pdb"
-				WarningLevel="3"
+				WarningLevel="0"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
 			/>
