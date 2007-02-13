@@ -256,10 +256,12 @@ typedef enum {
 	CONF_API_SUB_ARGS_AS_ONE
 } conference_fntype_t;
 
+typedef void (*void_fn_t)(void);
+
 /* API command parser */
 typedef struct api_command {
 	char *pname;
-	void *pfnapicmd;
+	void_fn_t pfnapicmd;
 	conference_fntype_t fntype;
 	char *psyntax;
 } api_command_t;
@@ -3129,28 +3131,28 @@ static switch_status_t conf_api_sub_norecord(conference_obj_t *conference, switc
 
 /* API Interface Function sub-commands */
 static api_command_t conf_api_sub_commands[] = {
-	{"list", &conf_api_sub_list, CONF_API_SUB_ARGS_SPLIT, "<confname> list [delim <string>]"}, 
-	{"energy", &conf_api_sub_energy, CONF_API_SUB_MEMBER_TARGET, "<confname> energy <member_id|all|last> [<newval>]"}, 
-	{"volume_in", &conf_api_sub_volume_in, CONF_API_SUB_MEMBER_TARGET, "<confname> volume_in <member_id|all|last> [<newval>]"}, 
-	{"volume_out", &conf_api_sub_volume_out, CONF_API_SUB_MEMBER_TARGET, "<confname> volume_out <member_id|all|last> [<newval>]"}, 
-	{"play", &conf_api_sub_play, CONF_API_SUB_ARGS_SPLIT, "<confname> play <file_path> [<member_id>]"}, 
-	{"say", &conf_api_sub_say, CONF_API_SUB_ARGS_AS_ONE, "<confname> say <text>"}, 
-	{"saymember", &conf_api_sub_saymember, CONF_API_SUB_ARGS_AS_ONE, "<confname> saymember <member_id> <text>"}, 
-	{"stop", &conf_api_sub_stop, CONF_API_SUB_ARGS_SPLIT, "<confname> stop <[current|all|last]> [<member_id>]"}, 
-	{"dtmf", &conf_api_sub_dtmf, CONF_API_SUB_MEMBER_TARGET, "<confname> dtmf <[member_id|all|last]> <digits>"}, 
-	{"kick", &conf_api_sub_kick, CONF_API_SUB_MEMBER_TARGET, "<confname> kick <[member_id|all|last]>"}, 
-	{"mute", &conf_api_sub_mute, CONF_API_SUB_MEMBER_TARGET, "<confname> mute <[member_id|all]|last>"}, 
-	{"unmute", &conf_api_sub_unmute, CONF_API_SUB_MEMBER_TARGET, "<confname> unmute <[member_id|all]|last>"}, 
-	{"deaf", &conf_api_sub_deaf, CONF_API_SUB_MEMBER_TARGET, "<confname> deaf <[member_id|all]|last>"}, 
-	{"undeaf", &conf_api_sub_undeaf, CONF_API_SUB_MEMBER_TARGET, "<confname> undeaf <[member_id|all]|last>"}, 
-	{"relate", &conf_api_sub_relate, CONF_API_SUB_ARGS_SPLIT, "<confname> relate <member_id> <other_member_id> [nospeak|nohear|clear]"}, 
-	{"lock", &conf_api_sub_lock, CONF_API_SUB_ARGS_SPLIT, "<confname> lock"}, 
-	{"unlock", &conf_api_sub_unlock, CONF_API_SUB_ARGS_SPLIT, "<confname> unlock"}, 
-	{"dial", &conf_api_sub_dial, CONF_API_SUB_ARGS_SPLIT, "<confname> dial <endpoint_module_name>/<destination> <callerid number> <callerid name>"}, 
-	{"bgdial", &conf_api_sub_bgdial, CONF_API_SUB_ARGS_SPLIT, "<confname> bgdial <endpoint_module_name>/<destination> <callerid number> <callerid name>"}, 
-	{"transfer", &conf_api_sub_transfer, CONF_API_SUB_ARGS_SPLIT, "<confname> transfer <conference_name> <member id> [...<member id>]"}, 
-	{"record", &conf_api_sub_record, CONF_API_SUB_ARGS_SPLIT, "<confname> record <filename>"}, 
-	{"norecord", &conf_api_sub_norecord, CONF_API_SUB_ARGS_SPLIT, "<confname> norecord <[filename|all]>"}, 
+	{"list", (void_fn_t)&conf_api_sub_list, CONF_API_SUB_ARGS_SPLIT, "<confname> list [delim <string>]"}, 
+	{"energy", (void_fn_t)&conf_api_sub_energy, CONF_API_SUB_MEMBER_TARGET, "<confname> energy <member_id|all|last> [<newval>]"}, 
+	{"volume_in", (void_fn_t)&conf_api_sub_volume_in, CONF_API_SUB_MEMBER_TARGET, "<confname> volume_in <member_id|all|last> [<newval>]"}, 
+	{"volume_out", (void_fn_t)&conf_api_sub_volume_out, CONF_API_SUB_MEMBER_TARGET, "<confname> volume_out <member_id|all|last> [<newval>]"}, 
+	{"play", (void_fn_t)&conf_api_sub_play, CONF_API_SUB_ARGS_SPLIT, "<confname> play <file_path> [<member_id>]"}, 
+	{"say", (void_fn_t)&conf_api_sub_say, CONF_API_SUB_ARGS_AS_ONE, "<confname> say <text>"}, 
+	{"saymember", (void_fn_t)&conf_api_sub_saymember, CONF_API_SUB_ARGS_AS_ONE, "<confname> saymember <member_id> <text>"}, 
+	{"stop", (void_fn_t)&conf_api_sub_stop, CONF_API_SUB_ARGS_SPLIT, "<confname> stop <[current|all|last]> [<member_id>]"}, 
+	{"dtmf", (void_fn_t)&conf_api_sub_dtmf, CONF_API_SUB_MEMBER_TARGET, "<confname> dtmf <[member_id|all|last]> <digits>"}, 
+	{"kick", (void_fn_t)&conf_api_sub_kick, CONF_API_SUB_MEMBER_TARGET, "<confname> kick <[member_id|all|last]>"}, 
+	{"mute", (void_fn_t)&conf_api_sub_mute, CONF_API_SUB_MEMBER_TARGET, "<confname> mute <[member_id|all]|last>"}, 
+	{"unmute", (void_fn_t)&conf_api_sub_unmute, CONF_API_SUB_MEMBER_TARGET, "<confname> unmute <[member_id|all]|last>"}, 
+	{"deaf", (void_fn_t)&conf_api_sub_deaf, CONF_API_SUB_MEMBER_TARGET, "<confname> deaf <[member_id|all]|last>"}, 
+	{"undeaf", (void_fn_t)&conf_api_sub_undeaf, CONF_API_SUB_MEMBER_TARGET, "<confname> undeaf <[member_id|all]|last>"}, 
+	{"relate", (void_fn_t)&conf_api_sub_relate, CONF_API_SUB_ARGS_SPLIT, "<confname> relate <member_id> <other_member_id> [nospeak|nohear|clear]"}, 
+	{"lock", (void_fn_t)&conf_api_sub_lock, CONF_API_SUB_ARGS_SPLIT, "<confname> lock"}, 
+	{"unlock", (void_fn_t)&conf_api_sub_unlock, CONF_API_SUB_ARGS_SPLIT, "<confname> unlock"}, 
+	{"dial", (void_fn_t)&conf_api_sub_dial, CONF_API_SUB_ARGS_SPLIT, "<confname> dial <endpoint_module_name>/<destination> <callerid number> <callerid name>"}, 
+	{"bgdial", (void_fn_t)&conf_api_sub_bgdial, CONF_API_SUB_ARGS_SPLIT, "<confname> bgdial <endpoint_module_name>/<destination> <callerid number> <callerid name>"}, 
+	{"transfer", (void_fn_t)&conf_api_sub_transfer, CONF_API_SUB_ARGS_SPLIT, "<confname> transfer <conference_name> <member id> [...<member id>]"}, 
+	{"record", (void_fn_t)&conf_api_sub_record, CONF_API_SUB_ARGS_SPLIT, "<confname> record <filename>"}, 
+	{"norecord", (void_fn_t)&conf_api_sub_norecord, CONF_API_SUB_ARGS_SPLIT, "<confname> norecord <[filename|all]>"}, 
 };
 
 #define CONFFUNCAPISIZE (sizeof(conf_api_sub_commands)/sizeof(conf_api_sub_commands[0]))
@@ -3194,7 +3196,7 @@ switch_status_t conf_api_dispatch(conference_obj_t *conference, switch_stream_ha
                     }
 
                     if (all) {
-                        conference_member_itterator(conference, stream, conf_api_sub_commands[i].pfnapicmd, argv[argn+2]);
+                        conference_member_itterator(conference, stream, (conf_api_member_cmd_t)conf_api_sub_commands[i].pfnapicmd, argv[argn+2]);
                     } else if (last) {
                         conference_member_t *member = NULL;
                         conference_member_t *last_member = NULL;
