@@ -274,7 +274,7 @@ SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms);
   \brief Create a pointer to the file name in a given file path eliminating the directory name
   \return the pointer to the next character after the final / or \\ characters
 */
-SWITCH_DECLARE(char *) switch_cut_path(char *in);
+SWITCH_DECLARE(const char *) switch_cut_path(const char *in);
 
 #define switch_clean_re(re)	if (re) {\
 				pcre_free(re);\

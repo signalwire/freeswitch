@@ -169,7 +169,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 	int ret = 0;
 	va_list ap;
 	FILE *handle;
-	const char *filep = (file ? (const char *)switch_cut_path((char *)file): "");
+	const char *filep = (file ? switch_cut_path(file): "");
 	const char *funcp = (func ? func : "");
 	char *content = NULL;
 	switch_time_t now = switch_time_now();

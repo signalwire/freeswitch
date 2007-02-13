@@ -62,7 +62,7 @@ SWITCH_DECLARE(void) switch_console_loop(void);
 /*!
   \brief A method akin to printf that allows you to redirect output to a specific console "channel"
 */
-SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, char *file, const char *func, int line, char *fmt, ...) PRINTF_FUNCTION(5,6);
+SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const char *file, const char *func, int line, const char *fmt, ...) PRINTF_FUNCTION(5,6);
 
 /*!
   \brief A method akin to printf for dealing with api streams

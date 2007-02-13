@@ -612,7 +612,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		if (state > CS_RING) {
 			switch_channel_presence(channel, "unknown", (char*)state_names[state]);
 		}
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_DEBUG, "%s State Change %s -> %s\n", 
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_DEBUG, "%s State Change %s -> %s\n", 
 						  channel->name,
 						  state_names[last_state], 
 						  state_names[state]);
@@ -645,7 +645,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		}
 		
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_WARNING, "%s Invalid State Change %s -> %s\n", 
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_WARNING, "%s Invalid State Change %s -> %s\n", 
 						  channel->name,
 						  state_names[last_state],
 						  state_names[state]);
@@ -958,7 +958,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		switch_channel_state_t last_state = channel->state;
 		channel->state = CS_HANGUP;
 		channel->hangup_cause = hangup_cause;
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n", 
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n", 
 						  channel->name,
 						  state_names[last_state], switch_channel_cause2str(channel->hangup_cause));
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_HANGUP) == SWITCH_STATUS_SUCCESS) {
@@ -985,7 +985,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_ch
 																	   int line)
 {
 	if (!switch_channel_test_flag(channel, CF_RING_READY)) {
-        switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Ring-Ready %s!\n", channel->name);
+        switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_NOTICE, "Ring-Ready %s!\n", channel->name);
 		switch_channel_set_flag(channel, CF_RING_READY);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1008,7 +1008,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
         char *uuid;
         switch_core_session_t *other_session;
 
-        switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Pre-Answer %s!\n", channel->name);
+        switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_NOTICE, "Pre-Answer %s!\n", channel->name);
         switch_channel_set_flag(channel, CF_EARLY_MEDIA);
         switch_channel_set_variable(channel, "endpoint_disposition", "EARLY MEDIA");
         if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_PROGRESS) == SWITCH_STATUS_SUCCESS) {
@@ -1091,7 +1091,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready(switch_channel
 	status = switch_core_session_message_send(uuid, &msg);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Ring Ready %s!\n", channel->name);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_NOTICE, "Ring Ready %s!\n", channel->name);
 	}
 
 	return status;
@@ -1138,7 +1138,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
     }
 
     switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
-    switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Channel [%s] has been answered\n", channel->name);
+    switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_NOTICE, "Channel [%s] has been answered\n", channel->name);
     
     return SWITCH_STATUS_SUCCESS;
 }

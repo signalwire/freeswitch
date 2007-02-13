@@ -132,14 +132,14 @@ static int switch_console_process(char *cmd)
 	return 1;
 }
 
-SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, char *file, const char *func, int line,
-										   char *fmt, ...)
+SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const char *file, const char *func, int line,
+										   const char *fmt, ...)
 {
 	char *data = NULL;
 	int ret = 0;
 	va_list ap;
 	FILE *handle;
-	char *filep = switch_cut_path(file);
+	const char *filep = switch_cut_path(file);
 
 	va_start(ap, fmt);
 

@@ -496,11 +496,11 @@ SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char 
 	return argc;
 }
 
-SWITCH_DECLARE(char *) switch_cut_path(char *in)
+SWITCH_DECLARE(const char *) switch_cut_path(const char *in)
 {
-	char *p, *ret = in;
-	char delims[] = "/\\";
-	char *i;
+	const char *p, *ret = in;
+	const char delims[] = "/\\";
+	const char *i;
 
 	if (in) {
 		for (i = delims; *i; i++) {
