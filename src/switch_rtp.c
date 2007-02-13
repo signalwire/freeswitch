@@ -1062,7 +1062,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 	rtp_msg_t *send_msg;
 	uint8_t send = 1;
 
-	assert(fwd);
 	if (fwd) {
 		bytes = datalen;
 		send_msg = (rtp_msg_t *) data;
