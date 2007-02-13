@@ -834,7 +834,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Doh! no caller profile\n");
 			switch_core_session_destroy(new_session);
-			SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		}
 
 		if ((tech_pvt->iax_session = iax_session_new()) == 0) {
