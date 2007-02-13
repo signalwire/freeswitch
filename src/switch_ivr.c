@@ -4158,7 +4158,9 @@ static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_me
 	uint32_t len;
 	char *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-    switch_input_args_t args= {0};
+	switch_input_args_t args= {0};
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "play_or_say sound=[%s]\n",sound);
 
 	if (session != NULL && menu != NULL && !switch_strlen_zero(sound)) {
 		memset(menu->buf, 0, menu->inlen);
@@ -4171,14 +4173,17 @@ static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_me
 			len = menu->inlen;
 			ptr = menu->ptr;
 		}
-        args.buf = ptr;
-        args.buflen = len;
+		args.buf = ptr;
+		args.buflen = len;
 
 		if (*sound == '/' || *sound == '\\') {
 			status = switch_ivr_play_file(session, NULL, sound, &args);
 		} else {
 			if (menu->tts_engine && menu->tts_voice) {
 				status = switch_ivr_speak_text(session, menu->tts_engine, menu->tts_voice, 0, sound, &args);
+			}
+			else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No TTS engine to play sound\n");
 			}
 		}
 
@@ -4191,6 +4196,7 @@ static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_me
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "digits '%s'\n",menu->buf);
 		}
 	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "play_or_say returning [%d]\n",status);
 
 	return status;
 }
@@ -4262,6 +4268,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IVR action on menu '%s' matched '%s' param '%s'\n", menu->name, menu->buf,aptr);
 					}
 
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "switch_ivr_menu_execute todo=[%d]\n", todo);
 
 					switch(todo) {
 					case SWITCH_IVR_ACTION_DIE:
@@ -4292,7 +4299,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 								*app_arg = '\0';
 								app_arg++;
 							}
-						
+
 							if (app_name && app_arg) {
 								if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
 									if (application_interface->application_function) {
@@ -4331,23 +4338,30 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 				}
 			}
 		}
-		if (*menu->buf && !match) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IVR menu '%s' caught invalid input '%s'\n", menu->name, menu->buf);
-
+		if (!match) {
+			if (*menu->buf) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IVR menu '%s' caught invalid input '%s'\n", menu->name, menu->buf);
+				}
+			else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IVR menu '%s' no input detected\n", menu->name);
+			}
 			if (menu->invalid_sound) {
 				play_or_say(session, menu, menu->invalid_sound, 0);
 			}
 			errs++;
-
 			if (status == SWITCH_STATUS_SUCCESS) {
 				status = switch_ivr_sleep(session, 1000);
+			}
+			/* breaks are ok too */
+			if (SWITCH_STATUS_IS_BREAK(status)) {
+				status = SWITCH_STATUS_SUCCESS;
 			}
 		}
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "exit-sound '%s'\n",menu->exit_sound);
 	if (!switch_strlen_zero(menu->exit_sound)) {
-		status = switch_ivr_play_file(session, NULL, menu->exit_sound, NULL);
+		play_or_say(session, menu, menu->exit_sound, 0);
 	}
 
 	switch_safe_free(menu->buf);
