@@ -4272,7 +4272,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(char *console, cons
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Loading Modules.\n");
 	if (switch_loadable_module_init() != SWITCH_STATUS_SUCCESS) {
 		*err = "Cannot load modules";
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Error: %s", err);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Error: %s", *err);
 		return SWITCH_STATUS_GENERR;
 	}
 
