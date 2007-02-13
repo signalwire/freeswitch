@@ -172,7 +172,7 @@ SWITCH_DECLARE(char *) switch_event_get_body(switch_event_t *event);
   \param fmt the value of the header (varargs see standard sprintf family)
   \return SWITCH_STATUS_SUCCESS if the header was added
 */
-SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, switch_stack_t stack, char *header_name, char *fmt, ...);
+SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, switch_stack_t stack, char *header_name, char *fmt, ...) PRINTF_FUNCTION(4,5);
 
 /*!
   \brief Destroy an event
@@ -251,7 +251,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
   \return the xml object if the operation was successful
   \note the body supplied by this function will supersede an existing body the event may have
 */
-SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, char *fmt, ...);
+SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, char *fmt, ...) PRINTF_FUNCTION(2,3);
 
 /*!
   \brief Determine if the event system has been initilized
@@ -266,7 +266,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_running(void);
   \return SWITCH_STATUS_SUCCESS if the body was added to the event
   \note the body parameter can be shadowed by the switch_event_reserve_subclass_detailed function
 */
-SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, char *fmt, ...);
+SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, char *fmt, ...) PRINTF_FUNCTION(2,3);
 
 
 /*!

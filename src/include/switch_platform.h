@@ -161,6 +161,12 @@ typedef unsigned long	in_addr_t;
 #define DoxyDefine(x)
 #endif
 
+#if __GNUC__ >= 3
+#define PRINTF_FUNCTION(fmtstr,vars) __attribute__((format(printf,fmtstr,vars)))
+#else
+#define PRINTF_FUNCTION(fmtstr,vars)
+#endif
+
 SWITCH_END_EXTERN_C
 
 #endif
