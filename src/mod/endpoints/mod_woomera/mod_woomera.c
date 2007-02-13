@@ -1063,6 +1063,8 @@ static void *woomera_channel_thread_run(switch_thread_t *thread, void *obj)
 			} else if (!strcasecmp(wmsg.command, "PROCEED")) {
 				/* This packet has lots of info so well keep it */
 				tech_pvt->call_info = wmsg;
+				switch_core_session_queue_indication(tech_pvt->session, SWITCH_MESSAGE_INDICATE_RINGING);
+				switch_channel_mark_ring_ready(channel);
 			} else if (switch_test_flag(tech_pvt, TFLAG_PARSE_INCOMING) && !strcasecmp(wmsg.command, "INCOMING")) {
 				char *exten;
 				char cid_name[512];

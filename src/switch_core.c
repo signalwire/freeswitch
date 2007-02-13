@@ -1732,6 +1732,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_queue_indication(switch_core_session_t *session, switch_core_session_message_types_t indication)
+{
+	switch_core_session_message_t *msg;
+
+	if ((msg = malloc(sizeof(*msg)))) {
+		memset(msg, 0, sizeof(*msg));
+		msg->message_id = indication;
+		msg->from = __FILE__;
+		switch_core_session_queue_message(session, msg);
+		switch_set_flag(msg, SCSMF_DYNAMIC);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	return SWITCH_STATUS_FALSE;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_queue_message(switch_core_session_t *session, switch_core_session_message_t *message)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;

@@ -2823,14 +2823,7 @@ static void sip_i_state(int status,
 						}
 						
 					} else {
-						switch_core_session_message_t *msg;
-						if ((msg = malloc(sizeof(*msg)))) {
-							memset(msg, 0, sizeof(*msg));
-							msg->message_id = SWITCH_MESSAGE_INDICATE_RINGING;
-							msg->from = __FILE__;
-							switch_core_session_queue_message(session, msg);
-							switch_set_flag(msg, SCSMF_DYNAMIC);
-						}
+						switch_core_session_queue_indication(session, SWITCH_MESSAGE_INDICATE_RINGING);
 					}
 				}
 			}

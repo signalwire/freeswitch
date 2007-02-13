@@ -1160,15 +1160,8 @@ static int on_ringing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 		channel = switch_core_session_get_channel(session);
 		assert(channel != NULL);
 
-		if ((msg = malloc(sizeof(*msg)))) {
-			memset(msg, 0, sizeof(*msg));
-			msg->message_id = SWITCH_MESSAGE_INDICATE_RINGING;
-			msg->from = __FILE__;
-			switch_core_session_queue_message(session, msg);
-			switch_set_flag(msg, SCSMF_DYNAMIC);
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-		}
+		switch_core_session_queue_indication(tech_pvt->session, SWITCH_MESSAGE_INDICATE_RINGING);
+		switch_channel_mark_ring_ready(channel);
 
 		switch_core_session_rwunlock(session);
 	} else {

@@ -1043,6 +1043,10 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Call accepted.\n");
 				break;
 			case IAX_EVENT_RINGA:
+				if (channel) {
+					switch_core_session_queue_indication(tech_pvt->session, SWITCH_MESSAGE_INDICATE_RINGING);
+					switch_channel_mark_ring_ready(channel);
+				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Ringing heard.\n");
 				break;
 			case IAX_EVENT_PONG:

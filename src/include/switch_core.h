@@ -515,6 +515,14 @@ SWITCH_DECLARE (switch_status_t) switch_core_session_message_send(char *uuid_str
 SWITCH_DECLARE(switch_status_t) switch_core_session_queue_message(switch_core_session_t *session, switch_core_session_message_t *message);
 
 /*! 
+  \brief Queue an indication message on a session
+  \param session the session to queue the message to
+  \param indication the indication message to queue
+  \return SWITCH_STATUS_SUCCESS if the message was queued
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_queue_indication(switch_core_session_t *session, switch_core_session_message_types_t indication);
+
+/*! 
   \brief DE-Queue an message on a given session
   \param session the session to de-queue the message on
   \param message the de-queued message
