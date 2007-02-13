@@ -969,7 +969,7 @@ static void do_invite(switch_core_session_t *session)
 	switch_stream_handle_t stream = {0};
 	switch_hash_index_t *hi;
 	void *vval;
-	char *extra_headers;
+	char *extra_headers = NULL;
 	const void *vvar;
 
     channel = switch_core_session_get_channel(session);
