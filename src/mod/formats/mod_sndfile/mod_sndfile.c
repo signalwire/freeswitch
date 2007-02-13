@@ -106,10 +106,9 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, char *pat
 			context->sfinfo.format |= map->format;
 			ready = 1;
 		}
-	} else if (map) {
-		ready = 1;
+	} else {
+		ready = 0;
 	}
-
 
 	if (!ready) {
 		ready = 1;
