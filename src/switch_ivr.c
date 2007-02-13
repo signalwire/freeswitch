@@ -2345,7 +2345,8 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 									uint32_t *hups,
 									char *file,
 									char *key,
-									uint8_t early_ok)
+									uint8_t early_ok,
+									uint8_t *ring_ready)
 {
 
 	uint32_t i;
@@ -2355,6 +2356,9 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 	for (i = 0; i < len; i++) {
 		if (!peer_channels[i]) {
 			continue;
+		}
+		if (!*ring_ready && switch_channel_test_flag(peer_channels[i], CF_RING_READY)) {
+			*ring_ready = 1;
 		}
 		if (switch_channel_get_state(peer_channels[i]) >= CS_HANGUP) {
 			(*hups)++;
@@ -2459,7 +2463,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_core_session_message_t *message = NULL;
     switch_event_t *var_event = NULL;
 	uint8_t fail_on_single_reject = 0;
-
+	uint8_t ring_ready = 0;
 	write_frame.data = fdata;
 	
 	*bleg = NULL;
@@ -2853,7 +2857,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
         }
 
         while ((!caller_channel || switch_channel_ready(caller_channel)) && 
-			   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, &hups, file, key, early_ok)) {
+			   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, &hups, file, key, early_ok, &ring_ready)) {
 
 			// When the AND operator is being used, and fail_on_single_reject is set, a hangup indicates that the call should fail.
 			if ((to = (uint8_t)((time(NULL) - start) >= (time_t)timelimit_sec)) || (fail_on_single_reject && hups)) {
@@ -2881,9 +2885,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				if (!SWITCH_READ_ACCEPTABLE(status)) {
 					break;
 				}
-
-				if (switch_channel_test_flag(caller_channel, CF_RING_READY) && 
-					read_frame && !pass && !switch_test_flag(read_frame, SFF_CNG) && read_frame->datalen > 1) {
+				
+				if (ring_ready && read_frame && !pass && !switch_test_flag(read_frame, SFF_CNG) && read_frame->datalen > 1) {
 					if (ringback.fh) {
 						uint8_t abuf[1024];
 						switch_size_t mlen, olen;
