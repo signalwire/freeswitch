@@ -323,6 +323,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
                                                                        const char *func,
                                                                        int line);
 
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_channel_t *channel,
+																	   const char *file,
+																	   const char *func,
+																	   int line);
+
 /*!
   \brief Indicate progress on a channel to attempt early media
   \param channel channel to pre-answer
