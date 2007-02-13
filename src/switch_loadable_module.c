@@ -286,6 +286,9 @@ static switch_status_t switch_loadable_module_load_file(char *filename, switch_l
 	switch_loadable_module_t *module = NULL;
 	apr_dso_handle_t *dso = NULL;
 	apr_status_t status = SWITCH_STATUS_SUCCESS;
+	apr_dso_handle_sym_t load_function_handle = NULL;
+	apr_dso_handle_sym_t shutdown_function_handle = NULL;
+	apr_dso_handle_sym_t runtime_function_handle = NULL;
 	switch_module_load_t load_func_ptr = NULL;
 	int loading = 1;
 	const char *err = NULL;
@@ -304,7 +307,8 @@ static switch_status_t switch_loadable_module_load_file(char *filename, switch_l
 			break;
 		}
 
-		status = apr_dso_sym((apr_dso_handle_sym_t *)&load_func_ptr, dso, "switch_module_load");
+		status = apr_dso_sym(&load_function_handle, dso, "switch_module_load");
+		load_func_ptr = (switch_module_load_t)(intptr_t) load_function_handle;
 
 		if (load_func_ptr == NULL) {
 			err = "Cannot locate symbol 'switch_module_load' please make sure this is a vaild module.";
@@ -334,8 +338,10 @@ static switch_status_t switch_loadable_module_load_file(char *filename, switch_l
 	module->module_interface = module_interface;
 	module->switch_module_load = load_func_ptr;
 
-	apr_dso_sym((apr_dso_handle_sym_t *)&module->switch_module_shutdown, dso, "switch_module_shutdown");
-	apr_dso_sym((apr_dso_handle_sym_t *)&module->switch_module_runtime, dso, "switch_module_runtime");
+	apr_dso_sym(&shutdown_function_handle, dso, "switch_module_shutdown");
+	module->switch_module_shutdown = (switch_module_shutdown_t)(intptr_t) shutdown_function_handle;
+	apr_dso_sym(&runtime_function_handle, dso, "switch_module_runtime");
+	module->switch_module_runtime = (switch_module_runtime_t)(intptr_t) runtime_function_handle;
 
 	module->lib = dso;
 
