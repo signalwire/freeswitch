@@ -460,7 +460,7 @@ static switch_status_t sm_load_file(char *filename)
 		}
 
 		status = apr_dso_sym(&function_handle, dso, "spidermonkey_init");
-		spidermonkey_init = (spidermonkey_init_t) function_handle;
+		spidermonkey_init = (spidermonkey_init_t)(intptr_t) function_handle;
 			
 		if (spidermonkey_init == NULL) {
 			err = "Cannot Load";
@@ -2209,12 +2209,12 @@ static JSBool js_log(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 		}
 
 		if ((msg = JS_GetStringBytes(JS_ValueToString(cx, argv[1])))) {
-			switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char*) file, "console_log", line, level, "%s", msg);
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "console_log", line, level, "%s", msg);
 			return JS_TRUE;
 		} 
 	} else if (argc > 0) {
 		if ((msg = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
-			switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char*) file, "console_log", line, level, "%s", msg);
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "console_log", line, level, "%s", msg);
 			return JS_TRUE;
 		}
 	}
