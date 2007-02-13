@@ -52,19 +52,17 @@ SWITCH_BEGIN_EXTERN_C
 
 
 /* disable the following warnings 
- * C4152: non standard extension, function/data ptr conversion in expression
- * C4054: A function pointer is cast (possibly incorrectly) to a data pointer.
  * C4100: The formal parameter is not referenced in the body of the function. The unreferenced parameter is ignored. 
- * C4142: A type is redefined in a manner that has no effect on the generated code.
  * C4200: Non standard extension C zero sized array
  * C4204: nonstandard extension used : non-constant aggregate initializer 
  * C4706: assignment within conditional expression
- * C4055: type cast from data pointer to function pointer (apr carries function pointers as data pointers)
- * C4214: nonstandard extension used : bit field types other than int
  * C4819: The file contains a character that cannot be represented in the current code page
  * C4132: 'object' : const object should be initialized (fires innapropriately for prototyped forward declaration of cost var)
+ * C4510: default constructor could not be generated
+ * C4512: assignment operator could not be generated
+ * C4610: struct  can never be instantiated - user defined constructor required
  */
-#pragma warning(disable:4152 4054 4100 4142 4200 4204 4706 4055 4214 4819 4132 4510 4512 4610)
+#pragma warning(disable:4100 4200 4204 4706 4819 4132 4510 4512 4610)
 
 #if (_MSC_VER >= 1400) // VC8+
 #ifndef _CRT_SECURE_NO_DEPRECATE
