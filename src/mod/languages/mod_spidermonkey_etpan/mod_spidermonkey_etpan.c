@@ -30,6 +30,9 @@
  *
  */
 #include "mod_spidermonkey.h"
+#ifdef _MSC_VER
+#pragma warning(disable:4142)
+#endif
 #include <libetpan/libetpan.h>
 
 static const char modname[] = "etpan";

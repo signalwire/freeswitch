@@ -30,6 +30,10 @@
  *
  */
 #include <switch.h>
+#ifdef _MSC_VER
+#pragma warning(disable:4142)
+#endif
+
 #include <xmlrpc-c/base.h>
 #ifdef ABYSS_WIN32
 #undef strcasecmp

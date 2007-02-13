@@ -30,6 +30,9 @@
  *
  */
 #include <switch.h>
+#ifdef _MSC_VER
+#pragma warning(disable:4142)
+#endif
 #include <howl.h>
 
 static const char modname[] = "mod_zeroconf";
