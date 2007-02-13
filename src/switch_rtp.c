@@ -1305,7 +1305,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 
 }
 
-SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session, void *data, uint16_t datalen, uint8_t m, uint8_t payload, uint32_t ts, uint16_t mseq, switch_frame_flag_t *flags)
+SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session, void *data, uint16_t datalen, uint8_t m, switch_payload_t payload, uint32_t ts, uint16_t mseq, switch_frame_flag_t *flags)
 {
 
 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) || !rtp_session->remote_addr) {
