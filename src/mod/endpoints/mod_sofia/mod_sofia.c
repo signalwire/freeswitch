@@ -424,8 +424,6 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 
 static void launch_profile_thread(sofia_profile_t *profile);
 
-static switch_status_t config_sofia(int reload);
-
 static switch_status_t chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint);
 
 /* BODY OF THE MODULE */
@@ -438,14 +436,13 @@ typedef enum {
 } auth_res_t;
 
 
-static char *get_url_from_contact(char *buf, uint8_t dup)
+static char *get_url_from_contact(char *buf, uint8_t to_dup)
 {
 	char *url = NULL, *e;
 
-
 	if ((url = strchr(buf, '<')) && (e = strchr(url, '>'))) {
 		url++;
-		if (dup) {
+		if (to_dup) {
 			url = strdup(url);
 			e = strchr(url, '>');
 		}
@@ -459,8 +456,8 @@ static char *get_url_from_contact(char *buf, uint8_t dup)
 
 static auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, char *regstr, char *np, size_t nplen)
 {
-	int index;
-	char *cur;
+	int indexnum;
+	const char *cur;
 	su_md5_t ctx;
 	char uridigest[2 * SU_MD5_DIGEST_SIZE + 1];
 	char bigdigest[2 * SU_MD5_DIGEST_SIZE + 1];
@@ -471,7 +468,7 @@ static auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const
 	nonce = uri = qop = cnonce = nc = response = NULL;
 
 	if (authorization->au_params) {
-		for(index = 0; (cur=(char*)authorization->au_params[index]); index++) {
+		for(indexnum = 0; (cur=authorization->au_params[indexnum]); indexnum++) {
 			char *var, *val, *p, *work; 
 			var = val = work = NULL;
 			if ((work = strdup(cur))) {
@@ -1325,7 +1322,7 @@ static switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	deactivate_rtp(tech_pvt);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel %s hanging up, cause: %s\n", 
-					  switch_channel_get_name(channel), switch_channel_cause2str(cause), sip_cause);
+					  switch_channel_get_name(channel), switch_channel_cause2str(cause));
 
 	if (tech_pvt->hash_key) {
 		switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->hash_key);
@@ -4573,7 +4570,7 @@ static void sip_r_challenge(int status,
 	char const *realm = NULL; 
 	char *p = NULL, *duprealm = NULL, *qrealm = NULL;
 	char const *scheme = NULL;
-	int index;
+	int indexnum;
 	char *cur;
 	char authentication[256] = "";
 	int ss_state;
@@ -4597,7 +4594,7 @@ static void sip_r_challenge(int status,
 	}
 	scheme = (char const *) authenticate->au_scheme;
 	if (authenticate->au_params) {
-		for(index = 0; (cur=(char*)authenticate->au_params[index]); index++) {
+		for(indexnum = 0; (cur=(char*)authenticate->au_params[indexnum]); indexnum++) {
 			if ((realm = strstr(cur, "realm="))) {
 				realm += 6;
 				break;
