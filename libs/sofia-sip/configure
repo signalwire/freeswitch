@@ -20453,7 +20453,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-char *s = __func__;
+const char *s = __func__;
 
   ;
   return 0;
@@ -26933,7 +26933,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-char *s = __func__;
+const char *s = __func__;
 
   ;
   return 0;
