@@ -199,8 +199,10 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 
 	while(running) {
 		uint32_t arg;
+#ifndef _MSC_VER
 		fd_set rfds, efds;
 		struct timeval tv = {0, 20000};
+#endif
 
 		switch_core_session_ctl(SCSC_CHECK_RUNNING, &arg);
 		if (!arg) {
@@ -210,13 +212,14 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 		if (activity) {
 			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "\nfreeswitch@%s> ", hostname);
 		}
-
 #ifdef _MSC_VER
-//Microsofts macros don't pass their own compilers warnings.
-#pragma warning(push)
-#pragma warning(disable: 4127 4389)
-#endif
+		activity = WaitForSingleObject(GetStdHandle(STD_INPUT_HANDLE),20);
 
+		if (activity == 102) {
+			fflush(stdout);
+			continue;
+		}
+#else
 		FD_ZERO(&rfds);
 		FD_ZERO(&efds);
 		FD_SET(fileno(stdin), &rfds);
@@ -225,14 +228,12 @@ SWITCH_DECLARE(void) switch_console_loop(void)
             break;
         }
 
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-
 		if (activity == 0) {
 			fflush(stdout);
 			continue;
 		}
+#endif
+
 
 		memset(&cmd, 0, sizeof(cmd));
 		for (x = 0; x < (sizeof(cmd)-1); x++) {
