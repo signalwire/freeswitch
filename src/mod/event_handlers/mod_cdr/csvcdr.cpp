@@ -182,7 +182,7 @@ void CsvCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setting
 			if(outputfile.good())
 			{
 				activated = 1;
-				switch_console_printf(SWITCH_CHANNEL_LOG,"CsvCDR activated, log rotation will occur at or after %d MB\n",(filesize_limit/1024/1024));
+				switch_console_printf(SWITCH_CHANNEL_LOG,"CsvCDR activated, log rotation will occur at or after %d MB\n",(int)(filesize_limit >> 20));
 			}
 		}
 		else
