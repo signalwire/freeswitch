@@ -550,7 +550,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
         
         if (switch_event_create(&event, SWITCH_EVENT_BACKGROUND_JOB) == SWITCH_STATUS_SUCCESS) {
             switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-UUID", "%s", acs->uuid_str);
-            switch_event_add_body(event, reply);
+            switch_event_add_body(event, "%s", reply);
             switch_event_fire(&event);
         }
     } else {
@@ -650,7 +650,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
                 }
 
             }
-            snprintf(reply, reply_len, val);
+            snprintf(reply, reply_len, "%s", val);
             goto done;
         } else if (!strncasecmp(cmd, "myevents", 8)) {
             listener->event_list[SWITCH_EVENT_CHANNEL_CREATE] = 1;

@@ -807,7 +807,7 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 			if (switch_event_create(&event, SWITCH_EVENT_DETECTED_SPEECH) == SWITCH_STATUS_SUCCESS) {
 				if (status == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Speech-Type", "detected-speech");
-					switch_event_add_body(event, xmlstr);
+					switch_event_add_body(event, "%s", xmlstr);
 				} else {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Speech-Type", "begin-speaking");
 				}
@@ -2518,7 +2518,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
         for (hi = switch_channel_variable_first(caller_channel, switch_core_session_get_pool(session)); hi; hi = switch_hash_next(hi)) {
             switch_hash_this(hi, &vvar, NULL, &vval);
             if (vvar && vval) {
-                switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, (void *)vvar, vval);
+                switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, (void *)vvar, "%s", (char *)vval);
             }
         }
 

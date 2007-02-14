@@ -2659,7 +2659,7 @@ static void sip_i_message(int status,
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "to", "%s", to_addr);
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
 					if (msg) {
-						switch_event_add_body(event, msg);
+						switch_event_add_body(event, "%s", msg);
 					}
 					if (switch_core_session_queue_event(tech_pvt->session, &event) != SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");

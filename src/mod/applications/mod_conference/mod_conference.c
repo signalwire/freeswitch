@@ -2466,7 +2466,7 @@ static switch_status_t conf_api_sub_dtmf(conference_member_t *member, switch_str
         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", "%s", member->conference->name);
         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "dtmf-member");
-        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Digits", dtmf);
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Digits", "%s", dtmf);
         switch_event_fire(&event);
     }
 
