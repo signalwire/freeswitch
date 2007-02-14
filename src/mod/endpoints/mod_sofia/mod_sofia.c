@@ -2047,15 +2047,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		nua_respond(tech_pvt->nh, SIP_180_RINGING, SIPTAG_CONTACT_STR(tech_pvt->profile->url), TAG_END());
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS: {
-		struct private_object *tech_pvt;
-	    switch_channel_t *channel = NULL;
-
-	    channel = switch_core_session_get_channel(session);
-	    assert(channel != NULL);
-
-	    tech_pvt = switch_core_session_get_private(session);
-	    assert(tech_pvt != NULL);
-
 		if (!switch_test_flag(tech_pvt, TFLAG_ANS)) {
 			switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Asked to send early media by %s\n", msg->from);
