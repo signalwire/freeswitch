@@ -27,7 +27,7 @@ sub init($;$) {
 
 sub readhash($;$) {
   my ($self,$to) = @_;
-  my ($can_read) = IO::Select::select($self->{_sel}, undef, undef, $to ? to : undef);
+  my ($can_read) = IO::Select::select($self->{_sel}, undef, undef, $to);
   my $s = shift @{$can_read};
   my @r = ();
   my $crc = 0;
