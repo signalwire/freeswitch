@@ -41,12 +41,15 @@ AC_PROG_CC
 AC_CHECK_DEBUGGING
 AC_CHECK_VA_COPY
 
+OLD_CFLAGS="$CFLAGS"
+CFLAGS=""
 AC_CHECK_LIB(nsl, gethostname)
 if test ".`echo $LIBS | grep nsl`" = .; then
     AC_CHECK_LIB(nsl, gethostbyname)
 fi
 AC_CHECK_LIB(socket, accept)
 AC_CHECK_LIB(m, floor)
+CFLAGS="$OLD_CFLAGS"
 
 AC_CHECK_MEMBERS([struct stat.st_birthtime, struct stat.st_birthtimensec],,, [#include <sys/stat.h>])
 
