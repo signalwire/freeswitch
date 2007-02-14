@@ -1340,6 +1340,27 @@ static JSBool session_answer(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	return JS_TRUE;
 }
 
+
+static JSBool session_cdr(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct js_session *jss = JS_GetPrivate(cx, obj);
+	switch_xml_t cdr;
+
+	/*Always a pessimist... sheesh!*/
+	*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+
+    if (switch_ivr_generate_xml_cdr(jss->session, &cdr) == SWITCH_STATUS_SUCCESS) {
+		char *xml_text;
+		if ((xml_text = switch_xml_toxml(cdr))) {
+			*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, xml_text));
+		}
+		switch_safe_free(xml_text);
+		switch_xml_free(cdr);
+	}
+
+	return JS_TRUE;
+}
+
 static JSBool session_ready(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
@@ -1716,6 +1737,7 @@ static JSFunctionSpec session_methods[] = {
 	{"getVariable", session_get_variable, 1}, 
 	{"getDigits", session_get_digits, 1},
 	{"answer", session_answer, 0}, 
+	{"generateXmlCdr", session_cdr, 0}, 
 	{"ready", session_ready, 0}, 
 	{"waitForAnswer", session_wait_for_answer, 0}, 
 	{"waitForMedia", session_wait_for_media, 0}, 

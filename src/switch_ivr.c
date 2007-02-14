@@ -4833,6 +4833,217 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 }
 
 
+static int set_profile_data(switch_xml_t xml, switch_caller_profile_t *caller_profile, int off)
+{
+	switch_xml_t param;
+
+	if (!(param = switch_xml_add_child_d(xml, "username", off++))) {
+		return -1;
+	}
+	switch_xml_set_txt(param, caller_profile->username);
+
+	if (!(param = switch_xml_add_child_d(xml, "dialplan", off++))) {
+		return -1;
+	}
+	switch_xml_set_txt(param, caller_profile->dialplan);
+
+	if (!(param = switch_xml_add_child_d(xml, "caller_id_name", off++))) {
+		return -1;
+	}
+	switch_xml_set_txt(param, caller_profile->caller_id_name);
+
+    if (!(param = switch_xml_add_child_d(xml, "ani", off++))) {
+        return -1;
+    }
+    switch_xml_set_txt(param, caller_profile->ani);
+
+    if (!(param = switch_xml_add_child_d(xml, "aniii", off++))) {
+        return -1;
+    }
+    switch_xml_set_txt(param, caller_profile->aniii);
+
+    if (!(param = switch_xml_add_child_d(xml, "caller_id_number", off++))) {
+        return -1;
+    }
+    switch_xml_set_txt(param, caller_profile->caller_id_number);
+
+    if (!(param = switch_xml_add_child_d(xml, "network_addr", off++))) {
+        return -1;
+    }
+    switch_xml_set_txt(param, caller_profile->network_addr);
+
+    if (!(param = switch_xml_add_child_d(xml, "rdnis", off++))) {
+        return -1;
+    }
+    switch_xml_set_txt(param, caller_profile->rdnis);
+
+    if (!(param = switch_xml_add_child_d(xml, "destination_number", off++))) {
+        return -1;
+    }
+    switch_xml_set_txt(param, caller_profile->destination_number);
+
+    if (!(param = switch_xml_add_child_d(xml, "uuid", off++))) {
+        return -1;
+    }
+    switch_xml_set_txt(param, caller_profile->uuid);
+
+    if (!(param = switch_xml_add_child_d(xml, "source", off++))) {
+        return -1;
+    }
+    switch_xml_set_txt(param, caller_profile->source);
+
+    if (!(param = switch_xml_add_child_d(xml, "context", off++))) {
+        return -1;
+    }
+    switch_xml_set_txt(param, caller_profile->context);
+
+    if (!(param = switch_xml_add_child_d(xml, "chan_name", off++))) {
+        return -1;
+    }
+    switch_xml_set_txt(param, caller_profile->chan_name);
+
+	return 0;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_t *session, switch_xml_t *xml_cdr)
+{
+	switch_channel_t *channel;
+	switch_caller_profile_t *caller_profile;
+	switch_hash_index_t *hi;
+	void *vval;
+	const void *vvar;
+	switch_xml_t variable,
+		variables,
+		cdr,
+		x_caller_profile,
+		x_caller_extension,
+		x_times,
+		x_application,
+		x_callflow;
+	char tmp[512];
+	int cdr_off = 0, v_off = 0;
+
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+	if (!(cdr = switch_xml_new("cdr"))) {
+        return SWITCH_STATUS_SUCCESS;
+    }
+
+	if (!(variables = switch_xml_add_child_d(cdr, "variables", cdr_off++))) {
+		goto error;
+	}
+	
+	for (hi = switch_channel_variable_first(channel, switch_core_session_get_pool(session)); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &vvar, NULL, &vval);
+		if (vvar && vval) {
+			if ((variable = switch_xml_add_child_d(variables, (char *) vvar, v_off++))) {
+				char *data;
+				char *value = (char *) vval;
+				switch_size_t dlen = strlen(value) * 3;
+
+				if ((data = switch_core_session_alloc(session, dlen))) {
+					switch_url_encode(value, data, dlen);					
+					switch_xml_set_txt_d(variable, data);
+				}
+			}
+		}
+	}
+
+	caller_profile = switch_channel_get_caller_profile(channel);
+	
+	while (caller_profile) {
+		int cf_off = 0;
+		
+		if (!(x_callflow = switch_xml_add_child_d(cdr, "callflow", cdr_off++))) {
+			goto error;
+		}
+		
+		if (caller_profile->caller_extension) {
+			switch_caller_application_t *ap;
+			
+			if (!(x_caller_extension = switch_xml_add_child_d(x_callflow, "extension", cf_off++))) {
+				goto error;
+			}
+			switch_xml_set_attr_d(x_caller_extension, "name", caller_profile->caller_extension->extension_name);
+			switch_xml_set_attr_d(x_caller_extension, "number", caller_profile->caller_extension->extension_number);
+			if (caller_profile->caller_extension->current_application) {
+				switch_xml_set_attr_d(x_caller_extension, "current_app", caller_profile->caller_extension->current_application->application_name);
+			}
+
+			for(ap = caller_profile->caller_extension->applications; ap; ap = ap->next) {
+				if (!(x_application = switch_xml_add_child_d(x_callflow, "application", cf_off++))) {
+					goto error;
+				}
+				switch_xml_set_attr_d(x_application, "app_name", ap->application_name);
+				switch_xml_set_attr_d(x_application, "app_data", ap->application_data);
+			}
+		}
+		
+		if (!(x_caller_profile = switch_xml_add_child_d(x_callflow, "caller_profile", cf_off++))) {
+			goto error;
+		}
+		set_profile_data(x_caller_profile, caller_profile, 0);
+
+		if (caller_profile->originator_caller_profile) {
+			if (!(x_caller_profile = switch_xml_add_child_d(x_callflow, "originator_caller_profile", cf_off++))) {
+				goto error;
+			}
+			set_profile_data(x_caller_profile, caller_profile->originator_caller_profile, 0);
+		}
+
+		if (caller_profile->originatee_caller_profile) {
+			if (!(x_caller_profile = switch_xml_add_child_d(x_callflow, "originatee_caller_profile", cf_off++))) {
+				goto error;
+			}
+			set_profile_data(x_caller_profile, caller_profile->originatee_caller_profile, 0);
+		}
+
+
+		if (caller_profile->times) {
+			if (!(x_times = switch_xml_add_child_d(x_callflow, "created_time", cf_off++))) {
+				goto error;
+			}
+			snprintf(tmp, sizeof(tmp), "%"APR_TIME_T_FMT, caller_profile->times->created);
+			switch_xml_set_txt_d(x_times, tmp);
+
+			if (!(x_times = switch_xml_add_child_d(x_callflow, "answered_time", cf_off++))) {
+				goto error;
+			}
+			snprintf(tmp, sizeof(tmp), "%"APR_TIME_T_FMT, caller_profile->times->answered);
+			switch_xml_set_txt_d(x_times, tmp);
+
+			if (!(x_times = switch_xml_add_child_d(x_callflow, "hangup_time", cf_off++))) {
+				goto error;
+			}
+			snprintf(tmp, sizeof(tmp), "%"APR_TIME_T_FMT, caller_profile->times->hungup);
+			switch_xml_set_txt_d(x_times, tmp);
+
+			if (!(x_times = switch_xml_add_child_d(x_callflow, "transfer_time", cf_off++))) {
+				goto error;
+			}
+			snprintf(tmp, sizeof(tmp), "%"APR_TIME_T_FMT, caller_profile->times->transferred);
+			switch_xml_set_txt_d(x_times, tmp);
+		}
+
+		caller_profile = caller_profile->next;
+	}
+
+	*xml_cdr = cdr;
+	
+	return SWITCH_STATUS_SUCCESS;	
+
+ error:
+
+	if (cdr) {
+		switch_xml_free(cdr);
+	}
+	
+	return SWITCH_STATUS_FALSE;
+}
+
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c

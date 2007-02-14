@@ -53,6 +53,15 @@ SWITCH_BEGIN_EXTERN_C
 
 
 /*!
+  \brief Generate an XML CDR report.
+  \param session the session to get the data from.
+  \param xml_cdr pointer to the xml_record
+  \return SWITCH_STATUS_SUCCESS if successful
+  \note on success the xml object must be freed
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_t *session, switch_xml_t *xml_cdr);
+
+/*!
   \brief Parse command from an event
   \param session the session to send the message to
   \param event the event to send
