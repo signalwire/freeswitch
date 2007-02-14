@@ -1529,7 +1529,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		char *dnis = NULL;
 		char workspace[1024] = "";
 		char *p, *u, ubuf[512] = "", *user = NULL;
-		char *cid_msg = NULL;
+		char *cid_msg = NULL, *f_cid_msg = NULL;
 
 		switch_copy_string(workspace, outbound_profile->destination_number, sizeof(workspace));
 		profile_name = workspace;
@@ -1631,10 +1631,22 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		tech_pvt->us = switch_core_session_strdup(*new_session, user);
 		tech_pvt->them = switch_core_session_strdup(*new_session, full_id);
 		ldl_session_create(&dlsession, mdl_profile->handle, sess_id, full_id, user, LDL_FLAG_OUTBOUND);
-		if ((cid_msg = switch_mprintf("Incoming Call From %s %s\n", outbound_profile->caller_id_name, outbound_profile->caller_id_number))) {
-			ldl_handle_send_msg(mdl_profile->handle, tech_pvt->them, tech_pvt->us, "", cid_msg);
-			free(cid_msg);
+		
+		if (session) {
+			switch_channel_t *calling_channel = switch_core_session_get_channel(session);
+			cid_msg = switch_channel_get_variable(calling_channel, "dl_cid_msg");
 		}
+
+		if (!cid_msg) {
+			f_cid_msg = switch_mprintf("Incoming Call From %s %s\n", outbound_profile->caller_id_name, outbound_profile->caller_id_number);
+			cid_msg = f_cid_msg;
+		}
+
+		if (cid_msg) {
+			ldl_handle_send_msg(mdl_profile->handle, tech_pvt->them, tech_pvt->us, "", cid_msg);
+		}
+		switch_safe_free(f_cid_msg);
+
 		tech_pvt->profile = mdl_profile;
 		ldl_session_set_private(dlsession, *new_session);
 		ldl_session_set_value(dlsession, "dnis", dnis);
