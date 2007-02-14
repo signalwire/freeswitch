@@ -35,7 +35,7 @@
 #define CMD_BUFLEN 1024;
 
 
-SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle_t *handle, char *fmt, ...)
+SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle_t *handle, const char *fmt, ...)
 {
 	va_list ap;
 	char *buf = handle->data;

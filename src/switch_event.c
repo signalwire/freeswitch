@@ -474,8 +474,8 @@ SWITCH_DECLARE(char *) switch_event_get_body(switch_event_t *event)
 	return NULL;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, switch_stack_t stack, char *header_name,
-													  char *fmt, ...)
+SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, switch_stack_t stack, const char *header_name,
+													  const char *fmt, ...)
 {
 	int ret = 0;
 	char data[2048];
@@ -516,7 +516,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, s
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, char *fmt, ...)
+SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, const char *fmt, ...)
 {
 	int ret = 0;
 	char *data;
@@ -729,7 +729,7 @@ static switch_xml_t add_xml_header(switch_xml_t xml, char *name, char *value, in
 	return header;
 }
 
-SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, char *fmt, ...)
+SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const char *fmt, ...)
 {
 	switch_event_header_t *hp;
 	char *data = NULL, *body = NULL;

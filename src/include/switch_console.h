@@ -67,7 +67,7 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const 
 /*!
   \brief A method akin to printf for dealing with api streams
 */
-SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle_t *handle, char *fmt, ...) PRINTF_FUNCTION(2,3);
+SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle_t *handle, const char *fmt, ...) PRINTF_FUNCTION(2,3);
 SWITCH_END_EXTERN_C
 
 #endif
