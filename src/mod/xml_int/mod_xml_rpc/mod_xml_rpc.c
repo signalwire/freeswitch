@@ -126,7 +126,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 }
 
 
-static switch_status_t http_stream_write(switch_stream_handle_t *handle, char *fmt, ...)
+static switch_status_t http_stream_write(switch_stream_handle_t *handle, const char *fmt, ...)
 {
 	va_list ap;
 	TSession *r = handle->data;
