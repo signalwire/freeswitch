@@ -802,7 +802,9 @@ static void tech_set_codecs(private_object_t *tech_pvt)
         codec_string = abs;
     } else {
         if (!(codec_string = switch_channel_get_variable(channel, "codec_string"))) {
-            codec_string = tech_pvt->profile->codec_string;
+			if (tech_pvt->profile->codec_string) {
+				codec_string = switch_core_session_strdup(tech_pvt->session, tech_pvt->profile->codec_string);
+			}
         }
         
         if ((ocodec = switch_channel_get_variable(channel, SWITCH_ORIGINATOR_CODEC_VARIABLE))) {
@@ -2373,7 +2375,7 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 				if (!strcasecmp(map->rm_encoding, "telephone-event")) {
 					tech_pvt->te = (switch_payload_t)map->rm_pt;
 				}
-				
+
 				for (i = 0; i < tech_pvt->num_codecs; i++) {
 					const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec Compare [%s:%d]/[%s:%d]\n", 
