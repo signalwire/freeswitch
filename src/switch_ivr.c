@@ -2076,6 +2076,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 	switch_channel_set_variable(chan_a, SWITCH_BRIDGE_VARIABLE, NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BRIDGE THREAD DONE [%s]\n", switch_channel_get_name(chan_a));
+	switch_core_session_reset(session_a);
 
 	switch_channel_clear_flag(chan_a, CF_BRIDGED);
 	switch_mutex_lock(data->mutex);
@@ -3642,6 +3643,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	assert(session != NULL);
 	assert(extension != NULL);
 
+	switch_core_session_reset(session);
+	
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 

@@ -2177,10 +2177,13 @@ static switch_status_t perform_write(switch_core_session_t *session, switch_fram
 
 SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session)
 {
+	switch_channel_t *channel;
+	char buf[256];
+	switch_size_t has;
+
 	/* sweep theese under the rug, they wont be leaked they will be reclaimed
 	   when the session ends.
 	*/
-
 	session->read_resampler = NULL;
 	session->write_resampler = NULL;
 
@@ -2190,6 +2193,15 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session)
 	/* wipe theese, they will be recreated if need be */
 	switch_buffer_destroy(&session->raw_read_buffer);
 	switch_buffer_destroy(&session->raw_write_buffer);
+
+	/* reset state handlers and flush dtmf */
+	channel = switch_core_session_get_channel(session);
+	switch_channel_clear_state_handler(channel, NULL);
+
+	if ((has = switch_channel_has_dtmf(channel))) {
+        switch_channel_dequeue_dtmf(channel, buf, has);
+    }
+
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_session_t *session, switch_frame_t *frame,
