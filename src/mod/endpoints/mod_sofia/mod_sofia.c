@@ -962,7 +962,7 @@ static void do_invite(switch_core_session_t *session)
 	switch_caller_profile_t *caller_profile;
 	char *cid_name, *cid_num;
 	char *e_dest = NULL;
-	char *holdstr = "";
+	const char *holdstr = "";
 	switch_stream_handle_t stream = {0};
 	switch_hash_index_t *hi;
 	void *vval;
@@ -1008,8 +1008,8 @@ static void do_invite(switch_core_session_t *session)
 
 		// forge a RPID for now KHR  -- Should wrap this in an if statement so it can be turned on and off
 		if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
-			char *priv = "off";
-			char *screen = "no";
+			const char *priv = "off";
+			const char *screen = "no";
 			if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
 				priv = "name";
 				if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
@@ -1067,11 +1067,11 @@ static void do_invite(switch_core_session_t *session)
 		for (hi = switch_channel_variable_first(channel, switch_core_session_get_pool(tech_pvt->session)); hi; hi = switch_hash_next(hi)) {
             switch_hash_this(hi, &vvar, NULL, &vval);
             if (vvar && vval) {
-				char *name = (char *) vvar;
+				const char *name = vvar;
 				char *value = (char *) vval;
 
 				if (!strncasecmp(name, SOFIA_SIP_HEADER_PREFIX, strlen(SOFIA_SIP_HEADER_PREFIX))) {
-					char *hname = name + strlen(SOFIA_SIP_HEADER_PREFIX);
+					const char *hname = name + strlen(SOFIA_SIP_HEADER_PREFIX);
 					stream.write_function(&stream, "%s: %s\r\n", hname, value);
 				}
 			}
@@ -1167,7 +1167,7 @@ static void tech_absorb_sdp(private_object_t *tech_pvt)
 		if ((parser = sdp_parse(tech_pvt->home, sdp_str, (int)strlen(sdp_str), 0))) {
 			if ((sdp = sdp_session(parser))) {
 				for (m = sdp->sdp_media; m ; m = m->m_next) {
-					tech_pvt->proxy_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, (char *)sdp->sdp_connection->c_address);
+					tech_pvt->proxy_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, sdp->sdp_connection->c_address);
 					tech_pvt->proxy_sdp_audio_port = (switch_port_t)m->m_port;
 					if (tech_pvt->proxy_sdp_audio_ip && tech_pvt->proxy_sdp_audio_port) {
 						break;
@@ -3165,7 +3165,7 @@ static uint8_t handle_register(nua_t *nua,
 	auth_res_t auth_res;
 	long exptime = 60;
 	switch_event_t *event;
-	char *rpid = "unknown";
+	const char *rpid = "unknown";
 	const char *display = "\"user\"";
 
 	if (contact && contact->m_url) {
