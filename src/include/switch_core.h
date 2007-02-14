@@ -383,7 +383,7 @@ SWITCH_DECLARE(char *) switch_core_permanent_strdup(const char *todup);
   \param todup the string to duplicate
   \return a pointer to the newly duplicated string
 */
-SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session_t *session, char *todup);
+SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session_t *session, const char *todup);
 
 /*! 
   \brief Copy a string using memory allocation from a given pool

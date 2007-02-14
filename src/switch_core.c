@@ -1466,7 +1466,7 @@ SWITCH_DECLARE(char *) switch_core_permanent_strdup(const char *todup)
 }
 
 
-SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session_t *session, char *todup)
+SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session_t *session, const char *todup)
 {
 	char *duped = NULL;
 	switch_size_t len;
