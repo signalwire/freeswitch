@@ -135,7 +135,7 @@ AC_ARG_WITH([file],
 	[ac_cv_with_file=$withval], [ac_cv_with_file=yes])
 AC_CACHE_CHECK([whether to build with the File object], [ac_cv_with_file], [ac_cv_with_file=yes])
 if test ".$ac_cv_with_file" = ".yes"; then
-    CPPFLAGS="$CPPFLAGS -DJS_HAS_FILE_OBJECT"
+    CPPFLAGS="$CPPFLAGS -DJS_HAS_FILE_OBJECT=1"
 fi
 
 dnl #   configure option --with-dso
@@ -147,7 +147,7 @@ if test ".$ac_cv_with_dso" = ".yes"; then
     AC_CHECK_LIB(dl, dlopen)
     AC_CHECK_HEADER(dlfcn.h, , AC_ERROR([dlopen(3) header <dlfcn.h> required]))
     AC_CHECK_FUNCS(dlopen dlclose dlerror, , AC_ERROR([dlopen(3) API functions dlopen/dlclose/dlerror required]))
-    CPPFLAGS="$CPPFLAGS -DJS_HAS_DSO_OBJECT"
+    CPPFLAGS="$CPPFLAGS -DJS_HAS_DSO_OBJECT=1"
     CLI_LDFLAGS="$CLI_LDFLAGS -export-dynamic"
 fi
 
@@ -157,7 +157,7 @@ AC_ARG_WITH([utf8],
 	[ac_cv_with_utf8=$withval], [ac_cv_with_utf8=no])
 AC_CACHE_CHECK([whether to build with exclusive UTF-8 C string], [ac_cv_with_utf8], [ac_cv_with_utf8=no])
 if test ".$ac_cv_with_utf8" = ".yes"; then
-    CPPFLAGS="$CPPFLAGS -DJS_C_STRINGS_ARE_UTF8"
+    CPPFLAGS="$CPPFLAGS -DJS_C_STRINGS_ARE_UTF8=1"
 fi
 
 AC_ARG_WITH(nspr,
@@ -166,7 +166,7 @@ AC_ARG_WITH(nspr,
 AC_CACHE_CHECK([whether to build with NSPR], [ac_cv_with_nspr], [ac_cv_with_nspr=no])
 if test ".$ac_cv_with_nspr" = ".yes"; then
     sinclude(nsprpub/config/nspr.m4)
-    CPPFLAGS="$CPPFLAGS -DJS_THREADSAFE -Insprpub/dist/include/nspr"
+    CPPFLAGS="$CPPFLAGS -DJS_THREADSAFE=1 -Insprpub/dist/include/nspr"
     LDFLAGS="$LDFLAGS -L$prefix/lib -lnspr4"
 fi
 

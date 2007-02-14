@@ -4645,7 +4645,7 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_with_file" >&5
 echo "${ECHO_T}$ac_cv_with_file" >&6
 if test ".$ac_cv_with_file" = ".yes"; then
-    CPPFLAGS="$CPPFLAGS -DJS_HAS_FILE_OBJECT"
+    CPPFLAGS="$CPPFLAGS -DJS_HAS_FILE_OBJECT=1"
 fi
 
 
@@ -5482,7 +5482,7 @@ echo "$as_me: error: dlopen(3) API functions dlopen/dlclose/dlerror required" >&
 fi
 done
 
-    CPPFLAGS="$CPPFLAGS -DJS_HAS_DSO_OBJECT"
+    CPPFLAGS="$CPPFLAGS -DJS_HAS_DSO_OBJECT=1"
     CLI_LDFLAGS="$CLI_LDFLAGS -export-dynamic"
 fi
 
@@ -5504,7 +5504,7 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_with_utf8" >&5
 echo "${ECHO_T}$ac_cv_with_utf8" >&6
 if test ".$ac_cv_with_utf8" = ".yes"; then
-    CPPFLAGS="$CPPFLAGS -DJS_C_STRINGS_ARE_UTF8"
+    CPPFLAGS="$CPPFLAGS -DJS_C_STRINGS_ARE_UTF8=1"
 fi
 
 
@@ -5532,7 +5532,7 @@ if test ".$ac_cv_with_nspr" = ".yes"; then
 
 
 
-    CPPFLAGS="$CPPFLAGS -DJS_THREADSAFE -Insprpub/dist/include/nspr"
+    CPPFLAGS="$CPPFLAGS -DJS_THREADSAFE=1 -Insprpub/dist/include/nspr"
     LDFLAGS="$LDFLAGS -L$prefix/lib -lnspr4"
 fi
 
