@@ -3987,7 +3987,7 @@ struct switch_ivr_menu_action {
 	struct switch_ivr_menu_action *next;
 };
 
-static switch_ivr_menu_t *switch_ivr_menu_find(switch_ivr_menu_t *stack, char *name) {
+static switch_ivr_menu_t *switch_ivr_menu_find(switch_ivr_menu_t *stack, const char *name) {
 	switch_ivr_menu_t *ret;
 	for(ret = stack; ret ; ret = ret->next) {
 		if (!name || !strcmp(ret->name, name))
@@ -4012,13 +4012,13 @@ static void switch_ivr_menu_stack_add(switch_ivr_menu_t **top, switch_ivr_menu_t
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new_menu,
 													 switch_ivr_menu_t *main,
-													 char *name, 
-													 char *greeting_sound, 
-													 char *short_greeting_sound,
-													 char *invalid_sound, 
-													 char *exit_sound,
-													 char *tts_engine,
-													 char *tts_voice,
+													 const char *name, 
+													 const char *greeting_sound, 
+													 const char *short_greeting_sound,
+													 const char *invalid_sound, 
+													 const char *exit_sound,
+													 const char *tts_engine,
+													 const char *tts_voice,
 													 int timeout,
 													 int max_failures, 
 													 switch_memory_pool_t *pool)
@@ -4097,7 +4097,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new_men
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_action(switch_ivr_menu_t *menu, switch_ivr_action_t ivr_action, char *arg, char *bind)
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_action(switch_ivr_menu_t *menu, switch_ivr_action_t ivr_action, const char *arg, const char *bind)
 {
 	switch_ivr_menu_action_t *action;
 	uint32_t len;
@@ -4118,13 +4118,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_action(switch_ivr_menu_t *m
 	return SWITCH_STATUS_MEMERR;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_function(switch_ivr_menu_t *menu, switch_ivr_menu_action_function_t *function, char *arg, char *bind)
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_function(switch_ivr_menu_t *menu, switch_ivr_menu_action_function_t *function, const char *arg, const char *bind)
 {
 	switch_ivr_menu_action_t *action;
 	uint32_t len;
 
 	if ((action = switch_core_alloc(menu->pool, sizeof(*action)))) {
-		action->bind = bind;
+		action->bind = switch_core_strdup(menu->pool,bind);
 		action->next = menu->actions;
 		action->arg = switch_core_strdup(menu->pool, arg);
 		len = (uint32_t)strlen(action->bind) + 1;
@@ -4495,15 +4495,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 	switch_status_t status	= SWITCH_STATUS_FALSE;
 
 	if (xml_menu_ctx != NULL && menu_stack  != NULL && xml_menu != NULL) {
-		char *menu_name		= (char *)switch_xml_attr_soft(xml_menu,"name");		// if the attr doesn't exist, return ""
-		char *greet_long	= (char *)switch_xml_attr(xml_menu,"greet-long");		// if the attr doesn't exist, return NULL
-		char *greet_short	= (char *)switch_xml_attr(xml_menu,"greet-short");		// if the attr doesn't exist, return NULL
-		char *invalid_sound	= (char *)switch_xml_attr(xml_menu,"invalid-sound");		// if the attr doesn't exist, return NULL
-		char *exit_sound	= (char *)switch_xml_attr(xml_menu,"exit-sound");		// if the attr doesn't exist, return NULL
-		char *tts_engine	= (char *)switch_xml_attr(xml_menu,"tts-engine");		// if the attr doesn't exist, return NULL
-		char *tts_voice		= (char *)switch_xml_attr(xml_menu,"tts-voice");		// if the attr doesn't exist, return NULL
-		char *timeout		= (char *)switch_xml_attr_soft(xml_menu,"timeout");		// if the attr doesn't exist, return ""
-		char *max_failures	= (char *)switch_xml_attr_soft(xml_menu,"max-failures");	// if the attr doesn't exist, return ""
+		const char *menu_name		= switch_xml_attr_soft(xml_menu,"name");		// if the attr doesn't exist, return ""
+		const char *greet_long	= switch_xml_attr(xml_menu,"greet-long");		// if the attr doesn't exist, return NULL
+		const char *greet_short	= switch_xml_attr(xml_menu,"greet-short");		// if the attr doesn't exist, return NULL
+		const char *invalid_sound	= switch_xml_attr(xml_menu,"invalid-sound");		// if the attr doesn't exist, return NULL
+		const char *exit_sound	= switch_xml_attr(xml_menu,"exit-sound");		// if the attr doesn't exist, return NULL
+		const char *tts_engine	= switch_xml_attr(xml_menu,"tts-engine");		// if the attr doesn't exist, return NULL
+		const char *tts_voice		= switch_xml_attr(xml_menu,"tts-voice");		// if the attr doesn't exist, return NULL
+		const char *timeout		= switch_xml_attr_soft(xml_menu,"timeout");		// if the attr doesn't exist, return ""
+		const char *max_failures	= switch_xml_attr_soft(xml_menu,"max-failures");	// if the attr doesn't exist, return ""
 		switch_ivr_menu_t *menu	= NULL;
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "building menu '%s'\n",menu_name);
@@ -4530,9 +4530,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 
 			// build menu entries
 			for(xml_kvp = switch_xml_child(xml_menu, "entry"); xml_kvp != NULL && status == SWITCH_STATUS_SUCCESS; xml_kvp = xml_kvp->next) {
-				char *action	= (char *)switch_xml_attr(xml_kvp, "action");
-				char *digits	= (char *)switch_xml_attr(xml_kvp, "digits");
-				char *param	= (char *)switch_xml_attr_soft(xml_kvp, "param");
+				const char *action	= switch_xml_attr(xml_kvp, "action");
+				const char *digits	= switch_xml_attr(xml_kvp, "digits");
+				const char *param	= switch_xml_attr_soft(xml_kvp, "param");
 
 				if (!switch_strlen_zero(action) && !switch_strlen_zero(digits)) {
 					switch_ivr_menu_xml_map_t *xml_map = xml_menu_ctx->map;

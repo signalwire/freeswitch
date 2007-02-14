@@ -453,17 +453,19 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 #endif
 						&& switch_ivr_menu_stack_xml_build(xml_ctx,&menu_stack,xml_menus,xml_menu) == SWITCH_STATUS_SUCCESS)
 					{
+						switch_xml_free(cxml);
 						switch_channel_pre_answer(channel);
 						switch_ivr_menu_execute(session,menu_stack,params,NULL);
 						switch_ivr_menu_stack_free(menu_stack);
 					} else {
+						switch_xml_free(cxml);
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to create menu '%s'\n", params);
 					}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to find menu '%s'\n", params);
 				}
 			}
-			switch_xml_free(cxml);
+			
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", ivr_cf_name);
 		}

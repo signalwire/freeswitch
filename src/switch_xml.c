@@ -169,7 +169,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_searc
 }
 
 
-SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(switch_xml_t node, char *childname, char *attrname, char *value)
+SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(switch_xml_t node, const char *childname, const char *attrname, const char *value)
 {
 	switch_xml_t p = NULL;
 

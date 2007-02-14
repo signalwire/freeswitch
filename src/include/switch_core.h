@@ -391,7 +391,7 @@ SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session_t *session
   \param todup the string to duplicate
   \return a pointer to the newly duplicated string
 */
-SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool_t *pool, char *todup);
+SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool_t *pool, const char *todup);
 
 /*! 
   \brief Retrieve the memory pool from a session

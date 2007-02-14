@@ -540,13 +540,13 @@ typedef struct switch_ivr_menu_action switch_ivr_menu_action_t;
  */
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new_menu,
 													 switch_ivr_menu_t *main,
-													 char *name, 
-													 char *greeting_sound, 
-													 char *short_greeting_sound,
-													 char *exit_sound,
-													 char *invalid_sound, 
-													 char *tts_engine,
-													 char *tts_voice,
+													 const char *name, 
+													 const char *greeting_sound, 
+													 const char *short_greeting_sound,
+													 const char *exit_sound,
+													 const char *invalid_sound, 
+													 const char *tts_engine,
+													 const char *tts_voice,
 													 int timeout,
 													 int max_failures, 
 													 switch_memory_pool_t *pool);
@@ -559,7 +559,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new_men
  *\param bind KeyStrokes to bind the action to.
  *\return SWUTCH_STATUS_SUCCESS if the action was binded
  */
-SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_action(switch_ivr_menu_t *menu, switch_ivr_action_t ivr_action, char *arg, char *bind);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_action(switch_ivr_menu_t *menu, switch_ivr_action_t ivr_action, const char *arg, const char *bind);
 
 
 /*!
@@ -573,7 +573,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_action(switch_ivr_menu_t *m
  *\note The function returns an switch_ivr_action_t enum of what you want to do. and looks to your buffer for args.
  *\return SWUTCH_STATUS_SUCCESS if the function was binded
  */
-SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_function(switch_ivr_menu_t *menu, switch_ivr_menu_action_function_t *function, char *arg, char *bind);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_function(switch_ivr_menu_t *menu, switch_ivr_menu_action_function_t *function, const char *arg, const char *bind);
 
 
 /*!

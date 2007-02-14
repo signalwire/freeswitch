@@ -143,7 +143,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_child(switch_xml_t xml, const char *name
 ///\param attrname the attribute name
 ///\param value the value
 ///\return an xml node or NULL
-SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(switch_xml_t node, char *childname, char *attrname, char *value);
+SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(switch_xml_t node, const char *childname, const char *attrname, const char *value);
 
 ///\brief returns the next tag of the same name in the same section and depth or NULL
 ///\ if not found
