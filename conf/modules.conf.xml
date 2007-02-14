@@ -64,5 +64,8 @@
     <!-- ASR /TTS -->
     <!-- <load module="mod_cepstral"/> -->
     <!-- <load module="mod_rss"/> -->
+    
+    <!-- Say -->
+    <load module="mod_say_en"/>
   </modules>
 </configuration>
