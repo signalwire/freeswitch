@@ -527,7 +527,6 @@ static switch_status_t wanpipe_read_frame(switch_core_session_t *session, switch
 			return SWITCH_STATUS_GENERR;
 		}
 
-
 		if (sangoma_socket_waitfor(tech_pvt->wpsock->fd, 1000, POLLIN | POLLERR | POLLHUP) <= 0) {
 			return SWITCH_STATUS_GENERR;
 		}
@@ -1150,7 +1149,6 @@ static int on_ringing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 	switch_core_session_t *session;
 	switch_channel_t *channel;
 	struct channel_map *chanmap;
-	private_object_t *tech_pvt;
 	switch_core_session_message_t *msg;
 
 	chanmap = spri->private_info;
@@ -1160,7 +1158,7 @@ static int on_ringing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 		channel = switch_core_session_get_channel(session);
 		assert(channel != NULL);
 
-		switch_core_session_queue_indication(tech_pvt->session, SWITCH_MESSAGE_INDICATE_RINGING);
+		switch_core_session_queue_indication(session, SWITCH_MESSAGE_INDICATE_RINGING);
 		switch_channel_mark_ring_ready(channel);
 
 		switch_core_session_rwunlock(session);
