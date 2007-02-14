@@ -65,9 +65,9 @@ static struct {
 	char *pass;
 } globals;
 
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_realm, globals.realm);
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_user, globals.user);
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_pass, globals.pass);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_realm, globals.realm)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_user, globals.user)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_pass, globals.pass)
 
 static switch_status_t do_config(void) 
 {
