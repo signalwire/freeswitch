@@ -2423,11 +2423,6 @@ static int env_init(JSContext *cx, JSObject *javascript_object)
 
 	JS_InitStandardClasses(cx, javascript_object);
 
-    /* this doesnt load in standard classes figure out wtf */
-#ifndef _MSC_VER //somthing is badly wrong in our build here, need to fix this.
-	js_InitFileClass(cx, javascript_object);
-#endif
-
 	JS_InitClass(cx,
 				 javascript_object,
 				 NULL,

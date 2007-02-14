@@ -1262,7 +1262,7 @@ static struct {
     {js_InitNamespaceClass,         ATOM_OFFSET(Namespace)},
     {js_InitQNameClass,             ATOM_OFFSET(QName)},
 #endif
-#if defined(JS_HAS_FILE_OBJECT) && (JS_HAS_FILE_OBJECT - 0) /* OSSP BUGFIX */
+#if JS_HAS_FILE_OBJECT
     {js_InitFileClass,              ATOM_OFFSET(File)},
 #endif
 #if defined(JS_HAS_DSO_OBJECT) && (JS_HAS_DSO_OBJECT - 0)
