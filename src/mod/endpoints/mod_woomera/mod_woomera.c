@@ -646,7 +646,7 @@ static int woomera_message_parse(switch_socket_t *fd, woomera_message * wmsg, in
 
 	memset(wmsg, 0, sizeof(woomera_message));
 
-	if (fd < 0) {
+	if (!fd) {
 		return -1;
 	}
 
