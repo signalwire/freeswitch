@@ -225,7 +225,7 @@ static JSBool event_add_body(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 
 	if (argc > 0) {
 		char *body = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-		switch_event_add_body(eo->event, body);
+		switch_event_add_body(eo->event, "%s", body);
 		*rval = BOOLEAN_TO_JSVAL( JS_TRUE );
 		return JS_TRUE;
 	}
