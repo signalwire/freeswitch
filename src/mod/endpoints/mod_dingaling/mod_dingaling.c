@@ -1528,7 +1528,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		char sess_id[11] = "";
 		char *dnis = NULL;
 		char workspace[1024] = "";
-		char *p, *u, ubuf[512] = "", *user = NULL;;
+		char *p, *u, ubuf[512] = "", *user = NULL;
 		char *cid_msg = NULL;
 
 		switch_copy_string(workspace, outbound_profile->destination_number, sizeof(workspace));
