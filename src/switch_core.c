@@ -1895,6 +1895,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_c
 	if (session->private_event_queue) {
 		if (switch_queue_trypush(session->private_event_queue, *event) == SWITCH_STATUS_SUCCESS) {
 			*event = NULL;
+			switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
 			status = SWITCH_STATUS_SUCCESS;
 		}
 	} 
