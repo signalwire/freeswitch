@@ -139,7 +139,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void);
   \param subclass_name the subclass name for custom event (only valid when event_id is SWITCH_EVENT_CUSTOM)
   \return SWITCH_STATUS_SUCCESS on success
 */
-SWITCH_DECLARE(switch_status_t) switch_event_create_subclass(switch_event_t **event, switch_event_types_t event_id, char *subclass_name);
+SWITCH_DECLARE(switch_status_t) switch_event_create_subclass(switch_event_t **event, switch_event_types_t event_id, const char *subclass_name);
 
 /*!
   \brief Set the priority of an event

@@ -886,7 +886,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(switch_hash_t *hash, cha
   \param key the key to retrieve
   \return a pointer to the data held in the key
 */
-SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash_t *hash, char *key);
+SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash_t *hash, const char *key);
 ///\}
 
 ///\defgroup timer Timer Functions

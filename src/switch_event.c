@@ -423,7 +423,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 
 SWITCH_DECLARE(switch_status_t) switch_event_create_subclass(switch_event_t **event,
 														   switch_event_types_t event_id,
-														   char *subclass_name)
+														   const char *subclass_name)
 {
 
 	if (event_id != SWITCH_EVENT_CUSTOM && subclass_name) {

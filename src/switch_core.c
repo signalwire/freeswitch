@@ -3504,7 +3504,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(switch_hash_t *hash, cha
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash_t *hash, char *key)
+SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash_t *hash, const char *key)
 {
 	return apr_hash_get(hash, key, APR_HASH_KEY_STRING);
 }
