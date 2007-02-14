@@ -1215,10 +1215,10 @@ JS_InitStandardClasses(JSContext *cx, JSObject *obj)
 #if JS_HAS_XML_SUPPORT
            js_InitXMLClasses(cx, obj) &&
 #endif
-#ifndef OSSP
 #if defined(JS_HAS_FILE_OBJECT) && (JS_HAS_FILE_OBJECT - 0) /* OSSP BUGFIX */
            js_InitFileClass(cx, obj) &&
 #endif
+#ifndef OSSP
 #if defined(JS_HAS_DSO_OBJECT) && (JS_HAS_DSO_OBJECT - 0)
            js_InitDSOClass(cx, obj) &&
 #endif
@@ -1262,7 +1262,7 @@ static struct {
     {js_InitNamespaceClass,         ATOM_OFFSET(Namespace)},
     {js_InitQNameClass,             ATOM_OFFSET(QName)},
 #endif
-#if JS_HAS_FILE_OBJECT
+#if defined(JS_HAS_FILE_OBJECT) && (JS_HAS_FILE_OBJECT - 0) /* OSSP BUGFIX */
     {js_InitFileClass,              ATOM_OFFSET(File)},
 #endif
 #if defined(JS_HAS_DSO_OBJECT) && (JS_HAS_DSO_OBJECT - 0)
