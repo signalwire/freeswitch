@@ -2200,12 +2200,12 @@ int process_cancel(nua_server_request_t *sr,
 
   if (nta_incoming_status(irq) < 200 && nua_server_request_is_pending(sr) &&
 	  ss && (ss == nua_session_usage_get(nh->nh_ds))) {
-    nua_stack_event(nh->nh_nua, nh, cancel, nua_i_cancel, SIP_200_OK, NULL);
+  nua_stack_event(nh->nh_nua, nh, cancel, nua_i_cancel, SIP_200_OK, NULL);
 
   SR_STATUS1(sr, SIP_487_REQUEST_TERMINATED);
 
-    nua_server_respond(sr, NULL);
-    nua_server_report(sr);
+  nua_server_respond(sr, NULL);
+  nua_server_report(sr);
   }
 
   return 0;
