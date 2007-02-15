@@ -345,6 +345,15 @@ void nua_dialog_usage_remove_at(nua_owner_t *own,
     nua_client_request_t *cr, *cr_next;
     nua_server_request_t *sr, *sr_next;
 
+    *at = du->du_next;
+
+    o = du->du_event;
+
+    SU_DEBUG_5(("nua(%p): removing %s usage%s%s\n",
+		(void *)own, nua_dialog_usage_name(du), 
+		o ? " with event " : "", o ? o->o_type :""));
+    du->du_class->usage_remove(own, ds, du);
+
     /* Destroy saved client request */
     if (nua_client_is_bound(du->du_cr)) {
       nua_client_bind(cr = du->du_cr, NULL);
@@ -366,26 +375,20 @@ void nua_dialog_usage_remove_at(nua_owner_t *own,
 	nua_server_request_destroy(sr);
     }
 
-    *at = du->du_next;
-
-    o = du->du_event;
-
-    SU_DEBUG_5(("nua(%p): removing %s usage%s%s\n",
-		(void *)own, nua_dialog_usage_name(du), 
-		o ? " with event " : "", o ? o->o_type :""));
-    du->du_class->usage_remove(own, ds, du);
     su_home_unref(own);
     su_free(own, du);
   }
 
   /* Zap dialog if there are no more usages */
-  if (ds->ds_usage == NULL) {
+  if (ds->ds_terminated)
+    ;
+  else if (ds->ds_usage == NULL) {
     nua_dialog_remove(own, ds, NULL);
     ds->ds_has_events = 0;
     ds->ds_terminated = 0;
     return;
   }
-  else if (!ds->ds_terminated) {
+  else {
     nua_dialog_log_usage(own, ds);
   }
 }
@@ -561,6 +564,8 @@ int nua_dialog_shutdown(nua_owner_t *owner, nua_dialog_state_t *ds)
 {
   nua_dialog_usage_t *du;
 
+  ds->ds_terminated = 1;
+
   do {
     for (du = ds->ds_usage; du; du = du->du_next) {
       if (!du->du_shutdown) {
@@ -575,8 +580,8 @@ int nua_dialog_shutdown(nua_owner_t *owner, nua_dialog_state_t *ds)
 
 /** (Gracefully) terminate usage */
 void nua_dialog_usage_shutdown(nua_owner_t *owner,
-				nua_dialog_state_t *ds,
-				nua_dialog_usage_t *du)
+			       nua_dialog_state_t *ds,
+			       nua_dialog_usage_t *du)
 {
   if (du) {
     du->du_refresh = 0;

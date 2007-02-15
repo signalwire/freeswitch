@@ -743,13 +743,13 @@ void nh_destroy(nua_t *nua, nua_handle_t *nh)
   if (nh->nh_notifier)
     nea_server_destroy(nh->nh_notifier), nh->nh_notifier = NULL;
 
-  nua_dialog_deinit(nh, nh->nh_ds);
-
   while (nh->nh_ds->ds_cr)
     nua_client_request_destroy(nh->nh_ds->ds_cr);
 
   while (nh->nh_ds->ds_sr)
     nua_server_request_destroy(nh->nh_ds->ds_sr);
+
+  nua_dialog_deinit(nh, nh->nh_ds);
 
   if (nh->nh_soa)
     soa_destroy(nh->nh_soa), nh->nh_soa = NULL;
@@ -1089,6 +1089,9 @@ int nua_stack_process_request(nua_handle_t *nh,
   enter;
 
   nta_incoming_tag(irq, NULL);
+
+  if (method == sip_method_cancel)
+    return 481;
 
   /* Hook to outbound */
   if (method == sip_method_options) {
@@ -1485,6 +1488,8 @@ int nua_server_respond(nua_server_request_t *sr, tagi_t const *tags)
     else if (next.msg)
       msg_destroy(next.msg);
 
+    assert(sr->sr_status >= 200 || sr->sr_response.msg);
+
     return retval;
   }
 
@@ -1521,7 +1526,7 @@ int nua_server_report(nua_server_request_t *sr)
   if (sr)
     return sr->sr_methods->sm_report(sr, NULL);
   else
-    return 2;
+    return 1;
 }
 
 int nua_base_server_treport(nua_server_request_t *sr,
@@ -1763,8 +1768,11 @@ inline int nua_client_request_queue(nua_client_request_t *cr)
     }
   }
   else {
-    while (*queue)
+    while (*queue) {
       queue = &(*queue)->cr_next;
+      if (cr->cr_method == sip_method_invite)
+	queued = 1;
+    }
   }
 
   if ((cr->cr_next = *queue))
@@ -2543,7 +2551,7 @@ int nua_base_client_response(nua_client_request_t *cr,
 			     tagi_t const *tags)
 {
   nua_handle_t *nh = cr->cr_owner;
-  int next;
+  sip_method_t method = cr->cr_method;
 
   cr->cr_reporting = 1;
 
@@ -2552,13 +2560,14 @@ int nua_base_client_response(nua_client_request_t *cr,
 
   nua_client_report(cr, status, phrase, sip, cr->cr_orq, tags);
 
-  if (status >= 200)
-    nua_client_request_remove(cr);
-
-  if (cr->cr_method == sip_method_invite ? status < 300 : status < 200) {
+  if (status < 200 ||
+      /* Un-ACKed 2XX response to INVITE */
+      (cr->cr_method == sip_method_invite && status < 300 && cr->cr_orq)) {
     cr->cr_reporting = 0;
     return 1;
   }
+
+  nua_client_request_remove(cr);
 
   if (cr->cr_orq)
     nta_outgoing_destroy(cr->cr_orq), cr->cr_orq = NULL;
@@ -2585,16 +2594,12 @@ int nua_base_client_response(nua_client_request_t *cr,
   if (nua_client_is_queued(cr))
     return 1;
 
-  next = cr->cr_method != sip_method_invite && cr->cr_method != sip_method_cancel;
-
   if (!nua_client_is_bound(cr))
     nua_client_request_destroy(cr);
 
-  if (next && nh->nh_ds->ds_cr != NULL && nh->nh_ds->ds_cr != cr) {
-    cr = nh->nh_ds->ds_cr;
-    if (cr->cr_method != sip_method_invite && cr->cr_method != sip_method_cancel)
-      nua_client_init_request(cr);
-  }
+  if (method != sip_method_cancel)
+    return nua_client_init_requests(nh->nh_ds->ds_cr, cr,
+				    method == sip_method_invite);
 
   return 1;
 }
@@ -2636,6 +2641,29 @@ int nua_client_treport(nua_client_request_t *cr,
   retval = nua_client_report(cr, status, phrase, sip, orq, ta_args(ta));
   ta_end(ta);
   return retval;
+}
+
+int nua_client_init_requests(nua_client_request_t *cr,
+			     void const *cr0,
+			     int invite)
+{
+  if (cr0 == cr)		/* already initialized! */
+    return 1;
+  
+  for (; cr; cr = cr->cr_next) {
+    if (cr->cr_method == sip_method_cancel)
+      continue;
+    
+    if (invite 
+	? cr->cr_method == sip_method_invite
+	: cr->cr_method != sip_method_invite)
+      break;
+  }
+
+  if (cr) 
+    nua_client_init_request(cr);
+
+  return 1;
 }
 
 nua_client_request_t *

@@ -422,6 +422,7 @@ void su_pthread_port_wait(su_clone_r rclone)
 
   pthread_mutex_unlock(mom->mutex);
   pthread_mutex_destroy(mom->mutex);
+  pthread_cond_destroy(mom->cv);
 }
 
 struct su_pthread_port_execute

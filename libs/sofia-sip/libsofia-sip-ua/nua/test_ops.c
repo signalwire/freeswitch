@@ -272,21 +272,21 @@ void run_abc_until(struct context *ctx,
   a->last_event = -1;
   a->running = a_condition != NULL && a_condition != save_events;
   a->running |= a_event != -1;
-  a->flags.n = 0;
+  memset(&a->flags, 0, sizeof a->flags);
 
   b->next_event = b_event;
   b->next_condition = b_condition;
   b->last_event = -1;
   b->running = b_condition != NULL && b_condition != save_events;
   b->running |= b_event != -1;
-  b->flags.n = 0;
+  memset(&b->flags, 0, sizeof b->flags);
 
   c->next_event = c_event;
   c->next_condition = c_condition;
   c->last_event = -1;
   c->running = c_condition != NULL && c_condition != save_events;
   c->running |= c_event != -1;
-  c->flags.n = 0;
+  memset(&c->flags, 0, sizeof c->flags);
 
   for (; a->running || b->running || c->running;) {
     su_root_step(ctx->root, 1000);

@@ -5,135 +5,69 @@ Release notes for current version of Sofia-SIP
 Changes since last release
 --------------------------
 
-Support for request queuing has been added to the high-level user-agent 
-API. Various portability improvements have been made related to Linux, 
-Mac OS X, Windows and Solaris ports. SIP registrations have been 
-modified to utilize persistent transport connections. The GObject 
-interface to 'nua' (nua-glib) has been dropped from the package and is 
-now distributed separately. Severe bugs in 'su', 'nua', 'nta', 'stun' and 
-'su-glib' modules have been fixed.
+<changes since last written in freshmeat.net "Changes:" style;
+ and in less than 10 lines, written in 3rd person English, with
+ complete sentences />
+
+Bugs in blaa and foo have been fixed. The stack now supports
+use of foobar...
 
 API/ABI changes and versioning
 ------------------------------
 
-New features in API are marked with Doxytag macro @NEW_1_12_5.
-Experimental features are marked with Doxytag macro @EXP_1_12_5.
+<see previous release notes at
+ http://sofia-sip.sourceforge.net/relnotes/ for examples ;
+ - should include all changes to public headers, and 
+   other important information to developers; 
+ - and should be updated _continuously_! />
 
-**template**: New features in API are marked with Doxytag macro @NEW_1_XX_X.
+**template**: New features in API are marked with Doxytag macro @VERSION_1_XX_X.
 
 libsofia-sip-ua:
 - **template**: Added foobar() function (sofia-sip/foobar.h).
-- Added nua tags NUTAG_APPL_METHOD() and NUTAG_NEWSUB()
-- Added nua_substate_make(), nua_substate_name()
-- Added nta_incoming_create_response() function
-- Added tport tags TPTAG_TOS(), TPTAG_DUMP(), TPTAG_LOG()
-- Added tport predicate function tport_is_connected()
-- Added authentication functions auc_info() and auc_has_authorization(),
-  added type msg_auth_info_t for Authentication-Info header
-- Added msg_header_join_items() function
-- Added sip_is_allowed() function and k_bitmap field to the 
-  sip_allow_t structure 
-- Added sl_header_log implementation, updated its prototype
-- Added experimental SIP headers Suppress-Notify-If-Match and
-  Suppress-Body-If-Match and functions related to them,
-  enabled with ./configure option --enable-experimental
-- Added SIP header Refer-Sub and related functions
-- Added <sofia-sip/sip_extra.h> include file
-- Added auc_info() function (sofia-sip/auth_client.h)
-- Added alternative implementations to event reactor object (su_port_t,
-  referenced by su_root_t) that can be changed at runtime using SU_PORT
-  environment variable, for instance
-  - Internal semantics of su_port_t reference counting have changed:
-    now su_port_create() has one reference, and su_root_create_with_port()
-    always consumes one reference
-- Changed return type of bm_memmem() and bm_memcasemem() to non-const
 - This release is ABI/API compatible with applications linked against 
   any 1.12.x release. However, applications built against this release won't 
   work against an older library. The ABI has been tested with the nua module 
   unit test (test_nua) built against original 1.12.0 release.
 
 libsofia-sip-ua-glib:
-- The 'nua-glib' module has been removed from the library and moved
-  to a separate package 'sofia-nua-glib'. The remaining library (su-glib) 
-  is now considered stable and will be API/ABI compatible with later 
-  releases in the 1.12.x series.
-- ABI has been modified and applications built against 1.12.4 and earlier 
-  releases, need to be rebuilt.
-- Added su_glib_prefer_gsource() which makes glib-based su_port_t
-  implementation the default choice when su_root_create() is called
+- No ABI/API changes, compatible with 1.12.0. Note, libsofia-sip-ua-glib
+  interface is not considered stable and may change in a future 1.12.x
+  release.
 
 Contributors to this release
 ----------------------------
 
-- Petteri Puolakka (patch to stun)
-- Mikhail Zabaluev (patch to su-glib mainloop integration)
-- Michael Jerris (patch to url parsing # in sip/sips userpart)
-- Colin Whittaker (TPTAG_TOS())
-- Roman Filonenko (TPTAG_LOG(), TPTAG_DUMP(), 
-	           patch to query DNS-servers with IP-Helper on win32)
-- Remi Denis-Courmont (patch to network change API)
-- Martti Mela (poll() emulation with select(), IPv6 and OS X fixes)
-- Kai Vehmanen (persistent registrations, release management)
-- Pekka Pessi (all the rest)
+<list of people who contributed to _this_ release
+ - update as people's patches are added, or when you commit stuff
+ - current development team members (see AUTHORS) may be omitted,
+   or listed at the end of the contribur list (depending on the scope 
+   of the work done since the last release)
+ - name of the contributor should be enough (email addresses in AUTHORS),
+   plus a _brief_ description of what was contributed
+ - roughly sorted by number of patches accepted
+/> 
+
+- **template**: First Surname (patch to nua/soa/msg)
 
 See the AUTHORS file in the distribution package.
 
 Notes on new features
 ---------------------
 
-- The su_root_t reactor uses different implementation (epoll, poll or select
-  on Linux), depending on SU_PORT environment variable.
-
-- nua now supports request queuing, for instance, an application can send
-  overlapping BYE and NOTIFY requests. The stack engine takes care of
-  sending the new request only after the previous one has been responded.
-
-- RFC 4488 defines the Refer-Sub header. Its datatypes, related functions and
-  methods declared in <sofia-sip/sip_extra.h> include file. The Refer-Sub
-  header structure can be accessed from sip_t structure with sip_refer_sub()
-  method, e.g.,
-
-  if (sip_refer_sub(sip) && 
-      strcasecmp("false", sip_refer_sub(sip)->rs_value) == 0) {
-     /* Do not create implicit subscription */ 
-  }
-
-- Unsolicited NOTIFYs are now supported. The application can accept incoming
-  NOTIFYs and send NOTIFYs without existing subscription.
-
-- Transport connections used for client registrations are now maintained 
-  in a persistent fashion. For example a TCP connection used for
-  registration is not closed until client is unregisters, or the whole stack
-  is shut down.
-
-- New build time options have been added: ability to build without 
-  STUN and HTTP support. See 'docs/devel_platform_notes.txt' for some
-  additional notes to distributors.
+<information about major new features
+ - new/changed/removed functionality
+ - links to further documentation
+ - section may be omitted for minor releases
+/> 
 
 Bugs fixed in this release
 --------------------------
 
-- Fixed su_from_create() returning a sip_to_t instance. Problem reported by
-  Ludovico Cavedon.
-- Partially fixed problem #1633969 with too frequent timer
-- Fixed problem in dialog matching. Problem reported by Fabio Margarido.
-- Fixed #1624446 - su_wait_clone() (and nua_destroy()) blocking for ever if
-  the root object was created using su_glib
-- Fixed #1626330 - leak in nta.c which happened if INVITE never got a final
-  response nor timed out.
-- Fixed handle leak (pthread_*_init without pthread_*_destroy). Problem
-  reported by Maxim Zaikin.
-- Fixed crash when nua_bye() was called while a NOTIFY client transaction
-  was in progress. Problem reported by Anthony Minnessale.
-- Not using close() with sockets in sres.c. Problem reported by
-  Roman Filonenko.
-- Bug in zero-padding STUN messages with a message integrity 
-  attribute. Patch by Petteri Puolakka.
-- Fixed a severe problem with timer accuracy, when sofia-sip timers 
-  where used under glib's mainloop.
-- Improved glib mainloop integration to avoid warnings about already
-  active mainloop context, and potentially other issue. Patch by 
-  Mikhail Zabaluev. Closes sf.net item #1606786.
-- Ignore harmless syntax errors in incoming requests/responses by default
-- If a TCP connection cannot be made within SIP T4 (because of a
-  firewall, for instance) nta now tries to use UDP instead.
+< notable bugs fixed in this release
+ - check the sf.net bug tracker; see closed bugs,
+   sorted by closing date
+ - other bugs as fixed in CVS/darcs
+/>
+
+- **template**: #9499652 sf.net bug item title

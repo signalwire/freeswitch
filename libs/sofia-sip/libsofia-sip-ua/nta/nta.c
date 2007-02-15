@@ -5056,10 +5056,16 @@ nta_incoming_t *incoming_find(nta_agent_t const *agent,
     if (irq->irq_method == rq->rq_method)
       break;		/* found */
 
-    if (return_ack && rq->rq_method == sip_method_cancel)
-      *return_ack = irq;
-    else if (return_ack && rq->rq_method == sip_method_ack && 
-	     irq->irq_method == sip_method_invite)
+    if (!return_ack)
+      continue;
+
+    if (irq->irq_method == sip_method_invite) {
+      if (rq->rq_method == sip_method_cancel)
+	*return_ack = irq;
+      else if (rq->rq_method == sip_method_ack)
+	*return_ack = irq;
+    }
+    else if (rq->rq_method == sip_method_cancel && !irq->irq_terminated)
       *return_ack = irq;
   }
 
@@ -5179,10 +5185,18 @@ int incoming_cancel(nta_incoming_t *irq, msg_t *msg, sip_t *sip,
   nta_agent_t *agent = irq->irq_agent;
 
   /* Respond to the CANCEL */
-  nta_msg_treply(agent, msg_ref_create(msg), SIP_200_OK, 
-		 NTATAG_TPORT(tport),
-		 TAG_END());
 
+  if (200 <= irq->irq_status && irq->irq_status < 300) {
+    nta_msg_treply(agent, msg_ref_create(msg), SIP_481_NO_TRANSACTION, 
+		   NTATAG_TPORT(tport),
+		   TAG_END());
+  }
+  else
+    nta_msg_treply(agent, msg_ref_create(msg), SIP_200_OK, 
+		   NTATAG_TPORT(tport),
+		   TAG_END());
+
+  /* We have already sent final response */
   if (irq->irq_completed || irq->irq_method != sip_method_invite) {
     msg_destroy(msg);
     return 0;

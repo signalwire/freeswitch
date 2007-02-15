@@ -166,12 +166,11 @@ struct context
     struct eventlist specials[1];
 
     /* State flags for complex scenarios */
-    union {
-      struct {
-	unsigned bit0:1, bit1:1, bit2:1, bit3:1;
-	unsigned bit4:1, bit5:1, bit6:1, bit7:1;
-      } b;
+    struct {
       unsigned n;
+      unsigned bit0:1, bit1:1, bit2:1, bit3:1;
+      unsigned bit4:1, bit5:1, bit6:1, bit7:1;
+      unsigned :0;
     } flags;
 
   } a, b, c;
@@ -215,6 +214,7 @@ int save_until_special(CONDITION_PARAMS);
 int until_terminated(CONDITION_PARAMS);
 int until_ready(CONDITION_PARAMS);
 int accept_call(CONDITION_PARAMS);
+int cancel_when_ringing(CONDITION_PARAMS);
 
 int accept_notify(CONDITION_PARAMS);
 
