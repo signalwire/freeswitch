@@ -49,5 +49,6 @@ formats/mod_sndfile
 timers/mod_softtimer
 #xml_int/mod_xml_rpc
 #xml_int/mod_xml_curl
+#xml_int/mod_xml_cdr
 say/mod_say_en
 

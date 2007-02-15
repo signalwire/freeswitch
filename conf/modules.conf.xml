@@ -11,6 +11,7 @@
     <!-- XML Interfaces -->
     <!-- <load module="mod_xml_rpc"/> -->
     <!-- <load module="mod_xml_curl"/> -->
+    <!-- <load module="mod_xml_cdr"/> -->
 
     <!-- Event Handlers -->
     <!-- <load module="mod_cdr"/> -->
