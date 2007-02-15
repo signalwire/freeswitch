@@ -2937,10 +2937,11 @@ static switch_status_t conf_api_sub_dial(conference_obj_t *conference, switch_st
 {
     switch_status_t ret_status = SWITCH_STATUS_SUCCESS;
 
-    assert(conference != NULL);
     assert(stream != NULL);
 
-    if (argc > 2) {
+	if(!conference) {
+		stream->write_function(stream, "Conference %s not found\n", argv[0]);
+	} else if (argc > 2) {
         switch_call_cause_t cause;
         conference_outcall(conference, NULL, argv[2], 60, NULL, argv[4], argv[3], &cause);
         stream->write_function(stream, "Call Requested: result: [%s]\n", switch_channel_cause2str(cause));
@@ -2956,10 +2957,11 @@ static switch_status_t conf_api_sub_bgdial(conference_obj_t *conference, switch_
 {
     switch_status_t ret_status = SWITCH_STATUS_SUCCESS;
 
-    assert(conference != NULL);
     assert(stream != NULL);
 
-    if (argc > 2) {
+	if(!conference) {
+		stream->write_function(stream, "Conference %s not found\n", argv[0]);
+	} else if (argc > 2) {
         conference_outcall_bg(conference, NULL, argv[2], 60, NULL, argv[4], argv[3]);
         stream->write_function(stream, "OK\n");
     } else {
@@ -3129,7 +3131,33 @@ static switch_status_t conf_api_sub_norecord(conference_obj_t *conference, switc
     return ret_status;
 }
 
+typedef enum {
+	CONF_API_COMMAND_LIST = 0,
+	CONF_API_COMMAND_ENERGY,
+	CONF_API_COMMAND_VOLUME_IN,
+	CONF_API_COMMAND_VOLUME_OUT,
+	CONF_API_COMMAND_PLAY,
+	CONF_API_COMMAND_SAY,
+	CONF_API_COMMAND_SAYMEMBER,
+	CONF_API_COMMAND_STOP,
+	CONF_API_COMMAND_DTMF,
+	CONF_API_COMMAND_KICK,
+	CONF_API_COMMAND_MUTE,
+	CONF_API_COMMAND_UNMUTE,
+	CONF_API_COMMAND_DEAF,
+	CONF_API_COMMAND_UNDEAF,
+	CONF_API_COMMAND_RELATE,
+	CONF_API_COMMAND_LOCK,
+	CONF_API_COMMAND_UNLOCK,
+	CONF_API_COMMAND_DIAL,
+	CONF_API_COMMAND_BGDIAL,
+	CONF_API_COMMAND_TRANSFER,
+	CONF_API_COMMAND_RECORD,
+	CONF_API_COMMAND_NORECORD
+} api_command_type_t;
+
 /* API Interface Function sub-commands */
+/* Entries in this list should be kept in sync with the enum above */
 static api_command_t conf_api_sub_commands[] = {
 	{"list", (void_fn_t)&conf_api_sub_list, CONF_API_SUB_ARGS_SPLIT, "<confname> list [delim <string>]"}, 
 	{"energy", (void_fn_t)&conf_api_sub_energy, CONF_API_SUB_MEMBER_TARGET, "<confname> energy <member_id|all|last> [<newval>]"}, 
@@ -3323,6 +3351,16 @@ static switch_status_t conf_api_main(char *buf, switch_core_session_t *session, 
                 conf_api_sub_list(NULL, stream, argc, argv);
             } else if (strcasecmp(argv[0], "help") == 0 || strcasecmp(argv[0], "commands") == 0) {
                 stream->write_function(stream, "%s\n", conf_api_interface.syntax);
+			} else if (strcasecmp(argv[0], "dial") == 0) {
+				if (conf_api_sub_dial(NULL, stream, argc, argv) != SWITCH_STATUS_SUCCESS) {
+					/* command returned error, so show syntax usage */
+					stream->write_function(stream, conf_api_sub_commands[CONF_API_COMMAND_DIAL].psyntax);
+				}
+			} else if (strcasecmp(argv[0], "bgdial") == 0) {
+				if (conf_api_sub_bgdial(NULL, stream, argc, argv) != SWITCH_STATUS_SUCCESS) {
+					/* command returned error, so show syntax usage */
+					stream->write_function(stream, conf_api_sub_commands[CONF_API_COMMAND_BGDIAL].psyntax);
+				}
             } else {
                 stream->write_function(stream, "Conference %s not found\n", argv[0]);
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Conference %s not found\n", argv[0]);
