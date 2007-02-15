@@ -4965,7 +4965,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 		
 		if (caller_profile->caller_extension) {
 			switch_caller_application_t *ap;
-			
+			int app_off = 0;
+
 			if (!(x_caller_extension = switch_xml_add_child_d(x_callflow, "extension", cf_off++))) {
 				goto error;
 			}
@@ -4976,7 +4977,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 			}
 
 			for(ap = caller_profile->caller_extension->applications; ap; ap = ap->next) {
-				if (!(x_application = switch_xml_add_child_d(x_callflow, "application", cf_off++))) {
+				if (!(x_application = switch_xml_add_child_d(x_caller_extension, "application", app_off++))) {
 					goto error;
 				}
 				switch_xml_set_attr_d(x_application, "app_name", ap->application_name);
