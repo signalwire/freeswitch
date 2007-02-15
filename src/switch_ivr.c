@@ -3971,6 +3971,7 @@ struct switch_ivr_menu {
 	char *exit_sound;
 	char *tts_engine;
 	char *tts_voice;
+	char *phrase_lang;
 	char *buf;
 	char *ptr;
 	int max_failures;
@@ -4022,6 +4023,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new_men
 													 const char *exit_sound,
 													 const char *tts_engine,
 													 const char *tts_voice,
+													 const char *phrase_lang,
 													 int timeout,
 													 int max_failures, 
 													 switch_memory_pool_t *pool)
@@ -4073,6 +4075,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new_men
 
 	if (!switch_strlen_zero(tts_voice)) {
 		menu->tts_voice = switch_core_strdup(menu->pool, tts_voice);
+	}
+
+	if (!switch_strlen_zero(phrase_lang)) {
+		menu->phrase_lang = switch_core_strdup(menu->pool, phrase_lang);
 	}
 
 	menu->max_failures = max_failures;
@@ -4185,11 +4191,18 @@ static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_me
 		if (*sound == '/' || *sound == '\\') {
 			status = switch_ivr_play_file(session, NULL, sound, &args);
 		} else {
-			if (menu->tts_engine && menu->tts_voice) {
-				status = switch_ivr_speak_text(session, menu->tts_engine, menu->tts_voice, 0, sound, &args);
-			}
-			else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No TTS engine to play sound\n");
+			if (strlen(sound) > 4 && strncmp(sound, "say:", 4) == 0) {
+				if (menu->tts_engine && menu->tts_voice) {
+					status = switch_ivr_speak_text(session, menu->tts_engine, menu->tts_voice, 0, sound+4, &args);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No TTS engine to play sound\n");
+				}
+			} else {
+				if (strlen(sound) > 7 && strncmp(sound, "phrase:", 7) == 0) {
+						status = switch_ivr_phrase_macro(session, sound+7, "", menu->phrase_lang, &args);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "play_or_say: no player for [%s]. Use say: or phrase:\n", sound);
+				}
 			}
 		}
 
@@ -4285,6 +4298,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 						break;
 					case SWITCH_IVR_ACTION_SAYTEXT:
 						status = switch_ivr_speak_text(session, menu->tts_engine, menu->tts_voice, 0, aptr, NULL);
+						break;
+					case SWITCH_IVR_ACTION_SAYPHRASE:
+						status = switch_ivr_phrase_macro(session, aptr, "", menu->phrase_lang, NULL);
 						break;
 					case SWITCH_IVR_ACTION_TRANSFER:
 						switch_ivr_session_transfer(session, aptr, NULL, NULL);
@@ -4469,6 +4485,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_init(switch_ivr_menu_x
 			{"menu-exec-api",	SWITCH_IVR_ACTION_EXECAPP},
 			{"menu-play-sound",	SWITCH_IVR_ACTION_PLAYSOUND},
 			{"menu-say-text",	SWITCH_IVR_ACTION_SAYTEXT},
+			{"menu-say-phrase",	SWITCH_IVR_ACTION_SAYPHRASE},
 			{"menu-back",		SWITCH_IVR_ACTION_BACK},
 			{"menu-top",		SWITCH_IVR_ACTION_TOMAIN},
 			{"menu-call-transfer",	SWITCH_IVR_ACTION_TRANSFER},
@@ -4505,6 +4522,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 		const char *exit_sound	= switch_xml_attr(xml_menu,"exit-sound");		// if the attr doesn't exist, return NULL
 		const char *tts_engine	= switch_xml_attr(xml_menu,"tts-engine");		// if the attr doesn't exist, return NULL
 		const char *tts_voice		= switch_xml_attr(xml_menu,"tts-voice");		// if the attr doesn't exist, return NULL
+		const char *phrase_lang		= switch_xml_attr(xml_menu,"phrase_lang");		// if the attr doesn't exist, return NULL
 		const char *timeout		= switch_xml_attr_soft(xml_menu,"timeout");		// if the attr doesn't exist, return ""
 		const char *max_failures	= switch_xml_attr_soft(xml_menu,"max-failures");	// if the attr doesn't exist, return ""
 		switch_ivr_menu_t *menu	= NULL;
@@ -4519,6 +4537,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 									exit_sound,
 									tts_engine,
 									tts_voice,
+									phrase_lang,
 									atoi(timeout)*1000,
 									atoi(max_failures),
 									xml_menu_ctx->pool

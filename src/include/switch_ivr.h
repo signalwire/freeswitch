@@ -511,6 +511,7 @@ typedef enum {
 	SWITCH_IVR_ACTION_EXECAPP,	/* Execute an application.         */
 	SWITCH_IVR_ACTION_PLAYSOUND,	/* Play a sound.                   */
 	SWITCH_IVR_ACTION_SAYTEXT,	/* say text.                       */
+	SWITCH_IVR_ACTION_SAYPHRASE,	/* say a phrase macro.                       */
 	SWITCH_IVR_ACTION_BACK,		/* Go back 1 menu.                 */
 	SWITCH_IVR_ACTION_TOMAIN,	/* Go back to the top level menu.  */
 	SWITCH_IVR_ACTION_TRANSFER,	/* Transfer caller to another ext. */
@@ -547,6 +548,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new_men
 													 const char *invalid_sound, 
 													 const char *tts_engine,
 													 const char *tts_voice,
+													 const char *phrase_lang,
 													 int timeout,
 													 int max_failures, 
 													 switch_memory_pool_t *pool);
