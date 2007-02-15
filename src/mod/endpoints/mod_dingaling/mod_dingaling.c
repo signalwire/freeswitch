@@ -1643,7 +1643,21 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		}
 
 		if (cid_msg) {
-			ldl_handle_send_msg(mdl_profile->handle, tech_pvt->them, tech_pvt->us, "", cid_msg);
+			char *us, *them;
+			us = strdup(tech_pvt->us);
+			them = strdup(tech_pvt->them);
+			if (us && them) {
+				char *p;
+				if ((p = strchr(us, '/'))) {
+					*p = '\0';
+				}
+				if ((p = strchr(them, '/'))) {
+					*p = '\0';
+				}
+				ldl_handle_send_msg(mdl_profile->handle, us, them, "", cid_msg);
+			}
+			switch_safe_free(us);
+			switch_safe_free(them);
 		}
 		switch_safe_free(f_cid_msg);
 
