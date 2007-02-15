@@ -657,6 +657,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 		
 
 		for (x = 0; x < loops; x++) {
+			rtp_session->dtmf_data.out_digit_seq++;
 			switch_rtp_write_manual(rtp_session, 
 									rtp_session->dtmf_data.out_digit_packet,
 									4,
@@ -674,7 +675,6 @@ static void do_2833(switch_rtp_t *rtp_session)
 							  duration,
 							  rtp_session->dtmf_data.out_digit_seq);
 
-			rtp_session->dtmf_data.out_digit_seq++;
 		}
 	}
 
@@ -701,6 +701,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 			
 
 			for (x = 0; x < 3; x++) {
+				rtp_session->dtmf_data.out_digit_seq++;
 				switch_rtp_write_manual(rtp_session,
 										rtp_session->dtmf_data.out_digit_packet,
 										4,
@@ -718,7 +719,6 @@ static void do_2833(switch_rtp_t *rtp_session)
 								  rtp_session->dtmf_data.out_digit_sofar,
 								  0,
 								  rtp_session->dtmf_data.out_digit_seq);
-				rtp_session->dtmf_data.out_digit_seq++;
 			}
 
 			free(rdigit);
