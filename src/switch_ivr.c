@@ -4921,6 +4921,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 		x_caller_profile,
 		x_caller_extension,
 		x_times,
+		time_tag,
 		x_application,
 		x_callflow;
 	char tmp[512];
@@ -5004,29 +5005,33 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 
 
 		if (caller_profile->times) {
-			if (!(x_times = switch_xml_add_child_d(x_callflow, "created_time", cf_off++))) {
+			int t_off = 0;
+			if (!(x_times = switch_xml_add_child_d(x_callflow, "times", cf_off++))) {
+				goto error;
+			}
+			if (!(time_tag = switch_xml_add_child_d(x_times, "created_time", t_off++))) {
 				goto error;
 			}
 			snprintf(tmp, sizeof(tmp), "%"APR_TIME_T_FMT, caller_profile->times->created);
-			switch_xml_set_txt_d(x_times, tmp);
+			switch_xml_set_txt_d(time_tag, tmp);
 
-			if (!(x_times = switch_xml_add_child_d(x_callflow, "answered_time", cf_off++))) {
+			if (!(time_tag = switch_xml_add_child_d(x_times, "answered_time", t_off++))) {
 				goto error;
 			}
 			snprintf(tmp, sizeof(tmp), "%"APR_TIME_T_FMT, caller_profile->times->answered);
-			switch_xml_set_txt_d(x_times, tmp);
+			switch_xml_set_txt_d(time_tag, tmp);
 
-			if (!(x_times = switch_xml_add_child_d(x_callflow, "hangup_time", cf_off++))) {
+			if (!(time_tag = switch_xml_add_child_d(x_times, "hangup_time", t_off++))) {
 				goto error;
 			}
 			snprintf(tmp, sizeof(tmp), "%"APR_TIME_T_FMT, caller_profile->times->hungup);
-			switch_xml_set_txt_d(x_times, tmp);
+			switch_xml_set_txt_d(time_tag, tmp);
 
-			if (!(x_times = switch_xml_add_child_d(x_callflow, "transfer_time", cf_off++))) {
+			if (!(time_tag = switch_xml_add_child_d(x_times, "transfer_time", t_off++))) {
 				goto error;
 			}
 			snprintf(tmp, sizeof(tmp), "%"APR_TIME_T_FMT, caller_profile->times->transferred);
-			switch_xml_set_txt_d(x_times, tmp);
+			switch_xml_set_txt_d(time_tag, tmp);
 		}
 
 		caller_profile = caller_profile->next;

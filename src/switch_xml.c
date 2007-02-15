@@ -1223,9 +1223,12 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
     // parent character content up to this tag
     *s = switch_xml_ampencode(txt + start, xml->off - start, s, len, max, 0);
 
-    while (*len + strlen(xml->name) + 5 + (strlen(XML_INDENT) * (*count)) > *max) // reallocate s
+    while (*len + strlen(xml->name) + 5 + (strlen(XML_INDENT) * (*count)) + 1 > *max) // reallocate s
         *s = realloc(*s, *max += SWITCH_XML_BUFSIZE);
 
+	if (*(*s+(*len)-1) == '>') {
+		*len += sprintf(*s + *len, "\n"); // indent
+	}
 	for (lcount = 0; lcount < *count; lcount++) {
 		*len += sprintf(*s + *len, "%s", XML_INDENT); // indent
 	}
@@ -1253,7 +1256,7 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
         *len += sprintf(*s + *len, "\"");
     }
 
-    *len += sprintf(*s + *len, (xml->child || xml->txt) ? ">" : "/>\n");
+	*len += sprintf(*s + *len, (xml->child || xml->txt) ? ">" : "/>\n");
 
 	if (xml->child) {
 		(*count)++;
@@ -1268,9 +1271,11 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 
 
 	if (xml->child || xml->txt) {
-		//for (lcount = 0; lcount < *count; lcount++) {
-		//*len += sprintf(*s + *len, "%s", XML_INDENT); // indent
-		//}
+		if (*(*s+(*len)-1) == '\n') {
+			for (lcount = 0; lcount < *count; lcount++) {
+				*len += sprintf(*s + *len, "%s", XML_INDENT); // indent
+			}
+		}
 		*len += sprintf(*s + (*len), "</%s>\n", xml->name); // close tag
 	}
 
