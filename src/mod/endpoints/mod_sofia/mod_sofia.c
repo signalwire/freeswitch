@@ -1029,12 +1029,14 @@ static void do_invite(switch_core_session_t *session)
 		}
 
 		if (!tech_pvt->nh) {
+			char *url =  get_url_from_contact(tech_pvt->dest, 1);
 			tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
-									  NUTAG_URL(tech_pvt->dest),
+									  NUTAG_URL(url),
 									  SIPTAG_TO_STR(tech_pvt->dest_to),
 									  SIPTAG_FROM_STR(tech_pvt->from_str),
 									  SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 									  TAG_END());
+			switch_safe_free(url);
 
             if (!(tech_pvt->sofia_private = malloc(sizeof(*tech_pvt->sofia_private)))) {
                 abort();
@@ -3181,8 +3183,6 @@ static uint8_t handle_register(nua_t *nua,
 					display = "\"user\"";
 				}
 			}
-		} else {
-			display = "\"user\"";
 		}
 		
 		if (!port) {
