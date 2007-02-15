@@ -4980,6 +4980,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 				if (!(x_application = switch_xml_add_child_d(x_caller_extension, "application", app_off++))) {
 					goto error;
 				}
+				if (ap == caller_profile->caller_extension->current_application) {
+					switch_xml_set_attr_d(x_application, "last_executed", "true");
+				}
 				switch_xml_set_attr_d(x_application, "app_name", ap->application_name);
 				switch_xml_set_attr_d(x_application, "app_data", ap->application_data);
 			}
