@@ -4522,7 +4522,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 		const char *exit_sound	= switch_xml_attr(xml_menu,"exit-sound");		// if the attr doesn't exist, return NULL
 		const char *tts_engine	= switch_xml_attr(xml_menu,"tts-engine");		// if the attr doesn't exist, return NULL
 		const char *tts_voice		= switch_xml_attr(xml_menu,"tts-voice");		// if the attr doesn't exist, return NULL
-		const char *phrase_lang		= switch_xml_attr(xml_menu,"phrase_lang");		// if the attr doesn't exist, return NULL
+		const char *phrase_lang		= switch_xml_attr(xml_menu,"phrase-lang");		// if the attr doesn't exist, return NULL
 		const char *timeout		= switch_xml_attr_soft(xml_menu,"timeout");		// if the attr doesn't exist, return ""
 		const char *max_failures	= switch_xml_attr_soft(xml_menu,"max-failures");	// if the attr doesn't exist, return ""
 		switch_ivr_menu_t *menu	= NULL;
