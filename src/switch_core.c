@@ -1641,7 +1641,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 			switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_VARIABLE, switch_core_session_get_uuid(session));            
 
             /* A comma (,) separated list of variable names that should ne propagated from originator to originatee */
-			if ((export_vars = switch_channel_get_variable(channel, "export_vars"))) {
+			if ((export_vars = switch_channel_get_variable(channel, SWITCH_EXPORT_VARS_VARIABLE))) {
 				char *cptmp = switch_core_session_strdup(session, export_vars);
 				int argc;
 				char *argv[256];

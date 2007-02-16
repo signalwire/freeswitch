@@ -210,6 +210,43 @@ static void set_function(switch_core_session_t *session, char *data)
 	}
 }
 
+static void export_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+	char *exports, *new_exports = NULL, *new_exports_d = NULL, *var, *val = NULL;
+
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+	if (switch_strlen_zero(data)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
+	} else {
+		exports = switch_channel_get_variable(channel, SWITCH_EXPORT_VARS_VARIABLE);
+		var = switch_core_session_strdup(session, data);
+		val = strchr(var, '=');
+
+		if (val) {
+			*val++ = '\0';
+            if (switch_strlen_zero(val)) {
+                val = NULL;
+            }
+		}
+		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "EXPORT [%s]=[%s]\n", var, val ? val : "UNDEF");
+		switch_channel_set_variable(channel, var, val);
+
+		if (var && val) {
+			if (exports) {
+				new_exports_d = switch_mprintf("%s,%s", exports, var);
+				new_exports = new_exports_d;
+			} else {
+				new_exports = var;
+			}
+			switch_channel_set_variable(channel, SWITCH_EXPORT_VARS_VARIABLE, new_exports);
+			switch_safe_free(new_exports_d);
+		}
+	}
+}
 
 static void unset_function(switch_core_session_t *session, char *data)
 {
@@ -567,13 +604,22 @@ static const switch_application_interface_t set_application_interface = {
 	/*.next */ &unset_application_interface
 };
 
+static const switch_application_interface_t export_application_interface = {
+	/*.interface_name */ "export",
+	/*.application_function */ export_function,
+	/* long_desc */ "Set and export a channel varaible for the channel calling the application.",
+	/* short_desc */ "Export a channel varaible across a bridge",
+	/* syntax */ "<varname>=<value>",
+	/*.next */ &set_application_interface
+};
+
 static const switch_application_interface_t info_application_interface = {
 	/*.interface_name */ "info",
 	/*.application_function */ info_function,
 	/* long_desc */ "Display Call Info",
 	/* short_desc */ "Display Call Info",
 	/* syntax */ "",
-	/*.next */ &set_application_interface
+	/*.next */ &export_application_interface
 };
 
 static const switch_application_interface_t log_application_interface = {
