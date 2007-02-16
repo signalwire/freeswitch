@@ -1139,6 +1139,23 @@ static void PrintSupportedStandardSampleRates(const PaStreamParameters *inputPar
 }
 /*******************************************************************/
 
+static switch_status_t devlist(char **argv, int argc, switch_stream_handle_t *stream)
+{
+	int     i, numDevices;
+    const   PaDeviceInfo *deviceInfo;
+            
+    numDevices = Pa_GetDeviceCount();
+    if (numDevices < 0) {
+		return SWITCH_STATUS_SUCCESS;
+    }
+	for(i=0; i<numDevices; i++) {
+        deviceInfo = Pa_GetDeviceInfo(i);
+        stream->write_function(stream, "%d;%s;%d;%d\n", i, deviceInfo->name, deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
+	}
+
+    return SWITCH_STATUS_SUCCESS;
+}
+
 static int dump_info(void)
 {
     int     i, numDevices, defaultDisplayed;
@@ -1151,7 +1168,10 @@ static int dump_info(void)
 
     switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,  "PortAudio version number = %d\nPortAudio version text = '%s'\n",
                       Pa_GetVersion(), Pa_GetVersionText());
-
+	if (globals.audio_stream) {
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,  "ERROR: Cannot use this command this while a call is in progress\n");
+		return 0;
+	}
             
     numDevices = Pa_GetDeviceCount();
     if (numDevices < 0) {
@@ -1695,10 +1715,10 @@ static switch_status_t pa_cmd(char *cmd, switch_core_session_t *isession, switch
 {
     char *argv[1024] = {0};
     int argc = 0;
-    char *mycmd = NULL;
+    char *mycmd = NULL, *devname = NULL;
     switch_status_t status = SWITCH_STATUS_SUCCESS;
     pa_command_t func = NULL;
-    int lead = 1;
+    int lead = 1, devval = 0;
     const char *usage_string = "USAGE:\n"
         "--------------------------------------------------------------------------------\n"
         "pa help\n"
@@ -1710,6 +1730,10 @@ static switch_status_t pa_cmd(char *cmd, switch_core_session_t *isession, switch
         "pa switch [<call_id>|none]\n"
         "pa dtmf <digit string>\n"
         "pa flags [on|off] [ear] [mouth]\n"
+		"pa devlist\n"
+		"pa indev [#<num>|<partial name>\n"
+		"pa outdev [#<num>|<partial name>\n"
+		"pa ringdev [#<num>|<partial name>\n"
         "--------------------------------------------------------------------------------\n";
 
     if (switch_strlen_zero(cmd)) {
@@ -1732,6 +1756,8 @@ static switch_status_t pa_cmd(char *cmd, switch_core_session_t *isession, switch
     } else if (!strcasecmp(argv[0], "help")) {
         stream->write_function(stream, "%s", usage_string);
         goto done;
+    } else if (!strcasecmp(argv[0], "devlist")) {
+		func = devlist;
     } else if (!strcasecmp(argv[0], "dump")) {
         dump_info();
         goto done;
@@ -1747,12 +1773,50 @@ static switch_status_t pa_cmd(char *cmd, switch_core_session_t *isession, switch
         func = switch_call;
     } else if (!strcasecmp(argv[0], "dtmf")) {
         func = dtmf_call;
+	} else if (argv[1] && !strcmp(argv[0], "indev")) {
+		if (*argv[1] == '#') {
+			devval = get_dev_by_number(atoi(argv[1] + 1), 1);
+		} else {
+			devval = get_dev_by_name(argv[1], 1);
+		}
+		devname = "indev";
+		if (devval > 0) {
+			globals.indev = devval;
+		}
+	} else if (argv[1] && !strcmp(argv[0], "outdev")) {
+		if (*argv[1] == '#') {
+			devval = get_dev_by_number(atoi(argv[1] + 1), 0);
+		} else {
+			devval = get_dev_by_name(argv[1], 0);
+		}
+		devname = "outdev";
+		if (devval > 0)  {
+			globals.outdev = devval;
+		}
+	} else if (argv[1] && !strcmp(argv[0], "ringdev")) {
+		if (*argv[1] == '#') {
+			devval = get_dev_by_number(atoi(argv[1] + 1), 0);
+		} else {
+			devval = get_dev_by_name(argv[1], 0);
+		}
+		devname = "ringdev";
+		if (devval > 0) {
+			globals.ringdev = devval;
+		}
     }
     
     if (func) {
         status = func(&argv[lead], argc - lead, stream);
     } else {
-        stream->write_function(stream, "Unknown Command [%s]\n", argv[0]);
+		if (devname) {
+			if (devval > 0) {
+				stream->write_function(stream, "%s set to %d\n", devname, devval);
+			} else {
+				stream->write_function(stream, "%s not set (invalid value)\n", devname);
+			}
+		} else {
+			stream->write_function(stream, "Unknown Command [%s]\n", argv[0]);
+		}
     }
 
  done:
