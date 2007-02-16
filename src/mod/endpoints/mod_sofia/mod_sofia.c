@@ -803,7 +803,7 @@ static void tech_set_codecs(private_object_t *tech_pvt)
     } else {
         if (!(codec_string = switch_channel_get_variable(channel, "codec_string"))) {
 			if (tech_pvt->profile->codec_string) {
-				codec_string = switch_core_session_strdup(tech_pvt->session, tech_pvt->profile->codec_string);
+				codec_string = tech_pvt->profile->codec_string;
 			}
         }
         
@@ -821,12 +821,15 @@ static void tech_set_codecs(private_object_t *tech_pvt)
     }
 
 	if (codec_string) {
-        tech_pvt->profile->codec_order_last = switch_separate_string(codec_string, ',', tech_pvt->profile->codec_order, SWITCH_MAX_CODECS);
-		tech_pvt->num_codecs = switch_loadable_module_get_codecs_sorted(tech_pvt->codecs,
-																		SWITCH_MAX_CODECS,
-																		tech_pvt->profile->codec_order,
-																		tech_pvt->profile->codec_order_last);
-		
+		char *tmp_codec_string;
+		if ((tmp_codec_string = strdup(codec_string))) {
+			tech_pvt->profile->codec_order_last = switch_separate_string(tmp_codec_string, ',', tech_pvt->profile->codec_order, SWITCH_MAX_CODECS);
+			tech_pvt->num_codecs = switch_loadable_module_get_codecs_sorted(tech_pvt->codecs,
+																			SWITCH_MAX_CODECS,
+																			tech_pvt->profile->codec_order,
+																			tech_pvt->profile->codec_order_last);
+			free(tmp_codec_string);
+		}
 	} else {
 		tech_pvt->num_codecs = switch_loadable_module_get_codecs(switch_core_session_get_pool(tech_pvt->session), tech_pvt->codecs,
 																 sizeof(tech_pvt->codecs) / sizeof(tech_pvt->codecs[0]));
