@@ -234,7 +234,7 @@ static void socket_function(switch_core_session_t *session, char *data)
     
     if (switch_test_flag(listener, LFLAG_ASYNC)) {
         launch_listener_thread(listener);
-        switch_ivr_park(session);
+        switch_ivr_park(session, NULL);
     } else {
         listener_run(NULL, (void*) listener);
     }
