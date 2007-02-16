@@ -3499,19 +3499,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(switch_hash_t *hash)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup(switch_hash_t *hash, char *key, void *data)
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup(switch_hash_t *hash, const char *key, const void *data)
 {
 	apr_hash_set(hash, switch_core_strdup(apr_hash_pool_get(hash), key), APR_HASH_KEY_STRING, data);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_hash_insert(switch_hash_t *hash, char *key, void *data)
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert(switch_hash_t *hash, const char *key, const void *data)
 {
 	apr_hash_set(hash, key, APR_HASH_KEY_STRING, data);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(switch_hash_t *hash, char *key)
+SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(switch_hash_t *hash, const char *key)
 {
 	apr_hash_set(hash, key, APR_HASH_KEY_STRING, NULL);
 	return SWITCH_STATUS_SUCCESS;
@@ -4114,8 +4114,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 		
 		if ((settings = switch_xml_child(cfg, "settings"))) {
 			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
-				char *var = (char *) switch_xml_attr_soft(param, "name");
-				char *val = (char *) switch_xml_attr_soft(param, "value");
+				const char *var = switch_xml_attr_soft(param, "name");
+				const char *val = switch_xml_attr_soft(param, "value");
 				
 				if (!strcasecmp(var, "max-sessions")) {
 					runtime.session_limit = atoi(val);
@@ -4125,8 +4125,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 
 		if ((settings = switch_xml_child(cfg, "variables"))) {
 			for (param = switch_xml_child(settings, "variable"); param; param = param->next) {
-				char *var = (char *) switch_xml_attr_soft(param, "name");
-				char *val = (char *) switch_xml_attr_soft(param, "value");
+				const char *var = switch_xml_attr_soft(param, "name");
+				const char *val = switch_xml_attr_soft(param, "value");
 				char *varr = NULL, *vall = NULL;
 
 				varr = switch_core_strdup(runtime.memory_pool, var);

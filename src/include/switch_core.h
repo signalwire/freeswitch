@@ -861,7 +861,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(switch_hash_t *hash);
   \return SWITCH_STATUS_SUCCESS if the data is added
   \note the string key must be a constant or a dynamic string
 */
-SWITCH_DECLARE(switch_status_t) switch_core_hash_insert(switch_hash_t *hash, char *key, void *data);
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert(switch_hash_t *hash, const char *key, const void *data);
 
 /*! 
   \brief Insert data into a hash with dynamicly allocated key name
@@ -870,7 +870,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert(switch_hash_t *hash, cha
   \param data the data to add
   \return SWITCH_STATUS_SUCCESS if the data is added
 */
-SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup(switch_hash_t *hash, char *key, void *data);
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup(switch_hash_t *hash, const char *key, const void *data);
 
 /*! 
   \brief Delete data from a hash based on desired key
@@ -878,7 +878,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup(switch_hash_t *hash,
   \param key the key from which to delete the data
   \return SWITCH_STATUS_SUCCESS if the data is deleted
 */
-SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(switch_hash_t *hash, char *key);
+SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(switch_hash_t *hash, const char *key);
 
 /*! 
   \brief Retrieve data from a given hash
