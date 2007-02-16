@@ -143,7 +143,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session)
+SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, switch_input_args_t *args)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *channel;
@@ -177,11 +177,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session)
 			if (switch_channel_has_dtmf(channel)) {
                 char dtmf[128];
                 switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
+				if (args && args->input_callback) {
+					if ((status = args->input_callback(session, dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen)) != SWITCH_STATUS_SUCCESS) {
+						break;
+					}
+				}
             }
 
             if (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
-                switch_channel_event_set_data(channel, event);
-                switch_event_fire(&event);
+				if (args && args->input_callback) {
+					if ((status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen)) != SWITCH_STATUS_SUCCESS) {
+						break;
+					}
+				} else {
+					switch_channel_event_set_data(channel, event);
+					switch_event_fire(&event);
+				}
             }
         }
 		

@@ -34,7 +34,7 @@ static const char modname[] = "mod_park";
 
 static void park_function(switch_core_session_t *session, char *data)
 {
-	switch_ivr_park(session);
+	switch_ivr_park(session, NULL);
 	
 }
 

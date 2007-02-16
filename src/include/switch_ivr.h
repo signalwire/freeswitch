@@ -77,7 +77,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session, uint32_t ms);
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, switch_input_args_t *args);
 
 /*!
   \brief Wait for DTMF digits calling a pluggable callback function when digits are collected.
