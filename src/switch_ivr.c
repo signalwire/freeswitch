@@ -4669,7 +4669,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	switch_xml_t cfg, xml = NULL, language, macros, macro, input, action;
     char *lname = NULL, *mname = NULL, hint_data[1024] = "", enc_hint[1024] = "";
     switch_status_t status = SWITCH_STATUS_GENERR;
-    char *old_sound_prefix = NULL, *sound_path = NULL, *tts_engine = NULL, *tts_voice = NULL;
+    char *old_sound_prefix = NULL, *sound_path = NULL, *tts_engine = NULL, *tts_voice = NULL, *chan_lang = NULL; 
     switch_channel_t *channel;
     uint8_t done = 0;
 
@@ -4682,15 +4682,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	}
 
 	if (!lang) {
-		lang = "en";
-	}
+        chan_lang = switch_channel_get_variable(channel, "default_language");
+        if (!chan_lang) {
+            chan_lang = "en";
+        } 
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No language specified - Using [%s]\n", chan_lang);
+	} else {
+        chan_lang = lang;
+    }
 
 	if (!data) {
 		data = "";
 	}
 
     switch_url_encode(data, enc_hint, sizeof(enc_hint));
-    snprintf(hint_data, sizeof(hint_data), "macro_name=%s&lang=%s&data=%s", macro_name, lang, enc_hint);
+    snprintf(hint_data, sizeof(hint_data), "macro_name=%s&lang=%s&data=%s", macro_name, chan_lang, enc_hint);
     
 	if (switch_xml_locate("phrases", NULL, NULL, NULL, &xml, &cfg, hint_data) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of phrases failed.\n");
@@ -4708,14 +4714,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
     }
 
     while(language) {
-        if ((lname = (char *) switch_xml_attr(language, "name")) && !strcasecmp(lname, lang)) {
+        if ((lname = (char *) switch_xml_attr(language, "name")) && !strcasecmp(lname, chan_lang)) {
             break;
         }
         language = language->next;
     }
 
     if (!language) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "can't find language %s.\n", lang);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "can't find language %s.\n", chan_lang);
         goto done;
     }
 
@@ -4797,7 +4803,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
                         odata = expanded;
                     }
                     
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Handle %s:[%s] (%s)\n", func, odata, lang);
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Handle %s:[%s] (%s)\n", func, odata, chan_lang);
 
                     if (!strcasecmp(func, "play-file")) {
                         status = switch_ivr_play_file(session, NULL, odata, args);
@@ -4808,13 +4814,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 
                     } else if (!strcasecmp(func, "say")) {
                         switch_say_interface_t *si;
-                        if ((si = switch_loadable_module_get_say_interface(lang))) {
+                        if ((si = switch_loadable_module_get_say_interface(chan_lang))) {
                             char *say_type = (char *) switch_xml_attr_soft(action, "type");
                             char *say_method = (char *) switch_xml_attr_soft(action, "method");
                             
                             status = si->say_function(session, odata, get_say_type_by_name(say_type), get_say_method_by_name(say_method), args);
                         } else {
-                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid SAY Interface [%s]!\n", lang);
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid SAY Interface [%s]!\n", chan_lang);
                         }
                     } else if (!strcasecmp(func, "speak-text")) {
                         switch_codec_t *read_codec;
