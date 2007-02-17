@@ -323,7 +323,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
  done:
 
 	if (status != SWITCH_STATUS_SUCCESS) {
-		rtp_session->ready = NULL;
+		rtp_session->ready = 0;
 	}
 
 	if (new_sock) {
