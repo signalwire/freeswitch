@@ -59,14 +59,6 @@
 #ifdef HAVE_MMAP
 #include <sys/mman.h>
 #endif
-#ifdef WIN32
-#ifndef S_IRUSR
-#define S_IRUSR _S_IREAD
-#endif
-#ifndef S_IWUSR
-#define S_IWUSR _S_IWRITE
-#endif
-#endif
 
 #define SWITCH_XML_WS   "\t\r\n "  // whitespace
 #define SWITCH_XML_ERRL 128        // maximum error string length

@@ -29,8 +29,8 @@
  * mod_xml_cdr.c -- XML CDR Module
  *
  */
+#include <sys/stat.h>
 #include <switch.h>
-
 
 static const char modname[] = "mod_xml_cdr";
 
@@ -55,13 +55,17 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 		if ((path = switch_mprintf("%s/xml_cdr/%s.cdr.xml", logdir, uuid_str))) {
 			if ((xml_text = switch_xml_toxml(cdr))) {
 				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC,  S_IRUSR | S_IWUSR)) > -1) {
-					write(fd, header, strlen(header));
-					write(fd, xml_text, strlen(xml_text));
+					write(fd, header, (unsigned)strlen(header));
+					write(fd, xml_text, (unsigned)strlen(xml_text));
 					close(fd);
 					fd = -1;
 				} else {
 					char ebuf[512] = {0};
+#ifdef WIN32
+					strerror_s(ebuf, sizeof(ebuf), errno);
+#else
 					strerror_r(errno, ebuf, sizeof(ebuf));
+#endif
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error![%s]\n", ebuf);
 				}
 				free(xml_text);
