@@ -4007,7 +4007,7 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 #else
 #ifdef WIN32
 	GetTempPath(dwBufSize, lpPathBuffer);
-	if (!SWITCH_GLOBAL_dirs.temp_dir && (SWITCH_GLOBAL_dirs.htdocs_dir = (char *) malloc(BUFSIZE))) {
+	if (!SWITCH_GLOBAL_dirs.temp_dir && (SWITCH_GLOBAL_dirs.temp_dir = (char *) malloc(BUFSIZE))) {
 		snprintf(SWITCH_GLOBAL_dirs.temp_dir, BUFSIZE, "%s", lpPathBuffer);
 	}
 #else
