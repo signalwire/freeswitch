@@ -33,8 +33,6 @@
  * @date Wed Mar 21 19:12:13 2001 ppessi
  */
 
-#include "config.h"
-
 #include <stdio.h>
 #include <sofia-sip/string0.h>
 #include <stddef.h>

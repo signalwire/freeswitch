@@ -133,8 +133,6 @@ int test_register_to_proxy(struct context *ctx)
 	   NUTAG_KEEPALIVE(1000),
 	   NUTAG_M_DISPLAY("A&A"),
 	   NUTAG_M_USERNAME("a"),
-	   NUTAG_M_PARAMS("foo=bar"),
-	   NUTAG_M_FEATURES("q=0.9"),
 	   SIPTAG_CSEQ(cseq),
 	   TAG_END());
   run_a_until(ctx, -1, save_until_final_response);
@@ -144,7 +142,6 @@ int test_register_to_proxy(struct context *ctx)
   TEST_1(sip = sip_object(e->data->e_msg));
   TEST(e->data->e_status, 401);
   TEST(sip->sip_status->st_status, 401);
-  /* Check that CSeq included in tags is actually used in the request */
   TEST(sip->sip_cseq->cs_seq, 13);
   TEST_1(!sip->sip_contact);
   TEST_1(!e->next);
@@ -163,8 +160,6 @@ int test_register_to_proxy(struct context *ctx)
     /* VC does not dig \" with TEST_S() */
   TEST_S(sip->sip_contact->m_display, expect_m_display); }
   TEST_S(sip->sip_contact->m_url->url_user, "a");
-  TEST_1(strstr(sip->sip_contact->m_url->url_params, "foo=bar"));
-  TEST_S(sip->sip_contact->m_q, "0.9");
   TEST(sip->sip_cseq->cs_seq, 14);
 
   if (ctx->nat) {
@@ -226,12 +221,8 @@ int test_register_to_proxy(struct context *ctx)
   TEST_1(c_reg->nh = nua_handle(c->nua, c_reg, TAG_END()));
 
   REGISTER(c, c_reg, c_reg->nh, SIPTAG_TO(c->to), 
-	   NUTAG_OUTBOUND(NULL),
 	   NUTAG_M_DISPLAY("C"),
 	   NUTAG_M_USERNAME("c"),
-	   NUTAG_M_PARAMS("c=1"),
-	   NUTAG_M_FEATURES("q=0.987;expires=5"),
-	   NUTAG_CALLEE_CAPS(1),
 	   SIPTAG_EXPIRES_STR("5"), /* Test 423 negotiation */
 	   TAG_END());
   run_abc_until(ctx, -1, save_events, -1, save_events, 
@@ -262,9 +253,6 @@ int test_register_to_proxy(struct context *ctx)
   TEST_1(sip->sip_contact);
   TEST_S(sip->sip_contact->m_display, "C");
   TEST_S(sip->sip_contact->m_url->url_user, "c");
-  TEST_1(strstr(sip->sip_contact->m_url->url_params, "c=1"));
-  TEST_S(sip->sip_contact->m_q, "0.987");
-  TEST_1(msg_header_find_param(sip->sip_contact->m_common, "methods="));
   TEST_1(!e->next);
   free_events_in_list(ctx, c->events);
 
@@ -361,7 +349,7 @@ int test_register_to_c(struct context *ctx)
   sip_t const *sip;
 
   if (print_headings)
-    printf("TEST NUA-2.6.1: REGISTER b to c\n");
+    printf("TEST NUA-2.3.2: REGISTER b to c\n");
 
   nua_set_params(ctx->c.nua,
 		 NUTAG_ALLOW("REGISTER"),
@@ -384,6 +372,9 @@ int test_register_to_c(struct context *ctx)
   TEST_1(sip = sip_object(e->data->e_msg));
   TEST_1(!sip->sip_contact);
 
+  if (print_headings)
+    printf("TEST NUA-2.6.1: PASSED\n");
+
   free_events_in_list(ctx, b->events);
   nua_handle_destroy(b_call->nh), b_call->nh = NULL;
 
@@ -397,7 +388,7 @@ int test_register_to_c(struct context *ctx)
   nua_handle_destroy(c_call->nh), c_call->nh = NULL;
 
   if (print_headings)
-    printf("TEST NUA-2.6.1: PASSED\n");
+    printf("TEST NUA-2.3.4: PASSED\n");
 
   END();
 }
@@ -561,8 +552,7 @@ int test_nat_timeout(struct context *ctx)
 
   BEGIN();
 
-  struct endpoint *a = &ctx->a,  *b = &ctx->b;
-  struct call *a_call = a->call, *b_call = b->call;
+  struct endpoint *a = &ctx->a,  *b = &ctx->b, *c = &ctx->c;
   struct event *e;
   sip_t const *sip;
 
@@ -596,38 +586,7 @@ int test_nat_timeout(struct context *ctx)
   if (print_headings)
     printf("TEST NUA-2.5.1: PASSED\n");
   
-  if (print_headings)
-    printf("TEST NUA-2.5.2: OPTIONS from B to A\n");
-
-  TEST_1(b_call->nh = nua_handle(b->nua, b_call, SIPTAG_TO(a->to), TAG_END()));
-
-  OPTIONS(b, b_call, b_call->nh, TAG_END());
-
-  run_ab_until(ctx, -1, save_until_received,
-	       -1, save_until_final_response);
-
-  /* Client events: nua_options(), nua_r_options */
-  TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_r_options);
-  TEST(e->data->e_status, 200);
-  TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip->sip_allow); TEST_1(sip->sip_accept); TEST_1(sip->sip_supported);
-  /* TEST_1(sip->sip_content_type); */
-  /* TEST_1(sip->sip_payload); */
-  TEST_1(!e->next);
-
-  free_events_in_list(ctx, b->events);
-  nua_handle_destroy(b_call->nh), b_call->nh = NULL;
-
-  /* Server events: nua_i_options */
-  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_i_options);
-  TEST(e->data->e_status, 200);
-  TEST_1(!e->next);
-
-  free_events_in_list(ctx, a->events);
-  nua_handle_destroy(a_call->nh), a_call->nh = NULL;
-
-  if (print_headings)
-    printf("TEST NUA-2.5.2: PASSED\n");
+  (void)b; (void)c; (void)sip;
 
   END();
 }
@@ -699,7 +658,6 @@ int test_unregister(struct context *ctx)
   UNREGISTER(c, c->call, c->call->nh, SIPTAG_TO(c->to), 
 	     NUTAG_M_DISPLAY("C"),
 	     NUTAG_M_USERNAME("c"),
-	     NUTAG_M_PARAMS("c=1"),
 	     TAG_END());
   run_c_until(ctx, -1, save_until_final_response);
 

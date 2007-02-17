@@ -65,7 +65,7 @@ int diff(const char *olds, const char *news, int *linep, int *pos)
   return *o != *n;
 }
 
-int test_msg_class(msg_mclass_t const *mc)
+int test_msg_class(msg_mclass_t *mc)
 {
   int i, j, N;
 
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
   int m, tcp;
   sip_t *sip;
   int exitcode = 0; 
-  msg_mclass_t const *sip_mclass = sip_default_mclass();
+  msg_mclass_t *sip_mclass = sip_default_mclass();
   msg_t *msg = msg_create(sip_mclass, MSG_FLG_EXTRACT_COPY);
   msg_iovec_t iovec[1];
 

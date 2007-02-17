@@ -230,7 +230,7 @@ int tport_recv_stream(tport_t *self)
   }
   if (N == -1) {
     err = su_errno();
-    SU_DEBUG_1(("%s(%p): su_getmsgsize(): %s (%d)\n", __func__, (void *)self,
+    SU_DEBUG_1(("%s(%p): su_getmsgsize(): %s (%d)\n", __func__, self,
 		su_strerror(err), err));
     return -1;
   }

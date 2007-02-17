@@ -654,7 +654,7 @@ int readfile(FILE *f, void **contents)
 
   *contents = buffer;
 
-  return (int)len;
+  return len;
 }
 
 #if HAVE_DIRENT_H

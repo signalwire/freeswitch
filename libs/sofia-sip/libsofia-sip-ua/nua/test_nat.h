@@ -31,7 +31,6 @@
 SOFIA_BEGIN_DECLS
 
 struct nat;
-struct nat_filter;
 
 struct nat *test_nat_create(su_root_t *, int family, 
 			    tag_type_t, tag_value_t, ...);
@@ -42,16 +41,6 @@ int test_nat_private(struct nat *nat, void *address, socklen_t *return_addrlen);
 int test_nat_public(struct nat *nat, void const *address, int addrlen);
 
 int test_nat_flush(struct nat *nat);
-
-struct nat_filter *test_nat_add_filter(struct nat *nat,
-				       size_t (*condition)(void *message,
-							   size_t len),
-				       int outbound);
-
-enum { nat_inbound, nat_outbound };
-
-int test_nat_remove_filter(struct nat *nat,
-			   struct nat_filter *filter);
 
 /* Tags */
 

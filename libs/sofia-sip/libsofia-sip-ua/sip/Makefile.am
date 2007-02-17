@@ -100,7 +100,7 @@ EXTRA_DIST =		Doxyfile sip.docs sip_parser.docs sip.doxyaliases \
 # ----------------------------------------------------------------------
 # Sofia specific rules
 
-include $(top_srcdir)/rules/sofia.am
+include ../sofia.am
 
 MSG_PARSER_AWK = $(srcdir)/../msg/msg_parser.awk
 

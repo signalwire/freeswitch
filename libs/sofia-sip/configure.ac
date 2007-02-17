@@ -11,14 +11,14 @@ dnl information on the package
 dnl ---------------------------
 
 dnl update both the version for AC_INIT and the LIBSOFIA_SIP_UA_MAJOR_MINOR
-AC_INIT([sofia-sip], [1.12.5work])
+AC_INIT([sofia-sip], [1.12.4work])
 AC_CONFIG_SRCDIR([libsofia-sip-ua/sip/sofia-sip/sip.h])
 AC_SUBST(VER_LIBSOFIA_SIP_UA_MAJOR_MINOR, [1.12])
 dnl Includedir specific to this sofia version
 AC_SUBST(include_sofiadir, '${includedir}/sofia-sip-1.12')
-AC_SUBST(LIBVER_SOFIA_SIP_UA_CUR, [4])
+AC_SUBST(LIBVER_SOFIA_SIP_UA_CUR, [3])
 AC_SUBST(LIBVER_SOFIA_SIP_UA_REV, [0])
-AC_SUBST(LIBVER_SOFIA_SIP_UA_AGE, [4])
+AC_SUBST(LIBVER_SOFIA_SIP_UA_AGE, [3])
 AC_SUBST(LIBVER_SOFIA_SIP_UA_SOVER, [0]) # CUR-AGE
 AC_SUBST(LIBVER_SOFIA_SIP_UA_GLIB_CUR, [3])
 AC_SUBST(LIBVER_SOFIA_SIP_UA_GLIB_REV, [0])
@@ -83,15 +83,6 @@ elif test x${HAVE_OPENSSL} != x1 ; then
 else
   AC_DEFINE([HAVE_SOFIA_STUN], 1, [Define to 1 if we use STUN library])
 fi
-AM_CONDITIONAL([HAVE_STUN], [test "x$enable_stun" = xyes])
-
-AC_ARG_ENABLE(nth,
-[  --disable-nth              disable nth and http modules (enabled)],
- , enable_nth=yes)
-AM_CONDITIONAL([HAVE_NTH], [test "x$enable_nth" = xyes])
-if test x$enable_nth = xyes ; then
-  AC_DEFINE([HAVE_SOFIA_NTH], 1, [Define to 1 if we use NTH library])
-fi
 
 dnl Disable NTLM support by default
 AC_ARG_ENABLE(ntlm,
@@ -113,6 +104,10 @@ AC_HEADER_STDC
 
 ### checks for declarations
 ### -----------------------
+AC_CHECK_DECL([SIGPIPE], [
+AC_DEFINE([HAVE_SIGPIPE], 1, [Define to 1 if you have SIGPIPE])],,[
+#include <signal.h>
+])
 
 ### checks for types
 ### ----------------

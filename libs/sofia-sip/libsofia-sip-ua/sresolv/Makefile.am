@@ -61,5 +61,4 @@ dist_noinst_DATA = run_test_sresolv \
 # ----------------------------------------------------------------------
 # Sofia specific rules
 
-include $(top_srcdir)/rules/sofia.am
-
+include ../sofia.am

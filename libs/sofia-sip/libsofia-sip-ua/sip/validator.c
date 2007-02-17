@@ -180,7 +180,7 @@ char *lastpart(char *path)
     return path;
 }
 
-msg_mclass_t const *mclass = NULL;
+msg_mclass_t *mclass = NULL;
 
 int validate_file(int fd, char const *name, context_t *ctx);
 int validate_dump(char *, off_t, context_t *ctx);

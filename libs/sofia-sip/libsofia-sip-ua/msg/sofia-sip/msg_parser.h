@@ -56,8 +56,7 @@ SOFIA_BEGIN_DECLS
  * 1) Header class definitions.
  */
 
-/* Do not use keywords until you fix msg_kind_foo_critical thing! */ \
-#if HAVE_STRUCT_KEYWORDS && 0
+#if HAVE_STRUCT_KEYWORDS
 /** Define a header class */
 #define MSG_HEADER_CLASS(pr, c, l, s, params, kind, dup, upd)	\
   {{								\
@@ -75,7 +74,6 @@ SOFIA_BEGIN_DECLS
     hc_kind:	msg_kind_##kind,				\
   }}
 #else
-/** Define a header class */
 #define MSG_HEADER_CLASS(pr, c, l, s, params, kind, dup, upd)	\
   {{ \
      pr##c##_hash, \

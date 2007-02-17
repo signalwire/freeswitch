@@ -63,4 +63,4 @@ EXTRA_DIST =		Doxyfile nth.docs $(BUILT_SOURCES) \
 # ----------------------------------------------------------------------
 # Sofia specific rules
 
-include $(top_srcdir)/rules/sofia.am
+include ../sofia.am

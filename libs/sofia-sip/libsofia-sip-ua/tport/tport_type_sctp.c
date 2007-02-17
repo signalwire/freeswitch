@@ -37,6 +37,8 @@
 
 #include "config.h"
 
+#if HAVE_SCTP
+
 #include "tport_internal.h"
 
 #if HAVE_NETINET_SCTP_H
@@ -73,8 +75,6 @@ typedef struct tport_sctp_t
 } tport_sctp_t;
 
 #define TP_SCTP_MSG_MAX (65536)
-
-#if HAVE_SCTP
 
 static int tport_sctp_init_primary(tport_primary_t *, 
 				   tp_name_t tpn[1], 

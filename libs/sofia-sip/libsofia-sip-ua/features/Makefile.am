@@ -31,5 +31,4 @@ EXTRA_DIST =		Doxyfile features.docs
 # ----------------------------------------------------------------------
 # Sofia specific rules
 
-include $(top_srcdir)/rules/sofia.am
-
+include ../sofia.am

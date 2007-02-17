@@ -412,12 +412,7 @@ int test_basic(void)
     TEST_1(sip_from_tag(home, f, "tag=jxahudsf") == 0);
     su_free(home, f);
 
-    TEST_1(f = sip_from_create(home, (void *)"<sip:joe@bar;tag=bar> (joe)"));
-    TEST_1(sip_is_from((sip_header_t*)f));
-    su_free(home, f);
-
     TEST_1(t = sip_to_create(home, (void *)"<sip:joe@bar;tag=bar> (joe)"));
-    TEST_1(sip_is_to((sip_header_t*)f));
     TEST_1(sip_to_tag(home, t, "tag=jxahudsf") == 0);
     TEST_S(t->a_tag, "jxahudsf");
     TEST(msg_header_replace_param(home, t->a_common, "tag=bar"), 1);
@@ -1658,11 +1653,7 @@ static int sip_header_test(void)
   TEST(count(sip->sip_content_type->c_common), 1);
   TEST(count(sip->sip_route->r_common), 0);
   TEST(count(sip->sip_record_route->r_common), 4);
-#if SU_HAVE_EXPERIMENTAL
   TEST(count(sip->sip_unknown->un_common), 2);
-#else
-  TEST(count(sip->sip_unknown->un_common), 4);
-#endif
   TEST(count(sip->sip_error->er_common), 1);
   TEST(count(sip->sip_max_forwards->mf_common), 1);
   TEST(count(sip->sip_min_expires->me_common), 1);
@@ -1676,7 +1667,6 @@ static int sip_header_test(void)
   TEST(sip->sip_max_forwards->mf_count, 12);
   TEST(sip->sip_min_expires->me_delta, 150);
 
-#if SU_HAVE_EXPERIMENTAL
   {
     sip_suppress_body_if_match_t *sbim;
     sip_suppress_notify_if_match_t *snim;
@@ -1693,7 +1683,6 @@ static int sip_header_test(void)
     TEST_SIZE(offsetof(msg_generic_t, g_value),
 	      offsetof(sip_suppress_notify_if_match_t, snim_tag));
   }
-#endif
 
   TEST_1(sip->sip_from->a_display);
   TEST_S(sip->sip_from->a_display, "h");

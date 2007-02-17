@@ -174,7 +174,7 @@ SOFIAPUBFUN void    tl_vfree(tagi_t *t);
 #if SU_HAVE_INLINE
 su_inline tag_value_t tag_int_v(int v) { return (tag_value_t)v; }
 su_inline tag_value_t tag_int_vr(int *vp) { return (tag_value_t)vp; }
-su_inline tag_value_t tag_uint_v(unsigned v) { return (tag_value_t)v; }
+su_inline tag_value_t tag_uint_v(size_t v) { return (tag_value_t)v; }
 su_inline tag_value_t tag_uint_vr(unsigned *vp) { return (tag_value_t)vp; }
 su_inline tag_value_t tag_usize_v(usize_t v) { return (tag_value_t)v; }
 su_inline tag_value_t tag_usize_vr(usize_t *vp) { return (tag_value_t)vp; }

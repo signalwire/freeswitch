@@ -91,8 +91,6 @@ struct nat {
 
   struct binding *bindings;
 
-  struct nat_filter *in_filters, *out_filters;
-
   /* True if we act in symmetric way */
   int symmetric;
   /* True if we do logging */
@@ -154,14 +152,6 @@ static int tcp_in_to_out(struct nat *, su_wait_t *wait, struct binding *);
 static int tcp_out_to_in(struct nat *, su_wait_t *wait, struct binding *);
 
 static int invalidate_binding(struct binding *b);
-
-LIST_PROTOS(static, nat_filter, struct nat_filter);
-
-struct nat_filter
-{
-  struct nat_filter *next, **prev;
-  size_t (*condition)(void *message, size_t len);
-};
 
 /* nat entry point */
 static int
@@ -680,35 +670,19 @@ static int udp_in_to_out(struct nat *nat, su_wait_t *wait, struct binding *b)
 {
   int events;
   ssize_t n, m;
-  size_t len, filtered;
-  struct nat_filter *f;
 
   events = su_wait_events(wait, b->in_socket);
 
   n = su_recv(b->in_socket, nat->buffer, sizeof nat->buffer, 0);
-  if (n == -1) {
+  if (n < 0) {
     su_perror("udp_in_to_out: recv");
     return 0;
   }
 
-  len = (size_t)n;
-
-  for (f = nat->out_filters; f; f = f->next) {
-    filtered = f->condition(nat->buffer, len);
-    if (filtered != len) {
-      if (nat->logging)
-	printf("nat: udp filtered "MOD_ZU" from %s => "MOD_ZU" to %s\n",
-	       len, b->in_name, filtered, b->out_name);
-      if (filtered == 0)
-	return 0;
-      len = filtered;
-    }
-  }
-
   if (nat->symmetric)
-    m = su_send(b->out_socket, nat->buffer, len, 0);
+    m = su_send(b->out_socket, nat->buffer, n, 0);
   else
-    m = su_sendto(b->out_socket, nat->buffer, len, 0,
+    m = su_sendto(b->out_socket, nat->buffer, n, 0,
 		  nat->out_address, nat->out_addrlen);
 
   if (nat->logging)
@@ -722,8 +696,6 @@ static int udp_out_to_in(struct nat *nat, su_wait_t *wait, struct binding *b)
 {
   int events;
   ssize_t n, m;
-  size_t len, filtered;
-  struct nat_filter *f;
 
   events = su_wait_events(wait, b->out_socket);
 
@@ -731,20 +703,6 @@ static int udp_out_to_in(struct nat *nat, su_wait_t *wait, struct binding *b)
   if (n < 0) {
     su_perror("udp_out_to_out: recv");
     return 0;
-  }
-
-  len = (size_t)n;
-
-  for (f = nat->in_filters; f; f = f->next) {
-    filtered = f->condition(nat->buffer, len);
-    if (filtered != len) {
-      if (nat->logging)
-	printf("nat: udp filtered "MOD_ZU" from %s => "MOD_ZU" to %s\n",
-	       len, b->out_name, filtered, b->in_name);
-      if (filtered == 0)
-	return 0;
-      len = filtered;
-    }
   }
 
   m = su_send(b->in_socket, nat->buffer, n, 0);
@@ -922,74 +880,5 @@ static int invalidate_binding(struct binding *b)
   if (nat->logging)
     printf("nat: flushed binding %s <=> %s\n", b->in_name, b->out_name);
 
-  return 0;
-}
-
-LIST_BODIES(static, nat_filter, struct nat_filter, next, prev);
-
-struct args {
-  struct nat *nat;
-  struct nat_filter *f;
-  int outbound;
-};
-
-int execute_nat_filter_insert(void *_args)
-{
-  struct args *a = (struct args *)_args;
-  if (a->outbound)
-    nat_filter_insert(&a->nat->out_filters, a->f);
-  else
-    nat_filter_insert(&a->nat->in_filters, a->f);
-  return 0;
-}
-
-int execute_nat_filter_remove(void *_args)
-{
-  struct args *a = (struct args *)_args;
-  nat_filter_remove(a->f);
-  return 0;
-}
-
-struct nat_filter *test_nat_add_filter(struct nat *nat,
-				       size_t (*condition)(void *message,
-							   size_t len),
-				       int outbound)
-{
-  struct args a[1];
-
-  if (nat == NULL)
-    return su_seterrno(EFAULT), NULL;
-
-  a->nat = nat;
-  a->f = su_zalloc(nat->home, sizeof *a->f);
-  a->outbound = outbound;
-
-  if (a->f) {
-    a->f->condition = condition;
-    if (su_task_execute(su_clone_task(nat->clone),
-			execute_nat_filter_insert, a, NULL) < 0)
-      su_free(nat->home, a->f), a->f = NULL;
-  }
-
-  return a->f;
-}
-
-
-int test_nat_remove_filter(struct nat *nat,
-			   struct nat_filter *filter)
-{
-  struct args a[1];
-
-  if (nat == NULL)
-    return su_seterrno(EFAULT);
-
-  a->nat = nat;
-  a->f = filter;
-  
-  if (su_task_execute(su_clone_task(nat->clone),
-		      execute_nat_filter_remove, a, NULL) < 0)
-    return -1;
-
-  su_free(nat->home, filter);
   return 0;
 }

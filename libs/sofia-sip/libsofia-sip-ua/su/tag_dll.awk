@@ -110,11 +110,6 @@ HEADER {
   print "" > DLL;
 }
 
-/SU_HAVE_EXPERIMENTAL/ { 
-  print $0 > REF; 
-  print $0 > DLL; 
-}
-
 !DEFS && /^tag_typedef_t/ { DEFS = 1; }
 
 DEFS && /tag_typedef_t/ {

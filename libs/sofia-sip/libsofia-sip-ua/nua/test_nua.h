@@ -126,13 +126,9 @@ struct context
   int threading, proxy_tests, expensive, quit_on_single_failure, osx_runloop;
   char const *external_proxy;
 
-  int proxy_logging;
-
   struct endpoint {
     char name[4];
     struct context *ctx;	/* Backpointer */
-
-    int logging;
 
     int running;
 
@@ -141,10 +137,6 @@ struct context
     nua_t *nua;
     sip_contact_t *contact;
     sip_from_t *to;
-
-    sip_allow_t *allow;
-    char const *appl_method;
-    sip_supported_t *supported;
 
     printer_function *printer;
 
@@ -166,11 +158,12 @@ struct context
     struct eventlist specials[1];
 
     /* State flags for complex scenarios */
-    struct {
+    union {
+      struct {
+	unsigned bit0:1, bit1:1, bit2:1, bit3:1;
+	unsigned bit4:1, bit5:1, bit6:1, bit7:1;
+      } b;
       unsigned n;
-      unsigned bit0:1, bit1:1, bit2:1, bit3:1;
-      unsigned bit4:1, bit5:1, bit6:1, bit7:1;
-      unsigned :0;
     } flags;
 
   } a, b, c;
@@ -192,9 +185,6 @@ int save_event_in_list(struct context *,
 		       struct call *);
 void free_events_in_list(struct context *,
 			 struct eventlist *);
-void free_event_in_list(struct context *ctx,
-			struct eventlist *list,
-			struct event *e);
 
 #define CONDITION_PARAMS			\
   nua_event_t event,				\
@@ -214,9 +204,6 @@ int save_until_special(CONDITION_PARAMS);
 int until_terminated(CONDITION_PARAMS);
 int until_ready(CONDITION_PARAMS);
 int accept_call(CONDITION_PARAMS);
-int cancel_when_ringing(CONDITION_PARAMS);
-
-int accept_notify(CONDITION_PARAMS);
 
 void a_callback(nua_event_t event,
 		int status, char const *phrase,
@@ -334,7 +321,6 @@ int test_reject_b(struct context *ctx);
 int test_reject_302(struct context *ctx);
 int test_reject_401(struct context *ctx);
 int test_mime_negotiation(struct context *ctx);
-int test_call_timeouts(struct context *ctx);
 int test_reject_401_aka(struct context *ctx);
 int test_call_cancel(struct context *ctx);
 int test_call_destroy(struct context *ctx);

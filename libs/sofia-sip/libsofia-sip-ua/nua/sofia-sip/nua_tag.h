@@ -1074,7 +1074,7 @@ SOFIAPUBVAR tag_typedef_t nutag_registrar_ref;
  *
  * The outbound option string can specify how the NAT traversal is handled.
  * The option tokens are as follows:
- * - "gruuize": try to generate a GRUU contact from REGISTER response
+ * - "gruuize": try to generate a GRUU
  * - "outbound": use SIP outbound extension (off by default)
  * - "validate": validate registration behind a NAT by sending OPTIONS to self
  * - "natify": try to traverse NAT
@@ -1084,10 +1084,6 @@ SOFIAPUBVAR tag_typedef_t nutag_registrar_ref;
  * An option token with "no-" or "not-" prefix turns the option off. For
  * example, if you want to try to traverse NATs but not to use OPTIONS
  * keepalive, use NUTAG_OUTBOUND("natify no-options-keepalive").
- * 
- * An empty string can be passed to let the stack choose the
- * default values for outbound usage (in the 1.12.5 release, the
- * defaults are: "gruuize no-outbound validate use-port options-keepalive").
  *
  * @note
  * Options string is used so that no new tags need to be added when the
@@ -1211,7 +1207,7 @@ SOFIAPUBVAR tag_typedef_t nutag_outbound_set4_ref;
  *    nua_create()
  *
  * @par Parameter type
- *    msg_mclass_t const *
+ *    msg_mclass_t *
  *
  * @par Values
  *    Pointer to an extended SIP parser.
@@ -1248,9 +1244,6 @@ SOFIAPUBVAR tag_typedef_t nutag_auth_ref;
 
 /** Keepalive interval in milliseconds.
  *
- * This setting applies to OPTIONS/STUN keepalives. See documentation 
- * for nua_register() for more detailed information.
- *
  * @par Used with
  *    nua_register()   \n
  *    nua_set_params() \n
@@ -1275,8 +1268,6 @@ SOFIAPUBVAR tag_typedef_t nutag_keepalive;
 SOFIAPUBVAR tag_typedef_t nutag_keepalive_ref;
 
 /** Transport-level keepalive interval for streams.
- *
- * See documentation for nua_register() for more detailed information.
  *
  * @par Used with
  *    nua_register()   \n
@@ -1336,7 +1327,6 @@ SOFIAPUBVAR tag_typedef_t nutag_authtime_ref;
  *
  * @par Used with
  *    nua_register(), nua_set_hparams(), nua_set_params().
- *    nua_invite(), nua_respond(), nua_subscribe(), nua_notify()
  *
  * @par Parameter type
  *    string (char *)
@@ -1368,7 +1358,6 @@ SOFIAPUBVAR tag_typedef_t nutag_m_display_ref;
  *
  * @par Used with
  *    nua_register(), nua_set_hparams(), nua_set_params().
- *    nua_invite(), nua_respond(), nua_subscribe(), nua_notify()
  *
  * @par Parameter type
  *    string (char *)
@@ -1399,8 +1388,7 @@ SOFIAPUBVAR tag_typedef_t nutag_m_username_ref;
  * user-agent.
  *
  * @par Used with
- *    nua_register(), nua_set_hparams(), nua_set_params(), 
- *    nua_invite(), nua_respond(), nua_subscribe(), nua_notify()
+ *    nua_register(), nua_set_hparams(), nua_set_params().
  *
  * @par Parameter type
  *    string (char *)
@@ -1871,39 +1859,26 @@ enum nua_callstate {
 /** Get name for NUA call state */
 SOFIAPUBFUN char const *nua_callstate_name(enum nua_callstate state);
 
-/**Subscription state.
+/** Subscription state
  *
  * @par Used with
- *    #nua_notify() \n
  *    #nua_r_subscribe \n
- *    #nua_i_notify \n
- *    #nua_i_subscribe \n
- *    #nua_r_notify \n
- *    nua_notify() \n
- *    nua_respond() to SUBSCRIBE
+ *    #nua_i_notify
  *
  * @par Parameter type
  *    int
  *
  * @par Values
- *   - #nua_substate_embryonic (0)
- *   - #nua_substate_pending (1)
- *   - #nua_substate_active (2)
- *   - #nua_substate_terminated (3)
+ *   @c nua_substate_embryonic (0) \n
+ *   @c nua_substate_pending (1) \n
+ *   @c nua_substate_active (2) \n
+ *   @c nua_substate_terminated	(3) \n
  *
- * Note that the @SubscriptionState or @Expires headers specified by
- * application overrides the subscription state specified by
- * NUTAG_SUBSTATE(). Application can terminate subscription by including
- * NUTAG_SUBSTATE(nua_substate_terminated), @SubscriptionState with value
- * "terminated" or @Expires header with value 0 in the NOTIFY request sent
- * by nua_notify().
- *
- * @sa @RFC3265, @SubscriptionState, SIPTAG_SUBSCRIPTION_STATE(),
- * SIPTAG_SUBSCRIPTION_STATE_STR(), #nua_r_subscribe, #nua_i_subscribe,
- * #nua_i_refer, #nua_r_notify, #nua_i_notify.
+ * see
+ * <a href="http://www.ietf.org/rfc/rfc3265.txt">RFC 3265</a>
  *
  * Corresponding tag taking reference parameter is NUTAG_SUBSTATE_REF()
- */
+*/
 #define NUTAG_SUBSTATE(x) nutag_substate, tag_int_v(x)
 SOFIAPUBVAR tag_typedef_t nutag_substate;
 
@@ -1920,46 +1895,6 @@ enum nua_substate {
   nua_substate_active = nea_active,	/**< Active subscription */
   nua_substate_terminated = nea_terminated /**< Terminated subscription */
 };
-
-/** Return name of subscription state. @NEW_1_12_5. */
-SOFIAPUBFUN char const *nua_substate_name(enum nua_substate substate);
-
-/** Convert string to enum nua_substate. @NEW_1_12_5. */
-SOFIAPUBFUN enum nua_substate nua_substate_make(char const *sip_substate);
-
-/**Send unsolicited NOTIFY request.
- *
- * Some applications may require sending unsolicited NOTIFY requests, that
- * is, NOTIFY without SUBSCRIBE or REFER request sent by event watcher. 
- * However, sending NOTIFY request requires an existing dialog usage by
- * default. If NUTAG_NEWSUB(1) is included in the nua_notify() the usage
- * is create the usage by itself.
- *
- * If you want to create a subscription that does not terminate immediately
- * include SIPTAG_SUBSCRIPTION_STATE_STR() with an "expires" parameter in
- * the argument list, too.
- *
- * @par Used with
- *    nua_notify()
- *
- * @par Parameter type
- *    int (boolean)
- *
- * @par Values
- *   - 0 - false (default) - do not create new subscription 
- *         but reject NOTIFY with 481 locally \n
- *   - 1 - true - create a subscription if it does not exist \n
- *
- * Corresponding tag taking reference parameter is NUTAG_NEWSUB().
- *
- * @since @NEW_1_12_5.
- */
-#define NUTAG_NEWSUB(x)   nutag_newsub, tag_bool_v(x)
-SOFIAPUBVAR tag_typedef_t nutag_newsub;
-
-#define NUTAG_NEWSUB_REF(x) nutag_newsub_ref, tag_bool_vr(&(x))
-SOFIAPUBVAR tag_typedef_t nutag_newsub_ref;
-
 
 /**Default lifetime for implicit subscriptions created by REFER.
  *

@@ -38,11 +38,6 @@ Makefile target notes
   separately in ``DIST_SOURCES`` variable (otherwise ``make dist``
   will fail)
 
-Makefile fragments
-------------------
-
-Some common makefile rules are in 'rules' subdirectory.
-
 Maintainer mode
 ---------------
 
@@ -59,15 +54,12 @@ option '--enable-maintainer-mode'.
 Running tests
 =============
 
-Sofia-SIP has quite complete suite of test cases. It is prudent to run
-them while making changes and before committing them to revision control
-system. However, running certain tests takes quite a long time to
-execture. Therefore, they are run only if the environment variable
+Sofia-SIP has quite complete suite of test cases. It is prudent to
+run them while making changes and before committing them to revision
+control system. However, running certain tests takes quite a long
+time. Therefore, they are run only if the environment variable
 EXPENSIVE_CHECKS has been set. EXPENSIVE_CHECKS is also set by the build
 system if configure option '--enable-expensive-checks' has been used.
-
-On hosts with i386 architecture, it is possible to run tests under
-valgrind. Use the make target 'valcheck' for that purpose.
 
 Code-tree layout
 ================

@@ -193,10 +193,7 @@ RBTREE_BODIES(static inline, timers, su_timer_t,
 	      IS_RED, SET_RED, IS_BLACK, SET_BLACK, COPY_COLOR,
 	      CMP, INSERT, REMOVE);
 
-/**@internal Set the timer. 
- *
- * @retval 0 when successful (always)
- */
+/** Set the timer. */
 static inline int
 su_timer_set0(su_timer_t **timers,
 	      su_timer_t *t,
@@ -215,10 +212,7 @@ su_timer_set0(su_timer_t **timers,
   return timers_append(timers, t);
 }
 
-/**@internal Reset the timer. 
- *
- * @retval 0 when successful (always)
- */
+/** Reset the timer. */
 static inline int
 su_timer_reset0(su_timer_t **timers,
 		su_timer_t *t)
@@ -233,40 +227,6 @@ su_timer_reset0(su_timer_t **timers,
   memset(&t->sut_run, 0, sizeof(t->sut_run));
 
   return 0;
-}
-
-/**@internal Validate timer @a t and return pointer to per-port timer tree.
- * 
- * @retval pointer to pointer to timer tree when successful
- * @retval NULL upon an error
- */
-static
-su_timer_t **su_timer_tree(su_timer_t const *t,
-			   int use_sut_duration,
-			   char const *caller)
-{
-  su_timer_t **timers;
-
-  if (t == NULL) {
-    SU_DEBUG_1(("%s(%p): %s\n", caller, (void *)t,
-		"NULL argument"));
-    return NULL;
-  }
-
-  timers = su_task_timers(t->sut_task);
-
-  if (timers == NULL)
-    SU_DEBUG_1(("%s(%p): %s\n", caller, (void *)t,
-		"invalid timer"));
-
-  if (use_sut_duration && t->sut_duration == 0) {
-    assert(t->sut_duration > 0);
-    SU_DEBUG_1(("%s(%p): %s\n", caller, (void *)t, 
-		"timer without default duration"));
-    return NULL;
-  }
-
-  return timers;
 }
 
 
@@ -331,12 +291,23 @@ int su_timer_set_interval(su_timer_t *t,
 			  su_timer_arg_t *arg,
 			  su_duration_t interval)
 {
-  su_timer_t **timers = su_timer_tree(t, 0, "su_timer_set_interval");
+  char const *func = "su_timer_set_interval";
+  su_timer_t **timers;
 
-  if (t == NULL)
+  if (t == NULL) {
+    SU_DEBUG_1(("%s(%p): %s\n", func, t, "NULL argument"));
     return -1;
+  }
 
-  return su_timer_set0(timers, t, wakeup, arg, su_now(), interval);
+  timers = su_task_timers(t->sut_task);
+  if (timers == NULL) {
+    SU_DEBUG_1(("%s(%p): %s\n", func, t, "invalid timer"));
+    return -1;
+  }
+
+  su_timer_set0(timers, t, wakeup, arg, su_now(), interval);
+
+  return 0;
 }
 
 /** Set the timer for the default interval.
@@ -355,12 +326,18 @@ int su_timer_set(su_timer_t *t,
 		 su_timer_f wakeup,
 		 su_timer_arg_t *arg)
 {
-  su_timer_t **timers = su_timer_tree(t, 1, "su_timer_set");
+  char const *func = "su_timer_set";
 
-  if (timers == NULL)
+  if (t == NULL)
     return -1;
 
-  return su_timer_set0(timers, t, wakeup, arg, su_now(), t->sut_duration);
+  assert(t->sut_duration > 0);
+  if (t->sut_duration == 0) {
+    SU_DEBUG_0(("%s(%p): %s\n", func, t, "timer without default duration"));
+    return -1;
+  }
+
+  return su_timer_set_interval(t, wakeup, arg, t->sut_duration);
 }
 
 /** Set timer at known time.
@@ -379,12 +356,23 @@ int su_timer_set_at(su_timer_t *t,
 		    su_wakeup_arg_t *arg,
 		    su_time_t when)
 {
-  su_timer_t **timers = su_timer_tree(t, 0, "su_timer_set_at");
+  char const *func = "su_timer_set_at";
+  su_timer_t **timers;
 
-  if (timers == NULL)
+  if (t == NULL) {
+    SU_DEBUG_1(("%s(%p): %s\n", func, t, "NULL argument"));
     return -1;
+  }
 
-  return su_timer_set0(timers, t, wakeup, arg, when, 0);
+  timers = su_task_timers(t->sut_task);
+  if (timers == NULL) {
+    SU_DEBUG_1(("%s(%p): %s\n", func, t, "invalid timer"));
+    return -1;
+  }
+
+  su_timer_set0(timers, t, wakeup, arg, when, 0);
+
+  return 0;
 }
 
 /** Set the timer for regular intervals.
@@ -409,17 +397,34 @@ int su_timer_run(su_timer_t *t,
 		 su_timer_f wakeup,
 		 su_timer_arg_t *arg)
 {
-  su_timer_t **timers = su_timer_tree(t, 1, "su_timer_run");
-  su_time_t now;
+  char const *func = "su_timer_run";
+  su_timer_t **timers;
+  su_time_t now = su_now();
 
-  if (timers == NULL)
+  if (t == NULL) {
+    SU_DEBUG_1(("%s(%p): %s\n", func, t, "NULL argument"));
     return -1;
+  }
+
+  assert(t->sut_duration > 0);
+  if (t->sut_duration == 0) {
+    SU_DEBUG_1(("%s(%p): %s\n", func, t, "timer without default duration"));
+    return -1;
+  }
+
+  timers = su_task_timers(t->sut_task);
+  if (timers == NULL) {
+    SU_DEBUG_1(("%s(%p): %s\n", func, t, "invalid timer"));
+    return -1;
+  }
 
   t->sut_running = run_at_intervals;
-  t->sut_run = now = su_now();
+  t->sut_run = now;
   t->sut_woken = 0;
 
-  return su_timer_set0(timers, t, wakeup, arg, now, t->sut_duration);
+  su_timer_set0(timers, t, wakeup, arg, now, t->sut_duration);
+
+  return 0;
 }
 
 /**Set the timer for regular intervals.
@@ -442,18 +447,36 @@ int su_timer_set_for_ever(su_timer_t *t,
 			  su_timer_f wakeup,
 			  su_timer_arg_t *arg)
 {
-  su_timer_t **timers = su_timer_tree(t, 1, "su_timer_set_for_ever");
-  su_time_t now;
+  char const *func = "su_timer_run";
+  su_timer_t **timers;
+  su_time_t now = su_now();
 
-  if (timers == NULL)
+  if (t == NULL) {
+    SU_DEBUG_1(("%s(%p): %s\n", func, t, "NULL argument"));
     return -1;
+  }
+
+  assert(t->sut_duration > 0);
+  if (t->sut_duration == 0) {
+    SU_DEBUG_1(("%s(%p): %s\n", func, t, "timer without default duration"));
+    return -1;
+  }
+
+  timers = su_task_timers(t->sut_task);
+  if (timers == NULL) {
+    SU_DEBUG_1(("%s(%p): %s\n", func, t, "invalid timer"));
+    return -1;
+  }
 
   t->sut_running = run_for_ever;
-  t->sut_run = now = su_now();
+  t->sut_run = now;
   t->sut_woken = 0;
 
-  return su_timer_set0(timers, t, wakeup, arg, now, t->sut_duration);
+  su_timer_set0(timers, t, wakeup, arg, now, t->sut_duration);
+
+  return 0;
 }
+
 
 /**Reset the timer.
  *
@@ -465,12 +488,19 @@ int su_timer_set_for_ever(su_timer_t *t,
  */
 int su_timer_reset(su_timer_t *t)
 {
-  su_timer_t **timers = su_timer_tree(t, 0, "su_timer_reset");
+  char const *func = "su_timer_reset";
+  su_timer_t **timers;
 
-  if (timers == NULL)
+  if (t == NULL) {
+    SU_DEBUG_1(("%s(%p): %s\n", func, t, "NULL argument"));
     return -1;
+  }
 
-  return su_timer_reset0(timers, t);
+  timers = su_task_timers(t->sut_task);
+
+  su_timer_reset0(timers, t);
+
+  return 0;
 }
 
 /** @internal Check for expired timers in queue.
@@ -544,7 +574,6 @@ int su_timer_expire(su_timer_t ** const timers,
 }
 
 
-/** Calculate duration in milliseconds until next timer expires. */
 su_duration_t su_timer_next_expires(su_timer_t const * t, su_time_t now)
 {
   su_duration_t tout;
@@ -594,13 +623,14 @@ int su_timer_reset_all(su_timer_t **timers, su_task_r task)
 
 /** Get the root object owning the timer.
  *
- * Return pointer to the root object owning the timer.
+ *   The function su_timer_root() return pointer to the root object owning the
+ *   timer.
  *
  * @param t pointer to the timer
  *
- * @return Pointer to the root object.
+ * @return Pointer to the root object owning the timer.
  */
 su_root_t *su_timer_root(su_timer_t const *t)
 {
-  return t ? su_task_root(t->sut_task) : NULL;
+  return su_task_root(t->sut_task);
 }

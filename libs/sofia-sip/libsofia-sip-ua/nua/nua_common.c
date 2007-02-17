@@ -110,14 +110,13 @@ nua_handle_t *nh_create_handle(nua_t *nua,
   assert(nua->nua_home);
 
   if ((nh = su_home_clone(nua->nua_home, sizeof(*nh)))) {
-    nh->nh_valid = nua_valid_handle_cookie;
+    nh->nh_valid = nua_handle;
     nh->nh_nua = nua;
     nh->nh_magic = hmagic;
     nh->nh_prefs = nua->nua_dhandle->nh_prefs;
 
     if (nua_handle_save_tags(nh, tags) < 0) {
-      SU_DEBUG_5(("nua(%p): creating handle %p failed\n",
-		  (void *)nua, (void *)nh));
+      SU_DEBUG_5(("nua(%p): creating handle %p failed\n", nua, nh));
       su_home_unref(nh->nh_home), nh = NULL;
     }
     
@@ -137,7 +136,7 @@ nua_handle_t *nh_create_handle(nua_t *nua,
       } 
       else {
 	_handle_lifetime = 2;
-	SU_DEBUG_0(("nh_handle_create(%p)\n", (void *)nh));
+	SU_DEBUG_0(("nh_handle_create(%p)\n", nh));
 	su_home_destructor(nh->nh_home, nh_destructor);
       }
     }
@@ -160,11 +159,9 @@ extern char const _NUA_HANDLE_DEBUG[];
 static void nh_destructor(void *arg)
 {
   nua_handle_t *nh = arg;
-  SU_DEBUG_0(("nh_destructor(%p)\n", (void *)nh));
-}
 
-#undef nua_handle_ref
-#undef nua_handle_unref
+  SU_DEBUG_0(("nh_destructor(%p)\n", nh));
+}
 
 /** Make a new reference to handle.
  *
@@ -182,6 +179,7 @@ nua_handle_t *nua_handle_ref(nua_handle_t *nh)
 {
   return (nua_handle_t *)su_home_ref(nh->nh_home);
 }
+
 
 /** Destroy reference to handle. 
  *
@@ -303,34 +301,3 @@ char const *nua_callstate_name(enum nua_callstate state)
   default: return "UNKNOWN";
   }
 }
-
-/** Return name of subscription state. @NEW_1_12_5. */
-char const *nua_substate_name(enum nua_substate substate)
-{
-  switch (substate) {
-  case nua_substate_embryonic:
-      /*FALLTHROUGH*/
-  case nua_substate_pending:
-    return "pending";
-  case nua_substate_terminated:
-    return "terminated";
-  case nua_substate_active:
-      /*FALLTHROUGH*/
-  default:
-    return "active";
-  }
-}
-
-/** Convert string to enum nua_substate. @NEW_1_12_5. */
-enum nua_substate nua_substate_make(char const *sip_substate)
-{
-  if (sip_substate == NULL)
-    return nua_substate_active;
-  else if (strcasecmp(sip_substate, "terminated") == 0)
-    return nua_substate_terminated;
-  else if (strcasecmp(sip_substate, "pending") == 0)
-    return nua_substate_pending;
-  else /* if (strcasecmp(sip_substate, "active") == 0) */ 
-    return nua_substate_active;
-}
-

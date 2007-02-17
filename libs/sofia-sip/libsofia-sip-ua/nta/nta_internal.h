@@ -98,17 +98,16 @@ struct nta_agent_s
   nta_agent_magic_t    *sa_magic;
   nta_message_f        *sa_callback;     
 
+  uint32_t              sa_nw_updates; /* Shall we enable network detector? */
+
   nta_update_magic_t   *sa_update_magic;
   nta_update_tport_f   *sa_update_tport;
 
-  su_duration_t         sa_next; /**< Timestamp for next agent_timer. */
-  su_time_t             sa_now;	 /**< Timestamp in microsecond resolution. */
+  su_time_t             sa_now;	/**< Timestamp in microsecond resolution. */
   uint32_t              sa_millisec; /**< Timestamp in milliseconds resolution. */
 
-  uint32_t              sa_nw_updates; /* Shall we enable network detector? */
-
   uint32_t              sa_flags;	/**< Message flags */
-  msg_mclass_t const   *sa_mclass;
+  msg_mclass_t         *sa_mclass;
 
   sip_contact_t        *sa_contact;
   sip_via_t            *sa_vias;   /**< @Via headers for all transports */
@@ -223,9 +222,6 @@ struct nta_agent_s
 
   /** If true, automatically create compartments */
   unsigned              sa_auto_comp:1;
-
-  /** Set when executing timer */
-  unsigned              sa_in_timer:1;
 
   unsigned              :0;
 
@@ -346,11 +342,6 @@ struct nta_leg_s
   unsigned          leg_loose_route : 1; /**< Topmost route in set is LR */
 #endif
   unsigned          leg_local_is_to : 1; /**< Backwards-compatibility. */
-  unsigned          leg_tagged : 1; /**< Tagged after creation.
-				     *
-				     * Request missing To tag matches it
-				     * even after tagging.
-				     */
   unsigned:0;
   nta_request_f    *leg_callback;
   nta_leg_magic_t  *leg_magic;
@@ -472,17 +463,12 @@ struct nta_outgoing_s
 
   sip_method_t        	orq_method;
   char const           *orq_method_name;
-  url_t const          *orq_url;        /**< Original RequestURI */
-
   sip_from_t const     *orq_from;
   sip_to_t const       *orq_to;
-  char const           *orq_tag;        /**< Tag from final response. */
-
   sip_cseq_t const     *orq_cseq;
   sip_call_id_t const  *orq_call_id;
 
-  msg_t		       *orq_request;
-  msg_t                *orq_response;
+  char const           *orq_tag;        /**< Tag from final response. */
 
   su_time_t             orq_sent;       /**< When request was sent? */
   unsigned              orq_delay;      /**< RTT estimate */
@@ -515,8 +501,10 @@ struct nta_outgoing_s
   unsigned orq_sigcomp_new:1;	/**< Create compartment if needed */
   unsigned orq_sigcomp_zap:1;	/**< Reset SigComp after completing */
   unsigned orq_must_100rel : 1;
-  unsigned orq_timestamp : 1;	/**< Insert @Timestamp header. */
+  unsigned orq_timestamp : 1;	/**< insert @Timestamp header. */
   unsigned : 0;	/* pad */
+
+  uint32_t              orq_rseq;       /**< Latest incoming rseq */
 
 #if HAVE_SOFIA_SRESOLV
   sipdns_resolver_t    *orq_resolver;
@@ -534,10 +522,12 @@ struct nta_outgoing_s
 
   char const           *orq_branch;	/**< Transaction branch */
   char const           *orq_via_branch;	/**< @Via branch */
+  url_t const          *orq_url;        /**< Original RequestURI */
+
+  msg_t		       *orq_request;
+  msg_t                *orq_response;
 
   nta_outgoing_t       *orq_cancel;     /**< CANCEL transaction */
-
-  uint32_t              orq_rseq;       /**< Latest incoming rseq */
 };
 
 /* Virtual function table for plugging in SigComp */

@@ -21,36 +21,11 @@
 # ----------------------------------------------------------------------
 # Header paths
 
-# common Makefile targets for libsofia-sip-ua(-glib) modules
-# ----------------------------------------------------------
-
-# 
-# run tests with valgrind
-#
-
-# Copyright (C) 2007 Nokia Corporation.
-
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Lesser General Public License
-# as published by the Free Software Foundation; either version 2.1 of
-# the License, or (at your option) any later version.
-
-# This file contains free software from Makefile.in by the Free Software
-# Foundation:
-
-# Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
-# 2003, 2004, 2005  Free Software Foundation, Inc.
-# This Makefile.in is free software; the Free Software Foundation
-# gives unlimited permission to copy and/or distribute it,
-# with or without modifications, as long as this notice is preserved.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
-# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE.
+# common Makefile targets for libsofia-sip-ua modules
+# ---------------------------------------------------
 
 
-SOURCES = $(libsip_la_SOURCES) test_date.c test_sip_msg.c torture_sip.c validator.c
+SOURCES = $(libsip_la_SOURCES) date_test.c test_sip_msg.c torture_sip.c validator.c
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -76,13 +51,9 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 check_PROGRAMS = torture_sip$(EXEEXT) test_sip_msg$(EXEEXT) \
-	validator$(EXEEXT) test_date$(EXEEXT)
-DIST_COMMON = $(nobase_include_sofia_HEADERS) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(top_srcdir)/rules/sofia.am \
-	$(top_srcdir)/rules/valcheck.am ChangeLog
-
-# Use with --enable-ndebug
-@NDEBUG_TRUE@am__append_1 = -DNDEBUG
+	validator$(EXEEXT) date_test$(EXEEXT)
+DIST_COMMON = $(nobase_include_sofia_HEADERS) $(srcdir)/../sofia.am \
+	$(srcdir)/Makefile.am $(srcdir)/Makefile.in ChangeLog
 subdir = libsofia-sip-ua/sip
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/sac-general.m4 \
@@ -104,10 +75,10 @@ am_libsip_la_OBJECTS = sip_parser.lo sip_header.lo sip_util.lo \
 	sip_refer.lo sip_session.lo sip_caller_prefs.lo sip_reason.lo \
 	sip_status.lo sip_time.lo sip_tag_class.lo $(am__objects_1)
 libsip_la_OBJECTS = $(am_libsip_la_OBJECTS)
-test_date_SOURCES = test_date.c
-test_date_OBJECTS = test_date.$(OBJEXT)
-test_date_LDADD = $(LDADD)
-test_date_DEPENDENCIES = libsip.la ../msg/libmsg.la ../bnf/libbnf.la \
+date_test_SOURCES = date_test.c
+date_test_OBJECTS = date_test.$(OBJEXT)
+date_test_LDADD = $(LDADD)
+date_test_DEPENDENCIES = libsip.la ../msg/libmsg.la ../bnf/libbnf.la \
 	../url/liburl.la ../su/libsu.la
 test_sip_msg_SOURCES = test_sip_msg.c
 test_sip_msg_OBJECTS = test_sip_msg.$(OBJEXT)
@@ -135,9 +106,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libsip_la_SOURCES) test_date.c test_sip_msg.c \
+SOURCES = $(libsip_la_SOURCES) date_test.c test_sip_msg.c \
 	torture_sip.c validator.c
-DIST_SOURCES = $(libsip_la_SOURCES) test_date.c test_sip_msg.c \
+DIST_SOURCES = $(libsip_la_SOURCES) date_test.c test_sip_msg.c \
 	torture_sip.c validator.c
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -152,7 +123,6 @@ CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ACLOCAL_AMFLAGS = @ACLOCAL_AMFLAGS@
-ALLOCA = @ALLOCA@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
@@ -199,12 +169,8 @@ HAVE_GLIB_FALSE = @HAVE_GLIB_FALSE@
 HAVE_GLIB_TRUE = @HAVE_GLIB_TRUE@
 HAVE_MINGW32_FALSE = @HAVE_MINGW32_FALSE@
 HAVE_MINGW32_TRUE = @HAVE_MINGW32_TRUE@
-HAVE_NTH_FALSE = @HAVE_NTH_FALSE@
-HAVE_NTH_TRUE = @HAVE_NTH_TRUE@
 HAVE_NTLM_FALSE = @HAVE_NTLM_FALSE@
 HAVE_NTLM_TRUE = @HAVE_NTLM_TRUE@
-HAVE_STUN_FALSE = @HAVE_STUN_FALSE@
-HAVE_STUN_TRUE = @HAVE_STUN_TRUE@
 HAVE_TLS_FALSE = @HAVE_TLS_FALSE@
 HAVE_TLS_TRUE = @HAVE_TLS_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
@@ -248,7 +214,6 @@ REPLACE_LIBADD = @REPLACE_LIBADD@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SOFIA_CFLAGS = @SOFIA_CFLAGS@
-SOFIA_COVERAGE = @SOFIA_COVERAGE@
 SOFIA_GLIB_PKG_REQUIRES = @SOFIA_GLIB_PKG_REQUIRES@
 STRIP = @STRIP@
 TESTS_ENVIRONMENT = @TESTS_ENVIRONMENT@
@@ -350,7 +315,7 @@ LDADD = libsip.la \
 
 torture_sip_LDFLAGS = -static
 test_sip_msg_LDFLAGS = -static
-test_date_LDFLAGS = -static
+date_test_LDFLAGS = -static
 
 # ----------------------------------------------------------------------
 # Install and distribution rules
@@ -380,8 +345,7 @@ EXTRA_DIST = Doxyfile sip.docs sip_parser.docs sip.doxyaliases \
 	tests/test35.txt tests/test36.txt tests/test37.txt tests/test38.txt  \
 	tests/test39.txt tests/test40.txt tests/test41.txt tests/test42.txt
 
-AM_CFLAGS = $(CWFLAG) $(SOFIA_COVERAGE) $(SOFIA_CFLAGS) \
-	$(am__append_1)
+AM_CFLAGS = $(CWFLAG) $(SOFIA_CFLAGS) 
 DISTCLEANFILES = $(BUILT_SOURCES)
 
 # rules for building tag files
@@ -407,15 +371,13 @@ INTERNAL_INCLUDES = \
 	-I$(srcdir)/../url -I../url \
 	-I$(srcdir)/../su -I../su
 
-VALGRIND = valgrind 
-VALGRINDFLAGS = --tool=memcheck
 
 # ----------------------------------------------------------------------
 # Tests
 
-#TESTS = torture_sip run_test_sip_msg run_test_date
+#TESTS = torture_sip run_test_sip_msg run_date_test
 
-#dist_noinst_SCRIPTS = 	run_test_sip_msg run_test_date
+#dist_noinst_SCRIPTS = 	run_test_sip_msg run_date_test
 
 # ----------------------------------------------------------------------
 # Sofia specific rules
@@ -427,7 +389,7 @@ all: $(BUILT_SOURCES)
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/rules/sofia.am $(top_srcdir)/rules/valcheck.am $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(srcdir)/../sofia.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -474,9 +436,9 @@ clean-checkPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
-test_date$(EXEEXT): $(test_date_OBJECTS) $(test_date_DEPENDENCIES) 
-	@rm -f test_date$(EXEEXT)
-	$(LINK) $(test_date_LDFLAGS) $(test_date_OBJECTS) $(test_date_LDADD) $(LIBS)
+date_test$(EXEEXT): $(date_test_OBJECTS) $(date_test_DEPENDENCIES) 
+	@rm -f date_test$(EXEEXT)
+	$(LINK) $(date_test_LDFLAGS) $(date_test_OBJECTS) $(date_test_LDADD) $(LIBS)
 test_sip_msg$(EXEEXT): $(test_sip_msg_OBJECTS) $(test_sip_msg_DEPENDENCIES) 
 	@rm -f test_sip_msg$(EXEEXT)
 	$(LINK) $(test_sip_msg_LDFLAGS) $(test_sip_msg_OBJECTS) $(test_sip_msg_LDADD) $(LIBS)
@@ -493,6 +455,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/date_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sip_basic.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sip_caller_prefs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sip_event.Plo@am__quote@
@@ -514,7 +477,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sip_tag_ref.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sip_time.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sip_util.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_date.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_sip_msg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/torture_sip.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/validator.Po@am__quote@
@@ -618,7 +580,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/../../rules $(distdir)/images $(distdir)/sofia-sip $(distdir)/tests
+	$(mkdir_p) $(distdir)/.. $(distdir)/images $(distdir)/sofia-sip $(distdir)/tests
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -767,92 +729,6 @@ clean-built-sources:
  ../sresolv/libsresolv.la ../stun/libstun.la ../su/libsu.la \
  ../tport/libtport.la ../url/liburl.la:
 	$(MAKE) -C $(@D) $(@F)
-
-valcheck: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) valcheck-am
-
-valcheck-am: all-am
-	$(MAKE) $(AM_MAKEFLAGS) $(check_PROGRAMS)
-	$(MAKE) $(AM_MAKEFLAGS) valcheck-TESTS
-
-# Run tests with valgrind in 
-valcheck-TESTS:	$(TESTS)
-	@failed=0; all=0; xfail=0; xpass=0; skip=0; \
-	srcdir=$(srcdir); export srcdir; \
-	list='$(TESTS)'; \
-	if test -n "$$list"; then \
-	  for tst in $$list; do \
-	    if test -f ./$$tst; then dir=./; \
-	    elif test -f $$tst; then dir=; \
-	    else dir="$(srcdir)/"; fi; \
-	    if case $$tst in \
-            run*) VALGRIND="$(VALGRIND) $(VALGRINDFLAGS)" \
-		  $(TESTS_ENVIRONMENT) $${dir}$$tst ;; \
-	    *) $(TESTS_ENVIRONMENT) $(VALGRIND) $(VALGRINDFLAGS) \
-	       $${dir}$$tst ;; \
-	    esac ; then \
-	      all=`expr $$all + 1`; \
-	      case " $(XFAIL_TESTS) " in \
-	      *" $$tst "*) \
-		xpass=`expr $$xpass + 1`; \
-		failed=`expr $$failed + 1`; \
-		echo "XPASS: $$tst"; \
-	      ;; \
-	      *) \
-		echo "PASS: $$tst"; \
-	      ;; \
-	      esac; \
-	    elif test $$? -ne 77; then \
-	      all=`expr $$all + 1`; \
-	      case " $(XFAIL_TESTS) " in \
-	      *" $$tst "*) \
-		xfail=`expr $$xfail + 1`; \
-		echo "XFAIL: $$tst"; \
-	      ;; \
-	      *) \
-		failed=`expr $$failed + 1`; \
-		echo "FAIL: $$tst"; \
-	      ;; \
-	      esac; \
-	    else \
-	      skip=`expr $$skip + 1`; \
-	      echo "SKIP: $$tst"; \
-	    fi; \
-	  done; \
-	  if test "$$failed" -eq 0; then \
-	    if test "$$xfail" -eq 0; then \
-	      banner="All $$all tests passed"; \
-	    else \
-	      banner="All $$all tests behaved as expected ($$xfail expected failures)"; \
-	    fi; \
-	  else \
-	    if test "$$xpass" -eq 0; then \
-	      banner="$$failed of $$all tests failed"; \
-	    else \
-	      banner="$$failed of $$all tests did not behave as expected ($$xpass unexpected passes)"; \
-	    fi; \
-	  fi; \
-	  dashes="$$banner"; \
-	  skipped=""; \
-	  if test "$$skip" -ne 0; then \
-	    skipped="($$skip tests were not run)"; \
-	    test `echo "$$skipped" | wc -c` -le `echo "$$banner" | wc -c` || \
-	      dashes="$$skipped"; \
-	  fi; \
-	  report=""; \
-	  if test "$$failed" -ne 0 && test -n "$(PACKAGE_BUGREPORT)"; then \
-	    report="Please report to $(PACKAGE_BUGREPORT)"; \
-	    test `echo "$$report" | wc -c` -le `echo "$$banner" | wc -c` || \
-	      dashes="$$report"; \
-	  fi; \
-	  dashes=`echo "$$dashes" | sed s/./=/g`; \
-	  echo "$$dashes"; \
-	  echo "$$banner"; \
-	  test -z "$$skipped" || echo "$$skipped"; \
-	  test -z "$$report" || echo "$$report"; \
-	  echo "$$dashes"; \
-	  test "$$failed" -eq 0; \
-	else :; fi
 
 #
 # Note: sip_bad_mask is used by nta to weed out bad messages

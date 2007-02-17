@@ -9,25 +9,12 @@
 
 AUTOMAKE_OPTIONS = foreign
 
-# select whicn optional sofia-sip modules have been enabled
-# in the build
-OPT_LIBADD =
-OPT_SUBDIRS_STUN =
-OPT_SUBDIRS_NTH =
-if HAVE_STUN
-OPT_LIBADD += stun/libstun.la 
-OPT_SUBDIRS_STUN += stun
-endif
-if HAVE_NTH
-OPT_LIBADD += nth/libnth.la http/libhttp.la
-OPT_SUBDIRS_NTH += nth http
-endif
-
 # note: order does matter in the subdir list
-SUBDIRS = su features bnf sresolv sdp url msg sip $(OPT_SUBDIRS_STUN) ipt soa \
-	  tport nta nea iptsec $(OPT_SUBDIRS_NTH) nua
+SUBDIRS = su features bnf sresolv sdp url msg sip stun ipt soa \
+	  tport http nta nea iptsec nth nua
 DIST_SUBDIRS = $(SUBDIRS) docs
 
+EXTRA_DIST = sofia.am
 DOXYGEN = doxygen
 
 lib_LTLIBRARIES = libsofia-sip-ua.la
@@ -40,22 +27,37 @@ libsofia_sip_ua_la_LIBADD = 	bnf/libbnf.la \
 				msg/libmsg.la \
 				nea/libnea.la \
 				nta/libnta.la \
+				nth/libnth.la \
 				nua/libnua.la \
+				http/libhttp.la \
 				sdp/libsdp.la \
 				sip/libsip.la \
 				soa/libsoa.la \
 				sresolv/libsresolv.la \
 				su/libsu.la \
+				stun/libstun.la \
 				tport/libtport.la \
-				url/liburl.la \
-				$(OPT_LIBADD)
-
+				url/liburl.la
 # set the libtool version info version:revision:age for libsofia-sip-ua
 # - soname to 'libsofia-sip-ua.so.(CUR-AGE)'
 libsofia_sip_ua_la_LDFLAGS = \
 	-version-info $(LIBVER_SOFIA_SIP_UA_CUR):$(LIBVER_SOFIA_SIP_UA_REV):$(LIBVER_SOFIA_SIP_UA_AGE)
 
-include $(top_srcdir)/rules/recursive.am
+if ENABLE_COVERAGE
+COVERAGE_RECURSIVE = coverage-recursive
+coverage: $(COVERAGE_RECURSIVE)
+endif
+
+all-recursive: built-sources-recursive
+built-sources: built-sources-recursive 
+clean-built-sources: clean-built-sources-recursive
+
+built-sources-recursive clean-built-sources-recursive $(COVERAGE_RECURSIVE):
+	target=`echo $@ | sed s/-recursive//`; \
+	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
+	  echo "Making $@ in $$subdir"; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$target) \
+	done;
 
 doxygen: built-sources
 	@echo Generating empty doxytags

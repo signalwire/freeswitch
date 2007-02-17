@@ -4,15 +4,10 @@
 # The line format is: 
 # C-name @SINCE sip_t-like-comment
 #
-# Put all experimental things after EXPERIMENTAL HEADER LIST STARTS HERE...
-#
 #### EXTRA HEADER LIST STARTS HERE ####
 
-refer_sub @NEW_1_12_5 /**< Refer-Sub header */
-
-#### EXPERIMENTAL HEADER LIST STARTS HERE ####
-
-suppress_body_if_match @EXP_1_12_5 /**< Suppress-Body-If-Match header */
-suppress_notify_if_match @EXP_1_12_5 /**< Suppress-Notify-If-Match header */
+refer_sub @VERSION_1_12_5 /**< Refer-Sub header */
+suppress_body_if_match @VERSION_1_12_5 /**< Suppress-Body-If-Match header */
+suppress_notify_if_match @VERSION_1_12_5 /**< Suppress-Notify-If-Match header*/
 
 #### EXTRA HEADER LIST ENDS HERE ####

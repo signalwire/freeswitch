@@ -36,6 +36,13 @@
 
 #include "config.h"
 
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <signal.h>
+
+#include <assert.h>
+
 struct pinger;
 #define SU_ROOT_MAGIC_T struct pinger
 #define SU_INTERNAL_P   su_root_t *
@@ -45,12 +52,6 @@ struct pinger;
 #include "sofia-sip/su_wait.h"
 #include "sofia-sip/su_log.h"
 #include "sofia-sip/su_debug.h"
-
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-
-#include <assert.h>
 
 char const name[] = "su_test";
 
@@ -409,6 +410,14 @@ init_ping(struct pinger *p, su_msg_r msg, su_sockaddr_t *arg)
   }
 }
 
+static
+RETSIGTYPE term(int n)
+{
+  enter;
+
+  exit(1);
+}
+
 void
 time_test(void)
 {
@@ -431,11 +440,9 @@ time_test(void)
     printf("time_test: passed\n");
 }
 
-#if HAVE_SIGNAL
+#if HAVE_ALARM
 #include <unistd.h>
 #include <signal.h>
-
-#if HAVE_ALARM
 
 static RETSIGTYPE sig_alarm(int s)
 {
@@ -448,18 +455,6 @@ static char const no_alarm[] = " [--no-alarm]";
 #else
 static char const no_alarm[] = "";
 #endif
-
-static
-RETSIGTYPE term(int n)
-{
-  enter;
-
-  exit(1);
-}
-#else
-static char const no_alarm[] = "";
-#endif
-
 
 void
 usage(int exitcode)
@@ -524,10 +519,11 @@ int main(int argc, char *argv[])
     }
   }
 
+  signal(SIGTERM, term);
+
   su_init(); atexit(su_deinit);
 
-#if HAVE_SIGNAL
-  signal(SIGTERM, term);
+  time_test();
 
 #if HAVE_ALARM
   if (opt_alarm) {
@@ -535,10 +531,6 @@ int main(int argc, char *argv[])
     signal(SIGALRM, sig_alarm);
   }
 #endif
-
-#endif
-
-  time_test();
 
   root = su_root_create(NULL);
   if (!root) perror("su_root_create"), exit(1);

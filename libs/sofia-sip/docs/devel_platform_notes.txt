@@ -11,29 +11,13 @@ up-to-date autotools. Autoconf should be at least 2.57 and automake should
 be at least 1.7. You can avoid running autoreconf explicitly if you use
 ./configure option --enable-maintainer-mode.
 
-Notes to distributors
-----------------------
-
-Build options such as "--disable-stun" (HAVE_SOFIA_STUN) and 
-"--disable-nth" (HAVE_SOFIA_NTH) modify the public library API/ABI,
-by omitting certain interfaces from the resulting library and installed
-header files.
-
-Options such as '--disable-size-compat' modify the library
-ABI by changing the types used in public library function 
-signatures.
-
 Generic POSIX (GNU/Linux, BSD, ...) 
 -----------------------------------
 
 Sofia-SIP should compile out-of-the-box on generic POSIX
 machines. Use the standard GNU autotool 'configure+make'
-procedure to build the software. See top-level README file
+procedure to build the software. See top-level INSTALL
 for more information.
-
-The configure script accepts various options. See "./configure --help"
-for the full list.
-
 
 Mac OS X 
 --------

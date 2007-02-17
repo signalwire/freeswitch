@@ -389,8 +389,6 @@ TPORT_DLL extern tag_typedef_t tptag_tos;
  * Use with tport_tcreate(), tport_tbind(), tport_set_params(), nua_create(),
  * nta_agent_create(), nta_agent_add_tport(), nth_engine_create(), or
  * initial nth_site_create().
- *
- * @NEW_1_12_5
  */
 #define TPTAG_TOS(x) tptag_tos, tag_int_v((x))
 
@@ -404,8 +402,6 @@ TPORT_DLL extern tag_typedef_t tptag_log;
  * nth_engine_create(), or initial nth_site_create().
  *
  * @sa #TPORT_DUMP, TPTAG_DUMP()
- *
- * @NEW_1_12_5
  */
 #define TPTAG_LOG(x) tptag_log, tag_bool_v((x))
 
@@ -419,8 +415,6 @@ TPORT_DLL extern tag_typedef_t tptag_dump;
  * nth_engine_create(), or initial nth_site_create().
  *
  * @sa #TPORT_DUMP, TPTAG_LOG().
- *
- * @NEW_1_12_5
  */
 #define TPTAG_DUMP(x) tptag_dump, tag_str_v((x))
 

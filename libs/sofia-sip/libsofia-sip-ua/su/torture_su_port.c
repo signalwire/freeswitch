@@ -24,7 +24,7 @@
 
 /**
  * @file torture_su_port.c
- * @brief Test su_poll_port interface
+ * @brief Test su_port interface
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @date Created: Wed Mar 10 17:05:23 2004 ppessi
@@ -39,10 +39,7 @@ struct su_root_magic_s;
 
 #define SU_ROOT_MAGIC_T struct su_root_magic_s
 
-#include "su_poll_port.c"
-
-#undef HAVE_EPOLL
-#define HAVE_EPOLL 0
+#include "su_port.c"
 
 #if HAVE_FUNC
 #elif HAVE_FUNCTION
@@ -59,7 +56,7 @@ int tstflags;
 
 char const *name = "torture_su_port";
 
-int const N0 = SU_MBOX_SIZE > 0, N = 128, I = 129;
+int N0 = SU_HAVE_MBOX, N = 128, I = 128 + 1;
 
 int test_sup_indices(su_port_t const *port)
 {
@@ -124,7 +121,7 @@ static int callback(su_root_magic_t *magic,
 
   magic->wakeups[i]++;
 
-#if HAVE_POLL || HAVE_SELECT
+#if HAVE_POLL
   if (w->fd != magic->sockets[i])
     return ++magic->error;
 #endif
@@ -147,8 +144,7 @@ int test_wakeup(su_port_t *port, su_root_magic_t *magic)
       su_perror("getsockname"), exit(1);
     if (su_sendto(magic->sockets[1], "X", 1, 0, su, sulen) < 0)
       su_perror("su_sendto"), exit(1);
-    n = su_poll_port_wait_events(port, 100);
-
+    n = su_port_wait_events(port, 100);
     if (n != 1)
       return 1;
     if (magic->error)
@@ -192,10 +188,9 @@ int test_register(void)
 
   su_root_size_hint = 16;
 
-  TEST_1(port = su_poll_port_create());
+  TEST_1(port = su_port_create());
   TEST(su_port_threadsafe(port), 0);
-  /* Before 1.12.4 su_port_create() had reference count 0 after creation */
-  /* su_port_incref(port, "test_register"); */
+  SU_PORT_INCREF(port, __func__);
 
   TEST_1(test_sup_indices(port));
 
@@ -297,7 +292,7 @@ int test_register(void)
     TEST(su_port_deregister(port, reg[i]), -1);
   }
 
-  TEST_VOID(su_port_decref(port, __func__));
+  TEST_VOID(su_port_decref(port, 1, __func__));
 
   END();
 }

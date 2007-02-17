@@ -26,15 +26,14 @@
 ::
 
 @setlocal
-@if x%AWK%==x set AWK=mawk
+@if x%AWK%==x set AWK=gawk
 @set VERSION=%AWK% -v BINMODE="rw" -f version.awk
 @set AC=..\configure.ac
 
 :: Check that we really have awk
 @%AWK% "{ exit(0); }" < NUL >NUL
 @if not errorlevel 9009 goto have_awk
-@echo *** install %AWK% (mawk or GNU awk) into your PATH ***
-@echo *** see http://gnuwin32.sourceforge.net/packages/mawk.htm ***
+@echo *** install %AWK% (GNU awk) into your PATH ***
 @goto end
 :have_awk
 

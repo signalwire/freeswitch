@@ -149,7 +149,7 @@ int su_wait_create(su_wait_t *newwait, su_socket_t socket, int events)
 
   *newwait = h;
 
-#elif SU_HAVE_POLL || HAVE_SELECT
+#elif SU_HAVE_POLL
   int mode;
 
   if (newwait == NULL || events == 0 || socket == INVALID_SOCKET) {
@@ -187,9 +187,7 @@ int su_wait_destroy(su_wait_t *waitobj)
   su_wait_t w0 = NULL;
   if (*waitobj)
     WSACloseEvent(*waitobj);
-#elif SU_HAVE_POLL || HAVE_SELECT
-  su_wait_t w0 = { INVALID_SOCKET, 0, 0 };
-#else
+#elif SU_HAVE_POLL
   su_wait_t w0 = { INVALID_SOCKET, 0, 0 };
 #endif
   assert(waitobj != NULL);
@@ -233,7 +231,7 @@ int su_wait(su_wait_t waits[], unsigned n, su_duration_t timeout)
   else
     return i;
 
-#elif SU_HAVE_POLL || HAVE_SELECT
+#elif SU_HAVE_POLL
   for (;;) {
     int i = poll(waits, n, timeout);
 
@@ -275,7 +273,7 @@ int su_wait_events(su_wait_t *waitobj, su_socket_t s)
 
   return net_events.lNetworkEvents;
 
-#elif SU_HAVE_POLL || HAVE_SELECT
+#elif SU_HAVE_POLL
   /* poll(e, 1, 0); */
   return waitobj->revents;
 #endif
@@ -304,7 +302,7 @@ int su_wait_mask(su_wait_t *waitobj, su_socket_t s, int events)
     WSASetLastError(error);
     return -1;
   }
-#elif SU_HAVE_POLL || HAVE_SELECT
+#elif SU_HAVE_POLL
   waitobj->fd = s;
   waitobj->events = events;
   waitobj->revents = 0;

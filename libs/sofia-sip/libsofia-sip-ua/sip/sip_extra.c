@@ -757,8 +757,6 @@ char *sip_info_dup_one(sip_header_t *dst,
 
 /* ====================================================================== */
 
-#if SU_HAVE_EXPERIMENTAL
-
 /**@SIP_HEADER sip_suppress_body_if_match Suppress-Body-If-Match Header
  *
  * The @b Suppress-Body-If-Match header field identifies a SIP event content
@@ -775,7 +773,7 @@ char *sip_info_dup_one(sip_header_t *dst,
  *
  * @sa @RFC3265, draft-niemi-sip-subnot-etags-01.txt
  *
- * @EXP_1_12_5. Note that #sip_t does not contain @a
+ * @NEW_1_12_5. Note that #sip_t does not contain @a
  * sip_suppress_body_if_match field, but sip_suppress_body_if_match()
  * function should be used for accessing the @b Suppress-Body-If-Match
  * header structure.
@@ -841,7 +839,7 @@ issize_t sip_suppress_body_if_match_e(char b[], isize_t bsiz,
  *
  * @sa @RFC3265, draft-niemi-sip-subnot-etag-01
  *
- * @EXP_1_12_5. Note that #sip_t does not contain @a
+ * @NEW_1_12_5. Note that #sip_t does not contain @a
  * sip_suppress_notify_if_match field, but sip_suppress_notify_if_match()
  * function should be used for accessing the @b Suppress-Notify-If-Match
  * header structure.
@@ -889,4 +887,4 @@ issize_t sip_suppress_notify_if_match_e(char b[], isize_t bsiz,
   return msg_generic_e(b, bsiz, h, f);
 }
 
-#endif
+

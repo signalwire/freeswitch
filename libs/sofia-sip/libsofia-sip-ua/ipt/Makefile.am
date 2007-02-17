@@ -51,5 +51,4 @@ EXTRA_DIST +=		Doxyfile ipt.docs
 # ----------------------------------------------------------------------
 # Sofia specific rules
 
-include $(top_srcdir)/rules/sofia.am
-
+include ../sofia.am

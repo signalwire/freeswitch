@@ -64,7 +64,7 @@ EXTRA_DIST =		Doxyfile http.docs \
 # ----------------------------------------------------------------------
 # Sofia specific rules
 
-include $(top_srcdir)/rules/sofia.am
+include ../sofia.am
 
 TAG_DLL_FLAGS = DLLREF=1
 

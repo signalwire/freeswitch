@@ -38,10 +38,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
-
-#if HAVE_SIGNAL
 #include <signal.h>
-#endif
 
 typedef struct context_s context_t;
 #define NTH_SITE_MAGIC_T context_t
@@ -80,10 +77,7 @@ static int request(context_t *context,
 		   http_t const *http,
 		   char const *path);
 su_msg_r server_intr_msg = SU_MSG_R_INIT;
-
-#if HAVE_SIGNAL
 static RETSIGTYPE server_intr_handler(int signum);
-#endif
 static void server_break(context_t *c, su_msg_r msg, su_msg_arg_t *arg);
 
 static msg_payload_t *read_payload(su_home_t *home, char const *fname);
@@ -146,12 +140,12 @@ int main(int argc, char *argv[])
 		su_root_task(context->c_root),
 		server_break, 0);
 
-#if HAVE_SIGNAL
   signal(SIGINT, server_intr_handler);
-#if HAVE_SIGQUIT
+
+#ifndef _WIN32
+  signal(SIGPIPE, server_intr_handler);
   signal(SIGQUIT, server_intr_handler);
   signal(SIGHUP, server_intr_handler);
-#endif
 #endif
 
   if (context->c_root) {
