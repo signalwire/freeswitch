@@ -259,7 +259,7 @@ static void unset_function(switch_core_session_t *session, char *data)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "UNSET [%s]\n", (char *) data);
-		switch_channel_set_variable(channel, (char *) data, NULL);
+		switch_channel_set_variable(channel, data, NULL);
 	}
 }
 

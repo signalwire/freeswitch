@@ -1167,33 +1167,33 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
     }
 	
 	if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_TITLE, &p) == SWITCH_STATUS_SUCCESS) {
-		title = (char *) switch_core_session_strdup(session, (char *)p);
-		switch_channel_set_variable(channel, "RECORD_TITLE", (char *)p);
+		title = switch_core_session_strdup(session, p);
+		switch_channel_set_variable(channel, "RECORD_TITLE", p);
 	}
 	
 	if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_COPYRIGHT, &p) == SWITCH_STATUS_SUCCESS) {
-		copyright = (char *) switch_core_session_strdup(session, (char *)p);
-		switch_channel_set_variable(channel, "RECORD_COPYRIGHT", (char *)p);
+		copyright = switch_core_session_strdup(session, p);
+		switch_channel_set_variable(channel, "RECORD_COPYRIGHT", p);
 	}
 	
 	if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_SOFTWARE, &p) == SWITCH_STATUS_SUCCESS) {
-		software = (char *) switch_core_session_strdup(session, (char *)p);
-		switch_channel_set_variable(channel, "RECORD_SOFTWARE", (char *)p);
+		software = switch_core_session_strdup(session, p);
+		switch_channel_set_variable(channel, "RECORD_SOFTWARE", p);
 	}
 	
 	if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_ARTIST, &p) == SWITCH_STATUS_SUCCESS) {
-		artist = (char *) switch_core_session_strdup(session, (char *)p);
-		switch_channel_set_variable(channel, "RECORD_ARTIST", (char *)p);
+		artist = switch_core_session_strdup(session, p);
+		switch_channel_set_variable(channel, "RECORD_ARTIST", p);
 	}
 	
 	if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_COMMENT, &p) == SWITCH_STATUS_SUCCESS) {
-		comment = (char *) switch_core_session_strdup(session, (char *)p);
-		switch_channel_set_variable(channel, "RECORD_COMMENT", (char *)p);
+		comment = switch_core_session_strdup(session, p);
+		switch_channel_set_variable(channel, "RECORD_COMMENT", p);
 	}
 	
 	if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_DATE, &p) == SWITCH_STATUS_SUCCESS) {
-		date = (char *) switch_core_session_strdup(session, (char *)p);
-		switch_channel_set_variable(channel, "RECORD_DATE", (char *)p);
+		date = switch_core_session_strdup(session, p);
+		switch_channel_set_variable(channel, "RECORD_DATE", p);
 	}
 #if 0
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 

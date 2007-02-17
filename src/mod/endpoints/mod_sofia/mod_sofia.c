@@ -2785,8 +2785,8 @@ static void sip_i_state(int status,
 
 		if (r_sdp) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote SDP:\n%s\n", r_sdp);			
-			tech_pvt->remote_sdp_str = switch_core_session_strdup(session, (char *)r_sdp);
-			switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, (char *)r_sdp);
+			tech_pvt->remote_sdp_str = switch_core_session_strdup(session, r_sdp);
+			switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
 			pass_sdp(tech_pvt, (char *)r_sdp);
 
 		}
@@ -2831,7 +2831,7 @@ static void sip_i_state(int status,
 						(uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
 						other_channel = switch_core_session_get_channel(other_session);
 						if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
-							switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, (char *)r_sdp);
+							switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);
 						}
 						
 						switch_channel_pre_answer(other_channel);
@@ -2997,7 +2997,7 @@ static void sip_i_state(int status,
 					if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
 						other_channel = switch_core_session_get_channel(other_session);
 						if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
-							switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, (char *)r_sdp);
+							switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);
 						}
 						switch_channel_answer(other_channel);
 						switch_core_session_rwunlock(other_session);
@@ -4011,7 +4011,7 @@ static void sip_i_refer(nua_t *nua,
             switch_core_session_t *b_session;
 				
             if ((b_session = switch_core_session_locate(br))) {
-                switch_channel_set_variable(channel, "TRANSFER_FALLBACK", (char *) from->a_user);
+                switch_channel_set_variable(channel, "TRANSFER_FALLBACK", from->a_user);
                 switch_ivr_session_transfer(b_session, exten, profile->dialplan, profile->context);
                 switch_core_session_rwunlock(b_session);
             } 
@@ -4333,13 +4333,13 @@ static void sip_i_invite(nua_t *nua,
     }
 
 			
-    switch_channel_set_variable(channel, "sip_from_user", (char *) from->a_url->url_user);
+    switch_channel_set_variable(channel, "sip_from_user", from->a_url->url_user);
     if (from->a_url->url_user && *from->a_url->url_user == '+') {
         switch_channel_set_variable(channel, "sip_from_user_stripped", (char *)(from->a_url->url_user+1));
     } else {
-        switch_channel_set_variable(channel, "sip_from_user_stripped", (char *)from->a_url->url_user);
+        switch_channel_set_variable(channel, "sip_from_user_stripped", from->a_url->url_user);
     }
-    switch_channel_set_variable(channel, "sip_from_host", (char *) from->a_url->url_host);
+    switch_channel_set_variable(channel, "sip_from_host", from->a_url->url_host);
 
             
     if (!(from_port = (char *) from->a_url->url_port)) {
@@ -4349,7 +4349,7 @@ static void sip_i_invite(nua_t *nua,
     switch_channel_set_variable(channel, "sip_from_port", from_port);
 
 
-    snprintf(uri, sizeof(uri), "%s@%s:%s", (char *) from->a_url->url_user, (char *) from->a_url->url_host, from_port);
+    snprintf(uri, sizeof(uri), "%s@%s:%s", from->a_url->url_user, from->a_url->url_host, from_port);
     switch_channel_set_variable(channel, "sip_from_uri", uri);
             
             
@@ -4373,13 +4373,13 @@ static void sip_i_invite(nua_t *nua,
 
     if (profile->pflags & PFLAG_FULL_ID)  {
 		if (req_user) {
-			if (!(req_username = switch_mprintf("%s@%s:%s", (char *) req_user, (char *) req_host, req_port))) {
+			if (!(req_username = switch_mprintf("%s@%s:%s", req_user, req_host, req_port))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 				switch_safe_free(username);
 				return;
 			}
 		} else {
-			if (!(req_username = switch_mprintf("%s:%s", (char *) req_host, req_port))) {
+			if (!(req_username = switch_mprintf("%s:%s", req_host, req_port))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 				switch_safe_free(username);
 				return;
@@ -4398,7 +4398,7 @@ static void sip_i_invite(nua_t *nua,
     switch_channel_set_variable(channel, "sip_contact_port", contact_port);
 
     if (!tech_pvt->call_id && sip && sip->sip_call_id && sip->sip_call_id->i_id) {
-        tech_pvt->call_id = switch_core_session_strdup(session, (char *)sip->sip_call_id->i_id);
+        tech_pvt->call_id = switch_core_session_strdup(session, sip->sip_call_id->i_id);
         switch_channel_set_variable(channel, "sip_call_id", tech_pvt->call_id);
     }
 
@@ -4491,8 +4491,8 @@ static void sip_i_invite(nua_t *nua,
 			} else if (!strncasecmp(un->un_name, "X-", 2)) {
 				if (!switch_strlen_zero(un->un_value)) { 
 					char *new_name;
-					if ((new_name = switch_mprintf("%s%s", SOFIA_SIP_HEADER_PREFIX, (char *)un->un_name))) {
-						switch_channel_set_variable(channel, new_name, (char *)un->un_value);
+					if ((new_name = switch_mprintf("%s%s", SOFIA_SIP_HEADER_PREFIX, un->un_name))) {
+						switch_channel_set_variable(channel, new_name, un->un_value);
 						free(new_name);
 					}
 				}
