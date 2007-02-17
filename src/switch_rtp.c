@@ -279,38 +279,58 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void)
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_session, char *host, switch_port_t port, const char **err)
 {
-	*err = "Success";
-
+	*err = NULL;
+	switch_socket_t *new_sock = NULL, *old_sock = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	
 	if (switch_sockaddr_info_get(&rtp_session->local_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS) {
 		*err = "Local Address Error!";
-		return SWITCH_STATUS_FALSE;
+		goto done;
 	}
 
 	if (rtp_session->sock) {
 		switch_rtp_kill_socket(rtp_session);
 	}
 	
-	if (switch_socket_create(&rtp_session->sock, AF_INET, SOCK_DGRAM, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_socket_create(&new_sock, AF_INET, SOCK_DGRAM, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS) {
 		*err = "Socket Error!";
-		return SWITCH_STATUS_SOCKERR;
+		goto done;
 	}
 
-	if (switch_socket_opt_set(rtp_session->sock, SWITCH_SO_REUSEADDR, 1) != SWITCH_STATUS_SUCCESS) {
+	if (switch_socket_opt_set(new_sock, SWITCH_SO_REUSEADDR, 1) != SWITCH_STATUS_SUCCESS) {
 		*err = "Socket Error!";
-		return SWITCH_STATUS_FALSE;
+		goto done;
 	}
 
-	if (switch_socket_bind(rtp_session->sock, rtp_session->local_addr) != SWITCH_STATUS_SUCCESS) {
+	if (switch_socket_bind(new_sock, rtp_session->local_addr) != SWITCH_STATUS_SUCCESS) {
 		*err = "Bind Error!";
-		return SWITCH_STATUS_FALSE;
+		goto done;
 	}
+
+	old_sock = rtp_session->sock;
+	rtp_session->sock = new_sock;
+	new_sock = NULL;
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK)) {
 		switch_socket_opt_set(rtp_session->sock, APR_SO_NONBLOCK, TRUE);
 		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
 	}
+
+	status = SWITCH_STATUS_SUCCESS;
+	*err = "Success";
 	switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_IO);
-	return SWITCH_STATUS_SUCCESS;
+
+ done:
+
+	if (new_sock) {
+		switch_socket_close(new_sock);
+	}
+
+	if (old_sock) {
+		switch_socket_close(old_sock);
+	}
+
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, char *host, switch_port_t port, const char **err)
