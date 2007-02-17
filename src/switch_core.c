@@ -2195,12 +2195,11 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session)
 	switch_buffer_destroy(&session->raw_read_buffer);
 	switch_buffer_destroy(&session->raw_write_buffer);
 
-	/* reset state handlers and flush dtmf */
+	/* flush dtmf */
 	channel = switch_core_session_get_channel(session);
-	switch_channel_clear_state_handler(channel, NULL);
 
-	if ((has = switch_channel_has_dtmf(channel))) {
-        switch_channel_dequeue_dtmf(channel, buf, has);
+	while ((has = switch_channel_has_dtmf(channel))) {
+        switch_channel_dequeue_dtmf(channel, buf, sizeof(buf));
     }
 
 }

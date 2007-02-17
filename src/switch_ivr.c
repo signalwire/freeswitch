@@ -36,9 +36,8 @@
 #include <switch_ivr.h>
 #include <libteletone.h>
 
-static const switch_state_handler_table_t noop_state_handler = {0};
-
 static const switch_state_handler_table_t audio_bridge_peer_state_handlers;
+static const switch_state_handler_table_t originate_state_handlers;
 
 typedef enum {
 	IDX_CANCEL = -2,
@@ -2157,6 +2156,35 @@ static const switch_state_handler_table_t audio_bridge_peer_state_handlers = {
 };
 
 
+
+static switch_status_t originate_on_ring(switch_core_session_t *session)
+{
+	switch_channel_t *channel = NULL;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	/* put the channel in a passive state so we can loop audio to it */
+
+	/* clear this handler so it only works once (next time (a.k.a. Transfer) we will do the real ring state) */
+	switch_channel_clear_state_handler(channel, &originate_state_handlers);
+
+	switch_channel_set_state(channel, CS_HOLD);
+
+	return SWITCH_STATUS_FALSE;
+}
+
+static const switch_state_handler_table_t originate_state_handlers = {
+	/*.on_init */ NULL,
+	/*.on_ring */ originate_on_ring,
+	/*.on_execute */ NULL,
+	/*.on_hangup */ NULL,
+	/*.on_loopback */ NULL,
+	/*.on_transmit */ NULL,
+	/*.on_hold */ NULL
+};
+
+
 static switch_status_t uuid_bridge_on_transmit(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
@@ -2722,12 +2750,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			peer_channels[i] = switch_core_session_get_channel(peer_sessions[i]);
 			assert(peer_channels[i] != NULL);
 
-			//switch_channel_set_flag(peer_channels[i], CF_NO_INDICATE);
-
-			if (table == &noop_state_handler) {
-				table = NULL;
-			} else if (!table) {
-				table = &audio_bridge_peer_state_handlers;
+			if (!table) {
+				table = &originate_state_handlers;
 			}
 
 			if (table) {
@@ -3533,7 +3557,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			switch_channel_set_private(peer_channel, "_bridge_", other_audio_thread);
 			switch_channel_set_state(peer_channel, CS_LOOPBACK);
 			audio_bridge_thread(NULL, (void *) this_audio_thread);
-			switch_core_session_reset(session);
 
 			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
 				switch_channel_event_set_data(caller_channel, event);
@@ -3560,7 +3583,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 					switch_yield(1000);
 				}
 			}
-			switch_core_session_reset(peer_session);
+
 			switch_core_session_rwunlock(peer_session);
 			
 		} else {
@@ -3656,9 +3679,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	assert(extension != NULL);
 
 	switch_core_session_reset(session);
-	
+
+
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
+
+	/* clear all state handlers */
+	switch_channel_clear_state_handler(channel, NULL);
 
 	if ((profile = switch_channel_get_caller_profile(channel))) {
 		new_profile = switch_caller_profile_clone(session, profile);

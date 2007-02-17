@@ -831,8 +831,8 @@ static JSBool session_flush_digits(JSContext *cx, JSObject *obj, uintN argc, jsv
         return JS_TRUE;
     }
 
-	if ((has = switch_channel_has_dtmf(channel))) {
-		switch_channel_dequeue_dtmf(channel, buf, has);
+	while ((has = switch_channel_has_dtmf(channel))) {
+		switch_channel_dequeue_dtmf(channel, buf, sizeof(buf));
 	}
 
 	*rval = BOOLEAN_TO_JSVAL( JS_TRUE );
