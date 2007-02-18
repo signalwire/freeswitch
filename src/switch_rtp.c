@@ -491,7 +491,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		}
 	}
 
-	rtp_session->ready++;
 	*new_rtp_session = rtp_session;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -524,6 +523,8 @@ SWITCH_DECLARE(switch_rtp_t *)switch_rtp_new(char *rx_host,
 		return NULL;
 	}
     
+	rtp_session->ready = 1;
+	
 	return rtp_session;
 }
 
