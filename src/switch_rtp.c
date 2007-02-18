@@ -567,7 +567,7 @@ SWITCH_DECLARE(void) switch_rtp_kill_socket(switch_rtp_t *rtp_session)
 
 SWITCH_DECLARE(uint8_t) switch_rtp_ready(switch_rtp_t *rtp_session)
 {
-	return (rtp_session != NULL && rtp_session->ready) ? 1 : 0;
+	return (rtp_session != NULL && rtp_session->sock && rtp_session->ready) ? 1 : 0;
 }
 
 SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
@@ -575,6 +575,8 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 	if (!switch_rtp_ready(*rtp_session)) {
 		return;
 	}
+
+	rtp_session->ready = 0;
 
 	switch_mutex_lock((*rtp_session)->flag_mutex);
 	
@@ -760,7 +762,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		rtp_session->last_time = switch_time_now();
 	}
 
-	while(rtp_session->ready) {
+	while(switch_rtp_ready(rtp_session)) {
 		bytes = sizeof(rtp_msg_t);	
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *)&rtp_session->recv_msg, &bytes);
 
