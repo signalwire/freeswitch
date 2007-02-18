@@ -279,9 +279,9 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void)
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_session, char *host, switch_port_t port, const char **err)
 {
-	*err = NULL;
 	switch_socket_t *new_sock = NULL, *old_sock = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	*err = NULL;
 	
 	if (switch_sockaddr_info_get(&rtp_session->local_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS) {
 		*err = "Local Address Error!";
@@ -576,7 +576,7 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 		return;
 	}
 
-	rtp_session->ready = 0;
+	(*rtp_session)->ready = 0;
 
 	switch_mutex_lock((*rtp_session)->flag_mutex);
 	
