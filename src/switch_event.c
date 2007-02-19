@@ -130,6 +130,7 @@ static char *EVENT_NAMES[] = {
 	"CODEC",
 	"BACKGROUND_JOB",
 	"DETECTED_SPEECH",
+	"PRIVATE_COMMAND",
 	"ALL"
 };
 

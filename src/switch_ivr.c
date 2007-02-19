@@ -98,6 +98,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	unsigned long CMD_NOMEDIA = apr_hashfunc_default("nomedia", &hlen);
 	
     assert(channel != NULL);
+	assert(event != NULL);
 
 	if (switch_strlen_zero(cmd)) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Command!\n");
@@ -170,7 +171,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
             
             if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
                 switch_ivr_parse_event(session, event);
-                switch_event_destroy(&event);
+                switch_event_fire(&event);
             }
 
 			if (switch_channel_has_dtmf(channel)) {
