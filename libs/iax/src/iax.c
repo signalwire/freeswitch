@@ -2916,17 +2916,29 @@ struct iax_event *iax_net_process(unsigned char *buf, int len, struct sockaddr_i
 	struct iax_session *session;
 	
 	if (ntohs(fh->scallno) & IAX_FLAG_FULL) {
+		int subclass = uncompress_subclass(fh->csub);
+		int makenew = 0;
+
 		/* Full size header */
 		if (len < sizeof(struct ast_iax2_full_hdr)) {
 			DEBU(G "Short header received from %s\n", inet_ntoa(sin->sin_addr));
 			IAXERROR "Short header received from %s\n", inet_ntoa(sin->sin_addr));
 		}
+		/* Only allow it to make new sessions on types where that makes sense */
+		if ((fh->type == AST_FRAME_IAX) && ((subclass == IAX_COMMAND_NEW) ||
+											(subclass == IAX_COMMAND_POKE) ||
+											(subclass == IAX_COMMAND_REGREL) ||
+											(subclass == IAX_COMMAND_REGREQ))) {
+			makenew = 1;
+		}
+
 		/* We have a full header, process appropriately */
-		session = iax_find_session(sin, ntohs(fh->scallno) & ~IAX_FLAG_FULL, ntohs(fh->dcallno) & ~IAX_FLAG_RETRANS, 1);
+		session = iax_find_session(sin, ntohs(fh->scallno) & ~IAX_FLAG_FULL, ntohs(fh->dcallno) & ~IAX_FLAG_RETRANS, makenew);
 		if (!session)
 			session = iax_txcnt_session(fh, len-sizeof(struct ast_iax2_full_hdr), sin, ntohs(fh->scallno) & ~IAX_FLAG_FULL, ntohs(fh->dcallno) & ~IAX_FLAG_RETRANS);
 		if (session) 
 			return iax_header_to_event(session, fh, len - sizeof(struct ast_iax2_full_hdr), sin);
+		/* if we get here, the frame was invalid for some reason, we should probably send IAX_COMMAND_INVAL (as long as the subclass was not already IAX_COMMAND_INVAL) */
 		DEBU(G "No session?\n");
 		return NULL;
 	} else {
