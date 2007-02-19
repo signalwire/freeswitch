@@ -171,6 +171,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
             
             if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
                 switch_ivr_parse_event(session, event);
+				switch_channel_event_set_data(switch_core_session_get_channel(session), event);
                 switch_event_fire(&event);
             }
 
