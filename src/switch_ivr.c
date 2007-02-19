@@ -1965,7 +1965,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		pre_b = switch_channel_test_flag(chan_a, CF_EARLY_MEDIA);
 		ans_b = switch_channel_test_flag(chan_b, CF_ANSWERED);
 	}
-
+	switch_core_session_read_lock(session_a);
+	switch_core_session_read_lock(session_b);
 
 	switch_channel_set_flag(chan_a, CF_BRIDGED);
 
@@ -2091,6 +2092,9 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	switch_mutex_lock(data->mutex);
 	data->running = 0;
 	switch_mutex_unlock(data->mutex);
+
+	switch_core_session_rwunlock(session_a);
+	switch_core_session_rwunlock(session_b);
 	return NULL;
 }
 
