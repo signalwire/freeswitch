@@ -211,6 +211,15 @@ SWITCH_DECLARE(char *) switch_channel_get_uuid(switch_channel_t *channel);
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *channel, const char *varname, const char *value);
 
 /*!
+  \brief Set a variable on a given channel, without duplicating the value from the session pool.
+  \param channel channel to set variable on
+  \param varname the name of the variable
+  \param value the vaule of the variable (MUST BE ALLOCATED FROM THE SESSION POOL ALREADY)
+  \returns SWITCH_STATUS_SUCCESS if successful
+*/
+SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_nodup(switch_channel_t *channel, const char *varname, char *value);
+
+/*!
   \brief Retrieve a variable from a given channel
   \param channel channel to retrieve variable from
   \param varname the name of the variable

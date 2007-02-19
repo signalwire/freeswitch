@@ -373,6 +373,23 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *ch
 	return SWITCH_STATUS_FALSE;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_nodup(switch_channel_t *channel, const char *varname, char *value)
+{
+	assert(channel != NULL);
+
+	if (varname) {
+		switch_core_hash_delete(channel->variables, varname);
+		if (!switch_strlen_zero(value)) {
+			switch_core_hash_insert_dup(channel->variables, varname, value);
+		} else {
+			switch_core_hash_delete(channel->variables, varname);
+		}
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
 SWITCH_DECLARE(int) switch_channel_test_flag(switch_channel_t *channel, switch_channel_flag_t flags)
 {
 	assert(channel != NULL);
