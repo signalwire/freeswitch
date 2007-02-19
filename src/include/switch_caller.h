@@ -171,17 +171,17 @@ SWITCH_DECLARE(char *) switch_caller_get_field_by_name(switch_caller_profile_t *
   \return a new profile object allocated from the session's memory pool
 */
 SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memory_pool_t *pool,
-																	char *username,
-																	char *dialplan,
-																	char *caller_id_name,
-																	char *caller_id_number,
-																	char *network_addr,
-																	char *ani,
-																	char *aniii,
-																	char *rdnis,
-																	char *source,
-																	char *context,
-																	char *destination_number);
+																	const char *username,
+																	const char *dialplan,
+																	const char *caller_id_name,
+																	const char *caller_id_number,
+																	const char *network_addr,
+																	const char *ani,
+																	const char *aniii,
+																	const char *rdnis,
+																	const char *source,
+																	const char *context,
+																	const char *destination_number);
 
 /*!
   \brief Clone an existing caller profile object
