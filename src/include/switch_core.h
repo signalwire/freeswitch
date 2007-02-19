@@ -393,6 +393,15 @@ SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session_t *session
 */
 SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool_t *pool, const char *todup);
 
+/*!
+  \brief printf-style style printing routine.  The data is output to a string allocated from the session
+  \param session a session to use for allocation
+  \param fmt The format of the string
+  \param ... The arguments to use while printing the data
+  \return The new string
+*/
+SWITCH_DECLARE(char *) switch_core_session_sprintf(switch_core_session_t *session, const char *fmt, ...);
+
 /*! 
   \brief Retrieve the memory pool from a session
   \param session the session to retrieve the pool from

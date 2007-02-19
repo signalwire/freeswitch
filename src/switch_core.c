@@ -1465,6 +1465,22 @@ SWITCH_DECLARE(char *) switch_core_permanent_strdup(const char *todup)
 	return duped;
 }
 
+SWITCH_DECLARE(char *) switch_core_session_sprintf(switch_core_session_t *session, const char *fmt, ...)
+{
+	va_list ap;
+	char *result = NULL;
+
+	assert(session != NULL);
+	assert(session->pool != NULL);
+	va_start(ap, fmt);
+	
+	result = apr_pvsprintf(session->pool ,fmt, ap);
+
+	va_end(ap);
+
+	return result;
+}
+
 
 SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session_t *session, const char *todup)
 {
