@@ -4406,10 +4406,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 		if (!match) {
 			if (*menu->buf) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IVR menu '%s' caught invalid input '%s'\n", menu->name, menu->buf);
-                if (menu->invalid_sound) {
-                    play_or_say(session, menu, menu->invalid_sound, 0);
-                }
-			} else {
+				if (menu->invalid_sound) {
+					play_or_say(session, menu, menu->invalid_sound, 0);
+				}
+			}
+			else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IVR menu '%s' no input detected\n", menu->name);
 			}
 			errs++;
