@@ -1481,6 +1481,21 @@ SWITCH_DECLARE(char *) switch_core_session_sprintf(switch_core_session_t *sessio
 	return result;
 }
 
+SWITCH_DECLARE(char *) switch_core_sprintf(switch_memory_pool_t *pool, const char *fmt, ...)
+{
+	va_list ap;
+	char *result = NULL;
+
+	assert(pool != NULL);
+	va_start(ap, fmt);
+	
+	result = apr_pvsprintf(pool ,fmt, ap);
+
+	va_end(ap);
+
+	return result;
+}
+
 
 SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session_t *session, const char *todup)
 {
