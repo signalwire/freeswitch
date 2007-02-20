@@ -683,7 +683,7 @@ static char *find_reg_url(sofia_profile_t *profile, char *user, char *host, char
 
 static void set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, char *sr, int force)
 {
-	char buf[1024];
+	char buf[2048];
 	switch_time_t now = switch_time_now();
     int ptime = 0;
 
@@ -2365,7 +2365,7 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 
         ptime = dptime;
         for (a = m->m_attributes; a; a = a->a_next) {
-            if (!strcasecmp(a->a_name, "ptime")) {
+            if (!strcasecmp(a->a_name, "ptime") && a->a_value) {
                 ptime = atoi(a->a_value);
             }
         }
