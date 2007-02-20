@@ -3790,9 +3790,15 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 	uint32_t itterations = 0;
 	uint8_t trans = 0, nothing_in_queue = 0;
 	uint32_t freq = 1000, target = 1000;
-	uint32_t len = 0;
-	uint32_t sql_len = SQLLEN;
+	switch_size_t len = 0, sql_len = SQLLEN;
+	const char *begin_sql = "BEGIN DEFERRED TRANSACTION CORE1;\n";
+	char *end_sql = "END TRANSACTION CORE1";
+	switch_size_t begin_len = strlen(begin_sql);
+	switch_size_t end_len = strlen(end_sql);
 	char *sqlbuf = (char *) malloc(sql_len);
+	char *sql;
+	switch_size_t newlen;
+
 	
 	if (!runtime.event_db) {
 		runtime.event_db = switch_core_db_handle();
@@ -3801,28 +3807,32 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 
 	for(;;) {
 		if (switch_queue_trypop(runtime.sql_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-			char *sql = (char *) pop;
-			uint32_t newlen;
+			sql = (char *) pop;
 
 			if (sql) {
-				if (itterations == 0) {
-					char *isql = "begin transaction CORE1;\n";
-					switch_core_db_persistant_execute(runtime.event_db, isql, 0);
-					trans = 1;
-					
-				}
+				newlen = strlen(sql) + 2;
 
-				itterations++;
-				newlen = (uint32_t)strlen(sql) + 2;
-				if (len + newlen > sql_len) {
-					sql_len = len + SQLLEN;
-					if (!(sqlbuf = realloc(sqlbuf, sql_len))) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL thread ending on mem err\n");
-						break;
+				/* ignore abnormally large strings sql strings as potential buffer overflow */
+				if (newlen + end_len < SQLLEN) {
+
+					if (itterations == 0) {
+						len = begin_len;
+						sprintf(sqlbuf, "%s", begin_sql); 
+						trans = 1;
 					}
+
+					itterations++;
+					if (len + newlen + end_len > sql_len) {
+						sql_len = len + SQLLEN;
+						if (!(sqlbuf = realloc(sqlbuf, sql_len))) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL thread ending on mem err\n");
+							break;
+						}
+					}
+					sprintf(sqlbuf + len, "%s;\n", sql); 
+					len += newlen;
+
 				}
-				snprintf(sqlbuf + len, sql_len - len, "%s;\n", sql); 
-				len += newlen;
 				switch_core_db_free(sql);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "SQL thread ending\n");
@@ -3834,10 +3844,10 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 
 
 		if (trans && ((itterations == target) || nothing_in_queue)) {
-			char *isql = "end transaction CORE1";
-
-			switch_core_db_persistant_execute(runtime.event_db, sqlbuf, 0);
-			switch_core_db_persistant_execute(runtime.event_db, isql, 0);
+			sprintf(sqlbuf + len, "%s", end_sql); 
+			if (switch_core_db_persistant_execute(runtime.event_db, sqlbuf, 1000) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL thread unable to commit transaction, records lost!\n");
+			}
 			itterations = 0;
 			trans = 0;
 			nothing_in_queue = 0;
