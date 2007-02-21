@@ -693,6 +693,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 			session = (switch_core_session_t *) val;
 			channel = switch_core_session_get_channel(session);
 			switch_channel_hangup(channel, cause);
+			switch_core_session_kill_channel(session, SWITCH_SIG_KILL);
 		}
 	}
 	switch_mutex_unlock(runtime.session_table_mutex);

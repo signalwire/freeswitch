@@ -188,6 +188,26 @@ static switch_status_t switch_g711a_destroy(switch_codec_t *codec)
 /* Registration */
 
 
+static const switch_codec_implementation_t g711u_8k_120ms_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 0,
+	/*.iananame */ "PCMU",
+	/*.fmtp */ NULL,
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ 64000,
+	/*.microseconds_per_frame */ 120000,
+	/*.samples_per_frame */ 960,
+	/*.bytes_per_frame */ 1920,
+	/*.encoded_bytes_per_frame */ 960,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_g711u_init,
+	/*.encode */ switch_g711u_encode,
+	/*.decode */ switch_g711u_decode,
+	/*.destroy */ switch_g711u_destroy
+};
+
 static const switch_codec_implementation_t g711u_8k_60ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 0,
@@ -205,7 +225,8 @@ static const switch_codec_implementation_t g711u_8k_60ms_implementation = {
 	/*.init */ switch_g711u_init,
 	/*.encode */ switch_g711u_encode,
 	/*.decode */ switch_g711u_decode,
-	/*.destroy */ switch_g711u_destroy
+	/*.destroy */ switch_g711u_destroy,
+	/*.next*/ &g711u_8k_120ms_implementation
 };
 
 static const switch_codec_implementation_t g711u_8k_30ms_implementation = {
@@ -273,6 +294,25 @@ static const switch_codec_implementation_t g711u_8k_10ms_implementation = {
 
 
 
+static const switch_codec_implementation_t g711a_8k_120ms_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 8,
+	/*.iananame */ "PCMA",
+	/*.fmtp */ NULL,
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ 64000,
+	/*.microseconds_per_frame */ 120000,
+	/*.samples_per_frame */ 960,
+	/*.bytes_per_frame */ 1920,
+	/*.encoded_bytes_per_frame */ 960,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_g711a_init,
+	/*.encode */ switch_g711a_encode,
+	/*.decode */ switch_g711a_decode,
+	/*.destroy */ switch_g711a_destroy
+};
 
 static const switch_codec_implementation_t g711a_8k_60ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
@@ -288,10 +328,11 @@ static const switch_codec_implementation_t g711a_8k_60ms_implementation = {
 	/*.number_of_channels */ 1,
 	/*.pref_frames_per_packet */ 1,
 	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g711u_init,
-	/*.encode */ switch_g711u_encode,
-	/*.decode */ switch_g711u_decode,
-	/*.destroy */ switch_g711u_destroy,
+	/*.init */ switch_g711a_init,
+	/*.encode */ switch_g711a_encode,
+	/*.decode */ switch_g711a_decode,
+	/*.destroy */ switch_g711a_destroy,
+    /*.next*/ &g711a_8k_120ms_implementation
 };
 
 static const switch_codec_implementation_t g711a_8k_30ms_implementation = {
@@ -308,10 +349,10 @@ static const switch_codec_implementation_t g711a_8k_30ms_implementation = {
 	/*.number_of_channels */ 1,
 	/*.pref_frames_per_packet */ 1,
 	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g711u_init,
-	/*.encode */ switch_g711u_encode,
-	/*.decode */ switch_g711u_decode,
-	/*.destroy */ switch_g711u_destroy,
+	/*.init */ switch_g711a_init,
+	/*.encode */ switch_g711a_encode,
+	/*.decode */ switch_g711a_decode,
+	/*.destroy */ switch_g711a_destroy,
     /*.next*/ &g711a_8k_60ms_implementation
 };
 
@@ -350,10 +391,10 @@ static const switch_codec_implementation_t g711a_8k_10ms_implementation = {
 	/*.number_of_channels */ 1,
 	/*.pref_frames_per_packet */ 1,
 	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g711u_init,
-	/*.encode */ switch_g711u_encode,
-	/*.decode */ switch_g711u_decode,
-	/*.destroy */ switch_g711u_destroy,
+	/*.init */ switch_g711a_init,
+	/*.encode */ switch_g711a_encode,
+	/*.decode */ switch_g711a_decode,
+	/*.destroy */ switch_g711a_destroy,
     /*.next*/ &g711a_8k_20ms_implementation
 };
 

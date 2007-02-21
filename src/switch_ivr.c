@@ -1218,6 +1218,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 	if (!fh->audio_buffer) {
 		switch_buffer_create_dynamic(&fh->audio_buffer, FILE_BLOCKSIZE, FILE_BUFSIZE, 0);
+		if (!fh->audio_buffer) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup buffer failed\n");
+
+			switch_core_file_close(fh);
+			switch_core_session_reset(session);
+			
+			return SWITCH_STATUS_GENERR;
+		}
 	} 
 
 	if (asis) {
@@ -1334,7 +1342,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			olen = asis ? framelen : ilen;
 			do_speed = 0;
 		} else {
-			olen = 32 * framelen;
+			olen = sizeof(abuf);
+			if (!asis) {
+				olen /= 2;
+			}
 			switch_core_file_read(fh, abuf, &olen);
 			switch_buffer_write(fh->audio_buffer, abuf, asis ? olen : olen * 2);
 			olen = switch_buffer_read(fh->audio_buffer, abuf, framelen);
