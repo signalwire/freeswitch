@@ -317,6 +317,7 @@ struct private_object {
 	switch_payload_t pt;
 	switch_mutex_t *flag_mutex;
 	switch_payload_t te;
+	switch_payload_t bte;
 	nua_handle_t *nh;
 	nua_handle_t *nh2;
 	su_home_t *home;
@@ -859,7 +860,11 @@ static void attach_private(switch_core_session_t *session,
 	tech_pvt->flags = profile->flags;
 	switch_mutex_unlock(tech_pvt->flag_mutex);
 	tech_pvt->profile = profile;
-	tech_pvt->te = profile->te;
+	if (tech_pvt->bte) {
+		tech_pvt->te = tech_pvt->bte;
+	} else {
+		tech_pvt->te = profile->te;
+	}
 	tech_pvt->session = session;
 	tech_pvt->home = su_home_new(sizeof(*tech_pvt->home));
 
@@ -2310,7 +2315,15 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		//switch_channel_t *channel = switch_core_session_get_channel(session);
 		switch_ivr_transfer_variable(session, nsession, SOFIA_REPLACES_HEADER);
 		switch_ivr_transfer_variable(session, nsession, SOFIA_SIP_HEADER_PREFIX_T);
-
+		if (switch_core_session_compare(session, nsession)) {
+			/* It's another sofia channel! so lets cache what they use as a pt for telephone event so 
+			   we can keep it the same
+			*/
+			private_object_t *ctech_pvt;
+			ctech_pvt = switch_core_session_get_private(session);
+			assert(ctech_pvt != NULL);
+			tech_pvt->bte = ctech_pvt->te;
+		}
 	}
 
  done:
@@ -2328,7 +2341,7 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
     int ptime = 0, dptime = 0;
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);                                                                                                                               
+	assert(tech_pvt != NULL);
 
 	channel = switch_core_session_get_channel(session);
 	

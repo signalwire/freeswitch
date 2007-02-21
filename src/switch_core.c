@@ -4466,6 +4466,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(int vg)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(uint8_t) switch_core_session_compare(switch_core_session_t *a, switch_core_session_t *b)
+{
+	assert(a != NULL);
+	assert(b != NULL);
+
+	return (a->endpoint_interface == b->endpoint_interface);
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c

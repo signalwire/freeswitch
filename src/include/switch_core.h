@@ -1454,6 +1454,14 @@ SWITCH_DECLARE(void) switch_core_launch_thread(void *(*func)(switch_thread_t *, 
   \brief Initiate Globals
 */
 SWITCH_DECLARE(void) switch_core_set_globals(void);
+
+/*!
+  \brief indicate if 2 sessions are the same type
+  \param a the first session
+  \param b the second session
+  \return TRUE or FALSE
+*/
+SWITCH_DECLARE(uint8_t) switch_core_session_compare(switch_core_session_t *a, switch_core_session_t *b);
 ///\}
 
 /*!
