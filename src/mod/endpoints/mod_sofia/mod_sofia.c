@@ -2256,7 +2256,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
         goto done;
 	}
 
-	if ((dest_to = strchr(dest, ':'))) {
+	if ((dest_to = strchr(dest, '^'))) {
 		*dest_to++ = '\0';
 		tech_pvt->dest_to = switch_core_session_alloc(nsession, strlen(dest_to) + 5);
 		snprintf(tech_pvt->dest_to, strlen(dest_to) + 5, "sip:%s", dest_to);
