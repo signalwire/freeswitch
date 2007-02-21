@@ -193,6 +193,25 @@ DoxyDefine(apr_status_t switch_file_close(switch_file_t *file);)
 #define switch_file_close apr_file_close
 
 /**
+ * Establish a lock on the specified, open file. The lock may be advisory
+ * or mandatory, at the discretion of the platform. The lock applies to
+ * the file as a whole, rather than a specific range. Locks are established
+ * on a per-thread/process basis; a second lock by the same thread will not
+ * block.
+ * @param thefile The file to lock.
+ * @param type The type of lock to establish on the file.
+ */
+DoxyDefine(apr_status_t apr_file_lock(switch_file_t *thefile, int type);)
+#define switch_file_lock apr_file_lock
+
+/**
+ * Remove any outstanding locks on the file.
+ * @param thefile The file to unlock.
+ */
+DoxyDefine(apr_status_t apr_file_unlock(switch_file_t *thefile);)
+#define switch_file_unlock apr_file_unlock
+
+/**
  * Delete the specified file.
  * @param path The full path to the file (using / on all systems)
  * @param pool The pool to use.
