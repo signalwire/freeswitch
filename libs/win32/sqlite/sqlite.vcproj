@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot; type &quot;$(ProjectDir)sqlite3.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot; type &quot;$(ProjectDir)parse.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot; type &quot;$(ProjectDir)parse.c&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot; type &quot;$(ProjectDir)opcodes.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot; type &quot;$(ProjectDir)opcodes.c&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot; type &quot;$(ProjectDir)keywordhash.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot;&#x0D;&#x0A;"
+				CommandLine="if exist &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot; del &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot;&#x0D;&#x0A;if exist &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot; del &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot;&#x0D;&#x0A;if exist &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot; del &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot;&#x0D;&#x0A;if exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot; del &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot;&#x0D;&#x0A;if exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot; del &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot;&#x0D;&#x0A;if exist &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot; del &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -42,6 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)&quot;;&quot;$(ProjectDir)..\..\sqlite\src&quot;"
 				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_DEBUG;_LIB;SQLITE_DEBUG"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -90,7 +91,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot; type &quot;$(ProjectDir)sqlite3.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot; type &quot;$(ProjectDir)parse.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot; type &quot;$(ProjectDir)parse.c&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot; type &quot;$(ProjectDir)opcodes.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot; type &quot;$(ProjectDir)opcodes.c&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot; type &quot;$(ProjectDir)keywordhash.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot;&#x0D;&#x0A;"
+				CommandLine="if exist &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot; del &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot;&#x0D;&#x0A;if exist &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot; del &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot;&#x0D;&#x0A;if exist &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot; del &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot;&#x0D;&#x0A;if exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot; del &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot;&#x0D;&#x0A;if exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot; del &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot;&#x0D;&#x0A;if exist &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot; del &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -106,6 +107,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)&quot;;&quot;$(ProjectDir)..\..\sqlite\src&quot;"
 				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -153,7 +155,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot; type &quot;$(ProjectDir)sqlite3.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot; type &quot;$(ProjectDir)parse.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot; type &quot;$(ProjectDir)parse.c&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot; type &quot;$(ProjectDir)opcodes.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot; type &quot;$(ProjectDir)opcodes.c&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot; type &quot;$(ProjectDir)keywordhash.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot;&#x0D;&#x0A;"
+				CommandLine="if exist &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot; del &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot;&#x0D;&#x0A;if exist &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot; del &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot;&#x0D;&#x0A;if exist &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot; del &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot;&#x0D;&#x0A;if exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot; del &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot;&#x0D;&#x0A;if exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot; del &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot;&#x0D;&#x0A;if exist &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot; del &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -170,6 +172,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)&quot;;&quot;$(ProjectDir)..\..\sqlite\src&quot;"
 				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_DEBUG;_LIB;SQLITE_DEBUG"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -234,7 +237,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot; type &quot;$(ProjectDir)sqlite3.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot; type &quot;$(ProjectDir)parse.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot; type &quot;$(ProjectDir)parse.c&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot; type &quot;$(ProjectDir)opcodes.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot; type &quot;$(ProjectDir)opcodes.c&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot; type &quot;$(ProjectDir)keywordhash.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot;&#x0D;&#x0A;"
+				CommandLine="if exist &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot; del &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot;&#x0D;&#x0A;if exist &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot; del &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot;&#x0D;&#x0A;if exist &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot; del &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot;&#x0D;&#x0A;if exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot; del &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot;&#x0D;&#x0A;if exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot; del &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot;&#x0D;&#x0A;if exist &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot; del &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -250,6 +253,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)&quot;;&quot;$(ProjectDir)..\..\sqlite\src&quot;"
 				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -376,7 +380,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite\src\opcodes.c"
+				RelativePath=".\opcodes.c"
 				>
 			</File>
 			<File
@@ -396,7 +400,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite\src\parse.c"
+				RelativePath=".\parse.c"
 				>
 			</File>
 			<File
@@ -494,11 +498,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite\src\keywordhash.h"
+				RelativePath=".\keywordhash.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite\src\opcodes.h"
+				RelativePath=".\opcodes.h"
 				>
 			</File>
 			<File
@@ -514,11 +518,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite\src\parse.h"
+				RelativePath=".\parse.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite\src\sqlite3.h"
+				RelativePath=".\sqlite3.h"
 				>
 			</File>
 			<File

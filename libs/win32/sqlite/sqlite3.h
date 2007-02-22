@@ -12,7 +12,7 @@
 ** This header file defines the interface that the SQLite library
 ** presents to client programs.
 **
-** @(#) $Id: sqlite.h.in,v 1.194 2006/09/16 21:45:14 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.198 2007/01/26 00:51:44 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -31,7 +31,7 @@ extern "C" {
 #ifdef SQLITE_VERSION
 # undef SQLITE_VERSION
 #endif
-#define SQLITE_VERSION         "3.3.8"
+#define SQLITE_VERSION         "3.3.13"
 
 /*
 ** The format of the version string is "X.Y.Z<trailing string>", where
@@ -48,7 +48,7 @@ extern "C" {
 #ifdef SQLITE_VERSION_NUMBER
 # undef SQLITE_VERSION_NUMBER
 #endif
-#define SQLITE_VERSION_NUMBER 3003008
+#define SQLITE_VERSION_NUMBER 3003013
 
 /*
 ** The version string is also compiled into the library so that a program
@@ -125,7 +125,7 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 ** value then the query is aborted, all subsequent SQL statements
 ** are skipped and the sqlite3_exec() function returns the SQLITE_ABORT.
 **
-** The 4th parameter is an arbitrary pointer that is passed
+** The 1st parameter is an arbitrary pointer that is passed
 ** to the callback function as its first parameter.
 **
 ** The 2nd parameter to the callback function is the number of
@@ -315,12 +315,29 @@ int sqlite3_complete16(const void *sql);
 ** currently locked by another process or thread.  If the busy callback
 ** is NULL, then sqlite3_exec() returns SQLITE_BUSY immediately if
 ** it finds a locked table.  If the busy callback is not NULL, then
-** sqlite3_exec() invokes the callback with three arguments.  The
-** second argument is the name of the locked table and the third
-** argument is the number of times the table has been busy.  If the
+** sqlite3_exec() invokes the callback with two arguments.  The
+** first argument to the handler is a copy of the void* pointer which
+** is the third argument to this routine.  The second argument to
+** the handler is the number of times that the busy handler has
+** been invoked for this locking event.  If the
 ** busy callback returns 0, then sqlite3_exec() immediately returns
 ** SQLITE_BUSY.  If the callback returns non-zero, then sqlite3_exec()
 ** tries to open the table again and the cycle repeats.
+**
+** The presence of a busy handler does not guarantee that
+** it will be invoked when there is lock contention.
+** If SQLite determines that invoking the busy handler could result in
+** a deadlock, it will return SQLITE_BUSY instead.
+** Consider a scenario where one process is holding a read lock that
+** it is trying to promote to a reserved lock and
+** a second process is holding a reserved lock that it is trying
+** to promote to an exclusive lock.  The first process cannot proceed
+** because it is blocked by the second and the second process cannot
+** proceed because it is blocked by the first.  If both processes
+** invoke the busy handlers, neither will make any progress.  Therefore,
+** SQLite returns SQLITE_BUSY for the first process, hoping that this
+** will induce the first process to release its read lock and allow
+** the second process to proceed.
 **
 ** The default busy callback is NULL.
 **
@@ -685,6 +702,31 @@ int sqlite3_prepare(
   const char **pzTail     /* OUT: Pointer to unused portion of zSql */
 );
 int sqlite3_prepare16(
+  sqlite3 *db,            /* Database handle */
+  const void *zSql,       /* SQL statement, UTF-16 encoded */
+  int nBytes,             /* Length of zSql in bytes. */
+  sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
+  const void **pzTail     /* OUT: Pointer to unused portion of zSql */
+);
+
+/*
+** Newer versions of the prepare API work just like the legacy versions
+** but with one exception:  The a copy of the SQL text is saved in the
+** sqlite3_stmt structure that is returned.  If this copy exists, it
+** modifieds the behavior of sqlite3_step() slightly.  First, sqlite3_step()
+** will no longer return an SQLITE_SCHEMA error but will instead automatically
+** rerun the compiler to rebuild the prepared statement.  Secondly, 
+** sqlite3_step() now turns a full result code - the result code that
+** use used to have to call sqlite3_reset() to get.
+*/
+int sqlite3_prepare_v2(
+  sqlite3 *db,            /* Database handle */
+  const char *zSql,       /* SQL statement, UTF-8 encoded */
+  int nBytes,             /* Length of zSql in bytes. */
+  sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
+  const char **pzTail     /* OUT: Pointer to unused portion of zSql */
+);
+int sqlite3_prepare16_v2(
   sqlite3 *db,            /* Database handle */
   const void *zSql,       /* SQL statement, UTF-16 encoded */
   int nBytes,             /* Length of zSql in bytes. */
@@ -1143,9 +1185,13 @@ void sqlite3_set_auxdata(sqlite3_context*, int, void*, void (*)(void*));
 ** SQLITE_TRANSIENT value means that the content will likely change in
 ** the near future and that SQLite should make its own private copy of
 ** the content before returning.
+**
+** The typedef is necessary to work around problems in certain
+** C++ compilers.  See ticket #2191.
 */
-#define SQLITE_STATIC      ((void(*)(void *))0)
-#define SQLITE_TRANSIENT   ((void(*)(void *))-1)
+typedef void (*sqlite3_destructor_type)(void*);
+#define SQLITE_STATIC      ((sqlite3_destructor_type)0)
+#define SQLITE_TRANSIENT   ((sqlite3_destructor_type)-1)
 
 /*
 ** User-defined functions invoke the following routines in order to
