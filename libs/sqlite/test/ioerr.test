@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.27 2006/09/15 07:28:51 drh Exp $
+# $Id: ioerr.test,v 1.29 2007/01/04 14:58:14 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -45,6 +45,9 @@ do_ioerr_test ioerr-1 -erc 1 -sqlprep {
   SELECT * FROM t1;
   DELETE FROM t1 WHERE a<100;
 } -exclude [expr [string match [execsql {pragma auto_vacuum}] 1] ? 4 : 0]
+
+finish_test
+return
 
 # Test for IO errors during a VACUUM. 
 #
@@ -165,6 +168,7 @@ ifcapable crashtest {
 # These tests can't be run on windows because the windows version of 
 # SQLite holds a mandatory exclusive lock on journal files it has open.
 #
+btree_breakpoint
 if {$tcl_platform(platform)!="windows"} {
   do_ioerr_test ioerr-7 -tclprep {
     db close

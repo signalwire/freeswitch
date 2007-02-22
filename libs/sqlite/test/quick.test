@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.45 2006/06/23 08:05:38 danielk1977 Exp $
+# $Id: quick.test,v 1.47 2006/11/23 21:09:11 drh Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -50,6 +50,7 @@ set EXCLUDE {
   memleak.test
   misuse.test
   quick.test
+  speed1.test
 
   autovacuum_crash.test
   btree8.test
@@ -63,9 +64,17 @@ if {[sqlite3 -has-codec]} {
   #  conflict.test
 }
 
+
+# Files to include in the test.  If this list is empty then everything
+# that is not in the EXCLUDE list is run.
+#
+set INCLUDE {
+}
+
 foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
   set tail [file tail $testfile]
   if {[lsearch -exact $EXCLUDE $tail]>=0} continue
+  if {[llength $INCLUDE]>0 && [lsearch -exact $INCLUDE $tail]<0} continue
   source $testfile
   catch {db close}
   if {$sqlite_open_file_count>0} {

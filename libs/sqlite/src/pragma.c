@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.124 2006/09/25 18:01:57 drh Exp $
+** $Id: pragma.c,v 1.127 2007/01/27 02:24:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include "os.h"
@@ -483,14 +483,12 @@ void sqlite3Pragma(
       sqlite3ViewGetColumnNames(pParse, pTab);
       for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
         const Token *pDflt;
-        static const Token noDflt =  { (unsigned char*)"", 0, 0 };
         sqlite3VdbeAddOp(v, OP_Integer, i, 0);
         sqlite3VdbeOp3(v, OP_String8, 0, 0, pCol->zName, 0);
         sqlite3VdbeOp3(v, OP_String8, 0, 0,
            pCol->zType ? pCol->zType : "", 0);
         sqlite3VdbeAddOp(v, OP_Integer, pCol->notNull, 0);
-        pDflt = pCol->pDflt ? &pCol->pDflt->span : &noDflt;
-        if( pDflt->z ){
+        if( pCol->pDflt && (pDflt = &pCol->pDflt->span)->z ){
           sqlite3VdbeOp3(v, OP_String8, 0, 0, (char*)pDflt->z, pDflt->n);
         }else{
           sqlite3VdbeAddOp(v, OP_Null, 0, 0);
@@ -642,9 +640,13 @@ void sqlite3Pragma(
     }
   }else
 
+#ifndef SQLITE_INTEGRITY_CHECK_ERROR_MAX
+# define SQLITE_INTEGRITY_CHECK_ERROR_MAX 100
+#endif
+
 #ifndef SQLITE_OMIT_INTEGRITY_CHECK
   if( sqlite3StrICmp(zLeft, "integrity_check")==0 ){
-    int i, j, addr;
+    int i, j, addr, mxErr;
 
     /* Code that appears at the end of the integrity check.  If no error
     ** messages have been generated, output OK.  Otherwise output the
@@ -662,7 +664,16 @@ void sqlite3Pragma(
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "integrity_check", P3_STATIC);
-    sqlite3VdbeAddOp(v, OP_MemInt, 0, 0);  /* Initialize error count to 0 */
+
+    /* Set the maximum error count */
+    mxErr = SQLITE_INTEGRITY_CHECK_ERROR_MAX;
+    if( zRight ){
+      mxErr = atoi(zRight);
+      if( mxErr<=0 ){
+        mxErr = SQLITE_INTEGRITY_CHECK_ERROR_MAX;
+      }
+    }
+    sqlite3VdbeAddOp(v, OP_MemInt, mxErr, 0);
 
     /* Do an integrity check on each database file */
     for(i=0; i<db->nDb; i++){
@@ -673,6 +684,9 @@ void sqlite3Pragma(
       if( OMIT_TEMPDB && i==1 ) continue;
 
       sqlite3CodeVerifySchema(pParse, i);
+      addr = sqlite3VdbeAddOp(v, OP_IfMemPos, 0, 0);
+      sqlite3VdbeAddOp(v, OP_Halt, 0, 0);
+      sqlite3VdbeJumpHere(v, addr);
 
       /* Do an integrity check of the B-Tree
       */
@@ -687,28 +701,28 @@ void sqlite3Pragma(
           cnt++;
         }
       }
-      assert( cnt>0 );
-      sqlite3VdbeAddOp(v, OP_IntegrityCk, cnt, i);
-      sqlite3VdbeAddOp(v, OP_Dup, 0, 1);
-      addr = sqlite3VdbeOp3(v, OP_String8, 0, 0, "ok", P3_STATIC);
-      sqlite3VdbeAddOp(v, OP_Eq, 0, addr+7);
+      if( cnt==0 ) continue;
+      sqlite3VdbeAddOp(v, OP_IntegrityCk, 0, i);
+      addr = sqlite3VdbeAddOp(v, OP_IsNull, -1, 0);
       sqlite3VdbeOp3(v, OP_String8, 0, 0,
          sqlite3MPrintf("*** in database %s ***\n", db->aDb[i].zName),
          P3_DYNAMIC);
       sqlite3VdbeAddOp(v, OP_Pull, 1, 0);
-      sqlite3VdbeAddOp(v, OP_Concat, 0, 1);
+      sqlite3VdbeAddOp(v, OP_Concat, 0, 0);
       sqlite3VdbeAddOp(v, OP_Callback, 1, 0);
-      sqlite3VdbeAddOp(v, OP_MemIncr, 1, 0);
+      sqlite3VdbeJumpHere(v, addr);
 
       /* Make sure all the indices are constructed correctly.
       */
-      sqlite3CodeVerifySchema(pParse, i);
       for(x=sqliteHashFirst(pTbls); x; x=sqliteHashNext(x)){
         Table *pTab = sqliteHashData(x);
         Index *pIdx;
         int loopTop;
 
         if( pTab->pIndex==0 ) continue;
+        addr = sqlite3VdbeAddOp(v, OP_IfMemPos, 0, 0);
+        sqlite3VdbeAddOp(v, OP_Halt, 0, 0);
+        sqlite3VdbeJumpHere(v, addr);
         sqlite3OpenTableAndIndices(pParse, pTab, 1, OP_OpenRead);
         sqlite3VdbeAddOp(v, OP_MemInt, 0, 1);
         loopTop = sqlite3VdbeAddOp(v, OP_Rewind, 1, 0);
@@ -716,7 +730,7 @@ void sqlite3Pragma(
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
           int jmp2;
           static const VdbeOpList idxErr[] = {
-            { OP_MemIncr,     1,  0,  0},
+            { OP_MemIncr,    -1,  0,  0},
             { OP_String8,     0,  0,  "rowid "},
             { OP_Rowid,       1,  0,  0},
             { OP_String8,     0,  0,  " missing from index "},
@@ -741,13 +755,16 @@ void sqlite3Pragma(
              { OP_MemLoad,      1,  0,  0},
              { OP_MemLoad,      2,  0,  0},
              { OP_Eq,           0,  0,  0},  /* 6 */
-             { OP_MemIncr,      1,  0,  0},
+             { OP_MemIncr,     -1,  0,  0},
              { OP_String8,      0,  0,  "wrong # of entries in index "},
              { OP_String8,      0,  0,  0},  /* 9 */
              { OP_Concat,       0,  0,  0},
              { OP_Callback,     1,  0,  0},
           };
           if( pIdx->tnum==0 ) continue;
+          addr = sqlite3VdbeAddOp(v, OP_IfMemPos, 0, 0);
+          sqlite3VdbeAddOp(v, OP_Halt, 0, 0);
+          sqlite3VdbeJumpHere(v, addr);
           addr = sqlite3VdbeAddOpList(v, ArraySize(cntIdx), cntIdx);
           sqlite3VdbeChangeP1(v, addr+1, j+2);
           sqlite3VdbeChangeP2(v, addr+1, addr+4);
@@ -759,6 +776,7 @@ void sqlite3Pragma(
       } 
     }
     addr = sqlite3VdbeAddOpList(v, ArraySize(endCode), endCode);
+    sqlite3VdbeChangeP1(v, addr+1, mxErr);
     sqlite3VdbeJumpHere(v, addr+2);
   }else
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
@@ -896,6 +914,7 @@ void sqlite3Pragma(
       sqlite3VdbeChangeP1(v, addr, iDb);
       sqlite3VdbeChangeP2(v, addr, iCookie);
       sqlite3VdbeSetNumCols(v, 1);
+      sqlite3VdbeSetColName(v, 0, COLNAME_NAME, zLeft, P3_TRANSIENT);
     }
   }
 #endif /* SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS */

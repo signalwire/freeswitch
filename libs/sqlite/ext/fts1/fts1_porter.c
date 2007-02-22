@@ -70,9 +70,6 @@ static int porterCreate(
   sqlite3_tokenizer **ppTokenizer
 ){
   porter_tokenizer *t;
-  int i;
-
-for(i=0; i<argc; i++) printf("argv[%d] = %s\n", i, argv[i]);
   t = (porter_tokenizer *) calloc(sizeof(porter_tokenizer), 1);
   *ppTokenizer = &t->base;
   return SQLITE_OK;
@@ -563,7 +560,7 @@ static void porter_stemmer(const char *zIn, int nIn, char *zOut, int *pnOut){
 ** part of a token.  In other words, delimiters all must have
 ** values of 0x7f or lower.
 */
-const char isIdChar[] = {
+static const char isIdChar[] = {
 /* x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 xA xB xC xD xE xF */
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,  /* 3x */
     0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /* 4x */

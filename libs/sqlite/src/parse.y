@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.210 2006/09/21 11:02:17 drh Exp $
+** @(#) $Id: parse.y,v 1.215 2007/02/02 12:44:37 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -205,6 +205,7 @@ id(A) ::= ID(X).         {A = X;}
 %left PLUS MINUS.
 %left STAR SLASH REM.
 %left CONCAT.
+%left COLLATE.
 %right UMINUS UPLUS BITNOT.
 
 // And "ids" is an identifer-or-string.
@@ -249,14 +250,14 @@ carglist ::= carglist carg.
 carglist ::= .
 carg ::= CONSTRAINT nm ccons.
 carg ::= ccons.
-carg ::= DEFAULT term(X).            {sqlite3AddDefaultValue(pParse,X);}
-carg ::= DEFAULT LP expr(X) RP.      {sqlite3AddDefaultValue(pParse,X);}
-carg ::= DEFAULT PLUS term(X).       {sqlite3AddDefaultValue(pParse,X);}
-carg ::= DEFAULT MINUS term(X).      {
+ccons ::= DEFAULT term(X).            {sqlite3AddDefaultValue(pParse,X);}
+ccons ::= DEFAULT LP expr(X) RP.      {sqlite3AddDefaultValue(pParse,X);}
+ccons ::= DEFAULT PLUS term(X).       {sqlite3AddDefaultValue(pParse,X);}
+ccons ::= DEFAULT MINUS term(X).      {
   Expr *p = sqlite3Expr(TK_UMINUS, X, 0, 0);
   sqlite3AddDefaultValue(pParse,p);
 }
-carg ::= DEFAULT id(X).              {
+ccons ::= DEFAULT id(X).              {
   Expr *p = sqlite3Expr(TK_STRING, 0, 0, &X);
   sqlite3AddDefaultValue(pParse,p);
 }
@@ -444,7 +445,10 @@ as(X) ::= .            {X.n = 0;}
 // A complete FROM clause.
 //
 from(A) ::= .                                 {A = sqliteMalloc(sizeof(*A));}
-from(A) ::= FROM seltablist(X).               {A = X;}
+from(A) ::= FROM seltablist(X).               {
+  A = X;
+  sqlite3SrcListShiftJoinType(A);
+}
 
 // "seltablist" is a "Select Table List" - the content of the FROM clause
 // in a SELECT statement.  "stl_prefix" is a prefix of this list.
@@ -455,31 +459,12 @@ stl_prefix(A) ::= seltablist(X) joinop(Y).    {
 }
 stl_prefix(A) ::= .                           {A = 0;}
 seltablist(A) ::= stl_prefix(X) nm(Y) dbnm(D) as(Z) on_opt(N) using_opt(U). {
-  A = sqlite3SrcListAppend(X,&Y,&D);
-  if( Z.n ) sqlite3SrcListAddAlias(A,&Z);
-  if( N ){
-    if( A && A->nSrc>1 ){ A->a[A->nSrc-2].pOn = N; }
-    else { sqlite3ExprDelete(N); }
-  }
-  if( U ){
-    if( A && A->nSrc>1 ){ A->a[A->nSrc-2].pUsing = U; }
-    else { sqlite3IdListDelete(U); }
-  }
+  A = sqlite3SrcListAppendFromTerm(X,&Y,&D,&Z,0,N,U);
 }
 %ifndef SQLITE_OMIT_SUBQUERY
   seltablist(A) ::= stl_prefix(X) LP seltablist_paren(S) RP
                     as(Z) on_opt(N) using_opt(U). {
-    A = sqlite3SrcListAppend(X,0,0);
-    if( A && A->nSrc>0 ) A->a[A->nSrc-1].pSelect = S;
-    if( Z.n ) sqlite3SrcListAddAlias(A,&Z);
-    if( N ){
-      if( A && A->nSrc>1 ){ A->a[A->nSrc-2].pOn = N; }
-      else { sqlite3ExprDelete(N); }
-    }
-    if( U ){
-      if( A && A->nSrc>1 ){ A->a[A->nSrc-2].pUsing = U; }
-      else { sqlite3IdListDelete(U); }
-    }
+    A = sqlite3SrcListAppendFromTerm(X,0,0,&Z,S,N,U);
   }
   
   // A seltablist_paren nonterminal represents anything in a FROM that
@@ -490,6 +475,7 @@ seltablist(A) ::= stl_prefix(X) nm(Y) dbnm(D) as(Z) on_opt(N) using_opt(U). {
   %destructor seltablist_paren {sqlite3SelectDelete($$);}
   seltablist_paren(A) ::= select(S).      {A = S;}
   seltablist_paren(A) ::= seltablist(F).  {
+     sqlite3SrcListShiftJoinType(F);
      A = sqlite3SelectNew(0,F,0,0,0,0,0,0,0);
   }
 %endif  SQLITE_OMIT_SUBQUERY
@@ -530,24 +516,21 @@ using_opt(U) ::= .                        {U = 0;}
 
 orderby_opt(A) ::= .                          {A = 0;}
 orderby_opt(A) ::= ORDER BY sortlist(X).      {A = X;}
-sortlist(A) ::= sortlist(X) COMMA sortitem(Y) collate(C) sortorder(Z). {
-  A = sqlite3ExprListAppend(X,Y,C.n>0?&C:0);
+sortlist(A) ::= sortlist(X) COMMA sortitem(Y) sortorder(Z). {
+  A = sqlite3ExprListAppend(X,Y,0);
   if( A ) A->a[A->nExpr-1].sortOrder = Z;
 }
-sortlist(A) ::= sortitem(Y) collate(C) sortorder(Z). {
-  A = sqlite3ExprListAppend(0,Y,C.n>0?&C:0);
+sortlist(A) ::= sortitem(Y) sortorder(Z). {
+  A = sqlite3ExprListAppend(0,Y,0);
   if( A && A->a ) A->a[0].sortOrder = Z;
 }
 sortitem(A) ::= expr(X).   {A = X;}
 
 %type sortorder {int}
-%type collate {Token}
 
 sortorder(A) ::= ASC.           {A = SQLITE_SO_ASC;}
 sortorder(A) ::= DESC.          {A = SQLITE_SO_DESC;}
 sortorder(A) ::= .              {A = SQLITE_SO_ASC;}
-collate(C) ::= .                {C.z = 0; C.n = 0;}
-collate(C) ::= COLLATE id(X).   {C = X;}
 
 %type groupby_opt {ExprList*}
 %destructor groupby_opt {sqlite3ExprListDelete($$);}
@@ -656,6 +639,9 @@ expr(A) ::= VARIABLE(X).     {
   Token *pToken = &X;
   Expr *pExpr = A = sqlite3Expr(TK_VARIABLE, 0, 0, pToken);
   sqlite3ExprAssignVarNumber(pParse, pExpr);
+}
+expr(A) ::= expr(E) COLLATE id(C). {
+  A = sqlite3ExprSetColl(pParse, E, &C);
 }
 %ifndef SQLITE_OMIT_CAST
 expr(A) ::= CAST(X) LP expr(E) AS typetoken(T) RP(Y). {
@@ -892,6 +878,10 @@ idxlist(A) ::= idxitem(Y) collate(C) sortorder(Z). {
 }
 idxitem(A) ::= nm(X).              {A = X;}
 
+%type collate {Token}
+collate(C) ::= .                {C.z = 0; C.n = 0;}
+collate(C) ::= COLLATE id(X).   {C = X;}
+
 
 ///////////////////////////// The DROP INDEX command /////////////////////////
 //
@@ -907,14 +897,15 @@ cmd ::= VACUUM nm.             {sqlite3Vacuum(pParse);}
 ///////////////////////////// The PRAGMA command /////////////////////////////
 //
 %ifndef SQLITE_OMIT_PRAGMA
-cmd ::= PRAGMA nm(X) dbnm(Z) EQ nm(Y).  {sqlite3Pragma(pParse,&X,&Z,&Y,0);}
+cmd ::= PRAGMA nm(X) dbnm(Z) EQ nmnum(Y).  {sqlite3Pragma(pParse,&X,&Z,&Y,0);}
 cmd ::= PRAGMA nm(X) dbnm(Z) EQ ON(Y).  {sqlite3Pragma(pParse,&X,&Z,&Y,0);}
-cmd ::= PRAGMA nm(X) dbnm(Z) EQ plus_num(Y). {sqlite3Pragma(pParse,&X,&Z,&Y,0);}
 cmd ::= PRAGMA nm(X) dbnm(Z) EQ minus_num(Y). {
   sqlite3Pragma(pParse,&X,&Z,&Y,1);
 }
-cmd ::= PRAGMA nm(X) dbnm(Z) LP nm(Y) RP. {sqlite3Pragma(pParse,&X,&Z,&Y,0);}
+cmd ::= PRAGMA nm(X) dbnm(Z) LP nmnum(Y) RP. {sqlite3Pragma(pParse,&X,&Z,&Y,0);}
 cmd ::= PRAGMA nm(X) dbnm(Z).             {sqlite3Pragma(pParse,&X,&Z,0,0);}
+nmnum(A) ::= plus_num(X).             {A = X;}
+nmnum(A) ::= nm(X).                   {A = X;}
 %endif SQLITE_OMIT_PRAGMA
 plus_num(A) ::= plus_opt number(X).   {A = X;}
 minus_num(A) ::= MINUS number(X).     {A = X;}

@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.69 2006/10/04 11:55:50 drh Exp $
+# $Id: tester.tcl,v 1.72 2007/01/04 14:58:14 drh Exp $
 
 # Make sure tclsqlite3 was compiled correctly.  Abort now with an
 # error message if not.
@@ -78,6 +78,9 @@ set nTest 0
 set skip_test 0
 set failList {}
 set maxErr 1000
+if {![info exists speedTest]} {
+  set speedTest 0
+}
 
 # Invoke the do_test procedure to run a single test 
 #
@@ -116,6 +119,21 @@ proc do_test {name cmd expected} {
   } else {
     puts " Ok"
   }
+}
+
+# Run an SQL script.  
+# Return the number of microseconds per statement.
+#
+proc speed_trial {name numstmt units sql} {
+  puts -nonewline [format {%-20.20s } $name...]
+  flush stdout
+  set speed [time {sqlite3_exec_nr db $sql}]
+  set tm [lindex $speed 0]
+  set per [expr {$tm/(1.0*$numstmt)}]
+  set rate [expr {1000000.0*$numstmt/$tm}]
+  set u1 us/$units
+  set u2 $units/s
+  puts [format {%20.3f %-7s %20.5f %s} $per $u1 $rate $u2]
 }
 
 # The procedure uses the special "sqlite_malloc_stat" command
@@ -334,10 +352,13 @@ proc do_ioerr_test {testname args} {
   set ::ioerropts(-start) 1
   set ::ioerropts(-cksum) 0
   set ::ioerropts(-erc) 0
+  set ::ioerropts(-count) 100000000
   array set ::ioerropts $args
 
   set ::go 1
   for {set n $::ioerropts(-start)} {$::go} {incr n} {
+    incr ::ioerropts(-count) -1
+    if {$::ioerropts(-count)<0} break
  
     # Skip this IO error if it was specified with the "-exclude" option.
     if {[info exists ::ioerropts(-exclude)]} {

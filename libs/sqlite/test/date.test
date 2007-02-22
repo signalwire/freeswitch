@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing date and time functions.
 #
-# $Id: date.test,v 1.17 2006/09/25 18:03:29 drh Exp $
+# $Id: date.test,v 1.19 2007/01/08 16:19:07 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -123,6 +123,17 @@ datetest 3.11.11 {strftime('%W','2004-07-18')} 28
 datetest 3.11.12 {strftime('%W','2004-12-31')} 52
 datetest 3.11.13 {strftime('%W','2007-12-31')} 53
 datetest 3.11.14 {strftime('%W','2007-01-01')} 01
+datetest 3.11.15 {strftime('%W %j',2454109.04140970)} {02 008}
+datetest 3.11.16 {strftime('%W %j',2454109.04140971)} {02 008}
+datetest 3.11.17 {strftime('%W %j',2454109.04140972)} {02 008}
+datetest 3.11.18 {strftime('%W %j',2454109.04140973)} {02 008}
+datetest 3.11.19 {strftime('%W %j',2454109.04140974)} {02 008}
+datetest 3.11.20 {strftime('%W %j',2454109.04140975)} {02 008}
+datetest 3.11.21 {strftime('%W %j',2454109.04140976)} {02 008}
+datetest 3.11.22 {strftime('%W %j',2454109.04140977)} {02 008}
+datetest 3.11.22 {strftime('%W %j',2454109.04140978)} {02 008}
+datetest 3.11.22 {strftime('%W %j',2454109.04140979)} {02 008}
+datetest 3.11.22 {strftime('%W %j',2454109.04140980)} {02 008}
 datetest 3.12 {strftime('%Y','2003-10-31 12:34:56.432')} 2003
 datetest 3.13 {strftime('%%','2003-10-31 12:34:56.432')} %
 datetest 3.14 {strftime('%_','2003-10-31 12:34:56.432')} NULL
@@ -283,6 +294,20 @@ do_test date-13.1 {
     SELECT strftime('%Y-%m-%d %H:%M:%f', julianday('2006-09-24T10:50:26.047'))
   }
 } {{2006-09-24 10:50:26.047}}
+
+# Ticket #2153
+datetest 13.2 {strftime('%Y-%m-%d %H:%M:%S', '2007-01-01 12:34:59.6')} \
+  {2007-01-01 12:34:59}
+datetest 13.3 {strftime('%Y-%m-%d %H:%M:%f', '2007-01-01 12:34:59.6')} \
+  {2007-01-01 12:34:59.600}
+datetest 13.4 {strftime('%Y-%m-%d %H:%M:%S', '2007-01-01 12:59:59.6')} \
+  {2007-01-01 12:59:59}
+datetest 13.5 {strftime('%Y-%m-%d %H:%M:%f', '2007-01-01 12:59:59.6')} \
+  {2007-01-01 12:59:59.600}
+datetest 13.6 {strftime('%Y-%m-%d %H:%M:%S', '2007-01-01 23:59:59.6')} \
+  {2007-01-01 23:59:59}
+datetest 13.7 {strftime('%Y-%m-%d %H:%M:%f', '2007-01-01 23:59:59.6')} \
+  {2007-01-01 23:59:59.600}
 
 
 finish_test

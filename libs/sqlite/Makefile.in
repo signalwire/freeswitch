@@ -116,9 +116,7 @@ NAWK = @AWK@
 
 # You should not have to change anything below this line
 ###############################################################################
-OPTS = 
-OPTS += -DSQLITE_OMIT_CURSOR          # Cursors do not work at this time
-TCC += -DSQLITE_OMIT_CURSOR
+TCC += -DSQLITE_OMIT_LOAD_EXTENSION=1
 
 # Object files for the SQLite library.
 #
@@ -305,7 +303,7 @@ target_source:	$(SRC) parse.c opcodes.c keywordhash.h $(VDBEHDR)
 # Rules to build the LEMON compiler generator
 #
 lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
-	$(BCC) -o lemon $(TOP)/tool/lemon.c
+	$(BCC) -o lemon$(BEXE) $(TOP)/tool/lemon.c
 	cp $(TOP)/tool/lempar.c .
 
 
@@ -393,7 +391,7 @@ parse.h:	parse.c
 
 parse.c:	$(TOP)/src/parse.y lemon$(BEXE) $(TOP)/addopcodes.awk
 	cp $(TOP)/src/parse.y .
-	./lemon $(OPTS) parse.y
+	./lemon$(BEXE) $(OPTS) parse.y
 	mv parse.h parse.h.temp
 	awk -f $(TOP)/addopcodes.awk parse.h.temp >parse.h
 
@@ -667,6 +665,7 @@ install:	sqlite3 libsqlite3.la sqlite3.h ${HAVE_TCL:1=tcl_install}
 	$(LTINSTALL) sqlite3 $(DESTDIR)$(exec_prefix)/bin
 	$(INSTALL) -d $(DESTDIR)$(prefix)/include
 	$(INSTALL) -m 0644 sqlite3.h $(DESTDIR)$(prefix)/include
+	$(INSTALL) -m 0644 $(TOP)/src/sqlite3ext.h $(DESTDIR)$(prefix)/include
 	$(INSTALL) -d $(DESTDIR)$(libdir)/pkgconfig; 
 	$(INSTALL) -m 0644 sqlite3.pc $(DESTDIR)$(libdir)/pkgconfig; 
 

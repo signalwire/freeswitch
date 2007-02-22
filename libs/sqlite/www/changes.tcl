@@ -25,6 +25,99 @@ proc chng {date desc} {
   puts "<DD><P><UL>$desc</UL></P></DD>"
 }
 
+chng {2007 February 13 (3.3.13)} {
+<li>Add a "fragmentation" measurement in the output of sqlite3_analyzer.</li>
+<li>Add the COLLATE operator used to explicitly set the collating sequence
+used by an expression.  This feature is considered experimental pending
+additional testing.</li>
+<li>Allow up to 64 tables in a join - the old limit was 32.</li>
+<li>Added two new experimental functions:
+<a href="lang_expr.html#randomblobFunc">randomBlob()</a> and
+<a href="lang_expr.html#hexFunc">hex()</a>.
+Their intended use is to facilitate generating 
+<a href="http://en.wikipedia.org/wiki/UUID">UUIDs</a>.
+</li>
+<li>Fix a problem where
+<a href="pragma.html#pragma_count_changes">PRAGMA count_changes</a> was
+causing incorrect results for updates on tables with triggers</li>
+<li>Fix a bug in the ORDER BY clause optimizer for joins where the
+left-most table in the join is constrained by a UNIQUE index.</li>
+<li>Fixed a bug in the "copy" method of the TCL interface.</li>
+<li>Bug fixes in fts1 and fts2 modules.</li>
+}
+
+chng {2007 January 27 (3.3.12)} {
+<li>Fix another bug in the IS NULL optimization that was added in
+version 3.3.9.</li>
+<li>Fix a assertion fault that occurred on deeply nested views.</li>
+<li>Limit the amount of output that
+<a href="pragma.html#pragma_integrity_check">PRAGMA integrity_check</a>
+generates.</li>
+<li>Minor syntactic changes to support a wider variety of compilers.</li>
+}
+
+chng {2007 January 22 (3.3.11)} {
+<li>Fix another bug in the implementation of the new 
+<a href="capi3ref.html#sqlite3_prepare_v2">sqlite3_prepare_v2()</a> API.
+We'll get it right eventually...</li>
+<li>Fix a bug in the IS NULL optimization that was added in version 3.3.9 -
+the bug was causing incorrect results on certain LEFT JOINs that included
+in the WHERE clause an IS NULL constraint for the right table of the
+LEFT JOIN.</li>
+<li>Make AreFileApisANSI() a no-op macro in winCE since winCE does not
+support this function.</li>
+}
+
+chng {2007 January 9 (3.3.10)} {
+<li>Fix bugs in the implementation of the new 
+<a href="capi3ref.html#sqlite3_prepare_v2">sqlite3_prepare_v2()</a> API
+that can lead to segfaults.</li>
+<li>Fix 1-second round-off errors in the 
+<a href="http://www.sqlite.org/cvstrac/wiki?p=DateAndTimeFunctions">
+strftime()</a> function</li>
+<li>Enhance the windows OS layer to provide detailed error codes</li>
+<li>Work around a win2k problem so that SQLite can use single-character
+database file names</li>
+<li>The
+<a href="pragma.html#pragma_user_version">user_version</a> and
+<a href="pragma.html#pragma_schema_version">schema_version</a> pragmas 
+correctly set their column names in the result set</li>
+<li>Documentation updates</li>
+}
+
+chng {2007 January 4 (3.3.9)} {
+<li>Fix bugs in pager.c that could lead to database corruption if two
+processes both try to recover a hot journal at the same instant</li>
+<li>Added the <a href="capi3ref.html#sqlite3_prepare_v2">sqlite3_prepare_v2()</a>
+API.</li>
+<li>Fixed the ".dump" command in the command-line shell to show
+indices, triggers and views again.</li>
+<li>Change the table_info pragma so that it returns NULL for the default
+value if there is no default value</li>
+<li>Support for non-ASCII characters in win95 filenames</li>
+<li>Query optimizer enhancements:
+<ul>
+<li>Optimizer does a better job of using indices to satisfy ORDER BY
+clauses that sort on the integer primary key</li>
+<li>Use an index to satisfy an IS NULL operator in the WHERE clause</li>
+<li>Fix a bug that was causing the optimizer to miss an OR optimization
+opportunity</li>
+<li>The optimizer has more freedom to reorder tables in the FROM clause
+even in there are LEFT joins.</li>
+</ul>
+<li>Extension loading supported added to winCE</li>
+<li>Allow constraint names on the DEFAULT clause in a table definition</li>
+<li>Added the ".bail" command to the command-line shell</li>
+<li>Make CSV (comma separate value) output from the command-line shell
+more closely aligned to accepted practice</li>
+<li>Experimental FTS2 module added</li>
+<li>Use sqlite3_mprintf() instead of strdup() to avoid libc dependencies</li>
+<li>VACUUM uses a temporary file in the official TEMP folder, not in the
+same directory as the original database</li>
+<li>The prefix on temporary filenames on windows is changed from "sqlite"
+to "etilqs".</li>
+}
+
 chng {2006 October 9 (3.3.8)} {
 <li>Support for full text search using the
 <a href="http://www.sqlite.org/cvstrac/wiki?p=FullTextIndex">FTS1 module</a>

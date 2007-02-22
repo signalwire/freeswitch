@@ -10,6 +10,60 @@ proc newsitem {date title text} {
 }
 
 
+newsitem {2007-Jan-4} {Version 3.3.9} {
+  Version 3.3.9 fixes bugs that can lead to database corruption under
+  obscure and difficult to reproduce circumstances.  See
+  <a href="http://www.sqlite.org/cvstrac/wiki?p=DatabaseCorruption">
+  DatabaseCorruption</a> in the
+  <a href="http://www.sqlite.org/cvstrac/wiki">wiki</a> for details.
+  This release also adds the new
+  <a href="capi3ref.html#sqlite3_prepare_v2">sqlite3_prepare_v2()</a>
+  API and includes important bug fixes in the command-line
+  shell and enhancements to the query optimizer.  Upgrading is
+  recommended.
+}
+
+newsitem {2006-Oct-9} {Version 3.3.8} {
+  Version 3.3.8 adds support for full-text search using the 
+  <a href="http://www.sqlite.org/cvstrac/wiki?p=FtsOne">FTS1
+  module.</a>  There are also minor bug fixes.  Upgrade only if
+  you want to try out the new full-text search capabilities or if
+  you are having problems with 3.3.7.
+}
+
+newsitem {2006-Aug-12} {Version 3.3.7} {
+  Version 3.3.7 includes support for loadable extensions and virtual
+  tables.  But both features are still considered "beta" and their
+  APIs are subject to change in a future release.  This release is
+  mostly to make available the minor bug fixes that have accumulated
+  since 3.3.6.  Upgrading is not necessary.  Do so only if you encounter
+  one of the obscure bugs that have been fixed or if you want to try
+  out the new features.
+}
+
+newsitem {2006-Jun-19} {New Book About SQLite} {
+  <a href="http://www.apress.com/book/bookDisplay.html?bID=10130">
+  <i>The Definitive Guide to SQLite</i></a>, a new book by
+  <a href="http://www.mikesclutter.com">Mike Owens</a>.
+  is now available from <a href="http://www.apress.com">Apress</a>.
+  The books covers the latest SQLite internals as well as
+  the native C interface and bindings for PHP, Python,
+  Perl, Ruby, Tcl, and Java.  Recommended.
+}
+
+
+newsitem {2006-Jun-6} {Version 3.3.6} {
+  Changes include improved tolerance for windows virus scanners
+  and faster :memory: databases.  There are also fixes for several
+  obscure bugs.  Upgrade if you are having problems.
+}
+
+newsitem {2006-Apr-5} {Version 3.3.5} {
+  This release fixes many minor bugs and documentation typos and
+  provides some minor new features and performance enhancements.
+  Upgrade only if you are having problems or need one of the new features.
+}
+
 newsitem {2006-Feb-11} {Version 3.3.4} {
   This release fixes several bugs, including a 
   a blunder that might cause a deadlock on multithreaded systems.
@@ -348,4 +402,4 @@ newsitem {2004-Apr-23} {Work Begins On SQLite Version 3} {
   Plans are to continue to support SQLite version 2.8 with
   bug fixes.  But all new development will occur in version 3.0.
 }
-footer {$Id: oldnews.tcl,v 1.16 2006/08/12 14:38:47 drh Exp $}
+footer {$Id: oldnews.tcl,v 1.19 2007/02/13 02:03:25 drh Exp $}

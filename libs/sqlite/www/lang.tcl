@@ -1,7 +1,7 @@
 #
 # Run this Tcl script to generate the lang-*.html files.
 #
-set rcsid {$Id: lang.tcl,v 1.118 2006/09/23 20:46:23 drh Exp $}
+set rcsid {$Id: lang.tcl,v 1.122 2007/02/13 02:03:25 drh Exp $}
 source common.tcl
 
 if {[llength $argv]>0} {
@@ -1007,7 +1007,8 @@ Syntax {expr} {
 <expr> [NOT] IN [<database-name> .] <table-name> |
 [EXISTS] ( <select-statement> ) |
 CASE [<expr>] LP WHEN <expr> THEN <expr> RPPLUS [ELSE <expr>] END |
-CAST ( <expr> AS <type> )
+CAST ( <expr> AS <type> ) |
+<expr> COLLATE <collation-name>
 } {like-op} {
 LIKE | GLOB | REGEXP | MATCH
 }
@@ -1032,11 +1033,16 @@ AND
 OR</font>
 </pre></blockquote>
 
-<p>Supported unary operators are these:</p>
+<p>Supported unary prefix operators are these:</p>
 
 <blockquote><pre>
 <font color="#2c2cf0"><big>-    +    !    ~    NOT</big></font>
 </pre></blockquote>
+
+<p>The COLLATE operator can be thought of as a unary postfix
+operator.  The COLLATE operator has the highest precedence.
+It always binds more tightly than any prefix unary operator or
+any binary operator.</p>
 
 <p>The unary operator [Operator +] is a no-op.  It can be applied
 to strings, numbers, or blobs and it always gives as its result the
@@ -1265,8 +1271,9 @@ all arguments are NULL then NULL is returned.  There must be at least
 </tr>
 
 <tr>
+<td valign="top" align="right">
 <a name="globFunc"></a>
-<td valign="top" align="right">glob(<i>X</i>,<i>Y</i>)</td>
+glob(<i>X</i>,<i>Y</i>)</td>
 <td valign="top">This function is used to implement the
 "<b>X GLOB Y</b>" syntax of SQLite.  The
 <a href="capi3ref.html#sqlite3_create_function">sqlite3_create_function()</a> 
@@ -1280,6 +1287,14 @@ of the <a href="#globFunc">GLOB</a> operator.</td>
 <td valign="top">Return a copy of the first non-NULL argument.  If
 both arguments are NULL then NULL is returned. This behaves the same as 
 <b>coalesce()</b> above.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">
+<a name="hexFunc">
+hex(<i>X</i>)</td>
+<td valign="top">The argument is interpreted as a BLOB.  The result
+is a hexadecimal rendering of the content of that blob.</td>
 </tr>
 
 <tr>
@@ -1297,8 +1312,9 @@ characters is returned, not the number of bytes.</td>
 </tr>
 
 <tr>
+<td valign="top" align="right">
 <a name="likeFunc"></a>
-<td valign="top" align="right">like(<i>X</i>,<i>Y</i> [,<i>Z</i>])</td>
+like(<i>X</i>,<i>Y</i> [,<i>Z</i>])</td>
 <td valign="top">
 This function is used to implement the "<b>X LIKE Y [ESCAPE Z]</b>"
 syntax of SQL. If the optional ESCAPE clause is present, then the
@@ -1371,6 +1387,14 @@ is also useful when writing triggers to implement undo/redo functionality.
 <td valign="top" align="right">random(*)</td>
 <td valign="top">Return a pseudo-random integer
 between -9223372036854775808 and +9223372036854775807.</td>
+</tr>
+
+<tr>
+<td valign="top" align="right">
+<a name="randomblobFunc">
+randomblob(<i>N</i>)</td>
+<td valign="top">Return a <i>N</i>-byte blob containing pseudo-random bytes.
+<i>N</i> should be a postive integer.</td>
 </tr>
 
 <tr>

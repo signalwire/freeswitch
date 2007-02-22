@@ -27,9 +27,10 @@ Features include:
 <li>A complete database is stored in a single disk file.</li>
 <li>Database files can be freely shared between machines with
     different byte orders.</li>
-<li>Supports databases up to 2 terabytes
+<li>Supports databases up to 2 tebibytes
     (2<sup><small>41</small></sup> bytes) in size.</li>
-<li>Sizes of strings and BLOBs limited only by available memory.</li>
+<li>Strings and BLOBs up to 2 gibibytes (2<sup><small>31</small></sup> bytes)
+    in size.</li>
 <li>Small code footprint: less than 250KiB fully configured or less
     than 150KiB with optional features omitted.</li>
 <li><a href="speed.html">Faster</a> than popular client/server database
@@ -66,49 +67,33 @@ proc newsitem {date title text} {
   puts "<hr width=\"50%\">"
 }
 
-newsitem {2006-Oct-9} {Version 3.3.8} {
-  Version 3.3.8 adds support for full-text search using the 
-  <a href="http://www.sqlite.org/cvstrac/wiki?p=FtsOne">FTS1
-  module.</a>  There are also minor bug fixes.  Upgrade only if
-  you want to try out the new full-text search capabilities or if
-  you are having problems with 3.3.7.
+newsitem {2007-Feb-13} {Version 3.3.13} {
+  This version fixes a subtle bug in the ORDER BY optimizer that can 
+  occur when using joins.  There are also a few minor enhancements.
+  Upgrading is recommended.
 }
 
-newsitem {2006-Aug-12} {Version 3.3.7} {
-  Version 3.3.7 includes support for loadable extensions and virtual
-  tables.  But both features are still considered "beta" and their
-  APIs are subject to change in a future release.  This release is
-  mostly to make available the minor bug fixes that have accumulated
-  since 3.3.6.  Upgrading is not necessary.  Do so only if you encounter
-  one of the obscure bugs that have been fixed or if you want to try
-  out the new features.
+newsitem {2007-Jan-27} {Version 3.3.12} {
+  The first published build of the previous version used the wrong
+  set of source files.  Consequently, many people downloaded a build
+  that was labeled as "3.3.11" but was really 3.3.10.  Version 3.3.12
+  is released to clear up the ambiguity.  A couple more bugs have
+  also been fixed and <a href="pragma.html#pragma_integrity_check">
+  PRAGMA integrity_check</a> has been enhanced.
 }
 
-newsitem {2006-Jun-19} {New Book About SQLite} {
-  <a href="http://www.apress.com/book/bookDisplay.html?bID=10130">
-  <i>The Definitive Guide to SQLite</i></a>, a new book by
-  <a href="http://www.mikesclutter.com">Mike Owens</a>.
-  is now available from <a href="http://www.apress.com">Apress</a>.
-  The books covers the latest SQLite internals as well as
-  the native C interface and bindings for PHP, Python,
-  Perl, Ruby, Tcl, and Java.  Recommended.
+newsitem {2007-Jan-22} {Version 3.3.11} {
+  Version 3.3.11 fixes for a few more problems in version 3.3.9 that
+  version 3.3.10 failed to catch.  Upgrading is recommended.
 }
 
-newsitem {2006-Jun-6} {Version 3.3.6} {
-  Changes include improved tolerance for windows virus scanners
-  and faster :memory: databases.  There are also fixes for several
-  obscure bugs.  Upgrade if you are having problems.
+newsitem {2007-Jan-9} {Version 3.3.10} {
+  Version 3.3.10 fixes several bugs that were introduced by the previous
+  release.  Upgrading is recommended.
 }
-
-newsitem {2006-Apr-5} {Version 3.3.5} {
-  This release fixes many minor bugs and documentation typos and
-  provides some minor new features and performance enhancements.
-  Upgrade only if you are having problems or need one of the new features.
-}
-
 
 puts {
 <p align="right"><a href="oldnews.html">Old news...</a></p>
 </td></tr></table>
 }
-footer {$Id: index.tcl,v 1.143 2006/10/08 18:56:57 drh Exp $}
+footer {$Id: index.tcl,v 1.150 2007/02/13 02:03:24 drh Exp $}

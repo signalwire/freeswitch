@@ -12,6 +12,12 @@
 **
 ** This file contains code that is specific to OS/2.
 */
+
+#if (__GNUC__ > 3 || __GNUC__ == 3 && __GNUC_MINOR__ >= 3) && defined(OS2_HIGH_MEMORY)
+/* os2safe.h has to be included before os2.h, needed for high mem */
+#include <os2safe.h>
+#endif
+
 #include "sqliteInt.h"
 #include "os.h"
 
@@ -290,7 +296,14 @@ int os2Read( OsFile *id, void *pBuf, int amt ){
   SimulateIOError( return SQLITE_IOERR );
   TRACE3( "READ %d lock=%d\n", ((os2File*)id)->h, ((os2File*)id)->locktype );
   DosRead( ((os2File*)id)->h, pBuf, amt, &got );
-  return (got == (ULONG)amt) ? SQLITE_OK : SQLITE_IOERR;
+  if (got == (ULONG)amt)
+    return SQLITE_OK;
+  else if (got < 0)
+    return SQLITE_IOERR_READ;
+  else {
+    memset(&((char*)pBuf)[got], 0, amt-got);
+    return SQLITE_IOERR_SHORT_READ;
+  }
 }
 
 /*
@@ -767,6 +780,40 @@ int allocateOs2File( os2File *pInit, OsFile **pld ){
 ** Everything above deals with file I/O.  Everything that follows deals
 ** with other miscellanous aspects of the operating system interface
 ****************************************************************************/
+
+#ifndef SQLITE_OMIT_LOAD_EXTENSION
+/*
+** Interfaces for opening a shared library, finding entry points
+** within the shared library, and closing the shared library.
+*/
+void *sqlite3Os2Dlopen(const char *zFilename){
+  UCHAR loadErr[256];
+  HMODULE hmod;
+  APIRET rc;
+  rc = DosLoadModule(loadErr, sizeof(loadErr), zFilename, &hmod);
+  if (rc != NO_ERROR) return 0;
+  return (void*)hmod;
+}
+void *sqlite3Os2Dlsym(void *pHandle, const char *zSymbol){
+  PFN pfn;
+  APIRET rc;
+  rc = DosQueryProcAddr((HMODULE)pHandle, 0L, zSymbol, &pfn);
+  if (rc != NO_ERROR) {
+    /* if the symbol itself was not found, search again for the same
+     * symbol with an extra underscore, that might be needed depending
+     * on the calling convention */
+    char _zSymbol[256] = "_";
+    strncat(_zSymbol, zSymbol, 255);
+    rc = DosQueryProcAddr((HMODULE)pHandle, 0L, _zSymbol, &pfn);
+  }
+  if (rc != NO_ERROR) return 0;
+  return pfn;
+}
+int sqlite3Os2Dlclose(void *pHandle){
+  return DosFreeModule((HMODULE)pHandle);
+}
+#endif /* SQLITE_OMIT_LOAD_EXTENSION */
+
 
 /*
 ** Get information to seed the random number generator.  The seed
