@@ -145,6 +145,7 @@ struct switch_core_runtime {
 	uint32_t no_new_sessions;
 	uint32_t shutting_down;
 	uint8_t running;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 };
 
 /* Prototypes */
@@ -746,6 +747,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(char *uuid_str, s
 	switch_mutex_unlock(runtime.session_table_mutex);
 
 	return status;
+}
+
+SWITCH_DECLARE(char *) switch_core_get_uuid(void)
+{
+	return runtime.uuid_str;
 }
 
 SWITCH_DECLARE(char *) switch_core_session_get_uuid(switch_core_session_t *session)
@@ -3808,7 +3814,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 	void *pop;
 	uint32_t itterations = 0;
 	uint8_t trans = 0, nothing_in_queue = 0;
-	uint32_t freq = 1000, target = 1000;
+	uint32_t target = 1000;
 	switch_size_t len = 0, sql_len = SQLLEN;
 	const char *begin_sql = "BEGIN DEFERRED TRANSACTION CORE1;\n";
 	char *end_sql = "END TRANSACTION CORE1";
@@ -3817,12 +3823,14 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 	char *sqlbuf = (char *) malloc(sql_len);
 	char *sql;
 	switch_size_t newlen;
-
+	uint32_t loops = 0;
 	
 	if (!runtime.event_db) {
 		runtime.event_db = switch_core_db_handle();
 	}
 	switch_queue_create(&runtime.sql_queue, SWITCH_SQL_QUEUE_LEN, runtime.memory_pool);
+
+
 
 	for(;;) {
 		if (switch_queue_trypop(runtime.sql_queue, &pop) == SWITCH_STATUS_SUCCESS) {
@@ -3873,10 +3881,42 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 			len = 0;
 			*sqlbuf = '\0';
 		}
+
+		if (loops++ >= 5000) {
+			switch_event_t *event;
+			switch_core_time_duration_t duration;
+
+			switch_core_measure_time(switch_core_uptime(), &duration);
+
+			if (switch_event_create(&event, SWITCH_EVENT_HEARTBEAT) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Info", "System Ready");
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Up-Time", 
+										"%u year%s, "
+										"%u day%s, "
+										"%u hour%s, "
+										"%u minute%s, "
+										"%u second%s, "
+										"%u millisecond%s, "
+										"%u microsecond%s\n",
+										duration.yr, duration.yr == 1 ? "" : "s",
+										duration.day, duration.day == 1 ? "" : "s",
+										duration.hr, duration.hr == 1 ? "" : "s",
+										duration.min, duration.min == 1 ? "" : "s",
+										duration.sec, duration.sec == 1 ? "" : "s",
+										duration.ms, duration.ms == 1 ? "" : "s",
+										duration.mms, duration.mms == 1 ? "" : "s"
+										);
+
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Session-Count", "%u", switch_core_session_count());
+				switch_event_fire(&event);
+			}
+			
+			loops = 0;
+		}
 		
 		if (nothing_in_queue) {
-			switch_yield(freq);
-		} 
+			switch_yield(1000);
+		}
 	}
 
 
@@ -4130,6 +4170,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 	switch_xml_t xml = NULL, cfg = NULL;
 	memset(&runtime, 0, sizeof(runtime));
 	runtime.session_limit = 1000;
+	switch_uuid_t uuid;
 
 	switch_core_set_globals();
 
@@ -4276,6 +4317,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 	switch_core_hash_init(&runtime.stack_table, runtime.memory_pool);
 #endif
 	runtime.initiated = switch_time_now();
+
+
+	switch_uuid_get(&uuid);
+	switch_uuid_format(runtime.uuid_str, &uuid);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

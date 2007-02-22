@@ -131,6 +131,7 @@ static char *EVENT_NAMES[] = {
 	"BACKGROUND_JOB",
 	"DETECTED_SPEECH",
 	"PRIVATE_COMMAND",
+	"HEARTBEAT",
 	"ALL"
 };
 
@@ -811,21 +812,21 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *fun
 		return SWITCH_STATUS_FALSE;
 	}
 
-
-	switch_event_add_header(*event, SWITCH_STACK_TOP, "Event-Calling-Line-Number", "%d", line);
-	switch_event_add_header(*event, SWITCH_STACK_TOP, "Event-Calling-Function", "%s", func);
-	switch_event_add_header(*event, SWITCH_STACK_TOP, "Event-Calling-File", "%s", switch_cut_path(file));
+	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Name", "%s", switch_event_name((*event)->event_id));
+	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Core-UUID", "%s", switch_core_get_uuid());
 	switch_time_exp_lt(&tm, switch_time_now());
 	switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
-	switch_event_add_header(*event, SWITCH_STACK_TOP, "Event-Date-Local", "%s", date);
+	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Date-Local", "%s", date);
 	switch_rfc822_date(date, switch_time_now());
-	switch_event_add_header(*event, SWITCH_STACK_TOP, "Event-Date-GMT", "%s", date);
-	if ((*event)->subclass) {
-		switch_event_add_header(*event, SWITCH_STACK_TOP, "Event-Subclass", "%s", (*event)->subclass->name);
-		switch_event_add_header(*event, SWITCH_STACK_TOP, "Event-Subclass-Owner", "%s", (*event)->subclass->owner);
-	}
-	switch_event_add_header(*event, SWITCH_STACK_TOP, "Event-Name", "%s", switch_event_name((*event)->event_id));
+	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Date-GMT", "%s", date);
+	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Calling-File", "%s", switch_cut_path(file));
+	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Calling-Function", "%s", func);
+	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Calling-Line-Number", "%d", line);
 
+	if ((*event)->subclass) {
+		switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Subclass", "%s", (*event)->subclass->name);
+		switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Subclass-Owner", "%s", (*event)->subclass->owner);
+	}
 
 	if (user_data) {
 		(*event)->event_user_data = user_data;

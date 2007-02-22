@@ -477,6 +477,12 @@ SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session
 */
 SWITCH_DECLARE(char *) switch_core_session_get_uuid(switch_core_session_t *session);
 
+/*! 
+  \brief Retrieve the unique identifier from the core
+  \return a string representing the uuid
+*/
+SWITCH_DECLARE(char *) switch_core_get_uuid(void);
+
 #ifdef SWITCH_DEBUG_RWLOCKS
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(char *uuid_str,
                                                                            const char *file,
