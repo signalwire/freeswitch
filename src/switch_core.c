@@ -4180,9 +4180,9 @@ SWITCH_DECLARE(void) switch_core_runtime_loop(int bg)
 SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err)
 {
 	switch_xml_t xml = NULL, cfg = NULL;
+	switch_uuid_t uuid;
 	memset(&runtime, 0, sizeof(runtime));
 	runtime.session_limit = 1000;
-	switch_uuid_t uuid;
 
 	switch_core_set_globals();
 
@@ -4532,7 +4532,7 @@ SWITCH_DECLARE(uint8_t) switch_core_session_compare(switch_core_session_t *a, sw
 	assert(a != NULL);
 	assert(b != NULL);
 
-	return (a->endpoint_interface == b->endpoint_interface);
+	return (uint8_t)(a->endpoint_interface == b->endpoint_interface);
 }
 
 /* For Emacs:
