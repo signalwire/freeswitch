@@ -1761,6 +1761,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_
 			}
 		}
 	}
+	switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
 	return status;
 }
 
@@ -1864,7 +1865,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_event(switch_core_se
 		}
         switch_core_session_rwunlock(session);
 	}
-	
+
+	switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
+
 	return status;
 }
 
