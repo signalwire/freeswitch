@@ -809,6 +809,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, ch
 {
 	const switch_codec_interface_t *codec_interface;
 	const switch_codec_implementation_t *iptr, *implementation = NULL;
+	char *mode = fmtp; 
 
 	assert(codec != NULL);
 	assert(codec_name != NULL);
@@ -820,6 +821,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, ch
 		return SWITCH_STATUS_GENERR;
 	}
 
+	if (mode && strncasecmp(mode, "mode=", 5)) {
+		int mms;
+		mode += 5;
+		if (mode) {
+			mms = atoi(mode);
+			if (mms > 0 && mms < 120) {
+				ms = mms;
+			}
+		}
+	}
+	
     /* If no specific codec interval is requested opt for 20ms above all else because lots of stuff assumes it */
     if (!ms) {
         for (iptr = codec_interface->implementations; iptr; iptr = iptr->next) {
