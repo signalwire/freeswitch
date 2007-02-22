@@ -81,6 +81,8 @@ static switch_status_t switch_ilbc_init(switch_codec_t *codec, switch_codec_flag
 		}
 	}
 
+	codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->implementation->fmtp);
+	
 	codec->private_info = context;
 	return SWITCH_STATUS_SUCCESS;
 }
