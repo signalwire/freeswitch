@@ -621,11 +621,12 @@ static switch_status_t show_function(char *cmd, switch_core_session_t *session, 
 	// If you changes the field qty or order of any of these select
 	// statmements, you must also change show_callback and friends to match!
 	if (!cmd) {
-		sprintf (sql, "select * from interfaces");
+		stream->write_function(stream, "USAGE: %s\n", show_api_interface.syntax);
+		return SWITCH_STATUS_SUCCESS;
 	} else if ( !strcmp(cmd,"codec") || !strcmp(cmd,"dialplan") || !strcmp(cmd,"file") || !strcmp(cmd,"timer")) {
 		sprintf (sql, "select type, name from interfaces where type = '%s'", cmd);
 	} else if (!strcmp(cmd,"application") || !strcmp(cmd,"api")) {
-		sprintf (sql, "select name, description, syntax from interfaces where type = '%s'", cmd);
+		sprintf (sql, "select name, description, syntax from interfaces where type = '%s' and description != ''" , cmd);
 	} else if ( !strcmp(cmd,"calls")) {
 		sprintf (sql, "select * from calls");
 	} else if ( !strcmp(cmd,"channels")) {
@@ -779,7 +780,7 @@ static switch_api_interface_t show_api_interface = {
 	/*.interface_name */ "show",
 	/*.desc */ "Show",
 	/*.function */ show_function,
-	/*.syntax */ "<blank>|codec|application|api|dialplan|file|timer|calls|channels",
+	/*.syntax */ "codec|application|api|dialplan|file|timer|calls|channels",
 	/*.next */ &status_api_interface
 };
 
