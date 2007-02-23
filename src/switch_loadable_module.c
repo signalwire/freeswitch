@@ -103,7 +103,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load endpoint interface from %s due to no interface name.\n", key);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Endpoint '%s'\n", ptr->interface_name);
-				switch_core_hash_insert(loadable_modules.endpoint_hash, (char *) ptr->interface_name, (void *) ptr);
+				switch_core_hash_insert(loadable_modules.endpoint_hash, ptr->interface_name, (const void *) ptr);
 			}
 		}
 	}
@@ -116,22 +116,32 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			if (!ptr->interface_name)  {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load codec interface from %s due to no interface name.\n", key);
 			} else {
+				unsigned load_interface = 1;
 				for (impl = ptr->implementations; impl; impl = impl->next) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-									  "Adding Codec '%s' (%s) %dhz %dms\n",
-									  impl->iananame,
-									  ptr->interface_name,
-									  impl->samples_per_second, impl->microseconds_per_frame / 1000);
-					if (!switch_core_hash_find(loadable_modules.codec_hash, (char *) impl->iananame)) {
-						switch_core_hash_insert(loadable_modules.codec_hash, (char *) impl->iananame, (void *) ptr);
+					if (!impl->iananame) {
+						load_interface = 0;
+						break;
 					}
 				}
-				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "codec");
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
-					switch_event_fire(&event);
+				if (!load_interface) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load codec interface %s from %s due to no iana name in an implementation.\n", ptr->interface_name, key);
+				} else {
+					for (impl = ptr->implementations; impl; impl = impl->next) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
+										  "Adding Codec '%s' (%s) %dhz %dms\n",
+										  impl->iananame,
+										  ptr->interface_name,
+										  impl->samples_per_second, impl->microseconds_per_frame / 1000);
+						if (!switch_core_hash_find(loadable_modules.codec_hash, impl->iananame)) {
+							switch_core_hash_insert(loadable_modules.codec_hash, impl->iananame, (const void *) ptr);
+						}
+					}
+					if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "codec");
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
+						switch_event_fire(&event);
+					}
 				}
-				
 			}
 		} 
 	}
@@ -149,7 +159,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
-				switch_core_hash_insert(loadable_modules.dialplan_hash, (char *) ptr->interface_name, (void *) ptr);
+				switch_core_hash_insert(loadable_modules.dialplan_hash, ptr->interface_name, (const void *) ptr);
 			}
 		}
 	}
@@ -167,7 +177,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
-				switch_core_hash_insert(loadable_modules.timer_hash, (char *) ptr->interface_name, (void *) ptr);
+				switch_core_hash_insert(loadable_modules.timer_hash, ptr->interface_name, (const void *) ptr);
 			}
 		}
 	}
@@ -183,12 +193,11 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "application");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "description", "%s", ptr->short_desc);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "syntax", "%s", ptr->syntax);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "description", "%s", switch_str_nil(ptr->short_desc));
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "syntax", "%s", switch_str_nil(ptr->syntax));
 					switch_event_fire(&event);
 				}
-				switch_core_hash_insert(loadable_modules.application_hash,
-										(char *) ptr->interface_name, (void *) ptr);
+				switch_core_hash_insert(loadable_modules.application_hash, ptr->interface_name, (const void *) ptr);
 			}
 		}
 	}
@@ -204,11 +213,11 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "api");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "description", "%s", ptr->desc);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "syntax", "%s", ptr->syntax);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "description", "%s", switch_str_nil(ptr->desc));
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "syntax", "%s", switch_str_nil(ptr->syntax));
 					switch_event_fire(&event);
 				}
-				switch_core_hash_insert(loadable_modules.api_hash, (char *) ptr->interface_name, (void *) ptr);
+				switch_core_hash_insert(loadable_modules.api_hash, ptr->interface_name, (const void *) ptr);
 			}
 		}
 	}
@@ -228,7 +237,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->extens[i]);
 					switch_event_fire(&event);
 				}
-					switch_core_hash_insert(loadable_modules.file_hash, (char *) ptr->extens[i], (void *) ptr);
+					switch_core_hash_insert(loadable_modules.file_hash, ptr->extens[i], (const void *) ptr);
 				}
 			}
 		}
@@ -247,7 +256,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
-				switch_core_hash_insert(loadable_modules.speech_hash, (char *) ptr->interface_name, (void *) ptr);
+				switch_core_hash_insert(loadable_modules.speech_hash, ptr->interface_name, (const void *) ptr);
 			}
 		}
 	}
@@ -265,7 +274,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
-				switch_core_hash_insert(loadable_modules.asr_hash, (char *) ptr->interface_name, (void *) ptr);
+				switch_core_hash_insert(loadable_modules.asr_hash, ptr->interface_name, (const void *) ptr);
 			}
 		}
 	}
@@ -283,7 +292,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
-				switch_core_hash_insert(loadable_modules.directory_hash, (char *) ptr->interface_name, (void *) ptr);
+				switch_core_hash_insert(loadable_modules.directory_hash, ptr->interface_name, (const void *) ptr);
 			}
 		}
 	}
@@ -301,7 +310,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
-				switch_core_hash_insert(loadable_modules.chat_hash, (char *) ptr->interface_name, (void *) ptr);
+				switch_core_hash_insert(loadable_modules.chat_hash, ptr->interface_name, (const void *) ptr);
 			}
 		}
 	}
@@ -319,7 +328,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 					switch_event_fire(&event);
 				}
-				switch_core_hash_insert(loadable_modules.say_hash, (char *) ptr->interface_name, (void *) ptr);
+				switch_core_hash_insert(loadable_modules.say_hash, ptr->interface_name, (const void *) ptr);
 			}
 		}
 	}
