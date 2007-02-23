@@ -1169,7 +1169,9 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
         }
         break;
 	case SWITCH_SIG_BREAK:
-		switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_BREAK);
+        if (switch_rtp_ready(tech_pvt->rtp_session)) {
+			switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_BREAK);
+		}
 		break;
     }
 
