@@ -69,7 +69,7 @@ sub readhash($;$) {
     if ($h->{'content-length'}) {
       while(length($h->{body}) < $h->{'content-length'}) {
 	my $buf;
-	recv $s, $buf, $h->{'content-length'}, 0;
+	recv $s, $buf, $h->{'content-length'} - length($h->{body}), 0;
 	if (!$buf) {
 	  $h->{socketerror} = "yes";
 	  return $h;	  
