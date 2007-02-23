@@ -239,8 +239,6 @@ struct sofia_profile {
 	char *timer_name;
 	int sip_port;
 	char *codec_string;
-	char *codec_order[SWITCH_MAX_CODECS];
-	int codec_order_last;
 	int running;
 	int codec_ms;
 	int dtmf_duration;
@@ -269,6 +267,8 @@ struct private_object {
 	switch_payload_t agreed_pt;
 	switch_core_session_t *session;
 	switch_frame_t read_frame;
+	char *codec_order[SWITCH_MAX_CODECS];
+	int codec_order_last;
 	const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];
 	int num_codecs;
 	switch_codec_t read_codec;
@@ -824,11 +824,11 @@ static void tech_set_codecs(private_object_t *tech_pvt)
 	if (codec_string) {
 		char *tmp_codec_string;
 		if ((tmp_codec_string = strdup(codec_string))) {
-			tech_pvt->profile->codec_order_last = switch_separate_string(tmp_codec_string, ',', tech_pvt->profile->codec_order, SWITCH_MAX_CODECS);
+			tech_pvt->codec_order_last = switch_separate_string(tmp_codec_string, ',', tech_pvt->codec_order, SWITCH_MAX_CODECS);
 			tech_pvt->num_codecs = switch_loadable_module_get_codecs_sorted(tech_pvt->codecs,
 																			SWITCH_MAX_CODECS,
-																			tech_pvt->profile->codec_order,
-																			tech_pvt->profile->codec_order_last);
+																			tech_pvt->codec_order,
+																			tech_pvt->codec_order_last);
 			free(tmp_codec_string);
 		}
 	} else {
