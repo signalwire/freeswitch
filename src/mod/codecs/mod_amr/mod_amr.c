@@ -32,6 +32,9 @@
  *
  */  
 #include "switch.h"
+static const char modname[] = "mod_amr";
+
+#ifndef AMR_PASSTHROUGH
 #include "amr/interf_enc.h"
 #include "amr/interf_dec.h"
 
@@ -58,8 +61,6 @@
  *        Table 1.  The number of class A bits for the AMR codec.
  *
  */
-
-static const char modname[] = "mod_amr";
 
 typedef enum {
 	AMR_OPT_OCTET_ALIGN = (1 << 0),
@@ -110,10 +111,19 @@ static struct {
 	switch_byte_t default_bitrate;
 } globals;
 
+#endif
 
 static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_t flags,
 									  const switch_codec_settings_t *codec_settings) 
 {
+
+#ifdef AMR_PASSTHROUGH
+	codec->flags |= SWITCH_CODEC_FLAG_PASSTHROUGH;
+    if (codec->fmtp_in) {
+        codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->fmtp_in);
+    }
+	return SWITCH_STATUS_SUCCESS;
+#else
 	struct amr_context *context = NULL;
 	int encoding, decoding;
 	int x, i, argc;
@@ -211,10 +221,12 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 
 		return SWITCH_STATUS_SUCCESS;
 	}
+#endif
 }
 
 static switch_status_t switch_amr_destroy(switch_codec_t *codec) 
 {
+#ifndef AMR_PASSTHROUGH
 	struct amr_context *context = codec->private_info;
 
 	if (context->encoder_state) {
@@ -224,6 +236,7 @@ static switch_status_t switch_amr_destroy(switch_codec_t *codec)
 		Decoder_Interface_exit(context->decoder_state);
 	}
 	codec->private_info = NULL;
+#endif
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -239,6 +252,10 @@ static switch_status_t switch_amr_encode(switch_codec_t *codec,
 										uint32_t *encoded_rate, 
 										unsigned int *flag) 
 {
+#ifdef AMR_PASSTHROUGH
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
+	return SWITCH_STATUS_FALSE;
+#else
 	struct amr_context *context = codec->private_info;
 	
 	if (!context) {
@@ -248,6 +265,7 @@ static switch_status_t switch_amr_encode(switch_codec_t *codec,
 	*encoded_data_len = Encoder_Interface_Encode( context->encoder_state, context->enc_mode, (int16_t *)decoded_data, (switch_byte_t *) encoded_data, 0);
 
 	return SWITCH_STATUS_SUCCESS;
+#endif
 }
 
 static switch_status_t switch_amr_decode(switch_codec_t *codec, 
@@ -262,6 +280,10 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 										uint32_t *decoded_rate, 
 										unsigned int *flag) 
 {
+#ifdef AMR_PASSTHROUGH
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
+	return SWITCH_STATUS_FALSE;
+#else
 	struct amr_context *context = codec->private_info;
 
 	if (!context) {
@@ -272,6 +294,7 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 	*decoded_data_len = codec->implementation->bytes_per_frame;
 
 	return SWITCH_STATUS_SUCCESS;
+#endif
 }
 
 /* Registration */ 
@@ -313,6 +336,7 @@ static switch_loadable_module_interface_t amr_module_interface = {
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
 													 char *filename)
 {
+#ifndef AMR_PASSTHROUGH
 	char *cf = "amr.conf";
 	switch_xml_t cfg, xml, settings, param;
 
@@ -330,6 +354,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 			}
 		}
 	}
+
+#endif
 
 	/* connect my internal structure to the blank pointer passed to me */ 
 	*module_interface = &amr_module_interface;

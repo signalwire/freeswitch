@@ -1,5 +1,13 @@
+ifeq ($(shell ls -d $(BASE)/libs/anr),$(BASE)/libs/amr)
+
 CFLAGS += -I$(PREFIX)/include/amr
 LDFLAGS +=-lamr
+
+else
+
+CFLAGS += -DAMR_PASSTHROUGH
+
+endif
 
 all:	$(MODNAME).$(DYNAMIC_LIB_EXTEN)
 

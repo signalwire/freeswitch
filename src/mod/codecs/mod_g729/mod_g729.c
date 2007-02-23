@@ -50,6 +50,9 @@ static switch_status_t switch_g729_init(switch_codec_t *codec, switch_codec_flag
 {
 #ifdef G729_PASSTHROUGH
 	codec->flags |= SWITCH_CODEC_FLAG_PASSTHROUGH;
+    if (codec->fmtp_in) {
+        codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->fmtp_in);
+    }
 	return SWITCH_STATUS_SUCCESS;
 #else 
 	struct g729_context *context = NULL;
