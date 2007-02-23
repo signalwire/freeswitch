@@ -4118,13 +4118,21 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_LOG:
 		return;
 	case SWITCH_EVENT_MODULE_LOAD:
-		sql = switch_mprintf("insert into interfaces (type,name,description,syntax) values('%q','%q','%q','%q')",
-									 switch_event_get_header(event, "type"),
-									 switch_event_get_header(event, "name"),
-									 switch_event_get_header(event, "description"),
-									 switch_event_get_header(event, "syntax")
-									 );
+		{
+			const char *type = switch_event_get_header(event, "type");
+			const char *name = switch_event_get_header(event, "name");
+			const char *description = switch_event_get_header(event, "description");
+			const char *syntax = switch_event_get_header(event, "syntax");
+			if(!switch_strlen_zero(type) && !switch_strlen_zero(name)) {
+				sql = switch_mprintf("insert into interfaces (type,name,description,syntax) values('%q','%q','%q','%q')",
+											 type,
+											 name,
+											 switch_str_nil(description),
+											 switch_str_nil(syntax)
+											 );
+			}
 		break;
+		}
 	default:
 		break;
 	}
