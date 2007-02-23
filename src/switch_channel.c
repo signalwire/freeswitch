@@ -698,19 +698,19 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
         originatee_caller_profile = caller_profile->originatee_caller_profile;
     }
 
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State", "%s", (char *) switch_channel_state_name(channel->state));
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State", "%s", switch_channel_state_name(channel->state));
 	snprintf(state_num, sizeof(state_num), "%d", channel->state);
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", "%s", (char *) state_num);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", "%s", state_num);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", "%s", switch_channel_get_name(channel));
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID", "%s", switch_core_session_get_uuid(channel->session));
 	
 	if ((codec = switch_core_session_get_read_codec(channel->session))) {
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Name", "%s", codec->implementation->iananame);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Name", "%s", switch_str_nil(codec->implementation->iananame));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Rate", "%u", codec->implementation->samples_per_second);
 	}
 	
 	if ((codec = switch_core_session_get_write_codec(channel->session))) {
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Name", "%s", codec->implementation->iananame);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Name", "%s", switch_str_nil(codec->implementation->iananame));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Rate", "%u", codec->implementation->samples_per_second);
 	}
 
@@ -734,8 +734,10 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 		 hi = switch_hash_next(hi)) {
 		char buf[1024];
 		switch_hash_this(hi, &var, NULL, &val);
-		snprintf(buf, sizeof(buf), "variable_%s", (char *) var);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, buf, "%s", (char *) val);
+		if (var && val) {
+			snprintf(buf, sizeof(buf), "variable_%s", var);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, buf, "%s", val);
+		}
 	}
 
 
