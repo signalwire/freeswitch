@@ -2958,7 +2958,7 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Execute %s(%s)\n",
 							  extension->current_application->application_name,
-							  extension->current_application->application_data);
+							  switch_str_nil(extension->current_application->application_data));
 		if (
 			(application_interface =
 			 switch_loadable_module_get_application_interface(extension->current_application->application_name)) == 0) {
