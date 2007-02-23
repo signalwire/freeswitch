@@ -2300,8 +2300,8 @@ static JSBool js_api_execute(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 		stream.data = retbuf;
 		stream.end = stream.data;
 		stream.data_size = sizeof(retbuf);
-		switch_api_execute(cmd, arg, session, &stream);
 		stream.write_function = switch_console_stream_write;
+		switch_api_execute(cmd, arg, session, &stream);
 
 		*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, retbuf));
 	} else {
