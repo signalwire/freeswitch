@@ -735,8 +735,8 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 		char buf[1024];
 		switch_hash_this(hi, &var, NULL, &val);
 		if (var && val) {
-			snprintf(buf, sizeof(buf), "variable_%s", var);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, buf, "%s", val);
+			snprintf(buf, sizeof(buf), "variable_%s", (char *)var);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, buf, "%s", (char *)val);
 		}
 	}
 
