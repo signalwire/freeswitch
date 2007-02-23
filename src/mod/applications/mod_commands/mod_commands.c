@@ -522,10 +522,10 @@ static switch_status_t originate_function(char *cmd, switch_core_session_t *ises
 	assert(caller_channel != NULL);
 	switch_channel_clear_state_handler(caller_channel, NULL);
 
-	if (*exten == '&') {
+	if (*exten == '&'  && *(exten + 1)) {
 		switch_caller_extension_t *extension = NULL;
 		char *app_name = switch_core_session_strdup(caller_session, (exten + 1));
-		char *arg, *e;
+		char *arg = NULL, *e;
 
 		if ((e = strchr(app_name, ')'))) {
 			*e = '\0';
