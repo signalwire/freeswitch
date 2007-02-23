@@ -42,7 +42,6 @@ sub readhash($;$) {
 	if ($i eq "") {	  
 	  $h->{socketerror} = "yes";
 	  return $h;
-	  last;
 	} elsif ($i eq "\n") {
 	  $crc++;
 	  last;
@@ -51,6 +50,7 @@ sub readhash($;$) {
 	}
 	$line .= $i;      
       }
+
       if (!$line) {
 	last;
       }
@@ -67,7 +67,15 @@ sub readhash($;$) {
     }
     
     if ($h->{'content-length'}) {
-      recv $s, $h->{body}, $h->{'content-length'}, 0;
+      while(length($h->{body}) < $h->{'content-length'}) {
+	my $buf;
+	recv $s, $buf, $h->{'content-length'}, 0;
+	if (!$buf) {
+	  $h->{socketerror} = "yes";
+	  return $h;	  
+	}
+	$h->{body} .= $buf;
+      }
     }
 
     if ($h->{'content-type'} eq "text/event-plain") {
