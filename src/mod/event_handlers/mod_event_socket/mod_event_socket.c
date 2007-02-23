@@ -554,14 +554,13 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
             switch_event_fire(&event);
         }
     } else {
-        switch_size_t len;
-        char buf[1024];
-        len = strlen(reply);			
-        snprintf(buf, sizeof(buf), "Content-Type: api/response\nContent-Length: %"APR_SSIZE_T_FMT"\n\n", len);
-        len = strlen(buf);
-        switch_socket_send(acs->listener->sock, buf, &len);
-        len = strlen(reply);
-        switch_socket_send(acs->listener->sock, reply, &len);
+        switch_size_t rlen, blen;
+        char buf[1024] = "";
+        rlen = strlen(reply);			
+        snprintf(buf, sizeof(buf), "Content-Type: api/response\nContent-Length: %"APR_SSIZE_T_FMT"\n\n", rlen);
+        blen = strlen(buf);
+        switch_socket_send(acs->listener->sock, buf, &blen);
+        switch_socket_send(acs->listener->sock, reply, &rlen);
     }
 		
     switch_safe_free(stream.data);
