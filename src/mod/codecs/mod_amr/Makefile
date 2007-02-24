@@ -1,4 +1,4 @@
-ifeq ($(shell ls -d $(BASE)/libs/anr),$(BASE)/libs/amr)
+ifeq ($(shell ls -d $(BASE)/libs/amr),$(BASE)/libs/amr)
 
 CFLAGS += -I$(PREFIX)/include/amr
 LDFLAGS +=-lamr
