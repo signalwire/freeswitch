@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  * Ken Rice, Asteria Solutions Group, Inc <ken@asteriasgi.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
+ * Bret McDanel <trixter AT 0xdecafbad.com>
  *
  *
  * mod_sofia.c -- SOFIA SIP Endpoint
@@ -2334,6 +2335,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 {
 	uint8_t match = 0;
+	switch_payload_t te = 0;
 	private_object_t *tech_pvt;
 	sdp_media_t *m;
 	sdp_attribute_t *a;
@@ -2390,8 +2392,15 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 				int32_t i;
                 const switch_codec_implementation_t *mimp = NULL, *near_match = NULL;
 
-				if (!strcasecmp(map->rm_encoding, "telephone-event")) {
-					tech_pvt->te = (switch_payload_t)map->rm_pt;
+				if (!te && !strcasecmp(map->rm_encoding, "telephone-event")) {
+					te = tech_pvt->te = (switch_payload_t)map->rm_pt;
+				}
+
+				if (match) {
+					if (te) {
+						break;
+					}
+					continue;
 				}
 
 				for (i = 0; i < tech_pvt->num_codecs; i++) {
@@ -2464,7 +2473,6 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 					if (tech_set_codec(tech_pvt, 1) != SWITCH_STATUS_SUCCESS) {
 						match = 0;
 					}
-					break;
 				}
 			}
 		}
