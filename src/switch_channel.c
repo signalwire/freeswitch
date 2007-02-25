@@ -1202,7 +1202,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 	size_t sp = 0, len = 0, olen = 0, vtype = 0, br = 0, cpos, block = 128;
 	char *sub_val = NULL, *func_val = NULL;
 
-	if (!strchr(in, '$')) {
+	if (!in || !strchr(in, '$')) {
 		return in;
 	}
 
