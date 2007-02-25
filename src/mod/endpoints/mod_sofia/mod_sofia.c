@@ -358,7 +358,7 @@ static void tech_set_codecs(private_object_t *tech_pvt);
 static void attach_private(switch_core_session_t *session,
                            sofia_profile_t *profile,
                            private_object_t *tech_pvt,
-                           char *channame);
+                           const char *channame);
 
 static void terminate_session(switch_core_session_t **session, switch_call_cause_t cause, int line);
 
@@ -843,7 +843,7 @@ static void tech_set_codecs(private_object_t *tech_pvt)
 static void attach_private(switch_core_session_t *session,
 						   sofia_profile_t *profile,
 						   private_object_t *tech_pvt,
-						   char *channame)
+						   const char *channame)
 {
 	switch_channel_t *channel;
 	char name[256];
@@ -4231,6 +4231,88 @@ static void sip_i_info(nua_t *nua,
 	return;
 }
 
+
+#define url_set_chanvars(session, url, varprefix) _url_set_chanvars(session, url, #varprefix "_user", #varprefix "_host", #varprefix "_port", #varprefix "_uri")
+static const char * _url_set_chanvars(switch_core_session_t *session, url_t *url, const char * user_var, const char * host_var, const char * port_var, const char * uri_var)
+{
+	const char *user = NULL, *host = NULL, *port = NULL;
+	char *uri = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (url) {
+		user = url->url_user;
+		host = url->url_host;
+		port = url->url_port;
+	}
+
+	if (user) {
+		switch_channel_set_variable(channel, user_var, user);
+	}
+
+	if (!port) {
+		port = "5060";
+	}
+
+	switch_channel_set_variable(channel, port_var, port);
+	if (host) {
+		if (user) {
+			uri = switch_core_session_sprintf(session, "%s@%s:%s", user, host, port);
+		} else {
+			uri = switch_core_session_sprintf(session, "%s:%s", host, port);
+		}
+		switch_channel_set_variable_nodup(channel, uri_var, uri);
+		switch_channel_set_variable(channel, host_var, host);
+	}
+
+	return uri;
+}
+
+static void process_rpid(sip_unknown_t *un, private_object_t *tech_pvt)
+{
+	int argc, x, screen = 1;
+	char *mydata, *argv[10] = { 0 };
+	if (!switch_strlen_zero(un->un_value)) { 
+		if ((mydata = strdup(un->un_value))) {
+			argc = switch_separate_string(mydata, ';', argv, (sizeof(argv) / sizeof(argv[0]))); 
+
+			// Do We really need this at this time 
+			// clid_uri = argv[0];
+
+			for (x=1; x < argc && argv[x]; x++){
+				// we dont need to do anything with party yet we should only be seeing party=calling here anyway
+				// maybe thats a dangerous assumption bit oh well yell at me later
+				// if (!strncasecmp(argv[x], "party", 5)) {
+				//	party = argv[x];
+				// } else 
+				if (!strncasecmp(argv[x], "privacy=", 8)) {
+					char *arg = argv[x] + 9;
+
+					if (!strcasecmp(arg, "yes")) {
+						switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
+					} else if (!strcasecmp(arg, "full")) {
+						switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
+					} else if (!strcasecmp(arg, "name")) {
+						switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME);
+					} else if (!strcasecmp(arg, "number")) {
+						switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NUMBER);
+					} else {
+						switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME);
+						switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NUMBER);
+					}
+
+				} else if (!strncasecmp(argv[x], "screen=", 7) && screen > 0) {
+					char *arg = argv[x] + 8;
+					if (!strcasecmp(arg, "no")) {
+						screen = 0;
+						switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_SCREEN);
+					}
+				}
+			}
+			free(mydata);
+		}
+	}
+}
+
 static void sip_i_invite(nua_t *nua, 
 						 sofia_profile_t *profile,
 						 nua_handle_t *nh, 
@@ -4241,266 +4323,166 @@ static void sip_i_invite(nua_t *nua,
 	switch_core_session_t *session = NULL;
 	char key[128] = "";
 	sip_unknown_t *un;
-    private_object_t *tech_pvt = NULL;
-    switch_channel_t *channel = NULL;
-	sip_from_t const *from = sip->sip_from;
-    sip_to_t const *to = sip->sip_to;
-    char *displayname;
-    char *username, *req_username = NULL;
-    char *url_user = (char *) from->a_url->url_user;
-    char *to_user, *to_host, *to_port;
-    char *req_user, *req_host, *req_port;
-    char *contact_user, *contact_host, *contact_port;
-    char *via_rport, *via_host, *via_port;
-    char *from_port;
-    char uri[1024];
+	private_object_t *tech_pvt = NULL;
+	switch_channel_t *channel = NULL;
+	const char *channel_name = NULL;
+	const char *displayname = NULL;
+	const char *destination_number = NULL;
+	const char *from_user = NULL, *from_host = NULL;
+	const char *context;
 	char network_ip[80];
 
-
-    if (!(sip && sip->sip_contact && sip->sip_contact->m_url)) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO CONTACT!\n");
-		nua_respond(nh, 400, "Missing Contact Header", TAG_END());
-        return;
-    }
-
-    if ((profile->pflags & PFLAG_AUTH_CALLS)) {
-        if (handle_register(nua, profile, nh, sip, REG_INVITE, key, sizeof(key))) {
-            return;
-        }
-    }
-
-    if (!(session = switch_core_session_request(&sofia_endpoint_interface, NULL))) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Session Alloc Failed!\n");
-		nua_respond(nh, SIP_503_SERVICE_UNAVAILABLE, TAG_END());
+	if (!sip) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received an invite callback with no packet!\n");
+		nua_respond(nh, SIP_500_INTERNAL_SERVER_ERROR, TAG_END());
 		return;
-    }
-
-    if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
-        terminate_session(&session, SWITCH_CAUSE_SWITCH_CONGESTION, __LINE__);
-        return;
-    }
-
-    if (!switch_strlen_zero(key)) {
-        tech_pvt->key = switch_core_session_strdup(session, key);
-    }
-
-	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *)msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_addr);
-	
-
-    to_user = (char *) to->a_url->url_user;
-    to_host = (char *) to->a_url->url_host;
-    if (!(to_port = (char *) to->a_url->url_port)) {
-        to_port = "5060";
-    }
-			
-    if (switch_strlen_zero(to_user)) { /* if sofia doesnt parse the To: right, we'll have to do it */
-        if ((to_user = sip_header_as_string(tech_pvt->home, (sip_header_t *) to))) {
-            char *p;
-            if (*to_user == '<') {
-                to_user++;
-            }
-            if ((p = strchr((to_user += 4), '@'))) {
-                *p++ = '\0';
-                to_host = p;
-                if ((p = strchr(to_host, '>'))) {
-                    *p = '\0';
-                }
-            }
-        }
-    }
-
-    if (switch_strlen_zero(url_user)) {
-        url_user = "service";
-    }
-			
-    if (!switch_strlen_zero(from->a_display)) {
-        displayname = switch_core_session_strdup(session, (char *) from->a_display);
-        if (*displayname == '"') {
-            char *p;
-				
-            displayname++;
-            if ((p = strchr(displayname, '"'))) {
-                *p = '\0';
-            }
-        }
-    } else {
-        displayname = url_user;
-    }
-			
-    if (!(username = switch_mprintf("%s@%s", url_user, (char *) from->a_url->url_host))) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-        return;
-    }
-
-    attach_private(session, profile, tech_pvt, username);
-    tech_set_codecs(tech_pvt);
-
-    channel = switch_core_session_get_channel(session);
-    switch_channel_set_variable(channel, "endpoint_disposition", "INBOUND CALL");
-    set_chat_hash(tech_pvt, sip);
-
-    if (switch_test_flag(tech_pvt, TFLAG_INB_NOMEDIA)) {
-        switch_set_flag_locked(tech_pvt, TFLAG_NOMEDIA);
-        switch_channel_set_flag(channel, CF_NOMEDIA);
-    }
-
-			
-    switch_channel_set_variable(channel, "sip_from_user", from->a_url->url_user);
-    if (from->a_url->url_user && *from->a_url->url_user == '+') {
-        switch_channel_set_variable(channel, "sip_from_user_stripped", (char *)(from->a_url->url_user+1));
-    } else {
-        switch_channel_set_variable(channel, "sip_from_user_stripped", from->a_url->url_user);
-    }
-    switch_channel_set_variable(channel, "sip_from_host", from->a_url->url_host);
-
-            
-    if (!(from_port = (char *) from->a_url->url_port)) {
-        from_port = "5060";
-    }
-
-    switch_channel_set_variable(channel, "sip_from_port", from_port);
-
-
-    snprintf(uri, sizeof(uri), "%s@%s:%s", from->a_url->url_user, from->a_url->url_host, from_port);
-    switch_channel_set_variable(channel, "sip_from_uri", uri);
-            
-            
-    switch_channel_set_variable(channel, "sip_to_user", to_user);
-    switch_channel_set_variable(channel, "sip_to_host", to_host);
-    switch_channel_set_variable(channel, "sip_to_port", to_port);
-
-    snprintf(uri, sizeof(uri), "%s@%s:%s", to_user, to_host, to_port);
-    switch_channel_set_variable(channel, "sip_to_uri", uri);
-
-
-    req_user = (char *) sip->sip_request->rq_url->url_user;
-    req_host = (char *) sip->sip_request->rq_url->url_host;
-    if (!(req_port = (char *) sip->sip_request->rq_url->url_port)) {
-        req_port = "5060";
-    }
-            
-    switch_channel_set_variable(channel, "sip_req_user", req_user);
-    switch_channel_set_variable(channel, "sip_req_host", req_host);
-    switch_channel_set_variable(channel, "sip_req_port", req_port);
-
-    if (profile->pflags & PFLAG_FULL_ID)  {
-		if (req_user) {
-			if (!(req_username = switch_mprintf("%s@%s:%s", req_user, req_host, req_port))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-				switch_safe_free(username);
-				return;
-			}
-		} else {
-			if (!(req_username = switch_mprintf("%s:%s", req_host, req_port))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-				switch_safe_free(username);
-				return;
-			}
-		}
-    }
-
-    contact_user = (char *) sip->sip_contact->m_url->url_user;
-    contact_host = (char *) sip->sip_contact->m_url->url_host;
-    if (!(contact_port = (char *) sip->sip_contact->m_url->url_port)) {
-        contact_port = "5060";
-    }
-            
-    switch_channel_set_variable(channel, "sip_contact_user", contact_user);
-    switch_channel_set_variable(channel, "sip_contact_host", contact_host);
-    switch_channel_set_variable(channel, "sip_contact_port", contact_port);
-
-    if (!tech_pvt->call_id && sip && sip->sip_call_id && sip->sip_call_id->i_id) {
-        tech_pvt->call_id = switch_core_session_strdup(session, sip->sip_call_id->i_id);
-        switch_channel_set_variable(channel, "sip_call_id", tech_pvt->call_id);
-    }
-
-    via_host = (char *) sip->sip_via->v_host;
-    if (!(via_port = (char *) sip->sip_via->v_port)) {
-        via_port = "5060";
-    }
-    if (!(via_rport = (char *) sip->sip_via->v_rport)) {
-        via_rport = "5060";
-    }
-            
-    switch_channel_set_variable(channel, "sip_via_host", via_host);
-    switch_channel_set_variable(channel, "sip_via_port", via_port);
-    switch_channel_set_variable(channel, "sip_via_rport", via_rport);
-
-            
-    snprintf(uri, sizeof(uri), "%s@%s:%s", req_user, req_host, req_port);
-    switch_channel_set_variable(channel, "sip_req_uri", uri);
-
-	if (sip->sip_max_forwards) {
-		snprintf(uri, sizeof(uri), "%u", sip->sip_max_forwards->mf_count);
-		switch_channel_set_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE, uri);
 	}
 
-	if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
-                                                              (char *) from->a_url->url_user,
-                                                              profile->dialplan,
-                                                              displayname,
-                                                              (char *) from->a_url->url_user,
-                                                              network_ip,
-                                                              NULL,
-                                                              NULL,
-                                                              NULL,
-                                                              (char *)modname,
-                                                              (profile->context && !strcasecmp(profile->context, "_domain_")) ? 
-                                                              (char *) from->a_url->url_host : profile->context,
-															  req_username ? req_username : req_user ? (char *) req_user : ""
-                                                              )) != 0) {
+	if (!(sip->sip_contact && sip->sip_contact->m_url)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO CONTACT!\n");
+		nua_respond(nh, 400, "Missing Contact Header", TAG_END());
+		return;
+	}
 
+	if ((profile->pflags & PFLAG_AUTH_CALLS)) {
+		if (handle_register(nua, profile, nh, sip, REG_INVITE, key, sizeof(key))) {
+			return;
+		}
+	}
+
+	if (!(session = switch_core_session_request(&sofia_endpoint_interface, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Session Alloc Failed!\n");
+		nua_respond(nh, SIP_503_SERVICE_UNAVAILABLE, TAG_END());
+		return;
+	}
+
+	if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
+		terminate_session(&session, SWITCH_CAUSE_SWITCH_CONGESTION, __LINE__);
+		return;
+	}
+
+	if (!switch_strlen_zero(key)) {
+		tech_pvt->key = switch_core_session_strdup(session, key);
+	}
+
+	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *)msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_addr);
+
+	channel = switch_core_session_get_channel(session);
+
+	if (sip->sip_from && sip->sip_from->a_url) {
+		from_user = sip->sip_from->a_url->url_user;
+		from_host = sip->sip_from->a_url->url_host;
+		channel_name = url_set_chanvars(session, sip->sip_from->a_url, "sip_from");
+
+		if (!switch_strlen_zero(from_user)) {
+			if (*from_user == '+') {
+				switch_channel_set_variable(channel, "sip_from_user_stripped", (const char *)(from_user+1));
+			} else {
+				switch_channel_set_variable(channel, "sip_from_user_stripped", from_user);
+			}
+		}
+
+		if (!switch_strlen_zero(sip->sip_from->a_display)) {
+			char *tmp;
+			tmp = switch_core_session_strdup(session, sip->sip_from->a_display);
+			if (*tmp == '"') {
+				char *p;
+
+				tmp++;
+				if ((p = strchr(tmp, '"'))) {
+					*p = '\0';
+				}
+			}
+			displayname = tmp;
+		} else {
+			displayname = switch_strlen_zero(from_user) ? "unkonwn" : from_user;
+		}
+	}
+
+	if (sip->sip_request && sip->sip_request->rq_url) {
+		const char * req_uri = url_set_chanvars(session, sip->sip_request->rq_url, "sip_req");
+		if (profile->pflags & PFLAG_FULL_ID)  {
+			destination_number = req_uri;
+		} else {
+			destination_number = sip->sip_request->rq_url->url_user;
+		}
+	}
+
+	if (sip->sip_to && sip->sip_to->a_url) {
+		url_set_chanvars(session, sip->sip_to->a_url, "sip_to");
+	}
+
+	if (sip->sip_contact && sip->sip_contact->m_url) {
+		const char *contact_uri = url_set_chanvars(session, sip->sip_contact->m_url, "sip_contact");
+		if (!channel_name) {
+			channel_name = contact_uri;
+		}
+	}
+
+	attach_private(session, profile, tech_pvt, channel_name);
+	tech_set_codecs(tech_pvt);
+
+	switch_channel_set_variable(channel, "endpoint_disposition", "INBOUND CALL");
+	set_chat_hash(tech_pvt, sip);
+
+	if (switch_test_flag(tech_pvt, TFLAG_INB_NOMEDIA)) {
+		switch_set_flag_locked(tech_pvt, TFLAG_NOMEDIA);
+		switch_channel_set_flag(channel, CF_NOMEDIA);
+	}
+
+	if (!tech_pvt->call_id && sip->sip_call_id && sip->sip_call_id->i_id) {
+		tech_pvt->call_id = switch_core_session_strdup(session, sip->sip_call_id->i_id);
+		switch_channel_set_variable(channel, "sip_call_id", tech_pvt->call_id);
+	}
+
+	if (sip->sip_via) {
+		if (sip->sip_via->v_host) {
+			switch_channel_set_variable(channel, "sip_via_host", sip->sip_via->v_host);
+		}
+		if (sip->sip_via->v_port) {
+			switch_channel_set_variable(channel, "sip_via_port", sip->sip_via->v_port);
+		}
+		if (sip->sip_via->v_rport) {
+			switch_channel_set_variable(channel, "sip_via_rport", sip->sip_via->v_rport);
+		}
+	}
+
+	if (sip->sip_max_forwards) {
+		char max_forwards[32];
+		snprintf(max_forwards, sizeof(max_forwards), "%u", sip->sip_max_forwards->mf_count);
+		switch_channel_set_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE, max_forwards);
+	}
+
+	if (profile->context && !strcasecmp(profile->context, "_domain_")) {
+		context = from_host;
+	} else {
+		context = profile->context;
+	}
+
+	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
+														from_user,
+														profile->dialplan,
+														displayname,
+														from_user,
+														network_ip,
+														NULL,
+														NULL,
+														NULL,
+														modname,
+														context,
+														destination_number);
+
+	if (tech_pvt->caller_profile) {
 				
-        for (un=sip->sip_unknown; un; un=un->un_next) {
-            if (!strncasecmp(un->un_name, "Alert-Info", 10)) {
-                if (!switch_strlen_zero(un->un_value)) { 
-                    switch_channel_set_variable(channel, "alert_info", (char *)un->un_value);
-                }
-                // Loop thru Known Headers Here so we can do something with them
-            } else if (!strncasecmp(un->un_name, "Remote-Party-ID", 15)) {
-                int argc, x, screen = 1;
-                char *mydata, *argv[10] = { 0 };
-                if (!switch_strlen_zero(un->un_value)) { 
-                    if ((mydata = strdup(un->un_value))) {
-                        argc = switch_separate_string(mydata, ';', argv, (sizeof(argv) / sizeof(argv[0]))); 
-
-                        // Do We really need this at this time 
-                        // clid_uri = argv[0];
-
-                        for (x=1; x < argc && argv[x]; x++){
-                            // we dont need to do anything with party yet we should only be seeing party=calling here anyway
-                            // maybe thats a dangerous assumption bit oh well yell at me later
-                            // if (!strncasecmp(argv[x], "party", 5)) {
-                            //	party = argv[x];
-                            // } else 
-                            if (!strncasecmp(argv[x], "privacy=", 8)) {
-                                char *arg = argv[x] + 9;
-
-                                if (!strcasecmp(arg, "yes")) {
-                                    switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
-                                } else if (!strcasecmp(arg, "full")) {
-                                    switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
-                                } else if (!strcasecmp(arg, "name")) {
-                                    switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME);
-                                } else if (!strcasecmp(arg, "number")) {
-                                    switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NUMBER);
-                                } else {
-                                    switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME);
-                                    switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NUMBER);
-                                }
-
-                            } else if (!strncasecmp(argv[x], "screen=", 7) && screen > 0) {
-                                char *arg = argv[x] + 8;
-                                if (!strcasecmp(arg, "no")) {
-                                    screen = 0;
-                                    switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_SCREEN);
-                                }
-                            }
-                        }
-                        free(mydata);
-                    }
-                }
+		/* Loop thru unknown Headers Here so we can do something with them */
+		for (un=sip->sip_unknown; un; un=un->un_next) {
+			if (!strncasecmp(un->un_name, "Alert-Info", 10)) {
+				if (!switch_strlen_zero(un->un_value)) { 
+					switch_channel_set_variable(channel, "alert_info", un->un_value);
+				}
+			} else if (!strncasecmp(un->un_name, "Remote-Party-ID", 15)) {
+				process_rpid(un, tech_pvt);
 			} else if (!strncasecmp(un->un_name, "X-", 2)) {
 				if (!switch_strlen_zero(un->un_value)) { 
 					char *new_name;
@@ -4510,20 +4492,18 @@ static void sip_i_invite(nua_t *nua,
 					}
 				}
 			}
-        }
+		}
 
-        switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
-        switch_safe_free(username);
-        switch_safe_free(req_username);
-    }
+		switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
+	}
 
-    if (!(tech_pvt->sofia_private = malloc(sizeof(*tech_pvt->sofia_private)))) {
-        abort();
-    }
-    memset(tech_pvt->sofia_private, 0, sizeof(*tech_pvt->sofia_private));
-    switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));
-    nua_handle_bind(nh, tech_pvt->sofia_private);
-    tech_pvt->nh = nh;
+	if (!(tech_pvt->sofia_private = malloc(sizeof(*tech_pvt->sofia_private)))) {
+		abort();
+	}
+	memset(tech_pvt->sofia_private, 0, sizeof(*tech_pvt->sofia_private));
+	switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));
+	nua_handle_bind(nh, tech_pvt->sofia_private);
+	tech_pvt->nh = nh;
 }
 
 static void sip_i_register(nua_t *nua,
