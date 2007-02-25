@@ -1176,11 +1176,23 @@ static void tech_absorb_sdp(private_object_t *tech_pvt)
 		sdp_parser_t *parser;
 		sdp_session_t *sdp;
 		sdp_media_t *m;
+		sdp_connection_t *connection;
 
 		if ((parser = sdp_parse(tech_pvt->home, sdp_str, (int)strlen(sdp_str), 0))) {
 			if ((sdp = sdp_session(parser))) {
 				for (m = sdp->sdp_media; m ; m = m->m_next) {
-					tech_pvt->proxy_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, sdp->sdp_connection->c_address);
+					if (m->m_type != sdp_media_audio) {
+						continue;
+					}
+
+					connection = sdp->sdp_connection;
+					if (m->m_connections) {
+						connection = m->m_connections;
+					}
+
+					if (connection) {
+						tech_pvt->proxy_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, connection->c_address);
+					}
 					tech_pvt->proxy_sdp_audio_port = (switch_port_t)m->m_port;
 					if (tech_pvt->proxy_sdp_audio_ip && tech_pvt->proxy_sdp_audio_port) {
 						break;
@@ -2367,17 +2379,6 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 	for (m = sdp->sdp_media; m ; m = m->m_next) {
         sdp_connection_t *connection;
 
-        connection = sdp->sdp_connection;
-        if (m->m_connections) {
-            connection = m->m_connections;
-        }
-
-        if (!connection) {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find a c= line in the sdp at media or session level!\n");
-            match = 0;
-            break;
-        }
-
         ptime = dptime;
         for (a = m->m_attributes; a; a = a->a_next) {
             if (!strcasecmp(a->a_name, "ptime") && a->a_value) {
@@ -2387,6 +2388,17 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 
 		if (m->m_type == sdp_media_audio) {
 			sdp_rtpmap_t *map;
+
+			connection = sdp->sdp_connection;
+			if (m->m_connections) {
+				connection = m->m_connections;
+			}
+
+			if (!connection) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find a c= line in the sdp at media or session level!\n");
+				match = 0;
+				break;
+			}
 
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 				int32_t i;
