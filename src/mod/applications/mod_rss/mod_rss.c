@@ -658,6 +658,7 @@ static const switch_application_interface_t rss_application_interface = {
 	/*.interface_name */ "rss",
 	/*.application_function */ rss_function,
 	NULL, NULL, NULL,
+	/* flags */ SAF_NONE,
 	/*.next*/ NULL
 };
 

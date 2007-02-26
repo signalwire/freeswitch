@@ -595,6 +595,8 @@ struct switch_application_interface {
 	const char *short_desc;
 	/*! an example of the application syntax */
 	const char *syntax;
+	/*! flags to control behaviour */
+	uint32_t flags;
 	const struct switch_application_interface *next;
 };
 
@@ -606,7 +608,7 @@ struct switch_api_interface {
 	const char *desc;
 	/*! function the api call uses */
 	switch_api_function_t function;
-	/*! an example of the application syntax */
+	/*! an example of the api syntax */
 	const char *syntax;
 	const struct switch_api_interface *next;
 };

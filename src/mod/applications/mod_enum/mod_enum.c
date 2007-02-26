@@ -689,6 +689,7 @@ static const switch_application_interface_t enum_application_interface = {
 	/* long_desc */ "Perform an ENUM lookup",
 	/* short_desc */ "Perform an ENUM lookup",
 	/* syntax */ "<number> [<root>]",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next */ NULL
 };
 
@@ -728,4 +729,5 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
+
 

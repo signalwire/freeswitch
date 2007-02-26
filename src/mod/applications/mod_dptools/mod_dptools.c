@@ -547,6 +547,7 @@ static const switch_application_interface_t queuedtmf_application_interface = {
 	/* long_desc */ "Queue dtmf to be sent from a session",
 	/* short_desc */ "Queue dtmf to be sent",
 	/* syntax */ "<dtmf_data>",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next */ NULL
 };
 
@@ -556,6 +557,7 @@ static const switch_application_interface_t redirect_application_interface = {
 	/* long_desc */ "Send a redirect message to a session.",
 	/* short_desc */ "Send session redirect",
 	/* syntax */ "<redirect_data>",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next */ &queuedtmf_application_interface
 };
 
@@ -565,6 +567,7 @@ static const switch_application_interface_t ivr_application_interface = {
 	/* long_desc */ "Run an ivr menu.",
 	/* short_desc */ "Run an ivr menu",
 	/* syntax */ "<menu_name>",
+	/* flags */ SAF_NONE,
 	/*.next */ &redirect_application_interface
 };
 
@@ -574,6 +577,7 @@ static const switch_application_interface_t detect_speech_application_interface 
 	/* long_desc */ "Detect speech on a channel.",
 	/* short_desc */ "Detect speech",
 	/* syntax */ "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR pause OR resume",
+	/* flags */ SAF_NONE,
 	/*.next */ &ivr_application_interface
 };
 
@@ -583,6 +587,7 @@ static const switch_application_interface_t ring_ready_application_interface = {
 	/* long_desc */ "Indicate Ring_Ready on a channel.",
 	/* short_desc */ "Indicate Ring_Ready",
 	/* syntax */ "",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next */ &detect_speech_application_interface
 };
 
@@ -592,6 +597,7 @@ static const switch_application_interface_t unset_application_interface = {
 	/* long_desc */ "Unset a channel varaible for the channel calling the application.",
 	/* short_desc */ "Unset a channel varaible",
 	/* syntax */ "<varname>",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next */ &ring_ready_application_interface
 };
 
@@ -601,6 +607,7 @@ static const switch_application_interface_t set_application_interface = {
 	/* long_desc */ "Set a channel varaible for the channel calling the application.",
 	/* short_desc */ "Set a channel varaible",
 	/* syntax */ "<varname>=<value>",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next */ &unset_application_interface
 };
 
@@ -610,6 +617,7 @@ static const switch_application_interface_t export_application_interface = {
 	/* long_desc */ "Set and export a channel varaible for the channel calling the application.",
 	/* short_desc */ "Export a channel varaible across a bridge",
 	/* syntax */ "<varname>=<value>",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next */ &set_application_interface
 };
 
@@ -619,6 +627,7 @@ static const switch_application_interface_t info_application_interface = {
 	/* long_desc */ "Display Call Info",
 	/* short_desc */ "Display Call Info",
 	/* syntax */ "",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next */ &export_application_interface
 };
 
@@ -628,6 +637,7 @@ static const switch_application_interface_t log_application_interface = {
 	/* long_desc */ "Logs a channel varaible for the channel calling the application.",
 	/* short_desc */ "Logs a channel varaible",
 	/* syntax */ "<varname>",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next */ &info_application_interface
 };
 
@@ -638,6 +648,7 @@ static const switch_application_interface_t hangup_application_interface = {
 	/* long_desc */ "Hangup the call for a channel.",
 	/* short_desc */ "Hangup the call",
 	/* syntax */ "[<cause>]",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next */ &log_application_interface
 
 };
@@ -648,6 +659,7 @@ static const switch_application_interface_t answer_application_interface = {
 	/* long_desc */ "Answer the call for a channel.",
 	/* short_desc */ "Answer the call",
 	/* syntax */ "",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next */ &hangup_application_interface
 
 };
@@ -658,6 +670,7 @@ static const switch_application_interface_t pre_answer_application_interface = {
 	/* long_desc */ "Pre-Answer the call for a channel.",
 	/* short_desc */ "Pre-Answer the call",
 	/* syntax */ "",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next */ &answer_application_interface
 
 };
@@ -668,6 +681,7 @@ static const switch_application_interface_t eval_application_interface = {
 	/* long_desc */ "Do Nothing",
 	/* short_desc */ "Do Nothing",
 	/* syntax */ "",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next */ &pre_answer_application_interface
 
 };
@@ -678,6 +692,7 @@ static const switch_application_interface_t phrase_application_interface = {
 	/* long_desc */ "Say a Phrase",
 	/* short_desc */ "Say a Phrase",
 	/* syntax */ "<macro_name>,<data>",
+	/* flags */ SAF_NONE,
 	/*.next */ &eval_application_interface
 
 };
@@ -688,6 +703,7 @@ static const switch_application_interface_t strftime_application_interface = {
 	/* long_desc */ NULL,
 	/* short_desc */ NULL,
 	/* syntax */ NULL,
+	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next */ &phrase_application_interface
 
 };
@@ -698,6 +714,7 @@ static const switch_application_interface_t sleep_application_interface = {
 	/* long_desc */ "Pause the channel for a given number of milliseconds, consuming the audio for that period of time.",
 	/* short_desc */ "Pause a channel",
 	/* syntax */ "<pausemilliseconds>",
+	/* flags */ SAF_NONE,
 	/* next */ &strftime_application_interface
 };
 
@@ -707,6 +724,7 @@ static const switch_application_interface_t transfer_application_interface = {
 	/* long_desc */ "Immediatly transfer the calling channel to a new extension",
 	/* short_desc */ "Transfer a channel",
 	/* syntax */ "<exten> [<dialplan> <context>]",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/* next */ &sleep_application_interface
 };
 
@@ -716,6 +734,7 @@ static const switch_application_interface_t privacy_application_interface = {
 	/* long_desc */ "Set caller privacy on calls.",
 	/* short_desc */ "Set privacy on calls",
 	/* syntax */ "off|on|name|full|number",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next */ &transfer_application_interface
 };
 

@@ -531,6 +531,11 @@ typedef enum {
 } switch_frame_flag_t;
 
 
+typedef enum {
+	SAF_NONE = 0,
+	SAF_SUPPORT_NOMEDIA = (1 << 0)
+} switch_application_flag_t;
+
 /*!
   \enum switch_signal_t
   \brief Signals to send to channels

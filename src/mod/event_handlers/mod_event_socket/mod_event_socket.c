@@ -252,6 +252,7 @@ static const switch_application_interface_t socket_application_interface = {
     /* long_desc */ "Connect to a socket",
     /* short_desc */ "Connect to a socket",
     /* syntax */ "<ip>[:<port>]",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
     /*.next */ NULL
 };
 

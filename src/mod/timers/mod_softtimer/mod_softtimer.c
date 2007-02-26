@@ -139,10 +139,7 @@ static const switch_timer_interface_t timer_interface = {
 static const switch_loadable_module_interface_t mod_softtimer_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ &timer_interface,
-	/*.switch_dialplan_interface */ NULL,
-	/*.switch_codec_interface */ NULL,
-	/*.switch_application_interface */ NULL
+	/*.timer_interface */ &timer_interface
 };
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)

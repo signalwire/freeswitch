@@ -4088,6 +4088,7 @@ static const switch_application_interface_t conference_application_interface = {
     /*.interface_name */ global_app_name, 
     /*.application_function */ conference_function, 
     NULL, NULL, NULL, 
+	/* flags */ SAF_NONE,
     /*.next*/ NULL
 };
 

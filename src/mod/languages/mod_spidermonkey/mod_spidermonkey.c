@@ -2570,7 +2570,10 @@ static switch_status_t launch_async(char *text, switch_core_session_t *session, 
 static const switch_application_interface_t ivrtest_application_interface = {
 	/*.interface_name */ "javascript",
 	/*.application_function */ js_parse_and_execute,
-	NULL, NULL, NULL,
+	/* long_desc */ "Run a javascript ivr on a channel",
+	/* short_desc */ "Launch JS ivr.",
+	/* syntax */ "<script> [additional_vars [...]]",
+	/* flags */ SAF_NONE, /* should we support no media mode here?  If so, we need to detect the mode, and either disable the media functions or indicate media if/when we need */
 	/*.next*/ NULL
 };
 
@@ -2578,7 +2581,7 @@ static switch_api_interface_t js_run_interface = {
 	/*.interface_name */ "jsrun",
 	/*.desc */ "run a script",
 	/*.function */ launch_async,
-	/*.syntax */ "jsrun <script>",
+	/*.syntax */ "jsrun <script> [additional_vars [...]]",
 	/*.next */ NULL
 };
 

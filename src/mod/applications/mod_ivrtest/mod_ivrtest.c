@@ -462,6 +462,7 @@ static const switch_application_interface_t bug_application_interface = {
 	/*.interface_name */ "bugtest",
 	/*.application_function */ bugtest_function,
 	NULL, NULL, NULL,
+	/* flags */ SAF_NONE,
 	/*.next*/ NULL
 };
 
@@ -469,6 +470,7 @@ static const switch_application_interface_t ivr_application_interface = {
 	/*.interface_name */ "ivrmenu",
 	/*.application_function */ ivr_application_function,
 	NULL, NULL, NULL,
+	/* flags */ SAF_NONE,
 	/*.next*/ &bug_application_interface
 };
 
@@ -476,6 +478,7 @@ static const switch_application_interface_t xml_application_interface = {
 	/*.interface_name */ "xml",
 	/*.application_function */ xml_function,
 	NULL, NULL, NULL,
+	/* flags */ SAF_NONE,
 	/*.next*/ &ivr_application_interface
 };
 
@@ -483,6 +486,7 @@ static const switch_application_interface_t disast_application_interface = {
 	/*.interface_name */ "disast",
 	/*.application_function */ disast_function,
 	NULL, NULL, NULL,
+	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next*/ &xml_application_interface
 };
 
@@ -490,6 +494,7 @@ static const switch_application_interface_t tts_application_interface = {
 	/*.interface_name */ "tts",
 	/*.application_function */ tts_function,
 	NULL, NULL, NULL,
+	/* flags */ SAF_NONE,
 	/*.next*/ &disast_application_interface
 };
 
@@ -497,6 +502,7 @@ static const switch_application_interface_t dirtest_application_interface = {
 	/*.interface_name */ "dirtest",
 	/*.application_function */ dirtest_function,
 	NULL, NULL, NULL,
+	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next*/ &tts_application_interface
 };
 
@@ -504,6 +510,7 @@ static const switch_application_interface_t ivrtest_application_interface = {
 	/*.interface_name */ "ivrtest",
 	/*.application_function */ ivrtest_function,
 	NULL, NULL, NULL,
+	/* flags */ SAF_NONE,
 	/*.next*/ &dirtest_application_interface
 };
 
@@ -511,6 +518,7 @@ static const switch_application_interface_t asrtest_application_interface = {
 	/*.interface_name */ "asrtest",
 	/*.application_function */ asrtest_function,
 	NULL, NULL, NULL,
+	/* flags */ SAF_NONE,
 	/*.next*/ &ivrtest_application_interface
 };
 

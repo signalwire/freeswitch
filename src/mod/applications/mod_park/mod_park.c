@@ -41,7 +41,9 @@ static void park_function(switch_core_session_t *session, char *data)
 static const switch_application_interface_t park_application_interface = {
 	/*.interface_name */ "park",
 	/*.application_function */ park_function,
-	NULL,NULL,NULL,NULL
+	NULL,NULL,NULL,
+	/* flags */ SAF_NONE,
+	NULL
 };
 
 static switch_loadable_module_interface_t park_module_interface = {

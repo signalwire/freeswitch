@@ -48,7 +48,10 @@ static void echo_function(switch_core_session_t *session, char *data)
 static const switch_application_interface_t echo_application_interface = {
 	/*.interface_name */ "echo",
 	/*.application_function */ echo_function,
-	NULL,NULL,NULL,NULL
+	/* long_desc */ "Perform an echo test against the calling channel",
+	/* short_desc */ "Echo",
+	/* syntax */ "",
+	/* flags */ SAF_NONE,
 };
 
 static switch_loadable_module_interface_t echo_module_interface = {

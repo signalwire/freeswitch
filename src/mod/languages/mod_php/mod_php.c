@@ -256,8 +256,11 @@ static void php_function(switch_core_session_t *session, char *data)
 }
 
 static const switch_application_interface_t php_application_interface = {
-        /*.interface_name */ "php",
-        /*.application_function */ php_function
+	/*.interface_name */ "php",
+	/*.application_function */ php_function,
+	NULL, NULL, NULL,
+	/* flags */ SAF_NONE, /* should we support no media mode here?  If so, we need to detect the mode, and either disable the media functions or indicate media if/when we need */
+	/*.next*/ NULL
 };
 
 static switch_loadable_module_interface_t php_module_interface = {

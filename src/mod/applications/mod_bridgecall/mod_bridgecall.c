@@ -118,6 +118,7 @@ static const switch_application_interface_t bridge_application_interface = {
 	/* long_desc */ "Bridge the audio between two sessions",
 	/* short_desc */ "Bridge Audio",
 	/* syntax */ "<channel_url>",
+	/* flags */ SAF_SUPPORT_NOMEDIA
 };
 
 static const switch_loadable_module_interface_t mod_bridgecall_module_interface = {

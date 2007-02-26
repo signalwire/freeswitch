@@ -177,13 +177,20 @@ static void stop_record_session_function(switch_core_session_t *session, char *d
 
 static const switch_application_interface_t speak_application_interface = {
 	/*.interface_name */ "speak",
-	/*.application_function */ speak_function
+	/*.application_function */ speak_function,
+	/* long_desc */ "Speak text to a channel via the tts interface",
+	/* short_desc */ "Speak text",
+	/* syntax */ "<engine>|<voice>|<text>",
+	/* flags */ SAF_NONE,
 };
 
 static const switch_application_interface_t record_application_interface = {
 	/*.interface_name */ "record",
 	/*.application_function */ record_function,
-	NULL,NULL,NULL,
+	/* long_desc */ "Record a file from the channels input",
+	/* short_desc */ "Record File",
+	/* syntax */ "<path> [+time_limit_ms]",
+	/* flags */ SAF_NONE,
 	&speak_application_interface
 };
 
@@ -191,7 +198,10 @@ static const switch_application_interface_t record_application_interface = {
 static const switch_application_interface_t record_session_application_interface = {
 	/*.interface_name */ "record_session",
 	/*.application_function */ record_session_function,
-	NULL,NULL,NULL,
+	/* long_desc */ "Starts a background recording of the entire session",
+	/* short_desc */ "Record Session",
+	/* syntax */ "<path>",
+	/* flags */ SAF_NONE,
 	&record_application_interface
 };
 
@@ -199,15 +209,21 @@ static const switch_application_interface_t record_session_application_interface
 static const switch_application_interface_t stop_record_session_application_interface = {
 	/*.interface_name */ "stop_record_session",
 	/*.application_function */ stop_record_session_function,
-	NULL,NULL,NULL,
+	/* long_desc */ "Stops a background recording of the entire session",
+	/* short_desc */ "Stop Record Session",
+	/* syntax */ "<path>",
+	/* flags */ SAF_NONE,
 	&record_session_application_interface
 };
 
 static const switch_application_interface_t playback_application_interface = {
 	/*.interface_name */ "playback",
 	/*.application_function */ playback_function,
-	NULL,NULL,NULL,
-	/*.next*/				  &stop_record_session_application_interface
+	/* long_desc */ "Playback a file to the channel",
+	/* short_desc */ "Playback File",
+	/* syntax */ "<path>",
+	/* flags */ SAF_NONE,
+	/*.next*/	&stop_record_session_application_interface
 };
 
 static const switch_loadable_module_interface_t mod_playback_module_interface = {
