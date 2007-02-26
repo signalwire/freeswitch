@@ -36,6 +36,11 @@
       <param name="interval" value="20"/>
       <!-- Energy level required for audio to be sent to the other users -->
       <param name="energy-level" value="300"/>
+
+      <!--Can be | delim of waste|mute|deaf waste will always transmit data to each channel
+          even during silence -->
+      <!--<param name="member-flags" value="waste"/>-->
+
       <!-- Name of the caller control group to use for this profile -->
       <!-- <param name="caller-controls" value="some name"/> -->
       <!-- TTS Engine to use -->

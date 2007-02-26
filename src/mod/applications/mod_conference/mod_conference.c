@@ -117,7 +117,8 @@ typedef enum {
 	MFLAG_KICKED = (1 << 3), 
 	MFLAG_ITHREAD = (1 << 4), 
 	MFLAG_NOCHANNEL = (1 << 5),
-    MFLAG_INTREE = (1 << 6)
+    MFLAG_INTREE = (1 << 6),
+	MFLAG_WASTE_BANDWIDTH = (1 << 7)
 } member_flag_t;
 
 typedef enum {
@@ -188,6 +189,7 @@ typedef struct conference_obj {
 	char *profile_name;
 	char *domain;
 	uint32_t flags;
+	uint32_t mflags;
 	switch_call_cause_t bridge_hangup_cause;
 	switch_mutex_t *flag_mutex;
 	uint32_t rate;
@@ -1358,8 +1360,13 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			}
 		}
 
+
+		if (switch_test_flag(member, MFLAG_WASTE_BANDWIDTH) && !talking) {
+			memset(read_frame->data, 255, read_frame->datalen);
+		}
+
 		/* skip frames that are not actual media or when we are muted or silent */
-		if ((talking || energy_level == 0) && switch_test_flag(member, MFLAG_CAN_SPEAK)) {
+		if ((talking || energy_level == 0) && switch_test_flag(member, MFLAG_CAN_SPEAK) || switch_test_flag(member, MFLAG_WASTE_BANDWIDTH)) {
 			if (member->read_resampler) {
 				int16_t *bptr = (int16_t *) read_frame->data;
 				int len = (int) read_frame->datalen;;
@@ -1630,7 +1637,7 @@ static void conference_loop_output(conference_member_t *member)
 				write_frame.data = data;
 				use_buffer = member->mux_buffer;
 
-				if ((write_frame.datalen = (uint32_t)switch_buffer_read(use_buffer, write_frame.data, bytes))) {
+				while ((write_frame.datalen = (uint32_t)switch_buffer_read(use_buffer, write_frame.data, bytes))) {
 					if (write_frame.datalen && switch_test_flag(member, MFLAG_CAN_HEAR)) {
 						write_frame.samples = write_frame.datalen / 2;
 
@@ -1638,16 +1645,18 @@ static void conference_loop_output(conference_member_t *member)
 						if (member->volume_out_level) {
 							switch_change_sln_volume(write_frame.data, write_frame.samples, member->volume_out_level);
 						}
+
 						switch_core_session_write_frame(member->session, &write_frame, -1, 0);
 					}
 				}
 
 				switch_mutex_unlock(member->audio_out_mutex);
 				continue;
-			}
+			} 
 		}
 
 		switch_core_timer_next(&timer);
+
 	} /* Rinse ... Repeat */
 
 	if (member->digit_stream != NULL) {
@@ -3624,6 +3633,21 @@ static switch_status_t conference_local_play_file(conference_obj_t *conference,
     return status;
 }
 
+static void set_mflags(char *flags, uint32_t *f)
+{
+	if (flags) {
+		if (strstr(flags, "mute")) {
+			*f &= ~MFLAG_CAN_SPEAK;
+		} else if (strstr(flags, "deaf")) {
+			*f &= ~MFLAG_CAN_HEAR;
+		} else if (strstr(flags, "waste")) {
+			*f |= MFLAG_WASTE_BANDWIDTH;
+		}
+	}
+
+}
+
+
 /* Application interface function that is called from the dialplan to join the channel to a conference */
 static void conference_function(switch_core_session_t *session, char *data)
 {
@@ -3640,7 +3664,7 @@ static void conference_function(switch_core_session_t *session, char *data)
     char *profile_name = NULL;
     switch_xml_t cxml = NULL, cfg = NULL, profiles = NULL;
     char *flags_str;
-    member_flag_t uflags = MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR;
+    member_flag_t mflags = 0;
     switch_core_session_message_t msg = {0};
     uint8_t rl = 0, isbr = 0;
     char *dpin = NULL;
@@ -3655,22 +3679,6 @@ static void conference_function(switch_core_session_t *session, char *data)
         return;
     }
 
-    /* Start the conference muted or deaf ? */
-    if ((flags_str = strstr(mydata, flags_prefix))) {
-        char *p;
-
-        *flags_str = '\0';
-        flags_str += strlen(flags_prefix);
-        if ((p = strchr(flags_str, '}'))) {
-            *p = '\0';
-        }
-
-        if (strstr(flags_str, "mute")) {
-            uflags &= ~MFLAG_CAN_SPEAK;
-        } else if (strstr(flags_str, "deaf")) {
-            uflags &= ~MFLAG_CAN_HEAR;
-        }
-    }
 
     /* is this a bridging conference ? */
     if (!strncasecmp(mydata, bridge_prefix, strlen(bridge_prefix))) {
@@ -3966,11 +3974,24 @@ static void conference_function(switch_core_session_t *session, char *data)
     /* Install our Signed Linear codec so we get the audio in that format */
     switch_core_session_set_read_codec(member.session, &member.read_codec);
 
+    if ((flags_str = strstr(mydata, flags_prefix))) {
+        char *p;
+
+        *flags_str = '\0';
+        flags_str += strlen(flags_prefix);
+        if ((p = strchr(flags_str, '}'))) {
+            *p = '\0';
+        }
+    }
+	
+	mflags = conference->mflags;
+	set_mflags(flags_str, &mflags);
+    switch_set_flag_locked((&member), MFLAG_RUNNING | mflags);
+	
     /* Add the caller to the conference */
     if (conference_add_member(conference, &member) != SWITCH_STATUS_SUCCESS) {
         goto codec_done1;
     }
-    switch_set_flag_locked((&member), MFLAG_RUNNING | uflags);
 
     msg.from = __FILE__;
 
@@ -4447,6 +4468,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
     char *caller_id_name = NULL;
     char *caller_id_number = NULL;
     char *caller_controls = NULL;
+	char *member_flags = NULL;
     uint32_t max_members = 0;
     uint32_t anounce_count = 0;
     char *maxmember_sound = NULL;
@@ -4508,6 +4530,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
             is_locked_sound = val;
         } else if (!strcasecmp(var, "is-unlocked-sound")) {
             is_unlocked_sound = val;
+        } else if (!strcasecmp(var, "member-flags")) {
+			member_flags = val;
         } else if (!strcasecmp(var, "kicked-sound")) {
             kicked_sound = val;
         } else if (!strcasecmp(var, "pin")) {
@@ -4605,6 +4629,11 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
     conference->caller_id_name = switch_core_strdup(conference->pool, caller_id_name);
     conference->caller_id_number = switch_core_strdup(conference->pool, caller_id_number);
 
+	conference->mflags = MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR;
+
+	if (member_flags) {
+		set_mflags(member_flags, &conference->mflags);
+	} 
 
     if (sound_prefix) {
         conference->sound_prefix = switch_core_strdup(conference->pool, sound_prefix);
