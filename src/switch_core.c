@@ -2552,6 +2552,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	return status;
 }
 
+static char *SIG_NAMES[] = {
+	"NONE",
+	"KILL",
+	"XFER",
+    "BREAK",
+	NULL
+};
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_perform_kill_channel(switch_core_session_t *session, 
                                                                          const char *file, 
                                                                          const char *func, 
@@ -2561,8 +2569,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_kill_channel(switch_
 	switch_io_event_hook_kill_channel_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_INFO, "Kill %s [%d]\n", switch_channel_get_name(session->channel), sig);
-
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_INFO, "Kill %s [%s]\n", switch_channel_get_name(session->channel), SIG_NAMES[sig]);
+	
 	if (session->endpoint_interface->io_routines->kill_channel) {
 		if ((status = session->endpoint_interface->io_routines->kill_channel(session, sig)) == SWITCH_STATUS_SUCCESS) {
 			for (ptr = session->event_hooks.kill_channel; ptr; ptr = ptr->next) {
