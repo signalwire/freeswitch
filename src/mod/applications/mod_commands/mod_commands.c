@@ -511,7 +511,7 @@ static switch_status_t originate_function(char *cmd, switch_core_session_t *ises
 
 	if (switch_ivr_originate(NULL, &caller_session, &cause, aleg, timeout, &noop_state_handler, cid_name, cid_num, NULL) != SWITCH_STATUS_SUCCESS) {
 		if (machine) {
-			stream->write_function(stream, "fail: %s", switch_channel_cause2str(cause));
+			stream->write_function(stream, "fail: %s\n", switch_channel_cause2str(cause));
 		} else {
 			stream->write_function(stream, "Cannot Create Outgoing Channel! [%s] cause: %s\n", aleg, switch_channel_cause2str(cause));
 		}
