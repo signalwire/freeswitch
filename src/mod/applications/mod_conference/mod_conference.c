@@ -189,7 +189,7 @@ typedef struct conference_obj {
 	char *profile_name;
 	char *domain;
 	uint32_t flags;
-	uint32_t mflags;
+	member_flag_t mflags;
 	switch_call_cause_t bridge_hangup_cause;
 	switch_mutex_t *flag_mutex;
 	uint32_t rate;
@@ -3633,7 +3633,7 @@ static switch_status_t conference_local_play_file(conference_obj_t *conference,
     return status;
 }
 
-static void set_mflags(char *flags, uint32_t *f)
+static void set_mflags(char *flags, member_flag_t *f)
 {
 	if (flags) {
 		if (strstr(flags, "mute")) {
