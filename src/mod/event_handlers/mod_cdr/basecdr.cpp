@@ -89,76 +89,71 @@ BaseCDR::BaseCDR(switch_mod_cdr_newchannel_t *newchannel)
 			calltransferdate = newchannel->callerprofile->times->transferred;
 			callenddate = newchannel->callerprofile->times->hungup;
 
-			if(newchannel->callerprofile->caller_id_name != 0)
-			{
+			if(!switch_strlen_zero(newchannel->callerprofile->caller_id_name))
 				strncpy(clid,newchannel->callerprofile->caller_id_name,strlen(newchannel->callerprofile->caller_id_name));
-				strncat(clid," <",2);
-				if(newchannel->callerprofile->caller_id_number != 0 )
-					strncat(clid,newchannel->callerprofile->caller_id_number,strlen(clid)+strlen(newchannel->callerprofile->caller_id_number));
-				strncat(clid,">",1);
-			}
 			
 			// Get the ANI information if it's set
-			if(newchannel->callerprofile->ani != 0)
+			if(!switch_strlen_zero(newchannel->callerprofile->ani))
 				strncpy(ani,newchannel->callerprofile->ani,strlen(newchannel->callerprofile->ani));
-			if(newchannel->callerprofile->aniii != 0)
+			if(!switch_strlen_zero(newchannel->callerprofile->aniii))
 				strncpy(aniii,newchannel->callerprofile->aniii,strlen(newchannel->callerprofile->aniii));
 		
-			if(newchannel->callerprofile->dialplan != 0)
+			if(!switch_strlen_zero(newchannel->callerprofile->dialplan))
 				strncpy(dialplan,newchannel->callerprofile->dialplan,strlen(newchannel->callerprofile->dialplan));
 		
-			if(newchannel->callerprofile->network_addr != 0)
+			if(!switch_strlen_zero(newchannel->callerprofile->network_addr))
 				strncpy(network_addr,newchannel->callerprofile->network_addr,strlen(newchannel->callerprofile->network_addr));
-		}
 		
-		//switch_caller_profile_t *originateprofile = switch_channel_get_originator_caller_profile(newchannel->channel->callerprofile);
-		
-		// Were we the receiver of the call?
-		if(newchannel->callerprofile->originator_caller_profile)
-		{
-			originated = 0;
-			if(newchannel->callerprofile->originator_caller_profile->uuid != 0)
-				strncpy(destuuid,newchannel->callerprofile->originator_caller_profile->uuid,strlen(newchannel->callerprofile->originator_caller_profile->uuid));
-			if(newchannel->callerprofile)
+			// Were we the receiver of the call?
+			if(newchannel->callerprofile->originator_caller_profile)
 			{
-				if(newchannel->callerprofile->destination_number)
+				originated = 0;
+				if(!switch_strlen_zero(newchannel->callerprofile->originator_caller_profile->uuid))
+					strncpy(destuuid,newchannel->callerprofile->originator_caller_profile->uuid,strlen(newchannel->callerprofile->originator_caller_profile->uuid));
+				
+				if(!switch_strlen_zero(newchannel->callerprofile->destination_number))
 					strncpy(src,newchannel->callerprofile->destination_number,strlen(newchannel->callerprofile->destination_number));
-				if(newchannel->callerprofile->caller_id_number != 0)
+				if(!switch_strlen_zero(newchannel->callerprofile->caller_id_number))
 					strncpy(dst,newchannel->callerprofile->caller_id_number,strlen(newchannel->callerprofile->caller_id_number));
 			}
-		}
-		else
-		{
-			//originateprofile = switch_channel_get_originatee_profile(newchannel->channel->callerprofile);
-			// Or were we maybe we were the caller?
-			if(newchannel->callerprofile->originatee_caller_profile)
+			else
 			{
-				if (newchannel->callerprofile) {
-					if(newchannel->callerprofile->caller_id_number != 0)
+				//originateprofile = switch_channel_get_originatee_profile(newchannel->channel->callerprofile);
+				// Or were we maybe we were the caller?
+				if(newchannel->callerprofile->originatee_caller_profile)
+				{
+					if(!switch_strlen_zero(newchannel->callerprofile->caller_id_number))
 						strncpy(src,newchannel->callerprofile->caller_id_number,strlen(newchannel->callerprofile->caller_id_number));
-					if(newchannel->callerprofile->destination_number != 0)
+					if(!switch_strlen_zero(newchannel->callerprofile->destination_number))
 						strncpy(dst,newchannel->callerprofile->destination_number,strlen(newchannel->callerprofile->destination_number));
+					if(!switch_strlen_zero(newchannel->callerprofile->originatee_caller_profile->chan_name))
+						strncpy(dstchannel,newchannel->callerprofile->originatee_caller_profile->chan_name,strlen(newchannel->callerprofile->originatee_caller_profile->chan_name));
 				}
-				if(newchannel->callerprofile->originatee_caller_profile->chan_name != 0)
-					strncpy(dstchannel,newchannel->callerprofile->originatee_caller_profile->chan_name,strlen(newchannel->callerprofile->originatee_caller_profile->chan_name));
 			}
 		}
 		
-		strncpy(myuuid,newchannel->callerprofile->uuid,strlen(newchannel->callerprofile->uuid));
-		strncpy(srcchannel,newchannel->callerprofile->chan_name,strlen(newchannel->callerprofile->chan_name));
+		if(!switch_strlen_zero(newchannel->callerprofile->uuid))
+			strncpy(myuuid,newchannel->callerprofile->uuid,strlen(newchannel->callerprofile->uuid));
+		
+		if(!switch_strlen_zero(newchannel->callerprofile->chan_name))
+			strncpy(srcchannel,newchannel->callerprofile->chan_name,strlen(newchannel->callerprofile->chan_name));
 		
 		if(switch_channel_test_flag(newchannel->channel,CF_ANSWERED))
 		{
 			disposition=1;
-			if(callstartdate)
-				billusec = callenddate - callanswerdate;
-			else
-				billusec = callenddate - calltransferdate;
+			if(callstartdate && callanswerdate)
+			{
+				if(callenddate)
+					billusec = callenddate - callanswerdate;
+				else if(calltransferdate)
+					billusec = calltransferdate - callanswerdate;
+			}
 		}
 		else if(switch_channel_test_flag(newchannel->channel,CF_TRANSFER))
 		{
 			disposition=1;
-			billusec = callenddate - calltransferdate;
+			if(callanswerdate && calltransferdate)
+				billusec = calltransferdate - callanswerdate;
 		}
 		else
 		{
@@ -170,12 +165,12 @@ BaseCDR::BaseCDR(switch_mod_cdr_newchannel_t *newchannel)
 		hangupcause = switch_channel_get_cause(newchannel->channel);
 		hangupcause_text = switch_channel_cause2str(hangupcause);
 	
-		if(newchannel->callerextension != 0)
-			if(newchannel->callerextension->last_application != 0)
+		if(newchannel->callerextension)
+			if(!newchannel->callerextension->last_application)
 			{
-				if(newchannel->callerextension->last_application->application_name != 0)
+				if(!switch_strlen_zero(newchannel->callerextension->last_application->application_name))
 					strncpy(lastapp,newchannel->callerextension->last_application->application_name,strlen(newchannel->callerextension->last_application->application_name));
-				if(newchannel->callerextension->last_application->application_data != 0)
+				if(!switch_strlen_zero(newchannel->callerextension->last_application->application_data))
 					strncpy(lastdata,newchannel->callerextension->last_application->application_data,strlen(newchannel->callerextension->last_application->application_data));
 			}
 		
@@ -320,7 +315,7 @@ void BaseCDR::process_channel_variables(const std::list<std::string>& stringlist
 		std::pair<std::string,std::string> temppair;
 		temppair.first = *iItr;
 			
-		if(tempvariable != 0)
+		if(!switch_strlen_zero(tempvariable))
 			temppair.second = tempvariable;
 		
 		chanvars_fixed.push_back(temppair);
@@ -359,7 +354,7 @@ void BaseCDR::process_channel_variables(const std::list<std::string>& stringlist
 
 			char *tempvariable;
 			tempvariable = switch_channel_get_variable(channel,tempstring);
-			if(tempvariable != 0)
+			if(!switch_strlen_zero(tempvariable))
 				chanvars_supp[*iItr] = tempvariable;
 		}
 	}
