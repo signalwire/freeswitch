@@ -76,6 +76,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_GRAMMAR_DIR SWITCH_PREFIX_DIR SWITCH_PATH_SEPARATOR "grammar"
 #endif
 
+#define SWITCH_ENDPOINT_DISPOSITION_VARIABLE "endpoint_disposition"
 #define SWITCH_EXPORT_VARS_VARIABLE "export_vars"
 #define SWITCH_R_SDP_VARIABLE "switch_r_sdp"
 #define SWITCH_L_SDP_VARIABLE "switch_l_sdp"

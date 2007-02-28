@@ -1631,7 +1631,7 @@ static switch_status_t tech_media(private_object_t *tech_pvt, char *r_sdp)
             return SWITCH_STATUS_FALSE;
         }
         activate_rtp(tech_pvt);
-        switch_channel_set_variable(channel, "endpoint_disposition", "EARLY MEDIA");
+        switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "EARLY MEDIA");
         switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
         switch_channel_mark_pre_answered(channel);
         return SWITCH_STATUS_SUCCESS;
@@ -1669,7 +1669,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			if (switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
 				char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 				if (tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
-					switch_channel_set_variable(channel, "endpoint_disposition", "CODEC NEGOTIATION ERROR");
+					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
 					nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
 					return SWITCH_STATUS_FALSE;
 				}
@@ -2084,7 +2084,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				if (switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
 					char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 					if (tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
-						switch_channel_set_variable(channel, "endpoint_disposition", "CODEC NEGOTIATION ERROR");
+						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
 						nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
 						return SWITCH_STATUS_FALSE;
 					}
@@ -2873,10 +2873,10 @@ static void sip_i_state(int status,
                     goto done;
 				} else {
 					if (switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
-						switch_channel_set_variable(channel, "endpoint_disposition", "DELAYED NEGOTIATION");
+						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "DELAYED NEGOTIATION");
 					} else {
 						if (tech_media(tech_pvt, (char *)r_sdp) != SWITCH_STATUS_SUCCESS) {
-							switch_channel_set_variable(channel, "endpoint_disposition", "CODEC NEGOTIATION ERROR");
+							switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
 							nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
 						}
 					}
@@ -2897,7 +2897,7 @@ static void sip_i_state(int status,
 		if (channel) {
 			if (r_sdp) {
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
-					switch_channel_set_variable(channel, "endpoint_disposition", "RECEIVED_NOMEDIA");
+					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_NOMEDIA");
 					switch_channel_set_state(channel, CS_INIT);
 					switch_set_flag_locked(tech_pvt, TFLAG_READY);
 					switch_core_session_thread_launch(session);
@@ -2920,7 +2920,7 @@ static void sip_i_state(int status,
 					if (match) {
 						nua_handle_t *bnh;
 						sip_replaces_t *replaces;
-						switch_channel_set_variable(channel, "endpoint_disposition", "RECEIVED");
+						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED");
 						switch_channel_set_state(channel, CS_INIT);
 						switch_set_flag_locked(tech_pvt, TFLAG_READY);
 
@@ -2940,14 +2940,14 @@ static void sip_i_state(int status,
 
 								if (br_b) {
 									switch_ivr_uuid_bridge(br_a, br_b);
-									switch_channel_set_variable(channel, "endpoint_disposition", "ATTENDED_TRANSFER");
+									switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
 									switch_channel_hangup(channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
 								} else {
-									switch_channel_set_variable(channel, "endpoint_disposition", "ATTENDED_TRANSFER_ERROR");
+									switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER_ERROR");
 									switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 								}
 							} else {
-								switch_channel_set_variable(channel, "endpoint_disposition", "ATTENDED_TRANSFER_ERROR");
+								switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER_ERROR");
 								switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 							}
 							nua_handle_unref(bnh);
@@ -2955,7 +2955,7 @@ static void sip_i_state(int status,
                         goto done;
 					}
 
-					switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
+					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "NO CODECS");
 					nua_respond(nh, SIP_488_NOT_ACCEPTABLE, 
 								TAG_END());
 				}
@@ -3061,7 +3061,7 @@ static void sip_i_state(int status,
                         }
 					}
 					
-					switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
+					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "NO CODECS");
 					nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
 				}
 			}
@@ -3905,7 +3905,7 @@ static void sip_i_refer(nua_t *nua,
                             
                         if (br_a && br_b) {
                             switch_ivr_uuid_bridge(br_a, br_b);
-                            switch_channel_set_variable(channel_b, "endpoint_disposition", "ATTENDED_TRANSFER");
+                            switch_channel_set_variable(channel_b, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
                             switch_set_flag_locked(tech_pvt, TFLAG_BYE);
                             switch_set_flag_locked(b_tech_pvt, TFLAG_BYE);
                             nua_notify(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
@@ -4004,7 +4004,7 @@ static void sip_i_refer(nua_t *nua,
                             switch_core_session_rwunlock(a_session);
                             tuuid_str = switch_core_session_get_uuid(tsession);
                             switch_ivr_uuid_bridge(br_a, tuuid_str);
-                            switch_channel_set_variable(channel_a, "endpoint_disposition", "ATTENDED_TRANSFER");
+                            switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
                             switch_set_flag_locked(tech_pvt, TFLAG_BYE);
                             nua_notify(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
                                        NUTAG_SUBSTATE(nua_substate_terminated),
@@ -4017,7 +4017,7 @@ static void sip_i_refer(nua_t *nua,
 
                     } else { error:
                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Transfer! [%s]\n", br_a);
-                        switch_channel_set_variable(channel_a, "endpoint_disposition", "ATTENDED_TRANSFER_ERROR");
+                        switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER_ERROR");
                         nua_notify(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
                                    NUTAG_SUBSTATE(nua_substate_terminated),
                                    SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"),
@@ -4049,7 +4049,7 @@ static void sip_i_refer(nua_t *nua,
                 switch_core_session_rwunlock(b_session);
             } 
 
-            switch_channel_set_variable(channel, "endpoint_disposition", "BLIND_TRANSFER");
+            switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "BLIND_TRANSFER");
                 
             /*
               nua_notify(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
@@ -4443,7 +4443,7 @@ static void sip_i_invite(nua_t *nua,
 	attach_private(session, profile, tech_pvt, channel_name);
 	tech_set_codecs(tech_pvt);
 
-	switch_channel_set_variable(channel, "endpoint_disposition", "INBOUND CALL");
+	switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "INBOUND CALL");
 	set_chat_hash(tech_pvt, sip);
 
 	if (switch_test_flag(tech_pvt, TFLAG_INB_NOMEDIA)) {
