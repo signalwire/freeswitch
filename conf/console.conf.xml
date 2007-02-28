@@ -5,4 +5,8 @@
     <!-- <param name="log_event" value="DEBUG"/> -->
     <param name="all" value="DEBUG"/>
   </mappings>
+  <settings>
+    <!-- uncomment for color logging (for debugging) -->
+    <!--<param name="colorize" value="true"/>-->
+  </settings>
 </configuration>

@@ -33,6 +33,9 @@
 
 static const char modname[] = "mod_console";
 static const uint8_t STATIC_LEVELS[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+static int COLORIZE = 0;
+static const char *COLORS[] = 
+	{ SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FMAGEN, SWITCH_SEQ_FCYAN, SWITCH_SEQ_FGREEN, SWITCH_SEQ_FYELLOW, "" };
 
 static switch_loadable_module_interface_t console_module_interface = {
 	/*.module_name */ modname,
@@ -100,6 +103,17 @@ static switch_status_t config_logger(void)
 		}
 	}
 
+	if ((settings = switch_xml_child(cfg, "settings"))) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+
+			if (!strcasecmp(var, "colorize") && switch_true(val)) {
+				COLORIZE = 1;
+			}
+		}
+	}
+
 	switch_xml_free(xml);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -128,7 +142,11 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 		} 
 
 		if (!log_hash || (((all_level > - 1) || lookup) && level >= node->level)) {
-			fprintf(handle, "%s", node->data);
+			if (COLORIZE) {
+				fprintf(handle, "%s%s%s", COLORS[node->level], node->data, SWITCH_SEQ_DEFAULT_COLOR);
+			} else {
+				fprintf(handle, "%s", node->data);
+			}
 		}
 	} else {
 		fprintf(stderr, "HELP I HAVE NO CONSOLE TO LOG TO!\n");
