@@ -62,6 +62,10 @@ static inline switch_status_t timer_init(switch_timer_t *timer)
 {
 	timer_private_t *private_info;
 
+	if (globals.RUNNING != 1) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if ((private_info = switch_core_alloc(timer->memory_pool, sizeof(*private_info)))) {
 		switch_mutex_lock(globals.mutex);
 		TIMER_MATRIX[timer->interval].count++;
@@ -78,6 +82,10 @@ static inline switch_status_t timer_step(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
 
+	if (globals.RUNNING != 1) {
+		return SWITCH_STATUS_FALSE;
+	}
+
     private_info->reference += timer->interval;
     return SWITCH_STATUS_SUCCESS;
 }
@@ -88,11 +96,17 @@ static inline switch_status_t timer_next(switch_timer_t *timer)
 	timer_private_t *private_info = timer->private_info;
     
 	timer_step(timer);
-	while (TIMER_MATRIX[timer->interval].tick < private_info->reference) {
+
+	while (globals.RUNNING == 1 && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
         switch_yield(1000);
 	}
-	timer->samplecount += timer->samples;
-	return SWITCH_STATUS_SUCCESS;
+
+	if (globals.RUNNING == 1) {
+		timer->samplecount += timer->samples;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
 }
 
 static inline switch_status_t timer_check(switch_timer_t *timer)
@@ -101,6 +115,10 @@ static inline switch_status_t timer_check(switch_timer_t *timer)
 	timer_private_t *private_info = timer->private_info;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
     uint64_t diff;
+
+	if (globals.RUNNING != 1) {
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	if (TIMER_MATRIX[timer->interval].tick < private_info->reference) {
         diff = private_info->reference - TIMER_MATRIX[timer->interval].tick;
