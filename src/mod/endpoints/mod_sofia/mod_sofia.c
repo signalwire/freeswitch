@@ -365,7 +365,7 @@ static void terminate_session(switch_core_session_t **session, switch_call_cause
 
 static switch_status_t tech_choose_port(private_object_t *tech_pvt);
 
-static void do_invite(switch_core_session_t *session);
+static switch_status_t do_invite(switch_core_session_t *session);
 
 static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp);
 
@@ -889,7 +889,7 @@ static void terminate_session(switch_core_session_t **session, switch_call_cause
 		tech_pvt = switch_core_session_get_private(*session);
 
 		if (tech_pvt) {
-			if (state > CS_INIT && state < CS_HANGUP) {
+			if (state < CS_HANGUP) {
 				switch_channel_hangup(channel, cause);
 			}
 			
@@ -960,7 +960,7 @@ static switch_status_t tech_choose_port(private_object_t *tech_pvt)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void do_invite(switch_core_session_t *session)
+static switch_status_t do_invite(switch_core_session_t *session)
 {
 	char rpid[1024] = { 0 };
 	char alert_info[1024] = { 0 };
@@ -979,6 +979,7 @@ static void do_invite(switch_core_session_t *session)
 	void *vval;
 	char *extra_headers = NULL;
 	const void *vvar;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
     channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
@@ -1010,7 +1011,7 @@ static void do_invite(switch_core_session_t *session)
 		}
 
 		if (tech_choose_port(tech_pvt) != SWITCH_STATUS_SUCCESS) {
-            return;
+            return status;
         }
         
 		set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
@@ -1108,9 +1109,12 @@ static void do_invite(switch_core_session_t *session)
 				   TAG_END());
 		
 		switch_safe_free(stream.data);
+		status = SWITCH_STATUS_SUCCESS;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
 	}
+
+	return status;
 	
 }
 
@@ -1230,7 +1234,9 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-		do_invite(session);
+		if (do_invite(session) != SWITCH_STATUS_SUCCESS) {
+			return SWITCH_STATUS_FALSE;
+		}
 	}
 	
 	/* Move Channel's State Machine to RING */

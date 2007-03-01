@@ -2795,7 +2795,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				valid_channels++;
 				state = switch_channel_get_state(peer_channels[i]);
 			
-				if (state >= CS_RING) {
+				if (state >= CS_HANGUP) {
+					goto notready;
+				} else if (state >= CS_RING) {
 					goto endfor1;
 				}
 		
