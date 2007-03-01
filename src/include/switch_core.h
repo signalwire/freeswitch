@@ -233,10 +233,9 @@ SWITCH_DECLARE(uint32_t) switch_core_session_limit(uint32_t new_limit);
 
 /*! 
   \brief Destroy the core
-  \param vg nonzero to skip core uninitilize for memory debugging
   \note to be called at application shutdown
 */
-SWITCH_DECLARE(switch_status_t) switch_core_destroy(int vg);
+SWITCH_DECLARE(switch_status_t) switch_core_destroy(void);
 ///\}
 
 

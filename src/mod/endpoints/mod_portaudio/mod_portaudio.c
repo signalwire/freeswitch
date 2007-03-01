@@ -1045,9 +1045,14 @@ static switch_status_t load_config(void)
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 {
-	switch_core_codec_destroy(&globals.read_codec);
-	switch_core_codec_destroy(&globals.write_codec);
-    
+	if (globals.read_codec.implementation) {
+		switch_core_codec_destroy(&globals.read_codec);
+	}
+
+	if (globals.write_codec.implementation) {
+		switch_core_codec_destroy(&globals.write_codec);
+	}
+
 	Pa_Terminate();
 
 	return SWITCH_STATUS_SUCCESS;

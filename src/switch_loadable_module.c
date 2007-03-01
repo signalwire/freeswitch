@@ -75,7 +75,7 @@ static void *switch_loadable_module_exec(switch_thread_t *thread, void *obj)
 	for (restarts = 0; status != SWITCH_STATUS_TERM; restarts++) {
 		status = module->switch_module_runtime();
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Thread ended for %s\n", module->module_interface->module_name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Thread ended for %s\n", module->module_interface->module_name);
 
 	if (ts->pool) {
 		switch_memory_pool_t *pool = ts->pool;

@@ -198,9 +198,6 @@ int main(int argc, char *argv[])
 	const char *err = NULL;		// error value for return from freeswitch initialization
 #ifndef WIN32
 	int nf = 0;					// TRUE if we are running in nofork mode
-	int vg = 0;					// Allways TRUE on windows to not do apr_terminate
-#else
-	int vg = 1;					// TRUE if we are running in vg mode
 #endif
 	int nc = 0;					// TRUE if we are running in noconsole mode
 	FILE *f;					// file handle to the pid file
@@ -233,7 +230,6 @@ int main(int argc, char *argv[])
         "\t-hp              -- enable high priority settings\n"
         "\t-stop            -- stop freeswitch\n"
         "\t-nc              -- do not output to a console and background\n"
-        "\t-vg              -- enable valgrind mode\n"
         "\t-conf [confdir]  -- specify an alternate config dir\n"
         "\t-log [logdir]    -- specify an alternate log dir\n"
         "\t-db [dbdir]      -- specify an alternate db dir\n";
@@ -307,9 +303,6 @@ int main(int argc, char *argv[])
 			nc++;
 		}
 
-		if (argv[x] && !strcmp(argv[x], "-vg")) {
-			vg++;
-		}
 
         if (argv[x] && !strcmp(argv[x], "-conf")) {
             x++;
@@ -389,7 +382,7 @@ int main(int argc, char *argv[])
 
 	switch_core_runtime_loop(nc);
 
-	return switch_core_destroy(vg);
+	return switch_core_destroy();
 }
 
 /* For Emacs:
