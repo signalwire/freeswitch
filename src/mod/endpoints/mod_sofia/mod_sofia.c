@@ -4258,7 +4258,7 @@ static void sip_i_info(nua_t *nua,
 }
 
 
-#define url_set_chanvars(session, url, varprefix) _url_set_chanvars(session, url, #varprefix "_user", #varprefix "_host", #varprefix "_port", #varprefix "_uri")
+#define url_set_chanvars(session, url, varprefix) _url_set_chanvars(session, url, ##varprefix "_user", ##varprefix "_host", ##varprefix "_port", ##varprefix "_uri")
 static const char * _url_set_chanvars(switch_core_session_t *session, url_t *url, const char * user_var, const char * host_var, const char * port_var, const char * uri_var)
 {
 	const char *user = NULL, *host = NULL, *port = NULL;
