@@ -34,6 +34,7 @@
 #include <libsangoma.h>
 #include <sangoma_pri.h>
 #include <libteletone.h>
+#include <ss7boost_client.h>
 
 #ifndef INVALID_HANDLE_VALUE
 #define INVALID_HANDLE_VALUE -1
@@ -67,11 +68,39 @@ typedef enum {
 	TFLAG_ABORT = (1 << 8),
 	TFLAG_SWITCH = (1 << 9),
 	TFLAG_NOSIG = (1 << 10),
-	TFLAG_BYE = (1 << 11)
+	TFLAG_BYE = (1 << 11),
+	TFLAG_CODEC = (1 << 12)
 } TFLAGS;
 
 
 #define DEFAULT_SAMPLES_PER_FRAME 160
+#define MAX_SPANS 128
+
+struct channel_map {
+	char map[SANGOMA_MAX_CHAN_PER_SPAN][SWITCH_UUID_FORMATTED_LENGTH + 1];
+};
+
+
+unsigned int txseq=0;
+unsigned int rxseq=0;
+
+#define SETUP_LEN CORE_MAX_CHAN_PER_SPAN*CORE_MAX_SPANS+1
+
+struct ss7boost_handle {
+	char *local_ip;
+	char *remote_ip;
+	int local_port;
+	int remote_port;
+	ss7boost_client_connection_t mcon;
+	switch_mutex_t *mutex;
+	struct channel_map span_chanmap[MAX_SPANS];
+	char setup_array[SETUP_LEN][SWITCH_UUID_FORMATTED_LENGTH + 1];
+	uint32_t setup_index;
+};
+
+typedef struct ss7boost_handle ss7boost_handle_t;
+
+static int isup_exec_command(ss7boost_handle_t *ss7boost_handle, int span, int chan, int id, int cmd, int cause);
 
 static struct {
 	int debug;
@@ -81,10 +110,12 @@ static struct {
 	int dtmf_off;
 	int supress_dtmf_tone;
 	int configured_spans;
+	int configured_boost_spans;
 	char *dialplan;
 	switch_hash_t *call_hash;
 	switch_mutex_t *hash_mutex;
 	switch_mutex_t *channel_mutex;
+	ss7boost_handle_t *ss7boost_handle;
 } globals;
 
 struct wanpipe_pri_span {
@@ -107,10 +138,7 @@ struct wpsock {
 
 typedef struct wpsock wpsock_t;
 
-
-#define MAX_SPANS 128
 static struct wanpipe_pri_span *SPANS[MAX_SPANS];
-
 
 struct private_object {
 	unsigned int flags;			/* FLAGS */
@@ -135,16 +163,18 @@ struct private_object {
 	unsigned int skip_write_frames;
 	switch_mutex_t *flag_mutex;
 	int frame_size;
+	ss7boost_handle_t *ss7boost_handle;
+	int boost_chan_number;
+	int boost_span_number;
+	int boost_trunk_group;
+	uint32_t setup_index;
+	uint32_t boost_pres;
 #ifdef DOTRACE
 	int fd;
 	int fd2;
 #endif
 };
 typedef struct private_object private_object_t;
-
-struct channel_map {
-	char map[SANGOMA_MAX_CHAN_PER_SPAN][SWITCH_UUID_FORMATTED_LENGTH + 1];
-};
 
 static int wp_close(private_object_t *tech_pvt)
 {
@@ -315,27 +345,20 @@ static void *SWITCH_THREAD_FUNC pri_thread_run(switch_thread_t *thread, void *ob
 static switch_status_t config_wanpipe(int reload);
 
 
-/* 
-   State methods they get called when the state changes to the specific state 
-   returning SWITCH_STATUS_SUCCESS tells the core to execute the standard state method next
-   so if you fully implement the state you can return SWITCH_STATUS_FALSE to skip it.
-*/
-static switch_status_t wanpipe_on_init(switch_core_session_t *session)
+static switch_status_t wanpipe_codec_init(private_object_t *tech_pvt)
 {
-	private_object_t *tech_pvt;
-	switch_channel_t *channel = NULL;
-	wanpipe_tdm_api_t tdm_api = {{0}};
 	int err = 0;
+	wanpipe_tdm_api_t tdm_api = {{0}};
 	unsigned int rate = 8000;
+	switch_channel_t *channel = NULL;
+
+	if (switch_test_flag(tech_pvt, TFLAG_CODEC)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 
-	channel = switch_core_session_get_channel(session);
+	channel = switch_core_session_get_channel(tech_pvt->session);
 	assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
-
-	tech_pvt->read_frame.data = tech_pvt->databuf;
 
 	err = sangoma_tdm_set_codec(tech_pvt->wpsock->fd, &tdm_api, WP_SLINEAR);
 	
@@ -344,7 +367,7 @@ static switch_status_t wanpipe_on_init(switch_core_session_t *session)
 
 	if (switch_core_codec_init
 		(&tech_pvt->read_codec, "L16", NULL, rate, globals.samples_per_frame / 8, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
-		 switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+		 switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Cannot set read codec\n", switch_channel_get_name(channel));
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return SWITCH_STATUS_FALSE;
@@ -352,15 +375,15 @@ static switch_status_t wanpipe_on_init(switch_core_session_t *session)
 
 	if (switch_core_codec_init
 		(&tech_pvt->write_codec, "L16", NULL, rate, globals.samples_per_frame / 8, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
-		 switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+		 switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Cannot set read codec\n", switch_channel_get_name(channel));
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return SWITCH_STATUS_FALSE;
 	}
 	tech_pvt->read_frame.rate = rate;
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
-	switch_core_session_set_read_codec(session, &tech_pvt->read_codec);
-	switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
+	switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
+	switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
 
 #ifdef DOTRACE	
 						tech_pvt->fd = open("/tmp/wp-in.raw", O_WRONLY | O_TRUNC | O_CREAT);
@@ -381,11 +404,74 @@ static switch_status_t wanpipe_on_init(switch_core_session_t *session)
 	tech_pvt->tone_session.wait = globals.dtmf_off * (tech_pvt->tone_session.rate / 1000);
 	
 	teletone_dtmf_detect_init (&tech_pvt->dtmf_detect, rate);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Audio init %s\n", switch_channel_get_name(channel));
 
+	switch_set_flag(tech_pvt, TFLAG_CODEC);
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+
+/* 
+   State methods they get called when the state changes to the specific state 
+   returning SWITCH_STATUS_SUCCESS tells the core to execute the standard state method next
+   so if you fully implement the state you can return SWITCH_STATUS_FALSE to skip it.
+*/
+static switch_status_t wanpipe_on_init(switch_core_session_t *session)
+{
+	private_object_t *tech_pvt;
+	switch_channel_t *channel = NULL;
+	switch_status_t status;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+
+	tech_pvt->read_frame.data = tech_pvt->databuf;
+
+	if (tech_pvt->ss7boost_handle)  {
+		if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			ss7boost_client_event_t event;
+
+			event.calling_number_presentation = tech_pvt->boost_pres;
+			event.trunk_group = tech_pvt->boost_trunk_group;
+		
+			switch_mutex_lock(tech_pvt->ss7boost_handle->mutex);
+			tech_pvt->setup_index = ++tech_pvt->ss7boost_handle->setup_index;
+			if (tech_pvt->ss7boost_handle->setup_index == SETUP_LEN - 1) {
+				tech_pvt->ss7boost_handle->setup_index = 0;
+			}
+			switch_mutex_unlock(tech_pvt->ss7boost_handle->mutex);
+		
+			switch_copy_string(tech_pvt->ss7boost_handle->setup_array[tech_pvt->setup_index],
+							   switch_core_session_get_uuid(session), 
+							   sizeof(tech_pvt->ss7boost_handle->setup_array[tech_pvt->setup_index]));
+		
+			
+			ss7boost_client_call_init(&event, tech_pvt->caller_profile->caller_id_number, tech_pvt->caller_profile->destination_number, tech_pvt->setup_index);
+			
+			if (ss7boost_client_connection_write(&tech_pvt->ss7boost_handle->mcon, &event) <= 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Critical System Error: Failed to tx on ISUP socket [%s]: %s\n", strerror(errno));
+			}
+			
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call Called Event TG=%d\n", tech_pvt->boost_trunk_group);
+			goto done;
+		}
+	} 
+
+	if ((status = wanpipe_codec_init(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		return status;
+	}
+	
 	if (switch_test_flag(tech_pvt, TFLAG_NOSIG)) {
 		switch_channel_mark_answered(channel);
 	}
 
+ done:
 
 	/* Move Channel's State Machine to RING */
 	switch_channel_set_state(channel, CS_RING);
@@ -423,13 +509,8 @@ static switch_status_t wanpipe_on_hangup(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 
-	if (!switch_test_flag(tech_pvt, TFLAG_NOSIG)) {
-		chanmap = tech_pvt->spri->private_info;
-	}
 
-	//sangoma_socket_close(&tech_pvt->wpsock->fd);
 	wp_close(tech_pvt);
 
 	switch_core_codec_destroy(&tech_pvt->read_codec);
@@ -438,15 +519,33 @@ static switch_status_t wanpipe_on_hangup(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WANPIPE HANGUP\n");
 
-	if (!switch_test_flag(tech_pvt, TFLAG_NOSIG)) {
-		pri_hangup(tech_pvt->spri->pri, tech_pvt->call, switch_channel_get_cause(channel));
-		pri_destroycall(tech_pvt->spri->pri, tech_pvt->call);
+	if (tech_pvt->ss7boost_handle) {
+		switch_mutex_lock(tech_pvt->ss7boost_handle->mutex);
+		*tech_pvt->ss7boost_handle->span_chanmap[tech_pvt->boost_span_number].map[tech_pvt->boost_chan_number] = '\0';
+		switch_mutex_unlock(tech_pvt->ss7boost_handle->mutex);
+		if (!switch_test_flag(tech_pvt, TFLAG_BYE)) {
+			isup_exec_command(tech_pvt->ss7boost_handle,
+							  tech_pvt->boost_span_number,
+							  tech_pvt->boost_chan_number,
+							  -1,
+							  SIGBOOST_EVENT_CALL_STOPPED,
+							  SIGBOOST_RELEASE_CAUSE_NORMAL);
+		}
+	} else if (tech_pvt->spri) {
+		chanmap = tech_pvt->spri->private_info;
+
+		if (!switch_test_flag(tech_pvt, TFLAG_BYE)) {
+			pri_hangup(tech_pvt->spri->pri, tech_pvt->call, switch_channel_get_cause(channel));
+			pri_destroycall(tech_pvt->spri->pri, tech_pvt->call);
+		}
 
 		switch_mutex_lock(globals.channel_mutex);
 		*chanmap->map[tech_pvt->callno] = '\0';
-
 		switch_mutex_unlock(globals.channel_mutex);
+		
 	}
+
+	switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 
 	teletone_destroy_session(&tech_pvt->tone_session);
 
@@ -490,9 +589,19 @@ static switch_status_t wanpipe_answer_channel(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	if (switch_test_flag(tech_pvt, TFLAG_INBOUND) && !switch_test_flag(tech_pvt, TFLAG_NOSIG)) {
-		pri_answer(tech_pvt->spri->pri, tech_pvt->call, 0, 1);
+	if (tech_pvt->spri) {
+		if (switch_test_flag(tech_pvt, TFLAG_INBOUND)) {
+			pri_answer(tech_pvt->spri->pri, tech_pvt->call, 0, 1);
+		}
+	} else if (tech_pvt->ss7boost_handle) {
+		isup_exec_command(tech_pvt->ss7boost_handle,
+						  tech_pvt->boost_span_number,
+						  tech_pvt->boost_chan_number,
+						  -1,
+						  SIGBOOST_EVENT_CALL_ANSWERED,
+						  0);
 	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -705,10 +814,7 @@ static switch_status_t wanpipe_kill_channel(switch_core_session_t *session, int 
 
 	switch(sig) {
 	case SWITCH_SIG_KILL:
-		switch_mutex_lock(tech_pvt->flag_mutex);
-		switch_set_flag(tech_pvt, TFLAG_BYE);
-		switch_clear_flag(tech_pvt, TFLAG_MEDIA);
-		switch_mutex_unlock(tech_pvt->flag_mutex);
+		switch_clear_flag_locked(tech_pvt, TFLAG_MEDIA);
 		break;
 	default:
 		break;
@@ -765,29 +871,59 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 {
 	char *bchan = NULL;
 	char name[128] = "";
-		
+	char *protocol;
+	char *dest;
+	int ready = 0, is_pri = 0, is_boost = 0, is_raw = 0;
 
-	if (outbound_profile && outbound_profile->destination_number) {
-		bchan = strchr(outbound_profile->destination_number, '=');
-	} else {
-		return SWITCH_STATUS_FALSE;
+
+	if (!outbound_profile) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Doh! no caller profile\n");
+		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
 
-	if (bchan) {
-		bchan++;
-		if (!bchan) {
-			return SWITCH_CAUSE_BEARERCAPABILITY_NOTAVAIL;
+	protocol = switch_core_session_strdup(session, outbound_profile->destination_number);
+
+	if (!(dest = strchr(protocol, '/'))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error No protocol specified!\n");
+		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+	}
+	
+	*dest++ = '\0';
+
+	if (!strcasecmp(protocol, "raw")) {
+		bchan = dest;
+		is_raw = ready = 1;
+	} else if (!strcasecmp(protocol, "pri")) {
+		if ((is_pri = globals.configured_spans)) {
+			ready = is_pri;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error No PRI Spans Configured.\n");
 		}
-		outbound_profile->destination_number++;
-	} else if (!globals.configured_spans) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error No Spans Configured.\n");
-		SWITCH_CAUSE_NETWORK_OUT_OF_ORDER;
+	} else if (!strcasecmp(protocol, "ss7boost")) {
+		if ((is_boost = globals.configured_boost_spans)) {
+			ready = is_boost;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error No SS7BOOST Spans Configured.\n");
+		}
+	}
+	
+	if (!ready) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Continue!\n");
+		return SWITCH_CAUSE_NETWORK_OUT_OF_ORDER;
 	}
 
+	outbound_profile->destination_number = dest;
 
 	if ((*new_session = switch_core_session_request(&wanpipe_endpoint_interface, pool))) {
 		private_object_t *tech_pvt;
 		switch_channel_t *channel;
+		switch_caller_profile_t *caller_profile = NULL;
+		int callno = 0;
+		struct sangoma_pri *spri;
+		int span = 0, autospan = 0, autochan = 0;
+		char *num, *p;
+		struct channel_map *chanmap = NULL;
+
 
 		switch_core_session_add_stream(*new_session, NULL);
 		if ((tech_pvt = (private_object_t *) switch_core_session_alloc(*new_session, sizeof(private_object_t)))) {
@@ -797,181 +933,193 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 			switch_core_session_set_private(*new_session, tech_pvt);
 			tech_pvt->session = *new_session;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 			switch_core_session_destroy(new_session);
-			SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		}
 
 		
-		if (outbound_profile) {
-			switch_caller_profile_t *caller_profile;
-			struct sangoma_pri *spri;
-			int span = 0, autospan = 0, autochan = 0;
-			char *num, *p;
-			int callno = 0;
-			struct channel_map *chanmap = NULL;
+		caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 
-			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
-			if (!bchan) {
-				num = caller_profile->destination_number;
-				if ((p = strchr(num, '/'))) {
-					*p++ = '\0';
+		if (is_pri) {
+			num = caller_profile->destination_number;
+			if ((p = strchr(num, '/'))) {
+				*p++ = '\0';
 
-					if (*num == 'a') {
-						span = 1;
-						autospan = 1;
-					} else if (*num = 'A') {
-						span = MAX_SPANS - 1;
-						autospan = -1;
-					} else {
-						if (num && *num > 47 && *num < 58) {
-							span = atoi(num);
-						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invlid Syntax\n");
-							switch_core_session_destroy(new_session);
-							return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-						}
-					}
-					num = p;
-					if ((p = strchr(num, '/'))) {
-						*p++ = '\0';
-						if (*num == 'a') {
-							autochan = 1;
-						} else if (*num == 'A') {
-							autochan = -1;
-						} else if (num && *num > 47 && *num < 58) {
-							callno = atoi(num);
-						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invlid Syntax\n");
-                            switch_core_session_destroy(new_session);
-                            return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-						}
-						caller_profile->destination_number = p;
+				if (*num == 'a') {
+					span = 1;
+					autospan = 1;
+				} else if (*num = 'A') {
+					span = MAX_SPANS - 1;
+					autospan = -1;
+				} else {
+					if (num && *num > 47 && *num < 58) {
+						span = atoi(num);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invlid Syntax\n");
 						switch_core_session_destroy(new_session);
 						return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 					}
 				}
-			}
-
-			tech_pvt->caller_profile = caller_profile;
-
-			if (bchan) {
-				int chan, span;
-
-				if (sangoma_span_chan_fromif(bchan, &span, &chan)) {
-					if (!wp_open(tech_pvt, span, chan)) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd for s%dc%d! [%s]\n", span, chan, strerror(errno));
+				num = p;
+				if ((p = strchr(num, '/'))) {
+					*p++ = '\0';
+					if (*num == 'a') {
+						autochan = 1;
+					} else if (*num == 'A') {
+						autochan = -1;
+					} else if (num && *num > 47 && *num < 58) {
+						callno = atoi(num);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invlid Syntax\n");
 						switch_core_session_destroy(new_session);
 						return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 					}
-					switch_set_flag_locked(tech_pvt, TFLAG_NOSIG);
-					snprintf(name, sizeof(name), "WanPipe/%s/nosig", bchan);
-					switch_channel_set_name(channel, name);			
-					switch_channel_set_caller_profile(channel, caller_profile);
+					caller_profile->destination_number = p;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid address\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invlid Syntax\n");
 					switch_core_session_destroy(new_session);
-					return SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL;
-				}
-			} else {
-				switch_mutex_lock(globals.channel_mutex);
-				callno = 0;
-				while (!callno) {
-					if (autospan > 0 && span == MAX_SPANS - 1) {
-						break;
-					}
-
-					if (autospan < 0 && span == 0) {
-						break;
-					}
-
-					if (SPANS[span] && (spri = &SPANS[span]->spri) && switch_test_flag(spri, SANGOMA_PRI_READY)) {
-						chanmap = spri->private_info;
-						
-						if (autochan > 0) {
-							for(callno = 1; callno < SANGOMA_MAX_CHAN_PER_SPAN; callno++) {
-								if ((SPANS[span]->bchans & (1 << callno)) && ! *chanmap->map[callno]) {
-									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Choosing channel s%dc%d\n", span, callno);
-									goto done;
-								}
-							}
-							callno = 0;
-						} else if (autochan < 0) {
-							for(callno = SANGOMA_MAX_CHAN_PER_SPAN; callno > 0; callno--) {
-								if ((SPANS[span]->bchans & (1 << callno)) && ! *chanmap->map[callno]) {
-									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Choosing channel s%dc%d\n", span, callno);
-									goto done;
-								}
-							}
-							callno = 0;
-						}
-					}
-
-					if (autospan > 0) {
-						span++;
-					} else if (autospan < 0) {
-						span--;
-					}
-				}
-			done:
-				switch_mutex_unlock(globals.channel_mutex);
-
-				if (!spri || callno == 0 || callno == (SANGOMA_MAX_CHAN_PER_SPAN)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No Free Channels!\n");
-					switch_core_session_destroy(new_session);
-					return SWITCH_CAUSE_SWITCH_CONGESTION;
-				}
-				
-				tech_pvt->callno = callno;
-				
-				if (spri && (tech_pvt->call = pri_new_call(spri->pri))) {
-					struct pri_sr *sr;
-					
-					snprintf(name, sizeof(name), "WanPipe/s%dc%d/%s", spri->span, callno, caller_profile->destination_number);
-					switch_channel_set_name(channel, name);			
-					switch_channel_set_caller_profile(channel, caller_profile);
-					sr = pri_sr_new();
-					pri_sr_set_channel(sr, callno, 0, 0);
-					pri_sr_set_bearer(sr, 0, SPANS[span]->l1);
-					pri_sr_set_called(sr, caller_profile->destination_number, SPANS[span]->dp, 1);
-					pri_sr_set_caller(sr,
-									  caller_profile->caller_id_number,
-									  caller_profile->caller_id_name,
-									  SPANS[span]->dp,
-									  PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN);
-					pri_sr_set_redirecting(sr,
-										   caller_profile->caller_id_number,
-										   SPANS[span]->dp,
-										   PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN,
-										   PRI_REDIR_UNCONDITIONAL);
-				
-					if (pri_setup(spri->pri, tech_pvt->call , sr)) {
-						switch_core_session_destroy(new_session);
-						pri_sr_free(sr);
-						return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-					}
-
-					if (!wp_open(tech_pvt, spri->span, callno)) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd!\n");
-						switch_core_session_destroy(new_session);
-						pri_sr_free(sr);
-						return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-					}
-					pri_sr_free(sr);
-					switch_copy_string(chanmap->map[callno],
-									   switch_core_session_get_uuid(*new_session),
-									   sizeof(chanmap->map[callno]));
-					tech_pvt->spri = spri;
+					return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 				}
 			}
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Doh! no caller profile\n");
-			switch_core_session_destroy(new_session);
-			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 		}
 
+		tech_pvt->caller_profile = caller_profile;
+
+		if (is_raw) {
+			int chan, span;
+
+			if (sangoma_span_chan_fromif(bchan, &span, &chan)) {
+				if (!wp_open(tech_pvt, span, chan)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd for s%dc%d! [%s]\n", span, chan, strerror(errno));
+					switch_core_session_destroy(new_session);
+					return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+				}
+				switch_set_flag_locked(tech_pvt, TFLAG_NOSIG);
+				snprintf(name, sizeof(name), "wanpipe/%s/nosig", bchan);
+				switch_channel_set_name(channel, name);			
+				switch_channel_set_caller_profile(channel, caller_profile);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid address\n");
+				switch_core_session_destroy(new_session);
+				return SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL;
+			}
+		} else if (is_pri) {
+			switch_mutex_lock(globals.channel_mutex);
+			callno = 0;
+			while (!callno) {
+				if (autospan > 0 && span == MAX_SPANS - 1) {
+					break;
+				}
+
+				if (autospan < 0 && span == 0) {
+					break;
+				}
+
+				if (SPANS[span] && (spri = &SPANS[span]->spri) && switch_test_flag(spri, SANGOMA_PRI_READY)) {
+					chanmap = spri->private_info;
+						
+					if (autochan > 0) {
+						for(callno = 1; callno < SANGOMA_MAX_CHAN_PER_SPAN; callno++) {
+							if ((SPANS[span]->bchans & (1 << callno)) && ! *chanmap->map[callno]) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Choosing channel s%dc%d\n", span, callno);
+								goto done;
+							}
+						}
+						callno = 0;
+					} else if (autochan < 0) {
+						for(callno = SANGOMA_MAX_CHAN_PER_SPAN; callno > 0; callno--) {
+							if ((SPANS[span]->bchans & (1 << callno)) && ! *chanmap->map[callno]) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Choosing channel s%dc%d\n", span, callno);
+								goto done;
+							}
+						}
+						callno = 0;
+					}
+				}
+
+				if (autospan > 0) {
+					span++;
+				} else if (autospan < 0) {
+					span--;
+				}
+			}
+		done:
+			switch_mutex_unlock(globals.channel_mutex);
+
+			if (!spri || callno == 0 || callno == (SANGOMA_MAX_CHAN_PER_SPAN)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No Free Channels!\n");
+				switch_core_session_destroy(new_session);
+				return SWITCH_CAUSE_SWITCH_CONGESTION;
+			}
+				
+			tech_pvt->callno = callno;
+				
+			if (spri && (tech_pvt->call = pri_new_call(spri->pri))) {
+				struct pri_sr *sr;
+					
+				snprintf(name, sizeof(name), "wanpipe/pri/s%dc%d/%s", spri->span, callno, caller_profile->destination_number);
+				switch_channel_set_name(channel, name);			
+				switch_channel_set_caller_profile(channel, caller_profile);
+				sr = pri_sr_new();
+				pri_sr_set_channel(sr, callno, 0, 0);
+				pri_sr_set_bearer(sr, 0, SPANS[span]->l1);
+				pri_sr_set_called(sr, caller_profile->destination_number, SPANS[span]->dp, 1);
+				pri_sr_set_caller(sr,
+								  caller_profile->caller_id_number,
+								  caller_profile->caller_id_name,
+								  SPANS[span]->dp,
+								  PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN);
+				pri_sr_set_redirecting(sr,
+									   caller_profile->caller_id_number,
+									   SPANS[span]->dp,
+									   PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN,
+									   PRI_REDIR_UNCONDITIONAL);
+				
+				if (pri_setup(spri->pri, tech_pvt->call , sr)) {
+					switch_core_session_destroy(new_session);
+					pri_sr_free(sr);
+					return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+				}
+
+				if (!wp_open(tech_pvt, spri->span, callno)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd!\n");
+					switch_core_session_destroy(new_session);
+					pri_sr_free(sr);
+					return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+				}
+				pri_sr_free(sr);
+				switch_copy_string(chanmap->map[callno],
+								   switch_core_session_get_uuid(*new_session),
+								   sizeof(chanmap->map[callno]));
+				tech_pvt->spri = spri;
+			}
+		} else if (is_boost) {
+			char *p;
+
+			if ((p = strchr(caller_profile->destination_number, '/'))) {
+				char *grp = caller_profile->destination_number;
+				*p = '\0';
+				caller_profile->destination_number = p+1;
+				tech_pvt->boost_trunk_group = atoi(grp+1) - 1;
+				if (tech_pvt->boost_trunk_group < 0) {
+					tech_pvt->boost_trunk_group = 0;
+				}
+			}
+			sprintf(name, "wanpipe/ss7boost/%s", caller_profile->destination_number);
+			switch_channel_set_name(channel, name);
+			tech_pvt->ss7boost_handle = globals.ss7boost_handle;
+
+			if (session && switch_core_session_compare(session, *new_session)) {
+				private_object_t *otech_pvt = switch_core_session_get_private(session);
+				tech_pvt->boost_pres = otech_pvt->boost_pres;
+			}
+
+		}
+
+
+
+		tech_pvt->caller_profile = caller_profile;
 		switch_channel_set_flag(channel, CF_OUTBOUND);
 		switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);
@@ -1069,9 +1217,9 @@ static int on_hangup(struct sangoma_pri *spri, sangoma_pri_event_t event_type, p
 		}
 
 		tech_pvt->cause = pevent->hangup.cause;
-
+		switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 		switch_channel_hangup(channel, tech_pvt->cause);
-
+		
 		switch_mutex_lock(globals.channel_mutex);
 		*chanmap->map[pevent->hangup.channel] = '\0';
 		switch_mutex_unlock(globals.channel_mutex);
@@ -1207,9 +1355,9 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 			channel = switch_core_session_get_channel(session);
 			switch_core_session_set_private(session, tech_pvt);
-			sprintf(name, "s%dc%d", spri->span, pevent->ring.channel);
+			sprintf(name, "wanpipe/pri/s%dc%d", spri->span, pevent->ring.channel);
 			switch_channel_set_name(channel, name);
-
+			tech_pvt->session = session;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(&session);
@@ -1379,11 +1527,502 @@ static void pri_thread_launch(struct sangoma_pri *spri)
 
 }
 
+
+static int isup_exec_command(ss7boost_handle_t *ss7boost_handle, int span, int chan, int id, int cmd, int cause)
+{
+	ss7boost_client_event_t oevent;
+	int r = 0;
+
+	switch_mutex_lock(ss7boost_handle->mutex);
+	ss7boost_client_event_init(&oevent, cmd, chan, span);
+	oevent.release_cause = cause;
+	
+	if (id >= 0) {
+		oevent.call_setup_id = id;
+	}
+	
+	if (ss7boost_client_connection_write(&ss7boost_handle->mcon, &oevent) <= 0){
+		r = -1;
+	}
+
+	switch_mutex_unlock(ss7boost_handle->mutex);
+
+	return r;
+}
+
+static int waitfor_socket(int fd, int timeout, int flags)
+{
+    struct pollfd pfds[1];
+    int res;
+ 
+    memset(&pfds[0], 0, sizeof(pfds[0]));
+    pfds[0].fd = fd;
+    pfds[0].events = flags;
+    res = poll(pfds, 1, timeout);
+
+    if (res > 0) {
+	if(pfds[0].revents & POLLIN) {
+		res = 1;
+	} else if ((pfds[0].revents & POLLERR)) {
+		res = -1;
+    	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,"System Error: Poll Event Error no event!\n");
+		res = -1;
+	}
+    }
+
+    return res;
+}
+
+
+static void validate_number(unsigned char *s)
+{
+	unsigned char *p;
+	for (p = s; *p; p++) {
+		if (*p < 48 || *p > 57) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Encountered a non-numeric character [%c]!\n", *p);
+			*p = '\0';
+			break;
+		}
+	}
+}
+
+
+static void handle_call_stop(ss7boost_handle_t *ss7boost_handle, ss7boost_client_event_t *event)
+{
+	char *uuid = ss7boost_handle->span_chanmap[event->span].map[event->chan];
+
+	if (*uuid) {
+		switch_core_session_t *session;
+
+		if ((session = switch_core_session_locate(uuid))) {
+			private_object_t *tech_pvt;
+			switch_channel_t *channel;
+	
+			channel = switch_core_session_get_channel(session);
+			assert(channel != NULL);
+
+			tech_pvt = switch_core_session_get_private(session);
+			assert(tech_pvt != NULL);
+			switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+			switch_channel_hangup(channel, event->release_cause);
+			switch_core_session_rwunlock(session);
+		}
+		*uuid = '\0';
+
+	} 
+
+	isup_exec_command(ss7boost_handle,
+					  event->span, 
+					  event->chan, 
+					  -1,
+					  SIGBOOST_EVENT_CALL_STOPPED_ACK,
+					  0);
+
+
+}
+
+static void handle_call_start(ss7boost_handle_t *ss7boost_handle, ss7boost_client_event_t *event)
+{
+	switch_core_session_t *session = NULL;
+	switch_channel_t *channel = NULL;
+	char name[128];
+
+	if (*ss7boost_handle->span_chanmap[event->span].map[event->chan]) {
+		isup_exec_command(ss7boost_handle,
+						  event->span, 
+						  event->chan, 
+						  -1,
+						  SIGBOOST_EVENT_CALL_START_NACK,
+						  SIGBOOST_RELEASE_CAUSE_BUSY);		
+		return;
+	}
+
+	
+	if ((session = switch_core_session_request(&wanpipe_endpoint_interface, NULL))) {
+		private_object_t *tech_pvt;
+
+		switch_core_session_add_stream(session, NULL);
+		if ((tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
+			memset(tech_pvt, 0, sizeof(*tech_pvt));
+			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+			channel = switch_core_session_get_channel(session);
+			switch_core_session_set_private(session, tech_pvt);
+			sprintf(name, "wanpipe/ss7boost/s%dc%d", event->span+1, event->chan+1);
+			switch_channel_set_name(channel, name);
+			tech_pvt->session = session;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
+			goto fail;
+		}
+
+
+		if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
+																  NULL,
+																  globals.dialplan,
+																  "FreeSWITCH(boost)",
+																  event->calling_number_digits,
+#ifdef WIN32
+																  NULL,
+#else
+																  event->calling_number_digits,
+#endif
+																  NULL,
+																  NULL,
+																  NULL,
+																  (char *)modname,
+																  NULL,
+																  event->called_number_digits))) {
+			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
+		}
+
+		switch_set_flag_locked(tech_pvt, TFLAG_INBOUND);
+
+		tech_pvt->cause = -1;
+
+		tech_pvt->ss7boost_handle = ss7boost_handle;
+		tech_pvt->boost_span_number = event->span;
+		tech_pvt->boost_chan_number = event->chan;
+		tech_pvt->boost_pres = event->calling_number_presentation;
+		
+		if (!wp_open(tech_pvt, event->span+1, event->chan+1)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open channel %d:%s\n", event->span+1, event->chan+1);
+			goto fail;
+		}
+
+		switch_copy_string(ss7boost_handle->span_chanmap[event->span].map[event->chan], switch_core_session_get_uuid(session), 
+						   sizeof(ss7boost_handle->span_chanmap[event->span].map[event->chan]));
+		
+		switch_channel_set_state(channel, CS_INIT);
+		isup_exec_command(ss7boost_handle,
+						  event->span, 
+						  event->chan, 
+						  -1,
+						  SIGBOOST_EVENT_CALL_START_ACK,
+						  0);
+		switch_core_session_thread_launch(session);
+		return;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create new Inbound Channel!\n");
+	}
+
+	
+ fail:
+	if (session) {
+		switch_core_session_destroy(&session);
+	}
+
+	isup_exec_command(ss7boost_handle,
+					  event->span, 
+					  event->chan, 
+					  -1,
+					  SIGBOOST_EVENT_CALL_STOPPED,
+					  SIGBOOST_RELEASE_CAUSE_BUSY);
+
+}
+
+
+static void handle_heartbeat(ss7boost_handle_t *ss7boost_handle, ss7boost_client_event_t *event)
+{
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Heartbeat!\n");
+
+	isup_exec_command(ss7boost_handle,
+					  event->span, 
+					  event->chan, 
+					  -1,
+					  SIGBOOST_EVENT_HEARTBEAT,
+					  0);
+}
+
+
+static void handle_call_start_ack(ss7boost_handle_t *ss7boost_handle, ss7boost_client_event_t *event)
+{
+	char *uuid = ss7boost_handle->setup_array[event->call_setup_id];
+	
+	if (*uuid) {
+		switch_core_session_t *session;
+
+		if ((session = switch_core_session_locate(uuid))) {
+			private_object_t *tech_pvt;
+			switch_channel_t *channel;
+	
+			channel = switch_core_session_get_channel(session);
+			assert(channel != NULL);
+			
+			tech_pvt = switch_core_session_get_private(session);
+			assert(tech_pvt != NULL);
+			
+			tech_pvt->ss7boost_handle = ss7boost_handle;
+			tech_pvt->boost_span_number = event->span;
+			tech_pvt->boost_chan_number = event->chan;
+			
+			switch_copy_string(ss7boost_handle->span_chanmap[event->span].map[event->chan], switch_core_session_get_uuid(session), 
+							   sizeof(ss7boost_handle->span_chanmap[event->span].map[event->chan]));
+
+
+
+			if (!tech_pvt->wpsock) {
+				if (!wp_open(tech_pvt, tech_pvt->boost_span_number+1, tech_pvt->boost_chan_number+1)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd for s%dc%d! [%s]\n", 
+									  tech_pvt->boost_span_number+1, tech_pvt->boost_chan_number+1, strerror(errno));
+					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					return;
+				}
+				if (wanpipe_codec_init(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					return;
+				}
+			}
+
+			switch_channel_mark_pre_answered(channel);
+			
+			switch_core_session_rwunlock(session);
+		}
+		*uuid = '\0';
+	}
+}
+
+static void handle_call_start_nack_ack(ss7boost_handle_t *ss7boost_handle, ss7boost_client_event_t *event)
+{
+	// WTF IS THIS! ?
+}
+
+static void handle_call_answer(ss7boost_handle_t *ss7boost_handle, ss7boost_client_event_t *event)
+{
+	char *uuid = ss7boost_handle->span_chanmap[event->span].map[event->chan];
+
+	if (*uuid) {
+		switch_core_session_t *session;
+		
+		if ((session = switch_core_session_locate(uuid))) {
+			private_object_t *tech_pvt;
+			switch_channel_t *channel;
+	
+			channel = switch_core_session_get_channel(session);
+			assert(channel != NULL);
+
+			tech_pvt = switch_core_session_get_private(session);
+			assert(tech_pvt != NULL);
+
+			if (!tech_pvt->wpsock) {
+				if (!wp_open(tech_pvt, tech_pvt->boost_span_number+1, tech_pvt->boost_chan_number+1)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd for s%dc%d! [%s]\n", 
+									  tech_pvt->boost_span_number+1, tech_pvt->boost_chan_number+1, strerror(errno));
+					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					return;
+				}
+				if (wanpipe_codec_init(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					return;
+				}
+			}
+			
+			switch_channel_mark_answered(channel);
+			switch_core_session_rwunlock(session);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Session %s missing!\n", uuid);
+			*uuid = '\0';
+		}
+
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No UUID?\n");
+	}
+}
+
+static void handle_call_stop_ack(ss7boost_handle_t *ss7boost_handle, ss7boost_client_event_t *event)
+{
+	// TODO anything here?
+}
+
+
+static void handle_call_start_nack(ss7boost_handle_t *ss7boost_handle, ss7boost_client_event_t *event)
+{
+	char *uuid = ss7boost_handle->setup_array[event->call_setup_id];
+	
+	if (*uuid) {
+		switch_core_session_t *session;
+
+		if ((session = switch_core_session_locate(uuid))) {
+			private_object_t *tech_pvt;
+			switch_channel_t *channel;
+	
+			channel = switch_core_session_get_channel(session);
+			assert(channel != NULL);
+			
+			tech_pvt = switch_core_session_get_private(session);
+			assert(tech_pvt != NULL);
+			
+			tech_pvt->ss7boost_handle = ss7boost_handle;
+			tech_pvt->boost_span_number = event->span;
+			tech_pvt->boost_chan_number = event->chan;
+			
+			switch_channel_hangup(channel, event->release_cause);
+			
+			isup_exec_command(ss7boost_handle,
+							  event->span,
+							  event->chan, 
+							  event->call_setup_id,
+							  SIGBOOST_EVENT_CALL_START_NACK_ACK,
+							  0);
+
+			switch_core_session_rwunlock(session);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Session %s missing!\n", uuid);
+		}
+		*uuid = '\0';
+	}
+}
+
+static int parse_ss7_event(ss7boost_handle_t *ss7boost_handle, ss7boost_client_event_t *event)
+{
+	int ret = 0;
+
+	switch_mutex_lock(ss7boost_handle->mutex);
+		
+	validate_number((unsigned char*)event->called_number_digits);
+	validate_number((unsigned char*)event->calling_number_digits);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+					  "\nRX EVENT\n"
+					  "===================================\n"
+					  "           rType: %s (%0x HEX)\n"
+					  "           rSpan: [%d]\n"
+					  "           rChan: [%d]\n"
+					  "  rCalledNum: %s\n"
+					  " rCallingNum: %s\n"
+					  "      rCause: %s\n"
+					  " rInterface : [w%dg%d]\n"
+					  "  rEvent ID : [%d]\n"
+					  "   rSetup ID: [%d]\n"
+					  "        rSeq: [%d]\n"
+					  "===================================\n"
+					  "\n",
+					  ss7boost_client_event_id_name(event->event_id),
+					  event->event_id,
+					  event->span+1,
+					  event->chan+1,
+					  (event->called_number_digits_count ? (char *) event->called_number_digits : "N/A"),
+					  (event->calling_number_digits_count ? (char *) event->calling_number_digits : "N/A"),
+					  switch_channel_cause2str(event->release_cause),
+					  event->span+1,
+					  event->chan+1,
+					  event->event_id,
+					  event->call_setup_id,
+					  event->seqno
+					  );
+	
+
+	switch(event->event_id) {
+	
+	case SIGBOOST_EVENT_CALL_START:
+		handle_call_start(ss7boost_handle, event);
+		break;
+	case SIGBOOST_EVENT_CALL_STOPPED:
+		handle_call_stop(ss7boost_handle, event);
+		break;
+	case SIGBOOST_EVENT_CALL_START_ACK:
+		handle_call_start_ack(ss7boost_handle, event);
+		break;
+	case SIGBOOST_EVENT_CALL_START_NACK:
+		handle_call_start_nack(ss7boost_handle, event);
+		break;
+	case SIGBOOST_EVENT_CALL_ANSWERED:
+		handle_call_answer(ss7boost_handle, event);
+		break;
+	case SIGBOOST_EVENT_HEARTBEAT:
+		handle_heartbeat(ss7boost_handle, event);
+		break;
+	case SIGBOOST_EVENT_CALL_START_NACK_ACK:
+		handle_call_start_nack_ack(ss7boost_handle, event);
+		break;
+	case SIGBOOST_EVENT_CALL_STOPPED_ACK:
+		handle_call_stop_ack(ss7boost_handle, event);
+		break;
+	default:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Warning no handler implemented for [%s]\n", 
+						  ss7boost_client_event_id_name(event->event_id));
+		break;
+	}
+	switch_mutex_unlock(ss7boost_handle->mutex);
+	return ret;
+}
+
+static void *SWITCH_THREAD_FUNC boost_thread_run(switch_thread_t *thread, void *obj)
+{
+	ss7boost_handle_t *ss7boost_handle = (ss7boost_handle_t *) obj;
+	ss7boost_client_event_t *event;
+	int ss = 0;
+
+	if (ss7boost_client_connection_open(&ss7boost_handle->mcon,
+									ss7boost_handle->local_ip, 
+									ss7boost_handle->local_port,
+									ss7boost_handle->remote_ip,
+									ss7boost_handle->remote_port,
+									module_pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "FATAL ERROR CREATING CLIENT CONNECTION\n");
+		return NULL;
+	}
+			
+	isup_exec_command(ss7boost_handle,
+					  0,
+					  0, 
+					  -1,
+					  SIGBOOST_EVENT_SYSTEM_RESTART,
+					  0);
+	
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Monitor Thread Started\n");
+	
+	switch_mutex_lock(globals.hash_mutex);
+	globals.configured_boost_spans++;
+	switch_mutex_unlock(globals.hash_mutex);
+
+	globals.ss7boost_handle = ss7boost_handle;
+	
+	for(;;) {
+		if (ss7boost_client_connection_read(&ss7boost_handle->mcon, &event) == SWITCH_STATUS_SUCCESS) {
+				struct timeval current;
+				struct timeval difftime;
+				gettimeofday(&current,NULL);
+				timersub (&current, &event->tv, &difftime);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Socket Event [%s] T=%d:%d\n",
+								  ss7boost_client_event_id_name(event->event_id),
+								  difftime.tv_sec, difftime.tv_usec);
+				
+				parse_ss7_event(ss7boost_handle, event);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: Reading from Boost Socket! %s\n", strerror(errno));
+			break;
+		}
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Close udp socket [%d]\n", ss7boost_handle->mcon.socket);
+	ss7boost_client_connection_close(&ss7boost_handle->mcon);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Monitor Thread Ended\n");	
+	
+
+	return NULL;
+}
+
+static void launch_ss7boost_handle(ss7boost_handle_t *ss7boost_handle)
+{
+	switch_thread_t *thread;
+	switch_threadattr_t *thd_attr = NULL;
+	
+	switch_threadattr_create(&thd_attr, module_pool);
+	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_thread_create(&thread, thd_attr, boost_thread_run, ss7boost_handle, module_pool);
+}
+
+
+
 static switch_status_t config_wanpipe(int reload)
 {
 	char *cf = "wanpipe.conf";
 	int current_span = 0, min_span = 0, max_span = 0;
-	switch_xml_t cfg, xml, settings, param, span;
+	switch_xml_t cfg, xml, settings, param, pri_spans, ss7boost_handles, span;
 
 	globals.samples_per_frame = DEFAULT_SAMPLES_PER_FRAME;
 	globals.dtmf_on = 150;
@@ -1410,14 +2049,55 @@ static switch_status_t config_wanpipe(int reload)
 				globals.dtmf_on = atoi(val);
 			} else if (!strcmp(var, "dtmf-off")) {
 				globals.dtmf_off = atoi(val);
+			} else if (!strcmp(var, "dialplan")) {
+				set_global_dialplan(val);
 			} else if (!strcmp(var, "supress-dtmf-tone")) {
 				globals.supress_dtmf_tone = switch_true(val);
 			}
 		}
 	}
 
-	
-	for (span = switch_xml_child(cfg, "span"); span; span = span->next) {
+	ss7boost_handles = switch_xml_child(cfg, "ss7boost_handles");
+	for (span = switch_xml_child(ss7boost_handles, "handle"); span; span = span->next) {
+		char *local_ip = NULL, *remote_ip = NULL;
+		int local_port = 0, remote_port = 0;
+		ss7boost_handle_t *ss7boost_handle;
+
+		for (param = switch_xml_child(span, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+			
+			if (!strcasecmp(var, "local-ip")) {
+				local_ip = val;
+			} else if (!strcasecmp(var, "local-port")) {
+				local_port = atoi(val);
+			} else if (!strcasecmp(var, "remote-ip")) {
+				remote_ip = val;
+			} else if (!strcasecmp(var, "remote-port")) {
+				remote_port = atoi(val);
+			}
+		}
+
+
+		if (!(local_ip && local_port && remote_ip && remote_port)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Config, skipping...\n");
+			continue;
+		}
+
+		assert(ss7boost_handle = malloc(sizeof(*ss7boost_handle)));
+		memset(ss7boost_handle, 0, sizeof(*ss7boost_handle));
+		ss7boost_handle->local_ip = switch_core_strdup(module_pool, local_ip);
+		ss7boost_handle->local_port = local_port;
+		ss7boost_handle->remote_ip = switch_core_strdup(module_pool, remote_ip);
+		ss7boost_handle->remote_port = remote_port;
+
+		switch_mutex_init(&ss7boost_handle->mutex, SWITCH_MUTEX_NESTED, module_pool);
+		launch_ss7boost_handle(ss7boost_handle);
+		break;
+	}
+
+	pri_spans = switch_xml_child(cfg, "pri_spans");
+	for (span = switch_xml_child(pri_spans, "span"); span; span = span->next) {
 		char *id = (char *) switch_xml_attr(span, "id");
 		int32_t i = 0;
 
@@ -1498,8 +2178,6 @@ static switch_status_t config_wanpipe(int reload)
 					SPANS[current_span]->dp = str2dp(val);
 				} else if (!strcmp(var, "l1")) {
 					SPANS[current_span]->l1 = str2l1(val);
-				} else if (!strcmp(var, "dialplan")) {
-					set_global_dialplan(val);
 				}
 			}
 		}
@@ -1507,7 +2185,7 @@ static switch_status_t config_wanpipe(int reload)
 	switch_xml_free(xml);
 
 	if (!globals.dialplan) {
-		set_global_dialplan("default");
+		set_global_dialplan("XML");
 	}
 
 
@@ -1529,7 +2207,9 @@ static switch_status_t config_wanpipe(int reload)
 			}
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Launch span %d\n", current_span);
 			pri_thread_launch(&SPANS[current_span]->spri);
+			switch_mutex_lock(globals.hash_mutex);
 			globals.configured_spans++;
+			switch_mutex_unlock(globals.hash_mutex);
 		}
 	}
 
