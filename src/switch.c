@@ -35,18 +35,18 @@
 
 #include <switch.h>
 
-//pid filename: Stores the process id of the freeswitch process
+/* pid filename: Stores the process id of the freeswitch process */
 #define PIDFILE "freeswitch.pid"
 static char *pfile = PIDFILE;
 
-//log filename: Filename of the freeswitch log file to be used if we are in background mode
+/* log filename: Filename of the freeswitch log file to be used if we are in background mode */
 #define LOGFILE "freeswitch.log"
 static char *lfile = LOGFILE;
 
-//If we are a windows service, what should we be called
+/* If we are a windows service, what should we be called */
 #define SERVICENAME "Freeswitch"
 
-//Picky compiler
+/* Picky compiler */
 #ifdef __ICC
 #pragma warning (disable:167)
 #endif
@@ -55,73 +55,74 @@ static char *lfile = LOGFILE;
 #include <winsock2.h>
 #include <windows.h>
 
-//event to signal shutdown (for you unix people, this is like a pthread_cond)
+/* event to signal shutdown (for you unix people, this is like a pthread_cond) */
 static HANDLE shutdown_event;
 #endif
 
-//signal handler for when freeswitch is running in background mode.
-//signal triggers the shutdown of freeswitch
+/* signal handler for when freeswitch is running in background mode.
+ * signal triggers the shutdown of freeswitch
+ */
 static void handle_SIGHUP(int sig)
 {
 	uint32_t arg = 0;
 	if(sig);
-	//send shutdown signal to the freeswitch core
+	/* send shutdown signal to the freeswitch core */
 	switch_core_session_ctl(SCSC_SHUTDOWN, &arg);
 	return;
 }
 
-//kill a freeswitch process running in background mode
+/* kill a freeswitch process running in background mode */
 static int freeswitch_kill_background()
 {
-	FILE *f;				//FILE handle to open the pid file
-	char path[256] = "";	//full path of the PID file
-	pid_t pid = 0;			//pid from the pid file	
+	FILE *f;				/* FILE handle to open the pid file */
+	char path[256] = "";    /* full path of the PID file */
+	pid_t pid = 0;			/* pid from the pid file */
 
-	//set the globals so we can use the global paths.
+	/* set the globals so we can use the global paths. */
 	switch_core_set_globals();
 
-	//get the full path of the pid file.
+	/* get the full path of the pid file. */
 	snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
 
-	//open the pid file
+	/* open the pid file */
 	if ((f = fopen(path, "r")) == 0) {
-		//pid file does not exist
+		/* pid file does not exist */
 		fprintf(stderr, "Cannot open pid file %s.\n", path);
 		return 255;
 	}
 
-	//pull the pid from the file
+	/* pull the pid from the file */
 	fscanf(f, "%d", &pid);
 
-	//if we have a valid pid
+	/* if we have a valid pid */
 	if (pid > 0) {
 
-		//kill the freeswitch running at the pid we found
+		/* kill the freeswitch running at the pid we found */
 		fprintf(stderr, "Killing: %d\n", (int) pid);
 #ifdef WIN32
-		//for windows we need the event to signal for shutting down a background freewitc
+		/* for windows we need the event to signal for shutting down a background freewitch */
 		snprintf(path, sizeof(path), "Global\\Freeswitch.%d", pid);
 
-		//open the event so we can signal it
+		/* open the event so we can signal it */
 		shutdown_event = OpenEvent(EVENT_MODIFY_STATE, FALSE, path);
 
-		//did we sucessfully open the event
+		/* did we sucessfully open the event */
 		if (!shutdown_event) {
 			/* we can't get the event, so we can't signal the process to shutdown */
 			fprintf(stderr, "ERROR: Can't Shutdown: %d\n", (int) pid);
 		} else {
-			//signal the event to shutdown
+			/* signal the event to shutdown */
 			SetEvent(shutdown_event);
 		}
-		//cleanup
+		/* cleanup */
 		CloseHandle(shutdown_event);
 #else
-		//for unix, send the signal to kill.
+		/* for unix, send the signal to kill. */
 		kill(pid, SIGTERM);
 #endif
 	}
 
-	//be nice and close the file handle to the pid file
+	/* be nice and close the file handle to the pid file */
 	fclose(f);
 
 	return 0;
@@ -129,81 +130,81 @@ static int freeswitch_kill_background()
 
 #ifdef WIN32
 
-//we need these vars to handle the service
+/* we need these vars to handle the service */
 SERVICE_STATUS_HANDLE hStatus;
 SERVICE_STATUS status;
 
-//Handler function for service start/stop from the service 
+/* Handler function for service start/stop from the service */
 void WINAPI ServiceCtrlHandler( DWORD control )
 {
 	switch( control )
 	{
 	case SERVICE_CONTROL_SHUTDOWN:
 	case SERVICE_CONTROL_STOP:
-		//Shutdown freeswitch
+		/* Shutdown freeswitch */
 		switch_core_destroy(0);
-		//set service status valuse
+		/* set service status valuse */
 		status.dwCurrentState = SERVICE_STOPPED;
 		status.dwWin32ExitCode = 0;
 		status.dwCheckPoint = 0;
 		status.dwWaitHint = 0;
 		break;
 	case SERVICE_CONTROL_INTERROGATE:
-		// we already set the service status every time it changes.
-		// if there are other times we change it and don't update, we should do so here
+		/* we already set the service status every time it changes. */
+		/* if there are other times we change it and don't update, we should do so here */
 		break;
 	}
 
 	SetServiceStatus( hStatus, &status );
 }
 
-//the main service entry point
+/* the main service entry point */
 void WINAPI service_main( DWORD numArgs, char **args )
 {
-	const char *err = NULL;		//error value for return from freeswitch initialization
-	// we have to initialize the service-specific stuff
+	const char *err = NULL;		/* error value for return from freeswitch initialization */
+	/*  we have to initialize the service-specific stuff */
 	memset( &status, 0, sizeof(SERVICE_STATUS) );
 	status.dwServiceType = SERVICE_WIN32;
 	status.dwCurrentState = SERVICE_START_PENDING;
 	status.dwControlsAccepted = SERVICE_ACCEPT_STOP;
 
-	//register our handler for service control messages
+	/* register our handler for service control messages */
 	hStatus = RegisterServiceCtrlHandler( SERVICENAME, &ServiceCtrlHandler );
 
-	//update the service status
+	/* update the service status */
 	SetServiceStatus( hStatus, &status );
 
-	//run freeswitch with elevated priority
+	/* run freeswitch with elevated priority */
 	set_high_priority();
 
-	//attempt to initialize freeswitch and load modules
+	/* attempt to initialize freeswitch and load modules */
 	if (switch_core_init_and_modload(lfile, &err) != SWITCH_STATUS_SUCCESS) {
-		//freeswitch did not start sucessfully
+		/* freeswitch did not start sucessfully */
 		status.dwCurrentState = SERVICE_STOPPED;
 	} else {
-		//freeswitch started
+		/* freeswitch started */
 		status.dwCurrentState = SERVICE_RUNNING;
 	}
 
-	//update the service status
+	/* update the service status */
 	SetServiceStatus( hStatus, &status );
 }
 
 #endif
 
-//the main application entry point
+/* the main application entry point */
 int main(int argc, char *argv[])
 {
-	char pid_path[256] = "";	// full path to the pid file
-	const char *err = NULL;		// error value for return from freeswitch initialization
+	char pid_path[256] = "";	/* full path to the pid file */
+	const char *err = NULL;		/* error value for return from freeswitch initialization */
 #ifndef WIN32
-	int nf = 0;					// TRUE if we are running in nofork mode
+	int nf = 0;					/* TRUE if we are running in nofork mode */
 #endif
-	int nc = 0;					// TRUE if we are running in noconsole mode
-	FILE *f;					// file handle to the pid file
-	pid_t pid = 0;				// 
-	int x;						//
-	int die = 0;				//
+	int nc = 0;					/* TRUE if we are running in noconsole mode */
+	FILE *f;					/* file handle to the pid file */
+	pid_t pid = 0;				
+	int x;						
+	int die = 0;				
     char *usageDesc;
 	int alt_dirs = 0;
 
@@ -245,7 +246,7 @@ int main(int argc, char *argv[])
 		if (x == 1) {
 			if (argv[x] && !strcmp(argv[x], "-service")) {
 				if(StartServiceCtrlDispatcher( dispatchTable ) == 0 ) {
-					//Not loaded as a service
+					/* Not loaded as a service */
 					fprintf(stderr, "Error Freeswitch loaded as a console app with -service option\n");
 					fprintf(stderr, "To install the service load freeswitch with -install\n");
 				}
@@ -279,7 +280,7 @@ int main(int argc, char *argv[])
 				SC_HANDLE handle = OpenSCManager( NULL, NULL, SC_MANAGER_ALL_ACCESS );
 				SC_HANDLE service = OpenService( handle, SERVICENAME, DELETE );
 				if( service != NULL ) {
-					// remove the service!
+					/* remove the service! */
 					DeleteService( service );
 				}
 				exit(0);
