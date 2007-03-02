@@ -98,7 +98,7 @@
   <extension name="To PRI">
     <condition field="rdnis" expression="8881231234"/>
     <condition field="destination_number" expression="(.*)">
-      <action application="bridge" data="wanpipe/a/a/$1"/>
+      <action application="bridge" data="wanpipe/pri/a/a/$1"/>
     </condition>
   </extension>
 
