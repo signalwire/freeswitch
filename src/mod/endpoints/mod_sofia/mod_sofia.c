@@ -5074,7 +5074,6 @@ static switch_status_t config_sofia(int reload)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	sofia_profile_t *profile = NULL;
 	char url[512] = "";
-	char bindurl[512] ="";
 	switch_mutex_lock(globals.mutex);
 	globals.running = 1;
 	switch_mutex_unlock(globals.mutex);
@@ -5272,13 +5271,10 @@ static switch_status_t config_sofia(int reload)
 					profile->sipdomain = switch_core_strdup(profile->pool, profile->sipip);
 				}
 				if (profile->extsipip) {
-					snprintf(url, sizeof(url), "sip:mod_sofia@%s:%d", profile->extsipip, profile->sip_port);
-					snprintf(bindurl, sizeof(url), "sip:mod_sofia@%s:%d", profile->sipip, profile->sip_port);
-					profile->url = switch_core_strdup(profile->pool, url);
-					profile->bindurl = switch_core_strdup(profile->pool, bindurl);
+					profile->url = switch_core_sprintf(profile->pool, "sip:mod_sofia@%s:%d", profile->extsipip, profile->sip_port);
+					profile->bindurl = switch_core_sprintf(profile->pool, "%s;maddr=%s", profile->url, profile->sipip);
 				} else {
-					snprintf(url, sizeof(url), "sip:mod_sofia@%s:%d", profile->sipip, profile->sip_port);
-					profile->url = switch_core_strdup(profile->pool, url);
+					profile->url = switch_core_sprintf(profile->pool, "sip:mod_sofia@%s:%d", profile->sipip, profile->sip_port);
 					profile->bindurl = profile->url;
 				}
 			}
