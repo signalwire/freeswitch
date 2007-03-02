@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="mod_xml_cdr"
-	ProjectGUID="{FE3540C5-3303-46E0-A69E-D92F775687F1}"
+	ProjectGUID="{08DAD348-9E0A-4A2E-97F1-F1E7E24A7836}"
 	RootNamespace="mod_xml_cdr"
 	Keyword="Win32Proj"
 	>
