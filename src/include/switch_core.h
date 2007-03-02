@@ -428,7 +428,7 @@ SWITCH_DECLARE(switch_memory_pool_t *) switch_core_session_get_pool(switch_core_
   \param pool the pool to use for the allocation (a new one will be used if NULL)
   \return the newly created session
 */
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch_endpoint_interface_t *endpoint_interface, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch_endpoint_interface_t *endpoint_interface, switch_memory_pool_t **pool);
 
 /*! 
   \brief Destroy a session and return the memory pool to the core
@@ -449,7 +449,7 @@ SWITCH_DECLARE(uint32_t) switch_core_session_count(void);
   \param pool the pool to use
   \return the newly created session
 */
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(char *endpoint_name, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(char *endpoint_name, switch_memory_pool_t **pool);
 
 /*! 
   \brief Launch the session thread (state machine) on a given session
@@ -649,7 +649,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 																		 char *endpoint_name,
 																		 switch_caller_profile_t *caller_profile,
 																		 switch_core_session_t **new_session,
-																		 switch_memory_pool_t *pool);
+																		 switch_memory_pool_t **pool);
 
 /*! 
   \brief Answer the channel of a given session

@@ -1596,7 +1596,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 																		 char *endpoint_name,
 																		 switch_caller_profile_t *caller_profile,
 																		 switch_core_session_t **new_session,
-																		 switch_memory_pool_t *pool)
+																		 switch_memory_pool_t **pool)
 {
 	switch_io_event_hook_outgoing_channel_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -3693,8 +3693,8 @@ SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool_t *pool, switch_size
 	return ptr;
 }
 
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch_endpoint_interface_t *endpoint_interface,
-																  switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch_endpoint_interface_t *endpoint_interface, switch_memory_pool_t **pool)
+																	
 {
 	switch_memory_pool_t *usepool;
 	switch_core_session_t *session;
@@ -3717,8 +3717,9 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 		return NULL;
 	}
 
-	if (pool) {
-		usepool = pool;
+	if (*pool) {
+		usepool = *pool;
+		*pool = NULL;
 	} else if (switch_core_new_memory_pool(&usepool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not allocate memory pool\n");
 		return NULL;
@@ -3778,7 +3779,7 @@ SWITCH_DECLARE(uint32_t) switch_core_session_count(void)
 	return runtime.session_count;
 }
 
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(char *endpoint_name, switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(char *endpoint_name, switch_memory_pool_t **pool)
 {
 	const switch_endpoint_interface_t *endpoint_interface;
 
