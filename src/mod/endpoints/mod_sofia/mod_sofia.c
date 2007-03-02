@@ -4258,7 +4258,7 @@ static void sip_i_info(nua_t *nua,
 }
 
 
-#define url_set_chanvars(session, url, varprefix) _url_set_chanvars(session, url, ##varprefix "_user", ##varprefix "_host", ##varprefix "_port", ##varprefix "_uri")
+#define url_set_chanvars(session, url, varprefix) _url_set_chanvars(session, url, #varprefix "_user", #varprefix "_host", #varprefix "_port", #varprefix "_uri")
 static const char * _url_set_chanvars(switch_core_session_t *session, url_t *url, const char * user_var, const char * host_var, const char * port_var, const char * uri_var)
 {
 	const char *user = NULL, *host = NULL, *port = NULL;
@@ -4399,7 +4399,7 @@ static void sip_i_invite(nua_t *nua,
 	if (sip->sip_from && sip->sip_from->a_url) {
 		from_user = sip->sip_from->a_url->url_user;
 		from_host = sip->sip_from->a_url->url_host;
-		channel_name = url_set_chanvars(session, sip->sip_from->a_url, "sip_from");
+		channel_name = url_set_chanvars(session, sip->sip_from->a_url, sip_from);
 
 		if (!switch_strlen_zero(from_user)) {
 			if (*from_user == '+') {
@@ -4427,7 +4427,7 @@ static void sip_i_invite(nua_t *nua,
 	}
 
 	if (sip->sip_request && sip->sip_request->rq_url) {
-		const char * req_uri = url_set_chanvars(session, sip->sip_request->rq_url, "sip_req");
+		const char * req_uri = url_set_chanvars(session, sip->sip_request->rq_url, sip_req);
 		if (profile->pflags & PFLAG_FULL_ID)  {
 			destination_number = req_uri;
 		} else {
@@ -4436,11 +4436,11 @@ static void sip_i_invite(nua_t *nua,
 	}
 
 	if (sip->sip_to && sip->sip_to->a_url) {
-		url_set_chanvars(session, sip->sip_to->a_url, "sip_to");
+		url_set_chanvars(session, sip->sip_to->a_url, sip_to);
 	}
 
 	if (sip->sip_contact && sip->sip_contact->m_url) {
-		const char *contact_uri = url_set_chanvars(session, sip->sip_contact->m_url, "sip_contact");
+		const char *contact_uri = url_set_chanvars(session, sip->sip_contact->m_url, sip_contact);
 		if (!channel_name) {
 			channel_name = contact_uri;
 		}
