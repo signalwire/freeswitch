@@ -2956,7 +2956,7 @@ static switch_status_t conf_api_sub_dial(conference_obj_t *conference, switch_st
 		if (conference) {
 			conference_outcall(conference, NULL, NULL, argv[2], 60, NULL, argv[4], argv[3], &cause);
 		} else {
-			conference_outcall(NULL, argv[1], NULL, argv[2], 60, NULL, argv[4], argv[3], &cause);
+			conference_outcall(NULL, argv[0], NULL, argv[2], 60, NULL, argv[4], argv[3], &cause);
 		}
 
         stream->write_function(stream, "Call Requested: result: [%s]\n", switch_channel_cause2str(cause));
