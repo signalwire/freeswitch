@@ -3717,7 +3717,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 		return NULL;
 	}
 
-	if (pool) {
+	if (pool && *pool) {
 		usepool = *pool;
 		*pool = NULL;
 	} else if (switch_core_new_memory_pool(&usepool) != SWITCH_STATUS_SUCCESS) {
