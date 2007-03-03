@@ -4072,7 +4072,18 @@ static void conference_function(switch_core_session_t *session, char *data)
     }
 
     if (switch_test_flag(&member, MFLAG_KICKED) && conference->kicked_sound) {
-        switch_ivr_play_file(session, NULL, conference->kicked_sound, NULL);
+		char *toplay = NULL;
+		char *dfile = NULL;
+
+        if (conference->sound_prefix) {
+            assert((dfile = switch_mprintf("%s/%s", conference->sound_prefix, conference->kicked_sound)));
+			toplay = dfile;
+		} else {
+			toplay = conference->kicked_sound;
+		}
+
+		switch_ivr_play_file(session, NULL, toplay, NULL);
+		switch_safe_free(dfile);
     }
 
     switch_core_session_reset(session);
