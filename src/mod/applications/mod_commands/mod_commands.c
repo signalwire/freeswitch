@@ -35,7 +35,7 @@
 #include <switch.h>
 #include <switch_version.h>
 
-static const switch_state_handler_table_t noop_state_handler = {0};
+
 static const char modname[] = "mod_commands";
 static switch_api_interface_t ctl_api_interface;
 static switch_api_interface_t uuid_bridge_api_interface;
@@ -509,7 +509,7 @@ static switch_status_t originate_function(char *cmd, switch_core_session_t *ises
 		timeout = atoi(argv[6]);
 	}
 
-	if (switch_ivr_originate(NULL, &caller_session, &cause, aleg, timeout, &noop_state_handler, cid_name, cid_num, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_originate(NULL, &caller_session, &cause, aleg, timeout, NULL, cid_name, cid_num, NULL) != SWITCH_STATUS_SUCCESS) {
 		if (machine) {
 			stream->write_function(stream, "fail: %s\n", switch_channel_cause2str(cause));
 		} else {

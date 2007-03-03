@@ -286,6 +286,7 @@ static void conference_list(conference_obj_t *conference, switch_stream_handle_t
 static switch_status_t conf_api_main(char *buf, switch_core_session_t *session, switch_stream_handle_t *stream);
 static switch_status_t audio_bridge_on_ring(switch_core_session_t *session);
 static switch_status_t conference_outcall(conference_obj_t *conference, 
+										  char *conference_name,
 										  switch_core_session_t *session, 
 										  char *bridgeto, 
 										  uint32_t timeout, 
@@ -294,6 +295,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 										  char *cid_num,
                                           switch_call_cause_t *cause);
 static switch_status_t conference_outcall_bg(conference_obj_t *conference, 
+											 char *conference_name,
                                              switch_core_session_t *session, 
                                              char *bridgeto, 
                                              uint32_t timeout, 
@@ -1248,7 +1250,7 @@ static void conference_loop_fn_dial(conference_member_t *member, void *data)
 			if (argc >= 4) {
                 switch_call_cause_t cause;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "executing conference outcall\n");
-				conference_outcall(member->conference, NULL, argv[0], atoi(argv[1]), NULL, argv[3], argv[2], &cause);
+				conference_outcall(member->conference, NULL, NULL, argv[0], atoi(argv[1]), NULL, argv[3], argv[2], &cause);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "conference outcall not executed\n");
 			}
@@ -2948,13 +2950,18 @@ static switch_status_t conf_api_sub_dial(conference_obj_t *conference, switch_st
 
     assert(stream != NULL);
 
-	if(!conference) {
-		stream->write_function(stream, "Conference %s not found\n", argv[0]);
-	} else if (argc > 2) {
+	if (argc > 2) {
         switch_call_cause_t cause;
-        conference_outcall(conference, NULL, argv[2], 60, NULL, argv[4], argv[3], &cause);
+
+		if (conference) {
+			conference_outcall(conference, NULL, NULL, argv[2], 60, NULL, argv[4], argv[3], &cause);
+		} else {
+			conference_outcall(NULL, argv[1], NULL, argv[2], 60, NULL, argv[4], argv[3], &cause);
+		}
+
         stream->write_function(stream, "Call Requested: result: [%s]\n", switch_channel_cause2str(cause));
     } else {
+        stream->write_function(stream, "Bad Args\n");
         ret_status = SWITCH_STATUS_GENERR;
     }
 
@@ -2968,12 +2975,15 @@ static switch_status_t conf_api_sub_bgdial(conference_obj_t *conference, switch_
 
     assert(stream != NULL);
 
-	if(!conference) {
-		stream->write_function(stream, "Conference %s not found\n", argv[0]);
-	} else if (argc > 2) {
-        conference_outcall_bg(conference, NULL, argv[2], 60, NULL, argv[4], argv[3]);
-        stream->write_function(stream, "OK\n");
+	if (argc > 2) {
+		if (conference) {
+			conference_outcall_bg(conference, NULL, NULL, argv[2], 60, NULL, argv[4], argv[3]);
+		} else {
+			conference_outcall_bg(NULL, argv[1], NULL, argv[2], 60, NULL, argv[4], argv[3]);
+		}
+		stream->write_function(stream, "OK\n");
     } else {
+        stream->write_function(stream, "Bad Args\n");
         ret_status = SWITCH_STATUS_GENERR;
     }
 
@@ -3360,7 +3370,7 @@ static switch_status_t conf_api_main(char *buf, switch_core_session_t *session, 
                 conf_api_sub_list(NULL, stream, argc, argv);
             } else if (strcasecmp(argv[0], "help") == 0 || strcasecmp(argv[0], "commands") == 0) {
                 stream->write_function(stream, "%s\n", conf_api_interface.syntax);
-			} else if (strcasecmp(argv[0], "dial") == 0) {
+			} else if (argv[1] && strcasecmp(argv[1], "dial") == 0) {
 				if (conf_api_sub_dial(NULL, stream, argc, argv) != SWITCH_STATUS_SUCCESS) {
 					/* command returned error, so show syntax usage */
 					stream->write_function(stream, conf_api_sub_commands[CONF_API_COMMAND_DIAL].psyntax);
@@ -3415,6 +3425,7 @@ static const switch_state_handler_table_t audio_bridge_peer_state_handlers = {
 
 /* generate an outbound call from the conference */
 static switch_status_t conference_outcall(conference_obj_t *conference, 
+										  char *conference_name,										  
                                           switch_core_session_t *session, 
                                           char *bridgeto, 
                                           uint32_t timeout, 
@@ -3429,8 +3440,28 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
     switch_channel_t *caller_channel = NULL;
     char appdata[512];
 
+
     *cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
+
+	if (conference == NULL) {
+		char *dialstr = switch_mprintf("{ignore_early_media=true}%s", bridgeto);
+
+		status = switch_ivr_originate(NULL, &peer_session, cause, dialstr, 60, NULL, cid_name, cid_num, NULL);
+		switch_safe_free(dialstr);
+
+		if (status != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+
+		peer_channel = switch_core_session_get_channel(peer_session);
+		assert(peer_channel != NULL);
+		
+		goto callup;
+	}
+
+
+	conference_name = conference->name;
 
     if (switch_thread_rwlock_tryrdlock(conference->rwlock) != SWITCH_STATUS_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Fail\n");
@@ -3486,22 +3517,24 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
         switch_channel_answer(caller_channel);
     }
 
+ callup:
+
     /* if the outbound call leg is ready */
     if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
         switch_caller_extension_t *extension = NULL;
 
         /* build an extension name object */
-        if ((extension = switch_caller_extension_new(peer_session, conference->name, conference->name)) == 0) {
+        if ((extension = switch_caller_extension_new(peer_session, conference_name, conference_name)) == 0) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
             status = SWITCH_STATUS_MEMERR;
             goto done;
         }
         /* add them to the conference */
         if (flags && strcasecmp(flags, "none")) {
-            snprintf(appdata, sizeof(appdata), "%s +flags{%s}", conference->name, flags);
+            snprintf(appdata, sizeof(appdata), "%s +flags{%s}", conference_name, flags);
             switch_caller_extension_add_application(peer_session, extension, (char *) global_app_name, appdata);
         } else {
-            switch_caller_extension_add_application(peer_session, extension, (char *) global_app_name, conference->name);
+            switch_caller_extension_add_application(peer_session, extension, (char *) global_app_name, conference_name);
         }
 
         switch_channel_set_caller_extension(peer_channel, extension);
@@ -3514,7 +3547,9 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
     }
 
  done:
-    switch_thread_rwlock_unlock(conference->rwlock);
+	if (conference) {
+		switch_thread_rwlock_unlock(conference->rwlock);
+	}
     return status;
 }
 
@@ -3526,6 +3561,7 @@ struct bg_call {
     char *flags;
     char *cid_name;
     char *cid_num;
+	char *conference_name;
 };
 
 static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, void *obj)
@@ -3536,7 +3572,7 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, 
         switch_call_cause_t cause;
         switch_event_t *event;
 
-        conference_outcall(call->conference, call->session, call->bridgeto, call->timeout, call->flags, call->cid_name, call->cid_num, &cause);
+        conference_outcall(call->conference, NULL, call->session, call->bridgeto, call->timeout, call->flags, call->cid_name, call->cid_num, &cause);
 
         if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
             switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", "%s", call->conference->name);
@@ -3548,6 +3584,7 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, 
         switch_safe_free(call->flags);
         switch_safe_free(call->cid_name);
         switch_safe_free(call->cid_num);
+        switch_safe_free(call->conference_name);
         switch_safe_free(call);
     }
 
@@ -3555,6 +3592,7 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, 
 }
 
 static switch_status_t conference_outcall_bg(conference_obj_t *conference, 
+											 char *conference_name,
                                              switch_core_session_t *session, 
                                              char *bridgeto, 
                                              uint32_t timeout, 
@@ -3585,6 +3623,11 @@ static switch_status_t conference_outcall_bg(conference_obj_t *conference,
         if (cid_num) {
             call->cid_num = strdup(cid_num);
         }
+		
+		if (conference_name) {
+			call->conference_name = strdup(conference_name);
+		}
+
         
         switch_threadattr_create(&thd_attr, conference->pool);
         switch_threadattr_detach_set(thd_attr, 1);
@@ -3882,7 +3925,7 @@ static void conference_function(switch_core_session_t *session, char *data)
     /* if we're using "bridge:" make an outbound call and bridge it in */
     if (!switch_strlen_zero(bridgeto) && strcasecmp(bridgeto, "none")) {
         switch_call_cause_t cause;
-        if (conference_outcall(conference, session, bridgeto, 60, NULL, NULL, NULL, &cause) != SWITCH_STATUS_SUCCESS) {
+        if (conference_outcall(conference, NULL, session, bridgeto, 60, NULL, NULL, NULL, &cause) != SWITCH_STATUS_SUCCESS) {
             goto done;
         }
     } else {	
