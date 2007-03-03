@@ -330,7 +330,7 @@ static switch_status_t wanpipe_on_hangup(switch_core_session_t *session);
 static switch_status_t wanpipe_on_loopback(switch_core_session_t *session);
 static switch_status_t wanpipe_on_transmit(switch_core_session_t *session);
 static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, switch_memory_pool_t *pool);
+													switch_core_session_t **new_session, switch_memory_pool_t **pool);
 static switch_status_t wanpipe_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
 										switch_io_flag_t flags, int stream_id);
 static switch_status_t wanpipe_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
@@ -867,7 +867,7 @@ static const switch_loadable_module_interface_t wanpipe_module_interface = {
 
 
 static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, switch_memory_pool_t *pool)
+													switch_core_session_t **new_session, switch_memory_pool_t **pool)
 {
 	char *bchan = NULL;
 	char name[128] = "";
