@@ -171,7 +171,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_read(switch_buffer_t *buffer, void *
 	buffer->used -= reading;
 	buffer->head += reading;
 
-	//if (buffer->id == 4) printf("%u o %d = %d\n", buffer->id, (uint32_t)reading, (uint32_t)buffer->used);
+	/* if (buffer->id == 4) printf("%u o %d = %d\n", buffer->id, (uint32_t)reading, (uint32_t)buffer->used); */
 	return reading;
 }
 
@@ -231,7 +231,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, void 
 		buffer->used += datalen;
 		buffer->actually_used += datalen;
 	}
-	//if (buffer->id == 4) printf("%u i %d = %d\n", buffer->id, (uint32_t)datalen, (uint32_t)buffer->used);
+	/* if (buffer->id == 4) printf("%u i %d = %d\n", buffer->id, (uint32_t)datalen, (uint32_t)buffer->used); */
 
 	return buffer->used;
 }
