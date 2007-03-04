@@ -376,8 +376,9 @@ SWITCH_DECLARE(apr_status_t) switch_socket_recvfrom(apr_sockaddr_t *from, apr_so
 
 	if ((r = apr_socket_recvfrom(from, sock, flags, buf, len)) == APR_SUCCESS) {
 		from->port = ntohs(from->sa.sin.sin_port);
-		//from->ipaddr_ptr = &(from->sa.sin.sin_addr);
-		//from->ipaddr_ptr = inet_ntoa(from->sa.sin.sin_addr);
+		/* from->ipaddr_ptr = &(from->sa.sin.sin_addr);
+		 * from->ipaddr_ptr = inet_ntoa(from->sa.sin.sin_addr);
+		 */
 	}
 
 	return r;
@@ -647,7 +648,7 @@ SWITCH_DECLARE(char *) switch_url_decode(char *s)
 
 
 #ifdef WIN32
-//this forces certain symbols to not be optimized out of the dll
+/* this forces certain symbols to not be optimized out of the dll */
 void include_me(void)
 {
 	apr_socket_shutdown(NULL, 0);
