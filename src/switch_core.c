@@ -40,7 +40,7 @@
 #include <sys/mman.h>
 #endif
 
-//#define DEBUG_ALLOC
+/* #define DEBUG_ALLOC */
 #define DO_EVENTS
 
 #ifdef CRASH_PROT
@@ -3684,7 +3684,7 @@ SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool_t *pool, switch_size
 
 #ifdef DEBUG_ALLOC
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Allocate %d\n", memory);
-	//assert(memory < 600000);
+	/* assert(memory < 600000); */
 #endif
 
 	if ((ptr = apr_palloc(pool, memory)) != 0) {
@@ -4615,7 +4615,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 
 	if (runtime.memory_pool) {
 		apr_pool_destroy(runtime.memory_pool);
-		//apr_terminate();
+		/* apr_terminate(); */
 	}
 
 	return SWITCH_STATUS_SUCCESS;
