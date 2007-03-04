@@ -667,9 +667,9 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 						  state_names[last_state],
 						  state_names[state]);
 
-		//we won't tolerate an invalid state change so we can make sure we are as robust as a nice cup of dark coffee!
+		/* we won't tolerate an invalid state change so we can make sure we are as robust as a nice cup of dark coffee! */
 		if (channel->state < CS_HANGUP) {
-			// not cool lets crash this bad boy and figure out wtf is going on
+			/* not cool lets crash this bad boy and figure out wtf is going on */
 			assert(0);
 		}
 	}
