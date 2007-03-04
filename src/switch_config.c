@@ -174,7 +174,7 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config_t *cfg, char **var, ch
 		
 		if ((*val = strchr(*var, '=')) == 0) {
 			ret = -1;
-			//log_printf(0, server.log, "Invalid syntax on %s: line %d\n", cfg->path, cfg->lineno);
+			/* log_printf(0, server.log, "Invalid syntax on %s: line %d\n", cfg->path, cfg->lineno); */
 			continue;
 		} else {
 			p = *val - 1;
