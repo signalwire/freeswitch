@@ -41,8 +41,8 @@ static switch_mutex_t *EVENT_QUEUE_MUTEX = NULL;
 static switch_mutex_t *EVENT_QUEUE_HAVEMORE_MUTEX = NULL;
 static switch_thread_cond_t *EVENT_QUEUE_CONDITIONAL = NULL;
 static switch_memory_pool_t *RUNTIME_POOL = NULL;
-//static switch_memory_pool_t *APOOL = NULL;
-//static switch_memory_pool_t *BPOOL = NULL;
+/* static switch_memory_pool_t *APOOL = NULL; */
+/* static switch_memory_pool_t *BPOOL = NULL; */
 static switch_memory_pool_t *THRUNTIME_POOL = NULL;
 static switch_queue_t *EVENT_QUEUE[3] = {0,0,0};
 static int POOL_COUNT_MAX = SWITCH_CORE_QUEUE_LEN;
@@ -209,34 +209,36 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 
 	
 		if (!any) {
-			//lock on havemore so we are the only ones poking at it while we check it
-			//see if we saw anything in the queues or have a check again flag
+			/* lock on havemore so we are the only ones poking at it while we check it
+			 * see if we saw anything in the queues or have a check again flag
+			 */
 			switch_mutex_lock(EVENT_QUEUE_HAVEMORE_MUTEX);
 			if(!EVENT_QUEUE_HAVEMORE) {
-				//See if we need to quit
+				/* See if we need to quit */
 				if (THREAD_RUNNING != 1) {
-					//give up our lock
+					/* give up our lock */
 					switch_mutex_unlock(EVENT_QUEUE_HAVEMORE_MUTEX);
 
-					//Game over
+					/* game over */
 					break;
 				}
 
-				//give up our lock
+				/* give up our lock */
 				switch_mutex_unlock(EVENT_QUEUE_HAVEMORE_MUTEX);
 
-				//wait until someone tells us we have something to do
+				/* wait until someone tells us we have something to do */
 				switch_thread_cond_wait(EVENT_QUEUE_CONDITIONAL, EVENT_QUEUE_MUTEX);
 			} else {
-				//Caught a race, one of the queues was updated after we looked at it
-				//reset our flag
+				/* Caught a race, one of the queues was updated after we looked at it 
+				 * reset our flag
+				 */
 				EVENT_QUEUE_HAVEMORE = 0;
 
-				//Give up our lock
+				/* give up our lock */
 				switch_mutex_unlock(EVENT_QUEUE_HAVEMORE_MUTEX);
 			}
 
-			//go grab some events
+			/* go grab some events */
 			continue;
 		}
 
@@ -348,24 +350,27 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 	if (THREAD_RUNNING > 0) {
 		THREAD_RUNNING = -1;
 
-		//Lock on havemore to make sure he event thread, if currently running
-		// doesn't check the HAVEMORE flag before we set it
+		/* lock on havemore to make sure he event thread, if currently running
+		 * doesn't check the HAVEMORE flag before we set it
+		 */
 		switch_mutex_lock(EVENT_QUEUE_HAVEMORE_MUTEX);
-		//See if the event thread is sitting
+		/* see if the event thread is sitting */
 		if(switch_mutex_trylock(EVENT_QUEUE_MUTEX) == SWITCH_STATUS_SUCCESS) {
-			//we don't need havemore anymore, the thread was sitting already
+			/* we don't need havemore anymore, the thread was sitting already */
 			switch_mutex_unlock(EVENT_QUEUE_HAVEMORE_MUTEX);
 
-			//wake up the event thread
+			/* wake up the event thread */
 			switch_thread_cond_signal(EVENT_QUEUE_CONDITIONAL);
 
-			//give up our lock
+			/* give up our lock */
 			switch_mutex_unlock(EVENT_QUEUE_MUTEX);
-		} else { // it wasn't waiting which means we might have updated a queue it already looked at
-			//set a flag so it knows to read the queues again
+		} else { 
+			/* it wasn't waiting which means we might have updated a queue it already looked at
+			 * set a flag so it knows to read the queues again
+			 */
 			EVENT_QUEUE_HAVEMORE = 1;
 
-			//variable updated, give up the mutex
+			/* variable updated, give up the mutex */
 			switch_mutex_unlock(EVENT_QUEUE_HAVEMORE_MUTEX);
 		}
 
@@ -401,7 +406,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 		return SWITCH_STATUS_MEMERR;
 	}
 	*/
-	//THRUNTIME_POOL = APOOL;
+	/* THRUNTIME_POOL = APOOL; */
 	switch_queue_create(&EVENT_QUEUE[0], POOL_COUNT_MAX + 10, THRUNTIME_POOL);
 	switch_queue_create(&EVENT_QUEUE[1], POOL_COUNT_MAX + 10, THRUNTIME_POOL);
 	switch_queue_create(&EVENT_QUEUE[2], POOL_COUNT_MAX + 10, THRUNTIME_POOL);
@@ -627,7 +632,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
         return SWITCH_STATUS_MEMERR;
     }
 
-    //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "hit serialze!.\n");
+    /* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "hit serialze!.\n"); */
 	for (hp = event->headers; hp; hp = hp->next) {
         /*
          * grab enough memory to store 3x the string (url encode takes one char and turns it into %XX)
@@ -641,7 +646,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 
         if(encode_len < new_len) {
             char* tmp;
-	        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Allocing %d was %d.\n", ((strlen(hp->value) * 3) + 1), encode_len);
+	        /* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Allocing %d was %d.\n", ((strlen(hp->value) * 3) + 1), encode_len); */
             /* we can use realloc for initial alloc as well, if encode_buf is zero it treats it as a malloc */
 
             /* keep track of the size of our allocation */
@@ -834,24 +839,27 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *fun
 
 	switch_queue_push(EVENT_QUEUE[(*event)->priority], *event);
 
-	//Lock on havemore to make sure he event thread, if currently running
-	// doesn't check the HAVEMORE flag before we set it
+	/* lock on havemore to make sure he event thread, if currently running
+	 * doesn't check the HAVEMORE flag before we set it
+	 */
 	switch_mutex_lock(EVENT_QUEUE_HAVEMORE_MUTEX);
-	//See if the event thread is sitting
+	/* see if the event thread is sitting */
 	if(switch_mutex_trylock(EVENT_QUEUE_MUTEX) == SWITCH_STATUS_SUCCESS) {
-		//we don't need havemore anymore, the thread was sitting already
+		/* we don't need havemore anymore, the thread was sitting already */
 		switch_mutex_unlock(EVENT_QUEUE_HAVEMORE_MUTEX);
 
-		//wake up the event thread
+		/* wake up the event thread */
 		switch_thread_cond_signal(EVENT_QUEUE_CONDITIONAL);
 
-		//give up our lock
+		/* give up our lock */
 		switch_mutex_unlock(EVENT_QUEUE_MUTEX);
-	} else { // it wasn't waiting which means we might have updated a queue it already looked at
-		//set a flag so it knows to read the queues again
+	} else { 
+		/* it wasn't waiting which means we might have updated a queue it already looked at
+		 * set a flag so it knows to read the queues again
+		 */
 		EVENT_QUEUE_HAVEMORE = 1;
 
-		//variable updated, give up the mutex
+		/* variable updated, give up the mutex */
 		switch_mutex_unlock(EVENT_QUEUE_HAVEMORE_MUTEX);
 	}
 		
