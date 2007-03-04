@@ -34,8 +34,24 @@
 static const char modname[] = "mod_console";
 static const uint8_t STATIC_LEVELS[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
 static int COLORIZE = 0;
+#ifdef WIN32
+static HANDLE hStdout;
+static WORD wOldColorAttrs;
+static CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
+static WORD COLORS[] =
+	{	FOREGROUND_RED | FOREGROUND_INTENSITY,
+		FOREGROUND_RED | FOREGROUND_INTENSITY,
+		FOREGROUND_RED | FOREGROUND_INTENSITY,
+		FOREGROUND_RED | FOREGROUND_INTENSITY,
+		FOREGROUND_BLUE | FOREGROUND_INTENSITY,
+		FOREGROUND_BLUE | FOREGROUND_INTENSITY,
+		FOREGROUND_GREEN | FOREGROUND_INTENSITY,
+		FOREGROUND_GREEN | FOREGROUND_INTENSITY,
+		FOREGROUND_GREEN | FOREGROUND_INTENSITY };
+#else
 static const char *COLORS[] = 
 	{ SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FMAGEN, SWITCH_SEQ_FCYAN, SWITCH_SEQ_FGREEN, SWITCH_SEQ_FYELLOW, "" };
+#endif
 
 static switch_loadable_module_interface_t console_module_interface = {
 	/*.module_name */ modname,
@@ -109,7 +125,16 @@ static switch_status_t config_logger(void)
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 
 			if (!strcasecmp(var, "colorize") && switch_true(val)) {
+#ifdef WIN32
+				hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+				if (switch_core_get_console() == stdout && hStdout != INVALID_HANDLE_VALUE 
+					&& GetConsoleScreenBufferInfo(hStdout, &csbiInfo)) {
+					wOldColorAttrs = csbiInfo.wAttributes;
+					COLORIZE = 1;
+				}
+#else
 				COLORIZE = 1;
+#endif
 			}
 		}
 	}
@@ -143,7 +168,13 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 
 		if (!log_hash || (((all_level > - 1) || lookup) && level >= node->level)) {
 			if (COLORIZE) {
+#ifdef WIN32
+				SetConsoleTextAttribute(hStdout, COLORS[node->level]);
+				WriteFile(hStdout, node->data, (DWORD)strlen(node->data), NULL, NULL);
+				SetConsoleTextAttribute(hStdout, wOldColorAttrs);
+#else
 				fprintf(handle, "%s%s%s", COLORS[node->level], node->data, SWITCH_SEQ_DEFAULT_COLOR);
+#endif
 			} else {
 				fprintf(handle, "%s", node->data);
 			}
