@@ -228,7 +228,7 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 		}
 	} while (switch_stun_packet_next_attribute(attr));
 
-	//printf("[%s] [%s] [%s]\n", rtp_session->user_ice, username, !strcmp(rtp_session->user_ice, username) ? "yes" : "no");
+	/* printf("[%s] [%s] [%s]\n", rtp_session->user_ice, username, !strcmp(rtp_session->user_ice, username) ? "yes" : "no"); */
 	if ((packet->header.type == SWITCH_STUN_BINDING_REQUEST)  && !strcmp(rtp_session->user_ice, username)) {
 		uint8_t buf[512];
 		switch_stun_packet_t *rpacket;
@@ -239,7 +239,7 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 		memset(buf, 0, sizeof(buf));
 		rpacket = switch_stun_packet_build_header(SWITCH_STUN_BINDING_RESPONSE, packet->header.id, buf);
 		switch_stun_packet_attribute_add_username(rpacket, username, 32);
-		//switch_sockaddr_ip_get(&remote_ip, rtp_session->from_addr);
+		/* switch_sockaddr_ip_get(&remote_ip, rtp_session->from_addr); */
 
 		remote_ip = switch_get_addr(ipbuf, sizeof(ipbuf), rtp_session->from_addr);
 		
@@ -427,8 +427,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 			return SWITCH_STATUS_FALSE;
 		}
     
-		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "set master key/salt to %s/", octet_string_hex_string(key, 16));
-		//switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "%s\n", octet_string_hex_string(key+16, 14));
+		/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "set master key/salt to %s/", octet_string_hex_string(key, 16));
+		 * switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "%s\n", octet_string_hex_string(key+16, 14));
+		 */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activating Secure RTP!\n");
 	}
 
@@ -678,7 +679,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 			duration = rtp_session->dtmf_data.out_digit_sofar;
 		}
 
-		//ts = rtp_session->dtmf_data.timestamp_dtmf += samples;
+		/* ts = rtp_session->dtmf_data.timestamp_dtmf += samples; */
 		rtp_session->dtmf_data.out_digit_packet[2] = (unsigned char) (duration >> 8);
 		rtp_session->dtmf_data.out_digit_packet[3] = (unsigned char) duration;
 		
@@ -719,8 +720,9 @@ static void do_2833(switch_rtp_t *rtp_session)
 			rtp_session->dtmf_data.out_digit_packet[0] = (unsigned char)switch_char_to_rfc2833(rdigit->digit);
 			rtp_session->dtmf_data.out_digit_packet[1] = 7;
 
-			//ts = rtp_session->dtmf_data.timestamp_dtmf += samples;
-			//rtp_session->dtmf_data.timestamp_dtmf++;
+			/* ts = rtp_session->dtmf_data.timestamp_dtmf += samples;
+			 * rtp_session->dtmf_data.timestamp_dtmf++;
+			 */
 
 			rtp_session->dtmf_data.timestamp_dtmf = rtp_session->last_write_ts;
 			rtp_session->dtmf_data.out_digit_seq = rtp_session->last_write_seq;
@@ -1131,7 +1133,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 		if (rtp_session->vad_data.scan_freq && rtp_session->vad_data.next_scan <= now) {
 			rtp_session->vad_data.bg_count = rtp_session->vad_data.bg_level = 0;
 			rtp_session->vad_data.next_scan = now + rtp_session->vad_data.scan_freq;
-			//printf("RESCAN\n");
+			/* printf("RESCAN\n"); */
 		}
 
 		if (switch_core_codec_decode(&rtp_session->vad_data.vad_codec,
@@ -1162,8 +1164,9 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 						rtp_session->vad_data.bg_level += score;
 						if (++rtp_session->vad_data.bg_count == rtp_session->vad_data.bg_len) {
 							rtp_session->vad_data.bg_level /= rtp_session->vad_data.bg_len;
-							//rtp_session->vad_data.bg_level += (rtp_session->vad_data.bg_level / 3);
-							//printf("AVG %u\n", rtp_session->vad_data.bg_level);
+							/* rtp_session->vad_data.bg_level += (rtp_session->vad_data.bg_level / 3);
+							 * printf("AVG %u\n", rtp_session->vad_data.bg_level);
+							 */
 						}
 						send = 1;
 					} else {
@@ -1215,8 +1218,9 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 					if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_CNG) && ++rtp_session->vad_data.cng_count >= rtp_session->vad_data.cng_freq) {
 						rtp_session->send_msg.header.pt = SWITCH_RTP_CNG_PAYLOAD;
 						memset(rtp_session->send_msg.body, 255, SWITCH_RTP_CNG_PAYLOAD);
-						//rtp_session->send_msg.header.ts = htonl(rtp_session->vad_data.ts);
-						//rtp_session->vad_data.ts++;
+						/* rtp_session->send_msg.header.ts = htonl(rtp_session->vad_data.ts);
+						 * rtp_session->vad_data.ts++;
+						 */
 						bytes = SWITCH_RTP_CNG_PAYLOAD;
 						send = 1;
 						rtp_session->vad_data.cng_count = 0;

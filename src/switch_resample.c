@@ -88,7 +88,7 @@ SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler_t *resam
 		int lastFlag = (last && (srcBlock == srclen - srcpos));
 		o = resample_process(resampler->resampler, resampler->factor, &src[srcpos], srcBlock, lastFlag, &srcused,
 							 &dst[out], dstlen - out);
-		//printf("resampling %d/%d (%d) %d %f\n",  srcpos, srclen,  MIN(dstlen-out, dstlen), srcused, factor);
+		/* printf("resampling %d/%d (%d) %d %f\n",  srcpos, srclen,  MIN(dstlen-out, dstlen), srcused, factor); */
 
 		srcpos += srcused;
 		if (o >= 0) {
@@ -169,7 +169,7 @@ SWITCH_DECLARE(int) switch_short_to_float(short *s, float *f, int len)
 
 	for (i = 0; i < len; i++) {
 		f[i] = (float) (s[i]) / NORMFACT;
-		//f[i] = (float) s[i];
+		/* f[i] = (float) s[i]; */
 	}
 	return len;
 }
