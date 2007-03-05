@@ -64,7 +64,7 @@ int fs_core_destroy(void)
 {
 	switch_status_t status;
 
-	status = switch_core_destroy(0);
+	status = switch_core_destroy();
 
 	return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
