@@ -56,11 +56,11 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 }
 
 
-static switch_xml_t xml_url_fetch(char *section,
-								  char *tag_name,
-								  char *key_name,
-								  char *key_value,
-								  char *params,
+static switch_xml_t xml_url_fetch(const char *section,
+								  const char *tag_name,
+								  const char *key_name,
+								  const char *key_value,
+								  const char *params,
                                   void *user_data)
 {
 	char filename[512] = "";

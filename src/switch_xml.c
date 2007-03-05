@@ -112,7 +112,7 @@ static struct xml_section_t SECTIONS[] = {
 	{ NULL, 0}
 };
 
-SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(char *str)
+SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(const char *str)
 {
 	size_t x;
 	char buf[1024] = "";
@@ -950,12 +950,12 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
     int fd = -1, write_fd = -1;
     switch_xml_t xml = NULL;
     char *new_file = NULL;
-    char *abs;
+    const char *abs;
 
     if ((abs = strrchr(file, '/')) || (abs = strrchr(file, '\\'))) {
         abs++;
     } else {
-        abs = (char *)file;
+        abs = file;
     }
     
     if (!(new_file = switch_mprintf("%s%s%s.fsxml", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, abs))) {
@@ -991,13 +991,13 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_xml_locate(char *section,
-												  char *tag_name,
-												  char *key_name,
-												  char *key_value,
+SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
+												  const char *tag_name,
+												  const char *key_name,
+												  const char *key_value,
 												  switch_xml_t *root,
 												  switch_xml_t *node,
-												  char *params)
+												  const char *params)
 {
 	switch_xml_t conf = NULL;
 	switch_xml_t tag = NULL;
@@ -1154,7 +1154,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_destroy(void)
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(char *file_path, switch_xml_t *node, char *params)
+SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_xml_t *node, const char *params)
 {
 	switch_xml_t xml = NULL, cfg = NULL;
 

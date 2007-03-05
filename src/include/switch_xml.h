@@ -316,20 +316,20 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_root(void);
 ///\param node a pointer to the requested node
 ///\param params optional URL formatted params to pass to external gateways
 ///\return SWITCH_STATUS_SUCCESS if successful root and node will be assigned
-SWITCH_DECLARE(switch_status_t) switch_xml_locate(char *section,
-												  char *tag_name,
-												  char *key_name,
-												  char *key_value,
+SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
+												  const char *tag_name,
+												  const char *key_name,
+												  const char *key_value,
 												  switch_xml_t *root,
 												  switch_xml_t *node,
-												  char *params);
+												  const char *params);
 												 
 ///\brief open a config in the core registry
 ///\param file_path the name of the config section e.g. modules.conf
 ///\param node a pointer to point to the node if it is found
 ///\param params optional URL formatted params to pass to external gateways
 ///\return the root xml node associated with the current request or NULL
-SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(char *file_path, switch_xml_t *node, char *params);
+SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_xml_t *node, const char *params);
 
 ///\brief bind a search function to an external gateway
 ///\param function the search function to bind
@@ -342,7 +342,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_searc
 ///\brief parse a string for a list of sections
 ///\param str a | delimited list of section names
 ///\return the section mask
-SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(char *str);
+SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(const char *str);
 
 SWITCH_END_EXTERN_C
 

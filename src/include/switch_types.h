@@ -1029,11 +1029,11 @@ typedef switch_status_t (*switch_module_runtime_t) (void);
 typedef switch_status_t (*switch_module_shutdown_t) (void);
 typedef struct switch_xml *switch_xml_t;
 typedef struct switch_core_time_duration switch_core_time_duration_t;
-typedef switch_xml_t (*switch_xml_search_function_t)(char *section,
-													 char *tag_name,
-													 char *key_name,
-													 char *key_value,
-													 char *params,
+typedef switch_xml_t (*switch_xml_search_function_t)(const char *section,
+													 const char *tag_name,
+													 const char *key_name,
+													 const char *key_value,
+													 const char *params,
                                                      void *user_data);
 
 /* things we don't deserve to know about */
