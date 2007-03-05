@@ -1303,18 +1303,24 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_enable_vad(switch_rtp_t *rtp_session,
 
 SWITCH_DECLARE(int) switch_rtp_write(switch_rtp_t *rtp_session, void *data, uint32_t datalen, uint32_t ts, switch_frame_flag_t *flags)
 {
+	uint8_t mark = 0;
 
 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) || !rtp_session->remote_addr) {
 		return -1;
 	}
 
-	rtp_session->ts += ts;
+	rtp_session->ts = ts;
+
+	if (rtp_session->ts > rtp_session->last_write_ts + rtp_session->packet_size) {
+		mark++;
+	}
+
 	rtp_session->seq = ntohs(rtp_session->seq) + 1;
 	rtp_session->seq = htons(rtp_session->seq);
 	rtp_session->send_msg.header.seq = rtp_session->seq;
 	rtp_session->send_msg.header.ts = htonl(rtp_session->ts);
 
-	return rtp_common_write(rtp_session, data, datalen, 0, rtp_session->payload, flags);
+	return rtp_common_write(rtp_session, data, datalen, mark, rtp_session->payload, flags);
 
 }
 
@@ -1324,6 +1330,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	uint8_t packetize = (rtp_session->packet_size > frame->datalen && (frame->payload == rtp_session->payload)) ? 1 : 0;
 	void *data;
 	uint32_t len;
+	uint8_t mark = 0;
 
 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) || !rtp_session->remote_addr) {
 		return -1;
@@ -1335,14 +1342,24 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	} else {
 		data = frame->data;
 		len = frame->datalen;
-		rtp_session->ts += ts;
+
+		if (frame->timestamp) {
+			rtp_session->ts = (uint32_t) frame->timestamp;
+		} else {
+			rtp_session->ts = ts;
+		}
+
+		if (rtp_session->ts > rtp_session->last_write_ts + rtp_session->packet_size) {
+			mark++;
+		}
+
 		rtp_session->seq = ntohs(rtp_session->seq) + 1;
 		rtp_session->seq = htons(rtp_session->seq);
 		rtp_session->send_msg.header.seq = rtp_session->seq;
 		rtp_session->send_msg.header.ts = htonl(rtp_session->ts);
 	}
 
-	return rtp_common_write(rtp_session, data, len, 0, rtp_session->payload, &frame->flags);
+	return rtp_common_write(rtp_session, data, len, mark, rtp_session->payload, &frame->flags);
 
 }
 

@@ -276,7 +276,7 @@ struct private_object {
 	switch_codec_t write_codec;
 	uint32_t codec_ms;
 	switch_caller_profile_t *caller_profile;
-	int32_t timestamp_send;
+	switch_size_t timestamp_send;
 	//int32_t timestamp_recv;
 	switch_rtp_t *rtp_session;
 	int ssrc;
@@ -682,7 +682,6 @@ static char *find_reg_url(sofia_profile_t *profile, const char *user, const char
     if (cbt.matches) {
         return val;
     } else {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", user, host);
         return NULL;
     }
 }
@@ -1881,9 +1880,8 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 		   tech_pvt->timestamp_send);
 #endif
 
-	switch_rtp_write_frame(tech_pvt->rtp_session, frame, samples);
-	
-	tech_pvt->timestamp_send += (int) samples;
+	tech_pvt->timestamp_send += samples;
+	switch_rtp_write_frame(tech_pvt->rtp_session, frame, (uint32_t)tech_pvt->timestamp_send);
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_WRITING);
 	return status;
@@ -2300,6 +2298,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			tech_pvt->dest = switch_core_session_strdup(nsession, buf);
 			
 		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", dest, host);
 			cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
 			terminate_session(&nsession, cause, __LINE__);
 			goto done;
@@ -2311,6 +2310,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
             tech_pvt->dest = switch_core_session_strdup(nsession, buf);
 
         } else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", dest, profile_name);
 			cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
             terminate_session(&nsession, cause, __LINE__);
             goto done;

@@ -1619,6 +1619,7 @@ static void conference_loop_output(conference_member_t *member)
 						if (member->volume_out_level) {
 							switch_change_sln_volume(write_frame.data, write_frame.samples, member->volume_out_level);
 						}
+						write_frame.timestamp = timer.samplecount;
 						switch_core_session_write_frame(member->session, &write_frame, -1, 0);
 
 						/* forget the conference data we played file node data instead */
@@ -1648,6 +1649,7 @@ static void conference_loop_output(conference_member_t *member)
 							switch_change_sln_volume(write_frame.data, write_frame.samples, member->volume_out_level);
 						}
 
+						write_frame.timestamp = timer.samplecount;
 						switch_core_session_write_frame(member->session, &write_frame, -1, 0);
 					}
 				}

@@ -43,12 +43,12 @@ static const char modname[] = "mod_softtimer";
 #define MAX_ELEMENTS 1000
 
 struct timer_private {
-    uint64_t reference;
+    switch_size_t reference;
 };
 typedef struct timer_private timer_private_t;
 
 struct timer_matrix {
-	uint64_t tick;
+	switch_size_t tick;
 	uint32_t count;
 };
 typedef struct timer_matrix timer_matrix_t;
@@ -86,7 +86,9 @@ static inline switch_status_t timer_step(switch_timer_t *timer)
 		return SWITCH_STATUS_FALSE;
 	}
 
-    private_info->reference += timer->interval;
+	timer->samplecount = timer->samples * private_info->reference;
+    private_info->reference++;// timer->interval;
+
     return SWITCH_STATUS_SUCCESS;
 }
 
@@ -101,8 +103,7 @@ static inline switch_status_t timer_next(switch_timer_t *timer)
         switch_yield(1000);
 	}
 
-	if (globals.RUNNING == 1) {
-		timer->samplecount += timer->samples;
+	if (globals.RUNNING == 1) {		
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -114,7 +115,7 @@ static inline switch_status_t timer_check(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-    uint64_t diff;
+    switch_size_t diff;
 
 	if (globals.RUNNING != 1) {
 		return SWITCH_STATUS_SUCCESS;
@@ -210,7 +211,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 			index = (current_ms % i == 0) ? i : 0; 
 
 			if (TIMER_MATRIX[index].count) {
-				TIMER_MATRIX[index].tick += index;
+				//TIMER_MATRIX[index].tick += index;
+				TIMER_MATRIX[index].tick++;
 			}
 		}
 

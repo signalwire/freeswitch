@@ -147,7 +147,7 @@ struct private_object {
 	unsigned int cand_id;
 	unsigned int desc_id;
 	unsigned int dc;
-	int32_t timestamp_send;
+	switch_size_t timestamp_send;
 	int32_t timestamp_recv;
 	uint32_t last_read;
 	char *codec_name;
@@ -1356,12 +1356,12 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	}
 
 	samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
-
-	if (switch_rtp_write_frame(tech_pvt->rtp_session, frame, samples) < 0) {
+	tech_pvt->timestamp_send += samples;
+	if (switch_rtp_write_frame(tech_pvt->rtp_session, frame, (uint32_t)tech_pvt->timestamp_send) < 0) {
 		terminate_session(&session,  __LINE__, SWITCH_CAUSE_NORMAL_CLEARING);
 		return SWITCH_STATUS_FALSE;
 	}
-	tech_pvt->timestamp_send += (int) samples;
+
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_WRITING);
 

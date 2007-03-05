@@ -2173,15 +2173,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 												  &session->enc_read_frame.datalen,
 												  &session->enc_read_frame.rate, 
 												  &flag);
-
+				
 
 				switch (status) {
 				case SWITCH_STATUS_RESAMPLE:
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "fixme 1\n");
 				case SWITCH_STATUS_SUCCESS:
+					session->enc_read_frame.codec = session->read_codec;
+					session->enc_read_frame.samples = session->read_codec->implementation->bytes_per_frame / sizeof(int16_t);
+					session->enc_read_frame.timestamp = read_frame->timestamp;
 					*frame = &session->enc_read_frame;
 					break;
 				case SWITCH_STATUS_NOOP:
+					session->raw_read_frame.codec = session->read_codec;
+					session->raw_read_frame.samples = session->read_codec->implementation->bytes_per_frame / sizeof(int16_t);
+					session->raw_read_frame.timestamp = read_frame->timestamp;
 					*frame = &session->raw_read_frame;
 					status = SWITCH_STATUS_SUCCESS;
 					break;
@@ -2439,9 +2445,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				case SWITCH_STATUS_RESAMPLE:
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "fixme 2\n");
 				case SWITCH_STATUS_SUCCESS:
+					session->enc_write_frame.codec = session->write_codec;
+					session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t);
+					session->enc_write_frame.timestamp = frame->timestamp;
 					write_frame = &session->enc_write_frame;
 					break;
 				case SWITCH_STATUS_NOOP:
+					enc_frame->codec = session->write_codec;
+					enc_frame->samples = enc_frame->datalen / sizeof(int16_t);
+					enc_frame->timestamp = frame->timestamp;
+
 					write_frame = enc_frame;
 					status = SWITCH_STATUS_SUCCESS;
 					break;
@@ -2486,21 +2499,30 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 							
 							switch (status) {
 							case SWITCH_STATUS_RESAMPLE:
+								session->enc_write_frame.codec = session->write_codec;
+								session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t);
+								session->enc_write_frame.timestamp = frame->timestamp;
+
 								write_frame = &session->enc_write_frame;
 								if (!session->read_resampler) {
 									status = switch_resample_create(&session->read_resampler,
 																	frame->codec->implementation->samples_per_second,
 																	frame->codec->implementation->bytes_per_frame * 20,
-																	session->write_codec->implementation->
-																	samples_per_second,
-																	session->write_codec->implementation->
-																	bytes_per_frame * 20, session->pool);
+																	session->write_codec->implementation->samples_per_second,
+																	session->write_codec->implementation->bytes_per_frame * 20,
+																	session->pool);
 								}
 								break;
 							case SWITCH_STATUS_SUCCESS:
+								session->enc_write_frame.codec = session->write_codec;
+								session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t);
+								session->enc_write_frame.timestamp = frame->timestamp;
 								write_frame = &session->enc_write_frame;
 								break;
 							case SWITCH_STATUS_NOOP:
+								enc_frame->codec = session->write_codec;
+								enc_frame->samples = enc_frame->datalen / sizeof(int16_t);
+								enc_frame->timestamp = frame->timestamp;
 								write_frame = enc_frame;
 								status = SWITCH_STATUS_SUCCESS;
 								break;

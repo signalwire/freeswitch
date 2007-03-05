@@ -1417,7 +1417,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 		llen = olen;
 
-
+		if (timer_name) {
+			write_frame.timestamp = timer.samplecount;
+		}
 #ifndef WIN32
 #if __BYTE_ORDER == __BIG_ENDIAN
 		if (!asis) {switch_swap_linear(write_frame.data, (int) write_frame.datalen / 2);}
@@ -1689,6 +1691,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	write_frame.codec = codec;
 
 	for( x = 0; !done && x < lead_in_out; x++) {
+		switch_yield(codec->implementation->microseconds_per_frame);
+		if (timer) {
+			write_frame.timestamp = timer->samplecount;
+		}
         if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Bad Write\n");
             done = 1;
@@ -1771,6 +1777,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 
 		if (status != SWITCH_STATUS_SUCCESS) {
 			for( x = 0; !done && x < lead_in_out; x++) {
+				switch_yield(codec->implementation->microseconds_per_frame);
+				if (timer) {
+					write_frame.timestamp = timer->samplecount;
+				}
                 if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Bad Write\n");
                     done = 1;
@@ -1789,7 +1799,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 
 		write_frame.datalen = (uint32_t)ilen;
 		write_frame.samples = (uint32_t)(ilen / 2);
-
+		if (timer) {
+			write_frame.timestamp = timer->samplecount;
+		}
         if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Bad Write\n");
             done = 1;
