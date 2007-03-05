@@ -623,7 +623,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
         {
             switch_size_t olen = globals.read_codec.implementation->samples_per_frame;
-			if (switch_core_timer_next(&tech_pvt->timer) < 0) {
+			if (switch_core_timer_next(&tech_pvt->timer) != SWITCH_STATUS_SUCCESS) {
                 switch_core_file_close(&tech_pvt->fh);
                 switch_core_codec_destroy(&tech_pvt->write_codec);
                 goto cng;

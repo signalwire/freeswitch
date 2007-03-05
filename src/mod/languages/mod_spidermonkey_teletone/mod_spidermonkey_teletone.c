@@ -273,7 +273,7 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 			}
 			
 			if (tto->timer) {
-				if (switch_core_timer_next(tto->timer)< 0) {
+				if (switch_core_timer_next(tto->timer) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
 

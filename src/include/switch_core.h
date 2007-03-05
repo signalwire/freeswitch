@@ -931,7 +931,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_init(switch_timer_t *timer, ch
   \param timer the timer to wait on
   \return the newest sample count
 */
-SWITCH_DECLARE(int) switch_core_timer_next(switch_timer_t *timer);
+SWITCH_DECLARE(switch_status_t) switch_core_timer_next(switch_timer_t *timer);
 
 /*! 
   \brief Step the timer one step

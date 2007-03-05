@@ -1315,7 +1315,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_init(switch_timer_t *timer, ch
 
 }
 
-SWITCH_DECLARE(int) switch_core_timer_next(switch_timer_t *timer)
+SWITCH_DECLARE(switch_status_t) switch_core_timer_next(switch_timer_t *timer)
 {
 	if (!timer->timer_interface) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer is not initilized!\n");
@@ -1323,9 +1323,9 @@ SWITCH_DECLARE(int) switch_core_timer_next(switch_timer_t *timer)
 	}
 
 	if (timer->timer_interface->timer_next(timer) == SWITCH_STATUS_SUCCESS) {
-		return timer->samplecount;
+		return SWITCH_STATUS_SUCCESS;
 	} else {
-		return -1;
+		return SWITCH_STATUS_GENERR;
 	}
 
 }

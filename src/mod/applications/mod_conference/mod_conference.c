@@ -676,7 +676,10 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		switch_size_t file_data_len = samples * 2;
 
 		/* Sync the conference to a single timing source */
-		switch_core_timer_next(&timer);
+		if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
+			switch_set_flag(conference, CFLAG_DESTRUCT);
+			break;
+		}
 		switch_mutex_lock(conference->mutex);
 		ready = 0;
 
@@ -1659,7 +1662,9 @@ static void conference_loop_output(conference_member_t *member)
 			} 
 		}
 
-		switch_core_timer_next(&timer);
+		if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
+			break;
+		}
 
 	} /* Rinse ... Repeat */
 

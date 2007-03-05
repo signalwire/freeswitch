@@ -1444,7 +1444,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
     
 		
 		if (timer_name) {
-			if (switch_core_timer_next(&timer) < 0) {
+			if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
 		} else { /* time off the channel (if you must) */
@@ -1750,7 +1750,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 
 		if (switch_test_flag(sh, SWITCH_SPEECH_FLAG_PAUSE)) {
 			if (timer) {
-				if ((x = switch_core_timer_next(timer)) < 0) {
+				if (switch_core_timer_next(timer) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
 			} else {
@@ -1813,7 +1813,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
         }
 
 		if (timer) {
-			if ((x = switch_core_timer_next(timer)) < 0) {
+			if (switch_core_timer_next(timer) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
 		} else { /* time off the channel (if you must) */
