@@ -132,6 +132,7 @@ static char *EVENT_NAMES[] = {
 	"DETECTED_SPEECH",
 	"PRIVATE_COMMAND",
 	"HEARTBEAT",
+	"TRAP",
 	"ALL"
 };
 

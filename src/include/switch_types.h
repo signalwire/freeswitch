@@ -816,6 +816,7 @@ typedef enum {
 	SWITCH_EVENT_DETECTED_SPEECH	- Detected Speech
 	SWITCH_EVENT_PRIVATE_COMMAND	- A private command event 
 	SWITCH_EVENT_HEARTBEAT			- Machine is alive
+	SWITCH_EVENT_TRAP				- Error Trap
     SWITCH_EVENT_ALL				- All events at once
 </pre>
 
@@ -857,6 +858,7 @@ typedef enum {
 	SWITCH_EVENT_DETECTED_SPEECH,
 	SWITCH_EVENT_PRIVATE_COMMAND,
 	SWITCH_EVENT_HEARTBEAT,
+	SWITCH_EVENT_TRAP,
 	SWITCH_EVENT_ALL
 } switch_event_types_t;
 
