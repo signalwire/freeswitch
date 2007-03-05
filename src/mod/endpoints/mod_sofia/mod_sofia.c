@@ -456,7 +456,7 @@ static char *get_url_from_contact(char *buf, uint8_t to_dup)
 }
 
 
-static auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, char *regstr, char *np, size_t nplen)
+static auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, const char *regstr, char *np, size_t nplen)
 {
 	int indexnum;
 	const char *cur;
@@ -643,11 +643,16 @@ static void check_expire(switch_core_db_t *db, sofia_profile_t *profile, time_t 
 
 }
 
-static char *find_reg_url(sofia_profile_t *profile, char *user, char *host, char *val, switch_size_t len)
+static char *find_reg_url(sofia_profile_t *profile, const char *user, const char *host, char *val, switch_size_t len)
 {
 	char *errmsg;
 	struct callback_t cbt = {0};
 	switch_core_db_t *db;
+
+	if (!user) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Called with null user!\n");
+        return NULL;
+	}
 
 	if (!(db = switch_core_db_open_file(profile->dbname))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
@@ -2594,19 +2599,20 @@ static void set_chat_hash(private_object_t *tech_pvt, sip_t const *sip)
 	char hash_key[256] = "";
 	char buf[512];
 
-	if (!sip || tech_pvt->hash_key) {
+	if (tech_pvt->hash_key || !sip || !sip->sip_from ||
+		!sip->sip_from->a_url ||
+		!sip->sip_from->a_url->url_user ||
+		!sip->sip_from->a_url->url_host) {
 		return;
 	}
 
-	if (find_reg_url(tech_pvt->profile, (char *) sip->sip_from->a_url->url_user, (char *) sip->sip_from->a_url->url_host, buf, sizeof(buf))) {
-		tech_pvt->chat_from = sip_header_as_string(tech_pvt->home, (void *)sip->sip_to);
+	if (find_reg_url(tech_pvt->profile, sip->sip_from->a_url->url_user, sip->sip_from->a_url->url_host, buf, sizeof(buf))) {
+		tech_pvt->chat_from = sip_header_as_string(tech_pvt->home, (const sip_header_t *)sip->sip_to);
 		tech_pvt->chat_to = switch_core_session_strdup(tech_pvt->session, buf);
 		set_hash_key(hash_key, sizeof(hash_key), sip);
 	} else {
 		return;
 	}
-
-	
 
 	tech_pvt->hash_key = switch_core_session_strdup(tech_pvt->session, hash_key);
 	switch_core_hash_insert(tech_pvt->profile->chat_hash, tech_pvt->hash_key, tech_pvt);
@@ -3193,16 +3199,16 @@ static uint8_t handle_register(nua_t *nua,
 							   char *key,
 							   uint32_t keylen)
 {
-	sip_from_t const *from = sip->sip_from;
-	sip_expires_t const *expires = sip->sip_expires;
-	sip_authorization_t const *authorization = sip->sip_authorization;
-	sip_contact_t const *contact = sip->sip_contact;
+	sip_from_t const *from = NULL;
+	sip_expires_t const *expires = NULL;
+	sip_authorization_t const *authorization = NULL;
+	sip_contact_t const *contact = NULL;
 	switch_xml_t domain, xml, user, param, xparams;
 	char params[1024] = "";
 	char *sql;
 	switch_event_t *s_event;
-	char *from_user = (char *) from->a_url->url_user;
-	char *from_host = (char *) from->a_url->url_host;
+	const char *from_user = NULL;
+	const char *from_host = NULL;
 	char contact_str[1024] = "";
 	char buf[512];
 	char *passwd = NULL;
@@ -3214,8 +3220,27 @@ static uint8_t handle_register(nua_t *nua,
 	const char *rpid = "unknown";
 	const char *display = "\"user\"";
 
-	if (contact && contact->m_url) {
-		char *port = (char *) contact->m_url->url_port;
+	/* all callers must confirm that sip, sip->sip_request and sip->sip_contact are not NULL */
+	assert(sip != NULL && sip->sip_contact != NULL && sip->sip_request != NULL);
+
+	expires = sip->sip_expires;
+	authorization = sip->sip_authorization;
+	contact = sip->sip_contact;
+	from = sip->sip_from;
+
+	if (from) {
+		from_user = from->a_url->url_user;
+		from_host = from->a_url->url_host;
+	}
+
+	if (!from_user || !from_host) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can not do authorization without a complete from header\n");
+		nua_respond(nh, SIP_500_INTERNAL_SERVER_ERROR, TAG_END());
+		return 1;
+	}
+
+	if (contact->m_url) {
+		const char *port = contact->m_url->url_port;
 		display = contact->m_display;
 
 		if (switch_strlen_zero(display)) {
@@ -3242,7 +3267,7 @@ static uint8_t handle_register(nua_t *nua,
 	
 	if (expires) {
 		exptime = expires->ex_delta;
-	} else if (contact && contact->m_expires) {
+	} else if (contact->m_expires) {
 		exptime = atol(contact->m_expires);
 	} 
 
@@ -3257,7 +3282,7 @@ static uint8_t handle_register(nua_t *nua,
 	}
 
 	if (authorization) {
-		if ((auth_res = parse_auth(profile, authorization, (char *)sip->sip_request->rq_method_name, key, keylen)) == AUTH_STALE) {
+		if ((auth_res = parse_auth(profile, authorization, sip->sip_request->rq_method_name, key, keylen)) == AUTH_STALE) {
             stale = 1;
         }
 
@@ -4358,11 +4383,12 @@ static void sip_i_invite(nua_t *nua,
 	const char *context;
 	char network_ip[80];
 
-	if (!sip) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received an invite callback with no packet!\n");
+	if (!sip || !sip->sip_request || !sip->sip_request->rq_method_name) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received an invalid packet!\n");
 		nua_respond(nh, SIP_500_INTERNAL_SERVER_ERROR, TAG_END());
 		return;
 	}
+
 
 	if (!(sip->sip_contact && sip->sip_contact->m_url)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO CONTACT!\n");
@@ -4426,7 +4452,7 @@ static void sip_i_invite(nua_t *nua,
 		}
 	}
 
-	if (sip->sip_request && sip->sip_request->rq_url) {
+	if (sip->sip_request->rq_url) {
 		const char * req_uri = url_set_chanvars(session, sip->sip_request->rq_url, sip_req);
 		if (profile->pflags & PFLAG_FULL_ID)  {
 			destination_number = req_uri;
@@ -4540,6 +4566,19 @@ static void sip_i_register(nua_t *nua,
 						   tagi_t tags[])
 {
     char key[128] = "";
+
+	if (!sip || !sip->sip_request || !sip->sip_request->rq_method_name) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received an invalid packet!\n");
+		nua_respond(nh, SIP_500_INTERNAL_SERVER_ERROR, TAG_END());
+		return;
+	}
+
+	if (!(sip->sip_contact && sip->sip_contact->m_url)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO CONTACT!\n");
+		nua_respond(nh, 400, "Missing Contact Header", TAG_END());
+		return;
+	}
+
 	handle_register(nua, profile, nh, sip, REG_REGISTER, key, sizeof(key));
 }
 
