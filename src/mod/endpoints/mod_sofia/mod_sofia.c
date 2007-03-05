@@ -3211,8 +3211,8 @@ static uint8_t handle_register(nua_t *nua,
 	const char *from_host = NULL;
 	char contact_str[1024] = "";
 	char buf[512];
-	char *passwd = NULL;
-	char *a1_hash = NULL;
+	const char *passwd = NULL;
+	const char *a1_hash = NULL;
 	uint8_t stale = 0, ret = 0, forbidden = 0;
 	auth_res_t auth_res;
 	long exptime = 60;
@@ -3329,10 +3329,8 @@ static uint8_t handle_register(nua_t *nua,
 	
 
 		for (param = switch_xml_child(xparams, "param"); param; param = param->next) {
-			char *var = (char *) switch_xml_attr_soft(param, "name");
-			char *val = (char *) switch_xml_attr_soft(param, "value");
-		
-			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "param [%s]=[%s]\n", var, val);
+			const char *var = switch_xml_attr_soft(param, "name");
+			const char *val = switch_xml_attr_soft(param, "value");
 		
 			if (!strcasecmp(var, "password")) {
 				passwd = val;
