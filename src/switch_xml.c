@@ -28,7 +28,7 @@
  *
  * switch_xml.c -- XML PARSER
  *
- * Derived from switch_xml http://switch_xml.sourceforge.net
+ * Derived from ezxml http://ezxml.sourceforge.net
  * Original Copyright
  *
  * Copyright 2004, 2006 Aaron Voisine <aaron@voisine.org>
