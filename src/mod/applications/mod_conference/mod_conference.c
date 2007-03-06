@@ -1445,7 +1445,10 @@ static void conference_loop_output(conference_member_t *member)
 	switch_frame_t write_frame = {0};
 	uint8_t data[SWITCH_RECCOMMENDED_BUFFER_SIZE];
 	switch_timer_t timer = {0};
-	uint32_t samples = switch_bytes_per_frame(member->conference->rate, member->conference->interval);
+	switch_codec_t *read_codec = switch_core_session_get_read_codec(member->session);
+	uint32_t interval = read_codec->implementation->microseconds_per_frame / 1000;
+	//uint32_t samples = switch_bytes_per_frame(member->conference->rate, member->conference->interval);
+	uint32_t samples = switch_bytes_per_frame(read_codec->implementation->samples_per_second, interval);
 	uint32_t bytes = samples * 2;
 
 	channel = switch_core_session_get_channel(member->session);
@@ -1455,7 +1458,8 @@ static void conference_loop_output(conference_member_t *member)
 
 	if (switch_core_timer_init(&timer, 
 							   member->conference->timer_name, 
-							   member->conference->interval, 
+							   interval,
+							   //member->conference->interval, 
 							   samples, 
 							   NULL) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer %s success interval: %u  samples: %u\n", 
@@ -1533,7 +1537,8 @@ static void conference_loop_output(conference_member_t *member)
 			if (member->conference->dtmf_parser != NULL) {
 
 				for (digit = dtmf; *digit && caller_action == NULL; digit++) {
-					caller_action = (caller_control_action_t *)switch_ivr_digit_stream_parser_feed(member->conference->dtmf_parser, member->digit_stream, *digit);
+					caller_action = (caller_control_action_t *)
+						switch_ivr_digit_stream_parser_feed(member->conference->dtmf_parser, member->digit_stream, *digit);
 				}
 			}
             /* otherwise, clock the parser so that it can handle digit timeout detection */
@@ -1624,7 +1629,9 @@ static void conference_loop_output(conference_member_t *member)
 						}
 						write_frame.timestamp = timer.samplecount;
 						switch_core_session_write_frame(member->session, &write_frame, -1, 0);
-
+						if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
+							break;
+						}
 						/* forget the conference data we played file node data instead */
 						switch_mutex_lock(member->audio_out_mutex);
 						switch_buffer_zero(member->mux_buffer);
@@ -1635,15 +1642,15 @@ static void conference_loop_output(conference_member_t *member)
             switch_mutex_unlock(member->flag_mutex);
 		} else {	/* send the conferecne frame to the call leg */
 			switch_buffer_t *use_buffer = NULL;
-			uint32_t mux_used = (uint32_t)switch_buffer_inuse(member->mux_buffer);
+			uint32_t mux_used = (uint32_t)switch_buffer_inuse(member->mux_buffer) >= bytes ? 1 : 0;
 
-			if (mux_used) {
+			while (mux_used) {
 				/* Flush the output buffer and write all the data (presumably muxed) back to the channel */
 				switch_mutex_lock(member->audio_out_mutex);
 				write_frame.data = data;
 				use_buffer = member->mux_buffer;
 
-				while ((write_frame.datalen = (uint32_t)switch_buffer_read(use_buffer, write_frame.data, bytes))) {
+				if ((write_frame.datalen = (uint32_t)switch_buffer_read(use_buffer, write_frame.data, bytes))) {
 					if (write_frame.datalen && switch_test_flag(member, MFLAG_CAN_HEAR)) {
 						write_frame.samples = write_frame.datalen / 2;
 
@@ -1656,16 +1663,14 @@ static void conference_loop_output(conference_member_t *member)
 						switch_core_session_write_frame(member->session, &write_frame, -1, 0);
 					}
 				}
-
+				mux_used = (uint32_t)switch_buffer_inuse(member->mux_buffer) >= bytes ? 1 : 0;
 				switch_mutex_unlock(member->audio_out_mutex);
-				continue;
-			} 
-		}
+				if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
+					break;
+				}
 
-		if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
-			break;
+			}
 		}
-
 	} /* Rinse ... Repeat */
 
 	if (member->digit_stream != NULL) {
