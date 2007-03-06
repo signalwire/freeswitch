@@ -1365,13 +1365,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			}
 		}
 
-
-		if (switch_test_flag(member, MFLAG_WASTE_BANDWIDTH) && !talking) {
-			memset(read_frame->data, 255, read_frame->datalen);
-		}
-
 		/* skip frames that are not actual media or when we are muted or silent */
-		if ((talking || energy_level == 0) && switch_test_flag(member, MFLAG_CAN_SPEAK) || switch_test_flag(member, MFLAG_WASTE_BANDWIDTH)) {
+		if ((talking || energy_level == 0) && switch_test_flag(member, MFLAG_CAN_SPEAK)) {
 			if (member->read_resampler) {
 				int16_t *bptr = (int16_t *) read_frame->data;
 				int len = (int) read_frame->datalen;;
@@ -1644,31 +1639,43 @@ static void conference_loop_output(conference_member_t *member)
 			switch_buffer_t *use_buffer = NULL;
 			uint32_t mux_used = (uint32_t)switch_buffer_inuse(member->mux_buffer) >= bytes ? 1 : 0;
 
-			while (mux_used) {
-				/* Flush the output buffer and write all the data (presumably muxed) back to the channel */
-				switch_mutex_lock(member->audio_out_mutex);
-				write_frame.data = data;
-				use_buffer = member->mux_buffer;
+			if (mux_used) {
+				while (mux_used) {
+					/* Flush the output buffer and write all the data (presumably muxed) back to the channel */
+					switch_mutex_lock(member->audio_out_mutex);
+					write_frame.data = data;
+					use_buffer = member->mux_buffer;
 
-				if ((write_frame.datalen = (uint32_t)switch_buffer_read(use_buffer, write_frame.data, bytes))) {
-					if (write_frame.datalen && switch_test_flag(member, MFLAG_CAN_HEAR)) {
-						write_frame.samples = write_frame.datalen / 2;
+					if ((write_frame.datalen = (uint32_t)switch_buffer_read(use_buffer, write_frame.data, bytes))) {
+						if (write_frame.datalen && switch_test_flag(member, MFLAG_CAN_HEAR)) {
+							write_frame.samples = write_frame.datalen / 2;
 
-						/* Check for output volume adjustments */
-						if (member->volume_out_level) {
-							switch_change_sln_volume(write_frame.data, write_frame.samples, member->volume_out_level);
+							/* Check for output volume adjustments */
+							if (member->volume_out_level) {
+								switch_change_sln_volume(write_frame.data, write_frame.samples, member->volume_out_level);
+							}
+
+							write_frame.timestamp = timer.samplecount;
+							switch_core_session_write_frame(member->session, &write_frame, -1, 0);
 						}
-
-						write_frame.timestamp = timer.samplecount;
-						switch_core_session_write_frame(member->session, &write_frame, -1, 0);
+					}
+					mux_used = (uint32_t)switch_buffer_inuse(member->mux_buffer) >= bytes ? 1 : 0;
+					switch_mutex_unlock(member->audio_out_mutex);
+					if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
+						break;
 					}
 				}
-				mux_used = (uint32_t)switch_buffer_inuse(member->mux_buffer) >= bytes ? 1 : 0;
-				switch_mutex_unlock(member->audio_out_mutex);
+			} else {
+				if (switch_test_flag(member, MFLAG_WASTE_BANDWIDTH)) {
+					memset(write_frame.data, 255, bytes);
+					write_frame.datalen = bytes;
+					write_frame.samples = samples;
+					write_frame.timestamp = timer.samplecount;
+					switch_core_session_write_frame(member->session, &write_frame, -1, 0);
+				}
 				if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
-
 			}
 		}
 	} /* Rinse ... Repeat */
