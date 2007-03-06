@@ -32,6 +32,13 @@
 #include <switch.h>
 #include <stdio.h>
 
+#ifndef UINT32_MAX
+#define UINT32_MAX 0xffffffff
+#endif
+
+#define MAX_TICK UINT32_MAX - 1024
+
+
 static switch_memory_pool_t *module_pool = NULL;
 
 static struct {
@@ -44,12 +51,15 @@ static const char modname[] = "mod_softtimer";
 
 struct timer_private {
     switch_size_t reference;
+    switch_size_t start;
+	uint32_t roll;
 };
 typedef struct timer_private timer_private_t;
 
 struct timer_matrix {
 	switch_size_t tick;
 	uint32_t count;
+	uint32_t roll;
 };
 typedef struct timer_matrix timer_matrix_t;
 
@@ -71,23 +81,41 @@ static inline switch_status_t timer_init(switch_timer_t *timer)
 		TIMER_MATRIX[timer->interval].count++;
 		switch_mutex_unlock(globals.mutex);
 		timer->private_info = private_info;
-		private_info->reference = TIMER_MATRIX[timer->interval].tick;
+		private_info->start = private_info->reference = TIMER_MATRIX[timer->interval].tick;
+		private_info->roll = TIMER_MATRIX[timer->interval].roll;
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	return SWITCH_STATUS_MEMERR;
 }
 
+
+#define check_roll() if (private_info->roll < TIMER_MATRIX[timer->interval].roll) {\
+		private_info->roll++;\
+		private_info->reference = private_info->start = TIMER_MATRIX[timer->interval].tick;\
+	}\
+
+
+
 static inline switch_status_t timer_step(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
+	uint64_t samples;
 
 	if (globals.RUNNING != 1) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	timer->samplecount = timer->samples * private_info->reference;
-    private_info->reference++;// timer->interval;
+	check_roll();
+	samples = timer->samples * (private_info->reference - private_info->start);
+	
+	if (samples > UINT32_MAX) {
+		private_info->start = private_info->reference;
+		samples = timer->samples;
+	}
+	
+	timer->samplecount = (uint32_t)samples;
+    private_info->reference++;
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -96,11 +124,12 @@ static inline switch_status_t timer_step(switch_timer_t *timer)
 static inline switch_status_t timer_next(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
-    
+
 	timer_step(timer);
 
 	while (globals.RUNNING == 1 && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
-        switch_yield(1000);
+		check_roll();
+		switch_yield(1000);
 	}
 
 	if (globals.RUNNING == 1) {		
@@ -120,6 +149,8 @@ static inline switch_status_t timer_check(switch_timer_t *timer)
 	if (globals.RUNNING != 1) {
 		return SWITCH_STATUS_SUCCESS;
 	}
+
+	check_roll();
 
 	if (TIMER_MATRIX[timer->interval].tick < private_info->reference) {
         diff = private_info->reference - TIMER_MATRIX[timer->interval].tick;
@@ -141,6 +172,9 @@ static inline switch_status_t timer_destroy(switch_timer_t *timer)
 {
 	switch_mutex_lock(globals.mutex);
 	TIMER_MATRIX[timer->interval].count--;
+	if (TIMER_MATRIX[timer->interval].count == 0) {
+		TIMER_MATRIX[timer->interval].tick = 0;
+	}
 	switch_mutex_unlock(globals.mutex);
 	timer->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
@@ -211,8 +245,11 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 			index = (current_ms % i == 0) ? i : 0; 
 
 			if (TIMER_MATRIX[index].count) {
-				//TIMER_MATRIX[index].tick += index;
 				TIMER_MATRIX[index].tick++;
+				if (TIMER_MATRIX[index].tick == MAX_TICK) {
+					TIMER_MATRIX[index].tick = 0;
+					TIMER_MATRIX[index].roll++;
+				}
 			}
 		}
 

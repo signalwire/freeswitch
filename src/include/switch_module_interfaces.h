@@ -225,7 +225,7 @@ struct switch_timer {
 	/*! sample count to increment by on each cycle */
 	unsigned int samples;
 	/*! current sample count based on samples parameter */
-	switch_size_t samplecount;
+	uint32_t samplecount;
 	/*! the timer interface provided from a loadable module */
 	switch_timer_interface_t *timer_interface;
 	/*! the timer's memory pool */

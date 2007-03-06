@@ -276,7 +276,7 @@ struct private_object {
 	switch_codec_t write_codec;
 	uint32_t codec_ms;
 	switch_caller_profile_t *caller_profile;
-	switch_size_t timestamp_send;
+	uint32_t timestamp_send;
 	//int32_t timestamp_recv;
 	switch_rtp_t *rtp_session;
 	int ssrc;
@@ -1881,7 +1881,7 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 #endif
 
 	tech_pvt->timestamp_send += samples;
-	switch_rtp_write_frame(tech_pvt->rtp_session, frame, (uint32_t)tech_pvt->timestamp_send);
+	switch_rtp_write_frame(tech_pvt->rtp_session, frame, tech_pvt->timestamp_send);
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_WRITING);
 	return status;
