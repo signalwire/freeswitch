@@ -76,6 +76,7 @@ SWITCH_BEGIN_EXTERN_C
  * @{
  */	
 
+#define SWITCH_SIZE_T_FMT APR_SIZE_T_FMT
 typedef apr_size_t swtich_size_t;
 typedef apr_int16_t switch_int16_t;
 
