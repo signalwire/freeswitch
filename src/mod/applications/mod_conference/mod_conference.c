@@ -1624,9 +1624,8 @@ static void conference_loop_output(conference_member_t *member)
 						}
 						write_frame.timestamp = timer.samplecount;
 						switch_core_session_write_frame(member->session, &write_frame, -1, 0);
-						if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
-							break;
-						}
+						switch_core_timer_next(&timer);
+
 						/* forget the conference data we played file node data instead */
 						switch_mutex_lock(member->audio_out_mutex);
 						switch_buffer_zero(member->mux_buffer);
@@ -1661,9 +1660,7 @@ static void conference_loop_output(conference_member_t *member)
 					}
 					mux_used = (uint32_t)switch_buffer_inuse(member->mux_buffer) >= bytes ? 1 : 0;
 					switch_mutex_unlock(member->audio_out_mutex);
-					if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
-						break;
-					}
+					switch_core_timer_next(&timer);
 				}
 			} else {
 				if (switch_test_flag(member, MFLAG_WASTE_BANDWIDTH)) {
@@ -1673,9 +1670,7 @@ static void conference_loop_output(conference_member_t *member)
 					write_frame.timestamp = timer.samplecount;
 					switch_core_session_write_frame(member->session, &write_frame, -1, 0);
 				}
-				if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
-					break;
-				}
+				switch_core_timer_next(&timer);
 			}
 		}
 	} /* Rinse ... Repeat */
