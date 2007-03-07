@@ -118,7 +118,8 @@ typedef enum {
 	MFLAG_ITHREAD = (1 << 4), 
 	MFLAG_NOCHANNEL = (1 << 5),
     MFLAG_INTREE = (1 << 6),
-	MFLAG_WASTE_BANDWIDTH = (1 << 7)
+	MFLAG_WASTE_BANDWIDTH = (1 << 7),
+	MFLAG_FLUSH_BUFFER = (1 << 8)
 } member_flag_t;
 
 typedef enum {
@@ -815,9 +816,11 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 
 			/* Go back and write each member his dedicated copy of the audio frame that does not contain his own audio. */
 			for (imember = conference->members; imember; imember = imember->next) {
-				switch_mutex_lock(imember->audio_out_mutex);
-				switch_buffer_write(imember->mux_buffer, imember->mux_frame, imember->len);
-				switch_mutex_unlock(imember->audio_out_mutex);
+				if (switch_test_flag(imember, MFLAG_RUNNING)) {
+					switch_mutex_lock(imember->audio_out_mutex);
+					switch_buffer_write(imember->mux_buffer, imember->mux_frame, imember->len);
+					switch_mutex_unlock(imember->audio_out_mutex);
+				}
 			}
 		}
 
@@ -1333,7 +1336,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 					if (!talking) {
 						switch_event_t *event;
-						talking = 1;		
+						talking = 1;
+						switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
 						if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 							switch_channel_event_set_data(channel, event);
 							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", "%s", member->conference->name);
@@ -1444,7 +1448,7 @@ static void conference_loop_output(conference_member_t *member)
 	uint32_t interval = read_codec->implementation->microseconds_per_frame / 1000;
 	//uint32_t samples = switch_bytes_per_frame(member->conference->rate, member->conference->interval);
 	uint32_t samples = switch_bytes_per_frame(read_codec->implementation->samples_per_second, interval);
-	uint32_t bytes = samples * 2;
+	uint32_t low_count = 0, bytes = samples * 2;
 
 	channel = switch_core_session_get_channel(member->session);
 
@@ -1627,41 +1631,62 @@ static void conference_loop_output(conference_member_t *member)
 						switch_core_timer_next(&timer);
 
 						/* forget the conference data we played file node data instead */
-						switch_mutex_lock(member->audio_out_mutex);
-						switch_buffer_zero(member->mux_buffer);
-						switch_mutex_unlock(member->audio_out_mutex);
+						switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
 					}
 				}
 			}
             switch_mutex_unlock(member->flag_mutex);
 		} else {	/* send the conferecne frame to the call leg */
 			switch_buffer_t *use_buffer = NULL;
-			uint32_t mux_used = (uint32_t)switch_buffer_inuse(member->mux_buffer) >= bytes ? 1 : 0;
+			uint32_t mux_used = (uint32_t) switch_buffer_inuse(member->mux_buffer);
+
+			if (mux_used){ 
+				if (mux_used < bytes) {
+					if (++low_count >= 5) {
+						/* partial frame sitting around this long is useless and builds delay */
+						switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
+					}
+					mux_used = 0;
+				} else 	if (mux_used > bytes * 2) {
+					/* getting behind, clear the buffer */
+					switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
+				} 
+			}
+
+			if (switch_test_flag(member, MFLAG_FLUSH_BUFFER)) {
+				if (mux_used) {
+					switch_mutex_lock(member->audio_out_mutex);
+					switch_buffer_zero(member->mux_buffer);
+					switch_mutex_unlock(member->audio_out_mutex);
+					mux_used = 0;
+				}
+				switch_clear_flag_locked(member, MFLAG_FLUSH_BUFFER);
+			}
 
 			if (mux_used) {
-				while (mux_used) {
-					/* Flush the output buffer and write all the data (presumably muxed) back to the channel */
-					switch_mutex_lock(member->audio_out_mutex);
-					write_frame.data = data;
-					use_buffer = member->mux_buffer;
+				/* Flush the output buffer and write all the data (presumably muxed) back to the channel */
+				switch_mutex_lock(member->audio_out_mutex);
+				write_frame.data = data;
+				use_buffer = member->mux_buffer;
+				low_count = 0;
 
-					if ((write_frame.datalen = (uint32_t)switch_buffer_read(use_buffer, write_frame.data, bytes))) {
-						if (write_frame.datalen && switch_test_flag(member, MFLAG_CAN_HEAR)) {
-							write_frame.samples = write_frame.datalen / 2;
+				if ((write_frame.datalen = (uint32_t)switch_buffer_read(use_buffer, write_frame.data, bytes))) {
+					if (write_frame.datalen && switch_test_flag(member, MFLAG_CAN_HEAR)) {
+						write_frame.samples = write_frame.datalen / 2;
 
-							/* Check for output volume adjustments */
-							if (member->volume_out_level) {
-								switch_change_sln_volume(write_frame.data, write_frame.samples, member->volume_out_level);
-							}
-
-							write_frame.timestamp = timer.samplecount;
-							switch_core_session_write_frame(member->session, &write_frame, -1, 0);
+						/* Check for output volume adjustments */
+						if (member->volume_out_level) {
+							switch_change_sln_volume(write_frame.data, write_frame.samples, member->volume_out_level);
 						}
+						//printf("WRITE %d %d\n", write_frame.datalen, ++x);
+						write_frame.timestamp = timer.samplecount;
+						switch_core_session_write_frame(member->session, &write_frame, -1, 0);
 					}
-					mux_used = (uint32_t)switch_buffer_inuse(member->mux_buffer) >= bytes ? 1 : 0;
-					switch_mutex_unlock(member->audio_out_mutex);
-					switch_core_timer_next(&timer);
 				}
+
+				switch_mutex_unlock(member->audio_out_mutex);
+				switch_core_timer_next(&timer);
+				
 			} else {
 				if (switch_test_flag(member, MFLAG_WASTE_BANDWIDTH)) {
 					memset(write_frame.data, 255, bytes);
