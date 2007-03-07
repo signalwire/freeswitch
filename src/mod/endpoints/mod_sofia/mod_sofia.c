@@ -874,7 +874,7 @@ static void attach_private(switch_core_session_t *session,
 	switch_core_session_add_stream(session, NULL);
 	channel = switch_core_session_get_channel(session);
 	
-	switch_channel_set_flag(channel, CF_ACCEPT_CNG);
+	//switch_channel_set_flag(channel, CF_ACCEPT_CNG);
 	
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_mutex_lock(tech_pvt->flag_mutex);
