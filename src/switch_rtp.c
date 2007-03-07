@@ -1364,11 +1364,24 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	void *data;
 	uint32_t len;
 	uint8_t mark = 0;
+	switch_payload_t payload;
 
 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) || !rtp_session->remote_addr) {
 		return -1;
 	}
 	
+	assert(frame != NULL);
+
+	if (switch_test_flag(frame, SFF_CNG)) {
+		payload = rtp_session->cng_pt;
+	} else {
+		payload = frame->payload;
+	}
+
+	if (payload) {
+		payload = rtp_session->payload;
+	}
+
 	if (fwd && !packetize) {
 		data = frame->packet;
 		len = frame->packetlen;
@@ -1394,7 +1407,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		rtp_session->send_msg.header.ts = htonl(rtp_session->ts);
 	}
 
-	return rtp_common_write(rtp_session, data, len, mark, rtp_session->payload, &frame->flags);
+	return rtp_common_write(rtp_session, data, len, mark, payload, &frame->flags);
 
 }
 

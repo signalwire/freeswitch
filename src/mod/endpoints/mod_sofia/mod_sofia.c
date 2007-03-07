@@ -874,6 +874,8 @@ static void attach_private(switch_core_session_t *session,
 	switch_core_session_add_stream(session, NULL);
 	channel = switch_core_session_get_channel(session);
 	
+	switch_channel_set_flag(channel, CF_ACCEPT_CNG);
+	
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_mutex_lock(tech_pvt->flag_mutex);
 	tech_pvt->flags = profile->flags;
@@ -1891,14 +1893,15 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 
 	switch_set_flag_locked(tech_pvt, TFLAG_WRITING);
 
+	if (!switch_test_flag(frame, SFF_CNG)) {
+		if (tech_pvt->read_codec.implementation->encoded_bytes_per_frame) {
+			bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
+			frames = ((int) frame->datalen / bytes);
+		} else
+			frames = 1;
 
-	if (tech_pvt->read_codec.implementation->encoded_bytes_per_frame) {
-		bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
-		frames = ((int) frame->datalen / bytes);
-	} else
-		frames = 1;
-
-	samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
+		samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
+	}
 
 #if 0
 	printf("%s %s->%s send %d bytes %d samples in %d frames ts=%d\n",
