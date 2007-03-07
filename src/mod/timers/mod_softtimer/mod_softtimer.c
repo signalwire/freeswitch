@@ -53,6 +53,7 @@ struct timer_private {
     switch_size_t reference;
     switch_size_t start;
 	uint32_t roll;
+	uint32_t ready;
 };
 typedef struct timer_private timer_private_t;
 
@@ -83,6 +84,7 @@ static inline switch_status_t timer_init(switch_timer_t *timer)
 		timer->private_info = private_info;
 		private_info->start = private_info->reference = TIMER_MATRIX[timer->interval].tick;
 		private_info->roll = TIMER_MATRIX[timer->interval].roll;
+		private_info->ready = 1;
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -102,7 +104,7 @@ static inline switch_status_t timer_step(switch_timer_t *timer)
 	timer_private_t *private_info = timer->private_info;
 	uint64_t samples;
 
-	if (globals.RUNNING != 1) {
+	if (globals.RUNNING != 1 || private_info->ready == 0) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -127,7 +129,7 @@ static inline switch_status_t timer_next(switch_timer_t *timer)
 
 	timer_step(timer);
 
-	while (globals.RUNNING == 1 && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
+	while (globals.RUNNING == 1 && private_info->ready  && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
 		check_roll();
 		switch_yield(1000);
 	}
@@ -146,7 +148,7 @@ static inline switch_status_t timer_check(switch_timer_t *timer)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
     switch_size_t diff;
 
-	if (globals.RUNNING != 1) {
+	if (globals.RUNNING != 1 || !private_info->ready) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -170,13 +172,14 @@ static inline switch_status_t timer_check(switch_timer_t *timer)
 
 static inline switch_status_t timer_destroy(switch_timer_t *timer)
 {
+	timer_private_t *private_info = timer->private_info;
 	switch_mutex_lock(globals.mutex);
 	TIMER_MATRIX[timer->interval].count--;
 	if (TIMER_MATRIX[timer->interval].count == 0) {
 		TIMER_MATRIX[timer->interval].tick = 0;
 	}
 	switch_mutex_unlock(globals.mutex);
-	timer->private_info = NULL;
+	private_info->ready = 0;
 	return SWITCH_STATUS_SUCCESS;
 }
 

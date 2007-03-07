@@ -787,9 +787,10 @@ static void set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, c
 	if (tech_pvt->te > 95) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
 	}
-
-	snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d CN/%d\n", tech_pvt->cng_pt, rate);
-
+	if (tech_pvt->cng_pt) {
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d CN/%d\n", tech_pvt->cng_pt, rate);
+		tech_pvt->cng_pt = 0;
+	}
     if (ptime) {
         snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=ptime:%d\n", ptime);
     }
