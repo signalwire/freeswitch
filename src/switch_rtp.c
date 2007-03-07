@@ -133,7 +133,6 @@ struct switch_rtp {
 	switch_rtp_invalid_handler_t invalid_handler;
 	void *private_data;
 	uint32_t ts;
-	uint32_t auto_write_ts;
 	uint32_t last_write_ts;
 	uint16_t last_write_seq;
 	uint32_t last_write_ssrc;
@@ -817,16 +816,16 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			check = (uint8_t)(switch_core_timer_check(&rtp_session->timer) == SWITCH_STATUS_SUCCESS);
 			
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTO_CNG) && 
-				rtp_session->timer.samplecount >= (rtp_session->auto_write_ts + (rtp_session->packet_size * 5))) {
+				rtp_session->timer.samplecount >= (rtp_session->last_write_ts + (rtp_session->packet_size * 5))) {
 				uint8_t data[2] = {0};
 				switch_frame_flag_t flags = SFF_NONE;
 				data[0] = 127;
 
-				rtp_session->auto_write_ts = rtp_session->timer.samplecount;
+				rtp_session->last_write_ts = rtp_session->timer.samplecount;
 				rtp_session->seq = ntohs(rtp_session->seq) + 1;
 				rtp_session->seq = htons(rtp_session->seq);
 				rtp_session->send_msg.header.seq = rtp_session->seq;
-				rtp_session->send_msg.header.ts = htonl(rtp_session->auto_write_ts);
+				rtp_session->send_msg.header.ts = htonl(rtp_session->last_write_ts);
 				
 				rtp_common_write(rtp_session, (void *) data, sizeof(data), 0, rtp_session->cng_pt, &flags);
 			}
@@ -1336,7 +1335,7 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp_t *rtp_session, void *data, uint
 	}
 
 	if (!ts && rtp_session->timer.timer_interface) {
-		rtp_session->auto_write_ts = rtp_session->ts = rtp_session->timer.samplecount;
+		rtp_session->ts = rtp_session->timer.samplecount;
 	} else {
 		rtp_session->ts = ts;
 	}
@@ -1376,7 +1375,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		if (frame->timestamp) {
 			rtp_session->ts = (uint32_t) frame->timestamp;
 		} else if (!ts && rtp_session->timer.timer_interface) {
-			rtp_session->auto_write_ts = rtp_session->ts = rtp_session->timer.samplecount;
+			rtp_session->ts = rtp_session->timer.samplecount;
 		} else {
 			rtp_session->ts = ts;
 		}
