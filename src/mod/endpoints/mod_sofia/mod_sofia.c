@@ -695,6 +695,7 @@ static void set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, c
 	char buf[2048];
 	switch_time_t now = switch_time_now();
     int ptime = 0;
+	int rate;
 
 	if (!force && !ip && !sr && switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 		return;
@@ -757,6 +758,7 @@ static void set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, c
 	snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "\n");
 
 	if (tech_pvt->rm_encoding) {
+		rate = tech_pvt->rm_rate;
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%ld\n", tech_pvt->pt, tech_pvt->rm_encoding, tech_pvt->rm_rate);
 		if (tech_pvt->fmtp_out) {
 			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->pt, tech_pvt->fmtp_out);
@@ -769,6 +771,9 @@ static void set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, c
 		int i;
 		for (i = 0; i < tech_pvt->num_codecs; i++) {
 			const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
+			if (!rate) {
+				rate = imp->samples_per_second;
+			}
             if (ptime && ptime != imp->microseconds_per_frame / 1000) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ptime %u != advertised ptime %u\n", imp->microseconds_per_frame / 1000, ptime);
             }
@@ -783,7 +788,7 @@ static void set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, c
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
 	}
 
-	snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d CN/%d\n", tech_pvt->cng_pt, tech_pvt->read_codec.implementation->samples_per_second);
+	snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d CN/%d\n", tech_pvt->cng_pt, rate);
 
     if (ptime) {
         snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=ptime:%d\n", ptime);
