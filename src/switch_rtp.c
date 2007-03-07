@@ -820,11 +820,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			check = (uint8_t)(switch_core_timer_check(&rtp_session->timer) == SWITCH_STATUS_SUCCESS);
 			
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTO_CNG) && 
-				rtp_session->timer.samplecount >= (rtp_session->last_write_ts + (rtp_session->packet_size * 5))) {
+				rtp_session->timer.samplecount >= (rtp_session->last_write_ts + (rtp_session->packet_size * 50))) {
 				uint8_t data[2] = {0};
 				switch_frame_flag_t flags = SFF_NONE;
 				data[0] = 127;
-				printf("WTF %u %u\n", rtp_session->timer.samplecount, (rtp_session->last_write_ts + (rtp_session->packet_size * 5)));
 				rtp_session->last_write_ts = rtp_session->timer.samplecount;
 				rtp_session->seq = ntohs(rtp_session->seq) + 1;
 				rtp_session->seq = htons(rtp_session->seq);

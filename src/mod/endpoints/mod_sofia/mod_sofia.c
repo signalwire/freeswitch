@@ -2460,6 +2460,10 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 				if (!cng_pt && !strcasecmp(map->rm_encoding, "CN")) {
 					cng_pt = tech_pvt->cng_pt = (switch_payload_t)map->rm_pt;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set comfort noise payload to %u\n", cng_pt);
+					if (tech_pvt->rtp_session) {
+						switch_rtp_set_cng_pt(tech_pvt->rtp_session, tech_pvt->cng_pt);
+						switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_AUTO_CNG);
+					}
 				}
 				
 				if (match) {
