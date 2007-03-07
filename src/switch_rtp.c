@@ -779,6 +779,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			switch_core_timer_step(&rtp_session->timer);
 		}
 		
+		if (rtp_session->recv_msg.header.pt == rtp_session->cng_pt) {
+			*flags |= SFF_CNG;
+		}
+
 		if (!bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
 			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
 

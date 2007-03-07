@@ -750,10 +750,6 @@ static void set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, c
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->te);
 	}
 
-	if (tech_pvt->read_codec.implementation->samples_per_second == 8000) {
-		tech_pvt->cng_pt = SWITCH_RTP_CNG_PAYLOAD;
-	}
-
 	if (tech_pvt->cng_pt) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->cng_pt);
 	}
@@ -880,13 +876,13 @@ static void attach_private(switch_core_session_t *session,
 	tech_pvt->profile = profile;
 	if (tech_pvt->bte) {
 		tech_pvt->te = tech_pvt->bte;
-	} else {
+	} else if (!tech_pvt->te) {
 		tech_pvt->te = profile->te;
 	}
 
 	if (tech_pvt->bcng_pt) {
 		tech_pvt->cng_pt = tech_pvt->bcng_pt;
-	} else {
+	} else if (!tech_pvt->cng_pt) {
 		tech_pvt->cng_pt = profile->cng_pt;
 	}
 
@@ -1629,6 +1625,7 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 
 		switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->te);
 		if (tech_pvt->cng_pt) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "WTF %d", tech_pvt->cng_pt);
 			switch_rtp_set_cng_pt(tech_pvt->rtp_session, tech_pvt->cng_pt);
 		}
 		
@@ -1829,7 +1826,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 			if (tech_pvt->read_frame.datalen > 0) {
                 size_t bytes = 0;
                 int frames = 1;
-				//tech_pvt->last_read = switch_time_now();
+
                 if (!switch_test_flag((&tech_pvt->read_frame), SFF_CNG)) {
                     if ((bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame)) {
                         frames = (tech_pvt->read_frame.datalen / bytes);
@@ -2390,7 +2387,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 {
 	uint8_t match = 0;
-	switch_payload_t te = 0;
+	switch_payload_t te = 0, cng_pt = 0;
 	private_object_t *tech_pvt;
 	sdp_media_t *m;
 	sdp_attribute_t *a;
@@ -2449,10 +2446,16 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 
 				if (!te && !strcasecmp(map->rm_encoding, "telephone-event")) {
 					te = tech_pvt->te = (switch_payload_t)map->rm_pt;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set 2833 dtmf payload to %u\n", te);
 				}
 
+				if (!cng_pt && !strcasecmp(map->rm_encoding, "CN")) {
+					cng_pt = tech_pvt->cng_pt = (switch_payload_t)map->rm_pt;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set comfort noise payload to %u\n", cng_pt);
+				}
+				
 				if (match) {
-					if (te) {
+					if (te && cng_pt) {
 						break;
 					}
 					continue;
@@ -5305,7 +5308,7 @@ static switch_status_t config_sofia(int reload)
 				}
 
                 if (!profile->cng_pt) {
-					profile->cng_pt = 127;
+					profile->cng_pt = SWITCH_RTP_CNG_PAYLOAD;
 				}
 
                 if (!profile->sipip) {

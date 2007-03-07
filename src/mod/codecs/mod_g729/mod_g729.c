@@ -214,10 +214,10 @@ static switch_status_t switch_g729_decode(switch_codec_t *codec,
 
 			}
 		} 
-	} //else {
-	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "yo this frame is an odd size [%d]\n", encoded_data_len);
-		//return SWITCH_STATUS_FALSE;
-	//}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "yo this frame is an odd size [%d]\n", encoded_data_len);
+		return SWITCH_STATUS_FALSE;
+	}
 	return SWITCH_STATUS_SUCCESS;
 #endif
 }
