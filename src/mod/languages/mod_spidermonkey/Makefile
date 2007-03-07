@@ -7,7 +7,7 @@ depends:
 	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install js --prefix=$(PREFIX) --with-pic --with-nspr=yes
 	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install curl --prefix=$(PREFIX) --without-libidn
 
-$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
+$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c $(MODNAME).h
 	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o 
 	$(CC) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(OBJS) $(LDFLAGS)
 

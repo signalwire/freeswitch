@@ -289,6 +289,7 @@ SWITCH_DECLARE(void) switch_perform_substitution(pcre *re, int match_count, char
 #define SWITCH_READ_ACCEPTABLE(status) (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK)
 SWITCH_DECLARE(size_t) switch_url_encode(char *url, char *buf, size_t len);
 SWITCH_DECLARE(char *) switch_url_decode(char *s);
+SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename);
 SWITCH_END_EXTERN_C
 
 #endif

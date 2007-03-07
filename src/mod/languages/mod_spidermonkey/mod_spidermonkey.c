@@ -2248,7 +2248,9 @@ static JSBool js_include(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 {
 	char *code;
 	if ( argc > 0 && (code = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
-		eval_some_js(code, cx, obj, rval);
+		if (eval_some_js(code, cx, obj, rval) < 0) {
+			return JS_FALSE;
+		}
 		return JS_TRUE;
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Arguements\n");

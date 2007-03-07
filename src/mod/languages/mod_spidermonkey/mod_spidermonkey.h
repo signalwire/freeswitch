@@ -81,7 +81,8 @@ int eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval)
 	JSScript *script = NULL;
 	char *cptr;
 	char *path = NULL;
-	int res = 0;
+	char *script_name;
+	int result = 0;
 
 	JS_ClearPendingException(cx);
 
@@ -90,19 +91,28 @@ int eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval)
 		script = JS_CompileScript(cx, obj, cptr, strlen(cptr), "inline", 1);
 	} else {
 		if (*code == '/') {
-			script = JS_CompileFile(cx, obj, code);
+			script_name = code;
 		} else if ((path = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.script_dir, SWITCH_PATH_SEPARATOR, code))) {
-			script = JS_CompileFile(cx, obj, path);
-			switch_safe_free(path);
+			script_name = path;
 		}
+		if (script_name) {
+			if (switch_file_exists(script_name) == SWITCH_STATUS_SUCCESS) {
+				script = JS_CompileFile(cx, obj, script_name);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Open File: %s\n", script_name);
+			}
+		} 
 	}
-
+	
 	if (script) {
-		res = JS_ExecuteScript(cx, obj, script, rval) == JS_TRUE ? 1 : 0;
+		result = JS_ExecuteScript(cx, obj, script, rval) == JS_TRUE ? 1 : 0;
 		JS_DestroyScript(cx, script);
+	} else {
+		result = -1;
 	}
-
-	return res;
+	
+	switch_safe_free(path);
+	return result;
 }
 
 

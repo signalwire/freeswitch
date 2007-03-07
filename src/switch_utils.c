@@ -331,6 +331,20 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(char *in)
 
 }
 
+SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename)
+{
+	int32_t wanted = APR_FINFO_TYPE;
+	apr_finfo_t info = {0};
+	if (filename) {
+		apr_stat(&info, filename, wanted, NULL);
+		if (info.filetype != APR_NOFILE) {
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
+
 SWITCH_DECLARE(char *) switch_priority_name(switch_priority_t priority)
 {
 	switch(priority) { /*lol*/
