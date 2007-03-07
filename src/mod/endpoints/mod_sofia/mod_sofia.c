@@ -1625,7 +1625,6 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 
 		switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->te);
 		if (tech_pvt->cng_pt) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "WTF %d", tech_pvt->cng_pt);
 			switch_rtp_set_cng_pt(tech_pvt->rtp_session, tech_pvt->cng_pt);
 		}
 		
