@@ -753,6 +753,8 @@ static int activate_rtp(struct private_object *tech_pvt)
 	  flags |= SWITCH_RTP_FLAG_USE_TIMER;
 	}
 
+	flags |= SWITCH_RTP_FLAG_AUTO_CNG;
+
 	if (!(tech_pvt->rtp_session = switch_rtp_new(tech_pvt->profile->ip,
 												 tech_pvt->local_port,
 												 tech_pvt->remote_ip,
@@ -1357,7 +1359,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 	samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
 	tech_pvt->timestamp_send += samples;
-	if (switch_rtp_write_frame(tech_pvt->rtp_session, frame, tech_pvt->timestamp_send) < 0) {
+	if (switch_rtp_write_frame(tech_pvt->rtp_session, frame, 0) < 0) {
 		terminate_session(&session,  __LINE__, SWITCH_CAUSE_NORMAL_CLEARING);
 		return SWITCH_STATUS_FALSE;
 	}

@@ -447,6 +447,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t sta
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_management_exec(char *relative_oid,
+															switch_management_action_t action,
+															char *data,
+															switch_size_t datalen)
+{
+	const switch_management_interface_t *ptr;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if ((ptr = switch_loadable_module_get_management_interface(relative_oid))) {
+		status = ptr->management_function(relative_oid, action, data, datalen);
+	}
+
+	return status;
+}
+
+
+
 SWITCH_DECLARE(switch_port_t) switch_core_port_allocator_request_port(switch_core_port_allocator_t *alloc)
 {
 	switch_port_t port;

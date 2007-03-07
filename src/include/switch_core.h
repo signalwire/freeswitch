@@ -1405,6 +1405,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_directory_close(switch_directory_han
 */
 SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel);
 
+/*! 
+  \brief Execute a management operation.
+  \param relative_oid the relative oid of the operation.
+  \param action the action to perform.
+  \param data input/output string.
+  \param datalen size in bytes of data.
+  \return SUCCESS on sucess.
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_management_exec(char *relative_oid,
+															switch_management_action_t action,
+															char *data,
+															switch_size_t datalen);
+
 
 /*! 
   \brief Set the maximum priority the process can obtain

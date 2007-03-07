@@ -197,13 +197,13 @@ abyss_bool HandleHook(TSession *r)
     return TRUE;
 }
 
-#define CMDLEN 1024 * 256
+
 static xmlrpc_value *freeswitch_api(xmlrpc_env *const envP, xmlrpc_value *const paramArrayP, void *const userData) 
 {
 	char *command, *arg;
-	char *retbuf = malloc(CMDLEN);
 	switch_stream_handle_t stream = {0};
-	xmlrpc_value *val;
+	xmlrpc_value *val = NULL;
+
 
     /* Parse our argument array. */
     xmlrpc_decompose_value(envP, paramArrayP, "(ss)", &command, &arg);
@@ -211,16 +211,67 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env *const envP, xmlrpc_value *const 
         return NULL;
 	}
 
-	memset(retbuf, 0, CMDLEN);
-	stream.data = retbuf;
-	stream.end = stream.data;
-	stream.data_size = CMDLEN;
-	stream.write_function = switch_console_stream_write;
-	switch_api_execute(command, arg, NULL, &stream);
+	SWITCH_STANDARD_STREAM(stream);
+	if (switch_api_execute(command, arg, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
+		/* Return our result. */
+		val = xmlrpc_build_value(envP, "s", stream.data);
+		free(stream.data);
+	} else {
+		val = xmlrpc_build_value(envP, "s", "ERROR!");
+	}
+
+	return val;
+}
+
+static xmlrpc_value *freeswitch_man(xmlrpc_env *const envP, xmlrpc_value *const paramArrayP, void *const userData) 
+{
+	char *oid, *relative_oid, *s_action, *data;
+	char buf[SWITCH_MAX_MANAGEMENT_BUFFER_LEN] = "";
+	switch_management_action_t action = SMA_NONE;
+	switch_stream_handle_t stream = {0};
+	xmlrpc_value *val;
+
+    /* Parse our argument array. */
+    xmlrpc_decompose_value(envP, paramArrayP, "(sss)", &oid, &s_action, &data);
+    if (envP->fault_occurred) {
+        return NULL;
+	}
+
+	if (!strncasecmp(oid, FREESWITCH_MIB, strlen(FREESWITCH_MIB))) {
+		relative_oid = oid + strlen(FREESWITCH_MIB);
+	} else {
+		relative_oid = oid;
+	}
+
+	if (!switch_strlen_zero(data)) {
+		switch_copy_string(buf, data, sizeof(buf));
+	}
+
+	if (!strcasecmp(s_action, "get")) {
+		action = SMA_GET;
+	} else if (!strcasecmp(s_action, "set")) {
+		action = SMA_SET;
+	}
+
+	if (action) {
+		if (switch_core_management_exec(relative_oid, action, buf, sizeof(buf)) == SWITCH_STATUS_SUCCESS) {
+			if (action == SMA_SET) {
+				if (switch_strlen_zero(buf)) {
+					snprintf(buf, sizeof(buf), "OK\n");
+				}
+			}
+		} else {
+			if (switch_strlen_zero(buf)) {
+				snprintf(buf, sizeof(buf), "ERROR\n");
+			}
+		}
+	} else {
+		snprintf(buf, sizeof(buf), "Invalid Action %s\n", s_action);
+	}
 
     /* Return our result. */
-    val = xmlrpc_build_value(envP, "s", retbuf);
-	free(retbuf);
+    val = xmlrpc_build_value(envP, "s", buf);
+
 
 	return val;
 }
@@ -240,6 +291,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 	
     xmlrpc_registry_add_method(&env, registryP, NULL, "freeswitch.api", &freeswitch_api, NULL);
 	xmlrpc_registry_add_method(&env, registryP, NULL,"freeswitch_api", &freeswitch_api, NULL);
+    xmlrpc_registry_add_method(&env, registryP, NULL, "freeswitch.management", &freeswitch_man, NULL);
+	xmlrpc_registry_add_method(&env, registryP, NULL,"freeswitch_management", &freeswitch_man, NULL);
 
     MIMETypeInit();
 	MIMETypeAdd("text/html", "html");

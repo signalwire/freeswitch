@@ -76,9 +76,11 @@ struct switch_loadable_module_interface {
 	/*! the table of chat interfaces the module has implmented */
 	const switch_chat_interface_t *chat_interface;
 	/*! the table of say interfaces the module has implmented */
-	const switch_say_interface_t *say_interface;
+	const switch_say_interface_t *say_interface;	
 	/*! the table of asr interfaces the module has implmented */
 	const switch_asr_interface_t *asr_interface;
+	/*! the table of management interfaces the module has implmented */
+	const switch_management_interface_t *management_interface;
 };
 
 /*!
@@ -190,6 +192,12 @@ SWITCH_DECLARE(switch_chat_interface_t *) switch_loadable_module_get_chat_interf
  */
 SWITCH_DECLARE(switch_say_interface_t *) switch_loadable_module_get_say_interface(char *name);
 
+/*!
+  \brief Retrieve the management interface by it's registered name
+  \param relative_oid the relative oid of the management interface
+  \return the desired management interface
+ */
+SWITCH_DECLARE(switch_management_interface_t *) switch_loadable_module_get_management_interface(char *relative_oid);
 
 /*!
   \brief Retrieve the list of loaded codecs into an array

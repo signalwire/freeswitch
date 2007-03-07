@@ -430,6 +430,15 @@ struct switch_chat_interface {
 	const struct switch_chat_interface *next;
 };
 
+/*! \brief Abstract interface to a management module */
+struct switch_management_interface {
+	/*! the name of the interface */
+	const char *relative_oid;
+	/*! function to open the directory interface */
+	switch_status_t (*management_function)(char *relative_oid, switch_management_action_t action, char *data, switch_size_t datalen);
+	const struct switch_management_interface *next;
+};
+
 /*! \brief Abstract interface to a directory module */
 struct switch_directory_interface {
 	/*! the name of the interface */

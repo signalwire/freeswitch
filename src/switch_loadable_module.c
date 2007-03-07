@@ -55,6 +55,7 @@ struct switch_loadable_module_container {
 	switch_hash_t *directory_hash;
 	switch_hash_t *chat_hash;
 	switch_hash_t *say_hash;
+	switch_hash_t *management_hash;
 	switch_memory_pool_t *pool;
 };
 
@@ -332,6 +333,24 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			}
 		}
 	}
+
+	if (new_module->module_interface->management_interface) {
+		const switch_management_interface_t *ptr;
+
+		for (ptr = new_module->module_interface->management_interface; ptr; ptr = ptr->next) {
+			if (!ptr->relative_oid) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load management interface from %s due to no interface name.\n", key);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Management interface '%s'\n", ptr->relative_oid);
+				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "management");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->relative_oid);
+					switch_event_fire(&event);
+				}
+				switch_core_hash_insert(loadable_modules.management_hash, ptr->relative_oid, (const void *) ptr);
+			}
+		}
+	}
 	
 
 	return SWITCH_STATUS_SUCCESS;
@@ -585,6 +604,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 	switch_core_hash_init(&loadable_modules.directory_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.chat_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.say_hash, loadable_modules.pool);
+	switch_core_hash_init(&loadable_modules.management_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.dialplan_hash, loadable_modules.pool);
 
 	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -765,6 +785,11 @@ SWITCH_DECLARE(switch_chat_interface_t *) switch_loadable_module_get_chat_interf
 SWITCH_DECLARE(switch_say_interface_t *) switch_loadable_module_get_say_interface(char *name)
 {
 	return switch_core_hash_find(loadable_modules.say_hash, name);
+}
+
+SWITCH_DECLARE(switch_management_interface_t *) switch_loadable_module_get_management_interface(char *relative_oid)
+{
+	return switch_core_hash_find(loadable_modules.management_hash, relative_oid);
 }
 
 SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool, const switch_codec_implementation_t **array,

@@ -46,7 +46,6 @@
 #define rtp_header_len 12
 #define RTP_START_PORT 16384
 #define RTP_END_PORT 32768
-#define SWITCH_RTP_CNG_PAYLOAD 13
 #define MAX_KEY_LEN      64
 #define MASTER_KEY_LEN   30
 #define RTP_MAGIC_NUMBER 42
@@ -131,11 +130,10 @@ struct switch_rtp {
 	uint16_t rseq;
 	switch_payload_t payload;
 	switch_payload_t rpayload;
-	
 	switch_rtp_invalid_handler_t invalid_handler;
 	void *private_data;
-
 	uint32_t ts;
+	uint32_t auto_write_ts;
 	uint32_t last_write_ts;
 	uint16_t last_write_seq;
 	uint32_t last_write_ssrc;
@@ -157,6 +155,7 @@ struct switch_rtp {
 	struct switch_rtp_vad_data vad_data;
 	struct switch_rtp_rfc2833_data dtmf_data;
 	switch_payload_t te;
+	switch_payload_t cng_pt;
 	switch_mutex_t *flag_mutex;
 	switch_timer_t timer;
 	uint8_t ready;
@@ -164,6 +163,7 @@ struct switch_rtp {
 };
 
 static int global_init = 0;
+static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t datalen, uint8_t m, switch_payload_t payload, switch_frame_flag_t *flags);
 
 static switch_status_t ice_out(switch_rtp_t *rtp_session)
 {
@@ -536,6 +536,13 @@ SWITCH_DECLARE(void) switch_rtp_set_telephony_event(switch_rtp_t *rtp_session, s
 	}
 }
 
+SWITCH_DECLARE(void) switch_rtp_set_cng_pt(switch_rtp_t *rtp_session, switch_payload_t pt)
+{
+
+	rtp_session->cng_pt = pt;
+
+}
+
 SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_session, char *login, char *rlogin)
 {
 	char ice_user[80];
@@ -773,15 +780,16 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			switch_core_timer_step(&rtp_session->timer);
 		}
 		
-		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
+		if (!bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
 			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
 
-            memset(&rtp_session->recv_msg, 0, SWITCH_RTP_CNG_PAYLOAD);
+            memset(&rtp_session->recv_msg.body, 0, 2);
+			rtp_session->recv_msg.body[0] = 127;
             rtp_session->recv_msg.header.pt = SWITCH_RTP_CNG_PAYLOAD;
             *flags |= SFF_CNG;
             /* Return a CNG frame */
             *payload_type = SWITCH_RTP_CNG_PAYLOAD;
-            return SWITCH_RTP_CNG_PAYLOAD + rtp_header_len;
+            return 2 + rtp_header_len;
 		}
 
 		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
@@ -807,7 +815,24 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		if (rtp_session->timer.interval) {
 			check = (uint8_t)(switch_core_timer_check(&rtp_session->timer) == SWITCH_STATUS_SUCCESS);
+			
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTO_CNG) && 
+				rtp_session->timer.samplecount >= (rtp_session->auto_write_ts + (rtp_session->packet_size * 5))) {
+				uint8_t data[2] = {0};
+				switch_frame_flag_t flags = SFF_NONE;
+				data[0] = 127;
+
+				rtp_session->auto_write_ts = rtp_session->timer.samplecount;
+				rtp_session->seq = ntohs(rtp_session->seq) + 1;
+				rtp_session->seq = htons(rtp_session->seq);
+				rtp_session->send_msg.header.seq = rtp_session->seq;
+				rtp_session->send_msg.header.ts = htonl(rtp_session->auto_write_ts);
+				
+				rtp_common_write(rtp_session, (void *) data, sizeof(data), 0, rtp_session->cng_pt, &flags);
+			}
 		}
+
+
 
 		if (check) {
 			do_2833(rtp_session);
@@ -1047,6 +1072,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 	frame->packetlen = bytes;
 	frame->source = __FILE__;
 	frame->flags |= SFF_RAW_RTP;
+	frame->timestamp =  ntohl(rtp_session->recv_msg.header.ts);
 
 	if (bytes < 0) {
 		frame->datalen = 0;
@@ -1309,7 +1335,11 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp_t *rtp_session, void *data, uint
 		return -1;
 	}
 
-	rtp_session->ts = ts;
+	if (!ts && rtp_session->timer.timer_interface) {
+		rtp_session->auto_write_ts = rtp_session->ts = rtp_session->timer.samplecount;
+	} else {
+		rtp_session->ts = ts;
+	}
 
 	if (rtp_session->ts > rtp_session->last_write_ts + rtp_session->packet_size || rtp_session->ts == rtp_session->packet_size) {
 		mark++;
@@ -1345,6 +1375,8 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 
 		if (frame->timestamp) {
 			rtp_session->ts = (uint32_t) frame->timestamp;
+		} else if (!ts && rtp_session->timer.timer_interface) {
+			rtp_session->auto_write_ts = rtp_session->ts = rtp_session->timer.samplecount;
 		} else {
 			rtp_session->ts = ts;
 		}

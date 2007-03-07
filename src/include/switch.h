@@ -47,6 +47,10 @@
 #include <switch_am_config.h>
 #endif
 
+#define FREESWITCH_PEN "27880"
+#define FREESWITCH_MIB ".1.3.6.1.4.1." FREESWITCH_PEN
+#define FREESWITCH_ITAD "543"
+
 #include <switch_platform.h>
 #include <assert.h>
 #include <setjmp.h>

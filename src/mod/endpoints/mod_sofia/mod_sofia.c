@@ -252,6 +252,7 @@ struct sofia_profile {
 	su_root_t *s_root;
 	sip_alias_node_t *aliases;
 	switch_payload_t te;
+	switch_payload_t cng_pt;
 	uint32_t codec_flags;
 	switch_mutex_t *ireg_mutex;
 	switch_mutex_t *oreg_mutex;
@@ -319,6 +320,8 @@ struct private_object {
 	switch_mutex_t *flag_mutex;
 	switch_payload_t te;
 	switch_payload_t bte;
+	switch_payload_t cng_pt;
+	switch_payload_t bcng_pt;
 	nua_handle_t *nh;
 	nua_handle_t *nh2;
 	su_home_t *home;
@@ -747,6 +750,14 @@ static void set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, c
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->te);
 	}
 
+	if (tech_pvt->read_codec.implementation->samples_per_second == 8000) {
+		tech_pvt->cng_pt = SWITCH_RTP_CNG_PAYLOAD;
+	}
+
+	if (tech_pvt->cng_pt) {
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->cng_pt);
+	}
+
 	snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "\n");
 
 	if (tech_pvt->rm_encoding) {
@@ -775,6 +786,8 @@ static void set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, c
 	if (tech_pvt->te > 95) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
 	}
+
+	snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d CN/%d\n", tech_pvt->cng_pt, tech_pvt->read_codec.implementation->samples_per_second);
 
     if (ptime) {
         snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=ptime:%d\n", ptime);
@@ -870,9 +883,16 @@ static void attach_private(switch_core_session_t *session,
 	} else {
 		tech_pvt->te = profile->te;
 	}
+
+	if (tech_pvt->bcng_pt) {
+		tech_pvt->cng_pt = tech_pvt->bcng_pt;
+	} else {
+		tech_pvt->cng_pt = profile->cng_pt;
+	}
+
 	tech_pvt->session = session;
 	tech_pvt->home = su_home_new(sizeof(*tech_pvt->home));
-
+	
 	switch_core_session_set_private(session, tech_pvt);
 
 
@@ -1543,6 +1563,10 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
         flags |= SWITCH_RTP_FLAG_PASS_RFC2833;
     }
 
+	if (tech_pvt->cng_pt) {
+		flags |= SWITCH_RTP_FLAG_AUTO_CNG;
+	}
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "RTP [%s] %s:%d->%s:%d codec: %u ms: %d\n",
 					  switch_channel_get_name(channel),
 					  tech_pvt->local_sdp_audio_ip,
@@ -1602,6 +1626,12 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
                               switch_channel_get_name(switch_core_session_get_channel(tech_pvt->session)),
                               vad_in ? "in" : "", vad_out ? "out" : "");
 		}
+
+		switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->te);
+		if (tech_pvt->cng_pt) {
+			switch_rtp_set_cng_pt(tech_pvt->rtp_session, tech_pvt->cng_pt);
+		}
+		
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP REPORTS ERROR: [%s]\n", err);
 		terminate_session(&tech_pvt->session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
@@ -1881,7 +1911,8 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 #endif
 
 	tech_pvt->timestamp_send += samples;
-	switch_rtp_write_frame(tech_pvt->rtp_session, frame, tech_pvt->timestamp_send);
+	//switch_rtp_write_frame(tech_pvt->rtp_session, frame, tech_pvt->timestamp_send);
+	switch_rtp_write_frame(tech_pvt->rtp_session, frame, 0);
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_WRITING);
 	return status;
@@ -2347,6 +2378,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			ctech_pvt = switch_core_session_get_private(session);
 			assert(ctech_pvt != NULL);
 			tech_pvt->bte = ctech_pvt->te;
+			tech_pvt->bcng_pt = ctech_pvt->cng_pt;
 		}
 	}
 
@@ -5181,6 +5213,8 @@ static switch_status_t config_sofia(int reload)
 						switch_set_flag(profile, TFLAG_LATE_NEGOTIATION);
 					} else if (!strcasecmp(var, "rfc2833-pt")) {
 						profile->te = (switch_payload_t) atoi(val);
+					} else if (!strcasecmp(var, "cng-pt")) {
+						profile->cng_pt = (switch_payload_t) atoi(val);
 					} else if (!strcasecmp(var, "sip-port")) {
 						profile->sip_port = atoi(val);
 					} else if (!strcasecmp(var, "vad")) {
@@ -5268,6 +5302,10 @@ static switch_status_t config_sofia(int reload)
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Duration out of bounds!\n");
 						}
 					}
+				}
+
+                if (!profile->cng_pt) {
+					profile->cng_pt = 127;
 				}
 
                 if (!profile->sipip) {

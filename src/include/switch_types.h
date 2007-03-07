@@ -187,6 +187,11 @@ typedef enum {
 	SST_NAME_PHONETIC,
 } switch_say_type_t;
 
+typedef enum {
+	SMA_NONE,
+	SMA_GET,
+	SMA_SET
+} switch_management_action_t;
 
 typedef enum {
 	SMF_NONE = 0,
@@ -248,6 +253,7 @@ SWITCH_DECLARE_DATA extern switch_directories SWITCH_GLOBAL_dirs;
 #define SWITCH_TRUE 1
 #define SWITCH_FALSE 0
 #define SWITCH_CORE_QUEUE_LEN 100000
+#define SWITCH_MAX_MANAGEMENT_BUFFER_LEN 1024 * 8
 
 typedef enum {
 	SWITCH_CPF_SCREEN = (1 << 0),
@@ -289,6 +295,7 @@ typedef enum {
 	SWITCH_VAD_FLAG_CNG = ( 1 << 3)
 } switch_vad_flag_t;
 
+#define SWITCH_RTP_CNG_PAYLOAD 13
 
 /*!
   \enum switch_rtp_flag_t
@@ -307,7 +314,8 @@ typedef enum {
 	SWITCH_RTP_FLAG_MINI		  - Use mini RTP when possible
 	SWITCH_RTP_FLAG_DATAWAIT	  - Do not return from reads unless there is data even when non blocking
 	SWITCH_RTP_FLAG_BUGGY_2833    - Emulate the bug in cisco equipment to allow interop
-	SWITCH_RTP_FLAG_PASS_RFC2833     - Pass 2833 (ignore it)
+	SWITCH_RTP_FLAG_PASS_RFC2833  - Pass 2833 (ignore it)
+	SWITCH_RTP_FLAG_AUTO_CNG      - Generate outbound CNG frames when idle
 </pre>
  */
 typedef enum {
@@ -324,7 +332,8 @@ typedef enum {
 	SWITCH_RTP_FLAG_MINI = ( 1 << 10),
 	SWITCH_RTP_FLAG_DATAWAIT = (1 << 11),
 	SWITCH_RTP_FLAG_BUGGY_2833 = (1 << 12),
-	SWITCH_RTP_FLAG_PASS_RFC2833 = (1 << 13)
+	SWITCH_RTP_FLAG_PASS_RFC2833 = (1 << 13),
+	SWITCH_RTP_FLAG_AUTO_CNG = (1 << 14)
 } switch_rtp_flag_t;
 
 /*!
@@ -985,6 +994,7 @@ typedef struct switch_speech_interface switch_speech_interface_t;
 typedef struct switch_asr_interface switch_asr_interface_t;
 typedef struct switch_directory_interface switch_directory_interface_t;
 typedef struct switch_chat_interface switch_chat_interface_t;
+typedef struct switch_management_interface switch_management_interface_t;
 typedef struct switch_core_port_allocator switch_core_port_allocator_t;
 typedef struct switch_media_bug switch_media_bug_t;
 typedef void (*switch_media_bug_callback_t)(switch_media_bug_t *, void *, switch_abc_type_t);
