@@ -913,9 +913,8 @@ static void terminate_session(switch_core_session_t **session, switch_call_cause
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Term called from line: %d\n", line);
     if (*session) {
         switch_channel_t *channel = switch_core_session_get_channel(*session);
-        switch_channel_state_t state = switch_channel_get_state(channel);
         struct private_object *tech_pvt = NULL;
-        uint8_t running = switch_core_session_running(*session);
+        unsigned running = switch_core_session_running(*session);
         tech_pvt = switch_core_session_get_private(*session);
 
         if (running) {
