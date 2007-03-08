@@ -910,20 +910,25 @@ static void attach_private(switch_core_session_t *session,
 
 static void terminate_session(switch_core_session_t **session, switch_call_cause_t cause, int line)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Term called from line: %d\n", line);
-	if (*session) {
-		switch_channel_t *channel = switch_core_session_get_channel(*session);
-		struct private_object *tech_pvt = NULL;
-		uint8_t running = (uint8_t)switch_core_session_running(*session);
-		tech_pvt = switch_core_session_get_private(*session);
-		
-		if (running) {
-			switch_channel_hangup(channel, cause);
-		} else {
-			sofia_on_hangup(*session);
-			switch_core_session_destroy(session);
-		}
-	}
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Term called from line: %d\n", line);
+    if (*session) {
+        switch_channel_t *channel = switch_core_session_get_channel(*session);
+        switch_channel_state_t state = switch_channel_get_state(channel);
+        struct private_object *tech_pvt = NULL;
+        uint8_t running = switch_core_session_running(*session);
+        tech_pvt = switch_core_session_get_private(*session);
+
+        if (running) {
+            switch_channel_hangup(channel, cause);
+        } else {
+            if (tech_pvt) {
+                sofia_on_hangup(*session);
+            }
+            if (session && *session) {
+                switch_core_session_destroy(session);
+            }
+        }
+    }
 }
 
 
@@ -1618,7 +1623,7 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 										   tech_pvt->remote_sdp_audio_ip,
 										   tech_pvt->remote_sdp_audio_port,
 										   tech_pvt->agreed_pt,
-										   tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
+										   tech_pvt->read_codec.implementation->samples_per_frame,
 										   tech_pvt->codec_ms * 1000,
 										   (switch_rtp_flag_t) flags,
 										   NULL,

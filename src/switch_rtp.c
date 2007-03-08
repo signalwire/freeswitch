@@ -685,7 +685,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 			duration = rtp_session->dtmf_data.out_digit_sofar;
 		}
 
-		/* ts = rtp_session->dtmf_data.timestamp_dtmf += samples; */
+		
 		rtp_session->dtmf_data.out_digit_packet[2] = (unsigned char) (duration >> 8);
 		rtp_session->dtmf_data.out_digit_packet[3] = (unsigned char) duration;
 		
@@ -710,6 +710,10 @@ static void do_2833(switch_rtp_t *rtp_session)
 							  rtp_session->dtmf_data.out_digit_seq);
 
 		}
+
+		if (loops == 1) {
+			rtp_session->last_write_seq = 0;
+		}
 	}
 
 	if (!rtp_session->dtmf_data.out_digit_dur && rtp_session->dtmf_data.dtmf_queue && switch_queue_size(rtp_session->dtmf_data.dtmf_queue)) {
@@ -726,17 +730,18 @@ static void do_2833(switch_rtp_t *rtp_session)
 			rtp_session->dtmf_data.out_digit_packet[0] = (unsigned char)switch_char_to_rfc2833(rdigit->digit);
 			rtp_session->dtmf_data.out_digit_packet[1] = 7;
 
-			/* ts = rtp_session->dtmf_data.timestamp_dtmf += samples;
-			 * rtp_session->dtmf_data.timestamp_dtmf++;
-			 */
+			if (rtp_session->timer.timer_interface) {
+				rtp_session->dtmf_data.timestamp_dtmf = rtp_session->timer.samplecount;
+			} else {
+				rtp_session->dtmf_data.timestamp_dtmf = rtp_session->last_write_ts;
+			}
 
-			rtp_session->dtmf_data.timestamp_dtmf = rtp_session->last_write_ts;
 			rtp_session->dtmf_data.out_digit_seq = rtp_session->last_write_seq;
 			rtp_session->dtmf_data.out_digit_ssrc = rtp_session->last_write_ssrc;
 			
 
 			for (x = 0; x < 3; x++) {
-				rtp_session->dtmf_data.out_digit_seq++;
+				//rtp_session->dtmf_data.out_digit_seq++;
 				switch_rtp_write_manual(rtp_session,
 										rtp_session->dtmf_data.out_digit_packet,
 										4,
@@ -1168,7 +1173,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 
 		stat = srtp_protect(rtp_session->send_ctx, &send_msg->header, &sbytes);
 		if (stat) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error: srtp unprotection failed with code %d\n", stat);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error: srtp protection failed with code %d\n", stat);
 		}
 
 		bytes = sbytes;
@@ -1297,6 +1302,9 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 	rtp_session->last_write_ts = ntohl(send_msg->header.ts);
 	rtp_session->last_write_ssrc = ntohl(send_msg->header.ssrc);
 	rtp_session->last_write_seq = ntohs((u_short)send_msg->header.seq);
+	if (rtp_session->last_write_seq <= rtp_session->dtmf_data.out_digit_seq) {
+		send = 0;
+	}
 
 	if (send) {
         switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)send_msg, &bytes);
@@ -1486,6 +1494,7 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 											switch_frame_flag_t *flags)
 {
 	rtp_msg_t send_msg = {{0}};
+	switch_size_t bytes;
 
 	if (!switch_rtp_ready(rtp_session)) {
 		return -1;
@@ -1504,7 +1513,28 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 	send_msg.header.m = m ? 1 : 0;
 	memcpy(send_msg.body, data, datalen);
 
-	return rtp_common_write(rtp_session, (void *) &send_msg, rtp_header_len + datalen, m, payload, NULL);
+	bytes = rtp_header_len + datalen;
+
+
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
+		int sbytes = (int)bytes;
+		err_status_t stat;
+
+		stat = srtp_protect(rtp_session->send_ctx, &send_msg.header, &sbytes);
+		if (stat) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error: srtp protection failed with code %d\n", stat);
+		}
+
+		bytes = sbytes;
+	}
+
+
+	if (switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)&send_msg, &bytes) != SWITCH_STATUS_SUCCESS) {
+		bytes = -1;
+	}
+	return (int) bytes;
+
+	//return rtp_common_write(rtp_session, (void *) &send_msg, rtp_header_len + datalen, m, payload, NULL);
 }
 
 SWITCH_DECLARE(uint32_t) switch_rtp_get_ssrc(switch_rtp_t *rtp_session)
