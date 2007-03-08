@@ -81,7 +81,7 @@ int eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval)
 	JSScript *script = NULL;
 	char *cptr;
 	char *path = NULL;
-	char *script_name;
+	char *script_name = NULL;
 	int result = 0;
 
 	JS_ClearPendingException(cx);

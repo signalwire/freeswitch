@@ -228,7 +228,6 @@ static xmlrpc_value *freeswitch_man(xmlrpc_env *const envP, xmlrpc_value *const 
 	char *oid, *relative_oid, *s_action, *data;
 	char buf[SWITCH_MAX_MANAGEMENT_BUFFER_LEN] = "";
 	switch_management_action_t action = SMA_NONE;
-	switch_stream_handle_t stream = {0};
 	xmlrpc_value *val;
 
     /* Parse our argument array. */
