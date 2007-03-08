@@ -915,21 +915,13 @@ static void terminate_session(switch_core_session_t **session, switch_call_cause
 		switch_channel_t *channel = switch_core_session_get_channel(*session);
 		switch_channel_state_t state = switch_channel_get_state(channel);
 		struct private_object *tech_pvt = NULL;
-
+		uint8_t running = switch_core_session_running(*session);
 		tech_pvt = switch_core_session_get_private(*session);
-
-		if (tech_pvt) {
-			if (state < CS_HANGUP) {
-				switch_channel_hangup(channel, cause);
-			}
-			
-			if (!switch_test_flag(tech_pvt, TFLAG_READY)) {
-				if (state > CS_INIT && state < CS_HANGUP) {
-					sofia_on_hangup(*session);
-				}
-				switch_core_session_destroy(session);
-			} 
+		
+		if (running) {
+			switch_channel_hangup(channel, cause);
 		} else {
+			sofia_on_hangup(*session);
 			switch_core_session_destroy(session);
 		}
 	}
