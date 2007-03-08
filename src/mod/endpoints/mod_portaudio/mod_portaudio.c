@@ -120,6 +120,7 @@ static struct {
     private_t *call_list;
     int ring_interval;
     GFLAGS flags;
+    switch_timer_t timer;
 } globals;
 
 
@@ -184,6 +185,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
     
 	last = switch_time_now() - waitsec;
+
 
 
     if ((val = switch_channel_get_variable(channel, "pa_hold_file"))) {
@@ -594,17 +596,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
                     goto cng;
                 }
 
-                if (switch_core_timer_init(&tech_pvt->timer,
-                                           globals.timer_name,
-                                           codec_ms,
-                                           globals.read_codec.implementation->samples_per_frame,
-                                           switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup timer failed!\n");
-                    switch_core_file_close(&tech_pvt->fh);
-                    switch_core_codec_destroy(&tech_pvt->write_codec);
-                    goto cng;
-                }
-                
                 tech_pvt->hfh = &tech_pvt->fh;
                 tech_pvt->hold_frame.data = tech_pvt->holdbuf;
                 tech_pvt->hold_frame.buflen = sizeof(tech_pvt->holdbuf);
@@ -639,6 +630,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
             
             tech_pvt->hold_frame.datalen = (uint32_t)(olen * sizeof(int16_t));
             tech_pvt->hold_frame.samples = (uint32_t)olen;
+			tech_pvt->hold_frame.timestamp = tech_pvt->timer.samplecount;
             *frame = &tech_pvt->hold_frame;
             
         }
@@ -651,6 +643,9 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
     if ((samples = ReadAudioStream(globals.audio_stream, globals.read_frame.data, globals.read_codec.implementation->samples_per_frame)) != 0) {
 		globals.read_frame.datalen = samples * 2;
 		globals.read_frame.samples = samples;
+
+		switch_core_timer_check(&globals.timer);
+		globals.read_frame.timestamp = globals.timer.samplecount;
 		*frame = &globals.read_frame;
 
         if (!switch_test_flag((&globals), GFLAG_MOUTH)) {
@@ -1312,6 +1307,21 @@ static switch_status_t engage_device(int sample_rate, int codec_ms)
                 return SWITCH_STATUS_FALSE;
             }
         }
+		
+		if (switch_core_timer_init(&globals.timer,
+								   globals.timer_name,
+								   codec_ms,
+								   globals.read_codec.implementation->samples_per_frame,
+								   module_pool) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup timer failed!\n");
+			switch_core_codec_destroy(&globals.read_codec);
+			switch_core_codec_destroy(&globals.write_codec);
+			return SWITCH_STATUS_FALSE;
+		}
+                
+
+
+
 
         globals.read_frame.rate = sample_rate;
         globals.read_frame.codec = &globals.read_codec;

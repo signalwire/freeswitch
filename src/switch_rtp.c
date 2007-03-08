@@ -1293,6 +1293,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 		}
 	}
 
+
 	rtp_session->last_write_ts = ntohl(send_msg->header.ts);
 	rtp_session->last_write_ssrc = ntohl(send_msg->header.ssrc);
 	rtp_session->last_write_seq = ntohs((u_short)send_msg->header.seq);
@@ -1384,13 +1385,14 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp_t *rtp_session, void *data, uint
 	}
 
 	if (!ts && rtp_session->timer.timer_interface) {
-		rtp_session->ts = rtp_session->timer.samplecount;
+		uint32_t sc = rtp_session->timer.samplecount;
+		if (rtp_session->last_write_ts == sc) {
+			rtp_session->ts = sc + rtp_session->packet_size;
+		} else {
+			rtp_session->ts = sc;
+		}
 	} else {
 		rtp_session->ts = ts;
-	}
-
-	if (rtp_session->ts <= rtp_session->last_write_ts) {
-		rtp_session->ts += rtp_session->packet_size;
 	}
 
 	if (rtp_session->ts > rtp_session->last_write_ts + rtp_session->packet_size || rtp_session->ts == rtp_session->packet_size) {
@@ -1449,19 +1451,20 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		if (frame->timestamp) {
 			rtp_session->ts = (uint32_t) frame->timestamp;
 		} else if (!ts && rtp_session->timer.timer_interface) {
-			rtp_session->ts = rtp_session->timer.samplecount;
+			uint32_t sc = rtp_session->timer.samplecount;
+			if (rtp_session->last_write_ts == sc) {
+				rtp_session->ts = sc + rtp_session->packet_size;
+			} else {
+				rtp_session->ts = sc;
+			}
 		} else {
 			rtp_session->ts = ts;
 		}
-
+		
 		if (rtp_session->ts > rtp_session->last_write_ts + rtp_session->packet_size || rtp_session->ts == rtp_session->packet_size) {
 			mark++;
 		}
 
-		if (rtp_session->ts <= rtp_session->last_write_ts) {
-			rtp_session->ts += rtp_session->packet_size;
-		}
-		
 		rtp_session->seq = ntohs(rtp_session->seq) + 1;
 		rtp_session->seq = htons(rtp_session->seq);
 		rtp_session->send_msg.header.seq = rtp_session->seq;
