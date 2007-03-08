@@ -1434,11 +1434,11 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	if (switch_test_flag(frame, SFF_CNG)) {
 		payload = rtp_session->cng_pt;
 	} else {
-		payload = frame->payload;
-	}
-
-	if (payload) {
-		payload = rtp_session->payload;
+		payload = frame->payload;	
+		if (payload != rtp_session->payload) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "payload mismatch %d->%d", payload, rtp_session->payload);
+			payload = rtp_session->payload;
+		}
 	}
 
 	if (fwd && !packetize) {
