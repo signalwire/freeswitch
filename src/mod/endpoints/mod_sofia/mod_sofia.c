@@ -927,12 +927,46 @@ static void terminate_session(switch_core_session_t **session, switch_call_cause
 }
 
 
+
+static switch_status_t sofia_ext_address_lookup(char **ip, 
+												  switch_port_t *port,
+												  char *sourceip,
+												  switch_memory_pool_t *pool)
+{
+	char *error;
+	
+	if (!sourceip) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!strncasecmp(sourceip, "stun:", 5)) {
+		char *stun_ip = sourceip + 5;
+		if (!stun_ip) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! NO STUN SERVER\n");
+			return SWITCH_STATUS_FALSE;
+		}
+		if (switch_stun_lookup(ip,
+							   port,
+							   stun_ip,
+							   SWITCH_STUN_DEFAULT_PORT,
+							   &error,
+							   pool) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, error);
+			return SWITCH_STATUS_FALSE;
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Stun Success [%s]:[%d]\n", *ip, *port);
+	} else {
+		*ip = sourceip;
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 static switch_status_t tech_choose_port(private_object_t *tech_pvt)
 {
 	char *ip = tech_pvt->profile->rtpip;
 	switch_channel_t *channel;
 	switch_port_t sdp_port;
-	char *err;
 	char tmp[50];
 
 	channel = switch_core_session_get_channel(tech_pvt->session);
@@ -945,28 +979,13 @@ static switch_status_t tech_choose_port(private_object_t *tech_pvt)
 	tech_pvt->local_sdp_audio_port = switch_rtp_request_port();
 	sdp_port = tech_pvt->local_sdp_audio_port;
 
-
 	if (tech_pvt->profile->extrtpip) {
-		if (!strncasecmp(tech_pvt->profile->extrtpip, "stun:", 5)) {
-			char *stun_ip = tech_pvt->profile->extrtpip + 5;
-			if (!stun_ip) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! NO STUN SERVER\n");
+		if (sofia_ext_address_lookup(&ip,
+									&sdp_port,
+									tech_pvt->profile->extrtpip,
+									switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 				terminate_session(&tech_pvt->session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
 				return SWITCH_STATUS_FALSE;
-			}
-			if (switch_stun_lookup(&ip,
-								   &sdp_port,
-								   stun_ip,
-								   SWITCH_STUN_DEFAULT_PORT,
-								   &err,
-								   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, err);
-				terminate_session(&tech_pvt->session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
-				return SWITCH_STATUS_FALSE;
-			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Stun Success [%s]:[%d]\n", ip, sdp_port);
-		} else {
-			ip = tech_pvt->profile->extrtpip;
 		}
 	}
 
@@ -5242,6 +5261,23 @@ static switch_status_t config_sofia(int reload)
 						profile->rtpip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : globals.guess_ip);
 					} else if (!strcasecmp(var, "sip-ip")) {
 						profile->sipip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : globals.guess_ip);
+					} else if (!strcasecmp(var, "ext-sip-ip")) {
+						if (!strcasecmp(val, "auto")) {
+							profile->extsipip = switch_core_strdup(profile->pool, globals.guess_ip);
+						} else {
+							char *ip = NULL;
+							switch_port_t port = 0;
+							if (sofia_ext_address_lookup(&ip,
+														&port,
+														val,
+														profile->pool) == SWITCH_STATUS_SUCCESS) {
+
+								if (ip) {
+									profile->extsipip = switch_core_strdup(profile->pool, ip);
+								}
+							}
+						}
+
 					} else if (!strcasecmp(var, "sip-domain")) {
 						profile->sipdomain = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "rtp-timer-name")) {
@@ -5276,8 +5312,6 @@ static switch_status_t config_sofia(int reload)
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_FULL_ID;
 						}
-					} else if (!strcasecmp(var, "ext-sip-ip")) {
-						profile->extsipip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : globals.guess_ip);
 					} else if (!strcasecmp(var, "bitpacking")) {
 						if (!strcasecmp(val, "aal2")) {
 							profile->codec_flags = SWITCH_CODEC_FLAG_AAL2;
