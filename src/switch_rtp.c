@@ -1389,6 +1389,10 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp_t *rtp_session, void *data, uint
 		rtp_session->ts = ts;
 	}
 
+	if (rtp_session->ts <= rtp_session->last_write_ts) {
+		rtp_session->ts += rtp_session->packet_size;
+	}
+
 	if (rtp_session->ts > rtp_session->last_write_ts + rtp_session->packet_size || rtp_session->ts == rtp_session->packet_size) {
 		mark++;
 	}
@@ -1454,6 +1458,10 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 			mark++;
 		}
 
+		if (rtp_session->ts <= rtp_session->last_write_ts) {
+			rtp_session->ts += rtp_session->packet_size;
+		}
+		
 		rtp_session->seq = ntohs(rtp_session->seq) + 1;
 		rtp_session->seq = htons(rtp_session->seq);
 		rtp_session->send_msg.header.seq = rtp_session->seq;
