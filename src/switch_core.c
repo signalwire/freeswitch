@@ -2199,12 +2199,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					session->enc_read_frame.codec = session->read_codec;
 					session->enc_read_frame.samples = session->read_codec->implementation->bytes_per_frame / sizeof(int16_t);
 					session->enc_read_frame.timestamp = read_frame->timestamp;
+					session->enc_read_frame.payload = session->read_codec->implementation->ianacode;
 					*frame = &session->enc_read_frame;
 					break;
 				case SWITCH_STATUS_NOOP:
 					session->raw_read_frame.codec = session->read_codec;
-					session->raw_read_frame.samples = session->read_codec->implementation->bytes_per_frame / sizeof(int16_t);
+					session->raw_read_frame.samples = enc_frame->codec->implementation->samples_per_frame;
 					session->raw_read_frame.timestamp = read_frame->timestamp;
+					session->raw_read_frame.payload = enc_frame->codec->implementation->ianacode;
 					*frame = &session->raw_read_frame;
 					status = SWITCH_STATUS_SUCCESS;
 					break;
@@ -2465,13 +2467,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					session->enc_write_frame.codec = session->write_codec;
 					session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t);
 					session->enc_write_frame.timestamp = frame->timestamp;
+					session->enc_write_frame.payload = session->write_codec->implementation->ianacode;
 					write_frame = &session->enc_write_frame;
 					break;
 				case SWITCH_STATUS_NOOP:
 					enc_frame->codec = session->write_codec;
 					enc_frame->samples = enc_frame->datalen / sizeof(int16_t);
 					enc_frame->timestamp = frame->timestamp;
-
+					enc_frame->payload = enc_frame->codec->implementation->ianacode;
 					write_frame = enc_frame;
 					status = SWITCH_STATUS_SUCCESS;
 					break;
@@ -2519,7 +2522,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 								session->enc_write_frame.codec = session->write_codec;
 								session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t);
 								session->enc_write_frame.timestamp = frame->timestamp;
-
+								session->enc_write_frame.payload = session->write_codec->implementation->ianacode;
 								write_frame = &session->enc_write_frame;
 								if (!session->read_resampler) {
 									status = switch_resample_create(&session->read_resampler,
@@ -2534,12 +2537,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 								session->enc_write_frame.codec = session->write_codec;
 								session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t);
 								session->enc_write_frame.timestamp = frame->timestamp;
+								session->enc_write_frame.payload = session->write_codec->implementation->ianacode;
 								write_frame = &session->enc_write_frame;
 								break;
 							case SWITCH_STATUS_NOOP:
 								enc_frame->codec = session->write_codec;
 								enc_frame->samples = enc_frame->datalen / sizeof(int16_t);
 								enc_frame->timestamp = frame->timestamp;
+								enc_frame->payload = enc_frame->codec->implementation->ianacode;
 								write_frame = enc_frame;
 								status = SWITCH_STATUS_SUCCESS;
 								break;
