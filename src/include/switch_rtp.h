@@ -68,7 +68,7 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void);
   \brief create a new RTP session handle
   \param new_rtp_session a poiter to aim at the new session
   \param payload the IANA payload number
-  \param packet_size the default packet_size
+  \param samples_per_interval the default samples_per_interval
   \param ms_per_packet time in microseconds per packet
   \param flags flags to control behaviour
   \param crypto_key optional crypto key
@@ -79,7 +79,7 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void);
 */
 SWITCH_DECLARE(switch_status_t)switch_rtp_create(switch_rtp_t **new_rtp_session,
 												 switch_payload_t payload,
-												 uint32_t packet_size,
+												 uint32_t samples_per_interval,
 												 uint32_t ms_per_packet,
 												 switch_rtp_flag_t flags,
 												 char *crypto_key,
@@ -95,7 +95,7 @@ SWITCH_DECLARE(switch_status_t)switch_rtp_create(switch_rtp_t **new_rtp_session,
   \param tx_host the remote address
   \param tx_port the remote port
   \param payload the IANA payload number
-  \param packet_size the default packet_size
+  \param samples_per_interval the default samples_per_interval
   \param ms_per_packet time in microseconds per packet
   \param flags flags to control behaviour
   \param crypto_key optional crypto key
@@ -109,7 +109,7 @@ SWITCH_DECLARE(switch_rtp_t *)switch_rtp_new(char *rx_host,
 											 char *tx_host,
 											 switch_port_t tx_port,
 											 switch_payload_t payload,
-											 uint32_t packet_size,
+											 uint32_t samples_per_interval,
 											 uint32_t ms_per_packet,
 											 switch_rtp_flag_t flags,
 											 char *crypto_key,
@@ -192,18 +192,18 @@ SWITCH_DECLARE(void) switch_rtp_clear_flag(switch_rtp_t *rtp_session, switch_rtp
 SWITCH_DECLARE(switch_socket_t *)switch_rtp_get_rtp_socket(switch_rtp_t *rtp_session);
 
 /*! 
-  \brief Set the default packet size for a given RTP session
-  \param rtp_session the RTP session to set the packet size on
-  \param packet_size the new default packet size 
+  \brief Set the default samples per interval for a given RTP session
+  \param rtp_session the RTP session to set the samples per interval on
+  \param samples_per_interval the new default samples per interval 
 */
-SWITCH_DECLARE(void) switch_rtp_set_default_packet_size(switch_rtp_t *rtp_session, uint16_t packet_size);
+SWITCH_DECLARE(void) switch_rtp_set_default_samples_per_interval(switch_rtp_t *rtp_session, uint16_t samples_per_interval);
 
 /*! 
-  \brief Get the default packet size for a given RTP session
-  \param rtp_session the RTP session to get the packet size from
-  \return the default packet_size of the RTP session
+  \brief Get the default samples per interval for a given RTP session
+  \param rtp_session the RTP session to get the samples per interval from
+  \return the default samples per interval of the RTP session
 */
-SWITCH_DECLARE(uint32_t) switch_rtp_get_default_packet_size(switch_rtp_t *rtp_session);
+SWITCH_DECLARE(uint32_t) switch_rtp_get_default_samples_per_interval(switch_rtp_t *rtp_session);
 
 /*! 
   \brief Set the default payload number for a given RTP session

@@ -144,9 +144,9 @@ struct switch_rtp {
 	char *user_ice;
     char *timer_name;
 	switch_time_t last_stun;
-	uint32_t packet_size;
-	uint32_t conf_packet_size;
-	uint32_t rpacket_size;
+	uint32_t samples_per_interval;
+	uint32_t conf_samples_per_interval;
+	uint32_t rsamples_per_interval;
 	uint32_t ms_per_packet;
 	uint32_t remote_port;
 	uint8_t stuncount;
@@ -351,7 +351,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session,
 												  switch_payload_t payload,
-												  uint32_t packet_size,
+												  uint32_t samples_per_interval,
 												  uint32_t ms_per_packet,
 												  switch_rtp_flag_t flags, 
 												  char *crypto_key,
@@ -366,7 +366,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 
 	*new_rtp_session = NULL;
 	
-	if (packet_size > SWITCH_RTP_MAX_BUF_LEN) {
+	if (samples_per_interval > SWITCH_RTP_MAX_BUF_LEN) {
 		*err = "Packet Size Too Large!";
 		return SWITCH_STATUS_FALSE;
 	}
@@ -454,7 +454,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	rtp_session->seq = (uint16_t)rtp_session->send_msg.header.seq;
 	rtp_session->payload = payload;
 	rtp_session->ms_per_packet = ms_per_packet;
-	rtp_session->packet_size = rtp_session->conf_packet_size = packet_size;
+	rtp_session->samples_per_interval = rtp_session->conf_samples_per_interval = samples_per_interval;
     rtp_session->timer_name = switch_core_strdup(rtp_session->pool, timer_name);
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
@@ -481,8 +481,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	}
 
 	if (!switch_strlen_zero(timer_name)) {
-		if (switch_core_timer_init(&rtp_session->timer, timer_name, ms_per_packet / 1000, packet_size, rtp_session->pool) == SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting timer [%s] %d bytes per %dms\n", timer_name, packet_size, ms_per_packet);
+		if (switch_core_timer_init(&rtp_session->timer, timer_name, ms_per_packet / 1000, samples_per_interval, rtp_session->pool) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting timer [%s] %d bytes per %dms\n", timer_name, samples_per_interval, ms_per_packet);
 		} else {
 			memset(&rtp_session->timer, 0, sizeof(rtp_session->timer));
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error starting timer [%s], async RTP disabled\n", timer_name);
@@ -500,7 +500,7 @@ SWITCH_DECLARE(switch_rtp_t *)switch_rtp_new(char *rx_host,
 											 char *tx_host,
 											 switch_port_t tx_port,
 											 switch_payload_t payload,
-											 uint32_t packet_size,
+											 uint32_t samples_per_interval,
 											 uint32_t ms_per_packet,
 											 switch_rtp_flag_t flags,
 											 char *crypto_key,
@@ -510,7 +510,7 @@ SWITCH_DECLARE(switch_rtp_t *)switch_rtp_new(char *rx_host,
 {
 	switch_rtp_t *rtp_session;
 
-	if (switch_rtp_create(&rtp_session, payload, packet_size, ms_per_packet, flags, crypto_key, timer_name, err, pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_rtp_create(&rtp_session, payload, samples_per_interval, ms_per_packet, flags, crypto_key, timer_name, err, pool) != SWITCH_STATUS_SUCCESS) {
 		return NULL;
 	}
 
@@ -619,14 +619,14 @@ SWITCH_DECLARE(switch_socket_t *)switch_rtp_get_rtp_socket(switch_rtp_t *rtp_ses
 	return rtp_session->sock;
 }
 
-SWITCH_DECLARE(void) switch_rtp_set_default_packet_size(switch_rtp_t *rtp_session, uint16_t packet_size)
+SWITCH_DECLARE(void) switch_rtp_set_default_samples_per_interval(switch_rtp_t *rtp_session, uint16_t samples_per_interval)
 {
-	rtp_session->packet_size = packet_size;
+	rtp_session->samples_per_interval = samples_per_interval;
 }
 
-SWITCH_DECLARE(uint32_t) switch_rtp_get_default_packet_size(switch_rtp_t *rtp_session)
+SWITCH_DECLARE(uint32_t) switch_rtp_get_default_samples_per_interval(switch_rtp_t *rtp_session)
 {
-	return rtp_session->packet_size;
+	return rtp_session->samples_per_interval;
 }
 
 SWITCH_DECLARE(void) switch_rtp_set_default_payload(switch_rtp_t *rtp_session, switch_payload_t payload)
@@ -669,7 +669,7 @@ SWITCH_DECLARE(void) switch_rtp_clear_flag(switch_rtp_t *rtp_session, switch_rtp
 static void do_2833(switch_rtp_t *rtp_session)
 {
 	switch_frame_flag_t flags = 0;
-	uint32_t samples = rtp_session->packet_size;
+	uint32_t samples = rtp_session->samples_per_interval;
 
 	if (rtp_session->dtmf_data.out_digit_dur > 0) {
 		int x, loops = 1, duration;
@@ -825,7 +825,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			check = (uint8_t)(switch_core_timer_check(&rtp_session->timer) == SWITCH_STATUS_SUCCESS);
 			
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTO_CNG) && 
-				rtp_session->timer.samplecount >= (rtp_session->last_write_ts + (rtp_session->packet_size * 50))) {
+				rtp_session->timer.samplecount >= (rtp_session->last_write_ts + (rtp_session->samples_per_interval * 50))) {
 				uint8_t data[2] = {0};
 				switch_frame_flag_t flags = SFF_NONE;
 				data[0] = 127;
@@ -1396,15 +1396,15 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp_t *rtp_session, void *data, uint
 	} else if (!ts && rtp_session->timer.timer_interface) {
 		uint32_t sc = rtp_session->timer.samplecount;
 		if (rtp_session->last_write_ts == sc) {
-			rtp_session->ts = sc + rtp_session->packet_size;
+			rtp_session->ts = sc + rtp_session->samples_per_interval;
 		} else {
 			rtp_session->ts = sc;
 		}
 	} else {
-		rtp_session->ts += rtp_session->packet_size;
+		rtp_session->ts += rtp_session->samples_per_interval;
 	}
 
-	if (rtp_session->ts > rtp_session->last_write_ts + rtp_session->packet_size || rtp_session->ts == rtp_session->packet_size) {
+	if (rtp_session->ts > rtp_session->last_write_ts + rtp_session->samples_per_interval || rtp_session->ts == rtp_session->samples_per_interval) {
 		mark++;
 	}
 
@@ -1432,7 +1432,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	}
 
 	fwd = (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE) && switch_test_flag(frame, SFF_RAW_RTP)) ? 1 : 0;
-	packetize = (rtp_session->packet_size > frame->datalen && (frame->payload == rtp_session->payload)) ? 1 : 0;
+	packetize = (rtp_session->samples_per_interval > frame->datalen && (frame->payload == rtp_session->payload)) ? 1 : 0;
 
 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) || !rtp_session->remote_addr) {
 		return -1;
@@ -1464,15 +1464,15 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		} else if (rtp_session->timer.timer_interface) {
 			uint32_t sc = rtp_session->timer.samplecount;
 			if (rtp_session->last_write_ts == sc) {
-				rtp_session->ts = sc + rtp_session->packet_size;
+				rtp_session->ts = sc + rtp_session->samples_per_interval;
 			} else {
 				rtp_session->ts = sc;
 			}
 		} else {
-			rtp_session->ts += rtp_session->packet_size;
+			rtp_session->ts += rtp_session->samples_per_interval;
 		}
 		
-		if (rtp_session->ts > rtp_session->last_write_ts + rtp_session->packet_size || rtp_session->ts == rtp_session->packet_size) {
+		if (rtp_session->ts > rtp_session->last_write_ts + rtp_session->samples_per_interval || rtp_session->ts == rtp_session->samples_per_interval) {
 			mark++;
 		}
 
