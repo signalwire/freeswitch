@@ -206,7 +206,6 @@ PaError OpenAudioStream( PABLIO_Stream **rwblPtr,
     long   bytesPerSample;
     PaError err;
     PABLIO_Stream *aStream;
-    long   minNumBuffers;
     long   numFrames;
 	long numBytes;
 	int channels = 1;

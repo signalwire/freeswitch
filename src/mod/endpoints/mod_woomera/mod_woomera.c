@@ -137,7 +137,7 @@ struct private_object {
 	switch_pollfd_t *read_poll;
 	switch_pollfd_t *write_poll;
 	switch_pollfd_t *command_poll;
-	char databuf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
+	char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	switch_mutex_t *iolock;
 	switch_sockaddr_t *udpread;
 	switch_sockaddr_t *udpwrite;

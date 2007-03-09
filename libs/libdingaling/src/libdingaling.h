@@ -372,7 +372,7 @@ void *ldl_handle_get_private(ldl_handle_t *handle);
   \param handle the conection handle
   \return the requested data
 */
-void *ldl_handle_get_login(ldl_handle_t *handle);
+char *ldl_handle_get_login(ldl_handle_t *handle);
 
 /*!
   \brief Send a message to a session

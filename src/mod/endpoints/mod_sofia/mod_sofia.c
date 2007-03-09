@@ -608,7 +608,7 @@ static int del_callback(void *pArg, int argc, char **argv, char **columnNames){
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "user", "%s", argv[1]);
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "host", "%s", argv[2]);
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s", argv[3]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%d", argv[4]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%s", argv[4]);
 			switch_event_fire(&s_event);
 		}
 	}
@@ -1530,7 +1530,7 @@ static switch_status_t tech_set_codec(private_object_t *tech_pvt, int force)
 			int ms;
 			tech_pvt->read_frame.rate = tech_pvt->rm_rate;
 			ms = tech_pvt->write_codec.implementation->microseconds_per_frame / 1000;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set Codec %s %s/%d %d ms\n",
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set Codec %s %s/%ld %d ms\n",
 							  switch_channel_get_name(channel),
 							  tech_pvt->rm_encoding, tech_pvt->rm_rate, tech_pvt->codec_ms);
 			tech_pvt->read_frame.codec = &tech_pvt->read_codec;
@@ -5205,7 +5205,7 @@ static switch_status_t config_sofia(int reload)
 	if ((profiles = switch_xml_child(cfg, "profiles"))) {
 		for (xprofile = switch_xml_child(profiles, "profile"); xprofile; xprofile = xprofile->next) {
 			if (!(settings = switch_xml_child(xprofile, "settings"))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Settings, check the new config!\n", cf);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Settings, check the new config!\n");
 			} else {
 				char *xprofilename = (char *) switch_xml_attr_soft(xprofile, "name");
 				switch_memory_pool_t *pool = NULL;

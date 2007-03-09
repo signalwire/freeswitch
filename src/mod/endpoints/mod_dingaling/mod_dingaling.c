@@ -2739,7 +2739,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 	case LDL_SIGNAL_ERROR:
 	case LDL_SIGNAL_TERMINATE:
 		if (channel) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hungup %s %u %d\n", switch_channel_get_name(channel));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hungup %s\n", switch_channel_get_name(channel));
 			terminate_session(&session,  __LINE__, SWITCH_CAUSE_NORMAL_CLEARING);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "End Call\n");
 			goto done;

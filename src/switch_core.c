@@ -115,14 +115,14 @@ struct switch_core_session {
 	switch_buffer_t *raw_write_buffer;
 	switch_frame_t raw_write_frame;
 	switch_frame_t enc_write_frame;
-	uint8_t raw_write_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
-	uint8_t enc_write_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
+	uint8_t raw_write_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	uint8_t enc_write_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 
 	switch_buffer_t *raw_read_buffer;
 	switch_frame_t raw_read_frame;
 	switch_frame_t enc_read_frame;
-	uint8_t raw_read_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
-	uint8_t enc_read_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
+	uint8_t raw_read_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	uint8_t enc_read_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 
 
 	switch_audio_resampler_t *read_resampler;
@@ -222,7 +222,7 @@ SWITCH_DECLARE(void *) switch_core_media_bug_get_user_data(switch_media_bug_t *b
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *bug, switch_frame_t *frame)
 {
 	uint32_t bytes = 0;
-	uint8_t data[SWITCH_RECCOMMENDED_BUFFER_SIZE] = {0};
+	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
 	uint32_t datalen = 0;
 	int16_t *dp, *fp;
 	uint32_t x;

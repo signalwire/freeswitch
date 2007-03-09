@@ -1442,7 +1442,7 @@ static void conference_loop_output(conference_member_t *member)
 {
 	switch_channel_t *channel;
 	switch_frame_t write_frame = {0};
-	uint8_t data[SWITCH_RECCOMMENDED_BUFFER_SIZE];
+	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	switch_timer_t timer = {0};
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(member->session);
 	uint32_t interval = read_codec->implementation->microseconds_per_frame / 1000;
@@ -1725,7 +1725,7 @@ static void conference_loop_output(conference_member_t *member)
 static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, void *obj)
 {
 	switch_frame_t write_frame = {0};
-	uint8_t data[SWITCH_RECCOMMENDED_BUFFER_SIZE];
+	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	switch_file_handle_t fh = {0};
 	conference_member_t smember = {0}, *member;
 	conference_record_t *rec = (conference_record_t *) obj;

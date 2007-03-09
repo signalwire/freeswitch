@@ -1186,7 +1186,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 		rtp_session->recv_msg.header.pt == rtp_session->vad_data.read_codec->implementation->ianacode &&
 		((datalen == rtp_session->vad_data.read_codec->implementation->encoded_bytes_per_frame) || 
 		 (datalen > SWITCH_RTP_CNG_PAYLOAD && rtp_session->vad_data.read_codec->implementation->encoded_bytes_per_frame == 0))) {
-		int16_t decoded[SWITCH_RECCOMMENDED_BUFFER_SIZE/sizeof(int16_t)];
+		int16_t decoded[SWITCH_RECOMMENDED_BUFFER_SIZE/sizeof(int16_t)];
 		uint32_t rate;
 		uint32_t flags;
 		uint32_t len = sizeof(decoded);

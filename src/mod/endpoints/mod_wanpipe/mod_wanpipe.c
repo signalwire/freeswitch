@@ -146,8 +146,8 @@ struct private_object {
 	switch_core_session_t *session;
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
-	unsigned char databuf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
-	unsigned char auxbuf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
+	unsigned char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	unsigned char auxbuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	struct sangoma_pri *spri;
 	sangoma_api_hdr_t hdrframe;
 	switch_caller_profile_t *caller_profile;

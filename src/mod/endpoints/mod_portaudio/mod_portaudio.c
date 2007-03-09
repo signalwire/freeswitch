@@ -82,7 +82,7 @@ struct private_object {
     switch_file_handle_t fh;
     switch_file_handle_t *hfh;
 	switch_frame_t hold_frame;
-    unsigned char holdbuf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
+    unsigned char holdbuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	switch_codec_t write_codec;
     switch_timer_t timer;
     struct private_object *next;
@@ -115,8 +115,8 @@ static struct {
 	switch_codec_t write_codec;
 	switch_frame_t read_frame;
     switch_frame_t cng_frame;
-	unsigned char databuf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
-	unsigned char cngbuf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
+	unsigned char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	unsigned char cngbuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
     private_t *call_list;
     int ring_interval;
     GFLAGS flags;

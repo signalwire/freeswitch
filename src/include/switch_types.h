@@ -247,7 +247,7 @@ typedef struct switch_directories switch_directories;
 SWITCH_DECLARE_DATA extern switch_directories SWITCH_GLOBAL_dirs;
 
 #define SWITCH_THREAD_STACKSIZE 240 * 1024
-#define SWITCH_RECCOMMENDED_BUFFER_SIZE 3968
+#define SWITCH_RECOMMENDED_BUFFER_SIZE 3968
 #define SWITCH_MAX_CODECS 30
 #define SWITCH_MAX_STATE_HANDLERS 30
 #define SWITCH_TRUE 1

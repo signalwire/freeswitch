@@ -1618,7 +1618,7 @@ void *ldl_handle_get_private(ldl_handle_t *handle)
 	return handle->private_info;
 }
 
-void *ldl_handle_get_login(ldl_handle_t *handle)
+char *ldl_handle_get_login(ldl_handle_t *handle)
 {
 	return handle->login;
 }
