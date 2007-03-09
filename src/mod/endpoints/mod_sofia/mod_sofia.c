@@ -4476,6 +4476,7 @@ static void sip_i_invite(nua_t *nua,
 
 	if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
+		nua_respond(nh, SIP_503_SERVICE_UNAVAILABLE, TAG_END());
 		terminate_session(&session, SWITCH_CAUSE_SWITCH_CONGESTION, __LINE__);
 		return;
 	}
