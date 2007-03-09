@@ -2041,7 +2041,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 		switch_set_flag_locked(tech_pvt, TFLAG_NOMEDIA);
 		tech_pvt->local_sdp_str = NULL;
-		if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+		if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
 			other_channel = switch_core_session_get_channel(other_session);
 			ip = switch_channel_get_variable(other_channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE);
 			port = switch_channel_get_variable(other_channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE);
@@ -2816,7 +2816,7 @@ static void pass_sdp(private_object_t *tech_pvt, char *sdp)
 	channel = switch_core_session_get_channel(tech_pvt->session);
 	assert(channel != NULL);
 	
-	if ((val = switch_channel_get_variable(channel, SWITCH_ORIGINATOR_VARIABLE)) && (other_session = switch_core_session_locate(val))) {
+	if ((val = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(val))) {
 		other_channel = switch_core_session_get_channel(other_session);
 		assert(other_channel != NULL);
 		if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
@@ -2922,7 +2922,7 @@ static void sip_i_state(int status,
 				switch_channel_mark_ring_ready(channel);
 				if (!switch_channel_test_flag(channel, CF_GEN_RINGBACK)) {
 					if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
-						if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+						if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
 							switch_core_session_message_t msg;
 							msg.message_id = SWITCH_MESSAGE_INDICATE_RINGING;
 							msg.from = __FILE__;
@@ -2941,7 +2941,7 @@ static void sip_i_state(int status,
 					switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
                     switch_channel_mark_pre_answered(channel);
 					if (!switch_channel_test_flag(channel, CF_GEN_RINGBACK) && 
-						(uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+						(uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
 						other_channel = switch_core_session_get_channel(other_session);
 						if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
 							switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);
@@ -3015,7 +3015,7 @@ static void sip_i_state(int status,
 							}
 
 							if ((b_private = nua_handle_magic(bnh))) {
-								char *br_b = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE);
+								char *br_b = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
 								char *br_a = b_private->uuid;
 
 								if (br_b) {
@@ -3092,7 +3092,7 @@ static void sip_i_state(int status,
 			if (switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
 				switch_set_flag_locked(tech_pvt, TFLAG_ANS);
                 switch_channel_mark_answered(channel);
-                if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+                if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
                     other_channel = switch_core_session_get_channel(other_session);
                     switch_channel_answer(other_channel);
                     switch_core_session_rwunlock(other_session);
@@ -3107,7 +3107,7 @@ static void sip_i_state(int status,
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 					switch_set_flag_locked(tech_pvt, TFLAG_ANS);
                     switch_channel_mark_answered(channel);
-					if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
 						other_channel = switch_core_session_get_channel(other_session);
 						if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
 							switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);
@@ -3995,8 +3995,8 @@ static void sip_i_refer(nua_t *nua,
                         b_tech_pvt = (private_object_t *) switch_core_session_get_private(b_session);
                         channel_b = switch_core_session_get_channel(b_session);
 				
-                        br_a = switch_channel_get_variable(channel_a, SWITCH_BRIDGE_VARIABLE);
-                        br_b = switch_channel_get_variable(channel_b, SWITCH_BRIDGE_VARIABLE);
+                        br_a = switch_channel_get_variable(channel_a, SWITCH_SIGNAL_BOND_VARIABLE);
+                        br_b = switch_channel_get_variable(channel_b, SWITCH_SIGNAL_BOND_VARIABLE);
 
                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Attended Transfer [%s][%s]\n", br_a, br_b);
                             
@@ -4059,7 +4059,7 @@ static void sip_i_refer(nua_t *nua,
                     }
                     nua_handle_unref(bnh);
                 } else { /* the other channel is on a different box, we have to go find them */
-                    if (exten && (br_a = switch_channel_get_variable(channel_a, SWITCH_BRIDGE_VARIABLE))) {
+                    if (exten && (br_a = switch_channel_get_variable(channel_a, SWITCH_SIGNAL_BOND_VARIABLE))) {
                         switch_core_session_t *a_session;
                         switch_channel_t *channel = switch_core_session_get_channel(session);
 							
@@ -4137,7 +4137,7 @@ static void sip_i_refer(nua_t *nua,
         switch_channel_t *channel = switch_core_session_get_channel(session);
         char *br;
 				
-        if ((br = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE))) {
+        if ((br = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
             switch_core_session_t *b_session;
 				
             if ((b_session = switch_core_session_locate(br))) {
