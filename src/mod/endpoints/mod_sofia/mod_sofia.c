@@ -717,7 +717,7 @@ static void set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, c
 
 	snprintf(buf, sizeof(buf), 
 			 "v=0\n"
-			 "o=FreeSWITCH %d%"APR_TIME_T_FMT" %d%"APR_TIME_T_FMT" IN IP4 %s\n"
+			 "o=FreeSWITCH %d%"SWITCH_TIME_T_FMT" %d%"SWITCH_TIME_T_FMT" IN IP4 %s\n"
 			 "s=FreeSWITCH\n"
 			 "c=IN IP4 %s\n"
 			 "t=0 0\n"
@@ -3219,13 +3219,13 @@ static char *get_auth_data(char *dbname, char *nonce, char *npassword, size_t le
 		while (running < 5000) {
 			int result = switch_core_db_step(stmt);
 
-			if (result == SQLITE_ROW) {
+			if (result == SWITCH_CORE_DB_ROW) {
 				if ((colcount = switch_core_db_column_count(stmt))) {
 					switch_copy_string(npassword, (char *)switch_core_db_column_text(stmt, 0), len);
 					ret = npassword;
 				}
 				break;
-			} else if (result == SQLITE_BUSY) {
+			} else if (result == SWITCH_CORE_DB_BUSY) {
 				running++;
 				switch_yield(1000);
 				continue;
@@ -5639,7 +5639,7 @@ static void cancel_presence(void)
     void *val;
 
 	if ((sql = switch_mprintf("select 0,'unavailable','unavailable',* from sip_subscriptions where event='presence'"))) {
-		for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		for (hi = switch_hash_first(switch_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);
 			profile = (sofia_profile_t *) val;
 			if (!(profile->pflags & PFLAG_PRESENCE)) {
@@ -5773,7 +5773,7 @@ static void pres_event_handler(switch_event_t *event)
 			sql = switch_mprintf("select 1,'%q','%q',* from sip_subscriptions where event='presence'", status, rpid);
 		}
 
-		for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		for (hi = switch_hash_first(switch_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);
 			profile = (sofia_profile_t *) val;
 			if (!(profile->pflags & PFLAG_PRESENCE)) {
@@ -5872,7 +5872,7 @@ static void pres_event_handler(switch_event_t *event)
 		break;
 	}
 
-    for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+    for (hi = switch_hash_first(switch_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
         switch_hash_this(hi, NULL, NULL, &val);
         profile = (sofia_profile_t *) val;
         if (!(profile->pflags & PFLAG_PRESENCE)) {

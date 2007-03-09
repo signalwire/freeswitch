@@ -100,7 +100,7 @@ SWITCH_DECLARE(void) switch_stun_random_string(char *buf, uint16_t len, char *se
 
 	max = (int)strlen(set);
 
-	srand((unsigned int)apr_time_now());
+	srand((unsigned int)switch_time_now());
 
 	for(x = 0; x < len; x++) {
 		int j = (int)(max*1.0*rand()/(RAND_MAX+1.0));
@@ -313,7 +313,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup (char **ip,
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	switch_socket_opt_set(sock, APR_SO_NONBLOCK, TRUE);
+	switch_socket_opt_set(sock, SWITCH_SO_NONBLOCK, TRUE);
 	packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, buf);
 	switch_stun_random_string(username, 32, NULL);
 	switch_stun_packet_attribute_add_username(packet, username, 32);
@@ -333,7 +333,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup (char **ip,
 
 		if ((elapsed = (unsigned int)((switch_time_now() - started) / 1000)) > 5000) {
 			*err = "Timeout";
-			switch_socket_shutdown(sock, APR_SHUTDOWN_READWRITE);
+			switch_socket_shutdown(sock, SWITCH_SHUTDOWN_READWRITE);
 			switch_socket_close(sock);
 			return SWITCH_STATUS_TIMEOUT;
 		}

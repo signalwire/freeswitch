@@ -44,7 +44,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libresample\include;..\..\libs\libteletone\src"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;PCRE_STATIC"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -137,7 +137,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libresample\include;..\..\libs\libteletone\src"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;CRASH_PROT"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;CRASH_PROT;PCRE_STATIC"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="switch.h"
@@ -208,6 +208,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\..\src\switch_apr.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_buffer.c"
 				>
 				<FileConfiguration
@@ -248,6 +252,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\switch_core_db.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_event.c"
 				>
 			</File>
@@ -261,6 +269,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\switch_log.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_regex.c"
 				>
 			</File>
 			<File
@@ -322,6 +334,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\include\switch_core_db.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\include\switch_event.h"
 				>
 			</File>
@@ -350,15 +366,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\include\switch_regex.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\include\switch_resample.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\src\include\switch_rtp.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\include\switch_sqlite.h"
 				>
 			</File>
 			<File

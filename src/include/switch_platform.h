@@ -48,6 +48,7 @@ SWITCH_BEGIN_EXTERN_C
 #define __SWITCH_FUNC__ (const char *)__func__
 #endif
 
+
 #ifdef _MSC_VER
 
 
@@ -62,7 +63,7 @@ SWITCH_BEGIN_EXTERN_C
  * C4512: assignment operator could not be generated
  * C4610: struct  can never be instantiated - user defined constructor required
  */
-#pragma warning(disable:4100 4200 4204 4706 4819 4132 4510 4512 4610)
+#pragma warning(disable:4100 4200 4204 4706 4819 4132 4510 4512 4610 4996)
 
 #if (_MSC_VER >= 1400) // VC8+
 #ifndef _CRT_SECURE_NO_DEPRECATE
@@ -93,20 +94,21 @@ typedef __int32		int32_t;
 typedef __int64		int64_t;
 typedef unsigned long	in_addr_t;
 #endif
+typedef  int         pid_t;
+typedef  int         uid_t;
+typedef  int         gid_t;
 #define PACKED
 #include <io.h>
+#define strcasecmp(s1, s2) stricmp(s1, s2)
+#define strncasecmp(s1, s2, n) strnicmp(s1, s2, n)
 #else
 /* packed attribute */
 #ifndef PACKED
 #define PACKED __attribute__ ((__packed__))
 #endif
-#include <limits.h>
-#include <inttypes.h>
-#include <sys/types.h>
 #include <inttypes.h>
 #include <unistd.h>
-#include <stdlib.h>
-#include <time.h>
+#include <arpa/inet.h>
 #endif // _MSC_VER
 
 #ifndef __LITTLE_ENDIAN
@@ -124,6 +126,7 @@ typedef unsigned long	in_addr_t;
 #endif
 
 #ifdef WIN32
+
 #if defined(SWITCH_CORE_DECLARE_STATIC)
 #define SWITCH_DECLARE(type)			type __stdcall
 #define SWITCH_DECLARE_NONSTD(type)		type __cdecl
@@ -152,11 +155,13 @@ typedef unsigned long	in_addr_t;
 #ifndef S_IWUSR
 #define S_IWUSR _S_IWRITE
 #endif
+#define SWITCH_THREAD_FUNC  __stdcall
 #else //not win32
 #define SWITCH_DECLARE(type) type
 #define SWITCH_DECLARE_NONSTD(type) type
 #define SWITCH_MOD_DECLARE(type) type
 #define SWITCH_DECLARE_DATA
+#define SWITCH_THREAD_FUNC
 #endif
 
 #ifdef DOXYGEN
@@ -171,9 +176,114 @@ typedef unsigned long	in_addr_t;
 #define PRINTF_FUNCTION(fmtstr,vars)
 #endif
 
-SWITCH_END_EXTERN_C
+#ifdef SWITCH_INT32
+typedef SWITCH_INT32 switch_int32_t;
+#else
+typedef int32_t switch_int32_t;
+#endif
+
+#ifdef SWITCH_SIZE_T
+typedef  SWITCH_SIZE_T  switch_size_t;
+#else
+typedef  uintptr_t  switch_size_t;
+#endif
+
+#ifdef SWITCH_SSIZE_T
+typedef  SWITCH_SSIZE_T   switch_ssize_t;
+#else
+typedef  intptr_t	switch_ssize_t;
+#endif
+
+#ifdef WIN32
+
+#ifdef WIN64
+#define SWITCH_SSIZE_T_FMT          "%I64d"
+#define SWITCH_SIZE_T_FMT           "%I64d"
+#else
+#define SWITCH_SSIZE_T_FMT          "%d"
+#define SWITCH_SIZE_T_FMT           "%d"
+#endif
+
+#define SWITCH_INT64_T_FMT          "%I64d"
+#define SWITCH_UINT64_T_FMT         "%I64u"
+
+#else
+#ifndef SWITCH_SSIZE_T_FMT
+#define SWITCH_SSIZE_T_FMT          (sizeof (switch_ssize_t) == sizeof (long) ? "%ld" : sizeof (switch_ssize_t) == sizeof (int) ? "%d" : "%lld")
+#endif
+
+#ifndef SWITCH_SIZE_T_FMT
+#define SWITCH_SIZE_T_FMT           (sizeof (switch_size_t) == sizeof (long) ? "%lu" : sizeof (switch_size_t) == sizeof (int) ? "%u" : "%llu")
+#endif
+
+#ifndef SWITCH_INT64_T_FMT
+#define SWITCH_INT64_T_FMT          (sizeof (long) == 8 ? "%ld" : "%lld")
+#endif
+
+#ifndef SWITCH_UINT64_T_FMT
+#define SWITCH_UINT64_T_FMT         (sizeof (long) == 8 ? "%lu" : "%llu")
+#endif
 
 #endif
+
+#define SWITCH_TIME_T_FMT SWITCH_INT64_T_FMT
+
+SWITCH_END_EXTERN_C
+
+/* these includes must be outside the extern "C" block on windows or it will break compatibility with c++ modules*/
+#ifdef WIN32
+/* Has windows.h already been included?  If so, our preferences don't matter,
+ * but we will still need the winsock things no matter what was included.
+ * If not, include a restricted set of windows headers to our tastes.
+ */
+#ifndef _WINDOWS_
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifndef _WIN32_WINNT
+
+/* Restrict the server to a subset of Windows NT 4.0 header files by default
+ */
+#define _WIN32_WINNT 0x0400
+#endif
+#ifndef NOUSER
+#define NOUSER
+#endif
+#ifndef NOMCX
+#define NOMCX
+#endif
+#ifndef NOIME
+#define NOIME
+#endif
+#include <windows.h>
+/* 
+ * Add a _very_few_ declarations missing from the restricted set of headers
+ * (If this list becomes extensive, re-enable the required headers above!)
+ * winsock headers were excluded by WIN32_LEAN_AND_MEAN, so include them now
+ */
+#define SW_HIDE             0
+#ifndef _WIN32_WCE
+#include <winsock2.h>
+#include <mswsock.h>
+#include <ws2tcpip.h>
+#else
+#include <winsock.h>
+#endif
+#endif /* !_WINDOWS_ */
+#include <process.h>
+#endif
+
+#endif
+
+
+#ifndef FALSE
+#define FALSE 0
+#endif
+#ifndef TRUE
+#define TRUE (!FALSE)
+#endif
+
+
 
 /* For Emacs:
  * Local Variables:

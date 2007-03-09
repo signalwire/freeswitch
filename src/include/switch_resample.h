@@ -45,7 +45,6 @@
 
 #include <switch.h>
 SWITCH_BEGIN_EXTERN_C
-#include <stdlib.h>
 
 /*!
   \defgroup resamp Audio Resample Functions

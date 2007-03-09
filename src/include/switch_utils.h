@@ -39,29 +39,14 @@
 #define SWITCH_UTILS_H
 
 #include <switch.h>
-#include <pcre.h>
 
 SWITCH_BEGIN_EXTERN_C
-
-#ifndef snprintf
-#define snprintf apr_snprintf
-#endif
-#ifndef vsnprintf
-#define vsnprintf apr_vsnprintf
-#endif
 
 #define switch_bytes_per_frame(rate, interval) ((uint32_t)((float)rate / (1000.0f / (float)interval)))
 
 #define SWITCH_SMAX 32767
 #define SWITCH_SMIN -32768
 #define switch_normalize_to_16bit(n) if (n > SWITCH_SMAX) n = SWITCH_SMAX / 2; else if (n < SWITCH_SMIN) n = SWITCH_SMIN / 2;
-
-SWITCH_DECLARE(char *) switch_get_addr(char *buf, switch_size_t len, switch_sockaddr_t *in);
-
-SWITCH_DECLARE(apr_status_t) switch_socket_recvfrom(apr_sockaddr_t *from, apr_socket_t *sock,
-									apr_int32_t flags, char *buf, 
-									apr_size_t *len);
-
 
 #define switch_codec2str(codec,buf,len) snprintf(buf, len, "%s@%uk@%ui", \
                                                  codec->implementation->iananame, \
@@ -133,10 +118,6 @@ SWITCH_DECLARE(unsigned char) switch_char_to_rfc2833(char key);
  */
 #define is_dtmf(key)  ((key > 47 && key < 58) || (key > 64 && key < 69) || (key > 96 && key < 101) || key == 35 || key == 42 || key == 87 || key == 119)
 
-/*!
-  \brief Duplicate a string 
-*/
-#define switch_copy_string apr_cpystrn
 
 /*!
   \brief Test for the existance of a flag on an arbitary object
@@ -209,13 +190,7 @@ switch_mutex_unlock(obj->flag_mutex);
 /*!
   \brief Wait a desired number of microseconds and yield the CPU
 */
-#if defined(HAVE_USLEEP)
-#define switch_yield(ms) usleep(ms);
-#elif defined(WIN32)
-#define switch_yield(ms) Sleep((DWORD)((ms) / 1000));
-#else
-#define switch_yield(ms) apr_sleep(ms); //apr_thread_yield();
-#endif
+#define switch_yield(ms) switch_sleep(ms);
 
 /*!
   \brief Converts a string representation of a date into a switch_time_t
@@ -253,16 +228,6 @@ SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char 
 SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t *pool, char *in, char *delim, char esc);
 
 /*!
-  \brief Create a set of file descriptors to poll
-  \param poll the polfd to create
-  \param sock the socket to add
-  \param flags the flags to modify the behaviour
-  \param pool the memory pool to use
-  \return SWITCH_STATUS_SUCCESS when successful
-*/
-SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t *poll, switch_socket_t *sock, switch_int16_t flags, switch_memory_pool_t *pool);
-
-/*!
   \brief Wait for a socket
   \param poll the pollfd to wait on
   \param ms the number of milliseconds to wait
@@ -276,20 +241,12 @@ SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms);
 */
 SWITCH_DECLARE(const char *) switch_cut_path(const char *in);
 
-#define switch_clean_re(re)	if (re) {\
-				pcre_free(re);\
-				re = NULL;\
-			}
-
 SWITCH_DECLARE(char *) switch_string_replace(const char *string, const char *search, const char *replace);
 SWITCH_DECLARE(switch_status_t) switch_string_match(const char *string, size_t string_len, const char *search, size_t search_len);
-SWITCH_DECLARE(int) switch_perform_regex(char *field, char *expression, pcre **new_re, int *ovector, uint32_t olen);
-SWITCH_DECLARE(void) switch_perform_substitution(pcre *re, int match_count, char *data, char *field_data, char *substituted, uint32_t len, int *ovector);
 
 #define SWITCH_READ_ACCEPTABLE(status) (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK)
 SWITCH_DECLARE(size_t) switch_url_encode(char *url, char *buf, size_t len);
 SWITCH_DECLARE(char *) switch_url_decode(char *s);
-SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename);
 SWITCH_END_EXTERN_C
 
 #endif

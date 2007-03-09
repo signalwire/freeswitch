@@ -53,7 +53,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="./"
-				PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;DEBUG;PCRE_DEFINITION;DLL_EXPORT"
+				PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;DEBUG;PCRE_DEFINITION;PCRE_STATIC"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -97,7 +97,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\pcre\pcre.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 		</Configuration>
 		<Configuration
@@ -140,7 +140,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="./"
-				PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;PCRE_DEFINITION;DLL_EXPORT"
+				PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;PCRE_DEFINITION;PCRE_STATIC"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -183,7 +183,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\pcre\pcre.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 		</Configuration>
 		<Configuration
@@ -285,7 +285,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\pcre\pcre.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 		</Configuration>
 		<Configuration
@@ -386,7 +386,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\pcre\pcre.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 		</Configuration>
 	</Configurations>

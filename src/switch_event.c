@@ -532,12 +532,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, con
 	va_list ap;
 	if (fmt) {
 		va_start(ap, fmt);
-#ifdef HAVE_VASPRINTF
-		ret = vasprintf(&data, fmt, ap);
-#else
-		data = (char *) malloc(2048);
-		ret = vsnprintf(data, 2048, fmt, ap);
-#endif
+		ret = switch_vasprintf(&data, fmt, ap);
 		va_end(ap);
 
 		if (ret == -1) {

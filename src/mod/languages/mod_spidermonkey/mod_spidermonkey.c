@@ -438,9 +438,9 @@ static void js_error(JSContext *cx, const char *message, JSErrorReport *report)
 static switch_status_t sm_load_file(char *filename)
 {
 	sm_loadable_module_t *module = NULL;
-	apr_dso_handle_t *dso = NULL;
-	apr_status_t status = SWITCH_STATUS_SUCCESS;
-	apr_dso_handle_sym_t function_handle = NULL;
+	switch_dso_handle_t *dso = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_dso_handle_sym_t function_handle = NULL;
 	spidermonkey_init_t spidermonkey_init = NULL;
 	const sm_module_interface_t *module_interface = NULL, *mp;
 
@@ -450,16 +450,16 @@ static switch_status_t sm_load_file(char *filename)
 
 	assert(filename != NULL);
 
-	status = apr_dso_load(&dso, filename, module_manager.pool);
+	status = switch_dso_load(&dso, filename, module_manager.pool);
 
 	while (loading) {
-		if (status != APR_SUCCESS) {
-			apr_dso_error(dso, derr, sizeof(derr));
+		if (status != SWITCH_STATUS_SUCCESS) {
+			switch_dso_error(dso, derr, sizeof(derr));
 			err = derr;
 			break;
 		}
 
-		status = apr_dso_sym(&function_handle, dso, "spidermonkey_init");
+		status = switch_dso_sym(&function_handle, dso, "spidermonkey_init");
 		spidermonkey_init = (spidermonkey_init_t)(intptr_t) function_handle;
 			
 		if (spidermonkey_init == NULL) {

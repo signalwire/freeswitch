@@ -65,7 +65,7 @@ enum switch_mod_cdr_sql_types_t { CDR_INTEGER,CDR_STRING,CDR_DECIMAL,CDR_DOUBLE,
 #define STDCALL
 #endif
 
-typedef apr_status_t (STDCALL *modcdr_time_convert_t)(apr_time_exp_t*,apr_time_t);
+typedef switch_status_t (STDCALL *modcdr_time_convert_t)(switch_time_exp_t*,switch_time_t);
 
 class BaseCDR {
 	public:

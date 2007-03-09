@@ -30,7 +30,15 @@
  *
  */
 #include <switch.h>
-#include <ctype.h>
+
+/* for apr_pstrcat */
+#include <apr_strings.h>
+
+/* for apr_env_get and apr_env_set */
+#include <apr_env.h>
+
+/* for apr file and directory handling */
+#include <apr_file_io.h>
 
 struct switch_loadable_module {
 	char *filename;
@@ -360,11 +368,11 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 static switch_status_t switch_loadable_module_load_file(char *filename, switch_loadable_module_t **new_module)
 {
 	switch_loadable_module_t *module = NULL;
-	apr_dso_handle_t *dso = NULL;
+	switch_dso_handle_t *dso = NULL;
 	apr_status_t status = SWITCH_STATUS_SUCCESS;
-	apr_dso_handle_sym_t load_function_handle = NULL;
-	apr_dso_handle_sym_t shutdown_function_handle = NULL;
-	apr_dso_handle_sym_t runtime_function_handle = NULL;
+	switch_dso_handle_sym_t load_function_handle = NULL;
+	switch_dso_handle_sym_t shutdown_function_handle = NULL;
+	switch_dso_handle_sym_t runtime_function_handle = NULL;
 	switch_module_load_t load_func_ptr = NULL;
 	int loading = 1;
 	const char *err = NULL;
@@ -374,16 +382,16 @@ static switch_status_t switch_loadable_module_load_file(char *filename, switch_l
 	assert(filename != NULL);
 
 	*new_module = NULL;
-	status = apr_dso_load(&dso, filename, loadable_modules.pool);
+	status = switch_dso_load(&dso, filename, loadable_modules.pool);
 
 	while (loading) {
 		if (status != APR_SUCCESS) {
-			apr_dso_error(dso, derr, sizeof(derr));
+			switch_dso_error(dso, derr, sizeof(derr));
 			err = derr;
 			break;
 		}
 
-		status = apr_dso_sym(&load_function_handle, dso, "switch_module_load");
+		status = switch_dso_sym(&load_function_handle, dso, "switch_module_load");
 		load_func_ptr = (switch_module_load_t)(intptr_t) load_function_handle;
 
 		if (load_func_ptr == NULL) {
@@ -414,9 +422,9 @@ static switch_status_t switch_loadable_module_load_file(char *filename, switch_l
 	module->module_interface = module_interface;
 	module->switch_module_load = load_func_ptr;
 
-	apr_dso_sym(&shutdown_function_handle, dso, "switch_module_shutdown");
+	switch_dso_sym(&shutdown_function_handle, dso, "switch_module_shutdown");
 	module->switch_module_shutdown = (switch_module_shutdown_t)(intptr_t) shutdown_function_handle;
-	apr_dso_sym(&runtime_function_handle, dso, "switch_module_runtime");
+	switch_dso_sym(&runtime_function_handle, dso, "switch_module_runtime");
 	module->switch_module_runtime = (switch_module_runtime_t)(intptr_t) runtime_function_handle;
 
 	module->lib = dso;
@@ -700,7 +708,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping: %s\n", module->module_interface->module_name);
 			if (module->switch_module_shutdown() == SWITCH_STATUS_UNLOAD) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s unloaded.\n", module->module_interface->module_name);
-				apr_dso_unload(module->lib);
+				switch_dso_unload(module->lib);
 				module->lib = NULL;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s shutdown.\n", module->module_interface->module_name);

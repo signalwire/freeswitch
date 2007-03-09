@@ -51,12 +51,29 @@
 #define FREESWITCH_MIB ".1.3.6.1.4.1." FREESWITCH_PEN
 #define FREESWITCH_ITAD "543"
 
-#include <switch_platform.h>
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <stddef.h>
 #include <assert.h>
 #include <setjmp.h>
-#include <switch_apr.h>
-#include <switch_sqlite.h>
+#include <ctype.h>
+#include <fcntl.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <limits.h>
+#include <sys/types.h>
+#include <time.h>
+#include <signal.h>
+#include <errno.h>
+
+#include <switch_platform.h>
 #include <switch_types.h>
+#include <switch_apr.h>
+
+#include <switch_core_db.h>
+#include <switch_regex.h>
 #include <switch_core.h>
 #include <switch_loadable_module.h>
 #include <switch_console.h>
@@ -74,7 +91,6 @@
 #include <switch_stun.h>
 #include <switch_log.h>
 #include <switch_xml.h>
-#include <pcre.h>
 
 
 /** \mainpage FreeSWITCH

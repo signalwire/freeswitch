@@ -363,7 +363,7 @@ static void pres_event_handler(switch_event_t *event)
 						 type, rpid, status, proto, from);
 	
 	
-	for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_hash_first(switch_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		char *errmsg;
         switch_hash_this(hi, NULL, NULL, &val);
         profile = (struct mdl_profile *) val;
@@ -462,7 +462,7 @@ static void roster_event_handler(switch_event_t *event)
 		sql = switch_mprintf("select *,'%q' from subscriptions", status ? status : "");
 	}
 
-	for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_hash_first(switch_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		char *errmsg;
         switch_hash_this(hi, NULL, NULL, &val);
         profile = (struct mdl_profile *) val;
@@ -537,7 +537,7 @@ static void sign_off(void)
 	sql = switch_mprintf("select * from subscriptions");
 	
 
-	for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_hash_first(switch_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		char *errmsg;
         switch_hash_this(hi, NULL, NULL, &val);
         profile = (struct mdl_profile *) val;

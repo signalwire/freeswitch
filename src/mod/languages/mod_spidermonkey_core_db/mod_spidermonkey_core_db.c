@@ -153,10 +153,10 @@ static JSBool db_next(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 		int running = 1;
 		while (running < 5000) {
 			int result = switch_core_db_step(dbo->stmt);
-			if (result == SQLITE_ROW) {
+			if (result == SWITCH_CORE_DB_ROW) {
 				*rval = BOOLEAN_TO_JSVAL( JS_TRUE );	
 				break;
-			} else if (result == SQLITE_BUSY) {
+			} else if (result == SWITCH_CORE_DB_BUSY) {
 				running++;
 				continue;
 			}

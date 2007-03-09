@@ -78,7 +78,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\sqlite\src\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;xcopy &quot;$(ProjectDir)*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -142,7 +142,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\sqlite\src\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;xcopy &quot;$(ProjectDir)*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -224,7 +224,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\sqlite\src\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;xcopy &quot;$(ProjectDir)*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -299,7 +299,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\sqlite\src\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;xcopy &quot;$(ProjectDir)*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

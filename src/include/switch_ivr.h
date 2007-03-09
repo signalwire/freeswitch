@@ -221,13 +221,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
                                                        switch_input_args_t *args,
                                                        uint32_t limit);
 
-/*!
- \brief Function to evaluate an expression against a string
- \param target The string to find a match in
- \param expression The regular expression to run against the string
- \return Boolean if a match was found or not
-*/
-SWITCH_DECLARE(switch_status_t) switch_regex_match(char *target, char *expression);
 
 /*!
   \brief Play a sound and gather digits with the number of retries specified if the user doesn't give digits in the set time

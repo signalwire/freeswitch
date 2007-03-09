@@ -194,7 +194,7 @@ static void socket_function(switch_core_session_t *session, char *data)
 		return;
 	}
 
-	if (switch_socket_create(&new_sock, AF_INET, SOCK_STREAM, APR_PROTO_TCP, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+	if (switch_socket_create(&new_sock, AF_INET, SOCK_STREAM, SWITCH_PROTO_TCP, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error!\n");
 		return;
 	}
@@ -271,7 +271,7 @@ static switch_loadable_module_interface_t event_socket_module_interface = {
 static void close_socket(switch_socket_t **sock) {
 	switch_mutex_lock(listen_list.sock_mutex);
 	if (*sock) {
-		apr_socket_shutdown(*sock, APR_SHUTDOWN_READWRITE);
+		switch_socket_shutdown(*sock, SWITCH_SHUTDOWN_READWRITE);
 		switch_socket_close(*sock);
 		*sock = NULL;
 	}
@@ -449,7 +449,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 
 
 					if (data) {
-						snprintf(buf, sizeof(buf), "Content-Type: log/data\nContent-Length: %"APR_SSIZE_T_FMT"\n\n", strlen(data));
+						snprintf(buf, sizeof(buf), "Content-Type: log/data\nContent-Length: %"SWITCH_SSIZE_T_FMT"\n\n", strlen(data));
 						len = strlen(buf);
 						switch_socket_send(listener->sock, buf, &len);
 						len = strlen(data);
@@ -486,7 +486,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			
 					len = strlen(listener->ebuf);
 
-					snprintf(hbuf, sizeof(hbuf), "Content-Length: %"APR_SSIZE_T_FMT"\n" 
+					snprintf(hbuf, sizeof(hbuf), "Content-Length: %"SWITCH_SSIZE_T_FMT"\n" 
 							 "Content-Type: text/event-%s\n"
 							 "\n", len, etype);
 
@@ -558,7 +558,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
         switch_size_t rlen, blen;
         char buf[1024] = "";
         rlen = strlen(reply);			
-        snprintf(buf, sizeof(buf), "Content-Type: api/response\nContent-Length: %"APR_SSIZE_T_FMT"\n\n", rlen);
+        snprintf(buf, sizeof(buf), "Content-Type: api/response\nContent-Length: %"SWITCH_SSIZE_T_FMT"\n\n", rlen);
         blen = strlen(buf);
         switch_socket_send(acs->listener->sock, buf, &blen);
         switch_socket_send(acs->listener->sock, reply, &rlen);
@@ -1006,7 +1006,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Open\n");
 
-	switch_socket_opt_set(listener->sock, APR_SO_NONBLOCK, TRUE);
+	switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, TRUE);
 	switch_set_flag_locked(listener, LFLAG_RUNNING);
 	add_listener(listener);
 
@@ -1210,9 +1210,9 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 	
 	
 	for(;;) {
-		rv = switch_sockaddr_info_get(&sa, prefs.ip, APR_INET, prefs.port, 0, pool);
+		rv = switch_sockaddr_info_get(&sa, prefs.ip, SWITCH_INET, prefs.port, 0, pool);
 		if (rv) goto fail;
-		rv = switch_socket_create(&listen_list.sock, sa->family, SOCK_STREAM, APR_PROTO_TCP, pool);
+		rv = switch_socket_create(&listen_list.sock, switch_sockaddr_get_family(sa), SOCK_STREAM, SWITCH_PROTO_TCP, pool);
 		if (rv) goto sock_fail;
 		rv = switch_socket_opt_set(listen_list.sock, SWITCH_SO_REUSEADDR, 1);
 		if (rv) goto sock_fail;

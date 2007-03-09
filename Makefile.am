@@ -4,82 +4,46 @@ AUTOMAKE_OPTS = gnu foreign
 NAME=freeswitch
 PREFIX=$(prefix)
 
-AM_CFLAGS       = $(new_AM_CFLAGS)
+AM_CFLAGS   = $(new_AM_CFLAGS)
 AM_CPPFLAGS = $(AM_CFLAGS)
-AM_LDFLAGS = $(new_AM_LDFLAGS)
-
-APR_CONFIG=$(prefix)/bin/apr-1-config
-APU_CONFIG=$(prefix)/bin/apu-1-config
-AM_CFLAGS  += -I$(PREFIX)/include $(shell $(APR_CONFIG) --cflags --cppflags --includes) -I${prefix}/include/srtp
-AM_LDFLAGS += -L$(PREFIX)/lib
-AM_LDFLAGS += $(shell $(APR_CONFIG) --link-ld --libs )
-AM_CFLAGS  += $(shell $(APU_CONFIG) --includes) 
-AM_LDFLAGS += $(shell $(APU_CONFIG) --link-ld --libs )
-AM_LDFLAGS += -lm -L/usr/local/lib/db42 -L/usr/local/lib
-AM_LDFLAGS += -lsqlite3 -lpcre
+AM_LDFLAGS  = $(new_AM_LDFLAGS)
+BASE        = $(PWD)
 OSARCH=$(shell uname -s)
+LIBTOOL=$(PWD)/libtool
+LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
+
+FIRST_INCLUDES = -I$(PWD)/src/include -I$(PWD)
+AM_CFLAGS  += $(FIRST_INCLUDES) -I$(PREFIX)/include
+
+AM_LDFLAGS += -L$(PREFIX)/lib
+AM_LDFLAGS += -lm -L/usr/local/lib/db42 -L/usr/local/lib
 
 if CRASHPROT
 AM_CFLAGS += -DCRASH_PROT
 endif
 
-AM_CFLAGS  +=-I$(PWD)/src/sqlite -I$(PWD) -I$(PWD)/src/include -I$(PREFIX)/include
-AM_CFLAGS 	+= -DSWITCH_MOD_DIR=\"$(PREFIX)/mod\"
-AM_CFLAGS	+= -DSWITCH_PREFIX_DIR=\"$(PREFIX)\"
-AM_CFLAGS	+= -DSWITCH_CONF_DIR=\"$(PREFIX)/conf\"
-AM_CFLAGS	+= -DSWITCH_DB_DIR=\"$(PREFIX)/db\"
-AM_CFLAGS	+= -DSWITCH_LOG_DIR=\"$(PREFIX)/log\"
-AM_CFLAGS	+= -DSWITCH_SCRIPT_DIR=\"$(PREFIX)/scripts\"
-AM_CFLAGS	+= -DSWITCH_HTDOCS_DIR=\"$(PREFIX)/htdocs\"
-AM_CFLAGS	+= -DSWITCH_GRAMMAR_DIR=\"$(PREFIX)/grammar\"
-
-
 libfreeswitch_la_SOURCES	= \
-src/include/switch_am_config.h\
-src/include/switch.h\
-src/include/switch_apr.h\
-src/include/switch_buffer.h\
-src/include/switch_caller.h\
-src/include/switch_channel.h\
-src/include/switch_config.h\
-src/include/switch_console.h\
-src/include/switch_core.h\
-src/include/switch_event.h\
-src/include/switch_frame.h\
-src/include/switch_ivr.h\
-src/include/switch_loadable_module.h\
-src/include/switch_module_interfaces.h\
-src/include/switch_platform.h\
-src/include/switch_resample.h\
-src/include/switch_sqlite.h\
-src/include/switch_types.h\
-src/include/switch_utils.h\
-src/include/switch_version.h\
-src/include/switch_rtp.h\
-src/include/switch_stun.h\
-src/include/switch_log.h\
-src/include/switch_xml.h\
-src/switch_rtp.c\
+src/switch_apr.c \
 src/switch_buffer.c \
 src/switch_caller.c \
 src/switch_channel.c \
 src/switch_config.c \
 src/switch_console.c \
 src/switch_core.c \
+src/switch_core_db.c\
 src/switch_loadable_module.c \
 src/switch_utils.c \
 src/switch_event.c \
 src/switch_resample.c \
+src/switch_regex.c\
+src/switch_rtp.c\
 src/switch_ivr.c \
 src/switch_stun.c\
 src/switch_log.c\
 src/switch_xml.c
 
-
-
-#bindir = $(PREFIX)/bin
-#libdir = $(PREFIX)/lib
 library_includedir	= $(PREFIX)/include
+
 library_include_HEADERS = \
 src/include/switch_am_config.h\
 src/include/switch.h\
@@ -90,6 +54,7 @@ src/include/switch_channel.h\
 src/include/switch_config.h\
 src/include/switch_console.h\
 src/include/switch_core.h\
+src/include/switch_core_db.h\
 src/include/switch_event.h\
 src/include/switch_frame.h\
 src/include/switch_ivr.h\
@@ -97,7 +62,7 @@ src/include/switch_loadable_module.h\
 src/include/switch_module_interfaces.h\
 src/include/switch_platform.h\
 src/include/switch_resample.h\
-src/include/switch_sqlite.h\
+src/include/switch_regex.h\
 src/include/switch_types.h\
 src/include/switch_utils.h\
 src/include/switch_rtp.h\
@@ -109,12 +74,39 @@ src/include/switch_xml.h
 BUILT_SOURCES = version depends
 CLEANFILES = src/include/switch_version.h scripts/fsxs
 
+APR_CONFIG=$(PWD)/libs/apr/apr-1-config
+APU_CONFIG=$(PWD)/libs/apr-util/apu-1-config
 
-lib_LTLIBRARIES		= libfreeswitch.la
-libfreeswitch_la_CFLAGS	= $(AM_CFLAGS)
-libfreeswitch_la_LDFLAGS	= -version-info 1:0:0
-libfreeswitch_la_LIBADD  = -lteletone -lresample -lsrtp -lsqlite3 -lpcre
+CORE_INCLUDES	  = -I$(PWD)/libs/apr/include
+CORE_INCLUDES	 += -I$(PWD)/libs/apr-util/include
+CORE_INCLUDES	 += -I$(PWD)/libs/sqlite
+CORE_INCLUDES	 += -I$(PWD)/libs/pcre
+CORE_INCLUDES	 += -I$(PWD)/libs/srtp/include
+CORE_INCLUDES	 += -I$(PWD)/libs/srtp/crypto/include
+CORE_INCLUDES  += -I$(PWD)/libs/libresample/include
+CORE_INCLUDES  += -I$(PWD)/libs/libteletone/src
+
+CORE_CFLAGS     = $(shell $(APR_CONFIG) --cflags --cppflags --includes)
+CORE_CFLAGS    += $(shell $(APU_CONFIG) --includes)
+CORE_CFLAGS    += -DSWITCH_MOD_DIR=\"$(PREFIX)/mod\"
+CORE_CFLAGS    += -DSWITCH_PREFIX_DIR=\"$(PREFIX)\"
+CORE_CFLAGS    += -DSWITCH_CONF_DIR=\"$(PREFIX)/conf\"
+CORE_CFLAGS	   += -DSWITCH_DB_DIR=\"$(PREFIX)/db\"
+CORE_CFLAGS	   += -DSWITCH_LOG_DIR=\"$(PREFIX)/log\"
+CORE_CFLAGS	   += -DSWITCH_SCRIPT_DIR=\"$(PREFIX)/scripts\"
+CORE_CFLAGS	   += -DSWITCH_HTDOCS_DIR=\"$(PREFIX)/htdocs\"
+CORE_CFLAGS	   += -DSWITCH_GRAMMAR_DIR=\"$(PREFIX)/grammar\"
+
+CORE_LDFLAGS    = $(shell $(APR_CONFIG) --link-ld --libs )
+CORE_LDFLAGS   += $(shell $(APU_CONFIG) --link-ld --libs )
+
+lib_LTLIBRARIES	          = libfreeswitch.la
+libfreeswitch_la_CFLAGS   = $(FIRST_INCLUDES) $(CORE_INCLUDES) $(AM_CFLAGS) $(CORE_CFLAGS)
+libfreeswitch_la_LDFLAGS  = -version-info 1:0:0 $(AM_LDFLAGS) $(CORE_LDFLAGS)
+libfreeswitch_la_LIBADD   = -lteletone -lresample -lsrtp -lsqlite3 -lpcre
 nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
+
+$(libfreeswitch_la_SOURCES): depends version
 
 bin_PROGRAMS =	freeswitch
 bin_SCRIPTS = scripts/fsxs
@@ -122,9 +114,6 @@ freeswitch_SOURCES = 	src/switch.c\
 			src/include/switch_version.h
 freeswitch_CFLAGS = $(AM_CFLAGS)
 freeswitch_LDADD = ${top_builddir}/libfreeswitch.la 
-
-
-
 
 version: Makefile src/include/switch_version.h
 	MAKE=$(MAKE) ./build/checkversion.sh
@@ -153,7 +142,6 @@ depends:
 	./build/buildlib.sh . install libresample --prefix=$(PREFIX)
 	./build/buildlib.sh . install libteletone --prefix=$(PREFIX)
 	./build/buildlib.sh . install srtp --prefix=$(PREFIX)
-#	./build/buildlib.sh . install libspeakup --prefix=$(PREFIX)
 	./build/buildlib.sh . install pcre --prefix=$(PREFIX)
 	rm build/freeswitch.env
 

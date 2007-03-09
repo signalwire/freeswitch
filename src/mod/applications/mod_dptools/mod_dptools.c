@@ -374,7 +374,7 @@ static switch_status_t strepoch_api_function(char *data, switch_core_session_t *
         out = switch_str_time(data);
     }
 
-    stream->write_function(stream, "%d", (uint32_t)apr_time_sec(out));
+    stream->write_function(stream, "%d", (uint32_t)((out) / (int64_t)(1000000)) );
 
 	return SWITCH_STATUS_SUCCESS;
 }

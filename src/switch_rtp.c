@@ -242,7 +242,7 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 		remote_ip = switch_get_addr(ipbuf, sizeof(ipbuf), rtp_session->from_addr);
 		
 
-		switch_stun_packet_attribute_add_binded_address(rpacket, remote_ip, rtp_session->from_addr->port);
+		switch_stun_packet_attribute_add_binded_address(rpacket, remote_ip, switch_sockaddr_get_port(rtp_session->from_addr));
 		bytes = switch_stun_packet_length(rpacket);
 		switch_socket_sendto(rtp_session->sock, rtp_session->from_addr, 0, (void*)rpacket, &bytes);
 	}
@@ -310,7 +310,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 	new_sock = NULL;
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK)) {
-		switch_socket_opt_set(rtp_session->sock, APR_SO_NONBLOCK, TRUE);
+		switch_socket_opt_set(rtp_session->sock, SWITCH_SO_NONBLOCK, TRUE);
 		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
 	}
 
@@ -566,7 +566,7 @@ SWITCH_DECLARE(void) switch_rtp_kill_socket(switch_rtp_t *rtp_session)
 	switch_mutex_lock(rtp_session->flag_mutex);
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
 		assert(rtp_session->sock != NULL);
-		apr_socket_shutdown(rtp_session->sock, APR_SHUTDOWN_READWRITE);
+		switch_socket_shutdown(rtp_session->sock, SWITCH_SHUTDOWN_READWRITE);
 		switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_IO);
 	}
 	switch_mutex_unlock(rtp_session->flag_mutex);
@@ -869,21 +869,21 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 
 		if (rtp_session->recv_msg.header.version) {
-			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && rtp_session->from_addr->port) {
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && switch_sockaddr_get_port(rtp_session->from_addr)) {
                 char *tx_host;
                 char *old_host;
                 char bufa[30], bufb[30];
                 tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->from_addr);
                 old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);
 
-				if ((rtp_session->from_addr->port != rtp_session->remote_port) || strcmp(tx_host, old_host)) {
+				if ((switch_sockaddr_get_port(rtp_session->from_addr) != rtp_session->remote_port) || strcmp(tx_host, old_host)) {
 					const char *err;
 					uint32_t old = rtp_session->remote_port;
 
-					if (!switch_strlen_zero(tx_host) && rtp_session->from_addr->port > 0) {
+					if (!switch_strlen_zero(tx_host) && switch_sockaddr_get_port(rtp_session->from_addr) > 0) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Auto Changing port from %s:%u to %s:%u\n",
-										  old_host, old, tx_host, rtp_session->from_addr->port);
-						switch_rtp_set_remote_address(rtp_session, tx_host, rtp_session->from_addr->port, &err);
+										  old_host, old, tx_host, switch_sockaddr_get_port(rtp_session->from_addr));
+						switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(rtp_session->from_addr), &err);
 					}
 				}
 				switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);

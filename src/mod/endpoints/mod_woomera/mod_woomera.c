@@ -117,7 +117,7 @@ struct woomera_event_queue {
 struct woomera_profile {
 	char *name;
 	switch_socket_t *woomera_socket;
-	apr_thread_mutex_t *iolock;
+	switch_mutex_t *iolock;
 	char woomera_host[WOOMERA_STRLEN];
 	switch_port_t woomera_port;
 	char audio_ip[WOOMERA_STRLEN];
@@ -134,9 +134,9 @@ struct private_object {
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
 	switch_core_session_t *session;
-	switch_pollfd_t read_poll;
-	switch_pollfd_t write_poll;
-	switch_pollfd_t command_poll;
+	switch_pollfd_t *read_poll;
+	switch_pollfd_t *write_poll;
+	switch_pollfd_t *command_poll;
 	char databuf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
 	switch_mutex_t *iolock;
 	switch_sockaddr_t *udpread;
@@ -306,7 +306,7 @@ static void woomera_socket_close(switch_socket_t **socket)
 static void udp_socket_close(struct private_object *tech_pvt)
 {
 	if (tech_pvt->udp_socket) {
-		apr_socket_shutdown(tech_pvt->udp_socket, APR_SHUTDOWN_READWRITE);
+		switch_socket_shutdown(tech_pvt->udp_socket, SWITCH_SHUTDOWN_READWRITE);
 		woomera_socket_close(&tech_pvt->udp_socket);
 	}
 }
@@ -364,7 +364,7 @@ static switch_status_t woomera_waitfor_read(switch_core_session_t *session, int 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	return switch_socket_waitfor(&tech_pvt->read_poll, ms) ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
+	return switch_socket_waitfor(tech_pvt->read_poll, ms) ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t woomera_waitfor_write(switch_core_session_t *session, int ms, int stream_id)
@@ -375,7 +375,7 @@ static switch_status_t woomera_waitfor_write(switch_core_session_t *session, int
 	assert(tech_pvt != NULL);
 
 	return SWITCH_STATUS_SUCCESS;
-//	return switch_socket_waitfor(&tech_pvt->write_poll, ms);
+//	return switch_socket_waitfor(tech_pvt->write_poll, ms);
 }
 
 static switch_status_t woomera_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,

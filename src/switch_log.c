@@ -193,12 +193,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 		fmt = new_fmt;
 	}
 
-#ifdef HAVE_VASPRINTF
-	ret = vasprintf(&data, fmt, ap);
-#else
-	data = (char *) malloc(2048);
-	ret = vsnprintf(data, 2048, fmt, ap);
-#endif
+	ret = switch_vasprintf(&data, fmt, ap);
 	va_end(ap);
 	if (ret == -1) {
 		fprintf(stderr, "Memory Error\n");

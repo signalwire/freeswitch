@@ -67,7 +67,7 @@ CsvCDR::CsvCDR(switch_mod_cdr_newchannel_t *newchannel) : BaseCDR(newchannel)
 		convert_time(&tempcallend, callenddate);
 		
 		// Format the times
-		apr_size_t retsizecsd, retsizecad, retsizectd, retsizeced;  //csd == callstartdate, cad == callanswerdate, ced == callenddate, ceff == callenddate_forfile
+		switch_size_t retsizecsd, retsizecad, retsizectd, retsizeced;  //csd == callstartdate, cad == callanswerdate, ced == callenddate, ceff == callenddate_forfile
 		char format[] = "%Y-%m-%d %H:%M:%S";
 		switch_strftime(formattedcallstartdate,&retsizecsd,sizeof(formattedcallstartdate),format,&tempcallstart);
 		switch_strftime(formattedcallanswerdate,&retsizecad,sizeof(formattedcallanswerdate),format,&tempcallanswer);
@@ -213,7 +213,7 @@ void CsvCDR::open_file()
 		
 	switch_time_exp_lt(&now_converted,now);
 		
-	apr_size_t retsize;		
+	switch_size_t retsize;		
 	char format[] = "%Y-%m-%d-%H-%M-%S";
 	char formatteddate[100];
 	memset(formatteddate,0,100);

@@ -65,10 +65,10 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_bindings, globals.bindings)
 	char *next, *cur;
 	uint32_t count = 0;
 	uint8_t custom = 0;
-	apr_ssize_t hlen = APR_HASH_KEY_STRING;
+	switch_ssize_t hlen = SWITCH_HASH_KEY_STRING;
 
 	gethostname(globals.hostname, sizeof(globals.hostname));
-	globals.host_hash = apr_hashfunc_default(globals.hostname, &hlen);
+	globals.host_hash = switch_hashfunc_default(globals.hostname, &hlen);
 	globals.key_count = 0;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -256,7 +256,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 {
 	int x = 0;
 
-	switch_socket_shutdown(globals.udp_socket, APR_SHUTDOWN_READWRITE);
+	switch_socket_shutdown(globals.udp_socket, SWITCH_SHUTDOWN_READWRITE);
 	globals.running = -1;
 	while(x < 100000 && globals.running) {
 		x++;

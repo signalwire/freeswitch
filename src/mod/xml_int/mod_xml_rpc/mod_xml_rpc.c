@@ -134,13 +134,7 @@ static switch_status_t http_stream_write(switch_stream_handle_t *handle, const c
 	char *data;
 
 	va_start(ap, fmt);
-#ifdef HAVE_VASPRINTF
-	ret = vasprintf(&data, fmt, ap);
-#else
-	if ((data = (char *) malloc(2048))) {
-		vsnprintf(data, 2048, fmt, ap);
-	}
-#endif
+	ret = switch_vasprintf(&data, fmt, ap);
 	va_end(ap);
 	
 	if (data) {

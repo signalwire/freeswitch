@@ -92,10 +92,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *cmd = switch_event_get_header(event, "call-command");
 	unsigned long cmd_hash;
-	apr_ssize_t hlen = APR_HASH_KEY_STRING;
-	unsigned long CMD_EXECUTE = apr_hashfunc_default("execute", &hlen);
-	unsigned long CMD_HANGUP = apr_hashfunc_default("hangup", &hlen);
-	unsigned long CMD_NOMEDIA = apr_hashfunc_default("nomedia", &hlen);
+	switch_ssize_t hlen = SWITCH_HASH_KEY_STRING;
+	unsigned long CMD_EXECUTE = switch_hashfunc_default("execute", &hlen);
+	unsigned long CMD_HANGUP = switch_hashfunc_default("hangup", &hlen);
+	unsigned long CMD_NOMEDIA = switch_hashfunc_default("nomedia", &hlen);
 	
     assert(channel != NULL);
 	assert(event != NULL);
@@ -106,7 +106,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
     }
 
 	hlen = (switch_size_t) strlen(cmd);
-	cmd_hash = apr_hashfunc_default(cmd, &hlen);
+	cmd_hash = switch_hashfunc_default(cmd, &hlen);
 
 	switch_channel_set_flag(channel, CF_EVENT_PARSE);
 	
@@ -1474,50 +1474,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 	switch_core_session_reset(session);
 	return status;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_regex_match(char *target, char *expression) {
-	const char* error	= NULL;		//Used to hold any errors
-	int error_offset	= 0;		//Holds the offset of an error
-	pcre* pcre_prepared	= NULL;		//Holds the compiled regex
-	int match_count		= 0;		//Number of times the regex was matched
-	int offset_vectors[2];			//not used, but has to exist or pcre won't even try to find a match
-	
-	//Compile the expression
-	pcre_prepared = pcre_compile(expression, 0, &error, &error_offset, NULL);
-
-	//See if there was an error in the expression
-	if (error != NULL) {
-		//Clean up after ourselves
-		if (pcre_prepared) {
-			pcre_free(pcre_prepared);
-			pcre_prepared = NULL;
-		}	       
-
-		//Note our error	
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Regular Expression Error expression[%s] error[%s] location[%d]\n", expression, error, error_offset);
-
-		//We definitely didn't match anything
-		return SWITCH_STATUS_FALSE;
-	}
-
-	//So far so good, run the regex
-	match_count = pcre_exec(pcre_prepared, NULL, target, (int) strlen(target), 0, 0, offset_vectors, sizeof(offset_vectors) / sizeof(offset_vectors[0]));
-
-	//Clean up
-	if (pcre_prepared) {
-		pcre_free(pcre_prepared);
-		pcre_prepared = NULL;
-	}
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "number of matches: %d\n", match_count);
-
-	//Was it a match made in heaven?
-	if (match_count > 0) {
-		return SWITCH_STATUS_SUCCESS;
-	} else {
-		return SWITCH_STATUS_FALSE;
-	}
 }
 
 SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t *session,
@@ -4830,7 +4786,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
         char *pattern = (char *) switch_xml_attr(input, "pattern");
 
         if (pattern) {
-            pcre *re = NULL;
+            switch_regex_t *re = NULL;
             int proceed = 0, ovector[30];
             char *substituted = NULL;
             uint32_t len = 0;
@@ -4838,7 +4794,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
             char *expanded = NULL;
             switch_xml_t match = NULL;
             
-            if ((proceed = switch_perform_regex(data, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+            if ((proceed = switch_regex_perform(data, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
                 match = switch_xml_child(input, "match");
             } else {
                 match = switch_xml_child(input, "nomatch");
@@ -4854,7 +4810,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
                         len = (uint32_t)(strlen(data) + strlen(adata) + 10);
                         if (!(substituted = malloc(len))) {
                             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
-                            switch_clean_re(re);
+                            switch_regex_safe_free(re);
                             switch_safe_free(expanded);
                             goto done;
                         }
@@ -4907,7 +4863,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
                 }
             }
             
-            switch_clean_re(re);
+            switch_regex_safe_free(re);
             switch_safe_free(expanded);
             switch_safe_free(substituted);
         }
@@ -5111,25 +5067,25 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 			if (!(time_tag = switch_xml_add_child_d(x_times, "created_time", t_off++))) {
 				goto error;
 			}
-			snprintf(tmp, sizeof(tmp), "%"APR_TIME_T_FMT, caller_profile->times->created);
+			snprintf(tmp, sizeof(tmp), "%"SWITCH_TIME_T_FMT, caller_profile->times->created);
 			switch_xml_set_txt_d(time_tag, tmp);
 
 			if (!(time_tag = switch_xml_add_child_d(x_times, "answered_time", t_off++))) {
 				goto error;
 			}
-			snprintf(tmp, sizeof(tmp), "%"APR_TIME_T_FMT, caller_profile->times->answered);
+			snprintf(tmp, sizeof(tmp), "%"SWITCH_TIME_T_FMT, caller_profile->times->answered);
 			switch_xml_set_txt_d(time_tag, tmp);
 
 			if (!(time_tag = switch_xml_add_child_d(x_times, "hangup_time", t_off++))) {
 				goto error;
 			}
-			snprintf(tmp, sizeof(tmp), "%"APR_TIME_T_FMT, caller_profile->times->hungup);
+			snprintf(tmp, sizeof(tmp), "%"SWITCH_TIME_T_FMT, caller_profile->times->hungup);
 			switch_xml_set_txt_d(time_tag, tmp);
 
 			if (!(time_tag = switch_xml_add_child_d(x_times, "transfer_time", t_off++))) {
 				goto error;
 			}
-			snprintf(tmp, sizeof(tmp), "%"APR_TIME_T_FMT, caller_profile->times->transferred);
+			snprintf(tmp, sizeof(tmp), "%"SWITCH_TIME_T_FMT, caller_profile->times->transferred);
 			switch_xml_set_txt_d(time_tag, tmp);
 		}
 

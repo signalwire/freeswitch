@@ -48,13 +48,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle
 	}
 
 	va_start(ap, fmt);
-#ifdef HAVE_VASPRINTF
-	ret = vasprintf(&data, fmt, ap);
-#else
-	if ((data = (char *) malloc(2048))) {
-		ret = vsnprintf(data, 2048, fmt, ap);
-	}
-#endif
+	ret = switch_vasprintf(&data, fmt, ap);
 	va_end(ap);
 	
 	if (data) {
@@ -145,12 +139,7 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const 
 
 	handle = switch_core_data_channel(channel);
 
-#ifdef HAVE_VASPRINTF
-	ret = vasprintf(&data, fmt, ap);
-#else
-	data = (char *) malloc(2048);
-	ret = vsnprintf(data, 2048, fmt, ap);
-#endif
+	ret = switch_vasprintf(&data, fmt, ap);
 	va_end(ap);
 	if (ret == -1) {
 		fprintf(stderr, "Memory Error\n");

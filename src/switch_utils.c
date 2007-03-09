@@ -30,9 +30,6 @@
  *
  */
 #include <switch.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #ifndef WIN32
 #include <arpa/inet.h>
 #endif
@@ -193,97 +190,12 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int fam
  
 }
 
-SWITCH_DECLARE(int) switch_perform_regex(char *field, char *expression, pcre **new_re, int *ovector, uint32_t olen)
-{
-	const char *error = NULL;
-	int erroffset = 0;
-	pcre *re = NULL;
-	int match_count = 0;
-	
-	if (!(field && expression)) {
-		return 0;
-	}
-
-	re = pcre_compile(expression, /* the pattern */
-					  0,		  /* default options */
-					  &error,	  /* for error message */
-					  &erroffset, /* for error offset */
-					  NULL);	  /* use default character tables */
-	if (error) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "COMPILE ERROR: %d [%s]\n", erroffset, error);
-		switch_clean_re(re);
-		return 0;
-	}
-
-	match_count = pcre_exec(re,	/* result of pcre_compile() */
-							NULL,	/* we didn't study the pattern */
-							field,	/* the subject string */
-							(int) strlen(field), /* the length of the subject string */
-							0,	/* start at offset 0 in the subject */
-							0,	/* default options */
-							ovector,	/* vector of integers for substring information */
-							olen); /* number of elements (NOT size in bytes) */
-
-	if (match_count <= 0) {
-		switch_clean_re(re);
-		match_count = 0;
-	}
-
-	*new_re = re;
-
-	return match_count;
-}
-
-
-SWITCH_DECLARE(void) switch_perform_substitution(pcre *re, int match_count, char *data, char *field_data, char *substituted, uint32_t len, int *ovector)
-{
-	char index[10] = "";
-	char replace[1024] = "";
-	uint32_t x, y = 0, z = 0, num = 0;
-
-	for (x = 0; x < (len-1) && x < strlen(data);) {
-		if (data[x] == '$') {
-			x++;
-			
-			if (!(data[x] > 47 && data[x] < 58)) {
-				substituted[y++] = data[x-1];
-				continue;
-			}
-
-			while (data[x] > 47 && data[x] < 58) {
-				index[z++] = data[x];
-				x++;
-			}
-			index[z++] = '\0';
-			z = 0;
-			num = atoi(index);
-			
-			if (pcre_copy_substring(field_data,
-									ovector,
-									match_count,
-									num,
-									replace,
-									sizeof(replace)) > 0) {
-				unsigned int r;
-				for (r = 0; r < strlen(replace); r++) {
-					substituted[y++] = replace[r];
-				}
-			}
-		} else {
-			substituted[y++] = data[x];
-			x++;
-		}
-	}
-	substituted[y++] = '\0';
-}
-
-
 
 SWITCH_DECLARE(switch_time_t) switch_str_time(char *in)
 {
     switch_time_exp_t tm = {0};
     int proceed = 0, ovector[30];
-    pcre *re = NULL;
+    switch_regex_t *re = NULL;
     char replace[1024] = "";
     switch_time_t ret = 0;
     char *pattern = "^(\\d+)-(\\d+)-(\\d+)\\s*(\\d*):{0,1}(\\d*):{0,1}(\\d*)";
@@ -291,59 +203,45 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(char *in)
     switch_time_exp_lt(&tm, switch_time_now());
     tm.tm_year = tm.tm_mon = tm.tm_mday = tm.tm_hour = tm.tm_min = tm.tm_sec = 0;
 
-    if ((proceed = switch_perform_regex(in, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+    if ((proceed = switch_regex_perform(in, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 
         if (proceed > 1) {
-            pcre_copy_substring(in, ovector, proceed, 1, replace, sizeof(replace));
+            switch_regex_copy_substring(in, ovector, proceed, 1, replace, sizeof(replace));
             tm.tm_year = atoi(replace) - 1900;
         }
 
         if (proceed > 2) {
-            pcre_copy_substring(in, ovector, proceed, 2, replace, sizeof(replace));
+            switch_regex_copy_substring(in, ovector, proceed, 2, replace, sizeof(replace));
             tm.tm_mon = atoi(replace) - 1;
         }
 
         if (proceed > 3) {
-            pcre_copy_substring(in, ovector, proceed, 3, replace, sizeof(replace));
+            switch_regex_copy_substring(in, ovector, proceed, 3, replace, sizeof(replace));
             tm.tm_mday = atoi(replace);
         }
         
         if (proceed > 4) {
-            pcre_copy_substring(in, ovector, proceed, 4, replace, sizeof(replace));
+            switch_regex_copy_substring(in, ovector, proceed, 4, replace, sizeof(replace));
             tm.tm_hour = atoi(replace);
         }
 
         if (proceed > 5) {
-            pcre_copy_substring(in, ovector, proceed, 5, replace, sizeof(replace));
+            switch_regex_copy_substring(in, ovector, proceed, 5, replace, sizeof(replace));
             tm.tm_min = atoi(replace);
         }
 
         if (proceed > 6) {
-            pcre_copy_substring(in, ovector, proceed, 6, replace, sizeof(replace));
+            switch_regex_copy_substring(in, ovector, proceed, 6, replace, sizeof(replace));
             tm.tm_sec = atoi(replace);
         }
 
-        apr_time_exp_gmt_get(&ret, &tm);
+        switch_time_exp_gmt_get(&ret, &tm);
         return ret;
     } /* possible else with more patterns later */
     
     return ret;
 
 }
-
-SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename)
-{
-	int32_t wanted = APR_FINFO_TYPE;
-	apr_finfo_t info = {0};
-	if (filename) {
-		apr_stat(&info, filename, wanted, NULL);
-		if (info.filetype != APR_NOFILE) {
-			return SWITCH_STATUS_SUCCESS;
-		}
-	}
-	return SWITCH_STATUS_FALSE;
-}
-
 
 SWITCH_DECLARE(char *) switch_priority_name(switch_priority_t priority)
 {
@@ -375,28 +273,6 @@ SWITCH_DECLARE(char *) get_addr(char *buf, switch_size_t len, struct in_addr *in
 		p = buf + strlen(buf);
 	}
 	return buf;
-}
-
-SWITCH_DECLARE(char *) switch_get_addr(char *buf, switch_size_t len, switch_sockaddr_t *in)
-{
-    return get_addr(buf, len, &in->sa.sin.sin_addr);
-}
-
-SWITCH_DECLARE(apr_status_t) switch_socket_recvfrom(apr_sockaddr_t *from, apr_socket_t *sock,
-                                                    apr_int32_t flags, char *buf, 
-                                                    apr_size_t *len)
-{
-	apr_status_t r;
-
-	if ((r = apr_socket_recvfrom(from, sock, flags, buf, len)) == APR_SUCCESS) {
-		from->port = ntohs(from->sa.sin.sin_port);
-		/* from->ipaddr_ptr = &(from->sa.sin.sin_addr);
-		 * from->ipaddr_ptr = inet_ntoa(from->sa.sin.sin_addr);
-		 */
-	}
-
-	return r;
-
 }
 
 SWITCH_DECLARE(char) switch_rfc2833_to_char(int event)
@@ -530,26 +406,6 @@ SWITCH_DECLARE(const char *) switch_cut_path(const char *in)
 	}
 }
 
-SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t *poll, switch_socket_t *sock,
-                                                            switch_int16_t flags, switch_memory_pool_t *pool)
-{
-	switch_pollset_t *pollset;
-
-	if (switch_pollset_create(&pollset, 1, pool, flags) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_GENERR;
-	}
-
-	poll->desc_type = SWITCH_POLL_SOCKET;
-	poll->reqevents = flags;
-	poll->desc.s = sock;
-	poll->client_data = sock;
-
-	if (switch_pollset_add(pollset, poll) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_GENERR;
-	}
-
-	return SWITCH_STATUS_SUCCESS;
-}
 
 SWITCH_DECLARE(switch_status_t) switch_string_match(const char *string, size_t string_len, const char *search, size_t search_len)
 {
@@ -660,17 +516,6 @@ SWITCH_DECLARE(char *) switch_url_decode(char *s)
 	return s;
 }
 
-
-#ifdef WIN32
-/* this forces certain symbols to not be optimized out of the dll */
-void include_me(void)
-{
-	apr_socket_shutdown(NULL, 0);
-	apr_socket_recvfrom(NULL, NULL, 0, NULL, NULL);
-	apr_mcast_join(NULL, NULL, NULL, NULL);
-	apr_socket_opt_set(NULL, 0, 0);
-}
-#endif
 
 /* For Emacs:
  * Local Variables:

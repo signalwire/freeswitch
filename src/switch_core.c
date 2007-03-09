@@ -33,8 +33,31 @@
  */
 
 #include <switch.h>
-#include <stdio.h>
 #include <switch_version.h>
+#ifndef WIN32
+#include <switch_private.h>
+#endif
+
+/* for apr_pool_create and apr_pool_destroy */
+/* functions only used in this file so not exposed */
+#include <apr_pools.h>
+
+/* for apr_hash_make, apr_hash_pool_get, apr_hash_set */
+/* functions only used in this file so not exposed */
+#include <apr_hash.h>
+
+/* for apr_pvsprintf */
+/* function only used in this file so not exposed */
+#include <apr_strings.h>
+
+/* for apr_initialize and apr_terminate */
+/* function only used in this file so not exposed */
+#include <apr_general.h>
+
+#include <apr_portable.h>
+typedef apr_os_thread_t switch_thread_id_t;
+#define switch_thread_self apr_os_thread_current
+
 
 #ifdef HAVE_MLOCKALL
 #include <sys/mman.h>

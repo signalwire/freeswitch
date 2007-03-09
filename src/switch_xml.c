@@ -54,8 +54,10 @@
  */
 
 #include <switch.h>
-#include <ctype.h>
-#include <sys/stat.h>
+#ifndef WIN32
+#include <switch_private.h>
+#endif
+
 #ifdef HAVE_MMAP
 #include <sys/mman.h>
 #endif

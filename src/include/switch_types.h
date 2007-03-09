@@ -35,7 +35,6 @@
 #define SWITCH_TYPES_H
 
 #include <switch.h>
-#include <ctype.h>
 SWITCH_BEGIN_EXTERN_C
 
 #define SWITCH_SEQ_ESC "\033["
@@ -503,7 +502,6 @@ typedef enum {
 	SCSMF_DYNAMIC = (1 << 0)
 } switch_core_session_message_flag_t;
 
-#define SWITCH_UUID_FORMATTED_LENGTH APR_UUID_FORMATTED_LENGTH 	
 #define SWITCH_CHANNEL_LOG SWITCH_CHANNEL_ID_LOG, __FILE__, __SWITCH_FUNC__, __LINE__
 #define SWITCH_CHANNEL_LOG_CLEAN SWITCH_CHANNEL_ID_LOG_CLEAN, __FILE__, __SWITCH_FUNC__, __LINE__
 #define SWITCH_CHANNEL_EVENT SWITCH_CHANNEL_ID_EVENT, __FILE__, __SWITCH_FUNC__, __LINE__
@@ -944,6 +942,7 @@ typedef enum {
 	SCSC_CHECK_RUNNING
 } switch_session_ctl_t;
 
+typedef uint16_t switch_port_t;
 typedef uint8_t switch_payload_t;
 typedef struct switch_rtp switch_rtp_t;
 typedef struct switch_core_session_message switch_core_session_message_t;
@@ -1032,7 +1031,6 @@ typedef switch_status_t (*switch_say_callback_t)(switch_core_session_t *session,
                                                  switch_say_type_t type,
                                                  switch_say_method_t method,
                                                  switch_input_args_t *args);
-typedef int (*switch_core_db_callback_func_t)(void *pArg, int argc, char **argv, char **columnNames);
 typedef switch_status_t (*switch_module_load_t) (switch_loadable_module_interface_t **, char *);
 typedef switch_status_t (*switch_module_reload_t) (void);
 typedef switch_status_t (*switch_module_pause_t) (void);

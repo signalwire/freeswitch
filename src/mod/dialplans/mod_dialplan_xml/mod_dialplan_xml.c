@@ -63,7 +63,7 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 		char *do_break_a = NULL;
 		char *expression = NULL;
 		char *field_data = NULL;
-		pcre *re = NULL;
+		switch_regex_t *re = NULL;
 		int ovector[30];
 		break_t do_break_i = BREAK_ON_FALSE;
 		
@@ -118,7 +118,7 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 				field_data = "";
 			}
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "test conditions %s(%s) =~ /%s/\n", field, field_data, expression);
-			if (!(proceed = switch_perform_regex(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+			if (!(proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Regex mismatch\n");
 
 				for (xaction = switch_xml_child(xcond, "anti-action"); xaction; xaction = xaction->next) {
@@ -181,7 +181,7 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
             switch_safe_free(substituted);
 		}
         
-		switch_clean_re(re);
+		switch_regex_safe_free(re);
 
 		if (do_break_i == BREAK_ON_TRUE || do_break_i == BREAK_ALWAYS) {
 			break;

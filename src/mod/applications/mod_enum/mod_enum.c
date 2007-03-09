@@ -315,16 +315,16 @@ static void parse_rr(const struct dns_parse *p, enum_query_t *q, struct dns_rr *
 		}
 
 		if (flags && service && regex && replace) {
-			pcre *re = NULL;
+			switch_regex_t *re = NULL;
 			int proceed = 0, ovector[30];
 			char substituted[1024] = "";
 			char rbuf[1024] = "";
 			char *uri;
 			enum_route_t *route;
 
-			switch_clean_re(re);
+			switch_regex_safe_free(re);
 
-			if ((proceed = switch_perform_regex(q->number, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+			if ((proceed = switch_regex_perform(q->number, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 				if (strchr(regex, '(')) {
 					switch_perform_substitution(re, proceed, replace, q->number, substituted, sizeof(substituted), ovector);
 					uri = substituted;
@@ -333,8 +333,8 @@ static void parse_rr(const struct dns_parse *p, enum_query_t *q, struct dns_rr *
 				}
 
 				if ((route = (enum_route_t *) switch_core_hash_find(globals.routes, service))){
-					switch_clean_re(re);
-					if ((proceed = switch_perform_regex(uri, route->regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+					switch_regex_safe_free(re);
+					if ((proceed = switch_regex_perform(uri, route->regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 						if (strchr(route->regex, '(')) {
 							switch_perform_substitution(re, proceed, route->replace, uri, rbuf, sizeof(rbuf), ovector);
 							uri = rbuf;
@@ -347,7 +347,7 @@ static void parse_rr(const struct dns_parse *p, enum_query_t *q, struct dns_rr *
 				add_result(q, order, preference, service, uri);
 			}
 
-			switch_clean_re(re);
+			switch_regex_safe_free(re);
 		}
 
 		break;

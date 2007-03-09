@@ -55,11 +55,7 @@
 
 #ifndef _SWITCH_XML_H
 #define _SWITCH_XML_H
-#include <switch_types.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <fcntl.h>
+#include <switch.h>
 
 
 ///\defgroup xml1 XML Library Functions
