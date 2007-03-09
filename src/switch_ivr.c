@@ -1090,7 +1090,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	uint32_t ilen = 0;
 	switch_size_t olen = 0, llen = 0;
 	switch_frame_t write_frame = {0};
-	switch_timer_t timer;
+	switch_timer_t timer = {0};
 	switch_core_thread_session_t thread_session;
 	switch_codec_t codec;
 	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
