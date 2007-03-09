@@ -1647,7 +1647,9 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
                               vad_in ? "in" : "", vad_out ? "out" : "");
 		}
 
-		switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->te);
+		if (tech_pvt->te) {
+			switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->te);
+		}
 		if (tech_pvt->cng_pt) {
 			switch_rtp_set_cng_pt(tech_pvt->rtp_session, tech_pvt->cng_pt);
 		}
@@ -2471,6 +2473,9 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 				if (!te && !strcasecmp(map->rm_encoding, "telephone-event")) {
 					te = tech_pvt->te = (switch_payload_t)map->rm_pt;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set 2833 dtmf payload to %u\n", te);
+					if (tech_pvt->rtp_session) {
+						switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->te);
+					}
 				}
 
 				if (!cng_pt && !strcasecmp(map->rm_encoding, "CN")) {
