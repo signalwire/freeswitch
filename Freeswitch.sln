@@ -473,6 +473,130 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_amr", "src\mod\codecs\m
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Config", "_Config", "{57D119DC-484F-420F-B9E9-8589FD9A8DF8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Default", "Default", "{3B08FEFD-4D3D-4C16-BA94-EE83509E32A0}"
+	ProjectSection(SolutionItems) = preProject
+		conf\conference.conf.xml = conf\conference.conf.xml
+		conf\console.conf.xml = conf\console.conf.xml
+		conf\default_context.xml = conf\default_context.xml
+		conf\dialplan_directory.conf.xml = conf\dialplan_directory.conf.xml
+		conf\dingaling.conf.xml = conf\dingaling.conf.xml
+		conf\directory.xml = conf\directory.xml
+		conf\enum.conf.xml = conf\enum.conf.xml
+		conf\event_multicast.conf.xml = conf\event_multicast.conf.xml
+		conf\event_socket.conf.xml = conf\event_socket.conf.xml
+		conf\freeswitch.xml = conf\freeswitch.xml
+		conf\freeswitch_combined.xml = conf\freeswitch_combined.xml
+		conf\iax.conf.xml = conf\iax.conf.xml
+		conf\ivr.conf.xml = conf\ivr.conf.xml
+		conf\lang_en.xml = conf\lang_en.xml
+		conf\lang_fr.xml = conf\lang_fr.xml
+		conf\modules.conf.xml = conf\modules.conf.xml
+		conf\portaudio.conf.xml = conf\portaudio.conf.xml
+		conf\rss.conf.xml = conf\rss.conf.xml
+		conf\sofia.conf.xml = conf\sofia.conf.xml
+		conf\spidermonkey.conf.xml = conf\spidermonkey.conf.xml
+		conf\switch.conf.xml = conf\switch.conf.xml
+		conf\syslog.conf.xml = conf\syslog.conf.xml
+		conf\wanpipe.conf.xml = conf\wanpipe.conf.xml
+		conf\woomera.conf.xml = conf\woomera.conf.xml
+		conf\xml_curl.conf.xml = conf\xml_curl.conf.xml
+		conf\xml_rpc.conf.xml = conf\xml_rpc.conf.xml
+		conf\xmpp_event.conf.xml = conf\xmpp_event.conf.xml
+		conf\zeroconf.conf.xml = conf\zeroconf.conf.xml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Release", "Release", "{7BFD517E-7F8F-4A40-A78E-8D3632738227}"
+	ProjectSection(SolutionItems) = preProject
+		release\conf\conference.conf.xml = release\conf\conference.conf.xml
+		release\conf\console.conf.xml = release\conf\console.conf.xml
+		release\conf\default_context.xml = release\conf\default_context.xml
+		release\conf\dialplan_directory.conf.xml = release\conf\dialplan_directory.conf.xml
+		release\conf\dingaling.conf.xml = release\conf\dingaling.conf.xml
+		release\conf\directory.xml = release\conf\directory.xml
+		release\conf\enum.conf.xml = release\conf\enum.conf.xml
+		release\conf\event_multicast.conf.xml = release\conf\event_multicast.conf.xml
+		release\conf\event_socket.conf.xml = release\conf\event_socket.conf.xml
+		release\conf\freeswitch.xml = release\conf\freeswitch.xml
+		release\conf\freeswitch_combined.xml = release\conf\freeswitch_combined.xml
+		release\conf\iax.conf.xml = release\conf\iax.conf.xml
+		release\conf\ivr.conf.xml = release\conf\ivr.conf.xml
+		release\conf\lang_en.xml = release\conf\lang_en.xml
+		release\conf\lang_fr.xml = release\conf\lang_fr.xml
+		release\conf\modules.conf.xml = release\conf\modules.conf.xml
+		release\conf\portaudio.conf.xml = release\conf\portaudio.conf.xml
+		release\conf\rss.conf.xml = release\conf\rss.conf.xml
+		release\conf\sofia.conf.xml = release\conf\sofia.conf.xml
+		release\conf\spidermonkey.conf.xml = release\conf\spidermonkey.conf.xml
+		release\conf\switch.conf.xml = release\conf\switch.conf.xml
+		release\conf\syslog.conf.xml = release\conf\syslog.conf.xml
+		release\conf\wanpipe.conf.xml = release\conf\wanpipe.conf.xml
+		release\conf\woomera.conf.xml = release\conf\woomera.conf.xml
+		release\conf\xml_curl.conf.xml = release\conf\xml_curl.conf.xml
+		release\conf\xml_rpc.conf.xml = release\conf\xml_rpc.conf.xml
+		release\conf\xmpp_event.conf.xml = release\conf\xmpp_event.conf.xml
+		release\conf\zeroconf.conf.xml = release\conf\zeroconf.conf.xml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Debug", "Debug", "{6374D55C-FABE-4A02-9CF1-4145308A56C5}"
+	ProjectSection(SolutionItems) = preProject
+		debug\conf\conference.conf.xml = debug\conf\conference.conf.xml
+		debug\conf\console.conf.xml = debug\conf\console.conf.xml
+		debug\conf\default_context.xml = debug\conf\default_context.xml
+		debug\conf\dialplan_directory.conf.xml = debug\conf\dialplan_directory.conf.xml
+		debug\conf\dingaling.conf.xml = debug\conf\dingaling.conf.xml
+		debug\conf\directory.xml = debug\conf\directory.xml
+		debug\conf\enum.conf.xml = debug\conf\enum.conf.xml
+		debug\conf\event_multicast.conf.xml = debug\conf\event_multicast.conf.xml
+		debug\conf\event_socket.conf.xml = debug\conf\event_socket.conf.xml
+		debug\conf\freeswitch.xml = debug\conf\freeswitch.xml
+		debug\conf\freeswitch_combined.xml = debug\conf\freeswitch_combined.xml
+		debug\conf\iax.conf.xml = debug\conf\iax.conf.xml
+		debug\conf\ivr.conf.xml = debug\conf\ivr.conf.xml
+		debug\conf\lang_en.xml = debug\conf\lang_en.xml
+		debug\conf\lang_fr.xml = debug\conf\lang_fr.xml
+		debug\conf\modules.conf.xml = debug\conf\modules.conf.xml
+		debug\conf\portaudio.conf.xml = debug\conf\portaudio.conf.xml
+		debug\conf\rss.conf.xml = debug\conf\rss.conf.xml
+		debug\conf\sofia.conf.xml = debug\conf\sofia.conf.xml
+		debug\conf\spidermonkey.conf.xml = debug\conf\spidermonkey.conf.xml
+		debug\conf\switch.conf.xml = debug\conf\switch.conf.xml
+		debug\conf\syslog.conf.xml = debug\conf\syslog.conf.xml
+		debug\conf\wanpipe.conf.xml = debug\conf\wanpipe.conf.xml
+		debug\conf\woomera.conf.xml = debug\conf\woomera.conf.xml
+		debug\conf\xml_curl.conf.xml = debug\conf\xml_curl.conf.xml
+		debug\conf\xml_rpc.conf.xml = debug\conf\xml_rpc.conf.xml
+		debug\conf\xmpp_event.conf.xml = debug\conf\xmpp_event.conf.xml
+		debug\conf\zeroconf.conf.xml = debug\conf\zeroconf.conf.xml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Build System", "_Build System", "{DB1024A8-41BF-4AD7-9AE6-13202230D1F3}"
+	ProjectSection(SolutionItems) = preProject
+		acsite.m4 = acsite.m4
+		build\addenv.sh = build\addenv.sh
+		build\build.sh = build\build.sh
+		build\buildlib.sh = build\buildlib.sh
+		build\checkversion.sh = build\checkversion.sh
+		configure.in = configure.in
+		Makefile.am = Makefile.am
+		build\modmake.sh = build\modmake.sh
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "m4", "m4", "{CDE9B06A-3C27-4987-8FAE-DF1006BC705D}"
+	ProjectSection(SolutionItems) = preProject
+		build\config\ac_cflags_gcc_option.m4 = build\config\ac_cflags_gcc_option.m4
+		build\config\ac_cflags_sun_option.m4 = build\config\ac_cflags_sun_option.m4
+		build\config\ac_gcc_archflag.m4 = build\config\ac_gcc_archflag.m4
+		build\config\ac_gcc_x86_cpuid.m4 = build\config\ac_gcc_x86_cpuid.m4
+		build\config\ac_prog_gzip.m4 = build\config\ac_prog_gzip.m4
+		build\config\ac_prog_wget.m4 = build\config\ac_prog_wget.m4
+		build\config\ax_cc_maxopt.m4 = build\config\ax_cc_maxopt.m4
+		build\config\ax_cflags_warn_all_ansi.m4 = build\config\ax_cflags_warn_all_ansi.m4
+		build\config\ax_check_compiler_flags.m4 = build\config\ax_check_compiler_flags.m4
+		build\config\ax_compiler_vendor.m4 = build\config\ax_compiler_vendor.m4
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -1083,5 +1207,9 @@ Global
 		{5927104D-C14C-4AC8-925C-4AB681762E75} = {C120A020-773F-4EA3-923F-B67AF28B750D}
 		{8B3B4C4C-13C2-446C-BEB0-F412CC2CFB9A} = {C120A020-773F-4EA3-923F-B67AF28B750D}
 		{988CACF7-3FCB-4992-BE69-77872AE67DC8} = {6CD61A1D-797C-470A-BE08-8C31B68BB336}
+		{3B08FEFD-4D3D-4C16-BA94-EE83509E32A0} = {57D119DC-484F-420F-B9E9-8589FD9A8DF8}
+		{7BFD517E-7F8F-4A40-A78E-8D3632738227} = {57D119DC-484F-420F-B9E9-8589FD9A8DF8}
+		{6374D55C-FABE-4A02-9CF1-4145308A56C5} = {57D119DC-484F-420F-B9E9-8589FD9A8DF8}
+		{CDE9B06A-3C27-4987-8FAE-DF1006BC705D} = {DB1024A8-41BF-4AD7-9AE6-13202230D1F3}
 	EndGlobalSection
 EndGlobal
