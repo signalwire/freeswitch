@@ -28,10 +28,10 @@ typedef enum mutex_status {
 	MUTEX_FAILURE
 } mutex_status_t;
 
-mutex_status_t mutex_create(mutex_t **mutex);
-mutex_status_t mutex_destroy(mutex_t *mutex);
-mutex_status_t mutex_lock(mutex_t *mutex);
-mutex_status_t mutex_trylock(mutex_t *mutex);
-mutex_status_t mutex_unlock(mutex_t *mutex);
+mutex_status_t iax_mutex_create(mutex_t **mutex);
+mutex_status_t iax_mutex_destroy(mutex_t *mutex);
+mutex_status_t iax_mutex_lock(mutex_t *mutex);
+mutex_status_t iax_mutex_trylock(mutex_t *mutex);
+mutex_status_t iax_mutex_unlock(mutex_t *mutex);
 
 #endif
