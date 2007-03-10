@@ -109,6 +109,8 @@ typedef  int         gid_t;
 #include <inttypes.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #endif // _MSC_VER
 
 #ifndef __LITTLE_ENDIAN
