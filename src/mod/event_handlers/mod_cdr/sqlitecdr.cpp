@@ -190,7 +190,7 @@ void SqliteCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& sett
 			
 			int sql_rc = switch_core_db_open(db_filename.c_str(),&db);
 			
-			if(sql_rc != SQLITE_OK)
+			if(sql_rc != SWITCH_CORE_DB_OK)
 			{
 				switch_console_printf(SWITCH_CHANNEL_LOG,"There was an error opening database filename %s.  The error was: %s.  SqliteCDR logging has been disabled until the problem is resolved and modcdr_reload is initiated.\n",db_filename.c_str(),switch_core_db_errmsg(db));
 				activated = 0;
@@ -211,7 +211,7 @@ void SqliteCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& sett
 				temp_sql_tables["freeswitchcdr"] = 0;
 				temp_sql_tables["chanvars"] = 0;
 			
-				if(sql_rc == SQLITE_OK)
+				if(sql_rc == SWITCH_CORE_DB_OK)
 				{
 					for(int i = 0; i < ((nrow+1)*ncol); i++)
 					{
@@ -284,7 +284,7 @@ void SqliteCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& sett
 					char *errormessage2;
 					sql_rc = switch_core_db_get_table(db,sql_query_get_schema_of_freeswitchcdr,&result2,&nrow,&ncol,&errormessage2);
 					
-					if(sql_rc == SQLITE_OK)
+					if(sql_rc == SWITCH_CORE_DB_OK)
 					{
 						for(int k = 0; k < nrow; k++)
 						{
@@ -451,25 +451,25 @@ bool SqliteCDR::process_record()
 	int column = 1;
 	switch_core_db_step(stmt_begin);
 	switch_core_db_reset(stmt_begin);
-	switch_core_db_bind_int64(stmt, column++, (sqlite_int64) sqlite_callstartdate);
-	switch_core_db_bind_int64(stmt, column++, (sqlite_int64) sqlite_callanswerdate);
-	switch_core_db_bind_int64(stmt, column++, (sqlite_int64) sqlite_calltransferdate);
-	switch_core_db_bind_int64(stmt, column++, (sqlite_int64) sqlite_callenddate);
+	switch_core_db_bind_int64(stmt, column++, sqlite_callstartdate);
+	switch_core_db_bind_int64(stmt, column++, sqlite_callanswerdate);
+	switch_core_db_bind_int64(stmt, column++, sqlite_calltransferdate);
+	switch_core_db_bind_int64(stmt, column++, sqlite_callenddate);
 	switch_core_db_bind_int(stmt, column++, (int) originated);
-	switch_core_db_bind_text(stmt, column++, clid,-1,SQLITE_STATIC);
-	switch_core_db_bind_text(stmt, column++, src,-1,SQLITE_STATIC);
-	switch_core_db_bind_text(stmt, column++, dst,-1,SQLITE_STATIC);
-	switch_core_db_bind_text(stmt, column++, ani,-1,SQLITE_STATIC);
-	switch_core_db_bind_text(stmt, column++, aniii,-1,SQLITE_STATIC);
-	switch_core_db_bind_text(stmt, column++, dialplan,-1,SQLITE_STATIC);
-	switch_core_db_bind_text(stmt, column++, myuuid,36,SQLITE_STATIC);
-	switch_core_db_bind_text(stmt, column++, destuuid,36,SQLITE_STATIC);
-	switch_core_db_bind_text(stmt, column++, srcchannel,-1,SQLITE_STATIC);
-	switch_core_db_bind_text(stmt, column++, dstchannel,-1,SQLITE_STATIC);
-	switch_core_db_bind_text(stmt, column++, network_addr,-1,SQLITE_STATIC);
-	switch_core_db_bind_text(stmt, column++, lastapp,-1,SQLITE_STATIC);
-	switch_core_db_bind_text(stmt, column++, lastdata,-1,SQLITE_STATIC);
-	switch_core_db_bind_int64(stmt, column++, (sqlite_int64) billusec);
+	switch_core_db_bind_text(stmt, column++, clid,-1,SWITCH_CORE_DB_STATIC);
+	switch_core_db_bind_text(stmt, column++, src,-1,SWITCH_CORE_DB_STATIC);
+	switch_core_db_bind_text(stmt, column++, dst,-1,SWITCH_CORE_DB_STATIC);
+	switch_core_db_bind_text(stmt, column++, ani,-1,SWITCH_CORE_DB_STATIC);
+	switch_core_db_bind_text(stmt, column++, aniii,-1,SWITCH_CORE_DB_STATIC);
+	switch_core_db_bind_text(stmt, column++, dialplan,-1,SWITCH_CORE_DB_STATIC);
+	switch_core_db_bind_text(stmt, column++, myuuid,36,SWITCH_CORE_DB_STATIC);
+	switch_core_db_bind_text(stmt, column++, destuuid,36,SWITCH_CORE_DB_STATIC);
+	switch_core_db_bind_text(stmt, column++, srcchannel,-1,SWITCH_CORE_DB_STATIC);
+	switch_core_db_bind_text(stmt, column++, dstchannel,-1,SWITCH_CORE_DB_STATIC);
+	switch_core_db_bind_text(stmt, column++, network_addr,-1,SWITCH_CORE_DB_STATIC);
+	switch_core_db_bind_text(stmt, column++, lastapp,-1,SWITCH_CORE_DB_STATIC);
+	switch_core_db_bind_text(stmt, column++, lastdata,-1,SWITCH_CORE_DB_STATIC);
+	switch_core_db_bind_int64(stmt, column++, billusec);
 	switch_core_db_bind_int(stmt, column++, disposition);
 	switch_core_db_bind_int(stmt, column++, (int) hangupcause);
 	switch_core_db_bind_int(stmt, column++, amaflags);
@@ -510,7 +510,7 @@ bool SqliteCDR::process_record()
 				case CDR_DECIMAL:
 				case CDR_STRING:
 				{
-					switch_core_db_bind_text(stmt,column++,iItr->second.c_str(),-1,SQLITE_STATIC);
+					switch_core_db_bind_text(stmt,column++,iItr->second.c_str(),-1,SWITCH_CORE_DB_STATIC);
 					break;
 				}
 				default:
@@ -520,11 +520,11 @@ bool SqliteCDR::process_record()
 	}
 	
 	int sql_rc = switch_core_db_step(stmt);
-	if(sql_rc != SQLITE_DONE)
+	if(sql_rc != SWITCH_CORE_DB_DONE)
 	{
-		if(sql_rc == SQLITE_BUSY)
+		if(sql_rc == SWITCH_CORE_DB_BUSY)
 			sql_rc = switch_core_db_step(stmt);
-		else if (sql_rc == SQLITE_ERROR || sql_rc == SQLITE_MISUSE)
+		else if (sql_rc == SWITCH_CORE_DB_ERROR || sql_rc == SWITCH_CORE_DB_MISUSE)
 			switch_console_printf(SWITCH_CHANNEL_LOG,"There was an error executing switch_core_db_step on SqliteCDR::stmt.  The error was: %s\n",switch_core_db_errmsg(db));
 	}
 	
@@ -532,20 +532,20 @@ bool SqliteCDR::process_record()
 	
 	if(logchanvars && chanvars_supp.size())
 	{
-		sqlite_int64 rowid = switch_core_db_last_insert_rowid(db);
+		int64_t rowid = switch_core_db_last_insert_rowid(db);
 		int column2 = 1;
 		std::map<std::string,std::string>::iterator iItr, iEnd;
 		for(iItr = chanvars_supp.begin(), iEnd = chanvars_supp.end(); iItr != iEnd; iItr++)
 		{
 			switch_core_db_bind_int64(stmt_chanvars, column2++, rowid);
-			switch_core_db_bind_text(stmt_chanvars, column2++, iItr->first.c_str(),-1,SQLITE_STATIC);
-			switch_core_db_bind_text(stmt_chanvars, column2++, iItr->second.c_str(),-1,SQLITE_STATIC);
+			switch_core_db_bind_text(stmt_chanvars, column2++, iItr->first.c_str(),-1,SWITCH_CORE_DB_STATIC);
+			switch_core_db_bind_text(stmt_chanvars, column2++, iItr->second.c_str(),-1,SWITCH_CORE_DB_STATIC);
 			int sql_rc = switch_core_db_step(stmt_chanvars);
-			if(sql_rc != SQLITE_DONE)
+			if(sql_rc != SWITCH_CORE_DB_DONE)
 			{
-				if(sql_rc == SQLITE_BUSY)
+				if(sql_rc == SWITCH_CORE_DB_BUSY)
 					sql_rc = switch_core_db_step(stmt_chanvars);
-				else if (sql_rc == SQLITE_ERROR || sql_rc == SQLITE_MISUSE)
+				else if (sql_rc == SWITCH_CORE_DB_ERROR || sql_rc == SWITCH_CORE_DB_MISUSE)
 					switch_console_printf(SWITCH_CHANNEL_LOG,"There was an error executing switch_core_db_step on SqliteCDR::stmt_chanvars.  The error was: %s\n",switch_core_db_errmsg(db));
 			}
 			

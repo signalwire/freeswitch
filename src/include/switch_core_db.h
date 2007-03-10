@@ -59,6 +59,22 @@ typedef struct sqlite3_stmt switch_core_db_stmt_t;
 
 typedef int (*switch_core_db_callback_func_t)(void *pArg, int argc, char **argv, char **columnNames);
 
+/*
+** These are special value for the destructor that is passed in as the
+** final argument to routines like switch_core_db_result_blob().  If the destructor
+** argument is SWITCH_CORE_DB_STATIC, it means that the content pointer is constant
+** and will never change.  It does not need to be destroyed.  The 
+** SWITCH_CORE_DB_TRANSIENT value means that the content will likely change in
+** the near future and that the db should make its own private copy of
+** the content before returning.
+**
+** The typedef is necessary to work around problems in certain
+** C++ compilers.
+*/
+typedef void (*switch_core_db_destructor_type_t)(void*);
+#define SWITCH_CORE_DB_STATIC      ((switch_core_db_destructor_type_t)0)
+#define SWITCH_CORE_DB_TRANSIENT   ((switch_core_db_destructor_type_t)-1)
+
 /**
  * A function to close the database.
  *
@@ -277,6 +293,177 @@ SWITCH_DECLARE(int) switch_core_db_prepare(switch_core_db_t *db,
  * is being used simulataneously by two or more threads.
  */
 SWITCH_DECLARE(int) switch_core_db_step(switch_core_db_stmt_t *stmt);
+
+/**
+ * The switch_core_db_reset() function is called to reset a compiled SQL
+ * statement obtained by a previous call to switch_core_db_prepare()
+ * back to it's initial state, ready to be re-executed.
+ * Any SQL statement variables that had values bound to them using
+ * the switch_core_db_bind_*() API retain their values.
+ */
+SWITCH_DECLARE(int) switch_core_db_reset(switch_core_db_stmt_t *pStmt);
+
+/**
+ * In the SQL strings input to switch_core_db_prepare(),
+ * one or more literals can be replace by parameters "?" or ":AAA" or
+ * "$VVV" where AAA is an identifer and VVV is a variable name according
+ * to the syntax rules of the TCL programming language.
+ * The value of these parameters (also called "host parameter names") can
+ * be set using the routines listed below.
+ *
+ * In every case, the first parameter is a pointer to the sqlite3_stmt
+ * structure returned from switch_core_db_prepare().  The second parameter is the
+ * index of the parameter.  The first parameter as an index of 1.  For
+ * named parameters (":AAA" or "$VVV") you can use 
+ * switch_core_db_bind_parameter_index() to get the correct index value given
+ * the parameters name.  If the same named parameter occurs more than
+ * once, it is assigned the same index each time.
+ *
+ * The switch_core_db_bind_* routine must be called before switch_core_db_step() after
+ * an switch_core_db_prepare() or sqlite3_reset().  Unbound parameterss are
+ * interpreted as NULL.
+ */
+SWITCH_DECLARE(int) switch_core_db_bind_int(switch_core_db_stmt_t *pStmt, int i, int iValue);
+
+/**
+ * In the SQL strings input to switch_core_db_prepare(),
+ * one or more literals can be replace by parameters "?" or ":AAA" or
+ * "$VVV" where AAA is an identifer and VVV is a variable name according
+ * to the syntax rules of the TCL programming language.
+ * The value of these parameters (also called "host parameter names") can
+ * be set using the routines listed below.
+ *
+ * In every case, the first parameter is a pointer to the sqlite3_stmt
+ * structure returned from switch_core_db_prepare().  The second parameter is the
+ * index of the parameter.  The first parameter as an index of 1.  For
+ * named parameters (":AAA" or "$VVV") you can use 
+ * switch_core_db_bind_parameter_index() to get the correct index value given
+ * the parameters name.  If the same named parameter occurs more than
+ * once, it is assigned the same index each time.
+ *
+ * The switch_core_db_bind_* routine must be called before switch_core_db_step() after
+ * an switch_core_db_prepare() or sqlite3_reset().  Unbound parameterss are
+ * interpreted as NULL.
+ */
+SWITCH_DECLARE(int) switch_core_db_bind_int64(switch_core_db_stmt_t *pStmt, int i, int64_t iValue);
+
+/**
+ * In the SQL strings input to switch_core_db_prepare(),
+ * one or more literals can be replace by parameters "?" or ":AAA" or
+ * "$VVV" where AAA is an identifer and VVV is a variable name according
+ * to the syntax rules of the TCL programming language.
+ * The value of these parameters (also called "host parameter names") can
+ * be set using the routines listed below.
+ *
+ * In every case, the first parameter is a pointer to the sqlite3_stmt
+ * structure returned from switch_core_db_prepare().  The second parameter is the
+ * index of the parameter.  The first parameter as an index of 1.  For
+ * named parameters (":AAA" or "$VVV") you can use 
+ * switch_core_db_bind_parameter_index() to get the correct index value given
+ * the parameters name.  If the same named parameter occurs more than
+ * once, it is assigned the same index each time.
+ *
+ * The fifth parameter to switch_core_db_bind_blob(), switch_core_db_bind_text(), and
+ * switch_core_db_bind_text16() is a destructor used to dispose of the BLOB or
+ * text after SQLite has finished with it.  If the fifth argument is the
+ * special value SQLITE_STATIC, then the library assumes that the information
+ * is in static, unmanaged space and does not need to be freed.  If the
+ * fifth argument has the value SQLITE_TRANSIENT, then SQLite makes its
+ * own private copy of the data.
+ *
+ * The switch_core_db_bind_* routine must be called before switch_core_db_step() after
+ * an switch_core_db_prepare() or sqlite3_reset().  Unbound parameterss are
+ * interpreted as NULL.
+ */
+SWITCH_DECLARE(int) switch_core_db_bind_text(switch_core_db_stmt_t *pStmt, int i, const char *zData, int nData, switch_core_db_destructor_type_t xDel);
+
+/**
+ * In the SQL strings input to switch_core_db_prepare(),
+ * one or more literals can be replace by parameters "?" or ":AAA" or
+ * "$VVV" where AAA is an identifer and VVV is a variable name according
+ * to the syntax rules of the TCL programming language.
+ * The value of these parameters (also called "host parameter names") can
+ * be set using the routines listed below.
+ *
+ * In every case, the first parameter is a pointer to the sqlite3_stmt
+ * structure returned from switch_core_db_prepare().  The second parameter is the
+ * index of the parameter.  The first parameter as an index of 1.  For
+ * named parameters (":AAA" or "$VVV") you can use 
+ * sqlite3_bind_parameter_index() to get the correct index value given
+ * the parameters name.  If the same named parameter occurs more than
+ * once, it is assigned the same index each time.
+ *
+ * The sqlite3_bind_* routine must be called before switch_core_db_step() after
+ * an switch_core_db_prepare() or switch_core_db_reset().  Unbound parameterss are
+ * interpreted as NULL.
+ */
+SWITCH_DECLARE(int) switch_core_db_bind_double(switch_core_db_stmt_t *pStmt, int i, double dValue);
+
+/**
+ * Each entry in a table has a unique integer key.  (The key is
+ * the value of the INTEGER PRIMARY KEY column if there is such a column,
+ * otherwise the key is generated at random.  The unique key is always
+ * available as the ROWID, OID, or _ROWID_ column.)  The following routine
+ * returns the integer key of the most recent insert in the database.
+ *
+ * This function is similar to the mysql_insert_id() function from MySQL.
+ */
+SWITCH_DECLARE(int64_t) switch_core_db_last_insert_rowid(switch_core_db_t *db);
+
+/**
+ * This next routine is really just a wrapper around switch_core_db_exec().
+ * Instead of invoking a user-supplied callback for each row of the
+ * result, this routine remembers each row of the result in memory
+ * obtained from malloc(), then returns all of the result after the
+ * query has finished. 
+ *
+ * As an example, suppose the query result where this table:
+ *
+ *        Name        | Age
+ *        -----------------------
+ *        Alice       | 43
+ *        Bob         | 28
+ *        Cindy       | 21
+ *
+ * If the 3rd argument were &azResult then after the function returns
+ * azResult will contain the following data:
+ *
+ *        azResult[0] = "Name";
+ *        azResult[1] = "Age";
+ *        azResult[2] = "Alice";
+ *        azResult[3] = "43";
+ *        azResult[4] = "Bob";
+ *        azResult[5] = "28";
+ *        azResult[6] = "Cindy";
+ *        azResult[7] = "21";
+ *
+ * Notice that there is an extra row of data containing the column
+ * headers.  But the *nrow return value is still 3.  *ncolumn is
+ * set to 2.  In general, the number of values inserted into azResult
+ * will be ((*nrow) + 1)*(*ncolumn).
+ *
+ * After the calling function has finished using the result, it should 
+ * pass the result data pointer to switch_core_db_free_table() in order to 
+ * release the memory that was malloc-ed.  Because of the way the 
+ * malloc() happens, the calling function must not try to call 
+ * free() directly.  Only switch_core_db_free_table() is able to release 
+ * the memory properly and safely.
+ *
+ * The return value of this routine is the same as from switch_core_db_exec().
+ */
+SWITCH_DECLARE(int) switch_core_db_get_table(
+  switch_core_db_t *db,       /* An open database */
+  const char *sql,       /* SQL to be executed */
+  char ***resultp,       /* Result written to a char *[]  that this points to */
+  int *nrow,             /* Number of result rows written here */
+  int *ncolumn,          /* Number of result columns written here */
+  char **errmsg          /* Error msg written here */
+);
+
+/**
+ * Call this routine to free the memory that sqlite3_get_table() allocated.
+ */
+SWITCH_DECLARE(void) switch_core_db_free_table(char **result);
 
 /**
  * Call this routine to free the memory that switch_core_db_get_table() allocated.

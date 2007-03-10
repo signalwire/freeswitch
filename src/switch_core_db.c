@@ -91,6 +91,46 @@ SWITCH_DECLARE(int) switch_core_db_step(switch_core_db_stmt_t *stmt)
 	return sqlite3_step(stmt);
 }
 
+SWITCH_DECLARE(int) switch_core_db_reset(switch_core_db_stmt_t *pStmt)
+{
+	return sqlite3_reset(pStmt);
+}
+
+SWITCH_DECLARE(int) switch_core_db_bind_int(switch_core_db_stmt_t *pStmt, int i, int iValue)
+{
+	return sqlite3_bind_int(pStmt, i, iValue);
+}
+
+SWITCH_DECLARE(int) switch_core_db_bind_int64(switch_core_db_stmt_t *pStmt, int i, int64_t iValue)
+{
+	return sqlite3_bind_int64(pStmt, i, iValue);
+}
+
+SWITCH_DECLARE(int) switch_core_db_bind_text(switch_core_db_stmt_t *pStmt, int i, const char *zData, int nData, switch_core_db_destructor_type_t xDel)
+{
+	return sqlite3_bind_text(pStmt, i, zData, nData, xDel);
+}
+
+SWITCH_DECLARE(int) switch_core_db_bind_double(switch_core_db_stmt_t *pStmt, int i, double dValue)
+{
+	return sqlite3_bind_double(pStmt, i, dValue);
+}
+
+SWITCH_DECLARE(int64_t) switch_core_db_last_insert_rowid(switch_core_db_t *db)
+{
+	return sqlite3_last_insert_rowid(db);
+}
+
+SWITCH_DECLARE(int) switch_core_db_get_table(switch_core_db_t *db, const char *sql, char ***resultp, int *nrow, int *ncolumn, char **errmsg)
+{
+	return sqlite3_get_table(db, sql, resultp, nrow, ncolumn, errmsg);
+}
+
+SWITCH_DECLARE(void) switch_core_db_free_table(char **result)
+{
+	sqlite3_free_table(result);
+}
+
 SWITCH_DECLARE(void) switch_core_db_free(char *z)
 {
 	sqlite3_free(z);

@@ -397,6 +397,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\sqlitecdr.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\xmlcdr.cpp"
 				>
 			</File>
@@ -428,6 +432,10 @@
 			</File>
 			<File
 				RelativePath=".\pddcdr.h"
+				>
+			</File>
+			<File
+				RelativePath=".\sqlitecdr.h"
 				>
 			</File>
 			<File
