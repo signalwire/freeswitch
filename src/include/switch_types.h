@@ -105,6 +105,8 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_PATH_SEPARATOR "/"
 #endif
 
+#define SWITCH_URL_SEPARATOR "://"
+
 #ifndef SWITCH_PREFIX_DIR
 #define SWITCH_PREFIX_DIR "."
 #endif

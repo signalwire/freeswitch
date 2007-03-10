@@ -54,9 +54,9 @@ SWITCH_BEGIN_EXTERN_C
                                                  codec->implementation->microseconds_per_frame / 1000)
 
 #ifdef WIN32
-#define switch_is_file_path(file) (*(file +1) == ':' || *file == '/')
+#define switch_is_file_path(file) (*(file +1) == ':' || *file == '/' || strstr(file, SWITCH_URL_SEPARATOR))
 #else
-#define switch_is_file_path(file) (*file == '/')
+#define switch_is_file_path(file) ((*file == '/') || strstr(file, SWITCH_URL_SEPARATOR))
 #endif
 
 /*!

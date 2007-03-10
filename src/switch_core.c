@@ -1019,12 +1019,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh, 
 {
 	char *ext;
 	switch_status_t status;
+	char stream_name[128] = "";
+	char *rhs = NULL;
 
-	if ((ext = strrchr(file_path, '.')) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Format\n");
-		return SWITCH_STATUS_FALSE;
+	if ((rhs = strstr(file_path, SWITCH_URL_SEPARATOR))) {
+		switch_copy_string(stream_name, file_path, (rhs+1) - file_path);
+		ext = stream_name;
+		file_path = rhs + 3;
+	} else {
+		if ((ext = strrchr(file_path, '.')) == 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Format\n");
+			return SWITCH_STATUS_FALSE;
+		}
+		ext++;
 	}
-	ext++;
 
 	if ((fh->file_interface = switch_loadable_module_get_file_interface(ext)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid file format [%s]!\n", ext);
