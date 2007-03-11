@@ -9,7 +9,7 @@
 #define SWITCH_SSIZE_T @ssize_t_value@
 
 #define SWITCH_SIZEOF_VOIDP @voidp_size@
-#define SWITCH_PREFIX_DIR @prefix@
+#define SWITCH_PREFIX_DIR "@prefix@"
 
 @ssize_t_fmt@
 @size_t_fmt@

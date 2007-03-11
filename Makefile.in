@@ -340,15 +340,7 @@ CORE_INCLUDES = -I$(PWD)/libs/apr/include \
 	-I$(PWD)/libs/libresample/include \
 	-I$(PWD)/libs/libteletone/src
 CORE_CFLAGS = $(shell $(APR_CONFIG) --cflags --cppflags --includes) \
-	$(shell $(APU_CONFIG) --includes) \
-	-DSWITCH_MOD_DIR=\"$(PREFIX)/mod\" \
-	-DSWITCH_PREFIX_DIR=\"$(PREFIX)\" \
-	-DSWITCH_CONF_DIR=\"$(PREFIX)/conf\" \
-	-DSWITCH_DB_DIR=\"$(PREFIX)/db\" \
-	-DSWITCH_LOG_DIR=\"$(PREFIX)/log\" \
-	-DSWITCH_SCRIPT_DIR=\"$(PREFIX)/scripts\" \
-	-DSWITCH_HTDOCS_DIR=\"$(PREFIX)/htdocs\" \
-	-DSWITCH_GRAMMAR_DIR=\"$(PREFIX)/grammar\"
+	$(shell $(APU_CONFIG) --includes)
 CORE_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs ) $(shell \
 	$(APU_CONFIG) --link-ld --libs )
 lib_LTLIBRARIES = libfreeswitch.la
