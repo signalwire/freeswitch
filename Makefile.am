@@ -1,5 +1,4 @@
 EXTRA_DIST =
-SUBDIRS = 
 AUTOMAKE_OPTS = gnu foreign
 NAME=freeswitch
 PREFIX=$(prefix)
@@ -7,9 +6,10 @@ PREFIX=$(prefix)
 AM_CFLAGS   = $(SWITCH_AM_CFLAGS)
 AM_CPPFLAGS = $(AM_CFLAGS)
 AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS)
-BASE        = $(PWD)
+BASE        = $(switch_srcdir)
 OSARCH=$(shell uname -s)
-LIBTOOL=$(PWD)/libtool
+
+LIBTOOL=$(switch_builddir)/libtool
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
 
 if CRASHPROT
@@ -65,17 +65,14 @@ src/include/switch_stun.h\
 src/include/switch_log.h\
 src/include/switch_xml.h
 
-BUILT_SOURCES = version depends
-CLEANFILES = src/include/switch_version.h
-
 CORE_CFLAGS     = $(shell $(switch_srcdir)/libs/apr/apr-1-config --cflags --cppflags --includes)
 CORE_CFLAGS    += $(shell $(switch_srcdir)/libs/apr-util/apu-1-config --includes)
-CORE_CFLAGS    += -I$(PWD)/libs/sqlite
-CORE_CFLAGS    += -I$(PWD)/libs/pcre
-CORE_CFLAGS    += -I$(PWD)/libs/srtp/include
-CORE_CFLAGS    += -I$(PWD)/libs/srtp/crypto/include
-CORE_CFLAGS    += -I$(PWD)/libs/libresample/include
-CORE_CFLAGS    += -I$(PWD)/libs/libteletone/src
+CORE_CFLAGS    += -I$(switch_srcdir)/libs/sqlite
+CORE_CFLAGS    += -I$(switch_srcdir)/libs/pcre
+CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/include
+CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/crypto/include
+CORE_CFLAGS    += -I$(switch_srcdir)/libs/libresample/include
+CORE_CFLAGS    += -I$(switch_srcdir)/libs/libteletone/src
 
 CORE_LDFLAGS    = $(shell $(switch_srcdir)/libs/apr/apr-1-config --link-ld --libs )
 CORE_LDFLAGS   += $(shell $(switch_srcdir)/libs/apr-util/apu-1-config --link-ld --libs )
@@ -88,12 +85,16 @@ nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
 
 $(libfreeswitch_la_SOURCES): depends version
 
-bin_PROGRAMS =	freeswitch
+MOD_LINK       = $(BASE)/libfreeswitch.la
 
-freeswitch_SOURCES = 	src/switch.c\
-			src/include/switch_version.h
+CLEANFILES     = src/include/switch_version.h
+BUILT_SOURCES = version depends
+
+bin_PROGRAMS =  freeswitch
+freeswitch_SOURCES =    src/switch.c\
+                        src/include/switch_version.h
 freeswitch_CFLAGS = $(AM_CFLAGS)
-freeswitch_LDADD = ${top_builddir}/libfreeswitch.la 
+freeswitch_LDADD = ${MOD_LINK}
 
 version: Makefile src/include/switch_version.h
 	MAKE=$(MAKE) ./build/checkversion.sh
@@ -134,7 +135,7 @@ modules: $(NAME)
 	@./build/addenv.sh build/freeswitch.env DYLD_LIBRARY_PATH "$(PREFIX)/lib:$DYLD_LIBRARY_PATH"
 	@./build/addenv.sh build/freeswitch.env LD_LIBRARY_PATH "$(PREFIX)/lib:$LD_LIBRARY_PATH"
 	@./build/addenv.sh build/freeswitch.env PREFIX "$(PREFIX)"
-	@./build/addenv.sh build/freeswitch.env BASE "$(PWD)"
+	@./build/addenv.sh build/freeswitch.env BASE "$(switch_srcdir)"
 	@./build/addenv.sh build/freeswitch.env OSARCH "$(OSARCH)"
 	@./build/addenv.sh build/freeswitch.env DYNAMIC_LIB_EXTEN "$(DYNAMIC_LIB_EXTEN)"
 	@./build/addenv.sh build/freeswitch.env SOLINK "$(SOLINK)"
@@ -166,9 +167,17 @@ modwipe:
 
 install_mod: modules
 	@echo Installing $(NAME)
-	@mkdir -p $(PREFIX) $(PREFIX)/conf $(PREFIX)/mod $(PREFIX)/db $(PREFIX)/log $(PREFIX)/log/xml_cdr $(PREFIX)/bin $(PREFIX)/scripts $(PREFIX)/htdocs $(PREFIX)/grammar
-	@if [ ! -f $(PREFIX)/conf/freeswitch.xml ] ; then /bin/cp -p conf/*.xml $(PREFIX)/conf/; fi
-	@if [ -f .libs/$(NAME) ] ; then /bin/cp -p .libs/$(NAME) $(PREFIX)/bin ; else /bin/cp -p ./$(NAME) $(PREFIX)/bin ; fi
+	@for x in conf mod db log log/xml_cdr bin scripts htdocs grammar ; do \
+		$(mkinstalldirs) $(DESTDIR)$(prefix)/$$x ; \
+	 done
+	@if [ ! -f $(DESTDIR)$(PREFIX)/conf/freeswitch.xml ] ; then \
+		$(INSTALL) conf/*.xml $(DESTDIR)$(PREFIX)/conf ; \
+	 fi
+	@if [ -f .libs/$(NAME) ] ; then \
+		$(INSTALL) .libs/$(NAME) $(DESTDIR)$(PREFIX)/bin/$(NAME) ; \
+	 else \
+		$(INSTALL) ./$(NAME) $(DESTDIR)$(PREFIX)/bin/$(NAME) ;\
+	 fi
 	@echo Installing Modules
 	@rm -f build/freeswitch.env
 	@./build/addenv.sh build/freeswitch.env PREFIX "$(PREFIX)"
@@ -176,7 +185,7 @@ install_mod: modules
 	@./build/addenv.sh build/freeswitch.env DYLD_LIBRARY_PATH "$(PREFIX)/lib:$DYLD_LIBRARY_PATH"
 	@./build/addenv.sh build/freeswitch.env LD_LIBRARY_PATH "$(PREFIX)/lib:$LD_LIBRARY_PATH"
 	@./build/addenv.sh build/freeswitch.env DYNAMIC_LIB_EXTEN "$(DYNAMIC_LIB_EXTEN)"
-	@./build/addenv.sh build/freeswitch.env BASE "$(PWD)"
+	@./build/addenv.sh build/freeswitch.env BASE "$(switch_srcdir)"
 	@./build/addenv.sh build/freeswitch.env OSARCH "$(OSARCH)"
 	@./build/addenv.sh build/freeswitch.env SOLINK "$(SOLINK)"
 	@./build/addenv.sh build/freeswitch.env LDFLAGS "$(AM_LDFLAGS) -lfreeswitch"
