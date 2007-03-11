@@ -182,7 +182,6 @@ AC_SUBST(CLI_OBJS)
 AC_SUBST(LIBPATH)
 
 with_tags=""
-sinclude(libtool.m4)
 
 AC_PROG_LIBTOOL
 

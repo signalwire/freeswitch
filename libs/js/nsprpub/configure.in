@@ -38,7 +38,7 @@ dnl
 AC_PREREQ(2.59)
 AC_INIT(config/libc_r.h)
 
-AC_CONFIG_AUX_DIR(${srcdir}/build/autoconf)
+AC_CONFIG_AUX_DIR(build/autoconf)
 AC_CANONICAL_SYSTEM
 
 dnl ========================================================
@@ -2266,7 +2266,7 @@ dnl library unless <pthread.h> is included so we need to test
 dnl using it
 dnl
 dnl MOZ_CHECK_PTHREADS(lib, success, failure)
-AC_DEFUN(MOZ_CHECK_PTHREADS,
+AC_DEFUN([MOZ_CHECK_PTHREADS],
 [
 AC_MSG_CHECKING([for pthread_create in -l$1])
 echo "
