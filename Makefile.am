@@ -1,4 +1,5 @@
 EXTRA_DIST =
+SUBDIRS =
 AUTOMAKE_OPTS = gnu foreign
 NAME=freeswitch
 PREFIX=$(prefix)
@@ -36,7 +37,7 @@ src/switch_stun.c\
 src/switch_log.c\
 src/switch_xml.c
 
-library_includedir	= $(PREFIX)/include
+library_includedir      = $(PREFIX)/include
 
 library_include_HEADERS = \
 src/include/switch_am_config.h\
@@ -143,6 +144,10 @@ modules: $(NAME)
 	@./build/addenv.sh build/freeswitch.env CFLAGS "$(AM_CFLAGS)"
 	@./build/addenv.sh build/freeswitch.env CC "$(CC)"
 	@./build/addenv.sh build/freeswitch.env CFGARGS "$(AM_CFGARGS)"
+	@./build/addenv.sh build/freeswitch.env LINK "$(LINK)"
+	@./build/addenv.sh build/freeswitch.env LTCOMPILE "$(LTCOMPILE)"
+	@./build/addenv.sh build/freeswitch.env LIBTOOL "$(LIBTOOL)"
+	@./build/addenv.sh build/freeswitch.env LTINSTALL "$(LTINSTALL)"
 	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making $$i ; $(PWD)/build/modmake.sh $(MAKE) $(PWD) $$i || exit 1; done
 	@rm -f build/freeswitch.env
 
@@ -191,6 +196,10 @@ install_mod: modules
 	@./build/addenv.sh build/freeswitch.env LDFLAGS "$(AM_LDFLAGS) -lfreeswitch"
 	@./build/addenv.sh build/freeswitch.env CFLAGS "$(AM_CFLAGS)"
 	@./build/addenv.sh build/freeswitch.env CC "$(CC)"
+	@./build/addenv.sh build/freeswitch.env LINK "$(LINK)"
+	@./build/addenv.sh build/freeswitch.env LTCOMPILE "$(LTCOMPILE)"
+	@./build/addenv.sh build/freeswitch.env LTINSTALL "$(LTINSTALL)"
+	@./build/addenv.sh build/freeswitch.env LIBTOOL "$(LIBTOOL)"
 	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making install $$i ; $(PWD)/build/modmake.sh $(MAKE) $(PWD) $$i install || exit 1; done
 	@rm -f build/freeswitch.env
 	@echo done
