@@ -75,21 +75,23 @@ CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/crypto/include
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/libresample/include
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/libteletone/src
 
-CORE_LDFLAGS    = $(shell $(switch_srcdir)/libs/apr/apr-1-config --link-ld --libs )
-CORE_LDFLAGS   += $(shell $(switch_srcdir)/libs/apr-util/apu-1-config --link-ld --libs )
+CORE_LIBS      = $(shell $(switch_srcdir)/libs/apr/apr-1-config --link-libtool )
+CORE_LIBS     += $(shell $(switch_srcdir)/libs/apr-util/apu-1-config --link-libtool )
+CORE_LIBS     += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la
+CORE_LIBS     += libs/srtp/libsrtp.la libs/libresample/libresample.la
+CORE_LIBS     += libs/libteletone/libteletone.la
 
 lib_LTLIBRARIES	          = libfreeswitch.la
 libfreeswitch_la_CFLAGS   = $(CORE_CFLAGS) $(AM_CFLAGS)
-libfreeswitch_la_LDFLAGS  = -version-info 1:0:0 $(CORE_LDFLAGS) $(AM_LDFLAGS)
-libfreeswitch_la_LIBADD   = -lteletone -lresample -lsrtp -lsqlite3 -lpcre
+libfreeswitch_la_LDFLAGS  = -version-info 1:0:0 $(AM_LDFLAGS)
+libfreeswitch_la_LIBADD  = $(CORE_LIBS)
 nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
 
-$(libfreeswitch_la_SOURCES): depends version
+$(libfreeswitch_la_SOURCES): deps
 
 MOD_LINK       = $(BASE)/libfreeswitch.la
 
 CLEANFILES     = src/include/switch_version.h
-BUILT_SOURCES = version depends
 
 bin_PROGRAMS =  freeswitch
 freeswitch_SOURCES =    src/switch.c\
@@ -112,23 +114,32 @@ nodepends: .nodepends
 yesdepends:
 	rm .nodepends
 
-depends:
-	@echo making depends
-	@rm -f build/freeswitch.env
-	@./build/addenv.sh build/freeswitch.env PREFIX $(PREFIX)
-	@./build/addenv.sh build/freeswitch.env MAKE $(MAKE)
-	mkdir -p $(PREFIX)
-	./build/buildlib.sh . install sqlite --prefix=$(PREFIX) --disable-tcl --enable-threadsafe
-	./build/buildlib.sh . install apr --prefix=$(PREFIX)
-	./build/buildlib.sh . install apr-util --with-apr=../apr --prefix=$(PREFIX)
-	./build/buildlib.sh . install libresample --prefix=$(PREFIX)
-	./build/buildlib.sh . install libteletone --prefix=$(PREFIX)
-	./build/buildlib.sh . install srtp --prefix=$(PREFIX)
-	./build/buildlib.sh . install pcre --prefix=$(PREFIX)
-	rm build/freeswitch.env
+sqlite:
+	cd libs/sqlite && $(MAKE)
 
+apr:
+	cd libs/apr && $(MAKE)
 
-modules: $(NAME)
+apr-util:
+	cd libs/apr-util && $(MAKE)
+
+pcre:
+	cd libs/pcre && $(MAKE)
+
+srtp:
+	cd libs/srtp && $(MAKE)
+
+resample:
+	cd libs/libresample && $(MAKE)
+
+teletone:
+	cd libs/libteletone && $(MAKE)
+
+deps: version sqlite apr apr-util pcre srtp resample teletone
+
+core: deps libfreeswitch.la  
+
+modules: libfreeswitch.la
 	@if [ ! -f $(PWD)/modules.conf ] ; then cp $(PWD)/modules.conf.in $(PWD)/modules.conf ; fi
 	@echo making modules
 	@rm -f build/freeswitch.env
