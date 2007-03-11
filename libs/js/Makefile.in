@@ -51,6 +51,7 @@ CLI_CFLAGS   = @CLI_CFLAGS@
 CLI_CPPFLAGS = @CLI_CPPFLAGS@
 CLI_LDFLAGS  = @CLI_LDFLAGS@
 CLI_LIBS     = @CLI_LIBS@
+LIBPATH      = @LIBPATH@
 
 RM           = rm -f
 CP           = cp
@@ -168,7 +169,7 @@ src/perlconnect/jsperl.o: src/perlconnect/jsperl.c
 $(LIB_OBJS): src/jsautocfg.h
 src/jsautocfg.h: jscpucfg
 	-rm -f $@ src/jsautocfg.h
-	$(LIBTOOL) --mode=execute ./jscpucfg >src/jsautocfg.h
+	$(LIBPATH) $(LIBTOOL) --mode=execute ./jscpucfg >src/jsautocfg.h
 jscpucfg.o: src/jscpucfg.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
 jscpucfg: jscpucfg.o

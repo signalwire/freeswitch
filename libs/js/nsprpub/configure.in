@@ -35,7 +35,7 @@ dnl may use your version of this file under either the MPL or the
 dnl GPL.
 dnl 
 
-AC_PREREQ(2.12)
+AC_PREREQ(2.59)
 AC_INIT(config/libc_r.h)
 
 AC_CONFIG_AUX_DIR(${srcdir}/build/autoconf)
@@ -405,8 +405,8 @@ if test "$target" != "$host"; then
 
     AC_MSG_CHECKING([whether the $host compiler ($HOST_CC $HOST_CFLAGS $HOST_LDFLAGS) works])
     AC_TRY_COMPILE([], [return(0);], 
-        [ac_cv_prog_host_cc_works=1 AC_MSG_RESULT([yes])],
-        AC_MSG_ERROR([installation or configuration problem: $host compiler $HOST_CC cannot create executables.]) )
+        [ac_cv_prog_host_cc_works=1; AC_MSG_RESULT([yes])],
+        [AC_MSG_ERROR([installation or configuration problem: $host compiler $HOST_CC cannot create executables.])] )
 
     CC=$_SAVE_CC
     CFLAGS=$_SAVE_CFLAGS

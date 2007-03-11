@@ -169,8 +169,9 @@ AC_ARG_WITH(nspr,
 AC_CACHE_CHECK([whether to build with NSPR], [ac_cv_with_nspr], [ac_cv_with_nspr=no])
 if test ".$ac_cv_with_nspr" = ".yes"; then
     sinclude(nsprpub/config/nspr.m4)
-    CPPFLAGS="$CPPFLAGS -DJS_THREADSAFE=1 -Insprpub/dist/include/nspr"
-    LDFLAGS="$LDFLAGS -L$prefix/lib -lnspr4"
+    CPPFLAGS="$CPPFLAGS -DJS_THREADSAFE=1 -Insprpub/dist/include/nspr -Insprpub/pr/include"
+    LDFLAGS="$LDFLAGS -L$prefix/lib -L./nsprpub/dist/lib -lnspr4"
+    LIBPATH="LD_LIBRARY_PATH=./nsprpub/dist/lib DYLD_LIBRARY_PATH=./nsprpub/dist/lib" 
 fi
 
 AC_SUBST(CLI_CFLAGS)
@@ -178,6 +179,7 @@ AC_SUBST(CLI_CPPFLAGS)
 AC_SUBST(CLI_LDFLAGS)
 AC_SUBST(CLI_LIBS)
 AC_SUBST(CLI_OBJS)
+AC_SUBST(LIBPATH)
 
 with_tags=""
 sinclude(libtool.m4)
