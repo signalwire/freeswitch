@@ -105,7 +105,8 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_freeswitch_OBJECTS = freeswitch-switch.$(OBJEXT)
 freeswitch_OBJECTS = $(am_freeswitch_OBJECTS)
-freeswitch_DEPENDENCIES = ${top_builddir}/libfreeswitch.la
+am__DEPENDENCIES_1 = $(BASE)/libfreeswitch.la
+freeswitch_DEPENDENCIES = $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src/include
 depcomp = $(SHELL) $(top_srcdir)/build/config/depcomp
 am__depfiles_maybe = depfiles
@@ -187,7 +188,7 @@ ISMAC_TRUE = @ISMAC_TRUE@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
-LIBTOOL = $(PWD)/libtool
+LIBTOOL = $(switch_builddir)/libtool
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
@@ -274,7 +275,7 @@ PREFIX = $(prefix)
 AM_CFLAGS = $(SWITCH_AM_CFLAGS) $(am__append_1)
 AM_CPPFLAGS = $(AM_CFLAGS)
 AM_LDFLAGS = $(SWITCH_AM_LDFLAGS)
-BASE = $(PWD)
+BASE = $(switch_srcdir)
 OSARCH = $(shell uname -s)
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
 libfreeswitch_la_SOURCES = \
@@ -325,15 +326,14 @@ src/include/switch_stun.h\
 src/include/switch_log.h\
 src/include/switch_xml.h
 
-BUILT_SOURCES = version depends
-CLEANFILES = src/include/switch_version.h
 CORE_CFLAGS = $(shell $(switch_srcdir)/libs/apr/apr-1-config --cflags \
 	--cppflags --includes) $(shell \
 	$(switch_srcdir)/libs/apr-util/apu-1-config --includes) \
-	-I$(PWD)/libs/sqlite -I$(PWD)/libs/pcre \
-	-I$(PWD)/libs/srtp/include -I$(PWD)/libs/srtp/crypto/include \
-	-I$(PWD)/libs/libresample/include \
-	-I$(PWD)/libs/libteletone/src
+	-I$(switch_srcdir)/libs/sqlite -I$(switch_srcdir)/libs/pcre \
+	-I$(switch_srcdir)/libs/srtp/include \
+	-I$(switch_srcdir)/libs/srtp/crypto/include \
+	-I$(switch_srcdir)/libs/libresample/include \
+	-I$(switch_srcdir)/libs/libteletone/src
 CORE_LDFLAGS = $(shell $(switch_srcdir)/libs/apr/apr-1-config \
 	--link-ld --libs ) $(shell \
 	$(switch_srcdir)/libs/apr-util/apu-1-config --link-ld --libs )
@@ -342,11 +342,14 @@ libfreeswitch_la_CFLAGS = $(CORE_CFLAGS) $(AM_CFLAGS)
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(CORE_LDFLAGS) $(AM_LDFLAGS)
 libfreeswitch_la_LIBADD = -lteletone -lresample -lsrtp -lsqlite3 -lpcre
 nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
+MOD_LINK = $(BASE)/libfreeswitch.la
+CLEANFILES = src/include/switch_version.h
+BUILT_SOURCES = version depends
 freeswitch_SOURCES = src/switch.c\
-			src/include/switch_version.h
+                        src/include/switch_version.h
 
 freeswitch_CFLAGS = $(AM_CFLAGS)
-freeswitch_LDADD = ${top_builddir}/libfreeswitch.la 
+freeswitch_LDADD = ${MOD_LINK}
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -1099,7 +1102,7 @@ modules: $(NAME)
 	@./build/addenv.sh build/freeswitch.env DYLD_LIBRARY_PATH "$(PREFIX)/lib:$DYLD_LIBRARY_PATH"
 	@./build/addenv.sh build/freeswitch.env LD_LIBRARY_PATH "$(PREFIX)/lib:$LD_LIBRARY_PATH"
 	@./build/addenv.sh build/freeswitch.env PREFIX "$(PREFIX)"
-	@./build/addenv.sh build/freeswitch.env BASE "$(PWD)"
+	@./build/addenv.sh build/freeswitch.env BASE "$(switch_srcdir)"
 	@./build/addenv.sh build/freeswitch.env OSARCH "$(OSARCH)"
 	@./build/addenv.sh build/freeswitch.env DYNAMIC_LIB_EXTEN "$(DYNAMIC_LIB_EXTEN)"
 	@./build/addenv.sh build/freeswitch.env SOLINK "$(SOLINK)"
@@ -1107,6 +1110,10 @@ modules: $(NAME)
 	@./build/addenv.sh build/freeswitch.env CFLAGS "$(AM_CFLAGS)"
 	@./build/addenv.sh build/freeswitch.env CC "$(CC)"
 	@./build/addenv.sh build/freeswitch.env CFGARGS "$(AM_CFGARGS)"
+	@./build/addenv.sh build/freeswitch.env LINK "$(LINK)"
+	@./build/addenv.sh build/freeswitch.env LTCOMPILE "$(LTCOMPILE)"
+	@./build/addenv.sh build/freeswitch.env LIBTOOL "$(LIBTOOL)"
+	@./build/addenv.sh build/freeswitch.env LTINSTALL "$(LTINSTALL)"
 	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making $$i ; $(PWD)/build/modmake.sh $(MAKE) $(PWD) $$i || exit 1; done
 	@rm -f build/freeswitch.env
 
@@ -1131,9 +1138,17 @@ modwipe:
 
 install_mod: modules
 	@echo Installing $(NAME)
-	@mkdir -p $(PREFIX) $(PREFIX)/conf $(PREFIX)/mod $(PREFIX)/db $(PREFIX)/log $(PREFIX)/log/xml_cdr $(PREFIX)/bin $(PREFIX)/scripts $(PREFIX)/htdocs $(PREFIX)/grammar
-	@if [ ! -f $(PREFIX)/conf/freeswitch.xml ] ; then /bin/cp -p conf/*.xml $(PREFIX)/conf/; fi
-	@if [ -f .libs/$(NAME) ] ; then /bin/cp -p .libs/$(NAME) $(PREFIX)/bin ; else /bin/cp -p ./$(NAME) $(PREFIX)/bin ; fi
+	@for x in conf mod db log log/xml_cdr bin scripts htdocs grammar ; do \
+		$(mkinstalldirs) $(DESTDIR)$(prefix)/$$x ; \
+	 done
+	@if [ ! -f $(DESTDIR)$(PREFIX)/conf/freeswitch.xml ] ; then \
+		$(INSTALL) conf/*.xml $(DESTDIR)$(PREFIX)/conf ; \
+	 fi
+	@if [ -f .libs/$(NAME) ] ; then \
+		$(INSTALL) .libs/$(NAME) $(DESTDIR)$(PREFIX)/bin/$(NAME) ; \
+	 else \
+		$(INSTALL) ./$(NAME) $(DESTDIR)$(PREFIX)/bin/$(NAME) ;\
+	 fi
 	@echo Installing Modules
 	@rm -f build/freeswitch.env
 	@./build/addenv.sh build/freeswitch.env PREFIX "$(PREFIX)"
@@ -1141,12 +1156,16 @@ install_mod: modules
 	@./build/addenv.sh build/freeswitch.env DYLD_LIBRARY_PATH "$(PREFIX)/lib:$DYLD_LIBRARY_PATH"
 	@./build/addenv.sh build/freeswitch.env LD_LIBRARY_PATH "$(PREFIX)/lib:$LD_LIBRARY_PATH"
 	@./build/addenv.sh build/freeswitch.env DYNAMIC_LIB_EXTEN "$(DYNAMIC_LIB_EXTEN)"
-	@./build/addenv.sh build/freeswitch.env BASE "$(PWD)"
+	@./build/addenv.sh build/freeswitch.env BASE "$(switch_srcdir)"
 	@./build/addenv.sh build/freeswitch.env OSARCH "$(OSARCH)"
 	@./build/addenv.sh build/freeswitch.env SOLINK "$(SOLINK)"
 	@./build/addenv.sh build/freeswitch.env LDFLAGS "$(AM_LDFLAGS) -lfreeswitch"
 	@./build/addenv.sh build/freeswitch.env CFLAGS "$(AM_CFLAGS)"
 	@./build/addenv.sh build/freeswitch.env CC "$(CC)"
+	@./build/addenv.sh build/freeswitch.env LINK "$(LINK)"
+	@./build/addenv.sh build/freeswitch.env LTCOMPILE "$(LTCOMPILE)"
+	@./build/addenv.sh build/freeswitch.env LTINSTALL "$(LTINSTALL)"
+	@./build/addenv.sh build/freeswitch.env LIBTOOL "$(LIBTOOL)"
 	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making install $$i ; $(PWD)/build/modmake.sh $(MAKE) $(PWD) $$i install || exit 1; done
 	@rm -f build/freeswitch.env
 	@echo done
