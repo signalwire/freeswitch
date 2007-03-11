@@ -1,0 +1,57 @@
+@SET_MAKE@
+
+switch_builddir=@switch_builddir@
+switch_srcdir=@switch_srcdir@
+BASE=$(switch_srcdir)
+
+CC=@CC@
+RM=@RM@
+AWK=@AWK@
+SHELL=@SHELL@
+INSTALL=@INSTALL@
+LIBTOOL=$(switch_builddir)/libtool
+LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
+
+CFLAGS=@SWITCH_AM_CFLAGS@ @CFLAGS@
+CPPFLAGS=$(CFLAGS) @CPPFLAGS@
+LDFLAGS=@SWITCH_AM_LDFLAGS@ @LDFLAGS@ 
+LIBS=$(switch_builddir)/libfreeswitch.la
+DEFS=@DEFS@
+PREFIX = @prefix@
+
+DYLD_LIBRARY_PATH=$(PREFIX)/lib:$DYLD_LIBRARY_PATH
+LD_LIBRARY_PATH=$(PREFIX)/lib:$LD_LIBRARY_PATH
+OSARCH=$(shell uname -s)
+DYNAMIC_LIB_EXTEN = @DYNAMIC_LIB_EXTEN@
+SOLINK = @SOLINK@
+
+COMPILE      = $(CC) $(MOD_CFLAGS) $(MOD_CPPFLAGS) $(MOD_INCLUDES)
+LT_COMPILE   = @lt_compile@
+
+LINK         = @link@
+
+all:	$(MODNAME).$(DYNAMIC_LIB_EXTEN)
+
+$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
+	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o
+	$(LINK) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LDFLAGS) $(OBJS)
+
+clean:
+	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
+
+install:
+	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod
+
+
+#
+# Implicit rules for creating outputs from input files
+#
+.SUFFIXES:
+.SUFFIXES: .c .lo .o
+
+.c.o:
+	$(COMPILE) -c $<
+
+.c.lo:
+	$(LT_COMPILE)
+
