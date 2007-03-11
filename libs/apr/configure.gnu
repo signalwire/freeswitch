@@ -1,3 +1,3 @@
 #! /bin/sh
-./configure "$@" --disable-shared
+./configure "$@" --disable-shared --with-pic
 

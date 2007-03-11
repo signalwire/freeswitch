@@ -81,7 +81,12 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" \
 	"$(DESTDIR)$(library_includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libfreeswitch_la_DEPENDENCIES =
+am__DEPENDENCIES_1 = libs/apr/libapr-1.la \
+	libs/apr-util/libaprutil-1.la libs/sqlite/libsqlite3.la \
+	libs/pcre/libpcre.la libs/srtp/libsrtp.la \
+	libs/libresample/libresample.la \
+	libs/libteletone/libteletone.la
+libfreeswitch_la_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_libfreeswitch_la_OBJECTS = libfreeswitch_la-switch_apr.lo \
 	libfreeswitch_la-switch_buffer.lo \
 	libfreeswitch_la-switch_caller.lo \
@@ -105,8 +110,8 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_freeswitch_OBJECTS = freeswitch-switch.$(OBJEXT)
 freeswitch_OBJECTS = $(am_freeswitch_OBJECTS)
-am__DEPENDENCIES_1 = $(BASE)/libfreeswitch.la
-freeswitch_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am__DEPENDENCIES_2 = $(BASE)/libfreeswitch.la
+freeswitch_DEPENDENCIES = $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src/include
 depcomp = $(SHELL) $(top_srcdir)/build/config/depcomp
 am__depfiles_maybe = depfiles
@@ -261,6 +266,7 @@ size_t_fmt = @size_t_fmt@
 size_t_value = @size_t_value@
 ssize_t_fmt = @ssize_t_fmt@
 ssize_t_value = @ssize_t_value@
+subdirs = @subdirs@
 switch_builddir = @switch_builddir@
 switch_srcdir = @switch_srcdir@
 sysconfdir = @sysconfdir@
@@ -334,24 +340,23 @@ CORE_CFLAGS = $(shell $(switch_srcdir)/libs/apr/apr-1-config --cflags \
 	-I$(switch_srcdir)/libs/srtp/crypto/include \
 	-I$(switch_srcdir)/libs/libresample/include \
 	-I$(switch_srcdir)/libs/libteletone/src
-CORE_LDFLAGS = $(shell $(switch_srcdir)/libs/apr/apr-1-config \
-	--link-ld --libs ) $(shell \
-	$(switch_srcdir)/libs/apr-util/apu-1-config --link-ld --libs )
+CORE_LIBS = libs/apr/libapr-1.la libs/apr-util/libaprutil-1.la \
+	libs/sqlite/libsqlite3.la libs/pcre/libpcre.la \
+	libs/srtp/libsrtp.la libs/libresample/libresample.la \
+	libs/libteletone/libteletone.la
 lib_LTLIBRARIES = libfreeswitch.la
 libfreeswitch_la_CFLAGS = $(CORE_CFLAGS) $(AM_CFLAGS)
-libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(CORE_LDFLAGS) $(AM_LDFLAGS)
-libfreeswitch_la_LIBADD = -lteletone -lresample -lsrtp -lsqlite3 -lpcre
+libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS)
+libfreeswitch_la_LIBADD = $(CORE_LIBS)
 nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
 MOD_LINK = $(BASE)/libfreeswitch.la
 CLEANFILES = src/include/switch_version.h
-BUILT_SOURCES = version depends
 freeswitch_SOURCES = src/switch.c\
                         src/include/switch_version.h
 
 freeswitch_CFLAGS = $(AM_CFLAGS)
 freeswitch_LDADD = ${MOD_LINK}
-all: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) all-recursive
+all: all-recursive
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
@@ -947,8 +952,7 @@ distcleancheck: distclean
 	       $(distcleancheck_listfiles) ; \
 	       exit 1; } >&2
 check-am: all-am
-check: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) check-recursive
+check: check-recursive
 all-am: Makefile $(LTLIBRARIES) $(PROGRAMS) $(HEADERS)
 install-binPROGRAMS: install-libLTLIBRARIES
 
@@ -957,8 +961,7 @@ installdirs-am:
 	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(library_includedir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
-install: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) install-recursive
+install: install-recursive
 install-exec: install-exec-recursive
 install-data: install-data-recursive
 uninstall: uninstall-recursive
@@ -983,7 +986,6 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-recursive
 
 clean-am: clean-binPROGRAMS clean-generic clean-libLTLIBRARIES \
@@ -1062,7 +1064,7 @@ uninstall-info: uninstall-info-recursive
 	uninstall-libLTLIBRARIES uninstall-library_includeHEADERS
 
 
-$(libfreeswitch_la_SOURCES): depends version
+$(libfreeswitch_la_SOURCES): deps
 
 version: Makefile src/include/switch_version.h
 	MAKE=$(MAKE) ./build/checkversion.sh
@@ -1079,22 +1081,32 @@ nodepends: .nodepends
 yesdepends:
 	rm .nodepends
 
-depends:
-	@echo making depends
-	@rm -f build/freeswitch.env
-	@./build/addenv.sh build/freeswitch.env PREFIX $(PREFIX)
-	@./build/addenv.sh build/freeswitch.env MAKE $(MAKE)
-	mkdir -p $(PREFIX)
-	./build/buildlib.sh . install sqlite --prefix=$(PREFIX) --disable-tcl --enable-threadsafe
-	./build/buildlib.sh . install apr --prefix=$(PREFIX)
-	./build/buildlib.sh . install apr-util --with-apr=../apr --prefix=$(PREFIX)
-	./build/buildlib.sh . install libresample --prefix=$(PREFIX)
-	./build/buildlib.sh . install libteletone --prefix=$(PREFIX)
-	./build/buildlib.sh . install srtp --prefix=$(PREFIX)
-	./build/buildlib.sh . install pcre --prefix=$(PREFIX)
-	rm build/freeswitch.env
+sqlite:
+	cd libs/sqlite && $(MAKE)
 
-modules: $(NAME)
+apr:
+	cd libs/apr && $(MAKE)
+
+apr-util:
+	cd libs/apr-util && $(MAKE)
+
+pcre:
+	cd libs/pcre && $(MAKE)
+
+srtp:
+	cd libs/srtp && $(MAKE)
+
+resample:
+	cd libs/libresample && $(MAKE)
+
+teletone:
+	cd libs/libteletone && $(MAKE)
+
+deps: version sqlite apr apr-util pcre srtp resample teletone
+
+core: deps libfreeswitch.la  
+
+modules: libfreeswitch.la
 	@if [ ! -f $(PWD)/modules.conf ] ; then cp $(PWD)/modules.conf.in $(PWD)/modules.conf ; fi
 	@echo making modules
 	@rm -f build/freeswitch.env

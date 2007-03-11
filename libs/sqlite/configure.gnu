@@ -1,2 +1,3 @@
 #! /bin/sh
-./configure "$@" --disable-tcl --enable-threadsafe --disable-shared
+./configure "$@" --disable-tcl --enable-threadsafe --disable-shared --with-pic
+

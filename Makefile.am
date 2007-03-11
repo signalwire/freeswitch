@@ -75,8 +75,7 @@ CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/crypto/include
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/libresample/include
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/libteletone/src
 
-CORE_LIBS      = $(shell $(switch_srcdir)/libs/apr/apr-1-config --link-libtool )
-CORE_LIBS     += $(shell $(switch_srcdir)/libs/apr-util/apu-1-config --link-libtool )
+CORE_LIBS      = libs/apr/libapr-1.la libs/apr-util/libaprutil-1.la
 CORE_LIBS     += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la
 CORE_LIBS     += libs/srtp/libsrtp.la libs/libresample/libresample.la
 CORE_LIBS     += libs/libteletone/libteletone.la
