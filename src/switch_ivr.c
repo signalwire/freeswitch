@@ -538,10 +538,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 				fh->silence_hits = org_silence_hits;
 			}
         }
-
+		
 		if (!switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
 			len = (switch_size_t) read_frame->datalen / 2;
-			switch_core_file_write(fh, read_frame->data, &len);
+			if (switch_core_file_write(fh, read_frame->data, &len) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
 		}
 	}
 
