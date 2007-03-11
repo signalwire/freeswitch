@@ -3,9 +3,9 @@ SUBDIRS =
 AUTOMAKE_OPTS= gnu
 NAME=libg726
 
-AM_CC=gcc
-AM_CFLAGS	= -Wall -O3 -funroll-loops
+AM_CFLAGS   = $(new_AM_CFLAGS) -I./src/include
 AM_CPPFLAGS = $(AM_CFLAGS)
+AM_LDFLAGS  = $(new_AM_LDFLAGS) -lm
 
 lib_LTLIBRARIES		= libg726.la
 libg726_la_SOURCES	= src/g726_16.c \
