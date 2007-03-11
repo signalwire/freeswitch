@@ -30,7 +30,7 @@ API_VERSION="$API_CURRENT:$API_REVISION:$API_AGE"
 AC_SUBST(API_VERSION)
 
 AC_ARG_ENABLE(debug,   [  --enable-debug          setup flags (gcc) for debugging (default=no)],
-CFLAGS="$CFLAGS -O2 -g"
+CFLAGS="$CFLAGS -g"
 CPPFLAGS="$CPPFLAGS -DDEBUG"
 LDFLAGS="$LDFLAGS",)
 AC_ARG_ENABLE(optim,   [  --enable-optim          setup flags (gcc) for optimizations (default=no)],
@@ -41,7 +41,7 @@ if test "x$enable_debug" != "xyes" ; then
 else
   AC_MSG_WARN([enable-optim and enable-debug are incompatible -- disabling optimizations])
 fi,)
-CFLAGS="$CFLAGS -W -Wall"
+CFLAGS="$CFLAGS"
 AC_ARG_ENABLE(syntax,   [  --enable-unstrict-syntax be lazy on syntax checking for protocols (default=no)], , [AC_DEFINE(UNSTRICT_SYNTAX, 1, [Define to be lazy on protocol syntax])])
 
 AC_CONFIG_HEADER(config.h)
@@ -429,7 +429,7 @@ fi
 AC_SUBST(SASLLIBS)
 
 dnl IPv6 support
-AC_ARG_ENABLE(ipv6, AC_HELP_STRING([--disable-ipv6], [enable IPv6 support (default=yes)]), , enable_ipv6=yes)
+AC_ARG_ENABLE(ipv6, AC_HELP_STRING([--disable-ipv6], [enable IPv6 support (default=yes)]), , enable_ipv6=no)
 AC_MSG_CHECKING([whether to use IPv6])
 AC_MSG_RESULT($enable_ipv6)
 if test "x$enable_ipv6" = "xyes"; then
