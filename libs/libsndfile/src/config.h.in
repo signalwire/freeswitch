@@ -189,46 +189,46 @@
 /* Set to maximum allowed value of sf_count_t type. */
 #undef SF_COUNT_MAX
 
-/* The size of `double', as computed by sizeof. */
+/* The size of a `double', as computed by sizeof. */
 #undef SIZEOF_DOUBLE
 
-/* The size of `float', as computed by sizeof. */
+/* The size of a `float', as computed by sizeof. */
 #undef SIZEOF_FLOAT
 
-/* The size of `int', as computed by sizeof. */
+/* The size of a `int', as computed by sizeof. */
 #undef SIZEOF_INT
 
-/* The size of `int64_t', as computed by sizeof. */
+/* The size of a `int64_t', as computed by sizeof. */
 #undef SIZEOF_INT64_T
 
-/* The size of `loff_t', as computed by sizeof. */
+/* The size of a `loff_t', as computed by sizeof. */
 #undef SIZEOF_LOFF_T
 
-/* The size of `long', as computed by sizeof. */
+/* The size of a `long', as computed by sizeof. */
 #undef SIZEOF_LONG
 
-/* The size of `long long', as computed by sizeof. */
+/* The size of a `long long', as computed by sizeof. */
 #undef SIZEOF_LONG_LONG
 
-/* The size of `off64_t', as computed by sizeof. */
+/* The size of a `off64_t', as computed by sizeof. */
 #undef SIZEOF_OFF64_T
 
-/* The size of `off_t', as computed by sizeof. */
+/* The size of a `off_t', as computed by sizeof. */
 #undef SIZEOF_OFF_T
 
 /* Set to sizeof (long) if unknown. */
 #undef SIZEOF_SF_COUNT_T
 
-/* The size of `short', as computed by sizeof. */
+/* The size of a `short', as computed by sizeof. */
 #undef SIZEOF_SHORT
 
-/* The size of `size_t', as computed by sizeof. */
+/* The size of a `size_t', as computed by sizeof. */
 #undef SIZEOF_SIZE_T
 
-/* The size of `ssize_t', as computed by sizeof. */
+/* The size of a `ssize_t', as computed by sizeof. */
 #undef SIZEOF_SSIZE_T
 
-/* The size of `void*', as computed by sizeof. */
+/* The size of a `void*', as computed by sizeof. */
 #undef SIZEOF_VOIDP
 
 /* Define to 1 if you have the ANSI C header files. */

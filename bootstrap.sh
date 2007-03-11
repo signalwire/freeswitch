@@ -3,7 +3,7 @@ echo "bootstrap: checking installation..."
 
 BASEDIR=`pwd`;
 LIBDIR=${BASEDIR}/libs;
-SUBDIRS="apr-util apr-util/xml/expat codec/g7xx codec/g726 codec/gsm codec/ilbc codec/lpc10 curl iax iksemel  \
+SUBDIRS="codec/g7xx codec/g726 codec/gsm codec/ilbc codec/lpc10 curl iax iksemel  \
         js js/nsprpub libdingaling libetpan libresample libsndfile libteletone pcre sofia-sip \
         speex sqlite srtp xmlrpc-c";
 
@@ -156,6 +156,10 @@ aclocal_dir="`${ACLOCAL:-aclocal} --print-ac-dir`"
 if [ -n "${aclocal_dir}" -a -n "${ltfile}" -a "`dirname ${ltfile}`" != "${aclocal_dir}" ] ; then
   ACLOCAL_OPTS="-I `dirname ${ltfile}`"
 fi
+
+echo "Entering directory ${LIBDIR}/apr-util"
+cd ${LIBDIR}/apr-util
+./buildconf
 
 
 for i in ${SUBDIRS}

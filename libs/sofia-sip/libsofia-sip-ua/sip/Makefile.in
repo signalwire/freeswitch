@@ -25,7 +25,7 @@
 # ---------------------------------------------------
 
 
-SOURCES = $(libsip_la_SOURCES) date_test.c test_sip_msg.c torture_sip.c validator.c
+SOURCES = $(libsip_la_SOURCES) test_date.c test_sip_msg.c torture_sip.c validator.c
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -51,14 +51,18 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 check_PROGRAMS = torture_sip$(EXEEXT) test_sip_msg$(EXEEXT) \
-	validator$(EXEEXT) date_test$(EXEEXT)
+	validator$(EXEEXT) test_date$(EXEEXT)
 DIST_COMMON = $(nobase_include_sofia_HEADERS) $(srcdir)/../sofia.am \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in ChangeLog
+
+# Use with --enable-ndebug
+@NDEBUG_TRUE@am__append_1 = -DNDEBUG
 subdir = libsofia-sip-ua/sip
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/sac-general.m4 \
-	$(top_srcdir)/m4/sac-openssl.m4 $(top_srcdir)/m4/sac-su.m4 \
-	$(top_srcdir)/m4/sac-su2.m4 $(top_srcdir)/m4/sac-tport.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/m4/sac-general.m4 \
+	$(top_srcdir)/m4/sac-openssl.m4 $(top_srcdir)/m4/sac-su2.m4 \
+	$(top_srcdir)/m4/sac-su.m4 $(top_srcdir)/m4/sac-tport.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -75,10 +79,10 @@ am_libsip_la_OBJECTS = sip_parser.lo sip_header.lo sip_util.lo \
 	sip_refer.lo sip_session.lo sip_caller_prefs.lo sip_reason.lo \
 	sip_status.lo sip_time.lo sip_tag_class.lo $(am__objects_1)
 libsip_la_OBJECTS = $(am_libsip_la_OBJECTS)
-date_test_SOURCES = date_test.c
-date_test_OBJECTS = date_test.$(OBJEXT)
-date_test_LDADD = $(LDADD)
-date_test_DEPENDENCIES = libsip.la ../msg/libmsg.la ../bnf/libbnf.la \
+test_date_SOURCES = test_date.c
+test_date_OBJECTS = test_date.$(OBJEXT)
+test_date_LDADD = $(LDADD)
+test_date_DEPENDENCIES = libsip.la ../msg/libmsg.la ../bnf/libbnf.la \
 	../url/liburl.la ../su/libsu.la
 test_sip_msg_SOURCES = test_sip_msg.c
 test_sip_msg_OBJECTS = test_sip_msg.$(OBJEXT)
@@ -106,9 +110,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libsip_la_SOURCES) date_test.c test_sip_msg.c \
+SOURCES = $(libsip_la_SOURCES) test_date.c test_sip_msg.c \
 	torture_sip.c validator.c
-DIST_SOURCES = $(libsip_la_SOURCES) date_test.c test_sip_msg.c \
+DIST_SOURCES = $(libsip_la_SOURCES) test_date.c test_sip_msg.c \
 	torture_sip.c validator.c
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -214,6 +218,7 @@ REPLACE_LIBADD = @REPLACE_LIBADD@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SOFIA_CFLAGS = @SOFIA_CFLAGS@
+SOFIA_COVERAGE = @SOFIA_COVERAGE@
 SOFIA_GLIB_PKG_REQUIRES = @SOFIA_GLIB_PKG_REQUIRES@
 STRIP = @STRIP@
 TESTS_ENVIRONMENT = @TESTS_ENVIRONMENT@
@@ -315,7 +320,7 @@ LDADD = libsip.la \
 
 torture_sip_LDFLAGS = -static
 test_sip_msg_LDFLAGS = -static
-date_test_LDFLAGS = -static
+test_date_LDFLAGS = -static
 
 # ----------------------------------------------------------------------
 # Install and distribution rules
@@ -345,7 +350,8 @@ EXTRA_DIST = Doxyfile sip.docs sip_parser.docs sip.doxyaliases \
 	tests/test35.txt tests/test36.txt tests/test37.txt tests/test38.txt  \
 	tests/test39.txt tests/test40.txt tests/test41.txt tests/test42.txt
 
-AM_CFLAGS = $(CWFLAG) $(SOFIA_CFLAGS) 
+AM_CFLAGS = $(CWFLAG) $(SOFIA_CFLAGS) $(SOFIA_COVERAGE) \
+	$(am__append_1)
 DISTCLEANFILES = $(BUILT_SOURCES)
 
 # rules for building tag files
@@ -375,9 +381,9 @@ INTERNAL_INCLUDES = \
 # ----------------------------------------------------------------------
 # Tests
 
-#TESTS = torture_sip run_test_sip_msg run_date_test
+#TESTS = torture_sip run_test_sip_msg run_test_date
 
-#dist_noinst_SCRIPTS = 	run_test_sip_msg run_date_test
+#dist_noinst_SCRIPTS = 	run_test_sip_msg run_test_date
 
 # ----------------------------------------------------------------------
 # Sofia specific rules
@@ -436,9 +442,9 @@ clean-checkPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
-date_test$(EXEEXT): $(date_test_OBJECTS) $(date_test_DEPENDENCIES) 
-	@rm -f date_test$(EXEEXT)
-	$(LINK) $(date_test_LDFLAGS) $(date_test_OBJECTS) $(date_test_LDADD) $(LIBS)
+test_date$(EXEEXT): $(test_date_OBJECTS) $(test_date_DEPENDENCIES) 
+	@rm -f test_date$(EXEEXT)
+	$(LINK) $(test_date_LDFLAGS) $(test_date_OBJECTS) $(test_date_LDADD) $(LIBS)
 test_sip_msg$(EXEEXT): $(test_sip_msg_OBJECTS) $(test_sip_msg_DEPENDENCIES) 
 	@rm -f test_sip_msg$(EXEEXT)
 	$(LINK) $(test_sip_msg_LDFLAGS) $(test_sip_msg_OBJECTS) $(test_sip_msg_LDADD) $(LIBS)
@@ -455,7 +461,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/date_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sip_basic.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sip_caller_prefs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sip_event.Plo@am__quote@
@@ -477,6 +482,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sip_tag_ref.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sip_time.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sip_util.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_date.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_sip_msg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/torture_sip.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/validator.Po@am__quote@

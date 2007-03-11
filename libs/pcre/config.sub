@@ -3,7 +3,7 @@
 #   Copyright (C) 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
 #   2000, 2001, 2002, 2003, 2004, 2005 Free Software Foundation, Inc.
 
-timestamp='2005-12-23'
+timestamp='2005-12-11'
 
 # This file is (in principle) common to ALL GNU software.
 # The presence of a machine in this file suggests that SOME GNU software
@@ -243,12 +243,12 @@ case $basic_machine in
 	| arc | arm | arm[bl]e | arme[lb] | armv[2345] | armv[345][lb] | avr \
 	| bfin \
 	| c4x | clipper \
-	| d10v | d30v | dlx | dsp16xx | dvp \
+	| d10v | d30v | dlx | dsp16xx \
 	| fr30 | frv \
 	| h8300 | h8500 | hppa | hppa1.[01] | hppa2.0 | hppa2.0[nw] | hppa64 \
 	| i370 | i860 | i960 | ia64 \
 	| ip2k | iq2000 \
-	| m32r | m32rle | m68000 | m68k | m88k | maxq | mb | microblaze | mcore \
+	| m32r | m32rle | m68000 | m68k | m88k | maxq | mcore \
 	| mips | mipsbe | mipseb | mipsel | mipsle \
 	| mips16 \
 	| mips64 | mips64el \
@@ -273,7 +273,7 @@ case $basic_machine in
 	| pdp10 | pdp11 | pj | pjl \
 	| powerpc | powerpc64 | powerpc64le | powerpcle | ppcbe \
 	| pyramid \
-	| sh | sh[1234] | sh[24]a | sh[24]a*eb | sh[23]e | sh[34]eb | shbe | shle | sh[1234]le | sh3ele \
+	| sh | sh[1234] | sh[24]a | sh[23]e | sh[34]eb | shbe | shle | sh[1234]le | sh3ele \
 	| sh64 | sh64le \
 	| sparc | sparc64 | sparc64b | sparc86x | sparclet | sparclite \
 	| sparcv8 | sparcv9 | sparcv9b \
@@ -297,10 +297,6 @@ case $basic_machine in
 		;;
 	ms1)
 		basic_machine=mt-unknown
-		;;
-	nios2 | nios2-* | nios2 | nios2-*)
-		basic_machine=nios2-altera
-		os=-none
 		;;
 
 	# We use `pc' rather than `unknown'
@@ -694,24 +690,6 @@ case $basic_machine in
 		basic_machine=m68k-atari
 		os=-mint
 		;;
-	mipsEE* | ee | ps2)
-		basic_machine=mips64r5900el-scei
-		case $os in
-		    -linux*)
-			;;
-		    *)
-			os=-elf
-			;;
-		esac
-		;;
-	iop)
-		basic_machine=mipsel-scei
-		os=-irx
-		;;
-	dvp)
-		basic_machine=dvp-scei
-		os=-elf
-		;;
 	mips3*-*)
 		basic_machine=`echo $basic_machine | sed -e 's/mips3/mips64/'`
 		;;
@@ -839,12 +817,6 @@ case $basic_machine in
 		;;
 	pc532 | pc532-*)
 		basic_machine=ns32k-pc532
-		;;
-	pc98)
-		basic_machine=i386-pc
-		;;
-	pc98-*)
-		basic_machine=i386-`echo $basic_machine | sed 's/^[^-]*-//'`
 		;;
 	pentium | p5 | k5 | k6 | nexgen | viac3)
 		basic_machine=i586-pc
@@ -1236,7 +1208,7 @@ case $os in
 	      | -os2* | -vos* | -palmos* | -uclinux* | -nucleus* \
 	      | -morphos* | -superux* | -rtmk* | -rtmk-nova* | -windiss* \
 	      | -powermax* | -dnix* | -nx6 | -nx7 | -sei* | -dragonfly* \
-	      | -skyos* | -haiku* | -rdos* | -irx*)
+	      | -skyos* | -haiku* | -rdos*)
 	# Remember, each alternative MUST END IN *, to match a version number.
 		;;
 	-qnx*)

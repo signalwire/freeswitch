@@ -29,7 +29,7 @@
 # ---------------------------------------------------
 
 
-SOURCES = $(libsu_glib_la_SOURCES) su_source_test.c
+SOURCES = $(libsu_glib_la_SOURCES) su_source_test.c torture_su_glib_timer.c
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -54,7 +54,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-check_PROGRAMS = su_source_test$(EXEEXT)
+check_PROGRAMS = su_source_test$(EXEEXT) \
+	torture_su_glib_timer$(EXEEXT)
 @HAVE_GLIB_TRUE@am__append_1 = \
 @HAVE_GLIB_TRUE@			sofia-sip/su_source.h \
 @HAVE_GLIB_TRUE@			sofia-sip/su_glib.h
@@ -62,11 +63,15 @@ check_PROGRAMS = su_source_test$(EXEEXT)
 DIST_COMMON = $(am__nobase_include_sofia_HEADERS_DIST) \
 	$(srcdir)/../../libsofia-sip-ua/sofia.am $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
+
+# Use with --enable-ndebug
+@NDEBUG_TRUE@am__append_2 = -DNDEBUG
 subdir = libsofia-sip-ua-glib/su-glib
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/sac-general.m4 \
-	$(top_srcdir)/m4/sac-openssl.m4 $(top_srcdir)/m4/sac-su.m4 \
-	$(top_srcdir)/m4/sac-su2.m4 $(top_srcdir)/m4/sac-tport.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/m4/sac-general.m4 \
+	$(top_srcdir)/m4/sac-openssl.m4 $(top_srcdir)/m4/sac-su2.m4 \
+	$(top_srcdir)/m4/sac-su.m4 $(top_srcdir)/m4/sac-tport.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -84,6 +89,11 @@ su_source_test_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
 su_source_test_DEPENDENCIES = libsu-glib.la \
 	../../libsofia-sip-ua/libsofia-sip-ua.la $(am__DEPENDENCIES_1)
+torture_su_glib_timer_SOURCES = torture_su_glib_timer.c
+torture_su_glib_timer_OBJECTS = torture_su_glib_timer.$(OBJEXT)
+torture_su_glib_timer_LDADD = $(LDADD)
+torture_su_glib_timer_DEPENDENCIES = libsu-glib.la \
+	../../libsofia-sip-ua/libsofia-sip-ua.la $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir) -I$(top_builddir)/libsofia-sip-ua/su/sofia-sip
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -95,8 +105,10 @@ LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libsu_glib_la_SOURCES) su_source_test.c
-DIST_SOURCES = $(libsu_glib_la_SOURCES) su_source_test.c
+SOURCES = $(libsu_glib_la_SOURCES) su_source_test.c \
+	torture_su_glib_timer.c
+DIST_SOURCES = $(libsu_glib_la_SOURCES) su_source_test.c \
+	torture_su_glib_timer.c
 am__nobase_include_sofia_HEADERS_DIST = sofia-sip/su_source.h \
 	sofia-sip/su_glib.h
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
@@ -203,6 +215,7 @@ REPLACE_LIBADD = @REPLACE_LIBADD@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SOFIA_CFLAGS = @SOFIA_CFLAGS@
+SOFIA_COVERAGE = @SOFIA_COVERAGE@
 SOFIA_GLIB_PKG_REQUIRES = @SOFIA_GLIB_PKG_REQUIRES@
 STRIP = @STRIP@
 TESTS_ENVIRONMENT = @TESTS_ENVIRONMENT@
@@ -267,7 +280,7 @@ noinst_LTLIBRARIES = libsu-glib.la
 
 # ----------------------------------------------------------------------
 # Tests
-TESTS = su_source_test
+TESTS = su_source_test torture_su_glib_timer
 
 # ----------------------------------------------------------------------
 # Rules for building the targets
@@ -288,7 +301,8 @@ EXTRA_DIST = Doxyfile su_glib.docs
 # ----------------------------------------------------------------------
 # Automake options
 AUTOMAKE_OPTIONS = foreign
-AM_CFLAGS = $(CWFLAG) $(SOFIA_CFLAGS) 
+AM_CFLAGS = $(CWFLAG) $(SOFIA_CFLAGS) $(SOFIA_COVERAGE) \
+	$(am__append_2)
 DISTCLEANFILES = $(BUILT_SOURCES)
 
 # rules for building tag files
@@ -368,6 +382,9 @@ clean-checkPROGRAMS:
 su_source_test$(EXEEXT): $(su_source_test_OBJECTS) $(su_source_test_DEPENDENCIES) 
 	@rm -f su_source_test$(EXEEXT)
 	$(LINK) $(su_source_test_LDFLAGS) $(su_source_test_OBJECTS) $(su_source_test_LDADD) $(LIBS)
+torture_su_glib_timer$(EXEEXT): $(torture_su_glib_timer_OBJECTS) $(torture_su_glib_timer_DEPENDENCIES) 
+	@rm -f torture_su_glib_timer$(EXEEXT)
+	$(LINK) $(torture_su_glib_timer_LDFLAGS) $(torture_su_glib_timer_OBJECTS) $(torture_su_glib_timer_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -377,6 +394,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_source.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/su_source_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/torture_su_glib_timer.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

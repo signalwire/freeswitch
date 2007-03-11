@@ -59,11 +59,15 @@ check_PROGRAMS = msg_name_hash$(EXEEXT) test_msg$(EXEEXT)
 DIST_COMMON = $(dist_pkgdata_SCRIPTS) $(nobase_include_sofia_HEADERS) \
 	$(srcdir)/../sofia.am $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in ChangeLog
+
+# Use with --enable-ndebug
+@NDEBUG_TRUE@am__append_1 = -DNDEBUG
 subdir = libsofia-sip-ua/msg
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/sac-general.m4 \
-	$(top_srcdir)/m4/sac-openssl.m4 $(top_srcdir)/m4/sac-su.m4 \
-	$(top_srcdir)/m4/sac-su2.m4 $(top_srcdir)/m4/sac-tport.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/m4/sac-general.m4 \
+	$(top_srcdir)/m4/sac-openssl.m4 $(top_srcdir)/m4/sac-su2.m4 \
+	$(top_srcdir)/m4/sac-su.m4 $(top_srcdir)/m4/sac-tport.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -217,6 +221,7 @@ REPLACE_LIBADD = @REPLACE_LIBADD@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SOFIA_CFLAGS = @SOFIA_CFLAGS@
+SOFIA_COVERAGE = @SOFIA_COVERAGE@
 SOFIA_GLIB_PKG_REQUIRES = @SOFIA_GLIB_PKG_REQUIRES@
 STRIP = @STRIP@
 TESTS_ENVIRONMENT = @TESTS_ENVIRONMENT@
@@ -327,7 +332,8 @@ EXTRA_DIST = Doxyfile msg.docs \
 # ----------------------------------------------------------------------
 # Tests
 TESTS = test_msg
-AM_CFLAGS = $(CWFLAG) $(SOFIA_CFLAGS) 
+AM_CFLAGS = $(CWFLAG) $(SOFIA_CFLAGS) $(SOFIA_COVERAGE) \
+	$(am__append_1)
 DISTCLEANFILES = $(BUILT_SOURCES)
 
 # rules for building tag files
