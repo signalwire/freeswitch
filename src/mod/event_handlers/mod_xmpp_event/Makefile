@@ -4,7 +4,7 @@ LDFLAGS += $(BASE)/libs/iksemel/src/libiksemel.la
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install iksemel --prefix=$(PREFIX)
+	cd $(BASE)/libs/iksemel && $(MAKE)
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
 	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o 
@@ -14,5 +14,4 @@ clean:
 	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
 
 install:
-	cd $(BASE)/libs/iksemel && $(MAKE) install
 	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod
