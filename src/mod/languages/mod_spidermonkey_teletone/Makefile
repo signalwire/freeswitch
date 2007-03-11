@@ -1,4 +1,5 @@
 include ../mod_spidermonkey/sm.mak
+CFLAGS+=-I$(BASE)/libs/libteletone/src
 LDFLAGS+=$(BASE)/libs/libteletone/libteletone.la
 
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
