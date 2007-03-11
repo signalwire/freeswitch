@@ -2167,8 +2167,7 @@ case $target in
     ;;
 *)
     AC_CHECK_LIB(dl, dlopen,
-        AC_CHECK_HEADER(dlfcn.h,
-            OS_LIBS="-ldl $OS_LIBS"))
+        [AC_CHECK_HEADER(dlfcn.h, OS_LIBS="-ldl $OS_LIBS")])
     ;;
 esac
 
@@ -2297,10 +2296,10 @@ darwin*)
     _HAVE_PTHREADS=1
     ;;
 *)
-    MOZ_CHECK_PTHREADS(pthreads,
-        _HAVE_PTHREADS=1 _PTHREAD_LDFLAGS="-lpthreads",
-        MOZ_CHECK_PTHREADS(pthread,
-            _HAVE_PTHREADS=1 _PTHREAD_LDFLAGS="-lpthread",
+    MOZ_CHECK_PTHREADS(pthread,
+        _HAVE_PTHREADS=1 _PTHREAD_LDFLAGS="-lpthread",
+        MOZ_CHECK_PTHREADS(pthreads,
+            _HAVE_PTHREADS=1 _PTHREAD_LDFLAGS="-lpthreads",
             MOZ_CHECK_PTHREADS(c_r,
                 _HAVE_PTHREADS=1 _PTHREAD_LDFLAGS="-lc_r",
                 MOZ_CHECK_PTHREADS(c,
@@ -2452,12 +2451,6 @@ if test -n "$USE_PTHREADS"; then
     *-freebsd*)
 	    AC_DEFINE(_REENTRANT)
 	    AC_DEFINE(_THREAD_SAFE)
-	    dnl -pthread links in -lc_r, so don't specify it explicitly.
-	    if test "$ac_cv_have_dash_pthread" = "yes"; then
-	        _PTHREAD_LDFLAGS="-pthread"
-	    else
-	        _PTHREAD_LDFLAGS="-lc_r"
-	    fi
 	    ;;
     *-netbsd*)
 	    if test "$ac_cv_have_dash_pthread" = "yes"; then
