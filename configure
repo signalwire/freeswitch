@@ -466,7 +466,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE build build_cpu build_vendor build_os host host_cpu host_vendor host_os EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CPP CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL PRTDIAG WANT_DEBUG_TRUE WANT_DEBUG_FALSE new_AM_CFLAGS new_AM_LDFLAGS SOLINK DYNAMIC_LIB_EXTEN LIBOBJS voidp_size short_value int_value long_value int64_value size_t_value ssize_t_value int64_t_fmt uint64_t_fmt ssize_t_fmt size_t_fmt CRASHPROT_TRUE CRASHPROT_FALSE ISLINUX_TRUE ISLINUX_FALSE ISMAC_TRUE ISMAC_FALSE IS64BITLINUX_TRUE IS64BITLINUX_FALSE LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar switch_srcdir switch_builddir CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE build build_cpu build_vendor build_os host host_cpu host_vendor host_os EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CPP CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL PRTDIAG WANT_DEBUG_TRUE WANT_DEBUG_FALSE SWITCH_AM_CFLAGS SWITCH_AM_LDFLAGS SOLINK DYNAMIC_LIB_EXTEN LIBOBJS voidp_size short_value int_value long_value int64_value size_t_value ssize_t_value int64_t_fmt uint64_t_fmt ssize_t_fmt size_t_fmt CRASHPROT_TRUE CRASHPROT_FALSE ISLINUX_TRUE ISLINUX_FALSE ISMAC_TRUE ISMAC_FALSE IS64BITLINUX_TRUE IS64BITLINUX_FALSE LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1960,6 +1960,12 @@ am__tar='${AMTAR} chof - "$$tardir"'; am__untar='${AMTAR} xf -'
           ac_config_headers="$ac_config_headers src/include/switch_private.h"
 
 
+
+
+
+# Absolute source/build directory
+switch_srcdir=`(cd $srcdir && pwd)`
+switch_builddir=`pwd`
 
 
 
@@ -3843,7 +3849,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 3846 "configure"' > conftest.$ac_ext
+  echo '#line 3852 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -5442,7 +5448,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:5445:" \
+echo "$as_me:5451:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6505,11 +6511,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6508: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6514: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6512: \$? = $ac_status" >&5
+   echo "$as_me:6518: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6773,11 +6779,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6776: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6782: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6780: \$? = $ac_status" >&5
+   echo "$as_me:6786: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6877,11 +6883,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6880: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6886: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:6884: \$? = $ac_status" >&5
+   echo "$as_me:6890: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9222,7 +9228,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9225 "configure"
+#line 9231 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9322,7 +9328,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9325 "configure"
+#line 9331 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11662,11 +11668,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11665: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11671: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:11669: \$? = $ac_status" >&5
+   echo "$as_me:11675: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -11766,11 +11772,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11769: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11775: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:11773: \$? = $ac_status" >&5
+   echo "$as_me:11779: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -13336,11 +13342,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13339: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13345: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13343: \$? = $ac_status" >&5
+   echo "$as_me:13349: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13440,11 +13446,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13443: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13449: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13447: \$? = $ac_status" >&5
+   echo "$as_me:13453: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15643,11 +15649,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15646: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15652: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15650: \$? = $ac_status" >&5
+   echo "$as_me:15656: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -15911,11 +15917,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15914: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15920: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15918: \$? = $ac_status" >&5
+   echo "$as_me:15924: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16015,11 +16021,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16018: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16024: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16022: \$? = $ac_status" >&5
+   echo "$as_me:16028: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -19994,82 +20000,203 @@ else
 fi
 
 
+# set defaults for use on all platforms
+SWITCH_AM_CFLAGS="-I${switch_srcdir}/src/include -I${switch_srcdir} -I${prefix}/include"
+SWITCH_AM_LDFLAGS="-L${prefix}/lib -lm -L/usr/local/lib/db42 -L/usr/local/lib"
 
+#set SOLINK variable based on compiler and host
+if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
+    SOLINK="-Bdynamic -dy -G"
+elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
+    case "$host" in
+        *-darwin*)
+            SOLINK="-dynamic -bundle -force-flat-namespace"
+        ;;
+        *)
+            SOLINK="-shared -Xlinker -x"
+        ;;
+    esac
+else
+    { { echo "$as_me:$LINENO: error: Please update configure.in with SOLINK values for your compiler" >&5
+echo "$as_me: error: Please update configure.in with SOLINK values for your compiler" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+# set DYNAMIC_LIB_EXTEN
+# we should really be using libtool so we don't need to do this
 case "$host" in
-                *-solaris2*)
-                        if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then                                SOLINK="-Bdynamic -dy -G"
-                                new_AM_CFLAGS="-DPATH_MAX=2048 -KPIC -DPIC"
-                                new_AM_LDFLAGS="-L${prefix}/lib -R${prefix}/lib"
-                                IN_LINE=""
-                        elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then                                SOLINK="-Bdynamic -dy -G"
-                                new_AM_CFLAGS="-DPATH_MAX=2048 -fPIC"
-                                new_AM_LDFLAGS=""
-                                IN_LINE=inline
-                        fi
-                        DYNAMIC_LIB_EXTEN="so"
-                ;;
-                *-darwin*)
-                        if test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
-                                SOLINK="-dynamic -bundle -force-flat-namespace"
-                                new_AM_CFLAGS="-DMACOSX"
-                                new_AM_LDFLAGS=""
-                        fi
-                        DYNAMIC_LIB_EXTEN="dylib"
-                        IN_LINE=inline
-                ;;
-                x86_64-*-linux-gnu)
-                        if test "x${ax_cv_c_compiler_vendor}" = "xsun" ; then
-                                SOLINK="-Bdynamic -dy -G"
-                                new_AM_CFLAGS="-KPIC -DPIC"
-                                new_AM_LDFLAGS="-L${prefix}/lib -R${prefix}/lib"
-                        elif test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
-                                SOLINK="-shared -Xlinker -x"
-                                new_AM_CFLAGS="-fPIC"
-                                new_AM_LDFLAGS=""
-                        fi
-                        DYNAMIC_LIB_EXTEN="so"
-                        IN_LINE=inline
-                ;;
-                i*6-*-linux-gnu)
-                        if test "x${ax_cv_c_compiler_vendor}" = "xsun" ; then
-                                SOLINK="-Bdynamic -dy -G"
-                                new_AM_CFLAGS="-KPIC -DPIC"
-                                new_AM_LDFLAGS="-L${prefix}/lib -R${prefix}/lib"
-                        elif test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
-                                SOLINK="-shared -Xlinker -x"
-                                new_AM_CFLAGS="-fpic"
-                                new_AM_LDFLAGS=""
-                        fi
-                        IN_LINE=inline
-                        DYNAMIC_LIB_EXTEN="so"
-                ;;
-	        *)
-                        if test "x${ax_cv_c_compiler_vendor}" = "xsun" ; then
-                                SOLINK="-Bdynamic -dy -G"
-                                new_AM_CFLAGS="-KPIC -DPIC"
-                                new_AM_LDFLAGS="-L${prefix}/lib -R${prefix}/lib"
-                        elif test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
-                                SOLINK="-shared -Xlinker -x"
-                                new_AM_CFLAGS="-fPIC"
-                                new_AM_LDFLAGS=""
-                        fi
-                        DYNAMIC_LIB_EXTEN="so"
-                        IN_LINE=inline
-			;;
+    *-darwin*)
+        DYNAMIC_LIB_EXTEN="dylib"
+    ;;
+    *cygwin* | *mingw*)
+        DYNAMIC_LIB_EXTEN="dll"
+    ;;
+    *)
+        DYNAMIC_LIB_EXTEN="so"
+    ;;
+esac
+
+# tweak compiler specific flags
+if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
+
+  if test "x$SWITCH_AM_CFLAGS" = "x"; then
+    test "x$silent" != "xyes" && echo "  setting SWITCH_AM_CFLAGS to \"-KPIC\""
+    SWITCH_AM_CFLAGS="-KPIC"
+  else
+    apr_addto_bugger="-KPIC"
+    for i in $apr_addto_bugger; do
+      apr_addto_duplicate="0"
+      for j in $SWITCH_AM_CFLAGS; do
+        if test "x$i" = "x$j"; then
+          apr_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $apr_addto_duplicate = "0"; then
+        test "x$silent" != "xyes" && echo "  adding \"$i\" to SWITCH_AM_CFLAGS"
+        SWITCH_AM_CFLAGS="$SWITCH_AM_CFLAGS $i"
+      fi
+    done
+  fi
+
+
+  if test "x$SWITCH_AM_CFLAGS" = "x"; then
+    test "x$silent" != "xyes" && echo "  setting SWITCH_AM_CFLAGS to \"-DPIC\""
+    SWITCH_AM_CFLAGS="-DPIC"
+  else
+    apr_addto_bugger="-DPIC"
+    for i in $apr_addto_bugger; do
+      apr_addto_duplicate="0"
+      for j in $SWITCH_AM_CFLAGS; do
+        if test "x$i" = "x$j"; then
+          apr_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $apr_addto_duplicate = "0"; then
+        test "x$silent" != "xyes" && echo "  adding \"$i\" to SWITCH_AM_CFLAGS"
+        SWITCH_AM_CFLAGS="$SWITCH_AM_CFLAGS $i"
+      fi
+    done
+  fi
+
+
+  if test "x$SWITCH_AM_LDFLAGS" = "x"; then
+    test "x$silent" != "xyes" && echo "  setting SWITCH_AM_LDFLAGS to \"-R${prefix}/lib\""
+    SWITCH_AM_LDFLAGS="-R${prefix}/lib"
+  else
+    apr_addto_bugger="-R${prefix}/lib"
+    for i in $apr_addto_bugger; do
+      apr_addto_duplicate="0"
+      for j in $SWITCH_AM_LDFLAGS; do
+        if test "x$i" = "x$j"; then
+          apr_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $apr_addto_duplicate = "0"; then
+        test "x$silent" != "xyes" && echo "  adding \"$i\" to SWITCH_AM_LDFLAGS"
+        SWITCH_AM_LDFLAGS="$SWITCH_AM_LDFLAGS $i"
+      fi
+    done
+  fi
+
+elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
+
+  if test "x$SWITCH_AM_CFLAGS" = "x"; then
+    test "x$silent" != "xyes" && echo "  setting SWITCH_AM_CFLAGS to \"-fPIC\""
+    SWITCH_AM_CFLAGS="-fPIC"
+  else
+    apr_addto_bugger="-fPIC"
+    for i in $apr_addto_bugger; do
+      apr_addto_duplicate="0"
+      for j in $SWITCH_AM_CFLAGS; do
+        if test "x$i" = "x$j"; then
+          apr_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $apr_addto_duplicate = "0"; then
+        test "x$silent" != "xyes" && echo "  adding \"$i\" to SWITCH_AM_CFLAGS"
+        SWITCH_AM_CFLAGS="$SWITCH_AM_CFLAGS $i"
+      fi
+    done
+  fi
+
+fi
+
+# tweak platform specific flags
+case "$host" in
+    *-darwin*)
+
+  if test "x$SWITCH_AM_CFLAGS" = "x"; then
+    test "x$silent" != "xyes" && echo "  setting SWITCH_AM_CFLAGS to \"-DMACOSX\""
+    SWITCH_AM_CFLAGS="-DMACOSX"
+  else
+    apr_addto_bugger="-DMACOSX"
+    for i in $apr_addto_bugger; do
+      apr_addto_duplicate="0"
+      for j in $SWITCH_AM_CFLAGS; do
+        if test "x$i" = "x$j"; then
+          apr_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $apr_addto_duplicate = "0"; then
+        test "x$silent" != "xyes" && echo "  adding \"$i\" to SWITCH_AM_CFLAGS"
+        SWITCH_AM_CFLAGS="$SWITCH_AM_CFLAGS $i"
+      fi
+    done
+  fi
+
+
+  if test "x$SWITCH_AM_CFLAGS" = "x-fPIC"; then
+    test "x$silent" != "xyes" && echo "  nulling SWITCH_AM_CFLAGS"
+    SWITCH_AM_CFLAGS=""
+  else
+    apr_new_bugger=""
+    apr_removed=0
+    for i in $SWITCH_AM_CFLAGS; do
+      if test "x$i" != "x-fPIC"; then
+        apr_new_bugger="$apr_new_bugger $i"
+      else
+        apr_removed=1
+      fi
+    done
+    if test $apr_removed = "1"; then
+      test "x$silent" != "xyes" && echo "  removed \"-fPIC\" from SWITCH_AM_CFLAGS"
+      SWITCH_AM_CFLAGS=$apr_new_bugger
+    fi
+  fi
+
+    ;;
+    *-solaris2*)
+
+  if test "x$SWITCH_AM_CFLAGS" = "x"; then
+    test "x$silent" != "xyes" && echo "  setting SWITCH_AM_CFLAGS to \"-DPATH_MAX=2048\""
+    SWITCH_AM_CFLAGS="-DPATH_MAX=2048"
+  else
+    apr_addto_bugger="-DPATH_MAX=2048"
+    for i in $apr_addto_bugger; do
+      apr_addto_duplicate="0"
+      for j in $SWITCH_AM_CFLAGS; do
+        if test "x$i" = "x$j"; then
+          apr_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $apr_addto_duplicate = "0"; then
+        test "x$silent" != "xyes" && echo "  adding \"$i\" to SWITCH_AM_CFLAGS"
+        SWITCH_AM_CFLAGS="$SWITCH_AM_CFLAGS $i"
+      fi
+    done
+  fi
+
+    ;;
 esac
 
 
 
-
-
-cat >>confdefs.h <<_ACEOF
-#define inline $IN_LINE
-_ACEOF
-
-
-cat >>confdefs.h <<_ACEOF
-#define __inline__ $IN_LINE
-_ACEOF
 
 
 
@@ -25574,6 +25701,8 @@ s,@am__leading_dot@,$am__leading_dot,;t t
 s,@AMTAR@,$AMTAR,;t t
 s,@am__tar@,$am__tar,;t t
 s,@am__untar@,$am__untar,;t t
+s,@switch_srcdir@,$switch_srcdir,;t t
+s,@switch_builddir@,$switch_builddir,;t t
 s,@CC@,$CC,;t t
 s,@CFLAGS@,$CFLAGS,;t t
 s,@LDFLAGS@,$LDFLAGS,;t t
@@ -25620,8 +25749,8 @@ s,@LIBTOOL@,$LIBTOOL,;t t
 s,@PRTDIAG@,$PRTDIAG,;t t
 s,@WANT_DEBUG_TRUE@,$WANT_DEBUG_TRUE,;t t
 s,@WANT_DEBUG_FALSE@,$WANT_DEBUG_FALSE,;t t
-s,@new_AM_CFLAGS@,$new_AM_CFLAGS,;t t
-s,@new_AM_LDFLAGS@,$new_AM_LDFLAGS,;t t
+s,@SWITCH_AM_CFLAGS@,$SWITCH_AM_CFLAGS,;t t
+s,@SWITCH_AM_LDFLAGS@,$SWITCH_AM_LDFLAGS,;t t
 s,@SOLINK@,$SOLINK,;t t
 s,@DYNAMIC_LIB_EXTEN@,$DYNAMIC_LIB_EXTEN,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t

@@ -136,9 +136,6 @@
 /* Version number of package */
 #undef VERSION
 
-/* sunpro is bad at inline */
-#undef __inline__
-
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const
 

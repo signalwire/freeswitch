@@ -4,19 +4,13 @@ AUTOMAKE_OPTS = gnu foreign
 NAME=freeswitch
 PREFIX=$(prefix)
 
-AM_CFLAGS   = $(new_AM_CFLAGS)
+AM_CFLAGS   = $(SWITCH_AM_CFLAGS)
 AM_CPPFLAGS = $(AM_CFLAGS)
-AM_LDFLAGS  = $(new_AM_LDFLAGS)
+AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS)
 BASE        = $(PWD)
 OSARCH=$(shell uname -s)
 LIBTOOL=$(PWD)/libtool
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
-
-FIRST_INCLUDES = -I$(PWD)/src/include -I$(PWD)
-AM_CFLAGS  += $(FIRST_INCLUDES) -I$(PREFIX)/include
-
-AM_LDFLAGS += -L$(PREFIX)/lib
-AM_LDFLAGS += -lm -L/usr/local/lib/db42 -L/usr/local/lib
 
 if CRASHPROT
 AM_CFLAGS += -DCRASH_PROT
@@ -72,36 +66,30 @@ src/include/switch_log.h\
 src/include/switch_xml.h
 
 BUILT_SOURCES = version depends
-CLEANFILES = src/include/switch_version.h scripts/fsxs
+CLEANFILES = src/include/switch_version.h
 
-APR_CONFIG=$(PWD)/libs/apr/apr-1-config
-APU_CONFIG=$(PWD)/libs/apr-util/apu-1-config
+CORE_CFLAGS     = $(shell $(switch_srcdir)/libs/apr/apr-1-config --cflags --cppflags --includes)
+CORE_CFLAGS    += $(shell $(switch_srcdir)/libs/apr-util/apu-1-config --includes)
+CORE_CFLAGS    += -I$(PWD)/libs/sqlite
+CORE_CFLAGS    += -I$(PWD)/libs/pcre
+CORE_CFLAGS    += -I$(PWD)/libs/srtp/include
+CORE_CFLAGS    += -I$(PWD)/libs/srtp/crypto/include
+CORE_CFLAGS    += -I$(PWD)/libs/libresample/include
+CORE_CFLAGS    += -I$(PWD)/libs/libteletone/src
 
-CORE_INCLUDES	  = -I$(PWD)/libs/apr/include
-CORE_INCLUDES	 += -I$(PWD)/libs/apr-util/include
-CORE_INCLUDES	 += -I$(PWD)/libs/sqlite
-CORE_INCLUDES	 += -I$(PWD)/libs/pcre
-CORE_INCLUDES	 += -I$(PWD)/libs/srtp/include
-CORE_INCLUDES	 += -I$(PWD)/libs/srtp/crypto/include
-CORE_INCLUDES  += -I$(PWD)/libs/libresample/include
-CORE_INCLUDES  += -I$(PWD)/libs/libteletone/src
-
-CORE_CFLAGS     = $(shell $(APR_CONFIG) --cflags --cppflags --includes)
-CORE_CFLAGS    += $(shell $(APU_CONFIG) --includes)
-
-CORE_LDFLAGS    = $(shell $(APR_CONFIG) --link-ld --libs )
-CORE_LDFLAGS   += $(shell $(APU_CONFIG) --link-ld --libs )
+CORE_LDFLAGS    = $(shell $(switch_srcdir)/libs/apr/apr-1-config --link-ld --libs )
+CORE_LDFLAGS   += $(shell $(switch_srcdir)/libs/apr-util/apu-1-config --link-ld --libs )
 
 lib_LTLIBRARIES	          = libfreeswitch.la
-libfreeswitch_la_CFLAGS   = $(FIRST_INCLUDES) $(CORE_INCLUDES) $(AM_CFLAGS) $(CORE_CFLAGS)
-libfreeswitch_la_LDFLAGS  = -version-info 1:0:0 $(AM_LDFLAGS) $(CORE_LDFLAGS)
+libfreeswitch_la_CFLAGS   = $(CORE_CFLAGS) $(AM_CFLAGS)
+libfreeswitch_la_LDFLAGS  = -version-info 1:0:0 $(CORE_LDFLAGS) $(AM_LDFLAGS)
 libfreeswitch_la_LIBADD   = -lteletone -lresample -lsrtp -lsqlite3 -lpcre
 nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
 
 $(libfreeswitch_la_SOURCES): depends version
 
 bin_PROGRAMS =	freeswitch
-bin_SCRIPTS = scripts/fsxs
+
 freeswitch_SOURCES = 	src/switch.c\
 			src/include/switch_version.h
 freeswitch_CFLAGS = $(AM_CFLAGS)
@@ -200,27 +188,6 @@ install_mod: modules
 
 dox:
 	cd docs && doxygen $(PWD)/docs/Doxygen.conf
-
-scripts/fsxs: scripts/fsxs.in
-	@echo creating fsxs
-	@sed -e "s,@MODULES_DIR\@,$(PREFIX)/mod," \
-	    -e "s,@LIB_DIR\@,$(PREFIX)/lib," \
-	    -e "s,@BIN_DIR\@,$(PREFIX)/bin," \
-	    -e "s,@INC_DIR\@,$(PREFIX)/include," \
-	    -e "s,@CFG_DIR\@,$(PREFIX)/conf," \
-	    -e "s,@DB_DIR\@,$(PREFIX)/db," \
-	    -e "s,@PREFIX\@,$(PREFIX)," \
-	    -e "s,@CC\@,$(CC)," \
-	    -e "s,@LD\@,$(CC)," \
-	    -e "s,@INSTALL\@,$(INSTALL)," \
-	    -e "s,@MKINSTALLDIRS\@,$(mkdir_p)," \
-	    \
-	    -e "s|@CFLAGS\@|$(CFLAGS) $(shell $(APR_CONFIG) --cflags --cppflags)|" \
-	    -e "s|@INCLUDES\@|-I$(PREFIX)/include $(shell $(APR_CONFIG) --includes) $(shell $(APU_CONFIG) --includes)|" \
-	    -e "s|@SOLINK\@|$(SOLINK)|" \
-	    -e "s|@LDFLAGS\@|-L$(PREFIX)/lib|" \
-	    -e "s|@LIBS\@|-lfreeswitch|" \
-	    scripts/fsxs.in > scripts/fsxs
 
 eclean: clean
 	rm -f `find . -type f -name \*~`

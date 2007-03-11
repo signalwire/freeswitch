@@ -33,6 +33,10 @@
  *
  */
 
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 500
+#endif
+
 #include <switch.h>
 
 /* pid filename: Stores the process id of the freeswitch process */
