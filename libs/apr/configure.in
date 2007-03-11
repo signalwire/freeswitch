@@ -737,6 +737,11 @@ fi
 haveshmgetanon="0"
 havemmapzero="0"
 havemmapanon="0"
+
+case $host in
+  *-*-cygwin | *-*-mingw* | *-*-pw32*)
+     ;;
+    *)	
 APR_BEGIN_DECISION([anonymous shared memory allocation method])
 APR_IFALLYES(header:sys/ipc.h header:sys/shm.h header:sys/file.h dnl
              func:shmget func:shmat func:shmdt func:shmctl,
@@ -772,6 +777,10 @@ case $host in
         ;;
 esac
 APR_END_DECISION
+
+        ;;
+esac
+
 AC_DEFINE_UNQUOTED($ac_decision)
 
 useshmgetanon="0"
@@ -803,6 +812,11 @@ havemmapshm="0"
 haveshmget="0"
 havebeosarea="0"
 haveos2shm="0"
+
+case $host in
+  *-*-cygwin | *-*-mingw* | *-*-pw32*)
+     ;;
+    *)	
 APR_BEGIN_DECISION([namebased memory allocation method])
 APR_IFALLYES(header:sys/mman.h func:mmap func:munmap,
              [havemmaptmp="1"
@@ -836,6 +850,8 @@ case $host in
         ;;
 esac
 APR_END_DECISION
+        ;;
+esac
 AC_DEFINE_UNQUOTED($ac_decision)
 
 usemmaptmp="0"
