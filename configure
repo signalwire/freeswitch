@@ -473,6 +473,23 @@ ac_subdirs_all="$ac_subdirs_all libs/libteletone"
 ac_subdirs_all="$ac_subdirs_all libs/pcre"
 ac_subdirs_all="$ac_subdirs_all libs/apr"
 ac_subdirs_all="$ac_subdirs_all libs/apr-util"
+ac_subdirs_all="$ac_subdirs_all libs/codec/g7xx"
+ac_subdirs_all="$ac_subdirs_all libs/codec/g726"
+ac_subdirs_all="$ac_subdirs_all libs/codec/gsm"
+ac_subdirs_all="$ac_subdirs_all libs/codec/ilbc"
+ac_subdirs_all="$ac_subdirs_all libs/codec/lpc10"
+ac_subdirs_all="$ac_subdirs_all libs/curl"
+ac_subdirs_all="$ac_subdirs_all libs/iax"
+ac_subdirs_all="$ac_subdirs_all libs/iksemel"
+ac_subdirs_all="$ac_subdirs_all libs/js/nsprpub"
+ac_subdirs_all="$ac_subdirs_all libs/js"
+ac_subdirs_all="$ac_subdirs_all libs/libdingaling"
+ac_subdirs_all="$ac_subdirs_all libs/libetpan"
+ac_subdirs_all="$ac_subdirs_all libs/libsndfile"
+ac_subdirs_all="$ac_subdirs_all libs/sofia-sip"
+ac_subdirs_all="$ac_subdirs_all libs/speex"
+ac_subdirs_all="$ac_subdirs_all libs/xmlrpc-c"
+ac_subdirs_all="$ac_subdirs_all libs/portaudio"
 ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar switch_srcdir switch_builddir CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE build build_cpu build_vendor build_os host host_cpu host_vendor host_os EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CPP CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL PRTDIAG WANT_DEBUG_TRUE WANT_DEBUG_FALSE SWITCH_AM_CFLAGS SWITCH_AM_LDFLAGS SOLINK DYNAMIC_LIB_EXTEN LIBOBJS voidp_size short_value int_value long_value int64_value size_t_value ssize_t_value int64_t_fmt uint64_t_fmt ssize_t_fmt size_t_fmt CRASHPROT_TRUE CRASHPROT_FALSE ISLINUX_TRUE ISLINUX_FALSE ISMAC_TRUE ISMAC_FALSE IS64BITLINUX_TRUE IS64BITLINUX_FALSE subdirs LTLIBOBJS'
 ac_subst_files=''
 
@@ -3859,7 +3876,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 3862 "configure"' > conftest.$ac_ext
+  echo '#line 3879 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -5458,7 +5475,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:5461:" \
+echo "$as_me:5478:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6521,11 +6538,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6524: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6541: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6528: \$? = $ac_status" >&5
+   echo "$as_me:6545: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6789,11 +6806,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6792: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6809: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6796: \$? = $ac_status" >&5
+   echo "$as_me:6813: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6893,11 +6910,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6896: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6913: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:6900: \$? = $ac_status" >&5
+   echo "$as_me:6917: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9238,7 +9255,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9241 "configure"
+#line 9258 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9338,7 +9355,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9341 "configure"
+#line 9358 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11678,11 +11695,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11681: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11698: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:11685: \$? = $ac_status" >&5
+   echo "$as_me:11702: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -11782,11 +11799,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11785: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11802: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:11789: \$? = $ac_status" >&5
+   echo "$as_me:11806: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -13352,11 +13369,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13355: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13372: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13359: \$? = $ac_status" >&5
+   echo "$as_me:13376: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13456,11 +13473,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13459: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13476: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13463: \$? = $ac_status" >&5
+   echo "$as_me:13480: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15659,11 +15676,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15662: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15679: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15666: \$? = $ac_status" >&5
+   echo "$as_me:15683: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -15927,11 +15944,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15930: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15947: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15934: \$? = $ac_status" >&5
+   echo "$as_me:15951: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16031,11 +16048,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16034: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16051: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16038: \$? = $ac_status" >&5
+   echo "$as_me:16055: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -25035,6 +25052,76 @@ subdirs="$subdirs libs/apr"
 
 
 subdirs="$subdirs libs/apr-util"
+
+
+
+subdirs="$subdirs libs/codec/g7xx"
+
+
+
+subdirs="$subdirs libs/codec/g726"
+
+
+
+subdirs="$subdirs libs/codec/gsm"
+
+
+
+subdirs="$subdirs libs/codec/ilbc"
+
+
+
+subdirs="$subdirs libs/codec/lpc10"
+
+
+
+subdirs="$subdirs libs/curl"
+
+
+
+subdirs="$subdirs libs/iax"
+
+
+
+subdirs="$subdirs libs/iksemel"
+
+
+
+subdirs="$subdirs libs/js/nsprpub"
+
+
+
+subdirs="$subdirs libs/js"
+
+
+
+subdirs="$subdirs libs/libdingaling"
+
+
+
+subdirs="$subdirs libs/libetpan"
+
+
+
+subdirs="$subdirs libs/libsndfile"
+
+
+
+subdirs="$subdirs libs/sofia-sip"
+
+
+
+subdirs="$subdirs libs/speex"
+
+
+
+subdirs="$subdirs libs/xmlrpc-c"
+
+
+
+subdirs="$subdirs libs/portaudio"
+
+
 
           ac_config_files="$ac_config_files src/include/switch_version.h"
 cat >confcache <<\_ACEOF

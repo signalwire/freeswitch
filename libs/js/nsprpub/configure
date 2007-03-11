@@ -9136,9 +9136,7 @@ echo "${ECHO_T}$ac_header_preproc" >&6
 
 # So?  What about this header?
 case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
-  yes:no:
-fi
-
+  yes:no: )
     { echo "$as_me:$LINENO: WARNING: dlfcn.h: accepted by the compiler, rejected by the preprocessor!" >&5
 echo "$as_me: WARNING: dlfcn.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
     { echo "$as_me:$LINENO: WARNING: dlfcn.h: proceeding with the compiler's result" >&5
@@ -9183,7 +9181,9 @@ if test $ac_cv_header_dlfcn_h = yes; then
   OS_LIBS="-ldl $OS_LIBS"
 fi
 
-)
+
+fi
+
     ;;
 esac
 
@@ -9397,30 +9397,6 @@ darwin*)
     ;;
 *)
 
-echo "$as_me:$LINENO: checking for pthread_create in -lpthreads" >&5
-echo $ECHO_N "checking for pthread_create in -lpthreads... $ECHO_C" >&6
-echo "
-    #include <pthread.h>
-    void *foo(void *v) { return v; }
-    int main() {
-        pthread_t t;
-        if (!pthread_create(&t, 0, &foo, 0)) {
-            pthread_join(t, 0);
-        }
-        return 0;
-    }" > dummy.c ;
-    echo "${CC-cc} -o dummy${ac_exeext} dummy.c $CFLAGS $CPPFLAGS -lpthreads $LDFLAGS $LIBS" 1>&5;
-    ${CC-cc} -o dummy${ac_exeext} dummy.c $CFLAGS $CPPFLAGS -lpthreads $LDFLAGS $LIBS 2>&5;
-    _res=$? ;
-    rm -f dummy.c dummy${ac_exeext} ;
-    if test "$_res" = "0"; then
-        echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-        _HAVE_PTHREADS=1 _PTHREAD_LDFLAGS="-lpthreads"
-    else
-        echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-
 echo "$as_me:$LINENO: checking for pthread_create in -lpthread" >&5
 echo $ECHO_N "checking for pthread_create in -lpthread... $ECHO_C" >&6
 echo "
@@ -9441,6 +9417,30 @@ echo "
         echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
         _HAVE_PTHREADS=1 _PTHREAD_LDFLAGS="-lpthread"
+    else
+        echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+echo "$as_me:$LINENO: checking for pthread_create in -lpthreads" >&5
+echo $ECHO_N "checking for pthread_create in -lpthreads... $ECHO_C" >&6
+echo "
+    #include <pthread.h>
+    void *foo(void *v) { return v; }
+    int main() {
+        pthread_t t;
+        if (!pthread_create(&t, 0, &foo, 0)) {
+            pthread_join(t, 0);
+        }
+        return 0;
+    }" > dummy.c ;
+    echo "${CC-cc} -o dummy${ac_exeext} dummy.c $CFLAGS $CPPFLAGS -lpthreads $LDFLAGS $LIBS" 1>&5;
+    ${CC-cc} -o dummy${ac_exeext} dummy.c $CFLAGS $CPPFLAGS -lpthreads $LDFLAGS $LIBS 2>&5;
+    _res=$? ;
+    rm -f dummy.c dummy${ac_exeext} ;
+    if test "$_res" = "0"; then
+        echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+        _HAVE_PTHREADS=1 _PTHREAD_LDFLAGS="-lpthreads"
     else
         echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
@@ -9679,11 +9679,6 @@ _ACEOF
 #define _THREAD_SAFE 1
 _ACEOF
 
-	    	    if test "$ac_cv_have_dash_pthread" = "yes"; then
-	        _PTHREAD_LDFLAGS="-pthread"
-	    else
-	        _PTHREAD_LDFLAGS="-lc_r"
-	    fi
 	    ;;
     *-netbsd*)
 	    if test "$ac_cv_have_dash_pthread" = "yes"; then

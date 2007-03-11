@@ -223,13 +223,14 @@ NAME = dingaling
 PREFIX = $(prefix)
 AM_CFLAGS = $(new_AM_CFLAGS) -I./src -I$(prefix)/include \
 	-I$(PREFIX)/include $(shell $(APR_CONFIG) --cflags --cppflags \
-	--includes) $(shell $(APU_CONFIG) --includes)
+	--includes) $(shell $(APU_CONFIG) --includes) \
+	-I../iksemel/include
 AM_CPPFLAGS = $(AM_CFLAGS)
-AM_LDFLAGS = $(new_AM_LDFLAGS) -liksemel -L$(PREFIX)/lib $(shell \
-	$(APR_CONFIG) --link-ld --libs ) $(shell $(APU_CONFIG) \
-	--link-ld --libs )
-APR_CONFIG = $(prefix)/bin/apr-1-config
-APU_CONFIG = $(prefix)/bin/apu-1-config
+AM_LDFLAGS = $(new_AM_LDFLAGS) -L$(PREFIX)/lib $(shell $(APR_CONFIG) \
+	--link-ld --libs ) $(shell $(APU_CONFIG) --link-ld --libs ) \
+	../iksemel/src/libiksemel.la
+APR_CONFIG = $(shell which ../apr/apr-1-config || which $(prefix)/bin/apr-1-config )
+APU_CONFIG = $(shell which ../apr-util/apu-1-config || which $(prefix)/bin/apu-1-config)
 lib_LTLIBRARIES = libdingaling.la
 libdingaling_la_SOURCES = src/libdingaling.c src/sha1.c
 libdingaling_la_CFLAGS = $(AM_CFLAGS)
