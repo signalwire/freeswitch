@@ -88,14 +88,6 @@ CORE_INCLUDES  += -I$(PWD)/libs/libteletone/src
 
 CORE_CFLAGS     = $(shell $(APR_CONFIG) --cflags --cppflags --includes)
 CORE_CFLAGS    += $(shell $(APU_CONFIG) --includes)
-CORE_CFLAGS    += -DSWITCH_MOD_DIR=\"$(PREFIX)/mod\"
-CORE_CFLAGS    += -DSWITCH_PREFIX_DIR=\"$(PREFIX)\"
-CORE_CFLAGS    += -DSWITCH_CONF_DIR=\"$(PREFIX)/conf\"
-CORE_CFLAGS	   += -DSWITCH_DB_DIR=\"$(PREFIX)/db\"
-CORE_CFLAGS	   += -DSWITCH_LOG_DIR=\"$(PREFIX)/log\"
-CORE_CFLAGS	   += -DSWITCH_SCRIPT_DIR=\"$(PREFIX)/scripts\"
-CORE_CFLAGS	   += -DSWITCH_HTDOCS_DIR=\"$(PREFIX)/htdocs\"
-CORE_CFLAGS	   += -DSWITCH_GRAMMAR_DIR=\"$(PREFIX)/grammar\"
 
 CORE_LDFLAGS    = $(shell $(APR_CONFIG) --link-ld --libs )
 CORE_LDFLAGS   += $(shell $(APU_CONFIG) --link-ld --libs )
