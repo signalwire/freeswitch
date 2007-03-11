@@ -394,7 +394,10 @@ else
   AC_MSG_RESULT(unknown)
 fi
 if test "$CYGWIN" != "yes"; then
-  AC_CYGWIN
+  case $host_os in
+    *cygwin* ) CYGWIN=yes;;
+    * ) CYGWIN=no;;
+  esac
 fi
 if test "$CYGWIN" = "yes"; then
   BUILD_EXEEXT=.exe
