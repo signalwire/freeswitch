@@ -5,9 +5,7 @@ AC_INIT(libspeakup, 0.1, BUG-REPORT-ADDRESS)
 AC_CONFIG_AUX_DIR(build)
 AM_INIT_AUTOMAKE(libspeakup,0.1)
 AC_CONFIG_SRCDIR([src])
-#AC_CONFIG_HEADER([])
 
-AC_PREFIX_DEFAULT(/usr/local/freeswitch)
 # Checks for programs.
 AC_LANG_C
 AC_PROG_CC
