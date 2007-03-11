@@ -1,0 +1,2 @@
+#! /bin/sh
+./configure "$@" --disable-tcl --enable-threadsafe --disable-shared
