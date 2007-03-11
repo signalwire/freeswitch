@@ -30,6 +30,8 @@ extern "C" {
 #endif	/* __cplusplus */
 
 #include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define SF_COUNT_TO_LONG(x)	((long) (x))
 #define	ARRAY_LEN(x)		((int) (sizeof (x)) / (sizeof ((x) [0])))
