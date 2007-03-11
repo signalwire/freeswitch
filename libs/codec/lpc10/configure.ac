@@ -3,14 +3,90 @@
 
 AC_PREREQ(2.59)
 AC_INIT(liblpc10, 1.0, liblpc10)
+AC_CONFIG_AUX_DIR(build)
 AM_INIT_AUTOMAKE(liblpc10,1.0)
-AC_CONFIG_SRCDIR([f2clib.c])
 
+#Set default language
+AC_LANG_C
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
 AC_PROG_INSTALL
+
+#Check for compiler vendor
+AX_COMPILER_VENDOR
+
+#  Optimize
+AC_ARG_ENABLE(optimization,
+[AC_HELP_STRING([--enable-optimization],[Set if you want us to add max optimising compiler flags])],[enable_optimizer="$enableval"],[enable_optimizer="no"])
+
+if test "${enable_optimizer}" = "yes" ; then
+        AC_DEFINE([OPTIMZER],[],[Enable Optimization.])
+        AX_CC_MAXOPT
+fi
+
+#  Enable debugging
+AC_ARG_ENABLE(debug,
+[AC_HELP_STRING([--enable-debug],[build with debug information])],[enable_debug="$enable_debug"],[enable_debug="yes"])
+
+if test "${enable_debug}" = "yes"; then
+        AC_DEFINE([DEBUG],[],[Enable extra debugging.])
+        AX_CFLAGS_WARN_ALL_ANSI
+fi
+
+AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
+
+
+case "$host" in
+                *-solaris2*)
+                        if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then                                SOLINK="-Bdynamic -dy -G"
+                                new_AM_CFLAGS="-KPIC -DPIC"
+                                new_AM_LDFLAGS="-L${prefix}/lib -R${prefix}/lib"
+                        elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then                                SOLINK="-Bdynamic -dy -G"
+                                new_AM_CFLAGS="-fPIC"
+                                new_AM_LDFLAGS=""
+                                IN_LINE=inline
+                        fi
+                        DYNAMIC_LIB_EXTEN="so"
+                ;;
+                *-darwin*)
+                        if test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
+                                SOLINK="-dynamic -bundle -force-flat-namespace"
+                                new_AM_CFLAGS="-DMACOSX"
+                                new_AM_LDFLAGS=""
+                        fi
+                        DYNAMIC_LIB_EXTEN="dylib"
+                ;;
+                x86_64-*-linux-gnu)
+                        if test "x${ax_cv_c_compiler_vendor}" = "xsun" ; then
+                                SOLINK="-Bdynamic -dy -G"
+                                new_AM_CFLAGS="-KPIC -DPIC"
+                                new_AM_LDFLAGS="-L${prefix}/lib -R${prefix}/lib"
+                        elif test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
+                                SOLINK="-shared -Xlinker -x"
+                                new_AM_CFLAGS="-fPIC"
+                                new_AM_LDFLAGS=""
+                        fi
+                        DYNAMIC_LIB_EXTEN="so"
+                ;;
+                i*6-*-linux-gnu)
+                        if test "x${ax_cv_c_compiler_vendor}" = "xsun" ; then
+                                SOLINK="-Bdynamic -dy -G"
+                                new_AM_CFLAGS="-KPIC -DPIC"
+                                new_AM_LDFLAGS="-L${prefix}/lib -R${prefix}/lib"
+                        elif test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
+                                SOLINK="-shared -Xlinker -x"
+                                new_AM_CFLAGS="-fpic"
+                                new_AM_LDFLAGS=""
+                        fi
+                        DYNAMIC_LIB_EXTEN="so"
+                ;;
+esac
+AC_SUBST(new_AM_CFLAGS)
+AC_SUBST(new_AM_LDFLAGS)
+AC_SUBST(SOLINK)
+AC_SUBST(DYNAMIC_LIB_EXTEN)
 
 # Checks for libraries.
 
