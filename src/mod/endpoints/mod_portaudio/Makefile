@@ -1,22 +1,25 @@
-CFLAGS += -I.
-LDFLAGS += -lportaudio -L$(PREFIX) 
+CFLAGS += -I. -I$(BASE)/libs/portaudio/include
 MYOBJS = pablio.o pa_ringbuffer.o
+ifeq ($(OSARCH),Darwin)
+LDFLAGS += -framework CoreAudio -framework AudioToolbox -framework AudioUnit -framework Carbon
+endif
 
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install portaudio --prefix=$(PREFIX) --with-pic
+	cd $(BASE)/libs/portaudio && $(MAKE)
+
 %.o:  %.c
-	$(CC) -fPIC $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c $(MYOBJS)
-	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o 
-	$(CC) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(MODNAME).o $(MYOBJS) $(LDFLAGS)
+	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o 
+	$(LINK) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(MYOBJS) $(LDFLAGS) $(BASE)/libs/portaudio/lib/libportaudio.la
 
 
 
 clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~
+	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
 
 install:
-	cp -f $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod
+	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod

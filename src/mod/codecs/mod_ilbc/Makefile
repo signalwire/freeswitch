@@ -1,16 +1,16 @@
-LDFLAGS +=-lilbc
+CFLAGS += -I$(BASE)/libs/codec/ilbc/src
 
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install codec/ilbc --prefix=$(PREFIX) --disable-shared
+	cd $(BASE)/libs/codec/ilbc && $(MAKE)
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
-	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o
-	$(CC) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LDFLAGS)
+	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o
+	$(LINK) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LDFLAGS) $(BASE)/libs/codec/ilbc/libilbc.la
 
 clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~
+	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
 
 install:
-	cp -f $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod
+	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod

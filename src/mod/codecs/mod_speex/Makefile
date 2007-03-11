@@ -1,14 +1,15 @@
+CFLAGS+=-I$(BASE)/libs/speex/include
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install speex --prefix=$(PREFIX) --disable-shared --with-pic
+	cd $(BASE)/libs/speex && $(MAKE)
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
-	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o
-	$(CC) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LDFLAGS) -lspeex
+	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o
+	$(LINK) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LDFLAGS) $(BASE)/libs/speex/libspeex/libspeex.la
 
 clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~
+	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
 
 install:
-	cp -f $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod
+	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod

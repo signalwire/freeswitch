@@ -31,7 +31,7 @@
  */  
 
 #include "switch.h"
-#include "lpc10/lpc10.h"
+#include "lpc10.h"
 
 enum {
 	SamplesPerFrame = 180,

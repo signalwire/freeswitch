@@ -3,14 +3,15 @@ LDFLAGS +=-lgsm
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install codec/gsm --prefix=$(PREFIX)
+	cd $(BASE)/libs/codec/gsm && $(MAKE)
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
 	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o
-	$(CC) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LDFLAGS)
+	$(LINK) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(LDFLAGS)
 
 clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~
+	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
 
 install:
-	cp -f $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod
+	cd $(BASE)/libs/codec/gsm && $(MAKE) install
+	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod

@@ -31,15 +31,11 @@
  */
 #include <switch.h>
 
-#ifdef WIN32
 #include <iax2.h>
 #include <iax-client.h>
 #include <iax2-parser.h>
+#ifdef WIN32
 #include <sys/timeb.h>
-#else
-#include <iax/iax2.h>
-#include <iax/iax-client.h>
-#include <iax/iax2-parser.h>
 #endif
 
 static const char modname[] = "mod_iax";

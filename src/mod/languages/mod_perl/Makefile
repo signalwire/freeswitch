@@ -20,7 +20,7 @@ all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN) fs_perl.$(DYNAMIC_LIB_EXTEN)
 depends:
 
 %.o:  %.c
-	$(CC) -fPIC $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 reswig: 
 	rm switch_swig_wrap.c
@@ -34,17 +34,17 @@ switch_swig_wrap.o: switch_swig_wrap.c
 
 
 fs_perl.$(DYNAMIC_LIB_EXTEN): $(MODNAME).$(DYNAMIC_LIB_EXTEN) switch_swig_wrap.o switch_swig.o
-	$(CC) $(SOLINK) -o fs_perl.$(DYNAMIC_LIB_EXTEN) switch_swig_wrap.o switch_swig.o $(LDFLAGS)
+	$(LINK) $(SOLINK) -o fs_perl.$(DYNAMIC_LIB_EXTEN) switch_swig_wrap.o switch_swig.o $(LDFLAGS)
 
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c $(MODNAME).o $(OBJS)
-	$(CC) -fPIC $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(OBJS) $(LDFLAGS)
+	$(LINK) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(OBJS) $(LDFLAGS)
 
 clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .perlok
+	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .perlok .libs
 
 install:
 	mkdir -p $(PREFIX)/perl
-	cp -f $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod
-	cp -f fs_perl.$(DYNAMIC_LIB_EXTEN) fs_perl.pm $(PREFIX)/perl
-	if [ ! -f $(PREFIX)/perl/freeswitch.pm ] ; then cp -f freeswitch.pm $(PREFIX)/perl ; fi
+	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod
+	$(LTINSTALL) fs_perl.$(DYNAMIC_LIB_EXTEN) fs_perl.pm $(PREFIX)/perl
+	if [ ! -f $(PREFIX)/perl/freeswitch.pm ] ; then $(LTINSTALL) freeswitch.pm $(PREFIX)/perl ; fi

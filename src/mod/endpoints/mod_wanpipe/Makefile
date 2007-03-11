@@ -18,11 +18,11 @@ depends:
 	$(CC) $(CFLAGS) $(MOD_CFLAGS) -g -ggdb -Werror -fPIC -c $< -o $@ 
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(OBJS) $(MODNAME).c
-	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o 
-	$(LINKER) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(OBJS) $(LDFLAGS)
+	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o 
+	$(LINK) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(OBJS) $(LDFLAGS)
 
 clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~
+	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
 
 install:
-	cp -f $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod
+	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod

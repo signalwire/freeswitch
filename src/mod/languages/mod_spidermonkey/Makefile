@@ -1,18 +1,23 @@
+CFLAGS += -I$(BASE)/libs/curl/include
+LDFLAGS += $(BASE)/libs/curl/lib/libcurl.la
 include sm.mak
 
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install js/nsprpub --prefix=$(PREFIX) --with-pic
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install js --prefix=$(PREFIX) --with-pic --with-nspr=yes
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install curl --prefix=$(PREFIX) --without-libidn
+	cd $(BASE)/libs/curl && $(MAKE)
+	cd $(BASE)/libs/js/nsprpub && $(MAKE)
+	cd $(BASE)/libs/js && $(MAKE)
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c $(MODNAME).h
 	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o 
-	$(CC) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(OBJS) $(LDFLAGS)
+	$(LINK) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(OBJS) $(LDFLAGS)
 
 clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~
+	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
 
 install:
-	cp -f $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod
+	cd $(BASE)/libs/js/nsprpub && $(MAKE) install
+	cd $(BASE)/libs/js && $(MAKE) install
+	$(LINK) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(OBJS) $(LDFLAGS)
+	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod

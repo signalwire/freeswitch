@@ -9,20 +9,20 @@ LDFLAGS += `$(PREFIX)/bin/pkg-config --libs mono`
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install $(GETTEXT_TARBALL) --prefix=$(PREFIX) --with-pic
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install $(PKGCONFIG_TARBALL) --prefix=$(PREFIX) --with-pic
-	export PKG_CONFIG=$(PREFIX)/bin/pkg-config; export MSGFMT=$(PREFIX)/bin/; MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install $(GLIB_TARBALL) --prefix=$(PREFIX) --with-pic
-	export PATH=$(PATH):$(PREFIX)/bin/; MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install $(TARBALL) --prefix=$(PREFIX) --with-pic --with-gc=boehm --with-preview=yes --without-sigaltstack
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) configure install $(GETTEXT_TARBALL) --prefix=$(PREFIX) --with-pic
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) configure install $(PKGCONFIG_TARBALL) --prefix=$(PREFIX) --with-pic
+	export PKG_CONFIG=$(PREFIX)/bin/pkg-config; export MSGFMT=$(PREFIX)/bin/; MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) configure install $(GLIB_TARBALL) --prefix=$(PREFIX) --with-pic
+	export PATH=$(PATH):$(PREFIX)/bin/; MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) configure install $(TARBALL) --prefix=$(PREFIX) --with-pic --with-gc=boehm --with-preview=yes --without-sigaltstack
 
 %.o:  %.c
-	$(CC) -fPIC $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
-	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o 
-	$(CC) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LDFLAGS)
+	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o 
+	$(LINK) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LDFLAGS)
 
 clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~
+	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
 
 install:
-	cp -f $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod
+	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod

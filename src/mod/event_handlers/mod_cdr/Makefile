@@ -14,15 +14,15 @@ all:	depends $(OBJS) $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 depends:
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(OBJS) $(MODNAME).cpp
-	$(CPPCC) $(CFLAGS) -fPIC -c $(MODNAME).cpp -o $(MODNAME).o 
-	$(CPPCC) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(OBJS) $(LDFLAGS)
+	$(CPPCC) $(CFLAGS) -c $(MODNAME).cpp -o $(MODNAME).o 
+	$(LIBTOOL) --mode=link $(CPPCC) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(OBJS) $(LDFLAGS)
 
 
 %.o:  %.cpp
 	$(CPPCC) -Wall -Werror -fPIC $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~
+	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
 
 install:
-	cp -f $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod
+	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod

@@ -14,12 +14,12 @@ depends:
 	MAKE=$(MAKE) PY_CFLAGS=-fPIC $(BASE)/build/buildlib.sh $(BASE) install Python-2.4.3.tgz --prefix=$(PREFIX) --enable-threads
 
 %.o: %.cpp
-	$(CPPCC) -Wall -Werror -fPIC $(CFLAGS) -c -o $@ $<
+	$(CPPCC) $(CFLAGS) -c -o $@ $<
 
 %.o:  %.c
 	$(CC) $(LCFLAGS) $(CFLAGS) -c $< -o $@
 
-od_python.c:
+mod_python.c:
 	$(CC) $(LCFLAGS) $(CFLAGS) -c  mod_python.c -o mod_python.o
 
 reswig: 
@@ -48,7 +48,6 @@ clean:
 	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~
 
 install:
-	# cp -f py_$(PYMOD).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod
-	cp -f $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod
+	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod
 	cp -f freeswitch.py $(PREFIX)/lib/python2.4/site-packages/
 
