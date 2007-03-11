@@ -1,2 +1,3 @@
 #! /bin/sh
-./configure $@ --with-pic --with-glib=no
+./configure "$@" --with-pic --with-glib=no --disable-shared
+
