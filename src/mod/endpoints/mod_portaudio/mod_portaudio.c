@@ -1477,7 +1477,8 @@ static switch_status_t hangup_call(char **argv, int argc, switch_stream_handle_t
     }
 
 	if (tech_pvt) {
-        switch_set_flag_locked(tech_pvt, TFLAG_HUP);
+		switch_channel_hangup(switch_core_session_get_channel(tech_pvt->session), SWITCH_CAUSE_NORMAL_CLEARING);
+        //switch_set_flag_locked(tech_pvt, TFLAG_HUP);
 		stream->write_function(stream, "OK\n");
 	} else {
 		stream->write_function(stream, "NO SUCH CALL\n");
