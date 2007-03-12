@@ -20030,7 +20030,7 @@ fi
 # set defaults for use on all platforms
 SWITCH_AM_CFLAGS="-I${switch_srcdir}/src/include -I${prefix}/include"
 SWITCH_AM_CXXFLAGS="-I${switch_srcdir}/src/include -I${prefix}/include"
-SWITCH_AM_LDFLAGS="-L${prefix}/lib -lm -L/usr/local/lib/db42 -L/usr/local/lib"
+SWITCH_AM_LDFLAGS="-L${prefix}/lib -lm -L/usr/local/lib"
 
 #set SOLINK variable based on compiler and host
 if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
