@@ -1,16 +1,11 @@
-CFLAGS+=-I$(BASE)/libs/codec/lpc10/src
+# define these targets in your makefile if you wish
+# local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
-all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
+# and define these variables to imapact your build
+LOCAL_CFLAGS=-I$(BASE)/libs/codec/lpc10/src
+LOCAL_LDFLAGS=$(BASE)/libs/codec/lpc10/liblpc10.la
+LOCAL_OBJS=
+include $(BASE)/build/modmake.rules
 
-depends:
+local_depend:
 	cd $(BASE)/libs/codec/lpc10 && $(MAKE)
-
-$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c ../../../include/switch_bitpack.h
-	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o
-	$(LINK) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LDFLAGS) $(BASE)/libs/codec/lpc10/liblpc10.la
-
-clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
-
-install:
-	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod

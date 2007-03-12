@@ -81,7 +81,7 @@ if [ -f ../$uncompressed.build.sh ] ; then
     MAKE=$MAKE ../$uncompressed.build.sh $@
 else
     $MAKE clean 2>&1
-    CFLAGS="$MOD_CFLAGS" ; export CFLAGS; sh ./configure $@
+    CFLAGS="$MOD_CFLAGS" sh ./configure $@
 
     if [ $? = 0 ] ; then
 	$MAKE

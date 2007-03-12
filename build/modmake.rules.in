@@ -2,18 +2,17 @@
 
 switch_builddir=@switch_builddir@
 switch_srcdir=@switch_srcdir@
-BASE=$(switch_srcdir)
 
 CC=@CC@
-RM=@RM@
+CXX=@CXX@
 AWK=@AWK@
 SHELL=@SHELL@
 INSTALL=@INSTALL@
 LIBTOOL=$(switch_builddir)/libtool
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
+CCLD = $(CC)
+CXXLD = $(CXX)
 
-CFLAGS=@SWITCH_AM_CFLAGS@ @CFLAGS@
-CPPFLAGS=$(CFLAGS) @CPPFLAGS@
 LDFLAGS=@SWITCH_AM_LDFLAGS@ @LDFLAGS@ 
 LIBS=$(switch_builddir)/libfreeswitch.la
 DEFS=@DEFS@
@@ -25,33 +24,67 @@ OSARCH=$(shell uname -s)
 DYNAMIC_LIB_EXTEN = @DYNAMIC_LIB_EXTEN@
 SOLINK = @SOLINK@
 
-COMPILE      = $(CC) $(MOD_CFLAGS) $(MOD_CPPFLAGS) $(MOD_INCLUDES)
-LT_COMPILE   = @lt_compile@
+ALL_CFLAGS   = $(LOCAL_CFLAGS) $(MOD_CFLAGS) @SWITCH_AM_CFLAGS@ @CFLAGS@ -D_GNU_SOURCE
+ALL_CXXFLAGS   = $(LOCAL_CFLAGS) $(MOD_CFLAGS) @SWITCH_AM_CXXFLAGS@ @CXXFLAGS@ -D_GNU_SOURC
 
-LINK         = @link@
+COMPILE      = $(CC) $(ALL_CFLAGS) $(DEFS)
+LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(COMPILE)
+LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(ALL_CFLAGS) $(LDFLAGS) -o $@
 
-all:	$(MODNAME).$(DYNAMIC_LIB_EXTEN)
+CXXCOMPILE = $(CXX) $(ALL_CXXFLAGS) $(DEFS)
+LTCXXCOMPILE = $(LIBTOOL) --mode=compile --tag=CXX $(CXXCOMPILE)
+CXXLINK = $(LIBTOOL) --mode=link --tag=CXX $(CXXLD) $(ALL_CXXFLAGS) $(LDFLAGS) -o $@
 
-$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
-	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o
-	$(LINK) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LDFLAGS) $(OBJS)
+CURDIR=$(shell pwd)
+CSOURCEFILE=$(CURDIR)/$(MODNAME).c
+CXXSOURCEFILE=$(CURDIR)/$(MODNAME).cpp
+LINK_TYPE=$(shell if test -f $(CSOURCEFILE); then echo "clink"; else echo "cxxlink"; fi;)
 
-clean:
+all: depend $(MODNAME).$(DYNAMIC_LIB_EXTEN) local_all
+depend: local_depend
+clean: local_clean mod_clean
+install: depend_install local_install mod_install
+distclean: clean local_distclean
+extraclean: distclean local_extraclean
+
+$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).o $(LOCAL_OBJS) depend $(LINK_TYPE)
+
+clink: $(MODNAME).o $(LOCAL_OBJS)
+	$(LINK) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LIBS) $(LOCAL_LDFLAGS) $(LOCAL_OBJS)
+
+cxxlink: $(MODNAME).o $(LOCAL_OBJS)
+	$(CXXLINK) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LIBS) $(LOCAL_LDFLAGS) $(LOCAL_OBJS)
+
+mod_clean:
 	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
 
-install:
+mod_install:
 	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod
 
+# define these in your makefile if you wish
+local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
 #
 # Implicit rules for creating outputs from input files
 #
 .SUFFIXES:
-.SUFFIXES: .c .lo .o
+.SUFFIXES: .c .lo .o .cpp
 
 .c.o:
-	$(COMPILE) -c $<
+	$(COMPILE) -c -o $@ $<
 
 .c.lo:
-	$(LT_COMPILE)
+	$(LTCOMPILE) -c -o $@ $<
 
+.cpp.o:
+	$(CXXCOMPILE) -c -o $@ $<
+
+.cpp.lo:
+	$(LTCXXCOMPILE) -c -o $@ $<
+
+
+.PHONY: all depend clean local_all local_depend \
+	install depend_install local_install mod_install \
+	clean local_clean mod_clean distclean \
+	local_distclean extraclean local_extraclean \
+	clink  cxxlink

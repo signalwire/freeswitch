@@ -89,16 +89,17 @@
 #   define PaUtil_ReadMemoryBarrier()  OSMemoryBarrier()
 #   define PaUtil_WriteMemoryBarrier() OSMemoryBarrier()
 #elif defined(__GNUC__)
+
     /* GCC understands volatile asm and "memory" to mean it
      * should not reorder memory read/writes */
 #   if defined( __PPC__ )
-#      define PaUtil_FullMemoryBarrier()  asm volatile("sync":::"memory")
-#      define PaUtil_ReadMemoryBarrier()  asm volatile("sync":::"memory")
-#      define PaUtil_WriteMemoryBarrier() asm volatile("sync":::"memory")
+#      define PaUtil_FullMemoryBarrier()  __asm__ volatile("sync":::"memory")
+#      define PaUtil_ReadMemoryBarrier()  __asm__ volatile("sync":::"memory")
+#      define PaUtil_WriteMemoryBarrier() __asm__ volatile("sync":::"memory")
 #   elif defined( __i386__ ) || defined( __i486__ ) || defined( __i586__ ) || defined( __i686__ ) || defined(__x86_64__)
-#      define PaUtil_FullMemoryBarrier()  asm volatile("mfence":::"memory")
-#      define PaUtil_ReadMemoryBarrier()  asm volatile("lfence":::"memory")
-#      define PaUtil_WriteMemoryBarrier() asm volatile("sfence":::"memory")
+#      define PaUtil_FullMemoryBarrier()  __asm__ volatile("mfence":::"memory")
+#      define PaUtil_ReadMemoryBarrier()  __asm__ volatile("lfence":::"memory")
+#      define PaUtil_WriteMemoryBarrier() __asm__ volatile("sfence":::"memory")
 #   else
 #      define PaUtil_FullMemoryBarrier()
 #      define PaUtil_ReadMemoryBarrier()

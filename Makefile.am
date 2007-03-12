@@ -5,7 +5,7 @@ NAME=freeswitch
 PREFIX=$(prefix)
 
 AM_CFLAGS   = $(SWITCH_AM_CFLAGS)
-AM_CPPFLAGS = $(AM_CFLAGS)
+AM_CPPFLAGS = $(SWITCH_AM_CXXFLAGS)
 AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS)
 BASE        = $(switch_srcdir)
 OSARCH=$(shell uname -s)

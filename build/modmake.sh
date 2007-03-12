@@ -7,9 +7,6 @@ shift
 mod=$1
 shift
 
-if [ -f $pwd/build/freeswitch.env ] ; then
-    . $pwd/build/freeswitch.env
-fi
 
 end=`echo $mod | sed "s/^.*\///g"`
 if [ -z "$end" ] ; then
@@ -17,8 +14,8 @@ if [ -z "$end" ] ; then
 fi
 
 if [ -f $mod/Makefile ] ; then
-    CFLAGS="$MOD_CFLAGS $CFLAGS " MODNAME=$end $make -C $mod $@
+    MOD_CFLAGS="$MOD_CFLAGS" MODNAME=$end BASE=$pwd $make -C $mod $@
 else 
-    CFLAGS="$MOD_CFLAGS $CFLAGS" MODNAME=$end $make -f $pwd/generic_mod.mk -C $mod $@
+    MOD_CFLAGS="$MOD_CFLAGS" MODNAME=$end BASE=$pwd $make -f $pwd/generic_mod.mk -C $mod $@
 fi
 

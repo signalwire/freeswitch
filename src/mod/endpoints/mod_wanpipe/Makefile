@@ -1,28 +1,12 @@
-CFLAGS +=-I/usr/local/include -I/usr/src/libpri -I/usr/src/linux/include -I. -I/usr/include
-CFLAGS +=-D__LINUX__ -D_REENTRANT -D_GNU_SOURCE -DAFT_A104 -DWANPIPE_TDM_API
-LDFLAGS += -lsangoma
-OBJS = ss7boost_client.o mod_wanpipe.o
+# define these targets in your makefile if you wish
+# local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
-ifeq ($(OSARCH),Darwin)
-	LINKER=g++
-else
-	LINKER=$(CC)
-endif
+# and define these variables to imapact your build
+LOCAL_CFLAGS  =-I/usr/local/include -I/usr/src/libpri -I/usr/src/linux/include -I. -I/usr/include 
+LOCAL_CFLAGS +=-D__LINUX__ -D_REENTRANT -D_GNU_SOURCE -DAFT_A104 -DWANPIPE_TDM_API
+LOCAL_LDFLAGS=-lsangoma
+LOCAL_OBJS=ss7boost_client.o
+include $(BASE)/build/modmake.rules
 
-all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
-
-depends:
+local_depend:
 	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install libsangoma --prefix=$(PREFIX) --with-libpri=/usr/src/libpri
-
-%.o:  %.c
-	$(CC) $(CFLAGS) $(MOD_CFLAGS) -g -ggdb -Werror -fPIC -c $< -o $@ 
-
-$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(OBJS) $(MODNAME).c
-	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o 
-	$(LINK) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(OBJS) $(LDFLAGS)
-
-clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
-
-install:
-	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod

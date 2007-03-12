@@ -1,20 +1,11 @@
-CFLAGS += -DWITH_OPENLDAP -DLDAP_DEPRECATED
-LDFLAGS += -lldap_r -llber
+# define these targets in your makefile if you wish
+# local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
-LINKER=$(CC)
+# and define these variables to imapact your build
+LOCAL_CFLAGS=-DWITH_OPENLDAP -DLDAP_DEPRECATED
+LOCAL_LDFLAGS=-lldap_r -llber
+LOCAL_OBJS=
+include $(BASE)/build/modmake.rules
 
-
-all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
-
-depends:
+local_depend:
 	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install openldap-2.3.19.tgz --prefix=$(PREFIX) --disable-bdb --disable-hdb
-
-$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
-	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o 
-	$(LINK) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(MODNAME).o $(LDFLAGS) 
-
-clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
-
-install:
-	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod

@@ -1,20 +1,13 @@
-CFLAGS += -I$(BASE)/libs/udns
-LINKER=$(CC)
+# define these targets in your makefile if you wish
+# local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
-all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
+# and define these variables to imapact your build
+LOCAL_CFLAGS=-I$(BASE)/libs/udns
+LOCAL_LDFLAGS=
+LOCAL_OBJS=$(BASE)/libs/udns/libudns.a
+include $(BASE)/build/modmake.rules
 
-depends:
+local_depend:
 	cd $(BASE)/libs/udns && $(MAKE) staticlib
 
-%.o:  %.c
-	$(CC) -fPIC $(CFLAGS) -c -o $@ $<
 
-$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
-	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o 
-	$(LINK) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(MODNAME).o $(LDFLAGS) $(BASE)/libs/udns/libudns.a
-
-clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~
-
-install:
-	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod

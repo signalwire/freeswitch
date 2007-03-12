@@ -44,7 +44,7 @@ host_triplet = @host@
 bin_PROGRAMS = freeswitch$(EXEEXT)
 DIST_COMMON = README $(am__configure_deps) $(library_include_HEADERS) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(top_srcdir)/configure \
+	$(top_srcdir)/build/modmake.rules.in $(top_srcdir)/configure \
 	$(top_srcdir)/src/include/switch_am_config.h.in \
 	$(top_srcdir)/src/include/switch_private.h.in \
 	$(top_srcdir)/src/include/switch_version.h.in AUTHORS COPYING \
@@ -70,7 +70,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/src/include/switch_private.h
 CONFIG_CLEAN_FILES = src/include/switch_am_config.h \
-	src/include/switch_version.h
+	build/modmake.rules src/include/switch_version.h
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -212,6 +212,7 @@ SHELL = @SHELL@
 SOLINK = @SOLINK@
 STRIP = @STRIP@
 SWITCH_AM_CFLAGS = @SWITCH_AM_CFLAGS@
+SWITCH_AM_CXXFLAGS = @SWITCH_AM_CXXFLAGS@
 SWITCH_AM_LDFLAGS = @SWITCH_AM_LDFLAGS@
 VERSION = @VERSION@
 WANT_DEBUG_FALSE = @WANT_DEBUG_FALSE@
@@ -279,7 +280,7 @@ AUTOMAKE_OPTS = gnu foreign
 NAME = freeswitch
 PREFIX = $(prefix)
 AM_CFLAGS = $(SWITCH_AM_CFLAGS) $(am__append_1)
-AM_CPPFLAGS = $(AM_CFLAGS)
+AM_CPPFLAGS = $(SWITCH_AM_CXXFLAGS)
 AM_LDFLAGS = $(SWITCH_AM_LDFLAGS)
 BASE = $(switch_srcdir)
 OSARCH = $(shell uname -s)
@@ -411,6 +412,8 @@ $(top_srcdir)/src/include/switch_private.h.in:  $(am__configure_deps)
 distclean-hdr:
 	-rm -f src/include/switch_private.h src/include/stamp-h1
 src/include/switch_am_config.h: $(top_builddir)/config.status $(top_srcdir)/src/include/switch_am_config.h.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+build/modmake.rules: $(top_builddir)/config.status $(top_srcdir)/build/modmake.rules.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 src/include/switch_version.h: $(top_builddir)/config.status $(top_srcdir)/src/include/switch_version.h.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
@@ -812,7 +815,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/build/config $(distdir)/libs/apr/build $(distdir)/src/include
+	$(mkdir_p) $(distdir)/build $(distdir)/build/config $(distdir)/libs/apr/build $(distdir)/src/include
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

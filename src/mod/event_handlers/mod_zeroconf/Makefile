@@ -1,19 +1,11 @@
-LDFLAGS += -lhowl
-CFLAGS += -I$(PREFIX)/include/howl
-LINKER=$(CC)
+# define these targets in your makefile if you wish
+# local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
+# and define these variables to imapact your build
+LOCAL_CFLAGS=-I$(PREFIX)/include/howl
+LOCAL_LDFLAGS=-lhowl
+LOCAL_OBJS=
+include $(BASE)/build/modmake.rules
 
-all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
-
-depends:
+local_depend:
 	$(BASE)/build/buildlib.sh $(BASE) install howl-1.0.0.tar.gz --prefix=$(PREFIX)
-
-$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
-	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o 
-	$(LINK) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(LDFLAGS)
-
-clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
-
-install:
-	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod

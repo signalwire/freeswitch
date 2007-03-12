@@ -1,24 +1,8 @@
 ifeq ($(shell ls -d $(BASE)/libs/libg729),$(BASE)/libs/libg729)
-
-CFLAGS += -I$(PREFIX)/include/libg729
-LDFLAGS +=-lg729
-
+LOCAL_CFLAGS += -I$(PREFIX)/include/libg729
+LOCAL_LDFLAGS +=-lg729
 else
-
-CFLAGS += -DG729_PASSTHROUGH
-
+LOCAL_CFLAGS += -DG729_PASSTHROUGH
 endif
 
-all:	$(MODNAME).$(DYNAMIC_LIB_EXTEN)
-
-depends:
-
-$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
-	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o
-	$(LINK) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(LDFLAGS)
-
-clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
-
-install:
-	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod
+include $(BASE)/build/modmake.rules

@@ -490,7 +490,7 @@ ac_subdirs_all="$ac_subdirs_all libs/sofia-sip"
 ac_subdirs_all="$ac_subdirs_all libs/speex"
 ac_subdirs_all="$ac_subdirs_all libs/xmlrpc-c"
 ac_subdirs_all="$ac_subdirs_all libs/portaudio"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar switch_srcdir switch_builddir CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE build build_cpu build_vendor build_os host host_cpu host_vendor host_os EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CPP CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL PRTDIAG WANT_DEBUG_TRUE WANT_DEBUG_FALSE SWITCH_AM_CFLAGS SWITCH_AM_LDFLAGS SOLINK DYNAMIC_LIB_EXTEN LIBOBJS voidp_size short_value int_value long_value int64_value size_t_value ssize_t_value int64_t_fmt uint64_t_fmt ssize_t_fmt size_t_fmt CRASHPROT_TRUE CRASHPROT_FALSE ISLINUX_TRUE ISLINUX_FALSE ISMAC_TRUE ISMAC_FALSE IS64BITLINUX_TRUE IS64BITLINUX_FALSE subdirs LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar switch_srcdir switch_builddir CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE build build_cpu build_vendor build_os host host_cpu host_vendor host_os EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CPP CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL PRTDIAG WANT_DEBUG_TRUE WANT_DEBUG_FALSE SWITCH_AM_CFLAGS SWITCH_AM_CXXFLAGS SWITCH_AM_LDFLAGS SOLINK DYNAMIC_LIB_EXTEN LIBOBJS voidp_size short_value int_value long_value int64_value size_t_value ssize_t_value int64_t_fmt uint64_t_fmt ssize_t_fmt size_t_fmt CRASHPROT_TRUE CRASHPROT_FALSE ISLINUX_TRUE ISLINUX_FALSE ISMAC_TRUE ISMAC_FALSE IS64BITLINUX_TRUE IS64BITLINUX_FALSE subdirs LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -20028,7 +20028,8 @@ fi
 
 
 # set defaults for use on all platforms
-SWITCH_AM_CFLAGS="-I${switch_srcdir}/src/include -I${switch_srcdir} -I${prefix}/include"
+SWITCH_AM_CFLAGS="-I${switch_srcdir}/src/include -I${prefix}/include"
+SWITCH_AM_CXXFLAGS="-I${switch_srcdir}/src/include -I${prefix}/include"
 SWITCH_AM_LDFLAGS="-L${prefix}/lib -lm -L/usr/local/lib/db42 -L/usr/local/lib"
 
 #set SOLINK variable based on compiler and host
@@ -20108,6 +20109,48 @@ if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
   fi
 
 
+  if test "x$SWITCH_AM_CXXFLAGS" = "x"; then
+    test "x$silent" != "xyes" && echo "  setting SWITCH_AM_CXXFLAGS to \"-KPIC\""
+    SWITCH_AM_CXXFLAGS="-KPIC"
+  else
+    apr_addto_bugger="-KPIC"
+    for i in $apr_addto_bugger; do
+      apr_addto_duplicate="0"
+      for j in $SWITCH_AM_CXXFLAGS; do
+        if test "x$i" = "x$j"; then
+          apr_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $apr_addto_duplicate = "0"; then
+        test "x$silent" != "xyes" && echo "  adding \"$i\" to SWITCH_AM_CXXFLAGS"
+        SWITCH_AM_CXXFLAGS="$SWITCH_AM_CXXFLAGS $i"
+      fi
+    done
+  fi
+
+
+  if test "x$SWITCH_AM_CXXFLAGS" = "x"; then
+    test "x$silent" != "xyes" && echo "  setting SWITCH_AM_CXXFLAGS to \"-DPIC\""
+    SWITCH_AM_CXXFLAGS="-DPIC"
+  else
+    apr_addto_bugger="-DPIC"
+    for i in $apr_addto_bugger; do
+      apr_addto_duplicate="0"
+      for j in $SWITCH_AM_CXXFLAGS; do
+        if test "x$i" = "x$j"; then
+          apr_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $apr_addto_duplicate = "0"; then
+        test "x$silent" != "xyes" && echo "  adding \"$i\" to SWITCH_AM_CXXFLAGS"
+        SWITCH_AM_CXXFLAGS="$SWITCH_AM_CXXFLAGS $i"
+      fi
+    done
+  fi
+
+
   if test "x$SWITCH_AM_LDFLAGS" = "x"; then
     test "x$silent" != "xyes" && echo "  setting SWITCH_AM_LDFLAGS to \"-R${prefix}/lib\""
     SWITCH_AM_LDFLAGS="-R${prefix}/lib"
@@ -20146,6 +20189,27 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
       if test $apr_addto_duplicate = "0"; then
         test "x$silent" != "xyes" && echo "  adding \"$i\" to SWITCH_AM_CFLAGS"
         SWITCH_AM_CFLAGS="$SWITCH_AM_CFLAGS $i"
+      fi
+    done
+  fi
+
+
+  if test "x$SWITCH_AM_CXXFLAGS" = "x"; then
+    test "x$silent" != "xyes" && echo "  setting SWITCH_AM_CXXFLAGS to \"-fPIC\""
+    SWITCH_AM_CXXFLAGS="-fPIC"
+  else
+    apr_addto_bugger="-fPIC"
+    for i in $apr_addto_bugger; do
+      apr_addto_duplicate="0"
+      for j in $SWITCH_AM_CXXFLAGS; do
+        if test "x$i" = "x$j"; then
+          apr_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $apr_addto_duplicate = "0"; then
+        test "x$silent" != "xyes" && echo "  adding \"$i\" to SWITCH_AM_CXXFLAGS"
+        SWITCH_AM_CXXFLAGS="$SWITCH_AM_CXXFLAGS $i"
       fi
     done
   fi
@@ -20221,6 +20285,28 @@ case "$host" in
 
     ;;
 esac
+
+
+  if test "x$SWITCH_AM_CXXFLAGS" = "x-std=c99"; then
+    test "x$silent" != "xyes" && echo "  nulling SWITCH_AM_CXXFLAGS"
+    SWITCH_AM_CXXFLAGS=""
+  else
+    apr_new_bugger=""
+    apr_removed=0
+    for i in $SWITCH_AM_CXXFLAGS; do
+      if test "x$i" != "x-std=c99"; then
+        apr_new_bugger="$apr_new_bugger $i"
+      else
+        apr_removed=1
+      fi
+    done
+    if test $apr_removed = "1"; then
+      test "x$silent" != "xyes" && echo "  removed \"-std=c99\" from SWITCH_AM_CXXFLAGS"
+      SWITCH_AM_CXXFLAGS=$apr_new_bugger
+    fi
+  fi
+
+
 
 
 
@@ -24990,7 +25076,7 @@ else
 fi
 
 
-                    ac_config_files="$ac_config_files Makefile src/include/switch_am_config.h"
+                              ac_config_files="$ac_config_files Makefile src/include/switch_am_config.h build/modmake.rules"
 
 
 
@@ -25717,6 +25803,7 @@ do
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "src/include/switch_am_config.h" ) CONFIG_FILES="$CONFIG_FILES src/include/switch_am_config.h" ;;
+  "build/modmake.rules" ) CONFIG_FILES="$CONFIG_FILES build/modmake.rules" ;;
   "src/include/switch_version.h" ) CONFIG_FILES="$CONFIG_FILES src/include/switch_version.h" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/include/switch_private.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/include/switch_private.h" ;;
@@ -25876,6 +25963,7 @@ s,@PRTDIAG@,$PRTDIAG,;t t
 s,@WANT_DEBUG_TRUE@,$WANT_DEBUG_TRUE,;t t
 s,@WANT_DEBUG_FALSE@,$WANT_DEBUG_FALSE,;t t
 s,@SWITCH_AM_CFLAGS@,$SWITCH_AM_CFLAGS,;t t
+s,@SWITCH_AM_CXXFLAGS@,$SWITCH_AM_CXXFLAGS,;t t
 s,@SWITCH_AM_LDFLAGS@,$SWITCH_AM_LDFLAGS,;t t
 s,@SOLINK@,$SOLINK,;t t
 s,@DYNAMIC_LIB_EXTEN@,$DYNAMIC_LIB_EXTEN,;t t

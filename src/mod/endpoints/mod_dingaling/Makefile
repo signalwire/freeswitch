@@ -1,20 +1,17 @@
-LDFLAGS += $(BASE)/libs/libdingaling/libdingaling.la
-CFLAGS  += -I$(BASE)/libs/libdingaling/src
-all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
+# define these targets in your makefile if you wish
+# local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
-depends:
+# and define these variables to imapact your build
+LOCAL_CFLAGS=-I$(BASE)/libs/libdingaling/src
+LOCAL_LDFLAGS=$(BASE)/libs/libdingaling/libdingaling.la
+LOCAL_OBJS=
+include $(BASE)/build/modmake.rules
+
+local_depend:
 	cd $(BASE)/libs/iksemel && $(MAKE)
 	cd $(BASE)/libs/libdingaling && $(MAKE)
 
-
-$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
-	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o 
-	$(LINK) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(LDFLAGS)
-
-clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
-
-install:
+depend_install:
 	cd $(BASE)/libs/iksemel && $(MAKE) install
 	cd $(BASE)/libs/libdingaling && $(MAKE) install
-	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod
+

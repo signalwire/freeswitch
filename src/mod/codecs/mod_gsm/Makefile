@@ -1,17 +1,11 @@
-LDFLAGS += $(BASE)/libs/codec/gsm/libgsm.la
-CFLAGS  += -I$(BASE)/libs/codec/gsm/inc
+# define these targets in your makefile if you wish
+# local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
-all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
+# and define these variables to imapact your build
+LOCAL_CFLAGS=-I$(BASE)/libs/codec/gsm/inc
+LOCAL_LDFLAGS=$(BASE)/libs/codec/gsm/libgsm.la
+LOCAL_OBJS=
+include $(BASE)/build/modmake.rules
 
-depends:
+local_depend:
 	cd $(BASE)/libs/codec/gsm && $(MAKE)
-
-$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
-	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o
-	$(LINK) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(LDFLAGS)
-
-clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
-
-install:
-	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod

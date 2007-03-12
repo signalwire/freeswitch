@@ -1,15 +1,11 @@
-CFLAGS+=-I$(BASE)/libs/speex/include
-all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
+# define these targets in your makefile if you wish
+# local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
-depends:
+# and define these variables to imapact your build
+LOCAL_CFLAGS=-I$(BASE)/libs/speex/include
+LOCAL_LDFLAGS=$(BASE)/libs/speex/libspeex/libspeex.la
+LOCAL_OBJS=
+include $(BASE)/build/modmake.rules
+
+local_depend:
 	cd $(BASE)/libs/speex && $(MAKE)
-
-$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
-	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o
-	$(LINK) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LDFLAGS) $(BASE)/libs/speex/libspeex/libspeex.la
-
-clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
-
-install:
-	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod

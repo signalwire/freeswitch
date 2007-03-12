@@ -1,17 +1,5 @@
+
 include ../mod_spidermonkey/sm.mak
-CFLAGS+=-I$(BASE)/libs/libteletone/src
-LDFLAGS+=$(BASE)/libs/libteletone/libteletone.la
-
-all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
-
-depends:
-
-$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
-	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o 
-	$(LINK) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(OBJS) $(LDFLAGS)
-
-clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
-
-install:
-	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod
+LOCAL_CFLAGS+=-I$(BASE)/libs/libteletone/src
+LOCAL_LDFLAGS+=$(BASE)/libs/libteletone/libteletone.la
+include $(BASE)/build/modmake.rules

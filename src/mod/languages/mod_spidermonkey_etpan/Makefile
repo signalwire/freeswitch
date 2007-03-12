@@ -1,18 +1,13 @@
 include ../mod_spidermonkey/sm.mak
+# define these targets in your makefile if you wish
+# local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
-LDFLAGS+=-letpan
+# and define these variables to imapact your build
+#LOCAL_CFLAGS=
+LOCAL_LDFLAGS+=-letpan
+#LOCAL_OBJS=
+include $(BASE)/build/modmake.rules
 
-all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
-
-depends:
+local_depend:
 	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install libetpan --prefix=$(PREFIX)
 
-$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
-	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o 
-	$(LINK) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o  $(LDFLAGS)
-
-clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
-
-install:
-	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod

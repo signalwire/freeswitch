@@ -1,16 +1,12 @@
-CFLAGS += -I$(BASE)/libs/codec/g726/src
+# define these targets in your makefile if you wish
+# local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
-all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
+# and define these variables to imapact your build
+LOCAL_CFLAGS=-I$(BASE)/libs/codec/g726/src
+LOCAL_LDFLAGS=
+LOCAL_OBJS=$(BASE)/libs/codec/g726/libg726.la
+include $(BASE)/build/modmake.rules
 
-depends:
+local_depend:
 	cd $(BASE)/libs/codec/g726 && $(MAKE)
 
-$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c ../../../include/switch_bitpack.h
-	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o
-	$(LINK) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LDFLAGS) $(BASE)/libs/codec/g726/libg726.la
-
-clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
-
-install:
-	$(LTINSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod
