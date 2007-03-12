@@ -297,7 +297,7 @@ static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data
 	shout_context_t *context = handle->private_info;
 
 
-    char mp3buf[2048] = "";
+    unsigned char mp3buf[2048] = "";
     long ret = 0;
     int rlen;
     int16_t *audio = data;
