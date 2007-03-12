@@ -432,7 +432,8 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_state(switch_channel_t
 SWITCH_DECLARE(uint8_t) switch_channel_ready(switch_channel_t *channel)
 {
 	assert(channel != NULL);
-	return (channel->state > CS_RING && channel->state < CS_HANGUP && !switch_test_flag(channel, CF_TRANSFER)) ? 1 : 0;
+
+	return (!channel->hangup_cause && channel->state > CS_RING && channel->state < CS_HANGUP && !switch_test_flag(channel, CF_TRANSFER)) ? 1 : 0;
 }
 
 static const char *state_names[] = {
@@ -1059,7 +1060,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 	
 	assert(channel != NULL);
 
-	if (channel->state >= CS_HANGUP) {
+	if (channel->hangup_cause || channel->state >= CS_HANGUP) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1093,7 +1094,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready(switch_channel
 	
 	assert(channel != NULL);
 
-	if (channel->state >= CS_HANGUP) {
+	if (channel->hangup_cause || channel->state >= CS_HANGUP) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1127,7 +1128,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 
     assert(channel != NULL);
 
-	if (channel->state >= CS_HANGUP) {
+	if (channel->hangup_cause || channel->state >= CS_HANGUP) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1169,7 +1170,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 {
 	assert(channel != NULL);
 
-	if (channel->state >= CS_HANGUP) {
+	if (channel->hangup_cause || channel->state >= CS_HANGUP) {
 		return SWITCH_STATUS_FALSE;
 	}
 

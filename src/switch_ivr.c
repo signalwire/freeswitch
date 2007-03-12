@@ -1377,6 +1377,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			switch_buffer_zero(fh->audio_buffer);
 		}
 
+		if (switch_test_flag(fh, SWITCH_FILE_SEEK)) {
+			/* file position has changed flush the buffer */
+			switch_buffer_zero(fh->audio_buffer);
+			switch_clear_flag(fh, SWITCH_FILE_SEEK);
+		}
+
 		
 		if (!asis && fh->speed && do_speed) {
 			float factor = 0.25f * abs(fh->speed);

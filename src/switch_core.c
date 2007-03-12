@@ -1070,6 +1070,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, 
 													int whence)
 {
 	assert(fh != NULL);
+
+	switch_set_flag(fh, SWITCH_FILE_SEEK);
 	return fh->file_interface->file_seek(fh, cur_pos, samples, whence);
 }
 
