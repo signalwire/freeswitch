@@ -38,7 +38,7 @@ CXXLINK = $(LIBTOOL) --mode=link --tag=CXX $(CXXLD) $(ALL_CXXFLAGS) $(LDFLAGS) -
 CURDIR=$(shell pwd)
 CSOURCEFILE=$(CURDIR)/$(MODNAME).c
 CXXSOURCEFILE=$(CURDIR)/$(MODNAME).cpp
-LINK_TYPE=$(shell if test -f $(CSOURCEFILE); then echo "clink"; else echo "cxxlink"; fi;)
+#LINK_TYPE=$(shell if test -f $(CSOURCEFILE); then echo "clink"; else echo "cxxlink"; fi;)
 
 all: depend $(MODNAME).$(DYNAMIC_LIB_EXTEN) local_all
 depend: local_depend
@@ -47,13 +47,16 @@ install: depend_install local_install mod_install
 distclean: clean local_distclean
 extraclean: distclean local_extraclean
 
-$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).o $(LOCAL_OBJS) depend $(LINK_TYPE)
+$(MODNAME).o: depend
 
-clink: $(MODNAME).o $(LOCAL_OBJS)
-	$(LINK) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LIBS) $(LOCAL_LDFLAGS) $(LOCAL_OBJS)
-
-cxxlink: $(MODNAME).o $(LOCAL_OBJS)
-	$(CXXLINK) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LIBS) $(LOCAL_LDFLAGS) $(LOCAL_OBJS)
+$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).o $(LOCAL_OBJS)
+	@if test -f $(CSOURCEFILE); then \
+	echo $(LINK) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LIBS) $(LOCAL_LDFLAGS) $(LOCAL_OBJS); \
+	$(LINK) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LIBS) $(LOCAL_LDFLAGS) $(LOCAL_OBJS); \
+	else \
+	echo $(CXXLINK) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LIBS) $(LOCAL_LDFLAGS) $(LOCAL_OBJS); \
+	$(CXXLINK) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LIBS) $(LOCAL_LDFLAGS) $(LOCAL_OBJS); \
+	fi;
 
 mod_clean:
 	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .libs
@@ -86,5 +89,4 @@ local_all local_depend local_clean depend_install local_install local_distclean 
 .PHONY: all depend clean local_all local_depend \
 	install depend_install local_install mod_install \
 	clean local_clean mod_clean distclean \
-	local_distclean extraclean local_extraclean \
-	clink  cxxlink
+	local_distclean extraclean local_extraclean 
