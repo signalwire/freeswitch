@@ -25,6 +25,24 @@ else
 echo "bootstrap: autoconf version $ac_version (ok)"
 fi
 
+# automake 1.9 or newer
+am_version=`${AUTOMAKE:-automake} --version 2>/dev/null|sed -e 's/^[^0-9]*//;s/[a-z]* *$//;q'`
+if test -z "$am_version"; then
+echo "bootstrap: automake not found."
+echo "           You need automake version 1.9 or newer installed"
+echo "           to build FreeSWITCH from SVN."
+exit 1
+fi
+IFS=.; set $am_version; IFS=' '
+if test "$1" = "1" -a "$2" -lt "9"; then
+echo "bootstrap: automake version $am_version found."
+echo "           You need automake version 1.9 or newer installed"
+echo "           to build FreeSWITCH from SVN."
+exit 1
+else
+echo "bootstrap: automake version $am_version (ok)"
+fi
+
 # Sample libtool --version outputs:
 # ltmain.sh (GNU libtool) 1.3.3 (1.385.2.181 1999/07/02 15:49:11)
 # ltmain.sh (GNU libtool 1.1361 2004/01/02 23:10:52) 1.5a
