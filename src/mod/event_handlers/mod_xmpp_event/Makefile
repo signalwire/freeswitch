@@ -1,7 +1,7 @@
 # define these targets in your makefile if you wish
 # local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
-# and define these variables to imapact your build
+# and define these variables to impact your build
 LOCAL_CFLAGS=-I$(BASE)/libs/iksemel/include
 LOCAL_LDFLAGS=$(BASE)/libs/iksemel/src/libiksemel.la
 LOCAL_OBJS=

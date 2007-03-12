@@ -1,7 +1,7 @@
 # define these targets in your makefile if you wish
 # local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 OSARCH=$(shell uname -s)
-# and define these variables to imapact your build
+# and define these variables to impact your build
 LOCAL_CFLAGS=-I. -I$(BASE)/libs/portaudio/include
 LOCAL_LDFLAGS=$(BASE)/libs/portaudio/lib/libportaudio.la
 ifeq ($(OSARCH),Darwin)

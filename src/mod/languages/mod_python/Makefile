@@ -1,7 +1,7 @@
 # define these targets in your makefile if you wish
 # local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
-# and define these variables to imapact your build
+# and define these variables to impact your build
 LOCAL_CFLAGS=-I$(PREFIX)/include/python2.4/
 LOCAL_LDFLAGS=-lpython2.4 -L$(PREFIX)/lib/python2.4/config/  -lutil -lstdc++
 LOCAL_OBJS=freeswitch_python.o mod_python_wrap.o
