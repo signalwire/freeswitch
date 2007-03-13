@@ -34,7 +34,7 @@
 #include "mpglib.h"
 #include <switch.h>
 #include <shout/shout.h>
-#include <lame/lame.h>
+#include <lame.h>
 #include <curl/curl.h>
 
 
