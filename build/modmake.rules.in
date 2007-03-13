@@ -38,18 +38,21 @@ CXXLINK = $(LIBTOOL) --mode=link --tag=CXX $(CXXLD) $(ALL_CXXFLAGS) $(LDFLAGS) -
 CURDIR=$(shell pwd)
 CSOURCEFILE=$(CURDIR)/$(MODNAME).c
 CXXSOURCEFILE=$(CURDIR)/$(MODNAME).cpp
-#LINK_TYPE=$(shell if test -f $(CSOURCEFILE); then echo "clink"; else echo "cxxlink"; fi;)
+SOURCEFILE=$(shell if test -f $(CSOURCEFILE); then echo $(CSOURCEFILE); else echo $(CXXSOURCEFILE); fi;)
 
-all: depend $(MODNAME).$(DYNAMIC_LIB_EXTEN) local_all
+all: local_depend local_all $(MODNAME).$(DYNAMIC_LIB_EXTEN) Makefile
 depend: local_depend
 clean: local_clean mod_clean
 install: all depend_install local_install mod_install
 distclean: clean local_distclean
 extraclean: distclean local_extraclean
 
-$(MODNAME).o: depend
+Makefile:
+	@if test ! -f $@; then \
+	  echo include $(switch_srcdir)/build/modmake.rules > Makefile ; \
+	fi ;
 
-$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).o $(LOCAL_OBJS)
+$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).o $(LOCAL_OBJS) $(SOURCEFILE)
 	@if test -f $(CSOURCEFILE); then \
 	echo $(LINK) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LIBS) $(LOCAL_LDFLAGS) $(LOCAL_OBJS); \
 	$(LINK) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LIBS) $(LOCAL_LDFLAGS) $(LOCAL_OBJS); \
