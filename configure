@@ -25211,8 +25211,6 @@ subdirs="$subdirs libs/xmlrpc-c"
 subdirs="$subdirs libs/portaudio"
 
 
-
-          ac_config_files="$ac_config_files src/include/switch_version.h"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -25808,7 +25806,6 @@ do
   "src/mod/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/mod/Makefile" ;;
   "src/include/switch_am_config.h" ) CONFIG_FILES="$CONFIG_FILES src/include/switch_am_config.h" ;;
   "build/modmake.rules" ) CONFIG_FILES="$CONFIG_FILES build/modmake.rules" ;;
-  "src/include/switch_version.h" ) CONFIG_FILES="$CONFIG_FILES src/include/switch_version.h" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/include/switch_private.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/include/switch_private.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

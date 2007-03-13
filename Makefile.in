@@ -16,7 +16,7 @@
 
 
 
-SOURCES = $(libfreeswitch_la_SOURCES) $(nodist_libfreeswitch_la_SOURCES) $(freeswitch_SOURCES)
+SOURCES = $(libfreeswitch_la_SOURCES) $(nodist_libfreeswitch_la_SOURCES) $(freeswitch_SOURCES) $(nodist_freeswitch_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -46,8 +46,7 @@ DIST_COMMON = README $(am__configure_deps) $(library_include_HEADERS) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/build/modmake.rules.in $(top_srcdir)/configure \
 	$(top_srcdir)/src/include/switch_am_config.h.in \
-	$(top_srcdir)/src/include/switch_private.h.in \
-	$(top_srcdir)/src/include/switch_version.h.in AUTHORS COPYING \
+	$(top_srcdir)/src/include/switch_private.h.in AUTHORS COPYING \
 	ChangeLog INSTALL NEWS build/config/compile \
 	build/config/config.guess build/config/config.sub \
 	build/config/depcomp build/config/install-sh \
@@ -70,7 +69,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/src/include/switch_private.h
 CONFIG_CLEAN_FILES = src/include/switch_am_config.h \
-	build/modmake.rules src/include/switch_version.h
+	build/modmake.rules
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -109,7 +108,9 @@ libfreeswitch_la_OBJECTS = $(am_libfreeswitch_la_OBJECTS) \
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_freeswitch_OBJECTS = freeswitch-switch.$(OBJEXT)
-freeswitch_OBJECTS = $(am_freeswitch_OBJECTS)
+nodist_freeswitch_OBJECTS =
+freeswitch_OBJECTS = $(am_freeswitch_OBJECTS) \
+	$(nodist_freeswitch_OBJECTS)
 am__DEPENDENCIES_2 = $(BASE)/libfreeswitch.la
 freeswitch_DEPENDENCIES = $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src/include
@@ -124,7 +125,8 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libfreeswitch_la_SOURCES) \
-	$(nodist_libfreeswitch_la_SOURCES) $(freeswitch_SOURCES)
+	$(nodist_libfreeswitch_la_SOURCES) $(freeswitch_SOURCES) \
+	$(nodist_freeswitch_SOURCES)
 DIST_SOURCES = $(libfreeswitch_la_SOURCES) $(freeswitch_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
@@ -329,7 +331,6 @@ src/include/switch_regex.h\
 src/include/switch_types.h\
 src/include/switch_utils.h\
 src/include/switch_rtp.h\
-src/include/switch_version.h\
 src/include/switch_stun.h\
 src/include/switch_log.h\
 src/include/switch_xml.h
@@ -353,12 +354,13 @@ libfreeswitch_la_LIBADD = $(CORE_LIBS)
 nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
 MOD_LINK = $(BASE)/libfreeswitch.la
 CLEANFILES = src/include/switch_version.h
-freeswitch_SOURCES = src/switch.c\
-                        src/include/switch_version.h
-
+BUILT_SOURCES = src/include/switch_version.h
+freeswitch_SOURCES = src/switch.c
+nodist_freeswitch_SOURCES = src/include/switch_version.h
 freeswitch_CFLAGS = $(AM_CFLAGS)
 freeswitch_LDADD = ${MOD_LINK}
-all: all-recursive
+all: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
@@ -415,8 +417,6 @@ distclean-hdr:
 src/include/switch_am_config.h: $(top_builddir)/config.status $(top_srcdir)/src/include/switch_am_config.h.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 build/modmake.rules: $(top_builddir)/config.status $(top_srcdir)/build/modmake.rules.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-src/include/switch_version.h: $(top_builddir)/config.status $(top_srcdir)/src/include/switch_version.h.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 install-libLTLIBRARIES: $(lib_LTLIBRARIES)
 	@$(NORMAL_INSTALL)
@@ -956,7 +956,8 @@ distcleancheck: distclean
 	       $(distcleancheck_listfiles) ; \
 	       exit 1; } >&2
 check-am: all-am
-check: check-recursive
+check: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) check-recursive
 all-am: Makefile $(LTLIBRARIES) $(PROGRAMS) $(HEADERS)
 install-binPROGRAMS: install-libLTLIBRARIES
 
@@ -965,7 +966,8 @@ installdirs-am:
 	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(library_includedir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
-install: install-recursive
+install: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) install-recursive
 install-exec: install-exec-recursive
 install-data: install-data-recursive
 uninstall: uninstall-recursive
@@ -990,6 +992,7 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-recursive
 
 clean-am: clean-binPROGRAMS clean-generic clean-libLTLIBRARIES \
@@ -1085,12 +1088,20 @@ install-data-local:
 		$(INSTALL) ./$(NAME) $(DESTDIR)$(PREFIX)/bin/$(NAME) ;\
 	 fi
 
-version: Makefile src/include/switch_version.h
-	MAKE=$(MAKE) ./build/checkversion.sh
+.version:
+	touch .version
 
-newversion: Makefile
-	MAKE=$(MAKE) ./build/checkversion.sh force
-	$(MAKE)
+src/include/switch_version.h: $(top_srcdir)/src/include/switch_version.h.in .version $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
+	@if test ! -f .noversion ; then \
+	  force=0 ; \
+	  version=`svnversion . -n || echo hacked` ; \
+	  oldversion=`cat .version 2>/dev/null || echo "0"` ; \
+	  test ! -f src/include/switch_version.h || grep "@SVN_VERSION@" src/include/switch_version.h && force=1 ; \
+	  if test "$$oldversion" != "$$version" || test $$force = 1 ; then \
+	    cat src/include/switch_version.h.in | sed "s/@SVN_VERSION@/$$version/g" > src/include/switch_version.h ; \
+	    echo $$version > .version ; \
+	  fi ; \
+	fi ;
 
 .nodepends:
 	touch .nodepends
@@ -1121,7 +1132,7 @@ resample:
 teletone:
 	cd libs/libteletone && $(MAKE)
 
-deps: version sqlite apr apr-util pcre srtp resample teletone
+deps: sqlite apr apr-util pcre srtp resample teletone
 
 core: deps libfreeswitch.la  
 

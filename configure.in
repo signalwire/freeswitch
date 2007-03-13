@@ -314,5 +314,4 @@ AC_CONFIG_SUBDIRS(libs/speex)
 AC_CONFIG_SUBDIRS(libs/xmlrpc-c)
 AC_CONFIG_SUBDIRS(libs/portaudio)
 
-
-AC_OUTPUT([src/include/switch_version.h])
+AC_OUTPUT
