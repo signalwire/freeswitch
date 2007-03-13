@@ -1,3 +1,4 @@
 include ../mod_spidermonkey/sm.mak
-include $(BASE)/build/modmake.rules
+MODNAME=mod_spidermonkey_skel
+include ../../../../build/modmake.rules
 

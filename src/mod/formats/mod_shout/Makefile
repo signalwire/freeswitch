@@ -2,6 +2,7 @@
 # local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
 # and define these variables to impact your build
+MODNAME=mod_shout
 LAME=lame-3.97
 SHOUT=libshout-2.2.2
 LAMELA=$(BASE)/libs/$(LAME)/libmp3lame/libmp3lame.la
@@ -13,7 +14,7 @@ MP3OBJS=common.o dct64_i386.o decode_ntom.o layer3.o tabinit.o interface.o
 LOCAL_OBJS=$(MP3OBJS)
 DEFAULT_ARGS=--prefix=$(PREFIX) --disable-shared --with-pic
 
-include $(BASE)/build/modmake.rules
+include ../../../../build/modmake.rules
 
 $(LAMELA):
 	MAKE="$(MAKE)" $(BASE)/build/buildlib.sh $(BASE) $(LAME).tar.gz $(DEFAULT_ARGS) --disable-decoder

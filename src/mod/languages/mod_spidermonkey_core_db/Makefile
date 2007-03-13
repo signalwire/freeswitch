@@ -1,2 +1,3 @@
 include ../mod_spidermonkey/sm.mak
-include $(BASE)/build/modmake.rules
+MODNAME=mod_spidermonkey_core_db
+include ../../../../build/modmake.rules

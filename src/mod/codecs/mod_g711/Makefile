@@ -2,9 +2,10 @@
 # local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
 # and define these variables to impact your build
+MODNAME=mod_g711
 LOCAL_CFLAGS=-I$(BASE)/libs/codec/g7xx/src/include
 LOCAL_LDFLAGS=
 LOCAL_OBJS=
-include $(BASE)/build/modmake.rules
+include ../../../../build/modmake.rules
 
 

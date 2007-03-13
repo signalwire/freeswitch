@@ -2,10 +2,11 @@
 # local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
 # and define these variables to impact your build
+MODNAME=mod_iax
 LOCAL_CFLAGS=-I$(BASE)/libs/iax/src
 LOCAL_LDFLAGS=$(BASE)/libs/iax/src/libiax.la
 LOCAL_OBJS=
-include $(BASE)/build/modmake.rules
+include ../../../../build/modmake.rules
 
 local_depend:
 	cd $(BASE)/libs/iax && $(MAKE)

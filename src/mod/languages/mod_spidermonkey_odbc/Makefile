@@ -3,10 +3,11 @@ include ../mod_spidermonkey/sm.mak
 # local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
 # and define these variables to impact your build
+MODNAME=mod_spidermonkey_odbc
 #LOCAL_CFLAGS=
 LOCAL_LDFLAGS+=-lodbc
 #LOCAL_OBJS=
-include $(BASE)/build/modmake.rules
+include ../../../../build/modmake.rules
 
 local_depend:
 	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install unixODBC-2.2.12.tar.gz --prefix=$(PREFIX) --disable-gui --without-x --with-pic

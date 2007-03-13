@@ -2,10 +2,11 @@
 # local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
 # and define these variables to impact your build
+MONAME=mod_sndfile
 LOCAL_CFLAGS=-I$(BASE)/libs/libsndfile/src
 LOCAL_LDFLAGS=$(BASE)/libs/libsndfile/src/libsndfile.la
 LOCAL_OBJS=
-include $(BASE)/build/modmake.rules
+include ../../../../build/modmake.rules
 
 local_depend:
 	cd $(BASE)/libs/libsndfile && $(MAKE)

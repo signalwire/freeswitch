@@ -1,3 +1,4 @@
+MODNAME=mod_sofia
 OS_ARCH         := $(subst /,_,$(shell uname -s | sed /\ /s//_/))
 
 LOCAL_CFLAGS  = -I. -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/bnf  -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/features
@@ -16,7 +17,7 @@ ifeq ($(OS_ARCH),Darwin)
 	LOCAL_LDFLAGS +=-framework CoreFoundation -framework SystemConfiguration
 endif
 
-include $(BASE)/build/modmake.rules
+include ../../../../build/modmake.rules
 
 local_depend:
 	cd $(BASE)/libs/sofia-sip && $(MAKE)

@@ -2,10 +2,11 @@
 # local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
 # and define these variables to impact your build
+MODNAME=mod_perl
 LOCAL_CFLAGS=-DMULTIPLICITY $(shell $(PERL) -MExtUtils::Embed -e ccopts) -DEMBED_PERL
 LOCAL_LDFLAGS=$(shell $(PERL) -MExtUtils::Embed -e ldopts) $(shell $(PERL) -MConfig -e 'print $$Config{libs}')
 LOCAL_OBJS=perlxsi.o
-include $(BASE)/build/modmake.rules
+include ../../../../build/modmake.rules
 
 PERL        = $(shell which perl)
 PERL_LIBDIR =-L$(shell perl -MConfig -e 'print $$Config{archlib}')/CORE

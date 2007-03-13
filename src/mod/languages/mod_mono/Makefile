@@ -1,3 +1,4 @@
+MODNAME=mod_mono
 VERSION = mono-1.1.13.8
 TARBALL = mono-1.1.13.8.tar.gz
 GLIB_TARBALL = glib-2.12.3.tar.gz
@@ -6,7 +7,7 @@ PKGCONFIG_TARBALL = pkg-config-0.21.tar.gz
 
 LOCAL_CFLAGS=`$(PREFIX)/bin/pkg-config --cflags mono`
 LOCAL_LDFLAGS=`$(PREFIX)/bin/pkg-config --libs mono`
-include $(BASE)/build/modmake.rules
+include ../../../../build/modmake.rules
 
 local_depend:
 	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) configure install $(GETTEXT_TARBALL) --prefix=$(PREFIX) --with-pic

@@ -1,9 +1,9 @@
-
+MODNAME=mod_spidermonkey
 include sm.mak
 LOCAL_CFLAGS  += -I$(BASE)/libs/curl/include
 LOCAL_LDFLAGS += $(BASE)/libs/curl/lib/libcurl.la
 
-include $(BASE)/build/modmake.rules
+include ../../../../build/modmake.rules
 
 local_depend:
 	cd $(BASE)/libs/curl && $(MAKE)
