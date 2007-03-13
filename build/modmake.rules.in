@@ -43,7 +43,7 @@ CXXSOURCEFILE=$(CURDIR)/$(MODNAME).cpp
 all: depend $(MODNAME).$(DYNAMIC_LIB_EXTEN) local_all
 depend: local_depend
 clean: local_clean mod_clean
-install: depend_install local_install mod_install
+install: all depend_install local_install mod_install
 distclean: clean local_distclean
 extraclean: distclean local_extraclean
 

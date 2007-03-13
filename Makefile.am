@@ -1,6 +1,6 @@
 EXTRA_DIST =
-SUBDIRS =
-AUTOMAKE_OPTS = gnu foreign
+SUBDIRS = . src/mod
+AUTOMAKE_OPTS = foreign
 NAME=freeswitch
 PREFIX=$(prefix)
 
@@ -98,6 +98,20 @@ freeswitch_SOURCES =    src/switch.c\
 freeswitch_CFLAGS = $(AM_CFLAGS)
 freeswitch_LDADD = ${MOD_LINK}
 
+install-data-local:
+	@echo Installing $(NAME)
+	@for x in conf mod db log log/xml_cdr bin scripts htdocs grammar ; do \
+		$(mkinstalldirs) $(DESTDIR)$(prefix)/$$x ; \
+	 done
+	@if [ ! -f $(DESTDIR)$(PREFIX)/conf/freeswitch.xml ] ; then \
+		$(INSTALL) conf/*.xml $(DESTDIR)$(PREFIX)/conf ; \
+	 fi
+	@if [ -f .libs/$(NAME) ] ; then \
+		$(INSTALL) .libs/$(NAME) $(DESTDIR)$(PREFIX)/bin/$(NAME) ; \
+	 else \
+		$(INSTALL) ./$(NAME) $(DESTDIR)$(PREFIX)/bin/$(NAME) ;\
+	 fi
+
 version: Makefile src/include/switch_version.h
 	MAKE=$(MAKE) ./build/checkversion.sh
 
@@ -138,81 +152,23 @@ deps: version sqlite apr apr-util pcre srtp resample teletone
 
 core: deps libfreeswitch.la  
 
+everything: install
+
+installall: install
+
+sure: clean modwipe uninstall installall
+
+wayclean: clean
+
 modules: libfreeswitch.la
-	@if [ ! -f $(PWD)/modules.conf ] ; then cp $(PWD)/modules.conf.in $(PWD)/modules.conf ; fi
-	@echo making modules
-	@rm -f build/freeswitch.env
-	@./build/addenv.sh build/freeswitch.env MAKE "$(MAKE)"
-	@./build/addenv.sh build/freeswitch.env DYLD_LIBRARY_PATH "$(PREFIX)/lib:$DYLD_LIBRARY_PATH"
-	@./build/addenv.sh build/freeswitch.env LD_LIBRARY_PATH "$(PREFIX)/lib:$LD_LIBRARY_PATH"
-	@./build/addenv.sh build/freeswitch.env PREFIX "$(PREFIX)"
-	@./build/addenv.sh build/freeswitch.env BASE "$(switch_srcdir)"
-	@./build/addenv.sh build/freeswitch.env OSARCH "$(OSARCH)"
-	@./build/addenv.sh build/freeswitch.env DYNAMIC_LIB_EXTEN "$(DYNAMIC_LIB_EXTEN)"
-	@./build/addenv.sh build/freeswitch.env SOLINK "$(SOLINK)"
-	@./build/addenv.sh build/freeswitch.env LDFLAGS "$(AM_LDFLAGS) $(MOD_LINK)"
-	@./build/addenv.sh build/freeswitch.env CFLAGS "$(AM_CFLAGS)"
-	@./build/addenv.sh build/freeswitch.env CC "$(CC)"
-	@./build/addenv.sh build/freeswitch.env CFGARGS "$(AM_CFGARGS)"
-	@./build/addenv.sh build/freeswitch.env LINK "$(LINK)"
-	@./build/addenv.sh build/freeswitch.env LTCOMPILE "$(LTCOMPILE)"
-	@./build/addenv.sh build/freeswitch.env LIBTOOL "$(LIBTOOL)"
-	@./build/addenv.sh build/freeswitch.env LTINSTALL "$(LTINSTALL)"
-	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making $$i ; $(PWD)/build/modmake.sh $(MAKE) $(PWD) $$i || exit 1; done
-	@rm -f build/freeswitch.env
-
+	$(MAKE) -C src/mod
+install_mod: libfreeswitch.la
+	$(MAKE) -C src/mod install
 modclean:
-	@rm -f build/freeswitch.env
-	@./build/addenv.sh build/freeswitch.env MAKE "$(MAKE)"
-	@./build/addenv.sh build/freeswitch.env CC "$(CC)"
-	@./build/addenv.sh build/freeswitch.env DYNAMIC_LIB_EXTEN "$(DYNAMIC_LIB_EXTEN)"
-	@cd src/mod && for i in `find . -type d -name mod_\*` ; do echo making clean $$i ; $(PWD)/build/modmake.sh $(MAKE) $(PWD) $$i clean || exit 1; done
-	@rm -f build/freeswitch.env
-
-everything: install install_mod
-
-installall: install install_mod
-
-sure: clean modclean modwipe uninstall installall
-
-wayclean: clean modclean
+	$(MAKE) -C src/mod clean
 
 modwipe:
 	rm -f $(PREFIX)/mod/*.${DYNAMIC_LIB_EXTEN}
-
-install_mod: modules
-	@echo Installing $(NAME)
-	@for x in conf mod db log log/xml_cdr bin scripts htdocs grammar ; do \
-		$(mkinstalldirs) $(DESTDIR)$(prefix)/$$x ; \
-	 done
-	@if [ ! -f $(DESTDIR)$(PREFIX)/conf/freeswitch.xml ] ; then \
-		$(INSTALL) conf/*.xml $(DESTDIR)$(PREFIX)/conf ; \
-	 fi
-	@if [ -f .libs/$(NAME) ] ; then \
-		$(INSTALL) .libs/$(NAME) $(DESTDIR)$(PREFIX)/bin/$(NAME) ; \
-	 else \
-		$(INSTALL) ./$(NAME) $(DESTDIR)$(PREFIX)/bin/$(NAME) ;\
-	 fi
-	@echo Installing Modules
-	@rm -f build/freeswitch.env
-	@./build/addenv.sh build/freeswitch.env PREFIX "$(PREFIX)"
-	@./build/addenv.sh build/freeswitch.env MAKE "$(MAKE)"
-	@./build/addenv.sh build/freeswitch.env DYLD_LIBRARY_PATH "$(PREFIX)/lib:$DYLD_LIBRARY_PATH"
-	@./build/addenv.sh build/freeswitch.env LD_LIBRARY_PATH "$(PREFIX)/lib:$LD_LIBRARY_PATH"
-	@./build/addenv.sh build/freeswitch.env DYNAMIC_LIB_EXTEN "$(DYNAMIC_LIB_EXTEN)"
-	@./build/addenv.sh build/freeswitch.env BASE "$(switch_srcdir)"
-	@./build/addenv.sh build/freeswitch.env OSARCH "$(OSARCH)"
-	@./build/addenv.sh build/freeswitch.env SOLINK "$(SOLINK)"
-	@./build/addenv.sh build/freeswitch.env LDFLAGS "$(AM_LDFLAGS)  $(MOD_LINK)"
-	@./build/addenv.sh build/freeswitch.env CFLAGS "$(AM_CFLAGS)"
-	@./build/addenv.sh build/freeswitch.env CC "$(CC)"
-	@./build/addenv.sh build/freeswitch.env LINK "$(LINK)"
-	@./build/addenv.sh build/freeswitch.env LTCOMPILE "$(LTCOMPILE)"
-	@./build/addenv.sh build/freeswitch.env LTINSTALL "$(LTINSTALL)"
-	@./build/addenv.sh build/freeswitch.env LIBTOOL "$(LIBTOOL)"
-	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making install $$i ; $(PWD)/build/modmake.sh $(MAKE) $(PWD) $$i install || exit 1; done
-	@rm -f build/freeswitch.env
-	@echo done
 
 dox:
 	cd docs && doxygen $(PWD)/docs/Doxygen.conf

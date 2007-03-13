@@ -9,10 +9,6 @@ if [ -f $root/.nodepends ] ; then
     exit 0
 fi
 
-if [ -f $root/build/freeswitch.env ] ; then
-    . $root/build/freeswitch.env
-fi
-
 if [ -z "$MAKE" ] ; then
     make=`which gmake 2>/dev/null`
     if [ -z "$MAKE" ] ; then
