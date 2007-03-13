@@ -1103,6 +1103,15 @@ src/include/switch_version.h: $(top_srcdir)/src/include/switch_version.h.in .ver
 	  fi ; \
 	fi ;
 
+update:
+	@if test -d .svn ; then \
+	  test ! -f .version || rm -f .version ; \
+	  echo Updating... ; \
+	  svn update ; \
+	else \
+	  echo "This source directory is not an svn working copy" ; \
+	fi
+
 .nodepends:
 	touch .nodepends
 
