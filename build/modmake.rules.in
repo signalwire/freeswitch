@@ -48,9 +48,10 @@ distclean: clean local_distclean
 extraclean: distclean local_extraclean
 
 Makefile:
-	@if test ! -f $@; then \
+	if test ! -f $@; then \
 	  echo MODNAME=$(MODNAME) > Makefile ; \
-	  echo include $(switch_srcdir)/build/modmake.rules >> Makefile ; \
+	  if ! pwd | grep $(switch_srcdir)/src/mod ; then rulesdir=$(switch_srcdir) ; else rulesdir=../../../.. ; fi ; \
+	  echo include $$rulesdir/build/modmake.rules >> Makefile ; \
 	fi ;
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).o $(LOCAL_OBJS) $(SOURCEFILE)
