@@ -454,7 +454,7 @@ static switch_status_t wanpipe_on_init(switch_core_session_t *session)
 			ss7boost_client_call_init(&event, tech_pvt->caller_profile->caller_id_number, tech_pvt->caller_profile->destination_number, tech_pvt->setup_index);
 			
 			if (ss7boost_client_connection_write(&tech_pvt->ss7boost_handle->mcon, &event) <= 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Critical System Error: Failed to tx on ISUP socket [%s]: %s\n", strerror(errno));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Critical System Error: Failed to tx on ISUP socket [%s]\n", strerror(errno));
 			}
 			
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call Called Event TG=%d\n", tech_pvt->boost_trunk_group);
@@ -707,7 +707,8 @@ static switch_status_t wanpipe_write_frame(switch_core_session_t *session, switc
 
 		switch_buffer_read(tech_pvt->dtmf_buffer, tech_pvt->auxbuf, len);		
 		if (len < frame->datalen) {
-			memcpy(frame->data + len, tech_pvt->auxbuf + len, frame->datalen - len);
+			uint8_t *data = frame->data;
+			memcpy(data + len, tech_pvt->auxbuf + len, frame->datalen - len);
 		}
 		data= tech_pvt->auxbuf;
 	} 
@@ -768,7 +769,6 @@ static switch_status_t wanpipe_receive_message(switch_core_session_t *session, s
 {
 	switch_channel_t *channel;
 	private_object_t *tech_pvt;
-    switch_status_t status;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -795,6 +795,8 @@ static switch_status_t wanpipe_receive_message(switch_core_session_t *session, s
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		break;
 	case SWITCH_MESSAGE_INDICATE_RINGING:
+		break;
+	default:
 		break;
 	}
 
@@ -871,21 +873,23 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 {
 	char *bchan = NULL;
 	char name[128] = "";
-	char *protocol;
+	char *protocol = NULL;
 	char *dest;
 	int ready = 0, is_pri = 0, is_boost = 0, is_raw = 0;
-
-
+	switch_call_cause_t cause = SWITCH_CAUSE_SUCCESS;
+	
 	if (!outbound_profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Doh! no caller profile\n");
-		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+		cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+		goto error;
 	}
 
-	protocol = switch_core_session_strdup(session, outbound_profile->destination_number);
+	protocol = strdup(outbound_profile->destination_number);
 
 	if (!(dest = strchr(protocol, '/'))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error No protocol specified!\n");
-		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+		cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+		goto error;
 	}
 	
 	*dest++ = '\0';
@@ -909,7 +913,8 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 	
 	if (!ready) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Continue!\n");
-		return SWITCH_CAUSE_NETWORK_OUT_OF_ORDER;
+		cause = SWITCH_CAUSE_NETWORK_OUT_OF_ORDER;
+		goto error;
 	}
 
 	outbound_profile->destination_number = dest;
@@ -935,7 +940,8 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 			switch_core_session_destroy(new_session);
-			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+			goto error;
 		}
 
 		
@@ -949,7 +955,7 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 				if (*num == 'a') {
 					span = 1;
 					autospan = 1;
-				} else if (*num = 'A') {
+				} else if (*num == 'A') {
 					span = MAX_SPANS - 1;
 					autospan = -1;
 				} else {
@@ -958,7 +964,8 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invlid Syntax\n");
 						switch_core_session_destroy(new_session);
-						return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+						cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+						goto error;
 					}
 				}
 				num = p;
@@ -973,13 +980,15 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invlid Syntax\n");
 						switch_core_session_destroy(new_session);
-						return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+						cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+						goto error;
 					}
 					caller_profile->destination_number = p;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invlid Syntax\n");
 					switch_core_session_destroy(new_session);
-					return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+					cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+					goto error;
 				}
 			}
 		}
@@ -993,7 +1002,8 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 				if (!wp_open(tech_pvt, span, chan)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd for s%dc%d! [%s]\n", span, chan, strerror(errno));
 					switch_core_session_destroy(new_session);
-					return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+					cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+					goto error;
 				}
 				switch_set_flag_locked(tech_pvt, TFLAG_NOSIG);
 				snprintf(name, sizeof(name), "wanpipe/%s/nosig", bchan);
@@ -1002,7 +1012,8 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid address\n");
 				switch_core_session_destroy(new_session);
-				return SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL;
+				cause = SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL;
+				goto error;
 			}
 		} else if (is_pri) {
 			switch_mutex_lock(globals.channel_mutex);
@@ -1050,7 +1061,8 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 			if (!spri || callno == 0 || callno == (SANGOMA_MAX_CHAN_PER_SPAN)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No Free Channels!\n");
 				switch_core_session_destroy(new_session);
-				return SWITCH_CAUSE_SWITCH_CONGESTION;
+				cause = SWITCH_CAUSE_SWITCH_CONGESTION;
+				goto error;
 			}
 				
 			tech_pvt->callno = callno;
@@ -1079,14 +1091,16 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 				if (pri_setup(spri->pri, tech_pvt->call , sr)) {
 					switch_core_session_destroy(new_session);
 					pri_sr_free(sr);
-					return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+					cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+					goto error;
 				}
 
 				if (!wp_open(tech_pvt, spri->span, callno)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd!\n");
 					switch_core_session_destroy(new_session);
 					pri_sr_free(sr);
-					return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+					cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+					goto error;
 				}
 				pri_sr_free(sr);
 				switch_copy_string(chanmap->map[callno],
@@ -1117,16 +1131,16 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 
 		}
 
-
-
 		tech_pvt->caller_profile = caller_profile;
 		switch_channel_set_flag(channel, CF_OUTBOUND);
 		switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);
-		return SWITCH_CAUSE_SUCCESS;
+		cause = SWITCH_CAUSE_SUCCESS;
 	}
 
-	return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+ error:
+	switch_safe_free(protocol);
+	return cause;
 }
 
 
@@ -1263,7 +1277,6 @@ static int on_proceed(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 	chanmap = spri->private_info;
 
 	if ((session = switch_core_session_locate(chanmap->map[pevent->proceeding.channel]))) {
-		char *uuid;
 		switch_core_session_message_t *msg;
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "-- Proceeding on channel s%dc%d\n", spri->span, pevent->proceeding.channel);
@@ -1297,7 +1310,7 @@ static int on_ringing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 	switch_core_session_t *session;
 	switch_channel_t *channel;
 	struct channel_map *chanmap;
-	switch_core_session_message_t *msg;
+
 
 	chanmap = spri->private_info;
 
@@ -1485,7 +1498,9 @@ static int on_anything(struct sangoma_pri *spri, sangoma_pri_event_t event_type,
 static void *SWITCH_THREAD_FUNC pri_thread_run(switch_thread_t *thread, void *obj)
 {
 	struct sangoma_pri *spri = obj;
-	struct channel_map chanmap = {0};
+	struct channel_map chanmap;
+
+	memset(&chanmap, 0, sizeof(chanmap));
 
 	switch_event_t *s_event;
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_ANY, on_anything);
@@ -1550,6 +1565,7 @@ static int isup_exec_command(ss7boost_handle_t *ss7boost_handle, int span, int c
 	return r;
 }
 
+#ifdef USE_WAITFOR_SOCKET
 static int waitfor_socket(int fd, int timeout, int flags)
 {
     struct pollfd pfds[1];
@@ -1573,6 +1589,7 @@ static int waitfor_socket(int fd, int timeout, int flags)
 
     return res;
 }
+#endif
 
 
 static void validate_number(unsigned char *s)
@@ -1661,18 +1678,18 @@ static void handle_call_start(ss7boost_handle_t *ss7boost_handle, ss7boost_clien
 																  NULL,
 																  globals.dialplan,
 																  "FreeSWITCH(boost)",
-																  event->calling_number_digits,
+																  (char *)event->calling_number_digits,
 #ifdef WIN32
 																  NULL,
 #else
-																  event->calling_number_digits,
+																  (char *)event->calling_number_digits,
 #endif
 																  NULL,
 																  NULL,
 																  NULL,
 																  (char *)modname,
 																  NULL,
-																  event->called_number_digits))) {
+																  (char *)event->called_number_digits))) {
 			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 		}
 
@@ -1686,7 +1703,7 @@ static void handle_call_start(ss7boost_handle_t *ss7boost_handle, ss7boost_clien
 		tech_pvt->boost_pres = event->calling_number_presentation;
 		
 		if (!wp_open(tech_pvt, event->span+1, event->chan+1)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open channel %d:%s\n", event->span+1, event->chan+1);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open channel %d:%d\n", event->span+1, event->chan+1);
 			goto fail;
 		}
 
@@ -1952,7 +1969,6 @@ static void *SWITCH_THREAD_FUNC boost_thread_run(switch_thread_t *thread, void *
 {
 	ss7boost_handle_t *ss7boost_handle = (ss7boost_handle_t *) obj;
 	ss7boost_client_event_t *event;
-	int ss = 0;
 
 	if (ss7boost_client_connection_open(&ss7boost_handle->mcon,
 									ss7boost_handle->local_ip, 
@@ -1988,7 +2004,7 @@ static void *SWITCH_THREAD_FUNC boost_thread_run(switch_thread_t *thread, void *
 				timersub (&current, &event->tv, &difftime);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Socket Event [%s] T=%d:%d\n",
 								  ss7boost_client_event_id_name(event->event_id),
-								  difftime.tv_sec, difftime.tv_usec);
+								  (int)difftime.tv_sec, (int)difftime.tv_usec);
 				
 				parse_ss7_event(ss7boost_handle, event);
 		} else {
@@ -1997,7 +2013,7 @@ static void *SWITCH_THREAD_FUNC boost_thread_run(switch_thread_t *thread, void *
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Close udp socket [%d]\n", ss7boost_handle->mcon.socket);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Close udp socket\n");
 	ss7boost_client_connection_close(&ss7boost_handle->mcon);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Monitor Thread Ended\n");	
 	
