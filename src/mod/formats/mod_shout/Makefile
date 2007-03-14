@@ -1,19 +1,18 @@
-BASE=../../../..
 MODNAME=mod_shout
 LAME=lame-3.97
 SHOUT=libshout-2.2.2
 switch_srcdir=../../../..
 
+WANT_CURL=yes
+
 LAME_DIR=$(switch_srcdir)/libs/$(LAME)
 SHOUT_DIR=$(switch_srcdir)/libs/$(SHOUT)
-CURL_DIR=$(switch_srcdir)/libs/curl
 
 LAMELA=$(LAME_DIR)/libmp3lame/libmp3lame.la
 SHOUTLA=$(SHOUT_DIR)/src/libshout.la
-CURLLA=$(CURL_DIR)/lib/libcurl.la
 
-LOCAL_CFLAGS=-I$(CURL_DIR)/include -I$(SHOUT_DIR)/include -I$(LAME_DIR)/include
-LOCAL_LIBADD=$(LAMELA) $(SHOUTLA) -lcurl
+LOCAL_CFLAGS=-I$(SHOUT_DIR)/include -I$(LAME_DIR)/include
+LOCAL_LIBADD=$(LAMELA) $(SHOUTLA)
 
 MP3OBJS=common.o dct64_i386.o decode_ntom.o layer3.o tabinit.o interface.o
 LOCAL_OBJS=$(MP3OBJS)
@@ -35,9 +34,6 @@ $(SHOUT_DIR)/Makefile:
 
 $(SHOUTLA): $(SHOUT_DIR)/Makefile
 	cd $(SHOUT_DIR) && $(MAKE)
-
-$(CURLLA):
-	cd $(CURL_DIR) && $(MAKE)
 
 
 

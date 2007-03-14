@@ -62,6 +62,7 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/build/config/ac_gcc_archflag.m4 \
 	$(top_srcdir)/build/config/ac_gcc_x86_cpuid.m4 \
 	$(top_srcdir)/libs/apr/build/apr_common.m4 \
+	$(top_srcdir)/libs/curl/docs/libcurl/libcurl.m4 \
 	$(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -196,6 +197,9 @@ ISLINUX_TRUE = @ISLINUX_TRUE@
 ISMAC_FALSE = @ISMAC_FALSE@
 ISMAC_TRUE = @ISMAC_TRUE@
 LDFLAGS = @LDFLAGS@
+LIBCURL = @LIBCURL@
+LIBCURL_CPPFLAGS = @LIBCURL_CPPFLAGS@
+LIBCURL_DEPS = @LIBCURL_DEPS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = $(switch_builddir)/libtool
@@ -225,6 +229,7 @@ WANT_DEBUG_FALSE = @WANT_DEBUG_FALSE@
 WANT_DEBUG_TRUE = @WANT_DEBUG_TRUE@
 WGET = @WGET@
 ZCAT = @ZCAT@
+_libcurl_config = @_libcurl_config@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
@@ -824,7 +829,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/build $(distdir)/build/config $(distdir)/libs/apr/build $(distdir)/src/include
+	$(mkdir_p) $(distdir)/build $(distdir)/build/config $(distdir)/libs/apr/build $(distdir)/libs/curl/docs/libcurl $(distdir)/src/include
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
