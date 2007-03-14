@@ -44,6 +44,7 @@ host_triplet = @host@
 bin_PROGRAMS = freeswitch$(EXEEXT)
 DIST_COMMON = README $(am__configure_deps) $(library_include_HEADERS) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(top_srcdir)/build/getlib.sh.in \
 	$(top_srcdir)/build/modmake.rules.in $(top_srcdir)/configure \
 	$(top_srcdir)/src/include/switch_am_config.h.in \
 	$(top_srcdir)/src/include/switch_private.h.in AUTHORS COPYING \
@@ -68,7 +69,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/src/include/switch_private.h
-CONFIG_CLEAN_FILES = src/include/switch_am_config.h \
+CONFIG_CLEAN_FILES = src/include/switch_am_config.h build/getlib.sh \
 	build/modmake.rules
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -166,6 +167,7 @@ CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CRASHPROT_FALSE = @CRASHPROT_FALSE@
 CRASHPROT_TRUE = @CRASHPROT_TRUE@
+CURL = @CURL@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
@@ -216,9 +218,12 @@ STRIP = @STRIP@
 SWITCH_AM_CFLAGS = @SWITCH_AM_CFLAGS@
 SWITCH_AM_CXXFLAGS = @SWITCH_AM_CXXFLAGS@
 SWITCH_AM_LDFLAGS = @SWITCH_AM_LDFLAGS@
+TAR = @TAR@
 VERSION = @VERSION@
 WANT_DEBUG_FALSE = @WANT_DEBUG_FALSE@
 WANT_DEBUG_TRUE = @WANT_DEBUG_TRUE@
+WGET = @WGET@
+ZCAT = @ZCAT@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
@@ -415,6 +420,8 @@ $(top_srcdir)/src/include/switch_private.h.in:  $(am__configure_deps)
 distclean-hdr:
 	-rm -f src/include/switch_private.h src/include/stamp-h1
 src/include/switch_am_config.h: $(top_builddir)/config.status $(top_srcdir)/src/include/switch_am_config.h.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+build/getlib.sh: $(top_builddir)/config.status $(top_srcdir)/build/getlib.sh.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 build/modmake.rules: $(top_builddir)/config.status $(top_srcdir)/build/modmake.rules.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
