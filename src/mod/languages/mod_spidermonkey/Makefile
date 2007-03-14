@@ -1,8 +1,6 @@
 MODNAME=mod_spidermonkey
 include sm.mak
-LOCAL_CFLAGS  += -I$(BASE)/libs/curl/include
-LOCAL_LDFLAGS += $(BASE)/libs/curl/lib/libcurl.la
-
+WANT_CURL=yes
 include ../../../../build/modmake.rules
 
 local_depend:
