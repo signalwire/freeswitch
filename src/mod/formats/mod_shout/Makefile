@@ -1,3 +1,4 @@
+BASE=../../../..
 MODNAME=mod_shout
 LAME=lame-3.97
 SHOUT=libshout-2.2.2
@@ -12,7 +13,7 @@ SHOUTLA=$(SHOUT_DIR)/src/libshout.la
 CURLLA=$(CURL_DIR)/lib/libcurl.la
 
 LOCAL_CFLAGS=-I$(CURL_DIR)/include -I$(SHOUT_DIR)/include -I$(LAME_DIR)/include
-LOCAL_LIBADD=$(LAMELA) $(SHOUTLA) $(CURLLA)
+LOCAL_LIBADD=$(LAMELA) $(SHOUTLA) -lcurl
 
 MP3OBJS=common.o dct64_i386.o decode_ntom.o layer3.o tabinit.o interface.o
 LOCAL_OBJS=$(MP3OBJS)

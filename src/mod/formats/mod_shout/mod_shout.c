@@ -39,7 +39,8 @@
 
 
 #define OUTSCALE 4096
-#define MP3BUFLEN OUTSCALE * 2
+#define MP3_SCACHE 16384
+#define MP3_DCACHE 8192
 
 static const char modname[] = "mod_shout";
 
@@ -51,10 +52,15 @@ struct shout_context {
     lame_global_flags *gfp;
     char *stream_url;
 	switch_mutex_t *audio_mutex;
+	switch_mutex_t *mp3_mutex;
 	switch_buffer_t *audio_buffer;
+	switch_buffer_t *mp3_buffer;
     switch_memory_pool_t *memory_pool;
-    char decode_buf[MP3BUFLEN];
+    //char encode_buf[MP3_SCACHE];
+    char decode_buf[MP3_DCACHE];
     struct mpstr mp;
+    int err;
+    int dlen;
 };
 
 typedef struct shout_context shout_context_t;
@@ -63,7 +69,13 @@ static inline void free_context(shout_context_t *context)
 {
     if (context) {
         if (context->audio_buffer) {
+            switch_mutex_lock(context->audio_mutex);
             switch_buffer_destroy(&context->audio_buffer);
+            switch_mutex_unlock(context->audio_mutex);
+        }
+
+        if (context->mp3_buffer) {
+            switch_buffer_destroy(&context->mp3_buffer);
         }
 
         if (context->shout) {
@@ -158,17 +170,65 @@ static void log_msg(char const *fmt, va_list ap)
 }
 
 
+static int wtf = -1;
+
 static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
 	register unsigned int realsize = (unsigned int)(size * nmemb);
 	shout_context_t *context = data;
-    int dlen;
-    
-    decodeMP3(&context->mp, data, realsize, context->decode_buf, sizeof(context->decode_buf), &dlen);
+    int rlen;
+    char grr[1024];
+    char *ass;
+    int decode_status = 0;
+    int dlen = 0;
+    int offset = 0;
+    int x = 0;
 
+    char *in;
+    int inlen;
+    char *out;
+    int outlen;
+    int usedlen;
+
+
+    in = ptr;
+    inlen = realsize;
+    out = context->decode_buf;
+    outlen = sizeof(context->decode_buf);
+    usedlen = 0;
+
+    do {
+        decode_status = decodeMP3(&context->mp, in, inlen, out, outlen, &dlen);
+
+        if (!x) {
+            in = NULL;
+            inlen = 0;
+            x++;
+        }
+        
+        if (decode_status == MP3_ERR) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decoder Error!\n");
+            context->err++;
+            return 0;
+        }
+    
+        usedlen += dlen;        
+        out += dlen;
+        outlen -= dlen;
+        dlen = 0;
+    } while (decode_status != MP3_NEED_MORE);
+
+    printf("WRITE %d\n", usedlen);
     switch_mutex_lock(context->audio_mutex);
-    switch_buffer_write(context->audio_buffer, context->decode_buf, dlen);
+    switch_buffer_write(context->audio_buffer, context->decode_buf, usedlen);
     switch_mutex_unlock(context->audio_mutex);
+    out = context->decode_buf;
+    outlen = sizeof(context->decode_buf);
+
+    printf("doh\n");
+    
+    
+
 
 	return realsize;
 }
@@ -181,6 +241,7 @@ static void *SWITCH_THREAD_FUNC stream_thread(switch_thread_t *thread, void *obj
     CURL *curl_handle = NULL;
     shout_context_t *context = (shout_context_t *) obj;
 
+	curl_handle = curl_easy_init();
     curl_easy_setopt(curl_handle, CURLOPT_URL, context->stream_url);
     curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, stream_callback);
     curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)context);
@@ -244,7 +305,12 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, char *path)
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
             goto error;
         }
+        if (switch_buffer_create_dynamic(&context->mp3_buffer, MY_BLOCK_SIZE, MY_BUF_LEN, 0) != SWITCH_STATUS_SUCCESS) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+            goto error;
+        }
         switch_mutex_init(&context->audio_mutex, SWITCH_MUTEX_NESTED, context->memory_pool);
+        switch_mutex_init(&context->mp3_mutex, SWITCH_MUTEX_NESTED, context->memory_pool);
         InitMP3(&context->mp, OUTSCALE);
         context->stream_url = switch_core_sprintf(context->memory_pool, "http://%s", path);
         launch_stream_thread(context);
@@ -354,13 +420,30 @@ static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned in
 static switch_status_t shout_file_read(switch_file_handle_t *handle, void *data, size_t *len)
 {
 	shout_context_t *context = handle->private_info;
-    size_t bytes = *len;
+    size_t rb = 0, bytes = *len * sizeof(int16_t);
+
+    *len = 0;
 
     switch_mutex_lock(context->audio_mutex);
-    *len = switch_buffer_read(context->audio_buffer, data, bytes);
+    if (context->audio_buffer) {
+        rb = switch_buffer_read(context->audio_buffer, data, bytes);
+    } else {
+        context->err++;
+    }
     switch_mutex_unlock(context->audio_mutex);
 
-	return SWITCH_STATUS_FALSE;
+    if (context->err) {
+        return SWITCH_STATUS_FALSE;
+    }
+
+    if (rb) {
+        *len = rb / sizeof(int16_t);
+    } else {
+        memset(data, 255, bytes);
+        *len = bytes / sizeof(int16_t);
+    }
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data, size_t *len)
@@ -455,6 +538,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	*module_interface = &shout_module_interface;
 
 	shout_init();
+    InitMP3Constants();
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

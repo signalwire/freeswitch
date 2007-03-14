@@ -324,7 +324,7 @@ static int III_get_side_info_1(struct mpstr *mp, struct III_sideinfo *si,int ste
        gr_info->part2_3_length = getbits(mp, 12);
        gr_info->big_values = getbits_fast(mp, 9);
        if(gr_info->big_values > 288) {
-          //printf("big_values too large!\n");
+		   debug_printf("%d big_values too large!\n", __LINE__);
           gr_info->big_values = 288;
        }
        gr_info->pow2gain = gainpow2+256 - getbits_fast(mp, 8) + powdiff;
@@ -348,7 +348,7 @@ static int III_get_side_info_1(struct mpstr *mp, struct III_sideinfo *si,int ste
            gr_info->full_gain[i] = gr_info->pow2gain + (getbits_fast(mp, 3)<<3);
 
          if(gr_info->block_type == 0) {
-           //printf("Blocktype == 0 and window-switching == 1 not allowed.\n");
+			 debug_printf("%d Blocktype == 0 and window-switching == 1 not allowed.\n",  __LINE__);
            return (1);
          }
          /* region_count/start parameters are implicit in this case. */       
@@ -399,7 +399,7 @@ static int III_get_side_info_2(struct mpstr *mp, struct III_sideinfo *si,int ste
        gr_info->part2_3_length = getbits(mp, 12);
        gr_info->big_values = getbits_fast(mp, 9);
        if(gr_info->big_values > 288) {
-         //printf("big_values too large!\n");
+		   debug_printf("%d big_values too large!\n",  __LINE__);
          gr_info->big_values = 288;
        }
        gr_info->pow2gain = gainpow2+256 - getbits_fast(mp, 8) + powdiff;
@@ -423,7 +423,7 @@ static int III_get_side_info_2(struct mpstr *mp, struct III_sideinfo *si,int ste
            gr_info->full_gain[i] = gr_info->pow2gain + (getbits_fast(mp, 3)<<3);
 
          if(gr_info->block_type == 0) {
-           //printf("Blocktype == 0 and window-switching == 1 not allowed.\n");
+			 debug_printf("%d Blocktype == 0 and window-switching == 1 not allowed.\n",  __LINE__);
            return (1);
          }
          /* region_count/start parameters are implicit in this case. */       
@@ -963,7 +963,7 @@ static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT],int
   if(part2remain > 0)
     getbits(mp, part2remain);
   else if(part2remain < 0) {
-    //printf("mpg123: Can't rewind stream by %d bits!\n",-part2remain);
+	  debug_printf("mpg123: %d Can't rewind stream by %d bits!\n",-part2remain,  __LINE__);
     return 1; /* -> error */
   }
   return 0;
@@ -1374,7 +1374,7 @@ static int III_dequantize_sample_ms(real xr[2][SBLIMIT][SSLIMIT],int *scf,
   if(part2remain > 0 )
     getbits(mp, part2remain);
   else if(part2remain < 0) {
-    //printf("mpg123_ms: Can't rewind stream by %d bits!\n",-part2remain);
+	  debug_printf("mpg123_ms: %d: Can't rewind stream by %d bits!\n",-part2remain,  __LINE__);
     return 1; /* -> error */
   }
   return 0;
@@ -1920,7 +1920,7 @@ int do_layer3(struct mpstr *mp,unsigned char *pcm_sample,int *pcm_point)
 	   return (MP3_ERR);
    
 #else
-    //printf("Not supported\n");
+   debug_printf("%d Not supported\n",  __LINE__);
 #endif
   }
 
@@ -1941,7 +1941,7 @@ int do_layer3(struct mpstr *mp,unsigned char *pcm_sample,int *pcm_point)
 #ifdef MPEG1
         part2bits = III_get_scale_factors_1(mp, scalefacs,gr_info);
 #else
-	//printf("Not supported\n");
+		debug_printf("%d Not supported\n",  __LINE__);
 #endif
       }
       if(III_dequantize_sample(mp, hybridIn[0], scalefacs,gr_info,sfreq,part2bits))
@@ -1956,7 +1956,7 @@ int do_layer3(struct mpstr *mp,unsigned char *pcm_sample,int *pcm_point)
 #ifdef MPEG1
         part2bits = III_get_scale_factors_1(mp, scalefacs,gr_info);
 #else
-	//printf("Not supported\n");
+		debug_printf("%d Not supported\n",  __LINE__);
 #endif
       }
 

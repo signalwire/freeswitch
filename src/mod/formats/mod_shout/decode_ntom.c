@@ -28,10 +28,10 @@ static unsigned long ntom_step = NTOM_MUL;
 int synth_ntom_set_step(long m,long n)
 {
 	if(param.verbose > 1)
-		//printf("Init rate converter: %ld->%ld\n",m,n);
+		debug_printf("Init rate converter: %ld->%ld\n",m,n);
 
 	if(n >= 96000 || m >= 96000 || m == 0 || n == 0) {
-		//printf("NtoM converter: illegal rates\n");
+		debug_printf("NtoM converter: %d illegal rates\n",  __LINE__);
 		return (1);
 	}
 
@@ -39,7 +39,7 @@ int synth_ntom_set_step(long m,long n)
 	ntom_step = n / m;
 
 	if(ntom_step > 8*NTOM_MUL) {
-		//printf("max. 1:8 conversion allowed!\n");
+		debug_printf("%d max. 1:8 conversion allowed!\n",  __LINE__);
 		return (1);
 	}
 

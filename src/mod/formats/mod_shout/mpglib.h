@@ -1,3 +1,8 @@
+#ifndef DEBUG_MP3
+#define debug_printf(fmt,...) printf(fmt, ##__VA_ARGS__);
+#else
+#define debug_printf;
+#endif
 
 struct buf {
         unsigned char *pnt;

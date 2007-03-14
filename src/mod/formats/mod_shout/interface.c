@@ -5,7 +5,6 @@
 #include "mpg123.h"
 #include "mpglib.h"
 
-
 void InitMP3Constants(void)
 {
 	init_layer3_const();
@@ -55,7 +54,7 @@ static struct buf *addbuf(struct mpstr *mp,char *buf,int size)
 
 	nbuf = malloc( sizeof(struct buf) );
 	if(!nbuf) {
-		//printf("Out of memory!\n");
+		debug_printf("%d Out of memory!\n",  __LINE__);
 		return NULL;
 	}
 	nbuf->pnt = malloc(size);
@@ -109,7 +108,7 @@ static int read_buf_byte(int *error, struct mpstr *mp)
 		if(!mp->tail) {
 			/* We may pick up this error a few times*/
 			/* But things have gone pear shaped */
-			//printf("Fatal Buffer error!\n");
+			debug_printf("%d Fatal Buffer error!\n",  __LINE__);
 			*error = 1;
 			return (0);		
 		}
@@ -190,7 +189,7 @@ int decodeMP3(struct mpstr *mp,char *in,int isize,char *out,
 	int down_sample_sblimit;
 
 	if(osize < 4608) {
-		//printf("To less out space\n");
+		debug_printf("%d To less out space\n",  __LINE__);
 		return MP3_ERR;
 	}
 
@@ -211,7 +210,7 @@ int decodeMP3(struct mpstr *mp,char *in,int isize,char *out,
 		if(!head_check(mp->header) ) {
 			int i;
 
-			//printf("Junk at the beginning of frame %08lx\n",mp->header);
+			debug_printf("Junk at the beginning of frame %08lx\n",mp->header);
 			
 			/* step in byte steps through next 64K */
 			for(i=0;i<65536;i++) {
@@ -225,7 +224,7 @@ int decodeMP3(struct mpstr *mp,char *in,int isize,char *out,
 					break;
 			}
 			if(i == 65536) {
-				//printf("Giving up searching valid MPEG header\n");
+				debug_printf("%d Giving up searching valid MPEG header\n",  __LINE__);
 				return MP3_ERR;
 			}
 		}
@@ -305,7 +304,7 @@ int set_pointer(struct mpstr *mp, long backstep)
 {
   unsigned char *bsbufold;
   if(mp->fsizeold < 0 && backstep > 0) {
-    //printf("Can't step back %ld!\n",backstep);
+    debug_printf("Can't step back %ld!\n",backstep);
     return MP3_ERR;
   }
   bsbufold = mp->bsspace[mp->bsnum] + 512;
