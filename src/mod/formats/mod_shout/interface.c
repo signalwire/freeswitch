@@ -13,7 +13,7 @@ void InitMP3Constants(void)
 }
 
 
-BOOL InitMP3(struct mpstr *mp, long outscale) 
+BOOL InitMP3(struct mpstr *mp, long outscale, int samplerate) 
 {
 	/* quiet 4096 med 8192 */
 
@@ -26,7 +26,7 @@ BOOL InitMP3(struct mpstr *mp, long outscale)
 	mp->fr.single = 3; /* force mono */
 	mp->bsnum = 0;
 	mp->synth_bo = 1;
-	mp->outsamplerate = 8000;
+	mp->outsamplerate = samplerate;
 
 	make_decode_tables_scale(mp, outscale);
 
@@ -190,7 +190,7 @@ int decodeMP3(struct mpstr *mp,char *in,int isize,char *out,
 
 	if(osize < 4608) {
 		debug_printf("%d To less out space\n",  __LINE__);
-		return MP3_ERR;
+		return MP3_TOOSMALL;
 	}
 
 	if(in) {

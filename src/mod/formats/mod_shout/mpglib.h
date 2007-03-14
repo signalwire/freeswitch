@@ -1,7 +1,7 @@
-#ifndef DEBUG_MP3
+#ifdef DEBUG_MP3
 #define debug_printf(fmt,...) printf(fmt, ##__VA_ARGS__);
 #else
-#define debug_printf;
+#define debug_printf(fmt,...)
 #endif
 
 struct buf {
@@ -47,10 +47,10 @@ struct mpstr {
 #define MP3_ERR -1
 #define MP3_OK  0
 #define MP3_NEED_MORE 1
-
+#define MP3_TOOSMALL 2
 
 void InitMP3Constants(void);
-BOOL InitMP3(struct mpstr *mp, long outscale);
+BOOL InitMP3(struct mpstr *mp, long outscale, int samplerate);
 int decodeMP3(struct mpstr *mp,char *inmemory,int inmemsize,
      char *outmemory,int outmemsize,int *done);
 void ExitMP3(struct mpstr *mp);
