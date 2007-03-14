@@ -1,12 +1,23 @@
-# define these targets in your makefile if you wish
-# local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
-
-# and define these variables to impact your build
 MODNAME=mod_ldap
-LOCAL_CFLAGS=-DWITH_OPENLDAP -DLDAP_DEPRECATED
-LOCAL_LDFLAGS=-lldap_r -llber
-LOCAL_OBJS=
-include ../../../../build/modmake.rules
+switch_srcdir=../../../..
 
-local_depend:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install openldap-2.3.19.tgz --prefix=$(PREFIX) --disable-bdb --disable-hdb
+LDAP=openldap-2.3.19
+LDAP_DIR=$(switch_srcdir)/libs/$(LDAP)
+
+LDAPLA=$(LDAP_DIR)/libraries/libldap_r/libldap_r.la
+LIBLBERLA=$(LDAP_DIR)/libraries/liblber/liblber.la
+
+LOCAL_CFLAGS=-DWITH_OPENLDAP -DLDAP_DEPRECATED -I$(LDAP_DIR)/include
+
+DEFAULT_ARGS=--prefix=$(PREFIX) --disable-shared --with-pic
+
+LOCAL_LIBADD=$(LDAPLA) $(LIBLBERLA)
+
+include $(switch_srcdir)/build/modmake.rules
+
+$(LDAP_DIR)/Makefile:
+	$(GETLIB) $(LDAP).tgz
+	cd $(LDAP_DIR) && ./configure $(DEFAULT_ARGS) --disable-bdb --disable-hdb
+
+$(LDAPLA) $(LIBLBERLA): $(LDAP_DIR)/Makefile
+	cd $(LDAP_DIR) && $(MAKE)

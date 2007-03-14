@@ -1,12 +1,20 @@
-# define these targets in your makefile if you wish
-# local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
-
-# and define these variables to impact your build
 MODNAME=mod_zeroconf
-LOCAL_CFLAGS=-I$(PREFIX)/include/howl
-LOCAL_LDFLAGS=-lhowl
-LOCAL_OBJS=
-include ../../../../build/modmake.rules
+switch_srcdir=../../../..
 
-local_depend:
-	$(BASE)/build/buildlib.sh $(BASE) install howl-1.0.0.tar.gz --prefix=$(PREFIX)
+HOWL=howl-1.0.0
+HOWL_DIR=$(switch_srcdir)/libs/$(HOWL)
+HOWLLA=$(HOWL_DIR)/src/lib/howl/libhowl.la
+
+LOCAL_CFLAGS=-I$(HOWL_DIR)/include
+LOCAL_LIBADD=$(HOWLLA)
+
+DEFAULT_ARGS=--prefix=$(PREFIX) --disable-shared --with-pic
+
+include $(switch_srcdir)/build/modmake.rules
+
+$(HOWL_DIR)/Makefile:
+	$(GETLIB) $(HOWL).tar.gz
+	cd $(HOWL_DIR) && ./configure $(DEFAULT_ARGS)
+
+$(HOWLLA): $(HOWL_DIR)/Makefile
+	cd $(HOWL_DIR) && $(MAKE)
