@@ -169,6 +169,10 @@ deps: sqlite apr apr-util pcre srtp resample teletone
 
 core: deps libfreeswitch.la  
 
+install_core: install-libLTLIBRARIES
+
+core_install: install_core
+
 everything: install
 
 installall: install
@@ -183,8 +187,12 @@ modules: libfreeswitch.la
 install_mod: libfreeswitch.la
 	$(MAKE) -C src/mod install
 
+mod_install: install_mod
+
 uninstall_mod:
 	$(MAKE) -C src/mod uninstall
+
+mod_uninstall: uninstall_mod
 
 modclean:
 	$(MAKE) -C src/mod clean
