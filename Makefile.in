@@ -184,6 +184,7 @@ EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
+GETLIB = @GETLIB@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -1162,8 +1163,13 @@ wayclean: clean
 
 modules: libfreeswitch.la
 	$(MAKE) -C src/mod
+
 install_mod: libfreeswitch.la
 	$(MAKE) -C src/mod install
+
+uninstall_mod:
+	$(MAKE) -C src/mod uninstall
+
 modclean:
 	$(MAKE) -C src/mod clean
 

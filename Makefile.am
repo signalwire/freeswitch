@@ -179,8 +179,13 @@ wayclean: clean
 
 modules: libfreeswitch.la
 	$(MAKE) -C src/mod
+
 install_mod: libfreeswitch.la
 	$(MAKE) -C src/mod install
+
+uninstall_mod:
+	$(MAKE) -C src/mod uninstall
+
 modclean:
 	$(MAKE) -C src/mod clean
 

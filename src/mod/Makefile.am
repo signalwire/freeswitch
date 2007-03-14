@@ -36,7 +36,19 @@ install:
 	   moddir=$(MOD_DIR); \
 	   if test -f $$moddir/Makefile ; then \
 	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) install ; else  \
-	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) -f $(switch_builddir)/build/modmake.rules clean ; \
+	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) -f $(switch_builddir)/build/modmake.rules install ; \
+	   fi; \
+	done
+	@echo done
+
+uninstall:
+	@echo Uninstalling Modules
+	@for i in $(OUR_MODULES) ; do \
+	   echo making uninstall $$i ; \
+	   moddir=$(MOD_DIR); \
+	   if test -f $$moddir/Makefile ; then \
+	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) uninstall ; else  \
+	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) -f $(switch_builddir)/build/modmake.rules uninstall ; \
 	   fi; \
 	done
 	@echo done

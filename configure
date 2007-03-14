@@ -490,7 +490,7 @@ ac_subdirs_all="$ac_subdirs_all libs/sofia-sip"
 ac_subdirs_all="$ac_subdirs_all libs/speex"
 ac_subdirs_all="$ac_subdirs_all libs/xmlrpc-c"
 ac_subdirs_all="$ac_subdirs_all libs/portaudio"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar switch_srcdir switch_builddir moddir CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE build build_cpu build_vendor build_os host host_cpu host_vendor host_os EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CPP CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL PRTDIAG WANT_DEBUG_TRUE WANT_DEBUG_FALSE SWITCH_AM_CFLAGS SWITCH_AM_CXXFLAGS SWITCH_AM_LDFLAGS SOLINK DYNAMIC_LIB_EXTEN LIBOBJS voidp_size short_value int_value long_value int64_value size_t_value ssize_t_value int64_t_fmt uint64_t_fmt ssize_t_fmt size_t_fmt ZCAT TAR WGET CURL CRASHPROT_TRUE CRASHPROT_FALSE ISLINUX_TRUE ISLINUX_FALSE ISMAC_TRUE ISMAC_FALSE IS64BITLINUX_TRUE IS64BITLINUX_FALSE subdirs LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar switch_srcdir switch_builddir moddir CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE build build_cpu build_vendor build_os host host_cpu host_vendor host_os EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CPP CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL PRTDIAG WANT_DEBUG_TRUE WANT_DEBUG_FALSE SWITCH_AM_CFLAGS SWITCH_AM_CXXFLAGS SWITCH_AM_LDFLAGS SOLINK DYNAMIC_LIB_EXTEN LIBOBJS voidp_size short_value int_value long_value int64_value size_t_value ssize_t_value int64_t_fmt uint64_t_fmt ssize_t_fmt size_t_fmt ZCAT TAR WGET CURL GETLIB CRASHPROT_TRUE CRASHPROT_FALSE ISLINUX_TRUE ISLINUX_FALSE ISMAC_TRUE ISMAC_FALSE IS64BITLINUX_TRUE IS64BITLINUX_FALSE subdirs LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -25236,6 +25236,9 @@ fi
   test -n "$CURL" && break
 done
 
+GETLIB="cd $switch_srcdir/libs && ${SHELL} $switch_srcdir/build/getlib.sh"
+
+
 
 # Check whether --enable-crash-protection or --disable-crash-protection was given.
 if test "${enable_crash_protection+set}" = set; then
@@ -26163,6 +26166,7 @@ s,@ZCAT@,$ZCAT,;t t
 s,@TAR@,$TAR,;t t
 s,@WGET@,$WGET,;t t
 s,@CURL@,$CURL,;t t
+s,@GETLIB@,$GETLIB,;t t
 s,@CRASHPROT_TRUE@,$CRASHPROT_TRUE,;t t
 s,@CRASHPROT_FALSE@,$CRASHPROT_FALSE,;t t
 s,@ISLINUX_TRUE@,$ISLINUX_TRUE,;t t

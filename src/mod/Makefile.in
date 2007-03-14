@@ -88,6 +88,7 @@ EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
+GETLIB = @GETLIB@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -274,7 +275,6 @@ all-am: Makefile
 installdirs:
 install-exec: install-exec-am
 install-data: install-data-am
-uninstall: uninstall-am
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
@@ -380,7 +380,19 @@ install:
 	   moddir=$(MOD_DIR); \
 	   if test -f $$moddir/Makefile ; then \
 	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) install ; else  \
-	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) -f $(switch_builddir)/build/modmake.rules clean ; \
+	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) -f $(switch_builddir)/build/modmake.rules install ; \
+	   fi; \
+	done
+	@echo done
+
+uninstall:
+	@echo Uninstalling Modules
+	@for i in $(OUR_MODULES) ; do \
+	   echo making uninstall $$i ; \
+	   moddir=$(MOD_DIR); \
+	   if test -f $$moddir/Makefile ; then \
+	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) uninstall ; else  \
+	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) -f $(switch_builddir)/build/modmake.rules uninstall ; \
 	   fi; \
 	done
 	@echo done

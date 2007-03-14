@@ -278,6 +278,9 @@ AC_PATH_PROGS(ZCAT, gunzip gzcat gzip zcat)
 AC_PATH_PROGS(TAR, gtar tar)
 AC_PATH_PROGS(WGET, wget)
 AC_PATH_PROGS(CURL, curl)
+GETLIB="cd $switch_srcdir/libs && ${SHELL} $switch_srcdir/build/getlib.sh"
+AC_SUBST(GETLIB)
+
 
 AC_ARG_ENABLE(crash-protection,     
 	[  --enable-crash-protection         Compile with CRASH Protection],,[enable_crash_prot="no"])

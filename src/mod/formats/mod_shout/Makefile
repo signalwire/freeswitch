@@ -1,34 +1,43 @@
-# define these targets in your makefile if you wish
-# local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
-
-# and define these variables to impact your build
 MODNAME=mod_shout
 LAME=lame-3.97
 SHOUT=libshout-2.2.2
-LAMELA=$(BASE)/libs/$(LAME)/libmp3lame/libmp3lame.la
-SHOUTLA=$(BASE)/libs/$(SHOUT)/src/libshout.la
-CURLLA=$(BASE)/libs/curl/lib/libcurl.la
-LOCAL_CFLAGS=-I$(BASE)/libs/curl/include -I$(BASE)/libs/$(SHOUT)/include -I$(BASE)/libs/$(LAME)/include
-LOCAL_LDFLAGS=$(LAMELA) $(SHOUTLA) $(CURLLA)
+switch_srcdir=../../../..
+
+LAME_DIR=$(switch_srcdir)/libs/$(LAME)
+SHOUT_DIR=$(switch_srcdir)/libs/$(SHOUT)
+CURL_DIR=$(switch_srcdir)/libs/curl
+
+LAMELA=$(LAME_DIR)/libmp3lame/libmp3lame.la
+SHOUTLA=$(SHOUT_DIR)/src/libshout.la
+CURLLA=$(CURL_DIR)/lib/libcurl.la
+
+LOCAL_CFLAGS=-I$(CURL_DIR)/include -I$(SHOUT_DIR)/include -I$(LAME_DIR)/include
+LOCAL_LIBADD=$(LAMELA) $(SHOUTLA) $(CURLLA)
+
 MP3OBJS=common.o dct64_i386.o decode_ntom.o layer3.o tabinit.o interface.o
 LOCAL_OBJS=$(MP3OBJS)
+
+include $(switch_srcdir)/build/modmake.rules
+
 DEFAULT_ARGS=--prefix=$(PREFIX) --disable-shared --with-pic
 
-include ../../../../build/modmake.rules
+$(LAME_DIR)/Makefile:
+	$(GETLIB) $(LAME).tar.gz
+	cd $(LAME_DIR) && ./configure $(DEFAULT_ARGS) --disable-decoder
 
-$(LAMELA):
-	MAKE="$(MAKE)" $(BASE)/build/buildlib.sh $(BASE) $(LAME).tar.gz $(DEFAULT_ARGS) --disable-decoder
+$(LAMELA): $(LAME_DIR)/Makefile
+	cd $(LAME_DIR) && $(MAKE)
 
-$(SHOUTLA):
-	MAKE="$(MAKE)" MOD_CFLAGS="${ALL_CFLAGS}" MOD_LDFLAGS="${LD_CFLAGS}" $(BASE)/build/buildlib.sh $(BASE) $(SHOUT).tar.gz $(DEFAULT_ARGS)
+$(SHOUT_DIR)/Makefile:
+	$(GETLIB) $(SHOUT).tar.gz
+	cd $(SHOUT_DIR) && ./configure $(DEFAULT_ARGS)
+
+$(SHOUTLA): $(SHOUT_DIR)/Makefile
+	cd $(SHOUT_DIR) && $(MAKE)
 
 $(CURLLA):
-	cd $(BASE)/libs/curl && $(MAKE)
+	cd $(CURL_DIR) && $(MAKE)
 
-%.o: %.c
-	$(CC) $(ALL_CFLAGS) -c -o $@ $<
-
-local_depend: $(LAMELA) $(SHOUTLA) $(MP3OBJS)
 
 
 
