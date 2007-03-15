@@ -2969,6 +2969,7 @@ static void sip_i_state(int status,
 		nua_ack(nh, TAG_END());
 		break;
 	case nua_callstate_received: 
+
 		if (session && switch_core_session_running(session)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Re-Entering Call State Received!\n");
             goto done;
@@ -3039,6 +3040,19 @@ static void sip_i_state(int status,
 					nua_respond(nh, SIP_488_NOT_ACCEPTABLE, 
 								TAG_END());
 				}
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "3PCC Invite\n");
+				switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_3PCC");
+				set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
+
+				nua_respond(tech_pvt->nh, SIP_200_OK, 
+							SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+							SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+							SOATAG_AUDIO_AUX("cn telephone-event"),
+							NUTAG_INCLUDE_EXTRA_SDP(1),
+							TAG_END());
+
+				goto done;
 			}
 		}
 
