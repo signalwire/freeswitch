@@ -63,6 +63,7 @@ struct shout_context {
     switch_file_t *fd;
     FILE *fp;
     int samplerate;
+    uint8_t thread_running;
 };
 
 typedef struct shout_context shout_context_t;
@@ -73,7 +74,7 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes);
 static inline void free_context(shout_context_t *context)
 {
     if (context) {
-        int sanity = 0;
+        context->err++;
 
         if (context->fd) {
             switch_file_close(context->fd);
@@ -108,15 +109,12 @@ static inline void free_context(shout_context_t *context)
             lame_close(context->gfp);
             context->gfp = NULL;
         }
-        if (context->stream_url) {
-            int err;
 
-            switch_mutex_lock(context->audio_mutex);
-            err = ++context->err;
-            switch_mutex_unlock(context->audio_mutex);
-            
-            while(context->err == err) {
-                switch_yield(1000000);
+        if (context->stream_url) {
+            int sanity = 0;
+        
+            while(context->thread_running) {
+                switch_yield(500000);
                 if (++sanity > 10) {
                     break;
                 }
@@ -235,6 +233,7 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
         outlen = (int) sizeof(context->decode_buf);
         usedlen = 0;
         x =  0;
+
         if (inlen < bytes) {
             done = 1;
         }
@@ -296,7 +295,7 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
         }
     }
 
-    if (switch_buffer_inuse(context->audio_buffer) >= bytes) {
+    if (done || switch_buffer_inuse(context->audio_buffer) >= bytes) {
         rb = switch_buffer_read(context->audio_buffer, data, bytes);
         return rb;
     }
@@ -311,6 +310,7 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 
 }
 
+#define error_check() if (context->err) goto error;
 
 static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
@@ -324,20 +324,42 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
     char *out;
     int outlen;
     int usedlen;
-
-
+    uint32_t used, buf_size = 1024 * 64;
+    
     in = ptr;
     inlen = realsize;
     out = context->decode_buf;
     outlen = sizeof(context->decode_buf);
     usedlen = 0;
 
+    error_check();
+    
+    /* make sure we aren't over zealous by slowing down the stream when the buffer is too full */
+    for(;;) { 
+        error_check();
+
+        switch_mutex_lock(context->audio_mutex);
+        if (!context->audio_buffer) {
+            context->err++;
+            break;
+        }
+
+        used = switch_buffer_inuse(context->audio_buffer);
+        switch_mutex_unlock(context->audio_mutex);
+
+        if (used < buf_size) {
+            break;
+        }
+
+        switch_yield(1000000);
+    }
+
+    error_check();
+
     do {
         decode_status = decodeMP3(&context->mp, in, inlen, out, outlen, &dlen);
 
-        if (context->err) {
-            goto error;
-        }
+        error_check();
 
         if (!x) {
             in = NULL;
@@ -415,6 +437,7 @@ static void *SWITCH_THREAD_FUNC stream_thread(switch_thread_t *thread, void *obj
     switch_mutex_lock(context->audio_mutex);
     context->err++;
     switch_mutex_unlock(context->audio_mutex);
+    context->thread_running = 0;
     return NULL;
 }
 
@@ -422,7 +445,12 @@ static void launch_stream_thread(shout_context_t *context)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
-	
+
+	if (context->err) {
+        return;
+    }
+    
+    context->thread_running = 1;
 	switch_threadattr_create(&thd_attr, context->memory_pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
@@ -473,7 +501,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, char *path)
 
         lame_set_num_channels(context->gfp, handle->channels);
         lame_set_in_samplerate(context->gfp, handle->samplerate);
-        lame_set_brate(context->gfp, 24);
+        lame_set_brate(context->gfp, 64);
         lame_set_mode(context->gfp, 3);
         lame_set_quality(context->gfp, 2);   /* 2=high  5 = medium  7=low */
         
@@ -548,7 +576,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, char *path)
                 goto error;
             }
 
-            if (shout_set_audio_info(context->shout, "bitrate", "24000") != SHOUTERR_SUCCESS) {
+            if (shout_set_audio_info(context->shout, "bitrate", "64000") != SHOUTERR_SUCCESS) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting user: %s\n", shout_get_error(context->shout));
                 goto error;
             }
@@ -563,6 +591,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, char *path)
                 goto error;
             }
         } else {
+            handle->seekable = 1;
             /* lame being lame and all has FILE * coded into it's API for some functions so we gotta use it */
             if (!(context->fp = fopen(path, "wb+"))) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", path);
@@ -571,8 +600,12 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, char *path)
         }
     }
 
+    handle->samples = 0;
+    handle->format = 0;
+    handle->sections = 0;
+    handle->speed = 0;
 	handle->private_info = context;
-
+    
 	return SWITCH_STATUS_SUCCESS;
     
  error:
@@ -588,7 +621,6 @@ static switch_status_t shout_file_close(switch_file_handle_t *handle)
 {
 	shout_context_t *context = handle->private_info;
 
-    
     free_context(context);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -596,10 +628,26 @@ static switch_status_t shout_file_close(switch_file_handle_t *handle)
 
 static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
 {
-	//shout_context_t *context = handle->private_info;
-	
-	return SWITCH_STATUS_FALSE;
+	shout_context_t *context = handle->private_info;
 
+    if (handle->handler) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot seek on a stream.\n");
+        return SWITCH_STATUS_FALSE;
+    } else {
+        switch_mutex_lock(context->audio_mutex);
+        if (context->audio_buffer) {
+            if (context->fd) {
+                switch_file_seek(context->fd, whence, &samples);
+            } else if (context->fp) {
+                *cur_sample = fseek(context->fp, *cur_sample, whence);
+            }
+            switch_buffer_zero(context->audio_buffer);
+        } else {
+            context->err++;
+        }
+        switch_mutex_unlock(context->audio_mutex);
+        return SWITCH_STATUS_SUCCESS;
+    }
 }
 
 static switch_status_t shout_file_read(switch_file_handle_t *handle, void *data, size_t *len)
