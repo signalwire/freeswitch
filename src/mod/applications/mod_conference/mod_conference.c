@@ -1724,22 +1724,30 @@ static void conference_loop_output(conference_member_t *member)
 /* Sub-Routine called by a record entity inside a conference */
 static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *thread, void *obj)
 {
-	switch_frame_t write_frame = {0};
 	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	switch_file_handle_t fh = {0};
 	conference_member_t smember = {0}, *member;
 	conference_record_t *rec = (conference_record_t *) obj;
 	conference_obj_t *conference = rec->conference;
 	uint32_t samples = switch_bytes_per_frame(conference->rate, conference->interval);
-	uint32_t bytes = samples * 2;
-	uint32_t mux_used;
+	//uint32_t bytes = samples * 2;
+	uint32_t low_count = 0, mux_used;
 	char *vval;
+	switch_timer_t timer = {0};
+	uint32_t rlen;
 
 	if (switch_thread_rwlock_tryrdlock(conference->rwlock) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Fail\n");
 		return NULL;
 	}
 
+	if (switch_core_timer_init(&timer, conference->timer_name, conference->interval, samples, rec->pool) == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer success interval: %u  samples: %u\n", conference->interval, samples);	
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer Setup Failed.  Conference Cannot Start\n");	
+		return NULL;
+	}
+	
 	switch_mutex_lock(globals.hash_mutex);
 	globals.threads++;
 	switch_mutex_unlock(globals.hash_mutex);		
@@ -1747,9 +1755,6 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	member = &smember;
 
 	member->flags = MFLAG_CAN_HEAR | MFLAG_NOCHANNEL | MFLAG_RUNNING;
-
-	write_frame.data = data;
-	write_frame.buflen = sizeof(data);
 
 	member->conference = conference;
 	member->native_rate = conference->rate;
@@ -1796,29 +1801,45 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	}
 
 	while(switch_test_flag(member, MFLAG_RUNNING) && switch_test_flag(conference, CFLAG_RUNNING) && conference->count) {
-		if ((mux_used = (uint32_t) switch_buffer_inuse(member->mux_buffer)) >= bytes) {
+		mux_used = (uint32_t) switch_buffer_inuse(member->mux_buffer);
+
+		if (switch_test_flag(member, MFLAG_FLUSH_BUFFER)) {
+			if (mux_used) {
+				switch_mutex_lock(member->audio_out_mutex);
+				switch_buffer_zero(member->mux_buffer);
+				switch_mutex_unlock(member->audio_out_mutex);
+				mux_used = 0;
+			}
+			switch_clear_flag_locked(member, MFLAG_FLUSH_BUFFER);
+		}
+
+		if (mux_used) {
 			/* Flush the output buffer and write all the data (presumably muxed) to the file */
 			switch_mutex_lock(member->audio_out_mutex);
-			write_frame.data = data;
-			while ((write_frame.datalen = (uint32_t)switch_buffer_read(member->mux_buffer, write_frame.data, mux_used))) {
+			low_count = 0;
+			
+			if ((rlen = (uint32_t)switch_buffer_read(member->mux_buffer, data, sizeof(data)))) {
 				if (!switch_test_flag((&fh), SWITCH_FILE_PAUSE)) {
-					switch_size_t len = (switch_size_t) mux_used / 2;
-					switch_core_file_write(&fh, write_frame.data, &len);
+					switch_size_t len = (switch_size_t) rlen / sizeof(int16_t);
+					if (switch_core_file_write(&fh, data, &len) != SWITCH_STATUS_SUCCESS) {
+						goto end;
+					}
 				}
 			}
 			switch_mutex_unlock(member->audio_out_mutex);
 		} else {
-			switch_yield(20000);
+			switch_core_timer_next(&timer);
 		}
 	} /* Rinse ... Repeat */
 
  end:
 
+	switch_core_timer_destroy(&timer);
 	conference_del_member(conference, member);
 	switch_buffer_destroy(&member->audio_buffer);
 	switch_buffer_destroy(&member->mux_buffer);
 	switch_clear_flag_locked(member, MFLAG_RUNNING);
-	if (fh.fd) {
+	if (switch_test_flag((&fh), SWITCH_FILE_OPEN)) {
 		switch_core_file_close(&fh);
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recording Stopped\n");
@@ -2293,7 +2314,6 @@ static void conference_list(conference_obj_t *conference, switch_stream_handle_t
         uint32_t count = 0;
 
         if (switch_test_flag(member, MFLAG_NOCHANNEL)) {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "continue\n");
             continue;
         }
 

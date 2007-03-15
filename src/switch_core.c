@@ -1025,7 +1025,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh,
 	switch_status_t status;
 	char stream_name[128] = "";
 	char *rhs = NULL;
-
+	
 	if ((rhs = strstr(file_path, SWITCH_URL_SEPARATOR))) {
 		switch_copy_string(stream_name, file_path, (rhs+1) - file_path);
 		ext = stream_name;
@@ -1069,7 +1069,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh,
 		fh->channels = 1;
 	}
 
-	return fh->file_interface->file_open(fh, file_path);
+	if ((status = fh->file_interface->file_open(fh, file_path)) == SWITCH_STATUS_SUCCESS) {
+		switch_set_flag(fh, SWITCH_FILE_OPEN);
+	}
+
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, void *data, switch_size_t *len)
@@ -1113,7 +1117,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(switch_file_handle_t
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 {
+	switch_clear_flag(fh, SWITCH_FILE_OPEN);
 	return fh->file_interface->file_close(fh);
+
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_directory_open(switch_directory_handle_t *dh, 
