@@ -1109,7 +1109,8 @@ SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *te
 /*! 
   \brief Open a media file using file format modules
   \param fh a file handle to use
-  \param codec_imp the codec implementation being used
+  \param channels the number of channels
+  \param rate the sample rate
   \param file_path the path to the file
   \param flags read/write flags
   \param pool the pool to use (NULL for new pool)
@@ -1117,8 +1118,9 @@ SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *te
   \note the loadable module used is chosen based on the file extension
 */
 SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh, 
-													  const switch_codec_implementation_t *codec_imp,
 													  char *file_path, 
+													  uint8_t channels,
+													  uint32_t rate,
 													  unsigned int flags,
 													  switch_memory_pool_t *pool);
 /*! 

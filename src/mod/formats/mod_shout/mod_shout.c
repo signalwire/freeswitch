@@ -440,8 +440,12 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, char *path)
 		return SWITCH_STATUS_MEMERR;
 	}
 
+    if (!handle->samplerate) {
+        handle->samplerate = 8000;
+    }
+
     context->memory_pool = handle->memory_pool;
-    context->samplerate = handle->codec_imp ? handle->codec_imp->samples_per_second : 8000;
+    context->samplerate = handle->samplerate;
     
     if (switch_test_flag(handle, SWITCH_FILE_FLAG_READ)) {
         if (switch_buffer_create_dynamic(&context->audio_buffer, MY_BLOCK_SIZE, MY_BUF_LEN, 0) != SWITCH_STATUS_SUCCESS) {

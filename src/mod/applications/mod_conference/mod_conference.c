@@ -1781,8 +1781,9 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	}
 
 	if (switch_core_file_open(&fh, 
-							  NULL,
 							  rec->path, 
+							  conference->rate,
+							  1,
 							  SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, 
 							  rec->pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s]\n", rec->path);
@@ -1958,8 +1959,9 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 
     /* Open the file */
     if (switch_core_file_open(&fnode->fh, 
-							  NULL,
                               file, 
+							  conference->rate,
+							  1,
                               SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, 
                               pool) != SWITCH_STATUS_SUCCESS) {
         switch_core_destroy_memory_pool(&pool);
@@ -2044,8 +2046,9 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 
         /* Open the file */
         if (switch_core_file_open(&fnode->fh, 
-								  switch_core_session_get_read_codec(member->session)->implementation,
                                   file, 
+								  conference->rate,
+								  1,
                                   SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, 
                                   pool) != SWITCH_STATUS_SUCCESS) {
             switch_core_destroy_memory_pool(&pool);

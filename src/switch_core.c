@@ -1012,11 +1012,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 	}
 
 	return SWITCH_STATUS_SUCCESS;
-}
+ }
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh, 
-													  const switch_codec_implementation_t *codec_imp,
 													  char *file_path, 
+													  uint8_t channels,
+													  uint32_t rate,
 													  unsigned int flags,
 													  switch_memory_pool_t *pool)
 {
@@ -1056,8 +1057,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh,
 		fh->handler = switch_core_strdup(fh->memory_pool, rhs);
 	}
 
-	fh->codec_imp = codec_imp;
+	if (rate) {
+		fh->samplerate = rate;
+	} else {
+		rate = 8000;
+	}
 	
+	if (channels) {
+		fh->channels = channels;
+	} else {
+		fh->channels = 1;
+	}
+
 	return fh->file_interface->file_open(fh, file_path);
 }
 
