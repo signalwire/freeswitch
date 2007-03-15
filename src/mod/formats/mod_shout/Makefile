@@ -14,12 +14,16 @@ SHOUTLA=$(SHOUT_DIR)/src/libshout.la
 LOCAL_CFLAGS=-I$(SHOUT_DIR)/include -I$(LAME_DIR)/include
 LOCAL_LIBADD=$(LAMELA) $(SHOUTLA)
 
+MP3SOURCES=common.c dct64_i386.c decode_ntom.c layer3.c tabinit.c interface.c
 MP3OBJS=common.o dct64_i386.o decode_ntom.o layer3.o tabinit.o interface.o
 LOCAL_OBJS=$(MP3OBJS)
+LOCAL_SOURCES=$(MP3SOURCES)
 
 include $(switch_srcdir)/build/modmake.rules
 
 DEFAULT_ARGS=--prefix=$(PREFIX) --disable-shared --with-pic
+
+$(LOCAL_OBJS): $(LOCAL_SOURCES)
 
 $(LAME_DIR)/Makefile:
 	$(GETLIB) $(LAME).tar.gz
