@@ -1,12 +1,9 @@
-# define these targets in your makefile if you wish
-# local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
-
-# and define these variables to impact your build
 MODNAME=mod_gsm
+BASE=../../../..
+GSMLA=$(BASE)/libs/codec/gsm/libgsm.la
 LOCAL_CFLAGS=-I$(BASE)/libs/codec/gsm/inc
-LOCAL_LDFLAGS=$(BASE)/libs/codec/gsm/libgsm.la
-LOCAL_OBJS=
-include ../../../../build/modmake.rules
+LOCAL_LIBADD=$(GSMLA)
+include $(BASE)/build/modmake.rules
 
-local_depend:
+$(GSMLA):
 	cd $(BASE)/libs/codec/gsm && $(MAKE)

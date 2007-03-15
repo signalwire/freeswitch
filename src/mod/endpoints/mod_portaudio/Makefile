@@ -1,19 +1,20 @@
-# define these targets in your makefile if you wish
-# local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 BASE=../../../..
 OSARCH=$(shell uname -s)
-# and define these variables to impact your build
 MODNAME=mod_portaudio
+BASE=../../../..
+
+PALA=$(BASE)/libs/portaudio/lib/libportaudio.la
 LOCAL_CFLAGS=-I. -I$(BASE)/libs/portaudio/include
-LOCAL_LDFLAGS=$(BASE)/libs/portaudio/lib/libportaudio.la
+LOCAL_LDFLAGS=
 ifeq ($(OSARCH),Darwin)
 LOCAL_LDFLAGS += -framework CoreAudio -framework AudioToolbox -framework AudioUnit -framework Carbon
 endif
+LOCAL_LIBADD=$(PALA)
 LOCAL_OBJS=pablio.o pa_ringbuffer.o
 
-include ../../../../build/modmake.rules
+include $(BASE)/build/modmake.rules
 
-local_depend:
+$(PALA):
 	cd $(BASE)/libs/portaudio && $(MAKE)
 
 pa_ringbuffer.o: pa_ringbuffer.c

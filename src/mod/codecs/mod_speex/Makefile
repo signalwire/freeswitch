@@ -3,10 +3,17 @@
 
 # and define these variables to impact your build
 MODNAME=mod_speex
-LOCAL_CFLAGS=-I$(BASE)/libs/speex/include
-LOCAL_LDFLAGS=$(BASE)/libs/speex/libspeex/libspeex.la
-LOCAL_OBJS=
-include ../../../../build/modmake.rules
 
-local_depend:
+BASE=../../../..
+
+SPEEXLA=$(BASE)/libs/speex/libspeex/libspeex.la
+
+LOCAL_CFLAGS=-I$(BASE)/libs/speex/include
+LOCAL_LDFLAGS=$(SPEEXLA)
+LOCAL_OBJS=
+include $(BASE)/build/modmake.rules
+
+local_depend: $(SPEEXLA)
+
+$(SPEEXLA): $(BASE)/libs/speex/stamp-h1
 	cd $(BASE)/libs/speex && $(MAKE)

@@ -1,4 +1,7 @@
 MODNAME=mod_sofia
+
+BASE=../../../..
+
 OS_ARCH         := $(subst /,_,$(shell uname -s | sed /\ /s//_/))
 
 LOCAL_CFLAGS  = -I. -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/bnf  -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/features
@@ -11,7 +14,9 @@ LOCAL_CFLAGS += -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/soa -I$(BASE)/libs/sofi
 LOCAL_CFLAGS += -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/stun -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/su
 LOCAL_CFLAGS += -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/tport -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/url
 
-LOCAL_LDFLAGS=$(BASE)/libs/sofia-sip/libsofia-sip-ua/libsofia-sip-ua.la
+SOFIALA=$(BASE)/libs/sofia-sip/libsofia-sip-ua/libsofia-sip-ua.la
+
+LOCAL_LDFLAGS=$(SOFIALA)
 
 ifeq ($(OS_ARCH),Darwin)
 	LOCAL_LDFLAGS +=-framework CoreFoundation -framework SystemConfiguration
@@ -19,5 +24,7 @@ endif
 
 include ../../../../build/modmake.rules
 
-local_depend:
+local_depend: $(SOFIALA)
+
+$(SOFIALA):
 	cd $(BASE)/libs/sofia-sip && $(MAKE)

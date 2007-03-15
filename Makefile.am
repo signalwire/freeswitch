@@ -85,7 +85,7 @@ libfreeswitch_la_LDFLAGS  = -version-info 1:0:0 $(AM_LDFLAGS)
 libfreeswitch_la_LIBADD  = $(CORE_LIBS)
 nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
 
-$(libfreeswitch_la_SOURCES): deps
+$(libfreeswitch_la_SOURCES): $(CORE_LIBS)
 
 MOD_LINK       = $(BASE)/libfreeswitch.la
 
@@ -144,28 +144,14 @@ nodepends: .nodepends
 yesdepends:
 	rm .nodepends
 
-sqlite:
+$(CORE_LIBS):
 	cd libs/sqlite && $(MAKE)
-
-apr:
 	cd libs/apr && $(MAKE)
-
-apr-util:
 	cd libs/apr-util && $(MAKE)
-
-pcre:
 	cd libs/pcre && $(MAKE)
-
-srtp:
 	cd libs/srtp && $(MAKE)
-
-resample:
 	cd libs/libresample && $(MAKE)
-
-teletone:
 	cd libs/libteletone && $(MAKE)
-
-deps: sqlite apr apr-util pcre srtp resample teletone
 
 core: deps libfreeswitch.la  
 

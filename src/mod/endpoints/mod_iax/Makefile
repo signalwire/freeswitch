@@ -3,11 +3,13 @@
 
 # and define these variables to impact your build
 MODNAME=mod_iax
+BASE=../../../..
+IAXLA=$(BASE)/libs/iax/src/libiax.la
 LOCAL_CFLAGS=-I$(BASE)/libs/iax/src
-LOCAL_LDFLAGS=$(BASE)/libs/iax/src/libiax.la
-LOCAL_OBJS=
-include ../../../../build/modmake.rules
+LOCAL_LDFLAGS=
+LOCAL_LIBADD=$(IAXLA)
+include $(BASE)/build/modmake.rules
 
-local_depend:
+$(IAXLA):
 	cd $(BASE)/libs/iax && $(MAKE)
 

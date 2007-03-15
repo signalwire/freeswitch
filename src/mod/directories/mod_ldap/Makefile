@@ -19,5 +19,5 @@ $(LDAP_DIR)/Makefile:
 	$(GETLIB) $(LDAP).tgz
 	cd $(LDAP_DIR) && ./configure $(DEFAULT_ARGS) --disable-bdb --disable-hdb
 
-$(LDAPLA) $(LIBLBERLA): $(LDAP_DIR)/Makefile
+$(LDAPLA) $(LIBLBERLA): $(LDAP_DIR)/Makefile $(LDAP_DIR)/stamp-h
 	cd $(LDAP_DIR) && $(MAKE)

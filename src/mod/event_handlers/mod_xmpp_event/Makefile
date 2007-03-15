@@ -3,10 +3,16 @@
 
 # and define these variables to impact your build
 MODNAME=mod_xmpp_event
-LOCAL_CFLAGS=-I$(BASE)/libs/iksemel/include
-LOCAL_LDFLAGS=$(BASE)/libs/iksemel/src/libiksemel.la
-LOCAL_OBJS=
-include ../../../../build/modmake.rules
+BASE=../../../..
 
-local_depend:
+IKSEMELLA=$(BASE)/libs/iksemel/src/libiksemel.la
+
+LOCAL_CFLAGS=-I$(BASE)/libs/iksemel/include
+LOCAL_LDFLAGS=$(IKSEMELA)
+LOCAL_OBJS=
+include $(BASE)/build/modmake.rules
+
+local_depend: $(IKSEMELLA)
+
+$(IKSEMELLA):
 	cd $(BASE)/libs/iksemel && $(MAKE)

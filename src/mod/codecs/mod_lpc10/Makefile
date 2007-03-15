@@ -1,12 +1,9 @@
-# define these targets in your makefile if you wish
-# local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
-
-# and define these variables to impact your build
 MODNAME=mod_lpc10
+BASE=../../../..
+LPC10LA=$(BASE)/libs/codec/lpc10/liblpc10.la
 LOCAL_CFLAGS=-I$(BASE)/libs/codec/lpc10/src
-LOCAL_LDFLAGS=$(BASE)/libs/codec/lpc10/liblpc10.la
-LOCAL_OBJS=
-include ../../../../build/modmake.rules
+LOCAL_LIBADD=$(LPC10LA)
+include $(BASE)/build/modmake.rules
 
-local_depend:
+$(LPC10LA):
 	cd $(BASE)/libs/codec/lpc10 && $(MAKE)

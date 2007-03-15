@@ -3,16 +3,28 @@
 
 # and define these variables to impact your build
 MODNAME=mod_dingaling
-LOCAL_CFLAGS=-I$(BASE)/libs/libdingaling/src
-LOCAL_LDFLAGS=$(BASE)/libs/libdingaling/libdingaling.la
-LOCAL_OBJS=
-include ../../../../build/modmake.rules
+BASE=../../../..
 
-local_depend:
+IKSEMELLA=$(BASE)/libs/iksemel/src/libiksemel.la
+DINGLA=$(BASE)/libs/libdingaling/libdingaling.la
+
+LOCAL_CFLAGS=-I$(BASE)/libs/libdingaling/src
+LOCAL_LDFLAGS=
+LOCAL_OBJS=
+LOCAL_LIBADD=$(DINGLA)
+
+include $(BASE)/build/modmake.rules
+
+INST_DINGLA=$(PREFIX)/lib/libdingaling.la
+
+$(IKSEMELLA):
 	cd $(BASE)/libs/iksemel && $(MAKE)
+
+$(DINGLA): $(IKSEMELLA)
 	cd $(BASE)/libs/libdingaling && $(MAKE)
 
-depend_install:
-	cd $(BASE)/libs/iksemel && $(MAKE) install
+depend_install: $(INST_DINGLA)
+
+$(INST_DINGLA): $(DINGLA)
 	cd $(BASE)/libs/libdingaling && $(MAKE) install
 
