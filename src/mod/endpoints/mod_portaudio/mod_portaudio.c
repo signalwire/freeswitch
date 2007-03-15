@@ -225,6 +225,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
             switch_set_flag_locked((&globals), GFLAG_RING);
             if (ring_file) {
                 if (switch_core_file_open(&fh,
+										  globals.read_codec.implementation,
                                           ring_file,
                                           SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
                                           NULL) == SWITCH_STATUS_SUCCESS) {
@@ -588,6 +589,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
                 }
 
                 if (switch_core_file_open(&tech_pvt->fh,
+										  globals.read_codec.implementation,
                                           tech_pvt->hold_file,
                                           SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
                                           switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {

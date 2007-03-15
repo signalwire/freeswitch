@@ -390,6 +390,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 
 	if (switch_core_file_open(fh,
+							  read_codec->implementation,
 							  file,
 							  SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT,
 							  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
@@ -628,6 +629,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 
 
     if (switch_core_file_open(fh,
+							  read_codec->implementation,
                               file,
                               SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT,
                               switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
@@ -1155,6 +1157,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	}
 	
 	if (switch_core_file_open(fh,
+							  read_codec->implementation,
 							  file,
 							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
 							  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
@@ -2854,6 +2857,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							ringback.fhb.channels = read_codec->implementation->number_of_channels;
 							ringback.fhb.samplerate = read_codec->implementation->samples_per_second;
 							if (switch_core_file_open(&ringback.fhb,
+													  read_codec->implementation,
 													  ringback_data,
 													  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
 													  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {

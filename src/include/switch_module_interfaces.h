@@ -311,6 +311,8 @@ struct switch_file_handle {
 	switch_memory_pool_t *memory_pool;
 	/*! private data for the format module to store handle specific info */
 	void *private_info;
+	char *handler;
+	const switch_codec_implementation_t *codec_imp;
 	int64_t pos;
 	switch_buffer_t *audio_buffer;
     uint32_t thresh;

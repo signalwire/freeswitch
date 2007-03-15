@@ -1014,8 +1014,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh, char *file_path, unsigned int flags,
-													switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh, 
+													  const switch_codec_implementation_t *codec_imp,
+													  char *file_path, 
+													  unsigned int flags,
+													  switch_memory_pool_t *pool)
 {
 	char *ext;
 	switch_status_t status;
@@ -1049,6 +1052,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh, 
 		switch_set_flag(fh, SWITCH_FILE_FLAG_FREE_POOL);
 	}
 
+	if (rhs) {
+		fh->handler = switch_core_strdup(fh->memory_pool, rhs);
+	}
+
+	fh->codec_imp = codec_imp;
+	
 	return fh->file_interface->file_open(fh, file_path);
 }
 
