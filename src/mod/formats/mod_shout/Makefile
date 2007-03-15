@@ -34,7 +34,7 @@ $(LAMELA): $(LAME_DIR)/Makefile
 
 $(SHOUT_DIR)/Makefile:
 	$(GETLIB) $(SHOUT).tar.gz
-	cd $(SHOUT_DIR) && ./configure $(DEFAULT_ARGS)
+	cd $(SHOUT_DIR) && ./configure $(DEFAULT_ARGS) --with-speex=no
 
 $(SHOUTLA): $(SHOUT_DIR)/Makefile
 	cd $(SHOUT_DIR) && $(MAKE)
