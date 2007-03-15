@@ -1,5 +1,7 @@
 MODNAME=mod_spidermonkey_teletone
+switch_srcdir=../../../..
+LOCAL_CFLAGS=-I$(switch_srcdir)/libs/libteletone/src
+LOCAL_LDFLAGS=
+LOCAL_LIBADD=$(switch_srcdir)/libs/libteletone/libteletone.la
 include ../mod_spidermonkey/sm.mak
-LOCAL_CFLAGS+=-I$(BASE)/libs/libteletone/src
-LOCAL_LDFLAGS+=$(BASE)/libs/libteletone/libteletone.la
-include ../../../../build/modmake.rules
+

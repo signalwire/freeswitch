@@ -1,15 +1,17 @@
 MODNAME=mod_spidermonkey
-include sm.mak
 WANT_CURL=yes
-include ../../../../build/modmake.rules
 
-local_depend:
-	cd $(BASE)/libs/curl && $(MAKE)
-	cd $(BASE)/libs/js/nsprpub && $(MAKE)
-	cd $(BASE)/libs/js && $(MAKE)
+LOCAL_CFLAGS=
+LOCAL_LDFLAGS=
+LOCAL_LIBADD=
 
-depend_install:
-	cd $(BASE)/libs/js/nsprpub && $(MAKE) install
-	cd $(BASE)/libs/js && $(MAKE) install
-	$(LINK) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LIBS) $(LOCAL_LDFLAGS) $(LOCAL_OBJS)
+include sm.mak
+
+depend_install: $(DESTDIR)$(PREFIX)/lib/libjs.la
+
+$(DESTDIR)$(PREFIX)/lib/libjs.la: $(JS_DIR)/nsprpub/pr/src/libnspr4.so $(JS_DIR)/nsprpub/lib/ds/libplds4.so $(JS_DIR)/nsprpub/lib/libc/src/libplc4.so $(JS_DIR)/libjs.la
+	cd $(JS_DIR)/nsprpub/pr/src && $(INSTALL) libnspr4.so $(DESTDIR)$(PREFIX)/lib
+	cd $(JS_DIR)/nsprpub/lib/ds && $(INSTALL) libplds4.so $(DESTDIR)$(PREFIX)/lib
+	cd $(JS_DIR)/nsprpub/lib/libc/src && $(INSTALL) libplc4.so $(DESTDIR)$(PREFIX)/lib 
+	cd $(JS_DIR) && $(LTINSTALL) libjs.la $(DESTDIR)$(PREFIX)/lib
 

@@ -1,4 +1,7 @@
-include ../mod_spidermonkey/sm.mak
 MODNAME=mod_spidermonkey_skel
-include ../../../../build/modmake.rules
+switch_srcdir=../../../..
+LOCAL_CFLAGS=
+LOCAL_LDFLAGS=
+LOCAL_LIBADD=
+include ../mod_spidermonkey/sm.mak
 

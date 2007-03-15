@@ -1,14 +1,16 @@
-include ../mod_spidermonkey/sm.mak
-# define these targets in your makefile if you wish
-# local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
-
-# and define these variables to impact your build
 MODNAME=mod_spidermonkey_etpan
-#LOCAL_CFLAGS=
-LOCAL_LDFLAGS+=-letpan
-#LOCAL_OBJS=
-include ../../../../build/modmake.rules
 
-local_depend:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install libetpan --prefix=$(PREFIX)
+switch_srcdir=../../../..
+
+ETPAN_DIR=$(switch_srcdir)/libs/libetpan
+ETPANLA=$(ETPAN_DIR)/src/libetpan.la
+
+LOCAL_CFLAGS=-I$(ETPAN_DIR)/include
+LOCAL_LDFLAGS=
+LOCAL_LIBADD=$(ETPANLA)
+
+include ../mod_spidermonkey/sm.mak
+
+$(ETPANLA):
+	cd $(ETPAN_DIR) && $(MAKE)
 
