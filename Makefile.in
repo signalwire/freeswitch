@@ -289,7 +289,7 @@ target_alias = @target_alias@
 uint64_t_fmt = @uint64_t_fmt@
 voidp_size = @voidp_size@
 EXTRA_DIST = 
-SUBDIRS = . src/mod
+SUBDIRS = . src
 AUTOMAKE_OPTS = foreign
 NAME = freeswitch
 PREFIX = $(prefix)
@@ -297,7 +297,7 @@ AM_CFLAGS = $(SWITCH_AM_CFLAGS) $(am__append_1)
 AM_CPPFLAGS = $(SWITCH_AM_CXXFLAGS)
 AM_LDFLAGS = $(SWITCH_AM_LDFLAGS)
 BASE = $(switch_srcdir)
-OSARCH = $(shell uname -s)
+OSARCH = `uname -s`
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
 libfreeswitch_la_SOURCES = \
 src/switch_apr.c \
@@ -346,9 +346,9 @@ src/include/switch_stun.h\
 src/include/switch_log.h\
 src/include/switch_xml.h
 
-CORE_CFLAGS = $(shell $(switch_srcdir)/libs/apr/apr-1-config --cflags \
-	--cppflags --includes) $(shell \
-	$(switch_srcdir)/libs/apr-util/apu-1-config --includes) \
+CORE_CFLAGS = `$(switch_srcdir)/libs/apr/apr-1-config --cflags \
+	--cppflags --includes` \
+	`$(switch_srcdir)/libs/apr-util/apu-1-config --includes` \
 	-I$(switch_srcdir)/libs/sqlite -I$(switch_srcdir)/libs/pcre \
 	-I$(switch_srcdir)/libs/srtp/include \
 	-I$(switch_srcdir)/libs/srtp/crypto/include \
@@ -1085,7 +1085,7 @@ uninstall-info: uninstall-info-recursive
 	uninstall-libLTLIBRARIES uninstall-library_includeHEADERS
 
 
-$(libfreeswitch_la_SOURCES): $(CORE_LIBS)
+$(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(library_include_HEADERS)
 
 install-data-local:
 	@echo Installing $(NAME)
@@ -1142,7 +1142,7 @@ $(CORE_LIBS):
 	cd libs/libresample && $(MAKE)
 	cd libs/libteletone && $(MAKE)
 
-core: deps libfreeswitch.la  
+core: $(CORE_LIBS) libfreeswitch.la  
 
 install_core: install-libLTLIBRARIES
 

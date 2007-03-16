@@ -25769,7 +25769,7 @@ else
 fi
 
 
-                                                  ac_config_files="$ac_config_files Makefile src/mod/Makefile src/include/switch_am_config.h build/getlib.sh build/modmake.rules"
+                                                            ac_config_files="$ac_config_files Makefile src/Makefile src/mod/Makefile src/include/switch_am_config.h build/getlib.sh build/modmake.rules"
 
 
 
@@ -26493,6 +26493,7 @@ do
   case "$ac_config_target" in
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+  "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "src/mod/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/mod/Makefile" ;;
   "src/include/switch_am_config.h" ) CONFIG_FILES="$CONFIG_FILES src/include/switch_am_config.h" ;;
   "build/getlib.sh" ) CONFIG_FILES="$CONFIG_FILES build/getlib.sh" ;;

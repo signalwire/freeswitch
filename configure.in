@@ -291,6 +291,7 @@ AC_ARG_ENABLE(crash-protection,
 AM_CONDITIONAL([CRASHPROT],[test "x$enable_crash_prot" != "xno"])
 
 AC_CONFIG_FILES([Makefile
+                src/Makefile
                 src/mod/Makefile
                 src/include/switch_am_config.h
                 build/getlib.sh

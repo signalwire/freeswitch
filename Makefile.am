@@ -1,5 +1,5 @@
 EXTRA_DIST =
-SUBDIRS = . src/mod
+SUBDIRS = . src
 AUTOMAKE_OPTS = foreign
 NAME=freeswitch
 PREFIX=$(prefix)
@@ -8,7 +8,7 @@ AM_CFLAGS   = $(SWITCH_AM_CFLAGS)
 AM_CPPFLAGS = $(SWITCH_AM_CXXFLAGS)
 AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS)
 BASE        = $(switch_srcdir)
-OSARCH=$(shell uname -s)
+OSARCH=`uname -s`
 
 LIBTOOL=$(switch_builddir)/libtool
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
@@ -65,8 +65,8 @@ src/include/switch_stun.h\
 src/include/switch_log.h\
 src/include/switch_xml.h
 
-CORE_CFLAGS     = $(shell $(switch_srcdir)/libs/apr/apr-1-config --cflags --cppflags --includes)
-CORE_CFLAGS    += $(shell $(switch_srcdir)/libs/apr-util/apu-1-config --includes)
+CORE_CFLAGS     = `$(switch_srcdir)/libs/apr/apr-1-config --cflags --cppflags --includes`
+CORE_CFLAGS    += `$(switch_srcdir)/libs/apr-util/apu-1-config --includes`
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/sqlite
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/pcre
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/include
@@ -85,7 +85,7 @@ libfreeswitch_la_LDFLAGS  = -version-info 1:0:0 $(AM_LDFLAGS)
 libfreeswitch_la_LIBADD  = $(CORE_LIBS)
 nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
 
-$(libfreeswitch_la_SOURCES): $(CORE_LIBS)
+$(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(library_include_HEADERS)
 
 MOD_LINK       = $(BASE)/libfreeswitch.la
 
@@ -153,7 +153,7 @@ $(CORE_LIBS):
 	cd libs/libresample && $(MAKE)
 	cd libs/libteletone && $(MAKE)
 
-core: deps libfreeswitch.la  
+core: $(CORE_LIBS) libfreeswitch.la  
 
 install_core: install-libLTLIBRARIES
 
