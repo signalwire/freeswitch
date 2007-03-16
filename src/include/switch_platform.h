@@ -101,6 +101,10 @@ typedef  int         gid_t;
 #include <io.h>
 #define strcasecmp(s1, s2) stricmp(s1, s2)
 #define strncasecmp(s1, s2, n) strnicmp(s1, s2, n)
+#ifndef snprintf
+#define snprintf _snprintf
+#endif
+
 #else
 /* packed attribute */
 #ifndef PACKED
@@ -199,31 +203,31 @@ typedef  intptr_t	switch_ssize_t;
 #ifdef WIN32
 
 #ifdef WIN64
-#define SWITCH_SSIZE_T_FMT          "%I64d"
-#define SWITCH_SIZE_T_FMT           "%I64d"
+#define SWITCH_SSIZE_T_FMT          "I64d"
+#define SWITCH_SIZE_T_FMT           "I64d"
 #else
-#define SWITCH_SSIZE_T_FMT          "%d"
-#define SWITCH_SIZE_T_FMT           "%d"
+#define SWITCH_SSIZE_T_FMT          "d"
+#define SWITCH_SIZE_T_FMT           "d"
 #endif
 
-#define SWITCH_INT64_T_FMT          "%I64d"
-#define SWITCH_UINT64_T_FMT         "%I64u"
+#define SWITCH_INT64_T_FMT          "I64d"
+#define SWITCH_UINT64_T_FMT         "I64u"
 
 #else
 #ifndef SWITCH_SSIZE_T_FMT
-#define SWITCH_SSIZE_T_FMT          (sizeof (switch_ssize_t) == sizeof (long) ? "%ld" : sizeof (switch_ssize_t) == sizeof (int) ? "%d" : "%lld")
+#define SWITCH_SSIZE_T_FMT          (sizeof (switch_ssize_t) == sizeof (long) ? "ld" : sizeof (switch_ssize_t) == sizeof (int) ? "d" : "lld")
 #endif
 
 #ifndef SWITCH_SIZE_T_FMT
-#define SWITCH_SIZE_T_FMT           (sizeof (switch_size_t) == sizeof (long) ? "%lu" : sizeof (switch_size_t) == sizeof (int) ? "%u" : "%llu")
+#define SWITCH_SIZE_T_FMT           (sizeof (switch_size_t) == sizeof (long) ? "lu" : sizeof (switch_size_t) == sizeof (int) ? "u" : "llu")
 #endif
 
 #ifndef SWITCH_INT64_T_FMT
-#define SWITCH_INT64_T_FMT          (sizeof (long) == 8 ? "%ld" : "%lld")
+#define SWITCH_INT64_T_FMT          (sizeof (long) == 8 ? "ld" : "lld")
 #endif
 
 #ifndef SWITCH_UINT64_T_FMT
-#define SWITCH_UINT64_T_FMT         (sizeof (long) == 8 ? "%lu" : "%llu")
+#define SWITCH_UINT64_T_FMT         (sizeof (long) == 8 ? "lu" : "llu")
 #endif
 
 #endif

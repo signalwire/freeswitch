@@ -131,10 +131,6 @@ SWITCH_DECLARE(const char *) switch_dso_error(switch_dso_handle_t *dso, char *bu
  * @{
  */
 
-#ifndef snprintf
-#define snprintf switch_snprintf
-#endif
-
 SWITCH_DECLARE(int) switch_snprintf(char *buf, switch_size_t len, const char *format, ...);
 
 SWITCH_DECLARE(int) switch_vasprintf(char **buf, const char *format, va_list ap);
