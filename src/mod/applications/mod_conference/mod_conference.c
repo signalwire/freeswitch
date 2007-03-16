@@ -147,6 +147,7 @@ typedef struct conference_file_node {
 	switch_speech_handle_t sh;
 	node_type_t type;
 	uint8_t done;
+	uint8_t async;
 	switch_memory_pool_t *pool;
 	uint32_t leadin;
 	struct conference_file_node *next;
@@ -197,6 +198,7 @@ typedef struct conference_obj {
 	conference_member_t *members;
     switch_mutex_t *member_mutex;
 	conference_file_node_t *fnode;
+	conference_file_node_t *async_fnode;
 	switch_memory_pool_t *pool;
 	switch_thread_rwlock_t *rwlock;
 	uint32_t count;
@@ -279,7 +281,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *obj);
 static void conference_loop_output(conference_member_t *member);
 static uint32_t conference_stop_file(conference_obj_t *conference, file_stop_t stop);
-static switch_status_t conference_play_file(conference_obj_t *conference, char *file, uint32_t leadin, switch_channel_t *channel);
+static switch_status_t conference_play_file(conference_obj_t *conference, char *file, uint32_t leadin, switch_channel_t *channel, uint8_t async);
 static switch_status_t conference_say(conference_obj_t *conference, const char *text, uint32_t leadin);
 static void conference_list(conference_obj_t *conference, switch_stream_handle_t *stream, char *delim);
 static switch_status_t conf_api_main(char *buf, switch_core_session_t *session, switch_stream_handle_t *stream);
@@ -509,7 +511,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
         }
 
         if (conference->count > 1 && conference->enter_sound) {
-            conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session));
+            conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 0);
         }
 
         // anounce the total number of members in the conference
@@ -518,7 +520,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
             conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
         } else if (conference->count == 1) {
             if (conference->alone_sound) {
-                conference_play_file(conference, conference->alone_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session));
+                conference_play_file(conference, conference->alone_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 0);
             } else {
                 snprintf(msg, sizeof(msg), "You are currently the only person in this conference.", conference->count);
                 conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
@@ -619,10 +621,10 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
             switch_set_flag(conference, CFLAG_DESTRUCT);
         } else { 
             if (conference->exit_sound) {
-                conference_play_file(conference, conference->exit_sound, 0, switch_core_session_get_channel(member->session));
+                conference_play_file(conference, conference->exit_sound, 0, switch_core_session_get_channel(member->session), 0);
             }
             if (conference->count == 1 && conference->alone_sound) {
-                conference_play_file(conference, conference->alone_sound, 0, switch_core_session_get_channel(member->session));
+                conference_play_file(conference, conference->alone_sound, 0, switch_core_session_get_channel(member->session), 0);
             } 
         }
 
@@ -657,6 +659,12 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	uint8_t ready = 0;
 	switch_timer_t timer = {0};
 	switch_event_t *event;
+	uint8_t *file_frame;
+	uint8_t *async_file_frame;
+
+	file_frame = switch_core_alloc(conference->pool, CONF_BUFFER_SIZE);
+	async_file_frame = switch_core_alloc(conference->pool, CONF_BUFFER_SIZE);
+
 
 	if (switch_core_timer_init(&timer, conference->timer_name, conference->interval, samples, conference->pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer success interval: %u  samples: %u\n", conference->interval, samples);	
@@ -670,9 +678,9 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	switch_mutex_unlock(globals.hash_mutex);
 
 	while(globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT)) {
-		uint8_t file_frame[CONF_BUFFER_SIZE] = {0};
 		switch_size_t file_sample_len = samples;
 		switch_size_t file_data_len = samples * 2;
+		int has_file_data = 0;
 
 		/* Sync the conference to a single timing source */
 		if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
@@ -723,6 +731,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		}
 		/* If a file or speech event is being played */
 		if (conference->fnode) {
+			switch_mutex_lock(conference->mutex);
 			/* Lead in time */
 			if (conference->fnode->leadin) {
 				conference->fnode->leadin--;
@@ -749,13 +758,44 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 					conference->fnode->done++;
 				}
 			}
+			has_file_data = 1;
+			
+			switch_mutex_unlock(conference->mutex);
+		} else {
+			has_file_data = 0;
+		}
+
+		if (conference->async_fnode) {
+			switch_core_file_read(&conference->async_fnode->fh, async_file_frame, &file_sample_len);
+
+			if (file_sample_len <= 0) {
+				conference->async_fnode->done++;
+			} else {
+				if (has_file_data) {
+					int x;			
+					for (x = 0; x < file_sample_len; x++) {
+						int32_t z;
+						int16_t *bptr, *muxed;
+						
+						muxed = (int16_t *) file_frame;
+						bptr = (int16_t *) async_file_frame;
+						z = muxed[x] + bptr[x];
+						switch_normalize_to_16bit(z);
+						muxed[x] = (int16_t)z;
+					}
+				} else {
+					memcpy(file_frame, async_file_frame, file_sample_len * 2);
+					has_file_data = 1;
+				}
+			}
+
 		}
 
 		if (ready) {
 			/* Build a muxed frame for every member that contains the mixed audio of everyone else */
 			for (omember = conference->members; omember; omember = omember->next) {
 				omember->len = bytes;
-				if (conference->fnode) {
+				if (has_file_data) {
 					memcpy(omember->mux_frame, file_frame, file_sample_len * 2);
 				} else {
 					memset(omember->mux_frame, 255, bytes);
@@ -820,6 +860,14 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 					switch_mutex_unlock(imember->audio_out_mutex);
 				}
 			}
+		}
+
+		if (conference->async_fnode && conference->async_fnode->done) {
+			switch_memory_pool_t *pool;
+			switch_core_file_close(&conference->async_fnode->fh);
+			pool = conference->async_fnode->pool;
+			conference->async_fnode = NULL;
+			switch_core_destroy_memory_pool(&pool);
 		}
 
 		if (conference->fnode && conference->fnode->done) {
@@ -1835,6 +1883,10 @@ static uint32_t conference_stop_file(conference_obj_t *conference, file_stop_t s
             nptr->done++;
             count++;
         }
+		if (conference->async_fnode) {
+			conference->async_fnode->done++;
+			count++;
+		}
     } else {
         if (conference->fnode) {
             conference->fnode->done++;
@@ -1876,10 +1928,10 @@ static uint32_t conference_member_stop_file(conference_member_t *member, file_st
 }
 
 /* Play a file in the conference room */
-static switch_status_t conference_play_file(conference_obj_t *conference, char *file, uint32_t leadin, switch_channel_t *channel)
+static switch_status_t conference_play_file(conference_obj_t *conference, char *file, uint32_t leadin, switch_channel_t *channel, uint8_t async)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-    conference_file_node_t *fnode, *nptr;
+    conference_file_node_t *fnode, *nptr = NULL;
     switch_memory_pool_t *pool;
     uint32_t count;
     char *dfile = NULL, *expanded = NULL;
@@ -1953,16 +2005,31 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
     }
 
     fnode->pool = pool;
-
+	fnode->async = async;
     /* Queue the node */
     switch_mutex_lock(conference->mutex);
-    for (nptr = conference->fnode; nptr && nptr->next; nptr = nptr->next);
 
-    if (nptr) {
-        nptr->next = fnode;
-    } else {
-        conference->fnode = fnode;
-    }
+	if (async) {
+		if (conference->async_fnode) {
+			nptr = conference->async_fnode;
+		}
+		conference->async_fnode = fnode;
+
+		if (nptr) {
+			switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
+			switch_core_speech_close(&conference->fnode->sh, &flags);
+		}
+		
+	} else {
+		for (nptr = conference->fnode; nptr && nptr->next; nptr = nptr->next);
+		
+		if (nptr) {
+			nptr->next = fnode;
+		} else {
+			conference->fnode = fnode;
+		}
+	}
+
     switch_mutex_unlock(conference->mutex);
 
  done:
@@ -2686,13 +2753,18 @@ static switch_status_t conf_api_sub_play(conference_obj_t *conference, switch_st
 {
     int ret_status = SWITCH_STATUS_GENERR;
     switch_event_t *event;
+	uint8_t async = 0;
 
     assert(conference != NULL);
     assert(stream != NULL);
 
-    
+    if ((argc == 4 && !strcasecmp(argv[3], "async")) || (argc == 5 && !strcasecmp(argv[4], "async"))) {    
+		argc--;
+		async++;
+	}
+	
     if (argc == 3) {
-        if (conference_play_file(conference, argv[2], 0, NULL) == SWITCH_STATUS_SUCCESS) {
+        if (conference_play_file(conference, argv[2], 0, NULL, async) == SWITCH_STATUS_SUCCESS) {
             stream->write_function(stream, "(play) Playing file %s\n", argv[2]);
             if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
                 switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", "%s", conference->name);
@@ -2934,7 +3006,7 @@ static switch_status_t conf_api_sub_lock(conference_obj_t *conference, switch_st
     assert(stream != NULL);
 
     if (conference->is_locked_sound) {
-        conference_play_file(conference, conference->is_locked_sound, CONF_DEFAULT_LEADIN, NULL);
+        conference_play_file(conference, conference->is_locked_sound, CONF_DEFAULT_LEADIN, NULL, 0);
     }
 
     switch_set_flag_locked(conference, CFLAG_LOCKED);
@@ -2956,7 +3028,7 @@ static switch_status_t conf_api_sub_unlock(conference_obj_t *conference, switch_
     assert(stream != NULL);
 
     if (conference->is_unlocked_sound) {
-        conference_play_file(conference, conference->is_unlocked_sound, CONF_DEFAULT_LEADIN, NULL);
+        conference_play_file(conference, conference->is_unlocked_sound, CONF_DEFAULT_LEADIN, NULL, 0);
     }
 
     switch_clear_flag_locked(conference, CFLAG_LOCKED);
