@@ -731,7 +731,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		}
 		/* If a file or speech event is being played */
 		if (conference->fnode) {
-			switch_mutex_lock(conference->mutex);
 			/* Lead in time */
 			if (conference->fnode->leadin) {
 				conference->fnode->leadin--;
@@ -759,8 +758,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				}
 			}
 			has_file_data = 1;
-			
-			switch_mutex_unlock(conference->mutex);
 		} else {
 			has_file_data = 0;
 		}
@@ -1751,16 +1748,9 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		return NULL;
 	}
 
-	if (switch_core_timer_init(&timer, conference->timer_name, conference->interval, samples, rec->pool) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer success interval: %u  samples: %u\n", conference->interval, samples);	
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer Setup Failed.  Conference Cannot Start\n");	
-		return NULL;
-	}
-	
 	switch_mutex_lock(globals.hash_mutex);
 	globals.threads++;
-	switch_mutex_unlock(globals.hash_mutex);		
+	switch_mutex_unlock(globals.hash_mutex);
 
 	member = &smember;
 
@@ -1805,10 +1795,20 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		goto end;
 	}
 
+
+	if (switch_core_timer_init(&timer, conference->timer_name, conference->interval, samples, rec->pool) == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer success interval: %u  samples: %u\n", conference->interval, samples);	
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer Setup Failed.  Conference Cannot Start\n");	
+		goto end;
+	}
+	
 	if ((vval = switch_mprintf("Conference %s", conference->name))) {
 		switch_core_file_set_string(&fh, SWITCH_AUDIO_COL_STR_TITLE, vval);
 		switch_safe_free(vval);
 	}
+
+	switch_core_file_set_string(&fh, SWITCH_AUDIO_COL_STR_ARTIST, "FreeSWITCH mod_conference Software Conference Module");
 
 	while(switch_test_flag(member, MFLAG_RUNNING) && switch_test_flag(conference, CFLAG_RUNNING) && conference->count) {
 		mux_used = (uint32_t) switch_buffer_inuse(member->mux_buffer);
@@ -1832,7 +1832,8 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 				if (!switch_test_flag((&fh), SWITCH_FILE_PAUSE)) {
 					switch_size_t len = (switch_size_t) rlen / sizeof(int16_t);
 					if (switch_core_file_write(&fh, data, &len) != SWITCH_STATUS_SUCCESS) {
-						goto end;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Failed\n");
+						switch_clear_flag_locked(member, MFLAG_RUNNING);
 					}
 				}
 			}

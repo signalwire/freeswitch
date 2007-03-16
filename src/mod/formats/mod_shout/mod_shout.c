@@ -530,8 +530,9 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, char *path)
 {
 	shout_context_t *context;
     char *host, *file;
-    char *username, *password;
+    char *username, *password, *port;
     char *err = NULL;
+    int portno = 0;
 
 	if ((context = switch_core_alloc(handle->memory_pool, sizeof(*context))) == 0) {
 		return SWITCH_STATUS_MEMERR;
@@ -610,6 +611,17 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, char *path)
                 goto error;
             }
             
+            if ((port = strchr(host, ':'))) {
+                *port++ = '\0';
+                if (port) {
+                    portno = atoi(port);
+                }
+            }
+
+            if (!portno) {
+                portno = 8000;
+            }
+
             if (!(context->shout = shout_new())) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate shout_t\n");
                 goto error;
@@ -625,7 +637,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, char *path)
                 goto error;
             }
     
-            if (shout_set_port(context->shout, 8000) != SHOUTERR_SUCCESS) {
+            if (shout_set_port(context->shout, portno) != SHOUTERR_SUCCESS) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting port: %s\n", shout_get_error(context->shout));
                 goto error;
             }
@@ -646,6 +658,11 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, char *path)
             }
 
             if (shout_set_url(context->shout, "http://www.freeswitch.org") != SHOUTERR_SUCCESS) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n", shout_get_error(context->shout));
+                goto error;
+            }
+
+            if (shout_set_description(context->shout, "FreeSWITCH mod_shout Broadcasting Module") != SHOUTERR_SUCCESS) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n", shout_get_error(context->shout));
                 goto error;
             }
@@ -815,6 +832,11 @@ static switch_status_t shout_file_set_string(switch_file_handle_t *handle, switc
         break;
     case SWITCH_AUDIO_COL_STR_COMMENT:
         if (shout_set_url(context->shout, string) != SHOUTERR_SUCCESS) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n", shout_get_error(context->shout));
+        }
+        break;
+    case SWITCH_AUDIO_COL_STR_ARTIST:
+        if (shout_set_description(context->shout, string) != SHOUTERR_SUCCESS) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n", shout_get_error(context->shout));
         }
         break;
