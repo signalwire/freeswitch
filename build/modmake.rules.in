@@ -111,6 +111,65 @@ local_all local_depend local_clean depend_install local_install local_distclean 
 .cpp.lo:
 	$(LTCXXCOMPILE) -c -o $@ $<
 
+$(MODNAME).o: $(SOURCEFILE) \
+  $(switch_srcdir)/src/include/switch.h $(switch_srcdir)/src/include/switch_am_config.h \
+  $(switch_srcdir)/src/include/switch_types.h $(switch_srcdir)/src/include/switch_apr.h \
+  $(switch_srcdir)/src/include/switch_core_db.h $(switch_srcdir)/src/include/switch_regex.h \
+  $(switch_srcdir)/src/include/switch_core.h $(switch_srcdir)/src/include/switch_loadable_module.h \
+  $(switch_srcdir)/src/include/switch_console.h $(switch_srcdir)/src/include/switch_utils.h \
+  $(switch_srcdir)/src/include/switch_caller.h $(switch_srcdir)/src/include/switch_config.h \
+  $(switch_srcdir)/src/include/switch_frame.h $(switch_srcdir)/src/include/switch_module_interfaces.h \
+  $(switch_srcdir)/src/include/switch_channel.h $(switch_srcdir)/src/include/switch_buffer.h \
+  $(switch_srcdir)/src/include/switch_event.h $(switch_srcdir)/src/include/switch_resample.h \
+  $(switch_srcdir)/src/include/switch_ivr.h $(switch_srcdir)/src/include/switch_rtp.h \
+  $(switch_srcdir)/src/include/switch_stun.h $(switch_srcdir)/src/include/switch_log.h \
+  $(switch_srcdir)/src/include/switch_xml.h
+
+$(switch_srcdir)/src/include/switch.h:
+
+$(switch_srcdir)/src/include/switch_am_config.h:
+
+$(switch_srcdir)/src/include/switch_types.h:
+
+$(switch_srcdir)/src/include/switch_apr.h:
+
+$(switch_srcdir)/src/include/switch_core_db.h:
+
+$(switch_srcdir)/src/include/switch_regex.h:
+
+$(switch_srcdir)/src/include/switch_core.h:
+
+$(switch_srcdir)/src/include/switch_loadable_module.h:
+
+$(switch_srcdir)/src/include/switch_console.h:
+
+$(switch_srcdir)/src/include/switch_utils.h:
+
+$(switch_srcdir)/src/include/switch_caller.h:
+
+$(switch_srcdir)/src/include/switch_config.h:
+
+$(switch_srcdir)/src/include/switch_frame.h:
+
+$(switch_srcdir)/src/include/switch_module_interfaces.h:
+
+$(switch_srcdir)/src/include/switch_channel.h:
+
+$(switch_srcdir)/src/include/switch_buffer.h:
+
+$(switch_srcdir)/src/include/switch_event.h:
+
+$(switch_srcdir)/src/include/switch_resample.h:
+
+$(switch_srcdir)/src/include/switch_ivr.h:
+
+$(switch_srcdir)/src/include/switch_rtp.h:
+
+$(switch_srcdir)/src/include/switch_stun.h:
+
+$(switch_srcdir)/src/include/switch_log.h:
+
+$(switch_srcdir)/src/include/switch_xml.h:
 
 .PHONY: all depend clean local_all local_depend \
 	install depend_install local_install mod_install \
