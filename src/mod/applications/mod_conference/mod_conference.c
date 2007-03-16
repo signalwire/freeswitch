@@ -769,7 +769,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				conference->async_fnode->done++;
 			} else {
 				if (has_file_data) {
-					int x;			
+					switch_size_t x;			
 					for (x = 0; x < file_sample_len; x++) {
 						int32_t z;
 						int16_t *bptr, *muxed;
