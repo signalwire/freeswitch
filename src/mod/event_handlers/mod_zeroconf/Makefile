@@ -1,4 +1,4 @@
-MODNAME=mod_zeroconf
+
 switch_srcdir=../../../..
 
 HOWL=howl-1.0.0

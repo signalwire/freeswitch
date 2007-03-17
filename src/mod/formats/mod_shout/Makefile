@@ -1,4 +1,4 @@
-MODNAME=mod_shout
+
 LAME=lame-3.97
 SHOUT=libshout-2.2.2
 switch_srcdir=../../../..

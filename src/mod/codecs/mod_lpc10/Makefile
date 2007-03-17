@@ -1,4 +1,4 @@
-MODNAME=mod_lpc10
+
 BASE=../../../..
 LPC10LA=$(BASE)/libs/codec/lpc10/liblpc10.la
 LOCAL_CFLAGS=-I$(BASE)/libs/codec/lpc10/src

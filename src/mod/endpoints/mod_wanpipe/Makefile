@@ -2,7 +2,7 @@
 # local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
 # and define these variables to impact your build
-MODNAME=mod_wanpipe
+
 LOCAL_CFLAGS  =-I/usr/local/include -I/usr/src/libpri -I/usr/src/linux/include -I. -I/usr/include 
 LOCAL_CFLAGS +=-D__LINUX__ -D_REENTRANT -D_GNU_SOURCE -DAFT_A104 -DWANPIPE_TDM_API -I$(switch_srcdir)/libs/libteletone/src
 LOCAL_LDFLAGS=-lsangoma $(BASE)/libs/libteletone/libteletone.la

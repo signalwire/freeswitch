@@ -2,7 +2,7 @@
 # local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
 # and define these variables to impact your build
-MODNAME=mod_iax
+
 BASE=../../../..
 IAXLA=$(BASE)/libs/iax/src/libiax.la
 LOCAL_CFLAGS=-I$(BASE)/libs/iax/src

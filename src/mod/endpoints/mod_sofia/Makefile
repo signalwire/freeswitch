@@ -1,4 +1,4 @@
-MODNAME=mod_sofia
+
 
 BASE=../../../..
 

@@ -1,4 +1,4 @@
-MODNAME=mod_gsm
+
 BASE=../../../..
 GSMLA=$(BASE)/libs/codec/gsm/libgsm.la
 LOCAL_CFLAGS=-I$(BASE)/libs/codec/gsm/inc

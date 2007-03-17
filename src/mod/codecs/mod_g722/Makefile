@@ -1,4 +1,4 @@
-MODNAME=mod_g722
+
 BASE=../../../..
 G7XXLA=$(BASE)/libs/codec/g7xx/libg7xx.la
 LOCAL_CFLAGS=-I$(BASE)/libs/codec/g7xx/src/include/

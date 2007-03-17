@@ -1,4 +1,4 @@
-MODNAME=mod_g729
+
 BASE=../../../..
 topdir=$(shell cd $(BASE) && pwd)
 ifeq ($(shell test -d $(topdir)/libs/libg729 && cd $(topdir)/libs/libg729 && pwd),$(topdir)/libs/libg729)

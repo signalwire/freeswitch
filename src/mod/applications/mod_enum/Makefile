@@ -1,4 +1,4 @@
-MODNAME=mod_enum
+
 BASE=../../../..
 UDNSA=$(BASE)/libs/udns/libudns.a
 LOCAL_CFLAGS=-I$(BASE)/libs/udns

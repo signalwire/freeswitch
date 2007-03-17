@@ -1,4 +1,4 @@
-MODNAME=mod_amr
+
 BASE=../../../..
 
 topdir=$(shell cd $(BASE) && pwd)

@@ -1,4 +1,4 @@
-MODNAME=mod_g726
+
 BASE=../../../..
 G726LA=$(BASE)/libs/codec/g726/libg726.la
 LOCAL_CFLAGS=-I$(BASE)/libs/codec/g726/src

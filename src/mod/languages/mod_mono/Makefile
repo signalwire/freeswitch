@@ -1,4 +1,4 @@
-MODNAME=mod_mono
+
 VERSION = mono-1.1.13.8
 TARBALL = mono-1.1.13.8.tar.gz
 GLIB_TARBALL = glib-2.12.3.tar.gz

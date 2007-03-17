@@ -1,4 +1,4 @@
-MODNAME=mod_xml_rpc
+
 BASE=../../../..
 
 XMLRPCLAS  = $(BASE)/libs/xmlrpc-c/src/libxmlrpc.la $(BASE)/libs/xmlrpc-c/src/libxmlrpc_server.la 

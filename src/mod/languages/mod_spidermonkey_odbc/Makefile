@@ -1,4 +1,4 @@
-MODNAME=mod_spidermonkey_odbc
+
 switch_srcdir=../../../..
 
 ODBC=unixODBC-2.2.12

@@ -1,4 +1,4 @@
-MODNAME=mod_ldap
+
 switch_srcdir=../../../..
 
 LDAP=openldap-2.3.19

@@ -2,7 +2,7 @@
 # local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
 
 # and define these variables to impact your build
-MODNAME=mod_cdr
+
 LOCAL_CFLAGS=
 LOCAL_LDFLAGS=
 LOCAL_OBJS=cdrcontainer.o basecdr.o baseregistry.o pddcdr.o csvcdr.o xmlcdr.o sqlitecdr.o

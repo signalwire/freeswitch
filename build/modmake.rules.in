@@ -21,20 +21,17 @@ LIBCURL_CPPFLAGS=@LIBCURL_CPPFLAGS@
 CURL_DIR=$(switch_srcdir)/libs/curl
 CURLLA=$(CURL_DIR)/lib/libcurl.la
 
-OUR_CFLAGS=$(shell test -z "$(WANT_CURL)" || echo $(LIBCURL_CPPFLAGS))
-OUR_LDFLAGS=$(shell test -z "$(WANT_CURL)" || echo $(LIBCURL))
-OUR_DEPS=$(shell test -z "$(WANT_CURL)" || if test ! -z "$(LIBCURL_DEPS)"; then echo $(CURLLA); fi)
-
-LDFLAGS=@SWITCH_AM_LDFLAGS@ @LDFLAGS@ $(OUR_LDFLAGS)
 LIBS=$(switch_builddir)/libfreeswitch.la
 DEFS=@DEFS@
 PREFIX = @prefix@
 
 DYLD_LIBRARY_PATH=$(PREFIX)/lib:$DYLD_LIBRARY_PATH
 LD_LIBRARY_PATH=$(PREFIX)/lib:$LD_LIBRARY_PATH
-OSARCH=$(shell uname -s)
+OSARCH=`uname -s`
 DYNAMIC_LIB_EXTEN = @DYNAMIC_LIB_EXTEN@
 SOLINK = @SOLINK@
+
+LDFLAGS=@SWITCH_AM_LDFLAGS@ @LDFLAGS@ $(OUR_LDFLAGS)
 
 ALL_CFLAGS   = $(LOCAL_CFLAGS) $(MOD_CFLAGS) @SWITCH_AM_CFLAGS@ @CFLAGS@ -D_GNU_SOURCE $(OUR_CFLAGS)
 ALL_CXXFLAGS   = $(LOCAL_CFLAGS) $(MOD_CFLAGS) @SWITCH_AM_CXXFLAGS@ @CXXFLAGS@ -D_GNU_SOURC $(OUR_CFLAGS)
@@ -47,24 +44,64 @@ CXXCOMPILE = $(CXX) $(ALL_CXXFLAGS) $(DEFS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile --tag=CXX $(CXXCOMPILE)
 CXXLINK = $(LIBTOOL) --mode=link --tag=CXX $(CXXLD) $(ALL_CXXFLAGS) $(LDFLAGS) -o $@
 
-CURDIR=$(shell pwd)
-CSOURCEFILE=$(CURDIR)/$(MODNAME).c
-CXXSOURCEFILE=$(CURDIR)/$(MODNAME).cpp
-SOURCEFILE=$(shell if test -f $(CSOURCEFILE); then echo $(CSOURCEFILE); else echo $(CXXSOURCEFILE); fi;)
+CSOURCEFILE=$(MODNAME).c
+CXXSOURCEFILE=$(MODNAME).cpp
 
-all: local_depend local_all $(MODNAME).$(DYNAMIC_LIB_EXTEN) Makefile
-depend: local_depend
-clean: local_clean mod_clean
-install: all depend_install local_install mod_install
-uninstall: local_uninstall mod_uninstall
-distclean: clean local_distclean
-extraclean: distclean local_extraclean
+RECURSE_MODNAME=`pwd | sed -e 's|^.*/||'`
+RECURSE_SOURCEFILE=`if test -f $$modname.cpp; then echo $$modname.cpp; else echo $$modname.c; fi`
+RECURSE_OUR_DEPS=`test -z "$(WANT_CURL)" || if test ! -z "$(LIBCURL_DEPS)"; then echo $(CURLLA); fi`
+RECURSE_OUR_CFLAGS=`test -z "$(WANT_CURL)" || echo $(LIBCURL_CPPFLAGS)`
+RECURSE_OUR_LDFLAGS=`test -z "$(WANT_CURL)" || echo $(LIBCURL)`
+RECURSE_CHECKS=if test -z "$(MODNAME)" || test -z "$(SOURCEFILE)" || test -z "$(OUR_DEPS)" ; \
+	then modname=$(RECURSE_MODNAME) ; \
+	sourcefile=$(RECURSE_SOURCEFILE) ; \
+	ourdefs=$(RECURSE_OUR_DEPS) ; \
+	ourcflags=$(RECURSE_OUR_CFLAGS) ; \
+	ourldflags=$(RECURSE_OUR_LDFLAGS) ;
+
+all: Makefile
+	@$(RECURSE_CHECKS) \
+	  $(MAKE) MODNAME=$$modname SOURCEFILE=$$sourcefile OUR_DEPS=$$ourdefs OUR_CFLAGS=$$ourcflags OUR_LDFLAGS=$$our_ldflags all-modules || exit 1;\
+	fi
+depend: Makefile
+	@$(RECURSE_CHECKS) \
+	  $(MAKE) MODNAME=$$modname SOURCEFILE=$$sourcefile OUR_DEPS=$$ourdefs OUR_CFLAGS=$$ourcflags OUR_LDFLAGS=$$our_ldflags depend-modules || exit 1;\
+	fi
+clean: Makefile
+	@$(RECURSE_CHECKS) \
+	  $(MAKE) MODNAME=$$modname SOURCEFILE=$$sourcefile OUR_DEPS=$$ourdefs OUR_CFLAGS=$$ourcflags OUR_LDFLAGS=$$our_ldflags clean-modules || exit 1;\
+	fi
+install: Makefile
+	@$(RECURSE_CHECKS) \
+	  $(MAKE) MODNAME=$$modname SOURCEFILE=$$sourcefile OUR_DEPS=$$ourdefs OUR_CFLAGS=$$ourcflags OUR_LDFLAGS=$$our_ldflags install-modules || exit 1;\
+	fi
+uninstall: Makefile
+	@$(RECURSE_CHECKS) \
+	  $(MAKE) MODNAME=$$modname SOURCEFILE=$$sourcefile OUR_DEPS=$$ourdefs OUR_CFLAGS=$$ourcflags OUR_LDFLAGS=$$our_ldflags uninstall-modules || exit 1;\
+	fi
+distclean: Makefile
+	@$(RECURSE_CHECKS) \
+	  $(MAKE) MODNAME=$$modname SOURCEFILE=$$sourcefile OUR_DEPS=$$ourdefs OUR_CFLAGS=$$ourcflags OUR_LDFLAGS=$$our_ldflags distclean-modules || exit 1;\
+	fi
+extraclean: Makefile
+	@$(RECURSE_CHECKS) \
+	  $(MAKE) MODNAME=$$modname SOURCEFILE=$$sourcefile OUR_DEPS=$$ourdefs OUR_CFLAGS=$$ourcflags OUR_LDFLAGS=$$our_ldflags extraclean-modules || exit 1;\
+	fi
+
+
+all-modules: local_depend local_all $(MODNAME).$(DYNAMIC_LIB_EXTEN) Makefile
+depend-modules: local_depend
+clean-modules: local_clean mod_clean
+install-modules: all depend_install local_install mod_install
+uninstall-modules: local_uninstall mod_uninstall
+distclean-modules: clean local_distclean
+extraclean-modules: distclean local_extraclean
 
 Makefile:
-	if test ! -f $@; then \
-	  echo MODNAME=$(MODNAME) > Makefile ; \
+	@if test ! -f $@; then \
 	  if ! pwd | grep $(switch_srcdir)/src/mod ; then rulesdir=$(switch_srcdir) ; else rulesdir=../../../.. ; fi ; \
-	  echo include $$rulesdir/build/modmake.rules >> Makefile ; \
+	  echo BASE=$$rulesdir > Makefile ; \
+	  echo "include $(BASE)/build/modmake.rules" >> Makefile ; \
 	fi ;
 
 $(CURLLA):
@@ -171,7 +208,8 @@ $(switch_srcdir)/src/include/switch_log.h:
 
 $(switch_srcdir)/src/include/switch_xml.h:
 
-.PHONY: all depend clean local_all local_depend \
-	install depend_install local_install mod_install \
-	clean local_clean mod_clean distclean \
-	local_distclean extraclean local_extraclean 
+
+.PHONY: all clean depend install distclean extraclean \
+	all-modules clean-modules depend-modules install-modules distclean-modules extraclean-modules \
+	local_all local_clean local_depend local_install local_distclean local_extraclean \
+	mod_clean mod_install mod_uninstall depend_install

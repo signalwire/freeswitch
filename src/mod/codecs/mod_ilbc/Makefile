@@ -1,4 +1,4 @@
-MODNAME=mod_ilbc
+
 BASE=../../../..
 ILBCLA=$(BASE)/libs/codec/ilbc/libilbc.la
 LOCAL_CFLAGS=-I$(BASE)/libs/codec/ilbc/src

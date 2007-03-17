@@ -1,6 +1,6 @@
 BASE=../../../..
 OSARCH=$(shell uname -s)
-MODNAME=mod_portaudio
+
 BASE=../../../..
 
 PALA=$(BASE)/libs/portaudio/lib/libportaudio.la

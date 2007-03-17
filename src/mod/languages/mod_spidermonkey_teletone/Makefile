@@ -1,4 +1,4 @@
-MODNAME=mod_spidermonkey_teletone
+
 switch_srcdir=../../../..
 LOCAL_CFLAGS=-I$(switch_srcdir)/libs/libteletone/src
 LOCAL_LDFLAGS=

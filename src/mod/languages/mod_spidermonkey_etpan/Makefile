@@ -1,4 +1,4 @@
-MODNAME=mod_spidermonkey_etpan
+
 
 switch_srcdir=../../../..
 
