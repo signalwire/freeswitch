@@ -97,6 +97,8 @@ nodist_freeswitch_SOURCES = src/include/switch_version.h
 freeswitch_CFLAGS = $(AM_CFLAGS)
 freeswitch_LDADD = ${MOD_LINK}
 
+$(libfreeswitch_la_SOURCES): $(CORE_LIBS)
+
 install-data-local:
 	@echo Installing $(NAME)
 	@for x in conf mod db log log/xml_cdr bin scripts htdocs grammar ; do \

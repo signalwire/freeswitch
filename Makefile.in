@@ -1086,6 +1086,8 @@ uninstall-info: uninstall-info-recursive
 	uninstall-libLTLIBRARIES uninstall-library_includeHEADERS
 
 
+$(libfreeswitch_la_SOURCES): $(CORE_LIBS)
+
 install-data-local:
 	@echo Installing $(NAME)
 	@for x in conf mod db log log/xml_cdr bin scripts htdocs grammar ; do \
