@@ -12,6 +12,7 @@ OSARCH=`uname -s`
 
 LIBTOOL=$(switch_builddir)/libtool
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
+TOUCH_TARGET=if test -f "$@" ; then touch "$@" ; fi ;
 
 if CRASHPROT
 AM_CFLAGS += -DCRASH_PROT
@@ -85,8 +86,6 @@ libfreeswitch_la_LDFLAGS  = -version-info 1:0:0 $(AM_LDFLAGS)
 libfreeswitch_la_LIBADD  = $(CORE_LIBS)
 nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
 
-$(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(library_include_HEADERS)
-
 MOD_LINK       = $(BASE)/libfreeswitch.la
 
 CLEANFILES     = src/include/switch_version.h
@@ -144,16 +143,35 @@ nodepends: .nodepends
 yesdepends:
 	rm .nodepends
 
-$(CORE_LIBS):
-	cd libs/sqlite && $(MAKE)
+libs/apr/libapr-1.la: libs/apr libs/apr/.update
 	cd libs/apr && $(MAKE)
-	cd libs/apr-util && $(MAKE)
-	cd libs/pcre && $(MAKE)
-	cd libs/srtp && $(MAKE)
-	cd libs/libresample && $(MAKE)
-	cd libs/libteletone && $(MAKE)
+	$(TOUCH_TARGET)
 
-core: $(CORE_LIBS) libfreeswitch.la  
+libs/apr-util/libaprutil-1.la: libs/apr-util libs/apr-util/.update
+	cd libs/apr-util && $(MAKE)
+	$(TOUCH_TARGET)
+
+libs/sqlite/libsqlite3.la: libs/sqlite libs/sqlite/.update
+	cd libs/sqlite && $(MAKE)
+	$(TOUCH_TARGET)
+
+libs/pcre/libpcre.la: libs/pcre libs/pcre/.update
+	cd libs/pcre && $(MAKE)
+	$(TOUCH_TARGET)
+
+libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update
+	cd libs/srtp && $(MAKE)
+	$(TOUCH_TARGET)
+
+libs/libteletone/libteletone.la: libs/libteletone libs/libteletone/.update
+	cd libs/libteletone && $(MAKE)
+	$(TOUCH_TARGET)
+
+libs/libresample/libresample.la: libs/libresample libs/libresample/.update
+	cd libs/libresample && $(MAKE)
+	$(TOUCH_TARGET)
+
+core:  libfreeswitch.la  
 
 install_core: install-libLTLIBRARIES
 
