@@ -1,4 +1,3 @@
-
 switch_srcdir=../../../..
 
 HOWL=howl-1.0.0
@@ -12,9 +11,10 @@ DEFAULT_ARGS=--prefix=$(PREFIX) --disable-shared --with-pic
 
 include $(switch_srcdir)/build/modmake.rules
 
-$(HOWL_DIR)/Makefile:
+$(HOWL_DIR):
 	$(GETLIB) $(HOWL).tar.gz
 	cd $(HOWL_DIR) && ./configure $(DEFAULT_ARGS)
 
-$(HOWLLA): $(HOWL_DIR)/Makefile
+$(HOWLLA): $(HOWL_DIR)
 	cd $(HOWL_DIR) && $(MAKE)
+	$(TOUCH_TARGET)

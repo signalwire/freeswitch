@@ -1,30 +1,27 @@
-# define these targets in your makefile if you wish
-# local_all local_depend local_clean depend_install local_install local_distclean local_extraclean:
-
-# and define these variables to impact your build
-
 BASE=../../../..
 
-IKSEMELLA=$(BASE)/libs/iksemel/src/libiksemel.la
-DINGLA=$(BASE)/libs/libdingaling/libdingaling.la
+IKSEMEL_DIR=$(BASE)/libs/iksemel
+DING_DIR=$(BASE)/libs/libdingaling
+IKSEMELLA=$(IKSEMEL_DIR)/src/libiksemel.la
+DINGLA=$(DING_DIR)/libdingaling.la
 
-LOCAL_CFLAGS=-I$(BASE)/libs/libdingaling/src
-LOCAL_LDFLAGS=
-LOCAL_OBJS=
+LOCAL_CFLAGS=-I$(DING_DIR)/src
 LOCAL_LIBADD=$(DINGLA)
 
 include $(BASE)/build/modmake.rules
 
 INST_DINGLA=$(PREFIX)/lib/libdingaling.la
 
-$(IKSEMELLA):
-	cd $(BASE)/libs/iksemel && $(MAKE)
+$(IKSEMELLA): $(IKSEMEL_DIR) $(IKSEMEL_DIR)/.update
+	cd $(IKSEMEL_DIR) && $(MAKE)
+	$(TOUCH_TARGET)
 
-$(DINGLA): $(IKSEMELLA)
-	cd $(BASE)/libs/libdingaling && $(MAKE)
+$(DINGLA): $(IKSEMELLA) $(DING_DIR) $(DING_DIR)/.update
+	cd $(DING_DIR) && $(MAKE)
+	$(TOUCH_TARGET)
 
 depend_install: $(INST_DINGLA)
 
 $(INST_DINGLA): $(DINGLA)
-	cd $(BASE)/libs/libdingaling && $(MAKE) install
+	cd $(DING_DIR) && $(MAKE) install
 

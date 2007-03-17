@@ -1,9 +1,10 @@
-
 BASE=../../../..
-ILBCLA=$(BASE)/libs/codec/ilbc/libilbc.la
-LOCAL_CFLAGS=-I$(BASE)/libs/codec/ilbc/src
+ILBC_DIR=$(BASE)/libs/codec/ilbc
+ILBCLA=$(ILBC_DIR)/libilbc.la
+LOCAL_CFLAGS=-I$(ILBC_DIR)/src
 LOCAL_LIBADD=$(ILBCLA)
 include $(BASE)/build/modmake.rules
 
-$(ILBCLA):
-	cd $(BASE)/libs/codec/ilbc && $(MAKE)
+$(ILBCLA): $(ILBC_DIR) $(ILBC_DIR)/.update
+	cd $(ILBC_DIR) && $(MAKE)
+	$(TOUCH_TARGET)

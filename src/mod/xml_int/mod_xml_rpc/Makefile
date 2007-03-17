@@ -1,17 +1,17 @@
-
 BASE=../../../..
+XMLRPC_DIR=$(BASE)/libs/xmlrpc-c
 
-XMLRPCLAS  = $(BASE)/libs/xmlrpc-c/src/libxmlrpc.la $(BASE)/libs/xmlrpc-c/src/libxmlrpc_server.la 
-XMLRPCLAS += $(BASE)/libs/xmlrpc-c/src/libxmlrpc_server_abyss.la $(BASE)/libs/xmlrpc-c/lib/abyss/src/libxmlrpc_abyss.la
-XMLRPCLAS += $(BASE)/libs/xmlrpc-c/lib/expat/xmlparse/libxmlrpc_xmlparse.la
+XMLRPCLAS  = $(XMLRPC_DIR)/src/libxmlrpc.la $(XMLRPC_DIR)/src/libxmlrpc_server.la 
+XMLRPCLAS += $(XMLRPC_DIR)/src/libxmlrpc_server_abyss.la $(XMLRPC_DIR)/lib/abyss/src/libxmlrpc_abyss.la
+XMLRPCLAS += $(XMLRPC_DIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la
 
 LOCAL_LDFLAGS = $(XMLRPCLAS)
-LOCAL_CFLAGS=-I$(BASE)/libs/xmlrpc-c/include
+LOCAL_CFLAGS=-I$(XMLRPC_DIR)/include
 
-include ../../../../build/modmake.rules
+include $(BASE)/build/modmake.rules
 
 local_depend: $(XMLRPCLAS)
 
-$(XMLRPCLAS):
-	cd $(BASE)/libs/xmlrpc-c && $(MAKE)
-
+$(XMLRPCLAS): $(XMLRPC_DIR) $(XMLRPC_DIR)/.update
+	cd $(XMLRPC_DIR) && $(MAKE)
+	$(TOUCH_TARGET)

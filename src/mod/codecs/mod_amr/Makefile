@@ -1,16 +1,6 @@
-
 BASE=../../../..
 
-topdir=$(shell cd $(BASE) && pwd)
-ifeq ($(shell test -d $(topdir)/libs/amr && cd $(topdir)/libs/amr && pwd),$(topdir)/libs/amr)
-
-LOCAL_CFLAGS = -I$(PREFIX)/include/amr
-LOCAL_LDFLAGS =-lamr
-
-else
-
-LOCAL_CFLAGS = -DAMR_PASSTHROUGH
-
-endif
+LOCAL_INSERT_CFLAGS=if test -d $(BASE)/libs/amr; then echo "-I$(PREFIX)/include/amr" ; else echo "-DAMR_PASSTHROUGH" ; fi ;
+LOCAL_INSERT_LDFLAGS=test ! -d $(BASE)/libs/amp || echo "-lamr"
 
 include $(BASE)/build/modmake.rules

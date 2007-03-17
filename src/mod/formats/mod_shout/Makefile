@@ -1,4 +1,3 @@
-
 LAME=lame-3.97
 SHOUT=libshout-2.2.2
 switch_srcdir=../../../..
@@ -25,20 +24,21 @@ DEFAULT_ARGS=--prefix=$(PREFIX) --disable-shared --with-pic
 
 $(LOCAL_OBJS): $(LOCAL_SOURCES)
 
-$(LAME_DIR)/Makefile:
+$(LAME_DIR):
 	$(GETLIB) $(LAME).tar.gz
 	cd $(LAME_DIR) && ./configure $(DEFAULT_ARGS) --disable-decoder
 
-$(LAMELA): $(LAME_DIR)/Makefile
+$(LAMELA): $(LAME_DIR)
 	cd $(LAME_DIR) && $(MAKE)
+	$(TOUCH_TARGET)
 
-$(SHOUT_DIR)/Makefile:
+$(SHOUT_DIR):
 	$(GETLIB) $(SHOUT).tar.gz
 	cd $(SHOUT_DIR) && ./configure $(DEFAULT_ARGS) --with-speex=no
 
-$(SHOUTLA): $(SHOUT_DIR)/Makefile
+$(SHOUTLA): $(SHOUT_DIR)
 	cd $(SHOUT_DIR) && $(MAKE)
-
+	$(TOUCH_TARGET)
 
 
 

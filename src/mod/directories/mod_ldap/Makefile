@@ -1,4 +1,3 @@
-
 switch_srcdir=../../../..
 
 LDAP=openldap-2.3.19
@@ -15,9 +14,10 @@ LOCAL_LIBADD=$(LDAPLA) $(LIBLBERLA)
 
 include $(switch_srcdir)/build/modmake.rules
 
-$(LDAP_DIR)/Makefile:
+$(LDAP_DIR):
 	$(GETLIB) $(LDAP).tgz
 	cd $(LDAP_DIR) && ./configure $(DEFAULT_ARGS) --disable-bdb --disable-hdb
 
-$(LDAPLA) $(LIBLBERLA): $(LDAP_DIR)/Makefile $(LDAP_DIR)/stamp-h
+$(LDAPLA) $(LIBLBERLA): $(LDAP_DIR)
 	cd $(LDAP_DIR) && $(MAKE)
+	$(TOUCH_TARGET)

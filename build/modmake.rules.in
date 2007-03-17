@@ -46,12 +46,13 @@ CXXLINK = $(LIBTOOL) --mode=link --tag=CXX $(CXXLD) $(ALL_CXXFLAGS) $(LDFLAGS) -
 
 CSOURCEFILE=$(MODNAME).c
 CXXSOURCEFILE=$(MODNAME).cpp
+TOUCH_TARGET=@if test -f "$@" ; then touch "$@" ; fi ;
 
 RECURSE_MODNAME=`pwd | sed -e 's|^.*/||'`
 RECURSE_SOURCEFILE=`if test -f $$modname.cpp; then echo $$modname.cpp; else echo $$modname.c; fi`
 RECURSE_OUR_DEPS=`test -z "$(WANT_CURL)" || if test ! -z "$(LIBCURL_DEPS)"; then echo $(CURLLA); fi`
-RECURSE_OUR_CFLAGS=`test -z "$(WANT_CURL)" || echo $(LIBCURL_CPPFLAGS)`
-RECURSE_OUR_LDFLAGS=`test -z "$(WANT_CURL)" || echo $(LIBCURL)`
+RECURSE_OUR_CFLAGS=`test -z "$(WANT_CURL)" || echo $(LIBCURL_CPPFLAGS) ; $(LOCAL_INSERT_CFLAGS) `
+RECURSE_OUR_LDFLAGS=`test -z "$(WANT_CURL)" || echo $(LIBCURL) ; $(LOCAL_INSERT_LDFLAGS) `
 RECURSE_CHECKS=if test -z "$(MODNAME)" || test -z "$(SOURCEFILE)" || test -z "$(OUR_DEPS)" ; \
 	then modname=$(RECURSE_MODNAME) ; \
 	sourcefile=$(RECURSE_SOURCEFILE) ; \
@@ -92,9 +93,9 @@ extraclean: Makefile
 all-modules: local_depend local_all $(MODNAME).$(DYNAMIC_LIB_EXTEN) Makefile
 depend-modules: local_depend
 clean-modules: local_clean mod_clean
-install-modules: all depend_install local_install mod_install
+install-modules: all-modules depend_install local_install mod_install
 uninstall-modules: local_uninstall mod_uninstall
-distclean-modules: clean local_distclean
+distclean-modules: clean-modules local_distclean
 extraclean-modules: distclean local_extraclean
 
 Makefile:

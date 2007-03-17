@@ -1,4 +1,3 @@
-
 switch_srcdir=../../../..
 LOCAL_CFLAGS=
 LOCAL_LDFLAGS=

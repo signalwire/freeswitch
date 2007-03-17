@@ -5,14 +5,14 @@
 
 BASE=../../../..
 
-IKSEMELLA=$(BASE)/libs/iksemel/src/libiksemel.la
+IKSEMEL_DIR=$(BASE)/libs/iksemel
+IKSEMELLA=$(IKSEMEL_DIR)/src/libiksemel.la
 
-LOCAL_CFLAGS=-I$(BASE)/libs/iksemel/include
-LOCAL_LDFLAGS=$(IKSEMELA)
+LOCAL_CFLAGS=-I$(IKSEMEL_DIR)/include
+LOCAL_LIBADD=$(IKSEMELA)
 LOCAL_OBJS=
 include $(BASE)/build/modmake.rules
 
-local_depend: $(IKSEMELLA)
-
-$(IKSEMELLA):
-	cd $(BASE)/libs/iksemel && $(MAKE)
+$(IKSEMELLA): $(IKSEMEL_DIR) $(IKSEMEL_DIR)/.update
+	cd $(IKSEMEL_DIR) && $(MAKE)
+	$(TOUCH_TARGET)

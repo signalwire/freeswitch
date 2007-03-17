@@ -1,30 +1,30 @@
-
-
 BASE=../../../..
 
 OS_ARCH         := $(subst /,_,$(shell uname -s | sed /\ /s//_/))
 
-LOCAL_CFLAGS  = -I. -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/bnf  -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/features
-LOCAL_CFLAGS += -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/http -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/ipt
-LOCAL_CFLAGS += -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/iptsec -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/msg
-LOCAL_CFLAGS += -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/nea -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/nta
-LOCAL_CFLAGS += -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/nth -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/nua
-LOCAL_CFLAGS += -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/sdp -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/sip
-LOCAL_CFLAGS += -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/soa -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/sresolv
-LOCAL_CFLAGS += -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/stun -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/su
-LOCAL_CFLAGS += -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/tport -I$(BASE)/libs/sofia-sip/libsofia-sip-ua/url
+SOFIA_DIR=$(BASE)/libs/sofia-sip
+SOFIAUA_DIR=$(SOFIA_DIR)/libsofia-sip-ua
 
-SOFIALA=$(BASE)/libs/sofia-sip/libsofia-sip-ua/libsofia-sip-ua.la
+LOCAL_CFLAGS  = -I. -I$(SOFIAUA_DIR)/bnf  -I$(SOFIAUA_DIR)/features
+LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/http -I$(SOFIAUA_DIR)/ipt
+LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/iptsec -I$(SOFIAUA_DIR)/msg
+LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/nea -I$(SOFIAUA_DIR)/nta
+LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/nth -I$(SOFIAUA_DIR)/nua
+LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/sdp -I$(SOFIAUA_DIR)/sip
+LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/soa -I$(SOFIAUA_DIR)/sresolv
+LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/stun -I$(SOFIAUA_DIR)/su
+LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/tport -I$(SOFIAUA_DIR)/url
 
-LOCAL_LDFLAGS=$(SOFIALA)
+SOFIALA=$(SOFIAUA_DIR)/libsofia-sip-ua.la
+
+LOCAL_LIBADD=$(SOFIALA)
 
 ifeq ($(OS_ARCH),Darwin)
 	LOCAL_LDFLAGS +=-framework CoreFoundation -framework SystemConfiguration
 endif
 
-include ../../../../build/modmake.rules
+include $(BASE)/build/modmake.rules
 
-local_depend: $(SOFIALA)
-
-$(SOFIALA):
-	cd $(BASE)/libs/sofia-sip && $(MAKE)
+$(SOFIALA): $(SOFIA_DIR) $(SOFIA_DIR)/.update
+	cd $(SOFIA_DIR) && $(MAKE)
+	$(TOUCH_TARGET)
