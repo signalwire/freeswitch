@@ -198,4 +198,4 @@ eclean: clean
 	rm -f *.tar *.tgz *.gz 
 
 megaclean: eclean modclean
-	rm -fr .depend `find . -name .complete`
+	rm -f `find ./libs -name \*.la`

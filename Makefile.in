@@ -1187,7 +1187,7 @@ eclean: clean
 	rm -f *.tar *.tgz *.gz 
 
 megaclean: eclean modclean
-	rm -fr .depend `find . -name .complete`
+	rm -f `find ./libs -name \*.la`
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
