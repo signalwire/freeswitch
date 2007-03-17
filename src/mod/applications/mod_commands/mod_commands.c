@@ -158,8 +158,11 @@ static switch_status_t load_function(char *mod, switch_core_session_t *session, 
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) mod);
-	stream->write_function(stream, "OK\n");
+	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) mod, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "OK\n");
+	} else {
+		stream->write_function(stream, "ERROR\n");
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }

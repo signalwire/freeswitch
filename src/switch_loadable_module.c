@@ -96,8 +96,22 @@ static void *switch_loadable_module_exec(switch_thread_t *thread, void *obj)
 }
 
 
+static void switch_loadable_module_runtime(void)
+{
+	switch_hash_index_t *hi;
+	void *val;
+	switch_loadable_module_t *module;
 
-
+	for (hi = switch_hash_first(loadable_modules.pool, loadable_modules.module_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, NULL, NULL, &val);
+		module = (switch_loadable_module_t *) val;
+		
+		if (module->switch_module_runtime) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Starting runtime thread for %s\n", module->module_interface->module_name);
+			switch_core_launch_thread(switch_loadable_module_exec, module, loadable_modules.pool);
+		}
+	}
+}
 
 static switch_status_t switch_loadable_module_process(char *key, switch_loadable_module_t *new_module)
 {
@@ -349,13 +363,20 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			if (!ptr->relative_oid) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load management interface from %s due to no interface name.\n", key);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Management interface '%s'\n", ptr->relative_oid);
-				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "management");
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->relative_oid);
-					switch_event_fire(&event);
+				if (switch_core_hash_find(loadable_modules.management_hash, ptr->relative_oid)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+									  "Failed to load management interface %s. OID %s already exists\n", key, ptr->relative_oid);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, 
+									  "Adding Management interface '%s' OID[%s.%s]\n", key, FREESWITCH_OID_PREFIX, ptr->relative_oid);
+					switch_core_hash_insert(loadable_modules.management_hash, ptr->relative_oid, (const void *) ptr);
+					if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "management");
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->relative_oid);
+						switch_event_fire(&event);
+					}
 				}
-				switch_core_hash_insert(loadable_modules.management_hash, ptr->relative_oid, (const void *) ptr);
+				
 			}
 		}
 	}
@@ -429,10 +450,6 @@ static switch_status_t switch_loadable_module_load_file(char *filename, switch_l
 
 	module->lib = dso;
 
-	if (module->switch_module_runtime) {
-		switch_core_launch_thread(switch_loadable_module_exec, module, loadable_modules.pool);
-	}
-
 	*new_module = module;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Successfully Loaded [%s]\n", module_interface->module_name);
 
@@ -440,7 +457,7 @@ static switch_status_t switch_loadable_module_load_file(char *filename, switch_l
 
 }
 
-SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, char *fname)
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, char *fname, switch_bool_t runtime)
 {
 	switch_size_t len = 0;
 	char *path;
@@ -485,10 +502,15 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, ch
     }
 
 	if ((status = switch_loadable_module_load_file(path, &new_module) == SWITCH_STATUS_SUCCESS)) {
-		return switch_loadable_module_process((char *) file, new_module);
-	} else {
-		return status;
+		if ((status = switch_loadable_module_process((char *) file, new_module)) == SWITCH_STATUS_SUCCESS && runtime) {
+			if (new_module->switch_module_runtime) {
+				switch_core_launch_thread(switch_loadable_module_exec, new_module, loadable_modules.pool);
+			}
+		}
 	}
+
+	return status;
+	
 }
 
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filename,
@@ -625,7 +647,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
 					continue;
 				}
-				switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val);
+				switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val, SWITCH_FALSE);
 				count++;
 			}
 		}
@@ -645,7 +667,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
 					continue;
 				}
-				switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val);
+				switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val, SWITCH_FALSE);
 				count++;
 			}
 		}
@@ -685,11 +707,12 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 				continue;
 			}
 
-			switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) fname);
+			switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) fname, SWITCH_FALSE);
 		}
 		apr_dir_close(module_dir_handle);
 	}
 
+	switch_loadable_module_runtime();
 
 	return SWITCH_STATUS_SUCCESS;
 }

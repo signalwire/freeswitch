@@ -129,6 +129,11 @@ SWITCH_BEGIN_EXTERN_C
 typedef uint8_t switch_byte_t;
 
 typedef enum {
+	SWITCH_FALSE = 0,
+	SWITCH_TRUE = 1
+} switch_bool_t;
+
+typedef enum {
 	SSM_NA,
 	SSM_PRONOUNCED,
 	SSM_ITERATED,

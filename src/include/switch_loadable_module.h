@@ -240,7 +240,7 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_
   \param fname the file name of the module
   \return the status
 */
-SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, char *fname);
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, char *fname, switch_bool_t runtime);
 
 /* Prototypes of module interface functions */
 
