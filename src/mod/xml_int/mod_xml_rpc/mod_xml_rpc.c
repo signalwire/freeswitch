@@ -230,8 +230,8 @@ static xmlrpc_value *freeswitch_man(xmlrpc_env *const envP, xmlrpc_value *const 
         return NULL;
 	}
 
-	if (!strncasecmp(oid, FREESWITCH_MIB, strlen(FREESWITCH_MIB))) {
-		relative_oid = oid + strlen(FREESWITCH_MIB);
+	if (!strncasecmp(oid, FREESWITCH_OID_PREFIX, strlen(FREESWITCH_OID_PREFIX))) {
+		relative_oid = oid + strlen(FREESWITCH_OID_PREFIX);
 	} else {
 		relative_oid = oid;
 	}
