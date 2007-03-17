@@ -778,6 +778,8 @@ static int activate_rtp(struct private_object *tech_pvt)
 			switch_rtp_enable_vad(tech_pvt->rtp_session, tech_pvt->session, &tech_pvt->read_codec, SWITCH_VAD_FLAG_TALKING);
 			switch_set_flag_locked(tech_pvt, TFLAG_VAD);
 		}
+		switch_rtp_set_cng_pt(tech_pvt->rtp_session, 13);
+		switch_rtp_set_telephony_event(tech_pvt->rtp_session, 101);
 	}
 
 	return 1;

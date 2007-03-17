@@ -134,6 +134,7 @@ struct switch_rtp {
 	void *private_data;
 	uint32_t ts;
 	uint32_t last_write_ts;
+	uint32_t last_write_samplecount;
 	uint16_t last_write_seq;
 	uint32_t last_write_ssrc;
 	uint32_t flags;
@@ -157,11 +158,12 @@ struct switch_rtp {
 	switch_mutex_t *flag_mutex;
 	switch_timer_t timer;
 	uint8_t ready;
+	uint8_t cn;
 	switch_time_t last_time;
 };
 
 static int global_init = 0;
-static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t datalen, uint8_t m, switch_payload_t payload, switch_frame_flag_t *flags);
+static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t datalen, switch_payload_t payload, switch_frame_flag_t *flags);
 
 static switch_status_t ice_out(switch_rtp_t *rtp_session)
 {
@@ -431,9 +433,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activating Secure RTP!\n");
 	}
 
+	rtp_session->seq = (uint16_t) rand();
 	rtp_session->send_msg.header.ssrc    = htonl(ssrc);
 	rtp_session->send_msg.header.ts      = 0;
-	rtp_session->send_msg.header.seq     = (uint16_t) rand();
+	//rtp_session->send_msg.header.seq     = (uint16_t) rand();
 	rtp_session->send_msg.header.m       = 0;
 	rtp_session->send_msg.header.pt      = (switch_payload_t)htonl(payload);
 	rtp_session->send_msg.header.version = 2;
@@ -451,7 +454,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	rtp_session->recv_msg.header.x       = 0;
 	rtp_session->recv_msg.header.cc      = 0;
 
-	rtp_session->seq = (uint16_t)rtp_session->send_msg.header.seq;
 	rtp_session->payload = payload;
 	rtp_session->ms_per_packet = ms_per_packet;
 	rtp_session->samples_per_interval = rtp_session->conf_samples_per_interval = samples_per_interval;
@@ -825,17 +827,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			check = (uint8_t)(switch_core_timer_check(&rtp_session->timer) == SWITCH_STATUS_SUCCESS);
 			
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTO_CNG) && 
-				rtp_session->timer.samplecount >= (rtp_session->last_write_ts + (rtp_session->samples_per_interval * 50))) {
+				rtp_session->timer.samplecount >= (rtp_session->last_write_samplecount + (rtp_session->samples_per_interval * 50))) {
 				uint8_t data[2] = {0};
 				switch_frame_flag_t flags = SFF_NONE;
-				data[0] = 127;
-				rtp_session->last_write_ts = rtp_session->timer.samplecount;
-				rtp_session->seq = ntohs(rtp_session->seq) + 1;
-				rtp_session->seq = htons(rtp_session->seq);
-				rtp_session->send_msg.header.seq = rtp_session->seq;
-				rtp_session->send_msg.header.ts = htonl(rtp_session->last_write_ts);
-				
-				rtp_common_write(rtp_session, (void *) data, sizeof(data), 0, rtp_session->cng_pt, &flags);
+				data[0] = 65;
+				rtp_session->cn++;
+				rtp_common_write(rtp_session, (void *) data, sizeof(data), rtp_session->cng_pt, &flags);
 			}
 		}
 
@@ -1142,7 +1139,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_sessi
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t datalen, uint8_t m, switch_payload_t payload, switch_frame_flag_t *flags)
+static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t datalen, switch_payload_t payload, switch_frame_flag_t *flags)
 {
 	switch_size_t bytes;
 	uint8_t fwd = 0;
@@ -1154,14 +1151,27 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 	}
 
 	fwd = (uint8_t)(!flags || (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE) && (*flags & SFF_RAW_RTP)));
-	
+		
 	if (fwd) {
 		bytes = datalen;
 		send_msg = (rtp_msg_t *) data;
 	} else {
+		uint8_t m = 0;
+		if (rtp_session->ts > rtp_session->last_write_ts + rtp_session->samples_per_interval || rtp_session->ts == rtp_session->samples_per_interval) {
+			m++;
+		}
+		if (rtp_session->cn && payload != rtp_session->cng_pt) {
+			rtp_session->cn = 0;
+			m++;
+		}
+
 		send_msg = &rtp_session->send_msg;
 		send_msg->header.pt = payload;
 		send_msg->header.m = m ? 1 : 0;
+		rtp_session->seq++;
+		rtp_session->send_msg.header.seq = htons(rtp_session->seq);
+		rtp_session->send_msg.header.ts = htonl(rtp_session->ts);
+		
         memcpy(send_msg->body, data, datalen);
 		bytes = datalen + rtp_header_len;	
 	}
@@ -1297,15 +1307,19 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 		}
 	}
 
-
 	rtp_session->last_write_ts = ntohl(send_msg->header.ts);
 	rtp_session->last_write_ssrc = ntohl(send_msg->header.ssrc);
-	rtp_session->last_write_seq = ntohs((u_short)send_msg->header.seq);
+	rtp_session->last_write_seq = rtp_session->seq;
+
 	if (rtp_session->last_write_seq <= rtp_session->dtmf_data.out_digit_seq) {
 		send = 0;
 	}
 
 	if (send) {
+		if (rtp_session->timer.interval) {
+			switch_core_timer_check(&rtp_session->timer);
+			rtp_session->last_write_samplecount = rtp_session->timer.samplecount;
+		}
         switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)send_msg, &bytes);
 	}
 
@@ -1381,7 +1395,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_enable_vad(switch_rtp_t *rtp_session,
 
 SWITCH_DECLARE(int) switch_rtp_write(switch_rtp_t *rtp_session, void *data, uint32_t datalen, uint32_t ts, switch_frame_flag_t *flags)
 {
-	uint8_t mark = 0;
 
 	if (!switch_rtp_ready(rtp_session)) {
 		return -1;
@@ -1404,16 +1417,7 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp_t *rtp_session, void *data, uint
 		rtp_session->ts += rtp_session->samples_per_interval;
 	}
 
-	if (rtp_session->ts > rtp_session->last_write_ts + rtp_session->samples_per_interval || rtp_session->ts == rtp_session->samples_per_interval) {
-		mark++;
-	}
-
-	rtp_session->seq = ntohs(rtp_session->seq) + 1;
-	rtp_session->seq = htons(rtp_session->seq);
-	rtp_session->send_msg.header.seq = rtp_session->seq;
-	rtp_session->send_msg.header.ts = htonl(rtp_session->ts);
-
-	return rtp_common_write(rtp_session, data, datalen, mark, rtp_session->payload, flags);
+	return rtp_common_write(rtp_session, data, datalen, rtp_session->payload, flags);
 
 }
 
@@ -1423,7 +1427,6 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	uint8_t packetize = 0;
 	void *data;
 	uint32_t len;
-	uint8_t mark = 0;
 	switch_payload_t payload;
 
 	
@@ -1467,18 +1470,9 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		} else {
 			rtp_session->ts += rtp_session->samples_per_interval;
 		}
-		
-		if (rtp_session->ts > rtp_session->last_write_ts + rtp_session->samples_per_interval || rtp_session->ts == rtp_session->samples_per_interval) {
-			mark++;
-		}
-
-		rtp_session->seq = ntohs(rtp_session->seq) + 1;
-		rtp_session->seq = htons(rtp_session->seq);
-		rtp_session->send_msg.header.seq = rtp_session->seq;
-		rtp_session->send_msg.header.ts = htonl(rtp_session->ts);
 	}
 
-	return rtp_common_write(rtp_session, data, len, mark, payload, &frame->flags);
+	return rtp_common_write(rtp_session, data, len, payload, &frame->flags);
 
 }
 
