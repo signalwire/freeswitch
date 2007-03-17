@@ -1083,37 +1083,40 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_root(void)
 SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **err)
 {
 	char path_buf[1024];
-	uint8_t hasmain = 0;
-	
+	uint8_t hasmain = 0, errcnt = 0;
+	switch_xml_t new_main;
+
 	switch_mutex_lock(XML_LOCK);
 
 	if (MAIN_XML_ROOT) {
-		switch_xml_t xml;
 		hasmain++;
 
 		if (!reload) {
 			switch_mutex_unlock(XML_LOCK);
 			return switch_xml_root();
 		}
-		xml = MAIN_XML_ROOT;
-		MAIN_XML_ROOT = NULL;
 		switch_thread_rwlock_wrlock(RWLOCK);
-		switch_xml_free(xml);
 	}
 
 	snprintf(path_buf, sizeof(path_buf), "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "freeswitch.xml");
-	if ((MAIN_XML_ROOT = switch_xml_parse_file(path_buf))) {
-		*err = switch_xml_error(MAIN_XML_ROOT);
+	if ((new_main = switch_xml_parse_file(path_buf))) {
+		*err = switch_xml_error(new_main);
 
 		if (!switch_strlen_zero(*err)) {
-			switch_xml_free(MAIN_XML_ROOT);
-			MAIN_XML_ROOT = NULL;
+			switch_xml_free(new_main);
+			new_main = NULL;
+			errcnt++;
 		} else {
+			switch_xml_t old_root;
 			*err = "Success";
+			old_root = MAIN_XML_ROOT;
+			MAIN_XML_ROOT = new_main;
 			switch_set_flag(MAIN_XML_ROOT, SWITCH_XML_ROOT);
+			switch_xml_free(old_root);
 		}
 	} else {
 		*err = "Cannot Open log directory or XML Root!";
+		errcnt++;
 	}
 
 	if (hasmain) {
@@ -1121,7 +1124,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 	}
 	switch_mutex_unlock(XML_LOCK);
 
-	return switch_xml_root();
+	return errcnt == 0 ? switch_xml_root() : NULL;
 }
 
 
