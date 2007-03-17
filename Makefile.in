@@ -299,7 +299,7 @@ AM_LDFLAGS = $(SWITCH_AM_LDFLAGS)
 BASE = $(switch_srcdir)
 OSARCH = `uname -s`
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
-TOUCH_TARGET = if test -f "$@" ; then touch "$@" ; fi ;
+TOUCH_TARGET = @if test -f "$@" ; then touch "$@" ; fi ;
 libfreeswitch_la_SOURCES = \
 src/switch_apr.c \
 src/switch_buffer.c \

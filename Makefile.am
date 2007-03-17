@@ -12,7 +12,7 @@ OSARCH=`uname -s`
 
 LIBTOOL=$(switch_builddir)/libtool
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
-TOUCH_TARGET=if test -f "$@" ; then touch "$@" ; fi ;
+TOUCH_TARGET=@if test -f "$@" ; then touch "$@" ; fi ;
 
 if CRASHPROT
 AM_CFLAGS += -DCRASH_PROT
