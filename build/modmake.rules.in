@@ -53,42 +53,28 @@ RECURSE_SOURCEFILE=`if test -f $$modname.cpp; then echo $$modname.cpp; else echo
 RECURSE_OUR_DEPS=`test -z "$(WANT_CURL)" || if test ! -z "$(LIBCURL_DEPS)"; then echo $(CURLLA); fi`
 RECURSE_OUR_CFLAGS=`test -z "$(WANT_CURL)" || echo $(LIBCURL_CPPFLAGS) ; $(LOCAL_INSERT_CFLAGS) `
 RECURSE_OUR_LDFLAGS=`test -z "$(WANT_CURL)" || echo $(LIBCURL) ; $(LOCAL_INSERT_LDFLAGS) `
-RECURSE_CHECKS=if test -z "$(MODNAME)" || test -z "$(SOURCEFILE)" || test -z "$(OUR_DEPS)" ; \
-	then modname=$(RECURSE_MODNAME) ; \
-	sourcefile=$(RECURSE_SOURCEFILE) ; \
-	ourdefs=$(RECURSE_OUR_DEPS) ; \
-	ourcflags=$(RECURSE_OUR_CFLAGS) ; \
-	ourldflags=$(RECURSE_OUR_LDFLAGS) ;
+RECURSE_MAKE=modname="$(RECURSE_MODNAME)" ; \
+		sourcefile="$(RECURSE_SOURCEFILE)" ; \
+		osarch=`uname -s` ; \
+		ourdefs="$(RECURSE_OUR_DEPS)" ; \
+		ourcflags="$(RECURSE_OUR_CFLAGS)" ; \
+		ourldflags="$(RECURSE_OUR_LDFLAGS)" ; \
+		$(MAKE) MODNAME="$$modname" SOURCEFILE="$$sourcefile" OUR_DEPS="$$ourdefs" OUR_CFLAGS="$$ourcflags" OUR_LDFLAGS="$$ourldflags" 
 
 all: Makefile
-	@$(RECURSE_CHECKS) \
-	  $(MAKE) MODNAME=$$modname SOURCEFILE=$$sourcefile OUR_DEPS=$$ourdefs OUR_CFLAGS=$$ourcflags OUR_LDFLAGS=$$our_ldflags all-modules || exit 1;\
-	fi
+	@$(RECURSE_MAKE) all-modules || exit 1
 depend: Makefile
-	@$(RECURSE_CHECKS) \
-	  $(MAKE) MODNAME=$$modname SOURCEFILE=$$sourcefile OUR_DEPS=$$ourdefs OUR_CFLAGS=$$ourcflags OUR_LDFLAGS=$$our_ldflags depend-modules || exit 1;\
-	fi
+	@$(RECURSE_MAKE) depend-modules || exit 1
 clean: Makefile
-	@$(RECURSE_CHECKS) \
-	  $(MAKE) MODNAME=$$modname SOURCEFILE=$$sourcefile OUR_DEPS=$$ourdefs OUR_CFLAGS=$$ourcflags OUR_LDFLAGS=$$our_ldflags clean-modules || exit 1;\
-	fi
+	@$(RECURSE_MAKE) clean-modules || exit 1
 install: Makefile
-	@$(RECURSE_CHECKS) \
-	  $(MAKE) MODNAME=$$modname SOURCEFILE=$$sourcefile OUR_DEPS=$$ourdefs OUR_CFLAGS=$$ourcflags OUR_LDFLAGS=$$our_ldflags install-modules || exit 1;\
-	fi
+	@$(RECURSE_MAKE) install-modules || exit 1
 uninstall: Makefile
-	@$(RECURSE_CHECKS) \
-	  $(MAKE) MODNAME=$$modname SOURCEFILE=$$sourcefile OUR_DEPS=$$ourdefs OUR_CFLAGS=$$ourcflags OUR_LDFLAGS=$$our_ldflags uninstall-modules || exit 1;\
-	fi
+	@$(RECURSE_MAKE) uninstall-modules || exit 1
 distclean: Makefile
-	@$(RECURSE_CHECKS) \
-	  $(MAKE) MODNAME=$$modname SOURCEFILE=$$sourcefile OUR_DEPS=$$ourdefs OUR_CFLAGS=$$ourcflags OUR_LDFLAGS=$$our_ldflags distclean-modules || exit 1;\
-	fi
+	@$(RECURSE_MAKE) distclean-modules || exit 1
 extraclean: Makefile
-	@$(RECURSE_CHECKS) \
-	  $(MAKE) MODNAME=$$modname SOURCEFILE=$$sourcefile OUR_DEPS=$$ourdefs OUR_CFLAGS=$$ourcflags OUR_LDFLAGS=$$our_ldflags extraclean-modules || exit 1;\
-	fi
-
+	@$(RECURSE_MAKE) extraclean-modules || exit 1
 
 all-modules: local_depend local_all $(MODNAME).$(DYNAMIC_LIB_EXTEN) Makefile
 depend-modules: local_depend

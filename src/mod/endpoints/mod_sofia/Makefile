@@ -1,7 +1,5 @@
 BASE=../../../..
 
-OS_ARCH         := $(subst /,_,$(shell uname -s | sed /\ /s//_/))
-
 SOFIA_DIR=$(BASE)/libs/sofia-sip
 SOFIAUA_DIR=$(SOFIA_DIR)/libsofia-sip-ua
 
@@ -19,9 +17,7 @@ SOFIALA=$(SOFIAUA_DIR)/libsofia-sip-ua.la
 
 LOCAL_LIBADD=$(SOFIALA)
 
-ifeq ($(OS_ARCH),Darwin)
-	LOCAL_LDFLAGS +=-framework CoreFoundation -framework SystemConfiguration
-endif
+LOCAL_INSERT_LDFLAGS=if test $$osarch = "Darwin" ; then echo "-framework CoreFoundation -framework SystemConfiguration" ; fi ;
 
 include $(BASE)/build/modmake.rules
 
