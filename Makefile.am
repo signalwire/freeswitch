@@ -13,6 +13,7 @@ OSARCH=`uname -s`
 LIBTOOL=$(switch_builddir)/libtool
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
 TOUCH_TARGET=if test -f "$@" ; then touch "$@" ; fi ;
+AM_MAKEFLAGS=`if test -z "$(VERBOSE)" ; then $(MAKE) --help | grep silent | grep "\-s"> /dev/null && echo -s;fi`
 
 if CRASHPROT
 AM_CFLAGS += -DCRASH_PROT
@@ -188,20 +189,20 @@ sure: clean modwipe uninstall installall
 wayclean: clean
 
 modules: libfreeswitch.la
-	@cd src/mod && $(MAKE)
+	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS)
 
 install_mod: libfreeswitch.la
-	@cd src/mod && $(MAKE) install
+	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS) install
 
 mod_install: install_mod
 
 uninstall_mod:
-	@cd src/mod && $(MAKE) uninstall
+	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS) uninstall
 
 mod_uninstall: uninstall_mod
 
 modclean:
-	@cd src/mod && $(MAKE) clean
+	cd src/mod && $(MAKE) $(AM_MAKEFLAGS) clean
 
 modwipe:
 	rm -f $(PREFIX)/mod/*.${DYNAMIC_LIB_EXTEN}

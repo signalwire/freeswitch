@@ -6,6 +6,7 @@ OUR_CLEAN_MODULES=if test -z "$(MODULES)" ; then tmp_clean_modules=`echo $$conf_
 			 else our_clean_modules=$(MODULES) ; fi ;
 MOD_NAME=`echo $$i | sed -e 's|^.*/||'`
 MOD_DIR=`if test -d $(switch_srcdir)/src/mod/$$i ; then echo $(switch_srcdir)/src/mod/$$i ; else echo $$i ; fi;`
+AM_MAKEFLAGS = `if test -z "$(VERBOSE)" ; then $(MAKE) --help | grep silent | grep "\-s"> /dev/null && echo -s;fi`
 
 all: 
 	@$(CONF_MODULES) \
@@ -17,8 +18,8 @@ all:
 	   echo making $$i ; \
 	   moddir=$(MOD_DIR); \
 	   if test -f $$moddir/Makefile ; then \
-	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) || exit 1; else  \
-	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) -f $(switch_builddir)/build/modmake.rules || exit 1; \
+	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) $(AM_MAKEFLAGS) || exit 1; else  \
+	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) $(AM_MAKEFLAGS) -f $(switch_builddir)/build/modmake.rules || exit 1; \
 	   fi; \
 	 done
 	@echo
@@ -35,8 +36,8 @@ clean:
 	   echo making clean $$i ; \
 	   moddir=$(MOD_DIR); \
 	   if test -f $$moddir/Makefile ; then \
-	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) clean || exit 1; else  \
-	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) -f $(switch_builddir)/build/modmake.rules clean || exit 1; \
+	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) $(AM_MAKEFLAGS) clean || exit 1; else  \
+	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) $(AM_MAKEFLAGS) -f $(switch_builddir)/build/modmake.rules clean || exit 1; \
 	   fi; \
 	 done
 	@echo
@@ -52,8 +53,8 @@ install:
 	   echo making install $$i ; \
 	   moddir=$(MOD_DIR); \
 	   if test -f $$moddir/Makefile ; then \
-	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) install || exit 1; else  \
-	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) -f $(switch_builddir)/build/modmake.rules install || exit 1; \
+	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) $(AM_MAKEFLAGS) install || exit 1; else  \
+	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) $(AM_MAKEFLAGS) -f $(switch_builddir)/build/modmake.rules install || exit 1; \
 	   fi; \
 	done
 	@echo
@@ -69,8 +70,8 @@ uninstall:
 	   echo making uninstall $$i ; \
 	   moddir=$(MOD_DIR); \
 	   if test -f $$moddir/Makefile ; then \
-	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) uninstall || exit 1; else  \
-	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) -f $(switch_builddir)/build/modmake.rules uninstall || exit 1; \
+	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) $(AM_MAKEFLAGS) uninstall || exit 1; else  \
+	      cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) $(AM_MAKEFLAGS) -f $(switch_builddir)/build/modmake.rules uninstall || exit 1; \
 	   fi; \
 	done
 	@echo
