@@ -202,7 +202,7 @@ uninstall_mod:
 mod_uninstall: uninstall_mod
 
 modclean:
-	cd src/mod && $(MAKE) $(AM_MAKEFLAGS) clean
+	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS) clean
 
 modwipe:
 	rm -f $(PREFIX)/mod/*.${DYNAMIC_LIB_EXTEN}
