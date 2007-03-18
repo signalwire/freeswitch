@@ -48,6 +48,9 @@
 #define MY_BUF_LEN 1024 * 32
 #define MY_BLOCK_SIZE MY_BUF_LEN
 
+#undef SWIFT_FAILED
+#define SWIFT_FAILED(r) ((void *)(r) < (void *)0)
+
 static const char modname[] = "mod_cepstral";
 
 static swift_engine *engine;
