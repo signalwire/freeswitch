@@ -4583,7 +4583,7 @@ static void sip_i_invite(nua_t *nua,
 
 	if (sip->sip_max_forwards) {
 		char max_forwards[32];
-		snprintf(max_forwards, sizeof(max_forwards), "%u", sip->sip_max_forwards->mf_count);
+		snprintf(max_forwards, sizeof(max_forwards), "%lu", sip->sip_max_forwards->mf_count);
 		switch_channel_set_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE, max_forwards);
 	}
 
