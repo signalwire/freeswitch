@@ -522,7 +522,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
             if (conference->alone_sound) {
                 conference_play_file(conference, conference->alone_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 0);
             } else {
-                snprintf(msg, sizeof(msg), "You are currently the only person in this conference.", conference->count);
+                snprintf(msg, sizeof(msg), "You are currently the only person in this conference.");
                 conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
             }
         }

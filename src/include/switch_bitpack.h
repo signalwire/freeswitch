@@ -63,8 +63,8 @@ static inline char *print_bits(switch_byte_t byte, char *x)
   \{ 
 */
 
-static const int8_t SWITCH_BITPACKED_MASKS[] = {0, 1, 3, 7, 15, 31, 63, 127, 255};
-static const int8_t SWITCH_REVERSE_BITPACKED_MASKS[] = {255, 254, 252, 248, 240, 224, 192, 128};
+static const uint8_t SWITCH_BITPACKED_MASKS[] = {0, 1, 3, 7, 15, 31, 63, 127, 255};
+static const uint8_t SWITCH_REVERSE_BITPACKED_MASKS[] = {255, 254, 252, 248, 240, 224, 192, 128};
 
 /*!
   \brief Initialize a bitpack object

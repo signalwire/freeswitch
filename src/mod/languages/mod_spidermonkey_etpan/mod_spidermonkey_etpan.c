@@ -62,10 +62,12 @@ static void etpan_destroy(JSContext *cx, JSObject *obj)
 {
 }
 
+#if 0
 static JSBool etpan_my_method(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	return JS_FALSE;
 }
+#endif
 
 enum etpan_tinyid {
 	etpan_NAME

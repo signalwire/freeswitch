@@ -77,7 +77,7 @@ static switch_xml_t xml_url_fetch(const char *section,
         return NULL;
     }
 
-    if (file_url = strstr(binding->url, "file:")) {
+    if ((file_url = strstr(binding->url, "file:"))) {
         file_url += 5;
      
         if (!(xml = switch_xml_parse_file(file_url))) {
