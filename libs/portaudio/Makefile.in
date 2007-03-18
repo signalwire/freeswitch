@@ -164,16 +164,19 @@ clean:
 distclean: clean
 	rm -f config.log config.status Makefile libtool portaudio-2.0.pc
 
-%.o: %.c $(MAKEFILE) $(PAINC)
+.SUFFIXES:
+.SUFFIXES: .c .lo .o .cpp
+
+.c.o: $(MAKEFILE) $(PAINC)
 	$(CC) -c $(CFLAGS) $< -o $@
 
-%.lo: %.c $(MAKEFILE) $(PAINC)
+.c.lo: $(MAKEFILE) $(PAINC)
 	$(LIBTOOL) --mode=compile $(CC) -c $(CFLAGS) $< -o $@
 
-%.o: %.cpp $(MAKEFILE) $(PAINC)
+.cpp.o: $(MAKEFILE) $(PAINC)
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
-%.o: %.asm
+.asm.o:
 	$(NASM) $(NASMOPT) -o $@ $<
 
 bin-stamp:
