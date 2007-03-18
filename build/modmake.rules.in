@@ -48,7 +48,7 @@ CSOURCEFILE=$(MODNAME).c
 CXXSOURCEFILE=$(MODNAME).cpp
 TOUCH_TARGET=if test -f "$@" ; then touch "$@" ; fi ;
 
-MAKE_OPTS = `if test -z "$(VERBOSE)" ; then $(MAKE) --help | grep silent | grep "\-s"> /dev/null && echo -s;fi`
+MAKE_OPTS = `if test -z "$(VERBOSE)" ; then $(MAKE) --help | grep silent | grep "\-s" 2>&1 >/dev/null && echo -s;fi`
 RECURSE_MODNAME=`pwd | sed -e 's|^.*/||'`
 RECURSE_SOURCEFILE=`if test -f $$modname.cpp; then echo $$modname.cpp; else echo $$modname.c; fi`
 RECURSE_OUR_DEPS=`test -z "$(WANT_CURL)" || if test ! -z "$(LIBCURL_DEPS)"; then echo $(CURLLA); fi`
