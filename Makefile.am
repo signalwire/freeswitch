@@ -10,7 +10,9 @@ AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS)
 BASE        = $(switch_srcdir)
 OSARCH=`uname -s`
 
-LIBTOOL=$(switch_builddir)/libtool
+LIBTOOL=`if test -z "$(VERBOSE)" ; then echo $(SHELL) $(switch_builddir)/quiet_libtool ;else echo $(switch_builddir)/libtool;  fi;`
+
+#LIBTOOL = $(SHELL) $(switch_builddir)/quiet_libtool
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
 TOUCH_TARGET=if test -f "$@" ; then touch "$@" ; fi ;
 AM_MAKEFLAGS=`test -n "$(VERBOSE)" || echo -s`
@@ -99,7 +101,10 @@ nodist_freeswitch_SOURCES = src/include/switch_version.h
 freeswitch_CFLAGS = $(AM_CFLAGS)
 freeswitch_LDADD = ${MOD_LINK}
 
-$(libfreeswitch_la_SOURCES): $(CORE_LIBS)
+$(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/quiet_libtool
+
+$(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
+	@cat libtool | sed -e 's|$$show "$$command"|if test -z "$$suppress_output" ; then $$show "Compiling $$srcfile ..." ; fi|' > quiet_libtool
 
 install-data-local:
 	@echo Installing $(NAME)

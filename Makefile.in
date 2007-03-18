@@ -203,7 +203,7 @@ LIBCURL_CPPFLAGS = @LIBCURL_CPPFLAGS@
 LIBCURL_DEPS = @LIBCURL_DEPS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
-LIBTOOL = $(switch_builddir)/libtool
+LIBTOOL = `if test -z "$(VERBOSE)" ; then echo $(SHELL) $(switch_builddir)/quiet_libtool ;else echo $(switch_builddir)/libtool;  fi;`
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
@@ -299,6 +299,8 @@ AM_CPPFLAGS = $(SWITCH_AM_CXXFLAGS)
 AM_LDFLAGS = $(SWITCH_AM_LDFLAGS)
 BASE = $(switch_srcdir)
 OSARCH = `uname -s`
+
+#LIBTOOL = $(SHELL) $(switch_builddir)/quiet_libtool
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
 TOUCH_TARGET = if test -f "$@" ; then touch "$@" ; fi ;
 AM_MAKEFLAGS = `test -n "$(VERBOSE)" || echo -s`
@@ -1088,7 +1090,10 @@ uninstall-info: uninstall-info-recursive
 	uninstall-libLTLIBRARIES uninstall-library_includeHEADERS
 
 
-$(libfreeswitch_la_SOURCES): $(CORE_LIBS)
+$(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/quiet_libtool
+
+$(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
+	@cat libtool | sed -e 's|$$show "$$command"|if test -z "$$suppress_output" ; then $$show "Compiling $$srcfile ..." ; fi|' > quiet_libtool
 
 install-data-local:
 	@echo Installing $(NAME)
