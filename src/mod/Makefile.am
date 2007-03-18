@@ -6,7 +6,8 @@ OUR_CLEAN_MODULES=if test -z "$(MODULES)" ; then tmp_clean_modules=`echo $$conf_
 			 else our_clean_modules=$(MODULES) ; fi ;
 MOD_NAME=`echo $$i | sed -e 's|^.*/||'`
 MOD_DIR=`if test -d $(switch_srcdir)/src/mod/$$i ; then echo $(switch_srcdir)/src/mod/$$i ; else echo $$i ; fi;`
-AM_MAKEFLAGS = `if test -z "$(VERBOSE)" ; then $(MAKE) --help | grep silent | grep "\-s" 2>&1 >/dev/null && echo -s;fi`
+AM_MAKEFLAGS = `test -n "$(VERBOSE)" || echo -s`
+#AM_MAKEFLAGS = `if test -z "$(VERBOSE)" ; then $(MAKE) --help | grep silent | grep "\-s" 2>&1 >/dev/null && echo -s;fi`
 
 all: 
 	@$(CONF_MODULES) \

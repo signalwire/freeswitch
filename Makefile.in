@@ -40,6 +40,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+#AM_MAKEFLAGS=`if test -z "$(VERBOSE)" ; then $(MAKE) --help | grep silent | grep "\-s" 2>&1 >/dev/null && echo -s;fi`
 @CRASHPROT_TRUE@am__append_1 = -DCRASH_PROT
 bin_PROGRAMS = freeswitch$(EXEEXT)
 DIST_COMMON = README $(am__configure_deps) $(library_include_HEADERS) \
@@ -300,7 +301,7 @@ BASE = $(switch_srcdir)
 OSARCH = `uname -s`
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
 TOUCH_TARGET = if test -f "$@" ; then touch "$@" ; fi ;
-AM_MAKEFLAGS = `if test -z "$(VERBOSE)" ; then $(MAKE) --help | grep silent | grep "\-s" 2>&1 >/dev/null && echo -s;fi`
+AM_MAKEFLAGS = `test -n "$(VERBOSE)" || echo -s`
 libfreeswitch_la_SOURCES = \
 src/switch_apr.c \
 src/switch_buffer.c \

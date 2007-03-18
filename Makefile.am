@@ -13,7 +13,8 @@ OSARCH=`uname -s`
 LIBTOOL=$(switch_builddir)/libtool
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
 TOUCH_TARGET=if test -f "$@" ; then touch "$@" ; fi ;
-AM_MAKEFLAGS=`if test -z "$(VERBOSE)" ; then $(MAKE) --help | grep silent | grep "\-s" 2>&1 >/dev/null && echo -s;fi`
+AM_MAKEFLAGS=`test -n "$(VERBOSE)" || echo -s`
+#AM_MAKEFLAGS=`if test -z "$(VERBOSE)" ; then $(MAKE) --help | grep silent | grep "\-s" 2>&1 >/dev/null && echo -s;fi`
 
 if CRASHPROT
 AM_CFLAGS += -DCRASH_PROT
