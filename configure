@@ -20218,6 +20218,27 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     done
   fi
 
+
+  if test "x$SWITCH_AM_CFLAGS" = "x"; then
+    test "x$silent" != "xyes" && echo "  setting SWITCH_AM_CFLAGS to \"-Werror\""
+    SWITCH_AM_CFLAGS="-Werror"
+  else
+    apr_addto_bugger="-Werror"
+    for i in $apr_addto_bugger; do
+      apr_addto_duplicate="0"
+      for j in $SWITCH_AM_CFLAGS; do
+        if test "x$i" = "x$j"; then
+          apr_addto_duplicate="1"
+          break
+        fi
+      done
+      if test $apr_addto_duplicate = "0"; then
+        test "x$silent" != "xyes" && echo "  adding \"$i\" to SWITCH_AM_CFLAGS"
+        SWITCH_AM_CFLAGS="$SWITCH_AM_CFLAGS $i"
+      fi
+    done
+  fi
+
 fi
 
 # tweak platform specific flags
