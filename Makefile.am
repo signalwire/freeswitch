@@ -12,7 +12,7 @@ OSARCH=`uname -s`
 
 LIBTOOL=$(switch_builddir)/libtool
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
-TOUCH_TARGET=@if test -f "$@" ; then touch "$@" ; fi ;
+TOUCH_TARGET=if test -f "$@" ; then touch "$@" ; fi ;
 
 if CRASHPROT
 AM_CFLAGS += -DCRASH_PROT
@@ -146,32 +146,32 @@ yesdepends:
 	rm .nodepends
 
 libs/apr/libapr-1.la: libs/apr libs/apr/.update
-	cd libs/apr && $(MAKE)
-	$(TOUCH_TARGET)
+	@cd libs/apr && $(MAKE)
+	@$(TOUCH_TARGET)
 
 libs/apr-util/libaprutil-1.la: libs/apr-util libs/apr-util/.update
-	cd libs/apr-util && $(MAKE)
-	$(TOUCH_TARGET)
+	@cd libs/apr-util && $(MAKE)
+	@$(TOUCH_TARGET)
 
 libs/sqlite/libsqlite3.la: libs/sqlite libs/sqlite/.update
-	cd libs/sqlite && $(MAKE)
-	$(TOUCH_TARGET)
+	@cd libs/sqlite && $(MAKE)
+	@$(TOUCH_TARGET)
 
 libs/pcre/libpcre.la: libs/pcre libs/pcre/.update
-	cd libs/pcre && $(MAKE)
-	$(TOUCH_TARGET)
+	@cd libs/pcre && $(MAKE)
+	@$(TOUCH_TARGET)
 
 libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update
-	cd libs/srtp && $(MAKE)
-	$(TOUCH_TARGET)
+	@cd libs/srtp && $(MAKE)
+	@$(TOUCH_TARGET)
 
 libs/libteletone/libteletone.la: libs/libteletone libs/libteletone/.update
-	cd libs/libteletone && $(MAKE)
-	$(TOUCH_TARGET)
+	@cd libs/libteletone && $(MAKE)
+	@$(TOUCH_TARGET)
 
 libs/libresample/libresample.la: libs/libresample libs/libresample/.update
-	cd libs/libresample && $(MAKE)
-	$(TOUCH_TARGET)
+	@cd libs/libresample && $(MAKE)
+	@$(TOUCH_TARGET)
 
 core:  libfreeswitch.la  
 
@@ -188,20 +188,20 @@ sure: clean modwipe uninstall installall
 wayclean: clean
 
 modules: libfreeswitch.la
-	$(MAKE) -C src/mod
+	@cd src/mod && $(MAKE)
 
 install_mod: libfreeswitch.la
-	$(MAKE) -C src/mod install
+	@cd src/mod && $(MAKE) install
 
 mod_install: install_mod
 
 uninstall_mod:
-	$(MAKE) -C src/mod uninstall
+	@cd src/mod && $(MAKE) uninstall
 
 mod_uninstall: uninstall_mod
 
 modclean:
-	$(MAKE) -C src/mod clean
+	@cd src/mod && $(MAKE) clean
 
 modwipe:
 	rm -f $(PREFIX)/mod/*.${DYNAMIC_LIB_EXTEN}
