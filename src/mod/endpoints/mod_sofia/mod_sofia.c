@@ -2251,6 +2251,16 @@ static const switch_chat_interface_t sofia_chat_interface = {
 	
 };
 
+static switch_status_t sofia_manage(char *relative_oid, switch_management_action_t action, char *data, switch_size_t datalen)
+{
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static const switch_management_interface_t sofia_management_interface = {
+	/*.relative_oid*/ "1",
+	/*.management_function*/ sofia_manage
+};
+
 static const switch_loadable_module_interface_t sofia_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ &sofia_endpoint_interface,
@@ -2262,7 +2272,10 @@ static const switch_loadable_module_interface_t sofia_module_interface = {
 	/*.file_interface */ NULL,
 	/*.speech_interface */ NULL,
 	/*.directory_interface */ NULL,
-	/*.chat_interface */ &sofia_chat_interface
+	/*.chat_interface */ &sofia_chat_interface,
+	/*.say_interface */ NULL,
+	/*.asr_interface */ NULL,
+	/*.management_interface */ &sofia_management_interface
 };
 
 
@@ -3043,6 +3056,11 @@ static void sip_i_state(int status,
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "3PCC Invite\n");
 				switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_3PCC");
+
+				if (tech_choose_port(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+					return status;
+				}
+
 				set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 
 				nua_respond(tech_pvt->nh, SIP_200_OK, 
