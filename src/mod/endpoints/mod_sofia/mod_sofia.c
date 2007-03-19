@@ -3058,7 +3058,7 @@ static void sip_i_state(int status,
 				switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_3PCC");
 
 				if (tech_choose_port(tech_pvt) != SWITCH_STATUS_SUCCESS) {
-					return status;
+					return;
 				}
 
 				set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
