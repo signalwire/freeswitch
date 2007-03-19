@@ -7,6 +7,13 @@ SUBDIRS="codec/g7xx codec/g726 codec/gsm codec/ilbc codec/lpc10 curl iax iksemel
         js js/nsprpub libdingaling libetpan libresample libsndfile libteletone pcre sofia-sip \
         speex sqlite srtp xmlrpc-c";
 
+# keep automake from making us magically GPL, and to stop complaining about missing files.
+cp -f docs/COPYING .
+cp -f docs/AUTHORS .
+touch NEWS
+touch README
+touch ChangeLog
+
 # autoconf 2.59 or newer
 ac_version=`${AUTOCONF:-autoconf} --version 2>/dev/null|sed -e 's/^[^0-9]*//;s/[a-z]* *$//;q'`
 if test -z "$ac_version"; then

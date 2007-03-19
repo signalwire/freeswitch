@@ -51,8 +51,7 @@ DIST_COMMON = README $(am__configure_deps) $(library_include_HEADERS) \
 	$(top_srcdir)/configure $(top_srcdir)/crypto/Makefile.in \
 	$(top_srcdir)/doc/Makefile.in AUTHORS COPYING ChangeLog \
 	INSTALL NEWS TODO build/config.guess build/config.sub \
-	build/depcomp build/install-sh build/ltmain.sh build/missing \
-	config.guess config.sub install-sh
+	build/depcomp build/install-sh build/ltmain.sh build/missing
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \

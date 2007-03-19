@@ -1,4 +1,4 @@
-CONF_MODULES=if test ! -f $(switch_builddir)/modules.conf ; then cp $(switch_builddir)/modules.conf.in $(switch_builddir)/modules.conf ; fi ; conf_modules=`grep -v "\#" $(switch_builddir)/modules.conf` ;
+CONF_MODULES=if test ! -f $(switch_builddir)/modules.conf ; then cp $(switch_builddir)/build/modules.conf.in $(switch_builddir)/modules.conf ; fi ; conf_modules=`grep -v "\#" $(switch_builddir)/modules.conf` ;
 FOUND_MODULES=found_modules=`find . -type d -name mod_\* | sed -e 's|^\./||'` ;
 OUR_MODULES=if test -z "$(MODULES)" ; then our_modules=$$conf_modules ; else our_modules=$(MODULES) ; fi ;
 OUR_CLEAN_MODULES=if test -z "$(MODULES)" ; then tmp_clean_modules=`echo $$conf_modules $$found_modules`; \
