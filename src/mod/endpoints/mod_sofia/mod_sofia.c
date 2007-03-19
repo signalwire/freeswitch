@@ -51,7 +51,7 @@ typedef struct sofia_profile sofia_profile_t;
 
 struct sofia_private {
     char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
-	outbound_reg_t *oreg;
+	outbound_reg_t *gateway;
 };
 
 typedef struct sofia_private sofia_private_t;
@@ -68,6 +68,7 @@ typedef struct private_object private_object_t;
 #define SOFIA_CHAT_PROTO "sip"
 #define SOFIA_SIP_HEADER_PREFIX "sip_h_"
 #define SOFIA_SIP_HEADER_PREFIX_T "~sip_h_"
+#define SOFIA_DEFAULT_PORT "5060"
 
 #include <sofia-sip/nua.h>
 #include <sofia-sip/sip_status.h>
@@ -180,6 +181,7 @@ typedef enum {
 
 static struct {
 	switch_hash_t *profile_hash;
+	switch_hash_t *gateway_hash;
 	switch_mutex_t *hash_mutex;
 	uint32_t callid;
 	int32_t running;
@@ -210,6 +212,7 @@ struct outbound_reg {
 	char *register_username;
 	char *register_password;
 	char *register_from;
+	char *register_contact;
 	char *register_to;
 	char *register_proxy;
 	char *expires_str;
@@ -255,8 +258,8 @@ struct sofia_profile {
 	switch_payload_t cng_pt;
 	uint32_t codec_flags;
 	switch_mutex_t *ireg_mutex;
-	switch_mutex_t *oreg_mutex;
-	outbound_reg_t *registrations;
+	switch_mutex_t *gateway_mutex;
+	outbound_reg_t *gateways;
 	su_home_t *home;
 	switch_hash_t *profile_hash;
 	switch_hash_t *chat_hash;
@@ -440,6 +443,42 @@ typedef enum {
 	AUTH_STALE,
 } auth_res_t;
 
+
+static sofia_profile_t *find_profile(char *key)
+{
+	static sofia_profile_t *profile;
+
+	switch_mutex_lock(globals.hash_mutex);
+	profile = (sofia_profile_t *) switch_core_hash_find(globals.profile_hash, key);
+	switch_mutex_unlock(globals.hash_mutex);
+
+	return profile;
+}
+
+static void add_profile(char *key, sofia_profile_t *profile)
+{
+	switch_mutex_lock(globals.hash_mutex);
+	switch_core_hash_insert(globals.profile_hash, key, profile);	
+	switch_mutex_unlock(globals.hash_mutex);
+}
+
+static outbound_reg_t *find_gateway(char *key)
+{
+	outbound_reg_t *gateway;
+
+	switch_mutex_lock(globals.hash_mutex);
+	gateway = (outbound_reg_t *) switch_core_hash_find(globals.gateway_hash, key);
+	switch_mutex_unlock(globals.hash_mutex);
+
+	return gateway;
+}
+
+static void add_gateway(char *key, outbound_reg_t *gateway)
+{
+	switch_mutex_lock(globals.hash_mutex);
+	switch_core_hash_insert(globals.gateway_hash, key, gateway);
+	switch_mutex_unlock(globals.hash_mutex);
+}
 
 static char *get_url_from_contact(char *buf, uint8_t to_dup)
 {
@@ -804,7 +843,6 @@ static void tech_set_codecs(private_object_t *tech_pvt)
 {
     switch_channel_t *channel;
     char *abs, *codec_string = NULL;
-    char *csdyn = NULL;
     char *ocodec = NULL;
 
 	if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
@@ -834,31 +872,27 @@ static void tech_set_codecs(private_object_t *tech_pvt)
             if (!codec_string || (tech_pvt->profile->pflags & PFLAG_DISABLE_TRANSCODING)) {
                 codec_string = ocodec;
             } else {
-                if ((csdyn = switch_mprintf("%s,%s", ocodec, codec_string))) {
-                    codec_string = csdyn;
-                } else {
-                    codec_string = ocodec;
-                }
+				if (!(codec_string = switch_core_session_sprintf(tech_pvt->session, "%s,%s", ocodec, codec_string))) {
+					codec_string = ocodec;
+				}
             }
         }
     }
 
 	if (codec_string) {
 		char *tmp_codec_string;
-		if ((tmp_codec_string = strdup(codec_string))) {
+		if ((tmp_codec_string = switch_core_session_strdup(tech_pvt->session, codec_string))) {
 			tech_pvt->codec_order_last = switch_separate_string(tmp_codec_string, ',', tech_pvt->codec_order, SWITCH_MAX_CODECS);
 			tech_pvt->num_codecs = switch_loadable_module_get_codecs_sorted(tech_pvt->codecs,
 																			SWITCH_MAX_CODECS,
 																			tech_pvt->codec_order,
 																			tech_pvt->codec_order_last);
-			free(tmp_codec_string);
 		}
 	} else {
 		tech_pvt->num_codecs = switch_loadable_module_get_codecs(switch_core_session_get_pool(tech_pvt->session), tech_pvt->codecs,
 																 sizeof(tech_pvt->codecs) / sizeof(tech_pvt->codecs[0]));
 	}
 
-    switch_safe_free(csdyn);
 }
 
 
@@ -1024,9 +1058,12 @@ static switch_status_t do_invite(switch_core_session_t *session)
 	char *extra_headers = NULL;
 	const void *vvar;
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *rep;
 
     channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
+
+	rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
 
     tech_pvt = (private_object_t *) switch_core_session_get_private(session);
     assert(tech_pvt != NULL);
@@ -1037,128 +1074,132 @@ static switch_status_t do_invite(switch_core_session_t *session)
 	cid_num = (char *) caller_profile->caller_id_number;
     tech_set_codecs(tech_pvt);
 
-	if ((tech_pvt->from_str = switch_mprintf("\"%s\" <sip:%s@%s>", 
-													 cid_name,
-													 cid_num,
-													 tech_pvt->profile->extsipip ? tech_pvt->profile->extsipip : tech_pvt->profile->sipip
-													 ))) {
-
-		char *rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
-
-		if ((alertbuf = switch_channel_get_variable(channel, "alert_info"))) {
-			snprintf(alert_info, sizeof(alert_info) - 1, "Alert-Info: %s", alertbuf);
-		}
-
-		if ((forwardbuf = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE))) {
-			forwardval = atoi(forwardbuf) - 1;
-			snprintf(max_forwards, sizeof(max_forwards) - 1, "%d", forwardval);
-		}
-
-		if (tech_choose_port(tech_pvt) != SWITCH_STATUS_SUCCESS) {
-            return status;
-        }
-        
-		set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
-
-		switch_set_flag_locked(tech_pvt, TFLAG_READY);
-
-		// forge a RPID for now KHR  -- Should wrap this in an if statement so it can be turned on and off
-		if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
-			const char *priv = "off";
-			const char *screen = "no";
-			if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
-				priv = "name";
-				if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
-					priv = "yes";
-				}
-			} else if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
-				priv = "yes";
-			}
-			if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
-				screen = "yes";
-			}
-
-			snprintf(rpid, sizeof(rpid) - 1, "Remote-Party-ID: %s;party=calling;screen=%s;privacy=%s", tech_pvt->from_str, screen, priv);
-								
-		}
-
-		if (!tech_pvt->nh) {
-			char *url =  get_url_from_contact(tech_pvt->dest, 1);
-			tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
-									  NUTAG_URL(url),
-									  SIPTAG_TO_STR(tech_pvt->dest_to),
-									  SIPTAG_FROM_STR(tech_pvt->from_str),
-									  SIPTAG_CONTACT_STR(tech_pvt->profile->url),
-									  TAG_END());
-			switch_safe_free(url);
-
-            if (!(tech_pvt->sofia_private = malloc(sizeof(*tech_pvt->sofia_private)))) {
-                abort();
-            }
-            memset(tech_pvt->sofia_private, 0, sizeof(*tech_pvt->sofia_private));
-			switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));
-			nua_handle_bind(tech_pvt->nh, tech_pvt->sofia_private);
-
-		}
-
-
-		if (tech_pvt->e_dest && (e_dest = strdup(tech_pvt->e_dest))) {
-			char *user = e_dest, *host = NULL;
-			char hash_key[256] = "";
-
-			if ((host = strchr(user, '@'))) {
-				*host++ = '\0';
-			}
-			snprintf(hash_key, sizeof(hash_key), "%s%s%s", user, host, cid_num);
-
-			tech_pvt->chat_from = tech_pvt->from_str;
-			tech_pvt->chat_to = tech_pvt->dest;
-			tech_pvt->hash_key = switch_core_session_strdup(tech_pvt->session, hash_key);
-			switch_core_hash_insert(tech_pvt->profile->chat_hash, tech_pvt->hash_key, tech_pvt);
-			free(e_dest);			
-		}
-
-		holdstr = switch_test_flag(tech_pvt, TFLAG_SIP_HOLD) ? "*" : "";
-
-
-		SWITCH_STANDARD_STREAM(stream);
-		for (hi = switch_channel_variable_first(channel, switch_core_session_get_pool(tech_pvt->session)); hi; hi = switch_hash_next(hi)) {
-            switch_hash_this(hi, &vvar, NULL, &vval);
-            if (vvar && vval) {
-				const char *name = vvar;
-				char *value = (char *) vval;
-
-				if (!strncasecmp(name, SOFIA_SIP_HEADER_PREFIX, strlen(SOFIA_SIP_HEADER_PREFIX))) {
-					const char *hname = name + strlen(SOFIA_SIP_HEADER_PREFIX);
-					stream.write_function(&stream, "%s: %s\r\n", hname, value);
-				}
-			}
-		}
+	if (!tech_pvt->from_str) {
+		tech_pvt->from_str = switch_core_session_sprintf(tech_pvt->session, "\"%s\" <sip:%s@%s>", 
+														 cid_name,
+														 cid_num,
+														 tech_pvt->profile->extsipip ? tech_pvt->profile->extsipip : tech_pvt->profile->sipip);
 		
-		if (stream.data) {
-			extra_headers = stream.data;
-		}
-
-		nua_invite(tech_pvt->nh,
-				   TAG_IF(!switch_strlen_zero(rpid), SIPTAG_HEADER_STR(rpid)),
-				   TAG_IF(!switch_strlen_zero(alert_info), SIPTAG_HEADER_STR(alert_info)),
-				   TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
-				   TAG_IF(!switch_strlen_zero(max_forwards),SIPTAG_MAX_FORWARDS_STR(max_forwards)),
-				   //SIPTAG_CONTACT_STR(tech_pvt->profile->url),
-				   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-				   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
-				   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL),
-				   TAG_IF(rep, SIPTAG_REPLACES_STR(rep)),
-				   SOATAG_HOLD(holdstr),
-				   TAG_END());
-		
-		switch_safe_free(stream.data);
-		status = SWITCH_STATUS_SUCCESS;
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
 	}
 
-	return status;
+	if (!tech_pvt->from_str) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+
+
+
+	if ((alertbuf = switch_channel_get_variable(channel, "alert_info"))) {
+		snprintf(alert_info, sizeof(alert_info) - 1, "Alert-Info: %s", alertbuf);
+	}
+
+	if ((forwardbuf = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE))) {
+		forwardval = atoi(forwardbuf) - 1;
+		snprintf(max_forwards, sizeof(max_forwards) - 1, "%d", forwardval);
+	}
+
+	if (tech_choose_port(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+		return status;
+	}
+        
+	set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
+
+	switch_set_flag_locked(tech_pvt, TFLAG_READY);
+
+	// forge a RPID for now KHR  -- Should wrap this in an if statement so it can be turned on and off
+	if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
+		const char *priv = "off";
+		const char *screen = "no";
+		if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
+			priv = "name";
+			if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
+				priv = "yes";
+			}
+		} else if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
+			priv = "yes";
+		}
+		if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
+			screen = "yes";
+		}
+
+		snprintf(rpid, sizeof(rpid) - 1, "Remote-Party-ID: %s;party=calling;screen=%s;privacy=%s", tech_pvt->from_str, screen, priv);
+								
+	}
+
+	if (!tech_pvt->nh) {
+		char *url =  get_url_from_contact(tech_pvt->dest, 1);
+		tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
+								  NUTAG_URL(url),
+								  SIPTAG_TO_STR(tech_pvt->dest_to),
+								  SIPTAG_FROM_STR(tech_pvt->from_str),
+								  SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+								  TAG_END());
+		switch_safe_free(url);
+
+		if (!(tech_pvt->sofia_private = malloc(sizeof(*tech_pvt->sofia_private)))) {
+			abort();
+		}
+		memset(tech_pvt->sofia_private, 0, sizeof(*tech_pvt->sofia_private));
+		switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));
+		nua_handle_bind(tech_pvt->nh, tech_pvt->sofia_private);
+
+	}
+
+
+	if (tech_pvt->e_dest && (e_dest = strdup(tech_pvt->e_dest))) {
+		char *user = e_dest, *host = NULL;
+		char hash_key[256] = "";
+
+		if ((host = strchr(user, '@'))) {
+			*host++ = '\0';
+		}
+		snprintf(hash_key, sizeof(hash_key), "%s%s%s", user, host, cid_num);
+
+		tech_pvt->chat_from = tech_pvt->from_str;
+		tech_pvt->chat_to = tech_pvt->dest;
+		tech_pvt->hash_key = switch_core_session_strdup(tech_pvt->session, hash_key);
+		switch_core_hash_insert(tech_pvt->profile->chat_hash, tech_pvt->hash_key, tech_pvt);
+		free(e_dest);			
+	}
+
+	holdstr = switch_test_flag(tech_pvt, TFLAG_SIP_HOLD) ? "*" : "";
+
+
+	SWITCH_STANDARD_STREAM(stream);
+	for (hi = switch_channel_variable_first(channel, switch_core_session_get_pool(tech_pvt->session)); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &vvar, NULL, &vval);
+		if (vvar && vval) {
+			const char *name = vvar;
+			char *value = (char *) vval;
+
+			if (!strncasecmp(name, SOFIA_SIP_HEADER_PREFIX, strlen(SOFIA_SIP_HEADER_PREFIX))) {
+				const char *hname = name + strlen(SOFIA_SIP_HEADER_PREFIX);
+				stream.write_function(&stream, "%s: %s\r\n", hname, value);
+			}
+		}
+	}
+		
+	if (stream.data) {
+		extra_headers = stream.data;
+	}
+
+	nua_invite(tech_pvt->nh,
+			   TAG_IF(!switch_strlen_zero(rpid), SIPTAG_HEADER_STR(rpid)),
+			   TAG_IF(!switch_strlen_zero(alert_info), SIPTAG_HEADER_STR(alert_info)),
+			   TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
+			   TAG_IF(!switch_strlen_zero(max_forwards),SIPTAG_MAX_FORWARDS_STR(max_forwards)),
+			   //SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+			   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+			   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
+			   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL),
+			   TAG_IF(rep, SIPTAG_REPLACES_STR(rep)),
+			   SOATAG_HOLD(holdstr),
+			   TAG_END());
+		
+	switch_safe_free(stream.data);
+
+	return SWITCH_STATUS_SUCCESS;
 	
 }
 
@@ -1181,11 +1222,11 @@ static void do_xfer_invite(switch_core_session_t *session)
 
 	
 
-	if ((tech_pvt->from_str = switch_mprintf("\"%s\" <sip:%s@%s>", 
-													 (char *) caller_profile->caller_id_name, 
-													 (char *) caller_profile->caller_id_number,
-													 tech_pvt->profile->extsipip ? tech_pvt->profile->extsipip : tech_pvt->profile->sipip
-													 ))) {
+	if ((tech_pvt->from_str = switch_core_session_sprintf(session, "\"%s\" <sip:%s@%s>", 
+														 (char *) caller_profile->caller_id_name, 
+														 (char *) caller_profile->caller_id_number,
+														 tech_pvt->profile->extsipip ? tech_pvt->profile->extsipip : tech_pvt->profile->sipip
+														 ))) {
 
 		char *rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
 
@@ -1425,10 +1466,6 @@ static switch_status_t sofia_on_hangup(switch_core_session_t *session)
 			}
 			switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 		}
-	}
-
-	if (tech_pvt->from_str) {
-		switch_safe_free(tech_pvt->from_str);
 	}
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
@@ -2334,57 +2371,95 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	data = switch_core_session_strdup(nsession, outbound_profile->destination_number);
 	profile_name = data;
 	
-	if (!(dest = strchr(profile_name, '/'))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
-        terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
-		cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
-        goto done;
-	}
+	if (!strncasecmp(profile_name, "gateway", 7)) {
+		char *gw;
+		outbound_reg_t *gateway_ptr;
 
-	*dest++ = '\0';
-	
-	if (!(profile = (sofia_profile_t *) switch_core_hash_find(globals.profile_hash, profile_name))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile\n");
-        terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
-		cause =  SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-        goto done;
-	}
-
-	if ((dest_to = strchr(dest, '^'))) {
-		*dest_to++ = '\0';
-		tech_pvt->dest_to = switch_core_session_alloc(nsession, strlen(dest_to) + 5);
-		snprintf(tech_pvt->dest_to, strlen(dest_to) + 5, "sip:%s", dest_to);
-	}
-
-	if ((host = strchr(dest, '%'))) {
-		char buf[128];
-		*host = '@';
-		tech_pvt->e_dest = switch_core_session_strdup(nsession, dest);
-		*host++ = '\0';
-		if (find_reg_url(profile, dest, host, buf, sizeof(buf))) {
-			tech_pvt->dest = switch_core_session_strdup(nsession, buf);
-			
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", dest, host);
-			cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
-			terminate_session(&nsession, cause, __LINE__);
+		
+		if (!(gw = strchr(profile_name, '/'))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
+			terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
 			goto done;
 		}
-	} else if (!strchr(dest, '@')) {
-		char buf[128];
-		tech_pvt->e_dest = switch_core_session_strdup(nsession, dest);
-		if (find_reg_url(profile, dest, profile_name, buf, sizeof(buf))) {
-            tech_pvt->dest = switch_core_session_strdup(nsession, buf);
 
-        } else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", dest, profile_name);
-			cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
-            terminate_session(&nsession, cause, __LINE__);
-            goto done;
-        }
+		*gw++ = '\0';
+		
+		if (!(dest = strchr(gw, '/'))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
+			terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
+			goto done;
+		}
+
+		*dest++ = '\0';
+
+		if (!(gateway_ptr = find_gateway(gw))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Gateway\n");
+			terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
+			goto done;
+		}
+		
+		profile = gateway_ptr->profile;
+		tech_pvt->from_str = switch_core_session_strdup(nsession, gateway_ptr->register_from);
+		if (!strchr(dest, '@')) {
+			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s@%s", dest, gateway_ptr->register_proxy + 4);
+		} else {
+			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s", dest);
+		}
 	} else {
-		tech_pvt->dest = switch_core_session_alloc(nsession, strlen(dest) + 5);
-		snprintf(tech_pvt->dest, strlen(dest) + 5, "sip:%s", dest);
+		if (!(dest = strchr(profile_name, '/'))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
+			terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
+			goto done;
+		}
+		*dest++ = '\0';
+
+		if (!(profile = find_profile(profile_name))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile\n");
+			terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+			cause =  SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+			goto done;
+		}
+
+		if ((dest_to = strchr(dest, '^'))) {
+			*dest_to++ = '\0';
+			tech_pvt->dest_to = switch_core_session_alloc(nsession, strlen(dest_to) + 5);
+			snprintf(tech_pvt->dest_to, strlen(dest_to) + 5, "sip:%s", dest_to);
+		}
+
+		if ((host = strchr(dest, '%'))) {
+			char buf[128];
+			*host = '@';
+			tech_pvt->e_dest = switch_core_session_strdup(nsession, dest);
+			*host++ = '\0';
+			if (find_reg_url(profile, dest, host, buf, sizeof(buf))) {
+				tech_pvt->dest = switch_core_session_strdup(nsession, buf);
+				
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", dest, host);
+				cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
+				terminate_session(&nsession, cause, __LINE__);
+				goto done;
+			}
+		} else if (!strchr(dest, '@')) {
+			char buf[128];
+			tech_pvt->e_dest = switch_core_session_strdup(nsession, dest);
+			if (find_reg_url(profile, dest, profile_name, buf, sizeof(buf))) {
+				tech_pvt->dest = switch_core_session_strdup(nsession, buf);
+				
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", dest, profile_name);
+				cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
+				terminate_session(&nsession, cause, __LINE__);
+				goto done;
+			}
+		} else {
+			tech_pvt->dest = switch_core_session_alloc(nsession, strlen(dest) + 5);
+			snprintf(tech_pvt->dest, strlen(dest) + 5, "sip:%s", dest);
+		}
 	}
 
 	if (!tech_pvt->dest_to) {
@@ -3058,7 +3133,7 @@ static void sip_i_state(int status,
 				switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_3PCC");
 
 				if (tech_choose_port(tech_pvt) != SWITCH_STATUS_SUCCESS) {
-					return;
+					goto done;
 				}
 
 				set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
@@ -3353,7 +3428,7 @@ static uint8_t handle_register(nua_t *nua,
 		}
 		
 		if (!port) {
-			port = "5060";
+			port = SOFIA_DEFAULT_PORT;
 		}
 
 		if (contact->m_url->url_params) {
@@ -3785,7 +3860,7 @@ static void sip_i_subscribe(int status,
 				}
 
 				if (!port) {
-					port = "5060";
+					port = SOFIA_DEFAULT_PORT;
 				}
 
 				if (contact->m_url->url_params) {
@@ -4399,7 +4474,7 @@ static const char * _url_set_chanvars(switch_core_session_t *session, url_t *url
 	}
 
 	if (!port) {
-		port = "5060";
+		port = SOFIA_DEFAULT_PORT;
 	}
 
 	switch_channel_set_variable(channel, port_var, port);
@@ -4708,12 +4783,28 @@ static void sip_r_register(int status,
 						   sip_t const *sip,
 						   tagi_t tags[])
 {
-	if (sofia_private && sofia_private->oreg) {
-		if (status == 200) {
-			sofia_private->oreg->state = REG_STATE_REGISTER;
-		} else {
-			sofia_private->oreg->state = REG_STATE_FAILED;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "received %d on register!\n", status);
+	if (sofia_private && sofia_private->gateway) {
+		switch (status) {
+		case 200:
+			if (sip && sip->sip_contact && sip->sip_contact->m_expires) {
+				char *new_expires = (char *) sip->sip_contact->m_expires;
+				int expi = atoi(new_expires);
+				
+				if (expi != sofia_private->gateway->freq) {
+					sofia_private->gateway->freq = expi;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
+									  "Changing expire time to %d by request of proxy %s\n", expi, sofia_private->gateway->register_proxy);
+				}
+
+			}
+			sofia_private->gateway->state = REG_STATE_REGISTER;
+			break;
+		case 100:
+			break;
+		default:
+			sofia_private->gateway->state = REG_STATE_FAILED;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Registration Failed with status %d\n", status);
+			break;
 		}
 	}
 }
@@ -4727,7 +4818,7 @@ static void sip_r_challenge(int status,
                             sip_t const *sip,
                             tagi_t tags[])
 {
-	outbound_reg_t *oreg = NULL;
+	outbound_reg_t *gateway = NULL;
 	sip_www_authenticate_t const *authenticate = NULL;
 	char const *realm = NULL; 
 	char *p = NULL, *duprealm = NULL, *qrealm = NULL;
@@ -4770,7 +4861,7 @@ static void sip_r_challenge(int status,
 	}
 
 	if (profile) {
-		outbound_reg_t *oregp;
+		outbound_reg_t *gateway_ptr;
 
 		if ((duprealm = strdup(realm))) {
 			qrealm = duprealm;
@@ -4782,14 +4873,29 @@ static void sip_r_challenge(int status,
 			if ((p = strchr(qrealm, '"'))) {
 				*p = '\0';
 			}
+			
+			if (sip->sip_from) {
+				char *from_key = switch_mprintf("sip:%s@%s", 
+												(char *) sip->sip_from->a_url->url_user,
+												(char *) sip->sip_from->a_url->url_host);
 
-			for (oregp = profile->registrations; oregp; oregp = oregp->next) {
-				if (scheme && qrealm && !strcasecmp(oregp->register_scheme, scheme) && !strcasecmp(oregp->register_realm, qrealm)) {
-					oreg = oregp;
-					break;
+				if (!(gateway = find_gateway(from_key))) {
+					gateway = find_gateway(qrealm);
+				} 
+				
+				switch_safe_free(from_key);
+			}
+
+			if (!gateway) {
+				for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
+					if (scheme && qrealm && !strcasecmp(gateway_ptr->register_scheme, scheme) && !strcasecmp(gateway_ptr->register_realm, qrealm)) {
+						gateway = gateway_ptr;
+						break;
+					}
 				}
 			}
-			if (!oreg) {
+
+			if (!gateway) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Match for Scheme [%s] Realm [%s]\n", scheme, qrealm);
 				return;
 			}
@@ -4801,8 +4907,8 @@ static void sip_r_challenge(int status,
 	}
 		
 	snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, 
-			 oreg->register_username,
-			 oreg->register_password);
+			 gateway->register_username,
+			 gateway->register_password);
 		
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Authenticating '%s' with '%s'.\n",
 					  profile->username, authentication);
@@ -4815,7 +4921,7 @@ static void sip_r_challenge(int status,
 			SIPTAG_WWW_AUTHENTICATE_REF(authenticate),
 			TAG_END());
 		
-	nua_authenticate(nh, SIPTAG_EXPIRES_STR(oreg->expires_str), NUTAG_AUTH(authentication), TAG_END());
+	nua_authenticate(nh, SIPTAG_EXPIRES_STR(gateway->expires_str), NUTAG_AUTH(authentication), TAG_END());
 	
 }
 
@@ -4974,73 +5080,73 @@ static void event_callback(nua_event_t event,
 
 static void unreg(sofia_profile_t *profile)
 {
-	outbound_reg_t *oregp;
-    for (oregp = profile->registrations; oregp; oregp = oregp->next) {
-        if (oregp->sofia_private) {
-            free(oregp->sofia_private);
-            nua_handle_bind(oregp->nh, NULL);
-            oregp->sofia_private = NULL;
+	outbound_reg_t *gateway_ptr;
+    for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
+        if (gateway_ptr->sofia_private) {
+            free(gateway_ptr->sofia_private);
+            nua_handle_bind(gateway_ptr->nh, NULL);
+            gateway_ptr->sofia_private = NULL;
         }
-		nua_handle_destroy(oregp->nh);
+		nua_handle_destroy(gateway_ptr->nh);
 	}
 }
 
-static void check_oreg(sofia_profile_t *profile, time_t now)
+static void check_gateway(sofia_profile_t *profile, time_t now)
 {
-	outbound_reg_t *oregp;
-	for (oregp = profile->registrations; oregp; oregp = oregp->next) {
+	outbound_reg_t *gateway_ptr;
+	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
 		int ss_state = nua_callstate_authenticating;
-		reg_state_t ostate = oregp->state;
+		reg_state_t ostate = gateway_ptr->state;
 
 		switch(ostate) {
 		case REG_STATE_REGISTER:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,  "registered %s\n", oregp->name);
-			oregp->expires = now + oregp->freq;
-			oregp->state = REG_STATE_REGED;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,  "registered %s\n", gateway_ptr->name);
+			gateway_ptr->expires = now + gateway_ptr->freq;
+			gateway_ptr->state = REG_STATE_REGED;
 			break;
 		case REG_STATE_UNREGED:
-			if ((oregp->nh = nua_handle(oregp->profile->nua, NULL,
-										NUTAG_URL(oregp->register_proxy),
-										SIPTAG_TO_STR(oregp->register_to),
+			if ((gateway_ptr->nh = nua_handle(gateway_ptr->profile->nua, NULL,
+										NUTAG_URL(gateway_ptr->register_proxy),
+										SIPTAG_TO_STR(gateway_ptr->register_to),
 										NUTAG_CALLSTATE_REF(ss_state),
-										SIPTAG_FROM_STR(oregp->register_from), TAG_END()))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,  "registering %s\n", oregp->name);	
+										SIPTAG_FROM_STR(gateway_ptr->register_from), TAG_END()))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,  "registering %s\n", gateway_ptr->name);	
                 
-                if (!(oregp->sofia_private = malloc(sizeof(*oregp->sofia_private)))) {
+                if (!(gateway_ptr->sofia_private = malloc(sizeof(*gateway_ptr->sofia_private)))) {
                     abort();
                 }
-                memset(oregp->sofia_private, 0, sizeof(*oregp->sofia_private));
+                memset(gateway_ptr->sofia_private, 0, sizeof(*gateway_ptr->sofia_private));
 
-				oregp->sofia_private->oreg = oregp;
-				nua_handle_bind(oregp->nh, oregp->sofia_private);
+				gateway_ptr->sofia_private->gateway = gateway_ptr;
+				nua_handle_bind(gateway_ptr->nh, gateway_ptr->sofia_private);
 
-				nua_register(oregp->nh,
-							SIPTAG_FROM_STR(oregp->register_from),
-							SIPTAG_CONTACT_STR(oregp->register_from),
-							SIPTAG_EXPIRES_STR(oregp->expires_str),
-							NUTAG_REGISTRAR(oregp->register_proxy),
-							NUTAG_OUTBOUND("no-options-keepalive"),
-							NUTAG_OUTBOUND("no-validate"),
-							NUTAG_KEEPALIVE(0),
-							TAG_NULL());
-				oregp->retry = now + 10;
-				oregp->state = REG_STATE_TRYING;
+				nua_register(gateway_ptr->nh,
+							 SIPTAG_FROM_STR(gateway_ptr->register_from),
+							 SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
+							 SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
+							 NUTAG_REGISTRAR(gateway_ptr->register_proxy),
+							 NUTAG_OUTBOUND("no-options-keepalive"),
+							 NUTAG_OUTBOUND("no-validate"),
+							 NUTAG_KEEPALIVE(0),
+							 TAG_NULL());
+				gateway_ptr->retry = now + 10;
+				gateway_ptr->state = REG_STATE_TRYING;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "Error registering %s\n", oregp->name);
-				oregp->state = REG_STATE_FAILED;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "Error registering %s\n", gateway_ptr->name);
+				gateway_ptr->state = REG_STATE_FAILED;
 			}
 			break;
 
 		case REG_STATE_TRYING:
-			if (oregp->retry && now >= oregp->retry) {
-				oregp->state = REG_STATE_UNREGED;
-				oregp->retry = 0;
+			if (gateway_ptr->retry && now >= gateway_ptr->retry) {
+				gateway_ptr->state = REG_STATE_UNREGED;
+				gateway_ptr->retry = 0;
 			}
 			break;
 		default:
-			if (oregp->expires && now >= oregp->expires) {
-				oregp->state = REG_STATE_UNREGED;
-				oregp->expires = 0;
+			if (gateway_ptr->expires && now >= gateway_ptr->expires) {
+				gateway_ptr->state = REG_STATE_UNREGED;
+				gateway_ptr->expires = 0;
 			}
 			break;
 		}
@@ -5049,14 +5155,14 @@ static void check_oreg(sofia_profile_t *profile, time_t now)
 }
 
 #define IREG_SECONDS 30
-#define OREG_SECONDS 1
+#define GATEWAY_SECONDS 1
 static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void *obj)
 {
 	sofia_profile_t *profile = (sofia_profile_t *) obj;
 	switch_memory_pool_t *pool;
 	sip_alias_node_t *node;
 	uint32_t ireg_loops = 0;
-	uint32_t oreg_loops = 0;
+	uint32_t gateway_loops = 0;
 	switch_core_db_t *db;
 	switch_event_t *s_event;
 
@@ -5122,10 +5228,10 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 
 
 	switch_mutex_init(&profile->ireg_mutex, SWITCH_MUTEX_NESTED, profile->pool);
-	switch_mutex_init(&profile->oreg_mutex, SWITCH_MUTEX_NESTED, profile->pool);
+	switch_mutex_init(&profile->gateway_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 
 	ireg_loops = IREG_SECONDS;
-	oreg_loops = OREG_SECONDS;
+	gateway_loops = GATEWAY_SECONDS;
 
 	if (switch_event_create(&s_event, SWITCH_EVENT_PUBLISH) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp");
@@ -5145,17 +5251,11 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 		switch_event_fire(&s_event);
 	}
 
-
-	switch_mutex_lock(globals.hash_mutex);
-	switch_core_hash_insert(globals.profile_hash, profile->name, profile);
-	switch_mutex_unlock(globals.hash_mutex);
+	add_profile(profile->name, profile);
 
 	if (profile->pflags & PFLAG_PRESENCE) {
 		establish_presence(profile);
 	}
-
-
-
 
 	while(globals.running == 1) {
 		if (++ireg_loops >= IREG_SECONDS) {
@@ -5163,9 +5263,9 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 			ireg_loops = 0;
 		}
 
-		if (++oreg_loops >= OREG_SECONDS) {
-			check_oreg(profile, time(NULL));
-			oreg_loops = 0;
+		if (++gateway_loops >= GATEWAY_SECONDS) {
+			check_gateway(profile, time(NULL));
+			gateway_loops = 0;
 		}
 
 		su_root_step(profile->s_root, 1000);
@@ -5208,7 +5308,7 @@ static void launch_profile_thread(sofia_profile_t *profile)
 static switch_status_t config_sofia(int reload)
 {
 	char *cf = "sofia.conf";
-	switch_xml_t cfg, xml = NULL, xprofile, param, settings, profiles, registration, registrations;
+	switch_xml_t cfg, xml = NULL, xprofile, param, settings, profiles, gateway_tag, gateways_tag;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	sofia_profile_t *profile = NULL;
 	char url[512] = "";
@@ -5419,7 +5519,7 @@ static switch_status_t config_sofia(int reload)
 				}
 
 				if (!profile->sip_port) {
-					profile->sip_port = 5060;
+					profile->sip_port = atoi(SOFIA_DEFAULT_PORT);
 				}
 
 				if (!profile->dialplan) {
@@ -5438,79 +5538,118 @@ static switch_status_t config_sofia(int reload)
 				}
 			}
 			if (profile) {
-				if ((registrations = switch_xml_child(xprofile, "registrations"))) {
-					for (registration = switch_xml_child(registrations, "registration"); registration; registration = registration->next) {
-						char *name = (char *) switch_xml_attr_soft(registration, "name");
-						outbound_reg_t *oreg;
+				if ((gateways_tag = switch_xml_child(xprofile, "registrations"))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, 
+									  "The <registrations> syntax has been discontinued, please see the new syntax in the default configuration examples\n");
+				}
 
+				if ((gateways_tag = switch_xml_child(xprofile, "gateways"))) {
+					for (gateway_tag = switch_xml_child(gateways_tag, "gateway"); gateway_tag; gateway_tag = gateway_tag->next) {
+						char *name = (char *) switch_xml_attr_soft(gateway_tag, "name");
+						outbound_reg_t *gateway;
+						
 						if (switch_strlen_zero(name)) {
 							name = "anonymous";
 						}
-
-						if ((oreg = switch_core_alloc(profile->pool, sizeof(*oreg)))) {
-							oreg->pool = profile->pool;
-							oreg->profile = profile;
-							oreg->name = switch_core_strdup(oreg->pool, name);
-							oreg->freq = 0;
-
-							for (param = switch_xml_child(registration, "param"); param; param = param->next) {
+						
+						if ((gateway = switch_core_alloc(profile->pool, sizeof(*gateway)))) {
+							gateway->pool = profile->pool;
+							gateway->profile = profile;
+							gateway->name = switch_core_strdup(gateway->pool, name);
+							gateway->freq = 0;
+							char *scheme = "Digest",
+								*realm = NULL,
+								*username = NULL,
+								*password = NULL,
+								*extension = NULL,
+								*proxy = NULL,
+								*expire_seconds = "3600";
+							
+							for (param = switch_xml_child(gateway_tag, "param"); param; param = param->next) {
 								char *var = (char *) switch_xml_attr_soft(param, "name");
 								char *val = (char *) switch_xml_attr_soft(param, "value");
 								
-								if (!strcmp(var, "register-scheme")) {
-									oreg->register_scheme = switch_core_strdup(oreg->pool, val);
-								} else if (!strcmp(var, "register-realm")) {
-									oreg->register_realm = switch_core_strdup(oreg->pool, val);
-								} else if (!strcmp(var, "register-username")) {
-									oreg->register_username = switch_core_strdup(oreg->pool, val);
-								} else if (!strcmp(var, "register-password")) {
-									oreg->register_password = switch_core_strdup(oreg->pool, val);
-								} else if (!strcmp(var, "register-from")) {
-									oreg->register_from = switch_core_strdup(oreg->pool, val);
-								} else if (!strcmp(var, "register-to")) {
-									oreg->register_to = switch_core_strdup(oreg->pool, val);
-								} else if (!strcmp(var, "register-proxy")) {
-									oreg->register_proxy = switch_core_strdup(oreg->pool, val);
-								} else if (!strcmp(var, "register-frequency")) {
-									oreg->expires_str = switch_core_strdup(oreg->pool, val);
+								if (!strcmp(var, "scheme")) {
+									scheme = val;
+								} else if (!strcmp(var, "realm")) {
+									realm = val;
+								} else if (!strcmp(var, "username")) {
+									username = val;
+								} else if (!strcmp(var, "password")) {
+									password = val;
+								} else if (!strcmp(var, "extension")) {
+									extension = val;
+								} else if (!strcmp(var, "proxy")) {
+									proxy = val;
+								} else if (!strcmp(var, "expire-seconds")) {
+									expire_seconds = val;
 								}
 							}
-							if (switch_strlen_zero(oreg->register_scheme)) {
-								oreg->register_scheme = switch_core_strdup(oreg->pool, "Digest");
+
+							if (switch_strlen_zero(realm)) {
+								realm = name;
 							}
-							if (switch_strlen_zero(oreg->register_realm)) {
-								oreg->register_realm = switch_core_strdup(oreg->pool, "freeswitch.org");
+							
+							if (switch_strlen_zero(username)) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: username param is REQUIRED!\n");
+								switch_xml_free(xml);
+								goto skip;
 							}
-							if (switch_strlen_zero(oreg->register_username)) {
-								oreg->register_username = switch_core_strdup(oreg->pool, "freeswitch");
+							
+							if (switch_strlen_zero(password)) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: password param is REQUIRED!\n");
+								switch_xml_free(xml);
+								goto skip;
 							}
-							if (switch_strlen_zero(oreg->register_password)) {
-								oreg->register_password = switch_core_strdup(oreg->pool, "works");
-							}							
-							if (switch_strlen_zero(oreg->register_from)) {
-								oreg->register_from = switch_core_strdup(oreg->pool, "FreeSWITCH <sip:freeswitch@freeswitch.org>");
+							
+							if (switch_strlen_zero(extension)) {
+								extension = username;
 							}
-							if (switch_strlen_zero(oreg->register_to)) {
-								oreg->register_to = switch_core_strdup(oreg->pool, "sip:freeswitch@freeswitch.org");
-							}
-							if (switch_strlen_zero(oreg->register_proxy)) {
-								oreg->register_proxy = switch_core_strdup(oreg->pool, "sip:freeswitch@freeswitch.org");
+							
+							if (switch_strlen_zero(proxy)) {
+								proxy = realm;
 							}
 
-							if (switch_strlen_zero(oreg->expires_str)) {
-								oreg->expires_str = switch_core_strdup(oreg->pool, "300");
+							gateway->register_scheme = switch_core_strdup(gateway->pool, scheme);
+							gateway->register_realm = switch_core_strdup(gateway->pool, realm);
+							gateway->register_username = switch_core_strdup(gateway->pool, username);
+							gateway->register_password = switch_core_strdup(gateway->pool, password);
+							gateway->register_from = switch_core_sprintf(gateway->pool, "sip:%s@%s", extension, realm);
+							gateway->register_contact = switch_core_sprintf(gateway->pool,
+																			"sip:%s@%s:%d", extension, profile->sipip, profile->sip_port);
+								
+							if (!strncasecmp(proxy, "sip:", 4)) {
+								gateway->register_proxy = switch_core_strdup(gateway->pool, proxy);
+								gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy + 4);
+							} else {
+								gateway->register_proxy = switch_core_sprintf(gateway->pool, "sip:%s", proxy);
+								gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy);
 							}
-
-							if ((oreg->freq = atoi(oreg->expires_str)) < 5) {
-                                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid Freq: %d.  Setting Register-Frequency to 5\n", oreg->freq);
-                                oreg->freq = 5;
+							
+							gateway->expires_str = switch_core_strdup(gateway->pool, expire_seconds);
+							
+							if ((gateway->freq = atoi(gateway->expires_str)) < 5) {
+                                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+												  "Invalid Freq: %d.  Setting Register-Frequency to 3600\n", gateway->freq);
+                                gateway->freq = 3600;
                             }
-                            oreg->freq -= 2;
+                            gateway->freq -= 2;
 
-							oreg->next = profile->registrations;
-							profile->registrations = oreg;
+							gateway->next = profile->gateways;
+							profile->gateways = gateway;
 
+							if (find_gateway(gateway->name)) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate gateway '%s'\n", gateway->name);
+							} else if (find_gateway(gateway->register_from)) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate uri '%s'\n", gateway->register_from);
+							} else {
+								add_gateway(gateway->name, gateway);
+								add_gateway(gateway->register_from, gateway);
+							}
 						}
+
+					skip:
+						assert(gateway_tag);
 					}
 				}
 
@@ -5552,7 +5691,7 @@ static void event_handler(switch_event_t *event)
 			rpid = "unknown";
 		}
 
-		if (!profile_name || !(profile = (sofia_profile_t *) switch_core_hash_find(globals.profile_hash, profile_name))) {
+		if (!profile_name || !(profile = find_profile(profile_name))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile\n");
 			return;
 		}
@@ -5602,7 +5741,7 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 			*host++ = '\0';
 		}
 		
-		if (!host || !(profile = (sofia_profile_t *) switch_core_hash_find(globals.profile_hash, host))) {
+		if (!host || !(profile = find_profile(host))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Chat proto [%s]\nfrom [%s]\nto [%s]\n%s\nInvalid Profile %s\n", 
                               proto,
                               from,
@@ -5671,6 +5810,7 @@ static void cancel_presence(void)
     void *val;
 
 	if ((sql = switch_mprintf("select 0,'unavailable','unavailable',* from sip_subscriptions where event='presence'"))) {
+		switch_mutex_lock(globals.hash_mutex);
 		for (hi = switch_hash_first(switch_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);
 			profile = (sofia_profile_t *) val;
@@ -5689,7 +5829,7 @@ static void cancel_presence(void)
 		}
 		switch_safe_free(sql);
 	}
-
+	switch_mutex_unlock(globals.hash_mutex);
 }
 
 static void establish_presence(sofia_profile_t *profile) 
@@ -5805,6 +5945,7 @@ static void pres_event_handler(switch_event_t *event)
 			sql = switch_mprintf("select 1,'%q','%q',* from sip_subscriptions where event='presence'", status, rpid);
 		}
 
+		switch_mutex_lock(globals.hash_mutex);
 		for (hi = switch_hash_first(switch_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);
 			profile = (sofia_profile_t *) val;
@@ -5824,6 +5965,7 @@ static void pres_event_handler(switch_event_t *event)
 			}
 
 		}
+		switch_mutex_unlock(globals.hash_mutex);
 
 		return;
 	}
@@ -5875,7 +6017,7 @@ static void pres_event_handler(switch_event_t *event)
 
             if (euser && host && 
                 (sql = switch_mprintf("select user,host,status,rpid,'' from sip_registrations where user='%q' and host='%q'", euser, host)) &&
-                (profile = (sofia_profile_t *) switch_core_hash_find(globals.profile_hash, host))) {
+                (profile = find_profile(host))) {
                 if (!(db = switch_core_db_open_file(profile->dbname))) {
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
                     switch_safe_free(user);
@@ -5904,6 +6046,7 @@ static void pres_event_handler(switch_event_t *event)
 		break;
 	}
 
+	switch_mutex_lock(globals.hash_mutex);
     for (hi = switch_hash_first(switch_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
         switch_hash_this(hi, NULL, NULL, &val);
         profile = (sofia_profile_t *) val;
@@ -5923,6 +6066,7 @@ static void pres_event_handler(switch_event_t *event)
 			switch_core_db_close(db);
 		}
 	}
+	switch_mutex_unlock(globals.hash_mutex);
 
 	switch_safe_free(sql);
 	switch_safe_free(user);
@@ -5958,6 +6102,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	su_log_redirect(tport_log, logger, NULL);
 
 	switch_core_hash_init(&globals.profile_hash, module_pool);
+	switch_core_hash_init(&globals.gateway_hash, module_pool);
 	switch_mutex_init(&globals.hash_mutex, SWITCH_MUTEX_NESTED, module_pool);
 
 	config_sofia(0);

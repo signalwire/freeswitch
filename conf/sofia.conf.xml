@@ -1,18 +1,23 @@
 <configuration name="sofia.conf" description="sofia Endpoint">
   <profiles>
     <profile name="$${domain}">
-      <registrations>
-	<!-- <registration name="asterlink">
-	     <param name="register-scheme" value="Digest"/>
-	     <param name="register-realm" value=""/>
-	     <param name="register-username" value="1001"/>
-	     <param name="register-password" value="nhy65tgb"/>
-	     <param name="register-from" value="sip:1001@208.64.200.40"/>
-	     <param name="register-to" value="sip:1001@conference.freeswitch.org"/>
-	     <param name="register-proxy" value="sip:conference.freeswitch.org:5060"/>
-	     <param name="register-frequency" value="20"/>
-	     </registration> -->
-      </registrations>
+      <!-- Outbound Registrations -->
+      <gateways>
+	<gateway name="asterlink.com">
+	  <!--/// account username *required* ///-->
+	  <param name="username" value="cluecon"/>
+	  <!--/// auth realm: *optional* same as gateway name, if blank ///-->
+	  <!--<param name="realm" value="asterlink.com"/>-->
+	  <!--/// account password *required* ///-->
+	  <param name="password" value="2007"/>	  
+	  <!--/// extension for inbound calls: *optional* same as username, if blank ///-->
+	  <!--<param name="extension" value="cluecon"/>-->
+	  <!--/// proxy host: *optional* same as realm, if blank ///-->
+	  <!--<param name="proxy" value="asterlink.com"/>-->
+	  <!--/// expire in seconds: *optional* 3600, if blank ///-->
+	  <param name="expire-seconds" value="60"/>
+	</gateway>
+      </gateways>
       <settings>
 	<param name="debug" value="1"/>
 	<param name="rfc2833-pt" value="101"/>
