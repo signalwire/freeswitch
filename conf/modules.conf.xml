@@ -54,6 +54,8 @@
     <!-- File Format Interfaces -->
     <load module="mod_sndfile"/>
     <load module="mod_native_file"/>
+    <!--For icecast/mp3 streams/files-->
+    <!--<load module="mod_shout"/>-->
 
     <!-- Timers -->
     <load module="mod_softtimer"/>
