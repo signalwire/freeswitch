@@ -308,4 +308,7 @@ fi
 AC_SUBST(ENABLE_CXX_TRUE)
 AC_SUBST(ENABLE_CXX_FALSE)
 
+#check for some headers
+AC_CHECK_HEADERS([libkern/OSAtomic.h])
+
 AC_OUTPUT([Makefile portaudio-2.0.pc])
