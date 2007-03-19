@@ -1301,7 +1301,7 @@ static JSBool session_get_digits(JSContext *cx, JSObject *obj, uintN argc, jsval
 		JS_ValueToInt32(cx, argv[0], &digits);
 
 		if (digits > sizeof(buf) - 1) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Exceeded max digits of %ld\n",  sizeof(buf) - 1);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Exceeded max digits of %"SWITCH_SIZE_T_FMT"\n",  sizeof(buf) - 1);
 			return JS_FALSE;
 		}
 		
