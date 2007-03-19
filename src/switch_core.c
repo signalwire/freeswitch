@@ -231,8 +231,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	uint32_t blen;
 	size_t rdlen = 0;
 	uint32_t maxlen;
-
-
+	switch_codec_t *read_codec = switch_core_session_get_read_codec(bug->session);
+	
 	if (bug->raw_read_buffer) {
 		rlen = switch_buffer_inuse(bug->raw_read_buffer);
 	}
@@ -299,8 +299,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		}
 
 		frame->datalen = bytes;
-
-
+		frame->samples = bytes / sizeof(int16_t);
+		frame->rate = read_codec->implementation->samples_per_second;
+		
 		return SWITCH_STATUS_SUCCESS;
 	}
 
