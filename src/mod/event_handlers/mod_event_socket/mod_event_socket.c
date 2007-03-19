@@ -475,7 +475,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 						switch_xml_t xml;
 						etype = "xml";
 
-						if ((xml = switch_event_xmlize(event, NULL))) {
+						if ((xml = switch_event_xmlize(event, "%s", ""))) {
 							listener->ebuf = switch_xml_toxml(xml);
 							switch_xml_free(xml);
 						} else {
