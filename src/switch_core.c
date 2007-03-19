@@ -2417,7 +2417,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				}
 				break;
 			case SWITCH_STATUS_SUCCESS:
-				session->raw_write_frame.samples = frame->datalen / sizeof(int16_t);
+				session->raw_write_frame.samples = session->raw_write_frame.datalen / sizeof(int16_t);
 				session->raw_write_frame.timestamp = frame->timestamp;
 				session->raw_write_frame.rate = frame->rate;
 				write_frame = &session->raw_write_frame;
