@@ -529,6 +529,7 @@ AC_SEARCH_LIBS(socket, socket)
 AC_SEARCH_LIBS(crypt, crypt ufc)
 AC_CHECK_LIB(truerand, main)
 AC_SEARCH_LIBS(modf, m)
+AC_CHECK_LIB(dl, dlopen)
 
 dnl ----------------------------- Checking for Threads
 echo "${nl}Checking for Threads..."
