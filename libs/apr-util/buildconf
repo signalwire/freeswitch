@@ -82,7 +82,7 @@ fi
 # Generate build-outputs.mk for the build systme
 #
 echo "Generating 'make' outputs ..."
-$apr_src_dir/build/gen-build.py make
+#$apr_src_dir/build/gen-build.py make
 
 #
 # If Expat has been bundled, then go and configure the thing
