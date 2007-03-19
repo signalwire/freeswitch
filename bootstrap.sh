@@ -41,9 +41,9 @@ echo "           to build FreeSWITCH from SVN."
 exit 1
 fi
 IFS=.; set $am_version; IFS=' '
-if test "$1" = "1" -a "$2" -lt "9"; then
+if test "$1" = "1" -a "$2" -lt "7"; then
 echo "bootstrap: automake version $am_version found."
-echo "           You need automake version 1.9 or newer installed"
+echo "           You need automake version 1.7 or newer installed"
 echo "           to build FreeSWITCH from SVN."
 exit 1
 else
