@@ -2164,6 +2164,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 										   session->read_codec->implementation->bytes_per_frame * 20, session->pool);
 				}
 			case SWITCH_STATUS_SUCCESS:
+				session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t);
+				session->raw_read_frame.rate = read_frame->rate;
+				session->raw_read_frame.timestamp = read_frame->timestamp;
 				read_frame = &session->raw_read_frame;
 				break;
 			case SWITCH_STATUS_NOOP:
@@ -2414,6 +2417,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				}
 				break;
 			case SWITCH_STATUS_SUCCESS:
+				session->raw_write_frame.samples = frame->datalen / sizeof(int16_t);
+				session->raw_write_frame.timestamp = frame->timestamp;
+				session->raw_write_frame.rate = frame->rate;
 				write_frame = &session->raw_write_frame;
 				break;
 			case SWITCH_STATUS_BREAK:
