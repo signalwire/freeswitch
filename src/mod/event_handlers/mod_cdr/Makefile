@@ -10,10 +10,8 @@ LOCAL_OBJS=cdrcontainer.o basecdr.o baseregistry.o pddcdr.o csvcdr.o xmlcdr.o sq
 #LOCAL_CFLAGS  += -DSWITCH_QUEUE_ENHANCED
 #LOCAL_LDFLAGS += -lcurl
 
-ifneq ($(shell which mysql_config),)
-  LOCAL_CFLAGS  += $(shell mysql_config --include)
-  LOCAL_LDFLAGS += $(shell mysql_config --libs)
-  LOCAL_OBJS    += mysqlcdr.o
-endif
+LOCAL_INSERT_CFLAGS=mysql_config="\`which mysql-config 2>/dev/null \`"; if test -n "$$mysql_config"; then echo "\`mysql_config --include\`" ; fi 
+LOCAL_INSERT_LDFLAGS=mysql_config="\`which mysql-config 2>/dev/null \`"; if test -n "$$mysql_config"; then echo "\`mysql_config --libs\`" ; fi 
+LOCAL_INSERT_OBJS=mysql_config="\`which mysql-config 2>/dev/null \`"; if test -n "$$mysql_config"; then echo "mysqlcdr.o" ; fi 
 
 include ../../../../build/modmake.rules
