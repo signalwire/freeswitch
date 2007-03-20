@@ -14,6 +14,8 @@ if test "x$prefix" = "xNONE" ; then
     prefix='/usr/local/freeswitch'
 fi
 
+AC_CANONICAL_HOST
+
 # Absolute source/build directory
 switch_srcdir=`(cd $srcdir && pwd)`
 switch_builddir=`pwd`
@@ -58,7 +60,7 @@ AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
 # set defaults for use on all platforms
 SWITCH_AM_CFLAGS="-I${switch_srcdir}/src/include -I${prefix}/include"
 SWITCH_AM_CXXFLAGS="-I${switch_srcdir}/src/include -I${prefix}/include"
-SWITCH_AM_LDFLAGS="-L${prefix}/lib -lm -L/usr/local/lib"
+SWITCH_AM_LDFLAGS="-lm -L/usr/local/lib"
 
 #set SOLINK variable based on compiler and host
 if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
@@ -66,6 +68,7 @@ if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
 elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     case "$host" in
         *darwin*)
+	    echo in darwin
             SOLINK="-dynamic -bundle -force-flat-namespace"
         ;;
         *)
