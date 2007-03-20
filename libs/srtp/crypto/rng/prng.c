@@ -47,7 +47,7 @@
 
 /* single, global prng structure */
 
-x917_prng_t x917_prng;
+static x917_prng_t x917_prng;
 
 err_status_t
 x917_prng_init(rand_source_func_t random_source) {
