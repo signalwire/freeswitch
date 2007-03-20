@@ -269,7 +269,7 @@ fi
 AC_MSG_RESULT($enable_gdoi)
 AM_CONDITIONAL([GDOI],[test "SRTP_GDOI" = "1"])
 
-AC_CONFIG_HEADER(crypto/include/config.h:config_in.h)
+AC_CONFIG_HEADERS(crypto/include/config.h:config_in.h)
 
 AC_OUTPUT(Makefile crypto/Makefile doc/Makefile test/Makefile srtp-1.42.pc)
 
