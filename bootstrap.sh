@@ -32,11 +32,11 @@ else
 echo "bootstrap: autoconf version $ac_version (ok)"
 fi
 
-# automake 1.9 or newer
+# automake 1.7 or newer
 am_version=`${AUTOMAKE:-automake} --version 2>/dev/null|sed -e 's/^[^0-9]*//;s/[a-z]* *$//;q'`
 if test -z "$am_version"; then
 echo "bootstrap: automake not found."
-echo "           You need automake version 1.9 or newer installed"
+echo "           You need automake version 1.7 or newer installed"
 echo "           to build FreeSWITCH from SVN."
 exit 1
 fi
@@ -69,7 +69,7 @@ IFS=.; set $lt_version; IFS=' '
 lt_status="good"
 
 if test "$1" = "1"; then
-   if test "$2" -lt "5" -o "$2" =  "5" -a "$3" -lt "7" || test ; then
+   if test "$2" -lt "5" -o "$2" =  "5" -a "$3" -lt "22" || test ; then
       lt_status="bad"
    fi
 fi
