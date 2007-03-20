@@ -2516,7 +2516,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					} else {
 						session->bugs = bp->next;
 					}
-					switch_mutex_unlock(bp->read_mutex);
 					dp = bp;
 					bp = last;
 					switch_core_media_bug_close(dp);
