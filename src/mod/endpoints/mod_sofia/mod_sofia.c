@@ -215,6 +215,7 @@ struct outbound_reg {
 	char *register_contact;
 	char *register_to;
 	char *register_proxy;
+	char *register_context;
 	char *expires_str;
 	uint32_t freq;
 	time_t expires;
@@ -4546,7 +4547,7 @@ static void sip_i_invite(nua_t *nua,
 	const char *displayname = NULL;
 	const char *destination_number = NULL;
 	const char *from_user = NULL, *from_host = NULL;
-	const char *context;
+	const char *context = NULL;
 	char network_ip[80];
 
 	if (!sip || !sip->sip_request || !sip->sip_request->rq_method_name) {
@@ -4673,10 +4674,26 @@ static void sip_i_invite(nua_t *nua,
 		switch_channel_set_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE, max_forwards);
 	}
 
-	if (profile->context && !strcasecmp(profile->context, "_domain_")) {
-		context = from_host;
-	} else {
-		context = profile->context;
+	
+	if (sip->sip_request->rq_url) {
+		outbound_reg_t *gateway;
+		char *from_key = switch_core_session_sprintf(session, "sip:%s@%s",
+													 (char *) sip->sip_request->rq_url->url_user,
+													 (char *) sip->sip_request->rq_url->url_host);
+		
+		if ((gateway = find_gateway(from_key))) {
+			context = gateway->register_context;
+			switch_channel_set_variable(channel, "sip_gateway", gateway->name);
+		}
+	}
+	
+
+	if (!context) {
+		if (profile->context && !strcasecmp(profile->context, "_domain_")) {
+			context = from_host;
+		} else {
+			context = profile->context;
+		}
 	}
 
 	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
@@ -5137,9 +5154,8 @@ static void check_gateway(sofia_profile_t *profile, time_t now)
 			}
 			break;
 		default:
-			if (gateway_ptr->expires && now >= gateway_ptr->expires) {
+			if (now >= gateway_ptr->expires) {
 				gateway_ptr->state = REG_STATE_UNREGED;
-				gateway_ptr->expires = 0;
 			}
 			break;
 		}
@@ -5556,7 +5572,9 @@ static switch_status_t config_sofia(int reload)
 								*password = NULL,
 								*extension = NULL,
 								*proxy = NULL,
+								*context = "default",
 								*expire_seconds = "3600";
+							
 							
 							for (param = switch_xml_child(gateway_tag, "param"); param; param = param->next) {
 								char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -5574,6 +5592,8 @@ static switch_status_t config_sofia(int reload)
 									extension = val;
 								} else if (!strcmp(var, "proxy")) {
 									proxy = val;
+								} else if (!strcmp(var, "context")) {
+									context = val;
 								} else if (!strcmp(var, "expire-seconds")) {
 									expire_seconds = val;
 								}
@@ -5604,6 +5624,7 @@ static switch_status_t config_sofia(int reload)
 							}
 
 							gateway->register_scheme = switch_core_strdup(gateway->pool, scheme);
+							gateway->register_context = switch_core_strdup(gateway->pool, context);
 							gateway->register_realm = switch_core_strdup(gateway->pool, realm);
 							gateway->register_username = switch_core_strdup(gateway->pool, username);
 							gateway->register_password = switch_core_strdup(gateway->pool, password);
@@ -5635,9 +5656,12 @@ static switch_status_t config_sofia(int reload)
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate gateway '%s'\n", gateway->name);
 							} else if (find_gateway(gateway->register_from)) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate uri '%s'\n", gateway->register_from);
+							} else if (find_gateway(gateway->register_contact)) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate contact '%s'\n", gateway->register_from);
 							} else {
 								add_gateway(gateway->name, gateway);
 								add_gateway(gateway->register_from, gateway);
+								add_gateway(gateway->register_contact, gateway);
 							}
 						}
 
