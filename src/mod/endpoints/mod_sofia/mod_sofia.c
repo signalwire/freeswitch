@@ -5607,7 +5607,7 @@ static switch_status_t config_sofia(int reload)
 							gateway->register_realm = switch_core_strdup(gateway->pool, realm);
 							gateway->register_username = switch_core_strdup(gateway->pool, username);
 							gateway->register_password = switch_core_strdup(gateway->pool, password);
-							gateway->register_from = switch_core_sprintf(gateway->pool, "sip:%s@%s", extension, realm);
+							gateway->register_from = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, realm);
 							gateway->register_contact = switch_core_sprintf(gateway->pool,
 																			"sip:%s@%s:%d", extension, profile->sipip, profile->sip_port);
 								
