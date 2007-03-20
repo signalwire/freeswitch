@@ -83,7 +83,6 @@ echo "           to build FreeSWITCH from SVN."
 exit 1
 fi
 
-exit
 
 echo "Entering directory ${LIBDIR}/apr"
 cd ${LIBDIR}/apr
