@@ -811,13 +811,20 @@ static void set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, c
 		int i;
 		for (i = 0; i < tech_pvt->num_codecs; i++) {
 			const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
+			uint32_t rfc_3551_sucks = imp->samples_per_second;
+			
 			if (!rate) {
 				rate = imp->samples_per_second;
 			}
             if (ptime && ptime != imp->microseconds_per_frame / 1000) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ptime %u != advertised ptime %u\n", imp->microseconds_per_frame / 1000, ptime);
             }
-			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", imp->ianacode, imp->iananame, imp->samples_per_second);
+			
+			if (rfc_3551_sucks && imp->ianacode == 9) {
+				rfc_3551_sucks = 8000;
+			}
+
+			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", imp->ianacode, imp->iananame, rfc_3551_sucks);
 			if (imp->fmtp) {
 				snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", imp->ianacode, imp->fmtp);
 			}

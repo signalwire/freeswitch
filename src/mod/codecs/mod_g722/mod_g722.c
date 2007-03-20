@@ -122,8 +122,8 @@ static switch_status_t switch_g722_destroy(switch_codec_t *codec)
 
 static const switch_codec_implementation_t g722_8k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 9,
-	/*.iananame */ "G722",
+	/*.ianacode */ 109,
+	/*.iananame */ "G722_8",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
 	/*.bits_per_second */ 64000,
