@@ -217,7 +217,7 @@ int teletone_multi_tone_detect (teletone_multi_tone_t *mt,
 			gtest += teletone_goertzel_result (&mt->gs2[x]) < eng_all[x] ? 1 : 0;
 		}
 
-		if (gtest >= 2 && eng_sum > 42.0 * mt->energy) {
+		if ((gtest >= 2 || gtest == mt->tone_count) && eng_sum > 42.0 * mt->energy) {
 			if(mt->negatives) {
 				mt->negatives--;
 			}
