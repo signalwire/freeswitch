@@ -12,11 +12,9 @@ OSARCH=`uname -s`
 
 LIBTOOL=`if test -z "$(VERBOSE)" ; then echo $(SHELL) $(switch_builddir)/quiet_libtool ;else echo $(switch_builddir)/libtool;  fi;`
 
-#LIBTOOL = $(SHELL) $(switch_builddir)/quiet_libtool
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
 TOUCH_TARGET=if test -f "$@" ; then touch "$@" ; fi ;
 AM_MAKEFLAGS=`test -n "$(VERBOSE)" || echo -s`
-#AM_MAKEFLAGS=`if test -z "$(VERBOSE)" ; then $(MAKE) --help | grep silent | grep "\-s" 2>&1 >/dev/null && echo -s;fi`
 
 if CRASHPROT
 AM_CFLAGS += -DCRASH_PROT
