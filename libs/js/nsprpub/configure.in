@@ -2199,6 +2199,7 @@ dnl ========================================================
 dnl Checks for library functions.
 dnl ========================================================
 AC_PROG_GCC_TRADITIONAL
+AC_PROG_LIBTOOL
 AC_CHECK_FUNCS(lchown strerror)
 
 dnl AC_FUNC_MEMCMP
