@@ -214,7 +214,7 @@ do
 #only run if AC_PROG_LIBTOOL is in configure.in/configure.ac
       if [ ! -z "${LTTEST}" -o "${LTTEST2}" ] ; then
           echo "Running libtoolize..."
-          ${LIBTOOLIZE:-libtoolize} --force --copy ;
+          $libtoolize --force --copy ;
       fi
 
       echo "Creating configure"
@@ -241,7 +241,7 @@ cd ${BASEDIR}
 
 rm -f aclocal.m4
 ${ACLOCAL:-aclocal} ${ACLOCAL_OPTS}
-${LIBTOOLIZE:-libtoolize} --copy --automake
+$libtoolize --copy --automake
 ${AUTOCONF:-autoconf}
 ${AUTOHEADER:-autoheader}
 ${AUTOMAKE:-automake} --no-force --add-missing
