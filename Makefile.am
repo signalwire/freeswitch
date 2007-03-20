@@ -97,7 +97,7 @@ bin_PROGRAMS =  freeswitch
 freeswitch_SOURCES =    src/switch.c
 nodist_freeswitch_SOURCES = src/include/switch_version.h
 freeswitch_CFLAGS = $(AM_CFLAGS)
-freeswitch_LDADD = ${MOD_LINK}
+freeswitch_LDADD = ${MOD_LINK} libs/apr/libapr-1.la
 
 $(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/quiet_libtool
 
