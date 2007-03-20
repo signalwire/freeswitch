@@ -555,7 +555,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	return status;
 }
 
-static void record_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
 	switch_file_handle_t *fh = (switch_file_handle_t *) user_data;
 	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
@@ -586,6 +586,8 @@ static void record_callback(switch_media_bug_t *bug, void *user_data, switch_abc
     default:
 		break;
 	}
+
+	return SWITCH_TRUE;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_stop_record_session(switch_core_session_t *session, char *file) 
@@ -699,7 +701,7 @@ typedef struct {
 	teletone_dtmf_detect_state_t dtmf_detect;
 } switch_inband_dtmf_t;
 
-static void inband_dtmf_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
 	switch_inband_dtmf_t *pvt = (switch_inband_dtmf_t *) user_data;
 	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
@@ -730,6 +732,8 @@ static void inband_dtmf_callback(switch_media_bug_t *bug, void *user_data, switc
 		default:
 			break;
 	}
+
+	return SWITCH_TRUE;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_stop_inband_dtmf_session(switch_core_session_t *session) 
@@ -857,7 +861,7 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 	return NULL;
 }
 
-static void speech_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+static switch_bool_t speech_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
 	struct speech_thread_handle *sth = (struct speech_thread_handle *) user_data;
 	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
@@ -891,7 +895,7 @@ static void speech_callback(switch_media_bug_t *bug, void *user_data, switch_abc
 			if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
 				if (switch_core_asr_feed(sth->ah, frame.data, frame.datalen, &flags) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error Feeding Data\n");
-					return;
+					return SWITCH_FALSE;
 				}
 				if (switch_core_asr_check_results(sth->ah, &flags) == SWITCH_STATUS_SUCCESS) {
 					switch_mutex_lock(sth->mutex);
@@ -905,6 +909,8 @@ static void speech_callback(switch_media_bug_t *bug, void *user_data, switch_abc
     default:
 		break;
 	}
+
+	return SWITCH_TRUE;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_stop_detect_speech(switch_core_session_t *session) 

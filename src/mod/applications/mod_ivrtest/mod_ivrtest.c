@@ -233,7 +233,7 @@ static void tts_function(switch_core_session_t *session, char *data)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Done\n");
 }
 
-static void bug_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+static switch_bool_t bug_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
     switch_frame_t *frame;
 
@@ -247,6 +247,7 @@ static void bug_callback(switch_media_bug_t *bug, void *user_data, switch_abc_ty
         break;
     }
 
+	return SWITCH_TRUE;
 }
 
 static void bugtest_function(switch_core_session_t *session, char *data)

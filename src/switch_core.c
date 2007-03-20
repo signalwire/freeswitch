@@ -366,7 +366,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	*new_bug = bug;
 
 	if (bug->callback) {
-		bug->callback(bug, bug->user_data, SWITCH_ABC_TYPE_INIT);
+		switch_bool_t result = bug->callback(bug, bug->user_data, SWITCH_ABC_TYPE_INIT);
+		if (result == SWITCH_FALSE) {
+			return switch_core_media_bug_remove(session, new_bug);
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -394,9 +397,25 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_ses
 	return SWITCH_STATUS_FALSE;
 }
 
+static switch_status_t switch_core_media_bug_close(switch_media_bug_t *bp)
+{
+	if (bp) {
+		if (bp->callback) {
+			bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_CLOSE);
+			bp->ready = 0;
+		}
+		switch_core_media_bug_destroy(bp);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing BUG from %s\n", switch_channel_get_name(bp->session->channel));
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session_t *session, switch_media_bug_t **bug)
 {
 	switch_media_bug_t *bp = NULL, *last = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (session->bugs) {
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
@@ -416,19 +435,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 		}
 		switch_thread_rwlock_unlock(session->bug_rwlock);
 
-		if (bp) {
-			if (bp->callback) {
-				bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_CLOSE);
-                bp->ready = 0;
-			}
-			switch_core_media_bug_destroy(bp);
+		if ((status = switch_core_media_bug_close(bp)) == SWITCH_STATUS_SUCCESS) {
 			*bug = NULL;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing BUG from %s\n", switch_channel_get_name(session->channel));
-			return SWITCH_STATUS_SUCCESS;
 		}
 	}
 
-	return SWITCH_STATUS_FALSE;
+	return status;
 }
 
 struct switch_core_port_allocator {
@@ -2195,17 +2207,31 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		}
 
 		if (session->bugs) {
-			switch_media_bug_t *bp;
+			switch_media_bug_t *bp, *dp, *last = NULL;
+			
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			for (bp = session->bugs; bp; bp = bp->next) {
 				if (bp->ready && switch_test_flag(bp, SMBF_READ_STREAM)) {
 					switch_mutex_lock(bp->read_mutex);
 					switch_buffer_write(bp->raw_read_buffer, read_frame->data, read_frame->datalen);
 					if (bp->callback) {
-						bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ);
+						if (bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ) == SWITCH_FALSE) {
+							bp->ready = 0;
+							if (last) {
+								last->next = bp->next;
+							} else {
+								session->bugs = bp->next;
+							}
+							switch_mutex_unlock(bp->read_mutex);
+							dp = bp;
+							bp = last;
+							switch_core_media_bug_close(dp);
+							continue;
+						}
 					}
 					switch_mutex_unlock(bp->read_mutex);
 				}
+				last = bp;
 			}
 			switch_thread_rwlock_unlock(session->bug_rwlock);
 		}
@@ -2457,7 +2483,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		}
 
 		if (session->bugs) {
-			switch_media_bug_t *bp;
+			switch_media_bug_t *bp, *dp, *last = NULL;
+			switch_bool_t ok = SWITCH_TRUE;
+
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			for (bp = session->bugs; bp; bp = bp->next) {
                 if (!bp->ready) {
@@ -2468,17 +2496,33 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					switch_buffer_write(bp->raw_write_buffer, write_frame->data, write_frame->datalen);
 					switch_mutex_unlock(bp->write_mutex);
 					if (bp->callback) {
-						bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_WRITE);
+						ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_WRITE);
 					}
 				} else if (switch_test_flag(bp, SMBF_WRITE_REPLACE)) {
                     do_bugs = 0;
 					if (bp->callback) {
                         bp->replace_frame_in = frame;
                         bp->replace_frame_out = NULL;
-						bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_WRITE_REPLACE);
-                        write_frame = bp->replace_frame_out;
+						if ((ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_WRITE_REPLACE)) == SWITCH_TRUE) {
+							write_frame = bp->replace_frame_out;
+						}
 					}
 				}
+
+				if (ok == SWITCH_FALSE) {
+					bp->ready = 0;
+					if (last) {
+						last->next = bp->next;
+					} else {
+						session->bugs = bp->next;
+					}
+					switch_mutex_unlock(bp->read_mutex);
+					dp = bp;
+					bp = last;
+					switch_core_media_bug_close(dp);
+					continue;
+				}
+				last = bp;
 			}
 			switch_thread_rwlock_unlock(session->bug_rwlock);
 		}
