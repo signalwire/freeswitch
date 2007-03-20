@@ -68,7 +68,6 @@ if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
 elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     case "$host" in
         *darwin*)
-	    echo in darwin
             SOLINK="-dynamic -bundle -force-flat-namespace"
         ;;
         *)
