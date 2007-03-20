@@ -397,8 +397,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_ses
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status_t switch_core_media_bug_close(switch_media_bug_t *bp)
+static switch_status_t switch_core_media_bug_close(switch_media_bug_t **bug)
 {
+	switch_media_bug_t *bp = *bug;
 	if (bp) {
 		if (bp->callback) {
 			bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_CLOSE);
@@ -406,6 +407,7 @@ static switch_status_t switch_core_media_bug_close(switch_media_bug_t *bp)
 		}
 		switch_core_media_bug_destroy(bp);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing BUG from %s\n", switch_channel_get_name(bp->session->channel));
+		*bug = NULL;
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -434,10 +436,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 			last = bp;
 		}
 		switch_thread_rwlock_unlock(session->bug_rwlock);
-
-		if ((status = switch_core_media_bug_close(bp)) == SWITCH_STATUS_SUCCESS) {
-			*bug = NULL;
-		}
+		status = switch_core_media_bug_close(&bp);
 	}
 
 	return status;
@@ -2225,7 +2224,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 							switch_mutex_unlock(bp->read_mutex);
 							dp = bp;
 							bp = last;
-							switch_core_media_bug_close(dp);
+							switch_core_media_bug_close(&dp);
+							if (!bp) {
+								break;
+							}
 							continue;
 						}
 					}
@@ -2484,10 +2486,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 		if (session->bugs) {
 			switch_media_bug_t *bp, *dp, *last = NULL;
-			switch_bool_t ok = SWITCH_TRUE;
 
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			for (bp = session->bugs; bp; bp = bp->next) {
+				switch_bool_t ok = SWITCH_TRUE;
                 if (!bp->ready) {
                     continue;
                 }
@@ -2518,7 +2520,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					}
 					dp = bp;
 					bp = last;
-					switch_core_media_bug_close(dp);
+					switch_core_media_bug_close(&dp);
+					if (!bp) {
+						break;
+					}
 					continue;
 				}
 				last = bp;
