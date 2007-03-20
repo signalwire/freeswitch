@@ -16,6 +16,10 @@ dnl A safety precaution
 
 AC_PREREQ(2.57)
 
+dnl Arrange to build config.h from config.h.in.
+dnl Manual says this macro should come right after AC_INIT.
+AC_CONFIG_HEADER(config.h)
+
 dnl Default values for miscellaneous macros
 
 POSIX_MALLOC_THRESHOLD=-DPOSIX_MALLOC_THRESHOLD=10
@@ -295,4 +299,4 @@ if test "x$enable_shared" = "xno" ; then
 fi
 
 dnl This must be last; it determines what files are written as well as config.h
-AC_OUTPUT(config.h Makefile pcre-config:pcre-config.in libpcre.pc:libpcre.pc.in pcrecpparg.h:pcrecpparg.h.in pcre_stringpiece.h:pcre_stringpiece.h.in RunGrepTest:RunGrepTest.in RunTest:RunTest.in,[chmod a+x RunTest RunGrepTest pcre-config])
+AC_OUTPUT(Makefile pcre-config:pcre-config.in libpcre.pc:libpcre.pc.in pcrecpparg.h:pcrecpparg.h.in pcre_stringpiece.h:pcre_stringpiece.h.in RunGrepTest:RunGrepTest.in RunTest:RunTest.in,[chmod a+x RunTest RunGrepTest pcre-config])
