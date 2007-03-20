@@ -111,7 +111,7 @@ AM_CONDITIONAL([SNDFILE],[test $have_libsndfile = "yes"])
 
 AC_CHECK_HEADERS(inttypes.h)
 
-AC_CONFIG_HEADER(src/config.h:src/configtemplate.h)
+AC_CONFIG_HEADERS(src/config.h:src/configtemplate.h)
 AC_OUTPUT([Makefile])
 
 echo ""

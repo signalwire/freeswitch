@@ -5,7 +5,7 @@ dnl
 AC_PREREQ(2.50)
 AC_INIT(export_vars.sh.in)
 
-AC_CONFIG_HEADER(include/private/apu_config.h)
+AC_CONFIG_HEADERS(include/private/apu_config.h)
 AC_CONFIG_AUX_DIR(build)
 
 sinclude(build/apu-conf.m4)
