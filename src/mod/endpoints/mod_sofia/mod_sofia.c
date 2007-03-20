@@ -3129,22 +3129,15 @@ static void sip_i_state(int status,
 								TAG_END());
 				}
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "3PCC Invite\n");
-				switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_3PCC");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Invite with no SDP activating no-media-mode\n");
+				switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_NOSDP");
 
-				if (tech_choose_port(tech_pvt) != SWITCH_STATUS_SUCCESS) {
-					goto done;
-				}
-
-				set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
-
-				nua_respond(tech_pvt->nh, SIP_200_OK, 
-							SIPTAG_CONTACT_STR(tech_pvt->profile->url),
-							SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-							SOATAG_AUDIO_AUX("cn telephone-event"),
-							NUTAG_INCLUDE_EXTRA_SDP(1),
-							TAG_END());
-
+				switch_set_flag(tech_pvt, TFLAG_LATE_NEGOTIATION);
+				switch_set_flag_locked(tech_pvt, TFLAG_NOMEDIA);
+				switch_channel_set_flag(channel, CF_NOMEDIA);
+				switch_channel_set_state(channel, CS_INIT);
+				switch_set_flag_locked(tech_pvt, TFLAG_READY);
+				switch_core_session_thread_launch(session);
 				goto done;
 			}
 		}
