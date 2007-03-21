@@ -1,11 +1,14 @@
 BASE=../../../..
 XMLRPC_DIR=$(BASE)/libs/xmlrpc-c
 
-XMLRPCLAS  = $(XMLRPC_DIR)/src/libxmlrpc.la $(XMLRPC_DIR)/src/libxmlrpc_server.la 
+#XMLRPCLAS  = $(XMLRPC_DIR)/src/libxmlrpc.la 
+#dont ask...
+XMLRPCLAS  = $(XMLRPC_DIR)/src/*.o
+XMLRPCLAS += $(XMLRPC_DIR)/src/libxmlrpc_server.la 
 XMLRPCLAS += $(XMLRPC_DIR)/src/libxmlrpc_server_abyss.la $(XMLRPC_DIR)/lib/abyss/src/libxmlrpc_abyss.la
 XMLRPCLAS += $(XMLRPC_DIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la
 
-LOCAL_LDFLAGS = $(XMLRPCLAS)
+LOCAL_OBJS =$(XMLRPCLAS)
 LOCAL_CFLAGS=-I$(XMLRPC_DIR)/include
 
 include $(BASE)/build/modmake.rules
