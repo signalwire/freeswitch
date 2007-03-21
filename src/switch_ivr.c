@@ -2048,9 +2048,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				switch_channel_answer(chan_a);
 				ans_a++;
 			} else if (!pre_b && switch_channel_test_flag(chan_b, CF_EARLY_MEDIA)) {
-				if (switch_channel_pre_answer(chan_a) == SWITCH_STATUS_SUCCESS) {
-					pre_b++;
-				}
+				switch_channel_pre_answer(chan_a);
+				pre_b++;
 			}
 			if (!pre_b) {
 				switch_yield(10000);

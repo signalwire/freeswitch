@@ -587,9 +587,7 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
     default:
         break;
     }
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
-
-
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -649,7 +647,8 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	private_t *tech_pvt = NULL;
 	switch_time_t started = switch_time_now();
 	unsigned int elapsed;
-
+	switch_byte_t *data;
+	
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -703,12 +702,14 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	return SWITCH_STATUS_FALSE;
 
  cng:
-    tech_pvt->read_frame.datalen = 13;
-    memset(tech_pvt->read_frame.data, 0, 13);
+	data = (switch_byte_t *) tech_pvt->read_frame.data;
+	data[0] = 65;
+	data[1] = 0;
+    tech_pvt->read_frame.datalen = 2;
     tech_pvt->read_frame.flags = SFF_CNG; 
     *frame = &tech_pvt->read_frame;
     return SWITCH_STATUS_SUCCESS;
-
+	
 }
 
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,

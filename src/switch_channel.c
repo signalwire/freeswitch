@@ -1036,10 +1036,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
             switch_event_fire(&event);
         }
 
-        /* if we're in a bridge and the other channel is in a blocking read they will never realize we have answered so send 
+        /* if we're the child of another channel and the other channel is in a blocking read they will never realize we have answered so send 
            a SWITCH_SIG_BREAK to interrupt any blocking reads on that channel
         */
-        if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+        if ((uuid = switch_channel_get_variable(channel, SWITCH_ORIGINATOR_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
             switch_core_session_kill_channel(other_session, SWITCH_SIG_BREAK);
             switch_core_session_rwunlock(other_session);
         }
@@ -1075,7 +1075,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 	msg.message_id = SWITCH_MESSAGE_INDICATE_PROGRESS;
 	msg.from = channel->name;
 	status = switch_core_session_message_send(uuid, &msg);
-
+	
 	if (status == SWITCH_STATUS_SUCCESS) {
         status = switch_channel_perform_mark_pre_answered(channel, file, func, line);
 	}
@@ -1148,11 +1148,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
         switch_channel_event_set_data(channel, event);
         switch_event_fire(&event);
     }
-
-    /* if we're in a bridge and the other channel is in a blocking read they will never realize we have answered so send 
+	
+    /* if we're the child of another channel and the other channel is in a blocking read they will never realize we have answered so send 
        a SWITCH_SIG_BREAK to interrupt any blocking reads on that channel
      */
-    if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+    if ((uuid = switch_channel_get_variable(channel, SWITCH_ORIGINATOR_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
         switch_core_session_kill_channel(other_session, SWITCH_SIG_BREAK);
         switch_core_session_rwunlock(other_session);
     }
