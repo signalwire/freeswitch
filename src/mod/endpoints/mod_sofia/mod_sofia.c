@@ -4805,7 +4805,7 @@ static void sip_r_register(int status,
 		case 200:
 			if (sip && sip->sip_contact && sip->sip_contact->m_expires) {
 				char *new_expires = (char *) sip->sip_contact->m_expires;
-				int expi = atoi(new_expires);
+				uint32_t expi = (uint32_t)atoi(new_expires);
 				
 				if (expi != sofia_private->gateway->freq) {
 					sofia_private->gateway->freq = expi;
@@ -5569,10 +5569,6 @@ static switch_status_t config_sofia(int reload)
 						}
 						
 						if ((gateway = switch_core_alloc(profile->pool, sizeof(*gateway)))) {
-							gateway->pool = profile->pool;
-							gateway->profile = profile;
-							gateway->name = switch_core_strdup(gateway->pool, name);
-							gateway->freq = 0;
 							char *scheme = "Digest",
 								*realm = NULL,
 								*username = NULL,
@@ -5581,6 +5577,11 @@ static switch_status_t config_sofia(int reload)
 								*proxy = NULL,
 								*context = "default",
 								*expire_seconds = "3600";
+
+							gateway->pool = profile->pool;
+							gateway->profile = profile;
+							gateway->name = switch_core_strdup(gateway->pool, name);
+							gateway->freq = 0;
 							
 							
 							for (param = switch_xml_child(gateway_tag, "param"); param; param = param->next) {
