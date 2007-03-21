@@ -17,7 +17,7 @@ LOCAL_CFLAGS +=-D__LINUX__ -D_REENTRANT -D_GNU_SOURCE -DAFT_A104 -DWANPIPE_TDM_A
 LOCAL_CFLAGS +=-w
 #LOCAL_LDFLAGS=
 LOCAL_OBJS=ss7boost_client.o $(BASE)/libs/libteletone/libteletone.la $(LIBSANGOMA_LA) $(LIBPRI_A)
-OPTS=--prefix=$(PREFIX) --with-libpri=$(LIBPRI_DIR) --disable-shared
+OPTS=--prefix=$(PREFIX) --with-libpri=../../../$(LIBPRI) --disable-shared
 
 include $(BASE)/build/modmake.rules
 
