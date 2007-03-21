@@ -86,9 +86,19 @@ dnl check for endianness
 if test "$cross_compiling" = "no"; then
   AC_C_BIGENDIAN
 else
-  AC_DEFINE(AP_UNKNOWN_BYTE_ORDER,1,
-                [byte order is unknown due to cross-compilation])
+  AC_DEFINE(AP_UNKNOWN_BYTE_ORDER,1,[byte order is unknown due to cross-compilation])
 fi
+
+if test "$ac_cv_c_bigendian" = "yes"; then
+  AC_DEFINE(XML_BYTE_ORDER,21,[21 for big endian or 12 for little])
+else
+  AC_DEFINE(XML_BYTE_ORDER,12,[z])
+fi
+
+AC_DEFINE(XML_NS,,[Define me])
+AC_DEFINE(XML_DTD,,[Define me])
+AC_DEFINE(XML_CONTEXT_BYTES,1024,[1024])
+
 AC_C_CONST
 AC_TYPE_OFF_T
 AC_TYPE_SIZE_T

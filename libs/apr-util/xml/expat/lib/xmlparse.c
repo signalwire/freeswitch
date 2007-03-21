@@ -14,6 +14,13 @@ static char RCSId[]
 #else
 #include <config.h>
 
+#ifndef HAVE_MEMMOVE
+#ifdef HAVE_BCOPY
+#define memmove(d,s,l) bcopy((s),(d),(l))
+#else
+#define memmove(d,s,l) ;punting on memmove;
+#endif
+
 #ifdef HAVE_STRING_H
 #  include <string.h>
 #endif
