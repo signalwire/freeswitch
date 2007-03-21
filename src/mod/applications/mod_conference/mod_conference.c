@@ -1696,7 +1696,7 @@ static void conference_loop_output(conference_member_t *member)
 				
 			} else {
 				if (switch_test_flag(member, MFLAG_WASTE_BANDWIDTH)) {
-					memset(write_frame.data, 255, bytes);
+					switch_generate_sln_silence(write_frame.data, samples, 1400);
 					write_frame.datalen = bytes;
 					write_frame.samples = samples;
 					write_frame.timestamp = timer.samplecount;

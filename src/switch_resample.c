@@ -183,6 +183,27 @@ SWITCH_DECLARE(void) switch_swap_linear(int16_t *buf, int len)
 	}
 }
 
+SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples, uint32_t divisor)
+{
+	int16_t rnd, x,i;
+	uint32_t sum_rnd = 0;
+
+	assert(divisor);
+	
+	for(i = 0; i < samples; i++, sum_rnd = 0) {
+		for(x = 0; x < 7; x++) {
+			rnd = (int16_t) (rand() * sizeof(int16_t));
+			sum_rnd += rnd;
+		}
+		switch_normalize_to_16bit(sum_rnd);
+		*data = (int16_t) sum_rnd;
+		*data /= (int)divisor;
+
+		data++;
+	}
+}
+
+
 SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, int32_t vol)
 {
     double newrate = 0;

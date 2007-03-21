@@ -155,6 +155,14 @@ SWITCH_DECLARE(int) switch_short_to_float(short *s, float *f, int len);
 SWITCH_DECLARE(void) switch_swap_linear(int16_t *buf, int len);
 
 /*!
+  \brief Generate static noise
+  \param data the audio data buffer
+  \param samples the number of 2 byte samples
+  \param divisor the volume factor
+ */
+SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples, uint32_t divisor);
+
+/*!
   \brief Change the volume of a signed linear audio frame
   \param data the audio data
   \param samples the number of 2 byte samples
