@@ -1466,7 +1466,7 @@ static void conference_loop_output(conference_member_t *member)
 							   samples, 
 							   NULL) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer %s success interval: %u  samples: %u\n", 
-						  member->conference->timer_name, member->conference->interval, samples);	
+						  member->conference->timer_name, interval, samples);	
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer Setup Failed.  Conference Cannot Start\n");	
 		return;
@@ -4046,10 +4046,12 @@ static void conference_function(switch_core_session_t *session, char *data)
                                NULL, 
                                member.pool) == SWITCH_STATUS_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Success L16@%uhz 1 channel %dms\n", 
-                          conference->rate, conference->interval);
+                          read_codec->implementation->samples_per_second,
+						  read_codec->implementation->microseconds_per_frame / 1000);
     } else {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n", 
-                          conference->rate, conference->interval);
+						  read_codec->implementation->samples_per_second,
+						  read_codec->implementation->microseconds_per_frame / 1000);
         flags = 0;
         goto done;
     }
@@ -4075,17 +4077,19 @@ static void conference_function(switch_core_session_t *session, char *data)
     if (switch_core_codec_init(&member.write_codec, 
                                "L16", 
                                NULL, 
-                               conference->rate, 
-                               conference->interval, 
+                               read_codec->implementation->samples_per_second, 
+                               read_codec->implementation->microseconds_per_frame / 1000, 
                                1, 
                                SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, 
                                NULL, 
                                member.pool) == SWITCH_STATUS_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Success L16@%uhz 1 channel %dms\n", 
-                          conference->rate, conference->interval);
+						  read_codec->implementation->samples_per_second,
+						  read_codec->implementation->microseconds_per_frame / 1000);
     } else {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n", 
-                          conference->rate, conference->interval);
+						  read_codec->implementation->samples_per_second,
+						  read_codec->implementation->microseconds_per_frame / 1000);
         flags = 0;
         goto codec_done2;
     }
