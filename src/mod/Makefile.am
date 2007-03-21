@@ -1,9 +1,9 @@
 CONF_MODULES=if test ! -f $(switch_builddir)/modules.conf ; then cp $(switch_builddir)/build/modules.conf.in $(switch_builddir)/modules.conf ; fi ; conf_modules=`grep -v "\#" $(switch_builddir)/modules.conf` ;
 FOUND_MODULES=found_modules=`find . -type d -name mod_\* | sed -e 's|^\./||'` ;
-OUR_MODULES=if test -z "$(MODULES)" ; then our_modules=$$conf_modules ; else our_modules=$(MODULES) ; fi ;
+OUR_MODULES=if test -z "$(MODULES)" ; then our_modules=$$conf_modules ; else our_modules="$(MODULES)" ; fi ;
 OUR_CLEAN_MODULES=if test -z "$(MODULES)" ; then tmp_clean_modules=`echo $$conf_modules $$found_modules`; \
 			our_clean_modules=`for i in $$tmp_clean_modules ; do echo $$i ; done | sort | uniq` ; \
-			 else our_clean_modules=$(MODULES) ; fi ;
+			 else our_clean_modules="$(MODULES)" ; fi ;
 MOD_NAME=`echo $$i | sed -e 's|^.*/||'`
 MOD_DIR=`if test -d $(switch_srcdir)/src/mod/$$i ; then echo $(switch_srcdir)/src/mod/$$i ; else echo $$i ; fi;`
 AM_MAKEFLAGS = `test -n "$(VERBOSE)" || echo -s`
