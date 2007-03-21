@@ -3,17 +3,20 @@
 
 # and define these variables to impact your build
 
-LOCAL_CFLAGS=-DMULTIPLICITY $(shell $(PERL) -MExtUtils::Embed -e ccopts) -DEMBED_PERL
+PERL        = `which perl`
+PERL_LIBDIR =-L$(shell perl -MConfig -e 'print $$Config{archlib}')/CORE
+PERL_LIBS   =$(shell perl -MConfig -e 'print $$Config{libs}')
+
+LOCAL_CFLAGS=-w -DMULTIPLICITY $(shell $(PERL) -MExtUtils::Embed -e ccopts) -DEMBED_PERL
 LOCAL_LDFLAGS=$(shell $(PERL) -MExtUtils::Embed -e ldopts) $(shell $(PERL) -MConfig -e 'print $$Config{libs}')
 LOCAL_OBJS=perlxsi.o
 include ../../../../build/modmake.rules
 
-PERL        = $(shell which perl)
-PERL_LIBDIR =-L$(shell perl -MConfig -e 'print $$Config{archlib}')/CORE
-PERL_LIBS   =$(shell perl -MConfig -e 'print $$Config{libs}')
 
 SWIGCFILE=../../../switch_swig.c
 SWIGIFILE=../../../switch_swig.i
+
+
 
 local_all: fs_perl.$(DYNAMIC_LIB_EXTEN)
 
