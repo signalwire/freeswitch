@@ -93,8 +93,8 @@ MOD_LINK       = $(BASE)/libfreeswitch.la
 CLEANFILES     = src/include/switch_version.h
 BUILT_SOURCES  = src/include/switch_version.h
 
-bin_PROGRAMS =  freeswitch
-freeswitch_SOURCES =    src/switch.c
+bin_PROGRAMS = freeswitch
+freeswitch_SOURCES = src/switch.c
 nodist_freeswitch_SOURCES = src/include/switch_version.h
 freeswitch_CFLAGS = $(AM_CFLAGS)
 freeswitch_LDADD = libfreeswitch.la libs/apr/libapr-1.la
@@ -111,11 +111,6 @@ install-data-local:
 	 done
 	@if [ ! -f $(DESTDIR)$(PREFIX)/conf/freeswitch.xml ] ; then \
 		$(INSTALL) conf/*.xml $(DESTDIR)$(PREFIX)/conf ; \
-	 fi
-	@if [ -f .libs/$(NAME) ] ; then \
-		$(INSTALL) .libs/$(NAME) $(DESTDIR)$(PREFIX)/bin/$(NAME) ; \
-	 else \
-		$(INSTALL) ./$(NAME) $(DESTDIR)$(PREFIX)/bin/$(NAME) ;\
 	 fi
 
 .version:
