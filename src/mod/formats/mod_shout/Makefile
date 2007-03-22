@@ -12,6 +12,8 @@ SHOUTLA=$(SHOUT_DIR)/src/libshout.la
 
 LOCAL_CFLAGS=-I$(SHOUT_DIR)/include -I$(LAME_DIR)/include
 LOCAL_LIBADD=$(LAMELA) $(SHOUTLA) 
+
+LOCAL_LDFLAGS=`cat ../../../../libs/libshout-2.2.2/Makefile | grep SPEEX_LIBS | sed -e 's|^SPEEX_LIBS =||'`
 MP3SOURCES=common.c dct64_i386.c decode_ntom.c layer3.c tabinit.c interface.c
 MP3OBJS=common.o dct64_i386.o decode_ntom.o layer3.o tabinit.o interface.o
 LOCAL_OBJS=$(MP3OBJS)
