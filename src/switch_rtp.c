@@ -105,6 +105,7 @@ struct switch_rtp_rfc2833_data {
 	unsigned char out_digit_packet[4];
 	unsigned int out_digit_sofar;
 	unsigned int out_digit_dur;
+	uint16_t in_digit_seq;
 	uint16_t out_digit_seq;
 	uint32_t out_digit_ssrc;
 	int32_t timestamp_dtmf;
@@ -910,31 +911,36 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			int end = packet[1]&0x80;
 			int duration = (packet[2]<<8) + packet[3];
 			char key = switch_rfc2833_to_char(packet[0]);
+			uint16_t in_digit_seq = ntohs((uint16_t)rtp_session->recv_msg.header.seq);
 
 			/* SHEESH.... Curse you RFC2833 inventors!!!!*/
 			if ((time(NULL) - rtp_session->dtmf_data.last_digit_time) > 2) {
 				rtp_session->dtmf_data.last_digit = 0;
 				rtp_session->dtmf_data.dc = 0;
 			}
+			if (in_digit_seq > rtp_session->dtmf_data.in_digit_seq) {
+				rtp_session->dtmf_data.in_digit_seq = in_digit_seq;
+			
+				if (duration && end) {
+					if (key != rtp_session->dtmf_data.last_digit) {
+						char digit_str[] = {key, 0};
+						time(&rtp_session->dtmf_data.last_digit_time);
+						switch_rtp_queue_dtmf(rtp_session, digit_str);
+					}
+					if (++rtp_session->dtmf_data.dc >= 3) {
+						rtp_session->dtmf_data.last_digit = 0;
+						rtp_session->dtmf_data.dc = 0;
+					}
 
-			if (duration && end) {
-				if (key != rtp_session->dtmf_data.last_digit) {
-					char digit_str[] = {key, 0};
-					time(&rtp_session->dtmf_data.last_digit_time);
-					switch_rtp_queue_dtmf(rtp_session, digit_str);
-				}
-				if (++rtp_session->dtmf_data.dc >= 3) {
+					rtp_session->dtmf_data.last_digit = key;
+				} else {
 					rtp_session->dtmf_data.last_digit = 0;
 					rtp_session->dtmf_data.dc = 0;
 				}
-
-				rtp_session->dtmf_data.last_digit = key;
-			} else {
-				rtp_session->dtmf_data.last_digit = 0;
-				rtp_session->dtmf_data.dc = 0;
 			}
 
 			continue;
+
 		}
 
 		break;
