@@ -3,9 +3,9 @@
 
 # and define these variables to impact your build
 
-LOCAL_CFLAGS= -fpermissive -Wno-deprecated -Wno-conversion -fpermissive -Wno-unused -Wno-comment -Wno-sign-compare \
-	-Wno-conversion -Wno-reorder -I/opt/lumenvox/eng\ine_7.0/include
-LOCAL_LDFLAGS= -L/opt/lumenvox/engine_7.0/lib -llv_lvspeechport
-LOCAL_OBJS=
+LVENGINE_DIR=/opt/lumenvox/engine_7.0
+LOCAL_CFLAGS= -fpermissive -Wno-deprecated -Wno-conversion -fpermissive -Wno-unused
+LOCAL_CFLAGS+= -Wno-comment -Wno-sign-compare -Wno-conversion -Wno-reorder -I$(LVINCLUDE)
+LOCAL_LDFLAGS= -L$(LVLIB) -llv_lvspeechport
 include ../../../../build/modmake.rules
 
