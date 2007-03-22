@@ -117,7 +117,7 @@ $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(LIBS) $(LOCAL_LIBADD) $(OUR_DEPS) $(LOCAL_OBJ
 	fi;
 
 mod_clean:
-	@rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *.lo *~ .libs
+	@rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *.lo *~ .libs $(LOCAL_OBJS)
 
 mod_install: $(DESTDIR)$(PREFIX)/mod/$(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
