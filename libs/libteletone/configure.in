@@ -6,7 +6,6 @@ AC_INIT(libteletone, 0.1, BUG-REPORT-ADDRESS)
 AC_CONFIG_AUX_DIR(build)
 AM_INIT_AUTOMAKE(libteletone,0.1)
 AC_CONFIG_SRCDIR([src])
-#AC_CONFIG_HEADER([])
 
 # Checks for programs.
 AC_PROG_CC
