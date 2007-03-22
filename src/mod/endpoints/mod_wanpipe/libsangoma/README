@@ -1,0 +1,91 @@
+* Needs wanpipe beta2-2.3.4 or higher to compile. 
+  It can be downloaded here.  Its still in beta.
+  ftp.sangoma.com/linux/current_wanpipe/wanpipe-beta2-2.3.4.tgz
+
+
+
+===============================================================
+
+
+The TDM API is only supported from wanpipe release: 
+
+wanpipe-beta2-2.3.4.tgz
+
+
+Pleaes refer to Install/Config Instructions on 
+Sangoma Wiki: http://sangoma.editme.com
+
+===============================================================
+
+Wanpipe TDM Voice API Solution contains the following:
+
+   1. Wanpipe Driver
+      TDM Voice API is only supported in BETA release.
+
+   2. Wanpipe API Library:  libsangoma
+      Already included in above release.
+
+
+Wanpipe TDM Voice API is currently supported on:
+
+   1. AFT A101/A102/A104
+   2. AFT A104D (Working without hw echo support)
+   3. AFT A200 Analog (Coming soon)
+
+ 
+Wanpipe Package Installation
+
+   1. Untar BETA release or greater
+   2. Run ./Setup install
+   3. Choose all default parameters
+   4. Compilation Mode:
+              Choose DEFAULT  (No zaptel drivers needed)
+           or
+              Choose TDM    (If some spans bind to zaptel)
+   5. Proceed with default parameters. 
+
+ 
+
+Wanpipe Package Configuration
+
+There is no wancfg support yet for TDM API.  Please used attached samples.
+
+   1. Please copy the following wanpipe config file into 
+      your /etc/wanpipe directory: wanpipe1.conf
+
+   2. If you have multiple AFT cards in your machine please edit the 
+      wanpipe1.conf and set the appropriate PCISLOT, PCIBUS 
+      values and disable AUTOPCI option.
+
+   3. To support multiple ports copy wanpipe1.conf into wanpipe2.conf and change:
+      string wanpipe1 to string wanpipe2
+      string w1 to string w2
+      TDMV_SPAN to next span.
+      FE_LINE to AFT port number.
+      Please refer to all comments inside the wanpipe#.conf file.
+
+
+Wanpipe LibSangoma Installation
+
+The LibSangoma is installed in /etc/wanpipe/api/libsangoma
+
+   1. cd /etc/wanpipe/api/libsangoma
+   2. ./configure
+   3. make
+   4. make install
+   5. Add library path /usr/local/include into /etc/ld.so.conf
+   6. Run ldconfig to accept /etc/ld.so.conf changes.
+
+
+Wanpipe TDMAPI Sample Code
+
+Sample code for tdm api is installed in /etc/wanpipe/api/tdm_api directory.
+
+   1. cd /etc/wanpipe/api/tdm_api
+   2. make
+   3. Read the README file on how to use sample applications
+
+
+
+
+

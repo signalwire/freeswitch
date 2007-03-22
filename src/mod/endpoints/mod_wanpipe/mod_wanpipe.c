@@ -80,7 +80,6 @@ struct channel_map {
 	char map[SANGOMA_MAX_CHAN_PER_SPAN][SWITCH_UUID_FORMATTED_LENGTH + 1];
 };
 
-
 unsigned int txseq=0;
 unsigned int rxseq=0;
 
@@ -116,6 +115,8 @@ static struct {
 	switch_mutex_t *hash_mutex;
 	switch_mutex_t *channel_mutex;
 	ss7boost_handle_t *ss7boost_handle;
+	uint32_t fxo_index;
+	uint32_t fxs_index;
 } globals;
 
 struct wanpipe_pri_span {
@@ -137,6 +138,37 @@ struct wpsock {
 };
 
 typedef struct wpsock wpsock_t;
+
+typedef enum {
+	ANALOG_TYPE_UNKNOWN,
+	ANALOG_TYPE_PHONE_FXS,
+	ANLOG_TYPE_LINE_FXO
+} analog_type_t;
+
+typedef enum {
+	ANALOG_STATE_DOWN,
+	ANALOG_STATE_ONHOOK,
+	ANALOG_STATE_OFFHOOK,
+	ANALOG_STATE_RING
+} analog_state_t;
+
+struct analog_channel {
+	analog_type_t a_type;
+	analog_state_t state;
+	wpsock_t *sock;
+	int chan;
+	int span;
+	char *device;
+	char *user;
+	char *domain;
+	char *cid_name;
+	char *cid_num;
+};
+typedef struct analog_channel analog_channel_t;
+
+#define MAX_ANALOG_CHANNELS 128
+static struct analog_channel *FXS_ANALOG_CHANNELS[MAX_ANALOG_CHANNELS];
+static struct analog_channel *FXO_ANALOG_CHANNELS[MAX_ANALOG_CHANNELS];
 
 static struct wanpipe_pri_span *SPANS[MAX_SPANS];
 
@@ -176,6 +208,105 @@ struct private_object {
 };
 typedef struct private_object private_object_t;
 
+
+
+static int local_sangoma_tdm_read_event(sng_fd_t fd, wp_tdm_api_rx_hdr_t *rx_event)
+{
+	wanpipe_tdm_api_t tdm_api[1];
+	
+#if defined(WIN32)
+    rx_event = &last_tdm_api_event_buffer;
+#else
+    int err;
+
+    tdm_api->wp_tdm_cmd.cmd = SIOC_WP_TDM_READ_EVENT;
+
+    if ((err = sangoma_tdm_cmd_exec(fd, tdm_api))) {
+        return err;
+    }
+
+    rx_event = &tdm_api->wp_tdm_cmd.event;
+#endif
+
+	return 0;
+}
+
+static int analog_set_state(analog_channel_t *alc, analog_state_t state)
+{
+	alc->state = state;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Changing State to %d\n", state);
+}
+
+static void analog_check_state(analog_channel_t *alc)
+{
+	wanpipe_tdm_api_t tdm_api;
+
+	switch(alc->state) {
+	case ANALOG_STATE_DOWN:
+		sangoma_tdm_enable_rxhook_events(alc->sock->fd, &tdm_api);
+		analog_set_state(alc, ANALOG_STATE_ONHOOK);
+		break;
+	default:
+		break;
+	}
+}
+
+static void analog_parse_event(analog_channel_t *alc)
+{
+	wp_tdm_api_rx_hdr_t rx_event;
+	int err = local_sangoma_tdm_read_event(alc->sock->fd, &rx_event);
+	
+	if (err < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error reading event!\n");
+		return;
+	}
+
+	switch (rx_event.wp_tdm_api_event_type) {
+	case WP_TDM_EVENT_RXHOOK:
+		printf("hook\n");
+		break;
+	}
+
+}
+
+static void *SWITCH_THREAD_FUNC fxs_thread_run(switch_thread_t *thread, void *obj)
+{
+
+	for(;;) {
+		int i = 0, sel_on = -1;
+		fd_set oob;
+		FD_ZERO(&oob);
+		
+		for(i = 0; i < globals.fxs_index; i++) {
+			int fd;
+			assert(FXS_ANALOG_CHANNELS[i]);
+			assert(FXS_ANALOG_CHANNELS[i]->sock);
+
+			fd = FXS_ANALOG_CHANNELS[i]->sock->fd;
+			
+			analog_check_state(FXS_ANALOG_CHANNELS[i]);
+
+			FD_SET(fd, &oob);
+
+			if (fd > sel_on) {
+				sel_on = fd;
+			}
+		}
+
+		if (sel_on > -1) {
+			if (select(++sel_on, NULL, NULL, &oob, NULL)) {
+				for(i = 0; i < globals.fxs_index; i++) {
+					int fd = FXS_ANALOG_CHANNELS[i]->sock->fd;
+					if (FD_ISSET(fd, &oob)) {
+						analog_parse_event(FXS_ANALOG_CHANNELS[i]);
+					}
+				}
+			}
+		}
+	}
+}
+
+
 static int wp_close(private_object_t *tech_pvt)
 {
 	int ret = 0;
@@ -190,7 +321,7 @@ static int wp_close(private_object_t *tech_pvt)
 	return ret;
 }
 
-static int wp_open(private_object_t *tech_pvt, int span, int chan)
+static wpsock_t *wp_open(private_object_t *tech_pvt, int span, int chan)
 {
 	sng_fd_t fd;
 	wpsock_t *sock;
@@ -212,7 +343,7 @@ static int wp_open(private_object_t *tech_pvt, int span, int chan)
 		}
 	}
 
-	if (sock) {
+	if (sock && tech_pvt) {
 		if (sock->tech_pvt) {
 			if (tech_pvt->session) {
 				switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
@@ -225,7 +356,7 @@ static int wp_open(private_object_t *tech_pvt, int span, int chan)
 
 	switch_mutex_unlock(globals.hash_mutex);
 
-	return sock ? 1 : 0;
+	return sock;
 }
 
 static int wp_restart(int span, int chan)
@@ -2038,7 +2169,7 @@ static switch_status_t config_wanpipe(int reload)
 {
 	char *cf = "wanpipe.conf";
 	int current_span = 0, min_span = 0, max_span = 0;
-	switch_xml_t cfg, xml, settings, param, pri_spans, ss7boost_handles, span;
+	switch_xml_t cfg, xml, settings, param, pri_spans, ss7boost_handles, span, analog_channels, channel;
 
 	globals.samples_per_frame = DEFAULT_SAMPLES_PER_FRAME;
 	globals.dtmf_on = 150;
@@ -2111,6 +2242,102 @@ static switch_status_t config_wanpipe(int reload)
 		launch_ss7boost_handle(ss7boost_handle);
 		break;
 	}
+
+	analog_channels = switch_xml_child(cfg, "analog_channels");
+	for(channel = switch_xml_child(analog_channels, "channel"); channel; channel = channel->next) {
+		char *c_type = (char *) switch_xml_attr(channel, "type");
+		char *c_dev = (char *) switch_xml_attr(channel, "device");
+		char *user = NULL;
+		char *domain = NULL;
+		char *cid_name = NULL, *cid_num = NULL;
+		analog_channel_t *alc;
+		analog_type_t a_type = ANALOG_TYPE_UNKNOWN;
+		wpsock_t *sock;
+		int chan, span;
+		
+		if (!c_type) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing required attribute 'type'\n");
+			continue;
+		}
+
+		if (!strcasecmp(c_type, "phone") || !strcasecmp(c_type, "fxs")) {
+			a_type = ANALOG_TYPE_PHONE_FXS;
+		} else if (!strcasecmp(c_type, "line") || !strcasecmp(c_type, "fxo")) {
+			a_type = ANLOG_TYPE_LINE_FXO;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid type '%s'\n", c_type);
+			continue;
+		}
+
+		if (!c_dev) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing required attribute 'device'\n");
+			continue;
+		}
+
+		if (!sangoma_span_chan_fromif(c_dev, &span, &chan)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid device name '%s'\n", c_dev);
+			continue;
+		}
+		
+		if (!(sock = wp_open(NULL, span, chan))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot open device '%s' (%s)\n", c_dev, strerror(errno));
+			continue;
+		}
+
+		for (param = switch_xml_child(channel, "param"); param; param = param->next) {
+            char *var = (char *) switch_xml_attr_soft(param, "name");
+            char *val = (char *) switch_xml_attr_soft(param, "value");
+			
+			if (!strcasecmp(var, "user")) {
+				user = var;
+			} else if (!strcasecmp(var, "domain")) {
+				domain = val;
+			} else if (!strcasecmp(var, "caller-id-name")) {
+				cid_name = val;
+			} else if (!strcasecmp(var, "caller-id-number")) {
+				cid_num = val;
+			}
+		}
+
+		assert((alc = malloc(sizeof(*alc))));
+		memset(alc, 0, sizeof(*alc));
+		if (user) {
+			alc->user = strdup(user);
+		}
+		if (domain) {
+			alc->domain = strdup(domain);
+		}
+		if (cid_name) {
+			alc->cid_name = strdup(cid_name);
+		}
+		if (cid_num) {
+			alc->cid_name = strdup(cid_num);
+		}
+		
+		alc->a_type = a_type;
+		alc->sock = sock;
+		alc->chan = chan;
+		alc->span = span;
+
+		if (a_type == ANALOG_TYPE_PHONE_FXS) {
+			FXS_ANALOG_CHANNELS[globals.fxs_index++] = alc;
+		} else {
+			FXO_ANALOG_CHANNELS[globals.fxo_index++] = alc;
+		}
+	}
+
+
+	if (globals.fxs_index) {
+		switch_thread_t *thread;
+		switch_threadattr_t *thd_attr = NULL;
+	
+		switch_threadattr_create(&thd_attr, module_pool);
+		switch_threadattr_detach_set(thd_attr, 1);
+		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+		switch_thread_create(&thread, thd_attr, fxs_thread_run, NULL, module_pool);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Starting FXS Thread!\n");
+	}
+
 
 	pri_spans = switch_xml_child(cfg, "pri_spans");
 	for (span = switch_xml_child(pri_spans, "span"); span; span = span->next) {
