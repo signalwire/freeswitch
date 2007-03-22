@@ -20,6 +20,7 @@ static char RCSId[]
 #else
 #define memmove(d,s,l) ;punting on memmove;
 #endif
+#endif
 
 #ifdef HAVE_STRING_H
 #  include <string.h>
