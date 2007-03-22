@@ -60,7 +60,7 @@ libtool=`${LIBDIR}/apr/build/PrintPath glibtool libtool libtool15 libtool14`
 lt_pversion=`$libtool --version 2>/dev/null|sed -e 's/([^)]*)//g;s/^[^0-9]*//;s/[- ].*//g;q'`
 if test -z "$lt_pversion"; then
 echo "bootstrap: libtool not found."
-echo "           You need libtool version 1.5.7 or newer installed"
+echo "           You need libtool version 1.5.14 or newer installed"
 echo "           to build FreeSWITCH from SVN."
 exit 1
 fi
@@ -68,16 +68,18 @@ lt_version=`echo $lt_pversion|sed -e 's/\([a-z]*\)$/.\1/'`
 IFS=.; set $lt_version; IFS=' '
 lt_status="good"
 
-if test "$1" = "1"; then
-   if test "$2" -lt "5" -o "$2" =  "5" -a "$3" -lt "22" || test ; then
+if test "$1" -lt "2"; then
+   if test "$2" -lt "5" -o "$2" =  "5" -a "$3" -lt "14" ; then
       lt_status="bad"
    fi
+else
+    lt_status="bad"
 fi
 if test $lt_status = "good"; then
    echo "bootstrap: libtool version $lt_pversion (ok)"
 else
 echo "bootstrap: libtool version $lt_pversion found."
-echo "           You need libtool version 1.5.7 or newer installed"
+echo "           You need libtool version 1.5.14 or newer installed"
 echo "           to build FreeSWITCH from SVN."
 
 exit 1
