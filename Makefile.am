@@ -38,7 +38,10 @@ src/switch_rtp.c\
 src/switch_ivr.c \
 src/switch_stun.c\
 src/switch_log.c\
-src/switch_xml.c
+src/switch_xml.c\
+libs/libteletone/src/libteletone_detect.c\
+libs/libteletone/src/libteletone_generate.c
+
 
 library_includedir      = $(PREFIX)/include
 
@@ -66,7 +69,12 @@ src/include/switch_utils.h\
 src/include/switch_rtp.h\
 src/include/switch_stun.h\
 src/include/switch_log.h\
-src/include/switch_xml.h
+src/include/switch_xml.h\
+libs/libteletone/src/libteletone_detect.h\
+libs/libteletone/src/libteletone_generate.h\
+libs/libteletone/src/libteletone.h
+
+
 
 CORE_CFLAGS     = `$(switch_srcdir)/libs/apr/apr-1-config --cflags --cppflags --includes`
 CORE_CFLAGS    += `$(switch_srcdir)/libs/apr-util/apu-1-config --includes`
@@ -80,7 +88,6 @@ CORE_CFLAGS    += -I$(switch_srcdir)/libs/libteletone/src
 CORE_LIBS      = libs/apr/libapr-1.la libs/apr-util/libaprutil-1.la
 CORE_LIBS     += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la
 CORE_LIBS     += libs/srtp/libsrtp.la libs/libresample/libresample.la
-CORE_LIBS     += libs/libteletone/libteletone.la
 
 lib_LTLIBRARIES	          = libfreeswitch.la
 libfreeswitch_la_CFLAGS   = $(CORE_CFLAGS) $(AM_CFLAGS)
@@ -164,10 +171,6 @@ libs/pcre/libpcre.la: libs/pcre libs/pcre/.update
 
 libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update
 	@cd libs/srtp && $(MAKE)
-	@$(TOUCH_TARGET)
-
-libs/libteletone/libteletone.la: libs/libteletone libs/libteletone/.update
-	@cd libs/libteletone && $(MAKE)
 	@$(TOUCH_TARGET)
 
 libs/libresample/libresample.la: libs/libresample libs/libresample/.update
