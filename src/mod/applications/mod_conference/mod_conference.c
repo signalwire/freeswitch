@@ -735,7 +735,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			if (conference->fnode->leadin) {
 				conference->fnode->leadin--;
 			} else {
-				ready++;
+				file_sample_len = samples;
 				if (conference->fnode->type == NODE_TYPE_SPEECH) {
 					switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_BLOCKING;
 					uint32_t rate = conference->rate;
@@ -758,34 +758,40 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				}
 			}
 			has_file_data = 1;
+			ready++;
 		} else {
 			has_file_data = 0;
 		}
 
 		if (conference->async_fnode) {
-			switch_core_file_read(&conference->async_fnode->fh, async_file_frame, &file_sample_len);
-
-			if (file_sample_len <= 0) {
-				conference->async_fnode->done++;
+			/* Lead in time */
+			if (conference->async_fnode->leadin) {
+				conference->async_fnode->leadin--;
 			} else {
-				if (has_file_data) {
-					switch_size_t x;			
-					for (x = 0; x < file_sample_len; x++) {
-						int32_t z;
-						int16_t *bptr, *muxed;
-						
-						muxed = (int16_t *) file_frame;
-						bptr = (int16_t *) async_file_frame;
-						z = muxed[x] + bptr[x];
-						switch_normalize_to_16bit(z);
-						muxed[x] = (int16_t)z;
-					}
+				file_sample_len = samples;
+				switch_core_file_read(&conference->async_fnode->fh, async_file_frame, &file_sample_len);
+				if (file_sample_len <= 0) {
+					conference->async_fnode->done++;
 				} else {
-					memcpy(file_frame, async_file_frame, file_sample_len * 2);
-					has_file_data = 1;
+					if (has_file_data) {
+						switch_size_t x;			
+						for (x = 0; x < file_sample_len; x++) {
+							int32_t z;
+							int16_t *bptr, *muxed;
+							
+							muxed = (int16_t *) file_frame;
+							bptr = (int16_t *) async_file_frame;
+							z = muxed[x] + bptr[x];
+							switch_normalize_to_16bit(z);
+							muxed[x] = (int16_t)z;
+						}
+					} else {
+						memcpy(file_frame, async_file_frame, file_sample_len * 2);
+						has_file_data = 1;
+						ready++;
+					}
 				}
 			}
-
 		}
 
 		if (ready) {
@@ -833,22 +839,22 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 						if (imember->read > imember->len) {
 							imember->len = imember->read;
 						}
-
+						
 						bptr = (int16_t *) imember->frame;
 						muxed = (int16_t *) omember->mux_frame;
 
-
+						
 						for (x = 0; x < imember->read / 2; x++) {
 							int32_t z = muxed[x] + bptr[x];
 							switch_normalize_to_16bit(z);
 							muxed[x] = (int16_t)z;
 						}
-
+						
 						ready++;
 					}
 				}
 			}
-
+			
 			/* Go back and write each member his dedicated copy of the audio frame that does not contain his own audio. */
 			for (imember = conference->members; imember; imember = imember->next) {
 				if (switch_test_flag(imember, MFLAG_RUNNING)) {
@@ -1958,7 +1964,7 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
         }
     }
 
-    if (!strncasecmp(file, "say:", 4)) {
+    if (!async && !strncasecmp(file, "say:", 4)) {
         status = conference_say(conference, file + 4, leadin);
         goto done;
     } 
@@ -1969,10 +1975,12 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
                 goto done;
             }
             file = dfile;
-        } else {
+        } else if (!async) {
             status = conference_say(conference, file, leadin);
             goto done;  
-        }
+        } else {
+			goto done;
+		}
     }
 
     /* Setup a memory pool to use. */
@@ -2017,8 +2025,10 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 		conference->async_fnode = fnode;
 
 		if (nptr) {
-			switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
-			switch_core_speech_close(&conference->fnode->sh, &flags);
+			switch_memory_pool_t *pool;
+			switch_core_file_close(&nptr->fh);
+			pool = nptr->pool;
+            switch_core_destroy_memory_pool(&pool);
 		}
 		
 	} else {
