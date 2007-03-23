@@ -1,0 +1,49 @@
+#we should set all these vars from configure, no reason to have these in each Makefile.am
+LIBTOOL=`if test -z "$(VERBOSE)" ; then echo $(SHELL) $(switch_builddir)/quiet_libtool ;else echo $(switch_builddir)/libtool;  fi;`
+AM_MAKEFLAGS=`test -n "$(VERBOSE)" || echo -s`
+LINK_OUTPUT_REDIR=> $(MODNAME).log || error="yes" ; \
+			if test -n "$(VERBOSE)" -o "$$error" = "yes"; then \
+			  cat $(MODNAME).log ; \
+			fi ;\
+			if test "$$error" = "yes"; then \
+			  exit 1 ;\
+			fi
+
+moddir=$(prefix)/mod
+
+
+
+MODNAME=mod_cdr
+mod_LTLIBRARIES = mod_cdr.la
+mod_cdr_la_SOURCES = mod_cdr.cpp cdrcontainer.cpp basecdr.cpp baseregistry.cpp pddcdr.cpp csvcdr.cpp xmlcdr.cpp sqlitecdr.cpp
+mod_cdr_la_CFLAGS = $(AM_CFLAGS)
+mod_cdr_la_LIBADD=$(switch_builddir)/libfreeswitch.la
+mod_cdr_la_LDFLAGS=-module -avoid-version -no-undefined -export-symbols-regex ^switch_module_.*$ -rpath $(PREFIX)/$(libdir)
+
+#Build mysqlcdr if we have mysql client
+if HAVE_MYSQL
+mod_cdr_la_CFLAGS += -DMYSQL
+mod_cdr_la_LDFLAGS += -lmysql-client
+mod_cdr_la_SOURCES += mysqlcdr.cpp
+endif
+
+#mod_cdr_la_CFLAGS  += -DSWITCH_QUEUE_ENHANCED
+#mod_cdr_la_LDFLAGS += -lcurl
+
+#Override link target so we can control the output
+
+$(MODNAME).la: $(mod_cdr_la_OBJECTS) $(mod_cdr_la_DEPENDENCIES)
+	@echo Creating $(MODNAME).$(DYNAMIC_LIB_EXTEN)...
+	@$(CXXLINK) -rpath $(moddir) $(mod_cdr_la_LDFLAGS) $(mod_cdr_la_OBJECTS) $(mod_cdr_la_LIBADD) $(LIBS) $(LINK_OUTPUT_REDIR)
+
+#Override the linstall target so we just install the .so/.dylib
+
+install-data-am: $(DESTDIR)$(PREFIX)/$(moddir)/$(MODNAME).$(DYNAMIC_LIB_EXTEN)
+
+$(DESTDIR)$(PREFIX)/$(moddir)/$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).la
+	@echo installing $(MODNAME).$(DYNAMIC_LIB_EXTEN)
+	@if [ -f .libs/$(MODNAME).$(DYNAMIC_LIB_EXTEN) ] ; then \
+	  $(LIBTOOL) --mode=install $(INSTALL) .libs/$(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/$(moddir) >/dev/null  ; \
+	else \
+	  $(LIBTOOL) --mode=install $(INSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/$(moddir) >/dev/null  ; \
+	fi
