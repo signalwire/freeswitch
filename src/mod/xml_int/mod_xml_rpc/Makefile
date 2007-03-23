@@ -3,7 +3,7 @@ XMLRPC_DIR=$(BASE)/libs/xmlrpc-c
 
 #XMLRPCLAS  = $(XMLRPC_DIR)/src/libxmlrpc.la 
 #dont ask...
-XMLRPCLAS  = $(XMLRPC_DIR)/src/libxmlrpc.la
+XMLRPCLAS  = $(XMLRPC_DIR)/src/*.o
 XMLRPCLAS += $(XMLRPC_DIR)/src/libxmlrpc_server.la 
 XMLRPCLAS += $(XMLRPC_DIR)/src/libxmlrpc_server_abyss.la $(XMLRPC_DIR)/lib/abyss/src/libxmlrpc_abyss.la
 XMLRPCLAS += $(XMLRPC_DIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la $(XMLRPC_DIR)/lib/expat/xmltok/libxmlrpc_xmltok.la
