@@ -259,6 +259,10 @@ int tport_recv_dgram(tport_t *self)
   msg = self->tp_msg;
 
   ai = msg_addrinfo(msg);
+
+  if (!ai)
+	  return -1;
+
   from = (su_sockaddr_t *)ai->ai_addr, fromlen = (socklen_t)(ai->ai_addrlen);
 
   n = su_vrecv(self->tp_socket, iovec, veclen, 0, from, &fromlen);
