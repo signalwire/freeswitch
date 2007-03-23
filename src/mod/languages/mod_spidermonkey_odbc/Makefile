@@ -25,4 +25,4 @@ depend_install: $(INST_ODBCLA)
 
 $(INST_ODBCLA): $(UNINST_ODBCLA)
 	cd $(ODBC_DIR) && $(MAKE) install
-
+	@$(TOUCH_TARGET)
