@@ -657,8 +657,31 @@ SWITCH_DECLARE(int) switch_vasprintf(char **buf, const char *format, va_list ap)
 #ifdef HAVE_VASPRINTF
     return vasprintf(buf, format, ap);
 #else
-    *buf = (char *) malloc(2048);
-    return vsnprintf(*buf, 2048, format, ap);
+	size_t block_size = 1024;
+	int ret = -1;
+	int count = 1;
+	*buf = (char *) malloc(block_size);
+
+	if (*buf == NULL) {
+        return -1;
+    }
+	
+	while (ret == -1 && count < 10) {
+		ret = vsnprintf(*buf, block_size*count, format, ap);
+		if (ret == -1) {
+			void *new_buf;
+			count++;
+			new_buf = realloc(*buf, block_size*count);
+			if (new_buf == NULL) {
+				*buf = NULL;
+				return -1;
+			} else {
+				*buf = new_buf;
+			}
+		}
+	}
+	return ret;
+
 #endif
 }
 

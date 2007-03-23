@@ -41,7 +41,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle
 	char *buf = handle->data;
 	char *end = handle->end;
 	int ret = 0;
-	char *data;
+	char *data = NULL;
 
 	if (handle->data_len >= handle->data_size) {
 		return SWITCH_STATUS_FALSE;
