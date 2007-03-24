@@ -616,8 +616,15 @@ SWITCH_DECLARE(int) switch_vasprintf(char **ret, const char *fmt, va_list ap)
 	char *buf;
 	int len;
 	size_t buflen;
+	va_list ap2;
 
-	len = vsnprintf(NULL, 0, fmt, ap);
+#ifdef _MSC_VER
+	ap2 = ap;
+#else
+	va_copy(ap2, ap);
+#endif
+
+	len = vsnprintf(NULL, 0, fmt, ap2);
 
 	if (len > 0 && (buf = malloc((buflen = (size_t)(len + 1)))) != NULL) {
 		len = vsnprintf(buf, buflen, fmt, ap);
@@ -627,6 +634,7 @@ SWITCH_DECLARE(int) switch_vasprintf(char **ret, const char *fmt, va_list ap)
 		len = -1;
 	}
 
+	va_end(ap2);
 	return len;
 
 #endif
