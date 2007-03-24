@@ -137,9 +137,7 @@ typedef enum {
 	SSM_NA,
 	SSM_PRONOUNCED,
 	SSM_ITERATED,
-    SSM_COUNTED,
-
-	SSM_COUNT
+    SSM_COUNTED
 } switch_say_method_t;
 
 typedef enum {
@@ -161,16 +159,12 @@ typedef enum {
 	SST_ACCOUNT_NUMBER,
 	SST_NAME_SPELLED,
 	SST_NAME_PHONETIC,
-
-	SST_COUNT
 } switch_say_type_t;
 
 typedef enum {
 	SMA_NONE,
 	SMA_GET,
-	SMA_SET,
-
-	SMA_COUNT
+	SMA_SET
 } switch_management_action_t;
 
 typedef enum {
@@ -192,8 +186,6 @@ typedef enum {
 	SWITCH_ABC_TYPE_WRITE,
 	SWITCH_ABC_TYPE_WRITE_REPLACE,
 	SWITCH_ABC_TYPE_CLOSE,
-
-	SWITCH_ABC_TYPE_COUNT
 } switch_abc_type_t;
 
 typedef struct {
@@ -249,7 +241,7 @@ typedef enum {
 	SWITCH_AUDIO_COL_STR_SOFTWARE                 = 0x03,
 	SWITCH_AUDIO_COL_STR_ARTIST                   = 0x04,
 	SWITCH_AUDIO_COL_STR_COMMENT                  = 0x05,
-	SWITCH_AUDIO_COL_STR_DATE                     = 0x06,
+	SWITCH_AUDIO_COL_STR_DATE                     = 0x06
 } switch_audio_col_t;
 
 typedef enum {
@@ -331,8 +323,6 @@ typedef enum {
 	SWITCH_PRIORITY_NORMAL,
 	SWITCH_PRIORITY_LOW,
 	SWITCH_PRIORITY_HIGH,
-
-	SWITCH_PRIORITY_COUNT
 } switch_priority_t;
 
 /*!
@@ -379,9 +369,7 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_NOMEDIA,
 	SWITCH_MESSAGE_INDICATE_HOLD,
 	SWITCH_MESSAGE_INDICATE_UNHOLD,
-	SWITCH_MESSAGE_INDICATE_REDIRECT,
-
-	SWITCH_MESSAGE_INDICATE_COUNT
+	SWITCH_MESSAGE_INDICATE_REDIRECT
 } switch_core_session_message_types_t;
 
 
@@ -436,9 +424,7 @@ typedef enum {
 	SWITCH_STATUS_SOCKERR,
 	SWITCH_STATUS_MORE_DATA,
 	SWITCH_STATUS_NOTFOUND,
-	SWITCH_STATUS_UNLOAD,
-
-	SWITCH_STATUS_COUNT
+	SWITCH_STATUS_UNLOAD
 } switch_status_t;
 
 
@@ -483,9 +469,7 @@ SWITCH_CHANNEL_ID_EVENT			- Write to the event engine as a LOG event
 typedef enum {
 	SWITCH_CHANNEL_ID_LOG,
 	SWITCH_CHANNEL_ID_LOG_CLEAN,
-	SWITCH_CHANNEL_ID_EVENT,
-
-	SWITCH_CHANNEL_ID_COUNT
+	SWITCH_CHANNEL_ID_EVENT
 } switch_text_channel_t;
 
 typedef enum {
@@ -522,9 +506,7 @@ typedef enum {
 	CS_HOLD,
 	CS_HIBERNATE,
 	CS_HANGUP,
-	CS_DONE,
-
-	CS_COUNT
+	CS_DONE 
 } switch_channel_state_t;
 
 
@@ -612,9 +594,7 @@ typedef enum {
 	SWITCH_SIG_NONE,
 	SWITCH_SIG_KILL,
 	SWITCH_SIG_XFER,
-    SWITCH_SIG_BREAK,
-
-	SWITCH_SIG_COUNT
+    SWITCH_SIG_BREAK
 } switch_signal_t;
 
 /*!
@@ -710,9 +690,7 @@ typedef enum {
 	SWITCH_CODEC_TYPE_AUDIO,
 	SWITCH_CODEC_TYPE_VIDEO,
 	SWITCH_CODEC_TYPE_T38,
-	SWITCH_CODEC_TYPE_APP,
-
-	SWITCH_CODEC_TYPE_COUNT
+	SWITCH_CODEC_TYPE_APP
 } switch_codec_type_t;
 
 
@@ -872,9 +850,7 @@ typedef enum {
 
 typedef enum {
 	SWITCH_INPUT_TYPE_DTMF,
-	SWITCH_INPUT_TYPE_EVENT,
-
-	SWITCH_INPUT_TYPE_COUNT
+	SWITCH_INPUT_TYPE_EVENT
 } switch_input_type_t;
 
 typedef enum {
@@ -941,9 +917,7 @@ typedef enum {
 	SCSC_PAUSE_INBOUND,
 	SCSC_HUPALL,
 	SCSC_SHUTDOWN,
-	SCSC_CHECK_RUNNING,
-
-	SCSC_COUNT
+	SCSC_CHECK_RUNNING
 } switch_session_ctl_t;
 
 typedef uint16_t switch_port_t;
