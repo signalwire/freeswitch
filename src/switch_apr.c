@@ -608,79 +608,28 @@ SWITCH_DECLARE(switch_status_t) switch_queue_trypush(switch_queue_t *queue, void
 	return apr_queue_trypush(queue, data);
 }
 
-#if 0
-/* Utility functions */
-struct switch_vasprintf_data {
-    apr_vformatter_buff_t vbuff;
-	switch_size_t len;
-	switch_size_t block_size;
-	char *buf;
-};
-
-static int vasprintf_flush(apr_vformatter_buff_t *buff)
+SWITCH_DECLARE(int) switch_vasprintf(char **ret, const char *fmt, va_list ap)
 {
-    struct switch_vasprintf_data *data = (struct switch_vasprintf_data *)buff;
-
-	char *temp;
-	switch_size_t len = data->vbuff.curpos - data->buf;
-
-	if ((temp = realloc(data->buf, data->len + data->block_size))) {
-		data->buf = temp;
-		data->vbuff.curpos = data->buf + len;
-		data->len = data->len + data->block_size;
-		data->vbuff.endpos = data->buf + data->len;
-		return 0;
-	}
-    	
-	return -1;
-}
-#endif
-
-SWITCH_DECLARE(int) switch_vasprintf(char **buf, const char *format, va_list ap)
-{
-#if 0
-	struct switch_vasprintf_data data;
-
-	data.block_size = 1024;
-	data.buf = malloc(data.block_size);
-
-	if (data.buf == NULL) {
-		*buf = NULL;
-        return 0;
-    }
-
-    data.vbuff.curpos = data.buf;
-    data.vbuff.endpos = data.buf + data.block_size;
-
-    return apr_vformatter(vasprintf_flush, (apr_vformatter_buff_t *)&data, format, ap);
-#endif
 #ifdef HAVE_VASPRINTF
-    return vasprintf(buf, format, ap);
+    return vasprintf(ret, fmt, ap);
 #else
-	size_t block_size = 1024;
-	int ret = -1;
-	int count = 1;
-	*buf = (char *) malloc(block_size);
+	char *buf;
+	int len;
+	size_t buflen;
 
-	if (*buf == NULL) {
-        return -1;
-    }
-	
-	while (ret == -1 && count < 10) {
-		ret = vsnprintf(*buf, block_size*count, format, ap);
-		if (ret == -1) {
-			void *new_buf;
-			count++;
-			new_buf = realloc(*buf, block_size*count);
-			if (new_buf == NULL) {
-				*buf = NULL;
-				return -1;
-			} else {
-				*buf = new_buf;
-			}
+	len = vsnprintf(NULL, 0, fmt, ap);
+	if (len > 0) {
+		buflen = (size_t)(len + 1);
+		if ((buf = malloc(buflen)) == NULL) {
+			*ret = NULL;
+			return -1;
 		}
+		len = vsnprintf(buf, buflen, fmt, ap);
+		*ret = buf;
+	} else {
+		*ret = NULL;
 	}
-	return ret;
+	return len;
 
 #endif
 }
