@@ -64,6 +64,9 @@ typedef struct {
 	switch_time_t timestamp;
 	/*! A pointer to where the actual content of the message starts (skipping past the preformatted portion) */	
 	char *content;
+
+	/* To maintain abi, only add new elements to the end of this struct and do not delete any elements */
+
 } switch_log_node_t;
 
 typedef switch_status_t (*switch_log_function_t)(const switch_log_node_t *node, switch_log_level_t level);
