@@ -509,6 +509,8 @@ typedef enum {
 	SWITCH_IVR_ACTION_TOMAIN,	/* Go back to the top level menu.  */
 	SWITCH_IVR_ACTION_TRANSFER,	/* Transfer caller to another ext. */
 	SWITCH_IVR_ACTION_NOOP,		/* No operation                    */
+
+	SWITCH_IVR_ACTION_COUNT
 } switch_ivr_action_t;
 struct switch_ivr_menu;
 typedef switch_ivr_action_t switch_ivr_menu_action_function_t(struct switch_ivr_menu *, char *, char *, size_t, void *);
