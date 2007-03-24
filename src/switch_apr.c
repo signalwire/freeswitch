@@ -618,17 +618,15 @@ SWITCH_DECLARE(int) switch_vasprintf(char **ret, const char *fmt, va_list ap)
 	size_t buflen;
 
 	len = vsnprintf(NULL, 0, fmt, ap);
-	if (len > 0) {
-		buflen = (size_t)(len + 1);
-		if ((buf = malloc(buflen)) == NULL) {
-			*ret = NULL;
-			return -1;
-		}
+
+	if (len > 0 && (buf = malloc((buflen = (size_t)(len + 1)))) != NULL) {
 		len = vsnprintf(buf, buflen, fmt, ap);
 		*ret = buf;
 	} else {
 		*ret = NULL;
+		len = -1;
 	}
+
 	return len;
 
 #endif
