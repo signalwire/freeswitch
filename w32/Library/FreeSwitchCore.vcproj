@@ -240,10 +240,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\switch_config.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\switch_console.c"
 				>
 			</File>
@@ -319,10 +315,6 @@
 			</File>
 			<File
 				RelativePath="..\..\src\include\switch_channel.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\include\switch_config.h"
 				>
 			</File>
 			<File

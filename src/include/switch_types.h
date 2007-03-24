@@ -969,7 +969,6 @@ typedef struct switch_core_thread_session switch_core_thread_session_t;
 typedef struct switch_codec_implementation switch_codec_implementation_t;
 typedef struct switch_buffer switch_buffer_t;
 typedef struct switch_codec_settings switch_codec_settings_t;
-typedef struct switch_config switch_config_t;
 
 typedef struct switch_io_event_hook_outgoing_channel switch_io_event_hook_outgoing_channel_t;
 typedef struct switch_io_event_hook_answer_channel switch_io_event_hook_answer_channel_t;

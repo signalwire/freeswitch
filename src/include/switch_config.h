@@ -60,6 +60,8 @@
 
 SWITCH_BEGIN_EXTERN_C
 
+typedef struct switch_config switch_config_t;
+
 /*! \brief A simple file handle representing an open configuration file **/
 struct switch_config {
 	/*! FILE stream buffer to the opened file */
