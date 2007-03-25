@@ -34,10 +34,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-
 static const char modname[] = "mod_dialplan_xml";
-
-
 
 typedef enum {
 	BREAK_ON_TRUE,
@@ -193,36 +190,26 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 	return proceed;
 }
 
-static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, void *arg)
+static switch_status_t dialplan_xml_locate(switch_core_session_t *session,
+										   switch_caller_profile_t *caller_profile,
+										   switch_xml_t *root,
+										   switch_xml_t *node)
 {
-	switch_caller_profile_t *caller_profile;
-	switch_caller_extension_t *extension = NULL;
+	switch_status_t status = SWITCH_STATUS_GENERR;
 	switch_channel_t *channel;
-	switch_xml_t alt_root = NULL, cfg, xml, xcontext, xexten;
-	char *context = NULL;
     switch_stream_handle_t stream = {0};
     switch_size_t encode_len = 1024, new_len = 0;
     char *encode_buf = NULL;
     char *prof[12] = {0}, *prof_names[12] = {0}, *e = NULL;
     switch_hash_index_t *hi;
     uint32_t x = 0;
-    char *alt_path = (char *) arg;
 
 	channel = switch_core_session_get_channel(session);
-	if ((caller_profile = switch_channel_get_caller_profile(channel))) {
-		context = caller_profile->context ? caller_profile->context : "default";
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Obtaining Profile!\n");
-		return NULL;
-	}
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Processing %s->%s!\n", caller_profile->caller_id_name,
-					  caller_profile->destination_number);
 
     SWITCH_STANDARD_STREAM(stream);
     
     if (!(encode_buf = malloc(encode_len))) {
-        return NULL;
+        goto done;
     }
     
     prof[0] = caller_profile->context;
@@ -250,6 +237,9 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, 
     prof_names[10] = "uuid";
 
     for (x = 0; prof[x]; x++) {
+		if (switch_strlen_zero(prof[x])) {
+			continue;
+		}
         new_len = (strlen(prof[x]) * 3) + 1;
         if (encode_len < new_len) {
             char *tmp;
@@ -257,8 +247,7 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, 
             encode_len = new_len;
 
             if (!(tmp = realloc(encode_buf, encode_len))) {
-                switch_safe_free(encode_buf);
-                return NULL;
+                goto done;
             }
 
             encode_buf = tmp;
@@ -280,8 +269,7 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, 
             encode_len = new_len;
 
             if (!(tmp = realloc(encode_buf, encode_len))) {
-                switch_safe_free(encode_buf);
-                return NULL;
+                goto done;
             }
 
             encode_buf = tmp;
@@ -298,11 +286,43 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, 
         *e = '\0';
     }
 
-    if (!switch_strlen_zero(alt_path)) {
+	status = switch_xml_locate("dialplan", NULL, NULL, NULL, root, node, stream.data);
+
+done:
+	switch_safe_free(stream.data);
+	switch_safe_free(encode_buf);
+	return status;
+}
+
+static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, void *arg)
+{
+	switch_caller_profile_t *caller_profile;
+	switch_caller_extension_t *extension = NULL;
+	switch_channel_t *channel;
+	switch_xml_t alt_root = NULL, cfg, xml = NULL, xcontext, xexten;
+    char *alt_path = (char *) arg;
+
+	channel = switch_core_session_get_channel(session);
+
+	if ((caller_profile = switch_channel_get_caller_profile(channel))) {
+		if (!caller_profile->context) {
+			caller_profile->context = "default";
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Obtaining Profile!\n");
+		goto done;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Processing %s->%s!\n", caller_profile->caller_id_name,
+					  caller_profile->destination_number);
+
+	/* get our handle to the "dialplan" section of the config */
+
+	if (!switch_strlen_zero(alt_path)) {
         switch_xml_t conf = NULL, tag = NULL;
         if (!(alt_root = switch_xml_parse_file(alt_path))) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of [%s] failed\n", alt_path);
-            return NULL;
+            goto done;
         }
         
 		if ((conf = switch_xml_find_child(alt_root, "section", "name", "dialplan")) && 
@@ -312,22 +332,20 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, 
             cfg = tag;
         } else {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of dialplan failed\n");
-            return NULL;
+            goto done;
         }
-    } else if (switch_xml_locate("dialplan", NULL, NULL, NULL, &xml, &cfg, stream.data) != SWITCH_STATUS_SUCCESS) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of dialplan failed\n");
-        return NULL;
+	} else {
+		if (dialplan_xml_locate(session, caller_profile, &xml, &cfg) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of dialplan failed\n");
+			goto done;
+		}
     }
     
-	
-    switch_safe_free(stream.data);
-    switch_safe_free(encode_buf);
-    
-	if (!(xcontext = switch_xml_find_child(cfg, "context", "name", context))) {
+    /* get a handle to the context tag */
+	if (!(xcontext = switch_xml_find_child(cfg, "context", "name", caller_profile->context))) {
 		if (!(xcontext = switch_xml_find_child(cfg, "context", "name", "global"))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "context %s not found\n", context);
-			switch_xml_free(xml);
-			return NULL;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "context %s not found\n", caller_profile->context);
+			goto done;
 		}
 	}
 	
@@ -355,6 +373,8 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, 
 		switch_channel_set_state(channel, CS_EXECUTE);
 	}
 
+done:
+	switch_xml_free(xml);
 	return extension;
 }
 
