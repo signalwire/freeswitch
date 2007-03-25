@@ -71,7 +71,7 @@
  *
  ****************/
 
-#if defined(HAVE_LIBKERN_OSATOMIC_H) && defined(__APPLE__) || defined(__FreeBSD__)
+#if defined(HAVE_LIBKERN_OSATOMIC_H) && (defined(__APPLE__) || defined(__FreeBSD__))
 #   include <libkern/OSAtomic.h>
     /* Here are the memory barrier functions. Mac OS X and FreeBSD only provide
        full memory barriers, so the three types of barriers are the same. */
