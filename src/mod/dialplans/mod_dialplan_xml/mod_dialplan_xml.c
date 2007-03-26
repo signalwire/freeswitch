@@ -368,6 +368,7 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, 
 
 
 	switch_xml_free(xml);
+	xml = NULL;
 
 	if (extension) {
 		switch_channel_set_state(channel, CS_EXECUTE);
