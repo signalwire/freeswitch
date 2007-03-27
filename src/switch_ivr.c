@@ -2498,7 +2498,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_frame_t *read_frame = NULL;
 	switch_memory_pool_t *pool = NULL;
 	int r = 0, i, and_argc = 0, or_argc = 0;
-	int32_t idx = IDX_NADA;
+	int32_t sleep_ms = 1000, try =0, retries = 1, idx = IDX_NADA;
 	switch_codec_t write_codec = {0};
 	switch_frame_t write_frame = {0};
 	uint8_t fdata[1024], pass = 0;
@@ -2512,6 +2512,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
     switch_event_t *var_event = NULL;
 	uint8_t fail_on_single_reject = 0;
 	uint8_t ring_ready = 0;
+	char *loop_data = NULL;
+
 	write_frame.data = fdata;
 	
 	*bleg = NULL;
@@ -2605,7 +2607,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
         }
     }
 
-	// When using the AND operator, the fail_on_single_reject flage may be set in order to indicate that a single
+	// When using the AND operator, the fail_on_single_reject flag may be set in order to indicate that a single
 	// rejections should terminate the attempt rather than a timeout, answer, or rejection by all.
 	if ((var = switch_event_get_header(var_event, "fail_on_single_reject")) && switch_true(var)) {
 		fail_on_single_reject = 1;
@@ -2619,6 +2621,28 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
         early_ok = 0;
     }
 
+    if ((var_val = switch_event_get_header(var_event, "originate_retries")) && switch_true(var_val)) {
+		int32_t tmp;
+		tmp = atoi(var_val);
+		if (tmp > 0 && tmp < 101) {
+			retries = tmp;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+							  "Invalid originate_retries setting of %d ignored, value must be between 1 and 100\n", tmp);
+		}
+    }
+
+    if ((var_val = switch_event_get_header(var_event, "originate_retry_sleep_ms")) && switch_true(var_val)) {
+		int32_t tmp;
+		tmp = atoi(var_val);
+		if (tmp > 500 && tmp < 60000) {
+			sleep_ms = tmp;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+							  "Invalid originate_retry_sleep_ms setting of %d ignored, value must be between 500 and 60000\n", tmp);
+		}
+    }
+	
     if (!cid_name_override) {
         cid_name_override = switch_event_get_header(var_event, "origination_caller_id_name");
     }
@@ -2628,517 +2652,528 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
     }
                                                         
 
-	or_argc = switch_separate_string(data, '|', pipe_names, (sizeof(pipe_names) / sizeof(pipe_names[0])));
 
-	if (caller_channel && or_argc > 1 && !ringback_data) {
-		switch_channel_ring_ready(caller_channel);
-		sent_ring = 1;
-	}
-
-	for (r = 0; r < or_argc; r++) {
-		uint32_t hups;
-        reason = SWITCH_CAUSE_UNALLOCATED;
-		memset(peer_names, 0, sizeof(peer_names));
-		peer_session = NULL;
-		memset(peer_sessions, 0, sizeof(peer_sessions));
-		memset(peer_channels, 0, sizeof(peer_channels));
-		memset(caller_profiles, 0, sizeof(caller_profiles));
-		chan_type = NULL;
-		chan_data = NULL;
-		peer_channel = NULL;
-		start = 0;
-		read_frame = NULL;
-		pool = NULL;
-		pass = 0;
-		file = NULL;
-		key = NULL;
-		var = NULL;
-		to = 0;
-
-		and_argc = switch_separate_string(pipe_names[r], ',', peer_names, (sizeof(peer_names) / sizeof(peer_names[0])));
-	
-		if (caller_channel && !sent_ring && and_argc > 1 && !ringback_data) {
+	for (try = 0; try < retries; try++) {
+		switch_safe_free(loop_data);
+		assert(loop_data = strdup(data));
+		or_argc = switch_separate_string(loop_data, '|', pipe_names, (sizeof(pipe_names) / sizeof(pipe_names[0])));
+		
+		if (caller_channel && or_argc > 1 && !ringback_data) {
 			switch_channel_ring_ready(caller_channel);
 			sent_ring = 1;
 		}
 
-		for (i = 0; i < and_argc; i++) {
-		
-			chan_type = peer_names[i];
-			if ((chan_data = strchr(chan_type, '/')) != 0) {
-				*chan_data = '\0';
-				chan_data++;
+		for (r = 0; r < or_argc; r++) {
+			uint32_t hups;
+			reason = SWITCH_CAUSE_UNALLOCATED;
+			memset(peer_names, 0, sizeof(peer_names));
+			peer_session = NULL;
+			memset(peer_sessions, 0, sizeof(peer_sessions));
+			memset(peer_channels, 0, sizeof(peer_channels));
+			memset(caller_profiles, 0, sizeof(caller_profiles));
+			chan_type = NULL;
+			chan_data = NULL;
+			peer_channel = NULL;
+			start = 0;
+			read_frame = NULL;
+			pool = NULL;
+			pass = 0;
+			file = NULL;
+			key = NULL;
+			var = NULL;
+			to = 0;
+			
+			if (try > 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Originate attempt %d/%d in %d ms\n", try + 1, retries, sleep_ms);
+				switch_yield(sleep_ms * 1000);
 			}
+
+			and_argc = switch_separate_string(pipe_names[r], ',', peer_names, (sizeof(peer_names) / sizeof(peer_names[0])));
 	
-			if (session) {
-				if (!switch_channel_ready(caller_channel)) {
-					status = SWITCH_STATUS_FALSE;
-					goto done;
-				}
+			if (caller_channel && !sent_ring && and_argc > 1 && !ringback_data) {
+				switch_channel_ring_ready(caller_channel);
+				sent_ring = 1;
+			}
 
-				caller_caller_profile = caller_profile_override ? caller_profile_override : switch_channel_get_caller_profile(caller_channel);
+			for (i = 0; i < and_argc; i++) {
+		
+				chan_type = peer_names[i];
+				if ((chan_data = strchr(chan_type, '/')) != 0) {
+					*chan_data = '\0';
+					chan_data++;
+				}
+	
+				if (session) {
+					if (!switch_channel_ready(caller_channel)) {
+						status = SWITCH_STATUS_FALSE;
+						goto done;
+					}
+
+					caller_caller_profile = caller_profile_override ? caller_profile_override : switch_channel_get_caller_profile(caller_channel);
                 
-				if (!cid_name_override) {
-					cid_name_override = caller_caller_profile->caller_id_name;
-				}
-				if (!cid_num_override) {
-					cid_num_override = caller_caller_profile->caller_id_number;
-				}
+					if (!cid_name_override) {
+						cid_name_override = caller_caller_profile->caller_id_name;
+					}
+					if (!cid_num_override) {
+						cid_num_override = caller_caller_profile->caller_id_number;
+					}
 
-				caller_profiles[i] = switch_caller_profile_new(switch_core_session_get_pool(session),
-															   caller_caller_profile->username,
-															   caller_caller_profile->dialplan,
-															   cid_name_override,
-															   cid_num_override,
-															   caller_caller_profile->network_addr,
-															   NULL,
-															   NULL,
-															   caller_caller_profile->rdnis,
-															   caller_caller_profile->source,
-															   caller_caller_profile->context,
-															   chan_data);
-				caller_profiles[i]->flags = caller_caller_profile->flags;
-				pool = NULL;
-			} else {
-				if (!cid_name_override) {
-					cid_name_override = "FreeSWITCH";
-				}
-				if (!cid_num_override) {
-					cid_num_override = "0000000000";
-				}
-
-				if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
-					status = SWITCH_STATUS_TERM;
-					goto done;
-				}
-
-				if (caller_profile_override) {
-					caller_profiles[i] = switch_caller_profile_new(pool,
-																   caller_profile_override->username,
-																   caller_profile_override->dialplan,
-																   caller_profile_override->caller_id_name,
-																   caller_profile_override->caller_id_number,
-																   caller_profile_override->network_addr, 
-																   caller_profile_override->ani,
-																   caller_profile_override->aniii,
-																   caller_profile_override->rdnis,
-																   caller_profile_override->source,
-																   caller_profile_override->context,
-																   chan_data);
-				} else {
-					caller_profiles[i] = switch_caller_profile_new(pool,
-																   NULL,
-																   NULL,
+					caller_profiles[i] = switch_caller_profile_new(switch_core_session_get_pool(session),
+																   caller_caller_profile->username,
+																   caller_caller_profile->dialplan,
 																   cid_name_override,
 																   cid_num_override,
+																   caller_caller_profile->network_addr,
 																   NULL,
-																   NULL, 
 																   NULL,
-																   NULL,
-																   __FILE__,
-																   NULL,
+																   caller_caller_profile->rdnis,
+																   caller_caller_profile->source,
+																   caller_caller_profile->context,
 																   chan_data);
+					caller_profiles[i]->flags = caller_caller_profile->flags;
+					pool = NULL;
+				} else {
+					if (!cid_name_override) {
+						cid_name_override = "FreeSWITCH";
+					}
+					if (!cid_num_override) {
+						cid_num_override = "0000000000";
+					}
+
+					if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
+						status = SWITCH_STATUS_TERM;
+						goto done;
+					}
+
+					if (caller_profile_override) {
+						caller_profiles[i] = switch_caller_profile_new(pool,
+																	   caller_profile_override->username,
+																	   caller_profile_override->dialplan,
+																	   caller_profile_override->caller_id_name,
+																	   caller_profile_override->caller_id_number,
+																	   caller_profile_override->network_addr, 
+																	   caller_profile_override->ani,
+																	   caller_profile_override->aniii,
+																	   caller_profile_override->rdnis,
+																	   caller_profile_override->source,
+																	   caller_profile_override->context,
+																	   chan_data);
+					} else {
+						caller_profiles[i] = switch_caller_profile_new(pool,
+																	   NULL,
+																	   NULL,
+																	   cid_name_override,
+																	   cid_num_override,
+																	   NULL,
+																	   NULL, 
+																	   NULL,
+																	   NULL,
+																	   __FILE__,
+																	   NULL,
+																	   chan_data);
+					}
 				}
-			}
 
-			if ((reason = switch_core_session_outgoing_channel(session, chan_type, caller_profiles[i], &peer_sessions[i], &pool)) != SWITCH_CAUSE_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! cause: %s\n", switch_channel_cause2str(reason));
-				if (pool) {
-					switch_core_destroy_memory_pool(&pool);
-				}
-				caller_profiles[i] = NULL;
-				peer_channels[i] = NULL;
-				peer_sessions[i] = NULL;
-				continue;
-			}
-			
-			switch_core_session_read_lock(peer_sessions[i]);
-			pool = NULL;
-	
-			peer_channels[i] = switch_core_session_get_channel(peer_sessions[i]);
-			assert(peer_channels[i] != NULL);
-
-			if (!table) {
-				table = &originate_state_handlers;
-			}
-
-			if (table) {
-				switch_channel_add_state_handler(peer_channels[i], table);
-			}
-
-			if (switch_core_session_running(peer_sessions[i])) {
-				switch_channel_set_state(peer_channels[i], CS_RING);
-			} else {
-				switch_core_session_thread_launch(peer_sessions[i]);
-			}
-		}
-
-		time(&start);
-
-		for (;;) {
-			uint32_t valid_channels = 0;
-			for (i = 0; i < and_argc; i++) {
-				int state;
-
-				if (!peer_channels[i]) {
+				if ((reason = switch_core_session_outgoing_channel(session, chan_type, caller_profiles[i], &peer_sessions[i], &pool)) != SWITCH_CAUSE_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! cause: %s\n", switch_channel_cause2str(reason));
+					if (pool) {
+						switch_core_destroy_memory_pool(&pool);
+					}
+					caller_profiles[i] = NULL;
+					peer_channels[i] = NULL;
+					peer_sessions[i] = NULL;
 					continue;
 				}
-				valid_channels++;
-				state = switch_channel_get_state(peer_channels[i]);
 			
-				if (state >= CS_HANGUP) {
-					goto notready;
-				} else if (state >= CS_RING) {
-					goto endfor1;
+				switch_core_session_read_lock(peer_sessions[i]);
+				pool = NULL;
+	
+				peer_channels[i] = switch_core_session_get_channel(peer_sessions[i]);
+				assert(peer_channels[i] != NULL);
+
+				if (!table) {
+					table = &originate_state_handlers;
 				}
-		
-				if (caller_channel && !switch_channel_ready(caller_channel)) {
-					goto notready;
+
+				if (table) {
+					switch_channel_add_state_handler(peer_channels[i], table);
 				}
-				
-				if ((time(NULL) - start) > (time_t)timelimit_sec) {
-					to++;
-					idx = IDX_CANCEL;
-					goto notready;
-				}
-				switch_yield(1000);
-			}
 
-			if (valid_channels == 0) {
-				status = SWITCH_STATUS_GENERR;
-				goto done;
-			}
-
-		}
-	endfor1:
-
-		if (ringback_data && !switch_channel_test_flag(caller_channel, CF_ANSWERED) && !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
-			switch_channel_pre_answer(caller_channel);
-		}
-
-		if (session && (read_codec = switch_core_session_get_read_codec(session)) && 
-			(ringback_data || !switch_channel_test_flag(caller_channel, CF_NOMEDIA))) {
-
-			if (!(pass = (uint8_t)switch_test_flag(read_codec, SWITCH_CODEC_FLAG_PASSTHROUGH))) {
-				if (switch_core_codec_init(&write_codec,
-										   "L16",
-										   NULL,
-										   read_codec->implementation->samples_per_second,
-										   read_codec->implementation->microseconds_per_frame / 1000,
-										   1,
-										   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-										   NULL,
-										   pool) == SWITCH_STATUS_SUCCESS) {
-					
-					
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
-									  read_codec->implementation->samples_per_second,
-									  read_codec->implementation->microseconds_per_frame / 1000);
-					write_frame.codec = &write_codec;
-					write_frame.datalen = read_codec->implementation->bytes_per_frame;
-					write_frame.samples = write_frame.datalen / 2;
-					memset(write_frame.data, 255, write_frame.datalen);
-					
-					if (ringback_data) {
-						char *tmp_data = NULL;
-						
-						switch_buffer_create_dynamic(&ringback.audio_buffer, 512, 1024, 0);
-						switch_buffer_create_dynamic(&ringback.loop_buffer, 512, 1024, 0);
-
-						if (*ringback_data == '/') {
-							char *ext;
-							
-							if ((ext = strrchr(ringback_data, '.'))) {
-								switch_core_session_set_read_codec(session, &write_codec);
-								ext++;
-							} else {
-								ringback.asis++;
-								write_frame.codec = read_codec;
-								ext = read_codec->implementation->iananame;
-								tmp_data = switch_mprintf("%s.%s", ringback_data, ext);
-								ringback_data = tmp_data;
-							}
-
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play Ringback File [%s]\n", ringback_data);
-
-							ringback.fhb.channels = read_codec->implementation->number_of_channels;
-							ringback.fhb.samplerate = read_codec->implementation->samples_per_second;
-							if (switch_core_file_open(&ringback.fhb,
-													  ringback_data,
-													  read_codec->implementation->number_of_channels,
-													  read_codec->implementation->samples_per_second,
-													  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
-													  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing File\n");
-								switch_safe_free(tmp_data);
-								goto notready;
-							}
-							ringback.fh = &ringback.fhb;
-
-							
-						} else {
-							teletone_init_session(&ringback.ts, 0, teletone_handler, &ringback);
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play Ringback Tone [%s]\n", ringback_data);
-							//ringback.ts.debug = 1;
-							//ringback.ts.debug_stream = switch_core_get_console();
-							if (teletone_run(&ringback.ts, ringback_data)) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing Tone\n");
-								teletone_destroy_session(&ringback.ts);
-								switch_buffer_destroy(&ringback.audio_buffer);
-								switch_buffer_destroy(&ringback.loop_buffer);
-								ringback_data = NULL;
-							}
-						}
-						switch_safe_free(tmp_data);
-					}
+				if (switch_core_session_running(peer_sessions[i])) {
+					switch_channel_set_state(peer_channels[i], CS_RING);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec Error!");
-					switch_channel_hangup(caller_channel, SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE);
-					read_codec = NULL;
-				}
-			}
-		}
-        
-        if (ringback_data) {
-            early_ok = 0;
-        }
-
-        while ((!caller_channel || switch_channel_ready(caller_channel)) && 
-			   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, &hups, file, key, early_ok, &ring_ready)) {
-
-			// When the AND operator is being used, and fail_on_single_reject is set, a hangup indicates that the call should fail.
-			if ((to = (uint8_t)((time(NULL) - start) >= (time_t)timelimit_sec)) || (fail_on_single_reject && hups)) {
-				idx = IDX_CANCEL;
-				goto notready;
-			}
-
-			if (peer_sessions[0] && switch_core_session_dequeue_message(peer_sessions[0], &message) == SWITCH_STATUS_SUCCESS) {
-				if (session && !ringback_data && or_argc == 1 && and_argc == 1) { /* when there is only 1 channel to call and bridge and no ringback */
-					switch_core_session_receive_message(session, message);
-				}
-				
-				if (switch_test_flag(message, SCSMF_DYNAMIC)) {
-					switch_safe_free(message);
-				} else {
-					message = NULL;
+					switch_core_session_thread_launch(peer_sessions[i]);
 				}
 			}
 
-			/* read from the channel while we wait if the audio is up on it */
-			if (session && (ringback_data || !switch_channel_test_flag(caller_channel, CF_NOMEDIA)) && 
-				(switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA))) {
-				switch_status_t status = switch_core_session_read_frame(session, &read_frame, 1000, 0);
-			
-				if (!SWITCH_READ_ACCEPTABLE(status)) {
-					break;
-				}
-				
-				if (ring_ready && read_frame && !pass && !switch_test_flag(read_frame, SFF_CNG) && read_frame->datalen > 1) {
-					if (ringback.fh) {
-						uint8_t abuf[1024];
-						switch_size_t mlen, olen;
-						unsigned int pos = 0;
+			time(&start);
 
-						if (ringback.asis) {
-							mlen = read_frame->datalen;
-						} else {
-							mlen = read_frame->datalen  / 2;
-						}
-
-						olen = mlen;
-						switch_core_file_read(ringback.fh, abuf, &olen);
-						
-						if (olen == 0) {
-							olen = mlen;
-							ringback.fh->speed = 0;
-							switch_core_file_seek(ringback.fh, &pos, 0, SEEK_SET);
-							switch_core_file_read(ringback.fh, abuf, &olen);
-							if (olen == 0) {
-								break;
-							}
-						}
-						write_frame.data = abuf;
-						write_frame.datalen = (uint32_t) (ringback.asis ? olen : olen * 2);
-						if (switch_core_session_write_frame(session, &write_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
-							break;
-						}
-					} else if (ringback.audio_buffer) {
-						if ((write_frame.datalen = (uint32_t)switch_buffer_read(ringback.audio_buffer,
-																				write_frame.data,
-																				write_frame.codec->implementation->bytes_per_frame)) <= 0) {
-							switch_buffer_t *tmp;
-							tmp = ringback.audio_buffer;
-							ringback.audio_buffer = ringback.loop_buffer;
-							ringback.loop_buffer = tmp;
-							if ((write_frame.datalen = (uint32_t)switch_buffer_read(ringback.audio_buffer,
-																					write_frame.data,
-																					write_frame.codec->implementation->bytes_per_frame)) <= 0) {
-								break;
-							}
-						}
-					}
-
-					if (switch_core_session_write_frame(session, &write_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
-						break;
-					}
-					if (ringback.loop_buffer) {
-						switch_buffer_write(ringback.loop_buffer, write_frame.data, write_frame.datalen);
-					}
-				}
-
-			} else {
-				switch_yield(1000);
-			}
-		
-		}
-
-	notready:
-
-		if (caller_channel && !switch_channel_ready(caller_channel)) {
-			idx = IDX_CANCEL;
-		}
-
-		if (session && (ringback_data || !switch_channel_test_flag(caller_channel, CF_NOMEDIA))) {
-			switch_core_session_reset(session);
-		}
-
-		for (i = 0; i < and_argc; i++) {
-			if (!peer_channels[i]) {
-				continue;
-			}
-			if (i != idx) {
-				if (idx == IDX_CANCEL) {
-					if (to) {
-						reason = SWITCH_CAUSE_NO_ANSWER;
-                    } else {
-                        reason = SWITCH_CAUSE_ORIGINATOR_CANCEL;
-                    }
-				} else {
-					if (to) {
-						reason = SWITCH_CAUSE_NO_ANSWER;
-					} else if (and_argc > 1) {
-						reason = SWITCH_CAUSE_LOSE_RACE;
-					} else {
-						reason = SWITCH_CAUSE_NO_ANSWER;
-					}
-				}
-
-				
-				switch_channel_hangup(peer_channels[i], reason);
-			}
-		}
-
-
-		if (idx > IDX_NADA) {
-			peer_session = peer_sessions[idx];
-			peer_channel = peer_channels[idx];
-		} else {
-			status = SWITCH_STATUS_FALSE;
-			goto done;
-		}
-
-		if (caller_channel) {
-			if (switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
-				switch_channel_answer(caller_channel);
-			} else if (switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
-				switch_channel_pre_answer(caller_channel);
-			}
-		}
-
-		if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
-			*bleg = peer_session;
-			status = SWITCH_STATUS_SUCCESS;
-		} else {
-			status = SWITCH_STATUS_FALSE;
-		}
-
-	done:
-		*cause = SWITCH_CAUSE_UNALLOCATED;
-        
-        if (var_event) {
-			if (peer_channel && !caller_channel) { /* install the vars from the {} params */
-                switch_event_header_t *header;
-                for (header = var_event->headers; header; header = header->next) {
-                    switch_channel_set_variable(peer_channel, header->name, header->value);
-                }
-            }
-            switch_event_destroy(&var_event);
-        }
-
-		if (status == SWITCH_STATUS_SUCCESS) {
-			if (caller_channel) {
-				switch_channel_set_variable(caller_channel, "originate_disposition", "call accepted");
-			} 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Resulted in Success: [%s]\n", switch_channel_get_name(peer_channel));
-            *cause = SWITCH_CAUSE_SUCCESS;
-            
-		} else {
-			if (peer_channel) {
-				*cause = switch_channel_get_cause(peer_channel);
-			} else {
+			for (;;) {
+				uint32_t valid_channels = 0;
 				for (i = 0; i < and_argc; i++) {
+					int state;
+
 					if (!peer_channels[i]) {
 						continue;
 					}
-                    *cause = switch_channel_get_cause(peer_channels[i]);
-					break;
+					valid_channels++;
+					state = switch_channel_get_state(peer_channels[i]);
+			
+					if (state >= CS_HANGUP) {
+						goto notready;
+					} else if (state >= CS_RING) {
+						goto endfor1;
+					}
+		
+					if (caller_channel && !switch_channel_ready(caller_channel)) {
+						goto notready;
+					}
+				
+					if ((time(NULL) - start) > (time_t)timelimit_sec) {
+						to++;
+						idx = IDX_CANCEL;
+						goto notready;
+					}
+					switch_yield(1000);
+				}
+
+				if (valid_channels == 0) {
+					status = SWITCH_STATUS_GENERR;
+					goto done;
+				}
+
+			}
+		endfor1:
+
+			if (ringback_data && !switch_channel_test_flag(caller_channel, CF_ANSWERED) && !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
+				switch_channel_pre_answer(caller_channel);
+			}
+
+			if (session && (read_codec = switch_core_session_get_read_codec(session)) && 
+				(ringback_data || !switch_channel_test_flag(caller_channel, CF_NOMEDIA))) {
+
+				if (!(pass = (uint8_t)switch_test_flag(read_codec, SWITCH_CODEC_FLAG_PASSTHROUGH))) {
+					if (switch_core_codec_init(&write_codec,
+											   "L16",
+											   NULL,
+											   read_codec->implementation->samples_per_second,
+											   read_codec->implementation->microseconds_per_frame / 1000,
+											   1,
+											   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+											   NULL,
+											   pool) == SWITCH_STATUS_SUCCESS) {
+					
+					
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
+										  read_codec->implementation->samples_per_second,
+										  read_codec->implementation->microseconds_per_frame / 1000);
+						write_frame.codec = &write_codec;
+						write_frame.datalen = read_codec->implementation->bytes_per_frame;
+						write_frame.samples = write_frame.datalen / 2;
+						memset(write_frame.data, 255, write_frame.datalen);
+					
+						if (ringback_data) {
+							char *tmp_data = NULL;
+						
+							switch_buffer_create_dynamic(&ringback.audio_buffer, 512, 1024, 0);
+							switch_buffer_create_dynamic(&ringback.loop_buffer, 512, 1024, 0);
+
+							if (*ringback_data == '/') {
+								char *ext;
+							
+								if ((ext = strrchr(ringback_data, '.'))) {
+									switch_core_session_set_read_codec(session, &write_codec);
+									ext++;
+								} else {
+									ringback.asis++;
+									write_frame.codec = read_codec;
+									ext = read_codec->implementation->iananame;
+									tmp_data = switch_mprintf("%s.%s", ringback_data, ext);
+									ringback_data = tmp_data;
+								}
+
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play Ringback File [%s]\n", ringback_data);
+
+								ringback.fhb.channels = read_codec->implementation->number_of_channels;
+								ringback.fhb.samplerate = read_codec->implementation->samples_per_second;
+								if (switch_core_file_open(&ringback.fhb,
+														  ringback_data,
+														  read_codec->implementation->number_of_channels,
+														  read_codec->implementation->samples_per_second,
+														  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
+														  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing File\n");
+									switch_safe_free(tmp_data);
+									goto notready;
+								}
+								ringback.fh = &ringback.fhb;
+
+							
+							} else {
+								teletone_init_session(&ringback.ts, 0, teletone_handler, &ringback);
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play Ringback Tone [%s]\n", ringback_data);
+								//ringback.ts.debug = 1;
+								//ringback.ts.debug_stream = switch_core_get_console();
+								if (teletone_run(&ringback.ts, ringback_data)) {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing Tone\n");
+									teletone_destroy_session(&ringback.ts);
+									switch_buffer_destroy(&ringback.audio_buffer);
+									switch_buffer_destroy(&ringback.loop_buffer);
+									ringback_data = NULL;
+								}
+							}
+							switch_safe_free(tmp_data);
+						}
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec Error!");
+						switch_channel_hangup(caller_channel, SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE);
+						read_codec = NULL;
+					}
+				}
+			}
+        
+			if (ringback_data) {
+				early_ok = 0;
+			}
+
+			while ((!caller_channel || switch_channel_ready(caller_channel)) && 
+				   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, &hups, file, key, early_ok, &ring_ready)) {
+
+				// When the AND operator is being used, and fail_on_single_reject is set, a hangup indicates that the call should fail.
+				if ((to = (uint8_t)((time(NULL) - start) >= (time_t)timelimit_sec)) || (fail_on_single_reject && hups)) {
+					idx = IDX_CANCEL;
+					goto notready;
+				}
+
+				if (peer_sessions[0] && switch_core_session_dequeue_message(peer_sessions[0], &message) == SWITCH_STATUS_SUCCESS) {
+					if (session && !ringback_data && or_argc == 1 && and_argc == 1) { /* when there is only 1 channel to call and bridge and no ringback */
+						switch_core_session_receive_message(session, message);
+					}
+				
+					if (switch_test_flag(message, SCSMF_DYNAMIC)) {
+						switch_safe_free(message);
+					} else {
+						message = NULL;
+					}
+				}
+
+				/* read from the channel while we wait if the audio is up on it */
+				if (session && (ringback_data || !switch_channel_test_flag(caller_channel, CF_NOMEDIA)) && 
+					(switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA))) {
+					switch_status_t status = switch_core_session_read_frame(session, &read_frame, 1000, 0);
+			
+					if (!SWITCH_READ_ACCEPTABLE(status)) {
+						break;
+					}
+				
+					if (ring_ready && read_frame && !pass && !switch_test_flag(read_frame, SFF_CNG) && read_frame->datalen > 1) {
+						if (ringback.fh) {
+							uint8_t abuf[1024];
+							switch_size_t mlen, olen;
+							unsigned int pos = 0;
+
+							if (ringback.asis) {
+								mlen = read_frame->datalen;
+							} else {
+								mlen = read_frame->datalen  / 2;
+							}
+
+							olen = mlen;
+							switch_core_file_read(ringback.fh, abuf, &olen);
+						
+							if (olen == 0) {
+								olen = mlen;
+								ringback.fh->speed = 0;
+								switch_core_file_seek(ringback.fh, &pos, 0, SEEK_SET);
+								switch_core_file_read(ringback.fh, abuf, &olen);
+								if (olen == 0) {
+									break;
+								}
+							}
+							write_frame.data = abuf;
+							write_frame.datalen = (uint32_t) (ringback.asis ? olen : olen * 2);
+							if (switch_core_session_write_frame(session, &write_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
+								break;
+							}
+						} else if (ringback.audio_buffer) {
+							if ((write_frame.datalen = (uint32_t)switch_buffer_read(ringback.audio_buffer,
+																					write_frame.data,
+																					write_frame.codec->implementation->bytes_per_frame)) <= 0) {
+								switch_buffer_t *tmp;
+								tmp = ringback.audio_buffer;
+								ringback.audio_buffer = ringback.loop_buffer;
+								ringback.loop_buffer = tmp;
+								if ((write_frame.datalen = (uint32_t)switch_buffer_read(ringback.audio_buffer,
+																						write_frame.data,
+																						write_frame.codec->implementation->bytes_per_frame)) <= 0) {
+									break;
+								}
+							}
+						}
+
+						if (switch_core_session_write_frame(session, &write_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
+							break;
+						}
+						if (ringback.loop_buffer) {
+							switch_buffer_write(ringback.loop_buffer, write_frame.data, write_frame.datalen);
+						}
+					}
+
+				} else {
+					switch_yield(1000);
+				}
+		
+			}
+
+		notready:
+
+			if (caller_channel && !switch_channel_ready(caller_channel)) {
+				idx = IDX_CANCEL;
+			}
+
+			if (session && (ringback_data || !switch_channel_test_flag(caller_channel, CF_NOMEDIA))) {
+				switch_core_session_reset(session);
+			}
+
+			for (i = 0; i < and_argc; i++) {
+				if (!peer_channels[i]) {
+					continue;
+				}
+				if (i != idx) {
+					if (idx == IDX_CANCEL) {
+						if (to) {
+							reason = SWITCH_CAUSE_NO_ANSWER;
+						} else {
+							reason = SWITCH_CAUSE_ORIGINATOR_CANCEL;
+						}
+					} else {
+						if (to) {
+							reason = SWITCH_CAUSE_NO_ANSWER;
+						} else if (and_argc > 1) {
+							reason = SWITCH_CAUSE_LOSE_RACE;
+						} else {
+							reason = SWITCH_CAUSE_NO_ANSWER;
+						}
+					}
+
+				
+					switch_channel_hangup(peer_channels[i], reason);
 				}
 			}
 
-            if (!*cause) {
-                if (reason) {
-                    *cause = reason;
-                } else if (caller_channel) {
-                    *cause = switch_channel_get_cause(caller_channel);
-                } else {
-                    *cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-                }
-            }
 
-			if (idx == IDX_CANCEL) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Cancelled by originator termination Cause: %d [%s]\n",
-								  *cause, switch_channel_cause2str(*cause));
-                
+			if (idx > IDX_NADA) {
+				peer_session = peer_sessions[idx];
+				peer_channel = peer_channels[idx];
 			} else {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Resulted in Error Cause: %d [%s]\n",
-								  *cause, switch_channel_cause2str(*cause));
+				status = SWITCH_STATUS_FALSE;
+				goto done;
 			}
-		}
+
+			if (caller_channel) {
+				if (switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
+					switch_channel_answer(caller_channel);
+				} else if (switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
+					switch_channel_pre_answer(caller_channel);
+				}
+			}
+
+			if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
+				*bleg = peer_session;
+				status = SWITCH_STATUS_SUCCESS;
+			} else {
+				status = SWITCH_STATUS_FALSE;
+			}
+
+		done:
+			*cause = SWITCH_CAUSE_UNALLOCATED;
         
-        if (caller_channel) {
-            switch_channel_set_variable(caller_channel, "originate_disposition", switch_channel_cause2str(*cause));
-        }
-
-		if (!pass && write_codec.implementation) {
-			switch_core_codec_destroy(&write_codec);
-		}
-
-		if (ringback.fh) {
-			switch_core_file_close(ringback.fh);
-			ringback.fh = NULL;
-			if (read_codec && !ringback.asis) {
-				switch_core_session_set_read_codec(session, read_codec);
-				switch_core_session_reset(session);
+			if (var_event) {
+				if (peer_channel && !caller_channel) { /* install the vars from the {} params */
+					switch_event_header_t *header;
+					for (header = var_event->headers; header; header = header->next) {
+						switch_channel_set_variable(peer_channel, header->name, header->value);
+					}
+				}
+				switch_event_destroy(&var_event);
 			}
-		} else if (ringback.audio_buffer) {
-			teletone_destroy_session(&ringback.ts);
-			switch_buffer_destroy(&ringback.audio_buffer);
-			switch_buffer_destroy(&ringback.loop_buffer);
-		}
 
-		for (i = 0; i < and_argc; i++) {
-			if (!peer_channels[i]) {
-				continue;
+			if (status == SWITCH_STATUS_SUCCESS) {
+				if (caller_channel) {
+					switch_channel_set_variable(caller_channel, "originate_disposition", "call accepted");
+				} 
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Resulted in Success: [%s]\n", switch_channel_get_name(peer_channel));
+				*cause = SWITCH_CAUSE_SUCCESS;
+            
+			} else {
+				if (peer_channel) {
+					*cause = switch_channel_get_cause(peer_channel);
+				} else {
+					for (i = 0; i < and_argc; i++) {
+						if (!peer_channels[i]) {
+							continue;
+						}
+						*cause = switch_channel_get_cause(peer_channels[i]);
+						break;
+					}
+				}
+
+				if (!*cause) {
+					if (reason) {
+						*cause = reason;
+					} else if (caller_channel) {
+						*cause = switch_channel_get_cause(caller_channel);
+					} else {
+						*cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+					}
+				}
+
+				if (idx == IDX_CANCEL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Cancelled by originator termination Cause: %d [%s]\n",
+									  *cause, switch_channel_cause2str(*cause));
+                
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Resulted in Error Cause: %d [%s]\n",
+									  *cause, switch_channel_cause2str(*cause));
+				}
 			}
-			switch_core_session_rwunlock(peer_sessions[i]);
-		}
+        
+			if (caller_channel) {
+				switch_channel_set_variable(caller_channel, "originate_disposition", switch_channel_cause2str(*cause));
+			}
 
-		if (status == SWITCH_STATUS_SUCCESS) {
-			break;
+			if (!pass && write_codec.implementation) {
+				switch_core_codec_destroy(&write_codec);
+			}
+
+			if (ringback.fh) {
+				switch_core_file_close(ringback.fh);
+				ringback.fh = NULL;
+				if (read_codec && !ringback.asis) {
+					switch_core_session_set_read_codec(session, read_codec);
+					switch_core_session_reset(session);
+				}
+			} else if (ringback.audio_buffer) {
+				teletone_destroy_session(&ringback.ts);
+				switch_buffer_destroy(&ringback.audio_buffer);
+				switch_buffer_destroy(&ringback.loop_buffer);
+			}
+
+			for (i = 0; i < and_argc; i++) {
+				if (!peer_channels[i]) {
+					continue;
+				}
+				switch_core_session_rwunlock(peer_sessions[i]);
+			}
+			
+			if (status == SWITCH_STATUS_SUCCESS) {
+				goto outer_for;
+			}
 		}
 	}
-
+ outer_for:
+	switch_safe_free(loop_data);
 	switch_safe_free(odata);
 	return status;
 }
