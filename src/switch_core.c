@@ -185,7 +185,6 @@ static void switch_core_standard_on_hold(switch_core_session_t *session);
 /* The main runtime obj we keep this hidden for ourselves */
 static struct switch_core_runtime runtime;
 
-
 static void db_pick_path(char *dbname, char *buf, switch_size_t size)
 {
 
@@ -1835,20 +1834,22 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 SWITCH_DECLARE(switch_status_t) switch_core_session_answer_channel(switch_core_session_t *session)
 {
 	switch_io_event_hook_answer_channel_t *ptr;
-	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	assert(session != NULL);
+
 	if (session->endpoint_interface->io_routines->answer_channel) {
-		if ((status = session->endpoint_interface->io_routines->answer_channel(session)) == SWITCH_STATUS_SUCCESS) {
-			for (ptr = session->event_hooks.answer_channel; ptr; ptr = ptr->next) {
-				if ((status = ptr->answer_channel(session)) != SWITCH_STATUS_SUCCESS) {
-					break;
-				}
+		status = session->endpoint_interface->io_routines->answer_channel(session);
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		for (ptr = session->event_hooks.answer_channel; ptr; ptr = ptr->next) {
+			if ((status = ptr->answer_channel(session)) != SWITCH_STATUS_SUCCESS) {
+				break;
 			}
 		}
-	} else {
-		status = SWITCH_STATUS_SUCCESS;
 	}
+	 
 
 	return status;
 }
@@ -1856,19 +1857,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_answer_channel(switch_core_s
 SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_session_t *session, switch_core_session_message_t *message)
 {
 	switch_io_event_hook_receive_message_t *ptr;
-	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	assert(session != NULL);
+
 	if (session->endpoint_interface->io_routines->receive_message) {
-		if ((status =
-			 session->endpoint_interface->io_routines->receive_message(session, message)) == SWITCH_STATUS_SUCCESS) {
-			for (ptr = session->event_hooks.receive_message; ptr; ptr = ptr->next) {
-				if ((status = ptr->receive_message(session, message)) != SWITCH_STATUS_SUCCESS) {
-					break;
-				}
+		status = session->endpoint_interface->io_routines->receive_message(session, message);
+		
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		for (ptr = session->event_hooks.receive_message; ptr; ptr = ptr->next) {
+			if ((status = ptr->receive_message(session, message)) != SWITCH_STATUS_SUCCESS) {
+				break;
 			}
 		}
 	}
+
 	switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
 	return status;
 }
@@ -2874,6 +2879,31 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_answer_channe
 
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_state_change(switch_core_session_t *session,
+																				switch_answer_channel_hook_t state_change)
+																				  
+
+{
+	switch_io_event_hook_state_change_t *hook, *ptr;
+
+	assert(state_change != NULL);
+	if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) {
+		hook->state_change = state_change;
+		if (!session->event_hooks.state_change) {
+			session->event_hooks.state_change = hook;
+		} else {
+			for (ptr = session->event_hooks.state_change; ptr && ptr->next; ptr = ptr->next);
+			ptr->next = hook;
+
+		}
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_MEMERR;
+
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_read_frame(switch_core_session_t *session,
 																			switch_read_frame_hook_t read_frame)
 {
@@ -3216,13 +3246,26 @@ static void switch_core_standard_on_hibernate(switch_core_session_t *session)
 
 SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session_t *session)
 {
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_io_event_hook_state_change_t *ptr;
 
 	/* If trylock fails the signal is already awake so we needn't bother */
 	if (switch_mutex_trylock(session->mutex) == SWITCH_STATUS_SUCCESS) {
 		switch_thread_cond_signal(session->cond);
 		switch_mutex_unlock(session->mutex);
 	} 
-	
+
+	if (session->endpoint_interface->io_routines->state_change) {
+		status = session->endpoint_interface->io_routines->state_change(session);
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		for (ptr = session->event_hooks.state_change; ptr; ptr = ptr->next) {
+			if ((status = ptr->state_change(session)) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
+		}
+	}
 }
 
 SWITCH_DECLARE(unsigned int) switch_core_session_running(switch_core_session_t *session)

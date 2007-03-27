@@ -145,6 +145,13 @@ struct switch_io_event_hook_send_dtmf {
 	struct switch_io_event_hook_send_dtmf *next;
 };
 
+/*! \brief Node in which to store state change callback hooks */
+struct switch_io_event_hook_state_change {
+	/*! the send dtmf channel callback hook*/
+	switch_state_change_hook_t state_change;
+	struct switch_io_event_hook_state_change *next;
+};
+
 /*! \brief A table of lists of io_event_hooks to store the event hooks associated with a session */
 struct switch_io_event_hooks {
 	/*! a list of outgoing channel hooks */
@@ -167,6 +174,8 @@ struct switch_io_event_hooks {
 	switch_io_event_hook_waitfor_write_t *waitfor_write;
 	/*! a list of send dtmf hooks */
 	switch_io_event_hook_send_dtmf_t *send_dtmf;
+	/*! a list of state change hooks */
+	switch_io_event_hook_state_change_t *state_change;
 };
 
 /*! \brief A table of i/o routines that an endpoint interface can implement */
@@ -191,6 +200,8 @@ struct switch_io_routines {
 	switch_status_t (*receive_message)(switch_core_session_t *, switch_core_session_message_t *);
 	/*! queue a message for another session*/
 	switch_status_t (*receive_event)(switch_core_session_t *, switch_event_t *);
+	/*! change a sessions channel state */
+	switch_status_t (*state_change)(switch_core_session_t *);
 };
 
 /*! \brief Abstraction of an module endpoint interface

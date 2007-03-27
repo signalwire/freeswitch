@@ -856,6 +856,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_waitfor_write
   \return SWITCH_STATUS_SUCCESS on suceess
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_send_dtmf(switch_core_session_t *session, switch_send_dtmf_hook_t send_dtmf);
+
+/*! 
+  \brief Add an event hook to be executed when a session receives a state change signal
+  \param session session to bind hook to
+  \param state_change hook to bind
+  \return SWITCH_STATUS_SUCCESS on suceess
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_state_change(switch_core_session_t *session,
+																				switch_answer_channel_hook_t state_change);
 ///\}
 
 ///\defgroup hashf Hash Functions

@@ -954,6 +954,7 @@ typedef struct switch_io_event_hook_kill_channel switch_io_event_hook_kill_chann
 typedef struct switch_io_event_hook_waitfor_read switch_io_event_hook_waitfor_read_t;
 typedef struct switch_io_event_hook_waitfor_write switch_io_event_hook_waitfor_write_t;
 typedef struct switch_io_event_hook_send_dtmf switch_io_event_hook_send_dtmf_t;
+typedef struct switch_io_event_hook_state_change switch_io_event_hook_state_change_t;
 typedef struct switch_io_routines switch_io_routines_t;
 typedef struct switch_io_event_hooks switch_io_event_hooks_t;
 typedef struct switch_speech_handle switch_speech_handle_t;
@@ -989,6 +990,7 @@ typedef switch_status_t (*switch_kill_channel_hook_t)(switch_core_session_t *, i
 typedef switch_status_t (*switch_waitfor_read_hook_t)(switch_core_session_t *, int, int);
 typedef switch_status_t (*switch_waitfor_write_hook_t)(switch_core_session_t *, int, int);
 typedef switch_status_t (*switch_send_dtmf_hook_t)(switch_core_session_t *, char *);
+typedef switch_status_t (*switch_state_change_hook_t)(switch_core_session_t *);
 typedef struct switch_stream_handle switch_stream_handle_t;
 typedef switch_status_t (*switch_stream_handle_write_function_t)(switch_stream_handle_t *handle, const char *fmt, ...);
 typedef switch_status_t (*switch_api_function_t)(char *in, switch_core_session_t *session, switch_stream_handle_t *stream);

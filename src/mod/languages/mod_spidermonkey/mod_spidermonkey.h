@@ -132,6 +132,8 @@ struct js_session {
 	JSContext *cx;
 	JSObject *obj;
 	unsigned int flags;
+	switch_call_cause_t cause;
+	JSFunction *on_hangup;
 };
 
 
