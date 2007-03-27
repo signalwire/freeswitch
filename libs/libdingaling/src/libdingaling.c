@@ -1423,15 +1423,17 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 			break;
 		case IKS_NET_NODNS:
 			globals.logger(DL_LOG_DEBUG, "hostname lookup failed\n");
+			microsleep(1000);
+			goto fail;
 		case IKS_NET_NOCONN:
 			globals.logger(DL_LOG_DEBUG, "connection failed\n");
+			microsleep(1000);
+			goto fail;
 		default:
-			globals.logger(DL_LOG_DEBUG, "io error %d\n", e);
-			microsleep(500);
-			continue;
+			globals.logger(DL_LOG_DEBUG, "io error 1 %d\n", e);
+			microsleep(1000);
+			goto fail;
 		}
-
-
 
 		handle->counter = opt_timeout;
 		if (ldl_test_flag(handle, LDL_FLAG_TLS)) {
@@ -1456,9 +1458,9 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 			}
 
 			if (IKS_OK != e) {
-				globals.logger(DL_LOG_DEBUG, "io error %d\n", e);
-				microsleep(500);
-				break;
+				globals.logger(DL_LOG_DEBUG, "io error 2 %d\n", e);
+				microsleep(1000);
+				goto fail;
 			}
 
 			
@@ -1481,10 +1483,12 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 			}
 		}
 
+	fail:
 		iks_disconnect(handle->parser);
 		iks_parser_delete(handle->parser);
 		ldl_clear_flag_locked(handle, LDL_FLAG_CONNECTED);
 		ldl_clear_flag_locked(handle, LDL_FLAG_AUTHORIZED);
+		handle->state = CS_NEW;
 	}
 	ldl_clear_flag_locked(handle, LDL_FLAG_RUNNING);
 
