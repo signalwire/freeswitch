@@ -1218,15 +1218,12 @@ static int on_error(void *user_data, ikspak * pak)
 
 static void on_log(ldl_handle_t *handle, const char *data, size_t size, int is_incoming)
 {
-	if (iks_is_secure(handle->parser)) {
-		fprintf(stderr, "Sec");
+	if (globals.debug) {
+		globals.logger(DL_LOG_DEBUG, "\n%s%s[%s]\n", 
+			iks_is_secure(handle->parser) ? "Sec" : "",
+			is_incoming ? "RECV" : "SEND",
+			data);
 	}
-	if (is_incoming) {
-		fprintf(stderr, "RECV");
-	} else {
-		fprintf(stderr, "SEND");
-	}
-	fprintf(stderr, "[%s]\n", data);
 }
 
 static void j_setup_filter(ldl_handle_t *handle)
