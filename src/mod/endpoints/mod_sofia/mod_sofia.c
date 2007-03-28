@@ -2565,8 +2565,14 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 				int32_t i;
                 const switch_codec_implementation_t *mimp = NULL, *near_match = NULL;
+				const char * rm_encoding;
 
-				if (!te && !strcasecmp(map->rm_encoding, "telephone-event")) {
+				
+				if (!(rm_encoding = map->rm_encoding)) {
+					rm_encoding = "";
+				}
+				
+				if (!te && !strcasecmp(rm_encoding, "telephone-event")) {
 					te = tech_pvt->te = (switch_payload_t)map->rm_pt;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set 2833 dtmf payload to %u\n", te);
 					if (tech_pvt->rtp_session) {
@@ -2574,7 +2580,7 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 					}
 				}
 
-				if (!cng_pt && !strcasecmp(map->rm_encoding, "CN")) {
+				if (!cng_pt && !strcasecmp(rm_encoding, "CN")) {
 					cng_pt = tech_pvt->cng_pt = (switch_payload_t)map->rm_pt;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set comfort noise payload to %u\n", cng_pt);
 					if (tech_pvt->rtp_session) {
@@ -2593,11 +2599,11 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 				for (i = 0; i < tech_pvt->num_codecs; i++) {
 					const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec Compare [%s:%d]/[%s:%d]\n", 
-									  map->rm_encoding, map->rm_pt, imp->iananame, imp->ianacode);
+									  rm_encoding, map->rm_pt, imp->iananame, imp->ianacode);
 					if (map->rm_pt < 96) {
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 					} else {
-						match = strcasecmp(map->rm_encoding, imp->iananame) ? 0 : 1;
+						match = strcasecmp(rm_encoding, imp->iananame) ? 0 : 1;
 					}
 
 					if (match && (map->rm_rate == imp->samples_per_second)) {
@@ -2639,7 +2645,7 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
                 }
 
                 if (mimp) {
-                    if ((tech_pvt->rm_encoding = switch_core_session_strdup(session, (char *)map->rm_encoding))) {
+                    if ((tech_pvt->rm_encoding = switch_core_session_strdup(session, (char *)rm_encoding))) {
                         char tmp[50];
                         tech_pvt->pt = (switch_payload_t)map->rm_pt;
                         tech_pvt->rm_rate = map->rm_rate;
