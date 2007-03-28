@@ -4070,12 +4070,15 @@ static void conference_function(switch_core_session_t *session, char *data)
         switch_audio_resampler_t **resampler = read_codec->implementation->samples_per_second > conference->rate ? 
             &member.read_resampler : &member.mux_resampler;
 
-        switch_resample_create(resampler, 
+        if (switch_resample_create(resampler, 
                                read_codec->implementation->samples_per_second, 
                                read_codec->implementation->samples_per_second * 20, 
                                conference->rate, 
                                conference->rate * 20, 
-                               member.pool);
+							   member.pool) != SWITCH_STATUS_SUCCESS){
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to crete resampler!\n");
+            goto done;
+		}
 
         /* Setup an audio buffer for the resampled audio */
         if (switch_buffer_create_dynamic(&member.resample_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX) != SWITCH_STATUS_SUCCESS) {

@@ -2174,11 +2174,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch (status) {
 			case SWITCH_STATUS_RESAMPLE:
 				if (!session->read_resampler) {
-					switch_resample_create(&session->read_resampler,
+					if (switch_resample_create(&session->read_resampler,
 										   read_frame->codec->implementation->samples_per_second,
 										   read_frame->codec->implementation->bytes_per_frame * 20,
 										   session->read_codec->implementation->samples_per_second,
-										   session->read_codec->implementation->bytes_per_frame * 20, session->pool);
+										   session->read_codec->implementation->bytes_per_frame * 20, session->pool) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to allocate resampler\n");
+						status = SWITCH_STATUS_FALSE;
+						goto done;
+					}
 				}
 			case SWITCH_STATUS_SUCCESS:
 				session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t);
@@ -2448,6 +2452,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 													session->write_codec->implementation->samples_per_second,
 													session->write_codec->implementation->bytes_per_frame * 20,
 													session->pool);
+					if (status != SWITCH_STATUS_SUCCESS) {
+						goto done;
+					}
 				}
 				break;
 			case SWITCH_STATUS_SUCCESS:
@@ -2652,6 +2659,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 																	session->write_codec->implementation->samples_per_second,
 																	session->write_codec->implementation->bytes_per_frame * 20,
 																	session->pool);
+									if (status != SWITCH_STATUS_SUCCESS) {
+										goto done;
+									}
 								}
 								break;
 							case SWITCH_STATUS_SUCCESS:
