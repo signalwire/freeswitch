@@ -78,8 +78,8 @@ AC_SUBST(RESAMPLE_CFLAGS)
 AM_CONDITIONAL([USE_INTREE_RESAMPLE],[test "${enable_resample}" = "yes"])
 
 # set defaults for use on all platforms
-SWITCH_AM_CFLAGS="-I${switch_srcdir}/src/include -I${prefix}/include"
-SWITCH_AM_CXXFLAGS="-I${switch_srcdir}/src/include -I${prefix}/include"
+SWITCH_AM_CFLAGS="-I${switch_srcdir}/src/include"
+SWITCH_AM_CXXFLAGS="-I${switch_srcdir}/src/include"
 SWITCH_AM_LDFLAGS="-lm -L/usr/local/lib"
 
 #set SOLINK variable based on compiler and host
