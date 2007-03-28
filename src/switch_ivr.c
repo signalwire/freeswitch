@@ -130,7 +130,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
         if (cause_name) {
             cause = switch_channel_str2cause(cause_name);
         }
-
+		
         switch_channel_hangup(channel, cause);
     } else if (cmd_hash == CMD_NOMEDIA) {
         char *uuid = switch_event_get_header(event, "nomedia-uuid");
@@ -3240,6 +3240,157 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unhold_uuid(char *uuid)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+struct hangup_helper {
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	switch_bool_t bleg;
+	switch_call_cause_t cause;
+};
+
+static void sch_hangup_callback(switch_core_scheduler_task_t *task)
+{
+	struct hangup_helper *helper;
+	switch_core_session_t *session, *other_session;
+	char *other_uuid;
+
+	assert(task);
+
+	helper = (struct hangup_helper *) task->cmd_arg;
+	
+	if ((session = switch_core_session_locate(helper->uuid_str))) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+
+		if (helper->bleg) {
+			if ((other_uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) &&
+				(other_session = switch_core_session_locate(other_uuid))) {
+				switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
+				switch_channel_hangup(other_channel, helper->cause);
+				switch_core_session_rwunlock(other_session);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No channel to hangup\n");
+			}
+		} else {
+			switch_channel_hangup(channel, helper->cause);
+		}
+
+		switch_core_session_rwunlock(session);
+	}
+}
+
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_hangup(time_t runtime, char *uuid, switch_call_cause_t cause, switch_bool_t bleg)
+{
+	struct hangup_helper *helper;
+	size_t len = sizeof(*helper);
+
+	assert((helper = malloc(len)));
+	memset(helper, 0, len);
+	
+	switch_copy_string(helper->uuid_str, uuid, sizeof(helper->uuid_str));
+	helper->cause = cause;
+	helper->bleg = bleg;
+	
+	return switch_core_scheduler_add_task(runtime, sch_hangup_callback, (char *)__SWITCH_FUNC__, uuid, 0, helper, SSHF_FREE_ARG); 
+}
+
+struct transfer_helper {
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	char *extension;
+	char *dialplan;
+	char *context;
+};
+
+static void sch_transfer_callback(switch_core_scheduler_task_t *task)
+{
+	struct transfer_helper *helper;
+	switch_core_session_t *session;
+
+	assert(task);
+
+	helper = (struct transfer_helper *) task->cmd_arg;
+	
+	if ((session = switch_core_session_locate(helper->uuid_str))) {
+		switch_ivr_session_transfer(session, helper->extension, helper->dialplan, helper->context);
+		switch_core_session_rwunlock(session);
+	}
+
+}
+
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_transfer(time_t runtime, char *uuid, char *extension, char *dialplan, char *context)
+{
+	struct transfer_helper *helper;
+	size_t len = sizeof(*helper);
+	char *cur = NULL;
+
+	if (extension) {
+		len += strlen(extension) + 1;
+	}
+
+	if (dialplan) {
+		len += strlen(dialplan) + 1;
+	}
+
+	if (context) {
+		len += strlen(context) + 1;
+	}
+
+	assert((helper = malloc(len)));
+	memset(helper, 0, len);
+	
+	switch_copy_string(helper->uuid_str, uuid, sizeof(helper->uuid_str));
+	
+	cur = (char *) helper + sizeof(*helper);
+
+	if (extension) {
+		helper->extension = cur;
+		switch_copy_string(helper->extension, extension, strlen(extension) + 1);
+		cur += strlen(helper->extension) + 1;
+	}
+
+	if (dialplan) {
+		helper->dialplan = cur;
+		switch_copy_string(helper->dialplan, dialplan, strlen(dialplan) + 1);
+		cur += strlen(helper->dialplan) + 1;
+	}
+
+	if (context) {
+		helper->context = cur;
+		switch_copy_string(helper->context, context, strlen(context)+1);
+	}
+	
+	return switch_core_scheduler_add_task(runtime, sch_transfer_callback, (char *)__SWITCH_FUNC__, uuid, 0, helper, SSHF_FREE_ARG); 
+}
+
+
+struct broadcast_helper {
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	char *path;
+	switch_media_flag_t flags;
+};
+
+static void sch_broadcast_callback(switch_core_scheduler_task_t *task)
+{
+	struct broadcast_helper *helper;
+	assert(task);
+
+	helper = (struct broadcast_helper *) task->cmd_arg;
+	switch_ivr_broadcast(helper->uuid_str, helper->path, helper->flags);
+}
+
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, char *uuid, char *path, switch_media_flag_t flags)
+{
+	struct broadcast_helper *helper;
+	size_t len = sizeof(*helper) + strlen(path) + 1;
+
+	assert((helper = malloc(len)));
+	memset(helper, 0, len);
+	
+	switch_copy_string(helper->uuid_str, uuid, sizeof(helper->uuid_str));
+	helper->flags = flags;
+	helper->path = (char *) helper + sizeof(*helper);
+	switch_copy_string(helper->path, path, len - sizeof(helper));
+
+	
+	return switch_core_scheduler_add_task(runtime, sch_broadcast_callback, (char *)__SWITCH_FUNC__, uuid, 0, helper, SSHF_FREE_ARG); 
+}
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, switch_media_flag_t flags)
 {
@@ -3249,9 +3400,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
 	switch_event_t *event;
 	switch_core_session_t *other_session = NULL;
 	char *other_uuid = NULL;
+	char *app = "playback";
+
+	assert(path);
 
 	if ((session = switch_core_session_locate(uuid))) {
-		char *app;
+		char *cause = NULL;
+		char *mypath = strdup(path);
+		char *p;
+		
 		master = session;
 
 		channel = switch_core_session_get_channel(session);
@@ -3261,11 +3418,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
 			switch_ivr_media(uuid, SMF_REBRIDGE);
 		}
 		
-		if (!strncasecmp(path, "speak:", 6)) {
-			path += 6;
-			app = "speak";
-		} else {
-			app = "playback";
+		if ((p = strchr(mypath, ':'))) {
+			app = mypath;
+			*p++ = '\0';
+			path = p;
+		}
+		
+		if ((cause = strchr(app, '!'))) {
+			*cause++ = '\0';
+			if (!cause) {
+				cause = "normal_clearing";
+			}
 		}
 		
 		if ((flags & SMF_ECHO_BLEG) && (other_uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE))
@@ -3299,8 +3462,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
 			}
 		}
 		
+		if (cause) {
+			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-name", "hangup");
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-arg", "%s", cause);
+
+				switch_core_session_queue_private_event(session, &event);
+			}
+		}
+
 		switch_core_session_rwunlock(session);
+		switch_safe_free(mypath);
 	}
+
+
 	return SWITCH_STATUS_SUCCESS;
 	
 }
@@ -3449,11 +3625,16 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 		switch_channel_set_variable(channel, SWITCH_BRIDGE_VARIABLE, NULL);
 		switch_channel_set_variable(other_channel, SWITCH_BRIDGE_VARIABLE, NULL);
 
-		switch_channel_hangup(other_channel, switch_channel_get_cause(channel));
+		if (switch_channel_get_state(other_channel) < CS_HANGUP && 
+			switch_true(switch_channel_get_variable(other_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
+			switch_channel_hangup(other_channel, switch_channel_get_cause(channel));
+		} else {
+			switch_channel_set_state(other_channel, CS_EXECUTE);
+		}
 		switch_core_session_rwunlock(other_session);
 	}
 
-
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 

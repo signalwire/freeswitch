@@ -51,6 +51,9 @@ static switch_api_interface_t originate_api_interface;
 static switch_api_interface_t media_api_interface;
 static switch_api_interface_t hold_api_interface;
 static switch_api_interface_t broadcast_api_interface;
+static switch_api_interface_t sched_broadcast_api_interface;
+static switch_api_interface_t sched_transfer_api_interface;
+static switch_api_interface_t sched_hangup_api_interface;
 
 static switch_status_t status_function(char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
@@ -245,6 +248,89 @@ static switch_status_t transfer_function(char *cmd, switch_core_session_t *isess
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+static switch_status_t sched_transfer_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+{
+	switch_core_session_t *session = NULL;
+	char *argv[6] = {0};
+	int argc = 0;
+
+	if (isession) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (switch_strlen_zero(cmd) || argc < 2 || argc > 5) {
+		stream->write_function(stream, "USAGE: %s\n", sched_transfer_api_interface.syntax);
+	} else {
+		char *uuid = argv[1];
+		char *dest = argv[2];
+		char *dp = argv[3];
+		char *context = argv[4];
+		time_t when;
+		
+		if (*argv[0] == '+') {
+			when = time (NULL) + atol(argv[0] + 1);
+		} else {
+			when = atol(argv[0]);
+		}
+
+		if ((session = switch_core_session_locate(uuid))) {
+			switch_ivr_schedule_transfer(when, uuid, dest, dp, context);
+			stream->write_function(stream, "OK\n");
+			switch_core_session_rwunlock(session);
+		} else {
+			stream->write_function(stream, "No Such Channel!\n");
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t sched_hangup_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+{
+	switch_core_session_t *session = NULL;
+	char *argv[4] = {0};
+	int argc = 0;
+
+	if (isession) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (switch_strlen_zero(cmd) || argc < 1) {
+		stream->write_function(stream, "USAGE: %s\n", sched_hangup_api_interface.syntax);
+	} else {
+		char *uuid = argv[1];
+		char *cause_str = argv[2];
+		time_t when;
+		switch_call_cause_t cause = SWITCH_CAUSE_ALLOTTED_TIMEOUT;
+
+		if (*argv[0] == '+') {
+			when = time (NULL) + atol(argv[0] + 1);
+		} else {
+			when = atol(argv[0]);
+		}
+
+		if (cause_str) {
+			cause = switch_channel_str2cause(cause_str);
+		}
+
+		if ((session = switch_core_session_locate(uuid))) {
+			switch_ivr_schedule_hangup(when, uuid, cause, SWITCH_FALSE);
+			stream->write_function(stream, "OK\n");
+			switch_core_session_rwunlock(session);
+		} else {
+			stream->write_function(stream, "No Such Channel!\n");
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 static switch_status_t uuid_media_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
 {
 	char *argv[4] = {0};
@@ -308,6 +394,50 @@ static switch_status_t uuid_broadcast_function(char *cmd, switch_core_session_t 
 		
 		status = switch_ivr_broadcast(argv[0], argv[1], flags);
 		stream->write_function(stream, "+OK Message Sent\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static switch_status_t sched_broadcast_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+{
+	char *argv[4] = {0};
+	int argc = 0;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (isession) {
+		return status;
+	}
+	
+	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (switch_strlen_zero(cmd) || argc < 3) {
+		stream->write_function(stream, "USAGE: %s\n", sched_broadcast_api_interface.syntax);
+	} else {
+		switch_media_flag_t flags = SMF_NONE;
+		time_t when;
+
+		if (*argv[0] == '+') {
+			when = time (NULL) + atol(argv[0] + 1);
+		} else {
+			when = atol(argv[0]);
+		}
+
+		if (argv[3]) {
+			if (!strcmp(argv[3], "both")) {
+				flags |= (SMF_ECHO_ALEG | SMF_ECHO_BLEG);
+			} else if (!strcmp(argv[3], "aleg")) {
+				flags |= SMF_ECHO_ALEG;
+			} else if (!strcmp(argv[3], "bleg")) {
+				flags |= SMF_ECHO_BLEG;
+			}
+		} else {
+			flags |= SMF_ECHO_ALEG;
+		}
+		
+		status = switch_ivr_schedule_broadcast(when, argv[1], argv[2], flags);
+		stream->write_function(stream, "+OK Message Scheduled\n");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -707,12 +837,36 @@ static switch_status_t help_function(char *cmd, switch_core_session_t *session, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_api_interface_t sched_transfer_api_interface = {
+	/*.interface_name */ "sched_transfer",
+	/*.desc */ "Schedule a broadcast event to a running call",
+	/*.function */ sched_transfer_function,
+	/*.syntax */ "[+]<time> <uuid> <extension> [<dialplan>] [<context>]",
+	/*.next */ NULL
+};
+
+static switch_api_interface_t sched_broadcast_api_interface = {
+	/*.interface_name */ "sched_broadcast",
+	/*.desc */ "Schedule a broadcast event to a running call",
+	/*.function */ sched_broadcast_function,
+	/*.syntax */ "[+]<time> <uuid> <path> [aleg|bleg|both]",
+	/*.next */ &sched_transfer_api_interface
+};
+
+static switch_api_interface_t sched_hangup_api_interface = {
+	/*.interface_name */ "sched_hangup",
+	/*.desc */ "Schedule a running call to hangup",
+	/*.function */ sched_hangup_function,
+	/*.syntax */ "[+]<time> <uuid> [<cause>]",
+	/*.next */ &sched_broadcast_api_interface
+};
+
 static switch_api_interface_t version_api_interface = {
 	/*.interface_name */ "version",
 	/*.desc */ "Show version of the switch",
 	/*.function */ version_function,
 	/*.syntax */ "",
-	/*.next */ NULL
+	/*.next */ &sched_hangup_api_interface
 };
 
 static switch_api_interface_t help_api_interface = {

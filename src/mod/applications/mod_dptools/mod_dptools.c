@@ -96,6 +96,99 @@ static void transfer_function(switch_core_session_t *session, char *data)
 	}
 }
 
+static void sched_transfer_function(switch_core_session_t *session, char *data)
+{
+	int argc;
+	char *argv[4] = {0};
+	char *mydata;
+	
+	if (data && (mydata = switch_core_session_strdup(session, data))) {
+		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
+			time_t when;
+
+			if (*argv[0] == '+') {
+				when = time (NULL) + atol(argv[0] + 1);
+			} else {
+				when = atol(argv[0]);
+			}
+
+			switch_ivr_schedule_transfer(when, switch_core_session_get_uuid(session), argv[1], argv[2], argv[3]);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Args\n");
+		}
+	}
+}
+
+static void sched_hangup_function(switch_core_session_t *session, char *data)
+{
+	int argc;
+	char *argv[5] = {0};
+	char *mydata;
+
+	if (data && (mydata = switch_core_session_strdup(session, data))) {
+		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
+			time_t when;
+			switch_call_cause_t cause = SWITCH_CAUSE_ALLOTTED_TIMEOUT;
+			switch_bool_t bleg = SWITCH_FALSE;
+
+			if (*argv[0] == '+') {
+				when = time (NULL) + atol(argv[0] + 1);
+			} else {
+				when = atol(argv[0]);
+			}
+			
+			if (argv[1]) {
+				cause = switch_channel_str2cause(argv[1]);
+			}
+
+			if (argv[2] && !strcasecmp(argv[2], "bleg")) {
+				bleg = SWITCH_TRUE;
+			}
+
+			switch_ivr_schedule_hangup(when, switch_core_session_get_uuid(session), cause, bleg);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No time specified.\n");
+		}
+	}
+}
+
+
+static void sched_broadcast_function(switch_core_session_t *session, char *data)
+{
+	int argc;
+	char *argv[6] = {0};
+	char *mydata;
+
+	if (data && (mydata = switch_core_session_strdup(session, data))) {
+		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
+			time_t when;
+			switch_media_flag_t flags = SMF_NONE;
+			
+			if (*argv[0] == '+') {
+				when = time (NULL) + atol(argv[0] + 1);
+			} else {
+				when = atol(argv[0]);
+			}
+			
+			if (argv[2]) {
+				if (!strcmp(argv[2], "both")) {
+					flags |= (SMF_ECHO_ALEG | SMF_ECHO_BLEG);
+				} else if (!strcmp(argv[2], "aleg")) {
+					flags |= SMF_ECHO_ALEG;
+				} else if (!strcmp(argv[2], "bleg")) {
+					flags |= SMF_ECHO_BLEG;
+				}
+			} else {
+				flags |= SMF_ECHO_ALEG;
+			}
+
+			switch_ivr_schedule_broadcast(when, switch_core_session_get_uuid(session), argv[1], flags);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Args\n");
+		}
+	}
+}
+
 static void sleep_function(switch_core_session_t *session, char *data)
 {
 
@@ -509,6 +602,7 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 	}
 }
 
+
 static switch_api_interface_t strepoch_api_interface = {
 	/*.interface_name */ "strepoch",
 	/*.desc */ "Convert a date string into epoch time",
@@ -541,6 +635,39 @@ static switch_api_interface_t presence_api_interface = {
 	/*.next */ &dptools_api_interface
 };
 
+
+
+static switch_application_interface_t sched_transfer_application_interface = {
+	/*.interface_name */ "sched_transfer",
+	/*.application_function */ sched_transfer_function,
+	/*.long_desc */ "Schedule a transfer in the future",
+	/*.short_desc */ "Schedule a transfer in the future",
+	/*.syntax */ "[+]<time> <extension> <dialplan> <context>",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
+	/*.next */ NULL
+};
+
+static switch_application_interface_t sched_broadcast_application_interface = {
+	/*.interface_name */ "sched_broadcast",
+	/*.application_function */ sched_broadcast_function,
+	/*.long_desc */ "Schedule a broadcast in the future",
+	/*.short_desc */ "Schedule a broadcast in the future",
+	/*.syntax */ "[+]<time> <path> [aleg|bleg|both]",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
+	/*.next */ &sched_transfer_application_interface
+};
+
+static switch_application_interface_t sched_hangup_application_interface = {
+	/*.interface_name */ "sched_hangup",
+	/*.application_function */ sched_hangup_function,
+	/*.long_desc */ "Schedule a hangup in the future",
+	/*.short_desc */ "Schedule a hangup in the future",
+	/*.syntax */ "[+]<time> [<cause>]",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
+	/*.next */ &sched_broadcast_application_interface
+};
+
+
 static const switch_application_interface_t queuedtmf_application_interface = {
 	/*.interface_name */ "queue_dtmf",
 	/*.application_function */ queue_dtmf_function,	
@@ -548,7 +675,7 @@ static const switch_application_interface_t queuedtmf_application_interface = {
 	/* short_desc */ "Queue dtmf to be sent",
 	/* syntax */ "<dtmf_data>",
 	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ NULL
+	/*.next */ &sched_hangup_application_interface
 };
 
 static const switch_application_interface_t redirect_application_interface = {

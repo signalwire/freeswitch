@@ -332,6 +332,28 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, char *extension, char *dialplan, char *context);
 
 /*!
+  \brief Transfer an existing session to another location in the future
+  \param runtime the time (int epoch seconds) to transfer the call
+  \param uuid the uuid of the session to transfer
+  \param extension the new extension
+  \param dialplan the new dialplan (OPTIONAL, may be NULL)
+  \param context the new context (OPTIONAL, may be NULL)
+  \return the id of the task
+*/
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_transfer(time_t runtime, char *uuid, char *extension, char *dialplan, char *context);
+
+
+/*!
+  \brief Hangup an existing session in the future
+  \param runtime the time (int epoch seconds) to transfer the call
+  \param uuid the uuid of the session to hangup
+  \param cause the hanup cause code
+  \param bleg hangup up the B-Leg if possible
+  \return the id of the task
+*/
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_hangup(time_t runtime, char *uuid, switch_call_cause_t cause, switch_bool_t bleg);
+
+/*!
   \brief Bridge two existing sessions
   \param originator_uuid the uuid of the originator
   \param originatee_uuid the uuid of the originator
@@ -382,6 +404,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session);
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_unhold(switch_core_session_t *session);
+
+/*!
+  \brief Signal the session to broadcast audio in the future
+  \param runtime when (in epoch time) to run the broadcast
+  \param uuid the uuid of the session to broadcast on
+  \param path the path data of the broadcast "/path/to/file.wav [<timer name>]" or "speak:<engine>|<voice>|<Text to say>"
+  \param flags flags to send to the request (SMF_ECHO_BRIDGED to send the broadcast to both sides of the call)
+  \return the id of the task
+*/
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, char *uuid, char *path, switch_media_flag_t flags);
 
 /*!
   \brief Signal the session to broadcast audio

@@ -233,6 +233,7 @@ static void tts_function(switch_core_session_t *session, char *data)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Done\n");
 }
 
+#ifdef BUGTEST
 static switch_bool_t bug_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
     switch_frame_t *frame;
@@ -249,9 +250,11 @@ static switch_bool_t bug_callback(switch_media_bug_t *bug, void *user_data, swit
 
 	return SWITCH_TRUE;
 }
+#endif
 
 static void bugtest_function(switch_core_session_t *session, char *data)
 {
+#ifdef BUGTEST
 	switch_media_bug_t *bug;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
     switch_status_t status;
@@ -264,6 +267,11 @@ static void bugtest_function(switch_core_session_t *session, char *data)
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
         return;
 	}
+#endif
+	//switch_ivr_schedule_broadcast(time(NULL) + 10, switch_core_session_get_uuid(session), "/Users/anthm/sr8k.wav", SMF_ECHO_ALEG);
+	//switch_ivr_schedule_transfer(time(NULL) + 10, switch_core_session_get_uuid(session), "2000", NULL, NULL);
+	//switch_ivr_schedule_hangup(time(NULL) + 10, switch_core_session_get_uuid(session), SWITCH_CAUSE_ALLOTTED_TIMEOUT);
+
     switch_ivr_play_file(session, NULL, data, NULL);
 }
 

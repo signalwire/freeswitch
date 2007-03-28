@@ -104,16 +104,67 @@ struct switch_core_session;
 struct switch_core_runtime;
 struct switch_core_port_allocator;
 
+struct switch_core_scheduler_task {
+	time_t created;
+	time_t runtime;
+	uint32_t cmd_id;
+	char *group;
+	void *cmd_arg;
+	uint32_t task_id;
+};
+
+
 /*!
   \defgroup core1 Core Library 
   \ingroup FREESWITCH
   \{ 
 */
 
-
 ///\defgroup mb1 Media Bugs
 ///\ingroup core1
 ///\{
+
+
+///\defgroup sched1 Scheduler
+///\ingroup core1
+///\{
+
+
+/*!
+  \brief Schedule a task in the future
+  \param runtime the time in epoch seconds to execute the task.
+  \param func the callback function to execute when the task is executed.
+  \param desc an arbitrary description of the task.
+  \param group a group id tag to link multiple tasks to a single entity.
+  \param cmd_id an arbitrary index number be used in the callback.
+  \param cmd_arg user data to be passed to the callback.
+  \param flags flags to alter behaviour 
+  \return the id of the task
+*/
+SWITCH_DECLARE(uint32_t) switch_core_scheduler_add_task(time_t task_runtime,
+														switch_core_scheduler_func_t func,
+														char *desc,
+														char *group,
+														uint32_t cmd_id,
+														void *cmd_arg,
+														switch_scheduler_flag_t flags);
+
+/*!
+  \brief Delete a scheduled task
+  \param task_id the id of the task
+  \return SWITCH_STATUS_SUCCESS if the task was deleted.
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_scheduler_del_task_id(uint32_t task_id);
+
+/*!
+  \brief Delete a scheduled task based on the group name
+  \param group the group name
+  \return SWITCH_STATUS_SUCCESS if any tasks were deleted
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_scheduler_del_task_group(char *group);
+
+
+///\}
 
 /*!
   \brief Add a media bug to the session

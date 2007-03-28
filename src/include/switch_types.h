@@ -168,6 +168,12 @@ typedef enum {
 } switch_management_action_t;
 
 typedef enum {
+	SSHF_NONE = 0,
+	SSHF_OWN_THREAD = (1 << 0),
+	SSHF_FREE_ARG = (1 << 1)
+} switch_scheduler_flag_t;
+
+typedef enum {
 	SMF_NONE = 0,
 	SMF_REBRIDGE = (1 << 0),
 	SMF_ECHO_ALEG = (1 << 1),
@@ -910,7 +916,8 @@ typedef enum {
 	SWITCH_CAUSE_LOSE_RACE = 502,
 	SWITCH_CAUSE_MANAGER_REQUEST = 503,
 	SWITCH_CAUSE_BLIND_TRANSFER = 600,
-	SWITCH_CAUSE_ATTENDED_TRANSFER = 601
+	SWITCH_CAUSE_ATTENDED_TRANSFER = 601,
+	SWITCH_CAUSE_ALLOTTED_TIMEOUT = 602
 } switch_call_cause_t;
 
 typedef enum {
@@ -979,6 +986,8 @@ typedef switch_bool_t (*switch_media_bug_callback_t)(switch_media_bug_t *, void 
 typedef void (*switch_application_function_t)(switch_core_session_t *, char *);
 typedef void (*switch_event_callback_t)(switch_event_t *);
 typedef switch_caller_extension_t *(*switch_dialplan_hunt_function_t)(switch_core_session_t *, void *);
+typedef struct switch_core_scheduler_task switch_core_scheduler_task_t;
+typedef void (*switch_core_scheduler_func_t)(switch_core_scheduler_task_t *task);
 typedef switch_status_t (*switch_state_handler_t)(switch_core_session_t *);
 typedef switch_status_t (*switch_outgoing_channel_hook_t)(switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t *);
 typedef switch_status_t (*switch_answer_channel_hook_t)(switch_core_session_t *);
