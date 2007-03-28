@@ -57,6 +57,26 @@ fi
 
 AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
 
+# Optional Features
+
+AC_ARG_ENABLE(resample,
+[AC_HELP_STRING([--enable-resample],[build with embedded resamper])],[enable_resample="$enable_resample"],[enable_resample="yes"])
+
+# We should add checking for out of tree libresample here
+RESAMPLE_LIB=
+RESAMPLE_CFLAGS=
+if test "${enable_resample}" = "yes"; then
+       RESAMPLE_LIB="libs/libresample/libresample.la"
+       RESAMPLE_CFLAGS="-I${switch_srcdir}/libs/libresample/include"
+else
+        AC_DEFINE([DISABLE_RESAMPLE],[],[Disable the embedded resampler])
+fi
+
+AC_SUBST(RESAMPLE_LIB)
+AC_SUBST(RESAMPLE_CFLAGS)
+
+AM_CONDITIONAL([USE_INTREE_RESAMPLE],[test "${enable_resample}" = "yes"])
+
 # set defaults for use on all platforms
 SWITCH_AM_CFLAGS="-I${switch_srcdir}/src/include -I${prefix}/include"
 SWITCH_AM_CXXFLAGS="-I${switch_srcdir}/src/include -I${prefix}/include"
