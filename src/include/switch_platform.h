@@ -213,6 +213,12 @@ typedef  intptr_t	switch_ssize_t;
 #define SWITCH_INT64_T_FMT          "I64d"
 #define SWITCH_UINT64_T_FMT         "I64u"
 
+#ifdef _USE_32BIT_TIME_T
+#define TIME_T_FMT "d"
+#else
+#define TIME_T_FMT SWITCH_INT64_T_FMT
+#endif
+
 #else
 #ifndef SWITCH_SSIZE_T_FMT
 #define SWITCH_SSIZE_T_FMT          (sizeof (switch_ssize_t) == sizeof (long) ? "ld" : sizeof (switch_ssize_t) == sizeof (int) ? "d" : "lld")
@@ -228,6 +234,10 @@ typedef  intptr_t	switch_ssize_t;
 
 #ifndef SWITCH_UINT64_T_FMT
 #define SWITCH_UINT64_T_FMT         (sizeof (long) == 8 ? "lu" : "llu")
+#endif
+
+#ifndef TIME_T_FMT
+#define TIME_T_FMT "ld"
 #endif
 
 #endif

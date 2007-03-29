@@ -402,7 +402,7 @@ SWITCH_DECLARE(uint32_t) switch_core_scheduler_add_task(time_t task_runtime,
 	switch_mutex_unlock(runtime.task_mutex);
 	
 	tp = container;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Added task %u %s (%s) to run at %ld\n", 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Added task %u %s (%s) to run at %"TIME_T_FMT"\n", 
 					  tp->task.task_id, tp->desc, switch_str_nil(tp->task.group), task_runtime);
 
 	

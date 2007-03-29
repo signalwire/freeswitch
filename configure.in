@@ -171,6 +171,7 @@ AC_CHECK_SIZEOF(int, 4)
 AC_CHECK_SIZEOF(long, 4)
 AC_CHECK_SIZEOF(short, 2)
 AC_CHECK_SIZEOF(long long, 8)
+AC_CHECK_SIZEOF(time_t, 4)
 AC_TYPE_SIZE_T
 AC_CHECK_TYPE(ssize_t, int)
 
@@ -246,6 +247,16 @@ else
     size_t_fmt='#error Can not determine the proper size for size_t'
 fi
 
+if test "$ac_cv_sizeof_time_t" = "$ac_cv_sizeof_int"; then
+   time_t_fmt='#define TIME_T_FMT "d"' 
+elif  test "$ac_cv_sizeof_time_t" = "$ac_cv_sizeof_long"; then
+   time_t_fmt='#define TIME_T_FMT "ld"'
+elif  test "$ac_cv_sizeof_time_t" = "$ac_cv_sizeof_long_long"; then
+   time_t_fmt='#define TIME_T_FMT "lld"'
+else
+    time_t_fmt='#error Can not determine the proper format specifier for time_t of size $ac_cv_sizeof_time_t'
+fi
+
 # Basically, we have tried to figure out the correct format strings
 # for SWITCH types which vary between platforms, but we don't always get 
 # it right.  If you find that we don't get it right for your platform, 
@@ -294,8 +305,7 @@ AC_SUBST(int64_t_fmt)
 AC_SUBST(uint64_t_fmt) 
 AC_SUBST(ssize_t_fmt) 
 AC_SUBST(size_t_fmt)
-
-
+AC_SUBST(time_t_fmt)
 
 AC_PATH_PROGS(ZCAT, gunzip gzcat gzip zcat)
 AC_PATH_PROGS(TAR, gtar tar)
