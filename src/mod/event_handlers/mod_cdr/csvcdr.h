@@ -44,38 +44,38 @@
 #ifndef CSVCDR
 #define CSVCDR
 
-class CsvCDR : public BaseCDR {
-	public:
-		CsvCDR();
-		CsvCDR(switch_mod_cdr_newchannel_t *newchannel);
-		//CsvCDR(const CsvCDR& copyFrom);
-		virtual ~CsvCDR();
-		virtual bool process_record();
-		virtual void connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settings, switch_xml_t& param); // connect and disconnect need to be static because we're persisting connections until shutdown
-		virtual void disconnect();
-		virtual bool is_activated();
-		virtual void tempdump_record();
-		virtual void reread_tempdumped_records();
-		virtual std::string get_display_name();
+class CsvCDR:public BaseCDR {
+  public:
+	CsvCDR();
+	CsvCDR(switch_mod_cdr_newchannel_t * newchannel);
+	//CsvCDR(const CsvCDR& copyFrom);
+	virtual ~ CsvCDR();
+	virtual bool process_record();
+	virtual void connect(switch_xml_t & cfg, switch_xml_t & xml, switch_xml_t & settings, switch_xml_t & param);	// connect and disconnect need to be static because we're persisting connections until shutdown
+	virtual void disconnect();
+	virtual bool is_activated();
+	virtual void tempdump_record();
+	virtual void reread_tempdumped_records();
+	virtual std::string get_display_name();
 
-	private:
-		static bool activated; // Is this module activated?
-		static bool connectionstate; // What is the status of the connection?
-		static bool logchanvars;
-		static modcdr_time_convert_t convert_time;
-		static bool repeat_fixed_in_supp; // Repeat the fixed chanvars in the supplemental?
-		static std::string outputfile_path; // The directory we'll dump these into
-		static std::list<std::string> chanvars_fixed_list; // Normally this would be used, but not in this class
-		static std::list<std::string> chanvars_supp_list; // This will hold the list for all chanvars here
-		static std::string display_name;
-		char formattedcallstartdate[100];
-		char formattedcallanswerdate[100];
-		char formattedcalltransferdate[100];
-		char formattedcallenddate[100];
-		static std::ofstream outputfile;
-		static std::ofstream::pos_type filesize_limit;
-		void check_file_size_and_open(); // Checks the size of the file, and if it's greater than size allowed, rotates it.
-		void open_file();
+  private:
+	static bool activated;		// Is this module activated?
+	static bool connectionstate;	// What is the status of the connection?
+	static bool logchanvars;
+	static modcdr_time_convert_t convert_time;
+	static bool repeat_fixed_in_supp;	// Repeat the fixed chanvars in the supplemental?
+	static std::string outputfile_path;	// The directory we'll dump these into
+	static std::list < std::string > chanvars_fixed_list;	// Normally this would be used, but not in this class
+	static std::list < std::string > chanvars_supp_list;	// This will hold the list for all chanvars here
+	static std::string display_name;
+	char formattedcallstartdate[100];
+	char formattedcallanswerdate[100];
+	char formattedcalltransferdate[100];
+	char formattedcallenddate[100];
+	static std::ofstream outputfile;
+	static std::ofstream::pos_type filesize_limit;
+	void check_file_size_and_open();	// Checks the size of the file, and if it's greater than size allowed, rotates it.
+	void open_file();
 };
 
 #endif

@@ -46,8 +46,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-struct switch_mod_cdr_newchannel_t 
-{
+struct switch_mod_cdr_newchannel_t {
 	switch_core_session_t *session;
 	switch_channel_t *channel;
 	//switch_channel_timetable_t *timetable;
@@ -57,7 +56,7 @@ struct switch_mod_cdr_newchannel_t
 	//bool originate;
 };
 
-enum switch_mod_cdr_sql_types_t { CDR_INTEGER,CDR_STRING,CDR_DECIMAL,CDR_DOUBLE,CDR_TINY };
+enum switch_mod_cdr_sql_types_t { CDR_INTEGER, CDR_STRING, CDR_DECIMAL, CDR_DOUBLE, CDR_TINY };
 
 #ifdef WIN32
 #define STDCALL __stdcall
@@ -65,54 +64,54 @@ enum switch_mod_cdr_sql_types_t { CDR_INTEGER,CDR_STRING,CDR_DECIMAL,CDR_DOUBLE,
 #define STDCALL
 #endif
 
-typedef switch_status_t (STDCALL *modcdr_time_convert_t)(switch_time_exp_t*,switch_time_t);
+typedef switch_status_t (STDCALL * modcdr_time_convert_t) (switch_time_exp_t *, switch_time_t);
 
 class BaseCDR {
-	public:
-		BaseCDR();
-		virtual ~BaseCDR();
-		BaseCDR(switch_mod_cdr_newchannel_t *newchannel);
-		virtual void connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settings, switch_xml_t& param) = 0;
-		virtual void disconnect() = 0;
-		virtual bool process_record() = 0;
-		virtual bool is_activated() = 0;
-		virtual void tempdump_record() = 0;
-		virtual void reread_tempdumped_records() = 0;
-		virtual std::string get_display_name() = 0; // Get the module name
-	protected:
-		void parse_channel_variables_xconfig(std::string& unparsed,std::list<std::string>& chanvarslist,bool fixed);
-		void parse_channel_variables_xconfig(std::string& unparsed,std::list<std::string>& chanvarslist,std::vector<switch_mod_cdr_sql_types_t>& chanvars_fixed_types);  // Typically used for SQL types
-		void process_channel_variables(const std::list<std::string>& stringlist,const std::list<std::string>& fixedlist,switch_channel_t *channel,bool repeat = 1); //This is used for supplemental chanvars
-		void process_channel_variables(const std::list<std::string>& stringlist,switch_channel_t *channel); // This is used for fixed chanvars
-		void escape_string(std::string& src);
-		std::string escape_chararray(char* src);
-		switch_time_t callstartdate;
-		switch_time_t callanswerdate;
-		switch_time_t callenddate;
-		switch_time_t calltransferdate;
-		switch_call_cause_t hangupcause;
-		char *hangupcause_text;
-		char clid[80];
-		bool originated;  // Did they originate this call?
-		char dialplan[80];
-		char myuuid[37]; // 36 + 1 to hold \0
-		char destuuid[37];
-		char src[80];
-		char dst[80];
-		char srcchannel[80];
-		char dstchannel[80];
-		char ani[80];
-		char aniii[80];
-		char network_addr[40];
-		char lastapp[80];
-		char lastdata[255]; 
-		switch_time_t billusec; // Yes, you heard me, we're measuring in microseconds
-		int disposition; // Currently 0 = Busy/Unanswered, 1 = Answered
-		int amaflags;
-		switch_core_session_t *coresession;
-		std::list<std::pair<std::string,std::string> > chanvars_fixed;
-		std::map<std::string,std::string> chanvars_supp;
-		bool errorstate; // True if there is an error writing the log
+  public:
+	BaseCDR();
+	virtual ~ BaseCDR();
+	BaseCDR(switch_mod_cdr_newchannel_t * newchannel);
+	virtual void connect(switch_xml_t & cfg, switch_xml_t & xml, switch_xml_t & settings, switch_xml_t & param) = 0;
+	virtual void disconnect() = 0;
+	virtual bool process_record() = 0;
+	virtual bool is_activated() = 0;
+	virtual void tempdump_record() = 0;
+	virtual void reread_tempdumped_records() = 0;
+	virtual std::string get_display_name() = 0;	// Get the module name
+  protected:
+	void parse_channel_variables_xconfig(std::string & unparsed, std::list < std::string > &chanvarslist, bool fixed);
+	void parse_channel_variables_xconfig(std::string & unparsed, std::list < std::string > &chanvarslist, std::vector < switch_mod_cdr_sql_types_t > &chanvars_fixed_types);	// Typically used for SQL types
+	void process_channel_variables(const std::list < std::string > &stringlist, const std::list < std::string > &fixedlist, switch_channel_t *channel, bool repeat = 1);	//This is used for supplemental chanvars
+	void process_channel_variables(const std::list < std::string > &stringlist, switch_channel_t *channel);	// This is used for fixed chanvars
+	void escape_string(std::string & src);
+	     std::string escape_chararray(char *src);
+	switch_time_t callstartdate;
+	switch_time_t callanswerdate;
+	switch_time_t callenddate;
+	switch_time_t calltransferdate;
+	switch_call_cause_t hangupcause;
+	char *hangupcause_text;
+	char clid[80];
+	bool originated;			// Did they originate this call?
+	char dialplan[80];
+	char myuuid[37];			// 36 + 1 to hold \0
+	char destuuid[37];
+	char src[80];
+	char dst[80];
+	char srcchannel[80];
+	char dstchannel[80];
+	char ani[80];
+	char aniii[80];
+	char network_addr[40];
+	char lastapp[80];
+	char lastdata[255];
+	switch_time_t billusec;		// Yes, you heard me, we're measuring in microseconds
+	int disposition;			// Currently 0 = Busy/Unanswered, 1 = Answered
+	int amaflags;
+	switch_core_session_t *coresession;
+	                      std::list < std::pair < std::string, std::string > >chanvars_fixed;
+	                      std::map < std::string, std::string > chanvars_supp;
+	bool errorstate;			// True if there is an error writing the log
 };
 
 #endif

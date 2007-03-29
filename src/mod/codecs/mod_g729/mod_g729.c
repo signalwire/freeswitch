@@ -30,7 +30,7 @@
  *
  * mod_g729.c -- G729 Codec Module
  *
- */  
+ */
 
 static const char modname[] = "mod_g729";
 
@@ -46,15 +46,15 @@ struct g729_context {
 #endif
 
 static switch_status_t switch_g729_init(switch_codec_t *codec, switch_codec_flag_t flags,
-									  const switch_codec_settings_t *codec_settings) 
+										const switch_codec_settings_t *codec_settings)
 {
 #ifdef G729_PASSTHROUGH
 	codec->flags |= SWITCH_CODEC_FLAG_PASSTHROUGH;
-    if (codec->fmtp_in) {
-        codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->fmtp_in);
-    }
+	if (codec->fmtp_in) {
+		codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->fmtp_in);
+	}
 	return SWITCH_STATUS_SUCCESS;
-#else 
+#else
 	struct g729_context *context = NULL;
 	int encoding, decoding;
 
@@ -64,9 +64,9 @@ static switch_status_t switch_g729_init(switch_codec_t *codec, switch_codec_flag
 	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(struct g729_context))))) {
 		return SWITCH_STATUS_FALSE;
 	} else {
-        if (codec->fmtp_in) {
-            codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->fmtp_in);
-        }
+		if (codec->fmtp_in) {
+			codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->fmtp_in);
+		}
 
 		if (encoding) {
 			g729_init_coder(&context->encoder_object, 0);
@@ -84,7 +84,7 @@ static switch_status_t switch_g729_init(switch_codec_t *codec, switch_codec_flag
 #endif
 }
 
-static switch_status_t switch_g729_destroy(switch_codec_t *codec) 
+static switch_status_t switch_g729_destroy(switch_codec_t *codec)
 {
 #ifndef G729_PASSTHROUGH
 	codec->private_info = NULL;
@@ -92,17 +92,13 @@ static switch_status_t switch_g729_destroy(switch_codec_t *codec)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t switch_g729_encode(switch_codec_t *codec, 
-										switch_codec_t *other_codec, 
-										void *decoded_data,
-
-										uint32_t decoded_data_len, 
-										uint32_t decoded_rate, 
-										void *encoded_data,
-
-										uint32_t *encoded_data_len, 
-										uint32_t *encoded_rate, 
-										unsigned int *flag) 
+static switch_status_t switch_g729_encode(switch_codec_t *codec,
+										  switch_codec_t *other_codec,
+										  void *decoded_data,
+										  uint32_t decoded_data_len,
+										  uint32_t decoded_rate,
+										  void *encoded_data,
+										  uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
 {
 #ifdef G729_PASSTHROUGH
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
@@ -117,7 +113,7 @@ static switch_status_t switch_g729_encode(switch_codec_t *codec,
 
 	if (decoded_data_len % 160 == 0) {
 		uint32_t new_len = 0;
-		INT16 * ddp = decoded_data;
+		INT16 *ddp = decoded_data;
 		char *edp = encoded_data;
 		int x;
 		int loops = (int) decoded_data_len / 160;
@@ -132,7 +128,8 @@ static switch_status_t switch_g729_encode(switch_codec_t *codec,
 		if (new_len <= *encoded_data_len) {
 			*encoded_data_len = new_len;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer overflow!!! %u >= %u\n", new_len, *encoded_data_len);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer overflow!!! %u >= %u\n", new_len,
+							  *encoded_data_len);
 			return SWITCH_STATUS_FALSE;
 		}
 	}
@@ -140,17 +137,13 @@ static switch_status_t switch_g729_encode(switch_codec_t *codec,
 #endif
 }
 
-static switch_status_t switch_g729_decode(switch_codec_t *codec, 
-										switch_codec_t *other_codec, 
-										void *encoded_data,
-
-										uint32_t encoded_data_len, 
-										uint32_t encoded_rate, 
-										void *decoded_data,
-
-										uint32_t *decoded_data_len, 
-										uint32_t *decoded_rate, 
-										unsigned int *flag) 
+static switch_status_t switch_g729_decode(switch_codec_t *codec,
+										  switch_codec_t *other_codec,
+										  void *encoded_data,
+										  uint32_t encoded_data_len,
+										  uint32_t encoded_rate,
+										  void *decoded_data,
+										  uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
 {
 #ifdef G729_PASSTHROUGH
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
@@ -189,7 +182,7 @@ static switch_status_t switch_g729_decode(switch_codec_t *codec,
 			uint32_t new_len = 0;
 
 			test = (uint8_t *) encoded_data;
-			if (*test == 0 && *(test+1) == 0) {
+			if (*test == 0 && *(test + 1) == 0) {
 				*decoded_data_len = (encoded_data_len / divisor) * 160;
 				memset(decoded_data, 0, *decoded_data_len);
 				return SWITCH_STATUS_SUCCESS;
@@ -213,55 +206,56 @@ static switch_status_t switch_g729_decode(switch_codec_t *codec,
 				return SWITCH_STATUS_FALSE;
 
 			}
-		} 
+		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "yo this frame is an odd size [%d]\n", encoded_data_len);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "yo this frame is an odd size [%d]\n",
+						  encoded_data_len);
 		return SWITCH_STATUS_FALSE;
 	}
 	return SWITCH_STATUS_SUCCESS;
 #endif
 }
 
-/* Registration */ 
+/* Registration */
 
-static const switch_codec_implementation_t g729_10ms_8k_implementation = { 
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-	/*.ianacode */ 18, 
-	/*.iananame */ "G729", 
+static const switch_codec_implementation_t g729_10ms_8k_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 18,
+	/*.iananame */ "G729",
 	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000, 
-	/*.bits_per_second */ 32000, 
-	/*.microseconds_per_frame */ 10000, 
-	/*.samples_per_frame */ 80, 
-	/*.bytes_per_frame */ 160, 
-	/*.encoded_bytes_per_frame */ 10, 
-	/*.number_of_channels */ 1, 
-	/*.pref_frames_per_packet */ 1, 
-	/*.max_frames_per_packet */ 1, 
-	/*.init */ switch_g729_init, 
-	/*.encode */ switch_g729_encode, 
-	/*.decode */ switch_g729_decode, 
-	/*.destroy */ switch_g729_destroy, 
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ 32000,
+	/*.microseconds_per_frame */ 10000,
+	/*.samples_per_frame */ 80,
+	/*.bytes_per_frame */ 160,
+	/*.encoded_bytes_per_frame */ 10,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_g729_init,
+	/*.encode */ switch_g729_encode,
+	/*.decode */ switch_g729_decode,
+	/*.destroy */ switch_g729_destroy,
 };
 
-static const switch_codec_implementation_t g729_8k_implementation = { 
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-	/*.ianacode */ 18, 
-	/*.iananame */ "G729", 
+static const switch_codec_implementation_t g729_8k_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 18,
+	/*.iananame */ "G729",
 	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000, 
-	/*.bits_per_second */ 64000, 
-	/*.microseconds_per_frame */ 20000, 
-	/*.samples_per_frame */ 160, 
-	/*.bytes_per_frame */ 320, 
-	/*.encoded_bytes_per_frame */ 20, 
-	/*.number_of_channels */ 1, 
-	/*.pref_frames_per_packet */ 1, 
-	/*.max_frames_per_packet */ 1, 
-	/*.init */ switch_g729_init, 
-	/*.encode */ switch_g729_encode, 
-	/*.decode */ switch_g729_decode, 
-	/*.destroy */ switch_g729_destroy, 
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ 64000,
+	/*.microseconds_per_frame */ 20000,
+	/*.samples_per_frame */ 160,
+	/*.bytes_per_frame */ 320,
+	/*.encoded_bytes_per_frame */ 20,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_g729_init,
+	/*.encode */ switch_g729_encode,
+	/*.decode */ switch_g729_decode,
+	/*.destroy */ switch_g729_destroy,
 	&g729_10ms_8k_implementation
 };
 
@@ -271,22 +265,22 @@ static const switch_codec_interface_t g729_codec_interface = {
 	/*.next */ NULL
 };
 
-static switch_loadable_module_interface_t g729_module_interface = { 
+static switch_loadable_module_interface_t g729_module_interface = {
 	/*.module_name */ "g729",
-	/*.endpoint_interface */ NULL, 
-	/*.timer_interface */ NULL, 
-	/*.dialplan_interface */ NULL, 
-	/*.codec_interface */ &g729_codec_interface, 
-	/*.application_interface */ NULL 
+	/*.endpoint_interface */ NULL,
+	/*.timer_interface */ NULL,
+	/*.dialplan_interface */ NULL,
+	/*.codec_interface */ &g729_codec_interface,
+	/*.application_interface */ NULL
 };
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													 char *filename)
+													   char *filename)
 {
-	/* connect my internal structure to the blank pointer passed to me */ 
+	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &g729_module_interface;
 
-	/* indicate that the module should continue to be loaded */ 
+	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
 

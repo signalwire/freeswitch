@@ -35,7 +35,7 @@
 static uint32_t buffer_id = 0;
 
 typedef enum {
-	SWITCH_BUFFER_FLAG_DYNAMIC = (1 <<  0)
+	SWITCH_BUFFER_FLAG_DYNAMIC = (1 << 0)
 } switch_buffer_flag_t;
 
 struct switch_buffer {
@@ -50,7 +50,8 @@ struct switch_buffer {
 	uint32_t id;
 };
 
-SWITCH_DECLARE(switch_status_t) switch_buffer_create(switch_memory_pool_t *pool, switch_buffer_t **buffer, switch_size_t max_len)
+SWITCH_DECLARE(switch_status_t) switch_buffer_create(switch_memory_pool_t *pool, switch_buffer_t **buffer,
+													 switch_size_t max_len)
 {
 	switch_buffer_t *new_buffer;
 
@@ -67,8 +68,7 @@ SWITCH_DECLARE(switch_status_t) switch_buffer_create(switch_memory_pool_t *pool,
 
 SWITCH_DECLARE(switch_status_t) switch_buffer_create_dynamic(switch_buffer_t **buffer,
 															 switch_size_t blocksize,
-															 switch_size_t start_len,
-															 switch_size_t max_len)
+															 switch_size_t start_len, switch_size_t max_len)
 {
 	switch_buffer_t *new_buffer;
 
@@ -89,7 +89,7 @@ SWITCH_DECLARE(switch_status_t) switch_buffer_create_dynamic(switch_buffer_t **b
 		new_buffer->blocksize = blocksize;
 		new_buffer->head = new_buffer->data;
 		switch_set_flag(new_buffer, SWITCH_BUFFER_FLAG_DYNAMIC);
-		
+
 		*buffer = new_buffer;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -144,8 +144,8 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_toss(switch_buffer_t *buffer, switch
 		reading = buffer->used;
 	}
 
-    buffer->used -= reading;
-    buffer->head += reading;
+	buffer->used -= reading;
+	buffer->head += reading;
 
 	return buffer->used;
 }
@@ -182,7 +182,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, void 
 	assert(buffer != NULL);
 	assert(data != NULL);
 	assert(buffer->data != NULL);
-	
+
 	if (!datalen) {
 		return buffer->used;
 	}
@@ -198,11 +198,11 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, void 
 	freespace = buffer->datalen - buffer->used;
 
 	/*
-	if (buffer->data != buffer->head) {
-		memmove(buffer->data, buffer->head, buffer->used);
-		buffer->head = buffer->data;
-	}
-	*/
+	   if (buffer->data != buffer->head) {
+	   memmove(buffer->data, buffer->head, buffer->used);
+	   buffer->head = buffer->data;
+	   }
+	 */
 	if (switch_test_flag(buffer, SWITCH_BUFFER_FLAG_DYNAMIC)) {
 		if (freespace < datalen) {
 			switch_size_t new_size, new_block_size;
@@ -221,7 +221,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, void 
 			buffer->datalen = new_size;
 		}
 	}
-	
+
 	freespace = buffer->datalen - buffer->used;
 
 	if (freespace < datalen) {
@@ -239,7 +239,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, void 
 SWITCH_DECLARE(void) switch_buffer_zero(switch_buffer_t *buffer)
 {
 	assert(buffer != NULL);
-    assert(buffer->data != NULL);
+	assert(buffer->data != NULL);
 
 	buffer->used = 0;
 	buffer->head = buffer->data;

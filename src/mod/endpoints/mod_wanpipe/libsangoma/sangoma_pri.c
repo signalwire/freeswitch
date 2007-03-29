@@ -23,20 +23,21 @@
 static __inline int gettimeofday(struct timeval *tp, void *nothing)
 {
 #ifdef WITHOUT_MM_LIB
-  SYSTEMTIME st;
-  time_t tt;
-  struct tm tmtm;
-  /* mktime converts local to UTC */
-  GetLocalTime (&st);
-  tmtm.tm_sec = st.wSecond;
-  tmtm.tm_min = st.wMinute;
-  tmtm.tm_hour = st.wHour;
-  tmtm.tm_mday = st.wDay;
-  tmtm.tm_mon = st.wMonth - 1;
-  tmtm.tm_year = st.wYear - 1900;  tmtm.tm_isdst = -1;
-  tt = mktime (&tmtm);
-  tp->tv_sec = tt;
-  tp->tv_usec = st.wMilliseconds * 1000;
+	SYSTEMTIME st;
+	time_t tt;
+	struct tm tmtm;
+	/* mktime converts local to UTC */
+	GetLocalTime(&st);
+	tmtm.tm_sec = st.wSecond;
+	tmtm.tm_min = st.wMinute;
+	tmtm.tm_hour = st.wHour;
+	tmtm.tm_mday = st.wDay;
+	tmtm.tm_mon = st.wMonth - 1;
+	tmtm.tm_year = st.wYear - 1900;
+	tmtm.tm_isdst = -1;
+	tt = mktime(&tmtm);
+	tp->tv_sec = tt;
+	tp->tv_usec = st.wMilliseconds * 1000;
 #else
   /**
    ** The earlier time calculations using GetLocalTime
@@ -44,18 +45,18 @@ static __inline int gettimeofday(struct timeval *tp, void *nothing)
    ** of multimedia apis offer a better time resolution
    ** of 1ms.Need to link against winmm.lib for this
    **/
-  unsigned long Ticks = 0;
-  unsigned long Sec =0;
-  unsigned long Usec = 0;
-  Ticks = timeGetTime();
+	unsigned long Ticks = 0;
+	unsigned long Sec = 0;
+	unsigned long Usec = 0;
+	Ticks = timeGetTime();
 
-  Sec = Ticks/1000;
-  Usec = (Ticks - (Sec*1000))*1000;
-  tp->tv_sec = Sec;
-  tp->tv_usec = Usec;
+	Sec = Ticks / 1000;
+	Usec = (Ticks - (Sec * 1000)) * 1000;
+	tp->tv_sec = Sec;
+	tp->tv_usec = Usec;
 #endif /* WITHOUT_MM_LIB */
-  (void)nothing;
-  return 0;
+	(void) nothing;
+	return 0;
 }
 #endif /* WIN32 */
 #endif /* HAVE_GETTIMEOFDAY */
@@ -84,37 +85,37 @@ static struct sangoma_pri_event_list SANGOMA_PRI_EVENT_LIST[] = {
 
 
 char *sangoma_pri_event_str(sangoma_pri_event_t event_id)
-{ 
+{
 	return SANGOMA_PRI_EVENT_LIST[event_id].name;
 }
 
 static int __pri_sangoma_read(struct pri *pri, void *buf, int buflen)
 {
 	unsigned char tmpbuf[sizeof(wp_tdm_api_rx_hdr_t)];
-	
+
 
 	/* NOTE: This code will be different for A104 
 	 *       A104   receives data + 2byte CRC + 1 byte flag 
-	 *       A101/2 receives data only */ 
-	
-	int res = sangoma_readmsg_socket((sng_fd_t)(pri->fd), 
-					 tmpbuf, sizeof(wp_tdm_api_rx_hdr_t), 
-					 buf, buflen, 
-					 0);
-	if (res > 0){
+	 *       A101/2 receives data only */
+
+	int res = sangoma_readmsg_socket((sng_fd_t) (pri->fd),
+									 tmpbuf, sizeof(wp_tdm_api_rx_hdr_t),
+									 buf, buflen,
+									 0);
+	if (res > 0) {
 #ifdef WANPIPE_LEGACY_A104
 		/* Prior 2.3.4 release A104 API passed up
-                 * 3 extra bytes: 2 CRC + 1 FLAG,
-                 * PRI is expecting only 2 CRC bytes, thus we
-                 * must remove 1 flag byte */
+		 * 3 extra bytes: 2 CRC + 1 FLAG,
+		 * PRI is expecting only 2 CRC bytes, thus we
+		 * must remove 1 flag byte */
 		res--;
 #else
-		/* Add 2 byte CRC and set it to ZERO */ 
-		memset(&((unsigned char*)buf)[res],0,2);
-		res+=2;
+		/* Add 2 byte CRC and set it to ZERO */
+		memset(&((unsigned char *) buf)[res], 0, 2);
+		res += 2;
 #endif
-	}else{
-		res=0;
+	} else {
+		res = 0;
 	}
 
 	return res;
@@ -126,25 +127,23 @@ static int __pri_sangoma_write(struct pri *pri, void *buf, int buflen)
 	int res;
 
 
-	memset(&tmpbuf[0],0,sizeof(wp_tdm_api_rx_hdr_t));	
+	memset(&tmpbuf[0], 0, sizeof(wp_tdm_api_rx_hdr_t));
 
-	if (buflen < 1){
+	if (buflen < 1) {
 		/* HDLC Frame must be greater than 2byte CRC */
-		fprintf(stderr,"%s: Got short frame %i\n",__FUNCTION__,buflen);
+		fprintf(stderr, "%s: Got short frame %i\n", __FUNCTION__, buflen);
 		return 0;
 	}
 
 	/* FIXME: This might cause problems with other libraries
 	 * We must remove 2 bytes from buflen because
 	 * libpri sends 2 fake CRC bytes */
-	res=sangoma_sendmsg_socket((sng_fd_t)(pri->fd),
-				   tmpbuf, sizeof(wp_tdm_api_rx_hdr_t),
-				   buf, (unsigned short)buflen-2,
-				   0);	
-	if (res > 0){
-		res=buflen;
+	res = sangoma_sendmsg_socket((sng_fd_t) (pri->fd),
+								 tmpbuf, sizeof(wp_tdm_api_rx_hdr_t), buf, (unsigned short) buflen - 2, 0);
+	if (res > 0) {
+		res = buflen;
 	}
-	
+
 	return res;
 }
 
@@ -155,10 +154,10 @@ int sangoma_init_pri(struct sangoma_pri *spri, int span, int dchan, int swtype, 
 
 	memset(spri, 0, sizeof(struct sangoma_pri));
 
-	if((dfd = sangoma_open_tdmapi_span_chan(span, dchan)) < 0) {
+	if ((dfd = sangoma_open_tdmapi_span_chan(span, dchan)) < 0) {
 		fprintf(stderr, "Unable to open DCHAN %d for span %d (%s)\n", dchan, span, strerror(errno));
 	} else {
-		  if ((spri->pri = pri_new_cb((int)dfd, node, swtype, __pri_sangoma_read, __pri_sangoma_write, NULL))){
+		if ((spri->pri = pri_new_cb((int) dfd, node, swtype, __pri_sangoma_read, __pri_sangoma_write, NULL))) {
 			spri->span = span;
 			pri_set_debug(spri->pri, debug);
 			ret = 0;
@@ -173,10 +172,10 @@ int sangoma_init_pri(struct sangoma_pri *spri, int span, int dchan, int swtype, 
 int sangoma_one_loop(struct sangoma_pri *spri)
 {
 	fd_set rfds, efds;
-	struct timeval now = {0,0}, *next;
+	struct timeval now = { 0, 0 }, *next;
 	pri_event *event;
-    int sel;
-	
+	int sel;
+
 	if (spri->on_loop) {
 		spri->on_loop(spri);
 	}
@@ -223,10 +222,11 @@ int sangoma_one_loop(struct sangoma_pri *spri)
 	if (event) {
 		event_handler handler;
 		/* 0 is catchall event handler */
-		if ((handler = spri->eventmap[event->e] ? spri->eventmap[event->e] : spri->eventmap[0] ? spri->eventmap[0] : NULL)) {
+		if ((handler =
+			 spri->eventmap[event->e] ? spri->eventmap[event->e] : spri->eventmap[0] ? spri->eventmap[0] : NULL)) {
 			handler(spri, event->e, event);
 		} else {
-			fprintf(stderr,"No event handler found for event %d.\n", event->e);
+			fprintf(stderr, "No event handler found for event %d.\n", event->e);
 		}
 	}
 
@@ -237,23 +237,22 @@ int sangoma_run_pri(struct sangoma_pri *spri)
 {
 	int ret = 0;
 
-	for (;;){
-		ret=sangoma_one_loop(spri);
-		if (ret < 0){
+	for (;;) {
+		ret = sangoma_one_loop(spri);
+		if (ret < 0) {
 
-#ifndef WIN32 //This needs to be adressed fror WIN32 still
-			if (errno == EINTR){
+#ifndef WIN32					//This needs to be adressed fror WIN32 still
+			if (errno == EINTR) {
 				/* Igonore an interrupted system call */
 				continue;
 			}
-#endif	
-			printf("Error = %i\n",ret);
+#endif
+			printf("Error = %i\n", ret);
 			perror("Sangoma Run Pri: ");
-			break;		
+			break;
 		}
 	}
 
 	return ret;
 
 }
-

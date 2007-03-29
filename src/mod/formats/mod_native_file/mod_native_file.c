@@ -63,7 +63,8 @@ static switch_status_t native_file_file_open(switch_file_handle_t *handle, char 
 		flags |= SWITCH_FOPEN_READ;
 	}
 
-	if (switch_file_open(&context->fd, path, flags, SWITCH_FPROT_UREAD|SWITCH_FPROT_UWRITE, handle->memory_pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_file_open(&context->fd, path, flags, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, handle->memory_pool) !=
+		SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", path);
 		return SWITCH_STATUS_GENERR;
 	}
@@ -78,7 +79,7 @@ static switch_status_t native_file_file_open(switch_file_handle_t *handle, char 
 	handle->seekable = 1;
 	handle->speed = 0;
 	handle->private_info = context;
-	handle->flags |=  SWITCH_FILE_NATIVE;
+	handle->flags |= SWITCH_FILE_NATIVE;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File [%s] %dhz\n", path, handle->samplerate);
 
 
@@ -88,7 +89,7 @@ static switch_status_t native_file_file_open(switch_file_handle_t *handle, char 
 static switch_status_t native_file_file_close(switch_file_handle_t *handle)
 {
 	native_file_context *context = handle->private_info;
-	
+
 	if (context->fd) {
 		switch_file_close(context->fd);
 		context->fd = NULL;
@@ -97,12 +98,13 @@ static switch_status_t native_file_file_close(switch_file_handle_t *handle)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t native_file_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
+static switch_status_t native_file_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples,
+											 int whence)
 {
 	native_file_context *context = handle->private_info;
-	
+
 	switch_file_seek(context->fd, whence, &samples);
-	
+
 	return SWITCH_STATUS_FALSE;
 
 }
@@ -121,21 +123,23 @@ static switch_status_t native_file_file_write(switch_file_handle_t *handle, void
 	return switch_file_write(context->fd, data, len);
 }
 
-static switch_status_t native_file_file_set_string(switch_file_handle_t *handle, switch_audio_col_t col, const char *string)
+static switch_status_t native_file_file_set_string(switch_file_handle_t *handle, switch_audio_col_t col,
+												   const char *string)
 {
 	//native_file_context *context = handle->private_info;
 
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status_t native_file_file_get_string(switch_file_handle_t *handle, switch_audio_col_t col, const char **string)
+static switch_status_t native_file_file_get_string(switch_file_handle_t *handle, switch_audio_col_t col,
+												   const char **string)
 {
 	return SWITCH_STATUS_FALSE;
 }
 
 /* Registration */
 
-static char *supported_formats[SWITCH_MAX_CODECS] = {0};
+static char *supported_formats[SWITCH_MAX_CODECS] = { 0 };
 
 static switch_file_interface_t native_file_file_interface = {
 	/*.interface_name */ modname,
@@ -163,14 +167,15 @@ static switch_loadable_module_interface_t native_file_module_interface = {
 
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
+													   char *filename)
 {
 
 	const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];
 	uint32_t num_codecs = switch_loadable_module_get_codecs(NULL, codecs, sizeof(codecs) / sizeof(codecs[0]));
 	uint32_t x;
 
-	for (x = 0 ; x < num_codecs; x++) {
+	for (x = 0; x < num_codecs; x++) {
 		supported_formats[x] = codecs[x]->iananame;
 	}
 

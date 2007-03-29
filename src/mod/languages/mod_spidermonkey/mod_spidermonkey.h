@@ -52,18 +52,14 @@
 #include "jsscript.h"
 
 SWITCH_BEGIN_EXTERN_C
-
 #define JS_BUFFER_SIZE 1024 * 32
 #define JS_BLOCK_SIZE JS_BUFFER_SIZE
-
 #ifdef __ICC
 #pragma warning (disable:310 193 1418)
 #endif
-
 #ifdef _MSC_VER
 #pragma warning(disable: 4311)
 #endif
-
 #ifdef WIN32
 #if defined(SWITCH_SM_DECLARE_STATIC)
 #define SWITCH_SM_DECLARE(type)		type __cdecl
@@ -75,8 +71,7 @@ SWITCH_BEGIN_EXTERN_C
 #else //not win32
 #define SWITCH_SM_DECLARE(type) type
 #endif
-
-int eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval)
+int eval_some_js(char *code, JSContext * cx, JSObject * obj, jsval * rval)
 {
 	JSScript *script = NULL;
 	char *cptr;
@@ -101,22 +96,22 @@ int eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval)
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Open File: %s\n", script_name);
 			}
-		} 
+		}
 	}
-	
+
 	if (script) {
 		result = JS_ExecuteScript(cx, obj, script, rval) == JS_TRUE ? 1 : 0;
 		JS_DestroyScript(cx, script);
 	} else {
 		result = -1;
 	}
-	
+
 	switch_safe_free(path);
 	return result;
 }
 
 
-typedef switch_status_t(*spidermonkey_load_t)(JSContext *cx, JSObject *obj);
+typedef switch_status_t (*spidermonkey_load_t) (JSContext * cx, JSObject * obj);
 
 struct sm_module_interface {
 	const char *name;
@@ -125,7 +120,7 @@ struct sm_module_interface {
 };
 
 typedef struct sm_module_interface sm_module_interface_t;
-typedef switch_status_t(*spidermonkey_init_t)(const sm_module_interface_t **module_interface);
+typedef switch_status_t (*spidermonkey_init_t) (const sm_module_interface_t ** module_interface);
 
 struct js_session {
 	switch_core_session_t *session;
@@ -139,6 +134,4 @@ struct js_session {
 
 
 SWITCH_END_EXTERN_C
-
 #endif
-

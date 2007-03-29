@@ -38,24 +38,25 @@ static const char modname[] = "mod_playback";
   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
    if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 */
-static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
+static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf,
+							   unsigned int buflen)
 {
 
-	
+
 	switch (itype) {
-	case SWITCH_INPUT_TYPE_DTMF: {
-		char *dtmf = (char *) input;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digits %s\n", dtmf);
-		
-		if (*dtmf == '*') {
-			return SWITCH_STATUS_BREAK;
+	case SWITCH_INPUT_TYPE_DTMF:{
+			char *dtmf = (char *) input;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digits %s\n", dtmf);
+
+			if (*dtmf == '*') {
+				return SWITCH_STATUS_BREAK;
+			}
 		}
-	}
 		break;
 	default:
 		break;
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -64,28 +65,28 @@ static void speak_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
 	char buf[10];
-	char *argv[4] = {0};
+	char *argv[4] = { 0 };
 	int argc;
 	char *engine = NULL;
 	char *voice = NULL;
 	char *text = NULL;
 	char *mydata = NULL;
 	switch_codec_t *codec;
-    switch_input_args_t args = {0};
+	switch_input_args_t args = { 0 };
 
 	codec = switch_core_session_get_read_codec(session);
 	assert(codec != NULL);
 
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
+	assert(channel != NULL);
 
 	mydata = switch_core_session_strdup(session, data);
-	argc = switch_separate_string(mydata, '|', argv, sizeof(argv)/sizeof(argv[0]));
+	argc = switch_separate_string(mydata, '|', argv, sizeof(argv) / sizeof(argv[0]));
 
 	engine = argv[0];
 	voice = argv[1];
 	text = argv[2];
-	
+
 	if (!(engine && voice && text)) {
 		if (!engine) {
 			engine = "NULL";
@@ -102,27 +103,27 @@ static void speak_function(switch_core_session_t *session, char *data)
 
 	switch_channel_pre_answer(channel);
 
-    args.input_callback = on_dtmf;
-    args.buf = buf;
-    args.buflen = sizeof(buf);
+	args.input_callback = on_dtmf;
+	args.buf = buf;
+	args.buflen = sizeof(buf);
 	switch_ivr_speak_text(session, engine, voice, codec->implementation->samples_per_second, text, &args);
-	
+
 }
 
 static void playback_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
 	char *file_name = NULL;
-    switch_input_args_t args = {0};
+	switch_input_args_t args = { 0 };
 
 	file_name = switch_core_session_strdup(session, data);
 
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
+	assert(channel != NULL);
 
 	switch_channel_pre_answer(channel);
 
-    args.input_callback = on_dtmf;
+	args.input_callback = on_dtmf;
 	switch_ivr_play_file(session, NULL, file_name, &args);
 
 }
@@ -132,21 +133,21 @@ static void record_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
 	switch_status_t status;
-    uint32_t limit = 0;
-    char *path;
-    char *p;
-    switch_input_args_t args = {0};
+	uint32_t limit = 0;
+	char *path;
+	char *p;
+	switch_input_args_t args = { 0 };
 
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
+	assert(channel != NULL);
 
-    path = switch_core_session_strdup(session, data);
-    if ((p = strchr(path, '+'))) {
-        *p++ = '\0';
-        limit = atoi(p);
-    }
+	path = switch_core_session_strdup(session, data);
+	if ((p = strchr(path, '+'))) {
+		*p++ = '\0';
+		limit = atoi(p);
+	}
 
-    args.input_callback = on_dtmf;
+	args.input_callback = on_dtmf;
 	status = switch_ivr_record_file(session, NULL, path, &args, limit);
 
 	if (!switch_channel_ready(channel) || (status != SWITCH_STATUS_SUCCESS && !SWITCH_STATUS_IS_BREAK(status))) {
@@ -159,9 +160,9 @@ static void record_session_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
+	assert(channel != NULL);
 
-	switch_ivr_record_session(session, data, NULL);	
+	switch_ivr_record_session(session, data, NULL);
 }
 
 
@@ -169,9 +170,9 @@ static void stop_record_session_function(switch_core_session_t *session, char *d
 {
 	switch_channel_t *channel;
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
+	assert(channel != NULL);
 
-	switch_ivr_stop_record_session(session, data);	
+	switch_ivr_stop_record_session(session, data);
 }
 
 
@@ -223,7 +224,7 @@ static const switch_application_interface_t playback_application_interface = {
 	/* short_desc */ "Playback File",
 	/* syntax */ "<path>",
 	/* flags */ SAF_NONE,
-	/*.next*/	&stop_record_session_application_interface
+	/*.next */ &stop_record_session_application_interface
 };
 
 static const switch_loadable_module_interface_t mod_playback_module_interface = {
@@ -235,7 +236,8 @@ static const switch_loadable_module_interface_t mod_playback_module_interface = 
 	/*.application_interface */ &playback_application_interface
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
+													   char *filename)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */

@@ -38,7 +38,7 @@ static void echo_function(switch_core_session_t *session, char *data)
 	switch_channel_t *channel;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);	
+	assert(channel != NULL);
 
 	switch_channel_answer(channel);
 
@@ -67,7 +67,8 @@ static switch_loadable_module_interface_t echo_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
+													   char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &echo_module_interface;

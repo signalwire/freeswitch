@@ -28,16 +28,16 @@
  *
  * mod_lpc10.c -- LPC10 Codec Module
  *
- */  
+ */
 
 #include "switch.h"
 #include "lpc10.h"
 
 enum {
 	SamplesPerFrame = 180,
-	BitsPerFrame    = 54,
-	BytesPerFrame   = (BitsPerFrame+7)/8,
-	BitsPerSecond   = 2400
+	BitsPerFrame = 54,
+	BytesPerFrame = (BitsPerFrame + 7) / 8,
+	BitsPerSecond = 2400
 };
 
 #define   SampleValueScale 32768.0
@@ -52,7 +52,7 @@ struct lpc10_context {
 };
 
 static switch_status_t switch_lpc10_init(switch_codec_t *codec, switch_codec_flag_t flags,
-									  const switch_codec_settings_t *codec_settings) 
+										 const switch_codec_settings_t *codec_settings)
 {
 	uint32_t encoding, decoding;
 	struct lpc10_context *context = NULL;
@@ -78,44 +78,40 @@ static switch_status_t switch_lpc10_init(switch_codec_t *codec, switch_codec_fla
 	}
 }
 
-static switch_status_t switch_lpc10_destroy(switch_codec_t *codec) 
+static switch_status_t switch_lpc10_destroy(switch_codec_t *codec)
 {
 	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t switch_lpc10_encode(switch_codec_t *codec, 
-										switch_codec_t *other_codec, 
-										void *decoded_data,
-
-										uint32_t decoded_data_len, 
-										uint32_t decoded_rate, 
-										void *encoded_data,
-
-										uint32_t *encoded_data_len, 
-										uint32_t *encoded_rate, 
-										unsigned int *flag) 
+static switch_status_t switch_lpc10_encode(switch_codec_t *codec,
+										   switch_codec_t *other_codec,
+										   void *decoded_data,
+										   uint32_t decoded_data_len,
+										   uint32_t decoded_rate,
+										   void *encoded_data,
+										   uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
 {
 	struct lpc10_context *context = codec->private_info;
 	uint8_t i;
 	int32_t bits[BitsPerFrame];
 	real speech[SamplesPerFrame];
-	const short *sampleBuffer = (const short *)decoded_data;
-	unsigned char *buffer = (unsigned char *)encoded_data;
+	const short *sampleBuffer = (const short *) decoded_data;
+	unsigned char *buffer = (unsigned char *) encoded_data;
 
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
 
 	for (i = 0; i < SamplesPerFrame; i++)
-		speech[i] = (real)(sampleBuffer[i]/SampleValueScale);
+		speech[i] = (real) (sampleBuffer[i] / SampleValueScale);
 
 	lpc10_encode(speech, bits, &context->encoder_object);
 
 	memset(encoded_data, 0, BytesPerFrame);
 	for (i = 0; i < BitsPerFrame; i++) {
 		if (bits[i])
-			buffer[i>>3] |= 1 << (i&7);
+			buffer[i >> 3] |= 1 << (i & 7);
 	}
 
 	*encoded_data_len = BytesPerFrame;
@@ -123,91 +119,87 @@ static switch_status_t switch_lpc10_encode(switch_codec_t *codec,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t switch_lpc10_decode(switch_codec_t *codec, 
-										switch_codec_t *other_codec, 
-										void *encoded_data,
-
-										uint32_t encoded_data_len, 
-										uint32_t encoded_rate, 
-										void *decoded_data,
-
-										uint32_t *decoded_data_len, 
-										uint32_t *decoded_rate, 
-										unsigned int *flag) 
+static switch_status_t switch_lpc10_decode(switch_codec_t *codec,
+										   switch_codec_t *other_codec,
+										   void *encoded_data,
+										   uint32_t encoded_data_len,
+										   uint32_t encoded_rate,
+										   void *decoded_data,
+										   uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
 {
 	struct lpc10_context *context = codec->private_info;
 	int i;
 	INT32 bits[BitsPerFrame];
 	real speech[SamplesPerFrame];
-	short *sampleBuffer = (short *)decoded_data;
-	const unsigned char *buffer = (const unsigned char *)encoded_data;
+	short *sampleBuffer = (short *) decoded_data;
+	const unsigned char *buffer = (const unsigned char *) encoded_data;
 
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
 
 	for (i = 0; i < BitsPerFrame; i++)
-		bits[i] = (buffer[i>>3]&(1<<(i&7))) != 0;
+		bits[i] = (buffer[i >> 3] & (1 << (i & 7))) != 0;
 
 	lpc10_decode(bits, speech, &context->decoder_object);
 
 	for (i = 0; i < SamplesPerFrame; i++) {
-		real sample = (real)(speech[i]*SampleValueScale);
+		real sample = (real) (speech[i] * SampleValueScale);
 		if (sample < MinSampleValue)
 			sample = MinSampleValue;
 		else if (sample > MaxSampleValue)
 			sample = MaxSampleValue;
-		sampleBuffer[i] = (short)sample;
+		sampleBuffer[i] = (short) sample;
 	}
 
-	*decoded_data_len = SamplesPerFrame*2;
+	*decoded_data_len = SamplesPerFrame * 2;
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/* Registration */ 
+/* Registration */
 
-static const switch_codec_implementation_t lpc10_implementation = { 
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-	/*.ianacode */ 7, 
-	/*.iananame */ "LPC", 
+static const switch_codec_implementation_t lpc10_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 7,
+	/*.iananame */ "LPC",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
-	/*.bits_per_second */ 240, 
-	/*.microseconds_per_frame */ 22500, 
-	/*.samples_per_frame */ 180, 
-	/*.bytes_per_frame */ 360, 
-	/*.encoded_bytes_per_frame */ 7, 
-	/*.number_of_channels */ 1, 
-	/*.pref_frames_per_packet */ 1, 
-	/*.max_frames_per_packet */ 1, 
-	/*.init */ switch_lpc10_init, 
-	/*.encode */ switch_lpc10_encode, 
-	/*.decode */ switch_lpc10_decode, 
-	/*.destroy */ switch_lpc10_destroy, 
+	/*.bits_per_second */ 240,
+	/*.microseconds_per_frame */ 22500,
+	/*.samples_per_frame */ 180,
+	/*.bytes_per_frame */ 360,
+	/*.encoded_bytes_per_frame */ 7,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_lpc10_init,
+	/*.encode */ switch_lpc10_encode,
+	/*.decode */ switch_lpc10_decode,
+	/*.destroy */ switch_lpc10_destroy,
 };
 
-const switch_codec_interface_t lpc10_codec_interface = { 
-	/*.interface_name */ "LPC-10 2.4kbps", 
-	/*.implementations */ &lpc10_implementation, 
+const switch_codec_interface_t lpc10_codec_interface = {
+	/*.interface_name */ "LPC-10 2.4kbps",
+	/*.implementations */ &lpc10_implementation,
 };
 
-static switch_loadable_module_interface_t lpc10_module_interface = { 
-	/*.module_name */ modname, 
-	/*.endpoint_interface */ NULL, 
-	/*.timer_interface */ NULL, 
-	/*.dialplan_interface */ NULL, 
-	/*.codec_interface */ &lpc10_codec_interface, 
-	/*.application_interface */ NULL 
+static switch_loadable_module_interface_t lpc10_module_interface = {
+	/*.module_name */ modname,
+	/*.endpoint_interface */ NULL,
+	/*.timer_interface */ NULL,
+	/*.dialplan_interface */ NULL,
+	/*.codec_interface */ &lpc10_codec_interface,
+	/*.application_interface */ NULL
 };
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													 char *filename)
+													   char *filename)
 {
-	/* connect my internal structure to the blank pointer passed to me */ 
+	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &lpc10_module_interface;
 
-	/* indicate that the module should continue to be loaded */ 
+	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
 

@@ -35,16 +35,16 @@ static const char modname[] = "Skel";
 
 /* Skel Object */
 /*********************************************************************************/
-static JSBool skel_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+static JSBool skel_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	return JS_TRUE;
 }
 
-static void skel_destroy(JSContext *cx, JSObject *obj)
+static void skel_destroy(JSContext * cx, JSObject * obj)
 {
 }
 
-static JSBool skel_my_method(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+static JSBool skel_my_method(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	return JS_FALSE;
 }
@@ -60,12 +60,12 @@ static JSFunctionSpec skel_methods[] = {
 
 
 static JSPropertySpec skel_props[] = {
-	{"name", SKEL_NAME, JSPROP_READONLY|JSPROP_PERMANENT}, 
+	{"name", SKEL_NAME, JSPROP_READONLY | JSPROP_PERMANENT},
 	{0}
 };
 
 
-static JSBool skel_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+static JSBool skel_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval * vp)
 {
 	JSBool res = JS_TRUE;
 
@@ -73,37 +73,27 @@ static JSBool skel_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp
 }
 
 JSClass skel_class = {
-	modname, JSCLASS_HAS_PRIVATE, 
-	JS_PropertyStub,  JS_PropertyStub,	skel_getProperty,  JS_PropertyStub, 
-	JS_EnumerateStub, JS_ResolveStub,	JS_ConvertStub,	  skel_destroy, NULL, NULL, NULL,
+	modname, JSCLASS_HAS_PRIVATE,
+	JS_PropertyStub, JS_PropertyStub, skel_getProperty, JS_PropertyStub,
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, skel_destroy, NULL, NULL, NULL,
 	skel_construct
 };
 
 
-switch_status_t spidermonkey_load(JSContext *cx, JSObject *obj)
+switch_status_t spidermonkey_load(JSContext * cx, JSObject * obj)
 {
-	JS_InitClass(cx,
-				 obj,
-				 NULL,
-				 &skel_class,
-				 skel_construct,
-				 3,
-				 skel_props,
-				 skel_methods,
-				 skel_props,
-				 skel_methods
-				 );
+	JS_InitClass(cx, obj, NULL, &skel_class, skel_construct, 3, skel_props, skel_methods, skel_props, skel_methods);
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
 const sm_module_interface_t skel_module_interface = {
 	/*.name = */ modname,
-	/*.spidermonkey_load*/ spidermonkey_load,
-	/*.next*/ NULL
+	/*.spidermonkey_load */ spidermonkey_load,
+	/*.next */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) spidermonkey_init(const sm_module_interface_t **module_interface)
+SWITCH_MOD_DECLARE(switch_status_t) spidermonkey_init(const sm_module_interface_t ** module_interface)
 {
 	*module_interface = &skel_module_interface;
 	return SWITCH_STATUS_SUCCESS;

@@ -87,8 +87,8 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, char *pat
 	map = switch_core_hash_find(globals.format_hash, ext);
 
 	if (mode & SFM_WRITE) {
-		sf_count_t  frames = 0 ;
-		
+		sf_count_t frames = 0;
+
 		context->sfinfo.channels = handle->channels;
 		context->sfinfo.samplerate = handle->samplerate;
 		if (handle->samplerate == 8000 || handle->samplerate == 16000) {
@@ -99,9 +99,9 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, char *pat
 			context->sfinfo.format |= SF_FORMAT_PCM_32;
 		}
 
-        sf_command (context->handle, SFC_FILE_TRUNCATE, &frames, sizeof (frames));
-	} 
-	
+		sf_command(context->handle, SFC_FILE_TRUNCATE, &frames, sizeof(frames));
+	}
+
 	if (map) {
 		context->sfinfo.format |= map->format;
 	}
@@ -134,23 +134,25 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, char *pat
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_ALAW;
 		context->sfinfo.channels = 1;
 		context->sfinfo.samplerate = 8000;
-	} 
-	
-	if ((mode & SFM_WRITE) && sf_format_check (&context->sfinfo) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error : file format is invalid (0x%08X).\n", context->sfinfo.format);
+	}
+
+	if ((mode & SFM_WRITE) && sf_format_check(&context->sfinfo) == 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error : file format is invalid (0x%08X).\n",
+						  context->sfinfo.format);
 		return SWITCH_STATUS_GENERR;
 	};
-	
+
 	if ((context->handle = sf_open(path, mode, &context->sfinfo)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s] [%s]\n", path,
-							  sf_strerror(context->handle));
+						  sf_strerror(context->handle));
 		return SWITCH_STATUS_GENERR;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opening File [%s] %dhz\n", path, context->sfinfo.samplerate);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opening File [%s] %dhz\n", path,
+					  context->sfinfo.samplerate);
 	handle->samples = (unsigned int) context->sfinfo.frames;
 	handle->samplerate = context->sfinfo.samplerate;
-	handle->channels = (uint8_t)context->sfinfo.channels;
+	handle->channels = (uint8_t) context->sfinfo.channels;
 	handle->format = context->sfinfo.format;
 	handle->sections = context->sfinfo.sections;
 	handle->seekable = context->sfinfo.seekable;
@@ -169,7 +171,8 @@ static switch_status_t sndfile_file_close(switch_file_handle_t *handle)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t sndfile_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
+static switch_status_t sndfile_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples,
+										 int whence)
 {
 	sndfile_context *context = handle->private_info;
 
@@ -233,15 +236,16 @@ static switch_status_t sndfile_file_set_string(switch_file_handle_t *handle, swi
 {
 	sndfile_context *context = handle->private_info;
 
-	return sf_set_string(context->handle, (int)col, string) ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
+	return sf_set_string(context->handle, (int) col, string) ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t sndfile_file_get_string(switch_file_handle_t *handle, switch_audio_col_t col, const char **string)
+static switch_status_t sndfile_file_get_string(switch_file_handle_t *handle, switch_audio_col_t col,
+											   const char **string)
 {
 	sndfile_context *context = handle->private_info;
 	const char *s;
 
-	if ((s = sf_get_string(context->handle, (int)col))) {
+	if ((s = sf_get_string(context->handle, (int) col))) {
 		*string = s;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -287,17 +291,18 @@ static switch_status_t setup_formats(void)
 	char *extras[] = { "r8", "r16", "r24", "r32", "gsm", "ul", "al", NULL };
 	int exlen = (sizeof(extras) / sizeof(extras[0]));
 	buffer[0] = 0;
-	
+
 	sf_command(NULL, SFC_GET_LIB_VERSION, buffer, sizeof(buffer));
 	if (strlen(buffer) < 1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "Line %d: could not retrieve lib version.\n", __LINE__);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "Line %d: could not retrieve lib version.\n",
+						  __LINE__);
 		return SWITCH_STATUS_FALSE;
 	}
 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "\nLibSndFile Version : %s Supported Formats\n", buffer);
 	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
-						  "================================================================================\n");
+					  "================================================================================\n");
 	sf_command(NULL, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
 	sf_command(NULL, SFC_GET_FORMAT_SUBTYPE_COUNT, &subtype_count, sizeof(int));
 
@@ -310,7 +315,8 @@ static switch_status_t setup_formats(void)
 		skip = 0;
 		info.format = m;
 		sf_command(NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof(info));
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "%s  (extension \"%s\")\n", info.name, info.extension);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "%s  (extension \"%s\")\n", info.name,
+						  info.extension);
 		for (x = 0; x < len; x++) {
 			if (supported_formats[x] == info.extension) {
 				skip++;
@@ -327,11 +333,11 @@ static switch_status_t setup_formats(void)
 			map->ext = switch_core_permanent_strdup(info.extension);
 			map->uext = switch_core_permanent_strdup(info.extension);
 			map->format = info.format;
-			for(p = map->ext; *p; p++) {
-				*p = (char)tolower(*p);
+			for (p = map->ext; *p; p++) {
+				*p = (char) tolower(*p);
 			}
-			for(p = map->uext; *p; p++) {
-				*p = (char)toupper(*p);
+			for (p = map->uext; *p; p++) {
+				*p = (char) toupper(*p);
 			}
 			switch_core_hash_insert(globals.format_hash, map->ext, map);
 			switch_core_hash_insert(globals.format_hash, map->uext, map);
@@ -339,16 +345,16 @@ static switch_status_t setup_formats(void)
 		}
 		format = info.format;
 
-		for (s = 0; s < subtype_count; s++) {			
+		for (s = 0; s < subtype_count; s++) {
 			info.format = s;
 			sf_command(NULL, SFC_GET_FORMAT_SUBTYPE, &info, sizeof(info));
 			format = (format & SF_FORMAT_TYPEMASK) | info.format;
 			sfinfo.format = format;
 			/*
-			if (sf_format_check(&sfinfo)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "   %s\n", info.name);
-			}
-			*/
+			   if (sf_format_check(&sfinfo)) {
+			   switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "   %s\n", info.name);
+			   }
+			 */
 		}
 
 	}
@@ -359,12 +365,13 @@ static switch_status_t setup_formats(void)
 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_NOTICE,
-						  "================================================================================\n");
-	
+					  "================================================================================\n");
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
+													   char *filename)
 {
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
@@ -373,7 +380,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	}
 
 	switch_core_hash_init(&globals.format_hash, module_pool);
-	
+
 	if (setup_formats() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}

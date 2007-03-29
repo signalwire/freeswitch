@@ -51,11 +51,11 @@ CDRContainer::process_records() will iterate thru the queue and commit the recor
 extern "C" {
 #endif
 
-class CDRContainer {
-	public:
+	class CDRContainer {
+	  public:
 		CDRContainer();
 		CDRContainer(switch_memory_pool_t *module_pool);
-		~CDRContainer();
+		                    ~CDRContainer();
 		void add_cdr(switch_core_session_t *session);
 		void process_records();
 #ifdef SWITCH_QUEUE_ENHANCED
@@ -65,21 +65,19 @@ class CDRContainer {
 #endif
 		void active(switch_stream_handle_t *stream);
 		void available(switch_stream_handle_t *stream);
-	protected:
-	private:
-		switch_xml_t cfg, xml, settings, param;
+	  protected:
+	  private:
+		                       switch_xml_t cfg, xml, settings, param;
 		switch_queue_t *cdrqueue;
-		std::string tempfilepath;
+		               std::string tempfilepath;
 		char configfile[13];
 		bool queue_paused;
-};
+	};
 
 #ifdef __cplusplus
 }
 #endif
-
 #endif
-
 /* For Emacs:
  * Local Variables:
  * mode:c++

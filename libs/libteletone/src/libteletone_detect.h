@@ -64,9 +64,11 @@ extern "C" {
 	This module is responsible for tone detection specifics
 */
 
+#ifndef FALSE
 #define FALSE   0
 #ifndef TRUE
 #define TRUE    (!FALSE)
+#endif
 #endif
 
 /* Basic DTMF specs:

@@ -41,7 +41,6 @@
 #include <switch.h>
 
 SWITCH_BEGIN_EXTERN_C
-
 /**
  * @defgroup switch_buffer Buffer Routines
  * @ingroup core1
@@ -50,8 +49,7 @@ SWITCH_BEGIN_EXTERN_C
  * and I think it can be optimized under the hood as we go using bucket brigades and/or ring buffering techniques.
  * @{
  */
-
-struct switch_buffer;
+	struct switch_buffer;
 
 
 /*! \brief Allocate a new switch_buffer 
@@ -60,7 +58,8 @@ struct switch_buffer;
  * \param max_len length required by the buffer
  * \return status
  */
-SWITCH_DECLARE(switch_status_t) switch_buffer_create(switch_memory_pool_t *pool, switch_buffer_t **buffer, switch_size_t max_len);
+SWITCH_DECLARE(switch_status_t) switch_buffer_create(switch_memory_pool_t *pool, switch_buffer_t **buffer,
+													 switch_size_t max_len);
 
 /*! \brief Allocate a new dynamic switch_buffer 
  * \param buffer returned pointer to the new buffer
@@ -71,8 +70,7 @@ SWITCH_DECLARE(switch_status_t) switch_buffer_create(switch_memory_pool_t *pool,
  */
 SWITCH_DECLARE(switch_status_t) switch_buffer_create_dynamic(switch_buffer_t **buffer,
 															 switch_size_t blocksize,
-															 switch_size_t start_len,
-															 switch_size_t max_len);
+															 switch_size_t start_len, switch_size_t max_len);
 
 /*! \brief Get the length of a switch_buffer_t 
  * \param buffer any buffer of type switch_buffer_t
@@ -129,9 +127,7 @@ SWITCH_DECLARE(void) switch_buffer_destroy(switch_buffer_t **buffer);
 /** @} */
 
 SWITCH_END_EXTERN_C
-
 #endif
-
 /* For Emacs:
  * Local Variables:
  * mode:c

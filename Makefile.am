@@ -11,6 +11,7 @@ BASE        = $(switch_srcdir)
 OSARCH=`uname -s`
 
 LIBTOOL=`if test -z "$(VERBOSE)" ; then echo $(SHELL) $(switch_builddir)/quiet_libtool ;else echo $(switch_builddir)/libtool;  fi;`
+#LIBS+=> core.log || error="yes";if test -n "$(VERBOSE)" -o "$$error" = "yes";then cat core.log;fi;if test "$$error" = "yes";then exit 1;fi
 
 LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
 TOUCH_TARGET=if test -f "$@" ; then touch "$@" ; fi ;
@@ -26,7 +27,24 @@ src/switch_buffer.c \
 src/switch_caller.c \
 src/switch_channel.c \
 src/switch_console.c \
+src/switch_core_media_bug.c \
+src/switch_core_timer.c \
+src/switch_core_asr.c \
+src/switch_core_event_hook.c \
+src/switch_core_speech.c \
+src/switch_core_memory.c \
+src/switch_core_codec.c \
+src/switch_core_file.c \
+src/switch_core_hash.c \
+src/switch_core_sqldb.c \
+src/switch_core_session.c \
+src/switch_core_directory.c \
+src/switch_core_state_machine.c \
+src/switch_core_io.c \
+src/switch_core_rwlock.c \
+src/switch_core_port_allocator.c \
 src/switch_core.c \
+src/switch_scheduler.c \
 src/switch_core_db.c\
 src/switch_loadable_module.c \
 src/switch_utils.c \
@@ -34,6 +52,11 @@ src/switch_event.c \
 src/switch_resample.c \
 src/switch_regex.c\
 src/switch_rtp.c\
+src/switch_ivr_bridge.c \
+src/switch_ivr_originate.c \
+src/switch_ivr_async.c \
+src/switch_ivr_play_say.c \
+src/switch_ivr_menu.c \
 src/switch_ivr.c \
 src/switch_stun.c\
 src/switch_log.c\
@@ -52,6 +75,8 @@ src/include/switch_buffer.h\
 src/include/switch_caller.h\
 src/include/switch_channel.h\
 src/include/switch_console.h\
+src/include/switch_core_event_hook.h\
+src/include/switch_scheduler.h\
 src/include/switch_core.h\
 src/include/switch_core_db.h\
 src/include/switch_event.h\
@@ -81,7 +106,6 @@ CORE_CFLAGS    += -I$(switch_srcdir)/libs/pcre
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/include
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/crypto/include
 CORE_CFLAGS    += $(RESAMPLE_CFLAGS)
-CORE_CFLAGS    += -I$(switch_srcdir)/libs/libteletone/src
 
 CORE_LIBS      = libs/apr/libapr-1.la libs/apr-util/libaprutil-1.la
 CORE_LIBS     += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la

@@ -41,43 +41,41 @@
 #include <switch.h>
 
 SWITCH_BEGIN_EXTERN_C
-
 #define SWITCH_MAX_CORE_THREAD_SESSION_OBJS 128
 #define SWITCH_MAX_STREAMS 128
-
-struct switch_core_time_duration {
-    uint32_t mms;
-    uint32_t ms;
-    uint32_t sec;
-    uint32_t min;
-    uint32_t hr;
+	struct switch_core_time_duration {
+	uint32_t mms;
+	uint32_t ms;
+	uint32_t sec;
+	uint32_t min;
+	uint32_t hr;
 	uint32_t day;
 	uint32_t yr;
 };
 
 /*! \brief A message object designed to allow unlike technologies to exchange data */
 struct switch_core_session_message {
-	/*! uuid of the sender (for replies)*/
+	/*! uuid of the sender (for replies) */
 	char *from;
 	/*! enumeration of the type of message */
 	switch_core_session_message_types_t message_id;
 
-	/*! optional numeric arg*/
+	/*! optional numeric arg */
 	int numeric_arg;
-	/*! optional string arg*/
+	/*! optional string arg */
 	char *string_arg;
-	/*! optional string arg*/
+	/*! optional string arg */
 	switch_size_t string_arg_size;
 	/*! optional arbitrary pointer arg */
 	void *pointer_arg;
 	/*! optional arbitrary pointer arg's size */
 	switch_size_t pointer_arg_size;
 
-	/*! optional numeric reply*/
+	/*! optional numeric reply */
 	int numeric_reply;
-	/*! optional string reply*/
+	/*! optional string reply */
 	char *string_reply;
-	/*! optional string reply*/
+	/*! optional string reply */
 	switch_size_t string_reply_size;
 	/*! optional arbitrary pointer reply */
 	void *pointer_reply;
@@ -96,23 +94,13 @@ struct switch_core_thread_session {
 	/*! array of void pointers to pass mutiple data objects */
 	void *objs[SWITCH_MAX_CORE_THREAD_SESSION_OBJS];
 	/*! a pointer to a memory pool if the thread has it's own pool */
-    switch_input_callback_function_t input_callback;
+	switch_input_callback_function_t input_callback;
 	switch_memory_pool_t *pool;
 };
 
 struct switch_core_session;
 struct switch_core_runtime;
 struct switch_core_port_allocator;
-
-struct switch_core_scheduler_task {
-	time_t created;
-	time_t runtime;
-	uint32_t cmd_id;
-	char *group;
-	void *cmd_arg;
-	uint32_t task_id;
-};
-
 
 /*!
   \defgroup core1 Core Library 
@@ -124,47 +112,6 @@ struct switch_core_scheduler_task {
 ///\ingroup core1
 ///\{
 
-
-///\defgroup sched1 Scheduler
-///\ingroup core1
-///\{
-
-
-/*!
-  \brief Schedule a task in the future
-  \param runtime the time in epoch seconds to execute the task.
-  \param func the callback function to execute when the task is executed.
-  \param desc an arbitrary description of the task.
-  \param group a group id tag to link multiple tasks to a single entity.
-  \param cmd_id an arbitrary index number be used in the callback.
-  \param cmd_arg user data to be passed to the callback.
-  \param flags flags to alter behaviour 
-  \return the id of the task
-*/
-SWITCH_DECLARE(uint32_t) switch_core_scheduler_add_task(time_t task_runtime,
-														switch_core_scheduler_func_t func,
-														char *desc,
-														char *group,
-														uint32_t cmd_id,
-														void *cmd_arg,
-														switch_scheduler_flag_t flags);
-
-/*!
-  \brief Delete a scheduled task
-  \param task_id the id of the task
-  \return SWITCH_STATUS_SUCCESS if the task was deleted.
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_scheduler_del_task_id(uint32_t task_id);
-
-/*!
-  \brief Delete a scheduled task based on the group name
-  \param group the group name
-  \return SWITCH_STATUS_SUCCESS if any tasks were deleted
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_scheduler_del_task_group(char *group);
-
-
-///\}
 
 /*!
   \brief Add a media bug to the session
@@ -178,8 +125,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_scheduler_del_task_group(char *group
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t *session,
 														  switch_media_bug_callback_t callback,
 														  void *user_data,
-														  switch_media_bug_flag_t flags,
-														  switch_media_bug_t **new_bug);
+														  switch_media_bug_flag_t flags, switch_media_bug_t **new_bug);
 /*!
   \brief Obtain private data from a media bug
   \param bug the bug to get the data from
@@ -208,6 +154,12 @@ SWITCH_DECLARE(void) switch_core_media_bug_set_replace_frame(switch_media_bug_t 
 */
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session_t *session, switch_media_bug_t **bug);
 
+/*!
+  \brief Close and destroy a media bug
+  \param bug bug to remove
+  \return SWITCH_STATUS_SUCCESS if the operation was a success
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(switch_media_bug_t **bug);
 /*!
   \brief Remove all media bugs from the session
   \param session the session to remove the bugs from
@@ -296,9 +248,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void);
 
 #ifdef SWITCH_DEBUG_RWLOCKS
 SWITCH_DECLARE(switch_status_t) switch_core_session_perform_read_lock(switch_core_session_t *session,
-                                                                      const char *file,
-                                                                      const char *func,
-                                                                      int line);
+																	  const char *file, const char *func, int line);
 #endif
 
 /*! 
@@ -315,9 +265,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_lock(switch_core_sessio
 
 #ifdef SWITCH_DEBUG_RWLOCKS
 SWITCH_DECLARE(void) switch_core_session_perform_write_lock(switch_core_session_t *session,
-                                                            const char *file,
-                                                            const char *func,
-                                                            int line);
+															const char *file, const char *func, int line);
 #endif
 
 /*! 
@@ -332,9 +280,7 @@ SWITCH_DECLARE(void) switch_core_session_write_lock(switch_core_session_t *sessi
 
 #ifdef SWITCH_DEBUG_RWLOCKS
 SWITCH_DECLARE(void) switch_core_session_perform_rwunlock(switch_core_session_t *session,
-                                                          const char *file,
-                                                          const char *func,
-                                                          int line);
+														  const char *file, const char *func, int line);
 #endif
 
 /*! 
@@ -479,7 +425,8 @@ SWITCH_DECLARE(switch_memory_pool_t *) switch_core_session_get_pool(switch_core_
   \param pool the pool to use for the allocation (a new one will be used if NULL)
   \return the newly created session
 */
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch_endpoint_interface_t *endpoint_interface, switch_memory_pool_t **pool);
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch_endpoint_interface_t
+																	*endpoint_interface, switch_memory_pool_t **pool);
 
 /*! 
   \brief Destroy a session and return the memory pool to the core
@@ -500,7 +447,8 @@ SWITCH_DECLARE(uint32_t) switch_core_session_count(void);
   \param pool the pool to use
   \return the newly created session
 */
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(char *endpoint_name, switch_memory_pool_t **pool);
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(char *endpoint_name,
+																			switch_memory_pool_t **pool);
 
 /*! 
   \brief Launch the session thread (state machine) on a given session
@@ -535,9 +483,8 @@ SWITCH_DECLARE(char *) switch_core_get_uuid(void);
 
 #ifdef SWITCH_DEBUG_RWLOCKS
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(char *uuid_str,
-                                                                           const char *file,
-                                                                           const char *func,
-                                                                           int line);
+																		   const char *file,
+																		   const char *func, int line);
 #endif
 
 /*! 
@@ -578,7 +525,8 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause);
   \param message the switch_core_session_message_t object to send
   \return the status returned by the message handler
 */
-SWITCH_DECLARE (switch_status_t) switch_core_session_message_send(char *uuid_str, switch_core_session_message_t *message);
+SWITCH_DECLARE(switch_status_t) switch_core_session_message_send(char *uuid_str,
+																 switch_core_session_message_t *message);
 
 /*! 
   \brief Queue a message on a session
@@ -586,7 +534,8 @@ SWITCH_DECLARE (switch_status_t) switch_core_session_message_send(char *uuid_str
   \param message the message to queue
   \return SWITCH_STATUS_SUCCESS if the message was queued
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_queue_message(switch_core_session_t *session, switch_core_session_message_t *message);
+SWITCH_DECLARE(switch_status_t) switch_core_session_queue_message(switch_core_session_t *session,
+																  switch_core_session_message_t *message);
 
 /*! 
   \brief Queue an indication message on a session
@@ -594,7 +543,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_message(switch_core_se
   \param indication the indication message to queue
   \return SWITCH_STATUS_SUCCESS if the message was queued
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_queue_indication(switch_core_session_t *session, switch_core_session_message_types_t indication);
+SWITCH_DECLARE(switch_status_t) switch_core_session_queue_indication(switch_core_session_t *session,
+																	 switch_core_session_message_types_t indication);
 
 /*! 
   \brief DE-Queue an message on a given session
@@ -602,7 +552,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_indication(switch_core
   \param message the de-queued message
   \return the  SWITCH_STATUS_SUCCESS if the message was de-queued
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_message(switch_core_session_t *session, switch_core_session_message_t **message);
+SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_message(switch_core_session_t *session,
+																	switch_core_session_message_t **message);
 
 /*! 
   \brief Flush a message queue on a given session
@@ -625,7 +576,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(char *uuid_str, s
   \param event the event to receive
   \return the status returned by the handler
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_receive_event(switch_core_session_t *session, switch_event_t **event);
+SWITCH_DECLARE(switch_status_t) switch_core_session_receive_event(switch_core_session_t *session,
+																  switch_event_t **event);
 
 /*! 
   \brief Retrieve private user data from a session
@@ -671,7 +623,8 @@ SWITCH_DECLARE(int) switch_core_session_get_stream_count(switch_core_session_t *
   \param func a function to execute in the thread
   \param obj an arguement
 */
-SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session_t *session, void *(*func)(switch_thread_t *, void *), void *obj);
+SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session_t *session,
+													   void *(*func) (switch_thread_t *, void *), void *obj);
 
 /*! 
   \brief Signal a thread using a thread session to terminate
@@ -685,7 +638,8 @@ SWITCH_DECLARE(void) switch_core_thread_session_end(switch_core_thread_session_t
   \param stream_id which logical media channel to use
   \param thread_session the thread_session to use
 */
-SWITCH_DECLARE(void) switch_core_service_session(switch_core_session_t *session, switch_core_thread_session_t *thread_session, int stream_id);
+SWITCH_DECLARE(void) switch_core_service_session(switch_core_session_t *session,
+												 switch_core_thread_session_t *thread_session, int stream_id);
 
 /*! 
   \brief Request an outgoing session spawned from an existing session using a desired endpoing module
@@ -715,7 +669,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_answer_channel(switch_core_s
   \param message the message to recieve
   \return the status returned by the message handler
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_session_t *session, switch_core_session_message_t *message);
+SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_session_t *session,
+																	switch_core_session_message_t *message);
 
 /*! 
   \brief Queue an event on a given session
@@ -739,7 +694,8 @@ SWITCH_DECLARE(int32_t) switch_core_session_event_count(switch_core_session_t *s
   \param event the de-queued event
   \return the  SWITCH_STATUS_SUCCESS if the event was de-queued
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_event(switch_core_session_t *session, switch_event_t **event);
+SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_event(switch_core_session_t *session,
+																  switch_event_t **event);
 
 /*! 
   \brief Queue a private event on a given session
@@ -747,7 +703,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_event(switch_core_se
   \param event the event to queue
   \return the status returned by the message handler
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_core_session_t *session, switch_event_t **event);
+SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_core_session_t *session,
+																		switch_event_t **event);
 
 
 /*! 
@@ -763,7 +720,8 @@ SWITCH_DECLARE(int32_t) switch_core_session_private_event_count(switch_core_sess
   \param event the de-queued event
   \return the  SWITCH_STATUS_SUCCESS if the event was de-queued
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch_core_session_t *session, switch_event_t **event);
+SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch_core_session_t *session,
+																		  switch_event_t **event);
 
 
 /*! 
@@ -774,7 +732,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch
   \param stream_id which logical media channel to use
   \return SWITCH_STATUS_SUCCESS a the frame was read
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, int stream_id);
+SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_session_t *session, switch_frame_t **frame,
+															   int timeout, int stream_id);
 
 /*! 
   \brief Reset the buffers and resampler on a session
@@ -790,14 +749,14 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session);
   \param stream_id which logical media channel to use
   \return SWITCH_STATUS_SUCCESS a the frame was written
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, int stream_id);
+SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_session_t *session, switch_frame_t *frame,
+																int timeout, int stream_id);
 
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_perform_kill_channel(switch_core_session_t *session, 
-                                                                         const char *file, 
-                                                                         const char *func, 
-                                                                         int line, 
-                                                                         switch_signal_t sig);
+SWITCH_DECLARE(switch_status_t) switch_core_session_perform_kill_channel(switch_core_session_t *session,
+																		 const char *file,
+																		 const char *func,
+																		 int line, switch_signal_t sig);
 /*! 
   \brief Send a signal to a channel
   \param session session to send signal to
@@ -813,7 +772,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_kill_channel(switch_
   \param stream_id which logical media channel to use
   \return SWITCH_STATUS_SUCCESS if data is available for read within timeframe specified
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_waitfor_read(switch_core_session_t *session, int timeout, int stream_id);
+SWITCH_DECLARE(switch_status_t) switch_core_session_waitfor_read(switch_core_session_t *session, int timeout,
+																 int stream_id);
 
 /*! 
   \brief Wait for a session to be ready for output
@@ -822,7 +782,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_waitfor_read(switch_core_ses
   \param stream_id which logical media channel to use
   \return SWITCH_STATUS_SUCCESS if the session is available for write within timeframe specified
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_waitfor_write(switch_core_session_t *session, int timeout, int stream_id);
+SWITCH_DECLARE(switch_status_t) switch_core_session_waitfor_write(switch_core_session_t *session, int timeout,
+																  int stream_id);
 
 /*! 
   \brief Send DTMF to a session
@@ -832,91 +793,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_waitfor_write(switch_core_se
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_session_t *session, char *dtmf);
 
-/*! 
-  \brief Add an event hook to be executed when a session requests an outgoing extension
-  \param session session to bind hook to
-  \param outgoing_channel hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_outgoing(switch_core_session_t *session, switch_outgoing_channel_hook_t outgoing_channel);
 ///\}
 
-///\defgroup shooks Session Hook Callbacks
-///\ingroup core1
-///\{
-/*! 
-  \brief Add an event hook to be executed when a session answers a channel
-  \param session session to bind hook to
-  \param answer_channel hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_answer_channel(switch_core_session_t *session, switch_answer_channel_hook_t answer_channel);
-
-/*! 
-  \brief Add an event hook to be executed when a session sends a message
-  \param session session to bind hook to
-  \param receive_message hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_receive_message(switch_core_session_t *session, switch_receive_message_hook_t receive_message);
-
-/*! 
-  \brief Add an event hook to be executed when a session reads a frame
-  \param session session to bind hook to
-  \param  read_frame hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_read_frame(switch_core_session_t *session, switch_read_frame_hook_t read_frame);
-
-/*! 
-  \brief Add an event hook to be executed when a session writes a frame
-  \param session session to bind hook to
-  \param write_frame hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_write_frame(switch_core_session_t *session, switch_write_frame_hook_t write_frame);
-
-/*! 
-  \brief Add an event hook to be executed when a session kills a channel
-  \param session session to bind hook to
-  \param kill_channel hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_kill_channel(switch_core_session_t *session, switch_kill_channel_hook_t kill_channel);
-
-/*! 
-  \brief Add an event hook to be executed when a session waits for a read event
-  \param session session to bind hook to
-  \param waitfor_read hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_waitfor_read(switch_core_session_t *session, switch_waitfor_read_hook_t waitfor_read);
-
-/*! 
-  \brief Add an event hook to be executed when a session waits for a write event
-  \param session session to bind hook to
-  \param waitfor_write hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_waitfor_write(switch_core_session_t *session, switch_waitfor_write_hook_t waitfor_write);
-
-/*! 
-  \brief Add an event hook to be executed when a session sends dtmf
-  \param session session to bind hook to
-  \param send_dtmf hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_send_dtmf(switch_core_session_t *session, switch_send_dtmf_hook_t send_dtmf);
-
-/*! 
-  \brief Add an event hook to be executed when a session receives a state change signal
-  \param session session to bind hook to
-  \param state_change hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_state_change(switch_core_session_t *session,
-																				switch_answer_channel_hook_t state_change);
-///\}
 
 ///\defgroup hashf Hash Functions
 ///\ingroup core1
@@ -984,7 +862,8 @@ SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash_t *hash, const char *ke
   \param pool the memory pool to use for allocation
   \return
 */
-SWITCH_DECLARE(switch_status_t) switch_core_timer_init(switch_timer_t *timer, char *timer_name, int interval, int samples, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_core_timer_init(switch_timer_t *timer, char *timer_name, int interval,
+													   int samples, switch_memory_pool_t *pool);
 
 /*! 
   \brief Wait for one cycle on an existing timer
@@ -1031,14 +910,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_destroy(switch_timer_t *timer)
   \param pool the memory pool to use
   \return SWITCH_STATUS_SUCCESS if the handle is allocated
 */
-SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, 
-													   char *codec_name, 
+SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec,
+													   char *codec_name,
 													   char *fmtp,
-													   uint32_t rate, 
-													   int ms, 
-													   int channels, 
+													   uint32_t rate,
+													   int ms,
+													   int channels,
 													   uint32_t flags,
-													   const switch_codec_settings_t *codec_settings, 
+													   const switch_codec_settings_t *codec_settings,
 													   switch_memory_pool_t *pool);
 
 /*! 
@@ -1056,14 +935,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec,
   \note encoded_data_len will be rewritten to the in-use size of encoded_data
 */
 SWITCH_DECLARE(switch_status_t) switch_core_codec_encode(switch_codec_t *codec,
-													   switch_codec_t *other_codec,
-													   void *decoded_data,
-													   uint32_t decoded_data_len,
-													   uint32_t decoded_rate,
-													   void *encoded_data,
-													   uint32_t *encoded_data_len,
-													   uint32_t *encoded_rate,
-													   unsigned int *flag);
+														 switch_codec_t *other_codec,
+														 void *decoded_data,
+														 uint32_t decoded_data_len,
+														 uint32_t decoded_rate,
+														 void *encoded_data,
+														 uint32_t * encoded_data_len,
+														 uint32_t * encoded_rate, unsigned int *flag);
 
 /*! 
   \brief Decode data using a codec handle
@@ -1080,14 +958,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_encode(switch_codec_t *codec,
   \note decoded_data_len will be rewritten to the in-use size of decoded_data
 */
 SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
-													   switch_codec_t *other_codec,
-													   void *encoded_data,
-													   uint32_t encoded_data_len,
-													   uint32_t encoded_rate,
-													   void *decoded_data,
-													   uint32_t *decoded_data_len,
-													   uint32_t *decoded_rate,
-													   unsigned int *flag);
+														 switch_codec_t *other_codec,
+														 void *encoded_data,
+														 uint32_t encoded_data_len,
+														 uint32_t encoded_rate,
+														 void *decoded_data,
+														 uint32_t * decoded_data_len,
+														 uint32_t * decoded_rate, unsigned int *flag);
 
 /*! 
   \brief Destroy an initalized codec handle
@@ -1102,7 +979,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
   \param codec the codec to add
   \return SWITCH_STATUS_SUCCESS if successful
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_session_t *session, switch_codec_t *codec);
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_session_t *session,
+																   switch_codec_t *codec);
 
 /*! 
   \brief Retrieve the read codec from a given session
@@ -1117,7 +995,8 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_read_codec(switch_core_
   \param codec the codec to add
   \return SWITCH_STATUS_SUCCESS if successful
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_session_t *session, switch_codec_t *codec);
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_session_t *session,
+																	switch_codec_t *codec);
 
 /*! 
   \brief Retrieve the write codec from a given session
@@ -1177,12 +1056,10 @@ SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *te
   \return SWITCH_STATUS_SUCCESS if the file is opened
   \note the loadable module used is chosen based on the file extension
 */
-SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh, 
-													  char *file_path, 
+SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh,
+													  char *file_path,
 													  uint8_t channels,
-													  uint32_t rate,
-													  unsigned int flags,
-													  switch_memory_pool_t *pool);
+													  uint32_t rate, unsigned int flags, switch_memory_pool_t *pool);
 /*! 
   \brief Read media from a file handle
   \param fh the file handle to read from (must be initilized by you memset all 0 for read, fill in channels and rate for write)
@@ -1209,7 +1086,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
   \param whence the indicator (see traditional seek)
   \return SWITCH_STATUS_SUCCESS with cur_pos adjusted to new position
 */
-SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, unsigned int *cur_pos, int64_t samples, int whence);
+SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, unsigned int *cur_pos, int64_t samples,
+													  int whence);
 
 /*! 
   \brief Set metadata to the desired string
@@ -1218,7 +1096,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, 
   \param string the string to add
   \return SWITCH_STATUS_SUCCESS with cur_pos adjusted to new position
 */
-SWITCH_DECLARE(switch_status_t) switch_core_file_set_string(switch_file_handle_t *fh, switch_audio_col_t col, const char *string);
+SWITCH_DECLARE(switch_status_t) switch_core_file_set_string(switch_file_handle_t *fh, switch_audio_col_t col,
+															const char *string);
 
 /*! 
   \brief get metadata of the desired string
@@ -1227,7 +1106,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_set_string(switch_file_handle_t
   \param string pointer to the string to fetch
   \return SWITCH_STATUS_SUCCESS with cur_pos adjusted to new position
 */
-SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(switch_file_handle_t *fh, switch_audio_col_t col, const char **string);
+SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(switch_file_handle_t *fh, switch_audio_col_t col,
+															const char **string);
 
 
 /*! 
@@ -1251,12 +1131,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
   \param pool the pool to use (NULL for new pool)
   \return SWITCH_STATUS_SUCCESS if the handle is opened
 */
-SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *sh, 
-													  char *module_name,
-													  char *voice_name,
-													  unsigned int rate,
-													  switch_speech_flag_t *flags,
-													  switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *sh,
+														char *module_name,
+														char *voice_name,
+														unsigned int rate,
+														switch_speech_flag_t *flags, switch_memory_pool_t *pool);
 /*! 
   \brief Feed text to the TTS module
   \param sh the speech handle to feed
@@ -1264,7 +1143,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
   \param flags flags in/out for fine tuning
   \return SWITCH_STATUS_SUCCESS with len adjusted to the bytes written if successful
 */
-SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags);
+SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle_t *sh, char *text,
+															switch_speech_flag_t *flags);
 
 /*! 
   \brief Flush TTS audio on a given handle
@@ -1305,11 +1185,10 @@ SWITCH_DECLARE(void) switch_core_speech_float_param_tts(switch_speech_handle_t *
   \param flags flags in/out for fine tuning
   \return SWITCH_STATUS_SUCCESS with len adjusted to the bytes written if successful
 */
-SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle_t *sh, 
-														  void *data,
-														  switch_size_t *datalen,
-														  uint32_t *rate,
-														  switch_speech_flag_t *flags);
+SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle_t *sh,
+															void *data,
+															switch_size_t *datalen,
+															uint32_t * rate, switch_speech_flag_t *flags);
 /*! 
   \brief Close an open speech handle
   \param sh the speech handle to close
@@ -1334,9 +1213,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
 													 char *module_name,
 													 char *codec,
 													 int rate,
-													 char *dest,
-													 switch_asr_flag_t *flags,
-													 switch_memory_pool_t *pool);
+													 char *dest, switch_asr_flag_t *flags, switch_memory_pool_t *pool);
 
 /*!
   \brief Close an asr handle
@@ -1354,7 +1231,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_close(switch_asr_handle_t *ah, s
   \param flags flags to influence behaviour
   \return SWITCH_STATUS_SUCCESS
 */
-SWITCH_DECLARE(switch_status_t) switch_core_asr_feed(switch_asr_handle_t *ah, void *data, unsigned int len, switch_asr_flag_t *flags);
+SWITCH_DECLARE(switch_status_t) switch_core_asr_feed(switch_asr_handle_t *ah, void *data, unsigned int len,
+													 switch_asr_flag_t *flags);
 
 /*!
   \brief Check an asr handle for results
@@ -1371,7 +1249,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_check_results(switch_asr_handle_
   \param flags flags to influence behaviour
   \return SWITCH_STATUS_SUCCESS
 */
-SWITCH_DECLARE(switch_status_t) switch_core_asr_get_results(switch_asr_handle_t *ah, char **xmlstr, switch_asr_flag_t *flags);
+SWITCH_DECLARE(switch_status_t) switch_core_asr_get_results(switch_asr_handle_t *ah, char **xmlstr,
+															switch_asr_flag_t *flags);
 
 /*!
   \brief Load a grammar to an asr handle
@@ -1420,12 +1299,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_resume(switch_asr_handle_t *ah);
   \param pool the pool to use (NULL for new pool)
   \return SWITCH_STATUS_SUCCESS if the handle is opened
 */
-SWITCH_DECLARE(switch_status_t) switch_core_directory_open(switch_directory_handle_t *dh, 
-														 char *module_name, 
-														 char *source,
-														 char *dsn,
-														 char *passwd,
-														 switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_core_directory_open(switch_directory_handle_t *dh,
+														   char *module_name,
+														   char *source,
+														   char *dsn, char *passwd, switch_memory_pool_t *pool);
 
 /*! 
   \brief Query a directory handle
@@ -1472,6 +1349,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_directory_close(switch_directory_han
 SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel);
 
 /*! 
+  \brief Determines if the core is ready to take calls
+  \return SWITCH_TRUE or SWITCH_FALSE
+*/
+SWITCH_DECLARE(switch_bool_t) switch_core_ready(void);
+
+/*! 
   \brief Execute a management operation.
   \param relative_oid the relative oid of the operation.
   \param action the action to perform.
@@ -1481,8 +1364,7 @@ SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel);
 */
 SWITCH_DECLARE(switch_status_t) switch_core_management_exec(char *relative_oid,
 															switch_management_action_t action,
-															char *data,
-															switch_size_t datalen);
+															char *data, switch_size_t datalen);
 
 
 /*! 
@@ -1522,7 +1404,7 @@ SWITCH_DECLARE(switch_time_t) switch_core_uptime(void);
   \param val the command arguement (if needed)
   \return 0 on success nonzero on error
 */
-SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, uint32_t *val);
+SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, uint32_t * val);
 
 /*!
   \brief Get the output console
@@ -1532,7 +1414,8 @@ SWITCH_DECLARE(FILE *) switch_core_get_console(void);
 /*! 
   \brief Launch a thread
 */
-SWITCH_DECLARE(void) switch_core_launch_thread(void *(*func)(switch_thread_t *, void*), void *obj, switch_memory_pool_t *pool);
+SWITCH_DECLARE(void) switch_core_launch_thread(void *(*func) (switch_thread_t *, void *), void *obj,
+											   switch_memory_pool_t *pool);
 
 /*!
   \brief Initiate Globals
@@ -1553,9 +1436,7 @@ SWITCH_DECLARE(uint8_t) switch_core_session_compare(switch_core_session_t *a, sw
 */
 
 SWITCH_END_EXTERN_C
-
 #endif
-
 /* For Emacs:
  * Local Variables:
  * mode:c

@@ -36,9 +36,7 @@
 
 #include <switch.h>
 SWITCH_BEGIN_EXTERN_C
-
 #define SWITCH_SEQ_ESC "\033["
-
 /* Ansi Control character suffixes */
 #define SWITCH_SEQ_HOME_CHAR 'H'
 #define SWITCH_SEQ_HOME_CHAR_STR "H"
@@ -48,11 +46,9 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_SEQ_CLEARSCR_CHAR0 '2'
 #define SWITCH_SEQ_CLEARSCR_CHAR1 'J'
 #define SWITCH_SEQ_CLEARSCR_CHAR "2J"
-
-#define SWITCH_SEQ_DEFAULT_COLOR SWITCH_SEQ_ESC SWITCH_SEQ_END_COLOR /* Reset to Default fg/bg color */
-#define SWITCH_SEQ_AND_COLOR ";" /* To add multiple color definitions */
-#define SWITCH_SEQ_END_COLOR "m" /* To end color definitions */
-
+#define SWITCH_SEQ_DEFAULT_COLOR SWITCH_SEQ_ESC SWITCH_SEQ_END_COLOR	/* Reset to Default fg/bg color */
+#define SWITCH_SEQ_AND_COLOR ";"	/* To add multiple color definitions */
+#define SWITCH_SEQ_END_COLOR "m"	/* To end color definitions */
 /* Foreground colors values */
 #define SWITCH_SEQ_F_BLACK "30"
 #define SWITCH_SEQ_F_RED "31"
@@ -62,7 +58,6 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_SEQ_F_MAGEN "35"
 #define SWITCH_SEQ_F_CYAN "36"
 #define SWITCH_SEQ_F_WHITE "37"
-
 /* Background colors values */
 #define SWITCH_SEQ_B_BLACK "40"
 #define SWITCH_SEQ_B_RED "41"
@@ -72,7 +67,6 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_SEQ_B_MAGEN "45"
 #define SWITCH_SEQ_B_CYAN "46"
 #define SWITCH_SEQ_B_WHITE "47"
-
 /* Preset escape sequences - Change foreground colors only */
 #define SWITCH_SEQ_FBLACK SWITCH_SEQ_ESC SWITCH_SEQ_F_BLACK SWITCH_SEQ_END_COLOR
 #define SWITCH_SEQ_FRED SWITCH_SEQ_ESC SWITCH_SEQ_F_RED SWITCH_SEQ_END_COLOR
@@ -82,7 +76,6 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_SEQ_FMAGEN SWITCH_SEQ_ESC SWITCH_SEQ_F_MAGEN SWITCH_SEQ_END_COLOR
 #define SWITCH_SEQ_FCYAN SWITCH_SEQ_ESC SWITCH_SEQ_F_CYAN SWITCH_SEQ_END_COLOR
 #define SWITCH_SEQ_FWHITE SWITCH_SEQ_ESC SWITCH_SEQ_F_WHITE SWITCH_SEQ_END_COLOR
-
 #define SWITCH_SEQ_BBLACK SWITCH_SEQ_ESC SWITCH_SEQ_B_BLACK SWITCH_SEQ_END_COLOR
 #define SWITCH_SEQ_BRED SWITCH_SEQ_ESC SWITCH_SEQ_B_RED SWITCH_SEQ_END_COLOR
 #define SWITCH_SEQ_BGREEN SWITCH_SEQ_ESC SWITCH_SEQ_B_GREEN SWITCH_SEQ_END_COLOR
@@ -91,21 +84,17 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_SEQ_BMAGEN SWITCH_SEQ_ESC SWITCH_SEQ_B_MAGEN SWITCH_SEQ_END_COLOR
 #define SWITCH_SEQ_BCYAN SWITCH_SEQ_ESC SWITCH_SEQ_B_CYAN SWITCH_SEQ_END_COLOR
 #define SWITCH_SEQ_BWHITE SWITCH_SEQ_ESC SWITCH_SEQ_B_WHITE SWITCH_SEQ_END_COLOR
-
 /* Preset escape sequences */
 #define SWITCH_SEQ_HOME SWITCH_SEQ_ESC SWITCH_SEQ_HOME_CHAR_STR
 #define SWITCH_SEQ_CLEARLINE SWITCH_SEQ_ESC SWITCH_SEQ_CLEARLINE_CHAR_STR
 #define SWITCH_SEQ_CLEARLINEEND SWITCH_SEQ_ESC SWITCH_SEQ_CLEARLINEEND_CHAR
 #define SWITCH_SEQ_CLEARSCR SWITCH_SEQ_ESC SWITCH_SEQ_CLEARSCR_CHAR SWITCH_SEQ_HOME
-
 #ifdef WIN32
 #define SWITCH_PATH_SEPARATOR "\\"
 #else
 #define SWITCH_PATH_SEPARATOR "/"
 #endif
-
 #define SWITCH_URL_SEPARATOR "://"
-
 #define SWITCH_ENDPOINT_DISPOSITION_VARIABLE "endpoint_disposition"
 #define SWITCH_EXPORT_VARS_VARIABLE "export_vars"
 #define SWITCH_R_SDP_VARIABLE "switch_r_sdp"
@@ -122,11 +111,10 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_REMOTE_MEDIA_PORT_VARIABLE "remote_media_port"
 #define SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE "hangup_after_bridge"
 #define SWITCH_MAX_FORWARDS_VARIABLE "max_forwards"
-
 #define SWITCH_SPEECH_KEY "speech"
 #define SWITCH_UUID_BRIDGE "uuid_bridge"
 #define SWITCH_BITS_PER_BYTE 8
-typedef uint8_t switch_byte_t;
+	typedef uint8_t switch_byte_t;
 
 typedef enum {
 	SWITCH_FALSE = 0,
@@ -137,7 +125,7 @@ typedef enum {
 	SSM_NA,
 	SSM_PRONOUNCED,
 	SSM_ITERATED,
-    SSM_COUNTED
+	SSM_COUNTED
 } switch_say_method_t;
 
 typedef enum {
@@ -242,12 +230,12 @@ typedef enum {
 } switch_caller_profile_flag_t;
 
 typedef enum {
-	SWITCH_AUDIO_COL_STR_TITLE                    = 0x01,
-	SWITCH_AUDIO_COL_STR_COPYRIGHT                = 0x02,
-	SWITCH_AUDIO_COL_STR_SOFTWARE                 = 0x03,
-	SWITCH_AUDIO_COL_STR_ARTIST                   = 0x04,
-	SWITCH_AUDIO_COL_STR_COMMENT                  = 0x05,
-	SWITCH_AUDIO_COL_STR_DATE                     = 0x06
+	SWITCH_AUDIO_COL_STR_TITLE = 0x01,
+	SWITCH_AUDIO_COL_STR_COPYRIGHT = 0x02,
+	SWITCH_AUDIO_COL_STR_SOFTWARE = 0x03,
+	SWITCH_AUDIO_COL_STR_ARTIST = 0x04,
+	SWITCH_AUDIO_COL_STR_COMMENT = 0x05,
+	SWITCH_AUDIO_COL_STR_DATE = 0x06
 } switch_audio_col_t;
 
 typedef enum {
@@ -269,10 +257,10 @@ typedef enum {
 </pre>
  */
 typedef enum {
-	SWITCH_VAD_FLAG_TALKING = ( 1 << 0 ),
-	SWITCH_VAD_FLAG_EVENTS_TALK = ( 1 << 1 ),
-	SWITCH_VAD_FLAG_EVENTS_NOTALK = ( 1 << 2 ),
-	SWITCH_VAD_FLAG_CNG = ( 1 << 3)
+	SWITCH_VAD_FLAG_TALKING = (1 << 0),
+	SWITCH_VAD_FLAG_EVENTS_TALK = (1 << 1),
+	SWITCH_VAD_FLAG_EVENTS_NOTALK = (1 << 2),
+	SWITCH_VAD_FLAG_CNG = (1 << 3)
 } switch_vad_flag_t;
 
 #define SWITCH_RTP_CNG_PAYLOAD 13
@@ -299,7 +287,7 @@ typedef enum {
 </pre>
  */
 typedef enum {
-	SWITCH_RTP_FLAG_NOBLOCK = ( 1 << 0),
+	SWITCH_RTP_FLAG_NOBLOCK = (1 << 0),
 	SWITCH_RTP_FLAG_IO = (1 << 1),
 	SWITCH_RTP_FLAG_USE_TIMER = (1 << 2),
 	SWITCH_RTP_FLAG_TIMER_RECLOCK = (1 << 3),
@@ -308,8 +296,8 @@ typedef enum {
 	SWITCH_RTP_FLAG_RAW_WRITE = (1 << 6),
 	SWITCH_RTP_FLAG_GOOGLEHACK = (1 << 7),
 	SWITCH_RTP_FLAG_VAD = (1 << 8),
-	SWITCH_RTP_FLAG_BREAK = ( 1 << 9),
-	SWITCH_RTP_FLAG_MINI = ( 1 << 10),
+	SWITCH_RTP_FLAG_BREAK = (1 << 9),
+	SWITCH_RTP_FLAG_MINI = (1 << 10),
 	SWITCH_RTP_FLAG_DATAWAIT = (1 << 11),
 	SWITCH_RTP_FLAG_BUGGY_2833 = (1 << 12),
 	SWITCH_RTP_FLAG_PASS_RFC2833 = (1 << 13),
@@ -453,7 +441,7 @@ typedef enum {
 typedef enum {
 	SWITCH_LOG_CONSOLE = 8,
 	SWITCH_LOG_DEBUG = 7,
-	SWITCH_LOG_INFO  = 6,
+	SWITCH_LOG_INFO = 6,
 	SWITCH_LOG_NOTICE = 5,
 	SWITCH_LOG_WARNING = 4,
 	SWITCH_LOG_ERROR = 3,
@@ -512,7 +500,7 @@ typedef enum {
 	CS_HOLD,
 	CS_HIBERNATE,
 	CS_HANGUP,
-	CS_DONE 
+	CS_DONE
 } switch_channel_state_t;
 
 
@@ -544,25 +532,25 @@ CF_RING_READY   = (1 << 18) - Channel is ready to send ringback
  */
 
 typedef enum {
-	CF_ANSWERED   	= (1 <<  0),
-	CF_OUTBOUND   	= (1 <<  1),
-	CF_EARLY_MEDIA	= (1 <<  2),
-	CF_ORIGINATOR	= (1 <<  3),
-	CF_TRANSFER		= (1 <<  4),
-	CF_ACCEPT_CNG	= (1 <<  5),
-	CF_LOCK_THREAD	= (1 <<  6),
-	CF_BRIDGED		= (1 <<  7),
-	CF_HOLD			= (1 <<  8),
-	CF_SERVICE		= (1 <<  9),
-	CF_TAGGED		= (1 << 10),
-	CF_WINNER		= (1 << 11),
-	CF_CONTROLLED	= (1 << 12),
-	CF_NOMEDIA		= (1 << 13),
-	CF_SUSPEND		= (1 << 14),
-	CF_EVENT_PARSE	= (1 << 15),
-    CF_REPEAT_STATE = (1 << 16),
-	CF_GEN_RINGBACK	= (1 << 17),
-	CF_RING_READY   = (1 << 18)
+	CF_ANSWERED = (1 << 0),
+	CF_OUTBOUND = (1 << 1),
+	CF_EARLY_MEDIA = (1 << 2),
+	CF_ORIGINATOR = (1 << 3),
+	CF_TRANSFER = (1 << 4),
+	CF_ACCEPT_CNG = (1 << 5),
+	CF_LOCK_THREAD = (1 << 6),
+	CF_BRIDGED = (1 << 7),
+	CF_HOLD = (1 << 8),
+	CF_SERVICE = (1 << 9),
+	CF_TAGGED = (1 << 10),
+	CF_WINNER = (1 << 11),
+	CF_CONTROLLED = (1 << 12),
+	CF_NOMEDIA = (1 << 13),
+	CF_SUSPEND = (1 << 14),
+	CF_EVENT_PARSE = (1 << 15),
+	CF_REPEAT_STATE = (1 << 16),
+	CF_GEN_RINGBACK = (1 << 17),
+	CF_RING_READY = (1 << 18)
 } switch_channel_flag_t;
 
 
@@ -600,7 +588,7 @@ typedef enum {
 	SWITCH_SIG_NONE,
 	SWITCH_SIG_KILL,
 	SWITCH_SIG_XFER,
-    SWITCH_SIG_BREAK
+	SWITCH_SIG_BREAK
 } switch_signal_t;
 
 /*!
@@ -618,14 +606,14 @@ SWITCH_CODEC_FLAG_PASSTHROUGH =		(1 <<  7) - Passthrough only
 </pre>
 */
 typedef enum {
-	SWITCH_CODEC_FLAG_ENCODE =			(1 <<  0),
-	SWITCH_CODEC_FLAG_DECODE =			(1 <<  1),
-	SWITCH_CODEC_FLAG_SILENCE_START =	(1 <<  2),
-	SWITCH_CODEC_FLAG_SILENCE_STOP =	(1 <<  3),
-	SWITCH_CODEC_FLAG_SILENCE =			(1 <<  4),
-	SWITCH_CODEC_FLAG_FREE_POOL =		(1 <<  5),
-	SWITCH_CODEC_FLAG_AAL2 =			(1 <<  6),
-	SWITCH_CODEC_FLAG_PASSTHROUGH =		(1 <<  7)
+	SWITCH_CODEC_FLAG_ENCODE = (1 << 0),
+	SWITCH_CODEC_FLAG_DECODE = (1 << 1),
+	SWITCH_CODEC_FLAG_SILENCE_START = (1 << 2),
+	SWITCH_CODEC_FLAG_SILENCE_STOP = (1 << 3),
+	SWITCH_CODEC_FLAG_SILENCE = (1 << 4),
+	SWITCH_CODEC_FLAG_FREE_POOL = (1 << 5),
+	SWITCH_CODEC_FLAG_AAL2 = (1 << 6),
+	SWITCH_CODEC_FLAG_PASSTHROUGH = (1 << 7)
 } switch_codec_flag_t;
 
 
@@ -641,12 +629,12 @@ SWITCH_SPEECH_FLAG_PAUSE = 			(1 <<  4) - Pause toggle for playback
 </pre>
 */
 typedef enum {
-	SWITCH_SPEECH_FLAG_NONE =			0,
-	SWITCH_SPEECH_FLAG_HASTEXT =		(1 <<  0),
-	SWITCH_SPEECH_FLAG_PEEK =			(1 <<  1),
-	SWITCH_SPEECH_FLAG_FREE_POOL =		(1 <<  2),
-	SWITCH_SPEECH_FLAG_BLOCKING =		(1 <<  3),
-	SWITCH_SPEECH_FLAG_PAUSE =			(1 <<  4)
+	SWITCH_SPEECH_FLAG_NONE = 0,
+	SWITCH_SPEECH_FLAG_HASTEXT = (1 << 0),
+	SWITCH_SPEECH_FLAG_PEEK = (1 << 1),
+	SWITCH_SPEECH_FLAG_FREE_POOL = (1 << 2),
+	SWITCH_SPEECH_FLAG_BLOCKING = (1 << 3),
+	SWITCH_SPEECH_FLAG_PAUSE = (1 << 4)
 
 } switch_speech_flag_t;
 
@@ -662,12 +650,12 @@ SWITCH_ASR_FLAG_AUTO_RESUME =   (1 <<  4) - Auto Resume
 </pre>
 */
 typedef enum {
-	SWITCH_ASR_FLAG_NONE =			0,
-	SWITCH_ASR_FLAG_DATA =			(1 <<  0),
-	SWITCH_ASR_FLAG_FREE_POOL =		(1 <<  1),
-	SWITCH_ASR_FLAG_CLOSED =		(1 <<  2),
-	SWITCH_ASR_FLAG_FIRE_EVENTS =	(1 <<  3),
-	SWITCH_ASR_FLAG_AUTO_RESUME = 	(1 <<  4)
+	SWITCH_ASR_FLAG_NONE = 0,
+	SWITCH_ASR_FLAG_DATA = (1 << 0),
+	SWITCH_ASR_FLAG_FREE_POOL = (1 << 1),
+	SWITCH_ASR_FLAG_CLOSED = (1 << 2),
+	SWITCH_ASR_FLAG_FIRE_EVENTS = (1 << 3),
+	SWITCH_ASR_FLAG_AUTO_RESUME = (1 << 4)
 } switch_asr_flag_t;
 
 /*!
@@ -678,7 +666,7 @@ SWITCH_DIRECTORY_FLAG_FREE_POOL =		(1 <<  0) - Free interface's pool on destruct
 </pre>
 */
 typedef enum {
-	SWITCH_DIRECTORY_FLAG_FREE_POOL =		(1 <<  0),
+	SWITCH_DIRECTORY_FLAG_FREE_POOL = (1 << 0),
 
 } switch_directory_flag_t;
 
@@ -708,7 +696,7 @@ SWITCH_TIMER_FLAG_FREE_POOL =		(1 <<  0) - Free timer's pool on destruction
 </pre>
 */
 typedef enum {
-		SWITCH_TIMER_FLAG_FREE_POOL =		(1 <<  0),
+	SWITCH_TIMER_FLAG_FREE_POOL = (1 << 0),
 } switch_timer_flag_t;
 
 
@@ -747,18 +735,18 @@ SWITCH_FILE_OPEN =              (1 << 11) - File is open
 </pre>
  */
 typedef enum {
-	SWITCH_FILE_FLAG_READ =			(1 <<  0),
-	SWITCH_FILE_FLAG_WRITE =		(1 <<  1),
-	SWITCH_FILE_FLAG_FREE_POOL =	(1 <<  2),
-	SWITCH_FILE_DATA_SHORT =		(1 <<  3),
-	SWITCH_FILE_DATA_INT =			(1 <<  4),
-	SWITCH_FILE_DATA_FLOAT =		(1 <<  5),
-	SWITCH_FILE_DATA_DOUBLE =		(1 <<  6),
-	SWITCH_FILE_DATA_RAW =			(1 <<  7),
-	SWITCH_FILE_PAUSE =				(1 <<  8),
-	SWITCH_FILE_NATIVE = 			(1 <<  9),
-	SWITCH_FILE_SEEK = 				(1 << 10),
-	SWITCH_FILE_OPEN =				(1 << 11)
+	SWITCH_FILE_FLAG_READ = (1 << 0),
+	SWITCH_FILE_FLAG_WRITE = (1 << 1),
+	SWITCH_FILE_FLAG_FREE_POOL = (1 << 2),
+	SWITCH_FILE_DATA_SHORT = (1 << 3),
+	SWITCH_FILE_DATA_INT = (1 << 4),
+	SWITCH_FILE_DATA_FLOAT = (1 << 5),
+	SWITCH_FILE_DATA_DOUBLE = (1 << 6),
+	SWITCH_FILE_DATA_RAW = (1 << 7),
+	SWITCH_FILE_PAUSE = (1 << 8),
+	SWITCH_FILE_NATIVE = (1 << 9),
+	SWITCH_FILE_SEEK = (1 << 10),
+	SWITCH_FILE_OPEN = (1 << 11)
 } switch_file_flag_t;
 
 typedef enum {
@@ -951,19 +939,8 @@ typedef struct switch_codec_implementation switch_codec_implementation_t;
 typedef struct switch_buffer switch_buffer_t;
 typedef struct switch_codec_settings switch_codec_settings_t;
 
-typedef struct switch_io_event_hook_outgoing_channel switch_io_event_hook_outgoing_channel_t;
-typedef struct switch_io_event_hook_answer_channel switch_io_event_hook_answer_channel_t;
-typedef struct switch_io_event_hook_receive_message switch_io_event_hook_receive_message_t;
-typedef struct switch_io_event_hook_receive_event switch_io_event_hook_receive_event_t;
-typedef struct switch_io_event_hook_read_frame switch_io_event_hook_read_frame_t;
-typedef struct switch_io_event_hook_write_frame switch_io_event_hook_write_frame_t;
-typedef struct switch_io_event_hook_kill_channel switch_io_event_hook_kill_channel_t;
-typedef struct switch_io_event_hook_waitfor_read switch_io_event_hook_waitfor_read_t;
-typedef struct switch_io_event_hook_waitfor_write switch_io_event_hook_waitfor_write_t;
-typedef struct switch_io_event_hook_send_dtmf switch_io_event_hook_send_dtmf_t;
-typedef struct switch_io_event_hook_state_change switch_io_event_hook_state_change_t;
+
 typedef struct switch_io_routines switch_io_routines_t;
-typedef struct switch_io_event_hooks switch_io_event_hooks_t;
 typedef struct switch_speech_handle switch_speech_handle_t;
 typedef struct switch_asr_handle switch_asr_handle_t;
 typedef struct switch_directory_handle switch_directory_handle_t;
@@ -982,43 +959,30 @@ typedef struct switch_chat_interface switch_chat_interface_t;
 typedef struct switch_management_interface switch_management_interface_t;
 typedef struct switch_core_port_allocator switch_core_port_allocator_t;
 typedef struct switch_media_bug switch_media_bug_t;
-typedef switch_bool_t (*switch_media_bug_callback_t)(switch_media_bug_t *, void *, switch_abc_type_t);
-typedef void (*switch_application_function_t)(switch_core_session_t *, char *);
-typedef void (*switch_event_callback_t)(switch_event_t *);
-typedef switch_caller_extension_t *(*switch_dialplan_hunt_function_t)(switch_core_session_t *, void *);
-typedef struct switch_core_scheduler_task switch_core_scheduler_task_t;
-typedef void (*switch_core_scheduler_func_t)(switch_core_scheduler_task_t *task);
-typedef switch_status_t (*switch_state_handler_t)(switch_core_session_t *);
-typedef switch_status_t (*switch_outgoing_channel_hook_t)(switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t *);
-typedef switch_status_t (*switch_answer_channel_hook_t)(switch_core_session_t *);
-typedef switch_status_t (*switch_receive_message_hook_t)(switch_core_session_t *, switch_core_session_message_t *);
-typedef switch_status_t (*switch_receive_event_hook_t)(switch_core_session_t *, switch_event_t *);
-typedef switch_status_t (*switch_read_frame_hook_t)(switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
-typedef switch_status_t (*switch_write_frame_hook_t)(switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int);
-typedef switch_status_t (*switch_kill_channel_hook_t)(switch_core_session_t *, int);
-typedef switch_status_t (*switch_waitfor_read_hook_t)(switch_core_session_t *, int, int);
-typedef switch_status_t (*switch_waitfor_write_hook_t)(switch_core_session_t *, int, int);
-typedef switch_status_t (*switch_send_dtmf_hook_t)(switch_core_session_t *, char *);
-typedef switch_status_t (*switch_state_change_hook_t)(switch_core_session_t *);
+typedef switch_bool_t (*switch_media_bug_callback_t) (switch_media_bug_t *, void *, switch_abc_type_t);
+typedef void (*switch_application_function_t) (switch_core_session_t *, char *);
+typedef void (*switch_event_callback_t) (switch_event_t *);
+typedef switch_caller_extension_t *(*switch_dialplan_hunt_function_t) (switch_core_session_t *, void *);
+typedef struct switch_scheduler_task switch_scheduler_task_t;
+typedef void (*switch_scheduler_func_t) (switch_scheduler_task_t *task);
+typedef switch_status_t (*switch_state_handler_t) (switch_core_session_t *);
 typedef struct switch_stream_handle switch_stream_handle_t;
-typedef switch_status_t (*switch_stream_handle_write_function_t)(switch_stream_handle_t *handle, const char *fmt, ...);
-typedef switch_status_t (*switch_api_function_t)(char *in, switch_core_session_t *session, switch_stream_handle_t *stream);
-typedef switch_status_t (*switch_input_callback_function_t)(switch_core_session_t *session,
-															void *input,
-															switch_input_type_t input_type,
-															void *buf,
-															unsigned int buflen);
+typedef switch_status_t (*switch_stream_handle_write_function_t) (switch_stream_handle_t *handle, const char *fmt, ...);
+typedef switch_status_t (*switch_api_function_t) (char *in, switch_core_session_t *session,
+												  switch_stream_handle_t *stream);
+typedef switch_status_t (*switch_input_callback_function_t) (switch_core_session_t *session, void *input,
+															 switch_input_type_t input_type, void *buf,
+															 unsigned int buflen);
 typedef struct switch_say_interface switch_say_interface_t;
 typedef struct {
-    switch_input_callback_function_t input_callback;
-    void *buf;
-    uint32_t buflen;
+	switch_input_callback_function_t input_callback;
+	void *buf;
+	uint32_t buflen;
 } switch_input_args_t;
-typedef switch_status_t (*switch_say_callback_t)(switch_core_session_t *session,
-                                                 char *tosay,
-                                                 switch_say_type_t type,
-                                                 switch_say_method_t method,
-                                                 switch_input_args_t *args);
+typedef switch_status_t (*switch_say_callback_t) (switch_core_session_t *session,
+												  char *tosay,
+												  switch_say_type_t type,
+												  switch_say_method_t method, switch_input_args_t *args);
 typedef switch_status_t (*switch_module_load_t) (switch_loadable_module_interface_t **, char *);
 typedef switch_status_t (*switch_module_reload_t) (void);
 typedef switch_status_t (*switch_module_pause_t) (void);
@@ -1028,12 +992,10 @@ typedef switch_status_t (*switch_module_runtime_t) (void);
 typedef switch_status_t (*switch_module_shutdown_t) (void);
 typedef struct switch_xml *switch_xml_t;
 typedef struct switch_core_time_duration switch_core_time_duration_t;
-typedef switch_xml_t (*switch_xml_search_function_t)(const char *section,
+typedef switch_xml_t(*switch_xml_search_function_t) (const char *section,
 													 const char *tag_name,
 													 const char *key_name,
-													 const char *key_value,
-													 const char *params,
-                                                     void *user_data);
+													 const char *key_value, const char *params, void *user_data);
 
 /* things we don't deserve to know about */
 /*! \brief A channel */
@@ -1046,9 +1008,7 @@ struct switch_media_bug;
 struct switch_ivr_digit_stream_parser;
 
 SWITCH_END_EXTERN_C
-
 #endif
-
 /* For Emacs:
  * Local Variables:
  * mode:c

@@ -57,7 +57,8 @@ SWITCH_DECLARE(int) switch_config_open_file(switch_config_t *cfg, char *file_pat
 			int last = -1;
 			char *var, *val;
 
-			snprintf(path_buf, sizeof(path_buf), "%s%sfreeswitch.conf", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR);
+			snprintf(path_buf, sizeof(path_buf), "%s%sfreeswitch.conf", SWITCH_GLOBAL_dirs.conf_dir,
+					 SWITCH_PATH_SEPARATOR);
 			path = path_buf;
 
 			if ((f = fopen(path, "r")) == 0) {
@@ -171,7 +172,7 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config_t *cfg, char **var, ch
 		}
 		*var = p;
 
-		
+
 		if ((*val = strchr(*var, '=')) == 0) {
 			ret = -1;
 			/* log_printf(0, server.log, "Invalid syntax on %s: line %d\n", cfg->path, cfg->lineno); */

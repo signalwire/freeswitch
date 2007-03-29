@@ -50,37 +50,37 @@
 #ifndef CURLCDR
 #define CURLCDR
 
-class CurlCDR : public BaseCDR {
-	public:
-		CurlCDR();
-		CurlCDR(switch_mod_cdr_newchannel_t *newchannel);
-		//CurlCDR(const CurlCDR& copyFrom);
-		virtual ~CurlCDR();
-		virtual bool process_record();
-		virtual void connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settings, switch_xml_t& param); // connect and disconnect need to be static because we're persisting connections until shutdown
-		virtual void disconnect();
-		virtual bool is_activated();
-		virtual void tempdump_record();
-		virtual void reread_tempdumped_records();
-		virtual std::string get_display_name();
-    virtual std::string itos(int i);
-    virtual std::string lltos(long long ll);
+class CurlCDR:public BaseCDR {
+  public:
+	CurlCDR();
+	CurlCDR(switch_mod_cdr_newchannel_t * newchannel);
+	//CurlCDR(const CurlCDR& copyFrom);
+	virtual ~ CurlCDR();
+	virtual bool process_record();
+	virtual void connect(switch_xml_t & cfg, switch_xml_t & xml, switch_xml_t & settings, switch_xml_t & param);	// connect and disconnect need to be static because we're persisting connections until shutdown
+	virtual void disconnect();
+	virtual bool is_activated();
+	virtual void tempdump_record();
+	virtual void reread_tempdumped_records();
+	virtual std::string get_display_name();
+	virtual std::string itos(int i);
+	virtual std::string lltos(long long ll);
 
-	private:
-		static bool activated; // Is this module activated?
-		static bool connectionstate; // What is the status of the connection?
-		static bool logchanvars;
-		static modcdr_time_convert_t convert_time;
-		static const char *gateway_url; // The URL to send data to
-		static const char *gateway_credentials; // The credentials for http auth
-		static std::list<std::string> chanvars_fixed_list; // Normally this would be used, but not in this class
-		static std::list<std::string> chanvars_supp_list; // This will hold the list for all chanvars here
-		static std::string display_name;
-        static std::string postdata;
-		char formattedcallstartdate[100];
-		char formattedcallanswerdate[100];
-		char formattedcalltransferdate[100];
-		char formattedcallenddate[100];
+  private:
+	static bool activated;		// Is this module activated?
+	static bool connectionstate;	// What is the status of the connection?
+	static bool logchanvars;
+	static modcdr_time_convert_t convert_time;
+	static const char *gateway_url;	// The URL to send data to
+	static const char *gateway_credentials;	// The credentials for http auth
+	static std::list < std::string > chanvars_fixed_list;	// Normally this would be used, but not in this class
+	static std::list < std::string > chanvars_supp_list;	// This will hold the list for all chanvars here
+	static std::string display_name;
+	static std::string postdata;
+	char formattedcallstartdate[100];
+	char formattedcallanswerdate[100];
+	char formattedcalltransferdate[100];
+	char formattedcallenddate[100];
 };
 
 #endif

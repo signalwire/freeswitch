@@ -37,7 +37,7 @@ static const char modname[] = "mod_xml_cdr";
 static switch_status_t my_on_hangup(switch_core_session_t *session)
 {
 	switch_xml_t cdr;
-	
+
 	if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		char *xml_text;
@@ -51,16 +51,16 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 		if ((alt = switch_channel_get_variable(channel, "xml_cdr_base"))) {
 			logdir = alt;
 		}
-		
+
 		if ((path = switch_mprintf("%s/xml_cdr/%s.cdr.xml", logdir, uuid_str))) {
 			if ((xml_text = switch_xml_toxml(cdr))) {
-				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC,  S_IRUSR | S_IWUSR)) > -1) {
-					write(fd, header, (unsigned)strlen(header));
-					write(fd, xml_text, (unsigned)strlen(xml_text));
+				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+					write(fd, header, (unsigned) strlen(header));
+					write(fd, xml_text, (unsigned) strlen(xml_text));
 					close(fd);
 					fd = -1;
 				} else {
-					char ebuf[512] = {0};
+					char ebuf[512] = { 0 };
 #ifdef WIN32
 					strerror_s(ebuf, sizeof(ebuf), errno);
 #else
@@ -77,7 +77,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Generating Data!\n");
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -100,7 +100,8 @@ static const switch_loadable_module_interface_t mod_xml_cdr_module_interface = {
 	/*.application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
+													   char *filename)
 {
 	/* test global state handlers */
 	switch_core_add_state_handler(&state_handlers);

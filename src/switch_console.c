@@ -50,12 +50,12 @@ SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle
 	va_start(ap, fmt);
 	ret = switch_vasprintf(&data, fmt, ap);
 	va_end(ap);
-	
+
 	if (data) {
 		switch_size_t remaining = handle->data_size - handle->data_len;
 		switch_size_t need = strlen(data) + 1;
-		
-		
+
+
 		if ((remaining < need) && handle->alloc_len) {
 			switch_size_t new_len;
 			void *new_data;
@@ -63,10 +63,10 @@ SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle
 			new_len = handle->data_size + need + handle->alloc_chunk;
 			if ((new_data = realloc(handle->data, new_len))) {
 				handle->data_size = handle->alloc_len = new_len;
-                handle->data = new_data;
+				handle->data = new_data;
 				buf = handle->data;
 				remaining = handle->data_size - handle->data_len;
-				handle->end = (uint8_t *)(handle->data) + handle->data_len;
+				handle->end = (uint8_t *) (handle->data) + handle->data_len;
 				end = handle->end;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
@@ -81,11 +81,11 @@ SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle
 			ret = 0;
 			snprintf(end, remaining, "%s", data);
 			handle->data_len = strlen(buf);
-			handle->end = (uint8_t *)(handle->data) + handle->data_len;
+			handle->end = (uint8_t *) (handle->data) + handle->data_len;
 		}
 		free(data);
 	}
-	
+
 	return ret ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 }
 
@@ -93,7 +93,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle
 static int switch_console_process(char *cmd)
 {
 	char *arg = NULL;
-	switch_stream_handle_t stream = {0};
+	switch_stream_handle_t stream = { 0 };
 
 	if (!strcmp(cmd, "shutdown") || !strcmp(cmd, "...")) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bye!\n");
@@ -103,18 +103,19 @@ static int switch_console_process(char *cmd)
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "FreeSwitch Version %s\n", SWITCH_VERSION_FULL);
 		return 1;
 	}
-	if ((arg = strchr(cmd, '\r')) != 0  || (arg = strchr(cmd, '\n')) != 0 )  {
+	if ((arg = strchr(cmd, '\r')) != 0 || (arg = strchr(cmd, '\n')) != 0) {
 		*arg = '\0';
 		arg = NULL;
 	}
 	if ((arg = strchr(cmd, ' ')) != 0) {
 		*arg++ = '\0';
 	}
-	
+
 	SWITCH_STANDARD_STREAM(stream);
 	if (stream.data) {
 		if (switch_api_execute(cmd, arg, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "", (char *)stream.data);
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "API CALL [%s(%s)] output:\n%s\n", cmd,
+							  arg ? arg : "", (char *) stream.data);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Unknown Command: %s\n", cmd);
 		}
@@ -171,7 +172,7 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const 
 			}
 		}
 	}
-	if(data) {
+	if (data) {
 		free(data);
 	}
 	fflush(handle);
@@ -186,11 +187,11 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 
 	gethostname(hostname, sizeof(hostname));
 
-	while(running) {
+	while (running) {
 		uint32_t arg;
 #ifndef _MSC_VER
 		fd_set rfds, efds;
-		struct timeval tv = {0, 20000};
+		struct timeval tv = { 0, 20000 };
 #endif
 
 		switch_core_session_ctl(SCSC_CHECK_RUNNING, &arg);
@@ -202,7 +203,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "\nfreeswitch@%s> ", hostname);
 		}
 #ifdef _MSC_VER
-		activity = WaitForSingleObject(GetStdHandle(STD_INPUT_HANDLE),20);
+		activity = WaitForSingleObject(GetStdHandle(STD_INPUT_HANDLE), 20);
 
 		if (activity == 102) {
 			fflush(stdout);
@@ -213,9 +214,9 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 		FD_ZERO(&efds);
 		FD_SET(fileno(stdin), &rfds);
 		FD_SET(fileno(stdin), &efds);
-		if ((activity = select(fileno(stdin)+1, &rfds, NULL, &efds, &tv)) < 0) {
-            break;
-        }
+		if ((activity = select(fileno(stdin) + 1, &rfds, NULL, &efds, &tv)) < 0) {
+			break;
+		}
 
 		if (activity == 0) {
 			fflush(stdout);
@@ -225,13 +226,13 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 
 
 		memset(&cmd, 0, sizeof(cmd));
-		for (x = 0; x < (sizeof(cmd)-1); x++) {
-            int c = getchar();
-            if (c < 0) {
-                int y = read(fileno(stdin), cmd, sizeof(cmd));
-                cmd[y-1] = '\0';
-                break;
-            }
+		for (x = 0; x < (sizeof(cmd) - 1); x++) {
+			int c = getchar();
+			if (c < 0) {
+				int y = read(fileno(stdin), cmd, sizeof(cmd));
+				cmd[y - 1] = '\0';
+				break;
+			}
 
 			cmd[x] = (char) c;
 
@@ -240,12 +241,12 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 				break;
 			}
 		}
-	
+
 		if (cmd[0]) {
 			running = switch_console_process(cmd);
 		}
 	}
-	
+
 
 }
 

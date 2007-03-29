@@ -45,15 +45,13 @@
 
 #include <switch.h>
 SWITCH_BEGIN_EXTERN_C
-
 /*!
   \defgroup resamp Audio Resample Functions
   \ingroup core1
   \{ 
 */
-
 /*! \brief An audio resampling handle */
-typedef struct {
+	typedef struct {
 	/*! a pointer to store the resampler object */
 	void *resampler;
 	/*! the rate to resample from in hz */
@@ -87,11 +85,9 @@ typedef struct {
   \return SWITCH_STATUS_SUCCESS if the handle was created
  */
 SWITCH_DECLARE(switch_status_t) switch_resample_create(switch_audio_resampler_t **new_resampler,
-													 int from_rate,
-													 switch_size_t from_size,
-													 int to_rate,
-													 uint32_t to_size,
-													 switch_memory_pool_t *pool);
+													   int from_rate,
+													   switch_size_t from_size,
+													   int to_rate, uint32_t to_size, switch_memory_pool_t *pool);
 
 /*!
   \brief Destroy an existing resampler handle
@@ -109,7 +105,8 @@ SWITCH_DECLARE(void) switch_resample_destroy(switch_audio_resampler_t *resampler
   \param last parameter denoting the last sample is being resampled
   \return the used size of dst
  */
-SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler_t *resampler, float *src, int srclen, float *dst, uint32_t dstlen, int last);
+SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler_t *resampler, float *src, int srclen,
+												 float *dst, uint32_t dstlen, int last);
 
 /*!
   \brief Convert an array of floats to an array of shorts
@@ -172,9 +169,7 @@ SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, i
 ///\}
 
 SWITCH_END_EXTERN_C
-
 #endif
-
 /* For Emacs:
  * Local Variables:
  * mode:c

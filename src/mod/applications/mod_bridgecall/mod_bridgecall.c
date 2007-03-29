@@ -44,11 +44,11 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 	char *var;
 	uint8_t no_media_bridge = 0;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
-    uint8_t do_continue = 0;
+	uint8_t do_continue = 0;
 
-    if (switch_strlen_zero(data)) {
-        return;
-    }
+	if (switch_strlen_zero(data)) {
+		return;
+	}
 
 	caller_channel = switch_core_session_get_channel(session);
 	assert(caller_channel != NULL);
@@ -60,43 +60,50 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 	if ((var = switch_channel_get_variable(caller_channel, "continue_on_fail"))) {
 		do_continue = switch_true(var);
 	}
-	
-	if (switch_channel_test_flag(caller_channel, CF_NOMEDIA) || ((var = switch_channel_get_variable(caller_channel, "no_media")) && switch_true(var))) {
-		if (!switch_channel_test_flag(caller_channel, CF_ANSWERED) && !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
+
+	if (switch_channel_test_flag(caller_channel, CF_NOMEDIA)
+		|| ((var = switch_channel_get_variable(caller_channel, "no_media")) && switch_true(var))) {
+		if (!switch_channel_test_flag(caller_channel, CF_ANSWERED)
+			&& !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
 			switch_channel_set_flag(caller_channel, CF_NOMEDIA);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already up, delaying point-to-point mode 'till both legs are up.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+							  "Channel is already up, delaying point-to-point mode 'till both legs are up.\n");
 			no_media_bridge = 1;
 		}
 	}
 
-	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n", switch_channel_cause2str(cause));
-        if (!do_continue && cause != SWITCH_CAUSE_NO_ANSWER) {
-            /* All Causes besides NO_ANSWER terminate the originating session unless continue_on_fail is set.
-               We will pass the fail cause on when we hangup.*/
-            switch_channel_hangup(caller_channel, cause);
-        }
-        /* Otherwise.. nobody answered.  Go back to the dialplan instructions in case there was more to do. */
+	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL) !=
+		SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n",
+						  switch_channel_cause2str(cause));
+		if (!do_continue && cause != SWITCH_CAUSE_NO_ANSWER) {
+			/* All Causes besides NO_ANSWER terminate the originating session unless continue_on_fail is set.
+			   We will pass the fail cause on when we hangup. */
+			switch_channel_hangup(caller_channel, cause);
+		}
+		/* Otherwise.. nobody answered.  Go back to the dialplan instructions in case there was more to do. */
 		return;
 	} else {
 		if (no_media_bridge) {
-            switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
-            switch_frame_t *read_frame;
-            /* SIP won't let us redir media until the call has been answered #$^#%& so we will proxy any early media until they do */
-            while(switch_channel_ready(caller_channel) && switch_channel_ready(peer_channel) && !switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
-                switch_status_t status = switch_core_session_read_frame(peer_session, &read_frame, -1, 0);
-                uint8_t bad = 1;
+			switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
+			switch_frame_t *read_frame;
+			/* SIP won't let us redir media until the call has been answered #$^#%& so we will proxy any early media until they do */
+			while (switch_channel_ready(caller_channel) && switch_channel_ready(peer_channel)
+				   && !switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
+				switch_status_t status = switch_core_session_read_frame(peer_session, &read_frame, -1, 0);
+				uint8_t bad = 1;
 
-                if (SWITCH_READ_ACCEPTABLE(status) && switch_core_session_write_frame(session, read_frame, -1, 0) == SWITCH_STATUS_SUCCESS) {
-                    bad = 0;
-                }
-                if (bad) {
-                    switch_channel_hangup(caller_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-                    switch_channel_hangup(peer_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-                    return;
-                }
-            }
+				if (SWITCH_READ_ACCEPTABLE(status)
+					&& switch_core_session_write_frame(session, read_frame, -1, 0) == SWITCH_STATUS_SUCCESS) {
+					bad = 0;
+				}
+				if (bad) {
+					switch_channel_hangup(caller_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					switch_channel_hangup(peer_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					return;
+				}
+			}
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Redirecting media to point-to-point mode.\n");
 			switch_ivr_nomedia(switch_core_session_get_uuid(session), SMF_FORCE);
@@ -130,7 +137,8 @@ static const switch_loadable_module_interface_t mod_bridgecall_module_interface 
 	/*.application_interface */ &bridge_application_interface
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
+													   char *filename)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */

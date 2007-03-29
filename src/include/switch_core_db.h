@@ -36,28 +36,24 @@
 #define SWITCH_CORE_DB_H
 
 SWITCH_BEGIN_EXTERN_C
-
 /**
  * @defgroup switch_sqlite_top Brought To You By SQLite
  * @ingroup FREESWITCH
  * @{
  */
-
 /**
  * @defgroup switch_core_db Database Routines
  * @ingroup switch_sqlite_top 
  * @{
  */
-
 /**
  * Each open database is represented by an instance of the
  * following opaque structure.
 */
-
-typedef struct sqlite3 switch_core_db_t;
+	typedef struct sqlite3 switch_core_db_t;
 typedef struct sqlite3_stmt switch_core_db_stmt_t;
 
-typedef int (*switch_core_db_callback_func_t)(void *pArg, int argc, char **argv, char **columnNames);
+typedef int (*switch_core_db_callback_func_t) (void *pArg, int argc, char **argv, char **columnNames);
 
 /*
 ** These are special value for the destructor that is passed in as the
@@ -71,7 +67,7 @@ typedef int (*switch_core_db_callback_func_t)(void *pArg, int argc, char **argv,
 ** The typedef is necessary to work around problems in certain
 ** C++ compilers.
 */
-typedef void (*switch_core_db_destructor_type_t)(void*);
+typedef void (*switch_core_db_destructor_type_t) (void *);
 #define SWITCH_CORE_DB_STATIC      ((switch_core_db_destructor_type_t)0)
 #define SWITCH_CORE_DB_TRANSIENT   ((switch_core_db_destructor_type_t)-1)
 
@@ -144,14 +140,14 @@ SWITCH_DECLARE(int) switch_core_db_open(const char *filename, switch_core_db_t *
  *
  *  Return the value as UTF-8 text.
  */
-SWITCH_DECLARE(const unsigned char *)switch_core_db_column_text(switch_core_db_stmt_t *stmt, int iCol);
+SWITCH_DECLARE(const unsigned char *) switch_core_db_column_text(switch_core_db_stmt_t *stmt, int iCol);
 
 /**
  * The first parameter is a compiled SQL statement. This function returns
  * the column heading for the Nth column of that statement, where N is the
  * second function parameter.  The string returned is UTF-8.
  */
-SWITCH_DECLARE(const char *)switch_core_db_column_name(switch_core_db_stmt_t *stmt, int N);
+SWITCH_DECLARE(const char *) switch_core_db_column_name(switch_core_db_stmt_t *stmt, int N);
 
 /**
  * Return the number of columns in the result set returned by the compiled
@@ -168,7 +164,7 @@ SWITCH_DECLARE(int) switch_core_db_column_count(switch_core_db_stmt_t *pStmt);
  * The string "not an error" is returned when the most recent API call was
  * successful.
  */
-SWITCH_DECLARE(const char *)switch_core_db_errmsg(switch_core_db_t *db);
+SWITCH_DECLARE(const char *) switch_core_db_errmsg(switch_core_db_t *db);
 
 /**
  * A function to executes one or more statements of SQL.
@@ -212,9 +208,7 @@ SWITCH_DECLARE(const char *)switch_core_db_errmsg(switch_core_db_t *db);
  */
 SWITCH_DECLARE(int) switch_core_db_exec(switch_core_db_t *db,
 										const char *sql,
-										switch_core_db_callback_func_t callback,
-										void *data,
-										char **errmsg);
+										switch_core_db_callback_func_t callback, void *data, char **errmsg);
 
 /**
  * This function is called to delete a compiled
@@ -256,9 +250,7 @@ SWITCH_DECLARE(int) switch_core_db_finalize(switch_core_db_stmt_t *pStmt);
  */
 SWITCH_DECLARE(int) switch_core_db_prepare(switch_core_db_t *db,
 										   const char *zSql,
-										   int nBytes,
-										   switch_core_db_stmt_t **ppStmt,
-										   const char **pzTail);
+										   int nBytes, switch_core_db_stmt_t **ppStmt, const char **pzTail);
 
 /** 
  * After an SQL query has been compiled with a call to either
@@ -375,7 +367,8 @@ SWITCH_DECLARE(int) switch_core_db_bind_int64(switch_core_db_stmt_t *pStmt, int 
  * an switch_core_db_prepare() or sqlite3_reset().  Unbound parameterss are
  * interpreted as NULL.
  */
-SWITCH_DECLARE(int) switch_core_db_bind_text(switch_core_db_stmt_t *pStmt, int i, const char *zData, int nData, switch_core_db_destructor_type_t xDel);
+SWITCH_DECLARE(int) switch_core_db_bind_text(switch_core_db_stmt_t *pStmt, int i, const char *zData, int nData,
+											 switch_core_db_destructor_type_t xDel);
 
 /**
  * In the SQL strings input to switch_core_db_prepare(),
@@ -451,14 +444,13 @@ SWITCH_DECLARE(int64_t) switch_core_db_last_insert_rowid(switch_core_db_t *db);
  *
  * The return value of this routine is the same as from switch_core_db_exec().
  */
-SWITCH_DECLARE(int) switch_core_db_get_table(
-  switch_core_db_t *db,       /* An open database */
-  const char *sql,       /* SQL to be executed */
-  char ***resultp,       /* Result written to a char *[]  that this points to */
-  int *nrow,             /* Number of result rows written here */
-  int *ncolumn,          /* Number of result columns written here */
-  char **errmsg          /* Error msg written here */
-);
+SWITCH_DECLARE(int) switch_core_db_get_table(switch_core_db_t *db,	/* An open database */
+											 const char *sql,	/* SQL to be executed */
+											 char ***resultp,	/* Result written to a char *[]  that this points to */
+											 int *nrow,	/* Number of result rows written here */
+											 int *ncolumn,	/* Number of result columns written here */
+											 char **errmsg	/* Error msg written here */
+	);
 
 /**
  * Call this routine to free the memory that sqlite3_get_table() allocated.
@@ -471,36 +463,36 @@ SWITCH_DECLARE(void) switch_core_db_free_table(char **result);
 SWITCH_DECLARE(void) switch_core_db_free(char *z);
 
 /** Return values for switch_core_db_exec() and switch_core_db_step()*/
-#define SWITCH_CORE_DB_OK           0   /* Successful result */
+#define SWITCH_CORE_DB_OK           0	/* Successful result */
 /* beginning-of-error-codes */
-#define SWITCH_CORE_DB_ERROR        1   /* SQL error or missing database */
-#define SWITCH_CORE_DB_INTERNAL     2   /* NOT USED. Internal logic error in SQLite */
-#define SWITCH_CORE_DB_PERM         3   /* Access permission denied */
-#define SWITCH_CORE_DB_ABORT        4   /* Callback routine requested an abort */
-#define SWITCH_CORE_DB_BUSY         5   /* The database file is locked */
-#define SWITCH_CORE_DB_LOCKED       6   /* A table in the database is locked */
-#define SWITCH_CORE_DB_NOMEM        7   /* A malloc() failed */
-#define SWITCH_CORE_DB_READONLY     8   /* Attempt to write a readonly database */
-#define SWITCH_CORE_DB_INTERRUPT    9   /* Operation terminated by switch_core_db_interrupt()*/
-#define SWITCH_CORE_DB_IOERR       10   /* Some kind of disk I/O error occurred */
-#define SWITCH_CORE_DB_CORRUPT     11   /* The database disk image is malformed */
-#define SWITCH_CORE_DB_NOTFOUND    12   /* NOT USED. Table or record not found */
-#define SWITCH_CORE_DB_FULL        13   /* Insertion failed because database is full */
-#define SWITCH_CORE_DB_CANTOPEN    14   /* Unable to open the database file */
-#define SWITCH_CORE_DB_PROTOCOL    15   /* Database lock protocol error */
-#define SWITCH_CORE_DB_EMPTY       16   /* Database is empty */
-#define SWITCH_CORE_DB_SCHEMA      17   /* The database schema changed */
-#define SWITCH_CORE_DB_TOOBIG      18   /* NOT USED. Too much data for one row */
-#define SWITCH_CORE_DB_CONSTRAINT  19   /* Abort due to contraint violation */
-#define SWITCH_CORE_DB_MISMATCH    20   /* Data type mismatch */
-#define SWITCH_CORE_DB_MISUSE      21   /* Library used incorrectly */
-#define SWITCH_CORE_DB_NOLFS       22   /* Uses OS features not supported on host */
-#define SWITCH_CORE_DB_AUTH        23   /* Authorization denied */
-#define SWITCH_CORE_DB_FORMAT      24   /* Auxiliary database format error */
-#define SWITCH_CORE_DB_RANGE       25   /* 2nd parameter to switch_core_db_bind out of range */
-#define SWITCH_CORE_DB_NOTADB      26   /* File opened that is not a database file */
-#define SWITCH_CORE_DB_ROW         100  /* switch_core_db_step() has another row ready */
-#define SWITCH_CORE_DB_DONE        101  /* switch_core_db_step() has finished executing */
+#define SWITCH_CORE_DB_ERROR        1	/* SQL error or missing database */
+#define SWITCH_CORE_DB_INTERNAL     2	/* NOT USED. Internal logic error in SQLite */
+#define SWITCH_CORE_DB_PERM         3	/* Access permission denied */
+#define SWITCH_CORE_DB_ABORT        4	/* Callback routine requested an abort */
+#define SWITCH_CORE_DB_BUSY         5	/* The database file is locked */
+#define SWITCH_CORE_DB_LOCKED       6	/* A table in the database is locked */
+#define SWITCH_CORE_DB_NOMEM        7	/* A malloc() failed */
+#define SWITCH_CORE_DB_READONLY     8	/* Attempt to write a readonly database */
+#define SWITCH_CORE_DB_INTERRUPT    9	/* Operation terminated by switch_core_db_interrupt() */
+#define SWITCH_CORE_DB_IOERR       10	/* Some kind of disk I/O error occurred */
+#define SWITCH_CORE_DB_CORRUPT     11	/* The database disk image is malformed */
+#define SWITCH_CORE_DB_NOTFOUND    12	/* NOT USED. Table or record not found */
+#define SWITCH_CORE_DB_FULL        13	/* Insertion failed because database is full */
+#define SWITCH_CORE_DB_CANTOPEN    14	/* Unable to open the database file */
+#define SWITCH_CORE_DB_PROTOCOL    15	/* Database lock protocol error */
+#define SWITCH_CORE_DB_EMPTY       16	/* Database is empty */
+#define SWITCH_CORE_DB_SCHEMA      17	/* The database schema changed */
+#define SWITCH_CORE_DB_TOOBIG      18	/* NOT USED. Too much data for one row */
+#define SWITCH_CORE_DB_CONSTRAINT  19	/* Abort due to contraint violation */
+#define SWITCH_CORE_DB_MISMATCH    20	/* Data type mismatch */
+#define SWITCH_CORE_DB_MISUSE      21	/* Library used incorrectly */
+#define SWITCH_CORE_DB_NOLFS       22	/* Uses OS features not supported on host */
+#define SWITCH_CORE_DB_AUTH        23	/* Authorization denied */
+#define SWITCH_CORE_DB_FORMAT      24	/* Auxiliary database format error */
+#define SWITCH_CORE_DB_RANGE       25	/* 2nd parameter to switch_core_db_bind out of range */
+#define SWITCH_CORE_DB_NOTADB      26	/* File opened that is not a database file */
+#define SWITCH_CORE_DB_ROW         100	/* switch_core_db_step() has another row ready */
+#define SWITCH_CORE_DB_DONE        101	/* switch_core_db_step() has finished executing */
 /* end-of-error-codes */
 
 
@@ -547,12 +539,10 @@ SWITCH_DECLARE(void) switch_core_db_free(char *z);
  * should always use %q instead of %s when inserting text into a string 
  * literal.
  */
-SWITCH_DECLARE(char *)switch_mprintf(const char *zFormat,...);
+SWITCH_DECLARE(char *) switch_mprintf(const char *zFormat, ...);
 
 SWITCH_END_EXTERN_C
-
 #endif
-
 /* For Emacs:
  * Local Variables:
  * mode:c

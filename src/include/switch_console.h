@@ -51,9 +51,6 @@ SWITCH_BEGIN_EXTERN_C
 		s.alloc_len = SWITCH_CMD_CHUNK_LEN;\
 		s.alloc_chunk = SWITCH_CMD_CHUNK_LEN;\
 	}
-
- 
-
 /*!
   \brief A simple comand loop that reads input from the terminal
 */
@@ -62,16 +59,16 @@ SWITCH_DECLARE(void) switch_console_loop(void);
 /*!
   \brief A method akin to printf that allows you to redirect output to a specific console "channel"
 */
-SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const char *file, const char *func, int line, const char *fmt, ...) PRINTF_FUNCTION(5,6);
+SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const char *file, const char *func, int line,
+										   const char *fmt, ...) PRINTF_FUNCTION(5, 6);
 
 /*!
   \brief A method akin to printf for dealing with api streams
 */
-SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle_t *handle, const char *fmt, ...) PRINTF_FUNCTION(2,3);
+SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle_t *handle, const char *fmt,
+															...) PRINTF_FUNCTION(2, 3);
 SWITCH_END_EXTERN_C
-
 #endif
-
 /* For Emacs:
  * Local Variables:
  * mode:c

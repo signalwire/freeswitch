@@ -2,9 +2,8 @@
 #define _PABLIO_H
 
 #ifdef __cplusplus
-extern "C"
-{
-#endif /* __cplusplus */
+extern "C" {
+#endif							/* __cplusplus */
 
 /*
  * $Id: pablio.h 1083 2006-08-23 07:30:49Z rossb $
@@ -57,15 +56,13 @@ extern "C"
 
 #include <string.h>
 
-typedef struct
-{
-    PaUtilRingBuffer   inFIFO;
-    PaUtilRingBuffer   outFIFO;
-    PaStream *stream;
-    int          bytesPerFrame;
-    int          samplesPerFrame;
-}
-PABLIO_Stream;
+	typedef struct {
+		PaUtilRingBuffer inFIFO;
+		PaUtilRingBuffer outFIFO;
+		PaStream *stream;
+		int bytesPerFrame;
+		int samplesPerFrame;
+	} PABLIO_Stream;
 
 /* Values for flags for OpenAudioStream(). */
 #define PABLIO_READ     (1<<0)
@@ -78,25 +75,25 @@ PABLIO_Stream;
  * Write data to ring buffer.
  * Will not return until all the data has been written.
  */
-long WriteAudioStream( PABLIO_Stream *aStream, void *data, long numFrames );
+	long WriteAudioStream(PABLIO_Stream * aStream, void *data, long numFrames);
 
 /************************************************************
  * Read data from ring buffer.
  * Will not return until all the data has been read.
  */
-long ReadAudioStream( PABLIO_Stream *aStream, void *data, long numFrames );
+	long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames);
 
 /************************************************************
  * Return the number of frames that could be written to the stream without
  * having to wait.
  */
-long GetAudioStreamWriteable( PABLIO_Stream *aStream );
+	long GetAudioStreamWriteable(PABLIO_Stream * aStream);
 
 /************************************************************
  * Return the number of frames that are available to be read from the
  * stream without having to wait.
  */
-long GetAudioStreamReadable( PABLIO_Stream *aStream );
+	long GetAudioStreamReadable(PABLIO_Stream * aStream);
 
 /************************************************************
  * Opens a PortAudio stream with default characteristics.
@@ -106,15 +103,14 @@ long GetAudioStreamReadable( PABLIO_Stream *aStream );
  *    PABLIO_READ, PABLIO_WRITE, or PABLIO_READ_WRITE,
  *    and either PABLIO_MONO or PABLIO_STEREO
  */
-PaError OpenAudioStream( PABLIO_Stream **rwblPtr, 
-						 const PaStreamParameters *inputParameters,
-						 const PaStreamParameters *outputParameters,
-						 double sampleRate,
-						 PaStreamCallbackFlags statusFlags);
+	PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
+							const PaStreamParameters * inputParameters,
+							const PaStreamParameters * outputParameters,
+							double sampleRate, PaStreamCallbackFlags statusFlags);
 
-PaError CloseAudioStream( PABLIO_Stream *aStream );
+	PaError CloseAudioStream(PABLIO_Stream * aStream);
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
-#endif /* _PABLIO_H */
+#endif							/* __cplusplus */
+#endif							/* _PABLIO_H */

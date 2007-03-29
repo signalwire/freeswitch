@@ -41,7 +41,7 @@ struct g722_context {
 };
 
 static switch_status_t switch_g722_init(switch_codec_t *codec, switch_codec_flag_t flags,
-									   const switch_codec_settings_t *codec_settings)
+										const switch_codec_settings_t *codec_settings)
 {
 	int encoding, decoding;
 	struct g722_context *context = NULL;
@@ -50,18 +50,18 @@ static switch_status_t switch_g722_init(switch_codec_t *codec, switch_codec_flag
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
 
-	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(struct g722_context))))) { 
+	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(struct g722_context))))) {
 		return SWITCH_STATUS_FALSE;
 	} else {
 		if (encoding) {
-			if(codec->implementation->samples_per_second == 16000){
+			if (codec->implementation->samples_per_second == 16000) {
 				g722_encode_init(&context->encoder_object, 64000, G722_PACKED);
 			} else {
 				g722_encode_init(&context->encoder_object, 64000, G722_SAMPLE_RATE_8000);
 			}
 		}
 		if (decoding) {
-			if(codec->implementation->samples_per_second == 16000){
+			if (codec->implementation->samples_per_second == 16000) {
 				g722_decode_init(&context->decoder_object, 64000, G722_PACKED);
 			} else {
 				g722_decode_init(&context->decoder_object, 64000, G722_SAMPLE_RATE_8000);
@@ -70,44 +70,47 @@ static switch_status_t switch_g722_init(switch_codec_t *codec, switch_codec_flag
 	}
 
 	codec->private_info = context;
-	return SWITCH_STATUS_SUCCESS;	
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t switch_g722_encode(switch_codec_t *codec,
-										 switch_codec_t *other_codec,
-										 void *decoded_data,
-										 uint32_t decoded_data_len,
-										 uint32_t decoded_rate,
-										 void *encoded_data,
-										 uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag)
+										  switch_codec_t *other_codec,
+										  void *decoded_data,
+										  uint32_t decoded_data_len,
+										  uint32_t decoded_rate,
+										  void *encoded_data,
+										  uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
 {
 	struct g722_context *context = codec->private_info;
 
 	if (!context) {
-		return SWITCH_STATUS_FALSE; 
+		return SWITCH_STATUS_FALSE;
 	}
 
-	*encoded_data_len = g722_encode(&context->encoder_object, (uint8_t *) encoded_data, (int16_t *) decoded_data, decoded_data_len / 2);
-	
+	*encoded_data_len =
+		g722_encode(&context->encoder_object, (uint8_t *) encoded_data, (int16_t *) decoded_data, decoded_data_len / 2);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t switch_g722_decode(switch_codec_t *codec,
-										 switch_codec_t *other_codec,
-										 void *encoded_data,
-										 uint32_t encoded_data_len,
-										 uint32_t encoded_rate,
-										 void *decoded_data,
-										 uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag)
+										  switch_codec_t *other_codec,
+										  void *encoded_data,
+										  uint32_t encoded_data_len,
+										  uint32_t encoded_rate,
+										  void *decoded_data,
+										  uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
 {
 	struct g722_context *context = codec->private_info;
 
 	if (!context) {
-		return SWITCH_STATUS_FALSE; 
+		return SWITCH_STATUS_FALSE;
 	}
 
-	*decoded_data_len = (2 * g722_decode(&context->decoder_object, (int16_t *) decoded_data, (uint8_t *) encoded_data, encoded_data_len));
-	
+	*decoded_data_len =
+		(2 *
+		 g722_decode(&context->decoder_object, (int16_t *) decoded_data, (uint8_t *) encoded_data, encoded_data_len));
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -175,7 +178,8 @@ static switch_loadable_module_interface_t g722_module_interface = {
 	/*.application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
+													   char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &g722_module_interface;

@@ -50,8 +50,8 @@ static const char modname[] = "mod_softtimer";
 #define MAX_ELEMENTS 1000
 
 struct timer_private {
-    switch_size_t reference;
-    switch_size_t start;
+	switch_size_t reference;
+	switch_size_t start;
 	uint32_t roll;
 	uint32_t ready;
 };
@@ -64,7 +64,7 @@ struct timer_matrix {
 };
 typedef struct timer_matrix timer_matrix_t;
 
-static timer_matrix_t TIMER_MATRIX[MAX_ELEMENTS+1];
+static timer_matrix_t TIMER_MATRIX[MAX_ELEMENTS + 1];
 
 #define IDLE_SPEED 100
 
@@ -110,16 +110,16 @@ static inline switch_status_t timer_step(switch_timer_t *timer)
 
 	check_roll();
 	samples = timer->samples * (private_info->reference - private_info->start);
-	
+
 	if (samples > UINT32_MAX) {
 		private_info->start = private_info->reference;
 		samples = timer->samples;
 	}
-	
-	timer->samplecount = (uint32_t)samples;
-    private_info->reference++;
 
-    return SWITCH_STATUS_SUCCESS;
+	timer->samplecount = (uint32_t) samples;
+	private_info->reference++;
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
@@ -129,12 +129,12 @@ static inline switch_status_t timer_next(switch_timer_t *timer)
 
 	timer_step(timer);
 
-	while (globals.RUNNING == 1 && private_info->ready  && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
+	while (globals.RUNNING == 1 && private_info->ready && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
 		check_roll();
 		switch_yield(1000);
 	}
 
-	if (globals.RUNNING == 1) {		
+	if (globals.RUNNING == 1) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -142,11 +142,10 @@ static inline switch_status_t timer_next(switch_timer_t *timer)
 }
 
 static inline switch_status_t timer_check(switch_timer_t *timer)
-
 {
 	timer_private_t *private_info = timer->private_info;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-    switch_size_t diff;
+	switch_size_t diff;
 
 	if (globals.RUNNING != 1 || !private_info->ready) {
 		return SWITCH_STATUS_SUCCESS;
@@ -155,16 +154,16 @@ static inline switch_status_t timer_check(switch_timer_t *timer)
 	check_roll();
 
 	if (TIMER_MATRIX[timer->interval].tick < private_info->reference) {
-        diff = private_info->reference - TIMER_MATRIX[timer->interval].tick;
+		diff = private_info->reference - TIMER_MATRIX[timer->interval].tick;
 	} else {
-        diff = 0;
+		diff = 0;
 	}
 
-    if (diff) {
-        status = SWITCH_STATUS_FALSE;
-    } else {
-        timer_step(timer);
-    }
+	if (diff) {
+		status = SWITCH_STATUS_FALSE;
+	} else {
+		timer_step(timer);
+	}
 
 	return status;
 }
@@ -198,7 +197,8 @@ static const switch_loadable_module_interface_t mod_softtimer_module_interface =
 	/*.timer_interface */ &timer_interface
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
+													   char *filename)
 {
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
@@ -224,13 +224,13 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 	switch_time_t reference = switch_time_now();
 	uint32_t current_ms = 0;
 	uint32_t x;
-	
+
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
 
 	globals.RUNNING = 1;
 
-	while(globals.RUNNING == 1) {
+	while (globals.RUNNING == 1) {
 		reference += STEP_MIC;
 
 		while (switch_time_now() < reference) {
@@ -244,8 +244,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 			if (i == 0) {
 				i = 1;
 			}
-			
-			index = (current_ms % i == 0) ? i : 0; 
+
+			index = (current_ms % i == 0) ? i : 0;
 
 			if (TIMER_MATRIX[index].count) {
 				TIMER_MATRIX[index].tick++;
@@ -271,12 +271,12 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 {
-	
+
 	if (globals.RUNNING) {
 		switch_mutex_lock(globals.mutex);
 		globals.RUNNING = -1;
 		switch_mutex_unlock(globals.mutex);
-		
+
 		while (globals.RUNNING) {
 			switch_yield(10000);
 		}

@@ -57,7 +57,7 @@ struct teletone_obj {
 };
 
 
-static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map_t *map)
+static int teletone_handler(teletone_generation_session_t * ts, teletone_tone_map_t * map)
 {
 	struct teletone_obj *tto = ts->user_data;
 	int wrote;
@@ -74,7 +74,7 @@ static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map
 
 /* TeleTone Object */
 /*********************************************************************************/
-static JSBool teletone_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+static JSBool teletone_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	JSObject *session_obj;
 	struct teletone_obj *tto = NULL;
@@ -129,8 +129,8 @@ static JSBool teletone_construct(JSContext *cx, JSObject *obj, uintN argc, jsval
 		if (switch_core_timer_init(&tto->timer_base,
 								   timer_name,
 								   ms,
-								   (read_codec->implementation->samples_per_second / 50) * read_codec->implementation->number_of_channels,
-								   pool) == SWITCH_STATUS_SUCCESS) {
+								   (read_codec->implementation->samples_per_second / 50) *
+								   read_codec->implementation->number_of_channels, pool) == SWITCH_STATUS_SUCCESS) {
 			tto->timer = &tto->timer_base;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Timer INIT Success %u\n", ms);
 		} else {
@@ -149,7 +149,7 @@ static JSBool teletone_construct(JSContext *cx, JSObject *obj, uintN argc, jsval
 	return JS_TRUE;
 }
 
-static void teletone_destroy(JSContext *cx, JSObject *obj)
+static void teletone_destroy(JSContext * cx, JSObject * obj)
 {
 	struct teletone_obj *tto = JS_GetPrivate(cx, obj);
 	switch_memory_pool_t *pool;
@@ -169,26 +169,26 @@ static void teletone_destroy(JSContext *cx, JSObject *obj)
 	}
 }
 
-static JSBool teletone_add_tone(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+static JSBool teletone_add_tone(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct teletone_obj *tto = JS_GetPrivate(cx, obj);
-	if (argc > 2) { 
+	if (argc > 2) {
 		int x;
 		char *fval;
 		char *map_str;
 		map_str = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 
-		for(x = 1; x < TELETONE_MAX_TONES; x++) {
+		for (x = 1; x < TELETONE_MAX_TONES; x++) {
 			fval = JS_GetStringBytes(JS_ValueToString(cx, argv[x]));
-			tto->ts.TONES[(int)*map_str].freqs[x-1] = strtod(fval, NULL);
+			tto->ts.TONES[(int) *map_str].freqs[x - 1] = strtod(fval, NULL);
 		}
 		return JS_TRUE;
 	}
-	
+
 	return JS_FALSE;
 }
 
-static JSBool teletone_on_dtmf(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+static JSBool teletone_on_dtmf(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct teletone_obj *tto = JS_GetPrivate(cx, obj);
 	if (argc > 0) {
@@ -201,7 +201,7 @@ static JSBool teletone_on_dtmf(JSContext *cx, JSObject *obj, uintN argc, jsval *
 	return JS_TRUE;
 }
 
-static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+static JSBool teletone_generate(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct teletone_obj *tto = JS_GetPrivate(cx, obj);
 	int32 loops = 0;
@@ -209,7 +209,7 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 	if (argc > 0) {
 		char *script;
 		switch_core_session_t *session;
-		switch_frame_t write_frame = {0};
+		switch_frame_t write_frame = { 0 };
 		unsigned char *fdata[1024];
 		switch_frame_t *read_frame;
 		int stream_id;
@@ -225,7 +225,7 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 			if (!tto->loop_buffer) {
 				switch_buffer_create_dynamic(&tto->loop_buffer, JS_BLOCK_SIZE, JS_BUFFER_SIZE, 0);
 			}
-		} 
+		}
 
 		if (tto->audio_buffer) {
 			switch_buffer_zero(tto->audio_buffer);
@@ -244,14 +244,14 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 		write_frame.data = fdata;
 
 		channel = switch_core_session_get_channel(session);
-		
+
 		if (tto->timer) {
 			for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
 				switch_core_service_session(session, &thread_session, stream_id);
 			}
 		}
 
-		for(;;) {
+		for (;;) {
 
 			if (switch_test_flag(tto, TTF_DTMF)) {
 				char dtmf[128];
@@ -262,7 +262,7 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 					jsval aargv[4];
 
 					switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
-					aargv[aargc++] = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, dtmf));
+					aargv[aargc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, dtmf));
 					JS_CallFunction(cx, obj, tto->function, aargc, aargv, &tto->ret);
 					ret = JS_GetStringBytes(JS_ValueToString(cx, tto->ret));
 					if (strcmp(ret, "true") && strcmp(ret, "undefined")) {
@@ -271,7 +271,7 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 					}
 				}
 			}
-			
+
 			if (tto->timer) {
 				if (switch_core_timer_next(tto->timer) != SWITCH_STATUS_SUCCESS) {
 					break;
@@ -280,23 +280,26 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 			} else {
 				switch_status_t status;
 				status = switch_core_session_read_frame(session, &read_frame, -1, 0);
-				
+
 				if (!SWITCH_READ_ACCEPTABLE(status)) {
 					break;
 				}
 			}
-			if ((write_frame.datalen = (uint32_t)switch_buffer_read(tto->audio_buffer, fdata, write_frame.codec->implementation->bytes_per_frame)) <= 0) {
-				if (loops) { 
+			if ((write_frame.datalen =
+				 (uint32_t) switch_buffer_read(tto->audio_buffer, fdata,
+											   write_frame.codec->implementation->bytes_per_frame)) <= 0) {
+				if (loops) {
 					switch_buffer_t *tmp;
 
-					/* Switcharoo*/
+					/* Switcharoo */
 					tmp = tto->audio_buffer;
 					tto->audio_buffer = tto->loop_buffer;
 					tto->loop_buffer = tmp;
 					loops--;
 					/* try again */
-					if ((write_frame.datalen = 
-						 (uint32_t)switch_buffer_read(tto->audio_buffer, fdata, write_frame.codec->implementation->bytes_per_frame)) <= 0) {
+					if ((write_frame.datalen =
+						 (uint32_t) switch_buffer_read(tto->audio_buffer, fdata,
+													   write_frame.codec->implementation->bytes_per_frame)) <= 0) {
 						break;
 					}
 				} else {
@@ -321,7 +324,7 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 		}
 		return JS_TRUE;
 	}
-	
+
 	return JS_FALSE;
 }
 
@@ -332,18 +335,18 @@ enum teletone_tinyid {
 static JSFunctionSpec teletone_methods[] = {
 	{"generate", teletone_generate, 1},
 	{"onDTMF", teletone_on_dtmf, 1},
-	{"addTone", teletone_add_tone, 10},	 
+	{"addTone", teletone_add_tone, 10},
 	{0}
 };
 
 
 static JSPropertySpec teletone_props[] = {
-	{"name", TELETONE_NAME, JSPROP_READONLY|JSPROP_PERMANENT}, 
+	{"name", TELETONE_NAME, JSPROP_READONLY | JSPROP_PERMANENT},
 	{0}
 };
 
 
-static JSBool teletone_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+static JSBool teletone_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval * vp)
 {
 	JSBool res = JS_TRUE;
 
@@ -351,37 +354,31 @@ static JSBool teletone_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval
 }
 
 JSClass teletone_class = {
-	modname, JSCLASS_HAS_PRIVATE, 
-	JS_PropertyStub,  JS_PropertyStub,	teletone_getProperty,  JS_PropertyStub, 
-	JS_EnumerateStub, JS_ResolveStub,	JS_ConvertStub,	  teletone_destroy, NULL, NULL, NULL,
+	modname, JSCLASS_HAS_PRIVATE,
+	JS_PropertyStub, JS_PropertyStub, teletone_getProperty, JS_PropertyStub,
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, teletone_destroy, NULL, NULL, NULL,
 	teletone_construct
 };
 
 
-switch_status_t teletone_load(JSContext *cx, JSObject *obj)
+switch_status_t teletone_load(JSContext * cx, JSObject * obj)
 {
 	JS_InitClass(cx,
 				 obj,
 				 NULL,
 				 &teletone_class,
-				 teletone_construct,
-				 3,
-				 teletone_props,
-				 teletone_methods,
-				 teletone_props,
-				 teletone_methods
-				 );
+				 teletone_construct, 3, teletone_props, teletone_methods, teletone_props, teletone_methods);
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
 const sm_module_interface_t teletone_module_interface = {
 	/*.name = */ modname,
-	/*.spidermonkey_load*/ teletone_load,
-	/*.next*/ NULL
+	/*.spidermonkey_load */ teletone_load,
+	/*.next */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) spidermonkey_init(const sm_module_interface_t **module_interface)
+SWITCH_MOD_DECLARE(switch_status_t) spidermonkey_init(const sm_module_interface_t ** module_interface)
 {
 	*module_interface = &teletone_module_interface;
 	return SWITCH_STATUS_SUCCESS;

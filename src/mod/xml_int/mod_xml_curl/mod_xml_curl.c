@@ -36,7 +36,7 @@ static const char modname[] = "mod_xml_curl";
 struct xml_binding {
 	char *url;
 	char *bindings;
-    char *cred;
+	char *cred;
 };
 
 typedef struct xml_binding xml_binding_t;
@@ -48,7 +48,7 @@ struct config_data {
 
 static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
-	register unsigned int realsize = (unsigned int)(size * nmemb);
+	register unsigned int realsize = (unsigned int) (size * nmemb);
 	struct config_data *config_data = data;
 
 	write(config_data->fd, ptr, realsize);
@@ -58,45 +58,42 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 
 static switch_xml_t xml_url_fetch(const char *section,
 								  const char *tag_name,
-								  const char *key_name,
-								  const char *key_value,
-								  const char *params,
-                                  void *user_data)
+								  const char *key_name, const char *key_value, const char *params, void *user_data)
 {
 	char filename[512] = "";
 	CURL *curl_handle = NULL;
 	struct config_data config_data;
 	switch_xml_t xml = NULL;
-    char *data = NULL;
+	char *data = NULL;
 	switch_uuid_t uuid;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
-    xml_binding_t *binding = (xml_binding_t *) user_data;
-    char *file_url;
+	xml_binding_t *binding = (xml_binding_t *) user_data;
+	char *file_url;
 
-    if (!binding) {
-        return NULL;
-    }
+	if (!binding) {
+		return NULL;
+	}
 
-    if ((file_url = strstr(binding->url, "file:"))) {
-        file_url += 5;
-     
-        if (!(xml = switch_xml_parse_file(file_url))) {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing Result!\n");
-        }
-   
-        return xml;
-    }
+	if ((file_url = strstr(binding->url, "file:"))) {
+		file_url += 5;
 
-    if (!(data = switch_mprintf("section=%s&tag_name=%s&key_name=%s&key_value=%s%s%s", 
-                                section,
-                                tag_name ? tag_name : "",
-                                key_name ? key_name : "",
-                                key_value ? key_value : "",
-                                params ? strchr(params,'=') ? "&" : "&params=" : "", params ? params : ""))) {
+		if (!(xml = switch_xml_parse_file(file_url))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing Result!\n");
+		}
 
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-        return NULL;
-    }
+		return xml;
+	}
+
+	if (!(data = switch_mprintf("section=%s&tag_name=%s&key_name=%s&key_value=%s%s%s",
+								section,
+								tag_name ? tag_name : "",
+								key_name ? key_name : "",
+								key_value ? key_value : "",
+								params ? strchr(params, '=') ? "&" : "&params=" : "", params ? params : ""))) {
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+		return NULL;
+	}
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
@@ -107,18 +104,18 @@ static switch_xml_t xml_url_fetch(const char *section,
 		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 	}
-		
+
 	config_data.name = filename;
 	if ((config_data.fd = open(filename, O_CREAT | O_RDWR | O_TRUNC)) > -1) {
-        if (!switch_strlen_zero(binding->cred)) {
-            curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
-            curl_easy_setopt(curl_handle, CURLOPT_USERPWD, binding->cred);
-        }
-        curl_easy_setopt(curl_handle, CURLOPT_POST, 1);
-        curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, data);
+		if (!switch_strlen_zero(binding->cred)) {
+			curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+			curl_easy_setopt(curl_handle, CURLOPT_USERPWD, binding->cred);
+		}
+		curl_easy_setopt(curl_handle, CURLOPT_POST, 1);
+		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, data);
 		curl_easy_setopt(curl_handle, CURLOPT_URL, binding->url);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
-		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&config_data);
+		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
 		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-xml/1.0");
 		curl_easy_perform(curl_handle);
 		curl_easy_cleanup(curl_handle);
@@ -127,14 +124,14 @@ static switch_xml_t xml_url_fetch(const char *section,
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!\n");
 	}
 
-    switch_safe_free(data);
+	switch_safe_free(data);
 
 	if (!(xml = switch_xml_parse_file(filename))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing Result!\n");
 	}
 
 	unlink(filename);
-	
+
 	return xml;
 }
 
@@ -152,12 +149,12 @@ static switch_loadable_module_interface_t xml_curl_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-static switch_status_t do_config(void) 
+static switch_status_t do_config(void)
 {
 	char *cf = "xml_curl.conf";
 	switch_xml_t cfg, xml, bindings_tag, binding_tag, param;
-    xml_binding_t *binding = NULL;
-    int x = 0;
+	xml_binding_t *binding = NULL;
+	int x = 0;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
@@ -165,56 +162,55 @@ static switch_status_t do_config(void)
 	}
 
 	if (!(bindings_tag = switch_xml_child(cfg, "bindings"))) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing <bindings> tag!\n");
-        return SWITCH_STATUS_FALSE;
-    }
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing <bindings> tag!\n");
+		return SWITCH_STATUS_FALSE;
+	}
 
 	for (binding_tag = switch_xml_child(bindings_tag, "binding"); binding_tag; binding_tag = binding_tag->next) {
-        char *bname = (char *) switch_xml_attr_soft(binding_tag, "name");
-        char *url = NULL;
-        char *bind_cred = NULL;
-        char *bind_mask = NULL;
+		char *bname = (char *) switch_xml_attr_soft(binding_tag, "name");
+		char *url = NULL;
+		char *bind_cred = NULL;
+		char *bind_mask = NULL;
 
 		for (param = switch_xml_child(binding_tag, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
-            if (!strcasecmp(var, "gateway-url")) {
+			if (!strcasecmp(var, "gateway-url")) {
 				bind_mask = (char *) switch_xml_attr_soft(param, "bindings");
-                if (val) {
-                    url = val;
-                }
+				if (val) {
+					url = val;
+				}
 			} else if (!strcasecmp(var, "gateway-credentials")) {
-                bind_cred = val;
-            }
+				bind_cred = val;
+			}
 		}
-        
-        if (!url) {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Binding has no url!\n");
-            continue;
-        }
 
-        if (!(binding = malloc(sizeof(*binding)))) {
-            return SWITCH_STATUS_FALSE;
-        }
-        memset(binding, 0, sizeof(*binding));
+		if (!url) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Binding has no url!\n");
+			continue;
+		}
 
-        binding->url = strdup(url);
+		if (!(binding = malloc(sizeof(*binding)))) {
+			return SWITCH_STATUS_FALSE;
+		}
+		memset(binding, 0, sizeof(*binding));
 
-        if (bind_mask) {
-            binding->bindings = strdup(bind_mask);
-        }
+		binding->url = strdup(url);
 
-        if (bind_cred) {
-            binding->cred = strdup(bind_cred);
-        }
-        
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Binding [%s] XML Fetch Function [%s] [%s]\n", 
-                          switch_strlen_zero(bname) ? "N/A" : bname,
-                          binding->url,
-                          binding->bindings ? binding->bindings : "all");
+		if (bind_mask) {
+			binding->bindings = strdup(bind_mask);
+		}
+
+		if (bind_cred) {
+			binding->cred = strdup(bind_cred);
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Binding [%s] XML Fetch Function [%s] [%s]\n",
+						  switch_strlen_zero(bname) ? "N/A" : bname,
+						  binding->url, binding->bindings ? binding->bindings : "all");
 		switch_xml_bind_search_function(xml_url_fetch, switch_xml_parse_section_string(binding->bindings), binding);
-        x++;
-        binding = NULL;
+		x++;
+		binding = NULL;
 	}
 
 	switch_xml_free(xml);
@@ -223,16 +219,17 @@ static switch_status_t do_config(void)
 }
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
+													   char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &xml_curl_module_interface;
 
 	if (do_config() == SWITCH_STATUS_SUCCESS) {
-        curl_global_init(CURL_GLOBAL_ALL);
-    } else {
-        return SWITCH_STATUS_FALSE;
-    }
+		curl_global_init(CURL_GLOBAL_ALL);
+	} else {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

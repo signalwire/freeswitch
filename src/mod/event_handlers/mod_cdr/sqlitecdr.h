@@ -39,43 +39,43 @@
 #ifndef SQLITECDR
 #define SQLITECDR
 
-class SqliteCDR : public BaseCDR {
-	public:
-		SqliteCDR();
-		SqliteCDR(switch_mod_cdr_newchannel_t *newchannel);
-		//SqliteCDR(const SqliteCDR& copyFrom);
-		virtual ~SqliteCDR();
-		virtual bool process_record();
-		virtual void connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settings, switch_xml_t& param);
-		virtual void disconnect();
-		virtual bool is_activated();
-		virtual void tempdump_record();
-		virtual void reread_tempdumped_records();
-		virtual std::string get_display_name();
+class SqliteCDR:public BaseCDR {
+  public:
+	SqliteCDR();
+	SqliteCDR(switch_mod_cdr_newchannel_t * newchannel);
+	//SqliteCDR(const SqliteCDR& copyFrom);
+	virtual ~ SqliteCDR();
+	virtual bool process_record();
+	virtual void connect(switch_xml_t & cfg, switch_xml_t & xml, switch_xml_t & settings, switch_xml_t & param);
+	virtual void disconnect();
+	virtual bool is_activated();
+	virtual void tempdump_record();
+	virtual void reread_tempdumped_records();
+	virtual std::string get_display_name();
 
-	private:
-		static bool activated;
-		static char sql_query[1024];
-		static std::string tmp_sql_query; // Object must exist to bind the statement, this used for generating the sql
-		static char sql_query_chanvars[100];
-		static std::string db_filename;
-		static bool use_utc_time;
-		switch_time_t sqlite_callstartdate;
-		switch_time_t sqlite_callanswerdate;
-		switch_time_t sqlite_calltransferdate;
-		switch_time_t sqlite_callenddate;
-		static switch_core_db_t *db;
-		static switch_core_db_stmt_t *stmt;
-		static switch_core_db_stmt_t *stmt_chanvars;
-		static switch_core_db_stmt_t *stmt_begin;
-		static switch_core_db_stmt_t *stmt_commit;
-		static bool connectionstate;
-		static bool logchanvars;
-		static std::list<std::string> chanvars_fixed_list;
-		static std::vector<switch_mod_cdr_sql_types_t> chanvars_fixed_types;
-		static std::list<std::string> chanvars_supp_list; // The supplemental list
-		static bool repeat_fixed_in_supp;
-		static std::string display_name;
+  private:
+	static bool activated;
+	static char sql_query[1024];
+	static std::string tmp_sql_query;	// Object must exist to bind the statement, this used for generating the sql
+	static char sql_query_chanvars[100];
+	static std::string db_filename;
+	static bool use_utc_time;
+	switch_time_t sqlite_callstartdate;
+	switch_time_t sqlite_callanswerdate;
+	switch_time_t sqlite_calltransferdate;
+	switch_time_t sqlite_callenddate;
+	static switch_core_db_t *db;
+	static switch_core_db_stmt_t *stmt;
+	static switch_core_db_stmt_t *stmt_chanvars;
+	static switch_core_db_stmt_t *stmt_begin;
+	static switch_core_db_stmt_t *stmt_commit;
+	static bool connectionstate;
+	static bool logchanvars;
+	static std::list < std::string > chanvars_fixed_list;
+	static std::vector < switch_mod_cdr_sql_types_t > chanvars_fixed_types;
+	static std::list < std::string > chanvars_supp_list;	// The supplemental list
+	static bool repeat_fixed_in_supp;
+	static std::string display_name;
 };
 
 #endif

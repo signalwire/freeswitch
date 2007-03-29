@@ -39,16 +39,15 @@
 #include <switch.h>
 
 SWITCH_BEGIN_EXTERN_C
-
 /*! \brief An abstraction of a data frame */
-struct switch_frame {
+	struct switch_frame {
 	/*! a pointer to the codec information */
 	switch_codec_t *codec;
 	/*! the originating source of the frame */
 	const char *source;
 	/*! the raw packet */
 	void *packet;
-	/*! the size of the raw packet when applicable*/
+	/*! the size of the raw packet when applicable */
 	uint32_t packetlen;
 	/*! the frame data */
 	void *data;
@@ -69,9 +68,7 @@ struct switch_frame {
 };
 
 SWITCH_END_EXTERN_C
-
 #endif
-
 /* For Emacs:
  * Local Variables:
  * mode:c

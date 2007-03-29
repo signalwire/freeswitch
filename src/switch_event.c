@@ -44,7 +44,7 @@ static switch_memory_pool_t *RUNTIME_POOL = NULL;
 /* static switch_memory_pool_t *APOOL = NULL; */
 /* static switch_memory_pool_t *BPOOL = NULL; */
 static switch_memory_pool_t *THRUNTIME_POOL = NULL;
-static switch_queue_t *EVENT_QUEUE[3] = {0,0,0};
+static switch_queue_t *EVENT_QUEUE[3] = { 0, 0, 0 };
 static int POOL_COUNT_MAX = SWITCH_CORE_QUEUE_LEN;
 
 static switch_hash_t *CUSTOM_HASH = NULL;
@@ -180,9 +180,9 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 {
 	switch_event_t *out_event = NULL;
 	switch_queue_t *queue = NULL;
-	switch_queue_t *queues[3] = {0,0,0};
+	switch_queue_t *queues[3] = { 0, 0, 0 };
 	void *pop;
-	int i, len[3] = {0,0,0};
+	int i, len[3] = { 0, 0, 0 };
 
 	assert(thread != NULL);
 	assert(obj == NULL);
@@ -192,14 +192,14 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 	assert(EVENT_QUEUE_HAVEMORE_MUTEX != NULL);
 	assert(EVENT_QUEUE_CONDITIONAL != NULL);
 	THREAD_RUNNING = 1;
-	
+
 	queues[0] = EVENT_QUEUE[SWITCH_PRIORITY_HIGH];
 	queues[1] = EVENT_QUEUE[SWITCH_PRIORITY_NORMAL];
 	queues[2] = EVENT_QUEUE[SWITCH_PRIORITY_LOW];
 
 	switch_mutex_lock(EVENT_QUEUE_MUTEX);
-	
-	for(;;) {
+
+	for (;;) {
 		int any;
 
 
@@ -208,13 +208,13 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 		len[0] = switch_queue_size(EVENT_QUEUE[SWITCH_PRIORITY_HIGH]);
 		any = len[1] + len[2] + len[0];
 
-	
+
 		if (!any) {
 			/* lock on havemore so we are the only ones poking at it while we check it
 			 * see if we saw anything in the queues or have a check again flag
 			 */
 			switch_mutex_lock(EVENT_QUEUE_HAVEMORE_MUTEX);
-			if(!EVENT_QUEUE_HAVEMORE) {
+			if (!EVENT_QUEUE_HAVEMORE) {
 				/* See if we need to quit */
 				if (THREAD_RUNNING != 1) {
 					/* give up our lock */
@@ -243,10 +243,10 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 			continue;
 		}
 
-		for(i = 0; i < 3; i++) {
+		for (i = 0; i < 3; i++) {
 			if (len[i]) {
 				queue = queues[i];
-				while(queue) {
+				while (queue) {
 					if (switch_queue_trypop(queue, &pop) == SWITCH_STATUS_SUCCESS) {
 						out_event = pop;
 						switch_event_deliver(&out_event);
@@ -307,14 +307,14 @@ SWITCH_DECLARE(switch_status_t) switch_name_event(char *name, switch_event_types
 	switch_event_types_t x;
 	assert(BLOCK != NULL);
 	assert(RUNTIME_POOL != NULL);
-	
+
 	for (x = 0; x <= SWITCH_EVENT_ALL; x++) {
 		if (!strcasecmp(name, EVENT_NAMES[x])) {
 			*type = x;
 			return SWITCH_STATUS_SUCCESS;
 		}
 	}
-	
+
 	return SWITCH_STATUS_FALSE;
 
 }
@@ -356,7 +356,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 		 */
 		switch_mutex_lock(EVENT_QUEUE_HAVEMORE_MUTEX);
 		/* see if the event thread is sitting */
-		if(switch_mutex_trylock(EVENT_QUEUE_MUTEX) == SWITCH_STATUS_SUCCESS) {
+		if (switch_mutex_trylock(EVENT_QUEUE_MUTEX) == SWITCH_STATUS_SUCCESS) {
 			/* we don't need havemore anymore, the thread was sitting already */
 			switch_mutex_unlock(EVENT_QUEUE_HAVEMORE_MUTEX);
 
@@ -365,7 +365,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 
 			/* give up our lock */
 			switch_mutex_unlock(EVENT_QUEUE_MUTEX);
-		} else { 
+		} else {
 			/* it wasn't waiting which means we might have updated a queue it already looked at
 			 * set a flag so it knows to read the queues again
 			 */
@@ -402,11 +402,11 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 		return SWITCH_STATUS_MEMERR;
 	}
 	/*
-	if (switch_core_new_memory_pool(&BPOOL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not allocate memory pool\n");
-		return SWITCH_STATUS_MEMERR;
-	}
-	*/
+	   if (switch_core_new_memory_pool(&BPOOL) != SWITCH_STATUS_SUCCESS) {
+	   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not allocate memory pool\n");
+	   return SWITCH_STATUS_MEMERR;
+	   }
+	 */
 	/* THRUNTIME_POOL = APOOL; */
 	switch_queue_create(&EVENT_QUEUE[0], POOL_COUNT_MAX + 10, THRUNTIME_POOL);
 	switch_queue_create(&EVENT_QUEUE[1], POOL_COUNT_MAX + 10, THRUNTIME_POOL);
@@ -430,8 +430,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 }
 
 SWITCH_DECLARE(switch_status_t) switch_event_create_subclass(switch_event_t **event,
-														   switch_event_types_t event_id,
-														   const char *subclass_name)
+															 switch_event_types_t event_id, const char *subclass_name)
 {
 
 	if (event_id != SWITCH_EVENT_CUSTOM && subclass_name) {
@@ -482,8 +481,8 @@ SWITCH_DECLARE(char *) switch_event_get_body(switch_event_t *event)
 	return NULL;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, switch_stack_t stack, const char *header_name,
-													  const char *fmt, ...)
+SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, switch_stack_t stack,
+														const char *header_name, const char *fmt, ...)
 {
 	int ret = 0;
 	char data[2048];
@@ -569,7 +568,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 {
 	switch_event_header_t *header, *hp, *hp2, *last = NULL;
 
-	if (switch_event_create_subclass(event, todup->event_id, todup->subclass ? todup->subclass->name : NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_create_subclass(event, todup->event_id, todup->subclass ? todup->subclass->name : NULL) !=
+		SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -613,8 +613,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 	switch_event_header_t *hp;
 	switch_size_t llen = 0, dlen = 0, blocksize = 512, encode_len = 1536, new_len = 0;
 	char *buf;
-    char *encode_buf = NULL; /* used for url encoding of variables to make sure unsafe things stay out of the serialzed copy */
-	
+	char *encode_buf = NULL;	/* used for url encoding of variables to make sure unsafe things stay out of the serialzed copy */
+
 	*str = NULL;
 
 	dlen = blocksize * 2;
@@ -623,55 +623,55 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 		return SWITCH_STATUS_MEMERR;
 	}
 
-    /* go ahead and give ourselves some space to work with, should save a few reallocs */
-    if(!(encode_buf = malloc(encode_len))) {
-        return SWITCH_STATUS_MEMERR;
-    }
+	/* go ahead and give ourselves some space to work with, should save a few reallocs */
+	if (!(encode_buf = malloc(encode_len))) {
+		return SWITCH_STATUS_MEMERR;
+	}
 
-    /* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "hit serialze!.\n"); */
+	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "hit serialze!.\n"); */
 	for (hp = event->headers; hp; hp = hp->next) {
-        /*
-         * grab enough memory to store 3x the string (url encode takes one char and turns it into %XX)
-         * so we could end up with a string that is 3 times the original's length, unlikely but rather
-         * be safe than destroy the string, also add one for the null.  And try to be smart about using 
-         * the memory, allocate and only reallocate if we need more.  This avoids an alloc, free CPU
-         * destroying loop.
-         */
+		/*
+		 * grab enough memory to store 3x the string (url encode takes one char and turns it into %XX)
+		 * so we could end up with a string that is 3 times the original's length, unlikely but rather
+		 * be safe than destroy the string, also add one for the null.  And try to be smart about using 
+		 * the memory, allocate and only reallocate if we need more.  This avoids an alloc, free CPU
+		 * destroying loop.
+		 */
 
-        new_len = (strlen(hp->value) * 3) + 1;
+		new_len = (strlen(hp->value) * 3) + 1;
 
-        if(encode_len < new_len) {
-            char* tmp;
-	        /* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Allocing %d was %d.\n", ((strlen(hp->value) * 3) + 1), encode_len); */
-            /* we can use realloc for initial alloc as well, if encode_buf is zero it treats it as a malloc */
+		if (encode_len < new_len) {
+			char *tmp;
+			/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Allocing %d was %d.\n", ((strlen(hp->value) * 3) + 1), encode_len); */
+			/* we can use realloc for initial alloc as well, if encode_buf is zero it treats it as a malloc */
 
-            /* keep track of the size of our allocation */
-            encode_len = new_len;
-            
-            if(!(tmp = realloc(encode_buf, encode_len))) {
-                /* oh boy, ram's gone, give back what little we grabbed and bail */
-                switch_safe_free(buf);
-                switch_safe_free(encode_buf);
-                return SWITCH_STATUS_MEMERR;
-            }
-            
-            encode_buf = tmp;
-        }
+			/* keep track of the size of our allocation */
+			encode_len = new_len;
 
-        /* handle any bad things in the string like newlines : etc that screw up the serialized format */
-        switch_url_encode(hp->value, encode_buf, encode_len - 1);
+			if (!(tmp = realloc(encode_buf, encode_len))) {
+				/* oh boy, ram's gone, give back what little we grabbed and bail */
+				switch_safe_free(buf);
+				switch_safe_free(encode_buf);
+				return SWITCH_STATUS_MEMERR;
+			}
+
+			encode_buf = tmp;
+		}
+
+		/* handle any bad things in the string like newlines : etc that screw up the serialized format */
+		switch_url_encode(hp->value, encode_buf, encode_len - 1);
 
 		llen = strlen(hp->name) + strlen(encode_buf) + 8;
-		
+
 		if ((len + llen) > dlen) {
 			char *m;
 			dlen += (blocksize + (len + llen));
 			if ((m = realloc(buf, dlen))) {
 				buf = m;
 			} else {
-                /* we seem to be out of memory trying to resize the serialize string, give back what we already have and give up */
+				/* we seem to be out of memory trying to resize the serialize string, give back what we already have and give up */
 				switch_safe_free(buf);
-                switch_safe_free(encode_buf);
+				switch_safe_free(encode_buf);
 				return SWITCH_STATUS_MEMERR;
 			}
 		}
@@ -681,8 +681,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 
 	}
 
-    /* we are done with the memory we used for encoding, give it back */
-    switch_safe_free(encode_buf);
+	/* we are done with the memory we used for encoding, give it back */
+	switch_safe_free(encode_buf);
 
 	if (event->body) {
 		int blen = (int) strlen(event->body);
@@ -693,7 +693,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 		} else {
 			llen += 5;
 		}
-		
+
 		if ((len + llen) > dlen) {
 			char *m;
 			dlen += (blocksize + (len + llen));
@@ -704,7 +704,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 				return SWITCH_STATUS_MEMERR;
 			}
 		}
-		
+
 		if (blen) {
 			snprintf(buf + len, dlen - len, "Content-Length: %d\n\n%s", blen, event->body);
 		} else {
@@ -715,7 +715,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 	}
 
 	*str = buf;
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -726,13 +726,13 @@ static switch_xml_t add_xml_header(switch_xml_t xml, char *name, char *value, in
 
 	if ((header = switch_xml_add_child_d(xml, "header", offset))) {
 		switch_xml_set_attr_d(header, "name", name);
-		switch_xml_set_attr_d(header, "value", value);	
+		switch_xml_set_attr_d(header, "value", value);
 	}
 
 	return header;
 }
 
-SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const char *fmt, ...)
+SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const char *fmt,...)
 {
 	switch_event_header_t *hp;
 	char *data = NULL, *body = NULL;
@@ -759,7 +759,7 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 		}
 	}
 
-	
+
 	for (hp = event->headers; hp; hp = hp->next) {
 		add_xml_header(xml, hp->name, hp->value, off++);
 	}
@@ -783,7 +783,7 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 			}
 		}
 	}
-	
+
 	if (data) {
 		free(data);
 	}
@@ -793,7 +793,7 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 
 
 SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *func, int line, switch_event_t **event,
-														 void *user_data)
+														   void *user_data)
 {
 
 	switch_time_exp_t tm;
@@ -840,7 +840,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *fun
 	 */
 	switch_mutex_lock(EVENT_QUEUE_HAVEMORE_MUTEX);
 	/* see if the event thread is sitting */
-	if(switch_mutex_trylock(EVENT_QUEUE_MUTEX) == SWITCH_STATUS_SUCCESS) {
+	if (switch_mutex_trylock(EVENT_QUEUE_MUTEX) == SWITCH_STATUS_SUCCESS) {
 		/* we don't need havemore anymore, the thread was sitting already */
 		switch_mutex_unlock(EVENT_QUEUE_HAVEMORE_MUTEX);
 
@@ -849,7 +849,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *fun
 
 		/* give up our lock */
 		switch_mutex_unlock(EVENT_QUEUE_MUTEX);
-	} else { 
+	} else {
 		/* it wasn't waiting which means we might have updated a queue it already looked at
 		 * set a flag so it knows to read the queues again
 		 */
@@ -858,7 +858,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *fun
 		/* variable updated, give up the mutex */
 		switch_mutex_unlock(EVENT_QUEUE_HAVEMORE_MUTEX);
 	}
-		
+
 
 	*event = NULL;
 
@@ -866,7 +866,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *fun
 }
 
 SWITCH_DECLARE(switch_status_t) switch_event_bind(char *id, switch_event_types_t event, char *subclass_name,
-												switch_event_callback_t callback, void *user_data)
+												  switch_event_callback_t callback, void *user_data)
 {
 	switch_event_node_t *event_node;
 	switch_event_subclass_t *subclass = NULL;

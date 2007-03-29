@@ -56,10 +56,9 @@
 #include <switch.h>
 
 SWITCH_BEGIN_EXTERN_C
-
 /*! \brief Call Specific Data
  */
-struct switch_caller_profile {
+	struct switch_caller_profile {
 	/*! The Call's User Name */
 	char *username;
 	/*! The name of the dialplan */
@@ -129,9 +128,7 @@ struct switch_caller_extension {
   \return a new extension object allocated from the session's memory pool
 */
 SWITCH_DECLARE(switch_caller_extension_t *) switch_caller_extension_new(switch_core_session_t *session,
-																	  char *extension_name,
-																	  char *extension_number
-																	  );
+																		char *extension_name, char *extension_number);
 
 /*!
   \brief Add an application (instruction) to the given extension
@@ -142,8 +139,7 @@ SWITCH_DECLARE(switch_caller_extension_t *) switch_caller_extension_new(switch_c
 */
 SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session_t *session,
 															 switch_caller_extension_t *caller_extension,
-															 char *application_name,
-															 char *extra_data);
+															 char *application_name, char *extra_data);
 
 
 /*!
@@ -188,9 +184,9 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
   \param session session associated with the profile (bound by scope)
   \param tocopy the existing profile
 */
-	
+
 SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_core_session_t *session,
-																	switch_caller_profile_t *tocopy);
+																	  switch_caller_profile_t *tocopy);
 
 /*!
   \brief Add headers to an existing event in regards to a specific profile
@@ -199,14 +195,12 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_cor
   \param event the event to add the information to
 */
 
-SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_t *caller_profile, char *prefix, switch_event_t *event);
+SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_t *caller_profile, char *prefix,
+														  switch_event_t *event);
 
 SWITCH_END_EXTERN_C
-
 /** @} */
-
 #endif
-
 /* For Emacs:
  * Local Variables:
  * mode:c

@@ -39,11 +39,10 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 																	const char *caller_id_number,
 																	const char *network_addr,
 																	const char *ani,
-																	const char *aniii, 
+																	const char *aniii,
 																	const char *rdnis,
 																	const char *source,
-																	const char *context,
-																	const char *destination_number)
+																	const char *context, const char *destination_number)
 {
 
 
@@ -71,8 +70,8 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 }
 
 
-SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_core_session_t *session, switch_caller_profile_t *tocopy)
-																	
+SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_core_session_t *session,
+																	  switch_caller_profile_t *tocopy)
 {
 	switch_caller_profile_t *profile = NULL;
 	if ((profile = switch_core_session_alloc(session, sizeof(switch_caller_profile_t))) != 0) {
@@ -199,20 +198,23 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 	}
 
 	snprintf(header_name, sizeof(header_name), "%s-Screen-Bit", prefix);
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_SCREEN) ? "yes" : "no");
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name,
+							switch_test_flag(caller_profile, SWITCH_CPF_SCREEN) ? "yes" : "no");
 
 	snprintf(header_name, sizeof(header_name), "%s-Privacy-Hide-Name", prefix);
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME) ? "yes" : "no");
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name,
+							switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME) ? "yes" : "no");
 
 	snprintf(header_name, sizeof(header_name), "%s-Privacy-Hide-Number", prefix);
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER) ? "yes" : "no");
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name,
+							switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER) ? "yes" : "no");
 
 
 
 }
 
 SWITCH_DECLARE(switch_caller_extension_t *) switch_caller_extension_new(switch_core_session_t *session,
-																	  char *extension_name, char *extension_number)
+																		char *extension_name, char *extension_number)
 {
 	switch_caller_extension_t *caller_extension = NULL;
 

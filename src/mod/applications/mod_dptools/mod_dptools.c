@@ -43,7 +43,8 @@ static void detect_speech_function(switch_core_session_t *session, char *data)
 	int argc;
 	char *lbuf = NULL;
 
-	if (data && (lbuf = switch_core_session_strdup(session, data)) && (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+	if (data && (lbuf = switch_core_session_strdup(session, data))
+		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		if (!strcasecmp(argv[0], "grammar") && argc >= 1) {
 			switch_ivr_detect_speech_load_grammar(session, argv[1], argv[2]);
 		} else if (!strcasecmp(argv[0], "nogrammar")) {
@@ -58,16 +59,17 @@ static void detect_speech_function(switch_core_session_t *session, char *data)
 			switch_ivr_detect_speech(session, argv[0], argv[1], argv[2], argv[3], NULL);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", detect_speech_application_interface.syntax);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n",
+						  detect_speech_application_interface.syntax);
 	}
-	
+
 }
 
 static void ring_ready_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
+	assert(channel != NULL);
 	switch_channel_ring_ready(channel);
 }
 
@@ -84,7 +86,7 @@ static void queue_dtmf_function(switch_core_session_t *session, char *data)
 static void transfer_function(switch_core_session_t *session, char *data)
 {
 	int argc;
-	char *argv[4] = {0};
+	char *argv[4] = { 0 };
 	char *mydata;
 
 	if (data && (mydata = switch_core_session_strdup(session, data))) {
@@ -99,15 +101,15 @@ static void transfer_function(switch_core_session_t *session, char *data)
 static void sched_transfer_function(switch_core_session_t *session, char *data)
 {
 	int argc;
-	char *argv[4] = {0};
+	char *argv[4] = { 0 };
 	char *mydata;
-	
+
 	if (data && (mydata = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
 			time_t when;
 
 			if (*argv[0] == '+') {
-				when = time (NULL) + atol(argv[0] + 1);
+				when = time(NULL) + atol(argv[0] + 1);
 			} else {
 				when = atol(argv[0]);
 			}
@@ -122,7 +124,7 @@ static void sched_transfer_function(switch_core_session_t *session, char *data)
 static void sched_hangup_function(switch_core_session_t *session, char *data)
 {
 	int argc;
-	char *argv[5] = {0};
+	char *argv[5] = { 0 };
 	char *mydata;
 
 	if (data && (mydata = switch_core_session_strdup(session, data))) {
@@ -132,11 +134,11 @@ static void sched_hangup_function(switch_core_session_t *session, char *data)
 			switch_bool_t bleg = SWITCH_FALSE;
 
 			if (*argv[0] == '+') {
-				when = time (NULL) + atol(argv[0] + 1);
+				when = time(NULL) + atol(argv[0] + 1);
 			} else {
 				when = atol(argv[0]);
 			}
-			
+
 			if (argv[1]) {
 				cause = switch_channel_str2cause(argv[1]);
 			}
@@ -156,20 +158,20 @@ static void sched_hangup_function(switch_core_session_t *session, char *data)
 static void sched_broadcast_function(switch_core_session_t *session, char *data)
 {
 	int argc;
-	char *argv[6] = {0};
+	char *argv[6] = { 0 };
 	char *mydata;
 
 	if (data && (mydata = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
 			time_t when;
 			switch_media_flag_t flags = SMF_NONE;
-			
+
 			if (*argv[0] == '+') {
-				when = time (NULL) + atol(argv[0] + 1);
+				when = time(NULL) + atol(argv[0] + 1);
 			} else {
 				when = atol(argv[0]);
 			}
-			
+
 			if (argv[2]) {
 				if (!strcmp(argv[2], "both")) {
 					flags |= (SMF_ECHO_ALEG | SMF_ECHO_BLEG);
@@ -207,26 +209,26 @@ static void eval_function(switch_core_session_t *session, char *data)
 
 static void phrase_function(switch_core_session_t *session, char *data)
 {
-    switch_channel_t *channel;
-    char *mydata = NULL;
+	switch_channel_t *channel;
+	char *mydata = NULL;
 
-    channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
-    
-    if ((mydata = switch_core_session_strdup(session, data))) {
-        char *lang;
-        char *macro = mydata;
-        char *mdata = NULL;
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
 
-        if ((mdata = strchr(macro, ','))) {
-            *mdata++ = '\0';
-        }
+	if ((mydata = switch_core_session_strdup(session, data))) {
+		char *lang;
+		char *macro = mydata;
+		char *mdata = NULL;
 
-        lang = switch_channel_get_variable(channel, "language");
-        
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Execute %s(%s) lang %s\n", macro, mdata, lang);
-        switch_ivr_phrase_macro(session, macro, mdata, lang, NULL);
-    }
+		if ((mdata = strchr(macro, ','))) {
+			*mdata++ = '\0';
+		}
+
+		lang = switch_channel_get_variable(channel, "language");
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Execute %s(%s) lang %s\n", macro, mdata, lang);
+		switch_ivr_phrase_macro(session, macro, mdata, lang, NULL);
+	}
 
 }
 
@@ -234,14 +236,14 @@ static void phrase_function(switch_core_session_t *session, char *data)
 static void hangup_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
-    switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
+	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
+	assert(channel != NULL);
 
-    if (!switch_strlen_zero((char *) data)) {
-        cause = switch_channel_str2cause((char *) data);
-    }
+	if (!switch_strlen_zero((char *) data)) {
+		cause = switch_channel_str2cause((char *) data);
+	}
 
 	switch_channel_hangup(channel, cause);
 }
@@ -251,7 +253,7 @@ static void answer_function(switch_core_session_t *session, char *data)
 	switch_channel_t *channel;
 	channel = switch_core_session_get_channel(session);
 
-    assert(channel != NULL);
+	assert(channel != NULL);
 	switch_channel_answer(channel);
 }
 
@@ -260,18 +262,18 @@ static void pre_answer_function(switch_core_session_t *session, char *data)
 	switch_channel_t *channel;
 	channel = switch_core_session_get_channel(session);
 
-    assert(channel != NULL);
+	assert(channel != NULL);
 	switch_channel_pre_answer(channel);
 }
 
 static void redirect_function(switch_core_session_t *session, char *data)
 {
-    switch_core_session_message_t msg = {0};
+	switch_core_session_message_t msg = { 0 };
 
-    /* Tell the channel to redirect */
+	/* Tell the channel to redirect */
 	msg.from = __FILE__;
 	msg.string_arg = data;
-    msg.message_id = SWITCH_MESSAGE_INDICATE_REDIRECT;
+	msg.message_id = SWITCH_MESSAGE_INDICATE_REDIRECT;
 	switch_core_session_receive_message(session, &msg);
 
 }
@@ -283,7 +285,7 @@ static void set_function(switch_core_session_t *session, char *data)
 	char *var, *val = NULL;
 
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
+	assert(channel != NULL);
 
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
@@ -293,11 +295,11 @@ static void set_function(switch_core_session_t *session, char *data)
 
 		if (val) {
 			*val++ = '\0';
-            if (switch_strlen_zero(val)) {
-                val = NULL;
-            }
+			if (switch_strlen_zero(val)) {
+				val = NULL;
+			}
 		}
-		
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SET [%s]=[%s]\n", var, val ? val : "UNDEF");
 		switch_channel_set_variable(channel, var, val);
 	}
@@ -309,7 +311,7 @@ static void export_function(switch_core_session_t *session, char *data)
 	char *exports, *new_exports = NULL, *new_exports_d = NULL, *var, *val = NULL;
 
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
+	assert(channel != NULL);
 
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
@@ -320,11 +322,11 @@ static void export_function(switch_core_session_t *session, char *data)
 
 		if (val) {
 			*val++ = '\0';
-            if (switch_strlen_zero(val)) {
-                val = NULL;
-            }
+			if (switch_strlen_zero(val)) {
+				val = NULL;
+			}
 		}
-		
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "EXPORT [%s]=[%s]\n", var, val ? val : "UNDEF");
 		switch_channel_set_variable(channel, var, val);
 
@@ -346,7 +348,7 @@ static void unset_function(switch_core_session_t *session, char *data)
 	switch_channel_t *channel;
 
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
+	assert(channel != NULL);
 
 	if (switch_strlen_zero(data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
@@ -359,43 +361,43 @@ static void unset_function(switch_core_session_t *session, char *data)
 static void log_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
-    char *level, *log_str;
+	char *level, *log_str;
 
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
+	assert(channel != NULL);
 
-    if (data && (level = strdup(data))) {
-        switch_event_types_t etype = SWITCH_LOG_DEBUG;
-        
-        if ((log_str = strchr(level, ' '))) {
-            *log_str++ = '\0';
-            switch_name_event(level, &etype);
-        } else {
-            log_str = level;
-        }
+	if (data && (level = strdup(data))) {
+		switch_event_types_t etype = SWITCH_LOG_DEBUG;
 
-        switch_log_printf(SWITCH_CHANNEL_LOG, etype, "%s\n", log_str);
-        switch_safe_free(level);
-    }
+		if ((log_str = strchr(level, ' '))) {
+			*log_str++ = '\0';
+			switch_name_event(level, &etype);
+		} else {
+			log_str = level;
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, etype, "%s\n", log_str);
+		switch_safe_free(level);
+	}
 }
 
 
 static void info_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
-    switch_event_t *event;
-    char *buf;
+	switch_event_t *event;
+	char *buf;
 
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
+	assert(channel != NULL);
 
-    if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-        switch_channel_event_set_data(channel, event);
-        switch_event_serialize(event, &buf);
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "CHANNEL_DATA:\n%s\n", buf);
-        switch_event_destroy(&event);
-    }
-    
+	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+		switch_event_serialize(event, &buf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "CHANNEL_DATA:\n%s\n", buf);
+		switch_event_destroy(&event);
+	}
+
 }
 
 static void privacy_function(switch_core_session_t *session, char *data)
@@ -405,8 +407,8 @@ static void privacy_function(switch_core_session_t *session, char *data)
 	char *arg;
 
 	channel = switch_core_session_get_channel(session);
-    	assert(channel != NULL);		
-	
+	assert(channel != NULL);
+
 	caller_profile = switch_channel_get_caller_profile(channel);
 
 	if (switch_strlen_zero(data)) {
@@ -416,7 +418,7 @@ static void privacy_function(switch_core_session_t *session, char *data)
 
 		switch_set_flag(caller_profile, SWITCH_CPF_SCREEN);
 
-		if(!strcasecmp(arg, "no")) {
+		if (!strcasecmp(arg, "no")) {
 			switch_clear_flag(caller_profile, SWITCH_CPF_HIDE_NAME);
 			switch_clear_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER);
 		} else if (!strcasecmp(arg, "yes")) {
@@ -428,7 +430,8 @@ static void privacy_function(switch_core_session_t *session, char *data)
 		} else if (!strcasecmp(arg, "number")) {
 			switch_set_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID privacy mode specified. Use a valid mode [no|yes|name|full|number].\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+							  "INVALID privacy mode specified. Use a valid mode [no|yes|name|full|number].\n");
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Privacy to %s [%d]\n", arg, caller_profile->flags);
 	}
@@ -440,7 +443,8 @@ static void strftime_function(switch_core_session_t *session, char *data)
 	int argc;
 	char *lbuf;
 
-	if (data && (lbuf = switch_core_session_strdup(session, data)) && (argc = switch_separate_string(lbuf, '=', argv, (sizeof(argv) / sizeof(argv[0])))) > 1) {
+	if (data && (lbuf = switch_core_session_strdup(session, data))
+		&& (argc = switch_separate_string(lbuf, '=', argv, (sizeof(argv) / sizeof(argv[0])))) > 1) {
 		switch_size_t retsize;
 		switch_time_exp_t tm;
 		char date[80] = "";
@@ -459,26 +463,26 @@ static void strftime_function(switch_core_session_t *session, char *data)
 
 static switch_status_t strepoch_api_function(char *data, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
-    switch_time_t out;
-    
-    if (switch_strlen_zero(data)) {
-        out = switch_time_now();
-    } else {
-        out = switch_str_time(data);
-    }
+	switch_time_t out;
 
-    stream->write_function(stream, "%d", (uint32_t)((out) / (int64_t)(1000000)) );
+	if (switch_strlen_zero(data)) {
+		out = switch_time_now();
+	} else {
+		out = switch_str_time(data);
+	}
+
+	stream->write_function(stream, "%d", (uint32_t) ((out) / (int64_t) (1000000)));
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t strftime_api_function(char *fmt, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
-	
+
 	switch_size_t retsize;
 	switch_time_exp_t tm;
 	char date[80] = "";
-	
+
 	switch_time_exp_lt(&tm, switch_time_now());
 	switch_strftime(date, &retsize, sizeof(date), fmt ? fmt : "%Y-%m-%d %T", &tm);
 	stream->write_function(stream, "%s", date);
@@ -493,14 +497,15 @@ static switch_status_t presence_api_function(char *fmt, switch_core_session_t *s
 	int argc = 0;
 	switch_event_types_t type = SWITCH_EVENT_PRESENCE_IN;
 
-	if (fmt && (lbuf = strdup(fmt)) && (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) > 0) {
+	if (fmt && (lbuf = strdup(fmt))
+		&& (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) > 0) {
 		if (!strcasecmp(argv[0], "out")) {
 			type = SWITCH_EVENT_PRESENCE_OUT;
 		} else if (argc != 4) {
 			stream->write_function(stream, "Invalid");
 			return SWITCH_STATUS_SUCCESS;
 		}
-		
+
 		if (switch_event_create(&event, type) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "dp");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", __FILE__);
@@ -527,9 +532,10 @@ static switch_status_t chat_api_function(char *fmt, switch_core_session_t *sessi
 	char *lbuf, *argv[4];
 	int argc = 0;
 
-	if (fmt && (lbuf = strdup(fmt)) && (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) == 4) {
+	if (fmt && (lbuf = strdup(fmt))
+		&& (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) == 4) {
 		switch_chat_interface_t *ci;
-		
+
 		if ((ci = switch_loadable_module_get_chat_interface(argv[0]))) {
 			ci->chat_send("dp", argv[1], argv[2], "", argv[3], "");
 			stream->write_function(stream, "Sent");
@@ -539,7 +545,7 @@ static switch_status_t chat_api_function(char *fmt, switch_core_session_t *sessi
 	} else {
 		stream->write_function(stream, "Invalid");
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -551,7 +557,7 @@ static switch_ivr_action_t menu_handler(switch_ivr_menu_t *menu, char *param, ch
 	switch_ivr_action_t action = SWITCH_IVR_ACTION_NOOP;
 
 	if (param != NULL) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "menu_handler '%s'\n",param);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "menu_handler '%s'\n", param);
 	}
 
 	return action;
@@ -563,7 +569,7 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *params;
 
-	if (channel && data && (params = switch_core_session_strdup(session,data))) {
+	if (channel && data && (params = switch_core_session_strdup(session, data))) {
 		switch_xml_t cxml = NULL, cfg = NULL, xml_menus = NULL, xml_menu = NULL;
 
 		// Open the config from the xml registry
@@ -577,16 +583,17 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 					switch_ivr_menu_t *menu_stack = NULL;
 
 					// build a menu tree and execute it
-					if (switch_ivr_menu_stack_xml_init(&xml_ctx,NULL) == SWITCH_STATUS_SUCCESS
+					if (switch_ivr_menu_stack_xml_init(&xml_ctx, NULL) == SWITCH_STATUS_SUCCESS
 #ifdef _TEST_CALLBACK_
-						&& switch_ivr_menu_stack_xml_add_custom(xml_ctx, "custom", &menu_handler) == SWITCH_STATUS_SUCCESS
+						&& switch_ivr_menu_stack_xml_add_custom(xml_ctx, "custom",
+																&menu_handler) == SWITCH_STATUS_SUCCESS
 #endif
-						&& switch_ivr_menu_stack_xml_build(xml_ctx,&menu_stack,xml_menus,xml_menu) == SWITCH_STATUS_SUCCESS)
-					{
+						&& switch_ivr_menu_stack_xml_build(xml_ctx, &menu_stack, xml_menus,
+														   xml_menu) == SWITCH_STATUS_SUCCESS) {
 						switch_xml_free(cxml);
 						cxml = NULL;
 						switch_channel_pre_answer(channel);
-						switch_ivr_menu_execute(session,menu_stack,params,NULL);
+						switch_ivr_menu_execute(session, menu_stack, params, NULL);
 						switch_ivr_menu_stack_free(menu_stack);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to create menu '%s'\n", params);
@@ -670,7 +677,7 @@ static switch_application_interface_t sched_hangup_application_interface = {
 
 static const switch_application_interface_t queuedtmf_application_interface = {
 	/*.interface_name */ "queue_dtmf",
-	/*.application_function */ queue_dtmf_function,	
+	/*.application_function */ queue_dtmf_function,
 	/* long_desc */ "Queue dtmf to be sent from a session",
 	/* short_desc */ "Queue dtmf to be sent",
 	/* syntax */ "<dtmf_data>",
@@ -680,7 +687,7 @@ static const switch_application_interface_t queuedtmf_application_interface = {
 
 static const switch_application_interface_t redirect_application_interface = {
 	/*.interface_name */ "redirect",
-	/*.application_function */ redirect_function,	
+	/*.application_function */ redirect_function,
 	/* long_desc */ "Send a redirect message to a session.",
 	/* short_desc */ "Send session redirect",
 	/* syntax */ "<redirect_data>",
@@ -690,7 +697,7 @@ static const switch_application_interface_t redirect_application_interface = {
 
 static const switch_application_interface_t ivr_application_interface = {
 	/*.interface_name */ "ivr",
-	/*.application_function */ ivr_application_function,	
+	/*.application_function */ ivr_application_function,
 	/* long_desc */ "Run an ivr menu.",
 	/* short_desc */ "Run an ivr menu",
 	/* syntax */ "<menu_name>",
@@ -700,7 +707,7 @@ static const switch_application_interface_t ivr_application_interface = {
 
 static const switch_application_interface_t detect_speech_application_interface = {
 	/*.interface_name */ "detect_speech",
-	/*.application_function */ detect_speech_function,	
+	/*.application_function */ detect_speech_function,
 	/* long_desc */ "Detect speech on a channel.",
 	/* short_desc */ "Detect speech",
 	/* syntax */ "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR pause OR resume",
@@ -777,7 +784,6 @@ static const switch_application_interface_t hangup_application_interface = {
 	/* syntax */ "[<cause>]",
 	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next */ &log_application_interface
-
 };
 
 static const switch_application_interface_t answer_application_interface = {
@@ -788,7 +794,6 @@ static const switch_application_interface_t answer_application_interface = {
 	/* syntax */ "",
 	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next */ &hangup_application_interface
-
 };
 
 static const switch_application_interface_t pre_answer_application_interface = {
@@ -799,7 +804,6 @@ static const switch_application_interface_t pre_answer_application_interface = {
 	/* syntax */ "",
 	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next */ &answer_application_interface
-
 };
 
 static const switch_application_interface_t eval_application_interface = {
@@ -810,7 +814,6 @@ static const switch_application_interface_t eval_application_interface = {
 	/* syntax */ "",
 	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next */ &pre_answer_application_interface
-
 };
 
 static const switch_application_interface_t phrase_application_interface = {
@@ -821,7 +824,6 @@ static const switch_application_interface_t phrase_application_interface = {
 	/* syntax */ "<macro_name>,<data>",
 	/* flags */ SAF_NONE,
 	/*.next */ &eval_application_interface
-
 };
 
 static const switch_application_interface_t strftime_application_interface = {
@@ -832,13 +834,13 @@ static const switch_application_interface_t strftime_application_interface = {
 	/* syntax */ NULL,
 	/* flags */ SAF_SUPPORT_NOMEDIA,
 	/*.next */ &phrase_application_interface
-
 };
 
 static const switch_application_interface_t sleep_application_interface = {
 	/*.interface_name */ "sleep",
 	/*.application_function */ sleep_function,
-	/* long_desc */ "Pause the channel for a given number of milliseconds, consuming the audio for that period of time.",
+	/* long_desc */
+	"Pause the channel for a given number of milliseconds, consuming the audio for that period of time.",
 	/* short_desc */ "Pause a channel",
 	/* syntax */ "<pausemilliseconds>",
 	/* flags */ SAF_NONE,
@@ -875,7 +877,8 @@ static const switch_loadable_module_interface_t mod_dptools_module_interface = {
 	/*.api_interface */ &presence_api_interface
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
+													   char *filename)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */

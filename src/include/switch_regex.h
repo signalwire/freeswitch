@@ -35,32 +35,28 @@
 #define SWITCH_REGEX_H
 
 SWITCH_BEGIN_EXTERN_C
-
 /**
  * @defgroup switch_regex
  * @ingroup FREESWITCH
  * @{
  */
-
-typedef struct real_pcre switch_regex_t;
+	typedef struct real_pcre switch_regex_t;
 
 SWITCH_DECLARE(switch_regex_t *) switch_regex_compile(const char *pattern,
 													  int options,
 													  const char **errorptr,
-													  int *erroroffset,
-													  const unsigned char *tables);
+													  int *erroroffset, const unsigned char *tables);
 
 SWITCH_DECLARE(int) switch_regex_copy_substring(const char *subject,
 												int *ovector,
-												int stringcount,
-												int stringnumber,
-												char *buffer,
-												int size);
+												int stringcount, int stringnumber, char *buffer, int size);
 
 SWITCH_DECLARE(void) switch_regex_free(void *data);
 
-SWITCH_DECLARE(int) switch_regex_perform(char *field, char *expression, switch_regex_t **new_re, int *ovector, uint32_t olen);
-SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_count, char *data, char *field_data, char *substituted, uint32_t len, int *ovector);
+SWITCH_DECLARE(int) switch_regex_perform(char *field, char *expression, switch_regex_t **new_re, int *ovector,
+										 uint32_t olen);
+SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_count, char *data, char *field_data,
+												 char *substituted, uint32_t len, int *ovector);
 
 /*!
  \brief Function to evaluate an expression against a string
@@ -78,9 +74,7 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match(char *target, char *expressio
 /** @} */
 
 SWITCH_END_EXTERN_C
-
 #endif
-
 /* For Emacs:
  * Local Variables:
  * mode:c

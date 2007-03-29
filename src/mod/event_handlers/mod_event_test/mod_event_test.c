@@ -53,13 +53,15 @@ static void event_handler(switch_event_t *event)
 			dofree++;
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nEVENT (text version)\n--------------------------------\n%s", buf);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nEVENT (xml version)\n--------------------------------\n%s\n", xmlstr);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
+						  "\nEVENT (text version)\n--------------------------------\n%s", buf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
+						  "\nEVENT (xml version)\n--------------------------------\n%s\n", xmlstr);
 		break;
 	}
 
 	switch_safe_free(buf);
-	
+
 	if (dofree) {
 		if (xml) {
 			switch_xml_free(xml);
@@ -125,7 +127,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 #endif
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
+													   char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &event_test_module_interface;
@@ -140,7 +143,6 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
-
 #ifdef TORTURE_ME
 	if (1) {
 		int x = 0;

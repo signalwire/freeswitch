@@ -59,13 +59,12 @@
 /******** Prototypes ****************************************************/
 /************************************************************************/
 
-static int blockingIOCallback( const void *inputBuffer, void *outputBuffer,
-                               unsigned long framesPerBuffer,
-							   const PaStreamCallbackTimeInfo* timeInfo,
-							   PaStreamCallbackFlags statusFlags,
-							   void *userData );
-static PaError PABLIO_InitFIFO( PaUtilRingBuffer *rbuf, long numFrames, long bytesPerFrame );
-static PaError PABLIO_TermFIFO( PaUtilRingBuffer *rbuf );
+static int blockingIOCallback(const void *inputBuffer, void *outputBuffer,
+							  unsigned long framesPerBuffer,
+							  const PaStreamCallbackTimeInfo * timeInfo,
+							  PaStreamCallbackFlags statusFlags, void *userData);
+static PaError PABLIO_InitFIFO(PaUtilRingBuffer * rbuf, long numFrames, long bytesPerFrame);
+static PaError PABLIO_TermFIFO(PaUtilRingBuffer * rbuf);
 
 /************************************************************************/
 /******** Functions *****************************************************/
@@ -74,122 +73,120 @@ static PaError PABLIO_TermFIFO( PaUtilRingBuffer *rbuf );
 /* Called from PortAudio.
  * Read and write data only if there is room in FIFOs.
  */
-static int blockingIOCallback( const void *inputBuffer, void *outputBuffer,
-                               unsigned long framesPerBuffer,
-                               const PaStreamCallbackTimeInfo* timeInfo,
-							   PaStreamCallbackFlags statusFlags,
-							   void *userData )
+static int blockingIOCallback(const void *inputBuffer, void *outputBuffer,
+							  unsigned long framesPerBuffer,
+							  const PaStreamCallbackTimeInfo * timeInfo,
+							  PaStreamCallbackFlags statusFlags, void *userData)
 {
-    PABLIO_Stream *data = (PABLIO_Stream*)userData;
-    long numBytes = data->bytesPerFrame * framesPerBuffer;
+	PABLIO_Stream *data = (PABLIO_Stream *) userData;
+	long numBytes = data->bytesPerFrame * framesPerBuffer;
 
-    /* This may get called with NULL inputBuffer during initial setup. */
-    if( inputBuffer != NULL )
-    {
-        PaUtil_WriteRingBuffer( &data->inFIFO, inputBuffer, numBytes );
-    }
-    if( outputBuffer != NULL )
-    {
-        int i;
-        int numRead = PaUtil_ReadRingBuffer( &data->outFIFO, outputBuffer, numBytes );
-        /* Zero out remainder of buffer if we run out of data. */
-        for( i=numRead; i<numBytes; i++ )
-        {
-            ((char *)outputBuffer)[i] = 0;
-        }
-    }
+	/* This may get called with NULL inputBuffer during initial setup. */
+	if (inputBuffer != NULL) {
+		PaUtil_WriteRingBuffer(&data->inFIFO, inputBuffer, numBytes);
+	}
+	if (outputBuffer != NULL) {
+		int i;
+		int numRead = PaUtil_ReadRingBuffer(&data->outFIFO, outputBuffer, numBytes);
+		/* Zero out remainder of buffer if we run out of data. */
+		for (i = numRead; i < numBytes; i++) {
+			((char *) outputBuffer)[i] = 0;
+		}
+	}
 
-    return 0;
+	return 0;
 }
 
 /* Allocate buffer. */
-static PaError PABLIO_InitFIFO( PaUtilRingBuffer *rbuf, long numFrames, long bytesPerFrame )
+static PaError PABLIO_InitFIFO(PaUtilRingBuffer * rbuf, long numFrames, long bytesPerFrame)
 {
-    long numBytes = numFrames * bytesPerFrame;
-    char *buffer = (char *) malloc( numBytes );
-    if( buffer == NULL ) return paInsufficientMemory;
-    memset( buffer, 0, numBytes );
-    return (PaError) PaUtil_InitializeRingBuffer( rbuf, numBytes, buffer );
+	long numBytes = numFrames * bytesPerFrame;
+	char *buffer = (char *) malloc(numBytes);
+	if (buffer == NULL)
+		return paInsufficientMemory;
+	memset(buffer, 0, numBytes);
+	return (PaError) PaUtil_InitializeRingBuffer(rbuf, numBytes, buffer);
 }
 
 /* Free buffer. */
-static PaError PABLIO_TermFIFO( PaUtilRingBuffer *rbuf )
+static PaError PABLIO_TermFIFO(PaUtilRingBuffer * rbuf)
 {
-    if( rbuf->buffer ) free( rbuf->buffer );
-    rbuf->buffer = NULL;
-    return paNoError;
+	if (rbuf->buffer)
+		free(rbuf->buffer);
+	rbuf->buffer = NULL;
+	return paNoError;
 }
 
 /************************************************************
  * Write data to ring buffer.
  * Will not return until all the data has been written.
  */
-long WriteAudioStream( PABLIO_Stream *aStream, void *data, long numFrames )
+long WriteAudioStream(PABLIO_Stream * aStream, void *data, long numFrames)
 {
-    long bytesWritten;
-    char *p = (char *) data;
-    long numBytes = aStream->bytesPerFrame * numFrames;
-    while( numBytes > 0)
-    {
-        bytesWritten = PaUtil_WriteRingBuffer( &aStream->outFIFO, p, numBytes );
-        numBytes -= bytesWritten;
-        p += bytesWritten;
-        if( numBytes > 0) Pa_Sleep(10);
-    }
-    return numFrames;
+	long bytesWritten;
+	char *p = (char *) data;
+	long numBytes = aStream->bytesPerFrame * numFrames;
+	while (numBytes > 0) {
+		bytesWritten = PaUtil_WriteRingBuffer(&aStream->outFIFO, p, numBytes);
+		numBytes -= bytesWritten;
+		p += bytesWritten;
+		if (numBytes > 0)
+			Pa_Sleep(10);
+	}
+	return numFrames;
 }
 
 /************************************************************
  * Read data from ring buffer.
  * Will not return until all the data has been read.
  */
-long ReadAudioStream( PABLIO_Stream *aStream, void *data, long numFrames )
+long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames)
 {
-    long bytesRead;
-    char *p = (char *) data;
-    long numBytes = aStream->bytesPerFrame * numFrames;
+	long bytesRead;
+	char *p = (char *) data;
+	long numBytes = aStream->bytesPerFrame * numFrames;
 
-    while( numBytes > 0)
-    {
-        bytesRead = PaUtil_ReadRingBuffer( &aStream->inFIFO, p, numBytes );
-        numBytes -= bytesRead;
-        p += bytesRead;
-        if( numBytes > 0) Pa_Sleep(10);
-    }
-    return numFrames;
+	while (numBytes > 0) {
+		bytesRead = PaUtil_ReadRingBuffer(&aStream->inFIFO, p, numBytes);
+		numBytes -= bytesRead;
+		p += bytesRead;
+		if (numBytes > 0)
+			Pa_Sleep(10);
+	}
+	return numFrames;
 }
 
 /************************************************************
  * Return the number of frames that could be written to the stream without
  * having to wait.
  */
-long GetAudioStreamWriteable( PABLIO_Stream *aStream )
+long GetAudioStreamWriteable(PABLIO_Stream * aStream)
 {
-    int bytesEmpty = PaUtil_GetRingBufferWriteAvailable( &aStream->outFIFO );
-    return bytesEmpty / aStream->bytesPerFrame;
+	int bytesEmpty = PaUtil_GetRingBufferWriteAvailable(&aStream->outFIFO);
+	return bytesEmpty / aStream->bytesPerFrame;
 }
 
 /************************************************************
  * Return the number of frames that are available to be read from the
  * stream without having to wait.
  */
-long GetAudioStreamReadable( PABLIO_Stream *aStream )
+long GetAudioStreamReadable(PABLIO_Stream * aStream)
 {
-    int bytesFull = PaUtil_GetRingBufferReadAvailable( &aStream->inFIFO );
-    return bytesFull / aStream->bytesPerFrame;
+	int bytesFull = PaUtil_GetRingBufferReadAvailable(&aStream->inFIFO);
+	return bytesFull / aStream->bytesPerFrame;
 }
 
 /************************************************************/
-static unsigned long RoundUpToNextPowerOf2( unsigned long n )
+static unsigned long RoundUpToNextPowerOf2(unsigned long n)
 {
-    long numBits = 0;
-    if( ((n-1) & n) == 0) return n; /* Already Power of two. */
-    while( n > 0 )
-    {
-        n= n>>1;
-        numBits++;
-    }
-    return (1<<numBits);
+	long numBits = 0;
+	if (((n - 1) & n) == 0)
+		return n;				/* Already Power of two. */
+	while (n > 0) {
+		n = n >> 1;
+		numBits++;
+	}
+	return (1 << numBits);
 }
 
 /************************************************************
@@ -197,27 +194,27 @@ static unsigned long RoundUpToNextPowerOf2( unsigned long n )
  * Allocates PABLIO_Stream structure.
  *
  */
-PaError OpenAudioStream( PABLIO_Stream **rwblPtr, 
-						 const PaStreamParameters *inputParameters,
-						 const PaStreamParameters *outputParameters,
-						 double sampleRate,
-						 PaStreamFlags streamFlags)
+PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
+						const PaStreamParameters * inputParameters,
+						const PaStreamParameters * outputParameters, double sampleRate, PaStreamFlags streamFlags)
 {
-    long   bytesPerSample;
-    PaError err;
-    PABLIO_Stream *aStream;
-    long   numFrames;
+	long bytesPerSample;
+	PaError err;
+	PABLIO_Stream *aStream;
+	long numFrames;
 	long numBytes;
 	int channels = 1;
 
-    /* Allocate PABLIO_Stream structure for caller. */
-    aStream = (PABLIO_Stream *) malloc( sizeof(PABLIO_Stream) );
-    if( aStream == NULL ) return paInsufficientMemory;
-    memset( aStream, 0, sizeof(PABLIO_Stream) );
+	/* Allocate PABLIO_Stream structure for caller. */
+	aStream = (PABLIO_Stream *) malloc(sizeof(PABLIO_Stream));
+	if (aStream == NULL)
+		return paInsufficientMemory;
+	memset(aStream, 0, sizeof(PABLIO_Stream));
 
-    /* Initialize PortAudio  */
-    err = Pa_Initialize();
-    if( err != paNoError ) goto error;
+	/* Initialize PortAudio  */
+	err = Pa_Initialize();
+	if (err != paNoError)
+		goto error;
 
 	if (inputParameters) {
 		channels = inputParameters->channelCount;
@@ -225,81 +222,79 @@ PaError OpenAudioStream( PABLIO_Stream **rwblPtr,
 		channels = outputParameters->channelCount;
 	}
 
-    numFrames = 4 * FRAMES_PER_BUFFER;
-    numFrames = RoundUpToNextPowerOf2( numFrames );
+	numFrames = 4 * FRAMES_PER_BUFFER;
+	numFrames = RoundUpToNextPowerOf2(numFrames);
 
 	bytesPerSample = 2;
 	aStream->samplesPerFrame = channels;
-    aStream->bytesPerFrame = bytesPerSample * aStream->samplesPerFrame;
+	aStream->bytesPerFrame = bytesPerSample * aStream->samplesPerFrame;
 
-    /* Initialize Ring Buffers */
+	/* Initialize Ring Buffers */
 
 	if (inputParameters) {
-		err = PABLIO_InitFIFO( &aStream->inFIFO, numFrames, aStream->bytesPerFrame );
-		if( err != paNoError ) goto error;
+		err = PABLIO_InitFIFO(&aStream->inFIFO, numFrames, aStream->bytesPerFrame);
+		if (err != paNoError)
+			goto error;
 	}
 
 	if (outputParameters) {
-		err = PABLIO_InitFIFO( &aStream->outFIFO, numFrames, aStream->bytesPerFrame );
-		if( err != paNoError ) goto error;
+		err = PABLIO_InitFIFO(&aStream->outFIFO, numFrames, aStream->bytesPerFrame);
+		if (err != paNoError)
+			goto error;
 	}
 
 	/* Make Write FIFO appear full initially. */
-	numBytes = PaUtil_GetRingBufferWriteAvailable( &aStream->outFIFO );
-	PaUtil_AdvanceRingBufferWriteIndex( &aStream->outFIFO, numBytes );
-	
+	numBytes = PaUtil_GetRingBufferWriteAvailable(&aStream->outFIFO);
+	PaUtil_AdvanceRingBufferWriteIndex(&aStream->outFIFO, numBytes);
 
-    /* Open a PortAudio stream that we will use to communicate with the underlying
-     * audio drivers. */
-    err = Pa_OpenStream(
-              &aStream->stream,
-			  inputParameters,
-              outputParameters,
-			  sampleRate,
-              FRAMES_PER_BUFFER,
-			  streamFlags,
-              blockingIOCallback,
-              aStream );
-    if( err != paNoError ) goto error;
 
-    err = Pa_StartStream( aStream->stream );
-    if( err != paNoError ) goto error;
-    *rwblPtr = aStream;
-    return paNoError;
+	/* Open a PortAudio stream that we will use to communicate with the underlying
+	 * audio drivers. */
+	err = Pa_OpenStream(&aStream->stream,
+						inputParameters,
+						outputParameters, sampleRate, FRAMES_PER_BUFFER, streamFlags, blockingIOCallback, aStream);
+	if (err != paNoError)
+		goto error;
 
-error:
-    CloseAudioStream( aStream );
-    *rwblPtr = NULL;
-    return err;
+	err = Pa_StartStream(aStream->stream);
+	if (err != paNoError)
+		goto error;
+	*rwblPtr = aStream;
+	return paNoError;
+
+  error:
+	CloseAudioStream(aStream);
+	*rwblPtr = NULL;
+	return err;
 }
 
 /************************************************************/
-PaError CloseAudioStream( PABLIO_Stream *aStream )
+PaError CloseAudioStream(PABLIO_Stream * aStream)
 {
-    PaError err;
-    int bytesEmpty;
-    int byteSize = aStream->outFIFO.bufferSize;
+	PaError err;
+	int bytesEmpty;
+	int byteSize = aStream->outFIFO.bufferSize;
 
-    /* If we are writing data, make sure we play everything written. */
-    if( byteSize > 0 )
-    {
-        bytesEmpty = PaUtil_GetRingBufferWriteAvailable( &aStream->outFIFO );
-        while( bytesEmpty < byteSize )
-        {
-            Pa_Sleep( 10 );
-            bytesEmpty = PaUtil_GetRingBufferWriteAvailable( &aStream->outFIFO );
-        }
-    }
+	/* If we are writing data, make sure we play everything written. */
+	if (byteSize > 0) {
+		bytesEmpty = PaUtil_GetRingBufferWriteAvailable(&aStream->outFIFO);
+		while (bytesEmpty < byteSize) {
+			Pa_Sleep(10);
+			bytesEmpty = PaUtil_GetRingBufferWriteAvailable(&aStream->outFIFO);
+		}
+	}
 
-    err = Pa_StopStream( aStream->stream );
-    if( err != paNoError ) goto error;
-    err = Pa_CloseStream( aStream->stream );
-    if( err != paNoError ) goto error;
-    Pa_Terminate();
+	err = Pa_StopStream(aStream->stream);
+	if (err != paNoError)
+		goto error;
+	err = Pa_CloseStream(aStream->stream);
+	if (err != paNoError)
+		goto error;
+	Pa_Terminate();
 
-error:
-    PABLIO_TermFIFO( &aStream->inFIFO );
-    PABLIO_TermFIFO( &aStream->outFIFO );
-    free( aStream );
-    return err;
+  error:
+	PABLIO_TermFIFO(&aStream->inFIFO);
+	PABLIO_TermFIFO(&aStream->outFIFO);
+	free(aStream);
+	return err;
 }

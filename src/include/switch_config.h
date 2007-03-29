@@ -58,24 +58,22 @@
 
 #include <switch.h>
 
-SWITCH_BEGIN_EXTERN_C
-
-typedef struct switch_config switch_config_t;
+SWITCH_BEGIN_EXTERN_C typedef struct switch_config switch_config_t;
 
 /*! \brief A simple file handle representing an open configuration file **/
 struct switch_config {
 	/*! FILE stream buffer to the opened file */
-    FILE *file;
+	FILE *file;
 	/*! path to the file */
-    char *path;
+	char *path;
 	/*! current category */
-    char category[256];
+	char category[256];
 	/*! current section */
-    char section[256];
+	char section[256];
 	/*! buffer of current line being read */
-    char buf[1024];
+	char buf[1024];
 	/*! current line number in file */
-    int lineno;
+	int lineno;
 	/*! current category number in file */
 	int catno;
 	/*! current section number in file */
@@ -107,11 +105,8 @@ SWITCH_DECLARE(void) switch_config_close_file(switch_config_t *cfg);
 SWITCH_DECLARE(int) switch_config_next_pair(switch_config_t *cfg, char **var, char **val);
 
 SWITCH_END_EXTERN_C
-
 /** @} */
-
 #endif
-
 /* For Emacs:
  * Local Variables:
  * mode:c

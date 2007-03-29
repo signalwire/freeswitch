@@ -44,10 +44,10 @@ static const char modname[] = "mod_ldap";
 
 struct ldap_context {
 	LDAP *ld;
-	LDAPMessage* msg;
-	LDAPMessage* entry;
-	BerElement* ber;
-	char* attr;
+	LDAPMessage *msg;
+	LDAPMessage *entry;
+	BerElement *ber;
+	char *attr;
 	char *var;
 	char *val;
 	char **vals;
@@ -60,14 +60,14 @@ struct ldap_context {
 static switch_status_t mod_ldap_open(switch_directory_handle_t *dh, char *source, char *dsn, char *passwd)
 {
 	struct ldap_context *context;
-	int  auth_method = LDAP_AUTH_SIMPLE;
+	int auth_method = LDAP_AUTH_SIMPLE;
 	int desired_version = LDAP_VERSION3;
 
 	if ((context = switch_core_alloc(dh->memory_pool, sizeof(*context))) == 0) {
 		return SWITCH_STATUS_MEMERR;
 	}
-	
-	if ((context->ld = ldap_init(source, LDAP_PORT)) == NULL ) {
+
+	if ((context->ld = ldap_init(source, LDAP_PORT)) == NULL) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -76,11 +76,11 @@ static switch_status_t mod_ldap_open(switch_directory_handle_t *dh, char *source
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (ldap_bind_s(context->ld, dsn, passwd, auth_method) != LDAP_SUCCESS ) {
+	if (ldap_bind_s(context->ld, dsn, passwd, auth_method) != LDAP_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	
+
 	dh->private_info = context;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -112,7 +112,7 @@ static switch_status_t mod_ldap_query(switch_directory_handle_t *dh, char *base,
 	if (ldap_count_entries(context->ld, context->msg) <= 0) {
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -161,7 +161,7 @@ static switch_status_t mod_ldap_next_pair(switch_directory_handle_t *dh, char **
 		*val = context->val;
 		return SWITCH_STATUS_SUCCESS;
 	} else {
-	itter:
+	  itter:
 		if (context->attr && context->vals) {
 			if ((*val = context->vals[context->vi++])) {
 				*var = context->attr;
@@ -177,7 +177,7 @@ static switch_status_t mod_ldap_next_pair(switch_directory_handle_t *dh, char **
 			ldap_memfree(context->val);
 			context->val = NULL;
 			if (context->ber) {
-				ber_free(context->ber,0);
+				ber_free(context->ber, 0);
 				context->ber = NULL;
 			}
 			context->attr = ldap_first_attribute(context->ld, context->entry, &context->ber);
@@ -188,22 +188,23 @@ static switch_status_t mod_ldap_next_pair(switch_directory_handle_t *dh, char **
 			context->attr = ldap_next_attribute(context->ld, context->entry, context->ber);
 		}
 		context->vitt++;
-		if (context->entry && context->attr && (context->vals = ldap_get_values(context->ld, context->entry, context->attr)) != 0) {
+		if (context->entry && context->attr
+			&& (context->vals = ldap_get_values(context->ld, context->entry, context->attr)) != 0) {
 			goto itter;
 		}
 	}
-	
+
 	return SWITCH_STATUS_FALSE;
 }
 
 
 static const switch_directory_interface_t ldap_directory_interface = {
-    /*.interface_name */ "ldap",
-	/*.directory_open*/ mod_ldap_open,
-	/*.directory_close*/ mod_ldap_close,
-	/*.directory_query*/ mod_ldap_query,
-	/*.directory_next*/ mod_ldap_next,
-	/*.directory_next_pair*/ mod_ldap_next_pair
+	/*.interface_name */ "ldap",
+	/*.directory_open */ mod_ldap_open,
+	/*.directory_close */ mod_ldap_close,
+	/*.directory_query */ mod_ldap_query,
+	/*.directory_next */ mod_ldap_next,
+	/*.directory_next_pair */ mod_ldap_next_pair
 };
 
 

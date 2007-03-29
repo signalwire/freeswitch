@@ -30,7 +30,7 @@
  *
  * mod_g723.c -- G723.1 Codec Module
  *
- */  
+ */
 #include "switch.h"
 
 #ifndef G723_PASSTHROUGH
@@ -61,11 +61,11 @@ struct g723_context {
 #endif
 
 static switch_status_t switch_g723_init(switch_codec_t *codec, switch_codec_flag_t flags,
-									  const switch_codec_settings_t *codec_settings) 
+										const switch_codec_settings_t *codec_settings)
 {
 #ifdef G723_PASSTHROUGH
 	codec->flags |= SWITCH_CODEC_FLAG_PASSTHROUGH;
-	return  SWITCH_STATUS_FALSE;
+	return SWITCH_STATUS_FALSE;
 #else
 	struct g723_context *context = NULL;
 	int encoding, decoding;
@@ -79,10 +79,10 @@ static switch_status_t switch_g723_init(switch_codec_t *codec, switch_codec_flag
 
 		if (encoding) {
 			Init_Coder(&context->encoder_object);
-			if( UseVx ) {
+			if (UseVx) {
 				Init_Vad(&context->encoder_object);
 				Init_Cod_Cng(&context->encoder_object);
-			}		   
+			}
 		}
 
 		if (decoding) {
@@ -98,7 +98,7 @@ static switch_status_t switch_g723_init(switch_codec_t *codec, switch_codec_flag
 }
 
 
-static switch_status_t switch_g723_destroy(switch_codec_t *codec) 
+static switch_status_t switch_g723_destroy(switch_codec_t *codec)
 {
 #ifndef G723_PASSTHROUGH
 	codec->private_info = NULL;
@@ -106,17 +106,13 @@ static switch_status_t switch_g723_destroy(switch_codec_t *codec)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t switch_g723_encode(switch_codec_t *codec, 
-										switch_codec_t *other_codec, 
-										void *decoded_data,
-
-										uint32_t decoded_data_len, 
-										uint32_t decoded_rate, 
-										void *encoded_data,
-
-										uint32_t *encoded_data_len, 
-										uint32_t *encoded_rate, 
-										unsigned int *flag) 
+static switch_status_t switch_g723_encode(switch_codec_t *codec,
+										  switch_codec_t *other_codec,
+										  void *decoded_data,
+										  uint32_t decoded_data_len,
+										  uint32_t decoded_rate,
+										  void *encoded_data,
+										  uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
 {
 #ifdef G723_PASSTHROUGH
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
@@ -131,28 +127,24 @@ static switch_status_t switch_g723_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	for(x = 0; x < Frame; x++) {
+	for (x = 0; x < Frame; x++) {
 		context->cod_float_buf[x] = decoded_slin_buf[x];
 	}
 
-	Coder(&context->encoder_object, (FLOAT *)context->cod_float_buf, ebuf);
+	Coder(&context->encoder_object, (FLOAT *) context->cod_float_buf, ebuf);
 	*encoded_data_len = codec->implementation->encoded_bytes_per_frame;
 
 	return SWITCH_STATUS_SUCCESS;
 #endif
 }
 
-static switch_status_t switch_g723_decode(switch_codec_t *codec, 
-										switch_codec_t *other_codec, 
-										void *encoded_data,
-
-										uint32_t encoded_data_len, 
-										uint32_t encoded_rate, 
-										void *decoded_data,
-
-										uint32_t *decoded_data_len, 
-										uint32_t *decoded_rate, 
-										unsigned int *flag) 
+static switch_status_t switch_g723_decode(switch_codec_t *codec,
+										  switch_codec_t *other_codec,
+										  void *encoded_data,
+										  uint32_t encoded_data_len,
+										  uint32_t encoded_rate,
+										  void *decoded_data,
+										  uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
 {
 #ifdef G723_PASSTHROUGH
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
@@ -165,10 +157,10 @@ static switch_status_t switch_g723_decode(switch_codec_t *codec,
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	Decod(&context->decoder_object, (FLOAT *) context->dec_float_buf, (char *) decoded_data, 0);
 
-	for (x=0;x<Frame;x++) {
+	for (x = 0; x < Frame; x++) {
 		to_slin_buf[x] = context->dec_float_buf[x];
 	}
 	*decoded_data_len = codec->implementation->bytes_per_frame;
@@ -177,49 +169,49 @@ static switch_status_t switch_g723_decode(switch_codec_t *codec,
 #endif
 }
 
-/* Registration */ 
+/* Registration */
 
-static const switch_codec_implementation_t g723_1_implementation = { 
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-	/*.ianacode */ 4, 
-	/*.iananame */ "G723", 
+static const switch_codec_implementation_t g723_1_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 4,
+	/*.iananame */ "G723",
 	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000, 
-	/*.bits_per_second */ 6300, 
-	/*.microseconds_per_frame */ 30000, 
-	/*.samples_per_frame */ 240, 
-	/*.bytes_per_frame */ 480, 
-	/*.encoded_bytes_per_frame */ 24, 
-	/*.number_of_channels */ 1, 
-	/*.pref_frames_per_packet */ 1, 
-	/*.max_frames_per_packet */ 4, 
-	/*.init */ switch_g723_init, 
-	/*.encode */ switch_g723_encode, 
-	/*.decode */ switch_g723_decode, 
-	/*.destroy */ switch_g723_destroy, 
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ 6300,
+	/*.microseconds_per_frame */ 30000,
+	/*.samples_per_frame */ 240,
+	/*.bytes_per_frame */ 480,
+	/*.encoded_bytes_per_frame */ 24,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 4,
+	/*.init */ switch_g723_init,
+	/*.encode */ switch_g723_encode,
+	/*.decode */ switch_g723_decode,
+	/*.destroy */ switch_g723_destroy,
 };
 
-static const switch_codec_interface_t g723_1_codec_interface = { 
-	/*.interface_name */ "g723.1 6.3k", 
-	/*.implementations */ &g723_1_implementation, 
+static const switch_codec_interface_t g723_1_codec_interface = {
+	/*.interface_name */ "g723.1 6.3k",
+	/*.implementations */ &g723_1_implementation,
 };
 
-static switch_loadable_module_interface_t g723_module_interface = { 
-	/*.module_name */ modname, 
-	/*.endpoint_interface */ NULL, 
-	/*.timer_interface */ NULL, 
-	/*.dialplan_interface */ NULL, 
-	/*.codec_interface */ &g723_1_codec_interface, 
-	/*.application_interface */ NULL 
+static switch_loadable_module_interface_t g723_module_interface = {
+	/*.module_name */ modname,
+	/*.endpoint_interface */ NULL,
+	/*.timer_interface */ NULL,
+	/*.dialplan_interface */ NULL,
+	/*.codec_interface */ &g723_1_codec_interface,
+	/*.application_interface */ NULL
 };
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													 char *filename)
+													   char *filename)
 {
-	/* connect my internal structure to the blank pointer passed to me */ 
+	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &g723_module_interface;
 
-	/* indicate that the module should continue to be loaded */ 
+	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
 

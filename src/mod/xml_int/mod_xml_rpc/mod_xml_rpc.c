@@ -66,10 +66,10 @@ static struct {
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_realm, globals.realm)
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_user, globals.user)
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_pass, globals.pass)
+	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_user, globals.user)
+	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_pass, globals.pass)
 
-static switch_status_t do_config(void) 
+	 static switch_status_t do_config(void)
 {
 	char *cf = "xml_rpc.conf";
 	switch_xml_t cfg, xml, settings, param;
@@ -93,11 +93,11 @@ static switch_status_t do_config(void)
 			} else if (!strcasecmp(var, "auth-pass")) {
 				pass = val;
 			} else if (!strcasecmp(var, "http-port")) {
-				globals.port = (uint16_t)atoi(val);
+				globals.port = (uint16_t) atoi(val);
 			}
 		}
 	}
-	
+
 	if (!globals.port) {
 		globals.port = 8080;
 	}
@@ -112,14 +112,15 @@ static switch_status_t do_config(void)
 }
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
+													   char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &xml_rpc_module_interface;
 
 	memset(&globals, 0, sizeof(globals));
 
-    do_config();
+	do_config();
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -136,73 +137,82 @@ static switch_status_t http_stream_write(switch_stream_handle_t *handle, const c
 	va_start(ap, fmt);
 	ret = switch_vasprintf(&data, fmt, ap);
 	va_end(ap);
-	
+
 	if (data) {
 		ret = 0;
-		HTTPWrite(r, data, (uint32_t)strlen(data));
+		HTTPWrite(r, data, (uint32_t) strlen(data));
 		free(data);
 	}
-	
+
 	return ret ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 }
 
 
-abyss_bool HandleHook(TSession *r)
+abyss_bool HandleHook(TSession * r)
 {
-    char *m = "text/html";
-	switch_stream_handle_t stream = {0};
+	char *m = "text/html";
+	switch_stream_handle_t stream = { 0 };
 	char *command;
 
 	stream.data = r;
 	stream.write_function = http_stream_write;
 
 	if (globals.realm) {
-		if (!RequestAuth(r,globals.realm, globals.user, globals.pass)) {
+		if (!RequestAuth(r, globals.realm, globals.user, globals.pass)) {
 			return TRUE;
 		}
 	}
 
 
 
-	if(strncmp(r->uri, "/api/", 5)) {
+	if (strncmp(r->uri, "/api/", 5)) {
 		return FALSE;
 	}
 
 	if (switch_event_create(&stream.event, SWITCH_EVENT_API) == SWITCH_STATUS_SUCCESS) {
-		if (r->uri) switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-URI", "%s", r->uri);
-		if (r->query) switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-QUERY", "%s", r->query);
-		if (r->host) switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-HOST", "%s", r->host);
-		if (r->from) switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-FROM", "%s", r->from);
-		if (r->useragent) switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-USER-AGENT", "%s", r->useragent);
-		if (r->referer) switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-REFERER", "%s", r->referer);
-		if (r->requestline) switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-REQUESTLINE", "%s", r->requestline);
-		if (r->user) switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-USER", "%s", r->user);
-		if (r->port) switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-PORT", "%u", r->port);
+		if (r->uri)
+			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-URI", "%s", r->uri);
+		if (r->query)
+			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-QUERY", "%s", r->query);
+		if (r->host)
+			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-HOST", "%s", r->host);
+		if (r->from)
+			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-FROM", "%s", r->from);
+		if (r->useragent)
+			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-USER-AGENT", "%s", r->useragent);
+		if (r->referer)
+			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-REFERER", "%s", r->referer);
+		if (r->requestline)
+			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-REQUESTLINE", "%s", r->requestline);
+		if (r->user)
+			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-USER", "%s", r->user);
+		if (r->port)
+			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-PORT", "%u", r->port);
 	}
 
 	command = r->uri + 5;
-	
+
 	ResponseChunked(r);
-	ResponseStatus(r,200);
+	ResponseStatus(r, 200);
 	ResponseContentType(r, m);
-    ResponseWrite(r);
+	ResponseWrite(r);
 	switch_api_execute(command, r->query, NULL, &stream);
 	HTTPWriteEnd(r);
-    return TRUE;
+	return TRUE;
 }
 
 
-static xmlrpc_value *freeswitch_api(xmlrpc_env *const envP, xmlrpc_value *const paramArrayP, void *const userData) 
+static xmlrpc_value *freeswitch_api(xmlrpc_env * const envP, xmlrpc_value * const paramArrayP, void *const userData)
 {
 	char *command, *arg;
-	switch_stream_handle_t stream = {0};
+	switch_stream_handle_t stream = { 0 };
 	xmlrpc_value *val = NULL;
 
 
-    /* Parse our argument array. */
-    xmlrpc_decompose_value(envP, paramArrayP, "(ss)", &command, &arg);
-    if (envP->fault_occurred) {
-        return NULL;
+	/* Parse our argument array. */
+	xmlrpc_decompose_value(envP, paramArrayP, "(ss)", &command, &arg);
+	if (envP->fault_occurred) {
+		return NULL;
 	}
 
 	SWITCH_STANDARD_STREAM(stream);
@@ -217,17 +227,17 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env *const envP, xmlrpc_value *const 
 	return val;
 }
 
-static xmlrpc_value *freeswitch_man(xmlrpc_env *const envP, xmlrpc_value *const paramArrayP, void *const userData) 
+static xmlrpc_value *freeswitch_man(xmlrpc_env * const envP, xmlrpc_value * const paramArrayP, void *const userData)
 {
 	char *oid, *relative_oid, *s_action, *data;
 	char buf[SWITCH_MAX_MANAGEMENT_BUFFER_LEN] = "";
 	switch_management_action_t action = SMA_NONE;
 	xmlrpc_value *val;
 
-    /* Parse our argument array. */
-    xmlrpc_decompose_value(envP, paramArrayP, "(sss)", &oid, &s_action, &data);
-    if (envP->fault_occurred) {
-        return NULL;
+	/* Parse our argument array. */
+	xmlrpc_decompose_value(envP, paramArrayP, "(sss)", &oid, &s_action, &data);
+	if (envP->fault_occurred) {
+		return NULL;
 	}
 
 	if (!strncasecmp(oid, FREESWITCH_OID_PREFIX, strlen(FREESWITCH_OID_PREFIX))) {
@@ -262,46 +272,48 @@ static xmlrpc_value *freeswitch_man(xmlrpc_env *const envP, xmlrpc_value *const 
 		snprintf(buf, sizeof(buf), "Invalid Action %s\n", s_action);
 	}
 
-    /* Return our result. */
-    val = xmlrpc_build_value(envP, "s", buf);
+	/* Return our result. */
+	val = xmlrpc_build_value(envP, "s", buf);
 
 
 	return val;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void) 
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 {
-    TServer abyssServer;
-    xmlrpc_registry * registryP;
-    xmlrpc_env env;
+	TServer abyssServer;
+	xmlrpc_registry *registryP;
+	xmlrpc_env env;
 	char logfile[512];
 
 	globals.running = 1;
-    
-    xmlrpc_env_init(&env);
 
-    registryP = xmlrpc_registry_new(&env);
-	
-    xmlrpc_registry_add_method(&env, registryP, NULL, "freeswitch.api", &freeswitch_api, NULL);
-	xmlrpc_registry_add_method(&env, registryP, NULL,"freeswitch_api", &freeswitch_api, NULL);
-    xmlrpc_registry_add_method(&env, registryP, NULL, "freeswitch.management", &freeswitch_man, NULL);
-	xmlrpc_registry_add_method(&env, registryP, NULL,"freeswitch_management", &freeswitch_man, NULL);
+	xmlrpc_env_init(&env);
 
-    MIMETypeInit();
+	registryP = xmlrpc_registry_new(&env);
+
+	xmlrpc_registry_add_method(&env, registryP, NULL, "freeswitch.api", &freeswitch_api, NULL);
+	xmlrpc_registry_add_method(&env, registryP, NULL, "freeswitch_api", &freeswitch_api, NULL);
+	xmlrpc_registry_add_method(&env, registryP, NULL, "freeswitch.management", &freeswitch_man, NULL);
+	xmlrpc_registry_add_method(&env, registryP, NULL, "freeswitch_management", &freeswitch_man, NULL);
+
+	MIMETypeInit();
 	MIMETypeAdd("text/html", "html");
 
-	snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "freeswitch_http.log");
-    ServerCreate(&abyssServer, "XmlRpcServer", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir, logfile);
-    
-    xmlrpc_server_abyss_set_handler(&env, &abyssServer, "/RPC2", registryP);
+	snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR,
+			 "freeswitch_http.log");
+	ServerCreate(&abyssServer, "XmlRpcServer", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir, logfile);
 
-    ServerInit(&abyssServer);
+	xmlrpc_server_abyss_set_handler(&env, &abyssServer, "/RPC2", registryP);
+
+	ServerInit(&abyssServer);
 	ServerAddHandler(&abyssServer, HandleHook);
-	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Starting HTTP Port %d, DocRoot [%s]\n", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir);
-    while (globals.running) {
-        ServerRunOnce2(&abyssServer, ABYSS_FOREGROUND);
-    }
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Starting HTTP Port %d, DocRoot [%s]\n", globals.port,
+					  SWITCH_GLOBAL_dirs.htdocs_dir);
+	while (globals.running) {
+		ServerRunOnce2(&abyssServer, ABYSS_FOREGROUND);
+	}
 
 
 	return SWITCH_STATUS_SUCCESS;

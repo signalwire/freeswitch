@@ -36,26 +36,22 @@
 #define SWITCH_SQLITE_H
 
 SWITCH_BEGIN_EXTERN_C
-
 #include <sqlite3.h>
-
 /**
  * @defgroup switch_sqlite_top Brought To You By SQLite
  * @ingroup FREESWITCH
  * @{
  */
-
 /**
  * @defgroup switch_sqlite Database Routines
  * @ingroup switch_sqlite_top 
  * @{
  */
-
 /**
  * Each open sqlite database is represented by an instance of the
  * following opaque structure.
 */
-typedef sqlite3 switch_core_db_t;
+	typedef sqlite3 switch_core_db_t;
 typedef sqlite3_stmt switch_core_db_stmt_t;
 /**
  * Aggregate functions use the following routine to allocate
@@ -67,17 +63,15 @@ typedef sqlite3_stmt switch_core_db_stmt_t;
  *
  * The buffer allocated is freed automatically by SQLite.
  */
-DoxyDefine(void *switch_core_db_aggregate_context(sqlite3_context*, int nBytes);)
+DoxyDefine(void *switch_core_db_aggregate_context(sqlite3_context *, int nBytes);)
 #define switch_core_db_aggregate_context sqlite3_aggregate_context
-
 /**
  * /return the number of calls to xStep for a particular
  * aggregate function instance.  The current call to xStep counts so this
  * routine always returns at least 1.
  */
-DoxyDefine(int switch_core_db_aggregate_count(sqlite3_context*);)
+DoxyDefine(int switch_core_db_aggregate_count(sqlite3_context *);)
 #define switch_core_db_aggregate_count sqlite3_aggregate_count
-
 /**
  * In the SQL strings input to switch_core_db_prepare(),
  * one or more literals can be replace by parameters "?" or ":AAA" or
@@ -106,9 +100,8 @@ DoxyDefine(int switch_core_db_aggregate_count(sqlite3_context*);)
  * an switch_core_db_prepare() or sqlite3_reset().  Unbound parameterss are
  * interpreted as NULL.
  */
-DoxyDefine(int switch_core_db_bind_blob(sqlite3_stmt*, int, const void*, int n, void(*)(void*));)
+DoxyDefine(int switch_core_db_bind_blob(sqlite3_stmt *, int, const void *, int n, void (*)(void *));)
 #define switch_core_db_bind_blob sqlite3_bind_blob
-
 /**
  * In the SQL strings input to switch_core_db_prepare(),
  * one or more literals can be replace by parameters "?" or ":AAA" or
@@ -129,9 +122,8 @@ DoxyDefine(int switch_core_db_bind_blob(sqlite3_stmt*, int, const void*, int n, 
  * an switch_core_db_prepare() or sqlite3_reset().  Unbound parameterss are
  * interpreted as NULL.
  */
-DoxyDefine(int switch_core_db_bind_double(sqlite3_stmt*, int, double);)
+DoxyDefine(int switch_core_db_bind_double(sqlite3_stmt *, int, double);)
 #define switch_core_db_bind_double sqlite3_bind_double
-
 /**
  * In the SQL strings input to switch_core_db_prepare(),
  * one or more literals can be replace by parameters "?" or ":AAA" or
@@ -152,9 +144,8 @@ DoxyDefine(int switch_core_db_bind_double(sqlite3_stmt*, int, double);)
  * an switch_core_db_prepare() or sqlite3_reset().  Unbound parameterss are
  * interpreted as NULL.
  */
-DoxyDefine(int switch_core_db_bind_int(sqlite3_stmt*, int, int);)
+DoxyDefine(int switch_core_db_bind_int(sqlite3_stmt *, int, int);)
 #define switch_core_db_bind_int sqlite3_bind_int
-
 /**
  * In the SQL strings input to switch_core_db_prepare(),
  * one or more literals can be replace by parameters "?" or ":AAA" or
@@ -175,9 +166,8 @@ DoxyDefine(int switch_core_db_bind_int(sqlite3_stmt*, int, int);)
  * an switch_core_db_prepare() or sqlite3_reset().  Unbound parameterss are
  * interpreted as NULL.
  */
-DoxyDefine(int switch_core_db_bind_int64(sqlite3_stmt*, int, sqlite_int64);)
+DoxyDefine(int switch_core_db_bind_int64(sqlite3_stmt *, int, sqlite_int64);)
 #define switch_core_db_bind_int64 sqlite3_bind_int64
-
 /**
  * In the SQL strings input to switch_core_db_prepare(),
  * one or more literals can be replace by parameters "?" or ":AAA" or
@@ -198,9 +188,8 @@ DoxyDefine(int switch_core_db_bind_int64(sqlite3_stmt*, int, sqlite_int64);)
  * an switch_core_db_prepare() or sqlite3_reset().  Unbound parameterss are
  * interpreted as NULL.
  */
-DoxyDefine(int switch_core_db_bind_null(sqlite3_stmt*, int);)
+DoxyDefine(int switch_core_db_bind_null(sqlite3_stmt *, int);)
 #define switch_core_db_bind_null sqlite3_bind_null
-
 /**
  * In the SQL strings input to switch_core_db_prepare(),
  * one or more literals can be replace by parameters "?" or ":AAA" or
@@ -229,9 +218,8 @@ DoxyDefine(int switch_core_db_bind_null(sqlite3_stmt*, int);)
  * an switch_core_db_prepare() or sqlite3_reset().  Unbound parameterss are
  * interpreted as NULL.
  */
-DoxyDefine(int switch_core_db_bind_text(sqlite3_stmt*, int, const char*, int n, void(*)(void*));)
+DoxyDefine(int switch_core_db_bind_text(sqlite3_stmt *, int, const char *, int n, void (*)(void *));)
 #define switch_core_db_bind_text sqlite3_bind_text
-
 /**
  * In the SQL strings input to switch_core_db_prepare(),
  * one or more literals can be replace by parameters "?" or ":AAA" or
@@ -260,9 +248,8 @@ DoxyDefine(int switch_core_db_bind_text(sqlite3_stmt*, int, const char*, int n, 
  * an switch_core_db_prepare() or sqlite3_reset().  Unbound parameterss are
  * interpreted as NULL.
  */
-DoxyDefine(int switch_core_db_bind_text16(sqlite3_stmt*, int, const void*, int, void(*)(void*));)
+DoxyDefine(int switch_core_db_bind_text16(sqlite3_stmt *, int, const void *, int, void (*)(void *));)
 #define switch_core_db_bind_text16 sqlite3_bind_text16
-
 /**
  * In the SQL strings input to switch_core_db_prepare(),
  * one or more literals can be replace by parameters "?" or ":AAA" or
@@ -283,24 +270,21 @@ DoxyDefine(int switch_core_db_bind_text16(sqlite3_stmt*, int, const void*, int, 
  * an switch_core_db_prepare() or sqlite3_reset().  Unbound parameterss are
  * interpreted as NULL.
  */
-DoxyDefine(int switch_core_db_bind_value(sqlite3_stmt*, int, const sqlite3_value*);)
+DoxyDefine(int switch_core_db_bind_value(sqlite3_stmt *, int, const sqlite3_value *);)
 #define switch_core_db_bind_value sqlite3_bind_value
-
 /**
  * @return The number of parameters in a compiled SQL statement.
  * @remark This routine was added to support DBD::SQLite.
  */
-DoxyDefine(int switch_core_db_bind_parameter_count(sqlite3_stmt*);)
+DoxyDefine(int switch_core_db_bind_parameter_count(sqlite3_stmt *);)
 #define switch_core_db_bind_parameter_count sqlite3_bind_parameter_count
-
 /**
  * @return the index of a parameter with the given name.  If no parameter with the 
  * given name is found, return 0.
  * @remark The name must match exactly.
  */
-DoxyDefine(int switch_core_db_bind_parameter_index(sqlite3_stmt*, const char *zName);)
+DoxyDefine(int switch_core_db_bind_parameter_index(sqlite3_stmt *, const char *zName);)
 #define switch_core_db_bind_parameter_index sqlite3_bind_parameter_index
-
 /**
  * @return the name of the i-th parameter.  
  * @remark Ordinary parameters "?" are
@@ -308,9 +292,8 @@ DoxyDefine(int switch_core_db_bind_parameter_index(sqlite3_stmt*, const char *zN
  * $VVV the complete text of the parameter name is returned, including
  * the initial ":" or "$".  NULL is returned if the index is out of range.
  */
-DoxyDefine(const char *switch_core_db_bind_parameter_name(sqlite3_stmt*, int);)
+DoxyDefine(const char *switch_core_db_bind_parameter_name(sqlite3_stmt *, int);)
 #define switch_core_db_bind_parameter_name sqlite3_bind_parameter_name
-
 /**
  * This routine identifies a callback function that is invoked
  * whenever an attempt is made to open a database table that is
@@ -333,9 +316,8 @@ DoxyDefine(const char *switch_core_db_bind_parameter_name(sqlite3_stmt*, int);)
  * data structures out from under the executing query and will 
  * probably result in a coredump.
  */
-DoxyDefine(int switch_core_db_busy_handler(switch_core_db*, int(*)(void*,int), void*);)
+DoxyDefine(int switch_core_db_busy_handler(switch_core_db *, int (*)(void *, int), void *);)
 #define switch_core_db_busy_handler sqlite3_busy_handler
-
 /**
  * This routine sets a busy handler that sleeps for a while when a
  * table is locked.  The handler will sleep multiple times until 
@@ -346,9 +328,8 @@ DoxyDefine(int switch_core_db_busy_handler(switch_core_db*, int(*)(void*,int), v
  * Calling this routine with an argument less than or equal to zero
  * turns off all busy handlers.
  */
-DoxyDefine(int switch_core_db_busy_timeout(switch_core_db*, int ms);)
+DoxyDefine(int switch_core_db_busy_timeout(switch_core_db *, int ms);)
 #define switch_core_db_busy_timeout sqlite3_busy_timeout
-
 /**
  * This function returns the number of database rows that were changed
  * (or inserted or deleted) by the most recent called sqlite3_exec().
@@ -369,9 +350,8 @@ DoxyDefine(int switch_core_db_busy_timeout(switch_core_db*, int ms);)
  * table. To get an accurate count of the number of rows deleted, use
  * "DELETE FROM table WHERE 1" instead.
  */
-DoxyDefine(int switch_core_db_changes(switch_core_db*);)
+DoxyDefine(int switch_core_db_changes(switch_core_db *);)
 #define switch_core_db_changes sqlite3_changes
-
 /**
  * A function to close the database.
  *
@@ -385,7 +365,6 @@ DoxyDefine(int switch_core_db_changes(switch_core_db*);)
  */
 DoxyDefine(int switch_core_db_close(switch_core_db *);)
 #define switch_core_db_close sqlite3_close
-
 /**
  * To avoid having to register all collation sequences before a database
  * can be used, a single callback function may be registered with the
@@ -405,13 +384,10 @@ DoxyDefine(int switch_core_db_close(switch_core_db *);)
  * The collation sequence is returned to SQLite by a collation-needed
  * callback using the sqlite3_create_collation() API, described above.
  */
-DoxyDefine(int switch_core_db_collation_needed(
-  switch_core_db*, 
-  void*, 
-  void(*)(void*,switch_core_db*,int eTextRep,const char*)
-);)
+DoxyDefine(int switch_core_db_collation_needed(switch_core_db *,
+											   void *, void (*)(void *, switch_core_db *, int eTextRep, const char *)
+		   );)
 #define switch_core_db_collation_needed sqlite3_collation_needed
-
 /**
  * The next group of routines returns information about the information
  * in a single column of the current result row of a query.
@@ -453,9 +429,8 @@ DoxyDefine(int switch_core_db_collation_needed(
  *
  * @return the value of a BLOB.
  */
-DoxyDefine(const void *switch_core_db_column_blob(sqlite3_stmt *stmt, int iCol);)
+DoxyDefine(const void *switch_core_db_column_blob(sqlite3_stmt * stmt, int iCol);)
 #define switch_core_db_column_blob sqlite3_column_blob
-
 /**
  * The next group of routines returns information about the information
  * in a single column of the current result row of a query.  In every
@@ -497,9 +472,8 @@ DoxyDefine(const void *switch_core_db_column_blob(sqlite3_stmt *stmt, int iCol);
  * TEXT value represented as UTF-8.  The "\000" terminator is included in the 
  * byte count for TEXT values.
  */
-DoxyDefine(int switch_core_db_column_bytes(sqlite3_stmt*, int iCol);)
+DoxyDefine(int switch_core_db_column_bytes(sqlite3_stmt *, int iCol);)
 #define switch_core_db_column_bytes sqlite3_column_bytes
-
 /**
  * The next group of routines returns information about the information
  * in a single column of the current result row of a query.  In every
@@ -541,9 +515,8 @@ DoxyDefine(int switch_core_db_column_bytes(sqlite3_stmt*, int iCol);)
  * TEXT value represented as UTF-16.  The "\u0000" terminator is included in 
  * the byte count for TEXT values.
  */
-DoxyDefine(int switch_core_db_column_bytes16(sqlite3_stmt*, int iCol);)
+DoxyDefine(int switch_core_db_column_bytes16(sqlite3_stmt *, int iCol);)
 #define switch_core_db_column_bytes16 sqlite3_column_bytes16
-
 /**
  * The next group of routines returns information about the information
  * in a single column of the current result row of a query.  In every
@@ -583,9 +556,8 @@ DoxyDefine(int switch_core_db_column_bytes16(sqlite3_stmt*, int iCol);)
  *
  *  Return a FLOAT value.
  */
-DoxyDefine(double switch_core_db_column_double(sqlite3_stmt*, int iCol);)
+DoxyDefine(double switch_core_db_column_double(sqlite3_stmt *, int iCol);)
 #define switch_core_db_column_double sqlite3_column_double
-
 /**
  * The next group of routines returns information about the information
  * in a single column of the current result row of a query.  In every
@@ -626,9 +598,8 @@ DoxyDefine(double switch_core_db_column_double(sqlite3_stmt*, int iCol);)
  *  Return an INTEGER value in the host computer's native integer representation.  
  *  This might be either a 32- or 64-bit integer depending on the host.
  */
-DoxyDefine(int switch_core_db_column_int(sqlite3_stmt*, int iCol);)
+DoxyDefine(int switch_core_db_column_int(sqlite3_stmt *, int iCol);)
 #define switch_core_db_column_int sqlite3_column_int
-
 /**
  * The next group of routines returns information about the information
  * in a single column of the current result row of a query.  In every
@@ -668,9 +639,8 @@ DoxyDefine(int switch_core_db_column_int(sqlite3_stmt*, int iCol);)
  *
  * Return an INTEGER value as a 64-bit signed integer.
  */
-DoxyDefine(sqlite_int64 switch_core_db_column_int64(sqlite3_stmt*, int iCol);)
+	DoxyDefine(sqlite_int64 switch_core_db_column_int64(sqlite3_stmt *, int iCol);)
 #define switch_core_db_column_int64 sqlite3_column_int64
-
 /**
  * The next group of routines returns information about the information
  * in a single column of the current result row of a query.  In every
@@ -710,9 +680,8 @@ DoxyDefine(sqlite_int64 switch_core_db_column_int64(sqlite3_stmt*, int iCol);)
  *
  *  Return the value as UTF-8 text.
  */
-DoxyDefine(const unsigned char *switch_core_db_column_text(sqlite3_stmt*, int iCol);)
+DoxyDefine(const unsigned char *switch_core_db_column_text(sqlite3_stmt *, int iCol);)
 #define switch_core_db_column_text sqlite3_column_text
-
 /**
  * The next group of routines returns information about the information
  * in a single column of the current result row of a query.  In every
@@ -752,9 +721,8 @@ DoxyDefine(const unsigned char *switch_core_db_column_text(sqlite3_stmt*, int iC
  *
  * Return the value as UTF-16 text.
  */
-DoxyDefine(const void *switch_core_db_column_text16(sqlite3_stmt*, int iCol);)
+DoxyDefine(const void *switch_core_db_column_text16(sqlite3_stmt *, int iCol);)
 #define switch_core_db_column_text16 sqlite3_column_text16
-
 /**
  * The next group of routines returns information about the information
  * in a single column of the current result row of a query.  In every
@@ -795,25 +763,22 @@ DoxyDefine(const void *switch_core_db_column_text16(sqlite3_stmt*, int iCol);)
  * ReturnS the datatype of the result.  This is one of
  * SQLITE_INTEGER, SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB, or SQLITE_NULL.
  */
-DoxyDefine(int switch_core_db_column_type(sqlite3_stmt*, int iCol);)
+DoxyDefine(int switch_core_db_column_type(sqlite3_stmt *, int iCol);)
 #define switch_core_db_column_type sqlite3_column_type
-
 /**
  * The first parameter is a compiled SQL statement. This function returns
  * the column heading for the Nth column of that statement, where N is the
  * second function parameter.  The string returned is UTF-8.
  */
-DoxyDefine(const char *switch_core_db_column_name(sqlite3_stmt*,int);)
+DoxyDefine(const char *switch_core_db_column_name(sqlite3_stmt *, int);)
 #define switch_core_db_column_name sqlite3_column_name
-
 /**
  * Return the number of columns in the result set returned by the compiled
  * SQL statement. This routine returns 0 if pStmt is an SQL statement
  * that does not return data (for example an UPDATE).
  */
-DoxyDefine(int switch_core_db_column_count(sqlite3_stmt *pStmt);)
+DoxyDefine(int switch_core_db_column_count(sqlite3_stmt * pStmt);)
 #define switch_core_db_column_count sqlite3_column_count
-
 /**
  * The first parameter is a compiled SQL statement. If this statement
  * is a SELECT statement, the Nth column of the returned result set 
@@ -834,7 +799,6 @@ DoxyDefine(int switch_core_db_column_count(sqlite3_stmt *pStmt);)
  */
 DoxyDefine(const char *switch_core_db_column_decltype(sqlite3_stmt *, int i);)
 #define switch_core_db_column_decltype sqlite3_column_decltype
-
 /**
  * The first parameter is a compiled SQL statement. If this statement
  * is a SELECT statement, the Nth column of the returned result set 
@@ -853,9 +817,8 @@ DoxyDefine(const char *switch_core_db_column_decltype(sqlite3_stmt *, int i);)
  * result column (i==1), and a NULL pointer for the first result column
  * (i==0).
  */
-DoxyDefine(const void *switch_core_db_column_decltype16(sqlite3_stmt*,int);)
+DoxyDefine(const void *switch_core_db_column_decltype16(sqlite3_stmt *, int);)
 #define switch_core_db_column_decltype16 sqlite3_column_decltype16
-
 /**
  * Register a callback function to be invoked whenever a new transaction
  * is committed.  The pArg argument is passed through to the callback.
@@ -869,9 +832,8 @@ DoxyDefine(const void *switch_core_db_column_decltype16(sqlite3_stmt*,int);)
  *
  ****** THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
  */
-DoxyDefine(void *switch_core_db_commit_hook(switch_core_db*, int(*)(void*), void*);)
+DoxyDefine(void *switch_core_db_commit_hook(switch_core_db *, int (*)(void *), void *);)
 #define switch_core_db_commit_hook sqlite3_commit_hook
-
 /**
  * This functions return true if the given input string comprises
  * one or more complete SQL statements. The parameter must be a nul-terminated 
@@ -883,7 +845,6 @@ DoxyDefine(void *switch_core_db_commit_hook(switch_core_db*, int(*)(void*), void
  */
 DoxyDefine(int switch_core_db_complete(const char *sql);)
 #define switch_core_db_complete sqlite3_complete
-
 /**
  * This function is used to add new collation sequences to the
  * sqlite3 handle specified as the first argument. 
@@ -909,15 +870,12 @@ DoxyDefine(int switch_core_db_complete(const char *sql);)
  * the first string is less than, equal to, or greater than the second
  * string. i.e. (STRING1 - STRING2).
  */
-DoxyDefine(int switch_core_db_create_collation(
-  switch_core_db*, 
-  const char *zName, 
-  int eTextRep, 
-  void*,
-  int(*xCompare)(void*,int,const void*,int,const void*)
-);)
+DoxyDefine(int switch_core_db_create_collation(switch_core_db *,
+											   const char *zName,
+											   int eTextRep,
+											   void *, int (*xCompare) (void *, int, const void *, int, const void *)
+		   );)
 #define switch_core_db_create_collation sqlite3_create_collation
-
 /**
  * The following function is used to add user functions or aggregates
  * implemented in C to the SQL langauge interpreted by SQLite. The
@@ -951,18 +909,16 @@ DoxyDefine(int switch_core_db_create_collation(
  * xFunc and an xFinal, or an xStep but no xFinal, SQLITE_ERROR is
  * returned.
  */
-DoxyDefine(int switch_core_db_create_function(
-  switch_core_db *,
-  const char *zFunctionName,
-  int nArg,
-  int eTextRep,
-  void*,
-  void (*xFunc)(sqlite3_context*,int,sqlite3_value**),
-  void (*xStep)(sqlite3_context*,int,sqlite3_value**),
-  void (*xFinal)(sqlite3_context*)
-);)
+DoxyDefine(int switch_core_db_create_function(switch_core_db *,
+											  const char *zFunctionName,
+											  int nArg,
+											  int eTextRep,
+											  void *,
+											  void (*xFunc) (sqlite3_context *, int, sqlite3_value **),
+											  void (*xStep) (sqlite3_context *, int, sqlite3_value **),
+											  void (*xFinal) (sqlite3_context *)
+		   );)
 #define switch_core_db_create_function sqlite3_create_function
-
 /**
  * Return the number of values in the current row of the result set.
  *
@@ -972,18 +928,16 @@ DoxyDefine(int switch_core_db_create_function(
  * error code, or before switch_core_db_step() has been called on a 
  * compiled SQL statement, this routine returns zero.
  */
-DoxyDefine(int switch_core_db_data_count(sqlite3_stmt *pStmt);)
+DoxyDefine(int switch_core_db_data_count(sqlite3_stmt * pStmt);)
 #define switch_core_db_data_count sqlite3_data_count
-
 /**
  * Return the sqlite3* database handle to which the prepared statement given
  * in the argument belongs.  This is the same database handle that was
  * the first argument to the switch_core_db_prepare() that was used to create
  * the statement in the first place.
  */
-DoxyDefine(switch_core_db *switch_core_db_db_handle(sqlite3_stmt*);)
+	DoxyDefine(switch_core_db * switch_core_db_db_handle(sqlite3_stmt *);)
 #define switch_core_db_db_handle sqlite3_db_handle
-
 /**
 ** Return the error code for the most recent switch_core_db_* API call associated
 ** with switch_core_db handle 'db'. SQLITE_OK is returned if the most recent 
@@ -999,9 +953,8 @@ DoxyDefine(switch_core_db *switch_core_db_db_handle(sqlite3_stmt*);)
 ** code returned by this function is associated with the same error as
 ** the strings  returned by sqlite3_errmsg() and sqlite3_errmsg16().
 */
-DoxyDefine(int switch_core_db_errcode(switch_core_db *db);)
+DoxyDefine(int switch_core_db_errcode(switch_core_db * db);)
 #define switch_core_db_errcode sqlite3_errcode
-
 /**
  * Return a pointer to a UTF-8 encoded string describing in english the
  * error condition for the most recent sqlite3_* API call. The returned
@@ -1010,9 +963,8 @@ DoxyDefine(int switch_core_db_errcode(switch_core_db *db);)
  * The string "not an error" is returned when the most recent API call was
  * successful.
  */
-DoxyDefine(const char *switch_core_db_errmsg(switch_core_db*);)
+DoxyDefine(const char *switch_core_db_errmsg(switch_core_db *);)
 #define switch_core_db_errmsg sqlite3_errmsg
-
 /**
  * A function to executes one or more statements of SQL.
  *
@@ -1053,15 +1005,13 @@ DoxyDefine(const char *switch_core_db_errmsg(switch_core_db*);)
  * behavior can be modified somewhat using the sswitch_core_db_busy_handler()
  * and switch_core_db_busy_timeout() functions below.)
  */
-DoxyDefine(int switch_core_db_exec(
-  switch_core_db*,                     /* An open database */
-  const char *sql,              /* SQL to be executed */
-  sqlite3_callback,             /* Callback function */
-  void *,                       /* 1st argument to callback function */
-  char **errmsg                 /* Error msg written here */
-);)
+DoxyDefine(int switch_core_db_exec(switch_core_db *,	/* An open database */
+								   const char *sql,	/* SQL to be executed */
+								   sqlite3_callback,	/* Callback function */
+								   void *,	/* 1st argument to callback function */
+								   char **errmsg	/* Error msg written here */
+		   );)
 #define switch_core_db_exec sqlite3_exec
-
 /**
  * Return TRUE (non-zero) if the statement supplied as an argument needs
  * to be recompiled.  A statement needs to be recompiled whenever the
@@ -1071,9 +1021,8 @@ DoxyDefine(int switch_core_db_exec(
  * added or changed.
  *
  */
-DoxyDefine(int switch_core_db_expired(sqlite3_stmt*);)
+DoxyDefine(int switch_core_db_expired(sqlite3_stmt *);)
 #define switch_core_db_expired sqlite3_expired
-
 /**
  * This function is called to delete a compiled
  * SQL statement obtained by a previous call to switch_core_db_prepare().
@@ -1088,24 +1037,21 @@ DoxyDefine(int switch_core_db_expired(sqlite3_stmt*);)
  * rolled back and transactions cancelled,  depending on the circumstances,
  * and the result code returned will be SQLITE_ABORT.
  */
-DoxyDefine(int switch_core_db_finalize(sqlite3_stmt *pStmt);)
+DoxyDefine(int switch_core_db_finalize(sqlite3_stmt * pStmt);)
 #define switch_core_db_finalize sqlite3_finalize
-
 /**
  * Call this routine to free the memory that sqlite3_get_table() allocated.
  */
 DoxyDefine(void switch_core_db_free_table(char **result);)
 #define switch_core_db_free_table sqlite3_free_table
-
 /**
  * Test to see whether or not the database connection is in autocommit
  * mode.  Return TRUE if it is and FALSE if not.  Autocommit mode is on
  * by default.  Autocommit is disabled by a BEGIN statement and reenabled
  * by the next COMMIT or ROLLBACK.
  */
-DoxyDefine(int switch_core_db_get_autocommit(switch_core_db*);)
+DoxyDefine(int switch_core_db_get_autocommit(switch_core_db *);)
 #define switch_core_db_get_autocommit sqlite3_get_autocommit
-
 /**
  * The following function may be used by scalar user functions to
  * associate meta-data with argument values. If the same value is passed to
@@ -1125,9 +1071,8 @@ DoxyDefine(int switch_core_db_get_autocommit(switch_core_db*);)
  * expressions that are constant at compile time. This includes literal
  * values and SQL variables.
  */
-DoxyDefine(void *switch_core_db_get_auxdata(sqlite3_context*, int);)
+DoxyDefine(void *switch_core_db_get_auxdata(sqlite3_context *, int);)
 #define switch_core_db_get_auxdata sqlite3_get_auxdata
-
 /**
  * The following function may be used by scalar user functions to
  * associate meta-data with argument values. If the same value is passed to
@@ -1149,9 +1094,8 @@ DoxyDefine(void *switch_core_db_get_auxdata(sqlite3_context*, int);)
  * expressions that are constant at compile time. This includes literal
  * values and SQL variables.
  */
-DoxyDefine(void switch_core_db_set_auxdata(sqlite3_context*, int, void*, void (*)(void*));)
+DoxyDefine(void switch_core_db_set_auxdata(sqlite3_context *, int, void *, void (*)(void *));)
 #define switch_core_db_set_auxdata sqlite3_set_auxdata
-
 /**
  * This next routine is really just a wrapper around sqlite3_exec().
  * Instead of invoking a user-supplied callback for each row of the
@@ -1193,16 +1137,14 @@ DoxyDefine(void switch_core_db_set_auxdata(sqlite3_context*, int, void*, void (*
  *
  * The return value of this routine is the same as from switch_core_db_exec().
  */
-DoxyDefine(int switch_core_db_get_table(
-  switch_core_db*,       /* An open database */
-  const char *sql,       /* SQL to be executed */
-  char ***resultp,       /* Result written to a char *[]  that this points to */
-  int *nrow,             /* Number of result rows written here */
-  int *ncolumn,          /* Number of result columns written here */
-  char **errmsg          /* Error msg written here */
-);)
+DoxyDefine(int switch_core_db_get_table(switch_core_db *,	/* An open database */
+										const char *sql,	/* SQL to be executed */
+										char ***resultp,	/* Result written to a char *[]  that this points to */
+										int *nrow,	/* Number of result rows written here */
+										int *ncolumn,	/* Number of result columns written here */
+										char **errmsg	/* Error msg written here */
+		   );)
 #define switch_core_db_get_table sqlite3_get_table
-
 /**
  * This function is called to recover from a malloc() failure that occured
  * within the SQLite library. Normally, after a single malloc() fails the 
@@ -1224,16 +1166,14 @@ DoxyDefine(int switch_core_db_get_table(
  */
 DoxyDefine(int switch_core_db_global_recover();)
 #define switch_core_db_global_recover sqlite3_global_recover
-
 /** This function causes any pending database operation to abort and
  * return at its earliest opportunity.  This routine is typically
  * called in response to a user action such as pressing "Cancel"
  * or Ctrl-C where the user wants a long query operation to halt
  * immediately.
  */
-DoxyDefine(void switch_core_db_interrupt(switch_core_db*);)
+DoxyDefine(void switch_core_db_interrupt(switch_core_db *);)
 #define switch_core_db_interrupt sqlite3_interrupt
-
 /**
  * Each entry in an SQLite table has a unique integer key.  (The key is
  * the value of the INTEGER PRIMARY KEY column if there is such a column,
@@ -1243,9 +1183,8 @@ DoxyDefine(void switch_core_db_interrupt(switch_core_db*);)
  *
  * This function is similar to the mysql_insert_id() function from MySQL.
  */
-DoxyDefine(sqlite_int64 switch_core_db_last_insert_rowid(switch_core_db*);)
+	DoxyDefine(sqlite_int64 switch_core_db_last_insert_rowid(switch_core_db *);)
 #define switch_core_db_last_insert_rowid sqlite3_last_insert_rowid
-
 /**
  * Open the sqlite database file "filename".  The "filename" is UTF-8
  * encoded.  An sqlite3* handle is returned in *ppDb, even
@@ -1261,12 +1200,10 @@ DoxyDefine(sqlite_int64 switch_core_db_last_insert_rowid(switch_core_db*);)
  * with the switch_core_db* handle should be released by passing it to
  * switch_core_db_close() when it is no longer required.
  */
-DoxyDefine(int switch_core_db_open(
-  const char *filename,   /* Database filename (UTF-8) */
-  switch_core_db **ppDb          /* OUT: SQLite db handle */
-);)
+DoxyDefine(int switch_core_db_open(const char *filename,	/* Database filename (UTF-8) */
+								   switch_core_db ** ppDb	/* OUT: SQLite db handle */
+		   );)
 #define switch_core_db_open sqlite3_open
-
 /**
  * To execute an SQL query, it must first be compiled into a byte-code
  * program using the following routine.
@@ -1289,15 +1226,13 @@ DoxyDefine(int switch_core_db_open(
  *
  * On success, SQLITE_OK is returned.  Otherwise an error code is returned.
  */
-DoxyDefine(int switch_core_db_prepare(
-  sqlite3 *db,            /* Database handle */
-  const char *zSql,       /* SQL statement, UTF-8 encoded */
-  int nBytes,             /* Length of zSql in bytes. */
-  sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
-  const char **pzTail     /* OUT: Pointer to unused portion of zSql */
-);)
+DoxyDefine(int switch_core_db_prepare(sqlite3 * db,	/* Database handle */
+									  const char *zSql,	/* SQL statement, UTF-8 encoded */
+									  int nBytes,	/* Length of zSql in bytes. */
+									  sqlite3_stmt ** ppStmt,	/* OUT: Statement handle */
+									  const char **pzTail	/* OUT: Pointer to unused portion of zSql */
+		   );)
 #define switch_core_db_prepare sqlite3_prepare
-
 /**
  * Register a function for tracing SQL command evaluation.  The function registered by
  * switch_core_db_profile() runs at the end of each SQL statement and includes
@@ -1306,10 +1241,9 @@ DoxyDefine(int switch_core_db_prepare(
  * The sqlite3_profile() API is currently considered experimental and
  * is subject to change.
  */
-DoxyDefine(void *switch_core_db_profile(switch_core_db*,
-   void(*xProfile)(void*,const char*,sqlite_uint64), void*);)
+DoxyDefine(void *switch_core_db_profile(switch_core_db *,
+										void (*xProfile) (void *, const char *, sqlite_uint64), void *);)
 #define switch_core_db_profile sqlite3_profile
-
 /**
  * This routine configures a callback function - the progress callback - that
  * is invoked periodically during long running calls to switch_core_db_exec(),
@@ -1336,9 +1270,8 @@ DoxyDefine(void *switch_core_db_profile(switch_core_db*,
  *
  ****** THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
  */
-DoxyDefine(void switch_core_db_progress_handler(switch_core_db*, int, int(*)(void*), void*);)
+DoxyDefine(void switch_core_db_progress_handler(switch_core_db *, int, int (*)(void *), void *);)
 #define switch_core_db_progress_handler sqlite3_progress_handler
-
 /**
  * The switch_core_db_reset() function is called to reset a compiled SQL
  * statement obtained by a previous call to switch_core_db_prepare()
@@ -1346,93 +1279,80 @@ DoxyDefine(void switch_core_db_progress_handler(switch_core_db*, int, int(*)(voi
  * Any SQL statement variables that had values bound to them using
  * the switch_core_db_bind_*() API retain their values.
  */
-DoxyDefine(int switch_core_db_reset(sqlite3_stmt *pStmt);)
+DoxyDefine(int switch_core_db_reset(sqlite3_stmt * pStmt);)
 #define switch_core_db_reset sqlite3_reset
-
 /**
  * User-defined functions invoke this routine in order to
  * set their return value.
  */
-DoxyDefine(void switch_core_db_result_blob(sqlite3_context*, const void*, int, void(*)(void*));)
+DoxyDefine(void switch_core_db_result_blob(sqlite3_context *, const void *, int, void (*)(void *));)
 #define switch_core_db_result_blob sqlite3_result_blob
-
 /**
  * User-defined functions invoke this routine in order to
  * set their return value.
  */
-DoxyDefine(void switch_core_db_result_double(sqlite3_context*, double);)
+DoxyDefine(void switch_core_db_result_double(sqlite3_context *, double);)
 #define switch_core_db_result_double sqlite3_result_double
-
 /**
  * User-defined functions invoke this routine in order to
  * set their return value.
  */
-DoxyDefine(void switch_core_db_result_error(sqlite3_context*, const char*, int);)
+DoxyDefine(void switch_core_db_result_error(sqlite3_context *, const char *, int);)
 #define switch_core_db_result_error sqlite3_result_error
-
 /**
  * User-defined functions invoke this routine in order to
  * set their return value.
  */
-DoxyDefine(void switch_core_db_result_error16(sqlite3_context*, const void*, int);)
+DoxyDefine(void switch_core_db_result_error16(sqlite3_context *, const void *, int);)
 #define switch_core_db_result_error16 sqlite3_result_error16
-
 /**
  * User-defined functions invoke this routine in order to
  * set their return value.
  */
-DoxyDefine(void switch_core_db_result_int(sqlite3_context*, int);)
+DoxyDefine(void switch_core_db_result_int(sqlite3_context *, int);)
 #define switch_core_db_result_int sqlite3_result_int
-
 /**
  * User-defined functions invoke this routine in order to
  * set their return value.
  */
-DoxyDefine(void switch_core_db_result_int64(sqlite3_context*, sqlite_int64);)
+DoxyDefine(void switch_core_db_result_int64(sqlite3_context *, sqlite_int64);)
 #define switch_core_db_result_int64 sqlite3_result_int64
-
 /**
  * User-defined functions invoke this routine in order to
  * set their return value.
  */
-DoxyDefine(void switch_core_db_result_null(sqlite3_context*);)
+DoxyDefine(void switch_core_db_result_null(sqlite3_context *);)
 #define switch_core_db_result_null sqlite3_result_null
-
 /**
  * User-defined functions invoke this routine in order to
  * set their return value.
  */
-DoxyDefine(void switch_core_db_result_text(sqlite3_context*, const char*, int, void(*)(void*));)
+DoxyDefine(void switch_core_db_result_text(sqlite3_context *, const char *, int, void (*)(void *));)
 #define switch_core_db_result_text sqlite3_result_text
-
 /**
  * User-defined functions invoke this routine in order to
  * set their return value.
  */
-DoxyDefine(void switch_core_db_result_text16(sqlite3_context*, const void*, int, void(*)(void*));)
+DoxyDefine(void switch_core_db_result_text16(sqlite3_context *, const void *, int, void (*)(void *));)
 #define switch_core_db_result_text16 sqlite3_result_text16
-
 /**
  * User-defined functions invoke this routine in order to
  * set their return value.
  */
-DoxyDefine(void switch_core_db_result_text16le(sqlite3_context*, const void*, int,void(*)(void*));)
+DoxyDefine(void switch_core_db_result_text16le(sqlite3_context *, const void *, int, void (*)(void *));)
 #define switch_core_db_result_text16le sqlite3_result_text16le
-
 /**
  * User-defined functions invoke this routine in order to
  * set their return value.
  */
-DoxyDefine(void switch_core_db_result_text16be(sqlite3_context*, const void*, int,void(*)(void*));)
+DoxyDefine(void switch_core_db_result_text16be(sqlite3_context *, const void *, int, void (*)(void *));)
 #define switch_core_db_result_text16be sqlite3_result_text16be
-
 /**
  * User-defined functions invoke this routine in order to
  * set their return value.
  */
-DoxyDefine(void switch_core_db_result_value(sqlite3_context*, sqlite3_value*);)
+DoxyDefine(void switch_core_db_result_value(sqlite3_context *, sqlite3_value *);)
 #define switch_core_db_result_value sqlite3_result_value
-
 /**
  * This routine registers a callback with the SQLite library.  The
  * callback is invoked (at compile-time, not at run-time) for each
@@ -1441,13 +1361,10 @@ DoxyDefine(void switch_core_db_result_value(sqlite3_context*, sqlite3_value*);)
  * SQL statement should be aborted with an error and SQLITE_IGNORE
  * if the column should be treated as a NULL value.
  */
-DoxyDefine(int switch_core_db_set_authorizer(
-  switch_core_db*,
-  int (*xAuth)(void*,int,const char*,const char*,const char*,const char*),
-  void *pUserData
-);)
+DoxyDefine(int switch_core_db_set_authorizer(switch_core_db *,
+											 int (*xAuth) (void *, int, const char *, const char *, const char *,
+														   const char *), void *pUserData);)
 #define switch_core_db_set_authorizer sqlite3_set_authorizer
-
 /** 
  * After an SQL query has been compiled with a call to either
  * switch_core_db_prepare(), then this function must be
@@ -1480,9 +1397,8 @@ DoxyDefine(int switch_core_db_set_authorizer(
  * SQLITE_DONE.  Or it could be the case the the same database connection
  * is being used simulataneously by two or more threads.
  */
-DoxyDefine(int switch_core_db_step(sqlite3_stmt*);)
+DoxyDefine(int switch_core_db_step(sqlite3_stmt *);)
 #define switch_core_db_step sqlite3_step
-
 /**
  * If the following global variable is made to point to a
  * string which is the name of a directory, then all temporary files
@@ -1493,9 +1409,8 @@ DoxyDefine(int switch_core_db_step(sqlite3_stmt*);)
  * Once switch_core_db_open() has been called, changing this variable will invalidate
  * the current temporary database, if any.
  */
-DoxyDefine(extern char *switch_core_db_temp_directory;)
+	DoxyDefine(extern char *switch_core_db_temp_directory;)
 #define switch_core_db_temp_directory sqlite3_temp_directory
-
 /**
  * This function returns the number of database rows that have been
  * modified by INSERT, UPDATE or DELETE statements since the database handle
@@ -1512,17 +1427,15 @@ DoxyDefine(extern char *switch_core_db_temp_directory;)
  * table. To get an accurate count of the number of rows deleted, use
  * "DELETE FROM table WHERE 1" instead.
  */
-DoxyDefine(int switch_core_db_total_changes(switch_core_db*);)
+DoxyDefine(int switch_core_db_total_changes(switch_core_db *);)
 #define switch_core_db_total_changes sqlite3_total_changes
-
 /**
  * Register a function for tracing SQL command evaluation.  The function
  * registered is invoked at the first switch_core_db_step()
  * for the evaluation of an SQL statement.
  */
-DoxyDefine(void *switch_core_db_trace(switch_core_db*, void(*xTrace)(void*,const char*), void*);)
+DoxyDefine(void *switch_core_db_trace(switch_core_db *, void (*xTrace) (void *, const char *), void *);)
 #define switch_core_db_trace sqlite3_trace
-
 /**
  * Move all bindings from the first prepared statement over to the second.
  * This routine is useful, for example, if the first prepared statement
@@ -1530,17 +1443,15 @@ DoxyDefine(void *switch_core_db_trace(switch_core_db*, void(*xTrace)(void*,const
  * the second prepared statement then all of the bindings transfered over
  * to the second statement before the first statement is finalized.
  */
-DoxyDefine(int switch_core_db_transfer_bindings(sqlite3_stmt*, sqlite3_stmt*);)
+DoxyDefine(int switch_core_db_transfer_bindings(sqlite3_stmt *, sqlite3_stmt *);)
 #define switch_core_db_transfer_bindings sqlite3_transfer_bindings
-
 /**
  * The pUserData parameter to the switch_core_db_create_function()
  * routine used to register user functions is available to
  * the implementation of the function using this call.
  */
-DoxyDefine(void *switch_core_db_user_data(sqlite3_context*);)
+DoxyDefine(void *switch_core_db_user_data(sqlite3_context *);)
 #define switch_core_db_user_data sqlite3_user_data
-
 /**
  * returns information about parameters to
  * a user-defined function.  Function implementations use this routines
@@ -1549,9 +1460,8 @@ DoxyDefine(void *switch_core_db_user_data(sqlite3_context*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(const void *switch_core_db_value_blob(sqlite3_value*);)
+DoxyDefine(const void *switch_core_db_value_blob(sqlite3_value *);)
 #define switch_core_db_value_blob sqlite3_value_blob
-
 /**
  * returns information about parameters to
  * a user-defined function.  Function implementations use this routines
@@ -1560,9 +1470,8 @@ DoxyDefine(const void *switch_core_db_value_blob(sqlite3_value*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(int switch_core_db_value_bytes(sqlite3_value*);)
+DoxyDefine(int switch_core_db_value_bytes(sqlite3_value *);)
 #define switch_core_db_value_bytes sqlite3_value_bytes
-
 /**
  * returns information about parameters to
  * a user-defined function.  Function implementations use this routines
@@ -1571,9 +1480,8 @@ DoxyDefine(int switch_core_db_value_bytes(sqlite3_value*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(int switch_core_db_value_bytes16(sqlite3_value*);)
+DoxyDefine(int switch_core_db_value_bytes16(sqlite3_value *);)
 #define switch_core_db_value_bytes16 sqlite3_value_bytes16
-
 /**
  * returns information about parameters to
  * a user-defined function.  Function implementations use this routines
@@ -1582,9 +1490,8 @@ DoxyDefine(int switch_core_db_value_bytes16(sqlite3_value*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(double switch_core_db_value_double(sqlite3_value*);)
+DoxyDefine(double switch_core_db_value_double(sqlite3_value *);)
 #define switch_core_db_value_double sqlite3_value_double
-
 /**
  * returns information about parameters to
  * a user-defined function.  Function implementations use this routines
@@ -1593,9 +1500,8 @@ DoxyDefine(double switch_core_db_value_double(sqlite3_value*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(int switch_core_db_value_int(sqlite3_value*);)
+DoxyDefine(int switch_core_db_value_int(sqlite3_value *);)
 #define switch_core_db_value_int sqlite3_value_int
-
 /**
  * returns information about parameters to
  * a user-defined function.  Function implementations use this routines
@@ -1604,9 +1510,8 @@ DoxyDefine(int switch_core_db_value_int(sqlite3_value*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(sqlite_int64 switch_core_db_value_int64(sqlite3_value*);)
+	DoxyDefine(sqlite_int64 switch_core_db_value_int64(sqlite3_value *);)
 #define switch_core_db_value_int64 sqlite3_value_int64
-
 /**
  * returns information about parameters to
  * a user-defined function.  Function implementations use this routines
@@ -1615,9 +1520,8 @@ DoxyDefine(sqlite_int64 switch_core_db_value_int64(sqlite3_value*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(const unsigned char *switch_core_db_value_text(sqlite3_value*);)
+DoxyDefine(const unsigned char *switch_core_db_value_text(sqlite3_value *);)
 #define switch_core_db_value_text sqlite3_value_text
-
 /**
  * returns information about parameters to
  * a user-defined function.  Function implementations use this routines
@@ -1626,9 +1530,8 @@ DoxyDefine(const unsigned char *switch_core_db_value_text(sqlite3_value*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(const void *switch_core_db_value_text16(sqlite3_value*);)
+DoxyDefine(const void *switch_core_db_value_text16(sqlite3_value *);)
 #define switch_core_db_value_text16 sqlite3_value_text16
-
 /**
  * returns information about parameters to
  * a user-defined function.  Function implementations use this routines
@@ -1637,9 +1540,8 @@ DoxyDefine(const void *switch_core_db_value_text16(sqlite3_value*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(const void *switch_core_db_value_text16be(sqlite3_value*);)
+DoxyDefine(const void *switch_core_db_value_text16be(sqlite3_value *);)
 #define switch_core_db_value_text16be sqlite3_value_text16be
-
 /**
  * returns information about parameters to
  * a user-defined function.  Function implementations use this routines
@@ -1648,9 +1550,8 @@ DoxyDefine(const void *switch_core_db_value_text16be(sqlite3_value*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(const void *switch_core_db_value_text16le(sqlite3_value*);)
+DoxyDefine(const void *switch_core_db_value_text16le(sqlite3_value *);)
 #define switch_core_db_value_text16le sqlite3_value_text16le
-
 /**
  * returns information about parameters to
  * a user-defined function.  Function implementations use this routines
@@ -1659,10 +1560,8 @@ DoxyDefine(const void *switch_core_db_value_text16le(sqlite3_value*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(int switch_core_db_value_type(sqlite3_value*);)
+DoxyDefine(int switch_core_db_value_type(sqlite3_value *);)
 #define switch_core_db_value_type sqlite3_value_type
-
-
 /**
  * This routine is a variant of the "sprintf()" from the
  * standard C library.  The resulting string is written into memory
@@ -1704,10 +1603,9 @@ DoxyDefine(int switch_core_db_value_type(sqlite3_value*);)
  * should always use %q instead of %s when inserting text into a string 
  * literal.
  */
-DoxyDefine(char *switch_core_db_mprintf(const char*,...);)
+DoxyDefine(char *switch_core_db_mprintf(const char *, ...);)
 #define switch_core_db_mprintf sqlite3_mprintf
 #define switch_mprintf sqlite3_mprintf
-
 /**
  * This routine is a variant of the "sprintf()" from the
  * standard C library.  The resulting string is written into memory
@@ -1749,9 +1647,8 @@ DoxyDefine(char *switch_core_db_mprintf(const char*,...);)
  * should always use %q instead of %s when inserting text into a string 
  * literal.
  */
-DoxyDefine(char *switch_core_db_vmprintf(const char*, va_list);)
+DoxyDefine(char *switch_core_db_vmprintf(const char *, va_list);)
 #define switch_core_db_vmprintf sqlite3_vmprintf
-
 /**
  * This routine is a variant of the "sprintf()" from the
  * standard C library.  The resulting string is written into memory
@@ -1793,22 +1690,17 @@ DoxyDefine(char *switch_core_db_vmprintf(const char*, va_list);)
  * should always use %q instead of %s when inserting text into a string 
  * literal.
  */
-DoxyDefine(char *switch_core_db_snprintf(int,char*,const char*, ...);)
+DoxyDefine(char *switch_core_db_snprintf(int, char *, const char *, ...);)
 #define switch_core_db_snprintf sqlite3_snprintf
-
 /**
  * call this routine to free memory malloced by a call to switch_core_db_mprintf, switch_core_db_vmprintf, or switch_core_db_snprintf
  */
 DoxyDefine(void switch_core_db_free(char *z);)
 #define switch_core_db_free sqlite3_free
-
 /** @} */
 /** @} */
-
-SWITCH_END_EXTERN_C
-
+	SWITCH_END_EXTERN_C
 #endif
-
 /* For Emacs:
  * Local Variables:
  * mode:c

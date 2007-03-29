@@ -33,14 +33,14 @@
 
 
 static const char *LEVELS[] = {
-	"EMERG"  , 
-	"ALERT"  , 
-	"CRIT"   , 
-	"ERR"    , 
-	"WARNING", 
-	"NOTICE" , 
-	"INFO"   , 
-	"DEBUG"  , 
+	"EMERG",
+	"ALERT",
+	"CRIT",
+	"ERR",
+	"WARNING",
+	"NOTICE",
+	"INFO",
+	"DEBUG",
 	"CONSOLE",
 	NULL
 };
@@ -69,7 +69,7 @@ SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(const char *str)
 {
 	int x = 0;
 	switch_log_level_t level = SWITCH_LOG_DEBUG;
-	for(x = 0;;x++) {
+	for (x = 0;; x++) {
 		if (!LEVELS[x]) {
 			break;
 		}
@@ -91,7 +91,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_bind_logger(switch_log_function_t fun
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	if ((uint8_t)level > MAX_LEVEL) {
+	if ((uint8_t) level > MAX_LEVEL) {
 		MAX_LEVEL = level;
 	}
 
@@ -118,23 +118,23 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *thread, void *obj)
 	assert(obj == NULL || obj != NULL);
 	THREAD_RUNNING = 1;
 
-	while(THREAD_RUNNING == 1) {
+	while (THREAD_RUNNING == 1) {
 		void *pop = NULL;
 		switch_log_node_t *node = NULL;
 		switch_log_binding_t *binding;
-		
+
 		if (switch_queue_pop(LOG_QUEUE, &pop) != SWITCH_STATUS_SUCCESS) {
 			break;
 		}
-		
+
 		if (!pop) {
 			break;
 		}
-		
+
 		node = (switch_log_node_t *) pop;
 
 		switch_mutex_lock(BINDLOCK);
-		for(binding = BINDINGS; binding; binding = binding->next) {
+		for (binding = BINDINGS; binding; binding = binding->next) {
 			if (binding->level >= node->level) {
 				binding->function(node, node->level);
 			}
@@ -162,14 +162,15 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *thread, void *obj)
 	return NULL;
 }
 
-SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char *file, const char *func, int line, switch_log_level_t level, const char *fmt, ...)
+SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char *file, const char *func, int line,
+									   switch_log_level_t level, const char *fmt, ...)
 {
 	char *data = NULL;
 	char *new_fmt = NULL;
 	int ret = 0;
 	va_list ap;
 	FILE *handle;
-	const char *filep = (file ? switch_cut_path(file): "");
+	const char *filep = (file ? switch_cut_path(file) : "");
 	const char *funcp = (func ? func : "");
 	char *content = NULL;
 	switch_time_t now = switch_time_now();
@@ -186,9 +187,9 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 
 		switch_time_exp_lt(&tm, now);
 		switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
-		
-		len = (uint32_t)(strlen(extra_fmt) + strlen(date) + strlen(filep) + 32 + strlen(funcp) + strlen(fmt));
-		new_fmt = malloc(len+1);
+
+		len = (uint32_t) (strlen(extra_fmt) + strlen(date) + strlen(filep) + 32 + strlen(funcp) + strlen(fmt));
+		new_fmt = malloc(len + 1);
 		snprintf(new_fmt, len, extra_fmt, date, LEVELS[level], filep, line, funcp, 128, fmt);
 		fmt = new_fmt;
 	}
@@ -208,15 +209,16 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 		}
 
 		if (channel == SWITCH_CHANNEL_ID_EVENT) {
-				switch_event_t *event;
-				if (switch_event_running() == SWITCH_STATUS_SUCCESS && switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Data", "%s", data);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-File", "%s", filep);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Function", "%s", funcp);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Line", "%d", line);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Level", "%d", (int)level);
-					switch_event_fire(&event);
-				}
+			switch_event_t *event;
+			if (switch_event_running() == SWITCH_STATUS_SUCCESS
+				&& switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Data", "%s", data);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-File", "%s", filep);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Function", "%s", funcp);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Line", "%d", line);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Level", "%d", (int) level);
+				switch_event_fire(&event);
+			}
 		} else {
 			if (level == SWITCH_LOG_CONSOLE || !LOG_QUEUE || !THREAD_RUNNING) {
 				fprintf(handle, "%s", data);
@@ -236,7 +238,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 				} else {
 					free(data);
 				}
-			} 
+			}
 		}
 	}
 

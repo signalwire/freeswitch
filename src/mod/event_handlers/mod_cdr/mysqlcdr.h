@@ -41,66 +41,66 @@
 #ifndef MYSQLCDR
 #define MYSQLCDR
 
-class MysqlCDR : public BaseCDR {
-	public:
-		MysqlCDR();
-		MysqlCDR(switch_mod_cdr_newchannel_t *newchannel);
-		//MysqlCDR(const MysqlCDR& copyFrom);
-		virtual ~MysqlCDR();
-		virtual bool process_record();
-		virtual void connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settings, switch_xml_t& param);
-		virtual void disconnect();
-		virtual bool is_activated();
-		virtual void tempdump_record();
-		virtual void reread_tempdumped_records();
-		virtual std::string get_display_name();
+class MysqlCDR:public BaseCDR {
+  public:
+	MysqlCDR();
+	MysqlCDR(switch_mod_cdr_newchannel_t * newchannel);
+	//MysqlCDR(const MysqlCDR& copyFrom);
+	virtual ~ MysqlCDR();
+	virtual bool process_record();
+	virtual void connect(switch_xml_t & cfg, switch_xml_t & xml, switch_xml_t & settings, switch_xml_t & param);
+	virtual void disconnect();
+	virtual bool is_activated();
+	virtual void tempdump_record();
+	virtual void reread_tempdumped_records();
+	virtual std::string get_display_name();
 
-	private:
-		static bool activated;
-		static char sql_query[1024];
-		static std::string tmp_sql_query; // Object must exist to bind the statement, this used for generating the sql
-		static char sql_query_chanvars[100];
-		static MYSQL *conn;
-		static MYSQL_STMT *stmt;
-		static MYSQL_STMT *stmt_chanvars;
-		static bool connectionstate;
-		static bool logchanvars;
-		static std::list<std::string> chanvars_fixed_list;
-		static std::vector<switch_mod_cdr_sql_types_t> chanvars_fixed_types;
-		static std::list<std::string> chanvars_supp_list; // The supplemental list
-		static bool repeat_fixed_in_supp;
-		static char hostname[255];
-		static char username[255];
-		static char dbname[255];
-		static char password[255];
-		static modcdr_time_convert_t convert_time;
-		static std::string display_name;
-		//static fstream tmpfile;
-		std::vector<MYSQL_BIND> bindme;
-		//MYSQL_BIND *bindme;
-		MYSQL_TIME my_callstartdate;
-		MYSQL_TIME my_callanswerdate;
-		MYSQL_TIME my_calltransferdate;
-		MYSQL_TIME my_callenddate;
-		// Why all these long unsigned int's?  MySQL's prep statement API expects these to actually exist and not just be params passed to the function calls.  The are to measure the length of actual data in the char* arrays.
-		long unsigned int clid_length;
-		long unsigned int dialplan_length;
-		long unsigned int myuuid_length;
-		long unsigned int destuuid_length;
-		long unsigned int src_length;
-		long unsigned int dst_length;
-		long unsigned int srcchannel_length;
-		long unsigned int dstchannel_length;
-		long unsigned int ani_length;
-		long unsigned int aniii_length;
-		long unsigned int lastapp_length;
-		long unsigned int lastdata_length;
-		long unsigned int network_addr_length;
-		// Now a couple internal methods
-		template <typename T> void add_parameter(T& param, enum_field_types type, bool *is_null=0);
-		void add_string_parameter(char* param, long unsigned int& param_length, enum_field_types type, bool* is_null=0);
-		void set_mysql_time(switch_time_exp_t& param, MYSQL_TIME& destination);
-		void connect_to_database();
+  private:
+	static bool activated;
+	static char sql_query[1024];
+	static std::string tmp_sql_query;	// Object must exist to bind the statement, this used for generating the sql
+	static char sql_query_chanvars[100];
+	static MYSQL *conn;
+	static MYSQL_STMT *stmt;
+	static MYSQL_STMT *stmt_chanvars;
+	static bool connectionstate;
+	static bool logchanvars;
+	static std::list < std::string > chanvars_fixed_list;
+	static std::vector < switch_mod_cdr_sql_types_t > chanvars_fixed_types;
+	static std::list < std::string > chanvars_supp_list;	// The supplemental list
+	static bool repeat_fixed_in_supp;
+	static char hostname[255];
+	static char username[255];
+	static char dbname[255];
+	static char password[255];
+	static modcdr_time_convert_t convert_time;
+	static std::string display_name;
+	//static fstream tmpfile;
+	       std::vector < MYSQL_BIND > bindme;
+	//MYSQL_BIND *bindme;
+	MYSQL_TIME my_callstartdate;
+	MYSQL_TIME my_callanswerdate;
+	MYSQL_TIME my_calltransferdate;
+	MYSQL_TIME my_callenddate;
+	// Why all these long unsigned int's?  MySQL's prep statement API expects these to actually exist and not just be params passed to the function calls.  The are to measure the length of actual data in the char* arrays.
+	long unsigned int clid_length;
+	long unsigned int dialplan_length;
+	long unsigned int myuuid_length;
+	long unsigned int destuuid_length;
+	long unsigned int src_length;
+	long unsigned int dst_length;
+	long unsigned int srcchannel_length;
+	long unsigned int dstchannel_length;
+	long unsigned int ani_length;
+	long unsigned int aniii_length;
+	long unsigned int lastapp_length;
+	long unsigned int lastdata_length;
+	long unsigned int network_addr_length;
+	// Now a couple internal methods
+	    template < typename T > void add_parameter(T & param, enum_field_types type, bool * is_null = 0);
+	void add_string_parameter(char *param, long unsigned int &param_length, enum_field_types type, bool * is_null = 0);
+	void set_mysql_time(switch_time_exp_t &param, MYSQL_TIME & destination);
+	void connect_to_database();
 };
 
 #endif

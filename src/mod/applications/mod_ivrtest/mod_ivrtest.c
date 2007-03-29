@@ -39,16 +39,17 @@ static const char modname[] = "mod_ivrtest";
   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
    if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 */
-static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
+static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf,
+							   unsigned int buflen)
 {
 	switch (itype) {
-	case SWITCH_INPUT_TYPE_DTMF: {
-		char *dtmf = (char *) input;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digits %s\n", dtmf);
-	
-		switch_copy_string((char *)buf, dtmf, buflen);
-		return SWITCH_STATUS_BREAK;
-	}
+	case SWITCH_INPUT_TYPE_DTMF:{
+			char *dtmf = (char *) input;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digits %s\n", dtmf);
+
+			switch_copy_string((char *) buf, dtmf, buflen);
+			return SWITCH_STATUS_BREAK;
+		}
 		break;
 	default:
 		break;
@@ -72,7 +73,7 @@ static void xml_function(switch_core_session_t *session, char *data)
 	for (team = switch_xml_child(f1, "team"); team; team = team->next) {
 		teamname = switch_xml_attr_soft(team, "name");
 		for (driver = switch_xml_child(team, "driver"); driver; driver = driver->next) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 							  "%s, %s: %s\n", switch_xml_child(driver, "name")->txt, teamname,
 							  switch_xml_child(driver, "points")->txt);
 		}
@@ -84,7 +85,7 @@ static void xml_function(switch_core_session_t *session, char *data)
 static void ivr_application_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	char *params = switch_core_session_strdup(session,data);
+	char *params = switch_core_session_strdup(session, data);
 
 	if (channel != NULL && params != NULL) {
 		switch_ivr_menu_t *menu = NULL, *sub_menu = NULL;
@@ -98,12 +99,7 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 									  "main",
 									  "please enter some numbers so i can figure out if I have any bugs or not",
 									  "enter some numbers",
-									  NULL,
-									  "I have no idea what that is",
-									  "cepstral",
-									  "david",
-									  NULL,
-									  15000, 10, NULL);
+									  NULL, "I have no idea what that is", "cepstral", "david", NULL, 15000, 10, NULL);
 
 
 		status = switch_ivr_menu_init(&sub_menu,
@@ -111,12 +107,7 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 									  "sub",
 									  "/ram/congrats.wav",
 									  "/ram/extension.wav",
-									  NULL,
-									  "/ram/invalid.wav",
-									  NULL,
-									  NULL,
-									  NULL,
-									  15000, 10, NULL);
+									  NULL, "/ram/invalid.wav", NULL, NULL, NULL, 15000, 10, NULL);
 
 		if (status == SWITCH_STATUS_SUCCESS) {
 			// build the menu
@@ -125,10 +116,10 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 			switch_ivr_menu_bind_action(menu, SWITCH_IVR_ACTION_EXECMENU, "sub", "3");
 			//switch_ivr_menu_bind_action(menu, SWITCH_IVR_ACTION_PLAYSOUND, "/usr/local/freeswitch/sounds/3.wav", "3");
 
-			
+
 			switch_ivr_menu_bind_action(sub_menu, SWITCH_IVR_ACTION_PLAYSOUND, "/ram/swimp.raw", "1");
 			switch_ivr_menu_bind_action(sub_menu, SWITCH_IVR_ACTION_BACK, NULL, "2");
-			
+
 
 			// start the menu
 			status = switch_ivr_menu_execute(session, menu, "main", NULL);
@@ -136,11 +127,11 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 			// cleaup the menu
 			switch_ivr_menu_stack_free(menu);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unable to build menu %s\n",params);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unable to build menu %s\n", params);
 		}
-			
 
-		switch_ivr_play_file(session, NULL,"/ram/goodbye.wav",NULL);
+
+		switch_ivr_play_file(session, NULL, "/ram/goodbye.wav", NULL);
 	}
 }
 
@@ -151,15 +142,13 @@ static void dirtest_function(switch_core_session_t *session, char *data)
 	switch_directory_handle_t dh;
 
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
+	assert(channel != NULL);
 
 
-	if (switch_core_directory_open(&dh, 
+	if (switch_core_directory_open(&dh,
 								   "ldap",
 								   "ldap.freeswitch.org",
-								   "cn=Manager,dc=freeswitch,dc=org",
-								   "test",
-								   NULL) != SWITCH_STATUS_SUCCESS) {
+								   "cn=Manager,dc=freeswitch,dc=org", "test", NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't connect\n");
 		return;
 	}
@@ -177,16 +166,17 @@ static void dirtest_function(switch_core_session_t *session, char *data)
 
 }
 
-static switch_status_t show_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
+static switch_status_t show_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf,
+								 unsigned int buflen)
 {
 
 	switch (itype) {
-	case SWITCH_INPUT_TYPE_DTMF: {
-		char *dtmf = (char *) input;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digits %s\n", dtmf);
+	case SWITCH_INPUT_TYPE_DTMF:{
+			char *dtmf = (char *) input;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digits %s\n", dtmf);
 
-		switch_copy_string((char *)buf, dtmf, buflen);
-	}
+			switch_copy_string((char *) buf, dtmf, buflen);
+		}
 		break;
 	default:
 		break;
@@ -203,9 +193,9 @@ static void tts_function(switch_core_session_t *session, char *data)
 	char buf[10] = "";
 	char *argv[3];
 	int argc;
-    switch_input_args_t args = {0};
+	switch_input_args_t args = { 0 };
 
-	if(!(mydata = switch_core_session_strdup(session, (char *) data))) {
+	if (!(mydata = switch_core_session_strdup(session, (char *) data))) {
 		return;
 	}
 
@@ -221,14 +211,14 @@ static void tts_function(switch_core_session_t *session, char *data)
 	}
 
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
-	
-    switch_channel_answer(channel);
+	assert(channel != NULL);
+
+	switch_channel_answer(channel);
 
 	codec = switch_core_session_get_read_codec(session);
-    args.input_callback = show_dtmf;
-    args.buf = buf;
-    args.buflen = sizeof(buf);
+	args.input_callback = show_dtmf;
+	args.buf = buf;
+	args.buflen = sizeof(buf);
 	switch_ivr_speak_text(session, tts_name, voice_name, codec->implementation->samples_per_second, text, &args);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Done\n");
 }
@@ -236,17 +226,17 @@ static void tts_function(switch_core_session_t *session, char *data)
 #ifdef BUGTEST
 static switch_bool_t bug_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
-    switch_frame_t *frame;
+	switch_frame_t *frame;
 
-    switch(type) {
+	switch (type) {
 	case SWITCH_ABC_TYPE_WRITE_REPLACE:
-        frame = switch_core_media_bug_get_replace_frame(bug);
-        switch_core_media_bug_set_replace_frame(bug, frame);
-        printf("W00t\n");
-        break;
-    default:
-        break;
-    }
+		frame = switch_core_media_bug_get_replace_frame(bug);
+		switch_core_media_bug_set_replace_frame(bug, frame);
+		printf("W00t\n");
+		break;
+	default:
+		break;
+	}
 
 	return SWITCH_TRUE;
 }
@@ -257,56 +247,46 @@ static void bugtest_function(switch_core_session_t *session, char *data)
 #ifdef BUGTEST
 	switch_media_bug_t *bug;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-    switch_status_t status;
+	switch_status_t status;
 
 	if ((status = switch_core_media_bug_add(session,
-											bug_callback,
-											NULL,
-											SMBF_WRITE_REPLACE,
-											&bug)) != SWITCH_STATUS_SUCCESS) {
+											bug_callback, NULL, SMBF_WRITE_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-        return;
+		return;
 	}
 #endif
 	//switch_ivr_schedule_broadcast(time(NULL) + 10, switch_core_session_get_uuid(session), "/Users/anthm/sr8k.wav", SMF_ECHO_ALEG);
 	//switch_ivr_schedule_transfer(time(NULL) + 10, switch_core_session_get_uuid(session), "2000", NULL, NULL);
 	//switch_ivr_schedule_hangup(time(NULL) + 10, switch_core_session_get_uuid(session), SWITCH_CAUSE_ALLOTTED_TIMEOUT);
 
-    switch_ivr_play_file(session, NULL, data, NULL);
+	switch_ivr_play_file(session, NULL, data, NULL);
 }
 
 #if 1
 static void asrtest_function(switch_core_session_t *session, char *data)
 {
-	switch_ivr_detect_speech(session,
-							 "lumenvox",
-							 "demo",
-							 data,
-							 "127.0.0.1",
-							 NULL);
+	switch_ivr_detect_speech(session, "lumenvox", "demo", data, "127.0.0.1", NULL);
 }
 
-#else 
+#else
 static void asrtest_function(switch_core_session_t *session, char *data)
 {
-	switch_asr_handle_t ah = {0};
+	switch_asr_handle_t ah = { 0 };
 	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *codec_name = "L16";
-	switch_codec_t codec = {0}, *read_codec;
-	switch_frame_t write_frame = {0}, *write_frame_p = NULL;
+	switch_codec_t codec = { 0 }, *read_codec;
+	switch_frame_t write_frame = { 0 }, *write_frame_p = NULL;
 	char xdata[1024] = "";
 
 	read_codec = switch_core_session_get_read_codec(session);
 	assert(read_codec != NULL);
-	
+
 
 	if (switch_core_asr_open(&ah, "lumenvox",
 							 read_codec->implementation->iananame,
 							 8000,
-							 "127.0.0.1",
-							 &flags,
-							 switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+							 "127.0.0.1", &flags, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 		if (strcmp(ah.codec, read_codec->implementation->iananame)) {
 			if (switch_core_codec_init(&codec,
 									   ah.codec,
@@ -317,36 +297,39 @@ static void asrtest_function(switch_core_session_t *session, char *data)
 									   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 									   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activated\n");
-				switch_core_session_set_read_codec(session, &codec);		
+				switch_core_session_set_read_codec(session, &codec);
 				write_frame.data = xdata;
 				write_frame.buflen = sizeof(xdata);
 				write_frame.codec = &codec;
 				write_frame_p = &write_frame;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec Activation Failed %s@%uhz %u channels %dms\n",
-								  codec_name, read_codec->implementation->samples_per_second, read_codec->implementation->number_of_channels,
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+								  "Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name,
+								  read_codec->implementation->samples_per_second,
+								  read_codec->implementation->number_of_channels,
 								  read_codec->implementation->microseconds_per_frame / 1000);
 				switch_core_session_reset(session);
 				return;
 			}
 		}
-		
-		
-		if (switch_core_asr_load_grammar(&ah, "demo", "/opt/lumenvox/engine_7.0/Lang/BuiltinGrammars/ABNFPhone.gram") != SWITCH_STATUS_SUCCESS) {
+
+
+		if (switch_core_asr_load_grammar(&ah, "demo", "/opt/lumenvox/engine_7.0/Lang/BuiltinGrammars/ABNFPhone.gram") !=
+			SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error loading Grammar\n");
 			goto end;
 		}
-		
-		while(switch_channel_ready(channel)) {
+
+		while (switch_channel_ready(channel)) {
 			switch_frame_t *read_frame;
 			switch_status_t status = switch_core_session_read_frame(session, &read_frame, -1, 0);
 			char *xmlstr = NULL;
 			switch_xml_t xml = NULL, result;
- 
+
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
 			}
-			
+
 			if (switch_test_flag(read_frame, SFF_CNG)) {
 				continue;
 			}
@@ -355,7 +338,7 @@ static void asrtest_function(switch_core_session_t *session, char *data)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error Feeding Data\n");
 				break;
 			}
-			
+
 			if (switch_core_asr_check_results(&ah, &flags) == SWITCH_STATUS_SUCCESS) {
 				if (switch_core_asr_get_results(&ah, &xmlstr, &flags) != SWITCH_STATUS_SUCCESS) {
 					break;
@@ -368,7 +351,7 @@ static void asrtest_function(switch_core_session_t *session, char *data)
 				}
 				switch_safe_free(xmlstr);
 			}
-			
+
 			if (write_frame_p) {
 				write_frame.datalen = read_frame->datalen;
 				switch_core_session_write_frame(session, write_frame_p, -1, 0);
@@ -378,7 +361,7 @@ static void asrtest_function(switch_core_session_t *session, char *data)
 			}
 		}
 
-	end:
+	  end:
 		if (write_frame_p) {
 			switch_core_session_set_read_codec(session, read_codec);
 			switch_core_codec_destroy(&codec);
@@ -400,9 +383,9 @@ static void ivrtest_function(switch_core_session_t *session, char *data)
 	char buf[10] = "";
 	char term;
 	char say[128] = "";
-	
+
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
+	assert(channel != NULL);
 
 	switch_channel_answer(channel);
 
@@ -410,18 +393,19 @@ static void ivrtest_function(switch_core_session_t *session, char *data)
 
 	while (switch_channel_get_state(channel) == CS_EXECUTE) {
 		memset(buf, 0, sizeof(buf));
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Enter up to 10 digits, press # to terminate, * to hangup\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
+						  "Enter up to 10 digits, press # to terminate, * to hangup\n");
 
 		if (data) {
-            switch_input_args_t args = {0};
+			switch_input_args_t args = { 0 };
 			/* you could have passed NULL instead of on_dtmf to get this exact behaviour (copy the digits to buf and stop playing)
 			   but you may want to pass the function if you have something cooler to do...
-			*/
-            args.input_callback = on_dtmf;
-            args.buf = buf;
-            args.buflen = sizeof(buf);
+			 */
+			args.input_callback = on_dtmf;
+			args.buf = buf;
+			args.buflen = sizeof(buf);
 			status = switch_ivr_play_file(session, NULL, data, &args);
-			
+
 			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				break;
@@ -440,7 +424,7 @@ static void ivrtest_function(switch_core_session_t *session, char *data)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, say);
 		switch_ivr_speak_text(session, "cepstral", "david", codec->implementation->samples_per_second, say, NULL);
 	}
-	
+
 }
 
 
@@ -449,9 +433,10 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	switch_channel_t *channel;
 
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
+	assert(channel != NULL);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "I globally hooked to [%s] on the hangup event\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "I globally hooked to [%s] on the hangup event\n",
+					  switch_channel_get_name(channel));
 	return SWITCH_STATUS_SUCCESS;
 
 }
@@ -472,7 +457,7 @@ static const switch_application_interface_t bug_application_interface = {
 	/*.application_function */ bugtest_function,
 	NULL, NULL, NULL,
 	/* flags */ SAF_NONE,
-	/*.next*/ NULL
+	/*.next */ NULL
 };
 
 static const switch_application_interface_t ivr_application_interface = {
@@ -480,7 +465,7 @@ static const switch_application_interface_t ivr_application_interface = {
 	/*.application_function */ ivr_application_function,
 	NULL, NULL, NULL,
 	/* flags */ SAF_NONE,
-	/*.next*/ &bug_application_interface
+	/*.next */ &bug_application_interface
 };
 
 static const switch_application_interface_t xml_application_interface = {
@@ -488,7 +473,7 @@ static const switch_application_interface_t xml_application_interface = {
 	/*.application_function */ xml_function,
 	NULL, NULL, NULL,
 	/* flags */ SAF_NONE,
-	/*.next*/ &ivr_application_interface
+	/*.next */ &ivr_application_interface
 };
 
 static const switch_application_interface_t disast_application_interface = {
@@ -496,7 +481,7 @@ static const switch_application_interface_t disast_application_interface = {
 	/*.application_function */ disast_function,
 	NULL, NULL, NULL,
 	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next*/ &xml_application_interface
+	/*.next */ &xml_application_interface
 };
 
 static const switch_application_interface_t tts_application_interface = {
@@ -504,7 +489,7 @@ static const switch_application_interface_t tts_application_interface = {
 	/*.application_function */ tts_function,
 	NULL, NULL, NULL,
 	/* flags */ SAF_NONE,
-	/*.next*/ &disast_application_interface
+	/*.next */ &disast_application_interface
 };
 
 static const switch_application_interface_t dirtest_application_interface = {
@@ -512,7 +497,7 @@ static const switch_application_interface_t dirtest_application_interface = {
 	/*.application_function */ dirtest_function,
 	NULL, NULL, NULL,
 	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next*/ &tts_application_interface
+	/*.next */ &tts_application_interface
 };
 
 static const switch_application_interface_t ivrtest_application_interface = {
@@ -520,7 +505,7 @@ static const switch_application_interface_t ivrtest_application_interface = {
 	/*.application_function */ ivrtest_function,
 	NULL, NULL, NULL,
 	/* flags */ SAF_NONE,
-	/*.next*/ &dirtest_application_interface
+	/*.next */ &dirtest_application_interface
 };
 
 static const switch_application_interface_t asrtest_application_interface = {
@@ -528,7 +513,7 @@ static const switch_application_interface_t asrtest_application_interface = {
 	/*.application_function */ asrtest_function,
 	NULL, NULL, NULL,
 	/* flags */ SAF_NONE,
-	/*.next*/ &ivrtest_application_interface
+	/*.next */ &ivrtest_application_interface
 };
 
 static const switch_loadable_module_interface_t mod_ivrtest_module_interface = {
@@ -540,7 +525,8 @@ static const switch_loadable_module_interface_t mod_ivrtest_module_interface = {
 	/*.application_interface */ &asrtest_application_interface
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
+													   char *filename)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */

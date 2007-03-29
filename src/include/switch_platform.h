@@ -35,23 +35,17 @@
 #define SWITCH_PLATFORM_H
 
 SWITCH_BEGIN_EXTERN_C
-
 #ifdef __ICC
 #pragma warning (disable:810 869 981 279 1469 188)
 #endif
-
 #include <stdio.h>
-
+#define SWITCH_VA_NONE "%s", ""
 #ifdef _MSC_VER
 #define __SWITCH_FUNC__ __FUNCTION__
 #else
 #define __SWITCH_FUNC__ (const char *)__func__
 #endif
-
-
 #ifdef _MSC_VER
-
-
 /* disable the following warnings 
  * C4100: The formal parameter is not referenced in the body of the function. The unreferenced parameter is ignored. 
  * C4200: Non standard extension C zero sized array
@@ -64,8 +58,7 @@ SWITCH_BEGIN_EXTERN_C
  * C4610: struct  can never be instantiated - user defined constructor required
  */
 #pragma warning(disable:4100 4200 4204 4706 4819 4132 4510 4512 4610 4996)
-
-#if (_MSC_VER >= 1400) // VC8+
+#if (_MSC_VER >= 1400)			// VC8+
 #ifndef _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE
 #endif
@@ -73,30 +66,27 @@ SWITCH_BEGIN_EXTERN_C
 #define _CRT_NONSTDC_NO_DEPRECATE
 #endif
 #endif // VC8+
-
 #if  _MSC_VER < 1300
 #ifndef __FUNCTION__
 #define __FUNCTION__ ""
 #endif
 #endif
-
 #undef inline
 #define inline __inline
-
 #ifndef uint32_t
-typedef unsigned __int8		uint8_t;
-typedef unsigned __int16	uint16_t;
-typedef unsigned __int32	uint32_t;
-typedef unsigned __int64    uint64_t;
-typedef __int8		int8_t;
-typedef __int16		int16_t;
-typedef __int32		int32_t;
-typedef __int64		int64_t;
-typedef unsigned long	in_addr_t;
+typedef unsigned __int8 uint8_t;
+typedef unsigned __int16 uint16_t;
+typedef unsigned __int32 uint32_t;
+typedef unsigned __int64 uint64_t;
+typedef __int8 int8_t;
+typedef __int16 int16_t;
+typedef __int32 int32_t;
+typedef __int64 int64_t;
+typedef unsigned long in_addr_t;
 #endif
-typedef  int         pid_t;
-typedef  int         uid_t;
-typedef  int         gid_t;
+typedef int pid_t;
+typedef int uid_t;
+typedef int gid_t;
 #define PACKED
 #include <io.h>
 #define strcasecmp(s1, s2) stricmp(s1, s2)
@@ -116,7 +106,6 @@ typedef  int         gid_t;
 #include <sys/socket.h>
 #include <netinet/in.h>
 #endif // _MSC_VER
-
 #ifndef __LITTLE_ENDIAN
 #define __LITTLE_ENDIAN 1234
 #endif
@@ -130,9 +119,7 @@ typedef  int         gid_t;
 #define __BYTE_ORDER __LITTLE_ENDIAN
 #endif
 #endif
-
 #ifdef WIN32
-
 #if defined(SWITCH_CORE_DECLARE_STATIC)
 #define SWITCH_DECLARE(type)			type __stdcall
 #define SWITCH_DECLARE_NONSTD(type)		type __cdecl
@@ -146,7 +133,6 @@ typedef  int         gid_t;
 #define SWITCH_DECLARE_NONSTD(type)		__declspec(dllimport) type __cdecl
 #define SWITCH_DECLARE_DATA				__declspec(dllimport)
 #endif
-
 #if defined(SWITCH_MOD_DECLARE_STATIC)
 #define SWITCH_MOD_DECLARE(type)		type __cdecl
 #elif defined(MOD_EXPORTS)
@@ -169,35 +155,32 @@ typedef  int         gid_t;
 #define SWITCH_DECLARE_DATA
 #define SWITCH_THREAD_FUNC
 #endif
-
 #ifdef DOXYGEN
 #define DoxyDefine(x) x
 #else
 #define DoxyDefine(x)
 #endif
-
 #if __GNUC__ >= 3
 #define PRINTF_FUNCTION(fmtstr,vars) __attribute__((format(printf,fmtstr,vars)))
 #else
 #define PRINTF_FUNCTION(fmtstr,vars)
 #endif
-
 #ifdef SWITCH_INT32
-typedef SWITCH_INT32 switch_int32_t;
+	typedef SWITCH_INT32 switch_int32_t;
 #else
-typedef int32_t switch_int32_t;
+	typedef int32_t switch_int32_t;
 #endif
 
 #ifdef SWITCH_SIZE_T
-typedef  SWITCH_SIZE_T  switch_size_t;
+typedef SWITCH_SIZE_T switch_size_t;
 #else
-typedef  uintptr_t  switch_size_t;
+typedef uintptr_t switch_size_t;
 #endif
 
 #ifdef SWITCH_SSIZE_T
-typedef  SWITCH_SSIZE_T   switch_ssize_t;
+typedef SWITCH_SSIZE_T switch_ssize_t;
 #else
-typedef  intptr_t	switch_ssize_t;
+typedef intptr_t switch_ssize_t;
 #endif
 
 #ifdef WIN32
@@ -245,7 +228,6 @@ typedef  intptr_t	switch_ssize_t;
 #define SWITCH_TIME_T_FMT SWITCH_INT64_T_FMT
 
 SWITCH_END_EXTERN_C
-
 /* these includes must be outside the extern "C" block on windows or it will break compatibility with c++ modules*/
 #ifdef WIN32
 /* Has windows.h already been included?  If so, our preferences don't matter,
@@ -257,7 +239,6 @@ SWITCH_END_EXTERN_C
 #define WIN32_LEAN_AND_MEAN
 #endif
 #ifndef _WIN32_WINNT
-
 /* Restrict the server to a subset of Windows NT 4.0 header files by default
  */
 #define _WIN32_WINNT 0x0400
@@ -288,19 +269,13 @@ SWITCH_END_EXTERN_C
 #endif /* !_WINDOWS_ */
 #include <process.h>
 #endif
-
 #endif
-
-
 #ifndef FALSE
 #define FALSE 0
 #endif
 #ifndef TRUE
 #define TRUE (!FALSE)
 #endif
-
-
-
 /* For Emacs:
  * Local Variables:
  * mode:c

@@ -61,9 +61,8 @@
 #include <switch.h>
 
 SWITCH_BEGIN_EXTERN_C
-
 /*! \brief An event Header */
-struct switch_event_header{
+	struct switch_event_header {
 	/*! the header name */
 	char *name;
 	/*! the header value */
@@ -139,7 +138,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void);
   \param subclass_name the subclass name for custom event (only valid when event_id is SWITCH_EVENT_CUSTOM)
   \return SWITCH_STATUS_SUCCESS on success
 */
-SWITCH_DECLARE(switch_status_t) switch_event_create_subclass(switch_event_t **event, switch_event_types_t event_id, const char *subclass_name);
+SWITCH_DECLARE(switch_status_t) switch_event_create_subclass(switch_event_t **event, switch_event_types_t event_id,
+															 const char *subclass_name);
 
 /*!
   \brief Set the priority of an event
@@ -172,7 +172,9 @@ SWITCH_DECLARE(char *) switch_event_get_body(switch_event_t *event);
   \param fmt the value of the header (varargs see standard sprintf family)
   \return SWITCH_STATUS_SUCCESS if the header was added
 */
-SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, switch_stack_t stack, const char *header_name, const char *fmt, ...) PRINTF_FUNCTION(4,5);
+SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, switch_stack_t stack,
+														const char *header_name, const char *fmt,
+														...) PRINTF_FUNCTION(4, 5);
 
 /*!
   \brief Destroy an event
@@ -197,7 +199,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
   \param user_data optional private data to pass to the event handlers
   \return
 */
-SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *func, int line, switch_event_t **event, void *user_data);
+SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *func, int line, switch_event_t **event,
+														   void *user_data);
 
 /*!
   \brief Bind an event callback to a specific event
@@ -208,7 +211,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *fun
   \param user_data optional user specific data to pass whenever the callback is invoked
   \return SWITCH_STATUS_SUCCESS if the event was binded
 */
-SWITCH_DECLARE(switch_status_t) switch_event_bind(char *id, switch_event_types_t event, char *subclass_name, switch_event_callback_t callback, void *user_data);
+SWITCH_DECLARE(switch_status_t) switch_event_bind(char *id, switch_event_types_t event, char *subclass_name,
+												  switch_event_callback_t callback, void *user_data);
 
 /*!
   \brief Render the name of an event id enumeration
@@ -251,7 +255,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
   \return the xml object if the operation was successful
   \note the body supplied by this function will supersede an existing body the event may have
 */
-SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const char *fmt, ...) PRINTF_FUNCTION(2,3);
+SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const char *fmt, ...) PRINTF_FUNCTION(2, 3);
 
 /*!
   \brief Determine if the event system has been initilized
@@ -266,7 +270,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_running(void);
   \return SWITCH_STATUS_SUCCESS if the body was added to the event
   \note the body parameter can be shadowed by the switch_event_reserve_subclass_detailed function
 */
-SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, const char *fmt, ...) PRINTF_FUNCTION(2,3);
+SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, const char *fmt, ...) PRINTF_FUNCTION(2,
+																												   3);
 
 
 /*!
@@ -311,9 +316,7 @@ SWITCH_DECLARE(void) switch_event_deliver(switch_event_t **event);
 ///\}
 
 SWITCH_END_EXTERN_C
-
 #endif
-
 /* For Emacs:
  * Local Variables:
  * mode:c

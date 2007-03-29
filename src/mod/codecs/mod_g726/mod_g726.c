@@ -28,15 +28,15 @@
  *
  * mod_g726.c -- G726 Codec Module
  *
- */  
+ */
 #include "switch.h"
 #include "g72x.h"
 #include "switch_bitpack.h"
 
 static const char modname[] = "mod_g726";
 
-typedef int (*encoder_t)(int, int, g726_state *);
-typedef int (*decoder_t)(int, int, g726_state *);
+typedef int (*encoder_t) (int, int, g726_state *);
+typedef int (*decoder_t) (int, int, g726_state *);
 
 
 typedef struct {
@@ -53,7 +53,7 @@ typedef struct {
 } g726_handle_t;
 
 static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag_t flags,
-									  const switch_codec_settings_t *codec_settings) 
+										const switch_codec_settings_t *codec_settings)
 {
 	uint32_t encoding, decoding;
 	g726_handle_t *handle;
@@ -65,8 +65,8 @@ static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag
 		return SWITCH_STATUS_FALSE;
 	} else {
 		handle->bytes = (switch_byte_t) codec->implementation->encoded_bytes_per_frame;
-		
-		switch(handle->bytes) {
+
+		switch (handle->bytes) {
 		case 100:
 			handle->encoder = g726_40_encoder;
 			handle->decoder = g726_40_decoder;
@@ -88,22 +88,24 @@ static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag
 			handle->loops = 160;
 			break;
 		default:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid Encoding Size %d!\n", codec->implementation->encoded_bytes_per_frame);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid Encoding Size %d!\n",
+							  codec->implementation->encoded_bytes_per_frame);
 			return SWITCH_STATUS_FALSE;
 			break;
 		}
 
 		g726_init_state(&handle->context);
 		codec->private_info = handle;
-		handle->bits_per_frame = (switch_byte_t) (codec->implementation->bits_per_second / (codec->implementation->samples_per_second));
-		handle->mode = (flags & SWITCH_CODEC_FLAG_AAL2 || strstr(codec->implementation->iananame, "AAL2")) 
+		handle->bits_per_frame =
+			(switch_byte_t) (codec->implementation->bits_per_second / (codec->implementation->samples_per_second));
+		handle->mode = (flags & SWITCH_CODEC_FLAG_AAL2 || strstr(codec->implementation->iananame, "AAL2"))
 			? SWITCH_BITPACK_MODE_AAL2 : SWITCH_BITPACK_MODE_RFC3551;
 		return SWITCH_STATUS_SUCCESS;
 	}
 }
 
 
-static switch_status_t switch_g726_destroy(switch_codec_t *codec) 
+static switch_status_t switch_g726_destroy(switch_codec_t *codec)
 {
 	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
@@ -111,17 +113,13 @@ static switch_status_t switch_g726_destroy(switch_codec_t *codec)
 
 
 
-static switch_status_t switch_g726_encode(switch_codec_t *codec, 
-										switch_codec_t *other_codec, 
-										void *decoded_data,
-
-										uint32_t decoded_data_len, 
-										uint32_t decoded_rate, 
-										void *encoded_data,
-
-										uint32_t *encoded_data_len, 
-										uint32_t *encoded_rate, 
-										unsigned int *flag) 
+static switch_status_t switch_g726_encode(switch_codec_t *codec,
+										  switch_codec_t *other_codec,
+										  void *decoded_data,
+										  uint32_t decoded_data_len,
+										  uint32_t decoded_rate,
+										  void *encoded_data,
+										  uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
 {
 
 	g726_handle_t *handle = codec->private_info;
@@ -153,7 +151,8 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 		if (new_len <= *encoded_data_len) {
 			*encoded_data_len = new_len;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer overflow!!! %u >= %u\n", new_len, *encoded_data_len);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer overflow!!! %u >= %u\n", new_len,
+							  *encoded_data_len);
 			return SWITCH_STATUS_FALSE;
 		}
 	}
@@ -163,17 +162,13 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 
 
 
-static switch_status_t switch_g726_decode(switch_codec_t *codec, 
-										switch_codec_t *other_codec, 
-										void *encoded_data,
-
-										uint32_t encoded_data_len, 
-										uint32_t encoded_rate, 
-										void *decoded_data,
-
-										uint32_t *decoded_data_len, 
-										uint32_t *decoded_rate, 
-										unsigned int *flag) 
+static switch_status_t switch_g726_decode(switch_codec_t *codec,
+										  switch_codec_t *other_codec,
+										  void *encoded_data,
+										  uint32_t encoded_data_len,
+										  uint32_t encoded_rate,
+										  void *decoded_data,
+										  uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
 {
 
 	g726_handle_t *handle = codec->private_info;
@@ -192,13 +187,13 @@ static switch_status_t switch_g726_decode(switch_codec_t *codec,
 		for (y = 0; y < handle->loops; y++) {
 			switch_bitpack_out(&handle->unpack, in[z++]);
 		}
-		for(y = 0; y < handle->bytes; y++) {
+		for (y = 0; y < handle->bytes; y++) {
 			*ddp++ = (int16_t) handle->decoder(handle->buf[y], AUDIO_ENCODING_LINEAR, context);
-            new_len += 2;
+			new_len += 2;
 		}
 		switch_bitpack_done(&handle->unpack);
 	}
-	
+
 	if (new_len <= *decoded_data_len) {
 		*decoded_data_len = new_len;
 	} else {
@@ -213,239 +208,239 @@ static switch_status_t switch_g726_decode(switch_codec_t *codec,
 
 
 
-/* Registration */ 
+/* Registration */
 
-static const switch_codec_implementation_t g726_16k_implementation = { 
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-	/*.ianacode */ 127, 
-	/*.iananame */ "G726-16", 
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000, 
-	/*.bits_per_second */ 16000, 
-	/*.microseconds_per_frame */ 20000, 
-	/*.samples_per_frame */ 160, 
-	/*.bytes_per_frame */ 320, 
-	/*.encoded_bytes_per_frame */ 40, 
-	/*.number_of_channels */ 1, 
-	/*.pref_frames_per_packet */ 1, 
-	/*.max_frames_per_packet */ 1, 
-	/*.init */ switch_g726_init, 
-	/*.encode */ switch_g726_encode, 
-	/*.decode */ switch_g726_decode, 
-	/*.destroy */ switch_g726_destroy, 
-};
-
-
-static const switch_codec_implementation_t g726_24k_implementation = { 
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-	/*.ianacode */ 126, 
-	/*.iananame */ "G726-24", 
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000, 
-	/*.bits_per_second */ 24000, 
-	/*.microseconds_per_frame */ 20000, 
-	/*.samples_per_frame */ 160, 
-	/*.bytes_per_frame */ 320, 
-	/*.encoded_bytes_per_frame */ 60, 
-	/*.number_of_channels */ 1, 
-	/*.pref_frames_per_packet */ 1, 
-	/*.max_frames_per_packet */ 1, 
-	/*.init */ switch_g726_init, 
-	/*.encode */ switch_g726_encode, 
-	/*.decode */ switch_g726_decode, 
-	/*.destroy */ switch_g726_destroy, 
-};
-
-static const switch_codec_implementation_t g726_32k_implementation = { 
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-	/*.ianacode */ 2, 
-	/*.iananame */ "G726-32", 
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000, 
-	/*.bits_per_second */ 32000, 
-	/*.microseconds_per_frame */ 20000, 
-	/*.samples_per_frame */ 160, 
-	/*.bytes_per_frame */ 320, 
-	/*.encoded_bytes_per_frame */ 80, 
-	/*.number_of_channels */ 1, 
-	/*.pref_frames_per_packet */ 1, 
-	/*.max_frames_per_packet */ 1, 
-	/*.init */ switch_g726_init, 
-	/*.encode */ switch_g726_encode, 
-	/*.decode */ switch_g726_decode, 
-	/*.destroy */ switch_g726_destroy, 
-};
-
-static const switch_codec_implementation_t g726_40k_implementation = { 
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-	/*.ianacode */ 125, 
-	/*.iananame */ "G726-40", 
+static const switch_codec_implementation_t g726_16k_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 127,
+	/*.iananame */ "G726-16",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
-	/*.bits_per_second */ 40000, 
-	/*.microseconds_per_frame */ 20000, 
-	/*.samples_per_frame */ 160, 
-	/*.bytes_per_frame */ 320, 
-	/*.encoded_bytes_per_frame */ 100, 
-	/*.number_of_channels */ 1, 
-	/*.pref_frames_per_packet */ 1, 
-	/*.max_frames_per_packet */ 1, 
-	/*.init */ switch_g726_init, 
-	/*.encode */ switch_g726_encode, 
-	/*.decode */ switch_g726_decode, 
-	/*.destroy */ switch_g726_destroy, 
+	/*.bits_per_second */ 16000,
+	/*.microseconds_per_frame */ 20000,
+	/*.samples_per_frame */ 160,
+	/*.bytes_per_frame */ 320,
+	/*.encoded_bytes_per_frame */ 40,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_g726_init,
+	/*.encode */ switch_g726_encode,
+	/*.decode */ switch_g726_decode,
+	/*.destroy */ switch_g726_destroy,
 };
 
 
-
-static const switch_codec_implementation_t aal2_g726_16k_implementation = { 
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-	/*.ianacode */ 124, 
-	/*.iananame */ "AAL2-G726-16", 
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000, 
-	/*.bits_per_second */ 16000, 
-	/*.microseconds_per_frame */ 20000, 
-	/*.samples_per_frame */ 160, 
-	/*.bytes_per_frame */ 320, 
-	/*.encoded_bytes_per_frame */ 40, 
-	/*.number_of_channels */ 1, 
-	/*.pref_frames_per_packet */ 1, 
-	/*.max_frames_per_packet */ 1, 
-	/*.init */ switch_g726_init, 
-	/*.encode */ switch_g726_encode, 
-	/*.decode */ switch_g726_decode, 
-	/*.destroy */ switch_g726_destroy, 
-};
-
-
-static const switch_codec_implementation_t aal2_g726_24k_implementation = { 
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-	/*.ianacode */ 123, 
-	/*.iananame */ "AAL2-G726-24", 
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000, 
-	/*.bits_per_second */ 24000, 
-	/*.microseconds_per_frame */ 20000, 
-	/*.samples_per_frame */ 160, 
-	/*.bytes_per_frame */ 320, 
-	/*.encoded_bytes_per_frame */ 60, 
-	/*.number_of_channels */ 1, 
-	/*.pref_frames_per_packet */ 1, 
-	/*.max_frames_per_packet */ 1, 
-	/*.init */ switch_g726_init, 
-	/*.encode */ switch_g726_encode, 
-	/*.decode */ switch_g726_decode, 
-	/*.destroy */ switch_g726_destroy, 
-};
-
-static const switch_codec_implementation_t aal2_g726_32k_implementation = { 
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-	/*.ianacode */ 2, 
-	/*.iananame */ "AAL2-G726-32", 
-	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000, 
-	/*.bits_per_second */ 32000, 
-	/*.microseconds_per_frame */ 20000, 
-	/*.samples_per_frame */ 160, 
-	/*.bytes_per_frame */ 320, 
-	/*.encoded_bytes_per_frame */ 80, 
-	/*.number_of_channels */ 1, 
-	/*.pref_frames_per_packet */ 1, 
-	/*.max_frames_per_packet */ 1, 
-	/*.init */ switch_g726_init, 
-	/*.encode */ switch_g726_encode, 
-	/*.decode */ switch_g726_decode, 
-	/*.destroy */ switch_g726_destroy, 
-};
-
-static const switch_codec_implementation_t aal2_g726_40k_implementation = { 
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-	/*.ianacode */ 122, 
-	/*.iananame */ "AAL2-G726-40", 
+static const switch_codec_implementation_t g726_24k_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 126,
+	/*.iananame */ "G726-24",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
-	/*.bits_per_second */ 40000, 
-	/*.microseconds_per_frame */ 20000, 
-	/*.samples_per_frame */ 160, 
-	/*.bytes_per_frame */ 320, 
-	/*.encoded_bytes_per_frame */ 100, 
-	/*.number_of_channels */ 1, 
-	/*.pref_frames_per_packet */ 1, 
-	/*.max_frames_per_packet */ 1, 
-	/*.init */ switch_g726_init, 
-	/*.encode */ switch_g726_encode, 
-	/*.decode */ switch_g726_decode, 
-	/*.destroy */ switch_g726_destroy, 
+	/*.bits_per_second */ 24000,
+	/*.microseconds_per_frame */ 20000,
+	/*.samples_per_frame */ 160,
+	/*.bytes_per_frame */ 320,
+	/*.encoded_bytes_per_frame */ 60,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_g726_init,
+	/*.encode */ switch_g726_encode,
+	/*.decode */ switch_g726_decode,
+	/*.destroy */ switch_g726_destroy,
 };
 
-const switch_codec_interface_t g726_16k_codec_interface = { 
-	/*.interface_name */ "G.726 16k", 
-	/*.implementations */ &g726_16k_implementation, 
+static const switch_codec_implementation_t g726_32k_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 2,
+	/*.iananame */ "G726-32",
+	/*.fmtp */ NULL,
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ 32000,
+	/*.microseconds_per_frame */ 20000,
+	/*.samples_per_frame */ 160,
+	/*.bytes_per_frame */ 320,
+	/*.encoded_bytes_per_frame */ 80,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_g726_init,
+	/*.encode */ switch_g726_encode,
+	/*.decode */ switch_g726_decode,
+	/*.destroy */ switch_g726_destroy,
 };
 
-const switch_codec_interface_t g726_24k_codec_interface = { 
-	/*.interface_name */ "G.726 24k", 
-	/*.implementations */ &g726_24k_implementation, 
+static const switch_codec_implementation_t g726_40k_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 125,
+	/*.iananame */ "G726-40",
+	/*.fmtp */ NULL,
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ 40000,
+	/*.microseconds_per_frame */ 20000,
+	/*.samples_per_frame */ 160,
+	/*.bytes_per_frame */ 320,
+	/*.encoded_bytes_per_frame */ 100,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_g726_init,
+	/*.encode */ switch_g726_encode,
+	/*.decode */ switch_g726_decode,
+	/*.destroy */ switch_g726_destroy,
+};
+
+
+
+static const switch_codec_implementation_t aal2_g726_16k_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 124,
+	/*.iananame */ "AAL2-G726-16",
+	/*.fmtp */ NULL,
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ 16000,
+	/*.microseconds_per_frame */ 20000,
+	/*.samples_per_frame */ 160,
+	/*.bytes_per_frame */ 320,
+	/*.encoded_bytes_per_frame */ 40,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_g726_init,
+	/*.encode */ switch_g726_encode,
+	/*.decode */ switch_g726_decode,
+	/*.destroy */ switch_g726_destroy,
+};
+
+
+static const switch_codec_implementation_t aal2_g726_24k_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 123,
+	/*.iananame */ "AAL2-G726-24",
+	/*.fmtp */ NULL,
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ 24000,
+	/*.microseconds_per_frame */ 20000,
+	/*.samples_per_frame */ 160,
+	/*.bytes_per_frame */ 320,
+	/*.encoded_bytes_per_frame */ 60,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_g726_init,
+	/*.encode */ switch_g726_encode,
+	/*.decode */ switch_g726_decode,
+	/*.destroy */ switch_g726_destroy,
+};
+
+static const switch_codec_implementation_t aal2_g726_32k_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 2,
+	/*.iananame */ "AAL2-G726-32",
+	/*.fmtp */ NULL,
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ 32000,
+	/*.microseconds_per_frame */ 20000,
+	/*.samples_per_frame */ 160,
+	/*.bytes_per_frame */ 320,
+	/*.encoded_bytes_per_frame */ 80,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_g726_init,
+	/*.encode */ switch_g726_encode,
+	/*.decode */ switch_g726_decode,
+	/*.destroy */ switch_g726_destroy,
+};
+
+static const switch_codec_implementation_t aal2_g726_40k_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 122,
+	/*.iananame */ "AAL2-G726-40",
+	/*.fmtp */ NULL,
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ 40000,
+	/*.microseconds_per_frame */ 20000,
+	/*.samples_per_frame */ 160,
+	/*.bytes_per_frame */ 320,
+	/*.encoded_bytes_per_frame */ 100,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_g726_init,
+	/*.encode */ switch_g726_encode,
+	/*.decode */ switch_g726_decode,
+	/*.destroy */ switch_g726_destroy,
+};
+
+const switch_codec_interface_t g726_16k_codec_interface = {
+	/*.interface_name */ "G.726 16k",
+	/*.implementations */ &g726_16k_implementation,
+};
+
+const switch_codec_interface_t g726_24k_codec_interface = {
+	/*.interface_name */ "G.726 24k",
+	/*.implementations */ &g726_24k_implementation,
 	/*.next */ &g726_16k_codec_interface
 };
 
-const switch_codec_interface_t g726_32k_codec_interface = { 
-	/*.interface_name */ "G.726 32k", 
-	/*.implementations */ &g726_32k_implementation, 
+const switch_codec_interface_t g726_32k_codec_interface = {
+	/*.interface_name */ "G.726 32k",
+	/*.implementations */ &g726_32k_implementation,
 	/*.next */ &g726_24k_codec_interface
 };
 
-const switch_codec_interface_t g726_40k_codec_interface = { 
-	/*.interface_name */ "G.726 40k", 
-	/*.implementations */ &g726_40k_implementation, 
+const switch_codec_interface_t g726_40k_codec_interface = {
+	/*.interface_name */ "G.726 40k",
+	/*.implementations */ &g726_40k_implementation,
 	/*.next */ &g726_32k_codec_interface
 };
 
 
 
-const switch_codec_interface_t aal2_g726_16k_codec_interface = { 
-	/*.interface_name */ "G.726 16k (aal2)", 
-	/*.implementations */ &aal2_g726_16k_implementation, 
+const switch_codec_interface_t aal2_g726_16k_codec_interface = {
+	/*.interface_name */ "G.726 16k (aal2)",
+	/*.implementations */ &aal2_g726_16k_implementation,
 	/*.next */ &g726_40k_codec_interface
 };
 
-const switch_codec_interface_t aal2_g726_24k_codec_interface = { 
-	/*.interface_name */ "G.726 24k (aal2)", 
-	/*.implementations */ &aal2_g726_24k_implementation, 
+const switch_codec_interface_t aal2_g726_24k_codec_interface = {
+	/*.interface_name */ "G.726 24k (aal2)",
+	/*.implementations */ &aal2_g726_24k_implementation,
 	/*.next */ &aal2_g726_16k_codec_interface
 };
 
-const switch_codec_interface_t aal2_g726_32k_codec_interface = { 
-	/*.interface_name */ "G.726 32k (aal2)", 
-	/*.implementations */ &aal2_g726_32k_implementation, 
+const switch_codec_interface_t aal2_g726_32k_codec_interface = {
+	/*.interface_name */ "G.726 32k (aal2)",
+	/*.implementations */ &aal2_g726_32k_implementation,
 	/*.next */ &aal2_g726_24k_codec_interface
 };
 
-const switch_codec_interface_t aal2_g726_40k_codec_interface = { 
-	/*.interface_name */ "G.726 40k (aal2)", 
-	/*.implementations */ &aal2_g726_40k_implementation, 
+const switch_codec_interface_t aal2_g726_40k_codec_interface = {
+	/*.interface_name */ "G.726 40k (aal2)",
+	/*.implementations */ &aal2_g726_40k_implementation,
 	/*.next */ &aal2_g726_32k_codec_interface
 };
 
 
 
-static switch_loadable_module_interface_t g726_module_interface = { 
-	/*.module_name */ modname, 
-	/*.endpoint_interface */ NULL, 
-	/*.timer_interface */ NULL, 
-	/*.dialplan_interface */ NULL, 
-	/*.codec_interface */ &aal2_g726_40k_codec_interface, 
-	/*.application_interface */ NULL 
+static switch_loadable_module_interface_t g726_module_interface = {
+	/*.module_name */ modname,
+	/*.endpoint_interface */ NULL,
+	/*.timer_interface */ NULL,
+	/*.dialplan_interface */ NULL,
+	/*.codec_interface */ &aal2_g726_40k_codec_interface,
+	/*.application_interface */ NULL
 };
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													 char *filename)
+													   char *filename)
 {
-	/* connect my internal structure to the blank pointer passed to me */ 
+	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &g726_module_interface;
 
-	/* indicate that the module should continue to be loaded */ 
+	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
 

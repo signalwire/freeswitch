@@ -30,7 +30,7 @@
  *
  * mod_amr.c -- GSM-AMR Codec Module
  *
- */  
+ */
 #include "switch.h"
 static const char modname[] = "mod_amr";
 
@@ -114,14 +114,14 @@ static struct {
 #endif
 
 static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_t flags,
-									  const switch_codec_settings_t *codec_settings) 
+									   const switch_codec_settings_t *codec_settings)
 {
 
 #ifdef AMR_PASSTHROUGH
 	codec->flags |= SWITCH_CODEC_FLAG_PASSTHROUGH;
-    if (codec->fmtp_in) {
-        codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->fmtp_in);
-    }
+	if (codec->fmtp_in) {
+		codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->fmtp_in);
+	}
 	return SWITCH_STATUS_SUCCESS;
 #else
 	struct amr_context *context = NULL;
@@ -139,10 +139,10 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 
 		if (codec->fmtp_in) {
 			argc = switch_separate_string(codec->fmtp_in, ';', argv, (sizeof(argv) / sizeof(argv[0])));
-			for(x = 0; x < argc; x++) {
+			for (x = 0; x < argc; x++) {
 				char *data = argv[x];
 				char *arg;
-				while(*data && *data == ' ') {
+				while (*data && *data == ' ') {
 					data++;
 				}
 				if ((arg = strchr(data, '='))) {
@@ -171,16 +171,16 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 					} else if (!strcasecmp(data, "mode-change-period")) {
 						context->change_period = atoi(arg);
 					} else if (!strcasecmp(data, "ptime")) {
-						context->ptime = (switch_byte_t)atoi(arg);
+						context->ptime = (switch_byte_t) atoi(arg);
 					} else if (!strcasecmp(data, "channels")) {
-						context->channels = (switch_byte_t)atoi(arg);
+						context->channels = (switch_byte_t) atoi(arg);
 					} else if (!strcasecmp(data, "maxptime")) {
-						context->max_ptime = (switch_byte_t)atoi(arg);
+						context->max_ptime = (switch_byte_t) atoi(arg);
 					} else if (!strcasecmp(data, "mode-set")) {
 						int y, m_argc;
 						char *m_argv[7];
 						m_argc = switch_separate_string(arg, ',', m_argv, (sizeof(m_argv) / sizeof(m_argv[0])));
-						for(y = 0; y < m_argc; y++) {
+						for (y = 0; y < m_argc; y++) {
 							context->enc_modes |= (1 << atoi(m_argv[y]));
 						}
 					}
@@ -192,7 +192,7 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 		if (context->enc_modes) {
 			for (i = 7; i > -1; i++) {
 				if (context->enc_modes & (1 << i)) {
-					context->enc_mode = (switch_byte_t)i;
+					context->enc_mode = (switch_byte_t) i;
 					break;
 				}
 			}
@@ -201,10 +201,11 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 		if (!context->enc_mode) {
 			context->enc_mode = globals.default_bitrate;
 		}
-		
-		snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d", switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0, context->enc_mode);
+
+		snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d",
+				 switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0, context->enc_mode);
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, fmtptmp);
-		
+
 		context->enc_mode = AMR_DEFAULT_BITRATE;
 		context->encoder_state = NULL;
 		context->decoder_state = NULL;
@@ -224,7 +225,7 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 #endif
 }
 
-static switch_status_t switch_amr_destroy(switch_codec_t *codec) 
+static switch_status_t switch_amr_destroy(switch_codec_t *codec)
 {
 #ifndef AMR_PASSTHROUGH
 	struct amr_context *context = codec->private_info;
@@ -240,45 +241,39 @@ static switch_status_t switch_amr_destroy(switch_codec_t *codec)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t switch_amr_encode(switch_codec_t *codec, 
-										switch_codec_t *other_codec, 
-										void *decoded_data,
-
-										uint32_t decoded_data_len, 
-										uint32_t decoded_rate, 
-										void *encoded_data,
-
-										uint32_t *encoded_data_len, 
-										uint32_t *encoded_rate, 
-										unsigned int *flag) 
+static switch_status_t switch_amr_encode(switch_codec_t *codec,
+										 switch_codec_t *other_codec,
+										 void *decoded_data,
+										 uint32_t decoded_data_len,
+										 uint32_t decoded_rate,
+										 void *encoded_data,
+										 uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
 {
 #ifdef AMR_PASSTHROUGH
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
 	return SWITCH_STATUS_FALSE;
 #else
 	struct amr_context *context = codec->private_info;
-	
+
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
-	
-	*encoded_data_len = Encoder_Interface_Encode( context->encoder_state, context->enc_mode, (int16_t *)decoded_data, (switch_byte_t *) encoded_data, 0);
+
+	*encoded_data_len =
+		Encoder_Interface_Encode(context->encoder_state, context->enc_mode, (int16_t *) decoded_data,
+								 (switch_byte_t *) encoded_data, 0);
 
 	return SWITCH_STATUS_SUCCESS;
 #endif
 }
 
-static switch_status_t switch_amr_decode(switch_codec_t *codec, 
-										switch_codec_t *other_codec, 
-										void *encoded_data,
-
-										uint32_t encoded_data_len, 
-										uint32_t encoded_rate, 
-										void *decoded_data,
-
-										uint32_t *decoded_data_len, 
-										uint32_t *decoded_rate, 
-										unsigned int *flag) 
+static switch_status_t switch_amr_decode(switch_codec_t *codec,
+										 switch_codec_t *other_codec,
+										 void *encoded_data,
+										 uint32_t encoded_data_len,
+										 uint32_t encoded_rate,
+										 void *decoded_data,
+										 uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
 {
 #ifdef AMR_PASSTHROUGH
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
@@ -290,51 +285,51 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	Decoder_Interface_Decode(context->decoder_state, (unsigned char *)encoded_data, (int16_t *)decoded_data, 0);
+	Decoder_Interface_Decode(context->decoder_state, (unsigned char *) encoded_data, (int16_t *) decoded_data, 0);
 	*decoded_data_len = codec->implementation->bytes_per_frame;
 
 	return SWITCH_STATUS_SUCCESS;
 #endif
 }
 
-/* Registration */ 
+/* Registration */
 
-static const switch_codec_implementation_t amr_implementation = { 
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-	/*.ianacode */ 96, 
-	/*.iananame */ "AMR", 
+static const switch_codec_implementation_t amr_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 96,
+	/*.iananame */ "AMR",
 	/*.fmtp */ "octet-align=0",
-	/*.samples_per_second */ 8000, 
-	/*.bits_per_second */ 0, 
-	/*.microseconds_per_frame */ 20000, 
-	/*.samples_per_frame */ 160, 
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ 0,
+	/*.microseconds_per_frame */ 20000,
+	/*.samples_per_frame */ 160,
 	/*.bytes_per_frame */ 320,
-	/*.encoded_bytes_per_frame */ 0, 
-	/*.number_of_channels */ 1, 
-	/*.pref_frames_per_packet */ 1, 
-	/*.max_frames_per_packet */ 1, 
-	/*.init */ switch_amr_init, 
-	/*.encode */ switch_amr_encode, 
-	/*.decode */ switch_amr_decode, 
-	/*.destroy */ switch_amr_destroy, 
+	/*.encoded_bytes_per_frame */ 0,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_amr_init,
+	/*.encode */ switch_amr_encode,
+	/*.decode */ switch_amr_decode,
+	/*.destroy */ switch_amr_destroy,
 };
 
-static const switch_codec_interface_t amr_codec_interface = { 
-	/*.interface_name */ "GSM-AMR", 
-	/*.implementations */ &amr_implementation, 
+static const switch_codec_interface_t amr_codec_interface = {
+	/*.interface_name */ "GSM-AMR",
+	/*.implementations */ &amr_implementation,
 };
 
-static switch_loadable_module_interface_t amr_module_interface = { 
-	/*.module_name */ modname, 
-	/*.endpoint_interface */ NULL, 
-	/*.timer_interface */ NULL, 
-	/*.dialplan_interface */ NULL, 
-	/*.codec_interface */ &amr_codec_interface, 
-	/*.application_interface */ NULL 
+static switch_loadable_module_interface_t amr_module_interface = {
+	/*.module_name */ modname,
+	/*.endpoint_interface */ NULL,
+	/*.timer_interface */ NULL,
+	/*.dialplan_interface */ NULL,
+	/*.codec_interface */ &amr_codec_interface,
+	/*.application_interface */ NULL
 };
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													 char *filename)
+													   char *filename)
 {
 #ifndef AMR_PASSTHROUGH
 	char *cf = "amr.conf";
@@ -349,17 +344,16 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 				if (!strcasecmp(var, "default-bitrate")) {
-					globals.default_bitrate = (switch_byte_t)atoi(val);
+					globals.default_bitrate = (switch_byte_t) atoi(val);
 				}
 			}
 		}
 	}
-
 #endif
 
-	/* connect my internal structure to the blank pointer passed to me */ 
+	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &amr_module_interface;
 
-	/* indicate that the module should continue to be loaded */ 
+	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

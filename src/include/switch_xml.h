@@ -62,40 +62,38 @@
 ///\ingroup core1
 ///\{
 SWITCH_BEGIN_EXTERN_C
-
-#define SWITCH_XML_BUFSIZE 1024 // size of internal memory buffers
-
-typedef enum {
-	SWITCH_XML_ROOT =	   (1 << 0), // root
-	SWITCH_XML_NAMEM =  (1 << 1), // name is malloced
-	SWITCH_XML_TXTM =   (1 << 2), // txt is malloced
-	SWITCH_XML_DUP   =  (1 << 3) // attribute name and value are strduped
+#define SWITCH_XML_BUFSIZE 1024	// size of internal memory buffers
+	typedef enum {
+	SWITCH_XML_ROOT = (1 << 0),	// root
+	SWITCH_XML_NAMEM = (1 << 1),	// name is malloced
+	SWITCH_XML_TXTM = (1 << 2),	// txt is malloced
+	SWITCH_XML_DUP = (1 << 3)	// attribute name and value are strduped
 } switch_xml_flag_t;
 
 /*! \brief A representation of an XML tree */
 struct switch_xml {
 	/*! tag name */
-    char *name;      
+	char *name;
 	/*! tag attributes { name, value, name, value, ... NULL } */
-    char **attr;
+	char **attr;
 	/*! tag character content, empty string if none */
-    char *txt;
-    /*! path to free on destroy*/
-    char *free_path;
+	char *txt;
+	/*! path to free on destroy */
+	char *free_path;
 	/*! tag offset from start of parent tag character content */
-    switch_size_t off;
+	switch_size_t off;
 	/*! next tag with same name in this section at this depth */
-    switch_xml_t next;
-	/*! next tag with different name in same section and depth*/
-    switch_xml_t sibling;
+	switch_xml_t next;
+	/*! next tag with different name in same section and depth */
+	switch_xml_t sibling;
 	/*! next tag, same section and depth, in original order */
-    switch_xml_t ordered;
-	/*! head of sub tag list, NULL if none*/
-    switch_xml_t child;
-	/*! parent tag, NULL if current tag is root tag*/
-    switch_xml_t parent;
+	switch_xml_t ordered;
+	/*! head of sub tag list, NULL if none */
+	switch_xml_t child;
+	/*! parent tag, NULL if current tag is root tag */
+	switch_xml_t parent;
 	/*! flags */
-    uint32_t flags;
+	uint32_t flags;
 };
 
 ///\brief Given a string of xml data and its length, parses it and creates an switch_xml
@@ -118,13 +116,13 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd);
 ///\param file a file to parse
 ///\return a formated xml node or NULL
 SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file);
-    
+
 ///\brief Wrapper for switch_xml_parse_str() that accepts a file stream. Reads the entire
 ///\ stream into memory and then parses it. For xml files, use switch_xml_parse_file()
 ///\ or switch_xml_parse_fd()
 ///\param fp a FILE pointer to parse
 ///\return an xml node or NULL
-SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fp(FILE *fp);
+SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fp(FILE * fp);
 
 ///\brief returns the first child tag (one level deeper) with the given name or NULL
 ///\ if not found
@@ -139,7 +137,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_child(switch_xml_t xml, const char *name
 ///\param attrname the attribute name
 ///\param value the value
 ///\return an xml node or NULL
-SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(switch_xml_t node, const char *childname, const char *attrname, const char *value);
+SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(switch_xml_t node, const char *childname, const char *attrname,
+												   const char *value);
 
 ///\brief returns the next tag of the same name in the same section and depth or NULL
 ///\ if not found
@@ -152,7 +151,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(switch_xml_t node, const char
 ///\param xml the xml node
 ///\param idx the index
 ///\return an xml node or NULL
-switch_xml_t switch_xml_idx(switch_xml_t xml, int idx);
+	 switch_xml_t switch_xml_idx(switch_xml_t xml, int idx);
 
 ///\brief returns the name of the given tag
 ///\param xml the xml node
@@ -184,7 +183,7 @@ SWITCH_DECLARE(const char *) switch_xml_attr_soft(switch_xml_t xml, const char *
 ///\ Returns NULL if not found.
 ///\param xml the xml node
 ///\return an xml node or NULL
-SWITCH_DECLARE(switch_xml_t) switch_xml_get(switch_xml_t xml, ...);
+SWITCH_DECLARE(switch_xml_t) switch_xml_get(switch_xml_t xml,...);
 
 ///\brief Converts an switch_xml structure back to xml. Returns a string of xml data that
 ///\ must be freed.
@@ -203,7 +202,7 @@ SWITCH_DECLARE(const char **) switch_xml_pi(switch_xml_t xml, const char *target
 ///\param xml the xml node
 ///\note in the case of the root node the readlock will be lifted
 SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml);
-    
+
 ///\brief returns parser error message or empty string if none
 ///\param xml the xml node
 ///\return the error string or nothing
@@ -224,7 +223,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_new(const char *name);
 ///\param name the name of the tag
 ///\param off the offset
 ///\return an xml node or NULL
-switch_xml_t switch_xml_add_child(switch_xml_t xml, const char *name, switch_size_t off);
+	 switch_xml_t switch_xml_add_child(switch_xml_t xml, const char *name, switch_size_t off);
 
 ///\brief wrapper for switch_xml_add_child() that strdup()s name
 ///\param xml the xml node
@@ -237,7 +236,7 @@ switch_xml_t switch_xml_add_child(switch_xml_t xml, const char *name, switch_siz
 ///\param xml the xml node
 ///\param txt the text
 ///\return an xml node or NULL
-switch_xml_t switch_xml_set_txt(switch_xml_t xml, const char *txt);
+	 switch_xml_t switch_xml_set_txt(switch_xml_t xml, const char *txt);
 
 ///\brief wrapper for switch_xml_set_txt() that strdup()s txt
 ///\ sets the character content for the given tag and returns the tag
@@ -316,16 +315,14 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 												  const char *tag_name,
 												  const char *key_name,
 												  const char *key_value,
-												  switch_xml_t *root,
-												  switch_xml_t *node,
-												  const char *params);
-												 
+												  switch_xml_t * root, switch_xml_t * node, const char *params);
+
 ///\brief open a config in the core registry
 ///\param file_path the name of the config section e.g. modules.conf
 ///\param node a pointer to point to the node if it is found
 ///\param params optional URL formatted params to pass to external gateways
 ///\return the root xml node associated with the current request or NULL
-SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_xml_t *node, const char *params);
+SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_xml_t * node, const char *params);
 
 ///\brief bind a search function to an external gateway
 ///\param function the search function to bind
@@ -333,7 +330,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_x
 ///\param user_data a pointer to private data to be used during the callback
 ///\return SWITCH_STATUS_SUCCESS if successful
 ///\note gateway functions will be executed in the order they were binded until a success is found else the root registry will be used
-SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_search_function_t function, switch_xml_section_t sections, void *user_data);
+SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_search_function_t function,
+																switch_xml_section_t sections, void *user_data);
 
 ///\brief parse a string for a list of sections
 ///\param str a | delimited list of section names
@@ -341,11 +339,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_searc
 SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(const char *str);
 
 SWITCH_END_EXTERN_C
-
 ///\}
-
 #endif // _SWITCH_XML_H
-
 /* For Emacs:
  * Local Variables:
  * mode:c

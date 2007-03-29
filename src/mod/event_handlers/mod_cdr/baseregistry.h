@@ -42,34 +42,32 @@
 #ifdef __cplusplus
 #include <vector>
 
-template<class T> BaseCDR* basecdr_factory(switch_mod_cdr_newchannel_t *newchannel)
+template < class T > BaseCDR * basecdr_factory(switch_mod_cdr_newchannel_t * newchannel)
 {
 	return new T(newchannel);
 }
 
-typedef BaseCDR* (*basecdr_creator)(switch_mod_cdr_newchannel_t *newchannel);
+typedef BaseCDR *(*basecdr_creator) (switch_mod_cdr_newchannel_t * newchannel);
 
-class BaseRegistry
-{
-	private:
-		std::vector<basecdr_creator> m_bases; // Stores all modules
-		std::vector<basecdr_creator> active_bases; // Stores only active modules
-	public:
-		typedef std::vector<basecdr_creator>::iterator iterator;
-		static BaseRegistry& get();
-		void add(basecdr_creator);
-		void reset_active(); // Clears the active vector for reloading of configuration.
-		void add_active(iterator);
-		iterator begin();
-		iterator end();
-		iterator active_begin();
-		iterator active_end();
+class BaseRegistry {
+  private:
+	std::vector < basecdr_creator > m_bases;	// Stores all modules
+	std::vector < basecdr_creator > active_bases;	// Stores only active modules
+  public:
+	typedef std::vector < basecdr_creator >::iterator iterator;
+	static BaseRegistry & get();
+	void add(basecdr_creator);
+	void reset_active();		// Clears the active vector for reloading of configuration.
+	void add_active(iterator);
+	iterator begin();
+	iterator end();
+	iterator active_begin();
+	iterator active_end();
 };
 
-class BaseRegistration
-{
-	public:
-		BaseRegistration(basecdr_creator);
+class BaseRegistration {
+  public:
+	BaseRegistration(basecdr_creator);
 };
 
 #define AUTO_REGISTER_BASECDR(basecdr) BaseRegistration _basecdr_registration_ ## basecdr(&basecdr_factory<basecdr>);

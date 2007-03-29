@@ -151,7 +151,7 @@ static int on_result(struct session *sess, ikspak * pak)
 {
 	iks *msg, *ctag;
 
-	msg = iks_make_pres (IKS_SHOW_AVAILABLE, "Available"); 
+	msg = iks_make_pres(IKS_SHOW_AVAILABLE, "Available");
 	ctag = iks_insert(msg, "c");
 	iks_insert_attrib(ctag, "node", "http://www.freeswitch.org/xmpp/client/caps");
 	iks_insert_attrib(ctag, "ver", "1.0.0.1");
@@ -159,7 +159,7 @@ static int on_result(struct session *sess, ikspak * pak)
 	iks_insert_attrib(ctag, "xmlns", "http://jabber.org/protocol/caps");
 
 	iks_send(sess->parser, msg);
-    iks_delete(msg);
+	iks_delete(msg);
 
 	return IKS_FILTER_EAT;
 }
@@ -231,16 +231,16 @@ static int on_stream(struct session *sess, int type, iks * node)
 }
 
 
-static int on_subscribe(void *user_data, ikspak *pak)
+static int on_subscribe(void *user_data, ikspak * pak)
 {
 	char *from = iks_find_attrib(pak->x, "from");
 	struct session *sess = (struct session *) user_data;
 
-	iks *msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, from, "mod_xmpp_event"); 
+	iks *msg = iks_make_s10n(IKS_TYPE_SUBSCRIBED, from, "mod_xmpp_event");
 	iks_send(sess->parser, msg);
 	iks_delete(msg);
-		
-	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBE, from, "mod_xmpp_event"); 
+
+	msg = iks_make_s10n(IKS_TYPE_SUBSCRIBE, from, "mod_xmpp_event");
 	iks_send(sess->parser, msg);
 	iks_delete(msg);
 
@@ -251,7 +251,7 @@ static int on_msg(void *user_data, ikspak * pak)
 {
 	char *cmd = iks_find_cdata(pak->x, "body");
 	char *arg = NULL;
-	switch_stream_handle_t stream = {0};
+	switch_stream_handle_t stream = { 0 };
 	char retbuf[2048] = "";
 	char *p;
 	iks *msg;
@@ -272,12 +272,12 @@ static int on_msg(void *user_data, ikspak * pak)
 	stream.write_function = switch_console_stream_write;
 	switch_api_execute(cmd, arg, NULL, &stream);
 
-	
+
 	msg = iks_make_msg(IKS_TYPE_NONE, globals.target_jid, retbuf);
 	iks_insert_attrib(msg, "subject", "Reply");
 	iks_send(globals.session.parser, msg);
 	iks_delete(msg);
-	
+
 
 	return 0;
 }
@@ -315,9 +315,7 @@ static void j_setup_filter(struct session *sess)
 						IKS_RULE_SUBTYPE, IKS_TYPE_ERROR, IKS_RULE_ID, "auth", IKS_RULE_DONE);
 
 	iks_filter_add_rule(my_filter, on_subscribe, sess,
-						IKS_RULE_TYPE, IKS_PAK_S10N,
-						IKS_RULE_SUBTYPE, IKS_TYPE_SUBSCRIBE,
-						IKS_RULE_DONE);
+						IKS_RULE_TYPE, IKS_PAK_S10N, IKS_RULE_SUBTYPE, IKS_TYPE_SUBSCRIBE, IKS_RULE_DONE);
 
 }
 
@@ -405,7 +403,8 @@ static switch_loadable_module_interface_t xmpp_event_module_interface = {
 	/*.application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
+													   char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &xmpp_event_module_interface;

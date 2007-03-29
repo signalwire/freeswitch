@@ -99,8 +99,8 @@ SWITCH_DECLARE(switch_memory_pool_t *) switch_hash_pool_get(switch_hash_t *ht)
 
 /* DSO functions */
 
-SWITCH_DECLARE(switch_status_t) switch_dso_load(switch_dso_handle_t **res_handle, 
-                                       const char *path, switch_memory_pool_t *ctx)
+SWITCH_DECLARE(switch_status_t) switch_dso_load(switch_dso_handle_t **res_handle,
+												const char *path, switch_memory_pool_t *ctx)
 {
 	return apr_dso_load(res_handle, path, ctx);
 }
@@ -110,9 +110,8 @@ SWITCH_DECLARE(switch_status_t) switch_dso_unload(switch_dso_handle_t *handle)
 	return apr_dso_unload(handle);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_dso_sym(switch_dso_handle_sym_t *ressym, 
-                                      switch_dso_handle_t *handle,
-                                      const char *symname)
+SWITCH_DECLARE(switch_status_t) switch_dso_sym(switch_dso_handle_sym_t * ressym,
+											   switch_dso_handle_t *handle, const char *symname)
 {
 	return apr_dso_sym(ressym, handle, symname);
 }
@@ -127,20 +126,18 @@ SWITCH_DECLARE(const char *) switch_dso_error(switch_dso_handle_t *dso, char *bu
 
 SWITCH_DECLARE(switch_status_t) switch_strftime(char *s,
 												switch_size_t *retsize,
-												switch_size_t max,
-												const char *format,
-												switch_time_exp_t *tm)
+												switch_size_t max, const char *format, switch_time_exp_t *tm)
 {
-	return apr_strftime(s, retsize, max, format, (apr_time_exp_t *)tm);
+	return apr_strftime(s, retsize, max, format, (apr_time_exp_t *) tm);
 }
 
 SWITCH_DECLARE(int) switch_snprintf(char *buf, switch_size_t len, const char *format, ...)
 {
-    va_list ap;
+	va_list ap;
 	int ret;
 	va_start(ap, format);
 	ret = apr_vsnprintf(buf, len, format, ap);
-    va_end(ap);
+	va_end(ap);
 	return ret;
 }
 
@@ -156,8 +153,7 @@ SWITCH_DECLARE(char *) switch_copy_string(char *dst, const char *src, switch_siz
 
 /* thread read write lock functions */
 
-SWITCH_DECLARE(switch_status_t) switch_thread_rwlock_create(switch_thread_rwlock_t **rwlock,
-                                                  switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_thread_rwlock_create(switch_thread_rwlock_t **rwlock, switch_memory_pool_t *pool)
 {
 	return apr_thread_rwlock_create(rwlock, pool);
 }
@@ -199,9 +195,7 @@ SWITCH_DECLARE(switch_status_t) switch_thread_rwlock_unlock(switch_thread_rwlock
 
 /* thread mutex functions */
 
-SWITCH_DECLARE(switch_status_t) switch_mutex_init(switch_mutex_t **lock,
-												unsigned int flags,
-												switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_mutex_init(switch_mutex_t **lock, unsigned int flags, switch_memory_pool_t *pool)
 {
 	return apr_thread_mutex_create(lock, flags, pool);
 }
@@ -230,27 +224,27 @@ SWITCH_DECLARE(switch_status_t) switch_mutex_trylock(switch_mutex_t *lock)
 
 SWITCH_DECLARE(switch_time_t) switch_time_now(void)
 {
-	return (switch_time_t)apr_time_now();
+	return (switch_time_t) apr_time_now();
 }
 
 SWITCH_DECLARE(switch_status_t) switch_time_exp_gmt_get(switch_time_t *result, switch_time_exp_t *input)
 {
-	return apr_time_exp_gmt_get(result, (apr_time_exp_t *)input);
+	return apr_time_exp_gmt_get(result, (apr_time_exp_t *) input);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_time_exp_get(switch_time_t *result, switch_time_exp_t *input)
 {
-	return apr_time_exp_get(result, (apr_time_exp_t *)input);
+	return apr_time_exp_get(result, (apr_time_exp_t *) input);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_time_exp_lt(switch_time_exp_t *result, switch_time_t input)
 {
-	return apr_time_exp_lt((apr_time_exp_t *)result, input);
+	return apr_time_exp_lt((apr_time_exp_t *) result, input);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_time_exp_gmt(switch_time_exp_t *result, switch_time_t input)
 {
-	return apr_time_exp_gmt((apr_time_exp_t *)result, input);
+	return apr_time_exp_gmt((apr_time_exp_t *) result, input);
 }
 
 SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
@@ -258,7 +252,7 @@ SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 #if defined(HAVE_USLEEP)
 	usleep(t);
 #elif defined(WIN32)
-	Sleep((DWORD)((t) / 1000));
+	Sleep((DWORD) ((t) / 1000));
 #else
 	apr_sleep(t);
 #endif
@@ -272,7 +266,7 @@ SWITCH_DECLARE(switch_status_t) switch_rfc822_date(char *date_str, switch_time_t
 
 SWITCH_DECLARE(switch_time_t) switch_time_make(switch_time_t sec, int32_t usec)
 {
-	return ((switch_time_t)(sec) * APR_USEC_PER_SEC + (switch_time_t)(usec));
+	return ((switch_time_t) (sec) * APR_USEC_PER_SEC + (switch_time_t) (usec));
 }
 
 
@@ -288,7 +282,8 @@ SWITCH_DECLARE(switch_status_t) switch_thread_cond_wait(switch_thread_cond_t *co
 	return apr_thread_cond_wait(cond, mutex);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_thread_cond_timedwait(switch_thread_cond_t *cond, switch_mutex_t *mutex, switch_interval_time_t timeout)
+SWITCH_DECLARE(switch_status_t) switch_thread_cond_timedwait(switch_thread_cond_t *cond, switch_mutex_t *mutex,
+															 switch_interval_time_t timeout)
 {
 	return apr_thread_cond_timedwait(cond, mutex, timeout);
 }
@@ -310,7 +305,8 @@ SWITCH_DECLARE(switch_status_t) switch_thread_cond_destroy(switch_thread_cond_t 
 
 /* file i/o stubs */
 
-SWITCH_DECLARE(switch_status_t) switch_file_open(switch_file_t **newf, const char *fname, int32_t flag, switch_fileperms_t perm, switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_file_open(switch_file_t **newf, const char *fname, int32_t flag,
+												 switch_fileperms_t perm, switch_memory_pool_t *pool)
 {
 	return apr_file_open(newf, fname, flag, perm, pool);
 }
@@ -318,9 +314,9 @@ SWITCH_DECLARE(switch_status_t) switch_file_open(switch_file_t **newf, const cha
 SWITCH_DECLARE(switch_status_t) switch_file_seek(switch_file_t *thefile, switch_seek_where_t where, int64_t *offset)
 {
 	apr_status_t rv;
-	apr_off_t off = (apr_off_t)(*offset);
+	apr_off_t off = (apr_off_t) (*offset);
 	rv = apr_file_seek(thefile, where, &off);
-	*offset = (int64_t)off;
+	*offset = (int64_t) off;
 	return rv;
 }
 
@@ -347,7 +343,7 @@ SWITCH_DECLARE(switch_status_t) switch_file_write(switch_file_t *thefile, const 
 SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename)
 {
 	int32_t wanted = APR_FINFO_TYPE;
-	apr_finfo_t info = {0};
+	apr_finfo_t info = { 0 };
 	if (filename) {
 		apr_stat(&info, filename, wanted, NULL);
 		if (info.filetype != APR_NOFILE) {
@@ -375,14 +371,16 @@ SWITCH_DECLARE(switch_status_t) switch_threadattr_stacksize_set(switch_threadatt
 	return apr_threadattr_stacksize_set(attr, stacksize);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_thread_create(switch_thread_t **new_thread, switch_threadattr_t *attr, switch_thread_start_t func, void *data, switch_memory_pool_t *cont)
+SWITCH_DECLARE(switch_status_t) switch_thread_create(switch_thread_t **new_thread, switch_threadattr_t *attr,
+													 switch_thread_start_t func, void *data, switch_memory_pool_t *cont)
 {
 	return apr_thread_create(new_thread, attr, func, data, cont);
 }
 
 /* socket stubs */
 
-SWITCH_DECLARE(switch_status_t) switch_socket_create(switch_socket_t **new_sock, int family, int type, int protocol, switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_socket_create(switch_socket_t **new_sock, int family, int type, int protocol,
+													 switch_memory_pool_t *pool)
 {
 	return apr_socket_create(new_sock, family, type, protocol, pool);
 }
@@ -407,7 +405,8 @@ SWITCH_DECLARE(switch_status_t) switch_socket_listen(switch_socket_t *sock, int3
 	return apr_socket_listen(sock, backlog);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_socket_accept(switch_socket_t **new_sock, switch_socket_t *sock, switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_socket_accept(switch_socket_t **new_sock, switch_socket_t *sock,
+													 switch_memory_pool_t *pool)
 {
 	return apr_socket_accept(new_sock, sock, pool);
 }
@@ -423,7 +422,8 @@ SWITCH_DECLARE(switch_status_t) switch_socket_send(switch_socket_t *sock, const 
 	return apr_socket_send(sock, buf, len);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_socket_sendto(switch_socket_t *sock, switch_sockaddr_t *where, int32_t flags, const char *buf, switch_size_t *len)
+SWITCH_DECLARE(switch_status_t) switch_socket_sendto(switch_socket_t *sock, switch_sockaddr_t *where, int32_t flags,
+													 const char *buf, switch_size_t *len)
 {
 	return apr_socket_sendto(sock, where, flags, buf, len);
 }
@@ -433,7 +433,8 @@ SWITCH_DECLARE(switch_status_t) switch_socket_recv(switch_socket_t *sock, char *
 	return apr_socket_recv(sock, buf, len);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_sockaddr_info_get(switch_sockaddr_t **sa, const char *hostname, int32_t family, switch_port_t port, int32_t flags, switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_sockaddr_info_get(switch_sockaddr_t **sa, const char *hostname, int32_t family,
+														 switch_port_t port, int32_t flags, switch_memory_pool_t *pool)
 {
 	return apr_sockaddr_info_get(sa, hostname, family, port, flags, pool);
 }
@@ -454,7 +455,8 @@ SWITCH_DECLARE(switch_status_t) switch_sockaddr_ip_get(char **addr, switch_socka
 	return apr_sockaddr_ip_get(addr, sa);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_mcast_join(switch_socket_t *sock, switch_sockaddr_t *join, switch_sockaddr_t *iface, switch_sockaddr_t *source)
+SWITCH_DECLARE(switch_status_t) switch_mcast_join(switch_socket_t *sock, switch_sockaddr_t *join,
+												  switch_sockaddr_t *iface, switch_sockaddr_t *source)
 {
 	return apr_mcast_join(sock, join, iface, source);
 }
@@ -464,7 +466,7 @@ SWITCH_DECLARE(switch_status_t) switch_mcast_join(switch_socket_t *sock, switch_
 
 SWITCH_DECLARE(char *) switch_get_addr(char *buf, switch_size_t len, switch_sockaddr_t *in)
 {
-    return get_addr(buf, len, &in->sa.sin.sin_addr);
+	return get_addr(buf, len, &in->sa.sin.sin_addr);
 }
 
 
@@ -479,8 +481,7 @@ SWITCH_DECLARE(int32_t) switch_sockaddr_get_family(switch_sockaddr_t *sa)
 }
 
 SWITCH_DECLARE(switch_status_t) switch_socket_recvfrom(switch_sockaddr_t *from, switch_socket_t *sock,
-                                                    int32_t flags, char *buf, 
-                                                    size_t *len)
+													   int32_t flags, char *buf, size_t *len)
 {
 	apr_status_t r;
 
@@ -498,29 +499,24 @@ SWITCH_DECLARE(switch_status_t) switch_socket_recvfrom(switch_sockaddr_t *from, 
 /* poll stubs */
 
 SWITCH_DECLARE(switch_status_t) switch_pollset_create(switch_pollset_t **pollset,
-													  uint32_t size,
-													  switch_memory_pool_t *p,
-													  uint32_t flags)
+													  uint32_t size, switch_memory_pool_t *p, uint32_t flags)
 {
 	return apr_pollset_create(pollset, size, p, flags);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_pollset_add(switch_pollset_t *pollset,
-												   const switch_pollfd_t *descriptor)
+SWITCH_DECLARE(switch_status_t) switch_pollset_add(switch_pollset_t *pollset, const switch_pollfd_t *descriptor)
 {
 	return apr_pollset_add(pollset, descriptor);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_poll(switch_pollfd_t *aprset,
-											int32_t numsock,
-											int32_t *nsds,
-											switch_interval_time_t timeout)
+											int32_t numsock, int32_t *nsds, switch_interval_time_t timeout)
 {
 	return apr_poll(aprset, numsock, nsds, timeout);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t **poll, switch_socket_t *sock,
-                                                            int16_t flags, switch_memory_pool_t *pool)
+															int16_t flags, switch_memory_pool_t *pool)
 {
 	switch_pollset_t *pollset;
 
@@ -560,25 +556,24 @@ SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t **po
 
 SWITCH_DECLARE(void) switch_uuid_format(char *buffer, const switch_uuid_t *uuid)
 {
-	apr_uuid_format(buffer, (const apr_uuid_t *)uuid);
+	apr_uuid_format(buffer, (const apr_uuid_t *) uuid);
 }
 
 SWITCH_DECLARE(void) switch_uuid_get(switch_uuid_t *uuid)
 {
-	apr_uuid_get((apr_uuid_t *)uuid);
+	apr_uuid_get((apr_uuid_t *) uuid);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_uuid_parse(switch_uuid_t *uuid, const char *uuid_str)
 {
-	return apr_uuid_parse((apr_uuid_t *)uuid, uuid_str);
+	return apr_uuid_parse((apr_uuid_t *) uuid, uuid_str);
 }
 
 
 /* FIFO queues (apr-util) */
 
 SWITCH_DECLARE(switch_status_t) switch_queue_create(switch_queue_t **queue,
-                                           unsigned int queue_capacity, 
-                                           switch_memory_pool_t *pool)
+													unsigned int queue_capacity, switch_memory_pool_t *pool)
 {
 	return apr_queue_create(queue, queue_capacity, pool);
 }
@@ -611,7 +606,7 @@ SWITCH_DECLARE(switch_status_t) switch_queue_trypush(switch_queue_t *queue, void
 SWITCH_DECLARE(int) switch_vasprintf(char **ret, const char *fmt, va_list ap)
 {
 #ifdef HAVE_VASPRINTF
-    return vasprintf(ret, fmt, ap);
+	return vasprintf(ret, fmt, ap);
 #else
 	char *buf;
 	int len;
@@ -626,7 +621,7 @@ SWITCH_DECLARE(int) switch_vasprintf(char **ret, const char *fmt, va_list ap)
 
 	len = vsnprintf(NULL, 0, fmt, ap2);
 
-	if (len > 0 && (buf = malloc((buflen = (size_t)(len + 1)))) != NULL) {
+	if (len > 0 && (buf = malloc((buflen = (size_t) (len + 1)))) != NULL) {
 		len = vsnprintf(buf, buflen, fmt, ap);
 		*ret = buf;
 	} else {

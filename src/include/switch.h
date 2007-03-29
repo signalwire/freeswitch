@@ -90,7 +90,9 @@
 #include <switch_stun.h>
 #include <switch_log.h>
 #include <switch_xml.h>
-
+#include <switch_core_event_hook.h>
+#include <switch_scheduler.h>
+#include <libteletone.h>
 
 /** \mainpage FreeSWITCH
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application

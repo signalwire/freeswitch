@@ -50,56 +50,56 @@ static struct {
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ident, globals.ident)
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_level, globals.level)
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_format, globals.format)
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_facility, globals.facility)
+	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_level, globals.level)
+	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_format, globals.format)
+	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_facility, globals.facility)
 
-static switch_loadable_module_interface_t console_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL,
-	/*.api_interface */ NULL,
-	/*.file_interface */ NULL,
-	/*.speech_interface */ NULL,
-	/*.directory_interface */ NULL
-};
+	 static switch_loadable_module_interface_t console_module_interface = {
+		 /*.module_name */ modname,
+		 /*.endpoint_interface */ NULL,
+		 /*.timer_interface */ NULL,
+		 /*.dialplan_interface */ NULL,
+		 /*.codec_interface */ NULL,
+		 /*.application_interface */ NULL,
+		 /*.api_interface */ NULL,
+		 /*.file_interface */ NULL,
+		 /*.speech_interface */ NULL,
+		 /*.directory_interface */ NULL
+	 };
 
 static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_log_level_t level)
 {
 	char *message = NULL;
-	char line_no[sizeof(int)*8+1];
+	char line_no[sizeof(int) * 8 + 1];
 	char date[80] = "";
 	switch_time_exp_t time;
 	switch_size_t retsize;
 
-	message = (char *)malloc(strlen(globals.format)+2);
+	message = (char *) malloc(strlen(globals.format) + 2);
 
-	switch_copy_string(message, globals.format, strlen(globals.format)+1);
+	switch_copy_string(message, globals.format, strlen(globals.format) + 1);
 
 	message = switch_string_replace(message, "${message}", node->content);
-	
+
 	if (switch_time_exp_lt(&time, node->timestamp) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &time);
 	message = switch_string_replace(message, "${time}", date);
-	
+
 	message = switch_string_replace(message, "${file}", node->file);
 	message = switch_string_replace(message, "${func}", node->func);
-	
+
 	snprintf(line_no, sizeof(line_no), "%d", node->line);
 	message = switch_string_replace(message, "${line}", line_no);
-	
+
 	if (!switch_strlen_zero(message)) {
 		syslog(LOG_ERR, "%s", message);
 	}
 
 	free(message);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -125,7 +125,7 @@ static switch_status_t load_config(void)
 				} else if (!strcmp(var, "level")) {
 					set_global_level(val);;
 				}
-	
+
 			}
 		}
 		switch_xml_free(xml);
@@ -148,26 +148,27 @@ static switch_status_t load_config(void)
 	return 0;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface,
+													   char *filename)
 {
 	switch_status_t status;
 	*interface = &console_module_interface;
 
-	if ((status=load_config()) != SWITCH_STATUS_SUCCESS) {
+	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 
 	openlog(globals.ident, LOG_PID, LOG_USER);
 
 	switch_log_bind_logger(mod_syslog_logger, SWITCH_LOG_DEBUG);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_unload(const switch_loadable_module_interface_t **interface)
 {
 	closelog();
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

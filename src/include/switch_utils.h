@@ -41,24 +41,19 @@
 #include <switch.h>
 
 SWITCH_BEGIN_EXTERN_C
-
 #define switch_bytes_per_frame(rate, interval) ((uint32_t)((float)rate / (1000.0f / (float)interval)))
-
 #define SWITCH_SMAX 32767
 #define SWITCH_SMIN -32768
 #define switch_normalize_to_16bit(n) if (n > SWITCH_SMAX) n = SWITCH_SMAX / 2; else if (n < SWITCH_SMIN) n = SWITCH_SMIN / 2;
-
 #define switch_codec2str(codec,buf,len) snprintf(buf, len, "%s@%uk@%ui", \
                                                  codec->implementation->iananame, \
                                                  codec->implementation->samples_per_second, \
                                                  codec->implementation->microseconds_per_frame / 1000)
-
 #ifdef WIN32
 #define switch_is_file_path(file) (*(file +1) == ':' || *file == '/' || strstr(file, SWITCH_URL_SEPARATOR))
 #else
 #define switch_is_file_path(file) ((*file == '/') || strstr(file, SWITCH_URL_SEPARATOR))
 #endif
-
 /*!
   \brief Evaluate the truthfullness of a string expression
   \param expr a string expression
@@ -69,7 +64,6 @@ SWITCH_BEGIN_EXTERN_C
 !strcasecmp(expr, "on") ||\
 !strcasecmp(expr, "true") ||\
 atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE
-
 /*!
   \brief find local ip of the box
   \param buf the buffer to write the ip adress found into
@@ -242,7 +236,8 @@ SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms);
 SWITCH_DECLARE(const char *) switch_cut_path(const char *in);
 
 SWITCH_DECLARE(char *) switch_string_replace(const char *string, const char *search, const char *replace);
-SWITCH_DECLARE(switch_status_t) switch_string_match(const char *string, size_t string_len, const char *search, size_t search_len);
+SWITCH_DECLARE(switch_status_t) switch_string_match(const char *string, size_t string_len, const char *search,
+													size_t search_len);
 
 #define SWITCH_READ_ACCEPTABLE(status) (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK)
 SWITCH_DECLARE(size_t) switch_url_encode(char *url, char *buf, size_t len);
@@ -258,9 +253,7 @@ SWITCH_DECLARE(char *) switch_url_decode(char *s);
 #endif
 
 SWITCH_END_EXTERN_C
-
 #endif
-
 /* For Emacs:
  * Local Variables:
  * mode:c

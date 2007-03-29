@@ -21,198 +21,191 @@
   else { *(samples) = sum; }
 
 #define NTOM_MUL (32768)
-static unsigned long ntom_val[2] = { NTOM_MUL>>1,NTOM_MUL>>1 };
+static unsigned long ntom_val[2] = { NTOM_MUL >> 1, NTOM_MUL >> 1 };
 static unsigned long ntom_step = NTOM_MUL;
 
 
-int synth_ntom_set_step(long m,long n)
+int synth_ntom_set_step(long m, long n)
 {
-	if(param.verbose > 1)
-		debug_printf("Init rate converter: %ld->%ld\n",m,n);
+	if (param.verbose > 1)
+		debug_printf("Init rate converter: %ld->%ld\n", m, n);
 
-	if(n >= 96000 || m >= 96000 || m == 0 || n == 0) {
-		debug_printf("NtoM converter: %d illegal rates\n",  __LINE__);
+	if (n >= 96000 || m >= 96000 || m == 0 || n == 0) {
+		debug_printf("NtoM converter: %d illegal rates\n", __LINE__);
 		return (1);
 	}
 
 	n *= NTOM_MUL;
 	ntom_step = n / m;
 
-	if(ntom_step > 8*NTOM_MUL) {
-		debug_printf("%d max. 1:8 conversion allowed!\n",  __LINE__);
+	if (ntom_step > 8 * NTOM_MUL) {
+		debug_printf("%d max. 1:8 conversion allowed!\n", __LINE__);
 		return (1);
 	}
 
-	ntom_val[0] = ntom_val[1] = NTOM_MUL>>1;
+	ntom_val[0] = ntom_val[1] = NTOM_MUL >> 1;
 
 	return (0);
-	
+
 }
 
 
-int synth_ntom_mono (struct mpstr *mp, real *bandPtr,unsigned char *samples,int *pnt)
+int synth_ntom_mono(struct mpstr *mp, real * bandPtr, unsigned char *samples, int *pnt)
 {
-  short samples_tmp[8*64];
-  short *tmp1 = samples_tmp;
-  int i,ret;
-  int pnt1 = 0;
+	short samples_tmp[8 * 64];
+	short *tmp1 = samples_tmp;
+	int i, ret;
+	int pnt1 = 0;
 
-  ret = synth_ntom(mp, bandPtr,0,(unsigned char *) samples_tmp,&pnt1);
-  samples += *pnt;
+	ret = synth_ntom(mp, bandPtr, 0, (unsigned char *) samples_tmp, &pnt1);
+	samples += *pnt;
 
-  for(i=0;i<(pnt1>>2);i++) {
-    *( (short *)samples) = *tmp1;
-    samples += 2;
-    tmp1 += 2;
-  }
-  *pnt += pnt1 >> 1;
+	for (i = 0; i < (pnt1 >> 2); i++) {
+		*((short *) samples) = *tmp1;
+		samples += 2;
+		tmp1 += 2;
+	}
+	*pnt += pnt1 >> 1;
 
-  return ret;
+	return ret;
 }
 
 
 
-int synth_ntom(struct mpstr *mp, real *bandPtr,int channel,unsigned char *out,int *pnt)
+int synth_ntom(struct mpstr *mp, real * bandPtr, int channel, unsigned char *out, int *pnt)
 {
-  static const int step = 2;
-  int bo;
-  short *samples = (short *) (out + *pnt);
+	static const int step = 2;
+	int bo;
+	short *samples = (short *) (out + *pnt);
 
-  real *b0,(*buf)[0x110];
-  int clip = 0; 
-  int bo1;
-  int ntom;
+	real *b0, (*buf)[0x110];
+	int clip = 0;
+	int bo1;
+	int ntom;
 
-  bo = mp->synth_bo;
-  
-  if(!channel) {
-    bo--;
-    bo &= 0xf;
-    buf = mp->synth_buffs[0];
-    ntom = ntom_val[1] = ntom_val[0];
-  }
-  else {
-    samples++;
-    out += 2; /* to compute the right *pnt value */
-    buf = mp->synth_buffs[1];
-    ntom = ntom_val[1];
-  }
+	bo = mp->synth_bo;
 
-  if(bo & 0x1) {
-    b0 = buf[0];
-    bo1 = bo;
-    dct64(buf[1]+((bo+1)&0xf),buf[0]+bo,bandPtr);
-  }
-  else {
-    b0 = buf[1];
-    bo1 = bo+1;
-    dct64(buf[0]+bo,buf[1]+bo+1,bandPtr);
-  }
+	if (!channel) {
+		bo--;
+		bo &= 0xf;
+		buf = mp->synth_buffs[0];
+		ntom = ntom_val[1] = ntom_val[0];
+	} else {
+		samples++;
+		out += 2;				/* to compute the right *pnt value */
+		buf = mp->synth_buffs[1];
+		ntom = ntom_val[1];
+	}
 
-  mp->synth_bo = bo;
-  
-  {
-    register int j;
-    real *window = (mp->decwin) + 16 - bo1;
- 
-    for (j=16;j;j--,window+=0x10)
-    {
-      real sum;
+	if (bo & 0x1) {
+		b0 = buf[0];
+		bo1 = bo;
+		dct64(buf[1] + ((bo + 1) & 0xf), buf[0] + bo, bandPtr);
+	} else {
+		b0 = buf[1];
+		bo1 = bo + 1;
+		dct64(buf[0] + bo, buf[1] + bo + 1, bandPtr);
+	}
 
-      ntom += ntom_step;
-      if(ntom < NTOM_MUL) {
-        window += 16;
-        b0 += 16;
-        continue;
-      }
+	mp->synth_bo = bo;
 
-      sum  = *window++ * *b0++;
-      sum -= *window++ * *b0++;
-      sum += *window++ * *b0++;
-      sum -= *window++ * *b0++;
-      sum += *window++ * *b0++;
-      sum -= *window++ * *b0++;
-      sum += *window++ * *b0++;
-      sum -= *window++ * *b0++;
-      sum += *window++ * *b0++;
-      sum -= *window++ * *b0++;
-      sum += *window++ * *b0++;
-      sum -= *window++ * *b0++;
-      sum += *window++ * *b0++;
-      sum -= *window++ * *b0++;
-      sum += *window++ * *b0++;
-      sum -= *window++ * *b0++;
+	{
+		register int j;
+		real *window = (mp->decwin) + 16 - bo1;
 
-      while(ntom >= NTOM_MUL) {
-        WRITE_SAMPLE(samples,sum,clip);
-        samples += step;
-        ntom -= NTOM_MUL;
-      }
-    }
+		for (j = 16; j; j--, window += 0x10) {
+			real sum;
 
-    ntom += ntom_step;
-    if(ntom >= NTOM_MUL)
-    {
-      real sum;
-      sum  = window[0x0] * b0[0x0];
-      sum += window[0x2] * b0[0x2];
-      sum += window[0x4] * b0[0x4];
-      sum += window[0x6] * b0[0x6];
-      sum += window[0x8] * b0[0x8];
-      sum += window[0xA] * b0[0xA];
-      sum += window[0xC] * b0[0xC];
-      sum += window[0xE] * b0[0xE];
+			ntom += ntom_step;
+			if (ntom < NTOM_MUL) {
+				window += 16;
+				b0 += 16;
+				continue;
+			}
 
-      while(ntom >= NTOM_MUL) {
-        WRITE_SAMPLE(samples,sum,clip);
-        samples += step;
-        ntom -= NTOM_MUL;
-      }
-    }
+			sum = *window++ * *b0++;
+			sum -= *window++ * *b0++;
+			sum += *window++ * *b0++;
+			sum -= *window++ * *b0++;
+			sum += *window++ * *b0++;
+			sum -= *window++ * *b0++;
+			sum += *window++ * *b0++;
+			sum -= *window++ * *b0++;
+			sum += *window++ * *b0++;
+			sum -= *window++ * *b0++;
+			sum += *window++ * *b0++;
+			sum -= *window++ * *b0++;
+			sum += *window++ * *b0++;
+			sum -= *window++ * *b0++;
+			sum += *window++ * *b0++;
+			sum -= *window++ * *b0++;
 
-    b0-=0x10,window-=0x20;
-    window += bo1<<1;
+			while (ntom >= NTOM_MUL) {
+				WRITE_SAMPLE(samples, sum, clip);
+				samples += step;
+				ntom -= NTOM_MUL;
+			}
+		}
 
-    for (j=15;j;j--,b0-=0x20,window-=0x10)
-    {
-      real sum;
+		ntom += ntom_step;
+		if (ntom >= NTOM_MUL) {
+			real sum;
+			sum = window[0x0] * b0[0x0];
+			sum += window[0x2] * b0[0x2];
+			sum += window[0x4] * b0[0x4];
+			sum += window[0x6] * b0[0x6];
+			sum += window[0x8] * b0[0x8];
+			sum += window[0xA] * b0[0xA];
+			sum += window[0xC] * b0[0xC];
+			sum += window[0xE] * b0[0xE];
 
-      ntom += ntom_step;
-      if(ntom < NTOM_MUL) {
-        window -= 16;
-        b0 += 16;
-        continue;
-      }
+			while (ntom >= NTOM_MUL) {
+				WRITE_SAMPLE(samples, sum, clip);
+				samples += step;
+				ntom -= NTOM_MUL;
+			}
+		}
 
-      sum = -*(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
-      sum -= *(--window) * *b0++;
+		b0 -= 0x10, window -= 0x20;
+		window += bo1 << 1;
 
-      while(ntom >= NTOM_MUL) {
-        WRITE_SAMPLE(samples,sum,clip);
-        samples += step;
-        ntom -= NTOM_MUL;
-      }
-    }
-  }
+		for (j = 15; j; j--, b0 -= 0x20, window -= 0x10) {
+			real sum;
 
-  ntom_val[channel] = ntom;
-  *pnt = ((unsigned char *) samples - out);
+			ntom += ntom_step;
+			if (ntom < NTOM_MUL) {
+				window -= 16;
+				b0 += 16;
+				continue;
+			}
 
-  return clip;
+			sum = -*(--window) * *b0++;
+			sum -= *(--window) * *b0++;
+			sum -= *(--window) * *b0++;
+			sum -= *(--window) * *b0++;
+			sum -= *(--window) * *b0++;
+			sum -= *(--window) * *b0++;
+			sum -= *(--window) * *b0++;
+			sum -= *(--window) * *b0++;
+			sum -= *(--window) * *b0++;
+			sum -= *(--window) * *b0++;
+			sum -= *(--window) * *b0++;
+			sum -= *(--window) * *b0++;
+			sum -= *(--window) * *b0++;
+			sum -= *(--window) * *b0++;
+			sum -= *(--window) * *b0++;
+			sum -= *(--window) * *b0++;
+
+			while (ntom >= NTOM_MUL) {
+				WRITE_SAMPLE(samples, sum, clip);
+				samples += step;
+				ntom -= NTOM_MUL;
+			}
+		}
+	}
+
+	ntom_val[channel] = ntom;
+	*pnt = ((unsigned char *) samples - out);
+
+	return clip;
 }
-
-

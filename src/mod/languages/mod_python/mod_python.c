@@ -50,54 +50,55 @@ const char modname[] = "mod_python";
 static void python_function(switch_core_session_t *session, char *data)
 {
 	char *uuid = switch_core_session_get_uuid(session);
-    char *argv[1];
-    FILE* pythonfile;
+	char *argv[1];
+	FILE *pythonfile;
 
-    argv[0] = uuid;
-    pythonfile = fopen(data, "r");
+	argv[0] = uuid;
+	pythonfile = fopen(data, "r");
 
-    Py_Initialize();
-    PySys_SetArgv(1, argv);
-    init_freeswitch();
-    PyRun_SimpleFile(pythonfile, "");
-    Py_Finalize();
+	Py_Initialize();
+	PySys_SetArgv(1, argv);
+	init_freeswitch();
+	PyRun_SimpleFile(pythonfile, "");
+	Py_Finalize();
 
 }
 
 static switch_status_t launch_python(char *text, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
-    FILE* pythonfile;
+	FILE *pythonfile;
 
-    if (switch_strlen_zero(text)) {
-        stream->write_function(stream, "USAGE: %s\n", python_run_interface.syntax);
-        return SWITCH_STATUS_SUCCESS;
-    }
+	if (switch_strlen_zero(text)) {
+		stream->write_function(stream, "USAGE: %s\n", python_run_interface.syntax);
+		return SWITCH_STATUS_SUCCESS;
+	}
 
-    pythonfile = fopen(text, "r");
+	pythonfile = fopen(text, "r");
 
-    Py_Initialize();
-    init_freeswitch();
-    PyRun_SimpleFile(pythonfile, "");
-    Py_Finalize();
+	Py_Initialize();
+	init_freeswitch();
+	PyRun_SimpleFile(pythonfile, "");
+	Py_Finalize();
 
-    stream->write_function(stream, "OK\n");
-    return SWITCH_STATUS_SUCCESS;
+	stream->write_function(stream, "OK\n");
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static const switch_application_interface_t python_application_interface = {
 	/*.interface_name */ "python",
 	/*.application_function */ python_function,
 	NULL, NULL, NULL,
-	/* flags */ SAF_NONE, /* should we support no media mode here?  If so, we need to detect the mode, and either disable the media functions or indicate media if/when we need */
-	/*.next*/ NULL
+	/* flags */ SAF_NONE,
+	/* should we support no media mode here?  If so, we need to detect the mode, and either disable the media functions or indicate media if/when we need */
+	/*.next */ NULL
 };
 
 static switch_api_interface_t python_run_interface = {
-    /*.interface_name */ "python",
-    /*.desc */ "run a python script",
-    /*.function */ launch_python,
-    /*.syntax */ "python </path/to/script>",
-    /*.next */ NULL
+	/*.interface_name */ "python",
+	/*.desc */ "run a python script",
+	/*.function */ launch_python,
+	/*.syntax */ "python </path/to/script>",
+	/*.next */ NULL
 };
 
 static switch_loadable_module_interface_t python_module_interface = {
@@ -113,7 +114,8 @@ static switch_loadable_module_interface_t python_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
+													   char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &python_module_interface;

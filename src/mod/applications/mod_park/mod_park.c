@@ -35,13 +35,13 @@ static const char modname[] = "mod_park";
 static void park_function(switch_core_session_t *session, char *data)
 {
 	switch_ivr_park(session, NULL);
-	
+
 }
 
 static const switch_application_interface_t park_application_interface = {
 	/*.interface_name */ "park",
 	/*.application_function */ park_function,
-	NULL,NULL,NULL,
+	NULL, NULL, NULL,
 	/* flags */ SAF_NONE,
 	NULL
 };
@@ -59,7 +59,8 @@ static switch_loadable_module_interface_t park_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
+													   char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &park_module_interface;

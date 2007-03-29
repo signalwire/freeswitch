@@ -44,15 +44,13 @@
 #include <switch.h>
 
 SWITCH_BEGIN_EXTERN_C
-
 /*!
   \defgroup mods Loadable Module Functions
   \ingroup core1
   \{ 
 */
-
 /*! \brief The abstraction of a loadable module */
-struct switch_loadable_module_interface {
+	struct switch_loadable_module_interface {
 	/*! the name of the module */
 	const char *module_name;
 	/*! the table of endpoints the module has implmented */
@@ -76,7 +74,7 @@ struct switch_loadable_module_interface {
 	/*! the table of chat interfaces the module has implmented */
 	const switch_chat_interface_t *chat_interface;
 	/*! the table of say interfaces the module has implmented */
-	const switch_say_interface_t *say_interface;	
+	const switch_say_interface_t *say_interface;
 	/*! the table of asr interfaces the module has implmented */
 	const switch_asr_interface_t *asr_interface;
 	/*! the table of management interfaces the module has implmented */
@@ -125,9 +123,9 @@ SWITCH_DECLARE(switch_dialplan_interface_t *) switch_loadable_module_get_dialpla
   \note only use this function if you are making a module that in turn gateways module loading to another technology
  */
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filename,
-																   switch_module_load_t switch_module_load,
-																   switch_module_runtime_t switch_module_runtime,
-																   switch_module_shutdown_t switch_module_shutdown);
+																	 switch_module_load_t switch_module_load,
+																	 switch_module_runtime_t switch_module_runtime,
+																	 switch_module_shutdown_t switch_module_shutdown);
 
 /*!
   \brief Retrieve the timer interface by it's registered name
@@ -206,8 +204,8 @@ SWITCH_DECLARE(switch_management_interface_t *) switch_loadable_module_get_manag
   \param arraylen the max size in elements of the array
   \return the number of elements added to the array
  */
-SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool, const switch_codec_implementation_t **array,
-													  int arraylen);
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool,
+													  const switch_codec_implementation_t **array, int arraylen);
 
 
 /*!
@@ -230,7 +228,8 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
   \param stream stream for output
   \return the status returned by the API call
 */
-SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_core_session_t *session, switch_stream_handle_t *stream);
+SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_core_session_t *session,
+												   switch_stream_handle_t *stream);
 
 
 
@@ -250,7 +249,8 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, ch
   \param filename the path to the module's dll or so file
   \return SWITCH_STATUS_SUCCESS on a successful load
 */
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename);
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
+													   char *filename);
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_reload(void);
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_pause(void);
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_resume(void);
@@ -266,9 +266,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void);
 ///\}
 
 SWITCH_END_EXTERN_C
-
 #endif
-
 /* For Emacs:
  * Local Variables:
  * mode:c

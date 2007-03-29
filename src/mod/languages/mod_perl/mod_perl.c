@@ -50,7 +50,7 @@ static struct {
 } globals;
 
 
-static void destroy_perl(PerlInterpreter **to_destroy)
+static void destroy_perl(PerlInterpreter ** to_destroy)
 {
 	perl_destruct(*to_destroy);
 	perl_free(*to_destroy);
@@ -59,7 +59,7 @@ static void destroy_perl(PerlInterpreter **to_destroy)
 
 static PerlInterpreter *clone_perl(void)
 {
-	return perl_clone(globals.my_perl, CLONEf_COPY_STACKS|CLONEf_KEEP_PTR_TABLE);
+	return perl_clone(globals.my_perl, CLONEf_COPY_STACKS | CLONEf_KEEP_PTR_TABLE);
 }
 
 
@@ -69,9 +69,7 @@ static void perl_function(switch_core_session_t *session, char *data)
 	char code[1024];
 	PerlInterpreter *my_perl = clone_perl();
 	sprintf(code, "package fs_perl;\n"
-			"$SWITCH_ENV{UUID} = \"%s\";\n"
-			"chdir(\"%s/perl\");\n",
-			uuid, SWITCH_GLOBAL_dirs.base_dir);
+			"$SWITCH_ENV{UUID} = \"%s\";\n" "chdir(\"%s/perl\");\n", uuid, SWITCH_GLOBAL_dirs.base_dir);
 
 	Perl_eval_pv(my_perl, code, TRUE);
 
@@ -84,8 +82,9 @@ static const switch_application_interface_t perl_application_interface = {
 	/*.interface_name */ "perl",
 	/*.application_function */ perl_function,
 	NULL, NULL, NULL,
-	/* flags */ SAF_NONE, /* should we support no media mode here?  If so, we need to detect the mode, and either disable the media functions or indicate media if/when we need */
-	/*.next*/ NULL
+	/* flags */ SAF_NONE,
+	/* should we support no media mode here?  If so, we need to detect the mode, and either disable the media functions or indicate media if/when we need */
+	/*.next */ NULL
 };
 
 static switch_loadable_module_interface_t perl_module_interface = {
@@ -102,7 +101,7 @@ static switch_loadable_module_interface_t perl_module_interface = {
 };
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void) 
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 {
 	if (globals.my_perl) {
 		perl_destruct(globals.my_perl);
@@ -113,12 +112,13 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
+													   char *filename)
 {
 
 	PerlInterpreter *my_perl;
 	char code[1024];
-	
+
 	if (!(my_perl = perl_alloc())) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate perl intrepreter\n");
 		return SWITCH_STATUS_MEMERR;
@@ -131,7 +131,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	perl_run(my_perl);
 	globals.my_perl = my_perl;
 	sprintf(code, "use lib '%s/perl';use fs_perl;use freeswitch\n", SWITCH_GLOBAL_dirs.base_dir);
-    Perl_eval_pv(my_perl, code, TRUE);
+	Perl_eval_pv(my_perl, code, TRUE);
 
 
 	/* connect my internal structure to the blank pointer passed to me */

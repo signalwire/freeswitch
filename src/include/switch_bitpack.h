@@ -36,22 +36,20 @@
 #ifndef SWITCH_BITPACK_H
 #define SWITCH_BITPACK_H
 SWITCH_BEGIN_EXTERN_C
-
 #include <switch.h>
-
 #ifdef DEBUG_BITS
 static char bb[80] = "";
 static inline char *print_bits(switch_byte_t byte, char *x)
 {
 
-    int i,j = 0;
-    x[j++] = '[';
-    for (i=7;i>=0;i--) {
-        x[j++] = (byte & (1 << i)) ? '1' : '0';
-    }
-    x[j++] = ']';
-    x[j++] = '\0';
-    return x;
+	int i, j = 0;
+	x[j++] = '[';
+	for (i = 7; i >= 0; i--) {
+		x[j++] = (byte & (1 << i)) ? '1' : '0';
+	}
+	x[j++] = ']';
+	x[j++] = '\0';
+	return x;
 }
 #endif
 
@@ -63,8 +61,8 @@ static inline char *print_bits(switch_byte_t byte, char *x)
   \{ 
 */
 
-static const uint8_t SWITCH_BITPACKED_MASKS[] = {0, 1, 3, 7, 15, 31, 63, 127, 255};
-static const uint8_t SWITCH_REVERSE_BITPACKED_MASKS[] = {255, 254, 252, 248, 240, 224, 192, 128};
+static const uint8_t SWITCH_BITPACKED_MASKS[] = { 0, 1, 3, 7, 15, 31, 63, 127, 255 };
+static const uint8_t SWITCH_REVERSE_BITPACKED_MASKS[] = { 255, 254, 252, 248, 240, 224, 192, 128 };
 
 /*!
   \brief Initialize a bitpack object
@@ -74,8 +72,11 @@ static const uint8_t SWITCH_REVERSE_BITPACKED_MASKS[] = {255, 254, 252, 248, 240
   \param buflen the length of the storage buffer
   \param mode RFC3551 or AAL2 mode (curse you backwards folks) 
 */
-DoxyDefine(void switch_bitpack_init(switch_bitpack_t *pack, int32_t bitlen, switch_byte_t *buf, uint32_t buflen, switch_bitpack_mode_t mode))
-static inline int8_t switch_bitpack_init(switch_bitpack_t *pack, switch_byte_t bitlen, switch_byte_t *buf, uint32_t buflen, switch_bitpack_mode_t mode)
+DoxyDefine(void
+		   switch_bitpack_init(switch_bitpack_t *pack, int32_t bitlen, switch_byte_t *buf, uint32_t buflen,
+							   switch_bitpack_mode_t mode))
+	 static inline int8_t switch_bitpack_init(switch_bitpack_t *pack, switch_byte_t bitlen, switch_byte_t *buf,
+											  uint32_t buflen, switch_bitpack_mode_t mode)
 {
 	if (!pack || (bitlen > SWITCH_BITS_PER_BYTE) || !buf || !buflen) {
 		return -1;
@@ -94,7 +95,7 @@ static inline int8_t switch_bitpack_init(switch_bitpack_t *pack, switch_byte_t b
 
 static inline void pack_check_over(switch_bitpack_t *pack)
 {
-	switch_byte_t this_byte = pack->this_byte;	
+	switch_byte_t this_byte = pack->this_byte;
 
 	if (pack->over) {
 		pack->bits_cur = pack->over;
@@ -117,7 +118,7 @@ static inline void pack_check_over(switch_bitpack_t *pack)
 
 		pack->bytes++;
 		pack->over = pack->under = 0;
-	}	
+	}
 }
 
 /*!
@@ -125,14 +126,14 @@ static inline void pack_check_over(switch_bitpack_t *pack)
   \param pack the pack/unpack object
 */
 DoxyDefine(int8_t switch_bitpack_done(switch_bitpack_t *pack))
-static inline int8_t switch_bitpack_done(switch_bitpack_t *pack)
+	 static inline int8_t switch_bitpack_done(switch_bitpack_t *pack)
 {
 
 	if (pack->bits_cur && pack->bits_cur < SWITCH_BITS_PER_BYTE) {
 		pack->bytes++;
 		if (pack->mode == SWITCH_BITPACK_MODE_AAL2) {
-            *pack->cur <<= SWITCH_BITS_PER_BYTE - pack->bits_cur;
-        }
+			*pack->cur <<= SWITCH_BITS_PER_BYTE - pack->bits_cur;
+		}
 	}
 
 	if (pack->over) {
@@ -149,11 +150,11 @@ static inline int8_t switch_bitpack_done(switch_bitpack_t *pack)
   \return -1 if the buffer is full otherwise 0
 */
 DoxyDefine(int8_t switch_bitpack_out(switch_bitpack_t *unpack, switch_byte_t in))
-static inline int8_t switch_bitpack_out(switch_bitpack_t *unpack, switch_byte_t in)
+	 static inline int8_t switch_bitpack_out(switch_bitpack_t *unpack, switch_byte_t in)
 {
 	switch_byte_t this_byte;
 
-	if ((uint32_t)(unpack->cur - unpack->buf) > unpack->buflen) {
+	if ((uint32_t) (unpack->cur - unpack->buf) > unpack->buflen) {
 		return -1;
 	}
 
@@ -163,7 +164,7 @@ static inline int8_t switch_bitpack_out(switch_bitpack_t *unpack, switch_byte_t 
 
 
 	pack_check_over(unpack);
-	while(unpack->bits_cur <= SWITCH_BITS_PER_BYTE) {
+	while (unpack->bits_cur <= SWITCH_BITS_PER_BYTE) {
 		switch_byte_t next = unpack->bits_cur + unpack->frame_bits;
 		switch_byte_t under_in;
 		switch_byte_t mask;
@@ -220,20 +221,20 @@ static inline int8_t switch_bitpack_out(switch_bitpack_t *unpack, switch_byte_t 
   \return -1 if the buffer is full otherwise 0
 */
 DoxyDefine(int8_t switch_bitpack_in(switch_bitpack_t *pack, switch_byte_t in))
-static inline int8_t switch_bitpack_in(switch_bitpack_t *pack, switch_byte_t in)
+	 static inline int8_t switch_bitpack_in(switch_bitpack_t *pack, switch_byte_t in)
 {
 	int next = pack->bits_cur + pack->frame_bits;
 
-	if ((uint32_t)(pack->cur - pack->buf) > pack->buflen) {
+	if ((uint32_t) (pack->cur - pack->buf) > pack->buflen) {
 		return -1;
-	} 
+	}
 
 	pack->bits_tot += pack->frame_bits;
 
 	if (next > SWITCH_BITS_PER_BYTE) {
 		switch_byte_t a = 0, b = 0, rem, nxt;
 		rem = SWITCH_BITS_PER_BYTE - pack->bits_cur;
-		nxt = pack->frame_bits - rem ;
+		nxt = pack->frame_bits - rem;
 		if (pack->mode == SWITCH_BITPACK_MODE_RFC3551) {
 			a = in & SWITCH_BITPACKED_MASKS[rem];
 			b = in >> rem;
@@ -250,7 +251,7 @@ static inline int8_t switch_bitpack_in(switch_bitpack_t *pack, switch_byte_t in)
 			pack->cur++;
 			*pack->cur |= b;
 			pack->bits_cur = nxt;
-			
+
 		}
 		pack->bytes++;
 
@@ -259,14 +260,14 @@ static inline int8_t switch_bitpack_in(switch_bitpack_t *pack, switch_byte_t in)
 		if (pack->mode == SWITCH_BITPACK_MODE_RFC3551) {
 			in <<= pack->shiftby;
 			*pack->cur |= in;
-			pack->shiftby = (switch_byte_t)(pack->shiftby + pack->frame_bits);
+			pack->shiftby = (switch_byte_t) (pack->shiftby + pack->frame_bits);
 		} else {
 			*pack->cur <<= pack->frame_bits;
 			*pack->cur |= in;
 		}
 
 		if (next == SWITCH_BITS_PER_BYTE) {
-			pack->cur++;			
+			pack->cur++;
 			pack->bytes++;
 			pack->bits_cur = pack->shiftby = 0;
 		} else {
@@ -276,11 +277,11 @@ static inline int8_t switch_bitpack_in(switch_bitpack_t *pack, switch_byte_t in)
 
 	return 0;
 }
+
 ///\}
 
 SWITCH_END_EXTERN_C
 #endif
-
 /* For Emacs:
  * Local Variables:
  * mode:c

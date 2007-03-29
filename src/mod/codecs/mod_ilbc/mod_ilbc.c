@@ -28,7 +28,7 @@
  *
  * mod_ilbc.c -- ilbc Codec Module
  *
- */  
+ */
 #include "switch.h"
 #include "iLBC_encode.h"
 #include "iLBC_decode.h"
@@ -45,11 +45,11 @@ struct ilbc_context {
 };
 
 static switch_status_t switch_ilbc_init(switch_codec_t *codec, switch_codec_flag_t flags,
-									  const switch_codec_settings_t *codec_settings) 
+										const switch_codec_settings_t *codec_settings)
 {
 	struct ilbc_context *context;
 	int encoding, decoding;
-	uint8_t ms = (uint8_t)(codec->implementation->microseconds_per_frame / 1000);
+	uint8_t ms = (uint8_t) (codec->implementation->microseconds_per_frame / 1000);
 
 
 	if (ms != 20 && ms != 30) {
@@ -82,13 +82,13 @@ static switch_status_t switch_ilbc_init(switch_codec_t *codec, switch_codec_flag
 	}
 
 	codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->implementation->fmtp);
-	
+
 	codec->private_info = context;
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
-static switch_status_t switch_ilbc_destroy(switch_codec_t *codec) 
+static switch_status_t switch_ilbc_destroy(switch_codec_t *codec)
 {
 	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
@@ -96,14 +96,12 @@ static switch_status_t switch_ilbc_destroy(switch_codec_t *codec)
 
 
 static switch_status_t switch_ilbc_encode(switch_codec_t *codec,
-										 switch_codec_t *other_codec,
-										 void *decoded_data,
-										 uint32_t decoded_data_len,
-										 uint32_t decoded_rate,
-										 void *encoded_data,
-										 uint32_t *encoded_data_len, 
-										 uint32_t *encoded_rate,
-										 unsigned int *flag)
+										  switch_codec_t *other_codec,
+										  void *decoded_data,
+										  uint32_t decoded_data_len,
+										  uint32_t decoded_rate,
+										  void *encoded_data,
+										  uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
 {
 	struct ilbc_context *context = codec->private_info;
 
@@ -120,7 +118,7 @@ static switch_status_t switch_ilbc_encode(switch_codec_t *codec,
 		float buf[240];
 
 		for (x = 0; x < loops && new_len < *encoded_data_len; x++) {
-			for(y = 0; y < context->dbytes / sizeof(short) ; y++) {
+			for (y = 0; y < context->dbytes / sizeof(short); y++) {
 				buf[y] = ddp[y];
 			}
 			iLBC_encode(edp, buf, &context->encoder);
@@ -131,7 +129,8 @@ static switch_status_t switch_ilbc_encode(switch_codec_t *codec,
 		if (new_len <= *encoded_data_len) {
 			*encoded_data_len = new_len;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer overflow!!! %u >= %u\n", new_len, *encoded_data_len);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer overflow!!! %u >= %u\n", new_len,
+							  *encoded_data_len);
 			return SWITCH_STATUS_FALSE;
 		}
 	}
@@ -139,14 +138,12 @@ static switch_status_t switch_ilbc_encode(switch_codec_t *codec,
 }
 
 static switch_status_t switch_ilbc_decode(switch_codec_t *codec,
-										switch_codec_t *other_codec,
-										void *encoded_data,
-										uint32_t encoded_data_len,
-										uint32_t encoded_rate,
-										void *decoded_data,
-										uint32_t *decoded_data_len, 
-										uint32_t *decoded_rate, 
-										unsigned int *flag)
+										  switch_codec_t *other_codec,
+										  void *encoded_data,
+										  uint32_t encoded_data_len,
+										  uint32_t encoded_rate,
+										  void *decoded_data,
+										  uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
 {
 	struct ilbc_context *context = codec->private_info;
 
@@ -165,8 +162,8 @@ static switch_status_t switch_ilbc_decode(switch_codec_t *codec,
 
 		for (x = 0; x < loops && new_len < *decoded_data_len; x++) {
 			iLBC_decode(buf, edp, &context->decoder, 1);
-			for(y = 0; y < context->dbytes / sizeof(short) ; y++) {
-				ddp[y] = (short)buf[y];
+			for (y = 0; y < context->dbytes / sizeof(short); y++) {
+				ddp[y] = (short) buf[y];
 			}
 			ddp += context->dbytes / sizeof(short);
 			edp += context->bytes;
@@ -179,160 +176,161 @@ static switch_status_t switch_ilbc_decode(switch_codec_t *codec,
 			return SWITCH_STATUS_FALSE;
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "yo this frame is an odd size [%d]\n", encoded_data_len);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "yo this frame is an odd size [%d]\n",
+						  encoded_data_len);
 		return SWITCH_STATUS_FALSE;
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
-/* Registration */ 
+/* Registration */
 
-static const switch_codec_implementation_t ilbc_8k_30ms_implementation = { 
-		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-		/*.ianacode */ 97, 
-		/*.iananame */ "iLBC", 
-		/*.fmtp */ "mode=30",
-		/*.samples_per_second */ 8000, 
-		/*.bits_per_second */ NO_OF_BYTES_30MS*8*8000/BLOCKL_30MS,
-		/*.microseconds_per_frame */ 30000,
-		/*.samples_per_frame */ 240,
-		/*.bytes_per_frame */ 480,
-		/*.encoded_bytes_per_frame */ NO_OF_BYTES_30MS,
-		/*.number_of_channels */ 1,
-		/*.pref_frames_per_packet */ 1,
-		/*.max_frames_per_packet */ 1,
-		/*.init */ switch_ilbc_init,
-		/*.encode */ switch_ilbc_encode,
-		/*.decode */ switch_ilbc_decode,
-		/*.destroy */ switch_ilbc_destroy
+static const switch_codec_implementation_t ilbc_8k_30ms_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 97,
+	/*.iananame */ "iLBC",
+	/*.fmtp */ "mode=30",
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ NO_OF_BYTES_30MS * 8 * 8000 / BLOCKL_30MS,
+	/*.microseconds_per_frame */ 30000,
+	/*.samples_per_frame */ 240,
+	/*.bytes_per_frame */ 480,
+	/*.encoded_bytes_per_frame */ NO_OF_BYTES_30MS,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_ilbc_init,
+	/*.encode */ switch_ilbc_encode,
+	/*.decode */ switch_ilbc_decode,
+	/*.destroy */ switch_ilbc_destroy
 };
 
-static const switch_codec_implementation_t ilbc_8k_20ms_implementation = { 
-		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-		/*.ianacode */ 97, 
-		/*.iananame */ "iLBC", 
-		/*.fmtp */ "mode=20",
-		/*.samples_per_second */ 8000, 
-		/*.bits_per_second */ NO_OF_BYTES_20MS*8*8000/BLOCKL_20MS, 
-		/*.microseconds_per_frame */ 20000,
-		/*.samples_per_frame */ 160,
-		/*.bytes_per_frame */ 320,
-		/*.encoded_bytes_per_frame */ NO_OF_BYTES_20MS, 
-		/*.number_of_channels */ 1,
-		/*.pref_frames_per_packet */ 1,
-		/*.max_frames_per_packet */ 1,
-		/*.init */ switch_ilbc_init,
-		/*.encode */ switch_ilbc_encode,
-		/*.decode */ switch_ilbc_decode,
-		/*.destroy */ switch_ilbc_destroy,
-		/*.next */ &ilbc_8k_30ms_implementation
-};
-
-
-
-static const switch_codec_implementation_t ilbc_102_8k_30ms_implementation = { 
-		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-		/*.ianacode */ 102, 
-		/*.iananame */ "iLBC", 
-		/*.fmtp */ "mode=30",
-		/*.samples_per_second */ 8000, 
-		/*.bits_per_second */ NO_OF_BYTES_30MS*8*8000/BLOCKL_30MS,
-		/*.microseconds_per_frame */ 30000,
-		/*.samples_per_frame */ 240,
-		/*.bytes_per_frame */ 480,
-		/*.encoded_bytes_per_frame */ NO_OF_BYTES_30MS,
-		/*.number_of_channels */ 1,
-		/*.pref_frames_per_packet */ 1,
-		/*.max_frames_per_packet */ 1,
-		/*.init */ switch_ilbc_init,
-		/*.encode */ switch_ilbc_encode,
-		/*.decode */ switch_ilbc_decode,
-		/*.destroy */ switch_ilbc_destroy
-};
-
-static const switch_codec_implementation_t ilbc_102_8k_20ms_implementation = { 
-		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-		/*.ianacode */ 102, 
-		/*.iananame */ "iLBC102", 
-		/*.fmtp */ "mode=20",
-		/*.samples_per_second */ 8000, 
-		/*.bits_per_second */ NO_OF_BYTES_20MS*8*8000/BLOCKL_20MS, 
-		/*.microseconds_per_frame */ 20000,
-		/*.samples_per_frame */ 160,
-		/*.bytes_per_frame */ 320,
-		/*.encoded_bytes_per_frame */ NO_OF_BYTES_20MS, 
-		/*.number_of_channels */ 1,
-		/*.pref_frames_per_packet */ 1,
-		/*.max_frames_per_packet */ 1,
-		/*.init */ switch_ilbc_init,
-		/*.encode */ switch_ilbc_encode,
-		/*.decode */ switch_ilbc_decode,
-		/*.destroy */ switch_ilbc_destroy,
-		/*.next */ &ilbc_102_8k_30ms_implementation
+static const switch_codec_implementation_t ilbc_8k_20ms_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 97,
+	/*.iananame */ "iLBC",
+	/*.fmtp */ "mode=20",
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ NO_OF_BYTES_20MS * 8 * 8000 / BLOCKL_20MS,
+	/*.microseconds_per_frame */ 20000,
+	/*.samples_per_frame */ 160,
+	/*.bytes_per_frame */ 320,
+	/*.encoded_bytes_per_frame */ NO_OF_BYTES_20MS,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_ilbc_init,
+	/*.encode */ switch_ilbc_encode,
+	/*.decode */ switch_ilbc_decode,
+	/*.destroy */ switch_ilbc_destroy,
+	/*.next */ &ilbc_8k_30ms_implementation
 };
 
 
-static const switch_codec_implementation_t ilbc_8k_20ms_nonext_implementation = { 
-		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-		/*.ianacode */ 97, 
-		/*.iananame */ "iLBC20ms",
-		/*.fmtp */ "mode=20",
-		/*.samples_per_second */ 8000, 
-		/*.bits_per_second */ NO_OF_BYTES_20MS*8*8000/BLOCKL_20MS, 
-		/*.microseconds_per_frame */ 20000,
-		/*.samples_per_frame */ 160,
-		/*.bytes_per_frame */ 320,
-		/*.encoded_bytes_per_frame */ NO_OF_BYTES_20MS, 
-		/*.number_of_channels */ 1,
-		/*.pref_frames_per_packet */ 1,
-		/*.max_frames_per_packet */ 1,
-		/*.init */ switch_ilbc_init,
-		/*.encode */ switch_ilbc_encode,
-		/*.decode */ switch_ilbc_decode,
-		/*.destroy */ switch_ilbc_destroy
+
+static const switch_codec_implementation_t ilbc_102_8k_30ms_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 102,
+	/*.iananame */ "iLBC",
+	/*.fmtp */ "mode=30",
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ NO_OF_BYTES_30MS * 8 * 8000 / BLOCKL_30MS,
+	/*.microseconds_per_frame */ 30000,
+	/*.samples_per_frame */ 240,
+	/*.bytes_per_frame */ 480,
+	/*.encoded_bytes_per_frame */ NO_OF_BYTES_30MS,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_ilbc_init,
+	/*.encode */ switch_ilbc_encode,
+	/*.decode */ switch_ilbc_decode,
+	/*.destroy */ switch_ilbc_destroy
+};
+
+static const switch_codec_implementation_t ilbc_102_8k_20ms_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 102,
+	/*.iananame */ "iLBC102",
+	/*.fmtp */ "mode=20",
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ NO_OF_BYTES_20MS * 8 * 8000 / BLOCKL_20MS,
+	/*.microseconds_per_frame */ 20000,
+	/*.samples_per_frame */ 160,
+	/*.bytes_per_frame */ 320,
+	/*.encoded_bytes_per_frame */ NO_OF_BYTES_20MS,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_ilbc_init,
+	/*.encode */ switch_ilbc_encode,
+	/*.decode */ switch_ilbc_decode,
+	/*.destroy */ switch_ilbc_destroy,
+	/*.next */ &ilbc_102_8k_30ms_implementation
 };
 
 
-static const switch_codec_interface_t ilbc_20ms_codec_interface = { 
-		/*.interface_name */ "ilbc", 
-		/*.implementations */ &ilbc_8k_20ms_nonext_implementation
+static const switch_codec_implementation_t ilbc_8k_20ms_nonext_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 97,
+	/*.iananame */ "iLBC20ms",
+	/*.fmtp */ "mode=20",
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ NO_OF_BYTES_20MS * 8 * 8000 / BLOCKL_20MS,
+	/*.microseconds_per_frame */ 20000,
+	/*.samples_per_frame */ 160,
+	/*.bytes_per_frame */ 320,
+	/*.encoded_bytes_per_frame */ NO_OF_BYTES_20MS,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_ilbc_init,
+	/*.encode */ switch_ilbc_encode,
+	/*.decode */ switch_ilbc_decode,
+	/*.destroy */ switch_ilbc_destroy
 };
 
-static const switch_codec_interface_t ilbc_102_codec_interface = { 
-		/*.interface_name */ "ilbc", 
-		/*.implementations */ &ilbc_102_8k_20ms_implementation, 
-		/*.next*/ &ilbc_20ms_codec_interface
+
+static const switch_codec_interface_t ilbc_20ms_codec_interface = {
+	/*.interface_name */ "ilbc",
+	/*.implementations */ &ilbc_8k_20ms_nonext_implementation
 };
 
-static const switch_codec_interface_t ilbc_codec_interface = { 
-		/*.interface_name */ "ilbc", 
-		/*.implementations */ &ilbc_8k_20ms_implementation, 
-		/*.next*/ &ilbc_102_codec_interface
+static const switch_codec_interface_t ilbc_102_codec_interface = {
+	/*.interface_name */ "ilbc",
+	/*.implementations */ &ilbc_102_8k_20ms_implementation,
+	/*.next */ &ilbc_20ms_codec_interface
+};
+
+static const switch_codec_interface_t ilbc_codec_interface = {
+	/*.interface_name */ "ilbc",
+	/*.implementations */ &ilbc_8k_20ms_implementation,
+	/*.next */ &ilbc_102_codec_interface
 };
 
 
-static switch_loadable_module_interface_t ilbc_module_interface = { 
-		/*.module_name */ modname, 
-		/*.endpoint_interface */ NULL, 
-		/*.timer_interface */ NULL, 
-		/*.dialplan_interface */ NULL, 
-		/*.codec_interface */ &ilbc_codec_interface, 
-		/*.application_interface */ NULL 
+static switch_loadable_module_interface_t ilbc_module_interface = {
+	/*.module_name */ modname,
+	/*.endpoint_interface */ NULL,
+	/*.timer_interface */ NULL,
+	/*.dialplan_interface */ NULL,
+	/*.codec_interface */ &ilbc_codec_interface,
+	/*.application_interface */ NULL
 };
 
 
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-														char *filename)
+													   char *filename)
 {
-	
-		/* connect my internal structure to the blank pointer passed to me */ 
-		*module_interface = &ilbc_module_interface;
-	
 
-		/* indicate that the module should continue to be loaded */ 
-		return SWITCH_STATUS_SUCCESS;
+	/* connect my internal structure to the blank pointer passed to me */
+	*module_interface = &ilbc_module_interface;
+
+
+	/* indicate that the module should continue to be loaded */
+	return SWITCH_STATUS_SUCCESS;
 
 }
 

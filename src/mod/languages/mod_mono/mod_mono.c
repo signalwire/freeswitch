@@ -39,16 +39,17 @@
 //#include <gc/gc.h>
 #include <switch.h>
 
-#define SWITCH_MONO_MODULES  "mono/" 
+#define SWITCH_MONO_MODULES  "mono/"
 #define SWITCH_MONO_LIBDIR   "lib/"
 #define SWITCH_MONO_ASSEMBLY "FreeSwitch.dll"
 
 /* Module functions */
 switch_status_t mod_mono_load_modules(const char *module_dir);
-MonoClass* mod_mono_find_assembly_class(MonoImage *image);
+MonoClass *mod_mono_find_assembly_class(MonoImage * image);
 
 /* Managed functions */
-void mod_mono_switch_console_printf(switch_text_channel_t channel, char *file, const char *func, int line, char *fmt, char *msg);
+void mod_mono_switch_console_printf(switch_text_channel_t channel, char *file, const char *func, int line, char *fmt,
+									char *msg);
 
 static const char modname[] = "mod_mono";
 static switch_memory_pool_t *mono_pool = NULL;
@@ -61,7 +62,7 @@ static struct {
 typedef struct {
 	MonoAssembly *assembly;
 	MonoClass *class;
-	MonoObject *object;	
+	MonoObject *object;
 } mono_plugin;
 
 static switch_loadable_module_interface_t mono_module_interface = {
@@ -74,7 +75,8 @@ static switch_loadable_module_interface_t mono_module_interface = {
  * This function will initialise the memory pool and plugin hash for this module,
  * it will then initialise a new mono domain.
  */
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface,
+													   char *filename)
 {
 	*interface = &mono_module_interface;
 
@@ -83,23 +85,24 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate memory pool\n");
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	/* Initialise plugin hash */
 	if (switch_core_hash_init(&globals.plugins, mono_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not initialise plugins hash\n");
 		return SWITCH_STATUS_FALSE;
-	}		
-	
+	}
+
 	/* Construct the path to the FreeSwitch assembly, then check to make sure it exists */
-	switch_size_t assembly_dir_len  = strlen(SWITCH_GLOBAL_dirs.base_dir) + strlen(SWITCH_MONO_LIBDIR) + 2; /* Account for / and \0 */
+	switch_size_t assembly_dir_len = strlen(SWITCH_GLOBAL_dirs.base_dir) + strlen(SWITCH_MONO_LIBDIR) + 2;	/* Account for / and \0 */
 	switch_size_t assembly_file_len = assembly_dir_len + strlen(SWITCH_MONO_ASSEMBLY);
-	char *assembly_dir  = (char *) switch_core_alloc(mono_pool, assembly_dir_len);
+	char *assembly_dir = (char *) switch_core_alloc(mono_pool, assembly_dir_len);
 	char *assembly_file = (char *) switch_core_alloc(mono_pool, assembly_file_len);
 
 	apr_finfo_t *assembly_finfo = (apr_finfo_t *) switch_core_alloc(mono_pool, sizeof(*assembly_finfo));
 
 	snprintf(assembly_dir, assembly_dir_len, "%s/%s", SWITCH_GLOBAL_dirs.base_dir, SWITCH_MONO_LIBDIR);
-	snprintf(assembly_file, assembly_file_len, "%s/%s%s", SWITCH_GLOBAL_dirs.base_dir, SWITCH_MONO_LIBDIR, SWITCH_MONO_ASSEMBLY);
+	snprintf(assembly_file, assembly_file_len, "%s/%s%s", SWITCH_GLOBAL_dirs.base_dir, SWITCH_MONO_LIBDIR,
+			 SWITCH_MONO_ASSEMBLY);
 
 	if (apr_stat(assembly_finfo, assembly_file, 0, mono_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not find FreeSwitch.NET assembly\n");
@@ -108,22 +111,21 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 	/* Mono wants to know where it will be able to find the FreeSwitch assembly if it's not in the GAC */
 	if (getenv("MONO_PATH") != NULL) {
-		switch_size_t mono_path_len = strlen(getenv("MONO_PATH")) + strlen(assembly_dir) + 2; /* Account for : and \0 */ 
+		switch_size_t mono_path_len = strlen(getenv("MONO_PATH")) + strlen(assembly_dir) + 2;	/* Account for : and \0 */
 		char *mono_path = (char *) switch_core_alloc(mono_pool, mono_path_len);
-	
+
 		snprintf(mono_path, mono_path_len, "%s:%s", getenv("MONO_PATH"), assembly_dir);
 
 		setenv("MONO_PATH", mono_path, 1);
-	}
-	else
+	} else
 		setenv("MONO_PATH", assembly_dir, 1);
 
 	/* Now find where our managed modules are */
-	switch_size_t module_dir_len = strlen(SWITCH_GLOBAL_dirs.mod_dir) + strlen(SWITCH_MONO_MODULES) + 2; /* Account for / and \0 */
+	switch_size_t module_dir_len = strlen(SWITCH_GLOBAL_dirs.mod_dir) + strlen(SWITCH_MONO_MODULES) + 2;	/* Account for / and \0 */
 	char *module_dir = (char *) switch_core_alloc(mono_pool, module_dir_len);
 
 	snprintf(module_dir, module_dir_len, "%s/%s", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_MONO_MODULES);
-	
+
 	/* Initialise the mono domain */
 	if (!(globals.domain = mono_jit_init("freeswitch"))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error initialising mono runtime\n");
@@ -139,7 +141,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 		return SWITCH_STATUS_FALSE;
 	}
 
-	/* Finally, go through and initialise each plugin before returning SUCCESS */ 
+	/* Finally, go through and initialise each plugin before returning SUCCESS */
 	switch_hash_index_t *p = NULL;
 
 	for (p = switch_hash_first(mono_pool, globals.plugins); p; p = switch_hash_next(p)) {
@@ -150,10 +152,10 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 		switch_hash_this(p, &key, key_length, &value);
 		plugin = (mono_plugin *) value;
-		
+
 		mono_runtime_object_init(plugin->object);
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -175,16 +177,16 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 /*
  * This function will load the managed modules
  *
- */ 
+ */
 switch_status_t mod_mono_load_modules(const char *module_dir)
 {
 	apr_finfo_t *module_finfo = (apr_finfo_t *) switch_core_alloc(mono_pool, sizeof(*module_finfo));
-	
+
 	if (apr_stat(module_finfo, module_dir, 0, mono_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not access module dir!.\n");
 		return SWITCH_STATUS_FALSE;
 	}
-	
+
 	apr_dir_t *module_dir_handle;
 	char *file;
 	size_t len;
@@ -196,22 +198,21 @@ switch_status_t mod_mono_load_modules(const char *module_dir)
 	MonoAssembly *assembly;
 	MonoImage *image;
 	gpointer iter;
-	iter=NULL;
-	mono_plugin *plugin=NULL;
+	iter = NULL;
+	mono_plugin *plugin = NULL;
 
 	if (apr_dir_open(&module_dir_handle, module_dir, mono_pool) != SWITCH_STATUS_SUCCESS)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Could not open directory: %s\n", module_dir);
 
 	/* Read the modules directory */
-	while (apr_dir_read(&finfo, finfo_flags, module_dir_handle) == SWITCH_STATUS_SUCCESS)
-	{
+	while (apr_dir_read(&finfo, finfo_flags, module_dir_handle) == SWITCH_STATUS_SUCCESS) {
 		assembly = (MonoAssembly *) switch_core_alloc(mono_pool, sizeof(assembly));
 		image = (MonoImage *) switch_core_alloc(mono_pool, sizeof(image));
 		const char *fname = finfo.fname;
 
 		if (finfo.filetype != APR_REG)
 			continue;
-                        
+
 		if (!fname)
 			fname = finfo.name;
 
@@ -222,7 +223,7 @@ switch_status_t mod_mono_load_modules(const char *module_dir)
 			continue;
 
 		len = strlen(module_dir) + strlen(fname) + 2;
-		file = (char *)switch_core_alloc(mono_pool, len);
+		file = (char *) switch_core_alloc(mono_pool, len);
 		snprintf(file, len, "%s%s", module_dir, fname);
 
 		/* Attempt to open the assembly */
@@ -233,53 +234,54 @@ switch_status_t mod_mono_load_modules(const char *module_dir)
 			continue;
 		}
 
-		/* Get the image from assembly */	
+		/* Get the image from assembly */
 		image = mono_assembly_get_image(assembly);
-	
-		plugin = (mono_plugin *)switch_core_alloc(mono_pool, sizeof(*plugin));
+
+		plugin = (mono_plugin *) switch_core_alloc(mono_pool, sizeof(*plugin));
 
 		plugin->assembly = assembly;
-		plugin->class    = mod_mono_find_assembly_class(mono_assembly_get_image(plugin->assembly));
+		plugin->class = mod_mono_find_assembly_class(mono_assembly_get_image(plugin->assembly));
 
 		if (!plugin->class)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No plugin class\n");
 
 		plugin->object = mono_object_new(globals.domain, plugin->class);
 
-		switch_core_hash_insert(globals.plugins, (char *) mono_image_get_name(mono_assembly_get_image(assembly)), plugin);
+		switch_core_hash_insert(globals.plugins, (char *) mono_image_get_name(mono_assembly_get_image(assembly)),
+								plugin);
 
 		plugin = NULL;
-	}	
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
 /*
  *
- */ 
-MonoClass* mod_mono_find_assembly_class(MonoImage *image)
+ */
+MonoClass *mod_mono_find_assembly_class(MonoImage * image)
 {
 	MonoClass *class, *parent_class = NULL;
 	int i, total;
 
 	total = mono_image_get_table_rows(image, MONO_TABLE_TYPEDEF);
-	
-	for (i = 1; i <= total; ++i)
-	{
+
+	for (i = 1; i <= total; ++i) {
 		class = mono_class_get(image, MONO_TOKEN_TYPE_DEF | i);
 		parent_class = mono_class_get_parent(class);
-		
-		if (parent_class) 
+
+		if (parent_class)
 			if (!strcmp("Module", mono_class_get_name(parent_class)))
 				return class;
 	}
-						
+
 	return NULL;
 }
 
 /*
  *
  */
-void mono_switch_console_printf(switch_text_channel_t channel, char *file, const char *func, int line, char *fmt, char *msg)
+void mono_switch_console_printf(switch_text_channel_t channel, char *file, const char *func, int line, char *fmt,
+								char *msg)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, msg);
 }

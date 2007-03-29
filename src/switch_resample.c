@@ -53,9 +53,9 @@
 
 
 SWITCH_DECLARE(switch_status_t) switch_resample_create(switch_audio_resampler_t **new_resampler,
-													 int from_rate,
-													 switch_size_t from_size,
-													 int to_rate, uint32_t to_size, switch_memory_pool_t *pool)
+													   int from_rate,
+													   switch_size_t from_size,
+													   int to_rate, uint32_t to_size, switch_memory_pool_t *pool)
 {
 #ifdef DISABLE_RESAMPLE
 	*new_resampler = NULL;
@@ -76,7 +76,7 @@ SWITCH_DECLARE(switch_status_t) switch_resample_create(switch_audio_resampler_t 
 
 	resampler->resampler = resample_open(QUALITY, resampler->factor, resampler->factor);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Activate Resampler %d->%d %f\n", resampler->from_rate,
-						  resampler->to_rate, resampler->factor);
+					  resampler->to_rate, resampler->factor);
 	resampler->from_size = from_size;
 	resampler->from = (float *) switch_core_alloc(pool, resampler->from_size);
 	resampler->to_size = to_size;
@@ -88,8 +88,8 @@ SWITCH_DECLARE(switch_status_t) switch_resample_create(switch_audio_resampler_t 
 }
 
 
-SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler_t *resampler, float *src, int srclen, float *dst,
-											uint32_t dstlen, int last)
+SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler_t *resampler, float *src, int srclen,
+												 float *dst, uint32_t dstlen, int last)
 {
 #ifdef DISABLE_RESAMPLE
 	return 0;
@@ -206,14 +206,14 @@ SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples
 	int sum_rnd = 0;
 
 	assert(divisor);
-	
-	for(i = 0; i < samples; i++, sum_rnd = 0) {
-		for(x = 0; x < 7; x++) {
+
+	for (i = 0; i < samples; i++, sum_rnd = 0) {
+		for (x = 0; x < 7; x++) {
 			rnd = (int16_t) (rand() * sizeof(int16_t));
 			sum_rnd += rnd;
 		}
 		switch_normalize_to_16bit(sum_rnd);
-		*data = (int16_t)((int16_t)sum_rnd / (int)divisor);
+		*data = (int16_t) ((int16_t) sum_rnd / (int) divisor);
 
 		data++;
 	}
@@ -222,8 +222,8 @@ SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples
 
 SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, int32_t vol)
 {
-    double newrate = 0;
-    int div = 0;
+	double newrate = 0;
+	int div = 0;
 
 	switch_normalize_volume(vol);
 
@@ -248,7 +248,7 @@ SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, i
 		for (x = 0; x < samples; x++) {
 			tmp = (int32_t) (div ? fp[x] / newrate : fp[x] * newrate);
 			switch_normalize_to_16bit(tmp);
-			fp[x] = (int16_t)tmp;
+			fp[x] = (int16_t) tmp;
 		}
 	}
 }

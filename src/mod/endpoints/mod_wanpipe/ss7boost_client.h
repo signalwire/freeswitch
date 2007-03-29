@@ -70,7 +70,7 @@
 					(dest)->flags |= ((src)->flags & (flagz)); \
 					} while (0)
 
-typedef  t_sigboost ss7boost_client_event_t;
+typedef t_sigboost ss7boost_client_event_t;
 typedef uint32_t ss7boost_client_event_id_t;
 
 struct ss7boost_client_connection {
@@ -80,7 +80,7 @@ struct ss7boost_client_connection {
 	ss7boost_client_event_t event;
 	unsigned int flags;
 	switch_mutex_t *mutex;
-	switch_memory_pool_t * pool;
+	switch_memory_pool_t *pool;
 };
 
 typedef enum {
@@ -89,19 +89,19 @@ typedef enum {
 
 typedef struct ss7boost_client_connection ss7boost_client_connection_t;
 
-SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_close(ss7boost_client_connection_t *mcon);
-SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_open(ss7boost_client_connection_t *mcon,
-															char *local_ip,
-															int local_port,
-															char *ip,
-															int port,
-															switch_memory_pool_t *pool);
-SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_read(ss7boost_client_connection_t *mcon, ss7boost_client_event_t **event);
-SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_write(ss7boost_client_connection_t *mcon, ss7boost_client_event_t *event);
-SWITCH_DECLARE(void) ss7boost_client_event_init(ss7boost_client_event_t *event, ss7boost_client_event_id_t event_id, int chan, int span);
-SWITCH_DECLARE(void) ss7boost_client_call_init(ss7boost_client_event_t *event, char *calling, char *called, int setup_id);
+SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_close(ss7boost_client_connection_t * mcon);
+SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_open(ss7boost_client_connection_t * mcon,
+																char *local_ip,
+																int local_port,
+																char *ip, int port, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_read(ss7boost_client_connection_t * mcon,
+																ss7boost_client_event_t ** event);
+SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_write(ss7boost_client_connection_t * mcon,
+																 ss7boost_client_event_t * event);
+SWITCH_DECLARE(void) ss7boost_client_event_init(ss7boost_client_event_t * event, ss7boost_client_event_id_t event_id,
+												int chan, int span);
+SWITCH_DECLARE(void) ss7boost_client_call_init(ss7boost_client_event_t * event, char *calling, char *called,
+											   int setup_id);
 SWITCH_DECLARE(char *) ss7boost_client_event_id_name(uint32_t event_id);
 
 #endif
-
-

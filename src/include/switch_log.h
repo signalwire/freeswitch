@@ -41,35 +41,32 @@
 #include <switch.h>
 
 SWITCH_BEGIN_EXTERN_C
-
 ///\defgroup log Logger Routines
 ///\ingroup core1
 ///\{
-
-
 /*! \brief Log Data
  */
-typedef struct {
+	typedef struct {
 	/*! The complete log message */
 	char *data;
-	/*! The file where the message originated */	
+	/*! The file where the message originated */
 	char *file;
-	/*! The line number where the message originated */	
+	/*! The line number where the message originated */
 	uint32_t line;
-	/*! The function where the message originated */	
+	/*! The function where the message originated */
 	char *func;
-	/*! The log level of the message */	
+	/*! The log level of the message */
 	switch_log_level_t level;
 	/*! The time when the log line was sent */
 	switch_time_t timestamp;
-	/*! A pointer to where the actual content of the message starts (skipping past the preformatted portion) */	
+	/*! A pointer to where the actual content of the message starts (skipping past the preformatted portion) */
 	char *content;
 
 	/* To maintain abi, only add new elements to the end of this struct and do not delete any elements */
 
 } switch_log_node_t;
 
-typedef switch_status_t (*switch_log_function_t)(const switch_log_node_t *node, switch_log_level_t level);
+typedef switch_status_t (*switch_log_function_t) (const switch_log_node_t *node, switch_log_level_t level);
 
 
 /*! 
@@ -97,7 +94,8 @@ SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void);
   \param ... variable args
   \note there are channel macros to supply the first 4 parameters
 */
-SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char *file, const char *func, int line, switch_log_level_t level, const char *fmt, ...) PRINTF_FUNCTION(6,7);
+SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char *file, const char *func, int line,
+									   switch_log_level_t level, const char *fmt, ...) PRINTF_FUNCTION(6, 7);
 
 /*! 
   \brief Shut down  the logging engine
@@ -121,9 +119,7 @@ SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(const char *str);
 
 ///\}
 SWITCH_END_EXTERN_C
-
 #endif
-
 /* For Emacs:
  * Local Variables:
  * mode:c

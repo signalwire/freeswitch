@@ -46,12 +46,12 @@ static struct {
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_directory_name, globals.directory_name)
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_host, globals.host)
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dn, globals.dn)
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_pass, globals.pass)
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_base, globals.base)
+	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_host, globals.host)
+	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dn, globals.dn)
+	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_pass, globals.pass)
+	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_base, globals.base)
 
-static void load_config(void)
+	 static void load_config(void)
 {
 	char *cf = "dialplan_directory.conf";
 	switch_xml_t cfg, xml, settings, param;
@@ -100,19 +100,16 @@ static switch_caller_extension_t *directory_dialplan_hunt(switch_core_session_t 
 	caller_profile = switch_channel_get_caller_profile(channel);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Hello %s You Dialed %s!\n", caller_profile->caller_id_name,
-						  caller_profile->destination_number);
-	
-	
-	if (! (globals.directory_name && globals.host && globals.dn && globals.base && globals.pass)) {
+					  caller_profile->destination_number);
+
+
+	if (!(globals.directory_name && globals.host && globals.dn && globals.base && globals.pass)) {
 		return NULL;
 	}
 
-	if (switch_core_directory_open(&dh, 
+	if (switch_core_directory_open(&dh,
 								   globals.directory_name,
-								   globals.host,
-								   globals.dn,
-								   globals.pass,
-								   NULL) != SWITCH_STATUS_SUCCESS) {
+								   globals.host, globals.dn, globals.pass, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't connect\n");
 		return NULL;
 	}
@@ -127,10 +124,10 @@ static switch_caller_extension_t *directory_dialplan_hunt(switch_core_session_t 
 	while (switch_core_directory_next(&dh) == SWITCH_STATUS_SUCCESS) {
 		while (switch_core_directory_next_pair(&dh, &var, &val) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DIRECTORY VALUE [%s]=[%s]\n", var, val);
-			if(!strcasecmp(var, "callflow")) {
+			if (!strcasecmp(var, "callflow")) {
 				if (!extension) {
 					if ((extension = switch_caller_extension_new(session, caller_profile->destination_number,
-																  caller_profile->destination_number)) == 0) {
+																 caller_profile->destination_number)) == 0) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
 						goto out;
 					}
@@ -143,11 +140,11 @@ static switch_caller_extension_t *directory_dialplan_hunt(switch_core_session_t 
 			}
 		}
 	}
- out:
-	
+  out:
+
 	switch_core_directory_close(&dh);
 
-	
+
 	if (extension) {
 		switch_channel_set_state(channel, CS_EXECUTE);
 	}
@@ -159,7 +156,7 @@ static switch_caller_extension_t *directory_dialplan_hunt(switch_core_session_t 
 static const switch_dialplan_interface_t directory_dialplan_interface = {
 	/*.interface_name = */ "directory",
 	/*.hunt_function = */ directory_dialplan_hunt
-	/*.next = NULL */
+		/*.next = NULL */
 };
 
 static const switch_loadable_module_interface_t directory_dialplan_module_interface = {
@@ -171,7 +168,8 @@ static const switch_loadable_module_interface_t directory_dialplan_module_interf
 	/*.application_interface = */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
+													   char *filename)
 {
 
 	load_config();

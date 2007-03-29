@@ -52,53 +52,53 @@
 #ifndef ODBCCDR
 #define ODBCCDR
 
-class OdbcCDR : public BaseCDR {
-	public:
-		OdbcCDR();
-		OdbcCDR(switch_mod_cdr_newchannel_t *newchannel);
-		//OdbcCDR(const MysqlCDR& copyFrom);
-		virtual ~OdbcCDR();
-		virtual bool process_record();
-		virtual void connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settings, switch_xml_t& param);
-		virtual void disconnect();
-		virtual bool is_activated();
-		virtual void tempdump_record();
-		virtual void reread_tempdumped_records();
-		virtual std::string get_display_name();
+class OdbcCDR:public BaseCDR {
+  public:
+	OdbcCDR();
+	OdbcCDR(switch_mod_cdr_newchannel_t * newchannel);
+	//OdbcCDR(const MysqlCDR& copyFrom);
+	virtual ~ OdbcCDR();
+	virtual bool process_record();
+	virtual void connect(switch_xml_t & cfg, switch_xml_t & xml, switch_xml_t & settings, switch_xml_t & param);
+	virtual void disconnect();
+	virtual bool is_activated();
+	virtual void tempdump_record();
+	virtual void reread_tempdumped_records();
+	virtual std::string get_display_name();
 
-	private:
-		static bool activated;
-		static char sql_query[1024];
-		static modcdr_time_convert_t convert_time;
-		static std::string display_name;
-		static std::string tmp_sql_query; // Object must exist to bind the statement, this used for generating the sql
-		static char sql_query_chanvars[355];
-		static char sql_query_ping[10];
-		static bool connectionstate;
-		static bool logchanvars;
-		static SQLHENV ODBC_env;     /* global ODBC Environment */
-		static SQLHDBC ODBC_con;     /* global ODBC Connection Handle */
-		static SQLHSTMT ODBC_stmt;
-		static SQLHSTMT ODBC_stmt_chanvars;
-		static SQLHSTMT ODBC_stmt_ping;
-		static std::list<std::string> chanvars_fixed_list;
-		static std::vector<switch_mod_cdr_sql_types_t> chanvars_fixed_types;
-		static std::list<std::string> chanvars_supp_list; // The supplemental list
-		static bool repeat_fixed_in_supp;
-		static char dsn[255];
-		static char hostname[255];
-		static char username[255];
-		static char dbname[255];
-		static char password[255];
-		static char tablename[255];
-		static char tablename_chanvars[255];
-		//static fstream tmpfile;
-		char odbc_callstartdate[128];
-		char odbc_callanswerdate[128];
-		char odbc_calltransferdate[128];
-		char odbc_callenddate[128];
-		void disconnect_stage_1();
-		void connect_to_database();
+  private:
+	static bool activated;
+	static char sql_query[1024];
+	static modcdr_time_convert_t convert_time;
+	static std::string display_name;
+	static std::string tmp_sql_query;	// Object must exist to bind the statement, this used for generating the sql
+	static char sql_query_chanvars[355];
+	static char sql_query_ping[10];
+	static bool connectionstate;
+	static bool logchanvars;
+	static SQLHENV ODBC_env;	/* global ODBC Environment */
+	static SQLHDBC ODBC_con;	/* global ODBC Connection Handle */
+	static SQLHSTMT ODBC_stmt;
+	static SQLHSTMT ODBC_stmt_chanvars;
+	static SQLHSTMT ODBC_stmt_ping;
+	static std::list < std::string > chanvars_fixed_list;
+	static std::vector < switch_mod_cdr_sql_types_t > chanvars_fixed_types;
+	static std::list < std::string > chanvars_supp_list;	// The supplemental list
+	static bool repeat_fixed_in_supp;
+	static char dsn[255];
+	static char hostname[255];
+	static char username[255];
+	static char dbname[255];
+	static char password[255];
+	static char tablename[255];
+	static char tablename_chanvars[255];
+	//static fstream tmpfile;
+	char odbc_callstartdate[128];
+	char odbc_callanswerdate[128];
+	char odbc_calltransferdate[128];
+	char odbc_callenddate[128];
+	void disconnect_stage_1();
+	void connect_to_database();
 };
 
 #endif

@@ -32,25 +32,27 @@
 #include <switch.h>
 
 static const char modname[] = "mod_console";
-static const uint8_t STATIC_LEVELS[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+static const uint8_t STATIC_LEVELS[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
 static int COLORIZE = 0;
 #ifdef WIN32
 static HANDLE hStdout;
 static WORD wOldColorAttrs;
 static CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
-static WORD COLORS[] =
-	{	FOREGROUND_RED | FOREGROUND_INTENSITY,
-		FOREGROUND_RED | FOREGROUND_INTENSITY,
-		FOREGROUND_RED | FOREGROUND_INTENSITY,
-		FOREGROUND_RED | FOREGROUND_INTENSITY,
-		FOREGROUND_BLUE | FOREGROUND_INTENSITY,
-		FOREGROUND_BLUE | FOREGROUND_INTENSITY,
-		FOREGROUND_GREEN | FOREGROUND_INTENSITY,
-		FOREGROUND_GREEN | FOREGROUND_INTENSITY,
-		FOREGROUND_GREEN | FOREGROUND_INTENSITY };
+static WORD COLORS[] = { FOREGROUND_RED | FOREGROUND_INTENSITY,
+	FOREGROUND_RED | FOREGROUND_INTENSITY,
+	FOREGROUND_RED | FOREGROUND_INTENSITY,
+	FOREGROUND_RED | FOREGROUND_INTENSITY,
+	FOREGROUND_BLUE | FOREGROUND_INTENSITY,
+	FOREGROUND_BLUE | FOREGROUND_INTENSITY,
+	FOREGROUND_GREEN | FOREGROUND_INTENSITY,
+	FOREGROUND_GREEN | FOREGROUND_INTENSITY,
+	FOREGROUND_GREEN | FOREGROUND_INTENSITY
+};
 #else
-static const char *COLORS[] = 
-	{ SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FMAGEN, SWITCH_SEQ_FCYAN, SWITCH_SEQ_FGREEN, SWITCH_SEQ_FYELLOW, "" };
+static const char *COLORS[] =
+	{ SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FMAGEN, SWITCH_SEQ_FCYAN,
+	SWITCH_SEQ_FGREEN, SWITCH_SEQ_FYELLOW, ""
+};
 #endif
 
 static switch_loadable_module_interface_t console_module_interface = {
@@ -71,7 +73,8 @@ static switch_hash_t *log_hash = NULL;
 static switch_hash_t *name_hash = NULL;
 static int8_t all_level = -1;
 
-static void del_mapping(char *var) {
+static void del_mapping(char *var)
+{
 	if (!strcasecmp(var, "all")) {
 		all_level = -1;
 		return;
@@ -94,7 +97,7 @@ static void add_mapping(char *var, char *val)
 	}
 
 	del_mapping(name);
-	switch_core_hash_insert(log_hash, name, (void *) &STATIC_LEVELS[(uint8_t)switch_log_str2level(val)]);
+	switch_core_hash_insert(log_hash, name, (void *) &STATIC_LEVELS[(uint8_t) switch_log_str2level(val)]);
 }
 
 static switch_status_t config_logger(void)
@@ -109,7 +112,7 @@ static switch_status_t config_logger(void)
 
 	switch_core_hash_init(&log_hash, module_pool);
 	switch_core_hash_init(&name_hash, module_pool);
-	
+
 	if ((settings = switch_xml_child(cfg, "mappings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -127,7 +130,7 @@ static switch_status_t config_logger(void)
 			if (!strcasecmp(var, "colorize") && switch_true(val)) {
 #ifdef WIN32
 				hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-				if (switch_core_get_console() == stdout && hStdout != INVALID_HANDLE_VALUE 
+				if (switch_core_get_console() == stdout && hStdout != INVALID_HANDLE_VALUE
 					&& GetConsoleScreenBufferInfo(hStdout, &csbiInfo)) {
 					wOldColorAttrs = csbiInfo.wAttributes;
 					COLORIZE = 1;
@@ -150,11 +153,11 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 
 	if ((handle = switch_core_data_channel(SWITCH_CHANNEL_ID_LOG))) {
 		uint8_t *lookup = NULL;
-		switch_log_level_t level = SWITCH_LOG_DEBUG;		
+		switch_log_level_t level = SWITCH_LOG_DEBUG;
 
 		if (log_hash) {
 			lookup = switch_core_hash_find(log_hash, node->file);
-			
+
 			if (!lookup) {
 				lookup = switch_core_hash_find(log_hash, node->func);
 			}
@@ -164,13 +167,13 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 			level = (switch_log_level_t) *lookup;
 		} else if (all_level > -1) {
 			level = (switch_log_level_t) all_level;
-		} 
+		}
 
-		if (!log_hash || (((all_level > - 1) || lookup) && level >= node->level)) {
+		if (!log_hash || (((all_level > -1) || lookup) && level >= node->level)) {
 			if (COLORIZE) {
 #ifdef WIN32
 				SetConsoleTextAttribute(hStdout, COLORS[node->level]);
-				WriteFile(hStdout, node->data, (DWORD)strlen(node->data), NULL, NULL);
+				WriteFile(hStdout, node->data, (DWORD) strlen(node->data), NULL, NULL);
 				SetConsoleTextAttribute(hStdout, wOldColorAttrs);
 #else
 				fprintf(handle, "%s%s%s", COLORS[node->level], node->data, SWITCH_SEQ_DEFAULT_COLOR);
@@ -183,11 +186,12 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 		fprintf(stderr, "HELP I HAVE NO CONSOLE TO LOG TO!\n");
 		fflush(stderr);
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
+													   char *filename)
 {
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
@@ -200,7 +204,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 	/* setup my logger function */
 	switch_log_bind_logger(switch_console_logger, SWITCH_LOG_DEBUG);
-	
+
 	config_logger();
 
 	/* indicate that the module should continue to be loaded */

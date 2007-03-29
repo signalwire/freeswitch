@@ -50,7 +50,7 @@ typedef enum {
 
 typedef enum {
 	SANGOMA_PRI_SWITCH_UNKNOWN = PRI_SWITCH_UNKNOWN,
-	SANGOMA_PRI_SWITCH_NI2 = PRI_SWITCH_NI2,	   		
+	SANGOMA_PRI_SWITCH_NI2 = PRI_SWITCH_NI2,
 	SANGOMA_PRI_SWITCH_DMS100 = PRI_SWITCH_DMS100,
 	SANGOMA_PRI_SWITCH_LUCENT5E = PRI_SWITCH_LUCENT5E,
 	SANGOMA_PRI_SWITCH_ATT4ESS = PRI_SWITCH_ATT4ESS,
@@ -67,8 +67,8 @@ typedef enum {
 } sangoma_pri_flag_t;
 
 struct sangoma_pri;
-typedef int (*event_handler)(struct sangoma_pri *, sangoma_pri_event_t, pri_event *);
-typedef int (*loop_handler)(struct sangoma_pri *);
+typedef int (*event_handler) (struct sangoma_pri *, sangoma_pri_event_t, pri_event *);
+typedef int (*loop_handler) (struct sangoma_pri *);
 #define MAX_EVENT 18
 
 struct sangoma_pri {
@@ -77,7 +77,7 @@ struct sangoma_pri {
 	int dchan;
 	unsigned int flags;
 	void *private_info;
-	event_handler eventmap[MAX_EVENT+1];
+	event_handler eventmap[MAX_EVENT + 1];
 	loop_handler on_loop;
 };
 
