@@ -247,10 +247,10 @@ else
     size_t_fmt='#error Can not determine the proper size for size_t'
 fi
 
-if test "$ac_cv_sizeof_time_t" = "$ac_cv_sizeof_int"; then
-   time_t_fmt='#define TIME_T_FMT "d"' 
-elif  test "$ac_cv_sizeof_time_t" = "$ac_cv_sizeof_long"; then
-   time_t_fmt='#define TIME_T_FMT "ld"'
+if test "$ac_cv_sizeof_time_t" = "$ac_cv_sizeof_long"; then
+   time_t_fmt='#define TIME_T_FMT "ld"' 
+elif  test "$ac_cv_sizeof_time_t" = "$ac_cv_sizeof_int"; then
+   time_t_fmt='#define TIME_T_FMT "d"'
 elif  test "$ac_cv_sizeof_time_t" = "$ac_cv_sizeof_long_long"; then
    time_t_fmt='#define TIME_T_FMT "lld"'
 else
