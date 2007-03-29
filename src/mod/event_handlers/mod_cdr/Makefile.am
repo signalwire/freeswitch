@@ -1,7 +1,16 @@
 #we should set all these vars from configure, no reason to have these in each Makefile.am
-LIBTOOL=`if test -z "$(VERBOSE)" ; then echo $(SHELL) $(switch_builddir)/quiet_libtool ;else echo $(switch_builddir)/libtool;  fi;`
+#LIBTOOL = compile=`echo $<|grep .c`;link=`echo $@|grep .la;echo $@|grep .so;echo $@|grep .dll`; if test -n "$$compile"; then echo Compiling $<;fi; if test -n "$$link"; then echo Creating $@;fi; `if test -z "$(VERBOSE)" ; then echo $(SHELL) $(switch_builddir)/quiet_libtool ;else echo $(switch_builddir)/libtool;  fi;`
+#LIBTOOL=`if test -z "$(VERBOSE)" ; then echo $(SHELL) $(switch_builddir)/quiet_libtool ;else echo $(switch_builddir)/libtool;  fi;`
+LIBTOOL = 	link=`echo $@|grep .la;echo $@|grep .so;echo $@|grep .dll`; \
+		if test -n "$$link"; then echo Creating $@;fi; \
+		`if test -z "$(VERBOSE)" ; \
+		then echo $(SHELL) $(switch_builddir)/quiet_libtool ;\
+		else echo $(switch_builddir)/libtool;  fi;`
+
 AM_MAKEFLAGS=`test -n "$(VERBOSE)" || echo -s`
-LINK_OUTPUT_REDIR=> $(MODNAME).log || error="yes" ; \
+
+# Dirty trick to override the link output
+LIBS+=> $(MODNAME).log || error="yes" ; \
 			if test -n "$(VERBOSE)" -o "$$error" = "yes"; then \
 			  cat $(MODNAME).log ; \
 			fi ;\
@@ -10,8 +19,6 @@ LINK_OUTPUT_REDIR=> $(MODNAME).log || error="yes" ; \
 			fi
 
 moddir=$(prefix)/mod
-
-
 
 MODNAME=mod_cdr
 mod_LTLIBRARIES = mod_cdr.la
@@ -29,12 +36,6 @@ endif
 
 #mod_cdr_la_CFLAGS  += -DSWITCH_QUEUE_ENHANCED
 #mod_cdr_la_LDFLAGS += -lcurl
-
-#Override link target so we can control the output
-
-$(MODNAME).la: $(mod_cdr_la_OBJECTS) $(mod_cdr_la_DEPENDENCIES)
-	@echo Creating $(MODNAME).$(DYNAMIC_LIB_EXTEN)...
-	@$(CXXLINK) -rpath $(moddir) $(mod_cdr_la_LDFLAGS) $(mod_cdr_la_OBJECTS) $(mod_cdr_la_LIBADD) $(LIBS) $(LINK_OUTPUT_REDIR)
 
 #Override the linstall target so we just install the .so/.dylib
 
