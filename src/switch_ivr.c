@@ -3281,8 +3281,7 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_hangup(time_t runtime, char *uuid, 
 	struct hangup_helper *helper;
 	size_t len = sizeof(*helper);
 
-	assert((helper = malloc(len)));
-	memset(helper, 0, len);
+	switch_zmalloc(helper, len);
 	
 	switch_copy_string(helper->uuid_str, uuid, sizeof(helper->uuid_str));
 	helper->cause = cause;
@@ -3332,9 +3331,8 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_transfer(time_t runtime, char *uuid
 		len += strlen(context) + 1;
 	}
 
-	assert((helper = malloc(len)));
-	memset(helper, 0, len);
-	
+	switch_zmalloc(helper, len);
+
 	switch_copy_string(helper->uuid_str, uuid, sizeof(helper->uuid_str));
 	
 	cur = (char *) helper + sizeof(*helper);
@@ -3380,9 +3378,8 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, char *uui
 	struct broadcast_helper *helper;
 	size_t len = sizeof(*helper) + strlen(path) + 1;
 
-	assert((helper = malloc(len)));
-	memset(helper, 0, len);
-	
+	switch_zmalloc(helper, len);
+
 	switch_copy_string(helper->uuid_str, uuid, sizeof(helper->uuid_str));
 	helper->flags = flags;
 	helper->path = (char *) helper + sizeof(*helper);
