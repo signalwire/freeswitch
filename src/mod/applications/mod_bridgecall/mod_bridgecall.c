@@ -61,7 +61,7 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 		do_continue = switch_true(var);
 	}
 	
-	if ((var = switch_channel_get_variable(caller_channel, "no_media")) && switch_true(var)) {
+	if (switch_channel_test_flag(caller_channel, CF_NOMEDIA) || ((var = switch_channel_get_variable(caller_channel, "no_media")) && switch_true(var))) {
 		if (!switch_channel_test_flag(caller_channel, CF_ANSWERED) && !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
 			switch_channel_set_flag(caller_channel, CF_NOMEDIA);
 		} else {

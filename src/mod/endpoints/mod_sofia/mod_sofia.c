@@ -1268,7 +1268,7 @@ static void tech_absorb_sdp(private_object_t *tech_pvt)
 
 	channel = switch_core_session_get_channel(tech_pvt->session);
 	assert(channel != NULL);
-	
+
 	if ((sdp_str = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE))) {
 		sdp_parser_t *parser;
 		sdp_session_t *sdp;
@@ -2921,9 +2921,7 @@ static void pass_sdp(private_object_t *tech_pvt, char *sdp)
 	if ((val = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(val))) {
 		other_channel = switch_core_session_get_channel(other_session);
 		assert(other_channel != NULL);
-		if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
-			switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, sdp);
-		}
+		switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, sdp);
 
 		if (!switch_test_flag(tech_pvt, TFLAG_CHANGE_MEDIA) && (
 			switch_channel_test_flag(other_channel, CF_OUTBOUND) && 
