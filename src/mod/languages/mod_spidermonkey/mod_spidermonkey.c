@@ -285,7 +285,7 @@ static JSBool event_serialize(JSContext *cx, JSObject *obj, uintN argc, jsval *a
 	if (isxml) {
 		switch_xml_t xml;
 		char *xmlstr;
-		if ((xml = switch_event_xmlize(eo->event, NULL))) {
+		if ((xml = switch_event_xmlize(eo->event, ""))) {
             xmlstr = switch_xml_toxml(xml);
 			*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, xmlstr));
 			switch_xml_free(xml);
