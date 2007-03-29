@@ -1,22 +1,9 @@
 #we should set all these vars from configure, no reason to have these in each Makefile.am
-#LIBTOOL = compile=`echo $<|grep .c`;link=`echo $@|grep .la;echo $@|grep .so;echo $@|grep .dll`; if test -n "$$compile"; then echo Compiling $<;fi; if test -n "$$link"; then echo Creating $@;fi; `if test -z "$(VERBOSE)" ; then echo $(SHELL) $(switch_builddir)/quiet_libtool ;else echo $(switch_builddir)/libtool;  fi;`
-#LIBTOOL=`if test -z "$(VERBOSE)" ; then echo $(SHELL) $(switch_builddir)/quiet_libtool ;else echo $(switch_builddir)/libtool;  fi;`
-LIBTOOL = 	link=`echo $@|grep .la;echo $@|grep .so;echo $@|grep .dll`; \
-		if test -n "$$link"; then echo Creating $@;fi; \
-		`if test -z "$(VERBOSE)" ; \
-		then echo $(SHELL) $(switch_builddir)/quiet_libtool ;\
-		else echo $(switch_builddir)/libtool;  fi;`
-
+LIBTOOL = echo "`link=\`echo $@|grep .la;echo $@|grep .so;echo $@|grep .dll\`;if test -n "$$link"; then echo Creating $@;fi`";`if test -z "$(VERBOSE)" ; \
+then echo $(SHELL) $(switch_builddir)/quiet_libtool ;else echo $(SHELL) $(switch_builddir)/libtool;  fi`
 AM_MAKEFLAGS=`test -n "$(VERBOSE)" || echo -s`
-
 # Dirty trick to override the link output
-LIBS+=> $(MODNAME).log || error="yes" ; \
-			if test -n "$(VERBOSE)" -o "$$error" = "yes"; then \
-			  cat $(MODNAME).log ; \
-			fi ;\
-			if test "$$error" = "yes"; then \
-			  exit 1 ;\
-			fi
+LIBS+=> $(MODNAME).log || error="yes";if test -n "$(VERBOSE)" -o "$$error" = "yes";then cat $(MODNAME).log;fi;if test "$$error" = "yes";then exit 1;fi
 
 moddir=$(prefix)/mod
 
