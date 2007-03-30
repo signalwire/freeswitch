@@ -67,16 +67,16 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_add_task(time_t task_runtime,
 /*!
   \brief Delete a scheduled task
   \param task_id the id of the task
-  \return SWITCH_STATUS_SUCCESS if the task was deleted.
+  \return the number of jobs deleted
 */
-SWITCH_DECLARE(switch_status_t) switch_scheduler_del_task_id(uint32_t task_id);
+SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_id(uint32_t task_id);
 
 /*!
   \brief Delete a scheduled task based on the group name
   \param group the group name
-  \return SWITCH_STATUS_SUCCESS if any tasks were deleted
+  \return the number of jobs deleted
 */
-SWITCH_DECLARE(switch_status_t) switch_scheduler_del_task_group(char *group);
+SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_group(char *group);
 
 
 /*!

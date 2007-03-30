@@ -54,6 +54,19 @@ SWITCH_BEGIN_EXTERN_C
 #else
 #define switch_is_file_path(file) ((*file == '/') || strstr(file, SWITCH_URL_SEPARATOR))
 #endif
+
+static inline switch_bool_t switch_is_digit_string(char *s) {
+
+	while(s && *s) {
+		if (*s < 48 || *s > 57) {
+			return SWITCH_FALSE;
+		}
+		s++;
+	}
+
+	return SWITCH_TRUE;
+}
+
 /*!
   \brief Evaluate the truthfullness of a string expression
   \param expr a string expression

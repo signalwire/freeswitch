@@ -158,7 +158,8 @@ typedef enum {
 typedef enum {
 	SSHF_NONE = 0,
 	SSHF_OWN_THREAD = (1 << 0),
-	SSHF_FREE_ARG = (1 << 1)
+	SSHF_FREE_ARG = (1 << 1),
+	SSHF_NO_DEL = (1 << 2)
 } switch_scheduler_flag_t;
 
 typedef enum {

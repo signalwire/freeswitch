@@ -187,15 +187,20 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_add_task(time_t task_runtime,
 	return container->task.task_id;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_scheduler_del_task_id(uint32_t task_id)
+SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_id(uint32_t task_id)
 {
 	switch_scheduler_task_container_t *tp;
-	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *event;
+	uint32_t delcnt = 0;
 
 	switch_mutex_lock(globals.task_mutex);
 	for (tp = globals.task_list; tp; tp = tp->next) {
 		if (tp->task.task_id == task_id) {
+			if (switch_test_flag(tp, SSHF_NO_DEL)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Attempt made to delete undeleteable task #%u (group %s)\n", 
+								  tp->task.task_id, tp->task.group);
+				break;
+			}
 			tp->destroyed++;
 			if (switch_event_create(&event, SWITCH_EVENT_DEL_SCHEDULE) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-ID", "%u", tp->task.task_id);
@@ -204,24 +209,29 @@ SWITCH_DECLARE(switch_status_t) switch_scheduler_del_task_id(uint32_t task_id)
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Runtime", "%" SWITCH_INT64_T_FMT, tp->task.runtime);
 				switch_event_fire(&event);
 			}
-			status = SWITCH_STATUS_SUCCESS;
+			delcnt++;
 			break;
 		}
 	}
 	switch_mutex_unlock(globals.task_mutex);
 
-	return status;
+	return delcnt;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_scheduler_del_task_group(char *group)
+SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_group(char *group)
 {
 	switch_scheduler_task_container_t *tp;
-	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *event;
+	uint32_t delcnt = 0;
 
 	switch_mutex_lock(globals.task_mutex);
 	for (tp = globals.task_list; tp; tp = tp->next) {
-		if (!strcmp(tp->task.group, group)) {
+		if (!switch_strlen_zero(group) && !strcmp(tp->task.group, group)) {
+			if (switch_test_flag(tp, SSHF_NO_DEL)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Attempt made to delete undeleteable task #%u (group %s)\n",
+								  tp->task.task_id, group);
+				continue;
+			}
 			if (switch_event_create(&event, SWITCH_EVENT_DEL_SCHEDULE) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-ID", "%u", tp->task.task_id);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Desc", "%s", tp->desc);
@@ -230,12 +240,12 @@ SWITCH_DECLARE(switch_status_t) switch_scheduler_del_task_group(char *group)
 				switch_event_fire(&event);
 			}
 			tp->destroyed++;
-			status = SWITCH_STATUS_SUCCESS;
+			delcnt++;
 		}
 	}
 	switch_mutex_unlock(globals.task_mutex);
 
-	return status;
+	return delcnt;
 }
 
 SWITCH_DECLARE(void) switch_scheduler_task_thread_start(void)

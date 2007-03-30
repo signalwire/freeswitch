@@ -705,6 +705,25 @@ static void sch_api_callback(switch_scheduler_task_t *task)
 	switch_safe_free(stream.data);
 }
 
+static switch_status_t sched_del_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+{
+	uint32_t cnt = 0;
+	
+	if (switch_is_digit_string(cmd)) {
+		int64_t tmp;
+		tmp = (uint32_t) atoi(cmd);
+		if (tmp > 0) {
+			cnt = switch_scheduler_del_task_id((uint32_t)tmp);
+		}
+	} else {
+		cnt = switch_scheduler_del_task_group(cmd);
+	}
+
+	stream->write_function(stream, "DELETED: %u\n", cnt);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t sched_api_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
 {
 	char *tm = NULL, *dcmd, *group;
@@ -729,7 +748,7 @@ static switch_status_t sched_api_function(char *cmd, switch_core_session_t *ises
 			}
 		
 			id = switch_scheduler_add_task(when, sch_api_callback, (char *) __SWITCH_FUNC__, group, 0, strdup(dcmd), SSHF_FREE_ARG);
-			stream->write_function(stream, "Added task %u for command [%s] group [%s]\n", id, dcmd, group);
+			stream->write_function(stream, "ADDED: %u\n", id);
 			goto good;
 		} 
 	}
@@ -895,12 +914,20 @@ static switch_status_t help_function(char *cmd, switch_core_session_t *session, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_api_interface_t sched_del_api_interface = {
+	/*.interface_name */ "sched_del",
+	/*.desc */ "Delete a Scheduled task",
+	/*.function */ sched_del_function,
+	/*.syntax */ "<task_id>|<group_id>",
+	/*.next */ NULL
+};
+
 static switch_api_interface_t sched_api_api_interface = {
 	/*.interface_name */ "sched_api",
 	/*.desc */ "Schedule an api command",
 	/*.function */ sched_api_function,
 	/*.syntax */ "[+]<time> <group_name> <command_string>",
-	/*.next */ NULL
+	/*.next */ &sched_del_api_interface
 };
 
 static switch_api_interface_t sched_transfer_api_interface = {

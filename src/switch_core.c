@@ -489,7 +489,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 	switch_scheduler_task_thread_start();
 	runtime.initiated = switch_time_now();
 
-	switch_scheduler_add_task(time(NULL), heartbeat_callback, "heartbeat", "core", 0, NULL, SSHF_NONE);
+	switch_scheduler_add_task(time(NULL), heartbeat_callback, "heartbeat", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL);
 
 
 	switch_uuid_get(&uuid);
