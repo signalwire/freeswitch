@@ -153,7 +153,7 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_add_task(time_t task_runtime,
 	switch_zmalloc(container, sizeof(*container));
 	assert(func);
 	container->func = func;
-	time(&container->task.created);
+	container->task.created = time(NULL);
 	container->task.runtime = task_runtime;
 	container->task.group = strdup(group ? group : "none");
 	container->task.cmd_id = cmd_id;
