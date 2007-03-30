@@ -9,7 +9,7 @@ AWK=@AWK@
 SHELL=@SHELL@
 INSTALL=@INSTALL@
 GETLIB=@GETLIB@
-LIBTOOL=$(switch_builddir)/libtool
+LIBTOOL=@LIBTOOL@
 LTINSTALL=$(LIBTOOL) --mode=install $(INSTALL)
 LTUNINSTALL=$(LIBTOOL) --mode=uninstall rm -f 
 CCLD = $(CC)
@@ -46,7 +46,7 @@ CXXLINK = $(LIBTOOL) --mode=link --tag=CXX $(CXXLD) $(ALL_CXXFLAGS) $(LDFLAGS) -
 
 CSOURCEFILE=$(MODNAME).c
 CXXSOURCEFILE=$(MODNAME).cpp
-TOUCH_TARGET=if test -f "$@" ; then touch "$@" ; fi ;
+TOUCH_TARGET=@TOUCH_TARGET@
 
 #MAKE_OPTS = `if test -z "$(VERBOSE)" ; then $(MAKE) --help | grep silent | grep "\-s" 2>&1 >/dev/null && echo -s;fi`
 MAKE_OPTS = `test -n "$(VERBOSE)" || echo -s`

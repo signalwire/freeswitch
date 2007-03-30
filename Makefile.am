@@ -10,13 +10,6 @@ AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS)
 BASE        = $(switch_srcdir)
 OSARCH=`uname -s`
 
-LIBTOOL=`if test -z "$(VERBOSE)" ; then echo $(SHELL) $(switch_builddir)/quiet_libtool ;else echo $(switch_builddir)/libtool;  fi;`
-#LIBS+=> core.log || error="yes";if test -n "$(VERBOSE)" -o "$$error" = "yes";then cat core.log;fi;if test "$$error" = "yes";then exit 1;fi
-
-LTINSTALL = $(LIBTOOL) --mode=install $(INSTALL)
-TOUCH_TARGET=if test -f "$@" ; then touch "$@" ; fi ;
-AM_MAKEFLAGS=`test -n "$(VERBOSE)" || echo -s`
-
 if CRASHPROT
 AM_CFLAGS += -DCRASH_PROT
 endif

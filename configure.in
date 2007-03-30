@@ -327,6 +327,15 @@ AM_CONDITIONAL(ISLINUX, [test `uname -s` = Linux])
 AM_CONDITIONAL(ISMAC, [test `uname -s` = Darwin])
 AM_CONDITIONAL(IS64BITLINUX, [test `uname -m` = x86_64])
 
+#some vars to sub into the Makefile.am's
+#LIBS+=> core.log || error="yes";if test -n "$(VERBOSE)" -o "$$error" = "yes";then cat core.log;fi;if test "$$error" = "yes";then exit 1;fi
+LIBTOOL='`if test -z "$(VERBOSE)" ; then echo $(SHELL) $(switch_builddir)/quiet_libtool ;else echo $(switch_builddir)/libtool; fi;`'
+TOUCH_TARGET='if test -f "$@";then touch "$@";fi;'
+AM_MAKEFLAGS='`test -n "$(VERBOSE)" || echo -s`'
+AC_SUBST(LIBTOOL)
+AC_SUBST(TOUCH_TARGET)
+AC_SUBST(AM_MAKEFLAGS)
+
 # Run configure in all the subdirs
 AC_CONFIG_SUBDIRS(libs/srtp)
 AC_CONFIG_SUBDIRS(libs/sqlite)
