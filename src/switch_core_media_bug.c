@@ -144,8 +144,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 #define MAX_BUG_BUFFER 1024 * 512
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t *session,
 														  switch_media_bug_callback_t callback,
-														  void *user_data,
-														  switch_media_bug_flag_t flags, switch_media_bug_t **new_bug)
+														  void *user_data, switch_media_bug_flag_t flags, switch_media_bug_t **new_bug)
 {
 	switch_media_bug_t *bug, *bp;
 	switch_size_t bytes;
@@ -171,8 +170,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	bug->session = session;
 	bug->flags = flags;
 	bug->ready = 1;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attaching BUG to %s\n",
-					  switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attaching BUG to %s\n", switch_channel_get_name(session->channel));
 	bytes = session->read_codec->implementation->bytes_per_frame;
 
 	if (!bug->flags) {
@@ -180,16 +178,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	}
 
 	if (switch_test_flag(bug, SMBF_READ_STREAM)) {
-		switch_buffer_create_dynamic(&bug->raw_read_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES,
-									 bytes * SWITCH_BUFFER_START_FRAMES, MAX_BUG_BUFFER);
+		switch_buffer_create_dynamic(&bug->raw_read_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES, bytes * SWITCH_BUFFER_START_FRAMES, MAX_BUG_BUFFER);
 		switch_mutex_init(&bug->read_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	}
 
 	bytes = session->write_codec->implementation->bytes_per_frame;
 
 	if (switch_test_flag(bug, SMBF_WRITE_STREAM)) {
-		switch_buffer_create_dynamic(&bug->raw_write_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES,
-									 bytes * SWITCH_BUFFER_START_FRAMES, MAX_BUG_BUFFER);
+		switch_buffer_create_dynamic(&bug->raw_write_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES, bytes * SWITCH_BUFFER_START_FRAMES, MAX_BUG_BUFFER);
 		switch_mutex_init(&bug->write_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	}
 
@@ -221,8 +217,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_ses
 				bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_CLOSE);
 			}
 			switch_core_media_bug_destroy(bp);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing BUG from %s\n",
-							  switch_channel_get_name(session->channel));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing BUG from %s\n", switch_channel_get_name(session->channel));
 		}
 		switch_thread_rwlock_unlock(session->bug_rwlock);
 		session->bugs = NULL;
@@ -241,8 +236,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(switch_media_bug_t *
 			bp->ready = 0;
 		}
 		switch_core_media_bug_destroy(bp);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing BUG from %s\n",
-						  switch_channel_get_name(bp->session->channel));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing BUG from %s\n", switch_channel_get_name(bp->session->channel));
 		*bug = NULL;
 		return SWITCH_STATUS_SUCCESS;
 	}

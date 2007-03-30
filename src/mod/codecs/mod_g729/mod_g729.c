@@ -45,8 +45,7 @@ struct g729_context {
 };
 #endif
 
-static switch_status_t switch_g729_init(switch_codec_t *codec, switch_codec_flag_t flags,
-										const switch_codec_settings_t *codec_settings)
+static switch_status_t switch_g729_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 #ifdef G729_PASSTHROUGH
 	codec->flags |= SWITCH_CODEC_FLAG_PASSTHROUGH;
@@ -96,9 +95,7 @@ static switch_status_t switch_g729_encode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
 										  void *decoded_data,
 										  uint32_t decoded_data_len,
-										  uint32_t decoded_rate,
-										  void *encoded_data,
-										  uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
+										  uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
 {
 #ifdef G729_PASSTHROUGH
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
@@ -128,8 +125,7 @@ static switch_status_t switch_g729_encode(switch_codec_t *codec,
 		if (new_len <= *encoded_data_len) {
 			*encoded_data_len = new_len;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer overflow!!! %u >= %u\n", new_len,
-							  *encoded_data_len);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer overflow!!! %u >= %u\n", new_len, *encoded_data_len);
 			return SWITCH_STATUS_FALSE;
 		}
 	}
@@ -141,9 +137,7 @@ static switch_status_t switch_g729_decode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
 										  void *encoded_data,
 										  uint32_t encoded_data_len,
-										  uint32_t encoded_rate,
-										  void *decoded_data,
-										  uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
+										  uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
 {
 #ifdef G729_PASSTHROUGH
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
@@ -208,8 +202,7 @@ static switch_status_t switch_g729_decode(switch_codec_t *codec,
 			}
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "yo this frame is an odd size [%d]\n",
-						  encoded_data_len);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "yo this frame is an odd size [%d]\n", encoded_data_len);
 		return SWITCH_STATUS_FALSE;
 	}
 	return SWITCH_STATUS_SUCCESS;
@@ -274,8 +267,7 @@ static switch_loadable_module_interface_t g729_module_interface = {
 	/*.application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &g729_module_interface;

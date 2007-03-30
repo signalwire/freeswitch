@@ -186,8 +186,7 @@ sng_fd_t sangoma_open_tdmapi_span_chan(int span, int chan)
 	return CreateFile(fname,
 					  GENERIC_READ | GENERIC_WRITE,
 					  FILE_SHARE_READ | FILE_SHARE_WRITE,
-					  (LPSECURITY_ATTRIBUTES) NULL,
-					  OPEN_EXISTING, FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH, (HANDLE) NULL);
+					  (LPSECURITY_ATTRIBUTES) NULL, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH, (HANDLE) NULL);
 #else
 	int fd = -1;
 
@@ -498,8 +497,7 @@ int sangoma_get_full_cfg(sng_fd_t fd, wanpipe_tdm_api_t * tdm_api)
 	printf("\trx pkt\t%d\ttx pkt\t%d\n", tdm_api->wp_tdm_cmd.stats.rx_packets, tdm_api->wp_tdm_cmd.stats.tx_packets);
 	printf("\trx err\t%d\ttx err\t%d\n", tdm_api->wp_tdm_cmd.stats.rx_errors, tdm_api->wp_tdm_cmd.stats.tx_errors);
 #ifndef __WINDOWS__
-	printf("\trx ovr\t%d\ttx idl\t%d\n",
-		   tdm_api->wp_tdm_cmd.stats.rx_fifo_errors, tdm_api->wp_tdm_cmd.stats.tx_carrier_errors);
+	printf("\trx ovr\t%d\ttx idl\t%d\n", tdm_api->wp_tdm_cmd.stats.rx_fifo_errors, tdm_api->wp_tdm_cmd.stats.tx_carrier_errors);
 #endif
 
 	return 0;
@@ -765,8 +763,7 @@ int sangoma_tdm_read_event(sng_fd_t fd, wanpipe_tdm_api_t * tdm_api)
 		if (tdm_api->wp_tdm_event.wp_dtmf_event) {
 			tdm_api->wp_tdm_event.wp_dtmf_event(fd,
 												rx_event->wp_tdm_api_event_dtmf_digit,
-												rx_event->wp_tdm_api_event_dtmf_type,
-												rx_event->wp_tdm_api_event_dtmf_port);
+												rx_event->wp_tdm_api_event_dtmf_type, rx_event->wp_tdm_api_event_dtmf_port);
 		}
 		break;
 

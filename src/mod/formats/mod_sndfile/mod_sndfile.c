@@ -137,19 +137,16 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, char *pat
 	}
 
 	if ((mode & SFM_WRITE) && sf_format_check(&context->sfinfo) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error : file format is invalid (0x%08X).\n",
-						  context->sfinfo.format);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error : file format is invalid (0x%08X).\n", context->sfinfo.format);
 		return SWITCH_STATUS_GENERR;
 	};
 
 	if ((context->handle = sf_open(path, mode, &context->sfinfo)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s] [%s]\n", path,
-						  sf_strerror(context->handle));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s] [%s]\n", path, sf_strerror(context->handle));
 		return SWITCH_STATUS_GENERR;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opening File [%s] %dhz\n", path,
-					  context->sfinfo.samplerate);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opening File [%s] %dhz\n", path, context->sfinfo.samplerate);
 	handle->samples = (unsigned int) context->sfinfo.frames;
 	handle->samplerate = context->sfinfo.samplerate;
 	handle->channels = (uint8_t) context->sfinfo.channels;
@@ -171,8 +168,7 @@ static switch_status_t sndfile_file_close(switch_file_handle_t *handle)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t sndfile_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples,
-										 int whence)
+static switch_status_t sndfile_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
 {
 	sndfile_context *context = handle->private_info;
 
@@ -239,8 +235,7 @@ static switch_status_t sndfile_file_set_string(switch_file_handle_t *handle, swi
 	return sf_set_string(context->handle, (int) col, string) ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t sndfile_file_get_string(switch_file_handle_t *handle, switch_audio_col_t col,
-											   const char **string)
+static switch_status_t sndfile_file_get_string(switch_file_handle_t *handle, switch_audio_col_t col, const char **string)
 {
 	sndfile_context *context = handle->private_info;
 	const char *s;
@@ -294,15 +289,13 @@ static switch_status_t setup_formats(void)
 
 	sf_command(NULL, SFC_GET_LIB_VERSION, buffer, sizeof(buffer));
 	if (strlen(buffer) < 1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "Line %d: could not retrieve lib version.\n",
-						  __LINE__);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "Line %d: could not retrieve lib version.\n", __LINE__);
 		return SWITCH_STATUS_FALSE;
 	}
 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "\nLibSndFile Version : %s Supported Formats\n", buffer);
-	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
-					  "================================================================================\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "================================================================================\n");
 	sf_command(NULL, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
 	sf_command(NULL, SFC_GET_FORMAT_SUBTYPE_COUNT, &subtype_count, sizeof(int));
 
@@ -315,8 +308,7 @@ static switch_status_t setup_formats(void)
 		skip = 0;
 		info.format = m;
 		sf_command(NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof(info));
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "%s  (extension \"%s\")\n", info.name,
-						  info.extension);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "%s  (extension \"%s\")\n", info.name, info.extension);
 		for (x = 0; x < len; x++) {
 			if (supported_formats[x] == info.extension) {
 				skip++;
@@ -364,14 +356,12 @@ static switch_status_t setup_formats(void)
 
 
 
-	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_NOTICE,
-					  "================================================================================\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_NOTICE, "================================================================================\n");
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {

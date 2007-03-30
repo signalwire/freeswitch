@@ -69,7 +69,7 @@ struct switch_loadable_module_container {
 
 static struct switch_loadable_module_container loadable_modules;
 
-static void *switch_loadable_module_exec(switch_thread_t *thread, void *obj)
+static void *switch_loadable_module_exec(switch_thread_t * thread, void *obj)
 {
 
 
@@ -84,13 +84,11 @@ static void *switch_loadable_module_exec(switch_thread_t *thread, void *obj)
 	for (restarts = 0; status != SWITCH_STATUS_TERM; restarts++) {
 		status = module->switch_module_runtime();
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Thread ended for %s\n",
-					  module->module_interface->module_name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Thread ended for %s\n", module->module_interface->module_name);
 
 	if (ts->pool) {
 		switch_memory_pool_t *pool = ts->pool;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroying Pool for %s\n",
-						  module->module_interface->module_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroying Pool for %s\n", module->module_interface->module_name);
 		switch_core_destroy_memory_pool(&pool);
 	}
 	switch_yield(1000000);
@@ -109,8 +107,7 @@ static void switch_loadable_module_runtime(void)
 		module = (switch_loadable_module_t *) val;
 
 		if (module->switch_module_runtime) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Starting runtime thread for %s\n",
-							  module->module_interface->module_name);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Starting runtime thread for %s\n", module->module_interface->module_name);
 			switch_core_launch_thread(switch_loadable_module_exec, module, loadable_modules.pool);
 		}
 	}
@@ -126,8 +123,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 		const switch_endpoint_interface_t *ptr;
 		for (ptr = new_module->module_interface->endpoint_interface; ptr; ptr = ptr->next) {
 			if (!ptr->interface_name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-								  "Failed to load endpoint interface from %s due to no interface name.\n", key);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load endpoint interface from %s due to no interface name.\n", key);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Endpoint '%s'\n", ptr->interface_name);
 				switch_core_hash_insert(loadable_modules.endpoint_hash, ptr->interface_name, (const void *) ptr);
@@ -141,8 +137,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 
 		for (ptr = new_module->module_interface->codec_interface; ptr; ptr = ptr->next) {
 			if (!ptr->interface_name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-								  "Failed to load codec interface from %s due to no interface name.\n", key);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load codec interface from %s due to no interface name.\n", key);
 			} else {
 				unsigned load_interface = 1;
 				for (impl = ptr->implementations; impl; impl = impl->next) {
@@ -153,15 +148,12 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 				}
 				if (!load_interface) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-									  "Failed to load codec interface %s from %s due to no iana name in an implementation.\n",
-									  ptr->interface_name, key);
+									  "Failed to load codec interface %s from %s due to no iana name in an implementation.\n", ptr->interface_name, key);
 				} else {
 					for (impl = ptr->implementations; impl; impl = impl->next) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 										  "Adding Codec '%s' (%s) %dhz %dms\n",
-										  impl->iananame,
-										  ptr->interface_name,
-										  impl->samples_per_second, impl->microseconds_per_frame / 1000);
+										  impl->iananame, ptr->interface_name, impl->samples_per_second, impl->microseconds_per_frame / 1000);
 						if (!switch_core_hash_find(loadable_modules.codec_hash, impl->iananame)) {
 							switch_core_hash_insert(loadable_modules.codec_hash, impl->iananame, (const void *) ptr);
 						}
@@ -181,8 +173,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 
 		for (ptr = new_module->module_interface->dialplan_interface; ptr; ptr = ptr->next) {
 			if (!ptr->interface_name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-								  "Failed to load dialplan interface from %s due to no interface name.\n", key);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load dialplan interface from %s due to no interface name.\n", key);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Dialplan '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
@@ -200,8 +191,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 
 		for (ptr = new_module->module_interface->timer_interface; ptr; ptr = ptr->next) {
 			if (!ptr->interface_name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-								  "Failed to load timer interface from %s due to no interface name.\n", key);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load timer interface from %s due to no interface name.\n", key);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Timer '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
@@ -219,16 +209,13 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 
 		for (ptr = new_module->module_interface->application_interface; ptr; ptr = ptr->next) {
 			if (!ptr->interface_name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-								  "Failed to load application interface from %s due to no interface name.\n", key);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load application interface from %s due to no interface name.\n", key);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Application '%s'\n",
-								  ptr->interface_name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Application '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "application");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "description", "%s",
-											switch_str_nil(ptr->short_desc));
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "description", "%s", switch_str_nil(ptr->short_desc));
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "syntax", "%s", switch_str_nil(ptr->syntax));
 					switch_event_fire(&event);
 				}
@@ -242,11 +229,9 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 
 		for (ptr = new_module->module_interface->api_interface; ptr; ptr = ptr->next) {
 			if (!ptr->interface_name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-								  "Failed to load api interface from %s due to no interface name.\n", key);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load api interface from %s due to no interface name.\n", key);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding API Function '%s'\n",
-								  ptr->interface_name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding API Function '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "api");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
@@ -264,13 +249,11 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 
 		for (ptr = new_module->module_interface->file_interface; ptr; ptr = ptr->next) {
 			if (!ptr->interface_name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-								  "Failed to load file interface from %s due to no interface name.\n", key);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load file interface from %s due to no interface name.\n", key);
 			} else {
 				int i;
 				for (i = 0; ptr->extens[i]; i++) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding File Format '%s'\n",
-									  ptr->extens[i]);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding File Format '%s'\n", ptr->extens[i]);
 					if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "file");
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->extens[i]);
@@ -287,11 +270,9 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 
 		for (ptr = new_module->module_interface->speech_interface; ptr; ptr = ptr->next) {
 			if (!ptr->interface_name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-								  "Failed to load speech interface from %s due to no interface name.\n", key);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load speech interface from %s due to no interface name.\n", key);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Speech interface '%s'\n",
-								  ptr->interface_name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Speech interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "speech");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
@@ -307,11 +288,9 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 
 		for (ptr = new_module->module_interface->asr_interface; ptr; ptr = ptr->next) {
 			if (!ptr->interface_name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-								  "Failed to load asr interface from %s due to no interface name.\n", key);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load asr interface from %s due to no interface name.\n", key);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Asr interface '%s'\n",
-								  ptr->interface_name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Asr interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "asr");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
@@ -327,11 +306,9 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 
 		for (ptr = new_module->module_interface->directory_interface; ptr; ptr = ptr->next) {
 			if (!ptr->interface_name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-								  "Failed to load directory interface from %s due to no interface name.\n", key);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load directory interface from %s due to no interface name.\n", key);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Directory interface '%s'\n",
-								  ptr->interface_name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Directory interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "directory");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
@@ -347,11 +324,9 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 
 		for (ptr = new_module->module_interface->chat_interface; ptr; ptr = ptr->next) {
 			if (!ptr->interface_name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-								  "Failed to load chat interface from %s due to no interface name.\n", key);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load chat interface from %s due to no interface name.\n", key);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Chat interface '%s'\n",
-								  ptr->interface_name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Chat interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "chat");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
@@ -367,11 +342,9 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 
 		for (ptr = new_module->module_interface->say_interface; ptr; ptr = ptr->next) {
 			if (!ptr->interface_name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-								  "Failed to load say interface from %s due to no interface name.\n", key);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load say interface from %s due to no interface name.\n", key);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Say interface '%s'\n",
-								  ptr->interface_name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Say interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "say");
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
@@ -387,17 +360,14 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 
 		for (ptr = new_module->module_interface->management_interface; ptr; ptr = ptr->next) {
 			if (!ptr->relative_oid) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-								  "Failed to load management interface from %s due to no interface name.\n", key);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load management interface from %s due to no interface name.\n", key);
 			} else {
 				if (switch_core_hash_find(loadable_modules.management_hash, ptr->relative_oid)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-									  "Failed to load management interface %s. OID %s already exists\n", key,
-									  ptr->relative_oid);
+									  "Failed to load management interface %s. OID %s already exists\n", key, ptr->relative_oid);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-									  "Adding Management interface '%s' OID[%s.%s]\n", key, FREESWITCH_OID_PREFIX,
-									  ptr->relative_oid);
+									  "Adding Management interface '%s' OID[%s.%s]\n", key, FREESWITCH_OID_PREFIX, ptr->relative_oid);
 					switch_core_hash_insert(loadable_modules.management_hash, ptr->relative_oid, (const void *) ptr);
 					if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "management");
@@ -480,8 +450,7 @@ static switch_status_t switch_loadable_module_load_file(char *filename, switch_l
 	module->lib = dso;
 
 	*new_module = module;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Successfully Loaded [%s]\n",
-					  module_interface->module_name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Successfully Loaded [%s]\n", module_interface->module_name);
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -599,8 +568,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filen
 	if (module->switch_module_runtime) {
 		switch_core_launch_thread(switch_loadable_module_exec, module, loadable_modules.pool);
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Successfully Loaded [%s]\n",
-					  module_interface->module_name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Successfully Loaded [%s]\n", module_interface->module_name);
 	return switch_loadable_module_process((char *) module->filename, module);
 }
 
@@ -615,8 +583,7 @@ static void switch_loadable_module_path_init()
 
 	if (apr_dir_open(&perl_dir_handle, ".\\perl", loadable_modules.pool) == APR_SUCCESS) {
 		apr_dir_close(perl_dir_handle);
-		apr_env_set("path",
-					apr_pstrcat(loadable_modules.pool, path, ";", working, "\\perl", NULL), loadable_modules.pool);
+		apr_env_set("path", apr_pstrcat(loadable_modules.pool, path, ";", working, "\\perl", NULL), loadable_modules.pool);
 	}
 }
 #endif
@@ -714,8 +681,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 
 	if (all) {
 		if (apr_dir_open(&module_dir_handle, SWITCH_GLOBAL_dirs.mod_dir, loadable_modules.pool) != APR_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't open directory: %s\n",
-							  SWITCH_GLOBAL_dirs.mod_dir);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't open directory: %s\n", SWITCH_GLOBAL_dirs.mod_dir);
 			return SWITCH_STATUS_GENERR;
 		}
 
@@ -759,20 +725,16 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 		module = (switch_loadable_module_t *) val;
 
 		if (module->switch_module_shutdown) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping: %s\n",
-							  module->module_interface->module_name);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping: %s\n", module->module_interface->module_name);
 			if (module->switch_module_shutdown() == SWITCH_STATUS_UNLOAD) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s unloaded.\n",
-								  module->module_interface->module_name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s unloaded.\n", module->module_interface->module_name);
 				switch_dso_unload(module->lib);
 				module->lib = NULL;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s shutdown.\n",
-								  module->module_interface->module_name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s shutdown.\n", module->module_interface->module_name);
 			}
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s has no shutdown routine\n",
-							  module->module_interface->module_name);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s has no shutdown routine\n", module->module_interface->module_name);
 		}
 	}
 
@@ -858,8 +820,7 @@ SWITCH_DECLARE(switch_management_interface_t *) switch_loadable_module_get_manag
 	return switch_core_hash_find(loadable_modules.management_hash, relative_oid);
 }
 
-SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool,
-													  const switch_codec_implementation_t **array, int arraylen)
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t * pool, const switch_codec_implementation_t **array, int arraylen)
 {
 	switch_hash_index_t *hi;
 	void *val;
@@ -891,8 +852,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool
 
 }
 
-SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_implementation_t **array,
-															 int arraylen, char **prefs, int preflen)
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_implementation_t **array, int arraylen, char **prefs, int preflen)
 {
 	int x, i = 0;
 	switch_codec_interface_t *codec_interface;
@@ -973,8 +933,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 	return i;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_core_session_t *session,
-												   switch_stream_handle_t *stream)
+SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	switch_api_interface_t *api;
 	switch_status_t status;

@@ -22,7 +22,7 @@ static struct {
 	switch_memory_pool_t *memory_pool;
 } globals;
 
-static void switch_scheduler_execute(switch_scheduler_task_container_t *tp)
+static void switch_scheduler_execute(switch_scheduler_task_container_t * tp)
 {
 	switch_event_t *event;
 	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Executing task %u %s (%s)\n", tp->task.task_id, tp->desc, switch_str_nil(tp->task.group));
@@ -50,7 +50,7 @@ static void switch_scheduler_execute(switch_scheduler_task_container_t *tp)
 	}
 }
 
-static void *SWITCH_THREAD_FUNC task_own_thread(switch_thread_t *thread, void *obj)
+static void *SWITCH_THREAD_FUNC task_own_thread(switch_thread_t * thread, void *obj)
 {
 	switch_scheduler_task_container_t *tp = (switch_scheduler_task_container_t *) obj;
 	switch_memory_pool_t *pool;
@@ -121,7 +121,7 @@ static int task_thread_loop(int done)
 	return done;
 }
 
-static void *SWITCH_THREAD_FUNC switch_scheduler_task_thread(switch_thread_t *thread, void *obj)
+static void *SWITCH_THREAD_FUNC switch_scheduler_task_thread(switch_thread_t * thread, void *obj)
 {
 
 	globals.task_thread_running = 1;
@@ -144,9 +144,7 @@ static void *SWITCH_THREAD_FUNC switch_scheduler_task_thread(switch_thread_t *th
 
 SWITCH_DECLARE(uint32_t) switch_scheduler_add_task(time_t task_runtime,
 												   switch_scheduler_func_t func,
-												   char *desc,
-												   char *group,
-												   uint32_t cmd_id, void *cmd_arg, switch_scheduler_flag_t flags)
+												   char *desc, char *group, uint32_t cmd_id, void *cmd_arg, switch_scheduler_flag_t flags)
 {
 	switch_scheduler_task_container_t *container, *tp;
 	switch_event_t *event;

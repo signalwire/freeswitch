@@ -59,8 +59,7 @@ static void detect_speech_function(switch_core_session_t *session, char *data)
 			switch_ivr_detect_speech(session, argv[0], argv[1], argv[2], argv[3], NULL);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n",
-						  detect_speech_application_interface.syntax);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", detect_speech_application_interface.syntax);
 	}
 
 }
@@ -430,8 +429,7 @@ static void privacy_function(switch_core_session_t *session, char *data)
 		} else if (!strcasecmp(arg, "number")) {
 			switch_set_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-							  "INVALID privacy mode specified. Use a valid mode [no|yes|name|full|number].\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID privacy mode specified. Use a valid mode [no|yes|name|full|number].\n");
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Privacy to %s [%d]\n", arg, caller_profile->flags);
 	}
@@ -552,7 +550,7 @@ static switch_status_t chat_api_function(char *fmt, switch_core_session_t *sessi
 static char *ivr_cf_name = "ivr.conf";
 
 #ifdef _TEST_CALLBACK_
-static switch_ivr_action_t menu_handler(switch_ivr_menu_t *menu, char *param, char *buf, size_t buflen, void *obj)
+static switch_ivr_action_t menu_handler(switch_ivr_menu_t * menu, char *param, char *buf, size_t buflen, void *obj)
 {
 	switch_ivr_action_t action = SWITCH_IVR_ACTION_NOOP;
 
@@ -585,11 +583,9 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 					// build a menu tree and execute it
 					if (switch_ivr_menu_stack_xml_init(&xml_ctx, NULL) == SWITCH_STATUS_SUCCESS
 #ifdef _TEST_CALLBACK_
-						&& switch_ivr_menu_stack_xml_add_custom(xml_ctx, "custom",
-																&menu_handler) == SWITCH_STATUS_SUCCESS
+						&& switch_ivr_menu_stack_xml_add_custom(xml_ctx, "custom", &menu_handler) == SWITCH_STATUS_SUCCESS
 #endif
-						&& switch_ivr_menu_stack_xml_build(xml_ctx, &menu_stack, xml_menus,
-														   xml_menu) == SWITCH_STATUS_SUCCESS) {
+						&& switch_ivr_menu_stack_xml_build(xml_ctx, &menu_stack, xml_menus, xml_menu) == SWITCH_STATUS_SUCCESS) {
 						switch_xml_free(cxml);
 						cxml = NULL;
 						switch_channel_pre_answer(channel);
@@ -877,8 +873,7 @@ static const switch_loadable_module_interface_t mod_dptools_module_interface = {
 	/*.api_interface */ &presence_api_interface
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */

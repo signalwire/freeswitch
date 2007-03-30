@@ -85,8 +85,7 @@ static uint32_t match_count(char *str, uint32_t max)
   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 */
-static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf,
-							   unsigned int buflen)
+static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
 	switch (itype) {
 	case SWITCH_INPUT_TYPE_DTMF:{
@@ -245,9 +244,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 	}
 
 	memset(&sh, 0, sizeof(sh));
-	if (switch_core_speech_open(&sh,
-								engine,
-								voice, rate, &flags, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_speech_open(&sh, engine, voice, rate, &flags, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module!\n");
 		return;
 	}
@@ -257,30 +254,24 @@ static void rss_function(switch_core_session_t *session, char *data)
 							   NULL,
 							   (int) rate,
 							   interval,
-							   1,
-							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activated\n");
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
-						  rate, interval);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n", rate, interval);
 		flags = 0;
 		switch_core_speech_close(&sh, &flags);
 		return;
 	}
 
 	if (timer_name) {
-		if (switch_core_timer_init
-			(&timer, timer_name, interval, (int) (rate / 50),
-			 switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+		if (switch_core_timer_init(&timer, timer_name, interval, (int) (rate / 50), switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup timer failed!\n");
 			switch_core_codec_destroy(&speech_codec);
 			flags = 0;
 			switch_core_speech_close(&sh, &flags);
 			return;
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer success %u bytes per %d ms!\n",
-						  (rate / 50) * 2, interval);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer success %u bytes per %d ms!\n", (rate / 50) * 2, interval);
 
 		/* start a thread to absorb incoming audio */
 		for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
@@ -311,8 +302,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 #else
 			snprintf(buf + len, sizeof(buf) - len,
 					 ",<break time=\"500ms\"/>Main Menu. <break time=\"600ms\"/> "
-					 "Select one of the following news sources, followed by the pound key or press 0 to exit. "
-					 ",<break time=\"600ms\"/>");
+					 "Select one of the following news sources, followed by the pound key or press 0 to exit. " ",<break time=\"600ms\"/>");
 #endif
 			len = (int32_t) strlen(buf);
 
@@ -370,10 +360,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 				args.input_callback = NULL;
 				args.buf = NULL;
 				args.buflen = 0;
-				status = switch_ivr_speak_text_handle(session,
-													  &sh,
-													  &speech_codec,
-													  timerp, "I'm sorry. That is an Invalid Selection. ", &args);
+				status = switch_ivr_speak_text_handle(session, &sh, &speech_codec, timerp, "I'm sorry. That is an Invalid Selection. ", &args);
 				if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 					goto finished;
 				}
@@ -544,8 +531,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 					}
 					if (switch_test_flag(&dtb, SFLAG_INFO)) {
 						switch_clear_flag(&dtb, SFLAG_INFO);
-						snprintf(buf + len, sizeof(buf) - len,
-								 "%s %s. I am speaking at %u words per minute. ", sh.engine, sh.voice, dtb.speed);
+						snprintf(buf + len, sizeof(buf) - len, "%s %s. I am speaking at %u words per minute. ", sh.engine, sh.voice, dtb.speed);
 						len = (uint32_t) strlen(buf);
 					}
 
@@ -569,8 +555,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 						}
 
 						if (entries[dtb.index].dept_txt) {
-							snprintf(buf + len, sizeof(buf) - len, "From the %s department. ",
-									 entries[dtb.index].dept_txt);
+							snprintf(buf + len, sizeof(buf) - len, "From the %s department. ", entries[dtb.index].dept_txt);
 							len = (uint32_t) strlen(buf);
 						}
 
@@ -599,10 +584,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 						args.input_callback = on_dtmf;
 						args.buf = &dtb;
 						args.buflen = sizeof(dtb);
-						status = switch_ivr_speak_text_handle(session,
-															  &sh,
-															  &speech_codec,
-															  timerp, entries[dtb.index].description_txt, &args);
+						status = switch_ivr_speak_text_handle(session, &sh, &speech_codec, timerp, entries[dtb.index].description_txt, &args);
 					}
 					if (status == SWITCH_STATUS_BREAK) {
 						continue;
@@ -655,8 +637,7 @@ static switch_loadable_module_interface_t rss_module_interface = {
 };
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &rss_module_interface;

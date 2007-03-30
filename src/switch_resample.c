@@ -53,9 +53,7 @@
 
 
 SWITCH_DECLARE(switch_status_t) switch_resample_create(switch_audio_resampler_t **new_resampler,
-													   int from_rate,
-													   switch_size_t from_size,
-													   int to_rate, uint32_t to_size, switch_memory_pool_t *pool)
+													   int from_rate, switch_size_t from_size, int to_rate, uint32_t to_size, switch_memory_pool_t * pool)
 {
 #ifdef DISABLE_RESAMPLE
 	*new_resampler = NULL;
@@ -75,8 +73,7 @@ SWITCH_DECLARE(switch_status_t) switch_resample_create(switch_audio_resampler_t 
 	resampler->factor = (lto_rate / lfrom_rate);
 
 	resampler->resampler = resample_open(QUALITY, resampler->factor, resampler->factor);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Activate Resampler %d->%d %f\n", resampler->from_rate,
-					  resampler->to_rate, resampler->factor);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Activate Resampler %d->%d %f\n", resampler->from_rate, resampler->to_rate, resampler->factor);
 	resampler->from_size = from_size;
 	resampler->from = (float *) switch_core_alloc(pool, resampler->from_size);
 	resampler->to_size = to_size;
@@ -88,8 +85,7 @@ SWITCH_DECLARE(switch_status_t) switch_resample_create(switch_audio_resampler_t 
 }
 
 
-SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler_t *resampler, float *src, int srclen,
-												 float *dst, uint32_t dstlen, int last)
+SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler_t *resampler, float *src, int srclen, float *dst, uint32_t dstlen, int last)
 {
 #ifdef DISABLE_RESAMPLE
 	return 0;
@@ -99,8 +95,7 @@ SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler_t *resam
 	for (;;) {
 		int srcBlock = MIN(srclen - srcpos, srclen);
 		int lastFlag = (last && (srcBlock == srclen - srcpos));
-		o = resample_process(resampler->resampler, resampler->factor, &src[srcpos], srcBlock, lastFlag, &srcused,
-							 &dst[out], dstlen - out);
+		o = resample_process(resampler->resampler, resampler->factor, &src[srcpos], srcBlock, lastFlag, &srcused, &dst[out], dstlen - out);
 		/* printf("resampling %d/%d (%d) %d %f\n",  srcpos, srclen,  MIN(dstlen-out, dstlen), srcused, factor); */
 
 		srcpos += srcused;

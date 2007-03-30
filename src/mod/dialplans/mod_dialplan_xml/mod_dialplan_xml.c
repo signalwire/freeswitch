@@ -114,11 +114,8 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 			if (!field_data) {
 				field_data = "";
 			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "test conditions %s(%s) =~ /%s/\n", field,
-							  field_data, expression);
-			if (!
-				(proceed =
-				 switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "test conditions %s(%s) =~ /%s/\n", field, field_data, expression);
+			if (!(proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Regex mismatch\n");
 
 				for (xaction = switch_xml_child(xcond, "anti-action"); xaction; xaction = xaction->next) {
@@ -126,9 +123,7 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 					char *data = (char *) switch_xml_attr_soft(xaction, "data");
 
 					if (!*extension) {
-						if ((*extension =
-							 switch_caller_extension_new(session, exten_name,
-														 caller_profile->destination_number)) == 0) {
+						if ((*extension = switch_caller_extension_new(session, exten_name, caller_profile->destination_number)) == 0) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
 							proceed = 0;
 							goto done;
@@ -170,8 +165,7 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 			}
 
 			if (!*extension) {
-				if ((*extension =
-					 switch_caller_extension_new(session, exten_name, caller_profile->destination_number)) == 0) {
+				if ((*extension = switch_caller_extension_new(session, exten_name, caller_profile->destination_number)) == 0) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
 					proceed = 0;
 					goto done;
@@ -194,9 +188,7 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 	return proceed;
 }
 
-static switch_status_t dialplan_xml_locate(switch_core_session_t *session,
-										   switch_caller_profile_t *caller_profile,
-										   switch_xml_t * root, switch_xml_t * node)
+static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t * root, switch_xml_t * node)
 {
 	switch_status_t status = SWITCH_STATUS_GENERR;
 	switch_channel_t *channel;
@@ -261,8 +253,7 @@ static switch_status_t dialplan_xml_locate(switch_core_session_t *session,
 	}
 
 
-	for (hi = switch_channel_variable_first(channel, switch_core_session_get_pool(session)); hi;
-		 hi = switch_hash_next(hi)) {
+	for (hi = switch_channel_variable_first(channel, switch_core_session_get_pool(session)); hi; hi = switch_hash_next(hi)) {
 		void *val;
 		const void *var;
 		switch_hash_this(hi, &var, NULL, &val);
@@ -318,8 +309,7 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, 
 		goto done;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Processing %s->%s!\n", caller_profile->caller_id_name,
-					  caller_profile->destination_number);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Processing %s->%s!\n", caller_profile->caller_id_name, caller_profile->destination_number);
 
 	/* get our handle to the "dialplan" section of the config */
 
@@ -330,10 +320,8 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, 
 			goto done;
 		}
 
-		if ((conf = switch_xml_find_child(alt_root, "section", "name", "dialplan")) &&
-			(tag = switch_xml_find_child(conf, "dialplan", NULL, NULL))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Getting dialplan from alternate path: %s\n",
-							  alt_path);
+		if ((conf = switch_xml_find_child(alt_root, "section", "name", "dialplan")) && (tag = switch_xml_find_child(conf, "dialplan", NULL, NULL))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Getting dialplan from alternate path: %s\n", alt_path);
 			xml = alt_root;
 			cfg = tag;
 		} else {
@@ -350,8 +338,7 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, 
 	/* get a handle to the context tag */
 	if (!(xcontext = switch_xml_find_child(cfg, "context", "name", caller_profile->context))) {
 		if (!(xcontext = switch_xml_find_child(cfg, "context", "name", "global"))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "context %s not found\n",
-							  caller_profile->context);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "context %s not found\n", caller_profile->context);
 			goto done;
 		}
 	}
@@ -402,8 +389,7 @@ static const switch_loadable_module_interface_t dialplan_module_interface = {
 	/*.application_interface = */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */

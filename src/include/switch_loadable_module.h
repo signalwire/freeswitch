@@ -204,8 +204,7 @@ SWITCH_DECLARE(switch_management_interface_t *) switch_loadable_module_get_manag
   \param arraylen the max size in elements of the array
   \return the number of elements added to the array
  */
-SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool,
-													  const switch_codec_implementation_t **array, int arraylen);
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t * pool, const switch_codec_implementation_t **array, int arraylen);
 
 
 /*!
@@ -217,8 +216,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool
   \return the number of elements added to the array
   \note this function only considers codecs that are listed in the "prefs" array and ignores the rest.
 */
-SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_implementation_t **array,
-															 int arraylen, char **prefs, int preflen);
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_implementation_t **array, int arraylen, char **prefs, int preflen);
 
 /*!
   \brief Execute a registered API command
@@ -228,8 +226,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
   \param stream stream for output
   \return the status returned by the API call
 */
-SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_core_session_t *session,
-												   switch_stream_handle_t *stream);
+SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_core_session_t *session, switch_stream_handle_t *stream);
 
 
 
@@ -249,8 +246,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, ch
   \param filename the path to the module's dll or so file
   \return SWITCH_STATUS_SUCCESS on a successful load
 */
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename);
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename);
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_reload(void);
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_pause(void);
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_resume(void);

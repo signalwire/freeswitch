@@ -165,8 +165,7 @@ int fs_ivr_play_file(switch_core_session_t *session, switch_file_handle_t *fh, c
 	return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-int fs_switch_ivr_record_file(switch_core_session_t *session,
-							  switch_file_handle_t *fh, char *file, switch_input_args_t *args, unsigned int limit)
+int fs_switch_ivr_record_file(switch_core_session_t *session, switch_file_handle_t *fh, char *file, switch_input_args_t *args, unsigned int limit)
 {
 	switch_status_t status;
 
@@ -190,8 +189,7 @@ int fs_ivr_play_file2(switch_core_session_t *session, char *file)
 }
 
 
-int fs_switch_ivr_collect_digits_callback(switch_core_session_t *session,
-										  switch_input_args_t *args, unsigned int timeout)
+int fs_switch_ivr_collect_digits_callback(switch_core_session_t *session, switch_input_args_t *args, unsigned int timeout)
 {
 	switch_status_t status;
 
@@ -200,10 +198,7 @@ int fs_switch_ivr_collect_digits_callback(switch_core_session_t *session,
 }
 
 int fs_switch_ivr_collect_digits_count(switch_core_session_t *session,
-									   char *buf,
-									   unsigned int buflen,
-									   unsigned int maxdigits,
-									   const char *terminators, char *terminator, unsigned int timeout)
+									   char *buf, unsigned int buflen, unsigned int maxdigits, const char *terminators, char *terminator, unsigned int timeout)
 {
 	switch_status_t status;
 
@@ -224,8 +219,7 @@ int fs_switch_ivr_collect_digits_count(switch_core_session_t *session,
   }
 */
 
-int fs_switch_ivr_originate(switch_core_session_t *session,
-							switch_core_session_t **bleg, char *bridgeto, uint32_t timelimit_sec)
+int fs_switch_ivr_originate(switch_core_session_t *session, switch_core_session_t **bleg, char *bridgeto, uint32_t timelimit_sec)
 /*const switch_state_handler_table_t *table,
   char *  	cid_name_override,
   char *  	cid_num_override,
@@ -245,8 +239,7 @@ int fs_switch_ivr_originate(switch_core_session_t *session,
 		timelimit = atoi(var);
 	}
 
-	if (switch_ivr_originate(session, &peer_session, &cause, bridgeto, timelimit, NULL, NULL, NULL, NULL) !=
-		SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_originate(session, &peer_session, &cause, bridgeto, timelimit, NULL, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel!\n");
 		switch_channel_hangup(caller_channel, SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL);
 		return;
@@ -265,8 +258,7 @@ int fs_switch_ivr_session_transfer(switch_core_session_t *session, char *extensi
 	return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-int fs_switch_ivr_speak_text(switch_core_session_t *session,
-							 char *tts_name, char *voice_name, uint32_t rate, char *text)
+int fs_switch_ivr_speak_text(switch_core_session_t *session, char *tts_name, char *voice_name, uint32_t rate, char *text)
 {
 	switch_status_t status;
 

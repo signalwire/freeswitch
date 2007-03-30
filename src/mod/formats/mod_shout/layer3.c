@@ -114,16 +114,13 @@ void init_layer3_const(void)
 	}
 
 	for (i = 0; i < 18; i++) {
-		win[0][i] = win[1][i] =
-			0.5 * sin(M_PI / 72.0 * (double) (2 * (i + 0) + 1)) / cos(M_PI * (double) (2 * (i + 0) + 19) / 72.0);
-		win[0][i + 18] = win[3][i + 18] =
-			0.5 * sin(M_PI / 72.0 * (double) (2 * (i + 18) + 1)) / cos(M_PI * (double) (2 * (i + 18) + 19) / 72.0);
+		win[0][i] = win[1][i] = 0.5 * sin(M_PI / 72.0 * (double) (2 * (i + 0) + 1)) / cos(M_PI * (double) (2 * (i + 0) + 19) / 72.0);
+		win[0][i + 18] = win[3][i + 18] = 0.5 * sin(M_PI / 72.0 * (double) (2 * (i + 18) + 1)) / cos(M_PI * (double) (2 * (i + 18) + 19) / 72.0);
 	}
 	for (i = 0; i < 6; i++) {
 		win[1][i + 18] = 0.5 / cos(M_PI * (double) (2 * (i + 18) + 19) / 72.0);
 		win[3][i + 12] = 0.5 / cos(M_PI * (double) (2 * (i + 12) + 19) / 72.0);
-		win[1][i + 24] =
-			0.5 * sin(M_PI / 24.0 * (double) (2 * i + 13)) / cos(M_PI * (double) (2 * (i + 24) + 19) / 72.0);
+		win[1][i + 24] = 0.5 * sin(M_PI / 24.0 * (double) (2 * i + 13)) / cos(M_PI * (double) (2 * (i + 24) + 19) / 72.0);
 		win[1][i + 30] = win[3][i] = 0.0;
 		win[3][i + 6] = 0.5 * sin(M_PI / 24.0 * (double) (2 * i + 1)) / cos(M_PI * (double) (2 * (i + 6) + 19) / 72.0);
 	}
@@ -295,8 +292,7 @@ void init_layer3_sample_limits(struct mpstr *mp, int down_sample_sblimit)
  * read additional side information
  */
 #ifdef MPEG1
-static int III_get_side_info_1(struct mpstr *mp, struct III_sideinfo *si, int stereo,
-							   int ms_stereo, long sfreq, int single)
+static int III_get_side_info_1(struct mpstr *mp, struct III_sideinfo *si, int stereo, int ms_stereo, long sfreq, int single)
 {
 	int ch, gr;
 	int powdiff = (single == 3) ? 4 : 0;
@@ -372,8 +368,7 @@ static int III_get_side_info_1(struct mpstr *mp, struct III_sideinfo *si, int st
 /*
  * Side Info for MPEG 2.0 / LSF
  */
-static int III_get_side_info_2(struct mpstr *mp, struct III_sideinfo *si, int stereo,
-							   int ms_stereo, long sfreq, int single)
+static int III_get_side_info_2(struct mpstr *mp, struct III_sideinfo *si, int stereo, int ms_stereo, long sfreq, int single)
 {
 	int ch;
 	int powdiff = (single == 3) ? 4 : 0;
@@ -602,8 +597,7 @@ static int pretab2[22] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 /*
  * don't forget to apply the same changes to III_dequantize_sample_ms() !!! 
  */
-static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], int *scf,
-								 struct gr_info_s *gr_info, int sfreq, int part2bits)
+static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], int *scf, struct gr_info_s *gr_info, int sfreq, int part2bits)
 {
 	int shift = 1 + gr_info->scalefac_scale;
 	real *xrpnt = (real *) xr;
@@ -953,8 +947,7 @@ static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], in
 }
 
 #if 0
-static int III_dequantize_sample_ms(real xr[2][SBLIMIT][SSLIMIT], int *scf,
-									struct gr_info_s *gr_info, int sfreq, int part2bits)
+static int III_dequantize_sample_ms(real xr[2][SBLIMIT][SSLIMIT], int *scf, struct gr_info_s *gr_info, int sfreq, int part2bits)
 {
 	int shift = 1 + gr_info->scalefac_scale;
 	real *xrpnt = (real *) xr[1];
@@ -1345,8 +1338,7 @@ static int III_dequantize_sample_ms(real xr[2][SBLIMIT][SSLIMIT], int *scf,
 /* 
  * III_stereo: calculate real channel values for Joint-I-Stereo-mode
  */
-static void III_i_stereo(real xr_buf[2][SBLIMIT][SSLIMIT], int *scalefac,
-						 struct gr_info_s *gr_info, int sfreq, int ms_stereo, int lsf)
+static void III_i_stereo(real xr_buf[2][SBLIMIT][SSLIMIT], int *scalefac, struct gr_info_s *gr_info, int sfreq, int ms_stereo, int lsf)
 {
 	real(*xr)[SBLIMIT * SSLIMIT] = (real(*)[SBLIMIT * SSLIMIT]) xr_buf;
 	struct bandInfoStruct *bi = &bandInfo[sfreq];
@@ -1777,8 +1769,7 @@ static void dct12(real * in, real * rawout1, real * rawout2, register real * wi,
 /*
  * III_hybrid
  */
-static void III_hybrid(struct mpstr *mp, real fsIn[SBLIMIT][SSLIMIT], real tsOut[SSLIMIT][SBLIMIT],
-					   int ch, struct gr_info_s *gr_info)
+static void III_hybrid(struct mpstr *mp, real fsIn[SBLIMIT][SSLIMIT], real tsOut[SSLIMIT][SBLIMIT], int ch, struct gr_info_s *gr_info)
 {
 	real *tspnt = (real *) tsOut;
 	real(*block)[2][SBLIMIT * SSLIMIT] = mp->hybrid_block;

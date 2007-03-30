@@ -50,7 +50,7 @@ SWITCH_BEGIN_EXTERN_C
  * Each open database is represented by an instance of the
  * following opaque structure.
 */
-	typedef struct sqlite3 switch_core_db_t;
+typedef struct sqlite3 switch_core_db_t;
 typedef struct sqlite3_stmt switch_core_db_stmt_t;
 
 typedef int (*switch_core_db_callback_func_t) (void *pArg, int argc, char **argv, char **columnNames);
@@ -82,7 +82,7 @@ typedef void (*switch_core_db_destructor_type_t) (void *);
  * this routine is called. Otherwise, SWITCH_CORE_DB_BUSY is returned and the
  * database connection remains open.
  */
-SWITCH_DECLARE(int) switch_core_db_close(switch_core_db_t *db);
+SWITCH_DECLARE(int) switch_core_db_close(switch_core_db_t * db);
 
 /**
  * Open the database file "filename".  The "filename" is UTF-8
@@ -99,7 +99,7 @@ SWITCH_DECLARE(int) switch_core_db_close(switch_core_db_t *db);
  * with the switch_core_db_t* handle should be released by passing it to
  * switch_core_db_close() when it is no longer required.
  */
-SWITCH_DECLARE(int) switch_core_db_open(const char *filename, switch_core_db_t **ppDb);
+SWITCH_DECLARE(int) switch_core_db_open(const char *filename, switch_core_db_t ** ppDb);
 
 /**
  * The next group of routines returns information about the information
@@ -164,7 +164,7 @@ SWITCH_DECLARE(int) switch_core_db_column_count(switch_core_db_stmt_t *pStmt);
  * The string "not an error" is returned when the most recent API call was
  * successful.
  */
-SWITCH_DECLARE(const char *) switch_core_db_errmsg(switch_core_db_t *db);
+SWITCH_DECLARE(const char *) switch_core_db_errmsg(switch_core_db_t * db);
 
 /**
  * A function to executes one or more statements of SQL.
@@ -206,9 +206,7 @@ SWITCH_DECLARE(const char *) switch_core_db_errmsg(switch_core_db_t *db);
  * behavior can be modified somewhat using the sswitch_core_db_busy_handler()
  * and switch_core_db_busy_timeout() functions below.)
  */
-SWITCH_DECLARE(int) switch_core_db_exec(switch_core_db_t *db,
-										const char *sql,
-										switch_core_db_callback_func_t callback, void *data, char **errmsg);
+SWITCH_DECLARE(int) switch_core_db_exec(switch_core_db_t * db, const char *sql, switch_core_db_callback_func_t callback, void *data, char **errmsg);
 
 /**
  * This function is called to delete a compiled
@@ -248,9 +246,7 @@ SWITCH_DECLARE(int) switch_core_db_finalize(switch_core_db_stmt_t *pStmt);
  *
  * On success, SWITCH_CORE_DB_OK is returned.  Otherwise an error code is returned.
  */
-SWITCH_DECLARE(int) switch_core_db_prepare(switch_core_db_t *db,
-										   const char *zSql,
-										   int nBytes, switch_core_db_stmt_t **ppStmt, const char **pzTail);
+SWITCH_DECLARE(int) switch_core_db_prepare(switch_core_db_t * db, const char *zSql, int nBytes, switch_core_db_stmt_t **ppStmt, const char **pzTail);
 
 /** 
  * After an SQL query has been compiled with a call to either
@@ -367,8 +363,7 @@ SWITCH_DECLARE(int) switch_core_db_bind_int64(switch_core_db_stmt_t *pStmt, int 
  * an switch_core_db_prepare() or sqlite3_reset().  Unbound parameterss are
  * interpreted as NULL.
  */
-SWITCH_DECLARE(int) switch_core_db_bind_text(switch_core_db_stmt_t *pStmt, int i, const char *zData, int nData,
-											 switch_core_db_destructor_type_t xDel);
+SWITCH_DECLARE(int) switch_core_db_bind_text(switch_core_db_stmt_t *pStmt, int i, const char *zData, int nData, switch_core_db_destructor_type_t xDel);
 
 /**
  * In the SQL strings input to switch_core_db_prepare(),
@@ -401,7 +396,7 @@ SWITCH_DECLARE(int) switch_core_db_bind_double(switch_core_db_stmt_t *pStmt, int
  *
  * This function is similar to the mysql_insert_id() function from MySQL.
  */
-SWITCH_DECLARE(int64_t) switch_core_db_last_insert_rowid(switch_core_db_t *db);
+SWITCH_DECLARE(int64_t) switch_core_db_last_insert_rowid(switch_core_db_t * db);
 
 /**
  * This next routine is really just a wrapper around switch_core_db_exec().
@@ -444,7 +439,7 @@ SWITCH_DECLARE(int64_t) switch_core_db_last_insert_rowid(switch_core_db_t *db);
  *
  * The return value of this routine is the same as from switch_core_db_exec().
  */
-SWITCH_DECLARE(int) switch_core_db_get_table(switch_core_db_t *db,	/* An open database */
+SWITCH_DECLARE(int) switch_core_db_get_table(switch_core_db_t * db,	/* An open database */
 											 const char *sql,	/* SQL to be executed */
 											 char ***resultp,	/* Result written to a char *[]  that this points to */
 											 int *nrow,	/* Number of result rows written here */

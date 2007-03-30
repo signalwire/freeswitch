@@ -47,12 +47,12 @@ static void db_pick_path(char *dbname, char *buf, switch_size_t size)
 }
 
 
-SWITCH_DECLARE(int) switch_core_db_open(const char *filename, switch_core_db_t **ppDb)
+SWITCH_DECLARE(int) switch_core_db_open(const char *filename, switch_core_db_t ** ppDb)
 {
 	return sqlite3_open(filename, ppDb);
 }
 
-SWITCH_DECLARE(int) switch_core_db_close(switch_core_db_t *db)
+SWITCH_DECLARE(int) switch_core_db_close(switch_core_db_t * db)
 {
 	return sqlite3_close(db);
 }
@@ -72,14 +72,12 @@ SWITCH_DECLARE(int) switch_core_db_column_count(switch_core_db_stmt_t *pStmt)
 	return sqlite3_column_count(pStmt);
 }
 
-SWITCH_DECLARE(const char *) switch_core_db_errmsg(switch_core_db_t *db)
+SWITCH_DECLARE(const char *) switch_core_db_errmsg(switch_core_db_t * db)
 {
 	return sqlite3_errmsg(db);
 }
 
-SWITCH_DECLARE(int) switch_core_db_exec(switch_core_db_t *db,
-										const char *sql,
-										switch_core_db_callback_func_t callback, void *data, char **errmsg)
+SWITCH_DECLARE(int) switch_core_db_exec(switch_core_db_t * db, const char *sql, switch_core_db_callback_func_t callback, void *data, char **errmsg)
 {
 	return sqlite3_exec(db, sql, callback, data, errmsg);
 }
@@ -89,9 +87,7 @@ SWITCH_DECLARE(int) switch_core_db_finalize(switch_core_db_stmt_t *pStmt)
 	return sqlite3_finalize(pStmt);
 }
 
-SWITCH_DECLARE(int) switch_core_db_prepare(switch_core_db_t *db,
-										   const char *zSql,
-										   int nBytes, switch_core_db_stmt_t **ppStmt, const char **pzTail)
+SWITCH_DECLARE(int) switch_core_db_prepare(switch_core_db_t * db, const char *zSql, int nBytes, switch_core_db_stmt_t **ppStmt, const char **pzTail)
 {
 	return sqlite3_prepare(db, zSql, nBytes, ppStmt, pzTail);
 }
@@ -116,8 +112,7 @@ SWITCH_DECLARE(int) switch_core_db_bind_int64(switch_core_db_stmt_t *pStmt, int 
 	return sqlite3_bind_int64(pStmt, i, iValue);
 }
 
-SWITCH_DECLARE(int) switch_core_db_bind_text(switch_core_db_stmt_t *pStmt, int i, const char *zData, int nData,
-											 switch_core_db_destructor_type_t xDel)
+SWITCH_DECLARE(int) switch_core_db_bind_text(switch_core_db_stmt_t *pStmt, int i, const char *zData, int nData, switch_core_db_destructor_type_t xDel)
 {
 	return sqlite3_bind_text(pStmt, i, zData, nData, xDel);
 }
@@ -127,13 +122,12 @@ SWITCH_DECLARE(int) switch_core_db_bind_double(switch_core_db_stmt_t *pStmt, int
 	return sqlite3_bind_double(pStmt, i, dValue);
 }
 
-SWITCH_DECLARE(int64_t) switch_core_db_last_insert_rowid(switch_core_db_t *db)
+SWITCH_DECLARE(int64_t) switch_core_db_last_insert_rowid(switch_core_db_t * db)
 {
 	return sqlite3_last_insert_rowid(db);
 }
 
-SWITCH_DECLARE(int) switch_core_db_get_table(switch_core_db_t *db, const char *sql, char ***resultp, int *nrow,
-											 int *ncolumn, char **errmsg)
+SWITCH_DECLARE(int) switch_core_db_get_table(switch_core_db_t * db, const char *sql, char ***resultp, int *nrow, int *ncolumn, char **errmsg)
 {
 	return sqlite3_get_table(db, sql, resultp, nrow, ncolumn, errmsg);
 }
@@ -173,7 +167,7 @@ SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(char *filename)
 }
 
 
-SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *test_sql, char *reactive_sql)
+SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t * db, char *test_sql, char *reactive_sql)
 {
 	char *errmsg;
 
@@ -182,14 +176,12 @@ SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *te
 			switch_core_db_exec(db, test_sql, NULL, NULL, &errmsg);
 
 			if (errmsg) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\nAuto Generating Table!\n",
-								  errmsg, test_sql);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\nAuto Generating Table!\n", errmsg, test_sql);
 				switch_core_db_free(errmsg);
 				errmsg = NULL;
 				switch_core_db_exec(db, reactive_sql, NULL, NULL, &errmsg);
 				if (errmsg) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\n", errmsg,
-									  reactive_sql);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\n", errmsg, reactive_sql);
 					switch_core_db_free(errmsg);
 					errmsg = NULL;
 				}

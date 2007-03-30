@@ -105,8 +105,7 @@ extern "C" {
  */
 	PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 							const PaStreamParameters * inputParameters,
-							const PaStreamParameters * outputParameters,
-							double sampleRate, PaStreamCallbackFlags statusFlags);
+							const PaStreamParameters * outputParameters, double sampleRate, PaStreamCallbackFlags statusFlags);
 
 	PaError CloseAudioStream(PABLIO_Stream * aStream);
 

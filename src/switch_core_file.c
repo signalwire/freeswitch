@@ -35,9 +35,7 @@
 #include "private/switch_core.h"
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh,
-													  char *file_path,
-													  uint8_t channels,
-													  uint32_t rate, unsigned int flags, switch_memory_pool_t *pool)
+													  char *file_path, uint8_t channels, uint32_t rate, unsigned int flags, switch_memory_pool_t * pool)
 {
 	char *ext;
 	switch_status_t status;
@@ -108,8 +106,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 	return fh->file_interface->file_write(fh, data, len);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, unsigned int *cur_pos, int64_t samples,
-													  int whence)
+SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, unsigned int *cur_pos, int64_t samples, int whence)
 {
 	assert(fh != NULL);
 
@@ -117,16 +114,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, 
 	return fh->file_interface->file_seek(fh, cur_pos, samples, whence);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_file_set_string(switch_file_handle_t *fh, switch_audio_col_t col,
-															const char *string)
+SWITCH_DECLARE(switch_status_t) switch_core_file_set_string(switch_file_handle_t *fh, switch_audio_col_t col, const char *string)
 {
 	assert(fh != NULL);
 
 	return fh->file_interface->file_set_string(fh, col, string);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(switch_file_handle_t *fh, switch_audio_col_t col,
-															const char **string)
+SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(switch_file_handle_t *fh, switch_audio_col_t col, const char **string)
 {
 	assert(fh != NULL);
 

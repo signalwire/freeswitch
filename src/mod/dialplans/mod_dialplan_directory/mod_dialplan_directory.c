@@ -99,17 +99,14 @@ static switch_caller_extension_t *directory_dialplan_hunt(switch_core_session_t 
 
 	caller_profile = switch_channel_get_caller_profile(channel);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Hello %s You Dialed %s!\n", caller_profile->caller_id_name,
-					  caller_profile->destination_number);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Hello %s You Dialed %s!\n", caller_profile->caller_id_name, caller_profile->destination_number);
 
 
 	if (!(globals.directory_name && globals.host && globals.dn && globals.base && globals.pass)) {
 		return NULL;
 	}
 
-	if (switch_core_directory_open(&dh,
-								   globals.directory_name,
-								   globals.host, globals.dn, globals.pass, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_directory_open(&dh, globals.directory_name, globals.host, globals.dn, globals.pass, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't connect\n");
 		return NULL;
 	}
@@ -126,8 +123,7 @@ static switch_caller_extension_t *directory_dialplan_hunt(switch_core_session_t 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DIRECTORY VALUE [%s]=[%s]\n", var, val);
 			if (!strcasecmp(var, "callflow")) {
 				if (!extension) {
-					if ((extension = switch_caller_extension_new(session, caller_profile->destination_number,
-																 caller_profile->destination_number)) == 0) {
+					if ((extension = switch_caller_extension_new(session, caller_profile->destination_number, caller_profile->destination_number)) == 0) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
 						goto out;
 					}
@@ -168,8 +164,7 @@ static const switch_loadable_module_interface_t directory_dialplan_module_interf
 	/*.application_interface = */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 
 	load_config();

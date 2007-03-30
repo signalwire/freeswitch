@@ -49,8 +49,7 @@ static WORD COLORS[] = { FOREGROUND_RED | FOREGROUND_INTENSITY,
 	FOREGROUND_GREEN | FOREGROUND_INTENSITY
 };
 #else
-static const char *COLORS[] =
-	{ SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FMAGEN, SWITCH_SEQ_FCYAN,
+static const char *COLORS[] = { SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FMAGEN, SWITCH_SEQ_FCYAN,
 	SWITCH_SEQ_FGREEN, SWITCH_SEQ_FYELLOW, ""
 };
 #endif
@@ -130,8 +129,7 @@ static switch_status_t config_logger(void)
 			if (!strcasecmp(var, "colorize") && switch_true(val)) {
 #ifdef WIN32
 				hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-				if (switch_core_get_console() == stdout && hStdout != INVALID_HANDLE_VALUE
-					&& GetConsoleScreenBufferInfo(hStdout, &csbiInfo)) {
+				if (switch_core_get_console() == stdout && hStdout != INVALID_HANDLE_VALUE && GetConsoleScreenBufferInfo(hStdout, &csbiInfo)) {
 					wOldColorAttrs = csbiInfo.wAttributes;
 					COLORIZE = 1;
 				}
@@ -190,8 +188,7 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");

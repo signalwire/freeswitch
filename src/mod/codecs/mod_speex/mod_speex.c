@@ -72,8 +72,7 @@ struct speex_context {
 	int decoder_mode;
 };
 
-static switch_status_t switch_speex_init(switch_codec_t *codec, switch_codec_flag_t flags,
-										 const switch_codec_settings_t *codec_settings)
+static switch_status_t switch_speex_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	struct speex_context *context = NULL;
 	int encoding, decoding;
@@ -111,17 +110,14 @@ static switch_status_t switch_speex_init(switch_codec_t *codec, switch_codec_fla
 			speex_encoder_ctl(context->encoder_state, SPEEX_GET_FRAME_SIZE, &context->encoder_frame_size);
 			speex_encoder_ctl(context->encoder_state, SPEEX_SET_COMPLEXITY, &codec->codec_settings.complexity);
 			if (codec->codec_settings.preproc) {
-				context->pp =
-					speex_preprocess_state_init(context->encoder_frame_size, codec->implementation->samples_per_second);
+				context->pp = speex_preprocess_state_init(context->encoder_frame_size, codec->implementation->samples_per_second);
 				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_VAD, &codec->codec_settings.pp_vad);
 				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_AGC, &codec->codec_settings.pp_agc);
 				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_AGC_LEVEL, &codec->codec_settings.pp_agc_level);
 				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_DENOISE, &codec->codec_settings.pp_denoise);
 				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_DEREVERB, &codec->codec_settings.pp_dereverb);
-				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_DEREVERB_DECAY,
-									 &codec->codec_settings.pp_dereverb_decay);
-				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_DEREVERB_LEVEL,
-									 &codec->codec_settings.pp_dereverb_level);
+				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_DEREVERB_DECAY, &codec->codec_settings.pp_dereverb_decay);
+				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_DEREVERB_LEVEL, &codec->codec_settings.pp_dereverb_level);
 			}
 
 			if (!codec->codec_settings.abr && !codec->codec_settings.vbr) {
@@ -161,9 +157,7 @@ static switch_status_t switch_speex_encode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *decoded_data,
 										   uint32_t decoded_data_len,
-										   uint32_t decoded_rate,
-										   void *encoded_data,
-										   uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
+										   uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
 {
 	struct speex_context *context = codec->private_info;
 	short *buf;
@@ -214,9 +208,7 @@ static switch_status_t switch_speex_decode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *encoded_data,
 										   uint32_t encoded_data_len,
-										   uint32_t encoded_rate,
-										   void *decoded_data,
-										   uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
+										   uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
 {
 	struct speex_context *context = codec->private_info;
 	short *buf;
@@ -343,8 +335,7 @@ static switch_loadable_module_interface_t speex_module_interface = {
 	/*.application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &speex_module_interface;

@@ -112,8 +112,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_realm, globals.realm)
 }
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &xml_rpc_module_interface;
@@ -300,8 +299,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 	MIMETypeInit();
 	MIMETypeAdd("text/html", "html");
 
-	snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR,
-			 "freeswitch_http.log");
+	snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "freeswitch_http.log");
 	ServerCreate(&abyssServer, "XmlRpcServer", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir, logfile);
 
 	xmlrpc_server_abyss_set_handler(&env, &abyssServer, "/RPC2", registryP);
@@ -309,8 +307,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 	ServerInit(&abyssServer);
 	ServerAddHandler(&abyssServer, HandleHook);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Starting HTTP Port %d, DocRoot [%s]\n", globals.port,
-					  SWITCH_GLOBAL_dirs.htdocs_dir);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Starting HTTP Port %d, DocRoot [%s]\n", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir);
 	while (globals.running) {
 		ServerRunOnce2(&abyssServer, ABYSS_FOREGROUND);
 	}

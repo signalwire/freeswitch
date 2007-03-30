@@ -173,10 +173,8 @@ void print_header(struct frame *fr)
 				 fr->mpeg25 ? "2.5" : (fr->lsf ? "2.0" : "1.0"),
 				 layers[fr->lay], freqs[fr->sampling_frequency], modes[fr->mode], fr->mode_ext, fr->framesize + 4);
 	debug_printf("Channels: %d, copyright: %s, original: %s, CRC: %s, emphasis: %d.\n",
-				 fr->stereo, fr->copyright ? "Yes" : "No",
-				 fr->original ? "Yes" : "No", fr->error_protection ? "Yes" : "No", fr->emphasis);
-	debug_printf("Bitrate: %d Kbits/s, Extension value: %d\n",
-				 tabsel_123[fr->lsf][fr->lay - 1][fr->bitrate_index], fr->extension);
+				 fr->stereo, fr->copyright ? "Yes" : "No", fr->original ? "Yes" : "No", fr->error_protection ? "Yes" : "No", fr->emphasis);
+	debug_printf("Bitrate: %d Kbits/s, Extension value: %d\n", tabsel_123[fr->lsf][fr->lay - 1][fr->bitrate_index], fr->extension);
 }
 
 void print_header_compact(struct frame *fr)
@@ -186,8 +184,7 @@ void print_header_compact(struct frame *fr)
 
 	debug_printf("MPEG %s layer %s, %d kbit/s, %ld Hz %s\n",
 				 fr->mpeg25 ? "2.5" : (fr->lsf ? "2.0" : "1.0"),
-				 layers[fr->lay],
-				 tabsel_123[fr->lsf][fr->lay - 1][fr->bitrate_index], freqs[fr->sampling_frequency], modes[fr->mode]);
+				 layers[fr->lay], tabsel_123[fr->lsf][fr->lay - 1][fr->bitrate_index], freqs[fr->sampling_frequency], modes[fr->mode]);
 }
 
 #endif

@@ -72,11 +72,8 @@ static const uint8_t SWITCH_REVERSE_BITPACKED_MASKS[] = { 255, 254, 252, 248, 24
   \param buflen the length of the storage buffer
   \param mode RFC3551 or AAL2 mode (curse you backwards folks) 
 */
-DoxyDefine(void
-		   switch_bitpack_init(switch_bitpack_t *pack, int32_t bitlen, switch_byte_t *buf, uint32_t buflen,
-							   switch_bitpack_mode_t mode))
-	 static inline int8_t switch_bitpack_init(switch_bitpack_t *pack, switch_byte_t bitlen, switch_byte_t *buf,
-											  uint32_t buflen, switch_bitpack_mode_t mode)
+DoxyDefine(void switch_bitpack_init(switch_bitpack_t *pack, int32_t bitlen, switch_byte_t * buf, uint32_t buflen, switch_bitpack_mode_t mode))
+	 static inline int8_t switch_bitpack_init(switch_bitpack_t *pack, switch_byte_t bitlen, switch_byte_t * buf, uint32_t buflen, switch_bitpack_mode_t mode)
 {
 	if (!pack || (bitlen > SWITCH_BITS_PER_BYTE) || !buf || !buflen) {
 		return -1;

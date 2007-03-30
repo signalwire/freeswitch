@@ -51,8 +51,7 @@ struct lpc10_context {
 	struct lpc10_decoder_state decoder_object;
 };
 
-static switch_status_t switch_lpc10_init(switch_codec_t *codec, switch_codec_flag_t flags,
-										 const switch_codec_settings_t *codec_settings)
+static switch_status_t switch_lpc10_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	uint32_t encoding, decoding;
 	struct lpc10_context *context = NULL;
@@ -88,9 +87,7 @@ static switch_status_t switch_lpc10_encode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *decoded_data,
 										   uint32_t decoded_data_len,
-										   uint32_t decoded_rate,
-										   void *encoded_data,
-										   uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
+										   uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
 {
 	struct lpc10_context *context = codec->private_info;
 	uint8_t i;
@@ -123,9 +120,7 @@ static switch_status_t switch_lpc10_decode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *encoded_data,
 										   uint32_t encoded_data_len,
-										   uint32_t encoded_rate,
-										   void *decoded_data,
-										   uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
+										   uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
 {
 	struct lpc10_context *context = codec->private_info;
 	int i;
@@ -193,8 +188,7 @@ static switch_loadable_module_interface_t lpc10_module_interface = {
 	/*.application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &lpc10_module_interface;

@@ -134,8 +134,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_jid, globals.jid)
 
 	if (count == 3) {
 		/* TBD use config to pick what events to bind to */
-		if (switch_event_bind((char *) modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) !=
-			SWITCH_STATUS_SUCCESS) {
+		if (switch_event_bind((char *) modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 			return SWITCH_STATUS_GENERR;
 		}
@@ -305,17 +304,12 @@ static void j_setup_filter(struct session *sess)
 		iks_filter_delete(my_filter);
 	my_filter = iks_filter_new();
 	iks_filter_add_rule(my_filter, on_msg, 0,
-						IKS_RULE_TYPE, IKS_PAK_MESSAGE,
-						IKS_RULE_SUBTYPE, IKS_TYPE_CHAT, IKS_RULE_FROM, globals.target_jid, IKS_RULE_DONE);
+						IKS_RULE_TYPE, IKS_PAK_MESSAGE, IKS_RULE_SUBTYPE, IKS_TYPE_CHAT, IKS_RULE_FROM, globals.target_jid, IKS_RULE_DONE);
 	iks_filter_add_rule(my_filter, (iksFilterHook *) on_result, sess,
-						IKS_RULE_TYPE, IKS_PAK_IQ,
-						IKS_RULE_SUBTYPE, IKS_TYPE_RESULT, IKS_RULE_ID, "auth", IKS_RULE_DONE);
-	iks_filter_add_rule(my_filter, on_error, sess,
-						IKS_RULE_TYPE, IKS_PAK_IQ,
-						IKS_RULE_SUBTYPE, IKS_TYPE_ERROR, IKS_RULE_ID, "auth", IKS_RULE_DONE);
+						IKS_RULE_TYPE, IKS_PAK_IQ, IKS_RULE_SUBTYPE, IKS_TYPE_RESULT, IKS_RULE_ID, "auth", IKS_RULE_DONE);
+	iks_filter_add_rule(my_filter, on_error, sess, IKS_RULE_TYPE, IKS_PAK_IQ, IKS_RULE_SUBTYPE, IKS_TYPE_ERROR, IKS_RULE_ID, "auth", IKS_RULE_DONE);
 
-	iks_filter_add_rule(my_filter, on_subscribe, sess,
-						IKS_RULE_TYPE, IKS_PAK_S10N, IKS_RULE_SUBTYPE, IKS_TYPE_SUBSCRIBE, IKS_RULE_DONE);
+	iks_filter_add_rule(my_filter, on_subscribe, sess, IKS_RULE_TYPE, IKS_PAK_S10N, IKS_RULE_SUBTYPE, IKS_TYPE_SUBSCRIBE, IKS_RULE_DONE);
 
 }
 
@@ -403,8 +397,7 @@ static switch_loadable_module_interface_t xmpp_event_module_interface = {
 	/*.application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &xmpp_event_module_interface;

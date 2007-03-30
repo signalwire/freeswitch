@@ -67,16 +67,13 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 			&& !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
 			switch_channel_set_flag(caller_channel, CF_NOMEDIA);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-							  "Channel is already up, delaying point-to-point mode 'till both legs are up.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already up, delaying point-to-point mode 'till both legs are up.\n");
 			no_media_bridge = 1;
 		}
 	}
 
-	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL) !=
-		SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n",
-						  switch_channel_cause2str(cause));
+	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n", switch_channel_cause2str(cause));
 		if (!do_continue && cause != SWITCH_CAUSE_NO_ANSWER) {
 			/* All Causes besides NO_ANSWER terminate the originating session unless continue_on_fail is set.
 			   We will pass the fail cause on when we hangup. */
@@ -137,8 +134,7 @@ static const switch_loadable_module_interface_t mod_bridgecall_module_interface 
 	/*.application_interface */ &bridge_application_interface
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */

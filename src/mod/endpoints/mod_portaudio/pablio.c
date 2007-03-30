@@ -60,9 +60,7 @@
 /************************************************************************/
 
 static int blockingIOCallback(const void *inputBuffer, void *outputBuffer,
-							  unsigned long framesPerBuffer,
-							  const PaStreamCallbackTimeInfo * timeInfo,
-							  PaStreamCallbackFlags statusFlags, void *userData);
+							  unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo * timeInfo, PaStreamCallbackFlags statusFlags, void *userData);
 static PaError PABLIO_InitFIFO(PaUtilRingBuffer * rbuf, long numFrames, long bytesPerFrame);
 static PaError PABLIO_TermFIFO(PaUtilRingBuffer * rbuf);
 
@@ -74,9 +72,7 @@ static PaError PABLIO_TermFIFO(PaUtilRingBuffer * rbuf);
  * Read and write data only if there is room in FIFOs.
  */
 static int blockingIOCallback(const void *inputBuffer, void *outputBuffer,
-							  unsigned long framesPerBuffer,
-							  const PaStreamCallbackTimeInfo * timeInfo,
-							  PaStreamCallbackFlags statusFlags, void *userData)
+							  unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo * timeInfo, PaStreamCallbackFlags statusFlags, void *userData)
 {
 	PABLIO_Stream *data = (PABLIO_Stream *) userData;
 	long numBytes = data->bytesPerFrame * framesPerBuffer;
@@ -195,8 +191,7 @@ static unsigned long RoundUpToNextPowerOf2(unsigned long n)
  *
  */
 PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
-						const PaStreamParameters * inputParameters,
-						const PaStreamParameters * outputParameters, double sampleRate, PaStreamFlags streamFlags)
+						const PaStreamParameters * inputParameters, const PaStreamParameters * outputParameters, double sampleRate, PaStreamFlags streamFlags)
 {
 	long bytesPerSample;
 	PaError err;
@@ -250,9 +245,7 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 
 	/* Open a PortAudio stream that we will use to communicate with the underlying
 	 * audio drivers. */
-	err = Pa_OpenStream(&aStream->stream,
-						inputParameters,
-						outputParameters, sampleRate, FRAMES_PER_BUFFER, streamFlags, blockingIOCallback, aStream);
+	err = Pa_OpenStream(&aStream->stream, inputParameters, outputParameters, sampleRate, FRAMES_PER_BUFFER, streamFlags, blockingIOCallback, aStream);
 	if (err != paNoError)
 		goto error;
 

@@ -422,7 +422,7 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 
 #define MY_BUF_LEN 1024 * 32
 #define MY_BLOCK_SIZE MY_BUF_LEN
-static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void *obj)
+static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t * thread, void *obj)
 {
 	CURL *curl_handle = NULL;
 	shout_context_t *context = (shout_context_t *) obj;
@@ -458,7 +458,7 @@ static void launch_read_stream_thread(shout_context_t * context)
 	switch_thread_create(&thread, thd_attr, read_stream_thread, context, context->memory_pool);
 }
 
-static void *SWITCH_THREAD_FUNC write_stream_thread(switch_thread_t *thread, void *obj)
+static void *SWITCH_THREAD_FUNC write_stream_thread(switch_thread_t * thread, void *obj)
 {
 	shout_context_t *context = (shout_context_t *) obj;
 
@@ -484,9 +484,7 @@ static void *SWITCH_THREAD_FUNC write_stream_thread(switch_thread_t *thread, voi
 			memset(audio, 255, sizeof(audio));
 		}
 
-		if ((rlen =
-			 lame_encode_buffer(context->gfp, (void *) audio, NULL, audio_read / sizeof(int16_t), mp3buf,
-								sizeof(mp3buf))) < 0) {
+		if ((rlen = lame_encode_buffer(context->gfp, (void *) audio, NULL, audio_read / sizeof(int16_t), mp3buf, sizeof(mp3buf))) < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
 			goto error;
 		}
@@ -494,8 +492,7 @@ static void *SWITCH_THREAD_FUNC write_stream_thread(switch_thread_t *thread, voi
 		if (rlen) {
 			ret = shout_send(context->shout, mp3buf, rlen);
 			if (ret != SHOUTERR_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Send error: %s\n",
-								  shout_get_error(context->shout));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Send error: %s\n", shout_get_error(context->shout));
 				goto error;
 			}
 		} else {
@@ -560,9 +557,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, char *path)
 			context->stream_url = switch_core_sprintf(context->memory_pool, "http://%s", path);
 			launch_read_stream_thread(context);
 		} else {
-			if (switch_file_open(&context->fd, path, SWITCH_FOPEN_READ,
-								 SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE,
-								 handle->memory_pool) != SWITCH_STATUS_SUCCESS) {
+			if (switch_file_open(&context->fd, path, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, handle->memory_pool) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", path);
 				goto error;
 			}
@@ -587,8 +582,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, char *path)
 		lame_print_config(context->gfp);
 
 		if (handle->handler) {
-			if (switch_buffer_create_dynamic(&context->audio_buffer, MY_BLOCK_SIZE, MY_BUF_LEN, 0) !=
-				SWITCH_STATUS_SUCCESS) {
+			if (switch_buffer_create_dynamic(&context->audio_buffer, MY_BLOCK_SIZE, MY_BUF_LEN, 0) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
 				goto error;
 			}
@@ -633,62 +627,52 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, char *path)
 			}
 
 			if (shout_set_host(context->shout, host) != SHOUTERR_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting hostname: %s\n",
-								  shout_get_error(context->shout));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting hostname: %s\n", shout_get_error(context->shout));
 				goto error;
 			}
 
 			if (shout_set_protocol(context->shout, SHOUT_PROTOCOL_HTTP) != SHOUTERR_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting protocol: %s\n",
-								  shout_get_error(context->shout));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting protocol: %s\n", shout_get_error(context->shout));
 				goto error;
 			}
 
 			if (shout_set_port(context->shout, portno) != SHOUTERR_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting port: %s\n",
-								  shout_get_error(context->shout));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting port: %s\n", shout_get_error(context->shout));
 				goto error;
 			}
 
 			if (shout_set_password(context->shout, password) != SHOUTERR_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting password: %s\n",
-								  shout_get_error(context->shout));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting password: %s\n", shout_get_error(context->shout));
 				goto error;
 			}
 
 			if (shout_set_mount(context->shout, file) != SHOUTERR_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting mount: %s\n",
-								  shout_get_error(context->shout));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting mount: %s\n", shout_get_error(context->shout));
 				goto error;
 			}
 
 			if (shout_set_user(context->shout, username) != SHOUTERR_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting user: %s\n",
-								  shout_get_error(context->shout));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting user: %s\n", shout_get_error(context->shout));
 				goto error;
 			}
 
 			if (shout_set_url(context->shout, "http://www.freeswitch.org") != SHOUTERR_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n",
-								  shout_get_error(context->shout));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n", shout_get_error(context->shout));
 				goto error;
 			}
 
 			if (shout_set_description(context->shout, "FreeSWITCH mod_shout Broadcasting Module") != SHOUTERR_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n",
-								  shout_get_error(context->shout));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n", shout_get_error(context->shout));
 				goto error;
 			}
 
 			if (shout_set_audio_info(context->shout, "bitrate", "64000") != SHOUTERR_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting user: %s\n",
-								  shout_get_error(context->shout));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting user: %s\n", shout_get_error(context->shout));
 				goto error;
 			}
 
 			if (shout_set_format(context->shout, SHOUT_FORMAT_MP3) != SHOUTERR_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting user: %s\n",
-								  shout_get_error(context->shout));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting user: %s\n", shout_get_error(context->shout));
 				goto error;
 			}
 
@@ -728,8 +712,7 @@ static switch_status_t shout_file_close(switch_file_handle_t *handle)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples,
-									   int whence)
+static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
 {
 	shout_context_t *context = handle->private_info;
 
@@ -800,8 +783,7 @@ static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data
 	if (context->shout && !context->shout_init) {
 		context->shout_init++;
 		if (shout_open(context->shout) != SHOUTERR_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening stream: %s\n",
-							  shout_get_error(context->shout));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening stream: %s\n", shout_get_error(context->shout));
 			context->err++;
 			return SWITCH_STATUS_FALSE;
 		}
@@ -844,20 +826,17 @@ static switch_status_t shout_file_set_string(switch_file_handle_t *handle, switc
 	switch (col) {
 	case SWITCH_AUDIO_COL_STR_TITLE:
 		if (shout_set_name(context->shout, string) != SHOUTERR_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n",
-							  shout_get_error(context->shout));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n", shout_get_error(context->shout));
 		}
 		break;
 	case SWITCH_AUDIO_COL_STR_COMMENT:
 		if (shout_set_url(context->shout, string) != SHOUTERR_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n",
-							  shout_get_error(context->shout));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n", shout_get_error(context->shout));
 		}
 		break;
 	case SWITCH_AUDIO_COL_STR_ARTIST:
 		if (shout_set_description(context->shout, string) != SHOUTERR_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n",
-							  shout_get_error(context->shout));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n", shout_get_error(context->shout));
 		}
 		break;
 	default:
@@ -898,8 +877,7 @@ static switch_loadable_module_interface_t shout_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	supported_formats[0] = "shout";
 	supported_formats[1] = "mp3";

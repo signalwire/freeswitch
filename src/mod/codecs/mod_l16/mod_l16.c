@@ -34,8 +34,7 @@
 static const char modname[] = "mod_l16";
 
 
-static switch_status_t switch_raw_init(switch_codec_t *codec, switch_codec_flag_t flags,
-									   const switch_codec_settings_t *codec_settings)
+static switch_status_t switch_raw_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	int encoding, decoding;
 
@@ -53,13 +52,10 @@ static switch_status_t switch_raw_encode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *decoded_data,
 										 uint32_t decoded_data_len,
-										 uint32_t decoded_rate,
-										 void *encoded_data,
-										 uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
+										 uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
 {
 	/* NOOP indicates that the audio in is already the same as the audio out, so no conversion was necessary. */
-	if (codec && other_codec
-		&& codec->implementation->samples_per_second != other_codec->implementation->samples_per_second) {
+	if (codec && other_codec && codec->implementation->samples_per_second != other_codec->implementation->samples_per_second) {
 		memcpy(encoded_data, decoded_data, decoded_data_len);
 		*encoded_data_len = decoded_data_len;
 		return SWITCH_STATUS_RESAMPLE;
@@ -71,12 +67,9 @@ static switch_status_t switch_raw_decode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *encoded_data,
 										 uint32_t encoded_data_len,
-										 uint32_t encoded_rate,
-										 void *decoded_data,
-										 uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
+										 uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
 {
-	if (codec && other_codec
-		&& codec->implementation->samples_per_second != other_codec->implementation->samples_per_second) {
+	if (codec && other_codec && codec->implementation->samples_per_second != other_codec->implementation->samples_per_second) {
 		memcpy(decoded_data, encoded_data, encoded_data_len);
 		*decoded_data_len = encoded_data_len;
 		return SWITCH_STATUS_RESAMPLE;
@@ -429,8 +422,7 @@ static switch_loadable_module_interface_t raw_module_interface = {
 };
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &raw_module_interface;

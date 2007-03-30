@@ -114,8 +114,7 @@ static int switch_console_process(char *cmd)
 	SWITCH_STANDARD_STREAM(stream);
 	if (stream.data) {
 		if (switch_api_execute(cmd, arg, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "API CALL [%s(%s)] output:\n%s\n", cmd,
-							  arg ? arg : "", (char *) stream.data);
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "", (char *) stream.data);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Unknown Command: %s\n", cmd);
 		}
@@ -127,8 +126,7 @@ static int switch_console_process(char *cmd)
 	return 1;
 }
 
-SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const char *file, const char *func, int line,
-										   const char *fmt, ...)
+SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const char *file, const char *func, int line, const char *fmt, ...)
 {
 	char *data = NULL;
 	int ret = 0;
@@ -161,8 +159,7 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const 
 			}
 
 			else if (channel == SWITCH_CHANNEL_ID_EVENT &&
-					 switch_event_running() == SWITCH_STATUS_SUCCESS &&
-					 switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
+					 switch_event_running() == SWITCH_STATUS_SUCCESS && switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
 
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Data", "%s", data);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-File", "%s", filep);

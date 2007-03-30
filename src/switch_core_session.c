@@ -45,8 +45,7 @@ static struct {
 
 
 #ifdef SWITCH_DEBUG_RWLOCKS
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(char *uuid_str,
-																		   const char *file, const char *func, int line)
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(char *uuid_str, const char *file, const char *func, int line)
 #else
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(char *uuid_str)
 #endif
@@ -178,8 +177,7 @@ SWITCH_DECLARE(int) switch_core_session_get_stream_count(switch_core_session_t *
 SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_core_session_t *session,
 																		 char *endpoint_name,
 																		 switch_caller_profile_t *caller_profile,
-																		 switch_core_session_t **new_session,
-																		 switch_memory_pool_t **pool)
+																		 switch_core_session_t **new_session, switch_memory_pool_t ** pool)
 {
 	switch_io_event_hook_outgoing_channel_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -218,9 +216,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 																 caller_profile->ani,
 																 caller_profile->aniii,
 																 caller_profile->rdnis,
-																 caller_profile->source,
-																 caller_profile->context,
-																 caller_profile->destination_number);
+																 caller_profile->source, caller_profile->context, caller_profile->destination_number);
 					outgoing_profile->flags = caller_profile->flags;
 				}
 			}
@@ -229,13 +225,10 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 			}
 		}
 
-		if ((cause = endpoint_interface->io_routines->outgoing_channel(session,
-																	   outgoing_profile,
-																	   new_session, pool)) == SWITCH_CAUSE_SUCCESS) {
+		if ((cause = endpoint_interface->io_routines->outgoing_channel(session, outgoing_profile, new_session, pool)) == SWITCH_CAUSE_SUCCESS) {
 			if (session) {
 				for (ptr = session->event_hooks.outgoing_channel; ptr; ptr = ptr->next) {
-					if ((status =
-						 ptr->outgoing_channel(session, caller_profile, *new_session)) != SWITCH_STATUS_SUCCESS) {
+					if ((status = ptr->outgoing_channel(session, caller_profile, *new_session)) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}
 				}
@@ -244,8 +237,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 			return cause;
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not locate outgoing channel interface for %s\n",
-						  endpoint_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not locate outgoing channel interface for %s\n", endpoint_name);
 		return SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED;
 	}
 
@@ -272,12 +264,9 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 				switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_CODEC_VARIABLE, tmp);
 			}
 
-			switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_VARIABLE,
-										switch_core_session_get_uuid(session));
-			switch_channel_set_variable(peer_channel, SWITCH_SIGNAL_BOND_VARIABLE,
-										switch_core_session_get_uuid(session));
-			switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE,
-										switch_core_session_get_uuid(*new_session));
+			switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_VARIABLE, switch_core_session_get_uuid(session));
+			switch_channel_set_variable(peer_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(session));
+			switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(*new_session));
 
 			/* A comma (,) separated list of variable names that should ne propagated from originator to originatee */
 			if ((export_vars = switch_channel_get_variable(channel, SWITCH_EXPORT_VARS_VARIABLE))) {
@@ -354,8 +343,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_answer_channel(switch_core_s
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_session_t *session,
-																	switch_core_session_message_t *message)
+SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_session_t *session, switch_core_session_message_t *message)
 {
 	switch_io_event_hook_receive_message_t *ptr;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -379,8 +367,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_queue_indication(switch_core_session_t *session,
-																	 switch_core_session_message_types_t indication)
+SWITCH_DECLARE(switch_status_t) switch_core_session_queue_indication(switch_core_session_t *session, switch_core_session_message_types_t indication)
 {
 	switch_core_session_message_t *msg;
 
@@ -396,8 +383,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_indication(switch_core
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_queue_message(switch_core_session_t *session,
-																  switch_core_session_message_t *message)
+SWITCH_DECLARE(switch_status_t) switch_core_session_queue_message(switch_core_session_t *session, switch_core_session_message_t *message)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -416,8 +402,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_message(switch_core_se
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_message(switch_core_session_t *session,
-																	switch_core_session_message_t **message)
+SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_message(switch_core_session_t *session, switch_core_session_message_t **message)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	void *pop;
@@ -449,8 +434,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_flush_message(switch_core_se
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_receive_event(switch_core_session_t *session,
-																  switch_event_t **event)
+SWITCH_DECLARE(switch_status_t) switch_core_session_receive_event(switch_core_session_t *session, switch_event_t **event)
 {
 	switch_io_event_hook_receive_event_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -517,8 +501,7 @@ SWITCH_DECLARE(int32_t) switch_core_session_event_count(switch_core_session_t *s
 	return -1;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_event(switch_core_session_t *session,
-																  switch_event_t **event)
+SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_event(switch_core_session_t *session, switch_event_t **event)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	void *pop;
@@ -534,8 +517,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_event(switch_core_se
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_core_session_t *session,
-																		switch_event_t **event)
+SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_core_session_t *session, switch_event_t **event)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -566,8 +548,7 @@ SWITCH_DECLARE(int32_t) switch_core_session_private_event_count(switch_core_sess
 	return -1;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch_core_session_t *session,
-																		  switch_event_t **event)
+SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch_core_session_t *session, switch_event_t **event)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	void *pop;
@@ -584,8 +565,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch
 
 
 	if (session->private_event_queue) {
-		if ((status =
-			 (switch_status_t) switch_queue_trypop(session->private_event_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
+		if ((status = (switch_status_t) switch_queue_trypop(session->private_event_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
 			*event = (switch_event_t *) pop;
 		}
 	}
@@ -714,8 +694,7 @@ SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session_t **session
 	switch_memory_pool_t *pool;
 	switch_event_t *event;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Close Channel %s\n",
-					  switch_channel_get_name((*session)->channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Close Channel %s\n", switch_channel_get_name((*session)->channel));
 
 	switch_scheduler_del_task_group((*session)->uuid_str);
 
@@ -743,7 +722,7 @@ SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session_t **session
 
 }
 
-static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thread, void *obj)
+static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t * thread, void *obj)
 {
 	switch_core_session_t *session = obj;
 	session->thread = thread;
@@ -758,8 +737,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thre
 	switch_set_flag(session, SSF_DESTROYED);
 	switch_core_session_rwunlock(session);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Session %u (%s) Ended\n", session->id,
-					  switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Session %u (%s) Ended\n", session->id, switch_channel_get_name(session->channel));
 	switch_core_session_destroy(&session);
 	return NULL;
 }
@@ -774,16 +752,14 @@ SWITCH_DECLARE(void) switch_core_session_thread_launch(switch_core_session_t *se
 
 	if (!session->thread_running) {
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		if (switch_thread_create(&thread, thd_attr, switch_core_session_thread, session, session->pool) !=
-			SWITCH_STATUS_SUCCESS) {
+		if (switch_thread_create(&thread, thd_attr, switch_core_session_thread, session, session->pool) != SWITCH_STATUS_SUCCESS) {
 			switch_core_session_destroy(&session);
 		}
 	}
 }
 
 
-SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session_t *session, switch_thread_start_t func,
-													   void *obj)
+SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session_t *session, switch_thread_start_t func, void *obj)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
@@ -797,7 +773,7 @@ SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session_t *se
 
 
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch_endpoint_interface_t
-																	*endpoint_interface, switch_memory_pool_t **pool)
+																	*endpoint_interface, switch_memory_pool_t ** pool)
 {
 	switch_memory_pool_t *usepool;
 	switch_core_session_t *session;
@@ -882,8 +858,7 @@ SWITCH_DECLARE(uint32_t) switch_core_session_count(void)
 	return runtime.session_count;
 }
 
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(char *endpoint_name,
-																			switch_memory_pool_t **pool)
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(char *endpoint_name, switch_memory_pool_t ** pool)
 {
 	const switch_endpoint_interface_t *endpoint_interface;
 
@@ -925,7 +900,7 @@ SWITCH_DECLARE(uint32_t) switch_core_session_limit(uint32_t new_limit)
 }
 
 
-SWITCH_DECLARE(void) switch_core_session_init(switch_memory_pool_t *pool)
+SWITCH_DECLARE(void) switch_core_session_init(switch_memory_pool_t * pool)
 {
 	memset(&runtime, 0, sizeof(runtime));
 	runtime.session_limit = 1000;

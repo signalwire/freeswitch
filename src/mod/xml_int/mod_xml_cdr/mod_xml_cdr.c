@@ -100,8 +100,7 @@ static const switch_loadable_module_interface_t mod_xml_cdr_module_interface = {
 	/*.application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	/* test global state handlers */
 	switch_core_add_state_handler(&state_handlers);

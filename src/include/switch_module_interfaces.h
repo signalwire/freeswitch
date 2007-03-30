@@ -80,8 +80,7 @@ struct switch_io_event_hooks;
 /*! \brief A table of i/o routines that an endpoint interface can implement */
 struct switch_io_routines {
 	/*! creates an outgoing session from given session, caller profile */
-	switch_call_cause_t (*outgoing_channel) (switch_core_session_t *, switch_caller_profile_t *,
-											 switch_core_session_t **, switch_memory_pool_t **);
+	switch_call_cause_t (*outgoing_channel) (switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t **, switch_memory_pool_t **);
 	/*! answers the given session's channel */
 	switch_status_t (*answer_channel) (switch_core_session_t *);
 	/*! read a frame from a session */
@@ -278,16 +277,13 @@ struct switch_speech_interface {
 	/*! the name of the interface */
 	const char *interface_name;
 	/*! function to open the speech interface */
-	switch_status_t (*speech_open) (switch_speech_handle_t *sh,
-									char *voice_name, int rate, switch_speech_flag_t *flags);
+	switch_status_t (*speech_open) (switch_speech_handle_t *sh, char *voice_name, int rate, switch_speech_flag_t *flags);
 	/*! function to close the speech interface */
 	switch_status_t (*speech_close) (switch_speech_handle_t *, switch_speech_flag_t *flags);
 	/*! function to feed audio to the ASR */
 	switch_status_t (*speech_feed_tts) (switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags);
 	/*! function to read audio from the TTS */
-	switch_status_t (*speech_read_tts) (switch_speech_handle_t *sh,
-										void *data,
-										switch_size_t *datalen, uint32_t * rate, switch_speech_flag_t *flags);
+	switch_status_t (*speech_read_tts) (switch_speech_handle_t *sh, void *data, switch_size_t *datalen, uint32_t * rate, switch_speech_flag_t *flags);
 	void (*speech_flush_tts) (switch_speech_handle_t *sh);
 	void (*speech_text_param_tts) (switch_speech_handle_t *sh, char *param, char *val);
 	void (*speech_numeric_param_tts) (switch_speech_handle_t *sh, char *param, int val);
@@ -339,8 +335,7 @@ struct switch_management_interface {
 	/*! the name of the interface */
 	const char *relative_oid;
 	/*! function to open the directory interface */
-	switch_status_t (*management_function) (char *relative_oid, switch_management_action_t action, char *data,
-											switch_size_t datalen);
+	switch_status_t (*management_function) (char *relative_oid, switch_management_action_t action, char *data, switch_size_t datalen);
 	const struct switch_management_interface *next;
 };
 
@@ -468,17 +463,13 @@ struct switch_codec_implementation {
 							   switch_codec_t *other_codec,
 							   void *decoded_data,
 							   uint32_t decoded_data_len,
-							   uint32_t decoded_rate,
-							   void *encoded_data,
-							   uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag);
+							   uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag);
 	/*! function to decode encoded data into raw data */
 	switch_status_t (*decode) (switch_codec_t *codec,
 							   switch_codec_t *other_codec,
 							   void *encoded_data,
 							   uint32_t encoded_data_len,
-							   uint32_t encoded_rate,
-							   void *decoded_data,
-							   uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag);
+							   uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag);
 	/*! deinitalize a codec handle using this implementation */
 	switch_status_t (*destroy) (switch_codec_t *);
 	const struct switch_codec_implementation *next;

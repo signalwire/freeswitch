@@ -188,8 +188,7 @@ static switch_status_t mod_ldap_next_pair(switch_directory_handle_t *dh, char **
 			context->attr = ldap_next_attribute(context->ld, context->entry, context->ber);
 		}
 		context->vitt++;
-		if (context->entry && context->attr
-			&& (context->vals = ldap_get_values(context->ld, context->entry, context->attr)) != 0) {
+		if (context->entry && context->attr && (context->vals = ldap_get_values(context->ld, context->entry, context->attr)) != 0) {
 			goto itter;
 		}
 	}

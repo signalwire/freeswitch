@@ -82,8 +82,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_record_session(switch_core_sessi
 
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t *session, char *file,
-														  switch_file_handle_t *fh)
+SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t *session, char *file, switch_file_handle_t *fh)
 {
 	switch_channel_t *channel;
 	switch_codec_t *read_codec;
@@ -112,8 +111,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 							  file,
 							  read_codec->implementation->number_of_channels,
 							  read_codec->implementation->samples_per_second,
-							  SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT,
-							  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+							  SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		switch_core_session_reset(session);
 		return SWITCH_STATUS_GENERR;
@@ -249,9 +247,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_session(switch_core_sessi
 
 	switch_channel_answer(channel);
 
-	if ((status = switch_core_media_bug_add(session,
-											inband_dtmf_callback,
-											pvt, SMBF_READ_STREAM, &bug)) != SWITCH_STATUS_SUCCESS) {
+	if ((status = switch_core_media_bug_add(session, inband_dtmf_callback, pvt, SMBF_READ_STREAM, &bug)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 
@@ -269,7 +265,7 @@ struct speech_thread_handle {
 	switch_memory_pool_t *pool;
 };
 
-static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj)
+static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t * thread, void *obj)
 {
 	struct speech_thread_handle *sth = (struct speech_thread_handle *) obj;
 	switch_channel_t *channel = switch_core_session_get_channel(sth->session);
@@ -433,8 +429,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_resume_detect_speech(switch_core_sess
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_load_grammar(switch_core_session_t *session, char *grammar,
-																	  char *path)
+SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_load_grammar(switch_core_session_t *session, char *grammar, char *path)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
@@ -478,8 +473,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_unload_grammar(switch_c
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *session,
-														 char *mod_name,
-														 char *grammar, char *path, char *dest, switch_asr_handle_t *ah)
+														 char *mod_name, char *grammar, char *path, char *dest, switch_asr_handle_t *ah)
 {
 	switch_channel_t *channel;
 	switch_codec_t *read_codec;
@@ -518,8 +512,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 	if (switch_core_asr_open(ah,
 							 mod_name,
 							 "L16",
-							 read_codec->implementation->samples_per_second,
-							 dest, &flags, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+							 read_codec->implementation->samples_per_second, dest, &flags, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 
 		if (switch_core_asr_load_grammar(ah, grammar, path) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error loading Grammar\n");
@@ -538,9 +531,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 	sth->session = session;
 	sth->ah = ah;
 
-	if ((status = switch_core_media_bug_add(session,
-											speech_callback,
-											sth, SMBF_READ_STREAM, &sth->bug)) != SWITCH_STATUS_SUCCESS) {
+	if ((status = switch_core_media_bug_add(session, speech_callback, sth, SMBF_READ_STREAM, &sth->bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_core_asr_close(ah, &flags);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return status;
@@ -572,8 +563,7 @@ static void sch_hangup_callback(switch_scheduler_task_t *task)
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 
 		if (helper->bleg) {
-			if ((other_uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) &&
-				(other_session = switch_core_session_locate(other_uuid))) {
+			if ((other_uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(other_uuid))) {
 				switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
 				switch_channel_hangup(other_channel, helper->cause);
 				switch_core_session_rwunlock(other_session);
@@ -588,8 +578,7 @@ static void sch_hangup_callback(switch_scheduler_task_t *task)
 	}
 }
 
-SWITCH_DECLARE(uint32_t) switch_ivr_schedule_hangup(time_t runtime, char *uuid, switch_call_cause_t cause,
-													switch_bool_t bleg)
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_hangup(time_t runtime, char *uuid, switch_call_cause_t cause, switch_bool_t bleg)
 {
 	struct hangup_helper *helper;
 	size_t len = sizeof(*helper);
@@ -600,8 +589,7 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_hangup(time_t runtime, char *uuid, 
 	helper->cause = cause;
 	helper->bleg = bleg;
 
-	return switch_scheduler_add_task(runtime, sch_hangup_callback, (char *) __SWITCH_FUNC__, uuid, 0, helper,
-									 SSHF_FREE_ARG);
+	return switch_scheduler_add_task(runtime, sch_hangup_callback, (char *) __SWITCH_FUNC__, uuid, 0, helper, SSHF_FREE_ARG);
 }
 
 struct transfer_helper {
@@ -627,8 +615,7 @@ static void sch_transfer_callback(switch_scheduler_task_t *task)
 
 }
 
-SWITCH_DECLARE(uint32_t) switch_ivr_schedule_transfer(time_t runtime, char *uuid, char *extension, char *dialplan,
-													  char *context)
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_transfer(time_t runtime, char *uuid, char *extension, char *dialplan, char *context)
 {
 	struct transfer_helper *helper;
 	size_t len = sizeof(*helper);
@@ -669,8 +656,7 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_transfer(time_t runtime, char *uuid
 		switch_copy_string(helper->context, context, strlen(context) + 1);
 	}
 
-	return switch_scheduler_add_task(runtime, sch_transfer_callback, (char *) __SWITCH_FUNC__, uuid, 0, helper,
-									 SSHF_FREE_ARG);
+	return switch_scheduler_add_task(runtime, sch_transfer_callback, (char *) __SWITCH_FUNC__, uuid, 0, helper, SSHF_FREE_ARG);
 }
 
 
@@ -689,8 +675,7 @@ static void sch_broadcast_callback(switch_scheduler_task_t *task)
 	switch_ivr_broadcast(helper->uuid_str, helper->path, helper->flags);
 }
 
-SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, char *uuid, char *path,
-													   switch_media_flag_t flags)
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, char *uuid, char *path, switch_media_flag_t flags)
 {
 	struct broadcast_helper *helper;
 	size_t len = sizeof(*helper) + strlen(path) + 1;
@@ -703,8 +688,7 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, char *uui
 	switch_copy_string(helper->path, path, len - sizeof(helper));
 
 
-	return switch_scheduler_add_task(runtime, sch_broadcast_callback, (char *) __SWITCH_FUNC__, uuid, 0, helper,
-									 SSHF_FREE_ARG);
+	return switch_scheduler_add_task(runtime, sch_broadcast_callback, (char *) __SWITCH_FUNC__, uuid, 0, helper, SSHF_FREE_ARG);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, switch_media_flag_t flags)
@@ -795,5 +779,3 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
 	return SWITCH_STATUS_SUCCESS;
 
 }
-
-

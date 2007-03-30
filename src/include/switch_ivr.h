@@ -85,8 +85,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
   \param timeout a timeout in milliseconds
   \return SWITCH_STATUS_SUCCESS to keep the collection moving.
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_session_t *session,
-																   switch_input_args_t *args, uint32_t timeout);
+SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_session_t *session, switch_input_args_t *args, uint32_t timeout);
 
 /*!
   \brief Wait for specified number of DTMF digits, untile terminator is received or until the channel hangs up.
@@ -102,9 +101,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_session_t *session,
 																char *buf,
 																uint32_t buflen,
-																uint32_t maxdigits,
-																const char *terminators,
-																char *terminator, uint32_t timeout);
+																uint32_t maxdigits, const char *terminators, char *terminator, uint32_t timeout);
 
 /*!
   \brief Engage background Speech detection on a session
@@ -117,9 +114,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *session,
-														 char *mod_name,
-														 char *grammar,
-														 char *path, char *dest, switch_asr_handle_t *ah);
+														 char *mod_name, char *grammar, char *path, char *dest, switch_asr_handle_t *ah);
 
 /*!
   \brief Stop background Speech detection on a session
@@ -149,8 +144,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_resume_detect_speech(switch_core_sess
   \param path the grammar path
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_load_grammar(switch_core_session_t *session, char *grammar,
-																	  char *path);
+SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_load_grammar(switch_core_session_t *session, char *grammar, char *path);
 
 /*!
   \brief Unload a grammar on a background speech detection handle
@@ -167,8 +161,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_unload_grammar(switch_c
   \param fh file handle to use (NULL for builtin one)
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t *session, char *file,
-														  switch_file_handle_t *fh);
+SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t *session, char *file, switch_file_handle_t *fh);
 
 /*!
   \brief Stop Recording a session
@@ -192,8 +185,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_inband_dtmf_session(switch_core_
   \return SWITCH_STATUS_SUCCESS if all is well
   \note passing a NULL dtmf_callback nad a not NULL buf indicates to copy any dtmf to buf and stop playback.
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *session,
-													 switch_file_handle_t *fh, char *file, switch_input_args_t *args);
+SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *session, switch_file_handle_t *fh, char *file, switch_input_args_t *args);
 
 
 /*!
@@ -209,8 +201,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
   \note passing a NULL dtmf_callback nad a not NULL buf indicates to copy any dtmf to buf and stop recording.
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *session,
-													   switch_file_handle_t *fh,
-													   char *file, switch_input_args_t *args, uint32_t limit);
+													   switch_file_handle_t *fh, char *file, switch_input_args_t *args, uint32_t limit);
 
 
 /*!
@@ -236,15 +227,11 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 														   uint32_t timeout,
 														   char *valid_terminators,
 														   char *audio_file,
-														   char *bad_input_audio_file,
-														   void *digit_buffer,
-														   uint32_t digit_buffer_length, char *digits_regex);
+														   char *bad_input_audio_file, void *digit_buffer, uint32_t digit_buffer_length, char *digits_regex);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session_t *session,
 															 switch_speech_handle_t *sh,
-															 switch_codec_t *codec,
-															 switch_timer_t *timer,
-															 char *text, switch_input_args_t *args);
+															 switch_codec_t *codec, switch_timer_t *timer, char *text, switch_input_args_t *args);
 
 /*!
   \brief Speak given text with given tts engine
@@ -259,9 +246,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *session,
-													  char *tts_name,
-													  char *voice_name,
-													  uint32_t rate, char *text, switch_input_args_t *args);
+													  char *tts_name, char *voice_name, uint32_t rate, char *text, switch_input_args_t *args);
 
 /*!
   \brief Make an outgoing call
@@ -282,9 +267,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 													 char *bridgeto,
 													 uint32_t timelimit_sec,
 													 const switch_state_handler_table_t *table,
-													 char *cid_name_override,
-													 char *cid_num_override,
-													 switch_caller_profile_t *caller_profile_override);
+													 char *cid_name_override, char *cid_num_override, switch_caller_profile_t *caller_profile_override);
 
 /*!
   \brief Bridge Audio from one session to another
@@ -297,8 +280,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_session_t *session,
 																 switch_core_session_t *peer_session,
-																 switch_input_callback_function_t dtmf_callback,
-																 void *session_data, void *peer_session_data);
+																 switch_input_callback_function_t dtmf_callback, void *session_data, void *peer_session_data);
 
 /*!
   \brief Bridge Signalling from one session to another
@@ -306,8 +288,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
   \param peer_session the other session
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *session,
-														 switch_core_session_t *peer_session);
+SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *session, switch_core_session_t *peer_session);
 
 /*!
   \brief Transfer an existing session to another location
@@ -316,8 +297,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
   \param dialplan the new dialplan (OPTIONAL, may be NULL)
   \param context the new context (OPTIONAL, may be NULL)
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, char *extension,
-															char *dialplan, char *context);
+SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, char *extension, char *dialplan, char *context);
 
 /*!
   \brief Transfer an existing session to another location in the future
@@ -328,8 +308,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
   \param context the new context (OPTIONAL, may be NULL)
   \return the id of the task
 */
-SWITCH_DECLARE(uint32_t) switch_ivr_schedule_transfer(time_t runtime, char *uuid, char *extension, char *dialplan,
-													  char *context);
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_transfer(time_t runtime, char *uuid, char *extension, char *dialplan, char *context);
 
 
 /*!
@@ -340,8 +319,7 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_transfer(time_t runtime, char *uuid
   \param bleg hangup up the B-Leg if possible
   \return the id of the task
 */
-SWITCH_DECLARE(uint32_t) switch_ivr_schedule_hangup(time_t runtime, char *uuid, switch_call_cause_t cause,
-													switch_bool_t bleg);
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_hangup(time_t runtime, char *uuid, switch_call_cause_t cause, switch_bool_t bleg);
 
 /*!
   \brief Bridge two existing sessions
@@ -403,8 +381,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unhold(switch_core_session_t *session
   \param flags flags to send to the request (SMF_ECHO_BRIDGED to send the broadcast to both sides of the call)
   \return the id of the task
 */
-SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, char *uuid, char *path,
-													   switch_media_flag_t flags);
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, char *uuid, char *path, switch_media_flag_t flags);
 
 /*!
   \brief Signal the session to broadcast audio
@@ -422,8 +399,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
   \param var the name of the variable to transfer (NULL for all)
   \return SWITCH_STATUS_SUCCESS if all is well 
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session_t *sessa, switch_core_session_t *sessb,
-															 char *var);
+SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session_t *sessa, switch_core_session_t *sessb, char *var);
 
 
 /******************************************************************************************************/
@@ -438,15 +414,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session
   \param parser a pointer to the object pointer
   \return SWITCH_STATUS_SUCCESS if all is well 
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory_pool_t *pool,
-																   switch_ivr_digit_stream_parser_t **parser);
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory_pool_t * pool, switch_ivr_digit_stream_parser_t ** parser);
 
 /*!
   \brief Destroy a digit stream parser object
   \param parser a pointer to the parser object
   \return SWITCH_STATUS_SUCCESS if all is well 
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_destroy(switch_ivr_digit_stream_parser_t *parser);
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_destroy(switch_ivr_digit_stream_parser_t * parser);
 
 /*!
   \brief Create a new digit stream object
@@ -454,15 +429,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_destroy(switch_iv
   \param stream a pointer to the stream object pointer
   \return NULL if no match found or consumer data that was associated with a given digit string when matched
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_new(switch_ivr_digit_stream_parser_t *parser,
-															switch_ivr_digit_stream_t **stream);
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_new(switch_ivr_digit_stream_parser_t * parser, switch_ivr_digit_stream_t ** stream);
 
 /*!
   \brief Destroys a digit stream object
   \param stream a pointer to the stream object
   \return NULL if no match found or consumer data that was associated with a given digit string when matched
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_destroy(switch_ivr_digit_stream_t *stream);
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_destroy(switch_ivr_digit_stream_t * stream);
 
 /*!
   \brief Set a digit string to action mapping
@@ -471,8 +445,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_destroy(switch_ivr_digit
   \param data consumer data attached to this digit string
   \return SWITCH_STATUS_SUCCESS if all is well 
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_event(switch_ivr_digit_stream_parser_t *parser,
-																		 char *digits, void *data);
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_event(switch_ivr_digit_stream_parser_t * parser, char *digits, void *data);
 
 /*!
   \brief Delete a string to action mapping
@@ -480,8 +453,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_event(switch_
   \param digits the digit string to be removed from the map
   \return SWITCH_STATUS_SUCCESS if all is well 
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_del_event(switch_ivr_digit_stream_parser_t *parser,
-																		 char *digits);
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_del_event(switch_ivr_digit_stream_parser_t * parser, char *digits);
 
 /*!
   \brief Feed digits collected into the stream for event match testing
@@ -489,15 +461,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_del_event(switch_
   \param digit a digit to collect and test against the map of digit strings
   \return NULL if no match found or consumer data that was associated with a given digit string when matched
 */
-SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stream_parser_t *parser,
-														   switch_ivr_digit_stream_t *stream, char digit);
+SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stream_parser_t * parser, switch_ivr_digit_stream_t * stream, char digit);
 
 /*!
   \brief Reset the collected digit stream to nothing
   \param stream a pointer to the parser stream object created by switch_ivr_digit_stream_new
   \return SWITCH_STATUS_SUCCESS if all is well 
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_reset(switch_ivr_digit_stream_t *stream);
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_reset(switch_ivr_digit_stream_t * stream);
 
 /*!
   \brief Set a digit string terminator
@@ -505,8 +476,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_reset(switch_ivr_digit_s
   \param digit the terminator digit
   \return SWITCH_STATUS_SUCCESS if all is well 
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(switch_ivr_digit_stream_parser_t *parser,
-																			  char digit);
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(switch_ivr_digit_stream_parser_t * parser, char digit);
 
 
 /******************************************************************************************************/
@@ -541,8 +511,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
 		 SWITCH_IVR_ACTION_NOOP,	/* No operation                    */
 	 } switch_ivr_action_t;
 	 struct switch_ivr_menu;
-	 typedef switch_ivr_action_t switch_ivr_menu_action_function_t(struct switch_ivr_menu *, char *, char *, size_t,
-																   void *);
+	 typedef switch_ivr_action_t switch_ivr_menu_action_function_t(struct switch_ivr_menu *, char *, char *, size_t, void *);
 	 typedef struct switch_ivr_menu switch_ivr_menu_t;
 	 typedef struct switch_ivr_menu_action switch_ivr_menu_action_t;
 /******************************************************************************************************/
@@ -563,17 +532,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  *\param pool memory pool (NULL to create one)
  *\return SWITCH_STATUS_SUCCESS if the menu was created
  */
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new_menu,
-														  switch_ivr_menu_t *main,
-														  const char *name,
-														  const char *greeting_sound,
-														  const char *short_greeting_sound,
-														  const char *exit_sound,
-														  const char *invalid_sound,
-														  const char *tts_engine,
-														  const char *tts_voice,
-														  const char *phrase_lang,
-														  int timeout, int max_failures, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_menu,
+													 switch_ivr_menu_t * main,
+													 const char *name,
+													 const char *greeting_sound,
+													 const char *short_greeting_sound,
+													 const char *exit_sound,
+													 const char *invalid_sound,
+													 const char *tts_engine,
+													 const char *tts_voice,
+													 const char *phrase_lang, int timeout, int max_failures, switch_memory_pool_t * pool);
 
 /*!
  *\brief switch_ivr_menu_bind_action: Bind a keystroke to an action.
@@ -583,9 +551,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  *\param bind KeyStrokes to bind the action to.
  *\return SWUTCH_STATUS_SUCCESS if the action was binded
  */
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_action(switch_ivr_menu_t *menu,
-																 switch_ivr_action_t ivr_action, const char *arg,
-																 const char *bind);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_action(switch_ivr_menu_t * menu, switch_ivr_action_t ivr_action, const char *arg, const char *bind);
 
 
 /*!
@@ -599,9 +565,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  *\note The function returns an switch_ivr_action_t enum of what you want to do. and looks to your buffer for args.
  *\return SWUTCH_STATUS_SUCCESS if the function was binded
  */
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_function(switch_ivr_menu_t *menu,
-																   switch_ivr_menu_action_function_t * function,
-																   const char *arg, const char *bind);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_function(switch_ivr_menu_t * menu,
+															  switch_ivr_menu_action_function_t * function, const char *arg, const char *bind);
 
 
 /*!
@@ -612,15 +577,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  *\param obj A void pointer to an object you want to make avaliable to your callback functions that you may have binded with switch_ivr_menu_bind_function.
  *\return SWITCH_STATUS_SUCCESS if all is well
  */
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *session, switch_ivr_menu_t *stack,
-															 char *name, void *obj);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *session, switch_ivr_menu_t * stack, char *name, void *obj);
 
 /*!
  *\brief free a stack of menu objects.
  *\param stack The top level menu you wish to destroy.
  *\return SWITCH_STATUS_SUCCESS if the object was a top level menu and it was freed
  */
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_free(switch_ivr_menu_t *stack);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_free(switch_ivr_menu_t * stack);
 
 	 struct switch_ivr_menu_xml_ctx;
 	 typedef struct switch_ivr_menu_xml_ctx switch_ivr_menu_xml_ctx_t;
@@ -632,9 +596,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  *\param xml_menu The xml Menu source of the menu to be created
  *\return SWITCH_STATUS_SUCCESS if all is well
  */
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_xml_ctx_t *xml_menu_ctx,
-																	 switch_ivr_menu_t **menu_stack,
-																	 switch_xml_t xml_menus, switch_xml_t xml_menu);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_xml_ctx_t * xml_menu_ctx,
+																switch_ivr_menu_t ** menu_stack, switch_xml_t xml_menus, switch_xml_t xml_menu);
 
 /*!
  *\param xml_menu_ctx The XML menu parser context previously created by switch_ivr_menu_stack_xml_init
@@ -642,24 +605,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  *\param function The menu function callback that will be executed when menu digits are bound to this name
  *\return SWITCH_STATUS_SUCCESS if all is well
  */
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_add_custom(switch_ivr_menu_xml_ctx_t *xml_menu_ctx,
-																		  char *name,
-																		  switch_ivr_menu_action_function_t * function);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_add_custom(switch_ivr_menu_xml_ctx_t * xml_menu_ctx,
+																	 char *name, switch_ivr_menu_action_function_t * function);
 
 /*!
  *\param xml_menu_ctx A pointer of a XML menu parser context to be created
  *\param pool memory pool (NULL to create one)
  *\return SWITCH_STATUS_SUCCESS if all is well
  */
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_init(switch_ivr_menu_xml_ctx_t **xml_menu_ctx,
-																	switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_init(switch_ivr_menu_xml_ctx_t ** xml_menu_ctx, switch_memory_pool_t * pool);
 
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *session,
-															 char *macro_name,
-															 char *data, char *lang, switch_input_args_t *args);
+SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *session, char *macro_name, char *data, char *lang, switch_input_args_t *args);
 /** @} */
 
-	 SWITCH_END_EXTERN_C
+SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:
  * Local Variables:

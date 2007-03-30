@@ -38,8 +38,7 @@ static const char modname[] = "mod_playback";
   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
    if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 */
-static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf,
-							   unsigned int buflen)
+static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
 
 
@@ -236,8 +235,7 @@ static const switch_loadable_module_interface_t mod_playback_module_interface = 
 	/*.application_interface */ &playback_application_interface
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */

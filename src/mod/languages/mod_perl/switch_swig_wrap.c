@@ -468,8 +468,7 @@ extern "C" {
 				if (s->next) {
 					s->next->prev = s->prev;
 				}
-				/* Insert s as second element in the list */
-				s->    next = ty->next;
+				/* Insert s as second element in the list */ s->next = ty->next;
 				if (ty->next)
 					ty->next->prev = s;
 				ty->next = s;
@@ -689,14 +688,12 @@ typedef struct {
 static void _swig_create_magic(SV * sv, char *name, int (*set) (SV *, MAGIC *), int (*get) (SV *, MAGIC *))
 {
 #else
-static void _swig_create_magic(SV * sv, char *name, int (*set) (struct interpreter *, SV *, MAGIC *),
-							   int (*get) (struct interpreter *, SV *, MAGIC *))
+static void _swig_create_magic(SV * sv, char *name, int (*set) (struct interpreter *, SV *, MAGIC *), int (*get) (struct interpreter *, SV *, MAGIC *))
 {
 #endif
 #else
 #  define swig_create_magic(s,a,b,c) _swig_create_magic(pPerl,s,a,b,c)
-static void _swig_create_magic(CPerlObj * pPerl, SV * sv, const char *name, int (CPerlObj::*set) (SV *, MAGIC *),
-							   int (CPerlObj::*get) (SV *, MAGIC *))
+static void _swig_create_magic(CPerlObj * pPerl, SV * sv, const char *name, int (CPerlObj::*set) (SV *, MAGIC *), int (CPerlObj::*get) (SV *, MAGIC *))
 {
 #endif
 	MAGIC *mg;
@@ -821,10 +818,8 @@ SWIGEXPORT(void) SWIG_init(CV * cv, CPerlObj *);
 										  switch_input_callback_function_t, void *, unsigned int, unsigned int);
 	 extern int fs_switch_ivr_sleep(switch_core_session_t *, uint32_t);
 	 extern int fs_ivr_play_file2(switch_core_session_t *, char *);
-	 extern int fs_switch_ivr_collect_digits_callback(switch_core_session_t *, switch_input_callback_function_t, void *,
-													  unsigned int, unsigned int);
-	 extern int fs_switch_ivr_collect_digits_count(switch_core_session_t *, char *, unsigned int, unsigned int,
-												   char const *, char *, unsigned int);
+	 extern int fs_switch_ivr_collect_digits_callback(switch_core_session_t *, switch_input_callback_function_t, void *, unsigned int, unsigned int);
+	 extern int fs_switch_ivr_collect_digits_count(switch_core_session_t *, char *, unsigned int, unsigned int, char const *, char *, unsigned int);
 	 extern int fs_switch_ivr_originate(switch_core_session_t *, switch_core_session_t **, char *, uint32_t);
 	 extern int fs_switch_ivr_session_transfer(switch_core_session_t *, char *, char *, char *);
 	 extern int fs_switch_ivr_speak_text(switch_core_session_t *, char *, char *, uint32_t, char *);
@@ -1157,8 +1152,7 @@ extern "C" {
 			}
 			{
 				if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-					SWIG_croak
-						("Type error in argument 1 of fs_channel_set_variable. Expected _p_switch_core_session_t");
+					SWIG_croak("Type error in argument 1 of fs_channel_set_variable. Expected _p_switch_core_session_t");
 				}
 			}
 			if (!SvOK((SV *) ST(1)))
@@ -1192,8 +1186,7 @@ extern "C" {
 			}
 			{
 				if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-					SWIG_croak
-						("Type error in argument 1 of fs_channel_get_variable. Expected _p_switch_core_session_t");
+					SWIG_croak("Type error in argument 1 of fs_channel_get_variable. Expected _p_switch_core_session_t");
 				}
 			}
 			if (!SvOK((SV *) ST(1)))
@@ -1291,14 +1284,12 @@ extern "C" {
 			}
 			{
 				if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-					SWIG_croak
-						("Type error in argument 1 of fs_switch_ivr_record_file. Expected _p_switch_core_session_t");
+					SWIG_croak("Type error in argument 1 of fs_switch_ivr_record_file. Expected _p_switch_core_session_t");
 				}
 			}
 			{
 				if (SWIG_ConvertPtr(ST(1), (void **) &arg2, SWIGTYPE_p_switch_file_handle_t, 0) < 0) {
-					SWIG_croak
-						("Type error in argument 2 of fs_switch_ivr_record_file. Expected _p_switch_file_handle_t");
+					SWIG_croak("Type error in argument 2 of fs_switch_ivr_record_file. Expected _p_switch_file_handle_t");
 				}
 			}
 			if (!SvOK((SV *) ST(2)))
@@ -1308,8 +1299,7 @@ extern "C" {
 			{
 				switch_input_callback_function_t *argp;
 				if (SWIG_ConvertPtr(ST(3), (void **) &argp, SWIGTYPE_p_switch_input_callback_function_t, 0) < 0) {
-					SWIG_croak
-						("Type error in argument 4 of fs_switch_ivr_record_file. Expected _p_switch_input_callback_function_t");
+					SWIG_croak("Type error in argument 4 of fs_switch_ivr_record_file. Expected _p_switch_input_callback_function_t");
 				}
 				arg4 = *argp;
 			}
@@ -1415,15 +1405,13 @@ extern "C" {
 			}
 			{
 				if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-					SWIG_croak
-						("Type error in argument 1 of fs_switch_ivr_collect_digits_callback. Expected _p_switch_core_session_t");
+					SWIG_croak("Type error in argument 1 of fs_switch_ivr_collect_digits_callback. Expected _p_switch_core_session_t");
 				}
 			}
 			{
 				switch_input_callback_function_t *argp;
 				if (SWIG_ConvertPtr(ST(1), (void **) &argp, SWIGTYPE_p_switch_input_callback_function_t, 0) < 0) {
-					SWIG_croak
-						("Type error in argument 2 of fs_switch_ivr_collect_digits_callback. Expected _p_switch_input_callback_function_t");
+					SWIG_croak("Type error in argument 2 of fs_switch_ivr_collect_digits_callback. Expected _p_switch_input_callback_function_t");
 				}
 				arg2 = *argp;
 			}
@@ -1460,13 +1448,11 @@ extern "C" {
 			dXSARGS;
 
 			if ((items < 7) || (items > 7)) {
-				SWIG_croak
-					("Usage: fs_switch_ivr_collect_digits_count(session,buf,buflen,maxdigits,terminators,terminator,timeout);");
+				SWIG_croak("Usage: fs_switch_ivr_collect_digits_count(session,buf,buflen,maxdigits,terminators,terminator,timeout);");
 			}
 			{
 				if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-					SWIG_croak
-						("Type error in argument 1 of fs_switch_ivr_collect_digits_count. Expected _p_switch_core_session_t");
+					SWIG_croak("Type error in argument 1 of fs_switch_ivr_collect_digits_count. Expected _p_switch_core_session_t");
 				}
 			}
 			if (!SvOK((SV *) ST(1)))
@@ -1511,14 +1497,12 @@ extern "C" {
 			}
 			{
 				if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-					SWIG_croak
-						("Type error in argument 1 of fs_switch_ivr_originate. Expected _p_switch_core_session_t");
+					SWIG_croak("Type error in argument 1 of fs_switch_ivr_originate. Expected _p_switch_core_session_t");
 				}
 			}
 			{
 				if (SWIG_ConvertPtr(ST(1), (void **) &arg2, SWIGTYPE_p_p_switch_core_session_t, 0) < 0) {
-					SWIG_croak
-						("Type error in argument 2 of fs_switch_ivr_originate. Expected _p_p_switch_core_session_t");
+					SWIG_croak("Type error in argument 2 of fs_switch_ivr_originate. Expected _p_p_switch_core_session_t");
 				}
 			}
 			if (!SvOK((SV *) ST(2)))
@@ -1559,8 +1543,7 @@ extern "C" {
 			}
 			{
 				if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-					SWIG_croak
-						("Type error in argument 1 of fs_switch_ivr_session_transfer. Expected _p_switch_core_session_t");
+					SWIG_croak("Type error in argument 1 of fs_switch_ivr_session_transfer. Expected _p_switch_core_session_t");
 				}
 			}
 			if (!SvOK((SV *) ST(1)))
@@ -1603,8 +1586,7 @@ extern "C" {
 			}
 			{
 				if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-					SWIG_croak
-						("Type error in argument 1 of fs_switch_ivr_speak_text. Expected _p_switch_core_session_t");
+					SWIG_croak("Type error in argument 1 of fs_switch_ivr_speak_text. Expected _p_switch_core_session_t");
 				}
 			}
 			if (!SvOK((SV *) ST(1)))
@@ -1651,8 +1633,7 @@ extern "C" {
 			}
 			{
 				if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_channel_t, 0) < 0) {
-					SWIG_croak
-						("Type error in argument 1 of fs_switch_channel_get_variable. Expected _p_switch_channel_t");
+					SWIG_croak("Type error in argument 1 of fs_switch_channel_get_variable. Expected _p_switch_channel_t");
 				}
 			}
 			if (!SvOK((SV *) ST(1)))
@@ -1689,8 +1670,7 @@ extern "C" {
 			}
 			{
 				if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_channel_t, 0) < 0) {
-					SWIG_croak
-						("Type error in argument 1 of fs_switch_channel_set_variable. Expected _p_switch_channel_t");
+					SWIG_croak("Type error in argument 1 of fs_switch_channel_set_variable. Expected _p_switch_channel_t");
 				}
 			}
 			if (!SvOK((SV *) ST(1)))
@@ -1716,17 +1696,14 @@ extern "C" {
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
-	static swig_type_info _swigt__p_switch_channel_t[] =
-		{ {"_p_switch_channel_t", 0, "switch_channel_t *", 0}, {"_p_switch_channel_t"}, {0} };
-	static swig_type_info _swigt__p_switch_file_handle_t[] =
-		{ {"_p_switch_file_handle_t", 0, "switch_file_handle_t *", 0}, {"_p_switch_file_handle_t"}, {0} };
+	static swig_type_info _swigt__p_switch_channel_t[] = { {"_p_switch_channel_t", 0, "switch_channel_t *", 0}, {"_p_switch_channel_t"}, {0} };
+	static swig_type_info _swigt__p_switch_file_handle_t[] = { {"_p_switch_file_handle_t", 0, "switch_file_handle_t *", 0}, {"_p_switch_file_handle_t"}, {0} };
 	static swig_type_info _swigt__p_switch_core_session_t[] =
 		{ {"_p_switch_core_session_t", 0, "switch_core_session_t *", 0}, {"_p_switch_core_session_t"}, {0} };
 	static swig_type_info _swigt__p_p_switch_core_session_t[] =
 		{ {"_p_p_switch_core_session_t", 0, "switch_core_session_t **", 0}, {"_p_p_switch_core_session_t"}, {0} };
 	static swig_type_info _swigt__p_uint32_t[] = { {"_p_uint32_t", 0, "uint32_t *", 0}, {"_p_uint32_t"}, {0} };
-	static swig_type_info _swigt__p_switch_input_callback_function_t[] =
-		{ {"_p_switch_input_callback_function_t", 0, "switch_input_callback_function_t *", 0},
+	static swig_type_info _swigt__p_switch_input_callback_function_t[] = { {"_p_switch_input_callback_function_t", 0, "switch_input_callback_function_t *", 0},
 	{"_p_switch_input_callback_function_t"}, {0}
 	};
 

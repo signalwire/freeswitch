@@ -41,7 +41,7 @@ static struct {
 	switch_memory_pool_t *memory_pool;
 } runtime;
 
-static switch_status_t switch_core_db_persistant_execute_trans(switch_core_db_t *db, char *sql, uint32_t retries)
+static switch_status_t switch_core_db_persistant_execute_trans(switch_core_db_t * db, char *sql, uint32_t retries)
 {
 	char *errmsg;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -113,7 +113,7 @@ static switch_status_t switch_core_db_persistant_execute_trans(switch_core_db_t 
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute(switch_core_db_t *db, char *sql, uint32_t retries)
+SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute(switch_core_db_t * db, char *sql, uint32_t retries)
 {
 	char *errmsg;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -145,7 +145,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute(switch_core_db
 }
 
 #define SQLLEN 1024 * 64
-static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, void *obj)
+static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t * thread, void *obj)
 {
 	void *pop;
 	uint32_t itterations = 0;
@@ -200,8 +200,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 
 		if (trans && ((itterations == target) || nothing_in_queue)) {
 			if (switch_core_db_persistant_execute_trans(runtime.event_db, sqlbuf, 1000) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
-								  "SQL thread unable to commit transaction, records lost!\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL thread unable to commit transaction, records lost!\n");
 			}
 			itterations = 0;
 			trans = 0;
@@ -229,9 +228,8 @@ static void core_event_handler(switch_event_t *event)
 		sql = switch_mprintf("insert into tasks values('%q','%q','%q','%q')",
 							 switch_event_get_header(event, "task-id"),
 							 switch_event_get_header(event, "task-desc"),
-							 switch_event_get_header(event, "task-group"),
-							 switch_event_get_header(event, "task-runtime")
-							 );
+							 switch_event_get_header(event, "task-group"), switch_event_get_header(event, "task-runtime")
+			);
 		break;
 	case SWITCH_EVENT_DEL_SCHEDULE:
 	case SWITCH_EVENT_EXE_SCHEDULE:
@@ -239,8 +237,7 @@ static void core_event_handler(switch_event_t *event)
 		break;
 	case SWITCH_EVENT_RE_SCHEDULE:
 		sql = switch_mprintf("update tasks set task_runtime='%q' where task_id=%q",
-							 switch_event_get_header(event, "task-runtime"),
-							 switch_event_get_header(event, "task-id"));
+							 switch_event_get_header(event, "task-runtime"), switch_event_get_header(event, "task-id"));
 		break;
 	case SWITCH_EVENT_CHANNEL_DESTROY:
 		sql = switch_mprintf("delete from channels where uuid='%q'", switch_event_get_header(event, "unique-id"));
@@ -249,8 +246,7 @@ static void core_event_handler(switch_event_t *event)
 		sql = switch_mprintf("insert into channels (uuid,created,name,state) values('%q','%q','%q','%q')",
 							 switch_event_get_header(event, "unique-id"),
 							 switch_event_get_header(event, "event-date-local"),
-							 switch_event_get_header(event, "channel-name"),
-							 switch_event_get_header(event, "channel-state")
+							 switch_event_get_header(event, "channel-name"), switch_event_get_header(event, "channel-state")
 			);
 		break;
 	case SWITCH_EVENT_CODEC:
@@ -266,8 +262,7 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_CHANNEL_EXECUTE:
 		sql = switch_mprintf("update channels set application='%q',application_data='%q' where uuid='%q'",
 							 switch_event_get_header(event, "application"),
-							 switch_event_get_header(event, "application-data"),
-							 switch_event_get_header(event, "unique-id")
+							 switch_event_get_header(event, "application-data"), switch_event_get_header(event, "unique-id")
 			);
 		break;
 	case SWITCH_EVENT_CHANNEL_STATE:
@@ -286,14 +281,12 @@ static void core_event_handler(switch_event_t *event)
 									 switch_event_get_header(event, "caller-caller-id-name"),
 									 switch_event_get_header(event, "caller-caller-id-number"),
 									 switch_event_get_header(event, "caller-network-addr"),
-									 switch_event_get_header(event, "caller-destination-number"),
-									 switch_event_get_header(event, "unique-id")
+									 switch_event_get_header(event, "caller-destination-number"), switch_event_get_header(event, "unique-id")
 					);
 				break;
 			default:
 				sql = switch_mprintf("update channels set state='%s' where uuid='%s'",
-									 switch_event_get_header(event, "channel-state"),
-									 switch_event_get_header(event, "unique-id")
+									 switch_event_get_header(event, "channel-state"), switch_event_get_header(event, "unique-id")
 					);
 				break;
 			}
@@ -311,14 +304,11 @@ static void core_event_handler(switch_event_t *event)
 							 switch_event_get_header(event, "originatee-caller-id-name"),
 							 switch_event_get_header(event, "originatee-caller-id-number"),
 							 switch_event_get_header(event, "originatee-destination-number"),
-							 switch_event_get_header(event, "originatee-channel-name"),
-							 switch_event_get_header(event, "originatee-unique-id")
+							 switch_event_get_header(event, "originatee-channel-name"), switch_event_get_header(event, "originatee-unique-id")
 			);
 		break;
 	case SWITCH_EVENT_CHANNEL_UNBRIDGE:
-		sql =
-			switch_mprintf("delete from calls where caller_uuid='%s'",
-						   switch_event_get_header(event, "caller-unique-id"));
+		sql = switch_mprintf("delete from calls where caller_uuid='%s'", switch_event_get_header(event, "caller-unique-id"));
 		break;
 	case SWITCH_EVENT_SHUTDOWN:
 		sql = switch_mprintf("delete from channels;delete from interfaces;delete from calls");
@@ -350,7 +340,7 @@ static void core_event_handler(switch_event_t *event)
 }
 
 
-SWITCH_DECLARE(void) switch_core_sqldb_start(switch_memory_pool_t *pool)
+SWITCH_DECLARE(void) switch_core_sqldb_start(switch_memory_pool_t * pool)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;;
@@ -373,8 +363,7 @@ SWITCH_DECLARE(void) switch_core_sqldb_start(switch_memory_pool_t *pool)
 			"   dest  VARCHAR(255),\n"
 			"   application  VARCHAR(255),\n"
 			"   application_data  VARCHAR(255),\n"
-			"   read_codec  VARCHAR(255),\n"
-			"   read_rate  VARCHAR(255),\n" "   write_codec  VARCHAR(255),\n" "   write_rate  VARCHAR(255)\n" ");\n";
+			"   read_codec  VARCHAR(255),\n" "   read_rate  VARCHAR(255),\n" "   write_codec  VARCHAR(255),\n" "   write_rate  VARCHAR(255)\n" ");\n";
 		char create_calls_sql[] =
 			"CREATE TABLE calls (\n"
 			"   function  VARCHAR(255),\n"
@@ -385,20 +374,15 @@ SWITCH_DECLARE(void) switch_core_sqldb_start(switch_memory_pool_t *pool)
 			"   caller_uuid      VARCHAR(255),\n"
 			"   callee_cid_name  VARCHAR(255),\n"
 			"   callee_cid_num   VARCHAR(255),\n"
-			"   callee_dest_num  VARCHAR(255),\n"
-			"   callee_chan_name VARCHAR(255),\n" "   callee_uuid      VARCHAR(255)\n" ");\n";
+			"   callee_dest_num  VARCHAR(255),\n" "   callee_chan_name VARCHAR(255),\n" "   callee_uuid      VARCHAR(255)\n" ");\n";
 		char create_interfaces_sql[] =
 			"CREATE TABLE interfaces (\n"
 			"   type             VARCHAR(255),\n"
-			"   name             VARCHAR(255),\n"
-			"   description      VARCHAR(255),\n" "   syntax           VARCHAR(255)\n" ");\n";
+			"   name             VARCHAR(255),\n" "   description      VARCHAR(255),\n" "   syntax           VARCHAR(255)\n" ");\n";
 		char create_tasks_sql[] =
 			"CREATE TABLE tasks (\n"
 			"   task_id             INTEGER(4),\n"
-			"   task_desc           VARCHAR(255),\n"
-			"   task_group          VARCHAR(255),\n"
-			"   task_runtime        INTEGER(8)\n"
-			");\n";
+			"   task_desc           VARCHAR(255),\n" "   task_group          VARCHAR(255),\n" "   task_runtime        INTEGER(8)\n" ");\n";
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening DB\n");
 		switch_core_db_exec(runtime.db, "drop table channels", NULL, NULL, NULL);
@@ -409,8 +393,7 @@ SWITCH_DECLARE(void) switch_core_sqldb_start(switch_memory_pool_t *pool)
 		switch_core_db_exec(runtime.db, create_calls_sql, NULL, NULL, NULL);
 		switch_core_db_exec(runtime.db, create_interfaces_sql, NULL, NULL, NULL);
 		switch_core_db_exec(runtime.db, create_tasks_sql, NULL, NULL, NULL);
-		if (switch_event_bind("core_db", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL) !=
-			SWITCH_STATUS_SUCCESS) {
+		if (switch_event_bind("core_db", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind event handler!\n");
 		}
 	}

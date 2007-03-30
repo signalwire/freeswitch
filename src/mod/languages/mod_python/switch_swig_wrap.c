@@ -329,8 +329,7 @@ extern "C" {
   Note: if start == end at the beginning of the function, we go all the way around
   the circular list.
 */
-	SWIGRUNTIME swig_type_info *SWIG_MangledTypeQueryModule(swig_module_info * start,
-															swig_module_info * end, const char *name) {
+	SWIGRUNTIME swig_type_info *SWIG_MangledTypeQueryModule(swig_module_info * start, swig_module_info * end, const char *name) {
 		swig_module_info *iter = start;
 		do {
 			if (iter->size) {
@@ -572,7 +571,7 @@ extern "C" {
  *     type checking.
  *
  * Author : David Beazley (beazley@cs.uchicago.edu)
-																																																																																																																																	   ************************************************************************//* Common SWIG API */
+																																																																																																																																																																																																																																																																																					   ************************************************************************//* Common SWIG API */
 #define SWIG_ConvertPtr(obj, pp, type, flags)    SWIG_Python_ConvertPtr(obj, pp, type, flags)
 #define SWIG_NewPointerObj(p, type, flags)       SWIG_Python_NewPointerObj(p, type, flags)
 #define SWIG_MustGetPtr(p, type, argnum, flags)  SWIG_Python_MustGetPtr(p, type, argnum, flags)
@@ -584,11 +583,11 @@ extern "C" {
 #define SWIG_SetModule(clientdata, pointer) SWIG_Python_SetModule(pointer)
 /* -----------------------------------------------------------------------------
  * Pointer declarations
-																																																																																		  																																									  																				    * ----------------------------------------------------------------------------- *//*
-																																																																																		     Use SWIG_NO_COBJECT_TYPES to force the use of strings to represent
-																																																																																		     C/C++ pointers in the python side. Very useful for debugging, but
-																																																																																		     not always safe.
-																																																																																		   */
+																																																																																																																																																																				  																																																																																		  																																									  																				    * ----------------------------------------------------------------------------- *//*
+																																																																																																																																																																				     Use SWIG_NO_COBJECT_TYPES to force the use of strings to represent
+																																																																																																																																																																				     C/C++ pointers in the python side. Very useful for debugging, but
+																																																																																																																																																																				     not always safe.
+																																																																																																																																																																				   */
 #if !defined(SWIG_NO_COBJECT_TYPES) && !defined(SWIG_COBJECT_TYPES)
 #  define SWIG_COBJECT_TYPES
 #endif
@@ -652,8 +651,7 @@ extern "C" {
 
 	SWIGRUNTIME PyObject *PySwigObject_repr(PySwigObject * v) {
 		char result[SWIG_BUFFER_SIZE];
-		return SWIG_PackVoidPtr(result, v->ptr, v->desc, sizeof(result)) ?
-			PyString_FromFormat("<Swig Object at %s>", result) : 0;
+		return SWIG_PackVoidPtr(result, v->ptr, v->desc, sizeof(result)) ? PyString_FromFormat("<Swig Object at %s>", result) : 0;
 	}
 
 	SWIGRUNTIME PyObject *PySwigObject_str(PySwigObject * v) {
@@ -1283,8 +1281,7 @@ extern "C" {
 #ifdef SWIG_LINK_RUNTIME
 			type_pointer = SWIG_ReturnGlobalTypeList((void *) 0);
 #else
-			type_pointer = PyCObject_Import((char *) "swig_runtime_data" SWIG_RUNTIME_VERSION,
-											(char *) "type_pointer" SWIG_TYPE_TABLE_NAME);
+			type_pointer = PyCObject_Import((char *) "swig_runtime_data" SWIG_RUNTIME_VERSION, (char *) "type_pointer" SWIG_TYPE_TABLE_NAME);
 			if (PyErr_Occurred()) {
 				PyErr_Clear();
 				type_pointer = (void *) 0;
@@ -1541,8 +1538,7 @@ extern "C" {
 		         resultobj = Py_None;
 		         return resultobj;
 		         fail:return NULL;
-	}
-	static PyObject *_wrap_fs_core_init(PyObject * self, PyObject * args) {
+	} static PyObject *_wrap_fs_core_init(PyObject * self, PyObject * args) {
 		PyObject *resultobj = NULL;
 		char *arg1 = (char *) 0;
 		int result;
@@ -1883,8 +1879,7 @@ extern "C" {
 		}
 		{
 			switch_input_callback_function_t *argp;
-			SWIG_Python_ConvertPtr(obj3, (void **) &argp, SWIGTYPE_p_switch_input_callback_function_t,
-								   SWIG_POINTER_EXCEPTION);
+			SWIG_Python_ConvertPtr(obj3, (void **) &argp, SWIGTYPE_p_switch_input_callback_function_t, SWIG_POINTER_EXCEPTION);
 			if (SWIG_arg_fail(4))
 				SWIG_fail;
 			if (argp == NULL) {
@@ -1932,8 +1927,7 @@ extern "C" {
 		PyObject *obj4 = 0;
 		PyObject *obj5 = 0;
 
-		if (!PyArg_ParseTuple
-			(args, (char *) "OOOOOO:fs_switch_ivr_record_file", &obj0, &obj1, &obj2, &obj3, &obj4, &obj5))
+		if (!PyArg_ParseTuple(args, (char *) "OOOOOO:fs_switch_ivr_record_file", &obj0, &obj1, &obj2, &obj3, &obj4, &obj5))
 			goto fail;
 		SWIG_Python_ConvertPtr(obj0, (void **) &arg1, SWIGTYPE_p_switch_core_session_t, SWIG_POINTER_EXCEPTION | 0);
 		if (SWIG_arg_fail(1))
@@ -1947,8 +1941,7 @@ extern "C" {
 		}
 		{
 			switch_input_callback_function_t *argp;
-			SWIG_Python_ConvertPtr(obj3, (void **) &argp, SWIGTYPE_p_switch_input_callback_function_t,
-								   SWIG_POINTER_EXCEPTION);
+			SWIG_Python_ConvertPtr(obj3, (void **) &argp, SWIGTYPE_p_switch_input_callback_function_t, SWIG_POINTER_EXCEPTION);
 			if (SWIG_arg_fail(4))
 				SWIG_fail;
 			if (argp == NULL) {
@@ -2051,16 +2044,14 @@ extern "C" {
 		PyObject *obj3 = 0;
 		PyObject *obj4 = 0;
 
-		if (!PyArg_ParseTuple
-			(args, (char *) "OOOOO:fs_switch_ivr_collect_digits_callback", &obj0, &obj1, &obj2, &obj3, &obj4))
+		if (!PyArg_ParseTuple(args, (char *) "OOOOO:fs_switch_ivr_collect_digits_callback", &obj0, &obj1, &obj2, &obj3, &obj4))
 			goto fail;
 		SWIG_Python_ConvertPtr(obj0, (void **) &arg1, SWIGTYPE_p_switch_core_session_t, SWIG_POINTER_EXCEPTION | 0);
 		if (SWIG_arg_fail(1))
 			SWIG_fail;
 		{
 			switch_input_callback_function_t *argp;
-			SWIG_Python_ConvertPtr(obj1, (void **) &argp, SWIGTYPE_p_switch_input_callback_function_t,
-								   SWIG_POINTER_EXCEPTION);
+			SWIG_Python_ConvertPtr(obj1, (void **) &argp, SWIGTYPE_p_switch_input_callback_function_t, SWIG_POINTER_EXCEPTION);
 			if (SWIG_arg_fail(2))
 				SWIG_fail;
 			if (argp == NULL) {
@@ -2115,9 +2106,7 @@ extern "C" {
 		PyObject *obj5 = 0;
 		PyObject *obj6 = 0;
 
-		if (!PyArg_ParseTuple
-			(args, (char *) "OOOOOOO:fs_switch_ivr_collect_digits_count", &obj0, &obj1, &obj2, &obj3, &obj4, &obj5,
-			 &obj6))
+		if (!PyArg_ParseTuple(args, (char *) "OOOOOOO:fs_switch_ivr_collect_digits_count", &obj0, &obj1, &obj2, &obj3, &obj4, &obj5, &obj6))
 			goto fail;
 		SWIG_Python_ConvertPtr(obj0, (void **) &arg1, SWIGTYPE_p_switch_core_session_t, SWIG_POINTER_EXCEPTION | 0);
 		if (SWIG_arg_fail(1))
@@ -2262,9 +2251,7 @@ extern "C" {
 		PyObject *obj7 = 0;
 		PyObject *obj8 = 0;
 
-		if (!PyArg_ParseTuple
-			(args, (char *) "OOOOOOOOO:fs_switch_ivr_speak_text", &obj0, &obj1, &obj2, &obj3, &obj4, &obj5, &obj6,
-			 &obj7, &obj8))
+		if (!PyArg_ParseTuple(args, (char *) "OOOOOOOOO:fs_switch_ivr_speak_text", &obj0, &obj1, &obj2, &obj3, &obj4, &obj5, &obj6, &obj7, &obj8))
 			goto fail;
 		SWIG_Python_ConvertPtr(obj0, (void **) &arg1, SWIGTYPE_p_switch_core_session_t, SWIG_POINTER_EXCEPTION | 0);
 		if (SWIG_arg_fail(1))
@@ -2288,8 +2275,7 @@ extern "C" {
 		}
 		{
 			switch_input_callback_function_t *argp;
-			SWIG_Python_ConvertPtr(obj5, (void **) &argp, SWIGTYPE_p_switch_input_callback_function_t,
-								   SWIG_POINTER_EXCEPTION);
+			SWIG_Python_ConvertPtr(obj5, (void **) &argp, SWIGTYPE_p_switch_input_callback_function_t, SWIG_POINTER_EXCEPTION);
 			if (SWIG_arg_fail(6))
 				SWIG_fail;
 			if (argp == NULL) {
@@ -2461,17 +2447,12 @@ extern "C" {
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
 	static swig_type_info _swigt__p_char = { "_p_char", "char *", 0, 0, 0 };
-	static swig_type_info _swigt__p_p_switch_core_session_t =
-		{ "_p_p_switch_core_session_t", "switch_core_session_t **", 0, 0, 0 };
-	static swig_type_info _swigt__p_switch_channel_state_t =
-		{ "_p_switch_channel_state_t", "enum switch_channel_state_t *|switch_channel_state_t *", 0, 0, 0 };
+	static swig_type_info _swigt__p_p_switch_core_session_t = { "_p_p_switch_core_session_t", "switch_core_session_t **", 0, 0, 0 };
+	static swig_type_info _swigt__p_switch_channel_state_t = { "_p_switch_channel_state_t", "enum switch_channel_state_t *|switch_channel_state_t *", 0, 0, 0 };
 	static swig_type_info _swigt__p_switch_channel_t = { "_p_switch_channel_t", "switch_channel_t *", 0, 0, 0 };
-	static swig_type_info _swigt__p_switch_core_session_t =
-		{ "_p_switch_core_session_t", "switch_core_session_t *", 0, 0, 0 };
-	static swig_type_info _swigt__p_switch_file_handle_t =
-		{ "_p_switch_file_handle_t", "switch_file_handle_t *", 0, 0, 0 };
-	static swig_type_info _swigt__p_switch_input_callback_function_t =
-		{ "_p_switch_input_callback_function_t", "switch_input_callback_function_t *", 0, 0, 0 };
+	static swig_type_info _swigt__p_switch_core_session_t = { "_p_switch_core_session_t", "switch_core_session_t *", 0, 0, 0 };
+	static swig_type_info _swigt__p_switch_file_handle_t = { "_p_switch_file_handle_t", "switch_file_handle_t *", 0, 0, 0 };
+	static swig_type_info _swigt__p_switch_input_callback_function_t = { "_p_switch_input_callback_function_t", "switch_input_callback_function_t *", 0, 0, 0 };
 	static swig_type_info _swigt__ptrdiff_t = { "_ptrdiff_t", "ptrdiff_t", 0, 0, 0 };
 	static swig_type_info _swigt__size_t = { "_size_t", "size_t", 0, 0, 0 };
 
@@ -2488,17 +2469,12 @@ extern "C" {
 	};
 
 	static swig_cast_info _swigc__p_char[] = { {&_swigt__p_char, 0, 0, 0}, {0, 0, 0, 0} };
-	static swig_cast_info _swigc__p_p_switch_core_session_t[] =
-		{ {&_swigt__p_p_switch_core_session_t, 0, 0, 0}, {0, 0, 0, 0} };
-	static swig_cast_info _swigc__p_switch_channel_state_t[] =
-		{ {&_swigt__p_switch_channel_state_t, 0, 0, 0}, {0, 0, 0, 0} };
+	static swig_cast_info _swigc__p_p_switch_core_session_t[] = { {&_swigt__p_p_switch_core_session_t, 0, 0, 0}, {0, 0, 0, 0} };
+	static swig_cast_info _swigc__p_switch_channel_state_t[] = { {&_swigt__p_switch_channel_state_t, 0, 0, 0}, {0, 0, 0, 0} };
 	static swig_cast_info _swigc__p_switch_channel_t[] = { {&_swigt__p_switch_channel_t, 0, 0, 0}, {0, 0, 0, 0} };
-	static swig_cast_info _swigc__p_switch_core_session_t[] =
-		{ {&_swigt__p_switch_core_session_t, 0, 0, 0}, {0, 0, 0, 0} };
-	static swig_cast_info _swigc__p_switch_file_handle_t[] =
-		{ {&_swigt__p_switch_file_handle_t, 0, 0, 0}, {0, 0, 0, 0} };
-	static swig_cast_info _swigc__p_switch_input_callback_function_t[] =
-		{ {&_swigt__p_switch_input_callback_function_t, 0, 0, 0}, {0, 0, 0, 0} };
+	static swig_cast_info _swigc__p_switch_core_session_t[] = { {&_swigt__p_switch_core_session_t, 0, 0, 0}, {0, 0, 0, 0} };
+	static swig_cast_info _swigc__p_switch_file_handle_t[] = { {&_swigt__p_switch_file_handle_t, 0, 0, 0}, {0, 0, 0, 0} };
+	static swig_cast_info _swigc__p_switch_input_callback_function_t[] = { {&_swigt__p_switch_input_callback_function_t, 0, 0, 0}, {0, 0, 0, 0} };
 	static swig_cast_info _swigc__ptrdiff_t[] = { {&_swigt__ptrdiff_t, 0, 0, 0}, {0, 0, 0, 0} };
 	static swig_cast_info _swigc__size_t[] = { {&_swigt__size_t, 0, 0, 0}, {0, 0, 0, 0} };
 
@@ -2704,8 +2680,7 @@ extern "C" {
 	SWIGINTERN PyObject *swig_varlink_repr(swig_varlinkobject * v) {
 		v = v;
 		return PyString_FromString("<Swig global variables>");
-	}
-	SWIGINTERN int swig_varlink_print(swig_varlinkobject * v, FILE * fp, int flags) {
+	} SWIGINTERN int swig_varlink_print(swig_varlinkobject * v, FILE * fp, int flags) {
 		swig_globalvar *var;
 		flags = flags;
 		fprintf(fp, "Swig global variables { ");
@@ -2809,9 +2784,7 @@ extern "C" {
 		return ((PyObject *) result);
 	}
 
-	SWIGINTERN void
-		SWIG_Python_addvarlink(PyObject * p, char *name, PyObject * (*get_attr) (void),
-							   int (*set_attr) (PyObject * p)) {
+	SWIGINTERN void SWIG_Python_addvarlink(PyObject * p, char *name, PyObject * (*get_attr) (void), int (*set_attr) (PyObject * p)) {
 		swig_varlinkobject *v = (swig_varlinkobject *) p;
 		swig_globalvar *gv = (swig_globalvar *) malloc(sizeof(swig_globalvar));
 		if (gv) {
@@ -2872,10 +2845,7 @@ extern "C" {
 	/* Fix SwigMethods to carry the callback ptrs when needed */
 	/* ----------------------------------------------------------------------------- */
 
-	SWIGINTERN void
-		SWIG_Python_FixMethods(PyMethodDef * methods,
-							   swig_const_info * const_table,
-							   swig_type_info ** types, swig_type_info ** types_initial) {
+	SWIGINTERN void SWIG_Python_FixMethods(PyMethodDef * methods, swig_const_info * const_table, swig_type_info ** types, swig_type_info ** types_initial) {
 		size_t i;
 		for (i = 0; methods[i].ml_name; ++i) {
 			char *c = methods[i].ml_doc;

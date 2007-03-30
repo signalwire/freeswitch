@@ -68,8 +68,7 @@ static void perl_function(switch_core_session_t *session, char *data)
 	char *uuid = switch_core_session_get_uuid(session);
 	char code[1024];
 	PerlInterpreter *my_perl = clone_perl();
-	sprintf(code, "package fs_perl;\n"
-			"$SWITCH_ENV{UUID} = \"%s\";\n" "chdir(\"%s/perl\");\n", uuid, SWITCH_GLOBAL_dirs.base_dir);
+	sprintf(code, "package fs_perl;\n" "$SWITCH_ENV{UUID} = \"%s\";\n" "chdir(\"%s/perl\");\n", uuid, SWITCH_GLOBAL_dirs.base_dir);
 
 	Perl_eval_pv(my_perl, code, TRUE);
 
@@ -112,8 +111,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 
 	PerlInterpreter *my_perl;

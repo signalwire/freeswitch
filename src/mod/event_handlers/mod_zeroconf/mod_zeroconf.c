@@ -50,9 +50,7 @@ static struct {
 static sw_result HOWL_API my_browser(sw_discovery discovery,
 									 sw_discovery_oid oid,
 									 sw_discovery_browse_status status,
-									 sw_uint32 interface_index,
-									 sw_const_string name,
-									 sw_const_string type, sw_const_string domain, sw_opaque_t extra)
+									 sw_uint32 interface_index, sw_const_string name, sw_const_string type, sw_const_string domain, sw_opaque_t extra)
 {
 	//sw_discovery_resolve_id rid;
 
@@ -90,8 +88,7 @@ static sw_result HOWL_API my_browser(sw_discovery discovery,
 	case SW_DISCOVERY_BROWSE_REMOVE_SERVICE:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "browse reply: Remove Service\n");
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "remove service: 0x%x %s %s %s\n", interface_index,
-							  name, type, domain);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "remove service: 0x%x %s %s %s\n", interface_index, name, type, domain);
 		}
 		break;
 
@@ -108,8 +105,7 @@ static sw_result HOWL_API my_browser(sw_discovery discovery,
 }
 
 
-static sw_result HOWL_API my_service_reply(sw_discovery discovery,
-										   sw_discovery_oid oid, sw_discovery_publish_status status, sw_opaque extra)
+static sw_result HOWL_API my_service_reply(sw_discovery discovery, sw_discovery_oid oid, sw_discovery_publish_status status, sw_opaque extra)
 {
 	static sw_string status_text[] = {
 		"Started",
@@ -170,8 +166,7 @@ static void event_handler(switch_event_t *event)
 											   NULL,
 											   porti,
 											   sw_text_record_bytes(text_record),
-											   sw_text_record_len(text_record),
-											   my_service_reply, NULL, &globals.disc_id)) != SW_OKAY) {
+											   sw_text_record_len(text_record), my_service_reply, NULL, &globals.disc_id)) != SW_OKAY) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "publish failed: %u\n", result);
 				sw_text_record_fina(text_record);
 				switch_mutex_unlock(globals.zc_lock);
@@ -220,16 +215,12 @@ static switch_status_t load_config(void)
 					return SWITCH_STATUS_MEMERR;
 				}
 			} else if (!strcasecmp(var, "publish") && !strcasecmp(val, "yes")) {
-				if (switch_event_bind
-					((char *) modname, SWITCH_EVENT_PUBLISH, SWITCH_EVENT_SUBCLASS_ANY, event_handler,
-					 NULL) != SWITCH_STATUS_SUCCESS) {
+				if (switch_event_bind((char *) modname, SWITCH_EVENT_PUBLISH, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 					return SWITCH_STATUS_GENERR;
 				}
 
-				if (switch_event_bind
-					((char *) modname, SWITCH_EVENT_UNPUBLISH, SWITCH_EVENT_SUBCLASS_ANY, event_handler,
-					 NULL) != SWITCH_STATUS_SUCCESS) {
+				if (switch_event_bind((char *) modname, SWITCH_EVENT_UNPUBLISH, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 					return SWITCH_STATUS_GENERR;
 				}
@@ -268,8 +259,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 }
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 
 	memset(&globals, 0, sizeof(globals));

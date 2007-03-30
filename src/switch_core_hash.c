@@ -34,7 +34,7 @@
 #include <switch.h>
 #include "private/switch_core.h"
 
-SWITCH_DECLARE(switch_status_t) switch_core_hash_init(switch_hash_t **hash, switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_core_hash_init(switch_hash_t ** hash, switch_memory_pool_t * pool)
 {
 	assert(pool != NULL);
 
@@ -45,31 +45,31 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_init(switch_hash_t **hash, swit
 	return SWITCH_STATUS_GENERR;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(switch_hash_t *hash)
+SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(switch_hash_t * hash)
 {
 	assert(hash != NULL);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup(switch_hash_t *hash, const char *key, const void *data)
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup(switch_hash_t * hash, const char *key, const void *data)
 {
 	apr_hash_set(hash, switch_core_strdup(apr_hash_pool_get(hash), key), APR_HASH_KEY_STRING, data);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_hash_insert(switch_hash_t *hash, const char *key, const void *data)
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert(switch_hash_t * hash, const char *key, const void *data)
 {
 	apr_hash_set(hash, key, APR_HASH_KEY_STRING, data);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(switch_hash_t *hash, const char *key)
+SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(switch_hash_t * hash, const char *key)
 {
 	apr_hash_set(hash, key, APR_HASH_KEY_STRING, NULL);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash_t *hash, const char *key)
+SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash_t * hash, const char *key)
 {
 	return apr_hash_get(hash, key, APR_HASH_KEY_STRING);
 }

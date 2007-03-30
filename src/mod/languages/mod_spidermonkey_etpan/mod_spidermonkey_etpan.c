@@ -90,8 +90,7 @@ static JSBool js_email(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 	if (argc > 3 &&
 		(from = JS_GetStringBytes(JS_ValueToString(cx, argv[0]))) &&
 		(to = JS_GetStringBytes(JS_ValueToString(cx, argv[1]))) &&
-		(headers = JS_GetStringBytes(JS_ValueToString(cx, argv[2]))) &&
-		(body = JS_GetStringBytes(JS_ValueToString(cx, argv[3])))
+		(headers = JS_GetStringBytes(JS_ValueToString(cx, argv[2]))) && (body = JS_GetStringBytes(JS_ValueToString(cx, argv[3])))
 		) {
 		if (argc > 4) {
 			file = JS_GetStringBytes(JS_ValueToString(cx, argv[4]));
@@ -129,8 +128,7 @@ static JSBool js_email(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 			if (file) {
 				snprintf(buf, B64BUFFLEN, "\n\n--%s\nContent-Type: application/octet-stream\n"
 						 "Content-Transfer-Encoding: base64\n"
-						 "Content-Description: Sound attachment.\n"
-						 "Content-Disposition: attachment; filename=\"%s\"\n\n", bound, file);
+						 "Content-Description: Sound attachment.\n" "Content-Disposition: attachment; filename=\"%s\"\n\n", bound, file);
 				if (!write_buf(fd, buf))
 					return JS_FALSE;
 
@@ -233,8 +231,7 @@ switch_status_t etpan_load(JSContext * cx, JSObject * obj)
 {
 	JS_DefineFunctions(cx, obj, etpan_functions);
 
-	JS_InitClass(cx,
-				 obj, NULL, &etpan_class, etpan_construct, 3, etpan_props, etpan_methods, etpan_props, etpan_methods);
+	JS_InitClass(cx, obj, NULL, &etpan_class, etpan_construct, 3, etpan_props, etpan_methods, etpan_props, etpan_methods);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -375,9 +372,7 @@ int send_message(char *data, size_t len, char **rcpts)
 	}
 
 	/* first open the stream */
-	if ((ret = mailsmtp_socket_connect(smtp,
-									   (smtp_server != NULL ? smtp_server : "localhost"),
-									   smtp_port)) != MAILSMTP_NO_ERROR) {
+	if ((ret = mailsmtp_socket_connect(smtp, (smtp_server != NULL ? smtp_server : "localhost"), smtp_port)) != MAILSMTP_NO_ERROR) {
 		fprintf(stderr, "mailsmtp_socket_connect: %s\n", mailsmtp_strerror(ret));
 		goto error;
 	}
@@ -397,17 +392,14 @@ int send_message(char *data, size_t len, char **rcpts)
 		goto error;
 	}
 
-	if (esmtp && smtp_user != NULL &&
-		(ret = mailsmtp_auth(smtp, smtp_user, (smtp_password != NULL) ? smtp_password : ""))
+	if (esmtp && smtp_user != NULL && (ret = mailsmtp_auth(smtp, smtp_user, (smtp_password != NULL) ? smtp_password : ""))
 		!= MAILSMTP_NO_ERROR) {
 		fprintf(stderr, "mailsmtp_auth: %s: %s\n", smtp_user, mailsmtp_strerror(ret));
 		goto error;
 	}
 
 	/* source */
-	if ((ret = (esmtp ?
-				mailesmtp_mail(smtp, smtp_from, 1, "etPanSMTPTest") :
-				mailsmtp_mail(smtp, smtp_from))) != MAILSMTP_NO_ERROR) {
+	if ((ret = (esmtp ? mailesmtp_mail(smtp, smtp_from, 1, "etPanSMTPTest") : mailsmtp_mail(smtp, smtp_from))) != MAILSMTP_NO_ERROR) {
 		fprintf(stderr, "mailsmtp_mail: %s, %s\n", smtp_from, mailsmtp_strerror(ret));
 		goto error;
 	}
@@ -415,9 +407,7 @@ int send_message(char *data, size_t len, char **rcpts)
 	/* recipients */
 	for (r = rcpts; *r != NULL; r++) {
 		if ((ret = (esmtp ?
-					mailesmtp_rcpt(smtp, *r,
-								   MAILSMTP_DSN_NOTIFY_FAILURE | MAILSMTP_DSN_NOTIFY_DELAY,
-								   NULL) : mailsmtp_rcpt(smtp, *r))) != MAILSMTP_NO_ERROR) {
+					mailesmtp_rcpt(smtp, *r, MAILSMTP_DSN_NOTIFY_FAILURE | MAILSMTP_DSN_NOTIFY_DELAY, NULL) : mailsmtp_rcpt(smtp, *r))) != MAILSMTP_NO_ERROR) {
 			fprintf(stderr, "mailsmtp_rcpt: %s: %s\n", *r, mailsmtp_strerror(ret));
 			goto error;
 		}

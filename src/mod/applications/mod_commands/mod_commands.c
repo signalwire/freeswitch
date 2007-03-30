@@ -80,8 +80,7 @@ static switch_status_t status_function(char *cmd, switch_core_session_t *session
 						   "UP %u year%s, %u day%s, %u hour%s, %u minute%s, %u second%s, %u millisecond%s, %u microsecond%s\n",
 						   duration.yr, duration.yr == 1 ? "" : "s", duration.day, duration.day == 1 ? "" : "s",
 						   duration.hr, duration.hr == 1 ? "" : "s", duration.min, duration.min == 1 ? "" : "s",
-						   duration.sec, duration.sec == 1 ? "" : "s", duration.ms, duration.ms == 1 ? "" : "s",
-						   duration.mms, duration.mms == 1 ? "" : "s");
+						   duration.sec, duration.sec == 1 ? "" : "s", duration.ms, duration.ms == 1 ? "" : "s", duration.mms, duration.mms == 1 ? "" : "s");
 
 	stream->write_function(stream, "%d sessions\n", switch_core_session_count());
 
@@ -96,9 +95,7 @@ static switch_status_t status_function(char *cmd, switch_core_session_t *session
 			refresh++;
 			r = atoi(refresh);
 			if (r > 0) {
-				stream->write_function(stream,
-									   "<META HTTP-EQUIV=REFRESH CONTENT=\"%d; URL=/api/status?refresh=%d%s\">\n", r, r,
-									   html ? "html=1" : "");
+				stream->write_function(stream, "<META HTTP-EQUIV=REFRESH CONTENT=\"%d; URL=/api/status?refresh=%d%s\">\n", r, r, html ? "html=1" : "");
 			}
 		}
 	}
@@ -133,8 +130,7 @@ static switch_status_t ctl_function(char *data, switch_core_session_t *session, 
 			arg = 0;
 			switch_core_session_ctl(SCSC_SHUTDOWN, &arg);
 		} else {
-			stream->write_function(stream, "INVALID COMMAND [%s]\nUSAGE: fsctl [hupall|pause|resume|shutdown]\n",
-								   argv[0]);
+			stream->write_function(stream, "INVALID COMMAND [%s]\nUSAGE: fsctl [hupall|pause|resume|shutdown]\n", argv[0]);
 			goto end;
 		}
 
@@ -161,8 +157,7 @@ static switch_status_t load_function(char *mod, switch_core_session_t *session, 
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) mod, SWITCH_TRUE) ==
-		SWITCH_STATUS_SUCCESS) {
+	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) mod, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "OK\n");
 	} else {
 		stream->write_function(stream, "ERROR\n");
@@ -250,8 +245,7 @@ static switch_status_t transfer_function(char *cmd, switch_core_session_t *isess
 }
 
 
-static switch_status_t sched_transfer_function(char *cmd, switch_core_session_t *isession,
-											   switch_stream_handle_t *stream)
+static switch_status_t sched_transfer_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
 {
 	switch_core_session_t *session = NULL;
 	char *argv[6] = { 0 };
@@ -365,8 +359,7 @@ static switch_status_t uuid_media_function(char *cmd, switch_core_session_t *ise
 }
 
 
-static switch_status_t uuid_broadcast_function(char *cmd, switch_core_session_t *isession,
-											   switch_stream_handle_t *stream)
+static switch_status_t uuid_broadcast_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
 {
 	char *argv[4] = { 0 };
 	int argc = 0;
@@ -403,8 +396,7 @@ static switch_status_t uuid_broadcast_function(char *cmd, switch_core_session_t 
 }
 
 
-static switch_status_t sched_broadcast_function(char *cmd, switch_core_session_t *isession,
-												switch_stream_handle_t *stream)
+static switch_status_t sched_broadcast_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
 {
 	char *argv[4] = { 0 };
 	int argc = 0;
@@ -500,8 +492,7 @@ static switch_status_t uuid_bridge_function(char *cmd, switch_core_session_t *is
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t session_record_function(char *cmd, switch_core_session_t *isession,
-											   switch_stream_handle_t *stream)
+static switch_status_t session_record_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
 {
 	switch_core_session_t *session = NULL;
 	char *argv[4] = { 0 };
@@ -647,13 +638,11 @@ static switch_status_t originate_function(char *cmd, switch_core_session_t *ises
 		timeout = atoi(argv[6]);
 	}
 
-	if (switch_ivr_originate(NULL, &caller_session, &cause, aleg, timeout, NULL, cid_name, cid_num, NULL) !=
-		SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_originate(NULL, &caller_session, &cause, aleg, timeout, NULL, cid_name, cid_num, NULL) != SWITCH_STATUS_SUCCESS) {
 		if (machine) {
 			stream->write_function(stream, "fail: %s\n", switch_channel_cause2str(cause));
 		} else {
-			stream->write_function(stream, "Cannot Create Outgoing Channel! [%s] cause: %s\n", aleg,
-								   switch_channel_cause2str(cause));
+			stream->write_function(stream, "Cannot Create Outgoing Channel! [%s] cause: %s\n", aleg, switch_channel_cause2str(cause));
 		}
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -704,14 +693,14 @@ static void sch_api_callback(switch_scheduler_task_t *task)
 	assert(task);
 
 	cmd = (char *) task->cmd_arg;
-	
+
 	if ((arg = strchr(cmd, ' '))) {
 		*arg++ = '\0';
 	}
 
 	SWITCH_STANDARD_STREAM(stream);
 	switch_api_execute(cmd, arg, NULL, &stream);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Command %s(%s):\n%s\n", cmd, arg, switch_str_nil((char *)stream.data));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Command %s(%s):\n%s\n", cmd, arg, switch_str_nil((char *) stream.data));
 	switch_safe_free(stream.data);
 }
 
@@ -723,7 +712,7 @@ static switch_status_t sched_api_function(char *cmd, switch_core_session_t *ises
 	assert(cmd != NULL);
 	tm = strdup(cmd);
 	assert(tm != NULL);
-	
+
 	if ((dcmd = strchr(tm, ' '))) {
 		uint32_t id;
 
@@ -738,10 +727,10 @@ static switch_status_t sched_api_function(char *cmd, switch_core_session_t *ises
 		stream->write_function(stream, "Added task %u\n", id);
 	} else {
 		stream->write_function(stream, "Invalid syntax\n");
-	}	
+	}
 
 	switch_safe_free(tm);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -767,8 +756,7 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames)
 		for (x = 0; x < argc; x++) {
 			if (holder->http) {
 				holder->stream->write_function(holder->stream, "<td>");
-				holder->stream->write_function(holder->stream, "<b>%s</b>%s", columnNames[x],
-											   x == (argc - 1) ? "</td></tr>\n" : "</td><td>");
+				holder->stream->write_function(holder->stream, "<b>%s</b>%s", columnNames[x], x == (argc - 1) ? "</td></tr>\n" : "</td><td>");
 			} else {
 				holder->stream->write_function(holder->stream, "%s%s", columnNames[x], x == (argc - 1) ? "\n" : ",");
 			}
@@ -782,11 +770,9 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames)
 	for (x = 0; x < argc; x++) {
 		if (holder->http) {
 			holder->stream->write_function(holder->stream, "<td>");
-			holder->stream->write_function(holder->stream, "%s%s", argv[x] ? argv[x] : "",
-										   x == (argc - 1) ? "</td></tr>\n" : "</td><td>");
+			holder->stream->write_function(holder->stream, "%s%s", argv[x] ? argv[x] : "", x == (argc - 1) ? "</td></tr>\n" : "</td><td>");
 		} else {
-			holder->stream->write_function(holder->stream, "%s%s", argv[x] ? argv[x] : "",
-										   x == (argc - 1) ? "\n" : ",");
+			holder->stream->write_function(holder->stream, "%s%s", argv[x] ? argv[x] : "", x == (argc - 1) ? "\n" : ",");
 		}
 	}
 
@@ -834,8 +820,7 @@ static switch_status_t show_function(char *cmd, switch_core_session_t *session, 
 		holder.print_title = 0;
 		if ((cmdname = strchr(cmd, ' ')) != 0) {
 			*cmdname++ = '\0';
-			snprintf(sql, sizeof(sql) - 1,
-					 "select name, syntax, description from interfaces where type = 'api' and name = '%s'", cmdname);
+			snprintf(sql, sizeof(sql) - 1, "select name, syntax, description from interfaces where type = 'api' and name = '%s'", cmdname);
 		} else {
 			snprintf(sql, sizeof(sql) - 1, "select name, syntax, description from interfaces where type = 'api'");
 		}
@@ -1073,8 +1058,7 @@ static const switch_loadable_module_interface_t mod_commands_module_interface = 
 	/*.api_interface */ &originate_api_interface
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &mod_commands_module_interface;

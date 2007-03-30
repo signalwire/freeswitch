@@ -62,9 +62,7 @@ SWITCH_BEGIN_EXTERN_C
 */
 SWITCH_DECLARE(uint32_t) switch_scheduler_add_task(time_t task_runtime,
 												   switch_scheduler_func_t func,
-												   char *desc,
-												   char *group,
-												   uint32_t cmd_id, void *cmd_arg, switch_scheduler_flag_t flags);
+												   char *desc, char *group, uint32_t cmd_id, void *cmd_arg, switch_scheduler_flag_t flags);
 
 /*!
   \brief Delete a scheduled task

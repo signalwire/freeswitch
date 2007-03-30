@@ -56,9 +56,7 @@ static const char modname[] = "mod_say_en";
 		}}\
 
 
-static switch_status_t en_spell(switch_core_session_t *session,
-								char *tosay,
-								switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
+static switch_status_t en_spell(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
 {
 	char *p;
 
@@ -78,9 +76,7 @@ static switch_status_t en_spell(switch_core_session_t *session,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t play_group(switch_say_method_t method,
-								  int a,
-								  int b, int c, char *what, switch_core_session_t *session, switch_input_args_t *args)
+static switch_status_t play_group(switch_say_method_t method, int a, int b, int c, char *what, switch_core_session_t *session, switch_input_args_t *args)
 {
 
 	if (a) {
@@ -156,9 +152,7 @@ static char *strip_nonnumerics(char *in, char *out, switch_size_t len)
 }
 
 static switch_status_t en_say_general_count(switch_core_session_t *session,
-											char *tosay,
-											switch_say_type_t type,
-											switch_say_method_t method, switch_input_args_t *args)
+											char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
 {
 	switch_channel_t *channel;
 	int in;
@@ -188,18 +182,13 @@ static switch_status_t en_say_general_count(switch_core_session_t *session,
 		switch (method) {
 		case SSM_COUNTED:
 		case SSM_PRONOUNCED:
-			if ((status =
-				 play_group(SSM_PRONOUNCED, places[8], places[7], places[6], "digits/million.wav", session,
-							args)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = play_group(SSM_PRONOUNCED, places[8], places[7], places[6], "digits/million.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
-			if ((status =
-				 play_group(SSM_PRONOUNCED, places[5], places[4], places[3], "digits/thousand.wav", session,
-							args)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = play_group(SSM_PRONOUNCED, places[5], places[4], places[3], "digits/thousand.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
-			if ((status =
-				 play_group(method, places[2], places[1], places[0], NULL, session, args)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = play_group(method, places[2], places[1], places[0], NULL, session, args)) != SWITCH_STATUS_SUCCESS) {
 				return status;
 			}
 			break;
@@ -224,8 +213,7 @@ static switch_status_t en_say_general_count(switch_core_session_t *session,
 }
 
 
-static switch_status_t en_ip(switch_core_session_t *session,
-							 char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
+static switch_status_t en_ip(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
 {
 	char *a, *b, *c, *d;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -268,9 +256,7 @@ static switch_status_t en_ip(switch_core_session_t *session,
 }
 
 
-static switch_status_t en_say_time(switch_core_session_t *session,
-								   char *tosay,
-								   switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
+static switch_status_t en_say_time(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
 {
 	int32_t t;
 	switch_time_t target = 0;
@@ -416,9 +402,7 @@ static switch_status_t en_say_time(switch_core_session_t *session,
 }
 
 
-static switch_status_t en_say_money(switch_core_session_t *session,
-									char *tosay,
-									switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
+static switch_status_t en_say_money(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
 {
 	switch_channel_t *channel;
 
@@ -484,9 +468,7 @@ static switch_status_t en_say_money(switch_core_session_t *session,
 
 
 
-static switch_status_t en_say(switch_core_session_t *session,
-							  char *tosay,
-							  switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
+static switch_status_t en_say(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
 {
 
 	switch_say_callback_t say_cb = NULL;
@@ -547,8 +529,7 @@ static switch_loadable_module_interface_t say_en_module_interface = {
 	/*.asr_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &say_en_module_interface;

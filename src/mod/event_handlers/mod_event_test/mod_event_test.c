@@ -53,10 +53,8 @@ static void event_handler(switch_event_t *event)
 			dofree++;
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
-						  "\nEVENT (text version)\n--------------------------------\n%s", buf);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
-						  "\nEVENT (xml version)\n--------------------------------\n%s\n", xmlstr);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nEVENT (text version)\n--------------------------------\n%s", buf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nEVENT (xml version)\n--------------------------------\n%s\n", xmlstr);
 		break;
 	}
 
@@ -90,7 +88,7 @@ static switch_loadable_module_interface_t event_test_module_interface = {
 #define TTHREADS 500
 static int THREADS = 0;
 
-static void *torture_thread(switch_thread_t *thread, void *obj)
+static void *torture_thread(switch_thread_t * thread, void *obj)
 {
 	int y = 0;
 	int z = 0;
@@ -127,8 +125,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 #endif
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &event_test_module_interface;
@@ -138,8 +135,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_event_bind((char *) modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) !=
-		SWITCH_STATUS_SUCCESS) {
+	if (switch_event_bind((char *) modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}

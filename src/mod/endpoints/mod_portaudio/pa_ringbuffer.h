@@ -142,8 +142,7 @@ extern "C" {
 
  @return The room available to be written or numBytes, whichever is smaller.
 */
-	long PaUtil_GetRingBufferWriteRegions(PaUtilRingBuffer * rbuf, long numBytes,
-										  void **dataPtr1, long *sizePtr1, void **dataPtr2, long *sizePtr2);
+	long PaUtil_GetRingBufferWriteRegions(PaUtilRingBuffer * rbuf, long numBytes, void **dataPtr1, long *sizePtr1, void **dataPtr2, long *sizePtr2);
 
 /** Advance the write index to the next location to be written.
 
@@ -175,8 +174,7 @@ extern "C" {
 
  @return The number of bytes available for reading.
 */
-	long PaUtil_GetRingBufferReadRegions(PaUtilRingBuffer * rbuf, long numBytes,
-										 void **dataPtr1, long *sizePtr1, void **dataPtr2, long *sizePtr2);
+	long PaUtil_GetRingBufferReadRegions(PaUtilRingBuffer * rbuf, long numBytes, void **dataPtr1, long *sizePtr1, void **dataPtr2, long *sizePtr2);
 
 /** Advance the read index to the next location to be read.
 

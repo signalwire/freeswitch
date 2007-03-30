@@ -138,8 +138,7 @@ static int __pri_sangoma_write(struct pri *pri, void *buf, int buflen)
 	/* FIXME: This might cause problems with other libraries
 	 * We must remove 2 bytes from buflen because
 	 * libpri sends 2 fake CRC bytes */
-	res = sangoma_sendmsg_socket((sng_fd_t) (pri->fd),
-								 tmpbuf, sizeof(wp_tdm_api_rx_hdr_t), buf, (unsigned short) buflen - 2, 0);
+	res = sangoma_sendmsg_socket((sng_fd_t) (pri->fd), tmpbuf, sizeof(wp_tdm_api_rx_hdr_t), buf, (unsigned short) buflen - 2, 0);
 	if (res > 0) {
 		res = buflen;
 	}
@@ -222,8 +221,7 @@ int sangoma_one_loop(struct sangoma_pri *spri)
 	if (event) {
 		event_handler handler;
 		/* 0 is catchall event handler */
-		if ((handler =
-			 spri->eventmap[event->e] ? spri->eventmap[event->e] : spri->eventmap[0] ? spri->eventmap[0] : NULL)) {
+		if ((handler = spri->eventmap[event->e] ? spri->eventmap[event->e] : spri->eventmap[0] ? spri->eventmap[0] : NULL)) {
 			handler(spri, event->e, event);
 		} else {
 			fprintf(stderr, "No event handler found for event %d.\n", event->e);

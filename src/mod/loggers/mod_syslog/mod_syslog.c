@@ -148,8 +148,7 @@ static switch_status_t load_config(void)
 	return 0;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 	switch_status_t status;
 	*interface = &console_module_interface;

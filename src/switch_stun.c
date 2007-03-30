@@ -113,7 +113,7 @@ SWITCH_DECLARE(void) switch_stun_random_string(char *buf, uint16_t len, char *se
 
 
 
-SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t * buf, uint32_t len)
+SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, uint32_t len)
 {
 	switch_stun_packet_t *packet;
 	switch_stun_packet_attribute_t *attr;
@@ -176,15 +176,14 @@ SWITCH_DECLARE(const char *) switch_stun_value_to_name(int32_t type, uint32_t va
 	return "INVALID";
 }
 
-SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_mapped_address(switch_stun_packet_attribute_t *attribute,
-																		char *ipstr, uint16_t * port)
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_mapped_address(switch_stun_packet_attribute_t *attribute, char *ipstr, uint16_t * port)
 {
 	switch_stun_ip_t *ip;
 	uint8_t x, *i;
 	char *p = ipstr;
 
 	ip = (switch_stun_ip_t *) attribute->value;
-	i = (uint8_t *) & ip->address;
+	i = (uint8_t *) &ip->address;
 	*ipstr = 0;
 	for (x = 0; x < 4; x++) {
 		sprintf(p, "%u%s", i[x], x == 3 ? "" : ".");
@@ -194,8 +193,7 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_get_mapped_address(switch_s
 	return 1;
 }
 
-SWITCH_DECLARE(char *) switch_stun_packet_attribute_get_username(switch_stun_packet_attribute_t *attribute,
-																 char *username, uint16_t len)
+SWITCH_DECLARE(char *) switch_stun_packet_attribute_get_username(switch_stun_packet_attribute_t *attribute, char *username, uint16_t len)
 {
 	uint16_t cpylen;
 
@@ -203,8 +201,7 @@ SWITCH_DECLARE(char *) switch_stun_packet_attribute_get_username(switch_stun_pac
 	return memcpy(username, attribute->value, cpylen);
 }
 
-SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_build_header(switch_stun_message_t type,
-																	   char *id, uint8_t * buf)
+SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_build_header(switch_stun_message_t type, char *id, uint8_t *buf)
 {
 	switch_stun_packet_header_t *header;
 
@@ -222,23 +219,21 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_build_header(switch_st
 	return (switch_stun_packet_t *) buf;
 }
 
-SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_binded_address(switch_stun_packet_t *packet, char *ipstr,
-																		uint16_t port)
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_binded_address(switch_stun_packet_t *packet, char *ipstr, uint16_t port)
 {
 	switch_stun_packet_attribute_t *attribute;
 	switch_stun_ip_t *ip;
 	uint8_t *i, x;
 	char *p = ipstr;
 
-	attribute =
-		(switch_stun_packet_attribute_t *) ((uint8_t *) & packet->first_attribute + ntohs(packet->header.length));
+	attribute = (switch_stun_packet_attribute_t *) ((uint8_t *) &packet->first_attribute + ntohs(packet->header.length));
 	attribute->type = htons(SWITCH_STUN_ATTR_MAPPED_ADDRESS);
 	attribute->length = htons(8);
 	ip = (switch_stun_ip_t *) attribute->value;
 
 	ip->port = htons(port);
 	ip->family = 1;
-	i = (uint8_t *) & ip->address;
+	i = (uint8_t *) &ip->address;
 
 	for (x = 0; x < 4; x++) {
 		i[x] = (uint8_t) atoi(p);
@@ -253,16 +248,14 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_binded_address(switch_s
 	return 1;
 }
 
-SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_username(switch_stun_packet_t *packet, char *username,
-																  uint16_t ulen)
+SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_username(switch_stun_packet_t *packet, char *username, uint16_t ulen)
 {
 	switch_stun_packet_attribute_t *attribute;
 
 	if (ulen % 4 != 0) {
 		return 0;
 	}
-	attribute =
-		(switch_stun_packet_attribute_t *) ((uint8_t *) & packet->first_attribute + ntohs(packet->header.length));
+	attribute = (switch_stun_packet_attribute_t *) ((uint8_t *) &packet->first_attribute + ntohs(packet->header.length));
 	attribute->type = htons(SWITCH_STUN_ATTR_USERNAME);
 	attribute->length = htons(ulen);
 	if (username) {
@@ -276,9 +269,7 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_username(switch_stun_pa
 }
 
 SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
-												   switch_port_t *port,
-												   char *stunip,
-												   switch_port_t stunport, char **err, switch_memory_pool_t *pool)
+												   switch_port_t *port, char *stunip, switch_port_t stunport, char **err, switch_memory_pool_t * pool)
 {
 	switch_sockaddr_t *local_addr = NULL, *remote_addr = NULL, *from_addr = NULL;
 	switch_socket_t *sock = NULL;

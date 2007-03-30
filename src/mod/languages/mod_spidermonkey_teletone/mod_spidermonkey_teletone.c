@@ -116,8 +116,7 @@ static JSBool teletone_construct(JSContext * cx, JSObject * obj, uintN argc, jsv
 							   read_codec->implementation->samples_per_second,
 							   read_codec->implementation->microseconds_per_frame / 1000,
 							   read_codec->implementation->number_of_channels,
-							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-							   NULL, pool) == SWITCH_STATUS_SUCCESS) {
+							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activated\n");
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed\n");
@@ -285,9 +284,7 @@ static JSBool teletone_generate(JSContext * cx, JSObject * obj, uintN argc, jsva
 					break;
 				}
 			}
-			if ((write_frame.datalen =
-				 (uint32_t) switch_buffer_read(tto->audio_buffer, fdata,
-											   write_frame.codec->implementation->bytes_per_frame)) <= 0) {
+			if ((write_frame.datalen = (uint32_t) switch_buffer_read(tto->audio_buffer, fdata, write_frame.codec->implementation->bytes_per_frame)) <= 0) {
 				if (loops) {
 					switch_buffer_t *tmp;
 
@@ -298,8 +295,7 @@ static JSBool teletone_generate(JSContext * cx, JSObject * obj, uintN argc, jsva
 					loops--;
 					/* try again */
 					if ((write_frame.datalen =
-						 (uint32_t) switch_buffer_read(tto->audio_buffer, fdata,
-													   write_frame.codec->implementation->bytes_per_frame)) <= 0) {
+						 (uint32_t) switch_buffer_read(tto->audio_buffer, fdata, write_frame.codec->implementation->bytes_per_frame)) <= 0) {
 						break;
 					}
 				} else {
@@ -363,11 +359,7 @@ JSClass teletone_class = {
 
 switch_status_t teletone_load(JSContext * cx, JSObject * obj)
 {
-	JS_InitClass(cx,
-				 obj,
-				 NULL,
-				 &teletone_class,
-				 teletone_construct, 3, teletone_props, teletone_methods, teletone_props, teletone_methods);
+	JS_InitClass(cx, obj, NULL, &teletone_class, teletone_construct, 3, teletone_props, teletone_methods, teletone_props, teletone_methods);
 	return SWITCH_STATUS_SUCCESS;
 }
 

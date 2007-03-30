@@ -103,8 +103,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ip, globals.ip)
 
 
-	 static char *IAXNAMES[] =
-		 { "IAX_EVENT_CONNECT", "IAX_EVENT_ACCEPT", "IAX_EVENT_HANGUP", "IAX_EVENT_REJECT", "IAX_EVENT_VOICE",
+	 static char *IAXNAMES[] = { "IAX_EVENT_CONNECT", "IAX_EVENT_ACCEPT", "IAX_EVENT_HANGUP", "IAX_EVENT_REJECT", "IAX_EVENT_VOICE",
 		 "IAX_EVENT_DTMF", "IAX_EVENT_TIMEOUT", "IAX_EVENT_LAGRQ", "IAX_EVENT_LAGRP", "IAX_EVENT_RINGA",
 		 "IAX_EVENT_PING", "IAX_EVENT_PONG", "IAX_EVENT_BUSY", "IAX_EVENT_ANSWER", "IAX_EVENT_IMAGE",
 		 "IAX_EVENT_AUTHRQ", "IAX_EVENT_AUTHRP", "IAX_EVENT_REGREQ", "IAX_EVENT_REGACK",
@@ -210,8 +209,7 @@ typedef enum {
 } iax_io_t;
 
 static switch_status_t iax_set_codec(private_t * tech_pvt, struct iax_session *iax_session,
-									 unsigned int *format, unsigned int *cababilities, unsigned short *samprate,
-									 iax_io_t io)
+									 unsigned int *format, unsigned int *cababilities, unsigned short *samprate, iax_io_t io)
 {
 	char *dname = NULL;
 	//int rate = 8000;
@@ -224,17 +222,11 @@ static switch_status_t iax_set_codec(private_t * tech_pvt, struct iax_session *i
 	uint32_t interval = 0;
 
 	if (globals.codec_string) {
-		if ((num_codecs = switch_loadable_module_get_codecs_sorted(codecs,
-																   SWITCH_MAX_CODECS,
-																   globals.codec_order,
-																   globals.codec_order_last)) <= 0) {
+		if ((num_codecs = switch_loadable_module_get_codecs_sorted(codecs, SWITCH_MAX_CODECS, globals.codec_order, globals.codec_order_last)) <= 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO codecs?\n");
 			return SWITCH_STATUS_GENERR;
 		}
-	} else
-		if (((num_codecs =
-			  switch_loadable_module_get_codecs(switch_core_session_get_pool(tech_pvt->session), codecs,
-												SWITCH_MAX_CODECS))) <= 0) {
+	} else if (((num_codecs = switch_loadable_module_get_codecs(switch_core_session_get_pool(tech_pvt->session), codecs, SWITCH_MAX_CODECS))) <= 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO codecs?\n");
 		return SWITCH_STATUS_GENERR;
 	}
@@ -425,11 +417,9 @@ static switch_status_t channel_on_loopback(switch_core_session_t *session);
 static switch_status_t channel_on_transmit(switch_core_session_t *session);
 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, switch_memory_pool_t **pool);
-static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
-										  switch_io_flag_t flags, int stream_id);
-static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
-										   switch_io_flag_t flags, int stream_id);
+													switch_core_session_t **new_session, switch_memory_pool_t ** pool);
+static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id);
+static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
 
 
@@ -642,8 +632,7 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, char *d
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
-										  switch_io_flag_t flags, int stream_id)
+static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
@@ -714,8 +703,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 }
 
-static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
-										   switch_io_flag_t flags, int stream_id)
+static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
@@ -736,8 +724,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	}
 #endif
 	//printf("Send %ld %d\n", time(NULL), (int) frame->datalen);
-	iax_send_voice(tech_pvt->iax_session, tech_pvt->codec, frame->data, (int) frame->datalen,
-				   tech_pvt->write_codec.implementation->samples_per_frame);
+	iax_send_voice(tech_pvt->iax_session, tech_pvt->codec, frame->data, (int) frame->datalen, tech_pvt->write_codec.implementation->samples_per_frame);
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -803,7 +790,7 @@ that allocate memory or you will have 1 channel with memory allocated from anoth
 */
 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, switch_memory_pool_t **pool)
+													switch_core_session_t **new_session, switch_memory_pool_t ** pool)
 {
 	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, pool)) != 0) {
 		private_t *tech_pvt;
@@ -853,8 +840,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		}
 
 		iax_call(tech_pvt->iax_session,
-				 caller_profile->caller_id_number,
-				 caller_profile->caller_id_name, caller_profile->destination_number, NULL, 0, req, cap);
+				 caller_profile->caller_id_number, caller_profile->caller_id_name, caller_profile->destination_number, NULL, 0, req, cap);
 
 		switch_channel_set_flag(channel, CF_OUTBOUND);
 		switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
@@ -866,8 +852,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
@@ -924,12 +909,10 @@ static switch_status_t load_config(void)
 				set_global_dialplan(val);
 			} else if (!strcmp(var, "codec-prefs")) {
 				set_global_codec_string(val);
-				globals.codec_order_last =
-					switch_separate_string(globals.codec_string, ',', globals.codec_order, SWITCH_MAX_CODECS);
+				globals.codec_order_last = switch_separate_string(globals.codec_string, ',', globals.codec_order, SWITCH_MAX_CODECS);
 			} else if (!strcmp(var, "codec-rates")) {
 				set_global_codec_rates_string(val);
-				globals.codec_rates_last =
-					switch_separate_string(globals.codec_rates_string, ',', globals.codec_rates, SWITCH_MAX_CODECS);
+				globals.codec_rates_last = switch_separate_string(globals.codec_rates_string, ',', globals.codec_rates, SWITCH_MAX_CODECS);
 			}
 		}
 	}
@@ -954,11 +937,8 @@ static switch_status_t tech_media(private_t * tech_pvt, struct iax_event *iaxeve
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!switch_test_flag(tech_pvt, TFLAG_CODEC) &&
-		(status =
-		 iax_set_codec(tech_pvt, iaxevent->session, &format, &cap, &iaxevent->ies.samprate,
-					   IAX_SET)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec Error %u %u\n", iaxevent->ies.format,
-						  iaxevent->ies.capability);
+		(status = iax_set_codec(tech_pvt, iaxevent->session, &format, &cap, &iaxevent->ies.samprate, IAX_SET)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec Error %u %u\n", iaxevent->ies.format, iaxevent->ies.capability);
 	}
 
 	return status;
@@ -1021,8 +1001,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 			}
 
 			if (globals.debug && iaxevent->etype != IAX_EVENT_VOICE) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Event %d [%s]!\n",
-								  iaxevent->etype, IAXNAMES[iaxevent->etype]);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Event %d [%s]!\n", iaxevent->etype, IAXNAMES[iaxevent->etype]);
 			}
 
 			switch (iaxevent->etype) {
@@ -1061,12 +1040,10 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 				if (channel) {
 					if (tech_media(tech_pvt, iaxevent) == SWITCH_STATUS_SUCCESS) {
 						if (switch_channel_test_flag(channel, CF_ANSWERED)) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "WTF Mutiple Answer %s?\n",
-											  switch_channel_get_name(channel));
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "WTF Mutiple Answer %s?\n", switch_channel_get_name(channel));
 
 						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Answer %s\n",
-											  switch_channel_get_name(channel));
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Answer %s\n", switch_channel_get_name(channel));
 							switch_channel_mark_answered(channel);
 						}
 					} else {
@@ -1079,14 +1056,12 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 								  "Incoming call connected %s, %s, %s %u/%u\n",
 								  iaxevent->ies.called_number,
-								  iaxevent->ies.calling_number,
-								  iaxevent->ies.calling_name, iaxevent->ies.format, iaxevent->ies.capability);
+								  iaxevent->ies.calling_number, iaxevent->ies.calling_name, iaxevent->ies.format, iaxevent->ies.capability);
 
 				if (iaxevent) {
 					switch_core_session_t *session;
 
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New Inbound Channel %s!\n",
-									  iaxevent->ies.calling_name);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New Inbound Channel %s!\n", iaxevent->ies.calling_name);
 					if ((session = switch_core_session_request(&channel_endpoint_interface, NULL)) != 0) {
 						private_t *tech_pvt;
 						switch_channel_t *channel;
@@ -1112,20 +1087,16 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 																				  NULL,
 																				  NULL,
 																				  (char *) modname,
-																				  iaxevent->ies.called_context,
-																				  iaxevent->ies.called_number)) != 0) {
+																				  iaxevent->ies.called_context, iaxevent->ies.called_number)) != 0) {
 							char name[128];
-							snprintf(name, sizeof(name), "IAX/%s-%04x", tech_pvt->caller_profile->destination_number,
-									 rand() & 0xffff);
+							snprintf(name, sizeof(name), "IAX/%s-%04x", tech_pvt->caller_profile->destination_number, rand() & 0xffff);
 							switch_channel_set_name(channel, name);
 							switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 
 						}
 
 						if (iax_set_codec(tech_pvt, iaxevent->session,
-										  &iaxevent->ies.format,
-										  &iaxevent->ies.capability,
-										  &iaxevent->ies.samprate, IAX_SET) != SWITCH_STATUS_SUCCESS) {
+										  &iaxevent->ies.format, &iaxevent->ies.capability, &iaxevent->ies.samprate, IAX_SET) != SWITCH_STATUS_SUCCESS) {
 							iax_reject(iaxevent->session, "Codec Error!");
 							switch_core_session_destroy(&session);
 						} else {
@@ -1150,13 +1121,9 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 					switch_mutex_unlock(tech_pvt->flag_mutex);
 
 
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hangup %s\n",
-									  switch_channel_get_name(channel));
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hangup %s\n", switch_channel_get_name(channel));
 					switch_set_flag_locked(tech_pvt, TFLAG_HANGUP);
-					switch_channel_hangup(channel,
-										  iaxevent->etype ==
-										  IAX_EVENT_HANGUP ? SWITCH_CAUSE_NORMAL_CLEARING :
-										  SWITCH_CAUSE_FACILITY_REJECTED);
+					switch_channel_hangup(channel, iaxevent->etype == IAX_EVENT_HANGUP ? SWITCH_CAUSE_NORMAL_CLEARING : SWITCH_CAUSE_FACILITY_REJECTED);
 					//switch_thread_cond_signal(tech_pvt->cond);
 					iaxevent->session = NULL;
 				}
@@ -1198,16 +1165,14 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 				if (channel) {
 					char str[2] = { (char) iaxevent->subclass };
 					if (globals.debug) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s DTMF %s\n", str,
-										  switch_channel_get_name(channel));
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s DTMF %s\n", str, switch_channel_get_name(channel));
 					}
 					switch_channel_queue_dtmf(channel, str);
 				}
 
 				break;
 			default:
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Don't know what to do with IAX event %d.\n",
-								  iaxevent->etype);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Don't know what to do with IAX event %d.\n", iaxevent->etype);
 				break;
 			}
 

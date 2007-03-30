@@ -219,7 +219,7 @@ SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char 
   \param esc the escape character
   \return the escaped string
 */
-SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t *pool, char *in, char *delim, char esc);
+SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t * pool, char *in, char *delim, char esc);
 
 /*!
   \brief Wait for a socket
@@ -227,7 +227,7 @@ SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t *pool, char *in, 
   \param ms the number of milliseconds to wait
   \return the requested condition
 */
-SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms);
+SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t * poll, int ms);
 
 /*!
   \brief Create a pointer to the file name in a given file path eliminating the directory name
@@ -236,8 +236,7 @@ SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms);
 SWITCH_DECLARE(const char *) switch_cut_path(const char *in);
 
 SWITCH_DECLARE(char *) switch_string_replace(const char *string, const char *search, const char *replace);
-SWITCH_DECLARE(switch_status_t) switch_string_match(const char *string, size_t string_len, const char *search,
-													size_t search_len);
+SWITCH_DECLARE(switch_status_t) switch_string_match(const char *string, size_t string_len, const char *search, size_t search_len);
 
 #define SWITCH_READ_ACCEPTABLE(status) (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK)
 SWITCH_DECLARE(size_t) switch_url_encode(char *url, char *buf, size_t len);

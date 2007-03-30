@@ -143,7 +143,7 @@ struct switch_media_bug {
 	struct switch_media_bug *next;
 };
 
-SWITCH_DECLARE(void) switch_core_sqldb_start(switch_memory_pool_t *pool);
+SWITCH_DECLARE(void) switch_core_sqldb_start(switch_memory_pool_t * pool);
 SWITCH_DECLARE(void) switch_core_sqldb_stop(void);
-SWITCH_DECLARE(void) switch_core_session_init(switch_memory_pool_t *pool);
+SWITCH_DECLARE(void) switch_core_session_init(switch_memory_pool_t * pool);
 SWITCH_DECLARE(switch_memory_pool_t *) switch_core_memory_init(void);

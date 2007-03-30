@@ -114,7 +114,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_SPEECH_KEY "speech"
 #define SWITCH_UUID_BRIDGE "uuid_bridge"
 #define SWITCH_BITS_PER_BYTE 8
-	typedef uint8_t switch_byte_t;
+typedef uint8_t switch_byte_t;
 
 typedef enum {
 	SWITCH_FALSE = 0,
@@ -976,11 +976,9 @@ typedef void (*switch_scheduler_func_t) (switch_scheduler_task_t *task);
 typedef switch_status_t (*switch_state_handler_t) (switch_core_session_t *);
 typedef struct switch_stream_handle switch_stream_handle_t;
 typedef switch_status_t (*switch_stream_handle_write_function_t) (switch_stream_handle_t *handle, const char *fmt, ...);
-typedef switch_status_t (*switch_api_function_t) (char *in, switch_core_session_t *session,
-												  switch_stream_handle_t *stream);
+typedef switch_status_t (*switch_api_function_t) (char *in, switch_core_session_t *session, switch_stream_handle_t *stream);
 typedef switch_status_t (*switch_input_callback_function_t) (switch_core_session_t *session, void *input,
-															 switch_input_type_t input_type, void *buf,
-															 unsigned int buflen);
+															 switch_input_type_t input_type, void *buf, unsigned int buflen);
 typedef struct switch_say_interface switch_say_interface_t;
 typedef struct {
 	switch_input_callback_function_t input_callback;
@@ -988,9 +986,7 @@ typedef struct {
 	uint32_t buflen;
 } switch_input_args_t;
 typedef switch_status_t (*switch_say_callback_t) (switch_core_session_t *session,
-												  char *tosay,
-												  switch_say_type_t type,
-												  switch_say_method_t method, switch_input_args_t *args);
+												  char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args);
 typedef switch_status_t (*switch_module_load_t) (switch_loadable_module_interface_t **, char *);
 typedef switch_status_t (*switch_module_reload_t) (void);
 typedef switch_status_t (*switch_module_pause_t) (void);
@@ -1001,9 +997,7 @@ typedef switch_status_t (*switch_module_shutdown_t) (void);
 typedef struct switch_xml *switch_xml_t;
 typedef struct switch_core_time_duration switch_core_time_duration_t;
 typedef switch_xml_t(*switch_xml_search_function_t) (const char *section,
-													 const char *tag_name,
-													 const char *key_name,
-													 const char *key_value, const char *params, void *user_data);
+													 const char *tag_name, const char *key_name, const char *key_value, const char *params, void *user_data);
 
 /* things we don't deserve to know about */
 /*! \brief A channel */

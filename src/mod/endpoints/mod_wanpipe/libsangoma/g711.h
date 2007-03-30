@@ -69,8 +69,7 @@ extern "C" {
 	}
 	/*- End of function --------------------------------------------------------*//*! \brief Find the bit position of the lowest set bit in a word
 	   \param bits The word to be searched
-	   \return The bit number of the lowest set bit, or -1 if the word is zero. */
-		static __inline__ int bottom_bit(unsigned int bits) {
+	   \return The bit number of the lowest set bit, or -1 if the word is zero. */ static __inline__ int bottom_bit(unsigned int bits) {
 		int res;
 
 		__asm__ __volatile__(" movl $-1,%%edx;\n" " bsfl %%eax,%%edx;\n":"=d"(res)
@@ -86,8 +85,7 @@ extern "C" {
 							 :"a"    (bits));
 		        return res;
 	}
-/*- End of function --------------------------------------------------------*/
-		static __inline__ int bottom_bit(unsigned int bits) {
+/*- End of function --------------------------------------------------------*/ static __inline__ int bottom_bit(unsigned int bits) {
 		int res;
 
 		__asm__ __volatile__(" movq $-1,%%rdx;\n" " bsfq %%rax,%%rdx;\n":"=d"(res)

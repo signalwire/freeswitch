@@ -74,9 +74,7 @@ SWITCH_DECLARE(uint8_t) switch_channel_ready(switch_channel_t *channel);
 
 
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_channel_t *channel,
-																		const char *file,
-																		const char *func,
-																		int line, switch_channel_state_t state);
+																		const char *file, const char *func, int line, switch_channel_state_t state);
 
 /*!
   \brief Set the current state of a channel
@@ -120,7 +118,7 @@ SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch
   \param pool memory_pool to use for allocation
   \return SWITCH_STATUS_SUCCESS if successful
 */
-SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel, switch_memory_pool_t * pool);
 
 /*!
   \brief Connect a newly allocated channel to a session object and setup it's initial state
@@ -129,9 +127,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
   \param state the initial state of the channel
   \param flags the initial channel flags
 */
-SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel,
-													switch_core_session_t *session,
-													switch_channel_state_t state, uint32_t flags);
+SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel, switch_core_session_t *session, switch_channel_state_t state, uint32_t flags);
 
 /*!
   \brief Fire A presence event for the channel
@@ -152,8 +148,7 @@ SWITCH_DECLARE(void) switch_channel_uninit(switch_channel_t *channel);
   \param channel channel to assign the profile to
   \param caller_profile the profile to assign
 */
-SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel,
-													   switch_caller_profile_t *caller_profile);
+SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile);
 
 /*!
   \brief Retrive the given channel's caller profile
@@ -167,8 +162,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_caller_profile(swit
   \param channel channel to assign the profile to
   \param caller_profile the profile to assign
 */
-SWITCH_DECLARE(void) switch_channel_set_originator_caller_profile(switch_channel_t *channel,
-																  switch_caller_profile_t *caller_profile);
+SWITCH_DECLARE(void) switch_channel_set_originator_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile);
 
 /*!
   \brief Retrive the given channel's originator caller profile
@@ -182,8 +176,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_originator_caller_p
   \param channel channel to assign the profile to
   \param caller_profile the profile to assign
 */
-SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel_t *channel,
-																  switch_caller_profile_t *caller_profile);
+SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile);
 
 /*!
   \brief Retrive the given channel's originatee caller profile
@@ -207,8 +200,7 @@ SWITCH_DECLARE(char *) switch_channel_get_uuid(switch_channel_t *channel);
   \param value the vaule of the variable
   \returns SWITCH_STATUS_SUCCESS if successful
 */
-SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *channel, const char *varname,
-															const char *value);
+SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *channel, const char *varname, const char *value);
 
 /*!
   \brief Set a variable on a given channel, without duplicating the value from the session pool.
@@ -217,8 +209,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *ch
   \param value the vaule of the variable (MUST BE ALLOCATED FROM THE SESSION POOL ALREADY)
   \returns SWITCH_STATUS_SUCCESS if successful
 */
-SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_nodup(switch_channel_t *channel, const char *varname,
-																  char *value);
+SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_nodup(switch_channel_t *channel, const char *varname, char *value);
 
 /*!
   \brief Retrieve a variable from a given channel
@@ -235,16 +226,14 @@ SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, ch
  *          pool is NULL, then an internal, non-thread-safe iterator is used.
  * @remark  Use switch_hash_next and switch_hash_this with this function to iterate all the channel variables
  */
-SWITCH_DECLARE(switch_hash_index_t *) switch_channel_variable_first(switch_channel_t *channel,
-																	switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_hash_index_t *) switch_channel_variable_first(switch_channel_t *channel, switch_memory_pool_t * pool);
 
 /*!
   \brief Assign a caller extension to a given channel
   \param channel channel to assign extension to
   \param caller_extension extension to assign
 */
-SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel_t *channel,
-														 switch_caller_extension_t *caller_extension);
+SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel_t *channel, switch_caller_extension_t *caller_extension);
 
 /*!
   \brief Retrieve caller extension from a given channel
@@ -282,11 +271,9 @@ SWITCH_DECLARE(void) switch_channel_set_state_flag(switch_channel_t *channel, sw
 */
 SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch_channel_flag_t flags);
 
-SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *channel,
-															  const char *file, const char *func, int line);
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *channel, const char *file, const char *func, int line);
 
-SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_channel_t *channel,
-																	 const char *file, const char *func, int line);
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_channel_t *channel, const char *file, const char *func, int line);
 
 /*!
   \brief Answer a channel (initiate/acknowledge a successful connection)
@@ -309,8 +296,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 */
 #define switch_channel_mark_pre_answered(channel) switch_channel_perform_mark_pre_answered(channel, __FILE__, __SWITCH_FUNC__, __LINE__)
 
-SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready(switch_channel_t *channel,
-																  const char *file, const char *func, int line);
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready(switch_channel_t *channel, const char *file, const char *func, int line);
 /*!
   \brief Send Ringing message to a channel
   \param channel channel to ring
@@ -319,14 +305,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready(switch_channel
 #define switch_channel_ring_ready(channel) switch_channel_perform_ring_ready(channel, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 
-SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel_t *channel,
-																  const char *file, const char *func, int line);
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel_t *channel, const char *file, const char *func, int line);
 
-SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_channel_t *channel,
-																		 const char *file, const char *func, int line);
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_channel_t *channel, const char *file, const char *func, int line);
 
-SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_channel_t *channel,
-																	   const char *file, const char *func, int line);
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_channel_t *channel, const char *file, const char *func, int line);
 
 /*!
   \brief Indicate progress on a channel to attempt early media
@@ -348,16 +331,14 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_ch
   \param state_handler table of state handler functions
   \return the index number/priority of the table negative value indicates failure
 */
-SWITCH_DECLARE(int) switch_channel_add_state_handler(switch_channel_t *channel,
-													 const switch_state_handler_table_t *state_handler);
+SWITCH_DECLARE(int) switch_channel_add_state_handler(switch_channel_t *channel, const switch_state_handler_table_t *state_handler);
 
 /*!
   \brief clear a state handler table from a given channel
   \param channel channel from which to clear the state handler table
   \param state_handler table of state handler functions
 */
-SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel_t *channel,
-														const switch_state_handler_table_t *state_handler);
+SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel_t *channel, const switch_state_handler_table_t *state_handler);
 
 /*!
   \brief Retrieve an state handler tablefrom a given channel at given index level
@@ -365,8 +346,7 @@ SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel_t *channe
   \param index the index of the state handler table (start from 0)
   \return given channel's state handler table at given index or NULL if requested index does not exist.
 */
-SWITCH_DECLARE(const switch_state_handler_table_t *) switch_channel_get_state_handler(switch_channel_t *channel,
-																					  int index);
+SWITCH_DECLARE(const switch_state_handler_table_t *) switch_channel_get_state_handler(switch_channel_t *channel, int index);
 
 /*!
   \brief Set private data on channel
@@ -402,9 +382,7 @@ SWITCH_DECLARE(char *) switch_channel_get_name(switch_channel_t *channel);
 
 
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_channel_t *channel,
-																	 const char *file,
-																	 const char *func,
-																	 int line, switch_call_cause_t hangup_cause);
+																	 const char *file, const char *func, int line, switch_call_cause_t hangup_cause);
 
 /*!
   \brief Hangup a channel flagging it's state machine to end

@@ -168,15 +168,12 @@ odbc_status_t odbc_obj_connect(odbc_obj_t * obj)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connecting %s\n", obj->dsn);
 
-	result = SQLConnect(obj->con,
-						(SQLCHAR *) obj->dsn, SQL_NTS,
-						(SQLCHAR *) obj->username, SQL_NTS, (SQLCHAR *) obj->password, SQL_NTS);
+	result = SQLConnect(obj->con, (SQLCHAR *) obj->dsn, SQL_NTS, (SQLCHAR *) obj->username, SQL_NTS, (SQLCHAR *) obj->password, SQL_NTS);
 
 	if ((result != SQL_SUCCESS) && (result != SQL_SUCCESS_WITH_INFO)) {
 		SQLGetDiagRec(SQL_HANDLE_DBC, obj->con, 1, stat, &err, msg, 100, &mlen);
 		SQLFreeHandle(SQL_HANDLE_ENV, obj->env);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error SQLConnect=%d errno=%d %s\n", result, (int) err,
-						  msg);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error SQLConnect=%d errno=%d %s\n", result, (int) err, msg);
 		return ODBC_FAIL;
 	} else {
 
@@ -445,8 +442,7 @@ static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 				SQLCHAR *data = odbc_obj->colbuf;
 				SQLCHAR *esc = NULL;
 
-				SQLDescribeCol(odbc_obj->stmt, x, name, sizeof(name), &NameLength, &DataType, &ColumnSize,
-							   &DecimalDigits, &Nullable);
+				SQLDescribeCol(odbc_obj->stmt, x, name, sizeof(name), &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
 				SQLGetData(odbc_obj->stmt, x, SQL_C_CHAR, odbc_obj->colbuf, odbc_obj->cblen, NULL);
 
 				if (strchr((char *) odbc_obj->colbuf, '"')) {	/* please don't */
@@ -454,8 +450,7 @@ static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 					data = esc;
 				}
 
-				snprintf((char *) odbc_obj->code, odbc_obj->codelen, "~_oDbC_dB_RoW_DaTa_[\"%s\"] = \"%s\"", name,
-						 data);
+				snprintf((char *) odbc_obj->code, odbc_obj->codelen, "~_oDbC_dB_RoW_DaTa_[\"%s\"] = \"%s\"", name, data);
 				switch_safe_free(esc);
 
 				eval_some_js((char *) odbc_obj->code, cx, obj, rval);

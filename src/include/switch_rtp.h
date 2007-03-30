@@ -44,15 +44,14 @@ SWITCH_BEGIN_EXTERN_C
 ///\ingroup core1
 ///\{
 typedef void (*switch_rtp_invalid_handler_t) (switch_rtp_t *rtp_session,
-											  switch_socket_t *sock,
-											  void *data, switch_size_t datalen, switch_sockaddr_t *from_addr);
+											  switch_socket_t * sock, void *data, switch_size_t datalen, switch_sockaddr_t * from_addr);
 
 /*! 
   \brief Initilize the RTP System
   \param pool the memory pool to use for long term allocations
   \note Generally called by the core_init
 */
-SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool);
+SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t * pool);
 
 /*! 
   \brief Request a new port to be used for media
@@ -77,9 +76,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 												  switch_payload_t payload,
 												  uint32_t samples_per_interval,
 												  uint32_t ms_per_packet,
-												  switch_rtp_flag_t flags,
-												  char *crypto_key,
-												  char *timer_name, const char **err, switch_memory_pool_t *pool);
+												  switch_rtp_flag_t flags, char *crypto_key, char *timer_name, const char **err, switch_memory_pool_t * pool);
 
 
 /*!
@@ -105,9 +102,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(char *rx_host,
 											  switch_payload_t payload,
 											  uint32_t samples_per_interval,
 											  uint32_t ms_per_packet,
-											  switch_rtp_flag_t flags,
-											  char *crypto_key,
-											  char *timer_name, const char **err, switch_memory_pool_t *pool);
+											  switch_rtp_flag_t flags, char *crypto_key, char *timer_name, const char **err, switch_memory_pool_t * pool);
 
 
 /*! 
@@ -117,8 +112,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(char *rx_host,
   \param port the remote port
   \param err pointer for error messages
 */
-SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, char *host, switch_port_t port,
-															  const char **err);
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, char *host, switch_port_t port, const char **err);
 
 /*! 
   \brief Assign a local address to the RTP session
@@ -128,8 +122,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
   \param err pointer for error messages
   \note this call also binds the RTP session's socket to the new address
 */
-SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_session, char *host, switch_port_t port,
-															 const char **err);
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_session, char *host, switch_port_t port, const char **err);
 
 /*! 
   \brief Kill the socket on an existing RTP session
@@ -190,8 +183,7 @@ SWITCH_DECLARE(switch_socket_t *) switch_rtp_get_rtp_socket(switch_rtp_t *rtp_se
   \param rtp_session the RTP session to set the samples per interval on
   \param samples_per_interval the new default samples per interval 
 */
-SWITCH_DECLARE(void) switch_rtp_set_default_samples_per_interval(switch_rtp_t *rtp_session,
-																 uint16_t samples_per_interval);
+SWITCH_DECLARE(void) switch_rtp_set_default_samples_per_interval(switch_rtp_t *rtp_session, uint16_t samples_per_interval);
 
 /*! 
   \brief Get the default samples per interval for a given RTP session
@@ -277,9 +269,7 @@ SWITCH_DECLARE(switch_size_t) switch_rtp_dequeue_dtmf(switch_rtp_t *rtp_session,
   \return the number of bytes read
 */
 SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_session,
-														 void **data,
-														 uint32_t * datalen,
-														 switch_payload_t *payload_type, switch_frame_flag_t *flags);
+														 void **data, uint32_t * datalen, switch_payload_t *payload_type, switch_frame_flag_t *flags);
 
 /*! 
   \brief Read data from a given RTP session without copying
@@ -298,8 +288,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
   \param flags frame flags
   \return the number of bytes written
 */
-SWITCH_DECLARE(int) switch_rtp_write(switch_rtp_t *rtp_session, void *data, uint32_t datalen, uint32_t ts,
-									 switch_frame_flag_t *flags);
+SWITCH_DECLARE(int) switch_rtp_write(switch_rtp_t *rtp_session, void *data, uint32_t datalen, uint32_t ts, switch_frame_flag_t *flags);
 
 /*!
   \brief Enable VAD on an RTP Session
@@ -344,9 +333,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 											void *data,
 											uint16_t datalen,
-											uint8_t m,
-											switch_payload_t payload,
-											uint32_t ts, uint16_t mseq, uint32_t ssrc, switch_frame_flag_t *flags);
+											uint8_t m, switch_payload_t payload, uint32_t ts, uint16_t mseq, uint32_t ssrc, switch_frame_flag_t *flags);
 
 /*! 
   \brief Retrieve the SSRC from a given RTP session

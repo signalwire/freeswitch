@@ -36,8 +36,7 @@ struct gsm_context {
 	gsm encoder;
 	gsm decoder;
 };
-static switch_status_t switch_gsm_init(switch_codec_t *codec, switch_codec_flag_t flags,
-									   const switch_codec_settings_t *codec_settings)
+static switch_status_t switch_gsm_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	struct gsm_context *context;
 	int encoding, decoding;
@@ -90,8 +89,7 @@ static switch_status_t switch_gsm_encode(switch_codec_t *codec, switch_codec_t *
 		if (new_len <= *encoded_data_len) {
 			*encoded_data_len = new_len;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer overflow!!! %u >= %u\n", new_len,
-							  *encoded_data_len);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer overflow!!! %u >= %u\n", new_len, *encoded_data_len);
 			return SWITCH_STATUS_FALSE;
 		}
 	}
@@ -122,13 +120,11 @@ static switch_status_t switch_gsm_decode(switch_codec_t *codec, switch_codec_t *
 		if (new_len <= *decoded_data_len) {
 			*decoded_data_len = new_len;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer overflow!!! %u %u\n", new_len,
-							  *decoded_data_len);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer overflow!!! %u %u\n", new_len, *decoded_data_len);
 			return SWITCH_STATUS_FALSE;
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "yo this frame is an odd size [%u]\n",
-						  encoded_data_len);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "yo this frame is an odd size [%u]\n", encoded_data_len);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -166,8 +162,7 @@ static switch_loadable_module_interface_t gsm_module_interface = {
 	/*.codec_interface */ &gsm_codec_interface,
 	/*.application_interface */ NULL
 };
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */

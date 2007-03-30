@@ -36,16 +36,14 @@
 
 static void switch_core_standard_on_init(switch_core_session_t *session)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard INIT %s\n",
-					  switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard INIT %s\n", switch_channel_get_name(session->channel));
 }
 
 static void switch_core_standard_on_hangup(switch_core_session_t *session)
 {
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard HANGUP %s, cause: %s\n",
-					  switch_channel_get_name(session->channel),
-					  switch_channel_cause2str(switch_channel_get_cause(session->channel)));
+					  switch_channel_get_name(session->channel), switch_channel_cause2str(switch_channel_get_cause(session->channel)));
 
 }
 
@@ -55,8 +53,7 @@ static void switch_core_standard_on_ring(switch_core_session_t *session)
 	switch_caller_profile_t *caller_profile;
 	switch_caller_extension_t *extension = NULL;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard RING %s\n",
-					  switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard RING %s\n", switch_channel_get_name(session->channel));
 
 	if ((caller_profile = switch_channel_get_caller_profile(session->channel)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't get profile!\n");
@@ -125,16 +122,13 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 		char *expanded = NULL;
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Execute %s(%s)\n",
-						  extension->current_application->application_name,
-						  switch_str_nil(extension->current_application->application_data));
-		if ((application_interface =
-			 switch_loadable_module_get_application_interface(extension->current_application->application_name)) == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Application %s\n",
-							  extension->current_application->application_name);
+						  extension->current_application->application_name, switch_str_nil(extension->current_application->application_data));
+		if ((application_interface = switch_loadable_module_get_application_interface(extension->current_application->application_name)) == 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Application %s\n", extension->current_application->application_name);
 			switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			return;
 		}
-		
+
 		if (switch_channel_test_flag(session->channel, CF_NOMEDIA) && !switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Application %s Cannot be used with NO_MEDIA mode!\n",
 							  extension->current_application->application_name);
@@ -143,26 +137,21 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 		}
 
 		if (!application_interface->application_function) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Function for %s\n",
-							  extension->current_application->application_name);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Function for %s\n", extension->current_application->application_name);
 			switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			return;
 		}
 
 		if ((expanded =
 			 switch_channel_expand_variables(session->channel,
-											 extension->current_application->application_data)) !=
-			extension->current_application->application_data) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Expanded String %s(%s)\n",
-							  extension->current_application->application_name, expanded);
+											 extension->current_application->application_data)) != extension->current_application->application_data) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Expanded String %s(%s)\n", extension->current_application->application_name, expanded);
 		}
 
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(session->channel, event);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application", "%s",
-									extension->current_application->application_name);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data-Orig", "%s",
-									extension->current_application->application_data);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application", "%s", extension->current_application->application_name);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data-Orig", "%s", extension->current_application->application_data);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", "%s", expanded);
 			switch_event_fire(&event);
 		}
@@ -248,8 +237,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			switch_channel_event_set_data(session->channel, event);
 			switch_event_fire(&event);
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Thread has crashed for channel %s\n",
-						  switch_channel_get_name(session->channel));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Thread has crashed for channel %s\n", switch_channel_get_name(session->channel));
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_CRASH);
 	} else {
 		apr_hash_set(runtime.stack_table, &thread_id, sizeof(thread_id), &env);
@@ -294,20 +282,16 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 
 			switch (state) {
 			case CS_NEW:		/* Just created, Waiting for first instructions */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State NEW\n",
-								  switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State NEW\n", switch_channel_get_name(session->channel));
 				break;
 			case CS_DONE:
 				goto done;
 			case CS_HANGUP:	/* Deactivate and end the thread */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State HANGUP\n",
-								  switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State HANGUP\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_hangup
 					|| (driver_state_handler->on_hangup
-						&& driver_state_handler->on_hangup(session) == SWITCH_STATUS_SUCCESS
-						&& midstate == switch_channel_get_state(session->channel))) {
-					while ((application_state_handler =
-							switch_channel_get_state_handler(session->channel, index++)) != 0) {
+						&& driver_state_handler->on_hangup(session) == SWITCH_STATUS_SUCCESS && midstate == switch_channel_get_state(session->channel))) {
+					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_hangup
 							|| (application_state_handler->on_hangup
 								&& application_state_handler->on_hangup(session) == SWITCH_STATUS_SUCCESS
@@ -339,13 +323,11 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				}
 				goto done;
 			case CS_INIT:		/* Basic setup tasks */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State INIT\n",
-								  switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State INIT\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_init
 					|| (driver_state_handler->on_init && driver_state_handler->on_init(session) == SWITCH_STATUS_SUCCESS
 						&& midstate == switch_channel_get_state(session->channel))) {
-					while ((application_state_handler =
-							switch_channel_get_state_handler(session->channel, index++)) != 0) {
+					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_init
 							|| (application_state_handler->on_init
 								&& application_state_handler->on_init(session) == SWITCH_STATUS_SUCCESS
@@ -361,8 +343,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					while (proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_init ||
 							(application_state_handler->on_init &&
-							 application_state_handler->on_init(session) == SWITCH_STATUS_SUCCESS &&
-							 midstate == switch_channel_get_state(session->channel))) {
+							 application_state_handler->on_init(session) == SWITCH_STATUS_SUCCESS && midstate == switch_channel_get_state(session->channel))) {
 							proceed++;
 							continue;
 						} else {
@@ -376,13 +357,11 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				}
 				break;
 			case CS_RING:		/* Look for a dialplan and find something to do */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State RING\n",
-								  switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State RING\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_ring
 					|| (driver_state_handler->on_ring && driver_state_handler->on_ring(session) == SWITCH_STATUS_SUCCESS
 						&& midstate == switch_channel_get_state(session->channel))) {
-					while ((application_state_handler =
-							switch_channel_get_state_handler(session->channel, index++)) != 0) {
+					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_ring
 							|| (application_state_handler->on_ring
 								&& application_state_handler->on_ring(session) == SWITCH_STATUS_SUCCESS
@@ -398,8 +377,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					while (proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_ring ||
 							(application_state_handler->on_ring &&
-							 application_state_handler->on_ring(session) == SWITCH_STATUS_SUCCESS &&
-							 midstate == switch_channel_get_state(session->channel))) {
+							 application_state_handler->on_ring(session) == SWITCH_STATUS_SUCCESS && midstate == switch_channel_get_state(session->channel))) {
 							proceed++;
 							continue;
 						} else {
@@ -413,14 +391,11 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				}
 				break;
 			case CS_EXECUTE:	/* Execute an Operation */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State EXECUTE\n",
-								  switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State EXECUTE\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_execute
 					|| (driver_state_handler->on_execute
-						&& driver_state_handler->on_execute(session) == SWITCH_STATUS_SUCCESS
-						&& midstate == switch_channel_get_state(session->channel))) {
-					while ((application_state_handler =
-							switch_channel_get_state_handler(session->channel, index++)) != 0) {
+						&& driver_state_handler->on_execute(session) == SWITCH_STATUS_SUCCESS && midstate == switch_channel_get_state(session->channel))) {
+					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_execute
 							|| (application_state_handler->on_execute
 								&& application_state_handler->on_execute(session) == SWITCH_STATUS_SUCCESS
@@ -451,14 +426,11 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				}
 				break;
 			case CS_LOOPBACK:	/* loop all data back to source */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State LOOPBACK\n",
-								  switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State LOOPBACK\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_loopback
 					|| (driver_state_handler->on_loopback
-						&& driver_state_handler->on_loopback(session) == SWITCH_STATUS_SUCCESS
-						&& midstate == switch_channel_get_state(session->channel))) {
-					while ((application_state_handler =
-							switch_channel_get_state_handler(session->channel, index++)) != 0) {
+						&& driver_state_handler->on_loopback(session) == SWITCH_STATUS_SUCCESS && midstate == switch_channel_get_state(session->channel))) {
+					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_loopback
 							|| (application_state_handler->on_loopback
 								&& application_state_handler->on_loopback(session) == SWITCH_STATUS_SUCCESS
@@ -489,15 +461,12 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				}
 				break;
 			case CS_TRANSMIT:	/* send/recieve data to/from another channel */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State TRANSMIT\n",
-								  switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State TRANSMIT\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_transmit
 					|| (driver_state_handler->on_transmit
-						&& driver_state_handler->on_transmit(session) == SWITCH_STATUS_SUCCESS
-						&& midstate == switch_channel_get_state(session->channel))) {
+						&& driver_state_handler->on_transmit(session) == SWITCH_STATUS_SUCCESS && midstate == switch_channel_get_state(session->channel))) {
 
-					while ((application_state_handler =
-							switch_channel_get_state_handler(session->channel, index++)) != 0) {
+					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_transmit
 							|| (application_state_handler->on_transmit
 								&& application_state_handler->on_transmit(session) == SWITCH_STATUS_SUCCESS
@@ -528,14 +497,12 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				}
 				break;
 			case CS_HOLD:		/* wait in limbo */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State HOLD\n",
-								  switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State HOLD\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_hold
 					|| (driver_state_handler->on_hold && driver_state_handler->on_hold(session) == SWITCH_STATUS_SUCCESS
 						&& midstate == switch_channel_get_state(session->channel))) {
 
-					while ((application_state_handler =
-							switch_channel_get_state_handler(session->channel, index++)) != 0) {
+					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_hold
 							|| (application_state_handler->on_hold
 								&& application_state_handler->on_hold(session) == SWITCH_STATUS_SUCCESS
@@ -551,8 +518,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					while (proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_hold ||
 							(application_state_handler->on_hold &&
-							 application_state_handler->on_hold(session) == SWITCH_STATUS_SUCCESS &&
-							 midstate == switch_channel_get_state(session->channel))) {
+							 application_state_handler->on_hold(session) == SWITCH_STATUS_SUCCESS && midstate == switch_channel_get_state(session->channel))) {
 							proceed++;
 							continue;
 						} else {
@@ -566,15 +532,12 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				}
 				break;
 			case CS_HIBERNATE:	/* wait in limbo */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State HIBERNATE\n",
-								  switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State HIBERNATE\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_hibernate
 					|| (driver_state_handler->on_hibernate
-						&& driver_state_handler->on_hibernate(session) == SWITCH_STATUS_SUCCESS
-						&& midstate == switch_channel_get_state(session->channel))) {
+						&& driver_state_handler->on_hibernate(session) == SWITCH_STATUS_SUCCESS && midstate == switch_channel_get_state(session->channel))) {
 
-					while ((application_state_handler =
-							switch_channel_get_state_handler(session->channel, index++)) != 0) {
+					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_hibernate
 							|| (application_state_handler->on_hibernate
 								&& application_state_handler->on_hibernate(session) == SWITCH_STATUS_SUCCESS

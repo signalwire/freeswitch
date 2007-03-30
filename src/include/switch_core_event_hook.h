@@ -47,15 +47,12 @@ typedef struct switch_io_event_hook_send_dtmf switch_io_event_hook_send_dtmf_t;
 typedef struct switch_io_event_hook_state_change switch_io_event_hook_state_change_t;
 
 
-typedef switch_status_t (*switch_outgoing_channel_hook_t) (switch_core_session_t *, switch_caller_profile_t *,
-														   switch_core_session_t *);
+typedef switch_status_t (*switch_outgoing_channel_hook_t) (switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t *);
 typedef switch_status_t (*switch_answer_channel_hook_t) (switch_core_session_t *);
 typedef switch_status_t (*switch_receive_message_hook_t) (switch_core_session_t *, switch_core_session_message_t *);
 typedef switch_status_t (*switch_receive_event_hook_t) (switch_core_session_t *, switch_event_t *);
-typedef switch_status_t (*switch_read_frame_hook_t) (switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t,
-													 int);
-typedef switch_status_t (*switch_write_frame_hook_t) (switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t,
-													  int);
+typedef switch_status_t (*switch_read_frame_hook_t) (switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
+typedef switch_status_t (*switch_write_frame_hook_t) (switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int);
 typedef switch_status_t (*switch_kill_channel_hook_t) (switch_core_session_t *, int);
 typedef switch_status_t (*switch_waitfor_read_hook_t) (switch_core_session_t *, int, int);
 typedef switch_status_t (*switch_waitfor_write_hook_t) (switch_core_session_t *, int, int);
@@ -180,9 +177,7 @@ extern switch_io_event_hooks_t switch_core_session_get_event_hooks(switch_core_s
   \param outgoing_channel hook to bind
   \return SWITCH_STATUS_SUCCESS on suceess
 */
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_outgoing_channel(switch_core_session_t *session,
-																			switch_outgoing_channel_hook_t
-																			outgoing_channel);
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_outgoing_channel(switch_core_session_t *session, switch_outgoing_channel_hook_t outgoing_channel);
 
 /*! 
   \brief Add an event hook to be executed when a session answers a channel
@@ -190,8 +185,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_outgoing_channel(swit
   \param answer_channel hook to bind
   \return SWITCH_STATUS_SUCCESS on suceess
 */
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_answer_channel(switch_core_session_t *session,
-																		  switch_answer_channel_hook_t answer_channel);
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_answer_channel(switch_core_session_t *session, switch_answer_channel_hook_t answer_channel);
 
 /*! 
   \brief Add an event hook to be executed when a session sends a message
@@ -199,9 +193,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_answer_channel(switch
   \param receive_message hook to bind
   \return SWITCH_STATUS_SUCCESS on suceess
 */
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_receive_message(switch_core_session_t *session,
-																		   switch_receive_message_hook_t
-																		   receive_message);
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_receive_message(switch_core_session_t *session, switch_receive_message_hook_t receive_message);
 
 /*! 
   \brief Add an event hook to be executed when a session reads a frame
@@ -209,8 +201,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_receive_message(switc
   \param  read_frame hook to bind
   \return SWITCH_STATUS_SUCCESS on suceess
 */
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_read_frame(switch_core_session_t *session,
-																	  switch_read_frame_hook_t read_frame);
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_read_frame(switch_core_session_t *session, switch_read_frame_hook_t read_frame);
 
 /*! 
   \brief Add an event hook to be executed when a session writes a frame
@@ -218,8 +209,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_read_frame(switch_cor
   \param write_frame hook to bind
   \return SWITCH_STATUS_SUCCESS on suceess
 */
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_write_frame(switch_core_session_t *session,
-																	   switch_write_frame_hook_t write_frame);
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_write_frame(switch_core_session_t *session, switch_write_frame_hook_t write_frame);
 
 /*! 
   \brief Add an event hook to be executed when a session kills a channel
@@ -227,8 +217,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_write_frame(switch_co
   \param kill_channel hook to bind
   \return SWITCH_STATUS_SUCCESS on suceess
 */
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_kill_channel(switch_core_session_t *session,
-																		switch_kill_channel_hook_t kill_channel);
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_kill_channel(switch_core_session_t *session, switch_kill_channel_hook_t kill_channel);
 
 /*! 
   \brief Add an event hook to be executed when a session waits for a read event
@@ -236,8 +225,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_kill_channel(switch_c
   \param waitfor_read hook to bind
   \return SWITCH_STATUS_SUCCESS on suceess
 */
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_waitfor_read(switch_core_session_t *session,
-																		switch_waitfor_read_hook_t waitfor_read);
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_waitfor_read(switch_core_session_t *session, switch_waitfor_read_hook_t waitfor_read);
 
 /*! 
   \brief Add an event hook to be executed when a session waits for a write event
@@ -245,8 +233,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_waitfor_read(switch_c
   \param waitfor_write hook to bind
   \return SWITCH_STATUS_SUCCESS on suceess
 */
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_waitfor_write(switch_core_session_t *session,
-																		 switch_waitfor_write_hook_t waitfor_write);
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_waitfor_write(switch_core_session_t *session, switch_waitfor_write_hook_t waitfor_write);
 
 /*! 
   \brief Add an event hook to be executed when a session sends dtmf
@@ -254,8 +241,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_waitfor_write(switch_
   \param send_dtmf hook to bind
   \return SWITCH_STATUS_SUCCESS on suceess
 */
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_send_dtmf(switch_core_session_t *session,
-																	 switch_send_dtmf_hook_t send_dtmf);
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_send_dtmf(switch_core_session_t *session, switch_send_dtmf_hook_t send_dtmf);
 
 /*! 
   \brief Add an event hook to be executed when a session receives a state change signal
@@ -263,8 +249,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_send_dtmf(switch_core
   \param state_change hook to bind
   \return SWITCH_STATUS_SUCCESS on suceess
 */
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_state_change(switch_core_session_t *session,
-																		switch_answer_channel_hook_t state_change);
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_state_change(switch_core_session_t *session, switch_answer_channel_hook_t state_change);
 ///\}
 
 SWITCH_END_EXTERN_C

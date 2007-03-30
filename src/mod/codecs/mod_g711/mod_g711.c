@@ -36,8 +36,7 @@
 static const char modname[] = "mod_g711";
 
 
-static switch_status_t switch_g711u_init(switch_codec_t *codec, switch_codec_flag_t flags,
-										 const switch_codec_settings_t *codec_settings)
+static switch_status_t switch_g711u_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	int encoding, decoding;
 
@@ -56,9 +55,7 @@ static switch_status_t switch_g711u_encode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *decoded_data,
 										   uint32_t decoded_data_len,
-										   uint32_t decoded_rate,
-										   void *encoded_data,
-										   uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
+										   uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
 {
 	short *dbuf;
 	unsigned char *ebuf;
@@ -80,9 +77,7 @@ static switch_status_t switch_g711u_decode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *encoded_data,
 										   uint32_t encoded_data_len,
-										   uint32_t encoded_rate,
-										   void *decoded_data,
-										   uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
+										   uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
 {
 	short *dbuf;
 	unsigned char *ebuf;
@@ -111,8 +106,7 @@ static switch_status_t switch_g711u_destroy(switch_codec_t *codec)
 }
 
 
-static switch_status_t switch_g711a_init(switch_codec_t *codec, switch_codec_flag_t flags,
-										 const switch_codec_settings_t *codec_settings)
+static switch_status_t switch_g711a_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	int encoding, decoding;
 
@@ -131,9 +125,7 @@ static switch_status_t switch_g711a_encode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *decoded_data,
 										   uint32_t decoded_data_len,
-										   uint32_t decoded_rate,
-										   void *encoded_data,
-										   uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
+										   uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
 {
 	short *dbuf;
 	unsigned char *ebuf;
@@ -155,9 +147,7 @@ static switch_status_t switch_g711a_decode(switch_codec_t *codec,
 										   switch_codec_t *other_codec,
 										   void *encoded_data,
 										   uint32_t encoded_data_len,
-										   uint32_t encoded_rate,
-										   void *decoded_data,
-										   uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
+										   uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
 {
 	short *dbuf;
 	unsigned char *ebuf;
@@ -421,8 +411,7 @@ static switch_loadable_module_interface_t g711_module_interface = {
 };
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &g711_module_interface;

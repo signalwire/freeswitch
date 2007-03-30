@@ -44,8 +44,7 @@ struct ilbc_context {
 	uint16_t dbytes;
 };
 
-static switch_status_t switch_ilbc_init(switch_codec_t *codec, switch_codec_flag_t flags,
-										const switch_codec_settings_t *codec_settings)
+static switch_status_t switch_ilbc_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	struct ilbc_context *context;
 	int encoding, decoding;
@@ -99,9 +98,7 @@ static switch_status_t switch_ilbc_encode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
 										  void *decoded_data,
 										  uint32_t decoded_data_len,
-										  uint32_t decoded_rate,
-										  void *encoded_data,
-										  uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
+										  uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
 {
 	struct ilbc_context *context = codec->private_info;
 
@@ -129,8 +126,7 @@ static switch_status_t switch_ilbc_encode(switch_codec_t *codec,
 		if (new_len <= *encoded_data_len) {
 			*encoded_data_len = new_len;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer overflow!!! %u >= %u\n", new_len,
-							  *encoded_data_len);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer overflow!!! %u >= %u\n", new_len, *encoded_data_len);
 			return SWITCH_STATUS_FALSE;
 		}
 	}
@@ -141,9 +137,7 @@ static switch_status_t switch_ilbc_decode(switch_codec_t *codec,
 										  switch_codec_t *other_codec,
 										  void *encoded_data,
 										  uint32_t encoded_data_len,
-										  uint32_t encoded_rate,
-										  void *decoded_data,
-										  uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
+										  uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
 {
 	struct ilbc_context *context = codec->private_info;
 
@@ -176,8 +170,7 @@ static switch_status_t switch_ilbc_decode(switch_codec_t *codec,
 			return SWITCH_STATUS_FALSE;
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "yo this frame is an odd size [%d]\n",
-						  encoded_data_len);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "yo this frame is an odd size [%d]\n", encoded_data_len);
 		return SWITCH_STATUS_FALSE;
 	}
 	return SWITCH_STATUS_SUCCESS;
@@ -321,8 +314,7 @@ static switch_loadable_module_interface_t ilbc_module_interface = {
 
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */

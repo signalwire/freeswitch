@@ -34,8 +34,7 @@
 #include <switch.h>
 #include "private/switch_core.h"
 
-SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle_t *sh, char *text,
-															switch_speech_flag_t *flags)
+SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags)
 {
 	assert(sh != NULL);
 
@@ -79,9 +78,7 @@ SWITCH_DECLARE(void) switch_core_speech_float_param_tts(switch_speech_handle_t *
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle_t *sh,
-															void *data,
-															switch_size_t *datalen,
-															uint32_t * rate, switch_speech_flag_t *flags)
+															void *data, switch_size_t *datalen, uint32_t * rate, switch_speech_flag_t *flags)
 {
 	assert(sh != NULL);
 

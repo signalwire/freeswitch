@@ -156,8 +156,7 @@ SWITCH_DECLARE(char *) switch_core_get_variable(char *varname)
 
 SWITCH_DECLARE(void) switch_core_set_variable(char *varname, char *value)
 {
-	switch_core_hash_insert(runtime.global_vars, switch_core_strdup(runtime.memory_pool, varname),
-							switch_core_strdup(runtime.memory_pool, value));
+	switch_core_hash_insert(runtime.global_vars, switch_core_strdup(runtime.memory_pool, varname), switch_core_strdup(runtime.memory_pool, value));
 }
 
 SWITCH_DECLARE(char *) switch_core_get_uuid(void)
@@ -166,7 +165,7 @@ SWITCH_DECLARE(char *) switch_core_get_uuid(void)
 }
 
 
-static void *switch_core_service_thread(switch_thread_t *thread, void *obj)
+static void *switch_core_service_thread(switch_thread_t * thread, void *obj)
 {
 	switch_core_thread_session_t *data = obj;
 	switch_core_session_t *session = data->objs[0];
@@ -210,8 +209,7 @@ SWITCH_DECLARE(void) switch_core_thread_session_end(switch_core_thread_session_t
 	}
 }
 
-SWITCH_DECLARE(void) switch_core_service_session(switch_core_session_t *session,
-												 switch_core_thread_session_t *thread_session, int stream_id)
+SWITCH_DECLARE(void) switch_core_service_session(switch_core_session_t *session, switch_core_thread_session_t *thread_session, int stream_id)
 {
 	thread_session->running = 1;
 	thread_session->objs[0] = session;
@@ -234,7 +232,7 @@ SWITCH_DECLARE(void) switch_core_service_session(switch_core_session_t *session,
 
 */
 
-SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void *obj, switch_memory_pool_t *pool)
+SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void *obj, switch_memory_pool_t * pool)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
@@ -583,8 +581,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(char *console, cons
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
-					  "\nFreeSWITCH Version %s Started.\nCrash Protection [%s]\nMax Sessions[%u]\n\n",
-					  SWITCH_VERSION_FULL, __CP, switch_core_session_limit(0));
+					  "\nFreeSWITCH Version %s Started.\nCrash Protection [%s]\nMax Sessions[%u]\n\n", SWITCH_VERSION_FULL, __CP, switch_core_session_limit(0));
 	return SWITCH_STATUS_SUCCESS;
 
 }

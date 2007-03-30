@@ -88,7 +88,7 @@ static struct {
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_ip, prefs.ip)
 	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_pass, prefs.password)
 
-	 static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj);
+	 static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj);
 	 static void launch_listener_thread(listener_t * listener);
 
 	 static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_level_t level)
@@ -133,8 +133,7 @@ static void event_handler(switch_event_t *event)
 		if (l->event_list[(uint8_t) SWITCH_EVENT_ALL]) {
 			send = 1;
 		} else if ((l->event_list[(uint8_t) event->event_id])) {
-			if (event->event_id != SWITCH_EVENT_CUSTOM
-				|| (event->subclass && switch_core_hash_find(l->event_hash, event->subclass->name))) {
+			if (event->event_id != SWITCH_EVENT_CUSTOM || (event->subclass && switch_core_hash_find(l->event_hash, event->subclass->name))) {
 				send = 1;
 			}
 		}
@@ -190,8 +189,7 @@ static void socket_function(switch_core_session_t *session, char *data)
 		port = (switch_port_t) atoi(port_name);
 	}
 
-	if (switch_sockaddr_info_get(&sa, host, AF_INET, port, 0, switch_core_session_get_pool(session)) !=
-		SWITCH_STATUS_SUCCESS) {
+	if (switch_sockaddr_info_get(&sa, host, AF_INET, port, 0, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error!\n");
 		return;
 	}
@@ -271,7 +269,7 @@ static switch_loadable_module_interface_t event_socket_module_interface = {
 };
 
 
-static void close_socket(switch_socket_t **sock)
+static void close_socket(switch_socket_t ** sock)
 {
 	switch_mutex_lock(listen_list.sock_mutex);
 	if (*sock) {
@@ -303,8 +301,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &event_socket_module_interface;
@@ -454,8 +451,7 @@ static switch_status_t read_packet(listener_t * listener, switch_event_t **event
 
 
 					if (data) {
-						snprintf(buf, sizeof(buf),
-								 "Content-Type: log/data\nContent-Length: %" SWITCH_SSIZE_T_FMT "\n\n", strlen(data));
+						snprintf(buf, sizeof(buf), "Content-Type: log/data\nContent-Length: %" SWITCH_SSIZE_T_FMT "\n\n", strlen(data));
 						len = strlen(buf);
 						switch_socket_send(listener->sock, buf, &len);
 						len = strlen(data);
@@ -492,8 +488,7 @@ static switch_status_t read_packet(listener_t * listener, switch_event_t **event
 
 					len = strlen(listener->ebuf);
 
-					snprintf(hbuf, sizeof(hbuf), "Content-Length: %" SWITCH_SSIZE_T_FMT "\n"
-							 "Content-Type: text/event-%s\n" "\n", len, etype);
+					snprintf(hbuf, sizeof(hbuf), "Content-Length: %" SWITCH_SSIZE_T_FMT "\n" "Content-Type: text/event-%s\n" "\n", len, etype);
 
 					len = strlen(hbuf);
 					switch_socket_send(listener->sock, hbuf, &len);
@@ -524,7 +519,7 @@ struct api_command_struct {
 	uint8_t bg;
 };
 
-static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
+static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t * thread, void *obj)
 {
 
 	struct api_command_struct *acs = (struct api_command_struct *) obj;
@@ -632,8 +627,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 			goto done;
 		} else if (!strncasecmp(cmd, "sendmsg", 4)) {
 			if (switch_test_flag(listener, LFLAG_ASYNC)) {
-				if ((status =
-					 switch_core_session_queue_private_event(listener->session, &event)) == SWITCH_STATUS_SUCCESS) {
+				if ((status = switch_core_session_queue_private_event(listener->session, &event)) == SWITCH_STATUS_SUCCESS) {
 					snprintf(reply, reply_len, "+OK");
 				} else {
 					snprintf(reply, reply_len, "-ERR memory error");
@@ -901,8 +895,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 			switch_set_flag_locked(listener, LFLAG_EVENTS);
 		}
 
-		snprintf(reply, reply_len, "+OK event listener enabled %s",
-				 listener->format == EVENT_FORMAT_XML ? "xml" : "plain");
+		snprintf(reply, reply_len, "+OK event listener enabled %s", listener->format == EVENT_FORMAT_XML ? "xml" : "plain");
 
 	} else if (!strncasecmp(cmd, "nixevent", 8)) {
 		char *next, *cur;
@@ -991,7 +984,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 	return status;
 }
 
-static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
+static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj)
 {
 	listener_t *listener = (listener_t *) obj;
 	char buf[1024];
@@ -1045,10 +1038,8 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		switch_channel_event_set_data(channel, call_event);
 		switch_event_add_header(call_event, SWITCH_STACK_BOTTOM, "Content-Type", "command/reply");
 
-		switch_event_add_header(call_event, SWITCH_STACK_BOTTOM, "Socket-Mode",
-								switch_test_flag(listener, LFLAG_ASYNC) ? "async" : "static");
-		switch_event_add_header(call_event, SWITCH_STACK_BOTTOM, "Control",
-								switch_test_flag(listener, LFLAG_FULL) ? "full" : "single-channel");
+		switch_event_add_header(call_event, SWITCH_STACK_BOTTOM, "Socket-Mode", switch_test_flag(listener, LFLAG_ASYNC) ? "async" : "static");
+		switch_event_add_header(call_event, SWITCH_STACK_BOTTOM, "Control", switch_test_flag(listener, LFLAG_FULL) ? "full" : "single-channel");
 
 		switch_event_serialize(call_event, &event_str);
 		if (!event_str) {
@@ -1221,8 +1212,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 		rv = switch_sockaddr_info_get(&sa, prefs.ip, SWITCH_INET, prefs.port, 0, pool);
 		if (rv)
 			goto fail;
-		rv = switch_socket_create(&listen_list.sock, switch_sockaddr_get_family(sa), SOCK_STREAM, SWITCH_PROTO_TCP,
-								  pool);
+		rv = switch_socket_create(&listen_list.sock, switch_sockaddr_get_family(sa), SOCK_STREAM, SWITCH_PROTO_TCP, pool);
 		if (rv)
 			goto sock_fail;
 		rv = switch_socket_opt_set(listen_list.sock, SWITCH_SO_REUSEADDR, 1);
@@ -1243,8 +1233,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 
 	listen_list.ready = 1;
 
-	if (switch_event_bind((char *) modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) !=
-		SWITCH_STATUS_SUCCESS) {
+	if (switch_event_bind((char *) modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}

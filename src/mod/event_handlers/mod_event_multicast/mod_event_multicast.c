@@ -146,8 +146,7 @@ static void event_handler(switch_event_t *event)
 	if (globals.event_list[(uint8_t) SWITCH_EVENT_ALL]) {
 		send = 1;
 	} else if ((globals.event_list[(uint8_t) event->event_id])) {
-		if (event->event_id != SWITCH_EVENT_CUSTOM ||
-			(event->subclass && switch_core_hash_find(globals.event_hash, event->subclass->name))) {
+		if (event->event_id != SWITCH_EVENT_CUSTOM || (event->subclass && switch_core_hash_find(globals.event_hash, event->subclass->name))) {
 			send = 1;
 		}
 	}
@@ -184,8 +183,7 @@ static switch_loadable_module_interface_t event_test_module_interface = {
 };
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 
 	memset(&globals, 0, sizeof(globals));
@@ -202,8 +200,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 		return SWITCH_STATUS_TERM;
 	}
 
-	if (switch_sockaddr_info_get(&globals.addr, globals.address, SWITCH_UNSPEC, globals.port, 0, module_pool) !=
-		SWITCH_STATUS_SUCCESS) {
+	if (switch_sockaddr_info_get(&globals.addr, globals.address, SWITCH_UNSPEC, globals.port, 0, module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find address\n");
 		return SWITCH_STATUS_TERM;
 	}
@@ -237,8 +234,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	*module_interface = &event_test_module_interface;
 
 
-	if (switch_event_bind((char *) modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) !=
-		SWITCH_STATUS_SUCCESS) {
+	if (switch_event_bind((char *) modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		switch_socket_close(globals.udp_socket);
 		return SWITCH_STATUS_GENERR;
@@ -290,8 +286,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 				continue;
 			}
 			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nEVENT %d\n--------------------------------\n%s\n", (int) len, packet);
-			if (switch_event_create_subclass(&local_event, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT) ==
-				SWITCH_STATUS_SUCCESS) {
+			if (switch_event_create_subclass(&local_event, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT) == SWITCH_STATUS_SUCCESS) {
 				char *var, *val, *term = NULL, tmpname[128];
 				switch_event_add_header(local_event, SWITCH_STACK_BOTTOM, "Multicast", "yes");
 				var = packet;

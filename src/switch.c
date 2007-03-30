@@ -263,8 +263,7 @@ int main(int argc, char *argv[])
 							  SERVICENAME,
 							  SERVICENAME,
 							  GENERIC_READ | GENERIC_EXECUTE,
-							  SERVICE_WIN32_OWN_PROCESS,
-							  SERVICE_AUTO_START, SERVICE_ERROR_IGNORE, servicePath, NULL, NULL, NULL, NULL, NULL);
+							  SERVICE_WIN32_OWN_PROCESS, SERVICE_AUTO_START, SERVICE_ERROR_IGNORE, servicePath, NULL, NULL, NULL, NULL, NULL);
 				exit(0);
 			}
 			if (argv[x] && !strcmp(argv[x], "-uninstall")) {

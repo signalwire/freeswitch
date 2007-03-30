@@ -136,8 +136,7 @@ SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(const char 
 	return sections;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_search_function_t function,
-																switch_xml_section_t sections, void *user_data)
+SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_search_function_t function, switch_xml_section_t sections, void *user_data)
 {
 	switch_xml_binding_t *binding = NULL, *ptr = NULL;
 	assert(function != NULL);
@@ -164,8 +163,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_searc
 }
 
 
-SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(switch_xml_t node, const char *childname, const char *attrname,
-												   const char *value)
+SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(switch_xml_t node, const char *childname, const char *attrname, const char *value)
 {
 	switch_xml_t p = NULL;
 
@@ -776,9 +774,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 			else
 				return switch_xml_err(root, d, "unclosed <![CDATA[");
 		} else if (!strncmp(s, "!DOCTYPE", 8)) {	// dtd
-			for (l = 0; *s && ((!l && *s != '>') || (l && (*s != ']' ||
-														   *(s + strspn(s + 1, SWITCH_XML_WS) + 1) != '>')));
-				 l = (*s == '[') ? 1 : l)
+			for (l = 0; *s && ((!l && *s != '>') || (l && (*s != ']' || *(s + strspn(s + 1, SWITCH_XML_WS) + 1) != '>'))); l = (*s == '[') ? 1 : l)
 				s += strcspn(s + 1, "[]>") + 1;
 			if (!*s && e != '>')
 				return switch_xml_err(root, d, "unclosed <!DOCTYPE");
@@ -1085,9 +1081,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 												  const char *tag_name,
-												  const char *key_name,
-												  const char *key_value,
-												  switch_xml_t * root, switch_xml_t * node, const char *params)
+												  const char *key_name, const char *key_value, switch_xml_t * root, switch_xml_t * node, const char *params)
 {
 	switch_xml_t conf = NULL;
 	switch_xml_t tag = NULL;
@@ -1141,8 +1135,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 			}
 		}
 
-		if ((conf = switch_xml_find_child(xml, "section", "name", section)) &&
-			(tag = switch_xml_find_child(conf, tag_name, key_name, key_value))) {
+		if ((conf = switch_xml_find_child(xml, "section", "name", section)) && (tag = switch_xml_find_child(conf, tag_name, key_name, key_value))) {
 			*node = tag;
 			*root = xml;
 			return SWITCH_STATUS_SUCCESS;
@@ -1186,8 +1179,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 		switch_thread_rwlock_wrlock(RWLOCK);
 	}
 
-	snprintf(path_buf, sizeof(path_buf), "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR,
-			 "freeswitch.xml");
+	snprintf(path_buf, sizeof(path_buf), "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "freeswitch.xml");
 	if ((new_main = switch_xml_parse_file(path_buf))) {
 		*err = switch_xml_error(new_main);
 
@@ -1217,7 +1209,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, const char **err)
+SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t * pool, const char **err)
 {
 	switch_xml_t xml;
 	XML_MEMORY_POOL = pool;
@@ -1256,8 +1248,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_x
 
 	assert(MAIN_XML_ROOT != NULL);
 
-	if (switch_xml_locate("configuration", "configuration", "name", file_path, &xml, &cfg, params) ==
-		SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate("configuration", "configuration", "name", file_path, &xml, &cfg, params) == SWITCH_STATUS_SUCCESS) {
 		*node = cfg;
 	}
 
@@ -1268,8 +1259,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_x
 
 // Encodes ampersand sequences appending the results to *dst, reallocating *dst
 // if length excedes max. a is non-zero for attribute encoding. Returns *dst
-static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, switch_size_t *dlen, switch_size_t *max,
-								  short a)
+static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, switch_size_t *dlen, switch_size_t *max, short a)
 {
 	const char *e = NULL;
 
@@ -1317,8 +1307,7 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
 // Recursively converts each tag to xml appending it to *s. Reallocates *s if
 // its length excedes max. start is the location of the previous tag in the
 // parent tag's character content. Returns *s.
-static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, switch_size_t *max,
-								switch_size_t start, char ***attr, uint32_t * count)
+static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, switch_size_t *max, switch_size_t start, char ***attr, uint32_t * count)
 {
 	int i, j;
 	char *txt = (xml->parent) ? xml->parent->txt : "";

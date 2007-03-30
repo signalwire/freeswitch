@@ -56,14 +56,12 @@ static struct ss7boost_client_map ss7boost_client_table[] = {
 
 
 
-static switch_status_t create_udp_socket(ss7boost_client_connection_t * mcon, char *local_ip, int local_port, char *ip,
-										 int port)
+static switch_status_t create_udp_socket(ss7boost_client_connection_t * mcon, char *local_ip, int local_port, char *ip, int port)
 {
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "connect %s:%d->%s:%d\n", local_ip, local_port, ip, port);
 
-	if (switch_sockaddr_info_get(&mcon->local_addr, local_ip, SWITCH_UNSPEC, local_port, 0, mcon->pool) !=
-		SWITCH_STATUS_SUCCESS) {
+	if (switch_sockaddr_info_get(&mcon->local_addr, local_ip, SWITCH_UNSPEC, local_port, 0, mcon->pool) != SWITCH_STATUS_SUCCESS) {
 		goto fail;
 	}
 
@@ -79,14 +77,12 @@ static switch_status_t create_udp_socket(ss7boost_client_connection_t * mcon, ch
 		goto fail;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Created boost connection %s:%d->%s:%d\n", local_ip,
-					  local_port, ip, port);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Created boost connection %s:%d->%s:%d\n", local_ip, local_port, ip, port);
 	return SWITCH_STATUS_SUCCESS;
 
   fail:
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failure creating boost connection %s:%d->%s:%d\n", local_ip,
-					  local_port, ip, port);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failure creating boost connection %s:%d->%s:%d\n", local_ip, local_port, ip, port);
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -102,9 +98,7 @@ SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_close(ss7boost_client
 }
 
 SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_open(ss7boost_client_connection_t * mcon,
-																char *local_ip,
-																int local_port,
-																char *ip, int port, switch_memory_pool_t *pool)
+																char *local_ip, int local_port, char *ip, int port, switch_memory_pool_t * pool)
 {
 	memset(mcon, 0, sizeof(*mcon));
 	mcon->pool = pool;
@@ -118,24 +112,21 @@ SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_open(ss7boost_client_
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_read(ss7boost_client_connection_t * mcon,
-																ss7boost_client_event_t ** event)
+SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_read(ss7boost_client_connection_t * mcon, ss7boost_client_event_t ** event)
 {
 	unsigned int fromlen = sizeof(struct sockaddr_in);
 	switch_size_t bytes = 0;
 
 	bytes = sizeof(mcon->event);
 
-	if (switch_socket_recvfrom(mcon->local_addr, mcon->socket, 0, (void *) &mcon->event, &bytes) !=
-		SWITCH_STATUS_SUCCESS) {
+	if (switch_socket_recvfrom(mcon->local_addr, mcon->socket, 0, (void *) &mcon->event, &bytes) != SWITCH_STATUS_SUCCESS) {
 		bytes = 0;
 	}
 
 	if (bytes == sizeof(mcon->event) || bytes == (sizeof(mcon->event) - sizeof(uint32_t))) {
 		if (rxseq != mcon->event.seqno) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "------------------------------------------\n");
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
-							  "Critical Error: Invalid Sequence Number Expect=%i Rx=%i\n", rxseq, mcon->event.seqno);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Critical Error: Invalid Sequence Number Expect=%i Rx=%i\n", rxseq, mcon->event.seqno);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "------------------------------------------\n");
 		}
 		rxseq++;
@@ -147,8 +138,7 @@ SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_read(ss7boost_client_
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_write(ss7boost_client_connection_t * mcon,
-																 ss7boost_client_event_t * event)
+SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_write(ss7boost_client_connection_t * mcon, ss7boost_client_event_t * event)
 {
 	int err;
 	switch_size_t len;
@@ -160,8 +150,7 @@ SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_write(ss7boost_client
 
 	if (event->span < 0 || event->chan < 0 || event->span > 7 || event->chan > 30) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "------------------------------------------\n");
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
-						  "Critical Error: Invalid Span=%i Chan=%i\n", event->span, event->chan);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Critical Error: Invalid Span=%i Chan=%i\n", event->span, event->chan);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "------------------------------------------\n");
 	}
 #ifdef WIN32
@@ -179,8 +168,7 @@ SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_write(ss7boost_client
 	switch_mutex_unlock(mcon->mutex);
 
 	if (len != sizeof(ss7boost_client_event_t)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write Error: [%d][%d][%s]\n", mcon->socket, errno,
-						  strerror(errno));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write Error: [%d][%d][%s]\n", mcon->socket, errno, strerror(errno));
 		err = -1;
 	}
 
@@ -206,15 +194,13 @@ SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_write(ss7boost_client
 					  event->chan + 1,
 					  (event->called_number_digits_count ? (char *) event->called_number_digits : "N/A"),
 					  (event->calling_number_digits_count ? (char *) event->calling_number_digits : "N/A"),
-					  event->release_cause,
-					  event->span + 1, event->chan + 1, event->event_id, event->call_setup_id, event->seqno);
+					  event->release_cause, event->span + 1, event->chan + 1, event->event_id, event->call_setup_id, event->seqno);
 
 
 	return err ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(void) ss7boost_client_call_init(ss7boost_client_event_t * event, char *calling, char *called,
-											   int setup_id)
+SWITCH_DECLARE(void) ss7boost_client_call_init(ss7boost_client_event_t * event, char *calling, char *called, int setup_id)
 {
 	memset(event, 0, sizeof(ss7boost_client_event_t));
 	event->event_id = SIGBOOST_EVENT_CALL_START;
@@ -233,8 +219,7 @@ SWITCH_DECLARE(void) ss7boost_client_call_init(ss7boost_client_event_t * event, 
 
 }
 
-SWITCH_DECLARE(void) ss7boost_client_event_init(ss7boost_client_event_t * event, ss7boost_client_event_id_t event_id,
-												int chan, int span)
+SWITCH_DECLARE(void) ss7boost_client_event_init(ss7boost_client_event_t * event, ss7boost_client_event_id_t event_id, int chan, int span)
 {
 	memset(event, 0, sizeof(ss7boost_client_event_t));
 	event->event_id = event_id;

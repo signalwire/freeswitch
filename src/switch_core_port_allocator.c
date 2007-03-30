@@ -44,9 +44,7 @@ struct switch_core_port_allocator {
 };
 
 SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t start,
-															   switch_port_t end,
-															   uint8_t inc,
-															   switch_core_port_allocator_t **new_allocator)
+															   switch_port_t end, uint8_t inc, switch_core_port_allocator_t **new_allocator)
 {
 	switch_status_t status;
 	switch_memory_pool_t *pool;
@@ -74,9 +72,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t sta
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_management_exec(char *relative_oid,
-															switch_management_action_t action,
-															char *data, switch_size_t datalen)
+SWITCH_DECLARE(switch_status_t) switch_core_management_exec(char *relative_oid, switch_management_action_t action, char *data, switch_size_t datalen)
 {
 	const switch_management_interface_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;

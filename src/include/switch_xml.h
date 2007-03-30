@@ -137,8 +137,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_child(switch_xml_t xml, const char *name
 ///\param attrname the attribute name
 ///\param value the value
 ///\return an xml node or NULL
-SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(switch_xml_t node, const char *childname, const char *attrname,
-												   const char *value);
+SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(switch_xml_t node, const char *childname, const char *attrname, const char *value);
 
 ///\brief returns the next tag of the same name in the same section and depth or NULL
 ///\ if not found
@@ -292,7 +291,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 ///\param pool a memory pool to use
 ///\param err a pointer to set error strings
 ///\return SWITCH_STATUS_SUCCESS if successful
-SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, const char **err);
+SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t * pool, const char **err);
 
 
 SWITCH_DECLARE(switch_status_t) switch_xml_destroy(void);
@@ -313,9 +312,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_root(void);
 ///\return SWITCH_STATUS_SUCCESS if successful root and node will be assigned
 SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 												  const char *tag_name,
-												  const char *key_name,
-												  const char *key_value,
-												  switch_xml_t * root, switch_xml_t * node, const char *params);
+												  const char *key_name, const char *key_value, switch_xml_t * root, switch_xml_t * node, const char *params);
 
 ///\brief open a config in the core registry
 ///\param file_path the name of the config section e.g. modules.conf
@@ -330,8 +327,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_x
 ///\param user_data a pointer to private data to be used during the callback
 ///\return SWITCH_STATUS_SUCCESS if successful
 ///\note gateway functions will be executed in the order they were binded until a success is found else the root registry will be used
-SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_search_function_t function,
-																switch_xml_section_t sections, void *user_data);
+SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_search_function_t function, switch_xml_section_t sections, void *user_data);
 
 ///\brief parse a string for a list of sections
 ///\param str a | delimited list of section names

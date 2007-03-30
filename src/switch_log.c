@@ -111,7 +111,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_bind_logger(switch_log_function_t fun
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *thread, void *obj)
+static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t * thread, void *obj)
 {
 
 	/* To Be or Not To Be */
@@ -210,8 +210,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 
 		if (channel == SWITCH_CHANNEL_ID_EVENT) {
 			switch_event_t *event;
-			if (switch_event_running() == SWITCH_STATUS_SUCCESS
-				&& switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
+			if (switch_event_running() == SWITCH_STATUS_SUCCESS && switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Data", "%s", data);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-File", "%s", filep);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Function", "%s", funcp);
@@ -250,7 +249,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t * pool)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;;

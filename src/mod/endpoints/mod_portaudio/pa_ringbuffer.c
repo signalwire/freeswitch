@@ -164,8 +164,7 @@ void PaUtil_FlushRingBuffer(PaUtilRingBuffer * rbuf)
 ** If non-contiguous, size2 will be the size of second region.
 ** Returns room available to be written or numBytes, whichever is smaller.
 */
-long PaUtil_GetRingBufferWriteRegions(PaUtilRingBuffer * rbuf, long numBytes,
-									  void **dataPtr1, long *sizePtr1, void **dataPtr2, long *sizePtr2)
+long PaUtil_GetRingBufferWriteRegions(PaUtilRingBuffer * rbuf, long numBytes, void **dataPtr1, long *sizePtr1, void **dataPtr2, long *sizePtr2)
 {
 	long index;
 	long available = PaUtil_GetRingBufferWriteAvailable(rbuf);
@@ -205,8 +204,7 @@ long PaUtil_AdvanceRingBufferWriteIndex(PaUtilRingBuffer * rbuf, long numBytes)
 ** If non-contiguous, size2 will be the size of second region.
 ** Returns room available to be written or numBytes, whichever is smaller.
 */
-long PaUtil_GetRingBufferReadRegions(PaUtilRingBuffer * rbuf, long numBytes,
-									 void **dataPtr1, long *sizePtr1, void **dataPtr2, long *sizePtr2)
+long PaUtil_GetRingBufferReadRegions(PaUtilRingBuffer * rbuf, long numBytes, void **dataPtr1, long *sizePtr1, void **dataPtr2, long *sizePtr2)
 {
 	long index;
 	long available = PaUtil_GetRingBufferReadAvailable(rbuf);

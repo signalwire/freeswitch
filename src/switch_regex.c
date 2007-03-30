@@ -33,15 +33,11 @@
 #include <switch.h>
 #include <pcre.h>
  SWITCH_DECLARE(switch_regex_t *) switch_regex_compile(const char *pattern,
-														 int options,
-														 const char **errorptr,
-														 int *erroroffset, const unsigned char *tables) 
+														 int options, const char **errorptr, int *erroroffset, const unsigned char *tables) 
 {
 	return pcre_compile(pattern, options, errorptr, erroroffset, tables);
 }
-SWITCH_DECLARE(int) switch_regex_copy_substring(const char *subject,
-												  int *ovector,
-												  int stringcount, int stringnumber, char *buffer, int size)
+SWITCH_DECLARE(int) switch_regex_copy_substring(const char *subject, int *ovector, int stringcount, int stringnumber, char *buffer, int size)
 {
 	return pcre_copy_substring(subject, ovector, stringcount, stringnumber, buffer, size);
 }
@@ -49,8 +45,7 @@
 SWITCH_DECLARE(void) switch_regex_free(void *data)
 {
 	pcre_free(data);
-} SWITCH_DECLARE(int) switch_regex_perform(char *field, char *expression, switch_regex_t **new_re, int *ovector,
-											  uint32_t olen)
+} SWITCH_DECLARE(int) switch_regex_perform(char *field, char *expression, switch_regex_t ** new_re, int *ovector, uint32_t olen)
 {
 	const char *error = NULL;
 	int erroffset = 0;
@@ -92,7 +87,7 @@ SWITCH_DECLARE(void) switch_regex_free(void *data)
 }
 
 
-SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_count, char *data, char *field_data,
+SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t * re, int match_count, char *data, char *field_data,
 												 char *substituted, uint32_t len, int *ovector)
 {
 	char index[10] = "";
@@ -149,16 +144,13 @@ SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_c
 		}
 		//Note our error    
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-						  "Regular Expression Error expression[%s] error[%s] location[%d]\n", expression, error,
-						  error_offset);
+						  "Regular Expression Error expression[%s] error[%s] location[%d]\n", expression, error, error_offset);
 
 		//We definitely didn't match anything
 		return SWITCH_STATUS_FALSE;
 	}
 	//So far so good, run the regex
-	match_count =
-		pcre_exec(pcre_prepared, NULL, target, (int) strlen(target), 0, 0, offset_vectors,
-				  sizeof(offset_vectors) / sizeof(offset_vectors[0]));
+	match_count = pcre_exec(pcre_prepared, NULL, target, (int) strlen(target), 0, 0, offset_vectors, sizeof(offset_vectors) / sizeof(offset_vectors[0]));
 
 	//Clean up
 	if (pcre_prepared) {

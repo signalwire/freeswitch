@@ -10,8 +10,7 @@ extern "C" {
 #include <switch.h>
 
 	extern void *globalDTMFCallbackFunction;
-	extern switch_status_t PythonDTMFCallback(switch_core_session * session,
-											  void *input, switch_input_type_t itype, void *buf, unsigned int buflen);
+	extern switch_status_t PythonDTMFCallback(switch_core_session * session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen);
 
 	class SessionContainer {
 	  private:

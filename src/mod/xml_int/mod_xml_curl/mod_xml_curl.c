@@ -56,9 +56,7 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 }
 
 
-static switch_xml_t xml_url_fetch(const char *section,
-								  const char *tag_name,
-								  const char *key_name, const char *key_value, const char *params, void *user_data)
+static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, const char *key_name, const char *key_value, const char *params, void *user_data)
 {
 	char filename[512] = "";
 	CURL *curl_handle = NULL;
@@ -88,8 +86,7 @@ static switch_xml_t xml_url_fetch(const char *section,
 								section,
 								tag_name ? tag_name : "",
 								key_name ? key_name : "",
-								key_value ? key_value : "",
-								params ? strchr(params, '=') ? "&" : "&params=" : "", params ? params : ""))) {
+								key_value ? key_value : "", params ? strchr(params, '=') ? "&" : "&params=" : "", params ? params : ""))) {
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 		return NULL;
@@ -206,8 +203,7 @@ static switch_status_t do_config(void)
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Binding [%s] XML Fetch Function [%s] [%s]\n",
-						  switch_strlen_zero(bname) ? "N/A" : bname,
-						  binding->url, binding->bindings ? binding->bindings : "all");
+						  switch_strlen_zero(bname) ? "N/A" : bname, binding->url, binding->bindings ? binding->bindings : "all");
 		switch_xml_bind_search_function(xml_url_fetch, switch_xml_parse_section_string(binding->bindings), binding);
 		x++;
 		binding = NULL;
@@ -219,8 +215,7 @@ static switch_status_t do_config(void)
 }
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &xml_curl_module_interface;

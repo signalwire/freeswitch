@@ -76,9 +76,7 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int fam
 
 	if (WSAIoctl(tmp_socket,
 				 SIO_ROUTING_INTERFACE_QUERY,
-				 address_info->ai_addr,
-				 (DWORD) address_info->ai_addrlen,
-				 &l_address, sizeof(l_address), (LPDWORD) & l_address_len, NULL, NULL)) {
+				 address_info->ai_addr, (DWORD) address_info->ai_addrlen, &l_address, sizeof(l_address), (LPDWORD) & l_address_len, NULL, NULL)) {
 
 		closesocket(tmp_socket);
 		freeaddrinfo(address_info);
@@ -286,7 +284,7 @@ SWITCH_DECLARE(unsigned char) switch_char_to_rfc2833(char key)
 	return '\0';
 }
 
-SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t *pool, char *in, char *delim, char esc)
+SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t * pool, char *in, char *delim, char esc)
 {
 	char *data, *p, *d;
 	int count = 1, i = 0;
@@ -395,8 +393,7 @@ SWITCH_DECLARE(const char *) switch_cut_path(const char *in)
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_string_match(const char *string, size_t string_len, const char *search,
-													size_t search_len)
+SWITCH_DECLARE(switch_status_t) switch_string_match(const char *string, size_t string_len, const char *search, size_t search_len)
 {
 	size_t i;
 
@@ -443,7 +440,7 @@ SWITCH_DECLARE(char *) switch_string_replace(const char *string, const char *sea
 	return dest;
 }
 
-SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms)
+SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t * poll, int ms)
 {
 	int nsds = 0;
 

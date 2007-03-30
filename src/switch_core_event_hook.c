@@ -31,8 +31,7 @@
 #include "switch.h"
 #include "private/switch_core.h"
 
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_outgoing(switch_core_session_t *session,
-																	switch_outgoing_channel_hook_t outgoing_channel)
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_outgoing(switch_core_session_t *session, switch_outgoing_channel_hook_t outgoing_channel)
 {
 	switch_io_event_hook_outgoing_channel_t *hook, *ptr;
 
@@ -53,8 +52,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_outgoing(switch_core_
 	return SWITCH_STATUS_MEMERR;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_answer_channel(switch_core_session_t *session,
-																		  switch_answer_channel_hook_t answer_channel)
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_answer_channel(switch_core_session_t *session, switch_answer_channel_hook_t answer_channel)
 {
 	switch_io_event_hook_answer_channel_t *hook, *ptr;
 
@@ -76,8 +74,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_answer_channel(switch
 
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_state_change(switch_core_session_t *session,
-																		switch_answer_channel_hook_t state_change)
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_state_change(switch_core_session_t *session, switch_answer_channel_hook_t state_change)
 {
 	switch_io_event_hook_state_change_t *hook, *ptr;
 
@@ -99,8 +96,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_state_change(switch_c
 
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_read_frame(switch_core_session_t *session,
-																	  switch_read_frame_hook_t read_frame)
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_read_frame(switch_core_session_t *session, switch_read_frame_hook_t read_frame)
 {
 	switch_io_event_hook_read_frame_t *hook, *ptr;
 
@@ -122,8 +118,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_read_frame(switch_cor
 
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_write_frame(switch_core_session_t *session,
-																	   switch_write_frame_hook_t write_frame)
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_write_frame(switch_core_session_t *session, switch_write_frame_hook_t write_frame)
 {
 	switch_io_event_hook_write_frame_t *hook, *ptr;
 
@@ -145,8 +140,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_write_frame(switch_co
 
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_kill_channel(switch_core_session_t *session,
-																		switch_kill_channel_hook_t kill_channel)
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_kill_channel(switch_core_session_t *session, switch_kill_channel_hook_t kill_channel)
 {
 	switch_io_event_hook_kill_channel_t *hook, *ptr;
 
@@ -168,8 +162,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_kill_channel(switch_c
 
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_waitfor_read(switch_core_session_t *session,
-																		switch_waitfor_read_hook_t waitfor_read)
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_waitfor_read(switch_core_session_t *session, switch_waitfor_read_hook_t waitfor_read)
 {
 	switch_io_event_hook_waitfor_read_t *hook, *ptr;
 
@@ -191,8 +184,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_waitfor_read(switch_c
 
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_waitfor_write(switch_core_session_t *session,
-																		 switch_waitfor_write_hook_t waitfor_write)
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_waitfor_write(switch_core_session_t *session, switch_waitfor_write_hook_t waitfor_write)
 {
 	switch_io_event_hook_waitfor_write_t *hook, *ptr;
 
@@ -215,8 +207,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_waitfor_write(switch_
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_send_dtmf(switch_core_session_t *session,
-																	 switch_send_dtmf_hook_t send_dtmf)
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_send_dtmf(switch_core_session_t *session, switch_send_dtmf_hook_t send_dtmf)
 {
 	switch_io_event_hook_send_dtmf_t *hook, *ptr;
 

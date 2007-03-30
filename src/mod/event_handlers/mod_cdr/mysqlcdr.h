@@ -99,7 +99,7 @@ class MysqlCDR:public BaseCDR {
 	// Now a couple internal methods
 	    template < typename T > void add_parameter(T & param, enum_field_types type, bool * is_null = 0);
 	void add_string_parameter(char *param, long unsigned int &param_length, enum_field_types type, bool * is_null = 0);
-	void set_mysql_time(switch_time_exp_t &param, MYSQL_TIME & destination);
+	void set_mysql_time(switch_time_exp_t & param, MYSQL_TIME & destination);
 	void connect_to_database();
 };
 

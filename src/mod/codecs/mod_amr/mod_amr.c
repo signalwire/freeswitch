@@ -113,8 +113,7 @@ static struct {
 
 #endif
 
-static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_t flags,
-									   const switch_codec_settings_t *codec_settings)
+static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 
 #ifdef AMR_PASSTHROUGH
@@ -202,8 +201,7 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 			context->enc_mode = globals.default_bitrate;
 		}
 
-		snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d",
-				 switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0, context->enc_mode);
+		snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=%d; mode-set=%d", switch_test_flag(context, AMR_OPT_OCTET_ALIGN) ? 1 : 0, context->enc_mode);
 		codec->fmtp_out = switch_core_strdup(codec->memory_pool, fmtptmp);
 
 		context->enc_mode = AMR_DEFAULT_BITRATE;
@@ -245,9 +243,7 @@ static switch_status_t switch_amr_encode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *decoded_data,
 										 uint32_t decoded_data_len,
-										 uint32_t decoded_rate,
-										 void *encoded_data,
-										 uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
+										 uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
 {
 #ifdef AMR_PASSTHROUGH
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
@@ -259,9 +255,7 @@ static switch_status_t switch_amr_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*encoded_data_len =
-		Encoder_Interface_Encode(context->encoder_state, context->enc_mode, (int16_t *) decoded_data,
-								 (switch_byte_t *) encoded_data, 0);
+	*encoded_data_len = Encoder_Interface_Encode(context->encoder_state, context->enc_mode, (int16_t *) decoded_data, (switch_byte_t *) encoded_data, 0);
 
 	return SWITCH_STATUS_SUCCESS;
 #endif
@@ -271,9 +265,7 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *encoded_data,
 										 uint32_t encoded_data_len,
-										 uint32_t encoded_rate,
-										 void *decoded_data,
-										 uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
+										 uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
 {
 #ifdef AMR_PASSTHROUGH
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
@@ -328,8 +320,7 @@ static switch_loadable_module_interface_t amr_module_interface = {
 	/*.application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
-													   char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 #ifndef AMR_PASSTHROUGH
 	char *cf = "amr.conf";

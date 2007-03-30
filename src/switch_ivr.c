@@ -172,9 +172,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 				char dtmf[128];
 				switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
 				if (args && args->input_callback) {
-					if ((status =
-						 args->input_callback(session, dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf,
-											  args->buflen)) != SWITCH_STATUS_SUCCESS) {
+					if ((status = args->input_callback(session, dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen)) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}
 				}
@@ -182,9 +180,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 
 			if (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
 				if (args && args->input_callback) {
-					if ((status =
-						 args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf,
-											  args->buflen)) != SWITCH_STATUS_SUCCESS) {
+					if ((status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen)) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}
 				} else {
@@ -205,8 +201,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_session_t *session,
-																   switch_input_args_t *args, uint32_t timeout)
+SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_session_t *session, switch_input_args_t *args, uint32_t timeout)
 {
 	switch_channel_t *channel;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -273,9 +268,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_session_t *session,
 																char *buf,
 																uint32_t buflen,
-																uint32_t maxdigits,
-																const char *terminators,
-																char *terminator, uint32_t timeout)
+																uint32_t maxdigits, const char *terminators, char *terminator, uint32_t timeout)
 {
 	uint32_t i = 0, x = (uint32_t) strlen(buf);
 	switch_channel_t *channel;
@@ -514,8 +507,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(char *uuid, switch_media_flag
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, char *extension,
-															char *dialplan, char *context)
+SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, char *extension, char *dialplan, char *context)
 {
 	switch_channel_t *channel;
 	switch_caller_profile_t *profile, *new_profile;
@@ -585,16 +577,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		msg.from = __FILE__;
 		switch_core_session_receive_message(session, &msg);
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Transfer %s to %s[%s@%s]\n",
-						  switch_channel_get_name(channel), dialplan, extension, context);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Transfer %s to %s[%s@%s]\n", switch_channel_get_name(channel), dialplan, extension, context);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session_t *sessa, switch_core_session_t *sessb,
-															 char *var)
+SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session_t *sessa, switch_core_session_t *sessb, char *var)
 {
 	switch_channel_t *chana = switch_core_session_get_channel(sessa);
 	switch_channel_t *chanb = switch_core_session_get_channel(sessb);
@@ -616,8 +606,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session
 		void *vval;
 		const void *vvar;
 
-		for (hi = switch_channel_variable_first(chana, switch_core_session_get_pool(sessa)); hi;
-			 hi = switch_hash_next(hi)) {
+		for (hi = switch_channel_variable_first(chana, switch_core_session_get_pool(sessa)); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, &vvar, NULL, &vval);
 			if (vvar && vval && (!prefix || (var && !strncmp((char *) vvar, var, strlen(var))))) {
 				switch_channel_set_variable(chanb, (char *) vvar, (char *) vval);
@@ -645,8 +634,7 @@ struct switch_ivr_digit_stream {
 	switch_time_t last_digit_time;
 };
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory_pool_t *pool,
-																   switch_ivr_digit_stream_parser_t **parser)
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory_pool_t * pool, switch_ivr_digit_stream_parser_t ** parser)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -663,8 +651,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory
 		}
 		// if we have a pool, make a parser object
 		if (pool != NULL) {
-			*parser =
-				(switch_ivr_digit_stream_parser_t *) switch_core_alloc(pool, sizeof(switch_ivr_digit_stream_parser_t));
+			*parser = (switch_ivr_digit_stream_parser_t *) switch_core_alloc(pool, sizeof(switch_ivr_digit_stream_parser_t));
 		}
 		// if we have parser object, initialize it for the caller
 		if (*parser != NULL) {
@@ -687,7 +674,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_destroy(switch_ivr_digit_stream_parser_t *parser)
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_destroy(switch_ivr_digit_stream_parser_t * parser)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -705,8 +692,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_destroy(switch_iv
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_new(switch_ivr_digit_stream_parser_t *parser,
-															switch_ivr_digit_stream_t **stream)
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_new(switch_ivr_digit_stream_parser_t * parser, switch_ivr_digit_stream_t ** stream)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -722,7 +708,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_new(switch_ivr_digit_str
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_destroy(switch_ivr_digit_stream_t *stream)
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_destroy(switch_ivr_digit_stream_t * stream)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -735,8 +721,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_destroy(switch_ivr_digit
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_event(switch_ivr_digit_stream_parser_t *parser,
-																		 char *digits, void *data)
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_event(switch_ivr_digit_stream_parser_t * parser, char *digits, void *data)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -773,8 +758,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_event(switch_
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_del_event(switch_ivr_digit_stream_parser_t *parser,
-																		 char *digits)
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_del_event(switch_ivr_digit_stream_parser_t * parser, char *digits)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -789,8 +773,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_del_event(switch_
 	return status;
 }
 
-SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stream_parser_t *parser,
-														   switch_ivr_digit_stream_t *stream, char digit)
+SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stream_parser_t * parser, switch_ivr_digit_stream_t * stream, char digit)
 {
 	void *result = NULL;
 
@@ -821,8 +804,7 @@ SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stre
 			}
 		}
 		// don't allow collected digit string testing if there are varying sized keys until timeout
-		if (parser->maxlen - parser->minlen > 0
-			&& (switch_time_now() / 1000) - stream->last_digit_time < parser->digit_timeout_ms) {
+		if (parser->maxlen - parser->minlen > 0 && (switch_time_now() / 1000) - stream->last_digit_time < parser->digit_timeout_ms) {
 			len = 0;
 		}
 		// if we have digits to test
@@ -840,7 +822,7 @@ SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stre
 	return result;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_reset(switch_ivr_digit_stream_t *stream)
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_reset(switch_ivr_digit_stream_t * stream)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -854,8 +836,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_reset(switch_ivr_digit_s
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(switch_ivr_digit_stream_parser_t *parser,
-																			  char digit)
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(switch_ivr_digit_stream_parser_t * parser, char digit)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -949,8 +930,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 	switch_hash_index_t *hi;
 	void *vval;
 	const void *vvar;
-	switch_xml_t variable,
-		variables, cdr, x_caller_profile, x_caller_extension, x_times, time_tag, x_application, x_callflow;
+	switch_xml_t variable, variables, cdr, x_caller_profile, x_caller_extension, x_times, time_tag, x_application, x_callflow;
 	char tmp[512];
 	int cdr_off = 0, v_off = 0;
 
@@ -965,8 +945,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 		goto error;
 	}
 
-	for (hi = switch_channel_variable_first(channel, switch_core_session_get_pool(session)); hi;
-		 hi = switch_hash_next(hi)) {
+	for (hi = switch_channel_variable_first(channel, switch_core_session_get_pool(session)); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, &vvar, NULL, &vval);
 		if (vvar && vval) {
 			if ((variable = switch_xml_add_child_d(variables, (char *) vvar, v_off++))) {
@@ -1001,8 +980,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 			switch_xml_set_attr_d(x_caller_extension, "name", caller_profile->caller_extension->extension_name);
 			switch_xml_set_attr_d(x_caller_extension, "number", caller_profile->caller_extension->extension_number);
 			if (caller_profile->caller_extension->current_application) {
-				switch_xml_set_attr_d(x_caller_extension, "current_app",
-									  caller_profile->caller_extension->current_application->application_name);
+				switch_xml_set_attr_d(x_caller_extension, "current_app", caller_profile->caller_extension->current_application->application_name);
 			}
 
 			for (ap = caller_profile->caller_extension->applications; ap; ap = ap->next) {

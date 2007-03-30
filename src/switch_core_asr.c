@@ -36,9 +36,7 @@
 
 SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
 													 char *module_name,
-													 char *codec,
-													 int rate,
-													 char *dest, switch_asr_flag_t *flags, switch_memory_pool_t *pool)
+													 char *codec, int rate, char *dest, switch_asr_flag_t *flags, switch_memory_pool_t * pool)
 {
 	switch_status_t status;
 
@@ -115,8 +113,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_close(switch_asr_handle_t *ah, s
 	return ah->asr_interface->asr_close(ah, flags);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_asr_feed(switch_asr_handle_t *ah, void *data, unsigned int len,
-													 switch_asr_flag_t *flags)
+SWITCH_DECLARE(switch_status_t) switch_core_asr_feed(switch_asr_handle_t *ah, void *data, unsigned int len, switch_asr_flag_t *flags)
 {
 	assert(ah != NULL);
 
@@ -130,8 +127,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_check_results(switch_asr_handle_
 	return ah->asr_interface->asr_check_results(ah, flags);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_asr_get_results(switch_asr_handle_t *ah, char **xmlstr,
-															switch_asr_flag_t *flags)
+SWITCH_DECLARE(switch_status_t) switch_core_asr_get_results(switch_asr_handle_t *ah, char **xmlstr, switch_asr_flag_t *flags)
 {
 	assert(ah != NULL);
 
