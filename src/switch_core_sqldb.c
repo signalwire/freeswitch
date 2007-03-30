@@ -39,6 +39,7 @@ static struct {
 	switch_core_db_t *event_db;
 	switch_queue_t *sql_queue;
 	switch_memory_pool_t *memory_pool;
+	int thread_running;
 } runtime;
 
 static switch_status_t switch_core_db_persistant_execute_trans(switch_core_db_t *db, char *sql, uint32_t retries)
@@ -159,9 +160,8 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t * thread,
 	if (!runtime.event_db) {
 		runtime.event_db = switch_core_db_handle();
 	}
-	switch_queue_create(&runtime.sql_queue, SWITCH_SQL_QUEUE_LEN, runtime.memory_pool);
 
-
+	runtime.thread_running = 1;
 
 	for (;;) {
 		if (switch_queue_trypop(runtime.sql_queue, &pop) == SWITCH_STATUS_SUCCESS) {
@@ -398,11 +398,15 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 		}
 	}
 
+	switch_queue_create(&runtime.sql_queue, SWITCH_SQL_QUEUE_LEN, runtime.memory_pool);
+	
 	switch_threadattr_create(&thd_attr, runtime.memory_pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, switch_core_sql_thread, NULL, runtime.memory_pool);
-
+	while (!runtime.thread_running) {
+		switch_yield(10000);
+	}
 }
 
 void switch_core_sqldb_stop(void)

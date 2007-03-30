@@ -398,13 +398,14 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 	switch_threadattr_detach_set(thd_attr, 1);
 
 	assert(pool != NULL);
-	RUNTIME_POOL = pool;
+	THRUNTIME_POOL = RUNTIME_POOL = pool;
 
-
+	/*
 	if (switch_core_new_memory_pool(&THRUNTIME_POOL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not allocate memory pool\n");
 		return SWITCH_STATUS_MEMERR;
 	}
+	*/
 	/*
 	   if (switch_core_new_memory_pool(&BPOOL) != SWITCH_STATUS_SUCCESS) {
 	   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not allocate memory pool\n");

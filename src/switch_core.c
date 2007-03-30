@@ -482,6 +482,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 	assert(runtime.memory_pool != NULL);
 	switch_log_init(runtime.memory_pool);
 	switch_event_init(runtime.memory_pool);
+
 	switch_core_sqldb_start(runtime.memory_pool);
 	switch_rtp_init(runtime.memory_pool);
 	runtime.running = 1;
