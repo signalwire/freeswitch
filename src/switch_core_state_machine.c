@@ -213,6 +213,66 @@ static void switch_core_standard_on_hibernate(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard HIBERNATE\n");
 }
 
+
+#ifdef CRASH_PROT
+static switch_hash_t *stack_table;
+#if defined (__GNUC__) && defined (LINUX)
+#include <execinfo.h>
+#include <stdio.h>
+#include <stdlib.h>
+#define STACK_LEN 10
+
+/* Obtain a backtrace and print it to stdout. */
+static void print_trace(void)
+{
+	void *array[STACK_LEN];
+	size_t size;
+	char **strings;
+	size_t i;
+
+	size = backtrace(array, STACK_LEN);
+	strings = backtrace_symbols(array, size);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Obtained %zd stack frames.\n", size);
+
+	for (i = 0; i < size; i++) {
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CRIT, "%s\n", strings[i]);
+	}
+
+	free(strings);
+}
+#else
+static void print_trace(void)
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Trace not avaliable =(\n");
+}
+#endif
+
+
+static void handle_fatality(int sig)
+{
+	switch_thread_id_t thread_id;
+	jmp_buf *env;
+
+	if (sig && (thread_id = switch_thread_self())
+		&& (env = (jmp_buf *) apr_hash_get(stack_table, &thread_id, sizeof(thread_id)))) {
+		print_trace();
+		longjmp(*env, sig);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Caught signal %d for unmapped thread!", sig);
+		abort();
+	}
+}
+#endif
+
+void switch_core_state_machine_init(switch_memory_pool_t *pool)
+{
+	(void)0;
+#ifdef CRASH_PROT
+	switch_core_hash_init(&stack_table, pool);
+#endif
+}
+
 SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 {
 	switch_channel_state_t state = CS_NEW, laststate = CS_HANGUP, midstate = CS_DONE, endstate;
@@ -241,7 +301,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Thread has crashed for channel %s\n", switch_channel_get_name(session->channel));
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_CRASH);
 	} else {
-		apr_hash_set(runtime.stack_table, &thread_id, sizeof(thread_id), &env);
+		apr_hash_set(stack_table, &thread_id, sizeof(thread_id), &env);
 	}
 #endif
 	/*
@@ -596,7 +656,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 	switch_mutex_unlock(session->mutex);
 
 #ifdef CRASH_PROT
-	apr_hash_set(runtime.stack_table, &thread_id, sizeof(thread_id), NULL);
+	apr_hash_set(stack_table, &thread_id, sizeof(thread_id), NULL);
 #endif
 	session->thread_running = 0;
 

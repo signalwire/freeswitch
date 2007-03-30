@@ -340,7 +340,7 @@ static void core_event_handler(switch_event_t *event)
 }
 
 
-SWITCH_DECLARE(void) switch_core_sqldb_start(switch_memory_pool_t *pool)
+void switch_core_sqldb_start(switch_memory_pool_t *pool)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;;
@@ -405,7 +405,7 @@ SWITCH_DECLARE(void) switch_core_sqldb_start(switch_memory_pool_t *pool)
 
 }
 
-SWITCH_DECLARE(void) switch_core_sqldb_stop(void)
+void switch_core_sqldb_stop(void)
 {
 	switch_queue_push(runtime.sql_queue, NULL);
 

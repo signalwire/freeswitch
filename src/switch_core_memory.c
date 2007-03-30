@@ -212,7 +212,7 @@ SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool_t *pool, switch_size
 	return ptr;
 }
 
-SWITCH_DECLARE(switch_memory_pool_t *) switch_core_memory_init(void)
+switch_memory_pool_t *switch_core_memory_init(void)
 {
 	memset(&runtime, 0, sizeof(runtime));
 

@@ -43,9 +43,6 @@ static struct {
 	switch_time_t initiated;
 	switch_hash_t *global_vars;
 	switch_memory_pool_t *memory_pool;
-#ifdef CRASH_PROT
-	switch_hash_t *stack_table;
-#endif
 	const switch_state_handler_table_t *state_handlers[SWITCH_MAX_STATE_HANDLERS];
 	int state_handler_index;
 	FILE *console;
@@ -426,7 +423,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 
 	switch_core_set_globals();
 	switch_core_session_init(runtime.memory_pool);
+	switch_core_state_machine_init(runtime.memory_pool);
 	switch_core_hash_init(&runtime.global_vars, runtime.memory_pool);
+
+
 
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
 		apr_terminate();
@@ -485,12 +485,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 	switch_core_sqldb_start(runtime.memory_pool);
 	switch_rtp_init(runtime.memory_pool);
 	runtime.running = 1;
-
-
-#ifdef CRASH_PROT
-	switch_core_hash_init(&runtime.stack_table, runtime.memory_pool);
-#endif
-
 
 	switch_scheduler_task_thread_start();
 	runtime.initiated = switch_time_now();
@@ -672,8 +666,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 		fclose(runtime.console);
 		runtime.console = NULL;
 	}
-
-	switch_yield(1000000);
 
 	switch_safe_free(SWITCH_GLOBAL_dirs.base_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.mod_dir);
