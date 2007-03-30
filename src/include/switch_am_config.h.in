@@ -15,6 +15,5 @@
 @size_t_fmt@
 @int64_t_fmt@
 @uint64_t_fmt@
-@time_t_fmt@
 
 #endif

@@ -2,7 +2,7 @@
 
 struct switch_scheduler_task_container {
 	switch_scheduler_task_t task;
-	time_t executed;
+	int64_t executed;
 	int in_thread;
 	int destroyed;
 	switch_scheduler_func_t func;
@@ -35,7 +35,7 @@ static void switch_scheduler_execute(switch_scheduler_task_container_t * tp)
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-ID", "%u", tp->task.task_id);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Desc", "%s", tp->desc);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Group", "%s", switch_str_nil(tp->task.group));
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Runtime", "%" TIME_T_FMT, tp->task.runtime);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Runtime", "%" SWITCH_INT64_T_FMT, tp->task.runtime);
 			switch_event_fire(&event);
 		}
 	} else {
@@ -43,7 +43,7 @@ static void switch_scheduler_execute(switch_scheduler_task_container_t * tp)
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-ID", "%u", tp->task.task_id);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Desc", "%s", tp->desc);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Group", "%s", switch_str_nil(tp->task.group));
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Runtime", "%" TIME_T_FMT, tp->task.runtime);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Runtime", "%" SWITCH_INT64_T_FMT, tp->task.runtime);
 			switch_event_fire(&event);
 		}
 		tp->destroyed = 1;
@@ -75,7 +75,7 @@ static int task_thread_loop(int done)
 		if (done) {
 			tp->destroyed = 1;
 		} else {
-			time_t now = time(NULL);
+			int64_t now = time(NULL);
 			if (now >= tp->task.runtime && !tp->in_thread) {
 				tp->executed = now;
 				if (switch_test_flag(tp, SSHF_OWN_THREAD)) {
@@ -174,14 +174,14 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_add_task(time_t task_runtime,
 	switch_mutex_unlock(globals.task_mutex);
 
 	tp = container;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Added task %u %s (%s) to run at %" TIME_T_FMT "\n",
-					  tp->task.task_id, tp->desc, switch_str_nil(tp->task.group), task_runtime);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Added task %u %s (%s) to run at %" SWITCH_INT64_T_FMT "\n",
+					  tp->task.task_id, tp->desc, switch_str_nil(tp->task.group), tp->task.runtime);
 
 	if (switch_event_create(&event, SWITCH_EVENT_ADD_SCHEDULE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-ID", "%u", tp->task.task_id);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Desc", "%s", tp->desc);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Group", "%s", switch_str_nil(tp->task.group));
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Runtime", "%" TIME_T_FMT, tp->task.runtime);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Runtime", "%" SWITCH_INT64_T_FMT, tp->task.runtime);
 		switch_event_fire(&event);
 	}
 	return container->task.task_id;
@@ -201,7 +201,7 @@ SWITCH_DECLARE(switch_status_t) switch_scheduler_del_task_id(uint32_t task_id)
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-ID", "%u", tp->task.task_id);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Desc", "%s", tp->desc);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Group", "%s", switch_str_nil(tp->task.group));
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Runtime", "%" TIME_T_FMT, tp->task.runtime);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Runtime", "%" SWITCH_INT64_T_FMT, tp->task.runtime);
 				switch_event_fire(&event);
 			}
 			status = SWITCH_STATUS_SUCCESS;
@@ -226,7 +226,7 @@ SWITCH_DECLARE(switch_status_t) switch_scheduler_del_task_group(char *group)
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-ID", "%u", tp->task.task_id);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Desc", "%s", tp->desc);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Group", "%s", switch_str_nil(tp->task.group));
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Runtime", "%" TIME_T_FMT, tp->task.runtime);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Task-Runtime", "%" SWITCH_INT64_T_FMT, tp->task.runtime);
 				switch_event_fire(&event);
 			}
 			tp->destroyed++;

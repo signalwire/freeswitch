@@ -40,8 +40,8 @@ SWITCH_BEGIN_EXTERN_C
 ///\ingroup core1
 ///\{
 	struct switch_scheduler_task {
-	time_t created;
-	time_t runtime;
+	int64_t created;
+	int64_t runtime;
 	uint32_t cmd_id;
 	char *group;
 	void *cmd_arg;
