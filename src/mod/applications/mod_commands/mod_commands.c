@@ -696,6 +696,56 @@ static switch_status_t originate_function(char *cmd, switch_core_session_t *ises
 	return SWITCH_STATUS_SUCCESS;;
 }
 
+static void sch_api_callback(switch_scheduler_task_t *task)
+{
+	char *cmd, *arg = NULL;
+	switch_stream_handle_t stream = { 0 };
+
+	assert(task);
+
+	cmd = (char *) task->cmd_arg;
+	
+	if ((arg = strchr(cmd, ' '))) {
+		*arg++ = '\0';
+	}
+
+	SWITCH_STANDARD_STREAM(stream);
+	switch_api_execute(cmd, arg, NULL, &stream);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Command %s(%s):\n%s\n", cmd, arg, switch_str_nil((char *)stream.data));
+	switch_safe_free(stream.data);
+}
+
+static switch_status_t sched_api_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+{
+	char *tm = NULL, *dcmd;
+	time_t when;
+
+	assert(cmd != NULL);
+	tm = strdup(cmd);
+	assert(tm != NULL);
+	
+	if ((dcmd = strchr(tm, ' '))) {
+		uint32_t id;
+
+		*dcmd++ = '\0';
+
+		if (*tm == '+') {
+			when = time(NULL) + atol(tm + 1);
+		} else {
+			when = atol(tm);
+		}
+		id = switch_scheduler_add_task(when, sch_api_callback, (char *) __SWITCH_FUNC__, dcmd, 0, strdup(dcmd), SSHF_FREE_ARG);
+		stream->write_function(stream, "Added task %u\n", id);
+	} else {
+		stream->write_function(stream, "Invalid syntax\n");
+	}	
+
+	switch_safe_free(tm);
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 struct holder {
 	switch_stream_handle_t *stream;
 	char *http;
@@ -769,6 +819,8 @@ static switch_status_t show_function(char *cmd, switch_core_session_t *session, 
 		return SWITCH_STATUS_SUCCESS;
 	} else if (!strcmp(cmd, "codec") || !strcmp(cmd, "dialplan") || !strcmp(cmd, "file") || !strcmp(cmd, "timer")) {
 		sprintf(sql, "select type, name from interfaces where type = '%s'", cmd);
+	} else if (!strcmp(cmd, "tasks")) {
+		sprintf(sql, "select * from %s", cmd);
 	} else if (!strcmp(cmd, "application") || !strcmp(cmd, "api")) {
 		sprintf(sql, "select name, description, syntax from interfaces where type = '%s' and description != ''", cmd);
 	} else if (!strcmp(cmd, "calls")) {
@@ -849,12 +901,20 @@ static switch_status_t help_function(char *cmd, switch_core_session_t *session, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_api_interface_t sched_api_api_interface = {
+	/*.interface_name */ "sched_api",
+	/*.desc */ "Schedule an api command",
+	/*.function */ sched_api_function,
+	/*.syntax */ "[+]<time> <command string>",
+	/*.next */ NULL
+};
+
 static switch_api_interface_t sched_transfer_api_interface = {
 	/*.interface_name */ "sched_transfer",
 	/*.desc */ "Schedule a broadcast event to a running call",
 	/*.function */ sched_transfer_function,
 	/*.syntax */ "[+]<time> <uuid> <extension> [<dialplan>] [<context>]",
-	/*.next */ NULL
+	/*.next */ &sched_api_api_interface
 };
 
 static switch_api_interface_t sched_broadcast_api_interface = {

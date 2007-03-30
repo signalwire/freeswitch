@@ -225,8 +225,25 @@ static void core_event_handler(switch_event_t *event)
 	char *sql = NULL;
 
 	switch (event->event_id) {
+	case SWITCH_EVENT_ADD_SCHEDULE:
+		sql = switch_mprintf("insert into tasks values('%q','%q','%q','%q')",
+							 switch_event_get_header(event, "task-id"),
+							 switch_event_get_header(event, "task-desc"),
+							 switch_event_get_header(event, "task-group"),
+							 switch_event_get_header(event, "task-runtime")
+							 );
+		break;
+	case SWITCH_EVENT_DEL_SCHEDULE:
+	case SWITCH_EVENT_EXE_SCHEDULE:
+		sql = switch_mprintf("delete from tasks where task_id=%q", switch_event_get_header(event, "task-id"));
+		break;
+	case SWITCH_EVENT_RE_SCHEDULE:
+		sql = switch_mprintf("update tasks set task_runtime='%q' where task_id=%q",
+							 switch_event_get_header(event, "task-runtime"),
+							 switch_event_get_header(event, "task-id"));
+		break;
 	case SWITCH_EVENT_CHANNEL_DESTROY:
-		sql = switch_mprintf("delete from channels where uuid='%s'", switch_event_get_header(event, "unique-id"));
+		sql = switch_mprintf("delete from channels where uuid='%q'", switch_event_get_header(event, "unique-id"));
 		break;
 	case SWITCH_EVENT_CHANNEL_CREATE:
 		sql = switch_mprintf("insert into channels (uuid,created,name,state) values('%q','%q','%q','%q')",
@@ -375,14 +392,23 @@ SWITCH_DECLARE(void) switch_core_sqldb_start(switch_memory_pool_t *pool)
 			"   type             VARCHAR(255),\n"
 			"   name             VARCHAR(255),\n"
 			"   description      VARCHAR(255),\n" "   syntax           VARCHAR(255)\n" ");\n";
+		char create_tasks_sql[] =
+			"CREATE TABLE tasks (\n"
+			"   task_id             INTEGER(4),\n"
+			"   task_desc           VARCHAR(255),\n"
+			"   task_group          VARCHAR(255),\n"
+			"   task_runtime        INTEGER(8)\n"
+			");\n";
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening DB\n");
 		switch_core_db_exec(runtime.db, "drop table channels", NULL, NULL, NULL);
 		switch_core_db_exec(runtime.db, "drop table calls", NULL, NULL, NULL);
 		switch_core_db_exec(runtime.db, "drop table interfaces", NULL, NULL, NULL);
+		switch_core_db_exec(runtime.db, "drop table tasks", NULL, NULL, NULL);
 		switch_core_db_exec(runtime.db, create_channels_sql, NULL, NULL, NULL);
 		switch_core_db_exec(runtime.db, create_calls_sql, NULL, NULL, NULL);
 		switch_core_db_exec(runtime.db, create_interfaces_sql, NULL, NULL, NULL);
+		switch_core_db_exec(runtime.db, create_tasks_sql, NULL, NULL, NULL);
 		if (switch_event_bind("core_db", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL) !=
 			SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind event handler!\n");
