@@ -707,28 +707,36 @@ static void sch_api_callback(switch_scheduler_task_t *task)
 
 static switch_status_t sched_api_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
 {
-	char *tm = NULL, *dcmd;
+	char *tm = NULL, *dcmd, *group;
 	time_t when;
 
 	assert(cmd != NULL);
 	tm = strdup(cmd);
 	assert(tm != NULL);
 
-	if ((dcmd = strchr(tm, ' '))) {
+	if ((group = strchr(tm, ' '))) {
 		uint32_t id;
 
-		*dcmd++ = '\0';
+		*group++ = '\0';
 
-		if (*tm == '+') {
-			when = time(NULL) + atol(tm + 1);
-		} else {
-			when = atol(tm);
-		}
-		id = switch_scheduler_add_task(when, sch_api_callback, (char *) __SWITCH_FUNC__, dcmd, 0, strdup(dcmd), SSHF_FREE_ARG);
-		stream->write_function(stream, "Added task %u\n", id);
-	} else {
-		stream->write_function(stream, "Invalid syntax\n");
+		if ((dcmd = strchr(group, ' '))) {
+			*dcmd++ = '\0';
+
+			if (*tm == '+') {
+				when = time(NULL) + atol(tm + 1);
+			} else {
+				when = atol(tm);
+			}
+		
+			id = switch_scheduler_add_task(when, sch_api_callback, (char *) __SWITCH_FUNC__, group, 0, strdup(dcmd), SSHF_FREE_ARG);
+			stream->write_function(stream, "Added task %u for command [%s] group [%s]\n", id, dcmd, group);
+			goto good;
+		} 
 	}
+
+	stream->write_function(stream, "Invalid syntax\n");
+
+ good:
 
 	switch_safe_free(tm);
 
@@ -891,7 +899,7 @@ static switch_api_interface_t sched_api_api_interface = {
 	/*.interface_name */ "sched_api",
 	/*.desc */ "Schedule an api command",
 	/*.function */ sched_api_function,
-	/*.syntax */ "[+]<time> <command string>",
+	/*.syntax */ "[+]<time> <group_name> <command_string>",
 	/*.next */ NULL
 };
 
