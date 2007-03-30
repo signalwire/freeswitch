@@ -510,9 +510,15 @@ static switch_status_t en_say(switch_core_session_t *session, char *tosay, switc
 	return SWITCH_STATUS_FALSE;
 }
 
+static const switch_say_interface_t es_say_interface = {
+	/*.name */ "es",
+	/*.say_function */ en_say,
+};
+
 static const switch_say_interface_t en_say_interface = {
 	/*.name */ "en",
 	/*.say_function */ en_say,
+	/*.next */ &es_say_interface
 };
 
 static switch_loadable_module_interface_t say_en_module_interface = {
