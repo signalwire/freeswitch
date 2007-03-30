@@ -58,6 +58,11 @@ SWITCH_BEGIN_EXTERN_C
  * C4610: struct  can never be instantiated - user defined constructor required
  */
 #pragma warning(disable:4100 4200 4204 4706 4819 4132 4510 4512 4610 4996)
+
+#pragma include_alias(<libteletone.h>,				<../../libs/libteletone/src/libteletone.h>)
+#pragma include_alias(<libteletone_generate.h>,		<../../libs/libteletone/src/libteletone_generate.h>)
+#pragma include_alias(<libteletone_detect.h>,		<../../libs/libteletone/src/libteletone_detect.h>)
+
 #if (_MSC_VER >= 1400)			// VC8+
 #ifndef _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE

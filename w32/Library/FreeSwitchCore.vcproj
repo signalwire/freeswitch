@@ -248,7 +248,71 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\switch_core_asr.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_core_codec.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_core_db.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_core_directory.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_core_event_hook.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_core_file.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_core_hash.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_core_io.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_core_media_bug.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_core_memory.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_core_port_allocator.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_core_rwlock.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_core_session.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_core_speech.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_core_sqldb.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_core_state_machine.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_core_timer.c"
 				>
 			</File>
 			<File
@@ -257,6 +321,26 @@
 			</File>
 			<File
 				RelativePath="..\..\src\switch_ivr.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_ivr_async.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_ivr_bridge.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_ivr_menu.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_ivr_originate.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_ivr_play_say.c"
 				>
 			</File>
 			<File
@@ -277,6 +361,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\switch_rtp.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_scheduler.c"
 				>
 			</File>
 			<File
@@ -306,6 +394,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\include\switch_bitpack.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\include\switch_buffer.h"
 				>
 			</File>
@@ -318,6 +410,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\include\switch_config.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\include\switch_console.h"
 				>
 			</File>
@@ -326,7 +422,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\include\private\switch_core.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\include\switch_core_db.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_core_event_hook.h"
 				>
 			</File>
 			<File
@@ -370,6 +474,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\include\switch_scheduler.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_sqlite.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\include\switch_stun.h"
 				>
 			</File>
@@ -379,6 +491,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\include\switch_utils.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_version.h"
 				>
 			</File>
 			<File

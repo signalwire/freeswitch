@@ -59,7 +59,7 @@ typedef struct {
 #endif
 
 #ifdef _MSC_VER
-#define int16_t __int16
+typedef __int16 int16_t;
 #endif
 
 #include <libteletone_generate.h>
