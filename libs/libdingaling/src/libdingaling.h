@@ -180,6 +180,55 @@ typedef void (*ldl_logger_t)(char *file, const char *func, int line, int level, 
 #define ldl_yield(ms) apr_sleep(ms * 10); apr_thread_yield();
 
 /*!
+  \brief Test for a common domain in 2 jid
+  \param id_a the first id
+  \param id_b the second id
+  \return 1 if the domains match 0 if they dont or -1 if either id is invalid
+  \note the id may or may not contain a user and/or resource
+*/
+static inline int ldl_jid_domcmp(char *id_a, char *id_b)
+{
+    char *id_a_host, *id_b_host, *id_a_r, *id_b_r;
+
+	if ((id_a_host = strchr(id_a, '@'))) {
+		id_a_host++;
+	} else {
+		id_a_host = id_a;
+	}
+
+	if ((id_b_host = strchr(id_b, '@'))) {
+		id_b_host++;
+	} else {
+		id_b_host = id_b;
+	}
+
+    if (id_a_host && id_b_host) {
+        int id_a_len = 0, id_b_len = 0, len = 0;
+
+        if ((id_a_r = strchr(id_a_host, '/'))) {
+            id_a_len = id_a_r - id_a_host;
+        } else {
+            id_a_len = strlen(id_a_host);
+        }
+
+        if ((id_b_r = strchr(id_b_host, '/'))) {
+            id_b_len = id_b_r - id_b_host;
+        } else {
+            id_b_len = strlen(id_b_host);
+        }
+
+        if (id_a_len > id_b_len) {
+            len = id_b_len;
+        } else {
+            len = id_a_len;
+        }
+		printf("[%s][%s][%d]\n", id_a_host, id_b_host, len);
+        return strncasecmp(id_a_host, id_b_host, len) ? 0 : 1;
+    }
+    return -1;
+}
+
+/*!
   \brief Test for the existance of a flag on an arbitary object
   \param obj the object to test
   \param flag the or'd list of flags to test

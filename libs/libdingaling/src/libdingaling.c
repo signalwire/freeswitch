@@ -761,6 +761,11 @@ static void do_presence(ldl_handle_t *handle, char *from, char *to, char *type, 
 		from = buf;
 	}
 
+	if (ldl_test_flag(handle, LDL_FLAG_COMPONENT) && ldl_jid_domcmp(from, to)) {
+		globals.logger(DL_LOG_ERR, "Refusal to send presence from and to the same domain in component mode [%s][%s]\n", from, to);
+		return;
+	}
+
 	if ((pres = iks_new("presence"))) {
 		iks_insert_attrib(pres, "xmlns", "jabber:client");
 		if (from) {
