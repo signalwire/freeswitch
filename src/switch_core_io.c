@@ -133,6 +133,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			case SWITCH_STATUS_NOOP:
 				status = SWITCH_STATUS_SUCCESS;
 				break;
+			case SWITCH_STATUS_BREAK:
+				memset(session->raw_read_frame.data, 255, read_frame->codec->implementation->bytes_per_frame);
+				session->raw_read_frame.datalen = read_frame->codec->implementation->bytes_per_frame;
+				session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t);
+				session->raw_read_frame.timestamp = read_frame->timestamp;
+				session->raw_read_frame.rate = read_frame->rate;
+				read_frame = &session->raw_read_frame;
+				status = SWITCH_STATUS_SUCCESS;
+				break;
 			default:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s decoder error!\n", session->read_codec->codec_interface->interface_name);
 				goto done;

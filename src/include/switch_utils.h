@@ -180,6 +180,60 @@ switch_mutex_unlock(obj->flag_mutex);
 */
 #define switch_safe_free(it) if (it) {free(it);it=NULL;}
 
+
+/*!
+  \brief Test if one string is inside another with extra case checking
+  \param s the inner string
+  \param q the big string
+  \return SWITCH_TRUE or SWITCH_FALSE
+*/
+static inline switch_bool_t switch_strstr(char *s, char *q)
+{
+	char *p, *S = NULL, *Q = NULL;
+	switch_bool_t tf = SWITCH_FALSE;
+
+	if (strstr(s, q)) {
+		return SWITCH_TRUE;
+	}
+
+	S = strdup(s);
+	
+	assert(S != NULL);
+
+	for (p = S; p && *p; p++) {
+		*p = (char)toupper(*p);
+	}
+
+	if (strstr(S, q)) {
+		tf = SWITCH_TRUE;
+		goto done;
+	}
+
+	Q = strdup(q);
+	assert(Q != NULL);
+
+	for (p = Q; p && *p; p++) {
+		*p = (char)toupper(*p);
+	}
+	
+	if (strstr(s, Q)) {
+		tf = SWITCH_TRUE;
+		goto done;
+	}
+
+	if (strstr(S, Q)) {
+		tf = SWITCH_TRUE;
+		goto done;
+	}
+	
+ done:
+	switch_safe_free(S);
+	switch_safe_free(Q);
+
+	return tf;
+}
+
+
 /*!
   \brief Test for NULL or zero length string
   \param s the string to test

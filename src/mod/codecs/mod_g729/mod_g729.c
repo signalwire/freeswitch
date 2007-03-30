@@ -154,10 +154,9 @@ static switch_status_t switch_g729_decode(switch_codec_t *codec,
 
 	}
 
-
 	if (encoded_data_len % 2 == 0) {
-
-		if (encoded_data_len % 12 == 0) {
+		
+		if (encoded_data_len == 2 || encoded_data_len % 12 == 0) {
 			return SWITCH_STATUS_BREAK;
 			//divisor = 12;
 			//plen = 10;

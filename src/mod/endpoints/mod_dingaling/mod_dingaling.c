@@ -2167,28 +2167,31 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 				break;
 
 			case LDL_SIGNAL_SUBSCRIBE:
-
-				if ((sql = switch_mprintf("delete from subscriptions where sub_from='%q' and sub_to='%q';\n"
-										  "insert into subscriptions values('%q','%q','%q','%q');\n", from, to, from, to, msg, subject))) {
-					execute_sql(profile->dbname, sql, profile->mutex);
-					switch_core_db_free(sql);
-				}
-
-				if (is_special(to)) {
-					ldl_handle_send_presence(profile->handle, to, from, NULL, NULL, "Click To Call");
-				}
-#if 0
-				if (is_special(to)) {
-					if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", to);
-						//switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Click To Call");
-						switch_event_fire(&event);
+				if (profile->user_flags & LDL_FLAG_COMPONENT && ldl_jid_domcmp(from, to)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Attempt to add presence from/to our own domain [%s][%s]\n", from, to);
+				} else {
+					if ((sql = switch_mprintf("delete from subscriptions where sub_from='%q' and sub_to='%q';\n"
+											  "insert into subscriptions values('%q','%q','%q','%q');\n", from, to, from, to, msg, subject))) {
+						execute_sql(profile->dbname, sql, profile->mutex);
+						switch_core_db_free(sql);
 					}
-				}
+
+					if (is_special(to)) {
+						ldl_handle_send_presence(profile->handle, to, from, NULL, NULL, "Click To Call");
+					}
+#if 0
+					if (is_special(to)) {
+						if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
+							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
+							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", to);
+							//switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Click To Call");
+							switch_event_fire(&event);
+						}
+					}
 #endif
+				}
 				break;
 			case LDL_SIGNAL_ROSTER:
 				if (switch_event_create(&event, SWITCH_EVENT_ROSTER) == SWITCH_STATUS_SUCCESS) {
