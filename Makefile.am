@@ -147,15 +147,13 @@ install-data-local:
 	touch .version
 
 src/include/switch_version.h: $(top_srcdir)/src/include/switch_version.h.in .version $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
-	@if test ! -f .noversion ; then \
-	  force=0 ; \
-	  version=`svnversion . -n || echo hacked` ; \
-	  oldversion=`cat .version 2>/dev/null || echo "0"` ; \
-	  test ! -f src/include/switch_version.h || grep "@SVN_VERSION@" src/include/switch_version.h && force=1 ; \
-	  if test "$$oldversion" != "$$version" || test $$force = 1 ; then \
-	    cat src/include/switch_version.h.in | sed "s/@SVN_VERSION@/$$version/g" > src/include/switch_version.h ; \
-	    echo $$version > .version ; \
-	  fi ; \
+	@force=0 ; \
+	version=`svnversion . -n || echo hacked` ; \
+	oldversion=`cat .version 2>/dev/null || echo "0"` ; \
+	test ! -f src/include/switch_version.h || grep "@SVN_VERSION@" src/include/switch_version.h && force=1 ; \
+	if test "$$oldversion" != "$$version" || test $$force = 1 ; then \
+	  cat src/include/switch_version.h.in | sed "s/@SVN_VERSION@/$$version/g" > src/include/switch_version.h ; \
+	  echo $$version > .version ; \
 	fi ;
 
 update:
