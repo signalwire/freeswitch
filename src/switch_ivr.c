@@ -108,11 +108,25 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 		const switch_application_interface_t *application_interface;
 		char *app_name = switch_event_get_header(event, "execute-app-name");
 		char *app_arg = switch_event_get_header(event, "execute-app-arg");
+		char *loop_h = switch_event_get_header(event, "loops");
+		int loops = 0;
+	
+		if (loop_h) {
+			loops = atoi(loop_h);
+		}
 
 		if (app_name && app_arg) {
 			if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
 				if (application_interface->application_function) {
-					application_interface->application_function(session, app_arg);
+					int x;
+					switch_channel_set_flag(channel, CF_BROADCAST);
+					for (x = 0; x < loops || loops < 0; x++) {
+						application_interface->application_function(session, app_arg);
+						if (!switch_channel_test_flag(channel, CF_BROADCAST)) {
+							break;
+						}
+					}
+					switch_channel_clear_flag(channel, CF_BROADCAST);					
 				}
 			}
 		}

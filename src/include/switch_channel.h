@@ -259,6 +259,22 @@ SWITCH_DECLARE(int) switch_channel_test_flag(switch_channel_t *channel, switch_c
 SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_channel_flag_t flags);
 
 /*!
+  \brief Set given flag(s) on a given channel's bridge partner
+  \param channel channel to derive the partner channel to set flag(s) on
+  \param flags or'd list of flags to set
+  \return true if the flag was set
+*/
+SWITCH_DECLARE(switch_bool_t) switch_channel_set_flag_partner(switch_channel_t *channel, switch_channel_flag_t flags);
+
+/*!
+  \brief Clears given flag(s) on a given channel's bridge partner
+  \param channel channel to derive the partner channel to clear flag(s) from
+  \param flags the flags to clear
+  \return true if the flag was cleared
+*/
+SWITCH_DECLARE(switch_bool_t) switch_channel_clear_flag_partner(switch_channel_t *channel, switch_channel_flag_t flags);
+
+/*!
   \brief Set given flag(s) on a given channel to be applied on the next state change
   \param channel channel on which to set flag(s)
   \param flags or'd list of flags to set

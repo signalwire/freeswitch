@@ -396,6 +396,42 @@ SWITCH_DECLARE(int) switch_channel_test_flag(switch_channel_t *channel, switch_c
 	return switch_test_flag(channel, flags) ? 1 : 0;
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_channel_set_flag_partner(switch_channel_t *channel, switch_channel_flag_t flags)
+{
+	char *uuid;
+
+	assert(channel != NULL);
+
+	if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE))) {
+		switch_core_session_t *session;
+		if ((session = switch_core_session_locate(uuid))) {
+			switch_channel_set_flag(switch_core_session_get_channel(session), flags);
+			switch_core_session_rwunlock(session);
+			return SWITCH_TRUE;
+		}
+	}
+
+	return SWITCH_FALSE;
+}
+
+SWITCH_DECLARE(switch_bool_t) switch_channel_clear_flag_partner(switch_channel_t *channel, switch_channel_flag_t flags)
+{
+	char *uuid;
+
+	assert(channel != NULL);
+
+	if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE))) {
+		switch_core_session_t *session;
+		if ((session = switch_core_session_locate(uuid))) {
+			switch_channel_clear_flag(switch_core_session_get_channel(session), flags);
+			switch_core_session_rwunlock(session);
+			return SWITCH_TRUE;
+		}
+	}
+
+	return SWITCH_FALSE;
+}
+
 SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_channel_flag_t flags)
 {
 	assert(channel != NULL);
@@ -431,9 +467,20 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_state(switch_channel_t
 
 SWITCH_DECLARE(uint8_t) switch_channel_ready(switch_channel_t *channel)
 {
-	assert(channel != NULL);
+	uint8_t ret = 0;
 
-	return (!channel->hangup_cause && channel->state > CS_RING && channel->state < CS_HANGUP && !switch_test_flag(channel, CF_TRANSFER)) ? 1 : 0;
+	assert(channel != NULL);
+	
+	if (!channel->hangup_cause && channel->state > CS_RING && channel->state < CS_HANGUP && !switch_test_flag(channel, CF_TRANSFER)) {
+		ret++;
+	}
+
+	if (switch_test_flag(channel, CF_BREAK)) {
+		switch_clear_flag_locked(channel, CF_BREAK);
+		ret = (uint8_t) 0;
+	}
+
+	return ret;
 }
 
 static const char *state_names[] = {

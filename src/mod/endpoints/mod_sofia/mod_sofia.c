@@ -90,7 +90,10 @@ static char reg_sql[] =
 	"CREATE TABLE sip_registrations (\n"
 	"   user            VARCHAR(255),\n"
 	"   host            VARCHAR(255),\n"
-	"   contact         VARCHAR(1024),\n" "   status          VARCHAR(255),\n" "   rpid            VARCHAR(255),\n" "   expires         INTEGER(8)" ");\n";
+	"   contact         VARCHAR(1024),\n" 
+	"   status          VARCHAR(255),\n" 
+	"   rpid            VARCHAR(255),\n" 
+	"   expires         INTEGER(8)" ");\n";
 
 
 static char sub_sql[] =
@@ -102,13 +105,19 @@ static char sub_sql[] =
 	"   sub_to_host     VARCHAR(255),\n"
 	"   event           VARCHAR(255),\n"
 	"   contact         VARCHAR(1024),\n"
-	"   call_id         VARCHAR(255),\n" "   full_from       VARCHAR(255),\n" "   full_via        VARCHAR(255),\n" "   expires         INTEGER(8)" ");\n";
+	"   call_id         VARCHAR(255),\n" 
+	"   full_from       VARCHAR(255),\n" 
+	"   full_via        VARCHAR(255),\n" 
+	"   expires         INTEGER(8)" ");\n";
 
 
 static char auth_sql[] =
 	"CREATE TABLE sip_authentication (\n"
 	"   user            VARCHAR(255),\n"
-	"   host            VARCHAR(255),\n" "   passwd            VARCHAR(255),\n" "   nonce           VARCHAR(255),\n" "   expires         INTEGER(8)"
+	"   host            VARCHAR(255),\n" 
+	"   passwd            VARCHAR(255),\n" 
+	"   nonce           VARCHAR(255),\n" 
+	"   expires         INTEGER(8)"
 	");\n";
 
 static const char modname[] = "mod_sofia";
@@ -231,6 +240,7 @@ struct sofia_profile {
 	char *bindurl;
 	char *sipdomain;
 	char *timer_name;
+	char *hold_music;
 	int sip_port;
 	char *codec_string;
 	int running;
@@ -1024,7 +1034,7 @@ static switch_status_t do_invite(switch_core_session_t *session)
 		return SWITCH_STATUS_FALSE;
 	}
 
-
+	
 
 
 	if ((alertbuf = switch_channel_get_variable(channel, "alert_info"))) {
@@ -2418,10 +2428,29 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t * sdp
 	}
 
 	for (a = sdp->sdp_attributes; a; a = a->a_next) {
+		if (switch_strlen_zero(a->a_name)) {
+			continue;
+		}
 		if (!strcasecmp(a->a_name, "sendonly")) {
-			switch_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+			if (!switch_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
+				char *stream;
+				
+				switch_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+				switch_channel_set_flag(channel, CF_HOLD);
+				if (!(stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
+					stream = tech_pvt->profile->hold_music;
+				}
+				if (stream) {
+					switch_ivr_broadcast(switch_core_session_get_uuid(tech_pvt->session), stream, SMF_ECHO_BLEG | SMF_LOOP);
+				}
+			}
 		} else if (!strcasecmp(a->a_name, "sendrecv")) {
-			switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+			if (switch_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
+				switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+				switch_channel_clear_flag(channel, CF_HOLD);
+				switch_channel_clear_flag_partner(channel, CF_BROADCAST);
+				switch_channel_set_flag_partner(channel, CF_BREAK);
+			}
 		} else if (!strcasecmp(a->a_name, "ptime")) {
 			dptime = atoi(a->a_value);
 		}
@@ -5135,6 +5164,8 @@ static switch_status_t config_sofia(int reload)
 						profile->sipdomain = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "rtp-timer-name")) {
 						profile->timer_name = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "hold-music")) {
+						profile->hold_music = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "manage-presence")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_PRESENCE;

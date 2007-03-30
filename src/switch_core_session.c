@@ -599,6 +599,7 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session)
 		switch_channel_dequeue_dtmf(channel, buf, sizeof(buf));
 	}
 
+	switch_channel_clear_flag(channel, CF_BREAK);
 }
 
 

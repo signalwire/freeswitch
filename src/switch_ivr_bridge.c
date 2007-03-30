@@ -81,10 +81,21 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 
 	switch_channel_set_flag(chan_a, CF_BRIDGED);
 
-	while (switch_channel_ready(chan_a) && data->running > 0 && his_thread->running > 0) {
-		switch_channel_state_t b_state = switch_channel_get_state(chan_b);
+	for (;;) {
+		switch_channel_state_t b_state;
 		switch_status_t status;
 		switch_event_t *event;
+
+		if (!(data->running > 0 && his_thread->running > 0)) {
+			break;
+		}
+
+		/* if you really want to make sure it's not ready, test it twice because it might be just a break */
+		if (!switch_channel_ready(chan_a) && !switch_channel_ready(chan_a)) {
+			break;
+		}
+
+		b_state = switch_channel_get_state(chan_b);
 
 		switch (b_state) {
 		case CS_HANGUP:

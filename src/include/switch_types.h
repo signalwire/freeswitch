@@ -96,6 +96,7 @@ SWITCH_BEGIN_EXTERN_C
 #endif
 #define SWITCH_URL_SEPARATOR "://"
 #define SWITCH_ENDPOINT_DISPOSITION_VARIABLE "endpoint_disposition"
+#define SWITCH_HOLD_MUSIC_VARIABLE "hold_music"
 #define SWITCH_EXPORT_VARS_VARIABLE "export_vars"
 #define SWITCH_R_SDP_VARIABLE "switch_r_sdp"
 #define SWITCH_L_SDP_VARIABLE "switch_l_sdp"
@@ -168,6 +169,7 @@ typedef enum {
 	SMF_ECHO_ALEG = (1 << 1),
 	SMF_ECHO_BLEG = (1 << 2),
 	SMF_FORCE = (1 << 3),
+	SMF_LOOP = (1 << 4)
 } switch_media_flag_t;
 
 typedef enum {
@@ -529,6 +531,8 @@ CF_EVENT_PARSE  = (1 << 15) - Suspend control events
 CF_REPEAT_STATE = (1 << 16) - Tell the state machine to repeat a state
 CF_GEN_RINGBACK = (1 << 17) - Channel is generating it's own ringback
 CF_RING_READY   = (1 << 18) - Channel is ready to send ringback
+CF_BREAK        = (1 << 19) - Channel should stop what it's doing
+CF_BROADCAST    = (1 << 20) - Channel is broadcasting
 </pre>
  */
 
@@ -551,7 +555,9 @@ typedef enum {
 	CF_EVENT_PARSE = (1 << 15),
 	CF_REPEAT_STATE = (1 << 16),
 	CF_GEN_RINGBACK = (1 << 17),
-	CF_RING_READY = (1 << 18)
+	CF_RING_READY = (1 << 18),
+	CF_BREAK = (1 << 19),
+	CF_BROADCAST = (1 << 20)
 } switch_channel_flag_t;
 
 
