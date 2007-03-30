@@ -65,14 +65,14 @@
 
 /* Memory Pools */
 
-SWITCH_DECLARE(void) switch_pool_clear(switch_memory_pool_t * p)
+SWITCH_DECLARE(void) switch_pool_clear(switch_memory_pool_t *p)
 {
 	apr_pool_clear(p);
 }
 
 /* Hash tables */
 
-SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(switch_memory_pool_t * p, switch_hash_t * ht)
+SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(switch_memory_pool_t *p, switch_hash_t * ht)
 {
 	return apr_hash_first(p, ht);
 }
@@ -99,7 +99,7 @@ SWITCH_DECLARE(switch_memory_pool_t *) switch_hash_pool_get(switch_hash_t * ht)
 
 /* DSO functions */
 
-SWITCH_DECLARE(switch_status_t) switch_dso_load(switch_dso_handle_t ** res_handle, const char *path, switch_memory_pool_t * ctx)
+SWITCH_DECLARE(switch_status_t) switch_dso_load(switch_dso_handle_t ** res_handle, const char *path, switch_memory_pool_t *ctx)
 {
 	return apr_dso_load(res_handle, path, ctx);
 }
@@ -149,7 +149,7 @@ SWITCH_DECLARE(char *) switch_copy_string(char *dst, const char *src, switch_siz
 
 /* thread read write lock functions */
 
-SWITCH_DECLARE(switch_status_t) switch_thread_rwlock_create(switch_thread_rwlock_t ** rwlock, switch_memory_pool_t * pool)
+SWITCH_DECLARE(switch_status_t) switch_thread_rwlock_create(switch_thread_rwlock_t ** rwlock, switch_memory_pool_t *pool)
 {
 	return apr_thread_rwlock_create(rwlock, pool);
 }
@@ -191,7 +191,7 @@ SWITCH_DECLARE(switch_status_t) switch_thread_rwlock_unlock(switch_thread_rwlock
 
 /* thread mutex functions */
 
-SWITCH_DECLARE(switch_status_t) switch_mutex_init(switch_mutex_t ** lock, unsigned int flags, switch_memory_pool_t * pool)
+SWITCH_DECLARE(switch_status_t) switch_mutex_init(switch_mutex_t ** lock, unsigned int flags, switch_memory_pool_t *pool)
 {
 	return apr_thread_mutex_create(lock, flags, pool);
 }
@@ -268,7 +268,7 @@ SWITCH_DECLARE(switch_time_t) switch_time_make(switch_time_t sec, int32_t usec)
 
 /* Thread condition locks */
 
-SWITCH_DECLARE(switch_status_t) switch_thread_cond_create(switch_thread_cond_t ** cond, switch_memory_pool_t * pool)
+SWITCH_DECLARE(switch_status_t) switch_thread_cond_create(switch_thread_cond_t ** cond, switch_memory_pool_t *pool)
 {
 	return apr_thread_cond_create(cond, pool);
 }
@@ -300,7 +300,8 @@ SWITCH_DECLARE(switch_status_t) switch_thread_cond_destroy(switch_thread_cond_t 
 
 /* file i/o stubs */
 
-SWITCH_DECLARE(switch_status_t) switch_file_open(switch_file_t ** newf, const char *fname, int32_t flag, switch_fileperms_t perm, switch_memory_pool_t * pool)
+SWITCH_DECLARE(switch_status_t) switch_file_open(switch_file_t ** newf, const char *fname, int32_t flag, switch_fileperms_t perm,
+												 switch_memory_pool_t *pool)
 {
 	return apr_file_open(newf, fname, flag, perm, pool);
 }
@@ -319,7 +320,7 @@ SWITCH_DECLARE(switch_status_t) switch_file_close(switch_file_t * thefile)
 	return apr_file_close(thefile);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_file_remove(const char *path, switch_memory_pool_t * pool)
+SWITCH_DECLARE(switch_status_t) switch_file_remove(const char *path, switch_memory_pool_t *pool)
 {
 	return apr_file_remove(path, pool);
 }
@@ -350,7 +351,7 @@ SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename)
 /* thread stubs */
 
 
-SWITCH_DECLARE(switch_status_t) switch_threadattr_create(switch_threadattr_t ** new_attr, switch_memory_pool_t * pool)
+SWITCH_DECLARE(switch_status_t) switch_threadattr_create(switch_threadattr_t ** new_attr, switch_memory_pool_t *pool)
 {
 	return apr_threadattr_create(new_attr, pool);
 }
@@ -366,14 +367,14 @@ SWITCH_DECLARE(switch_status_t) switch_threadattr_stacksize_set(switch_threadatt
 }
 
 SWITCH_DECLARE(switch_status_t) switch_thread_create(switch_thread_t ** new_thread, switch_threadattr_t * attr,
-													 switch_thread_start_t func, void *data, switch_memory_pool_t * cont)
+													 switch_thread_start_t func, void *data, switch_memory_pool_t *cont)
 {
 	return apr_thread_create(new_thread, attr, func, data, cont);
 }
 
 /* socket stubs */
 
-SWITCH_DECLARE(switch_status_t) switch_socket_create(switch_socket_t ** new_sock, int family, int type, int protocol, switch_memory_pool_t * pool)
+SWITCH_DECLARE(switch_status_t) switch_socket_create(switch_socket_t ** new_sock, int family, int type, int protocol, switch_memory_pool_t *pool)
 {
 	return apr_socket_create(new_sock, family, type, protocol, pool);
 }
@@ -398,7 +399,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_listen(switch_socket_t * sock, int
 	return apr_socket_listen(sock, backlog);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_socket_accept(switch_socket_t ** new_sock, switch_socket_t * sock, switch_memory_pool_t * pool)
+SWITCH_DECLARE(switch_status_t) switch_socket_accept(switch_socket_t ** new_sock, switch_socket_t * sock, switch_memory_pool_t *pool)
 {
 	return apr_socket_accept(new_sock, sock, pool);
 }
@@ -425,7 +426,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_recv(switch_socket_t * sock, char 
 }
 
 SWITCH_DECLARE(switch_status_t) switch_sockaddr_info_get(switch_sockaddr_t ** sa, const char *hostname, int32_t family,
-														 switch_port_t port, int32_t flags, switch_memory_pool_t * pool)
+														 switch_port_t port, int32_t flags, switch_memory_pool_t *pool)
 {
 	return apr_sockaddr_info_get(sa, hostname, family, port, flags, pool);
 }
@@ -487,7 +488,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_recvfrom(switch_sockaddr_t * from,
 
 /* poll stubs */
 
-SWITCH_DECLARE(switch_status_t) switch_pollset_create(switch_pollset_t ** pollset, uint32_t size, switch_memory_pool_t * p, uint32_t flags)
+SWITCH_DECLARE(switch_status_t) switch_pollset_create(switch_pollset_t ** pollset, uint32_t size, switch_memory_pool_t *p, uint32_t flags)
 {
 	return apr_pollset_create(pollset, size, p, flags);
 }
@@ -502,7 +503,7 @@ SWITCH_DECLARE(switch_status_t) switch_poll(switch_pollfd_t * aprset, int32_t nu
 	return apr_poll(aprset, numsock, nsds, timeout);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t ** poll, switch_socket_t * sock, int16_t flags, switch_memory_pool_t * pool)
+SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t ** poll, switch_socket_t * sock, int16_t flags, switch_memory_pool_t *pool)
 {
 	switch_pollset_t *pollset;
 
@@ -558,7 +559,7 @@ SWITCH_DECLARE(switch_status_t) switch_uuid_parse(switch_uuid_t * uuid, const ch
 
 /* FIFO queues (apr-util) */
 
-SWITCH_DECLARE(switch_status_t) switch_queue_create(switch_queue_t ** queue, unsigned int queue_capacity, switch_memory_pool_t * pool)
+SWITCH_DECLARE(switch_status_t) switch_queue_create(switch_queue_t ** queue, unsigned int queue_capacity, switch_memory_pool_t *pool)
 {
 	return apr_queue_create(queue, queue_capacity, pool);
 }

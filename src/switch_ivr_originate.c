@@ -156,7 +156,7 @@ static void launch_collect_thread(struct key_collect *collect)
 
 static uint8_t check_channel_status(switch_channel_t **peer_channels,
 									switch_core_session_t **peer_sessions,
-									uint32_t len, int32_t *idx, uint32_t * hups, char *file, char *key, uint8_t early_ok, uint8_t *ring_ready)
+									uint32_t len, int32_t *idx, uint32_t * hups, char *file, char *key, uint8_t early_ok, uint8_t * ring_ready)
 {
 
 	uint32_t i;
@@ -340,7 +340,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			for (x = 0; x < var_count; x++) {
 				char *inner_var_array[2];
 				int inner_var_count;
-				if ((inner_var_count = switch_separate_string(var_array[x], '=', inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
+				if ((inner_var_count =
+					 switch_separate_string(var_array[x], '=', inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
 
 					switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, inner_var_array[0], "%s", inner_var_array[1]);
 					if (caller_channel) {
@@ -515,12 +516,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						caller_profiles[i] = switch_caller_profile_new(pool,
 																	   NULL,
 																	   NULL,
-																	   cid_name_override, cid_num_override, NULL, NULL, NULL, NULL, __FILE__, NULL, chan_data);
+																	   cid_name_override, cid_num_override, NULL, NULL, NULL, NULL, __FILE__, NULL,
+																	   chan_data);
 					}
 				}
 
-				if ((reason = switch_core_session_outgoing_channel(session, chan_type, caller_profiles[i], &peer_sessions[i], &pool)) != SWITCH_CAUSE_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! cause: %s\n", switch_channel_cause2str(reason));
+				if ((reason =
+					 switch_core_session_outgoing_channel(session, chan_type, caller_profiles[i], &peer_sessions[i], &pool)) != SWITCH_CAUSE_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! cause: %s\n",
+									  switch_channel_cause2str(reason));
 					if (pool) {
 						switch_core_destroy_memory_pool(&pool);
 					}

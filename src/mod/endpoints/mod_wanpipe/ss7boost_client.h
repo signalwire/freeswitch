@@ -91,7 +91,7 @@ typedef struct ss7boost_client_connection ss7boost_client_connection_t;
 
 SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_close(ss7boost_client_connection_t * mcon);
 SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_open(ss7boost_client_connection_t * mcon,
-																char *local_ip, int local_port, char *ip, int port, switch_memory_pool_t * pool);
+																char *local_ip, int local_port, char *ip, int port, switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_read(ss7boost_client_connection_t * mcon, ss7boost_client_event_t ** event);
 SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_write(ss7boost_client_connection_t * mcon, ss7boost_client_event_t * event);
 SWITCH_DECLARE(void) ss7boost_client_event_init(ss7boost_client_event_t * event, ss7boost_client_event_id_t event_id, int chan, int span);

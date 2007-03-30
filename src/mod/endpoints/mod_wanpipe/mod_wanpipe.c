@@ -462,7 +462,7 @@ static switch_status_t wanpipe_on_loopback(switch_core_session_t *session);
 static switch_status_t wanpipe_on_transmit(switch_core_session_t *session);
 static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, switch_memory_pool_t ** pool);
+													switch_core_session_t **new_session, switch_memory_pool_t **pool);
 static switch_status_t wanpipe_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id);
 static switch_status_t wanpipe_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id);
 static int on_info(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event * pevent);
@@ -580,7 +580,8 @@ static switch_status_t wanpipe_on_init(switch_core_session_t *session)
 							   switch_core_session_get_uuid(session), sizeof(tech_pvt->ss7boost_handle->setup_array[tech_pvt->setup_index]));
 
 
-			ss7boost_client_call_init(&event, tech_pvt->caller_profile->caller_id_number, tech_pvt->caller_profile->destination_number, tech_pvt->setup_index);
+			ss7boost_client_call_init(&event, tech_pvt->caller_profile->caller_id_number, tech_pvt->caller_profile->destination_number,
+									  tech_pvt->setup_index);
 
 			if (ss7boost_client_connection_write(&tech_pvt->ss7boost_handle->mcon, &event) <= 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Critical System Error: Failed to tx on ISUP socket [%s]\n", strerror(errno));
@@ -985,7 +986,7 @@ static const switch_loadable_module_interface_t wanpipe_module_interface = {
 
 static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, switch_memory_pool_t ** pool)
+													switch_core_session_t **new_session, switch_memory_pool_t **pool)
 {
 	char *bchan = NULL;
 	char name[128] = "";
@@ -1194,8 +1195,10 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 				pri_sr_set_bearer(sr, 0, SPANS[span]->l1);
 				pri_sr_set_called(sr, caller_profile->destination_number, SPANS[span]->dp, 1);
 				pri_sr_set_caller(sr,
-								  caller_profile->caller_id_number, caller_profile->caller_id_name, SPANS[span]->dp, PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN);
-				pri_sr_set_redirecting(sr, caller_profile->caller_id_number, SPANS[span]->dp, PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN, PRI_REDIR_UNCONDITIONAL);
+								  caller_profile->caller_id_number, caller_profile->caller_id_name, SPANS[span]->dp,
+								  PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN);
+				pri_sr_set_redirecting(sr, caller_profile->caller_id_number, SPANS[span]->dp, PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN,
+									   PRI_REDIR_UNCONDITIONAL);
 
 				if (pri_setup(spri->pri, tech_pvt->call, sr)) {
 					switch_core_session_destroy(new_session);
@@ -1432,7 +1435,8 @@ static int on_ringing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 		switch_core_session_rwunlock(session);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-						  "-- Ringing on channel s%dc%d %s but it's not in use?\n", spri->span, pevent->ringing.channel, chanmap->map[pevent->ringing.channel]);
+						  "-- Ringing on channel s%dc%d %s but it's not in use?\n", spri->span, pevent->ringing.channel,
+						  chanmap->map[pevent->ringing.channel]);
 	}
 
 	return 0;
@@ -1982,7 +1986,8 @@ static int parse_ss7_event(ss7boost_handle_t * ss7boost_handle, ss7boost_client_
 					  event->chan + 1,
 					  (event->called_number_digits_count ? (char *) event->called_number_digits : "N/A"),
 					  (event->calling_number_digits_count ? (char *) event->calling_number_digits : "N/A"),
-					  switch_channel_cause2str(event->release_cause), event->span + 1, event->chan + 1, event->event_id, event->call_setup_id, event->seqno);
+					  switch_channel_cause2str(event->release_cause), event->span + 1, event->chan + 1, event->event_id, event->call_setup_id,
+					  event->seqno);
 
 
 	switch (event->event_id) {
@@ -2012,7 +2017,8 @@ static int parse_ss7_event(ss7boost_handle_t * ss7boost_handle, ss7boost_client_
 		handle_call_stop_ack(ss7boost_handle, event);
 		break;
 	default:
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Warning no handler implemented for [%s]\n", ss7boost_client_event_id_name(event->event_id));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Warning no handler implemented for [%s]\n",
+						  ss7boost_client_event_id_name(event->event_id));
 		break;
 	}
 	switch_mutex_unlock(ss7boost_handle->mutex);

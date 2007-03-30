@@ -46,7 +46,8 @@ static switch_memory_pool_t *module_pool = NULL;
 
 static char sub_sql[] =
 	"CREATE TABLE subscriptions (\n"
-	"   sub_from            VARCHAR(255),\n" "   sub_to          VARCHAR(255),\n" "   show          VARCHAR(255),\n" "   status          VARCHAR(255)\n" ");\n";
+	"   sub_from            VARCHAR(255),\n" "   sub_to          VARCHAR(255),\n" "   show          VARCHAR(255),\n" "   status          VARCHAR(255)\n"
+	");\n";
 
 
 typedef enum {
@@ -178,7 +179,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 	 static switch_status_t channel_on_transmit(switch_core_session_t *session);
 	 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
 														 switch_caller_profile_t *outbound_profile,
-														 switch_core_session_t **new_session, switch_memory_pool_t ** pool);
+														 switch_core_session_t **new_session, switch_memory_pool_t **pool);
 	 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id);
 	 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id);
 	 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
@@ -957,7 +958,8 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 
 	while (!(switch_test_flag(tech_pvt, TFLAG_CODEC_READY) &&
 			 switch_test_flag(tech_pvt, TFLAG_RTP_READY) &&
-			 switch_test_flag(tech_pvt, TFLAG_ANSWER) && switch_test_flag(tech_pvt, TFLAG_TRANSPORT_ACCEPT) && switch_test_flag(tech_pvt, TFLAG_TRANSPORT))) {
+			 switch_test_flag(tech_pvt, TFLAG_ANSWER) && switch_test_flag(tech_pvt, TFLAG_TRANSPORT_ACCEPT)
+			 && switch_test_flag(tech_pvt, TFLAG_TRANSPORT))) {
 		now = switch_time_now();
 		elapsed = (unsigned int) ((now - started) / 1000);
 
@@ -1502,7 +1504,7 @@ static const switch_loadable_module_interface_t channel_module_interface = {
 */
 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, switch_memory_pool_t ** pool)
+													switch_core_session_t **new_session, switch_memory_pool_t **pool)
 {
 	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, pool)) != 0) {
 		struct private_object *tech_pvt;
@@ -1758,7 +1760,8 @@ static switch_status_t init_profile(struct mdl_profile *profile, uint8_t login)
 						  "message[%s]\n"
 						  "rtp-ip[%s]\n"
 						  "name[%s]\n"
-						  "exten[%s]\n", profile->login, profile->password, profile->dialplan, profile->message, profile->ip, profile->name, profile->exten);
+						  "exten[%s]\n", profile->login, profile->password, profile->dialplan, profile->message, profile->ip, profile->name,
+						  profile->exten);
 
 		return SWITCH_STATUS_FALSE;
 	}
@@ -2129,7 +2132,8 @@ static void do_vcard(ldl_handle_t * handle, char *to, char *from, char *id)
 	switch_safe_free(xmlstr);
 }
 
-static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlsession, ldl_signal_t dl_signal, char *to, char *from, char *subject, char *msg)
+static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlsession, ldl_signal_t dl_signal, char *to, char *from, char *subject,
+									char *msg)
 {
 	struct mdl_profile *profile = NULL;
 	switch_core_session_t *session = NULL;
@@ -2267,7 +2271,8 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 
 				if (profile->auto_reply) {
 					ldl_handle_send_msg(handle,
-										(profile->user_flags & LDL_FLAG_COMPONENT) ? to : ldl_handle_get_login(profile->handle), from, "", profile->auto_reply);
+										(profile->user_flags & LDL_FLAG_COMPONENT) ? to : ldl_handle_get_login(profile->handle), from, "",
+										profile->auto_reply);
 				}
 
 				if (strchr(to, '+')) {
@@ -2482,7 +2487,8 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 
 						if (match && payloads[x].rate == tech_pvt->codecs[y]->samples_per_second) {
 							tech_pvt->codec_index = y;
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Choosing Payload index %u %s %u\n", y, payloads[x].name, payloads[x].id);
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Choosing Payload index %u %s %u\n", y, payloads[x].name,
+											  payloads[x].id);
 							tech_pvt->codec_name = tech_pvt->codecs[y]->iananame;
 							tech_pvt->codec_num = tech_pvt->codecs[y]->ianacode;
 							tech_pvt->r_codec_num = (switch_payload_t) (payloads[x].id);
@@ -2636,7 +2642,8 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 																				  ldl_session_get_value(dlsession,
 																										"aniii"),
 																				  ldl_session_get_value(dlsession,
-																										"rdnis"), (char *) modname, context, exten)) != 0) {
+																										"rdnis"), (char *) modname, context,
+																				  exten)) != 0) {
 							char name[128];
 							snprintf(name, sizeof(name), "DingaLing/%s", tech_pvt->caller_profile->destination_number);
 							switch_channel_set_name(channel, name);

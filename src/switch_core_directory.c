@@ -35,7 +35,7 @@
 #include "private/switch_core.h"
 
 SWITCH_DECLARE(switch_status_t) switch_core_directory_open(switch_directory_handle_t *dh,
-														   char *module_name, char *source, char *dsn, char *passwd, switch_memory_pool_t * pool)
+														   char *module_name, char *source, char *dsn, char *passwd, switch_memory_pool_t *pool)
 {
 	switch_status_t status;
 
@@ -78,7 +78,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_directory_close(switch_directory_han
 
 SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *sh,
 														char *module_name,
-														char *voice_name, unsigned int rate, switch_speech_flag_t *flags, switch_memory_pool_t * pool)
+														char *voice_name, unsigned int rate, switch_speech_flag_t *flags, switch_memory_pool_t *pool)
 {
 	switch_status_t status;
 

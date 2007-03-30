@@ -118,7 +118,7 @@ SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch
   \param pool memory_pool to use for allocation
   \return SWITCH_STATUS_SUCCESS if successful
 */
-SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel, switch_memory_pool_t * pool);
+SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel, switch_memory_pool_t *pool);
 
 /*!
   \brief Connect a newly allocated channel to a session object and setup it's initial state
@@ -127,7 +127,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
   \param state the initial state of the channel
   \param flags the initial channel flags
 */
-SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel, switch_core_session_t *session, switch_channel_state_t state, uint32_t flags);
+SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel, switch_core_session_t *session, switch_channel_state_t state,
+													uint32_t flags);
 
 /*!
   \brief Fire A presence event for the channel
@@ -226,7 +227,7 @@ SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, ch
  *          pool is NULL, then an internal, non-thread-safe iterator is used.
  * @remark  Use switch_hash_next and switch_hash_this with this function to iterate all the channel variables
  */
-SWITCH_DECLARE(switch_hash_index_t *) switch_channel_variable_first(switch_channel_t *channel, switch_memory_pool_t * pool);
+SWITCH_DECLARE(switch_hash_index_t *) switch_channel_variable_first(switch_channel_t *channel, switch_memory_pool_t *pool);
 
 /*!
   \brief Assign a caller extension to a given channel

@@ -198,7 +198,8 @@ int fs_switch_ivr_collect_digits_callback(switch_core_session_t *session, switch
 }
 
 int fs_switch_ivr_collect_digits_count(switch_core_session_t *session,
-									   char *buf, unsigned int buflen, unsigned int maxdigits, const char *terminators, char *terminator, unsigned int timeout)
+									   char *buf, unsigned int buflen, unsigned int maxdigits, const char *terminators, char *terminator,
+									   unsigned int timeout)
 {
 	switch_status_t status;
 

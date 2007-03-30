@@ -419,7 +419,8 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 		switch_channel_set_variable(channel, SWITCH_BRIDGE_VARIABLE, NULL);
 		switch_channel_set_variable(other_channel, SWITCH_BRIDGE_VARIABLE, NULL);
 
-		if (switch_channel_get_state(other_channel) < CS_HANGUP && switch_true(switch_channel_get_variable(other_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
+		if (switch_channel_get_state(other_channel) < CS_HANGUP
+			&& switch_true(switch_channel_get_variable(other_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
 			switch_channel_hangup(other_channel, switch_channel_get_cause(channel));
 		} else {
 			switch_channel_set_state(other_channel, CS_EXECUTE);
@@ -508,7 +509,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_session_t *session,
 																 switch_core_session_t *peer_session,
-																 switch_input_callback_function_t input_callback, void *session_data, void *peer_session_data)
+																 switch_input_callback_function_t input_callback, void *session_data,
+																 void *peer_session_data)
 {
 	switch_core_thread_session_t *this_audio_thread, *other_audio_thread;
 	switch_channel_t *caller_channel, *peer_channel;
@@ -635,7 +637,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
   done:
 
-	if (switch_channel_get_state(caller_channel) < CS_HANGUP && switch_true(switch_channel_get_variable(caller_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
+	if (switch_channel_get_state(caller_channel) < CS_HANGUP
+		&& switch_true(switch_channel_get_variable(caller_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
 		switch_channel_hangup(caller_channel, switch_channel_get_cause(peer_channel));
 	}
 

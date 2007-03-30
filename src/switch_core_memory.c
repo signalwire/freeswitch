@@ -118,7 +118,7 @@ SWITCH_DECLARE(char *) switch_core_session_sprintf(switch_core_session_t *sessio
 	return result;
 }
 
-SWITCH_DECLARE(char *) switch_core_sprintf(switch_memory_pool_t * pool, const char *fmt, ...)
+SWITCH_DECLARE(char *) switch_core_sprintf(switch_memory_pool_t *pool, const char *fmt, ...)
 {
 	va_list ap;
 	char *result = NULL;
@@ -157,7 +157,7 @@ SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session_t *session
 }
 
 
-SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool_t * pool, const char *todup)
+SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool_t *pool, const char *todup)
 {
 	char *duped = NULL;
 	switch_size_t len;
@@ -179,7 +179,7 @@ SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool_t * pool, const cha
 	return duped;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_new_memory_pool(switch_memory_pool_t ** pool)
+SWITCH_DECLARE(switch_status_t) switch_core_new_memory_pool(switch_memory_pool_t **pool)
 {
 
 	if ((apr_pool_create(pool, NULL)) != SWITCH_STATUS_SUCCESS) {
@@ -189,14 +189,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_new_memory_pool(switch_memory_pool_t
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_destroy_memory_pool(switch_memory_pool_t ** pool)
+SWITCH_DECLARE(switch_status_t) switch_core_destroy_memory_pool(switch_memory_pool_t **pool)
 {
 	apr_pool_destroy(*pool);
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
-SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool_t * pool, switch_size_t memory)
+SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool_t *pool, switch_size_t memory)
 {
 	void *ptr = NULL;
 	assert(pool != NULL);

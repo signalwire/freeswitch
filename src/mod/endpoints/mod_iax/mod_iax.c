@@ -417,7 +417,7 @@ static switch_status_t channel_on_loopback(switch_core_session_t *session);
 static switch_status_t channel_on_transmit(switch_core_session_t *session);
 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, switch_memory_pool_t ** pool);
+													switch_core_session_t **new_session, switch_memory_pool_t **pool);
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
@@ -790,7 +790,7 @@ that allocate memory or you will have 1 channel with memory allocated from anoth
 */
 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, switch_memory_pool_t ** pool)
+													switch_core_session_t **new_session, switch_memory_pool_t **pool)
 {
 	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, pool)) != 0) {
 		private_t *tech_pvt;

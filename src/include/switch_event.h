@@ -123,7 +123,7 @@ struct switch_event_node {
   \param pool the memory pool to use for the event system (creates a new one if NULL)
   \return SWITCH_STATUS_SUCCESS when complete
 */
-SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t * pool);
+SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool);
 
 /*!
   \brief Stop the eventing system
@@ -208,7 +208,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *fun
   \param user_data optional user specific data to pass whenever the callback is invoked
   \return SWITCH_STATUS_SUCCESS if the event was binded
 */
-SWITCH_DECLARE(switch_status_t) switch_event_bind(char *id, switch_event_types_t event, char *subclass_name, switch_event_callback_t callback, void *user_data);
+SWITCH_DECLARE(switch_status_t) switch_event_bind(char *id, switch_event_types_t event, char *subclass_name, switch_event_callback_t callback,
+												  void *user_data);
 
 /*!
   \brief Render the name of an event id enumeration

@@ -52,7 +52,8 @@ static switch_status_t switch_raw_encode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *decoded_data,
 										 uint32_t decoded_data_len,
-										 uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate, unsigned int *flag)
+										 uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
+										 unsigned int *flag)
 {
 	/* NOOP indicates that the audio in is already the same as the audio out, so no conversion was necessary. */
 	if (codec && other_codec && codec->implementation->samples_per_second != other_codec->implementation->samples_per_second) {
@@ -67,7 +68,8 @@ static switch_status_t switch_raw_decode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *encoded_data,
 										 uint32_t encoded_data_len,
-										 uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate, unsigned int *flag)
+										 uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
+										 unsigned int *flag)
 {
 	if (codec && other_codec && codec->implementation->samples_per_second != other_codec->implementation->samples_per_second) {
 		memcpy(decoded_data, encoded_data, encoded_data_len);

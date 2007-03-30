@@ -1081,7 +1081,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 												  const char *tag_name,
-												  const char *key_name, const char *key_value, switch_xml_t * root, switch_xml_t * node, const char *params)
+												  const char *key_name, const char *key_value, switch_xml_t * root, switch_xml_t * node,
+												  const char *params)
 {
 	switch_xml_t conf = NULL;
 	switch_xml_t tag = NULL;
@@ -1209,7 +1210,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t * pool, const char **err)
+SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, const char **err)
 {
 	switch_xml_t xml;
 	XML_MEMORY_POOL = pool;

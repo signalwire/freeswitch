@@ -50,7 +50,7 @@ struct switch_buffer {
 	uint32_t id;
 };
 
-SWITCH_DECLARE(switch_status_t) switch_buffer_create(switch_memory_pool_t * pool, switch_buffer_t **buffer, switch_size_t max_len)
+SWITCH_DECLARE(switch_status_t) switch_buffer_create(switch_memory_pool_t *pool, switch_buffer_t **buffer, switch_size_t max_len)
 {
 	switch_buffer_t *new_buffer;
 
@@ -64,7 +64,8 @@ SWITCH_DECLARE(switch_status_t) switch_buffer_create(switch_memory_pool_t * pool
 	return SWITCH_STATUS_MEMERR;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_buffer_create_dynamic(switch_buffer_t **buffer, switch_size_t blocksize, switch_size_t start_len, switch_size_t max_len)
+SWITCH_DECLARE(switch_status_t) switch_buffer_create_dynamic(switch_buffer_t **buffer, switch_size_t blocksize, switch_size_t start_len,
+															 switch_size_t max_len)
 {
 	switch_buffer_t *new_buffer;
 

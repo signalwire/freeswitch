@@ -577,7 +577,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		msg.from = __FILE__;
 		switch_core_session_receive_message(session, &msg);
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Transfer %s to %s[%s@%s]\n", switch_channel_get_name(channel), dialplan, extension, context);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Transfer %s to %s[%s@%s]\n", switch_channel_get_name(channel), dialplan, extension,
+						  context);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -634,7 +635,7 @@ struct switch_ivr_digit_stream {
 	switch_time_t last_digit_time;
 };
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory_pool_t * pool, switch_ivr_digit_stream_parser_t ** parser)
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory_pool_t *pool, switch_ivr_digit_stream_parser_t ** parser)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 

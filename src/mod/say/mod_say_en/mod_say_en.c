@@ -256,7 +256,8 @@ static switch_status_t en_ip(switch_core_session_t *session, char *tosay, switch
 }
 
 
-static switch_status_t en_say_time(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
+static switch_status_t en_say_time(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method,
+								   switch_input_args_t *args)
 {
 	int32_t t;
 	switch_time_t target = 0;
@@ -402,7 +403,8 @@ static switch_status_t en_say_time(switch_core_session_t *session, char *tosay, 
 }
 
 
-static switch_status_t en_say_money(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
+static switch_status_t en_say_money(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method,
+									switch_input_args_t *args)
 {
 	switch_channel_t *channel;
 

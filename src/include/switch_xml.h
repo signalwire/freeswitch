@@ -291,7 +291,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 ///\param pool a memory pool to use
 ///\param err a pointer to set error strings
 ///\return SWITCH_STATUS_SUCCESS if successful
-SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t * pool, const char **err);
+SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, const char **err);
 
 
 SWITCH_DECLARE(switch_status_t) switch_xml_destroy(void);
@@ -312,7 +312,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_root(void);
 ///\return SWITCH_STATUS_SUCCESS if successful root and node will be assigned
 SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 												  const char *tag_name,
-												  const char *key_name, const char *key_value, switch_xml_t * root, switch_xml_t * node, const char *params);
+												  const char *key_name, const char *key_value, switch_xml_t * root, switch_xml_t * node,
+												  const char *params);
 
 ///\brief open a config in the core registry
 ///\param file_path the name of the config section e.g. modules.conf

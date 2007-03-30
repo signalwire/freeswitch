@@ -301,7 +301,7 @@ static switch_status_t conference_local_play_file(conference_obj_t * conference,
 static switch_status_t conference_member_play_file(conference_member_t * member, char *file, uint32_t leadin);
 static switch_status_t conference_member_say(conference_member_t * member, char *text, uint32_t leadin);
 static uint32_t conference_member_stop_file(conference_member_t * member, file_stop_t stop);
-static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_memory_pool_t * pool);
+static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_memory_pool_t *pool);
 static switch_status_t chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint);
 static void launch_conference_record_thread(conference_obj_t * conference, char *path);
 
@@ -1384,7 +1384,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t * thread, 
 }
 
 /* launch an input thread for the call leg */
-static void launch_conference_loop_input(conference_member_t * member, switch_memory_pool_t * pool)
+static void launch_conference_loop_input(conference_member_t * member, switch_memory_pool_t *pool)
 {
 	if (member != NULL) {
 		switch_thread_t *thread;
@@ -1457,7 +1457,8 @@ static void conference_loop_output(conference_member_t * member)
 	launch_conference_loop_input(member, switch_core_session_get_pool(member->session));
 
 	/* build a digit stream object */
-	if (member->conference->dtmf_parser != NULL && switch_ivr_digit_stream_new(member->conference->dtmf_parser, &member->digit_stream) != SWITCH_STATUS_SUCCESS) {
+	if (member->conference->dtmf_parser != NULL
+		&& switch_ivr_digit_stream_new(member->conference->dtmf_parser, &member->digit_stream) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Warning Will Robinson, there is no digit parser stream object\n");
 	}
 
@@ -1748,7 +1749,8 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t * t
 	}
 
 	if (switch_core_file_open(&fh,
-							  rec->path, (uint8_t) 1, conference->rate, SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, rec->pool) != SWITCH_STATUS_SUCCESS) {
+							  rec->path, (uint8_t) 1, conference->rate, SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT,
+							  rec->pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s]\n", rec->path);
 		goto end;
 	}
@@ -1954,7 +1956,8 @@ static switch_status_t conference_play_file(conference_obj_t * conference, char 
 	fnode->leadin = leadin;
 
 	/* Open the file */
-	if (switch_core_file_open(&fnode->fh, file, (uint8_t) 1, conference->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_file_open(&fnode->fh, file, (uint8_t) 1, conference->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, pool) !=
+		SWITCH_STATUS_SUCCESS) {
 		switch_core_destroy_memory_pool(&pool);
 		status = SWITCH_STATUS_NOTFOUND;
 		goto done;
@@ -2054,7 +2057,8 @@ static switch_status_t conference_member_play_file(conference_member_t * member,
 
 		/* Open the file */
 		if (switch_core_file_open(&fnode->fh,
-								  file, (uint8_t) 1, member->conference->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, pool) != SWITCH_STATUS_SUCCESS) {
+								  file, (uint8_t) 1, member->conference->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
+								  pool) != SWITCH_STATUS_SUCCESS) {
 			switch_core_destroy_memory_pool(&pool);
 			status = SWITCH_STATUS_NOTFOUND;
 			goto done;
@@ -2120,7 +2124,8 @@ static switch_status_t conference_member_say(conference_member_t * member, char 
 		fnode->pool = pool;
 
 		memset(&fnode->sh, 0, sizeof(fnode->sh));
-		if (switch_core_speech_open(&fnode->sh, conference->tts_engine, conference->tts_voice, conference->rate, &flags, fnode->pool) != SWITCH_STATUS_SUCCESS) {
+		if (switch_core_speech_open(&fnode->sh, conference->tts_engine, conference->tts_voice, conference->rate, &flags, fnode->pool) !=
+			SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module [%s]!\n", conference->tts_engine);
 			return SWITCH_STATUS_FALSE;
 		}
@@ -2191,7 +2196,8 @@ static switch_status_t conference_say(conference_obj_t * conference, const char 
 	fnode->leadin = leadin;
 
 	memset(&fnode->sh, 0, sizeof(fnode->sh));
-	if (switch_core_speech_open(&fnode->sh, conference->tts_engine, conference->tts_voice, conference->rate, &flags, conference->pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_speech_open(&fnode->sh, conference->tts_engine, conference->tts_voice, conference->rate, &flags, conference->pool) !=
+		SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module [%s]!\n", conference->tts_engine);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -3519,7 +3525,8 @@ static switch_status_t conference_outcall(conference_obj_t * conference,
 
 	/* establish an outbound call leg */
 	if (switch_ivr_originate(session,
-							 &peer_session, cause, bridgeto, timeout, &audio_bridge_peer_state_handlers, cid_name, cid_num, NULL) != SWITCH_STATUS_SUCCESS) {
+							 &peer_session, cause, bridgeto, timeout, &audio_bridge_peer_state_handlers, cid_name, cid_num,
+							 NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot create outgoing channel, cause: %s\n", switch_channel_cause2str(*cause));
 		if (caller_channel) {
 			switch_channel_hangup(caller_channel, *cause);
@@ -4340,7 +4347,7 @@ static switch_status_t conference_new_install_caller_controls_custom(conference_
 }
 
 /* create a new conferene with a specific profile */
-static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_memory_pool_t * pool)
+static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_memory_pool_t *pool)
 {
 	conference_obj_t *conference;
 	switch_xml_t xml_kvp;

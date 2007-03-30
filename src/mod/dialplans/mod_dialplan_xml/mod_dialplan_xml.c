@@ -188,7 +188,8 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 	return proceed;
 }
 
-static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t * root, switch_xml_t * node)
+static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t * root,
+										   switch_xml_t * node)
 {
 	switch_status_t status = SWITCH_STATUS_GENERR;
 	switch_channel_t *channel;

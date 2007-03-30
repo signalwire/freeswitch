@@ -249,7 +249,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t * pool)
+SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;;

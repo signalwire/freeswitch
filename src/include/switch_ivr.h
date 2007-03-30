@@ -227,7 +227,8 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 														   uint32_t timeout,
 														   char *valid_terminators,
 														   char *audio_file,
-														   char *bad_input_audio_file, void *digit_buffer, uint32_t digit_buffer_length, char *digits_regex);
+														   char *bad_input_audio_file, void *digit_buffer, uint32_t digit_buffer_length,
+														   char *digits_regex);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session_t *session,
 															 switch_speech_handle_t *sh,
@@ -280,7 +281,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_session_t *session,
 																 switch_core_session_t *peer_session,
-																 switch_input_callback_function_t dtmf_callback, void *session_data, void *peer_session_data);
+																 switch_input_callback_function_t dtmf_callback, void *session_data,
+																 void *peer_session_data);
 
 /*!
   \brief Bridge Signalling from one session to another
@@ -414,7 +416,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session
   \param parser a pointer to the object pointer
   \return SWITCH_STATUS_SUCCESS if all is well 
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory_pool_t * pool, switch_ivr_digit_stream_parser_t ** parser);
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory_pool_t *pool, switch_ivr_digit_stream_parser_t ** parser);
 
 /*!
   \brief Destroy a digit stream parser object
@@ -541,7 +543,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 													 const char *invalid_sound,
 													 const char *tts_engine,
 													 const char *tts_voice,
-													 const char *phrase_lang, int timeout, int max_failures, switch_memory_pool_t * pool);
+													 const char *phrase_lang, int timeout, int max_failures, switch_memory_pool_t *pool);
 
 /*!
  *\brief switch_ivr_menu_bind_action: Bind a keystroke to an action.
@@ -613,9 +615,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_add_custom(switch_ivr_
  *\param pool memory pool (NULL to create one)
  *\return SWITCH_STATUS_SUCCESS if all is well
  */
-SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_init(switch_ivr_menu_xml_ctx_t ** xml_menu_ctx, switch_memory_pool_t * pool);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_init(switch_ivr_menu_xml_ctx_t ** xml_menu_ctx, switch_memory_pool_t *pool);
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *session, char *macro_name, char *data, char *lang, switch_input_args_t *args);
+SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *session, char *macro_name, char *data, char *lang,
+														switch_input_args_t *args);
 /** @} */
 
 SWITCH_END_EXTERN_C

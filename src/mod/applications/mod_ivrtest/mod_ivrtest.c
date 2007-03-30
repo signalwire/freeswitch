@@ -272,7 +272,8 @@ static void asrtest_function(switch_core_session_t *session, char *data)
 
 
 	if (switch_core_asr_open(&ah, "lumenvox",
-							 read_codec->implementation->iananame, 8000, "127.0.0.1", &flags, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+							 read_codec->implementation->iananame, 8000, "127.0.0.1", &flags,
+							 switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 		if (strcmp(ah.codec, read_codec->implementation->iananame)) {
 			if (switch_core_codec_init(&codec,
 									   ah.codec,

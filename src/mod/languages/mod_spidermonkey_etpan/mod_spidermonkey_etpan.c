@@ -407,7 +407,8 @@ int send_message(char *data, size_t len, char **rcpts)
 	/* recipients */
 	for (r = rcpts; *r != NULL; r++) {
 		if ((ret = (esmtp ?
-					mailesmtp_rcpt(smtp, *r, MAILSMTP_DSN_NOTIFY_FAILURE | MAILSMTP_DSN_NOTIFY_DELAY, NULL) : mailsmtp_rcpt(smtp, *r))) != MAILSMTP_NO_ERROR) {
+					mailesmtp_rcpt(smtp, *r, MAILSMTP_DSN_NOTIFY_FAILURE | MAILSMTP_DSN_NOTIFY_DELAY, NULL) : mailsmtp_rcpt(smtp,
+																															*r))) != MAILSMTP_NO_ERROR) {
 			fprintf(stderr, "mailsmtp_rcpt: %s: %s\n", *r, mailsmtp_strerror(ret));
 			goto error;
 		}

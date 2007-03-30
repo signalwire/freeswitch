@@ -30,7 +30,8 @@ int tdmv_api_ioctl(HANDLE fd, wanpipe_tdm_api_cmd_t * tdm_api_cmd)
 
 	if (DeviceIoControl(fd,
 						IoctlManagementCommand,
-						(LPVOID) & wan_udp, sizeof(wan_udp_hdr_t), (LPVOID) & wan_udp, sizeof(wan_udp_hdr_t), (LPDWORD) (&ln), (LPOVERLAPPED) NULL) == FALSE) {
+						(LPVOID) & wan_udp, sizeof(wan_udp_hdr_t), (LPVOID) & wan_udp, sizeof(wan_udp_hdr_t), (LPDWORD) (&ln),
+						(LPOVERLAPPED) NULL) == FALSE) {
 		//actual ioctl failed
 		err = 1;
 		prn(1, "Error: tdmv_api_ioctl(): DeviceIoControl failed!!\n");
@@ -68,7 +69,8 @@ int wanpipe_api_ioctl(HANDLE fd, wan_cmd_api_t * api_cmd)
 
 	if (DeviceIoControl(fd,
 						IoctlManagementCommand,
-						(LPVOID) & wan_udp, sizeof(wan_udp_hdr_t), (LPVOID) & wan_udp, sizeof(wan_udp_hdr_t), (LPDWORD) (&ln), (LPOVERLAPPED) NULL) == FALSE) {
+						(LPVOID) & wan_udp, sizeof(wan_udp_hdr_t), (LPVOID) & wan_udp, sizeof(wan_udp_hdr_t), (LPDWORD) (&ln),
+						(LPOVERLAPPED) NULL) == FALSE) {
 		err = 1;
 		prn(1, "Error: wanpipe_api_ioctl(): DeviceIoControl failed!!\n");
 		return err;
@@ -108,7 +110,8 @@ static UCHAR DoWriteCommand(HANDLE drv, TX_DATA_STRUCT * pTx)
 
 	if (DeviceIoControl(drv,
 						IoctlWriteCommand,
-						(LPVOID) pTx, (ULONG) sizeof(TX_DATA_STRUCT), (LPVOID) pTx, sizeof(TX_DATA_STRUCT), (LPDWORD) (&ln), (LPOVERLAPPED) NULL) == FALSE) {
+						(LPVOID) pTx, (ULONG) sizeof(TX_DATA_STRUCT), (LPVOID) pTx, sizeof(TX_DATA_STRUCT), (LPDWORD) (&ln),
+						(LPOVERLAPPED) NULL) == FALSE) {
 		//check messages log
 		prn(1, "Error: DoWriteCommand(): DeviceIoControl failed!\n");
 		return 1;
@@ -122,7 +125,8 @@ static USHORT DoApiPollCommand(HANDLE drv, API_POLL_STRUCT * api_poll_ptr)
 {
 	DWORD ln;
 
-	if (DeviceIoControl(drv, IoctlApiPoll, (LPVOID) NULL, 0L, (LPVOID) api_poll_ptr, sizeof(API_POLL_STRUCT), (LPDWORD) (&ln), (LPOVERLAPPED) NULL) == FALSE) {
+	if (DeviceIoControl(drv, IoctlApiPoll, (LPVOID) NULL, 0L, (LPVOID) api_poll_ptr, sizeof(API_POLL_STRUCT), (LPDWORD) (&ln), (LPOVERLAPPED) NULL) ==
+		FALSE) {
 		//check messages log
 		prn(1, "Error: DoApiPollCommand(): DeviceIoControl failed!\n");
 		return 1;

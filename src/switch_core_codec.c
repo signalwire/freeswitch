@@ -79,7 +79,7 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_write_codec(switch_core
 
 SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, char *codec_name, char *fmtp,
 													   uint32_t rate, int ms, int channels, uint32_t flags,
-													   const switch_codec_settings_t *codec_settings, switch_memory_pool_t * pool)
+													   const switch_codec_settings_t *codec_settings, switch_memory_pool_t *pool)
 {
 	const switch_codec_interface_t *codec_interface;
 	const switch_codec_implementation_t *iptr, *implementation = NULL;
@@ -151,7 +151,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, ch
 
 		return SWITCH_STATUS_SUCCESS;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec %s Exists but not at the desired implementation. %dhz %dms\n", codec_name, rate, ms);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec %s Exists but not at the desired implementation. %dhz %dms\n", codec_name, rate,
+						  ms);
 	}
 
 	return SWITCH_STATUS_NOTIMPL;
@@ -180,7 +181,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_encode(switch_codec_t *codec,
 	}
 
 
-	return codec->implementation->encode(codec, other_codec, decoded_data, decoded_data_len, decoded_rate, encoded_data, encoded_data_len, encoded_rate, flag);
+	return codec->implementation->encode(codec, other_codec, decoded_data, decoded_data_len, decoded_rate, encoded_data, encoded_data_len, encoded_rate,
+										 flag);
 
 }
 
@@ -209,7 +211,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 	}
 
 
-	return codec->implementation->decode(codec, other_codec, encoded_data, encoded_data_len, encoded_rate, decoded_data, decoded_data_len, decoded_rate, flag);
+	return codec->implementation->decode(codec, other_codec, encoded_data, encoded_data_len, encoded_rate, decoded_data, decoded_data_len, decoded_rate,
+										 flag);
 
 }
 

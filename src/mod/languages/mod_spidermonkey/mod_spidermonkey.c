@@ -1337,7 +1337,8 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	args.input_callback = dtmf_func;
 	args.buf = bp;
 	args.buflen = len;
-	switch_ivr_speak_text(jss->session, tts_name, voice_name && strlen(voice_name) ? voice_name : NULL, codec->implementation->samples_per_second, text, &args);
+	switch_ivr_speak_text(jss->session, tts_name, voice_name
+						  && strlen(voice_name) ? voice_name : NULL, codec->implementation->samples_per_second, text, &args);
 	JS_ResumeRequest(cx, cb_state.saveDepth);
 	*rval = cb_state.ret;
 
@@ -2135,7 +2136,8 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		}
 
 		caller_profile = switch_caller_profile_new(pool,
-												   username, dialplan, cid_name, cid_num, network_addr, ani, aniii, rdnis, (char *) modname, context, dest);
+												   username, dialplan, cid_name, cid_num, network_addr, ani, aniii, rdnis, (char *) modname, context,
+												   dest);
 
 		if (switch_ivr_originate(session, &peer_session, &jss->cause, dest, to ? atoi(to) : 60, NULL, NULL, NULL, caller_profile) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot Create Outgoing Channel! [%s]\n", dest);

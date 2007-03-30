@@ -74,7 +74,7 @@ SWITCH_BEGIN_EXTERN_C
 #undef inline
 #define inline __inline
 #ifndef uint32_t
-	typedef unsigned __int8 uint8_t;
+typedef unsigned __int8 uint8_t;
 typedef unsigned __int16 uint16_t;
 typedef unsigned __int32 uint32_t;
 typedef unsigned __int64 uint64_t;
@@ -166,9 +166,9 @@ typedef int gid_t;
 #define PRINTF_FUNCTION(fmtstr,vars)
 #endif
 #ifdef SWITCH_INT32
-typedef SWITCH_INT32 switch_int32_t;
+	typedef SWITCH_INT32 switch_int32_t;
 #else
-typedef int32_t switch_int32_t;
+	typedef int32_t switch_int32_t;
 #endif
 
 #ifdef SWITCH_SIZE_T

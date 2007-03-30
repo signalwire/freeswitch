@@ -32,7 +32,7 @@
 #include <switch.h>
 #include <switch_caller.h>
 
-SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memory_pool_t * pool,
+SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memory_pool_t *pool,
 																	const char *username,
 																	const char *dialplan,
 																	const char *caller_id_name,
@@ -40,7 +40,8 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 																	const char *network_addr,
 																	const char *ani,
 																	const char *aniii,
-																	const char *rdnis, const char *source, const char *context, const char *destination_number)
+																	const char *rdnis, const char *source, const char *context,
+																	const char *destination_number)
 {
 
 

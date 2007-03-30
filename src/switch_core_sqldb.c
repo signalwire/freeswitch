@@ -41,7 +41,7 @@ static struct {
 	switch_memory_pool_t *memory_pool;
 } runtime;
 
-static switch_status_t switch_core_db_persistant_execute_trans(switch_core_db_t * db, char *sql, uint32_t retries)
+static switch_status_t switch_core_db_persistant_execute_trans(switch_core_db_t *db, char *sql, uint32_t retries)
 {
 	char *errmsg;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -113,7 +113,7 @@ static switch_status_t switch_core_db_persistant_execute_trans(switch_core_db_t 
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute(switch_core_db_t * db, char *sql, uint32_t retries)
+SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute(switch_core_db_t *db, char *sql, uint32_t retries)
 {
 	char *errmsg;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -340,7 +340,7 @@ static void core_event_handler(switch_event_t *event)
 }
 
 
-SWITCH_DECLARE(void) switch_core_sqldb_start(switch_memory_pool_t * pool)
+SWITCH_DECLARE(void) switch_core_sqldb_start(switch_memory_pool_t *pool)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;;

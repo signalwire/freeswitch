@@ -252,7 +252,7 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 }
 
 
-SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t * pool)
+SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 {
 	if (global_init) {
 		return;
@@ -357,7 +357,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 												  switch_payload_t payload,
 												  uint32_t samples_per_interval,
 												  uint32_t ms_per_packet,
-												  switch_rtp_flag_t flags, char *crypto_key, char *timer_name, const char **err, switch_memory_pool_t * pool)
+												  switch_rtp_flag_t flags, char *crypto_key, char *timer_name, const char **err,
+												  switch_memory_pool_t *pool)
 {
 	switch_rtp_t *rtp_session = NULL;
 	srtp_policy_t policy;
@@ -478,8 +479,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	}
 
 	if (!switch_strlen_zero(timer_name)) {
-		if (switch_core_timer_init(&rtp_session->timer, timer_name, ms_per_packet / 1000, samples_per_interval, rtp_session->pool) == SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting timer [%s] %d bytes per %dms\n", timer_name, samples_per_interval, ms_per_packet);
+		if (switch_core_timer_init(&rtp_session->timer, timer_name, ms_per_packet / 1000, samples_per_interval, rtp_session->pool) ==
+			SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting timer [%s] %d bytes per %dms\n", timer_name, samples_per_interval,
+							  ms_per_packet);
 		} else {
 			memset(&rtp_session->timer, 0, sizeof(rtp_session->timer));
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error starting timer [%s], async RTP disabled\n", timer_name);
@@ -499,7 +502,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(char *rx_host,
 											  switch_payload_t payload,
 											  uint32_t samples_per_interval,
 											  uint32_t ms_per_packet,
-											  switch_rtp_flag_t flags, char *crypto_key, char *timer_name, const char **err, switch_memory_pool_t * pool)
+											  switch_rtp_flag_t flags, char *crypto_key, char *timer_name, const char **err, switch_memory_pool_t *pool)
 {
 	switch_rtp_t *rtp_session;
 
@@ -689,10 +692,10 @@ static void do_2833(switch_rtp_t *rtp_session)
 									4,
 									0,
 									rtp_session->te,
-									rtp_session->dtmf_data.timestamp_dtmf, rtp_session->dtmf_data.out_digit_seq, rtp_session->dtmf_data.out_digit_ssrc, &flags);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-							  "Send %s packet for [%c] ts=%d sofar=%u dur=%d seq=%d\n", loops == 1 ? "middle" : "end",
-							  rtp_session->dtmf_data.out_digit, rtp_session->dtmf_data.timestamp_dtmf,
+									rtp_session->dtmf_data.timestamp_dtmf, rtp_session->dtmf_data.out_digit_seq, rtp_session->dtmf_data.out_digit_ssrc,
+									&flags);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s packet for [%c] ts=%d sofar=%u dur=%d seq=%d\n",
+							  loops == 1 ? "middle" : "end", rtp_session->dtmf_data.out_digit, rtp_session->dtmf_data.timestamp_dtmf,
 							  rtp_session->dtmf_data.out_digit_sofar, duration, rtp_session->dtmf_data.out_digit_seq);
 
 		}
@@ -860,7 +863,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 					if (!switch_strlen_zero(tx_host) && switch_sockaddr_get_port(rtp_session->from_addr) > 0) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-										  "Auto Changing port from %s:%u to %s:%u\n", old_host, old, tx_host, switch_sockaddr_get_port(rtp_session->from_addr));
+										  "Auto Changing port from %s:%u to %s:%u\n", old_host, old, tx_host,
+										  switch_sockaddr_get_port(rtp_session->from_addr));
 						switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(rtp_session->from_addr), &err);
 					}
 				}
@@ -1332,7 +1336,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_disable_vad(switch_rtp_t *rtp_session
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_rtp_enable_vad(switch_rtp_t *rtp_session, switch_core_session_t *session, switch_codec_t *codec, switch_vad_flag_t flags)
+SWITCH_DECLARE(switch_status_t) switch_rtp_enable_vad(switch_rtp_t *rtp_session, switch_core_session_t *session, switch_codec_t *codec,
+													  switch_vad_flag_t flags)
 {
 
 	if (!switch_rtp_ready(rtp_session)) {

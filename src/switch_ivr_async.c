@@ -512,7 +512,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 	if (switch_core_asr_open(ah,
 							 mod_name,
 							 "L16",
-							 read_codec->implementation->samples_per_second, dest, &flags, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+							 read_codec->implementation->samples_per_second, dest, &flags,
+							 switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 
 		if (switch_core_asr_load_grammar(ah, grammar, path) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error loading Grammar\n");

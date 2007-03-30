@@ -468,7 +468,8 @@ extern "C" {
 				if (s->next) {
 					s->next->prev = s->prev;
 				}
-				/* Insert s as second element in the list */ s->next = ty->next;
+				/* Insert s as second element in the list */
+				s->    next = ty->next;
 				if (ty->next)
 					ty->next->prev = s;
 				ty->next = s;
@@ -1697,13 +1698,15 @@ extern "C" {
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
 	static swig_type_info _swigt__p_switch_channel_t[] = { {"_p_switch_channel_t", 0, "switch_channel_t *", 0}, {"_p_switch_channel_t"}, {0} };
-	static swig_type_info _swigt__p_switch_file_handle_t[] = { {"_p_switch_file_handle_t", 0, "switch_file_handle_t *", 0}, {"_p_switch_file_handle_t"}, {0} };
+	static swig_type_info _swigt__p_switch_file_handle_t[] =
+		{ {"_p_switch_file_handle_t", 0, "switch_file_handle_t *", 0}, {"_p_switch_file_handle_t"}, {0} };
 	static swig_type_info _swigt__p_switch_core_session_t[] =
 		{ {"_p_switch_core_session_t", 0, "switch_core_session_t *", 0}, {"_p_switch_core_session_t"}, {0} };
 	static swig_type_info _swigt__p_p_switch_core_session_t[] =
 		{ {"_p_p_switch_core_session_t", 0, "switch_core_session_t **", 0}, {"_p_p_switch_core_session_t"}, {0} };
 	static swig_type_info _swigt__p_uint32_t[] = { {"_p_uint32_t", 0, "uint32_t *", 0}, {"_p_uint32_t"}, {0} };
-	static swig_type_info _swigt__p_switch_input_callback_function_t[] = { {"_p_switch_input_callback_function_t", 0, "switch_input_callback_function_t *", 0},
+	static swig_type_info _swigt__p_switch_input_callback_function_t[] =
+		{ {"_p_switch_input_callback_function_t", 0, "switch_input_callback_function_t *", 0},
 	{"_p_switch_input_callback_function_t"}, {0}
 	};
 

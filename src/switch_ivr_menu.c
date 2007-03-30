@@ -93,7 +93,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 													 const char *invalid_sound,
 													 const char *exit_sound,
 													 const char *tts_engine,
-													 const char *tts_voice, const char *phrase_lang, int timeout, int max_failures, switch_memory_pool_t * pool)
+													 const char *tts_voice, const char *phrase_lang, int timeout, int max_failures,
+													 switch_memory_pool_t *pool)
 {
 	switch_ivr_menu_t *menu;
 	uint8_t newpool = 0;
@@ -488,7 +489,8 @@ static switch_ivr_menu_xml_map_t *switch_ivr_menu_stack_xml_find(switch_ivr_menu
 	return (rc == 0 ? map : NULL);
 }
 
-static switch_status_t switch_ivr_menu_stack_xml_add(switch_ivr_menu_xml_ctx_t * xml_ctx, char *name, int action, switch_ivr_menu_action_function_t * function)
+static switch_status_t switch_ivr_menu_stack_xml_add(switch_ivr_menu_xml_ctx_t * xml_ctx, char *name, int action,
+													 switch_ivr_menu_action_function_t * function)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -519,7 +521,7 @@ static switch_status_t switch_ivr_menu_stack_xml_add(switch_ivr_menu_xml_ctx_t *
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_init(switch_ivr_menu_xml_ctx_t ** xml_menu_ctx, switch_memory_pool_t * pool)
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_init(switch_ivr_menu_xml_ctx_t ** xml_menu_ctx, switch_memory_pool_t *pool)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int autocreated = 0;

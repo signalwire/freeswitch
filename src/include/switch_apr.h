@@ -55,7 +55,7 @@ SWITCH_BEGIN_EXTERN_C
  * @{
  */
 /** The fundamental pool type */
-typedef struct apr_pool_t switch_memory_pool_t;
+	typedef struct apr_pool_t switch_memory_pool_t;
 
 
 /**
@@ -66,7 +66,7 @@ typedef struct apr_pool_t switch_memory_pool_t;
  *         to re-use this memory for the next allocation.
  * @see apr_pool_destroy()
  */
-SWITCH_DECLARE(void) switch_pool_clear(switch_memory_pool_t * p);
+SWITCH_DECLARE(void) switch_pool_clear(switch_memory_pool_t *p);
 
 /** @} */
 
@@ -93,7 +93,7 @@ SWITCH_DECLARE(void) switch_pool_clear(switch_memory_pool_t * p);
  * @bug We aught to provide an alternative to RTLD_GLOBAL, which
  * is the only supported method of loading DSOs today.
  */
-SWITCH_DECLARE(switch_status_t) switch_dso_load(switch_dso_handle_t ** res_handle, const char *path, switch_memory_pool_t * ctx);
+SWITCH_DECLARE(switch_status_t) switch_dso_load(switch_dso_handle_t ** res_handle, const char *path, switch_memory_pool_t *ctx);
 
 /**
  * Close a DSO library.
@@ -163,7 +163,7 @@ SWITCH_DECLARE(char *) switch_copy_string(char *dst, const char *src, switch_siz
  * progress at the same time.
 
  */
-SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(switch_memory_pool_t * p, switch_hash_t * ht);
+SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(switch_memory_pool_t *p, switch_hash_t * ht);
 
 /**
  * Continue iterating over the entries in a hash table.
@@ -333,7 +333,7 @@ SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t);
  * it will behave as either a nested or an unnested lock.
  *
 */
-SWITCH_DECLARE(switch_status_t) switch_mutex_init(switch_mutex_t ** lock, unsigned int flags, switch_memory_pool_t * pool);
+SWITCH_DECLARE(switch_status_t) switch_mutex_init(switch_mutex_t ** lock, unsigned int flags, switch_memory_pool_t *pool);
 
 
 /**
@@ -375,7 +375,7 @@ SWITCH_DECLARE(switch_status_t) switch_mutex_trylock(switch_mutex_t * lock);
 /** Opaque structure used for the rwlock */
 	 typedef struct apr_thread_rwlock_t switch_thread_rwlock_t;
 
-SWITCH_DECLARE(switch_status_t) switch_thread_rwlock_create(switch_thread_rwlock_t ** rwlock, switch_memory_pool_t * pool);
+SWITCH_DECLARE(switch_status_t) switch_thread_rwlock_create(switch_thread_rwlock_t ** rwlock, switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_status_t) switch_thread_rwlock_destroy(switch_thread_rwlock_t * rwlock);
 SWITCH_DECLARE(switch_memory_pool_t *) switch_thread_rwlock_pool_get(switch_thread_rwlock_t * rwlock);
 SWITCH_DECLARE(switch_status_t) switch_thread_rwlock_rdlock(switch_thread_rwlock_t * rwlock);
@@ -408,7 +408,7 @@ SWITCH_DECLARE(switch_status_t) switch_thread_rwlock_unlock(switch_thread_rwlock
  *        will be stored.
  * @param pool the pool from which to allocate the mutex.
  */
-SWITCH_DECLARE(switch_status_t) switch_thread_cond_create(switch_thread_cond_t ** cond, switch_memory_pool_t * pool);
+SWITCH_DECLARE(switch_status_t) switch_thread_cond_create(switch_thread_cond_t ** cond, switch_memory_pool_t *pool);
 
 /**
  * Put the active calling thread to sleep until signaled to wake up. Each
@@ -522,7 +522,7 @@ SWITCH_DECLARE(switch_status_t) switch_uuid_parse(switch_uuid_t * uuid, const ch
  * @param queue_capacity maximum size of the queue
  * @param a pool to allocate queue from
  */
-SWITCH_DECLARE(switch_status_t) switch_queue_create(switch_queue_t ** queue, unsigned int queue_capacity, switch_memory_pool_t * pool);
+SWITCH_DECLARE(switch_status_t) switch_queue_create(switch_queue_t ** queue, unsigned int queue_capacity, switch_memory_pool_t *pool);
 
 /**
  * pop/get an object from the queue, blocking if the queue is already empty
@@ -676,7 +676,8 @@ SWITCH_DECLARE(switch_status_t) switch_queue_trypush(switch_queue_t * queue, voi
  * @remark If perm is SWITCH_FPROT_OS_DEFAULT and the file is being created,
  * appropriate default permissions will be used.
  */
-SWITCH_DECLARE(switch_status_t) switch_file_open(switch_file_t ** newf, const char *fname, int32_t flag, switch_fileperms_t perm, switch_memory_pool_t * pool);
+SWITCH_DECLARE(switch_status_t) switch_file_open(switch_file_t ** newf, const char *fname, int32_t flag, switch_fileperms_t perm,
+												 switch_memory_pool_t *pool);
 
 
 SWITCH_DECLARE(switch_status_t) switch_file_seek(switch_file_t * thefile, switch_seek_where_t where, int64_t *offset);
@@ -694,7 +695,7 @@ SWITCH_DECLARE(switch_status_t) switch_file_close(switch_file_t * thefile);
  * @remark If the file is open, it won't be removed until all
  * instances are closed.
  */
-SWITCH_DECLARE(switch_status_t) switch_file_remove(const char *path, switch_memory_pool_t * pool);
+SWITCH_DECLARE(switch_status_t) switch_file_remove(const char *path, switch_memory_pool_t *pool);
 
 /**
  * Read data from the specified file.
@@ -762,7 +763,7 @@ SWITCH_DECLARE(switch_status_t) switch_threadattr_stacksize_set(switch_threadatt
  * @param new_attr The newly created threadattr.
  * @param cont The pool to use
  */
-SWITCH_DECLARE(switch_status_t) switch_threadattr_create(switch_threadattr_t ** new_attr, switch_memory_pool_t * pool);
+SWITCH_DECLARE(switch_status_t) switch_threadattr_create(switch_threadattr_t ** new_attr, switch_memory_pool_t *pool);
 
 /**
  * Set if newly created threads should be created in detached state.
@@ -780,7 +781,7 @@ SWITCH_DECLARE(switch_status_t) switch_threadattr_detach_set(switch_threadattr_t
  * @param cont The pool to use
  */
 SWITCH_DECLARE(switch_status_t) switch_thread_create(switch_thread_t ** new_thread, switch_threadattr_t * attr,
-													 switch_thread_start_t func, void *data, switch_memory_pool_t * cont);
+													 switch_thread_start_t func, void *data, switch_memory_pool_t *cont);
 
 /** @} */
 
@@ -846,7 +847,7 @@ SWITCH_DECLARE(switch_status_t) switch_thread_create(switch_thread_t ** new_thre
  * @param protocol The protocol of the socket (e.g., SWITCH_PROTO_TCP).
  * @param pool The pool to use
  */
-SWITCH_DECLARE(switch_status_t) switch_socket_create(switch_socket_t ** new_sock, int family, int type, int protocol, switch_memory_pool_t * pool);
+SWITCH_DECLARE(switch_status_t) switch_socket_create(switch_socket_t ** new_sock, int family, int type, int protocol, switch_memory_pool_t *pool);
 
 /**
  * Shutdown either reading, writing, or both sides of a socket.
@@ -895,7 +896,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_listen(switch_socket_t * sock, int
  * @param sock The socket we are listening on.
  * @param connection_pool The pool for the new socket.
  */
-SWITCH_DECLARE(switch_status_t) switch_socket_accept(switch_socket_t ** new_sock, switch_socket_t * sock, switch_memory_pool_t * pool);
+SWITCH_DECLARE(switch_status_t) switch_socket_accept(switch_socket_t ** new_sock, switch_socket_t * sock, switch_memory_pool_t *pool);
 
 /**
  * Issue a connection request to a socket either on the same machine 
@@ -935,7 +936,7 @@ SWITCH_DECLARE(switch_status_t) switch_sockaddr_ip_get(char **addr, switch_socka
  * @param p The pool for the apr_sockaddr_t and associated storage.
  */
 SWITCH_DECLARE(switch_status_t) switch_sockaddr_info_get(switch_sockaddr_t ** sa, const char *hostname,
-														 int32_t family, switch_port_t port, int32_t flags, switch_memory_pool_t * pool);
+														 int32_t family, switch_port_t port, int32_t flags, switch_memory_pool_t *pool);
 
 /**
  * Send data over a network.
@@ -963,7 +964,8 @@ SWITCH_DECLARE(switch_status_t) switch_socket_send(switch_socket_t * sock, const
  * @param buf  The data to send
  * @param len  The length of the data to send
  */
-SWITCH_DECLARE(switch_status_t) switch_socket_sendto(switch_socket_t * sock, switch_sockaddr_t * where, int32_t flags, const char *buf, switch_size_t *len);
+SWITCH_DECLARE(switch_status_t) switch_socket_sendto(switch_socket_t * sock, switch_sockaddr_t * where, int32_t flags, const char *buf,
+													 switch_size_t *len);
 
 /**
  * @param from The apr_sockaddr_t to fill in the recipient info
@@ -1084,7 +1086,7 @@ SWITCH_DECLARE(switch_status_t) switch_mcast_join(switch_socket_t * sock, switch
  * platforms; the apr_pollset_create() call will fail with
  * APR_ENOTIMPL on platforms where it is not supported.
  */
-SWITCH_DECLARE(switch_status_t) switch_pollset_create(switch_pollset_t ** pollset, uint32_t size, switch_memory_pool_t * p, uint32_t flags);
+SWITCH_DECLARE(switch_status_t) switch_pollset_create(switch_pollset_t ** pollset, uint32_t size, switch_memory_pool_t *p, uint32_t flags);
 
 /**
  * Add a socket or file descriptor to a pollset
@@ -1128,7 +1130,7 @@ SWITCH_DECLARE(switch_status_t) switch_poll(switch_pollfd_t * aprset, int32_t nu
   \param pool the memory pool to use
   \return SWITCH_STATUS_SUCCESS when successful
 */
-SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t ** poll, switch_socket_t * sock, int16_t flags, switch_memory_pool_t * pool);
+SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t ** poll, switch_socket_t * sock, int16_t flags, switch_memory_pool_t *pool);
 
 
  /** @} */

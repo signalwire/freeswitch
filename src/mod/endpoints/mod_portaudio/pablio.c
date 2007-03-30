@@ -191,7 +191,8 @@ static unsigned long RoundUpToNextPowerOf2(unsigned long n)
  *
  */
 PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
-						const PaStreamParameters * inputParameters, const PaStreamParameters * outputParameters, double sampleRate, PaStreamFlags streamFlags)
+						const PaStreamParameters * inputParameters, const PaStreamParameters * outputParameters, double sampleRate,
+						PaStreamFlags streamFlags)
 {
 	long bytesPerSample;
 	PaError err;

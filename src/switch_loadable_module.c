@@ -820,7 +820,7 @@ SWITCH_DECLARE(switch_management_interface_t *) switch_loadable_module_get_manag
 	return switch_core_hash_find(loadable_modules.management_hash, relative_oid);
 }
 
-SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t * pool, const switch_codec_implementation_t **array, int arraylen)
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool, const switch_codec_implementation_t **array, int arraylen)
 {
 	switch_hash_index_t *hi;
 	void *val;

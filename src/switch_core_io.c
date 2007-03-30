@@ -55,7 +55,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	}
 
 	if (session->endpoint_interface->io_routines->read_frame) {
-		if ((status = session->endpoint_interface->io_routines->read_frame(session, frame, timeout, SWITCH_IO_FLAG_NOOP, stream_id)) == SWITCH_STATUS_SUCCESS) {
+		if ((status =
+			 session->endpoint_interface->io_routines->read_frame(session, frame, timeout, SWITCH_IO_FLAG_NOOP, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			for (ptr = session->event_hooks.read_frame; ptr; ptr = ptr->next) {
 				if ((status = ptr->read_frame(session, frame, timeout, SWITCH_IO_FLAG_NOOP, stream_id)) != SWITCH_STATUS_SUCCESS) {
 					break;
@@ -246,7 +247,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					status = SWITCH_STATUS_SUCCESS;
 					break;
 				default:
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s encoder error!\n", session->read_codec->codec_interface->interface_name);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s encoder error!\n",
+									  session->read_codec->codec_interface->interface_name);
 					*frame = NULL;
 					status = SWITCH_STATUS_GENERR;
 					break;
@@ -500,7 +502,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					status = SWITCH_STATUS_SUCCESS;
 					break;
 				default:
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s encoder error!\n", session->read_codec->codec_interface->interface_name);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s encoder error!\n",
+									  session->read_codec->codec_interface->interface_name);
 					write_frame = NULL;
 					return status;
 				}
@@ -580,7 +583,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 							if (session->read_resampler) {
 								short *data = write_frame->data;
 
-								session->read_resampler->from_len = switch_short_to_float(data, session->read_resampler->from, (int) write_frame->datalen / 2);
+								session->read_resampler->from_len =
+									switch_short_to_float(data, session->read_resampler->from, (int) write_frame->datalen / 2);
 								session->read_resampler->to_len = (uint32_t)
 									switch_resample_process(session->read_resampler, session->read_resampler->from,
 															session->read_resampler->from_len,
@@ -628,7 +632,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_kill_channel(switch_
 	switch_io_event_hook_kill_channel_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_INFO, "Kill %s [%s]\n", switch_channel_get_name(session->channel), SIG_NAMES[sig]);
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_INFO, "Kill %s [%s]\n", switch_channel_get_name(session->channel),
+					  SIG_NAMES[sig]);
 
 	if (session->endpoint_interface->io_routines->kill_channel) {
 		if ((status = session->endpoint_interface->io_routines->kill_channel(session, sig)) == SWITCH_STATUS_SUCCESS) {

@@ -284,7 +284,7 @@ SWITCH_DECLARE(unsigned char) switch_char_to_rfc2833(char key)
 	return '\0';
 }
 
-SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t * pool, char *in, char *delim, char esc)
+SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t *pool, char *in, char *delim, char esc)
 {
 	char *data, *p, *d;
 	int count = 1, i = 0;

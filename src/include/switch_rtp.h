@@ -51,7 +51,7 @@ typedef void (*switch_rtp_invalid_handler_t) (switch_rtp_t *rtp_session,
   \param pool the memory pool to use for long term allocations
   \note Generally called by the core_init
 */
-SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t * pool);
+SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool);
 
 /*! 
   \brief Request a new port to be used for media
@@ -76,7 +76,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 												  switch_payload_t payload,
 												  uint32_t samples_per_interval,
 												  uint32_t ms_per_packet,
-												  switch_rtp_flag_t flags, char *crypto_key, char *timer_name, const char **err, switch_memory_pool_t * pool);
+												  switch_rtp_flag_t flags, char *crypto_key, char *timer_name, const char **err,
+												  switch_memory_pool_t *pool);
 
 
 /*!
@@ -102,7 +103,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(char *rx_host,
 											  switch_payload_t payload,
 											  uint32_t samples_per_interval,
 											  uint32_t ms_per_packet,
-											  switch_rtp_flag_t flags, char *crypto_key, char *timer_name, const char **err, switch_memory_pool_t * pool);
+											  switch_rtp_flag_t flags, char *crypto_key, char *timer_name, const char **err, switch_memory_pool_t *pool);
 
 
 /*! 

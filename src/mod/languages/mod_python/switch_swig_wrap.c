@@ -571,7 +571,7 @@ extern "C" {
  *     type checking.
  *
  * Author : David Beazley (beazley@cs.uchicago.edu)
-																																																																																																																																																																																																																																																																																					   ************************************************************************//* Common SWIG API */
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																													   ************************************************************************//* Common SWIG API */
 #define SWIG_ConvertPtr(obj, pp, type, flags)    SWIG_Python_ConvertPtr(obj, pp, type, flags)
 #define SWIG_NewPointerObj(p, type, flags)       SWIG_Python_NewPointerObj(p, type, flags)
 #define SWIG_MustGetPtr(p, type, argnum, flags)  SWIG_Python_MustGetPtr(p, type, argnum, flags)
@@ -583,11 +583,11 @@ extern "C" {
 #define SWIG_SetModule(clientdata, pointer) SWIG_Python_SetModule(pointer)
 /* -----------------------------------------------------------------------------
  * Pointer declarations
-																																																																																																																																																																				  																																																																																		  																																									  																				    * ----------------------------------------------------------------------------- *//*
-																																																																																																																																																																				     Use SWIG_NO_COBJECT_TYPES to force the use of strings to represent
-																																																																																																																																																																				     C/C++ pointers in the python side. Very useful for debugging, but
-																																																																																																																																																																				     not always safe.
-																																																																																																																																																																				   */
+																																																																																																																																																																																																																																																																																																																																								  																																																																																																																																																																				  																																																																																		  																																									  																				    * ----------------------------------------------------------------------------- *//*
+																																																																																																																																																																																																																																																																																																																																								     Use SWIG_NO_COBJECT_TYPES to force the use of strings to represent
+																																																																																																																																																																																																																																																																																																																																								     C/C++ pointers in the python side. Very useful for debugging, but
+																																																																																																																																																																																																																																																																																																																																								     not always safe.
+																																																																																																																																																																																																																																																																																																																																								   */
 #if !defined(SWIG_NO_COBJECT_TYPES) && !defined(SWIG_COBJECT_TYPES)
 #  define SWIG_COBJECT_TYPES
 #endif
@@ -1538,7 +1538,8 @@ extern "C" {
 		         resultobj = Py_None;
 		         return resultobj;
 		         fail:return NULL;
-	} static PyObject *_wrap_fs_core_init(PyObject * self, PyObject * args) {
+	}
+	static PyObject *_wrap_fs_core_init(PyObject * self, PyObject * args) {
 		PyObject *resultobj = NULL;
 		char *arg1 = (char *) 0;
 		int result;
@@ -2448,11 +2449,13 @@ extern "C" {
 
 	static swig_type_info _swigt__p_char = { "_p_char", "char *", 0, 0, 0 };
 	static swig_type_info _swigt__p_p_switch_core_session_t = { "_p_p_switch_core_session_t", "switch_core_session_t **", 0, 0, 0 };
-	static swig_type_info _swigt__p_switch_channel_state_t = { "_p_switch_channel_state_t", "enum switch_channel_state_t *|switch_channel_state_t *", 0, 0, 0 };
+	static swig_type_info _swigt__p_switch_channel_state_t =
+		{ "_p_switch_channel_state_t", "enum switch_channel_state_t *|switch_channel_state_t *", 0, 0, 0 };
 	static swig_type_info _swigt__p_switch_channel_t = { "_p_switch_channel_t", "switch_channel_t *", 0, 0, 0 };
 	static swig_type_info _swigt__p_switch_core_session_t = { "_p_switch_core_session_t", "switch_core_session_t *", 0, 0, 0 };
 	static swig_type_info _swigt__p_switch_file_handle_t = { "_p_switch_file_handle_t", "switch_file_handle_t *", 0, 0, 0 };
-	static swig_type_info _swigt__p_switch_input_callback_function_t = { "_p_switch_input_callback_function_t", "switch_input_callback_function_t *", 0, 0, 0 };
+	static swig_type_info _swigt__p_switch_input_callback_function_t =
+		{ "_p_switch_input_callback_function_t", "switch_input_callback_function_t *", 0, 0, 0 };
 	static swig_type_info _swigt__ptrdiff_t = { "_ptrdiff_t", "ptrdiff_t", 0, 0, 0 };
 	static swig_type_info _swigt__size_t = { "_size_t", "size_t", 0, 0, 0 };
 
@@ -2680,7 +2683,8 @@ extern "C" {
 	SWIGINTERN PyObject *swig_varlink_repr(swig_varlinkobject * v) {
 		v = v;
 		return PyString_FromString("<Swig global variables>");
-	} SWIGINTERN int swig_varlink_print(swig_varlinkobject * v, FILE * fp, int flags) {
+	}
+	SWIGINTERN int swig_varlink_print(swig_varlinkobject * v, FILE * fp, int flags) {
 		swig_globalvar *var;
 		flags = flags;
 		fprintf(fp, "Swig global variables { ");

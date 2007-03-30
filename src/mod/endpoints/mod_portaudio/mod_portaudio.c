@@ -144,7 +144,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 	 static switch_status_t channel_on_transmit(switch_core_session_t *session);
 	 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
 														 switch_caller_profile_t *outbound_profile,
-														 switch_core_session_t **new_session, switch_memory_pool_t ** pool);
+														 switch_core_session_t **new_session, switch_memory_pool_t **pool);
 	 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id);
 	 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id);
 	 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
@@ -821,7 +821,7 @@ static const switch_loadable_module_interface_t channel_module_interface = {
 */
 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,
-													switch_core_session_t **new_session, switch_memory_pool_t ** pool)
+													switch_core_session_t **new_session, switch_memory_pool_t **pool)
 {
 
 	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, pool)) != 0) {
@@ -1248,7 +1248,8 @@ static int dump_info(void)
 		if (inputParameters.channelCount > 0 && outputParameters.channelCount > 0) {
 
 			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
-							  "full-duplex 16 bit %d channel input, %d channel output rates:", inputParameters.channelCount, outputParameters.channelCount);
+							  "full-duplex 16 bit %d channel input, %d channel output rates:", inputParameters.channelCount,
+							  outputParameters.channelCount);
 			PrintSupportedStandardSampleRates(&inputParameters, &outputParameters);
 		}
 	}
@@ -1281,14 +1282,16 @@ static switch_status_t engage_device(int sample_rate, int codec_ms)
 
 		if (switch_core_codec_init(&globals.read_codec,
 								   "L16",
-								   NULL, sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+								   NULL, sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+								   NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 			return SWITCH_STATUS_FALSE;
 		} else {
 			if (switch_core_codec_init(&globals.write_codec,
 									   "L16",
 									   NULL,
-									   sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+									   sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+									   NULL) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 				switch_core_codec_destroy(&globals.read_codec);
 				return SWITCH_STATUS_FALSE;
@@ -1296,7 +1299,8 @@ static switch_status_t engage_device(int sample_rate, int codec_ms)
 		}
 
 		if (switch_core_timer_init(&globals.timer,
-								   globals.timer_name, codec_ms, globals.read_codec.implementation->samples_per_frame, module_pool) != SWITCH_STATUS_SUCCESS) {
+								   globals.timer_name, codec_ms, globals.read_codec.implementation->samples_per_frame,
+								   module_pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup timer failed!\n");
 			switch_core_codec_destroy(&globals.read_codec);
 			switch_core_codec_destroy(&globals.write_codec);
@@ -1674,9 +1678,11 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 
 		if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																  NULL,
-																  dialplan, cid_name, cid_num, NULL, NULL, NULL, NULL, (char *) modname, NULL, dest)) != 0) {
+																  dialplan, cid_name, cid_num, NULL, NULL, NULL, NULL, (char *) modname, NULL,
+																  dest)) != 0) {
 			char name[128];
-			snprintf(name, sizeof(name), "PortAudio/%s", tech_pvt->caller_profile->destination_number ? tech_pvt->caller_profile->destination_number : modname);
+			snprintf(name, sizeof(name), "PortAudio/%s",
+					 tech_pvt->caller_profile->destination_number ? tech_pvt->caller_profile->destination_number : modname);
 			switch_channel_set_name(channel, name);
 
 			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);

@@ -35,7 +35,7 @@
 #include "private/switch_core.h"
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh,
-													  char *file_path, uint8_t channels, uint32_t rate, unsigned int flags, switch_memory_pool_t * pool)
+													  char *file_path, uint8_t channels, uint32_t rate, unsigned int flags, switch_memory_pool_t *pool)
 {
 	char *ext;
 	switch_status_t status;

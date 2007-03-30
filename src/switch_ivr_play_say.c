@@ -90,7 +90,8 @@ static switch_say_method_t get_say_type_by_name(char *name)
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *session, char *macro_name, char *data, char *lang, switch_input_args_t *args)
+SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *session, char *macro_name, char *data, char *lang,
+														switch_input_args_t *args)
 {
 	switch_xml_t cfg, xml = NULL, language, macros, macro, input, action;
 	char *lname = NULL, *mname = NULL, hint_data[1024] = "", enc_hint[1024] = "";
@@ -365,7 +366,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 							   read_codec->implementation->samples_per_second,
 							   read_codec->implementation->microseconds_per_frame / 1000,
 							   read_codec->implementation->number_of_channels,
-							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+							   switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activated\n");
 		switch_core_session_set_read_codec(session, &codec);
 	} else {
@@ -879,7 +881,8 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 														   uint32_t timeout,
 														   char *valid_terminators,
 														   char *prompt_audio_file,
-														   char *bad_input_audio_file, void *digit_buffer, uint32_t digit_buffer_length, char *digits_regex)
+														   char *bad_input_audio_file, void *digit_buffer, uint32_t digit_buffer_length,
+														   char *digits_regex)
 {
 
 	char terminator;			//used to hold terminator recieved from  

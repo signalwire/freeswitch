@@ -165,7 +165,7 @@ SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch
 	return times;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel, switch_memory_pool_t * pool)
+SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel, switch_memory_pool_t *pool)
 {
 	assert(pool != NULL);
 
@@ -259,7 +259,8 @@ SWITCH_DECLARE(void) switch_channel_uninit(switch_channel_t *channel)
 	switch_buffer_destroy(&channel->dtmf_buffer);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel, switch_core_session_t *session, switch_channel_state_t state, uint32_t flags)
+SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel, switch_core_session_t *session, switch_channel_state_t state,
+													uint32_t flags)
 {
 	assert(channel != NULL);
 	channel->state = state;
@@ -317,7 +318,7 @@ SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, ch
 	return v;
 }
 
-SWITCH_DECLARE(switch_hash_index_t *) switch_channel_variable_first(switch_channel_t *channel, switch_memory_pool_t * pool)
+SWITCH_DECLARE(switch_hash_index_t *) switch_channel_variable_first(switch_channel_t *channel, switch_memory_pool_t *pool)
 {
 	assert(channel != NULL);
 	return switch_hash_first(pool, channel->variables);

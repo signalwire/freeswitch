@@ -54,8 +54,8 @@ extern "C" {
 	class CDRContainer {
 	  public:
 		CDRContainer();
-		CDRContainer(switch_memory_pool_t * module_pool);
-		~CDRContainer();
+		CDRContainer(switch_memory_pool_t *module_pool);
+		                    ~CDRContainer();
 		void add_cdr(switch_core_session_t *session);
 		void process_records();
 #ifdef SWITCH_QUEUE_ENHANCED

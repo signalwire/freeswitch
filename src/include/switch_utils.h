@@ -219,7 +219,7 @@ SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char 
   \param esc the escape character
   \return the escaped string
 */
-SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t * pool, char *in, char *delim, char esc);
+SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t *pool, char *in, char *delim, char esc);
 
 /*!
   \brief Wait for a socket

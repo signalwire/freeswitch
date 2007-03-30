@@ -108,7 +108,8 @@ static char sub_sql[] =
 static char auth_sql[] =
 	"CREATE TABLE sip_authentication (\n"
 	"   user            VARCHAR(255),\n"
-	"   host            VARCHAR(255),\n" "   passwd            VARCHAR(255),\n" "   nonce           VARCHAR(255),\n" "   expires         INTEGER(8)" ");\n";
+	"   host            VARCHAR(255),\n" "   passwd            VARCHAR(255),\n" "   nonce           VARCHAR(255),\n" "   expires         INTEGER(8)"
+	");\n";
 
 static const char modname[] = "mod_sofia";
 #define STRLEN 15
@@ -331,7 +332,8 @@ static switch_status_t sofia_on_loopback(switch_core_session_t *session);
 static switch_status_t sofia_on_transmit(switch_core_session_t *session);
 
 static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session,
-												  switch_caller_profile_t *outbound_profile, switch_core_session_t **new_session, switch_memory_pool_t ** pool);
+												  switch_caller_profile_t *outbound_profile, switch_core_session_t **new_session,
+												  switch_memory_pool_t **pool);
 
 static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id);
 
@@ -610,7 +612,7 @@ static int del_callback(void *pArg, int argc, char **argv, char **columnNames)
 	return 0;
 }
 
-static void check_expire(switch_core_db_t * db, sofia_profile_t * profile, time_t now)
+static void check_expire(switch_core_db_t *db, sofia_profile_t * profile, time_t now)
 {
 	char sql[1024];
 	char *errmsg;
@@ -912,7 +914,7 @@ static void terminate_session(switch_core_session_t **session, switch_call_cause
 
 
 
-static switch_status_t sofia_ext_address_lookup(char **ip, switch_port_t *port, char *sourceip, switch_memory_pool_t * pool)
+static switch_status_t sofia_ext_address_lookup(char **ip, switch_port_t *port, char *sourceip, switch_memory_pool_t *pool)
 {
 	char *error;
 
@@ -956,7 +958,8 @@ static switch_status_t tech_choose_port(private_object_t * tech_pvt)
 	sdp_port = tech_pvt->local_sdp_audio_port;
 
 	if (tech_pvt->profile->extrtpip) {
-		if (sofia_ext_address_lookup(&ip, &sdp_port, tech_pvt->profile->extrtpip, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+		if (sofia_ext_address_lookup(&ip, &sdp_port, tech_pvt->profile->extrtpip, switch_core_session_get_pool(tech_pvt->session)) !=
+			SWITCH_STATUS_SUCCESS) {
 			terminate_session(&tech_pvt->session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
 			return SWITCH_STATUS_FALSE;
 		}
@@ -1065,7 +1068,8 @@ static switch_status_t do_invite(switch_core_session_t *session)
 		char *url = get_url_from_contact(tech_pvt->dest, 1);
 		tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
 								  NUTAG_URL(url),
-								  SIPTAG_TO_STR(tech_pvt->dest_to), SIPTAG_FROM_STR(tech_pvt->from_str), SIPTAG_CONTACT_STR(tech_pvt->profile->url), TAG_END());
+								  SIPTAG_TO_STR(tech_pvt->dest_to), SIPTAG_FROM_STR(tech_pvt->from_str), SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+								  TAG_END());
 		switch_safe_free(url);
 
 		if (!(tech_pvt->sofia_private = malloc(sizeof(*tech_pvt->sofia_private)))) {
@@ -1158,7 +1162,8 @@ static void do_xfer_invite(switch_core_session_t *session)
 		char *rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
 
 		tech_pvt->nh2 = nua_handle(tech_pvt->profile->nua, NULL,
-								   SIPTAG_TO_STR(tech_pvt->dest), SIPTAG_FROM_STR(tech_pvt->from_str), SIPTAG_CONTACT_STR(tech_pvt->profile->url), TAG_END());
+								   SIPTAG_TO_STR(tech_pvt->dest), SIPTAG_FROM_STR(tech_pvt->from_str), SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+								   TAG_END());
 
 
 		nua_handle_bind(tech_pvt->nh2, tech_pvt->sofia_private);
@@ -1557,7 +1562,8 @@ static switch_status_t activate_rtp(private_object_t * tech_pvt)
 	if (tech_pvt->rtp_session && switch_test_flag(tech_pvt, TFLAG_REINVITE)) {
 		switch_clear_flag_locked(tech_pvt, TFLAG_REINVITE);
 
-		if (switch_rtp_set_remote_address(tech_pvt->rtp_session, tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port, &err) != SWITCH_STATUS_SUCCESS) {
+		if (switch_rtp_set_remote_address(tech_pvt->rtp_session, tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port, &err) !=
+			SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP REPORTS ERROR: [%s]\n", err);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTP CHANGING DEST TO: [%s:%d]\n",
@@ -1694,7 +1700,8 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 
 			if (tech_pvt->nh) {
 				if (tech_pvt->local_sdp_str) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local SDP %s:\n%s\n", switch_channel_get_name(channel), tech_pvt->local_sdp_str);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local SDP %s:\n%s\n", switch_channel_get_name(channel),
+									  tech_pvt->local_sdp_str);
 				}
 			}
 		}
@@ -2233,7 +2240,8 @@ static void logger(void *logarg, char const *fmt, va_list ap)
 
 
 static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session,
-												  switch_caller_profile_t *outbound_profile, switch_core_session_t **new_session, switch_memory_pool_t ** pool)
+												  switch_caller_profile_t *outbound_profile, switch_core_session_t **new_session,
+												  switch_memory_pool_t **pool)
 {
 	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	switch_core_session_t *nsession;
@@ -2621,7 +2629,8 @@ static switch_call_cause_t sip_cause_to_freeswitch(int status)
 static void set_hash_key(char *hash_key, int32_t len, sip_t const *sip)
 {
 
-	snprintf(hash_key, len, "%s%s%s", (char *) sip->sip_from->a_url->url_user, (char *) sip->sip_from->a_url->url_host, (char *) sip->sip_to->a_url->url_user);
+	snprintf(hash_key, len, "%s%s%s", (char *) sip->sip_from->a_url->url_user, (char *) sip->sip_from->a_url->url_host,
+			 (char *) sip->sip_to->a_url->url_user);
 
 
 #if 0
@@ -3227,7 +3236,8 @@ typedef enum {
 	REG_INVITE
 } sofia_regtype_t;
 
-static uint8_t handle_register(nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sip_t const *sip, sofia_regtype_t regtype, char *key, uint32_t keylen)
+static uint8_t handle_register(nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sip_t const *sip, sofia_regtype_t regtype, char *key,
+							   uint32_t keylen)
 {
 	sip_from_t const *from = NULL;
 	sip_expires_t const *expires = NULL;
@@ -3389,7 +3399,8 @@ static uint8_t handle_register(nua_t * nua, sofia_profile_t * profile, nua_handl
 			sql = switch_mprintf("delete from sip_authentication where user='%q' and host='%q';\n"
 								 "insert into sip_authentication values('%q','%q','%q','%q', %ld)",
 								 from_user, from_host, from_user, from_host, a1_hash, uuid_str, time(NULL) + profile->nonce_ttl);
-			auth_str = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", from_host, uuid_str, stale ? " stale=\"true\"," : "");
+			auth_str =
+				switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", from_host, uuid_str, stale ? " stale=\"true\"," : "");
 
 
 			if (regtype == REG_REGISTER) {
@@ -3980,7 +3991,8 @@ static void sip_i_refer(nua_t * nua, sofia_profile_t * profile, nua_handle_t * n
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Transfer! [%s]\n", br_a);
 						switch_channel_set_variable(channel_a, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER_ERROR");
 						nua_notify(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
-								   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp), TAG_END());
+								   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp),
+								   TAG_END());
 					}
 				}
 			} else {

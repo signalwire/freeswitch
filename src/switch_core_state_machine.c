@@ -145,7 +145,8 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 		if ((expanded =
 			 switch_channel_expand_variables(session->channel,
 											 extension->current_application->application_data)) != extension->current_application->application_data) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Expanded String %s(%s)\n", extension->current_application->application_name, expanded);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Expanded String %s(%s)\n", extension->current_application->application_name,
+							  expanded);
 		}
 
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
@@ -343,7 +344,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					while (proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_init ||
 							(application_state_handler->on_init &&
-							 application_state_handler->on_init(session) == SWITCH_STATUS_SUCCESS && midstate == switch_channel_get_state(session->channel))) {
+							 application_state_handler->on_init(session) == SWITCH_STATUS_SUCCESS
+							 && midstate == switch_channel_get_state(session->channel))) {
 							proceed++;
 							continue;
 						} else {
@@ -377,7 +379,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					while (proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_ring ||
 							(application_state_handler->on_ring &&
-							 application_state_handler->on_ring(session) == SWITCH_STATUS_SUCCESS && midstate == switch_channel_get_state(session->channel))) {
+							 application_state_handler->on_ring(session) == SWITCH_STATUS_SUCCESS
+							 && midstate == switch_channel_get_state(session->channel))) {
 							proceed++;
 							continue;
 						} else {
@@ -429,7 +432,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State LOOPBACK\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_loopback
 					|| (driver_state_handler->on_loopback
-						&& driver_state_handler->on_loopback(session) == SWITCH_STATUS_SUCCESS && midstate == switch_channel_get_state(session->channel))) {
+						&& driver_state_handler->on_loopback(session) == SWITCH_STATUS_SUCCESS
+						&& midstate == switch_channel_get_state(session->channel))) {
 					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_loopback
 							|| (application_state_handler->on_loopback
@@ -464,7 +468,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State TRANSMIT\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_transmit
 					|| (driver_state_handler->on_transmit
-						&& driver_state_handler->on_transmit(session) == SWITCH_STATUS_SUCCESS && midstate == switch_channel_get_state(session->channel))) {
+						&& driver_state_handler->on_transmit(session) == SWITCH_STATUS_SUCCESS
+						&& midstate == switch_channel_get_state(session->channel))) {
 
 					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_transmit
@@ -518,7 +523,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					while (proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_hold ||
 							(application_state_handler->on_hold &&
-							 application_state_handler->on_hold(session) == SWITCH_STATUS_SUCCESS && midstate == switch_channel_get_state(session->channel))) {
+							 application_state_handler->on_hold(session) == SWITCH_STATUS_SUCCESS
+							 && midstate == switch_channel_get_state(session->channel))) {
 							proceed++;
 							continue;
 						} else {
@@ -535,7 +541,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State HIBERNATE\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_hibernate
 					|| (driver_state_handler->on_hibernate
-						&& driver_state_handler->on_hibernate(session) == SWITCH_STATUS_SUCCESS && midstate == switch_channel_get_state(session->channel))) {
+						&& driver_state_handler->on_hibernate(session) == SWITCH_STATUS_SUCCESS
+						&& midstate == switch_channel_get_state(session->channel))) {
 
 					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_hibernate

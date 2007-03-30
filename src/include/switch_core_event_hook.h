@@ -177,7 +177,8 @@ extern switch_io_event_hooks_t switch_core_session_get_event_hooks(switch_core_s
   \param outgoing_channel hook to bind
   \return SWITCH_STATUS_SUCCESS on suceess
 */
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_outgoing_channel(switch_core_session_t *session, switch_outgoing_channel_hook_t outgoing_channel);
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_outgoing_channel(switch_core_session_t *session,
+																			switch_outgoing_channel_hook_t outgoing_channel);
 
 /*! 
   \brief Add an event hook to be executed when a session answers a channel

@@ -136,7 +136,7 @@ SWITCH_DECLARE(void) switch_stun_random_string(char *buf, uint16_t len, char *se
   \param len the length of the data
   \return a stun packet pointer to buf to use as an access point
 */
-SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, uint32_t len);
+SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t * buf, uint32_t len);
 
 /*!
   \brief Obtain a printable string form of a given value
@@ -173,7 +173,7 @@ SWITCH_DECLARE(char *) switch_stun_packet_attribute_get_username(switch_stun_pac
   \param buf a pointer to data to use for the packet
   \return a pointer to a ready-to-use stun packet
 */
-SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_build_header(switch_stun_message_t type, char *id, uint8_t *buf);
+SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_build_header(switch_stun_message_t type, char *id, uint8_t * buf);
 
 /*!
   \brief Add a username packet attribute
@@ -205,7 +205,7 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_binded_address(switch_s
   \return SUCCESS or FAIL
 */
 SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
-												   switch_port_t *port, char *stunip, switch_port_t stunport, char **err, switch_memory_pool_t * pool);
+												   switch_port_t *port, char *stunip, switch_port_t stunport, char **err, switch_memory_pool_t *pool);
 
 
 

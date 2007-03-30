@@ -98,7 +98,7 @@ SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_close(ss7boost_client
 }
 
 SWITCH_DECLARE(switch_status_t) ss7boost_client_connection_open(ss7boost_client_connection_t * mcon,
-																char *local_ip, int local_port, char *ip, int port, switch_memory_pool_t * pool)
+																char *local_ip, int local_port, char *ip, int port, switch_memory_pool_t *pool)
 {
 	memset(mcon, 0, sizeof(*mcon));
 	mcon->pool = pool;

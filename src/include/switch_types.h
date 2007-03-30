@@ -114,7 +114,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_SPEECH_KEY "speech"
 #define SWITCH_UUID_BRIDGE "uuid_bridge"
 #define SWITCH_BITS_PER_BYTE 8
-typedef uint8_t switch_byte_t;
+	typedef uint8_t switch_byte_t;
 
 typedef enum {
 	SWITCH_FALSE = 0,
@@ -997,7 +997,8 @@ typedef switch_status_t (*switch_module_shutdown_t) (void);
 typedef struct switch_xml *switch_xml_t;
 typedef struct switch_core_time_duration switch_core_time_duration_t;
 typedef switch_xml_t(*switch_xml_search_function_t) (const char *section,
-													 const char *tag_name, const char *key_name, const char *key_value, const char *params, void *user_data);
+													 const char *tag_name, const char *key_name, const char *key_value, const char *params,
+													 void *user_data);
 
 /* things we don't deserve to know about */
 /*! \brief A channel */

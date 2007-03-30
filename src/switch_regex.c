@@ -45,7 +45,7 @@
 SWITCH_DECLARE(void) switch_regex_free(void *data)
 {
 	pcre_free(data);
-} SWITCH_DECLARE(int) switch_regex_perform(char *field, char *expression, switch_regex_t ** new_re, int *ovector, uint32_t olen)
+} SWITCH_DECLARE(int) switch_regex_perform(char *field, char *expression, switch_regex_t **new_re, int *ovector, uint32_t olen)
 {
 	const char *error = NULL;
 	int erroffset = 0;
@@ -87,7 +87,7 @@ SWITCH_DECLARE(void) switch_regex_free(void *data)
 }
 
 
-SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t * re, int match_count, char *data, char *field_data,
+SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_count, char *data, char *field_data,
 												 char *substituted, uint32_t len, int *ovector)
 {
 	char index[10] = "";
