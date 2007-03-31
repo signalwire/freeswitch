@@ -68,8 +68,12 @@ lt_version=`echo $lt_pversion|sed -e 's/\([a-z]*\)$/.\1/'`
 IFS=.; set $lt_version; IFS=' '
 lt_status="good"
 
-if test "$1" -lt "2"; then
-   if test "$2" -lt "5" -o "$2" =  "5" -a "$3" -lt "14" ; then
+a=$[$1+0]
+b=$[$2+0]
+c=$[$3+0]
+
+if test "$a" -lt "2"; then
+   if test "$b" -lt "5" -o "$b" =  "5" -a "$c" -lt "14" ; then
       lt_status="bad"
    fi
 else
@@ -84,7 +88,6 @@ echo "           to build FreeSWITCH from SVN."
 
 exit 1
 fi
-
 
 echo "Entering directory ${LIBDIR}/apr"
 cd ${LIBDIR}/apr
