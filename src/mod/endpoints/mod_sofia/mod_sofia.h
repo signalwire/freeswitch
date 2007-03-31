@@ -1,0 +1,406 @@
+/* 
+ * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ * Copyright (C) 2005/2006, Anthony Minessale II <anthmct@yahoo.com>
+ *
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ *
+ * The Initial Developer of the Original Code is
+ * Anthony Minessale II <anthmct@yahoo.com>
+ * Portions created by the Initial Developer are Copyright (C)
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * 
+ * Anthony Minessale II <anthmct@yahoo.com>
+ * Ken Rice, Asteria Solutions Group, Inc <ken@asteriasgi.com>
+ * Paul D. Tinsley <pdt at jackhammer.org>
+ * Bret McDanel <trixter AT 0xdecafbad.com>
+ *
+ *
+ * mod_sofia.h -- SOFIA SIP Endpoint
+ *
+ */
+
+/*Defines etc..*/
+/*************************************************************************************************************************************************************/
+#define IREG_SECONDS 30
+#define GATEWAY_SECONDS 1
+
+#define HAVE_APR
+#include <switch.h>
+
+static const char modname[] = "mod_sofia";
+static const switch_state_handler_table_t noop_state_handler = { 0 };
+struct outbound_reg;
+typedef struct outbound_reg outbound_reg_t;
+
+struct sofia_profile;
+typedef struct sofia_profile sofia_profile_t;
+#define NUA_MAGIC_T sofia_profile_t
+
+struct sofia_private {
+	char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	outbound_reg_t *gateway;
+};
+
+typedef struct sofia_private sofia_private_t;
+
+struct private_object;
+typedef struct private_object private_object_t;
+#define NUA_HMAGIC_T sofia_private_t
+
+#define MY_EVENT_REGISTER "sofia::register"
+#define MY_EVENT_EXPIRE "sofia::expire"
+#define MULTICAST_EVENT "multicast::event"
+#define SOFIA_REPLACES_HEADER "_sofia_replaces_"
+#define SOFIA_USER_AGENT "FreeSWITCH(mod_sofia)"
+#define SOFIA_CHAT_PROTO "sip"
+#define SOFIA_SIP_HEADER_PREFIX "sip_h_"
+#define SOFIA_SIP_HEADER_PREFIX_T "~sip_h_"
+#define SOFIA_DEFAULT_PORT "5060"
+
+#include <sofia-sip/nua.h>
+#include <sofia-sip/sip_status.h>
+#include <sofia-sip/sdp.h>
+#include <sofia-sip/sip_protos.h>
+#include <sofia-sip/auth_module.h>
+#include <sofia-sip/su_md5.h>
+#include <sofia-sip/su_log.h>
+#include <sofia-sip/nea.h>
+#include <sofia-sip/msg_addr.h>
+
+
+#define set_param(ptr,val) if (ptr) {free(ptr) ; ptr = NULL;} if (val) {ptr = strdup(val);}
+#define set_anchor(t,m) if (t->Anchor) {delete t->Anchor;} t->Anchor = new SipMessage(m);
+
+/* Local Structures */
+/*************************************************************************************************************************************************************/
+struct sip_alias_node {
+	char *url;
+	nua_t *nua;
+	struct sip_alias_node *next;
+};
+
+typedef struct sip_alias_node sip_alias_node_t;
+
+typedef enum {
+	PFLAG_AUTH_CALLS = (1 << 0),
+	PFLAG_BLIND_REG = (1 << 1),
+	PFLAG_AUTH_ALL = (1 << 2),
+	PFLAG_FULL_ID = (1 << 3),
+	PFLAG_PRESENCE = (1 << 4),
+	PFLAG_PASS_RFC2833 = (1 << 5),
+	PFLAG_DISABLE_TRANSCODING = (1 << 6)
+} PFLAGS;
+
+typedef enum {
+	TFLAG_IO = (1 << 0),
+	TFLAG_CHANGE_MEDIA = (1 << 1),
+	TFLAG_OUTBOUND = (1 << 2),
+	TFLAG_READING = (1 << 3),
+	TFLAG_WRITING = (1 << 4),
+	TFLAG_HUP = (1 << 5),
+	TFLAG_RTP = (1 << 6),
+	TFLAG_BYE = (1 << 7),
+	TFLAG_ANS = (1 << 8),
+	TFLAG_EARLY_MEDIA = (1 << 9),
+	TFLAG_SECURE = (1 << 10),
+	TFLAG_VAD_IN = (1 << 11),
+	TFLAG_VAD_OUT = (1 << 12),
+	TFLAG_VAD = (1 << 13),
+	TFLAG_TIMER = (1 << 14),
+	TFLAG_READY = (1 << 15),
+	TFLAG_REINVITE = (1 << 16),
+	TFLAG_REFER = (1 << 17),
+	TFLAG_NOHUP = (1 << 18),
+	TFLAG_XFER = (1 << 19),
+	TFLAG_NOMEDIA = (1 << 20),
+	TFLAG_BUGGY_2833 = (1 << 21),
+	TFLAG_SIP_HOLD = (1 << 22),
+	TFLAG_INB_NOMEDIA = (1 << 23),
+	TFLAG_LATE_NEGOTIATION = (1 << 24)
+} TFLAGS;
+
+struct sofia_globals {
+	switch_hash_t *profile_hash;
+	switch_hash_t *gateway_hash;
+	switch_mutex_t *hash_mutex;
+	uint32_t callid;
+	int32_t running;
+	switch_mutex_t *mutex;
+	char guess_ip[80];
+};
+extern struct sofia_globals globals;
+
+
+typedef enum {
+	REG_FLAG_AUTHED = (1 << 0),
+} reg_flags_t;
+
+typedef enum {
+	REG_STATE_UNREGED,
+	REG_STATE_TRYING,
+	REG_STATE_REGISTER,
+	REG_STATE_REGED,
+	REG_STATE_FAILED,
+	REG_STATE_EXPIRED
+} reg_state_t;
+
+struct outbound_reg {
+	sofia_private_t *sofia_private;
+	nua_handle_t *nh;
+	sofia_profile_t *profile;
+	char *name;
+	char *register_scheme;
+	char *register_realm;
+	char *register_username;
+	char *register_password;
+	char *register_from;
+	char *register_contact;
+	char *register_to;
+	char *register_proxy;
+	char *register_context;
+	char *expires_str;
+	uint32_t freq;
+	time_t expires;
+	time_t retry;
+	uint32_t flags;
+	reg_state_t state;
+	switch_memory_pool_t *pool;
+	struct outbound_reg *next;
+};
+
+
+struct sofia_profile {
+	int debug;
+	char *name;
+	char *dbname;
+	char *dialplan;
+	char *context;
+	char *extrtpip;
+	char *rtpip;
+	char *sipip;
+	char *extsipip;
+	char *username;
+	char *url;
+	char *bindurl;
+	char *sipdomain;
+	char *timer_name;
+	char *hold_music;
+	int sip_port;
+	char *codec_string;
+	int running;
+	int codec_ms;
+	int dtmf_duration;
+	unsigned int flags;
+	unsigned int pflags;
+	uint32_t max_calls;
+	uint32_t nonce_ttl;
+	nua_t *nua;
+	switch_memory_pool_t *pool;
+	su_root_t *s_root;
+	sip_alias_node_t *aliases;
+	switch_payload_t te;
+	switch_payload_t cng_pt;
+	uint32_t codec_flags;
+	switch_mutex_t *ireg_mutex;
+	switch_mutex_t *gateway_mutex;
+	outbound_reg_t *gateways;
+	su_home_t *home;
+	switch_hash_t *profile_hash;
+	switch_hash_t *chat_hash;
+};
+
+
+struct private_object {
+	sofia_private_t *sofia_private;
+	uint32_t flags;
+	switch_payload_t agreed_pt;
+	switch_core_session_t *session;
+	switch_frame_t read_frame;
+	char *codec_order[SWITCH_MAX_CODECS];
+	int codec_order_last;
+	const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];
+	int num_codecs;
+	switch_codec_t read_codec;
+	switch_codec_t write_codec;
+	uint32_t codec_ms;
+	switch_caller_profile_t *caller_profile;
+	uint32_t timestamp_send;
+	//int32_t timestamp_recv;
+	switch_rtp_t *rtp_session;
+	int ssrc;
+	//switch_time_t last_read;
+	sofia_profile_t *profile;
+	char *local_sdp_audio_ip;
+	switch_port_t local_sdp_audio_port;
+	char *remote_sdp_audio_ip;
+	switch_port_t remote_sdp_audio_port;
+	char *adv_sdp_audio_ip;
+	switch_port_t adv_sdp_audio_port;
+	char *proxy_sdp_audio_ip;
+	switch_port_t proxy_sdp_audio_port;
+	char *from_uri;
+	char *to_uri;
+	char *from_address;
+	char *to_address;
+	char *callid;
+	char *far_end_contact;
+	char *contact_url;
+	char *from_str;
+	char *rm_encoding;
+	char *rm_fmtp;
+	char *fmtp_out;
+	char *remote_sdp_str;
+	char *local_sdp_str;
+	char *dest;
+	char *dest_to;
+	char *key;
+	char *xferto;
+	char *kick;
+	char *origin;
+	char *hash_key;
+	char *chat_from;
+	char *chat_to;
+	char *e_dest;
+	char *call_id;
+	unsigned long rm_rate;
+	switch_payload_t pt;
+	switch_mutex_t *flag_mutex;
+	switch_payload_t te;
+	switch_payload_t bte;
+	switch_payload_t cng_pt;
+	switch_payload_t bcng_pt;
+	nua_handle_t *nh;
+	nua_handle_t *nh2;
+	su_home_t *home;
+	sip_contact_t *contact;
+};
+
+struct callback_t {
+	char *val;
+	switch_size_t len;
+	int matches;
+};
+
+typedef enum {
+	REG_REGISTER,
+	REG_INVITE
+} sofia_regtype_t;
+
+typedef enum {
+	AUTH_OK,
+	AUTH_FORBIDDEN,
+	AUTH_STALE,
+} auth_res_t;
+
+/* Function Prototypes */
+/*************************************************************************************************************************************************************/
+
+
+switch_status_t sofia_glue_activate_rtp(private_object_t * tech_pvt);
+
+void sofia_glue_deactivate_rtp(private_object_t * tech_pvt);
+
+void sofia_glue_set_local_sdp(private_object_t * tech_pvt, char *ip, uint32_t port, char *sr, int force);
+
+void sofia_glue_sofia_glue_tech_set_codecs(private_object_t * tech_pvt);
+
+void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t * profile, private_object_t * tech_pvt, const char *channame);
+
+void sofia_glue_terminate_session(switch_core_session_t **session, switch_call_cause_t cause, int line);
+
+switch_status_t sofia_glue_tech_choose_port(private_object_t * tech_pvt);
+
+switch_status_t sofia_glue_do_invite(switch_core_session_t *session);
+
+uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t * sdp);
+
+char *sofia_reg_get_auth_data(char *dbname, char *nonce, char *npassword, size_t len, switch_mutex_t * mutex);
+
+void sofia_presence_establish_presence(sofia_profile_t * profile);
+
+void sofia_handle_sip_i_state(int status,
+				 char const *phrase,
+				 nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[]);
+
+
+void sofia_handle_sip_i_refer(nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[]);
+
+void sofia_handle_sip_i_info(nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[]);
+
+void sofia_handle_sip_i_invite(nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[]);
+
+void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[]);
+
+void sofia_event_callback(nua_event_t event,
+					int status,
+					char const *phrase,
+					nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[]);
+
+
+void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t * thread, void *obj);
+
+void launch_sofia_profile_thread(sofia_profile_t * profile);
+
+switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint);
+void sofia_glue_tech_absorb_sdp(private_object_t * tech_pvt);
+switch_status_t sofia_glue_tech_media(private_object_t * tech_pvt, char *r_sdp);
+char *sofia_reg_find_reg_url(sofia_profile_t * profile, const char *user, const char *host, char *val, switch_size_t len);
+void event_handler(switch_event_t *event);
+void sofia_presence_event_handler(switch_event_t *event);
+void sofia_presence_cancel(void);
+switch_status_t config_sofia(int reload);
+auth_res_t parse_auth(sofia_profile_t * profile, sip_authorization_t const *authorization, const char *regstr, char *np, size_t nplen);
+void sofia_reg_handle_sip_r_challenge(int status,
+					 char const *phrase,
+					 nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[]);
+void sofia_reg_handle_sip_r_register(int status,
+					char const *phrase,
+					nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[]);
+void sofia_handle_sip_i_options(int status,
+				   char const *phrase,
+				   nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[]);
+void sofia_presence_handle_sip_i_publish(nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[]);
+void sofia_presence_handle_sip_i_message(int status,
+				   char const *phrase,
+				   nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[]);
+void sofia_presence_handle_sip_r_subscribe(int status,
+					 char const *phrase,
+					 nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[]);
+void sofia_presence_handle_sip_i_subscribe(int status,
+					 char const *phrase,
+					 nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[]);
+
+sofia_profile_t *sofia_glue_find_profile(char *key);
+void sofia_glue_add_profile(char *key, sofia_profile_t * profile);
+void sofia_glue_execute_sql(char *dbname, char *sql, switch_mutex_t * mutex);
+void sofia_reg_check_expire(switch_core_db_t *db, sofia_profile_t * profile, time_t now);
+void sofia_reg_check_gateway(sofia_profile_t * profile, time_t now);
+void sofia_reg_unregister(sofia_profile_t * profile);
+switch_status_t sofia_glue_ext_address_lookup(char **ip, switch_port_t *port, char *sourceip, switch_memory_pool_t *pool);
+outbound_reg_t *sofia_reg_find_gateway(char *key);
+void sofia_reg_add_gateway(char *key, outbound_reg_t * gateway);
+void sofia_glue_pass_sdp(private_object_t * tech_pvt, char *sdp);
+switch_call_cause_t sofia_glue_sip_cause_to_freeswitch(int status);
+void sofia_glue_do_xfer_invite(switch_core_session_t *session);
+uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sip_t const *sip, sofia_regtype_t regtype, char *key, uint32_t keylen);
+const switch_endpoint_interface_t sofia_endpoint_interface;
+void sofia_presence_set_chat_hash(private_object_t * tech_pvt, sip_t const *sip);
+switch_status_t sofia_on_hangup(switch_core_session_t *session);
+char *sofia_glue_get_url_from_contact(char *buf, uint8_t to_dup);
+int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char **columnNames);
+int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char **columnNames);
+void sofia_presence_set_hash_key(char *hash_key, int32_t len, sip_t const *sip);

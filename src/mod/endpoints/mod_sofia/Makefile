@@ -12,6 +12,7 @@ LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/sdp -I$(SOFIAUA_DIR)/sip
 LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/soa -I$(SOFIAUA_DIR)/sresolv
 LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/stun -I$(SOFIAUA_DIR)/su
 LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/tport -I$(SOFIAUA_DIR)/url
+LOCAL_OBJS=sofia.o sofia_glue.o sofia_presence.o sofia_reg.o
 
 SOFIALA=$(SOFIAUA_DIR)/libsofia-sip-ua.la
 
