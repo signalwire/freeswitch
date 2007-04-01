@@ -1391,15 +1391,13 @@ tools are selected during the Xcode/Developer Tools installation.])
         AC_DEFINE(LINUX)
         ;;
     esac
-    CFLAGS="$CFLAGS -Wall"
-    CXXFLAGS="$CXXFLAGS -Wall"
     MDCPUCFG_H=_linux.cfg
     PR_MD_CSRCS=linux.c
     MKSHLIB='$(CC) $(DSO_LDOPTS) -o $@'
     DSO_CFLAGS=-fPIC
     DSO_LDOPTS='-shared -Wl,-soname -Wl,$(notdir $@)'
     _OPTIMIZE_FLAGS=-O2
-    _DEBUG_FLAGS="-g -fno-inline"  # most people on linux use gcc/gdb, and that
+    _DEBUG_FLAGS="-g"  # most people on linux use gcc/gdb, and that
                                    # combo is not yet good at debugging inlined
                                    # functions (even when using DWARF2 as the
                                    # debugging format)
@@ -1872,7 +1870,7 @@ mips-sony-newsos*)
 *-sunos*)
     AC_DEFINE(XP_UNIX)
     AC_DEFINE(SUNOS4)
-    CFLAGS="$CFLAGS -Wall -Wno-format"
+#    CFLAGS="$CFLAGS -Wall -Wno-format"
     if test "$USE_MDUPDATE"; then
         CFLAGS="$CFLAGS -MDupdate \$(DEPENDENCIES)"
     fi
