@@ -134,13 +134,24 @@ dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(stdlib.h)
 AC_CHECK_HEADERS(unistd.h)
-AC_CHECK_HEADERS(byteswap.h)
 AC_CHECK_HEADERS(stdint.h)
 AC_CHECK_HEADERS(sys/uio.h)
 AC_CHECK_HEADERS(inttypes.h)
 AC_CHECK_HEADERS(sys/types.h)
 AC_CHECK_HEADERS(machine/types.h)
 AC_CHECK_HEADERS(sys/int_types.h)
+
+AC_LINK_IFELSE(AC_LANG_PROGRAM([
+#include <inttypes.h>
+#include <byteswap.h>
+],[
+uint64_t y = 0x1122334455667788LL;
+bswap_64(y);
+]),byteswap_cv_bswap_64_usable=yes,byteswap_cv_bswap_64_usable=no)
+
+if test "x${byteswap_cv_bswap_64_usable}" = "xyes" ; then
+AC_DEFINE([HAVE_BYTESWAP_H],1,[define if you have a usable bswap_64 in byteswap.h])
+fi
 
 dnl socket() and friends
 AC_CHECK_HEADERS(sys/socket.h netinet/in.h arpa/inet.h)
