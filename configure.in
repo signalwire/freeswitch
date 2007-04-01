@@ -32,6 +32,11 @@ AC_PROG_CC
 AC_PROG_AWK
 AC_PROG_MAKE_SET
 AC_PROG_INSTALL
+
+#override some default libtool behavior and invoke AC_PROG_LIBTOOL (see http://lists.gnu.org/archive/html/libtool/2007-03/msg00000.html)
+m4_defun([_LT_AC_LANG_F77_CONFIG], [:])
+m4_defun([_LT_AC_LANG_GCJ_CONFIG], [:])
+m4_defun([_LT_AC_LANG_RC_CONFIG], [:])
 AC_PROG_LIBTOOL
 
 #Check for compiler vendor
