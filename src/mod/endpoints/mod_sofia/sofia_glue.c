@@ -1071,18 +1071,18 @@ sofia_profile_t *sofia_glue_find_profile(char *key)
 {
 	sofia_profile_t *profile;
 
-	switch_mutex_lock(globals.hash_mutex);
-	profile = (sofia_profile_t *) switch_core_hash_find(globals.profile_hash, key);
-	switch_mutex_unlock(globals.hash_mutex);
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	profile = (sofia_profile_t *) switch_core_hash_find(mod_sofia_globals.profile_hash, key);
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 
 	return profile;
 }
 
 void sofia_glue_add_profile(char *key, sofia_profile_t * profile)
 {
-	switch_mutex_lock(globals.hash_mutex);
-	switch_core_hash_insert(globals.profile_hash, key, profile);
-	switch_mutex_unlock(globals.hash_mutex);
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	switch_core_hash_insert(mod_sofia_globals.profile_hash, key, profile);
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 }
 
 void sofia_glue_execute_sql(char *dbname, char *sql, switch_mutex_t * mutex)

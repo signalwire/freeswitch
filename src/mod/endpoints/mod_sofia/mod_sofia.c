@@ -38,7 +38,7 @@
 
 #include "mod_sofia.h"
 
-struct sofia_globals globals;
+struct mod_sofia_globals mod_sofia_globals;
 
 static switch_frame_t silence_frame = { 0 };
 static char silence_data[13] = "";
@@ -991,19 +991,19 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 		return SWITCH_STATUS_TERM;
 	}
 
-	memset(&globals, 0, sizeof(globals));
-	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
+	memset(&mod_sofia_globals, 0, sizeof(mod_sofia_globals));
+	switch_mutex_init(&mod_sofia_globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
 
-	switch_find_local_ip(globals.guess_ip, sizeof(globals.guess_ip), AF_INET);
+	switch_find_local_ip(mod_sofia_globals.guess_ip, sizeof(mod_sofia_globals.guess_ip), AF_INET);
 
 	if (switch_event_bind((char *) modname, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_TERM;
 	}
 
-	switch_core_hash_init(&globals.profile_hash, module_pool);
-	switch_core_hash_init(&globals.gateway_hash, module_pool);
-	switch_mutex_init(&globals.hash_mutex, SWITCH_MUTEX_NESTED, module_pool);
+	switch_core_hash_init(&mod_sofia_globals.profile_hash, module_pool);
+	switch_core_hash_init(&mod_sofia_globals.gateway_hash, module_pool);
+	switch_mutex_init(&mod_sofia_globals.hash_mutex, SWITCH_MUTEX_NESTED, module_pool);
 
 	config_sofia(0);
 
@@ -1041,13 +1041,13 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 
 	sofia_presence_cancel();
 
-	switch_mutex_lock(globals.mutex);
-	if (globals.running == 1) {
-		globals.running = -1;
+	switch_mutex_lock(mod_sofia_globals.mutex);
+	if (mod_sofia_globals.running == 1) {
+		mod_sofia_globals.running = -1;
 	}
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(mod_sofia_globals.mutex);
 
-	while (globals.running) {
+	while (mod_sofia_globals.running) {
 		switch_yield(1000);
 	}
 

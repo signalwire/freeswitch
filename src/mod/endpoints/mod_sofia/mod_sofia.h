@@ -133,7 +133,7 @@ typedef enum {
 	TFLAG_LATE_NEGOTIATION = (1 << 24)
 } TFLAGS;
 
-struct sofia_globals {
+struct mod_sofia_globals {
 	switch_hash_t *profile_hash;
 	switch_hash_t *gateway_hash;
 	switch_mutex_t *hash_mutex;
@@ -142,7 +142,7 @@ struct sofia_globals {
 	switch_mutex_t *mutex;
 	char guess_ip[80];
 };
-extern struct sofia_globals globals;
+extern struct mod_sofia_globals mod_sofia_globals;
 
 
 typedef enum {

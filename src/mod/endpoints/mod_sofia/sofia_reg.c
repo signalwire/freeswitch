@@ -772,18 +772,18 @@ outbound_reg_t *sofia_reg_find_gateway(char *key)
 {
 	outbound_reg_t *gateway;
 
-	switch_mutex_lock(globals.hash_mutex);
-	gateway = (outbound_reg_t *) switch_core_hash_find(globals.gateway_hash, key);
-	switch_mutex_unlock(globals.hash_mutex);
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	gateway = (outbound_reg_t *) switch_core_hash_find(mod_sofia_globals.gateway_hash, key);
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 
 	return gateway;
 }
 
 void sofia_reg_add_gateway(char *key, outbound_reg_t * gateway)
 {
-	switch_mutex_lock(globals.hash_mutex);
-	switch_core_hash_insert(globals.gateway_hash, key, gateway);
-	switch_mutex_unlock(globals.hash_mutex);
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	switch_core_hash_insert(mod_sofia_globals.gateway_hash, key, gateway);
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 }
 
 

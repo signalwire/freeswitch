@@ -359,7 +359,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t * thread, void
 		sofia_presence_establish_presence(profile);
 	}
 
-	while (globals.running == 1) {
+	while (mod_sofia_globals.running == 1) {
 		if (++ireg_loops >= IREG_SECONDS) {
 			sofia_reg_check_expire(db, profile, time(NULL));
 			ireg_loops = 0;
@@ -387,9 +387,9 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t * thread, void
 	su_root_destroy(profile->s_root);
 	pool = profile->pool;
 	switch_core_destroy_memory_pool(&pool);
-	switch_mutex_lock(globals.mutex);
-	globals.running = 0;
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_lock(mod_sofia_globals.mutex);
+	mod_sofia_globals.running = 0;
+	switch_mutex_unlock(mod_sofia_globals.mutex);
 
 	return NULL;
 }
@@ -439,9 +439,9 @@ switch_status_t config_sofia(int reload)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	sofia_profile_t *profile = NULL;
 	char url[512] = "";
-	switch_mutex_lock(globals.mutex);
-	globals.running = 1;
-	switch_mutex_unlock(globals.mutex);
+	switch_mutex_lock(mod_sofia_globals.mutex);
+	mod_sofia_globals.running = 1;
+	switch_mutex_unlock(mod_sofia_globals.mutex);
 
 	if (!reload) {
 		su_init();
@@ -531,14 +531,14 @@ switch_status_t config_sofia(int reload)
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invald option %s for VAD\n", val);
 						}
 					} else if (!strcasecmp(var, "ext-rtp-ip")) {
-						profile->extrtpip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : globals.guess_ip);
+						profile->extrtpip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip);
 					} else if (!strcasecmp(var, "rtp-ip")) {
-						profile->rtpip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : globals.guess_ip);
+						profile->rtpip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip);
 					} else if (!strcasecmp(var, "sip-ip")) {
-						profile->sipip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : globals.guess_ip);
+						profile->sipip = switch_core_strdup(profile->pool, strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip);
 					} else if (!strcasecmp(var, "ext-sip-ip")) {
 						if (!strcasecmp(val, "auto")) {
-							profile->extsipip = switch_core_strdup(profile->pool, globals.guess_ip);
+							profile->extsipip = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
 						} else {
 							char *ip = NULL;
 							switch_port_t port = 0;
@@ -625,11 +625,11 @@ switch_status_t config_sofia(int reload)
 				}
 
 				if (!profile->sipip) {
-					profile->sipip = switch_core_strdup(profile->pool, globals.guess_ip);
+					profile->sipip = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
 				}
 
 				if (!profile->rtpip) {
-					profile->rtpip = switch_core_strdup(profile->pool, globals.guess_ip);
+					profile->rtpip = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
 				}
 
 				if (profile->nonce_ttl < 60) {
