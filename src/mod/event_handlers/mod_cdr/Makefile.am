@@ -1,3 +1,6 @@
+AM_CFLAGS   = $(SWITCH_AM_CFLAGS)
+AM_CPPFLAGS = $(SWITCH_AM_CXXFLAGS)
+AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS)
 #we should set all these vars from configure, no reason to have these in each Makefile.am
 LIBTOOL = echo "`link=\`echo $@|grep .la;echo $@|grep .so;echo $@|grep .dll\`;if test -n "$$link"; then echo Creating $@;fi`";`if test -z "$(VERBOSE)" ; \
 then echo $(SHELL) $(switch_builddir)/quiet_libtool ;else echo $(SHELL) $(switch_builddir)/libtool;  fi`
