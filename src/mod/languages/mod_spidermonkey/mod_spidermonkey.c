@@ -2651,7 +2651,7 @@ static void js_parse_and_execute(switch_core_session_t *session, char *input_cod
 
 	if ((arg = strchr(script, ' '))) {
 		*arg++ = '\0';
-		argc = switch_separate_string(arg, ':', argv, (sizeof(argv) / sizeof(argv[0])));
+		argc = switch_separate_string(arg, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
 	if (argc) {					/* create a js doppleganger of this argc/argv */
@@ -2757,12 +2757,34 @@ static switch_loadable_module_interface_t spidermonkey_module_interface = {
 	/*.directory_interface */ NULL
 };
 
+static void  message_query_handler(switch_event_t *event)
+{
+	char *account = switch_event_get_header(event, "message-account");
+
+	if (account) {
+		char *text;
+
+		text = switch_mprintf("mwi.js %s", account);
+		assert(text != NULL);
+
+		js_thread_launch(text);
+		free(text);
+	}
+
+}
+
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	switch_status_t status;
 
 	if ((status = init_js()) != SWITCH_STATUS_SUCCESS) {
 		return status;
+	}
+
+	if (switch_event_bind((char *) modname, SWITCH_EVENT_MESSAGE_QUERY, SWITCH_EVENT_SUBCLASS_ANY, message_query_handler, NULL)
+		!= SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_GENERR;
 	}
 
 	/* connect my internal structure to the blank pointer passed to me */
