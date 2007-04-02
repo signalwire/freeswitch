@@ -454,9 +454,8 @@ static int sofia_presence_sub_reg_callback(void *pArg, int argc, char **argv, ch
 	char *event_name = argv[5];
 
 	if (!strcasecmp(event_name, "message-summary")) {
-		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", "no");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", "sip:%s@%s", user, host);
+		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", user, host);
 			switch_event_fire(&event);
 		}
 		return 0;

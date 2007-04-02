@@ -128,6 +128,7 @@ static JSBool event_construct(JSContext * cx, JSObject * obj, uintN argc, jsval 
 		if ((eo = malloc(sizeof(*eo)))) {
 
 			if (switch_name_event(ename, &etype) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown event %s\n", ename);
 				*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 				return JS_TRUE;
 			}
@@ -146,7 +147,7 @@ static JSBool event_construct(JSContext * cx, JSObject * obj, uintN argc, jsval 
 				}
 
 			} else {
-				if (!switch_event_create(&event, etype) != SWITCH_STATUS_SUCCESS) {
+				if (switch_event_create(&event, etype) != SWITCH_STATUS_SUCCESS) {
 					*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 					return JS_TRUE;
 				}

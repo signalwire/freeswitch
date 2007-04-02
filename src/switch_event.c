@@ -126,6 +126,8 @@ static char *EVENT_NAMES[] = {
 	"PRESENCE_IN",
 	"PRESENCE_OUT",
 	"PRESENCE_PROBE",
+	"MESSAGE_WAITING",
+	"MESSAGE_QUERY",
 	"ROSTER",
 	"CODEC",
 	"BACKGROUND_JOB",
@@ -313,7 +315,7 @@ SWITCH_DECLARE(switch_status_t) switch_name_event(char *name, switch_event_types
 	assert(RUNTIME_POOL != NULL);
 
 	for (x = 0; x <= SWITCH_EVENT_ALL; x++) {
-		if (!strcasecmp(name, EVENT_NAMES[x])) {
+		if ((strlen(name) > 13 && !strcasecmp(name + 13, EVENT_NAMES[x])) || !strcasecmp(name, EVENT_NAMES[x])) {
 			*type = x;
 			return SWITCH_STATUS_SUCCESS;
 		}
