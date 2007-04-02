@@ -1,5 +1,43 @@
+/* 
+ * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ * Copyright (C) 2005/2006, Anthony Minessale II <anthmct@yahoo.com>
+ *
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ *
+ * The Initial Developer of the Original Code is
+ * Anthony Minessale II <anthmct@yahoo.com>
+ * Portions created by the Initial Developer are Copyright (C)
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * 
+ * Anthony Minessale II <anthmct@yahoo.com>
+ * Ken Rice, Asteria Solutions Group, Inc <ken@asteriasgi.com>
+ * Paul D. Tinsley <pdt at jackhammer.org>
+ * Bret McDanel <trixter AT 0xdecafbad.com>
+ *
+ *
+ * sofia_presence.c -- SOFIA SIP Endpoint (presence code)
+ *
+ */
 #include "mod_sofia.h"
 
+static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char **columnNames);
+static int sofia_presence_sub_reg_callback(void *pArg, int argc, char **argv, char **columnNames);
+static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char **columnNames);
+static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char **columnNames);
 
 switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint)
 {
@@ -152,6 +190,70 @@ char *sofia_presence_translate_rpid(char *in, char *ext)
 	}
 
 	return r;
+}
+
+void sofia_presence_mwi_event_handler(switch_event_t *event)
+{
+	char *account, *dup_account, *yn, *host, *user;
+	char *sql;
+	switch_core_db_t *db;
+	sofia_profile_t *profile;
+	char *errmsg = NULL;
+	switch_stream_handle_t stream = { 0 };
+	switch_event_header_t *hp;
+
+	assert(event != NULL);
+
+	if (!(account = switch_event_get_header(event, "mwi-message-account"))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing required Header 'MWI-Message-Account'\n");
+		return;
+	}
+
+	if (!(yn = switch_event_get_header(event, "mwi-messages-waiting"))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing required Header 'MWI-Messages-Waiting'\n");
+		return;
+	}
+
+	dup_account = strdup(account);
+	assert(dup_account != NULL);
+	sofia_glue_get_user_host(dup_account, &user, &host);
+
+	if (!host || !(profile = sofia_glue_find_profile(host))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile for host %s\n", switch_str_nil(host));
+		return;
+	}
+
+
+	if (!(db = switch_core_db_open_file(profile->dbname))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+		return;
+	}
+
+	SWITCH_STANDARD_STREAM(stream);
+
+	for (hp = event->headers; hp; hp = hp->next) {
+		if (!strncasecmp(hp->name, "mwi-", 4)) {
+			stream.write_function(&stream, "%s: %s\r\n", hp->name + 4, hp->value);
+		}
+	}
+
+	stream.write_function(&stream, "\r\n");
+	
+	sql = switch_mprintf("select *,'%q' from sip_subscriptions where event='message-summary' and sub_to_user='%q' and sub_to_host='%q'", 
+						 stream.data, user, host);
+	
+	switch_safe_free(stream.data);
+
+	assert (sql != NULL);
+
+	switch_mutex_lock(profile->ireg_mutex);
+	switch_core_db_exec(db, sql, sofia_presence_mwi_callback, profile, &errmsg);
+	if (errmsg) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: %s\n", errmsg);
+	}
+	switch_mutex_unlock(profile->ireg_mutex);		
+	switch_safe_free(sql);
+	switch_safe_free(dup_account);
 }
 
 void sofia_presence_event_handler(switch_event_t *event)
@@ -341,7 +443,7 @@ void sofia_presence_event_handler(switch_event_t *event)
 	switch_safe_free(user);
 }
 
-int sofia_presence_sub_reg_callback(void *pArg, int argc, char **argv, char **columnNames)
+static int sofia_presence_sub_reg_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	sofia_profile_t *profile = (sofia_profile_t *) pArg;
 	//char *proto = argv[0];
@@ -349,6 +451,17 @@ int sofia_presence_sub_reg_callback(void *pArg, int argc, char **argv, char **co
 	char *host = argv[2];
 	switch_event_t *event;
 	char *status = NULL;
+	char *event_name = argv[5];
+
+	if (!strcasecmp(event_name, "message-summary")) {
+		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", "no");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", "sip:%s@%s", user, host);
+			switch_event_fire(&event);
+		}
+		return 0;
+	}
+
 	if (switch_strlen_zero(status)) {
 		status = "Available";
 	}
@@ -365,7 +478,7 @@ int sofia_presence_sub_reg_callback(void *pArg, int argc, char **argv, char **co
 	return 0;
 }
 
-int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char **columnNames)
+static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	sofia_profile_t *profile = (sofia_profile_t *) pArg;
 	char *user = argv[0];
@@ -392,7 +505,7 @@ int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char **colu
 	return 0;
 }
 
-int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char **columnNames)
+static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	sofia_profile_t *profile = (sofia_profile_t *) pArg;
 	char *pl;
@@ -475,6 +588,57 @@ int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char **column
 
 	return 0;
 }
+
+static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	//char *proto = argv[0];
+	//char *user = argv[1];
+	char *host = argv[2];
+	char *sub_to_user = argv[3];
+	char *sub_to_host = argv[4];
+	char *event = argv[5];
+	char *contact = argv[6];
+	char *call_id = argv[7];
+	char *full_from = argv[8];
+	char *full_via = argv[9];
+	char *expires = argv[10];
+	char *body = argv[11];
+	char *exp;
+	sofia_profile_t *profile;
+	char *tmp, *id = NULL;
+	nua_handle_t *nh;
+	
+	if (!(profile = sofia_glue_find_profile(sub_to_host))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile for host %s\n", host);
+		return 0;
+	}
+	
+	nh = nua_handle(profile->nua, NULL, TAG_END());
+	assert(nh != NULL);
+
+	id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
+	exp = switch_mprintf("active;expires=%s", expires ? expires : "3600");
+
+	tmp = contact;
+	contact = sofia_glue_get_url_from_contact(tmp, 0);
+
+	nua_notify(nh,
+			   NUTAG_URL(contact),
+			   SIPTAG_TO_STR(full_from),
+			   SIPTAG_FROM_STR(id),
+			   //SIPTAG_CONTACT_STR(profile->url),
+			   SIPTAG_CONTACT_STR(id),
+			   SIPTAG_CALL_ID_STR(call_id),
+			   SIPTAG_VIA_STR(full_via),
+			   SIPTAG_SUBSCRIPTION_STATE_STR(exp),
+			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"), SIPTAG_PAYLOAD_STR(body), TAG_END());
+
+
+	switch_safe_free(id);
+	switch_safe_free(exp);
+	return 0;
+}
+
 
 void sofia_presence_handle_sip_i_subscribe(int status,
 							char const *phrase,

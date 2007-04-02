@@ -29,7 +29,7 @@
  * Bret McDanel <trixter AT 0xdecafbad.com>
  *
  *
- * sofia.c -- SOFIA SIP Endpoint
+ * sofia.c -- SOFIA SIP Endpoint (sofia code)
  *
  */
 #include "mod_sofia.h"
