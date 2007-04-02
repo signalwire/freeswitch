@@ -2663,7 +2663,6 @@ static void js_parse_and_execute(switch_core_session_t *session, char *input_cod
 		for (y = 0; y < argc; y++) {
 			snprintf(buf, sizeof(buf), "~argv[%d] = \"%s\";", x++, argv[y]);
 			eval_some_js(buf, cx, javascript_global_object, &rval);
-
 		}
 	}
 
@@ -2764,10 +2763,13 @@ static void  message_query_handler(switch_event_t *event)
 	if (account) {
 		char *text;
 
-		text = switch_mprintf("mwi.js %s", account);
+		text = switch_mprintf("%s%smwi.js", SWITCH_GLOBAL_dirs.script_dir, SWITCH_PATH_SEPARATOR);
 		assert(text != NULL);
 
-		js_thread_launch(text);
+		if (switch_file_exists(text) == SWITCH_STATUS_SUCCESS) {
+			js_thread_launch(text);
+		}
+
 		free(text);
 	}
 
