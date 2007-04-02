@@ -606,7 +606,8 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	sofia_profile_t *profile;
 	char *tmp, *id = NULL;
 	nua_handle_t *nh;
-	
+	int expire_sec = atoi(expires);
+
 	if (!(profile = sofia_glue_find_profile(sub_to_host))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile for host %s\n", host);
 		return 0;
@@ -616,7 +617,7 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	assert(nh != NULL);
 
 	id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
-	exp = switch_mprintf("active;expires=%s", expires ? expires : "3600");
+	exp = switch_mprintf("active;expires=%ld", time(NULL) - expire_sec);
 
 	tmp = contact;
 	contact = sofia_glue_get_url_from_contact(tmp, 0);
