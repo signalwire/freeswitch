@@ -5,7 +5,7 @@ if [ -z $MAKE ] ; then
 fi
 
 if [ -z $arg ] ; then
-    $MAKE -j8 core
+    $MAKE -j20 freeswitch
     MODS=`cat modules.conf | grep -v \#`
     for i in $MODS ; do 
 	MOD_NAME=`echo $i | sed -e 's|^.*/||'`
