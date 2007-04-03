@@ -13,6 +13,7 @@ LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/soa -I$(SOFIAUA_DIR)/sresolv
 LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/stun -I$(SOFIAUA_DIR)/su
 LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/tport -I$(SOFIAUA_DIR)/url
 LOCAL_OBJS=sofia.o sofia_glue.o sofia_presence.o sofia_reg.o
+LOCAL_SOURCES=sofia.c sofia_glue.c sofia_presense.c sofia_reg.c mod_sofia.c
 
 SOFIALA=$(SOFIAUA_DIR)/libsofia-sip-ua.la
 
@@ -28,3 +29,6 @@ $(SOFIALA): $(SOFIA_DIR) $(SOFIA_DIR)/.update
 
 local_depend: $(SOFIALA)
 
+../../../../libs/sofia-sip/libsofia-sip-ua/nua/sofia-sip/nua_tag.h: $(SOFIALA)
+
+$(LOCAL_OBJS) $(LOCAL_SOURCES): ../../../../libs/sofia-sip/libsofia-sip-ua/nua/sofia-sip/nua_tag.h
