@@ -1,5 +1,3 @@
-_DIST =
-SUBDIRS = test
 AUTOMAKE_OPTS= gnu
 NAME=srtp
 
@@ -46,7 +44,7 @@ library_include_HEADERS = include/rtp.h include/srtp.h include/ut_sim.h crypto/i
 
 noinst_PROGRAMS = aes_tables
 aes_tables_SOURCES = tables/aes_tables.c
-aes_tables_LDFLAGS = -lcryptomath
+aes_tables_LDADD = libcryptomath.la
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = srtp-1.42.pc

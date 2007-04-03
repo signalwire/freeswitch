@@ -170,7 +170,7 @@ libs/apr/libapr-1.la: libs/apr libs/apr/.update
 	@cd libs/apr && $(MAKE)
 	@$(TOUCH_TARGET)
 
-libs/apr-util/libaprutil-1.la: libs/apr-util libs/apr-util/.update
+libs/apr-util/libaprutil-1.la: libs/apr-util libs/apr-util/.update libs/apr/libapr-1.la
 	@cd libs/apr-util && $(MAKE)
 	@$(TOUCH_TARGET)
 
