@@ -144,7 +144,7 @@ void sofia_presence_establish_presence(sofia_profile_t * profile)
 		return;
 	}
 
-	if ((sql = switch_mprintf("select user,host,'Registered','unknown','' from sofia_handle_sip_registrations"))) {
+	if ((sql = switch_mprintf("select user,host,'Registered','unknown','' sip_registrations"))) {
 		switch_mutex_lock(profile->ireg_mutex);
 		switch_core_db_exec(db, sql, sofia_presence_resub_callback, profile, &errmsg);
 		switch_mutex_unlock(profile->ireg_mutex);
@@ -383,7 +383,7 @@ void sofia_presence_event_handler(switch_event_t *event)
 
 			if (euser && host &&
 				(sql =
-				 switch_mprintf("select user,host,status,rpid,'' from sofia_handle_sip_registrations where user='%q' and host='%q'",
+				 switch_mprintf("select user,host,status,rpid,'' from sip_registrations where user='%q' and host='%q'",
 								euser, host)) && (profile = sofia_glue_find_profile(host))) {
 				if (!(db = switch_core_db_open_file(profile->dbname))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
@@ -872,7 +872,7 @@ void sofia_presence_handle_sip_i_publish(nua_t * nua, sofia_profile_t * profile,
 				}
 
 				if ((sql =
-					 switch_mprintf("update sofia_handle_sip_registrations set status='%q',rpid='%q' where user='%q' and host='%q'",
+					 switch_mprintf("update sip_registrations set status='%q',rpid='%q' where user='%q' and host='%q'",
 									note_txt, rpid, from_user, from_host))) {
 					sofia_glue_execute_sql(profile->dbname, sql, profile->ireg_mutex);
 					switch_safe_free(sql);
