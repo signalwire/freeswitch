@@ -242,7 +242,7 @@ megaclean: eclean modclean
 @am__include@ @am__quote@./$(DEPDIR)/modules.targets@am__quote@
 
 modules.conf:
-	if test -f $@; then touch $@; else cp build/modules.conf.in $@ 
+	if test -f $@; then touch $@; else cp build/modules.conf.in $@ ;fi
 
 ./$(DEPDIR)/modules.targets: modules.conf
 	mods=`cat modules.conf | sed -e 's|^.*/||'`; echo MODULE_TARGETS=\"$$mods\" > ./$(DEPDIR)/modules.targets
