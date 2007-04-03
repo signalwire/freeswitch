@@ -14,8 +14,6 @@ LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/stun -I$(SOFIAUA_DIR)/su
 LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/tport -I$(SOFIAUA_DIR)/url
 LOCAL_OBJS=sofia.o sofia_glue.o sofia_presence.o sofia_reg.o
 
-$(LOCAL_OBJS): $(SOFIALA)
-
 SOFIALA=$(SOFIAUA_DIR)/libsofia-sip-ua.la
 
 LOCAL_LIBADD=$(SOFIALA)
@@ -27,3 +25,6 @@ include $(BASE)/build/modmake.rules
 $(SOFIALA): $(SOFIA_DIR) $(SOFIA_DIR)/.update
 	cd $(SOFIA_DIR) && $(MAKE)
 	$(TOUCH_TARGET)
+
+local_depend: $(SOFIALA)
+
