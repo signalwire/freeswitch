@@ -76,3 +76,15 @@ uninstall:
 	@echo
 	@echo done Uninstalling Modules
 
+
+@am__include@ @am__quote@$(switch_builddir)/$(DEPDIR)/modules.targets@am__quote@
+
+$(MODULE_TARGETS):
+	@set fnord $$MAKEFLAGS; amf=$$2; \
+	moddir=`grep $@ $(switch_builddir)/modules.conf | sed -e 's|#||'` ; \
+	(if test -f $$moddir/Makefile ; then \
+		cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) $(AM_MAKEFLAGS); else\
+		cd $$moddir && MODNAME=$(MOD_NAME) BASE=$(switch_builddir) $(MAKE) $(AM_MAKEFLAGS) -f $(switch_builddir)/build/modmake.rules;\
+	fi;)\
+	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
+	test -z "$$fail"

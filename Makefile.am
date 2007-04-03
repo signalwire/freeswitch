@@ -113,7 +113,7 @@ nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
 MOD_LINK       = $(BASE)/libfreeswitch.la
 
 CLEANFILES     = src/include/switch_version.h
-BUILT_SOURCES  = src/include/switch_version.h
+BUILT_SOURCES  = src/include/switch_version.h ./$(DEPDIR)/modules.targets
 
 bin_PROGRAMS = freeswitch
 freeswitch_SOURCES = src/switch.c
@@ -122,7 +122,7 @@ freeswitch_CFLAGS = $(AM_CFLAGS)
 freeswitch_LDFLAGS = $(AM_LDFLAGS) -rpath $(libdir)
 freeswitch_LDADD = libfreeswitch.la libs/apr/libapr-1.la
 
-$(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/quiet_libtool
+$(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/quiet_libtool modules.conf
 
 $(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
 	@cat libtool | sed -e 's|$$show "$$command"|if test -z "$$suppress_output" ; then $$show "Compiling $$srcfile ..." ; fi|' > quiet_libtool
@@ -239,6 +239,19 @@ eclean: clean
 megaclean: eclean modclean
 	rm -f `find ./libs -name \*.la`
 
+@am__include@ @am__quote@./$(DEPDIR)/modules.targets@am__quote@
+
+modules.conf:
+	if test -f $@; then touch $@; else cp build/modules.conf.in $@ 
+
+./$(DEPDIR)/modules.targets: modules.conf
+	mods=`cat modules.conf | sed -e 's|^.*/||'`; echo MODULE_TARGETS=\"$$mods\" > ./$(DEPDIR)/modules.targets
+
+$(MODULE_TARGETS):
+	@set fnord $$MAKEFLAGS; amf=$$2; \
+	(cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@) \
+	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
+	test -z "$$fail"
 
 # Special targets
 
