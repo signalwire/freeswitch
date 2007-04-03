@@ -5,7 +5,7 @@ if [ -z $MAKE ] ; then
 fi
 
 if [ -z $arg ] ; then
-    $MAKE -j20 freeswitch
+    $MAKE -j freeswitch
     MODS=`cat modules.conf | grep -v \#`
     for i in $MODS ; do 
 	MOD_NAME=`echo $i | sed -e 's|^.*/||'`
@@ -42,9 +42,9 @@ MOD_DIR=$1 ; shift
 
 echo "Making module in $MOD_NAME"
 if [ -f $MOD_DIR/Makefile ] ; then 
-    cd $MOD_DIR && BASE=$switch_srcdir $MAKE
+    cd $MOD_DIR && BASE=$switch_srcdir $MAKE -j
 else
-    cd $MOD_DIR && BASE=$switch_srcdir $MAKE -f $switch_srcdir/build/modmake.rules
+    cd $MOD_DIR && BASE=$switch_srcdir $MAKE -j -f $switch_srcdir/build/modmake.rules
 fi
 
 echo "Finished making module in $MOD_NAME"
