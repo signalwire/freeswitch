@@ -230,6 +230,11 @@ struct sofia_profile {
 	char *odbc_user;
 	char *odbc_pass;
 	switch_odbc_handle_t *master_odbc;
+#else
+	void *filler1;
+	void *filler2;
+	void *filler3;
+	void *filler4;
 #endif
 };
 

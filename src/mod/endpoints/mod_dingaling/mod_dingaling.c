@@ -118,11 +118,17 @@ struct mdl_profile {
 	char *context;
 	char *timer_name;
 	char *dbname;
+	char *avatar;
 #ifdef SWITCH_HAVE_ODBC
 	char *odbc_dsn;
 	char *odbc_user;
 	char *odbc_pass;
 	switch_odbc_handle_t *master_odbc;
+#else
+	void *filler1;
+	void *filler2;
+	void *filler3;
+	void *filler4;
 #endif
 	switch_mutex_t *mutex;
 	ldl_handle_t *handle;
@@ -361,7 +367,7 @@ static int sub_callback(void *pArg, int argc, char **argv, char **columnNames)
 	rpid = translate_rpid(rpid, status);
 
 	//ldl_handle_send_presence(profile->handle, sub_to, sub_from, "probe", rpid, status);
-	ldl_handle_send_presence(profile->handle, sub_to, sub_from, type, rpid, status);
+	ldl_handle_send_presence(profile->handle, sub_to, sub_from, type, rpid, status, profile->avatar);
 
 
 	return 0;
@@ -384,7 +390,7 @@ static int rost_callback(void *pArg, int argc, char **argv, char **columnNames)
 		}
 	}
 
-	ldl_handle_send_presence(profile->handle, sub_to, sub_from, NULL, show, status);
+	ldl_handle_send_presence(profile->handle, sub_to, sub_from, NULL, show, status, profile->avatar);
 
 	return 0;
 }
@@ -588,7 +594,7 @@ static int so_callback(void *pArg, int argc, char **argv, char **columnNames)
 	char *sub_to = argv[1];
 
 
-	ldl_handle_send_presence(profile->handle, sub_to, sub_from, "unavailable", "dnd", "Bub-Bye");
+	ldl_handle_send_presence(profile->handle, sub_to, sub_from, "unavailable", "dnd", "Bub-Bye", profile->avatar);
 
 	return 0;
 }
@@ -1180,7 +1186,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	   We should find out why.....
 	 */
 	if ((tech_pvt->profile->user_flags & LDL_FLAG_COMPONENT) && is_special(tech_pvt->them)) {
-		ldl_handle_send_presence(tech_pvt->profile->handle, tech_pvt->them, tech_pvt->us, NULL, NULL, "Click To Call");
+		ldl_handle_send_presence(tech_pvt->profile->handle, tech_pvt->them, tech_pvt->us, NULL, NULL, "Click To Call", tech_pvt->profile->avatar);
 	}
 	if (tech_pvt->dlsession) {
 		if (!switch_test_flag(tech_pvt, TFLAG_TERM)) {
@@ -1881,6 +1887,8 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 		profile->login = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "password")) {
 		profile->password = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "avatar")) {
+		profile->avatar = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "odbc-dsn")) {
 #ifdef SWITCH_HAVE_ODBC
 		profile->odbc_dsn = switch_core_strdup(module_pool, val);
@@ -2164,10 +2172,11 @@ static switch_status_t load_config(void)
 }
 
 
-static void do_vcard(ldl_handle_t * handle, char *to, char *from, char *id)
+static void do_vcard(ldl_handle_t *handle, char *to, char *from, char *id)
 {
 	char *params = NULL, *real_to, *to_user, *xmlstr = NULL, *to_host = NULL;
 	switch_xml_t domain, xml = NULL, user, vcard;
+	int sent = 0;
 
 	if (!strncasecmp(to, "user+", 5)) {
 		real_to = to + 5;
@@ -2197,17 +2206,17 @@ static void do_vcard(ldl_handle_t * handle, char *to, char *from, char *id)
 
 
 	if (switch_xml_locate("directory", "domain", "name", to_host, &xml, &domain, params) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "can't find domain for [%s@%s]\n", to_user, to_host);
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "can't find domain for [%s@%s]\n", to_user, to_host);
 		goto end;
 	}
 
 	if (!(user = switch_xml_find_child(domain, "user", "id", to_user))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", to_user, to_host);
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", to_user, to_host);
 		goto end;
 	}
 
 	if (!(vcard = switch_xml_child(user, "vcard"))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find <vcard> tag for user [%s@%s]\n", to_user, to_host);
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find <vcard> tag for user [%s@%s]\n", to_user, to_host);
 		goto end;
 	}
 
@@ -2215,11 +2224,17 @@ static void do_vcard(ldl_handle_t * handle, char *to, char *from, char *id)
 
 	if ((xmlstr = switch_xml_toxml(vcard))) {
 		ldl_handle_send_vcard(handle, to, from, id, xmlstr);
+		sent = 1;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 	}
 
   end:
+
+	if (!sent) {
+		ldl_handle_send_vcard(handle, to, from, id, NULL);
+	}
+
 	if (xml)
 		switch_xml_free(xml);
 	switch_safe_free(to_user);
@@ -2280,7 +2295,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 					}
 					switch_mutex_unlock(profile->mutex);
 					if (is_special(to)) {
-						ldl_handle_send_presence(profile->handle, to, from, NULL, NULL, "Click To Call");
+						ldl_handle_send_presence(profile->handle, to, from, NULL, NULL, "Click To Call", profile->avatar);
 					}
 #if 0
 					if (is_special(to)) {
@@ -2305,7 +2320,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 				break;
 			case LDL_SIGNAL_PRESENCE_PROBE:
 				if (is_special(to)) {
-					ldl_handle_send_presence(profile->handle, to, from, NULL, NULL, "Click To Call");
+					ldl_handle_send_presence(profile->handle, to, from, NULL, NULL, "Click To Call", profile->avatar);
 				} else {
 					if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
@@ -2335,7 +2350,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 
 
 				if (is_special(to)) {
-					ldl_handle_send_presence(profile->handle, to, from, NULL, NULL, "Click To Call");
+					ldl_handle_send_presence(profile->handle, to, from, NULL, NULL, "Click To Call", profile->avatar);
 				}
 #if 0
 				if (is_special(to)) {

@@ -31,6 +31,11 @@
 
 #ifndef  _MSC_VER
 #include <config.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 #endif
 
 #include <string.h>
@@ -74,6 +79,8 @@
 
 static int opt_timeout = 30;
 
+static void sha1_hash(char *out, char *in);
+static int b64encode(unsigned char *in, uint32_t ilen, unsigned char *out, uint32_t olen);
 
 static struct {
 	unsigned int flags;
@@ -82,6 +89,7 @@ static struct {
 	apr_pool_t *memory_pool;
 	unsigned int id;
 	ldl_logger_t logger;
+	apr_hash_t *avatar_hash;
 	apr_thread_mutex_t *flag_mutex;
 } globals;
 
@@ -151,6 +159,15 @@ struct ldl_session {
 	apr_time_t created;
 	void *private_data;
 };
+
+struct ldl_avatar {
+	char *path;
+	char *from;
+	char *base64;
+	char hash[256];
+};
+
+typedef struct ldl_avatar ldl_avatar_t;
 
 
 static void lowercase(char *str) 
@@ -750,7 +767,54 @@ static int on_presence(void *user_data, ikspak *pak)
 	return IKS_FILTER_EAT;
 }
 
-static void do_presence(ldl_handle_t *handle, char *from, char *to, char *type, char *rpid, char *message) 
+static ldl_avatar_t *ldl_get_avatar(char *path, char *from)
+{
+	ldl_avatar_t *ap;
+	uint8_t image[8192];
+	unsigned char base64[9216] = "";
+	int fd = -1;
+	size_t bytes;
+	char *p;
+
+	if (path && (ap = (ldl_avatar_t *) apr_hash_get(globals.avatar_hash, path, APR_HASH_KEY_STRING))) {
+		return ap;
+	}
+
+	if (from && (ap = (ldl_avatar_t *) apr_hash_get(globals.avatar_hash, from, APR_HASH_KEY_STRING))) {
+		return ap;
+	}
+
+	if (!(path && from)) {
+		return NULL;
+	}
+
+	if ((fd = open(path, O_RDONLY, 0)) < 0) {
+		globals.logger(DL_LOG_ERR, "File %s does not exist!\n", path);
+		return NULL;
+	}
+	
+	bytes = read(fd, image, sizeof(image));
+	close(fd);
+	fd = -1;
+
+	ap = malloc(sizeof(*ap));
+	assert(ap != NULL);
+	memset(ap, 0, sizeof(*ap));
+	sha1_hash(ap->hash, (char *)image);
+	ap->path = strdup(path);
+	ap->from = strdup(from);
+	if ((p = strchr(ap->from, '/'))) {
+		*p = '\0';
+	}
+	b64encode((unsigned char *)image, bytes, base64, sizeof(base64));
+	ap->base64 = strdup(base64);
+	apr_hash_set(globals.avatar_hash, ap->path, APR_HASH_KEY_STRING, ap);
+	apr_hash_set(globals.avatar_hash, ap->from, APR_HASH_KEY_STRING, ap);
+	return ap;
+}
+
+
+static void do_presence(ldl_handle_t *handle, char *from, char *to, char *type, char *rpid, char *message, char *avatar) 
 {
 	iks *pres;
 	char buf[512];
@@ -791,6 +855,20 @@ static void do_presence(ldl_handle_t *handle, char *from, char *to, char *type, 
 		}
 
 		if (message || rpid) {
+			ldl_avatar_t *ap;
+
+			if (avatar) {
+				if ((ap = ldl_get_avatar(avatar, from))) {
+					if ((tag = iks_insert(pres, "x"))) {
+						iks *hash;
+						iks_insert_attrib(tag, "xmlns", "vcard-temp:x:update");
+						if ((hash = iks_insert(tag, "photo"))) {
+							iks_insert_cdata(hash, ap->hash, 0);
+						}
+					}
+				}
+			}
+
 			if ((tag = iks_insert(pres, "c"))) {
 				iks_insert_attrib(tag, "node", "http://www.freeswitch.org/xmpp/client/caps");
 				iks_insert_attrib(tag, "ver", "1.0.0.1");
@@ -975,7 +1053,8 @@ static int on_result(void *user_data, ikspak *pak)
 static const char c64[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 #define B64BUFFLEN 1024
 
-static int b64encode(unsigned char *in, uint32_t ilen, unsigned char *out, uint32_t olen) {
+static int b64encode(unsigned char *in, uint32_t ilen, unsigned char *out, uint32_t olen) 
+{
 	int y=0,bytes=0;
 	uint32_t x=0;
 	unsigned int b=0,l=0;
@@ -988,7 +1067,7 @@ static int b64encode(unsigned char *in, uint32_t ilen, unsigned char *out, uint3
 			if(++y!=72) {
 				continue;
 			}
-			out[bytes++] = '\n';
+			//out[bytes++] = '\n';
 			y=0;
 		}
 	}
@@ -1629,15 +1708,65 @@ char *ldl_handle_get_login(ldl_handle_t *handle)
 	return handle->login;
 }
 
-void ldl_handle_send_presence(ldl_handle_t *handle, char *from, char *to, char *type, char *rpid, char *message)
+void ldl_handle_send_presence(ldl_handle_t *handle, char *from, char *to, char *type, char *rpid, char *message, char *avatar)
 {
-	do_presence(handle, from, to, type, rpid, message);
+	do_presence(handle, from, to, type, rpid, message, avatar);
 }
+
+static void ldl_random_string(char *buf, uint16_t len, char *set)
+{
+    char chars[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    int max;
+    uint16_t x;
+
+    if (!set) {
+        set = chars;
+    }
+
+    max = (int) strlen(set);
+
+    srand((unsigned int) time(NULL));
+
+    for (x = 0; x < len; x++) {
+        int j = (int) (max * 1.0 * rand() / (RAND_MAX + 1.0));
+        buf[x] = set[j];
+    }
+}
+
 
 void ldl_handle_send_vcard(ldl_handle_t *handle, char *from, char *to, char *id, char *vcard)
 {
 	iks *vxml, *iq;
 	int e = 0;
+	ldl_avatar_t *ap;
+
+	ap = ldl_get_avatar(NULL, from);
+
+	if (!vcard) {
+		char text[8192];
+		char *ext;
+		if (!ap) {
+			return;
+		}
+		
+		if ((ext = strrchr(ap->path, '.'))) {
+			ext++;
+		} else {
+			ext = "png";
+		}
+
+		snprintf(text, sizeof(text),
+				 "<vCard xmlns='vcard-temp'><PHOTO><TYPE>image/%s</TYPE><BINVAL>%s</BINVAL></PHOTO></vCard>",
+				 ext,
+				 ap->base64
+				 );
+		vcard = text;
+	} else {
+		if (ap && (strstr(vcard, "photo") || strstr(vcard, "PHOTO"))) {
+			ldl_random_string(ap->hash, sizeof(ap->hash), NULL);
+		}
+	}
+
 
 	if (!(vxml = iks_tree(vcard, 0, &e))) {
 		globals.logger(DL_LOG_ERR, "Parse returned error [%d]\n", e);
@@ -2016,6 +2145,7 @@ ldl_status ldl_global_init(int debug)
 	globals.debug = debug;
 	globals.id = 300;
 	globals.logger = default_logger;
+	globals.avatar_hash = apr_hash_make(globals.memory_pool);
 	ldl_set_flag_locked((&globals), LDL_FLAG_INIT);
 	
 	return LDL_STATUS_SUCCESS;

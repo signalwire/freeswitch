@@ -439,8 +439,9 @@ void ldl_session_send_msg(ldl_session_t *session, char *subject, char *body);
   \param type the type of presence
   \param rpid data for the icon
   \param message a status message
+  \param avatar the path to an avatar image
 */
-void ldl_handle_send_presence(ldl_handle_t *handle, char *from, char *to, char *type, char *rpid, char *message);
+void ldl_handle_send_presence(ldl_handle_t *handle, char *from, char *to, char *type, char *rpid, char *message, char *avatar);
 
 /*!
   \brief Send a vcard
