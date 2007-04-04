@@ -1763,7 +1763,7 @@ void ldl_handle_send_vcard(ldl_handle_t *handle, char *from, char *to, char *id,
 		vcard = text;
 	} else {
 		if (ap && (strstr(vcard, "photo") || strstr(vcard, "PHOTO"))) {
-			ldl_random_string(ap->hash, sizeof(ap->hash), NULL);
+			ldl_random_string(ap->hash, sizeof(ap->hash) -1, NULL);
 		}
 	}
 
