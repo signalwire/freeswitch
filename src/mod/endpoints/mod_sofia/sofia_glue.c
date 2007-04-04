@@ -1119,7 +1119,91 @@ void sofia_glue_add_profile(char *key, sofia_profile_t * profile)
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 }
 
-void sofia_glue_execute_sql(char *dbname, char *sql, switch_mutex_t * mutex)
+int sofia_glue_init_sql(sofia_profile_t *profile)
+{
+
+	
+	char reg_sql[] =
+		"CREATE TABLE sip_registrations (\n"
+		"   user            VARCHAR(255),\n"
+		"   host            VARCHAR(255),\n"
+		"   contact         VARCHAR(1024),\n" 
+		"   status          VARCHAR(255),\n" 
+		"   rpid            VARCHAR(255),\n" 
+		"   expires         INTEGER(8)" ");\n";
+
+
+	char sub_sql[] =
+		"CREATE TABLE sip_subscriptions (\n"
+		"   proto           VARCHAR(255),\n"
+		"   user            VARCHAR(255),\n"
+		"   host            VARCHAR(255),\n"
+		"   sub_to_user     VARCHAR(255),\n"
+		"   sub_to_host     VARCHAR(255),\n"
+		"   event           VARCHAR(255),\n"
+		"   contact         VARCHAR(1024),\n"
+		"   call_id         VARCHAR(255),\n" 
+		"   full_from       VARCHAR(255),\n" 
+		"   full_via        VARCHAR(255),\n" 
+		"   expires         INTEGER(8)" ");\n";
+
+
+	char auth_sql[] =
+		"CREATE TABLE sip_authentication (\n"
+		"   user            VARCHAR(255),\n"
+		"   host            VARCHAR(255),\n" 
+		"   passwd            VARCHAR(255),\n" 
+		"   nonce           VARCHAR(255),\n" 
+		"   expires         INTEGER(8)"
+		");\n";
+	
+#ifdef SWITCH_HAVE_ODBC
+	if (profile->odbc_dsn) {
+		if (!(profile->master_odbc = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
+			return 0;
+		}
+		if (switch_odbc_handle_connect(profile->master_odbc) != SWITCH_ODBC_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Connecting ODBC DSN: %s\n", profile->odbc_dsn);
+			return 0;
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
+			
+		switch_odbc_handle_exec(profile->master_odbc, reg_sql, NULL);
+		switch_odbc_handle_exec(profile->master_odbc, sub_sql, NULL);
+		switch_odbc_handle_exec(profile->master_odbc, auth_sql, NULL);
+	} else {
+#endif
+		if (!(profile->master_db = switch_core_db_open_file(profile->dbname))) {
+			return 0;
+		}
+
+		switch_core_db_test_reactive(profile->master_db, "select contact from sip_registrations", reg_sql);
+		switch_core_db_test_reactive(profile->master_db, "select contact from sip_subscriptions", sub_sql);
+		switch_core_db_test_reactive(profile->master_db, "select * from sip_authentication", auth_sql);
+
+#ifdef SWITCH_HAVE_ODBC
+	}
+#endif
+
+	return 1;
+}
+
+void sofia_glue_sql_close(sofia_profile_t *profile)
+{
+#ifdef SWITCH_HAVE_ODBC
+    if (profile->odbc_dsn) {
+		switch_odbc_handle_destroy(&profile->master_odbc);
+	} else {
+#endif
+		switch_core_db_close(profile->master_db);
+#ifdef SWITCH_HAVE_ODBC
+	}
+#endif
+}
+
+
+void sofia_glue_execute_sql(sofia_profile_t *profile, switch_bool_t master, char *sql, switch_mutex_t *mutex)
 {
 	switch_core_db_t *db;
 
@@ -1127,12 +1211,38 @@ void sofia_glue_execute_sql(char *dbname, char *sql, switch_mutex_t * mutex)
 		switch_mutex_lock(mutex);
 	}
 
-	if (!(db = switch_core_db_open_file(dbname))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", dbname);
-		goto end;
+#ifdef SWITCH_HAVE_ODBC
+    if (profile->odbc_dsn) {
+		SQLHSTMT stmt;
+		if (switch_odbc_handle_exec(profile->master_odbc, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
+			char *err_str;
+			err_str = switch_odbc_handle_get_error(profile->master_odbc, stmt);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
+			switch_safe_free(err_str);
+		}
+		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+	} else {
+#endif
+
+
+	if (master) {
+		db = profile->master_db;
+	} else {
+		if (!(db = switch_core_db_open_file(profile->dbname))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+			goto end;
+		}
 	}
 	switch_core_db_persistant_execute(db, sql, 25);
-	switch_core_db_close(db);
+	if (!master) {
+		switch_core_db_close(db);
+	}
+
+
+#ifdef SWITCH_HAVE_ODBC
+    }
+#endif
+
 
   end:
 	if (mutex) {
@@ -1140,6 +1250,159 @@ void sofia_glue_execute_sql(char *dbname, char *sql, switch_mutex_t * mutex)
 	}
 }
 
+
+switch_bool_t sofia_glue_execute_sql_callback(sofia_profile_t *profile,
+											  switch_bool_t master,
+											  switch_mutex_t *mutex,
+											  char *sql,
+											  switch_core_db_callback_func_t callback,
+											  void *pdata)
+{
+	switch_bool_t ret = SWITCH_FALSE;
+	switch_core_db_t *db;
+	char *errmsg = NULL;
+	
+	if (mutex) {
+        switch_mutex_lock(mutex);
+    }
+
+
+#ifdef SWITCH_HAVE_ODBC
+    if (profile->odbc_dsn) {
+		switch_odbc_handle_callback_exec(profile->master_odbc, sql, callback, pdata);
+	} else {
+#endif
+
+
+	if (master) {
+		db = profile->master_db;
+	} else {
+		if (!(db = switch_core_db_open_file(profile->dbname))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+			goto end;
+		}
+	}
+	
+	switch_core_db_exec(db, sql, callback, pdata, &errmsg);
+
+	if (errmsg) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
+		free(errmsg);
+	}
+
+	if (!master && db) {
+		switch_core_db_close(db);
+	}
+
+#ifdef SWITCH_HAVE_ODBC
+    }
+#endif
+
+
+ end:
+
+	if (mutex) {
+        switch_mutex_unlock(mutex);
+    }
+	
+
+
+	return ret;
+
+}
+
+#ifdef SWITCH_HAVE_ODBC
+static char *sofia_glue_execute_sql2str_odbc(sofia_profile_t *profile, switch_mutex_t *mutex, char *sql, char *resbuf, size_t len)
+{
+	char *ret = NULL;
+	SQLHSTMT stmt;
+	SQLCHAR name[1024];
+	SQLINTEGER m = 0;
+
+	if (switch_odbc_handle_exec(profile->master_odbc, sql, &stmt) == SWITCH_ODBC_SUCCESS) {
+		SQLSMALLINT NameLength, DataType, DecimalDigits, Nullable;
+		SQLUINTEGER ColumnSize;
+		SQLRowCount(stmt, &m);
+
+		if (m <= 0) {
+			return NULL;
+		}
+
+		if (SQLFetch(stmt) != SQL_SUCCESS) {
+			return NULL;
+		}
+
+		SQLDescribeCol(stmt, 1, name, sizeof(name), &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
+		SQLGetData(stmt, 1, SQL_C_CHAR, (SQLCHAR *)resbuf, len, NULL);
+		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+		ret = resbuf;
+	}
+
+	return ret;
+}
+
+#endif
+
+char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex, char *sql, char *resbuf, size_t len)
+{
+	switch_core_db_t *db;
+	switch_core_db_stmt_t *stmt;
+	char *ret = NULL;
+
+#ifdef SWITCH_HAVE_ODBC
+    if (profile->odbc_dsn) {
+		return sofia_glue_execute_sql2str_odbc(profile, mutex, sql, resbuf, len);
+	}
+#endif
+
+	if (mutex) {
+		switch_mutex_lock(mutex);
+	}
+
+	if (!(db = switch_core_db_open_file(profile->dbname))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+		goto end;
+	}
+
+	if (switch_core_db_prepare(db, sql, -1, &stmt, 0)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Statement Error!\n");
+		goto fail;
+	} else {
+		int running = 1;
+		int colcount;
+
+		while (running < 5000) {
+			int result = switch_core_db_step(stmt);
+
+			if (result == SWITCH_CORE_DB_ROW) {
+				if ((colcount = switch_core_db_column_count(stmt))) {
+					switch_copy_string(resbuf, (char *) switch_core_db_column_text(stmt, 0), len);
+					ret = resbuf;
+				}
+				break;
+			} else if (result == SWITCH_CORE_DB_BUSY) {
+				running++;
+				switch_yield(1000);
+				continue;
+			}
+			break;
+		}
+
+		switch_core_db_finalize(stmt);
+	}
+
+
+  fail:
+
+	switch_core_db_close(db);
+
+  end:
+	if (mutex) {
+		switch_mutex_unlock(mutex);
+	}
+
+	return ret;
+}
 
 int sofia_glue_get_user_host(char *in, char **user, char **host)
 {

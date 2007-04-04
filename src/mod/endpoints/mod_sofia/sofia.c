@@ -36,41 +36,6 @@
 extern su_log_t tport_log[];
 
 
-static char reg_sql[] =
-	"CREATE TABLE sip_registrations (\n"
-	"   user            VARCHAR(255),\n"
-	"   host            VARCHAR(255),\n"
-	"   contact         VARCHAR(1024),\n" 
-	"   status          VARCHAR(255),\n" 
-	"   rpid            VARCHAR(255),\n" 
-	"   expires         INTEGER(8)" ");\n";
-
-
-static char sub_sql[] =
-	"CREATE TABLE sip_subscriptions (\n"
-	"   proto           VARCHAR(255),\n"
-	"   user            VARCHAR(255),\n"
-	"   host            VARCHAR(255),\n"
-	"   sub_to_user     VARCHAR(255),\n"
-	"   sub_to_host     VARCHAR(255),\n"
-	"   event           VARCHAR(255),\n"
-	"   contact         VARCHAR(1024),\n"
-	"   call_id         VARCHAR(255),\n" 
-	"   full_from       VARCHAR(255),\n" 
-	"   full_via        VARCHAR(255),\n" 
-	"   expires         INTEGER(8)" ");\n";
-
-
-static char auth_sql[] =
-	"CREATE TABLE sip_authentication (\n"
-	"   user            VARCHAR(255),\n"
-	"   host            VARCHAR(255),\n" 
-	"   passwd            VARCHAR(255),\n" 
-	"   nonce           VARCHAR(255),\n" 
-	"   expires         INTEGER(8)"
-	");\n";
-
-
 void sofia_event_callback(nua_event_t event,
 						   int status,
 						   char const *phrase,
@@ -253,7 +218,7 @@ void event_handler(switch_event_t *event)
 		}
 
 		if (sql) {
-			sofia_glue_execute_sql(profile->dbname, sql, profile->ireg_mutex);
+			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 			switch_safe_free(sql);
 			sql = NULL;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Propagating registration for %s@%s->%s\n", from_user, from_host, contact_str);
@@ -272,7 +237,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t * thread, void
 	sip_alias_node_t *node;
 	uint32_t ireg_loops = 0;
 	uint32_t gateway_loops = 0;
-	switch_core_db_t *db;
 	switch_event_t *s_event;
 
 	profile->s_root = su_root_create(NULL);
@@ -320,11 +284,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t * thread, void
 	}
 
 
-	if ((db = switch_core_db_open_file(profile->dbname))) {
-		switch_core_db_test_reactive(db, "select contact from sip_registrations", reg_sql);
-		switch_core_db_test_reactive(db, "select contact from sip_subscriptions", sub_sql);
-		switch_core_db_test_reactive(db, "select * from sip_authentication", auth_sql);
-	} else {
+	if (!sofia_glue_init_sql(profile)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
 		return NULL;
 	}
@@ -362,7 +322,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t * thread, void
 
 	while (mod_sofia_globals.running == 1) {
 		if (++ireg_loops >= IREG_SECONDS) {
-			sofia_reg_check_expire(db, profile, time(NULL));
+			sofia_reg_check_expire(profile, time(NULL));
 			ireg_loops = 0;
 		}
 
@@ -373,8 +333,9 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t * thread, void
 
 		su_root_step(profile->s_root, 1000);
 	}
+	
+	sofia_glue_sql_close(profile);
 
-	switch_core_db_close(db);
 	sofia_reg_unregister(profile);
 	su_home_unref(profile->home);
 
@@ -496,6 +457,7 @@ switch_status_t config_sofia(int reload)
 
 				profile->name = switch_core_strdup(profile->pool, xprofilename);
 				snprintf(url, sizeof(url), "sofia_reg_%s", xprofilename);
+				
 				profile->dbname = switch_core_strdup(profile->pool, url);
 				switch_core_hash_init(&profile->chat_hash, profile->pool);
 
@@ -510,6 +472,22 @@ switch_status_t config_sofia(int reload)
 						profile->debug = atoi(val);
 					} else if (!strcasecmp(var, "use-rtp-timer") && switch_true(val)) {
 						switch_set_flag(profile, TFLAG_TIMER);
+
+					} else if (!strcasecmp(var, "odbc-dsn")) {
+#ifdef SWITCH_HAVE_ODBC
+						profile->odbc_dsn = switch_core_strdup(profile->pool, val);
+						if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
+							*profile->odbc_user++ = '\0';
+						}
+						if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
+							*profile->odbc_pass++ = '\0';
+						}
+
+				
+#else
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
+#endif
+						
 					} else if (!strcasecmp(var, "inbound-no-media") && switch_true(val)) {
 						switch_set_flag(profile, TFLAG_INB_NOMEDIA);
 					} else if (!strcasecmp(var, "inbound-late-negotiation") && switch_true(val)) {

@@ -40,6 +40,9 @@
 
 #define HAVE_APR
 #include <switch.h>
+#ifdef SWITCH_HAVE_ODBC
+#include <switch_odbc.h>
+#endif
 
 static const char modname[] = "mod_sofia";
 static const switch_state_handler_table_t noop_state_handler = { 0 };
@@ -221,6 +224,13 @@ struct sofia_profile {
 	su_home_t *home;
 	switch_hash_t *profile_hash;
 	switch_hash_t *chat_hash;
+	switch_core_db_t *master_db;
+#ifdef SWITCH_HAVE_ODBC
+	char *odbc_dsn;
+	char *odbc_user;
+	char *odbc_pass;
+	switch_odbc_handle_t *master_odbc;
+#endif
 };
 
 
@@ -328,8 +338,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session);
 
 uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t * sdp);
 
-char *sofia_reg_get_auth_data(char *dbname, char *nonce, char *npassword, size_t len, switch_mutex_t * mutex);
-
 void sofia_presence_establish_presence(sofia_profile_t * profile);
 
 void sofia_handle_sip_i_state(int status,
@@ -387,8 +395,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 sofia_profile_t *sofia_glue_find_profile(char *key);
 void sofia_glue_add_profile(char *key, sofia_profile_t * profile);
-void sofia_glue_execute_sql(char *dbname, char *sql, switch_mutex_t * mutex);
-void sofia_reg_check_expire(switch_core_db_t *db, sofia_profile_t * profile, time_t now);
+void sofia_glue_execute_sql(sofia_profile_t *profile, switch_bool_t master, char *sql, switch_mutex_t *mutex);
+void sofia_reg_check_expire(sofia_profile_t * profile, time_t now);
 void sofia_reg_check_gateway(sofia_profile_t * profile, time_t now);
 void sofia_reg_unregister(sofia_profile_t * profile);
 switch_status_t sofia_glue_ext_address_lookup(char **ip, switch_port_t *port, char *sourceip, switch_memory_pool_t *pool);
@@ -404,3 +412,12 @@ void sofia_presence_set_chat_hash(private_object_t * tech_pvt, sip_t const *sip)
 switch_status_t sofia_on_hangup(switch_core_session_t *session);
 char *sofia_glue_get_url_from_contact(char *buf, uint8_t to_dup);
 void sofia_presence_set_hash_key(char *hash_key, int32_t len, sip_t const *sip);
+void sofia_glue_sql_close(sofia_profile_t *profile);
+int sofia_glue_init_sql(sofia_profile_t *profile);
+switch_bool_t sofia_glue_execute_sql_callback(sofia_profile_t *profile,
+											  switch_bool_t master,
+											  switch_mutex_t *mutex,
+											  char *sql,
+											  switch_core_db_callback_func_t callback,
+											  void *pdata);
+char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex, char *sql, char *resbuf, size_t len);

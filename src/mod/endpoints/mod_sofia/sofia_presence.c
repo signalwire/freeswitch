@@ -105,8 +105,7 @@ switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char
 
 void sofia_presence_cancel(void)
 {
-	char *sql, *errmsg = NULL;
-	switch_core_db_t *db;
+	char *sql;
 	sofia_profile_t *profile;
 	switch_hash_index_t *hi;
 	void *val;
@@ -120,47 +119,30 @@ void sofia_presence_cancel(void)
 				continue;
 			}
 
-			if (!(db = switch_core_db_open_file(profile->dbname))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+			if (sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, sofia_presence_sub_callback, profile) != SWITCH_TRUE) {
 				continue;
 			}
-			switch_mutex_lock(profile->ireg_mutex);
-			switch_core_db_exec(db, sql, sofia_presence_sub_callback, profile, &errmsg);
-			switch_mutex_unlock(profile->ireg_mutex);
-			switch_core_db_close(db);
 		}
 		switch_safe_free(sql);
+		switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 	}
-	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 }
 
 void sofia_presence_establish_presence(sofia_profile_t * profile)
 {
-	char *sql, *errmsg = NULL;
-	switch_core_db_t *db;
 
-	if (!(db = switch_core_db_open_file(profile->dbname))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+	if (sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, 
+										"select user,host,'Registered','unknown','' from sip_registrations", 
+										sofia_presence_resub_callback, profile) != SWITCH_TRUE) {
 		return;
 	}
 
-	if ((sql = switch_mprintf("select user,host,'Registered','unknown','' sip_registrations"))) {
-		switch_mutex_lock(profile->ireg_mutex);
-		switch_core_db_exec(db, sql, sofia_presence_resub_callback, profile, &errmsg);
-		switch_mutex_unlock(profile->ireg_mutex);
-		switch_safe_free(sql);
+	if (sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex,
+										"select sub_to_user,sub_to_host,'Online','unknown',proto from sip_subscriptions "
+										"where proto='ext' or proto='user' or proto='conf'",
+										sofia_presence_resub_callback, profile) != SWITCH_TRUE) {
+		return;
 	}
-
-	if ((sql = switch_mprintf("select sub_to_user,sub_to_host,'Online','unknown',proto from sip_subscriptions "
-							  "where proto='ext' or proto='user' or proto='conf'"))) {
-		switch_mutex_lock(profile->ireg_mutex);
-		switch_core_db_exec(db, sql, sofia_presence_resub_callback, profile, &errmsg);
-		switch_mutex_unlock(profile->ireg_mutex);
-		switch_safe_free(sql);
-	}
-
-	switch_core_db_close(db);
-
 }
 
 
@@ -196,9 +178,7 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 {
 	char *account, *dup_account, *yn, *host, *user;
 	char *sql;
-	switch_core_db_t *db;
 	sofia_profile_t *profile;
-	char *errmsg = NULL;
 	switch_stream_handle_t stream = { 0 };
 	switch_event_header_t *hp;
 
@@ -222,13 +202,7 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile for host %s\n", switch_str_nil(host));
 		return;
 	}
-
-
-	if (!(db = switch_core_db_open_file(profile->dbname))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-		return;
-	}
-
+	
 	SWITCH_STANDARD_STREAM(stream);
 
 	for (hp = event->headers; hp; hp = hp->next) {
@@ -246,12 +220,14 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 
 	assert (sql != NULL);
 
-	switch_mutex_lock(profile->ireg_mutex);
-	switch_core_db_exec(db, sql, sofia_presence_mwi_callback, profile, &errmsg);
-	if (errmsg) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: %s\n", errmsg);
-	}
-	switch_mutex_unlock(profile->ireg_mutex);		
+	sofia_glue_execute_sql_callback(profile,
+									SWITCH_FALSE,
+									profile->ireg_mutex,
+									sql,
+									sofia_presence_mwi_callback,
+									profile);
+
+
 	switch_safe_free(sql);
 	switch_safe_free(dup_account);
 }
@@ -269,8 +245,6 @@ void sofia_presence_event_handler(switch_event_t *event)
 	//char *event_subtype = switch_event_get_header(event, "event_subtype");
 	char *sql = NULL;
 	char *euser = NULL, *user = NULL, *host = NULL;
-	char *errmsg;
-	switch_core_db_t *db;
 
 
 	if (rpid && !strcasecmp(rpid, "n/a")) {
@@ -310,7 +284,8 @@ void sofia_presence_event_handler(switch_event_t *event)
 		} else {
 			sql = switch_mprintf("select 1,'%q','%q',* from sip_subscriptions where event='presence'", status, rpid);
 		}
-
+		
+		assert(sql != NULL);
 		switch_mutex_lock(mod_sofia_globals.hash_mutex);
 		for (hi = switch_hash_first(switch_hash_pool_get(mod_sofia_globals.profile_hash), mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);
@@ -319,20 +294,18 @@ void sofia_presence_event_handler(switch_event_t *event)
 				continue;
 			}
 
-			if (sql) {
-				if (!(db = switch_core_db_open_file(profile->dbname))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-					continue;
-				}
-				switch_mutex_lock(profile->ireg_mutex);
-				switch_core_db_exec(db, sql, sofia_presence_sub_callback, profile, &errmsg);
-				switch_mutex_unlock(profile->ireg_mutex);
-				switch_core_db_close(db);
-			}
+		
+			sofia_glue_execute_sql_callback(profile,
+											SWITCH_FALSE,
+											profile->ireg_mutex,
+											sql,
+											sofia_presence_sub_callback,
+											profile);
+		
 
 		}
 		switch_mutex_unlock(mod_sofia_globals.hash_mutex);
-
+		free(sql);
 		return;
 	}
 
@@ -365,7 +338,6 @@ void sofia_presence_event_handler(switch_event_t *event)
 	switch (event->event_id) {
 	case SWITCH_EVENT_PRESENCE_PROBE:
 		if (proto) {
-			switch_core_db_t *db = NULL;
 			char *to = switch_event_get_header(event, "to");
 			char *user, *euser, *host, *p;
 
@@ -382,23 +354,19 @@ void sofia_presence_event_handler(switch_event_t *event)
 			}
 
 			if (euser && host &&
-				(sql =
-				 switch_mprintf("select user,host,status,rpid,'' from sip_registrations where user='%q' and host='%q'",
-								euser, host)) && (profile = sofia_glue_find_profile(host))) {
-				if (!(db = switch_core_db_open_file(profile->dbname))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-					switch_safe_free(user);
-					switch_safe_free(sql);
-					return;
-				}
+				(sql = switch_mprintf("select user,host,status,rpid,'' from sip_registrations where user='%q' and host='%q'",
+									  euser, host)) && (profile = sofia_glue_find_profile(host))) {
+				
+				sofia_glue_execute_sql_callback(profile,
+												SWITCH_FALSE,
+												profile->ireg_mutex,
+												sql,
+												sofia_presence_resub_callback,
+												profile);
 
-				switch_mutex_lock(profile->ireg_mutex);
-				switch_core_db_exec(db, sql, sofia_presence_resub_callback, profile, &errmsg);
-				switch_mutex_unlock(profile->ireg_mutex);
 				switch_safe_free(sql);
 			}
 			switch_safe_free(user);
-			switch_core_db_close(db);
 		}
 		return;
 	case SWITCH_EVENT_PRESENCE_IN:
@@ -426,15 +394,13 @@ void sofia_presence_event_handler(switch_event_t *event)
 		}
 
 		if (sql) {
-			if (!(db = switch_core_db_open_file(profile->dbname))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-				continue;
-			}
-			switch_mutex_lock(profile->ireg_mutex);
-			switch_core_db_exec(db, sql, sofia_presence_sub_callback, profile, &errmsg);
-			switch_mutex_unlock(profile->ireg_mutex);
+			sofia_glue_execute_sql_callback(profile,
+											SWITCH_FALSE,
+											profile->ireg_mutex,
+											sql,
+											sofia_presence_sub_callback,
+											profile);
 
-			switch_core_db_close(db);
 		}
 	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
@@ -665,8 +631,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		char *to_str = NULL;
 		char *full_from = NULL;
 		char *full_via = NULL;
-		switch_core_db_t *db;
-		char *errmsg;
 		char *sstr;
 		const char *display = "\"user\"";
 		switch_event_t *sevent;
@@ -762,17 +726,28 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			from_host = "n/a";
 		}
 
-		if ((sql = switch_mprintf("delete from sip_subscriptions where "
-								  "proto='%q' and user='%q' and host='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q';\n"
-								  "insert into sip_subscriptions values ('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld)",
-								  proto,
-								  from_user,
-								  from_host,
-								  to_user,
-								  to_host, event, proto, from_user, from_host, to_user, to_host, event, contact_str, call_id, full_from, full_via, exp))) {
-			sofia_glue_execute_sql(profile->dbname, sql, profile->ireg_mutex);
-			switch_safe_free(sql);
-		}
+		switch_mutex_lock(profile->ireg_mutex);
+
+		sql = switch_mprintf("delete from sip_subscriptions where "
+							 "proto='%q' and user='%q' and host='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q'",
+							 proto,
+							 from_user,
+							 from_host,
+							 to_user,
+							 to_host, event, proto
+							 );
+
+		assert(sql != NULL);
+		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
+		free(sql);
+		sql = switch_mprintf("insert into sip_subscriptions values ('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld)",
+							 proto, from_user, from_host, to_user, to_host, event, contact_str, call_id, full_from, full_via, exp);
+
+		assert(sql != NULL);
+		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
+		free(sql);
+
+		switch_mutex_unlock(profile->ireg_mutex);
 
 		sstr = switch_mprintf("active;expires=%ld", exp_raw);
 
@@ -784,18 +759,17 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		switch_safe_free(sstr);
 
-		if (!(db = switch_core_db_open_file(profile->dbname))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-			goto end;
-		}
 		if ((sql = switch_mprintf("select * from sip_subscriptions where user='%q' and host='%q'", to_user, to_host, to_user, to_host))) {
-			switch_mutex_lock(profile->ireg_mutex);
-			switch_core_db_exec(db, sql, sofia_presence_sub_reg_callback, profile, &errmsg);
-			switch_mutex_unlock(profile->ireg_mutex);
+			sofia_glue_execute_sql_callback(profile,
+											SWITCH_FALSE,
+											profile->ireg_mutex,
+											sql,
+											sofia_presence_sub_reg_callback,
+											profile);
+
 			switch_safe_free(sql);
 		}
-		switch_core_db_close(db);
-	  end:
+	end:
 
 		if (event) {
 			su_free(profile->home, event);
@@ -878,7 +852,7 @@ void sofia_presence_handle_sip_i_publish(nua_t * nua, sofia_profile_t * profile,
 				if ((sql =
 					 switch_mprintf("update sip_registrations set status='%q',rpid='%q' where user='%q' and host='%q'",
 									note_txt, rpid, from_user, from_host))) {
-					sofia_glue_execute_sql(profile->dbname, sql, profile->ireg_mutex);
+					sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 					switch_safe_free(sql);
 				}
 

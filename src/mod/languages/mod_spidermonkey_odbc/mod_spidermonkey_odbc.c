@@ -30,48 +30,19 @@
  *
  */
 #include "mod_spidermonkey.h"
-
-
-#include <sql.h>
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4201)
-#include <sqlext.h>
-#pragma warning(pop)
-#else
-#include <sqlext.h>
-#endif
-#include <sqltypes.h>
+#include <switch_odbc.h>
 
 static const char modname[] = "ODBC";
 
 struct odbc_obj {
-	char *dsn;
-	char *username;
-	char *password;
-	SQLHENV env;
-	SQLHDBC con;
+	switch_odbc_handle_t *handle;
 	SQLHSTMT stmt;
-	uint32_t state;
 	SQLCHAR *colbuf;
 	int32 cblen;
 	SQLCHAR *code;
 	int32 codelen;
 };
-
-typedef enum {
-	ODBC_STATE_INIT,
-	ODBC_STATE_DOWN,
-	ODBC_STATE_CONNECTED,
-	ODBC_STATE_ERROR
-} odbc_state_t;
-typedef struct odbc_obj odbc_obj_t;
-
-typedef enum {
-	ODBC_SUCCESS = 0,
-	ODBC_FAIL = -1
-} odbc_status_t;
-
+typedef struct odbc_obj  odbc_obj_t;
 
 static odbc_obj_t *new_odbc_obj(char *dsn, char *username, char *password)
 {
@@ -81,122 +52,39 @@ static odbc_obj_t *new_odbc_obj(char *dsn, char *username, char *password)
 		goto err;
 	}
 
-	if (!(new_obj->dsn = strdup(dsn))) {
+	if (!(new_obj->handle = switch_odbc_handle_new(dsn, username, password))) {
 		goto err;
 	}
-
-	if (!(new_obj->username = strdup(username))) {
-		goto err;
-	}
-
-	if (!(new_obj->password = strdup(password))) {
-		goto err;
-	}
-
-	new_obj->env = SQL_NULL_HANDLE;
-	new_obj->state = ODBC_STATE_INIT;
-
+	
 	return new_obj;
 
   err:
 	if (new_obj) {
-		switch_safe_free(new_obj->dsn);
-		switch_safe_free(new_obj->username);
-		switch_safe_free(new_obj->password);
+		if (new_obj->handle) {
+			switch_odbc_handle_destroy(&new_obj->handle);
+		}
 		switch_safe_free(new_obj);
 	}
 
 	return NULL;
 }
 
-odbc_status_t odbc_obj_disconnect(odbc_obj_t * obj)
+switch_odbc_status_t odbc_obj_connect(odbc_obj_t *obj)
 {
-	int result;
-
-	if (obj->state == ODBC_STATE_CONNECTED) {
-		result = SQLDisconnect(obj->con);
-		if (result == ODBC_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Disconnected %d from [%s]\n", result, obj->dsn);
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Disconnectiong [%s]\n", obj->dsn);
-		}
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "[%s] already disconnected\n", obj->dsn);
-	}
-
-	obj->state = ODBC_STATE_DOWN;
-
-	return ODBC_SUCCESS;
-}
-
-odbc_status_t odbc_obj_connect(odbc_obj_t * obj)
-{
-	int result;
-	SQLINTEGER err;
-	int16_t mlen;
-	unsigned char msg[200], stat[10];
-
-	if (obj->env == SQL_NULL_HANDLE) {
-		result = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &obj->env);
-
-		if ((result != SQL_SUCCESS) && (result != SQL_SUCCESS_WITH_INFO)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error AllocHandle\n");
-			return ODBC_FAIL;
-		}
-
-		result = SQLSetEnvAttr(obj->env, SQL_ATTR_ODBC_VERSION, (void *) SQL_OV_ODBC3, 0);
-
-		if ((result != SQL_SUCCESS) && (result != SQL_SUCCESS_WITH_INFO)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error SetEnv\n");
-			SQLFreeHandle(SQL_HANDLE_ENV, obj->env);
-			return ODBC_FAIL;
-		}
-
-		result = SQLAllocHandle(SQL_HANDLE_DBC, obj->env, &obj->con);
-
-		if ((result != SQL_SUCCESS) && (result != SQL_SUCCESS_WITH_INFO)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error AllocHDB %d\n", result);
-			SQLFreeHandle(SQL_HANDLE_ENV, obj->env);
-			return ODBC_FAIL;
-		}
-		SQLSetConnectAttr(obj->con, SQL_LOGIN_TIMEOUT, (SQLPOINTER *) 10, 0);
-	}
-	if (obj->state == ODBC_STATE_CONNECTED) {
-		odbc_obj_disconnect(obj);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-connecting %s\n", obj->dsn);
-	}
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connecting %s\n", obj->dsn);
-
-	result = SQLConnect(obj->con, (SQLCHAR *) obj->dsn, SQL_NTS, (SQLCHAR *) obj->username, SQL_NTS, (SQLCHAR *) obj->password, SQL_NTS);
-
-	if ((result != SQL_SUCCESS) && (result != SQL_SUCCESS_WITH_INFO)) {
-		SQLGetDiagRec(SQL_HANDLE_DBC, obj->con, 1, stat, &err, msg, 100, &mlen);
-		SQLFreeHandle(SQL_HANDLE_ENV, obj->env);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error SQLConnect=%d errno=%d %s\n", result, (int) err, msg);
-		return ODBC_FAIL;
-	} else {
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connected to [%s]\n", obj->dsn);
-		obj->state = ODBC_STATE_CONNECTED;
-	}
-
-	return ODBC_SUCCESS;
+	
+	return switch_odbc_handle_connect(obj->handle);
 }
 
 static void destroy_odbc_obj(odbc_obj_t ** objp)
 {
 	odbc_obj_t *obj = *objp;
 
-	odbc_obj_disconnect(obj);
-
-	SQLFreeHandle(SQL_HANDLE_STMT, obj->stmt);
-	SQLFreeHandle(SQL_HANDLE_DBC, obj->con);
-	SQLFreeHandle(SQL_HANDLE_ENV, obj->env);
-
-	switch_safe_free(obj->dsn);
-	switch_safe_free(obj->username);
-	switch_safe_free(obj->password);
+	if (obj->handle) {
+		switch_odbc_handle_destroy(&obj->handle);
+	}
+	if (obj->stmt) {
+		SQLFreeHandle(SQL_HANDLE_STMT, obj->stmt);
+	}
 	switch_safe_free(obj->colbuf);
 	switch_safe_free(obj->code);
 	switch_safe_free(obj);
@@ -205,7 +93,7 @@ static void destroy_odbc_obj(odbc_obj_t ** objp)
 
 /* ODBC Object */
 /*********************************************************************************/
-static JSBool odbc_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+static JSBool odbc_construct(JSContext * cx, JSObject * obj, uintN argc, jsval *argv, jsval *rval)
 {
 	odbc_obj_t *odbc_obj = NULL;
 	char *dsn, *username, *password;
@@ -228,7 +116,15 @@ static JSBool odbc_construct(JSContext * cx, JSObject * obj, uintN argc, jsval *
 		}
 	}
 
-	if (dsn && username && password) {
+	if (switch_strlen_zero(username)) {
+		username = NULL;
+	}
+
+	if (switch_strlen_zero(password)) {
+		password = NULL;
+	}
+
+	if (dsn) {
 		odbc_obj = new_odbc_obj(dsn, username, password);
 	}
 
@@ -266,13 +162,13 @@ static void odbc_destroy(JSContext * cx, JSObject * obj)
 	}
 }
 
-static JSBool odbc_connect(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+static JSBool odbc_connect(JSContext * cx, JSObject * obj, uintN argc, jsval *argv, jsval *rval)
 {
 	odbc_obj_t *odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
 	JSBool tf = JS_TRUE;
 
 	if (odbc_obj) {
-		if (odbc_obj_connect(odbc_obj) == ODBC_SUCCESS) {
+		if (odbc_obj_connect(odbc_obj) == SWITCH_ODBC_SUCCESS) {
 			tf = JS_TRUE;
 		} else {
 			tf = JS_FALSE;
@@ -284,18 +180,18 @@ static JSBool odbc_connect(JSContext * cx, JSObject * obj, uintN argc, jsval * a
 	return JS_TRUE;
 }
 
-static JSBool odbc_exec(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+static JSBool odbc_exec(JSContext * cx, JSObject * obj, uintN argc, jsval *argv, jsval *rval)
 {
 	odbc_obj_t *odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
 	char *sql;
 	JSBool tf = JS_FALSE;
-	int result;
 
 	if (argc < 1) {
 		goto done;
 	}
 
-	if (odbc_obj->state != ODBC_STATE_CONNECTED) {
+	if (switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database is not connected!\n");
 		goto done;
 	}
 
@@ -306,17 +202,8 @@ static JSBool odbc_exec(JSContext * cx, JSObject * obj, uintN argc, jsval * argv
 
 	sql = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 
-	if (SQLAllocHandle(SQL_HANDLE_STMT, odbc_obj->con, &odbc_obj->stmt) != SQL_SUCCESS) {
-		goto done;
-	}
 
-	if (SQLPrepare(odbc_obj->stmt, (unsigned char *) sql, SQL_NTS) != SQL_SUCCESS) {
-		goto done;
-	}
-
-	result = SQLExecute(odbc_obj->stmt);
-
-	if (result != SQL_SUCCESS && result != SQL_SUCCESS_WITH_INFO) {
+	if (switch_odbc_handle_exec(odbc_obj->handle, sql, &odbc_obj->stmt) != SWITCH_ODBC_SUCCESS) {
 		goto done;
 	}
 
@@ -329,13 +216,14 @@ static JSBool odbc_exec(JSContext * cx, JSObject * obj, uintN argc, jsval * argv
 	return JS_TRUE;
 }
 
-static JSBool odbc_num_rows(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+static JSBool odbc_num_rows(JSContext * cx, JSObject * obj, uintN argc, jsval *argv, jsval *rval)
 {
 	odbc_obj_t *odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
 
 	SQLSMALLINT rows = 0;
 
-	if (odbc_obj->state != ODBC_STATE_CONNECTED) {
+	if (switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database is not connected!\n");
 		goto done;
 	}
 
@@ -352,15 +240,17 @@ static JSBool odbc_num_rows(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 }
 
 
-static JSBool odbc_next_row(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+static JSBool odbc_next_row(JSContext * cx, JSObject * obj, uintN argc, jsval *argv, jsval *rval)
 {
 	odbc_obj_t *odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
 	int result = 0;
 	JSBool tf = JS_FALSE;
 
-	if (odbc_obj->state != ODBC_STATE_CONNECTED) {
-		goto done;
-	}
+	if (switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database is not connected!\n");
+        goto done;
+    }
+
 
 	if (odbc_obj->stmt) {
 		if ((result = SQLFetch(odbc_obj->stmt) == SQL_SUCCESS)) {
@@ -412,19 +302,20 @@ static char *escape_data(char *in)
 }
 
 
-static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval *argv, jsval *rval)
 {
 
 	odbc_obj_t *odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
 	JSBool tf = JS_FALSE;
 
-	if (odbc_obj->state != ODBC_STATE_CONNECTED) {
-		goto done;
-	}
+	if (switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database is not connected!\n");
+        goto done;
+    }
 
 	if (odbc_obj->stmt) {
 		SQLSMALLINT c = 0, x = 0;
-		int result;
+		SQLINTEGER m = 0;
 		char code[66560];
 
 		snprintf(code, sizeof(code), "~var _oDbC_dB_RoW_DaTa_ = {}");
@@ -433,15 +324,16 @@ static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 			return JS_TRUE;
 		}
 
-		result = SQLNumResultCols(odbc_obj->stmt, &c);
-		if (result == SQL_SUCCESS || result == SQL_SUCCESS_WITH_INFO) {
+		SQLNumResultCols(odbc_obj->stmt, &c);
+		SQLRowCount(odbc_obj->stmt, &m);
+		if (m > 0) {
 			for (x = 1; x <= c; x++) {
 				SQLSMALLINT NameLength, DataType, DecimalDigits, Nullable;
 				SQLUINTEGER ColumnSize;
 				SQLCHAR name[1024] = "";
 				SQLCHAR *data = odbc_obj->colbuf;
 				SQLCHAR *esc = NULL;
-
+				
 				SQLDescribeCol(odbc_obj->stmt, x, name, sizeof(name), &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
 				SQLGetData(odbc_obj->stmt, x, SQL_C_CHAR, odbc_obj->colbuf, odbc_obj->cblen, NULL);
 

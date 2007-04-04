@@ -103,6 +103,11 @@ CORE_CFLAGS    += $(RESAMPLE_CFLAGS)
 CORE_LIBS      = libs/apr/libapr-1.la libs/apr-util/libaprutil-1.la
 CORE_LIBS     += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la
 CORE_LIBS     += libs/srtp/libsrtp.la $(RESAMPLE_LIB)
+if ADD_ODBC
+libfreeswitch_la_SOURCES += src/switch_odbc.c
+library_include_HEADERS += src/include/switch_odbc.h
+CORE_LIBS     += -lodbc
+endif
 
 lib_LTLIBRARIES	          = libfreeswitch.la
 libfreeswitch_la_CFLAGS   = $(CORE_CFLAGS) $(AM_CFLAGS)

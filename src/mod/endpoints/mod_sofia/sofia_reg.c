@@ -35,7 +35,7 @@
 #include "mod_sofia.h"
 
 
-void sofia_reg_unregister(sofia_profile_t * profile)
+void sofia_reg_unregister(sofia_profile_t *profile)
 {
 	outbound_reg_t *gateway_ptr;
 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
@@ -48,7 +48,7 @@ void sofia_reg_unregister(sofia_profile_t * profile)
 	}
 }
 
-void sofia_reg_check_gateway(sofia_profile_t * profile, time_t now)
+void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 {
 	outbound_reg_t *gateway_ptr;
 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
@@ -133,73 +133,74 @@ int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames
 	return 0;
 }
 
-void sofia_reg_check_expire(switch_core_db_t *db, sofia_profile_t * profile, time_t now)
+void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
 {
 	char sql[1024];
-	char *errmsg;
 
-	if (!db) {
+#ifdef SWITCH_HAVE_ODBC
+    if (profile->odbc_dsn) {
+     	if (!profile->master_odbc) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+			return;
+		}   
+    } else {
+#endif
+	if (!profile->master_db) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
 		return;
 	}
+#ifdef SWITCH_HAVE_ODBC
+    }
+#endif
+
+	snprintf(sql, sizeof(sql), "select '%s',* from sip_registrations where expires > 0 and expires <= %ld", profile->name, (long) now);
 
 	switch_mutex_lock(profile->ireg_mutex);
-	snprintf(sql, sizeof(sql), "select '%s',* from sip_registrations where expires > 0 and expires < %ld", profile->name, (long) now);
-	switch_core_db_exec(db, sql, sofia_reg_del_callback, NULL, &errmsg);
-
-	if (errmsg) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s][%s]\n", sql, errmsg);
-		switch_safe_free(errmsg);
-		errmsg = NULL;
-	}
-
-	snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and expires < %ld", (long) now);
-	switch_core_db_persistant_execute(db, sql, 1000);
-	snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and expires < %ld", (long) now);
-	switch_core_db_persistant_execute(db, sql, 1000);
-	snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0 and expires < %ld", (long) now);
-	switch_core_db_persistant_execute(db, sql, 1000);
+	sofia_glue_execute_sql_callback(profile,
+									SWITCH_TRUE,
+									NULL,
+									sql,
+									sofia_reg_del_callback,
+									NULL);
+	
+	snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and expires <= %ld", (long) now);
+	sofia_glue_execute_sql(profile, SWITCH_TRUE, sql, NULL);
+	snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and expires <= %ld", (long) now);
+	sofia_glue_execute_sql(profile, SWITCH_TRUE, sql, NULL);
+	snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0 and expires <= %ld", (long) now);
+	sofia_glue_execute_sql(profile, SWITCH_TRUE, sql, NULL);
 
 	switch_mutex_unlock(profile->ireg_mutex);
 
 }
 
-char *sofia_reg_find_reg_url(sofia_profile_t * profile, const char *user, const char *host, char *val, switch_size_t len)
+char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const char *host, char *val, switch_size_t len)
 {
-	char *errmsg;
 	struct callback_t cbt = { 0 };
-	switch_core_db_t *db;
 
 	if (!user) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Called with null user!\n");
 		return NULL;
 	}
 
-	if (!(db = switch_core_db_open_file(profile->dbname))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-		return NULL;
-	}
-
 	cbt.val = val;
 	cbt.len = len;
-	switch_mutex_lock(profile->ireg_mutex);
+
 	if (host) {
 		snprintf(val, len, "select contact from sip_registrations where user='%s' and host='%s'", user, host);
 	} else {
 		snprintf(val, len, "select contact from sip_registrations where user='%s'", user);
 	}
 
-	switch_core_db_exec(db, val, sofia_reg_find_callback, &cbt, &errmsg);
 
-	if (errmsg) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s][%s]\n", val, errmsg);
-		switch_safe_free(errmsg);
-		errmsg = NULL;
-	}
+	sofia_glue_execute_sql_callback(profile,
+									SWITCH_FALSE,
+									profile->ireg_mutex,
+									val,
+									sofia_reg_find_callback,
+									&cbt);
 
-	switch_mutex_unlock(profile->ireg_mutex);
 
-	switch_core_db_close(db);
 	if (cbt.matches) {
 		return val;
 	} else {
@@ -207,73 +208,20 @@ char *sofia_reg_find_reg_url(sofia_profile_t * profile, const char *user, const 
 	}
 }
 
-char *sofia_reg_get_auth_data(char *dbname, char *nonce, char *npassword, size_t len, switch_mutex_t * mutex)
+static char *sofia_reg_get_auth_data(sofia_profile_t *profile, char *nonce, char *npassword, size_t len, switch_mutex_t *mutex)
 {
-	switch_core_db_t *db;
-	switch_core_db_stmt_t *stmt;
-	char *sql = NULL, *ret = NULL;
-
-	if (mutex) {
-		switch_mutex_lock(mutex);
-	}
-
-	if (!dbname) {
-		goto end;
-	}
-
-	if (!(db = switch_core_db_open_file(dbname))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", dbname);
-		goto end;
-	}
-
+	char *sql, *ret;
+	
 	sql = switch_mprintf("select passwd from sip_authentication where nonce='%q'", nonce);
-	if (switch_core_db_prepare(db, sql, -1, &stmt, 0)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Statement Error!\n");
-		goto fail;
-	} else {
-		int running = 1;
-		int colcount;
+	assert(sql != NULL);
 
-		while (running < 5000) {
-			int result = switch_core_db_step(stmt);
+	ret = sofia_glue_execute_sql2str(profile, mutex, sql, npassword, len);
 
-			if (result == SWITCH_CORE_DB_ROW) {
-				if ((colcount = switch_core_db_column_count(stmt))) {
-					switch_copy_string(npassword, (char *) switch_core_db_column_text(stmt, 0), len);
-					ret = npassword;
-				}
-				break;
-			} else if (result == SWITCH_CORE_DB_BUSY) {
-				running++;
-				switch_yield(1000);
-				continue;
-			}
-			break;
-		}
-
-		switch_core_db_finalize(stmt);
-	}
-
-
-  fail:
-
-	switch_core_db_close(db);
-
-  end:
-	if (mutex) {
-		switch_mutex_unlock(mutex);
-	}
-
-	if (sql) {
-		switch_safe_free(sql);
-	}
-
+	free(sql);
 	return ret;
 }
 
-
-
-uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sip_t const *sip, sofia_regtype_t regtype, char *key,
+uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_handle_t * nh, sip_t const *sip, sofia_regtype_t regtype, char *key,
 							   uint32_t keylen)
 {
 	sip_from_t const *from = NULL;
@@ -433,9 +381,18 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t * profile, nua_ha
 				a1_hash = hexdigest;
 			}
 
-			sql = switch_mprintf("delete from sip_authentication where user='%q' and host='%q';\n"
-								 "insert into sip_authentication values('%q','%q','%q','%q', %ld)",
-								 from_user, from_host, from_user, from_host, a1_hash, uuid_str, time(NULL) + profile->nonce_ttl);
+			switch_mutex_lock(profile->ireg_mutex);
+			sql = switch_mprintf("delete from sip_authentication where user='%q' and host='%q';", from_user, from_host);
+			assert(sql != NULL);
+			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
+			switch_safe_free(sql);
+			sql = switch_mprintf("insert into sip_authentication values('%q','%q','%q','%q', %ld)",
+								 from_user, from_host, a1_hash, uuid_str, time(NULL) + profile->nonce_ttl);
+			assert(sql != NULL);
+			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
+			switch_safe_free(sql);
+			switch_mutex_unlock(profile->ireg_mutex);
+
 			auth_str =
 				switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", from_host, uuid_str, stale ? " stale=\"true\"," : "");
 
@@ -448,8 +405,6 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t * profile, nua_ha
 
 			}
 
-			sofia_glue_execute_sql(profile->dbname, sql, profile->ireg_mutex);
-			switch_safe_free(sql);
 			switch_safe_free(auth_str);
 			ret = 1;
 		} else {
@@ -488,7 +443,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t * profile, nua_ha
 		}
 
 		if (sql) {
-			sofia_glue_execute_sql(profile->dbname, sql, profile->ireg_mutex);
+			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 			switch_safe_free(sql);
 			sql = NULL;
 		}
@@ -509,7 +464,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t * profile, nua_ha
 		}
 	} else {
 		if ((sql = switch_mprintf("delete from sip_subscriptions where user='%q' and host='%q'", from_user, from_host))) {
-			sofia_glue_execute_sql(profile->dbname, sql, profile->ireg_mutex);
+			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 			switch_safe_free(sql);
 			sql = NULL;
 		}
@@ -542,7 +497,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t * profile, nua_ha
 
 
 
-void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[])
+void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[])
 {
 	char key[128] = "";
 
@@ -564,7 +519,7 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t * profile, nua
 
 void sofia_reg_handle_sip_r_register(int status,
 						   char const *phrase,
-						   nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[])
+						   nua_t * nua, sofia_profile_t *profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[])
 {
 	if (sofia_private && sofia_private->gateway) {
 		switch (status) {
@@ -594,7 +549,7 @@ void sofia_reg_handle_sip_r_register(int status,
 
 void sofia_reg_handle_sip_r_challenge(int status,
 							char const *phrase,
-							nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[])
+							nua_t * nua, sofia_profile_t *profile, nua_handle_t * nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[])
 {
 	outbound_reg_t *gateway = NULL;
 	sip_www_authenticate_t const *authenticate = NULL;
@@ -698,7 +653,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 
 }
 
-auth_res_t parse_auth(sofia_profile_t * profile, sip_authorization_t const *authorization, const char *regstr, char *np, size_t nplen)
+auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, const char *regstr, char *np, size_t nplen)
 {
 	int indexnum;
 	const char *cur;
@@ -758,7 +713,7 @@ auth_res_t parse_auth(sofia_profile_t * profile, sip_authorization_t const *auth
 	}
 
 	if (switch_strlen_zero(np)) {
-		if (!sofia_reg_get_auth_data(profile->dbname, nonce, np, nplen, profile->ireg_mutex)) {
+		if (!sofia_reg_get_auth_data(profile, nonce, np, nplen, profile->ireg_mutex)) {
 			ret = AUTH_STALE;
 			goto end;
 		}

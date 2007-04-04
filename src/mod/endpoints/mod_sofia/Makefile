@@ -12,6 +12,8 @@ LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/sdp -I$(SOFIAUA_DIR)/sip
 LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/soa -I$(SOFIAUA_DIR)/sresolv
 LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/stun -I$(SOFIAUA_DIR)/su
 LOCAL_CFLAGS += -I$(SOFIAUA_DIR)/tport -I$(SOFIAUA_DIR)/url
+LOCAL_CFLAGS += `if test -f $(BASE)/.libs/libfreeswitch_la-switch_odbc.o ; then echo -DSWITCH_HAVE_ODBC; fi ;`
+
 LOCAL_OBJS=sofia.o sofia_glue.o sofia_presence.o sofia_reg.o
 LOCAL_SOURCES=sofia.c sofia_glue.c sofia_presense.c sofia_reg.c mod_sofia.c
 
