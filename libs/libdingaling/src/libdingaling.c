@@ -81,6 +81,7 @@ static int opt_timeout = 30;
 
 static void sha1_hash(char *out, char *in);
 static int b64encode(unsigned char *in, uint32_t ilen, unsigned char *out, uint32_t olen);
+static void ldl_random_string(char *buf, uint16_t len, char *set);
 
 static struct {
 	unsigned int flags;
@@ -767,21 +768,47 @@ static int on_presence(void *user_data, ikspak *pak)
 	return IKS_FILTER_EAT;
 }
 
-static ldl_avatar_t *ldl_get_avatar(char *path, char *from)
+static char *ldl_handle_strdup(ldl_handle_t *handle, char *str)
+{
+	char *dup;
+	apr_size_t len;
+
+	len = strlen(str) + 1;
+	dup = apr_palloc(handle->pool, len);
+	assert(dup != NULL);
+	strncpy(dup, str, len);
+	return dup;
+}
+
+static void ldl_strip_resource(char *in)
+{
+	char *p;
+
+	if ((p = strchr(in, '/'))) {
+		*p = '\0';
+	}
+}
+
+static ldl_avatar_t *ldl_get_avatar(ldl_handle_t *handle, char *path, char *from)
 {
 	ldl_avatar_t *ap;
 	uint8_t image[8192];
 	unsigned char base64[9216] = "";
 	int fd = -1;
 	size_t bytes;
-	char *p;
-
-	if (path && (ap = (ldl_avatar_t *) apr_hash_get(globals.avatar_hash, path, APR_HASH_KEY_STRING))) {
-		return ap;
-	}
+	char *key;
 
 	if (from && (ap = (ldl_avatar_t *) apr_hash_get(globals.avatar_hash, from, APR_HASH_KEY_STRING))) {
 		return ap;
+	}
+
+	if (path && from) {
+		if ((ap = (ldl_avatar_t *) apr_hash_get(globals.avatar_hash, path, APR_HASH_KEY_STRING))) {
+			key = ldl_handle_strdup(handle, from);
+			ldl_strip_resource(key);
+			apr_hash_set(globals.avatar_hash, key, APR_HASH_KEY_STRING, ap);
+			return ap;
+		}
 	}
 
 	if (!(path && from)) {
@@ -802,14 +829,14 @@ static ldl_avatar_t *ldl_get_avatar(char *path, char *from)
 	memset(ap, 0, sizeof(*ap));
 	sha1_hash(ap->hash, (char *)image);
 	ap->path = strdup(path);
-	ap->from = strdup(from);
-	if ((p = strchr(ap->from, '/'))) {
-		*p = '\0';
-	}
+
+	key = ldl_handle_strdup(handle, from);
+	ldl_strip_resource(key);
+
 	b64encode((unsigned char *)image, bytes, base64, sizeof(base64));
 	ap->base64 = strdup(base64);
 	apr_hash_set(globals.avatar_hash, ap->path, APR_HASH_KEY_STRING, ap);
-	apr_hash_set(globals.avatar_hash, ap->from, APR_HASH_KEY_STRING, ap);
+	apr_hash_set(globals.avatar_hash, key, APR_HASH_KEY_STRING, ap);
 	return ap;
 }
 
@@ -858,7 +885,7 @@ static void do_presence(ldl_handle_t *handle, char *from, char *to, char *type, 
 			ldl_avatar_t *ap;
 
 			if (avatar) {
-				if ((ap = ldl_get_avatar(avatar, from))) {
+				if ((ap = ldl_get_avatar(handle, avatar, from))) {
 					if ((tag = iks_insert(pres, "x"))) {
 						iks *hash;
 						iks_insert_attrib(tag, "xmlns", "vcard-temp:x:update");
@@ -1740,7 +1767,7 @@ void ldl_handle_send_vcard(ldl_handle_t *handle, char *from, char *to, char *id,
 	int e = 0;
 	ldl_avatar_t *ap;
 
-	ap = ldl_get_avatar(NULL, from);
+	ap = ldl_get_avatar(handle, NULL, from);
 
 	if (!vcard) {
 		char text[8192];
