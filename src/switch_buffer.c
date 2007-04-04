@@ -48,6 +48,7 @@ struct switch_buffer {
 	switch_size_t blocksize;
 	uint32_t flags;
 	uint32_t id;
+	int32_t loops;
 };
 
 SWITCH_DECLARE(switch_status_t) switch_buffer_create(switch_memory_pool_t *pool, switch_buffer_t **buffer, switch_size_t max_len)
@@ -145,6 +146,26 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_toss(switch_buffer_t *buffer, switch
 	buffer->head += reading;
 
 	return buffer->used;
+}
+
+SWITCH_DECLARE(void) switch_buffer_set_loops(switch_buffer_t *buffer, int32_t loops)
+{
+	buffer->loops = loops;
+}
+
+SWITCH_DECLARE(switch_size_t) switch_buffer_read_loop(switch_buffer_t *buffer, void *data, switch_size_t datalen)
+{
+	switch_size_t len;
+	if ((len = switch_buffer_read(buffer, data, datalen)) == 0) {
+		if (buffer->loops == 0) {
+			return 0;
+		}
+		buffer->head = buffer->data;
+		buffer->used = buffer->actually_used;
+		len = switch_buffer_read(buffer, data, datalen);
+		buffer->loops--;
+	}
+	return len;
 }
 
 SWITCH_DECLARE(switch_size_t) switch_buffer_read(switch_buffer_t *buffer, void *data, switch_size_t datalen)

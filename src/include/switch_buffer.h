@@ -96,6 +96,21 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_inuse(switch_buffer_t *buffer);
  */
 SWITCH_DECLARE(switch_size_t) switch_buffer_read(switch_buffer_t *buffer, void *data, switch_size_t datalen);
 
+/*! \brief Read data endlessly from a switch_buffer_t 
+ * \param buffer any buffer of type switch_buffer_t
+ * \param data pointer to the read data to be returned
+ * \param datalen amount of data to be returned
+ * \return int ammount of data actually read
+ * \note Once you have read all the data from the buffer it will loop around.
+ */
+SWITCH_DECLARE(switch_size_t) switch_buffer_read_loop(switch_buffer_t *buffer, void *data, switch_size_t datalen);
+
+/*! \brief Assign a number of loops to read
+ * \param buffer any buffer of type switch_buffer_t
+ * \param loops the number of loops (-1 for infinite)
+ */
+SWITCH_DECLARE(void) switch_buffer_set_loops(switch_buffer_t *buffer, int32_t loops);
+
 /*! \brief Write data into a switch_buffer_t up to the length of datalen
  * \param buffer any buffer of type switch_buffer_t
  * \param data pointer to the data to be written

@@ -210,7 +210,6 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 
 struct ringback {
 	switch_buffer_t *audio_buffer;
-	switch_buffer_t *loop_buffer;
 	teletone_generation_session_t ts;
 	switch_file_handle_t fhb;
 	switch_file_handle_t *fh;
@@ -623,7 +622,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							char *tmp_data = NULL;
 
 							switch_buffer_create_dynamic(&ringback.audio_buffer, 512, 1024, 0);
-							switch_buffer_create_dynamic(&ringback.loop_buffer, 512, 1024, 0);
+							switch_buffer_set_loops(ringback.audio_buffer, -1);
 
 							if (*ringback_data == '/') {
 								char *ext;
@@ -665,7 +664,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing Tone\n");
 									teletone_destroy_session(&ringback.ts);
 									switch_buffer_destroy(&ringback.audio_buffer);
-									switch_buffer_destroy(&ringback.loop_buffer);
 									ringback_data = NULL;
 								}
 							}
@@ -747,26 +745,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								break;
 							}
 						} else if (ringback.audio_buffer) {
-							if ((write_frame.datalen = (uint32_t) switch_buffer_read(ringback.audio_buffer,
-																					 write_frame.data,
-																					 write_frame.codec->implementation->bytes_per_frame)) <= 0) {
-								switch_buffer_t *tmp;
-								tmp = ringback.audio_buffer;
-								ringback.audio_buffer = ringback.loop_buffer;
-								ringback.loop_buffer = tmp;
-								if ((write_frame.datalen = (uint32_t) switch_buffer_read(ringback.audio_buffer,
-																						 write_frame.data,
-																						 write_frame.codec->implementation->bytes_per_frame)) <= 0) {
-									break;
-								}
+							if ((write_frame.datalen = (uint32_t) switch_buffer_read_loop(ringback.audio_buffer,
+																						  write_frame.data,
+																						  write_frame.codec->implementation->bytes_per_frame)) <= 0) {
+								break;
 							}
 						}
 
 						if (switch_core_session_write_frame(session, &write_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
 							break;
-						}
-						if (ringback.loop_buffer) {
-							switch_buffer_write(ringback.loop_buffer, write_frame.data, write_frame.datalen);
 						}
 					}
 
@@ -908,7 +895,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			} else if (ringback.audio_buffer) {
 				teletone_destroy_session(&ringback.ts);
 				switch_buffer_destroy(&ringback.audio_buffer);
-				switch_buffer_destroy(&ringback.loop_buffer);
 			}
 
 			for (i = 0; i < and_argc; i++) {
