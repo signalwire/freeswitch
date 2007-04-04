@@ -286,6 +286,7 @@ struct private_object {
 	char *chat_to;
 	char *e_dest;
 	char *call_id;
+	char *invite_contact;
 	unsigned long rm_rate;
 	switch_payload_t pt;
 	switch_mutex_t *flag_mutex;
