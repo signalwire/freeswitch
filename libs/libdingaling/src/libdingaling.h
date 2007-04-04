@@ -222,7 +222,7 @@ static inline int ldl_jid_domcmp(char *id_a, char *id_b)
         } else {
             len = id_a_len;
         }
-		printf("[%s][%s][%d]\n", id_a_host, id_b_host, len);
+
         return strncasecmp(id_a_host, id_b_host, len) ? 0 : 1;
     }
     return -1;

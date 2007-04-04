@@ -2,6 +2,7 @@ BASE=../../../..
 
 LOCAL_CFLAGS     = `$(BASE)/libs/apr/apr-1-config --cflags --cppflags --includes`
 LOCAL_CFLAGS    += `$(BASE)/libs/apr-util/apu-1-config --includes`
+LOCAL_CFLAGS += `if test -f $(BASE)/.libs/libfreeswitch_la-switch_odbc.o ; then echo -DSWITCH_HAVE_ODBC; fi ;`
 
 IKS_DIR=$(BASE)/libs/iksemel
 IKS_LA=$(IKS_DIR)/src/libiksemel.la

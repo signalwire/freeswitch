@@ -31,6 +31,9 @@
  */
 #include <switch.h>
 #include <libdingaling.h>
+#ifdef SWITCH_HAVE_ODBC
+#include <switch_odbc.h>
+#endif
 
 #define DL_CAND_WAIT 10000000
 #define DL_CAND_INITIAL_WAIT 2000000
@@ -45,8 +48,11 @@ static const char modname[] = "mod_dingaling";
 static switch_memory_pool_t *module_pool = NULL;
 
 static char sub_sql[] =
-	"CREATE TABLE subscriptions (\n"
-	"   sub_from            VARCHAR(255),\n" "   sub_to          VARCHAR(255),\n" "   show          VARCHAR(255),\n" "   status          VARCHAR(255)\n"
+	"CREATE TABLE jabber_subscriptions (\n"
+	"   sub_from      VARCHAR(255),\n" 
+	"   sub_to        VARCHAR(255),\n" 
+	"   show_pres     VARCHAR(255),\n" 
+	"   status        VARCHAR(255)\n"
 	");\n";
 
 
@@ -112,18 +118,25 @@ struct mdl_profile {
 	char *context;
 	char *timer_name;
 	char *dbname;
+#ifdef SWITCH_HAVE_ODBC
+	char *odbc_dsn;
+	char *odbc_user;
+	char *odbc_pass;
+	switch_odbc_handle_t *master_odbc;
+#endif
 	switch_mutex_t *mutex;
 	ldl_handle_t *handle;
 	uint32_t flags;
 	uint32_t user_flags;
 };
+typedef struct mdl_profile mdl_profile_t;
 
 struct private_object {
 	unsigned int flags;
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
 	switch_frame_t read_frame;
-	struct mdl_profile *profile;
+	mdl_profile_t *profile;
 	switch_core_session_t *session;
 	switch_caller_profile_t *caller_profile;
 	unsigned short samprate;
@@ -229,9 +242,109 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 	return r;
 }
 
+
+
+
+static void mdl_execute_sql(mdl_profile_t *profile, char *sql, switch_mutex_t *mutex)
+{
+	switch_core_db_t *db;
+
+	if (mutex) {
+		switch_mutex_lock(mutex);
+	}
+
+#ifdef SWITCH_HAVE_ODBC
+    if (profile->odbc_dsn) {
+		SQLHSTMT stmt;
+		if (switch_odbc_handle_exec(profile->master_odbc, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
+			char *err_str;
+			err_str = switch_odbc_handle_get_error(profile->master_odbc, stmt);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
+			switch_safe_free(err_str);
+		}
+		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+	} else {
+#endif
+		if (!(db = switch_core_db_open_file(profile->dbname))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+			goto end;
+		}
+
+		switch_core_db_persistant_execute(db, sql, 25);
+		switch_core_db_close(db);
+
+#ifdef SWITCH_HAVE_ODBC
+    }
+#endif
+
+
+  end:
+	if (mutex) {
+		switch_mutex_unlock(mutex);
+	}
+}
+
+
+static switch_bool_t mdl_execute_sql_callback(mdl_profile_t *profile,
+											  switch_mutex_t *mutex,
+											  char *sql,
+											  switch_core_db_callback_func_t callback,
+											  void *pdata)
+{
+	switch_bool_t ret = SWITCH_FALSE;
+	switch_core_db_t *db;
+	char *errmsg = NULL;
+	
+	if (mutex) {
+        switch_mutex_lock(mutex);
+    }
+
+
+#ifdef SWITCH_HAVE_ODBC
+    if (profile->odbc_dsn) {
+		switch_odbc_handle_callback_exec(profile->master_odbc, sql, callback, pdata);
+	} else {
+#endif
+
+
+
+		if (!(db = switch_core_db_open_file(profile->dbname))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+			goto end;
+		}
+
+	
+		switch_core_db_exec(db, sql, callback, pdata, &errmsg);
+
+		if (errmsg) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
+			free(errmsg);
+		}
+
+		if (db) {
+			switch_core_db_close(db);
+		}
+
+#ifdef SWITCH_HAVE_ODBC
+    }
+#endif
+
+
+ end:
+
+	if (mutex) {
+        switch_mutex_unlock(mutex);
+    }
+	
+
+
+	return ret;
+
+}
+
 static int sub_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
-	struct mdl_profile *profile = (struct mdl_profile *) pArg;
+	mdl_profile_t *profile = (mdl_profile_t *) pArg;
 
 	char *sub_from = argv[0];
 	char *sub_to = argv[1];
@@ -256,7 +369,7 @@ static int sub_callback(void *pArg, int argc, char **argv, char **columnNames)
 
 static int rost_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
-	struct mdl_profile *profile = (struct mdl_profile *) pArg;
+	mdl_profile_t *profile = (mdl_profile_t *) pArg;
 
 	char *sub_from = argv[0];
 	char *sub_to = argv[1];
@@ -278,7 +391,7 @@ static int rost_callback(void *pArg, int argc, char **argv, char **columnNames)
 
 static void pres_event_handler(switch_event_t *event)
 {
-	struct mdl_profile *profile = NULL;
+	mdl_profile_t *profile = NULL;
 	switch_hash_index_t *hi;
 	void *val;
 	char *proto = switch_event_get_header(event, "proto");
@@ -287,7 +400,7 @@ static void pres_event_handler(switch_event_t *event)
 	char *rpid = switch_event_get_header(event, "rpid");
 	char *type = switch_event_get_header(event, "event_subtype");
 	char *sql;
-	switch_core_db_t *db;
+
 
 	if (!proto) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Missing 'proto' header\n");
@@ -307,8 +420,6 @@ static void pres_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_PRESENCE_PROBE:
 		if (proto) {
 			char *sql;
-			switch_core_db_t *db;
-			char *errmsg;
 			char *to = switch_event_get_header(event, "to");
 			char *f_host = NULL;
 			if (to) {
@@ -318,15 +429,8 @@ static void pres_event_handler(switch_event_t *event)
 			}
 
 			if (f_host && (profile = switch_core_hash_find(globals.profile_hash, f_host))) {
-				if (to && (sql = switch_mprintf("select * from subscriptions where sub_to='%q'", to))) {
-					if (!(db = switch_core_db_open_file(profile->dbname))) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-						return;
-					}
-					switch_mutex_lock(profile->mutex);
-					switch_core_db_exec(db, sql, sin_callback, profile, &errmsg);
-					switch_mutex_unlock(profile->mutex);
-					switch_core_db_close(db);
+				if (to && (sql = switch_mprintf("select * from jabber_subscriptions where sub_to='%q'", to))) {
+					mdl_execute_sql_callback(profile, profile->mutex, sql, sin_callback, profile);
 					switch_safe_free(sql);
 				}
 			}
@@ -356,13 +460,12 @@ static void pres_event_handler(switch_event_t *event)
 	}
 
 
-	sql = switch_mprintf("select sub_from, sub_to,'%q','%q','%q','%q' from subscriptions where sub_to like '%%%q'", type, rpid, status, proto, from);
+	sql = switch_mprintf("select sub_from, sub_to,'%q','%q','%q','%q' from jabber_subscriptions where sub_to like '%%%q'", type, rpid, status, proto, from);
 
 
 	for (hi = switch_hash_first(switch_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-		char *errmsg;
 		switch_hash_this(hi, NULL, NULL, &val);
-		profile = (struct mdl_profile *) val;
+		profile = (mdl_profile_t *) val;
 
 		if (!(profile->user_flags & LDL_FLAG_COMPONENT)) {
 			continue;
@@ -370,14 +473,11 @@ static void pres_event_handler(switch_event_t *event)
 
 
 		if (sql) {
-			if (!(db = switch_core_db_open_file(profile->dbname))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+			switch_bool_t worked = mdl_execute_sql_callback(profile, profile->mutex, sql, sub_callback, profile);
+			
+			if (!worked) {
 				continue;
 			}
-			switch_mutex_lock(profile->mutex);
-			switch_core_db_exec(db, sql, sub_callback, profile, &errmsg);
-			switch_mutex_unlock(profile->mutex);
-			switch_core_db_close(db);
 		}
 
 
@@ -389,7 +489,7 @@ static void pres_event_handler(switch_event_t *event)
 static switch_status_t chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint)
 {
 	char *user, *host, *f_user = NULL, *ffrom = NULL, *f_host = NULL, *f_resource = NULL;
-	struct mdl_profile *profile = NULL;
+	mdl_profile_t *profile = NULL;
 
 	assert(proto != NULL);
 
@@ -438,11 +538,11 @@ static void roster_event_handler(switch_event_t *event)
 	char *status = switch_event_get_header(event, "status");
 	char *from = switch_event_get_header(event, "from");
 	char *event_type = switch_event_get_header(event, "event_type");
-	struct mdl_profile *profile = NULL;
+	mdl_profile_t *profile = NULL;
 	switch_hash_index_t *hi;
 	void *val;
 	char *sql;
-	switch_core_db_t *db;
+
 
 	if (status && !strcasecmp(status, "n/a")) {
 		status = NULL;
@@ -453,15 +553,14 @@ static void roster_event_handler(switch_event_t *event)
 	}
 
 	if (from) {
-		sql = switch_mprintf("select *,'%q' from subscriptions where sub_from='%q'", status ? status : "", from);
+		sql = switch_mprintf("select *,'%q' from jabber_subscriptions where sub_from='%q'", status ? status : "", from);
 	} else {
-		sql = switch_mprintf("select *,'%q' from subscriptions", status ? status : "");
+		sql = switch_mprintf("select *,'%q' from jabber_subscriptions", status ? status : "");
 	}
 
 	for (hi = switch_hash_first(switch_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-		char *errmsg;
 		switch_hash_this(hi, NULL, NULL, &val);
-		profile = (struct mdl_profile *) val;
+		profile = (mdl_profile_t *) val;
 
 		if (!(profile->user_flags & LDL_FLAG_COMPONENT)) {
 			continue;
@@ -469,14 +568,10 @@ static void roster_event_handler(switch_event_t *event)
 
 
 		if (sql) {
-			if (!(db = switch_core_db_open_file(profile->dbname))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+			switch_bool_t worked = mdl_execute_sql_callback(profile, profile->mutex, sql, rost_callback, profile);
+			if (!worked) {
 				continue;
 			}
-			switch_mutex_lock(profile->mutex);
-			switch_core_db_exec(db, sql, rost_callback, profile, &errmsg);
-			switch_mutex_unlock(profile->mutex);
-			switch_core_db_close(db);
 		}
 
 	}
@@ -487,7 +582,7 @@ static void roster_event_handler(switch_event_t *event)
 
 static int so_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
-	struct mdl_profile *profile = (struct mdl_profile *) pArg;
+	mdl_profile_t *profile = (mdl_profile_t *) pArg;
 
 	char *sub_from = argv[0];
 	char *sub_to = argv[1];
@@ -501,7 +596,7 @@ static int so_callback(void *pArg, int argc, char **argv, char **columnNames)
 
 static int sin_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
-	struct mdl_profile *profile = (struct mdl_profile *) pArg;
+	mdl_profile_t *profile = (mdl_profile_t *) pArg;
 	switch_event_t *event;
 
 	//char *sub_from = argv[0];
@@ -523,20 +618,19 @@ static int sin_callback(void *pArg, int argc, char **argv, char **columnNames)
 
 static void sign_off(void)
 {
-	struct mdl_profile *profile = NULL;
+	mdl_profile_t *profile = NULL;
 	switch_hash_index_t *hi;
 	void *val;
 	char *sql;
-	switch_core_db_t *db;
 
 
-	sql = switch_mprintf("select * from subscriptions");
+
+	sql = switch_mprintf("select * from jabber_subscriptions");
 
 
 	for (hi = switch_hash_first(switch_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-		char *errmsg;
 		switch_hash_this(hi, NULL, NULL, &val);
-		profile = (struct mdl_profile *) val;
+		profile = (mdl_profile_t *) val;
 
 		if (!(profile->user_flags & LDL_FLAG_COMPONENT)) {
 			continue;
@@ -544,14 +638,10 @@ static void sign_off(void)
 
 
 		if (sql) {
-			if (!(db = switch_core_db_open_file(profile->dbname))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+			switch_bool_t worked = mdl_execute_sql_callback(profile, profile->mutex, sql, so_callback, profile);
+			if (!worked) {
 				continue;
 			}
-			switch_mutex_lock(profile->mutex);
-			switch_core_db_exec(db, sql, so_callback, profile, &errmsg);
-			switch_mutex_unlock(profile->mutex);
-			switch_core_db_close(db);
 		}
 
 	}
@@ -561,21 +651,13 @@ static void sign_off(void)
 
 }
 
-static void sign_on(struct mdl_profile *profile)
+static void sign_on(mdl_profile_t *profile)
 {
 	char *sql;
-	switch_core_db_t *db;
-	char *errmsg;
 
-	if ((sql = switch_mprintf("select * from subscriptions where sub_to like 'ext+%%' or sub_to like 'user+%%' or sub_to like 'conf+%%'"))) {
-		if (!(db = switch_core_db_open_file(profile->dbname))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-			return;
-		}
-		switch_mutex_lock(profile->mutex);
-		switch_core_db_exec(db, sql, sin_callback, profile, &errmsg);
-		switch_mutex_unlock(profile->mutex);
-		switch_core_db_close(db);
+
+	if ((sql = switch_mprintf("select * from jabber_subscriptions where sub_to like 'ext+%%' or sub_to like 'user+%%' or sub_to like 'conf+%%'"))) {
+		mdl_execute_sql_callback(profile, profile->mutex, sql, sin_callback, profile);
 		switch_safe_free(sql);
 	}
 }
@@ -656,7 +738,7 @@ static int get_codecs(struct private_object *tech_pvt)
 static void *SWITCH_THREAD_FUNC handle_thread_run(switch_thread_t * thread, void *obj)
 {
 	ldl_handle_t *handle = obj;
-	struct mdl_profile *profile = NULL;
+	mdl_profile_t *profile = NULL;
 
 
 
@@ -1510,7 +1592,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		struct private_object *tech_pvt;
 		switch_channel_t *channel;
 		switch_caller_profile_t *caller_profile = NULL;
-		struct mdl_profile *mdl_profile = NULL;
+		mdl_profile_t *mdl_profile = NULL;
 		ldl_session_t *dlsession = NULL;
 		char *profile_name;
 		char *callto;
@@ -1727,7 +1809,7 @@ static ldl_status handle_loop(ldl_handle_t * handle)
 	return LDL_STATUS_SUCCESS;
 }
 
-static switch_status_t init_profile(struct mdl_profile *profile, uint8_t login)
+static switch_status_t init_profile(mdl_profile_t *profile, uint8_t login)
 {
 	if (profile && profile->login && profile->password && profile->dialplan && profile->message && profile->ip && profile->name && profile->exten) {
 		ldl_handle_t *handle;
@@ -1792,13 +1874,27 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 }
 
 
-static void set_profile_val(struct mdl_profile *profile, char *var, char *val)
+static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 {
 
 	if (!strcasecmp(var, "login")) {
 		profile->login = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "password")) {
 		profile->password = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "odbc-dsn")) {
+#ifdef SWITCH_HAVE_ODBC
+		profile->odbc_dsn = switch_core_strdup(module_pool, val);
+		if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
+			*profile->odbc_user++ = '\0';
+		}
+		if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
+			*profile->odbc_pass++ = '\0';
+		}
+		
+		
+#else
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
+#endif
 	} else if (!strcasecmp(var, "use-rtp-timer") && switch_true(val)) {
 		switch_set_flag(profile, TFLAG_TIMER);
 	} else if (!strcasecmp(var, "dialplan")) {
@@ -1853,7 +1949,7 @@ static void set_profile_val(struct mdl_profile *profile, char *var, char *val)
 
 static switch_status_t dl_logout(char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
-	struct mdl_profile *profile;
+	mdl_profile_t *profile;
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
@@ -1879,7 +1975,7 @@ static switch_status_t dl_login(char *arg, switch_core_session_t *session, switc
 	char *argv[10] = { 0 };
 	int argc = 0;
 	char *var, *val, *myarg;
-	struct mdl_profile *profile = NULL;
+	mdl_profile_t *profile = NULL;
 	int x;
 
 	if (session) {
@@ -1938,7 +2034,7 @@ static switch_status_t dl_login(char *arg, switch_core_session_t *session, switc
 static switch_status_t load_config(void)
 {
 	char *cf = "dingaling.conf";
-	struct mdl_profile *profile = NULL;
+	mdl_profile_t *profile = NULL;
 	switch_xml_t cfg, xml, settings, param, xmlint;
 
 	memset(&globals, 0, sizeof(globals));
@@ -2010,13 +2106,34 @@ static switch_status_t load_config(void)
 			snprintf(dbname, sizeof(dbname), "dingaling_%s", profile->name);
 			profile->dbname = switch_core_strdup(module_pool, dbname);
 
-			if ((db = switch_core_db_open_file(profile->dbname))) {
-				switch_core_db_test_reactive(db, "select * from subscriptions", sub_sql);
+
+#ifdef SWITCH_HAVE_ODBC
+			if (profile->odbc_dsn) {
+				if (!(profile->master_odbc = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
+					continue;
+					
+				}
+				if (switch_odbc_handle_connect(profile->master_odbc) != SWITCH_ODBC_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
+					continue;
+				}
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
+				switch_odbc_handle_exec(profile->master_odbc, sub_sql, NULL);
+				//mdl_execute_sql(profile, sub_sql, NULL);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
-				continue;
+#endif
+				if ((db = switch_core_db_open_file(profile->dbname))) {
+					switch_core_db_test_reactive(db, "select * from jabber_subscriptions", sub_sql);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
+					continue;
+				}
+				switch_core_db_close(db);
+#ifdef SWITCH_HAVE_ODBC
 			}
-			switch_core_db_close(db);
+#endif
 		}
 
 		if (profile) {
@@ -2046,28 +2163,6 @@ static switch_status_t load_config(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
-static void execute_sql(char *dbname, char *sql, switch_mutex_t * mutex)
-{
-	switch_core_db_t *db;
-
-	if (mutex) {
-		switch_mutex_lock(mutex);
-	}
-
-	if (!(db = switch_core_db_open_file(dbname))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", dbname);
-		goto end;
-	}
-
-	switch_core_db_persistant_execute(db, sql, 25);
-	switch_core_db_close(db);
-
-  end:
-	if (mutex) {
-		switch_mutex_unlock(mutex);
-	}
-}
 
 static void do_vcard(ldl_handle_t * handle, char *to, char *from, char *id)
 {
@@ -2135,7 +2230,7 @@ static void do_vcard(ldl_handle_t * handle, char *to, char *from, char *id)
 static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlsession, ldl_signal_t dl_signal, char *to, char *from, char *subject,
 									char *msg)
 {
-	struct mdl_profile *profile = NULL;
+	mdl_profile_t *profile = NULL;
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 	struct private_object *tech_pvt = NULL;
@@ -2159,8 +2254,8 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 				break;
 			case LDL_SIGNAL_UNSUBSCRIBE:
 
-				if ((sql = switch_mprintf("delete from subscriptions where sub_from='%q' and sub_to='%q';", from, to))) {
-					execute_sql(profile->dbname, sql, profile->mutex);
+				if ((sql = switch_mprintf("delete from jabber_subscriptions where sub_from='%q' and sub_to='%q';", from, to))) {
+					mdl_execute_sql(profile, sql, profile->mutex);
 					switch_core_db_free(sql);
 				}
 
@@ -2170,12 +2265,20 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 				if (profile->user_flags & LDL_FLAG_COMPONENT && ldl_jid_domcmp(from, to)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Attempt to add presence from/to our own domain [%s][%s]\n", from, to);
 				} else {
-					if ((sql = switch_mprintf("delete from subscriptions where sub_from='%q' and sub_to='%q';\n"
-											  "insert into subscriptions values('%q','%q','%q','%q');\n", from, to, from, to, msg, subject))) {
-						execute_sql(profile->dbname, sql, profile->mutex);
+					switch_mutex_lock(profile->mutex);
+					if ((sql = switch_mprintf("delete from jabber_subscriptions where sub_from='%q' and sub_to='%q'", from, to))) {
+						mdl_execute_sql(profile, sql, NULL);
 						switch_core_db_free(sql);
 					}
-
+					if ((sql = switch_mprintf("insert into jabber_subscriptions values('%q','%q','%q','%q');\n", 
+											  switch_str_nil(from),
+											  switch_str_nil(to),
+											  switch_str_nil(msg),
+											  switch_str_nil(subject)))) {
+						mdl_execute_sql(profile, sql, NULL);
+						switch_core_db_free(sql);
+					}
+					switch_mutex_unlock(profile->mutex);
 					if (is_special(to)) {
 						ldl_handle_send_presence(profile->handle, to, from, NULL, NULL, "Click To Call");
 					}
@@ -2215,8 +2318,9 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 				break;
 			case LDL_SIGNAL_PRESENCE_IN:
 
-				if ((sql = switch_mprintf("update subscriptions set show='%q', status='%q' where sub_from='%q'", msg, subject, from))) {
-					execute_sql(profile->dbname, sql, profile->mutex);
+				if ((sql = switch_mprintf("update jabber_subscriptions set show_pres='%q', status='%q' where sub_from='%q'", 
+										  switch_str_nil(msg), switch_str_nil(subject), switch_str_nil(from)))) {
+					mdl_execute_sql(profile, sql, profile->mutex);
 					switch_core_db_free(sql);
 				}
 
@@ -2249,8 +2353,9 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 
 			case LDL_SIGNAL_PRESENCE_OUT:
 
-				if ((sql = switch_mprintf("update subscriptions set show='%q', status='%q' where sub_from='%q'", msg, subject, from))) {
-					execute_sql(profile->dbname, sql, profile->mutex);
+				if ((sql = switch_mprintf("update jabber_subscriptions set show_pres='%q', status='%q' where sub_from='%q'", 
+										  switch_str_nil(msg), switch_str_nil(subject), switch_str_nil(from)))) {
+					mdl_execute_sql(profile, sql, profile->mutex);
 					switch_core_db_free(sql);
 				}
 				if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
