@@ -33,6 +33,7 @@
     <!-- <param name="vad" value="in"/> -->
     <!-- <param name="vad" value="out"/> -->
     <param name="vad" value="both"/>
+    <!--<param name="avatar" value="/path/to/tiny.jpg"/>-->
   </x-profile>
 
   <!-- Component (Server to Server Login) -->
@@ -48,6 +49,10 @@
     <!-- "_auto_" means the extension will be automaticly set to the called jid -->
     <param name="exten" value="_auto_"/>
     <!--<param name="vad" value="both"/>-->
+    <!--<param name="avatar" value="/path/to/tiny.jpg"/>-->
+    <!--If you have ODBC support and a working dsn you can use it instead of SQLite-->
+    <!--<param name="odbc-dsn" value="dsn:user:pass"/>-->
+
   </x-profile>
 
 </configuration>

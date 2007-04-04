@@ -31,6 +31,9 @@
 	<param name="rtp-ip" value="auto"/>
 	<param name="sip-ip" value="auto"/>
 
+	<!--If you have ODBC support and a working dsn you can use it instead of SQLite-->
+	<!--<param name="odbc-dsn" value="dsn:user:pass"/>-->
+
 	<!--Uncomment to set all inbound calls to no media mode-->
 	<!--<param name="inbound-no-media" value="true"/>-->
 
