@@ -21,8 +21,8 @@ if [ -z $arg ] ; then
 	    fi
 	done
 	if [ $x = 0 ] ; then
-	    sleep 1
-	    echo done
+	    echo Build finished. Making install
+	    $MAKE install
 	    exit;
 	fi
 	sleep 1
