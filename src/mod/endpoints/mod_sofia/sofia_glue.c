@@ -416,7 +416,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		char *url = sofia_glue_get_url_from_contact(tech_pvt->dest, 1);
 		tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
 								  NUTAG_URL(url),
-								  SIPTAG_TO_STR(tech_pvt->dest_to), SIPTAG_FROM_STR(tech_pvt->from_str), SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+								  SIPTAG_TO_STR(tech_pvt->dest_to),
+								  SIPTAG_FROM_STR(tech_pvt->from_str),
+								  TAG_IF(tech_pvt->invite_contact, SIPTAG_CONTACT_STR(tech_pvt->invite_contact)),
+								  TAG_IF(!tech_pvt->invite_contact, SIPTAG_CONTACT_STR(tech_pvt->profile->url)),
 								  TAG_END());
 		switch_safe_free(url);
 
@@ -472,7 +475,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			   TAG_IF(!switch_strlen_zero(alert_info), SIPTAG_HEADER_STR(alert_info)),
 			   TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 			   TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
-			   TAG_IF(tech_pvt->invite_contact, SIPTAG_CONTACT_STR(tech_pvt->invite_contact)),
 			   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 			   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
 			   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), SOATAG_HOLD(holdstr), TAG_END());
