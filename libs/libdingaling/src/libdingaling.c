@@ -165,7 +165,6 @@ struct ldl_session {
 
 struct ldl_avatar {
 	char *path;
-	char *from;
 	char *base64;
 	char hash[256];
 };
