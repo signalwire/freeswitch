@@ -44,7 +44,9 @@
 #endif
 #include <sqltypes.h>
 
-SWITCH_BEGIN_EXTERN_C struct switch_odbc_handle;
+SWITCH_BEGIN_EXTERN_C 
+
+struct switch_odbc_handle;
 
 typedef enum {
 	SWITCH_ODBC_STATE_INIT,
@@ -59,7 +61,7 @@ typedef enum {
 	SWITCH_ODBC_FAIL = -1
 } switch_odbc_status_t;
 
-SWITCH_DECLARE(switch_odbc_handle_t) * switch_odbc_handle_new(char *dsn, char *username, char *password);
+SWITCH_DECLARE(switch_odbc_handle_t *) switch_odbc_handle_new(char *dsn, char *username, char *password);
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_disconnect(switch_odbc_handle_t *handle);
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_handle_t *handle);
 SWITCH_DECLARE(void) switch_odbc_handle_destroy(switch_odbc_handle_t **handlep);
@@ -69,6 +71,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odb
 																	  char *sql, switch_core_db_callback_func_t callback, void *pdata);
 SWITCH_DECLARE(char *) switch_odbc_handle_get_error(switch_odbc_handle_t *handle, SQLHSTMT stmt);
 SWITCH_END_EXTERN_C
+
 #endif
 /* For Emacs:
  * Local Variables:

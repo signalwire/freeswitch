@@ -59,6 +59,12 @@ SWITCH_BEGIN_EXTERN_C
  */
 #pragma warning(disable:4100 4200 4204 4706 4819 4132 4510 4512 4610 4996)
 
+#define SWITCH_HAVE_ODBC 1
+
+#ifdef _MSC_VER
+#  pragma comment(lib, "odbc32.lib")
+#endif
+
 #pragma include_alias(<libteletone.h>,				<../../libs/libteletone/src/libteletone.h>)
 #pragma include_alias(<libteletone_generate.h>,		<../../libs/libteletone/src/libteletone_generate.h>)
 #pragma include_alias(<libteletone_detect.h>,		<../../libs/libteletone/src/libteletone_detect.h>)

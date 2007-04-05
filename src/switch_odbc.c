@@ -28,6 +28,7 @@
  * switch_odbc.c -- ODBC
  *
  */
+#include <switch.h>
 #include <switch_odbc.h>
 
 struct switch_odbc_handle {
@@ -162,7 +163,6 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 		return SWITCH_ODBC_SUCCESS;
 	}
 
-	return SWITCH_ODBC_FAIL;
 }
 
 static int db_is_up(switch_odbc_handle_t *handle)
@@ -227,7 +227,7 @@ static int db_is_up(switch_odbc_handle_t *handle)
 
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_t *handle, char *sql, SQLHSTMT *rstmt)
 {
-	SQLHSTMT stmt;
+	SQLHSTMT stmt = NULL;
 	int result;
 
 	if (!db_is_up(handle)) {
@@ -270,7 +270,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odbc_handle_t *handle,
 																	  char *sql, switch_core_db_callback_func_t callback, void *pdata)
 {
-	SQLHSTMT stmt;
+	SQLHSTMT stmt = NULL;
 	SQLSMALLINT c = 0, x = 0;
 	SQLINTEGER m = 0;
 	int result;
@@ -320,7 +320,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odb
 			names[y] = malloc(name_len);
 			memset(names[y], 0, name_len);
 
-			SQLDescribeCol(stmt, x, (SQLCHAR *) names[y], name_len, &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
+			SQLDescribeCol(stmt, x, (SQLCHAR *) names[y], (SQLSMALLINT)name_len, &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
 			ColumnSize++;
 
 			vals[y] = malloc(ColumnSize);

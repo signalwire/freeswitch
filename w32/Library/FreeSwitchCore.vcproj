@@ -352,6 +352,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\switch_odbc.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_regex.c"
 				>
 			</File>
@@ -418,11 +422,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\include\switch_core.h"
+				RelativePath="..\..\src\include\private\switch_core.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\include\private\switch_core.h"
+				RelativePath="..\..\src\include\switch_core.h"
 				>
 			</File>
 			<File
@@ -455,6 +459,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\include\switch_module_interfaces.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_odbc.h"
 				>
 			</File>
 			<File
