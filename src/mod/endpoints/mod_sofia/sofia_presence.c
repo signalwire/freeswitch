@@ -583,7 +583,7 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	assert(nh != NULL);
 
 	id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
-	expire_sec -= time(NULL);
+	expire_sec = (int)(expire_sec - time(NULL));
 	if (expire_sec < 0) {
 		expire_sec = 3600;
 	}
