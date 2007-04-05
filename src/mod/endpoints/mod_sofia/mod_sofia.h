@@ -105,7 +105,8 @@ typedef enum {
 	PFLAG_FULL_ID = (1 << 3),
 	PFLAG_PRESENCE = (1 << 4),
 	PFLAG_PASS_RFC2833 = (1 << 5),
-	PFLAG_DISABLE_TRANSCODING = (1 << 6)
+	PFLAG_DISABLE_TRANSCODING = (1 << 6),
+	PFLAG_REWRITE_TIMESTAMPS = (1 << 7)
 } PFLAGS;
 
 typedef enum {

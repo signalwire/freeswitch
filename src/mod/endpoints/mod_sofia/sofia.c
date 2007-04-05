@@ -547,6 +547,10 @@ switch_status_t config_sofia(int reload)
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_DISABLE_TRANSCODING;
 						}
+					} else if (!strcasecmp(var, "rtp-rewrite-timestamps")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_REWRITE_TIMESTAMPS;
+						}
 					} else if (!strcasecmp(var, "auth-calls")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_AUTH_CALLS;

@@ -1307,6 +1307,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 			switch_core_timer_check(&rtp_session->timer);
 			rtp_session->last_write_samplecount = rtp_session->timer.samplecount;
 		}
+
 		switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void *) send_msg, &bytes);
 	}
 
@@ -1410,7 +1411,6 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp_t *rtp_session, void *data, uint
 SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_frame_t *frame, uint32_t ts)
 {
 	uint8_t fwd = 0;
-	uint8_t packetize = 0;
 	void *data;
 	uint32_t len;
 	switch_payload_t payload;
@@ -1421,7 +1421,6 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	}
 
 	fwd = (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE) && switch_test_flag(frame, SFF_RAW_RTP)) ? 1 : 0;
-	packetize = (rtp_session->samples_per_interval > frame->datalen && (frame->payload == rtp_session->payload)) ? 1 : 0;
 
 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) || !rtp_session->remote_addr) {
 		return -1;
@@ -1435,7 +1434,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		payload = rtp_session->payload;
 	}
 
-	if (fwd && !packetize) {
+	if (fwd) {
 		data = frame->packet;
 		len = frame->packetlen;
 	} else {

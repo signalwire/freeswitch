@@ -682,7 +682,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t * tech_pvt)
 	bw = tech_pvt->read_codec.implementation->bits_per_second;
 	ms = tech_pvt->read_codec.implementation->microseconds_per_frame;
 
-	flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_RAW_WRITE | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT);
+	flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT);
 
 	if (switch_test_flag(tech_pvt, TFLAG_BUGGY_2833)) {
 		flags |= SWITCH_RTP_FLAG_BUGGY_2833;
@@ -691,6 +691,11 @@ switch_status_t sofia_glue_activate_rtp(private_object_t * tech_pvt)
 	if ((tech_pvt->profile->pflags & PFLAG_PASS_RFC2833)
 		|| ((val = switch_channel_get_variable(channel, "pass_rfc2833")) && switch_true(val))) {
 		flags |= SWITCH_RTP_FLAG_PASS_RFC2833;
+	}
+
+	if (!((tech_pvt->profile->pflags & PFLAG_REWRITE_TIMESTAMPS) || 
+		  ((val = switch_channel_get_variable(channel, "rtp_rewrite_timestamps")) && switch_true(val)))) {
+		flags |= SWITCH_RTP_FLAG_RAW_WRITE;
 	}
 
 	if (tech_pvt->cng_pt) {
