@@ -798,6 +798,7 @@ static ldl_avatar_t *ldl_get_avatar(ldl_handle_t *handle, char *path, char *from
 	int fd = -1;
 	size_t bytes;
 	char *key;
+	char hash[128] = "";
 
 	if (from && (ap = (ldl_avatar_t *) apr_hash_get(globals.avatar_hash, from, APR_HASH_KEY_STRING))) {
 		return ap;
@@ -828,7 +829,8 @@ static ldl_avatar_t *ldl_get_avatar(ldl_handle_t *handle, char *path, char *from
 	ap = malloc(sizeof(*ap));
 	assert(ap != NULL);
 	memset(ap, 0, sizeof(*ap));
-	sha1_hash(ap->hash, (char *)image, bytes);
+	ldl_random_string(hash, sizeof(hash) -1, NULL);
+	sha1_hash(ap->hash, hash, strlen(hash));
 	ap->path = strdup(path);
 
 	key = ldl_handle_strdup(handle, from);
