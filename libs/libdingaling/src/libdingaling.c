@@ -43,6 +43,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <ctype.h>
+#include <fcntl.h>
 #include <iksemel.h>
 #include <apr.h>
 #include <apr_network_io.h>
@@ -72,6 +73,7 @@
 #include "sha1.h"
 
 #ifdef _MSC_VER
+#include <io.h>
 #pragma warning(disable:4127 4706)
 #endif
 
@@ -833,7 +835,10 @@ static ldl_avatar_t *ldl_get_avatar(ldl_handle_t *handle, char *path, char *from
 	key = ldl_handle_strdup(handle, from);
 	ldl_strip_resource(key);
 
-	b64encode((unsigned char *)image, bytes, base64, sizeof(base64));
+	b64encode((unsigned char *)image,
+		bytes, 
+		base64, 
+		sizeof(base64));
 	ap->base64 = strdup(base64);
 	apr_hash_set(globals.avatar_hash, ap->path, APR_HASH_KEY_STRING, ap);
 	apr_hash_set(globals.avatar_hash, key, APR_HASH_KEY_STRING, ap);
@@ -1080,10 +1085,10 @@ static int on_result(void *user_data, ikspak *pak)
 static const char c64[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 #define B64BUFFLEN 1024
 
-static int b64encode(unsigned char *in, uint32_t ilen, unsigned char *out, uint32_t olen) 
+static int b64encode(unsigned char *in, size_t ilen, unsigned char *out, size_t olen) 
 {
 	int y=0,bytes=0;
-	uint32_t x=0;
+	size_t x=0;
 	unsigned int b=0,l=0;
 
 	for(x=0;x<ilen;x++) {
