@@ -38,8 +38,9 @@
   \{
 */
 /* OMG */
-#ifdef WIN32
+#ifdef _MSC_VER
 #define __LDL_FUNC__ __FUNCTION__
+#define inline __inline
 #else
 #define __LDL_FUNC__ (const char *)__func__
 #endif
@@ -203,7 +204,7 @@ static inline int ldl_jid_domcmp(char *id_a, char *id_b)
 	}
 
     if (id_a_host && id_b_host) {
-        int id_a_len = 0, id_b_len = 0, len = 0;
+        size_t id_a_len = 0, id_b_len = 0, len = 0;
 
         if ((id_a_r = strchr(id_a_host, '/'))) {
             id_a_len = id_a_r - id_a_host;
