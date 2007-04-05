@@ -81,7 +81,7 @@
 
 static int opt_timeout = 30;
 
-static void sha1_hash(char *out, char *in);
+static void sha1_hash(char *out, char *in, unsigned int len);
 static int b64encode(unsigned char *in, size_t ilen, unsigned char *out, size_t olen);
 static void ldl_random_string(char *buf, uint16_t len, char *set);
 
@@ -828,7 +828,7 @@ static ldl_avatar_t *ldl_get_avatar(ldl_handle_t *handle, char *path, char *from
 	ap = malloc(sizeof(*ap));
 	assert(ap != NULL);
 	memset(ap, 0, sizeof(*ap));
-	sha1_hash(ap->hash, (char *)image);
+	sha1_hash(ap->hash, (char *)image, bytes);
 	ap->path = strdup(path);
 
 	key = ldl_handle_strdup(handle, from);
@@ -1110,7 +1110,7 @@ static int b64encode(unsigned char *in, size_t ilen, unsigned char *out, size_t 
 	return 0;
 }
 
-static void sha1_hash(char *out, char *in)
+static void sha1_hash(char *out, char *in, unsigned int len)
 {
 	sha_context_t sha;
 	char *p;
@@ -1119,7 +1119,7 @@ static void sha1_hash(char *out, char *in)
 
 	SHA1Init(&sha);
 	
-	SHA1Update(&sha, (unsigned char *) in, (unsigned int)strlen(in));
+	SHA1Update(&sha, (unsigned char *) in, len);
 
 	SHA1Final(digest, &sha);
 
@@ -1146,7 +1146,7 @@ static int on_stream_component(ldl_handle_t *handle, int type, iks *node)
 			char handshake[512] = "";
 
 			snprintf(secret, sizeof(secret), "%s%s", pak->id, handle->password);
-			sha1_hash(hash, secret);
+			sha1_hash(hash, secret, strlen(secret));
 			snprintf(handshake, sizeof(handshake), "<handshake>%s</handshake>", hash);
 			iks_send_raw(handle->parser, handshake);
 			handle->state = CS_START;

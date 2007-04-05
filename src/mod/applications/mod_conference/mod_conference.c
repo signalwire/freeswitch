@@ -3429,7 +3429,7 @@ static switch_status_t conf_api_main(char *buf, switch_core_session_t *session, 
 				}
 			} else {
 				stream->write_function(stream, "Conference %s not found\n", argv[0]);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Conference %s not found\n", argv[0]);
+				//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Conference %s not found\n", argv[0]);
 			}
 		}
 
