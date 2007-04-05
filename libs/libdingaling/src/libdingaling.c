@@ -82,7 +82,7 @@
 static int opt_timeout = 30;
 
 static void sha1_hash(char *out, char *in);
-static int b64encode(unsigned char *in, uint32_t ilen, unsigned char *out, uint32_t olen);
+static int b64encode(unsigned char *in, size_t ilen, unsigned char *out, size_t olen);
 static void ldl_random_string(char *buf, uint16_t len, char *set);
 
 static struct {
@@ -835,11 +835,8 @@ static ldl_avatar_t *ldl_get_avatar(ldl_handle_t *handle, char *path, char *from
 	key = ldl_handle_strdup(handle, from);
 	ldl_strip_resource(key);
 
-	b64encode((unsigned char *)image,
-		bytes, 
-		base64, 
-		sizeof(base64));
-	ap->base64 = strdup(base64);
+	b64encode((unsigned char *)image, bytes, base64, sizeof(base64));
+	ap->base64 = strdup((const char *)base64);
 	apr_hash_set(globals.avatar_hash, ap->path, APR_HASH_KEY_STRING, ap);
 	apr_hash_set(globals.avatar_hash, key, APR_HASH_KEY_STRING, ap);
 	return ap;
