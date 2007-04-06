@@ -322,7 +322,7 @@ AX_LIB_MYSQL
 
 AM_CONDITIONAL([CRASHPROT],[test "x$enable_crash_prot" != "xno"])
 AM_CONDITIONAL([ADD_ODBC],[test "x$enable_core_odbc_support" != "xno"])
-AM_CONDITIONAL([HAVE_MYSQL],[test "x$have_mysql" != "x"])
+AM_CONDITIONAL([HAVE_MYSQL],[test "$found_mysql" = "yes"])
 
 AC_CONFIG_FILES([Makefile
                 src/Makefile

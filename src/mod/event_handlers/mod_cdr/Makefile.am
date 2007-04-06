@@ -14,13 +14,15 @@ MODNAME=mod_cdr
 mod_LTLIBRARIES = mod_cdr.la
 mod_cdr_la_SOURCES = mod_cdr.cpp cdrcontainer.cpp basecdr.cpp baseregistry.cpp pddcdr.cpp csvcdr.cpp xmlcdr.cpp sqlitecdr.cpp
 mod_cdr_la_CFLAGS = $(AM_CFLAGS)
+mod_cdr_la_CPPFLAGS = $(AM_CPPFLAGS)
 mod_cdr_la_LIBADD=$(switch_builddir)/libfreeswitch.la
 mod_cdr_la_LDFLAGS=-module -avoid-version -no-undefined -export-symbols-regex ^switch_module_.*$ -rpath $(PREFIX)/$(libdir)
 
 #Build mysqlcdr if we have mysql client
 if HAVE_MYSQL
-mod_cdr_la_CFLAGS += -DMYSQL
-mod_cdr_la_LDFLAGS += -lmysql-client
+mod_cdr_la_CFLAGS += -DMYSQL $(MYSQL_CFLAGS)
+mod_cdr_la_CPPFLAGS += -DMYSQL $(MYSQL_CFLAGS)
+mod_cdr_la_LDFLAGS += -lmysql-client $(MYSQL_LDFLAGS)
 mod_cdr_la_SOURCES += mysqlcdr.cpp
 endif
 
