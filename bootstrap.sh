@@ -68,9 +68,9 @@ lt_version=`echo $lt_pversion|sed -e 's/\([a-z]*\)$/.\1/'`
 IFS=.; set $lt_version; IFS=' '
 lt_status="good"
 
-a=$[$1+0]
-b=$[$2+0]
-c=$[$3+0]
+if test -z "$1"; then a=0 ; else a=$1;fi
+if test -z "$2"; then b=0 ; else b=$2;fi
+if test -z "$3"; then c=0 ; else c=$3;fi
 
 if test "$a" -lt "2"; then
    if test "$b" -lt "5" -o "$b" =  "5" -a "$c" -lt "14" ; then
