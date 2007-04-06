@@ -20,9 +20,9 @@ mod_cdr_la_LDFLAGS=-module -avoid-version -no-undefined -export-symbols-regex ^s
 
 #Build mysqlcdr if we have mysql client
 if HAVE_MYSQL
-mod_cdr_la_CFLAGS += -DMYSQL $(MYSQL_CFLAGS)
-mod_cdr_la_CPPFLAGS += -DMYSQL $(MYSQL_CFLAGS)
-mod_cdr_la_LDFLAGS += -lmysql-client $(MYSQL_LDFLAGS)
+mod_cdr_la_CFLAGS += $(MYSQL_CFLAGS)
+mod_cdr_la_CPPFLAGS += $(MYSQL_CFLAGS)
+mod_cdr_la_LDFLAGS += $(MYSQL_LDFLAGS)
 mod_cdr_la_SOURCES += mysqlcdr.cpp
 endif
 
