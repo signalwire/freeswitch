@@ -186,32 +186,33 @@ struct rfc2833_digit {
 
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string)
 
-	 static switch_status_t dl_login(char *arg, switch_core_session_t *session, switch_stream_handle_t *stream);
-	 static switch_status_t dl_logout(char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream);
-	 static switch_status_t channel_on_init(switch_core_session_t *session);
-	 static switch_status_t channel_on_hangup(switch_core_session_t *session);
-	 static switch_status_t channel_on_ring(switch_core_session_t *session);
-	 static switch_status_t channel_on_loopback(switch_core_session_t *session);
-	 static switch_status_t channel_on_transmit(switch_core_session_t *session);
-	 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
-														 switch_caller_profile_t *outbound_profile,
-														 switch_core_session_t **new_session, switch_memory_pool_t **pool);
-	 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id);
-	 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id);
-	 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
+static switch_status_t dl_login(char *arg, switch_core_session_t *session, switch_stream_handle_t *stream);
+static switch_status_t dl_logout(char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream);
+static switch_status_t dl_pres(char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream);
+static switch_status_t channel_on_init(switch_core_session_t *session);
+static switch_status_t channel_on_hangup(switch_core_session_t *session);
+static switch_status_t channel_on_ring(switch_core_session_t *session);
+static switch_status_t channel_on_loopback(switch_core_session_t *session);
+static switch_status_t channel_on_transmit(switch_core_session_t *session);
+static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
+													switch_caller_profile_t *outbound_profile,
+													switch_core_session_t **new_session, switch_memory_pool_t **pool);
+static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id);
+static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id);
+static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
 
-	 static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlsession, ldl_signal_t dl_signal,
-										 char *to, char *from, char *subject, char *msg);
-	 static ldl_status handle_response(ldl_handle_t * handle, char *id);
-	 static switch_status_t load_config(void);
-	 static int sin_callback(void *pArg, int argc, char **argv, char **columnNames);
+static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlsession, ldl_signal_t dl_signal,
+									char *to, char *from, char *subject, char *msg);
+static ldl_status handle_response(ldl_handle_t * handle, char *id);
+static switch_status_t load_config(void);
+static int sin_callback(void *pArg, int argc, char **argv, char **columnNames);
 
 #define is_special(s) (s && (strstr(s, "ext+") || strstr(s, "user+")))
 
-	 static char *translate_rpid(char *in, char *ext)
+static char *translate_rpid(char *in, char *ext)
 {
 	char *r = NULL;
 
@@ -284,7 +285,7 @@ static void mdl_execute_sql(mdl_profile_t *profile, char *sql, switch_mutex_t *m
 #endif
 
 
-  end:
+ end:
 	if (mutex) {
 		switch_mutex_unlock(mutex);
 	}
@@ -1095,9 +1096,9 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 
 	goto done;
 
-  out:
+ out:
 	terminate_session(&session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-  done:
+ done:
 
 	return ret;
 }
@@ -1182,7 +1183,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	/* Dunno why, but if googletalk calls us for the first time, as soon as the call ends
 	   they think we are offline for no reason so we send this presence packet to stop it from happening
 	   We should find out why.....
-	 */
+	*/
 	if ((tech_pvt->profile->user_flags & LDL_FLAG_COMPONENT) && is_special(tech_pvt->them)) {
 		ldl_handle_send_presence(tech_pvt->profile->handle, tech_pvt->them, tech_pvt->us, NULL, NULL, "Click To Call", tech_pvt->profile->avatar);
 	}
@@ -1548,13 +1549,20 @@ static const switch_endpoint_interface_t channel_endpoint_interface = {
 };
 
 
+static switch_api_interface_t pres_api_interface = {
+	/*.interface_name */ "dl_pres",
+	/*.desc */ "DingaLing Presence",
+	/*.function */ dl_pres,
+	/*.syntax */ "dl_pres <profile_name>",
+	/*.next */ NULL
+};
 
 static switch_api_interface_t logout_api_interface = {
 	/*.interface_name */ "dl_logout",
 	/*.desc */ "DingaLing Logout",
 	/*.function */ dl_logout,
 	/*.syntax */ "dl_logout <profile_name>",
-	/*.next */ NULL
+	/*.next */ &pres_api_interface
 };
 
 static switch_api_interface_t login_api_interface = {
@@ -1953,6 +1961,33 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 	}
 }
 
+static switch_status_t dl_pres(char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream)
+{
+	mdl_profile_t *profile;
+
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!profile_name) {
+		stream->write_function(stream, "USAGE: %s\n", pres_api_interface.syntax);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if ((profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
+		if (profile->user_flags & LDL_FLAG_COMPONENT) {
+			sign_on(profile);
+			stream->write_function(stream, "OK\n");
+		} else {
+			stream->write_function(stream, "NO PROFILE %s NOT A COMPONENT\n", profile_name);
+		}
+	} else {
+		stream->write_function(stream, "NO SUCH PROFILE %s\n", profile_name);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t dl_logout(char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	mdl_profile_t *profile;
@@ -2227,7 +2262,7 @@ static void do_vcard(ldl_handle_t *handle, char *to, char *from, char *id)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 	}
 
-  end:
+ end:
 
 	if (!sent) {
 		ldl_handle_send_vcard(handle, to, from, id, NULL);
@@ -2385,44 +2420,44 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 
 		switch (dl_signal) {
 		case LDL_SIGNAL_MSG:{
-				switch_chat_interface_t *ci;
-				char *proto = MDL_CHAT_PROTO;
-				char *pproto = NULL, *ffrom = NULL;
-				char *hint;
+			switch_chat_interface_t *ci;
+			char *proto = MDL_CHAT_PROTO;
+			char *pproto = NULL, *ffrom = NULL;
+			char *hint;
 
-				if (profile->auto_reply) {
-					ldl_handle_send_msg(handle,
-										(profile->user_flags & LDL_FLAG_COMPONENT) ? to : ldl_handle_get_login(profile->handle), from, "",
-										profile->auto_reply);
-				}
-
-				if (strchr(to, '+')) {
-					pproto = strdup(to);
-					if ((to = strchr(pproto, '+'))) {
-						*to++ = '\0';
-					}
-					proto = pproto;
-				}
-
-				hint = from;
-
-				if (strchr(from, '/') && (ffrom = strdup(from))) {
-					char *p;
-					if ((p = strchr(ffrom, '/'))) {
-						*p = '\0';
-					}
-					from = ffrom;
-				}
-
-				if ((ci = switch_loadable_module_get_chat_interface(proto))) {
-					ci->chat_send(MDL_CHAT_PROTO, from, to, subject, msg, hint);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Chat Interface [%s]!\n", proto);
-				}
-
-				switch_safe_free(pproto);
-				switch_safe_free(ffrom);
+			if (profile->auto_reply) {
+				ldl_handle_send_msg(handle,
+									(profile->user_flags & LDL_FLAG_COMPONENT) ? to : ldl_handle_get_login(profile->handle), from, "",
+									profile->auto_reply);
 			}
+
+			if (strchr(to, '+')) {
+				pproto = strdup(to);
+				if ((to = strchr(pproto, '+'))) {
+					*to++ = '\0';
+				}
+				proto = pproto;
+			}
+
+			hint = from;
+
+			if (strchr(from, '/') && (ffrom = strdup(from))) {
+				char *p;
+				if ((p = strchr(ffrom, '/'))) {
+					*p = '\0';
+				}
+				from = ffrom;
+			}
+
+			if ((ci = switch_loadable_module_get_chat_interface(proto))) {
+				ci->chat_send(MDL_CHAT_PROTO, from, to, subject, msg, hint);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Chat Interface [%s]!\n", proto);
+			}
+
+			switch_safe_free(pproto);
+			switch_safe_free(ffrom);
+		}
 			break;
 		case LDL_SIGNAL_LOGIN_SUCCESS:
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, DL_EVENT_LOGIN_SUCCESS) == SWITCH_STATUS_SUCCESS) {
@@ -2674,7 +2709,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 																																															   address,
 																																															   "169.254.",
 																																															   8)
-																																							))) {
+																																															  ))) {
 					ldl_payload_t payloads[5];
 					char *exten;
 					char *context;
@@ -2828,7 +2863,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 		break;
 	}
 
-  done:
+ done:
 
 	return status;
 }
