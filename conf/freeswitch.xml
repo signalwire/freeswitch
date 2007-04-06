@@ -40,6 +40,7 @@
     <!--#include "conference.conf.xml"-->
     <!--#include "enum.conf.xml"-->
     <!--#include "ivr.conf.xml"-->
+    <!--#include "mod_cdr.conf.xml"-->
   </section>
   
   <section name="dialplan" description="Regex/XML Dialplan">
