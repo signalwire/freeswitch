@@ -708,13 +708,33 @@ static void terminate_session(switch_core_session_t **session, int line, switch_
 static void dl_logger(char *file, const char *func, int line, int level, char *fmt, ...)
 {
 	va_list ap;
-	char data[1024];
+	char *data = NULL;
+	int ret;
 
 	va_start(ap, fmt);
+	if ((ret = switch_vasprintf(&data, fmt, ap)) != -1) {
+		if (!strncasecmp(data, "+xml:", 5)) {
+			switch_xml_t xml;
+			char *form;
+			char *ll = data + 5;
+			char *xmltxt;
 
-	vsnprintf(data, sizeof(data), fmt, ap);
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_DEBUG, "%s", data);
-
+			if (ll) {
+				if ((xmltxt = strchr(ll, ':'))) {
+					*xmltxt++ = '\0';
+					xml = switch_xml_parse_str(xmltxt, strlen(xmltxt));
+					form = switch_xml_toxml(xml);
+					switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, level, 
+									  "%s:\n-------------------------------------------------------------------------------\n"
+									  "%s\n", ll, form);
+					switch_xml_free(xml);
+					free(data);
+				}
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, level, "%s\n", data);
+		}
+	}
 	va_end(ap);
 }
 

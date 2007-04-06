@@ -78,6 +78,7 @@
 #endif
 
 #define microsleep(x) apr_sleep(x * 1000)
+#define LDL_CAPS_VER "1.0.0.1"
 
 static int opt_timeout = 30;
 
@@ -162,6 +163,32 @@ struct ldl_session {
 	apr_time_t created;
 	void *private_data;
 };
+
+static int on_disco_default(void *user_data, ikspak *pak);
+static int on_vcard(void *user_data, ikspak *pak);
+typedef int (*iks_filter_callback_t)(void *user_data, ikspak *pak);
+
+struct ldl_feature {
+	const char *name;
+	iks_filter_callback_t callback;
+};
+typedef struct ldl_feature ldl_feature_t;
+
+#define FEATURE_DISCO "http://jabber.org/protocol/disco"
+#define FEATURE_VERSION "jabber:iq:version"
+#define FEATURE_VCARD "vcard-temp"
+#define FEATURE_VOICE "http://www.google.com/xmpp/protocol/voice/v1"
+#define FEATURE_LAST "jabber:iq:last"
+
+static ldl_feature_t FEATURES[] = { 
+	{ FEATURE_DISCO, on_disco_default },
+	{ FEATURE_VERSION, on_disco_default },
+	{ FEATURE_VCARD, on_vcard},
+	{ FEATURE_VOICE, on_disco_default },
+	{ FEATURE_LAST, on_disco_default },
+	{ NULL, NULL}
+};
+
 
 struct ldl_avatar {
 	char *path;
@@ -499,19 +526,6 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 
 const char *marker = "TRUE";
 
-static int on_vcard(void *user_data, ikspak *pak)
-{
-	ldl_handle_t *handle = user_data;
-	char *from = iks_find_attrib(pak->x, "from");
-	char *to = iks_find_attrib(pak->x, "to");
-
-	if (handle->session_callback) {
-		handle->session_callback(handle, NULL, LDL_SIGNAL_VCARD, to, from, pak->id, NULL); 
-	}
-
-	return IKS_FILTER_EAT;
-}
-
 static int on_disco_info(void *user_data, ikspak *pak)
 {
 	ldl_handle_t *handle = user_data;
@@ -603,89 +617,81 @@ static int on_disco_info(void *user_data, ikspak *pak)
 	return IKS_FILTER_EAT;
 }
 
-static int on_component_disco_info(void *user_data, ikspak *pak)
+
+static int on_vcard(void *user_data, ikspak *pak)
 {
-	char *node = iks_find_attrib(pak->query, "node");
 	ldl_handle_t *handle = user_data;
+	char *from = iks_find_attrib(pak->x, "from");
+	char *to = iks_find_attrib(pak->x, "to");
+
+	if (handle->session_callback) {
+		handle->session_callback(handle, NULL, LDL_SIGNAL_VCARD, to, from, pak->id, NULL); 
+	}
+
+	return IKS_FILTER_EAT;
+}
+
+
+static int on_disco_default(void *user_data, ikspak *pak)
+{
+	char *node = NULL;
+	char *ns;
+	ldl_handle_t *handle = user_data;
+	iks *iq, *query, *tag;
+	uint8_t send = 0;
+	int x;
+
+	if (pak && pak->query) {
+		ns = iks_find_attrib(pak->query, "xmlns");
+		node = iks_find_attrib(pak->query, "node");
+	}
 
 	if (pak->subtype == IKS_TYPE_RESULT) {
 		globals.logger(DL_LOG_DEBUG, "FixME!!! node=[%s]\n", node?node:"");		
 	} else if (pak->subtype == IKS_TYPE_GET) {
-		//	if (ldl_test_flag(handle, LDL_FLAG_COMPONENT)) {
-		if (node) {
-			
-		} else {
-			iks *iq, *query, *tag;
-			uint8_t send = 0;
-
-			if ((iq = iks_new("iq"))) {
-				do {
-					iks_insert_attrib(iq, "from", handle->login);
-					iks_insert_attrib(iq, "to", pak->from->full);
-					iks_insert_attrib(iq, "id", pak->id);
-					iks_insert_attrib(iq, "type", "result");
-
-					if (!(query = iks_insert (iq, "query"))) {
-						break;
-					}
-					iks_insert_attrib(query, "xmlns", "http://jabber.org/protocol/disco#info");
+		if ((iq = iks_new("iq"))) {
+			iks_insert_attrib(iq, "from", handle->login);
+			iks_insert_attrib(iq, "to", pak->from->full);
+			iks_insert_attrib(iq, "id", pak->id);
+			iks_insert_attrib(iq, "type", "result");
 					
-					if (!(tag = iks_insert (query, "identity"))) {
-						break;
-					}
-					iks_insert_attrib(tag, "category", "gateway");
-					iks_insert_attrib(tag, "type", "voice");
-					iks_insert_attrib(tag, "name", "LibDingaLing");
-				
-
-					if (!(tag = iks_insert (query, "feature"))) {
-						break;
-					}
-					iks_insert_attrib(tag, "var", "http://jabber.org/protocol/disco");
-
-					if (!(tag = iks_insert (query, "feature"))) {
-						break;
-					}
-					iks_insert_attrib(tag, "var", "jabber:iq:register");
-				
-					/*
-					if (!(tag = iks_insert (query, "feature"))) {
-						break;
-					}
-					iks_insert_attrib(tag, "var", "http://jabber.org/protocol/commands");
-					*/
-
-					if (!(tag = iks_insert (query, "feature"))) {
-						break;
-					}
-					iks_insert_attrib(tag, "var", "jabber:iq:gateway");
-
-					if (!(tag = iks_insert (query, "feature"))) {
-						break;
-					}
-					iks_insert_attrib(tag, "var", "jabber:iq:version");
-
-					if (!(tag = iks_insert (query, "feature"))) {
-						break;
-					}
-					iks_insert_attrib(tag, "var", "vcard-temp");
-
-					if (!(tag = iks_insert (query, "feature"))) {
-						break;
-					}
-					iks_insert_attrib(tag, "var", "jabber:iq:search");
-
-					iks_send(handle->parser, iq);
-					send = 1;
-				} while (0);
-
-				iks_delete(iq);
+			if (!(query = iks_insert (iq, "query"))) {
+				goto fail;
 			}
+			iks_insert_attrib(query, "xmlns", ns);
 
-			if (!send) {
-				globals.logger(DL_LOG_DEBUG, "Memory Error!\n");
+			if (!strcasecmp(ns, FEATURE_LAST)) {
+				iks_insert_attrib(query, "seconds", "1");
 			}
 			
+			if (!(tag = iks_insert (query, "identity"))) {
+				goto fail;
+			}
+
+			iks_insert_attrib(tag, "category", "gateway");
+			iks_insert_attrib(tag, "type", "voice");
+			iks_insert_attrib(tag, "name", "LibDingaLing");
+
+			for (x = 0; FEATURES[x].name; x++) {
+				if (!ns || !strcasecmp(ns, FEATURES[x].name)) {
+					if (!(tag = iks_insert (query, "feature"))) {
+						goto fail;
+					}
+					iks_insert_attrib(tag, "var", FEATURES[x].name);
+				}
+			}
+			
+			iks_send(handle->parser, iq);
+			send = 1;
+		}
+	fail:
+
+		if (iq) {
+			iks_delete(iq);
+		}
+
+		if (!send) {
+			globals.logger(DL_LOG_DEBUG, "Memory Error!\n");
 		}
 	}
 
@@ -901,7 +907,7 @@ static void do_presence(ldl_handle_t *handle, char *from, char *to, char *type, 
 
 			if ((tag = iks_insert(pres, "c"))) {
 				iks_insert_attrib(tag, "node", "http://www.freeswitch.org/xmpp/client/caps");
-				iks_insert_attrib(tag, "ver", "1.0.0.1");
+				iks_insert_attrib(tag, "ver", LDL_CAPS_VER);
 				iks_insert_attrib(tag, "ext", "sidebar voice-v1");
 				iks_insert_attrib(tag, "client", "libdingaling");
 				iks_insert_attrib(tag, "xmlns", "http://jabber.org/protocol/caps");
@@ -1333,15 +1339,19 @@ static int on_error(void *user_data, ikspak * pak)
 static void on_log(ldl_handle_t *handle, const char *data, size_t size, int is_incoming)
 {
 	if (globals.debug) {
-		globals.logger(DL_LOG_DEBUG, "\n%s%s[%s]\n", 
-			iks_is_secure(handle->parser) ? "Sec" : "",
-			is_incoming ? "RECV" : "SEND",
-			data);
+		if (is_incoming) {
+			globals.logger(DL_LOG_INFO, "+xml:%s%s:%s", iks_is_secure(handle->parser) ? "Sec" : "", is_incoming ? "RECV" : "SEND", data);
+		} else {
+			globals.logger(DL_LOG_NOTICE, "+xml:%s%s:%s", iks_is_secure(handle->parser) ? "Sec" : "", is_incoming ? "RECV" : "SEND", data);
+		}
+						   
 	}
 }
 
 static void j_setup_filter(ldl_handle_t *handle)
 {
+	int x = 0;
+
 	if (handle->filter) {
 		iks_filter_delete(handle->filter);
 	}
@@ -1387,24 +1397,10 @@ static void j_setup_filter(ldl_handle_t *handle)
 						IKS_RULE_TYPE, IKS_PAK_IQ,
 						IKS_RULE_SUBTYPE, IKS_TYPE_ERROR, IKS_RULE_ID, "auth", IKS_RULE_DONE);
 
-
-
-	if (ldl_test_flag(handle, LDL_FLAG_COMPONENT)) {
-		iks_filter_add_rule(handle->filter, on_component_disco_info, handle, 
-							IKS_RULE_NS, "http://jabber.org/protocol/disco#info", IKS_RULE_DONE);
-		iks_filter_add_rule(handle->filter, on_disco_items, handle,
-							IKS_RULE_NS, "http://jabber.org/protocol/disco#items", IKS_RULE_DONE);
-		iks_filter_add_rule(handle->filter, on_disco_reg_in, handle,
-							IKS_RULE_SUBTYPE, IKS_TYPE_GET, IKS_RULE_NS, "jabber:iq:register", IKS_RULE_DONE);
-		iks_filter_add_rule(handle->filter, on_disco_reg_out, handle,
-							IKS_RULE_SUBTYPE, IKS_TYPE_SET, IKS_RULE_NS, "jabber:iq:register", IKS_RULE_DONE);
-		iks_filter_add_rule(handle->filter, on_vcard, handle,
-							IKS_RULE_SUBTYPE, IKS_TYPE_GET, IKS_RULE_NS, "vcard-temp", IKS_RULE_DONE);
-	} else {
-		iks_filter_add_rule(handle->filter, on_disco_info, handle, 
-							IKS_RULE_NS, "http://jabber.org/protocol/disco#info", IKS_RULE_DONE);
+	for (x = 0; FEATURES[x].name; x++) {
+		iks_filter_add_rule(handle->filter, FEATURES[x].callback, handle, 
+							IKS_RULE_NS, FEATURES[x].name, IKS_RULE_DONE);
 	}
-	
 }
 
 static void ldl_flush_queue(ldl_handle_t *handle, int done)
