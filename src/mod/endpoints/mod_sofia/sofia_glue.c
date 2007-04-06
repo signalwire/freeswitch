@@ -1340,7 +1340,7 @@ static char *sofia_glue_execute_sql2str_odbc(sofia_profile_t *profile, switch_mu
 		}
 
 		SQLDescribeCol(stmt, 1, name, sizeof(name), &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
-		SQLGetData(stmt, 1, SQL_C_CHAR, (SQLCHAR *)resbuf, len, NULL);
+		SQLGetData(stmt, 1, SQL_C_CHAR, (SQLCHAR *)resbuf, (SQLINTEGER)len, NULL);
 		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 		ret = resbuf;
 	}
