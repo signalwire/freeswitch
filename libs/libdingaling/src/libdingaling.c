@@ -549,7 +549,7 @@ static int on_disco_default(void *user_data, ikspak *pak)
 	iks *iq, *query, *tag;
 	uint8_t send = 0;
 	int x;
-	printf("WTF ?????\n");
+
 	if (pak && pak->query) {
 		ns = iks_find_attrib(pak->query, "xmlns");
 		node = iks_find_attrib(pak->query, "node");
