@@ -15,7 +15,6 @@
     <param name="message" value="Jingle all the way"/>
     <param name="rtp-ip" value="auto"/>
     <param name="auto-login" value="true"/>
-    <param name="auto-reply" value="Press *Call* to call FreeSWITCH and be sure to come to ClueCon! http://www.cluecon.com"/>
     <!-- SASL "plain" or "md5" -->
     <param name="sasl" value="plain"/>
     <!-- if the server where the jabber is hosted is not the same as the one in the jid -->
