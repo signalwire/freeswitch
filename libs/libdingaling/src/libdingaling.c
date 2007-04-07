@@ -1495,7 +1495,10 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 		handle->state = CS_NEW;
 	}
 	ldl_clear_flag_locked(handle, LDL_FLAG_RUNNING);
-
+	if (!ldl_test_flag(handle, LDL_FLAG_TLS)) {
+		ldl_flush_queue(handle, 1);
+	}
+	
 	while(ldl_test_flag(handle, LDL_FLAG_QUEUE_RUNNING)) {
 		microsleep(100);
 	}
@@ -2077,10 +2080,10 @@ ldl_status ldl_global_init(int debug)
 
 ldl_status ldl_global_destroy(void)
 {
-	if (ldl_test_flag(&globals, LDL_FLAG_INIT)) {
+	if (!ldl_test_flag(&globals, LDL_FLAG_INIT)) {
 		return LDL_STATUS_FALSE;
 	}
-
+	
 	apr_pool_destroy(globals.memory_pool);
 	ldl_clear_flag(&globals, LDL_FLAG_INIT);
 	apr_terminate();

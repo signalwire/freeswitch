@@ -1928,6 +1928,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 				break;
 			}
 		}
+
 		if (globals.init) {
 			ldl_global_destroy();
 		}
