@@ -27,6 +27,7 @@
  *
  *
  * switch_channel.h -- Media Channel Interface
+ * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  *
  */
 /** 
@@ -52,6 +53,20 @@ typedef void (*switch_rtp_invalid_handler_t) (switch_rtp_t *rtp_session,
   \note Generally called by the core_init
 */
 SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool);
+
+/*!
+  \brief Set/Get RTP start port
+  \param port new value (if > 0)
+  \return the current RTP start port
+*/
+SWITCH_DECLARE(switch_port_t) switch_rtp_set_start_port(switch_port_t port);
+
+/*!
+  \brief Set/Get RTP end port
+  \param port new value (if > 0)
+  \return the current RTP end port
+*/
+SWITCH_DECLARE(switch_port_t) switch_rtp_set_end_port(switch_port_t port);
 
 /*! 
   \brief Request a new port to be used for media

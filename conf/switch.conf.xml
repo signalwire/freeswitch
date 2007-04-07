@@ -2,6 +2,9 @@
   <settings>
     <!--Most channels to allow at once -->
     <param name="max-sessions" value="1000"/>
+    <!--RTP port range -->
+    <!--<param name="rtp-start-port" value="16384"/>-->
+    <!--<param name="rtp-end-port" value="32768"/>-->
   </settings>
   <!--Any variables defined here will be available in every channel, in the dialplan etc -->
   <variables>

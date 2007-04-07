@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
+ * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  *
  *
  * switch_rtp.c -- RTP
@@ -50,6 +51,8 @@
 #define MASTER_KEY_LEN   30
 #define RTP_MAGIC_NUMBER 42
 
+static switch_port_t START_PORT = RTP_START_PORT;
+static switch_port_t END_PORT = RTP_END_PORT;
 static switch_port_t NEXT_PORT = RTP_START_PORT;
 static switch_mutex_t *port_lock = NULL;
 
@@ -263,6 +266,43 @@ SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 	global_init = 1;
 }
 
+SWITCH_DECLARE(switch_port_t) switch_rtp_set_start_port(switch_port_t port)
+{
+	if (port) {
+		if (port_lock) {
+			switch_mutex_lock(port_lock);
+		}
+		if (NEXT_PORT == START_PORT) {
+			NEXT_PORT = port;
+		}
+		START_PORT = port;
+		if (NEXT_PORT < START_PORT) {
+			NEXT_PORT = START_PORT;
+		}
+		if (port_lock) {
+			switch_mutex_unlock(port_lock);
+		}
+        }
+        return START_PORT;
+}
+
+SWITCH_DECLARE(switch_port_t) switch_rtp_set_end_port(switch_port_t port)
+{
+	if (port) {
+		if (port_lock) {
+			switch_mutex_lock(port_lock);
+		}
+		END_PORT = port;
+		if (NEXT_PORT > END_PORT) {
+			NEXT_PORT = START_PORT;
+		}
+		if (port_lock) {
+			switch_mutex_unlock(port_lock);
+		}
+        }
+        return END_PORT;
+}
+
 SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void)
 {
 	switch_port_t port;
@@ -270,8 +310,8 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void)
 	switch_mutex_lock(port_lock);
 	port = NEXT_PORT;
 	NEXT_PORT += 2;
-	if (NEXT_PORT > RTP_END_PORT) {
-		NEXT_PORT = RTP_START_PORT;
+	if (NEXT_PORT > END_PORT) {
+		NEXT_PORT = START_PORT;
 	}
 	switch_mutex_unlock(port_lock);
 	return port;

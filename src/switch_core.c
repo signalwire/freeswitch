@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  * Michael Jerris <mike@jerris.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
+ * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  *
  *
  * switch_core.c -- Main Core Library
@@ -444,6 +445,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 
 				if (!strcasecmp(var, "max-sessions")) {
 					switch_core_session_limit(atoi(val));
+				}
+				else if (!strcasecmp(var, "rtp-start-port")) {
+					switch_rtp_set_start_port(atoi(val));
+				}
+				else if (!strcasecmp(var, "rtp-end-port")) {
+					switch_rtp_set_end_port(atoi(val));
 				}
 			}
 		}
