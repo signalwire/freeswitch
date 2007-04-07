@@ -559,6 +559,8 @@ static int on_disco_default(void *user_data, ikspak *pak)
 		globals.logger(DL_LOG_DEBUG, "FixME!!! node=[%s]\n", node?node:"");		
 	} else if (pak->subtype == IKS_TYPE_GET) {
 		if ((iq = iks_new("iq"))) {
+			int all = 0;
+
 			iks_insert_attrib(iq, "from", handle->login);
 			iks_insert_attrib(iq, "to", pak->from->full);
 			iks_insert_attrib(iq, "id", pak->id);
@@ -576,13 +578,17 @@ static int on_disco_default(void *user_data, ikspak *pak)
 			if (!(tag = iks_insert (query, "identity"))) {
 				goto fail;
 			}
+			
+			if (!strcasecmp(ns, FEATURE_DISCO) && !node) {
+				all++;
+			}
 
 			iks_insert_attrib(tag, "category", "gateway");
 			iks_insert_attrib(tag, "type", "voice");
 			iks_insert_attrib(tag, "name", "LibDingaLing");
 
 			for (x = 0; FEATURES[x].name; x++) {
-				if (!ns || !strcasecmp(ns, FEATURES[x].name)) {
+				if (all || !ns || !strcasecmp(ns, FEATURES[x].name)) {
 					if (!(tag = iks_insert (query, "feature"))) {
 						goto fail;
 					}

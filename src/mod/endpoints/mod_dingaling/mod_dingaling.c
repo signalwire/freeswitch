@@ -108,7 +108,9 @@ struct mdl_profile {
 	char *login;
 	char *password;
 	char *message;
+#ifdef AUTO_REPLY
 	char *auto_reply;
+#endif
 	char *dialplan;
 	char *ip;
 	char *extip;
@@ -723,13 +725,15 @@ static void dl_logger(char *file, const char *func, int line, int level, char *f
 			if (ll) {
 				if ((xmltxt = strchr(ll, ':'))) {
 					*xmltxt++ = '\0';
-					xml = switch_xml_parse_str(xmltxt, strlen(xmltxt));
-					form = switch_xml_toxml(xml);
-					switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, level, 
-									  "%s:\n-------------------------------------------------------------------------------\n"
-									  "%s\n", ll, form);
-					switch_xml_free(xml);
-					free(data);
+					if (strlen(xmltxt) > 2) {
+						xml = switch_xml_parse_str(xmltxt, strlen(xmltxt));
+						form = switch_xml_toxml(xml);
+						switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, level, 
+										  "%s:\n-------------------------------------------------------------------------------\n"
+										  "%s\n", ll, form);
+						switch_xml_free(xml);
+						free(data);
+					}
 				}
 			}
 		} else {
@@ -1959,8 +1963,10 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 		switch_set_flag(profile, TFLAG_TIMER);
 	} else if (!strcasecmp(var, "dialplan")) {
 		profile->dialplan = switch_core_strdup(module_pool, val);
+#ifdef AUTO_REPLY // gotta fix looping on this
 	} else if (!strcasecmp(var, "auto-reply")) {
 		profile->auto_reply = switch_core_strdup(module_pool, val);
+#endif
 	} else if (!strcasecmp(var, "name")) {
 		profile->name = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "message")) {
@@ -2396,6 +2402,8 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 					switch_mutex_unlock(profile->mutex);
 					if (is_special(to)) {
 						ldl_handle_send_presence(profile->handle, to, from, NULL, NULL, "Click To Call", profile->avatar);
+					} else {
+						ldl_handle_send_presence(profile->handle, to, from, NULL, NULL, "Authenticated.\nCome to ClueCon!\nhttp://www.cluecon.com", profile->avatar);
 					}
 #if 0
 					if (is_special(to)) {
@@ -2491,12 +2499,13 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 			char *proto = MDL_CHAT_PROTO;
 			char *pproto = NULL, *ffrom = NULL;
 			char *hint;
-
+#ifdef AUTO_REPLY
 			if (profile->auto_reply) {
 				ldl_handle_send_msg(handle,
 									(profile->user_flags & LDL_FLAG_COMPONENT) ? to : ldl_handle_get_login(profile->handle), from, "",
 									profile->auto_reply);
 			}
+#endif
 
 			if (strchr(to, '+')) {
 				pproto = strdup(to);
