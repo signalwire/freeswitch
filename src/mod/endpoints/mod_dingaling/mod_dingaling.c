@@ -849,9 +849,8 @@ static int activate_rtp(struct private_object *tech_pvt)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SETUP RTP %s:%d -> %s:%d\n", tech_pvt->profile->ip,
 					  tech_pvt->local_port, tech_pvt->remote_ip, tech_pvt->remote_port);
-
+	
 	flags = SWITCH_RTP_FLAG_GOOGLEHACK | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_RAW_WRITE | SWITCH_RTP_FLAG_AUTO_CNG;
-	//flags = SWITCH_RTP_FLAG_AUTOADJ;
 
 	if (switch_test_flag(tech_pvt->profile, TFLAG_TIMER)) {
 		flags |= SWITCH_RTP_FLAG_USE_TIMER;
@@ -874,7 +873,11 @@ static int activate_rtp(struct private_object *tech_pvt)
 		uint8_t inb = switch_test_flag(tech_pvt, TFLAG_OUTBOUND) ? 0 : 1;
 		switch_rtp_activate_ice(tech_pvt->rtp_session, tech_pvt->remote_user, tech_pvt->local_user);
 		if ((vad_in && inb) || (vad_out && !inb)) {
-			switch_rtp_enable_vad(tech_pvt->rtp_session, tech_pvt->session, &tech_pvt->read_codec, SWITCH_VAD_FLAG_TALKING);
+			if (switch_rtp_enable_vad(tech_pvt->rtp_session, tech_pvt->session, &tech_pvt->read_codec, SWITCH_VAD_FLAG_TALKING) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VAD ERROR %s\n", err);
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				return 0;
+			}
 			switch_set_flag_locked(tech_pvt, TFLAG_VAD);
 		}
 		switch_rtp_set_cng_pt(tech_pvt->rtp_session, 13);
@@ -1065,7 +1068,8 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 
 	while (!(switch_test_flag(tech_pvt, TFLAG_CODEC_READY) &&
 			 switch_test_flag(tech_pvt, TFLAG_RTP_READY) &&
-			 switch_test_flag(tech_pvt, TFLAG_ANSWER) && switch_test_flag(tech_pvt, TFLAG_TRANSPORT_ACCEPT)
+			 switch_test_flag(tech_pvt, TFLAG_ANSWER) && switch_test_flag(tech_pvt, TFLAG_TRANSPORT_ACCEPT) &&
+			 tech_pvt->remote_ip && tech_pvt->remote_port
 			 && switch_test_flag(tech_pvt, TFLAG_TRANSPORT))) {
 		now = switch_time_now();
 		elapsed = (unsigned int) ((now - started) / 1000);
@@ -1329,89 +1333,101 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, char *d
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
 	struct private_object *tech_pvt = NULL;
-	uint32_t bytes = 0;
-	switch_size_t samples = 0, frames = 0, ms = 0;
 	switch_channel_t *channel = NULL;
-	switch_payload_t payload = 0;
-	switch_status_t status;
+	int payload = 0;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
-	tech_pvt = switch_core_session_get_private(session);
+	tech_pvt = (struct private_object *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-
-	if (!tech_pvt->rtp_session) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
-		//terminate_session(&session,  __LINE__, SWITCH_CAUSE_NORMAL_CLEARING);
-		return SWITCH_STATUS_FALSE;
+	while (!(tech_pvt->read_codec.implementation && switch_rtp_ready(tech_pvt->rtp_session))) {
+		if (switch_channel_ready(channel)) {
+			switch_yield(10000);
+		} else {
+			return SWITCH_STATUS_GENERR;
+		}
 	}
 
 
 	tech_pvt->read_frame.datalen = 0;
 	switch_set_flag_locked(tech_pvt, TFLAG_READING);
 
-	bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
-	samples = tech_pvt->read_codec.implementation->samples_per_frame;
-	ms = tech_pvt->read_codec.implementation->microseconds_per_frame;
-	tech_pvt->read_frame.datalen = 0;
-
-
-	while (!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO)
-		   && tech_pvt->read_frame.datalen == 0) {
-		tech_pvt->read_frame.flags = 0;
-		status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame);
-
-		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
-			return SWITCH_STATUS_FALSE;
+#if 0
+	if (tech_pvt->last_read) {
+		elapsed = (unsigned int) ((switch_time_now() - tech_pvt->last_read) / 1000);
+		if (elapsed > 60000) {
+			return SWITCH_STATUS_TIMEOUT;
 		}
-		payload = tech_pvt->read_frame.payload;
-
-		if (switch_rtp_has_dtmf(tech_pvt->rtp_session)) {
-			char dtmf[128];
-			switch_rtp_dequeue_dtmf(tech_pvt->rtp_session, dtmf, sizeof(dtmf));
-			switch_channel_queue_dtmf(channel, dtmf);
-			switch_set_flag_locked(tech_pvt, TFLAG_DTMF);
-		}
-
-		if (switch_test_flag(tech_pvt, TFLAG_DTMF)) {
-			switch_clear_flag_locked(tech_pvt, TFLAG_DTMF);
-			return SWITCH_STATUS_BREAK;
-		}
-
-		if (switch_test_flag(&tech_pvt->read_frame, SFF_CNG)) {
-			tech_pvt->read_frame.datalen = tech_pvt->last_read ? tech_pvt->last_read : tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
-		}
-
-		if (tech_pvt->read_frame.datalen > 0) {
-			if (!switch_test_flag((&tech_pvt->read_frame), SFF_CNG)) {
-				if (tech_pvt->read_codec.implementation->encoded_bytes_per_frame && bytes) {
-					bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
-					frames = (tech_pvt->read_frame.datalen / bytes);
-				} else {
-					frames = 1;
-				}
-				samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
-				ms = frames * tech_pvt->read_codec.implementation->microseconds_per_frame;
-				tech_pvt->timestamp_recv += (int32_t) samples;
-				tech_pvt->read_frame.samples = (int) samples;
-				tech_pvt->last_read = tech_pvt->read_frame.datalen;
-			}
-			break;
-		}
-
-		switch_yield(1000);
 	}
+#endif
 
+
+	if (switch_test_flag(tech_pvt, TFLAG_IO)) {
+		switch_status_t status;
+
+		assert(tech_pvt->rtp_session != NULL);
+		tech_pvt->read_frame.datalen = 0;
+
+
+		while (switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
+			tech_pvt->read_frame.flags = SFF_NONE;
+
+			status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame);
+			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+				return SWITCH_STATUS_FALSE;
+			}
+
+
+
+			payload = tech_pvt->read_frame.payload;
+
+#if 0
+			elapsed = (unsigned int) ((switch_time_now() - started) / 1000);
+
+			if (timeout > -1) {
+				if (elapsed >= (unsigned int) timeout) {
+					return SWITCH_STATUS_BREAK;
+				}
+			}
+
+			elapsed = (unsigned int) ((switch_time_now() - last_act) / 1000);
+			if (elapsed >= hard_timeout) {
+				return SWITCH_STATUS_BREAK;
+			}
+#endif
+			if (switch_rtp_has_dtmf(tech_pvt->rtp_session)) {
+				char dtmf[128];
+				switch_rtp_dequeue_dtmf(tech_pvt->rtp_session, dtmf, sizeof(dtmf));
+				switch_channel_queue_dtmf(channel, dtmf);
+			}
+
+
+			if (tech_pvt->read_frame.datalen > 0) {
+				size_t bytes = 0;
+				int frames = 1;
+
+				if (!switch_test_flag((&tech_pvt->read_frame), SFF_CNG)) {
+					if ((bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame)) {
+						frames = (tech_pvt->read_frame.datalen / bytes);
+					}
+					tech_pvt->read_frame.samples = (int) (frames * tech_pvt->read_codec.implementation->samples_per_frame);
+				}
+				break;
+			}
+		}
+	}
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_READING);
 
+	if (tech_pvt->read_frame.datalen == 0) {
+		*frame = NULL;
+		return SWITCH_STATUS_GENERR;
+	}
 
 	*frame = &tech_pvt->read_frame;
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1422,45 +1438,46 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int bytes = 0, samples = 0, frames = 0;
 
-
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
-	tech_pvt = switch_core_session_get_private(session);
+	tech_pvt = (struct private_object *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	if (!tech_pvt->rtp_session) {
-		return SWITCH_STATUS_FALSE;
+	while (!(tech_pvt->read_codec.implementation && switch_rtp_ready(tech_pvt->rtp_session))) {
+		if (switch_channel_ready(channel)) {
+			switch_yield(10000);
+		} else {
+			return SWITCH_STATUS_GENERR;
+		}
 	}
 
-	if (!switch_test_flag(tech_pvt, TFLAG_RTP_READY)) {
+	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
 		return SWITCH_STATUS_SUCCESS;
-	}
-
-
-	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
-		return SWITCH_STATUS_FALSE;
 	}
 
 	switch_set_flag_locked(tech_pvt, TFLAG_WRITING);
 
-	if (tech_pvt->read_codec.implementation->encoded_bytes_per_frame) {
-		bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
-		frames = ((int) frame->datalen / bytes);
-	} else {
-		frames = 1;
-	}
+	if (!switch_test_flag(frame, SFF_CNG)) {
+		if (tech_pvt->read_codec.implementation->encoded_bytes_per_frame) {
+			bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
+			frames = ((int) frame->datalen / bytes);
+		} else
+			frames = 1;
 
-	samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
+		samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
+	}
+#if 0
+	printf("%s %s->%s send %d bytes %d samples in %d frames ts=%d\n",
+		   switch_channel_get_name(channel),
+		   tech_pvt->local_sdp_audio_ip, tech_pvt->remote_sdp_audio_ip, frame->datalen, samples, frames, tech_pvt->timestamp_send);
+#endif
+
 	tech_pvt->timestamp_send += samples;
-	if (switch_rtp_write_frame(tech_pvt->rtp_session, frame, 0) < 0) {
-		terminate_session(&session, __LINE__, SWITCH_CAUSE_NORMAL_CLEARING);
-		return SWITCH_STATUS_FALSE;
-	}
-
+	//switch_rtp_write_frame(tech_pvt->rtp_session, frame, tech_pvt->timestamp_send);
+	switch_rtp_write_frame(tech_pvt->rtp_session, frame, 0);
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_WRITING);
-
 	return status;
 }
 

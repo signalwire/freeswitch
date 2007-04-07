@@ -731,6 +731,8 @@ static int on_presence(void *user_data, ikspak *pak)
 	struct ldl_buffer *buffer;
 	ldl_signal_t dl_signal = LDL_SIGNAL_PRESENCE_IN;
 
+
+
     if (type && *type) {
         if (!strcasecmp(type, "unavailable")) {
             dl_signal = LDL_SIGNAL_PRESENCE_OUT;
@@ -754,6 +756,7 @@ static int on_presence(void *user_data, ikspak *pak)
 		*resource++ = '\0';
 	}
 	
+
 	if (!apr_hash_get(handle->sub_hash, from, APR_HASH_KEY_STRING)) {
 		iks *msg;
 		apr_hash_set(handle->sub_hash, 	apr_pstrdup(handle->pool, from), APR_HASH_KEY_STRING, &marker);
@@ -766,6 +769,8 @@ static int on_presence(void *user_data, ikspak *pak)
 		apr_cpystrn(buffer->buf, from, buffer->len);
 		fflush(stderr);
 		buffer->hit = 1;
+	} else {
+		printf("DAMMIT Lookup %s\n", from);
 	}
 	
     if (handle->session_callback) {
@@ -1953,42 +1958,33 @@ char *ldl_handle_probe(ldl_handle_t *handle, char *id, char *from, char *buf, un
 	iks *pres, *msg;
 	char *lid = NULL, *low_id = NULL;
 	struct ldl_buffer buffer;
-	apr_time_t started;
+	time_t started;
 	unsigned int elapsed;
 	char *notice = "Call Me!";
-	int again = 0;
-
+	int next = 0;
+	
 	buffer.buf = buf;
 	buffer.len = len;
 	buffer.hit = 0;
 
-	pres = iks_new("presence");
-	iks_insert_attrib(pres, "type", "probe");
-	iks_insert_attrib(pres, "from", from);
-	iks_insert_attrib(pres, "to", id);
-	
-
 	apr_hash_set(handle->probe_hash, id, APR_HASH_KEY_STRING, &buffer);
+
 	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBE, id, notice); 
 	iks_insert_attrib(msg, "from", from);
 	apr_queue_push(handle->queue, msg);
-	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, id, notice); 
-	iks_insert_attrib(msg, "from", from);
-	apr_queue_push(handle->queue, msg);
-	apr_queue_push(handle->queue, pres);
 
-	//schedule_packet(handle, next_id(), pres, LDL_RETRY);
-
-	started = apr_time_now();
+	started = time(NULL);
 	for(;;) {
-		elapsed = (unsigned int)((apr_time_now() - started) / 1000);
-		if (elapsed > 5000 && ! again) {
-			msg = iks_make_s10n (IKS_TYPE_SUBSCRIBE, id, notice); 
-			iks_insert_attrib(msg, "from", from);
-			apr_queue_push(handle->queue, msg);
-			again++;
+		elapsed = time(NULL) - started;
+		if (elapsed == next) {
+			pres = iks_new("presence");
+			iks_insert_attrib(pres, "type", "probe");
+			iks_insert_attrib(pres, "from", from);
+			iks_insert_attrib(pres, "to", id);
+			apr_queue_push(handle->queue, pres);
+			next += 5;
 		}
-		if (elapsed > 10000) {
+		if (elapsed >= 17) {
 			break;
 		}
 		if (buffer.hit) {
