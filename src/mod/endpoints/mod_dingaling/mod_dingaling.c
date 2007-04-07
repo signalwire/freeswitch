@@ -2543,7 +2543,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 		}
 
 	} else {
-		if (dl_signal != LDL_SIGNAL_INITIATE) {
+		if (dl_signal != LDL_SIGNAL_INITIATE && !msg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session is already dead\n");
 			status = LDL_STATUS_FALSE;
 			goto done;
@@ -2551,6 +2551,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 		if ((session = switch_core_session_request(&channel_endpoint_interface, NULL)) != 0) {
 			switch_core_session_add_stream(session, NULL);
 
+			
 			if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object))) != 0) {
 				memset(tech_pvt, 0, sizeof(*tech_pvt));
 				switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));

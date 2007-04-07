@@ -640,7 +640,7 @@ static int on_disco_default(void *user_data, ikspak *pak)
 	iks *iq, *query, *tag;
 	uint8_t send = 0;
 	int x;
-
+	printf("WTF ?????\n");
 	if (pak && pak->query) {
 		ns = iks_find_attrib(pak->query, "xmlns");
 		node = iks_find_attrib(pak->query, "node");
@@ -766,6 +766,7 @@ static int on_presence(void *user_data, ikspak *pak)
 
 
 	if (resource && strstr(resource, "talk") && (buffer = apr_hash_get(handle->probe_hash, id, APR_HASH_KEY_STRING))) {
+		printf("WTF Lookup %s\n", from);
 		apr_cpystrn(buffer->buf, from, buffer->len);
 		fflush(stderr);
 		buffer->hit = 1;
