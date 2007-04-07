@@ -1870,18 +1870,19 @@ char *ldl_handle_probe(ldl_handle_t *handle, char *id, char *from, char *buf, un
 
 	apr_hash_set(handle->probe_hash, id, APR_HASH_KEY_STRING, &buffer);
 
-	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBE, id, notice); 
-	iks_insert_attrib(msg, "from", from);
-	apr_queue_push(handle->queue, msg);
-
 	started = time(NULL);
 	for(;;) {
 		elapsed = time(NULL) - started;
 		if (elapsed == next) {
+			msg = iks_make_s10n (IKS_TYPE_SUBSCRIBE, id, notice); 
+			iks_insert_attrib(msg, "from", from);
+			apr_queue_push(handle->queue, msg);
+
 			pres = iks_new("presence");
+			iks_insert_attrib(pres, "xmlns", "jabber:client");
 			iks_insert_attrib(pres, "type", "probe");
-			iks_insert_attrib(pres, "from", from);
 			iks_insert_attrib(pres, "to", id);
+			iks_insert_attrib(pres, "from", from);
 			apr_queue_push(handle->queue, pres);
 			next += 5;
 		}
