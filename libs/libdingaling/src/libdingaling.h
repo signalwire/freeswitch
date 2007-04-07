@@ -376,6 +376,13 @@ void *ldl_session_get_private(ldl_session_t *session);
 void ldl_session_accept_candidate(ldl_session_t *session, ldl_candidate_t *candidate);
 
 /*!
+  \brief turn logging on/off
+  \param on (TRUE or FALSE)
+  \return current state
+*/
+int ldl_global_debug(int on);
+
+/*!
   \brief Set a custom logger
   \param logger the logger function
 */

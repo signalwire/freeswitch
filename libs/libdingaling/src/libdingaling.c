@@ -1391,9 +1391,9 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 										handle,
 										(iksStreamHook *) (ldl_test_flag(handle, LDL_FLAG_COMPONENT) ? on_stream_component : on_stream));
 
-		if (globals.debug) {
-			iks_set_log_hook(handle->parser, (iksLogHook *) on_log);
-		}
+
+		iks_set_log_hook(handle->parser, (iksLogHook *) on_log);
+			
 		
 		strncpy(tmp, jabber_id, sizeof(tmp)-1);
 		sl = strchr(tmp, '/');
@@ -1761,6 +1761,15 @@ void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, char *subje
 
 	apr_queue_push(handle->queue, msg);
 	
+}
+
+int ldl_global_debug(int on)
+{
+	if (on > -1) {
+		globals.debug = on ? 1 : 0;
+	}
+
+	return globals.debug ? 1 : 0;
 }
 
 void ldl_global_set_logger(ldl_logger_t logger)

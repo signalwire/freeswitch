@@ -192,6 +192,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_r
 static switch_status_t dl_login(char *arg, switch_core_session_t *session, switch_stream_handle_t *stream);
 static switch_status_t dl_logout(char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream);
 static switch_status_t dl_pres(char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream);
+static switch_status_t dl_debug(char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream);
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
 static switch_status_t channel_on_ring(switch_core_session_t *session);
@@ -1586,12 +1587,20 @@ static const switch_endpoint_interface_t channel_endpoint_interface = {
 };
 
 
+static switch_api_interface_t debug_api_interface = {
+	/*.interface_name */ "dl_debug",
+	/*.desc */ "DingaLing Presence",
+	/*.function */ dl_debug,
+	/*.syntax */ "dl_debug [true|false]",
+	/*.next */ NULL
+};
+
 static switch_api_interface_t pres_api_interface = {
 	/*.interface_name */ "dl_pres",
 	/*.desc */ "DingaLing Presence",
 	/*.function */ dl_pres,
 	/*.syntax */ "dl_pres <profile_name>",
-	/*.next */ NULL
+	/*.next */ &debug_api_interface
 };
 
 static switch_api_interface_t logout_api_interface = {
@@ -1996,6 +2005,27 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invald option %s for VAD\n", val);
 		}
 	}
+}
+
+static switch_status_t dl_debug(char *tf, switch_core_session_t *session, switch_stream_handle_t *stream)
+{
+	int on, cur;
+
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (tf) {
+		on = switch_true(tf);
+		cur = ldl_global_debug(on);
+	} else {
+		cur = ldl_global_debug(-1);
+	}
+
+
+	stream->write_function(stream, "DEBUG IS NOW %s\n", cur ? "ON" : "OFF");
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t dl_pres(char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream)
