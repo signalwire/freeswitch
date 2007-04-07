@@ -27,6 +27,7 @@
  * Ken Rice, Asteria Solutions Group, Inc <ken@asteriasgi.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
+ * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  *
  *
  * sofia_ref.c -- SOFIA SIP Endpoint (registration code)
@@ -56,6 +57,8 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 		reg_state_t ostate = gateway_ptr->state;
 
 		switch (ostate) {
+		case REG_STATE_NOREG:
+			break;
 		case REG_STATE_REGISTER:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "registered %s\n", gateway_ptr->name);
 			gateway_ptr->expires = now + gateway_ptr->freq;

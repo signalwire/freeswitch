@@ -27,6 +27,7 @@
  * Ken Rice, Asteria Solutions Group, Inc <ken@asteriasgi.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
+ * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  *
  *
  * mod_sofia.h -- SOFIA SIP Endpoint
@@ -159,7 +160,8 @@ typedef enum {
 	REG_STATE_REGISTER,
 	REG_STATE_REGED,
 	REG_STATE_FAILED,
-	REG_STATE_EXPIRED
+	REG_STATE_EXPIRED,
+	REG_STATE_NOREG
 } reg_state_t;
 
 struct outbound_reg {

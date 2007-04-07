@@ -27,6 +27,7 @@
  * Ken Rice, Asteria Solutions Group, Inc <ken@asteriasgi.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
+ * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  *
  *
  * sofia.c -- SOFIA SIP Endpoint (sofia code)
@@ -668,7 +669,7 @@ switch_status_t config_sofia(int reload)
 						}
 
 						if ((gateway = switch_core_alloc(profile->pool, sizeof(*gateway)))) {
-							char *scheme = "Digest",
+							char *register_str = "true", *scheme = "Digest",
 								*realm = NULL,
 								*username = NULL, *password = NULL, *extension = NULL, *proxy = NULL, *context = "default", *expire_seconds = "3600";
 
@@ -682,7 +683,9 @@ switch_status_t config_sofia(int reload)
 								char *var = (char *) switch_xml_attr_soft(param, "name");
 								char *val = (char *) switch_xml_attr_soft(param, "value");
 
-								if (!strcmp(var, "scheme")) {
+								if (!strcmp(var, "register")) {
+									register_str = val;
+								} else if (!strcmp(var, "scheme")) {
 									scheme = val;
 								} else if (!strcmp(var, "realm")) {
 									realm = val;
@@ -725,6 +728,9 @@ switch_status_t config_sofia(int reload)
 								proxy = realm;
 							}
 
+							if (!switch_true(register_str)) {
+								gateway->state = REG_STATE_NOREG;
+							}
 							gateway->register_scheme = switch_core_strdup(gateway->pool, scheme);
 							gateway->register_context = switch_core_strdup(gateway->pool, context);
 							gateway->register_realm = switch_core_strdup(gateway->pool, realm);

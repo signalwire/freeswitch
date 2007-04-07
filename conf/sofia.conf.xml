@@ -16,6 +16,8 @@
 	  <!--<param name="proxy" value="asterlink.com"/>-->
 	  <!--/// expire in seconds: *optional* 3600, if blank ///-->
 	  <!--<param name="expire-seconds" value="60"/>-->
+	  <!--/// do not register ///-->
+	  <!--<param name="register" value="false"/>-->
 	<!--</gateway>-->
       </gateways>
       <settings>
