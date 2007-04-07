@@ -724,6 +724,55 @@ static switch_status_t sched_del_function(char *cmd, switch_core_session_t *ises
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t xml_wrap_api_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+{
+	char *dcommand, *edata = NULL, *send = NULL, *command, *arg = NULL;
+	switch_stream_handle_t mystream = { 0 };
+	int encoded = 0, elen = 0;
+	
+	if ((dcommand = strdup(cmd))) {
+		if (!strncasecmp(dcommand, "encoded ", 8)) {
+			encoded++;
+			command = dcommand + 8;
+		} else {
+			command = dcommand;
+		}
+
+		if ((arg = strchr(command, ' '))) {
+			*arg++ = '\0';
+		}
+		SWITCH_STANDARD_STREAM(mystream);
+		switch_api_execute(command, arg, NULL, &mystream);
+
+		if (mystream.data) {
+			if (encoded) {
+				elen = (int) strlen(mystream.data) * 3;
+				edata = malloc(elen);
+				assert(edata != NULL);
+				memset(edata, 0, elen);
+				switch_url_encode(mystream.data, edata, elen);
+				send = edata;
+			} else {
+				send = mystream.data;
+			}
+		}
+
+		stream->write_function(stream, 
+							   "<result>\n"
+							   "  <row id=\"1\">\n"
+							   "    <data>%s</data>\n"
+							   "  </row>\n"
+							   "</result>\n",
+							   send ? send : "ERROR"
+							   );
+		switch_safe_free(mystream.data);
+		switch_safe_free(edata);
+		free(dcommand);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t sched_api_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
 {
 	char *tm = NULL, *dcmd, *group;
@@ -768,7 +817,42 @@ struct holder {
 	char *http;
 	uint32_t count;
 	int print_title;
+	switch_xml_t xml;
+	int rows;
 };
+
+static int show_as_xml_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct holder *holder = (struct holder *) pArg;
+	switch_xml_t row, field;
+	int x, f_off = 0;
+	char id[50];
+
+	if (holder->count == 0) {
+		if (!(holder->xml = switch_xml_new("result"))) {
+			return -1;
+		}
+	}
+
+	if (!(row = switch_xml_add_child_d(holder->xml, "row", holder->rows++))) {
+		return -1;
+	}
+
+	snprintf(id, sizeof(id), "%d", holder->rows);
+	switch_xml_set_attr_d(row, "id", id);
+
+	for(x = 0; x < argc; x++) {
+		if ((field = switch_xml_add_child_d(row, columnNames[x], f_off++))) {
+			switch_xml_set_txt_d(field, argv[x]);
+		} else {
+			return -1;
+		}
+	}
+
+	holder->count++;
+
+	return 0;
+}
 
 static int show_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
@@ -808,19 +892,31 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames)
 	return 0;
 }
 
-static switch_status_t show_function(char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream)
+static switch_status_t show_function(char *data, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	char sql[1024];
 	char *errmsg;
 	switch_core_db_t *db = switch_core_db_handle();
 	struct holder holder = { 0 };
 	int help = 0;
+	char *mydata, *argv[5] = {0};
+	int argc;
+	char *cmd, *as = NULL;
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (stream->event) {
+	if ((mydata = strdup(data))) {
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}	
+
+	cmd = argv[0];
+	if (argv[2] && !strcasecmp(argv[1], "as")) {
+		as = argv[2];
+	}
+	
+	if (!as && stream->event) {
 		holder.http = switch_event_get_header(stream->event, "http-host");
 	}
 
@@ -864,23 +960,44 @@ static switch_status_t show_function(char *cmd, switch_core_session_t *session, 
 		holder.stream->write_function(holder.stream, "<table cellpadding=1 cellspacing=4 border=1>\n");
 	}
 
-	switch_core_db_exec(db, sql, show_callback, &holder, &errmsg);
-
-	if (holder.http) {
-		holder.stream->write_function(holder.stream, "</table>");
+	if (!as) {
+		as = "csv";
 	}
 
-	if (errmsg) {
-		stream->write_function(stream, "SQL ERR [%s]\n", errmsg);
-		switch_core_db_free(errmsg);
-		errmsg = NULL;
-	} else if (help) {
-		if (holder.count == 0)
-			stream->write_function(stream, "No such command.\n");
+	if (!strcasecmp(as, "csv")) {
+		switch_core_db_exec(db, sql, show_callback, &holder, &errmsg);
+		if (holder.http) {
+			holder.stream->write_function(holder.stream, "</table>");
+		}
+
+		if (errmsg) {
+			stream->write_function(stream, "SQL ERR [%s]\n", errmsg);
+			switch_core_db_free(errmsg);
+			errmsg = NULL;
+		} else if (help) {
+			if (holder.count == 0)
+				stream->write_function(stream, "No such command.\n");
+		} else {
+			stream->write_function(stream, "\n%u total.\n", holder.count);
+		}
+	} else if (!strcasecmp(as, "xml")) {
+		switch_core_db_exec(db, sql, show_as_xml_callback, &holder, &errmsg);
+		if (holder.xml) {
+			char *xmlstr = switch_xml_toxml(holder.xml);
+			if (xmlstr) {
+				holder.stream->write_function(holder.stream, "%s", xmlstr);
+				free(xmlstr);
+			} else {
+				holder.stream->write_function(holder.stream, "ERROR\n");
+			}
+		} else {
+			holder.stream->write_function(holder.stream, "ERROR\n");
+		}
 	} else {
-		stream->write_function(stream, "\n%u total.\n", holder.count);
+		holder.stream->write_function(holder.stream, "Cannot find format %s\n", as);
 	}
 
+	switch_safe_free(mydata);
 	switch_core_db_close(db);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -914,12 +1031,21 @@ static switch_status_t help_function(char *cmd, switch_core_session_t *session, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+static switch_api_interface_t xml_wrap_api_interface = {
+	/*.interface_name */ "xml_wrap",
+	/*.desc */ "Wrap another api command in xml",
+	/*.function */ xml_wrap_api_function,
+	/*.syntax */ "<command> <args>",
+	/*.next */ NULL
+};
+
 static switch_api_interface_t sched_del_api_interface = {
 	/*.interface_name */ "sched_del",
 	/*.desc */ "Delete a Scheduled task",
 	/*.function */ sched_del_function,
 	/*.syntax */ "<task_id>|<group_id>",
-	/*.next */ NULL
+	/*.next */ &xml_wrap_api_interface
 };
 
 static switch_api_interface_t sched_api_api_interface = {
