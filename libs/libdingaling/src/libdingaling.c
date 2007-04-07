@@ -526,97 +526,6 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 
 const char *marker = "TRUE";
 
-static int on_disco_info(void *user_data, ikspak *pak)
-{
-	ldl_handle_t *handle = user_data;
-
-	if (pak->subtype == IKS_TYPE_RESULT) {
-		if (iks_find_with_attrib(pak->query, "feature", "var", "http://www.google.com/xmpp/protocol/voice/v1")) {
-			char *from = iks_find_attrib(pak->x, "from");
-			char id[1024];
-			char *resource;
-			struct ldl_buffer *buffer;
-			size_t x;
-
-
-			apr_cpystrn(id, from, sizeof(id));
-			if ((resource = strchr(id, '/'))) {
-				*resource++ = '\0';
-			}
-
-			if (!apr_hash_get(handle->sub_hash, from, APR_HASH_KEY_STRING)) {
-				iks *msg;
-				apr_hash_set(handle->sub_hash, 	apr_pstrdup(handle->pool, from), APR_HASH_KEY_STRING, &marker);
-				msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, id, "Ding A Ling...."); 
-				apr_queue_push(handle->queue, msg);
-			}
-
-			
-
-			if (resource) {
-				for (x = 0; x < strlen(resource); x++) {
-					resource[x] = (char)tolower((int)resource[x]);
-				}
-			}
-
-			if (resource && strstr(resource, "talk") && (buffer = apr_hash_get(handle->probe_hash, id, APR_HASH_KEY_STRING))) {
-				apr_cpystrn(buffer->buf, from, buffer->len);
-				fflush(stderr);
-				buffer->hit = 1;
-			}
-		}
-		return IKS_FILTER_EAT;
-	}
-	
-	if (pak->subtype == IKS_TYPE_GET) {
-		iks *iq, *query, *tag;
-		uint8_t send = 0;
-
-		if ((iq = iks_new("iq"))) {
-			do {
-				iks_insert_attrib(iq, "from", handle->login);
-				iks_insert_attrib(iq, "to", pak->from->full);
-				iks_insert_attrib(iq, "id", pak->id);
-				iks_insert_attrib(iq, "type", "result");
-
-				if (!(query = iks_insert (iq, "query"))) {
-					break;
-				}
-				iks_insert_attrib(query, "xmlns", "http://jabber.org/protocol/disco#info");
-					
-				if (!(tag = iks_insert (query, "identity"))) {
-					break;
-				}
-				iks_insert_attrib(tag, "category", "client");
-				iks_insert_attrib(tag, "type", "voice");
-				iks_insert_attrib(tag, "name", "LibDingaLing");
-				
-
-				if (!(tag = iks_insert (query, "feature"))) {
-					break;
-				}
-				iks_insert_attrib(tag, "var", "http://jabber.org/protocol/disco#info");
-
-				if (!(tag = iks_insert (query, "feature"))) {
-					break;
-				}
-				iks_insert_attrib(tag, "var", "http://www.google.com/xmpp/protocol/voice/v1");
-				
-				iks_send(handle->parser, iq);
-				send = 1;
-			} while (0);
-
-			iks_delete(iq);
-		}
-
-		if (!send) {
-			globals.logger(DL_LOG_DEBUG, "Memory Error!\n");
-		}		
-	}
-
-	return IKS_FILTER_EAT;
-}
-
 
 static int on_vcard(void *user_data, ikspak *pak)
 {
@@ -635,7 +544,7 @@ static int on_vcard(void *user_data, ikspak *pak)
 static int on_disco_default(void *user_data, ikspak *pak)
 {
 	char *node = NULL;
-	char *ns;
+	char *ns = NULL;
 	ldl_handle_t *handle = user_data;
 	iks *iq, *query, *tag;
 	uint8_t send = 0;
@@ -698,26 +607,6 @@ static int on_disco_default(void *user_data, ikspak *pak)
 	return IKS_FILTER_EAT;
 }
 
-
-
-static int on_disco_items(void *user_data, ikspak *pak)
-{
-	globals.logger(DL_LOG_DEBUG, "FixME!!!\n");
-	return IKS_FILTER_EAT;
-}
-
-static int on_disco_reg_in(void *user_data, ikspak *pak)
-{	
-	globals.logger(DL_LOG_DEBUG, "FixME!!!\n");
-	return IKS_FILTER_EAT;
-}
-
-static int on_disco_reg_out(void *user_data, ikspak *pak)
-{
-	globals.logger(DL_LOG_DEBUG, "FixME!!!\n");
-	return IKS_FILTER_EAT;
-}
-
 static int on_presence(void *user_data, ikspak *pak)
 {
 	ldl_handle_t *handle = user_data;
@@ -764,15 +653,11 @@ static int on_presence(void *user_data, ikspak *pak)
 		apr_queue_push(handle->queue, msg);
 	}
 
-
 	if (resource && strstr(resource, "talk") && (buffer = apr_hash_get(handle->probe_hash, id, APR_HASH_KEY_STRING))) {
-		printf("WTF Lookup %s\n", from);
 		apr_cpystrn(buffer->buf, from, buffer->len);
 		fflush(stderr);
 		buffer->hit = 1;
-	} else {
-		printf("DAMMIT Lookup %s\n", from);
-	}
+	} 
 	
     if (handle->session_callback) {
         handle->session_callback(handle, NULL, dl_signal, to, id, status ? status : "n/a", show ? show : "n/a");
