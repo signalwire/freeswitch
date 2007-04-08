@@ -222,7 +222,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_new(const char *name);
 ///\param name the name of the tag
 ///\param off the offset
 ///\return an xml node or NULL
-	 switch_xml_t switch_xml_add_child(switch_xml_t xml, const char *name, switch_size_t off);
+	 SWITCH_DECLARE(switch_xml_t) switch_xml_add_child(switch_xml_t xml, const char *name, switch_size_t off);
 
 ///\brief wrapper for switch_xml_add_child() that strdup()s name
 ///\param xml the xml node
@@ -235,7 +235,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_new(const char *name);
 ///\param xml the xml node
 ///\param txt the text
 ///\return an xml node or NULL
-	 switch_xml_t switch_xml_set_txt(switch_xml_t xml, const char *txt);
+	 SWITCH_DECLARE(switch_xml_t) switch_xml_set_txt(switch_xml_t xml, const char *txt);
 
 ///\brief wrapper for switch_xml_set_txt() that strdup()s txt
 ///\ sets the character content for the given tag and returns the tag

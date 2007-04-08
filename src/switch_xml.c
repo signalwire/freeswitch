@@ -1570,7 +1570,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_insert(switch_xml_t xml, switch_xml_t de
 
 // Adds a child tag. off is the offset of the child tag relative to the start
 // of the parent tag's character content. Returns the child tag
-switch_xml_t switch_xml_add_child(switch_xml_t xml, const char *name, switch_size_t off)
+SWITCH_DECLARE(switch_xml_t) switch_xml_add_child(switch_xml_t xml, const char *name, switch_size_t off)
 {
 	switch_xml_t child;
 
@@ -1587,7 +1587,7 @@ switch_xml_t switch_xml_add_child(switch_xml_t xml, const char *name, switch_siz
 }
 
 // sets the character content for the given tag and returns the tag
-switch_xml_t switch_xml_set_txt(switch_xml_t xml, const char *txt)
+SWITCH_DECLARE(switch_xml_t) switch_xml_set_txt(switch_xml_t xml, const char *txt)
 {
 	if (!xml)
 		return NULL;
