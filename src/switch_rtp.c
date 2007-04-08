@@ -857,7 +857,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				
 				rtp_session->recv_msg.header.pt = (uint32_t) rtp_session->cng_pt ? rtp_session->cng_pt : SWITCH_RTP_CNG_PAYLOAD;
 				*flags |= SFF_CNG;
-				*payload_type = rtp_session->recv_msg.header.pt;
+				*payload_type = (switch_payload_t)rtp_session->recv_msg.header.pt;
 				return 2 + rtp_header_len;
 			}
 		}
@@ -877,7 +877,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 			rtp_session->recv_msg.header.pt = (uint32_t) rtp_session->cng_pt ? rtp_session->cng_pt : SWITCH_RTP_CNG_PAYLOAD;
 			*flags |= SFF_CNG;
-			*payload_type = rtp_session->recv_msg.header.pt;
+			*payload_type = (switch_payload_t)rtp_session->recv_msg.header.pt;
 			return 2 + rtp_header_len;
 		}
 		

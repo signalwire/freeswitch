@@ -59,7 +59,11 @@
 #include <setjmp.h>
 #include <ctype.h>
 #include <fcntl.h>
+#ifdef _MSC_VER
+#include <string.h>
+#else
 #include <strings.h>
+#endif
 #include <sys/stat.h>
 #include <limits.h>
 #include <sys/types.h>

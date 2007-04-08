@@ -447,10 +447,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 					switch_core_session_limit(atoi(val));
 				}
 				else if (!strcasecmp(var, "rtp-start-port")) {
-					switch_rtp_set_start_port(atoi(val));
+					switch_rtp_set_start_port((switch_port_t)atoi(val));
 				}
 				else if (!strcasecmp(var, "rtp-end-port")) {
-					switch_rtp_set_end_port(atoi(val));
+					switch_rtp_set_end_port((switch_port_t)atoi(val));
 				}
 			}
 		}
