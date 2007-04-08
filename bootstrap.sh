@@ -15,7 +15,7 @@ touch README
 touch ChangeLog
 
 # autoconf 2.59 or newer
-ac_version=`${AUTOCONF:-autoconf} --version 2>/dev/null|sed -e 's/^[^0-9]*//;s/[a-z]* *$//;q'`
+ac_version=`${AUTOCONF:-autoconf} --version 2>/dev/null|sed -e 's/^[^0-9]*//;s/[a-z]* *$//;s/[- ].*//g;q'`
 if test -z "$ac_version"; then
 echo "bootstrap: autoconf not found."
 echo "           You need autoconf version 2.59 or newer installed"
@@ -33,7 +33,7 @@ echo "bootstrap: autoconf version $ac_version (ok)"
 fi
 
 # automake 1.7 or newer
-am_version=`${AUTOMAKE:-automake} --version 2>/dev/null|sed -e 's/^[^0-9]*//;s/[a-z]* *$//;q'`
+am_version=`${AUTOMAKE:-automake} --version 2>/dev/null|sed -e 's/^[^0-9]*//;s/[a-z]* *$//;s/[- ].*//g;q'`
 if test -z "$am_version"; then
 echo "bootstrap: automake not found."
 echo "           You need automake version 1.7 or newer installed"
