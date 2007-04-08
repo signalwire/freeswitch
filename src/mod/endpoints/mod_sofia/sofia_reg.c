@@ -247,6 +247,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	switch_event_t *event;
 	const char *rpid = "unknown";
 	const char *display = "\"user\"";
+	char network_addr[80];
 
 	/* all callers must confirm that sip, sip->sip_request and sip->sip_contact are not NULL */
 	assert(sip != NULL && sip->sip_contact != NULL && sip->sip_request != NULL);
@@ -325,7 +326,8 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	}
 
 	if (!authorization || stale) {
-		snprintf(params, sizeof(params), "from_user=%s&from_host=%s&contact=%s", from_user, from_host, contact_str);
+		get_addr(network_addr, sizeof(network_addr), &((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_addr);
+		snprintf(params, sizeof(params), "network_addr=%s&from_user=%s&from_host=%s&contact=%s", network_addr, from_user, from_host, contact_str);
 
 
 		if (switch_xml_locate("directory", "domain", "name", from_host, &xml, &domain, params) != SWITCH_STATUS_SUCCESS) {
@@ -777,6 +779,7 @@ void sofia_reg_add_gateway(char *key, outbound_reg_t * gateway)
 	switch_core_hash_insert(mod_sofia_globals.gateway_hash, key, gateway);
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 }
+
 
 
 
