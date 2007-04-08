@@ -27,6 +27,7 @@
  * Michael Jerris <mike@jerris.com>
  * Johny Kadarisman <jkr888@gmail.com>
  * Paul Tinsley <jackhammer@gmail.com>
+ * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  *
  * 
  * mod_commands.c -- Misc. Command Module
@@ -901,19 +902,21 @@ static switch_status_t show_function(char *data, switch_core_session_t *session,
 	int help = 0;
 	char *mydata, *argv[5] = {0};
 	int argc;
-	char *cmd, *as = NULL;
+	char *cmd = NULL, *as = NULL;
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if ((mydata = strdup(data))) {
-		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-	}	
+	if (data) {
+		if ((mydata = strdup(data))) {
+			argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		}	
 
-	cmd = argv[0];
-	if (argv[2] && !strcasecmp(argv[1], "as")) {
-		as = argv[2];
+		cmd = argv[0];
+		if (argv[2] && !strcasecmp(argv[1], "as")) {
+			as = argv[2];
+		}
 	}
 	
 	if (!as && stream->event) {
