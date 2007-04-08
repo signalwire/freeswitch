@@ -50,8 +50,7 @@
 #define FREESWITCH_PEN "27880"
 #define FREESWITCH_OID_PREFIX ".1.3.6.1.4.1." FREESWITCH_PEN
 #define FREESWITCH_ITAD "543"
-
-
+#define __EXTENSIONS__ 1
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -60,7 +59,7 @@
 #include <setjmp.h>
 #include <ctype.h>
 #include <fcntl.h>
-#include <string.h>
+#include <strings.h>
 #include <sys/stat.h>
 #include <limits.h>
 #include <sys/types.h>

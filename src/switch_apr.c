@@ -381,7 +381,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_create(switch_socket_t ** new_sock
 
 SWITCH_DECLARE(switch_status_t) switch_socket_shutdown(switch_socket_t * sock, switch_shutdown_how_e how)
 {
-	return apr_socket_shutdown(sock, how);
+	return apr_socket_shutdown(sock, (apr_shutdown_how_e)how);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_socket_close(switch_socket_t * sock)

@@ -77,7 +77,7 @@ static switch_say_method_t get_say_method_by_name(char *name)
 	return (switch_say_method_t) x;
 }
 
-static switch_say_method_t get_say_type_by_name(char *name)
+static switch_say_type_t get_say_type_by_name(char *name)
 {
 	int x = 0;
 	for (x = 0; SAY_TYPE_NAMES[x]; x++) {
@@ -86,7 +86,7 @@ static switch_say_method_t get_say_type_by_name(char *name)
 		}
 	}
 
-	return (switch_say_method_t) x;
+	return (switch_say_type_t) x;
 }
 
 

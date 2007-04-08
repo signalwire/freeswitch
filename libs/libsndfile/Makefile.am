@@ -1,10 +1,11 @@
-## Process this file with automake to produce Makefile.in
+# Process this file with automake to produce Makefile.in
 
-SUBDIRS = man doc Win32 Octave src examples regtest tests
+SUBDIRS = Win32 Octave src
+# man doc Win32 examples regtest tests
 DIST_SUBDIRS = $(SUBDIRS)
 EXTRA_DIST = reconfigure.mk acinclude.m4 libsndfile.spec.in \
 			sndfile.pc.in Mingw-make-dist.sh
-			
+
 			 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = sndfile.pc

@@ -31,7 +31,6 @@
 #include <switch.h>
 
 static const switch_state_handler_table_t audio_bridge_peer_state_handlers;
-static const switch_state_handler_table_t originate_state_handlers;
 
 /* Bridge Related Stuff*/
 /*********************************************************************************/
