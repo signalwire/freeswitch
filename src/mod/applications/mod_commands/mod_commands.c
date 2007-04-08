@@ -900,7 +900,7 @@ static switch_status_t show_function(char *data, switch_core_session_t *session,
 	switch_core_db_t *db = switch_core_db_handle();
 	struct holder holder = { 0 };
 	int help = 0;
-	char *mydata, *argv[5] = {0};
+	char *mydata = NULL, *argv[5] = {0};
 	int argc;
 	char *cmd = NULL, *as = NULL;
 
