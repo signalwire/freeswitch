@@ -119,7 +119,7 @@ nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
 MOD_LINK       = $(BASE)/libfreeswitch.la
 
 CLEANFILES     = src/include/switch_version.h
-BUILT_SOURCES  = src/include/switch_version.h ./$(DEPDIR)/modules.targets
+BUILT_SOURCES  = src/include/switch_version.h
 
 bin_PROGRAMS = freeswitch
 freeswitch_SOURCES = src/switch.c
