@@ -159,6 +159,7 @@ int sangoma_tdm_enable_rxhook_events(sng_fd_t fd, wanpipe_tdm_api_t *tdm_api);
 int sangoma_tdm_disable_rxhook_events(sng_fd_t fd, wanpipe_tdm_api_t *tdm_api);
 
 int sangoma_tdm_get_fe_alarms(sng_fd_t fd, wanpipe_tdm_api_t *tdm_api);
+int sangoma_tdm_cmd_exec(sng_fd_t fd, wanpipe_tdm_api_t *tdm_api);
 
 #ifndef LIBSANGOMA_GET_HWCODING
 #define LIBSANGOMA_GET_HWCODING 1

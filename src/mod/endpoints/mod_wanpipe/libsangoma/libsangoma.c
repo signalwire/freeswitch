@@ -464,7 +464,7 @@ int sangoma_writemsg_tdm(sng_fd_t fd, void *hdrbuf, int hdrlen, void *databuf, u
  * Execute TDM command
  *
  */
-static int sangoma_tdm_cmd_exec(sng_fd_t fd, wanpipe_tdm_api_t *tdm_api)
+int sangoma_tdm_cmd_exec(sng_fd_t fd, wanpipe_tdm_api_t *tdm_api)
 {
 	int err;
 
