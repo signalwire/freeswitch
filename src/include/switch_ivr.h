@@ -110,9 +110,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 /*!
   \brief Wait for DTMF digits calling a pluggable callback function when digits are collected.
   \param session the session to read.
-  \param dtmf_callback code to execute if any dtmf is dialed during the recording
-  \param buf an object to maintain across calls
-  \param buflen the size of buf
+  \param args arguements to pass for callbacks etc
   \param timeout a timeout in milliseconds
   \return SWITCH_STATUS_SUCCESS to keep the collection moving.
 */
@@ -210,11 +208,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_inband_dtmf_session(switch_core_
   \param session the session to play the file too
   \param fh file handle to use (NULL for builtin one)
   \param file the path to the file
-  \param dtmf_callback code to execute if any dtmf is dialed during the playback
-  \param buf an object to maintain across calls
-  \param buflen the size of buf
+  \param args arguements to pass for callbacks etc
   \return SWITCH_STATUS_SUCCESS if all is well
-  \note passing a NULL dtmf_callback nad a not NULL buf indicates to copy any dtmf to buf and stop playback.
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *session, switch_file_handle_t *fh, char *file, switch_input_args_t *args);
 
@@ -224,12 +219,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
   \param session the session to record from
   \param fh file handle to use
   \param file the path to the file
-  \param dtmf_callback code to execute if any dtmf is dialed during the recording
-  \param buf an object to maintain across calls
-  \param buflen the size of buf
+  \param args arguements to pass for callbacks etc
   \param limit max limit to record for (0 for infinite)
   \return SWITCH_STATUS_SUCCESS if all is well
-  \note passing a NULL dtmf_callback nad a not NULL buf indicates to copy any dtmf to buf and stop recording.
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *session,
 													   switch_file_handle_t *fh, char *file, switch_input_args_t *args, uint32_t limit);
@@ -271,10 +263,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
   \param tts_name the desired tts module
   \param voice_name the desired voice
   \param rate the sample rate
-  \param dtmf_callback code to execute if any dtmf is dialed during the audio
   \param text the text to speak
-  \param buf an option data pointer to pass to the callback or a string to put encountered digits in
-  \param buflen the len of buf
+  \param args arguements to pass for callbacks etc
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *session,
@@ -305,7 +295,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
   \brief Bridge Audio from one session to another
   \param session one session
   \param peer_session the other session
-  \param dtmf_callback code to execute if any dtmf is dialed during the bridge
+  \param dtmf_callback a callback for messages and dtmf
   \param session_data data to pass to the DTMF callback for session
   \param peer_session_data data to pass to the DTMF callback for peer_session
   \return SWITCH_STATUS_SUCCESS if all is well
@@ -491,6 +481,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_del_event(switch_
 /*!
   \brief Feed digits collected into the stream for event match testing
   \param parser a pointer to the parser object created by switch_ivr_digit_stream_parser_new
+  \param stream a stream to write data to
   \param digit a digit to collect and test against the map of digit strings
   \return NULL if no match found or consumer data that was associated with a given digit string when matched
 */
@@ -556,14 +547,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  *\param name A pointer to the name of this menu.
  *\param greeting_sound Optional pointer to a main sound (press 1 for this 2 for that).
  *\param short_greeting_sound Optional pointer to a shorter main sound for subsequent loops.
- *\param exit_sound Optional pointer to a sound to play upon exiting the menu
+ *\param exit_sound Optional pointer to a sound to play upon exiting the menu.
  *\param invalid_sound Optional pointer to a sound to play after invalid input.
- *\param tts_engine Text To Speech engine name
- *\param tts_voice Text To Speech engine voice name
+ *\param tts_engine Text To Speech engine name.
+ *\param tts_voice Text To Speech engine voice name.
+ *\param phrase_lang the language to use for the phrase macros.
  *\param timeout A number of milliseconds to pause before looping.
  *\param max_failures Maximum number of failures to withstand before hangingup This resets everytime you enter the menu.
- *\param pool memory pool (NULL to create one)
- *\return SWITCH_STATUS_SUCCESS if the menu was created
+ *\param pool memory pool (NULL to create one).
+ *\return SWITCH_STATUS_SUCCESS if the menu was created.
  */
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_menu,
 													 switch_ivr_menu_t * main,

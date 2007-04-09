@@ -90,7 +90,7 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int fam
   \brief find the char representation of an ip adress
   \param buf the buffer to write the ip adress found into
   \param len the length of the buf
-  \param the struct in_addr * to get the adress from
+  \param in the struct in_addr * to get the adress from
   \return the ip adress string
 */
 SWITCH_DECLARE(char *) get_addr(char *buf, switch_size_t len, struct in_addr *in);
