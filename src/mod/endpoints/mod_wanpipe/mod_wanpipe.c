@@ -278,7 +278,7 @@ static void *SWITCH_THREAD_FUNC fxs_thread_run(switch_thread_t *thread, void *ob
 		FD_ZERO(&oob);
 		
 		for(i = 0; i < globals.fxs_index; i++) {
-			inFD_ZERO(&oob)t fd;
+			int fd;
 			assert(FXS_ANALOG_CHANNELS[i]);
 			assert(FXS_ANALOG_CHANNELS[i]->sock);
 
