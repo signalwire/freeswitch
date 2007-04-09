@@ -117,6 +117,13 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_BITS_PER_BYTE 8
 	typedef uint8_t switch_byte_t;
 
+
+typedef enum {
+	SUF_NONE = 0,
+	SUF_THREAD_RUNNING = (1 << 0),
+	SUF_READY = (1 << 1)
+} switch_unicast_flag_t;
+
 typedef enum {
 	SWITCH_FALSE = 0,
 	SWITCH_TRUE = 1
@@ -531,6 +538,7 @@ CF_GEN_RINGBACK = (1 << 17) - Channel is generating it's own ringback
 CF_RING_READY   = (1 << 18) - Channel is ready to send ringback
 CF_BREAK        = (1 << 19) - Channel should stop what it's doing
 CF_BROADCAST    = (1 << 20) - Channel is broadcasting
+CF_UNICAST      = (1 << 21) - Channel has a unicast connection
 </pre>
  */
 
@@ -555,7 +563,8 @@ typedef enum {
 	CF_GEN_RINGBACK = (1 << 17),
 	CF_RING_READY = (1 << 18),
 	CF_BREAK = (1 << 19),
-	CF_BROADCAST = (1 << 20)
+	CF_BROADCAST = (1 << 20),
+	CF_UNICAST = (1 << 21)
 } switch_channel_flag_t;
 
 

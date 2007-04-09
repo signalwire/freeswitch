@@ -80,6 +80,176 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 }
 
 
+static void *SWITCH_THREAD_FUNC unicast_thread_run(switch_thread_t *thread, void *obj)
+{
+	switch_unicast_conninfo_t *conninfo = (switch_unicast_conninfo_t *) obj;
+	switch_size_t len;
+	switch_channel_t *channel;
+
+	if (!conninfo) {
+		return NULL;
+	}
+
+	channel = switch_core_session_get_channel(conninfo->session);
+	
+	while(switch_test_flag(conninfo, SUF_READY) && switch_test_flag(conninfo, SUF_THREAD_RUNNING)) {
+		len = conninfo->write_frame.buflen;
+		if (switch_socket_recv(conninfo->socket, conninfo->write_frame.data, &len) != SWITCH_STATUS_SUCCESS || len == 0) {
+			break;
+		}
+		conninfo->write_frame.datalen = len;
+		conninfo->write_frame.samples = conninfo->write_frame.datalen / 2;
+		switch_core_session_write_frame(conninfo->session, &conninfo->write_frame, -1, conninfo->stream_id);
+	}
+	
+	switch_clear_flag_locked(conninfo, SUF_READY);
+	switch_clear_flag_locked(conninfo, SUF_THREAD_RUNNING);
+
+	return NULL;
+}
+
+static void unicast_thread_launch(switch_unicast_conninfo_t *conninfo)
+{
+	switch_thread_t *thread;
+	switch_threadattr_t *thd_attr = NULL;
+
+	switch_threadattr_create(&thd_attr, switch_core_session_get_pool(conninfo->session));
+	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_set_flag_locked(conninfo, SUF_THREAD_RUNNING);
+	switch_thread_create(&thread, thd_attr, unicast_thread_run, conninfo, switch_core_session_get_pool(conninfo->session));
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_deactivate_unicast(switch_core_session_t *session)
+{
+	switch_channel_t *channel;
+	switch_unicast_conninfo_t *conninfo;
+	int sanity = 0;
+	
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+	if (switch_channel_test_flag(channel, CF_UNICAST)) {
+		if ((conninfo = switch_channel_get_private(channel, "unicast"))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Shutting down unicast connection\n");
+			switch_clear_flag_locked(conninfo, SUF_READY);
+			switch_socket_shutdown(conninfo->socket, SWITCH_SHUTDOWN_READWRITE);
+			while(switch_test_flag(conninfo, SUF_THREAD_RUNNING)) {
+				switch_yield(10000);
+				if (++sanity >= 10000) {
+					break;
+				}
+			}
+			switch_core_codec_destroy(&conninfo->read_codec);
+			switch_socket_close(conninfo->socket);
+		}
+		switch_channel_clear_flag(channel, CF_UNICAST);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	return SWITCH_STATUS_FALSE;
+	
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_t *session, 
+															char *local_ip,
+															uint32_t local_port,
+															char *remote_ip,
+															uint32_t remote_port,
+															char *transport)
+{
+	switch_channel_t *channel;
+	switch_unicast_conninfo_t *conninfo;
+	switch_codec_t *read_codec;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	conninfo = switch_core_session_alloc(session, sizeof(*conninfo));
+	assert(conninfo != NULL);
+
+	conninfo->local_ip = switch_core_session_strdup(session, local_ip);
+	conninfo->local_port = local_port;
+
+	conninfo->remote_ip = switch_core_session_strdup(session, remote_ip);
+	conninfo->remote_port = remote_port;
+	conninfo->session = session;
+	
+	if (!strcasecmp(transport, "udp")) {
+		conninfo->type = AF_INET;
+		conninfo->transport = SOCK_DGRAM;
+	} else if (!strcasecmp(transport, "tcp")) {
+		conninfo->type = AF_INET;
+		conninfo->transport = SOCK_STREAM;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid transport %s\n", transport);
+		goto fail;
+	}
+
+	switch_mutex_init(&conninfo->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+	
+	read_codec = switch_core_session_get_read_codec(session);
+	
+	if (switch_core_codec_init(&conninfo->read_codec,
+							   "L16",
+							   NULL,
+							   read_codec->implementation->samples_per_second,
+							   read_codec->implementation->microseconds_per_frame / 1000,
+							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+						  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
+						  read_codec->implementation->samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
+						  read_codec->implementation->samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
+		goto fail;
+	}
+
+	conninfo->write_frame.data = conninfo->write_frame_data;
+	conninfo->write_frame.buflen = sizeof(conninfo->write_frame_data);
+	conninfo->write_frame.codec = &conninfo->read_codec;
+	
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "connect %s:%d->%s:%d\n",
+					  conninfo->local_ip, conninfo->local_port, conninfo->remote_ip, conninfo->remote_port);
+
+	if (switch_sockaddr_info_get(&conninfo->local_addr,
+								 conninfo->local_ip, SWITCH_UNSPEC, conninfo->local_port, 0, 
+								 switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+		goto fail;
+	}
+	
+	if (switch_sockaddr_info_get(&conninfo->remote_addr, 
+								 conninfo->remote_ip, SWITCH_UNSPEC, conninfo->remote_port, 0,
+								 switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+		goto fail;
+	}
+	
+	if (switch_socket_create(&conninfo->socket, AF_INET, SOCK_DGRAM, 0, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+		if (switch_socket_bind(conninfo->socket, conninfo->local_addr) != SWITCH_STATUS_SUCCESS) {
+			goto fail;
+		}
+	} else {
+		goto fail;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Created unicast connection %s:%d->%s:%d\n",
+					  conninfo->local_ip, conninfo->local_port, conninfo->remote_ip, conninfo->remote_port);
+	switch_channel_set_private(channel, "unicast", conninfo);
+	switch_channel_set_flag(channel, CF_UNICAST);
+	switch_set_flag_locked(conninfo, SUF_READY);
+	return SWITCH_STATUS_SUCCESS;
+
+ fail:
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failure creating unicast connection %s:%d->%s:%d\n",
+					  conninfo->local_ip, conninfo->local_port, conninfo->remote_ip, conninfo->remote_port);
+	return SWITCH_STATUS_FALSE;	
+
+
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *session, switch_event_t *event)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -89,6 +259,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	unsigned long CMD_EXECUTE = switch_hashfunc_default("execute", &hlen);
 	unsigned long CMD_HANGUP = switch_hashfunc_default("hangup", &hlen);
 	unsigned long CMD_NOMEDIA = switch_hashfunc_default("nomedia", &hlen);
+	unsigned long CMD_UNICAST = switch_hashfunc_default("unicast", &hlen);
 
 	assert(channel != NULL);
 	assert(event != NULL);
@@ -109,7 +280,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 		char *app_name = switch_event_get_header(event, "execute-app-name");
 		char *app_arg = switch_event_get_header(event, "execute-app-arg");
 		char *loop_h = switch_event_get_header(event, "loops");
-		int loops = 0;
+		int loops = 1;
 	
 		if (loop_h) {
 			loops = atoi(loop_h);
@@ -130,6 +301,31 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 				}
 			}
 		}
+	} else if (cmd_hash == CMD_UNICAST) {
+		char *local_ip = switch_event_get_header(event, "local_ip");
+		char *local_port = switch_event_get_header(event, "local_port");
+		char *remote_ip = switch_event_get_header(event, "remote_ip");
+		char *remote_port = switch_event_get_header(event, "remote_port");
+		char *transport = switch_event_get_header(event, "transport");
+
+		if (switch_strlen_zero(local_ip)) {
+			local_ip = "127.0.0.1";
+		}
+		if (switch_strlen_zero(remote_ip)) {
+			remote_ip = "127.0.0.1";
+		}
+		if (switch_strlen_zero(local_port)) {
+			local_port = "8025";
+		}
+		if (switch_strlen_zero(remote_port)) {
+			remote_port = "8026";
+		}
+		if (switch_strlen_zero(transport)) {
+			transport = "udp";
+		}
+
+		switch_ivr_activate_unicast(session, local_ip, atoi(local_port), remote_ip, atoi(remote_port), transport);
+
 	} else if (cmd_hash == CMD_HANGUP) {
 		char *cause_name = switch_event_get_header(event, "hangup-cause");
 		switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
@@ -154,10 +350,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *channel;
-	switch_frame_t *frame;
+	switch_frame_t *read_frame;
 	int stream_id = 0;
 	switch_event_t *event;
-
+	switch_unicast_conninfo_t *conninfo = NULL;
+	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -171,9 +368,72 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	switch_channel_set_flag(channel, CF_CONTROLLED);
 	while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_CONTROLLED)) {
 
-		if ((status = switch_core_session_read_frame(session, &frame, -1, stream_id)) == SWITCH_STATUS_SUCCESS) {
+		if ((status = switch_core_session_read_frame(session, &read_frame, -1, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
+			}
+			
+			if (switch_channel_test_flag(channel, CF_UNICAST)) {
+				if (!conninfo) {
+					if (!(conninfo = switch_channel_get_private(channel, "unicast"))) {
+						switch_channel_clear_flag(channel, CF_UNICAST);
+					}
+					
+					if (conninfo) {
+						unicast_thread_launch(conninfo);
+					}
+				}
+
+				if (conninfo) {
+					switch_size_t len;
+					uint32_t flags = 0;
+					switch_byte_t decoded[SWITCH_RECOMMENDED_BUFFER_SIZE];
+					uint32_t rate = read_codec->implementation->samples_per_second;
+					uint32_t dlen = sizeof(decoded);
+					switch_status_t status;
+					switch_byte_t *sendbuf = NULL;
+					uint32_t sendlen = 0;
+
+					if (switch_test_flag(read_frame, SFF_CNG)) {
+						sendlen = read_codec->implementation->bytes_per_frame;
+						memset(decoded, 255, sendlen);
+						sendbuf = decoded;
+						status = SWITCH_STATUS_SUCCESS;
+					} else {
+					
+						status = switch_core_codec_decode(
+														  read_codec,
+														  &conninfo->read_codec,
+														  read_frame->data,
+														  read_frame->datalen,
+														  read_codec->implementation->samples_per_second,
+														  decoded, &dlen, &rate, &flags);
+						switch (status) {
+						case SWITCH_STATUS_NOOP:
+						case SWITCH_STATUS_BREAK:
+							sendbuf = read_frame->data;
+							sendlen = read_frame->datalen;
+							status = SWITCH_STATUS_SUCCESS;
+							break;
+						case SWITCH_STATUS_SUCCESS:
+							sendbuf = decoded;
+							sendlen = dlen;
+							status = SWITCH_STATUS_SUCCESS;
+							break;
+						default:
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Codec Error\n");
+							switch_ivr_deactivate_unicast(session);
+							break;
+						}
+					}
+
+					if (status == SWITCH_STATUS_SUCCESS) {
+						len = sendlen;
+						if (switch_socket_sendto(conninfo->socket, conninfo->remote_addr, 0, (void *)sendbuf, &len) != SWITCH_STATUS_SUCCESS) {
+							switch_ivr_deactivate_unicast(session);
+						}
+					}
+				}
 			}
 
 			if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
@@ -210,6 +470,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNPARK) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
 		switch_event_fire(&event);
+	}
+
+	if (switch_channel_test_flag(channel, CF_UNICAST)) {
+		switch_ivr_deactivate_unicast(session);
 	}
 
 	return status;

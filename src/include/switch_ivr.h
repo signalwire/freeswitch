@@ -42,6 +42,28 @@
 #include <switch.h>
 
 SWITCH_BEGIN_EXTERN_C
+
+struct switch_unicast_conninfo {
+	switch_core_session_t *session;
+	switch_codec_t read_codec;
+	switch_frame_t write_frame;
+	switch_byte_t write_frame_data[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	switch_socket_t *socket;
+	char *local_ip;
+	uint32_t local_port;
+	char *remote_ip;
+	uint32_t remote_port;
+	switch_sockaddr_t *local_addr;
+	switch_sockaddr_t *remote_addr;
+	switch_mutex_t *flag_mutex;
+	int32_t flags;
+	int type;
+	int transport;
+	int stream_id;
+};
+typedef struct switch_unicast_conninfo switch_unicast_conninfo_t;
+
+
 /**
  * @defgroup switch_ivr IVR Library
  * @ingroup core1
@@ -49,6 +71,15 @@ SWITCH_BEGIN_EXTERN_C
  *	building blocks for a higher level IVR interface.
  * @{
  */
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_deactivate_unicast(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_t *session, 
+															char *local_ip,
+															uint32_t local_port,
+															char *remote_ip,
+															uint32_t remote_port,
+															char *transport);
+
 /*!
   \brief Generate an XML CDR report.
   \param session the session to get the data from.

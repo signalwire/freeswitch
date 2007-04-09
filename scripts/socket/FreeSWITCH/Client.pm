@@ -208,6 +208,22 @@ sub call_command($$$) {
   return $self->sendmsg($hash);
 }
 
+sub unicast($$$$$$) {
+  my $self = shift;
+
+  my $hash = {
+	      'command' => "sendmsg",
+	      'call-command' => "unicast",
+	      'local_ip' => $_[0],
+	      'local_port' => $_[1],
+	      'remote_ip' => $_[2],
+	      'remote_port' => $_[3],
+	      'transport' => $_[4]
+	     };
+
+  return $self->sendmsg($hash);
+}
+
 sub call_data($) {
   my $self = shift;
 
