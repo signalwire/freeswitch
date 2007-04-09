@@ -14,6 +14,9 @@ if CRASHPROT
 AM_CFLAGS += -DCRASH_PROT
 endif
 
+.DEFAULT:
+	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@
+
 libfreeswitch_la_SOURCES	= \
 src/switch_apr.c \
 src/switch_buffer.c \
@@ -89,8 +92,6 @@ src/include/switch_xml.h\
 libs/libteletone/src/libteletone_detect.h\
 libs/libteletone/src/libteletone_generate.h\
 libs/libteletone/src/libteletone.h
-
-
 
 CORE_CFLAGS     = `$(switch_srcdir)/libs/apr/apr-1-config --cflags --cppflags --includes`
 CORE_CFLAGS    += `$(switch_srcdir)/libs/apr-util/apu-1-config --includes`
@@ -244,15 +245,10 @@ eclean: clean
 megaclean: eclean modclean
 	rm -f `find ./libs -name \*.la`
 
-@am__include@ @am__quote@./$(DEPDIR)/modules.targets@am__quote@
-
 modules.conf:
 	if test -f $@; then touch $@; else cp build/modules.conf.in $@ ;fi
 
-./$(DEPDIR)/modules.targets: modules.conf
-	mods=`cat modules.conf | sed -e 's|^.*/||'`; echo MODULE_TARGETS=\"$$mods\" > ./$(DEPDIR)/modules.targets
-
-$(MODULE_TARGETS):
+$(OUR_MODULES):
 	@set fnord $$MAKEFLAGS; amf=$$2; \
 	(cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@) \
 	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
