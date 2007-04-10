@@ -278,6 +278,7 @@ struct private_object {
 	char *far_end_contact;
 	char *contact_url;
 	char *from_str;
+	char *gateway_from_str;
 	char *rm_encoding;
 	char *rm_fmtp;
 	char *fmtp_out;

@@ -882,7 +882,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 
 		profile = gateway_ptr->profile;
-		tech_pvt->from_str = switch_core_session_strdup(nsession, gateway_ptr->register_from);
+		tech_pvt->gateway_from_str = switch_core_session_strdup(nsession, gateway_ptr->register_from);
 		if (!strchr(dest, '@')) {
 			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s@%s", dest, gateway_ptr->register_proxy + 4);
 		} else {

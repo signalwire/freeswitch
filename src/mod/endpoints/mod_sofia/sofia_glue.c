@@ -417,7 +417,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
 								  NUTAG_URL(url),
 								  SIPTAG_TO_STR(tech_pvt->dest_to),
-								  SIPTAG_FROM_STR(tech_pvt->from_str),
+								  TAG_IF(tech_pvt->gateway_from_str, SIPTAG_FROM_STR(tech_pvt->gateway_from_str)),
+								  TAG_IF(!tech_pvt->gateway_from_str, SIPTAG_FROM_STR(tech_pvt->from_str)),
 								  TAG_IF(tech_pvt->invite_contact, SIPTAG_CONTACT_STR(tech_pvt->invite_contact)),
 								  TAG_IF(!tech_pvt->invite_contact, SIPTAG_CONTACT_STR(tech_pvt->profile->url)),
 								  TAG_END());
