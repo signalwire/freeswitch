@@ -10,9 +10,11 @@ include $(BUILDDIR)/Makefile.config
 default: all
 
 SUBDIRS =
+CPPCLEAN = 
 
 ifeq ($(ENABLE_CPLUSPLUS),yes)
   SUBDIRS += cpp
+  CPPCLEAN += cpp/clean
 endif
 
 WININET_TRANSPORT_DIR = $(SRCDIR)/lib/wininet_transport
@@ -131,7 +133,7 @@ install: install-common $(SUBDIRS:%=%/install)
 
 .PHONY: clean clean-local distclean
 clean: clean-common clean-local
-clean-local: cpp/clean
+clean-local: $(CPPCLEAN)
 
 distclean: clean distclean-common
 
