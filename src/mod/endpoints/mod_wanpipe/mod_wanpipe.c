@@ -665,10 +665,10 @@ static switch_status_t wanpipe_on_hangup(switch_core_session_t *session)
 	} else if (tech_pvt->spri) {
 		chanmap = tech_pvt->spri->private_info;
 
-		if (!switch_test_flag(tech_pvt, TFLAG_BYE)) {
+		//if (!switch_test_flag(tech_pvt, TFLAG_BYE)) {
 			pri_hangup(tech_pvt->spri->pri, tech_pvt->call, switch_channel_get_cause(channel));
 			pri_destroycall(tech_pvt->spri->pri, tech_pvt->call);
-		}
+			//}
 
 		switch_mutex_lock(globals.channel_mutex);
 		*chanmap->map[tech_pvt->callno] = '\0';
