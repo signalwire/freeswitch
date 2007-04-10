@@ -83,7 +83,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 static void *SWITCH_THREAD_FUNC unicast_thread_run(switch_thread_t *thread, void *obj)
 {
 	switch_unicast_conninfo_t *conninfo = (switch_unicast_conninfo_t *) obj;
-	switch_size_t len;
+	uint32_t len;
 	switch_channel_t *channel;
 
 	if (!conninfo) {
@@ -153,9 +153,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_deactivate_unicast(switch_core_sessio
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_t *session, 
 															char *local_ip,
-															uint32_t local_port,
+															switch_port_t local_port,
 															char *remote_ip,
-															uint32_t remote_port,
+															switch_port_t remote_port,
 															char *transport)
 {
 	switch_channel_t *channel;
@@ -324,7 +324,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 			transport = "udp";
 		}
 
-		switch_ivr_activate_unicast(session, local_ip, atoi(local_port), remote_ip, atoi(remote_port), transport);
+		switch_ivr_activate_unicast(session, local_ip, (switch_port_t)atoi(local_port), remote_ip, (switch_port_t)atoi(remote_port), transport);
 
 	} else if (cmd_hash == CMD_HANGUP) {
 		char *cause_name = switch_event_get_header(event, "hangup-cause");
