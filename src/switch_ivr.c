@@ -83,7 +83,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 static void *SWITCH_THREAD_FUNC unicast_thread_run(switch_thread_t *thread, void *obj)
 {
 	switch_unicast_conninfo_t *conninfo = (switch_unicast_conninfo_t *) obj;
-	uint32_t len;
+	switch_size_t len;
 	switch_channel_t *channel;
 
 	if (!conninfo) {
@@ -97,7 +97,7 @@ static void *SWITCH_THREAD_FUNC unicast_thread_run(switch_thread_t *thread, void
 		if (switch_socket_recv(conninfo->socket, conninfo->write_frame.data, &len) != SWITCH_STATUS_SUCCESS || len == 0) {
 			break;
 		}
-		conninfo->write_frame.datalen = len;
+		conninfo->write_frame.datalen = (uint32_t)len;
 		conninfo->write_frame.samples = conninfo->write_frame.datalen / 2;
 		switch_core_session_write_frame(conninfo->session, &conninfo->write_frame, -1, conninfo->stream_id);
 	}
