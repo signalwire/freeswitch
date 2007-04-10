@@ -73,14 +73,6 @@ void _PR_CleanupThread(PRThread *thread)
     thread->environment = NULL;
 }
 
-PR_IMPLEMENT(PRStatus) PR_Yield()
-{
-    static PRBool warning = PR_TRUE;
-    if (warning) warning = _PR_Obsolete(
-        "PR_Yield()", "PR_Sleep(PR_INTERVAL_NO_WAIT)");
-    return (PR_Sleep(PR_INTERVAL_NO_WAIT));
-}
-
 /*
 ** Make the current thread sleep until "timeout" ticks amount of time
 ** has expired. If "timeout" is PR_INTERVAL_NO_WAIT then the call is

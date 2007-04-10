@@ -693,84 +693,107 @@
 			Name="NSPR Source"
 			>
 			<File
-				RelativePath="..\..\js\nsprpub\pr\src\md\windows\ntgc.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\js\nsprpub\pr\src\md\windows\ntinrval.c"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\md\windows\ntio.c"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\md\windows\ntmisc.c"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\md\windows\ntsec.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\md\windows\ntsem.c"
-				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\md\windows\ntthread.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\misc\pralarm.c"
-				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\misc\pratom.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\threads\prcmon.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\misc\prcountr.c"
-				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\threads\prcthr.c"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\io\prdir.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\misc\prdtoa.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\threads\prdump.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\misc\prenv.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\misc\prerr.c"
-				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\misc\prerror.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\js\nsprpub\pr\src\misc\prerrortable.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\js\nsprpub\pr\src\io\prfdcach.c"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\io\prfile.c"
@@ -779,78 +802,101 @@
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\misc\prinit.c"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\misc\prinrval.c"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\io\prio.c"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\io\priometh.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\misc\pripc.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\misc\pripcsem.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\io\pripv6.c"
-				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\io\prlayer.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\linking\prlink.c"
-				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\io\prlog.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\misc\prlog2.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\misc\prlong.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\malloc\prmalloc.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\io\prmapopt.c"
-				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\malloc\prmem.c"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\io\prmmap.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\threads\prmon.c"
-				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\io\prmwait.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\misc\prnetdb.c"
-				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\misc\prolock.c"
@@ -859,82 +905,79 @@
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\md\prosdep.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\io\prpolevt.c"
-				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\io\prprf.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\misc\prrng.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\threads\prrwlock.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\io\prscanf.c"
-				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\memory\prseg.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\threads\prsem.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\memory\prshm.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\memory\prshma.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\io\prsocket.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\io\prstdio.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\misc\prsystem.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\misc\prthinfo.c"
-				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\misc\prtime.c"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\threads\prtpd.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\misc\prtpool.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\misc\prtrace.c"
-				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\threads\combined\prucpu.c"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\threads\combined\prucv.c"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\threads\combined\prulock.c"
@@ -943,26 +986,35 @@
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\threads\combined\prustack.c"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\threads\combined\pruthr.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\md\windows\w32ipcsem.c"
-				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\md\windows\w32poll.c"
 				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\md\windows\w32rng.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\js\nsprpub\pr\src\md\windows\w32shm.c"
-				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\js\nsprpub\pr\src\md\windows\win32_errors.c"

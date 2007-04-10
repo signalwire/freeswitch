@@ -202,7 +202,7 @@ static void _PR_InitStuff(void)
     _PR_InitSegs();
     _PR_InitStacks();
 	_PR_InitTPD();
-    _PR_InitEnv();
+    //_PR_InitEnv();
     _PR_InitLayerCache();
     _PR_InitClock();
 
@@ -234,20 +234,20 @@ static void _PR_InitStuff(void)
     _PR_InitMem();
 #endif
 
-    _PR_InitCMon();
+    //_PR_InitCMon();
     _PR_InitIO();
-    _PR_InitNet();
+    //_PR_InitNet();
     _PR_InitLog();
-    _PR_InitLinker();
+    //_PR_InitLinker();
     _PR_InitCallOnce();
-    _PR_InitDtoa();
+    //_PR_InitDtoa();
     _PR_InitMW();
-    _PR_InitRWLocks();
+    //_PR_InitRWLocks();
 
-    nspr_InitializePRErrorTable();
+    //nspr_InitializePRErrorTable();
 
 #if !defined(_PR_INET6) || defined(_PR_INET6_PROBE)
-	_pr_init_ipv6();
+	//_pr_init_ipv6();
 #endif
 	
     _PR_MD_FINAL_INIT();
@@ -420,9 +420,9 @@ PR_IMPLEMENT(PRStatus) PR_Cleanup()
 #endif
 
         _PR_CleanupMW();
-        _PR_CleanupDtoa();
+        //_PR_CleanupDtoa();
         _PR_CleanupCallOnce();
-		_PR_ShutdownLinker();
+		//_PR_ShutdownLinker();
         /* Release the primordial thread's private data, etc. */
         _PR_CleanupThread(me);
 
@@ -452,7 +452,7 @@ PR_IMPLEMENT(PRStatus) PR_Cleanup()
          * Ideally, for each _PR_InitXXX(), there should be a corresponding
          * _PR_XXXCleanup() that we can call here.
          */
-        _PR_CleanupNet();
+        //_PR_CleanupNet();
         _PR_CleanupIO();
 #ifdef WINNT
         _PR_CleanupCPUs();
@@ -461,7 +461,7 @@ PR_IMPLEMENT(PRStatus) PR_Cleanup()
         PR_DestroyLock(_pr_sleeplock);
         _pr_sleeplock = NULL;
         _PR_CleanupLayerCache();
-        _PR_CleanupEnv();
+        //_PR_CleanupEnv();
         _PR_CleanupStacks();
         _PR_CleanupBeforeExit();
         _pr_initialized = PR_FALSE;
@@ -541,25 +541,6 @@ PR_ProcessAttrSetStdioRedirect(
         default:
             PR_ASSERT(0);
     }
-}
-
-/*
- * OBSOLETE
- */
-PR_IMPLEMENT(void)
-PR_SetStdioRedirect(
-    PRProcessAttr *attr,
-    PRSpecialFD stdioFd,
-    PRFileDesc *redirectFd)
-{
-#if defined(DEBUG)
-    static PRBool warn = PR_TRUE;
-    if (warn) {
-        warn = _PR_Obsolete("PR_SetStdioRedirect()",
-                "PR_ProcessAttrSetStdioRedirect()");
-    }
-#endif
-    PR_ProcessAttrSetStdioRedirect(attr, stdioFd, redirectFd);
 }
 
 PR_IMPLEMENT(PRStatus)
@@ -657,75 +638,6 @@ PR_ProcessAttrSetInheritableFD(
     }
     attr->fdInheritBufferUsed += nwritten; 
     return PR_SUCCESS;
-}
-
-PR_IMPLEMENT(PRFileDesc *) PR_GetInheritedFD(
-    const char *name)
-{
-    PRFileDesc *fd;
-    const char *envVar;
-    const char *ptr;
-    int len = strlen(name);
-    PROsfd osfd;
-    int nColons;
-    PRIntn fileType;
-
-    envVar = PR_GetEnv("NSPR_INHERIT_FDS");
-    if (NULL == envVar || '\0' == envVar[0]) {
-        PR_SetError(PR_UNKNOWN_ERROR, 0);
-        return NULL;
-    }
-
-    ptr = envVar;
-    while (1) {
-        if ((ptr[len] == ':') && (strncmp(ptr, name, len) == 0)) {
-            ptr += len + 1;
-            PR_sscanf(ptr, "%d:0x%" PR_SCNxOSFD, &fileType, &osfd);
-            switch ((PRDescType)fileType) {
-                case PR_DESC_FILE:
-                    fd = PR_ImportFile(osfd);
-                    break;
-                case PR_DESC_PIPE:
-                    fd = PR_ImportPipe(osfd);
-                    break;
-                case PR_DESC_SOCKET_TCP:
-                    fd = PR_ImportTCPSocket(osfd);
-                    break;
-                case PR_DESC_SOCKET_UDP:
-                    fd = PR_ImportUDPSocket(osfd);
-                    break;
-                default:
-                    PR_ASSERT(0);
-                    PR_SetError(PR_UNKNOWN_ERROR, 0);
-                    fd = NULL;
-                    break;
-            }
-            if (fd) {
-                /*
-                 * An inherited FD is inheritable by default.
-                 * The child process needs to call PR_SetFDInheritable
-                 * to make it non-inheritable if so desired.
-                 */
-                fd->secret->inheritable = _PR_TRI_TRUE;
-            }
-            return fd;
-        }
-        /* Skip three colons */
-        nColons = 0;
-        while (*ptr) {
-            if (*ptr == ':') {
-                if (++nColons == 3) {
-                    break;
-                }
-            }
-            ptr++;
-        }
-        if (*ptr == '\0') {
-            PR_SetError(PR_UNKNOWN_ERROR, 0);
-            return NULL;
-        }
-        ptr++;
-    }
 }
 
 PR_IMPLEMENT(PRProcess*) PR_CreateProcess(
@@ -850,20 +762,6 @@ PR_IMPLEMENT(PRStatus) PR_CallOnceWithArg(
     }
     return once->status;
 }
-
-PRBool _PR_Obsolete(const char *obsolete, const char *preferred)
-{
-#if defined(DEBUG)
-#ifndef XP_MAC
-    PR_fprintf(
-        PR_STDERR, "'%s' is obsolete. Use '%s' instead.\n",
-        obsolete, (NULL == preferred) ? "something else" : preferred);
-#else
-#pragma unused (obsolete, preferred)
-#endif
-#endif
-    return PR_FALSE;
-}  /* _PR_Obsolete */
 
 /* prinit.c */
 
