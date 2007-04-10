@@ -762,6 +762,10 @@ PR_IMPLEMENT(PRStatus) PR_CallOnceWithArg(
     }
     return once->status;
 }
+PRBool _PR_Obsolete(const char *obsolete, const char *preferred)
+{
+  return PR_FALSE;
+}  /* _PR_Obsolete */
 
 /* prinit.c */
 

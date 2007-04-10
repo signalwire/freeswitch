@@ -222,50 +222,50 @@ OBJS = \
     $(OBJDIR)/prvrsion.$(OBJ_SUFFIX) \
     io/$(OBJDIR)/prfdcach.$(OBJ_SUFFIX) \
     io/$(OBJDIR)/prmwait.$(OBJ_SUFFIX) \
-    io/$(OBJDIR)/prmapopt.$(OBJ_SUFFIX) \
+#    io/$(OBJDIR)/prmapopt.$(OBJ_SUFFIX) \
     io/$(OBJDIR)/priometh.$(OBJ_SUFFIX) \
-    io/$(OBJDIR)/pripv6.$(OBJ_SUFFIX) \
+#    io/$(OBJDIR)/pripv6.$(OBJ_SUFFIX) \
     io/$(OBJDIR)/prlayer.$(OBJ_SUFFIX) \
     io/$(OBJDIR)/prlog.$(OBJ_SUFFIX) \
     io/$(OBJDIR)/prmmap.$(OBJ_SUFFIX) \
-    io/$(OBJDIR)/prpolevt.$(OBJ_SUFFIX) \
+#    io/$(OBJDIR)/prpolevt.$(OBJ_SUFFIX) \
     io/$(OBJDIR)/prprf.$(OBJ_SUFFIX) \
-    io/$(OBJDIR)/prscanf.$(OBJ_SUFFIX) \
-    io/$(OBJDIR)/prstdio.$(OBJ_SUFFIX) \
-    threads/$(OBJDIR)/prcmon.$(OBJ_SUFFIX) \
-	threads/$(OBJDIR)/prrwlock.$(OBJ_SUFFIX) \
+#    io/$(OBJDIR)/prscanf.$(OBJ_SUFFIX) \
+#    io/$(OBJDIR)/prstdio.$(OBJ_SUFFIX) \
+#    threads/$(OBJDIR)/prcmon.$(OBJ_SUFFIX) \
+#	threads/$(OBJDIR)/prrwlock.$(OBJ_SUFFIX) \
 	threads/$(OBJDIR)/prtpd.$(OBJ_SUFFIX) \
-    linking/$(OBJDIR)/prlink.$(OBJ_SUFFIX) \
+#    linking/$(OBJDIR)/prlink.$(OBJ_SUFFIX) \
     malloc/$(OBJDIR)/prmem.$(OBJ_SUFFIX) \
     md/$(OBJDIR)/prosdep.$(OBJ_SUFFIX) \
-    memory/$(OBJDIR)/prshm.$(OBJ_SUFFIX) \
-    memory/$(OBJDIR)/prshma.$(OBJ_SUFFIX) \
+#    memory/$(OBJDIR)/prshm.$(OBJ_SUFFIX) \
+#    memory/$(OBJDIR)/prshma.$(OBJ_SUFFIX) \
     memory/$(OBJDIR)/prseg.$(OBJ_SUFFIX) \
-    misc/$(OBJDIR)/pralarm.$(OBJ_SUFFIX) \
+#    misc/$(OBJDIR)/pralarm.$(OBJ_SUFFIX) \
     misc/$(OBJDIR)/pratom.$(OBJ_SUFFIX) \
-    misc/$(OBJDIR)/prcountr.$(OBJ_SUFFIX) \
-    misc/$(OBJDIR)/prdtoa.$(OBJ_SUFFIX) \
-    misc/$(OBJDIR)/prenv.$(OBJ_SUFFIX) \
-    misc/$(OBJDIR)/prerr.$(OBJ_SUFFIX) \
+#    misc/$(OBJDIR)/prcountr.$(OBJ_SUFFIX) \
+#    misc/$(OBJDIR)/prdtoa.$(OBJ_SUFFIX) \
+#    misc/$(OBJDIR)/prenv.$(OBJ_SUFFIX) \
+#    misc/$(OBJDIR)/prerr.$(OBJ_SUFFIX) \
     misc/$(OBJDIR)/prerror.$(OBJ_SUFFIX) \
-    misc/$(OBJDIR)/prerrortable.$(OBJ_SUFFIX) \
+#    misc/$(OBJDIR)/prerrortable.$(OBJ_SUFFIX) \
     misc/$(OBJDIR)/prinit.$(OBJ_SUFFIX) \
     misc/$(OBJDIR)/prinrval.$(OBJ_SUFFIX) \
-    misc/$(OBJDIR)/pripc.$(OBJ_SUFFIX) \
-    misc/$(OBJDIR)/prlog2.$(OBJ_SUFFIX) \
-    misc/$(OBJDIR)/prlong.$(OBJ_SUFFIX) \
-    misc/$(OBJDIR)/prnetdb.$(OBJ_SUFFIX) \
+#    misc/$(OBJDIR)/pripc.$(OBJ_SUFFIX) \
+#    misc/$(OBJDIR)/prlog2.$(OBJ_SUFFIX) \
+#    misc/$(OBJDIR)/prlong.$(OBJ_SUFFIX) \
+#    misc/$(OBJDIR)/prnetdb.$(OBJ_SUFFIX) \
     misc/$(OBJDIR)/prolock.$(OBJ_SUFFIX)	 \
-    misc/$(OBJDIR)/prrng.$(OBJ_SUFFIX)	 \
-    misc/$(OBJDIR)/prsystem.$(OBJ_SUFFIX) \
-    misc/$(OBJDIR)/prthinfo.$(OBJ_SUFFIX) \
-    misc/$(OBJDIR)/prtpool.$(OBJ_SUFFIX) \
-    misc/$(OBJDIR)/prtrace.$(OBJ_SUFFIX) \
+#    misc/$(OBJDIR)/prrng.$(OBJ_SUFFIX)	 \
+#    misc/$(OBJDIR)/prsystem.$(OBJ_SUFFIX) \
+#    misc/$(OBJDIR)/prthinfo.$(OBJ_SUFFIX) \
+#    misc/$(OBJDIR)/prtpool.$(OBJ_SUFFIX) \
+#    misc/$(OBJDIR)/prtrace.$(OBJ_SUFFIX) \
     misc/$(OBJDIR)/prtime.$(OBJ_SUFFIX)
 
 # ilib now rejects empty objects
 ifneq ($(MOZ_OS2_TOOLS),VACPP)
-OBJS += malloc/$(OBJDIR)/prmalloc.$(OBJ_SUFFIX)
+#OBJS += malloc/$(OBJDIR)/prmalloc.$(OBJ_SUFFIX)
 endif
 
 ifdef USE_PTHREADS
@@ -279,15 +279,15 @@ OBJS += \
     io/$(OBJDIR)/prdir.$(OBJ_SUFFIX) \
     io/$(OBJDIR)/prfile.$(OBJ_SUFFIX) \
     io/$(OBJDIR)/prio.$(OBJ_SUFFIX) \
-    io/$(OBJDIR)/prsocket.$(OBJ_SUFFIX) \
-    misc/$(OBJDIR)/pripcsem.$(OBJ_SUFFIX)
+#    io/$(OBJDIR)/prsocket.$(OBJ_SUFFIX) \
+#    misc/$(OBJDIR)/pripcsem.$(OBJ_SUFFIX)
 
 ifndef USE_BTHREADS
 OBJS += \
 	threads/$(OBJDIR)/prcthr.$(OBJ_SUFFIX) \
-	threads/$(OBJDIR)/prdump.$(OBJ_SUFFIX) \
-	threads/$(OBJDIR)/prmon.$(OBJ_SUFFIX) \
-	threads/$(OBJDIR)/prsem.$(OBJ_SUFFIX) \
+#	threads/$(OBJDIR)/prdump.$(OBJ_SUFFIX) \
+#	threads/$(OBJDIR)/prmon.$(OBJ_SUFFIX) \
+#	threads/$(OBJDIR)/prsem.$(OBJ_SUFFIX) \
 	threads/combined/$(OBJDIR)/prucpu.$(OBJ_SUFFIX) \
 	threads/combined/$(OBJDIR)/prucv.$(OBJ_SUFFIX) \
 	threads/combined/$(OBJDIR)/prulock.$(OBJ_SUFFIX) \
