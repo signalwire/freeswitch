@@ -34,7 +34,7 @@ terms of the curl license; see COPYING for more details])
 
 AC_CONFIG_SRCDIR([lib/urldata.h])
 AM_CONFIG_HEADER(lib/config.h src/config.h)
-AM_MAINTAINER_MODE
+#AM_MAINTAINER_MODE
 
 dnl SED is needed by some of the tools
 AC_PATH_PROG( SED, sed, sed-was-not-found-by-configure,
@@ -2038,17 +2038,10 @@ fi
 AM_CONDITIONAL(CROSSCOMPILING, test x$cross_compiling = xyes)
 
 AC_CONFIG_FILES([Makefile \
-	   docs/Makefile \
-           docs/examples/Makefile \
-           docs/libcurl/Makefile \
 	   include/Makefile \
 	   include/curl/Makefile \
 	   src/Makefile \
            lib/Makefile \
-           tests/Makefile \
-           tests/data/Makefile \
-           tests/server/Makefile \
-           tests/libtest/Makefile \
 	   packages/Makefile \
 	   packages/Win32/Makefile \
 	   packages/Win32/cygwin/Makefile \

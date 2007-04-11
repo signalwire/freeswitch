@@ -33,15 +33,7 @@ INCLUDES = -I$(top_srcdir)/include \
            -I$(top_srcdir)/lib     \
            -I$(top_srcdir)/src
 
-bin_PROGRAMS = curl
-
 include Makefile.inc
-
-curl_LDADD = ../lib/libcurl.la
-curl_DEPENDENCIES = ../lib/libcurl.la
-BUILT_SOURCES = hugehelp.c
-CLEANFILES = hugehelp.c
-NROFF=@NROFF@ @MANOPT@ # figured out by the configure script
 
 EXTRA_DIST = mkhelp.pl makefile.dj Makefile.vc6 Makefile.b32 Makefile.m32 \
 	Makefile.riscos config.h.in macos/curl.mcp.xml.sit.hqx		  \
@@ -49,34 +41,3 @@ EXTRA_DIST = mkhelp.pl makefile.dj Makefile.vc6 Makefile.b32 Makefile.m32 \
 	macos/src/macos_main.cpp config-amigaos.h makefile.amiga curl.rc  \
 	Makefile.netware Makefile.inc Makefile.Watcom
 
-MANPAGE=$(top_srcdir)/docs/curl.1
-README=$(top_srcdir)/docs/MANUAL
-MKHELP=$(top_srcdir)/src/mkhelp.pl
-HUGE=hugehelp.c
-
-if USE_MANUAL
-# Here are the stuff to create a built-in manual
-
-if HAVE_LIBZ
-# This generates the hugehelp.c file in both uncompressed and compressed formats
-$(HUGE): $(README) $(MANPAGE)  mkhelp.pl
-	echo '#include "setup.h"' > $(HUGE)
-	echo '#ifndef HAVE_LIBZ' >> $(HUGE)
-	$(NROFF) $(MANPAGE) | $(PERL) $(MKHELP) $(README) >> $(HUGE)
-	echo '#else' >> $(HUGE)
-	$(NROFF) $(MANPAGE) | $(PERL) $(MKHELP) -c $(README) >> $(HUGE)
-	echo '#endif /* HAVE_LIBZ */' >> $(HUGE)
-else # HAVE_LIBZ
-# This generates the hugehelp.c file uncompressed only
-$(HUGE): $(README) $(MANPAGE)  mkhelp.pl
-	echo '#include "setup.h"' > $(HUGE)
-	$(NROFF) $(MANPAGE) | $(PERL) $(MKHELP) $(README) >> $(HUGE)
-endif
-
-else # USE_MANUAL
-# built-in manual has been disabled, make a blank file
-$(HUGE):
-	echo "/* built-in manual is disabled, blank function */" > $(HUGE)
-	echo '#include "hugehelp.h"' >> $(HUGE)
-	echo "void hugehelp(void) {}" >>$(HUGE)
-endif
