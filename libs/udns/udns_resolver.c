@@ -46,9 +46,6 @@
 # include <unistd.h>
 # include <fcntl.h>
 # include <sys/time.h>
-# ifdef HAVE_CONFIG_H
-#  include <config.h>
-# endif
 # ifdef HAVE_POLL
 #  include <sys/poll.h>
 # endif
@@ -77,7 +74,7 @@
 # define EAFNOSUPPORT EINVAL
 #endif
 
-union sockaddr_ns {
+union usockaddr_ns {
   struct sockaddr sa;
   struct sockaddr_in sin;
 #if HAVE_INET6
@@ -184,7 +181,7 @@ struct dns_ctx {		/* resolver context */
   unsigned dnsc_port;			/* default port (DNS_PORT) */
   unsigned dnsc_udpbuf;			/* size of UDP buffer */
   /* array of nameserver addresses */
-  union sockaddr_ns dnsc_serv[DNS_MAXSERV];
+  union usockaddr_ns dnsc_serv[DNS_MAXSERV];
   unsigned dnsc_nserv;			/* number of nameservers */
   unsigned dnsc_salen;			/* length of socket addresses */
   /* search list for unqualified names */
@@ -272,7 +269,7 @@ enum {
 };
 
 static int dns_add_serv_internal(struct dns_ctx *ctx, const char *serv) {
-  union sockaddr_ns *sns;
+  union usockaddr_ns *sns;
   if (!serv)
     return (ctx->dnsc_nserv = 0);
   if (ctx->dnsc_nserv >= DNS_MAXSERV)
@@ -688,7 +685,7 @@ dns_socket dns_open(struct dns_ctx *ctx) {
   dns_socket sock;
   unsigned i;
   int port;
-  union sockaddr_ns *sns;
+  union usockaddr_ns *sns;
 #if HAVE_INET6
   unsigned have_inet6 = 0;
 #endif
@@ -922,7 +919,7 @@ static void dns_send(struct dns_ctx *ctx, struct dns_query *q, time_t now) {
     return;
   }
   DNS_DBGQ(ctx, q, 1,
-           &ctx->dnsc_serv[q->dnsq_servi].sa, sizeof(union sockaddr_ns),
+           &ctx->dnsc_serv[q->dnsq_servi].sa, sizeof(union usockaddr_ns),
            q->dnsq_buf, q->dnsq_len);
   q->dnsq_servwait |= 1 << q->dnsq_servi;	/* expect reply from this ns */
 
@@ -1045,7 +1042,7 @@ void dns_ioevent(struct dns_ctx *ctx, time_t now) {
   dnsc_t *pbuf;
   dnscc_t *pend, *pcur;
   void *result;
-  union sockaddr_ns sns;
+  union usockaddr_ns sns;
   socklen_t slen;
 
   SETCTX(ctx);
