@@ -279,7 +279,6 @@ static PRInt32 PR_CALLBACK Ipv6ToIpv4SocketRecvFrom(PRFileDesc *fd, void *buf,
 
 #if defined(_PR_INET6_PROBE)
 PRBool _pr_ipv6_is_present;
-extern PRBool _pr_test_ipv6_socket(void);
 
 #if !defined(_PR_INET6) && defined(_PR_HAVE_GETIPNODEBYNAME)
 extern PRStatus _pr_find_getipnodebyname(void);
@@ -292,17 +291,7 @@ extern PRStatus _pr_find_getaddrinfo(void);
 static PRBool
 _pr_probe_ipv6_presence(void)
 {
-#if !defined(_PR_INET6) && defined(_PR_HAVE_GETIPNODEBYNAME)
-    if (_pr_find_getipnodebyname() != PR_SUCCESS)
         return PR_FALSE;
-#endif
-
-#if !defined(_PR_INET6) && defined(_PR_HAVE_GETADDRINFO)
-    if (_pr_find_getaddrinfo() != PR_SUCCESS)
-        return PR_FALSE;
-#endif
-
-    return _pr_test_ipv6_socket();
 }
 #endif  /* _PR_INET6_PROBE */
 

@@ -210,25 +210,6 @@ loser:
     return;
 }
 
-PR_IMPLEMENT(void)
-PR_FPrintZoneStats(PRFileDesc *debug_out)
-{
-    int i, j;
-
-    for (j = 0; j < THREAD_POOLS; j++) {
-        for (i = 0; i < MEM_ZONES; i++) {
-            MemoryZone   *mz   = &zones[i][j];
-            MemoryZone    zone = *mz;
-            if (zone.elements || zone.misses || zone.hits) {
-                PR_fprintf(debug_out,
-"pool: %d, zone: %d, size: %d, free: %d, hit: %d, miss: %d, contend: %d\n",
-                    j, i, zone.blockSize, zone.elements,
-                    zone.hits, zone.misses, zone.contention);
-            }
-	}
-    }
-}
-
 static void *
 pr_ZoneMalloc(PRUint32 size)
 {

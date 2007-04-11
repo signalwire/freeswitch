@@ -55,8 +55,8 @@ endif
 endif
 
 CSRCS = \
+        ptsynch.c \
 	ptio.c \
-	ptsynch.c \
 	ptthread.c \
 	ptmisc.c \
 	$(NULL)

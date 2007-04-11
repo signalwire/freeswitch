@@ -42,8 +42,6 @@ CSRCS =          \
 	unix.c    \
 	unix_errors.c \
 	uxproces.c \
-	uxrng.c \
-	uxshm.c \
 	uxwrap.c \
 	$(NULL)
 

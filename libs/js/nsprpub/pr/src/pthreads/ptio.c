@@ -374,45 +374,12 @@ struct pt_Continuation
 
 PTDebug pt_debug;  /* this is shared between several modules */
 
-PR_IMPLEMENT(void) PT_FPrintStats(PRFileDesc *debug_out, const char *msg)
-{
-    PTDebug stats;
-    char buffer[100];
-    PRExplodedTime tod;
-    PRInt64 elapsed, aMil;
-    stats = pt_debug;  /* a copy */
-    PR_ExplodeTime(stats.timeStarted, PR_LocalTimeParameters, &tod);
-    (void)PR_FormatTime(buffer, sizeof(buffer), "%T", &tod);
-
-    LL_SUB(elapsed, PR_Now(), stats.timeStarted);
-    LL_I2L(aMil, 1000000);
-    LL_DIV(elapsed, elapsed, aMil);
-    
-    if (NULL != msg) PR_fprintf(debug_out, "%s", msg);
-    PR_fprintf(
-        debug_out, "\tstarted: %s[%lld]\n", buffer, elapsed);
-    PR_fprintf(
-        debug_out, "\tlocks [created: %u, destroyed: %u]\n",
-        stats.locks_created, stats.locks_destroyed);
-    PR_fprintf(
-        debug_out, "\tlocks [acquired: %u, released: %u]\n",
-        stats.locks_acquired, stats.locks_released);
-    PR_fprintf(
-        debug_out, "\tcvars [created: %u, destroyed: %u]\n",
-        stats.cvars_created, stats.cvars_destroyed);
-    PR_fprintf(
-        debug_out, "\tcvars [notified: %u, delayed_delete: %u]\n",
-        stats.cvars_notified, stats.delayed_cv_deletes);
-}  /* PT_FPrintStats */
-
-#else
+#endif  /* DEBUG */
 
 PR_IMPLEMENT(void) PT_FPrintStats(PRFileDesc *debug_out, const char *msg)
 {
     /* do nothing */
 }  /* PT_FPrintStats */
-
-#endif  /* DEBUG */
 
 #if defined(_PR_POLL_WITH_SELECT)
 /*
@@ -3374,6 +3341,8 @@ failed:
     return fd;
 }  /* PR_AllocFileDesc */
 
+#if 0
+
 #if !defined(_PR_INET6) || defined(_PR_INET6_PROBE)
 PR_EXTERN(PRStatus) _pr_push_ipv6toipv4_layer(PRFileDesc *fd);
 #if defined(_PR_INET6_PROBE)
@@ -3484,7 +3453,7 @@ PR_IMPLEMENT(PRFileDesc*) PR_Socket(PRInt32 domain, PRInt32 type, PRInt32 proto)
 #endif
     return fd;
 }  /* PR_Socket */
-
+#endif
 /*****************************************************************************/
 /****************************** I/O public methods ***************************/
 /*****************************************************************************/
@@ -4312,6 +4281,7 @@ PR_IMPLEMENT(PRDirEntry*) PR_ReadDir(PRDir *dir, PRDirFlags flags)
     return &dir->d;
 }  /* PR_ReadDir */
 
+#if 0
 PR_IMPLEMENT(PRFileDesc*) PR_NewUDPSocket(void)
 {
     PRIntn domain = PF_INET;
@@ -4335,6 +4305,8 @@ PR_IMPLEMENT(PRFileDesc*) PR_OpenTCPSocket(PRIntn af)
 {
     return PR_Socket(af, SOCK_STREAM, 0);
 }  /* PR_NewTCPSocket */
+
+#endif
 
 PR_IMPLEMENT(PRStatus) PR_NewTCPSocketPair(PRFileDesc *fds[2])
 {

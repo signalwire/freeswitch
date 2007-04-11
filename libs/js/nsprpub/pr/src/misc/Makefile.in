@@ -47,34 +47,15 @@ include $(MOD_DEPTH)/config/autoconf.mk
 include $(topsrcdir)/config/config.mk
 
 CSRCS = \
-	pralarm.c  \
 	pratom.c   \
-	prcountr.c \
-	prdtoa.c   \
-	prenv.c    \
-	prerr.c  \
 	prerror.c  \
-	prerrortable.c  \
+        pripc.c \
 	prinit.c   \
+	prnetdb.c   \
 	prinrval.c \
-	pripc.c \
-	prlog2.c   \
-	prlong.c   \
-	prnetdb.c  \
 	prolock.c  \
-	prrng.c    \
-	prsystem.c \
 	prtime.c   \
-	prthinfo.c \
-	prtpool.c \
-	prtrace.c  \
 	$(NULL)
-
-ifndef USE_PTHREADS
-CSRCS += \
-	pripcsem.c \
-	$(NULL)
-endif
 
 TARGETS	= $(OBJS)
 

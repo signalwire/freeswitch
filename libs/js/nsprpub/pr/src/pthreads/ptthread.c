@@ -938,9 +938,9 @@ PR_IMPLEMENT(PRStatus) PR_Cleanup(void)
         PR_Unlock(pt_book.ml);
 
         _PR_CleanupMW();
-        _PR_CleanupDtoa();
+        //_PR_CleanupDtoa();
         _PR_CleanupCallOnce();
-        _PR_ShutdownLinker();
+        //_PR_ShutdownLinker();
         _PR_LogCleanup();
         _PR_CleanupNet();
         /* Close all the fd's before calling _PR_CleanupIO */
@@ -963,7 +963,7 @@ PR_IMPLEMENT(PRStatus) PR_Cleanup(void)
         PR_DestroyLock(_pr_sleeplock);
         _pr_sleeplock = NULL;
         _PR_CleanupLayerCache();
-        _PR_CleanupEnv();
+        //_PR_CleanupEnv();
 #ifdef _PR_ZONE_ALLOCATOR
         _PR_DestroyZones();
 #endif

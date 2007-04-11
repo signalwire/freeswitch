@@ -58,14 +58,11 @@ CSRCS = \
     prmwait.c \
     priometh.c \
     pripv6.c \
-	prmapopt.c \
+    prmapopt.c \
     prlayer.c \
     prlog.c \
 	prmmap.c \
-    prpolevt.c \
 	prprf.c \
-	prscanf.c \
-	prstdio.c  \
 	$(NULL)
 
 ifndef USE_PTHREADS
@@ -73,7 +70,6 @@ ifndef USE_PTHREADS
 	    prdir.c \
 	    prfile.c \
 	    prio.c \
-	    prsocket.c \
 	    $(NULL)
 endif
 
