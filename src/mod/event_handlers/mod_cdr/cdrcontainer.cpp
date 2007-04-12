@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Yossi Neiman <freeswitch AT cartissolutions.com>
+ * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  *
  * Description: This C++ source file describes the CDRContainer singleton object used by mod_cdr to control
  * the creation, processing, and destruction of various CDR logger objects.
@@ -53,7 +54,7 @@ CDRContainer::CDRContainer(switch_memory_pool_t *module_pool)
 	newchannel = 0;
 	
 	if (!(xml = switch_xml_open_cfg(configfile, &cfg, NULL))) 
-		switch_console_printf(SWITCH_CHANNEL_LOG,"open of %s failed\n", configfile);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", configfile);
 	else
 	{	
 		BaseRegistry& registry(BaseRegistry::get());
@@ -89,7 +90,7 @@ CDRContainer::~CDRContainer()
 		ptr->disconnect();
 	}
 		
-	switch_console_printf(SWITCH_CHANNEL_LOG,"mod_cdr shutdown gracefully.");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mod_cdr shutdown gracefully.");
 }
 
 #ifdef SWITCH_QUEUE_ENHANCED
@@ -225,7 +226,7 @@ void CDRContainer::add_cdr(switch_core_session_t *session)
 			basecdr_creator func = *it;
 			
 			BaseCDR* newloggerobject = func(newchannel);
-			switch_console_printf(SWITCH_CHANNEL_LOG,"Adding a new logger object to the queue.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Adding a new logger object to the queue.\n");
 			switch_queue_push(cdrqueue,newloggerobject);
 		}
 		newchannel->callerprofile = newchannel->callerprofile->next;

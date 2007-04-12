@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Yossi Neiman <freeswitch AT cartissolutions.com>
+ * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  *
  * Description: This C++ source file describes the CsvCDR class that handles processing CDRs to a CSV format.
  * This is the standard CSV module, and has a list of predefined variables to log out which can be
@@ -101,7 +102,7 @@ std::string CsvCDR::display_name = "CsvCDR - The simple comma separated values C
 
 void CsvCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settings, switch_xml_t& param)
 {
-	switch_console_printf(SWITCH_CHANNEL_LOG, "CsvCDR::connect() - Loading configuration file.\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CsvCDR::connect() - Loading configuration file.\n");
 	activated = 0; // Set it as inactive initially
 	connectionstate = 0; // Initialize it to false to show that we aren't yet connected.
 	
@@ -170,7 +171,7 @@ void CsvCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setting
 					convert_time = switch_time_exp_lt;
 				else
 				{
-					switch_console_printf(SWITCH_CHANNEL_LOG,"Invalid configuration parameter for timezone.  Possible values are utc and local.  You entered: %s\nDefaulting to local.\n",val);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid configuration parameter for timezone.  Possible values are utc and local.  You entered: %s\nDefaulting to local.\n", val);
 					convert_time = switch_time_exp_lt;
 				}
 			}
@@ -182,11 +183,11 @@ void CsvCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setting
 			if(outputfile.good())
 			{
 				activated = 1;
-				switch_console_printf(SWITCH_CHANNEL_LOG,"CsvCDR activated, log rotation will occur at or after %d MB\n",(int)(filesize_limit >> 20));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CsvCDR activated, log rotation will occur at or after %d MB\n", (int)(filesize_limit >> 20));
 			}
 		}
 		else
-			switch_console_printf(SWITCH_CHANNEL_LOG,"CsvCDR::connect(): You did not specify the minimum parameters for using this module.  You must specify at least a path to have the records logged to.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "CsvCDR::connect(): You did not specify the minimum parameters for using this module.  You must specify at least a path to have the records logged to.\n");
 	}
 }
 
@@ -228,7 +229,7 @@ void CsvCDR::open_file()
 	outputfile.open(filename.c_str(),std::ios_base::app|std::ios_base::binary);
 	if(outputfile.fail())
 	{
-		switch_console_printf(SWITCH_CHANNEL_LOG,"Could not open the CSV file %s .  CsvCDR logger will not be functional until this is resolved and a reload is issued.  Failbit is set to %d.\n",filename.c_str(),outputfile.fail());
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open the CSV file %s .  CsvCDR logger will not be functional until this is resolved and a reload is issued.  Failbit is set to %d.\n", filename.c_str(), outputfile.fail());
 		activated = 0;
 	}
 	else
@@ -332,7 +333,7 @@ void CsvCDR::disconnect()
 	chanvars_fixed_list.clear();
 	chanvars_supp_list.clear();
 	connectionstate = 0;
-	switch_console_printf(SWITCH_CHANNEL_LOG,"Shutting down CsvCDR...  Done!\n");	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Shutting down CsvCDR...  Done!\n");	
 }
 
 AUTO_REGISTER_BASECDR(CsvCDR);

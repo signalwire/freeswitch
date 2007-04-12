@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Yossi Neiman <freeswitch AT cartissolutions.com>
+ * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  *
  * Description: his C++ header file describes the SqliteCDR class which handles formatting a CDR out to
  * a SQLite database using prepared statements.
@@ -141,7 +142,7 @@ void SqliteCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& sett
 					use_utc_time = 0;
 				else
 				{
-					switch_console_printf(SWITCH_CHANNEL_LOG,"Invalid configuration parameter for timezone.  Possible values are utc and local.  You entered: %s\nDefaulting to local.\n",val);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid configuration parameter for timezone.  Possible values are utc and local.  You entered: %s\nDefaulting to local.\n", val);
 					use_utc_time = 0;
 				}
 			}
@@ -150,7 +151,7 @@ void SqliteCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& sett
 		if (count_config_params==1)
 			activated = 1;
 		else
-			switch_console_printf(SWITCH_CHANNEL_LOG,"You did not specify the minimum parameters for using this module.  You must specify an explicit (complete) path to the location of the database file in order to use SqliteCDR.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "You did not specify the minimum parameters for using this module.  You must specify an explicit (complete) path to the location of the database file in order to use SqliteCDR.\n");
 		
 		if(activated)
 		{
@@ -192,7 +193,7 @@ void SqliteCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& sett
 			
 			if(sql_rc != SWITCH_CORE_DB_OK)
 			{
-				switch_console_printf(SWITCH_CHANNEL_LOG,"There was an error opening database filename %s.  The error was: %s.  SqliteCDR logging has been disabled until the problem is resolved and modcdr_reload is initiated.\n",db_filename.c_str(),switch_core_db_errmsg(db));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "There was an error opening database filename %s.  The error was: %s.  SqliteCDR logging has been disabled until the problem is resolved and modcdr_reload is initiated.\n", db_filename.c_str(), switch_core_db_errmsg(db));
 				activated = 0;
 				switch_core_db_close(db);
 			}
@@ -223,13 +224,13 @@ void SqliteCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& sett
 					}
 				}
 				else
-					switch_console_printf(SWITCH_CHANNEL_LOG,"There was an error in executing query %s: The error was %s.\n",sql_query_check_tables,errormessage);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "There was an error in executing query %s: The error was %s.\n", sql_query_check_tables, errormessage);
 				
 				switch_core_db_free_table(result);
 			
 				if(!temp_sql_tables["freeswitchcdr"])
 				{
-					switch_console_printf(SWITCH_CHANNEL_LOG,"Creating the freeswitchcdr table in the SQLite mod_cdr database file.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating the freeswitchcdr table in the SQLite mod_cdr database file.\n");
 					// Must create the missing freeswitchcdr table.
 					char sql_query_create_freeswitchcdr[] = "CREATE TABLE freeswitchcdr (\n"
 						"callid INTEGER PRIMARY KEY AUTOINCREMENT,\n"
@@ -262,7 +263,7 @@ void SqliteCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& sett
 			
 				if(!temp_sql_tables["chanvars"])
 				{
-					switch_console_printf(SWITCH_CHANNEL_LOG,"Creating the chanvars table in the SQLite mod_cdr database file.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating the chanvars table in the SQLite mod_cdr database file.\n");
 					// Must create the missing chanvars table.
 					char sql_query_create_chanvars[] = "CREATE TABLE chanvars (\n"
 						"callid INTEGER default 0,\n"
@@ -321,13 +322,13 @@ void SqliteCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& sett
 										tempstring2 = resultstring.substr(i,(j-i));
 								
 									freeswitchcdr_columns[tempstring1] = tempstring2;
-									// switch_console_printf(SWITCH_CHANNEL_LOG,"tempstring1 = %s, tempstring2 = %s\n",tempstring1.c_str(),tempstring2.c_str());
+									//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "tempstring1 = %s, tempstring2 = %s\n", tempstring1.c_str(), tempstring2.c_str());
 									if(resultstring.find('\n',j+1) == (j+1))
 										j++;
 									i = j+1;
 								}
 								else
-									switch_console_printf(SWITCH_CHANNEL_LOG,"There has been a parsing problem with the freeswitchcdr schema.\n");
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "There has been a parsing problem with the freeswitchcdr schema.\n");
 							}
 						}
 					}
@@ -346,9 +347,9 @@ void SqliteCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& sett
 							case CDR_TINY:
 								if(freeswitchcdr_columns.find(*iItr) != freeswitchcdr_columns.end())
 								{
-									//switch_console_printf(SWITCH_CHANNEL_LOG,"freeswitchcdr_columns[%s] == %s.\n",iItr->c_str(),freeswitchcdr_columns[*iItr].c_str());
+									//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "freeswitchcdr_columns[%s] == %s.\n", iItr->c_str(), freeswitchcdr_columns[*iItr].c_str());
 									if(freeswitchcdr_columns[*iItr].find("INTEGER",0) == std::string::npos)
-										switch_console_printf(SWITCH_CHANNEL_LOG,"WARNING: SqliteCDR freeswitchcdr table column type mismatch: Column \"%s\" is not of an INTEGER type.  This is not necessarily fatal, but may result in unexpected behavior.\n",iItr->c_str());
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SqliteCDR freeswitchcdr table column type mismatch: Column \"%s\" is not of an INTEGER type.  This is not necessarily fatal, but may result in unexpected behavior.\n", iItr->c_str());
 								}
 								else
 									freeswitchcdr_add_columns[*iItr] = "INTEGER";
@@ -357,7 +358,7 @@ void SqliteCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& sett
 								if(freeswitchcdr_columns.find(*iItr) != freeswitchcdr_columns.end())
 								{
 									if(freeswitchcdr_columns[*iItr].find("REAL",0) == std::string::npos)
-										switch_console_printf(SWITCH_CHANNEL_LOG,"WARNING: SqliteCDR freeswitchcdr table column type mismatch: Column \"%s\" is not of a REAL type.  This is not necessarily fatal, but may result in unexpected behavior.\n",iItr->c_str());
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SqliteCDR freeswitchcdr table column type mismatch: Column \"%s\" is not of a REAL type.  This is not necessarily fatal, but may result in unexpected behavior.\n", iItr->c_str());
 								}
 								else
 									freeswitchcdr_add_columns[*iItr] = "REAL";
@@ -367,19 +368,19 @@ void SqliteCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& sett
 								if(freeswitchcdr_columns.find(*iItr) != freeswitchcdr_columns.end())
 								{
 									if(freeswitchcdr_columns[*iItr].find("TEXT",0) == std::string::npos)
-										switch_console_printf(SWITCH_CHANNEL_LOG,"WARNING: SqliteCDR freeswitchcdr table column type mismatch: Column \"%s\" is not of a TEXT type.  This is not necessarily fatal, but may result in unexpected behavior.\n",iItr->c_str());
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SqliteCDR freeswitchcdr table column type mismatch: Column \"%s\" is not of a TEXT type.  This is not necessarily fatal, but may result in unexpected behavior.\n", iItr->c_str());
 								}
 								else
 									freeswitchcdr_add_columns[*iItr] = "TEXT";
 								break;
 							default:
-								switch_console_printf(SWITCH_CHANNEL_LOG,"Oh bother, I should not have fallen into this hole in the switch/case statement.  Please notify the author.\n");
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Oh bother, I should not have fallen into this hole in the switch/case statement.  Please notify the author.\n");
 						}
 					}
 					
 					if(freeswitchcdr_add_columns.size())
 					{
-						switch_console_printf(SWITCH_CHANNEL_LOG,"Updating the freeswitchcdr table schema.\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Updating the freeswitchcdr table schema.\n");
 						std::string tempsql_freeswitchcdr_alter_table = "ALTER TABLE freeswitchcdr ADD ";
 						std::map<std::string, std::string>::iterator iItr, iEnd;
 						for(iItr = freeswitchcdr_add_columns.begin(), iEnd = freeswitchcdr_add_columns.end(); iItr != iEnd; iItr++)
@@ -388,7 +389,7 @@ void SqliteCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& sett
 							sql_query_freeswitchcdr_alter_table.append(iItr->first);
 							sql_query_freeswitchcdr_alter_table.append(" ");
 							sql_query_freeswitchcdr_alter_table.append(iItr->second);
-							switch_console_printf(SWITCH_CHANNEL_LOG,"Updating the freeswitchcdr table with the following SQL command: %s.\n",sql_query_freeswitchcdr_alter_table.c_str());
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Updating the freeswitchcdr table with the following SQL command: %s.\n", sql_query_freeswitchcdr_alter_table.c_str());
 							switch_core_db_exec(db, sql_query_freeswitchcdr_alter_table.c_str(), NULL, NULL, NULL);
 						}
 					}
@@ -514,7 +515,7 @@ bool SqliteCDR::process_record()
 					break;
 				}
 				default:
-					switch_console_printf(SWITCH_CHANNEL_LOG,"Oh bother, I should not have fallen into this hole in the switch/case statement.  Please notify the author.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Oh bother, I should not have fallen into this hole in the switch/case statement.  Please notify the author.\n");
 			}
 		}
 	}
@@ -525,7 +526,7 @@ bool SqliteCDR::process_record()
 		if(sql_rc == SWITCH_CORE_DB_BUSY)
 			sql_rc = switch_core_db_step(stmt);
 		else if (sql_rc == SWITCH_CORE_DB_ERROR || sql_rc == SWITCH_CORE_DB_MISUSE)
-			switch_console_printf(SWITCH_CHANNEL_LOG,"There was an error executing switch_core_db_step on SqliteCDR::stmt.  The error was: %s\n",switch_core_db_errmsg(db));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "There was an error executing switch_core_db_step on SqliteCDR::stmt.  The error was: %s\n", switch_core_db_errmsg(db));
 	}
 	
 	sql_rc = switch_core_db_reset(stmt);
@@ -546,7 +547,7 @@ bool SqliteCDR::process_record()
 				if(sql_rc == SWITCH_CORE_DB_BUSY)
 					sql_rc = switch_core_db_step(stmt_chanvars);
 				else if (sql_rc == SWITCH_CORE_DB_ERROR || sql_rc == SWITCH_CORE_DB_MISUSE)
-					switch_console_printf(SWITCH_CHANNEL_LOG,"There was an error executing switch_core_db_step on SqliteCDR::stmt_chanvars.  The error was: %s\n",switch_core_db_errmsg(db));
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "There was an error executing switch_core_db_step on SqliteCDR::stmt_chanvars.  The error was: %s\n", switch_core_db_errmsg(db));
 			}
 			
 			switch_core_db_reset(stmt_chanvars);

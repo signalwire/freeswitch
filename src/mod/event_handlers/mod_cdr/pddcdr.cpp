@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Yossi Neiman <freeswitch AT cartissolutions.com>
+ * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  *
  * Description: This C++ source file describes the PddCDR class which handles formatting a CDR out to
  * individual text files in a Perl Data Dumper format.
@@ -101,7 +102,7 @@ std::string PddCDR::display_name = "PddCDR - Perl Data Dumper CDR logger";
 
 void PddCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settings, switch_xml_t& param)
 {
-	switch_console_printf(SWITCH_CHANNEL_LOG, "PddCDR::connect() - Loading configuration file.\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "PddCDR::connect() - Loading configuration file.\n");
 	activated = 0; // Set it as inactive initially
 	connectionstate = 0; // Initialize it to false to show that we aren't yet connected.
 	
@@ -135,11 +136,11 @@ void PddCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setting
 			}
 			else if (!strcmp(var, "chanvars_fixed"))
 			{
-				switch_console_printf(SWITCH_CHANNEL_LOG,"PddCDR has no need for a fixed or supplemental list of channel variables due to the nature of the format.  Please use the setting parameter of \"chanvars\" instead and try again.\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "PddCDR has no need for a fixed or supplemental list of channel variables due to the nature of the format.  Please use the setting parameter of \"chanvars\" instead and try again.\n");
 			}
 			else if (!strcmp(var, "chanvars_supp"))
 			{
-				switch_console_printf(SWITCH_CHANNEL_LOG,"PddCDR has no need for a fixed or supplemental list of channel variables due to the nature of the format.  Please use the setting parameter of \"chanvars\" instead and try again.\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "PddCDR has no need for a fixed or supplemental list of channel variables due to the nature of the format.  Please use the setting parameter of \"chanvars\" instead and try again.\n");
 			}
 			else if(!strcmp(var,"timezone"))
 			{
@@ -149,7 +150,7 @@ void PddCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setting
 					convert_time = switch_time_exp_lt;
 				else
 				{
-					switch_console_printf(SWITCH_CHANNEL_LOG,"Invalid configuration parameter for timezone.  Possible values are utc and local.  You entered: %s\nDefaulting to local.\n",val);
+				 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid configuration parameter for timezone.  Possible values are utc and local.  You entered: %s\nDefaulting to local.\n", val);
 					convert_time = switch_time_exp_lt;
 				}
 			}
@@ -158,7 +159,7 @@ void PddCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setting
 		if(count_config_params > 0)
 			activated = 1;
 		else
-			switch_console_printf(SWITCH_CHANNEL_LOG,"PddCDR::connect(): You did not specify the minimum parameters for using this module.  You must specify at least a path to have the records logged to.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "PddCDR::connect(): You did not specify the minimum parameters for using this module.  You must specify at least a path to have the records logged to.\n");
 	}
 }
 
@@ -168,7 +169,7 @@ bool PddCDR::process_record()
 	
 	bool retval = 0;
 	if(!outputfile)
-		switch_console_printf(SWITCH_CHANNEL_LOG, "PddCDR::process_record():  Unable to open file  %s to commit the call record to.  Invalid path name, invalid permissions, or no space available?\n",outputfile_name.c_str());
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "PddCDR::process_record():  Unable to open file  %s to commit the call record to.  Invalid path name, invalid permissions, or no space available?\n",outputfile_name.c_str());
 	else
 	{
 		// Format the call record and proceed from here...
@@ -247,7 +248,7 @@ void PddCDR::disconnect()
 	logchanvars = 0;
 	outputfile_path.clear();
 	chanvars_supp_list.clear();
-	switch_console_printf(SWITCH_CHANNEL_LOG,"Shutting down PddCDR...  Done!");	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Shutting down PddCDR...  Done!");	
 }
 
 AUTO_REGISTER_BASECDR(PddCDR);

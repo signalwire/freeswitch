@@ -28,6 +28,7 @@
  * Yossi Neiman <freeswitch AT cartissolutions.com>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Anthony Minessale II <anthmct@yahoo.com>
+ * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  *
  * Description: This C++ source file describes the CurlCDR class that handles processing CDRs to HTTP endpoint.
  * This is the standard Curl module, and has a list of predefined variables to log out which can be
@@ -106,14 +107,14 @@ std::string CurlCDR::postdata;
 
 void CurlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settings, switch_xml_t& param)
 {
-	switch_console_printf(SWITCH_CHANNEL_LOG, "CurlCDR::connect() - Loading configuration file.\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CurlCDR::connect() - Loading configuration file.\n");
 	activated = 0; // Set it as inactive initially
 	connectionstate = 0; // Initialize it to false to show that we aren't yet connected.
 
-    switch_console_printf(SWITCH_CHANNEL_LOG,"Checking to see if curlcdr is valid\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking to see if curlcdr is valid\n");
 	if ((settings = switch_xml_child(cfg, "curlcdr"))) 
 	{
-        switch_console_printf(SWITCH_CHANNEL_LOG,"curlcdr appears to be!!!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "curlcdr appears to be!!!\n");
 		int count_config_params = 0;  // Need to make sure all params are set before we load
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) 
 		{
@@ -168,7 +169,7 @@ void CurlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settin
 					convert_time = switch_time_exp_lt;
 				else
 				{
-					switch_console_printf(SWITCH_CHANNEL_LOG,"Invalid configuration parameter for timezone.  Possible values are utc and local.  You entered: %s\nDefaulting to local.\n",val);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid configuration parameter for timezone.  Possible values are utc and local.  You entered: %s\nDefaulting to local.\n", val);
 					convert_time = switch_time_exp_lt;
 				}
 			}
@@ -179,13 +180,13 @@ void CurlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settin
             if(strlen(gateway_url))
 			{
 				activated = 1;
-				switch_console_printf(SWITCH_CHANNEL_LOG,"CurlCDR activated");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CurlCDR activated");
 			}
             else
-                switch_console_printf(SWITCH_CHANNEL_LOG,"CurlCDR::connect(): You must specify a gateway_url to have the records logged to.\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "CurlCDR::connect(): You must specify a gateway_url to have the records logged to.\n");
 		}
 		else
-			switch_console_printf(SWITCH_CHANNEL_LOG,"CurlCDR::connect(): You did not specify the minimum parameters for using this module.  You must specify at least a gateway_url to have the records logged to.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "CurlCDR::connect(): You did not specify the minimum parameters for using this module.  You must specify at least a gateway_url to have the records logged to.\n");
 	}
 }
 
@@ -370,7 +371,7 @@ void CurlCDR::disconnect()
 	chanvars_fixed_list.clear();
 	chanvars_supp_list.clear();
 	connectionstate = 0;
-	switch_console_printf(SWITCH_CHANNEL_LOG,"Shutting down CurlCDR...  Done!");	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Shutting down CurlCDR...  Done!");	
 }
 
 AUTO_REGISTER_BASECDR(CurlCDR);

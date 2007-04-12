@@ -25,6 +25,7 @@
  * 
  * Yossi Neiman <freeswitch AT cartissolutions.com>
  * Ken Rice of Asteria Solutions Group, INC <ken AT asteriasgi.com>
+ * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  * 
  * Description: This C++ source file describes the XmlCDR class which handles formatting a CDR out to
  * individual text files in a XML format.
@@ -103,7 +104,7 @@ std::string XmlCDR::display_name = "XmlCDR - The rough implementation of XML CDR
 
 void XmlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settings, switch_xml_t& param)
 {
-	switch_console_printf(SWITCH_CHANNEL_LOG, "XmlCDR::connect() - Loading configuration file.\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "XmlCDR::connect() - Loading configuration file.\n");
 	activated = 0; // Set it as inactive initially
 	connectionstate = 0; // Initialize it to false to show that we aren't yet connected.
 	
@@ -137,11 +138,11 @@ void XmlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setting
 			}
 			else if (!strcmp(var, "chanvars_fixed"))
 			{
-				switch_console_printf(SWITCH_CHANNEL_LOG,"XmlCDR has no need for a fixed or supplemental list of channel variables due to the nature of the format.  Please use the setting parameter of \"chanvars\" instead and try again.\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "XmlCDR has no need for a fixed or supplemental list of channel variables due to the nature of the format.  Please use the setting parameter of \"chanvars\" instead and try again.\n");
 			}
 			else if (!strcmp(var, "chanvars_supp"))
 			{
-				switch_console_printf(SWITCH_CHANNEL_LOG,"XmlCDR has no need for a fixed or supplemental list of channel variables due to the nature of the format.  Please use the setting parameter of \"chanvars\" instead and try again.\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "XmlCDR has no need for a fixed or supplemental list of channel variables due to the nature of the format.  Please use the setting parameter of \"chanvars\" instead and try again.\n");
 			}
 			else if(!strcmp(var,"timezone"))
 			{
@@ -151,7 +152,7 @@ void XmlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setting
 					convert_time = switch_time_exp_lt;
 				else
 				{
-					switch_console_printf(SWITCH_CHANNEL_LOG,"Invalid configuration parameter for timezone.  Possible values are utc and local.  You entered: %s\nDefaulting to local.\n",val);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid configuration parameter for timezone.  Possible values are utc and local.  You entered: %s\nDefaulting to local.\n", val);
 					convert_time = switch_time_exp_lt;
 				}
 			}
@@ -160,7 +161,7 @@ void XmlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setting
 		if(count_config_params > 0)
 			activated = 1;
 		else
-			switch_console_printf(SWITCH_CHANNEL_LOG,"XmlCDR::connect(): You did not specify the minimum parameters for using this module.  You must specify at least a path to have the records logged to.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "XmlCDR::connect(): You did not specify the minimum parameters for using this module.  You must specify at least a path to have the records logged to.\n");
 	}
 }
 
@@ -170,10 +171,10 @@ bool XmlCDR::process_record()
 	outputfile.open(outputfile_name.c_str());
 	
 	if(!outputfile)
-		switch_console_printf(SWITCH_CHANNEL_LOG, "XmlCDR::process_record():  Unable to open file  %s to commit the call record to.  Invalid path name, invalid permissions, or no space available?\n",outputfile_name.c_str());
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "XmlCDR::process_record():  Unable to open file  %s to commit the call record to.  Invalid path name, invalid permissions, or no space available?\n", outputfile_name.c_str());
 	else
 	{
-		//switch_console_printf(SWITCH_CHANNEL_LOG, "XmlCDR::process_record():  Preping the CDR to %s.\n",outputfile_name.c_str());
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "XmlCDR::process_record():  Preping the CDR to %s.\n", outputfile_name.c_str());
 		// Format the call record and proceed from here...
 		outputfile << "<?xml version=\"1.0\"?>" << std::endl;
 		outputfile << "<document type=\"freeswitch-cdr/xml\">" << std::endl;
@@ -215,7 +216,7 @@ bool XmlCDR::process_record()
 		}
 		outputfile << "\t</chanvars>" << std::endl << "</document>" << std::endl << std::endl;
 
-		//switch_console_printf(SWITCH_CHANNEL_LOG, "XmlCDR::process_record():  Dumping the CDR to %s.\n",outputfile_name.c_str());
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "XmlCDR::process_record():  Dumping the CDR to %s.\n", outputfile_name.c_str());
 		retval = 1;
 	}
 	
@@ -249,7 +250,7 @@ void XmlCDR::disconnect()
 	logchanvars = 0;
 	outputfile_path.clear();
 	chanvars_supp_list.clear();
-	switch_console_printf(SWITCH_CHANNEL_LOG,"Shutting down XmlCDR...  Done!");	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Shutting down XmlCDR...  Done!");	
 }
 
 AUTO_REGISTER_BASECDR(XmlCDR);

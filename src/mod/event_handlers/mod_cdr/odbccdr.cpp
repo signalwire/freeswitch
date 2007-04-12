@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Yossi Neiman <freeswitch AT cartissolutions.com>
+ * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  *
  * Description: This C++ source file describes the OdbcCDR class which handles formatting a CDR out to
  * an ODBC backend using prepared statements.
@@ -201,7 +202,7 @@ void OdbcCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settin
 					convert_time = switch_time_exp_lt;
 				else
 				{
-					switch_console_printf(SWITCH_CHANNEL_LOG,"Invalid configuration parameter for timezone.  Possible values are utc and local.  You entered: %s\nDefaulting to local.\n",val);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid configuration parameter for timezone.  Possible values are utc and local.  You entered: %s\nDefaulting to local.\n", val);
 					convert_time = switch_time_exp_lt;
 				}
 			}
@@ -216,7 +217,7 @@ void OdbcCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settin
 		if (count_config_params==4)
 			activated = 1;
 		else
-			switch_console_printf(SWITCH_CHANNEL_LOG,"You did not specify the minimum parameters for using this module.  You must specify a DSN,hostname, username, password, and database to use OdbcCDR.  You only supplied %d parameters.\n",count_config_params);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "You did not specify the minimum parameters for using this module.  You must specify a DSN,hostname, username, password, and database to use OdbcCDR.  You only supplied %d parameters.\n", count_config_params);
 		
 		if(activated)
 		{
@@ -275,7 +276,7 @@ void OdbcCDR::connect_to_database()
 		ODBC_res = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &ODBC_env);
 		if ((ODBC_res != SQL_SUCCESS) && (ODBC_res != SQL_SUCCESS_WITH_INFO)) 
 		{
-			switch_console_printf(SWITCH_CHANNEL_LOG,"Error allocating a new ODBC handle.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error allocating a new ODBC handle.\n");
 			connectionstate = 0;
 		}
 	}
@@ -284,7 +285,7 @@ void OdbcCDR::connect_to_database()
 	
 	if ((ODBC_res != SQL_SUCCESS) && (ODBC_res != SQL_SUCCESS_WITH_INFO)) 
 	{
-		switch_console_printf(SWITCH_CHANNEL_LOG,"Error with ODBCSetEnv\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error with ODBCSetEnv\n");
 		SQLFreeHandle(SQL_HANDLE_ENV, ODBC_env);
 		connectionstate = 0;
 	}
@@ -293,7 +294,7 @@ void OdbcCDR::connect_to_database()
 
 	if ((ODBC_res != SQL_SUCCESS) && (ODBC_res != SQL_SUCCESS_WITH_INFO))
 	{
-		switch_console_printf(SWITCH_CHANNEL_LOG,"Error AllocHDB %d\n",ODBC_res);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error AllocHDB %d\n", ODBC_res);
 		SQLFreeHandle(SQL_HANDLE_ENV, ODBC_env);
 		connectionstate = 0;
 	}
@@ -306,14 +307,14 @@ void OdbcCDR::connect_to_database()
 	ODBC_res = SQLConnect(ODBC_con, (SQLCHAR*)dsn, SQL_NTS, (SQLCHAR*)username, SQL_NTS, (SQLCHAR*)password, SQL_NTS);
 	if ((ODBC_res != SQL_SUCCESS) && (ODBC_res != SQL_SUCCESS_WITH_INFO)) 
 	{
-		switch_console_printf(SWITCH_CHANNEL_LOG,"Error connecting to the ODBC database on %d\n",ODBC_res);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error connecting to the ODBC database on %d\n", ODBC_res);
 		SQLFreeHandle(SQL_HANDLE_DBC, ODBC_con);
 		SQLFreeHandle(SQL_HANDLE_ENV, ODBC_env);
 		connectionstate = 0;
 	}
 	else 
 	{
-		switch_console_printf(SWITCH_CHANNEL_LOG,"Connected to %s\n", dsn);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connected to %s\n", dsn);
 		connectionstate = 1;
 	}
 	
@@ -325,7 +326,7 @@ void OdbcCDR::connect_to_database()
 
 	if ((ODBC_res != SQL_SUCCESS) && (ODBC_res != SQL_SUCCESS_WITH_INFO))
 	{
-		switch_console_printf(SWITCH_CHANNEL_LOG,"Failure in allocating a prepared statement %d\n", ODBC_res);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failure in allocating a prepared statement %d\n", ODBC_res);
 		SQLFreeHandle(SQL_HANDLE_STMT, ODBC_stmt);
 	}
 		
@@ -333,7 +334,7 @@ void OdbcCDR::connect_to_database()
 
 	if ((ODBC_res != SQL_SUCCESS) && (ODBC_res != SQL_SUCCESS_WITH_INFO))
 	{
-		switch_console_printf(SWITCH_CHANNEL_LOG,"Error in preparing a statement: %d\n", ODBC_res);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error in preparing a statement: %d\n", ODBC_res);
 		SQLFreeHandle(SQL_HANDLE_STMT, ODBC_stmt);
 	}
 		
@@ -343,7 +344,7 @@ void OdbcCDR::connect_to_database()
 
 		if ((ODBC_res != SQL_SUCCESS) && (ODBC_res != SQL_SUCCESS_WITH_INFO))
 		{
-			switch_console_printf(SWITCH_CHANNEL_LOG,"Failure in allocating a prepared statement %d\n", ODBC_res);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failure in allocating a prepared statement %d\n", ODBC_res);
 			SQLFreeHandle(SQL_HANDLE_STMT, ODBC_stmt_chanvars);
 		}
 		
@@ -351,7 +352,7 @@ void OdbcCDR::connect_to_database()
 
 		if ((ODBC_res != SQL_SUCCESS) && (ODBC_res != SQL_SUCCESS_WITH_INFO))
 		{
-			switch_console_printf(SWITCH_CHANNEL_LOG,"Error in preparing a statement: %d\n", ODBC_res);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error in preparing a statement: %d\n", ODBC_res);
 			SQLFreeHandle(SQL_HANDLE_STMT, ODBC_stmt);
 		}
 	}
@@ -360,7 +361,7 @@ void OdbcCDR::connect_to_database()
 	
 	if ((ODBC_res != SQL_SUCCESS) && (ODBC_res != SQL_SUCCESS_WITH_INFO))
 	{
-		switch_console_printf(SWITCH_CHANNEL_LOG,"Failure in allocating a prepared statement %d\n", ODBC_res);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failure in allocating a prepared statement %d\n", ODBC_res);
 		SQLFreeHandle(SQL_HANDLE_STMT, ODBC_stmt_ping);
 	}
 	
@@ -368,7 +369,7 @@ void OdbcCDR::connect_to_database()
 	
 	if ((ODBC_res != SQL_SUCCESS) && (ODBC_res != SQL_SUCCESS_WITH_INFO))
 	{
-		switch_console_printf(SWITCH_CHANNEL_LOG,"Error in preparing a statement: %d\n", ODBC_res);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error in preparing a statement: %d\n", ODBC_res);
 		SQLFreeHandle(SQL_HANDLE_STMT, ODBC_stmt_ping);
 	}
 	
@@ -400,7 +401,7 @@ bool OdbcCDR::process_record()
 		if(ODBC_res != SQL_SUCCESS && ODBC_res != SQL_SUCCESS_WITH_INFO)
 		{
 			// Try to reconnect and reprepare
-			switch_console_printf(SWITCH_CHANNEL_LOG,"Error pinging the ODBC backend.  Attempt #%d to reconnect.\n",count+1);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error pinging the ODBC backend.  Attempt #%d to reconnect.\n", count+1);
 			connect_to_database();
 		}
 	}
@@ -502,7 +503,7 @@ bool OdbcCDR::process_record()
 					break;
 				}
 				default:
-					switch_console_printf(SWITCH_CHANNEL_LOG,"We should not get to this point in this switch/case statement.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "We should not get to this point in this switch/case statement.\n");
 			}
 			i++;
 		}
@@ -585,7 +586,7 @@ bool OdbcCDR::process_record()
 					break;
 				}
 				default:
-					switch_console_printf(SWITCH_CHANNEL_LOG,"We should not get to this point in this switch/case statement.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "We should not get to this point in this switch/case statement.\n");
 			}
 		}
 	}

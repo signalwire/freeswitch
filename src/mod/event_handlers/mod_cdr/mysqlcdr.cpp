@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Yossi Neiman <freeswitch AT cartissolutions.com>
+ * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  *
  * Description: This C++ source file describes the MysqlCDR class which handles formatting a CDR out to
  * a MySQL 4.1.x or greater server using prepared statements.
@@ -183,7 +184,7 @@ void MysqlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setti
 					convert_time = switch_time_exp_lt;
 				else
 				{
-					switch_console_printf(SWITCH_CHANNEL_LOG,"Invalid configuration parameter for timezone.  Possible values are utc and local.  You entered: %s\nDefaulting to local.\n",val);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid configuration parameter for timezone.  Possible values are utc and local.  You entered: %s\nDefaulting to local.\n", val);
 					convert_time = switch_time_exp_lt;
 				}
 			}
@@ -192,7 +193,7 @@ void MysqlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setti
 		if (count_config_params==4)
 			activated = 1;
 		else
-			switch_console_printf(SWITCH_CHANNEL_LOG,"You did not specify the minimum parameters for using this module.  You must specify a hostname, username, password, and database to use MysqlCDR.  You only supplied %d parameters.\n",count_config_params);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You did not specify the minimum parameters for using this module.  You must specify a hostname, username, password, and database to use MysqlCDR.  You only supplied %d parameters.\n", count_config_params);
 		
 		if(activated)
 		{
@@ -241,7 +242,7 @@ void MysqlCDR::connect_to_database()
 	if(mysql_real_connect(conn,hostname,username,password,dbname,0,NULL,0) == NULL)
 	{
 		const char *error1 = mysql_error(conn);
-		switch_console_printf(SWITCH_CHANNEL_LOG,"Cannot connect to MySQL Server.  The error was: %s\n",error1);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot connect to MySQL Server.  The error was: %s\n", error1);
 	}
 	else
 		connectionstate = 1;
@@ -446,7 +447,7 @@ bool MysqlCDR::process_record()
 					break;
 				}
 				default:
-					switch_console_printf(SWITCH_CHANNEL_LOG,"We should not get to this point in this switch/case statement.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "We should not get to this point in this switch/case statement.\n");
 			}
 			i++;
 		}
@@ -466,13 +467,13 @@ bool MysqlCDR::process_record()
 				case CR_SERVER_GONE_ERROR:
 				case CR_SERVER_LOST:
 				{
-					switch_console_printf(SWITCH_CHANNEL_LOG,"We lost connection to the MySQL server.  Trying to reconnect.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "We lost connection to the MySQL server.  Trying to reconnect.\n");
 					connect_to_database();
 					break;
 				}
 				default:
 				{
-					switch_console_printf(SWITCH_CHANNEL_LOG,"We have encountered an unknown error when pinging the MySQL server.  Attempting to reconnect anyways.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "We have encountered an unknown error when pinging the MySQL server.  Attempting to reconnect anyways.\n");
 					connect_to_database();
 				}
 			}
@@ -485,10 +486,10 @@ bool MysqlCDR::process_record()
 			if(mysql_stmt_error_code != 0)
 			{
 				errorstate = 1;
-				switch_console_printf(SWITCH_CHANNEL_LOG,"MysqlCDR::process_record() - Statement executed? Error: %d\n",mysql_stmt_error_code);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MysqlCDR::process_record() - Statement executed? Error: %d\n", mysql_stmt_error_code);
 			
 				const char* mysql_stmt_error_string = mysql_stmt_error(stmt);
-				switch_console_printf(SWITCH_CHANNEL_LOG,"MySQL encountered error: %s\n",mysql_stmt_error_string);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MySQL encountered error: %s\n", mysql_stmt_error_string);
 			}
 			else
 				errorstate = 0;
@@ -585,7 +586,7 @@ bool MysqlCDR::process_record()
 					break;
 				}
 				default:
-					switch_console_printf(SWITCH_CHANNEL_LOG,"We should not get to this point in this switch/case statement.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "We should not get to this point in this switch/case statement.\n");
 			}
 			
 			bool* tempbool = (bool*) temp_chanvars_holder.front();

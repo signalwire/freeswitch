@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Yossi Neiman <freeswitch AT cartissolutions.com>
+ * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  *
  * Description: This C++ source file describes the BaseCDR class that all other CDR classes inherit from.
  * It handles the bulk of the processing of data from the switch_channel_t objects.
@@ -214,7 +215,7 @@ void BaseCDR::parse_channel_variables_xconfig(std::string& unparsed,std::list<st
 		{
 			if(fixed)
 			{
-				switch_console_printf(SWITCH_CHANNEL_LOG,"Wildcards are not allow in the fixed chanvars list.  Item removed.\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Wildcards are not allow in the fixed chanvars list.  Item removed.\n");
 				iItr = chanvarlist.erase(iItr);
 			}
 			else
@@ -271,19 +272,19 @@ void BaseCDR::parse_channel_variables_xconfig(std::string& unparsed,std::list<st
 						sql_type = CDR_TINY;
 						break;
 					default:
-						switch_console_printf(SWITCH_CHANNEL_LOG,"Valid fixed channel variable types are x (decimal), d (double), i (integer), t (tiny), s (string).  You tried to give a type of %s to chanvar %s.\nReverting this chanvar type to a string type.\n",tempstring2.c_str(),tempstring.c_str());
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Valid fixed channel variable types are x (decimal), d (double), i (integer), t (tiny), s (string).  You tried to give a type of %s to chanvar %s.\nReverting this chanvar type to a string type.\n", tempstring2.c_str(), tempstring.c_str());
 						sql_type = CDR_STRING;
 				}
 			}
 			else
 			{
-				switch_console_printf(SWITCH_CHANNEL_LOG,"Valid fixed channel variable types are x (decimal), d (double), i (integer), t (tiny), s (string).  You tried to give a type of %s to chanvar %s.\nReverting this chanvar type to a string type.\n",tempstring2.c_str(),tempstring.c_str());
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Valid fixed channel variable types are x (decimal), d (double), i (integer), t (tiny), s (string).  You tried to give a type of %s to chanvar %s.\nReverting this chanvar type to a string type.\n", tempstring2.c_str(), tempstring.c_str());
 				sql_type = CDR_STRING;
 			}
 		}
 		else
 		{
-			switch_console_printf(SWITCH_CHANNEL_LOG,"No parameter set, for channel variable %s, using default type of string.\n",iItr->c_str());
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No parameter set, for channel variable %s, using default type of string.\n", iItr->c_str());
 			sql_type = CDR_STRING;
 			tempstring = *iItr;
 		}

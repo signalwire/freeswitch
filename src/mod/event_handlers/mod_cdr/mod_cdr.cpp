@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Yossi Neiman <freeswitch AT cartissolutions.com>
+ * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  *
  * Description: This source file describes the most basic portions of the CDR module.  These are the functions
  * and structures that the Freeswitch core looks for when opening up the DSO file to create the load, shutdown
@@ -130,7 +131,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) 
 	{
-		switch_console_printf(SWITCH_CHANNEL_LOG, "OH OH - Can't swim, no pool\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH - Can't swim, no pool\n");
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -144,7 +145,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 {
 	RUNNING = 1;
-	switch_console_printf(SWITCH_CHANNEL_LOG, "mod_cdr made it to runtime.  Wee!\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mod_cdr made it to runtime.  Wee!\n");
 	newcdrcontainer->process_records();
 	
 	return RUNNING ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_TERM;
