@@ -117,7 +117,7 @@ static int db_callback(void *pArg, int argc, char **argv, char **columnNames)
 static JSBool db_exec(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct db_obj *dbo = JS_GetPrivate(cx, obj);
-	*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
+	*rval = INT_TO_JSVAL(0);
 
 	if (argc > 0) {
 		char *sql = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
@@ -137,7 +137,11 @@ static JSBool db_exec(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, 
 		if (err) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error %s\n", err);
 			switch_core_db_free(err);
-			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+			*rval = INT_TO_JSVAL(-1);
+		} else {
+			int count = switch_core_db_changes(dbo->db);
+
+			*rval = INT_TO_JSVAL(count);
 		}
 	}
 	return JS_TRUE;

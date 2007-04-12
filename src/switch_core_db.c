@@ -142,6 +142,10 @@ SWITCH_DECLARE(void) switch_core_db_free(char *z)
 	sqlite3_free(z);
 }
 
+SWITCH_DECLARE(int) switch_core_db_changes(switch_core_db_t *db) {
+    return sqlite3_changes(db);
+}
+
 SWITCH_DECLARE(char *) switch_mprintf(const char *zFormat, ...)
 {
 	va_list ap;

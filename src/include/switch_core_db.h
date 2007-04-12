@@ -457,6 +457,11 @@ SWITCH_DECLARE(void) switch_core_db_free_table(char **result);
  */
 SWITCH_DECLARE(void) switch_core_db_free(char *z);
 
+/**
+ * Call this routine to find the number of rows changed by the last statement.
+ */
+SWITCH_DECLARE(int) switch_core_db_changes(switch_core_db_t *db);
+
 /** Return values for switch_core_db_exec() and switch_core_db_step()*/
 #define SWITCH_CORE_DB_OK           0	/* Successful result */
 /* beginning-of-error-codes */
