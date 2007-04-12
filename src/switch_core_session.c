@@ -671,6 +671,9 @@ SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session_t **session
 	switch_channel_uninit((*session)->channel);
 
 	pool = (*session)->pool;
+#ifndef NDEBUG
+	memset(*session, 0, sizeof(switch_core_session_t));
+#endif
 	*session = NULL;
 	apr_pool_destroy(pool);
 	pool = NULL;
