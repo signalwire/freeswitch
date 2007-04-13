@@ -146,6 +146,7 @@ struct mod_sofia_globals {
 	switch_mutex_t *hash_mutex;
 	uint32_t callid;
 	int32_t running;
+	int32_t threads;
 	switch_mutex_t *mutex;
 	char guess_ip[80];
 };

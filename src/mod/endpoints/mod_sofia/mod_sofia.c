@@ -1002,8 +1002,13 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	switch_core_hash_init(&mod_sofia_globals.gateway_hash, module_pool);
 	switch_mutex_init(&mod_sofia_globals.hash_mutex, SWITCH_MUTEX_NESTED, module_pool);
 
-	config_sofia(0);
+	if (config_sofia(0) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_GENERR;
+	}
 
+	switch_mutex_lock(mod_sofia_globals.mutex);
+	mod_sofia_globals.running = 1;
+	switch_mutex_unlock(mod_sofia_globals.mutex);
 
 	if (switch_event_bind((char *) modname, SWITCH_EVENT_PRESENCE_IN, SWITCH_EVENT_SUBCLASS_ANY, sofia_presence_event_handler, NULL)
 		!= SWITCH_STATUS_SUCCESS) {
@@ -1045,17 +1050,21 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 {
-
+	int sanity = 0;
+	
 	sofia_presence_cancel();
 
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	if (mod_sofia_globals.running == 1) {
-		mod_sofia_globals.running = -1;
+		mod_sofia_globals.running = 0;
 	}
 	switch_mutex_unlock(mod_sofia_globals.mutex);
 
-	while (mod_sofia_globals.running) {
+	while (mod_sofia_globals.threads) {
 		switch_yield(1000);
+		if (++sanity >= 5000) {
+			break;
+		}
 	}
 
 	su_deinit();

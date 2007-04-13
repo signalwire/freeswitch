@@ -240,6 +240,10 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	uint32_t gateway_loops = 0;
 	switch_event_t *s_event;
 
+	switch_mutex_lock(mod_sofia_globals.mutex);
+	mod_sofia_globals.threads++;
+	switch_mutex_unlock(mod_sofia_globals.mutex);
+
 	profile->s_root = su_root_create(NULL);
 	profile->home = su_home_new(sizeof(*profile->home));
 
@@ -287,7 +291,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	if (!sofia_glue_init_sql(profile)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
-		return NULL;
+		goto end;
 	}
 
 
@@ -350,8 +354,11 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	su_root_destroy(profile->s_root);
 	pool = profile->pool;
 	switch_core_destroy_memory_pool(&pool);
+
+ end:
+	
 	switch_mutex_lock(mod_sofia_globals.mutex);
-	mod_sofia_globals.running = 0;
+	mod_sofia_globals.threads--;
 	switch_mutex_unlock(mod_sofia_globals.mutex);
 
 	return NULL;
@@ -402,9 +409,7 @@ switch_status_t config_sofia(int reload)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	sofia_profile_t *profile = NULL;
 	char url[512] = "";
-	switch_mutex_lock(mod_sofia_globals.mutex);
-	mod_sofia_globals.running = 1;
-	switch_mutex_unlock(mod_sofia_globals.mutex);
+
 
 	if (!reload) {
 		su_init();
