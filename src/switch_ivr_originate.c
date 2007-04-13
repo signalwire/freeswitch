@@ -156,7 +156,7 @@ static void launch_collect_thread(struct key_collect *collect)
 
 static uint8_t check_channel_status(switch_channel_t **peer_channels,
 									switch_core_session_t **peer_sessions,
-									uint32_t len, int32_t *idx, uint32_t * hups, char *file, char *key, uint8_t early_ok, uint8_t * ring_ready)
+									uint32_t len, int32_t *idx, uint32_t * hups, char *file, char *key, uint8_t early_ok, uint8_t *ring_ready)
 {
 
 	uint32_t i;
@@ -901,9 +901,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				if (!peer_channels[i]) {
 					continue;
 				}
+				if (status == SWITCH_STATUS_SUCCESS && bleg && *bleg && *bleg == peer_sessions[i]) {
+					continue;
+				}
 				switch_core_session_rwunlock(peer_sessions[i]);
 			}
-
+			
 			if (status == SWITCH_STATUS_SUCCESS) {
 				goto outer_for;
 			}
@@ -912,5 +915,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
   outer_for:
 	switch_safe_free(loop_data);
 	switch_safe_free(odata);
+
+	if (bleg && status != SWITCH_STATUS_SUCCESS) {
+		*bleg = NULL;
+	}
+
 	return status;
 }

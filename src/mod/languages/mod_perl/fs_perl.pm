@@ -76,4 +76,8 @@ package fs_perl;
 
 package fs_perl;
 
+*FREESWITCH_PEN = *fs_perlc::FREESWITCH_PEN;
+*FREESWITCH_OID_PREFIX = *fs_perlc::FREESWITCH_OID_PREFIX;
+*FREESWITCH_ITAD = *fs_perlc::FREESWITCH_ITAD;
+*__EXTENSIONS__ = *fs_perlc::__EXTENSIONS__;
 1;

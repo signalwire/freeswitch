@@ -242,11 +242,6 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 
-	if (tech_pvt->home) {
-		su_home_unref(tech_pvt->home);
-		tech_pvt->home = NULL;
-	}
-
 	if (tech_pvt->sofia_private) {
 		*tech_pvt->sofia_private->uuid = '\0';
 	}
@@ -847,6 +842,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		sofia_glue_terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
 		goto done;
 	}
+	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(nsession));
 
 	data = switch_core_session_strdup(nsession, outbound_profile->destination_number);
 	profile_name = data;

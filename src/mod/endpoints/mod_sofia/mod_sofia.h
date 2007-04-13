@@ -54,11 +54,6 @@ struct sofia_profile;
 typedef struct sofia_profile sofia_profile_t;
 #define NUA_MAGIC_T sofia_profile_t
 
-struct sofia_private {
-	char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
-	outbound_reg_t *gateway;
-};
-
 typedef struct sofia_private sofia_private_t;
 
 struct private_object;
@@ -84,6 +79,13 @@ typedef struct private_object private_object_t;
 #include <sofia-sip/su_log.h>
 #include <sofia-sip/nea.h>
 #include <sofia-sip/msg_addr.h>
+
+struct sofia_private {
+	char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	outbound_reg_t *gateway;
+	su_home_t *home;
+};
+
 
 
 #define set_param(ptr,val) if (ptr) {free(ptr) ; ptr = NULL;} if (val) {ptr = strdup(val);}
@@ -305,7 +307,6 @@ struct private_object {
 	switch_payload_t bcng_pt;
 	nua_handle_t *nh;
 	nua_handle_t *nh2;
-	su_home_t *home;
 	sip_contact_t *contact;
 };
 
@@ -330,95 +331,95 @@ typedef enum {
 /*************************************************************************************************************************************************************/
 
 
-switch_status_t sofia_glue_activate_rtp(private_object_t * tech_pvt);
+switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt);
 
-void sofia_glue_deactivate_rtp(private_object_t * tech_pvt);
+void sofia_glue_deactivate_rtp(private_object_t *tech_pvt);
 
-void sofia_glue_set_local_sdp(private_object_t * tech_pvt, char *ip, uint32_t port, char *sr, int force);
+void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, char *sr, int force);
 
-void sofia_glue_sofia_glue_tech_set_codecs(private_object_t * tech_pvt);
+void sofia_glue_sofia_glue_tech_set_codecs(private_object_t *tech_pvt);
 
-void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t * profile, private_object_t * tech_pvt, const char *channame);
+void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *profile, private_object_t *tech_pvt, const char *channame);
 
 void sofia_glue_terminate_session(switch_core_session_t **session, switch_call_cause_t cause, int line);
 
-switch_status_t sofia_glue_tech_choose_port(private_object_t * tech_pvt);
+switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt);
 
 switch_status_t sofia_glue_do_invite(switch_core_session_t *session);
 
-uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t * sdp);
+uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp);
 
-void sofia_presence_establish_presence(sofia_profile_t * profile);
+void sofia_presence_establish_presence(sofia_profile_t *profile);
 
 void sofia_handle_sip_i_state(int status,
 				 char const *phrase,
-				 nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[]);
+				 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 
 
-void sofia_handle_sip_i_refer(nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[]);
+void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[]);
 
-void sofia_handle_sip_i_info(nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[]);
+void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[]);
 
-void sofia_handle_sip_i_invite(nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[]);
+void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 
-void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[]);
+void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 
 void sofia_event_callback(nua_event_t event,
 					int status,
 					char const *phrase,
-					nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[]);
+					nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 
 
-void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t * thread, void *obj);
+void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void *obj);
 
-void launch_sofia_profile_thread(sofia_profile_t * profile);
+void launch_sofia_profile_thread(sofia_profile_t *profile);
 
 switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint);
-void sofia_glue_tech_absorb_sdp(private_object_t * tech_pvt);
-switch_status_t sofia_glue_tech_media(private_object_t * tech_pvt, char *r_sdp);
-char *sofia_reg_find_reg_url(sofia_profile_t * profile, const char *user, const char *host, char *val, switch_size_t len);
+void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt);
+switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, char *r_sdp);
+char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const char *host, char *val, switch_size_t len);
 void event_handler(switch_event_t *event);
 void sofia_presence_event_handler(switch_event_t *event);
 void sofia_presence_mwi_event_handler(switch_event_t *event);
 void sofia_presence_cancel(void);
 switch_status_t config_sofia(int reload);
-auth_res_t parse_auth(sofia_profile_t * profile, sip_authorization_t const *authorization, const char *regstr, char *np, size_t nplen);
+auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, const char *regstr, char *np, size_t nplen);
 void sofia_reg_handle_sip_r_challenge(int status,
 					 char const *phrase,
-					 nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[]);
+					 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[]);
 void sofia_reg_handle_sip_r_register(int status,
 					char const *phrase,
-					nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[]);
+					nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 void sofia_handle_sip_i_options(int status,
 				   char const *phrase,
-				   nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[]);
-void sofia_presence_handle_sip_i_publish(nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[]);
+				   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
+void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 void sofia_presence_handle_sip_i_message(int status,
 				   char const *phrase,
-				   nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[]);
+				   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 void sofia_presence_handle_sip_r_subscribe(int status,
 					 char const *phrase,
-					 nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[]);
+					 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 void sofia_presence_handle_sip_i_subscribe(int status,
 					 char const *phrase,
-					 nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[]);
+					 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 
 sofia_profile_t *sofia_glue_find_profile(char *key);
-void sofia_glue_add_profile(char *key, sofia_profile_t * profile);
+void sofia_glue_add_profile(char *key, sofia_profile_t *profile);
 void sofia_glue_execute_sql(sofia_profile_t *profile, switch_bool_t master, char *sql, switch_mutex_t *mutex);
-void sofia_reg_check_expire(sofia_profile_t * profile, time_t now);
-void sofia_reg_check_gateway(sofia_profile_t * profile, time_t now);
-void sofia_reg_unregister(sofia_profile_t * profile);
+void sofia_reg_check_expire(sofia_profile_t *profile, time_t now);
+void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now);
+void sofia_reg_unregister(sofia_profile_t *profile);
 switch_status_t sofia_glue_ext_address_lookup(char **ip, switch_port_t *port, char *sourceip, switch_memory_pool_t *pool);
 outbound_reg_t *sofia_reg_find_gateway(char *key);
-void sofia_reg_add_gateway(char *key, outbound_reg_t * gateway);
-void sofia_glue_pass_sdp(private_object_t * tech_pvt, char *sdp);
+void sofia_reg_add_gateway(char *key, outbound_reg_t *gateway);
+void sofia_glue_pass_sdp(private_object_t *tech_pvt, char *sdp);
 int sofia_glue_get_user_host(char *in, char **user, char **host);
 switch_call_cause_t sofia_glue_sip_cause_to_freeswitch(int status);
 void sofia_glue_do_xfer_invite(switch_core_session_t *session);
-uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sip_t const *sip, sofia_regtype_t regtype, char *key, uint32_t keylen);
+uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, sofia_regtype_t regtype, char *key, uint32_t keylen);
 const switch_endpoint_interface_t sofia_endpoint_interface;
-void sofia_presence_set_chat_hash(private_object_t * tech_pvt, sip_t const *sip);
+void sofia_presence_set_chat_hash(private_object_t *tech_pvt, sip_t const *sip);
 switch_status_t sofia_on_hangup(switch_core_session_t *session);
 char *sofia_glue_get_url_from_contact(char *buf, uint8_t to_dup);
 void sofia_presence_set_hash_key(char *hash_key, int32_t len, sip_t const *sip);

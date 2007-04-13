@@ -590,7 +590,7 @@ static switch_status_t pause_function(char *cmd, switch_core_session_t *isession
 static switch_status_t originate_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
 {
 	switch_channel_t *caller_channel;
-	switch_core_session_t *caller_session;
+	switch_core_session_t *caller_session = NULL;
 	char *argv[7] = { 0 };
 	int i = 0, x, argc = 0;
 	char *aleg, *exten, *dp, *context, *cid_name, *cid_num;
@@ -682,6 +682,10 @@ static switch_status_t originate_function(char *cmd, switch_core_session_t *ises
 		stream->write_function(stream, "success: %s\n", switch_core_session_get_uuid(caller_session));
 	} else {
 		stream->write_function(stream, "Created Session: %s\n", switch_core_session_get_uuid(caller_session));
+	}
+
+	if (caller_session) {
+		switch_core_session_rwunlock(caller_session);
 	}
 
 	return SWITCH_STATUS_SUCCESS;;

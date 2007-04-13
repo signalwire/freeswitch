@@ -81,7 +81,8 @@ typedef struct sm_loadable_module sm_loadable_module_t;
 
 typedef enum {
 	S_HUP = (1 << 0),
-	S_FREE = (1 << 1)
+	S_FREE = (1 << 1),
+	S_RDLOCK = (1 << 2)
 } session_flag_t;
 
 struct input_callback_state {
@@ -2146,7 +2147,7 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		}
 
 		jss->session = peer_session;
-		jss->flags = 0;
+		jss->flags = S_RDLOCK;
 
 		*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
 
@@ -2177,6 +2178,10 @@ static void session_destroy(JSContext * cx, JSObject * obj)
 				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 			}
 
+			if (jss->session && switch_test_flag(jss, S_RDLOCK)) {
+				switch_core_session_rwunlock(jss->session);
+			}
+			
 			if (switch_test_flag(jss, S_FREE)) {
 				free(jss);
 			}

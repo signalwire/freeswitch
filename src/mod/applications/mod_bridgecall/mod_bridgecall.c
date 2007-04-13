@@ -39,7 +39,7 @@ static const char modname[] = "mod_bridgecall";
 static void audio_bridge_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *caller_channel;
-	switch_core_session_t *peer_session;
+	switch_core_session_t *peer_session = NULL;
 	unsigned int timelimit = 60;
 	char *var;
 	uint8_t no_media_bridge = 0;
@@ -98,7 +98,7 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 				if (bad) {
 					switch_channel_hangup(caller_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					switch_channel_hangup(peer_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-					return;
+					goto end;
 				}
 			}
 
@@ -112,6 +112,10 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 			} else {
 				switch_ivr_multi_threaded_bridge(session, peer_session, NULL, NULL, NULL);
 			}
+		}
+	end:
+		if (peer_session) {
+			switch_core_session_rwunlock(peer_session);
 		}
 	}
 }

@@ -283,6 +283,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
   \param cid_num_override override the caller id number
   \param caller_profile_override override the entire calling caller profile
   \return SWITCH_STATUS_SUCCESS if bleg is a running session.
+  \note bleg will be read locked which must be unlocked with switch_core_session_rwunlock() before losing scope
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *session,
 													 switch_core_session_t **bleg,

@@ -139,7 +139,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t por
 	tech_pvt->local_sdp_str = switch_core_session_strdup(tech_pvt->session, buf);
 }
 
-void sofia_glue_sofia_glue_tech_set_codecs(private_object_t * tech_pvt)
+void sofia_glue_sofia_glue_tech_set_codecs(private_object_t *tech_pvt)
 {
 	switch_channel_t *channel;
 	char *abs, *codec_string = NULL;
@@ -195,7 +195,7 @@ void sofia_glue_sofia_glue_tech_set_codecs(private_object_t * tech_pvt)
 }
 
 
-void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t * profile, private_object_t * tech_pvt, const char *channame)
+void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *profile, private_object_t *tech_pvt, const char *channame)
 {
 	switch_channel_t *channel;
 	char name[256];
@@ -209,7 +209,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 
 	//switch_channel_set_flag(channel, CF_ACCEPT_CNG);
 
-	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+
 	switch_mutex_lock(tech_pvt->flag_mutex);
 	tech_pvt->flags = profile->flags;
 	switch_mutex_unlock(tech_pvt->flag_mutex);
@@ -227,8 +227,6 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	}
 
 	tech_pvt->session = session;
-	tech_pvt->home = su_home_new(sizeof(*tech_pvt->home));
-
 	switch_core_session_set_private(session, tech_pvt);
 
 
@@ -288,7 +286,7 @@ switch_status_t sofia_glue_ext_address_lookup(char **ip, switch_port_t *port, ch
 }
 
 
-switch_status_t sofia_glue_tech_choose_port(private_object_t * tech_pvt)
+switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt)
 {
 	char *ip = tech_pvt->profile->rtpip;
 	switch_channel_t *channel;
@@ -428,6 +426,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			abort();
 		}
 		memset(tech_pvt->sofia_private, 0, sizeof(*tech_pvt->sofia_private));
+		tech_pvt->sofia_private->home = su_home_new(sizeof(*tech_pvt->sofia_private->home));
 		switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));
 		nua_handle_bind(tech_pvt->nh, tech_pvt->sofia_private);
 
@@ -530,7 +529,7 @@ void sofia_glue_do_xfer_invite(switch_core_session_t *session)
 
 }
 
-void sofia_glue_tech_absorb_sdp(private_object_t * tech_pvt)
+void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt)
 {
 	switch_channel_t *channel;
 	char *sdp_str;
@@ -544,7 +543,7 @@ void sofia_glue_tech_absorb_sdp(private_object_t * tech_pvt)
 		sdp_media_t *m;
 		sdp_connection_t *connection;
 
-		if ((parser = sdp_parse(tech_pvt->home, sdp_str, (int) strlen(sdp_str), 0))) {
+		if ((parser = sdp_parse(tech_pvt->sofia_private->home, sdp_str, (int) strlen(sdp_str), 0))) {
 			if ((sdp = sdp_session(parser))) {
 				for (m = sdp->sdp_media; m; m = m->m_next) {
 					if (m->m_type != sdp_media_audio) {
@@ -571,7 +570,7 @@ void sofia_glue_tech_absorb_sdp(private_object_t * tech_pvt)
 	}
 }
 
-void sofia_glue_deactivate_rtp(private_object_t * tech_pvt)
+void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 {
 	int loops = 0;				//, sock = -1;
 	if (switch_rtp_ready(tech_pvt->rtp_session)) {
@@ -583,7 +582,7 @@ void sofia_glue_deactivate_rtp(private_object_t * tech_pvt)
 	}
 }
 
-switch_status_t sofia_glue_tech_set_codec(private_object_t * tech_pvt, int force)
+switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 {
 	switch_channel_t *channel;
 
@@ -654,7 +653,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t * tech_pvt, int force
 }
 
 
-switch_status_t sofia_glue_activate_rtp(private_object_t * tech_pvt)
+switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt)
 {
 	int bw, ms;
 	switch_channel_t *channel;
@@ -773,9 +772,9 @@ switch_status_t sofia_glue_activate_rtp(private_object_t * tech_pvt)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status_t sofia_glue_tech_media(private_object_t * tech_pvt, char *r_sdp)
+switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, char *r_sdp)
 {
-	sdp_parser_t *parser = sdp_parse(tech_pvt->home, r_sdp, (int) strlen(r_sdp), 0);
+	sdp_parser_t *parser = sdp_parse(tech_pvt->sofia_private->home, r_sdp, (int) strlen(r_sdp), 0);
 	sdp_session_t *sdp;
 	uint8_t match = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
@@ -812,7 +811,7 @@ switch_status_t sofia_glue_tech_media(private_object_t * tech_pvt, char *r_sdp)
 
 
 
-uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t * sdp)
+uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 {
 	uint8_t match = 0;
 	switch_payload_t te = 0, cng_pt = 0;
@@ -1062,7 +1061,7 @@ switch_call_cause_t sofia_glue_sip_cause_to_freeswitch(int status)
 }
 
 
-void sofia_glue_pass_sdp(private_object_t * tech_pvt, char *sdp)
+void sofia_glue_pass_sdp(private_object_t *tech_pvt, char *sdp)
 {
 	char *val;
 	switch_channel_t *channel;
@@ -1120,7 +1119,7 @@ sofia_profile_t *sofia_glue_find_profile(char *key)
 	return profile;
 }
 
-void sofia_glue_add_profile(char *key, sofia_profile_t * profile)
+void sofia_glue_add_profile(char *key, sofia_profile_t *profile)
 {
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	switch_core_hash_insert(mod_sofia_globals.profile_hash, key, profile);

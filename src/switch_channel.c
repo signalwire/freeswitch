@@ -745,12 +745,12 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", "%s", switch_channel_get_name(channel));
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID", "%s", switch_core_session_get_uuid(channel->session));
 
-	if ((codec = switch_core_session_get_read_codec(channel->session))) {
+	if ((codec = switch_core_session_get_read_codec(channel->session)) && codec->implementation) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Name", "%s", switch_str_nil(codec->implementation->iananame));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Rate", "%u", codec->implementation->samples_per_second);
 	}
 
-	if ((codec = switch_core_session_get_write_codec(channel->session))) {
+	if ((codec = switch_core_session_get_write_codec(channel->session)) && codec->implementation) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Name", "%s", switch_str_nil(codec->implementation->iananame));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Rate", "%u", codec->implementation->samples_per_second);
 	}

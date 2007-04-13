@@ -3476,12 +3476,12 @@ static switch_status_t conference_outcall(conference_obj_t * conference,
 										  switch_core_session_t *session,
 										  char *bridgeto, uint32_t timeout, char *flags, char *cid_name, char *cid_num, switch_call_cause_t *cause)
 {
-	switch_core_session_t *peer_session;
+	switch_core_session_t *peer_session = NULL;
 	switch_channel_t *peer_channel;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *caller_channel = NULL;
 	char appdata[512];
-
+	int rdlock = 0;
 
 	*cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
@@ -3498,7 +3498,7 @@ static switch_status_t conference_outcall(conference_obj_t * conference,
 
 		peer_channel = switch_core_session_get_channel(peer_session);
 		assert(peer_channel != NULL);
-
+		rdlock = 1;
 		goto callup;
 	}
 
@@ -3534,7 +3534,7 @@ static switch_status_t conference_outcall(conference_obj_t * conference,
 		goto done;
 	}
 
-
+	rdlock = 1;
 	peer_channel = switch_core_session_get_channel(peer_session);
 	assert(peer_channel != NULL);
 
@@ -3585,6 +3585,10 @@ static switch_status_t conference_outcall(conference_obj_t * conference,
 	if (conference) {
 		switch_thread_rwlock_unlock(conference->rwlock);
 	}
+	if (rdlock && peer_session) {
+		switch_core_session_rwunlock(peer_session);
+	}
+
 	return status;
 }
 

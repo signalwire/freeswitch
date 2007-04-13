@@ -128,7 +128,7 @@ void sofia_presence_cancel(void)
 	}
 }
 
-void sofia_presence_establish_presence(sofia_profile_t * profile)
+void sofia_presence_establish_presence(sofia_profile_t *profile)
 {
 
 	if (sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, 
@@ -612,7 +612,7 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 
 void sofia_presence_handle_sip_i_subscribe(int status,
 							char const *phrase,
-							nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[])
+							nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
 {
 	if (sip) {
 		long exp, exp_raw;
@@ -792,12 +792,12 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 void sofia_presence_handle_sip_r_subscribe(int status,
 							char const *phrase,
-							nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[])
+							nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
 {
 
 }
 
-void sofia_presence_handle_sip_i_publish(nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[])
+void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
 {
 	if (sip) {
 		sip_from_t const *from = sip->sip_from;
@@ -917,7 +917,7 @@ void sofia_presence_set_hash_key(char *hash_key, int32_t len, sip_t const *sip)
 
 void sofia_presence_handle_sip_i_message(int status,
 						  char const *phrase,
-						  nua_t * nua, sofia_profile_t * profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[])
+						  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
 {
 	if (sip) {
 		sip_from_t const *from = sip->sip_from;
@@ -1028,7 +1028,7 @@ void sofia_presence_handle_sip_i_message(int status,
 	}
 }
 
-void sofia_presence_set_chat_hash(private_object_t * tech_pvt, sip_t const *sip)
+void sofia_presence_set_chat_hash(private_object_t *tech_pvt, sip_t const *sip)
 {
 	char hash_key[256] = "";
 	char buf[512];
@@ -1038,7 +1038,7 @@ void sofia_presence_set_chat_hash(private_object_t * tech_pvt, sip_t const *sip)
 	}
 
 	if (sofia_reg_find_reg_url(tech_pvt->profile, sip->sip_from->a_url->url_user, sip->sip_from->a_url->url_host, buf, sizeof(buf))) {
-		tech_pvt->chat_from = sip_header_as_string(tech_pvt->home, (const sip_header_t *) sip->sip_to);
+		tech_pvt->chat_from = sip_header_as_string(tech_pvt->sofia_private->home, (const sip_header_t *) sip->sip_to);
 		tech_pvt->chat_to = switch_core_session_strdup(tech_pvt->session, buf);
 		sofia_presence_set_hash_key(hash_key, sizeof(hash_key), sip);
 	} else {
