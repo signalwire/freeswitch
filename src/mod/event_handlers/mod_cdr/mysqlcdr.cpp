@@ -245,7 +245,10 @@ void MysqlCDR::connect_to_database()
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot connect to MySQL Server.  The error was: %s\n", error1);
 	}
 	else
+	{
 		connectionstate = 1;
+		conn->reconnect = false;
+	}
 	
 	mysql_autocommit(conn,0);
 	stmt = mysql_stmt_init(conn);
