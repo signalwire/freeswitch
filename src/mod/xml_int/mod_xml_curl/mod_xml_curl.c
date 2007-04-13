@@ -104,7 +104,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	}
 
 	config_data.name = filename;
-	if ((config_data.fd = open(filename, O_CREAT | O_RDWR | O_TRUNC)) > -1) {
+	if ((config_data.fd = open(filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 		if (!switch_strlen_zero(binding->cred)) {
 			curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
 			curl_easy_setopt(curl_handle, CURLOPT_USERPWD, binding->cred);
