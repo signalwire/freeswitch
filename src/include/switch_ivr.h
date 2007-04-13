@@ -78,7 +78,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_
 															switch_port_t local_port,
 															char *remote_ip,
 															switch_port_t remote_port,
-															char *transport);
+															char *transport,
+															char *flags);
 
 /*!
   \brief Generate an XML CDR report.

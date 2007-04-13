@@ -140,7 +140,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_deactivate_unicast(switch_core_sessio
 					break;
 				}
 			}
-			switch_core_codec_destroy(&conninfo->read_codec);
+			if (conninfo->read_codec.implementation) {
+				switch_core_codec_destroy(&conninfo->read_codec);
+			}
 			switch_socket_close(conninfo->socket);
 		}
 		switch_channel_clear_flag(channel, CF_UNICAST);
@@ -156,7 +158,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_
 															switch_port_t local_port,
 															char *remote_ip,
 															switch_port_t remote_port,
-															char *transport)
+															char *transport,
+															char *flags)
 {
 	switch_channel_t *channel;
 	switch_unicast_conninfo_t *conninfo;
@@ -186,29 +189,37 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_
 		goto fail;
 	}
 
+	if (flags) {
+		if (strstr(flags, "native")) {
+			switch_set_flag(conninfo, SUF_NATIVE);
+		}
+	}
+
 	switch_mutex_init(&conninfo->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	
 	read_codec = switch_core_session_get_read_codec(session);
 	
-	if (switch_core_codec_init(&conninfo->read_codec,
-							   "L16",
-							   NULL,
-							   read_codec->implementation->samples_per_second,
-							   read_codec->implementation->microseconds_per_frame / 1000,
-							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-						  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
-						  read_codec->implementation->samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
-						  read_codec->implementation->samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
-		goto fail;
+	if (!switch_test_flag(conninfo, SUF_NATIVE)) {
+		if (switch_core_codec_init(&conninfo->read_codec,
+								   "L16",
+								   NULL,
+								   read_codec->implementation->samples_per_second,
+								   read_codec->implementation->microseconds_per_frame / 1000,
+								   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+								   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+							  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
+							  read_codec->implementation->samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
+							  read_codec->implementation->samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
+			goto fail;
+		}
 	}
 
 	conninfo->write_frame.data = conninfo->write_frame_data;
 	conninfo->write_frame.buflen = sizeof(conninfo->write_frame_data);
-	conninfo->write_frame.codec = &conninfo->read_codec;
+	conninfo->write_frame.codec = switch_test_flag(conninfo, SUF_NATIVE) ? read_codec : &conninfo->read_codec;
 	
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "connect %s:%d->%s:%d\n",
@@ -307,6 +318,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 		char *remote_ip = switch_event_get_header(event, "remote_ip");
 		char *remote_port = switch_event_get_header(event, "remote_port");
 		char *transport = switch_event_get_header(event, "transport");
+		char *flags = switch_event_get_header(event, "flags");
 
 		if (switch_strlen_zero(local_ip)) {
 			local_ip = "127.0.0.1";
@@ -324,7 +336,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 			transport = "udp";
 		}
 
-		switch_ivr_activate_unicast(session, local_ip, (switch_port_t)atoi(local_port), remote_ip, (switch_port_t)atoi(remote_port), transport);
+		switch_ivr_activate_unicast(session, local_ip, (switch_port_t)atoi(local_port), remote_ip, (switch_port_t)atoi(remote_port), transport, flags);
 
 	} else if (cmd_hash == CMD_HANGUP) {
 		char *cause_name = switch_event_get_header(event, "hangup-cause");
@@ -383,9 +395,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 						unicast_thread_launch(conninfo);
 					}
 				}
-
+				
 				if (conninfo) {
-					switch_size_t len;
+					switch_size_t len = 0;
 					uint32_t flags = 0;
 					switch_byte_t decoded[SWITCH_RECOMMENDED_BUFFER_SIZE];
 					uint32_t rate = read_codec->implementation->samples_per_second;
@@ -400,14 +412,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 						sendbuf = decoded;
 						status = SWITCH_STATUS_SUCCESS;
 					} else {
-					
-						status = switch_core_codec_decode(
-														  read_codec,
-														  &conninfo->read_codec,
-														  read_frame->data,
-														  read_frame->datalen,
-														  read_codec->implementation->samples_per_second,
-														  decoded, &dlen, &rate, &flags);
+						if (switch_test_flag(conninfo, SUF_NATIVE)) {
+							status = SWITCH_STATUS_NOOP;
+						} else {
+							status = switch_core_codec_decode(
+															  read_codec,
+															  &conninfo->read_codec,
+															  read_frame->data,
+															  read_frame->datalen,
+															  read_codec->implementation->samples_per_second,
+															  decoded, &dlen, &rate, &flags);
+						}
 						switch (status) {
 						case SWITCH_STATUS_NOOP:
 						case SWITCH_STATUS_BREAK:
@@ -435,7 +450,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 					}
 				}
 			}
-
+			
 			if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
 				switch_ivr_parse_event(session, event);
 				switch_channel_event_set_data(switch_core_session_get_channel(session), event);

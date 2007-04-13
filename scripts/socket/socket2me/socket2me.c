@@ -42,6 +42,7 @@
 #include <unistd.h>
 #include <spandsp.h>
 
+
 #define SOCKET2ME_DEBUG 0
 #define MAXPENDING 10000
 #define RCVBUFSIZE 4198
@@ -178,7 +179,9 @@ void client_run(int client_socket, char *local_ip, int local_port, char *remote_
     fax_state_t fax;
 	char tmp[512], fn[512], *file_name = "/tmp/test.tiff";
 	int send_fax = FALSE;
-	
+	int g711 = 0;
+	int pcmu = 0;
+
 	snprintf(sendbuf, sizeof(sendbuf), "connect\n\n");
 	send(client_socket, sendbuf, strlen(sendbuf), 0);
 
@@ -189,17 +192,32 @@ void client_run(int client_socket, char *local_ip, int local_port, char *remote_
 #if SOCKET2ME_DEBUG
 	printf("READ [%s]\n", infobuf);
 #endif
+
+	if (cheezy_get_var(infobuf, "Channel-Read-Codec-Name", tmp, sizeof(tmp))) {
+		if (!strcasecmp(tmp, "pcmu")) {
+			g711 = 1;
+			pcmu = 1;
+		} else if (!strcasecmp(tmp, "pcma")) {
+			g711 = 1;
+		}
+	}
+
+
 	snprintf(sendbuf, sizeof(sendbuf), "sendmsg\n"
 			 "call-command: unicast\n"
 			 "local_ip: %s\n"
 			 "local_port: %d\n"
 			 "remote_ip: %s\n"
 			 "remote_port: %d\n"
-			 "transport: udp\n\n",
+			 "transport: udp\n"
+			 "%s"
+			 "\n",
 			 local_ip, local_port,
-			 remote_ip, remote_port
+			 remote_ip, remote_port,
+			 g711 ? "flags: native\n" : ""
 			 );
 
+	
 	if (cheezy_get_var(infobuf, "variable_fax_file_name", fn, sizeof(fn))) {
 		file_name = fn;
 	}
@@ -267,8 +285,9 @@ void client_run(int client_socket, char *local_ip, int local_port, char *remote_
 	for (;;) {
 		struct sockaddr_in local_addr = {0};
         int cliAddrLen = sizeof(local_addr);
-		short audioBuffer[1024], outbuf[1024];
-		int tx, bigger;
+		unsigned char audiobuf[1024], rawbuf[1024], outbuf[1024];
+		short *usebuf = NULL;
+		int tx, tx_bytes, bigger, sample_count;
 		fd_set ready;
 
 		FD_ZERO(&ready);
@@ -297,23 +316,62 @@ void client_run(int client_socket, char *local_ip, int local_port, char *remote_
 			continue;
 		}
 
-        if ((read_bytes = recvfrom(usock, audioBuffer, sizeof(audioBuffer), 0, (struct sockaddr *) &local_addr, &cliAddrLen)) < 0) {
+        if ((read_bytes = recvfrom(usock, audiobuf, sizeof(audiobuf), 0, (struct sockaddr *) &local_addr, &cliAddrLen)) < 0) {
 			die("recvfrom() failed");
 		}
 
-		fax_rx(&fax, (int16_t *)audioBuffer, read_bytes / 2);
+		if (g711) {
+			int i;
+			short *rp = (short *) rawbuf;
+			
+			for (i = 0; i < read_bytes; i++) {
+				if (pcmu) {
+					rp[i] = ulaw_to_linear(audiobuf[i]);
+				} else {
+					rp[i] = alaw_to_linear(audiobuf[i]);
+				}
+			}
+			usebuf = rp;
+			sample_count = read_bytes;
+		} else {
+			usebuf = (short *) audiobuf;
+			sample_count = read_bytes / 2;
+		}
+		
+		fax_rx(&fax, usebuf, sample_count);
 #if SOCKET2ME_DEBUG
 		printf("Handling client %s:%d %d bytes\n", inet_ntoa(local_addr.sin_addr), ntohs(local_addr.sin_port), read_bytes);
 #endif
-        if ((tx = fax_tx(&fax, (int16_t *) &outbuf, read_bytes / 2)) < 0) {
+
+		
+		if ((tx = fax_tx(&fax, (short *)outbuf, sample_count)) < 0) {
             printf("Fax Error\n");
 			break;
         } else if (!tx) {
 			continue;
 		}
 		
+
+		if (g711) {
+			int i;
+			short *bp = (short *) outbuf;
+			for (i = 0; i < tx; i++) {
+				if (pcmu) {
+					rawbuf[i] = linear_to_ulaw(bp[i]);
+				} else {
+					rawbuf[i] = linear_to_alaw(bp[i]);
+				}
+			}
+			usebuf = (short *) rawbuf;
+			tx_bytes = tx;
+		} else {
+			usebuf = (short *)outbuf;
+			tx_bytes = tx * 2;
+		}	
+		
+
 		cliAddrLen = sizeof(sendaddr);
-        if (sendto(usock, outbuf, tx * 2, 0, (struct sockaddr *) &sendaddr, sizeof(sendaddr)) != tx * 2) {
+        if (sendto(usock, usebuf, tx_bytes, 0, (struct sockaddr *) &sendaddr, sizeof(sendaddr)) != sample_count) {
 			die("sendto() sent a different number of bytes than expected");
 		}
 	}

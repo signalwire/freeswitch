@@ -121,7 +121,8 @@ SWITCH_BEGIN_EXTERN_C
 typedef enum {
 	SUF_NONE = 0,
 	SUF_THREAD_RUNNING = (1 << 0),
-	SUF_READY = (1 << 1)
+	SUF_READY = (1 << 1),
+	SUF_NATIVE = (1 << 2)
 } switch_unicast_flag_t;
 
 typedef enum {
