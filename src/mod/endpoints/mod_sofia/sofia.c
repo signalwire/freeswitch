@@ -942,7 +942,7 @@ void sofia_handle_sip_i_state(int status,
 					switch_core_session_thread_launch(session);
 					goto done;
 				} else {
-					sdp_parser_t *parser = sdp_parse(tech_pvt->sofia_private->home, r_sdp, (int) strlen(r_sdp), 0);
+					sdp_parser_t *parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0);
 					sdp_session_t *sdp;
 					uint8_t match = 0;
 
@@ -1023,7 +1023,7 @@ void sofia_handle_sip_i_state(int status,
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 					goto done;
 				} else {
-					sdp_parser_t *parser = sdp_parse(tech_pvt->sofia_private->home, r_sdp, (int) strlen(r_sdp), 0);
+					sdp_parser_t *parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0);
 					sdp_session_t *sdp;
 					uint8_t match = 0;
 
@@ -1091,7 +1091,7 @@ void sofia_handle_sip_i_state(int status,
 					}
 					goto done;
 				} else {
-					sdp_parser_t *parser = sdp_parse(tech_pvt->sofia_private->home, r_sdp, (int) strlen(r_sdp), 0);
+					sdp_parser_t *parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0);
 					sdp_session_t *sdp;
 					uint8_t match = 0;
 

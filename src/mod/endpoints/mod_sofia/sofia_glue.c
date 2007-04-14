@@ -543,7 +543,7 @@ void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt)
 		sdp_media_t *m;
 		sdp_connection_t *connection;
 
-		if ((parser = sdp_parse(tech_pvt->sofia_private->home, sdp_str, (int) strlen(sdp_str), 0))) {
+		if ((parser = sdp_parse(NULL, sdp_str, (int) strlen(sdp_str), 0))) {
 			if ((sdp = sdp_session(parser))) {
 				for (m = sdp->sdp_media; m; m = m->m_next) {
 					if (m->m_type != sdp_media_audio) {
@@ -774,7 +774,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt)
 
 switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, char *r_sdp)
 {
-	sdp_parser_t *parser = sdp_parse(tech_pvt->sofia_private->home, r_sdp, (int) strlen(r_sdp), 0);
+	sdp_parser_t *parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0);
 	sdp_session_t *sdp;
 	uint8_t match = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
