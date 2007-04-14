@@ -1653,7 +1653,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	sofia_glue_sofia_glue_tech_set_codecs(tech_pvt);
 
 	switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "INBOUND CALL");
-	sofia_presence_set_chat_hash(tech_pvt, sip);
+	
 
 	if (switch_test_flag(tech_pvt, TFLAG_INB_NOMEDIA)) {
 		switch_set_flag_locked(tech_pvt, TFLAG_NOMEDIA);
@@ -1739,7 +1739,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	}
 	memset(tech_pvt->sofia_private, 0, sizeof(*tech_pvt->sofia_private));
 	tech_pvt->sofia_private->home = su_home_new(sizeof(*tech_pvt->sofia_private->home));
-	
+	sofia_presence_set_chat_hash(tech_pvt, sip);
 	switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));
 	nua_handle_bind(nh, tech_pvt->sofia_private);
 	tech_pvt->nh = nh;
