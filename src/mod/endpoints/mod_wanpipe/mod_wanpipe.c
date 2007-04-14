@@ -876,6 +876,10 @@ static switch_status_t wanpipe_send_dtmf(switch_core_session_t *session, char *d
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->wpsock->fd < 0) {
+		return SWITCH_STATUS_GENERR;
+	}
+
 	if (!tech_pvt->dtmf_buffer) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Allocate DTMF Buffer....");
 		if (switch_buffer_create_dynamic(&tech_pvt->dtmf_buffer, 1024, 3192, 0) != SWITCH_STATUS_SUCCESS) {
@@ -907,6 +911,9 @@ static switch_status_t wanpipe_receive_message(switch_core_session_t *session, s
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->wpsock->fd < 0) {
+		return SWITCH_STATUS_GENERR;
+	}
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_NOMEDIA:
