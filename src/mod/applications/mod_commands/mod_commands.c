@@ -844,7 +844,7 @@ static int show_as_xml_callback(void *pArg, int argc, char **argv, char **column
 	}
 
 	snprintf(id, sizeof(id), "%d", holder->rows);
-	switch_xml_set_attr_d(row, "id", id);
+	switch_xml_set_attr_d(row, "row_id", id);
 
 	for(x = 0; x < argc; x++) {
 		if ((field = switch_xml_add_child_d(row, columnNames[x], f_off++))) {
@@ -990,15 +990,19 @@ static switch_status_t show_function(char *data, switch_core_session_t *session,
 	} else if (!strcasecmp(as, "xml")) {
 		switch_core_db_exec(db, sql, show_as_xml_callback, &holder, &errmsg);
 		if (holder.xml) {
+			char count[50];
+			snprintf(count, sizeof(count), "%d", holder.count);
+			switch_xml_set_attr_d(holder.xml, "row_count", count);
 			char *xmlstr = switch_xml_toxml(holder.xml);
+
 			if (xmlstr) {
 				holder.stream->write_function(holder.stream, "%s", xmlstr);
 				free(xmlstr);
 			} else {
-				holder.stream->write_function(holder.stream, "ERROR\n");
+				holder.stream->write_function(holder.stream, "<result row_count=\"0\"/>\n");
 			}
 		} else {
-			holder.stream->write_function(holder.stream, "ERROR\n");
+			holder.stream->write_function(holder.stream, "<result row_count=\"0\"/>\n");
 		}
 	} else {
 		holder.stream->write_function(holder.stream, "Cannot find format %s\n", as);
