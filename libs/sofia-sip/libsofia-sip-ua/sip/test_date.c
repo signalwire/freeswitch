@@ -33,6 +33,8 @@
  * @date Wed Mar 21 19:12:13 2001 ppessi
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <sofia-sip/string0.h>
 #include <stddef.h>
@@ -42,12 +44,12 @@
 #include <sofia-sip/sip_header.h>
 #include <sofia-sip/msg_date.h>
 
-void usage(void)
+void usage(int exitcode)
 {
   fprintf(stderr, 
 	  "usage: test_date [SIP-date] "
 	  "[YYYYy][DDd][HHh][MMm][SS[s]]\n");
-  exit(1);
+  exit(exitcode);
 }
 
 int main(int ac, char *av[])
@@ -83,7 +85,7 @@ int main(int ac, char *av[])
 	case 's': delta += t2; break;
 	default:
 	  fprintf(stderr, "test_date: %s is not valid time offset\n" , av[2]);
-	  usage();
+	  usage(1);
 	  break;
 	}
       }

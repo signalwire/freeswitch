@@ -4,7 +4,7 @@ dnl ======================================================================
 AC_DEFUN([SAC_TPORT], [
 
 AC_ARG_WITH(sigcomp,
-[  --with-sigcomp=dir      use Sofia SigComp package (not used by default)],,
+[  --with-sigcomp=dir      use Sofia SigComp package [[not used]]],,
 	with_sigcomp=no)
 
 if test -n "${with_sigcomp}" && test "${with_sigcomp}" != no ; then
@@ -27,10 +27,12 @@ fi
 AC_SYS_IP_RECVERR
 AC_SYS_IPV6_RECVERR
 
-AC_CHECK_HEADERS(netinet/tcp.h netinet/sctp.h)
+AC_CHECK_HEADERS([netinet/tcp.h netinet/sctp.h],[],[],[
+#include <sys/socket.h>
+])
 
-AC_ARG_WITH(sctp,
-[  --enable-sctp          use LK-SCTP (not used by default)],,
+AC_ARG_ENABLE(sctp,
+[  --enable-sctp           use SCTP [[disabled]]],,
  enable_sigcomp=no)
 
 if test x$enable_sctp = xyes; then

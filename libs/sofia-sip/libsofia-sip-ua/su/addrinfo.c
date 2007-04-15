@@ -1,7 +1,7 @@
 /*
  * This file is part of the Sofia-SIP package
  *
- * Copyright (C) 2005 Nokia Corporation.
+ * Copyright (C) 2005,2007 Nokia Corporation.
  *
  * Contact: Pekka Pessi <pekka.pessi@nokia.com>
  *
@@ -26,12 +26,13 @@
  * 
  * @section synopsis Synopsis
  *
- * <tt>addrinfo [-pcn46] host service</tt>
+ * <tt>addrinfo [-pcn46] service-name host</tt>
  *
  * @section description Description
  * 
  * The @em addrinfo utility will use su_getaddrinfo() to resolve the network
- * services and print resolved names.
+ * services and print resolved names. See sect 6.1 of RFC3493 and the getaddrinfo(3)
+ * manual page of POSIX 1003.1g, for more information.
  *
  * @section options Options
  *
@@ -56,7 +57,7 @@
  * Written by Pekka Pessi <pekka -dot pessi -at- nokia -dot- com>
  *
  * @section copyright Copyright
- * Copyright (C) 2005 Nokia Corporation.
+ * Copyright (C) 2005,2007 Nokia Corporation.
  *
  * This program is free software; see the source for copying conditions.
  * There is @b NO warranty; not even for @b MERCHANTABILITY or <b>FITNESS
@@ -72,7 +73,7 @@
 #include "sofia-sip/su.h"
 
 char const help[] =
-"usage: addrinfo [-pnc46] [domainname]\n"
+"usage: addrinfo [-pnc46] <servicename> <domainname>\n"
 "\t-p query for passive open\n"
 "\t-n use numeric host names\n"
 "\t-c ask for canonic names\n"

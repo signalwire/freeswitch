@@ -1045,7 +1045,9 @@ int bsd_localinfo(su_localinfo_t const hints[1],
 {
   struct ifaddrs *ifa, *results;
   int error = 0;
+#if SU_HAVE_IN6
   int v4_mapped = (hints->li_flags & LI_V4MAPPED) != 0;
+#endif
   char *canonname = NULL;
 
   if (getifaddrs(&results) < 0) {
@@ -1057,7 +1059,10 @@ int bsd_localinfo(su_localinfo_t const hints[1],
 
   for (ifa = results; ifa; ifa = ifa->ifa_next) {
     su_localinfo_t *li;
-    su_sockaddr_t *su, su2[1];
+    su_sockaddr_t *su;
+#if SU_HAVE_IN6
+    su_sockaddr_t su2[1];
+#endif
     socklen_t sulen;
     int scope, flags = 0, gni_flags = 0, if_index = 0;
     char const *ifname = 0;
@@ -1075,15 +1080,19 @@ int bsd_localinfo(su_localinfo_t const hints[1],
     if (su->su_family == AF_INET) {
       sulen = sizeof(su->su_sin);
       scope = li_scope4(su->su_sin.sin_addr.s_addr);
+#if SU_HAVE_IN6
       if (v4_mapped)
 	sulen = sizeof(su->su_sin6);
+#endif
     }
+#if SU_HAVE_IN6
     else if (su->su_family == AF_INET6) {
       if (IN6_IS_ADDR_MULTICAST(&su->su_sin6.sin6_addr))
 	continue;
       sulen = sizeof(su->su_sin6);
       scope = li_scope6(&su->su_sin6.sin6_addr);
     }
+#endif
     else 
       continue;
 
@@ -1102,6 +1111,7 @@ int bsd_localinfo(su_localinfo_t const hints[1],
     if (scope == LI_SCOPE_HOST || scope == LI_SCOPE_LINK)
       gni_flags = NI_NUMERICHOST;
 
+#if SU_HAVE_IN6
     if (v4_mapped && su->su_family == AF_INET) {
       /* Map IPv4 address to IPv6 address */
       memset(su2, 0, sizeof(*su2));
@@ -1110,6 +1120,7 @@ int bsd_localinfo(su_localinfo_t const hints[1],
       ((int32_t*)&su2->su_sin6.sin6_addr)[3] = su->su_sin.sin_addr.s_addr;
       su = su2;
     }
+#endif
 
     if ((error = li_name(hints, gni_flags, su, &canonname)) < 0)
       break;
@@ -1188,7 +1199,7 @@ static
 int win_localinfo(su_localinfo_t const hints[1], su_localinfo_t **rresult)
 {
   /* This is Windows XP code, for both IPv6 and IPv4. */
-  size_t iaa_size = 2048;
+  ULONG iaa_size = 2048;
   IP_ADAPTER_ADDRESSES *iaa0, *iaa;
   int error, loopback_seen = 0;
   int v4_mapped = (hints->li_flags & LI_V4MAPPED) != 0;
@@ -1197,7 +1208,7 @@ int win_localinfo(su_localinfo_t const hints[1], su_localinfo_t **rresult)
   int flags = GAA_FLAG_SKIP_MULTICAST;
   *rresult = NULL; next = rresult;
 
-  iaa0 = malloc(iaa_size);
+  iaa0 = malloc((size_t)iaa_size);
   if (!iaa0) {
     SU_DEBUG_1(("su_localinfo: memory exhausted\n"));
     error = ELI_MEMORY;
@@ -1209,7 +1220,25 @@ int win_localinfo(su_localinfo_t const hints[1], su_localinfo_t **rresult)
       error = GetAdaptersAddresses(hints->li_family, flags, NULL, iaa0, &iaa_size);
   }
   if (error) {
-    SU_DEBUG_1(("su_localinfo: GetAdaptersAddresses failed: %d\n", error));
+    char const *empty = "";
+    LPTSTR msg = empty;
+
+    if (error == ERROR_NO_DATA) {
+      error = ELI_NOADDRESS;
+      goto err;
+    }
+
+    if (!FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+	               FORMAT_MESSAGE_FROM_SYSTEM | 
+	               FORMAT_MESSAGE_IGNORE_INSERTS,
+	  	       NULL,
+	  	       error,
+		       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		       msg, 0, NULL))
+      msg = empty;
+ 
+    SU_DEBUG_1(("su_localinfo: GetAdaptersAddresses: %s (%d)\n", msg, error));
+    if (msg != empty) LocalFree((LPVOID)msg);
     error = ELI_SYSTEM;
     goto err;
   }
@@ -1218,7 +1247,7 @@ int win_localinfo(su_localinfo_t const hints[1], su_localinfo_t **rresult)
     IP_ADAPTER_UNICAST_ADDRESS *ua;
     IP_ADAPTER_UNICAST_ADDRESS lua[1];
     int if_index = iaa->IfIndex;
-    int ifnamelen = 0;
+    size_t ifnamelen = 0;
     char ifname[16];
 
     for (ua = iaa->FirstUnicastAddress; ;ua = ua->Next) {

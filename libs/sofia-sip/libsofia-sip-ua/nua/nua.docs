@@ -1124,7 +1124,7 @@ follows:
     <td>terminating</td>
     <td>Process answer</td>
     <td>
-   If there was an failure in SDP negotiation or other failure with media,
+   If there was a failure in SDP negotiation or other failure with media,
    the stack will automatically terminate the call. The BYE follows
    immediatelhy after the ACK.
 </td></tr>
@@ -1262,7 +1262,7 @@ does not include the extensions like @b 100rel or @b UPDATE.
      |    +---------------|            |    :         |     :
      |    |               +------------+    :         |     :
      |    |                           |     :         |     :
-     |    |          nua_respond/18X (2)    :         |     :
+     |    |          nua_respond/18X (2a)   :         |     :
      |    |                           |     :         |     :
      |    |                           V     V         |     :
      |    |                          +------------+   |     :
@@ -2029,7 +2029,8 @@ NUTAG_AUTOANSWER(0) on B side, NUTAG_AUTOACK(0) on A side.
  *               Always present
  * @param nh     Pointer to operation handle.
  * @param hmagic Pointer to callback context from nua_handle().
- * @param sip    Parsed incoming message. May be NULL.
+ * @param sip    Headers in parsed incoming message. May be NULL.
+ *               See also nua_current_request().
  * @param tags   Tag list containing more information about the state of NUA.
  *               May be empty.
  *
@@ -2038,17 +2039,22 @@ NUTAG_AUTOANSWER(0) on B side, NUTAG_AUTOACK(0) on A side.
  * individual event.
  *
  * The events can be divided into the following categories: \n
- * @par Indications:
+ * @par Status or Error Indications:
  * #nua_i_active           \n
+ * #nua_i_error            \n
+ * #nua_i_fork             \n
+ * #nua_i_media_error      \n
+ * #nua_i_subscription     \n
+ * #nua_i_state            \n
+ * #nua_i_terminated
+ *
+ * @par SIP requests:
  * #nua_i_ack              \n
  * #nua_i_bye              \n
  * #nua_i_cancel           \n
  * #nua_i_chat             \n
- * #nua_i_error            \n
- * #nua_i_fork             \n
  * #nua_i_info             \n
  * #nua_i_invite           \n
- * #nua_i_media_error      \n
  * #nua_i_message          \n
  * #nua_i_method           \n
  * #nua_i_notify           \n
@@ -2058,9 +2064,6 @@ NUTAG_AUTOANSWER(0) on B side, NUTAG_AUTOACK(0) on A side.
  * #nua_i_refer            \n
  * #nua_i_register         \n
  * #nua_i_subscribe        \n
- * #nua_i_subscription     \n
- * #nua_i_state            \n
- * #nua_i_terminated       \n
  * #nua_i_update
  *
  * @par Responses:
@@ -2122,7 +2125,8 @@ NUTAG_AUTOANSWER(0) on B side, NUTAG_AUTOACK(0) on A side.
  *
  * Outgoing call has been forked.
  *
- * This is sent when an INVITE request is answered with multiple 200 responses.
+ * This is sent when an INVITE request is answered with multiple 2XX series
+ * responses.
  *
  * @param status response status code
  * @param phrase a short textual description of @a status code
@@ -2219,7 +2223,7 @@ NUTAG_AUTOANSWER(0) on B side, NUTAG_AUTOACK(0) on A side.
  * @param nh     operation handle associated with the notifier
  * @param hmagic operation magic associated with the notifier
  * @param sip    response to MESSAGE request or NULL upon an error
- *               (error code and message are in status an phrase parameters)
+ *               (error code and message are in status and phrase parameters)
  * @param tags   empty
  *
  * @sa nua_chat(), #nua_r_message

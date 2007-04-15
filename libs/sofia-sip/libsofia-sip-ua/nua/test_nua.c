@@ -72,20 +72,29 @@ static RETSIGTYPE sig_alarm(int s)
 static char const options_usage[] =
   "   -v | --verbose    be verbose\n"
   "   -q | --quiet      be quiet\n"
+  "   -a | --abort      abort on error\n" 
   "   -s                use only single thread\n"
   "   -l level          set logging level (0 by default)\n"
   "   -e | --events     print nua events\n"
   "   -A                print nua events for A\n"
   "   -B                print nua events for B\n"
   "   -C                print nua events for C\n"
+  "   --log=a           log messages for A\n"
+  "   --log=b           log messages for B\n"
+  "   --log=c           log messages for C\n"
+  "   --log=proxy       log messages for proxy\n"
   "   --attach          print pid, wait for a debugger to be attached\n"
   "   --no-proxy        do not use internal proxy\n"
   "   --no-nat          do not use internal \"nat\"\n"
   "   --symmetric       run internal \"nat\" in symmetric mode\n"
   "   -N                print events from internal \"nat\"\n"
+  "   --loop            loop main tests for ever\n"
   "   --no-alarm        don't ask for guard ALARM\n"
   "   -p uri            specify uri of outbound proxy (implies --no-proxy)\n"
   "   --proxy-tests     run tests involving proxy, too\n"
+#if SU_HAVE_OSX_CF_API /* If compiled with CoreFoundation events */
+  "   --osx-runloop     use OSX CoreFoundation runloop instead of poll() loop\n"
+#endif
   "   -k                do not exit after first error\n"
   ;
 
@@ -99,7 +108,7 @@ void usage(int exitcode)
 int main(int argc, char *argv[])
 {
   int retval = 0;
-  int i, o_quiet = 0, o_attach = 0, o_alarm = 1;
+  int i, o_quiet = 0, o_attach = 0, o_alarm = 1, o_loop = 0;
   int o_events_init = 0, o_events_a = 0, o_events_b = 0, o_events_c = 0;
   int o_iproxy = 1, o_inat = 1;
   int o_inat_symmetric = 0, o_inat_logging = 0, o_expensive = 0;
@@ -199,6 +208,21 @@ int main(int argc, char *argv[])
     else if (strcmp(argv[i], "--no-alarm") == 0) {
       o_alarm = 0;
     }
+    else if (strcmp(argv[i], "--loop") == 0) {
+      o_alarm = 0, o_loop = 1;
+    }
+    else if (strcmp(argv[i], "--log=a") == 0) {
+      ctx->a.logging = 1;
+    }
+    else if (strcmp(argv[i], "--log=b") == 0) {
+      ctx->b.logging = 1;
+    }
+    else if (strcmp(argv[i], "--log=c") == 0) {
+      ctx->c.logging = 1;
+    }
+    else if (strcmp(argv[i], "--log=proxy") == 0) {
+      ctx->proxy_logging = 1;
+    }
 #if SU_HAVE_OSX_CF_API /* If compiled with CoreFoundation events */
     else if (strcmp(argv[i], "--osx-runloop") == 0) {
       ctx->osx_runloop = 1;
@@ -210,8 +234,10 @@ int main(int argc, char *argv[])
     else if (argv[i][0] != '-') {
       break;
     }
-    else
+    else {
+      fprintf(stderr, "test_nua: unknown argument \"%s\"\n\n", argv[i]);
       usage(1);
+    }
   }
 
   if (o_attach) {
@@ -222,8 +248,15 @@ int main(int argc, char *argv[])
   }
 #if HAVE_ALARM
   else if (o_alarm) {
-    alarm(o_expensive ? 60 : 120);
     signal(SIGALRM, sig_alarm);
+    if (o_expensive) {
+      printf("%s: extending timeout to %u because expensive tests\n",
+	     name, 240);
+      alarm(240);
+    }
+    else {
+      alarm(120);
+    }
   }
 #endif
 
@@ -279,17 +312,12 @@ int main(int argc, char *argv[])
     if (retval == 0 && o_inat)
       retval |= test_nat_timeout(ctx);
 
-    if (retval == 0) {
-      retval |= test_extension(ctx); SINGLE_FAILURE_CHECK();
+    while (retval == 0) {
       retval |= test_basic_call(ctx); SINGLE_FAILURE_CHECK();
-      retval |= test_reject_a(ctx); SINGLE_FAILURE_CHECK();
-      retval |= test_reject_b(ctx); SINGLE_FAILURE_CHECK();
-      retval |= test_reject_302(ctx); SINGLE_FAILURE_CHECK();
-      retval |= test_reject_401(ctx); SINGLE_FAILURE_CHECK();
-      retval |= test_mime_negotiation(ctx); SINGLE_FAILURE_CHECK();
-      retval |= test_reject_401_aka(ctx); SINGLE_FAILURE_CHECK();
+      retval |= test_rejects(ctx); SINGLE_FAILURE_CHECK();
       retval |= test_call_cancel(ctx); SINGLE_FAILURE_CHECK();
       retval |= test_call_destroy(ctx); SINGLE_FAILURE_CHECK();
+      retval |= test_offer_answer(ctx); SINGLE_FAILURE_CHECK();
       retval |= test_early_bye(ctx); SINGLE_FAILURE_CHECK();
       retval |= test_reinvites(ctx); SINGLE_FAILURE_CHECK();
       retval |= test_session_timer(ctx); SINGLE_FAILURE_CHECK();
@@ -297,6 +325,9 @@ int main(int argc, char *argv[])
       retval |= test_100rel(ctx); SINGLE_FAILURE_CHECK();
       retval |= test_simple(ctx); SINGLE_FAILURE_CHECK();
       retval |= test_events(ctx); SINGLE_FAILURE_CHECK();
+      retval |= test_extension(ctx); SINGLE_FAILURE_CHECK();
+      if (!o_loop)
+	break;
     }
 
     if (ctx->proxy_tests && (retval == 0 || !ctx->p))

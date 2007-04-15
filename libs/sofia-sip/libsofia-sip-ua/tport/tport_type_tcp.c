@@ -175,8 +175,6 @@ int tport_tcp_init_secondary(tport_t *self, int socket, int accepted,
 
   if (setsockopt(socket, SOL_TCP, TCP_NODELAY, (void *)&one, sizeof one) == -1)
     return *return_reason = "TCP_NODELAY", -1;
-  if (su_setblocking(socket, 0) < 0)
-    return *return_reason = "su_setblocking", -1;
 
   if (!accepted)
     tport_tcp_setsndbuf(socket, 64 * 1024);
@@ -230,7 +228,7 @@ int tport_recv_stream(tport_t *self)
   }
   if (N == -1) {
     err = su_errno();
-    SU_DEBUG_1(("%s(%p): su_getmsgsize(): %s (%d)\n", __func__, self,
+    SU_DEBUG_1(("%s(%p): su_getmsgsize(): %s (%d)\n", __func__, (void *)self,
 		su_strerror(err), err));
     return -1;
   }

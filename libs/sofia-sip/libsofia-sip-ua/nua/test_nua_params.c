@@ -117,12 +117,12 @@ int test_nua_params(struct context *ctx)
   nua_get_params(ctx->a.nua, TAG_ANY(), TAG_END());
   run_a_until(ctx, nua_r_get_params, save_until_final_response);
 
-  TEST_1(e = ctx->a.events->head);
+  TEST_1(e = ctx->a.specials->head);
   TEST_E(e->data->e_event, nua_r_get_params);
   for (n = 0, t = e->data->e_tags; t; n++, t = tl_next(t))
     ;
   TEST_1(n > 32);
-  free_events_in_list(ctx, ctx->a.events);
+  free_events_in_list(ctx, ctx->a.specials);
 
   nh = nua_handle(ctx->a.nua, NULL, TAG_END()); TEST_1(nh);
   nua_handle_unref(nh);
@@ -148,8 +148,11 @@ int test_nua_params(struct context *ctx)
 
 		 SIPTAG_SUPPORTED_STR("test"),
 		 SIPTAG_ALLOW_STR("DWIM, OPTIONS, INFO"),
+		 NUTAG_APPL_METHOD(NULL),
+		 NUTAG_APPL_METHOD("INVITE, REGISTER, PUBLISH, SUBSCRIBE"),
 		 SIPTAG_ALLOW_EVENTS_STR("reg"),
 		 SIPTAG_USER_AGENT_STR("test_nua/1.0"),
+
 
 		 SIPTAG_ORGANIZATION_STR("Open Laboratory"),
 		 
@@ -190,6 +193,7 @@ int test_nua_params(struct context *ctx)
 		 NUTAG_MEDIA_FEATURES(1),
 		 NUTAG_SERVICE_ROUTE_ENABLE(0),
 		 NUTAG_PATH_ENABLE(0),
+		 NUTAG_AUTH_CACHE(nua_auth_cache_challenged),
 		 NUTAG_REFER_EXPIRES(333),
 		 NUTAG_REFER_WITH_ID(0),
 		 NUTAG_SUBSTATE(nua_substate_pending),
@@ -211,9 +215,12 @@ int test_nua_params(struct context *ctx)
 		 SIPTAG_ALLOW(sip_allow_make(tmphome, "INFO")),
 		 NUTAG_ALLOW("ACK, INFO"),
 
+		 NUTAG_APPL_METHOD("NOTIFY"),
+
 		 SIPTAG_ALLOW_EVENTS_STR("reg"),
 		 SIPTAG_ALLOW_EVENTS(sip_allow_events_make(tmphome, "presence")),
 		 NUTAG_ALLOW_EVENTS("presence.winfo"),
+
 
 		 SIPTAG_USER_AGENT(sip_user_agent_make(tmphome, "test_nua")),
 
@@ -262,12 +269,14 @@ int test_nua_params(struct context *ctx)
     int media_features = -1;
     int service_route_enable = -1;
     int path_enable = -1;
+    int auth_cache = -1;
     unsigned refer_expires = (unsigned)-1;
     int refer_with_id = -1;
     int substate = -1;
 
     sip_allow_t const *allow = NONE;
     char const *allow_str = "NONE";
+    char const *appl_method = "NONE";
     sip_allow_events_t const *allow_events = NONE;
     char const *allow_events_str = "NONE";
     sip_supported_t const *supported = NONE;
@@ -291,7 +300,7 @@ int test_nua_params(struct context *ctx)
     nua_get_params(ctx->a.nua, TAG_ANY(), TAG_END());
     run_a_until(ctx, nua_r_get_params, save_until_final_response);
 
-    TEST_1(e = ctx->a.events->head);
+    TEST_1(e = ctx->a.specials->head);
     TEST_E(e->data->e_event, nua_r_get_params);
 
     n = tl_gets(e->data->e_tags,
@@ -324,6 +333,7 @@ int test_nua_params(struct context *ctx)
 	       	NUTAG_MEDIA_FEATURES_REF(media_features),
 	       	NUTAG_SERVICE_ROUTE_ENABLE_REF(service_route_enable),
 	       	NUTAG_PATH_ENABLE_REF(path_enable),
+	       	NUTAG_AUTH_CACHE_REF(auth_cache),
 	       	NUTAG_REFER_EXPIRES_REF(refer_expires),
 	       	NUTAG_REFER_WITH_ID_REF(refer_with_id),
 	       	NUTAG_SUBSTATE_REF(substate),
@@ -332,6 +342,7 @@ int test_nua_params(struct context *ctx)
 	       	SIPTAG_SUPPORTED_STR_REF(supported_str),
 	       	SIPTAG_ALLOW_REF(allow),
 	       	SIPTAG_ALLOW_STR_REF(allow_str),
+		NUTAG_APPL_METHOD_REF(appl_method),
 		SIPTAG_ALLOW_EVENTS_REF(allow_events),
 		SIPTAG_ALLOW_EVENTS_STR_REF(allow_events_str),
 	       	SIPTAG_USER_AGENT_REF(user_agent),
@@ -353,7 +364,7 @@ int test_nua_params(struct context *ctx)
 		NUTAG_INSTANCE_REF(instance),
 
 		TAG_END());
-    TEST(n, 46);
+    TEST(n, 48);
 
     TEST_S(sip_header_as_string(tmphome, (void *)from), Alice);
     TEST_S(from_str, Alice);
@@ -383,12 +394,14 @@ int test_nua_params(struct context *ctx)
     TEST(media_features, 1);
     TEST(service_route_enable, 0);
     TEST(path_enable, 0);
+    TEST(auth_cache, nua_auth_cache_challenged);
     TEST(refer_expires, 333);
     TEST(refer_with_id, 0);
     TEST(substate, nua_substate_pending);
 
     TEST_S(sip_header_as_string(tmphome, (void *)allow), "OPTIONS, INFO, ACK");
     TEST_S(allow_str, "OPTIONS, INFO, ACK");
+    TEST_S(appl_method, "INVITE, REGISTER, PUBLISH, SUBSCRIBE, NOTIFY");
     TEST_S(sip_header_as_string(tmphome, (void *)allow_events), 
 	   "reg, presence, presence.winfo");
     TEST_S(allow_events_str, "reg, presence, presence.winfo");
@@ -414,7 +427,7 @@ int test_nua_params(struct context *ctx)
     TEST_S(m_features, expect_m_features); }
     TEST_S(outbound, "foo");
 
-    free_events_in_list(ctx, ctx->a.events);
+    free_events_in_list(ctx, ctx->a.specials);
   }
 
   /* Test that only those tags that have been set per handle are returned by nua_get_hparams() */
@@ -446,6 +459,7 @@ int test_nua_params(struct context *ctx)
     int media_features = -1;
     int service_route_enable = -1;
     int path_enable = -1;
+    int auth_cache = -1;
     unsigned refer_expires = (unsigned)-1;
     int refer_with_id = -1;
     int substate = -1;
@@ -504,6 +518,7 @@ int test_nua_params(struct context *ctx)
 	       	NUTAG_MEDIA_FEATURES_REF(media_features),
 	       	NUTAG_SERVICE_ROUTE_ENABLE_REF(service_route_enable),
 	       	NUTAG_PATH_ENABLE_REF(path_enable),
+		NUTAG_AUTH_CACHE_REF(auth_cache),
 	       	NUTAG_SUBSTATE_REF(substate),
 
 	       	SIPTAG_SUPPORTED_REF(supported),
@@ -556,6 +571,7 @@ int test_nua_params(struct context *ctx)
     TEST(media_features, -1);
     TEST(service_route_enable, -1);
     TEST(path_enable, -1);
+    TEST(auth_cache, -1);
     TEST(refer_expires, (unsigned)-1);
     TEST(refer_with_id, -1);
     TEST(substate, -1);

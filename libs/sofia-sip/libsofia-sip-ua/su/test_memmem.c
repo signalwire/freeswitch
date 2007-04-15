@@ -58,9 +58,10 @@ static int test_flags = 0;
 
 char const name[] = "test_memmem";
 
-void usage(void)
+void usage(int exitcode)
 {
-  fprintf(stderr, "usage: %s [-v]\n", name);
+  fprintf(stderr, "usage: %s [-v] [-a]\n", name);
+  exit(exitcode);
 }
 
 static int test_notfound(void);
@@ -77,14 +78,25 @@ static int test_notfound(void)
 
   TEST_P(memmem(haystack, 12, needle, 3), haystack + 2);
   TEST_P(memmem(needle, 3, haystack, 12), NULL);
-  TEST_P(memmem(haystack, 12, "", 0), haystack);
-  TEST_P(memmem(haystack, 12, null, 0), haystack);
-  TEST_P(memmem(haystack, 0, "", 0), haystack);
-  TEST_P(memmem(haystack, 0, null, 0), haystack);
+  
+#if HAVE_MEMMEM
+  if (memmem(haystack, 12, "", 0) == NULL) {
+    fprintf(stderr, "test_memmem.c: "
+	    "*** WARNING: system memmem() fails with empty needle ***\n");
+  }
+  else 
+#endif
+  {
+    TEST_P(memmem(haystack, 12, "", 0), haystack);
+    TEST_P(memmem(haystack, 12, null, 0), haystack);
+    TEST_P(memmem(haystack, 0, "", 0), haystack);
+    TEST_P(memmem(haystack, 0, null, 0), haystack);
+  }
 
   TEST_P(memmem(haystack + 2, 3, needle, 3), haystack + 2);
   TEST_P(memmem(haystack + 2, 2, needle, 3), NULL);
   TEST_P(memmem(a = "a\0bc", 4, "a\0bc", 4), a);
+  TEST_P(memmem(a, 4, "\0bc", 3), a + 1);
 
   END();
 }
@@ -225,8 +237,10 @@ int main(int argc, char *argv[])
   for (i = 1; argv[i]; i++) {
     if (strcmp(argv[i], "-v") == 0)
       test_flags |= tst_verbatim;
+    else if (strcmp(argv[i], "-a") == 0)
+      test_flags |= tst_abort;
     else
-      usage();
+      usage(1);
   }
 
   retval |= test_notfound(); fflush(stdout);

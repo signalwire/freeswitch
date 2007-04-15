@@ -58,7 +58,7 @@
 SOFIA_BEGIN_DECLS
 
 /** Return built-in SIP parser object. */
-SOFIAPUBFUN msg_mclass_t *sip_default_mclass(void);
+SOFIAPUBFUN msg_mclass_t const *sip_default_mclass(void);
 
 /** Check that sip_t is a SIP structure (not RTSP or HTTP). @HIDE */
 #define sip_is_sip(sip) ((sip) && (sip)->sip_ident == SIP_PROTOCOL_TAG)
@@ -345,8 +345,14 @@ int sip_has_supported(sip_supported_t const *support, char const *feature);
 SOFIAPUBFUN
 int sip_has_feature(msg_list_t const *supported, char const *feature);
 
+/** Return true if the method is listed in @Allow header. */
 SOFIAPUBFUN int sip_is_allowed(sip_allow_t const *allow, 
 			       sip_method_t method, char const *name);
+
+/** Check if the well-known method is listed in @Allow header. @NEW_1_12_6 */
+#define SIP_IS_ALLOWED(allow, method) \
+  (sip_method_unknown < (method) && (method) < 32 && \
+   (allow) && ((allow)->k_bitmap & (1 << (method))) != 0)
 
 /* ---------------------------------------------------------------------------
  * Bitmasks for header classifications

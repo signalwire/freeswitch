@@ -110,13 +110,14 @@ nua_handle_t *nh_create_handle(nua_t *nua,
   assert(nua->nua_home);
 
   if ((nh = su_home_clone(nua->nua_home, sizeof(*nh)))) {
-    nh->nh_valid = nua_handle;
+    nh->nh_valid = nua_valid_handle_cookie;
     nh->nh_nua = nua;
     nh->nh_magic = hmagic;
     nh->nh_prefs = nua->nua_dhandle->nh_prefs;
 
     if (nua_handle_save_tags(nh, tags) < 0) {
-      SU_DEBUG_5(("nua(%p): creating handle %p failed\n", nua, nh));
+      SU_DEBUG_5(("nua(%p): creating handle %p failed\n",
+		  (void *)nua, (void *)nh));
       su_home_unref(nh->nh_home), nh = NULL;
     }
     
@@ -136,7 +137,7 @@ nua_handle_t *nh_create_handle(nua_t *nua,
       } 
       else {
 	_handle_lifetime = 2;
-	SU_DEBUG_0(("nh_handle_create(%p)\n", nh));
+	SU_DEBUG_0(("nh_handle_create(%p)\n", (void *)nh));
 	su_home_destructor(nh->nh_home, nh_destructor);
       }
     }
@@ -159,9 +160,11 @@ extern char const _NUA_HANDLE_DEBUG[];
 static void nh_destructor(void *arg)
 {
   nua_handle_t *nh = arg;
-
-  SU_DEBUG_0(("nh_destructor(%p)\n", nh));
+  SU_DEBUG_0(("nh_destructor(%p)\n", (void *)nh));
 }
+
+#undef nua_handle_ref
+#undef nua_handle_unref
 
 /** Make a new reference to handle.
  *
@@ -179,7 +182,6 @@ nua_handle_t *nua_handle_ref(nua_handle_t *nh)
 {
   return (nua_handle_t *)su_home_ref(nh->nh_home);
 }
-
 
 /** Destroy reference to handle. 
  *
@@ -212,6 +214,50 @@ char const *nua_generate_instance_identifier(su_home_t *home)
   su_guid_sprintf(str, su_guid_strlen + 1, guid);
 
   return su_strdup(home, str);
+}
+
+/** Check if event is a request that can be responded with nua_respond().
+ *
+ * Note that if event status is 200 or greater, it already has been
+ * responded. This function is provided for compatibility with future
+ * versions of nua. An unknown event can always be handled in the event
+ * callback like this:
+ * @code
+ * switch (event) {
+ *   ...
+ *   default:
+ *     if (status < 200 && nua_event_is_incoming_request(event))
+ *       nua_respond(nh, SIP_501_NOT_IMPLEMENTED,
+ *                   NUTAG_WITH_THIS(nua), TAG_END());
+ *     if (hmagic == NULL)
+ *       nua_handle_destroy(nh);
+ *     return;
+ *   ...
+ * @endcode
+ *
+ * @sa #nua_event_t, nua_respond()
+ *
+ * @NEW_1_12_6
+ */
+int nua_event_is_incoming_request(nua_event_t event)
+{
+  switch (event) {
+  case nua_i_invite: return 1;
+  case nua_i_cancel: return 1;
+  case nua_i_register: return 1;
+  case nua_i_bye: return 1;
+  case nua_i_options: return 1;
+  case nua_i_refer: return 1;
+  case nua_i_publish: return 1;
+  case nua_i_prack: return 1;
+  case nua_i_info: return 1;
+  case nua_i_update: return 1;
+  case nua_i_message: return 1;
+  case nua_i_subscribe: return 1;
+  case nua_i_notify: return 1;
+  case nua_i_method: return 1;
+  default: return 0;
+  }
 }
 
 /** Get name for a NUA event. */
@@ -301,3 +347,34 @@ char const *nua_callstate_name(enum nua_callstate state)
   default: return "UNKNOWN";
   }
 }
+
+/** Return name of subscription state. @NEW_1_12_5. */
+char const *nua_substate_name(enum nua_substate substate)
+{
+  switch (substate) {
+  case nua_substate_embryonic:
+      /*FALLTHROUGH*/
+  case nua_substate_pending:
+    return "pending";
+  case nua_substate_terminated:
+    return "terminated";
+  case nua_substate_active:
+      /*FALLTHROUGH*/
+  default:
+    return "active";
+  }
+}
+
+/** Convert string to enum nua_substate. @NEW_1_12_5. */
+enum nua_substate nua_substate_make(char const *sip_substate)
+{
+  if (sip_substate == NULL)
+    return nua_substate_active;
+  else if (strcasecmp(sip_substate, "terminated") == 0)
+    return nua_substate_terminated;
+  else if (strcasecmp(sip_substate, "pending") == 0)
+    return nua_substate_pending;
+  else /* if (strcasecmp(sip_substate, "active") == 0) */ 
+    return nua_substate_active;
+}
+

@@ -269,7 +269,7 @@ nua_dialog_usage_t *nua_dialog_usage_add(nua_owner_t *own,
     du = *prev_du;
     if (du) {		/* Already exists */
       SU_DEBUG_5(("nua(%p): adding already existing %s usage%s%s\n",
-		  own, nua_dialog_usage_name(du), 
+		  (void *)own, nua_dialog_usage_name(du), 
 		  event ? "  with event " : "", event ? event->o_type : ""));
       
       if (prev_du != &ds->ds_usage) {
@@ -297,7 +297,7 @@ nua_dialog_usage_t *nua_dialog_usage_add(nua_owner_t *own,
       }
 	
       SU_DEBUG_5(("nua(%p): adding %s usage%s%s\n",
-		  own, nua_dialog_usage_name(du), 
+		  (void *)own, nua_dialog_usage_name(du), 
 		  o ? " with event " : "", o ? o->o_type :""));
 
       su_home_ref(own);
@@ -345,6 +345,24 @@ void nua_dialog_usage_remove_at(nua_owner_t *own,
     nua_client_request_t *cr, *cr_next;
     nua_server_request_t *sr, *sr_next;
 
+    *at = du->du_next;
+
+    o = du->du_event;
+
+    SU_DEBUG_5(("nua(%p): removing %s usage%s%s\n",
+		(void *)own, nua_dialog_usage_name(du), 
+		o ? " with event " : "", o ? o->o_type :""));
+    du->du_class->usage_remove(own, ds, du);
+
+    /* Destroy saved client request */
+    if (nua_client_is_bound(du->du_cr)) {
+      nua_client_bind(cr = du->du_cr, NULL);
+      if (!nua_client_is_queued(cr) &&
+	  !nua_client_is_reporting(cr))
+	nua_client_request_destroy(cr);
+    }
+
+    /* Clean references from queued client requests */
     for (cr = ds->ds_cr; cr; cr = cr_next) {
       cr_next = cr->cr_next;
       if (cr->cr_usage == du)
@@ -357,29 +375,19 @@ void nua_dialog_usage_remove_at(nua_owner_t *own,
 	nua_server_request_destroy(sr);
     }
 
-    *at = du->du_next;
-
-    o = du->du_event;
-
-    SU_DEBUG_5(("nua(%p): removing %s usage%s%s\n",
-		own, nua_dialog_usage_name(du), 
-		o ? " with event " : "", o ? o->o_type :""));
-    du->du_class->usage_remove(own, ds, du);
-    msg_destroy(du->du_msg), du->du_msg = NULL;
     su_home_unref(own);
     su_free(own, du);
   }
 
-  /* Zap dialog if there is no more usages */
-  if (ds->ds_usage == NULL) {
-    nta_leg_destroy(ds->ds_leg), ds->ds_leg = NULL;
-    su_free(own, (void *)ds->ds_remote_tag), ds->ds_remote_tag = NULL;
-    ds->ds_route = 0;
+  /* Zap dialog if there are no more usages */
+  if (ds->ds_terminating)
+    ;
+  else if (ds->ds_usage == NULL) {
+    nua_dialog_remove(own, ds, NULL);
     ds->ds_has_events = 0;
-    ds->ds_terminated = 0;
     return;
   }
-  else if (!ds->ds_terminated) {
+  else {
     nua_dialog_log_usage(own, ds);
   }
 }
@@ -412,7 +420,7 @@ void nua_dialog_log_usage(nua_owner_t *own, nua_dialog_state_t *ds)
       }
     }
     
-    SU_DEBUG_3(("nua(%p): handle with %s%s%s\n", own,
+    SU_DEBUG_3(("nua(%p): handle with %s%s%s\n", (void *)own,
 		ds->ds_has_session ? "session and " : "", 
 		ds->ds_has_events ? "events " : "",
 		buffer));
@@ -423,49 +431,16 @@ void nua_dialog_log_usage(nua_owner_t *own, nua_dialog_state_t *ds)
 void nua_dialog_deinit(nua_owner_t *own,
 		       nua_dialog_state_t *ds)
 {
+  ds->ds_terminating = 1;
+
   while (ds->ds_usage) {
     nua_dialog_usage_remove_at(own, ds, &ds->ds_usage);
   }
-}
 
+  nua_dialog_remove(own, ds, NULL);
 
-/** @internal Dialog has been terminated. Remove all usages. */
-void nua_dialog_terminated(nua_owner_t *own,
-			   struct nua_dialog_state *ds,
-			   int status,
-			   char const *phrase)
-{
-
-  ds->ds_terminated = 1;
-
-  while (ds->ds_usage) {
-#if 0
-    int call = 0;
-
-    if (ds->ds_usage->du_kind == nua_session_usage)
-      call = 1;			/* Delay sending the event */
-    else
-      /* XXX */;
-#endif
-    nua_dialog_usage_remove_at(own, ds, &ds->ds_usage);
-  }
-}
-
-/**@internal
- * Set expiration time. 
- */
-void nua_dialog_usage_set_expires(nua_dialog_usage_t *du,
-				  unsigned delta)
-{
-  if (delta) {
-    sip_time_t now = sip_now(), expires = now + delta;
-    if (expires < now)
-      expires = SIP_TIME_MAX;
-    du->du_expires = expires;
-    nua_dialog_usage_set_refresh(du, delta);
-  }
-  else
-    du->du_expires = 0, du->du_refresh = 0;
+  ds->ds_has_events = 0;
+  ds->ds_terminating = 0;
 }
 
 /**@internal
@@ -521,10 +496,20 @@ void nua_dialog_usage_refresh_range(nua_dialog_usage_t *du,
   du->du_refresh = target;
 }
 
+/** Set absolute refresh time */
+void nua_dialog_usage_refresh_at(nua_dialog_usage_t *du,
+				 sip_time_t target)
+{
+  SU_DEBUG_7(("nua(): refresh %s after %lu seconds\n",
+	      nua_dialog_usage_name(du), target - sip_now()));
+  du->du_refresh = target;
+} 
+
 /**@internal Do not refresh. */
 void nua_dialog_usage_reset_refresh(nua_dialog_usage_t *du)
 {
-  du->du_refresh = 0;
+  if (du)
+    du->du_refresh = 0;
 }
 
 /** @internal Refresh usage or shutdown usage if @a now is 0. */
@@ -537,18 +522,52 @@ void nua_dialog_usage_refresh(nua_owner_t *owner,
     du->du_refresh = 0;
 
     if (now > 0) {
-      if (du->du_class->usage_refresh) {
-	du->du_class->usage_refresh(owner, ds, du, now);
-	return;
-      }
+      assert(du->du_class->usage_refresh);
+      du->du_class->usage_refresh(owner, ds, du, now);
     }
     else {
       du->du_shutdown = 1;
-      if (du->du_class->usage_shutdown) {
-	du->du_class->usage_shutdown(owner, ds, du);
-	return;
-      }
+      assert(du->du_class->usage_shutdown);
+      du->du_class->usage_shutdown(owner, ds, du);
     }
   }
 }
 
+/** Terminate all dialog usages gracefully. */
+int nua_dialog_shutdown(nua_owner_t *owner, nua_dialog_state_t *ds)
+{
+  nua_dialog_usage_t *du;
+
+  ds->ds_terminating = 1;
+
+  do {
+    for (du = ds->ds_usage; du; du = du->du_next) {
+      if (!du->du_shutdown) {
+	nua_dialog_usage_shutdown(owner, ds, du);
+	break;
+      }
+    }
+  } while (du);
+
+  return 1;
+}
+
+/** (Gracefully) terminate usage.
+ *
+ * @retval >0  shutdown done
+ * @retval 0   shutdown in progress
+ * @retval <0  try again later
+ */
+int nua_dialog_usage_shutdown(nua_owner_t *owner,
+			       nua_dialog_state_t *ds,
+			       nua_dialog_usage_t *du)
+{
+  if (du) {
+    du->du_refresh = 0;
+    du->du_shutdown = 1;
+    assert(du->du_class->usage_shutdown);
+    return du->du_class->usage_shutdown(owner, ds, du);
+  }
+  else
+    return 200;
+}

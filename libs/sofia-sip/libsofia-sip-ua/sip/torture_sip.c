@@ -354,7 +354,7 @@ int test_basic(void)
     su_home_t home[1] = { SU_HOME_INIT(home) };
     char const *display;
     url_t url[1];
-    char const * const *params;
+    msg_param_t const *params;
     char const *comment;
     char const na[] = "Raaka Arska <tel:+358501970>;param=1;humppa (test) ";
     char const na2[] = "tel:+358501970;param=1;humppa (test) ";
@@ -412,7 +412,12 @@ int test_basic(void)
     TEST_1(sip_from_tag(home, f, "tag=jxahudsf") == 0);
     su_free(home, f);
 
+    TEST_1(f = sip_from_create(home, (void *)"<sip:joe@bar;tag=bar> (joe)"));
+    TEST_1(sip_is_from((sip_header_t*)f));
+    su_free(home, f);
+
     TEST_1(t = sip_to_create(home, (void *)"<sip:joe@bar;tag=bar> (joe)"));
+    TEST_1(sip_is_to((sip_header_t*)t));
     TEST_1(sip_to_tag(home, t, "tag=jxahudsf") == 0);
     TEST_S(t->a_tag, "jxahudsf");
     TEST(msg_header_replace_param(home, t->a_common, "tag=bar"), 1);
@@ -511,7 +516,7 @@ int test_basic(void)
 
     v = sip_via_make(home, "SIP/2.0/UDP domain.invalid:5060"); TEST_1(v);
     s = sip_contact_string_from_via(home, v, NULL, v->v_protocol);
-    TEST_S(s, "<sip:domain.invalid:5060;transport=udp>");
+    TEST_S(s, "<sip:domain.invalid;transport=udp>");
     su_free(home, v), su_free(home, s);
 
     TEST_1(sip_transport_has_tls("SIP/2.0/TLS-SCTP"));
@@ -739,8 +744,6 @@ int test_sip_msg_class(msg_mclass_t const *mc)
   }
 
   END();
-
-  return 0;
 }
 
 msg_t *read_message(int flags, char const buffer[])
@@ -1653,7 +1656,11 @@ static int sip_header_test(void)
   TEST(count(sip->sip_content_type->c_common), 1);
   TEST(count(sip->sip_route->r_common), 0);
   TEST(count(sip->sip_record_route->r_common), 4);
+#if SU_HAVE_EXPERIMENTAL
   TEST(count(sip->sip_unknown->un_common), 2);
+#else
+  TEST(count(sip->sip_unknown->un_common), 4);
+#endif
   TEST(count(sip->sip_error->er_common), 1);
   TEST(count(sip->sip_max_forwards->mf_common), 1);
   TEST(count(sip->sip_min_expires->me_common), 1);
@@ -1667,6 +1674,7 @@ static int sip_header_test(void)
   TEST(sip->sip_max_forwards->mf_count, 12);
   TEST(sip->sip_min_expires->me_delta, 150);
 
+#if SU_HAVE_EXPERIMENTAL
   {
     sip_suppress_body_if_match_t *sbim;
     sip_suppress_notify_if_match_t *snim;
@@ -1683,6 +1691,7 @@ static int sip_header_test(void)
     TEST_SIZE(offsetof(msg_generic_t, g_value),
 	      offsetof(sip_suppress_notify_if_match_t, snim_tag));
   }
+#endif
 
   TEST_1(sip->sip_from->a_display);
   TEST_S(sip->sip_from->a_display, "h");
@@ -3206,11 +3215,12 @@ static int test_utils(void)
   END();
 }
 
-void usage(void)
+void usage(int exitcode)
 {
   fprintf(stderr, 
-	  "usage: %s [-v]\n", 
+	  "usage: %s [-v] [-a]\n", 
 	  name);
+  exit(exitcode);
 }
 
 char *lastpart(char *path)
@@ -3231,8 +3241,10 @@ int main(int argc, char *argv[])
   for (i = 1; argv[i]; i++) {
     if (strcmp(argv[i], "-v") == 0)
       tstflags |= tst_verbatim;
+    else if (strcmp(argv[i], "-a") == 0)
+      tstflags |= tst_abort;
     else
-      usage();
+      usage(1);
   }
 
   if (!test_mclass)

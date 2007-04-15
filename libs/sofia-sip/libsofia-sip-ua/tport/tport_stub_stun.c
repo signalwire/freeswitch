@@ -155,7 +155,7 @@ int tport_recv_stun_dgram(tport_t const *self,
     }
     else
       SU_DEBUG_7(("tport(%p): recv_stun_dgram(): "
-		  "ignoring request with "MOD_ZU" bytes\n", self, n));
+		  "ignoring request with "MOD_ZU" bytes\n", (void *)self, n));
   }
   else if (request[0] == 0 && self->tp_master->mr_stun_server) {
     tport_stun_server_vtable_t const *vst = tport_stun_server_vtable;
@@ -178,7 +178,7 @@ int tport_recv_stun_dgram(tport_t const *self,
     elen = (elen + 3) & -4;	/* Round up to 4 */
 
     SU_DEBUG_7(("tport(%p): recv_stun_dgram(): "
-		"responding %u %s\n", self, status, error));
+		"responding %u %s\n", (void *)self, status, error));
   /*
      0                   1                   2                   3
      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -237,7 +237,7 @@ int tport_recv_stun_dgram(tport_t const *self,
 #undef set16
   }
   else {
-    SU_DEBUG_0(("tport(%p): recv_stun_dgram(): internal error\n", self));
+    SU_DEBUG_0(("tport(%p): recv_stun_dgram(): internal error\n", (void *)self));
     su_seterrno(EBADMSG);
     retval = -1;
   }

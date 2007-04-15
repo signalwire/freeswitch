@@ -113,7 +113,7 @@ AC_CACHE_CHECK([for maximum warnings compiler flag],
   *gcc*) ac_cv_cwflag=-Wall;;
   *)	case "$host" in
     *irix*)	ac_cv_cwflag=-fullwarn ;;
-    *solaris*)  ac_cv_cwflag="-erroff=%none,E_END_OF_LOOP_CODE_NOT_REACHED -xCC"
+    *solaris*)  ac_cv_cwflag="-erroff=%none,E_END_OF_LOOP_CODE_NOT_REACHED,E_BAD_PTR_INT_COMBINATION -errtags"
 	        ;;
     *)		ac_cv_cwflag=;;
 		esac 
@@ -127,7 +127,7 @@ AC_ARG_VAR([SOFIA_CFLAGS], [CFLAGS not used during configure])
 # GCoverage
 #
 AC_ARG_ENABLE(coverage,
-[  --enable-coverage       compile test-coverage (disabled)],
+[  --enable-coverage       compile test-coverage [[disabled]]],
  , enable_coverage=no)
 
 if test X$enable_coverage != Xno ; then
@@ -341,7 +341,7 @@ dnl ======================================================================
 AC_DEFUN([SAC_ENABLE_NDEBUG],[
 AC_REQUIRE([SAC_TOOL_CC])
 AC_ARG_ENABLE(ndebug,
-[  --enable-ndebug             compile with NDEBUG (disabled)],
+[  --enable-ndebug         compile with NDEBUG [[disabled]]],
  , enable_ndebug=no)
 AM_CONDITIONAL(NDEBUG, test x$enable_ndebug = yes)
 ])
@@ -351,7 +351,8 @@ dnl SAC_ENABLE_EXPENSIVE_CHECKS
 dnl ======================================================================
 AC_DEFUN([SAC_ENABLE_EXPENSIVE_CHECKS],[
 AC_ARG_ENABLE(expensive-checks,
-[  --enable-expensive-checks   run also expensive checks (disabled)],
+[  --enable-expensive-checks
+                          run also expensive checks [[disabled]]],
  , enable_expensive_checks=no)
 if test $enable_expensive_checks != no; then
 AC_SUBST([TESTS_ENVIRONMENT], [EXPENSIVE_CHECKS=1])

@@ -1094,7 +1094,7 @@ int hc_reply(nth_client_t * hc, int status, char const *phrase)
 
   assert(status >= 400);
 
-  SU_DEBUG_5(("nth: hc_reply(%p, %u, %s)\n", hc, status, phrase));
+  SU_DEBUG_5(("nth: hc_reply(%p, %u, %s)\n", (void *)hc, status, phrase));
 
   if (hc->hc_pending) {
     tport_release(hc->hc_tport, hc->hc_pending, hc->hc_request, NULL, hc,

@@ -104,9 +104,8 @@ SOFIAPUBFUN uint32_t su_ntp_mw(su_ntp_t ntp);
 SOFIAPUBFUN uint32_t su_ntp_fraq(su_time_t t);
 SOFIAPUBFUN uint32_t su_time_ms(su_time_t t);
 #else
-static SU_INLINE
 /** Middle 32 bit of NTP timestamp. */
-uint32_t su_ntp_fraq(su_time_t t)
+su_inline uint32_t su_ntp_fraq(su_time_t t)
 {
   /*
    * Multiply usec by 0.065536 (ie. 2**16 / 1E6)
@@ -116,9 +115,8 @@ uint32_t su_ntp_fraq(su_time_t t)
   return (t.tv_sec << 16) + (1024 * t.tv_usec + 7812) / 15625;
 }
 
-static SU_INLINE
 /** Time as milliseconds. */
-uint32_t su_time_ms(su_time_t t)
+su_inline uint32_t su_time_ms(su_time_t t)
 {
   return t.tv_sec * 1000 + (t.tv_usec + 500) / 1000;
 }

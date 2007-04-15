@@ -95,9 +95,11 @@ typedef struct nua_handle_preferences
   unsigned         nhp_service_route_enable:1;
   /** Enable Path */
   unsigned         nhp_path_enable:1;
+  /** Authentication cache policy */
+  unsigned         nhp_auth_cache:1;
+
   /** Always include id with Event: refer */
   unsigned         nhp_refer_with_id:1;
-
   unsigned:0;
 
   /* Default lifetime for implicit subscriptions created by REFER */
@@ -157,6 +159,7 @@ typedef struct nua_handle_preferences
     unsigned nhb_media_features:1;
     unsigned nhb_service_route_enable:1;
     unsigned nhb_path_enable:1;
+    unsigned nhb_auth_cache:1;
     unsigned nhb_refer_with_id:1;
     unsigned nhb_refer_expires:1;
     unsigned nhb_substate:1;
@@ -166,8 +169,8 @@ typedef struct nua_handle_preferences
 
     unsigned nhb_allow:1;
     unsigned nhb_supported:1;
-    unsigned nhb_allow_events:1;
     unsigned :0;		/* at most 32 bits ... */
+    unsigned nhb_allow_events:1;
     unsigned nhb_user_agent:1;
     unsigned nhb_organization:1;
 
@@ -222,5 +225,10 @@ typedef struct nua_handle_preferences
 #define NH_PISSET(nh, pref)						\
   (NHP_ISSET((nh)->nh_prefs, pref) &&					\
    (nh)->nh_nua->nua_dhandle->nh_prefs != (nh)->nh_prefs)
+
+/* Check if preference has been set by applicationx */
+#define NUA_PISSET(nua, nh, pref)					\
+  (NHP_ISSET((nua)->nua_dhandle->nh_prefs, pref) ||			\
+   ((nh) && NHP_ISSET((nh)->nh_prefs, pref)))
 
 #endif /* NUA_PARAMS_H */

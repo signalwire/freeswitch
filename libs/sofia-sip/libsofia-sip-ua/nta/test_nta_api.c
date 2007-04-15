@@ -559,18 +559,18 @@ int api_test_stats(agent_t *ag)
 
   nta_agent_t *nta;
 
-  uint32_t irq_hash = -1, orq_hash = -1, leg_hash = -1;
-  uint32_t recv_msg = -1, sent_msg = -1;
-  uint32_t recv_request = -1, recv_response = -1;
-  uint32_t bad_message = -1, bad_request = -1, bad_response = -1;
-  uint32_t drop_request = -1, drop_response = -1;
-  uint32_t client_tr = -1, server_tr = -1, dialog_tr = -1;
-  uint32_t acked_tr = -1, canceled_tr = -1;
-  uint32_t trless_request = -1, trless_to_tr = -1, trless_response = -1;
-  uint32_t trless_200 = -1, merged_request = -1;
-  uint32_t sent_request = -1, sent_response = -1;
-  uint32_t retry_request = -1, retry_response = -1, recv_retry = -1;
-  uint32_t tout_request = -1, tout_response = -1;
+  usize_t irq_hash = -1, orq_hash = -1, leg_hash = -1;
+  usize_t recv_msg = -1, sent_msg = -1;
+  usize_t recv_request = -1, recv_response = -1;
+  usize_t bad_message = -1, bad_request = -1, bad_response = -1;
+  usize_t drop_request = -1, drop_response = -1;
+  usize_t client_tr = -1, server_tr = -1, dialog_tr = -1;
+  usize_t acked_tr = -1, canceled_tr = -1;
+  usize_t trless_request = -1, trless_to_tr = -1, trless_response = -1;
+  usize_t trless_200 = -1, merged_request = -1;
+  usize_t sent_request = -1, sent_response = -1;
+  usize_t retry_request = -1, retry_response = -1, recv_retry = -1;
+  usize_t tout_request = -1, tout_response = -1;
 
   TEST_1(nta = nta_agent_create(ag->ag_root, (url_string_t *)"sip:*:*",
 				NULL, NULL, TAG_END()));
@@ -1238,6 +1238,7 @@ char const nta_test_api_usage[] =
   "usage: %s OPTIONS\n"
   "where OPTIONS are\n"
   "   -v | --verbose    be verbose\n"
+  "   -a | --abort      abort() on error\n"
   "   -q | --quiet      be quiet\n"
   "   -1                quit on first error\n"
   "   -l level          set logging level (0 by default)\n"
@@ -1247,10 +1248,10 @@ char const nta_test_api_usage[] =
 #endif
   ;
 
-void usage(void)
+void usage(int exitcode)
 {
   fprintf(stderr, nta_test_api_usage, name);
-  exit(1);
+  exit(exitcode);
 }
 
 int main(int argc, char *argv[])
@@ -1261,9 +1262,11 @@ int main(int argc, char *argv[])
   agent_t ag[1] = {{ { SU_HOME_INIT(ag) }, 0, NULL }};
 
   for (i = 1; argv[i]; i++) {
-    if (strcmp(argv[i], "-v") == 0)
+    if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0)
       tstflags |= tst_verbatim;
-    else if (strcmp(argv[i], "-q") == 0)
+    else if (strcmp(argv[i], "-a") == 0 || strcmp(argv[i], "--abort") == 0)
+      tstflags |= tst_abort;
+    else if (strcmp(argv[i], "-q") == 0 || strcmp(argv[i], "--quiet") == 0)
       tstflags &= ~tst_verbatim;
     else if (strcmp(argv[i], "-1") == 0)
       quit_on_single_failure = 1;
@@ -1279,7 +1282,7 @@ int main(int argc, char *argv[])
 	level = 3, rest = "";
 
       if (rest == NULL || *rest)
-	usage();
+	usage(1);
       
       su_log_set_level(nta_log, level);
       su_log_set_level(tport_log, level);
@@ -1297,14 +1300,14 @@ int main(int argc, char *argv[])
       break;
     }
     else
-      usage();
+      usage(1);
   }
 
   if (o_attach) {
-    char line[10];
+    char *response, line[10];
     printf("nua_test: pid %lu\n", (unsigned long)getpid());
     printf("<Press RETURN to continue>\n");
-    fgets(line, sizeof line, stdin);
+    response = fgets(line, sizeof line, stdin);
   }
 #if HAVE_ALARM
   else if (o_alarm) {

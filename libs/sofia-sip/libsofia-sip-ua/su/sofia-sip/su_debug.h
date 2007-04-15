@@ -74,9 +74,9 @@ SOFIAPUBVAR su_log_t SU_LOG[];
 #endif
 
 #define SU_DEBUG_DEF(level) \
-  static SU_INLINE void su_debug_##level(char const *fmt, ...) \
+  su_inline void su_debug_##level(char const *fmt, ...) \
     __attribute__ ((__format__ (printf, 1, 2))); \
-  void su_debug_##level(char const *fmt, ...) \
+  su_inline void su_debug_##level(char const *fmt, ...) \
     { va_list ap; va_start(ap, fmt); su_vllog(SU_LOG, level, fmt, ap); va_end(ap); }
 
 SU_DEBUG_DEF(0)

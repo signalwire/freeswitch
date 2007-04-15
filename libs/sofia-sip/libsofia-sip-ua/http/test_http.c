@@ -76,14 +76,7 @@ static int http_tag_test(void);
 static int test_query_parser(void);
 
 static msg_t *read_message(char const string[]);
-msg_mclass_t *test_mclass = NULL;
-
-void usage(void)
-{
-  fprintf(stderr,
-	  "usage: %s [-v]\n",
-	  name);
-}
+msg_mclass_t const *test_mclass = NULL;
 
 char *lastpart(char *path)
 {
@@ -95,6 +88,14 @@ char *lastpart(char *path)
 
 int tstflags;
 
+void usage(int exitcode)
+{
+  fprintf(stderr,
+	  "usage: %s [-v] [-a]\n",
+	  name);
+  exit(exitcode);
+}
+
 int main(int argc, char *argv[])
 {
   int retval = 0;
@@ -105,8 +106,10 @@ int main(int argc, char *argv[])
   for (i = 1; argv[i]; i++) {
     if (strcmp(argv[i], "-v") == 0)
       tstflags |= tst_verbatim;
+    else if (strcmp(argv[i], "-a") == 0)
+      tstflags |= tst_abort;
     else
-      usage();
+      usage(1);
   }
 
   if (!test_mclass)

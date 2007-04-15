@@ -54,6 +54,7 @@
 				ProgramDataBaseFileName=".\Debug/"
 				BrowseInformation="1"
 				WarningLevel="4"
+				WarnAsError="true"
 				SuppressStartupBanner="true"
 				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
@@ -133,6 +134,7 @@
 				ProgramDataBaseFileName=".\Release/"
 				BrowseInformation="1"
 				WarningLevel="4"
+				WarnAsError="true"
 				SuppressStartupBanner="true"
 				Detect64BitPortabilityProblems="true"
 			/>
@@ -207,6 +209,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_base_port.c"
+					>
+				</File>
+				<File
 					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_bm.c"
 					>
 				</File>
@@ -243,7 +249,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_pthread_port.c"
+					>
+				</File>
+				<File
 					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_root.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_socket_port.c"
 					>
 				</File>
 				<File
@@ -292,6 +306,10 @@
 				</File>
 				<File
 					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_wait.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_win32_port.c"
 					>
 				</File>
 			</Filter>

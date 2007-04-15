@@ -166,7 +166,9 @@ int tport_udp_init_primary(tport_primary_t *pri,
 
   tport_check_trunc(pri->pri_primary, ai);
 
+#if HAVE_SOFIA_STUN
   tport_stun_server_add_socket(pri->pri_primary);
+#endif
 
   return 0;
 }
@@ -233,7 +235,7 @@ int tport_recv_dgram(tport_t *self)
   if (self->tp_params->tpp_drop && 
       (unsigned)su_randint(0, 1000) < self->tp_params->tpp_drop) {
     su_recv(self->tp_socket, sample, 1, 0);
-    SU_DEBUG_3(("tport(%p): simulated packet loss!\n", self));
+    SU_DEBUG_3(("tport(%p): simulated packet loss!\n", (void *)self));
     return 0;
   }
 
@@ -246,9 +248,14 @@ int tport_recv_dgram(tport_t *self)
   N = (ssize_t)su_getmsgsize(self->tp_socket);
   if (N == -1) {
     int err = su_errno();
-    SU_DEBUG_1(("%s(%p): su_getmsgsize(): %s (%d)\n", __func__, self,
+    SU_DEBUG_1(("%s(%p): su_getmsgsize(): %s (%d)\n", __func__, (void *)self,
 		su_strerror(err), err));
     return -1;
+  }
+  if (N == 0) {
+    su_recv(self->tp_socket, sample, 1, 0);
+    SU_DEBUG_3(("tport(%p): zero length packet", (void *)self));
+    return 0;
   }
 #endif
 
@@ -280,7 +287,8 @@ int tport_recv_dgram(tport_t *self)
       return -1;
   }
   else if (n <= 1) {
-    SU_DEBUG_1(("%s(%p): runt of "MOD_ZD" bytes\n", "tport_recv_dgram", self, n));
+    SU_DEBUG_1(("%s(%p): runt of "MOD_ZD" bytes\n",
+		"tport_recv_dgram", (void *)self, n));
     msg_destroy(msg), self->tp_msg = NULL;
     return 0;
   }
@@ -299,9 +307,11 @@ int tport_recv_dgram(tport_t *self)
     /* SigComp */
     return tport_recv_comp_dgram(self, self->tp_comp, &self->tp_msg, 
 				 from, fromlen);
+#if HAVE_SOFIA_STUN
   else if (sample[0] == 0 || sample[0] == 1)
     /* STUN request or response */
     return tport_recv_stun_dgram(self, &self->tp_msg, from, fromlen);
+#endif
   else
     return 0;
 }

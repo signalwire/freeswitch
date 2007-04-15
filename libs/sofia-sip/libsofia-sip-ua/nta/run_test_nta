@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/sh
 #
 # Run nta_test with our own name server
 #
@@ -50,11 +50,11 @@ export PATH
 
 me6="::1"
 
-if ../su/localinfo -6 -n -g -s >& /dev/null ; then
+if ../su/localinfo -6 -n -g -s > /dev/null 2>&1 ; then
     ipv6=true aaaa=aaaa v6flag=-6
     me6=$(../su/localinfo -6 -n -s -g | awk '{print $1; exit(0); }')
 else
-    if ! ../su/localinfo '--help' >& /dev/null ; then
+    if ! ../su/localinfo '--help' > /dev/null 2>&1 ; then
 	echo "warning: $0: missing 'localinfo', cannot test IPv6"
     else
 	echo "warning: $0: no valid IPv6 addresses available"
@@ -62,7 +62,7 @@ else
     ipv6=false aaaa=a
 fi
 
-if type named >& /dev/null && ./portbind --help >& /dev/null
+if type named > /dev/null 2>&1 && ./portbind --help > /dev/null 2>&1
 then
 
 port=$(./portbind $v6flag) sink=$port

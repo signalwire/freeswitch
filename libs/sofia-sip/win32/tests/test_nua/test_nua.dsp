@@ -145,6 +145,10 @@ SOURCE="..\..\..\libsofia-sip-ua\nua\test_nua_params.c"
 # End Source File
 # Begin Source File
 
+SOURCE="..\..\..\libsofia-sip-ua\nua\test_offer_answer.c"
+# End Source File
+# Begin Source File
+
 SOURCE="..\..\..\libsofia-sip-ua\nua\test_ops.c"
 # End Source File
 # Begin Source File

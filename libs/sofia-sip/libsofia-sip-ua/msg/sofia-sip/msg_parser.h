@@ -56,7 +56,8 @@ SOFIA_BEGIN_DECLS
  * 1) Header class definitions.
  */
 
-#if HAVE_STRUCT_KEYWORDS
+/* Do not use keywords until you fix msg_kind_foo_critical thing! */ \
+#if HAVE_STRUCT_KEYWORDS && 0
 /** Define a header class */
 #define MSG_HEADER_CLASS(pr, c, l, s, params, kind, dup, upd)	\
   {{								\
@@ -74,6 +75,7 @@ SOFIA_BEGIN_DECLS
     hc_kind:	msg_kind_##kind,				\
   }}
 #else
+/** Define a header class */
 #define MSG_HEADER_CLASS(pr, c, l, s, params, kind, dup, upd)	\
   {{ \
      pr##c##_hash, \
@@ -198,8 +200,10 @@ SOFIAPUBFUN issize_t msg_parse_next_field(su_home_t *home, msg_header_t *prev,
 
 /** Duplicate string. @HI */
 #define MSG_STRING_DUP(p, d, s) \
-  (void)((s)?((p)=(char*)memccpy((void *)((d)=(char*)p),(s),0,SIZE_MAX))\
+  (void)((s)?((p)=(char*)memccpy((void *)((d)=(char*)p),(s),0,INT_MAX))\
 	    :((d)=NULL))
+
+/* Solaris has broken memccpy - it considers last argument as signed */
 
 /** Calculate string size. @HI */
 #define MSG_STRING_SIZE(s) ((s) ? (strlen(s) + 1) : 0)

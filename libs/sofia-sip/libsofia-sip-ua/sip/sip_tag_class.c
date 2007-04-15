@@ -46,6 +46,7 @@
 #include <assert.h>
 #include <stddef.h>
 #include <string.h>
+#include <limits.h>
 
 /** Tag class for SIP header tags. @HIDE */
 tag_class_t siphdrtag_class[1] = 

@@ -64,15 +64,15 @@ int save_until_notified(CONDITION_PARAMS)
 int save_until_notified_and_responded(CONDITION_PARAMS)
 {
   save_event_in_list(ctx, event, ep, call);
-  if (event == nua_i_notify) ep->flags.b.bit0 = 1;
+  if (event == nua_i_notify) ep->flags.bit0 = 1;
   if (event == nua_r_subscribe || event == nua_r_unsubscribe) {
     if (status >= 300)
       return 1;
     else if (status >= 200)
-      ep->flags.b.bit1 = 1;
+      ep->flags.bit1 = 1;
   }
 
-  return ep->flags.b.bit0 && ep->flags.b.bit1;
+  return ep->flags.bit0 && ep->flags.bit1;
 }
 
 

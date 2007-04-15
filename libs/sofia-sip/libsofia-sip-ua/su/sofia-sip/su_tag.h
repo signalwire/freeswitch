@@ -174,7 +174,7 @@ SOFIAPUBFUN void    tl_vfree(tagi_t *t);
 #if SU_HAVE_INLINE
 su_inline tag_value_t tag_int_v(int v) { return (tag_value_t)v; }
 su_inline tag_value_t tag_int_vr(int *vp) { return (tag_value_t)vp; }
-su_inline tag_value_t tag_uint_v(size_t v) { return (tag_value_t)v; }
+su_inline tag_value_t tag_uint_v(unsigned v) { return (tag_value_t)v; }
 su_inline tag_value_t tag_uint_vr(unsigned *vp) { return (tag_value_t)vp; }
 su_inline tag_value_t tag_usize_v(usize_t v) { return (tag_value_t)v; }
 su_inline tag_value_t tag_usize_vr(usize_t *vp) { return (tag_value_t)vp; }
@@ -197,9 +197,9 @@ extern "C++" {
   static inline tag_value_t tag_ptr_v(void const *v)
   { return (tag_value_t)v; }
   static inline tag_value_t tag_ptr_vr(void *vp, void const *p) 
-  { return(tag_value_t)vp; }
+  { return (tag_value_t)vp; }
   static inline tag_value_t tag_str_v(char *v) { return (tag_value_t)v; }
-  static inline tag_value_t tag_str_vr(char **vp) {return(tag_value_t)vp;}
+  static inline tag_value_t tag_str_vr(char **vp) {return (tag_value_t)vp;}
 }
 #endif
 su_inline tag_value_t tag_filter_v(tag_filter_f *v) {return(tag_value_t)v;}
@@ -208,10 +208,14 @@ su_inline tag_value_t tag_filter_v(tag_filter_f *v) {return(tag_value_t)v;}
 #define tag_int_vr(v)  (tag_value_t)(v)
 #define tag_uint_v(v)  (tag_value_t)(v)
 #define tag_uint_vr(v) (tag_value_t)(v)
+#define tag_usize_v(v) (tag_value_t)(v)
+#define tag_usize_vr(v) (tag_value_t)(v)
 #define tag_bool_v(v)  (tag_value_t)(v != 0)
 #define tag_bool_vr(v) (tag_value_t)(v)
 #define tag_ptr_v(v)   (tag_value_t)(v)
 #define tag_ptr_vr(v,x) (tag_value_t)(v)
+#define tag_cptr_v(v)   (tag_value_t)(v)
+#define tag_cptr_vr(v,x) (tag_value_t)(v)
 #define tag_cstr_v(v)  (tag_value_t)(v)
 #define tag_cstr_vr(v) (tag_value_t)(v)
 #define tag_str_v(v)   (tag_value_t)(v)

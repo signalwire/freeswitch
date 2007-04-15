@@ -42,8 +42,15 @@
 #include <time.h>
 
 #include "sofia-sip/su_types.h"
-#include "sofia-sip/su_time.h"
 #include "su_module_debug.h"
+
+/* Include bodies of inlined functions */
+#undef su_inline
+#define su_inline
+#undef SU_HAVE_INLINE
+#define SU_HAVE_INLINE 1
+
+#include "sofia-sip/su_time.h"
 
 #if HAVE_SYS_TIME_H
 #include <sys/time.h> /* Get struct timeval */

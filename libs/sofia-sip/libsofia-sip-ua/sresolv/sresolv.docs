@@ -261,3 +261,10 @@ void process_natpr(sres_context_t *context,
 @endcode
 
 */
+
+/** @defgroup sresolv_env Environment Variables Used by sresolv Module
+
+In addition to the standard #RES_OPTIONS and #LOCALDOMAIN environment
+variables, the #SRES_OPTIONS and #SRESOLV_DEBUG variables are supported.
+
+*/

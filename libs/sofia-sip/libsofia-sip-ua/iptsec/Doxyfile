@@ -11,6 +11,7 @@ TAGFILES           += ../docs/bnf.doxytags=../bnf
 TAGFILES           += ../docs/url.doxytags=../url
 TAGFILES           += ../docs/msg.doxytags=../msg
 TAGFILES           += ../docs/sip.doxytags=../sip
+TAGFILES           += ../docs/http.doxytags=../http
 TAGFILES           += ../docs/sresolv.doxytags=../sresolv
 TAGFILES           += ../docs/tport.doxytags=../tport
 TAGFILES           += ../docs/nta.doxytags=../nta
@@ -18,3 +19,6 @@ TAGFILES           += ../docs/nta.doxytags=../nta
 GENERATE_TAGFILE    = ../docs/iptsec.doxytags
 
 ALIASES 	   += 
+
+PREDEFINED         += SOFIA_EXTEND_AUTH_CLIENT=1
+

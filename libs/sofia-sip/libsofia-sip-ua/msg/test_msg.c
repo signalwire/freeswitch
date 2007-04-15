@@ -59,11 +59,6 @@ static int test_flags = 0;
 
 char const name[] = "test_msg";
 
-void usage(void)
-{
-  fprintf(stderr, "usage: %s [-v]\n", name);
-}
-
 static int msg_time_test(void)
 {
   char buf[32];
@@ -138,7 +133,6 @@ static int msg_time_test(void)
   }
 
   END();
-  return 0;
 }
 
 static int addr_test(void)
@@ -1688,6 +1682,12 @@ static int random_test(void)
   END();
 }
 
+void usage(int exitcode)
+{
+  fprintf(stderr, "usage: %s [-v] [-a]\n", name);
+  exit(exitcode);
+}
+
 int main(int argc, char *argv[])
 {
   int retval = 0;
@@ -1696,8 +1696,10 @@ int main(int argc, char *argv[])
   for (i = 1; argv[i]; i++) {
     if (strcmp(argv[i], "-v") == 0)
       test_flags |= tst_verbatim;
+    else if (strcmp(argv[i], "-a") == 0)
+      test_flags |= tst_abort;
     else
-      usage();
+      usage(1);
   }
 
   retval |= msg_time_test(); fflush(stdout);

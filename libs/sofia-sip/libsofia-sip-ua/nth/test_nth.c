@@ -893,10 +893,10 @@ static RETSIGTYPE sig_alarm(int s)
 }
 #endif
 
-void usage(void)
+void usage(int exitcode)
 {
-  fprintf(stderr, "usage: %s [-v|-q] [-p proxy-uri]\n", name);
-  exit(1);
+  fprintf(stderr, "usage: %s [-v|-q] [-a] [-p proxy-uri]\n", name);
+  exit(exitcode);
 }
 
 int main(int argc, char **argv)
@@ -915,6 +915,8 @@ int main(int argc, char **argv)
   for (i = 1; argv[i]; i++) {
     if (strcmp(argv[i], "-v") == 0)
       tstflags |= tst_verbatim;
+    else if (strcmp(argv[i], "-a") == 0)
+      tstflags |= tst_abort;
     else if (strcmp(argv[i], "-q") == 0)
       tstflags &= ~tst_verbatim;
     else if (strcmp(argv[i], "-p") == 0 && argv[i + 1])
@@ -931,7 +933,7 @@ int main(int argc, char **argv)
       break;
     }
     else
-      usage();
+      usage(1);
   }
 
   t->t_srcdir = srcdir;

@@ -704,7 +704,7 @@ server_t *server_create(url_t const *url,
 			tag_type_t tag, tag_value_t value, ...)
 {
   server_t *srv;
-  msg_mclass_t *mclass = NULL;
+  msg_mclass_t const *mclass = NULL;
   tp_name_t tpn[1] = {{ NULL }};
   su_root_t *root = NULL;
   http_server_t const *server = NULL;

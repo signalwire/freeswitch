@@ -210,7 +210,10 @@ int test_stack_errors(struct context *ctx)
   run_a_until(ctx, -1, save_until_final_response);
 
   TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_r_unregister);
-  TEST(e->data->e_status, 401);
+  if (e->data->e_status == 401)
+    TEST(e->data->e_status, 401);
+  else
+    TEST(e->data->e_status, 406);
   TEST_1(!e->next);
 
   free_events_in_list(ctx, a->events);

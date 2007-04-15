@@ -32,10 +32,10 @@
  * @date Created: Tue Sep 12 19:22:54 2000 ppessi
  */
 
-/* Define this as the random number source name. */
+/* Define to as the random number source name. */
 #undef DEV_URANDOM
 
-/* Define this as 1 if you have addrinfo structure. */
+/* Define to 1 if you have addrinfo structure. */
 #define HAVE_ADDRINFO 1
 
 /* Define to 1 if you have the `alarm' function. */
@@ -50,14 +50,20 @@
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
 
-/* Define this as 1 if you have /dev/urandom. */
+/* Define to 1 if you have /dev/urandom. */
 #undef HAVE_DEV_URANDOM
+
+/* Define to 1 if you have the <dirent.h> header file. */
+#undef HAVE_DIRENT_H
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
-/* Define to 1 if you have the `epoll' function. */
+/* Define to 1 if you have epoll interface. */
 #undef HAVE_EPOLL
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#undef HAVE_FCNTL_H
 
 /* Define this as 1 if you have WIN32 FILETIME type and
    GetSystemTimeAsFileTime(). */
@@ -69,10 +75,10 @@
 /* Define to 1 if you have the `freeaddrinfo' function. */
 #define HAVE_FREEADDRINFO 1
 
-/* Define as 1 if the C compiler supports __func__ */
+/* Define to 1 if the C compiler supports __func__ */
 #undef HAVE_FUNC
 
-/* Define as 1 if the C compiler supports __FUNCTION__ */
+/* Define to 1 if the C compiler supports __FUNCTION__ */
 #undef HAVE_FUNCTION
 
 /* Define to 1 if you have the `gai_strerror' function. */
@@ -111,16 +117,16 @@
 /* Define to 1 if you have the <ifaddr.h> header file. */
 #undef HAVE_IFADDR_H
 
-/* Define this as 1 if you have SIOCGIFCONF */
+/* Define to 1 if you have SIOCGIFCONF */
 #undef HAVE_IFCONF
 
-/* Define this as 1 if you have SIOCGIFNUM ioctl */
+/* Define to 1 if you have SIOCGIFNUM ioctl */
 #undef HAVE_IFNUM
 
-/* Define this as 1 if you have ifr_ifindex in <net/if.h> */
+/* Define to 1 if you have ifr_ifindex in <net/if.h> */
 #undef HAVE_IFR_IFINDEX
 
-/* Define this as 1 if you have ifr_index in <net/if.h> */
+/* Define to 1 if you have ifr_index in <net/if.h> */
 #undef HAVE_IFR_INDEX
 
 /* Define to 1 if you have the `if_nameindex' function. */
@@ -135,23 +141,27 @@
 /* Define to 1 if you have the `initstate' function. */
 #undef HAVE_INITSTATE
 
-/* Define this as 1 if you have inlining compiler */
+/* Define to 1 if you have inlining compiler */
 #define HAVE_INLINE 1
 
-/* Define this as 1 if you have WIN32 INTERFACE_INFO_EX type. */
+/* Define to 1 if you have WIN32 INTERFACE_INFO_EX type. */
 #undef HAVE_INTERFACE_INFO_EX
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define as 1 you have WIN32 <iphlpapi.h> */
-// XXX: vehmanek-win32-fix:
+/* Define to 1 if you have the <iphlpapi.h> header file. */
+#if _MSC_VER > 1200 
+#define HAVE_IPHLPAPI_H 1
+#else
+// XXX: vehmanek-win32-fix for VC6
 #undef HAVE_IPHLPAPI_H
+#endif
 
-/* Define this as 1 if you have IPV6_RECVERR in <netinet/in6.h> */
+/* Define to 1 if you have IPV6_RECVERR in <netinet/in6.h> */
 #undef HAVE_IPV6_RECVERR
 
-/* Define this as 1 if you have IP_RECVERR in <netinet/in.h> */
+/* Define to 1 if you have IP_RECVERR in <netinet/in.h> */
 #undef HAVE_IP_RECVERR
 
 /* Define to 1 if you have the `crypto' library (-lcrypto). */
@@ -181,8 +191,11 @@
 /* Define to 1 if you have the `memspn' function. */
 #undef HAVE_MEMSPN
 
-/* Define this as 1 if you are compiling in MinGW environment */
+/* Define to 1 if you are compiling in MinGW environment */
 #undef HAVE_MINGW
+
+/* Define to 1 if you have MSG_TRUNC flag */
+#undef HAVE_MSG_TRUNC
 
 /* Define to 1 if you have the <netdb.h> header file. */
 #undef HAVE_NETDB_H
@@ -205,7 +218,7 @@
 /* Define to 1 if you have the <net/if_types.h> header file. */
 #undef HAVE_NET_IF_TYPES_H
 
-/* Define this as 1 if you have OpenSSL */
+/* Define to 1 if you have OpenSSL */
 #undef HAVE_OPENSSL
 
 /* Define to 1 if you have the <openssl/tls1.h> header file. */
@@ -214,8 +227,18 @@
 /* Define to 1 if you have the `poll' function. */
 #undef HAVE_POLL
 
-/* Define this as 1 if you have /proc/net/if_inet6 control file */
+/* Define to 1 if you use poll in su_port. */
+#undef HAVE_POLL_PORT
+
+/* Define to 1 if you have /proc/net/if_inet6 control file */
 #undef HAVE_PROC_NET_IF_INET6
+
+/* Define to 1 if you have working pthread_rwlock_t implementation. A thread
+   may hold multiple concurrent read locks on rwlock - that is, successfully
+   call the pthread_rwlock_rdlock() function n times. If so, the application
+   shall ensure that the thread performs matching unlocks - that is, it calls
+   the pthread_rwlock_unlock() function n times. */
+#undef HAVE_PTHREAD_RWLOCK
 
 /* Define to 1 if you have the <pthread.h> header file. */
 #define HAVE_PTHREAD_H 1
@@ -224,52 +247,61 @@
 /* See later */
 #define HAVE_RANDOM 1
 
-/* Define this as 1 if you have sa_len in struct sockaddr */
+/* Define to 1 if you have sa_len in struct sockaddr */
 #undef HAVE_SA_LEN
 
-/* Define this a 1 if you have SCTP */
+/* Define to 1 if you have SCTP */
 #undef HAVE_SCTP
 
 /* Define to 1 if you have the `select' function. */
 #undef HAVE_SELECT
 
-/* Define this as 1 if you have Sofia sigcomp >= 2.5 */
+/* Define to 1 if you have Sofia sigcomp >= 2.5 */
 #undef HAVE_SIGCOMP
 
 /* Define to 1 if you have the <sigcomp.h> header file. */
 #undef HAVE_SIGCOMP_H
 
-/* Define as 1 if you have SIGPIPE */
+/* Define to 1 if you have the `signal' function. */
+#define HAVE_SIGNAL 1
+
+/* Define to 1 if you have SIGPIPE */
 #undef HAVE_SIGPIPE
 
-/* Define this as 1 if you have IPv6 structures and constants */
+/* Define to 1 if you have IPv6 structures and constants */
 #define HAVE_SIN6 1
 
-/* Define this as 1 if you have WIN32 WSAIoctl SIO_ADDRESS_LIST_QUERY. */
+/* Define to 1 if you have WIN32 WSAIoctl SIO_ADDRESS_LIST_QUERY. */
 #define HAVE_SIO_ADDRESS_LIST_QUERY 1
 
 /* Define to 1 if you have the `socketpair' function. */
 #undef HAVE_SOCKETPAIR
 
-/* Define this as 1 if you have Sofia sigcomp >= 2.5 */
+/* Define to 1 if we use NTH library */
+#define HAVE_SOFIA_NTH 1
+
+/* Define to 1 if we use NTLM library */
+#undef HAVE_SOFIA_NTLM
+
+/* Define to 1 if you have Sofia sigcomp >= 2.5 */
 #undef HAVE_SOFIA_SIGCOMP
 
-/* Define as 1 always */
+/* Define to 1 always */
 #define HAVE_SOFIA_SIP 1
 
-/* Define as 1 if we use S/MIME library */
+/* Define to 1 if we use S/MIME library */
 #undef HAVE_SOFIA_SMIME
 
-/* Define as 1 if we use DNS library */
+/* Define to 1 if we use DNS library */
 #define HAVE_SOFIA_SRESOLV 1
 
-/* Define as 1 if we use STUN library */
+/* Define to 1 if we use STUN library */
 #undef HAVE_SOFIA_STUN
 
-/* Define as 1 always */
+/* Define to 1 always */
 #define HAVE_SOFIA_SU 1
 
-/* Define as 1 if we use SRTP */
+/* Define to 1 if we use SRTP */
 #undef HAVE_SRTP
 
 /* Define to 1 if you have the <stdint.h> header file. */
@@ -293,14 +325,20 @@
 /* Define to 1 if you have the `strtoull' function. */
 #undef HAVE_STRTOULL
 
-/* Define this as 1 if your CC supports C99 struct initialization */
+/* Define to 1 if your CC supports C99 struct initialization */
 #undef HAVE_STRUCT_KEYWORDS
 
 /* Define to 1 if you have the <sofia-sip/su_wait.h> header file. */
 #define HAVE_SU_WAIT_H 1
 
+/* Define to 1 if you have the <sys/epoll.h> header file. */
+#undef HAVE_SYS_EPOLL_H
+
 /* Define to 1 if you have the <sys/filio.h> header file. */
 #undef HAVE_SYS_FILIO_H
+
+/* Define to 1 if you have the <sys/ioctl.h> header file. */
+#undef HAVE_SYS_IOCTL_H
 
 /* Define to 1 if you have the <sys/select.h> header file. */
 #undef HAVE_SYS_SELECT_H
@@ -323,16 +361,16 @@
 /* Define to 1 if you have the `tcsetattr' function. */
 #undef HAVE_TCSETATTR
 
-/* Define this as 1 if you have TLS */
+/* Define to 1 if you have TLS */
 #undef HAVE_TLS
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define as 1 if we use UPnP */
+/* Define to 1 if we use UPnP */
 #undef HAVE_UPNP
 
-/* Define as 1 you have WIN32 */
+/* Define to 1 you have WIN32 */
 #define HAVE_WIN32 1
 
 /* Define to 1 if you have the <windef.h> header file. */
@@ -344,13 +382,13 @@
 /* Define to 1 if you have the <ws2tcpip.h> header file. */
 #define HAVE_WS2TCPIP_H 1
 
-/* Define as format (%lli) for long long */
+/* Define to format (%lli) for long long */
 #define LLI "%I64i"
 
-/* Define as format (%llu) for unsigned long long */
+/* Define to format (%llu) for unsigned long long */
 #define LLU "%I64u"
 
-/* Define as format (%llx) for long long hex */
+/* Define to format (%llx) for long long hex */
 #define LLX "%I64x"
 
 /* Name of package */
@@ -427,20 +465,20 @@
 /* This is GCC magic  */
 #define __attribute__(x)
 
-/* Define this as 1 if you have TimeGetTime() */
+/* Define to 1 if you have TimeGetTime() */
 #define HAVE_TIMEGETTIME     1
 
 #define PATH_MAX _MAX_PATH
 
 #define HAVE_WINMM 1
 
-/* Define this as 1 if you have FILETIME */
+/* Define to 1 if you have FILETIME */
 #define HAVE_FILETIME 1
 
-/* Define this as 1 if you have WinSock2 ioctl SIO_ADDRESS_LIST_QUERY */
+/* Define to 1 if you have WinSock2 ioctl SIO_ADDRESS_LIST_QUERY */
 #define HAVE_SIO_ADDRESS_LIST_QUERY 1
 
-/* Define this as 1 if you have INTERFACE_INFO ioctl */
+/* Define to 1 if you have INTERFACE_INFO ioctl */
 #define HAVE_INTERFACE_INFO 	   (1) 
 
 /* Ignore certain warnings */

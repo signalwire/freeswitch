@@ -22,7 +22,7 @@
  *
  */
 
-/**@CFILE test_nua_re_invite.c
+/**@CFILE test_session_timer.c
  * @brief NUA-8 tests: Session timer, UPDATE
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -40,10 +40,12 @@
 #elif HAVE_FUNCTION
 #define __func__ __FUNCTION__
 #else
-#define __func__ "test_call_hold"
+#define __func__ "test_session_timer"
 #endif
 
 /* ======================================================================== */
+
+static size_t remove_update(void *a, void *message, size_t len);
 
 int test_session_timer(struct context *ctx)
 {
@@ -69,22 +71,6 @@ int test_session_timer(struct context *ctx)
    |--INVITE->| 	|
    |<--422----|		|
    |---ACK--->|		|
-   |			|
-   |-------INVITE------>|
-   |<-------422---------|
-   |--------ACK-------->|
-   |			|
-   |-------INVITE------>|
-   |<----100 Trying-----|
-   |			|
-   |<----180 Ringing----|
-   |			|
-   |<------200 OK-------|
-   |--------ACK-------->|
-   |			|
-   |<-------BYE---------|
-   |-------200 OK-------|
-   |			|
 
 */
 
@@ -94,8 +80,15 @@ int test_session_timer(struct context *ctx)
   a_call->sdp = "m=audio 5008 RTP/AVP 8";
   b_call->sdp = "m=audio 5010 RTP/AVP 0 8";
 
+  /* We negotiate session timer of 6 second */
+  /* Disable session timer from proxy */
+  test_proxy_set_session_timer(ctx->p, 0, 0); 
+
   nua_set_params(ctx->b.nua,
 		 NUTAG_SESSION_REFRESHER(nua_any_refresher),
+		 NUTAG_MIN_SE(1),
+		 NUTAG_SESSION_TIMER(6),
+		 NTATAG_SIP_T1X64(8000),
 		 TAG_END());
 
   run_b_until(ctx, nua_r_set_params, until_final_response);
@@ -159,23 +152,132 @@ int test_session_timer(struct context *ctx)
   if (print_headings)
     printf("TEST NUA-8.1.1: PASSED\n");
 
-  if (print_headings)
-    printf("TEST NUA-8.1.2: Session timers negotiation\n");
+  if (ctx->expensive) {
+    nua_set_hparams(a_call->nh,
+		    NUTAG_SUPPORTED("timer"),
+		    NUTAG_MIN_SE(1),
+		    NUTAG_SESSION_TIMER(5),
+		    TAG_END());
+    run_a_until(ctx, nua_r_set_params, until_final_response);
 
-  nua_set_hparams(b_call->nh,
-		  NUTAG_AUTOANSWER(0),
-		  NUTAG_MIN_SE(120),
-		  TAG_END());
+    if (print_headings)
+      printf("TEST NUA-8.1.2: Wait for refresh using INVITE\n");
+
+    run_ab_until(ctx, -1, until_ready, -1, until_ready);
+
+    free_events_in_list(ctx, a->events);
+    free_events_in_list(ctx, b->events);
+
+    if (print_headings)
+      printf("TEST NUA-8.1.2: PASSED\n");
+
+    nua_set_hparams(b_call->nh,
+		    NUTAG_UPDATE_REFRESH(1),
+		    TAG_END());
+    run_b_until(ctx, nua_r_set_params, until_final_response);
+
+    if (print_headings)
+      printf("TEST NUA-8.1.3: Wait for refresh using UPDATE\n");
+
+    run_ab_until(ctx, -1, until_ready, -1, until_ready);
+
+    TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_i_update);
+
+    free_events_in_list(ctx, a->events);
+    free_events_in_list(ctx, b->events);
+
+    if (print_headings)
+      printf("TEST NUA-8.1.3: PASSED\n");
+
+    if (ctx->nat) {
+      struct nat_filter *f;
+
+      if (print_headings)
+	printf("TEST NUA-8.1.4: filter UPDATE, wait until session expires\n");
+
+      f = test_nat_add_filter(ctx->nat, remove_update, NULL, nat_inbound);
+      TEST_1(f);
+
+      run_ab_until(ctx, -1, until_terminated, -1, until_terminated);
+      
+      TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_r_bye);
+
+      free_events_in_list(ctx, a->events);
+      free_events_in_list(ctx, b->events);
+
+      nua_handle_destroy(a_call->nh), a_call->nh = NULL;
+      nua_handle_destroy(b_call->nh), b_call->nh = NULL;
+
+      test_nat_remove_filter(ctx->nat, f);
+
+      if (print_headings)
+	printf("TEST NUA-8.1.4: PASSED\n");
+    }
+  }
+
+  if (b_call->nh) {
+    if (print_headings)
+      printf("TEST NUA-8.1.9: Terminate first session timer call\n");
+
+    BYE(b, b_call, b_call->nh, TAG_END());
+    run_ab_until(ctx, -1, until_terminated, -1, until_terminated);
+    free_events_in_list(ctx, a->events);
+    free_events_in_list(ctx, b->events);
+
+    nua_handle_destroy(a_call->nh), a_call->nh = NULL;
+    nua_handle_destroy(b_call->nh), b_call->nh = NULL;
+
+    if (print_headings)
+      printf("TEST NUA-8.1.9: PASSED\n");
+  }
+
+  /*
+   |			|
+   |-------INVITE------>|
+   |<-------422---------|
+   |--------ACK-------->|
+   |			|
+   |-------INVITE------>|
+   |<----100 Trying-----|
+   |			|
+   |<----180 Ringing----|
+   |			|
+   |<------200 OK-------|
+   |--------ACK-------->|
+   |			|
+   |<-------BYE---------|
+   |-------200 OK-------|
+   |			|
+  */
+
+  if (print_headings)
+    printf("TEST NUA-8.2: Session timers negotiation\n");
+
+  test_proxy_set_session_timer(ctx->p, 180, 90);
+
+  nua_set_params(a->nua,
+		 NUTAG_SUPPORTED("timer"),
+		 TAG_END());
+
+  run_a_until(ctx, nua_r_set_params, until_final_response);
+
+  nua_set_params(b->nua,
+		 NUTAG_AUTOANSWER(0),
+		 NUTAG_MIN_SE(120),
+		 NTATAG_SIP_T1X64(2000),
+		 TAG_END());
 
   run_b_until(ctx, nua_r_set_params, until_final_response);
 
+  TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to),
+				 TAG_END()));
 
   INVITE(a, a_call, a_call->nh,
 	 TAG_IF(!ctx->proxy_tests, NUTAG_URL(b->contact->m_url)),
 	 SOATAG_USER_SDP_STR(a_call->sdp),
 	 SIPTAG_SUPPORTED_STR("100rel, timer"),
-	 NUTAG_SESSION_TIMER(15),
-	 NUTAG_MIN_SE(5),
+	 NUTAG_SESSION_TIMER(4),
+	 NUTAG_MIN_SE(3),
 	 TAG_END());
 
   run_ab_until(ctx, -1, until_ready, -1, accept_call);
@@ -252,17 +354,17 @@ int test_session_timer(struct context *ctx)
   free_events_in_list(ctx, b->events);
 
   if (print_headings)
-    printf("TEST NUA-8.1: PASSED\n");
+    printf("TEST NUA-8.2: PASSED\n");
 
   if (print_headings)
-    printf("TEST NUA-8.2: use UPDATE\n");
+    printf("TEST NUA-8.3: UPDATE with session timer headers\n");
 
   UPDATE(b, b_call, b_call->nh, TAG_END());
   run_ab_until(ctx, -1, until_ready, -1, until_ready);
 
   /* Events from B (who sent UPDATE) */
   TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_state);
-  TEST(callstate(e->data->e_tags), nua_callstate_ready); /* READY */
+  TEST(callstate(e->data->e_tags), nua_callstate_calling); /* CALLING */
   TEST_1(is_offer_sent(e->data->e_tags));
   if (!e->next)
     run_b_until(ctx, -1, until_ready);
@@ -313,7 +415,20 @@ int test_session_timer(struct context *ctx)
   nua_handle_destroy(b_call->nh), b_call->nh = NULL;
 
   if (print_headings)
-    printf("TEST NUA-8.2: PASSED\n");
+    printf("TEST NUA-8.3: PASSED\n");
 
   END();
 }
+
+static
+size_t remove_update(void *a, void *message, size_t len)
+{
+  (void)a;
+
+  if (strncmp("UPDATE ", message, 7) == 0) {
+    return 0;
+  }
+
+  return len;
+}
+

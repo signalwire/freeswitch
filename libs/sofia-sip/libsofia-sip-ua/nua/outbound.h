@@ -70,17 +70,11 @@ int outbound_set_options(outbound_t *ob,
 			 unsigned dgram_interval,
 			 unsigned stream_interval);
 
-int outbound_set_features(outbound_t *ob, char *features);
+int outbound_get_contacts(outbound_t *ob, 
+			  sip_contact_t **return_current_contact, 
+			  sip_contact_t **return_previous_contact);
 
-nta_outgoing_t *outbound_register_request(outbound_t *ob, int terminating, 
-					  sip_contact_t *stack_contact,
-					  nta_agent_t *nta,
-					  nta_response_f *callback,
-					  nta_outgoing_magic_t *magic,
-					  url_string_t *next_hop,
-					  msg_t *msg,
-					  tag_type_t tag, tag_value_t value,
-					  ...);
+int outbound_start_registering(outbound_t *ob);
 
 int outbound_register_response(outbound_t *ob,
 			       int terminating,
@@ -102,6 +96,8 @@ int outbound_set_contact(outbound_t *ob,
 
 sip_contact_t const *outbound_dialog_contact(outbound_t const *ob);
 
+sip_contact_t const *outbound_dialog_gruu(outbound_t const *ob);
+
 int outbound_gruuize(outbound_t *ob, sip_t const *sip);
 
 void outbound_start_keepalive(outbound_t *ob,
@@ -122,6 +118,7 @@ struct outbound_owner_vtable
   int oo_size;
   sip_contact_t *(*oo_contact)(outbound_owner_t *,
 			       su_home_t *home,
+			       int used_in_dialog,
 			       char const *extra_username,
 			       sip_via_t const *v,
 			       char const *transport,

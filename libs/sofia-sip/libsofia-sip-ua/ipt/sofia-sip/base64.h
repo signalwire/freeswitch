@@ -57,6 +57,9 @@ SOFIAPUBFUN isize_t base64_e(char buf[], isize_t bsiz, void *data, isize_t dsiz)
 /** Calculate size of n bytes encoded in base64 */
 #define BASE64_SIZE(n) ((((n) + 2) / 3) * 4)
 
+/** Calculate size of n bytes encoded in base64 sans trailing =. @NEW_1_12_5 */
+#define BASE64_MINSIZE(n) ((n * 4 + 2) / 3)
+
 SOFIA_END_DECLS
 
 #endif /* !BASE_64 */

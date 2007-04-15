@@ -70,6 +70,10 @@ typedef int socklen_t;
 #endif
 #endif
 
+#if HAVE_IPHLPAPI_H
+#include <iphlpapi.h>
+#endif
+
 #include <time.h>
 
 #include "sofia-resolv/sres.h"
@@ -159,6 +163,7 @@ struct sockaddr_storage {
 #define INVALID_SOCKET ((sres_socket_t)-1)
 #endif
 
+#define SRES_TIME_MAX ((time_t)LONG_MAX)
 
 #if !HAVE_INET_PTON
 int inet_pton(int af, char const *src, void *dst);
@@ -211,7 +216,10 @@ struct sres_server {
 
   /** ICMP/temporary error received, zero when successful. */
   time_t                  dns_icmp;
-  /** Persisten error, zero when successful. */
+  /** Persistent error, zero when successful or timeout. 
+   *
+   * Never selected if dns_error is SRES_TIME_MAX.
+   */
   time_t                  dns_error;
 };
 
@@ -434,7 +442,7 @@ sres_config_t *sres_parse_resolv_conf(sres_resolver_t *res,
 static
 sres_server_t *sres_next_server(sres_resolver_t *res, 
 				uint8_t *in_out_i,
-				int timeout);
+				int always);
 
 static
 int sres_send_dns_query(sres_resolver_t *res, sres_query_t *q);
@@ -541,7 +549,8 @@ static int m_get_domain(char *d, int n, sres_message_t *m, uint16_t offset);
 #include <winreg.h>
 #endif
 
-/**@var SRESOLV_DEBUG
+#if DOXYGEN_ONLY
+/**@ingroup sresolv_env
  *
  * Environment variable determining the debug log level for @b sresolv
  * module.
@@ -551,7 +560,8 @@ static int m_get_domain(char *d, int n, sres_message_t *m, uint16_t offset);
  * 
  * @sa <su_debug.h>, sresolv_log, SOFIA_DEBUG
  */
-extern char const SRESOLV_DEBUG[];
+extern SRESOLV_DEBUG;
+#endif
 
 /**Debug log for @b sresolv module. 
  * 
@@ -626,7 +636,7 @@ sres_resolver_t *sres_resolver_copy(sres_resolver_t *res)
  *                       (overriding options in conf_file)
  *
  * @par Environment Variables
- * - LOCALDOMAIN overrides @c domain or @c search directives
+ * - #LOCALDOMAIN overrides @c domain or @c search directives
  * - #RES_OPTIONS overrides values of @a options in resolv.conf
  * - #SRES_OPTIONS overrides values of @a options in resolv.conf, #RES_OPTIONS,
  *   and @a options, ... list given as argument for this function
@@ -923,8 +933,8 @@ sres_query(sres_resolver_t *res,
   size_t dlen;
   
   char b[8];
-  SU_DEBUG_9(("sres_query(%p, %p, %p, %s, \"%s\") called\n",
-	      res, callback, context, sres_record_type(type, b), domain));
+  SU_DEBUG_9(("sres_query(%p, %p, %s, \"%s\") called\n",
+			  (void *)res, (void *)context, sres_record_type(type, b), domain));
 
   if (res == NULL || domain == NULL)
     return su_seterrno(EFAULT), (void *)NULL;
@@ -990,8 +1000,8 @@ sres_search(sres_resolver_t *res,
   unsigned dots; char const *dot;
   char b[8];
 
-  SU_DEBUG_9(("sres_search(%p, %p, %p, %s, \"%s\") called\n",
-	      res, callback, context, sres_record_type(type, b), domain));
+  SU_DEBUG_9(("sres_search(%p, %p, %s, \"%s\") called\n",
+			  (void *)res, (void *)context, sres_record_type(type, b), domain));
 
   if (res == NULL || domain == NULL)
     return su_seterrno(EFAULT), (void *)NULL;
@@ -1235,7 +1245,7 @@ sres_search_cached_answers(sres_resolver_t *res,
   int i;
 
   SU_DEBUG_9(("sres_search_cached_answers(%p, %s, \"%s\") called\n",
-	      res, sres_record_type(type, rooted_domain), domain));
+	      (void *)res, sres_record_type(type, rooted_domain), domain));
 
   if (!res || !name)
     return su_seterrno(EFAULT), (void *)NULL;
@@ -1895,6 +1905,36 @@ int sres_update_config(sres_resolver_t *res, int always, time_t now)
 #define MAX_DATALEN           65535
 
 /**
+ * Uses IP Helper IP to get DNS servers list.
+ */
+static int sres_parse_win32_ip(sres_config_t *c)
+{
+  int ret = -1;
+
+#if HAVE_IPHLPAPI_H
+  DWORD dw;
+  su_home_t *home = c->c_home;
+  ULONG size = sizeof(FIXED_INFO);
+
+  do {
+    FIXED_INFO *info = (FIXED_INFO *)su_alloc(home, size);
+    dw = GetNetworkParams(info, &size);
+    if (dw == ERROR_SUCCESS) {
+      IP_ADDR_STRING* addr = &info->DnsServerList;
+      for (; addr; addr = addr->Next) {
+       SU_DEBUG_3(("Adding nameserver: %s\n", addr->IpAddress.String));
+       sres_parse_nameserver(c, addr->IpAddress.String);
+      }
+      ret = 0;
+    }
+    su_free(home, info);
+  } while (dw == ERROR_BUFFER_OVERFLOW);
+#endif
+
+  return ret;
+}
+
+/**
  * Parses name servers listed in registry key 'key+lpValueName'. The
  * key is expected to contain a whitespace separate list of
  * name server IP addresses.
@@ -2072,7 +2112,7 @@ sres_config_t *sres_parse_resolv_conf(sres_resolver_t *res,
 #if _WIN32    
     /* note: no 127.0.0.1 on win32 systems */
     /* on win32, query the registry for nameservers */
-    if (sres_parse_win32_reg(c) == 0) 
+    if (sres_parse_win32_ip(c) == 0 || sres_parse_win32_reg(c) == 0)
       /* success */;
     else
       /* now what? */;
@@ -2203,21 +2243,24 @@ int sres_parse_config(sres_config_t *c, FILE *f)
   return i;
 }
 
-/**Environment variable containing options for Sofia resolver. The options
+#if DOXYGEN_ONLY
+/**@ingroup sresolv_env
+ *
+ * Environment variable containing options for Sofia resolver. The options
  * recognized by Sofia resolver are as follows:
- * - debug           turn on debugging (no effect)
- * - ndots:<i>n</i>  when searching, try first to query name as absolute
- *                   domain if it contains at least <i>n</i> dots
- * - timeout:<i>secs</i> timeout in seconds
- * - attempts:<i>n</i> fail after <i>n</i> retries
- * - rotate          use round robin selection of nameservers
- * - no-check-names  do not check names for invalid characters
- * - inet6           (no effect) 
- * - ip6-dotint      IPv6 addresses are resolved using suffix ".ip6.int"
- *                   instead of the standard ".ip6.arpa" suffix
- * - ip6-bytestring  (no effect)
+ * - @b debug           turn on debugging (no effect)
+ * - @b ndots:<i>n</i>  when searching, try first to query name as absolute
+ *                      domain if it contains at least <i>n</i> dots
+ * - @b timeout:<i>secs</i> timeout in seconds
+ * - @b attempts:<i>n</i> fail after <i>n</i> retries
+ * - @b rotate          use round robin selection of nameservers
+ * - @b no-check-names  do not check names for invalid characters
+ * - @b inet6           (no effect) 
+ * - @b ip6-dotint      IPv6 addresses are resolved using suffix ".ip6.int"
+ *                      instead of the standard ".ip6.arpa" suffix
+ * - @b ip6-bytestring  (no effect)
  * The following option is a Sofia-specific extension:
- * - no-edns0        do not try to use EDNS0 extension (@RFC2671)
+ * - @b no-edns0        do not try to use EDNS0 extension (@RFC2671)
  *
  * The same options can be listed in @b options directive in resolv.conf, or
  * in #RES_OPTIONS environment variable. Note that options given in
@@ -2228,15 +2271,26 @@ int sres_parse_config(sres_config_t *c, FILE *f)
  *
  * @sa Manual page for resolv.conf, #RES_OPTIONS.
  */
-extern char const SRES_OPTIONS[];
+extern SRES_OPTIONS;
 
-/**Environment variable containing resolver options. This environment
+/**@ingroup sresolv_env
+ *
+ * Environment variable containing resolver options. This environment
  * variable is also used by standard BIND resolver.
  *
  * @sa Manual page for resolv.conf, #SRES_OPTIONS.
  */
-extern char const RES_OPTIONS[];
+extern RES_OPTIONS;
 
+/**@ingroup sresolv_env
+ *
+ * Environment variable containing search domain. This environment
+ * variable is also used by standard BIND resolver.
+ *
+ * @sa Manual page for resolv.conf, #RES_OPTIONS, #SRES_OPTIONS.
+ */
+extern LOCALDOMAIN;
+#endif
 
 /* Parse options line or #SRES_OPTIONS or #RES_OPTIONS environment variable. */
 static int 
@@ -2263,7 +2317,7 @@ sres_parse_options(sres_config_t *c, char const *value)
       value += strspn(value, " \t");
 
     if (n > 65536) {
-      SU_DEBUG_3(("sres: %s: invalid %*.s\n", c->c_filename,
+      SU_DEBUG_3(("sres: %s: invalid %*.0s\n", c->c_filename,
 		  (int)(len + extra), b));
       continue;
     }
@@ -2288,7 +2342,7 @@ sres_parse_options(sres_config_t *c, char const *value)
     else if (MATCH("no-edns0")) c->c_opt.edns = edns_not_supported;
     else if (MATCH("edns0")) c->c_opt.edns = edns0_configured;
     else {
-      SU_DEBUG_3(("sres: %s: unknown option %*.s\n",
+      SU_DEBUG_3(("sres: %s: unknown option %*.0s\n",
 		  c->c_filename, (int)(len + extra), b));
     }
   }
@@ -2437,7 +2491,7 @@ void sres_servers_close(sres_resolver_t *res,
     if (!servers[i])
       break;
 
-    if (servers[i]->dns_socket != -1) {
+    if (servers[i]->dns_socket != INVALID_SOCKET) {
       if (res->res_updcb)
 	res->res_updcb(res->res_async, INVALID_SOCKET, servers[i]->dns_socket);
       sres_close(servers[i]->dns_socket);
@@ -2467,14 +2521,13 @@ sres_socket_t sres_server_socket(sres_resolver_t *res, sres_server_t *dns)
   int family = dns->dns_addr->ss_family;
   sres_socket_t s;
 
-  if (dns->dns_socket != -1)
+  if (dns->dns_socket != INVALID_SOCKET)
     return dns->dns_socket;
 
   s = socket(family, SOCK_DGRAM, IPPROTO_UDP);
   if (s == -1) {
     SU_DEBUG_1(("%s: %s: %s\n", "sres_server_socket", "socket",
 		su_strerror(su_errno())));
-    dns->dns_error = time(NULL);
     return s;
   }
 
@@ -2517,7 +2570,6 @@ sres_socket_t sres_server_socket(sres_resolver_t *res, sres_server_t *dns)
 		su_strerror(su_errno()), lb, ipaddr, rb,
 		ntohs(((struct sockaddr_in *)dns->dns_addr)->sin_port)));
     sres_close(s);
-    dns->dns_error = time(NULL);
     return INVALID_SOCKET;
   }
   
@@ -2526,7 +2578,6 @@ sres_socket_t sres_server_socket(sres_resolver_t *res, sres_server_t *dns)
       SU_DEBUG_1(("%s: %s: %s\n", "sres_server_socket", "update callback",
 		  su_strerror(su_errno())));
       sres_close(s);
-      dns->dns_error = time(NULL);
       return INVALID_SOCKET;
     }
   }
@@ -2547,7 +2598,7 @@ sres_send_dns_query(sres_resolver_t *res,
   sres_message_t m[1];
   uint8_t i, i0, N = res->res_n_servers;
   sres_socket_t s;
-  int transient, error = 0;
+  int error = 0;
   ssize_t size, no_edns_size, edns_size;
   uint16_t id = q->q_id;
   uint16_t type = q->q_type;
@@ -2558,7 +2609,7 @@ sres_send_dns_query(sres_resolver_t *res,
 
   if (now == 0) time(&now);
 
-  SU_DEBUG_9(("sres_send_dns_query(%p, %p) called\n", res, q));
+  SU_DEBUG_9(("sres_send_dns_query(%p, %p) called\n", (void *)res, (void *)q));
 
   if (domain == NULL)
     return -1;
@@ -2600,17 +2651,14 @@ sres_send_dns_query(sres_resolver_t *res,
     return -1;
   }
 
-  transient = 0;
+  i0 = q->q_i_server;
+  if (i0 > N) i0 = 0; /* Number of DNS servers reduced */
+  dns = servers[i = i0];
 
-  i0 = q->q_i_server; if (i0 > N) i0 = 0; /* Number of DNS servers reduced */
+  if (res->res_config->c_opt.rotate || dns->dns_error || dns->dns_icmp)
+    dns = sres_next_server(res, &q->q_i_server, 1), i = q->q_i_server;
 
-  if (res->res_config->c_opt.rotate || 
-      servers[i0]->dns_error || servers[i0]->dns_icmp)
-    dns = sres_next_server(res, &q->q_i_server, 0), i = q->q_i_server;
-  else 
-    dns = servers[i0], i = i0;
-
-  for (; dns; dns = sres_next_server(res, &i, 0)) {
+  for (; dns; dns = sres_next_server(res, &i, 1)) {
     /* If server supports EDNS, include EDNS0 record */
     q->q_edns = dns->dns_edns;
     /* 0 (no EDNS) or 1 (EDNS supported) additional data records */
@@ -2620,17 +2668,18 @@ sres_send_dns_query(sres_resolver_t *res,
 
     s = sres_server_socket(res, dns);
 
-    /* Send the DNS message via the UDP socket */
-    if (s != INVALID_SOCKET && sres_send(s, m->m_data, size, 0) == size)
-      break;
-
-    error = su_errno();
-    dns->dns_icmp = now;
-    /* EINVAL is returned if destination address is bad */
-    if (transient++ < 3 && error != EINVAL && s != -1)
+    if (s == INVALID_SOCKET) {
+      dns->dns_icmp = now;
+      dns->dns_error = SRES_TIME_MAX;
       continue;
-    transient = 0;
+    }
 
+    /* Send the DNS message via the UDP socket */
+    if (sres_send(s, m->m_data, size, 0) == size)
+      break;
+    error = su_errno();
+
+    dns->dns_icmp = now;
     dns->dns_error = now;	/* Mark as a bad destination */
   }
 
@@ -2645,46 +2694,76 @@ sres_send_dns_query(sres_resolver_t *res,
 
   SU_DEBUG_5(("%s(%p, %p) id=%u %s %s (to [%s]:%u)\n", 
 	      "sres_send_dns_query",
-	      res, q, id, sres_record_type(type, b), domain, 
+	      (void *)res, (void *)q, id, sres_record_type(type, b), domain, 
 	      dns->dns_name, 
 	      htons(((struct sockaddr_in *)dns->dns_addr)->sin_port)));
 
   return 0;
 }
 
+/** Retry time after ICMP error */
+#define DNS_ICMP_TIMEOUT 60
 
-/** Select next server */
+/** Retry time after immediate error */
+#define DNS_ERROR_TIMEOUT 10
+
+/** Select next server.
+ *
+ * @param res resolver object
+ * @param[in,out] in_out_i index to DNS server table
+ * @param always return always a server
+ */
 static
 sres_server_t *sres_next_server(sres_resolver_t *res, 
 				uint8_t *in_out_i,
-				int timeout)
+				int always)
 {
   int i, j, N;
-  sres_server_t **servers;
-
-  assert(res && in_out_i);
+  sres_server_t *dns, **servers;
+  time_t now = res->res_now;
 
   N = res->res_n_servers;
   servers = res->res_servers;
   i = *in_out_i;
 
   assert(res->res_servers && res->res_servers[i]);
+
+  for (j=0; j < N; j++) {
+    dns = servers[j]; if (!dns) continue;
+    if (dns->dns_icmp + DNS_ICMP_TIMEOUT < now)
+      dns->dns_icmp = 0;
+    if (dns->dns_error + DNS_ERROR_TIMEOUT < now &&
+	dns->dns_error != SRES_TIME_MAX)
+      dns->dns_error = 0;
+  }
   
   /* Retry using another server? */
   for (j = (i + 1) % N; (j != i); j = (j + 1) % N) {
-    if (servers[j]->dns_icmp == 0) {
-      return *in_out_i = j, servers[j];
+    dns = servers[j]; if (!dns) continue;
+    if (dns->dns_icmp == 0) {
+      return *in_out_i = j, dns;
     }
   }
 
   for (j = (i + 1) % N; (j != i); j = (j + 1) % N) {
-    if (servers[j]->dns_error == 0) {
-      return *in_out_i = j, servers[j];
+    dns = servers[j]; if (!dns) continue;
+    if (dns->dns_error == 0) {
+      return *in_out_i = j, dns;
     }
   }
 
-  if (timeout)
-    return servers[i];
+  if (!always)
+    return NULL;
+
+  dns = servers[i]; 
+  if (dns && dns->dns_error < now && dns->dns_error != SRES_TIME_MAX)
+    return dns;
+
+  for (j = (i + 1) % N; j != i; j = (j + 1) % N) {
+    dns = servers[j]; if (!dns) continue;
+    if (dns->dns_error < now && dns->dns_error != SRES_TIME_MAX)
+      return *in_out_i = j, dns;
+  }
   
   return NULL;
 }
@@ -2763,7 +2842,7 @@ sres_query_report_error(sres_query_t *q,
     }
 
     SU_DEBUG_5(("sres(q=%p): reporting errors for %u %s\n",
-		q, q->q_type, q->q_name));
+		(void *)q, q->q_type, q->q_name));
  
     sres_remove_query(q->q_res, q, 1);
     (q->q_callback)(q->q_context, q, answers);
@@ -2822,15 +2901,21 @@ void sres_resolver_timer(sres_resolver_t *res, int dummy)
   sres_cache_clean(res->res_cache, res->res_now);
 }
 
-/** Resend DNS query, report error if cannot resend any more. */
+/** Resend DNS query, report error if cannot resend any more.
+ * 
+ * @param res  resolver object
+ * @param q    query object
+ * @param timeout  true if resent because of timeout
+ *                (false if because icmp error report)
+ */
 static void
 sres_resend_dns_query(sres_resolver_t *res, sres_query_t *q, int timeout)
 {
   uint8_t i, N;
   sres_server_t *dns;
-
-  SU_DEBUG_9(("sres_resend_dns_query(%p, %p, %u) called\n",
-	      res, q, timeout));
+  
+  SU_DEBUG_9(("sres_resend_dns_query(%p, %p, %s) called\n",
+	      (void *)res, (void *)q, timeout ? "timeout" : "error"));
   
   N = res->res_n_servers;
 
@@ -2956,6 +3041,11 @@ int sres_resolver_sockets(sres_resolver_t *res,
 
     s = sres_server_socket(res, dns);
 
+    if (s == INVALID_SOCKET) {	/* Mark as a bad destination */
+      dns->dns_icmp = SRES_TIME_MAX;
+      dns->dns_error = SRES_TIME_MAX;	
+    }
+
     return_sockets[i++] = s;
   }
 
@@ -2998,7 +3088,8 @@ int sres_resolver_error(sres_resolver_t *res, int socket)
   int n;
   char info[128] = "";
 
-  SU_DEBUG_9(("%s(%p, %u) called\n", "sres_resolver_error", res, socket));
+  SU_DEBUG_9(("%s(%p, %u) called\n", "sres_resolver_error",
+	      (void *)res, socket));
 
   msg->msg_name = name, msg->msg_namelen = sizeof(name);
   msg->msg_iov = iov, msg->msg_iovlen = 1;
@@ -3111,7 +3202,8 @@ int sres_resolver_error(sres_resolver_t *res, int socket)
   int errcode = 0;
   socklen_t errorlen = sizeof(errcode);
 
-  SU_DEBUG_9(("%s(%p, %u) called\n", "sres_resolver_error", res, socket));
+  SU_DEBUG_9(("%s(%p, %u) called\n", "sres_resolver_error",
+	      (void *)res, socket));
 
   getsockopt(socket, SOL_SOCKET, SO_ERROR, (void *)&errcode, &errorlen);
 
@@ -3176,7 +3268,7 @@ sres_resolver_report_error(sres_resolver_t *res,
 	  continue;
 
 	/* Resend query/report error to application */
-	sres_resend_dns_query(res, q, 1);
+	sres_resend_dns_query(res, q, 0);
 
 	if (q != res->res_queries->qt_table[i])
 	  i--;
@@ -3203,7 +3295,8 @@ sres_resolver_receive(sres_resolver_t *res, int socket)
   struct sockaddr_storage from[1];
   socklen_t fromlen = sizeof from;
 
-  SU_DEBUG_9(("%s(%p, %u) called\n", "sres_resolver_receive", res, socket));
+  SU_DEBUG_9(("%s(%p, %u) called\n", "sres_resolver_receive",
+	      (void *)res, socket));
 
   memset(m, 0, offsetof(sres_message_t, m_data)); 
   
@@ -3282,7 +3375,7 @@ void sres_log_response(sres_resolver_t const *res,
 #endif
 
     SU_DEBUG_5(("sres_resolver_receive(%p, %p) id=%u (from [%s]:%u)\n", 
-		res, query, m->m_id, 
+		(void *)res, (void *)query, m->m_id, 
 		host, ntohs(((struct sockaddr_in *)from)->sin_port)));
   }
 }

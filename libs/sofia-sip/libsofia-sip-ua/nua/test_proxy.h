@@ -48,6 +48,14 @@ void test_proxy_get_expiration(struct proxy *,
 			       sip_time_t *return_expires, 
 			       sip_time_t *return_max_expires);
 
+void test_proxy_set_session_timer(struct proxy *p,
+				  sip_time_t session_expires, 
+				  sip_time_t min_se);
+
+void test_proxy_get_session_timer(struct proxy *p,
+				  sip_time_t *return_session_expires,
+				  sip_time_t *return_min_se);
+
 SOFIA_END_DECLS
 
 #endif

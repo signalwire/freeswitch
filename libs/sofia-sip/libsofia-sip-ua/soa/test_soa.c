@@ -353,7 +353,9 @@ int test_static_offer_answer(struct context *ctx)
   soa_session_t *a, *b;
 
   char const *caps = NONE, *offer = NONE, *answer = NONE;
-  isize_t capslen = -1, offerlen = -1, answerlen = -1;
+  isize_t capslen = (isize_t)-1;
+  isize_t offerlen = (isize_t)-1;
+  isize_t answerlen = (isize_t)-1;
 
   su_home_t home[1] = { SU_HOME_INIT(home) };
 
@@ -611,7 +613,7 @@ int test_codec_selection(struct context *ctx)
   soa_session_t *a, *b;
 
   char const *offer = NONE, *answer = NONE;
-  isize_t offerlen = -1, answerlen = -1;
+  isize_t offerlen = (isize_t)-1, answerlen = (isize_t)-1;
 
   sdp_session_t const *a_sdp, *b_sdp;
   sdp_media_t const *m;
@@ -1243,12 +1245,12 @@ static RETSIGTYPE sig_alarm(int s)
 }
 #endif
 
-void usage(void)
+void usage(int exitcode)
 {
   fprintf(stderr, 
-	  "usage: %s [-v|-q] [-l level] [-p outbound-proxy-uri]\n", 
+	  "usage: %s [-v|-q] [-a] [-l level] [-p outbound-proxy-uri]\n", 
 	  name);
-  exit(1);
+  exit(exitcode);
 }
 
 int main(int argc, char *argv[])
@@ -1261,6 +1263,8 @@ int main(int argc, char *argv[])
   for (i = 1; argv[i]; i++) {
     if (strcmp(argv[i], "-v") == 0)
       tstflags |= tst_verbatim;
+    else if (strcmp(argv[i], "-a") == 0)
+      tstflags |= tst_abort;
     else if (strcmp(argv[i], "-q") == 0)
       tstflags &= ~tst_verbatim;
     else if (strcmp(argv[i], "-1") == 0)
@@ -1277,7 +1281,7 @@ int main(int argc, char *argv[])
 	level = 3, rest = "";
 
       if (rest == NULL || *rest)
-	usage();
+	usage(1);
       
       su_log_set_level(soa_log, level);
     }
@@ -1294,7 +1298,7 @@ int main(int argc, char *argv[])
       break;
     }
     else
-      usage();
+      usage(1);
   }
 
   if (o_attach) {

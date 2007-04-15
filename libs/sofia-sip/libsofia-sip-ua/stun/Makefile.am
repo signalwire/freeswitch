@@ -38,14 +38,7 @@ BUILT_SOURCES =		stun_tag_ref.c
 
 COVERAGE_INPUT = 	$(libstun_la_SOURCES) $(include_sofia_HEADERS)
 
-LDADD =			\
-			libstun.la
-			../sresolv/libsresolv.la \
-			../su/libsu.la
-
-stunc_LDADD = libstun.la ../sresolv/libsresolv.la ../su/libsu.la
-
-lookup_stun_server_LDADD = libstun.la ../sresolv/libsresolv.la ../su/libsu.la
+LDADD = 		libstun.la ../sresolv/libsresolv.la ../su/libsu.la
 
 # ----------------------------------------------------------------------
 # tests
@@ -58,6 +51,6 @@ EXTRA_DIST =		Doxyfile stun.docs cert.pem key.pem
 # ----------------------------------------------------------------------
 # Sofia specific rules
 
-include ../sofia.am
+include $(top_srcdir)/rules/sofia.am
 
 TAG_DLL_FLAGS =		LIST=stun_tag_list

@@ -25,6 +25,7 @@ check_PROGRAMS =       torture_sip \
 GENERATED_H = 		sofia-sip/sip_hclasses.h \
 			sofia-sip/sip_protos.h sofia-sip/sip_tag.h \
 			sofia-sip/sip_extra.h
+
 H_IN = 			sofia-sip/sip_hclasses.h.in \
 			sofia-sip/sip_protos.h.in sofia-sip/sip_tag.h.in \
 			sofia-sip/sip_extra.h.in
@@ -33,9 +34,9 @@ PUBLIC_H = sofia-sip/sip.h sofia-sip/sip_util.h \
            sofia-sip/sip_header.h sofia-sip/sip_parser.h \
 	   sofia-sip/sip_tag_class.h sofia-sip/sip_status.h
 
-GENERATED_C = sip_tag.c sip_tag_ref.c sip_parser_table.c
+GENERATED_C = sip_tag.c sip_parser_table.c
 
-BUILT_SOURCES = 	$(GENERATED_H) $(GENERATED_C)
+BUILT_SOURCES = 	$(GENERATED_H) $(GENERATED_C) sip_tag_ref.c
 
 nobase_include_sofia_HEADERS = $(GENERATED_H) $(PUBLIC_H) $(H_IN)
 
@@ -46,8 +47,8 @@ libsip_la_SOURCES = 	$(INTERNAL_H) \
 			sip_refer.c sip_session.c \
 			sip_caller_prefs.c sip_reason.c \
 			sip_status.c sip_time.c \
-			sip_tag_class.c \
-			$(GENERATED_C)
+			sip_tag_class.c sip_inlined.c \
+			$(BUILT_SOURCES)
 
 COVERAGE_INPUT = 	$(libsip_la_SOURCES) $(include_sofia_HEADERS)
 
@@ -55,6 +56,7 @@ LDADD = 		libsip.la \
 			../msg/libmsg.la \
 			../bnf/libbnf.la \
 			../url/liburl.la \
+			../ipt/libipt.la \
 			../su/libsu.la
 
 torture_sip_LDFLAGS = 	-static
@@ -93,62 +95,53 @@ EXTRA_DIST =		Doxyfile sip.docs sip_parser.docs sip.doxyaliases \
 # ----------------------------------------------------------------------
 # Tests
 
-#TESTS = torture_sip run_test_sip_msg run_test_date
+TESTS = torture_sip run_test_sip_msg run_test_date
 
-#dist_noinst_SCRIPTS = 	run_test_sip_msg run_test_date
+dist_noinst_SCRIPTS = 	run_test_sip_msg run_test_date
 
 # ----------------------------------------------------------------------
 # Sofia specific rules
 
-include ../sofia.am
+include $(top_srcdir)/rules/sofia.am
 
 MSG_PARSER_AWK = $(srcdir)/../msg/msg_parser.awk
 
 AWK_SIP_AWK = $(AWK) -f $(MSG_PARSER_AWK) module=sip
 
-#
+SS_SIP_H = ${srcdir}/sofia-sip/sip.h
+
+EXTRA = ${srcdir}/sip_extra_headers.txt
+
+${GENERATED_H} ${GENERATED_C}: ${SS_SIP_H} ${MSG_PARSER_AWK}
+
+sofia-sip/sip_hclasses.h: ${srcdir}/sofia-sip/sip_hclasses.h.in
+	@-mkdir sofia-sip 2>/dev/null || true
+	${AWK_SIP_AWK} PR=$@ TEMPLATE=${srcdir}/$@.in ${SS_SIP_H}
+
+sofia-sip/sip_protos.h: ${srcdir}/sofia-sip/sip_protos.h.in
+	@-mkdir sofia-sip 2>/dev/null || true
+	${AWK_SIP_AWK} PR=$@ TEMPLATE=${srcdir}/$@.in ${SS_SIP_H}
+
+sofia-sip/sip_tag.h: ${srcdir}/sofia-sip/sip_tag.h.in
+	@-mkdir sofia-sip 2>/dev/null || true
+	${AWK_SIP_AWK} PR=$@ TEMPLATE=${srcdir}/$@.in ${SS_SIP_H}
+
+sip_tag.c: ${srcdir}/sip_tag.c.in ${EXTRA}
+	${AWK_SIP_AWK} PR=$@ TEMPLATE=${srcdir}/$@.in ${SS_SIP_H} ${EXTRA}
+
 # Note: sip_bad_mask is used by nta to weed out bad messages
-#
-sip_parser_table.c: sip_bad_mask
 
-sofia-sip/sip_hclasses.h: sofia-sip/sip_hclasses.h.in
-sofia-sip/sip_protos.h: sofia-sip/sip_protos.h.in
-sofia-sip/sip_tag.h: sofia-sip/sip_tag.h.in
+sip_parser_table.c: ${srcdir}/sip_parser_table.c.in ${EXTRA} sip_bad_mask
+	${AWK_SIP_AWK} PT=$@ TEMPLATE=${srcdir}/$@.in \
+		FLAGFILE=${srcdir}/sip_bad_mask \
+		MC_HASH_SIZE=127 MC_SHORT_SIZE=26 \
+		${SS_SIP_H} ${EXTRA}
 
-$(GENERATED_H): $(MSG_PARSER_AWK)
-
-sip_parser_table.c: sip_parser_table.c.in $(MSG_PARSER_AWK)
-sip_tag.c: sip_tag.c.in $(MSG_PARSER_AWK)
-
-EXTRA = $(srcdir)/sip_extra_headers.txt
-
-sofia-sip/sip_hclasses.h: sofia-sip/sip.h
-	@-mkdir sofia-sip 2>/dev/null || true
-	$(AWK_SIP_AWK) PR=$@ TEMPLATE=$(srcdir)/sofia-sip/sip_hclasses.h.in $<
-
-sofia-sip/sip_protos.h: sofia-sip/sip.h
-	@-mkdir sofia-sip 2>/dev/null || true
-	$(AWK_SIP_AWK) PR=$@ TEMPLATE=$(srcdir)/sofia-sip/sip_protos.h.in $<
-
-sofia-sip/sip_tag.h: sofia-sip/sip.h
-	@-mkdir sofia-sip 2>/dev/null || true
-	$(AWK_SIP_AWK) PR=$@ TEMPLATE=$(srcdir)/sofia-sip/sip_tag.h.in $<
-
-sip_tag.c: sofia-sip/sip.h sip_extra_headers.txt
-	$(AWK_SIP_AWK) PR=$@ TEMPLATE=$(srcdir)/sip_tag.c.in $< $(EXTRA)
-
-sip_parser_table.c: sip_extra_headers.txt
-
-sip_parser_table.c: sofia-sip/sip.h
-	$(AWK_SIP_AWK) PT=$@ TEMPLATE=$(srcdir)/sip_parser_table.c.in \
-		FLAGFILE=$(srcdir)/sip_bad_mask \
-		MC_HASH_SIZE=127 MC_SHORT_SIZE=26 $< $(EXTRA)
-
-sofia-sip/sip_extra.h: sofia-sip/sip_extra.h.in sip_extra_headers.txt
+sofia-sip/sip_extra.h: ${srcdir}/sofia-sip/sip_extra.h.in ${EXTRA}
 	@-mkdir -p sofia-sip 2>/dev/null
 	${AWK_SIP_AWK} PR=$@ NO_FIRST=1 NO_LAST=1 \
 		PACKAGE_NAME="${PACKAGE_NAME}" \
 		PACKAGE_VERSION="${PACKAGE_VERSION}" \
 		TEMPLATE1=${srcdir}/sofia-sip/sip_hclasses.h.in \
 		TEMPLATE2=${srcdir}/sofia-sip/sip_protos.h.in \
-		TEMPLATE=$< $(EXTRA)
+		TEMPLATE=${srcdir}/$@.in ${EXTRA}

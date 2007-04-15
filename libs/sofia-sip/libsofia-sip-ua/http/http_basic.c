@@ -55,6 +55,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+#include <limits.h>
 
 /* ====================================================================== */
 
@@ -1196,7 +1197,7 @@ char *http_range_dup_one(msg_header_t *dst, msg_header_t const *src,
   http_range_t const *o = (http_range_t const *)src;
   char *end = b + xtra;
 
-  b = msg_params_dup((char const * const **)&rng->rng_specs,
+  b = msg_params_dup((msg_param_t const **)&rng->rng_specs,
 		     o->rng_specs, b, xtra);
   MSG_STRING_DUP(b, rng->rng_unit, o->rng_unit);
 

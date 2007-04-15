@@ -1974,6 +1974,8 @@ msg_t *msg_make(msg_mclass_t const *mc, int flags,
     return NULL;
 
   msg = msg_create(mc, flags);
+  if (msg == NULL)
+    return NULL;
 
   su_home_preload(msg_home(msg), 1, len + 1024);
 

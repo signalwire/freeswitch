@@ -45,15 +45,15 @@ typedef struct bw_fwd_table bm_fwd_table_t;
 
 SOFIAPUBFUN bm_fwd_table_t *bm_memmem_study(char const *needle, size_t nlen);
 
-SOFIAPUBFUN char const* bm_memmem(char const *haystack, size_t hlen,
-				  char const *needle, size_t nlen,
-				  bm_fwd_table_t *fwd);
+SOFIAPUBFUN char *bm_memmem(char const *haystack, size_t hlen,
+			    char const *needle, size_t nlen,
+			    bm_fwd_table_t *fwd);
 
 SOFIAPUBFUN bm_fwd_table_t *bm_memcasemem_study(char const *needle, size_t);
 
-SOFIAPUBFUN char const* bm_memcasemem(char const *haystack, size_t hlen,
-				      char const *needle, size_t nlen,
-				      bm_fwd_table_t *fwd);
+SOFIAPUBFUN char *bm_memcasemem(char const *haystack, size_t hlen,
+				char const *needle, size_t nlen,
+				bm_fwd_table_t *fwd);
 
 SOFIA_END_DECLS
 

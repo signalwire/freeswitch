@@ -822,7 +822,7 @@ int soa_sdp_mode_set_is_needed(sdp_session_t const *session,
   sdp_mode_t recv_mode;
 
   SU_DEBUG_7(("soa_sdp_mode_set_is_needed(%p, %p, \"%s\"): called\n",
-	      session, remote, hold ? hold : ""));
+	      (void *)session, (void *)remote, hold ? hold : ""));
 
   if (!session )
     return 0;
@@ -865,7 +865,7 @@ int soa_sdp_mode_set(sdp_session_t *session,
   sdp_mode_t send_mode, recv_mode;
 
   SU_DEBUG_7(("soa_sdp_mode_set(%p, %p, \"%s\"): called\n",
-	      session, remote, hold ? hold : ""));
+	      (void *)session, (void *)remote, hold ? hold : ""));
 
   if (!session || !session->sdp_media)
     return 0;
@@ -928,7 +928,8 @@ static int offer_answer_step(soa_session_t *ss,
 
   su_home_auto(tmphome, sizeof tmphome);
 
-  SU_DEBUG_7(("soa_static_offer_answer_action(%p, %s): called\n", ss, by));
+  SU_DEBUG_7(("soa_static_offer_answer_action(%p, %s): called\n",
+	      (void *)ss, by));
 
   if (user == NULL)
     return soa_set_status(ss, 500, "No session set by user");
@@ -954,7 +955,8 @@ static int offer_answer_step(soa_session_t *ss,
   if (local == NULL) switch (action) {
   case generate_offer:
   case generate_answer:
-    SU_DEBUG_7(("soa_static(%p, %s): generating local description\n", ss, by));
+    SU_DEBUG_7(("soa_static(%p, %s): %s\n", (void *)ss, by,
+		"generating local description"));
 
     local = local0;
     *local = *user, local->sdp_media = NULL;
@@ -987,7 +989,7 @@ static int offer_answer_step(soa_session_t *ss,
       break;
     if (local != local0)
       *local0 = *local, local = local0;
-    SU_DEBUG_7(("soa_static(%p, %s): %s\n", ss, by, 
+    SU_DEBUG_7(("soa_static(%p, %s): %s\n", (void *)ss, by, 
 		"upgrade with local description"));
     soa_sdp_upgrade(ss, tmphome, local, user, user);
     break;
@@ -999,7 +1001,7 @@ static int offer_answer_step(soa_session_t *ss,
     if (1) {
       if (local != local0)
 	*local0 = *local, local = local0;
-      SU_DEBUG_7(("soa_static(%p, %s): %s\n", ss, by,
+      SU_DEBUG_7(("soa_static(%p, %s): %s\n", (void *)ss, by,
 		  "upgrade with remote description"));
       soa_sdp_upgrade(ss, tmphome, local, user, remote);
     }
@@ -1032,7 +1034,8 @@ static int offer_answer_step(soa_session_t *ss,
 	} while (0)
 	DUP_LOCAL(local);
       }
-      SU_DEBUG_7(("soa_static(%p, %s): marking rejected media\n", ss, by));
+      SU_DEBUG_7(("soa_static(%p, %s): %s\n", (void *)ss, by, 
+		  "marking rejected media"));
       soa_sdp_reject(tmphome, local, remote);
     }
     break;
@@ -1065,7 +1068,7 @@ static int offer_answer_step(soa_session_t *ss,
     if (ss->ss_local_remote_version == remote_version)
       break;
     if (1 /* We don't have good test for codecs */) {
-      SU_DEBUG_7(("soa_static(%p, %s): %s\n", ss, by,
+      SU_DEBUG_7(("soa_static(%p, %s): %s\n", (void *)ss, by,
 		  "upgrade codecs with remote description"));
       if (local != local0) {
 	*local0 = *local, local = local0; 
@@ -1143,7 +1146,8 @@ static int offer_answer_step(soa_session_t *ss,
       ss->ss_previous_remote_version = ss->ss_local_remote_version;
     }
 
-    SU_DEBUG_7(("soa_static(%p, %s): storing local description\n", ss, by));
+    SU_DEBUG_7(("soa_static(%p, %s): %s\n", (void *)ss, by,
+		"storing local description"));
 
     /* Update the unparsed and pretty-printed descriptions  */
     if (soa_description_set(ss, ss->ss_local, local, NULL, 0) < 0) {

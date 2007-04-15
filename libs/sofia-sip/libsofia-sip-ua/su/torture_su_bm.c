@@ -43,12 +43,8 @@
 char const *name = "torture_su_bm";
 int tstflags;
 
-#define TORTURELOG(x)		       \
-  do {				       \
-    if (tstflags & (2 * tst_verbatim)) \
-      printf x;			       \
-  } while(0)
-    
+#define TORTURELOG TEST_LOG
+
 #include "su_bm.c"
 
 int test_bm(void)
@@ -192,6 +188,8 @@ char const Needle[] =
 
     s = bm_memmem(hs, strlen(hs), needle, nlen, fwd);
 
+    free(fwd);
+
     TEST_S(s, hs + 1919);
 
     TEST_1(bm_memmem(hs, strlen(hs), Needle, nlen, NULL) == 0);
@@ -211,11 +209,12 @@ char const Needle[] =
 }
 
 
-void usage(void)
+void usage(int exitcode)
 {
   fprintf(stderr, 
-	  "usage: %s [-v]\n", 
+	  "usage: %s [-v] [-a]\n", 
 	  name);
+  exit(exitcode);
 }
 
 int main(int argc, char *argv[])
@@ -232,10 +231,12 @@ int main(int argc, char *argv[])
   for (i = 1; argv[i]; i++) {
     if (strcmp(argv[i], "-v") == 0)
       tstflags |= tst_verbatim;
+    else if (strcmp(argv[i], "-a") == 0)
+      tstflags |= tst_abort;
     else if (strcmp(argv[i], "-l") == 0)
-      tstflags |= 2 * tst_verbatim;
+      tstflags |= tst_log;
     else
-      usage();
+      usage(1);
   }
 
   retval |= test_bm(); fflush(stdout);

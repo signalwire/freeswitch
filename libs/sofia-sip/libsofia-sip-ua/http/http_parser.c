@@ -61,9 +61,9 @@ char const http_version_1_0[] = "HTTP/1.0";
 /** HTTP version 0.9 is an empty string. */
 char const http_version_0_9[] = "";
 
-msg_mclass_t *http_default_mclass(void)
+msg_mclass_t const *http_default_mclass(void)
 {
-  extern msg_mclass_t http_mclass[];
+  extern msg_mclass_t const http_mclass[];
 
   return http_mclass;
 }

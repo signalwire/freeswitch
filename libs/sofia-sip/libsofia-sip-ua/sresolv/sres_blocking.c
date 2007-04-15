@@ -86,7 +86,13 @@ struct sres_blocking_s
 #elif HAVE_SELECT
   struct { sres_socket_t fd; } fds[SRES_MAX_NAMESERVERS];
 #else
-#error No wait mechanism!
+#warning No guaranteed wait mechanism!
+/* typedef struct os_specific su_wait_t; */
+struct _pollfd {
+  sres_socket_t fd;   /* file descriptor */
+  short events;     /* requested events */
+  short revents;    /* returned events */
+} fds[SRES_MAX_NAMESERVERS];
 #endif
   sres_record_t ***return_records;  
 };

@@ -106,7 +106,7 @@ HTABLE_SCOPE entry_t **prefix##_hash(prefix##_t const *, hash_value_t hv); \
 HTABLE_SCOPE entry_t **prefix##_next(prefix##_t const *, entry_t * const *ee); \
 HTABLE_SCOPE void prefix##_append(prefix##_t *pr, entry_t const *e); \
 HTABLE_SCOPE void prefix##_insert(prefix##_t *pr, entry_t const *e); \
-HTABLE_SCOPE void prefix##_remove(prefix##_t *, entry_t const *e)
+HTABLE_SCOPE int prefix##_remove(prefix##_t *, entry_t const *e)
 
 /** Hash table implementation.
  *
@@ -220,13 +220,13 @@ void prefix##_insert(prefix##_t *pr, entry_t const *e) \
 } \
 \
 HTABLE_SCOPE \
-void prefix##_remove(prefix##_t *pr, entry_t const *e) \
+int prefix##_remove(prefix##_t *pr, entry_t const *e) \
 { \
   size_t i, j, k; \
   size_t size = pr->pr##_size; \
   entry_t **htable = pr->pr##_table; \
 \
-  if (!e) return; \
+  if (!e) return -1; \
 \
   /* Search for entry */ \
   for (i = hfun(e) % size; htable[i]; i = (i + 1) % size) \
@@ -234,7 +234,7 @@ void prefix##_remove(prefix##_t *pr, entry_t const *e) \
       break; \
 \
   /* Entry is not in table? */ \
-  assert(htable[i]); if (!e) return; \
+  if (!htable[i]) return -1; \
 \
   /* Move table entries towards their primary place  */ \
   for (j = (i + 1) % size; htable[j]; j = (j + 1) % size) { \
@@ -252,6 +252,8 @@ void prefix##_remove(prefix##_t *pr, entry_t const *e) \
   pr->pr##_used--; \
 \
   htable[i] = NULL; \
+\
+  return 0; \
 } \
 extern int prefix##_dummy
 

@@ -37,7 +37,7 @@
 
 #include "config.h"
 
-char const *name = "su_root_test";
+char const *name = "torture_su_root";
 
 #include <stdio.h>
 #include <string.h>
@@ -54,15 +54,19 @@ typedef struct test_ep_s   test_ep_t;
 
 #include <sofia-sip/su_wait.h>
 #include <sofia-sip/su_alloc.h>
+#include <sofia-sip/su_log.h>
 
-typedef struct test_ep_s {
+struct test_ep_s {
+  test_ep_t     *next, **prev, **list;
   int           i;
   int           s;
   su_wait_t     wait[1];
   int           registered;
   socklen_t     addrlen;
   su_sockaddr_t addr[1];
-} test_ep_at[1];
+};
+
+typedef struct test_ep_s   test_ep_at[1];
 
 struct root_test_s {
   su_home_t  rt_home[1];
@@ -81,11 +85,22 @@ struct root_test_s {
   unsigned   rt_success_init:1;
   unsigned   rt_success_deinit:1;
 
+  unsigned   rt_sent_reporter:1;
+  unsigned   rt_recv_reporter:1;
+  unsigned   rt_reported_reporter:1;
+
+  unsigned :0;
+
   test_ep_at rt_ep[5];
+
+  int rt_sockets, rt_woken;
 };
 
 /** Test root initialization */
-int init_test(root_test_t *rt)
+int init_test(root_test_t *rt,
+	      char const *preference,
+	      su_port_create_f *create,
+	      su_clone_start_f *start)
 {
   su_sockaddr_t su[1] = {{ 0 }};
   int i;
@@ -94,9 +109,14 @@ int init_test(root_test_t *rt)
 
   su_init();
 
-  su->su_family = rt->rt_family;
+  su_port_prefer(create, start);
 
   TEST_1(rt->rt_root = su_root_create(rt));
+
+  printf("%s: testing %s (%s) implementation\n",
+	 name, preference, su_root_name(rt->rt_root));
+
+  su->su_family = rt->rt_family;
 
   for (i = 0; i < 5; i++) {
     test_ep_t *ep = rt->rt_ep[i];
@@ -178,7 +198,6 @@ static int wakeup4(root_test_t *rt, su_wait_t *w, test_ep_t *ep)
 
 static
 su_wakeup_f wakeups[5] = { wakeup0, wakeup1, wakeup2, wakeup3, wakeup4 };
-
 
 static
 void test_run(root_test_t *rt)
@@ -271,6 +290,133 @@ static int register_test(root_test_t *rt)
   END();
 }
 
+
+int wakeup_remove(root_test_t *rt, su_wait_t *w, test_ep_t *node)
+{
+  char buffer[64];
+  ssize_t x;
+  test_ep_t *n = node->next; 
+
+  su_wait_events(w, node->s);
+
+  x = recv(node->s, buffer, sizeof(buffer), 0);
+
+  if (x < 0)
+    fprintf(stderr, "%s: %s\n", "recv", su_strerror(su_errno()));
+
+  if (node->prev) {		/* first run */
+    *node->prev = n;
+
+    if (n) {
+      *node->prev = node->next;    
+      node->next->prev = node->prev;
+      sendto(n->s, "foo", 3, 0, (void *)n->addr, n->addrlen);
+    }
+
+    node->next = NULL;
+    node->prev = NULL;
+    
+    if (!*node->list) {
+      su_root_break(rt->rt_root);
+    }
+  }
+  else {			/* second run */
+    if (++rt->rt_woken == rt->rt_sockets)
+      su_root_break(rt->rt_root);
+  }
+
+  return 0;
+}
+
+
+int event_test(root_test_t rt[1])
+{
+  BEGIN();
+  int i = 0, N = 2048;
+  test_ep_t *n, *nodes, *list = NULL;
+  su_sockaddr_t su[1];
+  socklen_t sulen;
+  
+  TEST_1(nodes = calloc(N, sizeof *nodes));
+  
+  memset(su, 0, sulen = sizeof su->su_sin);
+  su->su_len = sizeof su->su_sin;
+  su->su_family = AF_INET;
+  su->su_sin.sin_addr.s_addr = htonl(0x7f000001); /* 127.0.0.1 */
+
+  for (i = 0; i < N; i++) {
+    n = nodes + i;
+    n->s = su_socket(AF_INET, SOCK_DGRAM, 0);
+
+    if (n->s == INVALID_SOCKET)
+      break;
+
+    n->addrlen = sizeof n->addr;
+
+    n->addr->su_len = sizeof n->addr;
+
+    if (bind(n->s, (void *)su, sulen) < 0) {
+      su_perror("bind()");
+      su_close(n->s);
+      break;
+    }
+      
+    if (getsockname(n->s, (void *)n->addr, &n->addrlen)) {
+      su_perror("getsockname()");
+      su_close(n->s);
+      break;
+    }
+
+    if (su_wait_create(n->wait, n->s, SU_WAIT_IN)) {
+      su_perror("su_wait_create()");
+      su_close(n->s);
+      break;
+    }
+
+    n->registered = su_root_register(rt->rt_root, n->wait, wakeup_remove, n, 0);
+    if (n->registered < 0) {
+      su_wait_destroy(n->wait);
+      su_close(n->s);
+      break;
+    }
+    
+    n->list = &list, n->prev = &list;
+    if ((n->next = list))
+      n->next->prev = &n->next;
+    list = n;
+  }
+
+  TEST_1(i >= 1);
+
+  N = i;
+
+  /* Wake up socket at a time */
+  n = list; sendto(n->s, "foo", 3, 0, (void *)n->addr, n->addrlen);
+
+  su_root_run(rt->rt_root);
+
+  for (i = 0; i < N; i++) {
+    n = nodes + i;
+    TEST_1(n->prev == NULL);
+    sendto(n->s, "bar", 3, 0, (void *)n->addr, n->addrlen);
+  }
+
+  rt->rt_sockets = N;
+
+  /* Wake up all sockets */
+  su_root_run(rt->rt_root);
+
+  for (i = 0; i < N; i++) {
+    n = nodes + i;
+    su_root_deregister(rt->rt_root, n->registered);
+    TEST_1(su_close(n->s) == 0);
+  }
+
+  free(nodes);
+
+  END();
+}
+
 int fail_init(su_root_t *root, root_test_t *rt)
 {
   rt->rt_fail_init = 1;
@@ -293,14 +439,49 @@ void success_deinit(su_root_t *root, root_test_t *rt)
   rt->rt_success_deinit = 1;
 }
 
+void receive_a_reporter(root_test_t *rt, 
+			su_msg_r msg,
+			su_msg_arg_t *arg)
+{
+  rt->rt_recv_reporter = 1;
+}
+
+void receive_recv_report(root_test_t *rt, 
+			 su_msg_r msg,
+			 su_msg_arg_t *arg)
+{
+  rt->rt_reported_reporter = 1;
+}
+
+void send_a_reporter_msg(root_test_t *rt, 
+			 su_msg_r msg,
+			 su_msg_arg_t *arg)
+{
+  su_msg_r m = SU_MSG_R_INIT;
+
+  if (su_msg_create(m,
+		    su_msg_from(msg),
+		    su_msg_to(msg),
+		    receive_a_reporter,
+		    0) == 0 &&
+      su_msg_report(m, receive_recv_report) == 0 &&
+      su_msg_send(m) == 0)
+    rt->rt_sent_reporter = 1;
+}
+
 static int clone_test(root_test_t rt[1])
 {
   BEGIN();
+
+  su_msg_r m = SU_MSG_R_INIT;
 
   rt->rt_fail_init = 0;
   rt->rt_fail_deinit = 0;
   rt->rt_success_init = 0;
   rt->rt_success_deinit = 0;
+  rt->rt_sent_reporter = 0;
+  rt->rt_recv_reporter = 0;
+  rt->rt_reported_reporter = 0;
 
   TEST(su_clone_start(rt->rt_root,
 		      rt->rt_clone,
@@ -318,45 +499,108 @@ static int clone_test(root_test_t rt[1])
   TEST_1(rt->rt_success_init);
   TEST_1(!rt->rt_success_deinit);
 
+  /* Make sure 3-way handshake is done as expected */
+  TEST(su_msg_create(m,
+		     su_clone_task(rt->rt_clone),
+		     su_root_task(rt->rt_root),
+		     send_a_reporter_msg,
+		     0), 0);
+  TEST(su_msg_send(m), 0);
+
   TEST_VOID(su_clone_wait(rt->rt_root, rt->rt_clone));
 
   TEST_1(rt->rt_success_deinit);
-  
+  TEST_1(rt->rt_sent_reporter);
+  TEST_1(rt->rt_recv_reporter);
+  TEST_1(rt->rt_reported_reporter);
+
+  rt->rt_recv_reporter = 0;
+
+  /* Make sure we can handle messages done as expected */
+  TEST(su_msg_create(m,
+		     su_root_task(rt->rt_root),
+		     su_task_null,
+		     receive_a_reporter,
+		     0), 0);
+  TEST(su_msg_send(m), 0);
+  su_root_step(rt->rt_root, 0);
+  TEST_1(rt->rt_recv_reporter);
+
+  rt->rt_success_init = 0;
+  rt->rt_success_deinit = 0;
+
   END();
 }
 
-void usage(void)
+void usage(int exitcode)
 {
   fprintf(stderr, 
-	  "usage: %s [-v]\n", 
+	  "usage: %s [-v] [-a]\n", 
 	  name);
+  exit(exitcode);
 }
 
 int main(int argc, char *argv[])
 {
-  root_test_t rt[1] = {{{ SU_HOME_INIT(rt) }}};
+  root_test_t *rt, rt0[1] = {{{ SU_HOME_INIT(rt0) }}}, rt1[1];
   int retval = 0;
   int i;
 
+  struct {
+    su_port_create_f *create;
+    su_clone_start_f *start;
+    char const *name;
+  } prefer[] =
+      {
+	{ NULL, NULL, "default" },
+#if HAVE_EPOLL
+	{ su_epoll_port_create, su_epoll_clone_start, "epoll", },
+#endif
+#if HAVE_KQUEUE
+	{ su_kqueue_port_create, su_kqueue_clone_start, "kqueue", },
+#endif
+#if HAVE_SYS_DEVPOLL_H
+	{ su_devpoll_port_create, su_devpoll_clone_start, "devpoll", },
+#endif
+#if HAVE_POLL_PORT
+	{ su_poll_port_create, su_poll_clone_start, "poll" },
+#endif
+#if HAVE_SELECT
+	{ su_select_port_create, su_select_clone_start, "select" },
+#endif
+	{ NULL, NULL }
+      };
+
+  rt = rt0;
   rt->rt_family = AF_INET;
 
   for (i = 1; argv[i]; i++) {
     if (strcmp(argv[i], "-v") == 0)
       rt->rt_flags |= tst_verbatim;
+    else if (strcmp(argv[i], "-a") == 0)
+      rt->rt_flags |= tst_abort;
 #if SU_HAVE_IN6
     else if (strcmp(argv[i], "-6") == 0)
       rt->rt_family = AF_INET6;
 #endif
     else
-      usage();
+      usage(1);
   }
 
-  retval |= init_test(rt);
-  retval |= register_test(rt);
-  retval |= clone_test(rt);
-  su_root_threading(rt->rt_root, 0);
-  retval |= clone_test(rt);
-  retval |= deinit_test(rt);
+  i = 0;
+
+  do {
+    rt = rt1, *rt = *rt0;
+
+    retval |= init_test(rt, prefer[i].name, prefer[i].create, prefer[i].start);
+    retval |= register_test(rt);
+    retval |= event_test(rt);
+    su_root_threading(rt->rt_root, 1);
+    retval |= clone_test(rt);
+    su_root_threading(rt->rt_root, 0);
+    retval |= clone_test(rt);
+    retval |= deinit_test(rt);
+  } while (prefer[++i].create);
 
   return retval;
 }

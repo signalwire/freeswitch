@@ -43,56 +43,39 @@
 
 SOFIA_BEGIN_DECLS
 
-#if SU_HAVE_INLINE
-su_inline
-#else
-SOFIAPUBFUN
-#endif
-int 
-  str0cmp(char const *a, char const *b),
-  str0ncmp(char const *a, char const *b, size_t n),
-  str0casecmp(char const *a, char const *b),
-  str0ncasecmp(char const *a, char const *b, size_t n);
-
-#if SU_HAVE_INLINE
-su_inline
-#else
-SOFIAPUBFUN
-#endif
-size_t
-strnspn(char const *s, size_t size, char const *term),
-  strncspn(char const *s, size_t ssize, char const *reject);
-
-#if SU_HAVE_INLINE
-int str0cmp(char const *a, char const *b)
+su_inline int str0cmp(char const *a, char const *b)
 {
   if (a == NULL) a = "";
   if (b == NULL) b = "";
   return strcmp(a, b);
 }
 
-int str0ncmp(char const *a, char const *b, size_t n)
+su_inline int str0ncmp(char const *a, char const *b, size_t n)
 {
   if (a == NULL) a = "";
   if (b == NULL) b = "";
   return strncmp(a, b, n);
 }
 
-int str0casecmp(char const *a, char const *b)
+su_inline int str0casecmp(char const *a, char const *b)
 {
   if (a == NULL) a = "";
   if (b == NULL) b = "";
   return strcasecmp(a, b);
 }
 
-int str0ncasecmp(char const *a, char const *b, size_t n)
+su_inline int str0ncasecmp(char const *a, char const *b, size_t n)
 {
   if (a == NULL) a = "";
   if (b == NULL) b = "";
   return strncasecmp(a, b, n);
 }
 
-size_t strnspn(char const *s, size_t ssize, char const *term)
+#if !SU_HAVE_INLINE
+SOFIAPUBFUN size_t strnspn(char const *s, size_t size, char const *term);
+SOFIAPUBFUN size_t strncspn(char const *s, size_t ssize, char const *reject);
+#else
+su_inline size_t strnspn(char const *s, size_t ssize, char const *term)
 {
   size_t n;
   size_t tsize = strlen(term);
@@ -123,7 +106,7 @@ size_t strnspn(char const *s, size_t ssize, char const *term)
   return n;
 }
 
-size_t strncspn(char const *s, size_t ssize, char const *reject)
+su_inline size_t strncspn(char const *s, size_t ssize, char const *reject)
 {
   size_t n;
   size_t rsize = strlen(reject);

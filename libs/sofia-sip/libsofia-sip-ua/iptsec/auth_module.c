@@ -76,6 +76,7 @@ static char const __func__[] = "auth_mod";
 
 char const auth_internal_server_error[] = "Internal server error";
 
+static void auth_call_scheme_destructor(void *);
 static void auth_md5_hmac_key(auth_mod_t *am);
 
 HTABLE_PROTOS_WITH(auth_htable, aht, auth_passwd_t, usize_t, unsigned);
@@ -94,7 +95,7 @@ auth_mod_t *auth_mod_alloc(auth_scheme_t *scheme,
 
   if ((am = su_home_new(scheme->asch_size))) {
     am->am_scheme = scheme;
-    am->am_refcount = 1;
+    su_home_destructor(am->am_home, auth_call_scheme_destructor);
   }
 
   return am;
@@ -246,10 +247,14 @@ int auth_init_default(auth_mod_t *am,
 /** Destroy (a reference to) an authentication module. */
 void auth_mod_destroy(auth_mod_t *am)
 {
-  if (am && am->am_refcount != 0 && --am->am_refcount == 0) {
-    am->am_scheme->asch_destroy(am);
-    su_home_zap(am->am_home);
-  }
+  su_home_unref(am->am_home);
+}
+
+/** Call scheme-specific destructor function. */
+static void auth_call_scheme_destructor(void *arg)
+{
+  auth_mod_t *am = arg;
+  am->am_scheme->asch_destroy(am);
 }
 
 /** Do-nothing destroy function.
@@ -264,18 +269,13 @@ void auth_destroy_default(auth_mod_t *am)
 /** Create a new reference to authentication module. */
 auth_mod_t *auth_mod_ref(auth_mod_t *am)
 {
-  if (!am || am->am_refcount == 0)
-    return NULL;
-
-  am->am_refcount++;
-
-  return am;
+  return (auth_mod_t *)su_home_ref(am->am_home);
 }
 
 /** Destroy a reference to an authentication module. */
 void auth_mod_unref(auth_mod_t *am)
 {
-  auth_mod_destroy(am);
+  su_home_unref(am->am_home);
 }
 
 /** Get authenticatin module name. @NEW_1_12_4. */
@@ -608,7 +608,7 @@ struct nonce {
   uint8_t    digest[6];
 };
 
-#define AUTH_DIGEST_NONCE_LEN (BASE64_SIZE(sizeof (struct nonce)) + 1)
+#define AUTH_DIGEST_NONCE_LEN (BASE64_MINSIZE(sizeof (struct nonce)) + 1)
 
 /** Authenticate a request with @b Digest authentication scheme.
  *
@@ -950,7 +950,8 @@ int auth_readdb_if_needed(auth_mod_t *am)
 #include <sys/file.h>
 #endif
 
-#define auth_apw_local auth_readdb_internal
+/* This is just a magic value */
+#define auth_apw_local ((void *)(intptr_t)auth_readdb_internal)
 
 /** Read authentication database */
 static

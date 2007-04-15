@@ -3,6 +3,8 @@ OUTPUT_DIRECTORY     = ../docs/html/sresolv
 
 INPUT 		     =  sofia-sip sofia-resolv sresolv.docs .
 
+EXCLUDE		     = resolve_sip.c
+
 @INCLUDE 	     = ../docs/Doxyfile.conf
 
 ALIASES             += CFILE="@internal @file" IFILE="@internal @file"

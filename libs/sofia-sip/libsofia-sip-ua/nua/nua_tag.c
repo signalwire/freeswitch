@@ -68,6 +68,7 @@ tag_typedef_t nutag_answer_recv = BOOLTAG_TYPEDEF(answer_recv);
 tag_typedef_t nutag_offer_sent = BOOLTAG_TYPEDEF(offer_sent);
 tag_typedef_t nutag_answer_sent = BOOLTAG_TYPEDEF(answer_sent);
 tag_typedef_t nutag_substate = INTTAG_TYPEDEF(substate);
+tag_typedef_t nutag_newsub = BOOLTAG_TYPEDEF(newsub);
 tag_typedef_t nutag_invite_timer = UINTTAG_TYPEDEF(invite_timer);
 tag_typedef_t nutag_session_timer = UINTTAG_TYPEDEF(session_timer);
 tag_typedef_t nutag_min_se = UINTTAG_TYPEDEF(min_se);
@@ -143,10 +144,9 @@ tag_typedef_t nutag_supported = STRTAG_TYPEDEF(supported);
 tag_typedef_t nutag_path_enable = BOOLTAG_TYPEDEF(path_enable);
 tag_typedef_t nutag_service_route_enable = 
   BOOLTAG_TYPEDEF(service_route_enable);
+tag_typedef_t nutag_auth_cache = INTTAG_TYPEDEF(auth_cache);
 
 tag_typedef_t nutag_detect_network_updates = UINTTAG_TYPEDEF(detect_network_updates);
 
 tag_typedef_t nutag_with = PTRTAG_TYPEDEF(with);
-
-tag_typedef_t _nutag_add_contact = BOOLTAG_TYPEDEF(add_contact);
-tag_typedef_t _nutag_copy = BOOLTAG_TYPEDEF(copy);
+tag_typedef_t nutag_dialog = UINTTAG_TYPEDEF(dialog);

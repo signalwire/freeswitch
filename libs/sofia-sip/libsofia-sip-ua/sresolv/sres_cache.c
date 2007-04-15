@@ -178,7 +178,7 @@ int sres_cache_get(sres_cache_t *cache,
   *return_cached = NULL;
 
   SU_DEBUG_9(("%s(%p, %s, \"%s\") called\n", "sres_cache_get",
-	      cache, sres_record_type(type, b), domain));
+	      (void *)cache, sres_record_type(type, b), domain));
 
   hash = sres_hash_key(domain);
 
@@ -241,7 +241,7 @@ int sres_cache_get(sres_cache_t *cache,
   UNLOCK(cache);
 
   SU_DEBUG_9(("%s(%p, %s, \"%s\") returned %d entries\n", "sres_cache_get", 
-	      cache, sres_record_type(type, b), domain, rr_count));
+	      (void *)cache, sres_record_type(type, b), domain, rr_count));
 
   *return_cached = result;
 

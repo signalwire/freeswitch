@@ -46,7 +46,6 @@ The Sofia-SIP su submodule also provides some small utilities:
 - localinfo (libsofia-sip-ua/su), prints information about
   local network interfaces 
 
-
 References
 ----------
 

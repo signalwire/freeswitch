@@ -113,6 +113,10 @@ SOURCE="..\..\libsofia-sip-ua\su\su_alloc_lock.c"
 # End Source File
 # Begin Source File
 
+SOURCE="..\..\libsofia-sip-ua\su\su_base_port.c"
+# End Source File
+# Begin Source File
+
 SOURCE="..\..\libsofia-sip-ua\su\su_bm.c"
 # End Source File
 # Begin Source File
@@ -149,7 +153,15 @@ SOURCE="..\..\libsofia-sip-ua\su\su_port.c"
 # End Source File
 # Begin Source File
 
+SOURCE="..\..\libsofia-sip-ua\su\su_pthread_port.c"
+# End Source File
+# Begin Source File
+
 SOURCE="..\..\libsofia-sip-ua\su\su_root.c"
+# End Source File
+# Begin Source File
+
+SOURCE="..\..\libsofia-sip-ua\su\su_socket_port.c"
 # End Source File
 # Begin Source File
 
@@ -198,6 +210,10 @@ SOURCE="..\..\libsofia-sip-ua\su\su_vector.c"
 # Begin Source File
 
 SOURCE="..\..\libsofia-sip-ua\su\su_wait.c"
+# End Source File
+# Begin Source File
+
+SOURCE="..\..\libsofia-sip-ua\su\su_win32_port.c"
 # End Source File
 # End Group
 # Begin Group "ipt"

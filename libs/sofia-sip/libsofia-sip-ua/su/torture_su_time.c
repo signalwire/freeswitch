@@ -54,11 +54,12 @@ static int test1(int flags);
 static int test2(int flags);
 static int test3(int flags);
 
-void usage(void)
+void usage(int exitcode)
 {
   fprintf(stderr, 
-	  "usage: %s [-v]\n", 
+	  "usage: %s [-v] [-a]\n", 
 	  name);
+  exit(exitcode);
 }
 
 char *lastpart(char *path)
@@ -80,8 +81,10 @@ int main(int argc, char *argv[])
   for (i = 1; argv[i]; i++) {
     if (strcmp(argv[i], "-v") == 0)
       flags |= tst_verbatim;
+    else if (strcmp(argv[i], "-a") == 0)
+      flags |= tst_abort;
     else
-      usage();
+      usage(1);
   }
 
   retval |= test1(flags); fflush(stdout);

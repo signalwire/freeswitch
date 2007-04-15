@@ -887,10 +887,16 @@ int su_getaddrinfo(char const *node, char const *service,
 		   su_addrinfo_t const *hints,
 		   su_addrinfo_t **res)
 {
+  int retval;
+  su_addrinfo_t *ai;
+
+  if (!service || service[0] == '\0')
+    service = "0";
+
 #if HAVE_SCTP
   if (res && hints && hints->ai_protocol == IPPROTO_SCTP) {
-    su_addrinfo_t *ai, system_hints[1];
-    int retval, socktype;
+    su_addrinfo_t system_hints[1];
+    int socktype;
 
     socktype = hints->ai_socktype;
     
@@ -920,7 +926,31 @@ int su_getaddrinfo(char const *node, char const *service,
   }
 #endif
 
-  return getaddrinfo(node, service, hints, res);
+  retval = getaddrinfo(node, service, hints, res);
+
+  if (retval == 0) {
+    for (ai = *res; ai; ai = ai->ai_next) {
+      if (ai->ai_protocol)
+	continue;
+
+      if (hints && hints->ai_protocol) {
+	ai->ai_protocol = hints->ai_protocol;
+	continue;
+      }
+
+      if (ai->ai_family != AF_INET 
+#if SU_HAVE_IN6
+	  && ai->ai_family != AF_INET6
+#endif
+	  ) continue;
+
+      if (ai->ai_socktype == SOCK_STREAM)
+	ai->ai_protocol = IPPROTO_TCP;
+      else if (ai->ai_socktype == SOCK_DGRAM)
+	ai->ai_protocol = IPPROTO_UDP;
+    }
+  }
+  return retval;
 }
 
 /** Free su_addrinfo_t structure allocated by su_getaddrinfo(). */

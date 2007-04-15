@@ -109,7 +109,7 @@ su_inline tag_value_t nthtag_template_vr(struct nth_client_s const **vp)
 {return(tag_value_t)vp;}
 #else
 #define nthtag_template_v(v) ((tag_value_t)(v))
-#define nthtag_template_vr(vp) ((tag_value_t)&(vp))
+#define nthtag_template_vr(vp) ((tag_value_t)(vp))
 #endif
 
 NTH_DLL extern tag_typedef_t nthtag_template;
@@ -126,7 +126,7 @@ su_inline tag_value_t nthtag_message_vr(struct msg_s **vp)
 { return(tag_value_t)vp; }
 #else
 #define nthtag_message_v(v) ((tag_value_t)(v))
-#define nthtag_message_vr(vp) ((tag_value_t)&(vp))
+#define nthtag_message_vr(vp) ((tag_value_t)(vp))
 #endif
 
 NTH_DLL extern tag_typedef_t nthtag_message;
@@ -142,7 +142,7 @@ su_inline tag_value_t nthtag_authentication_v(struct auth_client_s **v) { return
 su_inline tag_value_t nthtag_authentication_vr(struct auth_client_s ***vp) {return(tag_value_t)vp;}
 #else
 #define nthtag_authentication_v(v) ((tag_value_t)(v))
-#define nthtag_authentication_vr(vp) ((tag_value_t)&(vp))
+#define nthtag_authentication_vr(vp) ((tag_value_t)(vp))
 #endif
 
 NTH_DLL extern tag_typedef_t nthtag_authentication;

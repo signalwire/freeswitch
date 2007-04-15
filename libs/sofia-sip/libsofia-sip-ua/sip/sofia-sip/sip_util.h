@@ -42,21 +42,11 @@
 #include <sofia-sip/string0.h>
 #endif
 
-SOFIA_BEGIN_DECLS
+#ifndef MSG_HEADER_H
+#include <sofia-sip/msg_header.h>
+#endif
 
-/* @deprecated
- * These are just wrappers around msg_params_*() functions. 
- *
- * Use msg_header_*_param() functions instead.
- */
-SOFIAPUBFUN char const *sip_params_find(sip_param_t const pp[],
-					char const *token);
-SOFIAPUBFUN int sip_params_add(su_home_t *sh, 
-			       sip_param_t **pparams,
-			       char const *param);
-SOFIAPUBFUN int sip_params_cmp(sip_param_t const a[], sip_param_t const b[]);
-SOFIAPUBFUN int sip_params_replace(su_home_t *,
-				   sip_param_t **pparams, char const *param);
+SOFIA_BEGIN_DECLS
 
 SOFIAPUBFUN
 sip_contact_t *
@@ -209,6 +199,13 @@ SOFIAPUBFUN
 sip_security_client_t const *
 sip_security_client_select(sip_security_client_t const *client,
 			   sip_security_server_t const *server);
+
+/* Compatibility stuff */
+
+#define sip_params_add      	msg_params_add
+#define sip_params_cmp      	msg_params_cmp
+#define sip_params_replace  	msg_params_replace
+#define sip_params_find         msg_params_find
 
 SOFIA_END_DECLS
 

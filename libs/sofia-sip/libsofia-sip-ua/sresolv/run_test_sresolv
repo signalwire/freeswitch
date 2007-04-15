@@ -55,8 +55,13 @@ if netstat --ip >/dev/null 2>&1 ; then
     done
 fi
 
-# No named, no fun
-type -p named >/dev/null || exit 77
+# No BIND 9, no fun
+{ type -p named >/dev/null &&
+  named -v | grep -q BIND.*9 
+} || {
+echo test_sresolv: there is no BIND 9 named in you path, skipping
+exit 77
+} 
 
 if eval $ipv6
 then

@@ -13,7 +13,7 @@ dnl SAC_WITH_RT - check for POSIX realtime library
 dnl ======================================================================
 AC_DEFUN([SAC_WITH_RT],[
 AC_ARG_WITH(rt,  
-[  --with-rt               use POSIX realtime library (used by default)])
+[  --with-rt               use POSIX realtime library [[used by default]]])
 ])
 
 dnl ======================================================================

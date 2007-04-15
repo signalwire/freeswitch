@@ -30,6 +30,7 @@
  * @file sofia-sip/su_wait.h Syncronization and threading interface.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
+ * @author Martti Mela <Martti.Mela@nokia.com>
  * 
  * @date Created: Tue Sep 14 15:51:04 1999 ppessi
  */
@@ -44,6 +45,7 @@
 #ifndef SU_TIME_H
 #include "sofia-sip/su_time.h"
 #endif
+
 #if SU_HAVE_POLL
 #include <sys/poll.h>
 #endif
@@ -53,7 +55,36 @@ SOFIA_BEGIN_DECLS
 /* ---------------------------------------------------------------------- */
 /* Constants */
 
-#if SU_HAVE_POLL || DOCUMENTATION_ONLY
+#if SU_HAVE_KQUEUE
+/** Compare wait object. @HI */
+#define SU_WAIT_CMP(x, y) \
+ (((x).ident - (y).ident) ? ((x).ident - (y).ident) : ((x).flags - (y).flags))
+
+/** Incoming data is available on socket. @HI */
+#define SU_WAIT_IN      (EVFILT_READ)
+/** Data can be sent on socket. @HI */
+#define SU_WAIT_OUT     (EVFILT_WRITE)
+/** Socket is connected. @HI */
+#define SU_WAIT_CONNECT (EVFILT_WRITE)
+/** An error occurred on socket. @HI */
+#define SU_WAIT_ERR     (EV_ERROR)
+/** The socket connection was closed. @HI */
+#define SU_WAIT_HUP     (EV_EOF)
+/** A listening socket accepted a new connection. @HI */
+#define SU_WAIT_ACCEPT  (EVFILT_READ)
+
+/** No timeout for su_wait(). */
+#define SU_WAIT_FOREVER (-1)
+/** The return value of su_wait() if timeout occurred. */
+#define SU_WAIT_TIMEOUT (-2)
+
+/** Initializer for a wait object. @HI */
+#define SU_WAIT_INIT    { INVALID_SOCKET, 0, 0, 0, 0, NULL }
+
+/** Maximum number of sources supported by su_wait() */
+#define SU_WAIT_MAX    (0x7fffffff)
+
+#elif SU_HAVE_POLL || DOCUMENTATION_ONLY
 /** Compare wait object. @HI */
 #define SU_WAIT_CMP(x, y) \
  (((x).fd - (y).fd) ? ((x).fd - (y).fd) : ((x).events - (y).events))
@@ -101,35 +132,73 @@ SOFIA_BEGIN_DECLS
 #define SU_WAIT_MAX    (64)
 
 #else
-#define SU_WAIT_CMP(x, y) 
-#define SU_WAIT_IN      
-#define SU_WAIT_OUT     
-#define SU_WAIT_ERR     
-#define SU_WAIT_HUP     
-#define SU_WAIT_ACCEPT  
-#define SU_WAIT_FOREVER 
-#define SU_WAIT_TIMEOUT 
+/* If nothing works, try these */
 
-#define SU_WAIT_INIT
+#define	POLLIN		0x001
+#define	POLLPRI		0x002
+#define	POLLOUT		0x004
+
+#ifdef __USE_XOPEN
+#define	POLLRDNORM	0x040
+#define	POLLRDBAND	0x080
+#define	POLLWRNORM	0x100
+#define	POLLWRBAND	0x200
+#endif
+
+/* These for pollfd.revents */
+#define POLLERR         0x008
+#define POLLHUP         0x010
+#define POLLNVAL        0x020
+
+#define SU_WAIT_CMP(x, y) \
+ (((x).fd - (y).fd) ? ((x).fd - (y).fd) : ((x).events - (y).events))
+
+#define SU_WAIT_IN      POLLIN
+#define SU_WAIT_OUT     POLLOUT
+#define SU_WAIT_CONNECT POLLOUT
+#define SU_WAIT_ERR     POLLERR
+#define SU_WAIT_HUP     POLLHUP
+#define SU_WAIT_ACCEPT  POLLIN
+#define SU_WAIT_FOREVER (-1)
+#define SU_WAIT_TIMEOUT (-2)
+
+#define SU_WAIT_INIT    { INVALID_SOCKET, 0, 0 }
+
+/** Maximum number of sources supported by su_wait() */
+#define SU_WAIT_MAX    (0x7fffffff)
 
 #endif
 
 /* ---------------------------------------------------------------------- */
 /* Types */
 
-#if 0
-typedef struct _pollfd {
-  su_socket_t fd;           /* file descriptor */
-  short events;     /* requested events */
-  short revents;    /* returned events */
-} su_wait_t;
+/** Wait object. */
+#if SU_HAVE_KQUEUE
+typedef struct kevent su_wait_t;
 #elif SU_HAVE_POLL
 typedef struct pollfd su_wait_t;
 #elif SU_HAVE_WINSOCK
 typedef HANDLE su_wait_t;
 #else
-/** Wait object. */
-typedef struct os_specific su_wait_t;
+/* typedef struct os_specific su_wait_t; */
+typedef struct pollfd su_wait_t;
+struct pollfd {
+  su_socket_t fd;   /* file descriptor */
+  short events;     /* requested events */
+  short revents;    /* returned events */
+};
+
+
+/* Type used for the number of file descriptors.  */
+typedef unsigned long int nfds_t;
+
+/* Poll the file descriptors described by the NFDS structures starting at
+   FDS.  If TIMEOUT is nonzero and not -1, allow TIMEOUT milliseconds for
+   an event to occur; if TIMEOUT is -1, block until an event occurs.
+   Returns the number of file descriptors with events, zero if timed out,
+   or -1 for errors.  */
+int poll (struct pollfd *__fds, nfds_t __nfds, int __timeout);
+
 #endif
 
 /* Used by AD */
@@ -191,7 +260,7 @@ typedef SU_ROOT_MAGIC_T su_root_magic_t;
  */
 typedef SU_WAKEUP_ARG_T su_wakeup_arg_t;
 
-/** Wakeup callback function prototype. 
+/** Wakeup callback function pointer type. 
  *
  * Whenever a registered wait object receives an event, the @link
  * ::su_wakeup_f callback function @endlink is invoked.
@@ -316,9 +385,13 @@ typedef su_msg_t * const su_msg_cr[1];
 #define SU_MSG_R_INIT   { NULL }
 
 /** Message delivery function type. */
-typedef void (*su_msg_f)(su_root_magic_t *magic, 
-			 su_msg_r msg,
-			 su_msg_arg_t *arg);
+typedef void su_msg_function(su_root_magic_t *magic, 
+			     su_msg_r msg,
+			     su_msg_arg_t *arg);
+
+/** Message delivery function pointer type. */
+typedef su_msg_function *su_msg_f;
+
 
 /* ---------------------------------------------------------------------- */
 
@@ -350,11 +423,15 @@ SOFIAPUBFUN int su_wait(su_wait_t waits[], unsigned n, su_duration_t timeout);
 SOFIAPUBFUN int su_wait_events(su_wait_t *wait, su_socket_t s);
 SOFIAPUBFUN int su_wait_mask(su_wait_t *dst, su_socket_t s, int events);
 
-#if SU_HAVE_POLL
+#if !HAVE_WIN32 && (SU_HAVE_POLL || HAVE_SELECT)
 static inline
 su_socket_t su_wait_socket(su_wait_t *wait)
 {
+#if SU_HAVE_KQUEUE
+  return wait->ident;
+#else
   return wait->fd;
+#endif
 }
 #endif
 
@@ -362,6 +439,7 @@ su_socket_t su_wait_socket(su_wait_t *wait)
 SOFIAPUBFUN su_root_t *su_root_create(su_root_magic_t *magic)
   __attribute__((__malloc__));
 SOFIAPUBFUN void su_root_destroy(su_root_t*);
+SOFIAPUBFUN char const *su_root_name(su_root_t *self);
 SOFIAPUBFUN int su_root_set_magic(su_root_t *self, su_root_magic_t *magic);
 SOFIAPUBFUN su_root_magic_t *su_root_magic(su_root_t *root);
 SOFIAPUBFUN int su_root_register(su_root_t*, su_wait_t *, 
@@ -471,6 +549,34 @@ SOFIAPUBFUN void su_clone_wait(su_root_t *root, su_clone_r clone);
 
 SOFIAPUBFUN int su_clone_pause(su_clone_r);
 SOFIAPUBFUN int su_clone_resume(su_clone_r);
+
+/* ---------------------------------------------------------------------- */
+/* Different su_root_t implementations */
+
+typedef su_port_t *su_port_create_f(void);
+typedef int su_clone_start_f(su_root_t *parent,
+			    su_clone_r return_clone,
+			    su_root_magic_t *magic,
+			    su_root_init_f init,
+			    su_root_deinit_f deinit);
+
+SOFIAPUBFUN void su_port_prefer(su_port_create_f *f, su_clone_start_f *);
+
+SOFIAPUBFUN su_port_create_f su_default_port_create;
+SOFIAPUBFUN su_port_create_f su_epoll_port_create;
+SOFIAPUBFUN su_port_create_f su_poll_port_create;
+SOFIAPUBFUN su_port_create_f su_wsaevent_port_create;
+SOFIAPUBFUN su_port_create_f su_select_port_create;
+SOFIAPUBFUN su_port_create_f su_kqueue_port_create;
+SOFIAPUBFUN su_port_create_f su_devpoll_port_create;
+
+SOFIAPUBFUN su_clone_start_f su_default_clone_start;
+SOFIAPUBFUN su_clone_start_f su_epoll_clone_start;
+SOFIAPUBFUN su_clone_start_f su_poll_clone_start;
+SOFIAPUBFUN su_clone_start_f su_wsaevent_clone_start;
+SOFIAPUBFUN su_clone_start_f su_select_clone_start;
+SOFIAPUBFUN su_clone_start_f su_kqueue_clone_start;
+SOFIAPUBFUN su_clone_start_f su_devpoll_clone_start;
 
 SOFIA_END_DECLS
 

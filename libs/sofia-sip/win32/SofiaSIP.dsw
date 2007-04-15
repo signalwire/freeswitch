@@ -252,21 +252,6 @@ Package=<4>
 
 ###############################################################################
 
-Project: "torture_su_port"=".\tests\torture_su_port\torture_su_port.dsp" - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-    Begin Project Dependency
-    Project_Dep_Name libsofia_sip_ua_static
-    End Project Dependency
-}}}
-
-###############################################################################
-
 Project: "torture_su_root"=".\tests\torture_su_root\torture_su_root.dsp" - Package Owner=<4>
 
 Package=<5>

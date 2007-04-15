@@ -167,7 +167,7 @@ int soa_add(char const *name,
   struct soa_namenode const *n;
   struct soa_namenode *e;
 
-  SU_DEBUG_9(("soa_add(%s%s%s, %p) called\n", NICE(name), actions));
+  SU_DEBUG_9(("soa_add(%s%s%s, %p) called\n", NICE(name), (void *)actions));
 
   if (name == NULL || actions == NULL)
     return su_seterrno(EFAULT);
@@ -227,7 +227,7 @@ soa_session_t *soa_create(char const *name,
   size_t namelen;
 
   SU_DEBUG_9(("soa_create(\"%s\", %p, %p) called\n",
-	      name ? name : "default", root, magic));
+	      name ? name : "default", (void *)root, (void *)magic));
 
   if (name && name[0]) {
     struct soa_namenode const *n;
@@ -276,7 +276,7 @@ soa_session_t *soa_clone(soa_session_t *parent_ss,
 
   SU_DEBUG_9(("soa_clone(%s::%p, %p, %p) called\n",
 	      parent_ss ? parent_ss->ss_actions->soa_name : "",
-	      parent_ss, root, magic));
+	      (void *)parent_ss, (void *)root, (void *)magic));
 
   if (parent_ss == NULL || root == NULL)
     return (void)su_seterrno(EFAULT), NULL;
@@ -302,7 +302,7 @@ soa_session_t *soa_clone(soa_session_t *parent_ss,
 soa_session_t *soa_session_ref(soa_session_t *ss)
 {
   SU_DEBUG_9(("soa_session_ref(%s::%p) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss));
   return su_home_ref(ss->ss_home);
 }
 
@@ -310,7 +310,7 @@ soa_session_t *soa_session_ref(soa_session_t *ss)
 void soa_session_unref(soa_session_t *ss)
 {
   SU_DEBUG_9(("soa_session_unref(%s::%p) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss));
   su_home_unref(ss->ss_home);
 }
 
@@ -350,7 +350,7 @@ int soa_base_init(char const *name,
 void soa_destroy(soa_session_t *ss)
 {
   SU_DEBUG_9(("soa_destroy(%s::%p) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss));
 
   if (ss) {
     ss->ss_active = 0;
@@ -396,7 +396,7 @@ int soa_set_params(soa_session_t *ss, tag_type_t tag, tag_value_t value, ...)
   int n;
 
   SU_DEBUG_9(("soa_set_params(%s::%p, ...) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss));
 
   if (ss == NULL)
     return su_seterrno(EFAULT), -1;
@@ -606,7 +606,7 @@ int soa_get_params(soa_session_t const *ss,
   int n;
 
   SU_DEBUG_9(("soa_get_params(%s::%p, ...) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss));
 
   if (ss == NULL)
     return su_seterrno(EFAULT), -1;
@@ -688,7 +688,7 @@ tagi_t *soa_get_paramlist(soa_session_t const *ss,
   tagi_t *params = NULL;
 
   SU_DEBUG_9(("soa_get_paramlist(%s::%p, ...) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss));
 
   if (ss) {
     ta_start(ta, tag, value);
@@ -756,7 +756,7 @@ int soa_error_as_sip_response(soa_session_t *ss,
 			      char const **return_phrase)
 {
   SU_DEBUG_9(("soa_error_as_sip_response(%s::%p, ...) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss));
 
   if (ss == NULL || ss->ss_status < 400 || ss->ss_status >= 700) {
     if (return_phrase)
@@ -777,7 +777,7 @@ char const *soa_error_as_sip_reason(soa_session_t *ss)
   char *reason;
 
   SU_DEBUG_9(("soa_error_as_sip_reason(%s::%p) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss));
 
   if (ss == NULL)
     return "SIP;cause=500;text=\"Internal Server Error\"";
@@ -832,8 +832,8 @@ int soa_get_capability_sdp(soa_session_t const *ss,
   char const *sdp_str;
 
   SU_DEBUG_9(("soa_get_capability_sdp(%s::%p, [%p], [%p], [%p]) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss,
-	      return_sdp, return_sdp_str, return_len));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss,
+	      (void *)return_sdp, (void *)return_sdp_str, (void *)return_len));
 
   if (ss == NULL)
     return (void)su_seterrno(EFAULT), -1;
@@ -878,7 +878,7 @@ int soa_set_capability_sdp(soa_session_t *ss,
 			   char const *str, issize_t len)
 {
   SU_DEBUG_9(("soa_set_capability_sdp(%s::%p, %p, %p, "MOD_ZD") called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss, sdp, str, (ssize_t)len));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss, (void *)sdp, (void *)str, (ssize_t)len));
 
   return soa_set_sdp(ss, soa_capability_sdp_kind, sdp, str, len);
 }
@@ -964,8 +964,8 @@ int soa_get_user_sdp(soa_session_t const *ss,
   char const *sdp_str;
 
   SU_DEBUG_9(("soa_get_user_sdp(%s::%p, [%p], [%p], [%p]) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss,
-	      return_sdp, return_sdp_str, return_len));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss,
+			  (void *)return_sdp, (void *)return_sdp_str, (void *)return_len));
 
   if (ss == NULL)
     return (void)su_seterrno(EFAULT), -1;
@@ -1036,7 +1036,7 @@ int soa_set_user_sdp(soa_session_t *ss,
 		     char const *str, issize_t len)
 {
   SU_DEBUG_9(("soa_set_user_sdp(%s::%p, %p, %p, "MOD_ZD") called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss, sdp, str, (ssize_t)len));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss, (void *)sdp, (void *)str, (ssize_t)len));
 
   return soa_set_sdp(ss, soa_user_sdp_kind, sdp, str, len);
 }
@@ -1081,8 +1081,8 @@ int soa_get_remote_sdp(soa_session_t const *ss,
   char const *sdp_str;
 
   SU_DEBUG_9(("soa_get_remote_sdp(%s::%p, [%p], [%p], [%p]) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss,
-	      return_sdp, return_sdp_str, return_len));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss,
+			  (void *)return_sdp, (void *)return_sdp_str, (void *)return_len));
 
   if (ss == NULL)
     return (void)su_seterrno(EFAULT), -1;
@@ -1155,7 +1155,7 @@ int soa_set_remote_sdp(soa_session_t *ss,
 		       char const *str, issize_t len)
 {
   SU_DEBUG_9(("soa_set_remote_sdp(%s::%p, %p, %p, "MOD_ZD") called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss, sdp, str, (ssize_t)len));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss, (void *)sdp, (void *)str, (ssize_t)len));
 
   return soa_set_sdp(ss, soa_remote_sdp_kind, sdp, str, len);
 }
@@ -1198,7 +1198,7 @@ int soa_base_set_remote_sdp(soa_session_t *ss,
 int soa_clear_remote_sdp(soa_session_t *ss)
 {
   SU_DEBUG_9(("soa_clear_remote_sdp(%s::%p) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss));
 
   if (!ss)
     return (void)su_seterrno(EFAULT), -1;
@@ -1253,8 +1253,8 @@ int soa_get_local_sdp(soa_session_t const *ss,
   char const *sdp_str;
 
   SU_DEBUG_9(("soa_get_local_sdp(%s::%p, [%p], [%p], [%p]) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss,
-	      return_sdp, return_sdp_str, return_len));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss,
+			  (void *)return_sdp, (void *)return_sdp_str, (void *)return_len));
 
   if (ss == NULL)
     return (void)su_seterrno(EFAULT), -1;
@@ -1286,7 +1286,7 @@ int soa_init_offer_answer(soa_session_t *ss)
   int complete;
 
   SU_DEBUG_9(("soa_init_offer_answer(%s::%p) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss));
 
   if (!ss)
     return 0;
@@ -1308,7 +1308,7 @@ int soa_init_offer_answer(soa_session_t *ss)
 char **soa_media_features(soa_session_t *ss, int live, su_home_t *home)
 {
   SU_DEBUG_9(("soa_media_features(%s::%p, %u, %p) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss, live, home));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss, live, (void *)home));
 
   if (ss)
     return ss->ss_actions->soa_media_features(ss, live, home);
@@ -1324,7 +1324,7 @@ char **soa_base_media_features(soa_session_t *ss, int live, su_home_t *home)
 char const * const * soa_sip_require(soa_session_t const *ss)
 {
   SU_DEBUG_9(("soa_sip_require(%s::%p) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss));
 
   if (ss)
     return ss->ss_actions->soa_sip_require(ss);
@@ -1341,7 +1341,7 @@ char const * const * soa_base_sip_require(soa_session_t const *ss)
 char const * const * soa_sip_supported(soa_session_t const *ss)
 {
   SU_DEBUG_9(("soa_sip_supported(%s::%p) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss));
 
   if (ss)
     return ss->ss_actions->soa_sip_supported(ss);
@@ -1360,7 +1360,7 @@ int soa_remote_sip_features(soa_session_t *ss,
 			    char const * const * require)
 {
   SU_DEBUG_9(("soa_remote_sip_features(%s::%p, %p, %p) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss, supported, require));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss, (void *)supported, (void *)require));
 
   if (ss)
     return ss->ss_actions->soa_remote_sip_features(ss, supported, require);
@@ -1405,8 +1405,8 @@ int soa_generate_offer(soa_session_t *ss,
 		       int always,
 		       soa_callback_f *completed)
 {
-  SU_DEBUG_9(("soa_generate_offer(%s::%p, %u, %p) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss, always, completed));
+  SU_DEBUG_9(("soa_generate_offer(%s::%p, %u) called\n",
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss, always));
 
   /** @ERROR EFAULT Bad address. */
   if (ss == NULL)
@@ -1493,8 +1493,8 @@ int soa_base_generate_offer(soa_session_t *ss,
 int soa_generate_answer(soa_session_t *ss,
 			soa_callback_f *completed)
 {
-  SU_DEBUG_9(("soa_generate_answer(%s::%p, %p) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss, completed));
+  SU_DEBUG_9(("soa_generate_answer(%s::%p) called\n",
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss));
 
   /** @ERROR EFAULT Bad address as @a ss. */
   if (ss == NULL)
@@ -1573,8 +1573,8 @@ int soa_base_generate_answer(soa_session_t *ss,
 int soa_process_answer(soa_session_t *ss,
 		       soa_callback_f *completed)
 {
-  SU_DEBUG_9(("soa_process_answer(%s::%p, %p) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss, completed));
+  SU_DEBUG_9(("soa_process_answer(%s::%p) called\n",
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss));
 
   /** @ERROR EFAULT Bad address as @a ss. */
   if (ss == NULL)
@@ -1654,8 +1654,8 @@ int soa_base_process_answer(soa_session_t *ss,
 int soa_process_reject(soa_session_t *ss,
 		       soa_callback_f *completed)
 {
-  SU_DEBUG_9(("soa_process_reject(%s::%p, %p) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss, completed));
+  SU_DEBUG_9(("soa_process_reject(%s::%p) called\n",
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss));
 
   /** @ERROR EFAULT Bad address as @a ss. */
   if (ss == NULL)
@@ -1711,7 +1711,7 @@ int soa_base_process_reject(soa_session_t *ss,
 int soa_activate(soa_session_t *ss, char const *option)
 {
   SU_DEBUG_9(("soa_activate(%s::%p, %s%s%s) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss, NICE(option)));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss, NICE(option)));
 
   /** @ERROR EFAULT Bad address as @a ss. */
   if (ss == NULL)
@@ -1741,7 +1741,7 @@ int soa_base_activate(soa_session_t *ss, char const *option)
 int soa_deactivate(soa_session_t *ss, char const *option)
 {
   SU_DEBUG_9(("soa_deactivate(%s::%p, %s%s%s) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss, NICE(option)));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss, NICE(option)));
 
   /** @ERROR EFAULT Bad address as @a ss. */
   if (ss == NULL)
@@ -1763,7 +1763,7 @@ int soa_base_deactivate(soa_session_t *ss, char const *option)
 void soa_terminate(soa_session_t *ss, char const *option)
 {
   SU_DEBUG_9(("soa_terminate(%s::%p) called\n",
-	      ss ? ss->ss_actions->soa_name : "", ss));
+	      ss ? ss->ss_actions->soa_name : "", (void *)ss));
 
   /** @ERROR EFAULT Bad address as @a ss. */
   if (ss == NULL)
@@ -1799,49 +1799,65 @@ int soa_is_complete(soa_session_t const *ss)
 /** Return true if audio has been activated. */
 int soa_is_audio_active(soa_session_t const *ss)
 {
-  return ss ? ss->ss_local_activity->ma_audio : SOA_ACTIVE_DISABLED;
+  int ma = ss ? ss->ss_local_activity->ma_audio : SOA_ACTIVE_DISABLED;
+  if (ma >= 4) ma |= -8;
+  return ma;
 }
 
 /** Return true if video has been activated. */
 int soa_is_video_active(soa_session_t const *ss)
 {
-  return ss ? ss->ss_local_activity->ma_video : SOA_ACTIVE_DISABLED;
+  int ma = ss ? ss->ss_local_activity->ma_video : SOA_ACTIVE_DISABLED;
+  if (ma >= 4) ma |= -8;
+  return ma;
 }
 
 /** Return true if image sharing has been activated. */
 int soa_is_image_active(soa_session_t const *ss)
 {
-  return ss ? ss->ss_local_activity->ma_image : SOA_ACTIVE_DISABLED;
+  int ma = ss ? ss->ss_local_activity->ma_image : SOA_ACTIVE_DISABLED;
+  if (ma >= 4) ma |= -8;
+  return ma;
 }
 
 /** Return true if messaging session has been activated. */
 int soa_is_chat_active(soa_session_t const *ss)
 {
-  return ss ? ss->ss_local_activity->ma_chat : SOA_ACTIVE_DISABLED;
+  int ma = ss ? ss->ss_local_activity->ma_chat : SOA_ACTIVE_DISABLED;
+  if (ma >= 4) ma |= -8;
+  return ma;
 }
 
 /** Return true if remote audio is active (not on hold). */
 int soa_is_remote_audio_active(soa_session_t const *ss)
 {
-  return ss ? ss->ss_remote_activity->ma_audio : SOA_ACTIVE_DISABLED;
+  int ma = ss ? ss->ss_remote_activity->ma_audio : SOA_ACTIVE_DISABLED;
+  if (ma >= 4) ma |= -8;
+  return ma;
 }
 
 /** Return true if remote video is active (not on hold). */
 int soa_is_remote_video_active(soa_session_t const *ss)
 {
-  return ss ? ss->ss_remote_activity->ma_video : SOA_ACTIVE_DISABLED;
+  int ma = ss ? ss->ss_remote_activity->ma_video : SOA_ACTIVE_DISABLED;
+  if (ma >= 4) ma |= -8;
+  return ma;
 }
 
 /** Return true if image sharing is active (not on hold). */
 int soa_is_remote_image_active(soa_session_t const *ss)
 {
-  return ss ? ss->ss_remote_activity->ma_image : SOA_ACTIVE_DISABLED;
+  int ma = ss ? ss->ss_remote_activity->ma_image : SOA_ACTIVE_DISABLED;
+  if (ma >= 4) ma |= -8;
+  return ma;
 }
 
 /** Return true if chat session is active (not on hold). */
 int soa_is_remote_chat_active(soa_session_t const *ss)
 {
-  return ss ? ss->ss_remote_activity->ma_chat : SOA_ACTIVE_DISABLED;
+  int ma = ss ? ss->ss_remote_activity->ma_chat : SOA_ACTIVE_DISABLED;
+  if (ma >= 4) ma |= -8;
+  return ma;
 }
 
 /* ======================================================================== */

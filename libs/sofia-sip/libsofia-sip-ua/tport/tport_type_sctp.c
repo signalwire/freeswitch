@@ -37,8 +37,6 @@
 
 #include "config.h"
 
-#if HAVE_SCTP
-
 #include "tport_internal.h"
 
 #if HAVE_NETINET_SCTP_H
@@ -59,6 +57,12 @@
 #undef MAX_STREAMS
 #define MAX_STREAMS MAX_STREAMS
 
+/* Missing socket symbols */
+#ifndef SOL_SCTP
+#define SOL_SCTP IPPROTO_SCTP
+#endif
+
+
 enum { MAX_STREAMS = 1 };
 typedef struct tport_sctp_t
 {
@@ -75,6 +79,8 @@ typedef struct tport_sctp_t
 } tport_sctp_t;
 
 #define TP_SCTP_MSG_MAX (65536)
+
+#if HAVE_SCTP
 
 static int tport_sctp_init_primary(tport_primary_t *, 
 				   tp_name_t tpn[1], 
@@ -173,9 +179,6 @@ static int tport_sctp_init_secondary(tport_t *self, int socket, int accepted,
 				     char const **return_reason)
 {
   self->tp_has_connection = 1;
-
-  if (su_setblocking(socket, 0) < 0)
-    return *return_reason = "su_setblocking", -1;
 
   if (accepted) {
     /* Accepted socket inherit the init information from listen socket */

@@ -340,9 +340,10 @@ int host_test(void)
   END();
 }
 
-void usage(void)
+void usage(int exitcode)
 {
-  fprintf(stderr, "usage: %s [-v]\n", name);
+  fprintf(stderr, "usage: %s [-v] [-a]\n", name);
+  exit(exitcode);
 }
 
 int main(int argc, char *argv[])
@@ -353,8 +354,10 @@ int main(int argc, char *argv[])
   for (i = 1; argv[i]; i++) {
     if (strcmp(argv[i], "-v") == 0)
       test_flags |= tst_verbatim;
+    else if (strcmp(argv[i], "-a") == 0)
+      test_flags |= tst_abort;
     else
-      usage();
+      usage(1);
   }
 
   retval |= bnf_test(); fflush(stdout);

@@ -769,8 +769,6 @@ int test_digest_client()
     {
       char const *nonce1, *nextnonce, *nonce2;
 
-      reinit_as(as); auth_mod_destroy(am); aucs = NULL;
-
       TEST_1(am = auth_mod_create(NULL, 
 				  AUTHTAG_METHOD("Digest"),
 				  AUTHTAG_REALM("ims3.so.noklab.net"),
@@ -1164,9 +1162,10 @@ int test_module_io()
 extern su_log_t iptsec_log[];
 
 static
-void usage(void)
+void usage(int exitcode)
 {
-  fprintf(stderr, "usage: %s [-v] [-l n]\n", name);
+  fprintf(stderr, "usage: %s [-v] [-a] [-l n]\n", name);
+  exit(exitcode);
 }
 
 int main(int argc, char *argv[])
@@ -1179,8 +1178,10 @@ int main(int argc, char *argv[])
   su_init();
 
   for (i = 1; argv[i]; i++) {
-    if (argv[i] && strcmp(argv[i], "-v") == 0)
+    if (strcmp(argv[i], "-v") == 0)
       tstflags |= tst_verbatim;
+    else if (strcmp(argv[i], "-a") == 0)
+      tstflags |= tst_abort;
     else if (strncmp(argv[i], "-l", 2) == 0) {
       int level = 3;
       char *rest = NULL;
@@ -1193,11 +1194,11 @@ int main(int argc, char *argv[])
 	level = 3, rest = "";
 
       if (rest == NULL || *rest)
-	usage();
+	usage(1);
       
       su_log_set_level(iptsec_log, level);
     } else {
-      usage();
+      usage(1);
     }
   }
 

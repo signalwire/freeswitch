@@ -11,14 +11,14 @@ dnl information on the package
 dnl ---------------------------
 
 dnl update both the version for AC_INIT and the LIBSOFIA_SIP_UA_MAJOR_MINOR
-AC_INIT([sofia-sip], [1.12.4work])
+AC_INIT([sofia-sip], [1.12.5work6])
 AC_CONFIG_SRCDIR([libsofia-sip-ua/sip/sofia-sip/sip.h])
 AC_SUBST(VER_LIBSOFIA_SIP_UA_MAJOR_MINOR, [1.12])
 dnl Includedir specific to this sofia version
 AC_SUBST(include_sofiadir, '${includedir}/sofia-sip-1.12')
-AC_SUBST(LIBVER_SOFIA_SIP_UA_CUR, [3])
+AC_SUBST(LIBVER_SOFIA_SIP_UA_CUR, [5])
 AC_SUBST(LIBVER_SOFIA_SIP_UA_REV, [0])
-AC_SUBST(LIBVER_SOFIA_SIP_UA_AGE, [3])
+AC_SUBST(LIBVER_SOFIA_SIP_UA_AGE, [5])
 AC_SUBST(LIBVER_SOFIA_SIP_UA_SOVER, [0]) # CUR-AGE
 AC_SUBST(LIBVER_SOFIA_SIP_UA_GLIB_CUR, [3])
 AC_SUBST(LIBVER_SOFIA_SIP_UA_GLIB_REV, [0])
@@ -53,8 +53,15 @@ SAC_ENABLE_EXPENSIVE_CHECKS
 dnl Add parameters for aclocal
 AC_SUBST(ACLOCAL_AMFLAGS, "-I m4")
 
-AC_CHECK_PROG([DOXYGEN], [doxygen], [doxygen], [echo])
-AM_CONDITIONAL([HAVE_DOXYGEN], [test $DOXYGEN = doxygen])
+AC_ARG_WITH(doxygen,
+[  --with-doxygen[[=CMD]]    use doxygen command CMD [[doxygen]]],[
+case $enable_doxygen in 
+yes ) doxygen=doxygen ;;
+no ) doxygen=echo ;;
+esac], doxygen=doxygen)
+
+AC_CHECK_PROG([DOXYGEN], [doxygen], [$doxygen], [echo])
+AM_CONDITIONAL([HAVE_DOXYGEN], [test $DOXYGEN != echo])
 
 ### checks for libraries
 ### --------------------
@@ -71,7 +78,7 @@ AC_DEFINE([HAVE_SOFIA_SRESOLV], 1, [Define to 1 if we use DNS library])
 AC_DEFINE([HAVE_SOFIA_SMIME], 0, [Define to 1 if we use S/MIME library])
 
 AC_ARG_ENABLE(stun,
-[  --disable-stun              disable stun module (enabled)],
+[  --disable-stun          disable stun module (enabled)],
  , enable_stun=yes)
 
 if test x$enable_stun = xno ; then
@@ -83,10 +90,19 @@ elif test x${HAVE_OPENSSL} != x1 ; then
 else
   AC_DEFINE([HAVE_SOFIA_STUN], 1, [Define to 1 if we use STUN library])
 fi
+AM_CONDITIONAL([HAVE_STUN], [test "x$enable_stun" = xyes])
+
+AC_ARG_ENABLE(nth,
+[  --disable-nth           disable nth and http modules (enabled)],
+ , enable_nth=yes)
+AM_CONDITIONAL([HAVE_NTH], [test "x$enable_nth" = xyes])
+if test x$enable_nth = xyes ; then
+  AC_DEFINE([HAVE_SOFIA_NTH], 1, [Define to 1 if we use NTH library])
+fi
 
 dnl Disable NTLM support by default
 AC_ARG_ENABLE(ntlm,
-[  --enable-ntlm               enable NTLM support (disabled)],
+[  --enable-ntlm           enable NTLM support [[disabled]]],
  , enable_ntlm=no)
 
 if test x$enable_ntlm = xyes ; then
@@ -104,22 +120,97 @@ AC_HEADER_STDC
 
 ### checks for declarations
 ### -----------------------
-AC_CHECK_DECL([SIGPIPE], [
-AC_DEFINE([HAVE_SIGPIPE], 1, [Define to 1 if you have SIGPIPE])],,[
-#include <signal.h>
-])
 
 ### checks for types
 ### ----------------
 
 AC_TYPE_SIGNAL
-AC_TYPE_LONGLONG([
-AC_DEFINE([LLU], ["%llu"], [Define to format (%llu) for unsigned long long])dnl
-AC_DEFINE([LLI], ["%lli"], [Define to format (%lli) for long long])dnl
-AC_DEFINE([LLX], ["%llx"], [Define to format (%llx) for long long hex])dnl
+AC_TYPE_LONGLONG
+
+dnl
+dnl Define HAVE_C99_FORMAT to 1 if the formatted IO functions (printf/scanf
+dnl et.al.) support the C99 'size specifiers', namely ll, hh, j, z, t
+dnl (representing long long int, char, intmax_t, size_t, ptrdiff_t). Some C
+dnl compilers supported these specifiers prior to C99 as an extension.
+dnl
+AC_CACHE_CHECK([whether IO functions support C99 size specifiers],
+[ac_cv_c_c99_format],[
+
+ac_cv_c_c99_format=yes
+
+AC_RUN_IFELSE([AC_LANG_PROGRAM([AC_INCLUDES_DEFAULT],
+[[char buf[64];
+ if (sprintf(buf, "%lld%hhd%jd%zd%td", (long long int)1, (char)2, (intmax_t)3, (size_t)4, (ptrdiff_t)5) != 5)
+  exit(1);
+ else if (strcmp(buf, "12345"))
+  exit(2);]])],
+ [ac_cv_c_c99_format=yes],
+ [ac_cv_c_c99_format=no],
+ [ac_cv_c_c99_format=yes])
 ])
-AC_DEFINE([MOD_ZD], ["%zd"], [Define printf() modifier for ssize_t])
-AC_DEFINE([MOD_ZU], ["%zu"], [Define printf() modifier for size_t])
+
+if test $ac_cv_c_c99_format = yes; then
+  AC_DEFINE([HAVE_C99_FORMAT], [1], [Define to 1 if printf supports C99 size specifiers])dnl
+
+  AC_DEFINE([LLU], ["%llu"], [Format (%llu) for unsigned long long])dnl
+  AC_DEFINE([LLI], ["%lli"], [Format (%lli) for long long])dnl
+  AC_DEFINE([LLX], ["%llx"], [Format (%llx) for long long hex])dnl
+  AC_DEFINE([MOD_ZD], ["%zd"], [Define printf() modifier for ssize_t])dnl
+  AC_DEFINE([MOD_ZU], ["%zu"], [Define printf() modifier for size_t])dnl
+
+else
+
+AC_CACHE_CHECK([whether IO functions support size specifier for long long],
+[ac_cv_c_ll_format],[
+
+ac_cv_c_ll_format=yes
+
+AC_RUN_IFELSE([AC_LANG_PROGRAM([AC_INCLUDES_DEFAULT],
+[[char buf[64];
+ if (sprintf(buf, "%lld", (long long int)1) != 1)
+  exit(1);
+ else if (strcmp(buf, "1"))
+  exit(2);]])],
+ [ac_cv_c_ll_format=yes],
+ [ac_cv_c_ll_format=no],
+ [ac_cv_c_ll_format=yes])
+])
+
+if test $ac_cv_c_ll_format = yes; then
+  AC_DEFINE([LLU], ["%llu"], [Format (%llu) for unsigned long long])dnl
+  AC_DEFINE([LLI], ["%lli"], [Format (%lli) for long long])dnl
+  AC_DEFINE([LLX], ["%llx"], [Format (%llx) for long long hex])dnl
+else
+  AC_MSG_ERROR("printf cannot handle 64-bit integers")
+fi
+
+AC_CACHE_CHECK([whether IO functions support size specifier for size_t],
+[ac_cv_c_z_format],[
+
+ac_cv_c_z_format=yes
+
+AC_RUN_IFELSE([AC_LANG_PROGRAM([AC_INCLUDES_DEFAULT],
+[[char buf[64];
+ if (sprintf(buf, "%zd", (size_t)1) != 1)
+  exit(1);
+ else if (strcmp(buf, "1"))
+  exit(2);]])],
+ [ac_cv_c_z_format=yes],
+ [ac_cv_c_z_format=no],
+ [ac_cv_c_z_format=yes])
+])
+
+if test $ac_cv_c_z_format = yes; then
+  AC_DEFINE([MOD_ZD], ["%ld"], [Define printf() modifier for ssize_t])dnl
+  AC_DEFINE([MOD_ZU], ["%lu"], [Define printf() modifier for size_t])dnl
+else 
+  dnl Cross fingers
+  AC_MSG_WARN("printf cannot handle size_t, using long instead")
+  AC_DEFINE([MOD_ZD], ["%ld"], [Define printf() modifier for ssize_t])dnl
+  AC_DEFINE([MOD_ZU], ["%lu"], [Define printf() modifier for size_t])dnl
+fi 
+
+fi
 
 ### checks for structures
 ### ---------------------

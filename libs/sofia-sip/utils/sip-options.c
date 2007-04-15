@@ -331,7 +331,7 @@ int main(int argc, char *argv[])
   return context->c_retval;
 }
 
-/** Handle responses to registration request */
+/** Handle responses to OPTIONS request */
 static
 int response_to_options(context_t *context,
 			nta_outgoing_t *oreq,
@@ -355,12 +355,16 @@ int response_to_options(context_t *context,
 	    sip_is_content_length(h))
 	  continue;
       }
-      if (h->sh_class->hc_name) {
-	snprintf(hname, sizeof hname, "%s: %%s\n", h->sh_class->hc_name);
-	sl_header_print(stdout, hname, h); 
+
+      if (h->sh_class->hc_name == NULL) {
+	sl_header_print(stdout, NULL, h);
+      } 
+      else if (h->sh_class->hc_name[0] == '\0') {
+	sl_header_print(stdout, "%s\n", h); 
       }
       else {
-	sl_header_print(stdout, NULL, h); 
+	snprintf(hname, sizeof hname, "%s: %%s\n", h->sh_class->hc_name);
+	sl_header_print(stdout, hname, h); 
       }
     }
   }

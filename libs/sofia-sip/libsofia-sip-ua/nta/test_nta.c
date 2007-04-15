@@ -654,7 +654,7 @@ int readfile(FILE *f, void **contents)
 
   *contents = buffer;
 
-  return len;
+  return (int)len;
 }
 
 #if HAVE_DIRENT_H
@@ -663,6 +663,8 @@ int readfile(FILE *f, void **contents)
 
 static int test_bad_messages(agent_t *ag)
 {
+  BEGIN();
+
 #if HAVE_DIRENT_H
   DIR *dir;
   struct dirent *d;
@@ -687,12 +689,9 @@ static int test_bad_messages(agent_t *ag)
   if (dir == NULL) {
     fprintf(stderr, "test_nta: cannot find sip torture messages\n"); 
     fprintf(stderr, "test_nta: tried %s\n", name); 
-    return 0;
   }
 
   offset = strlen(name);
-
-  BEGIN();
 
   TEST_1(ag->ag_default_leg = nta_leg_tcreate(ag->ag_agent, 
 					      leg_callback_500,
@@ -713,14 +712,14 @@ static int test_bad_messages(agent_t *ag)
   
   TEST(su_getaddrinfo(host, port, hints, &ai), 0); TEST_1(ai);
   s = su_socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol); TEST_1(s != -1);
-  memset(su, 0, sulen = sizeof su); 
+  memset(su, 0, sulen = ai->ai_addrlen); 
   su->su_len = sizeof su; su->su_family = ai->ai_family;
   TEST_1(bind(s, &su->su_sa, sulen) == 0);
   TEST_1(getsockname(s, &su->su_sa, &sulen) == 0);
   sprintf(via, "v: SIP/2.0/UDP is.invalid:%u\r\n", ntohs(su->su_port));
   vlen = strlen(via);
 
-  for (d = readdir(dir); d; d = readdir(dir)) {
+  for (d = dir ? readdir(dir) : NULL; d; d = readdir(dir)) {
     size_t len = strlen(d->d_name);
     FILE *f;
     int blen, n;
@@ -733,6 +732,7 @@ static int test_bad_messages(agent_t *ag)
     strncpy(name + offset, d->d_name, PATH_MAX - offset);
     TEST_1(f = fopen(name, "rb"));
     TEST_1((blen = readfile(f, &buffer)) > 0);
+    fclose(f);
     r = buffer;
 
     if (strncmp(r, "JUNK ", 5) == 0) {
@@ -751,6 +751,12 @@ static int test_bad_messages(agent_t *ag)
     su_root_step(ag->ag_root, 1);
   }
 
+  TEST_SIZE(su_sendto(s, "\r\n\r\n", 4, 0, (void *)ai->ai_addr, ai->ai_addrlen), 4);
+
+  su_root_step(ag->ag_root, 1);
+
+  TEST_SIZE(su_sendto(s, "", 0, 0, ai->ai_addr, ai->ai_addrlen), 0);
+
   su_close(s);
 
   for (i = 0; i < 20; i++)
@@ -758,12 +764,12 @@ static int test_bad_messages(agent_t *ag)
 
   nta_leg_destroy(ag->ag_default_leg), ag->ag_default_leg = NULL;
 
-  closedir(dir);
+  if (dir)
+    closedir(dir);
+
+#endif /* HAVE_DIRENT_H */
 
   END();
-#else
-  return 0;
-#endif /* HAVE_DIRENT_H */
 }
 
 static unsigned char const code[] = 
@@ -3357,6 +3363,7 @@ char const nta_test_usage[] =
   "usage: %s OPTIONS\n"
   "where OPTIONS are\n"
   "   -v | --verbose    be verbose\n"
+  "   -a | --abort      abort() on error\n"
   "   -q | --quiet      be quiet\n"
   "   -1                quit on first error\n"
   "   -l level          set logging level (0 by default)\n"
@@ -3368,10 +3375,10 @@ char const nta_test_usage[] =
 #endif
   ;
 
-void usage(void)
+void usage(int exitcode)
 {
   fprintf(stderr, nta_test_usage, name);
-  exit(1);
+  exit(exitcode);
 }
 
 int main(int argc, char *argv[])
@@ -3384,6 +3391,8 @@ int main(int argc, char *argv[])
   for (i = 1; argv[i]; i++) {
     if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbose") == 0)
       tstflags |= tst_verbatim;
+    else if (strcmp(argv[i], "-a") == 0 || strcmp(argv[i], "--abort") == 0)
+      tstflags |= tst_abort;
     else if (strcmp(argv[i], "-q") == 0 || strcmp(argv[i], "--quiet") == 0)
       tstflags &= ~tst_verbatim;
     else if (strcmp(argv[i], "-1") == 0)
@@ -3400,7 +3409,7 @@ int main(int argc, char *argv[])
 	level = 3, rest = "";
 
       if (rest == NULL || *rest)
-	usage();
+	usage(1);
       
       su_log_set_level(nta_log, level);
       su_log_set_level(tport_log, level);
@@ -3411,7 +3420,7 @@ int main(int argc, char *argv[])
       else if (argv[i + 1])
 	ag->ag_obp = (url_string_t *)(argv[++i]);
       else
-	usage();
+	usage(1);
     }
     else if (strncmp(argv[i], "-m", 2) == 0) {
       if (argv[i][2])
@@ -3419,7 +3428,7 @@ int main(int argc, char *argv[])
       else if (argv[i + 1])
 	ag->ag_m = argv[++i];
       else
-	usage();
+	usage(1);
     }
     else if (strcmp(argv[i], "--attach") == 0) {
       o_attach = 1;
@@ -3434,7 +3443,7 @@ int main(int argc, char *argv[])
       break;
     }
     else
-      usage();
+      usage(1);
   }
 
   if (o_attach) {

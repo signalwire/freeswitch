@@ -25,4 +25,6 @@ ALIASES += \
 
 @INCLUDE = sip.doxyaliases
 
+PREDEFINED += SU_HAVE_EXPERIMENTAL=1
+
 IMAGE_PATH           += images

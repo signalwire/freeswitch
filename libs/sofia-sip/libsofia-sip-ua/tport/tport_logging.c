@@ -221,17 +221,17 @@ void tport_log_msg(tport_t *self, msg_t *msg,
       n = strncspn(s, end - s, "\r\n");
 
       if (linelen + n > MAX_LINELEN) {
-	n = MAX_LINELEN - n - linelen;
+	n = MAX_LINELEN - linelen;
 	truncated = logged + n;
       }
 
-      su_log("%s%.*s", linelen > n ? "" : "   ", (int)n, s);
+      su_log("%s%.*s", linelen > 0 ? "" : "   ", (int)n, s);
       s += n, linelen += n, logged += n;
 
       if (truncated)
 	break;
       if (s == end)
-	continue;
+	break;
 
       linelen = 0;
       su_log("\n");

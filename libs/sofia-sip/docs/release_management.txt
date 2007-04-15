@@ -61,7 +61,8 @@ Making the release tarball
     sh> cvs tag rel-sofia-sip-x_y_z
 - take a fresh checkout of the release using the release tag
     sh> darcs get http://sofia-sip.org/repos/sofia-sip --tag=rel-sofia-sip-1_yy_z
-- create the release tarball with "make distcheck"
+- create the release tarball with "make distcheck" (make sure depcomp et
+  al libtool scripts are correctly created)
 - calculate md5 and sha1 hashes using md5sum and sha1sum utilities,
   and copy the values to the release-notes (see below)
 

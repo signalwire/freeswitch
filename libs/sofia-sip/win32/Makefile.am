@@ -44,6 +44,31 @@ EXTRA_DIST = SofiaSIP.dsw \
 	autogen.cmd build_sources.cmd version_files.cmd version.awk \
 	install.cmd check.cmd
 
+# VC2005 Project files
+EXTRA_DIST += SofiaSIP.sln \
+    libsofia-sip-ua-static/libsofia_sip_ua_static.vcproj \
+    libsofia-sip-ua/libsofia_sip_ua.vcproj \
+    tests/test_htable/test_htable.vcproj \
+    tests/test_memmem/test_memmem.vcproj \
+    tests/test_nta/test_nta.vcproj \
+    tests/test_nua/test_nua.vcproj \
+    tests/test_su/test_su.vcproj \
+    tests/test_tport/test_tport.vcproj \
+    tests/torture_rbtree/torture_rbtree.vcproj \
+    tests/torture_su/torture_su.vcproj \
+    tests/torture_su_alloc/torture_su_alloc.vcproj \
+    tests/torture_su_bm/torture_su_bm.vcproj \
+    tests/torture_su_port/torture_su_port.vcproj \
+    tests/torture_su_root/torture_su_root.vcproj \
+    tests/torture_su_tag/torture_su_tag.vcproj \
+    tests/torture_su_time/torture_su_time.vcproj \
+    tests/torture_su_timer/torture_su_timer.vcproj \
+    utils/localinfo/localinfo.vcproj \
+    utils/sip_dig/sip_dig.vcproj \
+    utils/sip_options/sip_options.vcproj \
+    utils/sip_options_static/sip_options_static.vcproj \
+    utils/stunc/stunc.vcproj
+
 PTHREAD_DIST = \
 	pthread/ChangeLog \
 	pthread/md5.sum.txt \

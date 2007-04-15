@@ -220,13 +220,15 @@ typedef size_t su_ioveclen_t;
  * } WSABUF, *LPWSABUF;
  * @endcode
  *
- * @note Ordering of the fields is reversed on Windows. Do not initialize this
- * structure with static initializer, but assign both fields separately.
+ * @note Ordering of the fields is reversed on Windows. Do not initialize
+ * this structure with static initializer, but assign both fields
+ * separately. Note that the type of the siv_len is #su_ioveclen_t which is
+ * defined as u_long on Windows and size_t on POSIX.
  *
  * For historical reasons, the structure is known as #msg_iovec_t in @msg
  * module.
  *
- * @sa #su_iovec_t, #su_ioveclen_t, SU_IOVECLEN_MAX, su_vsend(), su_vrecv(), 
+ * @sa #su_ioveclen_t, SU_IOVECLEN_MAX, su_vsend(), su_vrecv(), 
  * #msg_iovec_t, msg_iovec(), msg_recv_iovec(), 
  * @c struct @c iovec defined in <sys/uio.h>, writev(2), readv(2),
  * sendmsg(), recvmsg(),

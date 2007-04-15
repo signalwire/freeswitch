@@ -1061,7 +1061,7 @@ tagi_t *sdptag_session_dup(tagi_t *dst, tagi_t const *src, void **bb)
   b += STRUCT_ALIGN(b);
   srcsdp = (sdp_session_t *)src->t_value;
 
-  sdp = session_dup(&b, srcsdp);
+  sdp = srcsdp ? session_dup(&b, srcsdp) : NULL;
 
   dst->t_tag = src->t_tag;
   dst->t_value = (tag_value_t)sdp;

@@ -192,10 +192,6 @@ SOFIAPUBFUN issize_t sip_name_addr_e(char b[], isize_t bsiz,
 #define sip_params_copy_xtra	msg_params_copy_xtra
 #define sip_params_copy		msg_params_copy
 
-#define sip_params_add      	msg_params_add
-#define sip_params_cmp      	msg_params_cmp
-#define sip_params_replace  	msg_params_replace
-
 SOFIAPUBFUN int sip_generic_xtra(sip_generic_t const *g);
 
 SOFIAPUBFUN sip_generic_t *sip_generic_dup(su_home_t *home, 

@@ -240,7 +240,7 @@ int prefix##_remove(type *pr, entrytype const e) \
     if (is_equal(e, htable[i])) \
       break; \
 \
-  assert(is_used(htable[i])); if (!is_used(htable[i])) return -1; \
+  if (!is_used(htable[i])) return -1; \
 \
   /* Move table entries towards their primary place  */ \
   for (j = (i + 1) % size; is_used(htable[j]); j = (j + 1) % size) { \

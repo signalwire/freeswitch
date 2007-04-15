@@ -39,12 +39,15 @@
 #if SU_HAVE_PTHREADS
 #include <pthread.h>
 #include <assert.h>
+#include <stdlib.h>
 
 extern void (*su_home_locker)(void *mutex);
 extern void (*su_home_unlocker)(void *mutex);
 
 extern void (*su_home_mutex_locker)(void *mutex);
 extern void (*su_home_mutex_unlocker)(void *mutex);
+
+extern void (*su_home_destroy_mutexes)(void *mutex);
 
 /** Mutex */
 static void mutex_locker(void *_mutex)
@@ -58,6 +61,15 @@ static void mutex_unlocker(void *_mutex)
   pthread_mutex_t *mutex = _mutex;
   pthread_mutex_unlock(mutex + 1);
 }
+
+static void mutex_destroy(void *_mutex)
+{
+  pthread_mutex_t *mutex = _mutex;
+  pthread_mutex_destroy(mutex + 0);
+  pthread_mutex_destroy(mutex + 1);
+  free(_mutex);
+}
+
 #endif
 
 
@@ -65,7 +77,7 @@ static void mutex_unlocker(void *_mutex)
  *
  * Convert a memory home object as thread-safe by allocating mutexes and
  * modifying function pointers in su_alloc.c module.
-
+ *
  * @param home memory home object to be converted thread-safe.
  *
  * @retval 0 when successful,
@@ -94,9 +106,10 @@ int su_home_threadsafe(su_home_t *home)
     su_home_mutex_unlocker = mutex_unlocker;
     su_home_locker = (void (*)(void *))pthread_mutex_lock;
     su_home_unlocker = (void (*)(void *))pthread_mutex_unlock;
+    su_home_destroy_mutexes = mutex_destroy;
   }
 
-  mutex = su_alloc(home, 2 * sizeof (pthread_mutex_t));
+  mutex = calloc(1, 2 * (sizeof *mutex));
   assert(mutex);
   if (mutex) {
     /* Mutex for memory operations */

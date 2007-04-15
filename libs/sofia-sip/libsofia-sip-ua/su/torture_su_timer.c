@@ -39,7 +39,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <signal.h>
 
 #include <assert.h>
 
@@ -91,6 +90,10 @@ print_X(struct tester *x, su_timer_t *t1, struct timing *ti)
   putchar('X'); fflush(stdout);
 }
 
+#if HAVE_SIGNAL
+
+#include <signal.h>
+
 su_msg_r intr_msg = SU_MSG_R_INIT;
 
 static RETSIGTYPE intr_handler(int signum)
@@ -102,6 +105,8 @@ static void test_break(struct tester *tester, su_msg_r msg, su_msg_arg_t *arg)
 {
   su_root_break(tester->root);
 }
+
+#endif
 
 void
 end_test(struct tester *tester, su_timer_t *t, struct timing *ti)
@@ -182,6 +187,7 @@ int main(int argc, char *argv[])
 
   tester->root = root = su_root_create(tester);
 
+#if HAVE_SIGNAL
   su_msg_create(intr_msg,
 		su_root_task(root),
 		su_root_task(root),
@@ -189,9 +195,9 @@ int main(int argc, char *argv[])
 
   signal(SIGINT, intr_handler);
 #if HAVE_SIGPIPE
-  signal(SIGPIPE, intr_handler);
   signal(SIGQUIT, intr_handler);
   signal(SIGHUP, intr_handler);
+#endif
 #endif
 
   t = su_timer_create(su_root_task(root), interval);
@@ -217,7 +223,9 @@ int main(int argc, char *argv[])
 
   su_root_run(root);
 
+#if HAVE_SIGNAL
   su_msg_destroy(intr_msg);
+#endif
 
   su_timer_destroy(t);
   su_timer_destroy(t1);

@@ -43,6 +43,8 @@
 #define __func__ "test_simple"
 #endif
 
+extern int accept_request(CONDITION_PARAMS);
+
 int test_message(struct context *ctx)
 {
   BEGIN();
@@ -62,7 +64,7 @@ int test_message(struct context *ctx)
 
 */
   if (print_headings)
-    printf("TEST NUA-11.1: MESSAGE\n");
+    printf("TEST NUA-11.1.1: MESSAGE\n");
 
   if (ctx->proxy_tests)
     *url = *b->to->a_url;
@@ -76,7 +78,7 @@ int test_message(struct context *ctx)
 
   MESSAGE(a, a_call, a_call->nh,
 	  NUTAG_URL(url),
-	  SIPTAG_SUBJECT_STR("NUA-11.1"),
+	  SIPTAG_SUBJECT_STR("NUA-11.1.1"),
 	  SIPTAG_CONTENT_TYPE_STR("text/plain"),
 	  SIPTAG_PAYLOAD_STR("Hello hellO!\n"),
 	  TAG_END());
@@ -98,7 +100,7 @@ int test_message(struct context *ctx)
   TEST(e->data->e_status, 200);
   TEST_1(sip = sip_object(e->data->e_msg));
   TEST_1(sip->sip_subject && sip->sip_subject->g_string);
-  TEST_S(sip->sip_subject->g_string, "NUA-11.1");
+  TEST_S(sip->sip_subject->g_string, "NUA-11.1.1");
   TEST_1(sip->sip_organization);
   TEST_S(sip->sip_organization->g_string, "United Testers");
   TEST_1(!e->next);
@@ -110,7 +112,64 @@ int test_message(struct context *ctx)
   nua_handle_destroy(b_call->nh), b_call->nh = NULL;
 
   if (print_headings)
-    printf("TEST NUA-11.1: PASSED\n");
+    printf("TEST NUA-11.1.1: PASSED\n");
+
+/* MESSAGE as application method
+
+   A			B
+   |-------MESSAGE----->|
+   |<-------202---------|
+   |			|
+*/
+
+  if (print_headings)
+    printf("TEST NUA-11.1.2: MESSAGE\n");
+
+  nua_set_params(b->nua, NUTAG_APPL_METHOD("MESSAGE"), TAG_END());
+  run_b_until(ctx, nua_r_set_params, until_final_response);
+
+  TEST_1(a_call->nh = nua_handle(a->nua, a_call, TAG_END()));
+
+  MESSAGE(a, a_call, a_call->nh,
+	  NUTAG_URL(url),
+	  SIPTAG_SUBJECT_STR("NUA-11.1.2"),
+	  SIPTAG_CONTENT_TYPE_STR("text/plain"),
+	  SIPTAG_PAYLOAD_STR("Hello hellO!\n"),
+	  TAG_END());
+
+  run_ab_until(ctx, -1, save_until_final_response, -1, accept_request);
+
+  /* Client events:
+     nua_message(), nua_r_message
+  */
+  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_r_message);
+  TEST(e->data->e_status, 202);
+  TEST_1(sip = sip_object(e->data->e_msg));
+  TEST_1(sip_user_agent(sip)); 
+  TEST_S(sip_user_agent(sip)->g_value, "007");
+  TEST_1(!e->next);
+
+  /*
+   Server events:
+   nua_i_message
+  */
+  TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_message);
+  TEST(e->data->e_status, 100);
+  TEST_1(sip = sip_object(e->data->e_msg));
+  TEST_1(sip->sip_subject && sip->sip_subject->g_string);
+  TEST_S(sip->sip_subject->g_string, "NUA-11.1.2");
+  TEST_1(sip->sip_organization);
+  TEST_S(sip->sip_organization->g_string, "United Testers");
+  TEST_1(!e->next);
+
+  free_events_in_list(ctx, a->events);
+  nua_handle_destroy(a_call->nh), a_call->nh = NULL;
+
+  free_events_in_list(ctx, b->events);
+  nua_handle_destroy(b_call->nh), b_call->nh = NULL;
+
+  if (print_headings)
+    printf("TEST NUA-11.1.2: PASSED\n");
 
 
 /* Message test
@@ -131,7 +190,7 @@ int test_message(struct context *ctx)
   MESSAGE(a, a_call, a_call->nh,
 	  /* We cannot reach us by using our contact! */
 	  NUTAG_URL(!ctx->p && !ctx->proxy_tests ? a->contact->m_url : NULL),
-	  SIPTAG_SUBJECT_STR("NUA-11.1b"),
+	  SIPTAG_SUBJECT_STR("NUA-11.2"),
 	  SIPTAG_CONTENT_TYPE_STR("text/plain"),
 	  SIPTAG_PAYLOAD_STR("Hello hellO!\n"),
 	  TAG_END());
@@ -141,16 +200,21 @@ int test_message(struct context *ctx)
   /* Events:
      nua_message(), nua_i_message, nua_r_message
   */
-  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_i_message);
+  TEST_1(e = a->specials->head);
+  while (e->data->e_event == nua_i_outbound)
+    e = e->next;
+  TEST_E(e->data->e_event, nua_i_message);
   TEST(e->data->e_status, 200);
   TEST_1(sip = sip_object(e->data->e_msg));
   TEST_1(sip->sip_subject && sip->sip_subject->g_string);
-  TEST_S(sip->sip_subject->g_string, "NUA-11.1b");
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_message);
+  TEST_S(sip->sip_subject->g_string, "NUA-11.2");
+
+  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_r_message);
   TEST(e->data->e_status, 200);
   TEST_1(!e->next);
 
   free_events_in_list(ctx, a->events);
+  free_events_in_list(ctx, a->specials);
   nua_handle_destroy(a_call->nh), a_call->nh = NULL;
 
   if (print_headings)
@@ -159,12 +223,32 @@ int test_message(struct context *ctx)
   END();
 }
 
+int accept_request(CONDITION_PARAMS)
+{
+  msg_t *with = nua_current_request(nua);
+  
+  if (!(check_handle(ep, call, nh, SIP_500_INTERNAL_SERVER_ERROR)))
+    return 0;
+
+  save_event_in_list(ctx, event, ep, call);
+
+  if (status < 200) {
+    RESPOND(ep, call, nh, SIP_202_ACCEPTED,
+	    NUTAG_WITH(with),
+	    SIPTAG_USER_AGENT_STR("007"),
+	    TAG_END());
+    return 1;
+  }
+
+  return 0;
+}
+
 int respond_with_etag(CONDITION_PARAMS)
 {
   msg_t *with = nua_current_request(nua);
 
   if (!(check_handle(ep, call, nh, SIP_500_INTERNAL_SERVER_ERROR)))
-    return 0;
+    return 1;
 
   save_event_in_list(ctx, event, ep, call);
 
@@ -189,6 +273,14 @@ int respond_with_etag(CONDITION_PARAMS)
   default:
     return 0;
   }
+}
+
+static int close_handle(CONDITION_PARAMS)
+{
+  if (call->nh == nh)
+    call->nh = NULL;
+  nua_handle_destroy(nh);
+  return 1;
 }
 
 int test_publish(struct context *ctx)
@@ -357,8 +449,60 @@ int test_publish(struct context *ctx)
   nua_handle_destroy(a_call->nh), a_call->nh = NULL;
   nua_handle_destroy(b_call->nh), b_call->nh = NULL;
 
+  TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
+
+  /* Let server close handle without responding to PUBLISH */ 
+  PUBLISH(a, a_call, a_call->nh,
+	  TAG_IF(!ctx->proxy_tests, NUTAG_URL(b->contact->m_url)),
+	  SIPTAG_EVENT_STR("presence"),
+	  SIPTAG_CONTENT_TYPE_STR("text/urllist"),
+	  SIPTAG_PAYLOAD_STR("sip:example.com\n"),
+	  TAG_END());
+
+  run_ab_until(ctx, -1, save_until_final_response, -1, close_handle);
+
+  /* Client events:
+     nua_publish(), nua_r_publish
+  */
+  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_r_publish);
+  TEST(e->data->e_status, 500);
+  TEST_1(!e->next);
+
+  free_events_in_list(ctx, a->events);
+
+  nua_handle_destroy(a_call->nh), a_call->nh = NULL;
+
+  /* No Event header */
+
+  TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
+
+  PUBLISH(a, a_call, a_call->nh,
+	  TAG_IF(!ctx->proxy_tests, NUTAG_URL(b->contact->m_url)),
+	  SIPTAG_CONTENT_TYPE_STR("text/urllist"),
+	  SIPTAG_PAYLOAD_STR("sip:example.com\n"),
+	  TAG_END());
+
+  run_ab_until(ctx, -1, save_until_final_response, -1, save_events);
+
+  /* Client events:
+     nua_publish(), nua_r_publish
+  */
+  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_r_publish);
+  TEST(e->data->e_status, 489);
+  TEST_1(!e->next);
+
+  free_events_in_list(ctx, a->events);
+
+  /*
+   Server events: nothing
+  */
+  TEST_1(!b->events->head);
+
+  nua_handle_destroy(a_call->nh), a_call->nh = NULL;
+
   if (print_headings)
     printf("TEST NUA-11.3: PASSED\n");
+
   END();
 }
 
@@ -429,7 +573,10 @@ int test_subscribe_notify(struct context *ctx)
   tagi_t const *n_tags, *r_tags;
 
   if (print_headings)
-    printf("TEST NUA-11.4: establishing subscription without notifier\n");
+    printf("TEST NUA-11.4: notifier server using nua_notify()\n");
+
+  if (print_headings)
+    printf("TEST NUA-11.4.1: establishing subscription\n");
 
   TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
 
@@ -489,7 +636,7 @@ int test_subscribe_notify(struct context *ctx)
   free_events_in_list(ctx, b->events);
 
   if (print_headings)
-    printf("TEST NUA-11.4: PASSED\n");
+    printf("TEST NUA-11.4.1: PASSED\n");
 
   /* ---------------------------------------------------------------------- */
 
@@ -502,7 +649,7 @@ int test_subscribe_notify(struct context *ctx)
    |                    |
 */
   if (print_headings)
-    printf("TEST NUA-11.5: send NOTIFY\n");
+    printf("TEST NUA-11.4.2: send NOTIFY\n");
 
   /* Update presence data */
 
@@ -542,7 +689,7 @@ int test_subscribe_notify(struct context *ctx)
   free_events_in_list(ctx, b->events);
 
   if (print_headings)
-    printf("TEST NUA-11.5: PASSED\n");
+    printf("TEST NUA-11.4.2: PASSED\n");
 
   /* ---------------------------------------------------------------------- */
 
@@ -557,7 +704,7 @@ int test_subscribe_notify(struct context *ctx)
    |                    |
 */
   if (print_headings)
-    printf("TEST NUA-11.6: un-SUBSCRIBE\n");
+    printf("TEST NUA-11.4.3: un-SUBSCRIBE\n");
 
   UNSUBSCRIBE(a, a_call, a_call->nh, TAG_END());
 
@@ -614,10 +761,537 @@ int test_subscribe_notify(struct context *ctx)
   nua_handle_destroy(b_call->nh), b_call->nh = NULL;
 
   if (print_headings)
-    printf("TEST NUA-11.6: PASSED\n");
+    printf("TEST NUA-11.4.3: PASSED\n");
+
+  if (print_headings)
+    printf("TEST NUA-11.4: PASSED\n");
 
   END();
 }
+
+/* ---------------------------------------------------------------------- */
+/* Subscriber gracefully terminates dialog upon 483 */
+
+static
+size_t change_status_to_483(void *a, void *message, size_t len);
+int save_until_notified_and_responded_twice(CONDITION_PARAMS);
+int save_until_notify_responded_twice(CONDITION_PARAMS);
+
+int test_subscribe_notify_graceful(struct context *ctx)
+{
+  if (!ctx->nat)
+    return 0;
+
+  BEGIN();
+
+  struct endpoint *a = &ctx->a,  *b = &ctx->b;
+  struct call *a_call = a->call, *b_call = b->call;
+  struct event *e;
+  sip_t const *sip;
+  tagi_t const *n_tags, *r_tags;
+  struct nat_filter *f;
+
+  if (print_headings)
+    printf("TEST NUA-11.5.1: establishing subscription\n");
+
+  TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
+
+  SUBSCRIBE(a, a_call, a_call->nh, NUTAG_URL(b->contact->m_url),
+	    SIPTAG_EVENT_STR("presence"),
+	    SIPTAG_ACCEPT_STR("application/xpidf, application/pidf+xml"),
+	    TAG_END());
+
+  run_ab_until(ctx, -1, save_until_notified_and_responded,
+	       -1, accept_and_notify);
+
+  /* Client events:
+     nua_subscribe(), nua_i_notify/nua_r_subscribe
+  */
+  TEST_1(e = a->events->head);
+  if (e->data->e_event == nua_i_notify) {
+    TEST_E(e->data->e_event, nua_i_notify);
+    TEST_1(sip = sip_object(e->data->e_msg));
+    n_tags = e->data->e_tags;
+    TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_subscribe);
+    r_tags = e->data->e_tags;
+    TEST_1(tl_find(r_tags, nutag_substate));
+    TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_pending);
+  }
+  else {
+    TEST_E(e->data->e_event, nua_r_subscribe);
+    TEST(e->data->e_status, 202);
+    r_tags = e->data->e_tags;
+    TEST_1(tl_find(r_tags, nutag_substate));
+    TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_embryonic);
+    TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_notify);
+    TEST_1(sip = sip_object(e->data->e_msg));
+    n_tags = e->data->e_tags;
+  }
+  TEST_1(sip->sip_event); TEST_S(sip->sip_event->o_type, "presence");
+  TEST_1(sip->sip_content_type);
+  TEST_S(sip->sip_content_type->c_type, "application/pidf+xml");
+  TEST_1(sip->sip_subscription_state);
+  TEST_S(sip->sip_subscription_state->ss_substate, "pending");
+  TEST_1(sip->sip_subscription_state->ss_expires);
+  TEST_1(tl_find(n_tags, nutag_substate));
+  TEST(tl_find(n_tags, nutag_substate)->t_value, nua_substate_pending);
+  TEST_1(!e->next);
+  free_events_in_list(ctx, a->events);
+
+  /* Server events: nua_i_subscribe, nua_r_notify */
+  TEST_1(e = b->events->head);
+  TEST_E(e->data->e_event, nua_i_subscribe);
+  TEST_E(e->data->e_status, 100);
+  TEST_1(sip = sip_object(e->data->e_msg));
+
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_notify);
+  r_tags = e->data->e_tags;
+  TEST_1(tl_find(r_tags, nutag_substate));
+  TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_pending);
+
+  free_events_in_list(ctx, b->events);
+
+  if (print_headings)
+    printf("TEST NUA-11.5.1: PASSED\n");
+
+  if (print_headings)
+    printf("TEST NUA-11.5.2: terminate gracefully upon 483\n");
+
+  TEST_1(f = test_nat_add_filter(ctx->nat,
+				 change_status_to_483, NULL,
+				 nat_inbound));
+
+  SUBSCRIBE(a, a_call, a_call->nh, TAG_END());
+
+  run_ab_until(ctx, -1, save_until_notified_and_responded_twice, 
+	       -1, save_until_notify_responded_twice);
+
+#if 0
+  /* Client events:
+     nua_unsubscribe(), nua_i_notify/nua_r_unsubscribe
+  */
+  TEST_1(e = a->events->head);
+  if (e->data->e_event == nua_i_notify) {
+    TEST_E(e->data->e_event, nua_i_notify);
+    n_tags = e->data->e_tags;
+    TEST_1(sip = sip_object(e->data->e_msg));
+    TEST_1(sip->sip_event);
+    TEST_1(sip->sip_subscription_state);
+    TEST_S(sip->sip_subscription_state->ss_substate, "terminated");
+    TEST_1(!sip->sip_subscription_state->ss_expires);
+    TEST_1(tl_find(n_tags, nutag_substate));
+    TEST(tl_find(n_tags, nutag_substate)->t_value, nua_substate_terminated);
+    TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_unsubscribe);
+    TEST(e->data->e_status, 200);
+    r_tags = e->data->e_tags;
+    TEST_1(tl_find(r_tags, nutag_substate));
+    TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_terminated);
+  }
+  else {
+    TEST_E(e->data->e_event, nua_r_unsubscribe);
+    TEST(e->data->e_status, 200);
+    r_tags = e->data->e_tags;
+    TEST_1(tl_find(r_tags, nutag_substate));
+    TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_terminated);
+  }
+  TEST_1(!e->next);
+
+  /* Notifier events: nua_r_notify */
+  TEST_1(e = b->events->head);
+  TEST_E(e->data->e_event, nua_i_subscribe);
+  TEST(e->data->e_status, 200);
+  TEST_1(sip = sip_object(e->data->e_msg));
+  TEST_1(tl_find(e->data->e_tags, nutag_substate));
+  TEST(tl_find(e->data->e_tags, nutag_substate)->t_value, 
+       nua_substate_terminated);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_notify);
+  TEST_1(e->data->e_status >= 200);
+  r_tags = e->data->e_tags;
+  TEST_1(tl_find(r_tags, nutag_substate));
+  TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_terminated);
+#endif
+
+  free_events_in_list(ctx, a->events);
+  free_events_in_list(ctx, b->events);
+
+  nua_handle_destroy(a_call->nh), a_call->nh = NULL;
+  nua_handle_destroy(b_call->nh), b_call->nh = NULL;
+
+  test_nat_remove_filter(ctx->nat, f);
+
+  if (print_headings)
+    printf("TEST NUA-11.5.2: PASSED\n");
+
+  END();
+}
+
+static
+size_t change_status_to_483(void *a, void *message, size_t len)
+{
+  (void)a;
+
+  if (strncmp("SIP/2.0 2", message, 9) == 0) {
+    memcpy(message, "SIP/2.0 483", 11);
+  }
+  return len;
+}
+
+int save_until_notified_and_responded_twice(CONDITION_PARAMS)
+{
+  save_event_in_list(ctx, event, ep, call);
+
+  if (event == nua_i_notify) {
+    if (ep->flags.bit0)
+      ep->flags.bit1 = 1;
+    ep->flags.bit0 = 1;
+  }
+
+  if (event == nua_r_subscribe || event == nua_r_unsubscribe) {
+    if (status >= 300)
+      return 1;
+    else if (status >= 200) {
+      if (ep->flags.bit2)
+	ep->flags.bit3 = 1;
+      ep->flags.bit2 = 1;
+    }
+  }
+
+  return ep->flags.bit0 && ep->flags.bit1 && ep->flags.bit2 && ep->flags.bit3;
+}
+
+int save_until_notify_responded_twice(CONDITION_PARAMS)
+{
+  save_event_in_list(ctx, event, ep, call);
+
+  if (event == nua_r_notify) {
+    if (ep->flags.bit0)
+      ep->flags.bit1 = 1;
+    ep->flags.bit0 = 1;
+  }
+
+  return ep->flags.bit0 && ep->flags.bit1;
+}
+
+
+/* ---------------------------------------------------------------------- */
+/* Unsolicited NOTIFY */
+
+int accept_notify(CONDITION_PARAMS);
+
+int test_newsub_notify(struct context *ctx)
+{
+  BEGIN();
+
+  struct endpoint *a = &ctx->a,  *b = &ctx->b;
+  struct call *a_call = a->call, *b_call = b->call;
+  struct event *e;
+  sip_t const *sip;
+  sip_call_id_t *i;
+  tagi_t const *n_tags, *r_tags;
+
+  if (print_headings)
+    printf("TEST NUA-11.7.1: rejecting NOTIFY without subscription locally\n");
+
+  TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
+
+  NOTIFY(a, a_call, a_call->nh, NUTAG_URL(b->contact->m_url),
+	 SIPTAG_SUBJECT_STR("NUA-11.7.1"),
+	 SIPTAG_EVENT_STR("message-summary"),
+	 SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"),
+	 SIPTAG_PAYLOAD_STR("Messages-Waiting: yes"),
+	 TAG_END());
+
+  run_a_until(ctx, -1, save_until_final_response);
+
+  /* Client events:
+     nua_notify(), nua_r_notify
+  */
+  TEST_1(e = a->events->head);
+  TEST_E(e->data->e_event, nua_r_notify);
+  TEST(e->data->e_status, 481);
+  TEST_1(!e->data->e_msg);
+  TEST_1(!e->next);
+  free_events_in_list(ctx, a->events);
+
+  if (print_headings)
+    printf("TEST NUA-11.7.1: PASSED\n");
+
+  if (print_headings)
+    printf("TEST NUA-11.7.2: rejecting NOTIFY without subscription\n");
+
+  TEST_1(i = sip_call_id_create(nua_handle_home(a_call->nh), NULL));
+
+  NOTIFY(a, a_call, a_call->nh, NUTAG_URL(b->contact->m_url),
+	 NUTAG_NEWSUB(1),
+	 SIPTAG_SUBJECT_STR("NUA-11.7.2 first"),
+	 SIPTAG_FROM_STR("<sip:alice@example.com>;tag=nua-11.7.2"),
+	 SIPTAG_CALL_ID(i),
+	 SIPTAG_CSEQ_STR("1 NOTIFY"),
+	 SIPTAG_EVENT_STR("message-summary"),
+	 SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"),
+	 SIPTAG_PAYLOAD_STR("Messages-Waiting: yes"),
+	 TAG_END());
+
+  run_a_until(ctx, -1, save_until_final_response);
+
+  /* Client events:
+     nua_notify(), nua_r_notify
+  */
+  TEST_1(e = a->events->head);
+  TEST_E(e->data->e_event, nua_r_notify);
+  TEST(e->data->e_status, 481);
+  TEST_1(e->data->e_msg);
+  TEST_1(!e->next);
+
+  free_events_in_list(ctx, a->events);
+  
+  /* 2nd NOTIFY using same dialog */
+  /* Check that server really discards the dialog */
+
+  NOTIFY(a, a_call, a_call->nh, NUTAG_URL(b->contact->m_url),
+	 NUTAG_NEWSUB(1),
+	 SIPTAG_SUBJECT_STR("NUA-11.7.2 second"),
+	 SIPTAG_FROM_STR("<sip:alice@example.com>;tag=nua-11.7.2"),
+	 SIPTAG_CALL_ID(i),
+	 SIPTAG_CSEQ_STR("2 NOTIFY"),
+	 SIPTAG_EVENT_STR("message-summary"),
+	 SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"),
+	 SIPTAG_PAYLOAD_STR("Messages-Waiting: yes"),
+	 TAG_END());
+
+  run_a_until(ctx, -1, save_until_final_response);
+
+  /* Client events:
+     nua_notify(), nua_r_notify
+  */
+  TEST_1(e = a->events->head);
+  TEST_E(e->data->e_event, nua_r_notify);
+  TEST(e->data->e_status, 481);
+  TEST_1(e->data->e_msg);
+  TEST_1(!e->next);
+
+  free_events_in_list(ctx, a->events);
+
+  if (print_headings)
+    printf("TEST NUA-11.7.2: PASSED\n");
+
+  /* ---------------------------------------------------------------------- */
+
+  if (print_headings)
+    printf("TEST NUA-11.7.3: accept NOTIFY\n");
+
+  nua_set_params(b->nua, NUTAG_APPL_METHOD("NOTIFY"), TAG_END());
+  run_b_until(ctx, nua_r_set_params, until_final_response);
+
+  NOTIFY(a, a_call, a_call->nh,
+	 NUTAG_URL(b->contact->m_url),
+	 NUTAG_NEWSUB(1),
+	 SIPTAG_SUBJECT_STR("NUA-11.7.3"),
+	 SIPTAG_EVENT_STR("message-summary"),
+	 SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"),
+	 SIPTAG_PAYLOAD_STR("Messages-Waiting: yes"),
+	 TAG_END());
+
+  run_ab_until(ctx, -1, save_until_final_response, -1, accept_notify);
+
+  /* Notifier events: nua_r_notify */
+  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_r_notify);
+  TEST(e->data->e_status, 200);
+  r_tags = e->data->e_tags;
+  TEST_1(tl_find(r_tags, nutag_substate));
+  TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_terminated);
+
+  /* subscriber events:
+     nua_i_notify
+  */
+  TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_notify);
+  TEST_1(sip = sip_object(e->data->e_msg));
+  TEST_1(sip->sip_subscription_state);
+  TEST_S(sip->sip_subscription_state->ss_substate, "terminated");
+  n_tags = e->data->e_tags;
+  TEST_1(tl_find(n_tags, nutag_substate));
+  TEST(tl_find(n_tags, nutag_substate)->t_value, nua_substate_terminated);
+  TEST_1(!e->next);
+
+  free_events_in_list(ctx, a->events);
+  free_events_in_list(ctx, b->events);
+
+  if (print_headings)
+    printf("TEST NUA-11.7.3: PASSED\n");
+
+  nua_handle_destroy(a_call->nh), a_call->nh = NULL;
+  nua_handle_destroy(b_call->nh), b_call->nh = NULL;
+
+  if (print_headings)
+    printf("TEST NUA-11.7: PASSED\n");
+
+  END();
+}
+
+/**Terminate when received notify. 
+ * Respond to NOTIFY with 200 OK if it has not been responded.
+ * Save events (except nua_i_active or terminated).
+ */
+int accept_notify(CONDITION_PARAMS)
+{
+  if (event == nua_i_notify && status < 200)
+    RESPOND(ep, call, nh, SIP_200_OK, 
+	    NUTAG_WITH_THIS(ep->nua),
+	    TAG_END());
+
+  save_event_in_list(ctx, event, ep, call);
+
+  return event == nua_i_notify;
+}
+
+/* ======================================================================== */
+
+int save_until_subscription_terminated(CONDITION_PARAMS);
+int accept_subscription_until_terminated(CONDITION_PARAMS);
+
+/* Timeout subscription */
+int test_subscription_timeout(struct context *ctx)
+{
+  BEGIN();
+
+  struct endpoint *a = &ctx->a,  *b = &ctx->b;
+  struct call *a_call = a->call, *b_call = b->call;
+  struct event *e;
+  sip_t const *sip;
+  tagi_t const *n_tags, *r_tags;
+
+  if (print_headings)
+    printf("TEST NUA-11.8: subscribe and wait until subscription times out\n");
+
+  TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
+
+  METHOD(a, a_call, a_call->nh,
+	 NUTAG_METHOD("SUBSCRIBE"),
+	 NUTAG_URL(b->contact->m_url),
+	 SIPTAG_EVENT_STR("presence"),
+	 SIPTAG_ACCEPT_STR("application/xpidf, application/pidf+xml"),
+	 SIPTAG_EXPIRES_STR("2"),
+	 NUTAG_APPL_METHOD("NOTIFY"),
+	 NUTAG_DIALOG(2),
+	 TAG_END());
+
+  run_ab_until(ctx,
+	       -1, save_until_subscription_terminated,
+	       -1, accept_subscription_until_terminated);
+
+  /* Client events:
+     nua_method(), nua_i_notify/nua_r_method, nua_i_notify
+  */
+  TEST_1(e = a->events->head);
+  if (e->data->e_event == nua_i_notify) {
+    TEST_E(e->data->e_event, nua_i_notify);
+    TEST_1(sip = sip_object(e->data->e_msg));
+    n_tags = e->data->e_tags;
+    TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_subscribe);
+    r_tags = e->data->e_tags;
+  }
+  else {
+    TEST_E(e->data->e_event, nua_r_method);
+    TEST(e->data->e_status, 202);
+    r_tags = e->data->e_tags;
+    TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_notify);
+    TEST_1(sip = sip_object(e->data->e_msg));
+    n_tags = e->data->e_tags;
+  }
+  TEST_1(sip->sip_event); TEST_S(sip->sip_event->o_type, "presence");
+  TEST_1(sip->sip_content_type);
+  TEST_S(sip->sip_content_type->c_type, "application/pidf+xml");
+  TEST_1(sip->sip_subscription_state);
+  TEST_S(sip->sip_subscription_state->ss_substate, "pending");
+  TEST_1(sip->sip_subscription_state->ss_expires);
+  TEST_1(tl_find(n_tags, nutag_substate));
+  TEST(tl_find(n_tags, nutag_substate)->t_value, nua_substate_pending);
+
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_notify);
+  n_tags = e->data->e_tags;
+  TEST_1(tl_find(n_tags, nutag_substate));
+  TEST(tl_find(n_tags, nutag_substate)->t_value, nua_substate_terminated);
+  TEST_1(sip = sip_object(e->data->e_msg));
+  TEST_1(sip->sip_event);
+  TEST_1(sip->sip_subscription_state);
+  TEST_S(sip->sip_subscription_state->ss_substate, "terminated");
+  TEST_1(!sip->sip_subscription_state->ss_expires);
+  TEST_1(!e->next);
+
+  free_events_in_list(ctx, a->events);
+
+  /* Server events: nua_i_subscribe, nua_r_notify */
+  TEST_1(e = b->events->head);
+  TEST_E(e->data->e_event, nua_i_subscribe);
+  TEST_E(e->data->e_status, 100);
+  TEST_1(sip = sip_object(e->data->e_msg));
+
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_notify);
+  r_tags = e->data->e_tags;
+  TEST_1(tl_find(r_tags, nutag_substate));
+  TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_pending);
+
+  /* Notifier events: 2nd nua_r_notify */
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_notify);
+  TEST_1(e->data->e_status >= 200);
+  r_tags = e->data->e_tags;
+  TEST_1(tl_find(r_tags, nutag_substate));
+  TEST(tl_find(r_tags, nutag_substate)->t_value, nua_substate_terminated);
+
+  free_events_in_list(ctx, b->events);
+
+  nua_handle_destroy(a_call->nh), a_call->nh = NULL;
+  nua_handle_destroy(b_call->nh), b_call->nh = NULL;
+
+  if (print_headings)
+    printf("TEST NUA-11.8: PASSED\n");
+
+  END();
+}
+
+int save_until_subscription_terminated(CONDITION_PARAMS)
+{
+  void *with = nua_current_request(nua);
+
+  save_event_in_list(ctx, event, ep, call);
+
+  if (event == nua_i_notify) {
+    if (status < 200)
+      RESPOND(ep, call, nh, SIP_200_OK, NUTAG_WITH(with), TAG_END());
+
+    tags = tl_find(tags, nutag_substate);
+    return tags && tags->t_value == nua_substate_terminated;
+  }
+
+  return 0;
+}
+
+int accept_subscription_until_terminated(CONDITION_PARAMS)
+{
+  void *with = nua_current_request(nua);
+
+  save_event_in_list(ctx, event, ep, call);
+
+  if (event == nua_i_subscribe && status < 200) {
+    RESPOND(ep, call, nh, SIP_202_ACCEPTED,
+	    NUTAG_WITH(with),
+	    SIPTAG_EXPIRES_STR("360"),
+	    TAG_END());
+    NOTIFY(ep, call, nh, 
+	   SIPTAG_EVENT(sip->sip_event),
+	   SIPTAG_CONTENT_TYPE_STR("application/pidf+xml"),
+	   SIPTAG_PAYLOAD_STR(presence_closed),
+	   NUTAG_SUBSTATE(nua_substate_pending),
+	   TAG_END());
+  }
+  else if (event == nua_r_notify) {
+    tags = tl_find(tags, nutag_substate);
+    return tags && tags->t_value == nua_substate_terminated;
+  }
+
+  return 0;
+}
+
 
 /* ======================================================================== */
 /* Test simple methods: MESSAGE, PUBLISH, SUBSCRIBE/NOTIFY */
@@ -628,5 +1302,8 @@ int test_simple(struct context *ctx)
     test_message(ctx)
     || test_publish(ctx)
     || test_subscribe_notify(ctx)
+    || test_subscribe_notify_graceful(ctx)
+    || test_newsub_notify(ctx)
+    || test_subscription_timeout(ctx)
     ;
 }

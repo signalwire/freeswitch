@@ -52,10 +52,10 @@
 
 char const name[] = "htable_test";
 
-void usage(void)
+void usage(int exitcode)
 {
-  fprintf(stderr, "usage: %s [-v|--verbatim]\n", name);
-  exit(2);
+  fprintf(stderr, "usage: %s [-v|--verbatim] [-a|--abort]\n", name);
+  exit(exitcode);
 }
 
 static int table_test(int flags);
@@ -70,8 +70,10 @@ int main(int argc, char *argv[])
   for (i = 1; argv[i]; i++) {
     if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbatim") == 0)
       flags |= tst_verbatim;
+    else if (strcmp(argv[i], "-a") == 0 || strcmp(argv[i], "--abort") == 0)
+      flags |= tst_abort;
     else
-      usage();
+      usage(1);
   }
 
   retval |= table_test(flags); fflush(stdout);
@@ -179,44 +181,46 @@ int table_test(int flags)
 
   BEGIN();
 
-  TEST0(c = context_create());
-  TEST0(add(c, 0, 1)); TEST0(c->c_hash->ht_table[0]);
-  TEST0(add(c, 1, 2)); TEST0(c->c_hash->ht_table[1]);
-  TEST0(add(c, 2, 3)); TEST0(c->c_hash->ht_table[2]);
-  TEST0(add(c, 0, 4)); TEST0(c->c_hash->ht_table[3]);
-  TEST0(add(c, 2, 5)); TEST0(c->c_hash->ht_table[4]);
+  TEST_1(c = context_create());
+  TEST_1(add(c, 0, 1)); TEST_1(c->c_hash->ht_table[0]);
+  TEST_1(add(c, 1, 2)); TEST_1(c->c_hash->ht_table[1]);
+  TEST_1(add(c, 2, 3)); TEST_1(c->c_hash->ht_table[2]);
+  TEST_1(add(c, 0, 4)); TEST_1(c->c_hash->ht_table[3]);
+  TEST_1(add(c, 2, 5)); TEST_1(c->c_hash->ht_table[4]);
 
-  TEST0(e = search(c, 1, 2, 0));
-  zap(c, e);
-  TEST0(c->c_hash->ht_table[0]);
-  TEST0(c->c_hash->ht_table[1]);
-  TEST0(c->c_hash->ht_table[2]);
-  TEST0(c->c_hash->ht_table[3]);
-  TEST0(c->c_hash->ht_table[4] == NULL);
+  TEST_1(e = search(c, 1, 2, 0));
+  TEST(htable_remove(c->c_hash, e), 0);
+  TEST(htable_remove(c->c_hash, e), -1);
+  su_free(c->c_home, e);
+  TEST_1(c->c_hash->ht_table[0]);
+  TEST_1(c->c_hash->ht_table[1]);
+  TEST_1(c->c_hash->ht_table[2]);
+  TEST_1(c->c_hash->ht_table[3]);
+  TEST_1(c->c_hash->ht_table[4] == NULL);
 
   zap(c, c->c_hash->ht_table[0]);
 
-  TEST0(c->c_hash->ht_table[0]);
-  TEST0(c->c_hash->ht_table[1] == NULL);
-  TEST0(c->c_hash->ht_table[2]);
-  TEST0(c->c_hash->ht_table[3]);
-  TEST0(c->c_hash->ht_table[4] == NULL);
+  TEST_1(c->c_hash->ht_table[0]);
+  TEST_1(c->c_hash->ht_table[1] == NULL);
+  TEST_1(c->c_hash->ht_table[2]);
+  TEST_1(c->c_hash->ht_table[3]);
+  TEST_1(c->c_hash->ht_table[4] == NULL);
 
-  TEST0(add(c, 0, 6)); TEST0(c->c_hash->ht_table[1]);
-  TEST0(add(c, 1, 7)); TEST0(c->c_hash->ht_table[4]);
+  TEST_1(add(c, 0, 6)); TEST_1(c->c_hash->ht_table[1]);
+  TEST_1(add(c, 1, 7)); TEST_1(c->c_hash->ht_table[4]);
 
   /* Test that zapping entry 0 does not move 2 and 3 */
   zap(c, c->c_hash->ht_table[0]);
-  TEST0(c->c_hash->ht_table[4] == NULL);
+  TEST_1(c->c_hash->ht_table[4] == NULL);
 
   {
     /* Insert entries at the end of hash, then resize and check
        for correct ordering */
     hash_value_t size = c->c_hash->ht_size, h = size - 1;
 
-    TEST0(add(c, h, 0)); TEST0(add(c, h, 1)); TEST0(add(c, h, 2));
-    TEST0(add(c, h, 3)); TEST0(add(c, h, 4)); TEST0(add(c, h, 5));
-    TEST0(add(c, h, 6)); TEST0(add(c, h, 7)); TEST0(add(c, h, 8));
+    TEST_1(add(c, h, 0)); TEST_1(add(c, h, 1)); TEST_1(add(c, h, 2));
+    TEST_1(add(c, h, 3)); TEST_1(add(c, h, 4)); TEST_1(add(c, h, 5));
+    TEST_1(add(c, h, 6)); TEST_1(add(c, h, 7)); TEST_1(add(c, h, 8));
 
     TEST(count(c, h), 9);
     

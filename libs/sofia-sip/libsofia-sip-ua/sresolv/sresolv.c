@@ -186,8 +186,8 @@ static int sres_sofia_update(sres_sofia_t *srs,
   int i, index = -1, error = 0;
   int N = SRES_MAX_NAMESERVERS;
 
-  SU_DEBUG_9(("sres_sofia_update(%p, %d, %d)\n", srs, 
-	      (int)new_socket, (int)old_socket));
+  SU_DEBUG_9(("sres_sofia_update(%p, %d, %d)\n",
+	      (void *)srs, (int)new_socket, (int)old_socket));
 
   if (srs == NULL)
     return 0;
@@ -297,7 +297,7 @@ su_socket_t sres_resolver_root_socket(sres_resolver_t *res)
   if (!srs)
     return su_seterrno(EINVAL);
 
-  if (sres_resolver_set_async(res, sres_sofia_update, srs, 1) < 0)
+  if (sres_resolver_set_async(res, sres_sofia_update, srs, 1) == NULL)
     return INVALID_SOCKET;
 
   if (srs->srs_socket != INVALID_SOCKET)

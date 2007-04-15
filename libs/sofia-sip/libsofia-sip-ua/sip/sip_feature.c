@@ -336,7 +336,7 @@ issize_t sip_unsupported_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
   return msg_list_e(b, bsiz, h, f);
 }
 
-/** Check if required feature is supported.
+/** Check if required feature is not supported.
  *
  * @retval NULL if all the required features are supported
  * @retval pointer to a @Unsupported header or
@@ -351,7 +351,7 @@ sip_unsupported_t *sip_has_unsupported(su_home_t *home,
 }
 
 
-/** Check if required feature is supported.
+/** Check if required feature is not supported.
  *
  * @retval NULL if all the required features are supported
  * @retval pointer to a @Unsupported header or
@@ -370,7 +370,7 @@ sip_has_unsupported2(su_home_t *home,
 }
 
 
-/** Ensure that required features are supported.
+/** Check if required features are not supported.
  *
  * The supported features can be listed in @Supported, @Require or 
  * @ProxyRequire headers (in @a supported, @a by_require, or @a

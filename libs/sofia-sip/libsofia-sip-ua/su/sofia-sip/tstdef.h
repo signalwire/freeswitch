@@ -145,13 +145,14 @@ enum {
   tst_verbatim = 1,
   /** If (TSTFLAGS & tst_abort) is non-zero, abort() when failed. */
   tst_abort = 2,
+  /** If (TSTFLAGS & tst_log) is non-zero, log intermediate results. */
+  tst_log = 4
 };
 
 #ifndef TSTFLAGS
 #error <TSTFLAGS is not defined>
 #endif
 
-#ifdef TSTFLAGS
 /** Begin a test function. @HIDE */
 #define BEGIN() BEGIN_(TSTFLAGS); { extern int tstdef_dummy
 /** End a test function. @HIDE */
@@ -179,17 +180,12 @@ enum {
 /** Test that @a suite has same size as @a expected. @HIDE */
 #define TEST_SIZE(suite, expected) TEST_SIZE_(TSTFLAGS, suite, expected)
 
-#else
-/* Deprecated */
-#define TEST0(flags, suite) TEST_1_(flags, suite)
-#define TEST_1(flags, suite) TEST_1_(flags, suite)
-#define TEST_VOID(flags, suite) TEST_VOID_(flags, suite)
-#define TEST(flags, suite, expect) TEST_(flags, suite, expect)
-#define TEST64(flags, suite, expect) TEST64_(flags, suite, expect)
-#define TEST_S(flags, suite, expect) TEST_S_(flags, suite, expect)
-#define BEGIN(flags) BEGIN_(flags) { extern int tstdef_dummy
-#define END(flags) (void) tstdef_dummy;  } END_(flags) 
-#endif
+/** Print in torture test with -l option */
+#define TEST_LOG(x)		       \
+  do {				       \
+    if (tstflags & tst_log)	       \
+      printf x;			       \
+  } while(0)
 
 #define TEST_FAILED(flags) \
   ((flags) & tst_abort) ? abort() : (void)0; return 1

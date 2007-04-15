@@ -377,7 +377,7 @@ int canonize_ip6_address(char *host, char *hexparts[9])
 
     if (i == maxparts + 1) {
       /* There is an extra doublecolon */
-      for (j = doublecolon; j <= i; j++)
+      for (j = doublecolon; j + 1 < i; j++)
 	hexparts[j] = hexparts[j + 1];
       i--;
     }
@@ -825,9 +825,9 @@ static size_t convert_ip_address(char const *s,
 {
   size_t len;
   int canonize = 0;
+  char buf[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"];
 
 #if SU_HAVE_IN6
-  char buf[sizeof "ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255"];
 
   len = span_ip6_reference(s);
   if (len) {

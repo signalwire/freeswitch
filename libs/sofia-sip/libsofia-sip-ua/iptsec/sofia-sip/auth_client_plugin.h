@@ -29,6 +29,9 @@
 /**@file sofia-sip/auth_client_plugin.h
  * @brief Client-side plugin interface for authentication
  * 
+ * @note For extensions in 1.12.6 or later, 
+ * you have to #define SOFIA_EXTEND_AUTH_CLIENT to 1.
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * 
  * @date Created: Fri May 19 16:18:21 EEST 2006
@@ -58,6 +61,10 @@ struct auth_client_s {
   char         *ca_pass;
 
   msg_hclass_t *ca_credential_class;
+
+#if SOFIA_EXTEND_AUTH_CLIENT
+  int           ca_clear;
+#endif
 };
 
 struct auth_client_plugin
@@ -81,7 +88,18 @@ struct auth_client_plugin
 
   /** Store nextnonce from Authentication-Info or Proxy-Authentication-Info. */
   int (*auc_info)(auth_client_t *ca, msg_auth_info_t const *ai);
+
+#if SOFIA_EXTEND_AUTH_CLIENT
+  /** Clear credentials (user/pass). @NEW_1_12_6 */
+  int (*auc_clear)(auth_client_t *ca);
+#endif
 };
+
+/** Check if authentication client has been extended. @NEW_1_12_6 */
+#define AUTH_CLIENT_IS_EXTENDED(ca)					\
+  ((ca)->ca_auc->auc_plugin_size >					\
+   (int)offsetof(auth_client_plugin_t, auc_clear)			\
+   && (ca)->ca_auc->auc_clear != NULL)
 
 SOFIA_END_DECLS
 

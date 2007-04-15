@@ -27,6 +27,10 @@ ACLOCAL_AMFLAGS = -I m4
 EXTRA_DIST += 	m4/sac-general.m4 m4/sac-su.m4 \
 		m4/sac-su2.m4 m4/sac-tport.m4 m4/sac-openssl.m4
 
+EXTRA_DIST +=   docs/build_system.txt \
+		docs/devel_platform_notes.txt \
+		docs/release_management.txt
+
 dist_man_MANS = man/man1/sip-date.1 man/man1/sip-options.1 \
 		man/man1/localinfo.1 man/man1/addrinfo.1 \
 		man/man1/stunc.1 man/man1/sip-dig.1
@@ -44,7 +48,12 @@ endif
 
 CLEANFILES = $(dist_man_MANS)
 
-coverage built-sources clean-built-sources doxygen:
-	for i in libsofia-sip-ua $(GLIB_SUBDIRS) ; do $(MAKE) $(AM_MAKEFLAGS) -C $$i $@ ; done
+coverage built-sources clean-built-sources valcheck doxygen:
+	@failcom='exit 1'; for f in x $$MAKEFLAGS; do \
+	case $$f in *=* | --[!k]*);; *k*) failcom='fail=yes';; esac; done; \
+	for i in libsofia-sip-ua $(GLIB_SUBDIRS) ; do \
+	  (cd $$i && $(MAKE) $(AM_MAKEFLAGS) $@) || eval $$failcom; \
+	done ; \
+	test -z "$$fail"
 
-.PHONY: coverage built-sources clean-built-sources doxygen manpages
+.PHONY: coverage built-sources clean-built-sources valcheck doxygen manpages

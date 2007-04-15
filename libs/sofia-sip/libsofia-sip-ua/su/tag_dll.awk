@@ -46,10 +46,17 @@ HEADER {
     fn = FILENAME;
   }
 
-  DLL = fn;
-  sub(/[.]c(at)?/, "_dll.c", DLL);
+  if (REF == "") {
+    REF = fn;
+    sub(/[.]c(at)?/, "_ref.c", REF);
+  }
 
   if (NODLL) DLL = "/dev/null";
+
+  if (DLL == "") {
+    DLL = fn;
+    sub(/[.]c(at)?/, "_dll.c", DLL);
+  }
 
   base = fn;
   sub(/.*\//, "", base);
@@ -72,9 +79,6 @@ HEADER {
       "#include \"config.h\"\n\n" \
       "#include <sofia-sip/su_tag_class.h>\n\n" > DLL;
   }
-
-  REF = fn;
-  sub(/[.]c(at)?/, "_ref.c", REF);
 
   printf("/*\n" \
 	 " * PLEASE NOTE: \n" \
@@ -108,6 +112,11 @@ HEADER {
   print "#undef TAG_NAMESPACE" > DLL; 
   print $0 > DLL; 
   print "" > DLL;
+}
+
+/SU_HAVE_EXPERIMENTAL/ { 
+  print $0 > REF; 
+  print $0 > DLL; 
 }
 
 !DEFS && /^tag_typedef_t/ { DEFS = 1; }

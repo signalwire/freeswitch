@@ -35,20 +35,28 @@ nobase_include_sofia_HEADERS = \
 			sofia-sip/tport_plugins.h
 
 TLS_SRC =		tport_type_tls.c tport_tls.c tport_tls.h
-
 if HAVE_TLS
 USE_TLS_SRC = 		$(TLS_SRC)
 endif
 
+STUN_SRC =		tport_stub_stun.c tport_type_stun.c
+if HAVE_STUN
+USE_STUN_SRC = 		$(STUN_SRC)
+endif
+
+HTTP_SRC =		tport_type_connect.c
+if HAVE_NTH
+USE_HTTP_SRC = 		$(HTTP_SRC)
+endif
+
 libtport_la_SOURCES = 	tport.c tport_logging.c \
-			tport_stub_stun.c tport_stub_sigcomp.c \
+			tport_stub_sigcomp.c \
 			tport_type_udp.c tport_type_tcp.c tport_type_sctp.c \
-			tport_type_connect.c tport_type_stun.c \
 			tport_internal.h \
-			tport_tag.c tport_tag_ref.c $(USE_TLS_SRC)
+			tport_tag.c tport_tag_ref.c $(USE_HTTP_SRC) $(USE_TLS_SRC) $(USE_STUN_SRC)
 
 # to make sure all files end up in the dist package
-EXTRA_libtport_la_SOURCES = $(TLS_SRC) 
+EXTRA_libtport_la_SOURCES = $(TLS_SRC) $(STUN_SRC) $(HTTP_SRC)
 
 # Disable for now
 EXTRA_libtport_la_SOURCES += tport_sigcomp.c tport_threadpool.c
@@ -78,4 +86,5 @@ EXTRA_DIST =		Doxyfile tport.docs \
 # ----------------------------------------------------------------------
 # Sofia specific rules
 
-include ../sofia.am
+include $(top_srcdir)/rules/sofia.am
+

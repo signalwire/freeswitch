@@ -126,7 +126,7 @@ static int delayed_auth_init(auth_mod_t *am,
 
 struct auth_splugin_t 
 {
-  void const      *asp_tag;
+  void const      *asp_cookie;
   auth_splugin_t  *asp_next;
   auth_splugin_t **asp_prev;
   auth_mod_t      *asp_am;
@@ -136,6 +136,8 @@ struct auth_splugin_t
   int              asp_canceled;
 };
 
+/* This is unique identifier */
+#define delayed_asp_cookie ((void const *)(intptr_t)delayed_auth_cancel)
 
 static void delayed_auth_method_recv(su_root_magic_t *rm,
 				     su_msg_r msg,
@@ -162,7 +164,7 @@ static void delayed_auth_method(auth_mod_t *am,
 
   asp = su_msg_data(mamc); assert(asp);
 
-  asp->asp_tag = delayed_auth_cancel;
+  asp->asp_cookie = delayed_asp_cookie;
   asp->asp_am = am;
   asp->asp_as = as;
   asp->asp_header = auth;
@@ -216,7 +218,7 @@ static void delayed_auth_cancel(auth_mod_t *am, auth_status_t *as)
 
   (void)ap;			/* xyzzy */
   
-  if (as->as_plugin && as->as_plugin->asp_tag == delayed_auth_cancel)
+  if (as->as_plugin && as->as_plugin->asp_cookie == delayed_asp_cookie)
     as->as_plugin->asp_canceled = 1;
 
   as->as_status = 500, as->as_phrase = "Authentication canceled";

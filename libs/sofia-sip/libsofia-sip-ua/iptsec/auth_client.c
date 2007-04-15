@@ -31,6 +31,8 @@
 
 #include "config.h"
 
+#define SOFIA_EXTEND_AUTH_CLIENT 1
+
 #include <sofia-sip/su.h>
 #include <sofia-sip/su_md5.h>
 
@@ -77,9 +79,7 @@ static int ca_credentials(auth_client_t *ca,
 			  char const *user,
 			  char const *pass);
 
-static int ca_clear_credentials(auth_client_t *ca, 
-				char const *scheme,
-				char const *realm);
+static int ca_clear_credentials(auth_client_t *ca);
 
 
 /** Initialize authenticators.
@@ -178,29 +178,31 @@ int ca_challenge(auth_client_t *ca,
     return -1;
 
   if (!ca->ca_credential_class)
-    stale = 1, ca->ca_credential_class = credential_class;
+    stale = 2, ca->ca_credential_class = credential_class;
 
-  return stale ? 2 : 1;
+  return stale > 1 ? 2 : 1;
 }
 
 /** Store authentication info to authenticators.
  *
- * The function auc_info() feeds the authentication data from the
- * authentication info @a info to the list of authenticators @a auc_list.
+ * The function auc_info() feeds the authentication data from the @b
+ * Authentication-Info header @a info to the list of authenticators @a
+ * auc_list.
  *
  * @param[in,out] auc_list  list of authenticators to be updated
- * @param[in] info      info to be processed
- * @param[in] crcl      corresponding credential class
+ * @param[in] info        info header to be processed
+ * @param[in] credential_class      corresponding credential class
  *
- * The authentication info can be in either Authentication-Info or in
- * Proxy-Authentication-Info headers.
- * If the header is Authentication-Info, the @a crcl should be
- * #sip_authorization_class or #http_authorization_class.
- * Likewise, If the header is Proxy-Authentication-Info, the @a crcl should
- * be #sip_proxy_authorization_class or #http_proxy_authorization_class.
+ * The authentication info can be in either @AuthenticationInfo or in
+ * @ProxyAuthenticationInfo headers. If the header is @AuthenticationInfo,
+ * the @a credential_class should be #sip_authorization_class or
+ * #http_authorization_class. Likewise, If the header is
+ * @ProxyAuthenticationInfo, the @a credential_class should be
+ * #sip_proxy_authorization_class or #http_proxy_authorization_class.
 
- * The authentication into usually contains next nonce or mutual
- * authentication information. We handle only nextnonce parameter. 
+ * The authentication into header usually contains next nonce or mutual
+ * authentication information. Currently, only the nextnonce parameter is
+ * processed.
  *
  * @bug
  * The result can be quite unexpected if there are more than one
@@ -210,9 +212,11 @@ int ca_challenge(auth_client_t *ca,
  * @retval number of challenges to updated
  * @retval 0 when there was no challenge to update
  * @retval -1 upon an error
+ *
+ * @NEW_1_12_5
  */
 int auc_info(auth_client_t **auc_list,
-	     msg_auth_info_t const *ai,
+	     msg_auth_info_t const *info,
 	     msg_hclass_t *credential_class)
 {
   auth_client_t *ca;
@@ -222,7 +226,7 @@ int auc_info(auth_client_t **auc_list,
 
   /* Update matching authenticator */
   for (ca = *auc_list; ca; ca = ca->ca_next) {
-    int updated = ca_info(ca, ai, credential_class);
+    int updated = ca_info(ca, info, credential_class);
     if (updated < 0)
       return -1;
     if (updated >= 1)
@@ -241,12 +245,12 @@ int auc_info(auth_client_t **auc_list,
  */
 static
 int ca_info(auth_client_t *ca, 
-	    msg_auth_info_t const *ai,
+	    msg_auth_info_t const *info,
 	    msg_hclass_t *credential_class)
 {
-  assert(ca); assert(ai);
+  assert(ca); assert(info);
 
-  if (!ca || !ai)
+  if (!ca || !info)
     return -1;
 
   if (!ca->ca_credential_class)
@@ -261,7 +265,7 @@ int ca_info(auth_client_t *ca,
       || !ca->ca_auc->auc_info)
     return 0;
 
-  return ca->ca_auc->auc_info(ca, ai);
+  return ca->ca_auc->auc_info(ca, info);
 }
 
 
@@ -336,8 +340,8 @@ int auc_credentials(auth_client_t **auc_list, su_home_t *home,
  * @param[in] user          username 
  * @param[in] pass          password
  * 
- * @retval number of matching clients
- * @retval 0 when no matching client was found
+ * @retval number of updated clients
+ * @retval 0 when no client was updated
  * @retval -1 upon an error
  */
 int auc_all_credentials(auth_client_t **auc_list, 
@@ -371,6 +375,9 @@ int ca_credentials(auth_client_t *ca,
 		   char const *user,
 		   char const *pass)
 {
+  char *new_user, *new_pass;
+  char *old_user, *old_pass;
+
   assert(ca);
 
   if (!ca || !ca->ca_scheme || !ca->ca_realm)
@@ -380,11 +387,23 @@ int ca_credentials(auth_client_t *ca,
       (realm != NULL && strcmp(realm, ca->ca_realm)))
     return -1;
 
-  ca->ca_user = su_strdup(ca->ca_home, user);
-  ca->ca_pass = su_strdup(ca->ca_home, pass);
+  old_user = ca->ca_user, old_pass = ca->ca_pass;
 
-  if (!ca->ca_user || !ca->ca_pass)
+  if (str0cmp(user, old_user) == 0 && str0cmp(pass, old_pass) == 0)
+    return 0;
+
+  new_user = su_strdup(ca->ca_home, user);
+  new_pass = su_strdup(ca->ca_home, pass);
+
+  if (!new_user || !new_pass)
     return -1;
+
+  ca->ca_user = new_user, ca->ca_pass = new_pass;
+  if (AUTH_CLIENT_IS_EXTENDED(ca))
+    ca->ca_clear = 0;
+
+  su_free(ca->ca_home, old_user);
+  su_free(ca->ca_home, old_pass);
 
   return 1;
 }
@@ -412,12 +431,15 @@ int auc_copy_credentials(auth_client_t **dst,
       char *u, *p;
       if (!ca->ca_user || !ca->ca_pass)
 	continue;
+      if (AUTH_CLIENT_IS_EXTENDED(ca) && ca->ca_clear)
+	continue;
       if (!ca->ca_scheme[0] || strcmp(ca->ca_scheme, d->ca_scheme))
 	continue;
       if (!ca->ca_realm[0] || strcmp(ca->ca_realm, d->ca_realm))
 	continue;
 
-      if (d->ca_user && strcmp(d->ca_user, ca->ca_user) == 0 &&
+      if (!(AUTH_CLIENT_IS_EXTENDED(d) && d->ca_clear) &&
+	  d->ca_user && strcmp(d->ca_user, ca->ca_user) == 0 &&
 	  d->ca_pass && strcmp(d->ca_pass, ca->ca_pass) == 0) {
 	retval++;
 	break;
@@ -431,6 +453,9 @@ int auc_copy_credentials(auth_client_t **dst,
       if (d->ca_user) su_free(d->ca_home, (void *)d->ca_user);
       if (d->ca_pass) su_free(d->ca_home, (void *)d->ca_pass);
       d->ca_user = u, d->ca_pass = p;
+      if (AUTH_CLIENT_IS_EXTENDED(d))
+	d->ca_clear = 0;
+
       retval++;
       break;
     }
@@ -453,13 +478,24 @@ int auc_copy_credentials(auth_client_t **dst,
  * @retval -1 upon an error
  */
 int auc_clear_credentials(auth_client_t **auc_list, 
-			 char const *scheme,
-			 char const *realm)
+			  char const *scheme,
+			  char const *realm)
 {
   int retval = 0;
+  int match;
 
   for (; *auc_list; auc_list = &(*auc_list)->ca_next) {
-    int match = ca_clear_credentials(*auc_list, scheme, realm);
+    auth_client_t *ca = *auc_list;
+
+    if (!AUTH_CLIENT_IS_EXTENDED(ca))
+      continue;
+
+    if ((scheme != NULL && strcasecmp(scheme, ca->ca_scheme)) ||
+	(realm != NULL && strcmp(realm, ca->ca_realm)))
+      continue;
+
+    match = ca->ca_auc->auc_clear(*auc_list);
+
     if (match < 0) {
       retval = -1;
       break;
@@ -472,21 +508,14 @@ int auc_clear_credentials(auth_client_t **auc_list,
 }
 
 static
-int ca_clear_credentials(auth_client_t *ca, 
-			 char const *scheme,
-			 char const *realm)
+int ca_clear_credentials(auth_client_t *ca)
 {
-  assert(ca);
+  assert(ca); assert(ca->ca_home->suh_size >= (int)(sizeof *ca));
 
-  if (!ca || !ca->ca_scheme || !ca->ca_realm)
+  if (!ca)
     return -1;
 
-  if ((scheme != NULL && strcasecmp(scheme, ca->ca_scheme)) ||
-      (realm != NULL && strcmp(realm, ca->ca_realm)))
-    return -1;
-
-  su_free(ca->ca_home, (void *)ca->ca_user), ca->ca_user = NULL;
-  su_free(ca->ca_home, (void *)ca->ca_pass), ca->ca_pass = NULL;
+  ca->ca_clear = 1;
 
   return 1;
 }
@@ -495,6 +524,8 @@ int ca_clear_credentials(auth_client_t *ca,
  * 
  * @retval 1 when authorization can proceed
  * @retval 0 when there is not enough credentials
+ *
+ * @NEW_1_12_5
  */
 int auc_has_authorization(auth_client_t **auc_list)
 {
@@ -506,6 +537,8 @@ int auc_has_authorization(auth_client_t **auc_list)
   /* Make sure every challenge has credentials */
   for (ca = *auc_list; ca; ca = ca->ca_next) {
     if (!ca->ca_user || !ca->ca_pass || !ca->ca_credential_class)
+      return 0;
+    if (AUTH_CLIENT_IS_EXTENDED(ca) && ca->ca_clear)
       return 0;
   }
 
@@ -564,8 +597,11 @@ int auc_authorization(auth_client_t **auc_list, msg_t *msg, msg_pub_t *pub,
     if (!ca->ca_auc)
       continue;
 
-    if (ca->ca_auc->auc_authorize(ca, home, method, url, body, &h) < 0
-	|| msg_header_insert(msg, pub, h) < 0)
+    if (ca->ca_auc->auc_authorize(ca, home, method, url, body, &h) < 0)
+      return -1;
+    if (h == NULL)
+      continue;
+    if (msg_header_insert(msg, pub, h) < 0)
       return -1;
   }
 
@@ -633,14 +669,15 @@ static int auc_basic_authorization(auth_client_t *ca,
 				   msg_payload_t const *body,
 				   msg_header_t **);
 
-const auth_client_plugin_t ca_basic_plugin = 
+static const auth_client_plugin_t ca_basic_plugin = 
 { 
   /* auc_plugin_size: */ sizeof ca_basic_plugin,
   /* auc_size: */        sizeof (auth_client_t),
   /* auc_name: */       "Basic",
   /* auc_challenge: */   NULL,
   /* auc_authorize: */   auc_basic_authorization,
-  /* auc_info: */        NULL
+  /* auc_info: */        NULL,
+  /* auc_clear: */       ca_clear_credentials
 };
 
 /**Create a basic authorization header.
@@ -676,6 +713,9 @@ int auc_basic_authorization(auth_client_t *ca,
 
   if (user == NULL || pass == NULL)
     return -1;
+
+  if (AUTH_CLIENT_IS_EXTENDED(ca) && ca->ca_clear)
+    return 0;
 
   ulen = strlen(user), plen = strlen(pass), uplen = ulen + 1 + plen;
   b64len = BASE64_SIZE(uplen);
@@ -731,7 +771,7 @@ static int auc_digest_authorization(auth_client_t *ca,
 				    msg_payload_t const *body,
 				    msg_header_t **);
 static int auc_digest_info(auth_client_t *ca, 
-			   msg_auth_info_t const *ai);
+			   msg_auth_info_t const *info);
 
 static const auth_client_plugin_t ca_digest_plugin = 
 { 
@@ -740,10 +780,15 @@ static const auth_client_plugin_t ca_digest_plugin =
   /* auc_name: */       "Digest", 
   /* auc_challenge: */   auc_digest_challenge,
   /* auc_authorize: */   auc_digest_authorization,
-  /* auc_info: */        auc_digest_info
+  /* auc_info: */        auc_digest_info,
+  /* auc_clear: */       ca_clear_credentials
 };
 
 /** Store a digest authorization challenge.
+ *
+ * @retval 2 if credentials need to be (re)sent
+ * @retval 1 if challenge was updated
+ * @retval -1 upon an error
  */
 static int auc_digest_challenge(auth_client_t *ca, msg_auth_t const *ch)
 {
@@ -761,27 +806,18 @@ static int auc_digest_challenge(auth_client_t *ca, msg_auth_t const *ch)
   if (ac->ac_qop && !ac->ac_auth && !ac->ac_auth_int)
     goto error;
 
-  stale = ac->ac_stale || str0cmp(ac->ac_nonce, cda->cda_ac->ac_nonce);
+  stale = ac->ac_stale || cda->cda_ac->ac_nonce == NULL;
 
   if (ac->ac_qop && (cda->cda_cnonce == NULL || ac->ac_stale)) {
     su_guid_t guid[1];
     char *cnonce;
-    char *e;
-
+    size_t b64len = BASE64_MINSIZE(sizeof(guid)) + 1;
     if (cda->cda_cnonce != NULL)
       /* Free the old one if we are updating after stale=true */
       su_free(home, (void *)cda->cda_cnonce);
     su_guid_generate(guid);
-    cda->cda_cnonce = cnonce = su_alloc(home, BASE64_SIZE(sizeof(guid)) + 1);
-    base64_e(cnonce, BASE64_SIZE(sizeof(guid)) + 1, guid, sizeof(guid));
-    /* somewhere else in the code the '=' chars are stripped in the header 
-       we need to strip it now before the digest is created or we're in trouble
-       cos they won't match.....
-    */
-    e = cnonce + strlen(cnonce) - 1;
-    while(*e == '=') {
-       *e-- = '\0';
-    }
+    cda->cda_cnonce = cnonce = su_alloc(home, b64len);
+    base64_e(cnonce, b64len, guid, sizeof(guid));
     cda->cda_ncount = 0;
   }
 
@@ -797,14 +833,14 @@ static int auc_digest_challenge(auth_client_t *ca, msg_auth_t const *ch)
 }
 
 static int auc_digest_info(auth_client_t *ca,
-			   msg_auth_info_t const *ai)
+			   msg_auth_info_t const *info)
 {
   auth_digest_client_t *cda = (auth_digest_client_t *)ca;
   su_home_t *home = ca->ca_home;
   char const *nextnonce = NULL;
   issize_t n;
 
-  n = auth_get_params(home, ai->ai_params,
+  n = auth_get_params(home, info->ai_params,
 		      "nextnonce=", &nextnonce,
 		      NULL);
 
@@ -825,9 +861,9 @@ static int auc_digest_info(auth_client_t *ca,
  * sip_authorization_class or sip_proxy_authorization_class, as well as
  * http_authorization_class or http_proxy_authorization_class.
  *
- * @return
- * Returns a pointer to newly created authorization header, or NULL upon an
- * error.
+ * @retval 1 when authorization headers has been created  
+ * @retval 0 when there is no credentials
+ * @retval -1 upon an error
  */
 static
 int auc_digest_authorization(auth_client_t *ca, 
@@ -852,6 +888,9 @@ int auc_digest_authorization(auth_client_t *ca,
   auth_hexmd5_t sessionkey, response;
   auth_response_t ar[1] = {{ 0 }};
   char ncount[17];
+
+  if (!user || !pass || (AUTH_CLIENT_IS_EXTENDED(ca) && ca->ca_clear))
+    return 0;
 
   ar->ar_size = sizeof(ar);
   ar->ar_username = user;

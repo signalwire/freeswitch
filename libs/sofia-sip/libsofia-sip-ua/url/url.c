@@ -556,8 +556,8 @@ static
 int _url_d(url_t *url, char *s)
 {
   size_t n, p;
-  char *s0, rest_c, *host;
-  int net_path = 1;
+  char *s0, rest_c, *host, *user;
+  int have_authority = 1;
 
   memset(url, 0, sizeof(*url));
   
@@ -582,112 +582,131 @@ int _url_d(url_t *url, char *s)
 
     url->url_type = url_get_type(url->url_scheme, n);
 
-    net_path = !url_type_is_opaque(url->url_type);
+    have_authority = !url_type_is_opaque(url->url_type);
   }
   else {
     url->url_type = url_unknown;
   }
 
-  host = s;
+  user = NULL, host = s;
 
   if (url->url_type == url_sip || url->url_type == url_sips) {
-    /* SIP URL may have /; in user part */
-	n = strcspn(s, "@#");   /* Opaque part */
-	if ((p = strcspn(s, "#")) == n) {
-	  n = strcspn(s, "@");
-      if (s[n] != '@')
-        n = 0;
-	}
+    /* SIP URL may have /;? in user part but no path */
+    /* user-unreserved  =  "&" / "=" / "+" / "$" / "," / ";" / "?" / "/" */
+    /* Some #*@#* phones include unescaped # there, too */
+    n = strcspn(s, "@/;?#");
+    p = strcspn(s + n, "@");
+    if (s[n + p] == '@') {
+      n += p;
+      user = s;
+      host = s + n + 1;
+    }
+
     n += strcspn(s + n, "/;?#");
   }
-  else if (url->url_type == url_wv) {
-    /* WV URL may have / in user part */
-    n = strcspn(s, "@#?;");
-    if (s[n] == '@')
-      n += strcspn(s + n, ";?#");
-  }
-  else if (url->url_type == url_invalid) {
-    n = strcspn(s, "#");
-  }
-  else if (net_path && host[0] == '/') {
-    url->url_root = host[0];	/* Absolute path */
-
-    if (host[1] == '/') {	/* We have host-part */
-      host += 2; s += 2;
+  else if (have_authority) {
+    if (url->url_type == url_wv) {
+      /* WV URL may have / in user part */
+      n = strcspn(s, "@#?;");
+      if (s[n] == '@') {
+	user = s;
+	host = s + n + 1;
+	n += strcspn(s + n, ";?#");
+      }
     }
-    else 
-      host = NULL;
-    n = strcspn(s, "/;?#");	/* Find path, query and/or fragment */
+    else if (host[0] == '/' && host[1] != '/') {
+      /* foo:/bar or /bar - no authority, just path */
+      url->url_root = '/';	/* Absolute path */
+      host = NULL, n = 0;
+    }
+    else {
+      if (host[0] == '/' && host[1] == '/') {
+	/* We have authority, / / foo or foo */
+	host += 2; s += 2, url->url_root = '/';
+	n = strcspn(s, "/?#@[]");
+      }
+      else 
+	n = strcspn(s, "@;/?#");
+
+      if (s[n] == '@')
+	user = host, host = user + n + 1;
+
+      n += strcspn(s + n, ";/?#");	/* Find path, query and/or fragment */
+    }
   }
-  else {
-    n = strcspn(s, "/;?#");	/* Find params, query and/or fragment */
+  else /* !have_authority */ {
+    user = host, host = NULL;
+    if (url->url_type != url_invalid)
+      n = strcspn(s, "/;?#");	/* Find params, query and/or fragment */
+    else
+      n = strcspn(s, "#");
   }
 
   rest_c = s[n]; s[n] = 0; s = rest_c ? s + n + 1 : NULL;
 
+  if (user) {
+    if (host) host[-1] = '\0';
+    url->url_user = user;
+    if (url->url_type != url_unknown) {
+      n = strcspn(user, ":");
+      if (user[n]) {
+	user[n] = '\0';
+	url->url_password = user + n + 1;
+      }
+    }
+  }
+
   if (host) {
-    char *atsign, *port;
-
-    if (!net_path) {
-      url->url_user = host;
-      host = NULL;
+    url->url_host = host;
+    /* IPv6 (and in some cases, IPv4) addresses are quoted with [] */
+    if (host[0] == '[') {
+      n = strcspn(host, "]");
+      if (host[n] && (host[n + 1] == '\0' || host[n + 1] == ':'))
+	n++;
+      else
+	n = 0;
     }
-    else if ((atsign = strchr(host, '@'))) {
-      char *user;
-
-      url->url_user = user = host;
-
-      if (atsign)
-	*atsign++ = '\0';
-      host = atsign;
-
-      if (url->url_type != url_unknown) {
-	char *colon = strchr(user, ':');
-	if (colon)
-	  *colon++ = '\0';
-	url->url_password = colon;
-      }
+    else {
+      n = strcspn(host, ":");
     }
 
-    if ((url->url_host = host)) {
-      /* IPv6 (and in some cases, IPv4) addresses are quoted with [] */
-      if (host[0] == '[') {
-	port = strchr(host, ']');
-	if (!port)
+    /* We allow empty host by default */
+    if (n == 0) switch (url->url_type) {
+    case url_sip:
+    case url_sips:
+    case url_im:
+    case url_pres:
+      return -1;
+    default:
+      break;
+    }
+    
+    if (host[n] == ':') {
+      char *port = host + n + 1;
+      url->url_port = port;
+      switch (url->url_type) {
+      case url_any:
+      case url_sip:
+      case url_sips:
+      case url_http:
+      case url_https:
+      case url_ftp:
+      case url_file:
+      case url_rtsp:
+      case url_rtspu:
+	if (!url_canonize2(port, port, SIZE_MAX, RESERVED_MASK))
 	  return -1;
-	port = strchr(port + 1, ':');
-      }
-      else 
-	port = strchr(host, ':');
 
-      if (port) {
-	*port++ = '\0';
-	url->url_port = port;
-	switch (url->url_type) {
-	case url_any:
-	case url_sip:
-	case url_sips:
-	case url_http:
-	case url_https:
-	case url_ftp:
-	case url_file:
-	case url_rtsp:
-	case url_rtspu:
-	  
-	  if (!url_canonize2(port, port, SIZE_MAX, RESERVED_MASK))
-	    return -1;
-
-	  /* Check that port is really numeric or wildcard */
-	  /* Port can be *digit, empty string or "*" */
-	  while (*port >= '0' && *port <= '9')
-	    port++;
-	  if (port != url->url_port 
-	      ? port[0] != '\0' 
-	      : port[0] != '\0'
-	      && (port[0] != '*' || port[1] != '\0'))
-	    return -1;
-	}
+	/* Check that port is really numeric or wildcard */
+	/* Port can be *digit, empty string or "*" */
+	while (*port >= '0' && *port <= '9')
+	  port++;
+	
+	if (port != url->url_port ? port[0] != '\0' 
+	    : (port[0] != '*' || port[1] != '\0'))
+	  return -1;
       }
+      host[n] = 0;
     }
   }
 
@@ -742,12 +761,15 @@ int url_d(url_t *url, char *s)
     if (s && !url_canonize(s, s, SIZE_MAX, SIP_USER_UNRESERVED))
       return -1;
 
+    /* Having different charset in user and password does not make sense */
+    /* but that is how it is defined in RFC 3261 */
 #   define SIP_PASS_UNRESERVED "&=+$,"
     s = (char *)url->url_password;
     if (s && !url_canonize(s, s, SIZE_MAX, SIP_PASS_UNRESERVED))
       return -1;
 
-  } else {
+  }
+  else {
 
 #   define USER_UNRESERVED "&=+$,;"
     s = (char *)url->url_user;
@@ -943,7 +965,7 @@ issize_t url_e(char buffer[], isize_t n, url_t const *url)
 }
 
 
-/** Calculate the lengh of URL when encoded. 
+/** Calculate the length of URL when encoded. 
  *
  */
 isize_t url_len(url_t const * url)
@@ -1588,7 +1610,7 @@ int url_cmp(url_t const *a, url_t const *b)
 static
 int url_tel_cmp_numbers(char const *A, char const *B)
 {
-  char a, b;
+  short a, b;
   int rv;
 
   while (*A && *B) {
@@ -1889,8 +1911,8 @@ void canon_update(su_md5_t *md5, char const *s, size_t n, char const *allow)
 static
 void url_string_update(su_md5_t *md5, char const *s)
 {
-  size_t n;
-  int hostpart = 1;
+  size_t n, p;
+  int have_authority = 1;
   enum url_type_e type = url_any;
   char const *at, *colon;
   char schema[48];
@@ -1910,7 +1932,7 @@ void url_string_update(su_md5_t *md5, char const *s)
     type = url_get_type(schema, at - schema);
     su_md5_iupdate(md5, schema, at - schema);
 
-    hostpart = !url_type_is_opaque(type);
+    have_authority = !url_type_is_opaque(type);
     s += n + 1;
   }
   else {
@@ -1918,62 +1940,71 @@ void url_string_update(su_md5_t *md5, char const *s)
   }
   
   if (type == url_sip || type == url_sips) {
-    n = strcspn(s, "@#");	/* Opaque part */
-    if (s[n] != '@')
-      n = 0;
+    /* SIP URL may have /;? in user part but no path */
+    /* user-unreserved  =  "&" / "=" / "+" / "$" / "," / ";" / "?" / "/" */
+    /* Some #*@#* phones include unescaped # there, too */
+    n = strcspn(s, "@/;?#");
+    p = strcspn(s + n, "@");
+    if (s[n + p] == '@') {
+      n += p;
+      /* Ignore password in hash */
+      colon = memchr(s, ':', n);
+      p = colon ? (size_t)(colon - s) : n;
+      canon_update(md5, s, p, SIP_USER_UNRESERVED);
+      s += n + 1; n = 0;
+    }
+    else
+      su_md5_iupdate(md5, "", 1);	/* user */
     n += strcspn(s + n, "/;?#");
   }
-  else if (type == url_wv) {    /* WV URL may have / in user part */
-    n = strcspn(s, "@#?;");
-    if (s[n] == '@')
-      n += strcspn(s + n, ";?#");
+  else if (have_authority) {
+    if (type == url_wv) {    /* WV URL may have / in user part */
+      n = strcspn(s, "@;?#");
+    }
+    else if (type != url_wv && s[0] == '/' && s[1] != '/') {
+      /* foo:/bar */
+      su_md5_update(md5, "\0\0", 2); /* user, host */
+      su_md5_striupdate(md5, url_port_default(type));
+      return;
+    }
+    else if (s[0] == '/' && s[1] == '/') {
+      /* We have authority, / / foo or foo */
+      s += 2;
+      n = strcspn(s, "/?#@[]");
+    }
+    else 
+      n = strcspn(s, "@;/?#");
+
+    if (s[n] == '@') {
+      /* Ignore password in hash */
+      colon = type != url_unknown ? memchr(s, ':', n) : NULL;
+      p = colon ? (size_t)(colon - s) : n;
+      canon_update(md5, s, p, SIP_USER_UNRESERVED);
+      s += n + 1;
+      n = strcspn(s, "/;?#");	/* Until path, query or fragment */
+    }
+    else {
+      su_md5_iupdate(md5, "", 1);	/* user */
+      n += strcspn(s + n, "/;?#");	/* Until path, query or fragment */
+    }
   }
-  else if (!hostpart || s[0] != '/') {
-    n = strcspn(s, "/;?#");	/* Opaque part */
-  }
-  else if (s[1] == '/') {
-    s += 2;
-    n = strcspn(s, "/;?#");	/* Until host, path, query or fragment */
-  }
-  else {
-    /* foo:/bar */
-    su_md5_update(md5, "\0\0", 2); /* user, host */
-    su_md5_striupdate(md5, url_port_default(type));
-    return;
-  }
-  
-  if (!hostpart) {
-    char const *colon = memchr(s, ':', n);
+  else /* if (!have_authority) */ {
+    n = strcspn(s, ":/;?#");	/* Until pass, path, query or fragment */
     
-    if (colon) n = colon - s;
     canon_update(md5, s, n, ""); /* user */
     su_md5_update(md5, "\0", 1); /* host, no port */
     su_md5_striupdate(md5, url_port_default(type));
     return;
   }
 
-  at = memchr(s, '@', n);
-
-  if (at) {
-    char const *allow = 
-      (type == url_sip || type == url_sips) 
-      ? SIP_USER_UNRESERVED
-      : USER_UNRESERVED;
-
-    colon = type == url_unknown ? NULL : memchr(s, ':', at - s);
-
-    /* Updated only user part */
-    if (colon)
-      canon_update(md5, s, colon - s, allow);
-    else
-      canon_update(md5, s, at - s, allow);
-    n = n - (at + 1 - s);
-    s = at + 1;
+  if (n > 0 && s[0] == '[') {	/* IPv6reference */
+    colon = memchr(s, ']', n);
+    if (colon == NULL || ++colon == s + n || *colon != ':')
+      colon = NULL;
   }
-  else
-    su_md5_iupdate(md5, "", 1);	/* user */
+  else 
+    colon = memchr(s, ':', n);
 
-  colon = memchr(s, ':', n);	/* XXX - IPv6! */
   if (colon) {
     canon_update(md5, s, colon - s, ""); /* host */
     canon_update(md5, colon + 1, (s + n) - (colon + 1), "");
