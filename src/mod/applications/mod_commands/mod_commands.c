@@ -991,9 +991,10 @@ static switch_status_t show_function(char *data, switch_core_session_t *session,
 		switch_core_db_exec(db, sql, show_as_xml_callback, &holder, &errmsg);
 		if (holder.xml) {
 			char count[50];
+			char *xmlstr;
 			snprintf(count, sizeof(count), "%d", holder.count);
 			switch_xml_set_attr_d(holder.xml, "row_count", count);
-			char *xmlstr = switch_xml_toxml(holder.xml);
+			xmlstr = switch_xml_toxml(holder.xml);
 
 			if (xmlstr) {
 				holder.stream->write_function(holder.stream, "%s", xmlstr);
