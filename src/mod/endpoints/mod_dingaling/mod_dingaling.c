@@ -2593,6 +2593,12 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 
 			
 			if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object))) != 0) {
+				char *exten;
+				char *context;
+				char *cid_name;
+				char *cid_num;
+				char *tmp, *t, *them = NULL;
+
 				memset(tech_pvt, 0, sizeof(*tech_pvt));
 				switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 				tech_pvt->flags |= globals.flags;
@@ -2605,6 +2611,89 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 				tech_pvt->local_port = switch_rtp_request_port();
 				switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
 				tech_pvt->recip = switch_core_session_strdup(session, from);
+				if (!(exten = ldl_session_get_value(dlsession, "dnis"))) {
+					exten = profile->exten;
+					/* if it's _auto_ set the extension to match the username portion of the called address */
+					if (!strcmp(exten, "_auto_")) {
+						if ((t = ldl_session_get_callee(dlsession))) {
+							if ((them = strdup(t))) {
+								char *a, *b, *p;
+								if ((p = strchr(them, '/'))) {
+									*p = '\0';
+								}
+
+								if ((a = strchr(them, '+')) && (b = strrchr(them, '+')) && a != b) {
+									*b++ = '\0';
+									switch_channel_set_variable(channel, "dl_user", them);
+									switch_channel_set_variable(channel, "dl_host", b);
+								}
+								exten = them;
+							}
+						}
+					}
+				}
+
+				if (!(context = ldl_session_get_value(dlsession, "context"))) {
+					context = profile->context;
+				}
+
+				if (!(cid_name = ldl_session_get_value(dlsession, "caller_id_name"))) {
+					cid_name = tech_pvt->recip;
+				}
+
+				if (!(cid_num = ldl_session_get_value(dlsession, "caller_id_number"))) {
+					cid_num = tech_pvt->recip;
+				}
+
+				/* context of "_auto_" means set it to the domain */
+				if (profile->context && !strcmp(profile->context, "_auto_")) {
+					context = profile->name;
+				}
+
+				tech_pvt->them = switch_core_session_strdup(session, ldl_session_get_callee(dlsession));
+				tech_pvt->us = switch_core_session_strdup(session, ldl_session_get_caller(dlsession));
+
+				if ((tmp = strdup(tech_pvt->us))) {
+					char *p, *q;
+
+					if ((p = strchr(tmp, '@'))) {
+						*p++ = '\0';
+						if ((q = strchr(p, '/'))) {
+							*q = '\0';
+						}
+						switch_channel_set_variable(channel, "dl_from_user", tmp);
+						switch_channel_set_variable(channel, "dl_from_host", p);
+					}
+
+					switch_safe_free(tmp);
+				}
+
+				if (!tech_pvt->caller_profile) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+									  "Creating an identity for %s %s <%s> %s\n", ldl_session_get_id(dlsession), cid_name, cid_num, exten);
+
+					if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
+																			  ldl_handle_get_login(profile->handle),
+																			  profile->dialplan,
+																			  cid_name,
+																			  cid_num,
+																			  ldl_session_get_ip(dlsession),
+																			  ldl_session_get_value(dlsession,
+																									"ani"),
+																			  ldl_session_get_value(dlsession,
+																									"aniii"),
+																			  ldl_session_get_value(dlsession,
+																									"rdnis"), (char *) modname, context,
+																			  exten)) != 0) {
+						char name[128];
+						snprintf(name, sizeof(name), "DingaLing/%s", tech_pvt->caller_profile->destination_number);
+						switch_channel_set_name(channel, name);
+						switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
+					}
+				}
+
+				switch_safe_free(them);
+
 				switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hey where is my memory pool?\n");
@@ -2789,11 +2878,6 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 																																															   8)
 																																															  ))) {
 					ldl_payload_t payloads[5];
-					char *exten;
-					char *context;
-					char *cid_name;
-					char *cid_num;
-					char *tmp, *t, *them = NULL;
 
 					memset(payloads, 0, sizeof(payloads));
 
@@ -2803,89 +2887,6 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 						switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
 						ldl_session_accept_candidate(dlsession, &candidates[x]);
 					}
-
-					if (!(exten = ldl_session_get_value(dlsession, "dnis"))) {
-						exten = profile->exten;
-						/* if it's _auto_ set the extension to match the username portion of the called address */
-						if (!strcmp(exten, "_auto_")) {
-							if ((t = ldl_session_get_callee(dlsession))) {
-								if ((them = strdup(t))) {
-									char *a, *b, *p;
-									if ((p = strchr(them, '/'))) {
-										*p = '\0';
-									}
-
-									if ((a = strchr(them, '+')) && (b = strrchr(them, '+')) && a != b) {
-										*b++ = '\0';
-										switch_channel_set_variable(channel, "dl_user", them);
-										switch_channel_set_variable(channel, "dl_host", b);
-									}
-									exten = them;
-								}
-							}
-						}
-					}
-
-					if (!(context = ldl_session_get_value(dlsession, "context"))) {
-						context = profile->context;
-					}
-
-					if (!(cid_name = ldl_session_get_value(dlsession, "caller_id_name"))) {
-						cid_name = tech_pvt->recip;
-					}
-
-					if (!(cid_num = ldl_session_get_value(dlsession, "caller_id_number"))) {
-						cid_num = tech_pvt->recip;
-					}
-
-					/* context of "_auto_" means set it to the domain */
-					if (profile->context && !strcmp(profile->context, "_auto_")) {
-						context = profile->name;
-					}
-
-					tech_pvt->them = switch_core_session_strdup(session, ldl_session_get_callee(dlsession));
-					tech_pvt->us = switch_core_session_strdup(session, ldl_session_get_caller(dlsession));
-
-					if ((tmp = strdup(tech_pvt->us))) {
-						char *p, *q;
-
-						if ((p = strchr(tmp, '@'))) {
-							*p++ = '\0';
-							if ((q = strchr(p, '/'))) {
-								*q = '\0';
-							}
-							switch_channel_set_variable(channel, "dl_from_user", tmp);
-							switch_channel_set_variable(channel, "dl_from_host", p);
-						}
-
-						switch_safe_free(tmp);
-					}
-
-					if (!tech_pvt->caller_profile) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-										  "Creating an identity for %s %s <%s> %s\n", ldl_session_get_id(dlsession), cid_name, cid_num, exten);
-
-						if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
-																				  ldl_handle_get_login(profile->handle),
-																				  profile->dialplan,
-																				  cid_name,
-																				  cid_num,
-																				  ldl_session_get_ip(dlsession),
-																				  ldl_session_get_value(dlsession,
-																										"ani"),
-																				  ldl_session_get_value(dlsession,
-																										"aniii"),
-																				  ldl_session_get_value(dlsession,
-																										"rdnis"), (char *) modname, context,
-																				  exten)) != 0) {
-							char name[128];
-							snprintf(name, sizeof(name), "DingaLing/%s", tech_pvt->caller_profile->destination_number);
-							switch_channel_set_name(channel, name);
-							switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
-						}
-					}
-
-					switch_safe_free(them);
 
 					if (lanaddr) {
 						switch_set_flag_locked(tech_pvt, TFLAG_LANADDR);
