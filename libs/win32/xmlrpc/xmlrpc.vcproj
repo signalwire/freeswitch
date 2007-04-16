@@ -26,7 +26,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist $(ProjectDir)..\..\xmlrpc-c\transport_config.h copy &quot;$(ProjectDir)..\..\xmlrpc-c\Windows\transport_config_win32.h&quot; $(ProjectDir)..\..\xmlrpc-c\transport_config.h&#x0D;&#x0A;if not exist $(ProjectDir)..\..\xmlrpc-c\config.h copy &quot;$(ProjectDir)..\..\xmlrpc-c\Windows\xmlrpc_win32_config.h&quot; $(ProjectDir)..\..\xmlrpc-c\config.h&#x0D;&#x0A;if not exist $(ProjectDir)..\..\xmlrpc-c\xmlrpc_config.h copy &quot;$(ProjectDir)..\..\xmlrpc-c\Windows\xmlrpc_win32_config.h&quot; $(ProjectDir)..\..\xmlrpc-c\xmlrpc_config.h&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\xmlrpc-c\transport_config.h&quot; copy &quot;$(ProjectDir)..\..\xmlrpc-c\Windows\transport_config_win32.h&quot; &quot;$(ProjectDir)..\..\xmlrpc-c\transport_config.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\xmlrpc-c\config.h&quot; copy &quot;$(ProjectDir)..\..\xmlrpc-c\Windows\xmlrpc_win32_config.h&quot; &quot;$(ProjectDir)..\..\xmlrpc-c\config.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\xmlrpc-c\xmlrpc_config.h&quot; copy &quot;$(ProjectDir)..\..\xmlrpc-c\Windows\xmlrpc_win32_config.h&quot; &quot;$(ProjectDir)..\..\xmlrpc-c\xmlrpc_config.h&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -102,7 +102,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist $(ProjectDir)..\..\xmlrpc-c\transport_config.h copy &quot;$(ProjectDir)..\..\xmlrpc-c\Windows\transport_config_win32.h&quot; $(ProjectDir)..\..\xmlrpc-c\transport_config.h&#x0D;&#x0A;if not exist $(ProjectDir)..\..\xmlrpc-c\config.h copy &quot;$(ProjectDir)..\..\xmlrpc-c\Windows\xmlrpc_win32_config.h&quot; $(ProjectDir)..\..\xmlrpc-c\config.h&#x0D;&#x0A;if not exist $(ProjectDir)..\..\xmlrpc-c\xmlrpc_config.h copy &quot;$(ProjectDir)..\..\xmlrpc-c\Windows\xmlrpc_win32_config.h&quot; $(ProjectDir)..\..\xmlrpc-c\xmlrpc_config.h&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\xmlrpc-c\transport_config.h&quot; copy &quot;$(ProjectDir)..\..\xmlrpc-c\Windows\transport_config_win32.h&quot; &quot;$(ProjectDir)..\..\xmlrpc-c\transport_config.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\xmlrpc-c\config.h&quot; copy &quot;$(ProjectDir)..\..\xmlrpc-c\Windows\xmlrpc_win32_config.h&quot; &quot;$(ProjectDir)..\..\xmlrpc-c\config.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\xmlrpc-c\xmlrpc_config.h&quot; copy &quot;$(ProjectDir)..\..\xmlrpc-c\Windows\xmlrpc_win32_config.h&quot; &quot;$(ProjectDir)..\..\xmlrpc-c\xmlrpc_config.h&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
