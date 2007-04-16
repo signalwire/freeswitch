@@ -306,7 +306,7 @@ static void *SWITCH_THREAD_FUNC fxs_thread_run(switch_thread_t *thread, void *ob
 }
 
 
-static wpsock_t *wp_open(private_object_t *tech_pvt, int span, int chan)
+static wpsock_t *wp_open(int span, int chan)
 {
 	sng_fd_t fd;
 	wpsock_t *sock;
@@ -1110,7 +1110,7 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 		int chan, span;
 
 		if (sangoma_span_chan_fromif(bchan, &span, &chan)) {
-			if (!wp_open(tech_pvt, span, chan)) {
+			if (!(tech_pvt->wpsock = wp_open(span, chan))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd for s%dc%d! [%s]\n", span, chan, strerror(errno));
 				switch_core_session_destroy(new_session);
 				cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -1206,7 +1206,7 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 				goto error;
 			}
 
-			if (!wp_open(tech_pvt, spri->span, callno)) {
+			if (!(tech_pvt->wpsock = wp_open(spri->span, callno))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd!\n");
 				switch_core_session_destroy(new_session);
 				pri_sr_free(sr);
@@ -1511,7 +1511,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 		tech_pvt->callno = pevent->ring.channel;
 		tech_pvt->span = spri->span;
 
-		if (!wp_open(tech_pvt, spri->span, pevent->ring.channel)) {
+		if (!(tech_pvt->wpsock = wp_open(spri->span, pevent->ring.channel))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd!\n");
 		}
 
@@ -1801,7 +1801,7 @@ static void handle_call_start(ss7boost_handle_t *ss7boost_handle, ss7boost_clien
 		tech_pvt->boost_chan_number = event->chan;
 		tech_pvt->boost_pres = event->calling_number_presentation;
 		
-		if (!wp_open(tech_pvt, event->span+1, event->chan+1)) {
+		if (!(tech_pvt->wpsock = wp_open(event->span+1, event->chan+1))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open channel %d:%d\n", event->span+1, event->chan+1);
 			goto fail;
 		}
@@ -1879,7 +1879,7 @@ static void handle_call_start_ack(ss7boost_handle_t *ss7boost_handle, ss7boost_c
 
 
 			if (!tech_pvt->wpsock) {
-				if (!wp_open(tech_pvt, tech_pvt->boost_span_number+1, tech_pvt->boost_chan_number+1)) {
+				if (!(tech_pvt->wpsock = wp_open(tech_pvt->boost_span_number+1, tech_pvt->boost_chan_number+1))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd for s%dc%d! [%s]\n", 
 									  tech_pvt->boost_span_number+1, tech_pvt->boost_chan_number+1, strerror(errno));
 					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -1922,7 +1922,7 @@ static void handle_call_answer(ss7boost_handle_t *ss7boost_handle, ss7boost_clie
 			assert(tech_pvt != NULL);
 
 			if (!tech_pvt->wpsock) {
-				if (!wp_open(tech_pvt, tech_pvt->boost_span_number+1, tech_pvt->boost_chan_number+1)) {
+				if (!(tech_pvt->wpsock=wp_open(tech_pvt->boost_span_number+1, tech_pvt->boost_chan_number+1))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd for s%dc%d! [%s]\n", 
 									  tech_pvt->boost_span_number+1, tech_pvt->boost_chan_number+1, strerror(errno));
 					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -2247,7 +2247,7 @@ static switch_status_t config_wanpipe(int reload)
 			continue;
 		}
 		
-		if (!(sock = wp_open(NULL, span, chan))) {
+		if (!(sock = wp_open(span, chan))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot open device '%s' (%s)\n", c_dev, strerror(errno));
 			continue;
 		}
