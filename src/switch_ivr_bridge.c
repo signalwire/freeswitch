@@ -81,18 +81,13 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 		switch_channel_state_t b_state;
 		switch_status_t status;
 		switch_event_t *event;
-
+		
 		/* if you really want to make sure it's not ready, test it twice because it might be just a break */
 		if (!switch_channel_ready(chan_a) && !switch_channel_ready(chan_a)) {
 			break;
 		}
 
-		b_state = switch_channel_get_state(chan_b);
-
-		switch (b_state) {
-		case CS_HANGUP:
-		case CS_DONE:
-		default:
+		if ((b_state = switch_channel_get_state(chan_b)) >= CS_HANGUP) {
 			break;
 		}
 
@@ -181,11 +176,11 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 		}
 	}
 
-	switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 	msg.string_arg = data->b_uuid;
 	msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
 	msg.from = __FILE__;
 	switch_core_session_receive_message(session_a, &msg);
+	switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 
 	switch_channel_set_variable(chan_a, SWITCH_BRIDGE_VARIABLE, NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BRIDGE THREAD DONE [%s]\n", switch_channel_get_name(chan_a));

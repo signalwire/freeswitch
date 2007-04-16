@@ -1016,7 +1016,15 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 	char *protocol = NULL;
 	char *dest;
 	int ready = 0, is_pri = 0, is_boost = 0, is_raw = 0;
-	switch_call_cause_t cause = SWITCH_CAUSE_SUCCESS;
+	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+	private_object_t *tech_pvt;
+	switch_channel_t *channel;
+	switch_caller_profile_t *caller_profile = NULL;
+	int callno = 0;
+	struct sangoma_pri *spri;
+	int span = 0, autospan = 0, autochan = 0;
+	char *num, *p;
+	struct channel_map *chanmap = NULL;
 	
 	if (!outbound_profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Doh! no caller profile\n");
@@ -1025,6 +1033,7 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 	}
 
 	protocol = strdup(outbound_profile->destination_number);
+	assert(protocol != NULL);
 
 	if (!(dest = strchr(protocol, '/'))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error No protocol specified!\n");
@@ -1059,71 +1068,42 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 
 	outbound_profile->destination_number = dest;
 
-	if ((*new_session = switch_core_session_request(&wanpipe_endpoint_interface, pool))) {
-		private_object_t *tech_pvt;
-		switch_channel_t *channel;
-		switch_caller_profile_t *caller_profile = NULL;
-		int callno = 0;
-		struct sangoma_pri *spri;
-		int span = 0, autospan = 0, autochan = 0;
-		char *num, *p;
-		struct channel_map *chanmap = NULL;
+	if (!(*new_session = switch_core_session_request(&wanpipe_endpoint_interface, pool))) {
+		cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+        goto error;
+	}
 
-
-		switch_core_session_add_stream(*new_session, NULL);
-		if ((tech_pvt = (private_object_t *) switch_core_session_alloc(*new_session, sizeof(private_object_t)))) {
-			memset(tech_pvt, 0, sizeof(*tech_pvt));
-			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(*new_session));
-			channel = switch_core_session_get_channel(*new_session);
-			switch_core_session_set_private(*new_session, tech_pvt);
-			tech_pvt->session = *new_session;
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-			switch_core_session_destroy(new_session);
-			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-			goto error;
-		}
+	switch_core_session_add_stream(*new_session, NULL);
+	if ((tech_pvt = (private_object_t *) switch_core_session_alloc(*new_session, sizeof(private_object_t)))) {
+		memset(tech_pvt, 0, sizeof(*tech_pvt));
+		switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(*new_session));
+		channel = switch_core_session_get_channel(*new_session);
+		switch_core_session_set_private(*new_session, tech_pvt);
+		tech_pvt->session = *new_session;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+		switch_core_session_destroy(new_session);
+		cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+		goto error;
+	}
 
 		
-		caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
+	caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 
-		if (is_pri) {
-			num = caller_profile->destination_number;
-			if ((p = strchr(num, '/'))) {
-				*p++ = '\0';
+	if (is_pri) {
+		num = caller_profile->destination_number;
+		if ((p = strchr(num, '/'))) {
+			*p++ = '\0';
 
-				if (*num == 'a') {
-					span = 1;
-					autospan = 1;
-				} else if (*num == 'A') {
-					span = MAX_SPANS - 1;
-					autospan = -1;
-				} else {
-					if (num && *num > 47 && *num < 58) {
-						span = atoi(num);
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invlid Syntax\n");
-						switch_core_session_destroy(new_session);
-						cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-						goto error;
-					}
-				}
-				num = p;
-				if ((p = strchr(num, '/'))) {
-					*p++ = '\0';
-					if (*num == 'a') {
-						autochan = 1;
-					} else if (*num == 'A') {
-						autochan = -1;
-					} else if (num && *num > 47 && *num < 58) {
-						callno = atoi(num);
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invlid Syntax\n");
-						switch_core_session_destroy(new_session);
-						cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-						goto error;
-					}
-					caller_profile->destination_number = p;
+			if (*num == 'a') {
+				span = 1;
+				autospan = 1;
+			} else if (*num == 'A') {
+				span = MAX_SPANS - 1;
+				autospan = -1;
+			} else {
+				if (num && *num > 47 && *num < 58) {
+					span = atoi(num);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invlid Syntax\n");
 					switch_core_session_destroy(new_session);
@@ -1131,152 +1111,175 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 					goto error;
 				}
 			}
-		}
-
-		tech_pvt->caller_profile = caller_profile;
-
-		if (is_raw) {
-			int chan, span;
-
-			if (sangoma_span_chan_fromif(bchan, &span, &chan)) {
-				if (!wp_open(tech_pvt, span, chan)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd for s%dc%d! [%s]\n", span, chan, strerror(errno));
+			num = p;
+			if ((p = strchr(num, '/'))) {
+				*p++ = '\0';
+				if (*num == 'a') {
+					autochan = 1;
+				} else if (*num == 'A') {
+					autochan = -1;
+				} else if (num && *num > 47 && *num < 58) {
+					callno = atoi(num);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invlid Syntax\n");
 					switch_core_session_destroy(new_session);
 					cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 					goto error;
 				}
-				switch_set_flag_locked(tech_pvt, TFLAG_NOSIG);
-				snprintf(name, sizeof(name), "wanpipe/%s/nosig", bchan);
-				switch_channel_set_name(channel, name);			
-				switch_channel_set_caller_profile(channel, caller_profile);
+				caller_profile->destination_number = p;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid address\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invlid Syntax\n");
 				switch_core_session_destroy(new_session);
-				cause = SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL;
+				cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 				goto error;
 			}
-		} else if (is_pri) {
-			switch_mutex_lock(globals.channel_mutex);
-			callno = 0;
-			while (!callno) {
-				if (autospan > 0 && span == MAX_SPANS - 1) {
-					break;
-				}
+		}
+	}
 
-				if (autospan < 0 && span == 0) {
-					break;
-				}
+	tech_pvt->caller_profile = caller_profile;
 
-				if (SPANS[span] && (spri = &SPANS[span]->spri) && switch_test_flag(spri, SANGOMA_PRI_READY)) {
-					chanmap = spri->private_info;
+	if (is_raw) {
+		int chan, span;
+
+		if (sangoma_span_chan_fromif(bchan, &span, &chan)) {
+			if (!wp_open(tech_pvt, span, chan)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd for s%dc%d! [%s]\n", span, chan, strerror(errno));
+				switch_core_session_destroy(new_session);
+				cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+				goto error;
+			}
+			switch_set_flag_locked(tech_pvt, TFLAG_NOSIG);
+			snprintf(name, sizeof(name), "wanpipe/%s/nosig", bchan);
+			switch_channel_set_name(channel, name);			
+			switch_channel_set_caller_profile(channel, caller_profile);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid address\n");
+			switch_core_session_destroy(new_session);
+			cause = SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL;
+			goto error;
+		}
+	} else if (is_pri) {
+		switch_mutex_lock(globals.channel_mutex);
+		callno = 0;
+		while (!callno) {
+			if (autospan > 0 && span == MAX_SPANS - 1) {
+				break;
+			}
+
+			if (autospan < 0 && span == 0) {
+				break;
+			}
+
+			if (SPANS[span] && (spri = &SPANS[span]->spri) && switch_test_flag(spri, SANGOMA_PRI_READY)) {
+				chanmap = spri->private_info;
 						
-					if (autochan > 0) {
-						for(callno = 1; callno < SANGOMA_MAX_CHAN_PER_SPAN; callno++) {
-							if ((SPANS[span]->bchans & (1 << callno)) && ! *chanmap->map[callno]) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Choosing channel s%dc%d\n", span, callno);
-								goto done;
-							}
+				if (autochan > 0) {
+					for(callno = 1; callno < SANGOMA_MAX_CHAN_PER_SPAN; callno++) {
+						if ((SPANS[span]->bchans & (1 << callno)) && ! *chanmap->map[callno]) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Choosing channel s%dc%d\n", span, callno);
+							goto done;
 						}
-						callno = 0;
-					} else if (autochan < 0) {
-						for(callno = SANGOMA_MAX_CHAN_PER_SPAN; callno > 0; callno--) {
-							if ((SPANS[span]->bchans & (1 << callno)) && ! *chanmap->map[callno]) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Choosing channel s%dc%d\n", span, callno);
-								goto done;
-							}
-						}
-						callno = 0;
 					}
-				}
-
-				if (autospan > 0) {
-					span++;
-				} else if (autospan < 0) {
-					span--;
+					callno = 0;
+				} else if (autochan < 0) {
+					for(callno = SANGOMA_MAX_CHAN_PER_SPAN; callno > 0; callno--) {
+						if ((SPANS[span]->bchans & (1 << callno)) && ! *chanmap->map[callno]) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Choosing channel s%dc%d\n", span, callno);
+							goto done;
+						}
+					}
+					callno = 0;
 				}
 			}
-		done:
-			switch_mutex_unlock(globals.channel_mutex);
 
-			if (!spri || callno == 0 || callno == (SANGOMA_MAX_CHAN_PER_SPAN)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No Free Channels!\n");
+			if (autospan > 0) {
+				span++;
+			} else if (autospan < 0) {
+				span--;
+			}
+		}
+	done:
+		switch_mutex_unlock(globals.channel_mutex);
+
+		if (!spri || callno == 0 || callno == (SANGOMA_MAX_CHAN_PER_SPAN)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No Free Channels!\n");
+			switch_core_session_destroy(new_session);
+			cause = SWITCH_CAUSE_SWITCH_CONGESTION;
+			goto error;
+		}
+				
+		tech_pvt->callno = callno;
+				
+		if (spri && (tech_pvt->call = pri_new_call(spri->pri))) {
+			struct pri_sr *sr;
+					
+			snprintf(name, sizeof(name), "wanpipe/pri/s%dc%d/%s", spri->span, callno, caller_profile->destination_number);
+			switch_channel_set_name(channel, name);			
+			switch_channel_set_caller_profile(channel, caller_profile);
+			sr = pri_sr_new();
+			pri_sr_set_channel(sr, callno, 0, 0);
+			pri_sr_set_bearer(sr, 0, SPANS[span]->l1);
+			pri_sr_set_called(sr, caller_profile->destination_number, SPANS[span]->dp, 1);
+			pri_sr_set_caller(sr,
+							  caller_profile->caller_id_number,
+							  caller_profile->caller_id_name,
+							  SPANS[span]->dp,
+							  PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN);
+			pri_sr_set_redirecting(sr,
+								   caller_profile->caller_id_number,
+								   SPANS[span]->dp,
+								   PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN,
+								   PRI_REDIR_UNCONDITIONAL);
+				
+			if (pri_setup(spri->pri, tech_pvt->call , sr)) {
 				switch_core_session_destroy(new_session);
-				cause = SWITCH_CAUSE_SWITCH_CONGESTION;
+				pri_sr_free(sr);
+				cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 				goto error;
 			}
-				
-			tech_pvt->callno = callno;
-				
-			if (spri && (tech_pvt->call = pri_new_call(spri->pri))) {
-				struct pri_sr *sr;
-					
-				snprintf(name, sizeof(name), "wanpipe/pri/s%dc%d/%s", spri->span, callno, caller_profile->destination_number);
-				switch_channel_set_name(channel, name);			
-				switch_channel_set_caller_profile(channel, caller_profile);
-				sr = pri_sr_new();
-				pri_sr_set_channel(sr, callno, 0, 0);
-				pri_sr_set_bearer(sr, 0, SPANS[span]->l1);
-				pri_sr_set_called(sr, caller_profile->destination_number, SPANS[span]->dp, 1);
-				pri_sr_set_caller(sr,
-								  caller_profile->caller_id_number,
-								  caller_profile->caller_id_name,
-								  SPANS[span]->dp,
-								  PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN);
-				pri_sr_set_redirecting(sr,
-									   caller_profile->caller_id_number,
-									   SPANS[span]->dp,
-									   PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN,
-									   PRI_REDIR_UNCONDITIONAL);
-				
-				if (pri_setup(spri->pri, tech_pvt->call , sr)) {
-					switch_core_session_destroy(new_session);
-					pri_sr_free(sr);
-					cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-					goto error;
-				}
 
-				if (!wp_open(tech_pvt, spri->span, callno)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd!\n");
-					switch_core_session_destroy(new_session);
-					pri_sr_free(sr);
-					cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-					goto error;
-				}
+			if (!wp_open(tech_pvt, spri->span, callno)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd!\n");
+				switch_core_session_destroy(new_session);
 				pri_sr_free(sr);
-				switch_copy_string(chanmap->map[callno],
-								   switch_core_session_get_uuid(*new_session),
-								   sizeof(chanmap->map[callno]));
-				tech_pvt->spri = spri;
+				cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+				goto error;
 			}
-		} else if (is_boost) {
-			char *p;
+			pri_sr_free(sr);
+			switch_copy_string(chanmap->map[callno],
+							   switch_core_session_get_uuid(*new_session),
+							   sizeof(chanmap->map[callno]));
+			tech_pvt->spri = spri;
+		}
+	} else if (is_boost) {
+		char *p;
 
-			if ((p = strchr(caller_profile->destination_number, '/'))) {
-				char *grp = caller_profile->destination_number;
-				*p = '\0';
-				caller_profile->destination_number = p+1;
-				tech_pvt->boost_trunk_group = atoi(grp+1) - 1;
-				if (tech_pvt->boost_trunk_group < 0) {
-					tech_pvt->boost_trunk_group = 0;
-				}
+		if ((p = strchr(caller_profile->destination_number, '/'))) {
+			char *grp = caller_profile->destination_number;
+			*p = '\0';
+			caller_profile->destination_number = p+1;
+			tech_pvt->boost_trunk_group = atoi(grp+1) - 1;
+			if (tech_pvt->boost_trunk_group < 0) {
+				tech_pvt->boost_trunk_group = 0;
 			}
-			sprintf(name, "wanpipe/ss7boost/%s", caller_profile->destination_number);
-			switch_channel_set_name(channel, name);
-			tech_pvt->ss7boost_handle = globals.ss7boost_handle;
+		}
+		sprintf(name, "wanpipe/ss7boost/%s", caller_profile->destination_number);
+		switch_channel_set_name(channel, name);
+		tech_pvt->ss7boost_handle = globals.ss7boost_handle;
 
-			if (session && switch_core_session_compare(session, *new_session)) {
-				private_object_t *otech_pvt = switch_core_session_get_private(session);
-				tech_pvt->boost_pres = otech_pvt->boost_pres;
-			}
-
+		if (session && switch_core_session_compare(session, *new_session)) {
+			private_object_t *otech_pvt = switch_core_session_get_private(session);
+			tech_pvt->boost_pres = otech_pvt->boost_pres;
 		}
 
-		tech_pvt->caller_profile = caller_profile;
-		switch_channel_set_flag(channel, CF_OUTBOUND);
-		switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
-		switch_channel_set_state(channel, CS_INIT);
-		cause = SWITCH_CAUSE_SUCCESS;
 	}
+
+	tech_pvt->caller_profile = caller_profile;
+	switch_channel_set_flag(channel, CF_OUTBOUND);
+	switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
+	switch_channel_set_state(channel, CS_INIT);
+	cause = SWITCH_CAUSE_SUCCESS;
+	
 
  error:
 	switch_safe_free(protocol);

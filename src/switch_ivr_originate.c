@@ -246,8 +246,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *caller_channel = NULL;
 	char *peer_names[MAX_PEERS] = { 0 };
-	switch_core_session_t *peer_session, *peer_sessions[MAX_PEERS] = { 0 };
-	switch_caller_profile_t *caller_profiles[MAX_PEERS] = { 0 }, *caller_caller_profile;
+	switch_core_session_t *new_session = NULL, *peer_session, *peer_sessions[MAX_PEERS] = { 0 };
+	switch_caller_profile_t *new_profile = NULL, *caller_profiles[MAX_PEERS] = { 0 }, *caller_caller_profile;
 	char *chan_type = NULL, *chan_data;
 	switch_channel_t *peer_channel = NULL, *peer_channels[MAX_PEERS] = { 0 };
 	ringback_t ringback = { 0 };
@@ -427,6 +427,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			memset(peer_sessions, 0, sizeof(peer_sessions));
 			memset(peer_channels, 0, sizeof(peer_channels));
 			memset(caller_profiles, 0, sizeof(caller_profiles));
+			new_profile = NULL;
+			new_session = NULL;
 			chan_type = NULL;
 			chan_data = NULL;
 			peer_channel = NULL;
@@ -474,16 +476,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						cid_num_override = caller_caller_profile->caller_id_number;
 					}
 
-					caller_profiles[i] = switch_caller_profile_new(switch_core_session_get_pool(session),
-																   caller_caller_profile->username,
-																   caller_caller_profile->dialplan,
-																   cid_name_override,
-																   cid_num_override,
-																   caller_caller_profile->network_addr,
-																   NULL,
-																   NULL,
-																   caller_caller_profile->rdnis,
-																   caller_caller_profile->source, caller_caller_profile->context, chan_data);
+					new_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
+															caller_caller_profile->username,
+															caller_caller_profile->dialplan,
+															cid_name_override,
+															cid_num_override,
+															caller_caller_profile->network_addr,
+															NULL,
+															NULL,
+															caller_caller_profile->rdnis,
+															caller_caller_profile->source, caller_caller_profile->context, chan_data);
 					caller_profiles[i]->flags = caller_caller_profile->flags;
 					pool = NULL;
 				} else {
@@ -501,42 +503,44 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 
 					if (caller_profile_override) {
-						caller_profiles[i] = switch_caller_profile_new(pool,
-																	   caller_profile_override->username,
-																	   caller_profile_override->dialplan,
-																	   caller_profile_override->caller_id_name,
-																	   caller_profile_override->caller_id_number,
-																	   caller_profile_override->network_addr,
-																	   caller_profile_override->ani,
-																	   caller_profile_override->aniii,
-																	   caller_profile_override->rdnis,
-																	   caller_profile_override->source, caller_profile_override->context, chan_data);
+						new_profile = switch_caller_profile_new(pool,
+																 caller_profile_override->username,
+																 caller_profile_override->dialplan,
+																 caller_profile_override->caller_id_name,
+																 caller_profile_override->caller_id_number,
+																 caller_profile_override->network_addr,
+																 caller_profile_override->ani,
+																 caller_profile_override->aniii,
+																 caller_profile_override->rdnis,
+																 caller_profile_override->source, caller_profile_override->context, chan_data);
 					} else {
-						caller_profiles[i] = switch_caller_profile_new(pool,
-																	   NULL,
-																	   NULL,
-																	   cid_name_override, cid_num_override, NULL, NULL, NULL, NULL, __FILE__, NULL,
-																	   chan_data);
+						new_profile = switch_caller_profile_new(pool,
+																 NULL,
+																 NULL,
+																 cid_name_override, cid_num_override, NULL, NULL, NULL, NULL, __FILE__, NULL,
+																 chan_data);
 					}
 				}
-
-				if ((reason =
-					 switch_core_session_outgoing_channel(session, chan_type, caller_profiles[i], &peer_sessions[i], &pool)) != SWITCH_CAUSE_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! cause: %s\n",
-									  switch_channel_cause2str(reason));
+				
+				caller_profiles[i] = NULL;
+				peer_channels[i] = NULL;
+				peer_sessions[i] = NULL;
+				new_session = NULL;
+				
+				if ((reason = switch_core_session_outgoing_channel(session, chan_type, new_profile, &new_session, &pool)) != SWITCH_CAUSE_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! cause: %s\n", switch_channel_cause2str(reason));
 					if (pool) {
 						switch_core_destroy_memory_pool(&pool);
 					}
-					caller_profiles[i] = NULL;
-					peer_channels[i] = NULL;
-					peer_sessions[i] = NULL;
 					continue;
 				}
 
 				switch_core_session_read_lock(peer_sessions[i]);
 				pool = NULL;
 
-				peer_channels[i] = switch_core_session_get_channel(peer_sessions[i]);
+				caller_profiles[i] = new_profile;
+				peer_sessions[i] = new_session;
+				peer_channels[i] = switch_core_session_get_channel(new_session);
 				assert(peer_channels[i] != NULL);
 
 				if (!table) {
