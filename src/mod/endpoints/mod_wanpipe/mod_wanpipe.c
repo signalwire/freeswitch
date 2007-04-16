@@ -78,6 +78,7 @@ typedef enum {
 
 struct channel_map {
 	char map[SANGOMA_MAX_CHAN_PER_SPAN][SWITCH_UUID_FORMATTED_LENGTH + 1];
+	switch_mutex_t *mutex;
 };
 
 unsigned int txseq=0;
@@ -635,10 +636,10 @@ static switch_status_t wanpipe_on_hangup(switch_core_session_t *session)
 	} else if (tech_pvt->spri) {
 		chanmap = tech_pvt->spri->private_info;
 
-		//if (!switch_test_flag(tech_pvt, TFLAG_BYE)) {
-			pri_hangup(tech_pvt->spri->pri, tech_pvt->call, switch_channel_get_cause(channel));
-			pri_destroycall(tech_pvt->spri->pri, tech_pvt->call);
-			//}
+		switch_mutex_lock(chanmap->mutex);
+		pri_hangup(tech_pvt->spri->pri, tech_pvt->call, switch_channel_get_cause(channel));
+		pri_destroycall(tech_pvt->spri->pri, tech_pvt->call);
+		switch_mutex_unlock(chanmap->mutex);
 
 		switch_mutex_lock(globals.channel_mutex);
 		*chanmap->map[tech_pvt->callno] = '\0';
@@ -691,8 +692,12 @@ static switch_status_t wanpipe_answer_channel(switch_core_session_t *session)
 	assert(tech_pvt != NULL);
 
 	if (tech_pvt->spri) {
+		struct channel_map *chanmap = tech_pvt->spri->private_info;
+			
 		if (switch_test_flag(tech_pvt, TFLAG_INBOUND)) {
+			switch_mutex_lock(chanmap->mutex);
 			pri_answer(tech_pvt->spri->pri, tech_pvt->call, 0, 1);
+			switch_mutex_unlock(chanmap->mutex);
 		}
 	} else if (tech_pvt->ss7boost_handle) {
 		isup_exec_command(tech_pvt->ss7boost_handle,
@@ -1178,46 +1183,53 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 				
 		tech_pvt->callno = callno;
 				
-		if (spri && (tech_pvt->call = pri_new_call(spri->pri))) {
-			struct pri_sr *sr;
+		if (spri) {
+			struct channel_map *chanmap = spri->private_info;
+			switch_mutex_lock(chanmap->mutex);
+			if (tech_pvt->call = pri_new_call(spri->pri)) {
+				struct pri_sr *sr;
 					
-			snprintf(name, sizeof(name), "wanpipe/pri/s%dc%d/%s", spri->span, callno, caller_profile->destination_number);
-			switch_channel_set_name(channel, name);			
-			switch_channel_set_caller_profile(channel, caller_profile);
-			sr = pri_sr_new();
-			pri_sr_set_channel(sr, callno, 0, 0);
-			pri_sr_set_bearer(sr, 0, SPANS[span]->l1);
-			pri_sr_set_called(sr, caller_profile->destination_number, SPANS[span]->dp, 1);
-			pri_sr_set_caller(sr,
-							  caller_profile->caller_id_number,
-							  caller_profile->caller_id_name,
-							  SPANS[span]->dp,
-							  PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN);
-			pri_sr_set_redirecting(sr,
-								   caller_profile->caller_id_number,
-								   SPANS[span]->dp,
-								   PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN,
-								   PRI_REDIR_UNCONDITIONAL);
+				snprintf(name, sizeof(name), "wanpipe/pri/s%dc%d/%s", spri->span, callno, caller_profile->destination_number);
+				switch_channel_set_name(channel, name);			
+				switch_channel_set_caller_profile(channel, caller_profile);
+				sr = pri_sr_new();
+				pri_sr_set_channel(sr, callno, 0, 0);
+				pri_sr_set_bearer(sr, 0, SPANS[span]->l1);
+				pri_sr_set_called(sr, caller_profile->destination_number, SPANS[span]->dp, 1);
+				pri_sr_set_caller(sr,
+								  caller_profile->caller_id_number,
+								  caller_profile->caller_id_name,
+								  SPANS[span]->dp,
+								  PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN);
+				pri_sr_set_redirecting(sr,
+									   caller_profile->caller_id_number,
+									   SPANS[span]->dp,
+									   PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN,
+									   PRI_REDIR_UNCONDITIONAL);
 				
-			if (pri_setup(spri->pri, tech_pvt->call , sr)) {
-				switch_core_session_destroy(new_session);
+				if (pri_setup(spri->pri, tech_pvt->call , sr)) {
+					switch_core_session_destroy(new_session);
+					pri_sr_free(sr);
+					cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+					switch_mutex_unlock(chanmap->mutex);
+					goto error;
+				}
+				
+				if (!(tech_pvt->wpsock = wp_open(spri->span, callno))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd!\n");
+					switch_core_session_destroy(new_session);
+					pri_sr_free(sr);
+					cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+					switch_mutex_unlock(chanmap->mutex);
+					goto error;
+				}
 				pri_sr_free(sr);
-				cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-				goto error;
+				switch_copy_string(chanmap->map[callno],
+								   switch_core_session_get_uuid(*new_session),
+								   sizeof(chanmap->map[callno]));
+				tech_pvt->spri = spri;
 			}
-
-			if (!(tech_pvt->wpsock = wp_open(spri->span, callno))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd!\n");
-				switch_core_session_destroy(new_session);
-				pri_sr_free(sr);
-				cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-				goto error;
-			}
-			pri_sr_free(sr);
-			switch_copy_string(chanmap->map[callno],
-							   switch_core_session_get_uuid(*new_session),
-							   sizeof(chanmap->map[callno]));
-			tech_pvt->spri = spri;
+			switch_mutex_unlock(chanmap->mutex);
 		}
 	} else if (is_boost) {
 		char *p;
@@ -1452,9 +1464,10 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "-- Ring on channel s%dc%d (from %s to %s)\n", spri->span, pevent->ring.channel,
 						  pevent->ring.callingnum, pevent->ring.callednum);
 
-
+	switch_mutex_unlock(chanmap->mutex);
 	pri_proceeding(spri->pri, pevent->ring.call, pevent->ring.channel, 0);
 	pri_acknowledge(spri->pri, pevent->ring.call, pevent->ring.channel, 0);
+	switch_mutex_unlock(chanmap->mutex);
 
 	if ((session = switch_core_session_request(&wanpipe_endpoint_interface, NULL))) {
 		private_object_t *tech_pvt;
@@ -1602,6 +1615,9 @@ static void *SWITCH_THREAD_FUNC pri_thread_run(switch_thread_t *thread, void *ob
 	memset(&chanmap, 0, sizeof(chanmap));
 
 	switch_event_t *s_event;
+
+
+	switch_mutex_init(&chanmap.mutex, SWITCH_MUTEX_NESTED, module_pool);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_ANY, on_anything);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RING, on_ring);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RINGING, on_ringing);
