@@ -535,7 +535,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					continue;
 				}
 
-				switch_core_session_read_lock(peer_sessions[i]);
+				switch_core_session_read_lock(new_session);
 				pool = NULL;
 
 				caller_profiles[i] = new_profile;
