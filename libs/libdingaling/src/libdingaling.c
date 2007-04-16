@@ -733,7 +733,7 @@ static ldl_avatar_t *ldl_get_avatar(ldl_handle_t *handle, char *path, char *from
 	assert(ap != NULL);
 	memset(ap, 0, sizeof(*ap));
 	ldl_random_string(hash, sizeof(hash) -1, NULL);
-	sha1_hash(ap->hash, hash, strlen(hash));
+	sha1_hash(ap->hash, hash, (unsigned)strlen(hash));
 	ap->path = strdup(path);
 
 	key = ldl_handle_strdup(handle, from);
@@ -1051,7 +1051,7 @@ static int on_stream_component(ldl_handle_t *handle, int type, iks *node)
 			char handshake[512] = "";
 
 			snprintf(secret, sizeof(secret), "%s%s", pak->id, handle->password);
-			sha1_hash(hash, secret, strlen(secret));
+			sha1_hash(hash, secret, (unsigned)strlen(secret));
 			snprintf(handshake, sizeof(handshake), "<handshake>%s</handshake>", hash);
 			iks_send_raw(handle->parser, handshake);
 			handle->state = CS_START;
@@ -1862,10 +1862,8 @@ char *ldl_handle_probe(ldl_handle_t *handle, char *id, char *from, char *buf, un
 	iks *pres, *msg;
 	char *lid = NULL, *low_id = NULL;
 	struct ldl_buffer buffer;
-	time_t started;
-	unsigned int elapsed;
+	time_t started, elapsed, next = 0;
 	char *notice = "Call Me!";
-	int next = 0;
 	
 	buffer.buf = buf;
 	buffer.len = len;

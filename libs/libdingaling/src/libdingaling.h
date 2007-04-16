@@ -191,13 +191,15 @@ static inline int ldl_jid_domcmp(char *id_a, char *id_b)
 {
     char *id_a_host, *id_b_host, *id_a_r, *id_b_r;
 
-	if ((id_a_host = strchr(id_a, '@'))) {
+	id_a_host = strchr(id_a, '@');
+	if (id_a_host) {
 		id_a_host++;
 	} else {
 		id_a_host = id_a;
 	}
 
-	if ((id_b_host = strchr(id_b, '@'))) {
+	id_b_host = strchr(id_b, '@');
+	if (id_b_host) {
 		id_b_host++;
 	} else {
 		id_b_host = id_b;
@@ -206,13 +208,15 @@ static inline int ldl_jid_domcmp(char *id_a, char *id_b)
     if (id_a_host && id_b_host) {
         size_t id_a_len = 0, id_b_len = 0, len = 0;
 
-        if ((id_a_r = strchr(id_a_host, '/'))) {
+        id_a_r = strchr(id_a_host, '/');
+		if (id_a_r) {
             id_a_len = id_a_r - id_a_host;
         } else {
             id_a_len = strlen(id_a_host);
         }
 
-        if ((id_b_r = strchr(id_b_host, '/'))) {
+        id_b_r = strchr(id_b_host, '/');
+		if (id_b_r) {
             id_b_len = id_b_r - id_b_host;
         } else {
             id_b_len = strlen(id_b_host);
