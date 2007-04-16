@@ -134,7 +134,6 @@ struct wanpipe_pri_span {
 struct wpsock {
 	sng_fd_t fd;
 	char *name;
-	struct private_object *tech_pvt;
 };
 
 typedef struct wpsock wpsock_t;
@@ -307,20 +306,6 @@ static void *SWITCH_THREAD_FUNC fxs_thread_run(switch_thread_t *thread, void *ob
 }
 
 
-static int wp_close(private_object_t *tech_pvt)
-{
-	int ret = 0;
-
-	switch_mutex_lock(globals.hash_mutex);
-	if (tech_pvt->wpsock && tech_pvt->wpsock->tech_pvt == tech_pvt) {
-		tech_pvt->wpsock->tech_pvt = NULL;
-		ret = 1;
-	}
-	switch_mutex_unlock(globals.hash_mutex);
-	
-	return ret;
-}
-
 static wpsock_t *wp_open(private_object_t *tech_pvt, int span, int chan)
 {
 	sng_fd_t fd;
@@ -341,17 +326,6 @@ static wpsock_t *wp_open(private_object_t *tech_pvt, int span, int chan)
 				switch_core_hash_insert(globals.call_hash, sock->name, sock);
 			}
 		}
-	}
-
-	if (sock && tech_pvt) {
-		if (sock->tech_pvt) {
-			if (tech_pvt->session) {
-				switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
-				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			}
-		}
-		sock->tech_pvt = tech_pvt;
-		tech_pvt->wpsock = sock;
 	}
 
 	switch_mutex_unlock(globals.hash_mutex);
@@ -639,10 +613,6 @@ static switch_status_t wanpipe_on_hangup(switch_core_session_t *session)
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
-
-
-
-	wp_close(tech_pvt);
 
 	switch_core_codec_destroy(&tech_pvt->read_codec);
 	switch_core_codec_destroy(&tech_pvt->write_codec);
@@ -962,8 +932,6 @@ static switch_status_t wanpipe_kill_channel(switch_core_session_t *session, int 
 	default:
 		break;
 	}
-	//sangoma_socket_close(&tech_pvt->wpsock->fd);
-	//wp_close(tech_pvt);
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -1366,21 +1334,17 @@ static int on_hangup(struct sangoma_pri *spri, sangoma_pri_event_t event_type, p
 		channel = switch_core_session_get_channel(session);
 		assert(channel != NULL);
 
-		tech_pvt = switch_core_session_get_private(session);
-		assert(tech_pvt != NULL);
+		if (switch_channel_get_state(channel) < CS_HANGUP) {
+			tech_pvt = switch_core_session_get_private(session);
+			assert(tech_pvt != NULL);
 
-		if (!tech_pvt->call) {
-			tech_pvt->call = pevent->hangup.call;
+			if (!tech_pvt->call) {
+				tech_pvt->call = pevent->hangup.call;
+			}
+
+			tech_pvt->cause = pevent->hangup.cause;
+			switch_channel_hangup(channel, tech_pvt->cause);
 		}
-
-		tech_pvt->cause = pevent->hangup.cause;
-		switch_set_flag_locked(tech_pvt, TFLAG_BYE);
-		switch_channel_hangup(channel, tech_pvt->cause);
-		
-		switch_mutex_lock(globals.channel_mutex);
-		*chanmap->map[pevent->hangup.channel] = '\0';
-		switch_mutex_unlock(globals.channel_mutex);
-
 		switch_core_session_rwunlock(session);
 	}
 
