@@ -1433,7 +1433,7 @@ static int on_ringing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *pevent)
 {
 	char name[128];
-	switch_core_session_t *session;
+	switch_core_session_t *session = NULL;
 	switch_channel_t *channel;
 	struct channel_map *chanmap;
 	int ret = 0;
@@ -1441,7 +1441,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 	switch_mutex_lock(globals.channel_mutex);
 
 	chanmap = spri->private_info;
-	if (switch_core_session_locate(chanmap->map[pevent->ring.channel])) {
+	if ((session = switch_core_session_locate(chanmap->map[pevent->ring.channel]))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "--Duplicate Ring on channel s%dc%d (ignored)\n",
 							  spri->span, pevent->ring.channel);
 		switch_core_session_rwunlock(session);

@@ -225,22 +225,24 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 			}
 		}
 
-		if ((cause = endpoint_interface->io_routines->outgoing_channel(session, outgoing_profile, new_session, pool)) == SWITCH_CAUSE_SUCCESS) {
-			if (session) {
-				for (ptr = session->event_hooks.outgoing_channel; ptr; ptr = ptr->next) {
-					if ((status = ptr->outgoing_channel(session, caller_profile, *new_session)) != SWITCH_STATUS_SUCCESS) {
-						break;
-					}
+		if ((cause = endpoint_interface->io_routines->outgoing_channel(session, outgoing_profile, new_session, pool)) != SWITCH_CAUSE_SUCCESS) {
+			return cause;
+		}
+
+		if (session) {
+			for (ptr = session->event_hooks.outgoing_channel; ptr; ptr = ptr->next) {
+				if ((status = ptr->outgoing_channel(session, caller_profile, *new_session)) != SWITCH_STATUS_SUCCESS) {
+					break;
 				}
 			}
-		} else {
-			return cause;
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not locate outgoing channel interface for %s\n", endpoint_name);
 		return SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED;
 	}
 
+	assert(*new_session != NULL);
+	
 	if (*new_session) {
 		switch_caller_profile_t *profile = NULL, *peer_profile = NULL, *cloned_profile = NULL;
 		switch_event_t *event;
