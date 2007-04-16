@@ -675,9 +675,14 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		break;
 	case SWITCH_MESSAGE_INDICATE_RINGING:
 		nua_respond(tech_pvt->nh, SIP_180_RINGING, SIPTAG_CONTACT_STR(tech_pvt->profile->url), TAG_END());
+		switch_channel_mark_ring_ready(channel);
+		break;
+	case SWITCH_MESSAGE_INDICATE_ANSWER:
+		sofia_answer_channel(session);
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:{
 			if (!switch_test_flag(tech_pvt, TFLAG_ANS)) {
+				
 				switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Asked to send early media by %s\n", msg->from);
 
@@ -708,7 +713,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Ring SDP:\n%s\n", tech_pvt->local_sdp_str);
 					}
 				}
-
+				switch_channel_mark_pre_answered(channel);
 				nua_respond(tech_pvt->nh,
 							SIP_183_SESSION_PROGRESS,
 							SIPTAG_CONTACT_STR(tech_pvt->profile->url),
@@ -754,7 +759,6 @@ static switch_status_t sofia_receive_event(switch_core_session_t *session, switc
 
 static const switch_io_routines_t sofia_io_routines = {
 	/*.outgoing_channel */ sofia_outgoing_channel,
-	/*.answer_channel */ sofia_answer_channel,
 	/*.read_frame */ sofia_read_frame,
 	/*.write_frame */ sofia_write_frame,
 	/*.kill_channel */ sofia_kill_channel,

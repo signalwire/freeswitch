@@ -1080,7 +1080,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel_t *channel, const char *file, const char *func, int line)
 {
 	switch_core_session_message_t msg;
-	char *uuid = switch_core_session_get_uuid(channel->session);
 	switch_status_t status;
 
 	assert(channel != NULL);
@@ -1099,7 +1098,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 
 	msg.message_id = SWITCH_MESSAGE_INDICATE_PROGRESS;
 	msg.from = channel->name;
-	status = switch_core_session_message_send(uuid, &msg);
+	status = switch_core_session_receive_message(channel->session, &msg);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		status = switch_channel_perform_mark_pre_answered(channel, file, func, line);
@@ -1111,7 +1110,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready(switch_channel_t *channel, const char *file, const char *func, int line)
 {
 	switch_core_session_message_t msg;
-	char *uuid = switch_core_session_get_uuid(channel->session);
 	switch_status_t status;
 
 	assert(channel != NULL);
@@ -1130,7 +1128,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready(switch_channel
 
 	msg.message_id = SWITCH_MESSAGE_INDICATE_RINGING;
 	msg.from = channel->name;
-	status = switch_core_session_message_send(uuid, &msg);
+	status = switch_core_session_receive_message(channel->session, &msg);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_NOTICE, "Ring Ready %s!\n", channel->name);
@@ -1185,6 +1183,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *channel, const char *file, const char *func, int line)
 {
+	switch_core_session_message_t msg;
+	switch_status_t status;
+
 	assert(channel != NULL);
 
 	if (channel->hangup_cause || channel->state >= CS_HANGUP) {
@@ -1195,7 +1196,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (switch_core_session_answer_channel(channel->session) == SWITCH_STATUS_SUCCESS) {
+
+	msg.message_id = SWITCH_MESSAGE_INDICATE_ANSWER;
+	msg.from = channel->name;
+	status = switch_core_session_receive_message(channel->session, &msg);
+
+	if (status == SWITCH_STATUS_SUCCESS) {
 		return switch_channel_perform_mark_answered(channel, file, func, line);
 	}
 

@@ -52,29 +52,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_outgoing(switch_core_
 	return SWITCH_STATUS_MEMERR;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_answer_channel(switch_core_session_t *session, switch_answer_channel_hook_t answer_channel)
-{
-	switch_io_event_hook_answer_channel_t *hook, *ptr;
-
-	assert(answer_channel != NULL);
-	if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) {
-		hook->answer_channel = answer_channel;
-		if (!session->event_hooks.answer_channel) {
-			session->event_hooks.answer_channel = hook;
-		} else {
-			for (ptr = session->event_hooks.answer_channel; ptr && ptr->next; ptr = ptr->next);
-			ptr->next = hook;
-
-		}
-
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	return SWITCH_STATUS_MEMERR;
-
-}
-
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_state_change(switch_core_session_t *session, switch_answer_channel_hook_t state_change)
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_state_change(switch_core_session_t *session, switch_state_change_hook_t state_change)
 {
 	switch_io_event_hook_state_change_t *hook, *ptr;
 

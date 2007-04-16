@@ -320,29 +320,6 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 	return cause;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_answer_channel(switch_core_session_t *session)
-{
-	switch_io_event_hook_answer_channel_t *ptr;
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
-
-	assert(session != NULL);
-
-	if (session->endpoint_interface->io_routines->answer_channel) {
-		status = session->endpoint_interface->io_routines->answer_channel(session);
-	}
-
-	if (status == SWITCH_STATUS_SUCCESS) {
-		for (ptr = session->event_hooks.answer_channel; ptr; ptr = ptr->next) {
-			if ((status = ptr->answer_channel(session)) != SWITCH_STATUS_SUCCESS) {
-				break;
-			}
-		}
-	}
-
-
-	return status;
-}
-
 SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_session_t *session, switch_core_session_message_t *message)
 {
 	switch_io_event_hook_receive_message_t *ptr;
@@ -367,6 +344,31 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_pass_indication(switch_core_session_t *session, switch_core_session_message_types_t indication)
+{
+	switch_core_session_message_t msg = {0};
+	switch_core_session_t *other_session;
+	char *uuid;
+	switch_channel_t *channel;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	assert(session != NULL);
+	
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+		msg.message_id = indication;
+		msg.from = __FILE__;
+		status = switch_core_session_receive_message(other_session, &msg);
+		switch_core_session_rwunlock(other_session);
+	} else {
+		status = SWITCH_STATUS_FALSE;
+	}
+
+	return status;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_queue_indication(switch_core_session_t *session, switch_core_session_message_types_t indication)
 {
 	switch_core_session_message_t *msg;
@@ -375,8 +377,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_indication(switch_core
 		memset(msg, 0, sizeof(*msg));
 		msg->message_id = indication;
 		msg->from = __FILE__;
-		switch_core_session_queue_message(session, msg);
 		switch_set_flag(msg, SCSMF_DYNAMIC);
+		switch_core_session_queue_message(session, msg);
 		return SWITCH_STATUS_SUCCESS;
 	}
 

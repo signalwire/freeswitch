@@ -527,6 +527,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_message_send(char *uuid_str,
 SWITCH_DECLARE(switch_status_t) switch_core_session_queue_message(switch_core_session_t *session, switch_core_session_message_t *message);
 
 /*! 
+  \brief pass an indication message on a session
+  \param session the session to pass the message across
+  \param indication the indication message to pass
+  \return SWITCH_STATUS_SUCCESS if the message was passed
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_pass_indication(switch_core_session_t *session, switch_core_session_message_types_t indication);
+
+/*! 
   \brief Queue an indication message on a session
   \param session the session to queue the message to
   \param indication the indication message to queue
@@ -638,13 +646,6 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 																		 char *endpoint_name,
 																		 switch_caller_profile_t *caller_profile,
 																		 switch_core_session_t **new_session, switch_memory_pool_t **pool);
-
-/*! 
-  \brief Answer the channel of a given session
-  \param session the session to answer the channel of
-  \return SWITCH_STATUS_SUCCESS if the channel was answered
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_session_answer_channel(switch_core_session_t *session);
 
 /*! 
   \brief Receive a message on a given session

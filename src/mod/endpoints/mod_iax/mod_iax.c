@@ -747,6 +747,29 @@ static switch_status_t channel_answer_channel(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
+{
+	switch_channel_t *channel;
+	private_t *tech_pvt;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+			
+	tech_pvt = (private_t *) switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+
+	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_ANSWER:
+		channel_answer_channel(session);
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static const switch_state_handler_table_t channel_event_handlers = {
 	/*.on_init */ channel_on_init,
 	/*.on_ring */ channel_on_ring,
@@ -758,13 +781,13 @@ static const switch_state_handler_table_t channel_event_handlers = {
 
 static const switch_io_routines_t channel_io_routines = {
 	/*.outgoing_channel */ channel_outgoing_channel,
-	/*.answer_channel */ channel_answer_channel,
 	/*.read_frame */ channel_read_frame,
 	/*.write_frame */ channel_write_frame,
 	/*.kill_channel */ channel_kill_channel,
 	/*.waitfor_read */ channel_waitfor_read,
 	/*.waitfor_write */ channel_waitfor_write,
-	/*.send_dtmf */ channel_send_dtmf
+	/*.send_dtmf */ channel_send_dtmf,
+	/*.receive_message*/ channel_receive_message
 };
 
 static const switch_endpoint_interface_t channel_endpoint_interface = {

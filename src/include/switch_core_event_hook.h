@@ -35,7 +35,6 @@
 SWITCH_BEGIN_EXTERN_C typedef struct switch_io_event_hooks switch_io_event_hooks_t;
 
 typedef struct switch_io_event_hook_outgoing_channel switch_io_event_hook_outgoing_channel_t;
-typedef struct switch_io_event_hook_answer_channel switch_io_event_hook_answer_channel_t;
 typedef struct switch_io_event_hook_receive_message switch_io_event_hook_receive_message_t;
 typedef struct switch_io_event_hook_receive_event switch_io_event_hook_receive_event_t;
 typedef struct switch_io_event_hook_read_frame switch_io_event_hook_read_frame_t;
@@ -48,7 +47,6 @@ typedef struct switch_io_event_hook_state_change switch_io_event_hook_state_chan
 
 
 typedef switch_status_t (*switch_outgoing_channel_hook_t) (switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t *);
-typedef switch_status_t (*switch_answer_channel_hook_t) (switch_core_session_t *);
 typedef switch_status_t (*switch_receive_message_hook_t) (switch_core_session_t *, switch_core_session_message_t *);
 typedef switch_status_t (*switch_receive_event_hook_t) (switch_core_session_t *, switch_event_t *);
 typedef switch_status_t (*switch_read_frame_hook_t) (switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
@@ -67,23 +65,16 @@ struct switch_io_event_hook_outgoing_channel {
 	struct switch_io_event_hook_outgoing_channel *next;
 };
 
-/*! \brief Node in which to store custom answer channel callback hooks */
-struct switch_io_event_hook_answer_channel {
-	/*! the answer channel callback hook */
-	switch_answer_channel_hook_t answer_channel;
-	struct switch_io_event_hook_answer_channel *next;
-};
-
 /*! \brief Node in which to store custom receive message callback hooks */
 struct switch_io_event_hook_receive_message {
-	/*! the answer channel callback hook */
+	/*! the message callback hook */
 	switch_receive_message_hook_t receive_message;
 	struct switch_io_event_hook_receive_message *next;
 };
 
 /*! \brief Node in which to store custom receive message callback hooks */
 struct switch_io_event_hook_receive_event {
-	/*! the answer channel callback hook */
+	/*! the event callback hook */
 	switch_receive_event_hook_t receive_event;
 	struct switch_io_event_hook_receive_event *next;
 };
@@ -141,8 +132,6 @@ struct switch_io_event_hook_state_change {
 struct switch_io_event_hooks {
 	/*! a list of outgoing channel hooks */
 	switch_io_event_hook_outgoing_channel_t *outgoing_channel;
-	/*! a list of answer channel hooks */
-	switch_io_event_hook_answer_channel_t *answer_channel;
 	/*! a list of receive message hooks */
 	switch_io_event_hook_receive_message_t *receive_message;
 	/*! a list of queue message hooks */
@@ -179,14 +168,6 @@ extern switch_io_event_hooks_t switch_core_session_get_event_hooks(switch_core_s
 */
 SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_outgoing_channel(switch_core_session_t *session,
 																			switch_outgoing_channel_hook_t outgoing_channel);
-
-/*! 
-  \brief Add an event hook to be executed when a session answers a channel
-  \param session session to bind hook to
-  \param answer_channel hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_answer_channel(switch_core_session_t *session, switch_answer_channel_hook_t answer_channel);
 
 /*! 
   \brief Add an event hook to be executed when a session sends a message
@@ -250,7 +231,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_send_dtmf(switch_core
   \param state_change hook to bind
   \return SWITCH_STATUS_SUCCESS on suceess
 */
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_state_change(switch_core_session_t *session, switch_answer_channel_hook_t state_change);
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_state_change(switch_core_session_t *session, switch_state_change_hook_t state_change);
 ///\}
 
 SWITCH_END_EXTERN_C

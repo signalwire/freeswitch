@@ -718,6 +718,9 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 
 
 	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_ANSWER:
+		channel_answer_channel(session);
+		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Engage Early Media\n");
@@ -788,7 +791,6 @@ static const switch_state_handler_table_t channel_event_handlers = {
 
 static const switch_io_routines_t channel_io_routines = {
 	/*.outgoing_channel */ channel_outgoing_channel,
-	/*.answer_channel */ channel_answer_channel,
 	/*.read_frame */ channel_read_frame,
 	/*.write_frame */ channel_write_frame,
 	/*.kill_channel */ channel_kill_channel,

@@ -81,8 +81,6 @@ struct switch_io_event_hooks;
 struct switch_io_routines {
 	/*! creates an outgoing session from given session, caller profile */
 	switch_call_cause_t (*outgoing_channel) (switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t **, switch_memory_pool_t **);
-	/*! answers the given session's channel */
-	switch_status_t (*answer_channel) (switch_core_session_t *);
 	/*! read a frame from a session */
 	switch_status_t (*read_frame) (switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
 	/*! write a frame to a session */

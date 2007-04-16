@@ -447,7 +447,6 @@ static const switch_state_handler_table_t woomera_event_handlers = {
 
 static const switch_io_routines_t woomera_io_routines = {
 	/*.outgoing_channel */ woomera_outgoing_channel,
-	/*.answer_channel */ NULL,
 	/*.read_frame */ woomera_read_frame,
 	/*.write_frame */ woomera_write_frame,
 	/*.kill_channel */ woomera_kill_channel,

@@ -349,6 +349,7 @@ typedef enum {
 <pre>
 	SWITCH_MESSAGE_REDIRECT_AUDIO     - Indication to redirect audio to another location if possible
 	SWITCH_MESSAGE_TRANSMIT_TEXT      - A text message
+	SWITCH_MESSAGE_INDICATE_ANSWER    - indicate answer
 	SWITCH_MESSAGE_INDICATE_PROGRESS  - indicate progress 
 	SWITCH_MESSAGE_INDICATE_BRIDGE    - indicate a bridge starting
 	SWITCH_MESSAGE_INDICATE_UNBRIDGE  - indicate a bridge ending
@@ -363,6 +364,7 @@ typedef enum {
 typedef enum {
 	SWITCH_MESSAGE_REDIRECT_AUDIO,
 	SWITCH_MESSAGE_TRANSMIT_TEXT,
+	SWITCH_MESSAGE_INDICATE_ANSWER,
 	SWITCH_MESSAGE_INDICATE_PROGRESS,
 	SWITCH_MESSAGE_INDICATE_BRIDGE,
 	SWITCH_MESSAGE_INDICATE_UNBRIDGE,

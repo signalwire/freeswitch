@@ -930,6 +930,9 @@ static switch_status_t wanpipe_receive_message(switch_core_session_t *session, s
 		break;
 	case SWITCH_MESSAGE_INDICATE_REDIRECT:
 		break;
+	case SWITCH_MESSAGE_INDICATE_ANSWER:
+		wanpipe_answer_channel(session);
+		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		break;
 	case SWITCH_MESSAGE_INDICATE_RINGING:
@@ -969,7 +972,6 @@ static switch_status_t wanpipe_kill_channel(switch_core_session_t *session, int 
 
 static const switch_io_routines_t wanpipe_io_routines = {
 	/*.outgoing_channel */ wanpipe_outgoing_channel,
-	/*.answer_channel */ wanpipe_answer_channel,
 	/*.read_frame */ wanpipe_read_frame,
 	/*.write_frame */ wanpipe_write_frame,
 	/*.kill_channel */ wanpipe_kill_channel,
@@ -1422,16 +1424,8 @@ static int on_proceed(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 		channel = switch_core_session_get_channel(session);
 		assert(channel != NULL);
 		
-		if ((msg = malloc(sizeof(*msg)))) {
-			memset(msg, 0, sizeof(*msg));
-			msg->message_id = SWITCH_MESSAGE_INDICATE_PROGRESS;
-			msg->from = __FILE__;
-			switch_core_session_queue_message(session, msg);
-			switch_set_flag(msg, SCSMF_DYNAMIC);
-			switch_channel_mark_pre_answered(channel);
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-		}
+		switch_core_session_pass_indication(session, SWITCH_MESSAGE_INDICATE_PROGRESS);
+		switch_channel_mark_pre_answered(channel);
 		
 		switch_core_session_rwunlock(session);
 	} else {
@@ -1457,7 +1451,7 @@ static int on_ringing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 		channel = switch_core_session_get_channel(session);
 		assert(channel != NULL);
 
-		switch_core_session_queue_indication(session, SWITCH_MESSAGE_INDICATE_RINGING);
+		switch_core_session_pass_indication(session, SWITCH_MESSAGE_INDICATE_RINGING);
 		switch_channel_mark_ring_ready(channel);
 
 		switch_core_session_rwunlock(session);
