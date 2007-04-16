@@ -23,6 +23,7 @@
 
 #ifdef WIN32
 #ifdef _MSC_VER
+#pragma warning(disable:4133)
 #if (_MSC_VER >= 1400) // VC8+
 #ifndef _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE
