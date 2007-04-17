@@ -69,7 +69,8 @@ typedef enum {
 	TFLAG_SWITCH = (1 << 9),
 	TFLAG_NOSIG = (1 << 10),
 	TFLAG_BYE = (1 << 11),
-	TFLAG_CODEC = (1 << 12)
+	TFLAG_CODEC = (1 << 12),
+	TFLAG_HANGUP = (1 << 13)
 } TFLAGS;
 
 
@@ -636,10 +637,14 @@ static switch_status_t wanpipe_on_hangup(switch_core_session_t *session)
 	} else if (tech_pvt->spri) {
 		chanmap = tech_pvt->spri->private_info;
 
-		switch_mutex_lock(chanmap->mutex);
-		pri_hangup(tech_pvt->spri->pri, tech_pvt->call, switch_channel_get_cause(channel));
-		pri_destroycall(tech_pvt->spri->pri, tech_pvt->call);
-		switch_mutex_unlock(chanmap->mutex);
+		if (!switch_test_flag(tech_pvt, TFLAG_HANGUP)) {
+			switch_set_flag_locked(tech_pvt, TFLAG_HANGUP);
+			switch_mutex_lock(chanmap->mutex);
+			pri_hangup(tech_pvt->spri->pri, tech_pvt->call, switch_channel_get_cause(channel));
+			pri_destroycall(tech_pvt->spri->pri, tech_pvt->call);
+			switch_mutex_unlock(chanmap->mutex);
+		}
+
 
 		switch_mutex_lock(globals.channel_mutex);
 		*chanmap->map[tech_pvt->callno] = '\0';
@@ -1355,6 +1360,7 @@ static int on_hangup(struct sangoma_pri *spri, sangoma_pri_event_t event_type, p
 			}
 
 			tech_pvt->cause = pevent->hangup.cause;
+			switch_set_flag_locked(tech_pvt, TFLAG_HANGUP);
 			switch_channel_hangup(channel, tech_pvt->cause);
 		}
 		switch_core_session_rwunlock(session);
