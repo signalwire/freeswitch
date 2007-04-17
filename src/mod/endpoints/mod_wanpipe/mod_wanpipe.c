@@ -1352,9 +1352,11 @@ static int on_hangup(struct sangoma_pri *spri, sangoma_pri_event_t event_type, p
 		assert(channel != NULL);
 
 		if (switch_channel_get_state(channel) < CS_HANGUP) {
+
+
 			tech_pvt = switch_core_session_get_private(session);
 			assert(tech_pvt != NULL);
-
+			chanmap = tech_pvt->spri->private_info;
 			if (!tech_pvt->call) {
 				tech_pvt->call = pevent->hangup.call;
 			}
@@ -1362,6 +1364,9 @@ static int on_hangup(struct sangoma_pri *spri, sangoma_pri_event_t event_type, p
 			tech_pvt->cause = pevent->hangup.cause;
 			switch_set_flag_locked(tech_pvt, TFLAG_HANGUP);
 			switch_channel_hangup(channel, tech_pvt->cause);
+			switch_mutex_lock(chanmap->mutex);
+			pri_destroycall(tech_pvt->spri->pri, tech_pvt->call);
+			switch_mutex_unlock(chanmap->mutex);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "-- Hanging up channel s%dc%d\n", spri->span, pevent->hangup.channel);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "-- Duplicate Hang up on channel s%dc%d\n", spri->span, pevent->hangup.channel);
