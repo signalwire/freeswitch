@@ -306,7 +306,6 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt)
 	if (tech_pvt->profile->extrtpip) {
 		if (sofia_glue_ext_address_lookup(&ip, &sdp_port, tech_pvt->profile->extrtpip, switch_core_session_get_pool(tech_pvt->session)) !=
 			SWITCH_STATUS_SUCCESS) {
-			sofia_glue_terminate_session(&tech_pvt->session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __FILE__, __LINE__);
 			return SWITCH_STATUS_FALSE;
 		}
 	}
