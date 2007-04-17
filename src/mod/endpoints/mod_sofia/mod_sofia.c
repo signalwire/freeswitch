@@ -300,7 +300,9 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			}
 
 			sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
-			sofia_glue_activate_rtp(tech_pvt);
+			if (sofia_glue_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			}
 
 			if (tech_pvt->nh) {
 				if (tech_pvt->local_sdp_str) {
@@ -605,7 +607,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			switch_clear_flag_locked(tech_pvt, TFLAG_NOMEDIA);
 			tech_pvt->local_sdp_str = NULL;
 			if (!switch_rtp_ready(tech_pvt->rtp_session)) {
-				sofia_glue_sofia_glue_tech_set_codecs(tech_pvt);
+				sofia_glue_tech_prepare_codecs(tech_pvt);
 				if ((status = sofia_glue_tech_choose_port(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
 					return status;
 				}
@@ -645,8 +647,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					a_tech_pvt->remote_sdp_audio_port = b_tech_pvt->remote_sdp_audio_port;
 					a_tech_pvt->local_sdp_audio_ip = switch_core_session_strdup(a_session, b_tech_pvt->local_sdp_audio_ip);
 					a_tech_pvt->local_sdp_audio_port = b_tech_pvt->local_sdp_audio_port;
-					sofia_glue_activate_rtp(a_tech_pvt);
-
+					if (sofia_glue_activate_rtp(a_tech_pvt) != SWITCH_STATUS_SUCCESS) {
+						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					}
 					b_tech_pvt->kick = switch_core_session_strdup(b_session, tech_pvt->xferto);
 					switch_core_session_rwunlock(a_session);
 				}
@@ -708,7 +711,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						return status;
 					}
 					sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
-					sofia_glue_activate_rtp(tech_pvt);
+					if (sofia_glue_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					}
 					if (tech_pvt->local_sdp_str) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Ring SDP:\n%s\n", tech_pvt->local_sdp_str);
 					}
@@ -843,7 +848,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 	if (!(tech_pvt = (struct private_object *) switch_core_session_alloc(nsession, sizeof(*tech_pvt)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
-		sofia_glue_terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+		sofia_glue_terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __FILE__, __LINE__);
 		goto done;
 	}
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(nsession));
@@ -858,7 +863,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 		if (!(gw = strchr(profile_name, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
-			sofia_glue_terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+			sofia_glue_terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __FILE__, __LINE__);
 			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
 			goto done;
 		}
@@ -867,7 +872,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 		if (!(dest = strchr(gw, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
-			sofia_glue_terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+			sofia_glue_terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __FILE__, __LINE__);
 			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
 			goto done;
 		}
@@ -876,7 +881,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 		if (!(gateway_ptr = sofia_reg_find_gateway(gw))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Gateway\n");
-			sofia_glue_terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+			sofia_glue_terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __FILE__, __LINE__);
 			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
 			goto done;
 		}
@@ -892,7 +897,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	} else {
 		if (!(dest = strchr(profile_name, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
-			sofia_glue_terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+			sofia_glue_terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __FILE__, __LINE__);
 			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
 			goto done;
 		}
@@ -900,7 +905,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 		if (!(profile = sofia_glue_find_profile(profile_name))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile\n");
-			sofia_glue_terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+			sofia_glue_terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __FILE__, __LINE__);
 			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 			goto done;
 		}
@@ -922,7 +927,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", dest, host);
 				cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
-				sofia_glue_terminate_session(&nsession, cause, __LINE__);
+				sofia_glue_terminate_session(&nsession, cause, __FILE__, __LINE__);
 				goto done;
 			}
 		} else if (!strchr(dest, '@')) {
@@ -934,7 +939,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", dest, profile_name);
 				cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
-				sofia_glue_terminate_session(&nsession, cause, __LINE__);
+				sofia_glue_terminate_session(&nsession, cause, __FILE__, __LINE__);
 				goto done;
 			}
 		} else {

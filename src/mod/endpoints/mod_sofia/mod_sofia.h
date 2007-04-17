@@ -309,6 +309,7 @@ struct private_object {
 	nua_handle_t *nh;
 	nua_handle_t *nh2;
 	sip_contact_t *contact;
+	int hangup_status;
 };
 
 struct callback_t {
@@ -338,24 +339,19 @@ void sofia_glue_deactivate_rtp(private_object_t *tech_pvt);
 
 void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, char *sr, int force);
 
-void sofia_glue_sofia_glue_tech_set_codecs(private_object_t *tech_pvt);
+void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt);
 
 void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *profile, private_object_t *tech_pvt, const char *channame);
 
-void sofia_glue_terminate_session(switch_core_session_t **session, switch_call_cause_t cause, int line);
+void sofia_glue_terminate_session(switch_core_session_t **session, switch_call_cause_t cause, const char *file, int line);
 
 switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt);
 
 switch_status_t sofia_glue_do_invite(switch_core_session_t *session);
 
-uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp);
+uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp);
 
 void sofia_presence_establish_presence(sofia_profile_t *profile);
-
-void sofia_handle_sip_i_state(int status,
-				 char const *phrase,
-				 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
-
 
 void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[]);
 

@@ -36,6 +36,9 @@
 #include "mod_sofia.h"
 extern su_log_t tport_log[];
 
+static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
+									 char const *phrase,
+									 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 
 void sofia_event_callback(nua_event_t event,
 						   int status,
@@ -144,7 +147,7 @@ void sofia_event_callback(nua_event_t event,
 	case nua_i_prack:
 		break;
 	case nua_i_state:
-		sofia_handle_sip_i_state(status, phrase, nua, profile, nh, sofia_private, sip, tags);
+		sofia_handle_sip_i_state(session, status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
 	case nua_i_message:
 		sofia_presence_handle_sip_i_message(status, phrase, nua, profile, nh, sofia_private, sip, tags);
@@ -177,7 +180,18 @@ void sofia_event_callback(nua_event_t event,
   done:
 
 	if (session) {
-		switch_core_session_rwunlock(session);
+		if (tech_pvt->hangup_status) {
+			if (!switch_core_session_running(session)) {
+				switch_core_session_rwunlock(session);
+				switch_core_session_destroy(&session);
+			} else {
+				switch_channel_hangup(channel, sofia_glue_sip_cause_to_freeswitch(tech_pvt->hangup_status));
+				switch_core_session_rwunlock(session);
+			}
+			tech_pvt->hangup_status = 0;
+		} else {
+			switch_core_session_rwunlock(session);
+		}
 	}
 }
 
@@ -801,31 +815,20 @@ switch_status_t config_sofia(int reload)
 
 }
 
-void sofia_handle_sip_i_state(int status,
-						char const *phrase,
-						nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
+static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
+									 char const *phrase,
+									 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
 {
 	const char *l_sdp = NULL, *r_sdp = NULL;
 	int offer_recv = 0, answer_recv = 0, offer_sent = 0, answer_sent = 0;
 	int ss_state = nua_callstate_init;
 	switch_channel_t *channel = NULL;
 	private_object_t *tech_pvt = NULL;
-	switch_core_session_t *session = NULL;
 	const char *replaces_str = NULL;
 	char *uuid;
 	switch_core_session_t *other_session = NULL;
 	switch_channel_t *other_channel = NULL;
 	char st[80] = "";
-
-
-	if (sofia_private) {
-		if (!switch_strlen_zero(sofia_private->uuid)) {
-			if (!(session = switch_core_session_locate(sofia_private->uuid))) {
-				/* too late */
-				return;
-			}
-		}
-	}
 
 
 	tl_gets(tags,
@@ -916,6 +919,7 @@ void sofia_handle_sip_i_state(int status,
 						if (sofia_glue_tech_media(tech_pvt, (char *) r_sdp) != SWITCH_STATUS_SUCCESS) {
 							switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
 							nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+							switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 						}
 					}
 					goto done;
@@ -942,20 +946,19 @@ void sofia_handle_sip_i_state(int status,
 					switch_core_session_thread_launch(session);
 					goto done;
 				} else {
-					sdp_parser_t *parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0);
+					sdp_parser_t *parser;
 					sdp_session_t *sdp;
 					uint8_t match = 0;
 
 					if (tech_pvt->num_codecs) {
-						if ((sdp = sdp_session(parser))) {
-							match = negotiate_sdp(session, sdp);
+						if ((parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
+							if ((sdp = sdp_session(parser))) {
+								match = sofia_glue_negotiate_sdp(session, sdp);
+							}
+							sdp_parser_free(parser);
 						}
 					}
-
-					if (parser) {
-						sdp_parser_free(parser);
-					}
-
+					
 					if (match) {
 						nua_handle_t *bnh;
 						sip_replaces_t *replaces;
@@ -1023,13 +1026,16 @@ void sofia_handle_sip_i_state(int status,
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 					goto done;
 				} else {
-					sdp_parser_t *parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0);
+					sdp_parser_t *parser; 
 					sdp_session_t *sdp;
 					uint8_t match = 0;
 
 					if (tech_pvt->num_codecs) {
-						if ((sdp = sdp_session(parser))) {
-							match = negotiate_sdp(session, sdp);
+						if ((parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
+							if ((sdp = sdp_session(parser))) {
+								match = sofia_glue_negotiate_sdp(session, sdp);
+							}
+							sdp_parser_free(parser);
 						}
 					}
 					if (match) {
@@ -1038,11 +1044,14 @@ void sofia_handle_sip_i_state(int status,
 						}
 						sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 						switch_set_flag_locked(tech_pvt, TFLAG_REINVITE);
-						sofia_glue_activate_rtp(tech_pvt);
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Processing Reinvite\n");
-						if (parser) {
-							sdp_parser_free(parser);
+						if (sofia_glue_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Reinvite RTP Error!\n");
+							switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 						}
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Processing Reinvite\n");
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Reinvite Codec Error!\n");
+						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					}
 				}
 			}
@@ -1055,7 +1064,10 @@ void sofia_handle_sip_i_state(int status,
 			tech_pvt->nh = tech_pvt->nh2;
 			tech_pvt->nh2 = NULL;
 			if (sofia_glue_tech_choose_port(tech_pvt) == SWITCH_STATUS_SUCCESS) {
-				sofia_glue_activate_rtp(tech_pvt);
+				if (sofia_glue_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cheater Reinvite RTP Error!\n");
+					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				}
 			}
 			goto done;
 		}
@@ -1091,26 +1103,28 @@ void sofia_handle_sip_i_state(int status,
 					}
 					goto done;
 				} else {
-					sdp_parser_t *parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0);
+					sdp_parser_t *parser;
 					sdp_session_t *sdp;
 					uint8_t match = 0;
 
 					if (tech_pvt->num_codecs) {
-						if ((sdp = sdp_session(parser))) {
-							match = negotiate_sdp(session, sdp);
+						if ((parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
+							if ((sdp = sdp_session(parser))) {
+								match = sofia_glue_negotiate_sdp(session, sdp);
+							}
+							sdp_parser_free(parser);
 						}
 					}
-
-					if (parser) {
-						sdp_parser_free(parser);
-					}
-
 
 					if (match) {
 						switch_set_flag_locked(tech_pvt, TFLAG_ANS);
 						if (sofia_glue_tech_choose_port(tech_pvt) == SWITCH_STATUS_SUCCESS) {
-							sofia_glue_activate_rtp(tech_pvt);
-							switch_channel_mark_answered(channel);
+							if (sofia_glue_activate_rtp(tech_pvt) == SWITCH_STATUS_SUCCESS) {
+								switch_channel_mark_answered(channel);
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP Error!\n");
+								switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+							}
 							goto done;
 						}
 					}
@@ -1128,25 +1142,26 @@ void sofia_handle_sip_i_state(int status,
 	case nua_callstate_terminated:
 		if (session) {
 			if (!switch_test_flag(tech_pvt, TFLAG_BYE)) {
-				
 				switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 				if (switch_test_flag(tech_pvt, TFLAG_NOHUP)) {
 					switch_clear_flag_locked(tech_pvt, TFLAG_NOHUP);
 				} else {
 					snprintf(st, sizeof(st), "%d", status);
 					switch_channel_set_variable(channel, "sip_term_status", st);
-					sofia_glue_terminate_session(&session, sofia_glue_sip_cause_to_freeswitch(status), __LINE__);
+					tech_pvt->hangup_status = status;
 				}
 			}
 			
 			if (tech_pvt->sofia_private) {
-				if (sofia_private->home) {
-					su_home_unref(sofia_private->home);
+				if (tech_pvt->sofia_private->home) {
+					su_home_unref(tech_pvt->sofia_private->home);
 				}
 				free(tech_pvt->sofia_private);
 				tech_pvt->sofia_private = NULL;
 			}
+
 			tech_pvt->nh = NULL;
+			
 		} else if (sofia_private) {
 			if (sofia_private->home) {
 				su_home_unref(sofia_private->home);
@@ -1163,9 +1178,7 @@ void sofia_handle_sip_i_state(int status,
 
   done:
 
-	if (session) {
-		switch_core_session_rwunlock(session);
-	}
+	return;
 }
 
 
@@ -1277,10 +1290,11 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 									tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(session, br_b_tech_pvt->remote_sdp_audio_ip);
 									tech_pvt->remote_sdp_audio_port = br_b_tech_pvt->remote_sdp_audio_port;
-									sofia_glue_activate_rtp(tech_pvt);
-
-									br_b_tech_pvt->kick = switch_core_session_strdup(br_b_session, switch_core_session_get_uuid(session));
-
+									if (sofia_glue_activate_rtp(tech_pvt) == SWITCH_STATUS_SUCCESS) {
+										br_b_tech_pvt->kick = switch_core_session_strdup(br_b_session, switch_core_session_get_uuid(session));
+									} else {
+										switch_channel_hangup(channel_a, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+									}
 
 									switch_core_session_rwunlock(br_b_session);
 								}
@@ -1586,7 +1600,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 		nua_respond(nh, SIP_503_SERVICE_UNAVAILABLE, TAG_END());
-		sofia_glue_terminate_session(&session, SWITCH_CAUSE_SWITCH_CONGESTION, __LINE__);
+		sofia_glue_terminate_session(&session, SWITCH_CAUSE_SWITCH_CONGESTION, __FILE__, __LINE__);
 		return;
 	}
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
@@ -1650,7 +1664,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	}
 
 	sofia_glue_attach_private(session, profile, tech_pvt, channel_name);
-	sofia_glue_sofia_glue_tech_set_codecs(tech_pvt);
+	sofia_glue_tech_prepare_codecs(tech_pvt);
 
 	switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "INBOUND CALL");
 	
