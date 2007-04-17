@@ -1362,11 +1362,16 @@ static int on_hangup(struct sangoma_pri *spri, sangoma_pri_event_t event_type, p
 			tech_pvt->cause = pevent->hangup.cause;
 			switch_set_flag_locked(tech_pvt, TFLAG_HANGUP);
 			switch_channel_hangup(channel, tech_pvt->cause);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "-- Hanging up channel s%dc%d\n", spri->span, pevent->hangup.channel);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "-- Duplicate Hang up on channel s%dc%d\n", spri->span, pevent->hangup.channel);
 		}
 		switch_core_session_rwunlock(session);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "-- Hanging up nonexistant channel s%dc%d\n", spri->span, pevent->hangup.channel);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "-- Hanging up channel s%dc%d\n", spri->span, pevent->hangup.channel);
+
 	return 0;
 }
 
