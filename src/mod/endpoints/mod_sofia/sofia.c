@@ -180,18 +180,8 @@ void sofia_event_callback(nua_event_t event,
   done:
 
 	if (session) {
-		if (tech_pvt->hangup_status) {
-			if (!switch_core_session_running(session)) {
-				switch_core_session_rwunlock(session);
-				switch_core_session_destroy(&session);
-			} else {
-				switch_channel_hangup(channel, sofia_glue_sip_cause_to_freeswitch(tech_pvt->hangup_status));
-				switch_core_session_rwunlock(session);
-			}
-			tech_pvt->hangup_status = 0;
-		} else {
-			switch_core_session_rwunlock(session);
-		}
+		switch_core_session_rwunlock(session);
+
 	}
 }
 
@@ -919,7 +909,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						if (sofia_glue_tech_media(tech_pvt, (char *) r_sdp) != SWITCH_STATUS_SUCCESS) {
 							switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
 							nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
-							switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+							switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 						}
 					}
 					goto done;
@@ -941,9 +931,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			if (r_sdp) {
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_NOMEDIA");
-					switch_channel_set_state(channel, CS_INIT);
 					switch_set_flag_locked(tech_pvt, TFLAG_READY);
-					switch_core_session_thread_launch(session);
+					switch_channel_set_state(channel, CS_INIT);
+					//switch_core_session_thread_launch(session);
 					goto done;
 				} else {
 					sdp_parser_t *parser;
@@ -963,10 +953,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						nua_handle_t *bnh;
 						sip_replaces_t *replaces;
 						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED");
-						switch_channel_set_state(channel, CS_INIT);
 						switch_set_flag_locked(tech_pvt, TFLAG_READY);
-
-						switch_core_session_thread_launch(session);
+						switch_channel_set_state(channel, CS_INIT);
+						//switch_core_session_thread_launch(session);
 
 						if (replaces_str && (replaces = sip_replaces_make(tech_pvt->sofia_private->home, replaces_str))
 							&& (bnh = nua_handle_by_replaces(nua, replaces))) {
@@ -1000,6 +989,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "NO CODECS");
 					nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+					switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 				}
 			} else {
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
@@ -1131,6 +1121,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "NO CODECS");
 					nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+					switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 				}
 			}
 
@@ -1148,7 +1139,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				} else {
 					snprintf(st, sizeof(st), "%d", status);
 					switch_channel_set_variable(channel, "sip_term_status", st);
-					tech_pvt->hangup_status = status;
+					switch_channel_hangup(channel, sofia_glue_sip_cause_to_freeswitch(status));
 				}
 			}
 			
@@ -1600,7 +1591,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 		nua_respond(nh, SIP_503_SERVICE_UNAVAILABLE, TAG_END());
-		sofia_glue_terminate_session(&session, SWITCH_CAUSE_SWITCH_CONGESTION, __FILE__, __LINE__);
+		switch_core_session_destroy(&session);
 		return;
 	}
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
@@ -1757,6 +1748,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));
 	nua_handle_bind(nh, tech_pvt->sofia_private);
 	tech_pvt->nh = nh;
+	switch_core_session_thread_launch(session);
 }
 
 void sofia_handle_sip_i_options(int status,

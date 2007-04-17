@@ -343,8 +343,6 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt);
 
 void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *profile, private_object_t *tech_pvt, const char *channame);
 
-void sofia_glue_terminate_session(switch_core_session_t **session, switch_call_cause_t cause, const char *file, int line);
-
 switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt);
 
 switch_status_t sofia_glue_do_invite(switch_core_session_t *session);

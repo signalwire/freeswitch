@@ -136,7 +136,7 @@ static switch_status_t sofia_on_execute(switch_core_session_t *session)
 
 // map QSIG cause codes to SIP from RFC4497 section 8.4.1
 static int hangup_cause_to_sip(switch_call_cause_t cause)
-{
+{		
 	switch (cause) {
 	case SWITCH_CAUSE_NO_ROUTE_TRANSIT_NET:
 	case SWITCH_CAUSE_NO_ROUTE_DESTINATION:
@@ -175,12 +175,11 @@ static int hangup_cause_to_sip(switch_call_cause_t cause)
 	case SWITCH_CAUSE_BEARERCAPABILITY_NOTAVAIL:
 		return 503;
 	case SWITCH_CAUSE_BEARERCAPABILITY_NOTIMPL:
+	case SWITCH_CAUSE_INCOMPATIBLE_DESTINATION:
 		return 488;
 	case SWITCH_CAUSE_FACILITY_NOT_IMPLEMENTED:
 	case SWITCH_CAUSE_SERVICE_NOT_IMPLEMENTED:
 		return 501;
-	case SWITCH_CAUSE_INCOMPATIBLE_DESTINATION:
-		return 503;
 	case SWITCH_CAUSE_RECOVERY_ON_TIMER_EXPIRE:
 		return 504;
 	case SWITCH_CAUSE_ORIGINATOR_CANCEL:
@@ -852,7 +851,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 	if (!(tech_pvt = (struct private_object *) switch_core_session_alloc(nsession, sizeof(*tech_pvt)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
-		sofia_glue_terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __FILE__, __LINE__);
+		switch_core_session_destroy(&nsession);
 		goto done;
 	}
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(nsession));
@@ -867,7 +866,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 		if (!(gw = strchr(profile_name, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
-			sofia_glue_terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __FILE__, __LINE__);
+			switch_core_session_destroy(&nsession);
 			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
 			goto done;
 		}
@@ -876,7 +875,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 		if (!(dest = strchr(gw, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
-			sofia_glue_terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __FILE__, __LINE__);
+			switch_core_session_destroy(&nsession);
 			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
 			goto done;
 		}
@@ -885,7 +884,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 		if (!(gateway_ptr = sofia_reg_find_gateway(gw))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Gateway\n");
-			sofia_glue_terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __FILE__, __LINE__);
+			switch_core_session_destroy(&nsession);
 			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
 			goto done;
 		}
@@ -901,7 +900,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	} else {
 		if (!(dest = strchr(profile_name, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
-			sofia_glue_terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __FILE__, __LINE__);
+			switch_core_session_destroy(&nsession);
 			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
 			goto done;
 		}
@@ -909,7 +908,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 		if (!(profile = sofia_glue_find_profile(profile_name))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile\n");
-			sofia_glue_terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __FILE__, __LINE__);
+			switch_core_session_destroy(&nsession);
 			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 			goto done;
 		}
@@ -931,7 +930,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", dest, host);
 				cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
-				sofia_glue_terminate_session(&nsession, cause, __FILE__, __LINE__);
+				switch_core_session_destroy(&nsession);
 				goto done;
 			}
 		} else if (!strchr(dest, '@')) {
@@ -943,7 +942,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", dest, profile_name);
 				cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
-				sofia_glue_terminate_session(&nsession, cause, __FILE__, __LINE__);
+				switch_core_session_destroy(&nsession);
 				goto done;
 			}
 		} else {

@@ -236,30 +236,6 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 
 }
 
-void sofia_glue_terminate_session(switch_core_session_t **session, switch_call_cause_t cause, const char *file, int line)
-{
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Term called from %s line: %d\n", file, line);
-	if (*session) {
-		switch_channel_t *channel = switch_core_session_get_channel(*session);
-		struct private_object *tech_pvt = NULL;
-		unsigned running = switch_core_session_running(*session);
-		tech_pvt = switch_core_session_get_private(*session);
-
-		if (running) {
-			switch_channel_hangup(channel, cause);
-		} else {
-			if (tech_pvt) {
-				sofia_on_hangup(*session);
-			}
-			if (session && *session) {
-				switch_core_session_destroy(session);
-			}
-		}
-	}
-}
-
-
-
 switch_status_t sofia_glue_ext_address_lookup(char **ip, switch_port_t *port, char *sourceip, switch_memory_pool_t *pool)
 {
 	char *error;
@@ -759,7 +735,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt)
 
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP REPORTS ERROR: [%s]\n", err);
-		sofia_glue_terminate_session(&tech_pvt->session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __FILE__, __LINE__);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1037,7 +1013,7 @@ switch_call_cause_t sofia_glue_sip_cause_to_freeswitch(int status)
 		return SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
 	case 488:
 	case 606:
-		return SWITCH_CAUSE_BEARERCAPABILITY_NOTIMPL;
+		return SWITCH_CAUSE_INCOMPATIBLE_DESTINATION;
 	case 502:
 		return SWITCH_CAUSE_NETWORK_OUT_OF_ORDER;
 	case 405:
