@@ -316,7 +316,7 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, 
 
 	if (!switch_strlen_zero(alt_path)) {
 		switch_xml_t conf = NULL, tag = NULL;
-		if (!(alt_root = switch_xml_parse_file(alt_path))) {
+		if (!(alt_root = switch_xml_parse_file_simple(alt_path))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of [%s] failed\n", alt_path);
 			goto done;
 		}

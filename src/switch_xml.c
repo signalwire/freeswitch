@@ -1032,7 +1032,26 @@ static int preprocess(const char *file, int write_fd, int rlevel)
 	return write_fd;
 }
 
-// a wrapper for switch_xml_parse_fd that accepts a file name
+SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file_simple(const char *file)
+{
+	int fd = -1;
+	struct stat st;
+	switch_size_t l;
+	void *m;
+	switch_xml_root_t root;
+
+	if ((fd = open(file, O_RDONLY, 0)) > -1) {
+		fstat(fd, &st);
+		l = read(fd, m = malloc(st.st_size), st.st_size);
+		root = (switch_xml_root_t) switch_xml_parse_str(m, l);
+		root->dynamic = 1;
+		close(fd);
+		return &root->xml;
+	}
+	
+	return NULL;
+}
+
 SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 {
 	int fd = -1, write_fd = -1;
@@ -1045,7 +1064,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 	} else {
 		abs = file;
 	}
-
+	
 	if (!(new_file = switch_mprintf("%s%s%s.fsxml", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, abs))) {
 		return NULL;
 	}

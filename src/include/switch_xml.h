@@ -117,6 +117,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd);
 ///\return a formated xml node or NULL
 SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file);
 
+SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file_simple(const char *file);
+
 ///\brief Wrapper for switch_xml_parse_str() that accepts a file stream. Reads the entire
 ///\ stream into memory and then parses it. For xml files, use switch_xml_parse_file()
 ///\ or switch_xml_parse_fd()
