@@ -55,7 +55,9 @@ int until_final_response(CONDITION_PARAMS)
 int save_until_final_response(CONDITION_PARAMS)
 {
   save_event_in_list(ctx, event, ep, call);
-  return event >= nua_r_set_params && status >= 200;
+  return
+    nua_r_set_params <= event && event < nua_i_network_changed
+    && status >= 200;
 }
 
 /** Save events.

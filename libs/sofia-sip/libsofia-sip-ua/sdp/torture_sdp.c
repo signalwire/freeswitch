@@ -460,7 +460,7 @@ static int test_sanity(void)
 
   su_home_check(home); TEST_1(home);
 
-  TEST_1((parser = sdp_parse(home, s3_msg, sizeof(s1_msg), 0)));
+  TEST_1((parser = sdp_parse(home, s3_msg, sizeof(s3_msg) - 1, 0)));
   
   TEST_1(sdp_sanity_check(parser) == 0);
 
@@ -468,6 +468,52 @@ static int test_sanity(void)
 
   END();
 }
+
+static char const pint_msg[] = 
+  "v=0\r\n"
+  "o=- 2353687640 2353687640 IN IP4 128.3.4.5\r\n"
+  "s=marketing\r\n"
+  "e=john.jones.3@chinet.net\r\n"
+  "c= TN RFC2543  +1-201-406-4090\r\n"
+  "t=2353687640 0\r\n"
+  "m=audio 1 voice -\r\n"
+  ;
+
+static char const pint_torture_msg[] = 
+  "v=0\r\n"
+  "o=- 2353687640 2353687640 IN IP4 128.3.4.5\r\n"
+  "s=marketing\r\n"
+
+  "c= TN RFC2543 123\r\n"
+  "a=phone-context:+97252\r\n"
+  "t=2353687640 0\r\n"
+  "m= text 1  fax plain\r\n"
+  "a=fmtp:plain  spr:fi6MeoclEjaF3EDfYHlkqx1zn8A1lMoiJFUHpQ5Xo\r\n"
+  ;
+
+static int test_pint(void)
+{
+  su_home_t *home = su_home_create();
+  sdp_parser_t *parser;
+  sdp_session_t *sdp;
+
+  BEGIN();
+
+  su_home_check(home); TEST_1(home);
+
+  TEST_1((parser = sdp_parse(home, pint_msg, sizeof(pint_msg) - 1, sdp_f_anynet)));
+  TEST_1((sdp = sdp_session(parser)));
+
+  TEST_1((parser = sdp_parse(home, pint_torture_msg, sizeof(pint_torture_msg) - 1,
+			     sdp_f_anynet)));
+  TEST_1((sdp = sdp_session(parser)));
+  
+  su_home_check(home);
+  su_home_unref(home);
+
+  END();
+}
+
 
 static sdp_list_t const l0[1] = {{ sizeof(l0), NULL, "foo" }};
 static sdp_list_t const l1[1] = {{ sizeof(l1), (sdp_list_t *)l0, "bar" }};
@@ -873,6 +919,7 @@ int main(int argc, char *argv[])
   retval |= test_error(); fflush(stdout);
   retval |= test_session(); fflush(stdout);
   retval |= test_session2(); fflush(stdout);
+  retval |= test_pint(); fflush(stdout);
   retval |= test_sanity(); fflush(stdout);
   retval |= test_list(); fflush(stdout);
   retval |= test_rtpmap(); fflush(stdout);

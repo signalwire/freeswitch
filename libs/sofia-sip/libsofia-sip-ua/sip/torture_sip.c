@@ -2535,6 +2535,7 @@ int test_request_disposition(void)
 }
 
 #include <float.h>
+#include <math.h>
 
 int test_caller_prefs(void)
 {
@@ -2650,7 +2651,7 @@ int test_caller_prefs(void)
     
   TEST_1(sip_prefs_parse(sp, &s, &negate));
   TEST(sp->sp_type, sp_range);
-  TEST_D(sp->sp_range.spr_lower, DBL_MIN);
+  TEST_D(sp->sp_range.spr_lower, -DBL_MAX);
   TEST_D(sp->sp_range.spr_upper, 3.0);
   TEST_1(sip_prefs_match(sp, sp));
   TEST_1(!negate);
@@ -2668,7 +2669,7 @@ int test_caller_prefs(void)
 
   TEST_1(sip_prefs_parse(sp, &s, &negate));
   TEST(sp->sp_type, sp_range);
-  TEST_D(sp->sp_range.spr_lower, DBL_MIN);
+  TEST_D(sp->sp_range.spr_lower, -DBL_MAX);
   TEST_D(sp->sp_range.spr_upper, 6.0);
   TEST_1(sip_prefs_match(sp, sp));
   TEST_1(negate);
@@ -2686,6 +2687,46 @@ int test_caller_prefs(void)
 
   TEST_1(!sip_prefs_parse(sp, &s, &negate));
   TEST(sp->sp_type, sp_init);
+
+  /* Numeric */
+  s = "\" !#="
+    "1111111111111111111111111111111111111111"
+    "1111111111111111111111111111111111111111"
+    "1111111111111111111111111111111111111111"
+    "1111111111111111111111111111111111111111"
+
+    "1111111111111111111111111111111111111111"
+    "1111111111111111111111111111111111111111"
+    "1111111111111111111111111111111111111111"
+    "1111111111111111111111111111111111111111."
+
+    "1111111111111111111111111111111111111111"
+    "1111111111111111111111111111111111111111"
+    "1111111111111111111111111111111111111111"
+    "1111111111111111111111111111111111111111"
+
+    "1111111111111111111111111111111111111111"
+    "1111111111111111111111111111111111111111"
+    "1111111111111111111111111111111111111111"
+    "1111111111111111111111111111111111111111,"
+    " #<=-16"
+    "\"";
+
+  negate = 0; memset(sp, 0, sizeof sp);
+
+  TEST_1(sip_prefs_parse(sp, &s, &negate));
+  TEST(sp->sp_type, sp_range);
+  TEST_D(sp->sp_range.spr_lower, DBL_MAX);
+  TEST_D(sp->sp_range.spr_upper, DBL_MAX);
+  TEST_1(sip_prefs_match(sp, sp));
+  TEST_1(negate);
+
+  TEST_1(sip_prefs_parse(sp, &s, &negate));
+  TEST(sp->sp_type, sp_range);
+  TEST_D(sp->sp_range.spr_lower, -DBL_MAX);
+  TEST_D(sp->sp_range.spr_upper, -16.0);
+  TEST_1(sip_prefs_match(sp, sp));
+  TEST_1(!negate);
 
   error = 12;
 

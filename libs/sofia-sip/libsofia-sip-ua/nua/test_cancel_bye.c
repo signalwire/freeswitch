@@ -1135,7 +1135,7 @@ int test_bye_after_receiving_401(struct context *ctx)
   INVITE(b, b_call, b_call->nh, 
 	 SIPTAG_SUBJECT_STR("NUA-6.3 re-INVITE"),
 	 TAG_END());
-  run_ab_until(ctx, -1, reject_reinvite_401, -1, until_final_response);
+  run_ab_until(ctx, -1, reject_reinvite_401, -1, save_until_final_response);
 
   TEST_1(nua_handle_has_active_call(a_call->nh));
   TEST_1(nua_handle_has_active_call(b_call->nh));
@@ -1210,7 +1210,7 @@ int test_bye_after_sending_401(struct context *ctx)
   INVITE(b, b_call, b_call->nh, 
 	 SIPTAG_SUBJECT_STR("NUA-6.4.1 re-INVITE"),
 	 TAG_END());
-  run_ab_until(ctx, -1, reject_reinvite_401, -1, until_final_response);
+  run_ab_until(ctx, -1, reject_reinvite_401, -1, save_until_final_response);
 
   TEST_1(nua_handle_has_active_call(a_call->nh));
   TEST_1(nua_handle_has_active_call(b_call->nh));
@@ -1286,7 +1286,7 @@ int test_bye_after_receiving_401_to_update(struct context *ctx)
 	 SIPTAG_SUBJECT_STR("NUA-6.4.2 UPDATE"),
 	 TAG_END());
   BYE(b, b_call, b_call->nh, TAG_END()); /* Queued until nua_authenticate */
-  run_ab_until(ctx, -1, reject_reinvite_401, -1, until_final_response);
+  run_ab_until(ctx, -1, reject_reinvite_401, -1, save_until_final_response);
 
   TEST_1(nua_handle_has_active_call(a_call->nh));
   TEST_1(nua_handle_has_active_call(b_call->nh));

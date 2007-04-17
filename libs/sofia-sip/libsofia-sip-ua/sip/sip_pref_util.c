@@ -44,6 +44,8 @@
 #include <sofia-sip/sip_util.h>
 #include <sofia-sip/sip_status.h>
 
+static double parse_number(char const *str, char **return_end);
+
 /** Parse a single preference */
 int sip_prefs_parse(union sip_pref *sp, 
 		    char const **in_out_s, 
@@ -107,16 +109,16 @@ int sip_prefs_parse(union sip_pref *sp,
     s0 = s[0];
 
     if (s0 == '=')
-      sp->sp_type = sp_range, n1 = n2 = strtod(s = s + 1, &e);
+      sp->sp_type = sp_range, n1 = n2 = parse_number(s = s + 1, &e);
     else if (s0 == '<' && s[1] == '=')
-      sp->sp_type = sp_range, n1 = DBL_MIN, n2 = strtod(s = s + 2, &e);
+      sp->sp_type = sp_range, n1 = -DBL_MAX, n2 = parse_number(s = s + 2, &e);
     else if (s0 == '>' && s[1] == '=')
-      sp->sp_type = sp_range, n1 = strtod(s = s + 2, &e), n2 = DBL_MAX;
-    else if (((n1 = strtod(s, &e)) != 0.0 || s != e) && e[0] == ':')
-      sp->sp_type = sp_range, n2 = strtod(s = e + 1, &e);
+      sp->sp_type = sp_range, n1 = parse_number(s = s + 2, &e), n2 = DBL_MAX;
+    else if (((n1 = parse_number(s, &e)) != 0.0 || s != e) && e[0] == ':')
+      sp->sp_type = sp_range, n2 = parse_number(s = e + 1, &e);
     else
       /* Error in conversion */
-      sp->sp_type = sp_error, n1 = DBL_MAX, n2 = DBL_MIN;
+      sp->sp_type = sp_error, n1 = DBL_MAX, n2 = -DBL_MAX;
 
     if (s == e && (n1 == 0.0 || n2 == 0.0))
       sp->sp_type = sp_error;      /* Error in conversion */
@@ -154,6 +156,46 @@ int sip_prefs_parse(union sip_pref *sp,
 
   return sp->sp_type != sp_error;
 }
+
+/** Parse number:
+ * number          =  [ "+" / "-" ] 1*DIGIT ["." 0*DIGIT]
+ */
+static double parse_number(char const *str, char **return_end)
+{
+  double value = 0.0;
+  double decimal = 0.1;
+  char d, sign = '+';
+
+  if (return_end)
+    *return_end = (char *)str;
+
+  d = *str;
+
+  if (d == '+' || d == '-')
+    sign = d, d = *++str;
+
+  if (!('0' <= d && d <= '9'))
+    return value;
+
+  for (; '0' <= d && d <= '9'; d = *++str)
+    value = value * 10 + (d - '0');
+
+  if (d == '.') for (d = *++str; '0' <= d && d <= '9'; d = *++str) {
+    value += (d - '0') * decimal; decimal *= 0.1;
+  }
+
+  if (value > DBL_MAX)
+    value = DBL_MAX;
+
+  if (sign == '-')
+    value = -value;
+
+  if (return_end)
+    *return_end = (char *)str;
+
+  return value;
+}
+
 
 /** Return true if preferences match */
 int sip_prefs_match(union sip_pref const *a, 

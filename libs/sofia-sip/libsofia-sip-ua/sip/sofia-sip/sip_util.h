@@ -149,8 +149,8 @@ union sip_pref
    */
   struct sp_range {
     enum sp_type spr_type;
-    double spr_lower;
-    double spr_upper;
+    double spr_lower;		/**< Lower limit. Lowest value is -DBL_MAX. */
+    double spr_upper;		/**< Upper limit. Highest value is DBL_MAX. */
   } sp_range;
 };
 

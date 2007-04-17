@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/sh
 #
 # Run sresolv_test using our own name server
 #
