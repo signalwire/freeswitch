@@ -655,8 +655,10 @@ static int on_presence(void *user_data, ikspak *pak)
 	if (!apr_hash_get(handle->sub_hash, from, APR_HASH_KEY_STRING)) {
 		iks *msg;
 		apr_hash_set(handle->sub_hash, 	apr_pstrdup(handle->pool, from), APR_HASH_KEY_STRING, &marker);
-		msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, id, "Ding A Ling...."); 
-		apr_queue_push(handle->queue, msg);
+		if ((msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, id, "Ding A Ling...."))) {
+			apr_queue_push(handle->queue, msg);
+			msg = NULL;
+		}
 	}
 
 	if (resource && strstr(resource, "talk") && (buffer = apr_hash_get(handle->probe_hash, id, APR_HASH_KEY_STRING))) {
@@ -812,6 +814,7 @@ static void do_presence(ldl_handle_t *handle, char *from, char *to, char *type, 
 		}
 
 		apr_queue_push(handle->queue, pres);
+		pres = NULL;
 	}
 }
 
@@ -851,20 +854,24 @@ static int on_subscribe(void *user_data, ikspak *pak)
 		*r++ = '\0';
 	}
 
-	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, id, "Ding A Ling....");
-	
-	if (to && ldl_test_flag(handle, LDL_FLAG_COMPONENT)) {
-		iks_insert_attrib(msg, "from", to);
+	if ((msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, id, "Ding A Ling...."))) {
+		if (to && ldl_test_flag(handle, LDL_FLAG_COMPONENT)) {
+			iks_insert_attrib(msg, "from", to);
+		}
+
+		apr_queue_push(handle->queue, msg);
+		msg = NULL;
 	}
 
-	apr_queue_push(handle->queue, msg);
-	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBE, id, "Ding A Ling...."); 
+	if ((msg = iks_make_s10n (IKS_TYPE_SUBSCRIBE, id, "Ding A Ling...."))) {
 
-	if (to && ldl_test_flag(handle, LDL_FLAG_COMPONENT)) {
-		iks_insert_attrib(msg, "from", to);
+		if (to && ldl_test_flag(handle, LDL_FLAG_COMPONENT)) {
+			iks_insert_attrib(msg, "from", to);
+		}
+
+		apr_queue_push(handle->queue, msg);
+		msg = NULL;
 	}
-
-	apr_queue_push(handle->queue, msg);
 
 	if (handle->session_callback) {
 		handle->session_callback(handle, NULL, LDL_SIGNAL_SUBSCRIBE, to, from, NULL, NULL);
@@ -950,11 +957,13 @@ static int on_commands(void *user_data, ikspak *pak)
 			//printf("SESSION type=%s name=%s id=%s\n", type, name, id);
 			if (parse_session_code(handle, id, from, to, xml, strcasecmp(type, "error") ? NULL : type) == LDL_STATUS_SUCCESS) {
 				iks *reply;
-				reply = iks_make_iq(IKS_TYPE_RESULT, NULL); 
-				iks_insert_attrib(reply, "to", from);
-				iks_insert_attrib(reply, "from", to);
-				iks_insert_attrib(reply, "id", iqid);
-				apr_queue_push(handle->queue, reply);
+				if ((reply = iks_make_iq(IKS_TYPE_RESULT, NULL))) {
+					iks_insert_attrib(reply, "to", from);
+					iks_insert_attrib(reply, "from", to);
+					iks_insert_attrib(reply, "id", iqid);
+					apr_queue_push(handle->queue, reply);
+					reply = NULL;
+				}
 			}
 		}
 		xml = iks_child (xml);
@@ -970,16 +979,18 @@ static int on_result(void *user_data, ikspak *pak)
 	ldl_handle_t *handle = user_data;
 	iks *msg, *ctag;
 
-	msg = iks_make_pres (IKS_SHOW_AVAILABLE, handle->status_msg); 
-	ctag = iks_insert(msg, "c");
-	iks_insert_attrib(ctag, "node", "http://www.freeswitch.org/xmpp/client/caps");
-	iks_insert_attrib(ctag, "ver", "1.0.0.1");
-	iks_insert_attrib(ctag, "ext", "sidebar voice-v1");
-	iks_insert_attrib(ctag, "client", "libdingaling");
-	iks_insert_attrib(ctag, "xmlns", "http://jabber.org/protocol/caps");
+	if ((msg = iks_make_pres (IKS_SHOW_AVAILABLE, handle->status_msg))) {
+		ctag = iks_insert(msg, "c");
+		iks_insert_attrib(ctag, "node", "http://www.freeswitch.org/xmpp/client/caps");
+		iks_insert_attrib(ctag, "ver", "1.0.0.1");
+		iks_insert_attrib(ctag, "ext", "sidebar voice-v1");
+		iks_insert_attrib(ctag, "client", "libdingaling");
+		iks_insert_attrib(ctag, "xmlns", "http://jabber.org/protocol/caps");
 
-	apr_queue_push(handle->queue, msg);
-	ldl_set_flag_locked(handle, LDL_FLAG_READY);
+		apr_queue_push(handle->queue, msg);
+		msg = NULL;
+		ldl_set_flag_locked(handle, LDL_FLAG_READY);
+	}
 	return IKS_FILTER_EAT;
 }
 
@@ -1122,15 +1133,17 @@ static int on_stream(ldl_handle_t *handle, int type, iks *node)
 			if (ldl_test_flag(handle, LDL_FLAG_CONNECTED)) {
 				iks *t;
 				if (handle->features & IKS_STREAM_BIND) {
-					t = iks_make_resource_bind(handle->acc);
-					apr_queue_push(handle->queue, t);
-					t = NULL;
+					if ((t = iks_make_resource_bind(handle->acc))) {
+						apr_queue_push(handle->queue, t);
+						t = NULL;
+					}
 				}
 				if (handle->features & IKS_STREAM_SESSION) {
-					t = iks_make_session();
-					iks_insert_attrib(t, "id", "auth");
-					apr_queue_push(handle->queue, t);
-					t = NULL;
+					if ((t = iks_make_session())) {
+						iks_insert_attrib(t, "id", "auth");
+						apr_queue_push(handle->queue, t);
+						t = NULL;
+					}
 				}
 			} else {
 				if (handle->features & IKS_STREAM_SASL_MD5) {
@@ -1306,10 +1319,12 @@ static void ldl_flush_queue(ldl_handle_t *handle, int done)
 	void *pop = NULL;
 	unsigned int len = 0, x = 0;
 
+	apr_thread_mutex_lock(handle->lock);
+
 	while(apr_queue_trypop(handle->queue, &pop) == APR_SUCCESS) {
 		if (pop) {
 			msg = (iks *) pop;
-			iks_send(handle->parser, msg);
+			if (!done) iks_send(handle->parser, msg);
 			iks_delete(msg);
 			pop = NULL;
 		} else {
@@ -1321,7 +1336,6 @@ static void ldl_flush_queue(ldl_handle_t *handle, int done)
 	if (globals.debug && len) {
 		globals.logger(DL_LOG_DEBUG, "Processing %u packets in retry queue\n", len);
 	}
-	apr_thread_mutex_lock(handle->lock);		
 
 	pop = NULL;
 
@@ -1352,6 +1366,7 @@ static void ldl_flush_queue(ldl_handle_t *handle, int done)
 				free(packet_node);
 			} else {
 				apr_queue_push(handle->retry_queue, packet_node);
+				packet_node = NULL;
 			}
 			pop = NULL;
 		}
@@ -1574,8 +1589,9 @@ static void schedule_packet(ldl_handle_t *handle, unsigned int id, iks *xml, uns
 		packet_node->xml = xml;
 		packet_node->retries = retries;
 		packet_node->next = apr_time_now();
-		apr_queue_push(handle->retry_queue, packet_node);
 		apr_hash_set(handle->retry_hash, packet_node->id, APR_HASH_KEY_STRING, packet_node);
+		apr_queue_push(handle->retry_queue, packet_node);
+		packet_node = NULL;
 	}
 	apr_thread_mutex_unlock(handle->lock);
 
@@ -1619,21 +1635,28 @@ void ldl_session_accept_candidate(ldl_session_t *session, ldl_candidate_t *candi
 	myid = next_id();
     snprintf(idbuf, sizeof(idbuf), "%u", myid);
 
-	iq = iks_new("iq");
-	iks_insert_attrib(iq, "type", "set");
-	iks_insert_attrib(iq, "id", idbuf);
-	iks_insert_attrib(iq, "from", session->login);
-	iks_insert_attrib(iq, "to", session->them);
-	sess = iks_insert (iq, "session");
-    iks_insert_attrib(sess, "xmlns", "http://www.google.com/session");
-	iks_insert_attrib(sess, "type", "transport-accept");
-	iks_insert_attrib(sess, "id", candidate->tid);
-	iks_insert_attrib(sess, "xmlns", "http://www.google.com/session");
-	iks_insert_attrib(sess, "initiator", session->initiator ? session->initiator : session->them);
-	tp = iks_insert (sess, "transport");
-	iks_insert_attrib(tp, "xmlns", "http://www.google.com/transport/p2p");
+	if ((iq = iks_new("iq"))) {
+		if (!iks_insert_attrib(iq, "type", "set")) goto fail;
+		if (!iks_insert_attrib(iq, "id", idbuf)) goto fail;
+		if (!iks_insert_attrib(iq, "from", session->login)) goto fail;
+		if (!iks_insert_attrib(iq, "to", session->them)) goto fail;
+		if (!(sess = iks_insert (iq, "session"))) goto fail;
+		if (!iks_insert_attrib(sess, "xmlns", "http://www.google.com/session")) goto fail;
+		if (!iks_insert_attrib(sess, "type", "transport-accept")) goto fail;
+		if (!iks_insert_attrib(sess, "id", candidate->tid)) goto fail;
+		if (!iks_insert_attrib(sess, "xmlns", "http://www.google.com/session")) goto fail;
+		if (!iks_insert_attrib(sess, "initiator", session->initiator ? session->initiator : session->them)) goto fail;
+		if (!(tp = iks_insert (sess, "transport"))) goto fail;
+		if (!iks_insert_attrib(tp, "xmlns", "http://www.google.com/transport/p2p")) goto fail;
+		apr_queue_push(session->handle->queue, iq);
+		iq = NULL;
+	}
 
-	apr_queue_push(session->handle->queue, iq);
+ fail:
+	if (iq) {
+		iks_delete(iq);
+	}
+
 }
 
 void *ldl_handle_get_private(ldl_handle_t *handle)
@@ -1716,16 +1739,24 @@ void ldl_handle_send_vcard(ldl_handle_t *handle, char *from, char *to, char *id,
 		return;
 	}
 
-	iks_insert_attrib(iq, "to", to);
-	iks_insert_attrib(iq, "xmlns", "jabber:client");
-	iks_insert_attrib(iq,"from", from);
-	iks_insert_attrib(iq, "type", "result");
-	iks_insert_attrib(iq, "id", id);
-	iks_insert_node(iq, vxml);
-	
-	apr_queue_push(handle->queue, iq);
+	if (!iks_insert_attrib(iq, "to", to)) goto fail;
+	if (!iks_insert_attrib(iq, "xmlns", "jabber:client")) goto fail;
+	if (!iks_insert_attrib(iq,"from", from)) goto fail;
+	if (!iks_insert_attrib(iq, "type", "result")) goto fail;
+	if (!iks_insert_attrib(iq, "id", id)) goto fail;
+	if (!iks_insert_node(iq, vxml)) goto fail;
 
-	iks_free(vxml);
+	apr_queue_push(handle->queue, iq);
+	iq = NULL;
+	vxml = NULL;
+
+ fail:
+	if (iq) {
+		iks_delete(iq);
+	}
+	if (vxml) {
+		iks_delete(vxml);
+	}
 
 }
 
@@ -1781,6 +1812,7 @@ void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, char *subje
 	}
 
 	apr_queue_push(handle->queue, msg);
+	msg = NULL;
 	
 }
 
@@ -1890,13 +1922,15 @@ char *ldl_handle_probe(ldl_handle_t *handle, char *id, char *from, char *buf, un
 			msg = iks_make_s10n (IKS_TYPE_SUBSCRIBE, id, notice); 
 			iks_insert_attrib(msg, "from", from);
 			apr_queue_push(handle->queue, msg);
-
+			msg = NULL;
+			
 			pres = iks_new("presence");
 			iks_insert_attrib(pres, "xmlns", "jabber:client");
 			iks_insert_attrib(pres, "type", "probe");
 			iks_insert_attrib(pres, "to", id);
 			iks_insert_attrib(pres, "from", from);
 			apr_queue_push(handle->queue, pres);
+			pres = NULL;
 			next += 5;
 		}
 		if (elapsed >= 17) {
@@ -1958,9 +1992,12 @@ char *ldl_handle_disco(ldl_handle_t *handle, char *id, char *from, char *buf, un
 	apr_hash_set(handle->probe_hash, id, APR_HASH_KEY_STRING, &buffer);
 	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBE, id, notice); 
 	apr_queue_push(handle->queue, msg);
+	msg = NULL;
 	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, id, notice); 
 	apr_queue_push(handle->queue, msg);
+	msg = NULL;
 	apr_queue_push(handle->queue, iq);
+	iq = NULL;
 
 	//schedule_packet(handle, next_id(), pres, LDL_RETRY);
 
@@ -1970,6 +2007,7 @@ char *ldl_handle_disco(ldl_handle_t *handle, char *id, char *from, char *buf, un
 		if (elapsed > 5000 && ! again) {
 			msg = iks_make_s10n (IKS_TYPE_SUBSCRIBE, id, notice); 
 			apr_queue_push(handle->queue, msg);
+			msg = NULL;
 			again++;
 		}
 		if (elapsed > 10000) {
