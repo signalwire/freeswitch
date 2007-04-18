@@ -680,7 +680,7 @@ switch_status_t config_sofia(int reload)
 						if ((gateway = switch_core_alloc(profile->pool, sizeof(*gateway)))) {
 							char *register_str = "true", *scheme = "Digest",
 								*realm = NULL,
-								*username = NULL, *password = NULL, *extension = NULL, *proxy = NULL, *context = "default", *expire_seconds = "3600";
+								*username = NULL, *password = NULL, *force_fromuser = "false", *extension = NULL, *proxy = NULL, *context = "default", *expire_seconds = "3600";
 
 							gateway->pool = profile->pool;
 							gateway->profile = profile;
@@ -702,6 +702,8 @@ switch_status_t config_sofia(int reload)
 									username = val;
 								} else if (!strcmp(var, "password")) {
 									password = val;
+								} else if (!strcmp(var, "force-fromuser")) {
+									force_fromuser = val;
 								} else if (!strcmp(var, "extension")) {
 									extension = val;
 								} else if (!strcmp(var, "proxy")) {
@@ -745,6 +747,7 @@ switch_status_t config_sofia(int reload)
 							gateway->register_realm = switch_core_strdup(gateway->pool, realm);
 							gateway->register_username = switch_core_strdup(gateway->pool, username);
 							gateway->register_password = switch_core_strdup(gateway->pool, password);
+							gateway->force_fromuser = switch_true(force_fromuser);
 							gateway->register_from = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, realm);
 							gateway->register_contact = switch_core_sprintf(gateway->pool, "sip:%s@%s:%d", extension, profile->sipip, profile->sip_port);
 
@@ -1761,6 +1764,7 @@ void sofia_handle_sip_i_options(int status,
 				//NUTAG_INCLUDE_EXTRA_SDP(1),
 				TAG_END());
 }
+
 
 
 

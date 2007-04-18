@@ -176,6 +176,7 @@ struct outbound_reg {
 	char *register_realm;
 	char *register_username;
 	char *register_password;
+	switch_bool_t force_fromuser;
 	char *register_from;
 	char *register_contact;
 	char *register_to;

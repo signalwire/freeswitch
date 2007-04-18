@@ -890,7 +890,9 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 
 		profile = gateway_ptr->profile;
-		tech_pvt->gateway_from_str = switch_core_session_strdup(nsession, gateway_ptr->register_from);
+		if (gateway_ptr->force_fromuser) {
+			tech_pvt->gateway_from_str = switch_core_session_strdup(nsession, gateway_ptr->register_from);
+		}
 		if (!strchr(dest, '@')) {
 			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s@%s", dest, gateway_ptr->register_proxy + 4);
 		} else {
@@ -1094,4 +1096,5 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
  * For VIM:
  * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
  */
+
 
