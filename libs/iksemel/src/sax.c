@@ -629,5 +629,5 @@ iks_parser_delete (iksparser *prs)
 	if (prs->deleteHook) prs->deleteHook (prs->user_data);
 	if (prs->stack) iks_free (prs->stack);
 	if (prs->atts) iks_free (prs->atts);
-	if (prs->s) iks_stack_delete (prs->s); else iks_free (prs);
+	if (prs->s) iks_stack_delete (&prs->s); else iks_free (prs);
 }

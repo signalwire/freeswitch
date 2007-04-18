@@ -595,8 +595,8 @@ static int on_disco_default(void *user_data, ikspak *pak)
 					iks_insert_attrib(tag, "var", FEATURES[x].name);
 				}
 			}
-			
-			iks_send(handle->parser, iq);
+			apr_queue_push(handle->queue, iq);
+			iq = NULL;
 			send = 1;
 		}
 	fail:
@@ -919,8 +919,8 @@ static int on_commands(void *user_data, ikspak *pak)
 					iks_insert_attrib(x, "xmlns:gr", "google:roster");
 					iks_insert_attrib(x, "gr:ext", "2");
 					iks_insert_attrib(x, "gr:include", "all");
-					iks_send(handle->parser, iq);
-					iks_delete(iq);
+					apr_queue_push(handle->queue, iq);
+					iq = NULL;
 					break;
 				}
 #endif
@@ -1123,14 +1123,14 @@ static int on_stream(ldl_handle_t *handle, int type, iks *node)
 				iks *t;
 				if (handle->features & IKS_STREAM_BIND) {
 					t = iks_make_resource_bind(handle->acc);
-					iks_send(handle->parser, t);
-					iks_delete(t);
+					apr_queue_push(handle->queue, t);
+					t = NULL;
 				}
 				if (handle->features & IKS_STREAM_SESSION) {
 					t = iks_make_session();
 					iks_insert_attrib(t, "id", "auth");
-					iks_send(handle->parser, t);
-					iks_delete(t);
+					apr_queue_push(handle->queue, t);
+					t = NULL;
 				}
 			} else {
 				if (handle->features & IKS_STREAM_SASL_MD5) {
@@ -1150,8 +1150,8 @@ static int on_stream(ldl_handle_t *handle, int type, iks *node)
 						slen = (uint32_t)(strlen(handle->acc->user) + strlen(handle->password) + 2);
 						b64encode((unsigned char *)s, slen, (unsigned char *) base64, sizeof(base64));
 						iks_insert_cdata(x, base64, 0);
-						iks_send(handle->parser, x);
-						iks_delete(x);
+						apr_queue_push(handle->queue, x);
+						x = NULL;
 					} else {
 						globals.logger(DL_LOG_DEBUG, "Memory ERROR!\n");
 						break;
@@ -1303,45 +1303,57 @@ static void j_setup_filter(ldl_handle_t *handle)
 static void ldl_flush_queue(ldl_handle_t *handle, int done)
 {
 	iks *msg;
-	void *pop;
+	void *pop = NULL;
 	unsigned int len = 0, x = 0;
 
 	while(apr_queue_trypop(handle->queue, &pop) == APR_SUCCESS) {
-		msg = (iks *) pop;
-		iks_send(handle->parser, msg);
-		iks_delete(msg);
+		if (pop) {
+			msg = (iks *) pop;
+			iks_send(handle->parser, msg);
+			iks_delete(msg);
+			pop = NULL;
+		} else {
+			break;
+		}
 	}
 
 	len = apr_queue_size(handle->retry_queue); 
-
 	if (globals.debug && len) {
 		globals.logger(DL_LOG_DEBUG, "Processing %u packets in retry queue\n", len);
 	}
 	apr_thread_mutex_lock(handle->lock);		
-	while(x < len && apr_queue_trypop(handle->retry_queue, &pop) == APR_SUCCESS) {
-		struct packet_node *packet_node = (struct packet_node *) pop;
-		apr_time_t now = apr_time_now();
-		x++;
 
-		if (packet_node->next <= now) {
-			if (packet_node->retries > 0) {
-				packet_node->retries--;
-				if (globals.debug) {
-					globals.logger(DL_LOG_DEBUG, "Sending packet %s (%d left)\n", packet_node->id, packet_node->retries);
-				}
-				iks_send(handle->parser, packet_node->xml);
-				packet_node->next = now + 5000000;
-			}
-		}
-		if (packet_node->retries == 0 || done) {
-			if (globals.debug) {
-				globals.logger(DL_LOG_DEBUG, "Discarding packet %s\n", packet_node->id);
-			}
-			apr_hash_set(handle->retry_hash, packet_node->id, APR_HASH_KEY_STRING, NULL);
-			iks_delete(packet_node->xml);
-			free(packet_node);
+	pop = NULL;
+
+	while(x < len && apr_queue_trypop(handle->retry_queue, &pop) == APR_SUCCESS) {
+		if (!pop) {
+			break;
 		} else {
-			apr_queue_push(handle->retry_queue, packet_node);
+			struct packet_node *packet_node = (struct packet_node *) pop;
+			apr_time_t now = apr_time_now();
+			x++;
+
+			if (packet_node->next <= now) {
+				if (packet_node->retries > 0) {
+					packet_node->retries--;
+					if (globals.debug) {
+						globals.logger(DL_LOG_DEBUG, "Sending packet %s (%d left)\n", packet_node->id, packet_node->retries);
+					}
+					iks_send(handle->parser, packet_node->xml);
+					packet_node->next = now + 5000000;
+				}
+			}
+			if (packet_node->retries == 0 || done) {
+				if (globals.debug) {
+					globals.logger(DL_LOG_DEBUG, "Discarding packet %s\n", packet_node->id);
+				}
+				apr_hash_set(handle->retry_hash, packet_node->id, APR_HASH_KEY_STRING, NULL);
+				iks_delete(packet_node->xml);
+				free(packet_node);
+			} else {
+				apr_queue_push(handle->retry_queue, packet_node);
+			}
+			pop = NULL;
 		}
 	}
 	apr_thread_mutex_unlock(handle->lock);

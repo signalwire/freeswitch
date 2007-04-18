@@ -22,7 +22,7 @@ iks_malloc (size_t size)
 }
 
 void
-iks_free (void *ptr)
+iks_real_free (void *ptr)
 {
 	if (my_free_func)
 		my_free_func (ptr);

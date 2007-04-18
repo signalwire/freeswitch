@@ -60,7 +60,7 @@ iks_new (const char *name)
 	if (!s) return NULL;
 	x = iks_new_within (name, s);
 	if (!x) {
-		iks_stack_delete (s);
+		iks_stack_delete (&s);
 		return NULL;
 	}
 	return x;
@@ -202,7 +202,7 @@ iks_hide (iks *x)
 void
 iks_delete (iks *x)
 {
-	if (x) iks_stack_delete (x->s);
+	if (x) iks_stack_delete (&x->s);
 }
 
 /*****  Node Traversing  *****/

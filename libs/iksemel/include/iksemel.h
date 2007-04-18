@@ -24,12 +24,13 @@ void *iks_stack_alloc (ikstack *s, size_t size);
 char *iks_stack_strdup (ikstack *s, const char *src, size_t len);
 char *iks_stack_strcat (ikstack *s, char *old, size_t old_len, const char *src, size_t src_len);
 void iks_stack_stat (ikstack *s, size_t *allocated, size_t *used);
-void iks_stack_delete (ikstack *s);
+void iks_stack_delete (ikstack **sp);
+
 
 /*****  utilities  *****/
 
 void *iks_malloc (size_t size);
-void iks_free (void *ptr);
+void iks_real_free (void *ptr);
 void iks_set_mem_funcs (void *(*malloc_func)(size_t size), void (*free_func)(void *ptr));
 
 char *iks_strdup (const char *src);
@@ -41,6 +42,8 @@ int iks_strncasecmp (const char *a, const char *b, size_t n);
 size_t iks_strlen (const char *src);
 char *iks_escape (ikstack *s, char *src, size_t len);
 char *iks_unescape (ikstack *s, char *src, size_t len);
+
+#define iks_free(p) if (p) {iks_real_free(p) ; p = NULL;}
 
 /*****  dom tree  *****/
 

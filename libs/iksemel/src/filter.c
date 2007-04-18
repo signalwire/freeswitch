@@ -96,7 +96,7 @@ iks_filter_remove_rule (iksfilter *f, iksrule *rule)
 	if (rule->next) rule->next->prev = rule->prev;
 	if (f->rules == rule) f->rules = rule->next;
 	if (f->last_rule == rule) f->last_rule = rule->prev;
-	iks_stack_delete (rule->s);
+	iks_stack_delete (&rule->s);
 }
 
 void
@@ -174,7 +174,7 @@ iks_filter_delete (iksfilter *f)
 	rule = f->rules;
 	while (rule) {
 		tmp = rule->next;
-		iks_stack_delete (rule->s);
+		iks_stack_delete (&rule->s);
 		rule = tmp;
 	}
 	iks_free (f);

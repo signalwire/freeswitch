@@ -182,10 +182,20 @@ iks_stack_stat (ikstack *s, size_t *allocated, size_t *used)
 }
 
 void
-iks_stack_delete (ikstack *s)
+iks_stack_delete (ikstack **sp)
 {
 	ikschunk *c, *tmp;
+	ikstack *s;
 
+	if (!sp) {
+		return;
+	}
+
+	s = *sp;
+	
+	if (!s) {
+		return;
+	}
 	c = s->meta->next;
 	while (c) {
 		tmp = c->next;
@@ -199,4 +209,5 @@ iks_stack_delete (ikstack *s)
 		c = tmp;
 	}
 	iks_free (s);
+	*sp = NULL;
 }
