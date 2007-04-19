@@ -1146,7 +1146,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 	frame->source = __FILE__;
 	frame->flags |= SFF_RAW_RTP;
 	frame->timestamp = ntohl(rtp_session->recv_msg.header.ts);
-	frame->seq = ntohs(rtp_session->recv_msg.header.seq);
+	frame->seq = (uint16_t)ntohs((u_short)rtp_session->recv_msg.header.seq);
 	frame->ssrc = ntohl(rtp_session->recv_msg.header.ssrc);
 	frame->m = rtp_session->recv_msg.header.m ? SWITCH_TRUE : SWITCH_FALSE;
 
@@ -1488,7 +1488,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 
 	if (switch_test_flag(frame, SFF_RTP_HEADER)) {
 		return switch_rtp_write_manual(rtp_session, frame->data, frame->datalen, frame->m, frame->payload, 
-									   frame->timestamp, frame->seq, frame->ssrc, &frame->flags);
+									   (uint32_t)(frame->timestamp), frame->seq, frame->ssrc, &frame->flags);
 	}
 
 
@@ -1521,7 +1521,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 
 SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 											void *data,
-											uint16_t datalen,
+											uint32_t datalen,
 											uint8_t m, switch_payload_t payload, uint32_t ts, uint16_t mseq, uint32_t ssrc, switch_frame_flag_t *flags)
 {
 	rtp_msg_t send_msg = { {0} };
