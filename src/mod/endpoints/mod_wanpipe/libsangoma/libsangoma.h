@@ -1,18 +1,3 @@
-/*****************************************************************************
- * libsangoma.c	AFT T1/E1: HDLC API Code Library
- *
- * Author(s):	Anthony Minessale II <anthmct@yahoo.com>
- *              Nenad Corbic <ncorbic@sangoma.com>
- *
- * Copyright:	(c) 2005 Anthony Minessale II
- *
- *		This program is free software; you can redistribute it and/or
- *		modify it under the terms of the GNU General Public License
- *		as published by the Free Software Foundation; either version
- *		2 of the License, or (at your option) any later version.
- * ============================================================================
- */
-
 #ifndef _LIBSNAGOMA_H
 #define _LIBSNAGOMA_H
 #include <stdio.h>
@@ -160,6 +145,21 @@ int sangoma_tdm_disable_rxhook_events(sng_fd_t fd, wanpipe_tdm_api_t *tdm_api);
 
 int sangoma_tdm_get_fe_alarms(sng_fd_t fd, wanpipe_tdm_api_t *tdm_api);
 int sangoma_tdm_cmd_exec(sng_fd_t fd, wanpipe_tdm_api_t *tdm_api);
+
+#define WP_PRE __FILE__, __FUNCTION__, __LINE__
+#define WP_LOG_DEBUG WP_PRE, 7
+#define WP_LOG_INFO WP_PRE, 6
+#define WP_LOG_NOTICE WP_PRE, 5
+#define WP_LOG_WARNING WP_PRE, 4
+#define WP_LOG_ERROR WP_PRE, 3
+#define WP_LOG_CRIT WP_PRE, 2
+#define WP_LOG_ALERT WP_PRE, 1
+#define WP_LOG_EMERG WP_PRE, 0
+
+typedef void (*sangoma_logger_t)(char *file, const char *func, int line, int level, char *fmt, ...);
+void sangoma_set_logger(sangoma_logger_t logger);
+
+extern sangoma_logger_t global_logger;
 
 #ifndef LIBSANGOMA_GET_HWCODING
 #define LIBSANGOMA_GET_HWCODING 1

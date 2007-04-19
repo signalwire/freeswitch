@@ -79,6 +79,10 @@ struct sangoma_pri {
 	void *private_info;
 	event_handler eventmap[MAX_EVENT + 1];
 	loop_handler on_loop;
+	int dfd;
+	int swtype;
+	int node; 
+	int debug;
 };
 
 struct sangoma_pri_event_list {

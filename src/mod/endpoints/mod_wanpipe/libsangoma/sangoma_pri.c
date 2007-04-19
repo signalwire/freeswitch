@@ -1,18 +1,3 @@
-/*****************************************************************************
- * sangoma_pri.c libpri Sangoma integration
- *
- * Author(s):	Anthony Minessale II <anthmct@yahoo.com>
- *              Nenad Corbic <ncorbic@sangoma.com>
- *
- * Copyright:	(c) 2005 Anthony Minessale II
- *
- *		This program is free software; you can redistribute it and/or
- *		modify it under the terms of the GNU General Public License
- *		as published by the Free Software Foundation; either version
- *		2 of the License, or (at your option) any later version.
- * ============================================================================
- */
-
 #include <libsangoma.h>
 #include <sangoma_pri.h>
 #ifndef HAVE_GETTIMEOFDAY
@@ -158,6 +143,10 @@ int sangoma_init_pri(struct sangoma_pri *spri, int span, int dchan, int swtype, 
 	} else {
 		if ((spri->pri = pri_new_cb((int) dfd, node, swtype, __pri_sangoma_read, __pri_sangoma_write, NULL))) {
 			spri->span = span;
+			spri->dchan = dchan;
+			spri->swtype = swtype;
+			spri->node = node;
+			spri->debug = debug;
 			pri_set_debug(spri->pri, debug);
 			ret = 0;
 		} else {
@@ -183,7 +172,7 @@ int sangoma_one_loop(struct sangoma_pri *spri)
 	FD_ZERO(&efds);
 
 #ifdef _MSC_VER
-//Windows macro for FD_SET includes a warning C4127: conditional expression is constant
+//Windows macro  for FD_SET includes a warning C4127: conditional expression is constant
 #pragma warning(push)
 #pragma warning(disable:4127)
 #endif
@@ -211,6 +200,13 @@ int sangoma_one_loop(struct sangoma_pri *spri)
 
 	sel = select(spri->pri->fd + 1, &rfds, NULL, &efds, next ? &now : NULL);
 	event = NULL;
+	
+	if (FD_ISSET(spri->pri->fd, &efds)) {
+		wanpipe_tdm_api_t tdm_api = {0};
+
+		sangoma_tdm_read_event(spri->pri->fd, &tdm_api);
+		global_logger(WP_LOG_ERROR, "DCHANNEL ERROR! [span %d]\n", spri->span);
+	}
 
 	if (!sel) {
 		event = pri_schedule_run(spri->pri);

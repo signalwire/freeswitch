@@ -1,25 +1,6 @@
-/*****************************************************************************
- * libsangoma.c	AFT T1/E1: HDLC API Code Library
- *
- * Author(s):	Anthony Minessale II <anthmct@yahoo.com>
- *              Nenad Corbic <ncorbic@sangoma.com>
- *              David Rokhvarg <davidr@sangoma.com>
- *              Michael Jerris <mike@jerris.com>
- *
- * Copyright:	(c) 2005 Anthony Minessale II
- *
- *		This program is free software; you can redistribute it and/or
- *		modify it under the terms of the GNU General Public License
- *		as published by the Free Software Foundation; either version
- *		2 of the License, or (at your option) any later version.
- * ============================================================================
- *
- * Aug 15, 2006  David Rokhvarg <davidr@sangoma.com>	Ported to MS Windows 2000/XP
- * Sep 24, 2006  Michael Jerris <mike@jerris.com>		Windows port, standardize api, cleanup
- * 
- */
-
 #include "libsangoma.h"
+#include <stdarg.h>
+
 #define DFT_CARD "wanpipe1"
 
 #if defined(WIN32)
@@ -264,6 +245,48 @@ sng_fd_t sangoma_open_tdmapi_span(int span)
 #endif	
     return fd;  
 }      
+
+static char *cut_path(char *in)
+{
+	char *p, *ret = in;
+	char delims[] = "/\\";
+	char *i;
+
+	for (i = delims; *i; i++) {
+		p = in;
+		while ((p = strchr(p, *i)) != 0) {
+			ret = ++p;
+		}
+	}
+	return ret;
+}
+
+
+static void default_logger(char *file, const char *func, int line, int level, char *fmt, ...)
+{
+	char *fp;
+	char data[1024];
+
+	va_list ap;
+	
+	fp = cut_path(file);
+
+	va_start(ap, fmt);
+
+	vsnprintf(data, sizeof(data), fmt, ap);
+
+	fprintf(stderr, "%s:%d %s() %s", file, line, func, data);
+
+	va_end(ap);
+
+}
+
+sangoma_logger_t global_logger = default_logger;
+
+void sangoma_set_logger(sangoma_logger_t logger)
+{
+	global_logger = logger;
+}
 
 int sangoma_readmsg_tdm(sng_fd_t fd, void *hdrbuf, int hdrlen, void *databuf, int datalen, int flag)
 {

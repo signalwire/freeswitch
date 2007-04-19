@@ -211,6 +211,19 @@ typedef struct private_object private_object_t;
 
 
 
+static void wp_logger(char *file, const char *func, int line, int level, char *fmt, ...)
+{
+	va_list ap;
+	char *data = NULL;
+	int ret;
+
+	va_start(ap, fmt);
+	if ((ret = switch_vasprintf(&data, fmt, ap)) != -1) {
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, level, "%s", data);
+	}
+	va_end(ap);
+}
+
 static int local_sangoma_tdm_read_event(sng_fd_t fd, wp_tdm_api_rx_hdr_t *rx_event)
 {
 	wanpipe_tdm_api_t tdm_api[1];
@@ -1298,6 +1311,8 @@ static void s_pri_message(struct pri *pri, char *s)
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	sangoma_set_logger(wp_logger);
 
 	memset(SPANS, 0, sizeof(SPANS));
 
