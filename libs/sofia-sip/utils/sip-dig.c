@@ -116,7 +116,7 @@
  * @endcode
  *
  * @section sip_dig_environment Environment
- * #SRESOLV_DEBUG, SRESOLV_CONF
+ * SRESOLV_DEBUG, SRESOLV_CONF
  * 
  * @section sip_dig_bugs Reporting Bugs
  * Report bugs to <sofia-sip-devel@lists.sourceforge.net>.

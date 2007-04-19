@@ -98,7 +98,7 @@
  * @endcode
  *
  * @section stunc_environment Environment
- * #STUN_DEBUG
+ * STUN_DEBUG
  * 
  * @section stunc_bugs Reporting Bugs
  * Report bugs to <sofia-sip-devel@lists.sourceforge.net>.
