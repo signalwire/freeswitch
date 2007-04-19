@@ -57,7 +57,7 @@ test_nth_LDFLAGS = 	-static
 # ----------------------------------------------------------------------
 # Install and distribution rules
 
-EXTRA_DIST =		Doxyfile nth.docs $(BUILT_SOURCES) \
+EXTRA_DIST =		nth.docs $(BUILT_SOURCES) \
 			agent.pem cafile.pem
 
 # ----------------------------------------------------------------------

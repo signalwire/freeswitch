@@ -43,7 +43,7 @@ test_urlmap_CFLAGS =	$(CFLAGS) -DTEST_URLMAP=1
 # ----------------------------------------------------------------------
 # Install and distribution rules
 
-EXTRA_DIST =		Doxyfile url.docs $(BUILT_SOURCES)
+EXTRA_DIST =		url.docs $(BUILT_SOURCES)
 
 # ----------------------------------------------------------------------
 # Tests

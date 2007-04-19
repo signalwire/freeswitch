@@ -66,7 +66,7 @@ MOSTLYCLEANFILES +=	.test[0-9]*
 # ----------------------------------------------------------------------
 # Install and distribution rules
 
-EXTRA_DIST =		Doxyfile nta.docs sl_utils.docs \
+EXTRA_DIST =		nta.docs sl_utils.docs \
 			agent.pem cafile.pem \
 			invite.msc $(BUILT_SOURCES) 
 

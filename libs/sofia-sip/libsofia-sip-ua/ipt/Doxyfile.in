@@ -1,8 +1,9 @@
 PROJECT_NAME         = "ipt"
 OUTPUT_DIRECTORY     = ../docs/html/ips
 
-INPUT 		     = ipt.docs sofia-sip . 
+INPUT 		     = @srcdir@/ipt.docs @srcdir@/sofia-sip @srcdir@ . 
 
+@INCLUDE_PATH = . @srcdir@
 @INCLUDE = ../docs/Doxyfile.conf
 
 TAGFILES            += ../docs/su.doxytags=../su

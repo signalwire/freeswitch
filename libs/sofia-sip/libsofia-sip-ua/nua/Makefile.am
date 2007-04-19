@@ -92,7 +92,7 @@ test_nua_SOURCES = 	test_nua.c test_nua.h test_ops.c \
 # ----------------------------------------------------------------------
 # Install and distribution rules
 
-EXTRA_DIST =		Doxyfile nua.docs $(BUILT_SOURCES)
+EXTRA_DIST =		nua.docs $(BUILT_SOURCES)
 
 # ----------------------------------------------------------------------
 # Sofia specific rules

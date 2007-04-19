@@ -1,10 +1,11 @@
 PROJECT_NAME         = "sresolv"
 OUTPUT_DIRECTORY     = ../docs/html/sresolv
 
-INPUT 		     =  sofia-sip sofia-resolv sresolv.docs .
+INPUT 		     =  @srcdir@/sofia-sip @srcdir@/sofia-resolv @srcdir@/sresolv.docs @srcdir@
 
 EXCLUDE		     = resolve_sip.c
 
+@INCLUDE_PATH 	     = . @srcdir@
 @INCLUDE 	     = ../docs/Doxyfile.conf
 
 ALIASES             += CFILE="@internal @file" IFILE="@internal @file"

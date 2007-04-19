@@ -1,8 +1,9 @@
 PROJECT_NAME         = "nth"
 OUTPUT_DIRECTORY     = ../docs/html/nth
 
-INPUT 		     = nth.docs sofia-sip . 
+INPUT 		     = @srcdir@/nth.docs @srcdir@/sofia-sip @srcdir@ . 
 
+@INCLUDE_PATH = . @srcdir@
 @INCLUDE = ../docs/Doxyfile.conf
 
 TAGFILES            += \

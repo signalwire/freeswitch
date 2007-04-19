@@ -56,7 +56,7 @@ test_http_LDFLAGS = 	-static
 # ----------------------------------------------------------------------
 # Install and distribution rules
 
-EXTRA_DIST =		Doxyfile http.docs \
+EXTRA_DIST =		http.docs \
 			sofia-sip/http_protos.h.in \
 			sofia-sip/http_tag.h.in \
 			http_parser_table.c.in \

@@ -1,9 +1,11 @@
 PROJECT_NAME         = "soa"
 OUTPUT_DIRECTORY     = ../docs/html/soa
 
-INPUT 		     = soa.docs sofia-sip/soa.h sofia-sip/soa_add.h soa.c
-INPUT		    += sofia-sip/soa_tag.h soa_tag.c
+INPUT 		     = @srcdir@/soa.docs @srcdir@/sofia-sip/soa.h 
+INPUT               += @srcdir@/sofia-sip/soa_add.h @srcdir@/soa.c
+INPUT		    += @srcdir@/sofia-sip/soa_tag.h @srcdir@/soa_tag.c
 
+@INCLUDE_PATH	     = . @srcdir@
 @INCLUDE             = ../docs/Doxyfile.conf
 
 TAGFILES            += ../docs/docs.doxytags=../docs

@@ -43,7 +43,7 @@ torture_sdp_LDFLAGS = 	-static
 # ----------------------------------------------------------------------
 # Install and distribution rules
 
-EXTRA_DIST =		Doxyfile sdp.docs $(BUILT_SOURCES) \
+EXTRA_DIST =		sdp.docs $(BUILT_SOURCES) \
 			tests/message-1.sdp \
 			tests/message-2.sdp \
 			tests/message-3.sdp \

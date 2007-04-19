@@ -1,8 +1,9 @@
 PROJECT_NAME         = "url"
 OUTPUT_DIRECTORY     = ../docs/html/url
 
-INPUT 		     = url.docs sofia-sip . 
+INPUT 		     = @srcdir@/url.docs @srcdir@/sofia-sip @srcdir@ . 
 
+@INCLUDE_PATH = . @srcdir@
 @INCLUDE = ../docs/Doxyfile.conf
 
 TAGFILES             += ../docs/su.doxytags=../su

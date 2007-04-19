@@ -29,9 +29,9 @@
 #
 # --------------------------------------------------------------------
 
-find . -name '*.html' -print | while read i ; do 
-  (
-    echo "Hiding email addresses in ${i}."
-    sed -r -i 's/([:>;][a-z][-a-z.]*)(@[a-z][a-z]*)\.[a-z][a-z]*(["<\&])/\1\2-email.address.hidden\3/gi' $i
- )
-done
+echo "Hiding email addresses in ${1:-.}"
+
+find ${1:-.} -name '*.html' -print0 | 
+xargs -0 \
+sed -r -i 's/([:>;][a-z][-a-z.]*)(@[a-z][a-z]*)\.[a-z][a-z]*(["<\&])/\1\2-email.address.hidden\3/gi'
+

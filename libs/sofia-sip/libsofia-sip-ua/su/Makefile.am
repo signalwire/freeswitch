@@ -105,7 +105,7 @@ LDADD = 		libsu.la
 # ----------------------------------------------------------------------
 # Install and distribution rules
 
-EXTRA_DIST = 		Doxyfile su.docs \
+EXTRA_DIST = 		su.docs \
 			run_addrinfo run_localinfo run_test_su
 
 dist_pkgdata_SCRIPTS = 	tag_dll.awk

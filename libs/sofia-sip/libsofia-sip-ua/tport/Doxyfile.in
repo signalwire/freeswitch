@@ -1,8 +1,9 @@
 PROJECT_NAME         = "tport"
 OUTPUT_DIRECTORY     = ../docs/html/tport
 
-INPUT 		     = tport.docs sofia-sip .
+INPUT 		     = @srcdir@/tport.docs @srcdir@/sofia-sip @srcdir@ .
 
+@INCLUDE_PATH = . @srcdir@
 @INCLUDE = ../docs/Doxyfile.conf
 
 TAGFILES            += \

@@ -51,7 +51,7 @@ COVERAGE_INPUT = 	$(libsresolv_la_SOURCES) $(include_sofia_HEADERS)
 # ----------------------------------------------------------------------
 # Distribution
 
-EXTRA_DIST =		Doxyfile sresolv.docs
+EXTRA_DIST =		sresolv.docs
 
 dist_noinst_DATA = run_test_sresolv \
 	root.zone rndc.conf \

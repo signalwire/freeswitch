@@ -53,7 +53,7 @@ test_soa_LDFLAGS = 	-static
 # ----------------------------------------------------------------------
 # Install and distribution rules
 
-EXTRA_DIST =		Doxyfile soa.docs $(BUILT_SOURCES)
+EXTRA_DIST =		soa.docs $(BUILT_SOURCES)
 
 # ----------------------------------------------------------------------
 # Sofia specific rules

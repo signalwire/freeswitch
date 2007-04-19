@@ -1,8 +1,9 @@
 PROJECT_NAME         = "msg"
 OUTPUT_DIRECTORY     = ../docs/html/msg
 
-INPUT 		     = msg.docs . sofia-sip
+INPUT 		     = @srcdir@/msg.docs @srcdir@/sofia-sip sofia-sip @srcdir@ .
 
+@INCLUDE_PATH = . @srcdir@
 @INCLUDE = ../docs/Doxyfile.conf
 @INCLUDE = ../sip/sip.doxyaliases
 
@@ -14,4 +15,4 @@ TAGFILES             += ../docs/ipt.doxytags=../ipt  \
 
 GENERATE_TAGFILE     = ../docs/msg.doxytags
 
-IMAGE_PATH           += ../sip/images
+IMAGE_PATH           += @srcdir@/../sip/images

@@ -32,8 +32,7 @@ EXTRA_DIST = docs/Doxyfile.aliases \
 	     docs/Doxyfile.version
 
 doxygen: built-sources
-	@cd ${srcdir} ;\
-	mkdir -p docs docs/html &&\
+	@mkdir -p docs docs/html &&\
 	for d in $(DIST_SUBDIRS) $(DIST_SUBDIRS); do \
 	  test -r $$d/Doxyfile \
 	  && pushd $$d > /dev/null \
@@ -41,7 +40,7 @@ doxygen: built-sources
           && ${DOXYGEN} \
           && popd > /dev/null ; \
 	done
-	cd ${srcdir}/docs/html && ../../${top_srcdir}/libsofia-sip-ua/docs/hide_emails.sh
+	${top_srcdir}/libsofia-sip-ua/docs/hide_emails.sh docs/html 
 
 include $(top_srcdir)/rules/recursive.am
 

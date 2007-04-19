@@ -46,7 +46,7 @@ torture_base64_LDFLAGS = -static
 # ----------------------------------------------------------------------
 # Install and distribution rules
 
-EXTRA_DIST +=		Doxyfile ipt.docs
+EXTRA_DIST +=		ipt.docs
 
 # ----------------------------------------------------------------------
 # Sofia specific rules

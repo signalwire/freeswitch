@@ -66,7 +66,7 @@ msg_name_hash_LDFLAGS =	-static
 
 dist_pkgdata_SCRIPTS = 	msg_parser.awk
 
-EXTRA_DIST =		Doxyfile msg.docs \
+EXTRA_DIST =		msg.docs \
 			sofia-sip/msg_mime_protos.h.in \
 			sofia-sip/msg_protos.h.in \
 			msg_mime_table.c.in \

@@ -80,7 +80,7 @@ test_tport_LDFLAGS = 	-static
 # ----------------------------------------------------------------------
 # Install and distribution rules
 
-EXTRA_DIST =		Doxyfile tport.docs \
+EXTRA_DIST =		tport.docs \
 			certificates.html agent.pem cafile.pem
 
 # ----------------------------------------------------------------------

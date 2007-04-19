@@ -63,7 +63,7 @@
  * messages based on message priority.
  *
  * @sa @ref debug_logs, <sofia-sip/su_log.h>, 
- * su_llog(), su_vllog(), #su_log_t, #SU_LOG,
+ * su_llog(), su_vllog(), #su_log_t, #SU_DEBUG,
  * SU_DEBUG_0(), SU_DEBUG_1(), SU_DEBUG_2(), SU_DEBUG_3(), SU_DEBUG_5(), 
  * SU_DEBUG_7(), SU_DEBUG_9()
  */

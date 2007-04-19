@@ -69,7 +69,7 @@ test_date_LDFLAGS = 	-static
 # note: srcdir needs to be specified, otherwise
 #       breaks make distcheck target
 
-EXTRA_DIST =		Doxyfile sip.docs sip_parser.docs sip.doxyaliases \
+EXTRA_DIST =		sip.docs sip_parser.docs sip.doxyaliases \
 			ADD-A-HEADER GRAMMAR sip_bad_mask \
 			sip_parser_table.c.in sip_tag.c.in \
 			sip_extra_headers.txt \

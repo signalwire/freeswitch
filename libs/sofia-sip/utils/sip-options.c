@@ -77,7 +77,7 @@
  * @endcode
  *
  * @section environment Environment
- * SIPADDRESS, sip_proxy, NTA_DEBUG, TPORT_DEBUG, TPORT_LOG.
+ * #SIPADDRESS, #sip_proxy, #NTA_DEBUG, #TPORT_DEBUG, #TPORT_LOG.
  * 
  * @section bugs Reporting Bugs
  * Report bugs to <sofia-sip-devel@lists.sourceforge.net>.

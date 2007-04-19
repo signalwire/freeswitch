@@ -59,7 +59,6 @@ include $(top_srcdir)/rules/recursive.am
 
 doxygen: built-sources
 	@echo Generating empty doxytags
-	cd ${srcdir}; \
 	mkdir -p docs/html ; \
 	for d in $(DIST_SUBDIRS); do \
 	  test -r $$d/Doxyfile || continue ; \
@@ -71,20 +70,18 @@ doxygen: built-sources
 	    mv -f docs/$$d.doxytags.tmp docs/$$d.doxytags ; \
           fi ; \
 	done
-	@cd ${srcdir} ;\
 	for d in $(DIST_SUBDIRS); do \
 	  test -r $$d/Doxyfile \
 	  && pushd $$d > /dev/null \
 	  && echo running ${DOXYGEN} first time in $$d \
           && ${DOXYGEN} 2>&1 \
-	  | egrep -v -i -e 'Warning: (unsupported (xml/)?html tag|unable to resolve reference|could not be resolved)' \
+	  | egrep -v -i -e 'Warning: (unsupported (xml/)?html tag|unable to resolve reference|explicit link.*could not be resolved)' \
           ; popd > /dev/null ; \
 	  test -r docs/$$d.doxytags && \
 	  sed '2,10s!<name>index</name>!<name>'$$d'_index</name>!' \
 	    docs/$$d.doxytags > docs/$$d.doxytags.tmp && \
 	  mv -f docs/$$d.doxytags.tmp docs/$$d.doxytags ; \
 	done 
-	@cd ${srcdir} ;\
 	for d in $(DIST_SUBDIRS); do \
 	  test -r $$d/Doxyfile \
 	  && pushd $$d > /dev/null \
@@ -97,6 +94,6 @@ doxygen: built-sources
 	    docs/$$d.doxytags > docs/$$d.doxytags.tmp && \
 	  mv -f docs/$$d.doxytags.tmp docs/$$d.doxytags ; \
 	done 
-	cd ${srcdir}/docs/html && ../hide_emails.sh
+	${srcdir}/docs/hide_emails.sh docs/html
 
 .PHONY: built-sources built-sources-am empty-doxytags doxygen 

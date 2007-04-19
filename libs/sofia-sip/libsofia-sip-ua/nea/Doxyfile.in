@@ -1,8 +1,9 @@
 PROJECT_NAME         = "nea"
 OUTPUT_DIRECTORY     = ../docs/html/nea
 
-INPUT 		     = nea.docs sofia-sip . 
+INPUT 		     = @srcdir@/nea.docs @srcdir@/sofia-sip @srcdir@ . 
 
+@INCLUDE_PATH = . @srcdir@
 @INCLUDE = ../docs/Doxyfile.conf
 
 EXCLUDE_PATTERNS     = test*.c torture*.c

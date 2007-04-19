@@ -1,4 +1,27 @@
+#
+# Template for Doxyfile. 
+# @configure_input@
+#
+# Copyright (C) 2006 Nokia Corporation
+# Contact: Pekka Pessi <pekka.pessi@nokia.com>
+# Licensed under LGPL. See file COPYING.
+#
+
 PROJECT_NAME         = "sofia-sip"
+
+PROJECT_NUMBER       = @VERSION@
+
+INPUT 		      = @srcdir@
+INPUT                += @top_srcdir@/libsofia-sip-ua/su/localinfo.c
+INPUT                += @top_srcdir@/libsofia-sip-ua/su/addrinfo.c
+INPUT                += @top_srcdir@/libsofia-sip-ua/stun/stunc.c
+
+OUTPUT_DIRECTORY     = ../man
+
+@INCLUDE_PATH = . @srcdir@
+
+@INCLUDE = ../libsofia-sip-ua/docs/Doxyfile.aliases
+@INCLUDE = ../libsofia-sip-ua/docs/Doxyfile.rfc
 
 FILE_PATTERNS        = *.h *.c 
 
@@ -6,7 +29,7 @@ EXCLUDE_PATTERNS     = acconfig.h config.h confdefs.h \
 			test*.h test*.c torture*.c *test.c *torture.c \
 			*_tag_dll.c *_tag_ref.c
 
-TAGFILES            = 
+TAGFILES             = 
 
 OUTPUT_LANGUAGE      = English
 

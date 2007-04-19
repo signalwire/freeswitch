@@ -33,7 +33,7 @@ torture_bnf_LDFLAGS = 	-static
 # ----------------------------------------------------------------------
 # Install and distribution rules
 
-EXTRA_DIST =		Doxyfile bnf.docs
+EXTRA_DIST =		bnf.docs
 
 # ----------------------------------------------------------------------
 # Tests

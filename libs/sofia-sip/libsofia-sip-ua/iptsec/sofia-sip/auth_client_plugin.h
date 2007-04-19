@@ -30,7 +30,8 @@
  * @brief Client-side plugin interface for authentication
  * 
  * @note For extensions in 1.12.6 or later, 
- * you have to #define SOFIA_EXTEND_AUTH_CLIENT to 1.
+ * you have to define SOFIA_EXTEND_AUTH_CLIENT to 1
+ * before including this file.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * 

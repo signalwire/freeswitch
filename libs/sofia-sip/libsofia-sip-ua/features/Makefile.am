@@ -26,7 +26,7 @@ libfeatures_la_SOURCES = features.c
 # ----------------------------------------------------------------------
 # Install and distribution rules
 
-EXTRA_DIST =		Doxyfile features.docs
+EXTRA_DIST =		features.docs
 
 # ----------------------------------------------------------------------
 # Sofia specific rules

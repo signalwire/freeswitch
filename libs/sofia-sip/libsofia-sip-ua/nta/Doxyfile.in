@@ -1,8 +1,9 @@
 PROJECT_NAME         = "nta"
 OUTPUT_DIRECTORY     = ../docs/html/nta
 
-INPUT 		     = nta.docs sofia-sip . 
+INPUT 		     = @srcdir@/nta.docs @srcdir@/sofia-sip @srcdir@ . 
 
+@INCLUDE_PATH = . @srcdir@
 @INCLUDE = ../docs/Doxyfile.conf
 
 TAGFILES           += ../docs/su.doxytags=../su
@@ -20,4 +21,5 @@ EXCLUDE_PATTERNS   += sl_*.h sl_*.c nta_compat.*
 
 ALIASES            +=
 
+@INCLUDE_PATH = . @srcdir@
 @INCLUDE = ../sip/sip.doxyaliases

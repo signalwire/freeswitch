@@ -1,9 +1,11 @@
 PROJECT_NAME         = "iptsec"
 OUTPUT_DIRECTORY     = ../docs/html/iptsec
 
-INPUT 		     = iptsec.docs sofia-sip . 
+INPUT 		     = @srcdir@/iptsec.docs @srcdir@/sofia-sip @srcdir@ . 
 
+@INCLUDE_PATH = . @srcdir@
 @INCLUDE = ../docs/Doxyfile.conf
+@INCLUDE = ../sip/sip.doxyaliases
 
 TAGFILES           += ../docs/su.doxytags=../su
 TAGFILES           += ../docs/ipt.doxytags=../ipt

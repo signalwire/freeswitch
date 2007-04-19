@@ -54,7 +54,7 @@ LDADD = 		libnea.la \
 # ----------------------------------------------------------------------
 # Install and distribution rules
 
-EXTRA_DIST =		Doxyfile nea.docs $(BUILT_SOURCES)
+EXTRA_DIST =		nea.docs $(BUILT_SOURCES)
 
 # ----------------------------------------------------------------------
 # Sofia specific rules

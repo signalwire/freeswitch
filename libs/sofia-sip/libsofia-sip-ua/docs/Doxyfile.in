@@ -1,10 +1,11 @@
 PROJECT_NAME         = "libsofia-sip-ua"
 OUTPUT_DIRECTORY     = ../docs/html
 
-INPUT 		     = mainpage.docs docguide.docs conformance.docs
+INPUT 		     = @srcdir@/mainpage.docs @srcdir@/docguide.docs @srcdir@/conformance.docs
 
 #			release.docs
 
+@INCLUDE_PATH = . @srcdir@
 @INCLUDE = ../docs/Doxyfile.conf
 
 GENERATE_TAGFILE    = docs.doxytags
@@ -27,4 +28,4 @@ TAGFILES            += nea.doxytags=nea
 TAGFILES            += nua.doxytags=nua
 TAGFILES            += features.doxytags=features
 
-EXAMPLE_PATH = ../sip
+EXAMPLE_PATH = @srcdir@/../sip

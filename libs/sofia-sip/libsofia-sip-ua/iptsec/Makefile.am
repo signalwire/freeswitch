@@ -78,7 +78,7 @@ EXTRA_libiptsec_la_SOURCES = \
 # ----------------------------------------------------------------------
 # Install and distribution rules
 
-EXTRA_DIST = 		Doxyfile iptsec.docs testpasswd $(BUILT_SOURCES)
+EXTRA_DIST = 		iptsec.docs testpasswd $(BUILT_SOURCES)
 
 # ----------------------------------------------------------------------
 # Sofia specific rules

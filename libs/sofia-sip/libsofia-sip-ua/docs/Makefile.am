@@ -1,9 +1,7 @@
-EXTRA_DIST = 	Doxyfile Doxyfile.aliases Doxyfile.conf \
+EXTRA_DIST = 	Doxyfile.aliases Doxyfile.conf \
 		docguide.docs \
 		mainpage.docs \
 		conformance.docs \
-		Doxyfile.version.in \
-		sofia-footer.html.in \
 		hide_emails.sh \
 		ChangeLog \
 	pictures/SIP_basic_incoming_operation.eps \

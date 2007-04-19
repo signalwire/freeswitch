@@ -1,8 +1,9 @@
 PROJECT_NAME         = "sdp"
 OUTPUT_DIRECTORY     = ../docs/html/sdp
 
-INPUT 		     = sdp.docs .  sofia-sip
+INPUT 		     = @srcdir@/sdp.docs @srcdir@/sofia-sip @srcdir@ .
 
+@INCLUDE_PATH = . @srcdir@
 @INCLUDE = ../docs/Doxyfile.conf
 
 TAGFILES             += ../docs/su.doxytags=../su
