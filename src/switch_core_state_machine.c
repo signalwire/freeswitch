@@ -181,18 +181,9 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 
 static void switch_core_standard_on_loopback(switch_core_session_t *session)
 {
-	switch_frame_t *frame;
-	int stream_id;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard LOOPBACK\n");
-
-	while (switch_channel_get_state(session->channel) == CS_LOOPBACK) {
-		for (stream_id = 0; stream_id < session->stream_count; stream_id++) {
-			if (switch_core_session_read_frame(session, &frame, -1, stream_id) == SWITCH_STATUS_SUCCESS) {
-				switch_core_session_write_frame(session, frame, -1, stream_id);
-			}
-		}
-	}
+	switch_ivr_session_echo(session);
 }
 
 static void switch_core_standard_on_transmit(switch_core_session_t *session)

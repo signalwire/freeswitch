@@ -38,7 +38,9 @@ typedef struct switch_io_event_hook_outgoing_channel switch_io_event_hook_outgoi
 typedef struct switch_io_event_hook_receive_message switch_io_event_hook_receive_message_t;
 typedef struct switch_io_event_hook_receive_event switch_io_event_hook_receive_event_t;
 typedef struct switch_io_event_hook_read_frame switch_io_event_hook_read_frame_t;
+typedef struct switch_io_event_hook_video_read_frame switch_io_event_hook_video_read_frame_t;
 typedef struct switch_io_event_hook_write_frame switch_io_event_hook_write_frame_t;
+typedef struct switch_io_event_hook_video_write_frame switch_io_event_hook_video_write_frame_t;
 typedef struct switch_io_event_hook_kill_channel switch_io_event_hook_kill_channel_t;
 typedef struct switch_io_event_hook_waitfor_read switch_io_event_hook_waitfor_read_t;
 typedef struct switch_io_event_hook_waitfor_write switch_io_event_hook_waitfor_write_t;
@@ -50,7 +52,9 @@ typedef switch_status_t (*switch_outgoing_channel_hook_t) (switch_core_session_t
 typedef switch_status_t (*switch_receive_message_hook_t) (switch_core_session_t *, switch_core_session_message_t *);
 typedef switch_status_t (*switch_receive_event_hook_t) (switch_core_session_t *, switch_event_t *);
 typedef switch_status_t (*switch_read_frame_hook_t) (switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
+typedef switch_status_t (*switch_video_read_frame_hook_t) (switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
 typedef switch_status_t (*switch_write_frame_hook_t) (switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int);
+typedef switch_status_t (*switch_video_write_frame_hook_t) (switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int);
 typedef switch_status_t (*switch_kill_channel_hook_t) (switch_core_session_t *, int);
 typedef switch_status_t (*switch_waitfor_read_hook_t) (switch_core_session_t *, int, int);
 typedef switch_status_t (*switch_waitfor_write_hook_t) (switch_core_session_t *, int, int);
@@ -86,11 +90,25 @@ struct switch_io_event_hook_read_frame {
 	struct switch_io_event_hook_read_frame *next;
 };
 
+/*! \brief Node in which to store custom read frame channel callback hooks */
+struct switch_io_event_hook_video_read_frame {
+	/*! the read frame channel callback hook */
+	switch_read_frame_hook_t video_read_frame;
+	struct switch_io_event_hook_video_read_frame *next;
+};
+
 /*! \brief Node in which to store custom write_frame channel callback hooks */
 struct switch_io_event_hook_write_frame {
 	/*! the write_frame channel callback hook */
 	switch_write_frame_hook_t write_frame;
 	struct switch_io_event_hook_write_frame *next;
+};
+
+/*! \brief Node in which to store custom video_write_frame channel callback hooks */
+struct switch_io_event_hook_video_write_frame {
+	/*! the video_write_frame channel callback hook */
+	switch_video_write_frame_hook_t video_write_frame;
+	struct switch_io_event_hook_video_write_frame *next;
 };
 
 /*! \brief Node in which to store custom kill channel callback hooks */
@@ -138,8 +156,12 @@ struct switch_io_event_hooks {
 	switch_io_event_hook_receive_event_t *receive_event;
 	/*! a list of read frame hooks */
 	switch_io_event_hook_read_frame_t *read_frame;
+	/*! a list of video read frame hooks */
+	switch_io_event_hook_video_read_frame_t *video_read_frame;
 	/*! a list of write frame hooks */
 	switch_io_event_hook_write_frame_t *write_frame;
+	/*! a list of video write frame hooks */
+	switch_io_event_hook_video_write_frame_t *video_write_frame;
 	/*! a list of kill channel hooks */
 	switch_io_event_hook_kill_channel_t *kill_channel;
 	/*! a list of wait for read hooks */
@@ -186,12 +208,28 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_receive_message(switc
 SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_read_frame(switch_core_session_t *session, switch_read_frame_hook_t read_frame);
 
 /*! 
+  \brief Add an event hook to be executed when a session reads a frame
+  \param session session to bind hook to
+  \param  video_read_frame hook to bind
+  \return SWITCH_STATUS_SUCCESS on suceess
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_video_read_frame(switch_core_session_t *session, switch_read_frame_hook_t video_read_frame);
+
+/*! 
   \brief Add an event hook to be executed when a session writes a frame
   \param session session to bind hook to
   \param write_frame hook to bind
   \return SWITCH_STATUS_SUCCESS on suceess
 */
 SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_write_frame(switch_core_session_t *session, switch_write_frame_hook_t write_frame);
+
+/*! 
+  \brief Add an event hook to be executed when a session writes a video frame
+  \param session session to bind hook to
+  \param write_frame hook to bind
+  \return SWITCH_STATUS_SUCCESS on suceess
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_video_write_frame(switch_core_session_t *session, switch_video_write_frame_hook_t video_write_frame);
 
 /*! 
   \brief Add an event hook to be executed when a session kills a channel

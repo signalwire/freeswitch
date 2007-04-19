@@ -58,6 +58,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 												  switch_memory_pool_t **pool);
 static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id);
 static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id);
+static switch_status_t sofia_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id);
+static switch_status_t sofia_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id);
 static switch_status_t sofia_kill_channel(switch_core_session_t *session, int sig);
 
 
@@ -321,12 +323,117 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 }
 
 
+
+static switch_status_t sofia_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id)
+{
+	private_object_t *tech_pvt = NULL;
+	switch_channel_t *channel = NULL;
+	int payload = 0;
+	
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+
+	if (switch_test_flag(tech_pvt, TFLAG_HUP)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	while (!(tech_pvt->video_read_codec.implementation && switch_rtp_ready(tech_pvt->video_rtp_session))) {
+		if (switch_channel_ready(channel)) {
+			switch_yield(10000);
+		} else {
+			return SWITCH_STATUS_GENERR;
+		}
+	}
+
+
+	tech_pvt->video_read_frame.datalen = 0;
+
+
+	if (switch_test_flag(tech_pvt, TFLAG_IO)) {
+		switch_status_t status;
+
+		if (!switch_test_flag(tech_pvt, TFLAG_RTP)) {
+			return SWITCH_STATUS_GENERR;
+		}
+
+		assert(tech_pvt->rtp_session != NULL);
+		tech_pvt->video_read_frame.datalen = 0;
+
+		while (switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->video_read_frame.datalen == 0) {
+			tech_pvt->video_read_frame.flags = SFF_NONE;
+
+			status = switch_rtp_zerocopy_read_frame(tech_pvt->video_rtp_session, &tech_pvt->video_read_frame);
+			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+				return SWITCH_STATUS_FALSE;
+			}
+			
+			payload = tech_pvt->video_read_frame.payload;
+
+			if (tech_pvt->video_read_frame.datalen > 0) {
+				break;
+			}
+		}
+	}
+
+	if (tech_pvt->video_read_frame.datalen == 0) {
+		*frame = NULL;
+		return SWITCH_STATUS_GENERR;
+	}
+
+	*frame = &tech_pvt->video_read_frame;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t sofia_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id)
+{
+	private_object_t *tech_pvt;
+	switch_channel_t *channel = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+
+	while (!(tech_pvt->video_read_codec.implementation && switch_rtp_ready(tech_pvt->video_rtp_session))) {
+		if (switch_channel_ready(channel)) {
+			switch_yield(10000);
+		} else {
+			return SWITCH_STATUS_GENERR;
+		}
+	}
+
+	if (switch_test_flag(tech_pvt, TFLAG_HUP)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!switch_test_flag(tech_pvt, TFLAG_RTP)) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (!switch_test_flag(frame, SFF_CNG)) {
+		switch_rtp_write_frame(tech_pvt->video_rtp_session, frame, 0);
+	}
+	
+	return status;
+}
+
+
 static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
 	private_object_t *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
 	int payload = 0;
-
+	
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -348,16 +455,6 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 
 	tech_pvt->read_frame.datalen = 0;
 	switch_set_flag_locked(tech_pvt, TFLAG_READING);
-
-#if 0
-	if (tech_pvt->last_read) {
-		elapsed = (unsigned int) ((switch_time_now() - tech_pvt->last_read) / 1000);
-		if (elapsed > 60000) {
-			return SWITCH_STATUS_TIMEOUT;
-		}
-	}
-#endif
-
 
 	if (switch_test_flag(tech_pvt, TFLAG_IO)) {
 		switch_status_t status;
@@ -382,20 +479,6 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 
 			payload = tech_pvt->read_frame.payload;
 
-#if 0
-			elapsed = (unsigned int) ((switch_time_now() - started) / 1000);
-
-			if (timeout > -1) {
-				if (elapsed >= (unsigned int) timeout) {
-					return SWITCH_STATUS_BREAK;
-				}
-			}
-
-			elapsed = (unsigned int) ((switch_time_now() - last_act) / 1000);
-			if (elapsed >= hard_timeout) {
-				return SWITCH_STATUS_BREAK;
-			}
-#endif
 			if (switch_rtp_has_dtmf(tech_pvt->rtp_session)) {
 				char dtmf[128];
 				switch_rtp_dequeue_dtmf(tech_pvt->rtp_session, dtmf, sizeof(dtmf));
@@ -508,6 +591,9 @@ static switch_status_t sofia_kill_channel(switch_core_session_t *session, int si
 		if (switch_rtp_ready(tech_pvt->rtp_session)) {
 			switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_BREAK);
 		}
+		if (switch_rtp_ready(tech_pvt->video_rtp_session)) {
+			switch_rtp_set_flag(tech_pvt->video_rtp_session, SWITCH_RTP_FLAG_BREAK);
+		}
 		break;
 	case SWITCH_SIG_KILL:
 	default:
@@ -516,6 +602,9 @@ static switch_status_t sofia_kill_channel(switch_core_session_t *session, int si
 
 		if (switch_rtp_ready(tech_pvt->rtp_session)) {
 			switch_rtp_kill_socket(tech_pvt->rtp_session);
+		}
+		if (switch_rtp_ready(tech_pvt->video_rtp_session)) {
+			switch_rtp_kill_socket(tech_pvt->video_rtp_session);
 		}
 		break;
 	}
@@ -774,7 +863,10 @@ static const switch_io_routines_t sofia_io_routines = {
 	/*.waitfor_read */ sofia_waitfor_write,
 	/*.send_dtmf */ sofia_send_dtmf,
 	/*.receive_message */ sofia_receive_message,
-	/*.receive_event */ sofia_receive_event
+	/*.receive_event */ sofia_receive_event,
+	/*.state_change*/ NULL,
+	/*.read_video_frame*/ sofia_read_video_frame,
+	/*.write_video_frame*/ sofia_write_video_frame
 };
 
 static const switch_state_handler_table_t sofia_event_handlers = {

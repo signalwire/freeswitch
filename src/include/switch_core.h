@@ -714,6 +714,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, int stream_id);
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, int stream_id);
+SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, int stream_id);
+
 /*! 
   \brief Reset the buffers and resampler on a session
   \param session the session to reset

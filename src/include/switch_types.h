@@ -110,6 +110,10 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_LOCAL_MEDIA_PORT_VARIABLE "local_media_port"
 #define SWITCH_REMOTE_MEDIA_IP_VARIABLE "remote_media_ip"
 #define SWITCH_REMOTE_MEDIA_PORT_VARIABLE "remote_media_port"
+#define SWITCH_REMOTE_VIDEO_IP_VARIABLE "remote_video_ip"
+#define SWITCH_REMOTE_VIDEO_PORT_VARIABLE "remote_video_port"
+#define SWITCH_LOCAL_VIDEO_IP_VARIABLE "local_video_ip"
+#define SWITCH_LOCAL_VIDEO_PORT_VARIABLE "local_video_port"
 #define SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE "hangup_after_bridge"
 #define SWITCH_MAX_FORWARDS_VARIABLE "max_forwards"
 #define SWITCH_SPEECH_KEY "speech"
@@ -542,6 +546,7 @@ CF_RING_READY   = (1 << 18) - Channel is ready to send ringback
 CF_BREAK        = (1 << 19) - Channel should stop what it's doing
 CF_BROADCAST    = (1 << 20) - Channel is broadcasting
 CF_UNICAST      = (1 << 21) - Channel has a unicast connection
+CF_VIDEO		= (1 << 22) - Channel has video
 </pre>
  */
 
@@ -567,7 +572,8 @@ typedef enum {
 	CF_RING_READY = (1 << 18),
 	CF_BREAK = (1 << 19),
 	CF_BROADCAST = (1 << 20),
-	CF_UNICAST = (1 << 21)
+	CF_UNICAST = (1 << 21),
+	CF_VIDEO = (1 << 22)
 } switch_channel_flag_t;
 
 
@@ -578,12 +584,14 @@ typedef enum {
 <pre>
 SFF_CNG       = (1 <<  0) - Frame represents comfort noise
 SFF_RAW_RTP   = (1 <<  1) - Frame has raw rtp accessible
+SFF_RTP_HEADER = (1 << 2) - Get the rtp header from the frame header
 </pre>
  */
 typedef enum {
 	SFF_NONE = 0,
 	SFF_CNG = (1 << 0),
-	SFF_RAW_RTP = (1 << 1)
+	SFF_RAW_RTP = (1 << 1),
+	SFF_RTP_HEADER = (1 << 2)
 } switch_frame_flag_t;
 
 

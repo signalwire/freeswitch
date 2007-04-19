@@ -118,6 +118,50 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_write_frame(switch_co
 
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_video_read_frame(switch_core_session_t *session, switch_video_read_frame_hook_t video_read_frame)
+{
+	switch_io_event_hook_video_read_frame_t *hook, *ptr;
+
+	assert(video_read_frame != NULL);
+	if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) {
+		hook->video_read_frame = video_read_frame;
+		if (!session->event_hooks.video_read_frame) {
+			session->event_hooks.video_read_frame = hook;
+		} else {
+			for (ptr = session->event_hooks.video_read_frame; ptr && ptr->next; ptr = ptr->next);
+			ptr->next = hook;
+
+		}
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_MEMERR;
+
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_video_write_frame(switch_core_session_t *session, switch_video_write_frame_hook_t video_write_frame)
+{
+	switch_io_event_hook_video_write_frame_t *hook, *ptr;
+
+	assert(video_write_frame != NULL);
+	if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) {
+		hook->video_write_frame = video_write_frame;
+		if (!session->event_hooks.video_write_frame) {
+			session->event_hooks.video_write_frame = hook;
+		} else {
+			for (ptr = session->event_hooks.video_write_frame; ptr && ptr->next; ptr = ptr->next);
+			ptr->next = hook;
+
+		}
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_MEMERR;
+
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_kill_channel(switch_core_session_t *session, switch_kill_channel_hook_t kill_channel)
 {
 	switch_io_event_hook_kill_channel_t *hook, *ptr;

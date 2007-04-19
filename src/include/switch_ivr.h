@@ -203,6 +203,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_record_session(switch_core_sessi
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_session(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_ivr_stop_inband_dtmf_session(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session);
 
 /*!
   \brief play a file from the disk to the session

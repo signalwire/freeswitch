@@ -35,6 +35,61 @@
 #include "private/switch_core.h"
 
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, int stream_id)
+{
+	switch_io_event_hook_video_write_frame_t *ptr;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_io_flag_t flags = 0;
+	if (session->endpoint_interface->io_routines->write_video_frame) {
+		if ((status = session->endpoint_interface->io_routines->write_video_frame(session, frame, timeout, flags, stream_id)) == SWITCH_STATUS_SUCCESS) {
+			for (ptr = session->event_hooks.video_write_frame; ptr; ptr = ptr->next) {
+				if ((status = ptr->video_write_frame(session, frame, timeout, flags, stream_id)) != SWITCH_STATUS_SUCCESS) {
+					break;
+				}
+			}
+		}
+	}
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, int stream_id)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_io_event_hook_video_read_frame_t *ptr;
+
+	if (session->endpoint_interface->io_routines->read_video_frame) {
+		if ((status =
+			 session->endpoint_interface->io_routines->read_video_frame(session, frame, timeout, SWITCH_IO_FLAG_NOOP, stream_id)) == SWITCH_STATUS_SUCCESS) {
+			for (ptr = session->event_hooks.video_read_frame; ptr; ptr = ptr->next) {
+				if ((status = ptr->video_read_frame(session, frame, timeout, SWITCH_IO_FLAG_NOOP, stream_id)) != SWITCH_STATUS_SUCCESS) {
+					break;
+				}
+			}
+		}
+	}
+
+	if (status != SWITCH_STATUS_SUCCESS) {
+		goto done;
+	}
+
+	if (!(*frame)) {
+		goto done;
+	}
+
+	assert(session != NULL);
+	assert(*frame != NULL);
+
+	if (switch_test_flag(*frame, SFF_CNG)) {
+		status = SWITCH_STATUS_SUCCESS;
+		goto done;
+	}
+
+ done:
+
+	return status;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, int stream_id)
 {
 	switch_io_event_hook_read_frame_t *ptr;
@@ -128,6 +183,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t);
 				session->raw_read_frame.rate = read_frame->rate;
 				session->raw_read_frame.timestamp = read_frame->timestamp;
+				session->raw_read_frame.ssrc = read_frame->ssrc;
+				session->raw_read_frame.seq = read_frame->seq;
+				session->raw_read_frame.m = read_frame->m;
+				session->raw_read_frame.payload = read_frame->payload;
 				read_frame = &session->raw_read_frame;
 				break;
 			case SWITCH_STATUS_NOOP:
@@ -139,6 +198,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t);
 				session->raw_read_frame.timestamp = read_frame->timestamp;
 				session->raw_read_frame.rate = read_frame->rate;
+				session->raw_read_frame.ssrc = read_frame->ssrc;
+				session->raw_read_frame.seq = read_frame->seq;
+				session->raw_read_frame.m = read_frame->m;
+				session->raw_read_frame.payload = read_frame->payload;
 				read_frame = &session->raw_read_frame;
 				status = SWITCH_STATUS_SUCCESS;
 				break;
@@ -244,6 +307,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					session->enc_read_frame.codec = session->read_codec;
 					session->enc_read_frame.samples = session->read_codec->implementation->bytes_per_frame / sizeof(int16_t);
 					session->enc_read_frame.timestamp = read_frame->timestamp;
+					session->enc_read_frame.rate = read_frame->rate;
+					session->enc_read_frame.ssrc = read_frame->ssrc;
+					session->enc_read_frame.seq = read_frame->seq;
+					session->enc_read_frame.m = read_frame->m;
 					session->enc_read_frame.payload = session->read_codec->implementation->ianacode;
 					*frame = &session->enc_read_frame;
 					break;
@@ -252,6 +319,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					session->raw_read_frame.samples = enc_frame->codec->implementation->samples_per_frame;
 					session->raw_read_frame.timestamp = read_frame->timestamp;
 					session->raw_read_frame.payload = enc_frame->codec->implementation->ianacode;
+					session->raw_read_frame.m = read_frame->m;
+					session->raw_read_frame.ssrc = read_frame->ssrc;
+					session->raw_read_frame.seq = read_frame->seq;
 					*frame = &session->raw_read_frame;
 					status = SWITCH_STATUS_SUCCESS;
 					break;
@@ -371,6 +441,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				session->raw_write_frame.samples = session->raw_write_frame.datalen / sizeof(int16_t);
 				session->raw_write_frame.timestamp = frame->timestamp;
 				session->raw_write_frame.rate = frame->rate;
+				session->raw_write_frame.m = frame->m;
+				session->raw_write_frame.ssrc = frame->ssrc;
+				session->raw_write_frame.seq = frame->seq;
+				session->raw_write_frame.payload = frame->payload;
 				write_frame = &session->raw_write_frame;
 				break;
 			case SWITCH_STATUS_BREAK:
@@ -500,12 +574,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t);
 					session->enc_write_frame.timestamp = frame->timestamp;
 					session->enc_write_frame.payload = session->write_codec->implementation->ianacode;
+					session->enc_write_frame.m = frame->m;
+					session->enc_write_frame.ssrc = frame->ssrc;
+					session->enc_write_frame.seq = frame->seq;
 					write_frame = &session->enc_write_frame;
 					break;
 				case SWITCH_STATUS_NOOP:
 					enc_frame->codec = session->write_codec;
 					enc_frame->samples = enc_frame->datalen / sizeof(int16_t);
 					enc_frame->timestamp = frame->timestamp;
+					enc_frame->m = frame->m;
+					enc_frame->seq = frame->seq;
+					enc_frame->ssrc = frame->ssrc;
 					enc_frame->payload = enc_frame->codec->implementation->ianacode;
 					write_frame = enc_frame;
 					status = SWITCH_STATUS_SUCCESS;
@@ -553,6 +633,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 								session->enc_write_frame.codec = session->write_codec;
 								session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t);
 								session->enc_write_frame.timestamp = frame->timestamp;
+								session->enc_write_frame.m = frame->m;
+								session->enc_write_frame.ssrc = frame->ssrc;
+								session->enc_write_frame.seq = frame->seq;
 								session->enc_write_frame.payload = session->write_codec->implementation->ianacode;
 								write_frame = &session->enc_write_frame;
 								if (!session->read_resampler) {
@@ -571,6 +654,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 								session->enc_write_frame.codec = session->write_codec;
 								session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t);
 								session->enc_write_frame.timestamp = frame->timestamp;
+								session->enc_write_frame.m = frame->m;
+								session->enc_write_frame.ssrc = frame->ssrc;
+								session->enc_write_frame.seq = frame->seq;
 								session->enc_write_frame.payload = session->write_codec->implementation->ianacode;
 								write_frame = &session->enc_write_frame;
 								break;
@@ -578,6 +664,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 								enc_frame->codec = session->write_codec;
 								enc_frame->samples = enc_frame->datalen / sizeof(int16_t);
 								enc_frame->timestamp = frame->timestamp;
+								enc_frame->m = frame->m;
+								enc_frame->ssrc = frame->ssrc;
+								enc_frame->seq = frame->seq;
 								enc_frame->payload = enc_frame->codec->implementation->ianacode;
 								write_frame = enc_frame;
 								status = SWITCH_STATUS_SUCCESS;

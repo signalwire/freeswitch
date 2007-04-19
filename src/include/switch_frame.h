@@ -30,7 +30,7 @@
  *
  */
 /*! \file switch_frame.h
-    \brief Media Frame Structure
+  \brief Media Frame Structure
 */
 
 #ifndef SWITCH_FRAME_H
@@ -40,7 +40,7 @@
 
 SWITCH_BEGIN_EXTERN_C
 /*! \brief An abstraction of a data frame */
-	struct switch_frame {
+struct switch_frame {
 	/*! a pointer to the codec information */
 	switch_codec_t *codec;
 	/*! the originating source of the frame */
@@ -63,6 +63,9 @@ SWITCH_BEGIN_EXTERN_C
 	switch_payload_t payload;
 	/*! the timestamp of the frame */
 	switch_size_t timestamp;
+	uint16_t seq;
+	uint32_t ssrc;
+	switch_bool_t m;
 	/*! frame flags */
 	switch_frame_flag_t flags;
 };

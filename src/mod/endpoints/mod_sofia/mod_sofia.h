@@ -137,7 +137,9 @@ typedef enum {
 	TFLAG_BUGGY_2833 = (1 << 21),
 	TFLAG_SIP_HOLD = (1 << 22),
 	TFLAG_INB_NOMEDIA = (1 << 23),
-	TFLAG_LATE_NEGOTIATION = (1 << 24)
+	TFLAG_LATE_NEGOTIATION = (1 << 24),
+	TFLAG_SDP = (1 << 25),
+	TFLAG_VIDEO = (1 << 26)
 } TFLAGS;
 
 struct mod_sofia_globals {
@@ -310,7 +312,23 @@ struct private_object {
 	nua_handle_t *nh;
 	nua_handle_t *nh2;
 	sip_contact_t *contact;
-	int hangup_status;
+	/** VIDEO **/
+	switch_frame_t video_read_frame;
+	switch_codec_t video_read_codec;
+	switch_codec_t video_write_codec;
+	switch_rtp_t *video_rtp_session;
+	switch_port_t adv_sdp_video_port;
+	switch_port_t local_sdp_video_port;
+	char *video_rm_encoding;
+	switch_payload_t video_pt;
+	unsigned long video_rm_rate;
+	uint32_t video_codec_ms;
+	char *remote_sdp_video_ip;
+	switch_port_t remote_sdp_video_port;
+	char *video_rm_fmtp;
+	switch_payload_t video_agreed_pt;
+	char *video_fmtp_out;
+	uint32_t video_count;
 };
 
 struct callback_t {
@@ -428,3 +446,4 @@ switch_bool_t sofia_glue_execute_sql_callback(sofia_profile_t *profile,
 											  switch_core_db_callback_func_t callback,
 											  void *pdata);
 char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex, char *sql, char *resbuf, size_t len);
+void sofia_glue_check_video_codecs(private_object_t *tech_pvt);

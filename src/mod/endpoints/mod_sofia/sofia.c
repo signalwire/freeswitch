@@ -924,14 +924,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		nua_ack(nh, TAG_END());
 		break;
 	case nua_callstate_received:
-
-		if (session && switch_core_session_running(session)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Re-Entering Call State Received!\n");
-			goto done;
-		}
-
-		if (channel) {
-			if (r_sdp) {
+		if (tech_pvt && !switch_test_flag(tech_pvt, TFLAG_SDP)) {
+			if (r_sdp && !switch_test_flag(tech_pvt, TFLAG_SDP)) {
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_NOMEDIA");
 					switch_set_flag_locked(tech_pvt, TFLAG_READY);
@@ -1015,7 +1009,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		break;
 	case nua_callstate_completed:
 		if (tech_pvt && r_sdp) {
-			if (r_sdp) {
+			if (r_sdp) { // && !switch_test_flag(tech_pvt, TFLAG_SDP)) {
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 					goto done;
 				} else {
@@ -1078,10 +1072,10 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				goto done;
 			}
 
-			if (!r_sdp) {
+			if (!r_sdp && !switch_test_flag(tech_pvt, TFLAG_SDP)) {
 				r_sdp = (const char *) switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 			}
-			if (r_sdp) {
+			if (r_sdp && !switch_test_flag(tech_pvt, TFLAG_SDP)) {
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 					switch_set_flag_locked(tech_pvt, TFLAG_ANS);
 					switch_channel_mark_answered(channel);

@@ -31,6 +31,71 @@
  */
 #include <switch.h>
 
+struct echo_helper {
+	switch_core_session_t *session;
+	int up;
+};
+
+static void *SWITCH_THREAD_FUNC echo_video_thread(switch_thread_t *thread, void *obj)
+{
+	struct echo_helper *eh = obj;
+	switch_core_session_t *session = eh->session;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_status_t status;
+	switch_frame_t *read_frame;
+
+	eh->up = 1;	
+	while(switch_channel_ready(channel) && switch_channel_get_state(channel) == CS_LOOPBACK) {
+		status = switch_core_session_read_video_frame(session, &read_frame, -1, 0);
+		
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			break;
+		}
+		
+		switch_core_session_write_video_frame(session, read_frame, -1, 0);
+		
+	}
+	eh->up = 0;
+	return NULL;
+}
+
+SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session)
+{
+	switch_status_t status;
+	switch_frame_t *read_frame;
+	struct echo_helper eh = {0};
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_thread_t *thread;
+	switch_threadattr_t *thd_attr = NULL;
+	
+
+	switch_channel_answer(channel);
+
+	if (switch_channel_test_flag(channel, CF_VIDEO)) {
+		eh.session = session;
+		switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
+		switch_threadattr_detach_set(thd_attr, 1);
+		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+		switch_thread_create(&thread, thd_attr, echo_video_thread, &eh, switch_core_session_get_pool(session));
+	}
+
+	while(switch_channel_ready(channel) && switch_channel_get_state(channel) == CS_LOOPBACK) {
+		status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			break;
+		}
+		switch_core_session_write_frame(session, read_frame, -1, 0);
+	}
+
+	if (eh.up) {
+		while(eh.up) {
+			switch_yield(1000);
+		}
+	}
+}
+
+
+
 static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
 	switch_file_handle_t *fh = (switch_file_handle_t *) user_data;

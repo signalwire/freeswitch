@@ -99,6 +99,10 @@ struct switch_io_routines {
 	switch_status_t (*receive_event) (switch_core_session_t *, switch_event_t *);
 	/*! change a sessions channel state */
 	switch_status_t (*state_change) (switch_core_session_t *);
+	/*! read a video frame from a session */
+	switch_status_t (*read_video_frame) (switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
+	/*! write a video frame to a session */
+	switch_status_t (*write_video_frame) (switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int);
 };
 
 /*! \brief Abstraction of an module endpoint interface
