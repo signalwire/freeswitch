@@ -74,6 +74,10 @@ UPDATE while the call has already been completed has been also changed.
 Bugs fixed in this release
 --------------------------
 
+- Fixed nua failing to refresh publication with re-PUBLISH.
+  Problem reported by Jan van den Bosch.
+- Fixed encoding of c= lines without IN address.
+  Problem reported by Saurav Sahu.
 - Fixed status code sent to network and returned to the client if there was
   an internal error while responding to a request. 
   The problem was reported by Michael Jerris and Joshua Engelbrecht.

@@ -236,6 +236,9 @@ static int nua_publish_client_init(nua_client_request_t *cr,
 static int nua_publish_client_request(nua_client_request_t *cr,
 				      msg_t *, sip_t *,
 				      tagi_t const *tags);
+static int nua_publish_client_check_restart(nua_client_request_t *cr,
+					    int status, char const *phrase,
+					    sip_t const *sip);
 static int nua_publish_client_response(nua_client_request_t *cr,
 				       int status, char const *phrase,
 				       sip_t const *sip);
@@ -251,7 +254,7 @@ static nua_client_methods_t const nua_publish_client_methods = {
   nua_publish_client_template,
   nua_publish_client_init,
   nua_publish_client_request,
-  /* nua_publish_client_check_restart */ NULL,
+  nua_publish_client_check_restart,
   nua_publish_client_response,
   /* nua_publish_client_preliminary */ NULL
 };
@@ -348,6 +351,34 @@ int nua_publish_client_request(nua_client_request_t *cr,
 				  TAG_NEXT(tags));
 }
 
+static int nua_publish_client_check_restart(nua_client_request_t *cr,
+					    int status, char const *phrase,
+					    sip_t const *sip)
+{
+  char const *restarting = NULL;
+
+  if (cr->cr_terminating || !cr->cr_usage)
+    ;
+  else if (status == 412)
+    restarting = phrase;
+  else if (200 <= status && status < 300 && 
+	   sip->sip_expires && sip->sip_expires->ex_delta == 0)
+    restarting = "Immediate re-PUBLISH";
+
+  if (restarting) {
+    struct publish_usage *pu = nua_dialog_usage_private(cr->cr_usage);
+
+    if (pu) {
+      pu->pu_published = 0;
+      su_free(cr->cr_owner->nh_home, pu->pu_etag), pu->pu_etag = NULL;
+      if (nua_client_restart(cr, 100, restarting))
+	return 0;
+    }
+  }
+
+  return nua_base_client_check_restart(cr, status, phrase, sip);
+}
+
 static int nua_publish_client_response(nua_client_request_t *cr,
 				       int status, char const *phrase,
 				       sip_t const *sip)
@@ -364,15 +395,7 @@ static int nua_publish_client_response(nua_client_request_t *cr,
     if (pu->pu_etag)
       su_free(nh->nh_home, pu->pu_etag), pu->pu_etag = NULL;
 
-    if (status == 412) {
-      if (nua_client_restart(cr, 100, phrase))
-	return 0;
-    }
-    else if (status < 300) {
-      if (ex && ex->ex_delta == 0 &&
-	  nua_client_restart(cr, 100, "Trying re-PUBLISH"))
-	return 0;
-
+    if (status < 300) {
       pu->pu_published = 1;
       pu->pu_etag = sip_etag_dup(nh->nh_home, sip->sip_etag);
 
@@ -384,6 +407,8 @@ static int nua_publish_client_response(nua_client_request_t *cr,
 	else
 	  SET_STATUS1(NUA_INTERNAL_ERROR);
       }
+      else
+	nua_dialog_usage_set_refresh(du, ex->ex_delta);
     }
   }
 

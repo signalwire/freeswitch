@@ -229,7 +229,6 @@ AC_C_KEYWORD_STRUCT
 AC_HEADER_TIME
 AC_TYPE_SIZE_T
 
-AC_STRUCT_SIN6
 AC_SYS_SA_LEN
 
 ### checks for library functions

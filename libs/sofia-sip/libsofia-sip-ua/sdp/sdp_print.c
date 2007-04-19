@@ -405,7 +405,13 @@ static void print_connection2(sdp_printer_t *p, sdp_connection_t const *c)
     return;
   }
 
-  sdp_printf(p, "%s%s%s", nettype, addrtype, c->c_address);
+  if (nettype && addrtype)
+    sdp_printf(p, "%s%s%s", nettype, addrtype, c->c_address);
+  else if (nettype)
+    sdp_printf(p, "%s%s%s", nettype, c->c_address);
+  else
+    sdp_printf(p, "%s", c->c_address);
+    
   if (c->c_mcast || c->c_ttl) {
     sdp_printf(p, "/%u", c->c_ttl);
     if (c->c_groups > 1)

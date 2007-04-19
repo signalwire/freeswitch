@@ -106,7 +106,7 @@ include $(top_srcdir)/rules/sofia.am
 
 MSG_PARSER_AWK = $(srcdir)/../msg/msg_parser.awk
 
-AWK_SIP_AWK = $(AWK) -f $(MSG_PARSER_AWK) module=sip
+AWK_SIP_AWK = LC_ALL=C $(AWK) -f $(MSG_PARSER_AWK) module=sip
 
 SS_SIP_H = ${srcdir}/sofia-sip/sip.h
 
@@ -116,23 +116,27 @@ ${GENERATED_H} ${GENERATED_C}: ${SS_SIP_H} ${MSG_PARSER_AWK}
 
 sofia-sip/sip_hclasses.h: ${srcdir}/sofia-sip/sip_hclasses.h.in
 	@-mkdir sofia-sip 2>/dev/null || true
-	${AWK_SIP_AWK} PR=$@ TEMPLATE=${srcdir}/$@.in ${SS_SIP_H}
+	${AWK_SIP_AWK} PR=$@ TEMPLATE=${srcdir}/sofia-sip/sip_hclasses.h.in \
+		${SS_SIP_H}
 
 sofia-sip/sip_protos.h: ${srcdir}/sofia-sip/sip_protos.h.in
 	@-mkdir sofia-sip 2>/dev/null || true
-	${AWK_SIP_AWK} PR=$@ TEMPLATE=${srcdir}/$@.in ${SS_SIP_H}
+	${AWK_SIP_AWK} PR=$@ TEMPLATE=${srcdir}/sofia-sip/sip_protos.h.in \
+		 ${SS_SIP_H}
 
 sofia-sip/sip_tag.h: ${srcdir}/sofia-sip/sip_tag.h.in
 	@-mkdir sofia-sip 2>/dev/null || true
-	${AWK_SIP_AWK} PR=$@ TEMPLATE=${srcdir}/$@.in ${SS_SIP_H}
+	${AWK_SIP_AWK} PR=$@ TEMPLATE=${srcdir}/sofia-sip/sip_tag.h.in \
+		${SS_SIP_H}
 
 sip_tag.c: ${srcdir}/sip_tag.c.in ${EXTRA}
-	${AWK_SIP_AWK} PR=$@ TEMPLATE=${srcdir}/$@.in ${SS_SIP_H} ${EXTRA}
+	${AWK_SIP_AWK} PR=$@ TEMPLATE=${srcdir}/sip_tag.c.in \
+		${SS_SIP_H} ${EXTRA}
 
 # Note: sip_bad_mask is used by nta to weed out bad messages
 
 sip_parser_table.c: ${srcdir}/sip_parser_table.c.in ${EXTRA} sip_bad_mask
-	${AWK_SIP_AWK} PT=$@ TEMPLATE=${srcdir}/$@.in \
+	${AWK_SIP_AWK} PT=$@ TEMPLATE=${srcdir}/sip_parser_table.c.in \
 		FLAGFILE=${srcdir}/sip_bad_mask \
 		MC_HASH_SIZE=127 MC_SHORT_SIZE=26 \
 		${SS_SIP_H} ${EXTRA}
@@ -144,4 +148,4 @@ sofia-sip/sip_extra.h: ${srcdir}/sofia-sip/sip_extra.h.in ${EXTRA}
 		PACKAGE_VERSION="${PACKAGE_VERSION}" \
 		TEMPLATE1=${srcdir}/sofia-sip/sip_hclasses.h.in \
 		TEMPLATE2=${srcdir}/sofia-sip/sip_protos.h.in \
-		TEMPLATE=${srcdir}/$@.in ${EXTRA}
+		TEMPLATE=${srcdir}/sofia-sip/sip_extra.h.in ${EXTRA}

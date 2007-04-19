@@ -85,7 +85,7 @@ include $(top_srcdir)/rules/sofia.am
 
 MSG_PARSER_AWK = $(srcdir)/msg_parser.awk
 
-AWK_MSG_AWK = $(AWK) -f $(MSG_PARSER_AWK)
+AWK_MSG_AWK = LC_ALL=C $(AWK) -f $(MSG_PARSER_AWK)
 
 ${GENERATED_HC}: ${MSG_PARSER_AWK}
 
@@ -95,12 +95,12 @@ test_protos.h test_table.c: ${TEST_CLASS_H}
 
 test_protos.h: ${srcdir}/test_protos.h.in
 	$(AWK_MSG_AWK) module=msg_test NO_MIDDLE=1 NO_LAST=1 \
-		PR=$@ TEMPLATE=$(srcdir)/$@.in ${TEST_CLASS_H}
+		PR=$@ TEMPLATE=${srcdir}/test_protos.h.in ${TEST_CLASS_H}
 
 test_table.c: ${srcdir}/test_table.c.in
 	$(AWK_MSG_AWK) module=msg_test prefix=msg \
 		MC_HASH_SIZE=127 multipart=msg_multipart \
-		PT=$@ TEMPLATE=$(srcdir)/$@.in ${TEST_CLASS_H}
+		PT=$@ TEMPLATE=${srcdir}/test_table.c.in ${TEST_CLASS_H}
 
 SS_MIME_H = ${srcdir}/sofia-sip/msg_mime.h
 
@@ -110,14 +110,17 @@ msg_mime_table.c: ${SS_MIME_H}
 sofia-sip/msg_protos.h: ${srcdir}/sofia-sip/msg_protos.h.in
 	@-mkdir sofia-sip 2>/dev/null || true
 	$(AWK_MSG_AWK) module=msg NO_FIRST=1 NO_MIDDLE=1 \
-		PR=$@ TEMPLATE=$(srcdir)/$@.in ${SS_MIME_H}
+		PR=$@ TEMPLATE=${srcdir}/sofia-sip/msg_protos.h.in \
+		${SS_MIME_H}
 
 sofia-sip/msg_mime_protos.h: ${srcdir}/sofia-sip/msg_mime_protos.h.in
 	@-mkdir sofia-sip 2>/dev/null || true
 	$(AWK_MSG_AWK) module=msg NO_FIRST=1 NO_LAST=1 \
-		PR=$@ TEMPLATE=$(srcdir)/$@.in ${SS_MIME_H}
+		PR=$@ TEMPLATE=${srcdir}/sofia-sip/msg_mime_protos.h.in \
+		${SS_MIME_H}
 
 msg_mime_table.c: ${srcdir}/msg_mime_table.c.in
 	$(AWK_MSG_AWK) module=msg_multipart \
 		tprefix=msg prefix=mp MC_HASH_SIZE=127 \
-		PT=$@ TEMPLATE=$(srcdir)/$@.in ${SS_MIME_H}
+		PT=$@ TEMPLATE=${srcdir}/msg_mime_table.c.in \
+		${SS_MIME_H}

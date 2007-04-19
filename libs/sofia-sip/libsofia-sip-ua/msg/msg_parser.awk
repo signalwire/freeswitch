@@ -201,7 +201,7 @@ function replace (p, hash, name, NAME, comment, Comment, COMMENT, since)
     }
     else {
       # Remove line with #version#
-      gsub(/\n[^\n]*#version#[^\n]*\n/, "\n", p);
+      gsub(/\n[^#\n]*#version#[^\n]*/, "", p);
     }
     	    
     print p > PR;

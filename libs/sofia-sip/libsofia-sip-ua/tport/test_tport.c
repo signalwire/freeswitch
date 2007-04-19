@@ -773,12 +773,14 @@ static int udp_test(tp_test_t *tt)
 
 static int tcp_test(tp_test_t *tt)
 {
+  BEGIN();
+
+#ifndef WIN32			/* Windows seems to be buffering too much */
+
   msg_t *msg = NULL;
   int i;
   tport_t *tp, *tp0;
   char ident[16];
-
-  BEGIN();
 
   /* Create a large message, just to force queueing in sending end */
   TEST(new_test_msg(tt, &msg, "tcp-0", 1, 16 * 64 * 1024), 0);
@@ -855,6 +857,8 @@ static int tcp_test(tp_test_t *tt)
   msg_destroy(tt->tt_rmsg), tt->tt_rmsg = NULL;
 
   tport_decref(&tp0);
+
+#endif
 
   END();
 }

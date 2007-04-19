@@ -474,7 +474,7 @@ static char const pint_msg[] =
   "o=- 2353687640 2353687640 IN IP4 128.3.4.5\r\n"
   "s=marketing\r\n"
   "e=john.jones.3@chinet.net\r\n"
-  "c= TN RFC2543  +1-201-406-4090\r\n"
+  "c=TN RFC2543 +1-201-406-4090\r\n"
   "t=2353687640 0\r\n"
   "m=audio 1 voice -\r\n"
   ;
@@ -496,6 +496,8 @@ static int test_pint(void)
   su_home_t *home = su_home_create();
   sdp_parser_t *parser;
   sdp_session_t *sdp;
+  sdp_printer_t *printer;
+  char const *m;
 
   BEGIN();
 
@@ -503,6 +505,11 @@ static int test_pint(void)
 
   TEST_1((parser = sdp_parse(home, pint_msg, sizeof(pint_msg) - 1, sdp_f_anynet)));
   TEST_1((sdp = sdp_session(parser)));
+
+  TEST_1((printer = sdp_print(home, sdp, NULL, -1, 0)));
+  TEST_1((m = sdp_message(printer)));
+  TEST_S(m, pint_msg);
+  TEST(sdp_message_size(printer), sizeof(pint_msg) - 1);
 
   TEST_1((parser = sdp_parse(home, pint_torture_msg, sizeof(pint_torture_msg) - 1,
 			     sdp_f_anynet)));

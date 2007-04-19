@@ -196,13 +196,18 @@ if test "$ac_cv_sa_len" = yes ;then
 	        [Define to 1 if you have sa_len in struct sockaddr])
 fi
 
-AC_REQUIRE([AC_STRUCT_SIN6])
+AC_ARG_ENABLE([ip6],
+[  --disable-ip6          disable IPv6 functionality [[enabled]]],,enable_ip6=yes)
+
+if ! test no$enable_ip6 = nono ; then
+AC_STRUCT_SIN6
 case $ac_cv_sin6 in 
 yes) SAC_SU_DEFINE(SU_HAVE_IN6, 1, [
 	Define to 1 if you have struct sockaddr_in6]) ;;
  no) ;;
   *) AC_MSG_ERROR([Inconsistent struct sockaddr_sin6 test]) ;;
 esac
+fi
 
 AC_CHECK_HEADERS([unistd.h sys/time.h])
 

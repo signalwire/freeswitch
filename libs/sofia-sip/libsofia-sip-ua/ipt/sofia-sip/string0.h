@@ -28,11 +28,11 @@
 
 /**@file sofia-sip/string0.h
  *
- * @brief String comparison functions accepting NULL pointers
+ * @brief Extra string function.
  *
- * This module contains string comparison functions that can be called
- * with NULL pointer as argument.
- *
+ * String comparison functions accepting NULL pointers: str0cmp(),
+ * str0ncmp(), str0casecmp(), str0ncasecmp(). Also includes span functions
+ * testing at most @a n bytes: strncspn(), strnspn().
  */
 
 #ifndef SU_CONFIG_H
