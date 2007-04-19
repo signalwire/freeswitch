@@ -52,7 +52,9 @@
  * 
  * @sa TPORT_DUMP, TPORT_DEBUG, tport_log
  */
+#ifdef DOXYGEN
 extern char const TPORT_LOG[];	/* dummy declaration for Doxygen */
+#endif
 
 /**@var TPORT_DUMP
  *
@@ -64,7 +66,9 @@ extern char const TPORT_LOG[];	/* dummy declaration for Doxygen */
  * 
  * @sa TPORT_LOG, TPORT_DEBUG, tport_log
  */
+#ifdef DOXYGEN
 extern char const TPORT_DUMP[];	/* dummy declaration for Doxygen */
+#endif
 
 /**@var TPORT_DEBUG
  *
@@ -75,7 +79,9 @@ extern char const TPORT_DUMP[];	/* dummy declaration for Doxygen */
  * 
  * @sa <su_debug.h>, tport_log, SOFIA_DEBUG
  */
+#ifdef DOXYGEN
 extern char const TPORT_DEBUG[]; /* dummy declaration for Doxygen */
+#endif
 
 /**Debug log for @b tport module. 
  * 

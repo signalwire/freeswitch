@@ -71,7 +71,9 @@
 
 SOFIA_BEGIN_DECLS
 
+#ifdef DOXYGEN
 extern char const STUN_DEBUG[]; /* dummy declaration for Doxygen */
+#endif
 
 /* XXX -- mela: note that this are 100 times too small */
 #if 1
