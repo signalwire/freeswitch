@@ -40,7 +40,6 @@ switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int 
 void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, char *sr, int force)
 {
 	char buf[2048];
-	switch_time_t now = switch_time_now();
 	int ptime = 0;
 	int rate = 0;
 	uint32_t v_port;
@@ -65,14 +64,24 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t por
 		sr = "sendrecv";
 	}
 
+	if (!tech_pvt->owner_id) {
+		tech_pvt->owner_id = (uint32_t) time(NULL) - port;
+	}
+
+	if (!tech_pvt->session_id) {
+		tech_pvt->session_id = tech_pvt->owner_id ;
+	}
+
+	tech_pvt->session_id++;
+	
 	snprintf(buf, sizeof(buf),
 			 "v=0\n"
-			 "o=FreeSWITCH %d%" SWITCH_TIME_T_FMT " %d%" SWITCH_TIME_T_FMT " IN IP4 %s\n"
+			 "o=FreeSWITCH %010u %010u IN IP4 %s\n"
 			 "s=FreeSWITCH\n" 
 			 "c=IN IP4 %s\n" "t=0 0\n" 
 			 "a=%s\n" 
-			 "m=audio %d RTP/AVP", port, now, port, now, ip, ip, sr, port);
-
+			 "m=audio %d RTP/AVP", tech_pvt->owner_id, tech_pvt->session_id, ip, ip, sr, port);
+	
 	if (tech_pvt->rm_encoding) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->pt);
 	} else if (tech_pvt->num_codecs) {
@@ -277,7 +286,7 @@ void sofia_glue_check_video_codecs(private_object_t *tech_pvt)
 {
 	if (tech_pvt->num_codecs && !switch_test_flag(tech_pvt, TFLAG_VIDEO)) {
 		int i;
-
+		tech_pvt->video_count = 0;
 		for (i = 0; i < tech_pvt->num_codecs; i++) {
 			if (tech_pvt->codecs[i]->codec_type == SWITCH_CODEC_TYPE_VIDEO) {
 				tech_pvt->video_count++;

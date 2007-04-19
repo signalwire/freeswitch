@@ -312,6 +312,8 @@ struct private_object {
 	nua_handle_t *nh;
 	nua_handle_t *nh2;
 	sip_contact_t *contact;
+	uint32_t owner_id;
+	uint32_t session_id;
 	/** VIDEO **/
 	switch_frame_t video_read_frame;
 	switch_codec_t video_read_codec;
