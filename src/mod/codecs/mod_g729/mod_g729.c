@@ -212,6 +212,47 @@ static switch_status_t switch_g729_decode(switch_codec_t *codec,
 
 /* Registration */
 
+static const switch_codec_implementation_t g729_40ms_8k_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 18,
+	/*.iananame */ "G729",
+	/*.fmtp */ NULL,
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ 128000,
+	/*.microseconds_per_frame */ 40000,
+	/*.samples_per_frame */ 320,
+	/*.bytes_per_frame */ 640,
+	/*.encoded_bytes_per_frame */ 40,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_g729_init,
+	/*.encode */ switch_g729_encode,
+	/*.decode */ switch_g729_decode,
+	/*.destroy */ switch_g729_destroy,
+};
+
+static const switch_codec_implementation_t g729_30ms_8k_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 18,
+	/*.iananame */ "G729",
+	/*.fmtp */ NULL,
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ 96000,
+	/*.microseconds_per_frame */ 30000,
+	/*.samples_per_frame */ 240,
+	/*.bytes_per_frame */ 480,
+	/*.encoded_bytes_per_frame */ 30,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_g729_init,
+	/*.encode */ switch_g729_encode,
+	/*.decode */ switch_g729_decode,
+	/*.destroy */ switch_g729_destroy,
+	&g729_40ms_8k_implementation
+};
+
 static const switch_codec_implementation_t g729_10ms_8k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 18,
@@ -230,6 +271,7 @@ static const switch_codec_implementation_t g729_10ms_8k_implementation = {
 	/*.encode */ switch_g729_encode,
 	/*.decode */ switch_g729_decode,
 	/*.destroy */ switch_g729_destroy,
+	&g729_30ms_8k_implementation
 };
 
 static const switch_codec_implementation_t g729_8k_implementation = {
