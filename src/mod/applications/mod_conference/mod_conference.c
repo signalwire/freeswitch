@@ -91,6 +91,13 @@ typedef enum {
 struct conference_member;
 typedef struct conference_member conference_member_t;
 
+struct call_list {
+	char *string;
+	int itteration;
+	struct call_list *next;
+};
+typedef struct call_list call_list_t;
+
 struct caller_control_actions;
 
 typedef struct caller_control_fn_table {
@@ -179,6 +186,7 @@ typedef struct conference_obj {
 	char *caller_id_name;
 	char *caller_id_number;
 	char *sound_prefix;
+	char *special_announce;
 	uint32_t max_members;
 	char *maxmember_sound;
 	uint32_t anounce_count;
@@ -297,7 +305,7 @@ static void conference_function(switch_core_session_t *session, char *data);
 static void launch_conference_thread(conference_obj_t * conference);
 static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t * thread, void *obj);
 static switch_status_t conference_local_play_file(conference_obj_t * conference,
-												  switch_core_session_t *session, char *path, uint32_t leadin, char *buf, switch_size_t len);
+												  switch_core_session_t *session, char *path, uint32_t leadin);
 static switch_status_t conference_member_play_file(conference_member_t * member, char *file, uint32_t leadin);
 static switch_status_t conference_member_say(conference_member_t * member, char *text, uint32_t leadin);
 static uint32_t conference_member_stop_file(conference_member_t * member, file_stop_t stop);
@@ -461,6 +469,8 @@ static switch_status_t conference_add_member(conference_obj_t * conference, conf
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *event;
 	char msg[512];				// for conference count anouncement
+	call_list_t *call_list = NULL;
+	switch_channel_t *channel;
 
 	assert(conference != NULL);
 	assert(member != NULL);
@@ -492,18 +502,32 @@ static switch_status_t conference_add_member(conference_obj_t * conference, conf
 		if (conference->count > 1 && conference->enter_sound) {
 			conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 0);
 		}
-		// anounce the total number of members in the conference
-		if (conference->count >= conference->anounce_count && conference->anounce_count > 1) {
-			snprintf(msg, sizeof(msg), "There are %d callers", conference->count);
-			conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
-		} else if (conference->count == 1) {
-			if (conference->alone_sound) {
-				conference_play_file(conference, conference->alone_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 0);
-			} else {
-				snprintf(msg, sizeof(msg), "You are currently the only person in this conference.");
-				conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
-			}
+
+		channel = switch_core_session_get_channel(member->session);
+		call_list = (call_list_t *) switch_channel_get_private(channel, "_conference_autocall_list_");
+			
+		if (call_list) {
+			char msg[1024];
+			snprintf(msg, sizeof(msg), "Auto Calling %d parties", call_list->itteration);
+			conference_member_say(member, msg, 0);
+		} else {
+			if (switch_strlen_zero(conference->special_announce)) {
+				// anounce the total number of members in the conference
+				if (conference->count >= conference->anounce_count && conference->anounce_count > 1) {
+					snprintf(msg, sizeof(msg), "There are %d callers", conference->count);
+					conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
+				} else if (conference->count == 1) {
+					if (conference->alone_sound) {
+						conference_play_file(conference, conference->alone_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 0);
+					} else {
+						snprintf(msg, sizeof(msg), "You are currently the only person in this conference.");
+						conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
+					}
+				}
+			} 
 		}
+
+		
 
 		if (conference->min && conference->count >= conference->min) {
 			switch_set_flag(conference, CFLAG_ENFORCE_MIN);
@@ -1429,6 +1453,7 @@ static void conference_loop_output(conference_member_t * member)
 	//uint32_t samples = switch_bytes_per_frame(member->conference->rate, member->conference->interval);
 	uint32_t samples = switch_bytes_per_frame(read_codec->implementation->samples_per_second, interval);
 	uint32_t low_count = 0, bytes = samples * 2;
+	call_list_t *call_list = NULL, *cp = NULL;
 
 	channel = switch_core_session_get_channel(member->session);
 
@@ -1459,9 +1484,38 @@ static void conference_loop_output(conference_member_t * member)
 	/* build a digit stream object */
 	if (member->conference->dtmf_parser != NULL
 		&& switch_ivr_digit_stream_new(member->conference->dtmf_parser, &member->digit_stream) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Warning Will Robinson, there is no digit parser stream object\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Danger Will Robinson, there is no digit parser stream object\n");
 	}
+	
 
+	if ((call_list = switch_channel_get_private(channel, "_conference_autocall_list_"))) {
+		char *cid_name = switch_channel_get_variable(channel, "conference_auto_outcall_caller_id_name");
+		char *cid_num = switch_channel_get_variable(channel, "conference_auto_outcall_caller_id_number");
+		char *toval = switch_channel_get_variable(channel, "conference_auto_outcall_timeout");
+		char *flags = switch_channel_get_variable(channel, "conference_auto_outcall_flags");
+		char *ann = switch_channel_get_variable(channel, "conference_auto_outcall_announce");
+		int to = 60;
+		
+		if (ann) {
+			member->conference->special_announce = switch_core_strdup(member->conference->pool, ann);
+		}
+
+		switch_channel_set_private(channel, "_conference_autocall_list_", NULL);
+		
+		if (toval) {
+			to = atoi(toval);
+		}
+		
+		if (to < 10 || to > 500) {
+			to = 60;
+		}
+		
+		for (cp = call_list; cp; cp = cp->next) {
+			conference_outcall_bg(member->conference, NULL, member->session, cp->string, to, switch_str_nil(flags), cid_name, cid_num);
+
+		}
+
+	}
 	/* Fair WARNING, If you expect the caller to hear anything or for digit handling to be proccessed,      */
 	/* you better not block this thread loop for more than the duration of member->conference->timer_name!  */
 	while (switch_test_flag(member, MFLAG_RUNNING) && switch_test_flag(member, MFLAG_ITHREAD)
@@ -3565,8 +3619,8 @@ static switch_status_t conference_outcall(conference_obj_t * conference,
 			goto done;
 		}
 		/* add them to the conference */
-		if (flags && strcasecmp(flags, "none")) {
-			snprintf(appdata, sizeof(appdata), "%s +flags{%s}", conference_name, flags);
+		if (flags && !strcasecmp(flags, "none")) {
+			snprintf(appdata, sizeof(appdata), "%s+flags{%s}", conference_name, flags);
 			switch_caller_extension_add_application(peer_session, extension, (char *) global_app_name, appdata);
 		} else {
 			switch_caller_extension_add_application(peer_session, extension, (char *) global_app_name, conference_name);
@@ -3611,7 +3665,8 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t * thread,
 		switch_call_cause_t cause;
 		switch_event_t *event;
 
-		conference_outcall(call->conference, NULL, call->session, call->bridgeto, call->timeout, call->flags, call->cid_name, call->cid_num, &cause);
+		conference_outcall(call->conference, call->conference_name, 
+						   call->session, call->bridgeto, call->timeout, call->flags, call->cid_name, call->cid_num, &cause);
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", "%s", call->conference->name);
@@ -3677,10 +3732,12 @@ static switch_status_t conference_outcall_bg(conference_obj_t * conference,
 
 /* Play a file */
 static switch_status_t conference_local_play_file(conference_obj_t * conference,
-												  switch_core_session_t *session, char *path, uint32_t leadin, char *buf, switch_size_t len)
+												  switch_core_session_t *session, char *path, uint32_t leadin)
 {
 	uint32_t x = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_channel_t *channel;
+	char *expanded = NULL;
 
 	/* generate some space infront of the file to be played */
 	for (x = 0; x < leadin; x++) {
@@ -3695,10 +3752,28 @@ static switch_status_t conference_local_play_file(conference_obj_t * conference,
 	/* if all is well, really play the file */
 	if (status == SWITCH_STATUS_SUCCESS) {
 		char *dpath = NULL;
+	
+		channel = switch_core_session_get_channel(session);
+		if ((expanded = switch_channel_expand_variables(channel, path)) != path) {
+			path = expanded;
+		} else {
+			expanded = NULL;
+		}
+
+		if (!strncasecmp(path, "say:", 4)) {
+			if (!(conference->tts_engine && conference->tts_voice)) {
+				status = SWITCH_STATUS_FALSE;
+			} else {
+				status = switch_ivr_speak_text(session, conference->tts_engine, conference->tts_voice, 0, path + 4, NULL);
+			}
+			goto done;
+		}
+			
 
 		if (conference->sound_prefix) {
 			if (!(dpath = switch_mprintf("%s/%s", conference->sound_prefix, path))) {
-				return SWITCH_STATUS_MEMERR;
+				status = SWITCH_STATUS_MEMERR;
+				goto done;
 			}
 			path = dpath;
 		}
@@ -3707,6 +3782,9 @@ static switch_status_t conference_local_play_file(conference_obj_t * conference,
 		switch_safe_free(dpath);
 	}
 
+ done:
+	switch_safe_free(expanded);
+	
 	return status;
 }
 
@@ -3724,6 +3802,39 @@ static void set_mflags(char *flags, member_flag_t * f)
 
 }
 
+static void conference_auto_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel = NULL;
+	call_list_t *call_list, *np;
+	char *addition = (char *) data;
+
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+	call_list = switch_channel_get_private(channel, "_conference_autocall_list_");
+
+	if (switch_strlen_zero(addition)) {
+		call_list = NULL;
+	} else {
+		np = switch_core_session_alloc(session, sizeof(*np));
+		assert(np != NULL);
+
+		np->string = switch_core_session_strdup(session, addition);
+		if (call_list) {
+			np->next = call_list;
+			np->itteration = call_list->itteration + 1;
+		} else {
+			np->itteration = 1;
+		}
+
+		call_list = np;
+		
+	}
+	
+	switch_channel_set_private(channel, "_conference_autocall_list_", call_list);
+	
+
+}
 
 /* Application interface function that is called from the dialplan to join the channel to a conference */
 static void conference_function(switch_core_session_t *session, char *data)
@@ -3845,7 +3956,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 		if (!(conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, conf_name))) {
 			/* couldn't find the conference, create one */
 			conference = conference_new(conf_name, xml_cfg, NULL);
-
+			
 			if (!conference) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 				goto done;
@@ -3887,7 +3998,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 
 				/* be friendly */
 				if (conference->pin_sound) {
-					conference_local_play_file(conference, session, conference->pin_sound, 20, pin_buf, sizeof(pin_buf));
+					conference_local_play_file(conference, session, conference->pin_sound, 20);
 				}
 				/* wait for them if neccessary */
 				if (strlen(pin_buf) < strlen(conference->pin)) {
@@ -3907,7 +4018,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 
 					/* more friendliness */
 					if (conference->bad_pin_sound) {
-						conference_local_play_file(conference, session, conference->bad_pin_sound, 20, pin_buf, sizeof(pin_buf));
+						conference_local_play_file(conference, session, conference->bad_pin_sound, 20);
 					}
 				}
 				pin_retries--;
@@ -3918,13 +4029,17 @@ static void conference_function(switch_core_session_t *session, char *data)
 			}
 		}
 
+		if (conference->special_announce) {
+			conference_local_play_file(conference, session, conference->special_announce, CONF_DEFAULT_LEADIN);
+		}
+
 		/* don't allow more callers if the conference is locked, unless we invited them */
 		if (switch_test_flag(conference, CFLAG_LOCKED) && !switch_channel_test_flag(channel, CF_OUTBOUND)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Conference %s is locked.\n", conf_name);
 			if (conference->locked_sound) {
 				/* Answer the channel */
 				switch_channel_answer(channel);
-				conference_local_play_file(conference, session, conference->locked_sound, 20, NULL, 0);
+				conference_local_play_file(conference, session, conference->locked_sound, 20);
 			}
 			goto done;
 		}
@@ -3938,7 +4053,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 			if (conference->maxmember_sound) {
 				/* Answer the channel */
 				switch_channel_answer(channel);
-				conference_local_play_file(conference, session, conference->maxmember_sound, 20, NULL, 0);
+				conference_local_play_file(conference, session, conference->maxmember_sound, 20);
 			}
 			goto done;
 		}
@@ -4071,7 +4186,8 @@ static void conference_function(switch_core_session_t *session, char *data)
 
 	/* Run the confernece loop */
 	conference_loop_output(&member);
-
+	switch_channel_set_private(channel, "_conference_autocall_list_", NULL);
+	
 	/* Tell the channel we are no longer going to be in a bridge */
 	msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
 	switch_core_session_receive_message(session, &msg);
@@ -4165,12 +4281,20 @@ static void launch_conference_record_thread(conference_obj_t * conference, char 
 	switch_thread_create(&thread, thd_attr, conference_record_thread_run, rec, rec->pool);
 }
 
+static const switch_application_interface_t conference_autocall_application_interface = {
+	/*.interface_name */ "conference_set_auto_outcall",
+	/*.application_function */ conference_auto_function,
+	NULL, NULL, NULL,
+	/* flags */ SAF_NONE,
+	/*.next */
+};
+
 static const switch_application_interface_t conference_application_interface = {
 	/*.interface_name */ global_app_name,
 	/*.application_function */ conference_function,
 	NULL, NULL, NULL,
 	/* flags */ SAF_NONE,
-	/*.next */ NULL
+	/*.next */ &conference_autocall_application_interface
 };
 
 static switch_api_interface_t conf_api_interface = {
