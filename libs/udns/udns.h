@@ -236,17 +236,17 @@ enum dns_rcode {	/* reply codes */
   DNS_R_BADTIME		= 18
 };
 
-static __inline unsigned dns_get16(dnscc_t *s) {
+static inline unsigned dns_get16(dnscc_t *s) {
   return ((unsigned)s[0]<<8) | s[1];
 }
-static __inline unsigned dns_get32(dnscc_t *s) {
+static inline unsigned dns_get32(dnscc_t *s) {
   return ((unsigned)s[0]<<24) | ((unsigned)s[1]<<16)
         | ((unsigned)s[2]<<8) | s[3];
 }
-static __inline dnsc_t *dns_put16(dnsc_t *d, unsigned n) {
+static inline dnsc_t *dns_put16(dnsc_t *d, unsigned n) {
   *d++ = (dnsc_t)((n >> 8) & 255); *d++ = (dnsc_t)(n & 255); return d;
 }
-static __inline dnsc_t *dns_put32(dnsc_t *d, unsigned n) {
+static inline dnsc_t *dns_put32(dnsc_t *d, unsigned n) {
   *d++ = (dnsc_t)((n >> 24) & 255); *d++ = (dnsc_t)((n >> 16) & 255);
   *d++ = (dnsc_t)((n >>  8) & 255); *d++ = (dnsc_t)(n & 255);
   return d;

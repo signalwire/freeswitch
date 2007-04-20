@@ -46,6 +46,7 @@
 #include "prprf.h"
 #include "prerror.h"
 
+#if 0
 PR_IMPLEMENT(void) PL_FPrintError(PRFileDesc *fd, const char *msg)
 {
 static const char *tags[] =
@@ -148,7 +149,7 @@ PR_IMPLEMENT(void) PL_PrintError(const char *msg)
 	if (NULL == fd) fd = PR_GetSpecialFD(PR_StandardError);
 	PL_FPrintError(fd, msg);
 }  /* PL_PrintError */
-
+#endif
 #if defined(WIN16)
 /*
 ** libmain() is a required function for win16

@@ -4,7 +4,7 @@ AUTOMAKE_OPTS= gnu
 NAME=libgsm
 
 AM_CC=gcc
-AM_CFLAGS	=  -I./inc -DNeedFunctionPrototypes=1 -funroll-loops  -fPIC -DSASR -DNDEBUG -DWAV49
+AM_CFLAGS	=  -I./inc -DNeedFunctionPrototypes=1   -fPIC -DSASR -DNDEBUG -DWAV49
 AM_CPPFLAGS = $(AM_CFLAGS)
 
 lib_LTLIBRARIES		= libgsm.la

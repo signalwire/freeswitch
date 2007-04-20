@@ -107,7 +107,7 @@ static PLHashAllocOps defaultHashAllocOps = {
     DefaultAllocTable, DefaultFreeTable,
     DefaultAllocEntry, DefaultFreeEntry
 };
-
+#if 0
 PR_IMPLEMENT(PLHashTable *)
 PL_NewHashTable(PRUint32 n, PLHashFunction keyHash,
                 PLHashComparator keyCompare, PLHashComparator valueCompare,
@@ -153,7 +153,7 @@ PL_NewHashTable(PRUint32 n, PLHashFunction keyHash,
     ht->allocPriv = allocPriv;
     return ht;
 }
-
+#endif
 PR_IMPLEMENT(void)
 PL_HashTableDestroy(PLHashTable *ht)
 {

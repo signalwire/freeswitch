@@ -70,8 +70,6 @@ PL_HashTableRawAdd;
 PL_HashTableRawLookup;
 PL_HashTableRawRemove;
 PL_HashTableRemove;
-PL_InitArenaPool;
-PL_NewHashTable;
 libVersionPoint;
 ;+    local: *;
 ;+};

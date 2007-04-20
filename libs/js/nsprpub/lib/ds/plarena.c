@@ -103,7 +103,7 @@ static void UnlockArena( void )
     PR_Unlock( arenaLock );
     return;
 } /* end UnlockArena() */
-
+#if 0
 PR_IMPLEMENT(void) PL_InitArenaPool(
     PLArenaPool *pool, const char *name, PRUint32 size, PRUint32 align)
 {
@@ -126,7 +126,7 @@ PR_IMPLEMENT(void) PL_InitArenaPool(
     arena_stats_list = &pool->stats;
 #endif
 }
-
+#endif
 
 /*
 ** PL_ArenaAllocate() -- allocate space from an arena pool
