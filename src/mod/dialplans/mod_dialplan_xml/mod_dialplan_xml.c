@@ -43,17 +43,15 @@ typedef enum {
 	BREAK_NEVER
 } break_t;
 
-static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, switch_caller_extension_t **extension)
+static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t xexten, switch_caller_extension_t **extension)
 {
 	switch_xml_t xcond, xaction;
-	switch_caller_profile_t *caller_profile;
 	switch_channel_t *channel;
 	char *exten_name = (char *) switch_xml_attr_soft(xexten, "name");
 	int proceed = 0;
 	switch_stream_handle_t stream = { 0 };
 
 	channel = switch_core_session_get_channel(session);
-	caller_profile = switch_channel_get_caller_profile(channel);
 
 	for (xcond = switch_xml_child(xexten, "condition"); xcond; xcond = xcond->next) {
 		char *field = NULL;
@@ -291,24 +289,26 @@ static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switc
 	return status;
 }
 
-static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, void *arg)
+static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, void *arg, switch_caller_profile_t *caller_profile)
 {
-	switch_caller_profile_t *caller_profile;
 	switch_caller_extension_t *extension = NULL;
 	switch_channel_t *channel;
 	switch_xml_t alt_root = NULL, cfg, xml = NULL, xcontext, xexten;
 	char *alt_path = (char *) arg;
-
+	
 	channel = switch_core_session_get_channel(session);
 
-	if ((caller_profile = switch_channel_get_caller_profile(channel))) {
-		if (!caller_profile->context) {
-			caller_profile->context = "default";
+	if (!caller_profile) {
+		if (!(caller_profile = switch_channel_get_caller_profile(channel))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Obtaining Profile!\n");
+			goto done;
 		}
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Obtaining Profile!\n");
-		goto done;
 	}
+	
+	if (!caller_profile->context) {
+		caller_profile->context = "default";
+	}
+	
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Processing %s->%s!\n", caller_profile->caller_id_name, caller_profile->destination_number);
 
@@ -352,7 +352,7 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, 
 		int proceed = 0;
 		char *cont = (char *) switch_xml_attr_soft(xexten, "continue");
 
-		proceed = parse_exten(session, xexten, &extension);
+		proceed = parse_exten(session, caller_profile, xexten, &extension);
 
 		if (proceed && !switch_true(cont)) {
 			break;

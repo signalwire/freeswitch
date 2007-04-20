@@ -999,7 +999,7 @@ typedef struct switch_media_bug switch_media_bug_t;
 typedef switch_bool_t (*switch_media_bug_callback_t) (switch_media_bug_t *, void *, switch_abc_type_t);
 typedef void (*switch_application_function_t) (switch_core_session_t *, char *);
 typedef void (*switch_event_callback_t) (switch_event_t *);
-typedef switch_caller_extension_t *(*switch_dialplan_hunt_function_t) (switch_core_session_t *, void *);
+typedef switch_caller_extension_t *(*switch_dialplan_hunt_function_t) (switch_core_session_t *, void *, switch_caller_profile_t *);
 typedef struct switch_scheduler_task switch_scheduler_task_t;
 typedef void (*switch_scheduler_func_t) (switch_scheduler_task_t *task);
 typedef switch_status_t (*switch_state_handler_t) (switch_core_session_t *);

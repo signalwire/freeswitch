@@ -519,10 +519,9 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t ** result
 }
 
 
-static switch_caller_extension_t *enum_dialplan_hunt(switch_core_session_t *session, void *arg)
+static switch_caller_extension_t *enum_dialplan_hunt(switch_core_session_t *session, void *arg, switch_caller_profile_t *caller_profile)
 {
 	switch_caller_extension_t *extension = NULL;
-	switch_caller_profile_t *caller_profile;
 	enum_record_t *results, *rp;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	enum_route_t *rtp;
@@ -530,7 +529,9 @@ static switch_caller_extension_t *enum_dialplan_hunt(switch_core_session_t *sess
 
 	assert(channel != NULL);
 
-	caller_profile = switch_channel_get_caller_profile(channel);
+	if (!caller_profile) {
+		caller_profile = switch_channel_get_caller_profile(channel);
+	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ENUM Lookup on %s\n", caller_profile->destination_number);
 

@@ -565,6 +565,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_flush_message(switch_core_se
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(char *uuid_str, switch_event_t **event);
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_session_t *session, char *exten, char *dialplan, char *context);
+
 /*! 
   \brief Send an event to a session translating it to it's native message format
   \param session the session to receive the event

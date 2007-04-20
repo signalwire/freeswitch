@@ -83,9 +83,8 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_directory_name, globals.directory_n
 	switch_xml_free(xml);
 }
 
-static switch_caller_extension_t *directory_dialplan_hunt(switch_core_session_t *session, void *arg)
+static switch_caller_extension_t *directory_dialplan_hunt(switch_core_session_t *session, void *arg, switch_caller_profile_t *caller_profile)
 {
-	switch_caller_profile_t *caller_profile;
 	switch_caller_extension_t *extension = NULL;
 	switch_channel_t *channel;
 	char *var, *val;
@@ -97,8 +96,10 @@ static switch_caller_extension_t *directory_dialplan_hunt(switch_core_session_t 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
-	caller_profile = switch_channel_get_caller_profile(channel);
-
+	if (!caller_profile) {
+		caller_profile = switch_channel_get_caller_profile(channel);
+	}
+	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Hello %s You Dialed %s!\n", caller_profile->caller_id_name,
 					  caller_profile->destination_number);
 

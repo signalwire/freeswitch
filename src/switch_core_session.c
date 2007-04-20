@@ -871,3 +871,121 @@ void switch_core_session_init(switch_memory_pool_t *pool)
 	switch_core_hash_init(&runtime.session_table, runtime.memory_pool);
 	switch_mutex_init(&runtime.session_table_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
 }
+
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_session_t *session, char *exten, char *dialplan, char *context)
+{
+	char *dp[25];
+	char *dpstr;
+	int argc, x, count = 0;
+	char *expanded = NULL;
+	switch_caller_profile_t *profile, *new_profile;
+	switch_channel_t *channel;
+	switch_dialplan_interface_t *dialplan_interface = NULL;
+	switch_caller_extension_t *extension = NULL;
+	const switch_application_interface_t *application_interface;
+	switch_event_t *event;
+
+	channel = switch_core_session_get_channel(session);
+	
+	if (!(profile = switch_channel_get_caller_profile(channel))) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	new_profile = switch_caller_profile_clone(session, profile);
+	new_profile->destination_number = switch_core_session_strdup(session, exten);
+		
+	if (!switch_strlen_zero(dialplan)) {
+		new_profile->dialplan = switch_core_session_strdup(session, dialplan);
+	}
+	
+	if (!switch_strlen_zero(context)) {
+		new_profile->context = switch_core_session_strdup(session, context);
+	}
+
+	if (!(dpstr = switch_core_session_strdup(session, new_profile->dialplan))) {
+		abort();
+	}
+
+	argc = switch_separate_string(dpstr, ',', dp, (sizeof(dp) / sizeof(dp[0])));
+	for (x = 0; x < argc; x++) {
+		char *dpname = dp[x];
+		char *dparg = NULL;
+			
+		if (dpname) {
+			if ((dparg = strchr(dpname, ':'))) {
+				*dparg++ = '\0';
+			}
+		}
+		if (!(dialplan_interface = switch_loadable_module_get_dialplan_interface(dpname))) {
+			continue;
+		}
+			
+		count++;
+			
+		if ((extension = dialplan_interface->hunt_function(session, dparg, new_profile)) != 0) {
+			break;
+		}
+	}
+	
+	if (!extension) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	while (switch_channel_ready(channel) && extension->current_application) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Execute %s(%s)\n",
+						  extension->current_application->application_name, switch_str_nil(extension->current_application->application_data));
+		if ((application_interface = switch_loadable_module_get_application_interface(extension->current_application->application_name)) == 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Application %s\n", extension->current_application->application_name);
+			return SWITCH_STATUS_FALSE;
+		}
+
+		if (switch_channel_test_flag(session->channel, CF_NOMEDIA) && !switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Application %s Cannot be used with NO_MEDIA mode!\n",
+							  extension->current_application->application_name);
+			return SWITCH_STATUS_FALSE;
+		}
+	
+		if (!application_interface->application_function) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Function for %s\n", extension->current_application->application_name);
+			return SWITCH_STATUS_FALSE;
+		}
+
+		if ((expanded =
+			 switch_channel_expand_variables(session->channel,
+											 extension->current_application->application_data)) != extension->current_application->application_data) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Expanded String %s(%s)\n", extension->current_application->application_name,
+							  expanded);
+		}
+
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(session->channel, event);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application", "%s", extension->current_application->application_name);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data-Orig", "%s", extension->current_application->application_data);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", "%s", expanded);
+			switch_event_fire(&event);
+		}
+
+
+		if (switch_channel_get_variable(session->channel, "presence_id")) {
+			char *arg = switch_mprintf("%s(%s)", extension->current_application->application_name, expanded);
+			if (arg) {
+				switch_channel_presence(session->channel, "unknown", arg);
+				switch_safe_free(arg);
+			}
+		}
+
+		application_interface->application_function(session, expanded);
+
+		if (expanded != extension->current_application->application_data) {
+			switch_safe_free(expanded);
+		}
+
+		extension->current_application = extension->current_application->next;		
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+	
+}
+
+

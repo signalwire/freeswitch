@@ -36,6 +36,7 @@
 static const char modname[] = "mod_dptools";
 
 static const switch_application_interface_t detect_speech_application_interface;
+static const switch_application_interface_t exe_application_interface;
 
 static void detect_speech_function(switch_core_session_t *session, char *data)
 {
@@ -62,6 +63,26 @@ static void detect_speech_function(switch_core_session_t *session, char *data)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", detect_speech_application_interface.syntax);
 	}
 
+}
+
+static void exe_function(switch_core_session_t *session, char *data)
+{
+	char *argv[4];
+	int argc;
+	char *lbuf = NULL;
+	char *extension;
+	char *context;
+	char *dialplan;
+	
+	if (data && (lbuf = switch_core_session_strdup(session, data))
+		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+		extension = argv[0];
+		dialplan = argv[1];
+		context = argv[2];
+		switch_core_session_execute_exten(session, extension, dialplan, context);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", exe_application_interface.syntax);
+	}
 }
 
 static void ring_ready_function(switch_core_session_t *session, char *data)
@@ -606,7 +627,7 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 }
 
 
-static switch_api_interface_t strepoch_api_interface = {
+static const switch_api_interface_t strepoch_api_interface = {
 	/*.interface_name */ "strepoch",
 	/*.desc */ "Convert a date string into epoch time",
 	/*.function */ strepoch_api_function,
@@ -614,7 +635,7 @@ static switch_api_interface_t strepoch_api_interface = {
 	/*.next */ NULL
 };
 
-static switch_api_interface_t chat_api_interface = {
+static const switch_api_interface_t chat_api_interface = {
 	/*.interface_name */ "chat",
 	/*.desc */ "chat",
 	/*.function */ chat_api_function,
@@ -622,7 +643,7 @@ static switch_api_interface_t chat_api_interface = {
 	/*.next */ &strepoch_api_interface
 };
 
-static switch_api_interface_t dptools_api_interface = {
+static const switch_api_interface_t dptools_api_interface = {
 	/*.interface_name */ "strftime",
 	/*.desc */ "strftime",
 	/*.function */ strftime_api_function,
@@ -630,7 +651,7 @@ static switch_api_interface_t dptools_api_interface = {
 	/*.next */ &chat_api_interface
 };
 
-static switch_api_interface_t presence_api_interface = {
+static const switch_api_interface_t presence_api_interface = {
 	/*.interface_name */ "presence",
 	/*.desc */ "presence",
 	/*.function */ presence_api_function,
@@ -639,18 +660,27 @@ static switch_api_interface_t presence_api_interface = {
 };
 
 
+static const switch_application_interface_t exe_application_interface = {
+	/*.interface_name */ "execute_extension",
+	/*.application_function */ exe_function,
+	/*.long_desc */ "Execute an extension",
+	/*.short_desc */ "Execute an extension",
+	/*.syntax */ "<extension> <dialplan> <context>",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
+	/*.next */
+};
 
-static switch_application_interface_t sched_transfer_application_interface = {
+static const switch_application_interface_t sched_transfer_application_interface = {
 	/*.interface_name */ "sched_transfer",
 	/*.application_function */ sched_transfer_function,
 	/*.long_desc */ "Schedule a transfer in the future",
 	/*.short_desc */ "Schedule a transfer in the future",
 	/*.syntax */ "[+]<time> <extension> <dialplan> <context>",
 	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ NULL
+	/*.next */ &exe_application_interface
 };
 
-static switch_application_interface_t sched_broadcast_application_interface = {
+static const switch_application_interface_t sched_broadcast_application_interface = {
 	/*.interface_name */ "sched_broadcast",
 	/*.application_function */ sched_broadcast_function,
 	/*.long_desc */ "Schedule a broadcast in the future",
@@ -660,7 +690,7 @@ static switch_application_interface_t sched_broadcast_application_interface = {
 	/*.next */ &sched_transfer_application_interface
 };
 
-static switch_application_interface_t sched_hangup_application_interface = {
+static const switch_application_interface_t sched_hangup_application_interface = {
 	/*.interface_name */ "sched_hangup",
 	/*.application_function */ sched_hangup_function,
 	/*.long_desc */ "Schedule a hangup in the future",
