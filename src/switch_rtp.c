@@ -323,6 +323,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 	switch_socket_t *new_sock = NULL, *old_sock = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	*err = NULL;
+	char o[5] = "TEST", i[5] = "";
+	switch_size_t len;
 
 	if (switch_sockaddr_info_get(&rtp_session->local_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS) {
 		*err = "Local Address Error!";
@@ -345,6 +347,14 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 
 	if (switch_socket_bind(new_sock, rtp_session->local_addr) != SWITCH_STATUS_SUCCESS) {
 		*err = "Bind Error!";
+		goto done;
+	}
+
+	len = sizeof(i);
+	switch_socket_sendto(new_sock, rtp_session->local_addr, 0, (void *) o, &len);
+	switch_socket_recvfrom(rtp_session->from_addr, new_sock, 0, (void *) i, &len);
+
+	if (!len) {
 		goto done;
 	}
 
