@@ -955,7 +955,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		char *gw;
 		outbound_reg_t *gateway_ptr;
 
-
 		if (!(gw = strchr(profile_name, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
 			switch_core_session_destroy(&nsession);
@@ -982,7 +981,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 
 		profile = gateway_ptr->profile;
-		if (gateway_ptr->force_fromuser) {
+		if (!switch_test_flag(gateway_ptr, REG_FLAG_CALLERID)) {
 			tech_pvt->gateway_from_str = switch_core_session_strdup(nsession, gateway_ptr->register_from);
 		}
 		if (!strchr(dest, '@')) {

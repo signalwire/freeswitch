@@ -157,6 +157,7 @@ extern struct mod_sofia_globals mod_sofia_globals;
 
 typedef enum {
 	REG_FLAG_AUTHED = (1 << 0),
+	REG_FLAG_CALLERID = (1 << 1)
 } reg_flags_t;
 
 typedef enum {
@@ -178,7 +179,6 @@ struct outbound_reg {
 	char *register_realm;
 	char *register_username;
 	char *register_password;
-	switch_bool_t force_fromuser;
 	char *register_from;
 	char *register_contact;
 	char *register_to;

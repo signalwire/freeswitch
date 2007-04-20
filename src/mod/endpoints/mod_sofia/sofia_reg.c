@@ -636,12 +636,12 @@ void sofia_reg_handle_sip_r_challenge(int status,
 
 			if (!gateway) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Match for Scheme [%s] Realm [%s]\n", scheme, qrealm);
-				return;
+				goto cancel;
 			}
 			switch_safe_free(duprealm);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
-			return;
+			goto cancel;
 		}
 	}
 
@@ -656,6 +656,16 @@ void sofia_reg_handle_sip_r_challenge(int status,
 
 	nua_authenticate(nh, SIPTAG_EXPIRES_STR(gateway->expires_str), NUTAG_AUTH(authentication), TAG_END());
 
+	return;
+
+ cancel:
+	if (session) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		switch_channel_hangup(channel, SWITCH_CAUSE_MANDATORY_IE_MISSING);
+	} else {
+		nua_cancel(nh, TAG_END());
+	}
+	
 }
 
 auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, const char *regstr, char *np, size_t nplen)
