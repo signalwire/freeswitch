@@ -337,10 +337,10 @@ SOFIAPUBFUN void nua_authorize(nua_handle_t *, tag_type_t, tag_value_t, ...);
 /*# Redirect an operation. @deprecated */
 SOFIAPUBFUN void nua_redirect(nua_handle_t *, tag_type_t, tag_value_t, ...);
 
-/** Extension request method. */
+/** Send a request message with an extension method. */
 SOFIAPUBFUN void nua_method(nua_handle_t *, tag_type_t, tag_value_t, ...);
 
-/** Respond with given status. */
+/** Respond to a request with given status code and phrase. */
 SOFIAPUBFUN void nua_respond(nua_handle_t *nh, 
 			     int status, char const *phrase,
 			     tag_type_t, tag_value_t, 

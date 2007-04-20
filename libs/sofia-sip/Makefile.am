@@ -40,7 +40,10 @@ $(dist_man_MANS): manpages
 manpages: built-sources
 	-mkdir -p man man/man1 2> /dev/null
 if HAVE_DOXYGEN
-	cd utils && $(DOXYGEN) Doxyfile.build
+	@echo 'cd utils && $(DOXYGEN)'
+	@cd utils && \
+	{ exec 3>&1 1>&2; { $(DOXYGEN) 2>&1; echo $$? >& 3 ;} | \
+	  fgrep -v 'Warning:' ;} | { read x; exit $$x ;}
 	@rm -f man/man1/_*.1
 else
 	-touch $(dist_man_MANS)

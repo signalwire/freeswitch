@@ -45,15 +45,19 @@
 
 #include "nua_stack.h"
 
-/** Send an extension request. 
+/**Send a request message with an extension method. 
  *
- * Send an entension request message.
+ * Send a request message with the request method specified with
+ * NUTAG_METHOD().
  *
  * @param nh              Pointer to operation handle
  * @param tag, value, ... List of tagged parameters
  *
  * @return 
  *    nothing
+ *
+ * Note that it is possible to send a request with any method (except
+ * perhaps @b INVITE, @b ACK or @b CANCEL) using this function.
  *
  * @par Related Tags:
  *    NUTAG_METHOD() \n

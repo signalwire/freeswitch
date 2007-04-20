@@ -1276,23 +1276,42 @@ void nua_server_request_destroy(nua_server_request_t *sr)
   }
 }
 
-/** Respond to a request with given status. 
+/**@fn void nua_respond(nua_handle_t *nh, int status, char const *phrase, tag_type_t tag, tag_value_t value, ...);
+ * 
+ * Respond to a request with given status code and phrase.
  *
- * When nua protocol engine receives an incoming SIP request, it can either
- * respond to the request automatically or let it up to application to
- * respond to the request. The automatic response is returned to the client
- * if the request fails syntax check, or the method, SIP extension or
- * content negotiation fails.
+ * The stack returns a SIP response message with given status code and
+ * phrase to the client. The tagged parameter list can specify extra headers
+ * to include with the response message and other stack parameters. The SIP
+ * session or other protocol state associated with the handle is updated
+ * accordingly (for instance, if an initial INVITE is responded with 200, a
+ * SIP session is established.)
  *
  * When responding to an incoming INVITE request, the nua_respond() can be
- * called without NUTAG_WITH() (or NUTAG_WITH_THIS() or
+ * called without NUTAG_WITH() (or NUTAG_WITH_CURRENT() or
  * NUTAG_WITH_SAVED()). Otherwise, NUTAG_WITH() will contain an indication
  * of the request being responded.
  *
- * In order to simplify the simple applications, most requests are responded
- * automatically. The BYE and CANCEL requests are always responded by the
- * stack. Likewise, the NOTIFY requests associated with an event
- * subscription are responded by the stack.
+ * @param nh              Pointer to operation handle
+ * @param status          SIP response status code (see RFCs of SIP)
+ * @param phrase          free text (default response phrase is used if NULL)
+ * @param tag, value, ... List of tagged parameters
+ *
+ * @return 
+ *    nothing
+ *
+ * @par Responses by Protocol Engine
+ *
+ * When nua protocol engine receives an incoming SIP request, it can either
+ * respond to the request automatically or let application to respond to the
+ * request. The automatic response is returned to the client if the request
+ * fails syntax check, or the method, SIP extension or content negotiation
+ * fails.
+ *
+ * When the @ref nua_handlingevents "request event" is delivered to the
+ * application, the application should examine the @a status parameter. The
+ * @a status parameter is 200 or greater if the request has been already
+ * responded automatically by the stack.
  *
  * The application can add methods that it likes to handle by itself with
  * NUTAG_APPL_METHOD(). The default set of NUTAG_APPL_METHOD() includes
@@ -1300,18 +1319,15 @@ void nua_server_request_destroy(nua_server_request_t *sr)
  * also included in the set of allowed methods with NUTAG_ALLOW(), the stack
  * will respond to the incoming methods with <i>405 Not Allowed</i>.
  *
+ * In order to simplify the simple applications, most requests are responded
+ * automatically. The BYE and CANCEL requests are always responded by the
+ * stack. Likewise, the NOTIFY requests associated with an event
+ * subscription are responded by the stack.
+ *
  * Note that certain methods are rejected outside a SIP session (created
  * with INVITE transaction). They include BYE, UPDATE, PRACK and INFO. Also
- * the auxiliary methods ACK and CANCEL are rejected by stack if there is no
- * ongoing INVITE transaction corresponding to them.
- *
- * @param nh              Pointer to operation handle
- * @param status          SIP response status (see RFCs of SIP)
- * @param phrase          free text (default response phrase used if NULL)
- * @param tag, value, ... List of tagged parameters
- *
- * @return 
- *    nothing
+ * the auxiliary methods ACK and CANCEL are rejected by the stack if there
+ * is no ongoing INVITE transaction corresponding to them.
  *
  * @par Related Tags:
  *    NUTAG_WITH(), NUTAG_WITH_THIS(), NUTAG_WITH_SAVED() \n
@@ -1319,6 +1335,7 @@ void nua_server_request_destroy(nua_server_request_t *sr)
  *    SOATAG_ADDRESS() \n
  *    SOATAG_AF() \n
  *    SOATAG_HOLD() \n
+ *    Tags used with nua_set_hparams() \n
  *    Tags in <sip_tag.h>.
  *
  * @par Events:
@@ -1330,6 +1347,7 @@ void nua_server_request_destroy(nua_server_request_t *sr)
  *
  * @sa #nua_i_invite, #nua_i_register, #nua_i_subscribe, #nua_i_publish
  */
+
 void
 nua_stack_respond(nua_t *nua, nua_handle_t *nh,
 		  int status, char const *phrase, tagi_t const *tags)
