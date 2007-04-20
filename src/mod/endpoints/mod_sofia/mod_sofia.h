@@ -399,7 +399,7 @@ void sofia_presence_event_handler(switch_event_t *event);
 void sofia_presence_mwi_event_handler(switch_event_t *event);
 void sofia_presence_cancel(void);
 switch_status_t config_sofia(int reload);
-auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, const char *regstr, char *np, size_t nplen);
+auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, const char *regstr, char *np, size_t nplen, char *ip);
 void sofia_reg_handle_sip_r_challenge(int status,
 					 char const *phrase,
 					 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[]);

@@ -1173,6 +1173,46 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 	return SWITCH_STATUS_FALSE;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(char *domain_name, char *params, switch_xml_t *root, switch_xml_t *domain)
+{
+	*domain = NULL;
+	return switch_xml_locate("directory", "domain", "name", domain_name, root, domain, params);
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(char *user_name, char *domain_name, 
+													   char *ip, 
+													   switch_xml_t *root,
+													   switch_xml_t *domain,
+													   switch_xml_t *user)
+{
+	char params[1024] = "";
+	switch_status_t status;
+	*root = NULL;
+	*user = NULL;
+	*domain = NULL;
+	
+	snprintf(params, sizeof(params), "user=%s&domain=%s&ip=%s", switch_str_nil(user_name), switch_str_nil(domain_name), switch_str_nil(ip));
+	if ((status = switch_xml_locate_domain(domain_name, params, root, domain)) != SWITCH_STATUS_SUCCESS) {
+		return status;
+	}
+	
+	if (ip) {
+		if ((*user = switch_xml_find_child(*domain, "user", "ip", ip))) {
+			return SWITCH_STATUS_SUCCESS;
+		}
+	} 
+
+	if (user_name) {
+		if (!(*user = switch_xml_find_child(*domain, "user", "id", user_name))) {
+			return SWITCH_STATUS_FALSE;
+		}
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
 
 SWITCH_DECLARE(switch_xml_t) switch_xml_root(void)
 {

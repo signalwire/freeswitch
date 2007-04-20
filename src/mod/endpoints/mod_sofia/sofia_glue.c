@@ -1459,9 +1459,6 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 	char auth_sql[] =
 		"CREATE TABLE sip_authentication (\n"
-		"   user            VARCHAR(255),\n"
-		"   host            VARCHAR(255),\n" 
-		"   passwd            VARCHAR(255),\n" 
 		"   nonce           VARCHAR(255),\n" 
 		"   expires         INTEGER(8)"
 		");\n";

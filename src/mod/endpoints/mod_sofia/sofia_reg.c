@@ -36,6 +36,7 @@
 #include "mod_sofia.h"
 
 
+
 void sofia_reg_unregister(sofia_profile_t *profile)
 {
 	outbound_reg_t *gateway_ptr;
@@ -211,19 +212,6 @@ char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const c
 	}
 }
 
-static char *sofia_reg_get_auth_data(sofia_profile_t *profile, char *nonce, char *npassword, size_t len, switch_mutex_t *mutex)
-{
-	char *sql, *ret;
-	
-	sql = switch_mprintf("select passwd from sip_authentication where nonce='%q'", nonce);
-	assert(sql != NULL);
-
-	ret = sofia_glue_execute_sql2str(profile, mutex, sql, npassword, len);
-
-	free(sql);
-	return ret;
-}
-
 uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_handle_t * nh, sip_t const *sip, sofia_regtype_t regtype, char *key,
 							   uint32_t keylen)
 {
@@ -231,26 +219,24 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	sip_expires_t const *expires = NULL;
 	sip_authorization_t const *authorization = NULL;
 	sip_contact_t const *contact = NULL;
-	switch_xml_t domain, xml, user, param, xparams;
-	char params[1024] = "";
 	char *sql;
 	switch_event_t *s_event;
 	const char *from_user = NULL;
 	const char *from_host = NULL;
 	char contact_str[1024] = "";
 	char buf[512];
-	const char *passwd = NULL;
-	const char *a1_hash = NULL;
-	uint8_t stale = 0, ret = 0, forbidden = 0;
+	uint8_t stale = 0, forbidden = 0;
 	auth_res_t auth_res;
 	long exptime = 60;
 	switch_event_t *event;
 	const char *rpid = "unknown";
 	const char *display = "\"user\"";
-	char network_addr[80];
+	char network_ip[80];
 
 	/* all callers must confirm that sip, sip->sip_request and sip->sip_contact are not NULL */
 	assert(sip != NULL && sip->sip_contact != NULL && sip->sip_request != NULL);
+
+	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_addr);
 
 	expires = sip->sip_expires;
 	authorization = sip->sip_authorization;
@@ -310,7 +296,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	}
 
 	if (authorization) {
-		if ((auth_res = parse_auth(profile, authorization, sip->sip_request->rq_method_name, key, keylen)) == AUTH_STALE) {
+		if ((auth_res = sofia_reg_parse_auth(profile, authorization, sip->sip_request->rq_method_name, key, keylen, network_ip)) == AUTH_STALE) {
 			stale = 1;
 		}
 
@@ -326,101 +312,33 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	}
 
 	if (!authorization || stale) {
-		get_addr(network_addr, sizeof(network_addr), &((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_addr);
-		snprintf(params, sizeof(params), "network_addr=%s&from_user=%s&from_host=%s&contact=%s", network_addr, from_user, from_host, contact_str);
+		switch_uuid_t uuid;
+		char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+		char *sql, *auth_str;
 
+		switch_uuid_get(&uuid);
+		switch_uuid_format(uuid_str, &uuid);
 
-		if (switch_xml_locate("directory", "domain", "name", from_host, &xml, &domain, params) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "can't find domain for [%s@%s]\n", from_user, from_host);
-			nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), SIPTAG_CONTACT(contact), TAG_END());
-			return 1;
+		switch_mutex_lock(profile->ireg_mutex);
+		sql = switch_mprintf("insert into sip_authentication (nonce, expires) values('%q', %ld)",
+							uuid_str, time(NULL) + profile->nonce_ttl);
+		assert(sql != NULL);
+		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
+		switch_safe_free(sql);
+		switch_mutex_unlock(profile->ireg_mutex);
+
+		auth_str =
+			switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", from_host, uuid_str, stale ? " stale=\"true\"," : "");
+
+		if (regtype == REG_REGISTER) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Requesting Registration from: [%s@%s]\n", from_user, from_host);
+			nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), SIPTAG_WWW_AUTHENTICATE_STR(auth_str), TAG_END());
+		} else if (regtype == REG_INVITE) {
+			nua_respond(nh, SIP_407_PROXY_AUTH_REQUIRED, NUTAG_WITH_THIS(nua), SIPTAG_PROXY_AUTHENTICATE_STR(auth_str), TAG_END());
 		}
 
-		if (!(user = switch_xml_find_child(domain, "user", "id", from_user))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", from_user, from_host);
-			nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), SIPTAG_CONTACT(contact), TAG_END());
-			switch_xml_free(xml);
-			return 1;
-		}
-
-		if (!(xparams = switch_xml_child(user, "params"))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find params for user [%s@%s]\n", from_user, from_host);
-			nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), SIPTAG_CONTACT(contact), TAG_END());
-			switch_xml_free(xml);
-			return 1;
-		}
-
-
-		for (param = switch_xml_child(xparams, "param"); param; param = param->next) {
-			const char *var = switch_xml_attr_soft(param, "name");
-			const char *val = switch_xml_attr_soft(param, "value");
-
-			if (!strcasecmp(var, "password")) {
-				passwd = val;
-			}
-
-			if (!strcasecmp(var, "a1-hash")) {
-				a1_hash = val;
-			}
-		}
-
-		if (passwd || a1_hash) {
-			switch_uuid_t uuid;
-			char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
-			char *sql, *auth_str;
-
-			su_md5_t ctx;
-			char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1];
-			char *input;
-
-			if (!a1_hash) {
-				input = switch_mprintf("%s:%s:%s", from_user, from_host, passwd);
-				su_md5_init(&ctx);
-				su_md5_strupdate(&ctx, input);
-				su_md5_hexdigest(&ctx, hexdigest);
-				su_md5_deinit(&ctx);
-				switch_safe_free(input);
-
-				switch_uuid_get(&uuid);
-				switch_uuid_format(uuid_str, &uuid);
-				a1_hash = hexdigest;
-			}
-
-			switch_mutex_lock(profile->ireg_mutex);
-			sql = switch_mprintf("delete from sip_authentication where user='%q' and host='%q';", from_user, from_host);
-			assert(sql != NULL);
-			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
-			switch_safe_free(sql);
-			sql = switch_mprintf("insert into sip_authentication values('%q','%q','%q','%q', %ld)",
-								 from_user, from_host, a1_hash, uuid_str, time(NULL) + profile->nonce_ttl);
-			assert(sql != NULL);
-			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
-			switch_safe_free(sql);
-			switch_mutex_unlock(profile->ireg_mutex);
-
-			auth_str =
-				switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", from_host, uuid_str, stale ? " stale=\"true\"," : "");
-
-
-			if (regtype == REG_REGISTER) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Requesting Registration from: [%s@%s]\n", from_user, from_host);
-				nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), SIPTAG_WWW_AUTHENTICATE_STR(auth_str), TAG_END());
-			} else if (regtype == REG_INVITE) {
-				nua_respond(nh, SIP_407_PROXY_AUTH_REQUIRED, NUTAG_WITH_THIS(nua), SIPTAG_PROXY_AUTHENTICATE_STR(auth_str), TAG_END());
-
-			}
-
-			switch_safe_free(auth_str);
-			ret = 1;
-		} else {
-			ret = 0;
-		}
-
-		switch_xml_free(xml);
-
-		if (ret) {
-			return ret;
-		}
+		switch_safe_free(auth_str);
+		return 1;
 	}
   reg:
 
@@ -668,18 +586,18 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	
 }
 
-auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, const char *regstr, char *np, size_t nplen)
+auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, const char *regstr, char *np, size_t nplen, char *ip)
 {
 	int indexnum;
 	const char *cur;
 	su_md5_t ctx;
 	char uridigest[2 * SU_MD5_DIGEST_SIZE + 1];
 	char bigdigest[2 * SU_MD5_DIGEST_SIZE + 1];
-	char *nonce, *uri, *qop, *cnonce, *nc, *response, *input = NULL, *input2 = NULL;
+	char *username, *realm, *nonce, *uri, *qop, *cnonce, *nc, *response, *input = NULL, *input2 = NULL;
 	auth_res_t ret = AUTH_FORBIDDEN;
 	char *npassword = NULL;
 	int cnt = 0;
-	nonce = uri = qop = cnonce = nc = response = NULL;
+	username = realm = nonce = uri = qop = cnonce = nc = response = NULL;
 
 	if (authorization->au_params) {
 		for (indexnum = 0; (cur = authorization->au_params[indexnum]); indexnum++) {
@@ -696,7 +614,13 @@ auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const *autho
 						*p = '\0';
 					}
 
-					if (!strcasecmp(var, "nonce")) {
+					if (!strcasecmp(var, "username")) {
+						username = strdup(val);
+						cnt++;
+					} else if (!strcasecmp(var, "realm")) {
+						realm = strdup(val);
+						cnt++;
+					} else if (!strcasecmp(var, "nonce")) {
 						nonce = strdup(val);
 						cnt++;
 					} else if (!strcasecmp(var, "uri")) {
@@ -722,16 +646,74 @@ auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const *autho
 		}
 	}
 
-	if (cnt != 6) {
+	if (cnt != 8) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Authorization header!\n");
 		goto end;
 	}
 
 	if (switch_strlen_zero(np)) {
-		if (!sofia_reg_get_auth_data(profile, nonce, np, nplen, profile->ireg_mutex)) {
+		switch_xml_t domain, xml, user, param, xparams;
+		const char *passwd = NULL;
+		const char *a1_hash = NULL;
+		char *sql;
+
+		sql = switch_mprintf("select nonce from sip_authentication where nonce='%q'", nonce);
+		assert(sql != NULL);
+		if (!sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, np, nplen)) {
+			free(sql);
 			ret = AUTH_STALE;
 			goto end;
 		}
+		free(sql);
+
+		if (switch_xml_locate_user(username, realm, ip, &xml, &domain, &user) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", username, realm);
+			ret = AUTH_FORBIDDEN;
+			goto end;
+		}
+		
+		if (!(xparams = switch_xml_child(user, "params"))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find params for user [%s@%s]\n", username, realm);
+			ret = AUTH_FORBIDDEN;
+			goto end;
+		}
+		
+		for (param = switch_xml_child(xparams, "param"); param; param = param->next) {
+			const char *var = switch_xml_attr_soft(param, "name");
+			const char *val = switch_xml_attr_soft(param, "value");
+
+			if (!strcasecmp(var, "password")) {
+				passwd = val;
+			}
+
+			if (!strcasecmp(var, "a1-hash")) {
+				a1_hash = val;
+			}
+		}
+		
+		if (switch_strlen_zero(passwd) && switch_strlen_zero(a1_hash)) {
+			ret = AUTH_OK;
+			goto end;
+		}
+
+		if (!a1_hash) {
+			su_md5_t ctx;
+			char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1];
+			char *input;
+
+			input = switch_mprintf("%s:%s:%s", username, realm, passwd);
+			su_md5_init(&ctx);
+			su_md5_strupdate(&ctx, input);
+			su_md5_hexdigest(&ctx, hexdigest);
+			su_md5_deinit(&ctx);
+			switch_safe_free(input);
+			a1_hash = hexdigest;
+			
+		}
+
+		np = strdup(a1_hash);
+
+		switch_xml_free(xml);
 	}
 
 	npassword = np;
@@ -760,6 +742,8 @@ auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const *autho
   end:
 	switch_safe_free(input);
 	switch_safe_free(input2);
+	switch_safe_free(username);
+	switch_safe_free(realm);
 	switch_safe_free(nonce);
 	switch_safe_free(uri);
 	switch_safe_free(qop);
