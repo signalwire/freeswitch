@@ -1482,6 +1482,8 @@ int tport_bind_server(tport_master_t *mr,
   unsigned short step = 0;
 
   bind6only_check(mr);
+
+  (void)hostname;
   
   SU_DEBUG_5(("%s(%p) to " TPN_FORMAT "\n", __func__, (void *)mr, TPN_ARGS(tpn)));
 

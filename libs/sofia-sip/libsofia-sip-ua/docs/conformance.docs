@@ -43,6 +43,7 @@ below.
 <a href="#3892">RFC 3892</a> <br>
 <a href="#3903">RFC 3903</a> <br>
 <a href="#4028">RFC 4028</a> <br>
+<a href="#4320">RFC 4320</a> <br>
 <a href="#4566">RFC 4566</a> <br>
 </td><td>
 <a href="#2327">RFC 2327</a> <br>
@@ -849,9 +850,11 @@ below.
         The session-expires value and refreshing party is negotiated in
 	<a href="nua/index.html">user-agent engine</a>. When user-agent
 	engine is responsible for refreshes, it will initiate re-INVITE or
-	UPDATE transaction at regular intervals. If there has been no SIP
-	activity in session during the refresh period, it will try to
-	automatically terminate the call by sending a @b BYE request.
+	UPDATE transaction at regular intervals.
+
+	If there has been no SIP activity in session during the refresh
+	period, it will try to automatically terminate the call by sending a
+	@b BYE request.
 
         The SIP headers explicitly supported (generating, parsing and
 	syntax checking) are @ref sip_session_expires "Session-Expires" ("x") and
@@ -861,6 +864,29 @@ below.
 	&nbsp;
     </td>
 </tr>
+
+<tr valign=top>
+    <th align="left">
+	<a name="4320"></a>
+	@RFC4320: Actions Addressing Identified Issues with SIP's Non-INVITE Transaction
+    </th>
+    <td>
+	The action 1 (make the best use of provisional responses) is
+	supported when NTATAG_EXTRA_100(1) is used with nua_create() or
+	nta_agent_create(). The 100 Trying provisional response is sent
+	after T2 is expired or when a retransmission is received after T2/2
+        after the initial request.
+
+	The action 2 (remove the useless late-response storm) is supported
+	by default. The 408 timeout response is not forwarded by default (it's
+	forwarding can be enabled with NTATAG_PASS_408(1), however).
+    </td>
+    <td>
+        Application must include NTATAG_EXTRA_100(1) with nua_create() or
+	nta_agent_create() tags.
+    </td>
+</tr>
+
 </table>
 
 <table border=1 cellpadding=4 cellspacing=0>

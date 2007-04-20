@@ -96,8 +96,8 @@ static int tport_sctp_init_socket(tport_primary_t *pri,
 				  int socket,
 				  char const **return_reason);
 static int tport_recv_sctp(tport_t *self);
-static int tport_send_sctp(tport_t const *self, msg_t *msg,
-			   msg_iovec_t iov[], int iovused);
+static ssize_t tport_send_sctp(tport_t const *self, msg_t *msg,
+			       msg_iovec_t iov[], size_t iovused);
 
 tport_vtable_t const tport_sctp_client_vtable =
 {
@@ -254,8 +254,8 @@ int tport_recv_sctp(tport_t *self)
   return 2;
 }
 
-static int tport_send_sctp(tport_t const *self, msg_t *msg,
-			   msg_iovec_t iov[], int iovused)
+static ssize_t tport_send_sctp(tport_t const *self, msg_t *msg,
+			       msg_iovec_t iov[], size_t iovused)
 {
   
 
