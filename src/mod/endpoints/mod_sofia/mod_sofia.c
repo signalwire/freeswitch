@@ -767,6 +767,32 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			nua_respond(tech_pvt->nh, SIP_302_MOVED_TEMPORARILY, SIPTAG_CONTACT_STR(msg->string_arg), TAG_END());
 		}
 		break;
+	case SWITCH_MESSAGE_INDICATE_REJECT:
+		if (msg->string_arg) {
+			int code = 0;
+			char *reason;
+			
+			if (switch_channel_test_flag(channel, CF_ANSWERED)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Call is already answered, Rejecting with hangup\n");
+				switch_channel_hangup(channel, SWITCH_CAUSE_CALL_REJECTED);
+			} else {
+
+				if ((reason = strchr(msg->string_arg, ' '))) {
+					reason++;
+					code = atoi(msg->string_arg);
+				} else {
+					reason = "Call Refused";
+				}
+
+				if (!(code > 400 && code < 600)) {
+					code = 488;
+				}
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Rejecting with %d %s\n", code, reason);
+				nua_respond(tech_pvt->nh, code, reason, TAG_END());
+			}
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_RINGING:
 		nua_respond(tech_pvt->nh, SIP_180_RINGING, SIPTAG_CONTACT_STR(tech_pvt->profile->url), TAG_END());
 		switch_channel_mark_ring_ready(channel);

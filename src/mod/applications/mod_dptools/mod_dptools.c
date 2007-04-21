@@ -298,6 +298,18 @@ static void redirect_function(switch_core_session_t *session, char *data)
 
 }
 
+static void reject_function(switch_core_session_t *session, char *data)
+{
+	switch_core_session_message_t msg = { 0 };
+
+	/* Tell the channel to reject the call */
+	msg.from = __FILE__;
+	msg.string_arg = data;
+	msg.message_id = SWITCH_MESSAGE_INDICATE_REJECT;
+	switch_core_session_receive_message(session, &msg);
+
+}
+
 
 static void set_function(switch_core_session_t *session, char *data)
 {
@@ -711,6 +723,16 @@ static const switch_application_interface_t queuedtmf_application_interface = {
 	/*.next */ &sched_hangup_application_interface
 };
 
+static const switch_application_interface_t reject_application_interface = {
+	/*.interface_name */ "reject",
+	/*.application_function */ reject_function,
+	/* long_desc */ "Send a reject message to a session.",
+	/* short_desc */ "Send session reject",
+	/* syntax */ "<reject_data>",
+	/* flags */ SAF_SUPPORT_NOMEDIA,
+	/*.next */ &queuedtmf_application_interface
+};
+
 static const switch_application_interface_t redirect_application_interface = {
 	/*.interface_name */ "redirect",
 	/*.application_function */ redirect_function,
@@ -718,7 +740,7 @@ static const switch_application_interface_t redirect_application_interface = {
 	/* short_desc */ "Send session redirect",
 	/* syntax */ "<redirect_data>",
 	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ &queuedtmf_application_interface
+	/*.next */ &reject_application_interface
 };
 
 static const switch_application_interface_t ivr_application_interface = {
