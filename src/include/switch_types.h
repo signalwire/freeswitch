@@ -954,6 +954,7 @@ typedef enum {
 
 typedef uint16_t switch_port_t;
 typedef uint8_t switch_payload_t;
+typedef struct switch_app_log switch_app_log_t;
 typedef struct switch_rtp switch_rtp_t;
 typedef struct switch_core_session_message switch_core_session_message_t;
 typedef struct switch_event_header switch_event_header_t;

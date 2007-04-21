@@ -397,7 +397,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 								if (app_name && app_arg) {
 									if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
 										if (application_interface->application_function) {
-											application_interface->application_function(session, app_arg);
+											switch_core_session_exec(session, application_interface, app_arg);
 										}
 									}
 								}

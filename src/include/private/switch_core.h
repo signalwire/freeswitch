@@ -126,6 +126,7 @@ struct switch_core_session {
 	switch_queue_t *private_event_queue;
 	switch_thread_rwlock_t *bug_rwlock;
 	switch_media_bug_t *bugs;
+	switch_app_log_t *app_log;
 };
 
 struct switch_media_bug {

@@ -873,19 +873,48 @@ void switch_core_session_init(switch_memory_pool_t *pool)
 }
 
 
+SWITCH_DECLARE(switch_app_log_t *) switch_core_session_get_app_log(switch_core_session_t *session)
+{
+	return session->app_log;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *session,
+														 const switch_application_interface_t *application_interface, char *arg) {
+	switch_app_log_t *log, *lp;
+	
+	log = switch_core_session_alloc(session, sizeof(*log));
+
+	assert(log != NULL);
+
+	log->app = switch_core_session_strdup(session, application_interface->interface_name);
+	log->arg = switch_core_session_strdup(session, arg);
+
+	for(lp = session->app_log; lp && lp->next; lp = lp->next);
+
+	if (lp) {
+		lp->next = log;
+	} else {
+		session->app_log = log;
+	}
+	
+	application_interface->application_function(session, arg);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_session_t *session, char *exten, char *dialplan, char *context)
 {
 	char *dp[25];
 	char *dpstr;
 	int argc, x, count = 0;
 	char *expanded = NULL;
-	switch_caller_profile_t *profile, *new_profile;
+	switch_caller_profile_t *profile, *new_profile, *pp;
 	switch_channel_t *channel;
 	switch_dialplan_interface_t *dialplan_interface = NULL;
 	switch_caller_extension_t *extension = NULL;
 	const switch_application_interface_t *application_interface;
 	switch_event_t *event;
-
+	
 	channel = switch_core_session_get_channel(session);
 	
 	if (!(profile = switch_channel_get_caller_profile(channel))) {
@@ -922,7 +951,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 		}
 			
 		count++;
-			
+		
 		if ((extension = dialplan_interface->hunt_function(session, dparg, new_profile)) != 0) {
 			break;
 		}
@@ -930,6 +959,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 	
 	if (!extension) {
 		return SWITCH_STATUS_FALSE;
+	}
+
+	new_profile->caller_extension = extension;
+
+	for(pp = profile->caller_extension->children; pp && pp->next; pp = pp->next);
+
+	if (pp) {
+		pp->next = new_profile;
+	} else {
+		profile->caller_extension->children = new_profile;
 	}
 
 	while (switch_channel_ready(channel) && extension->current_application) {
@@ -975,7 +1014,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 			}
 		}
 
-		application_interface->application_function(session, expanded);
+		switch_core_session_exec(session, application_interface, expanded);
 
 		if (expanded != extension->current_application->application_data) {
 			switch_safe_free(expanded);

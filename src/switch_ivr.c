@@ -303,7 +303,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 					int x;
 					switch_channel_set_flag(channel, CF_BROADCAST);
 					for (x = 0; x < loops || loops < 0; x++) {
-						application_interface->application_function(session, app_arg);
+						switch_core_session_exec(session, application_interface, app_arg);
 						if (!switch_channel_test_flag(channel, CF_BROADCAST)) {
 							break;
 						}
@@ -1224,7 +1224,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 	switch_hash_index_t *hi;
 	void *vval;
 	const void *vvar;
-	switch_xml_t variable, variables, cdr, x_caller_profile, x_caller_extension, x_times, time_tag, x_application, x_callflow;
+	switch_xml_t variable, variables, cdr, x_caller_profile, x_caller_extension, x_times, time_tag, 
+		x_application, x_callflow, x_inner_extension, x_apps;
+	switch_app_log_t *app_log;
+	
 	char tmp[512];
 	int cdr_off = 0, v_off = 0;
 
@@ -1237,6 +1240,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 
 	if (!(variables = switch_xml_add_child_d(cdr, "variables", cdr_off++))) {
 		goto error;
+	}
+
+	if ((app_log = switch_core_session_get_app_log(session))) {
+		int app_off = 0;
+		switch_app_log_t *ap;
+		
+		if (!(x_apps = switch_xml_add_child_d(cdr, "app_log", cdr_off++))) {
+			goto error;
+		}
+		for(ap = app_log; ap; ap = ap->next) {
+
+			if (!(x_application = switch_xml_add_child_d(x_apps, "application", app_off++))) {
+				goto error;
+			}
+			
+			switch_xml_set_attr_d(x_application, "app_name", ap->app);
+			switch_xml_set_attr_d(x_application, "app_data", ap->arg);
+		}
 	}
 
 	for (hi = switch_channel_variable_first(channel, switch_core_session_get_pool(session)); hi; hi = switch_hash_next(hi)) {
@@ -1263,6 +1284,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 		if (!(x_callflow = switch_xml_add_child_d(cdr, "callflow", cdr_off++))) {
 			goto error;
 		}
+		switch_xml_set_attr_d(x_callflow, "dialplan", caller_profile->dialplan);
 
 		if (caller_profile->caller_extension) {
 			switch_caller_application_t *ap;
@@ -1287,7 +1309,46 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 				switch_xml_set_attr_d(x_application, "app_name", ap->application_name);
 				switch_xml_set_attr_d(x_application, "app_data", ap->application_data);
 			}
+
+			if (caller_profile->caller_extension->children) {
+				switch_caller_profile_t *cp = NULL;
+				int i_off = 0;
+				for (cp = caller_profile->caller_extension->children; cp; cp = cp->next) {
+					switch_caller_application_t *ap;
+					int app_off = 0;
+					
+					if (!cp->caller_extension) {
+						continue;
+					}
+					if (!(x_inner_extension = switch_xml_add_child_d(x_caller_extension, "sub_extensions", i_off++))) {
+						goto error;
+					}				
+
+					if (!(x_caller_extension = switch_xml_add_child_d(x_inner_extension, "extension", cf_off++))) {
+						goto error;
+					}
+					switch_xml_set_attr_d(x_caller_extension, "name", cp->caller_extension->extension_name);
+					switch_xml_set_attr_d(x_caller_extension, "number", cp->caller_extension->extension_number);
+					switch_xml_set_attr_d(x_caller_extension, "dialplan", cp->dialplan);
+					if (cp->caller_extension->current_application) {
+						switch_xml_set_attr_d(x_caller_extension, "current_app", cp->caller_extension->current_application->application_name);
+					}
+				
+					for (ap = cp->caller_extension->applications; ap; ap = ap->next) {
+						if (!(x_application = switch_xml_add_child_d(x_caller_extension, "application", app_off++))) {
+							goto error;
+						}
+						if (ap == cp->caller_extension->current_application) {
+							switch_xml_set_attr_d(x_application, "last_executed", "true");
+						}
+						switch_xml_set_attr_d(x_application, "app_name", ap->application_name);
+						switch_xml_set_attr_d(x_application, "app_data", ap->application_data);
+					}
+				}
+			}
+
 		}
+
 
 		if (!(x_caller_profile = switch_xml_add_child_d(x_callflow, "caller_profile", cf_off++))) {
 			goto error;
@@ -1341,6 +1402,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 
 		caller_profile = caller_profile->next;
 	}
+
+
+
 
 	*xml_cdr = cdr;
 

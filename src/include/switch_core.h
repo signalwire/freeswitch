@@ -43,7 +43,7 @@
 SWITCH_BEGIN_EXTERN_C
 #define SWITCH_MAX_CORE_THREAD_SESSION_OBJS 128
 #define SWITCH_MAX_STREAMS 128
-	struct switch_core_time_duration {
+struct switch_core_time_duration {
 	uint32_t mms;
 	uint32_t ms;
 	uint32_t sec;
@@ -51,6 +51,12 @@ SWITCH_BEGIN_EXTERN_C
 	uint32_t hr;
 	uint32_t day;
 	uint32_t yr;
+};
+
+struct switch_app_log {
+	char *app;
+	char *arg;
+	struct switch_app_log *next;
 };
 
 /*! \brief A message object designed to allow unlike technologies to exchange data */
@@ -565,6 +571,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_flush_message(switch_core_se
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(char *uuid_str, switch_event_t **event);
 
+SWITCH_DECLARE(switch_app_log_t *) switch_core_session_get_app_log(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *session,
+														 const switch_application_interface_t *application_interface, char *arg);
 SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_session_t *session, char *exten, char *dialplan, char *context);
 
 /*! 

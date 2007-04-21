@@ -165,8 +165,8 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 				switch_safe_free(arg);
 			}
 		}
-
-		application_interface->application_function(session, expanded);
+		switch_core_session_exec(session, application_interface, expanded);
+		//application_interface->application_function(session, expanded);
 
 		if (expanded != extension->current_application->application_data) {
 			switch_safe_free(expanded);

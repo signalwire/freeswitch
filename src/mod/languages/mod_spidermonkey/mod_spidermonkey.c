@@ -1615,7 +1615,7 @@ static JSBool session_execute(JSContext * cx, JSObject * obj, uintN argc, jsval 
 		if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
 			if (application_interface->application_function) {
 				saveDepth = JS_SuspendRequest(cx);
-				application_interface->application_function(jss->session, app_arg);
+				switch_core_session_exec(jss->session, application_interface, app_arg);
 				JS_ResumeRequest(cx, saveDepth);
 				retval = JS_TRUE;
 			}
