@@ -1225,6 +1225,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 	char *data, *indup;
 	size_t sp = 0, len = 0, olen = 0, vtype = 0, br = 0, cpos, block = 128;
 	char *sub_val = NULL, *func_val = NULL;
+	int nv = 0;
 
 	if (!in || !strchr(in, '$')) {
 		return in;
@@ -1239,11 +1240,25 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 		for (p = indup; *p; p++) {
 			vtype = 0;
 
-			if (*p == '$') {
+			if (*p == '\\') {
+				if (*(p + 1) == '$') {
+					nv = 1;
+				}
+				p++;
+			}
+
+			if (*p == '$' && !nv) {
 				vtype = 1;
 				if (*(p + 1) != '{') {
 					vtype = 2;
 				}
+			}
+
+			if (nv) {
+				*c++ = *p;
+				len++;
+				nv = 0;
+				continue;
 			}
 
 			if (vtype) {
