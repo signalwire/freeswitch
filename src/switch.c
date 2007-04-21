@@ -210,6 +210,7 @@ int main(int argc, char *argv[])
 	int die = 0;
 	char *usageDesc;
 	int alt_dirs = 0;
+	int known_opt;
 
 #ifdef WIN32
 	SERVICE_TABLE_ENTRY dispatchTable[] = {
@@ -238,13 +239,11 @@ int main(int argc, char *argv[])
 #endif
 
 	for (x = 1; x < argc; x++) {
-		if (argv[x] && !strcmp(argv[x], "-help")) {
-			printf("%s\n", usageDesc);
-			exit(0);
-		}
+		known_opt = 0;
 #ifdef WIN32
 		if (x == 1) {
 			if (argv[x] && !strcmp(argv[x], "-service")) {
+				known_opt++;
 				if (StartServiceCtrlDispatcher(dispatchTable) == 0) {
 					/* Not loaded as a service */
 					fprintf(stderr, "Error Freeswitch loaded as a console app with -service option\n");
@@ -257,6 +256,7 @@ int main(int argc, char *argv[])
 				char servicePath[1024];
 
 				SC_HANDLE handle = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+				known_opt++;
 				GetModuleFileName(NULL, exePath, 1024);
 				snprintf(servicePath, sizeof(servicePath), "%s -service", exePath);
 				CreateService(handle,
@@ -269,6 +269,7 @@ int main(int argc, char *argv[])
 			if (argv[x] && !strcmp(argv[x], "-uninstall")) {
 				SC_HANDLE handle = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 				SC_HANDLE service = OpenService(handle, SERVICENAME, DELETE);
+				known_opt++;
 				if (service != NULL) {
 					/* remove the service! */
 					DeleteService(service);
@@ -280,18 +281,22 @@ int main(int argc, char *argv[])
 
 		if (argv[x] && !strcmp(argv[x], "-nf")) {
 			nf++;
+			known_opt++;
 		}
 #endif
 		if (argv[x] && !strcmp(argv[x], "-hp")) {
 			set_high_priority();
+			known_opt++;
 		}
 
 		if (argv[x] && !strcmp(argv[x], "-stop")) {
 			die++;
+			known_opt++;
 		}
 
 		if (argv[x] && !strcmp(argv[x], "-nc")) {
 			nc++;
+			known_opt++;
 		}
 
 
@@ -305,6 +310,7 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "When using -conf you must specify a config directory\n");
 				return 255;
 			}
+			known_opt++;
 		}
 
 		if (argv[x] && !strcmp(argv[x], "-log")) {
@@ -317,6 +323,7 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "When using -log you must specify a log directory\n");
 				return 255;
 			}
+			known_opt++;
 		}
 
 		if (argv[x] && !strcmp(argv[x], "-db")) {
@@ -329,6 +336,12 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "When using -db you must specify a db directory\n");
 				return 255;
 			}
+			known_opt++;
+		}
+
+		if (!known_opt || argv[x] && !strcmp(argv[x], "-help")) {
+			printf("%s\n", usageDesc);
+			exit(0);
 		}
 
 	}
