@@ -35,6 +35,10 @@
 #   define UDNS_DATA_API __declspec(dllimport)
 #  endif
 # endif
+#ifdef _MSC_VER
+#undef inline
+#define inline __inline
+#endif
 #endif
 
 #ifndef UDNS_API
