@@ -84,6 +84,7 @@ static switch_status_t status_function(char *cmd, switch_core_session_t *session
 						   duration.sec, duration.sec == 1 ? "" : "s", duration.ms, duration.ms == 1 ? "" : "s", duration.mms,
 						   duration.mms == 1 ? "" : "s");
 
+	stream->write_function(stream, "%"SWITCH_SIZE_T_FMT" sessions since startup\n", switch_core_session_id() - 1 );
 	stream->write_function(stream, "%d sessions\n", switch_core_session_count());
 
 	if (html) {

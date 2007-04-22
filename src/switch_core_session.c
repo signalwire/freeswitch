@@ -40,7 +40,7 @@ static struct {
 	switch_mutex_t *session_table_mutex;
 	uint32_t session_count;
 	uint32_t session_limit;
-	uint32_t session_id;
+	switch_size_t session_id;
 } runtime;
 
 
@@ -819,6 +819,12 @@ SWITCH_DECLARE(uint32_t) switch_core_session_count(void)
 {
 	return runtime.session_count;
 }
+
+SWITCH_DECLARE(switch_size_t) switch_core_session_id(void)
+{
+	return runtime.session_id;
+}
+
 
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(char *endpoint_name, switch_memory_pool_t **pool)
 {

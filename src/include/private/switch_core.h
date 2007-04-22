@@ -83,7 +83,7 @@ typedef enum {
 
 
 struct switch_core_session {
-	uint32_t id;
+	switch_size_t id;
 	char name[80];
 	switch_session_flag_t flags;
 	int thread_running;
