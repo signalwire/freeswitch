@@ -693,13 +693,14 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t * thr
 
 	switch_core_session_run(session);
 	switch_core_media_bug_remove_all(session);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session %u (%s) Locked, Waiting on external entities\n",
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session %"SWITCH_SIZE_T_FMT" (%s) Locked, Waiting on external entities\n",
 					  session->id, switch_channel_get_name(session->channel));
 	switch_core_session_write_lock(session);
 	switch_set_flag(session, SSF_DESTROYED);
 	switch_core_session_rwunlock(session);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Session %u (%s) Ended\n", session->id, switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Session %"SWITCH_SIZE_T_FMT" (%s) Ended\n",
+					  session->id, switch_channel_get_name(session->channel));
 	switch_core_session_destroy(&session);
 	return NULL;
 }
@@ -805,7 +806,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 	switch_thread_cond_create(&session->cond, session->pool);
 	switch_thread_rwlock_create(&session->rwlock, session->pool);
 
-	snprintf(session->name, sizeof(session->name), "%u", session->id);
+	snprintf(session->name, sizeof(session->name), "%"SWITCH_SIZE_T_FMT, session->id);
 	switch_mutex_lock(runtime.session_table_mutex);
 	session->id = runtime.session_id++;
 	switch_core_hash_insert(runtime.session_table, session->uuid_str, session);

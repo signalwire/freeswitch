@@ -339,7 +339,7 @@ int main(int argc, char *argv[])
 			known_opt++;
 		}
 
-		if (!known_opt || argv[x] && !strcmp(argv[x], "-help")) {
+		if ((!known_opt || argv[x]) && !strcmp(argv[x], "-help")) {
 			printf("%s\n", usageDesc);
 			exit(0);
 		}
