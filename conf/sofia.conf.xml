@@ -63,6 +63,7 @@
 	<!-- optional ; -->
 	<!-- <param name="ext-rtp-ip" value="stun:stun.server.com"/>-->
 	<!-- <param name="ext-rtp-ip" value="100.101.102.103"/> -->
+	<!-- <param name="ext-sip-ip" value="100.101.102.103"/> -->
 	<!-- VAD choose one (out is a good choice); -->
 	<!-- <param name="vad" value="in"/> -->
 	<!-- <param name="vad" value="out"/> -->
