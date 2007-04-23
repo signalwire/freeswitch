@@ -1090,11 +1090,17 @@ static JSBool session_sayphrase(JSContext * cx, JSObject * obj, uintN argc, jsva
 
 static void check_hangup_hook(struct js_session *jss)
 {
-	jsval argv[2] = { 0 };
+	jsval argv[3] = { 0 };
 	int argc = 0;
 	jsval ret;
-	if (jss->on_hangup) {
+
+	if (jss->on_hangup && (jss->hook_state == CS_HANGUP || jss->hook_state == CS_RING)) {
 		argv[argc++] = OBJECT_TO_JSVAL(jss->obj);
+		if (jss->hook_state == CS_HANGUP) {
+			argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(jss->cx, "hangup"));
+		} else {
+			argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(jss->cx, "transfer"));
+		}
 		JS_CallFunction(jss->cx, jss->obj, jss->on_hangup, argc, argv, &ret);
 	}
 }
@@ -1103,15 +1109,20 @@ static switch_status_t hanguphook(switch_core_session_t *session)
 {
 	switch_channel_t *channel;
 	struct js_session *jss = NULL;
+	switch_channel_state_t state;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
-	if (switch_channel_get_state(channel) != CS_EXECUTE) {
-		if ((jss = switch_channel_get_private(channel, "jss"))) {
+	state = switch_channel_get_state(channel);
+
+	if ((jss = switch_channel_get_private(channel, "jss"))) {
+		if (jss->hook_state != state) {
+			jss->hook_state = state;
 			check_hangup_hook(jss);
 		}
 	}
+
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1128,6 +1139,7 @@ static JSBool session_hanguphook(JSContext * cx, JSObject * obj, uintN argc, jsv
 				switch_channel_t *channel = switch_core_session_get_channel(jss->session);
 				assert(channel != NULL);
 				jss->on_hangup = function;
+				jss->hook_state = switch_channel_get_state(channel);
 				switch_channel_set_private(channel, "jss", jss);
 				switch_core_event_hook_add_state_change(jss->session, hanguphook);
 				*rval = BOOLEAN_TO_JSVAL(JS_FALSE);

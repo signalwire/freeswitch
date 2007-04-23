@@ -129,6 +129,7 @@ struct js_session {
 	unsigned int flags;
 	switch_call_cause_t cause;
 	JSFunction *on_hangup;
+	switch_channel_state_t hook_state;
 };
 
 
