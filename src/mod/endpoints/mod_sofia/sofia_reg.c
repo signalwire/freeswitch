@@ -391,6 +391,11 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			switch_safe_free(sql);
 			sql = NULL;
 		}
+		if ((sql = switch_mprintf("delete from sip_registrations where user='%q' and host='%q'", from_user, from_host))) {
+			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
+			switch_safe_free(sql);
+			sql = NULL;
+		}
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "sip");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->url);
