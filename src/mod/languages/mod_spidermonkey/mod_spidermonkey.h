@@ -91,7 +91,7 @@ int eval_some_js(char *code, JSContext * cx, JSObject * obj, jsval * rval)
 			script_name = path;
 		}
 		if (script_name) {
-			if (switch_file_exists(script_name) == SWITCH_STATUS_SUCCESS) {
+			if (switch_file_exists(script_name, NULL) == SWITCH_STATUS_SUCCESS) {
 				script = JS_CompileFile(cx, obj, script_name);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Open File: %s\n", script_name);

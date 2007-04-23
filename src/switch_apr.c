@@ -335,17 +335,31 @@ SWITCH_DECLARE(switch_status_t) switch_file_write(switch_file_t * thefile, const
 	return apr_file_write(thefile, buf, nbytes);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename)
+SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename, switch_memory_pool_t *pool)
 {
 	int32_t wanted = APR_FINFO_TYPE;
+	switch_memory_pool_t *our_pool = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	apr_finfo_t info = { 0 };
-	if (filename) {
-		apr_stat(&info, filename, wanted, NULL);
-		if (info.filetype != APR_NOFILE) {
-			return SWITCH_STATUS_SUCCESS;
+
+	if (!pool) {
+		if ((apr_pool_create(&our_pool, NULL)) != SWITCH_STATUS_SUCCESS) {
+			return SWITCH_STATUS_MEMERR;
 		}
 	}
-	return SWITCH_STATUS_FALSE;
+
+	if (filename) {
+		apr_stat(&info, filename, wanted, pool ? pool : our_pool);
+		if (info.filetype != APR_NOFILE) {
+			status =  SWITCH_STATUS_SUCCESS;
+		}
+	}
+
+	if (our_pool) {
+		apr_pool_destroy(our_pool);
+	}
+
+	return status;
 }
 
 /* thread stubs */

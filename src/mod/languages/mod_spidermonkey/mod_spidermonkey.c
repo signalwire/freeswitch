@@ -2771,7 +2771,7 @@ static void  message_query_handler(switch_event_t *event)
 		path  = switch_mprintf("%s%smwi.js", SWITCH_GLOBAL_dirs.script_dir, SWITCH_PATH_SEPARATOR);
 		assert(path != NULL);
 
-		if (switch_file_exists(path) == SWITCH_STATUS_SUCCESS) {
+		if (switch_file_exists(path, NULL) == SWITCH_STATUS_SUCCESS) {
 			cmd = switch_mprintf("%s %s", path, account);
 			assert(cmd != NULL);
 			js_thread_launch(cmd);

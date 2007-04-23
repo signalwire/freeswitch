@@ -733,7 +733,7 @@ SWITCH_DECLARE(switch_status_t) switch_file_read(switch_file_t * thefile, void *
  */
 SWITCH_DECLARE(switch_status_t) switch_file_write(switch_file_t * thefile, const void *buf, switch_size_t *nbytes);
 
-SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename);
+SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename, switch_memory_pool_t *pool);
 
 /** @} */
 

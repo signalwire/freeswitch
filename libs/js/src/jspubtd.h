@@ -552,7 +552,7 @@ typedef void
  * JSEXN_NONE marks an unthrowable error.
  */
 typedef enum JSExnType {
-    JSEXN_NONE = -1,
+    JSEXN_NONE,
       JSEXN_ERR,
         JSEXN_INTERNALERR,
         JSEXN_EVALERR,
