@@ -175,6 +175,7 @@ struct ldl_feature {
 typedef struct ldl_feature ldl_feature_t;
 
 #define FEATURE_DISCO "http://jabber.org/protocol/disco"
+#define FEATURE_DISCO_INFO "http://jabber.org/protocol/disco#info"
 #define FEATURE_VERSION "jabber:iq:version"
 #define FEATURE_VCARD "vcard-temp"
 #define FEATURE_VOICE "http://www.google.com/xmpp/protocol/voice/v1"
@@ -182,6 +183,7 @@ typedef struct ldl_feature ldl_feature_t;
 
 static ldl_feature_t FEATURES[] = { 
 	{ FEATURE_DISCO, on_disco_default },
+	{ FEATURE_DISCO_INFO, on_disco_default },
 	{ FEATURE_VERSION, on_disco_default },
 	{ FEATURE_VCARD, on_vcard},
 	{ FEATURE_VOICE, on_disco_default },
@@ -414,11 +416,11 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 				dl_signal = LDL_SIGNAL_TRANSPORT_ACCEPT;
 			} else if (!strcasecmp(type, "reject")) {
 				dl_signal = LDL_SIGNAL_REJECT;
-			} else if (!strcasecmp(type, "transport-info")) {
+			} else if (!strcasecmp(type, "transport-info") || !strcasecmp(type, "candidates")) {
 				char *tid = iks_find_attrib(xml, "id");
 				dl_signal = LDL_SIGNAL_CANDIDATES;
 				tag = iks_child (xml);
-				
+				id = type;
 				if (tag && !strcasecmp(iks_name(tag), "transport")) {
 					tag = iks_child(tag);
 				}
@@ -560,7 +562,7 @@ static int on_disco_default(void *user_data, ikspak *pak)
 	} else if (pak->subtype == IKS_TYPE_GET) {
 		if ((iq = iks_new("iq"))) {
 			int all = 0;
-
+			
 			iks_insert_attrib(iq, "from", handle->login);
 			iks_insert_attrib(iq, "to", pak->from->full);
 			iks_insert_attrib(iq, "id", pak->id);
@@ -578,15 +580,32 @@ static int on_disco_default(void *user_data, ikspak *pak)
 			if (!(tag = iks_insert (query, "identity"))) {
 				goto fail;
 			}
-			
-			if (!strcasecmp(ns, FEATURE_DISCO) && !node) {
-				all++;
-			}
 
 			iks_insert_attrib(tag, "category", "gateway");
-			iks_insert_attrib(tag, "type", "voice");
+			//iks_insert_attrib(tag, "type", "voice");
 			iks_insert_attrib(tag, "name", "LibDingaLing");
+			
+			if (!strcasecmp(ns, FEATURE_DISCO_INFO)) {
+				if (!node) {
+					all++;
+				} else {
+					char *p;
 
+					if ((p = strstr(node, "caps#"))) {
+						char *what = p + 5;
+
+						if (!strcasecmp(what, "voice-v1")) {
+							if (!(tag = iks_insert (query, "feature"))) {
+								goto fail;
+							}
+							iks_insert_attrib(tag, "var", FEATURE_VOICE);
+							goto done;
+						}
+						
+					}
+				}
+			}
+			
 			for (x = 0; FEATURES[x].name; x++) {
 				if (all || !ns || !strcasecmp(ns, FEATURES[x].name)) {
 					if (!(tag = iks_insert (query, "feature"))) {
@@ -595,6 +614,9 @@ static int on_disco_default(void *user_data, ikspak *pak)
 					iks_insert_attrib(tag, "var", FEATURES[x].name);
 				}
 			}
+
+		done:
+
 			apr_queue_push(handle->queue, iq);
 			iq = NULL;
 			send = 1;
@@ -625,7 +647,7 @@ static int on_presence(void *user_data, ikspak *pak)
 	char *resource;
 	struct ldl_buffer *buffer;
 	ldl_signal_t dl_signal = LDL_SIGNAL_PRESENCE_IN;
-
+	
 
 
     if (type && *type) {
@@ -661,7 +683,7 @@ static int on_presence(void *user_data, ikspak *pak)
 		}
 	}
 
-	if (resource && strstr(resource, "talk") && (buffer = apr_hash_get(handle->probe_hash, id, APR_HASH_KEY_STRING))) {
+	if (resource && (strstr(resource, "talk") || strstr(resource, "telepathy")) && (buffer = apr_hash_get(handle->probe_hash, id, APR_HASH_KEY_STRING))) {
 		apr_cpystrn(buffer->buf, from, buffer->len);
 		fflush(stderr);
 		buffer->hit = 1;
@@ -1857,7 +1879,7 @@ unsigned int ldl_session_candidates(ldl_session_t *session,
 		iq = NULL;
 		sess = NULL;
 		id = 0;
-
+		
 		new_session_iq(session, &iq, &sess, &id, "transport-info");
 		tag = iks_insert(sess, "transport");
 		iks_insert_attrib(tag, "xmlns", "http://www.google.com/transport/p2p");

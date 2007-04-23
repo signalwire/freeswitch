@@ -1700,12 +1700,20 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				user = ldl_handle_get_login(mdl_profile->handle);
 			} else {
 				if (!user) {
-					if (strchr(outbound_profile->caller_id_number, '@')) {
-						snprintf(ubuf, sizeof(ubuf), "%s/talk", outbound_profile->caller_id_number);
+					char *id_num;
+					
+					if (!(id_num = outbound_profile->caller_id_number)) {
+						if (!(id_num = outbound_profile->caller_id_name)) {
+							id_num = "nobody";
+						}
+					}
+
+					if (strchr(id_num, '@')) {
+						snprintf(ubuf, sizeof(ubuf), "%s/talk", id_num);
 						user = ubuf;
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid User!\n");
-						terminate_session(new_session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+						snprintf(ubuf, sizeof(ubuf), "%s@%s/talk", id_num, profile_name);
+						user = ubuf;
 					}
 				}
 			}
@@ -2871,14 +2879,27 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "candidates %s:%d\n", candidates[x].address, candidates[x].port);
 
-				if (!strcasecmp(candidates[x].protocol, "udp") && (!strcasecmp(candidates[x].type, "local") || !strcasecmp(candidates[x].type, "stun")) && ((profile->lanaddr && lanaddr) || (strncasecmp(candidates[x].address, "10.", 3) && strncasecmp(candidates[x].address, "192.168.", 8) && strncasecmp(candidates[x].address, "127.", 4) && strncasecmp(candidates[x].address, "255.", 4) && strncasecmp(candidates[x].address, "0.", 2) && strncasecmp(candidates[x].address, "1.", 2) && strncasecmp(candidates[x].address, "2.", 2) && strncasecmp(candidates[x].address, "172.16.", 7) && strncasecmp(candidates[x].address, "172.17.", 7) && strncasecmp(candidates[x].address, "172.18.", 7) && strncasecmp(candidates[x].address, "172.19.", 7) && strncasecmp(candidates[x].address, "172.2", 5) && strncasecmp(candidates[x].address, "172.30.", 7) && strncasecmp(candidates[x].address, "172.31.", 7) && strncasecmp(candidates[x].address, "192.0.2.", 8) &&	// 192.0.0.0 - 192.0.127.255 is marked as reserved, should we filter all of them?
-																																															  strncasecmp
-																																															  (candidates
-																																															   [x].
-																																															   address,
-																																															   "169.254.",
-																																															   8)
-																																															  ))) {
+				// 192.0.0.0 - 192.0.127.255 is marked as reserved, should we filter all of them?
+				if (!strcasecmp(candidates[x].protocol, "udp") &&
+					(!strcasecmp(candidates[x].type, "local") || !strcasecmp(candidates[x].type, "stun")) &&
+					((profile->lanaddr &&
+					  lanaddr) || (strncasecmp(candidates[x].address, "10.", 3) &&
+								   strncasecmp(candidates[x].address, "192.168.", 8) &&
+								   strncasecmp(candidates[x].address, "127.", 4) &&
+								   strncasecmp(candidates[x].address, "255.", 4) &&
+								   strncasecmp(candidates[x].address, "0.", 2) &&
+								   strncasecmp(candidates[x].address, "1.", 2) &&
+								   strncasecmp(candidates[x].address, "2.", 2) &&
+								   strncasecmp(candidates[x].address, "172.16.", 7) &&
+								   strncasecmp(candidates[x].address, "172.17.", 7) &&
+								   strncasecmp(candidates[x].address, "172.18.", 7) &&
+								   strncasecmp(candidates[x].address, "172.19.", 7) &&
+								   strncasecmp(candidates[x].address, "172.2", 5) &&
+								   strncasecmp(candidates[x].address, "172.30.", 7) &&
+								   strncasecmp(candidates[x].address, "172.31.", 7) &&
+								   strncasecmp(candidates[x].address, "192.0.2.", 8) &&
+								   strncasecmp(candidates[x].address, "169.254.", 8)
+								   ))) {
 					ldl_payload_t payloads[5];
 
 					memset(payloads, 0, sizeof(payloads));
@@ -2888,6 +2909,11 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 					if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 						switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
 						ldl_session_accept_candidate(dlsession, &candidates[x]);
+					}
+
+					if (!strcasecmp(subject, "candidates")) {
+						switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
+						switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
 					}
 
 					if (lanaddr) {

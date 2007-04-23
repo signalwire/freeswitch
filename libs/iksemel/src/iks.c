@@ -379,7 +379,7 @@ char *
 iks_name (iks *x)
 {
 	if (x) {
-		if (IKS_TAG == x->type)
+		if (IKS_TAG == x->type) 
 			return IKS_TAG_NAME (x);
 		else
 			return IKS_ATTRIB_NAME (x);
