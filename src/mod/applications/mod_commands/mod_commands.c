@@ -821,6 +821,7 @@ static switch_status_t sched_api_function(char *cmd, switch_core_session_t *ises
 struct holder {
 	switch_stream_handle_t *stream;
 	char *http;
+	char *delim;
 	uint32_t count;
 	int print_title;
 	switch_xml_t xml;
@@ -876,7 +877,7 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames)
 				holder->stream->write_function(holder->stream, "<td>");
 				holder->stream->write_function(holder->stream, "<b>%s</b>%s", columnNames[x], x == (argc - 1) ? "</td></tr>\n" : "</td><td>");
 			} else {
-				holder->stream->write_function(holder->stream, "%s%s", columnNames[x], x == (argc - 1) ? "\n" : ",");
+				holder->stream->write_function(holder->stream, "%s%s", columnNames[x], x == (argc - 1) ? "\n" : holder->delim);
 			}
 		}
 	}
@@ -890,7 +891,7 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames)
 			holder->stream->write_function(holder->stream, "<td>");
 			holder->stream->write_function(holder->stream, "%s%s", argv[x] ? argv[x] : "", x == (argc - 1) ? "</td></tr>\n" : "</td><td>");
 		} else {
-			holder->stream->write_function(holder->stream, "%s%s", argv[x] ? argv[x] : "", x == (argc - 1) ? "\n" : ",");
+			holder->stream->write_function(holder->stream, "%s%s", argv[x] ? argv[x] : "", x == (argc - 1) ? "\n" : holder->delim);
 		}
 	}
 
@@ -905,7 +906,7 @@ static switch_status_t show_function(char *data, switch_core_session_t *session,
 	switch_core_db_t *db = switch_core_db_handle();
 	struct holder holder = { 0 };
 	int help = 0;
-	char *mydata = NULL, *argv[5] = {0};
+	char *mydata = NULL, *argv[6] = {0};
 	int argc;
 	char *cmd = NULL, *as = NULL;
 
@@ -969,10 +970,16 @@ static switch_status_t show_function(char *data, switch_core_session_t *session,
 	}
 
 	if (!as) {
-		as = "csv";
+		as = "delim";
+		holder.delim = ",";
 	}
 
-	if (!strcasecmp(as, "csv")) {
+	if (!strcasecmp(as, "delim") || !strcasecmp(as, "csv")) {
+		if (switch_strlen_zero(holder.delim)) {
+			if (!(holder.delim = argv[3])) {
+				holder.delim = ",";
+			}
+		}
 		switch_core_db_exec(db, sql, show_callback, &holder, &errmsg);
 		if (holder.http) {
 			holder.stream->write_function(holder.stream, "</table>");
