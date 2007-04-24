@@ -114,6 +114,7 @@ lib_LTLIBRARIES	          = libfreeswitch.la
 libfreeswitch_la_CFLAGS   = $(CORE_CFLAGS) $(AM_CFLAGS)
 libfreeswitch_la_LDFLAGS  = -version-info 1:0:0 $(AM_LDFLAGS)
 libfreeswitch_la_LIBADD  = $(CORE_LIBS)
+libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
 nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
 
 MOD_LINK       = $(BASE)/libfreeswitch.la
@@ -198,7 +199,8 @@ libs/libresample/libresample.la: libs/libresample libs/libresample/.update
 	@$(TOUCH_TARGET)
 endif
 
-core:  libfreeswitch.la  
+core:
+	$(MAKE) $(AM_MAKEFLAGS) libfreeswitch.la
 
 install_core: install-libLTLIBRARIES
 
