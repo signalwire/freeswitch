@@ -711,20 +711,30 @@ ServerFunc(TConn * c) {
     SocketClose(&(c->socket));
 }
 
-void ServerInit(TServer *srv)
+int ServerInit(TServer *srv)
 {
     /********* Must check errors from these functions *************/
-    if (!SocketInit())
-        TraceExit("Can't initialize TCP sockets\n");;
+	if (!SocketInit()) {
+        TraceMsg("Can't initialize TCP sockets\n");
+		return FALSE;
+	}
 
-    if (!SocketCreate(&srv->listensock))
-        TraceExit("Can't create a socket\n");;
+	if (!SocketCreate(&srv->listensock)) {
+        TraceMsg("Can't create a socket\n");
+		return FALSE;
+	}
 
-    if (!SocketBind(&srv->listensock,NULL,srv->port))
-        TraceExit("Can't bind\n");
+	if (!SocketBind(&srv->listensock,NULL,srv->port)) {
+        TraceMsg("Can't bind\n");
+		return FALSE;
+	}
 
-    if (!SocketListen(&srv->listensock,MAX_CONN))
-        TraceExit("Can't listen\n");
+	if (!SocketListen(&srv->listensock,MAX_CONN)) {
+        TraceMsg("Can't listen\n");
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 /* With pthread configuration, our connections run as threads of a

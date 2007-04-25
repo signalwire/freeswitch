@@ -304,7 +304,11 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 
 	xmlrpc_server_abyss_set_handler(&env, &abyssServer, "/RPC2", registryP);
 
-	ServerInit(&abyssServer);
+	if (ServerInit(&abyssServer) != TRUE) {
+		globals.running = 0;
+		return SWITCH_STATUS_FALSE;
+	}
+
 	ServerAddHandler(&abyssServer, HandleHook);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Starting HTTP Port %d, DocRoot [%s]\n", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir);

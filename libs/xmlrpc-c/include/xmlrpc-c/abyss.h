@@ -634,7 +634,7 @@ abyss_bool ServerCreate(TServer *srv,
 
 void ServerFree(TServer *srv);
 
-void ServerInit(TServer *srv);
+int ServerInit(TServer *srv);
 void ServerRun(TServer *srv);
 void ServerRunOnce(TServer *srv);
 void ServerRunOnce2(TServer *           const srv,

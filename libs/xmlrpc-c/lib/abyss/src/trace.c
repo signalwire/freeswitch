@@ -63,5 +63,5 @@ void TraceExit(char *fmt,...)
     va_start(argptr,fmt);
     TraceVMsg(fmt,argptr);
     va_end(argptr);
-    exit(1);
+    abort();
 }
