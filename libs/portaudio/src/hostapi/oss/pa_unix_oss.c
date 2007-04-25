@@ -63,15 +63,17 @@
 #include <limits.h>
 #include <semaphore.h>
 
-#ifdef __FreeBSD__
+#ifdef HAVE_SYS_SOUNDCARD_H
 # include <sys/soundcard.h>
 # define DEVICE_NAME_BASE            "/dev/dsp"
-#elif defined __linux__
+#elif defined(HAVE_LINUX_SOUNDCARD_H)
 # include <linux/soundcard.h>
 # define DEVICE_NAME_BASE            "/dev/dsp"
-#else
+#elif defined(HAVE_MACHINE_SOUNDCARD_H)
 # include <machine/soundcard.h> /* JH20010905 */
 # define DEVICE_NAME_BASE            "/dev/audio"
+#else
+# error No sound card header file
 #endif
 
 #include "portaudio.h"
@@ -1612,7 +1614,11 @@ static void *PaOSS_AudioThreadProc( void *userData )
             if ( stream->capture )
             {
                 PA_ENSURE( PaOssStreamComponent_Read( stream->capture, &frames ) );
-                assert( frames == framesAvail );
+                if( frames < framesAvail )
+                {
+                    PA_DEBUG(( "Read %lu less frames than requested\n", framesAvail - frames ));
+                    framesAvail = frames;
+                }
             }
 
 #if ( SOUND_VERSION >= 0x030904 )
@@ -1648,9 +1654,11 @@ static void *PaOSS_AudioThreadProc( void *userData )
                 frames = framesAvail;
 
                 PA_ENSURE( PaOssStreamComponent_Write( stream->playback, &frames ) );
-                assert( frames == framesAvail );
-
-                /* TODO: handle bytesWritten != bytesRequested (slippage?) */
+                if( frames < framesAvail )
+                {
+                    /* TODO: handle bytesWritten != bytesRequested (slippage?) */
+                    PA_DEBUG(( "Wrote %lu less frames than requested\n", framesAvail - frames ));
+                }
             }
 
             framesAvail -= framesProcessed;
@@ -1932,4 +1940,5 @@ static signed long GetStreamWriteAvailable( PaStream* s )
     
     return (PaOssStreamComponent_BufferSize( stream->playback ) - delay) / PaOssStreamComponent_FrameSize( stream->playback );
 }
+
 

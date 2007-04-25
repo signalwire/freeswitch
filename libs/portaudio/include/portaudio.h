@@ -153,10 +153,10 @@ PaError Pa_Terminate( void );
 
 
 /** The type used to refer to audio devices. Values of this type usually
- range from 0 to (Pa_DeviceCount-1), and may also take on the PaNoDevice
+ range from 0 to (Pa_GetDeviceCount()-1), and may also take on the PaNoDevice
  and paUseHostApiSpecificDeviceSpecification values.
 
- @see Pa_DeviceCount, paNoDevice, paUseHostApiSpecificDeviceSpecification
+ @see Pa_GetDeviceCount, paNoDevice, paUseHostApiSpecificDeviceSpecification
 */
 typedef int PaDeviceIndex;
 

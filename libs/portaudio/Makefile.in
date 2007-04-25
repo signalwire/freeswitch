@@ -40,7 +40,7 @@ OTHER_OBJS = @OTHER_OBJS@
 PALIB = libportaudio.la
 PAINC = include/portaudio.h
 
-PA_LDFLAGS = $(LDFLAGS) $(SHARED_FLAGS) -rpath $(libdir) -no-undefined -export-symbols-regex "Pa_.*" -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)
+PA_LDFLAGS = $(LDFLAGS) $(SHARED_FLAGS) -rpath $(libdir) -no-undefined -export-symbols-regex "(Pa|PaMacCore)_.*" -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)
 #MAKEFILE = Makefile
 
 COMMON_OBJS = \
@@ -51,7 +51,6 @@ COMMON_OBJS = \
 	src/common/pa_debugprint.o \
 	src/common/pa_front.o \
 	src/common/pa_process.o \
-	src/common/pa_ringbuffer.o \
 	src/common/pa_skeleton.o \
 	src/common/pa_stream.o \
 	src/common/pa_trace.o
@@ -82,6 +81,7 @@ TESTS = \
 	test/patest_saw \
 	test/patest_sine8 \
 	test/patest_sine \
+  test/patest_sine_channelmaps \
 	test/patest_sine_formats \
 	test/patest_sine_time \
 	test/patest_start_stop \
@@ -120,7 +120,7 @@ LTOBJS:= $(OBJS:.o=.lo)
 SUBDIRS =
 @ENABLE_CXX_TRUE@SUBDIRS += bindings/cpp
 
-all: lib/$(PALIB) all-recursive tests
+all: lib/$(PALIB) all-recursive
 
 tests: bin-stamp $(TESTS)
 

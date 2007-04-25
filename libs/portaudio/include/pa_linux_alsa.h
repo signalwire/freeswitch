@@ -42,6 +42,7 @@
 /** @file
  * ALSA-specific PortAudio API extension header file.
  */
+#include "portaudio.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,7 +62,9 @@ void PaAlsa_InitializeStreamInfo( PaAlsaStreamInfo *info );
 
 void PaAlsa_EnableRealtimeScheduling( PaStream *s, int enable );
 
+#if 0
 void PaAlsa_EnableWatchdog( PaStream *s, int enable );
+#endif
 
 int PaAlsa_GetStreamInputCard( PaStream *s, int *card );
 

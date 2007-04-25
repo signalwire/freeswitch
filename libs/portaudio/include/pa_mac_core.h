@@ -38,6 +38,9 @@
  * license above.
  */
 
+#include <AudioUnit/AudioUnit.h>
+//#include <AudioToolbox/AudioToolbox.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -52,10 +55,12 @@ extern "C" {
  */
 typedef struct
 {
-    unsigned long size;         /**size of whole structure including this header */
-    PaHostApiTypeId hostApiType;/**host API for which this data is intended */
-    unsigned long version;      /**structure version */
-    unsigned long flags;        /* flags to modify behaviour */
+    unsigned long size;           /**size of whole structure including this header */
+    PaHostApiTypeId hostApiType;  /**host API for which this data is intended */
+    unsigned long version;        /**structure version */
+    unsigned long flags;          /* flags to modify behaviour */
+    long const * channelMap;             /* Channel map for HAL channel mapping , if not needed, use NULL;*/ 
+    unsigned long channelMapSize; /* Channel map size for HAL channel mapping , if not needed, use 0;*/ 
 } PaMacCoreStreamInfo;
 
 /*
@@ -64,15 +69,25 @@ typedef struct
 
 
 /* Use this function to initialize a paMacCoreStreamInfo struct
-   using the requested flags. */
-void paSetupMacCoreStreamInfo( PaMacCoreStreamInfo *data, unsigned long flags ) ;
+ * using the requested flags. Note that channel mapping is turned
+ * off after a call to this function.
+ * @param data The datastructure to initialize
+ * @param flags The flags to initialize the datastructure with.
+*/
+void PaMacCore_SetupStreamInfo( PaMacCoreStreamInfo *data, unsigned long flags );
 
+/* call this after pa_SetupMacCoreStreamInfo to use channel mapping as described in notes.txt.
+ * @param data The stream info structure to assign a channel mapping to
+ * @param channelMap The channel map array, as described in notes.txt. This array pointer will be used directly (ie the underlying data will not be copied), so the caller should not free the array until after the stream has been opened.
+ * @param channelMapSize The size of the channel map array.
+ */
+void PaMacCore_SetupChannelMap( PaMacCoreStreamInfo *data, const long * const channelMap, unsigned long channelMapSize );
 
 /*
  * Retrieve the AudioDeviceID of the input device assigned to an open stream
  *
  * @param s The stream to query.
- *`
+ *
  * @return A valid AudioDeviceID, or NULL if an error occurred.
  */
 AudioDeviceID PaMacCore_GetStreamInputDevice( PaStream* s );
@@ -86,6 +101,21 @@ AudioDeviceID PaMacCore_GetStreamInputDevice( PaStream* s );
  */
 AudioDeviceID PaMacCore_GetStreamOutputDevice( PaStream* s );
 
+/*
+ * Returns a statically allocated string with the device's name
+ * for the given channel. NULL will be returned on failure.
+ *
+ * This function's implemenation is not complete!
+ *
+ * @param device The PortAudio device index.
+ * @param channel The channel number who's name is requested.
+ * @return a statically allocated string with the name of the device.
+ *         Because this string is statically allocated, it must be
+ *         coppied if it is to be saved and used by the user after
+ *         another call to this function.
+ *
+ */
+const char *PaMacCore_GetChannelName( int device, int channelIndex, bool input );
 
 /*
  * Flags

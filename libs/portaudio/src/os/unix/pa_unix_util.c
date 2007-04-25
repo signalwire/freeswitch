@@ -208,23 +208,31 @@ PaError PaUnixThreading_Initialize()
     return paNoError;
 }
 
-#if 0
-PaError PaUnixThread_Initialize( PaUnixThread* self )
+static PaError BoostPriority( PaUnixThread* self )
 {
-    th->watchdogRunning = 0;
-    th->rtSched = 0;
-    th->callbackTime = 0;
-    th->callbackCpuTime = 0;
-    th->useWatchdog = 1;
-    th->throttledSleepTime = 0;
-    th->cpuLoadMeasurer = clm;
+    PaError result = paNoError;
+    struct sched_param spm = { 0 };
+    /* Priority should only matter between contending FIFO threads? */
+    spm.sched_priority = 1;
 
-    th->rtPrio = (sched_get_priority_max( SCHED_FIFO ) - sched_get_priority_min( SCHED_FIFO )) / 2
-            + sched_get_priority_min( SCHED_FIFO );
+    assert( self );
+
+    if( pthread_setschedparam( self->thread, SCHED_FIFO, &spm ) != 0 )
+    {
+        PA_UNLESS( errno == EPERM, paInternalError );  /* Lack permission to raise priority */
+        PA_DEBUG(( "Failed bumping priority\n" ));
+        result = 0;
+    }
+    else
+    {
+        result = 1; /* Success */
+    }
+error:
+    return result;
 }
-#endif
 
-PaError PaUnixThread_New( PaUnixThread* self, void* (*threadFunc)( void* ), void* threadArg, PaTime waitForChild )
+PaError PaUnixThread_New( PaUnixThread* self, void* (*threadFunc)( void* ), void* threadArg, PaTime waitForChild,
+        int rtSched )
 {
     PaError result = paNoError;
     pthread_attr_t attr;
@@ -238,8 +246,10 @@ PaError PaUnixThread_New( PaUnixThread* self, void* (*threadFunc)( void* ), void
 
     /* Spawn thread */
 
-#if 0 && defined _POSIX_MEMLOCK && (_POSIX_MEMLOCK != -1)
-    if( th->rtSched )
+/* Temporarily disabled since we should test during configuration for presence of required mman.h header */
+#if 0
+#if defined _POSIX_MEMLOCK && (_POSIX_MEMLOCK != -1)
+    if( rtSched )
     {
         if( mlockall( MCL_CURRENT | MCL_FUTURE ) < 0 )
         {
@@ -252,6 +262,7 @@ PaError PaUnixThread_New( PaUnixThread* self, void* (*threadFunc)( void* ), void
             PA_DEBUG(( "%s: Successfully locked memory\n", __FUNCTION__ ));
     }
 #endif
+#endif
 
     PA_UNLESS( !pthread_attr_init( &attr ), paInternalError );
     /* Priority relative to other processes */
@@ -260,15 +271,15 @@ PaError PaUnixThread_New( PaUnixThread* self, void* (*threadFunc)( void* ), void
     PA_UNLESS( !pthread_create( &self->thread, &attr, threadFunc, threadArg ), paInternalError );
     started = 1;
 
-#if 0
-    if( th->rtSched )
+    if( rtSched )
     {
-        if( th->useWatchdog )
+#if 0
+        if( self->useWatchdog )
         {
             int err;
             struct sched_param wdSpm = { 0 };
             /* Launch watchdog, watchdog sets callback thread priority */
-            int prio = PA_MIN( th->rtPrio + 4, sched_get_priority_max( SCHED_FIFO ) );
+            int prio = PA_MIN( self->rtPrio + 4, sched_get_priority_max( SCHED_FIFO ) );
             wdSpm.sched_priority = prio;
 
             PA_UNLESS( !pthread_attr_init( &attr ), paInternalError );
@@ -276,7 +287,7 @@ PaError PaUnixThread_New( PaUnixThread* self, void* (*threadFunc)( void* ), void
             PA_UNLESS( !pthread_attr_setscope( &attr, PTHREAD_SCOPE_SYSTEM ), paInternalError );
             PA_UNLESS( !pthread_attr_setschedpolicy( &attr, SCHED_FIFO ), paInternalError );
             PA_UNLESS( !pthread_attr_setschedparam( &attr, &wdSpm ), paInternalError );
-            if( (err = pthread_create( &th->watchdogThread, &attr, &WatchdogFunc, th )) )
+            if( (err = pthread_create( &self->watchdogThread, &attr, &WatchdogFunc, self )) )
             {
                 PA_UNLESS( err == EPERM, paInternalError );
                 /* Permission error, go on without realtime privileges */
@@ -285,8 +296,8 @@ PaError PaUnixThread_New( PaUnixThread* self, void* (*threadFunc)( void* ), void
             else
             {
                 int policy;
-                th->watchdogRunning = 1;
-                PA_ENSURE_SYSTEM( pthread_getschedparam( th->watchdogThread, &policy, &wdSpm ), 0 );
+                self->watchdogRunning = 1;
+                PA_ENSURE_SYSTEM( pthread_getschedparam( self->watchdogThread, &policy, &wdSpm ), 0 );
                 /* Check if priority is right, policy could potentially differ from SCHED_FIFO (but that's alright) */
                 if( wdSpm.sched_priority != prio )
                 {
@@ -296,9 +307,15 @@ PaError PaUnixThread_New( PaUnixThread* self, void* (*threadFunc)( void* ), void
             }
         }
         else
-            PA_ENSURE( BoostPriority( th ) );
-    }
 #endif
+            PA_ENSURE( BoostPriority( self ) );
+
+        {
+            int policy;
+            struct sched_param spm;
+            pthread_getschedparam(self->thread, &policy, &spm);
+        }
+    }
     
     if( self->parentWaiting )
     {
@@ -486,22 +503,8 @@ error:
     return result;
 }
 
-#if 0
-/* Threading utility struct */
-typedef struct PaAlsaThreading
-{
-    pthread_t watchdogThread;
-    pthread_t callbackThread;
-    int watchdogRunning;
-    int rtSched;
-    int rtPrio;
-    int useWatchdog;
-    unsigned long throttledSleepTime;
-    volatile PaTime callbackTime;
-    volatile PaTime callbackCpuTime;
-    PaUtilCpuLoadMeasurer *cpuLoadMeasurer;
-} PaAlsaThreading;
 
+#if 0
 static void OnWatchdogExit( void *userData )
 {
     PaAlsaThreading *th = (PaAlsaThreading *) userData;
@@ -510,26 +513,6 @@ static void OnWatchdogExit( void *userData )
 
     PA_ASSERT_CALL( pthread_setschedparam( th->callbackThread, SCHED_OTHER, &spm ), 0 );    /* Lower before exiting */
     PA_DEBUG(( "Watchdog exiting\n" ));
-}
-
-static PaError BoostPriority( PaAlsaThreading *th )
-{
-    PaError result = paNoError;
-    struct sched_param spm = { 0 };
-    spm.sched_priority = th->rtPrio;
-
-    assert( th );
-
-    if( pthread_setschedparam( th->callbackThread, SCHED_FIFO, &spm ) != 0 )
-    {
-        PA_UNLESS( errno == EPERM, paInternalError );  /* Lack permission to raise priority */
-        PA_DEBUG(( "Failed bumping priority\n" ));
-        result = 0;
-    }
-    else
-        result = 1; /* Success */
-error:
-    return result;
 }
 
 static void *WatchdogFunc( void *userData )
@@ -661,7 +644,6 @@ static void CallbackUpdate( PaAlsaThreading *th )
     th->callbackTime = PaUtil_GetTime();
     th->callbackCpuTime = PaUtil_GetCpuLoad( th->cpuLoadMeasurer );
 }
-#endif
 
 /*
 static void *CanaryFunc( void *userData )
@@ -680,3 +662,4 @@ static void *CanaryFunc( void *userData )
     pthread_exit( NULL );
 }
 */
+#endif

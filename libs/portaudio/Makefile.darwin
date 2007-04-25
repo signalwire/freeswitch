@@ -19,7 +19,7 @@ bindir = ${exec_prefix}/bin
 libdir = ${exec_prefix}/lib
 includedir = ${prefix}/include
 CC = gcc
-CFLAGS = -g -std=gnu99 -Werror -arch i386 -arch ppc -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.3 $(OPT_LEVEL) -Wall -pedantic -pipe -fPIC -DPA_BIG_ENDIAN  -Ipa_common -DPACKAGE_NAME=\"\" -DPACKAGE_TARNAME=\"\" -DPACKAGE_VERSION=\"\" -DPACKAGE_STRING=\"\" -DPACKAGE_BUGREPORT=\"\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DSIZEOF_SHORT=2 -DSIZEOF_INT=4 -DSIZEOF_LONG=4 -DPA_USE_COREAUDIO=1 -Iinclude -Isrc/common
+CFLAGS = -g -std=gnu99 -Werror -arch i386 -arch ppc -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.3 $(OPT_LEVEL) -Wall -pedantic -pipe -fPIC -DPA_BIG_ENDIAN  -Ipa_common -DPACKAGE_NAME=\"\" -DPACKAGE_TARNAME=\"\" -DPACKAGE_VERSION=\"\" -DPACKAGE_STRING=\"\" -DPACKAGE_BUGREPORT=\"\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DSIZEOF_SHORT=2 -DSIZEOF_INT=4 -DSIZEOF_LONG=4 -DPA_USE_COREAUDIO=1 -DHAVE_LIBKERN_OSATOMIC_H=1 -Iinclude -Isrc/common
 LIBS = -framework CoreAudio -framework AudioToolbox -framework AudioUnit -framework Carbon
 AR = /usr/bin/ar
 RANLIB = ranlib
@@ -88,6 +88,7 @@ TESTS = \
 	bin/patest_saw \
 	bin/patest_sine8 \
 	bin/patest_sine \
+	bin/patest_sine_channelmaps \
 	bin/patest_sine_formats \
 	bin/patest_sine_time \
 	bin/patest_start_stop \
@@ -144,6 +145,7 @@ ALL_TESTS = \
 	bin/patest_saw \
 	bin/patest_sine8 \
 	bin/patest_sine \
+	bin/patest_sine_channelmaps \
 	bin/patest_sine_formats \
 	bin/patest_sine_time \
 	bin/patest_start_stop \
@@ -217,6 +219,7 @@ bin:
 
 lib:
 	mkdir lib
+
 
 
 

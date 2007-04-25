@@ -85,7 +85,7 @@ static char *jackErr_ = NULL;
         { \
             if( (paErr_) == paUnanticipatedHostError && pthread_self() == mainThread_ ) \
             { \
-                assert( jackErr_ ); \
+                if (! jackErr_ ) jackErr_ = "unknown error";\
                 PaUtil_SetLastHostErrorInfo( paJACK, -1, jackErr_ ); \
             } \
             PaUtil_DebugPrint(( "Expression '" #expr "' failed in '" __FILE__ "', line: " STRINGIZE( __LINE__ ) "\n" )); \
@@ -100,7 +100,7 @@ static char *jackErr_ = NULL;
         { \
             if( (code) == paUnanticipatedHostError && pthread_self() == mainThread_ ) \
             { \
-                assert( jackErr_ ); \
+                if (!jackErr_) jackErr_ = "unknown error";\
                 PaUtil_SetLastHostErrorInfo( paJACK, -1, jackErr_ ); \
             } \
             PaUtil_DebugPrint(( "Expression '" #expr "' failed in '" __FILE__ "', line: " STRINGIZE( __LINE__ ) "\n" )); \
@@ -451,11 +451,6 @@ static PaError BuildDeviceList( PaJackHostApiRepresentation *jackApi )
 {
     /* Utility macros for the repetitive process of allocating memory */
 
-    /* ... MALLOC: allocate memory as part of the device list
-     * allocation group */
-#define MALLOC(size) \
-     (PaUtil_GroupAllocateMemory( jackApi->deviceInfoMemory, (size) ))
-
     /* JACK has no concept of a device.  To JACK, there are clients
      * which have an arbitrary number of ports.  To make this
      * intelligible to PortAudio clients, we will group each JACK client
@@ -484,8 +479,8 @@ static PaError BuildDeviceList( PaJackHostApiRepresentation *jackApi )
      * associated with the previous list */
     PaUtil_FreeAllAllocations( jackApi->deviceInfoMemory );
 
-    regex_pattern = MALLOC( jack_client_name_size() + 3 );
-    tmp_client_name = MALLOC( jack_client_name_size() );
+    regex_pattern = PaUtil_GroupAllocateMemory( jackApi->deviceInfoMemory, jack_client_name_size() + 3 );
+    tmp_client_name = PaUtil_GroupAllocateMemory( jackApi->deviceInfoMemory, jack_client_name_size() );
 
     /* We can only retrieve the list of clients indirectly, by first
      * asking for a list of all ports, then parsing the port names
@@ -497,7 +492,8 @@ static PaError BuildDeviceList( PaJackHostApiRepresentation *jackApi )
     while( jack_ports[numPorts] )
         ++numPorts;
     /* At least there will be one port per client :) */
-    UNLESS( client_names = MALLOC( numPorts * sizeof (char *) ), paInsufficientMemory );
+    UNLESS( client_names = PaUtil_GroupAllocateMemory( jackApi->deviceInfoMemory, numPorts *
+                sizeof (char *) ), paInsufficientMemory );
 
     /* Build a list of clients from the list of ports */
     for( numClients = 0, port_index = 0; jack_ports[port_index] != NULL; port_index++ )
@@ -524,7 +520,8 @@ static PaError BuildDeviceList( PaJackHostApiRepresentation *jackApi )
         if (client_seen)
             continue;   /* A: Nothing to see here, move along */
 
-        UNLESS( client_names[numClients] = (char*)MALLOC(strlen(tmp_client_name) + 1), paInsufficientMemory );
+        UNLESS( client_names[numClients] = (char*)PaUtil_GroupAllocateMemory( jackApi->deviceInfoMemory,
+                    strlen(tmp_client_name) + 1), paInsufficientMemory );
 
         /* The alsa_pcm client should go in spot 0.  If this
          * is the alsa_pcm client AND we are NOT about to put
@@ -550,8 +547,8 @@ static PaError BuildDeviceList( PaJackHostApiRepresentation *jackApi )
     /* there is one global sample rate all clients must conform to */
 
     globalSampleRate = jack_get_sample_rate( jackApi->jack_client );
-    UNLESS( commonApi->deviceInfos = (PaDeviceInfo**)MALLOC( sizeof(PaDeviceInfo*) *
-                                                     numClients ), paInsufficientMemory );
+    UNLESS( commonApi->deviceInfos = (PaDeviceInfo**)PaUtil_GroupAllocateMemory( jackApi->deviceInfoMemory,
+                sizeof(PaDeviceInfo*) * numClients ), paInsufficientMemory );
 
     assert( commonApi->info.deviceCount == 0 );
 
@@ -561,8 +558,10 @@ static PaError BuildDeviceList( PaJackHostApiRepresentation *jackApi )
         PaDeviceInfo *curDevInfo;
         const char **clientPorts = NULL;
 
-        UNLESS( curDevInfo = (PaDeviceInfo*)MALLOC( sizeof(PaDeviceInfo) ), paInsufficientMemory );
-        UNLESS( curDevInfo->name = (char*)MALLOC( strlen(client_names[client_index]) + 1 ), paInsufficientMemory );
+        UNLESS( curDevInfo = (PaDeviceInfo*)PaUtil_GroupAllocateMemory( jackApi->deviceInfoMemory,
+                    sizeof(PaDeviceInfo) ), paInsufficientMemory );
+        UNLESS( curDevInfo->name = (char*)PaUtil_GroupAllocateMemory( jackApi->deviceInfoMemory,
+                    strlen(client_names[client_index]) + 1 ), paInsufficientMemory );
         strcpy( (char *)curDevInfo->name, client_names[client_index] );
 
         curDevInfo->structVersion = 2;
@@ -633,7 +632,6 @@ error:
     free( jack_ports );
     return result;
 }
-#undef MALLOC
 
 static void UpdateSampleRate( PaJackStream *stream, double sampleRate )
 {
@@ -647,9 +645,8 @@ static void JackErrorCallback( const char *msg )
     if( pthread_self() == mainThread_ )
     {
         assert( msg );
-        free( jackErr_ );
-        jackErr_ = malloc( strlen( msg ) );
-        sprintf( jackErr_, msg );
+        jackErr_ = realloc( jackErr_, strlen( msg ) + 1 );
+        strcpy( jackErr_, msg );
     }
 }
 

@@ -135,6 +135,12 @@ if checkSymbol(conf, "time.h", "rt", "clock_gettime"):
     conf.env.Append(CPPDEFINES=["HAVE_CLOCK_GETTIME"])
 if checkSymbol(conf, "time.h", symbol="nanosleep"):
     conf.env.Append(CPPDEFINES=["HAVE_NANOSLEEP"])
+if conf.CheckCHeader("sys/soundcard.h"):
+    conf.env.Append(CPPDEFINES=["HAVE_SYS_SOUNDCARD_H"])
+if conf.CheckCHeader("linux/soundcard.h"):
+    conf.env.Append(CPPDEFINES=["HAVE_LINUX_SOUNDCARD_H"])
+if conf.CheckCHeader("machine/soundcard.h"):
+    conf.env.Append(CPPDEFINES=["HAVE_MACHINE_SOUNDCARD_H"])
 
 # Look for needed libraries and link with them
 for lib, hdr, sym in neededLibs:
@@ -188,8 +194,9 @@ testNames = ["patest_sine", "paqa_devs", "paqa_errs", "patest1", "patest_buffer"
         "patest_dither", "patest_hang", "patest_in_overflow", "patest_latency", "patest_leftright", "patest_longsine", \
         "patest_many", "patest_maxsines", "patest_multi_sine", "patest_out_underflow", "patest_pink", "patest_prime", \
         "patest_read_record", "patest_record", "patest_ringmix", "patest_saw", "patest_sine8", "patest_sine", \
-        "patest_sine_time", "patest_start_stop", "patest_stop", "patest_sync", \
-        "patest_toomanysines", "patest_underflow", "patest_wire", "patest_write_sine", "pa_devs", "pa_fuzz", "pa_minlat"]
+        "patest_sine_time", "patest_start_stop", "patest_stop", "patest_sync", "patest_toomanysines", \
+        "patest_underflow", "patest_wire", "patest_write_sine", "pa_devs", "pa_fuzz", "pa_minlat", \
+        "patest_sine_channelmaps",]
 
 # The test directory ("bin") should be in the top-level PA directory
 tests = [env.Program(target=os.path.join("#", "bin", name), source=[os.path.join("#", "test", name + ".c"),
