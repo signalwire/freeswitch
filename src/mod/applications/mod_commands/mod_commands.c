@@ -849,8 +849,15 @@ static int show_as_xml_callback(void *pArg, int argc, char **argv, char **column
 	switch_xml_set_attr_d(row, "row_id", id);
 
 	for(x = 0; x < argc; x++) {
-		if ((field = switch_xml_add_child_d(row, columnNames[x], f_off++))) {
-			switch_xml_set_txt_d(field, argv[x]);
+		char *name = columnNames[x];
+		char *val = switch_str_nil(argv[x]);
+
+		if (!name) {
+			name = "undefined";
+		}
+
+		if ((field = switch_xml_add_child_d(row, name, f_off++))) {
+			switch_xml_set_txt_d(field, val);
 		} else {
 			return -1;
 		}
@@ -873,11 +880,18 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames)
 		}
 
 		for (x = 0; x < argc; x++) {
+			char *name = columnNames[x];
+
+
+			if (!name) {
+				name = "undefined";
+			}
+
 			if (holder->http) {
 				holder->stream->write_function(holder->stream, "<td>");
-				holder->stream->write_function(holder->stream, "<b>%s</b>%s", columnNames[x], x == (argc - 1) ? "</td></tr>\n" : "</td><td>");
+				holder->stream->write_function(holder->stream, "<b>%s</b>%s", name, x == (argc - 1) ? "</td></tr>\n" : "</td><td>");
 			} else {
-				holder->stream->write_function(holder->stream, "%s%s", columnNames[x], x == (argc - 1) ? "\n" : holder->delim);
+				holder->stream->write_function(holder->stream, "%s%s", name, x == (argc - 1) ? "\n" : holder->delim);
 			}
 		}
 	}
@@ -887,11 +901,13 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames)
 	}
 
 	for (x = 0; x < argc; x++) {
+		char *val = switch_str_nil(argv[x]);
+
 		if (holder->http) {
 			holder->stream->write_function(holder->stream, "<td>");
-			holder->stream->write_function(holder->stream, "%s%s", argv[x] ? argv[x] : "", x == (argc - 1) ? "</td></tr>\n" : "</td><td>");
+			holder->stream->write_function(holder->stream, "%s%s", val, x == (argc - 1) ? "</td></tr>\n" : "</td><td>");
 		} else {
-			holder->stream->write_function(holder->stream, "%s%s", argv[x] ? argv[x] : "", x == (argc - 1) ? "\n" : holder->delim);
+			holder->stream->write_function(holder->stream, "%s%s", val, x == (argc - 1) ? "\n" : holder->delim);
 		}
 	}
 
@@ -997,6 +1013,7 @@ static switch_status_t show_function(char *data, switch_core_session_t *session,
 		}
 	} else if (!strcasecmp(as, "xml")) {
 		switch_core_db_exec(db, sql, show_as_xml_callback, &holder, &errmsg);
+
 		if (holder.xml) {
 			char count[50];
 			char *xmlstr;
