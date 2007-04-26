@@ -623,6 +623,7 @@ JSObject *new_js_event(switch_event_t *event, char *name, JSContext * cx, JSObje
 	return Event;
 }
 
+#define MAX_STACK_DEPTH 12
 
 static switch_status_t js_common_callback(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
@@ -639,6 +640,8 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 		return SWITCH_STATUS_FALSE;
 	}
 
+	jss->stack_depth++;
+
 	switch (itype) {
 	case SWITCH_INPUT_TYPE_EVENT:
 		if ((event = (switch_event_t *) input)) {
@@ -648,6 +651,7 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 			}
 		}
 		if (!Event) {
+			jss->stack_depth--;
 			return SWITCH_STATUS_FALSE;
 		}
 		break;
@@ -662,10 +666,17 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 		argv[argc++] = cb_state->arg;
 	}
 
+	if (jss->stack_depth > MAX_STACK_DEPTH) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Maximum recursive callback limit %d reached.\n", MAX_STACK_DEPTH);
+		jss->stack_depth--;
+		return SWITCH_STATUS_FALSE;
+	}
+
 	JS_ResumeRequest(cb_state->cx, cb_state->saveDepth);
 	JS_CallFunction(cb_state->cx, cb_state->obj, cb_state->function, argc, argv, &cb_state->ret);
 	cb_state->saveDepth = JS_SuspendRequest(cb_state->cx);
 
+	jss->stack_depth--;
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2037,6 +2048,7 @@ static JSObject *new_js_session(JSContext * cx, JSObject * obj, switch_core_sess
 		jss->flags = flags;
 		jss->cx = cx;
 		jss->obj = session_obj;
+		jss->stack_depth = 0;
 		if ((JS_SetPrivate(cx, session_obj, jss) &&
 			 JS_DefineProperties(cx, session_obj, session_props) && JS_DefineFunctions(cx, session_obj, session_methods))) {
 			return session_obj;
