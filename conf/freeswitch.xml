@@ -30,6 +30,7 @@
     <!--#include "woomera.conf.xml"-->
     <!--#include "wanpipe.conf.xml"-->
     <!--#include "portaudio.conf.xml"-->
+    <!--#include "alsa.conf.xml"-->
     <!--#include "zeroconf.conf.xml"-->
     <!--#include "xmpp_event.conf.xml"-->
     <!--#include "dialplan_directory.conf.xml"-->
