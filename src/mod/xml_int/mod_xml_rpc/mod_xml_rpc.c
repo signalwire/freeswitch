@@ -306,7 +306,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 
 	if (ServerInit(&abyssServer) != TRUE) {
 		globals.running = 0;
-		return SWITCH_STATUS_FALSE;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to start HTTP Port %d\n", globals.port);
+		return SWITCH_STATUS_TERM;
 	}
 
 	ServerAddHandler(&abyssServer, HandleHook);
