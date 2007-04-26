@@ -1716,18 +1716,19 @@ static void ldl_random_string(char *buf, uint16_t len, char *set)
     }
 }
 
-
+#define TLEN 8192
 void ldl_handle_send_vcard(ldl_handle_t *handle, char *from, char *to, char *id, char *vcard)
 {
-	iks *vxml, *iq;
+	iks *vxml = NULL, *iq = NULL;
 	int e = 0;
-	ldl_avatar_t *ap;
+	ldl_avatar_t *ap = NULL;
+	char *text = NULL;
 
 	ap = ldl_get_avatar(handle, NULL, from);
 
 	if (!vcard) {
-		char text[8192];
 		char *ext;
+
 		if (!ap) {
 			return;
 		}
@@ -1737,8 +1738,8 @@ void ldl_handle_send_vcard(ldl_handle_t *handle, char *from, char *to, char *id,
 		} else {
 			ext = "png";
 		}
-
-		snprintf(text, sizeof(text),
+		text = malloc(TLEN);
+		snprintf(text, TLEN,
 				 "<vCard xmlns='vcard-temp'><PHOTO><TYPE>image/%s</TYPE><BINVAL>%s</BINVAL></PHOTO></vCard>",
 				 ext,
 				 ap->base64
@@ -1753,12 +1754,12 @@ void ldl_handle_send_vcard(ldl_handle_t *handle, char *from, char *to, char *id,
 
 	if (!(vxml = iks_tree(vcard, 0, &e))) {
 		globals.logger(DL_LOG_ERR, "Parse returned error [%d]\n", e);
-		return;
+		goto fail;
 	}
 	
 	if (!(iq = iks_new("iq"))) {
 		globals.logger(DL_LOG_ERR, "Memory Error\n");
-		return;
+		goto fail;
 	}
 
 	if (!iks_insert_attrib(iq, "to", to)) goto fail;
@@ -1769,15 +1770,22 @@ void ldl_handle_send_vcard(ldl_handle_t *handle, char *from, char *to, char *id,
 	if (!iks_insert_node(iq, vxml)) goto fail;
 
 	apr_queue_push(handle->queue, iq);
+
 	iq = NULL;
 	vxml = NULL;
 
  fail:
+
 	if (iq) {
 		iks_delete(iq);
 	}
+
 	if (vxml) {
 		iks_delete(vxml);
+	}
+
+	if (text) {
+		free(text);
 	}
 
 }
