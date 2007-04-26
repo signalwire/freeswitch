@@ -552,7 +552,7 @@ typedef void
  * JSEXN_NONE marks an unthrowable error.
  */
 typedef enum JSExnType {
-    JSEXN_NONE,
+    JSEXN_NONE = -1,
       JSEXN_ERR,
         JSEXN_INTERNALERR,
         JSEXN_EVALERR,
@@ -567,7 +567,7 @@ typedef enum JSExnType {
 typedef struct JSErrorFormatString {
     const char *format;  /* the error message (may be UTF-8 if compiled with JS_C_STRINGS_ARE_UTF8) */
     uint16 argCount;     /* the number of arguments to convert in the error message */
-    uint16 exnType;      /* One of the JSExnType constants above */
+    JSExnType exnType;      /* One of the JSExnType constants above */
 } JSErrorFormatString;
 
 typedef const JSErrorFormatString *
