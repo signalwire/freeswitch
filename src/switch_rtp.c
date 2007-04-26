@@ -967,6 +967,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			char key = switch_rfc2833_to_char(packet[0]);
 			uint16_t in_digit_seq = ntohs((uint16_t) rtp_session->recv_msg.header.seq);
 
+			
 			/* SHEESH.... Curse you RFC2833 inventors!!!! */
 			if ((time(NULL) - rtp_session->dtmf_data.last_digit_time) > 2) {
 				rtp_session->dtmf_data.last_digit = 0;
@@ -974,12 +975,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 			if (in_digit_seq > rtp_session->dtmf_data.in_digit_seq) {
 				rtp_session->dtmf_data.in_digit_seq = in_digit_seq;
-
 				if (duration && end) {
 					if (key != rtp_session->dtmf_data.last_digit) {
 						char digit_str[] = { key, 0 };
 						time(&rtp_session->dtmf_data.last_digit_time);
 						switch_rtp_queue_dtmf(rtp_session, digit_str);
+						switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
 					}
 					if (++rtp_session->dtmf_data.dc >= 3) {
 						rtp_session->dtmf_data.last_digit = 0;
