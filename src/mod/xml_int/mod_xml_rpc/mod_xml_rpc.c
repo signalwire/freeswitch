@@ -169,6 +169,9 @@ abyss_bool HandleHook(TSession * r)
 	}
 
 	if (switch_event_create(&stream.event, SWITCH_EVENT_API) == SWITCH_STATUS_SUCCESS) {
+		const char * const content_length = RequestHeaderValue(r, "content-length");
+			
+
 		if (r->uri)
 			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-URI", "%s", r->uri);
 		if (r->query)
@@ -187,6 +190,82 @@ abyss_bool HandleHook(TSession * r)
 			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-USER", "%s", r->user);
 		if (r->port)
 			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-PORT", "%u", r->port);
+		if (r->query || content_length) {
+			char *q, *qd;
+			char *next;
+			char *query = r->query;
+			char *name, *val;
+			char qbuf[8192] = "";
+			
+			if (r->method == m_post && content_length) {
+				int len = atoi(content_length);
+				int qlen = 0;
+				
+				if (len > 0) {
+					int succeeded;
+					char *qp = qbuf;
+					do {
+						int blen = r->conn->buffersize - r->conn->bufferpos;
+
+						if ((qlen + blen) > len) {
+							blen = len - qlen;
+						}
+
+						qlen += blen;
+						
+						if ( qlen > sizeof(qbuf) ) {
+							break;
+						}
+						
+						memcpy(qp, r->conn->buffer + r->conn->bufferpos, blen);
+						qp += blen;
+
+						if (qlen >= len) {
+							break;
+						}
+					} while ((succeeded = ConnRead(r->conn, r->server->timeout)));
+					
+					query = qbuf;
+				}
+
+			}
+			if (query) {
+				switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-QUERY", "%s", query);
+
+				qd = strdup(query);
+				assert(qd != NULL);
+
+				q = qd;
+				next = q;
+
+				do {
+					char *p;
+
+					if ((next = strchr(next, '&'))) {
+						*next++ = '\0';
+					}
+
+					for (p = q; p && *p; p++) {
+						if (*p == '+') {
+							*p = ' ';
+						}
+					}
+
+					switch_url_decode(q);
+					
+
+					name = q;
+					if ((val = strchr(name, '='))) {
+						*val++ = '\0';
+						switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, name, "%s", val);
+					}
+					q = next;
+				} while (q != NULL);
+			
+				free(qd);
+			
+			}
+		}
 	}
 
 	command = r->uri + 5;

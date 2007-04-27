@@ -254,10 +254,14 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	profile->s_root = su_root_create(NULL);
 	profile->home = su_home_new(sizeof(*profile->home));
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating agent for %s\n", profile->name);
+
 	profile->nua = nua_create(profile->s_root,	/* Event loop */
 							  sofia_event_callback,	/* Callback for processing events */
 							  profile,	/* Additional data to pass to callback */
 							  NUTAG_URL(profile->bindurl), NTATAG_UDP_MTU(65536), TAG_END());	/* Last tag should always finish the sequence */
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created agent for %s\n", profile->name);
 
 	nua_set_params(profile->nua,
 				   //NUTAG_EARLY_MEDIA(1),                 
@@ -275,6 +279,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("message-summary")),
 				   SIPTAG_SUPPORTED_STR("100rel, precondition"), SIPTAG_USER_AGENT_STR(SOFIA_USER_AGENT), TAG_END());
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set params for %s\n", profile->name);
 
 	for (node = profile->aliases; node; node = node->next) {
 		node->nua = nua_create(profile->s_root,	/* Event loop */
@@ -301,6 +306,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		goto end;
 	}
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "activated db for %s\n", profile->name);
 
 	switch_mutex_init(&profile->ireg_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 	switch_mutex_init(&profile->gateway_mutex, SWITCH_MUTEX_NESTED, profile->pool);
@@ -331,6 +337,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	if (profile->pflags & PFLAG_PRESENCE) {
 		sofia_presence_establish_presence(profile);
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting thread for %s\n", profile->name);
 
 	while (mod_sofia_globals.running == 1) {
 		if (++ireg_loops >= IREG_SECONDS) {
