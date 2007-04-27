@@ -2623,7 +2623,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 				tech_pvt->codec_index = -1;
 				tech_pvt->profile = profile;
 				tech_pvt->local_port = switch_rtp_request_port();
-				//switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
+				switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
 				tech_pvt->recip = switch_core_session_strdup(session, from);
 				if (!(exten = ldl_session_get_value(dlsession, "dnis"))) {
 					exten = profile->exten;
