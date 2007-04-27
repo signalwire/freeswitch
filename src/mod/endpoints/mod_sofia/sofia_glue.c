@@ -474,9 +474,11 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	sofia_glue_tech_prepare_codecs(tech_pvt);
 
 	if (!tech_pvt->from_str) {
-		tech_pvt->from_str = switch_core_session_sprintf(tech_pvt->session, "\"%s\" <sip:%s@%s>",
+		tech_pvt->from_str = switch_core_session_sprintf(tech_pvt->session, "\"%s\" <sip:%s%s%s>",
 														 cid_name,
-														 cid_num, tech_pvt->profile->extsipip ? tech_pvt->profile->extsipip : tech_pvt->profile->sipip);
+														 cid_num,
+														 !switch_strlen_zero(cid_num) ? "@" : "",
+														 tech_pvt->profile->extsipip ? tech_pvt->profile->extsipip : tech_pvt->profile->sipip);
 
 	}
 
