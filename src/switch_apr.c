@@ -335,6 +335,17 @@ SWITCH_DECLARE(switch_status_t) switch_file_write(switch_file_t * thefile, const
 	return apr_file_write(thefile, buf, nbytes);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_file_mktemp(switch_file_t **thefile, char *templ, int32_t flags, switch_memory_pool_t *pool)
+{
+	return apr_file_mktemp(thefile, templ, flags, pool);
+}
+
+SWITCH_DECLARE(switch_size_t) switch_file_get_size(switch_file_t *thefile)
+{
+	struct apr_finfo_t finfo;
+	return apr_file_info_get(&finfo, APR_FINFO_SIZE, thefile) == SWITCH_STATUS_SUCCESS ? (switch_size_t)finfo.size : 0;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename, switch_memory_pool_t *pool)
 {
 	int32_t wanted = APR_FINFO_TYPE;
