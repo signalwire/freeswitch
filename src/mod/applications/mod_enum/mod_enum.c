@@ -591,11 +591,14 @@ static void enum_app_function(switch_core_session_t *session, char *data)
 			void *vval;
 			const void *vvar;
 
-			for (hi = switch_channel_variable_first(channel, switch_core_session_get_pool(session)); hi; hi = switch_hash_next(hi)) {
-				switch_hash_this(hi, &vvar, NULL, &vval);
-				if (vvar && !strncmp(vvar, "enum_", 5)) {
-					switch_channel_set_variable(channel, (char *) vvar, NULL);
+			if ((hi = switch_channel_variable_first(channel, switch_core_session_get_pool(session)))) {
+				for (; hi; hi = switch_hash_next(hi)) {
+					switch_hash_this(hi, &vvar, NULL, &vval);
+					if (vvar && !strncmp(vvar, "enum_", 5)) {
+						switch_channel_set_variable(channel, (char *) vvar, NULL);
+					}
 				}
+				switch_channel_variable_last(channel);
 			}
 
 			for (rtp = globals.route_order; rtp; rtp = rtp->next) {

@@ -570,17 +570,20 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 
 	SWITCH_STANDARD_STREAM(stream);
-	for (hi = switch_channel_variable_first(channel, switch_core_session_get_pool(tech_pvt->session)); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, &vvar, NULL, &vval);
-		if (vvar && vval) {
-			const char *name = vvar;
-			char *value = (char *) vval;
-
-			if (!strncasecmp(name, SOFIA_SIP_HEADER_PREFIX, strlen(SOFIA_SIP_HEADER_PREFIX))) {
-				const char *hname = name + strlen(SOFIA_SIP_HEADER_PREFIX);
-				stream.write_function(&stream, "%s: %s\r\n", hname, value);
+	if ((hi = switch_channel_variable_first(channel, switch_core_session_get_pool(tech_pvt->session)))) {
+		for (; hi; hi = switch_hash_next(hi)) {
+			switch_hash_this(hi, &vvar, NULL, &vval);
+			if (vvar && vval) {
+				const char *name = vvar;
+				char *value = (char *) vval;
+				
+				if (!strncasecmp(name, SOFIA_SIP_HEADER_PREFIX, strlen(SOFIA_SIP_HEADER_PREFIX))) {
+					const char *hname = name + strlen(SOFIA_SIP_HEADER_PREFIX);
+					stream.write_function(&stream, "%s: %s\r\n", hname, value);
+				}
 			}
 		}
+		switch_channel_variable_last(channel);
 	}
 
 	if (stream.data) {

@@ -115,6 +115,7 @@ struct switch_channel {
 	switch_hash_t *variables;
 	switch_hash_t *private_hash;
 	switch_call_cause_t hangup_cause;
+	int vi;
 };
 
 
@@ -306,6 +307,7 @@ SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, ch
 	char *v = NULL;
 	assert(channel != NULL);
 
+	switch_mutex_lock(channel->profile_mutex);
 	if (!(v = switch_core_hash_find(channel->variables, varname))) {
 		if (!channel->caller_profile || !(v = switch_caller_get_field_by_name(channel->caller_profile, varname))) {
 			if (!strcmp(varname, "base_dir")) {
@@ -314,27 +316,50 @@ SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, ch
 			v = switch_core_get_variable(varname);
 		}
 	}
+	switch_mutex_unlock(channel->profile_mutex);
 
 	return v;
 }
 
-SWITCH_DECLARE(switch_hash_index_t *) switch_channel_variable_first(switch_channel_t *channel, switch_memory_pool_t *pool)
+SWITCH_DECLARE(void) switch_channel_variable_last(switch_channel_t *channel)
 {
 	assert(channel != NULL);
-	return switch_hash_first(pool, channel->variables);
+	if (channel->vi) {
+		switch_mutex_unlock(channel->profile_mutex);
+	}
+}
+
+SWITCH_DECLARE(switch_hash_index_t *) switch_channel_variable_first(switch_channel_t *channel, switch_memory_pool_t *pool)
+{
+	switch_hash_index_t *hi;
+
+	assert(channel != NULL);
+
+	if ((hi = switch_hash_first(pool, channel->variables))) {
+		switch_mutex_lock(channel->profile_mutex);
+		channel->vi = 1;
+	}
+
+	return hi;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_channel_set_private(switch_channel_t *channel, char *key, void *private_info)
 {
 	assert(channel != NULL);
+	switch_mutex_lock(channel->profile_mutex);
 	switch_core_hash_insert_dup(channel->private_hash, switch_core_session_strdup(channel->session, key), private_info);
+	switch_mutex_unlock(channel->profile_mutex);
 	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel_t *channel, char *key)
 {
 	assert(channel != NULL);
-	return switch_core_hash_find(channel->private_hash, key);
+	void *val;
+	switch_mutex_lock(channel->profile_mutex);
+	val = switch_core_hash_find(channel->private_hash, key);
+	switch_mutex_unlock(channel->profile_mutex);
+	return val;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_channel_set_name(switch_channel_t *channel, char *name)
@@ -361,12 +386,14 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *ch
 	assert(channel != NULL);
 
 	if (varname) {
+		switch_mutex_lock(channel->profile_mutex);
 		switch_core_hash_delete(channel->variables, varname);
 		if (!switch_strlen_zero(value)) {
 			switch_core_hash_insert_dup(channel->variables, varname, switch_core_session_strdup(channel->session, value));
 		} else {
 			switch_core_hash_delete(channel->variables, varname);
 		}
+		switch_mutex_unlock(channel->profile_mutex);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -378,12 +405,14 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_nodup(switch_channel
 	assert(channel != NULL);
 
 	if (varname) {
+		switch_mutex_lock(channel->profile_mutex);
 		switch_core_hash_delete(channel->variables, varname);
 		if (!switch_strlen_zero(value)) {
 			switch_core_hash_insert_dup(channel->variables, varname, value);
 		} else {
 			switch_core_hash_delete(channel->variables, varname);
 		}
+		switch_mutex_unlock(channel->profile_mutex);
 		return SWITCH_STATUS_SUCCESS;
 	}
 

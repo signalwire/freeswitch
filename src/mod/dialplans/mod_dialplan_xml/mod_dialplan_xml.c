@@ -251,28 +251,30 @@ static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switc
 		stream.write_function(&stream, "%s=%s&", prof_names[x], encode_buf);
 	}
 
+	if ((hi = switch_channel_variable_first(channel, switch_core_session_get_pool(session)))) {
+		for (; hi; hi = switch_hash_next(hi)) {
+			void *val;
+			const void *var;
+			switch_hash_this(hi, &var, NULL, &val);
+			
+			new_len = (strlen((char *) var) * 3) + 1;
+			if (encode_len < new_len) {
+				char *tmp;
+				
+				encode_len = new_len;
+			
+				if (!(tmp = realloc(encode_buf, encode_len))) {
+					goto done;
+				}
 
-	for (hi = switch_channel_variable_first(channel, switch_core_session_get_pool(session)); hi; hi = switch_hash_next(hi)) {
-		void *val;
-		const void *var;
-		switch_hash_this(hi, &var, NULL, &val);
-
-		new_len = (strlen((char *) var) * 3) + 1;
-		if (encode_len < new_len) {
-			char *tmp;
-
-			encode_len = new_len;
-
-			if (!(tmp = realloc(encode_buf, encode_len))) {
-				goto done;
+				encode_buf = tmp;
 			}
 
-			encode_buf = tmp;
+			switch_url_encode((char *) val, encode_buf, encode_len - 1);
+			stream.write_function(&stream, "%s=%s&", (char *) var, encode_buf);
+
 		}
-
-		switch_url_encode((char *) val, encode_buf, encode_len - 1);
-		stream.write_function(&stream, "%s=%s&", (char *) var, encode_buf);
-
+		switch_channel_variable_last(channel);
 	}
 
 	e = (char *) stream.data + (strlen((char *) stream.data) - 1);

@@ -900,11 +900,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session
 		void *vval;
 		const void *vvar;
 
-		for (hi = switch_channel_variable_first(chana, switch_core_session_get_pool(sessa)); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, &vvar, NULL, &vval);
-			if (vvar && vval && (!prefix || (var && !strncmp((char *) vvar, var, strlen(var))))) {
-				switch_channel_set_variable(chanb, (char *) vvar, (char *) vval);
+		if ((hi = switch_channel_variable_first(chana, switch_core_session_get_pool(sessa)))) {
+			for (; hi; hi = switch_hash_next(hi)) {
+				switch_hash_this(hi, &vvar, NULL, &vval);
+				if (vvar && vval && (!prefix || (var && !strncmp((char *) vvar, var, strlen(var))))) {
+					switch_channel_set_variable(chanb, (char *) vvar, (char *) vval);
+				}
 			}
+			switch_channel_variable_last(chana);
 		}
 	}
 
@@ -1260,20 +1263,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 		}
 	}
 
-	for (hi = switch_channel_variable_first(channel, switch_core_session_get_pool(session)); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, &vvar, NULL, &vval);
-		if (vvar && vval) {
-			if ((variable = switch_xml_add_child_d(variables, (char *) vvar, v_off++))) {
-				char *data;
-				char *value = (char *) vval;
-				switch_size_t dlen = strlen(value) * 3;
-
-				if ((data = switch_core_session_alloc(session, dlen))) {
-					switch_url_encode(value, data, dlen);
-					switch_xml_set_txt_d(variable, data);
+	if (((hi = switch_channel_variable_first(channel, switch_core_session_get_pool(session))))) {
+		for (; hi; hi = switch_hash_next(hi)) {
+			switch_hash_this(hi, &vvar, NULL, &vval);
+			if (vvar && vval) {
+				if ((variable = switch_xml_add_child_d(variables, (char *) vvar, v_off++))) {
+					char *data;
+					char *value = (char *) vval;
+					switch_size_t dlen = strlen(value) * 3;
+					
+					if ((data = switch_core_session_alloc(session, dlen))) {
+						switch_url_encode(value, data, dlen);
+						switch_xml_set_txt_d(variable, data);
+					}
 				}
 			}
 		}
+		switch_channel_variable_last(channel);
 	}
 
 	caller_profile = switch_channel_get_caller_profile(channel);

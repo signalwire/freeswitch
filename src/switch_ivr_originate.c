@@ -323,11 +323,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		assert(caller_channel != NULL);
 
 		/* Copy all the channel variables into the event */
-		for (hi = switch_channel_variable_first(caller_channel, switch_core_session_get_pool(session)); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, &vvar, NULL, &vval);
-			if (vvar && vval) {
-				switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, (void *) vvar, "%s", (char *) vval);
+		if ((hi = switch_channel_variable_first(caller_channel, switch_core_session_get_pool(session)))) {
+			for (; hi; hi = switch_hash_next(hi)) {
+				switch_hash_this(hi, &vvar, NULL, &vval);
+				if (vvar && vval) {
+					switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, (void *) vvar, "%s", (char *) vval);
+				}
 			}
+			switch_channel_variable_last(caller_channel);
 		}
 
 	}

@@ -1025,10 +1025,6 @@ static void conference_loop_fn_energy_up(conference_member_t * member, caller_co
 		if (member->energy_level > 3000) {
 			member->energy_level = 3000;
 		}
-		switch_mutex_unlock(member->flag_mutex);
-
-		snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
-		conference_member_say(member, msg, 0);
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_t *channel = switch_core_session_get_channel(member->session);
@@ -1040,6 +1036,12 @@ static void conference_loop_fn_energy_up(conference_member_t * member, caller_co
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->energy_level);
 			switch_event_fire(&event);
 		}
+		switch_mutex_unlock(member->flag_mutex);
+
+		snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
+		conference_member_say(member, msg, 0);
+
+
 	}
 }
 
@@ -1051,10 +1053,6 @@ static void conference_loop_fn_energy_equ_conf(conference_member_t * member, cal
 
 		switch_mutex_lock(member->flag_mutex);
 		member->energy_level = member->conference->energy_level;
-		switch_mutex_unlock(member->flag_mutex);
-
-		snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
-		conference_member_say(member, msg, 0);
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_t *channel = switch_core_session_get_channel(member->session);
@@ -1066,6 +1064,11 @@ static void conference_loop_fn_energy_equ_conf(conference_member_t * member, cal
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->energy_level);
 			switch_event_fire(&event);
 		}
+		switch_mutex_unlock(member->flag_mutex);
+
+		snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
+		conference_member_say(member, msg, 0);
+
 	}
 }
 
@@ -1080,10 +1083,6 @@ static void conference_loop_fn_energy_dn(conference_member_t * member, caller_co
 		if (member->energy_level < 0) {
 			member->energy_level = 0;
 		}
-		switch_mutex_unlock(member->flag_mutex);
-
-		snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
-		conference_member_say(member, msg, 0);
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_t *channel = switch_core_session_get_channel(member->session);
@@ -1095,6 +1094,13 @@ static void conference_loop_fn_energy_dn(conference_member_t * member, caller_co
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->energy_level);
 			switch_event_fire(&event);
 		}
+		switch_mutex_unlock(member->flag_mutex);
+
+		snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
+		conference_member_say(member, msg, 0);
+
+
+
 	}
 }
 
@@ -1107,10 +1113,7 @@ static void conference_loop_fn_volume_talk_up(conference_member_t * member, call
 		switch_mutex_lock(member->flag_mutex);
 		member->volume_out_level++;
 		switch_normalize_volume(member->volume_out_level);
-		switch_mutex_unlock(member->flag_mutex);
 
-		snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
-		conference_member_say(member, msg, 0);
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_t *channel = switch_core_session_get_channel(member->session);
@@ -1122,6 +1125,12 @@ static void conference_loop_fn_volume_talk_up(conference_member_t * member, call
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_out_level);
 			switch_event_fire(&event);
 		}
+		switch_mutex_unlock(member->flag_mutex);
+
+
+		snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
+		conference_member_say(member, msg, 0);
+
 	}
 }
 
@@ -1133,10 +1142,7 @@ static void conference_loop_fn_volume_talk_zero(conference_member_t * member, ca
 
 		switch_mutex_lock(member->flag_mutex);
 		member->volume_out_level = 0;
-		switch_mutex_unlock(member->flag_mutex);
 
-		snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
-		conference_member_say(member, msg, 0);
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_t *channel = switch_core_session_get_channel(member->session);
@@ -1148,6 +1154,13 @@ static void conference_loop_fn_volume_talk_zero(conference_member_t * member, ca
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_out_level);
 			switch_event_fire(&event);
 		}
+		switch_mutex_unlock(member->flag_mutex);
+
+
+		snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
+		conference_member_say(member, msg, 0);
+
+
 	}
 }
 
@@ -1160,10 +1173,6 @@ static void conference_loop_fn_volume_talk_dn(conference_member_t * member, call
 		switch_mutex_lock(member->flag_mutex);
 		member->volume_out_level--;
 		switch_normalize_volume(member->volume_out_level);
-		switch_mutex_unlock(member->flag_mutex);
-
-		snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
-		conference_member_say(member, msg, 0);
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_t *channel = switch_core_session_get_channel(member->session);
@@ -1175,6 +1184,12 @@ static void conference_loop_fn_volume_talk_dn(conference_member_t * member, call
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_out_level);
 			switch_event_fire(&event);
 		}
+		switch_mutex_unlock(member->flag_mutex);
+
+		snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
+		conference_member_say(member, msg, 0);
+
+
 	}
 }
 
@@ -1187,10 +1202,7 @@ static void conference_loop_fn_volume_listen_up(conference_member_t * member, ca
 		switch_mutex_lock(member->flag_mutex);
 		member->volume_in_level++;
 		switch_normalize_volume(member->volume_in_level);
-		switch_mutex_unlock(member->flag_mutex);
 
-		snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
-		conference_member_say(member, msg, 0);
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_t *channel = switch_core_session_get_channel(member->session);
@@ -1202,6 +1214,14 @@ static void conference_loop_fn_volume_listen_up(conference_member_t * member, ca
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_in_level);
 			switch_event_fire(&event);
 		}
+		switch_mutex_unlock(member->flag_mutex);
+
+
+		snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
+		conference_member_say(member, msg, 0);
+
+
+
 	}
 }
 
@@ -1213,10 +1233,6 @@ static void conference_loop_fn_volume_listen_zero(conference_member_t * member, 
 
 		switch_mutex_lock(member->flag_mutex);
 		member->volume_in_level = 0;
-		switch_mutex_unlock(member->flag_mutex);
-
-		snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
-		conference_member_say(member, msg, 0);
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_t *channel = switch_core_session_get_channel(member->session);
@@ -1228,6 +1244,13 @@ static void conference_loop_fn_volume_listen_zero(conference_member_t * member, 
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_in_level);
 			switch_event_fire(&event);
 		}
+		switch_mutex_unlock(member->flag_mutex);
+
+		snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
+		conference_member_say(member, msg, 0);
+
+
+
 	}
 }
 
@@ -1240,10 +1263,7 @@ static void conference_loop_fn_volume_listen_dn(conference_member_t * member, ca
 		switch_mutex_lock(member->flag_mutex);
 		member->volume_in_level--;
 		switch_normalize_volume(member->volume_in_level);
-		switch_mutex_unlock(member->flag_mutex);
 
-		snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
-		conference_member_say(member, msg, 0);
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_t *channel = switch_core_session_get_channel(member->session);
@@ -1255,6 +1275,13 @@ static void conference_loop_fn_volume_listen_dn(conference_member_t * member, ca
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_in_level);
 			switch_event_fire(&event);
 		}
+		switch_mutex_unlock(member->flag_mutex);
+
+
+		snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
+		conference_member_say(member, msg, 0);
+
+
 	}
 }
 
