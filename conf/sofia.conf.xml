@@ -1,6 +1,6 @@
 <configuration name="sofia.conf" description="sofia Endpoint">
   <profiles>
-    <profile name="$${domain}">
+    <profile name="$${sip_profile}">
       <!-- Outbound Registrations -->
       <gateways>
 	<!--<gateway name="asterlink.com">-->
@@ -28,12 +28,12 @@
 	<param name="sip-port" value="5060"/>
 	<param name="dialplan" value="enum,XML"/>
 	<param name="dtmf-duration" value="100"/>
-	<param name="codec-prefs" value="$${default_codecs}"/>
+	<param name="codec-prefs" value="PCMU@20i"/>
 	<param name="codec-ms" value="20"/>
 	<param name="use-rtp-timer" value="true"/>
 	<param name="rtp-timer-name" value="soft"/>
-	<param name="rtp-ip" value="auto"/>
-	<param name="sip-ip" value="auto"/>
+	<param name="rtp-ip" value="$${bind_server_ip}"/>
+	<param name="sip-ip" value="$${bind_server_ip}"/>
 
 	<!--If you don't want to pass through timestampes from 1 RTP call to another (on a per call basis with rtp_rewrite_timestamps chanvar)-->
 	<!--<param name="rtp-rewrite-timestampes" value="true"/>-->
@@ -60,9 +60,8 @@
 	<!-- on authed calls, authenticate *all* the packets not just invite -->
 	<!--<param name="auth-all-packets" value="true"/>-->
 
-	<!-- optional ; -->
-	<!-- <param name="ext-rtp-ip" value="stun:stun.server.com"/>-->
-	<!-- <param name="ext-rtp-ip" value="100.101.102.103"/> -->
+	<!-- <param name="ext-rtp-ip" value="$${external_rtp_ip}"/>-->
+
 	<!-- <param name="ext-sip-ip" value="100.101.102.103"/> -->
 	<!-- VAD choose one (out is a good choice); -->
 	<!-- <param name="vad" value="in"/> -->
