@@ -623,7 +623,7 @@ JSObject *new_js_event(switch_event_t *event, char *name, JSContext * cx, JSObje
 	return Event;
 }
 
-#define MAX_STACK_DEPTH 12
+#define MAX_STACK_DEPTH 2
 
 static switch_status_t js_common_callback(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
