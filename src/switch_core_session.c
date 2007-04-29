@@ -921,13 +921,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 	switch_caller_extension_t *extension = NULL;
 	const switch_application_interface_t *application_interface;
 	switch_event_t *event;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	
 	channel = switch_core_session_get_channel(session);
-	
+
 	if (!(profile = switch_channel_get_caller_profile(channel))) {
-		return SWITCH_STATUS_SUCCESS;
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	if (session->stack_count > SWITCH_MAX_STACKS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error %s too many stacked extensions\n", switch_channel_get_name(session->channel));
+		return SWITCH_STATUS_FALSE;
 	}
 
+	session->stack_count++;
+	
 	new_profile = switch_caller_profile_clone(session, profile);
 	new_profile->destination_number = switch_core_session_strdup(session, exten);
 		
@@ -965,7 +973,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 	}
 	
 	if (!extension) {
-		return SWITCH_STATUS_FALSE;
+		status = SWITCH_STATUS_FALSE;
+		goto done;
 	}
 
 	new_profile->caller_extension = extension;
@@ -983,18 +992,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 						  extension->current_application->application_name, switch_str_nil(extension->current_application->application_data));
 		if ((application_interface = switch_loadable_module_get_application_interface(extension->current_application->application_name)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Application %s\n", extension->current_application->application_name);
-			return SWITCH_STATUS_FALSE;
+			status = SWITCH_STATUS_FALSE;
+			goto done;
 		}
 
 		if (switch_channel_test_flag(session->channel, CF_NOMEDIA) && !switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Application %s Cannot be used with NO_MEDIA mode!\n",
 							  extension->current_application->application_name);
-			return SWITCH_STATUS_FALSE;
+			status = SWITCH_STATUS_FALSE;
+			goto done;
 		}
 	
 		if (!application_interface->application_function) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Function for %s\n", extension->current_application->application_name);
-			return SWITCH_STATUS_FALSE;
+			status = SWITCH_STATUS_FALSE;
+			goto done;
 		}
 
 		if ((expanded =
@@ -1030,7 +1042,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 		extension->current_application = extension->current_application->next;		
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+ done:
+
+	session->stack_count--;
+
+	return status;
 	
 }
 

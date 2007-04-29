@@ -127,6 +127,7 @@ struct switch_core_session {
 	switch_thread_rwlock_t *bug_rwlock;
 	switch_media_bug_t *bugs;
 	switch_app_log_t *app_log;
+	uint32_t stack_count;
 };
 
 struct switch_media_bug {
