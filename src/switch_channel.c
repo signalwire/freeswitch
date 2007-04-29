@@ -354,8 +354,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_private(switch_channel_t *cha
 
 SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel_t *channel, char *key)
 {
-	assert(channel != NULL);
 	void *val;
+	assert(channel != NULL);
 	switch_mutex_lock(channel->profile_mutex);
 	val = switch_core_hash_find(channel->private_hash, key);
 	switch_mutex_unlock(channel->profile_mutex);

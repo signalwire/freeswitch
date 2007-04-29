@@ -372,8 +372,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	su_root_run(profile->s_root);
 	nua_destroy(profile->nua);
-	while(0 && profile->inuse) {
-		switch_yield(1000000);
+	while(profile->inuse) {
+		switch_yield(100000);
 	}
 
 	if (switch_event_create(&s_event, SWITCH_EVENT_UNPUBLISH) == SWITCH_STATUS_SUCCESS) {
