@@ -467,7 +467,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 		return status;
 	}
 
-	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+	snprintf(url, sizeof(url), "profile=%s", switch_str_nil(profile_name));
+
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, url))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
