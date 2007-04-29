@@ -133,7 +133,7 @@ static switch_status_t ctl_function(char *data, switch_core_session_t *session, 
 			arg = 0;
 			switch_core_session_ctl(SCSC_SHUTDOWN, &arg);
 		} else {
-			stream->write_function(stream, "INVALID COMMAND [%s]\nUSAGE: fsctl [hupall|pause|resume|shutdown]\n", argv[0]);
+			stream->write_function(stream, "INVALID COMMAND\nUSAGE: fsctl [hupall|pause|resume|shutdown]\n");
 			goto end;
 		}
 

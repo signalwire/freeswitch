@@ -959,8 +959,7 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_
 		status = api->function(arg, session, stream);
 	} else {
 		status = SWITCH_STATUS_FALSE;
-		stream->write_function(stream, "INVALID COMMAND [%s]", cmd);
-		/* snprintf(retbuf, len, "INVALID COMMAND [%s]", cmd); */
+		stream->write_function(stream, "INVALID COMMAND!\n");
 	}
 
 	if (stream->event) {
