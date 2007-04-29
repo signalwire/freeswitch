@@ -70,7 +70,7 @@ void sofia_event_callback(nua_event_t event,
 		}
 	}
 
-
+	
 	if (status != 100 && status != 200) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "event [%s] status [%d][%s] session: %s\n",
 						  nua_event_name(event), status, phrase, session ? switch_channel_get_name(channel) : "n/a");
@@ -110,6 +110,10 @@ void sofia_event_callback(nua_event_t event,
 
 	switch (event) {
 	case nua_r_shutdown:
+		if (status >= 200) {
+			su_root_break(profile->s_root);
+		}
+		break;
 	case nua_r_get_params:
 	case nua_r_invite:
 	case nua_r_unregister:
@@ -201,7 +205,7 @@ void event_handler(switch_event_t *event)
 		char *rpid = switch_event_get_header(event, "orig-rpid");
 		long expires = (long) time(NULL) + atol(exp_str);
 		char *profile_name = switch_event_get_header(event, "orig-profile-name");
-		sofia_profile_t *profile;
+		sofia_profile_t *profile = NULL;
 		char buf[512];
 
 		if (!rpid) {
@@ -233,6 +237,9 @@ void event_handler(switch_event_t *event)
 
 		}
 
+		if (profile) {
+			switch_thread_rwlock_unlock(profile->rwlock);
+		}
 	}
 }
 
@@ -340,7 +347,9 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting thread for %s\n", profile->name);
 
-	while (mod_sofia_globals.running == 1) {
+	
+	sofia_set_pflag_locked(profile, PFLAG_RUNNING);
+	while (mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING)) {
 		if (++ireg_loops >= IREG_SECONDS) {
 			sofia_reg_check_expire(profile, time(NULL));
 			ireg_loops = 0;
@@ -353,12 +362,19 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 		su_root_step(profile->s_root, 1000);
 	}
-	
-	sofia_glue_sql_close(profile);
 
+	//sofia_reg_check_expire(profile, 0);
+	//sofia_reg_check_gateway(profile, 0);	
+	switch_thread_rwlock_wrlock(profile->rwlock);
 	sofia_reg_unregister(profile);
-	su_home_unref(profile->home);
+	nua_shutdown(profile->nua);
 
+
+	su_root_run(profile->s_root);
+	nua_destroy(profile->nua);
+	while(0 && profile->inuse) {
+		switch_yield(1000000);
+	}
 
 	if (switch_event_create(&s_event, SWITCH_EVENT_UNPUBLISH) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp");
@@ -366,9 +382,19 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		switch_event_fire(&s_event);
 	}
 
+	sofia_glue_sql_close(profile);
+	su_home_unref(profile->home);
 	su_root_destroy(profile->s_root);
 	pool = profile->pool;
+
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	switch_core_hash_delete(mod_sofia_globals.profile_hash, profile->name);
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+	switch_thread_rwlock_unlock(profile->rwlock);
+	
 	switch_core_destroy_memory_pool(&pool);
+
 
  end:
 	
@@ -417,19 +443,28 @@ static void logger(void *logarg, char const *fmt, va_list ap)
 }
 
 
-switch_status_t config_sofia(int reload)
+switch_status_t config_sofia(int reload, char *profile_name)
 {
 	char *cf = "sofia.conf";
 	switch_xml_t cfg, xml = NULL, xprofile, param, settings, profiles, gateway_tag, gateways_tag;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	sofia_profile_t *profile = NULL;
 	char url[512] = "";
-
+	sofia_gateway_t *gp;
+	int profile_found = 0;
 
 	if (!reload) {
 		su_init();
 		su_log_redirect(NULL, logger, NULL);
 		su_log_redirect(tport_log, logger, NULL);
+	}
+
+
+	if (!switch_strlen_zero(profile_name) && (profile = sofia_glue_find_profile(profile_name))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile [%s] Already exists.\n", switch_str_nil(profile_name));
+		status = SWITCH_STATUS_FALSE;
+		switch_thread_rwlock_unlock(profile->rwlock);
+		return status;
 	}
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -458,7 +493,18 @@ switch_status_t config_sofia(int reload)
 				char *xprofilename = (char *) switch_xml_attr_soft(xprofile, "name");
 				switch_memory_pool_t *pool = NULL;
 
-
+				if (!xprofilename) {
+					xprofilename = "unnamed";
+				}
+				
+				if (profile_name) {
+					if (strcasecmp(profile_name, xprofilename)) {
+						continue;
+					} else {
+						profile_found = 1;
+					}
+				}
+				
 				/* Setup the pool */
 				if ((status = switch_core_new_memory_pool(&pool)) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
@@ -470,9 +516,7 @@ switch_status_t config_sofia(int reload)
 					goto done;
 				}
 
-				if (!xprofilename) {
-					xprofilename = "unnamed";
-				}
+				
 
 				profile->pool = pool;
 
@@ -481,7 +525,8 @@ switch_status_t config_sofia(int reload)
 				
 				profile->dbname = switch_core_strdup(profile->pool, url);
 				switch_core_hash_init(&profile->chat_hash, profile->pool);
-
+				switch_thread_rwlock_create(&profile->rwlock, profile->pool);
+				switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				profile->dtmf_duration = 100;
 				profile->codec_ms = 20;
 
@@ -503,7 +548,6 @@ switch_status_t config_sofia(int reload)
 						if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
 							*profile->odbc_pass++ = '\0';
 						}
-
 				
 #else
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
@@ -682,7 +726,7 @@ switch_status_t config_sofia(int reload)
 				if ((gateways_tag = switch_xml_child(xprofile, "gateways"))) {
 					for (gateway_tag = switch_xml_child(gateways_tag, "gateway"); gateway_tag; gateway_tag = gateway_tag->next) {
 						char *name = (char *) switch_xml_attr_soft(gateway_tag, "name");
-						outbound_reg_t *gateway;
+						sofia_gateway_t *gateway;
 
 						if (switch_strlen_zero(name)) {
 							name = "anonymous";
@@ -790,12 +834,15 @@ switch_status_t config_sofia(int reload)
 							gateway->next = profile->gateways;
 							profile->gateways = gateway;
 
-							if (sofia_reg_find_gateway(gateway->name)) {
+							if ((gp = sofia_reg_find_gateway(gateway->name))) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate gateway '%s'\n", gateway->name);
-							} else if (sofia_reg_find_gateway(gateway->register_from)) {
+								sofia_reg_release_gateway(gp);
+							} else if ((gp=sofia_reg_find_gateway(gateway->register_from))) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate uri '%s'\n", gateway->register_from);
-							} else if (sofia_reg_find_gateway(gateway->register_contact)) {
+								sofia_reg_release_gateway(gp);
+							} else if ((gp=sofia_reg_find_gateway(gateway->register_contact))) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate contact '%s'\n", gateway->register_from);
+								sofia_reg_release_gateway(gp);
 							} else {
 								sofia_reg_add_gateway(gateway->name, gateway);
 								sofia_reg_add_gateway(gateway->register_from, gateway);
@@ -816,11 +863,19 @@ switch_status_t config_sofia(int reload)
 				}
 				profile = NULL;
 			}
+			if (profile_found) {
+				break;
+			}
 		}
 	}
   done:
 	if (xml) {
 		switch_xml_free(xml);
+	}
+
+	if (profile_name && !profile_found) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No Such Profile '%s'\n", profile_name);
+		status = SWITCH_STATUS_FALSE;
 	}
 
 	return status;
@@ -1168,6 +1223,10 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			}
 
 			tech_pvt->nh = NULL;
+			
+			switch_mutex_lock(profile->flag_mutex);
+			profile->inuse--;
+			switch_mutex_unlock(profile->flag_mutex);
 			
 		} else if (sofia_private) {
 			if (sofia_private->home) {
@@ -1706,7 +1765,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 
 	if (sip->sip_request->rq_url) {
-		outbound_reg_t *gateway;
+		sofia_gateway_t *gateway;
 		char *from_key = switch_core_session_sprintf(session, "sip:%s@%s",
 													 (char *) sip->sip_request->rq_url->url_user,
 													 (char *) sip->sip_request->rq_url->url_host);
@@ -1714,6 +1773,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		if ((gateway = sofia_reg_find_gateway(from_key))) {
 			context = gateway->register_context;
 			switch_channel_set_variable(channel, "sip_gateway", gateway->name);
+			sofia_reg_release_gateway(gateway);
 		}
 	}
 

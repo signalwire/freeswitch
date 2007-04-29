@@ -244,6 +244,10 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 
+	switch_mutex_lock(tech_pvt->profile->flag_mutex);
+	tech_pvt->profile->inuse--;
+	switch_mutex_unlock(tech_pvt->profile->flag_mutex);
+
 	if (tech_pvt->sofia_private) {
 		*tech_pvt->sofia_private->uuid = '\0';
 	}
@@ -275,7 +279,6 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	assert(channel != NULL);
 
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
 
 	if (!switch_test_flag(tech_pvt, TFLAG_ANS) && !switch_channel_test_flag(channel, CF_OUTBOUND)) {
 		switch_set_flag_locked(tech_pvt, TFLAG_ANS);
@@ -314,9 +317,11 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 				}
 			}
 		}
+
 		nua_respond(tech_pvt->nh, SIP_200_OK,
 					SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 					SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
+
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -336,7 +341,7 @@ static switch_status_t sofia_read_video_frame(switch_core_session_t *session, sw
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	if (switch_test_flag(tech_pvt, TFLAG_HUP)) {
+	if (switch_test_flag(tech_pvt, TFLAG_HUP) || !sofia_test_pflag(tech_pvt->profile, PFLAG_RUNNING)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -408,7 +413,7 @@ static switch_status_t sofia_write_video_frame(switch_core_session_t *session, s
 		}
 	}
 
-	if (switch_test_flag(tech_pvt, TFLAG_HUP)) {
+	if (switch_test_flag(tech_pvt, TFLAG_HUP) || !sofia_test_pflag(tech_pvt->profile, PFLAG_RUNNING)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -440,7 +445,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	if (switch_test_flag(tech_pvt, TFLAG_HUP)) {
+	if (switch_test_flag(tech_pvt, TFLAG_HUP) || !sofia_test_pflag(tech_pvt->profile, PFLAG_RUNNING)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -535,7 +540,7 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 		}
 	}
 
-	if (switch_test_flag(tech_pvt, TFLAG_HUP)) {
+	if (switch_test_flag(tech_pvt, TFLAG_HUP) || !sofia_test_pflag(tech_pvt->profile, PFLAG_RUNNING)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -880,6 +885,126 @@ static switch_status_t sofia_receive_event(switch_core_session_t *session, switc
 	return SWITCH_STATUS_SUCCESS;
 }
 
+typedef switch_status_t (*sofia_command_t) (char **argv, int argc, switch_stream_handle_t *stream);
+
+
+static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t *stream)
+{
+	sofia_profile_t *profile = NULL;
+	switch_hash_index_t *hi;
+	void *val;
+	int c = 0;
+
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	for (hi = switch_hash_first(switch_hash_pool_get(mod_sofia_globals.profile_hash), mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, NULL, NULL, &val);
+		profile = (sofia_profile_t *) val;
+		if (sofia_test_pflag(profile, PFLAG_RUNNING)) {
+			stream->write_function(stream, "Profile %s\n", profile->name);
+			c++;
+		}
+	}
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+	stream->write_function(stream, "%d profiles\n", c);
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t *stream)
+{
+	sofia_profile_t *profile = NULL;
+	char *profile_name = argv[0];
+
+	if (argc < 2) {
+		stream->write_function(stream, "Invalid Args!\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (!strcasecmp(argv[1], "start")) {
+		if (config_sofia(1, argv[0]) == SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "%s started successfully\n", argv[0]);
+		} else {
+			stream->write_function(stream, "Failure starting %s\n", argv[0]);
+		}
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	if (switch_strlen_zero(profile_name) || !(profile = sofia_glue_find_profile(profile_name))) {
+		stream->write_function(stream, "Invalid Profile [%s]", switch_str_nil(profile_name));
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (!strcasecmp(argv[1], "stop")) {
+		sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
+		stream->write_function(stream, "stopping: %s", profile->name);
+	} 
+
+	if (profile) {
+		switch_thread_rwlock_unlock(profile->rwlock);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t sofia_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+{
+	char *argv[1024] = { 0 };
+	int argc = 0;
+	char *mycmd = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	sofia_command_t func = NULL;
+	int lead = 1;
+	const char *usage_string = "USAGE:\n"
+		"--------------------------------------------------------------------------------\n"
+		"sofia help\n"
+		"sofia profile <options>\n"
+		"sofia status\n"
+		"--------------------------------------------------------------------------------\n";
+		
+	if (isession) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "%s", usage_string);
+		goto done;
+	}
+
+	if (!(mycmd = strdup(cmd))) {
+		status = SWITCH_STATUS_MEMERR;
+		goto done;
+	}
+
+	if (!(argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+		stream->write_function(stream, "%s", usage_string);
+		goto done;
+	}
+
+	if (!strcasecmp(argv[0], "profile")) {
+		func = cmd_profile;
+	} else if (!strcasecmp(argv[0], "status")) {
+		func = cmd_status;
+	} else if (!strcasecmp(argv[0], "help")) {
+		stream->write_function(stream, "%s", usage_string);
+		goto done;
+	}
+
+	if (func) {
+		status = func(&argv[lead], argc - lead, stream);
+	} else {
+		stream->write_function(stream, "Unknown Command [%s]\n", argv[0]);
+	}
+
+
+  done:
+
+	switch_safe_free(mycmd);
+
+	return status;
+
+
+}
+
 static const switch_io_routines_t sofia_io_routines = {
 	/*.outgoing_channel */ sofia_outgoing_channel,
 	/*.read_frame */ sofia_read_frame,
@@ -928,6 +1053,14 @@ static const switch_management_interface_t sofia_management_interface = {
 	/*.management_function */ sofia_manage
 };
 
+static switch_api_interface_t sofia_api_interface = {
+	/*.interface_name */ "sofia",
+	/*.desc */ "Sofia Controls",
+	/*.function */ sofia_function,
+	/*.syntax */ "<cmd> <args>",
+	/*.next */ NULL
+};
+
 static const switch_loadable_module_interface_t sofia_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ &sofia_endpoint_interface,
@@ -935,7 +1068,7 @@ static const switch_loadable_module_interface_t sofia_module_interface = {
 	/*.dialplan_interface */ NULL,
 	/*.codec_interface */ NULL,
 	/*.application_interface */ NULL,
-	/*.api_interface */ NULL,
+	/*.api_interface */ &sofia_api_interface,
 	/*.file_interface */ NULL,
 	/*.speech_interface */ NULL,
 	/*.directory_interface */ NULL,
@@ -954,7 +1087,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	switch_core_session_t *nsession;
 	char *data, *profile_name, *dest;
-	sofia_profile_t *profile;
+	sofia_profile_t *profile = NULL;
 	switch_caller_profile_t *caller_profile = NULL;
 	private_object_t *tech_pvt = NULL;
 	switch_channel_t *nchannel;
@@ -979,7 +1112,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 	if (!strncasecmp(profile_name, "gateway", 7)) {
 		char *gw;
-		outbound_reg_t *gateway_ptr;
+		sofia_gateway_t *gateway_ptr = NULL;
 
 		if (!(gw = strchr(profile_name, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
@@ -1016,6 +1149,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s", dest);
 		}
 		tech_pvt->invite_contact = switch_core_session_strdup(nsession, gateway_ptr->register_contact);
+		sofia_reg_release_gateway(gateway_ptr);
 	} else {
 		if (!(dest = strchr(profile_name, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
@@ -1102,6 +1236,10 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	}
 
   done:
+	if (profile) {
+		switch_thread_rwlock_unlock(profile->rwlock);
+	}
+
 	return cause;
 }
 
@@ -1133,7 +1271,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	switch_core_hash_init(&mod_sofia_globals.gateway_hash, module_pool);
 	switch_mutex_init(&mod_sofia_globals.hash_mutex, SWITCH_MUTEX_NESTED, module_pool);
 
-	if (config_sofia(0) != SWITCH_STATUS_SUCCESS) {
+	if (config_sofia(0, NULL) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
 	}
 

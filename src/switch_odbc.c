@@ -372,6 +372,7 @@ SWITCH_DECLARE(void) switch_odbc_handle_destroy(switch_odbc_handle_t **handlep)
 		switch_safe_free(handle->password);
 		free(handle);
 	}
+	*handlep = NULL;
 }
 
 SWITCH_DECLARE(switch_odbc_state_t) switch_odbc_handle_get_state(switch_odbc_handle_t *handle)

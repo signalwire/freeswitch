@@ -47,8 +47,8 @@
 
 static const char modname[] = "mod_sofia";
 static const switch_state_handler_table_t noop_state_handler = { 0 };
-struct outbound_reg;
-typedef struct outbound_reg outbound_reg_t;
+struct sofia_gateway;
+typedef struct sofia_gateway sofia_gateway_t;
 
 struct sofia_profile;
 typedef struct sofia_profile sofia_profile_t;
@@ -82,7 +82,7 @@ typedef struct private_object private_object_t;
 
 struct sofia_private {
 	char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
-	outbound_reg_t *gateway;
+	sofia_gateway_t *gateway;
 	su_home_t *home;
 };
 
@@ -109,7 +109,8 @@ typedef enum {
 	PFLAG_PRESENCE = (1 << 4),
 	PFLAG_PASS_RFC2833 = (1 << 5),
 	PFLAG_DISABLE_TRANSCODING = (1 << 6),
-	PFLAG_REWRITE_TIMESTAMPS = (1 << 7)
+	PFLAG_REWRITE_TIMESTAMPS = (1 << 7),
+	PFLAG_RUNNING = (1 << 8)
 } PFLAGS;
 
 typedef enum {
@@ -170,7 +171,7 @@ typedef enum {
 	REG_STATE_NOREG
 } reg_state_t;
 
-struct outbound_reg {
+struct sofia_gateway {
 	sofia_private_t *sofia_private;
 	nua_handle_t *nh;
 	sofia_profile_t *profile;
@@ -191,7 +192,7 @@ struct outbound_reg {
 	uint32_t flags;
 	reg_state_t state;
 	switch_memory_pool_t *pool;
-	struct outbound_reg *next;
+	struct sofia_gateway *next;
 };
 
 
@@ -229,11 +230,14 @@ struct sofia_profile {
 	uint32_t codec_flags;
 	switch_mutex_t *ireg_mutex;
 	switch_mutex_t *gateway_mutex;
-	outbound_reg_t *gateways;
+	sofia_gateway_t *gateways;
 	su_home_t *home;
 	switch_hash_t *profile_hash;
 	switch_hash_t *chat_hash;
 	switch_core_db_t *master_db;
+	switch_thread_rwlock_t *rwlock;
+	switch_mutex_t *flag_mutex;
+	uint32_t inuse;
 #ifdef SWITCH_HAVE_ODBC
 	char *odbc_dsn;
 	char *odbc_user;
@@ -350,6 +354,17 @@ typedef enum {
 	AUTH_STALE,
 } auth_res_t;
 
+
+#define sofia_test_pflag(obj, flag) ((obj)->pflags & flag)
+#define sofia_set_pflag(obj, flag) (obj)->pflags |= (flag)
+#define sofia_set_pflag_locked(obj, flag) assert(obj->flag_mutex != NULL);\
+switch_mutex_lock(obj->flag_mutex);\
+(obj)->pflags |= (flag);\
+switch_mutex_unlock(obj->flag_mutex);
+#define sofia_clear_pflag_locked(obj, flag) switch_mutex_lock(obj->flag_mutex); (obj)->pflags &= ~(flag); switch_mutex_unlock(obj->flag_mutex);
+#define sofia_clear_pflag(obj, flag) (obj)->pflags &= ~(flag)
+#define sofia_copy_pflags(dest, src, flags) (dest)->pflags &= ~(flags);	(dest)->pflags |= ((src)->pflags & (flags))
+
 /* Function Prototypes */
 /*************************************************************************************************************************************************************/
 
@@ -398,7 +413,7 @@ void event_handler(switch_event_t *event);
 void sofia_presence_event_handler(switch_event_t *event);
 void sofia_presence_mwi_event_handler(switch_event_t *event);
 void sofia_presence_cancel(void);
-switch_status_t config_sofia(int reload);
+switch_status_t config_sofia(int reload, char *profile_name);
 auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, const char *regstr, char *np, size_t nplen, char *ip);
 void sofia_reg_handle_sip_r_challenge(int status,
 					 char const *phrase,
@@ -427,8 +442,8 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now);
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now);
 void sofia_reg_unregister(sofia_profile_t *profile);
 switch_status_t sofia_glue_ext_address_lookup(char **ip, switch_port_t *port, char *sourceip, switch_memory_pool_t *pool);
-outbound_reg_t *sofia_reg_find_gateway(char *key);
-void sofia_reg_add_gateway(char *key, outbound_reg_t *gateway);
+sofia_gateway_t *sofia_reg_find_gateway(char *key);
+void sofia_reg_add_gateway(char *key, sofia_gateway_t *gateway);
 void sofia_glue_pass_sdp(private_object_t *tech_pvt, char *sdp);
 int sofia_glue_get_user_host(char *in, char **user, char **host);
 switch_call_cause_t sofia_glue_sip_cause_to_freeswitch(int status);
@@ -449,3 +464,4 @@ switch_bool_t sofia_glue_execute_sql_callback(sofia_profile_t *profile,
 											  void *pdata);
 char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex, char *sql, char *resbuf, size_t len);
 void sofia_glue_check_video_codecs(private_object_t *tech_pvt);
+void sofia_reg_release_gateway(sofia_gateway_t *gateway);

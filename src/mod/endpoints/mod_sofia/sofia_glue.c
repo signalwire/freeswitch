@@ -315,9 +315,13 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 
 
 	switch_mutex_lock(tech_pvt->flag_mutex);
+	switch_mutex_lock(profile->flag_mutex);
 	tech_pvt->flags = profile->flags;
-	switch_mutex_unlock(tech_pvt->flag_mutex);
 	tech_pvt->profile = profile;
+	profile->inuse++;
+	switch_mutex_unlock(profile->flag_mutex);
+	switch_mutex_unlock(tech_pvt->flag_mutex);
+
 	if (tech_pvt->bte) {
 		tech_pvt->te = tech_pvt->bte;
 	} else if (!tech_pvt->te) {
@@ -1420,7 +1424,14 @@ sofia_profile_t *sofia_glue_find_profile(char *key)
 	sofia_profile_t *profile;
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
-	profile = (sofia_profile_t *) switch_core_hash_find(mod_sofia_globals.profile_hash, key);
+	if ((profile = (sofia_profile_t *) switch_core_hash_find(mod_sofia_globals.profile_hash, key))) {
+		if (!sofia_test_pflag(profile, PFLAG_RUNNING)) {
+			profile = NULL;
+		} else if (switch_thread_rwlock_tryrdlock(profile->rwlock) != SWITCH_STATUS_SUCCESS) {
+			profile = NULL;
+		}
+	}
+
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 
 	return profile;
@@ -1508,6 +1519,7 @@ void sofia_glue_sql_close(sofia_profile_t *profile)
 	} else {
 #endif
 		switch_core_db_close(profile->master_db);
+		profile->master_db = NULL;
 #ifdef SWITCH_HAVE_ODBC
 	}
 #endif

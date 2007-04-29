@@ -39,7 +39,7 @@
 
 void sofia_reg_unregister(sofia_profile_t *profile)
 {
-	outbound_reg_t *gateway_ptr;
+	sofia_gateway_t *gateway_ptr;
 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
 		if (gateway_ptr->sofia_private) {
 			free(gateway_ptr->sofia_private);
@@ -52,10 +52,15 @@ void sofia_reg_unregister(sofia_profile_t *profile)
 
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 {
-	outbound_reg_t *gateway_ptr;
+	sofia_gateway_t *gateway_ptr;
 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
 		int ss_state = nua_callstate_authenticating;
 		reg_state_t ostate = gateway_ptr->state;
+
+		if (!now) {
+			gateway_ptr->state = ostate = REG_STATE_UNREGED;
+			gateway_ptr->expires_str = "0";
+		}
 
 		switch (ostate) {
 		case REG_STATE_NOREG:
@@ -80,14 +85,26 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 				gateway_ptr->sofia_private->gateway = gateway_ptr;
 				nua_handle_bind(gateway_ptr->nh, gateway_ptr->sofia_private);
 
-				nua_register(gateway_ptr->nh,
-							 SIPTAG_FROM_STR(gateway_ptr->register_from),
-							 SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
-							 SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
-							 NUTAG_REGISTRAR(gateway_ptr->register_proxy),
-							 NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
-				gateway_ptr->retry = now + 10;
+				if (now) {
+					nua_register(gateway_ptr->nh,
+								 SIPTAG_FROM_STR(gateway_ptr->register_from),
+								 SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
+								 SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
+								 NUTAG_REGISTRAR(gateway_ptr->register_proxy),
+								 NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
+					gateway_ptr->retry = now + 10;
+				} else {
+					nua_unregister(gateway_ptr->nh,
+								   SIPTAG_FROM_STR(gateway_ptr->register_from),
+								   SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
+								   SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
+								   NUTAG_REGISTRAR(gateway_ptr->register_proxy),
+								   NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
+				}
+
+				gateway_ptr->retry = now + time(NULL);
 				gateway_ptr->state = REG_STATE_TRYING;
+
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error registering %s\n", gateway_ptr->name);
 				gateway_ptr->state = REG_STATE_FAILED;
@@ -107,7 +124,6 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			break;
 		}
 	}
-
 }
 
 
@@ -157,7 +173,11 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
     }
 #endif
 
-	snprintf(sql, sizeof(sql), "select '%s',* from sip_registrations where expires > 0 and expires <= %ld", profile->name, (long) now);
+	if (now) {
+		snprintf(sql, sizeof(sql), "select '%s',* from sip_registrations where expires > 0 and expires <= %ld", profile->name, (long) now);
+	} else {
+		snprintf(sql, sizeof(sql), "select '%s',* from sip_registrations where expires > 0", profile->name);
+	}
 
 	switch_mutex_lock(profile->ireg_mutex);
 	sofia_glue_execute_sql_callback(profile,
@@ -166,12 +186,23 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
 									sql,
 									sofia_reg_del_callback,
 									NULL);
-	
-	snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and expires <= %ld", (long) now);
+	if (now) {
+		snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and expires <= %ld", (long) now);
+	} else {
+		snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0");
+	}
 	sofia_glue_execute_sql(profile, SWITCH_TRUE, sql, NULL);
-	snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and expires <= %ld", (long) now);
+	if (now) {
+		snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and expires <= %ld", (long) now);
+	} else {
+		snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0");
+	}
 	sofia_glue_execute_sql(profile, SWITCH_TRUE, sql, NULL);
-	snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0 and expires <= %ld", (long) now);
+	if (now) {
+		snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0 and expires <= %ld", (long) now);
+	} else {
+		snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0");
+	}
 	sofia_glue_execute_sql(profile, SWITCH_TRUE, sql, NULL);
 
 	switch_mutex_unlock(profile->ireg_mutex);
@@ -479,7 +510,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 							char const *phrase,
 							nua_t * nua, sofia_profile_t *profile, nua_handle_t * nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[])
 {
-	outbound_reg_t *gateway = NULL;
+	sofia_gateway_t *gateway = NULL;
 	sip_www_authenticate_t const *authenticate = NULL;
 	char const *realm = NULL;
 	char *p = NULL, *duprealm = NULL, *qrealm = NULL;
@@ -522,7 +553,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	}
 
 	if (profile) {
-		outbound_reg_t *gateway_ptr;
+		sofia_gateway_t *gateway_ptr;
 
 		if ((duprealm = strdup(realm))) {
 			qrealm = duprealm;
@@ -548,13 +579,21 @@ void sofia_reg_handle_sip_r_challenge(int status,
 			}
 
 			if (!gateway) {
+				switch_mutex_lock(mod_sofia_globals.hash_mutex);
 				for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
 					if (scheme && qrealm && !strcasecmp(gateway_ptr->register_scheme, scheme)
 						&& !strcasecmp(gateway_ptr->register_realm, qrealm)) {
 						gateway = gateway_ptr;
+
+						if (!switch_test_flag(gateway->profile, PFLAG_RUNNING)) {
+							gateway = NULL;
+						} else if (switch_thread_rwlock_tryrdlock(gateway->profile->rwlock) != SWITCH_STATUS_SUCCESS) {
+							gateway = NULL;
+						}						
 						break;
 					}
 				}
+				switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 			}
 
 			if (!gateway) {
@@ -578,7 +617,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	tl_gets(tags, NUTAG_CALLSTATE_REF(ss_state), SIPTAG_WWW_AUTHENTICATE_REF(authenticate), TAG_END());
 
 	nua_authenticate(nh, SIPTAG_EXPIRES_STR(gateway->expires_str), NUTAG_AUTH(authentication), TAG_END());
-
+	sofia_reg_release_gateway(gateway);
 	return;
 
  cancel:
@@ -761,18 +800,29 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 }
 
 
-outbound_reg_t *sofia_reg_find_gateway(char *key)
+sofia_gateway_t *sofia_reg_find_gateway(char *key)
 {
-	outbound_reg_t *gateway;
+	sofia_gateway_t *gateway = NULL;
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
-	gateway = (outbound_reg_t *) switch_core_hash_find(mod_sofia_globals.gateway_hash, key);
-	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+	if ((gateway = (sofia_gateway_t *) switch_core_hash_find(mod_sofia_globals.gateway_hash, key))) {
+		if (!sofia_test_pflag(gateway->profile, PFLAG_RUNNING)) {
+			gateway = NULL;
+		} else if (switch_thread_rwlock_tryrdlock(gateway->profile->rwlock) != SWITCH_STATUS_SUCCESS) {
+			gateway = NULL;
+		}
+	}
 
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 	return gateway;
 }
 
-void sofia_reg_add_gateway(char *key, outbound_reg_t * gateway)
+void sofia_reg_release_gateway(sofia_gateway_t *gateway)
+{
+	switch_thread_rwlock_unlock(gateway->profile->rwlock);
+}
+
+void sofia_reg_add_gateway(char *key, sofia_gateway_t * gateway)
 {
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	switch_core_hash_insert(mod_sofia_globals.gateway_hash, key, gateway);

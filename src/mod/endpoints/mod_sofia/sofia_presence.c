@@ -43,7 +43,7 @@ switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char
 {
 	char buf[256];
 	char *user, *host;
-	sofia_profile_t *profile;
+	sofia_profile_t *profile = NULL;
 	char *ffrom = NULL;
 	nua_handle_t *msg_nh;
 	char *contact;
@@ -98,6 +98,10 @@ switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char
 
 		switch_safe_free(ffrom);
 		free(user);
+
+		if (profile) {
+			switch_thread_rwlock_unlock(profile->rwlock);
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -178,7 +182,7 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 {
 	char *account, *dup_account, *yn, *host, *user;
 	char *sql;
-	sofia_profile_t *profile;
+	sofia_profile_t *profile = NULL;
 	switch_stream_handle_t stream = { 0 };
 	switch_event_header_t *hp;
 
@@ -230,11 +234,16 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 
 	switch_safe_free(sql);
 	switch_safe_free(dup_account);
+
+	if (profile) {
+		switch_thread_rwlock_unlock(profile->rwlock);
+	}
+
 }
 
 void sofia_presence_event_handler(switch_event_t *event)
 {
-	sofia_profile_t *profile;
+	sofia_profile_t *profile = NULL;
 	switch_hash_index_t *hi;
 	void *val;
 	char *from = switch_event_get_header(event, "from");
@@ -364,6 +373,9 @@ void sofia_presence_event_handler(switch_event_t *event)
 												sofia_presence_resub_callback,
 												profile);
 
+				
+				switch_thread_rwlock_unlock(profile->rwlock);
+					
 				switch_safe_free(sql);
 			}
 			switch_safe_free(user);
@@ -569,7 +581,7 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	char *expires = argv[10];
 	char *body = argv[11];
 	char *exp;
-	sofia_profile_t *profile;
+	sofia_profile_t *profile = NULL;
 	char *tmp, *id = NULL;
 	nua_handle_t *nh;
 	int expire_sec = atoi(expires);
@@ -606,6 +618,11 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 
 	switch_safe_free(id);
 	switch_safe_free(exp);
+
+	if (profile) {
+		switch_thread_rwlock_unlock(profile->rwlock);
+	}
+
 	return 0;
 }
 
