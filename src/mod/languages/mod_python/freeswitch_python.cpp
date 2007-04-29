@@ -76,17 +76,19 @@ void SessionContainer::set_state(char *state)
 int SessionContainer::play_file(char *file, char *timer_name)
 {
     switch_status_t status;
+    switch_input_args_t args = { 0 };
 
     if (switch_strlen_zero(timer_name)) {
         timer_name = NULL;
     }
 
     if (!dtmfCallbackFunction) {
-        status = switch_ivr_play_file(session, NULL, file, timer_name, NULL, NULL, 0);
+        status = switch_ivr_play_file(session, NULL, file, &args);
     } 
     else {
         globalDTMFCallbackFunction = dtmfCallbackFunction;
-        status = switch_ivr_play_file(session, NULL, file, timer_name, PythonDTMFCallback, NULL, 0);
+        args.input_callback = PythonDTMFCallback;
+        status = switch_ivr_play_file(session, NULL, file, &args);
     }
 
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
@@ -106,13 +108,19 @@ void SessionContainer::set_dtmf_callback(PyObject *pyfunc)
 int SessionContainer::speak_text(char *text)
 {
     switch_status_t status;
+    switch_codec_t *codec;
+    switch_input_args_t args = { 0 };
 
+    codec = switch_core_session_get_read_codec(session);
     if (!dtmfCallbackFunction) {
-        status = switch_ivr_speak_text(session, tts_name, voice_name, NULL, 0, NULL, text, NULL, 0);
+        status = switch_ivr_speak_text(session, tts_name, voice_name, 
+                codec->implementation->samples_per_second, text, &args);
     }
     else {
         globalDTMFCallbackFunction = dtmfCallbackFunction;
-        status = switch_ivr_speak_text(session, tts_name, voice_name, NULL, 0, PythonDTMFCallback, text, NULL, 0);
+        args.input_callback = PythonDTMFCallback;
+        status = switch_ivr_speak_text(session, tts_name, voice_name, 
+                codec->implementation->samples_per_second, text, &args);
     }
 
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
@@ -150,4 +158,5 @@ int SessionContainer::play_and_get_digits(int min_digits, int max_digits, int ma
             terminators, audio_files, bad_input_audio_files, dtmf_buf, 128, digits_regex);
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
+
 
