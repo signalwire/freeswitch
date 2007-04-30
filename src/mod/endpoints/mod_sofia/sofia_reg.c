@@ -244,7 +244,7 @@ char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const c
 }
 
 uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_handle_t * nh, sip_t const *sip, sofia_regtype_t regtype, char *key,
-							   uint32_t keylen)
+								  uint32_t keylen, switch_event_t **v_event)
 {
 	sip_from_t const *from = NULL;
 	sip_expires_t const *expires = NULL;
@@ -327,10 +327,10 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	}
 
 	if (authorization) {
-		if ((auth_res = sofia_reg_parse_auth(profile, authorization, sip->sip_request->rq_method_name, key, keylen, network_ip)) == AUTH_STALE) {
+		if ((auth_res = sofia_reg_parse_auth(profile, authorization, sip->sip_request->rq_method_name, key, keylen, network_ip, v_event)) == AUTH_STALE) {
 			stale = 1;
 		}
-
+		
 		if (auth_res != AUTH_OK && !stale) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "send %s for [%s@%s]\n", forbidden ? "forbidden" : "challange", from_user, from_host);
 			if (auth_res == AUTH_FORBIDDEN) {
@@ -472,7 +472,7 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 		return;
 	}
 
-	sofia_reg_handle_register(nua, profile, nh, sip, REG_REGISTER, key, sizeof(key));
+	sofia_reg_handle_register(nua, profile, nh, sip, REG_REGISTER, key, sizeof(key), NULL);
 }
 
 
@@ -630,7 +630,8 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	
 }
 
-auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, const char *regstr, char *np, size_t nplen, char *ip)
+auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, 
+								const char *regstr, char *np, size_t nplen, char *ip, switch_event_t **v_event)
 {
 	int indexnum;
 	const char *cur;
@@ -641,8 +642,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	auth_res_t ret = AUTH_FORBIDDEN;
 	char *npassword = NULL;
 	int cnt = 0;
-	username = realm = nonce = uri = qop = cnonce = nc = response = NULL;
 
+	username = realm = nonce = uri = qop = cnonce = nc = response = NULL;
+	
 	if (authorization->au_params) {
 		for (indexnum = 0; (cur = authorization->au_params[indexnum]); indexnum++) {
 			char *var, *val, *p, *work;
@@ -734,7 +736,21 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 				a1_hash = val;
 			}
 		}
-		
+
+		if (v_event && (xparams = switch_xml_child(user, "variables"))) {
+			if (switch_event_create(v_event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+				for (param = switch_xml_child(xparams, "variable"); param; param = param->next) {
+					const char *var = switch_xml_attr_soft(param, "name");
+					const char *val = switch_xml_attr_soft(param, "value");
+
+					if (!switch_strlen_zero(var) && !switch_strlen_zero(val)) {
+						switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, var, "%s", val);
+					}
+				}
+			}
+		}
+
+
 		if (switch_strlen_zero(passwd) && switch_strlen_zero(a1_hash)) {
 			ret = AUTH_OK;
 			goto end;

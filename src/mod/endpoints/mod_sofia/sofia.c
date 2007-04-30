@@ -52,7 +52,7 @@ void sofia_event_callback(nua_event_t event,
 
 	if (sofia_private) {
 		if (!switch_strlen_zero(sofia_private->uuid)) {
-
+			
 			if ((session = switch_core_session_locate(sofia_private->uuid))) {
 				tech_pvt = switch_core_session_get_private(session);
 				channel = switch_core_session_get_channel(tech_pvt->session);
@@ -69,7 +69,6 @@ void sofia_event_callback(nua_event_t event,
 			}
 		}
 	}
-
 	
 	if (status != 100 && status != 200) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "event [%s] status [%d][%s] session: %s\n",
@@ -89,7 +88,7 @@ void sofia_event_callback(nua_event_t event,
 			char network_ip[80];
 			get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_addr);
 			auth_res = sofia_reg_parse_auth(profile, authorization, 
-											(char *) sip->sip_request->rq_method_name, tech_pvt->key, strlen(tech_pvt->key), network_ip);
+											(char *) sip->sip_request->rq_method_name, tech_pvt->key, strlen(tech_pvt->key), network_ip, NULL);
 		}
 
 		if (auth_res != AUTH_OK) {
@@ -322,20 +321,11 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	gateway_loops = GATEWAY_SECONDS;
 
 	if (switch_event_create(&s_event, SWITCH_EVENT_PUBLISH) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp");
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp,_sip._tcp,_sip._sctp");
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", profile->sip_port);
-		switch_event_fire(&s_event);
-	}
-
-	if (switch_event_create(&s_event, SWITCH_EVENT_PUBLISH) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._tcp");
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", profile->sip_port);
-		switch_event_fire(&s_event);
-	}
-
-	if (switch_event_create(&s_event, SWITCH_EVENT_PUBLISH) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._sctp");
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", profile->sip_port);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "module_name", "%s", "mod_sofia");
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_name", "%s", profile->name);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_uri", "%s", profile->url);
 		switch_event_fire(&s_event);
 	}
 
@@ -377,8 +367,11 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	}
 
 	if (switch_event_create(&s_event, SWITCH_EVENT_UNPUBLISH) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp");
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp,_sip._tcp,_sip._sctp");
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", profile->sip_port);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "module_name", "%s", "mod_sofia");
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_name", "%s", profile->name);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_uri", "%s", profile->url);
 		switch_event_fire(&s_event);
 	}
 
@@ -1639,6 +1632,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	const char *from_user = NULL, *from_host = NULL;
 	const char *context = NULL;
 	char network_ip[80];
+	switch_event_t *v_event = NULL;
 
 	if (!sip || !sip->sip_request || !sip->sip_request->rq_method_name) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received an invalid packet!\n");
@@ -1654,11 +1648,14 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	}
 
 	if ((profile->pflags & PFLAG_AUTH_CALLS)) {
-		if (sofia_reg_handle_register(nua, profile, nh, sip, REG_INVITE, key, sizeof(key))) {
+		if (sofia_reg_handle_register(nua, profile, nh, sip, REG_INVITE, key, sizeof(key), &v_event)) {
+			if (v_event) {
+				switch_event_destroy(&v_event);
+			}
 			return;
 		}
 	}
-
+	
 	if (!(session = switch_core_session_request(&sofia_endpoint_interface, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Session Alloc Failed!\n");
 		nua_respond(nh, SIP_503_SERVICE_UNAVAILABLE, TAG_END());
@@ -1680,6 +1677,16 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_addr);
 
 	channel = switch_core_session_get_channel(session);
+
+	if (v_event) {
+		switch_event_header_t *hp;
+		
+		for(hp = v_event->headers; hp; hp = hp->next) {
+			switch_channel_set_variable(channel, hp->name, hp->value);
+		}
+		
+		switch_event_destroy(&v_event);
+	}
 
 	if (sip->sip_from && sip->sip_from->a_url) {
 		from_user = sip->sip_from->a_url->url_user;
