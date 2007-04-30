@@ -380,9 +380,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	su_root_destroy(profile->s_root);
 	pool = profile->pool;
 
-	switch_mutex_lock(mod_sofia_globals.hash_mutex);
-	switch_core_hash_delete(mod_sofia_globals.profile_hash, profile->name);
-	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+	sofia_glue_del_profile(profile);
 
 	switch_thread_rwlock_unlock(profile->rwlock);
 	
@@ -436,14 +435,148 @@ static void logger(void *logarg, char const *fmt, va_list ap)
 }
 
 
+static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
+{
+	switch_xml_t gateway_tag, param;
+	sofia_gateway_t *gp;
+
+	for (gateway_tag = switch_xml_child(gateways_tag, "gateway"); gateway_tag; gateway_tag = gateway_tag->next) {
+		char *name = (char *) switch_xml_attr_soft(gateway_tag, "name");
+		sofia_gateway_t *gateway;
+
+		if (switch_strlen_zero(name)) {
+			name = "anonymous";
+		}
+
+		if ((gateway = switch_core_alloc(profile->pool, sizeof(*gateway)))) {
+			char *register_str = "true", *scheme = "Digest",
+				*realm = NULL,
+				*username = NULL,
+				*password = NULL,
+				*caller_id_in_from = "false",
+				*extension = NULL,
+				*proxy = NULL,
+				*context = "default",
+				*expire_seconds = "3600";
+
+			gateway->pool = profile->pool;
+			gateway->profile = profile;
+			gateway->name = switch_core_strdup(gateway->pool, name);
+			gateway->freq = 0;
+
+
+			for (param = switch_xml_child(gateway_tag, "param"); param; param = param->next) {
+				char *var = (char *) switch_xml_attr_soft(param, "name");
+				char *val = (char *) switch_xml_attr_soft(param, "value");
+
+				if (!strcmp(var, "register")) {
+					register_str = val;
+				} else if (!strcmp(var, "scheme")) {
+					scheme = val;
+				} else if (!strcmp(var, "realm")) {
+					realm = val;
+				} else if (!strcmp(var, "username")) {
+					username = val;
+				} else if (!strcmp(var, "password")) {
+					password = val;
+				} else if (!strcmp(var, "caller-id-in-from")) {
+					caller_id_in_from = val;
+				} else if (!strcmp(var, "extension")) {
+					extension = val;
+				} else if (!strcmp(var, "proxy")) {
+					proxy = val;
+				} else if (!strcmp(var, "context")) {
+					context = val;
+				} else if (!strcmp(var, "expire-seconds")) {
+					expire_seconds = val;
+				}
+			}
+
+			if (switch_strlen_zero(realm)) {
+				realm = name;
+			}
+
+			if (switch_strlen_zero(username)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: username param is REQUIRED!\n");
+				goto skip;
+			}
+
+			if (switch_strlen_zero(password)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: password param is REQUIRED!\n");
+				goto skip;
+			}
+
+			if (switch_strlen_zero(extension)) {
+				extension = username;
+			}
+
+			if (switch_strlen_zero(proxy)) {
+				proxy = realm;
+			}
+
+			if (!switch_true(register_str)) {
+				gateway->state = REG_STATE_NOREG;
+			}
+			gateway->register_scheme = switch_core_strdup(gateway->pool, scheme);
+			gateway->register_context = switch_core_strdup(gateway->pool, context);
+			gateway->register_realm = switch_core_strdup(gateway->pool, realm);
+			gateway->register_username = switch_core_strdup(gateway->pool, username);
+			gateway->register_password = switch_core_strdup(gateway->pool, password);
+			if (switch_true(caller_id_in_from)) {
+				switch_set_flag(gateway, REG_FLAG_CALLERID);
+			}
+			gateway->register_from = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, realm);
+			gateway->register_contact = switch_core_sprintf(gateway->pool, "sip:%s@%s:%d", extension, profile->sipip, profile->sip_port);
+
+			if (!strncasecmp(proxy, "sip:", 4)) {
+				gateway->register_proxy = switch_core_strdup(gateway->pool, proxy);
+				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy + 4);
+			} else {
+				gateway->register_proxy = switch_core_sprintf(gateway->pool, "sip:%s", proxy);
+				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy);
+			}
+
+			gateway->expires_str = switch_core_strdup(gateway->pool, expire_seconds);
+
+			if ((gateway->freq = atoi(gateway->expires_str)) < 5) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+								  "Invalid Freq: %d.  Setting Register-Frequency to 3600\n", gateway->freq);
+				gateway->freq = 3600;
+			}
+			gateway->freq -= 2;
+
+			gateway->next = profile->gateways;
+			profile->gateways = gateway;
+
+			if ((gp = sofia_reg_find_gateway(gateway->name))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate gateway '%s'\n", gateway->name);
+				sofia_reg_release_gateway(gp);
+			} else if ((gp=sofia_reg_find_gateway(gateway->register_from))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate uri '%s'\n", gateway->register_from);
+				sofia_reg_release_gateway(gp);
+			} else if ((gp=sofia_reg_find_gateway(gateway->register_contact))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate contact '%s'\n", gateway->register_from);
+				sofia_reg_release_gateway(gp);
+			} else {
+				sofia_reg_add_gateway(gateway->name, gateway);
+				sofia_reg_add_gateway(gateway->register_from, gateway);
+				sofia_reg_add_gateway(gateway->register_contact, gateway);
+			}
+		}
+
+	skip:
+		assert(gateway_tag);
+	}
+
+}
+
 switch_status_t config_sofia(int reload, char *profile_name)
 {
 	char *cf = "sofia.conf";
-	switch_xml_t cfg, xml = NULL, xprofile, param, settings, profiles, gateway_tag, gateways_tag;
+	switch_xml_t cfg, xml = NULL, xprofile, param, settings, profiles, gateways_tag, domain_tag, domains_tag;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	sofia_profile_t *profile = NULL;
 	char url[512] = "";
-	sofia_gateway_t *gp;
 	int profile_found = 0;
 
 	if (!reload) {
@@ -713,142 +846,51 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				}
 			}
 			if (profile) {
+				switch_xml_t aliases_tag, alias_tag;
+
 				if ((gateways_tag = switch_xml_child(xprofile, "registrations"))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
 									  "The <registrations> syntax has been discontinued, please see the new syntax in the default configuration examples\n");
+				} else if ((gateways_tag = switch_xml_child(xprofile, "gateways"))) {
+					parse_gateways(profile, gateways_tag);
 				}
 
-				if ((gateways_tag = switch_xml_child(xprofile, "gateways"))) {
-					for (gateway_tag = switch_xml_child(gateways_tag, "gateway"); gateway_tag; gateway_tag = gateway_tag->next) {
-						char *name = (char *) switch_xml_attr_soft(gateway_tag, "name");
-						sofia_gateway_t *gateway;
+				if ((domains_tag = switch_xml_child(xprofile, "domains"))) {
+					for (domain_tag = switch_xml_child(domains_tag, "domain"); domain_tag; domain_tag = domain_tag->next) {
+						switch_xml_t droot, actual_domain_tag, ut;
+						char *dname = (char *) switch_xml_attr_soft(domain_tag, "name");
+						char *parse = (char *) switch_xml_attr_soft(domain_tag, "parse");
 
-						if (switch_strlen_zero(name)) {
-							name = "anonymous";
-						}
-
-						if ((gateway = switch_core_alloc(profile->pool, sizeof(*gateway)))) {
-							char *register_str = "true", *scheme = "Digest",
-								*realm = NULL,
-								*username = NULL,
-								*password = NULL,
-								*caller_id_in_from = "false",
-								*extension = NULL,
-								*proxy = NULL,
-								*context = "default",
-								*expire_seconds = "3600";
-
-							gateway->pool = profile->pool;
-							gateway->profile = profile;
-							gateway->name = switch_core_strdup(gateway->pool, name);
-							gateway->freq = 0;
-
-
-							for (param = switch_xml_child(gateway_tag, "param"); param; param = param->next) {
-								char *var = (char *) switch_xml_attr_soft(param, "name");
-								char *val = (char *) switch_xml_attr_soft(param, "value");
-
-								if (!strcmp(var, "register")) {
-									register_str = val;
-								} else if (!strcmp(var, "scheme")) {
-									scheme = val;
-								} else if (!strcmp(var, "realm")) {
-									realm = val;
-								} else if (!strcmp(var, "username")) {
-									username = val;
-								} else if (!strcmp(var, "password")) {
-									password = val;
-								} else if (!strcmp(var, "caller-id-in-from")) {
-									caller_id_in_from = val;
-								} else if (!strcmp(var, "extension")) {
-									extension = val;
-								} else if (!strcmp(var, "proxy")) {
-									proxy = val;
-								} else if (!strcmp(var, "context")) {
-									context = val;
-								} else if (!strcmp(var, "expire-seconds")) {
-									expire_seconds = val;
+						if (!switch_strlen_zero(dname)) { 
+							if (switch_true(parse)) {
+								if (switch_xml_locate_domain(dname, NULL, &droot, &actual_domain_tag) == SWITCH_STATUS_SUCCESS) {
+									for (ut = switch_xml_child(actual_domain_tag, "user"); ut; ut = ut->next) {
+										if (((gateways_tag = switch_xml_child(ut, "gateways")))) {
+											parse_gateways(profile, gateways_tag);
+										}
+									}
 								}
 							}
-
-							if (switch_strlen_zero(realm)) {
-								realm = name;
-							}
-
-							if (switch_strlen_zero(username)) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: username param is REQUIRED!\n");
-								switch_xml_free(xml);
-								goto skip;
-							}
-
-							if (switch_strlen_zero(password)) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: password param is REQUIRED!\n");
-								switch_xml_free(xml);
-								goto skip;
-							}
-
-							if (switch_strlen_zero(extension)) {
-								extension = username;
-							}
-
-							if (switch_strlen_zero(proxy)) {
-								proxy = realm;
-							}
-
-							if (!switch_true(register_str)) {
-								gateway->state = REG_STATE_NOREG;
-							}
-							gateway->register_scheme = switch_core_strdup(gateway->pool, scheme);
-							gateway->register_context = switch_core_strdup(gateway->pool, context);
-							gateway->register_realm = switch_core_strdup(gateway->pool, realm);
-							gateway->register_username = switch_core_strdup(gateway->pool, username);
-							gateway->register_password = switch_core_strdup(gateway->pool, password);
-							if (switch_true(caller_id_in_from)) {
-								switch_set_flag(gateway, REG_FLAG_CALLERID);
-							}
-							gateway->register_from = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, realm);
-							gateway->register_contact = switch_core_sprintf(gateway->pool, "sip:%s@%s:%d", extension, profile->sipip, profile->sip_port);
-
-							if (!strncasecmp(proxy, "sip:", 4)) {
-								gateway->register_proxy = switch_core_strdup(gateway->pool, proxy);
-								gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy + 4);
-							} else {
-								gateway->register_proxy = switch_core_sprintf(gateway->pool, "sip:%s", proxy);
-								gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy);
-							}
-
-							gateway->expires_str = switch_core_strdup(gateway->pool, expire_seconds);
-
-							if ((gateway->freq = atoi(gateway->expires_str)) < 5) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-												  "Invalid Freq: %d.  Setting Register-Frequency to 3600\n", gateway->freq);
-								gateway->freq = 3600;
-							}
-							gateway->freq -= 2;
-
-							gateway->next = profile->gateways;
-							profile->gateways = gateway;
-
-							if ((gp = sofia_reg_find_gateway(gateway->name))) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate gateway '%s'\n", gateway->name);
-								sofia_reg_release_gateway(gp);
-							} else if ((gp=sofia_reg_find_gateway(gateway->register_from))) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate uri '%s'\n", gateway->register_from);
-								sofia_reg_release_gateway(gp);
-							} else if ((gp=sofia_reg_find_gateway(gateway->register_contact))) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate contact '%s'\n", gateway->register_from);
-								sofia_reg_release_gateway(gp);
-							} else {
-								sofia_reg_add_gateway(gateway->name, gateway);
-								sofia_reg_add_gateway(gateway->register_from, gateway);
-								sofia_reg_add_gateway(gateway->register_contact, gateway);
-							}
+							sofia_glue_add_profile(switch_core_strdup(profile->pool, dname), profile);
 						}
-
-					  skip:
-						assert(gateway_tag);
 					}
 				}
+				
+				if ((aliases_tag = switch_xml_child(xprofile, "aliases"))) {
+					for (alias_tag = switch_xml_child(aliases_tag, "alias"); alias_tag; alias_tag = alias_tag->next) {
+						char *aname = (char *) switch_xml_attr_soft(alias_tag, "name");
+						if (!switch_strlen_zero(aname)) {
+
+							if (sofia_glue_add_profile(switch_core_strdup(profile->pool, aname), profile) == SWITCH_STATUS_SUCCESS) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Alias [%s] for profile [%s]\n", aname, profile->name);
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Adding Alias [%s] for profile [%s] (name in use)\n", 
+												  aname, profile->name);
+							}
+						}
+					}
+				}
+
 
 				if (profile->sipip) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Started Profile %s [%s]\n", profile->name, url);

@@ -1437,11 +1437,48 @@ sofia_profile_t *sofia_glue_find_profile(char *key)
 	return profile;
 }
 
-void sofia_glue_add_profile(char *key, sofia_profile_t *profile)
+switch_status_t sofia_glue_add_profile(char *key, sofia_profile_t *profile)
 {
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
-	switch_core_hash_insert(mod_sofia_globals.profile_hash, key, profile);
+	if (!switch_core_hash_find(mod_sofia_globals.profile_hash, key)) {
+		status = switch_core_hash_insert(mod_sofia_globals.profile_hash, key, profile);
+	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+	return status;
+}
+
+void sofia_glue_del_profile(sofia_profile_t *profile)
+{
+	switch_hash_index_t *hi;
+	void *vval;
+	const void *vvar;
+	sofia_profile_t *this_profile;
+	sofia_gateway_t *gp, *this_gateway;
+
+
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	for (hi = switch_hash_first(switch_hash_pool_get(mod_sofia_globals.profile_hash), mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &vvar, NULL, &vval);
+		this_profile = (sofia_profile_t *) vval;
+		if (this_profile == profile) {
+			switch_core_hash_delete(mod_sofia_globals.profile_hash, vvar);
+		}
+	}
+	for (hi = switch_hash_first(switch_hash_pool_get(mod_sofia_globals.gateway_hash), mod_sofia_globals.gateway_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &vvar, NULL, &vval);
+        this_gateway = (sofia_gateway_t *) vval;
+
+		for (gp = profile->gateways; gp; gp = gp->next) {
+			if (gp == this_gateway) {
+				switch_core_hash_delete(mod_sofia_globals.gateway_hash, vvar);
+			}
+		}
+	}
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
 }
 
 int sofia_glue_init_sql(sofia_profile_t *profile)

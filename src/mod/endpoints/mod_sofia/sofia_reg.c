@@ -838,13 +838,18 @@ void sofia_reg_release_gateway(sofia_gateway_t *gateway)
 	switch_thread_rwlock_unlock(gateway->profile->rwlock);
 }
 
-void sofia_reg_add_gateway(char *key, sofia_gateway_t * gateway)
+switch_status_t sofia_reg_add_gateway(char *key, sofia_gateway_t *gateway)
 {
-	switch_mutex_lock(mod_sofia_globals.hash_mutex);
-	switch_core_hash_insert(mod_sofia_globals.gateway_hash, key, gateway);
-	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
-}
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	if (!switch_core_hash_find(mod_sofia_globals.gateway_hash, key)) {
+		status = switch_core_hash_insert(mod_sofia_globals.gateway_hash, key, gateway);
+	}
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+
+	return status;
+}
 
 
 

@@ -893,19 +893,35 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 	sofia_profile_t *profile = NULL;
 	switch_hash_index_t *hi;
 	void *val;
+	const void *vvar;
 	int c = 0;
+	int ac = 0;
+	const char *line = "================================================================================";
 
+
+
+	stream->write_function(stream, "%25s\t%s\t  %32s\n", "Name", "   Type", "Data");
+	stream->write_function(stream, "%s\n", line);
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	for (hi = switch_hash_first(switch_hash_pool_get(mod_sofia_globals.profile_hash), mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
+		switch_hash_this(hi, &vvar, NULL, &val);
 		profile = (sofia_profile_t *) val;
 		if (sofia_test_pflag(profile, PFLAG_RUNNING)) {
-			stream->write_function(stream, "Profile %s\n", profile->name);
-			c++;
+			
+			if (strcmp(vvar, profile->name)) {
+				ac++;
+				stream->write_function(stream, "%25s\t%s\t  %32s\n", vvar, "  alias", profile->name);
+			} else {
+				stream->write_function(stream, "%25s\t%s\t  %32s\n", profile->name, "profile", profile->url);
+				c++;
+			}
+
+			
 		}
 	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
-	stream->write_function(stream, "%d profiles\n", c);
+	stream->write_function(stream, "%s\n", line);
+	stream->write_function(stream, "%d profiles %d aliases\n", c, ac);
 	return SWITCH_STATUS_SUCCESS;
 
 }

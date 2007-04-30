@@ -437,14 +437,14 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 					 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 
 sofia_profile_t *sofia_glue_find_profile(char *key);
-void sofia_glue_add_profile(char *key, sofia_profile_t *profile);
+switch_status_t sofia_glue_add_profile(char *key, sofia_profile_t *profile);
 void sofia_glue_execute_sql(sofia_profile_t *profile, switch_bool_t master, char *sql, switch_mutex_t *mutex);
 void sofia_reg_check_expire(sofia_profile_t *profile, time_t now);
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now);
 void sofia_reg_unregister(sofia_profile_t *profile);
 switch_status_t sofia_glue_ext_address_lookup(char **ip, switch_port_t *port, char *sourceip, switch_memory_pool_t *pool);
 sofia_gateway_t *sofia_reg_find_gateway(char *key);
-void sofia_reg_add_gateway(char *key, sofia_gateway_t *gateway);
+switch_status_t sofia_reg_add_gateway(char *key, sofia_gateway_t *gateway);
 void sofia_glue_pass_sdp(private_object_t *tech_pvt, char *sdp);
 int sofia_glue_get_user_host(char *in, char **user, char **host);
 switch_call_cause_t sofia_glue_sip_cause_to_freeswitch(int status);
@@ -467,3 +467,4 @@ switch_bool_t sofia_glue_execute_sql_callback(sofia_profile_t *profile,
 char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex, char *sql, char *resbuf, size_t len);
 void sofia_glue_check_video_codecs(private_object_t *tech_pvt);
 void sofia_reg_release_gateway(sofia_gateway_t *gateway);
+void sofia_glue_del_profile(sofia_profile_t *profile);

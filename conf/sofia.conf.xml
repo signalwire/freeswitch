@@ -1,6 +1,10 @@
 <configuration name="sofia.conf" description="sofia Endpoint">
   <profiles>
     <profile name="$${sip_profile}">
+      <!--aliases are other names that will work as a valid profile name for this profile-->
+      <aliases>
+	<alias name="default"/>
+      </aliases>
       <!-- Outbound Registrations -->
       <gateways>
 	<!--<gateway name="asterlink.com">-->
@@ -22,6 +26,12 @@
 	  <!--<param name="register" value="false"/>-->
 	<!--</gateway>-->
       </gateways>
+
+      <domains>
+	<!-- indicator to parse the directory for domains with parse="true" to get gateways-->
+	<!--<domain name="$${domain}" parse="true"/>-->
+      </domains>
+
       <settings>
 	<param name="debug" value="1"/>
 	<param name="rfc2833-pt" value="101"/>
