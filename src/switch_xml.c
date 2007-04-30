@@ -1175,8 +1175,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(char *domain_name, char *params, switch_xml_t *root, switch_xml_t *domain)
 {
-	*domain = NULL;
 	char my_params[512];
+	*domain = NULL;
 
 	if (!params) {
 		snprintf(my_params, sizeof(my_params), "domain=%s", domain_name);
