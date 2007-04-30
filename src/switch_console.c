@@ -175,9 +175,84 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const 
 	fflush(handle);
 }
 
+static char hostname[256] = "";
+
+#ifdef SWITCH_HAVE_LIBEDIT
+#include <histedit.h>
+static char prompt_str[512] = "";
+
+char * prompt(EditLine *e) {
+	if (switch_strlen_zero(prompt_str)) {
+		gethostname(hostname, sizeof(hostname));
+		snprintf(prompt_str, sizeof(prompt_str), "\nfreeswitch@%s> ", hostname);
+	}	
+
+	return prompt_str;
+	
+}
+
 SWITCH_DECLARE(void) switch_console_loop(void)
 {
-	char hostname[256];
+	EditLine *el;
+	History *myhistory;
+	int count;
+	const char *line;
+	HistEvent ev;
+	int32_t running = 1;
+	char *hfile;
+
+	el = el_init(__FILE__, switch_core_get_console(), switch_core_get_console(), switch_core_get_console());
+	el_set(el, EL_PROMPT, &prompt);
+	el_set(el, EL_EDITOR, "emacs");
+
+	myhistory = history_init();
+	if (myhistory == 0) {
+		fprintf(stderr, "history could not be initialized\n");
+		return;
+	}
+
+	hfile = switch_mprintf("%s%sfreeswitch.history", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
+	assert(hfile != NULL);
+
+	
+	history(myhistory, &ev, H_SETSIZE, 800);
+	el_set(el, EL_HIST, history, myhistory);
+	history(myhistory, &ev, H_LOAD, hfile);
+
+	while (running) {
+		line = el_gets(el, &count);
+		if (count > 1) {
+			if (!switch_strlen_zero(line)) {
+				char *cmd = strdup(line);
+				char *p;
+
+				if ((p = strrchr(cmd, '\r')) || (p = strrchr(cmd, '\n'))) {
+					*p = '\0';
+				}
+				assert(cmd != NULL);
+				history(myhistory, &ev, H_ENTER, line);
+				running = switch_console_process(cmd);
+				free(cmd);
+			}
+		}
+	}
+	
+
+	history(myhistory, &ev, H_SAVE, hfile);
+
+	free(hfile);
+	
+	/* Clean up our memory */
+	history_end(myhistory);
+	el_end(el);
+  	
+}
+
+#else
+
+SWITCH_DECLARE(void) switch_console_loop(void)
+{
+
 	char cmd[2048];
 	int32_t activity = 1, running = 1;
 	switch_size_t x = 0;
@@ -246,6 +321,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 
 
 }
+#endif
 
 /* For Emacs:
  * Local Variables:

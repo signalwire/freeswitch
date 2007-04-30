@@ -1,0 +1,62 @@
+
+Files in this directory are used to update the source in this distribution with
+updates from the FreeBSD CVS source.
+
+
+1) cvs_export.sh - get the source from cvs (to ./export)
+
+2) patches_apply.sh - try to patch ./export with current pathes.
+
+3) patches_check.sh - check updated ./export against dist
+
+4) update_dist.sh - update dist and version
+      
+      If by hand:
+
+      *) copy ./export/* files to dist   '""cp -rf export/* ..'
+
+      *) 'rm -rf export; cp -rf export.unpatched export' - get clean ./export hierarchy
+
+      *) patches_make.sh - make new patches to be distributed
+
+      *) update 'vi ../Makefile.am with' list ':r !./extra_dist_list.sh' (vim cmd)
+
+      *) update LT_VERSION in configure.ac according to the below Note
+
+5) update ChangeLog
+
+6) autoreconf && make distcheck!!!
+
+
+
+http://developer.gnome.org/doc/books/WGA/dealing-with-libraries.html#AEN555 A
+Note about Version Numbers 
+
+ The three numbers stand for CURRENT:REVISION:AGE, or C:R:A for short. The
+ libtool script typically tacks these three numbers onto the end of the name of
+ the .so file it creates. The formula for calculating the file numbers on Linux
+ and Solaris is (C - A).(A).(R), so the example given here would create the
+ file libgrump.so.3.2.1. Other operating systems might use a different library
+ file name convention; libtool takes care of the details.
+
+ As you release new versions of your library, you will update the library's
+ C:R:A. Although the rules for changing these version numbers can quickly
+ become confusing, a few simple tips should help keep you on track. The libtool
+ documentation goes into greater depth.
+
+ In essence, every time you make a change to the library and release it, the
+ C:R:A should change. A new library should start with 0:0:0. Each time you
+ change the public interface (i.e., your installed header files), you should
+ increment the CURRENT number. This is called your interface number. The main
+ use of this interface number is to tag successive revisions of your API.
+
+ The AGE number is how many consecutive versions of the API the current
+ implementation supports. Thus if the CURRENT library API is the sixth
+ published version of the interface and it is also binary compatible with the
+ fourth and fifth versions (i.e., the last two), the C:R:A might be 6:0:2. When
+ you break binary compatibility, you need to set AGE to 0 and of course
+ increment CURRENT.
+
+ The REVISION marks a change in the source code of the library that doesn't
+ affect the interface-for example, a minor bug fix. Anytime you increment
+ CURRENT, you should set REVISION back to 0. 
