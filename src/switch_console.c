@@ -184,7 +184,7 @@ static char prompt_str[512] = "";
 char * prompt(EditLine *e) {
 	if (switch_strlen_zero(prompt_str)) {
 		gethostname(hostname, sizeof(hostname));
-		snprintf(prompt_str, sizeof(prompt_str), "\nfreeswitch@%s> ", hostname);
+		snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", hostname);
 	}	
 
 	return prompt_str;
@@ -220,7 +220,15 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 	history(myhistory, &ev, H_LOAD, hfile);
 
 	while (running) {
+		uint32_t arg;
+
+		switch_core_session_ctl(SCSC_CHECK_RUNNING, &arg);
+		if (!arg) {
+			break;
+		}
+
 		line = el_gets(el, &count);
+
 		if (count > 1) {
 			if (!switch_strlen_zero(line)) {
 				char *cmd = strdup(line);

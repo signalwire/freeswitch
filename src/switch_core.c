@@ -613,7 +613,6 @@ SWITCH_DECLARE(switch_time_t) switch_core_uptime(void)
 
 SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, uint32_t * val)
 {
-
 	if (runtime.shutting_down) {
 		return -1;
 	}
