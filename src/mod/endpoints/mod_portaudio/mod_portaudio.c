@@ -1851,7 +1851,13 @@ static switch_status_t pa_cmd(char *cmd, switch_core_session_t *isession, switch
 	}
 
 	if (func) {
+		if (stream->event) {
+			stream->write_function(stream, "<pre>");
+		}
 		status = func(&argv[lead], argc - lead, stream);
+		if (stream->event) {
+			stream->write_function(stream, "\n\n</pre>");
+		}
 	} else {
 		if (devname) {
 			if (devval > 0) {

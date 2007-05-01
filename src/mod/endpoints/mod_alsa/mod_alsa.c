@@ -1520,7 +1520,7 @@ static switch_status_t pa_cmd(char *cmd, switch_core_session_t *isession, switch
 {
 	char *argv[1024] = { 0 };
 	int argc = 0;
-	char *mycmd = NULL, *devname = NULL;
+	char *mycmd = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	pa_command_t func = NULL;
 	int lead = 1, devval = 0;
@@ -1616,17 +1616,15 @@ static switch_status_t pa_cmd(char *cmd, switch_core_session_t *isession, switch
 	}
 
 	if (func) {
-		status = func(&argv[lead], argc - lead, stream);
-	} else {
-		if (devname) {
-			if (devval > 0) {
-				stream->write_function(stream, "%s set to %d\n", devname, devval);
-			} else {
-				stream->write_function(stream, "%s not set (invalid value)\n", devname);
-			}
-		} else {
-			stream->write_function(stream, "Unknown Command [%s]\n", argv[0]);
+		if (stream->event) {
+			stream->write_function(stream, "<pre>");
 		}
+		status = func(&argv[lead], argc - lead, stream);
+		if (stream->event) {
+			stream->write_function(stream, "\n\n</pre>");
+		}
+	} else {
+		stream->write_function(stream, "Unknown Command [%s]\n", argv[0]);
 	}
 
  done:

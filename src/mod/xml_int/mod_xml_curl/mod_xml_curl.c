@@ -119,7 +119,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		curl_easy_cleanup(curl_handle);
 		close(config_data.fd);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening temp file!\n");
 	}
 
 	switch_safe_free(data);
