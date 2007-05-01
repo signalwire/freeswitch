@@ -28,6 +28,7 @@
        containing the "subscriptions" table.
        used by: dingaling.conf.xml enum.conf.xml 
   --> 
+  <!--#set "global_codec_prefs=PCMU@20i"-->
   <!--#set "xmpp_client_profile=xmppc"-->
   <!--#set "xmpp_server_profile=xmpps"-->
   <!-- bind_server_ip
