@@ -49,6 +49,10 @@
 # endif
 #endif
 
+#ifdef _MSC_VER
+#define inline __inline
+#endif
+
 #include <string.h>
 
 #include "sha1.h"
@@ -95,7 +99,7 @@ static const char rcsid[] =
 
 static inline uint64_t _byteswap64(uint64_t x)
 {
-  uint32_t a = x >> 32;
+  uint32_t a = (uint32_t)(x >> 32);
   uint32_t b = (uint32_t) x;
   return ((uint64_t) BYTESWAP(b) << 32) | (uint64_t) BYTESWAP(a);
 }
