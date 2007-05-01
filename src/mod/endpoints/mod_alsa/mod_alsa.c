@@ -1645,19 +1645,23 @@ static switch_status_t pa_cmd(char *cmd, switch_core_session_t *isession, switch
 							   "<table border=1>\n"
 							   "<tr><td><input name=action type=submit value=\"1\"></td>"
 							   "<td><input name=action type=submit value=\"2\"></td>"
-							   "<td><input name=action type=submit value=\"3\"></td></tr>\n"
+							   "<td><input name=action type=submit value=\"3\"></td>\n"
+							   "<td><input name=action type=submit value=\"A\"></td></tr>\n"
 
 							   "<tr><td><input name=action type=submit value=\"4\"></td>"
 							   "<td><input name=action type=submit value=\"5\"></td>"
-							   "<td><input name=action type=submit value=\"6\"></td></tr>\n"
+							   "<td><input name=action type=submit value=\"6\"></td>\n"
+							   "<td><input name=action type=submit value=\"B\"></td></tr>\n"
 
 							   "<tr><td><input name=action type=submit value=\"7\"></td>"
 							   "<td><input name=action type=submit value=\"8\"></td>"
-							   "<td><input name=action type=submit value=\"9\"></td></tr>\n"
-							   
+							   "<td><input name=action type=submit value=\"9\"></td>\n"
+							   "<td><input name=action type=submit value=\"C\"></td></tr>\n"
+
 							   "<tr><td><input name=action type=submit value=\"*\"></td>"
 							   "<td><input name=action type=submit value=\"0\"></td>"
-							   "<td><input name=action type=submit value=\"#\"></td></tr>\n"
+							   "<td><input name=action type=submit value=\"#\"></td>\n"
+							   "<td><input name=action type=submit value=\"D\"></td></tr>\n"
 							   "</table>"
 							   
 							   "</form><br></center></td></tr></table>\n"
