@@ -1526,6 +1526,12 @@ static switch_status_t pa_cmd(char *cmd, switch_core_session_t *isession, switch
 	int lead = 1, devval = 0;
 	char *wcmd = NULL, *action = NULL;
 	char cmd_buf[1024] = "";
+	char *http = NULL;
+
+	if (stream->event) {
+		http = switch_event_get_header(stream->event, "http-host");
+	}
+
 	
 	const char *usage_string = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
@@ -1540,7 +1546,7 @@ static switch_status_t pa_cmd(char *cmd, switch_core_session_t *isession, switch
 		"alsa flags [on|off] [ear] [mouth]\n"
 		"--------------------------------------------------------------------------------\n";
 
-	if (stream->event) {
+	if (http) {
 #if 0
 		switch_event_header_t *hp;
 		stream->write_function(stream, "<pre>");
@@ -1629,7 +1635,7 @@ static switch_status_t pa_cmd(char *cmd, switch_core_session_t *isession, switch
 
  done:
 
-	if (stream->event) {
+	if (http) {
 
 		stream->write_function(stream,
 							   "<br><br><table align=center><tr><td><center><form method=post>\n"
