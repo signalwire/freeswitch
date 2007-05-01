@@ -267,6 +267,12 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 							  profile,	/* Additional data to pass to callback */
 							  NUTAG_URL(profile->bindurl), NTATAG_UDP_MTU(65536), TAG_END());	/* Last tag should always finish the sequence */
 
+	if (!profile->nua) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s\n", profile->name);
+		goto end;
+	}
+
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created agent for %s\n", profile->name);
 
 	nua_set_params(profile->nua,
