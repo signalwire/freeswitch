@@ -1720,6 +1720,9 @@ static switch_status_t pa_cmd(char *cmd, switch_core_session_t *isession, switch
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	pa_command_t func = NULL;
 	int lead = 1, devval = 0;
+	char *wcmd = NULL, *action = NULL;
+	char cmd_buf[1024] = "";
+
 	const char *usage_string = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
 		"pa help\n"
@@ -1736,9 +1739,51 @@ static switch_status_t pa_cmd(char *cmd, switch_core_session_t *isession, switch
 		"pa outdev [#<num>|<partial name>\n"
 		"pa ringdev [#<num>|<partial name>\n" "--------------------------------------------------------------------------------\n";
 
-	if (switch_strlen_zero(cmd)) {
-		stream->write_function(stream, "%s", usage_string);
-		goto done;
+
+	if (stream->event) {
+#if 0
+		switch_event_header_t *hp;
+		stream->write_function(stream, "<pre>");
+		for (hp = stream->event->headers; hp; hp = hp->next) {
+			stream->write_function(stream, "[%s]=[%s]\n", hp->name, hp->value);
+		}
+		stream->write_function(stream, "</pre>");
+#endif
+
+		wcmd = switch_str_nil(switch_event_get_header(stream->event, "wcmd"));
+		action = switch_event_get_header(stream->event, "action");
+
+		if (action) {
+			if (strlen(action) == 1) {
+				snprintf(cmd_buf, sizeof(cmd_buf), "dtmf %s", action);
+				cmd = cmd_buf;
+			} else if (!strcmp(action, "mute")) {
+				snprintf(cmd_buf, sizeof(cmd_buf), "flags off mouth");
+				cmd = cmd_buf;
+			} else if (!strcmp(action, "unmute")) {
+				snprintf(cmd_buf, sizeof(cmd_buf), "flags on mouth");
+				cmd = cmd_buf;
+			} else if (!strcmp(action, "switch")) {
+				snprintf(cmd_buf, sizeof(cmd_buf), "switch %s", wcmd);
+				cmd = cmd_buf;
+			} else if (!strcmp(action, "call")) {
+				snprintf(cmd_buf, sizeof(cmd_buf), "call %s", wcmd);
+				cmd = cmd_buf;
+			} else if (!strcmp(action, "hangup") || !strcmp(action, "list") || !strcmp(action, "answer")) {
+				cmd = action;
+			}
+		}
+
+		if (switch_strlen_zero(cmd)) {
+			goto done;
+		}
+
+	} else {
+
+		if (switch_strlen_zero(cmd)) {
+			stream->write_function(stream, "%s", usage_string);
+			goto done;
+		}
 	}
 
 	if (!(mycmd = strdup(cmd))) {
@@ -1820,6 +1865,41 @@ static switch_status_t pa_cmd(char *cmd, switch_core_session_t *isession, switch
 	}
 
   done:
+
+	if (stream->event) {
+
+		stream->write_function(stream,
+							   "<br><br><table align=center><tr><td><center><form method=post>\n"
+							   "<input type=text name=wcmd size=40><br><br>\n"
+
+							   "<input name=action type=submit value=\"call\"> "
+							   "<input name=action type=submit value=\"hangup\"> "
+							   "<input name=action type=submit value=\"list\"> "
+							   "<input name=action type=submit value=\"switch\"> "
+							   "<input name=action type=submit value=\"mute\"> "
+							   "<input name=action type=submit value=\"unmute\"> "
+							   "<input name=action type=submit value=\"answer\"> <br><br>"
+							   "<table border=1>\n"
+							   "<tr><td><input name=action type=submit value=\"1\"></td>"
+							   "<td><input name=action type=submit value=\"2\"></td>"
+							   "<td><input name=action type=submit value=\"3\"></td></tr>\n"
+
+							   "<tr><td><input name=action type=submit value=\"4\"></td>"
+							   "<td><input name=action type=submit value=\"5\"></td>"
+							   "<td><input name=action type=submit value=\"6\"></td></tr>\n"
+
+							   "<tr><td><input name=action type=submit value=\"7\"></td>"
+							   "<td><input name=action type=submit value=\"8\"></td>"
+							   "<td><input name=action type=submit value=\"9\"></td></tr>\n"
+							   
+							   "<tr><td><input name=action type=submit value=\"*\"></td>"
+							   "<td><input name=action type=submit value=\"0\"></td>"
+							   "<td><input name=action type=submit value=\"#\"></td></tr>\n"
+							   "</table>"
+							   
+							   "</form><br></center></td></tr></table>\n"
+							   );
+	}
 
 	switch_safe_free(mycmd);
 
