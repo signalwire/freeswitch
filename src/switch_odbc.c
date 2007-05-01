@@ -176,6 +176,11 @@ static int db_is_up(switch_odbc_handle_t *handle)
 	char *err_str = NULL;
 	SQLCHAR sql[] = "select 1";
 
+	if (!handle) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No DB Handle\n");
+		goto done;
+	}
+
     if (SQLAllocHandle(SQL_HANDLE_STMT, handle->con, &stmt) != SQL_SUCCESS) {
         goto error;
     }

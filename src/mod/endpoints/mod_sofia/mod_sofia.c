@@ -1420,15 +1420,11 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 	switch_find_local_ip(mod_sofia_globals.guess_ip, sizeof(mod_sofia_globals.guess_ip), AF_INET);
 
-	if (switch_event_bind((char *) modname, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
-		return SWITCH_STATUS_TERM;
-	}
 
 	switch_core_hash_init(&mod_sofia_globals.profile_hash, module_pool);
 	switch_core_hash_init(&mod_sofia_globals.gateway_hash, module_pool);
 	switch_mutex_init(&mod_sofia_globals.hash_mutex, SWITCH_MUTEX_NESTED, module_pool);
-
+	
 	if (config_sofia(0, NULL) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
 	}
@@ -1436,6 +1432,14 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	mod_sofia_globals.running = 1;
 	switch_mutex_unlock(mod_sofia_globals.mutex);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for profiles to start\n");
+	switch_yield(1500000);
+
+	if (switch_event_bind((char *) modname, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_TERM;
+	}
 
 	if (switch_event_bind((char *) modname, SWITCH_EVENT_PRESENCE_IN, SWITCH_EVENT_SUBCLASS_ANY, sofia_presence_event_handler, NULL)
 		!= SWITCH_STATUS_SUCCESS) {

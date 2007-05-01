@@ -35,7 +35,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-
+#include <time.h>
 #endif
 
 #include <string.h>
@@ -82,7 +82,7 @@
 
 static int opt_timeout = 30;
 
-static void sha1_hash(char *out, char *in, unsigned int len);
+static void sha1_hash(char *out, unsigned char *in, unsigned int len);
 static int b64encode(unsigned char *in, size_t ilen, unsigned char *out, size_t olen);
 static void ldl_random_string(char *buf, uint16_t len, char *set);
 
@@ -725,7 +725,7 @@ static ldl_avatar_t *ldl_get_avatar(ldl_handle_t *handle, char *path, char *from
 	int fd = -1;
 	size_t bytes;
 	char *key;
-	char hash[128] = "";
+	//char hash[128] = "";
 
 	if (from && (ap = (ldl_avatar_t *) apr_hash_get(globals.avatar_hash, from, APR_HASH_KEY_STRING))) {
 		return ap;
@@ -756,8 +756,7 @@ static ldl_avatar_t *ldl_get_avatar(ldl_handle_t *handle, char *path, char *from
 	ap = malloc(sizeof(*ap));
 	assert(ap != NULL);
 	memset(ap, 0, sizeof(*ap));
-	ldl_random_string(hash, sizeof(hash) -1, NULL);
-	sha1_hash(ap->hash, hash, (unsigned)strlen(hash));
+	sha1_hash(ap->hash, (unsigned char *) image, (unsigned int)bytes);
 	ap->path = strdup(path);
 
 	key = ldl_handle_strdup(handle, from);
@@ -1048,21 +1047,21 @@ static int b64encode(unsigned char *in, size_t ilen, unsigned char *out, size_t 
 	return 0;
 }
 
-static void sha1_hash(char *out, char *in, unsigned int len)
+static void sha1_hash(char *out, unsigned char *in, unsigned int len)
 {
-	sha_context_t sha;
+	SHA1Context sha;
 	char *p;
 	int x;
-	unsigned char digest[20] = "";
+	unsigned char digest[SHA1_HASH_SIZE] = "";
 
 	SHA1Init(&sha);
 	
-	SHA1Update(&sha, (unsigned char *) in, len);
+	SHA1Update(&sha, in, len);
 
-	SHA1Final(digest, &sha);
+	SHA1Final(&sha, digest);
 
 	p = out;
-	for (x = 0; x < 20; x++) {
+	for (x = 0; x < SHA1_HASH_SIZE; x++) {
 		p += sprintf(p, "%2.2x", digest[x]);
 	}
 }
@@ -1084,7 +1083,7 @@ static int on_stream_component(ldl_handle_t *handle, int type, iks *node)
 			char handshake[512] = "";
 
 			snprintf(secret, sizeof(secret), "%s%s", pak->id, handle->password);
-			sha1_hash(hash, secret, (unsigned)strlen(secret));
+			sha1_hash(hash, (unsigned char *) secret, (unsigned int)strlen(secret));
 			snprintf(handshake, sizeof(handshake), "<handshake>%s</handshake>", hash);
 			iks_send_raw(handle->parser, handshake);
 			handle->state = CS_START;

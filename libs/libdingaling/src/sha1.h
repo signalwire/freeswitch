@@ -1,83 +1,72 @@
-/* 
- * libDingaLing XMPP Jingle Library
- * Copyright (C) 2005/2006, Anthony Minessale II <anthmct@yahoo.com>
+/*-
+ * Copyright (c) 2001-2003 Allan Saddi <allan@saddi.com>
+ * All rights reserved.
  *
- * Version: MPL 1.1
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
  *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
+ * THIS SOFTWARE IS PROVIDED BY ALLAN SADDI AND HIS CONTRIBUTORS ``AS IS''
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL ALLAN SADDI OR HIS CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is libDingaLing XMPP Jingle Library
- *
- * The Initial Developer of the Original Code is
- * Steve Reid <steve@edmweb.com>
- * Portions created by the Initial Developer are Copyright (C)
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- * 
- * Steve Reid <steve@edmweb.com>
- *
- * sha1.h
- *
+ * $Id: sha1.h 347 2003-02-23 22:11:49Z asaddi $
  */
-/*! \file sha1.h
-    \brief SHA1
-*/
 
-#ifndef __SHA1_H
-#define __SHA1_H
+#ifndef _SHA1_H
+#define _SHA1_H
+
+#if HAVE_INTTYPES_H
+# include <inttypes.h>
+#else
+# if HAVE_STDINT_H
+#  include <stdint.h>
+# endif
+#endif
+
+#define SHA1_HASH_SIZE 20
+
+/* Hash size in 32-bit words */
+#define SHA1_HASH_WORDS 5
+
+struct _SHA1Context {
+  uint64_t totalLength;
+  uint32_t hash[SHA1_HASH_WORDS];
+  uint32_t bufferLength;
+  union {
+    uint32_t words[16];
+    uint8_t bytes[64];
+  } buffer;
+#ifdef RUNTIME_ENDIAN
+  int littleEndian;
+#endif /* RUNTIME_ENDIAN */
+};
+
+typedef struct _SHA1Context SHA1Context;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-#ifdef __STUPIDFORMATBUG__
-}
-#endif
 
-#undef inline
-#define inline __inline
-
-#ifndef uint32_t
-#ifdef WIN32
-typedef unsigned __int8		uint8_t;
-typedef unsigned __int16	uint16_t;
-typedef unsigned __int32	uint32_t;
-typedef unsigned __int64    uint64_t;
-typedef __int8		int8_t;
-typedef __int16		int16_t;
-typedef __int32		int32_t;
-typedef __int64		int64_t;
-typedef unsigned long	in_addr_t;
-#else
-#include <limits.h>
-#include <inttypes.h>
-#include <sys/types.h>
-#include <inttypes.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <time.h>
-#endif
-#endif
-
-typedef struct {
-    uint32_t state[5];
-    uint32_t count[2];
-    unsigned char buffer[64];
-} sha_context_t;
-
-void SHA1Transform(uint32_t state[5], unsigned char buffer[64]);
-void SHA1Init(sha_context_t* context);
-void SHA1Update(sha_context_t* context, unsigned char* data, uint32_t len);
-void SHA1Final(unsigned char digest[20], sha_context_t* context);
+void SHA1Init (SHA1Context *sc);
+void SHA1Update (SHA1Context *sc, const void *data, uint32_t len);
+void SHA1Final (SHA1Context *sc, uint8_t hash[SHA1_HASH_SIZE]);
 
 #ifdef __cplusplus
 }
 #endif
-#endif
+
+#endif /* _SHA1_H */
