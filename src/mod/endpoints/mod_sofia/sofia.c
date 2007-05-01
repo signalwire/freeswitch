@@ -252,7 +252,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	uint32_t ireg_loops = 0;
 	uint32_t gateway_loops = 0;
 	switch_event_t *s_event;
-
+	
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	mod_sofia_globals.threads++;
 	switch_mutex_unlock(mod_sofia_globals.mutex);
@@ -384,6 +384,10 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	sofia_glue_del_profile(profile);
 
 	switch_thread_rwlock_unlock(profile->rwlock);
+
+	if (sofia_test_pflag(profile, PFLAG_RESPAWN)) {
+		config_sofia(1, profile->name);
+	}
 	
 	switch_core_destroy_memory_pool(&pool);
 
@@ -869,6 +873,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 											parse_gateways(profile, gateways_tag);
 										}
 									}
+									switch_xml_free(droot);
 								}
 							}
 							sofia_glue_add_profile(switch_core_strdup(profile->pool, dname), profile);

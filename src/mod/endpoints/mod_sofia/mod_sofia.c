@@ -953,7 +953,11 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 	if (!strcasecmp(argv[1], "stop")) {
 		sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
 		stream->write_function(stream, "stopping: %s", profile->name);
-	} 
+	} else if (!strcasecmp(argv[1], "restart")) {
+		sofia_set_pflag_locked(profile, PFLAG_RESPAWN);
+		sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
+		stream->write_function(stream, "restarting: %s", profile->name);
+	}
 
 	if (profile) {
 		switch_thread_rwlock_unlock(profile->rwlock);

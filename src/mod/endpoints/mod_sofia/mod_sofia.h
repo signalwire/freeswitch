@@ -110,7 +110,8 @@ typedef enum {
 	PFLAG_PASS_RFC2833 = (1 << 5),
 	PFLAG_DISABLE_TRANSCODING = (1 << 6),
 	PFLAG_REWRITE_TIMESTAMPS = (1 << 7),
-	PFLAG_RUNNING = (1 << 8)
+	PFLAG_RUNNING = (1 << 8),
+	PFLAG_RESPAWN = (1 << 9)
 } PFLAGS;
 
 typedef enum {
