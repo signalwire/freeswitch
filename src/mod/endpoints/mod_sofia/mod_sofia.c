@@ -674,7 +674,20 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 
 	switch (msg->message_id) {
-	case SWITCH_MESSAGE_INDICATE_NOMEDIA:{
+	case SWITCH_MESSAGE_INDICATE_BROADCAST: {
+		char *ip = NULL, *port = NULL;
+		ip = switch_channel_get_variable(channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE);
+		port = switch_channel_get_variable(channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE);
+		if (ip && port) {
+			sofia_glue_set_local_sdp(tech_pvt, ip, atoi(port), NULL, 1);
+		}
+		nua_respond(tech_pvt->nh, SIP_200_OK,
+					SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+					SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
+		switch_channel_mark_answered(channel);
+	}
+		break;
+	case SWITCH_MESSAGE_INDICATE_NOMEDIA: {
 			char *uuid;
 			switch_core_session_t *other_session;
 			switch_channel_t *other_channel;
@@ -696,7 +709,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				sofia_glue_tech_absorb_sdp(tech_pvt);
 			}
 			sofia_glue_do_invite(session);
-		}
+	}
 		break;
 	case SWITCH_MESSAGE_INDICATE_MEDIA:{
 			switch_clear_flag_locked(tech_pvt, TFLAG_NOMEDIA);
