@@ -1272,10 +1272,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 			tech_pvt->nh = NULL;
 			
-			switch_mutex_lock(profile->flag_mutex);
-			profile->inuse--;
-			switch_mutex_unlock(profile->flag_mutex);
-			
 		} else if (sofia_private) {
 			if (sofia_private->home) {
 				su_home_unref(sofia_private->home);
