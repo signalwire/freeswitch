@@ -168,7 +168,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 static int db_is_up(switch_odbc_handle_t *handle)
 {
 	int ret = 0;
-	SQLHSTMT stmt;
+	SQLHSTMT stmt = NULL;
 	SQLINTEGER m = 0;
 	int result;
 	switch_event_t *event;
