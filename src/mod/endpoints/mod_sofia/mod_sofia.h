@@ -169,7 +169,8 @@ typedef enum {
 	REG_STATE_REGED,
 	REG_STATE_FAILED,
 	REG_STATE_EXPIRED,
-	REG_STATE_NOREG
+	REG_STATE_NOREG,
+	REG_STATE_LAST
 } reg_state_t;
 
 struct sofia_gateway {

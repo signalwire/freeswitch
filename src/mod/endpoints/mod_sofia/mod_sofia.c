@@ -888,19 +888,141 @@ static switch_status_t sofia_receive_event(switch_core_session_t *session, switc
 typedef switch_status_t (*sofia_command_t) (char **argv, int argc, switch_stream_handle_t *stream);
 
 
+static const char *sofia_state_names[] = { "UNREGED",
+										   "TRYING",
+										   "REGISTER",
+										   "REGED",
+										   "FAILED",
+										   "EXPIRED",
+										   "NOREG" };
+
+struct cb_helper {
+	sofia_profile_t *profile;
+	switch_stream_handle_t *stream;
+};
+
+#define switch_time_from_sec(sec)   ((switch_time_t)(sec) * 1000000)
+
+static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct cb_helper *cb = (struct cb_helper *) pArg;
+	char exp_buf[128] = "";
+	switch_time_exp_t tm;
+
+
+	if (argv[5]) {
+		switch_time_t etime = atoi(argv[5]);
+		switch_size_t retsize;
+
+		switch_time_exp_lt(&tm, switch_time_from_sec(etime));
+		switch_strftime(exp_buf, &retsize, sizeof(exp_buf), "%Y-%m-%d %T", &tm);
+	}
+	
+	
+	cb->stream->write_function(cb->stream, 
+							   "User    \t%s@%s\n"
+							   "Contact \t%s\n"
+							   "Status  \t%s(%s) EXP(%s)\n\n", 
+							   switch_str_nil(argv[0]), switch_str_nil(argv[1]), switch_str_nil(argv[2]), 
+							   switch_str_nil(argv[3]), switch_str_nil(argv[4]), exp_buf);
+	return 0;
+}
+
 static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t *stream)
 {
 	sofia_profile_t *profile = NULL;
+	sofia_gateway_t *gp;
 	switch_hash_index_t *hi;
 	void *val;
 	const void *vvar;
 	int c = 0;
 	int ac = 0;
-	const char *line = "================================================================================";
+	const char *line = "=======================================================================================";
 
 
+	if (argc > 0) {
+		if (argc == 1) {
+			stream->write_function(stream, "Invalid Syntax!\n");
+			return SWITCH_STATUS_SUCCESS;
+		}
+		if (!strcasecmp(argv[0], "gateway")) {
+			if ((gp = sofia_reg_find_gateway(argv[1]))) {
+				assert(gp->state < REG_STATE_LAST);
+				
+				stream->write_function(stream, "%s\n", line);
+				stream->write_function(stream, "Name    \t%s\n", switch_str_nil(gp->name));
+				stream->write_function(stream, "Scheme  \t%s\n", switch_str_nil(gp->register_scheme));
+				stream->write_function(stream, "Realm   \t%s\n", switch_str_nil(gp->register_realm));
+				stream->write_function(stream, "Username\t%s\n", switch_str_nil(gp->register_username));
+				stream->write_function(stream, "Password\t%s\n", switch_strlen_zero(gp->register_password) ? "no" : "yes");
+				stream->write_function(stream, "From    \t%s\n", switch_str_nil(gp->register_from));
+				stream->write_function(stream, "Contact \t%s\n", switch_str_nil(gp->register_contact));
+				stream->write_function(stream, "To      \t%s\n", switch_str_nil(gp->register_to));
+				stream->write_function(stream, "Proxy   \t%s\n", switch_str_nil(gp->register_proxy));
+				stream->write_function(stream, "Context \t%s\n", switch_str_nil(gp->register_context));
+				stream->write_function(stream, "Expires \t%s\n", switch_str_nil(gp->expires_str));
+				stream->write_function(stream, "Freq    \t%d\n", gp->freq);
+				stream->write_function(stream, "State   \t%s\n", sofia_state_names[gp->state]);
+				stream->write_function(stream, "%s\n", line);
+				sofia_reg_release_gateway(gp);
+			} else {
+				stream->write_function(stream, "Invalid Gateway!\n");
+			}
+		} else if (!strcasecmp(argv[0], "profile")) {
+			struct cb_helper cb;
 
-	stream->write_function(stream, "%25s\t%s\t  %32s\n", "Name", "   Type", "Data");
+			if ((profile = sofia_glue_find_profile(argv[1]))) {
+				stream->write_function(stream, "%s\n", line);
+				stream->write_function(stream, "Name       \t%s\n", switch_str_nil(argv[1]));
+				if (strcasecmp(argv[1], profile->name)) {
+				stream->write_function(stream, "Alias Of   \t%s\n", switch_str_nil(profile->name));
+				}
+				stream->write_function(stream, "DBName     \t%s\n", switch_str_nil(profile->dbname));
+				stream->write_function(stream, "Dialplan   \t%s\n", switch_str_nil(profile->dialplan));
+				stream->write_function(stream, "RTP-IP     \t%s\n", switch_str_nil(profile->rtpip));
+				if (profile->extrtpip) {
+				stream->write_function(stream, "Ext-RTP-IP \t%s\n", profile->extrtpip);
+				}
+				
+				stream->write_function(stream, "SIP-IP     \t%s\n", switch_str_nil(profile->sipip));
+				if (profile->extsipip) {
+				stream->write_function(stream, "Ext-SIP-IP \t%s\n", profile->extsipip);
+				}
+				stream->write_function(stream, "URL        \t%s\n", switch_str_nil(profile->url));
+				stream->write_function(stream, "BIND-URL   \t%s\n", switch_str_nil(profile->bindurl));
+				stream->write_function(stream, "HOLD-MUSIC \t%s\n", switch_str_nil(profile->hold_music));
+				stream->write_function(stream, "CODECS     \t%s\n", switch_str_nil(profile->codec_string));
+				stream->write_function(stream, "TEL-EVENT  \t%d\n", profile->te);
+				stream->write_function(stream, "CNG        \t%d\n", profile->cng_pt);
+				
+
+				stream->write_function(stream, "\nRegistrations:\n%s\n", line);
+				
+
+				cb.profile = profile;
+				cb.stream = stream;
+				
+				sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex,
+												"select * from sip_registrations",
+												show_reg_callback, &cb);
+
+
+				stream->write_function(stream, "%s\n", line);
+
+				switch_thread_rwlock_unlock(profile->rwlock);
+			} else {
+				stream->write_function(stream, "Invalid Profile!\n");
+			}
+		} else {
+			stream->write_function(stream, "Invalid Syntax!\n");
+		}
+		
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+
+	stream->write_function(stream, "%25s\t%s\t  %32s\t%s\n", "Name", "   Type", "Data", "State");
 	stream->write_function(stream, "%s\n", line);
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	for (hi = switch_hash_first(switch_hash_pool_get(mod_sofia_globals.profile_hash), mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
@@ -910,10 +1032,15 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 			
 			if (strcmp(vvar, profile->name)) {
 				ac++;
-				stream->write_function(stream, "%25s\t%s\t  %32s\n", vvar, "  alias", profile->name);
+				stream->write_function(stream, "%25s\t%s\t  %32s\t%s\n", vvar, "  alias", profile->name, "LOADED");
 			} else {
-				stream->write_function(stream, "%25s\t%s\t  %32s\n", profile->name, "profile", profile->url);
+				stream->write_function(stream, "%25s\t%s\t  %32s\t%s\n", profile->name, "profile", profile->url, "LOADED");
 				c++;
+
+				for (gp = profile->gateways; gp; gp = gp->next) {
+					assert(gp->state < REG_STATE_LAST);
+					stream->write_function(stream, "%25s\t%s\t  %32s\t%s\n", gp->name, "gateway", gp->register_to, sofia_state_names[gp->state]);
+				}
 			}
 
 			
@@ -934,6 +1061,17 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 	if (argc < 2) {
 		stream->write_function(stream, "Invalid Args!\n");
 		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (argc > 2 && !strcasecmp(argv[2], "reloadxml")) {
+		const char *err;
+		switch_xml_t xml_root;
+
+		if ((xml_root = switch_xml_open_root(1, &err))) {
+			switch_xml_free(xml_root);
+		}
+
+		stream->write_function(stream, "Reload XML [%s]\n", err);
 	}
 
 	if (!strcasecmp(argv[1], "start")) {
@@ -977,8 +1115,8 @@ static switch_status_t sofia_function(char *cmd, switch_core_session_t *isession
 	const char *usage_string = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
 		"sofia help\n"
-		"sofia profile <options>\n"
-		"sofia status\n"
+		"sofia profile <profile_name> [start|stop|restart] [reloadxml]\n"
+		"sofia status [[profile | gateway] <name>]\n"
 		"--------------------------------------------------------------------------------\n";
 		
 	if (isession) {
