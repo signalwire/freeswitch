@@ -679,7 +679,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		ip = switch_channel_get_variable(channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE);
 		port = switch_channel_get_variable(channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE);
 		if (ip && port) {
-			sofia_glue_set_local_sdp(tech_pvt, ip, atoi(port), NULL, 1);
+			sofia_glue_set_local_sdp(tech_pvt, ip, atoi(port), msg->string_arg, 1);
 		}
 		nua_respond(tech_pvt->nh, SIP_200_OK,
 					SIPTAG_CONTACT_STR(tech_pvt->profile->url),

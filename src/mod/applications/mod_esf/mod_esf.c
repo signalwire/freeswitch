@@ -112,7 +112,7 @@ static void bcast_function(switch_core_session_t *session, char *data)
 		
 		/* special answer with the mcast addr */
 		msg.from = __FILE__;
-		msg.string_arg = data;
+		msg.string_arg = "recvonly";
 		msg.message_id = SWITCH_MESSAGE_INDICATE_BROADCAST;
 		switch_core_session_receive_message(session, &msg);
 	} else {
