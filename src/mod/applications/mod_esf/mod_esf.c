@@ -66,14 +66,14 @@ static void bcast_function(switch_core_session_t *session, char *data)
 	uint32_t flags = 0;
 	const char *err;
 	switch_rtp_t *rtp_session;
-	uint32_t rtp_port;
+	switch_port_t rtp_port;
 	char guess_ip[25];
 	ls_how_t ready = SEND_TYPE_UNKNOWN;
 	int argc;
     char *mydata, *argv[5];
 	char *mcast_ip = "224.168.168.168";
-	uint32_t mcast_port = 34567;
-	uint32_t mcast_control_port = 6061;
+	switch_port_t mcast_port = 34567;
+	switch_port_t mcast_control_port = 6061;
 	char *mcast_port_str = "34567";
 
 
@@ -93,11 +93,11 @@ static void bcast_function(switch_core_session_t *session, char *data)
 
 		if (!switch_strlen_zero(argv[1])) {
 			mcast_port_str = argv[1];
-			mcast_port = atoi(mcast_port_str);
+			mcast_port = (switch_port_t)atoi(mcast_port_str);
 		}
 
 		if (!switch_strlen_zero(argv[2])) {
-			mcast_control_port = atoi(argv[2]);
+			mcast_control_port = (switch_port_t)atoi(argv[2]);
 		}
 	}
 
@@ -177,7 +177,7 @@ static void bcast_function(switch_core_session_t *session, char *data)
 		}
 	}
 
-	control_packet.unique_id = htonl(time(NULL));
+	control_packet.unique_id = htonl((u_long)time(NULL));
 	control_packet.command = htonl(LS_START_BCAST);
 	control_packet.ip = inet_addr(mcast_ip);
 	control_packet.port = htonl(mcast_port);
@@ -206,7 +206,7 @@ static void bcast_function(switch_core_session_t *session, char *data)
 
 
 
-	control_packet.unique_id = htonl(time(NULL));
+	control_packet.unique_id = htonl((u_long)time(NULL));
 	control_packet.command = htonl(LS_STOP_BCAST);
 	bytes = 8;
 	switch_socket_sendto(socket, control_packet_addr, 0, (void *)&control_packet, &bytes);

@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="mod_esf"
-	ProjectGUID="{419AA391-5F3F-4BFE-A869-9D154D62A792}"
+	ProjectGUID="{3850D93A-5F24-4922-BC1C-74D08C37C256}"
 	RootNamespace="mod_esf"
 	Keyword="Win32Proj"
 	>
@@ -63,6 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="Ws2_32.lib "
 				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\$(OutDir)"
@@ -142,6 +143,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="Ws2_32.lib "
 				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\$(OutDir)"
