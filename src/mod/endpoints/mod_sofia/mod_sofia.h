@@ -240,6 +240,7 @@ struct sofia_profile {
 	switch_thread_rwlock_t *rwlock;
 	switch_mutex_t *flag_mutex;
 	uint32_t inuse;
+	time_t started;
 #ifdef SWITCH_HAVE_ODBC
 	char *odbc_dsn;
 	char *odbc_user;

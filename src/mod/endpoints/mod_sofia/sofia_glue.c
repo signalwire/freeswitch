@@ -1426,10 +1426,14 @@ sofia_profile_t *sofia_glue_find_profile(char *key)
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if ((profile = (sofia_profile_t *) switch_core_hash_find(mod_sofia_globals.profile_hash, key))) {
 		if (!sofia_test_pflag(profile, PFLAG_RUNNING)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile %s is not running\n", profile->name);
 			profile = NULL;
 		} else if (switch_thread_rwlock_tryrdlock(profile->rwlock) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile %s is locked\n", profile->name);
 			profile = NULL;
 		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile %s is not in the hash\n", profile->name);
 	}
 
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
@@ -1545,7 +1549,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 	}
 #endif
 
-	return 1;
+	return profile->master_odbc ? 1 : 0;
 }
 
 void sofia_glue_sql_close(sofia_profile_t *profile)

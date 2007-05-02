@@ -262,6 +262,13 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating agent for %s\n", profile->name);
 
+	if (!sofia_glue_init_sql(profile)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database [%s]!\n", profile->name);
+		sofia_glue_del_profile(profile);
+		goto end;
+	}
+
+
 	profile->nua = nua_create(profile->s_root,	/* Event loop */
 							  sofia_event_callback,	/* Callback for processing events */
 							  profile,	/* Additional data to pass to callback */
@@ -269,6 +276,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	if (!profile->nua) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s\n", profile->name);
+		sofia_glue_del_profile(profile);
 		goto end;
 	}
 
@@ -313,10 +321,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	}
 
 
-	if (!sofia_glue_init_sql(profile)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
-		goto end;
-	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "activated db for %s\n", profile->name);
 
@@ -343,8 +347,11 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting thread for %s\n", profile->name);
 
-	
+	profile->started = time(NULL);
+	switch_yield(1000000);
+
 	sofia_set_pflag_locked(profile, PFLAG_RUNNING);
+	
 	while (mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING)) {
 		if (++ireg_loops >= IREG_SECONDS) {
 			sofia_reg_check_expire(profile, time(NULL));
@@ -363,8 +370,12 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		switch_yield(500000);
 	}
 
+
+
 	//sofia_reg_check_expire(profile, 0);
 	//sofia_reg_check_gateway(profile, 0);	
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock %s\n", profile->name);
 	switch_thread_rwlock_wrlock(profile->rwlock);
 	sofia_reg_unregister(profile);
 	nua_shutdown(profile->nua);
@@ -393,6 +404,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	sofia_glue_del_profile(profile);
 
 	switch_thread_rwlock_unlock(profile->rwlock);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write unlock %s\n", profile->name);
 
 	if (sofia_test_pflag(profile, PFLAG_RESPAWN)) {
 		config_sofia(1, profile->name);
@@ -402,6 +414,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 
  end:
+
 	
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	mod_sofia_globals.threads--;

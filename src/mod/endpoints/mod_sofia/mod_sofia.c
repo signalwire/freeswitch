@@ -950,7 +950,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 	const void *vvar;
 	int c = 0;
 	int ac = 0;
-	const char *line = "=======================================================================================";
+	const char *line = "=================================================================================================";
 
 
 	if (argc > 0) {
@@ -1045,14 +1045,16 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 			
 			if (strcmp(vvar, profile->name)) {
 				ac++;
-				stream->write_function(stream, "%25s\t%s\t  %32s\t%s\n", vvar, "  alias", profile->name, "LOADED");
+				stream->write_function(stream, "%25s\t%s\t  %32s\t%s\n", vvar, "  alias", profile->name, "ALIASED");
 			} else {
-				stream->write_function(stream, "%25s\t%s\t  %32s\t%s\n", profile->name, "profile", profile->url, "LOADED");
+				stream->write_function(stream, "%25s\t%s\t  %32s\t%s\n", profile->name, "profile", profile->url,
+									   sofia_test_pflag(profile, PFLAG_RUNNING) ? "RUNNING" : "DOWN");
 				c++;
 
 				for (gp = profile->gateways; gp; gp = gp->next) {
 					assert(gp->state < REG_STATE_LAST);
 					stream->write_function(stream, "%25s\t%s\t  %32s\t%s\n", gp->name, "gateway", gp->register_to, sofia_state_names[gp->state]);
+
 				}
 			}
 
@@ -1061,7 +1063,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 	stream->write_function(stream, "%s\n", line);
-	stream->write_function(stream, "%d profiles %d aliases\n", c, ac);
+	stream->write_function(stream, "%d profile%s %d alias%s\n", c, c == 1 ? "" : "s", ac, ac == 1 ? "" : "es");
 	return SWITCH_STATUS_SUCCESS;
 
 }
@@ -1105,9 +1107,15 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
 		stream->write_function(stream, "stopping: %s", profile->name);
 	} else if (!strcasecmp(argv[1], "restart")) {
-		sofia_set_pflag_locked(profile, PFLAG_RESPAWN);
-		sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
-		stream->write_function(stream, "restarting: %s", profile->name);
+		int rsec = 30;
+
+		if (time(NULL) - profile->started < rsec) {
+			stream->write_function(stream, "Profile %s must be up for at least %d seconds to restart\n", rsec, profile->name);
+		} else {
+			sofia_set_pflag_locked(profile, PFLAG_RESPAWN);
+			sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
+			stream->write_function(stream, "restarting: %s", profile->name);
+		}
 	}
 
 	if (profile) {
