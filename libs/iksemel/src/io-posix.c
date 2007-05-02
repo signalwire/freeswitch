@@ -110,12 +110,11 @@ io_recv (void *socket, char *buffer, size_t buf_len, int timeout)
 	tv.tv_sec = timeout;
 	if (timeout != -1) tvptr = &tv; else tvptr = NULL;
 	if (select (sock + 1, &fds, NULL, NULL, tvptr) > 0) {
-		memset(buffer, 0, buf_len);
 		len = recv (sock, buffer, buf_len, 0);
 		if (len > 0) {
 			char *p, *e = NULL, *t = NULL;
+			*(buffer+buf_len+1) = '\0';
 			for (p = buffer; p && *p; p++) {
-
 				if (*p == '>') {
 					e = p;
 					t = p+1;
