@@ -244,7 +244,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 
-	switch_mutex_lock(tech_pvt->profile->flag_mutex);
+
 	tech_pvt->profile->inuse--;
 	switch_mutex_unlock(tech_pvt->profile->flag_mutex);
 

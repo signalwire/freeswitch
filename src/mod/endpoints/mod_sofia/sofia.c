@@ -359,6 +359,10 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		su_root_step(profile->s_root, 1000);
 	}
 
+	while(profile->inuse) {
+		switch_yield(500000);
+	}
+
 	//sofia_reg_check_expire(profile, 0);
 	//sofia_reg_check_gateway(profile, 0);	
 	switch_thread_rwlock_wrlock(profile->rwlock);
@@ -368,9 +372,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	su_root_run(profile->s_root);
 	nua_destroy(profile->nua);
-	while(profile->inuse) {
-		switch_yield(100000);
-	}
+
+
 
 	if (switch_event_create(&s_event, SWITCH_EVENT_UNPUBLISH) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp,_sip._tcp,_sip._sctp");
@@ -1270,8 +1273,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				tech_pvt->sofia_private = NULL;
 			}
 
-			tech_pvt->nh = NULL;
-			
+			tech_pvt->nh = NULL;		
+
+
 		} else if (sofia_private) {
 			if (sofia_private->home) {
 				su_home_unref(sofia_private->home);
