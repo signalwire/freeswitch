@@ -1549,7 +1549,12 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 	}
 #endif
 
+#ifdef SWITCH_HAVE_ODBC
 	return profile->master_odbc ? 1 : 0;
+#else
+	return 1;
+#endif
+
 }
 
 void sofia_glue_sql_close(sofia_profile_t *profile)
