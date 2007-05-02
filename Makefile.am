@@ -110,11 +110,6 @@ library_include_HEADERS += src/include/switch_odbc.h
 CORE_LIBS     += -lodbc
 endif
 
-if ADD_LIBEDIT
-CORE_CFLAGS    += -Ilibs/libedit/src -DSWITCH_HAVE_LIBEDIT
-CORE_LIBS      += libs/libedit/src/.libs/libedit.a
-endif
-
 lib_LTLIBRARIES	          = libfreeswitch.la
 libfreeswitch_la_CFLAGS   = $(CORE_CFLAGS) $(AM_CFLAGS)
 libfreeswitch_la_LDFLAGS  = -version-info 1:0:0 $(AM_LDFLAGS)
@@ -132,7 +127,15 @@ freeswitch_SOURCES = src/switch.c
 nodist_freeswitch_SOURCES = src/include/switch_version.h
 freeswitch_CFLAGS = $(AM_CFLAGS)
 freeswitch_LDFLAGS = $(AM_LDFLAGS) -rpath $(libdir)
-freeswitch_LDADD = libfreeswitch.la libs/apr/libapr-1.la -ltermcap
+freeswitch_LDADD = libfreeswitch.la libs/apr/libapr-1.la
+
+
+if ADD_LIBEDIT
+CORE_CFLAGS    += -Ilibs/libedit/src -DSWITCH_HAVE_LIBEDIT
+CORE_LIBS      += libs/libedit/src/.libs/libedit.a
+freeswitch_LDADD += -ltermcap
+endif
+
 
 
 libs/libedit/Makefile:
