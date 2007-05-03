@@ -1418,27 +1418,42 @@ char *sofia_glue_get_url_from_contact(char *buf, uint8_t to_dup)
 	return url;
 }
 
-
-sofia_profile_t *sofia_glue_find_profile(char *key)
+sofia_profile_t *sofia_glue_find_profile__(const char *file, const char *func, int line, char *key)
 {
 	sofia_profile_t *profile;
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if ((profile = (sofia_profile_t *) switch_core_hash_find(mod_sofia_globals.profile_hash, key))) {
-		if (!sofia_test_pflag(profile, PFLAG_RUNNING)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile %s is not running\n", profile->name);
+		if (switch_thread_rwlock_tryrdlock(profile->rwlock) != SWITCH_STATUS_SUCCESS) {
+#ifdef SOFIA_DEBUG_RWLOCKS
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_ERROR, "Profile %s is locked\n", profile->name);
+#endif
 			profile = NULL;
-		} else if (switch_thread_rwlock_tryrdlock(profile->rwlock) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile %s is locked\n", profile->name);
-			profile = NULL;
-		}
+		}		
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile %s is not in the hash\n", profile->name);
+#ifdef SOFIA_DEBUG_RWLOCKS
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_ERROR, "Profile %s is not in the hash\n", key);
+#endif
 	}
-
+#ifdef SOFIA_DEBUG_RWLOCKS
+	if (profile) {
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_ERROR, "XXXXXXXXXXXXXX LOCK %s\n", profile->name);
+	}
+#endif
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 
 	return profile;
+}
+
+
+void sofia_glue_release_profile__(const char *file, const char *func, int line, sofia_profile_t *profile)
+{
+	if (profile) {
+#ifdef SOFIA_DEBUG_RWLOCKS
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_ERROR, "XXXXXXXXXXXXXX UNLOCK %s\n", profile->name);
+#endif
+		switch_thread_rwlock_unlock(profile->rwlock);
+	}
 }
 
 switch_status_t sofia_glue_add_profile(char *key, sofia_profile_t *profile)

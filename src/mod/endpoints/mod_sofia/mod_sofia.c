@@ -1022,7 +1022,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 
 				stream->write_function(stream, "%s\n", line);
 
-				switch_thread_rwlock_unlock(profile->rwlock);
+				sofia_glue_release_profile(profile);
 			} else {
 				stream->write_function(stream, "Invalid Profile!\n");
 			}
@@ -1047,8 +1047,8 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				ac++;
 				stream->write_function(stream, "%25s\t%s\t  %32s\t%s\n", vvar, "  alias", profile->name, "ALIASED");
 			} else {
-				stream->write_function(stream, "%25s\t%s\t  %32s\t%s\n", profile->name, "profile", profile->url,
-									   sofia_test_pflag(profile, PFLAG_RUNNING) ? "RUNNING" : "DOWN");
+				stream->write_function(stream, "%25s\t%s\t  %32s\t%s (%u)\n", profile->name, "profile", profile->url,
+									   sofia_test_pflag(profile, PFLAG_RUNNING) ? "RUNNING" : "DOWN", profile->inuse);
 				c++;
 
 				for (gp = profile->gateways; gp; gp = gp->next) {
@@ -1072,24 +1072,21 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 {
 	sofia_profile_t *profile = NULL;
 	char *profile_name = argv[0];
+	const char *err;
+	switch_xml_t xml_root;
 
 	if (argc < 2) {
 		stream->write_function(stream, "Invalid Args!\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (argc > 2 && !strcasecmp(argv[2], "reloadxml")) {
-		const char *err;
-		switch_xml_t xml_root;
-
-		if ((xml_root = switch_xml_open_root(1, &err))) {
-			switch_xml_free(xml_root);
-		}
-
-		stream->write_function(stream, "Reload XML [%s]\n", err);
-	}
-
 	if (!strcasecmp(argv[1], "start")) {
+		if (argc > 2 && !strcasecmp(argv[2], "reloadxml")) {
+			if ((xml_root = switch_xml_open_root(1, &err))) {
+				switch_xml_free(xml_root);
+			}
+			stream->write_function(stream, "Reload XML [%s]\n", err);
+		}
 		if (config_sofia(1, argv[0]) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "%s started successfully\n", argv[0]);
 		} else {
@@ -1103,23 +1100,35 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!strcasecmp(argv[1], "stop")) {
-		sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
-		stream->write_function(stream, "stopping: %s", profile->name);
-	} else if (!strcasecmp(argv[1], "restart")) {
+	if (!strcasecmp(argv[1], "stop") || !strcasecmp(argv[1], "restart")) {
 		int rsec = 30;
-
-		if (time(NULL) - profile->started < rsec) {
-			stream->write_function(stream, "Profile %s must be up for at least %d seconds to restart\n", rsec, profile->name);
+		int diff = (int) (time(NULL) - profile->started);
+		int remain = rsec - diff;
+		if (diff < rsec) {
+			stream->write_function(stream, "Profile %s must be up for at least %d seconds to stop/restart.\nPlease wait %d second%s\n", 
+								   profile->name, rsec, remain, remain == 1 ? "" : "s");
 		} else {
-			sofia_set_pflag_locked(profile, PFLAG_RESPAWN);
-			sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
-			stream->write_function(stream, "restarting: %s", profile->name);
+
+			if (argc > 2 && !strcasecmp(argv[2], "reloadxml")) {
+				if ((xml_root = switch_xml_open_root(1, &err))) {
+					switch_xml_free(xml_root);
+				}
+				stream->write_function(stream, "Reload XML [%s]\n", err);
+			}
+
+			if (!strcasecmp(argv[1], "stop")) {
+				sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
+				stream->write_function(stream, "stopping: %s", profile->name);
+			} else {
+				sofia_set_pflag_locked(profile, PFLAG_RESPAWN);
+				sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
+				stream->write_function(stream, "restarting: %s", profile->name);
+			}
 		}
 	}
 
 	if (profile) {
-		switch_thread_rwlock_unlock(profile->rwlock);
+		sofia_glue_release_profile(profile);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1328,7 +1337,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s", dest);
 		}
 		tech_pvt->invite_contact = switch_core_session_strdup(nsession, gateway_ptr->register_contact);
-		sofia_reg_release_gateway(gateway_ptr);
 	} else {
 		if (!(dest = strchr(profile_name, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
@@ -1416,7 +1424,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
   done:
 	if (profile) {
-		switch_thread_rwlock_unlock(profile->rwlock);
+		sofia_glue_release_profile(profile);
 	}
 
 	return cause;

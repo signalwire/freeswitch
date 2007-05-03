@@ -553,7 +553,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	}
 
 	if (profile) {
-		sofia_gateway_t *gateway_ptr;
+		sofia_gateway_t *gateway_ptr = NULL;
 
 		if ((duprealm = strdup(realm))) {
 			qrealm = duprealm;
@@ -585,28 +585,37 @@ void sofia_reg_handle_sip_r_challenge(int status,
 						&& !strcasecmp(gateway_ptr->register_realm, qrealm)) {
 						gateway = gateway_ptr;
 
-						if (!switch_test_flag(gateway->profile, PFLAG_RUNNING)) {
+						if (switch_thread_rwlock_tryrdlock(gateway->profile->rwlock) != SWITCH_STATUS_SUCCESS) {
+#ifdef SOFIA_DEBUG_RWLOCKS
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile %s is locked\n", gateway->profile->name);
+#endif
 							gateway = NULL;
-						} else if (switch_thread_rwlock_tryrdlock(gateway->profile->rwlock) != SWITCH_STATUS_SUCCESS) {
-							gateway = NULL;
-						}						
+						}
+#ifdef SOFIA_DEBUG_RWLOCKS
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "XXXXXXXXXXXXXX GW LOCK %s\n", gateway->profile->name);
+#endif
 						break;
 					}
 				}
 				switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 			}
-
+			
 			if (!gateway) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Match for Scheme [%s] Realm [%s]\n", scheme, qrealm);
+			}
+			
+			switch_safe_free(duprealm);
+
+			if (!gateway) {
 				goto cancel;
 			}
-			switch_safe_free(duprealm);
+
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
 			goto cancel;
 		}
 	}
-
+	
 	snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, gateway->register_username, gateway->register_password);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Authenticating '%s' with '%s'.\n", profile->username, authentication);
@@ -617,10 +626,16 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	tl_gets(tags, NUTAG_CALLSTATE_REF(ss_state), SIPTAG_WWW_AUTHENTICATE_REF(authenticate), TAG_END());
 
 	nua_authenticate(nh, SIPTAG_EXPIRES_STR(gateway->expires_str), NUTAG_AUTH(authentication), TAG_END());
-	sofia_reg_release_gateway(gateway);
+	if (gateway) {
+		sofia_reg_release_gateway(gateway);
+		gateway = NULL;
+	}
 	return;
 
  cancel:
+	if (gateway) {
+		sofia_reg_release_gateway(gateway);
+	}
 	if (session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		switch_channel_hangup(channel, SWITCH_CAUSE_MANDATORY_IE_MISSING);
@@ -816,26 +831,32 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 }
 
 
-sofia_gateway_t *sofia_reg_find_gateway(char *key)
+sofia_gateway_t *sofia_reg_find_gateway__(const char *file, const char *func, int line, char *key)
 {
 	sofia_gateway_t *gateway = NULL;
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if ((gateway = (sofia_gateway_t *) switch_core_hash_find(mod_sofia_globals.gateway_hash, key))) {
-		if (!sofia_test_pflag(gateway->profile, PFLAG_RUNNING)) {
-			gateway = NULL;
-		} else if (switch_thread_rwlock_tryrdlock(gateway->profile->rwlock) != SWITCH_STATUS_SUCCESS) {
+		if (switch_thread_rwlock_tryrdlock(gateway->profile->rwlock) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_ERROR, "Profile %s is locked\n", gateway->profile->name);
 			gateway = NULL;
 		}
 	}
-
+	if (gateway) {
+#ifdef SOFIA_DEBUG_RWLOCKS
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_ERROR, "XXXXXXXXXXXXXX GW LOCK %s\n", gateway->profile->name);
+#endif
+	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 	return gateway;
 }
 
-void sofia_reg_release_gateway(sofia_gateway_t *gateway)
+void sofia_reg_release_gateway__(const char *file, const char *func, int line, sofia_gateway_t *gateway)
 {
 	switch_thread_rwlock_unlock(gateway->profile->rwlock);
+#ifdef SOFIA_DEBUG_RWLOCKS
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_ERROR, "XXXXXXXXXXXXXX GW UNLOCK %s\n", gateway->profile->name);
+#endif
 }
 
 switch_status_t sofia_reg_add_gateway(char *key, sofia_gateway_t *gateway)

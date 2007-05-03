@@ -234,11 +234,9 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 
 	switch_safe_free(sql);
 	switch_safe_free(dup_account);
-
 	if (profile) {
-		switch_thread_rwlock_unlock(profile->rwlock);
+		sofia_glue_release_profile(profile);
 	}
-
 }
 
 void sofia_presence_event_handler(switch_event_t *event)
@@ -374,7 +372,7 @@ void sofia_presence_event_handler(switch_event_t *event)
 												profile);
 
 				
-				switch_thread_rwlock_unlock(profile->rwlock);
+				sofia_glue_release_profile(profile);
 					
 				switch_safe_free(sql);
 			}
@@ -619,9 +617,8 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	switch_safe_free(id);
 	switch_safe_free(exp);
 
-	if (profile) {
-		switch_thread_rwlock_unlock(profile->rwlock);
-	}
+	sofia_glue_release_profile(profile);
+
 
 	return 0;
 }

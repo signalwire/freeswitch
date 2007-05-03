@@ -237,7 +237,7 @@ void event_handler(switch_event_t *event)
 		}
 
 		if (profile) {
-			switch_thread_rwlock_unlock(profile->rwlock);
+			sofia_glue_release_profile(profile);
 		}
 	}
 }
@@ -615,7 +615,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 	if (!switch_strlen_zero(profile_name) && (profile = sofia_glue_find_profile(profile_name))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile [%s] Already exists.\n", switch_str_nil(profile_name));
 		status = SWITCH_STATUS_FALSE;
-		switch_thread_rwlock_unlock(profile->rwlock);
+		sofia_glue_release_profile(profile);
 		return status;
 	}
 
