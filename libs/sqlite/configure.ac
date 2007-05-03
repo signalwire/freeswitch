@@ -627,10 +627,11 @@ fi
 if test "$found" = "yes"; then
   AC_MSG_RESULT($TARGET_READLINE_INC)
 else
-  AC_MSG_RESULT(not specified: still searching...)
-  AC_CHECK_HEADER(readline.h, [found=yes])
+    AC_MSG_RESULT(not specified: still searching...)
+    AC_CHECK_HEADER(readline.h, [found=yes])
 fi
 if test "$found" = "no"; then
+  if test "$cross_compiling" != "yes"; then
   for dir in /usr /usr/local /usr/local/readline /usr/contrib /mingw; do
     AC_CHECK_FILE($dir/include/readline.h, found=yes)
     if test "$found" = "yes"; then
@@ -643,6 +644,7 @@ if test "$found" = "no"; then
       break
     fi
   done
+  fi
 fi
 if test "$found" = "yes"; then
   if test "$TARGET_READLINE_LIBS" = ""; then
