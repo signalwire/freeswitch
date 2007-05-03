@@ -819,6 +819,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(switch_hash_t * hash);
 SWITCH_DECLARE(switch_status_t) switch_core_hash_insert(switch_hash_t * hash, const char *key, const void *data);
 
 /*! 
+  \brief Insert data into a hash
+  \param hash the hash to add data to
+  \param key the name of the key to add the data to
+  \param data the data to add
+  \param mutex optional mutex to lock
+  \return SWITCH_STATUS_SUCCESS if the data is added
+  \note the string key must be a constant or a dynamic string
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_locked(switch_hash_t * hash, const char *key, const void *data, switch_mutex_t *mutex);
+
+/*! 
   \brief Insert data into a hash with dynamicly allocated key name
   \param hash the hash to add data to
   \param key the name of the key to add the data to
@@ -826,6 +837,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert(switch_hash_t * hash, co
   \return SWITCH_STATUS_SUCCESS if the data is added
 */
 SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup(switch_hash_t * hash, const char *key, const void *data);
+
+/*! 
+  \brief Insert data into a hash with dynamicly allocated key name
+  \param hash the hash to add data to
+  \param key the name of the key to add the data to
+  \param data the data to add
+  \param mutex optional mutex to lock
+  \return SWITCH_STATUS_SUCCESS if the data is added
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup_locked(switch_hash_t * hash, const char *key, const void *data, switch_mutex_t *mutex);
 
 /*! 
   \brief Delete data from a hash based on desired key
@@ -836,12 +857,32 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup(switch_hash_t * hash
 SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(switch_hash_t * hash, const char *key);
 
 /*! 
+  \brief Delete data from a hash based on desired key
+  \param hash the hash to delete from
+  \param key the key from which to delete the data
+  \param mutex optional mutex to lock
+  \return SWITCH_STATUS_SUCCESS if the data is deleted
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(switch_hash_t * hash, const char *key, switch_mutex_t *mutex);
+
+/*! 
   \brief Retrieve data from a given hash
   \param hash the hash to retrieve from
   \param key the key to retrieve
   \return a pointer to the data held in the key
 */
 SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash_t * hash, const char *key);
+
+
+/*! 
+  \brief Retrieve data from a given hash
+  \param hash the hash to retrieve from
+  \param key the key to retrieve
+  \param mutex optional mutex to lock
+  \return a pointer to the data held in the key
+*/
+SWITCH_DECLARE(void *) switch_core_hash_find_locked(switch_hash_t * hash, const char *key, switch_mutex_t *mutex);
+
 ///\}
 
 ///\defgroup timer Timer Functions

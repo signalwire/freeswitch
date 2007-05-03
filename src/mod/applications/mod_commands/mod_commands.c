@@ -46,6 +46,7 @@ static switch_api_interface_t show_api_interface;
 static switch_api_interface_t pause_api_interface;
 static switch_api_interface_t transfer_api_interface;
 static switch_api_interface_t load_api_interface;
+static switch_api_interface_t unload_api_interface;
 static switch_api_interface_t reload_api_interface;
 static switch_api_interface_t kill_api_interface;
 static switch_api_interface_t originate_api_interface;
@@ -150,6 +151,7 @@ static switch_status_t ctl_function(char *data, switch_core_session_t *session, 
 
 static switch_status_t load_function(char *mod, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
+	const char *err;
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
@@ -160,10 +162,32 @@ static switch_status_t load_function(char *mod, switch_core_session_t *session, 
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) mod, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
+	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) mod, SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "OK\n");
 	} else {
-		stream->write_function(stream, "ERROR\n");
+		stream->write_function(stream, "ERROR [%s]\n", err);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t unload_function(char *mod, switch_core_session_t *session, switch_stream_handle_t *stream)
+{
+	const char *err;
+
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_strlen_zero(mod)) {
+		stream->write_function(stream, "USAGE: %s\n", unload_api_interface.syntax);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (switch_loadable_module_unload_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) mod, &err) == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "OK\n");
+	} else {
+		stream->write_function(stream, "ERROR [%s]\n", err);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1221,12 +1245,20 @@ static switch_api_interface_t load_api_interface = {
 	/*.next */ &transfer_api_interface
 };
 
+static switch_api_interface_t unload_api_interface = {
+	/*.interface_name */ "unload",
+	/*.desc */ "Unoad Module",
+	/*.function */ unload_function,
+	/*.syntax */ "<mod_name>",
+	/*.next */ &load_api_interface
+};
+
 static switch_api_interface_t reload_api_interface = {
 	/*.interface_name */ "reloadxml",
 	/*.desc */ "Reload XML",
 	/*.function */ reload_function,
 	/*.syntax */ "",
-	/*.next */ &load_api_interface,
+	/*.next */ &unload_api_interface,
 
 };
 
@@ -1263,7 +1295,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	*module_interface = &mod_commands_module_interface;
 
 	/* indicate that the module should continue to be loaded */
-	return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_NOUNLOAD;
 }
 
 /* For Emacs:

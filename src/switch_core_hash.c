@@ -57,9 +57,40 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup(switch_hash_t * hash
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup_locked(switch_hash_t * hash, const char *key, const void *data, switch_mutex_t *mutex)
+{
+	if (mutex) {
+        switch_mutex_lock(mutex);
+    }
+
+	apr_hash_set(hash, switch_core_strdup(apr_hash_pool_get(hash), key), APR_HASH_KEY_STRING, data);
+
+	if (mutex) {
+        switch_mutex_unlock(mutex);
+    }
+
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_hash_insert(switch_hash_t * hash, const char *key, const void *data)
 {
 	apr_hash_set(hash, key, APR_HASH_KEY_STRING, data);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_locked(switch_hash_t * hash, const char *key, const void *data, switch_mutex_t *mutex)
+{
+	if (mutex) {
+        switch_mutex_lock(mutex);
+    }
+	
+	apr_hash_set(hash, key, APR_HASH_KEY_STRING, data);
+
+	if (mutex) {
+        switch_mutex_unlock(mutex);
+    }	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -69,7 +100,40 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(switch_hash_t * hash, co
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(switch_hash_t * hash, const char *key, switch_mutex_t *mutex)
+{
+	if (mutex) {
+        switch_mutex_lock(mutex);
+    }
+	
+	apr_hash_set(hash, key, APR_HASH_KEY_STRING, NULL);
+
+	if (mutex) {
+        switch_mutex_unlock(mutex);
+    }
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash_t * hash, const char *key)
 {
 	return apr_hash_get(hash, key, APR_HASH_KEY_STRING);
+}
+
+SWITCH_DECLARE(void *) switch_core_hash_find_locked(switch_hash_t * hash, const char *key, switch_mutex_t *mutex)
+{
+	void *val;
+
+	if (mutex) {
+		switch_mutex_lock(mutex);
+	}
+
+	val = apr_hash_get(hash, key, APR_HASH_KEY_STRING);
+
+	if (mutex) {
+		switch_mutex_unlock(mutex);
+	}
+
+	return val;
 }

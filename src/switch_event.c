@@ -121,6 +121,7 @@ static char *EVENT_NAMES[] = {
 	"NOTALK",
 	"SESSION_CRASH",
 	"MODULE_LOAD",
+	"MODULE_UNLOAD",
 	"DTMF",
 	"MESSAGE",
 	"PRESENCE_IN",

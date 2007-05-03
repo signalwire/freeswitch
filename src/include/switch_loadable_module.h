@@ -228,15 +228,24 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 */
 SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_core_session_t *session, switch_stream_handle_t *stream);
 
-
-
 /*!
   \brief Load a module
   \param dir the directory where the module resides
   \param fname the file name of the module
+  \param runtime option to start the runtime thread if it exists
+  \param err pointer to error message
   \return the status
 */
-SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, char *fname, switch_bool_t runtime);
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, char *fname, switch_bool_t runtime, const char **err);
+
+/*!
+  \brief Unoad a module
+  \param dir the directory where the module resides
+  \param fname the file name of the module
+  \param err pointer to error message
+  \return the status
+*/
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, char *fname, const char **err);
 
 /* Prototypes of module interface functions */
 

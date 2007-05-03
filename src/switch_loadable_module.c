@@ -41,12 +41,15 @@
 #include <apr_file_io.h>
 
 struct switch_loadable_module {
+	char *key;
 	char *filename;
+	int perm;
 	const switch_loadable_module_interface_t *module_interface;
 	void *lib;
 	switch_module_load_t switch_module_load;
 	switch_module_runtime_t switch_module_runtime;
 	switch_module_shutdown_t switch_module_shutdown;
+	switch_memory_pool_t *pool;
 };
 
 struct switch_loadable_module_container {
@@ -64,10 +67,12 @@ struct switch_loadable_module_container {
 	switch_hash_t *chat_hash;
 	switch_hash_t *say_hash;
 	switch_hash_t *management_hash;
+	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
 };
 
 static struct switch_loadable_module_container loadable_modules;
+static void do_shutdown(switch_loadable_module_t *module);
 
 static void *switch_loadable_module_exec(switch_thread_t * thread, void *obj)
 {
@@ -102,6 +107,7 @@ static void switch_loadable_module_runtime(void)
 	void *val;
 	switch_loadable_module_t *module;
 
+	switch_mutex_lock(loadable_modules.mutex);
 	for (hi = switch_hash_first(loadable_modules.pool, loadable_modules.module_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		module = (switch_loadable_module_t *) val;
@@ -111,12 +117,16 @@ static void switch_loadable_module_runtime(void)
 			switch_core_launch_thread(switch_loadable_module_exec, module, loadable_modules.pool);
 		}
 	}
+	switch_mutex_unlock(loadable_modules.mutex);
 }
 
 static switch_status_t switch_loadable_module_process(char *key, switch_loadable_module_t *new_module)
 {
 	switch_event_t *event;
 
+	new_module->key = switch_core_strdup(new_module->pool, key);
+	
+	switch_mutex_lock(loadable_modules.mutex);
 	switch_core_hash_insert(loadable_modules.module_hash, key, new_module);
 
 	if (new_module->module_interface->endpoint_interface) {
@@ -380,10 +390,251 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 		}
 	}
 
+	switch_mutex_unlock(loadable_modules.mutex);
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+
+static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t *old_module)
+{
+	switch_event_t *event;
+
+	switch_mutex_lock(loadable_modules.mutex);
+	switch_core_hash_delete(loadable_modules.module_hash, old_module->key);
+
+	if (old_module->module_interface->endpoint_interface) {
+		const switch_endpoint_interface_t *ptr;
+		for (ptr = old_module->module_interface->endpoint_interface; ptr; ptr = ptr->next) {
+			if (ptr->interface_name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Endpoint '%s'\n", ptr->interface_name);
+				switch_core_hash_delete(loadable_modules.endpoint_hash, ptr->interface_name);
+			}
+		}
+	}
+
+	if (old_module->module_interface->codec_interface) {
+		const switch_codec_implementation_t *impl;
+		const switch_codec_interface_t *ptr;
+
+		for (ptr = old_module->module_interface->codec_interface; ptr; ptr = ptr->next) {
+			if (ptr->interface_name) {
+				unsigned load_interface = 1;
+				for (impl = ptr->implementations; impl; impl = impl->next) {
+					if (!impl->iananame) {
+						load_interface = 0;
+						break;
+					}
+				}
+				if (load_interface) {
+					for (impl = ptr->implementations; impl; impl = impl->next) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
+										  "Deleting Codec '%s' (%s) %dhz %dms\n",
+										  impl->iananame, ptr->interface_name, impl->samples_per_second, impl->microseconds_per_frame / 1000);
+						if (switch_core_hash_find(loadable_modules.codec_hash, impl->iananame)) {
+							switch_core_hash_delete(loadable_modules.codec_hash, impl->iananame);
+						}
+					}
+					if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "codec");
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
+						switch_event_fire(&event);
+					}
+				}
+			}
+		}
+	}
+
+	if (old_module->module_interface->dialplan_interface) {
+		const switch_dialplan_interface_t *ptr;
+
+		for (ptr = old_module->module_interface->dialplan_interface; ptr; ptr = ptr->next) {
+			if (ptr->interface_name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Dialplan '%s'\n", ptr->interface_name);
+				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "dialplan");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
+					switch_event_fire(&event);
+				}
+				switch_core_hash_delete(loadable_modules.dialplan_hash, ptr->interface_name);
+			}
+		}
+	}
+
+	if (old_module->module_interface->timer_interface) {
+		const switch_timer_interface_t *ptr;
+
+		for (ptr = old_module->module_interface->timer_interface; ptr; ptr = ptr->next) {
+			if (ptr->interface_name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Timer '%s'\n", ptr->interface_name);
+				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "timer");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
+					switch_event_fire(&event);
+				}
+				switch_core_hash_delete(loadable_modules.timer_hash, ptr->interface_name);
+			}
+		}
+	}
+
+	if (old_module->module_interface->application_interface) {
+		const switch_application_interface_t *ptr;
+
+		for (ptr = old_module->module_interface->application_interface; ptr; ptr = ptr->next) {
+			if (ptr->interface_name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Application '%s'\n", ptr->interface_name);
+				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "application");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "description", "%s", switch_str_nil(ptr->short_desc));
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "syntax", "%s", switch_str_nil(ptr->syntax));
+					switch_event_fire(&event);
+				}
+				switch_core_hash_delete(loadable_modules.application_hash, ptr->interface_name);
+			}
+		}
+	}
+
+	if (old_module->module_interface->api_interface) {
+		const switch_api_interface_t *ptr;
+
+		for (ptr = old_module->module_interface->api_interface; ptr; ptr = ptr->next) {
+			if (ptr->interface_name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting API Function '%s'\n", ptr->interface_name);
+				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "api");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "description", "%s", switch_str_nil(ptr->desc));
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "syntax", "%s", switch_str_nil(ptr->syntax));
+					switch_event_fire(&event);
+				}
+				switch_core_hash_delete(loadable_modules.api_hash, ptr->interface_name);
+			}
+		}
+	}
+
+	if (old_module->module_interface->file_interface) {
+		const switch_file_interface_t *ptr;
+
+		for (ptr = old_module->module_interface->file_interface; ptr; ptr = ptr->next) {
+			if (ptr->interface_name) {
+				int i;
+				for (i = 0; ptr->extens[i]; i++) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting File Format '%s'\n", ptr->extens[i]);
+					if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "file");
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->extens[i]);
+						switch_event_fire(&event);
+					}
+					switch_core_hash_delete(loadable_modules.file_hash, ptr->extens[i]);
+				}
+			}
+		}
+	}
+
+	if (old_module->module_interface->speech_interface) {
+		const switch_speech_interface_t *ptr;
+
+		for (ptr = old_module->module_interface->speech_interface; ptr; ptr = ptr->next) {
+			if (ptr->interface_name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Speech interface '%s'\n", ptr->interface_name);
+				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "speech");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
+					switch_event_fire(&event);
+				}
+				switch_core_hash_delete(loadable_modules.speech_hash, ptr->interface_name);
+			}
+		}
+	}
+
+	if (old_module->module_interface->asr_interface) {
+		const switch_asr_interface_t *ptr;
+
+		for (ptr = old_module->module_interface->asr_interface; ptr; ptr = ptr->next) {
+			if (ptr->interface_name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Asr interface '%s'\n", ptr->interface_name);
+				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "asr");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
+					switch_event_fire(&event);
+				}
+				switch_core_hash_delete(loadable_modules.asr_hash, ptr->interface_name);
+			}
+		}
+	}
+
+	if (old_module->module_interface->directory_interface) {
+		const switch_directory_interface_t *ptr;
+
+		for (ptr = old_module->module_interface->directory_interface; ptr; ptr = ptr->next) {
+			if (ptr->interface_name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Directory interface '%s'\n", ptr->interface_name);
+				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "directory");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
+					switch_event_fire(&event);
+				}
+				switch_core_hash_delete(loadable_modules.directory_hash, ptr->interface_name);
+			}
+		}
+	}
+
+
+	if (old_module->module_interface->chat_interface) {
+		const switch_chat_interface_t *ptr;
+
+		for (ptr = old_module->module_interface->chat_interface; ptr; ptr = ptr->next) {
+			if (ptr->interface_name) {				
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Chat interface '%s'\n", ptr->interface_name);
+				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "chat");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
+					switch_event_fire(&event);
+				}
+				switch_core_hash_delete(loadable_modules.chat_hash, ptr->interface_name);
+			}
+		}
+	}
+
+	if (old_module->module_interface->say_interface) {
+		const switch_say_interface_t *ptr;
+
+		for (ptr = old_module->module_interface->say_interface; ptr; ptr = ptr->next) {
+			if (ptr->interface_name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Say interface '%s'\n", ptr->interface_name);
+				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "say");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
+					switch_event_fire(&event);
+				}
+				switch_core_hash_delete(loadable_modules.say_hash, ptr->interface_name);
+			}
+		}
+	}
+
+	if (old_module->module_interface->management_interface) {
+		const switch_management_interface_t *ptr;
+
+		for (ptr = old_module->module_interface->management_interface; ptr; ptr = ptr->next) {
+			if (ptr->relative_oid) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
+								  "Deleting Management interface '%s' OID[%s.%s]\n", old_module->key, FREESWITCH_OID_PREFIX, ptr->relative_oid);
+				switch_core_hash_delete(loadable_modules.management_hash, ptr->relative_oid);
+				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "management");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->relative_oid);
+					switch_event_fire(&event);
+				}
+			}
+		}
+	}
+	switch_mutex_unlock(loadable_modules.mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 
 }
+
 
 static switch_status_t switch_loadable_module_load_file(char *filename, switch_loadable_module_t **new_module)
 {
@@ -398,11 +649,17 @@ static switch_status_t switch_loadable_module_load_file(char *filename, switch_l
 	const char *err = NULL;
 	switch_loadable_module_interface_t *module_interface = NULL;
 	char derr[512] = "";
+	switch_memory_pool_t *pool;
 
 	assert(filename != NULL);
 
 	*new_module = NULL;
 	status = switch_dso_load(&dso, filename, loadable_modules.pool);
+
+	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
+		abort();
+	}
 
 	while (loading) {
 		if (status != APR_SUCCESS) {
@@ -419,26 +676,37 @@ static switch_status_t switch_loadable_module_load_file(char *filename, switch_l
 			break;
 		}
 
-		if (load_func_ptr(&module_interface, filename) != SWITCH_STATUS_SUCCESS) {
+		status = load_func_ptr(&module_interface, filename);
+
+		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_NOUNLOAD) {
 			err = "Module load routine returned an error";
 			module_interface = NULL;
 			break;
 		}
 
-		if ((module = switch_core_permanent_alloc(sizeof(switch_loadable_module_t))) == 0) {
+		if ((module = switch_core_alloc(pool, sizeof(switch_loadable_module_t))) == 0) {
 			err = "Could not allocate memory\n";
-			break;
+			abort();
 		}
 
+		if (status == SWITCH_STATUS_NOUNLOAD) {
+            module->perm++;
+        }
+		
 		loading = 0;
 	}
+	
 
 	if (err) {
+		if (pool) {
+			switch_core_destroy_memory_pool(&pool);
+		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Loading module %s\n**%s**\n", filename, err);
 		return SWITCH_STATUS_GENERR;
 	}
 
-	module->filename = switch_core_permanent_strdup(filename);
+	module->pool = pool;
+	module->filename = switch_core_strdup(module->pool, filename);
 	module->module_interface = module_interface;
 	module->switch_module_load = load_func_ptr;
 
@@ -456,7 +724,7 @@ static switch_status_t switch_loadable_module_load_file(char *filename, switch_l
 
 }
 
-SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, char *fname, switch_bool_t runtime)
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, char *fname, switch_bool_t runtime, const char **err)
 {
 	switch_size_t len = 0;
 	char *path;
@@ -495,18 +763,82 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, ch
 		}
 	}
 
+	switch_mutex_lock(loadable_modules.mutex);
 	if (switch_core_hash_find(loadable_modules.module_hash, file)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Module %s Already Loaded!\n", file);
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if ((status = switch_loadable_module_load_file(path, &new_module) == SWITCH_STATUS_SUCCESS)) {
+		*err = "Module already loadedn\n";
+		status = SWITCH_STATUS_FALSE;
+	} else if ((status = switch_loadable_module_load_file(path, &new_module) == SWITCH_STATUS_SUCCESS)) {
 		if ((status = switch_loadable_module_process((char *) file, new_module)) == SWITCH_STATUS_SUCCESS && runtime) {
 			if (new_module->switch_module_runtime) {
-				switch_core_launch_thread(switch_loadable_module_exec, new_module, loadable_modules.pool);
+				switch_core_launch_thread(switch_loadable_module_exec, new_module, new_module->pool);
 			}
 		}
 	}
+	switch_mutex_unlock(loadable_modules.mutex);
+
+	return status;
+
+}
+
+
+
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, char *fname, const char **err)
+{
+	switch_size_t len = 0;
+	char *path = NULL;
+	char *file = NULL;
+	switch_loadable_module_t *module = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+#ifdef WIN32
+	const char *ext = ".dll";
+#elif defined (MACOSX) || defined (DARWIN)
+	const char *ext = ".dylib";
+#else
+	const char *ext = ".so";
+#endif
+
+
+	if (!(file = strdup(fname))) {
+		abort();
+	}
+	
+	if (*file == '/') {
+		path = strdup(file);
+	} else {
+		if (strchr(file, '.')) {
+			len = strlen(dir);
+			len += strlen(file);
+			len += 4;
+			path = (char *) switch_core_alloc(loadable_modules.pool, len);
+			snprintf(path, len, "%s%s%s", dir, SWITCH_PATH_SEPARATOR, file);
+		} else {
+			len = strlen(dir);
+			len += strlen(file);
+			len += 8;
+			path = (char *) malloc(len);
+			snprintf(path, len, "%s%s%s%s", dir, SWITCH_PATH_SEPARATOR, file, ext);
+		}
+	}
+
+
+	switch_mutex_lock(loadable_modules.mutex);
+	if ((module = switch_core_hash_find(loadable_modules.module_hash, file))) {
+		if (module->perm) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Module is not unloadable.\n");
+			*err = "Module is not unloadable";
+			status = SWITCH_STATUS_NOUNLOAD;
+		} else {
+			do_shutdown(module);
+		}
+	} else {
+		status = SWITCH_STATUS_FALSE;
+	}
+	switch_mutex_unlock(loadable_modules.mutex);
+
+	switch_safe_free(file);
+	switch_safe_free(path);
 
 	return status;
 
@@ -522,40 +854,58 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filen
 	int loading = 1;
 	const char *err = NULL;
 	switch_loadable_module_interface_t *module_interface = NULL;
+	switch_memory_pool_t *pool;
 
-	if ((module = switch_core_permanent_alloc(sizeof(switch_loadable_module_t))) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Couldn't allocate memory\n");
-		return SWITCH_STATUS_GENERR;
+	
+	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
+		abort();
 	}
+
+	if ((module = switch_core_alloc(pool, sizeof(switch_loadable_module_t))) == 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Couldn't allocate memory\n");
+		abort();
+	}
+
+
 
 	while (loading) {
 		load_func_ptr = (switch_module_load_t) switch_module_load;
+		switch_status_t status;
 
 		if (load_func_ptr == NULL) {
 			err = "Cannot Load";
 			break;
 		}
 
-		if (load_func_ptr(&module_interface, filename) != SWITCH_STATUS_SUCCESS) {
+		status = load_func_ptr(&module_interface, filename);
+
+		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_NOUNLOAD) {
 			err = "Module load routine returned an error";
 			module_interface = NULL;
 			break;
 		}
 
-		if ((module = switch_core_permanent_alloc(sizeof(switch_loadable_module_t))) == 0) {
+		if ((module = switch_core_alloc(pool, sizeof(switch_loadable_module_t))) == 0) {
 			err = "Could not allocate memory\n";
-			break;
+			abort();
+		}
+
+		if (status == SWITCH_STATUS_NOUNLOAD) {
+			module->perm++;
 		}
 
 		loading = 0;
 	}
 
 	if (err) {
+		switch_core_destroy_memory_pool(&pool);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Error Loading module %s\n**%s**\n", filename, err);
 		return SWITCH_STATUS_GENERR;
 	}
 
-	module->filename = switch_core_permanent_strdup(filename);
+	module->pool = pool;
+	module->filename = switch_core_strdup(module->pool, filename);
 	module->module_interface = module_interface;
 	module->switch_module_load = load_func_ptr;
 
@@ -566,7 +916,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filen
 		module->switch_module_runtime = switch_module_runtime;
 	}
 	if (module->switch_module_runtime) {
-		switch_core_launch_thread(switch_loadable_module_exec, module, loadable_modules.pool);
+		switch_core_launch_thread(switch_loadable_module_exec, module, module->pool);
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Successfully Loaded [%s]\n", module_interface->module_name);
 	return switch_loadable_module_process((char *) module->filename, module);
@@ -599,6 +949,8 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 	switch_xml_t cfg, xml;
 	unsigned char all = 0;
 	unsigned int count = 0;
+	const char *err;
+
 
 #ifdef WIN32
 	const char *ext = ".dll";
@@ -633,10 +985,10 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 	switch_core_hash_init(&loadable_modules.say_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.management_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.dialplan_hash, loadable_modules.pool);
+	switch_mutex_init(&loadable_modules.mutex, SWITCH_MUTEX_NESTED, loadable_modules.pool);
 
 	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_xml_t mods, ld;
-
 		if ((mods = switch_xml_child(cfg, "modules"))) {
 			for (ld = switch_xml_child(mods, "load"); ld; ld = ld->next) {
 				const char *val = switch_xml_attr_soft(ld, "module");
@@ -644,7 +996,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
 					continue;
 				}
-				switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val, SWITCH_FALSE);
+				switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val, SWITCH_FALSE, &err);
 				count++;
 			}
 		}
@@ -664,7 +1016,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
 					continue;
 				}
-				switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val, SWITCH_FALSE);
+				switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val, SWITCH_FALSE, &err);
 				count++;
 			}
 		}
@@ -687,6 +1039,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 
 		while (apr_dir_read(&finfo, finfo_flags, module_dir_handle) == APR_SUCCESS) {
 			const char *fname = finfo.fname;
+			const char *err;
 
 			if (finfo.filetype != APR_REG) {
 				continue;
@@ -704,7 +1057,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 				continue;
 			}
 
-			switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) fname, SWITCH_FALSE);
+			switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) fname, SWITCH_FALSE, &err);
 		}
 		apr_dir_close(module_dir_handle);
 	}
@@ -714,35 +1067,58 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void do_shutdown(switch_loadable_module_t *module)
+{
+	assert(module != NULL);
+
+	switch_loadable_module_unprocess(module);
+
+	if (module->switch_module_shutdown) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping: %s\n", module->module_interface->module_name);
+		if (module->switch_module_shutdown() == SWITCH_STATUS_UNLOAD) {
+			switch_memory_pool_t *pool;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s unloaded.\n", module->module_interface->module_name);
+			switch_dso_unload(module->lib);
+			module->lib = NULL;
+			if ((pool = module->pool)) {
+				module = NULL;
+				switch_core_destroy_memory_pool(&pool);
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s shutdown.\n", module->module_interface->module_name);
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s has no shutdown routine\n", module->module_interface->module_name);
+	}
+
+	
+    switch_core_hash_delete_locked(loadable_modules.module_hash, module->key, loadable_modules.mutex);
+		
+}
+
 SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 {
 	switch_hash_index_t *hi;
 	void *val;
 	switch_loadable_module_t *module;
-
+	
 	for (hi = switch_hash_first(loadable_modules.pool, loadable_modules.module_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		module = (switch_loadable_module_t *) val;
-
-		if (module->switch_module_shutdown) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping: %s\n", module->module_interface->module_name);
-			if (module->switch_module_shutdown() == SWITCH_STATUS_UNLOAD) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s unloaded.\n", module->module_interface->module_name);
-				switch_dso_unload(module->lib);
-				module->lib = NULL;
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s shutdown.\n", module->module_interface->module_name);
-			}
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s has no shutdown routine\n", module->module_interface->module_name);
-		}
+		do_shutdown(module);
 	}
 
 }
 
 SWITCH_DECLARE(switch_endpoint_interface_t *) switch_loadable_module_get_endpoint_interface(char *name)
 {
-	return switch_core_hash_find(loadable_modules.endpoint_hash, name);
+	switch_endpoint_interface_t *ptr;
+
+	switch_mutex_lock(loadable_modules.mutex);
+	ptr = switch_core_hash_find(loadable_modules.endpoint_hash, name);
+	switch_mutex_unlock(loadable_modules.mutex);
+
+	return ptr;
 }
 
 SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_interface(char *name)
@@ -751,6 +1127,7 @@ SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_inte
 	switch_codec_interface_t *codec;
 	switch_size_t x;
 
+	switch_mutex_lock(loadable_modules.mutex);
 	if (!(codec = switch_core_hash_find(loadable_modules.codec_hash, name))) {
 		for (x = 0; x < strlen(name); x++) {
 			altname[x] = (char) toupper((int) name[x]);
@@ -762,62 +1139,63 @@ SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_inte
 			codec = switch_core_hash_find(loadable_modules.codec_hash, altname);
 		}
 	}
+	switch_mutex_unlock(loadable_modules.mutex);
 	return codec;
 }
 
 SWITCH_DECLARE(switch_dialplan_interface_t *) switch_loadable_module_get_dialplan_interface(char *name)
 {
-	return switch_core_hash_find(loadable_modules.dialplan_hash, name);
+	return switch_core_hash_find_locked(loadable_modules.dialplan_hash, name, loadable_modules.mutex);
 }
 
 SWITCH_DECLARE(switch_timer_interface_t *) switch_loadable_module_get_timer_interface(char *name)
 {
-	return switch_core_hash_find(loadable_modules.timer_hash, name);
+	return switch_core_hash_find_locked(loadable_modules.timer_hash, name, loadable_modules.mutex);
 }
 
 SWITCH_DECLARE(switch_application_interface_t *) switch_loadable_module_get_application_interface(char *name)
 {
-	return switch_core_hash_find(loadable_modules.application_hash, name);
+	return switch_core_hash_find_locked(loadable_modules.application_hash, name, loadable_modules.mutex);
 }
 
 SWITCH_DECLARE(switch_api_interface_t *) switch_loadable_module_get_api_interface(char *name)
 {
-	return switch_core_hash_find(loadable_modules.api_hash, name);
+	return switch_core_hash_find_locked(loadable_modules.api_hash, name, loadable_modules.mutex);
 }
 
 SWITCH_DECLARE(switch_file_interface_t *) switch_loadable_module_get_file_interface(char *name)
 {
-	return switch_core_hash_find(loadable_modules.file_hash, name);
+	return switch_core_hash_find_locked(loadable_modules.file_hash, name, loadable_modules.mutex);
 }
 
 SWITCH_DECLARE(switch_speech_interface_t *) switch_loadable_module_get_speech_interface(char *name)
 {
-	return switch_core_hash_find(loadable_modules.speech_hash, name);
+	return switch_core_hash_find_locked(loadable_modules.speech_hash, name, loadable_modules.mutex);
 }
 
 SWITCH_DECLARE(switch_asr_interface_t *) switch_loadable_module_get_asr_interface(char *name)
 {
-	return switch_core_hash_find(loadable_modules.asr_hash, name);
+	return switch_core_hash_find_locked(loadable_modules.asr_hash, name, loadable_modules.mutex);
 }
 
 SWITCH_DECLARE(switch_directory_interface_t *) switch_loadable_module_get_directory_interface(char *name)
 {
-	return switch_core_hash_find(loadable_modules.directory_hash, name);
+	return switch_core_hash_find_locked(loadable_modules.directory_hash, name, loadable_modules.mutex);
 }
 
 SWITCH_DECLARE(switch_chat_interface_t *) switch_loadable_module_get_chat_interface(char *name)
 {
-	return switch_core_hash_find(loadable_modules.chat_hash, name);
+	return switch_core_hash_find_locked(loadable_modules.chat_hash, name, loadable_modules.mutex);
 }
 
 SWITCH_DECLARE(switch_say_interface_t *) switch_loadable_module_get_say_interface(char *name)
 {
-	return switch_core_hash_find(loadable_modules.say_hash, name);
+	return switch_core_hash_find_locked(loadable_modules.say_hash, name, loadable_modules.mutex);
 }
 
 SWITCH_DECLARE(switch_management_interface_t *) switch_loadable_module_get_management_interface(char *relative_oid)
 {
-	return switch_core_hash_find(loadable_modules.management_hash, relative_oid);
+	return switch_core_hash_find_locked(loadable_modules.management_hash, relative_oid, loadable_modules.mutex);
 }
 
 SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool, const switch_codec_implementation_t **array, int arraylen)
@@ -828,6 +1206,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool
 	int i = 0;
 	const switch_codec_implementation_t *imp;
 
+	switch_mutex_lock(loadable_modules.mutex);
 	for (hi = switch_hash_first(pool, loadable_modules.codec_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		codec_interface = (switch_codec_interface_t *) val;
@@ -848,6 +1227,8 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool
 		}
 	}
 
+	switch_mutex_unlock(loadable_modules.mutex);
+	
 	return i;
 
 }
@@ -858,6 +1239,8 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 	switch_codec_interface_t *codec_interface;
 	const switch_codec_implementation_t *imp;
 
+	switch_mutex_lock(loadable_modules.mutex);
+	
 	for (x = 0; x < preflen; x++) {
 		char *cur, *last = NULL, *next = NULL, *name, *p, buf[256];
 		uint32_t interval = 0, rate = 0;
@@ -929,6 +1312,9 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 			}
 		}
 	}
+
+	switch_mutex_unlock(loadable_modules.mutex);
+	
 
 	return i;
 }
