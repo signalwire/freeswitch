@@ -36,5 +36,5 @@ $(GLIB_DIR):
 $(MONO_DIR):
 	$(GETLIB) $(MONO).tar.gz
 	export PATH=$(PATH):$(PREFIX)/bin/
-	cd $(MONO_DIR) && PKG_CONFIG_PATH=$(GLIB_DIR) ./configure $(DEFAULT_ARGS) --with-pic --with-gc=boehm --with-preview=yes --without-sigaltstack 
+	cd $(MONO_DIR) && PKG_CONFIG_PATH=$(GLIB_DIR) CFLAGS="-I$(GLIB_DIR)/glib -I$(GLIB_DIR)/gmodule -I$(GLIB_DIR)" ./configure $(DEFAULT_ARGS) --with-pic --with-preview=yes --without-sigaltstack 
 	cd $(MONO_DIR) && $(MAKE) install
