@@ -1,5 +1,5 @@
 
-MONO = mono-1.1.13.8
+MONO = mono-1.2.3.1
 MONO_DIR = $(switch_srcdir)/libs/$(MONO)
 GLIB = glib-2.12.3
 GLIB_DIR = $(switch_srcdir)/libs/$(GLIB)
@@ -13,6 +13,8 @@ LOCAL_LDFLAGS=`$(PREFIX)/bin/pkg-config --libs mono`
 include ../../../../build/modmake.rules
 
 DEFAULT_ARGS=--prefix=$(PREFIX) --with-pic
+MONO_ARGS=--with-preview=yes --without-sigaltstack  --disable-mcs-build
+MONO_CFLAGS="-I$(GLIB_DIR)/glib -I$(GLIB_DIR)/gmodule -I$(GLIB_DIR)"
 
 local_depend: $(GETTEXT_DIR) $(PKGCONFIG_DIR) $(GLIB_DIR) $(MONO_DIR)
 
@@ -36,5 +38,5 @@ $(GLIB_DIR):
 $(MONO_DIR):
 	$(GETLIB) $(MONO).tar.gz
 	export PATH=$(PATH):$(PREFIX)/bin/
-	cd $(MONO_DIR) && PKG_CONFIG_PATH=$(GLIB_DIR) CFLAGS="-I$(GLIB_DIR)/glib -I$(GLIB_DIR)/gmodule -I$(GLIB_DIR)" ./configure $(DEFAULT_ARGS) --with-pic --with-preview=yes --without-sigaltstack 
+	cd $(MONO_DIR) && PKG_CONFIG_PATH=$(GLIB_DIR) CFLAGS=$(MONO_CFLAGS) ./configure $(DEFAULT_ARGS) $(MONO_ARGS) 
 	cd $(MONO_DIR) && $(MAKE) install
