@@ -36,7 +36,7 @@ static const switch_state_handler_table_t audio_bridge_peer_state_handlers;
 /*********************************************************************************/
 struct switch_ivr_bridge_data {
 	switch_core_session_t *session;
-	char *b_uuid;
+	char b_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	int stream_id;
 	switch_input_callback_function_t input_callback;
 	void *session_data;
@@ -200,7 +200,11 @@ static switch_status_t audio_bridge_on_loopback(switch_core_session_t *session)
 
 	if ((bd = (switch_ivr_bridge_data_t *) switch_channel_get_private(channel, "_bridge_"))) {
 		switch_channel_set_private(channel, "_bridge_", NULL);
-		audio_bridge_thread(NULL, (void *) bd);
+		if (bd->session == session && *bd->b_uuid) {
+			audio_bridge_thread(NULL, (void *) bd);
+		} else {
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		}
 	} else {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 	}
@@ -509,14 +513,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	a_leg = switch_core_session_alloc(session, sizeof(*a_leg));
 	b_leg = switch_core_session_alloc(peer_session, sizeof(*b_leg));
 	
+	assert(a_leg && b_leg);
+
 	b_leg->session = peer_session;
-	b_leg->b_uuid = switch_core_session_strdup(peer_session, switch_core_session_get_uuid(session));
+	switch_copy_string(b_leg->b_uuid, switch_core_session_get_uuid(session), sizeof(b_leg->b_uuid));
 	b_leg->stream_id = stream_id;
 	b_leg->input_callback = input_callback;
 	b_leg->session_data = session_data;
 
 	a_leg->session = session;
-	a_leg->b_uuid = switch_core_session_strdup(session, switch_core_session_get_uuid(peer_session));
+	switch_copy_string(a_leg->b_uuid, switch_core_session_get_uuid(peer_session), sizeof(a_leg->b_uuid));
 	b_leg->stream_id = stream_id;
 	b_leg->input_callback = input_callback;
 	b_leg->session_data = peer_session_data;
