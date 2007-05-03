@@ -38,5 +38,5 @@ $(GLIB_DIR):
 $(MONO_DIR):
 	$(GETLIB) $(MONO).tar.gz
 	export PATH=$(PATH):$(PREFIX)/bin/
-	cd $(MONO_DIR) && PKG_CONFIG_PATH=$(GLIB_DIR) CFLAGS=$(MONO_CFLAGS) ./configure $(DEFAULT_ARGS) $(MONO_ARGS) 
+	cd $(MONO_DIR) && PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig CFLAGS=$(MONO_CFLAGS) top_builddir="$(switch_srcdir)/libs/$(MONO)" ./configure $(DEFAULT_ARGS) $(MONO_ARGS) 
 	cd $(MONO_DIR) && $(MAKE) install
