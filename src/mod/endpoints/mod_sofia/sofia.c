@@ -1820,6 +1820,10 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		switch_channel_set_variable(channel, "sip_call_id", tech_pvt->call_id);
 	}
 
+	if (sip->sip_subject && sip->sip_subject->g_string) {
+		switch_channel_set_variable(channel, "sip_subject", sip->sip_subject->g_string);
+	}
+
 	if (sip->sip_via) {
 		if (sip->sip_via->v_host) {
 			switch_channel_set_variable(channel, "sip_via_host", sip->sip_via->v_host);
