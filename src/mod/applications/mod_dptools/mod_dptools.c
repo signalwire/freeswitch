@@ -399,7 +399,7 @@ static void log_function(switch_core_session_t *session, char *data)
 	assert(channel != NULL);
 
 	if (data && (level = strdup(data))) {
-		switch_event_types_t etype = SWITCH_LOG_DEBUG;
+		switch_log_level_t etype = SWITCH_LOG_DEBUG;
 
 		if ((log_str = strchr(level, ' '))) {
 			*log_str++ = '\0';

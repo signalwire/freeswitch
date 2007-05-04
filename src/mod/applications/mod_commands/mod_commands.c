@@ -713,7 +713,7 @@ static switch_status_t originate_function(char *cmd, switch_core_session_t *ises
 		switch_core_session_rwunlock(caller_session);
 	}
 
-	return SWITCH_STATUS_SUCCESS;;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static void sch_api_callback(switch_scheduler_task_t *task)

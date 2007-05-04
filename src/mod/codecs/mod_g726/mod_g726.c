@@ -89,7 +89,6 @@ static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid Encoding Size %d!\n", codec->implementation->encoded_bytes_per_frame);
 			return SWITCH_STATUS_FALSE;
-			break;
 		}
 
 		g726_init_state(&handle->context);

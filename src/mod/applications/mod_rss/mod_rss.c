@@ -114,12 +114,10 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 				switch_core_speech_text_param_tts(dtb->sh, "voice", "next");
 				switch_set_flag(dtb, SFLAG_INFO);
 				return SWITCH_STATUS_BREAK;
-				break;
 			case '9':
 				switch_core_speech_text_param_tts(dtb->sh, "voice", dtb->voice);
 				switch_set_flag(dtb, SFLAG_INFO);
 				return SWITCH_STATUS_BREAK;
-				break;
 			case '2':
 				if (dtb->speed < 260) {
 					dtb->speed += 30;
@@ -490,7 +488,6 @@ static void rss_function(switch_core_session_t *session, char *data)
 					break;
 				case '#':
 					goto main_menu;
-					break;
 				}
 			}
 		}
