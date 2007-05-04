@@ -399,16 +399,16 @@ static void log_function(switch_core_session_t *session, char *data)
 	assert(channel != NULL);
 
 	if (data && (level = strdup(data))) {
-		switch_log_level_t etype = SWITCH_LOG_DEBUG;
+		switch_log_level_t ltype = SWITCH_LOG_DEBUG;
 
 		if ((log_str = strchr(level, ' '))) {
 			*log_str++ = '\0';
-			switch_name_event(level, &etype);
+			ltype = switch_log_str2level(level);
 		} else {
 			log_str = level;
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, etype, "%s\n", log_str);
+		switch_log_printf(SWITCH_CHANNEL_LOG, ltype, "%s\n", log_str);
 		switch_safe_free(level);
 	}
 }
