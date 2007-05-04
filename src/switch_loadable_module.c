@@ -870,8 +870,8 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filen
 
 
 	while (loading) {
-		load_func_ptr = (switch_module_load_t) switch_module_load;
 		switch_status_t status;
+		load_func_ptr = (switch_module_load_t) switch_module_load;
 
 		if (load_func_ptr == NULL) {
 			err = "Cannot Load";
