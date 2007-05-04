@@ -85,7 +85,7 @@ stfu_instance_t *stfu_n_init(uint32_t qlen)
 	return i;
 }
 
-static int32_t stfu_n_measure_interval(stfu_instance_t *i, stfu_queue_t *queue)
+static int32_t stfu_n_measure_interval(stfu_queue_t *queue)
 {
 	uint32_t index;
 	int32_t d, most = 0, last = 0, this, track[STFU_MAX_TRACK] = {0};
@@ -114,7 +114,7 @@ static int32_t stfu_n_measure_interval(stfu_instance_t *i, stfu_queue_t *queue)
 
 static int16_t stfu_n_process(stfu_instance_t *i, stfu_queue_t *queue)
 {
-	if (!i->interval && !(i->interval = stfu_n_measure_interval(i, queue))) {
+	if (!i->interval && !(i->interval = stfu_n_measure_interval(queue))) {
 		return -1;
 	}
 
