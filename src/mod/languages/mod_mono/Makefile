@@ -8,7 +8,7 @@ GETTEXT_DIR = $(switch_srcdir)/libs/$(GETTEXT)
 PKGCONFIG = pkg-config-0.21
 PKGCONFIG_DIR = $(switch_srcdir)/libs/$(PKGCONFIG)
 
-LOCAL_CFLAGS=`$(PREFIX)/bin/pkg-config --cflags mono`
+LOCAL_CFLAGS=-w `$(PREFIX)/bin/pkg-config --cflags mono`
 LOCAL_LDFLAGS=`$(PREFIX)/bin/pkg-config --libs mono`
 include ../../../../build/modmake.rules
 
