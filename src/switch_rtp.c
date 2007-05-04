@@ -42,7 +42,7 @@
 #undef inline
 #include <datatypes.h>
 #include <srtp.h>
-
+#include "stfu.h"
 #define MAX_KEY_LEN      64
 #define rtp_header_len 12
 #define RTP_START_PORT 16384
@@ -164,6 +164,7 @@ struct switch_rtp {
 	uint8_t ready;
 	uint8_t cn;
 	switch_time_t last_time;
+	stfu_instance_t *jb;
 };
 
 static int global_init = 0;
@@ -586,6 +587,13 @@ SWITCH_DECLARE(void) switch_rtp_set_cng_pt(switch_rtp_t *rtp_session, switch_pay
 
 }
 
+SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *rtp_session, uint32_t queue_frames)
+{
+	rtp_session->jb = stfu_n_init(queue_frames);	
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_session, char *login, char *rlogin)
 {
 	char ice_user[80];
@@ -631,6 +639,10 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 	(*rtp_session)->ready = 0;
 
 	switch_mutex_lock((*rtp_session)->flag_mutex);
+
+	if ((*rtp_session)->jb) {
+		stfu_n_destroy(&(*rtp_session)->jb);
+	}
 
 	if ((*rtp_session)->dtmf_data.dtmf_buffer) {
 		switch_buffer_destroy(&(*rtp_session)->dtmf_data.dtmf_buffer);
@@ -821,6 +833,24 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			return -1;
 		}
 
+		if (rtp_session->jb && bytes) {
+			stfu_frame_t *frame;
+			
+			stfu_n_eat(rtp_session->jb, ntohl(rtp_session->recv_msg.header.ts), rtp_session->recv_msg.body, bytes - rtp_header_len);
+			if ((frame = stfu_n_read_a_frame(rtp_session->jb))) {
+				memcpy(rtp_session->recv_msg.body, frame->data, frame->dlen);
+				if (frame->plc) {
+					*flags |= SFF_PLC;
+				}
+				bytes = frame->dlen + rtp_header_len;
+				rtp_session->recv_msg.header.ts = htonl(frame->ts);
+			} else {
+				bytes = 0;
+				continue;
+			}
+			
+		}
+
 		if (!bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
 			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
 
@@ -906,6 +936,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 			bytes = sbytes;
 		}
+
 
 		if (status == SWITCH_STATUS_BREAK || bytes == 0) {
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_DATAWAIT)) {
@@ -996,6 +1027,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			
 			continue;
 		}
+	
 
 		break;
 	}

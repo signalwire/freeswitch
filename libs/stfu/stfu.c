@@ -163,7 +163,6 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, void *data, size_
 		cplen = sizeof(frame->data);
 	}
 
-
 	memcpy(frame->data, data, cplen);
 	frame->ts = ts;
 	frame->dlen = cplen;
@@ -185,7 +184,9 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 
 	if (i->running) {
 		should_have = i->last_ts + i->interval;
-	} 
+	} else {
+		should_have = i->out_queue->array[0].ts;
+	}
 
 	for(index = 0; index < i->out_queue->array_len; index++) {
 		if (i->out_queue->array[index].was_read) {
@@ -220,11 +221,12 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 
 			i->miss_count++;
 
-			if (i->miss_count > 10) {
+			if (i->miss_count > 10 || i->in_queue->array_len == i->in_queue->array_size ) {
 				i->out_queue->wr_len = i->out_queue->array_len;
 				i->last_ts = should_have = frame->ts;
 				return NULL;
 			}
+
 			i->last_ts = should_have;
 			rframe = &i->out_queue->int_frame;
 			rframe->dlen = i->out_queue->array[i->out_queue->last_index].dlen;
@@ -248,6 +250,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 		i->last_ts = rframe->ts;
 		rframe->was_read = 1;
 		i->running = 1;
+		i->miss_count = 0;
 	}
 
 	return rframe;

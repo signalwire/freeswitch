@@ -53,6 +53,7 @@
       <!-- Request a certain tone/file to be played while you wait for the call to be answered-->
       <action application="set" data="ringback=${us-ring}"/>
       <!--<action application="set" data="ringback=/home/ring.wav"/>-->
+      <!--<action application="set" data="jitterbuffer_msec=400"/>-->
       <action application="bridge" data="sofia/$${sip_profile}/1234@conference.freeswitch.org"/>
     </condition>
   </extension>

@@ -949,6 +949,23 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt)
 							  switch_channel_get_name(switch_core_session_get_channel(tech_pvt->session)), vad_in ? "in" : "", vad_out ? "out" : "");
 		}
 
+		if ((val = switch_channel_get_variable(channel, "jitterbuffer_msec"))) {
+			int len = atoi(val);
+			
+			if (len < 100 || len > 1000) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Jitterbuffer spec [%d] myst be between 100 and 1000\n", len);
+			} else {
+				int qlen;
+
+				qlen = len / (tech_pvt->read_codec.implementation->microseconds_per_frame / 1000);
+				
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting Jitterbuffer to %dms (%d frames)\n", len, qlen);
+				switch_rtp_activate_jitter_buffer(tech_pvt->rtp_session, qlen);
+			}
+		}
+
+
+
 		if (tech_pvt->te) {
 			switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->te);
 		}

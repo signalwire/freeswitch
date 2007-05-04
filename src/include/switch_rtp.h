@@ -165,6 +165,14 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session);
 */
 SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_session, char *login, char *rlogin);
 
+/*! 
+  \brief Acvite a jitter buffer on an RTP session
+  \param rtp_session the rtp session
+  \param queue_frames the number of frames to delay
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *rtp_session, uint32_t queue_frames);
+
 /*!
   \brief Set an RTP Flag
   \param rtp_session the RTP session

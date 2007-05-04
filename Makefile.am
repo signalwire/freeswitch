@@ -57,6 +57,7 @@ src/switch_ivr.c \
 src/switch_stun.c\
 src/switch_log.c\
 src/switch_xml.c\
+libs/stfu/stfu.c\
 libs/libteletone/src/libteletone_detect.c\
 libs/libteletone/src/libteletone_generate.c
 
@@ -95,6 +96,7 @@ libs/libteletone/src/libteletone.h
 
 CORE_CFLAGS     = `$(switch_srcdir)/libs/apr/apr-1-config --cflags --cppflags --includes`
 CORE_CFLAGS    += `$(switch_srcdir)/libs/apr-util/apu-1-config --includes`
+CORE_CFLAGS    += -I$(switch_srcdir)/libs/stfu
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/sqlite
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/pcre
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/include
