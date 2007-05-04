@@ -739,6 +739,12 @@ SWITCH_DECLARE(switch_size_t) switch_file_get_size(switch_file_t *thefile);
 
 SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename, switch_memory_pool_t *pool);
 
+typedef struct switch_dir switch_dir_t;
+
+SWITCH_DECLARE(switch_status_t) switch_dir_open(switch_dir_t **new_dir, const char *dirname, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_dir_close(switch_dir_t *thedir);
+SWITCH_DECLARE(const char *) switch_dir_next_file(switch_dir_t *thedir);
+
 /** @} */
 
 /**

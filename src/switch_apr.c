@@ -373,6 +373,42 @@ SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename, switch_
 	return status;
 }
 
+struct switch_dir {
+	apr_dir_t *dir_handle;
+	apr_finfo_t finfo;
+};
+
+SWITCH_DECLARE(switch_status_t) switch_dir_open(switch_dir_t **new_dir, const char *dirname, switch_memory_pool_t *pool)
+{
+	switch_status_t status;
+	switch_dir_t *dir = switch_core_alloc(pool, sizeof(switch_dir_t));
+	status = apr_dir_open(&(dir->dir_handle), dirname, pool);
+	*new_dir = dir;
+	return status;	 
+}
+
+SWITCH_DECLARE(switch_status_t) switch_dir_close(switch_dir_t *thedir)
+{
+	return apr_dir_close(thedir->dir_handle);
+}
+
+SWITCH_DECLARE(const char *) switch_dir_next_file(switch_dir_t *thedir) 
+{
+	const char *fname = NULL;
+	apr_int32_t finfo_flags = APR_FINFO_DIRENT | APR_FINFO_TYPE | APR_FINFO_NAME;
+	while (apr_dir_read(&(thedir->finfo), finfo_flags, thedir->dir_handle) == SWITCH_STATUS_SUCCESS) {
+		if (thedir->finfo.filetype != APR_REG)
+			continue;
+		fname = thedir->finfo.fname;
+		if (!fname)
+			fname = thedir->finfo.name;
+		if (!fname)
+			continue;
+	}
+	return fname;
+}
+
+
 /* thread stubs */
 
 
