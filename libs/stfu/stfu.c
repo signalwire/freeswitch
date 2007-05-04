@@ -27,6 +27,11 @@
  */
 #include "stfu.h"
 
+#ifdef _MSC_VER
+/* warning C4706: assignment within conditional expression*/
+#pragma warning(disable: 4706)
+#endif
+
 struct stfu_queue {
 	struct stfu_frame *array;
 	struct stfu_frame int_frame;
