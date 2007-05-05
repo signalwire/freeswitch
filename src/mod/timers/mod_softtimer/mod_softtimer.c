@@ -73,7 +73,7 @@ static inline switch_status_t timer_init(switch_timer_t *timer)
 {
 	timer_private_t *private_info;
 
-	if (globals.RUNNING != 1) {
+	if (globals.RUNNING != 1 || !globals.mutex) {
 		return SWITCH_STATUS_FALSE;
 	}
 

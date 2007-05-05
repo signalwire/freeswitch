@@ -90,6 +90,21 @@ stfu_instance_t *stfu_n_init(uint32_t qlen)
 	return i;
 }
 
+void stfu_n_reset(stfu_instance_t *i)
+{
+	i->in_queue = &i->a_queue;
+	i->out_queue = &i->b_queue;
+	i->in_queue->array_len = 0;
+	i->out_queue->array_len = 0;
+	i->out_queue->wr_len = 0;
+	i->out_queue->last_index = 0;
+	i->miss_count = 0;	
+	i->last_ts = 0;
+	i->running = 0;
+	i->miss_count = 0;
+	i->interval = 0;
+}
+
 static int32_t stfu_n_measure_interval(stfu_queue_t *queue)
 {
 	uint32_t index;
@@ -148,7 +163,7 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, void *data, size_
 		i->out_queue->wr_len = 0;
 		i->out_queue->last_index = 0;
 		i->miss_count = 0;
-
+	
 		if (stfu_n_process(i, i->out_queue) < 0) {
 			return STFU_IT_FAILED;
 		}
@@ -183,7 +198,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 	stfu_frame_t *frame = NULL, *rframe = NULL;
 	
 
-	if ((i->out_queue->wr_len == i->out_queue->array_len) || !i->out_queue->array_len) {
+	if (((i->out_queue->wr_len == i->out_queue->array_len) || !i->out_queue->array_len)) {
 		return NULL;
 	}
 
@@ -199,7 +214,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 		}
 
 		frame = &i->out_queue->array[index];
-				
+		
 		if (frame->ts != should_have) {
 			int tried = 0;
 			for (index2 = 0; index2 < i->out_queue->array_len; index2++) {
@@ -226,12 +241,13 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 
 			i->miss_count++;
 
-			if (i->miss_count > 10 || i->in_queue->array_len == i->in_queue->array_size ) {
-				i->out_queue->wr_len = i->out_queue->array_len;
-				i->last_ts = should_have = frame->ts;
+			if (i->miss_count > 10 || (i->in_queue->array_len == i->in_queue->array_size) || tried >= i->in_queue->array_size) {
+				i->running = 0;
+				i->interval = 0;
+				i->out_queue->wr_len = i->out_queue->array_size;
 				return NULL;
 			}
-
+			
 			i->last_ts = should_have;
 			rframe = &i->out_queue->int_frame;
 			rframe->dlen = i->out_queue->array[i->out_queue->last_index].dlen;

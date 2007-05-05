@@ -816,6 +816,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	switch_size_t bytes = 0;
 	switch_status_t status;
 	uint8_t check = 1;
+	stfu_frame_t *jb_frame;
 
 	if (!rtp_session->timer.interval) {
 		rtp_session->last_time = switch_time_now();
@@ -833,22 +834,23 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			return -1;
 		}
 
-		if (rtp_session->jb && bytes) {
-			stfu_frame_t *frame;
+		if (rtp_session->jb && bytes && rtp_session->recv_msg.header.pt == rtp_session->payload) {
+			if (rtp_session->recv_msg.header.m) {
+				stfu_n_reset(rtp_session->jb);
+			} 
 			
 			stfu_n_eat(rtp_session->jb, ntohl(rtp_session->recv_msg.header.ts), rtp_session->recv_msg.body, bytes - rtp_header_len);
-			if ((frame = stfu_n_read_a_frame(rtp_session->jb))) {
-				memcpy(rtp_session->recv_msg.body, frame->data, frame->dlen);
-				if (frame->plc) {
+			if ((jb_frame = stfu_n_read_a_frame(rtp_session->jb))) {
+				memcpy(rtp_session->recv_msg.body, jb_frame->data, jb_frame->dlen);
+				if (jb_frame->plc) {
 					*flags |= SFF_PLC;
-				}
-				bytes = frame->dlen + rtp_header_len;
-				rtp_session->recv_msg.header.ts = htonl(frame->ts);
+					}
+				bytes = jb_frame->dlen + rtp_header_len;
+				rtp_session->recv_msg.header.ts = htonl(jb_frame->ts);
 			} else {
 				bytes = 0;
 				continue;
-			}
-			
+			}			
 		}
 
 		if (!bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
@@ -882,15 +884,22 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		if (check) {
 			do_2833(rtp_session);
-
-			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
+			
+			if (rtp_session->jb && (jb_frame = stfu_n_read_a_frame(rtp_session->jb))) {
+				memcpy(rtp_session->recv_msg.body, jb_frame->data, jb_frame->dlen);
+				if (jb_frame->plc) {
+					*flags |= SFF_PLC;
+				}
+				bytes = jb_frame->dlen + rtp_header_len;
+				rtp_session->recv_msg.header.ts = htonl(jb_frame->ts);
+			} else if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 				uint8_t *data = (uint8_t *) rtp_session->recv_msg.body;
 				/* We're late! We're Late! */
 				if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK) && status == SWITCH_STATUS_BREAK) {
 					switch_yield(1000);
 					continue;
 				}
-					
+				
 				memset(data, 0, 2);
 				data[0] = 65;
 				
