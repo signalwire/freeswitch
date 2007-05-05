@@ -174,7 +174,7 @@ static const switch_codec_implementation_t g723_1_implementation = {
 	/*.iananame */ "G723",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
-	/*.bits_per_second */ 6300,
+	/*.bits_per_second */ 6400,
 	/*.microseconds_per_frame */ 30000,
 	/*.samples_per_frame */ 240,
 	/*.bytes_per_frame */ 480,
@@ -189,7 +189,7 @@ static const switch_codec_implementation_t g723_1_implementation = {
 };
 
 static const switch_codec_interface_t g723_1_codec_interface = {
-	/*.interface_name */ "g723.1 6.3k",
+	/*.interface_name */ "g723.1 6.4k",
 	/*.implementations */ &g723_1_implementation,
 };
 
