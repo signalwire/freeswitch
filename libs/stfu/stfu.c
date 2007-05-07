@@ -216,7 +216,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 		frame = &i->out_queue->array[index];
 		
 		if (frame->ts != should_have) {
-			int tried = 0;
+			unsigned int tried = 0;
 			for (index2 = 0; index2 < i->out_queue->array_len; index2++) {
 				if (i->out_queue->array[index2].was_read) {
 					continue;
