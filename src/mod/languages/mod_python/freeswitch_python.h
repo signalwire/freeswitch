@@ -39,7 +39,7 @@ extern "C" {
 		int transfer(char *extensions, char *dialplan, char *context);
 		int play_and_get_digits(int min_digits, int max_digits, int max_tries, int timeout, char *terminators,
 								char *audio_files, char *bad_input_audio_files, char *dtmf_buf, char *digits_regex);
-		void SessionContainer::execute(char *app, char *data);
+		void execute(char *app, char *data);
 	  protected:
 	};
 
