@@ -57,14 +57,14 @@ void SessionContainer::get_variable(char *var, char *val)
     switch_channel_get_variable(channel, var);
 }
 
-void SessionContainer::set_state(char *state)
+void SessionContainer::execute(char *app, char *data)
 {
-    switch_channel_state_t current_state;
+	const switch_application_interface_t *application_interface;
 	sanity_check();
-	current_state = switch_channel_get_state(channel);
-    if ((current_state = switch_channel_name_state(state)) < CS_HANGUP) {
-        switch_channel_set_state(channel, current_state);
-    }
+
+	if ((application_interface = switch_loadable_module_get_application_interface(app))) {
+		switch_core_session_exec(session, application_interface, data);
+	}
 }
 
 int SessionContainer::play_file(char *file, char *timer_name)

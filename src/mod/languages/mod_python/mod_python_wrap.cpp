@@ -785,6 +785,21 @@ void console_clean_log(char *msg)
 }
 
 
+ char *api_execute(char *cmd, char *arg)
+ {
+	 switch_stream_handle_t stream = { 0 };
+	 SWITCH_STANDARD_STREAM(stream);
+	 switch_api_execute(cmd, arg, NULL, &stream);
+	 return (char *) stream.data;
+ }
+
+ void api_reply_delete(char *reply)
+ {
+	 if (!switch_strlen_zero(reply)) {
+		 free(reply);
+	 }
+ }
+
 
 
 #ifdef __cplusplus
@@ -847,6 +862,36 @@ static PyObject *_wrap_console_clean_log(PyObject *self, PyObject *args) {
     
     if(!PyArg_ParseTuple(args,(char *)"s:console_clean_log",&arg1)) goto fail;
     console_clean_log(arg1);
+    
+    Py_INCREF(Py_None); resultobj = Py_None;
+    return resultobj;
+    fail:
+    return NULL;
+}
+
+
+static PyObject *_wrap_api_execute(PyObject *self, PyObject *args) {
+    PyObject *resultobj;
+    char *arg1 ;
+    char *arg2 ;
+    char *result;
+    
+    if(!PyArg_ParseTuple(args,(char *)"ss:api_execute",&arg1,&arg2)) goto fail;
+    result = (char *)api_execute(arg1,arg2);
+    
+    resultobj = result ? PyString_FromString(result) : Py_BuildValue((char*)"");
+    return resultobj;
+    fail:
+    return NULL;
+}
+
+
+static PyObject *_wrap_api_reply_delete(PyObject *self, PyObject *args) {
+    PyObject *resultobj;
+    char *arg1 ;
+    
+    if(!PyArg_ParseTuple(args,(char *)"s:api_reply_delete",&arg1)) goto fail;
+    api_reply_delete(arg1);
     
     Py_INCREF(Py_None); resultobj = Py_None;
     return resultobj;
@@ -965,23 +1010,6 @@ static PyObject *_wrap_SessionContainer_get_variable(PyObject *self, PyObject *a
     if(!PyArg_ParseTuple(args,(char *)"Oss:SessionContainer_get_variable",&obj0,&arg2,&arg3)) goto fail;
     if ((SWIG_ConvertPtr(obj0,(void **) &arg1, SWIGTYPE_p_SessionContainer,SWIG_POINTER_EXCEPTION | 0 )) == -1) SWIG_fail;
     (arg1)->get_variable(arg2,arg3);
-    
-    Py_INCREF(Py_None); resultobj = Py_None;
-    return resultobj;
-    fail:
-    return NULL;
-}
-
-
-static PyObject *_wrap_SessionContainer_set_state(PyObject *self, PyObject *args) {
-    PyObject *resultobj;
-    SessionContainer *arg1 = (SessionContainer *) 0 ;
-    char *arg2 ;
-    PyObject * obj0 = 0 ;
-    
-    if(!PyArg_ParseTuple(args,(char *)"Os:SessionContainer_set_state",&obj0,&arg2)) goto fail;
-    if ((SWIG_ConvertPtr(obj0,(void **) &arg1, SWIGTYPE_p_SessionContainer,SWIG_POINTER_EXCEPTION | 0 )) == -1) SWIG_fail;
-    (arg1)->set_state(arg2);
     
     Py_INCREF(Py_None); resultobj = Py_None;
     return resultobj;
@@ -1174,6 +1202,24 @@ static PyObject *_wrap_SessionContainer_play_and_get_digits(PyObject *self, PyOb
 }
 
 
+static PyObject *_wrap_SessionContainer_execute(PyObject *self, PyObject *args) {
+    PyObject *resultobj;
+    SessionContainer *arg1 = (SessionContainer *) 0 ;
+    char *arg2 ;
+    char *arg3 ;
+    PyObject * obj0 = 0 ;
+    
+    if(!PyArg_ParseTuple(args,(char *)"Oss:SessionContainer_execute",&obj0,&arg2,&arg3)) goto fail;
+    if ((SWIG_ConvertPtr(obj0,(void **) &arg1, SWIGTYPE_p_SessionContainer,SWIG_POINTER_EXCEPTION | 0 )) == -1) SWIG_fail;
+    (arg1)->execute(arg2,arg3);
+    
+    Py_INCREF(Py_None); resultobj = Py_None;
+    return resultobj;
+    fail:
+    return NULL;
+}
+
+
 static PyObject * SessionContainer_swigregister(PyObject *self, PyObject *args) {
     PyObject *obj;
     if (!PyArg_ParseTuple(args,(char*)"O", &obj)) return NULL;
@@ -1185,6 +1231,8 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"PythonDTMFCallback", _wrap_PythonDTMFCallback, METH_VARARGS },
 	 { (char *)"console_log", _wrap_console_log, METH_VARARGS },
 	 { (char *)"console_clean_log", _wrap_console_clean_log, METH_VARARGS },
+	 { (char *)"api_execute", _wrap_api_execute, METH_VARARGS },
+	 { (char *)"api_reply_delete", _wrap_api_reply_delete, METH_VARARGS },
 	 { (char *)"new_SessionContainer", _wrap_new_SessionContainer, METH_VARARGS },
 	 { (char *)"delete_SessionContainer", _wrap_delete_SessionContainer, METH_VARARGS },
 	 { (char *)"SessionContainer_answer", _wrap_SessionContainer_answer, METH_VARARGS },
@@ -1192,7 +1240,6 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"SessionContainer_hangup", _wrap_SessionContainer_hangup, METH_VARARGS },
 	 { (char *)"SessionContainer_set_variable", _wrap_SessionContainer_set_variable, METH_VARARGS },
 	 { (char *)"SessionContainer_get_variable", _wrap_SessionContainer_get_variable, METH_VARARGS },
-	 { (char *)"SessionContainer_set_state", _wrap_SessionContainer_set_state, METH_VARARGS },
 	 { (char *)"SessionContainer_play_file", _wrap_SessionContainer_play_file, METH_VARARGS },
 	 { (char *)"SessionContainer_set_dtmf_callback", _wrap_SessionContainer_set_dtmf_callback, METH_VARARGS },
 	 { (char *)"SessionContainer_speak_text", _wrap_SessionContainer_speak_text, METH_VARARGS },
@@ -1200,6 +1247,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"SessionContainer_get_digits", _wrap_SessionContainer_get_digits, METH_VARARGS },
 	 { (char *)"SessionContainer_transfer", _wrap_SessionContainer_transfer, METH_VARARGS },
 	 { (char *)"SessionContainer_play_and_get_digits", _wrap_SessionContainer_play_and_get_digits, METH_VARARGS },
+	 { (char *)"SessionContainer_execute", _wrap_SessionContainer_execute, METH_VARARGS },
 	 { (char *)"SessionContainer_swigregister", SessionContainer_swigregister, METH_VARARGS },
 	 { NULL, NULL }
 };

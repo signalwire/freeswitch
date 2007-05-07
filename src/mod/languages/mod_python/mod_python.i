@@ -49,6 +49,21 @@ void console_clean_log(char *msg)
 }
 
 
+ char *api_execute(char *cmd, char *arg)
+ {
+	 switch_stream_handle_t stream = { 0 };
+	 SWITCH_STANDARD_STREAM(stream);
+	 switch_api_execute(cmd, arg, NULL, &stream);
+	 return (char *) stream.data;
+ }
+
+ void api_reply_delete(char *reply)
+ {
+	 if (!switch_strlen_zero(reply)) {
+		 free(reply);
+	 }
+ }
+
 
 %}
 

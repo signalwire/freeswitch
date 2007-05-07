@@ -36,6 +36,10 @@ PythonDTMFCallback = _freeswitch.PythonDTMFCallback
 console_log = _freeswitch.console_log
 
 console_clean_log = _freeswitch.console_clean_log
+
+api_execute = _freeswitch.api_execute
+
+api_reply_delete = _freeswitch.api_reply_delete
 class SessionContainer(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, SessionContainer, name, value)
@@ -55,7 +59,6 @@ class SessionContainer(_object):
     def hangup(*args): return _freeswitch.SessionContainer_hangup(*args)
     def set_variable(*args): return _freeswitch.SessionContainer_set_variable(*args)
     def get_variable(*args): return _freeswitch.SessionContainer_get_variable(*args)
-    def set_state(*args): return _freeswitch.SessionContainer_set_state(*args)
     def play_file(*args): return _freeswitch.SessionContainer_play_file(*args)
     def set_dtmf_callback(*args): return _freeswitch.SessionContainer_set_dtmf_callback(*args)
     def speak_text(*args): return _freeswitch.SessionContainer_speak_text(*args)
@@ -63,6 +66,7 @@ class SessionContainer(_object):
     def get_digits(*args): return _freeswitch.SessionContainer_get_digits(*args)
     def transfer(*args): return _freeswitch.SessionContainer_transfer(*args)
     def play_and_get_digits(*args): return _freeswitch.SessionContainer_play_and_get_digits(*args)
+    def execute(*args): return _freeswitch.SessionContainer_execute(*args)
 
 class SessionContainerPtr(SessionContainer):
     def __init__(self, this):
