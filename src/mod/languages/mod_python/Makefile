@@ -14,7 +14,7 @@ SWIGCFILE=../../../switch_swig.c
 SWIGIFILE=../../../switch_swig.i
 
 local_depend:
-	MAKE=$(MAKE) PY_CFLAGS=-fPIC $(BASE)/build/buildlib.sh $(BASE) install Python-2.4.3.tgz --prefix=$(PREFIX) --enable-threads
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install Python-2.4.3.tgz --prefix=$(PREFIX) --enable-threads CFLAGSFORSHARED="-fPIC"
 
 reswig: 
 	swig -python -shadow -c++ -o mod_python_wrap.cpp mod_python.i
