@@ -9,8 +9,9 @@ extern "C" {
 
 #include <switch.h>
 
-	extern void *globalDTMFCallbackFunction;
 	extern switch_status_t PythonDTMFCallback(switch_core_session * session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen);
+	void console_log(char *level_str, char *msg);
+	void console_clean_log(char *msg);
 
 	class SessionContainer {
 	  private:
@@ -23,8 +24,8 @@ extern "C" {
 	  public:
 		     SessionContainer(char *uuid);
 		    ~SessionContainer();
-		void console_log(char *level_str, char *msg);
-		void console_clean_log(char *msg);
+			//void console_log(char *level_str, char *msg);
+			//void console_clean_log(char *msg);
 		int answer();
 		int pre_answer();
 		void hangup(char *cause);

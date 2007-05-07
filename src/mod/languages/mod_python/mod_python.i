@@ -22,9 +22,9 @@ switch_status_t PythonDTMFCallback(switch_core_session_t *session,
    PyObject *result;
    switch_status_t dres = SWITCH_STATUS_FALSE;
    
-   func = (PyObject *) globalDTMFCallbackFunction;               // Get Python function
-   arglist = Py_BuildValue("(sisi)",input,itype,buf,buflen);             // Build argument list
-   result = PyEval_CallObject(func,arglist);     // Call Python
+   func = (PyObject *) buf;               // Get Python function
+   arglist = Py_BuildValue("(si)", input, itype);             // Build argument list
+   result = PyEval_CallObject(func, arglist);     // Call Python
    Py_DECREF(arglist);                           // Trash arglist
    if (result) {                                 // If no errors, return double
      dres = (switch_status_t) PyInt_AsLong(result);
@@ -32,6 +32,23 @@ switch_status_t PythonDTMFCallback(switch_core_session_t *session,
    Py_XDECREF(result);
    return dres;
 }
+
+
+void console_log(char *level_str, char *msg)
+{
+    switch_log_level_t level = SWITCH_LOG_DEBUG;
+    if (level_str) {
+        level = switch_log_str2level(level_str);
+    }
+    switch_log_printf(SWITCH_CHANNEL_LOG, level, msg);
+}
+
+void console_clean_log(char *msg)
+{
+    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN,SWITCH_LOG_DEBUG, msg);
+}
+
+
 
 %}
 

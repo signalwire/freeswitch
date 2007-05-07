@@ -32,6 +32,10 @@ del types
 
 
 PythonDTMFCallback = _freeswitch.PythonDTMFCallback
+
+console_log = _freeswitch.console_log
+
+console_clean_log = _freeswitch.console_clean_log
 class SessionContainer(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, SessionContainer, name, value)
@@ -46,8 +50,6 @@ class SessionContainer(_object):
         try:
             if self.thisown: destroy(self)
         except: pass
-    def console_log(*args): return _freeswitch.SessionContainer_console_log(*args)
-    def console_clean_log(*args): return _freeswitch.SessionContainer_console_clean_log(*args)
     def answer(*args): return _freeswitch.SessionContainer_answer(*args)
     def pre_answer(*args): return _freeswitch.SessionContainer_pre_answer(*args)
     def hangup(*args): return _freeswitch.SessionContainer_hangup(*args)
@@ -68,6 +70,5 @@ class SessionContainerPtr(SessionContainer):
         if not hasattr(self,"thisown"): _swig_setattr(self, SessionContainer, 'thisown', 0)
         _swig_setattr(self, SessionContainer,self.__class__,SessionContainer)
 _freeswitch.SessionContainer_swigregister(SessionContainerPtr)
-cvar = _freeswitch.cvar
 
 

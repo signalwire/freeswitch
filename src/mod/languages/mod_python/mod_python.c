@@ -42,43 +42,127 @@
 
 #include <switch.h>
 
+
+
 void init_freeswitch(void);
 static switch_api_interface_t python_run_interface;
 
 const char modname[] = "mod_python";
 
+static void eval_some_python(char *uuid, char *args)
+{
+	PyThreadState *tstate;
+	FILE *pythonfile = NULL;
+	char *dupargs = NULL;
+	char *argv[128] = {0};
+	int argc;
+	int lead = 0;
+	char *script = NULL;
+
+	if (args) {
+		dupargs = strdup(args);
+	} else {
+		return;
+	}
+
+	assert(dupargs != NULL);
+	
+	if (!(argc = switch_separate_string(dupargs, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No script name specified!\n");
+		goto done;
+	}
+
+	script = argv[0];
+	
+	if (uuid) {
+		argv[0] = uuid;
+	} else {
+		lead = 1;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "running %s\n", script);
+
+
+	if ((pythonfile = fopen(script, "r"))) {
+		PyEval_AcquireLock();
+		tstate = Py_NewInterpreter();
+		PyEval_ReleaseLock(); 
+
+		if (!tstate) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error acquiring tstate\n");
+			goto done;
+		}
+
+
+		init_freeswitch();
+		PySys_SetArgv(argc - lead, &argv[lead]);
+		PyRun_SimpleFile(pythonfile, "");
+		Py_EndInterpreter(tstate);
+		
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error running %s\n", script);
+	}
+
+
+ done:
+
+	if (pythonfile) {
+		fclose(pythonfile);
+	}
+
+	switch_safe_free(dupargs);
+}
+
 static void python_function(switch_core_session_t *session, char *data)
 {
-	char *uuid = switch_core_session_get_uuid(session);
-	char *argv[1];
-	FILE *pythonfile;
 
-	argv[0] = uuid;
-	pythonfile = fopen(data, "r");
+	eval_some_python(switch_core_session_get_uuid(session), (char *)data);
+	
+}
 
-	Py_Initialize();
-	PySys_SetArgv(1, argv);
-	init_freeswitch();
-	PyRun_SimpleFile(pythonfile, "");
-	Py_Finalize();
+struct switch_py_thread {
+	char *args;
+	switch_memory_pool_t *pool;
+};
 
+static void *SWITCH_THREAD_FUNC py_thread_run(switch_thread_t *thread, void *obj)
+{
+	switch_memory_pool_t *pool;
+	struct switch_py_thread *pt = (struct switch_py_thread *) obj;
+
+	eval_some_python(NULL, strdup(pt->args));
+
+	pool = pt->pool;
+	switch_core_destroy_memory_pool(&pool);
+
+	return NULL;
 }
 
 static switch_status_t launch_python(char *text, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
-	FILE *pythonfile;
+	switch_thread_t *thread;
+    switch_threadattr_t *thd_attr = NULL;
+	switch_memory_pool_t *pool;
+	struct switch_py_thread *pt;
 
 	if (switch_strlen_zero(text)) {
 		stream->write_function(stream, "USAGE: %s\n", python_run_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}
+	
+	switch_core_new_memory_pool(&pool);
+	assert(pool != NULL);
 
-	pythonfile = fopen(text, "r");
+	pt = switch_core_alloc(pool, sizeof(*pt));
+	assert(pt != NULL);
 
-	Py_Initialize();
-	init_freeswitch();
-	PyRun_SimpleFile(pythonfile, "");
-	Py_Finalize();
+	pt->pool = pool;
+	pt->args = switch_core_strdup(pt->pool, text);
+	
+    switch_threadattr_create(&thd_attr, pt->pool);
+    switch_threadattr_detach_set(thd_attr, 1);
+    switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+    switch_thread_create(&thread, thd_attr, py_thread_run, pt, pt->pool);
 
 	stream->write_function(stream, "OK\n");
 	return SWITCH_STATUS_SUCCESS;
@@ -114,32 +198,46 @@ static switch_loadable_module_interface_t python_module_interface = {
 	/*.directory_interface */ NULL
 };
 
+//static PyThreadState *gtstate;
+static PyThreadState *mainThreadState;
+
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &python_module_interface;
-
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Python Framework Loading...\n");
+	
+	Py_Initialize();
+	PyEval_InitThreads();
+
+	mainThreadState = PyThreadState_Get();
+
+	PyEval_ReleaseLock();	
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
 
 /*
-  Called when the system shuts down
-  SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
-  {
-  return SWITCH_STATUS_SUCCESS;
-  }
-*/
+  Called when the system shuts down*/
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+{
 
-/*
-  If it exists, this is called in it's own thread when the module-load completes
-  SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
-  {
-  return SWITCH_STATUS_SUCCESS;
-  }
-*/
+	PyInterpreterState *mainInterpreterState;
+	PyThreadState *myThreadState;
+
+	PyEval_AcquireLock();
+	mainInterpreterState = mainThreadState->interp;
+	myThreadState = PyThreadState_New(mainInterpreterState);
+	PyThreadState_Swap(myThreadState);
+	PyEval_ReleaseLock();
+
+	Py_Finalize();
+	PyEval_ReleaseLock();
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 
 
 /* Return the number of arguments of the application command line */

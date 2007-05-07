@@ -702,10 +702,9 @@ SWIG_Python_InstallConstants(PyObject *d, swig_const_info constants[]) {
 
 #define  SWIGTYPE_p_switch_status_t swig_types[0] 
 #define  SWIGTYPE_p_switch_input_type_t swig_types[1] 
-#define  SWIGTYPE_p_void swig_types[2] 
-#define  SWIGTYPE_p_switch_core_session swig_types[3] 
-#define  SWIGTYPE_p_SessionContainer swig_types[4] 
-static swig_type_info *swig_types[6];
+#define  SWIGTYPE_p_switch_core_session swig_types[2] 
+#define  SWIGTYPE_p_SessionContainer swig_types[3] 
+static swig_type_info *swig_types[5];
 
 /* -------- TYPES TABLE (END) -------- */
 
@@ -719,7 +718,6 @@ static swig_type_info *swig_types[6];
 
 #include "freeswitch_python.h"
 
-extern void *globalDTMFCallbackFunction;
 extern switch_status_t PythonDTMFCallback(switch_core_session *,void *,switch_input_type_t,void *,unsigned int);
 
 static PyObject* t_output_helper(PyObject* target, PyObject* o) {
@@ -760,9 +758,9 @@ switch_status_t PythonDTMFCallback(switch_core_session_t *session,
    PyObject *result;
    switch_status_t dres = SWITCH_STATUS_FALSE;
    
-   func = (PyObject *) globalDTMFCallbackFunction;               // Get Python function
-   arglist = Py_BuildValue("(sisi)",input,itype,buf,buflen);             // Build argument list
-   result = PyEval_CallObject(func,arglist);     // Call Python
+   func = (PyObject *) buf;               // Get Python function
+   arglist = Py_BuildValue("(si)", input, itype);             // Build argument list
+   result = PyEval_CallObject(func, arglist);     // Call Python
    Py_DECREF(arglist);                           // Trash arglist
    if (result) {                                 // If no errors, return double
      dres = (switch_status_t) PyInt_AsLong(result);
@@ -772,30 +770,26 @@ switch_status_t PythonDTMFCallback(switch_core_session_t *session,
 }
 
 
+void console_log(char *level_str, char *msg)
+{
+    switch_log_level_t level = SWITCH_LOG_DEBUG;
+    if (level_str) {
+        level = switch_log_str2level(level_str);
+    }
+    switch_log_printf(SWITCH_CHANNEL_LOG, level, msg);
+}
+
+void console_clean_log(char *msg)
+{
+    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN,SWITCH_LOG_DEBUG, msg);
+}
+
+
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-static int _wrap_globalDTMFCallbackFunction_set(PyObject *_val) {
-    {
-        void * temp;
-        if ((SWIG_ConvertPtr(_val,(void **) &temp, 0, SWIG_POINTER_EXCEPTION | SWIG_POINTER_DISOWN)) == -1) {
-            PyErr_SetString(PyExc_TypeError, "C variable 'globalDTMFCallbackFunction (void *)'");
-            return 1;
-        }
-        globalDTMFCallbackFunction = (void *) temp;
-    }
-    return 0;
-}
-
-
-static PyObject *_wrap_globalDTMFCallbackFunction_get() {
-    PyObject *pyobj;
-    
-    pyobj = SWIG_NewPointerObj((void *) globalDTMFCallbackFunction, SWIGTYPE_p_void, 0);
-    return pyobj;
-}
-
-
 static PyObject *_wrap_PythonDTMFCallback(PyObject *self, PyObject *args) {
     PyObject *resultobj;
     switch_core_session *arg1 = (switch_core_session *) 0 ;
@@ -832,6 +826,35 @@ static PyObject *_wrap_PythonDTMFCallback(PyObject *self, PyObject *args) {
 }
 
 
+static PyObject *_wrap_console_log(PyObject *self, PyObject *args) {
+    PyObject *resultobj;
+    char *arg1 ;
+    char *arg2 ;
+    
+    if(!PyArg_ParseTuple(args,(char *)"ss:console_log",&arg1,&arg2)) goto fail;
+    console_log(arg1,arg2);
+    
+    Py_INCREF(Py_None); resultobj = Py_None;
+    return resultobj;
+    fail:
+    return NULL;
+}
+
+
+static PyObject *_wrap_console_clean_log(PyObject *self, PyObject *args) {
+    PyObject *resultobj;
+    char *arg1 ;
+    
+    if(!PyArg_ParseTuple(args,(char *)"s:console_clean_log",&arg1)) goto fail;
+    console_clean_log(arg1);
+    
+    Py_INCREF(Py_None); resultobj = Py_None;
+    return resultobj;
+    fail:
+    return NULL;
+}
+
+
 static PyObject *_wrap_new_SessionContainer(PyObject *self, PyObject *args) {
     PyObject *resultobj;
     char *arg1 ;
@@ -855,41 +878,6 @@ static PyObject *_wrap_delete_SessionContainer(PyObject *self, PyObject *args) {
     if(!PyArg_ParseTuple(args,(char *)"O:delete_SessionContainer",&obj0)) goto fail;
     if ((SWIG_ConvertPtr(obj0,(void **) &arg1, SWIGTYPE_p_SessionContainer,SWIG_POINTER_EXCEPTION | 0 )) == -1) SWIG_fail;
     delete arg1;
-    
-    Py_INCREF(Py_None); resultobj = Py_None;
-    return resultobj;
-    fail:
-    return NULL;
-}
-
-
-static PyObject *_wrap_SessionContainer_console_log(PyObject *self, PyObject *args) {
-    PyObject *resultobj;
-    SessionContainer *arg1 = (SessionContainer *) 0 ;
-    char *arg2 ;
-    char *arg3 ;
-    PyObject * obj0 = 0 ;
-    
-    if(!PyArg_ParseTuple(args,(char *)"Oss:SessionContainer_console_log",&obj0,&arg2,&arg3)) goto fail;
-    if ((SWIG_ConvertPtr(obj0,(void **) &arg1, SWIGTYPE_p_SessionContainer,SWIG_POINTER_EXCEPTION | 0 )) == -1) SWIG_fail;
-    (arg1)->console_log(arg2,arg3);
-    
-    Py_INCREF(Py_None); resultobj = Py_None;
-    return resultobj;
-    fail:
-    return NULL;
-}
-
-
-static PyObject *_wrap_SessionContainer_console_clean_log(PyObject *self, PyObject *args) {
-    PyObject *resultobj;
-    SessionContainer *arg1 = (SessionContainer *) 0 ;
-    char *arg2 ;
-    PyObject * obj0 = 0 ;
-    
-    if(!PyArg_ParseTuple(args,(char *)"Os:SessionContainer_console_clean_log",&obj0,&arg2)) goto fail;
-    if ((SWIG_ConvertPtr(obj0,(void **) &arg1, SWIGTYPE_p_SessionContainer,SWIG_POINTER_EXCEPTION | 0 )) == -1) SWIG_fail;
-    (arg1)->console_clean_log(arg2);
     
     Py_INCREF(Py_None); resultobj = Py_None;
     return resultobj;
@@ -1195,10 +1183,10 @@ static PyObject * SessionContainer_swigregister(PyObject *self, PyObject *args) 
 }
 static PyMethodDef SwigMethods[] = {
 	 { (char *)"PythonDTMFCallback", _wrap_PythonDTMFCallback, METH_VARARGS },
+	 { (char *)"console_log", _wrap_console_log, METH_VARARGS },
+	 { (char *)"console_clean_log", _wrap_console_clean_log, METH_VARARGS },
 	 { (char *)"new_SessionContainer", _wrap_new_SessionContainer, METH_VARARGS },
 	 { (char *)"delete_SessionContainer", _wrap_delete_SessionContainer, METH_VARARGS },
-	 { (char *)"SessionContainer_console_log", _wrap_SessionContainer_console_log, METH_VARARGS },
-	 { (char *)"SessionContainer_console_clean_log", _wrap_SessionContainer_console_clean_log, METH_VARARGS },
 	 { (char *)"SessionContainer_answer", _wrap_SessionContainer_answer, METH_VARARGS },
 	 { (char *)"SessionContainer_pre_answer", _wrap_SessionContainer_pre_answer, METH_VARARGS },
 	 { (char *)"SessionContainer_hangup", _wrap_SessionContainer_hangup, METH_VARARGS },
@@ -1221,14 +1209,12 @@ static PyMethodDef SwigMethods[] = {
 
 static swig_type_info _swigt__p_switch_status_t[] = {{"_p_switch_status_t", 0, "switch_status_t *", 0},{"_p_switch_status_t"},{0}};
 static swig_type_info _swigt__p_switch_input_type_t[] = {{"_p_switch_input_type_t", 0, "switch_input_type_t *", 0},{"_p_switch_input_type_t"},{0}};
-static swig_type_info _swigt__p_void[] = {{"_p_void", 0, "void *", 0},{"_p_void"},{0}};
 static swig_type_info _swigt__p_switch_core_session[] = {{"_p_switch_core_session", 0, "switch_core_session *", 0},{"_p_switch_core_session"},{0}};
 static swig_type_info _swigt__p_SessionContainer[] = {{"_p_SessionContainer", 0, "SessionContainer *", 0},{"_p_SessionContainer"},{0}};
 
 static swig_type_info *swig_types_initial[] = {
 _swigt__p_switch_status_t, 
 _swigt__p_switch_input_type_t, 
-_swigt__p_void, 
 _swigt__p_switch_core_session, 
 _swigt__p_SessionContainer, 
 0
@@ -1264,7 +1250,5 @@ SWIGEXPORT(void) SWIG_init(void) {
     }
     SWIG_InstallConstants(d,swig_const_table);
     
-    PyDict_SetItemString(d,(char*)"cvar", SWIG_globals);
-    SWIG_addvarlink(SWIG_globals,(char*)"globalDTMFCallbackFunction",_wrap_globalDTMFCallbackFunction_get, _wrap_globalDTMFCallbackFunction_set);
 }
 
