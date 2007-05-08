@@ -57,7 +57,7 @@ static void eval_some_python(char *uuid, char *args)
 	char *argv[128] = {0};
 	int argc;
 	int lead = 0;
-	char *script = NULL;
+	char *script = NULL, *script_path = NULL, *path = NULL;
 
 	if (args) {
 		dupargs = strdup(args);
@@ -80,27 +80,47 @@ static void eval_some_python(char *uuid, char *args)
 		lead = 1;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "running %s\n", script);
+	
+	if (switch_is_file_path(script)) {
+		script_path = script;
+		if ((script = strrchr(script_path, *SWITCH_PATH_SEPARATOR))) {
+			script++;
+		} else {
+			script = script_path;
+		}
+	} else if ((path = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.script_dir, SWITCH_PATH_SEPARATOR, script))) {
+		script_path = path;
+	}
+	if (script_path) {
+		if (!switch_file_exists(script_path, NULL) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Open File: %s\n", script_path);
+			goto done;
+		}
+	}
 
 
-	if ((pythonfile = fopen(script, "r"))) {
-		PyEval_AcquireLock();
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "running %s\n", script_path);
+
+
+	if ((pythonfile = fopen(script_path, "r"))) {
 		tstate = Py_NewInterpreter();
-		PyEval_ReleaseLock(); 
 
 		if (!tstate) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error acquiring tstate\n");
 			goto done;
 		}
+		
 
-
+		PyThreadState_Clear(tstate);
 		init_freeswitch();
+		PyRun_SimpleString("from freeswitch import *");
+		
 		PySys_SetArgv(argc - lead, &argv[lead]);
-		PyRun_SimpleFile(pythonfile, "");
+		PyRun_SimpleFile(pythonfile, script);
 		Py_EndInterpreter(tstate);
 		
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error running %s\n", script);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error running %s\n", script_path);
 	}
 
 
@@ -111,6 +131,7 @@ static void eval_some_python(char *uuid, char *args)
 	}
 
 	switch_safe_free(dupargs);
+	switch_safe_free(path);
 }
 
 static void python_function(switch_core_session_t *session, char *data)
@@ -213,6 +234,9 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	mainThreadState = PyThreadState_Get();
 
 	PyEval_ReleaseLock();	
+
+	eval_some_python(NULL, "init_python.py");
+	PyThreadState_Swap(NULL);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

@@ -85,7 +85,7 @@ int eval_some_js(char *code, JSContext * cx, JSObject * obj, jsval * rval)
 		cptr = code + 1;
 		script = JS_CompileScript(cx, obj, cptr, strlen(cptr), "inline", 1);
 	} else {
-		if (*code == '/') {
+		if (switch_is_file_path(code)) {
 			script_name = code;
 		} else if ((path = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.script_dir, SWITCH_PATH_SEPARATOR, code))) {
 			script_name = path;
