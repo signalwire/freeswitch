@@ -3,6 +3,7 @@ m4_include([m4/sac-openssl.m4])
 m4_include([m4/sac-su2.m4])
 m4_include([m4/sac-su.m4])
 m4_include([m4/sac-tport.m4])
+m4_include([m4/sac-coverage.m4])
 
 dnl PKG_CHECK_MODULES(GSTUFF, gtk+-2.0 >= 1.3 glib = 1.3.4, action-if, action-not)
 dnl defines GSTUFF_LIBS, GSTUFF_CFLAGS, see pkg-config man page
