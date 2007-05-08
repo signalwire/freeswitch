@@ -193,6 +193,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\string0.c"
+					>
+				</File>
+				<File
 					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su.c"
 					>
 				</File>
@@ -322,10 +326,6 @@
 				</File>
 				<File
 					RelativePath="..\..\sofia-sip\libsofia-sip-ua\ipt\rc4.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\ipt\string0.c"
 					>
 				</File>
 				<File
@@ -959,6 +959,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\string0.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su.h"
 					>
 				</File>
@@ -1092,10 +1096,6 @@
 				</File>
 				<File
 					RelativePath="..\..\sofia-sip\libsofia-sip-ua\ipt\sofia-sip\rc4.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\ipt\sofia-sip\string0.h"
 					>
 				</File>
 				<File
