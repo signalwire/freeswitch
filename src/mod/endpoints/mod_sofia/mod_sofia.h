@@ -214,6 +214,7 @@ struct sofia_profile {
 	char *sipdomain;
 	char *timer_name;
 	char *hold_music;
+	char *bind_params;
 	int sip_port;
 	char *codec_string;
 	int running;

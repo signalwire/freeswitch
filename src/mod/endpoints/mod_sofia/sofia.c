@@ -748,6 +748,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							}
 						}
 
+					} else if (!strcasecmp(var, "bind-params")) {
+						profile->bind_params = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "sip-domain")) {
 						profile->sipdomain = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "rtp-timer-name")) {
@@ -870,6 +872,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					profile->url = switch_core_sprintf(profile->pool, "sip:mod_sofia@%s:%d", profile->sipip, profile->sip_port);
 					profile->bindurl = profile->url;
 				}
+
+				if (profile->bind_params) {
+					char *url = profile->bindurl;
+					profile->bindurl = switch_core_sprintf(profile->pool, "%s;%s", url, profile->bind_params);
+				}
+				
 			}
 			if (profile) {
 				switch_xml_t aliases_tag, alias_tag;

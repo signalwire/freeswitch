@@ -44,6 +44,8 @@
 	<param name="rtp-timer-name" value="soft"/>
 	<param name="rtp-ip" value="$${bind_server_ip}"/>
 	<param name="sip-ip" value="$${bind_server_ip}"/>
+	<!-- if you want to send any special bind params of your own -->
+	<!--<param name="bind-params" value="transport=udp"/>-->
 
 	<!--If you don't want to pass through timestampes from 1 RTP call to another (on a per call basis with rtp_rewrite_timestamps chanvar)-->
 	<!--<param name="rtp-rewrite-timestampes" value="true"/>-->
