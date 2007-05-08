@@ -58,6 +58,7 @@ src/switch_stun.c\
 src/switch_log.c\
 src/switch_xml.c\
 libs/stfu/stfu.c\
+src/switch_cpp.cpp\
 libs/libteletone/src/libteletone_detect.c\
 libs/libteletone/src/libteletone_generate.c
 
@@ -90,6 +91,7 @@ src/include/switch_rtp.h\
 src/include/switch_stun.h\
 src/include/switch_log.h\
 src/include/switch_xml.h\
+src/include/switch_cpp.h\
 libs/libteletone/src/libteletone_detect.h\
 libs/libteletone/src/libteletone_generate.h\
 libs/libteletone/src/libteletone.h
