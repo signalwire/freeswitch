@@ -108,7 +108,7 @@ SU_DLL su_strlst_t *su_strlst_dup_split(su_home_t *, char const *s,
 SU_DLL usize_t su_strlst_len(su_strlst_t const *l);
 
 #if SU_HAVE_INLINE
-static inline
+su_inline
 su_home_t *su_strlst_home(su_strlst_t *s)
 {
   return (su_home_t *)s;

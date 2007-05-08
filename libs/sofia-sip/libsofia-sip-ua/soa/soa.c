@@ -74,7 +74,7 @@ void soa_set_activity(soa_session_t *ss,
 		      sdp_media_t const *,
 		      int remote);
 
-static inline int soa_media_is_ready(soa_session_t const *ss);
+su_inline int soa_media_is_ready(soa_session_t const *ss);
 
 enum soa_sdp_kind { 
   soa_capability_sdp_kind,
@@ -1879,7 +1879,7 @@ int soa_set_warning(soa_session_t *ss, int code, char const *text)
   return -1;
 }
 
-static inline
+su_inline
 int soa_media_is_ready(soa_session_t const *ss)
 {
   XXX;

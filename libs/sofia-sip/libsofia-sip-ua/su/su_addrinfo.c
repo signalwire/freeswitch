@@ -29,8 +29,8 @@
 
 #include "config.h"
 
-#include <sofia-sip/su_addrinfo.h>
 #include <sofia-sip/su.h>
+#include <sofia-sip/su_addrinfo.h>
 
 #ifndef IN_LOOPBACKNET
 #define IN_LOOPBACKNET          127

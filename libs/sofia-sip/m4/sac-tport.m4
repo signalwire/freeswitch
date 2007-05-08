@@ -28,6 +28,7 @@ AC_SYS_IP_RECVERR
 AC_SYS_IPV6_RECVERR
 
 AC_CHECK_HEADERS([netinet/tcp.h netinet/sctp.h],[],[],[
+#include <sys/types.h>
 #include <sys/socket.h>
 ])
 

@@ -811,14 +811,14 @@ tport_sigcomp_deliver(tport_t *self, msg_t *msg, su_time_t now)
 
 #if HAVE_SIGCOMP && 0
 
-static inline
+su_inline
 int msg_is_compressed(msg_t *msg)
 {
   return msg && 
     (msg_addrinfo(msg)->ai_flags & TP_AI_COMPRESSED) == TP_AI_COMPRESSED;
 }
 
-static inline
+su_inline
 void msg_mark_as_compressed(msg_t *msg)
 {
   if (msg)

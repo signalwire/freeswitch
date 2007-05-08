@@ -534,6 +534,7 @@ static int init_test(tp_test_t *tt)
 		   TAG_END()), 
        0);
 
+  /* Check that the master transport has idle parameter */
   TEST(tport_get_params(tt->tt_srv_tports,
 			TPTAG_IDLE_REF(idle),
 			TAG_END()), 1);
@@ -552,6 +553,8 @@ static int init_test(tp_test_t *tt)
 
     *rname = *myname;
 
+    /* Check that we cannot bind to an already used socket */
+
     memset(su, 0, sulen = sizeof(su->su_sin));
     s = su_socket(su->su_family = AF_INET, SOCK_STREAM, 0); TEST_1(s != -1);
     TEST_1(bind(s, &su->su_sa, sulen) != -1);
@@ -565,7 +568,7 @@ static int init_test(tp_test_t *tt)
     
     before = count_tports(tt->tt_srv_tports);
 
-    /* Bind server transports to an reserved port */
+    /* Bind server transports to an reserved port - this should fail */
     TEST(tport_tbind(tt->tt_srv_tports, rname, transports, 
 		     TPTAG_SERVER(1),
 		     TAG_END()), 
@@ -573,7 +576,10 @@ static int init_test(tp_test_t *tt)
 
     after = count_tports(tt->tt_srv_tports);
 
+    /* Check that no new primary transports has been added by failed call */
     TEST(before, after);
+
+    /* Add new transports to an ephemeral port with new identity */
 
     for (tp = tport_primaries(tt->tt_srv_tports); tp; tp = tport_next(tp))
       TEST_S(tport_name(tp)->tpn_ident, "server");
@@ -587,9 +593,10 @@ static int init_test(tp_test_t *tt)
 		     TAG_END()), 
 	 0);
 
-    tp = tport_primaries(tt->tt_srv_tports);
-
-    for (i = 0; i++ < before; tp = tport_next(tp))
+    /* Check that new transports are after old ones. */
+    for (i = 0, tp = tport_primaries(tt->tt_srv_tports);
+	 i < before;
+	 i++, tp = tport_next(tp))
       TEST_S(tport_name(tp)->tpn_ident, "server");
 
     for (; tp; tp = tport_next(tp))

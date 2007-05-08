@@ -174,7 +174,7 @@ SOFIAPUBVAR unsigned char const _bnf_table[256];
 /** Calculate span of a linear whitespace. 
  * LWS = [*WSP CRLF] 1*WSP
  */
-static inline isize_t span_lws(char const *s)
+su_inline isize_t span_lws(char const *s)
 {
   char const *e = s;
   int i = 0;
@@ -187,7 +187,7 @@ static inline isize_t span_lws(char const *s)
 }
 
 /** Calculate span of a token or linear whitespace characters.  */
-static inline isize_t span_token_lws(char const *s)
+su_inline isize_t span_token_lws(char const *s)
 {
   char const *e = s; 
   while (_bnf_table[(unsigned char)(*e)] & (bnf_token | bnf_lws))
@@ -195,23 +195,17 @@ static inline isize_t span_token_lws(char const *s)
   return e - s; 
 }
 
-#if 1
 /** Calculate span of a token characters.  */
-static inline isize_t span_token(char const *s)
+su_inline isize_t span_token(char const *s)
 {
   char const *e = s; 
   while (_bnf_table[(unsigned char)(*e)] & bnf_token)
     e++; 
   return e - s; 
 }
-#else
-size_t bnf_span_token(char const *s);
-#define span_token(s) bnf_span_token((s))
-#endif
-
 
 /** Calculate span of a alphabetic characters.  */
-static inline isize_t span_alpha(char const *s)
+su_inline isize_t span_alpha(char const *s)
 {
   char const *e = s; 
   while (_bnf_table[(unsigned char)(*e)] & bnf_alpha)
@@ -220,7 +214,7 @@ static inline isize_t span_alpha(char const *s)
 }
 
 /** Calculate span of a digits.  */
-static inline isize_t span_digit(char const *s)
+su_inline isize_t span_digit(char const *s)
 {
   char const *e = s; 
   while (*e >= '0' && *e <= '9')
@@ -229,7 +223,7 @@ static inline isize_t span_digit(char const *s)
 }
 
 /** Calculate span of a hex.  */
-static inline isize_t span_hexdigit(char const *s)
+su_inline isize_t span_hexdigit(char const *s)
 {
   char const *e = s; 
   while (IS_HEX(*e))
@@ -238,7 +232,7 @@ static inline isize_t span_hexdigit(char const *s)
 }
 
 /** Calculate span of characters belonging to an RTSP token */
-static inline isize_t span_alpha_digit_safe(char const *s)
+su_inline isize_t span_alpha_digit_safe(char const *s)
 {
   char const *e = s; 
   while (_bnf_table[(unsigned char)(*e)] & (bnf_alpha | bnf_safe))
@@ -247,7 +241,7 @@ static inline isize_t span_alpha_digit_safe(char const *s)
 }
 
 /** Calculate span of a characters valid in parameters.  */
-static inline isize_t span_param(char const *s)
+su_inline isize_t span_param(char const *s)
 {
   char const *e = s; 
   while (IS_PARAM(*e))
@@ -256,7 +250,7 @@ static inline isize_t span_param(char const *s)
 }
 
 /** Calculate span of a SIP word.  */
-static inline isize_t span_word(char const *s)
+su_inline isize_t span_word(char const *s)
 {
   char const *e = s; 
   while (*e && (IS_TOKEN(*e) || strchr(SIP_WORD, *e)))
@@ -265,7 +259,7 @@ static inline isize_t span_word(char const *s)
 }
 
 /** Calculate span of a unreserved characters.  */
-static inline isize_t span_unreserved(char const *s)
+su_inline isize_t span_unreserved(char const *s)
 {
   char const *e = s;
   while (IS_UNRESERVED(*e))
@@ -274,7 +268,7 @@ static inline isize_t span_unreserved(char const *s)
 }
 
 /** Calculate span of a double quoted string (with escaped chars inside) */
-static inline isize_t span_quoted(char const *s)
+su_inline isize_t span_quoted(char const *s)
 {
   char const *b = s;
 

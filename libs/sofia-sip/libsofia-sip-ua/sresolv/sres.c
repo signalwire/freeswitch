@@ -44,7 +44,7 @@
 #elif HAVE_INTTYPES_H
 #include <inttypes.h>
 #else
-#if defined(_WIN32)
+#if defined(HAVE_WIN32)
 typedef _int8 int8_t;
 typedef unsigned _int8 uint8_t;
 typedef unsigned _int16 uint16_t;
@@ -105,7 +105,7 @@ typedef int socklen_t;
 
 #if HAVE_WINSOCK2_H
 /* Posix send() */
-static inline 
+su_inline 
 ssize_t sres_send(sres_socket_t s, void *b, size_t length, int flags)
 {
   if (length > INT_MAX)
@@ -114,7 +114,7 @@ ssize_t sres_send(sres_socket_t s, void *b, size_t length, int flags)
 }
 
 /* Posix recvfrom() */
-static inline 
+su_inline 
 ssize_t sres_recvfrom(sres_socket_t s, void *buffer, size_t length, int flags,
 		      struct sockaddr *from, socklen_t *fromlen)
 {
@@ -135,7 +135,7 @@ ssize_t sres_recvfrom(sres_socket_t s, void *buffer, size_t length, int flags,
   return (ssize_t)retval;
 }
 
-static inline
+su_inline
 int sres_close(sres_socket_t s)
 {
   return closesocket(s);
@@ -182,7 +182,7 @@ const char *inet_ntop(int af, void const *src, char *dst, size_t size);
 /**
  * How often to recheck nameserver information (seconds).
  */
-#ifndef _WIN32
+#ifndef HAVE_WIN32
 #define SRES_UPDATE_INTERVAL_SECS        5
 #else
 #define SRES_UPDATE_INTERVAL_SECS        180
@@ -545,7 +545,7 @@ static int m_get_domain(char *d, int n, sres_message_t *m, uint16_t offset);
 
 #include <sofia-sip/su_debug.h>
 
-#ifdef _WIN32
+#ifdef HAVE_WIN32
 #include <winreg.h>
 #endif
 
@@ -1648,7 +1648,7 @@ sres_query_alloc(sres_resolver_t *res,
   return query;
 }
 
-static inline
+su_inline
 void 
 sres_remove_query(sres_resolver_t *res, sres_query_t *q, int all)
 {
@@ -1898,7 +1898,7 @@ int sres_update_config(sres_resolver_t *res, int always, time_t now)
   return retval;
 }
 
-#if _WIN32
+#if HAVE_WIN32
 
 /** Number of octets to read from a registry key at a time */
 #define QUERY_DATALEN         1024
@@ -2082,7 +2082,7 @@ static int sres_parse_win32_reg(sres_config_t *c)
   return ret;
 }
 
-#endif /* _WIN32 */
+#endif /* HAVE_WIN32 */
 
 /** Parse /etc/resolv.conf file.
  *
@@ -2109,7 +2109,7 @@ sres_config_t *sres_parse_resolv_conf(sres_resolver_t *res,
     if (f)
       fclose(f);
 
-#if _WIN32    
+#if HAVE_WIN32    
     /* note: no 127.0.0.1 on win32 systems */
     /* on win32, query the registry for nameservers */
     if (sres_parse_win32_ip(c) == 0 || sres_parse_win32_reg(c) == 0)
@@ -2403,7 +2403,7 @@ int sres_parse_nameserver(sres_config_t *c, char const *server)
 static
 time_t sres_config_timestamp(sres_config_t const *c)
 {
-#ifndef _WIN32
+#ifndef HAVE_WIN32
   struct stat st;
 
   if (stat(c->c_filename, &st) == 0)

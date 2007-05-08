@@ -1351,7 +1351,7 @@ HTTP_HEADER_CLASS_G(server, "Server", single);
  * @endcode
  */
 
-static inline
+su_inline
 void http_te_update(http_te_t *te)
 {
   te->te_q = msg_header_find_param(te->te_common, "q");

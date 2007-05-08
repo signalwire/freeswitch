@@ -119,29 +119,29 @@ struct msg_buffer_s {
 
 /* ---------------------------------------------------------------------- */
 /* Header-kind predicate functions. */
-static inline int msg_is_single(msg_header_t const *h)
+su_inline int msg_is_single(msg_header_t const *h)
 {
   return h->sh_class->hc_kind == msg_kind_single;
 }
 
-static inline int msg_is_prepend(msg_header_t const *h)
+su_inline int msg_is_prepend(msg_header_t const *h)
 {
   return h->sh_class->hc_kind == msg_kind_prepend;
 }
 
-static inline int msg_is_append(msg_header_t const *h)
+su_inline int msg_is_append(msg_header_t const *h)
 {
   return 
     h->sh_class->hc_kind == msg_kind_append ||
     h->sh_class->hc_kind == msg_kind_apndlist;
 }
 
-static inline int msg_is_list(msg_header_t const *h)
+su_inline int msg_is_list(msg_header_t const *h)
 {
   return h->sh_class->hc_kind == msg_kind_list;
 }
 
-static inline int msg_is_special(msg_header_t const *h)
+su_inline int msg_is_special(msg_header_t const *h)
 {
   return h->sh_class->hc_hash < 0;
 }

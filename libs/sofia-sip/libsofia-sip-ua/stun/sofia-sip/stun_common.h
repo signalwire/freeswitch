@@ -45,13 +45,11 @@
 #include <winsock.h>
 #else
 #include <sys/socket.h>
-#include <netinet/tcp.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 #endif
 
-#include <sofia-sip/su.h>
 #include <sofia-sip/su_localinfo.h>
+
 
 SOFIA_BEGIN_DECLS
 

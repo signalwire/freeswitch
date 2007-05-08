@@ -97,7 +97,7 @@ HTTP_HEADER_CLASS_LIST(proxy_connection, "Proxy-Connection", list);
  *
  * @param sc pointer to a @c http_cookie_t object
  */
-static inline
+su_inline
 void http_cookie_update(http_cookie_t *c)
 {
   size_t i;
@@ -299,7 +299,7 @@ HTTP_HEADER_CLASS(cookie, "Cookie", c_params, append, cookie);
  *
  * @param sc pointer to a @c http_set_cookie_t object
  */
-static inline
+su_inline
 void http_set_cookie_update(http_set_cookie_t *sc)
 {
   size_t i;

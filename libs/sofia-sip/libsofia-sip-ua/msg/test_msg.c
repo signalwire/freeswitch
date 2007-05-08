@@ -1702,6 +1702,10 @@ int main(int argc, char *argv[])
       usage(1);
   }
 
+#if HAVE_OPEN_C
+  test_flags |= tst_verbatim;
+#endif
+
   retval |= msg_time_test(); fflush(stdout);
   retval |= addr_test(); fflush(stdout);
   retval |= hash_test(); fflush(stdout);

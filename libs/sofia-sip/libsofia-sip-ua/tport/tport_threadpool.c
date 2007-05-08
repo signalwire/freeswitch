@@ -282,7 +282,7 @@ static void thrp_udp_deinit(su_root_t *root, threadpool_t *thrp)
   su_msg_destroy(thrp->thrp_rmsg);
 }
 
-static inline void
+su_inline void
 thrp_yield(threadpool_t *thrp)
 {
   tport_t *tp = thrp->thrp_tport->tptp_primary->pri_primary;
@@ -290,7 +290,7 @@ thrp_yield(threadpool_t *thrp)
   thrp->thrp_yield = 1;
 }
 
-static inline void
+su_inline void
 thrp_gain(threadpool_t *thrp)
 {
   tport_t *tp = thrp->thrp_tport->tptp_primary->pri_primary;

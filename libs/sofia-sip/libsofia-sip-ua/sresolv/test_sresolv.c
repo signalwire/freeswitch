@@ -122,7 +122,7 @@ static int tstflags = 0;
 #if HAVE_WINSOCK2_H
 
 /* Posix send() */
-static inline 
+su_inline 
 ssize_t sres_send(sres_socket_t s, void *b, size_t length, int flags)
 {
   if (length > INT_MAX)
@@ -130,7 +130,7 @@ ssize_t sres_send(sres_socket_t s, void *b, size_t length, int flags)
   return (ssize_t)send(s, b, (int)length, flags);
 }
 
-static inline 
+su_inline 
 ssize_t sres_sendto(sres_socket_t s, void *b, size_t length, int flags,
 		    struct sockaddr const *sa, socklen_t salen)
 {
@@ -140,7 +140,7 @@ ssize_t sres_sendto(sres_socket_t s, void *b, size_t length, int flags,
 }
 
 /* Posix recvfrom() */
-static inline 
+su_inline 
 ssize_t sres_recvfrom(sres_socket_t s, void *buffer, size_t length, int flags,
 		      struct sockaddr *from, socklen_t *fromlen)
 {
@@ -166,7 +166,7 @@ static sres_socket_t sres_socket(int af, int socktype, int protocol)
   return socket(af, socktype, protocol);
 }
 
-static inline
+su_inline
 int sres_close(sres_socket_t s)
 {
   return closesocket(s);
@@ -1836,9 +1836,7 @@ int test_api_errors(sres_context_t *noctx)
   TEST(errno, EFAULT); errno = 0;
   TEST_P(sres_query_sockaddr(res, test_answer, ctx,
 			     sres_qtype_any, sa), NULL);
-#if defined(EAFNOSUPPORT)
   TEST(errno, EAFNOSUPPORT); errno = 0;
-#endif
 
   TEST_P(sres_cached_answers(NULL, sres_qtype_any, "example.com"), NULL);
   TEST(errno, EFAULT); errno = 0;

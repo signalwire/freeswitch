@@ -49,7 +49,7 @@ SOFIA_BEGIN_DECLS
 #define MC_HASH(s, n)     (msg_header_name_hash(s, NULL) % (unsigned)(n))
 
 /** Hash header name */
-static inline 
+su_inline 
 unsigned short msg_header_name_hash(char const *s, isize_t *llen)
 {
   unsigned short hash = 0;

@@ -194,12 +194,12 @@ su_inline tag_value_t tag_str_v(char const *v) { return (tag_value_t)v; }
 su_inline tag_value_t tag_str_vr(char const **vp) {return(tag_value_t)vp;}
 #if __cplusplus
 extern "C++" {
-  static inline tag_value_t tag_ptr_v(void const *v)
+  su_inline tag_value_t tag_ptr_v(void const *v)
   { return (tag_value_t)v; }
-  static inline tag_value_t tag_ptr_vr(void *vp, void const *p) 
+  su_inline tag_value_t tag_ptr_vr(void *vp, void const *p) 
   { return (tag_value_t)vp; }
-  static inline tag_value_t tag_str_v(char *v) { return (tag_value_t)v; }
-  static inline tag_value_t tag_str_vr(char **vp) {return (tag_value_t)vp;}
+  su_inline tag_value_t tag_str_v(char *v) { return (tag_value_t)v; }
+  su_inline tag_value_t tag_str_vr(char **vp) {return (tag_value_t)vp;}
 }
 #endif
 su_inline tag_value_t tag_filter_v(tag_filter_f *v) {return(tag_value_t)v;}

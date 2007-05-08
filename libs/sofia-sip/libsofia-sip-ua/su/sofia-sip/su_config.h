@@ -21,7 +21,6 @@
  * 02110-1301 USA
  *
  */
-
 #ifndef SU_CONFIG_H
 /** Defined when <sofia-sip/su_config.h> has been included. */
 #define SU_CONFIG_H
@@ -36,7 +35,9 @@
  * @date Created: Thu Mar 18 19:40:51 1999 pessi
  */
 
-#include <sofia-sip/su_configure.h>
+#ifndef SU_CONFIGURE_H
+#include "sofia-sip/su_configure.h"
+#endif
 
 #if defined(__GNUC__)
 /* Special attributes for GNU C */
@@ -83,7 +84,7 @@
     #undef SOFIAPUBVAR
     #if defined(IN_LIBSOFIA_SIP_UA)
       #define SOFIAPUBFUN __declspec(dllexport)
-      #define SOFIAPUBVAR __declspec(dllexport)
+     	#define SOFIAPUBVAR __declspec(dllexport)
     #else
       #define SOFIAPUBFUN __declspec(dllimport)
       #define SOFIAPUBVAR __declspec(dllimport) extern
@@ -93,7 +94,28 @@
   #if !defined _REENTRANT
     #define _REENTRANT
   #endif
+#elif defined (SYMBIAN)
+  #undef SOFIACALL
+  #define SOFIACALL __cdecl
+
+  #if defined(LIBSOFIA_SIP_UA_STATIC)
+  #else
+    #undef SOFIAPUBFUN
+    #undef SOFIAPUBVAR
+    #if defined(IN_LIBSOFIA_SIP_UA)
+      #define SOFIAPUBFUN __declspec(dllexport)
+     	#define SOFIAPUBVAR __declspec(dllexport) extern
+    #else
+      #define SOFIAPUBFUN __declspec(dllimport)
+      #define SOFIAPUBVAR __declspec(dllimport)
+    #endif
+  #endif
+
+  #if !defined _REENTRANT
+    #define _REENTRANT
+  #endif
 #endif
+
 
 #define BNF_DLL   SOFIAPUBFUN
 #define HTTP_DLL  SOFIAPUBFUN

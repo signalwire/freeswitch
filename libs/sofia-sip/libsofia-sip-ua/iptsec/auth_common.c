@@ -45,7 +45,7 @@
 char *strcasestr(char const *haystack, char const *needle);
 #endif
 
-static inline int has_token(char const *qstring, char const *token);
+su_inline int has_token(char const *qstring, char const *token);
 
 /**
  * Parse authentication parameters.
@@ -163,7 +163,7 @@ int auth_struct_copy(void *dst, void const *src, isize_t s_size)
   return 0;
 }
 
-static inline int has_token(char const *qstring, char const *token)
+su_inline int has_token(char const *qstring, char const *token)
 {
   size_t n = strlen(token);
   char const *q;

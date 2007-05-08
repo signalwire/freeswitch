@@ -84,7 +84,7 @@ struct sname { \
 
 #ifndef HTABLE2_SCOPE
 /** Default scope for hash table functions. */
-#define HTABLE2_SCOPE static inline
+#define HTABLE2_SCOPE su_inline
 #endif
 
 /** Prototypes for hash table

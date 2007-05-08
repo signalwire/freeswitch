@@ -1115,7 +1115,7 @@ tag_class_t sdptag_session_class[1] =
 /* ---------------------------------------------------------------------- */
 
 /* Compare two string pointers */
-static inline 
+su_inline 
 int str0cmp(char const *a, char const *b)
 {
   if (a == NULL) a = "";
@@ -1124,7 +1124,7 @@ int str0cmp(char const *a, char const *b)
 }
 
 /* Compare two string pointers ignoring case. */
-static inline 
+su_inline 
 int str0casecmp(char const *a, char const *b)
 {
   if (a == NULL) a = "";

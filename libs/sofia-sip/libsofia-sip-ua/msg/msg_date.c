@@ -92,7 +92,7 @@ static char const months[12 * 4] =
  * @return The function month_d() returns 0..11 if given first three letters
  * of month name, or -1 if no month name matches.
  */
-static inline
+su_inline
 int month_d(char const *s)
 {
   unsigned const uc = ('a' - 'A') << 16 | ('a' - 'A') << 8 | ('a' - 'A');
@@ -125,7 +125,7 @@ int month_d(char const *s)
 }
 
 /* Parse SP 2DIGIT ":" 2DIGIT ":" 2DIGIT SP */
-static inline
+su_inline
 int time_d(char const **ss, 
 	   unsigned long *hour, unsigned long *min, unsigned long *sec)
 {

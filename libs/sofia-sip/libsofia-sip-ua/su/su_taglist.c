@@ -356,7 +356,7 @@ tagi_t *tl_find_last(tagi_t const lst[], tag_type_t tt)
   return (tagi_t *)last;
 }
 
-static inline
+su_inline
 int t_ref_set(tag_type_t tt, void *ref, tagi_t const value[])
 {
   if (value == NULL)

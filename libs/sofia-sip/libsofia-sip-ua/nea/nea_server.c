@@ -271,7 +271,7 @@ static int nea_view_queue(nea_server_t *nes,
 			  nea_event_queue_t *evq);
 
 /** Assign an event view to subscriber. */
-static inline
+su_inline
 void nea_sub_assign_view(nea_sub_t *s, nea_event_view_t *evv)
 {
   if (s->s_view != evv)
@@ -281,7 +281,7 @@ void nea_sub_assign_view(nea_sub_t *s, nea_event_view_t *evv)
   s->s_throttle = evv->evv_throttle;
 }
 
-static inline 
+su_inline 
 void nea_subnode_init(nea_subnode_t *sn, nea_sub_t *s, sip_time_t now)
 {
   sn->sn_state = s->s_state;

@@ -1072,15 +1072,17 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
   nta_outgoing_t *ack;
   int status = 200;
   char const *phrase = "OK", *reason = NULL;
+  char const *invite_branch;
 
   assert(ds->ds_leg);
   assert(cr->cr_orq);
 
   msg = nta_outgoing_getrequest(cr->cr_orq);
-  sip = sip_object(msg);  
+  sip = sip_object(msg);
   if (!msg)
     return -1;
-  
+  invite_branch = nta_outgoing_branch(cr->cr_orq);
+
   wa = sip_authorization(sip);
   pa = sip_proxy_authorization(sip);
   
@@ -1157,9 +1159,11 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
     
     if ((ack = nta_outgoing_mcreate(nh->nh_nua->nua_nta, NULL, NULL, NULL,
 				    msg,
+				    NTATAG_ACK_BRANCH(invite_branch),
 				    SIPTAG_END(),
 				    TAG_NEXT(tags)))) {
-      nta_outgoing_destroy(ack);	/* TR engine keeps this around for T2 */
+      /* TR engine keeps this around for T2 so it catches all 2XX retransmissions  */
+      nta_outgoing_destroy(ack);
 
       if (nh->nh_soa && reason && ss && ss->ss_state <= nua_callstate_ready)
 	nua_stack_event(nh->nh_nua, nh, NULL,
@@ -4077,7 +4081,7 @@ session_timer_set(nua_session_usage_t *ss)
   }
 }
 
-static inline int
+su_inline int
 session_timer_has_been_set(struct session_timer const *t)
 {
   return t->timer_set;

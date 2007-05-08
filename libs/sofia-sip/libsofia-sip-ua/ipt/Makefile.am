@@ -25,10 +25,10 @@ TESTS = 		torture_base64
 nobase_include_sofia_HEADERS = \
 			sofia-sip/rc4.h \
 			sofia-sip/base64.h \
-			sofia-sip/string0.h sofia-sip/token64.h \
+		  sofia-sip/token64.h \
 			sofia-sip/uniqueid.h
 
-libipt_la_SOURCES = 	base64.c string0.c token64.c
+libipt_la_SOURCES = 	base64.c token64.c
 
 EXTRA_DIST = 		sofia-sip/utf8.h \
 			utf8internal.h \

@@ -103,9 +103,9 @@ SOFIAPUBVAR tag_typedef_t httptag_http;
 SOFIAPUBVAR tag_typedef_t httptag_http_ref;
 
 #if SU_HAVE_INLINE
-static inline
+su_inline
 tag_value_t httptag_http_v(http_t const *v) { return (tag_value_t)v; }
-static inline 
+su_inline 
 tag_value_t httptag_http_vr(http_t const **vp) { return (tag_value_t)vp; }
 #else
 #define httptag_http_v(v)   (tag_value_t)(v)
@@ -151,10 +151,10 @@ SOFIAPUBVAR tag_typedef_t httptag_header;
 SOFIAPUBVAR tag_typedef_t httptag_header_ref;
 
 #if SU_HAVE_INLINE
-static inline tag_value_t
+su_inline tag_value_t
 httptag_header_v(http_header_t const *v)
 { return (tag_value_t)v; }
-static inline tag_value_t
+su_inline tag_value_t
 httptag_header_vr(http_header_t const **vp)
 { return (tag_value_t)vp; }
 #else
@@ -221,10 +221,10 @@ SOFIAPUBVAR tag_typedef_t httptag_#xxxxxx#_ref;
 SOFIAPUBVAR tag_typedef_t httptag_#xxxxxx#_str_ref;
 
 #if SU_HAVE_INLINE
-static inline tag_value_t
+su_inline tag_value_t
 httptag_#xxxxxx#_v(http_#xxxxxx#_t const *v)
 { return (tag_value_t)v; }
-static inline tag_value_t
+su_inline tag_value_t
 httptag_#xxxxxx#_vr(http_#xxxxxx#_t const **vp)
 { return (tag_value_t)vp; }
 #else

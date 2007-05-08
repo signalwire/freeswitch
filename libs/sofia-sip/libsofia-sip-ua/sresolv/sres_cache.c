@@ -117,9 +117,9 @@ struct sres_cache
 #define LOCK(cache) (su_home_mutex_lock((cache)->cache_home) == 0)
 #define UNLOCK(cache) (su_home_mutex_unlock((cache)->cache_home))
 
-static inline
+su_inline
 void _sres_cache_free_one(sres_cache_t *cache, sres_record_t *answer);
-static inline
+su_inline
 void _sres_cache_free_answers(sres_cache_t *cache, sres_record_t **answers);
 
 static unsigned sres_hash_key(const char *string);
@@ -374,7 +374,7 @@ void sres_cache_free_one(sres_cache_t *cache, sres_record_t *answer)
 /* ---------------------------------------------------------------------- */
 /* Private functions */
 
-static inline
+su_inline
 void _sres_cache_free_answers(sres_cache_t *cache, sres_record_t **answers)
 {
   int i;
@@ -390,7 +390,7 @@ void _sres_cache_free_answers(sres_cache_t *cache, sres_record_t **answers)
   su_free(cache->cache_home, answers);
 }
 
-static inline
+su_inline
 void _sres_cache_free_one(sres_cache_t *cache, sres_record_t *answer)
 {
   if (answer) {

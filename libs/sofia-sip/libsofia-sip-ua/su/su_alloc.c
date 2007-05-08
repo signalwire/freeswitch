@@ -275,7 +275,7 @@ size_t su_block_find_collision, su_block_find_collision_used,
   su_block_find_collision_size;
 #endif
 
-static inline su_alloc_t *su_block_find(su_block_t *b, void const *p)
+su_inline su_alloc_t *su_block_find(su_block_t *b, void const *p)
 {
   size_t h, h0, probe;
 
@@ -315,7 +315,7 @@ static inline su_alloc_t *su_block_find(su_block_t *b, void const *p)
   return NULL;
 }
 
-static inline su_alloc_t *su_block_add(su_block_t *b, void *p)
+su_inline su_alloc_t *su_block_add(su_block_t *b, void *p)
 {
   size_t h, probe;
 
@@ -337,7 +337,7 @@ static inline su_alloc_t *su_block_add(su_block_t *b, void *p)
   return &b->sub_nodes[h];
 }
 
-static inline int su_is_preloaded(su_block_t const *sub, char *data)
+su_inline int su_is_preloaded(su_block_t const *sub, char *data)
 {
   return
     sub->sub_preload && 
@@ -345,7 +345,7 @@ static inline int su_is_preloaded(su_block_t const *sub, char *data)
     sub->sub_preload + sub->sub_prsize > data;
 }
 
-static inline int su_alloc_check(su_block_t const *sub, su_alloc_t const *sua)
+su_inline int su_alloc_check(su_block_t const *sub, su_alloc_t const *sua)
 {
 #if MEMCHECK_EXTRA
   size_t size, term;
@@ -375,7 +375,7 @@ static inline int su_alloc_check(su_block_t const *sub, su_alloc_t const *sua)
  *   This function returns a pointer to the allocated hash table or
  *   NULL if an error occurred.
  */
-static inline su_block_t *su_hash_alloc(size_t n)
+su_inline su_block_t *su_hash_alloc(size_t n)
 {
   su_block_t *b = calloc(1, offsetof(su_block_t, sub_nodes[n]));
 

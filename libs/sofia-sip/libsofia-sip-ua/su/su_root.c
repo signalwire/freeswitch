@@ -908,7 +908,7 @@ int su_msg_reply(su_msg_r reply, su_msg_r const msg,
 
   assert(msg != reply);
 
-  *msg0 = *msg;
+  *msg0 = *(su_msg_t **) msg;
   *reply = NULL;
 
   return su_msg_create(reply, su_msg_from(msg0), su_msg_to(msg0), wakeup, size);
@@ -1016,7 +1016,7 @@ isize_t su_msg_size(su_msg_cr rmsg)
  *
  * @return The task handle of the sender is returned.  
  */
-_su_task_r su_msg_from(su_msg_r const msg)
+_su_task_r su_msg_from(su_msg_cr msg)
 {
   return msg[0] ? msg[0]->sum_from : NULL;
 }
@@ -1033,7 +1033,7 @@ _su_task_r su_msg_from(su_msg_r const msg)
  *
  * @return The task handle of the recipient is returned.  
  */
-_su_task_r su_msg_to(su_msg_r const msg)
+_su_task_r su_msg_to(su_msg_cr msg)
 {
   return msg[0] ? msg[0]->sum_to : NULL;
 }
@@ -1042,7 +1042,7 @@ _su_task_r su_msg_to(su_msg_r const msg)
  *
  * @param msg       message handle
  */
-void su_msg_remove_refs(su_msg_r const msg)
+void su_msg_remove_refs(su_msg_cr msg)
 {
   if (msg[0]) {
     su_task_deinit(msg[0]->sum_to);

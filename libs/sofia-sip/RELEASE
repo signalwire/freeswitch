@@ -5,31 +5,27 @@ Release notes for current version of Sofia-SIP
 Changes since last release
 --------------------------
 
-Numerous nua bugs introduced in the release 1.12.5 have been fixed. Support
-for nextnonce in Authentication-Info header has been added. The nua engine
-now fully supports application-driven SDP.
+<changes since last written in freshmeat.net "Changes:" style;
+ and in less than 10 lines, written in 3rd person English, with
+ complete sentences />
+
+Bugs in blaa and foo have been fixed. The stack now supports
+use of foobar...
 
 API/ABI changes and versioning
 ------------------------------
 
+<see previous release notes at
+ http://sofia-sip.sourceforge.net/relnotes/ for examples ;
+ - should include all changes to public headers, and 
+   other important information to developers; 
+ - and should be updated _continuously_! />
+
+New features in API are marked with Doxytag macro @VERSION_1_12_7.
+
 libsofia-sip-ua:
-- Use calling/received callstate in nua_i_state event sent because of UPDATE
-  while call is ready
-- Added tag define NUTAG_WITH_CURRENT() as an alias to NUTAG_WITH_THIS()
-- Added tag NUTAG_DIALOG() controlling whether nua_method() creates a dialog.
-- Added tag NUTAG_AUTH_CACHE() <sofia-sip/nua_tag.h> determining when to 
-  include credentials in the request
-- Added kqueue and /dev/poll interfaces (su_devpoll_port_create(),
-  su_devpoll_clone_start(), su_kqueue_port_create(), su_kqueue_clone_start()
-  in <sofia-sip/su_wait.h>)
-- Added SIP_IS_ALLOWED() macro to <sofia-sip/sip_util.h>
-- Fixed NUTAG_APPL_METHOD() implementation for UPDATE and PRACK as documented
-  ("100rel" and "precondition" extensions now require explicit calls to
-  nua_update() and nua_prack() if those methods are included in
-  NUTAG_APPL_METHOD())
-- Added auc_clear field and member to authentication client plugin interface
-  in <sofia-sip/auth_client_plugin.h>
-- Added nua_event_is_incoming_request() to <sofia-sip/nua.h>
+- Added accessor function nta_outgoing_branch()
+- **template**: Added foobar() function (sofia-sip/foobar.h).
 - This release is ABI/API compatible with applications linked against 
   any 1.12.x release. However, applications built against this release won't 
   work against an older library. The ABI has been tested with the nua module 
@@ -43,74 +39,38 @@ libsofia-sip-ua-glib:
 Contributors to this release
 ----------------------------
 
-- Pekka Pessi (/dev/poll interface to Solaris, kqueue)
-- Martti Mela (kqueue interface to Max OS X and FreeBSD)
-- Michael Jerris (Solaris patches)
-- Colin Whittaker (sresolv patch)
+<list of people who contributed to _this_ release
+ - update as people's patches are added, or when you commit stuff
+ - current development team members (see AUTHORS) may be omitted,
+   or listed at the end of the contribur list (depending on the scope 
+   of the work done since the last release)
+ - name of the contributor should be enough (email addresses in AUTHORS),
+   plus a _brief_ description of what was contributed
+ - roughly sorted by number of patches accepted
+/> 
+
+- **template**: First Surname (patch to nua/soa/msg)
 
 See the AUTHORS file in the distribution package.
 
 Notes on new features
 ---------------------
 
-The Sofia-SIP has been compiled and tested on Solaris. The /dev/poll
-interface (in su_devpoll_port.c) has been added for Solaris. Likewise, the
-kqueue interface (in su_kqueue_port.c) has been added for FreeBSD and Mac OS
-X. There is also select-based reactor for systems without poll().
-
-The client authentication in nua has been updated. The nextnonce in
-Authentication-Info or Proxy-Authentication-Info headers is now used during
-the next . The NUTAG_AUTH_CACHE() policy determines how the cached
-credentials are used. By default, the credentials are included in each
-request within the dialog, however, with the
-NUTAG_AUTH_CACHE(nua_auth_cache_challenged) the client authenticates
-requests only after they have been challenged.
-
-The application can now fully control the SDP negotiation (when soa is
-disabled with NUTAG_MEDIA_ENABLE(0)). The application can send UPDATE and
-PRACK requests and respond to them. The callstate sent in nua_i_state after
-UPDATE while the call has already been completed has been also changed.
+<information about major new features
+ - new/changed/removed functionality
+ - links to further documentation
+ - section may be omitted for minor releases
+/> 
 
 Bugs fixed in this release
 --------------------------
 
-- Fixed nua failing to refresh publication with re-PUBLISH.
-  Problem reported by Jan van den Bosch.
-- Fixed encoding of c= lines without IN address.
-  Problem reported by Saurav Sahu.
-- Fixed status code sent to network and returned to the client if there was
-  an internal error while responding to a request. 
-  The problem was reported by Michael Jerris and Joshua Engelbrecht.
-- Fixed #1685249, unclear termination of call in absense of credentials by
-  nua_authenticate(). Problem reported by Mikhail Zabaluev.
-- Fixed status code reported to application when REGISTER transaction was
-  restarted by nua stack. Problem reported by Mikhail Zabaluev.
-- An invalid Contact was used if STUN was disabled but there was no STUN
-  server. Problem reported by Miguel Freitas.
-- Fixed problem logging long lines from with TPORT_LOG.
-  Problem reported by Mike Murdock and Michael Jerris.
-- Nua now includes the SDP capabilities in the response to the OPTIONS
-- Fixed assertion failure because BYE destroyed a session twice.
-  Problem reported by Michael Jerris.
-- Fixed crash caused by a 0-length UDP datagram.
-  Problem reported by Michael Jerris.
-- Fixed the 305 response handling by nua stack.
-  Bug #1676445 reported by Fabio Margarido.
-- Fixed authentication-related bugs #1685245 and #1570746.
-  #1685245 reported by Mikhail Zabaluev.
-- Fixed problems resuming DNS after server or link downtime.
-  Bug #1631198 reported and initial patch submitted by Colin Whittaker.
-- Fixed NUTAG_APPL_METHOD() implementation for UPDATE and PRACK as documented
-- Fixed crashes in nua state engines:
-  - when nua_invite() was called second time before receiving
-    final response to first INVITE
-  - when UAS expected PRACK but received CANCEL
-  - when UAC received error response to PRACK, it tried to send BYE and crashed
-  - when UAS rejected initial request, the subsequent request with same 
-    dialog id (Call-ID, From-tag) crashed (dialog cleanup code left dialog
-    dangling)
-  Problems reported by Michael Jerris
-- Fixed crash in nta state engine:
-  - DNS resolver failure in non-invite transctions crashed
-- Fixed sdp handling when soa is disabled (NUTAG_MEDIA_ENABLE(0)).
-  Problem reported by Marcin Michalak
+< notable bugs fixed in this release
+ - check the sf.net bug tracker; see closed bugs,
+   sorted by closing date
+ - other bugs as fixed in CVS/darcs
+/>
+
+- **template**: #9499652 sf.net bug item title
+- Fixed #1472682 sf.net bug: ACK does not find INVITE when
+  To URI has been changed.

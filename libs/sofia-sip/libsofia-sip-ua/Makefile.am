@@ -9,7 +9,7 @@
 
 AUTOMAKE_OPTIONS = foreign
 
-# select whicn optional sofia-sip modules have been enabled
+# select which optional sofia-sip modules have been enabled
 # in the build
 OPT_LIBADD =
 OPT_SUBDIRS_STUN =
@@ -55,6 +55,8 @@ libsofia_sip_ua_la_LIBADD = 	bnf/libbnf.la \
 libsofia_sip_ua_la_LDFLAGS = \
 	-version-info $(LIBVER_SOFIA_SIP_UA_CUR):$(LIBVER_SOFIA_SIP_UA_REV):$(LIBVER_SOFIA_SIP_UA_AGE)
 
+PHONY = doxygen built-sources
+
 include $(top_srcdir)/rules/recursive.am
 
 doxygen: built-sources
@@ -96,4 +98,8 @@ doxygen: built-sources
 	done 
 	${srcdir}/docs/hide_emails.sh docs/html
 
-.PHONY: built-sources built-sources-am empty-doxytags doxygen 
+if HAVE_LCOV
+include $(top_srcdir)/rules/lcov.am
+endif
+
+.PHONY: $(PHONY)

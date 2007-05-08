@@ -50,13 +50,24 @@
   #else
     #define SRESPUBFUN __declspec(dllimport)
   #endif
+#elif defined(SYMBIAN) && !defined(LIBSRES_STATIC)
+  /* Open C platform */
+  #undef SRESPUBFUN
+  #if defined(IN_LIBSOFIA_SRES)
+    #define SRESPUBFUN __declspec(dllexport)
+  #else
+    #define SRESPUBFUN __declspec(dllimport)
+  #endif
 #endif
 
 /* ---------------------------------------------------------------------- */
 
 /* Types required by Win32/64 */
 
-#if defined(_WIN32)
+#if defined (SYMBIAN)
+/** Socket descriptor. @since New in @VERSION_1_12_2. */
+typedef int sres_socket_t;
+#elif defined(_WIN32)
 typedef SOCKET sres_socket_t;
 #else
 /** Socket descriptor. @since New in @VERSION_1_12_2. */

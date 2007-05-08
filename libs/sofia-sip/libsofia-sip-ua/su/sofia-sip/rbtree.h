@@ -62,7 +62,7 @@ typedef struct node Type;
    */
 
 #define RBTREE_LEFT_ROTATE(prefix, Type, left, right, parent)	\
-static inline \
+su_inline \
 void prefix ## _left_rotate(Type **top, Type *x)   \
 {						   \
   Type *c = right(x), *dad = parent(x); assert(c); \
@@ -90,7 +90,7 @@ extern int const prefix##_dummy
    */
 
 #define RBTREE_RIGHT_ROTATE(prefix, Type, left, right, parent)	\
-static inline \
+su_inline \
 void prefix ## _right_rotate(Type **top, Type *x)	\
 {							\
   Type *c = left(x), *dad = parent(x); assert(c);	\
@@ -111,7 +111,7 @@ void prefix ## _right_rotate(Type **top, Type *x)	\
 extern int const prefix##_dummy
 
 #define RBTREE_BALANCE_INSERT1(prefix, Type, left, right, parent, IS_RED, SET_RED, IS_BLACK, SET_BLACK)				\
-static inline								\
+su_inline								\
 void prefix ## _balance_insert(Type **top, Type *node)			\
 {									\
   Type *dad, *uncle, *granddad;						\
@@ -127,7 +127,7 @@ extern int const prefix##_dummy
  * RED(node) - set node as red
  */
 #define RBTREE_BALANCE_INSERT(prefix, Type, left, right, parent, IS_RED, SET_RED, IS_BLACK, SET_BLACK)				\
-static inline								\
+su_inline								\
 void prefix ## _balance_insert(Type **top, Type *node)			\
 {									\
   Type *dad, *uncle, *granddad;						\
@@ -179,7 +179,7 @@ extern int const prefix##_dummy
 #define RBTREE_BALANCE_DELETE(prefix, Type, left, right, parent,	\
 			      IS_RED, SET_RED, IS_BLACK, SET_BLACK,	\
                               COPY_COLOR)				\
-static inline								\
+su_inline								\
 void prefix##_balance_delete(Type **top, Type *node)			\
 {									\
   Type *dad, *brother;							\
@@ -586,13 +586,13 @@ extern int const prefix##_dummy
 
 /** Define prototypes for red-black tree functions. @HIDE 
  *
- * @param SCOPE function scope (e.g., static inline)
+ * @param SCOPE function scope (e.g., su_inline)
  * @param prefix function prefix (e.g., rbtree)
  * @param Type node type
  *
  * @par Example
  * @code
- * RBTREE_PROTOS(static inline, rbtree, struct node);
+ * RBTREE_PROTOS(su_inline, rbtree, struct node);
  * @endcode
  */
 #define RBTREE_PROTOS(SCOPE, prefix, Type)				\
@@ -607,7 +607,7 @@ extern int const prefix##_dummy
 
 /** Define bodies for red-black tree functions. @HIDE 
  *
- * @param SCOPE function scope (e.g., static inline)
+ * @param SCOPE function scope (e.g., su_inline)
  * @param prefix function prefix (e.g., rbtree)
  * @param Type node type
  * @param left accessor of left node 
@@ -638,7 +638,7 @@ extern int const prefix##_dummy
  * #define REMOVE(node) ((node)->left = (node)->right = (node)->parent = NULL, \
  *                       (node)->inserted = 0)
  * 
- * RBTREE_BODIES(static inline, rbtree, struct node,
+ * RBTREE_BODIES(su_inline, rbtree, struct node,
  *               LEFT, RIGHT, PARENT,
  *               IS_RED, SET_RED, IS_BLACK, SET_BLACK, COPY_COLOR,
  *               CMP, INSERT, REMOVE);

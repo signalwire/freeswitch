@@ -473,7 +473,7 @@ char const* url_scheme(enum url_type_e url_type)
   }
 }
 
-static inline
+su_inline
 int url_type_is_opaque(enum url_type_e url_type)
 {
   return 
@@ -497,7 +497,7 @@ void url_init(url_t *url, enum url_type_e type)
 }
 
 /** Get url type */
-static inline
+su_inline
 enum url_type_e url_get_type(char const *scheme, size_t len)
 {
 #define test_scheme(s) \
@@ -1031,7 +1031,7 @@ isize_t url_xtra(url_t const *url)
   return xtra;
 }
 
-static inline
+su_inline
 char *copy(char *buf, char *end, char const *src)
 {
 #if HAVE_MEMCCPY

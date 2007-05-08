@@ -28,9 +28,20 @@
 
 #if HAVE_SELECT
 
+#if HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
+
 #include "sofia-sip/su.h"
 
+#if HAVE_ALLOCA_H
 #include <alloca.h>
+#endif
+
+#if HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
+
 #include <string.h>
 
 #include "sofia-sip/su_wait.h"

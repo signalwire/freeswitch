@@ -73,9 +73,9 @@ char const *name = "torture_rbtree";
 #define INSERT(node) ((void)0)
 #define REMOVE(node) ((node)->left = (node)->right = (node)->parent = NULL)
 
-RBTREE_PROTOS(static inline, redblack, Node);
+RBTREE_PROTOS(su_inline, redblack, Node);
 
-RBTREE_BODIES(static inline, redblack, Node, LEFT, RIGHT, PARENT,
+RBTREE_BODIES(su_inline, redblack, Node, LEFT, RIGHT, PARENT,
 	      IS_RED, SET_RED, IS_BLACK, SET_BLACK, COPY_COLOR,
 	      CMP, INSERT, REMOVE);
 

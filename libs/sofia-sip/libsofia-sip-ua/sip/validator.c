@@ -292,7 +292,7 @@ int validate_file(int fd, char const *name, context_t *ctx)
 
 }
 
-static inline 
+su_inline 
 void nul_terminate(char *b, off_t size)
 {
   char *end;
@@ -305,7 +305,7 @@ void nul_terminate(char *b, off_t size)
   *end = '\0';
 }
 
-static inline
+su_inline
 int search_msg(char **bb, char const *protocol)
 {
   int linelen, plen = strlen(protocol);

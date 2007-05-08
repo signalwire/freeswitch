@@ -42,6 +42,12 @@ doxygen: built-sources
 	done
 	${top_srcdir}/libsofia-sip-ua/docs/hide_emails.sh docs/html 
 
+PHONY = doxygen 
+
 include $(top_srcdir)/rules/recursive.am
 
-.PHONY: built-sources built-sources-am doxygen 
+if HAVE_LCOV
+include $(top_srcdir)/rules/lcov.am
+endif
+
+.PHONY = $(PHONY)

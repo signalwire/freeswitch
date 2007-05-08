@@ -51,7 +51,7 @@
 #include "sofia-sip/msg_header.h"
 
 /** Calculate size of a parameter vector */
-static inline
+su_inline
 size_t msg_params_copy_xtra(msg_param_t const pp[], size_t offset)
 {
   size_t n = msg_params_count(pp);
@@ -63,7 +63,7 @@ size_t msg_params_copy_xtra(msg_param_t const pp[], size_t offset)
 }
 
 /** Copy a vector of parameters */
-static inline
+su_inline
 char *msg_params_copy(char *b, size_t size,
 		      msg_param_t **dst, 
 		      msg_param_t const src[])

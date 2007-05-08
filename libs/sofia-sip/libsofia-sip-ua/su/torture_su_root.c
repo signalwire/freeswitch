@@ -89,6 +89,8 @@ struct root_test_s {
   unsigned   rt_recv_reporter:1;
   unsigned   rt_reported_reporter:1;
 
+  unsigned   rt_executed:1;
+
   unsigned :0;
 
   test_ep_at rt_ep[5];
@@ -469,11 +471,19 @@ void send_a_reporter_msg(root_test_t *rt,
     rt->rt_sent_reporter = 1;
 }
 
+static int set_execute_bit_and_return_3(void *void_rt)
+{
+  root_test_t *rt = void_rt;
+  rt->rt_executed = 1;
+  return 3;
+}
+
 static int clone_test(root_test_t rt[1])
 {
   BEGIN();
 
   su_msg_r m = SU_MSG_R_INIT;
+  int retval;
 
   rt->rt_fail_init = 0;
   rt->rt_fail_deinit = 0;
@@ -499,6 +509,15 @@ static int clone_test(root_test_t rt[1])
   TEST_1(rt->rt_success_init);
   TEST_1(!rt->rt_success_deinit);
 
+  retval = -1;
+  rt->rt_executed = 0;
+  TEST(su_task_execute(su_clone_task(rt->rt_clone),
+		       set_execute_bit_and_return_3, rt,
+		       &retval), 0);
+  TEST(retval, 3);
+  TEST_1(rt->rt_executed);
+       
+
   /* Make sure 3-way handshake is done as expected */
   TEST(su_msg_create(m,
 		     su_clone_task(rt->rt_clone),
@@ -513,7 +532,7 @@ static int clone_test(root_test_t rt[1])
   TEST_1(rt->rt_sent_reporter);
   TEST_1(rt->rt_recv_reporter);
   TEST_1(rt->rt_reported_reporter);
-
+  
   rt->rt_recv_reporter = 0;
 
   /* Make sure we can handle messages done as expected */
@@ -586,6 +605,10 @@ int main(int argc, char *argv[])
     else
       usage(1);
   }
+
+#if HAVE_OPEN_C
+  rt->rt_flags |= tst_verbatim;
+#endif
 
   i = 0;
 

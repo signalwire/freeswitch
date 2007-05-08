@@ -154,7 +154,7 @@ union msg_test_u
 issize_t msg_test_extract_body(msg_t *, msg_pub_t *,
 			       char b[], isize_t bsiz, int eos);
 
-static inline
+su_inline
 msg_test_t *msg_test_public(msg_t *msg)
 {
   return (msg_test_t *)msg_public(msg, MSG_TEST_PROTOCOL_TAG);

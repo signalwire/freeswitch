@@ -831,7 +831,7 @@ void auth_info_digest(auth_mod_t *am,
 /* ====================================================================== */
 /* Password database */
 
-static inline void
+su_inline void
 auth_htable_append_local(auth_htable_t *pr, auth_passwd_t *apw);
 
 /** Get an passwd entry for user. */
@@ -1132,7 +1132,7 @@ int auth_readdb_internal(auth_mod_t *am, int always)
 }
 
 /** Append to hash, remove existing user */
-static inline void
+su_inline void
 auth_htable_append_local(auth_htable_t *aht, auth_passwd_t *apw)
 {
   auth_passwd_t **slot;

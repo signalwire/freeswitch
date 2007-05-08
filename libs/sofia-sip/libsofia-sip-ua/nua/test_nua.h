@@ -297,13 +297,13 @@ void print_event(nua_event_t event,
 		 sip_t const *sip,
 		 tagi_t tags[]);
 
-static inline
+su_inline
 void eventlist_init(struct eventlist *list)
 {
   list->tail = &list->head;
 }
 
-static inline
+su_inline
 void call_init(struct call *call)
 {
 }

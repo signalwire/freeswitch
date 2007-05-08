@@ -378,7 +378,10 @@ typedef struct su_msg_s su_msg_t;
 /** Message reference type. */
 typedef su_msg_t *su_msg_r[1];
 
-/** Contstant reference to su_msg */
+/** Constant reference to su_msg.
+ *
+ * @note The reference is constant, but the message can be modified.
+ */
 typedef su_msg_t * const su_msg_cr[1];
 
 /** Initializer for a message reference. @HI */
@@ -424,7 +427,7 @@ SOFIAPUBFUN int su_wait_events(su_wait_t *wait, su_socket_t s);
 SOFIAPUBFUN int su_wait_mask(su_wait_t *dst, su_socket_t s, int events);
 
 #if !HAVE_WIN32 && (SU_HAVE_POLL || HAVE_SELECT)
-static inline
+su_inline
 su_socket_t su_wait_socket(su_wait_t *wait)
 {
 #if SU_HAVE_KQUEUE
@@ -513,7 +516,7 @@ SOFIAPUBFUN int su_msg_create(su_msg_r msg,
 			      su_task_r const to, su_task_r const from, 
 			      su_msg_f wakeup, isize_t size);
 SOFIAPUBFUN int su_msg_report(su_msg_r msg, su_msg_f report);
-SOFIAPUBFUN int su_msg_reply(su_msg_r reply, su_msg_r const msg,
+SOFIAPUBFUN int su_msg_reply(su_msg_r reply, su_msg_cr msg,
 			     su_msg_f wakeup, isize_t size);
 SOFIAPUBFUN void su_msg_destroy(su_msg_r msg);
 SOFIAPUBFUN void su_msg_save(su_msg_r msg, su_msg_r msg0);

@@ -765,6 +765,44 @@ int test_digest_client()
 
     reinit_as(as); auth_mod_destroy(am); aucs = NULL;
 
+    /* Test without realm */
+    {
+      msg_auth_t *au;
+
+      TEST_1(am = auth_mod_create(NULL, 
+				  AUTHTAG_METHOD("Digest"),
+				  AUTHTAG_DB(testpasswd),
+				  AUTHTAG_ALGORITHM("MD5-sess"),
+				  AUTHTAG_QOP("auth"),
+				  AUTHTAG_OPAQUE("opaque=="),
+				  TAG_END()));
+      as->as_realm = NULL;
+      auth_mod_check_client(am, as, NULL, ach); TEST(as->as_status, 500);
+
+      as->as_realm = "ims3.so.noklab.net";
+      auth_mod_check_client(am, as, NULL, ach); TEST(as->as_status, 401);
+
+      au = (void *)msg_header_dup(home, as->as_response); TEST_1(au);
+
+      TEST(auc_challenge(&aucs, home, au, sip_authorization_class), 1);
+      TEST(auc_all_credentials(&aucs, "Digest", "\"ims3.so.noklab.net\"", 
+			       "user1", "secret"), 1);
+      msg_header_remove(m2, (void *)sip, (void *)sip->sip_authorization);
+
+      TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
+			     (url_t *)"sip:surf3@ims3.so.noklab.net", 
+			     sip->sip_payload), 1);
+
+      TEST_1(sip->sip_authorization);
+      reinit_as(as);
+
+      as->as_realm = "ims3.so.noklab.net";
+      auth_mod_check_client(am, as, sip->sip_authorization, ach);
+      TEST(as->as_status, 0);
+    }
+
+    reinit_as(as); auth_mod_destroy(am); aucs = NULL;
+
     /* Test nextnonce */
     {
       char const *nonce1, *nextnonce, *nonce2;

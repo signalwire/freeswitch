@@ -37,10 +37,10 @@
 /* Includes */
 
 #ifndef SU_CONFIG_H
-#include "sofia-sip/su_config.h"
+#include <sofia-sip/su_config.h>
 #endif
 #ifndef SU_TYPES_H
-#include "sofia-sip/su_types.h"
+#include <sofia-sip/su_types.h>
 #endif
 #ifndef SU_ERRNO_H
 #include <sofia-sip/su_errno.h>

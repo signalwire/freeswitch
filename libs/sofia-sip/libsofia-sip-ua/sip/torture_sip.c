@@ -3288,6 +3288,10 @@ int main(int argc, char *argv[])
       usage(1);
   }
 
+#if HAVE_OPEN_C
+  tstflags |= tst_verbatim;
+#endif
+
   if (!test_mclass)
     test_mclass = msg_mclass_clone(sip_default_mclass(), 0, 0);
 
@@ -3323,6 +3327,10 @@ int main(int argc, char *argv[])
   retval |= test_sec_ext(); fflush(stdout);
 
   retval |= test_utils(); fflush(stdout);
+
+#if HAVE_OPEN_C
+  sleep(5);
+#endif
 
   return retval;
 }

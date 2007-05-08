@@ -83,7 +83,7 @@ typedef unsigned long hash_value_t;
 
 #ifndef HTABLE_SCOPE
 /** Default scope for hash table functions. */
-#define HTABLE_SCOPE static inline
+#define HTABLE_SCOPE su_inline
 #endif
 
 /** Prototypes for hash table

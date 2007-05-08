@@ -576,7 +576,7 @@ char *su_strlst_join(su_strlst_t *self, su_home_t *home, char const *sep)
   return su_strdup(home, "");
 }
 
-static inline
+su_inline
 su_strlst_t *
 su_strlst_split0(su_strlst_t *l, char *str, char const *sep)
 {

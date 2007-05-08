@@ -43,7 +43,7 @@
 
 #include "iptsec_debug.h"
 
-static inline int has_token(char const *qstring, char const *token);
+su_inline int has_token(char const *qstring, char const *token);
 
 
 /**Get ntlm-challenge parameters.

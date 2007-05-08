@@ -76,7 +76,7 @@ static void msg_insert_chain(msg_t *msg, msg_pub_t *pub, int prepend,
 static void msg_insert_here_in_chain(msg_t *msg,
 				     msg_header_t **prev,
 				     msg_header_t *h);
-static inline msg_header_t *msg_chain_remove(msg_t *msg, msg_header_t *h);
+su_inline msg_header_t *msg_chain_remove(msg_t *msg, msg_header_t *h);
 
 #ifndef NDEBUG
 static int msg_chain_loop(msg_header_t const *h);
@@ -122,12 +122,12 @@ void msg_set_streaming(msg_t *msg, enum msg_streaming_status what)
 /** Test if header is not in the chain */
 #define msg_header_is_removed(h) ((h)->sh_prev == NULL)
 
-static inline int msg_is_request(msg_header_t const *h)
+su_inline int msg_is_request(msg_header_t const *h)
 {
   return h->sh_class->hc_hash == msg_request_hash;
 }
 
-static inline int msg_is_status(msg_header_t const *h)
+su_inline int msg_is_status(msg_header_t const *h)
 {
   return h->sh_class->hc_hash == msg_status_hash;
 }
@@ -253,7 +253,7 @@ usize_t msg_buf_size(msg_t const *msg)
     return 0;
 }
 
-static inline
+su_inline
 void msg_buf_used(msg_t *msg, usize_t used)
 {
   msg->m_size += used;
@@ -812,10 +812,10 @@ int msg_unref_external(msg_t *msg, msg_buffer_t *b)
 /* ====================================================================== */
 /* Parsing messages */
 
-static inline int extract_incomplete_chunks(msg_t *, int eos);
+su_inline int extract_incomplete_chunks(msg_t *, int eos);
 static issize_t extract_first(msg_t *, msg_pub_t *,
 			    char b[], isize_t bsiz, int eos);
-static inline issize_t extract_next(msg_t *, msg_pub_t *, char *, isize_t bsiz, 
+su_inline issize_t extract_next(msg_t *, msg_pub_t *, char *, isize_t bsiz, 
 				  int eos, int copy);
 static issize_t extract_header(msg_t *, msg_pub_t*,
 			     char b[], isize_t bsiz, int eos, int copy);
@@ -823,14 +823,14 @@ static msg_header_t *header_parse(msg_t *, msg_pub_t *, msg_href_t const *,
 				  char s[], isize_t slen, int copy_buffer);
 static msg_header_t *error_header_parse(msg_t *msg, msg_pub_t *mo,
 					msg_href_t const *hr);
-static inline issize_t
+su_inline issize_t
 extract_trailers(msg_t *msg, msg_pub_t *mo,
 		 char *b, isize_t bsiz, int eos, int copy);
 
 /** Calculate length of line ending (0, 1 or 2). @internal */
 #define CRLF_TEST(b) ((b)[0] == '\r' ? ((b)[1] == '\n') + 1 : (b)[0] =='\n')
 
-static inline void
+su_inline void
 append_parsed(msg_t *msg, msg_pub_t *mo, msg_href_t const *hr, msg_header_t *h,
 	      int always_into_chain);
 
@@ -991,7 +991,7 @@ issize_t extract_first(msg_t *msg, msg_pub_t *mo, char b[], isize_t bsiz, int eo
 }
 
 /* Extract header or message body */
-static inline issize_t
+su_inline issize_t
 extract_next(msg_t *msg, msg_pub_t *mo, char *b, isize_t bsiz, 
 	     int eos, int copy)
 {
@@ -1302,7 +1302,7 @@ issize_t msg_extract_separator(msg_t *msg, msg_pub_t *mo,
   return l;
 }
 
-static inline msg_header_t **msg_chain_tail(msg_t const *msg);
+su_inline msg_header_t **msg_chain_tail(msg_t const *msg);
 
 /** Extract a message body of @a body_len bytes.
   */
@@ -1459,7 +1459,7 @@ issize_t msg_extract_payload(msg_t *msg, msg_pub_t *mo,
 
 /** Extract incomplete chunks.
  */
-static inline
+su_inline
 int extract_incomplete_chunks(msg_t *msg, int eos)
 {
   msg_payload_t *chunk;
@@ -1495,7 +1495,7 @@ int extract_incomplete_chunks(msg_t *msg, int eos)
 }
 
 /* Extract trailers */
-static inline issize_t
+su_inline issize_t
 extract_trailers(msg_t *msg, msg_pub_t *mo,
 		 char *b, isize_t bsiz, int eos, int copy)
 {
@@ -1511,7 +1511,7 @@ extract_trailers(msg_t *msg, msg_pub_t *mo,
 /* Preparing (printing/encoding) a message structure for sending */
 
 /* Internal prototypes */
-static inline size_t
+su_inline size_t
 msg_header_name_e(char b[], size_t bsiz, msg_header_t const *h, int flags);
 static size_t msg_header_prepare(msg_mclass_t const *, int flags,
 				 msg_header_t *h, msg_header_t **return_next,
@@ -1731,7 +1731,7 @@ issize_t msg_header_e(char b[], isize_t bsiz, msg_header_t const *h, int flags)
 }
 
 /** Encode header name */
-static inline
+su_inline
 size_t
 msg_header_name_e(char b[], size_t bsiz, msg_header_t const *h, int flags)
 {
@@ -1854,7 +1854,7 @@ char *msg_as_string(su_home_t *home, msg_t *msg, msg_pub_t *pub, int flags,
 /* ====================================================================== */
 /* Handling header chain */
 
-static inline void serialize_first(msg_t *msg, msg_header_t *h);
+su_inline void serialize_first(msg_t *msg, msg_header_t *h);
 static msg_header_t **serialize_one(msg_t *msg, msg_header_t *h,
 				    msg_header_t **prev);
 
@@ -1864,13 +1864,13 @@ msg_header_t **msg_chain_head(msg_t const *msg)
   return msg ? (msg_header_t **)&msg->m_chain : NULL;
 }
 
-static inline msg_header_t **_msg_chain_head(msg_t const *msg)
+su_inline msg_header_t **_msg_chain_head(msg_t const *msg)
 {
   return msg ? (msg_header_t **)&msg->m_chain : NULL;
 }
 
 /** Return tail of the fragment chain */
-static inline msg_header_t **msg_chain_tail(msg_t const *msg)
+su_inline msg_header_t **msg_chain_tail(msg_t const *msg)
 {
   return msg ? msg->m_tail : NULL;
 }
@@ -1977,7 +1977,7 @@ int msg_serialize(msg_t *msg, msg_pub_t *pub)
   return 0;
 }
 
-static inline
+su_inline
 void serialize_first(msg_t *msg, msg_header_t *h)
 {
   if (msg_header_is_removed(h)) {
@@ -2202,7 +2202,7 @@ void msg_insert_here_in_chain(msg_t *msg,
  *
  * @return The pointer to the header just removed.
  */
-static inline
+su_inline
 msg_header_t *msg_chain_remove(msg_t *msg, msg_header_t *h)
 {
   if (h) {
@@ -2477,7 +2477,7 @@ msg_hclass_offset(msg_mclass_t const *mc, msg_pub_t const *mo, msg_hclass_t *hc)
 }
 
 /** Append a parsed header object into the message structure */
-static inline void
+su_inline void
 append_parsed(msg_t *msg, msg_pub_t *mo, msg_href_t const *hr, msg_header_t *h,
 	      int always_into_chain)
 {

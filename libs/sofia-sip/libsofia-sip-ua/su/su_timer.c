@@ -180,16 +180,16 @@ enum sut_running {
 #define REMOVE(sut) ((sut)->sut_set = 0,				\
   (sut)->sut_left = (sut)->sut_right = (sut)->sut_parent = NULL)
 
-RBTREE_PROTOS(static inline, timers, su_timer_t);
+RBTREE_PROTOS(su_inline, timers, su_timer_t);
 
-static inline int timers_append(su_timer_t **, su_timer_t *);
-static inline void timers_remove(su_timer_t **, su_timer_t *);
-static inline su_timer_t *timers_succ(su_timer_t const *);
-static inline su_timer_t *timers_prec(su_timer_t const *);
-static inline su_timer_t *timers_first(su_timer_t const *);
-static inline su_timer_t *timers_last(su_timer_t const *);
+su_inline int timers_append(su_timer_t **, su_timer_t *);
+su_inline void timers_remove(su_timer_t **, su_timer_t *);
+su_inline su_timer_t *timers_succ(su_timer_t const *);
+su_inline su_timer_t *timers_prec(su_timer_t const *);
+su_inline su_timer_t *timers_first(su_timer_t const *);
+su_inline su_timer_t *timers_last(su_timer_t const *);
 
-RBTREE_BODIES(static inline, timers, su_timer_t,
+RBTREE_BODIES(su_inline, timers, su_timer_t,
 	      LEFT, RIGHT, PARENT,
 	      IS_RED, SET_RED, IS_BLACK, SET_BLACK, COPY_COLOR,
 	      CMP, INSERT, REMOVE);
@@ -198,7 +198,7 @@ RBTREE_BODIES(static inline, timers, su_timer_t,
  *
  * @retval 0 when successful (always)
  */
-static inline int
+su_inline int
 su_timer_set0(su_timer_t **timers,
 	      su_timer_t *t,
 	      su_timer_f wakeup,
@@ -220,7 +220,7 @@ su_timer_set0(su_timer_t **timers,
  *
  * @retval 0 when successful (always)
  */
-static inline int
+su_inline int
 su_timer_reset0(su_timer_t **timers,
 		su_timer_t *t)
 {

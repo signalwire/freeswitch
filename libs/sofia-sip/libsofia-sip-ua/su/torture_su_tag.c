@@ -644,6 +644,10 @@ int main(int argc, char *argv[])
       usage(1);
   }
 
+#if HAVE_OPEN_C
+  tstflags |= tst_verbatim;
+#endif
+
   retval |= test_assumptions();
   retval |= test_stackargs(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
   retval |= test_dup();

@@ -42,9 +42,9 @@
 
 #define SU_ROOT_MAGIC_T struct stun_magic_t
 
-#include "sofia-sip/stun.h"
+#include <sofia-sip/stun.h>
 #include "stun_internal.h"
-#include "sofia-sip/stun_tag.h"
+#include <sofia-sip/stun_tag.h>
 
 #include <sofia-sip/su_alloc.h>
 #include <sofia-sip/su_tagarg.h>
@@ -52,17 +52,12 @@
 #include <sofia-sip/su.h>
 #include <sofia-sip/su_localinfo.h>
 
-#if HAVE_WINSOCK2_H
-#include <winsock2.h>
-#include <ws2tcpip.h>
+#if HAVE_NETINET_TCP_H
+#include <netinet/tcp.h>
 #endif
 
 #if HAVE_OPENSSL
 #include <openssl/opensslv.h>
-#endif
-
-#if !defined(ETIMEDOUT) && defined(_WIN32)
-#define ETIMEDOUT WSAETIMEDOUT
 #endif
 
 /* Missing socket symbols */
@@ -1611,7 +1606,7 @@ int stun_make_sharedsecret_req(stun_msg_t *msg)
 
 
 /* Return action of the request. If no request, return default value */
-static inline
+su_inline
 stun_action_t get_action(stun_request_t *req)
 {
   stun_discovery_t *sd = NULL;
@@ -1626,7 +1621,7 @@ stun_action_t get_action(stun_request_t *req)
 
 
 /* Find request from the request queue, based on TID */
-static inline
+su_inline
 stun_request_t *find_request(stun_handle_t *self, void *id)
 {
   void *match;

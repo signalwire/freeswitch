@@ -56,7 +56,7 @@ SOFIA_BEGIN_DECLS
 #define TAG_TYPE_OF(t) ((t) && (t)->t_tag ? (t)->t_tag : tag_null)
 
 /** Check if the tag item is last in current list */
-static inline int t_end(tagi_t const *t)
+su_inline int t_end(tagi_t const *t)
 {
   tag_type_t tt = TAG_TYPE_OF(t);
 
@@ -65,7 +65,7 @@ static inline int t_end(tagi_t const *t)
   return tt == tag_null || tt == tag_next;
 }
 
-static inline tagi_t const *t_next(tagi_t const *t)
+su_inline tagi_t const *t_next(tagi_t const *t)
 {
   tag_type_t tt = TAG_TYPE_OF(t);
 
@@ -75,7 +75,7 @@ static inline tagi_t const *t_next(tagi_t const *t)
     return t + 1;
 }
 
-static inline tagi_t *t_move(tagi_t *dst, tagi_t const *src)
+su_inline tagi_t *t_move(tagi_t *dst, tagi_t const *src)
 {
   tag_type_t tt = TAG_TYPE_OF(src);
 
@@ -86,7 +86,7 @@ static inline tagi_t *t_move(tagi_t *dst, tagi_t const *src)
   return dst + 1;
 }
 
-static inline size_t t_xtra(tagi_t const *t, size_t offset)
+su_inline size_t t_xtra(tagi_t const *t, size_t offset)
 {
   tag_type_t tt = TAG_TYPE_OF(t);
 
@@ -96,7 +96,7 @@ static inline size_t t_xtra(tagi_t const *t, size_t offset)
   return 0;
 }
 
-static inline tagi_t *t_dup(tagi_t *dst, tagi_t const *src, void **bb)
+su_inline tagi_t *t_dup(tagi_t *dst, tagi_t const *src, void **bb)
 {
   tag_type_t tt = TAG_TYPE_OF(src);
 
@@ -107,7 +107,7 @@ static inline tagi_t *t_dup(tagi_t *dst, tagi_t const *src, void **bb)
   return dst + 1;
 }
 
-static inline tagi_t const *t_find(tag_type_t tt, tagi_t const *lst)
+su_inline tagi_t const *t_find(tag_type_t tt, tagi_t const *lst)
 {
   if (!tt)
     return NULL;
@@ -123,7 +123,7 @@ static inline tagi_t const *t_find(tag_type_t tt, tagi_t const *lst)
   return NULL;
 }
 
-static inline tagi_t *t_free(tagi_t *t)
+su_inline tagi_t *t_free(tagi_t *t)
 {
   tag_type_t tt = TAG_TYPE_OF(t);
 
@@ -135,7 +135,7 @@ static inline tagi_t *t_free(tagi_t *t)
     return t + 1;
 }
 
-static inline size_t t_len(tagi_t const *t)
+su_inline size_t t_len(tagi_t const *t)
 {
   tag_type_t tt = TAG_TYPE_OF(t);
 

@@ -415,7 +415,7 @@ int nua_dialog_remove(nua_owner_t *own,
 		      nua_dialog_state_t *ds,
 		      nua_dialog_usage_t *usage);
 
-static inline int nua_dialog_is_reporting(nua_dialog_state_t const *ds)
+su_inline int nua_dialog_is_reporting(nua_dialog_state_t const *ds)
 {
   return ds && ds->ds_reporting;
 }
@@ -459,20 +459,20 @@ int nua_dialog_usage_shutdown(nua_owner_t *owner,
 			      nua_dialog_state_t *ds,
 			      nua_dialog_usage_t *du);
 
-static inline
+su_inline
 int nua_dialog_is_established(nua_dialog_state_t const *ds)
 {
   return ds->ds_remote_tag != NULL;
 }
 
 #if 0
-static inline
+su_inline
 void *nua_dialog_usage_private(nua_dialog_usage_t const *du)
 {
   return du ? (void *)(du + 1) : NULL;
 }
 
-static inline
+su_inline
 nua_dialog_usage_t *nua_dialog_usage_public(void const *p)
 {
   return p ? (nua_dialog_usage_t *)p - 1 : NULL;
@@ -494,7 +494,7 @@ int nua_client_tcreate(nua_owner_t *nh,
 		       nua_client_methods_t const *methods,
 		       tag_type_t tag, tag_value_t value, ...);
 
-static inline 
+su_inline 
 void *nua_private_client_request(nua_client_request_t const *cr)
 {
   return (void *)(cr + 1);
@@ -504,7 +504,7 @@ void nua_client_request_destroy(nua_client_request_t *);
 
 int nua_client_request_queue(nua_client_request_t *cr);
 
-static inline int nua_client_is_queued(nua_client_request_t const *cr)
+su_inline int nua_client_is_queued(nua_client_request_t const *cr)
 {
   return cr && cr->cr_prev;
 }
@@ -513,18 +513,18 @@ nua_client_request_t *nua_client_request_remove(nua_client_request_t *cr);
 
 int nua_client_bind(nua_client_request_t *cr, nua_dialog_usage_t *du);
 
-static inline int nua_client_is_bound(nua_client_request_t const *cr)
+su_inline int nua_client_is_bound(nua_client_request_t const *cr)
 {
   return cr && cr->cr_usage && cr->cr_usage->du_cr == cr;
 }
 
-static inline int nua_client_is_reporting(nua_client_request_t const *cr)
+su_inline int nua_client_is_reporting(nua_client_request_t const *cr)
 {
   return cr && cr->cr_reporting;
 }
 
 /** Mark client request as a terminating one */
-static inline void nua_client_terminating(nua_client_request_t *cr)
+su_inline void nua_client_terminating(nua_client_request_t *cr)
 {
   cr->cr_terminating = 1;
 }
@@ -613,13 +613,13 @@ extern nua_server_methods_t const
   nua_publish_server_methods;	/**< PUBLISH */
 
 /** Return true if we have not sent final response to request */ 
-static inline 
+su_inline 
 int nua_server_request_is_pending(nua_server_request_t const *sr)
 {
   return sr && sr->sr_response.msg;
 }
 
-static inline 
+su_inline 
 int nua_server_request_status(nua_server_request_t const *sr)
 {
   return sr ? nta_incoming_status(sr->sr_irq) : 500;

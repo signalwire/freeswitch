@@ -103,10 +103,10 @@ extern tag_typedef_t tsttag_header;
 extern tag_typedef_t tsttag_header_ref;
 
 #if HAVE_INLINE
-static inline tag_value_t
+su_inline tag_value_t
 tsttag_header_v(msg_header_t const *v)
 { return (tag_value_t)v; }
-static inline tag_value_t
+su_inline tag_value_t
 tsttag_header_vr(msg_header_t const **vp)
 { return (tag_value_t)vp; }
 #else
@@ -132,9 +132,9 @@ extern tag_typedef_t tsttag_header_str;
 extern tag_typedef_t tsttag_header_str_ref;
 
 #if HAVE_INLINE
-static inline
+su_inline
 tag_value_t tsttag_tst_v(msg_test_t const *v) { return (tag_value_t)v; }
-static inline 
+su_inline 
 tag_value_t tsttag_tst_vr(msg_test_t const **vp) { return (tag_value_t)vp; }
 #else
 #define tsttag_tst_v(v)   (tag_value_t)(v)

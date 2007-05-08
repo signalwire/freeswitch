@@ -698,6 +698,9 @@ int main(int argc, char *argv[])
     else
       usage(1);
   }
+#if HAVE_OPEN_C
+  tstflags |= tst_verbatim;
+#endif
 
   retval |= test_alloc();
   retval |= test_strdupcat();

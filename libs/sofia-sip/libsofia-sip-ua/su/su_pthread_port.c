@@ -217,7 +217,11 @@ int su_pthreaded_port_start(su_port_create_f *create,
     /* init: */   NULL,
     /* deinit: */ NULL,
     /* mutex: */  { PTHREAD_MUTEX_INITIALIZER },
+#if HAVE_OPEN_C
+/* cv: */     { _ENeedsNormalInit, NULL },
+#else
     /* cv: */     { PTHREAD_COND_INITIALIZER },
+#endif
     /* retval: */ -1,
     /* clone: */  SU_MSG_R_INIT,
   };
@@ -451,11 +455,19 @@ int su_pthread_port_execute(su_task_r const task,
 {
   int success;
   su_msg_r m = SU_MSG_R_INIT;
+#if HAVE_OPEN_C
+  struct su_pthread_port_execute frame = {
+    { PTHREAD_MUTEX_INITIALIZER },
+    { _ENeedsNormalInit, NULL },
+    function, arg, 0
+  };
+#else
   struct su_pthread_port_execute frame = {
     { PTHREAD_MUTEX_INITIALIZER },
     { PTHREAD_COND_INITIALIZER },
     function, arg, 0
   };
+#endif
 
   if (su_msg_create(m, task, su_task_null,
 		    _su_pthread_port_execute, (sizeof &frame)) < 0)

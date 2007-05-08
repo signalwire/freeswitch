@@ -247,7 +247,7 @@ void red_black_balance_delete(UrlMap **top, UrlMap *um)
 }
 
 /** Compare paths. */
-static inline
+su_inline
 int urlmap_pathcmp(url_t const *a, url_t const *b, int *return_hostmatch)
 {
   int retval;

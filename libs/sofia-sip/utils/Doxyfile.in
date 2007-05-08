@@ -21,7 +21,9 @@ OUTPUT_DIRECTORY     = ../man
 @INCLUDE_PATH = . @srcdir@
 
 @INCLUDE = ../libsofia-sip-ua/docs/Doxyfile.aliases
-@INCLUDE = ../libsofia-sip-ua/docs/Doxyfile.rfc
+# @INCLUDE = ../libsofia-sip-ua/docs/Doxyfile.rfc
+# Only @RFC3263 is used now
+ALIASES += RFC3263="<a href=\"http://www.faqs.org/rfcs/rfc3263.html\">RFC 3263</a>"
 
 FILE_PATTERNS        = *.h *.c 
 

@@ -937,7 +937,7 @@ int nh_authorize(nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...)
   return retval;
 }
 
-static inline
+su_inline
 int can_redirect(sip_contact_t const *m, sip_method_t method)
 {
   if (m && m->m_url->url_host) {

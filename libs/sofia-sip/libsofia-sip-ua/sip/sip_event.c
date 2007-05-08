@@ -434,7 +434,7 @@ msg_hclass_t sip_publication_class[] =
 SIP_HEADER_CLASS(publication, "Publication", "", pub_params, single, 
 		 publication);
 
-static inline void sip_publication_update(sip_publication_t *pub);
+su_inline void sip_publication_update(sip_publication_t *pub);
 
 issize_t sip_publication_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
 {
@@ -491,7 +491,7 @@ char *sip_publication_dup_one(sip_header_t *dst, sip_header_t const *src,
   return b;
 }
 
-static inline void sip_publication_update(sip_publication_t *pub)
+su_inline void sip_publication_update(sip_publication_t *pub)
 {
   size_t i;
 

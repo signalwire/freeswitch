@@ -75,14 +75,6 @@
 #include "sofia-sip/nta_stateless.h"
 #include "sofia-sip/url_tag.h"
 
-#if !defined(random) && defined(_WIN32)
-#define random rand
-#endif
-
-#if !defined(EMSGSIZE) && defined(_WIN32)
-#define EMSGSIZE WSAEMSGSIZE
-#endif
-
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -202,30 +194,30 @@ static nta_incoming_t *incoming_create(nta_agent_t *agent,
 				       char const *tag);
 static int incoming_callback(nta_leg_t *leg, nta_incoming_t *irq, sip_t *sip);
 static void incoming_free(nta_incoming_t *irq);
-static inline void incoming_cut_off(nta_incoming_t *irq);
-static inline void incoming_reclaim(nta_incoming_t *irq);
+su_inline void incoming_cut_off(nta_incoming_t *irq);
+su_inline void incoming_reclaim(nta_incoming_t *irq);
 static void incoming_queue_init(incoming_queue_t *, 
 				unsigned timeout);
 static void incoming_queue_adjust(nta_agent_t *sa, 
 				  incoming_queue_t *queue, 
 				  unsigned timeout);
 
-static inline
+su_inline
 nta_incoming_t *incoming_find(nta_agent_t const *agent, sip_t const *sip,
 			      sip_via_t const *v,
 			      nta_incoming_t **merge,
 			      nta_incoming_t **ack);
 static int incoming_reply(nta_incoming_t *irq, msg_t *msg, sip_t *sip);
-static inline int incoming_recv(nta_incoming_t *irq, msg_t *msg, sip_t *sip,
+su_inline int incoming_recv(nta_incoming_t *irq, msg_t *msg, sip_t *sip,
 				tport_t *tport);
-static inline int incoming_ack(nta_incoming_t *irq, msg_t *msg, sip_t *sip,
+su_inline int incoming_ack(nta_incoming_t *irq, msg_t *msg, sip_t *sip,
 			       tport_t *tport);
-static inline int incoming_cancel(nta_incoming_t *irq, msg_t *msg, sip_t *sip,
+su_inline int incoming_cancel(nta_incoming_t *irq, msg_t *msg, sip_t *sip,
 				  tport_t *tport);
-static inline int incoming_merge(nta_incoming_t *irq, msg_t *msg, sip_t *sip,
+su_inline int incoming_merge(nta_incoming_t *irq, msg_t *msg, sip_t *sip,
 				 tport_t *tport);
-static inline int incoming_timestamp(nta_incoming_t *, msg_t *, sip_t *);
-static inline su_duration_t incoming_timer(nta_agent_t *, su_duration_t);
+su_inline int incoming_timestamp(nta_incoming_t *, msg_t *, sip_t *);
+su_inline su_duration_t incoming_timer(nta_agent_t *, su_duration_t);
 
 static nta_reliable_t *reliable_mreply(nta_incoming_t *,
 				       nta_prack_f *, nta_reliable_magic_t *,
@@ -251,15 +243,15 @@ static void outgoing_queue_adjust(nta_agent_t *sa,
 				  outgoing_queue_t *queue, 
 				  unsigned timeout);
 static void outgoing_free(nta_outgoing_t *orq);
-static inline void outgoing_cut_off(nta_outgoing_t *orq);
-static inline void outgoing_reclaim(nta_outgoing_t *orq);
+su_inline void outgoing_cut_off(nta_outgoing_t *orq);
+su_inline void outgoing_reclaim(nta_outgoing_t *orq);
 static nta_outgoing_t *outgoing_find(nta_agent_t const *sa,
 				     msg_t const *msg,
 				     sip_t const *sip,
 				     sip_via_t const *v);
 static int outgoing_recv(nta_outgoing_t *orq, int status, msg_t *, sip_t *);
 static void outgoing_default_recv(nta_outgoing_t *, int, msg_t *, sip_t *);
-static inline su_duration_t outgoing_timer(nta_agent_t *, su_duration_t);
+su_inline su_duration_t outgoing_timer(nta_agent_t *, su_duration_t);
 static int outgoing_recv_reliable(nta_outgoing_t *orq, msg_t *msg, sip_t *sip);
 
 /* Internal message passing */
@@ -3250,7 +3242,7 @@ static int leg_callback_default(nta_leg_magic_t*, nta_leg_t*,
 				nta_incoming_t*, sip_t const *);
 #define HTABLE_HASH_LEG(leg) ((leg)->leg_hash)
 HTABLE_BODIES_WITH(leg_htable, lht, nta_leg_t, HTABLE_HASH_LEG, size_t, hash_value_t);
-static inline
+su_inline
 hash_value_t hash_istring(char const *, char const *, hash_value_t);
 
 /**@typedef nta_request_f
@@ -3814,7 +3806,7 @@ nta_leg_t *nta_leg_by_replaces(nta_agent_t *sa, sip_replaces_t const *rp)
 }
 
 /** Calculate a simple case-insensitive hash over a string */
-static inline
+su_inline
 hash_value_t hash_istring(char const *s, char const *term, hash_value_t hash)
 {
   if (s) {
@@ -3908,7 +3900,7 @@ void leg_recv(nta_leg_t *leg, msg_t *msg, sip_t *sip, tport_t *tport)
  * @retval nonzero if matching.
  * @retval zero if not matching.
  */
-static inline
+su_inline
 int addr_cmp(url_t const *a, url_t const *b)
 {
   if (b == NULL)
@@ -4260,21 +4252,21 @@ static void incoming_insert(nta_agent_t *agent,
 			    incoming_queue_t *queue, 
 			    nta_incoming_t *irq);
 
-static inline int incoming_is_queued(nta_incoming_t const *irq);
-static inline void incoming_queue(incoming_queue_t *queue, nta_incoming_t *);
-static inline void incoming_remove(nta_incoming_t *irq);
-static inline void incoming_set_timer(nta_incoming_t *, unsigned interval);
-static inline void incoming_reset_timer(nta_incoming_t *);
-static inline size_t incoming_mass_destroy(nta_agent_t *, incoming_queue_t *);
+su_inline int incoming_is_queued(nta_incoming_t const *irq);
+su_inline void incoming_queue(incoming_queue_t *queue, nta_incoming_t *);
+su_inline void incoming_remove(nta_incoming_t *irq);
+su_inline void incoming_set_timer(nta_incoming_t *, unsigned interval);
+su_inline void incoming_reset_timer(nta_incoming_t *);
+su_inline size_t incoming_mass_destroy(nta_agent_t *, incoming_queue_t *);
 
 static int incoming_set_params(nta_incoming_t *irq, tagi_t const *tags);
-static inline
+su_inline
 int incoming_set_compartment(nta_incoming_t *irq, tport_t *tport, msg_t *msg,
 			     int create_if_needed);
 
-static inline nta_incoming_t
+su_inline nta_incoming_t
   *incoming_call_callback(nta_incoming_t *, msg_t *, sip_t *);
-static inline int incoming_final_failed(nta_incoming_t *irq, msg_t *);
+su_inline int incoming_final_failed(nta_incoming_t *irq, msg_t *);
 static void incoming_retransmit_reply(nta_incoming_t *irq, tport_t *tport);
 
 /** Create a default server transaction. 
@@ -4438,6 +4430,7 @@ nta_incoming_t *incoming_create(nta_agent_t *agent,
     /* Tag transaction */
     if (tag)
       sip_to_tag(home, irq->irq_to, tag);
+    irq->irq_tag = irq->irq_to->a_tag;
 
     if (method != sip_method_ack) {
       int *use_rport = NULL;
@@ -4617,7 +4610,7 @@ incoming_queue_adjust(nta_agent_t *sa,
 /** @internal
  * Test if an incoming transaction is in a queue.
  */
-static inline
+su_inline
 int incoming_is_queued(nta_incoming_t const *irq)
 {
   return irq && irq->irq_queue;
@@ -4629,7 +4622,7 @@ int incoming_is_queued(nta_incoming_t const *irq)
  * Insert a server transaction into a queue, and sets the corresponding
  * timeout at the same time.
  */
-static inline
+su_inline
 void incoming_queue(incoming_queue_t *queue, 
 		    nta_incoming_t *irq)
 {
@@ -4655,7 +4648,7 @@ void incoming_queue(incoming_queue_t *queue,
 /** @internal
  * Remove an incoming transaction from a queue.
  */
-static inline
+su_inline
 void incoming_remove(nta_incoming_t *irq)
 {
   assert(incoming_is_queued(irq));
@@ -4673,7 +4666,7 @@ void incoming_remove(nta_incoming_t *irq)
   irq->irq_timeout = 0;
 }
 
-static inline
+su_inline
 void incoming_set_timer(nta_incoming_t *irq, unsigned interval)
 {
   nta_incoming_t **rq;
@@ -4714,7 +4707,7 @@ void incoming_set_timer(nta_incoming_t *irq, unsigned interval)
     irq->irq_agent->sa_in.re_t1 = rq;
 }
 
-static inline
+su_inline
 void incoming_reset_timer(nta_incoming_t *irq)
 {
   if (irq->irq_rprev) {
@@ -4742,7 +4735,7 @@ void incoming_free(nta_incoming_t *irq)
 }
 
 /** Remove references to the irq */
-static inline
+su_inline
 void incoming_cut_off(nta_incoming_t *irq)
 {
   nta_agent_t *agent = irq->irq_agent;
@@ -4771,7 +4764,7 @@ void incoming_cut_off(nta_incoming_t *irq)
 }
 
 /** Reclaim the memory used by irq */
-static inline
+su_inline
 void incoming_reclaim(nta_incoming_t *irq)
 {
   su_home_t *home = irq->irq_home;
@@ -4799,7 +4792,7 @@ void incoming_reclaim(nta_incoming_t *irq)
 }
 
 /** Queue request to be freed */
-static inline 
+su_inline 
 void incoming_free_queue(incoming_queue_t *q, nta_incoming_t *irq)
 {
   incoming_cut_off(irq);
@@ -5007,10 +5000,12 @@ nta_incoming_t *nta_incoming_find(nta_agent_t const *agent,
     return NULL;
 }
 
-static inline
-int addr_match(sip_addr_t const *a, sip_addr_t const *b)
+su_inline
+int addr_match(sip_addr_t const *a, char const *a_tag, sip_addr_t const *b)
 {
-  if (a->a_tag && b->a_tag)
+  if (a_tag && b->a_tag)
+    return strcasecmp(a_tag, b->a_tag) == 0;
+  else if (a->a_tag && b->a_tag)
     return strcasecmp(a->a_tag, b->a_tag) == 0;
   else
     return
@@ -5022,7 +5017,7 @@ int addr_match(sip_addr_t const *a, sip_addr_t const *b)
  *
  *
  */
-static inline
+su_inline
 nta_incoming_t *incoming_find(nta_agent_t const *agent,
 			      sip_t const *sip,
 			      sip_via_t const *v,
@@ -5061,7 +5056,7 @@ nta_incoming_t *incoming_find(nta_agent_t const *agent,
       if (is_uas_ack &&
 	  irq->irq_method == sip_method_invite && 
 	  200 <= irq->irq_status && irq->irq_status < 300 &&
-	  addr_match(irq->irq_to, to))
+	  addr_match(irq->irq_to, irq->irq_tag, to))
 	*return_ack = irq;
       /* RFC3261 - section 8.2.2.2 Merged Requests */
       else if (return_merge && agent->sa_merge_482 &&
@@ -5077,7 +5072,7 @@ nta_incoming_t *incoming_find(nta_agent_t const *agent,
     }
 
     if (is_uas_ack) {
-      if (!addr_match(irq->irq_to, to))
+      if (!addr_match(irq->irq_to, irq->irq_tag, to))
 	continue;
     }
     else if (irq->irq_tag_set || !irq->irq_tag) {
@@ -5131,8 +5126,8 @@ nta_incoming_t *incoming_find(nta_agent_t const *agent,
 	continue;
       if (irq->irq_cseq->cs_seq != rack->ra_cseq)
 	continue;
-      if (!addr_match(irq->irq_to, to) ||
-	  !addr_match(irq->irq_from, from))
+      if (!addr_match(irq->irq_to, NULL, to) ||
+	  !addr_match(irq->irq_from, NULL, from))
 	continue;
       if (!irq->irq_from->a_tag != !from->a_tag)
 	continue;
@@ -5146,7 +5141,7 @@ nta_incoming_t *incoming_find(nta_agent_t const *agent,
 }
 
 /** Process retransmitted requests. */
-static inline
+su_inline
 int 
 incoming_recv(nta_incoming_t *irq, msg_t *msg, sip_t *sip, tport_t *tport)
 {
@@ -5179,7 +5174,7 @@ incoming_recv(nta_incoming_t *irq, msg_t *msg, sip_t *sip, tport_t *tport)
   return 0;
 }
 
-static inline
+su_inline
 int incoming_ack(nta_incoming_t *irq, msg_t *msg, sip_t *sip, tport_t *tport)
 {
   nta_agent_t *agent = irq->irq_agent;
@@ -5221,7 +5216,7 @@ int incoming_ack(nta_incoming_t *irq, msg_t *msg, sip_t *sip, tport_t *tport)
   return 0;
 }
 
-static inline
+su_inline
 int incoming_cancel(nta_incoming_t *irq, msg_t *msg, sip_t *sip,
 		    tport_t *tport)
 {
@@ -5261,7 +5256,7 @@ int incoming_cancel(nta_incoming_t *irq, msg_t *msg, sip_t *sip,
 }
 
 /** Process merged requests */
-static inline
+su_inline
 int incoming_merge(nta_incoming_t *irq, msg_t *msg, sip_t *sip, tport_t *tport)
 {
   nta_agent_t *agent = irq->irq_agent;
@@ -5302,7 +5297,7 @@ int incoming_merge(nta_incoming_t *irq, msg_t *msg, sip_t *sip, tport_t *tport)
  */
 
 /** Call callback of incoming transaction */
-static inline
+su_inline
 nta_incoming_t *
 incoming_call_callback(nta_incoming_t *irq, msg_t *msg, sip_t *sip)
 {
@@ -5391,7 +5386,7 @@ int incoming_set_params(nta_incoming_t *irq, tagi_t const *tags)
   return retval; 
 }
 
-static inline
+su_inline
 int incoming_set_compartment(nta_incoming_t *irq, tport_t *tport, msg_t *msg,
 			     int create_if_needed)
 {
@@ -5846,7 +5841,7 @@ int incoming_reply(nta_incoming_t *irq, msg_t *msg, sip_t *sip)
  *
  * Put transaction into its own queue, try later to send the response.
  */
-static inline
+su_inline
 int incoming_final_failed(nta_incoming_t *irq, msg_t *msg)
 {
   msg_destroy(msg);
@@ -5921,7 +5916,7 @@ enum {
 };
 
 /** @internal Timer routine for the incoming request. */
-static inline
+su_inline
 su_duration_t incoming_timer(nta_agent_t *sa, su_duration_t next)
 {
   su_duration_t now = sa->sa_millisec;
@@ -6141,7 +6136,7 @@ su_duration_t incoming_timer(nta_agent_t *sa, su_duration_t next)
 }
 
 /** Mass destroy server transactions */
-static inline
+su_inline
 size_t incoming_mass_destroy(nta_agent_t *sa, incoming_queue_t *q)
 {
   size_t destroyed = q->q_length;
@@ -6198,12 +6193,12 @@ static void outgoing_print_tport_error(nta_outgoing_t *orq,
 				       tp_name_t const *, msg_t *, int error);
 static void outgoing_insert(nta_agent_t *sa, nta_outgoing_t *orq);
 static void outgoing_destroy(nta_outgoing_t *orq);
-static inline int outgoing_is_queued(nta_outgoing_t const *orq);
-static inline void outgoing_queue(outgoing_queue_t *queue, 
+su_inline int outgoing_is_queued(nta_outgoing_t const *orq);
+su_inline void outgoing_queue(outgoing_queue_t *queue, 
 				  nta_outgoing_t *orq);
-static inline void outgoing_remove(nta_outgoing_t *orq);
-static inline void outgoing_set_timer(nta_outgoing_t *orq, unsigned interval);
-static inline void outgoing_reset_timer(nta_outgoing_t *orq);
+su_inline void outgoing_remove(nta_outgoing_t *orq);
+su_inline void outgoing_set_timer(nta_outgoing_t *orq, unsigned interval);
+su_inline void outgoing_reset_timer(nta_outgoing_t *orq);
 static size_t outgoing_timer_dk(outgoing_queue_t *q, 
 				char const *timer, 
 				su_duration_t now);
@@ -6234,8 +6229,8 @@ static int outgoing_default_cb(nta_outgoing_magic_t *magic,
 
 #if HAVE_SOFIA_SRESOLV
 static void outgoing_resolve(nta_outgoing_t *orq);
-static inline void outgoing_cancel_resolver(nta_outgoing_t *orq);
-static inline void outgoing_destroy_resolver(nta_outgoing_t *orq);
+su_inline void outgoing_cancel_resolver(nta_outgoing_t *orq);
+su_inline void outgoing_destroy_resolver(nta_outgoing_t *orq);
 static int outgoing_other_destinations(nta_outgoing_t const *orq);
 static int outgoing_try_another(nta_outgoing_t *orq);
 #else
@@ -6622,6 +6617,14 @@ unsigned nta_outgoing_delay(nta_outgoing_t const *orq)
   return orq != NULL && orq != NONE ? orq->orq_delay : UINT_MAX;
 }
 
+/** Get the branch parameter. */
+char const *nta_outgoing_branch(nta_outgoing_t const *orq)
+{
+  return orq != NULL && orq != NONE && orq->orq_branch
+    ? orq->orq_branch + strlen("branch=")
+    : NULL;
+}
+
 /**Get reference to response message.
  *
  * Retrieve the latest incoming response message to the outgoing
@@ -6849,7 +6852,7 @@ nta_outgoing_t *outgoing_create(nta_agent_t *agent,
   }
 
   if (branch && branch != NONE) {
-    if (strchr(branch, '='))
+    if (strncasecmp(branch, "branch=", 7) == 0)
       branch = su_strdup(home, branch);
     else
       branch = su_sprintf(home, "branch=%s", branch);
@@ -6866,7 +6869,10 @@ nta_outgoing_t *outgoing_create(nta_agent_t *agent,
 
   if (orq->orq_method == sip_method_ack) {
     if (ack_branch != NULL && ack_branch != NONE) {
-      orq->orq_branch = su_strdup(home, ack_branch);
+      if (strncasecmp(ack_branch, "branch=", 7) == 0)
+	orq->orq_branch = su_strdup(home, ack_branch);
+      else
+	orq->orq_branch = su_sprintf(home, "branch=%s", ack_branch);
     } 
     else if (!stateless && agent->sa_is_a_uas) {
       /*
@@ -7406,7 +7412,7 @@ outgoing_queue_adjust(nta_agent_t *sa,
 /** @internal
  * Test if an outgoing transaction is in a queue.
  */
-static inline
+su_inline
 int outgoing_is_queued(nta_outgoing_t const *orq)
 {
   return orq && orq->orq_queue;
@@ -7418,7 +7424,7 @@ int outgoing_is_queued(nta_outgoing_t const *orq)
  * Insert a client transaction into a queue and set the corresponding
  * timeout at the same time.
  */
-static inline
+su_inline
 void outgoing_queue(outgoing_queue_t *queue, 
 		    nta_outgoing_t *orq)
 {
@@ -7444,7 +7450,7 @@ void outgoing_queue(outgoing_queue_t *queue,
 /** @internal
  * Remove an outgoing transaction from a queue.
  */
-static inline
+su_inline
 void outgoing_remove(nta_outgoing_t *orq)
 {
   assert(outgoing_is_queued(orq));
@@ -7466,7 +7472,7 @@ void outgoing_remove(nta_outgoing_t *orq)
  *
  * Set the retry timer (B/D) on the outgoing request (client transaction).
  */
-static inline
+su_inline
 void outgoing_set_timer(nta_outgoing_t *orq, unsigned interval)
 {
   nta_outgoing_t **rq;
@@ -7509,7 +7515,7 @@ void outgoing_set_timer(nta_outgoing_t *orq, unsigned interval)
     orq->orq_agent->sa_out.re_t1 = rq;
 }
 
-static inline
+su_inline
 void outgoing_reset_timer(nta_outgoing_t *orq)
 {
   if (orq->orq_rprev) {
@@ -7536,7 +7542,7 @@ void outgoing_free(nta_outgoing_t *orq)
 }
 
 /** Remove outgoing request from hash tables */
-static inline
+su_inline
 void outgoing_cut_off(nta_outgoing_t *orq)
 {
   nta_agent_t *agent = orq->orq_agent;
@@ -7566,7 +7572,7 @@ void outgoing_cut_off(nta_outgoing_t *orq)
 }
 
 /** Reclaim outgoing request */
-static inline
+su_inline
 void outgoing_reclaim(nta_outgoing_t *orq)
 {
   if (orq->orq_request)
@@ -7581,7 +7587,7 @@ void outgoing_reclaim(nta_outgoing_t *orq)
 }
 
 /** Queue request to be freed */
-static inline 
+su_inline 
 void outgoing_free_queue(outgoing_queue_t *q, nta_outgoing_t *orq)
 {
   outgoing_cut_off(orq);
@@ -7640,7 +7646,7 @@ void outgoing_destroy(nta_outgoing_t *orq)
 /** @internal Outgoing transaction timer routine. 
  *
  */
-static inline 
+su_inline 
 su_duration_t outgoing_timer(nta_agent_t *sa, su_duration_t next)
 {
   su_duration_t now = sa->sa_millisec;
@@ -7985,9 +7991,7 @@ nta_outgoing_t *outgoing_find(nta_agent_t const *sa,
       continue;
     if (str0casecmp(orq->orq_from->a_tag, sip->sip_from->a_tag))
       continue;
-    if (orq->orq_to->a_tag && sip->sip_to->a_tag
-	? strcasecmp(orq->orq_to->a_tag, sip->sip_to->a_tag)
-	: !addr_match(orq->orq_to, sip->sip_to))
+    if (!addr_match(orq->orq_to, NULL, sip->sip_to))
       continue;
     if (orq->orq_method == method ?
 	/* Don't match if request To has a tag and response has no To tag */
@@ -8779,7 +8783,7 @@ outgoing_try_another(nta_outgoing_t *orq)
 }
 
 /** Cancel resolver query */
-static inline void outgoing_cancel_resolver(nta_outgoing_t *orq)
+su_inline void outgoing_cancel_resolver(nta_outgoing_t *orq)
 {
   struct sipdns_resolver *sr = orq->orq_resolver;
   
@@ -8790,7 +8794,7 @@ static inline void outgoing_cancel_resolver(nta_outgoing_t *orq)
 }
 
 /** Destroy resolver */
-static inline void outgoing_destroy_resolver(nta_outgoing_t *orq)
+su_inline void outgoing_destroy_resolver(nta_outgoing_t *orq)
 {
   struct sipdns_resolver *sr = orq->orq_resolver;
 
@@ -9436,7 +9440,7 @@ static nta_prack_f nta_reliable_destroyed;
  * Check that server transaction can be used to send reliable provisional
  * responses.
  */
-static inline
+su_inline
 int reliable_check(nta_incoming_t *irq)
 {
   if (irq == NULL || irq->irq_status >= 200 || !irq->irq_agent)
@@ -10198,7 +10202,7 @@ int nta_outgoing_setrseq(nta_outgoing_t *orq, uint32_t rseq)
 
 #include <sofia-sip/nta_tport.h>
 
-static inline tport_t *
+su_inline tport_t *
 nta_transport_(nta_agent_t *agent,
 	       nta_incoming_t *irq,
 	       msg_t *msg)

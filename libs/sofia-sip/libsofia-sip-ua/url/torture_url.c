@@ -1067,6 +1067,10 @@ int main(int argc, char *argv[])
     else
       usage(1);
   }
+  
+#if HAVE_OPEN_C
+  tstflags |= tst_verbatim;
+#endif
 
   retval |= test_quote(); fflush(stdout);
   retval |= test_any(); fflush(stdout);
