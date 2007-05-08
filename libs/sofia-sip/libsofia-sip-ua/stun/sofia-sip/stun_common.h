@@ -42,7 +42,7 @@
 #include <time.h>
 
 #ifdef WIN32
-#include <winsock.h>
+#include <winsock2.h>
 #else
 #include <sys/socket.h>
 #include <arpa/inet.h>
