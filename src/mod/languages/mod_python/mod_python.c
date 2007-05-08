@@ -73,14 +73,8 @@ static void eval_some_python(char *uuid, char *args)
 	}
 
 	script = argv[0];
-	
-	if (uuid) {
-		argv[0] = uuid;
-	} else {
-		lead = 1;
-	}
+	lead = 1;
 
-	
 	if (switch_is_file_path(script)) {
 		script_path = script;
 		if ((script = strrchr(script_path, *SWITCH_PATH_SEPARATOR))) {
@@ -114,7 +108,11 @@ static void eval_some_python(char *uuid, char *args)
 		PyThreadState_Clear(tstate);
 		init_freeswitch();
 		PyRun_SimpleString("from freeswitch import *");
-		
+		if (uuid) {
+			char code[128];
+			snprintf(code, sizeof(code), "session = SessionContainer(\"%s\");", uuid);
+			PyRun_SimpleString(code);
+		}
 		PySys_SetArgv(argc - lead, &argv[lead]);
 		PyRun_SimpleFile(pythonfile, script);
 		Py_EndInterpreter(tstate);

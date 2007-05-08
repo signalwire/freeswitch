@@ -931,6 +931,47 @@ static PyObject *_wrap_delete_SessionContainer(PyObject *self, PyObject *args) {
 }
 
 
+static PyObject *_wrap_SessionContainer_uuid_set(PyObject *self, PyObject *args) {
+    PyObject *resultobj;
+    SessionContainer *arg1 = (SessionContainer *) 0 ;
+    char *arg2 ;
+    PyObject * obj0 = 0 ;
+    
+    if(!PyArg_ParseTuple(args,(char *)"Os:SessionContainer_uuid_set",&obj0,&arg2)) goto fail;
+    if ((SWIG_ConvertPtr(obj0,(void **) &arg1, SWIGTYPE_p_SessionContainer,SWIG_POINTER_EXCEPTION | 0 )) == -1) SWIG_fail;
+    {
+        if (arg1->uuid) delete [] arg1->uuid;
+        if (arg2) {
+            arg1->uuid = (char *) (new char[strlen(arg2)+1]);
+            strcpy((char *) arg1->uuid,arg2);
+        } else {
+            arg1->uuid = 0;
+        }
+    }
+    Py_INCREF(Py_None); resultobj = Py_None;
+    return resultobj;
+    fail:
+    return NULL;
+}
+
+
+static PyObject *_wrap_SessionContainer_uuid_get(PyObject *self, PyObject *args) {
+    PyObject *resultobj;
+    SessionContainer *arg1 = (SessionContainer *) 0 ;
+    char *result;
+    PyObject * obj0 = 0 ;
+    
+    if(!PyArg_ParseTuple(args,(char *)"O:SessionContainer_uuid_get",&obj0)) goto fail;
+    if ((SWIG_ConvertPtr(obj0,(void **) &arg1, SWIGTYPE_p_SessionContainer,SWIG_POINTER_EXCEPTION | 0 )) == -1) SWIG_fail;
+    result = (char *) ((arg1)->uuid);
+    
+    resultobj = result ? PyString_FromString(result) : Py_BuildValue((char*)"");
+    return resultobj;
+    fail:
+    return NULL;
+}
+
+
 static PyObject *_wrap_SessionContainer_answer(PyObject *self, PyObject *args) {
     PyObject *resultobj;
     SessionContainer *arg1 = (SessionContainer *) 0 ;
@@ -1235,6 +1276,8 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"api_reply_delete", _wrap_api_reply_delete, METH_VARARGS },
 	 { (char *)"new_SessionContainer", _wrap_new_SessionContainer, METH_VARARGS },
 	 { (char *)"delete_SessionContainer", _wrap_delete_SessionContainer, METH_VARARGS },
+	 { (char *)"SessionContainer_uuid_set", _wrap_SessionContainer_uuid_set, METH_VARARGS },
+	 { (char *)"SessionContainer_uuid_get", _wrap_SessionContainer_uuid_get, METH_VARARGS },
 	 { (char *)"SessionContainer_answer", _wrap_SessionContainer_answer, METH_VARARGS },
 	 { (char *)"SessionContainer_pre_answer", _wrap_SessionContainer_pre_answer, METH_VARARGS },
 	 { (char *)"SessionContainer_hangup", _wrap_SessionContainer_hangup, METH_VARARGS },

@@ -54,6 +54,9 @@ class SessionContainer(_object):
         try:
             if self.thisown: destroy(self)
         except: pass
+    __swig_setmethods__["uuid"] = _freeswitch.SessionContainer_uuid_set
+    __swig_getmethods__["uuid"] = _freeswitch.SessionContainer_uuid_get
+    if _newclass:uuid = property(_freeswitch.SessionContainer_uuid_get, _freeswitch.SessionContainer_uuid_set)
     def answer(*args): return _freeswitch.SessionContainer_answer(*args)
     def pre_answer(*args): return _freeswitch.SessionContainer_pre_answer(*args)
     def hangup(*args): return _freeswitch.SessionContainer_hangup(*args)
