@@ -39,6 +39,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <time.h>
 
 #define SU_ROOT_MAGIC_T struct stun_magic_t
 
