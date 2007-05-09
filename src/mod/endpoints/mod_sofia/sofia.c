@@ -489,7 +489,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			gateway->profile = profile;
 			gateway->name = switch_core_strdup(gateway->pool, name);
 			gateway->freq = 0;
-
+			gateway->next = NULL;
 
 			for (param = switch_xml_child(gateway_tag, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
