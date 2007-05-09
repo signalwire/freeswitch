@@ -102,7 +102,7 @@ static void bcast_function(switch_core_session_t *session, char *data)
 	}
 
 	
-	if (switch_true(switch_channel_get_variable(channel, "no_media"))) {
+	if (switch_true(switch_channel_get_variable(channel, SWITCH_BYPASS_MEDIA_VARIABLE))) {
 		switch_core_session_message_t msg = { 0 };
 
 		ready = SEND_TYPE_NOMEDIA;

@@ -95,6 +95,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_PATH_SEPARATOR "/"
 #endif
 #define SWITCH_URL_SEPARATOR "://"
+#define SWITCH_BYPASS_MEDIA_VARIABLE "bypass_media"
 #define SWITCH_ENDPOINT_DISPOSITION_VARIABLE "endpoint_disposition"
 #define SWITCH_HOLD_MUSIC_VARIABLE "hold_music"
 #define SWITCH_EXPORT_VARS_VARIABLE "export_vars"
@@ -544,7 +545,7 @@ CF_SERVICE		= (1 <<  9) - Channel has a service thread
 CF_TAGGED		= (1 << 10) - Channel is tagged
 CF_WINNER		= (1 << 11) - Channel is the winner
 CF_CONTROLLED	= (1 << 12) - Channel is under control
-CF_NOMEDIA		= (1 << 13) - Channel has no media
+CF_BYPASS_MEDIA		= (1 << 13) - Channel has no media
 CF_SUSPEND		= (1 << 14) - Suspend i/o
 CF_EVENT_PARSE  = (1 << 15) - Suspend control events
 CF_REPEAT_STATE = (1 << 16) - Tell the state machine to repeat a state
@@ -571,7 +572,7 @@ typedef enum {
 	CF_TAGGED = (1 << 10),
 	CF_WINNER = (1 << 11),
 	CF_CONTROLLED = (1 << 12),
-	CF_NOMEDIA = (1 << 13),
+	CF_BYPASS_MEDIA = (1 << 13),
 	CF_SUSPEND = (1 << 14),
 	CF_EVENT_PARSE = (1 << 15),
 	CF_REPEAT_STATE = (1 << 16),

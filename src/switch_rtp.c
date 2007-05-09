@@ -375,7 +375,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
   done:
 
 	if (status != SWITCH_STATUS_SUCCESS) {
-		rtp_session->ready = 0;
+		rtp_session->ready = 1;
 	}
 
 	if (new_sock) {
@@ -817,7 +817,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	switch_status_t status;
 	uint8_t check = 1;
 	stfu_frame_t *jb_frame;
-
+	
 	if (!rtp_session->timer.interval) {
 		rtp_session->last_time = switch_time_now();
 	}
@@ -825,7 +825,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	while (switch_rtp_ready(rtp_session)) {
 		bytes = sizeof(rtp_msg_t);
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *) &rtp_session->recv_msg, &bytes);
-		
+
 		if (!SWITCH_STATUS_IS_BREAK(status) && rtp_session->timer.interval) {
 			switch_core_timer_step(&rtp_session->timer);
 		}

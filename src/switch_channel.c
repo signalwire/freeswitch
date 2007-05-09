@@ -431,7 +431,7 @@ SWITCH_DECLARE(switch_bool_t) switch_channel_set_flag_partner(switch_channel_t *
 
 	assert(channel != NULL);
 
-	if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE))) {
+	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 		switch_core_session_t *session;
 		if ((session = switch_core_session_locate(uuid))) {
 			switch_channel_set_flag(switch_core_session_get_channel(session), flags);
@@ -449,7 +449,7 @@ SWITCH_DECLARE(switch_bool_t) switch_channel_clear_flag_partner(switch_channel_t
 
 	assert(channel != NULL);
 
-	if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE))) {
+	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 		switch_core_session_t *session;
 		if ((session = switch_core_session_locate(uuid))) {
 			switch_channel_clear_flag(switch_core_session_get_channel(session), flags);

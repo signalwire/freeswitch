@@ -621,16 +621,16 @@
 /* Define to the function return type for send. */
 #undef SEND_TYPE_RETV
 
-/* The size of a `curl_off_t', as computed by sizeof. */
+/* The size of `curl_off_t', as computed by sizeof. */
 #undef SIZEOF_CURL_OFF_T
 
-/* The size of a `long', as computed by sizeof. */
+/* The size of `long', as computed by sizeof. */
 #undef SIZEOF_LONG
 
-/* The size of a `size_t', as computed by sizeof. */
+/* The size of `size_t', as computed by sizeof. */
 #undef SIZEOF_SIZE_T
 
-/* The size of a `time_t', as computed by sizeof. */
+/* The size of `time_t', as computed by sizeof. */
 #undef SIZEOF_TIME_T
 
 /* Define to 1 if you have the ANSI C header files. */
@@ -685,7 +685,7 @@
 /* type to use in place of in_addr_t if not defined */
 #undef in_addr_t
 
-/* Define to `unsigned' if <sys/types.h> does not define. */
+/* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t
 
 /* type to use in place of socklen_t if not defined */

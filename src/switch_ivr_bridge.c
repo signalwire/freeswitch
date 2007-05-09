@@ -52,7 +52,6 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 	switch_input_callback_function_t input_callback;
 	switch_core_session_message_t *message, msg = { 0 };
 	void *user_data;
-
 	switch_channel_t *chan_a, *chan_b;
 	switch_frame_t *read_frame;
 	switch_core_session_t *session_a, *session_b;
@@ -81,7 +80,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 		switch_channel_state_t b_state;
 		switch_status_t status;
 		switch_event_t *event;
-		
+
 		/* if you really want to make sure it's not ready, test it twice because it might be just a break */
 		if (!switch_channel_ready(chan_a) && !switch_channel_ready(chan_a)) {
 			break;
@@ -97,12 +96,24 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 			break;
 		}
 
+		if (switch_channel_test_flag(chan_a, CF_SUSPEND) || switch_channel_test_flag(chan_b, CF_SUSPEND)) {
+			switch_yield(100000);
+			continue;
+		}
+
 		if (switch_core_session_dequeue_private_event(session_a, &event) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_set_flag(chan_b, CF_SUSPEND);
+			msg.string_arg = data->b_uuid;
+			msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
+			msg.from = __FILE__;
+			switch_core_session_receive_message(session_a, &msg);
 			switch_ivr_parse_event(session_a, event);
+			msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
+			switch_core_session_receive_message(session_a, &msg);
 			switch_channel_clear_flag(chan_b, CF_SUSPEND);
 			switch_event_destroy(&event);
 		}
+		
 
 		/* if 1 channel has DTMF pass it to the other */
 		if (switch_channel_has_dtmf(chan_a)) {
@@ -154,11 +165,6 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 		}
 
 
-		if (switch_channel_test_flag(chan_a, CF_SUSPEND) || switch_channel_test_flag(chan_b, CF_SUSPEND)) {
-			switch_yield(10000);
-			continue;
-		}
-
 		/* read audio from 1 channel and write it to the other */
 		status = switch_core_session_read_frame(session_a, &read_frame, -1, stream_id);
 
@@ -180,6 +186,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 	msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
 	msg.from = __FILE__;
 	switch_core_session_receive_message(session_a, &msg);
+
 	switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 
 	switch_channel_set_variable(chan_a, SWITCH_BRIDGE_VARIABLE, NULL);

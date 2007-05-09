@@ -779,10 +779,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
 		channel = switch_core_session_get_channel(session);
 		assert(channel != NULL);
 
-		if ((nomedia = switch_channel_test_flag(channel, CF_NOMEDIA))) {
+		if ((nomedia = switch_channel_test_flag(channel, CF_BYPASS_MEDIA))) {
 			switch_ivr_media(uuid, SMF_REBRIDGE);
 		}
-
+		
 		if ((p = strchr(mypath, ':'))) {
 			app = mypath;
 			*p++ = '\0';
@@ -802,10 +802,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-name", "%s", app);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-arg", "%s", path);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
 				if ((flags & SMF_LOOP)) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "loops", "%d", -1);
 				}
-
+				
 				switch_core_session_queue_private_event(other_session, &event);
 			}
 			
@@ -819,6 +820,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-name", "%s", app);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-arg", "%s", path);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
 				if ((flags & SMF_LOOP)) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "loops", "%d", -1);
 				}

@@ -271,7 +271,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	unsigned long CMD_HANGUP = switch_hashfunc_default("hangup", &hlen);
 	unsigned long CMD_NOMEDIA = switch_hashfunc_default("nomedia", &hlen);
 	unsigned long CMD_UNICAST = switch_hashfunc_default("unicast", &hlen);
-
+	char *lead_frames = switch_event_get_header(event, "lead-frames");
+	
 	assert(channel != NULL);
 	assert(event != NULL);
 
@@ -285,6 +286,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 
 	switch_channel_set_flag(channel, CF_EVENT_PARSE);
 
+	if (lead_frames) {
+		switch_frame_t *read_frame;
+		int frame_count = atoi(lead_frames);
+		switch_status_t status;
+
+		while(frame_count > 0) {
+			status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+			if (!SWITCH_READ_ACCEPTABLE(status)) {
+				return status;
+			}
+			if (!switch_test_flag(read_frame, SFF_CNG)) {
+				frame_count--;
+			}
+		}
+	}
 
 	if (cmd_hash == CMD_EXECUTE) {
 		const switch_application_interface_t *application_interface;
@@ -304,7 +320,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 					switch_channel_set_flag(channel, CF_BROADCAST);
 					for (x = 0; x < loops || loops < 0; x++) {
 						switch_core_session_exec(session, application_interface, app_arg);
-						if (!switch_channel_test_flag(channel, CF_BROADCAST)) {
+						if (!switch_channel_ready(channel) || !switch_channel_test_flag(channel, CF_BROADCAST)) {
 							break;
 						}
 					}
@@ -718,9 +734,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(char *uuid, switch_media_flag_t
 			swap = 1;
 		}
 
-		if (switch_channel_test_flag(channel, CF_NOMEDIA)) {
+		if (switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
 			status = SWITCH_STATUS_SUCCESS;
-			switch_channel_clear_flag(channel, CF_NOMEDIA);
+			switch_channel_clear_flag(channel, CF_BYPASS_MEDIA);
 			switch_core_session_receive_message(session, &msg);
 
 			if ((flags & SMF_REBRIDGE)
@@ -773,8 +789,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(char *uuid, switch_media_flag
 			swap = 1;
 		}
 
-		if ((flags & SMF_FORCE) || !switch_channel_test_flag(channel, CF_NOMEDIA)) {
-			switch_channel_set_flag(channel, CF_NOMEDIA);
+		if ((flags & SMF_FORCE) || !switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
+			switch_channel_set_flag(channel, CF_BYPASS_MEDIA);
 			switch_core_session_receive_message(session, &msg);
 			if ((flags & SMF_REBRIDGE) && (other_uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) &&
 				(other_session = switch_core_session_locate(other_uuid))) {

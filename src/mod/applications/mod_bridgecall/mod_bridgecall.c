@@ -61,11 +61,11 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 		do_continue = switch_true(var);
 	}
 
-	if (switch_channel_test_flag(caller_channel, CF_NOMEDIA)
-		|| ((var = switch_channel_get_variable(caller_channel, "no_media")) && switch_true(var))) {
+	if (switch_channel_test_flag(caller_channel, CF_BYPASS_MEDIA)
+		|| ((var = switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_VARIABLE)) && switch_true(var))) {
 		if (!switch_channel_test_flag(caller_channel, CF_ANSWERED)
 			&& !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
-			switch_channel_set_flag(caller_channel, CF_NOMEDIA);
+			switch_channel_set_flag(caller_channel, CF_BYPASS_MEDIA);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already up, delaying point-to-point mode 'till both legs are up.\n");
 			no_media_bridge = 1;
@@ -107,7 +107,7 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 			switch_ivr_nomedia(switch_core_session_get_uuid(peer_session), SMF_FORCE);
 			switch_ivr_signal_bridge(session, peer_session);
 		} else {
-			if (switch_channel_test_flag(caller_channel, CF_NOMEDIA)) {
+			if (switch_channel_test_flag(caller_channel, CF_BYPASS_MEDIA)) {
 				switch_ivr_signal_bridge(session, peer_session);
 			} else {
 				switch_ivr_multi_threaded_bridge(session, peer_session, NULL, NULL, NULL);
