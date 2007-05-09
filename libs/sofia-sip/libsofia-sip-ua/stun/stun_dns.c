@@ -54,6 +54,8 @@ static char const __func__[] = "stun_dns";
 
 #include "stun_internal.h"
 
+#include <string.h>
+
 struct stun_dns_lookup_s {
   su_home_t          stun_home[1];
   su_root_t         *stun_root;

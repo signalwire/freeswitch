@@ -964,6 +964,10 @@ tport_t *tport_base_connect(tport_primary_t *pri,
   if (tport_setname(self, tpn->tpn_proto, real_ai, tpn->tpn_canon) == -1) 
     TPORT_CONNECT_ERROR(su_errno(), tport_setname);
 
+  /* Try to have a non-blocking connect().
+   * The su_wait_create() below makes the socket non-blocking anyway. */
+  su_setblocking(s, 0);
+
   if (connect(s, ai->ai_addr, (socklen_t)(ai->ai_addrlen)) == SOCKET_ERROR) {
     err = su_errno();
     if (!su_is_blocking(err))

@@ -40,6 +40,7 @@
 #include "sofia-sip/msg_addr.h"
 
 #include <assert.h>
+#include <string.h>
 
 /* ---------------------------------------------------------------------- */
 /* Plugin pointer */

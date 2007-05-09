@@ -33,6 +33,8 @@
 
 #include "tport_internal.h"
 
+#include <string.h>
+
 tport_comp_vtable_t const *tport_comp_vtable = NULL;
 
 int tport_plug_in_compress(tport_comp_vtable_t const *vsc)
