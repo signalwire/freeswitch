@@ -341,6 +341,7 @@ static void export_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
 	char *exports, *new_exports = NULL, *new_exports_d = NULL, *var, *val = NULL;
+	int local = 1;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -359,7 +360,12 @@ static void export_function(switch_core_session_t *session, char *data)
 			}
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "EXPORT [%s]=[%s]\n", var, val ? val : "UNDEF");
+		if (!strncasecmp(var, "nolocal:", 8)) {
+			var += 8;
+			local = 0;
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "EXPORT %s[%s]=[%s]\n", local ? "" : "(REMOTE ONLY) ", var, val ? val : "UNDEF");
 		switch_channel_set_variable(channel, var, val);
 
 		if (var && val) {
@@ -369,7 +375,9 @@ static void export_function(switch_core_session_t *session, char *data)
 			} else {
 				new_exports = var;
 			}
-			switch_channel_set_variable(channel, SWITCH_EXPORT_VARS_VARIABLE, new_exports);
+			if (local) {
+				switch_channel_set_variable(channel, SWITCH_EXPORT_VARS_VARIABLE, new_exports);
+			}
 			switch_safe_free(new_exports_d);
 		}
 	}
