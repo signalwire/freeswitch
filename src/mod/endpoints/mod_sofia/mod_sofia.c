@@ -74,9 +74,9 @@ static switch_status_t sofia_kill_channel(switch_core_session_t *session, int si
 */
 static switch_status_t sofia_on_init(switch_core_session_t *session)
 {
-	private_object_t *tech_pvt;
 	switch_channel_t *channel = NULL;
-
+	private_object_t *tech_pvt;
+	
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -86,8 +86,7 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 	tech_pvt->read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SOFIA INIT\n");
-	if (switch_channel_test_flag(channel, CF_NOMEDIA)) {
-		switch_set_flag_locked(tech_pvt, TFLAG_NOMEDIA);
+	if (switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
 		sofia_glue_tech_absorb_sdp(tech_pvt);
 	}
 
@@ -283,9 +282,8 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	if (!switch_test_flag(tech_pvt, TFLAG_ANS) && !switch_channel_test_flag(channel, CF_OUTBOUND)) {
 		switch_set_flag_locked(tech_pvt, TFLAG_ANS);
 
-		if (switch_channel_test_flag(channel, CF_NOMEDIA)) {
+		if (switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
 			char *sdp = NULL;
-			switch_set_flag_locked(tech_pvt, TFLAG_NOMEDIA);
 			if ((sdp = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE))) {
 				tech_pvt->local_sdp_str = switch_core_session_strdup(session, sdp);
 			}
@@ -692,8 +690,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			switch_core_session_t *other_session;
 			switch_channel_t *other_channel;
 			char *ip = NULL, *port = NULL;
-
-			switch_set_flag_locked(tech_pvt, TFLAG_NOMEDIA);
+			switch_channel_set_flag(channel, CF_BYPASS_MEDIA);
 			tech_pvt->local_sdp_str = NULL;
 			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
 				&& (other_session = switch_core_session_locate(uuid))) {
@@ -712,7 +709,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	}
 		break;
 	case SWITCH_MESSAGE_INDICATE_MEDIA:{
-			switch_clear_flag_locked(tech_pvt, TFLAG_NOMEDIA);
+		uint32_t count = 0;
+		switch_channel_clear_flag(channel, CF_BYPASS_MEDIA);
 			tech_pvt->local_sdp_str = NULL;
 			if (!switch_rtp_ready(tech_pvt->rtp_session)) {
 				sofia_glue_tech_prepare_codecs(tech_pvt);
@@ -723,8 +721,18 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 			sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
 			sofia_glue_do_invite(session);
-			while (!switch_rtp_ready(tech_pvt->rtp_session) && switch_channel_get_state(channel) < CS_HANGUP) {
-				switch_yield(1000);
+
+			/* wait for rtp to start and first real frame to arrive */
+			tech_pvt->read_frame.datalen = 0;
+			while (switch_test_flag(tech_pvt, TFLAG_IO) && switch_channel_get_state(channel) < CS_HANGUP && !switch_rtp_ready(tech_pvt->rtp_session)) {
+				if (++count > 1000) {
+					return SWITCH_STATUS_FALSE;
+				}
+				if (!switch_rtp_ready(tech_pvt->rtp_session)) {
+					switch_yield(1000);
+					continue;
+				}
+				break;
 			}
 		}
 		break;
@@ -741,7 +749,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
-
+		
 		if (switch_test_flag(tech_pvt, TFLAG_XFER)) {
 			switch_clear_flag_locked(tech_pvt, TFLAG_XFER);
 			if (msg->pointer_arg) {
@@ -825,9 +833,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Asked to send early media by %s\n", msg->from);
 
 				/* Transmit 183 Progress with SDP */
-				if (switch_channel_test_flag(channel, CF_NOMEDIA)) {
+				if (switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
 					char *sdp = NULL;
-					switch_set_flag_locked(tech_pvt, TFLAG_NOMEDIA);
 					if ((sdp = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE))) {
 						tech_pvt->local_sdp_str = switch_core_session_strdup(session, sdp);
 					}

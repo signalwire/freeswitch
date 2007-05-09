@@ -44,7 +44,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t por
 	int rate = 0;
 	uint32_t v_port;
 
-	if (!force && !ip && !sr && switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
+	if (!force && !ip && !sr && switch_channel_test_flag(tech_pvt->channel, CF_BYPASS_MEDIA)) {
 		return;
 	}
 
@@ -225,11 +225,10 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t por
 
 void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 {
-	switch_channel_t *channel;
 	char *abs, *codec_string = NULL;
 	char *ocodec = NULL;
 
-	if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
+	if (switch_channel_test_flag(tech_pvt->channel, CF_BYPASS_MEDIA)) {
 		goto end;
 	}
 
@@ -239,20 +238,17 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 
 	assert(tech_pvt->session != NULL);
 
-	channel = switch_core_session_get_channel(tech_pvt->session);
-	assert(channel != NULL);
 
-
-	if ((abs = switch_channel_get_variable(channel, "absolute_codec_string"))) {
+	if ((abs = switch_channel_get_variable(tech_pvt->channel, "absolute_codec_string"))) {
 		codec_string = abs;
 	} else {
-		if (!(codec_string = switch_channel_get_variable(channel, "codec_string"))) {
+		if (!(codec_string = switch_channel_get_variable(tech_pvt->channel, "codec_string"))) {
 			if (tech_pvt->profile->codec_string) {
 				codec_string = tech_pvt->profile->codec_string;
 			}
 		}
 
-		if ((ocodec = switch_channel_get_variable(channel, SWITCH_ORIGINATOR_CODEC_VARIABLE))) {
+		if ((ocodec = switch_channel_get_variable(tech_pvt->channel, SWITCH_ORIGINATOR_CODEC_VARIABLE))) {
 			if (!codec_string || (tech_pvt->profile->pflags & PFLAG_DISABLE_TRANSCODING)) {
 				codec_string = ocodec;
 			} else {
@@ -301,7 +297,6 @@ void sofia_glue_check_video_codecs(private_object_t *tech_pvt)
 
 void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *profile, private_object_t *tech_pvt, const char *channame)
 {
-	switch_channel_t *channel;
 	char name[256];
 
 	assert(session != NULL);
@@ -309,9 +304,6 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	assert(tech_pvt != NULL);
 
 	switch_core_session_add_stream(session, NULL);
-	channel = switch_core_session_get_channel(session);
-
-	//switch_channel_set_flag(channel, CF_ACCEPT_CNG);
 
 
 	switch_mutex_lock(tech_pvt->flag_mutex);
@@ -335,11 +327,12 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	}
 
 	tech_pvt->session = session;
+	tech_pvt->channel = switch_core_session_get_channel(session);
 	switch_core_session_set_private(session, tech_pvt);
 
 
 	snprintf(name, sizeof(name), "sofia/%s/%s", profile->name, channame);
-	switch_channel_set_name(channel, name);
+	switch_channel_set_name(tech_pvt->channel, name);
 	//sofia_glue_tech_prepare_codecs(tech_pvt);
 
 }
@@ -362,7 +355,7 @@ switch_status_t sofia_glue_ext_address_lookup(char **ip, switch_port_t *port, ch
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, error);
 			return SWITCH_STATUS_FALSE;
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Stun Success [%s]:[%d]\n", *ip, *port);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Success [%s]:[%d]\n", *ip, *port);
 	} else {
 		*ip = sourceip;
 	}
@@ -373,13 +366,11 @@ switch_status_t sofia_glue_ext_address_lookup(char **ip, switch_port_t *port, ch
 switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt)
 {
 	char *ip = tech_pvt->profile->rtpip;
-	switch_channel_t *channel;
 	switch_port_t sdp_port;
 	char tmp[50];
 
-	channel = switch_core_session_get_channel(tech_pvt->session);
 
-	if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA) || tech_pvt->adv_sdp_audio_port) {
+	if (switch_channel_test_flag(tech_pvt->channel, CF_BYPASS_MEDIA) || tech_pvt->adv_sdp_audio_port) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -398,8 +389,8 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt)
 	tech_pvt->adv_sdp_audio_port = sdp_port;
 
 	snprintf(tmp, sizeof(tmp), "%d", sdp_port);
-	switch_channel_set_variable(channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
-	switch_channel_set_variable(channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE, tmp);
+	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
+	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE, tmp);
 
 
 	return SWITCH_STATUS_SUCCESS;
@@ -410,13 +401,11 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt)
 switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt)
 {
 	char *ip = tech_pvt->profile->rtpip;
-	switch_channel_t *channel;
 	switch_port_t sdp_port;
 	char tmp[50];
 
-	channel = switch_core_session_get_channel(tech_pvt->session);
 
-	if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA) || tech_pvt->adv_sdp_video_port) {
+	if (switch_channel_test_flag(tech_pvt->channel, CF_BYPASS_MEDIA) || tech_pvt->adv_sdp_video_port) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -434,8 +423,8 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt)
 	tech_pvt->adv_sdp_video_port = sdp_port;
 
 	snprintf(tmp, sizeof(tmp), "%d", sdp_port);
-	switch_channel_set_variable(channel, SWITCH_LOCAL_VIDEO_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
-	switch_channel_set_variable(channel, SWITCH_LOCAL_VIDEO_PORT_VARIABLE, tmp);
+	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_VIDEO_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
+	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_VIDEO_PORT_VARIABLE, tmp);
 
 
 	return SWITCH_STATUS_SUCCESS;
@@ -470,6 +459,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
+
+	switch_clear_flag_locked(tech_pvt, TFLAG_SDP);
 
 	caller_profile = switch_channel_get_caller_profile(channel);
 
@@ -655,13 +646,10 @@ void sofia_glue_do_xfer_invite(switch_core_session_t *session)
 
 void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt)
 {
-	switch_channel_t *channel;
 	char *sdp_str;
 
-	channel = switch_core_session_get_channel(tech_pvt->session);
-	assert(channel != NULL);
 
-	if ((sdp_str = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE))) {
+	if ((sdp_str = switch_channel_get_variable(tech_pvt->channel, SWITCH_B_SDP_VARIABLE))) {
 		sdp_parser_t *parser;
 		sdp_session_t *sdp;
 		sdp_media_t *m;
@@ -711,7 +699,6 @@ void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 
 switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int force)
 {
-	switch_channel_t *channel;
 
 	if (tech_pvt->video_read_codec.implementation) {
 		if (!force) {
@@ -731,8 +718,6 @@ switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int 
 		}
 	}
 
-	channel = switch_core_session_get_channel(tech_pvt->session);
-	assert(channel != NULL);
 
 	if (!tech_pvt->video_rm_encoding) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec with no name?\n");
@@ -765,8 +750,8 @@ switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int 
 			int ms;
 			tech_pvt->video_read_frame.rate = tech_pvt->video_rm_rate;
 			ms = tech_pvt->video_write_codec.implementation->microseconds_per_frame / 1000;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set VIDEO Codec %s %s/%ld %d ms\n",
-							  switch_channel_get_name(channel), tech_pvt->video_rm_encoding, tech_pvt->video_rm_rate, tech_pvt->video_codec_ms);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set VIDEO Codec %s %s/%ld %d ms\n",
+							  switch_channel_get_name(tech_pvt->channel), tech_pvt->video_rm_encoding, tech_pvt->video_rm_rate, tech_pvt->video_codec_ms);
 			tech_pvt->video_read_frame.codec = &tech_pvt->video_read_codec;
 			
 			//switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
@@ -779,7 +764,6 @@ switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int 
 
 switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 {
-	switch_channel_t *channel;
 
 	if (tech_pvt->read_codec.implementation) {
 		if (!force) {
@@ -798,9 +782,6 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 			return SWITCH_STATUS_SUCCESS;
 		}
 	}
-
-	channel = switch_core_session_get_channel(tech_pvt->session);
-	assert(channel != NULL);
 
 	if (!tech_pvt->rm_encoding) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec with no name?\n");
@@ -832,8 +813,8 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 			int ms;
 			tech_pvt->read_frame.rate = tech_pvt->rm_rate;
 			ms = tech_pvt->write_codec.implementation->microseconds_per_frame / 1000;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set Codec %s %s/%ld %d ms\n",
-							  switch_channel_get_name(channel), tech_pvt->rm_encoding, tech_pvt->rm_rate, tech_pvt->codec_ms);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Codec %s %s/%ld %d ms\n",
+							  switch_channel_get_name(tech_pvt->channel), tech_pvt->rm_encoding, tech_pvt->rm_rate, tech_pvt->codec_ms);
 			tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 			
 			switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
@@ -851,7 +832,6 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt)
 {
 	int bw, ms;
-	switch_channel_t *channel;
 	const char *err = NULL;
 	char *val = NULL;
 	switch_rtp_flag_t flags;
@@ -859,10 +839,8 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt)
 	char tmp[50];
 	assert(tech_pvt != NULL);
 
-	channel = switch_core_session_get_channel(tech_pvt->session);
-	assert(channel != NULL);
 
-	if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
+	if (switch_channel_test_flag(tech_pvt->channel, CF_BYPASS_MEDIA)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -884,12 +862,12 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt)
 	}
 
 	if ((tech_pvt->profile->pflags & PFLAG_PASS_RFC2833)
-		|| ((val = switch_channel_get_variable(channel, "pass_rfc2833")) && switch_true(val))) {
+		|| ((val = switch_channel_get_variable(tech_pvt->channel, "pass_rfc2833")) && switch_true(val))) {
 		flags |= SWITCH_RTP_FLAG_PASS_RFC2833;
 	}
 
 	if (!((tech_pvt->profile->pflags & PFLAG_REWRITE_TIMESTAMPS) || 
-		  ((val = switch_channel_get_variable(channel, "rtp_rewrite_timestamps")) && switch_true(val)))) {
+		  ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_rewrite_timestamps")) && switch_true(val)))) {
 		flags |= SWITCH_RTP_FLAG_RAW_WRITE;
 	}
 
@@ -897,16 +875,16 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt)
 		flags |= SWITCH_RTP_FLAG_AUTO_CNG;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "AUDIO RTP [%s] %s:%d->%s:%d codec: %u ms: %d\n",
-					  switch_channel_get_name(channel),
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AUDIO RTP [%s] %s:%d->%s:%d codec: %u ms: %d\n",
+					  switch_channel_get_name(tech_pvt->channel),
 					  tech_pvt->local_sdp_audio_ip,
 					  tech_pvt->local_sdp_audio_port,
 					  tech_pvt->remote_sdp_audio_ip,
 					  tech_pvt->remote_sdp_audio_port, tech_pvt->agreed_pt, tech_pvt->read_codec.implementation->microseconds_per_frame / 1000);
 
 	snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
-	switch_channel_set_variable(channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
-	switch_channel_set_variable(channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE, tmp);
+	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
+	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE, tmp);
 
 	if (tech_pvt->rtp_session && switch_test_flag(tech_pvt, TFLAG_REINVITE)) {
 		switch_clear_flag_locked(tech_pvt, TFLAG_REINVITE);
@@ -949,7 +927,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt)
 							  switch_channel_get_name(switch_core_session_get_channel(tech_pvt->session)), vad_in ? "in" : "", vad_out ? "out" : "");
 		}
 
-		if ((val = switch_channel_get_variable(channel, "jitterbuffer_msec"))) {
+		if ((val = switch_channel_get_variable(tech_pvt->channel, "jitterbuffer_msec"))) {
 			int len = atoi(val);
 			
 			if (len < 100 || len > 1000) {
@@ -959,7 +937,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt)
 
 				qlen = len / (tech_pvt->read_codec.implementation->microseconds_per_frame / 1000);
 				
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting Jitterbuffer to %dms (%d frames)\n", len, qlen);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames)\n", len, qlen);
 				switch_rtp_activate_jitter_buffer(tech_pvt->rtp_session, qlen);
 			}
 		}
@@ -993,8 +971,8 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt)
 													 &err, switch_core_session_get_pool(tech_pvt->session));
 			
 			
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "VIDEO RTP [%s] %s:%d->%s:%d codec: %u ms: %d [%s]\n",
-							  switch_channel_get_name(channel),
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VIDEO RTP [%s] %s:%d->%s:%d codec: %u ms: %d [%s]\n",
+							  switch_channel_get_name(tech_pvt->channel),
 							  tech_pvt->local_sdp_audio_ip,
 							  tech_pvt->local_sdp_video_port,
 							  tech_pvt->remote_sdp_video_ip,
@@ -1004,13 +982,13 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt)
 			
 
 			if (switch_rtp_ready(tech_pvt->video_rtp_session)) {
-				switch_channel_set_flag(channel, CF_VIDEO);
+				switch_channel_set_flag(tech_pvt->channel, CF_VIDEO);
 			}
 		}
 
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP REPORTS ERROR: [%s]\n", err);
-		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1024,7 +1002,6 @@ switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, char *r_sdp)
 	sdp_parser_t *parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0);
 	sdp_session_t *sdp;
 	uint8_t match = 0;
-	switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
 
 	assert(tech_pvt != NULL);
 
@@ -1049,9 +1026,9 @@ switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, char *r_sdp)
 		if (sofia_glue_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
 		}
-		switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "EARLY MEDIA");
+		switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "EARLY MEDIA");
 		switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
-		switch_channel_mark_pre_answered(channel);
+		switch_channel_mark_pre_answered(tech_pvt->channel);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1065,13 +1042,12 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 	private_object_t *tech_pvt;
 	sdp_media_t *m;
 	sdp_attribute_t *a;
-	switch_channel_t *channel;
+
 	int ptime = 0, dptime = 0;
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	channel = switch_core_session_get_channel(session);
 
 	if ((tech_pvt->origin = switch_core_session_strdup(session, (char *) sdp->sdp_origin->o_username))) {
 		if (strstr(tech_pvt->origin, "CiscoSystemsSIP-GW-UserAgent")) {
@@ -1088,10 +1064,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 		if (!strcasecmp(a->a_name, "sendonly")) {
 			if (!switch_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
 				char *stream;
-				
 				switch_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
-				switch_channel_set_flag(channel, CF_HOLD);
-				if (!(stream = switch_channel_get_variable(channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
+				if (!(stream = switch_channel_get_variable(tech_pvt->channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
 					stream = tech_pvt->profile->hold_music;
 				}
 				if (stream) {
@@ -1100,10 +1074,9 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 			}
 		} else if (!strcasecmp(a->a_name, "sendrecv")) {
 			if (switch_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
+				switch_channel_clear_flag_partner(tech_pvt->channel, CF_BROADCAST);
+				switch_channel_set_flag_partner(tech_pvt->channel, CF_BREAK);
 				switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
-				switch_channel_clear_flag(channel, CF_HOLD);
-				switch_channel_clear_flag_partner(channel, CF_BROADCAST);
-				switch_channel_set_flag_partner(channel, CF_BREAK);
 			}
 		} else if (!strcasecmp(a->a_name, "ptime")) {
 			dptime = atoi(a->a_value);
@@ -1230,8 +1203,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 						tech_pvt->remote_sdp_audio_port = (switch_port_t) m->m_port;
 						tech_pvt->agreed_pt = (switch_payload_t) map->rm_pt;
 						snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
-						switch_channel_set_variable(channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
-						switch_channel_set_variable(channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
+						switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
+						switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
 					} else {
 						match = 0;
 					}
@@ -1307,8 +1280,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 						tech_pvt->remote_sdp_video_port = (switch_port_t) m->m_port;
 						tech_pvt->video_agreed_pt = (switch_payload_t) map->rm_pt;
 						snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_video_port);
-						switch_channel_set_variable(channel, SWITCH_REMOTE_VIDEO_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
-						switch_channel_set_variable(channel, SWITCH_REMOTE_VIDEO_PORT_VARIABLE, tmp);
+						switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_VIDEO_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
+						switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_VIDEO_PORT_VARIABLE, tmp);
 					} else {
 						vmatch = 0;
 					}
@@ -1392,23 +1365,20 @@ switch_call_cause_t sofia_glue_sip_cause_to_freeswitch(int status)
 void sofia_glue_pass_sdp(private_object_t *tech_pvt, char *sdp)
 {
 	char *val;
-	switch_channel_t *channel;
 	switch_core_session_t *other_session;
 	switch_channel_t *other_channel;
 
-	channel = switch_core_session_get_channel(tech_pvt->session);
-	assert(channel != NULL);
 
-	if ((val = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
+	if ((val = switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE))
 		&& (other_session = switch_core_session_locate(val))) {
 		other_channel = switch_core_session_get_channel(other_session);
 		assert(other_channel != NULL);
 		switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, sdp);
 
 		if (!switch_test_flag(tech_pvt, TFLAG_CHANGE_MEDIA) && (switch_channel_test_flag(other_channel, CF_OUTBOUND) &&
-																//switch_channel_test_flag(other_channel, CF_NOMEDIA) && 
-																switch_channel_test_flag(channel, CF_OUTBOUND) &&
-																switch_channel_test_flag(channel, CF_NOMEDIA))) {
+																//switch_channel_test_flag(other_channel, CF_BYPASS_MEDIA) && 
+																switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND) &&
+																switch_channel_test_flag(tech_pvt->channel, CF_BYPASS_MEDIA))) {
 			switch_ivr_nomedia(val, SMF_FORCE);
 			switch_set_flag_locked(tech_pvt, TFLAG_CHANGE_MEDIA);
 		}

@@ -135,7 +135,7 @@ typedef enum {
 	TFLAG_REFER = (1 << 17),
 	TFLAG_NOHUP = (1 << 18),
 	TFLAG_XFER = (1 << 19),
-	TFLAG_NOMEDIA = (1 << 20),
+	TFLAG_RESERVED = (1 << 20),
 	TFLAG_BUGGY_2833 = (1 << 21),
 	TFLAG_SIP_HOLD = (1 << 22),
 	TFLAG_INB_NOMEDIA = (1 << 23),
@@ -261,6 +261,7 @@ struct private_object {
 	uint32_t flags;
 	switch_payload_t agreed_pt;
 	switch_core_session_t *session;
+	switch_channel_t *channel;
 	switch_frame_t read_frame;
 	char *codec_order[SWITCH_MAX_CODECS];
 	int codec_order_last;
