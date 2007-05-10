@@ -51,6 +51,7 @@
 #define FREESWITCH_OID_PREFIX ".1.3.6.1.4.1." FREESWITCH_PEN
 #define FREESWITCH_ITAD "543"
 #define __EXTENSIONS__ 1
+#define _XOPEN_SOURCE 600
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
