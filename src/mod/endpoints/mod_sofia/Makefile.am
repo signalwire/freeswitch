@@ -1,6 +1,6 @@
 AM_CFLAGS   = $(SWITCH_AM_CFLAGS)
 AM_CPPFLAGS = $(SWITCH_AM_CXXFLAGS)
-AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS)
+#AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS)
 #we should set all these vars from configure, no reason to have these in each Makefile.am
 LIBTOOL = echo "`link=\`echo $@|grep .la;echo $@|grep .so;echo $@|grep .dll\`;if test -n "$$link"; then echo Creating $@;fi`";`if test -z "$(VERBOSE)" ; \
 then echo $(SHELL) $(switch_builddir)/quiet_libtool ;else echo $(SHELL) $(switch_builddir)/libtool;  fi`
@@ -30,8 +30,8 @@ mod_sofia_la_CFLAGS += -I$(SOFIAUA_DIR)/sdp -I$(SOFIAUA_DIR)/sip
 mod_sofia_la_CFLAGS += -I$(SOFIAUA_DIR)/soa -I$(SOFIAUA_DIR)/sresolv
 mod_sofia_la_CFLAGS += -I$(SOFIAUA_DIR)/stun -I$(SOFIAUA_DIR)/su
 mod_sofia_la_CFLAGS += -I$(SOFIAUA_DIR)/tport -I$(SOFIAUA_DIR)/url
-mod_sofia_la_LIBADD = $(SOFIALA) $(switch_builddir)/libfreeswitch.la
-mod_sofia_la_LDFLAGS = -module -avoid-version -no-undefined
+mod_sofia_la_LIBADD = $(switch_builddir)/libfreeswitch.la $(SOFIALA)
+mod_sofia_la_LDFLAGS = -avoid-version -module -no-undefined -lssl -lcrypto -ldl -lz -lrt -lpthread
 
 if ADD_ODBC
 mod_sofia_la_CFLAGS += -DSWITCH_HAVE_ODBC
@@ -51,12 +51,12 @@ $(SOFIALA): $(SOFIA_DIR) $(SOFIA_DIR)/.update
 
 ../../../../libs/sofia-sip/libsofia-sip-ua/nua/sofia-sip/nua_tag.h: $(SOFIALA)
 
-install-data-am: $(DESTDIR)$(PREFIX)/$(moddir)/$(MODNAME).$(DYNAMIC_LIB_EXTEN)
+#install-data-am: $(DESTDIR)$(PREFIX)/$(moddir)/$(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
-$(DESTDIR)$(PREFIX)/$(moddir)/$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).la
-	@echo installing $(MODNAME).$(DYNAMIC_LIB_EXTEN)
-	@if [ -f .libs/$(MODNAME).$(DYNAMIC_LIB_EXTEN) ] ; then \
-	  $(LIBTOOL) --mode=install $(INSTALL) .libs/$(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/$(moddir) >/dev/null  ; \
-	else \
-	  $(LIBTOOL) --mode=install $(INSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/$(moddir) >/dev/null  ; \
-	fi
+#$(DESTDIR)$(PREFIX)/$(moddir)/$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).la
+#	@echo installing $(MODNAME).$(DYNAMIC_LIB_EXTEN)
+#	@if [ -f .libs/$(MODNAME).$(DYNAMIC_LIB_EXTEN) ] ; then \
+#	  $(LIBTOOL) --mode=install $(INSTALL) .libs/$(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/$(moddir) >/dev/null  ; \
+#	else \
+#	  $(LIBTOOL) --mode=install $(INSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/$(moddir) >/dev/null  ; \
+#	fi
