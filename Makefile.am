@@ -10,10 +10,6 @@ AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS)
 BASE        = $(switch_srcdir)
 OSARCH=`uname -s`
 
-if CRASHPROT
-AM_CFLAGS += -DCRASH_PROT
-endif
-
 .DEFAULT:
 	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@
 

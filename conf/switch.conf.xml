@@ -2,6 +2,8 @@
   <settings>
     <!--Most channels to allow at once -->
     <param name="max-sessions" value="1000"/>
+    <!--Try to catch any crashes that can be recoverable (in the context of a call)-->
+    <param name="crash-protection" value="false"/>
     <!--RTP port range -->
     <!--<param name="rtp-start-port" value="16384"/>-->
     <!--<param name="rtp-end-port" value="32768"/>-->

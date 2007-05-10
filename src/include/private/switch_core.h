@@ -63,12 +63,6 @@ typedef apr_os_thread_t switch_thread_id_t;
 /* #define DEBUG_ALLOC */
 #define DO_EVENTS
 
-#ifdef CRASH_PROT
-#define __CP "ENABLED"
-#else
-#define __CP "DISABLED"
-#endif
-
 #define SWITCH_EVENT_QUEUE_LEN 256
 #define SWITCH_MESSAGE_QUEUE_LEN 256
 #define SWITCH_SQL_QUEUE_LEN 2000
@@ -144,6 +138,22 @@ struct switch_media_bug {
 	uint8_t ready;
 	struct switch_media_bug *next;
 };
+
+struct switch_runtime {
+	switch_time_t initiated;
+	switch_hash_t *global_vars;
+	switch_memory_pool_t *memory_pool;
+	const switch_state_handler_table_t *state_handlers[SWITCH_MAX_STATE_HANDLERS];
+	int state_handler_index;
+	FILE *console;
+	uint8_t running;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	uint32_t no_new_sessions;
+	uint32_t shutting_down;
+	uint32_t crash_prot;
+};
+
+extern struct switch_runtime runtime;
 
 void switch_core_sqldb_start(switch_memory_pool_t *pool);
 void switch_core_sqldb_stop(void);

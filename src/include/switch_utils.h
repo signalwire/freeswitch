@@ -76,6 +76,8 @@ static inline switch_bool_t switch_is_digit_string(char *s) {
 (expr && ( !strcasecmp(expr, "yes") ||\
 !strcasecmp(expr, "on") ||\
 !strcasecmp(expr, "true") ||\
+!strcasecmp(expr, "enabled") ||\
+!strcasecmp(expr, "active") ||\
 atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE
 /*!
   \brief find local ip of the box

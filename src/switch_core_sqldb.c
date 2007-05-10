@@ -40,7 +40,7 @@ static struct {
 	switch_queue_t *sql_queue;
 	switch_memory_pool_t *memory_pool;
 	int thread_running;
-} runtime;
+} sql_manager;
 
 static switch_status_t switch_core_db_persistant_execute_trans(switch_core_db_t *db, char *sql, uint32_t retries)
 {
@@ -157,14 +157,14 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t * thread,
 	char *sql;
 	switch_size_t newlen;
 
-	if (!runtime.event_db) {
-		runtime.event_db = switch_core_db_handle();
+	if (!sql_manager.event_db) {
+		sql_manager.event_db = switch_core_db_handle();
 	}
 
-	runtime.thread_running = 1;
+	sql_manager.thread_running = 1;
 
 	for (;;) {
-		if (switch_queue_trypop(runtime.sql_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+		if (switch_queue_trypop(sql_manager.sql_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			sql = (char *) pop;
 
 			if (sql) {
@@ -199,7 +199,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t * thread,
 
 
 		if (trans && ((itterations == target) || nothing_in_queue)) {
-			if (switch_core_db_persistant_execute_trans(runtime.event_db, sqlbuf, 1000) != SWITCH_STATUS_SUCCESS) {
+			if (switch_core_db_persistant_execute_trans(sql_manager.event_db, sqlbuf, 1000) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL thread unable to commit transaction, records lost!\n");
 			}
 			itterations = 0;
@@ -228,7 +228,7 @@ static void core_event_handler(switch_event_t *event)
 		sql = switch_mprintf("insert into tasks values('%q','%q','%q','%q')",
 							 switch_event_get_header(event, "task-id"),
 							 switch_event_get_header(event, "task-desc"),
-							 switch_event_get_header(event, "task-group"), switch_event_get_header(event, "task-runtime")
+							 switch_event_get_header(event, "task-group"), switch_event_get_header(event, "task-sql_manager")
 			);
 		break;
 	case SWITCH_EVENT_DEL_SCHEDULE:
@@ -236,8 +236,8 @@ static void core_event_handler(switch_event_t *event)
 		sql = switch_mprintf("delete from tasks where task_id=%q", switch_event_get_header(event, "task-id"));
 		break;
 	case SWITCH_EVENT_RE_SCHEDULE:
-		sql = switch_mprintf("update tasks set task_runtime='%q' where task_id=%q",
-							 switch_event_get_header(event, "task-runtime"), switch_event_get_header(event, "task-id"));
+		sql = switch_mprintf("update tasks set task_sql_manager='%q' where task_id=%q",
+							 switch_event_get_header(event, "task-sql_manager"), switch_event_get_header(event, "task-id"));
 		break;
 	case SWITCH_EVENT_CHANNEL_DESTROY:
 		sql = switch_mprintf("delete from channels where uuid='%q'", switch_event_get_header(event, "unique-id"));
@@ -334,7 +334,7 @@ static void core_event_handler(switch_event_t *event)
 	}
 
 	if (sql) {
-		switch_queue_push(runtime.sql_queue, sql);
+		switch_queue_push(sql_manager.sql_queue, sql);
 		sql = NULL;
 	}
 }
@@ -345,10 +345,10 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;;
 
-	runtime.memory_pool = pool;
+	sql_manager.memory_pool = pool;
 
 	/* Activate SQL database */
-	if ((runtime.db = switch_core_db_handle()) == 0) {
+	if ((sql_manager.db = switch_core_db_handle()) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB!\n");
 	} else {
 		char create_channels_sql[] =
@@ -382,43 +382,43 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 		char create_tasks_sql[] =
 			"CREATE TABLE tasks (\n"
 			"   task_id             INTEGER(4),\n"
-			"   task_desc           VARCHAR(255),\n" "   task_group          VARCHAR(255),\n" "   task_runtime        INTEGER(8)\n" ");\n";
+			"   task_desc           VARCHAR(255),\n" "   task_group          VARCHAR(255),\n" "   task_sql_manager        INTEGER(8)\n" ");\n";
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening DB\n");
-		switch_core_db_exec(runtime.db, "drop table channels", NULL, NULL, NULL);
-		switch_core_db_exec(runtime.db, "drop table calls", NULL, NULL, NULL);
-		switch_core_db_exec(runtime.db, "drop table interfaces", NULL, NULL, NULL);
-		switch_core_db_exec(runtime.db, "drop table tasks", NULL, NULL, NULL);
-		switch_core_db_exec(runtime.db, create_channels_sql, NULL, NULL, NULL);
-		switch_core_db_exec(runtime.db, create_calls_sql, NULL, NULL, NULL);
-		switch_core_db_exec(runtime.db, create_interfaces_sql, NULL, NULL, NULL);
-		switch_core_db_exec(runtime.db, create_tasks_sql, NULL, NULL, NULL);
+		switch_core_db_exec(sql_manager.db, "drop table channels", NULL, NULL, NULL);
+		switch_core_db_exec(sql_manager.db, "drop table calls", NULL, NULL, NULL);
+		switch_core_db_exec(sql_manager.db, "drop table interfaces", NULL, NULL, NULL);
+		switch_core_db_exec(sql_manager.db, "drop table tasks", NULL, NULL, NULL);
+		switch_core_db_exec(sql_manager.db, create_channels_sql, NULL, NULL, NULL);
+		switch_core_db_exec(sql_manager.db, create_calls_sql, NULL, NULL, NULL);
+		switch_core_db_exec(sql_manager.db, create_interfaces_sql, NULL, NULL, NULL);
+		switch_core_db_exec(sql_manager.db, create_tasks_sql, NULL, NULL, NULL);
 		if (switch_event_bind("core_db", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind event handler!\n");
 		}
 	}
 
-	switch_queue_create(&runtime.sql_queue, SWITCH_SQL_QUEUE_LEN, runtime.memory_pool);
+	switch_queue_create(&sql_manager.sql_queue, SWITCH_SQL_QUEUE_LEN, sql_manager.memory_pool);
 	
-	switch_threadattr_create(&thd_attr, runtime.memory_pool);
+	switch_threadattr_create(&thd_attr, sql_manager.memory_pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_thread_create(&thread, thd_attr, switch_core_sql_thread, NULL, runtime.memory_pool);
-	while (!runtime.thread_running) {
+	switch_thread_create(&thread, thd_attr, switch_core_sql_thread, NULL, sql_manager.memory_pool);
+	while (!sql_manager.thread_running) {
 		switch_yield(10000);
 	}
 }
 
 void switch_core_sqldb_stop(void)
 {
-	switch_queue_push(runtime.sql_queue, NULL);
+	switch_queue_push(sql_manager.sql_queue, NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Waiting for unfinished SQL transactions\n");
-	while (switch_queue_size(runtime.sql_queue) > 0) {
+	while (switch_queue_size(sql_manager.sql_queue) > 0) {
 		switch_yield(10000);
 	}
 
-	switch_core_db_close(runtime.db);
-	switch_core_db_close(runtime.event_db);
+	switch_core_db_close(sql_manager.db);
+	switch_core_db_close(sql_manager.event_db);
 
 }

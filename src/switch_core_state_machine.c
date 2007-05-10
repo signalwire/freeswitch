@@ -204,9 +204,7 @@ static void switch_core_standard_on_hibernate(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard HIBERNATE\n");
 }
 
-
-#ifdef CRASH_PROT
-static switch_hash_t *stack_table;
+static switch_hash_t *stack_table = NULL;
 #if defined (__GNUC__) && defined (LINUX)
 #include <execinfo.h>
 #include <stdio.h>
@@ -254,14 +252,13 @@ static void handle_fatality(int sig)
 		abort();
 	}
 }
-#endif
+
 
 void switch_core_state_machine_init(switch_memory_pool_t *pool)
 {
-	(void)0;
-#ifdef CRASH_PROT
-	switch_core_hash_init(&stack_table, pool);
-#endif
+	if (runtime.crash_prot) {
+		switch_core_hash_init(&stack_table, pool);
+	}
 }
 
 SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
@@ -270,31 +267,33 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 	const switch_endpoint_interface_t *endpoint_interface;
 	const switch_state_handler_table_t *driver_state_handler = NULL;
 	const switch_state_handler_table_t *application_state_handler = NULL;
-
-#ifdef CRASH_PROT
-	switch_thread_id_t thread_id = switch_thread_self();
+	switch_thread_id_t thread_id;
 	jmp_buf env;
 	int sig;
 
-	signal(SIGSEGV, handle_fatality);
-	signal(SIGFPE, handle_fatality);
+	if (runtime.crash_prot) {
+		thread_id = switch_thread_self();
+		signal(SIGSEGV, handle_fatality);
+		signal(SIGFPE, handle_fatality);
 #ifndef WIN32
-	signal(SIGBUS, handle_fatality);
+		signal(SIGBUS, handle_fatality);
 #endif
 
-	if ((sig = setjmp(env)) != 0) {
-		switch_event_t *event;
+		if ((sig = setjmp(env)) != 0) {
+			switch_event_t *event;
 
-		if (switch_event_create(&event, SWITCH_EVENT_SESSION_CRASH) == SWITCH_STATUS_SUCCESS) {
-			switch_channel_event_set_data(session->channel, event);
-			switch_event_fire(&event);
+			if (switch_event_create(&event, SWITCH_EVENT_SESSION_CRASH) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_event_set_data(session->channel, event);
+				switch_event_fire(&event);
+			}
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Thread has crashed for channel %s\n", switch_channel_get_name(session->channel));
+			switch_channel_hangup(session->channel, SWITCH_CAUSE_CRASH);
+		} else {
+			apr_hash_set(stack_table, &thread_id, sizeof(thread_id), &env);
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Thread has crashed for channel %s\n", switch_channel_get_name(session->channel));
-		switch_channel_hangup(session->channel, SWITCH_CAUSE_CRASH);
-	} else {
-		apr_hash_set(stack_table, &thread_id, sizeof(thread_id), &env);
 	}
-#endif
+
+
 	/*
 	   Life of the channel. you have channel and pool in your session
 	   everywhere you go you use the session to malloc with
@@ -646,9 +645,9 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
   done:
 	switch_mutex_unlock(session->mutex);
 
-#ifdef CRASH_PROT
-	apr_hash_set(stack_table, &thread_id, sizeof(thread_id), NULL);
-#endif
+	if (runtime.crash_prot) {
+		apr_hash_set(stack_table, &thread_id, sizeof(thread_id), NULL);
+	}
 	session->thread_running = 0;
 
 }

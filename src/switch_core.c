@@ -40,19 +40,7 @@
 SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs = { 0 };
 
 /* The main runtime obj we keep this hidden for ourselves */
-static struct {
-	switch_time_t initiated;
-	switch_hash_t *global_vars;
-	switch_memory_pool_t *memory_pool;
-	const switch_state_handler_table_t *state_handlers[SWITCH_MAX_STATE_HANDLERS];
-	int state_handler_index;
-	FILE *console;
-	uint8_t running;
-	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
-	uint32_t no_new_sessions;
-	uint32_t shutting_down;
-} runtime;
-
+struct switch_runtime runtime;
 
 static void send_heartbeat(void)
 {
@@ -424,7 +412,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 
 	switch_core_set_globals();
 	switch_core_session_init(runtime.memory_pool);
-	switch_core_state_machine_init(runtime.memory_pool);
 	switch_core_hash_init(&runtime.global_vars, runtime.memory_pool);
 
 
@@ -443,7 +430,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 				const char *var = switch_xml_attr_soft(param, "name");
 				const char *val = switch_xml_attr_soft(param, "value");
 
-				if (!strcasecmp(var, "max-sessions")) {
+				if (!strcasecmp(var, "crash-protection")) {
+					runtime.crash_prot = switch_true(val);
+				} else if (!strcasecmp(var, "max-sessions")) {
 					switch_core_session_limit(atoi(val));
 				}
 				else if (!strcasecmp(var, "rtp-start-port")) {
@@ -468,6 +457,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 		}
 		switch_xml_free(xml);
 	}
+
+	switch_core_state_machine_init(runtime.memory_pool);
 
 	*err = NULL;
 
@@ -583,7 +574,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(char *console, cons
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
-					  "\nFreeSWITCH Version %s Started.\nCrash Protection [%s]\nMax Sessions[%u]\n\n", SWITCH_VERSION_FULL, __CP,
+					  "\nFreeSWITCH Version %s Started.\nCrash Protection [%s]\nMax Sessions[%u]\n\n", SWITCH_VERSION_FULL, 
+					  runtime.crash_prot ? "Enabled" : "Disabled",
 					  switch_core_session_limit(0));
 	return SWITCH_STATUS_SUCCESS;
 

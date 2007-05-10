@@ -36,7 +36,7 @@
 
 static struct {
 	switch_memory_pool_t *memory_pool;
-} runtime;
+} memory_manager;
 
 SWITCH_DECLARE(switch_memory_pool_t *) switch_core_session_get_pool(switch_core_session_t *session)
 {
@@ -68,14 +68,14 @@ SWITCH_DECLARE(void *) switch_core_session_alloc(switch_core_session_t *session,
 SWITCH_DECLARE(void *) switch_core_permanent_alloc(switch_size_t memory)
 {
 	void *ptr = NULL;
-	assert(runtime.memory_pool != NULL);
+	assert(memory_manager.memory_pool != NULL);
 
 
 #ifdef DEBUG_ALLOC
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Perm Allocate %d\n", memory);
 #endif
 
-	if ((ptr = apr_palloc(runtime.memory_pool, memory)) != 0) {
+	if ((ptr = apr_palloc(memory_manager.memory_pool, memory)) != 0) {
 		memset(ptr, 0, memory);
 	}
 	return ptr;
@@ -85,7 +85,7 @@ SWITCH_DECLARE(char *) switch_core_permanent_strdup(const char *todup)
 {
 	char *duped = NULL;
 	switch_size_t len;
-	assert(runtime.memory_pool != NULL);
+	assert(memory_manager.memory_pool != NULL);
 
 	if (!todup)
 		return NULL;
@@ -96,7 +96,7 @@ SWITCH_DECLARE(char *) switch_core_permanent_strdup(const char *todup)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Perm Allocate %d\n", len);
 #endif
 
-	if (todup && (duped = apr_palloc(runtime.memory_pool, len)) != 0) {
+	if (todup && (duped = apr_palloc(memory_manager.memory_pool, len)) != 0) {
 		strncpy(duped, todup, len);
 	}
 	return duped;
@@ -214,8 +214,8 @@ SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool_t *pool, switch_size
 
 switch_memory_pool_t *switch_core_memory_init(void)
 {
-	memset(&runtime, 0, sizeof(runtime));
+	memset(&memory_manager, 0, sizeof(memory_manager));
 
-	apr_pool_create(&runtime.memory_pool, NULL);
-	return runtime.memory_pool;
+	apr_pool_create(&memory_manager.memory_pool, NULL);
+	return memory_manager.memory_pool;
 }
