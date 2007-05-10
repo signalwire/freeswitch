@@ -480,8 +480,9 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				*extension = NULL,
 				*proxy = NULL,
 				*context = "default",
-				*expire_seconds = "3600";
-
+				*expire_seconds = "3600",
+				*retry_seconds = "30";
+			
 			gateway->pool = profile->pool;
 			gateway->profile = profile;
 			gateway->name = switch_core_strdup(gateway->pool, name);
@@ -512,6 +513,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					context = val;
 				} else if (!strcmp(var, "expire-seconds")) {
 					expire_seconds = val;
+				} else if (!strcmp(var, "retry-seconds")) {
+					retry_seconds = val;
 				}
 			}
 
@@ -539,6 +542,12 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 
 			if (!switch_true(register_str)) {
 				gateway->state = REG_STATE_NOREG;
+			}
+
+			gateway->retry_seconds = atoi(retry_seconds);
+			if (gateway->retry_seconds < 10) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "INVALID: retry_seconds correcting the value to 30\n");
+				gateway->retry_seconds = 30;
 			}
 			gateway->register_scheme = switch_core_strdup(gateway->pool, scheme);
 			gateway->register_context = switch_core_strdup(gateway->pool, context);
@@ -568,9 +577,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			}
 			gateway->freq -= 2;
 
-			gateway->next = profile->gateways;
-			profile->gateways = gateway;
-
+			
 			if ((gp = sofia_reg_find_gateway(gateway->name))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate gateway '%s'\n", gateway->name);
 				sofia_reg_release_gateway(gp);
@@ -581,6 +588,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate contact '%s'\n", gateway->register_from);
 				sofia_reg_release_gateway(gp);
 			} else {
+				gateway->next = profile->gateways;
+				profile->gateways = gateway;
 				sofia_reg_add_gateway(gateway->name, gateway);
 				sofia_reg_add_gateway(gateway->register_from, gateway);
 				sofia_reg_add_gateway(gateway->register_contact, gateway);

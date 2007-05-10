@@ -1060,8 +1060,11 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 
 				for (gp = profile->gateways; gp; gp = gp->next) {
 					assert(gp->state < REG_STATE_LAST);
-					stream->write_function(stream, "%25s\t%s\t  %32s\t%s\n", gp->name, "gateway", gp->register_to, sofia_state_names[gp->state]);
-
+					stream->write_function(stream, "%25s\t%s\t  %32s\t%s", gp->name, "gateway", gp->register_to, sofia_state_names[gp->state]);
+					if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
+						stream->write_function(stream, " (retry: %ds)", gp->retry - time(NULL));
+					}
+					stream->write_function(stream, "\n");
 				}
 			}
 
@@ -1087,6 +1090,7 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	
 	if (!strcasecmp(argv[1], "start")) {
 		if (argc > 2 && !strcasecmp(argv[2], "reloadxml")) {
 			if ((xml_root = switch_xml_open_root(1, &err))) {
@@ -1106,6 +1110,34 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		stream->write_function(stream, "Invalid Profile [%s]", switch_str_nil(profile_name));
 		return SWITCH_STATUS_SUCCESS;
 	}
+
+	if (!strcasecmp(argv[1], "register")) {
+		char *gname = argv[2];
+		sofia_gateway_t *gateway_ptr;
+
+		if (switch_strlen_zero(gname)) {
+			stream->write_function(stream, "No gateway name provided!\n");
+			goto done;
+		}
+
+		if (!strcasecmp(gname, "all")) {
+			for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
+				gateway_ptr->retry = 0;
+				gateway_ptr->state = REG_STATE_UNREGED;
+			}
+			stream->write_function(stream, "+OK\n");
+		} else if ((gateway_ptr = sofia_reg_find_gateway(gname))) {
+			gateway_ptr->retry = 0;
+			gateway_ptr->state = REG_STATE_UNREGED;
+			stream->write_function(stream, "+OK\n");
+			sofia_reg_release_gateway(gateway_ptr);
+		} else {
+			stream->write_function(stream, "Invalid gateway!\n");
+		}
+		
+		goto done;
+	}
+
 
 	if (!strcasecmp(argv[1], "stop") || !strcasecmp(argv[1], "restart")) {
 		int rsec = 30;
@@ -1133,6 +1165,8 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 			}
 		}
 	}
+
+ done:
 
 	if (profile) {
 		sofia_glue_release_profile(profile);

@@ -92,7 +92,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 								 SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
 								 NUTAG_REGISTRAR(gateway_ptr->register_proxy),
 								 NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
-					gateway_ptr->retry = now + 10;
+					gateway_ptr->retry = now + gateway_ptr->retry_seconds;
 				} else {
 					nua_unregister(gateway_ptr->nh,
 								   SIPTAG_FROM_STR(gateway_ptr->register_from),
@@ -102,7 +102,6 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 								   NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
 				}
 
-				gateway_ptr->retry = now + time(NULL);
 				gateway_ptr->state = REG_STATE_TRYING;
 
 			} else {
@@ -111,6 +110,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			}
 			break;
 
+		case REG_STATE_FAILED:
 		case REG_STATE_TRYING:
 			if (gateway_ptr->retry && now >= gateway_ptr->retry) {
 				gateway_ptr->state = REG_STATE_UNREGED;

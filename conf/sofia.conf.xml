@@ -24,6 +24,8 @@
 	  <!--<param name="expire-seconds" value="60"/>-->
 	  <!--/// do not register ///-->
 	  <!--<param name="register" value="false"/>-->
+	  <!--How many seconds before a retry when a failure or timeout occurs -->
+	  <!--<param name="retry_seconds" value="30"/>-->
 	<!--</gateway>-->
       </gateways>
 

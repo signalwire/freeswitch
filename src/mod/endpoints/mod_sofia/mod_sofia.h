@@ -192,6 +192,7 @@ struct sofia_gateway {
 	time_t expires;
 	time_t retry;
 	uint32_t flags;
+	int32_t retry_seconds;
 	reg_state_t state;
 	switch_memory_pool_t *pool;
 	struct sofia_gateway *next;
