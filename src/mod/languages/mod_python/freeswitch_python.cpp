@@ -9,8 +9,8 @@ SessionContainer::SessionContainer(char *nuuid)
     tts_name = NULL;
     voice_name = NULL;
 
-	if (session = switch_core_session_locate(uuid)) {
-		channel = switch_core_session_get_channel(session);
+       if (session = switch_core_session_locate(uuid)) {
+	        channel = switch_core_session_get_channel(session);
     }
 }
 
@@ -83,7 +83,10 @@ int SessionContainer::play_file(char *file, char *timer_name)
 		ap = &args;
     }
 
+    Py_BEGIN_ALLOW_THREADS
 	status = switch_ivr_play_file(session, NULL, file, ap);
+    Py_END_ALLOW_THREADS
+
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
@@ -114,7 +117,10 @@ int SessionContainer::speak_text(char *text)
 		ap = &args;
     }
 
+    Py_BEGIN_ALLOW_THREADS
 	status = switch_ivr_speak_text(session, tts_name, voice_name, codec->implementation->samples_per_second, text, ap);
+    Py_END_ALLOW_THREADS
+
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
@@ -129,7 +135,11 @@ int SessionContainer::get_digits(char *dtmf_buf, int len, char *terminators, cha
 {
     switch_status_t status;
 	sanity_check(-1);
+
+    Py_BEGIN_ALLOW_THREADS
     status = switch_ivr_collect_digits_count(session, dtmf_buf,(uint32_t) len,(uint32_t) len, terminators, terminator, (uint32_t) timeout);
+    Py_END_ALLOW_THREADS
+
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
@@ -137,7 +147,11 @@ int SessionContainer::transfer(char *extension, char *dialplan, char *context)
 {
     switch_status_t status;
 	sanity_check(-1);
+
+    Py_BEGIN_ALLOW_THREADS
     status = switch_ivr_session_transfer(session, extension, dialplan, context);
+    Py_END_ALLOW_THREADS
+
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
@@ -146,9 +160,13 @@ int SessionContainer::play_and_get_digits(int min_digits, int max_digits, int ma
 {
     switch_status_t status;
 	sanity_check(-1);
+
+    Py_BEGIN_ALLOW_THREADS
     status = switch_play_and_get_digits( session, (uint32_t) min_digits,(uint32_t) max_digits,
             (uint32_t) max_tries, (uint32_t) timeout, 
             terminators, audio_files, bad_input_audio_files, dtmf_buf, 128, digits_regex);
+    Py_END_ALLOW_THREADS
+
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 

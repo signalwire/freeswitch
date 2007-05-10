@@ -25,6 +25,7 @@
  * 
  * Brian Fertig <brian.fertig@convergencetek.com>
  * Johny Kadarisman <jkr888@gmail.com>
+ * Traun Leyden <tleyden@branchcut.com>
  *
  * mod_python.c -- Python Module
  *
@@ -43,6 +44,7 @@
 #include <switch.h>
 
 
+static PyThreadState *mainThreadState = NULL;
 
 void init_freeswitch(void);
 static switch_api_interface_t python_run_interface;
@@ -51,7 +53,7 @@ const char modname[] = "mod_python";
 
 static void eval_some_python(char *uuid, char *args)
 {
-	PyThreadState *tstate;
+	PyThreadState *tstate = NULL;
 	FILE *pythonfile = NULL;
 	char *dupargs = NULL;
 	char *argv[128] = {0};
@@ -97,16 +99,15 @@ static void eval_some_python(char *uuid, char *args)
 
 
 	if ((pythonfile = fopen(script_path, "r"))) {
-		tstate = Py_NewInterpreter();
 
+		PyEval_AcquireLock();
+		tstate = PyThreadState_New(mainThreadState->interp);
 		if (!tstate) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error acquiring tstate\n");
 			goto done;
 		}
-		
-
-		PyThreadState_Clear(tstate);
-		init_freeswitch();
+		PyThreadState_Swap(tstate);
+		init_freeswitch(); 
 		PyRun_SimpleString("from freeswitch import *");
 		if (uuid) {
 			char code[128];
@@ -115,7 +116,11 @@ static void eval_some_python(char *uuid, char *args)
 		}
 		PySys_SetArgv(argc - lead, &argv[lead]);
 		PyRun_SimpleFile(pythonfile, script);
-		Py_EndInterpreter(tstate);
+		PyThreadState_Swap(NULL);
+		PyThreadState_Clear(tstate);
+		PyThreadState_Delete(tstate);
+		PyEval_ReleaseLock();
+
 		
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error running %s\n", script_path);
@@ -134,7 +139,6 @@ static void eval_some_python(char *uuid, char *args)
 
 static void python_function(switch_core_session_t *session, char *data)
 {
-
 	eval_some_python(switch_core_session_get_uuid(session), (char *)data);
 	
 }
@@ -217,9 +221,6 @@ static switch_loadable_module_interface_t python_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-//static PyThreadState *gtstate;
-static PyThreadState *mainThreadState;
-
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
@@ -231,10 +232,9 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 	mainThreadState = PyThreadState_Get();
 
-	PyEval_ReleaseLock();	
+	PyThreadState_Swap(NULL); 
 
-	eval_some_python(NULL, "init_python.py");
-	PyThreadState_Swap(NULL);
+	PyEval_ReleaseLock();	
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -244,19 +244,19 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
   Called when the system shuts down*/
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 {
+    PyInterpreterState *mainInterpreterState;
+    PyThreadState *myThreadState;
 
-	PyInterpreterState *mainInterpreterState;
-	PyThreadState *myThreadState;
+    PyEval_AcquireLock();
+    mainInterpreterState = mainThreadState->interp;
+    myThreadState = PyThreadState_New(mainInterpreterState);
+    PyThreadState_Swap(myThreadState);
+    PyEval_ReleaseLock();
 
-	PyEval_AcquireLock();
-	mainInterpreterState = mainThreadState->interp;
-	myThreadState = PyThreadState_New(mainInterpreterState);
-	PyThreadState_Swap(myThreadState);
-	PyEval_ReleaseLock();
+    Py_Finalize();
+    PyEval_ReleaseLock();
+    return SWITCH_STATUS_SUCCESS;
 
-	Py_Finalize();
-	PyEval_ReleaseLock();
-	return SWITCH_STATUS_SUCCESS;
 }
 
 
