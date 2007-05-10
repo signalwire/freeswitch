@@ -12,9 +12,7 @@ moddir=$(prefix)/mod
 
 MODNAME=mod_sofia
 
-BASE=../../../..
-
-SOFIA_DIR=$(BASE)/libs/sofia-sip
+SOFIA_DIR=$(switch_builddir)/libs/sofia-sip
 SOFIAUA_DIR=$(SOFIA_DIR)/libsofia-sip-ua
 SOFIALA=$(SOFIAUA_DIR)/libsofia-sip-ua.la
 
@@ -31,7 +29,7 @@ mod_sofia_la_CFLAGS += -I$(SOFIAUA_DIR)/soa -I$(SOFIAUA_DIR)/sresolv
 mod_sofia_la_CFLAGS += -I$(SOFIAUA_DIR)/stun -I$(SOFIAUA_DIR)/su
 mod_sofia_la_CFLAGS += -I$(SOFIAUA_DIR)/tport -I$(SOFIAUA_DIR)/url
 mod_sofia_la_LIBADD = $(switch_builddir)/libfreeswitch.la $(SOFIALA)
-mod_sofia_la_LDFLAGS = -avoid-version -module -no-undefined -lssl -lcrypto -ldl -lz -lrt -lpthread
+mod_sofia_la_LDFLAGS = -avoid-version -module -no-undefined
 
 if ADD_ODBC
 mod_sofia_la_CFLAGS += -DSWITCH_HAVE_ODBC

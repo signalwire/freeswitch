@@ -30,7 +30,7 @@ DIST_SUBDIRS = $(SUBDIRS) docs
 
 DOXYGEN = doxygen
 
-lib_LTLIBRARIES = libsofia-sip-ua.la
+noinst_LTLIBRARIES = libsofia-sip-ua.la
 
 libsofia_sip_ua_la_SOURCES = 
 libsofia_sip_ua_la_LIBADD = 	bnf/libbnf.la \
