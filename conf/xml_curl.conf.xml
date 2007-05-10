@@ -8,6 +8,8 @@
       <param name="gateway-url" value="http://www.mydomain.com/test.cgi" bindings="dialplan"/>
       <!-- set this to provide authentication credentials to the server -->
       <!--<param name="gateway-credentials" value="muser:mypass"/>-->
+      <!-- set to true to disable Expect: 100-continue lighttpd requires this setting -->
+      <!--<param name="disable-100-continue" value="true"/>-->
     </binding>
   </bindings>
 </configuration>

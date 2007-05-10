@@ -37,6 +37,7 @@ struct xml_binding {
 	char *url;
 	char *bindings;
 	char *cred;
+	int disable100continue;
 };
 
 typedef struct xml_binding xml_binding_t;
@@ -68,6 +69,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	xml_binding_t *binding = (xml_binding_t *) user_data;
 	char *file_url;
+	struct curl_slist *slist = NULL;
 
 	if (!binding) {
 		return NULL;
@@ -115,6 +117,12 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
 		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-xml/1.0");
+
+		if (binding->disable100continue) {
+			slist = curl_slist_append(slist,"Expect:"); 
+			curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, slist); 
+		}
+
 		curl_easy_perform(curl_handle);
 		curl_easy_cleanup(curl_handle);
 		close(config_data.fd);
@@ -169,6 +177,7 @@ static switch_status_t do_config(void)
 		char *url = NULL;
 		char *bind_cred = NULL;
 		char *bind_mask = NULL;
+		int disable100continue = 0;
 
 		for (param = switch_xml_child(binding_tag, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -180,6 +189,8 @@ static switch_status_t do_config(void)
 				}
 			} else if (!strcasecmp(var, "gateway-credentials")) {
 				bind_cred = val;
+			} else if (!strcasecmp(var, "disable-100-continue ") && switch_true(val)) {
+				disable100continue = 1;
 			}
 		}
 
@@ -202,6 +213,8 @@ static switch_status_t do_config(void)
 		if (bind_cred) {
 			binding->cred = strdup(bind_cred);
 		}
+
+		binding->disable100continue = disable100continue;
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Binding [%s] XML Fetch Function [%s] [%s]\n",
 						  switch_strlen_zero(bname) ? "N/A" : bname, binding->url, binding->bindings ? binding->bindings : "all");
