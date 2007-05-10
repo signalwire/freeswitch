@@ -927,7 +927,7 @@ void nua_signal(nua_t *nua, nua_handle_t *nh, msg_t *msg, int always,
   size_t len, xtra, e_len, l_len = 0, l_xtra = 0;
   ta_list ta;
 
-  if (nua == NULL || (nua->nua_shutdown_started && event != nua_r_shutdown))
+  if (nua == NULL)
     return;
 
   ta_start(ta, tag, value);

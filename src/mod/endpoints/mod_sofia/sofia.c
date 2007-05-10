@@ -363,11 +363,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		su_root_step(profile->s_root, 1000);
 	}
 
-	while(profile->inuse) {
-		switch_yield(500000);
-	}
-
-
 
 	//sofia_reg_check_expire(profile, 0);
 	//sofia_reg_check_gateway(profile, 0);	

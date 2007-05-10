@@ -339,7 +339,7 @@ static switch_status_t sofia_read_video_frame(switch_core_session_t *session, sw
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	if (switch_test_flag(tech_pvt, TFLAG_HUP) || !sofia_test_pflag(tech_pvt->profile, PFLAG_RUNNING)) {
+	if (switch_test_flag(tech_pvt, TFLAG_HUP)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -411,7 +411,7 @@ static switch_status_t sofia_write_video_frame(switch_core_session_t *session, s
 		}
 	}
 
-	if (switch_test_flag(tech_pvt, TFLAG_HUP) || !sofia_test_pflag(tech_pvt->profile, PFLAG_RUNNING)) {
+	if (switch_test_flag(tech_pvt, TFLAG_HUP)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -443,7 +443,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	if (switch_test_flag(tech_pvt, TFLAG_HUP) || !sofia_test_pflag(tech_pvt->profile, PFLAG_RUNNING)) {
+	if (switch_test_flag(tech_pvt, TFLAG_HUP)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -538,7 +538,7 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 		}
 	}
 
-	if (switch_test_flag(tech_pvt, TFLAG_HUP) || !sofia_test_pflag(tech_pvt->profile, PFLAG_RUNNING)) {
+	if (switch_test_flag(tech_pvt, TFLAG_HUP)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1140,7 +1140,7 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 
 
 	if (!strcasecmp(argv[1], "stop") || !strcasecmp(argv[1], "restart")) {
-		int rsec = 30;
+		int rsec = 3;
 		int diff = (int) (time(NULL) - profile->started);
 		int remain = rsec - diff;
 		if (diff < rsec) {
