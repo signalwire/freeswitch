@@ -26,6 +26,8 @@
 	  <!--<param name="register" value="false"/>-->
 	  <!--How many seconds before a retry when a failure or timeout occurs -->
 	  <!--<param name="retry_seconds" value="30"/>-->
+	  <!--Use the callerid of an inbound call in the from field on outbound calls via this gateway -->
+	  <!--<param name="caller-id-in-from" value="false"/>-->
 	<!--</gateway>-->
       </gateways>
 
