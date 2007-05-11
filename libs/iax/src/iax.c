@@ -788,9 +788,22 @@ static int speex_get_samples(unsigned char *data, int len)
 	return cnt;
 }
 
+static inline int get_interp_len(int format)
+{
+	return (format == AST_FORMAT_ILBC) ? 30 : 20;
+}
+
 static int get_sample_cnt(struct iax_event *e)
 {
 	int cnt = 0;
+
+	/*
+	 * In the case of zero length frames, do not return a cnt of 0
+	 */
+	if ( e->datalen == 0 ) {
+		return get_interp_len( e->subclass ) * 8;
+	}
+
 	switch (e->subclass) {
 	  case AST_FORMAT_SPEEX:
 	    cnt = speex_get_samples(e->data, e->datalen);
@@ -3143,8 +3156,7 @@ struct iax_event *iax_get_event(int blocking)
 
 			now = time_in_ms - cur->rxcore;
 			if(now > (next = jb_next(cur->jb))) {
-				/* FIXME don't hardcode interpolation frame length in jb_get */
-				ret = jb_get(cur->jb,&frame,now,20);
+				ret = jb_get(cur->jb,&frame,now,get_interp_len(cur->voiceformat));
 				switch(ret) {
 				case JB_OK:
 					//			    if(frame.type == JB_TYPE_VOICE && next + 20 != jb_next(cur->jb)) fprintf(stderr, "NEXT %ld is not %ld+20!\n", jb_next(cur->jb), next);
