@@ -969,23 +969,35 @@ int iax_init(char *ip, int preferredportno)
 		    return -1;
 	    }
 	    
-	    if (preferredportno == 0) 
-		    preferredportno = IAX_DEFAULT_PORTNO;
-		    
-	    if (preferredportno > 0) {
-		    sin.sin_family = AF_INET;
-			if (ip) {
-				inet_aton(ip, &sin.sin_addr);
-			} else {
-				sin.sin_addr.s_addr = 0;
-			}
+	    if (preferredportno == 0) preferredportno = IAX_DEFAULT_PORTNO;
+		if (preferredportno < 0)  preferredportno = 0;
 
-		    sin.sin_port = htons((short)preferredportno);
-		    if (bind(netfd, (struct sockaddr *) &sin, sizeof(sin)) < 0) {
-			    DEBU(G "Unable to bind to preferred port.  Using random one instead.");
-		    }
-	    }
-	    sinlen = sizeof(sin);
+		sin.sin_family = AF_INET;
+		sin.sin_addr.s_addr = 0;
+		sin.sin_port = htons((short)preferredportno);
+		if (bind(netfd, (struct sockaddr *) &sin, sizeof(sin)) < 0) 
+		{
+#if defined(WIN32)  ||  defined(_WIN32_WCE)
+			if (WSAGetLastError() == WSAEADDRINUSE)
+#else
+			if (errno == EADDRINUSE)
+#endif
+			{
+				/*the port is already in use, so bind to a free port chosen by the IP stack*/
+				DEBU(G "Unable to bind to preferred port - port is in use. Trying to bind to a free one");
+				sin.sin_port = htons((short)0);
+				if (bind(netfd, (struct sockaddr *) &sin, sizeof(sin)) < 0)
+				{
+					IAXERROR "Unable to bind UDP socket\n");
+					return -1;
+				}
+			} else
+			{
+				IAXERROR "Unable to bind UDP socket\n");
+				return -1;
+			}
+		}
+		sinlen = sizeof(sin);
 	    if (getsockname(netfd, (struct sockaddr *) &sin, &sinlen) < 0) {
 		    close(netfd);
 		    netfd = -1;
@@ -1561,6 +1573,12 @@ static struct iax_event *handle_event(struct iax_event *event)
 				iax_send_pong(event->session, event->ts);
 				iax_event_free(event);
 				break;
+			case IAX_EVENT_POKE:
+				event->etype = IAX_EVENT_PONG;
+				iax_send_pong(event->session, event->ts);
+				destroy_session(event->session);
+				iax_event_free(event);
+				break;         
 			default:
 				return event;
 			}
@@ -2652,8 +2670,10 @@ static struct iax_event *iax_header_to_event(struct iax_session *session,
 				e->ts = ts;
 				e = schedule_delivery(e, ts, updatehistory);
 				break;
-			case IAX_COMMAND_PING:
 			case IAX_COMMAND_POKE:
+				e->etype = IAX_EVENT_POKE;
+				e->ts = ts;
+				break;			case IAX_COMMAND_PING:
 				/* PINGS and PONGS don't get scheduled; */
 				e->etype = IAX_EVENT_PING;
 				e->ts = ts;

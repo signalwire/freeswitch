@@ -81,6 +81,7 @@ struct iax_session;
 #define IAX_EVENT_REGREJ  30		/* Registration reply */
 #define IAX_EVENT_LINKURL	31		/* Unlink */
 #define IAX_EVENT_CNG	32		/* Comfort-noise (almost silence) */
+#define IAX_EVENT_POKE   33
 
 /* moved from iax.c to support attended transfer */
 #define IAX_EVENT_REREQUEST	999
