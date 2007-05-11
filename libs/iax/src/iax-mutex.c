@@ -17,7 +17,8 @@
  *
  */
 
-
+#define _XOPEN_SOURCE 600
+#include <stdlib.h>
 #include "iax-mutex.h"
 
 
@@ -29,7 +30,7 @@ struct mutex {
 };
 
 #else
-#define _XOPEN_SOURCE 600
+
 #include <pthread.h>
 struct mutex {
 	pthread_mutex_t mutex;
