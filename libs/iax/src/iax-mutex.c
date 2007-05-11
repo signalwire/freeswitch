@@ -29,7 +29,7 @@ struct mutex {
 };
 
 #else
-
+#define _XOPEN_SOURCE 600
 #include <pthread.h>
 struct mutex {
 	pthread_mutex_t mutex;
@@ -64,7 +64,7 @@ mutex_status_t iax_mutex_create(mutex_t **mutex)
 	goto success;
 
 fail:
-        pthread_mutexattr_destroy(&mattr);
+        pthread_mutexattr_destroy(&attr);
 		goto done;
 
 success:
