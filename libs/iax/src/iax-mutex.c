@@ -40,22 +40,40 @@ struct mutex {
 
 mutex_status_t iax_mutex_create(mutex_t **mutex)
 {
+	mutex_status_t status = MUTEX_FAILURE;
+#ifndef WIN32
+	pthread_mutexattr_t attr;
+#endif
 	mutex_t *check = NULL;
 
 	check = (mutex_t *)malloc(sizeof(**mutex));
 	if (!check)
-		return MUTEX_FAILURE;
+		goto done;
 #ifdef WIN32
 	InitializeCriticalSection(&check->mutex);
 #else
-	if (pthread_mutex_init(&check->mutex, NULL))
-		return MUTEX_FAILURE;
+	if (pthread_mutexattr_init(&attr))
+		goto done;
 
+	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE))
+		goto fail;
+
+	if (pthread_mutex_init(&check->mutex, &attr))
+		goto fail;
+
+	goto success;
+
+fail:
+        pthread_mutexattr_destroy(&mattr);
+		goto done;
+
+success:
 #endif
-
 	*mutex = check;
+	status = MUTEX_SUCCESS;
 
-	return MUTEX_SUCCESS;
+done:
+	return status;
 }
 
 mutex_status_t iax_mutex_destroy(mutex_t *mutex)
