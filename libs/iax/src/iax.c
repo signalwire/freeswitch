@@ -40,16 +40,12 @@ void gettimeofday(struct timeval *tv, void /*struct timezone*/ *tz);
 
 #else
 
+#define _BSD_SOURCE 1
 #include <netdb.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/time.h>
 #include <stdlib.h>
-#ifdef __GNUC__
-#ifndef __USE_SVID
-#define __USE_SVID
-#endif
-#endif
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -60,7 +56,7 @@ void gettimeofday(struct timeval *tv, void /*struct timezone*/ *tz);
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <time.h>
-
+       
 #endif
 
 #include "iax2.h"
@@ -70,7 +66,7 @@ void gettimeofday(struct timeval *tv, void /*struct timezone*/ *tz);
 #ifdef NEWJB
 #include "jitterbuf.h"
 #endif
-
+#include "iax-mutex.h"
 /*
 	work around jitter-buffer shrinking in asterisk:
 	channels/chan_iax2.c:schedule_delivery() shrinks jitter buffer by 2.
@@ -330,6 +326,8 @@ struct iax_sched {
 	struct iax_sched *next;
 };
 
+static mutex_t *sched_mutex = NULL;
+static mutex_t *session_mutex = NULL;
 static struct iax_sched *schedq = NULL;
 static struct iax_session *sessions = NULL;
 static int callnums = 1;
@@ -412,6 +410,7 @@ static int iax_sched_add(struct iax_event *event, struct iax_frame *frame, sched
 		sched->func = func;
 		sched->arg = arg;
 		/* Put it in the list, in order */
+		iax_mutex_lock(sched_mutex);
 		cur = schedq;
 		while(cur && cur->when <= sched->when) {
 			prev = cur;
@@ -423,6 +422,7 @@ static int iax_sched_add(struct iax_event *event, struct iax_frame *frame, sched
 		} else {
 			schedq = sched;
 		}
+		iax_mutex_unlock(sched_mutex);
 		return 0;
 	} else {
 		DEBU(G "Out of memory!\n");
@@ -433,7 +433,9 @@ static int iax_sched_add(struct iax_event *event, struct iax_frame *frame, sched
 static int iax_sched_del(struct iax_event *event, struct iax_frame *frame, sched_func func, void *arg, int all)
 {
 	struct iax_sched *cur, *tmp, *prev = NULL;
+	int ret = 0;
 
+	iax_mutex_lock(sched_mutex);
 	cur = schedq;
 	while (cur) {
 		if (cur->event == event && cur->frame == frame && cur->func == func && cur->arg == arg) {
@@ -444,13 +446,18 @@ static int iax_sched_del(struct iax_event *event, struct iax_frame *frame, sched
 			tmp = cur;
 			cur = cur->next;	
 			free(tmp);
-			if (!all)
-				return -1;
+			if (!all) {
+				ret = -1;
+				goto done;
+			}
 		} else {
 			prev = cur;
 			cur = cur->next;
 		}
 	}
+ done:
+	iax_mutex_unlock(sched_mutex);
+
 	return 0;
 
 }
@@ -458,23 +465,30 @@ static int iax_sched_del(struct iax_event *event, struct iax_frame *frame, sched
 
 time_in_ms_t iax_time_to_next_event(void)
 {
-	struct iax_sched *cur = schedq;
+	struct iax_sched *cur = NULL;
 	time_in_ms_t minimum = 999999999;
 	
-	/* If there are no pending events, we don't need to timeout */
-	if (!cur)
-		return -1;
+	iax_mutex_lock(sched_mutex);
+	cur = schedq;
 
+	/* If there are no pending events, we don't need to timeout */
+	if (!cur) {
+		iax_mutex_unlock(sched_mutex);
+		return -1;
+	}
 	while(cur) {
 		if (cur->when < minimum) {
 			minimum = cur->when;
 		}
 		cur = cur->next;
 	}
+	iax_mutex_unlock(sched_mutex);
 
 	if (minimum <= 0) {
 		return -1;
 	}
+
+
 
 	return minimum - current_time_in_ms();
 }
@@ -497,7 +511,7 @@ struct iax_session *iax_session_new(void)
 			callnums = 1;
 		s->peercallno = 0;
 		s->transferpeer = 0;		/* for attended transfer */
-		s->next = sessions;
+
 		s->sendto = iax_sendto;
 		s->pingid = -1;
 #ifdef NEWJB
@@ -510,7 +524,10 @@ struct iax_session *iax_session_new(void)
 			jb_setconf(s->jb, &jbconf);
 		}
 #endif
+		iax_mutex_lock(session_mutex);
+		s->next = sessions;
 		sessions = s;
+		iax_mutex_unlock(session_mutex);
 	}
 	return s;
 }
@@ -518,12 +535,19 @@ struct iax_session *iax_session_new(void)
 static int iax_session_valid(struct iax_session *session)
 {
 	/* Return -1 on a valid iax session pointer, 0 on a failure */
-	struct iax_session *cur = sessions;
+	struct iax_session *cur;
+
+	iax_mutex_lock(session_mutex);
+	cur = sessions;
 	while(cur) {
-		if (session == cur)
+		if (session == cur) {
+			iax_mutex_unlock(session_mutex);
 			return -1;
+		}
 		cur = cur->next;
 	}
+	iax_mutex_unlock(session_mutex);
+
 	return 0;
 }
 
@@ -865,26 +889,29 @@ void iax_set_networking(sendto_t st, recvfrom_t rf)
 
 int __iax_shutdown(void)
 {
+	struct iax_sched *sp, *fp;
+
 	/* Hangup Calls */
 	if (sessions) {
 		struct iax_session *sp = NULL, *fp = NULL;
+		iax_mutex_lock(session_mutex); 
 		for(sp = sessions; sp ;) {
 			iax_hangup(sp, "System Shutdown");
 			fp = sp;
 			sp = sp->next;
 			destroy_session(fp);
 		}
+		iax_mutex_unlock(session_mutex); 
 	}
 
 	/* Clear Scheduler */
-	if(schedq) {
-		struct iax_sched *sp, *fp;
-		for(sp = schedq; sp ;) {
-			fp = sp;
-			sp = sp->next;
-			free(fp);
-		}
+	iax_mutex_lock(sched_mutex);
+	for(sp = schedq; sp ;) {
+		fp = sp;
+		sp = sp->next;
+		free(fp);
 	}
+	iax_mutex_unlock(sched_mutex);
 	
 	if (netfd > -1) {
 		shutdown(netfd, 2);
@@ -892,6 +919,9 @@ int __iax_shutdown(void)
 	}
 
 	time_end();
+
+	iax_mutex_destroy(sched_mutex);
+	iax_mutex_destroy(session_mutex);
 
 	return 0;
 }
@@ -909,6 +939,9 @@ int iax_init(char *ip, int preferredportno)
 	int flags;
 
 	init_time();
+
+	iax_mutex_create(&sched_mutex);
+	iax_mutex_create(&session_mutex);
 
 	if(iax_recvfrom == (recvfrom_t) recvfrom) {
 	    if (netfd > -1) {
@@ -1229,12 +1262,14 @@ static void stop_transfer(struct iax_session *session)
 {
 	struct iax_sched *sch;
 
+	iax_mutex_lock(sched_mutex);
 	sch = schedq;
 	while(sch) {
 		if (sch->frame && (sch->frame->session == session))
 					sch->frame->retries = -1;
 		sch = sch->next;
 	}
+	iax_mutex_unlock(sched_mutex);
 }	/* stop_transfer */
 
 static void complete_transfer(struct iax_session *session, int peercallno, int xfr2peer, int preserveSeq)
@@ -1356,14 +1391,18 @@ static int iax_finish_transfer(struct iax_session *s, short new_peer)
 
 static struct iax_session *iax_find_session2(short callno)
 {
-	struct iax_session *cur = sessions;
+	struct iax_session *cur;
 
+	iax_mutex_lock(session_mutex); 
+	cur = sessions;
 	while(cur) {
 		if (callno == cur->callno && callno != 0)  {
+			iax_mutex_unlock(session_mutex); 
 			return cur;
 		}
 		cur = cur->next;
 	}
+	iax_mutex_unlock(session_mutex); 
 
 	return NULL;
 }
@@ -1431,6 +1470,8 @@ static void destroy_session(struct iax_session *session)
 	struct iax_session *cur, *prev=NULL;
 	struct iax_sched *curs, *prevs=NULL, *nexts=NULL;
 	int    loop_cnt=0;
+
+	iax_mutex_lock(sched_mutex);
 	curs = schedq;
 	while(curs) {
 		nexts = curs->next;
@@ -1451,7 +1492,9 @@ static void destroy_session(struct iax_session *session)
 		curs = nexts;
 		loop_cnt++;
 	}
-		
+	iax_mutex_unlock(sched_mutex);
+	
+
 	cur = sessions;
 	while(cur) {
 		if (cur == session) {
@@ -2081,9 +2124,13 @@ static struct iax_session *iax_find_session(struct sockaddr_in *sin,
 											short dcallno,
 											int makenew)
 {
-	struct iax_session *cur = sessions;
+	struct iax_session *cur;
+
+	iax_mutex_lock(session_mutex); 
+	cur = sessions;
 	while(cur) {
 		if (forward_match(sin, callno, dcallno, cur)) {
+			iax_mutex_unlock(session_mutex); 
 			return cur;
 		}
 		cur = cur->next;
@@ -2092,10 +2139,13 @@ static struct iax_session *iax_find_session(struct sockaddr_in *sin,
 	cur = sessions;
 	while(cur) {
 		if (reverse_match(sin, callno, cur)) {
+			iax_mutex_unlock(session_mutex); 
 			return cur;
 		}
 		cur = cur->next;
 	}
+
+	iax_mutex_unlock(session_mutex); 
 
 	if (makenew && !dcallno) {
 		cur = iax_session_new();
@@ -2108,6 +2158,7 @@ static struct iax_session *iax_find_session(struct sockaddr_in *sin,
 	} else {
 		DEBU(G "No session, peer = %d, us = %d\n", callno, dcallno);
 	}
+
 	return cur;	
 }
 
@@ -2428,6 +2479,7 @@ static struct iax_event *iax_header_to_event(struct iax_session *session,
 				for (x=session->rseqno; x != fh->iseqno; x++) {
 					/* Ack the packet with the given timestamp */
 					DEBU(G "Cancelling transmission of packet %d\n", x);
+					iax_mutex_lock(sched_mutex);
 					sch = schedq;
 					while(sch) {
 						if (sch->frame && (sch->frame->session == session) && 
@@ -2435,6 +2487,7 @@ static struct iax_event *iax_header_to_event(struct iax_session *session,
 							sch->frame->retries = -1;
 						sch = sch->next;
 					}
+					iax_mutex_unlock(sched_mutex);
 				}
 				/* Note how much we've received acknowledgement for */
 				session->rseqno = fh->iseqno;
@@ -2846,15 +2899,17 @@ static struct iax_event *iax_miniheader_to_event(struct iax_session *session,
 
 void iax_destroy(struct iax_session *session)
 {
+	iax_mutex_lock(session_mutex); 
 	destroy_session(session);
+	iax_mutex_unlock(session_mutex); 
 }
 
 static struct iax_event *iax_net_read(void)
 {
 	unsigned char buf[65536];
-	int res;
+	int res, sinlen;
 	struct sockaddr_in sin;
-	unsigned int sinlen;
+
 	sinlen = sizeof(sin);
 	res = iax_recvfrom(netfd, buf, sizeof(buf), 0, (struct sockaddr *) &sin, &sinlen);
 
@@ -2894,6 +2949,7 @@ static struct iax_session *iax_txcnt_session(struct ast_iax2_full_hdr *fh, int d
 	if (!ies.transferid) {
 		return NULL;	/* TXCNT without proper IAX_IE_TRANSFERID */
 	}
+	iax_mutex_lock(session_mutex); 
 	for( cur=sessions; cur; cur=cur->next ) {
 		if ((cur->transferring) && (cur->transferid == ies.transferid) &&
 		   	(cur->callno == dcallno) && (cur->transfercallno == callno)) {
@@ -2906,6 +2962,7 @@ static struct iax_session *iax_txcnt_session(struct ast_iax2_full_hdr *fh, int d
 			break;		
 		}
 	}
+	iax_mutex_unlock(session_mutex); 
 	return cur;
 }
 
@@ -2958,6 +3015,7 @@ struct iax_event *iax_net_process(unsigned char *buf, int len, struct sockaddr_i
 static struct iax_sched *iax_get_sched(time_in_ms_t time_in_ms)
 {
 	struct iax_sched *cur, *prev=NULL;
+	iax_mutex_lock(sched_mutex);
 	cur = schedq;
 	/* Check the event schedule first. */
 	while(cur) {
@@ -2968,10 +3026,12 @@ static struct iax_sched *iax_get_sched(time_in_ms_t time_in_ms)
 			} else {
 				schedq = cur->next;
 			}
+			iax_mutex_unlock(sched_mutex);
 			return cur;
 		}
 		cur = cur->next;
 	}
+	iax_mutex_unlock(sched_mutex);
 	return NULL;
 }
 
@@ -3005,8 +3065,11 @@ struct iax_event *iax_get_event(int blocking)
 			if (frame->retries < 0) {
 				/* It's been acked.  No need to send it.   Destroy the old
 				   frame. If final, destroy the session. */
-				if (frame->final)
+				if (frame->final) {
+					iax_mutex_lock(session_mutex); 
 					destroy_session(frame->session);
+					iax_mutex_unlock(session_mutex); 
+				}
 				if (frame->data)
 					free(frame->data);
 				free(frame);
@@ -3023,7 +3086,9 @@ struct iax_event *iax_get_event(int blocking)
 					/* We haven't been able to get an ACK on this packet. If a 
 					   final frame, destroy the session, otherwise, pass up timeout */
 					if (frame->final) {
+						iax_mutex_lock(session_mutex); 
 						destroy_session(frame->session);
+						iax_mutex_unlock(session_mutex); 
 						if (frame->data)
 							free(frame->data);
 						free(frame);
@@ -3070,54 +3135,59 @@ struct iax_event *iax_get_event(int blocking)
 	{
 	    struct iax_session *cur;
 	    jb_frame frame;
+		iax_mutex_lock(session_mutex); 
 	    for(cur=sessions; cur; cur=cur->next) {
-		int ret;
-		time_in_ms_t now;
-		time_in_ms_t next;
+			int ret;
+			time_in_ms_t now;
+			time_in_ms_t next;
 
-		now = time_in_ms - cur->rxcore;
-		if(now > (next = jb_next(cur->jb))) {
-		    /* FIXME don't hardcode interpolation frame length in jb_get */
-		    ret = jb_get(cur->jb,&frame,now,20);
-		    switch(ret) {
-			case JB_OK:
-//			    if(frame.type == JB_TYPE_VOICE && next + 20 != jb_next(cur->jb)) fprintf(stderr, "NEXT %ld is not %ld+20!\n", jb_next(cur->jb), next);
-			    event = frame.data;
-			    event = handle_event(event);
-			    if (event) {
-				    return event;
-			    }
-			break;
-			case JB_INTERP:
-//			    if(next + 20 != jb_next(cur->jb)) fprintf(stderr, "NEXT %ld is not %ld+20!\n", jb_next(cur->jb), next);
-			    /* create an interpolation frame */
-			    //fprintf(stderr, "Making Interpolation frame\n");
-			    event = (struct iax_event *)malloc(sizeof(struct iax_event));
-			    if (event) {
-				    event->etype    = IAX_EVENT_VOICE;
-				    event->subclass = cur->voiceformat;
-				    event->ts	    = now; /* XXX: ??? applications probably ignore this anyway */
-				    event->session  = cur;
-				    event->datalen  = 0;
-				    event = handle_event(event);
-				    if(event)
-					return event;
-			    }
-			break;
-			case JB_DROP:
-//			    if(next != jb_next(cur->jb)) fprintf(stderr, "NEXT %ld is not next %ld!\n", jb_next(cur->jb), next);
-			    iax_event_free(frame.data);
-			break;
-			case JB_NOFRAME:
-			case JB_EMPTY:
-			    /* do nothing */
-			break;
-			default:
-			    /* shouldn't happen */
-			break;
-		    }
-		}
+			now = time_in_ms - cur->rxcore;
+			if(now > (next = jb_next(cur->jb))) {
+				/* FIXME don't hardcode interpolation frame length in jb_get */
+				ret = jb_get(cur->jb,&frame,now,20);
+				switch(ret) {
+				case JB_OK:
+					//			    if(frame.type == JB_TYPE_VOICE && next + 20 != jb_next(cur->jb)) fprintf(stderr, "NEXT %ld is not %ld+20!\n", jb_next(cur->jb), next);
+					event = frame.data;
+					event = handle_event(event);
+					if (event) {
+						iax_mutex_unlock(session_mutex);
+						return event;
+					}
+					break;
+				case JB_INTERP:
+					//			    if(next + 20 != jb_next(cur->jb)) fprintf(stderr, "NEXT %ld is not %ld+20!\n", jb_next(cur->jb), next);
+					/* create an interpolation frame */
+					//fprintf(stderr, "Making Interpolation frame\n");
+					event = (struct iax_event *)malloc(sizeof(struct iax_event));
+					if (event) {
+						event->etype    = IAX_EVENT_VOICE;
+						event->subclass = cur->voiceformat;
+						event->ts	    = now; /* XXX: ??? applications probably ignore this anyway */
+						event->session  = cur;
+						event->datalen  = 0;
+						event = handle_event(event);
+						if(event) {
+							iax_mutex_unlock(session_mutex);
+							return event;
+						}
+					}
+					break;
+				case JB_DROP:
+					//			    if(next != jb_next(cur->jb)) fprintf(stderr, "NEXT %ld is not next %ld!\n", jb_next(cur->jb), next);
+					iax_event_free(frame.data);
+					break;
+				case JB_NOFRAME:
+				case JB_EMPTY:
+					/* do nothing */
+					break;
+				default:
+					/* shouldn't happen */
+					break;
+				}
+			}
 	    }
+		iax_mutex_unlock(session_mutex);
 	}
 
 #endif
@@ -3169,8 +3239,10 @@ char *iax_event_get_apparent_ip(struct iax_event *event)
 
 void iax_session_destroy(struct iax_session **session) 
 {
+	iax_mutex_lock(session_mutex); 
 	destroy_session(*session);
 	*session = NULL;
+	iax_mutex_unlock(session_mutex); 
 }
 
 void iax_event_free(struct iax_event *event)
@@ -3185,7 +3257,9 @@ void iax_event_free(struct iax_event *event)
 	case IAX_EVENT_HANGUP:
 		/* Destroy this session -- it's no longer valid */
 		if (event->session) { /* maybe the user did it already */
+			iax_mutex_lock(session_mutex); 
 			destroy_session(event->session);
+			iax_mutex_unlock(session_mutex); 
 		}
 		break;
 	}
