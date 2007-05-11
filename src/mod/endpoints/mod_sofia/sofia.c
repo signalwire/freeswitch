@@ -1703,10 +1703,17 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	const char *context = NULL;
 	char network_ip[80];
 	switch_event_t *v_event = NULL;
+	uint32_t sess_count = switch_core_session_count();
+	uint32_t sess_max = switch_core_session_limit(0);
+
+	if ((profile->soft_max && sess_count >= profile->soft_max) || sess_count >= sess_max) {
+		nua_respond(nh, 480, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
+		return;
+	}
 
 	if (!sip || !sip->sip_request || !sip->sip_request->rq_method_name) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received an invalid packet!\n");
-		nua_respond(nh, SIP_500_INTERNAL_SERVER_ERROR, TAG_END());
+		nua_respond(nh, SIP_503_SERVICE_UNAVAILABLE, TAG_END());
 		return;
 	}
 
@@ -1906,7 +1913,33 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));
 	nua_handle_bind(nh, tech_pvt->sofia_private);
 	tech_pvt->nh = nh;
-	switch_core_session_thread_launch(session);
+
+	if (switch_core_session_thread_launch(session) == SWITCH_STATUS_SUCCESS) {
+		return;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "LUKE: I'm hit, but not bad.\n");
+					  
+	switch_mutex_lock(profile->flag_mutex);
+
+	profile->soft_max = sess_count - 10;
+	switch_core_session_limit(profile->soft_max);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "LUKE'S VOICE: Artoo, see what you can do with it. Hang on back there....\n"
+					  "Green laserfire moves past the beeping little robot as his head turns.  "
+					  "After a few beeps and a twist of his mechanical arm,\n"
+					  "Artoo reduces the max sessions to %d thus, saving the switch from certian doom.\n", 
+					  profile->soft_max);
+
+	switch_mutex_unlock(profile->flag_mutex);
+
+	if (tech_pvt->hash_key) {
+		switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->hash_key);
+	}
+
+	nua_handle_bind(nh, NULL);
+	free(tech_pvt->sofia_private);
+	switch_core_session_destroy(&session);
+	nua_respond(nh, 480, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 }
 
 void sofia_handle_sip_i_options(int status,

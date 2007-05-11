@@ -1504,9 +1504,15 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 			switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
 			switch_channel_mark_answered(channel);
 			switch_channel_set_state(channel, CS_INIT);
-			switch_core_session_thread_launch(tech_pvt->session);
-			add_pvt(tech_pvt, PA_MASTER);
-			stream->write_function(stream, "SUCCESS:%s:%s\n", tech_pvt->call_id, switch_core_session_get_uuid(tech_pvt->session));
+
+			if (switch_core_session_thread_launch(tech_pvt->session) != SWITCH_STATUS_SUCCESS) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
+				switch_core_session_destroy(&session);
+				stream->write_function(stream, "FAIL:Thread Error!\n");
+			} else {
+				add_pvt(tech_pvt, PA_MASTER);
+				stream->write_function(stream, "SUCCESS:%s:%s\n", tech_pvt->call_id, switch_core_session_get_uuid(tech_pvt->session));
+			}
 		} else {
 			switch_core_session_destroy(&session);
 			stream->write_function(stream, "FAIL:Device Error!\n");

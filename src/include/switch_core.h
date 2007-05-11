@@ -428,12 +428,15 @@ SWITCH_DECLARE(switch_memory_pool_t *) switch_core_session_get_pool(switch_core_
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch_endpoint_interface_t
 																	*endpoint_interface, switch_memory_pool_t **pool);
 
+
+SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t **session, const char *file, const char *func, int line);
+
 /*! 
   \brief Destroy a session and return the memory pool to the core
   \param session pointer to a pointer of the session to destroy
   \return
 */
-SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session_t **session);
+#define switch_core_session_destroy(session) switch_core_session_perform_destroy(session, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 /*! 
   \brief Provide the total number of sessions
@@ -458,8 +461,9 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(char
 /*! 
   \brief Launch the session thread (state machine) on a given session
   \param session the session to activate the state machine on
+  \return SWITCH_STATUS_SUCCESS if the thread was launched
 */
-SWITCH_DECLARE(void) switch_core_session_thread_launch(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(switch_core_session_t *session);
 
 /*! 
   \brief Retrieve a pointer to the channel object associated with a given session

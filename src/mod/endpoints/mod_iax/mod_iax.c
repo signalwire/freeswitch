@@ -1128,7 +1128,10 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 							iax_accept(tech_pvt->iax_session, tech_pvt->codec);
 							iax_ring_announce(tech_pvt->iax_session);
 							switch_channel_set_state(channel, CS_INIT);
-							switch_core_session_thread_launch(session);
+							if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
+								switch_core_session_destroy(&session);
+							}
 						}
 					}
 				}

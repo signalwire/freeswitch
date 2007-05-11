@@ -1240,7 +1240,11 @@ static void *woomera_thread_run(void *obj)
 						break;
 					}
 					switch_channel_set_state(channel, CS_INIT);
-					switch_core_session_thread_launch(session);
+					if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
+						switch_core_session_destroy(&session);
+						break;
+					}
 				}
 			}
 		}

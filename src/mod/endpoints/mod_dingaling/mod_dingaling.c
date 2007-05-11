@@ -2720,7 +2720,12 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 			tech_pvt->dlsession = dlsession;
 			switch_channel_set_name(channel, "DingaLing/new");
 			switch_channel_set_state(channel, CS_INIT);
-			switch_core_session_thread_launch(session);
+			if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
+				terminate_session(&session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+                status = LDL_STATUS_FALSE;
+                goto done;
+			}
 		} else {
 			status = LDL_STATUS_FALSE;
 			goto done;

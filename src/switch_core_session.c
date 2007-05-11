@@ -651,13 +651,15 @@ SWITCH_DECLARE(unsigned int) switch_core_session_running(switch_core_session_t *
 }
 
 
-SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session_t **session)
+SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t **session, const char *file, const char *func, int line)
 {
 	switch_memory_pool_t *pool;
 	switch_event_t *event;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Close Channel %s\n", switch_channel_get_name((*session)->channel));
-
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_NOTICE, "Close Channel %s [%s]\n", 
+					  switch_channel_get_name((*session)->channel),
+					  switch_channel_state_name(switch_channel_get_state((*session)->channel)));
+	
 	switch_ivr_deactivate_unicast(*session);
 	
 	switch_scheduler_del_task_group((*session)->uuid_str);
@@ -711,7 +713,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t * thr
 }
 
 
-SWITCH_DECLARE(void) switch_core_session_thread_launch(switch_core_session_t *session)
+SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(switch_core_session_t *session)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;;
@@ -720,10 +722,16 @@ SWITCH_DECLARE(void) switch_core_session_thread_launch(switch_core_session_t *se
 
 	if (!session->thread_running) {
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		if (switch_thread_create(&thread, thd_attr, switch_core_session_thread, session, session->pool) != SWITCH_STATUS_SUCCESS) {
-			switch_core_session_destroy(&session);
+		if (switch_thread_create(&thread, thd_attr, switch_core_session_thread, session, session->pool) == SWITCH_STATUS_SUCCESS) {
+			return SWITCH_STATUS_SUCCESS;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot create thread!\n");
 		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot double-launch thread!\n");
 	}
+
+	return SWITCH_STATUS_FALSE;
 }
 
 
