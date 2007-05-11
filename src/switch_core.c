@@ -76,7 +76,7 @@ static void heartbeat_callback(switch_scheduler_task_t *task)
 	send_heartbeat();
 
 	/* reschedule this task */
-	task->runtime += 20;
+	task->runtime = time(NULL) + 20;
 }
 
 
