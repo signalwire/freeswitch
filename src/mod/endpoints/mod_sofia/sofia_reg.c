@@ -281,7 +281,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 
 	if (!from_user || !from_host) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can not do authorization without a complete from header\n");
-		nua_respond(nh, SIP_500_INTERNAL_SERVER_ERROR, TAG_END());
+		nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), TAG_END());
 		return 1;
 	}
 
