@@ -61,10 +61,10 @@ void CoreSession::setVariable(char *var, char *val)
     switch_channel_set_variable(channel, var, val);
 }
 
-void CoreSession::getVariable(char *var, char *val)
+char *CoreSession::getVariable(char *var)
 {
-	sanity_check();
-    switch_channel_get_variable(channel, var);
+	sanity_check(NULL);
+    return switch_channel_get_variable(channel, var);
 }
 
 void CoreSession::execute(char *app, char *data)

@@ -26,7 +26,7 @@ class CoreSession {
 	int preAnswer();
 	void hangup(char *cause);
 	void setVariable(char *var, char *val);
-	void getVariable(char *var, char *val);
+	char *getVariable(char *var);
 	int playFile(char *file, char *timer_name);
 	void setDTMFCallback(switch_input_callback_function_t cb, void *buf, uint32_t buflen);
 	int speakText(char *text);
