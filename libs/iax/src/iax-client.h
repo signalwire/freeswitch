@@ -226,6 +226,10 @@ extern unsigned int iax_session_get_capability(struct iax_session *s);
 extern char iax_pref_codec_add(struct iax_session *session, unsigned int format);
 extern void iax_pref_codec_del(struct iax_session *session, unsigned int format);
 extern int iax_pref_codec_get(struct iax_session *session, unsigned int *array, int len);
+
+/* Fine tune jitterbuffer */
+extern void iax_set_jb_target_extra( long value );
+
 extern char *iax_get_peer_ip(struct iax_session *session);
 extern char *iax_event_get_apparent_ip(struct iax_event *event);
 extern void iax_set_samplerate(struct iax_session *session, unsigned short samplemask);

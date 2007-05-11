@@ -140,6 +140,9 @@ static int netfd = -1;
 /* Max timeouts */
 static int maxretries = 10;
 
+/* configurable jitterbuffer options */
+static long jb_target_extra = -1; 
+
 static int do_shutdown = 0;
 
 /* external global networking replacements */
@@ -521,6 +524,7 @@ struct iax_session *iax_session_new(void)
 			jbconf.max_jitterbuf = 0;
 			jbconf.resync_threshold = 1000;
 			jbconf.max_contig_interp = 0;
+			jbconf.target_extra = jb_target_extra;
 			jb_setconf(s->jb, &jbconf);
 		}
 #endif
@@ -942,6 +946,12 @@ int __iax_shutdown(void)
 int iax_shutdown(void)
 {
 	return do_shutdown++;
+}
+
+void iax_set_jb_target_extra( long value )
+{
+	/* store in jb_target_extra, a static global */
+	jb_target_extra = value ;
 }
 
 int iax_init(char *ip, int preferredportno)
