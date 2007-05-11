@@ -917,8 +917,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 
 		//Make sure we made it out alive
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
-			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-			break;
+			goto done;
 		}
 		//we only get one digit out of playback, see if thats all we needed and what we got
 		if (max_digits == 1 && status == SWITCH_STATUS_BREAK) {
@@ -938,8 +937,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 
 						//Make sure we made it out alive
 						if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
-							switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-							break;
+							goto done;
 						}
 					}
 				}
@@ -957,8 +955,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 		//Make sure we made it out alive
 		if (status != SWITCH_STATUS_SUCCESS) {
 			//Bail
-			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-			break;
+			goto done;
 		}
 		//see if we got enough
 		if (min_digits <= strlen(digit_buffer)) {
@@ -977,8 +974,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 
 						//Make sure we made it out alive
 						if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
-							switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-							break;
+							goto done;
 						}
 					}
 				}
@@ -989,6 +985,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 		}
 	}
 
+ done:
 	//if we got here, we got no digits or lost the channel
 	digit_buffer = "\0";
 	return SWITCH_STATUS_FALSE;
