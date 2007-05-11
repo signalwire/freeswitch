@@ -8,7 +8,7 @@
  * Mark Spencer <markster@digium.com>
  *
  * This program is free software, distributed under the terms of
- * the GNU General Public License
+ * the GNU Lesser (Library) General Public License
  */
  
 #ifndef _IAX2_PARSER_H
