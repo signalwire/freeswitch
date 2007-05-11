@@ -77,7 +77,7 @@ static int task_thread_loop(int done)
 		} else {
 			int64_t now = time(NULL);
 			if (now >= tp->task.runtime && !tp->in_thread) {
-				int32_t diff = now - tp->task.runtime;
+				int32_t diff = (int32_t)(now - tp->task.runtime);
 				if (diff > 1) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Task was executed late by %d seconds %u %s (%s)\n",
 									  diff, tp->task.task_id, tp->desc, switch_str_nil(tp->task.group));
