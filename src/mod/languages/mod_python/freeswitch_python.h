@@ -34,7 +34,7 @@ class SessionContainer {
 	int pre_answer();
 	void hangup(char *cause);
 	void set_variable(char *var, char *val);
-	void get_variable(char *var, char *val);
+	char *get_variable(char *var);
 	int play_file(char *file, char *timer_name);
 	void set_dtmf_callback(PyObject * pyfunc);
 	int speak_text(char *text);

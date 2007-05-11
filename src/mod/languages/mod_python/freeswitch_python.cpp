@@ -51,10 +51,10 @@ void SessionContainer::set_variable(char *var, char *val)
     switch_channel_set_variable(channel, var, val);
 }
 
-void SessionContainer::get_variable(char *var, char *val)
+char *SessionContainer::get_variable(char *var)
 {
-	sanity_check();
-    switch_channel_get_variable(channel, var);
+	sanity_check(NULL);
+    return switch_channel_get_variable(channel, var);
 }
 
 void SessionContainer::execute(char *app, char *data)

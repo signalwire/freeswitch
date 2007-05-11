@@ -1045,14 +1045,14 @@ static PyObject *_wrap_SessionContainer_get_variable(PyObject *self, PyObject *a
     PyObject *resultobj;
     SessionContainer *arg1 = (SessionContainer *) 0 ;
     char *arg2 ;
-    char *arg3 ;
+    char *result;
     PyObject * obj0 = 0 ;
     
-    if(!PyArg_ParseTuple(args,(char *)"Oss:SessionContainer_get_variable",&obj0,&arg2,&arg3)) goto fail;
+    if(!PyArg_ParseTuple(args,(char *)"Os:SessionContainer_get_variable",&obj0,&arg2)) goto fail;
     if ((SWIG_ConvertPtr(obj0,(void **) &arg1, SWIGTYPE_p_SessionContainer,SWIG_POINTER_EXCEPTION | 0 )) == -1) SWIG_fail;
-    (arg1)->get_variable(arg2,arg3);
+    result = (char *)(arg1)->get_variable(arg2);
     
-    Py_INCREF(Py_None); resultobj = Py_None;
+    resultobj = result ? PyString_FromString(result) : Py_BuildValue((char*)"");
     return resultobj;
     fail:
     return NULL;
