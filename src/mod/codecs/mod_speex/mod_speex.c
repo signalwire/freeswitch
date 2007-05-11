@@ -302,7 +302,73 @@ static const switch_codec_implementation_t speex_16k_implementation = {
 	/*.next */ &speex_32k_implementation
 };
 
-static const switch_codec_implementation_t speex_8k_implementation = {
+
+static const switch_codec_implementation_t speex_8k_60ms_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 98,
+	/*.iananame */ "speex",
+	/*.fmtp */ NULL,
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ 3300,
+	/*.nanoseconds_per_frame */ 60000,
+	/*.samples_per_frame */ 480,
+	/*.bytes_per_frame */ 960,
+	/*.encoded_bytes_per_frame */ 0,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_speex_init,
+	/*.encode */ switch_speex_encode,
+	/*.decode */ switch_speex_decode,
+	/*.destroy */ switch_speex_destroy,
+	/*.next */ &speex_16k_implementation
+};
+
+static const switch_codec_implementation_t speex_8k_40ms_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 98,
+	/*.iananame */ "speex",
+	/*.fmtp */ NULL,
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ 22000,
+	/*.nanoseconds_per_frame */ 40000,
+	/*.samples_per_frame */ 240,
+	/*.bytes_per_frame */ 640,
+	/*.encoded_bytes_per_frame */ 0,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_speex_init,
+	/*.encode */ switch_speex_encode,
+	/*.decode */ switch_speex_decode,
+	/*.destroy */ switch_speex_destroy,
+	/*.next */ &speex_8k_60ms_implementation
+
+};
+
+
+static const switch_codec_implementation_t speex_8k_30ms_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 98,
+	/*.iananame */ "speex",
+	/*.fmtp */ NULL,
+	/*.samples_per_second */ 8000,
+	/*.bits_per_second */ 1650,
+	/*.nanoseconds_per_frame */ 30000,
+	/*.samples_per_frame */ 240,
+	/*.bytes_per_frame */ 480,
+	/*.encoded_bytes_per_frame */ 0,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_speex_init,
+	/*.encode */ switch_speex_encode,
+	/*.decode */ switch_speex_decode,
+	/*.destroy */ switch_speex_destroy,
+	/*.next */ &speex_8k_40ms_implementation
+};
+
+static const switch_codec_implementation_t speex_8k_20ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 98,
 	/*.iananame */ "speex",
@@ -320,12 +386,12 @@ static const switch_codec_implementation_t speex_8k_implementation = {
 	/*.encode */ switch_speex_encode,
 	/*.decode */ switch_speex_decode,
 	/*.destroy */ switch_speex_destroy,
-	/*.next */ &speex_16k_implementation
+	/*.next */ &speex_8k_30ms_implementation
 };
 
 static const switch_codec_interface_t speex_codec_interface = {
 	/*.interface_name */ "speex",
-	/*.implementations */ &speex_8k_implementation
+	/*.implementations */ &speex_8k_20ms_implementation
 };
 
 static switch_loadable_module_interface_t speex_module_interface = {
