@@ -189,7 +189,7 @@ static switch_status_t do_config(void)
 				}
 			} else if (!strcasecmp(var, "gateway-credentials")) {
 				bind_cred = val;
-			} else if (!strcasecmp(var, "disable-100-continue ") && switch_true(val)) {
+			} else if (!strcasecmp(var, "disable-100-continue") && switch_true(val)) {
 				disable100continue = 1;
 			}
 		}
