@@ -615,7 +615,7 @@ struct hangup_helper {
 	switch_call_cause_t cause;
 };
 
-static void sch_hangup_callback(switch_scheduler_task_t *task)
+SWITCH_STANDARD_SCHED_FUNC(sch_hangup_callback)
 {
 	struct hangup_helper *helper;
 	switch_core_session_t *session, *other_session;
@@ -665,7 +665,7 @@ struct transfer_helper {
 	char *context;
 };
 
-static void sch_transfer_callback(switch_scheduler_task_t *task)
+SWITCH_STANDARD_SCHED_FUNC(sch_transfer_callback)
 {
 	struct transfer_helper *helper;
 	switch_core_session_t *session;
@@ -732,7 +732,7 @@ struct broadcast_helper {
 	switch_media_flag_t flags;
 };
 
-static void sch_broadcast_callback(switch_scheduler_task_t *task)
+SWITCH_STANDARD_SCHED_FUNC(sch_broadcast_callback)
 {
 	struct broadcast_helper *helper;
 	assert(task);

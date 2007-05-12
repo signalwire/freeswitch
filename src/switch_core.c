@@ -71,7 +71,7 @@ static void send_heartbeat(void)
 	}
 }
 
-static void heartbeat_callback(switch_scheduler_task_t *task)
+SWITCH_STANDARD_SCHED_FUNC(heartbeat_callback)
 {
 	send_heartbeat();
 
