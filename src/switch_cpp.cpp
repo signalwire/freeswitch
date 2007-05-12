@@ -1,6 +1,10 @@
 #include <switch.h>
 #include <switch_cpp.h>
 
+#ifdef _MSC_VER
+#pragma warning(disable:4127 4003)
+#endif
+
 #define sanity_check(x) do { if (!session) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return x;}} while(0)
 #define init_vars() do { session = NULL; channel = NULL; uuid = NULL; tts_name = NULL; voice_name = NULL; memset(&args, 0, sizeof(args)); ap = NULL;} while(0)
 
@@ -45,7 +49,7 @@ int CoreSession::preAnswer()
 {
     switch_status_t status;
 	sanity_check(-1);
-    switch_channel_pre_answer(channel);
+    status = switch_channel_pre_answer(channel);
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
