@@ -1255,7 +1255,11 @@ static int send_command_final(struct iax_session *i, char type, int command, uns
 #endif	
 	int r;
 	r = __send_command(i, type, command, ts, data, datalen, seqno, 0, 0, 1, 0);
-	if (r >= 0) destroy_session(i);
+	if (r >= 0) {
+		iax_mutex_lock(session_mutex); 
+		destroy_session(i);
+		iax_mutex_unlock(session_mutex);
+	}
 	return r;
 }
 
@@ -1667,6 +1671,24 @@ int iax_register(struct iax_session *session, char *server, char *peer, char *se
 	iax_ie_append_short(&ied, IAX_IE_REFRESH, refresh);
 	res = send_command(session, AST_FRAME_IAX, IAX_COMMAND_REGREQ, 0, ied.buf, ied.pos, -1);
 	return res;
+}
+
+int iax_reject_registration(struct iax_session *session, char *reason)
+{
+	struct iax_ie_data ied;
+	memset(&ied, 0, sizeof(ied));
+	iax_ie_append_str(&ied, IAX_IE_CAUSE, reason ? (unsigned char *) reason : (unsigned char *) "Unspecified");
+	return send_command_final(session, AST_FRAME_IAX, IAX_COMMAND_REGREJ, 0, ied.buf, ied.pos, -1);
+}
+
+int iax_ack_registration(struct iax_session *session)
+{
+	return send_command_final(session, AST_FRAME_IAX, IAX_COMMAND_REGACK, 0, NULL, 0, -1);
+}
+
+int iax_auth_registration(struct iax_session *session)
+{
+	return send_command_final(session, AST_FRAME_IAX, IAX_COMMAND_REGAUTH, 0, NULL, 0, -1);
 }
 
 int iax_reject(struct iax_session *session, char *reason)
