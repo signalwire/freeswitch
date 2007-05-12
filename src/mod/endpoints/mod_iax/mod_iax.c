@@ -1038,7 +1038,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 				break;
 			case IAX_EVENT_REGREQ:
 				/* what is the right way to handle this? */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Registration request ignored, not implemented.\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Registration request ignored, not implemented.\n");
 				iax_destroy(iaxevent->session);
 				iaxevent->session = NULL;
 				break;
