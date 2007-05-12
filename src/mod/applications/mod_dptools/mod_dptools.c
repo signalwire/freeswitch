@@ -502,7 +502,7 @@ static void strftime_function(switch_core_session_t *session, char *data)
 }
 
 
-static switch_status_t strepoch_api_function(char *data, switch_core_session_t *session, switch_stream_handle_t *stream)
+static switch_status_t strepoch_api_function(const char *data, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	switch_time_t out;
 
@@ -517,7 +517,7 @@ static switch_status_t strepoch_api_function(char *data, switch_core_session_t *
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t strftime_api_function(char *fmt, switch_core_session_t *session, switch_stream_handle_t *stream)
+static switch_status_t strftime_api_function(const char *fmt, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 
 	switch_size_t retsize;
@@ -531,7 +531,7 @@ static switch_status_t strftime_api_function(char *fmt, switch_core_session_t *s
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t presence_api_function(char *fmt, switch_core_session_t *session, switch_stream_handle_t *stream)
+static switch_status_t presence_api_function(const char *fmt, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	switch_event_t *event;
 	char *lbuf, *argv[4];
@@ -568,7 +568,7 @@ static switch_status_t presence_api_function(char *fmt, switch_core_session_t *s
 }
 
 
-static switch_status_t chat_api_function(char *fmt, switch_core_session_t *session, switch_stream_handle_t *stream)
+static switch_status_t chat_api_function(const char *fmt, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	char *lbuf, *argv[4];
 	int argc = 0;

@@ -90,7 +90,7 @@ class BaseCDR {
 	switch_time_t callenddate;
 	switch_time_t calltransferdate;
 	switch_call_cause_t hangupcause;
-	char *hangupcause_text;
+	const char *hangupcause_text;
 	char clid[80];
 	bool originated;			// Did they originate this call?
 	char dialplan[80];

@@ -92,7 +92,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_cor
 	return profile;
 }
 
-SWITCH_DECLARE(char *) switch_caller_get_field_by_name(switch_caller_profile_t *caller_profile, char *name)
+SWITCH_DECLARE(char *) switch_caller_get_field_by_name(switch_caller_profile_t *caller_profile, const char *name)
 {
 	if (!strcasecmp(name, "dialplan")) {
 		return caller_profile->dialplan;
@@ -136,7 +136,7 @@ SWITCH_DECLARE(char *) switch_caller_get_field_by_name(switch_caller_profile_t *
 	return NULL;
 }
 
-SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_t *caller_profile, char *prefix, switch_event_t *event)
+SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_t *caller_profile, const char *prefix, switch_event_t *event)
 {
 	char header_name[1024];
 
@@ -207,7 +207,7 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 
 }
 
-SWITCH_DECLARE(switch_caller_extension_t *) switch_caller_extension_new(switch_core_session_t *session, char *extension_name, char *extension_number)
+SWITCH_DECLARE(switch_caller_extension_t *) switch_caller_extension_new(switch_core_session_t *session, const char *extension_name, const char *extension_number)
 {
 	switch_caller_extension_t *caller_extension = NULL;
 
@@ -222,7 +222,7 @@ SWITCH_DECLARE(switch_caller_extension_t *) switch_caller_extension_new(switch_c
 
 
 SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session_t *session,
-															 switch_caller_extension_t *caller_extension, char *application_name, char *application_data)
+															 switch_caller_extension_t *caller_extension, const char *application_name, const char *application_data)
 {
 	switch_caller_application_t *caller_application = NULL;
 

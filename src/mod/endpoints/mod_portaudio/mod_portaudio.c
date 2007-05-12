@@ -155,8 +155,8 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 	 static switch_status_t load_config(void);
 	 static int get_dev_by_name(char *name, int in);
 	 static int get_dev_by_number(int number, int in);
-	 static switch_status_t pa_cmd(char *dest, switch_core_session_t *session, switch_stream_handle_t *stream);
-	 static switch_status_t padep(char *dest, switch_core_session_t *session, switch_stream_handle_t *stream);
+	 static switch_status_t pa_cmd(const char *dest, switch_core_session_t *session, switch_stream_handle_t *stream);
+	 static switch_status_t padep(const char *dest, switch_core_session_t *session, switch_stream_handle_t *stream);
 
 
 /* 
@@ -1711,13 +1711,13 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t padep(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+static switch_status_t padep(const char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
 {
 	stream->write_function(stream, "This command no longer exists (try 'pa help')\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t pa_cmd(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+static switch_status_t pa_cmd(const char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
 {
 	char *argv[1024] = { 0 };
 	int argc = 0;

@@ -1110,7 +1110,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 
 }
 
-SWITCH_DECLARE(switch_endpoint_interface_t *) switch_loadable_module_get_endpoint_interface(char *name)
+SWITCH_DECLARE(switch_endpoint_interface_t *) switch_loadable_module_get_endpoint_interface(const char *name)
 {
 	switch_endpoint_interface_t *ptr;
 
@@ -1121,7 +1121,7 @@ SWITCH_DECLARE(switch_endpoint_interface_t *) switch_loadable_module_get_endpoin
 	return ptr;
 }
 
-SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_interface(char *name)
+SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_interface(const char *name)
 {
 	char altname[256] = "";
 	switch_codec_interface_t *codec;
@@ -1143,57 +1143,57 @@ SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_inte
 	return codec;
 }
 
-SWITCH_DECLARE(switch_dialplan_interface_t *) switch_loadable_module_get_dialplan_interface(char *name)
+SWITCH_DECLARE(switch_dialplan_interface_t *) switch_loadable_module_get_dialplan_interface(const char *name)
 {
 	return switch_core_hash_find_locked(loadable_modules.dialplan_hash, name, loadable_modules.mutex);
 }
 
-SWITCH_DECLARE(switch_timer_interface_t *) switch_loadable_module_get_timer_interface(char *name)
+SWITCH_DECLARE(switch_timer_interface_t *) switch_loadable_module_get_timer_interface(const char *name)
 {
 	return switch_core_hash_find_locked(loadable_modules.timer_hash, name, loadable_modules.mutex);
 }
 
-SWITCH_DECLARE(switch_application_interface_t *) switch_loadable_module_get_application_interface(char *name)
+SWITCH_DECLARE(switch_application_interface_t *) switch_loadable_module_get_application_interface(const char *name)
 {
 	return switch_core_hash_find_locked(loadable_modules.application_hash, name, loadable_modules.mutex);
 }
 
-SWITCH_DECLARE(switch_api_interface_t *) switch_loadable_module_get_api_interface(char *name)
+SWITCH_DECLARE(switch_api_interface_t *) switch_loadable_module_get_api_interface(const char *name)
 {
 	return switch_core_hash_find_locked(loadable_modules.api_hash, name, loadable_modules.mutex);
 }
 
-SWITCH_DECLARE(switch_file_interface_t *) switch_loadable_module_get_file_interface(char *name)
+SWITCH_DECLARE(switch_file_interface_t *) switch_loadable_module_get_file_interface(const char *name)
 {
 	return switch_core_hash_find_locked(loadable_modules.file_hash, name, loadable_modules.mutex);
 }
 
-SWITCH_DECLARE(switch_speech_interface_t *) switch_loadable_module_get_speech_interface(char *name)
+SWITCH_DECLARE(switch_speech_interface_t *) switch_loadable_module_get_speech_interface(const char *name)
 {
 	return switch_core_hash_find_locked(loadable_modules.speech_hash, name, loadable_modules.mutex);
 }
 
-SWITCH_DECLARE(switch_asr_interface_t *) switch_loadable_module_get_asr_interface(char *name)
+SWITCH_DECLARE(switch_asr_interface_t *) switch_loadable_module_get_asr_interface(const char *name)
 {
 	return switch_core_hash_find_locked(loadable_modules.asr_hash, name, loadable_modules.mutex);
 }
 
-SWITCH_DECLARE(switch_directory_interface_t *) switch_loadable_module_get_directory_interface(char *name)
+SWITCH_DECLARE(switch_directory_interface_t *) switch_loadable_module_get_directory_interface(const char *name)
 {
 	return switch_core_hash_find_locked(loadable_modules.directory_hash, name, loadable_modules.mutex);
 }
 
-SWITCH_DECLARE(switch_chat_interface_t *) switch_loadable_module_get_chat_interface(char *name)
+SWITCH_DECLARE(switch_chat_interface_t *) switch_loadable_module_get_chat_interface(const char *name)
 {
 	return switch_core_hash_find_locked(loadable_modules.chat_hash, name, loadable_modules.mutex);
 }
 
-SWITCH_DECLARE(switch_say_interface_t *) switch_loadable_module_get_say_interface(char *name)
+SWITCH_DECLARE(switch_say_interface_t *) switch_loadable_module_get_say_interface(const char *name)
 {
 	return switch_core_hash_find_locked(loadable_modules.say_hash, name, loadable_modules.mutex);
 }
 
-SWITCH_DECLARE(switch_management_interface_t *) switch_loadable_module_get_management_interface(char *relative_oid)
+SWITCH_DECLARE(switch_management_interface_t *) switch_loadable_module_get_management_interface(const char *relative_oid)
 {
 	return switch_core_hash_find_locked(loadable_modules.management_hash, relative_oid, loadable_modules.mutex);
 }
@@ -1319,7 +1319,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 	return i;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *arg, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	switch_api_interface_t *api;
 	switch_status_t status;

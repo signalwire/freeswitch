@@ -45,9 +45,9 @@ static struct {
 
 
 #ifdef SWITCH_DEBUG_RWLOCKS
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(char *uuid_str, const char *file, const char *func, int line)
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(const char *uuid_str, const char *file, const char *func, int line)
 #else
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(char *uuid_str)
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(const char *uuid_str)
 #endif
 {
 	switch_core_session_t *session = NULL;

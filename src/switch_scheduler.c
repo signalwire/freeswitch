@@ -149,7 +149,7 @@ static void *SWITCH_THREAD_FUNC switch_scheduler_task_thread(switch_thread_t * t
 
 SWITCH_DECLARE(uint32_t) switch_scheduler_add_task(time_t task_runtime,
 												   switch_scheduler_func_t func,
-												   char *desc, char *group, uint32_t cmd_id, void *cmd_arg, switch_scheduler_flag_t flags)
+												   const char *desc, const char *group, uint32_t cmd_id, void *cmd_arg, switch_scheduler_flag_t flags)
 {
 	switch_scheduler_task_container_t *container, *tp;
 	switch_event_t *event;
@@ -223,7 +223,7 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_id(uint32_t task_id)
 	return delcnt;
 }
 
-SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_group(char *group)
+SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_group(const char *group)
 {
 	switch_scheduler_task_container_t *tp;
 	switch_event_t *event;

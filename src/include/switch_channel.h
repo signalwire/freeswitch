@@ -89,7 +89,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
   \param str the string to check
   \return the code
 */
-SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2cause(char *str);
+SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2cause(const char *str);
 
 /*!
   \brief return the cause code for a given channel
@@ -103,7 +103,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(switch_channel_t *c
   \param cause the code to check
   \return the string
 */
-SWITCH_DECLARE(char *) switch_channel_cause2str(switch_call_cause_t cause);
+SWITCH_DECLARE(const char *) switch_channel_cause2str(switch_call_cause_t cause);
 
 /*!
   \brief View the timetable of a channel
@@ -136,7 +136,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel, s
   \param rpid the rpid if for the icon to use
   \param status the status message
 */
-SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, char *rpid, char *status);
+SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, const char *rpid, const char *status);
 
 /*!
   \brief Uninitalize a channel
@@ -218,7 +218,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_nodup(switch_channel
   \param varname the name of the variable
   \return the value of the requested variable
 */
-SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, char *varname);
+SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, const char *varname);
 
 /*!
  * Start iterating over the entries in the channel variable list.
@@ -373,7 +373,7 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_channel_get_state_ha
   \param private_info void pointer to private data
   \return SWITCH_STATUS_SUCCESS if data was set
 */
-SWITCH_DECLARE(switch_status_t) switch_channel_set_private(switch_channel_t *channel, char *key, void *private_info);
+SWITCH_DECLARE(switch_status_t) switch_channel_set_private(switch_channel_t *channel, const char *key, const void *private_info);
 
 /*!
   \brief Retrieve private from a given channel
@@ -381,7 +381,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_private(switch_channel_t *cha
   \param key unique keyname to retrieve your private data
   \return void pointer to channel's private data
 */
-SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel_t *channel, char *key);
+SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel_t *channel, const char *key);
 
 /*!
   \brief Assign a name to a given channel
@@ -389,7 +389,7 @@ SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel_t *channel, cha
   \param name name to assign
   \return SWITCH_STATUS_SUCCESS if name was assigned
 */
-SWITCH_DECLARE(switch_status_t) switch_channel_set_name(switch_channel_t *channel, char *name);
+SWITCH_DECLARE(switch_status_t) switch_channel_set_name(switch_channel_t *channel, const char *name);
 
 /*!
   \brief Retrieve the name of a given channel
@@ -423,7 +423,7 @@ SWITCH_DECLARE(switch_size_t) switch_channel_has_dtmf(switch_channel_t *channel)
   \param dtmf string of digits to queue
   \return SWITCH_STATUS_SUCCESS if successful
 */
-SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *channel, char *dtmf);
+SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *channel, const char *dtmf);
 
 /*!
   \brief Retrieve DTMF digits from a given channel
@@ -446,7 +446,7 @@ SWITCH_DECLARE(const char *) switch_channel_state_name(switch_channel_state_t st
   \param name the name of the state
   \return the enum value (numeric)
 */
-SWITCH_DECLARE(switch_channel_state_t) switch_channel_name_state(char *name);
+SWITCH_DECLARE(switch_channel_state_t) switch_channel_name_state(const char *name);
 
 /*!
   \brief Add information about a given channel to an event object

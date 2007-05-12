@@ -319,7 +319,7 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void)
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_session, char *host, switch_port_t port, const char **err)
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, const char **err)
 {
 	switch_socket_t *new_sock = NULL, *old_sock = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -389,7 +389,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, char *host, switch_port_t port, const char **err)
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, const char **err)
 {
 	*err = "Success";
 
@@ -545,9 +545,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(char *rx_host,
+SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 											  switch_port_t rx_port,
-											  char *tx_host,
+											  const char *tx_host,
 											  switch_port_t tx_port,
 											  switch_payload_t payload,
 											  uint32_t samples_per_interval,

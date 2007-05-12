@@ -49,8 +49,8 @@ SWITCH_DECLARE(int) switch_regex_copy_substring(const char *subject, int *ovecto
 
 SWITCH_DECLARE(void) switch_regex_free(void *data);
 
-SWITCH_DECLARE(int) switch_regex_perform(char *field, char *expression, switch_regex_t **new_re, int *ovector, uint32_t olen);
-SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_count, char *data, char *field_data,
+SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expression, switch_regex_t **new_re, int *ovector, uint32_t olen);
+SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_count, const char *data, const char *field_data,
 												 char *substituted, uint32_t len, int *ovector);
 
 /*!
@@ -59,7 +59,7 @@ SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_c
  \param expression The regular expression to run against the string
  \return Boolean if a match was found or not
 */
-SWITCH_DECLARE(switch_status_t) switch_regex_match(char *target, char *expression);
+SWITCH_DECLARE(switch_status_t) switch_regex_match(const char *target, const char *expression);
 
 #define switch_regex_safe_free(re)	if (re) {\
 				switch_regex_free(re);\

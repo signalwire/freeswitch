@@ -625,7 +625,7 @@ static void enum_app_function(switch_core_session_t *session, char *data)
 
 }
 
-static switch_status_t enum_function(char *data, switch_core_session_t *session, switch_stream_handle_t *stream)
+static switch_status_t enum_function(const char *data, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 
 	int argc = 0;
@@ -649,7 +649,7 @@ static switch_status_t enum_function(char *data, switch_core_session_t *session,
 		dest = argv[0];
 		root = argv[1] ? argv[1] : globals.root;
 
-		if (!enum_lookup(root, data, &results) == SWITCH_STATUS_SUCCESS) {
+		if (!enum_lookup(root, dest, &results) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "No Match!\n");
 			return SWITCH_STATUS_SUCCESS;
 		}

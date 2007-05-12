@@ -55,7 +55,7 @@ SWITCH_BEGIN_EXTERN_C
 #define switch_is_file_path(file) ((*file == '/') || strstr(file, SWITCH_URL_SEPARATOR))
 #endif
 
-static inline switch_bool_t switch_is_digit_string(char *s) {
+static inline switch_bool_t switch_is_digit_string(const char *s) {
 
 	while(s && *s) {
 		if (*s < 48 || *s > 57) {
@@ -104,7 +104,7 @@ SWITCH_DECLARE(char *) get_addr(char *buf, switch_size_t len, struct in_addr *in
   \param priority the priority to get the name of
   \return the printable form of the priority
 */
-SWITCH_DECLARE(char *) switch_priority_name(switch_priority_t priority);
+SWITCH_DECLARE(const char *) switch_priority_name(switch_priority_t priority);
 
 /*!
   \brief Return the RFC2833 character based on an event id
@@ -260,7 +260,7 @@ static inline switch_bool_t switch_strstr(char *s, char *q)
   \param in the string
   \return the epoch time in usec
 */
-SWITCH_DECLARE(switch_time_t) switch_str_time(char *in);
+SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in);
 
 /*!
   \brief Declares a function designed to set a dymaic global string
@@ -288,7 +288,7 @@ SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char 
   \param esc the escape character
   \return the escaped string
 */
-SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t *pool, char *in, char *delim, char esc);
+SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t *pool, char *in, const char *delim, char esc);
 
 /*!
   \brief Wait for a socket

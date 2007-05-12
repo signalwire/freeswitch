@@ -161,7 +161,7 @@ static void *SWITCH_THREAD_FUNC py_thread_run(switch_thread_t *thread, void *obj
 	return NULL;
 }
 
-static switch_status_t launch_python(char *text, switch_core_session_t *session, switch_stream_handle_t *stream)
+static switch_status_t launch_python(const char *text, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	switch_thread_t *thread;
     switch_threadattr_t *thd_attr = NULL;

@@ -2720,7 +2720,7 @@ static void *SWITCH_THREAD_FUNC js_thread_run(switch_thread_t * thread, void *ob
 
 static switch_memory_pool_t *module_pool = NULL;
 
-static void js_thread_launch(char *text)
+static void js_thread_launch(const char *text)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
@@ -2739,7 +2739,7 @@ static void js_thread_launch(char *text)
 }
 
 
-static switch_status_t launch_async(char *text, switch_core_session_t *session, switch_stream_handle_t *stream)
+static switch_status_t launch_async(const char *text, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 
 	if (switch_strlen_zero(text)) {

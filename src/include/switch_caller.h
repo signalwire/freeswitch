@@ -128,7 +128,7 @@ struct switch_caller_extension {
   \param extension_number extension number
   \return a new extension object allocated from the session's memory pool
 */
-SWITCH_DECLARE(switch_caller_extension_t *) switch_caller_extension_new(switch_core_session_t *session, char *extension_name, char *extension_number);
+SWITCH_DECLARE(switch_caller_extension_t *) switch_caller_extension_new(switch_core_session_t *session, const char *extension_name, const char *extension_number);
 
 /*!
   \brief Add an application (instruction) to the given extension
@@ -138,7 +138,7 @@ SWITCH_DECLARE(switch_caller_extension_t *) switch_caller_extension_new(switch_c
   \param extra_data optional argument to the application
 */
 SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session_t *session,
-															 switch_caller_extension_t *caller_extension, char *application_name, char *extra_data);
+															 switch_caller_extension_t *caller_extension, const char *application_name, const char *extra_data);
 
 
 /*!
@@ -147,7 +147,7 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session
   \param name the name
   \note this function is meant for situations where the name paramater is the contents of the variable
 */
-SWITCH_DECLARE(char *) switch_caller_get_field_by_name(switch_caller_profile_t *caller_profile, char *name);
+SWITCH_DECLARE(char *) switch_caller_get_field_by_name(switch_caller_profile_t *caller_profile, const char *name);
 
 /*!
   \brief Create a new caller profile object
@@ -191,7 +191,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_cor
   \param event the event to add the information to
 */
 
-SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_t *caller_profile, char *prefix, switch_event_t *event);
+SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_t *caller_profile, const char *prefix, switch_event_t *event);
 
 SWITCH_END_EXTERN_C
 /** @} */

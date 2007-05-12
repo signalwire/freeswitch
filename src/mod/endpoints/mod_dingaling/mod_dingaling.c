@@ -191,10 +191,10 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string)
 
-static switch_status_t dl_login(char *arg, switch_core_session_t *session, switch_stream_handle_t *stream);
-static switch_status_t dl_logout(char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream);
-static switch_status_t dl_pres(char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream);
-static switch_status_t dl_debug(char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream);
+static switch_status_t dl_login(const char *arg, switch_core_session_t *session, switch_stream_handle_t *stream);
+static switch_status_t dl_logout(const char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream);
+static switch_status_t dl_pres(const char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream);
+static switch_status_t dl_debug(const char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream);
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
 static switch_status_t channel_on_ring(switch_core_session_t *session);
@@ -2028,7 +2028,7 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 	}
 }
 
-static switch_status_t dl_debug(char *tf, switch_core_session_t *session, switch_stream_handle_t *stream)
+static switch_status_t dl_debug(const char *tf, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	int on, cur;
 
@@ -2049,7 +2049,7 @@ static switch_status_t dl_debug(char *tf, switch_core_session_t *session, switch
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t dl_pres(char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream)
+static switch_status_t dl_pres(const char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	mdl_profile_t *profile;
 
@@ -2076,7 +2076,7 @@ static switch_status_t dl_pres(char *profile_name, switch_core_session_t *sessio
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t dl_logout(char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream)
+static switch_status_t dl_logout(const char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	mdl_profile_t *profile;
 
@@ -2099,7 +2099,7 @@ static switch_status_t dl_logout(char *profile_name, switch_core_session_t *sess
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t dl_login(char *arg, switch_core_session_t *session, switch_stream_handle_t *stream)
+static switch_status_t dl_login(const char *arg, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	char *argv[10] = { 0 };
 	int argc = 0;

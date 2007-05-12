@@ -111,9 +111,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
   \param pool a memory pool to use for the session
   \return the new RTP session or NULL on failure
 */
-SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(char *rx_host,
+SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 											  switch_port_t rx_port,
-											  char *tx_host,
+											  const char *tx_host,
 											  switch_port_t tx_port,
 											  switch_payload_t payload,
 											  uint32_t samples_per_interval,
@@ -128,7 +128,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(char *rx_host,
   \param port the remote port
   \param err pointer for error messages
 */
-SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, char *host, switch_port_t port, const char **err);
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, const char **err);
 
 /*! 
   \brief Assign a local address to the RTP session
@@ -138,7 +138,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
   \param err pointer for error messages
   \note this call also binds the RTP session's socket to the new address
 */
-SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_session, char *host, switch_port_t port, const char **err);
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, const char **err);
 
 /*! 
   \brief Kill the socket on an existing RTP session

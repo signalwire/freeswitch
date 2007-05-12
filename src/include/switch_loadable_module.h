@@ -97,21 +97,21 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void);
   \param name the name of the endpoint
   \return the desired endpoint interface
  */
-SWITCH_DECLARE(switch_endpoint_interface_t *) switch_loadable_module_get_endpoint_interface(char *name);
+SWITCH_DECLARE(switch_endpoint_interface_t *) switch_loadable_module_get_endpoint_interface(const char *name);
 
 /*!
   \brief Retrieve the codec interface by it's registered name
   \param name the name of the codec
   \return the desired codec interface
  */
-SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_interface(char *name);
+SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_interface(const char *name);
 
 /*!
   \brief Retrieve the dialplan interface by it's registered name
   \param name the name of the dialplan
   \return the desired dialplan interface
  */
-SWITCH_DECLARE(switch_dialplan_interface_t *) switch_loadable_module_get_dialplan_interface(char *name);
+SWITCH_DECLARE(switch_dialplan_interface_t *) switch_loadable_module_get_dialplan_interface(const char *name);
 
 /*!
   \brief build a dynamic module object and register it (for use in double embeded modules)
@@ -132,70 +132,70 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filen
   \param name the name of the timer
   \return the desired timer interface
  */
-SWITCH_DECLARE(switch_timer_interface_t *) switch_loadable_module_get_timer_interface(char *name);
+SWITCH_DECLARE(switch_timer_interface_t *) switch_loadable_module_get_timer_interface(const char *name);
 
 /*!
   \brief Retrieve the application interface by it's registered name
   \param name the name of the application
   \return the desired application interface
  */
-SWITCH_DECLARE(switch_application_interface_t *) switch_loadable_module_get_application_interface(char *name);
+SWITCH_DECLARE(switch_application_interface_t *) switch_loadable_module_get_application_interface(const char *name);
 
 /*!
   \brief Retrieve the API interface by it's registered name
   \param name the name of the API
   \return the desired API interface
  */
-SWITCH_DECLARE(switch_api_interface_t *) switch_loadable_module_get_api_interface(char *name);
+SWITCH_DECLARE(switch_api_interface_t *) switch_loadable_module_get_api_interface(const char *name);
 
 /*!
   \brief Retrieve the file format interface by it's registered name
   \param name the name of the file format
   \return the desired file format interface
  */
-SWITCH_DECLARE(switch_file_interface_t *) switch_loadable_module_get_file_interface(char *name);
+SWITCH_DECLARE(switch_file_interface_t *) switch_loadable_module_get_file_interface(const char *name);
 
 /*!
   \brief Retrieve the speech interface by it's registered name
   \param name the name of the speech interface
   \return the desired speech interface
  */
-SWITCH_DECLARE(switch_speech_interface_t *) switch_loadable_module_get_speech_interface(char *name);
+SWITCH_DECLARE(switch_speech_interface_t *) switch_loadable_module_get_speech_interface(const char *name);
 
 /*!
   \brief Retrieve the asr interface by it's registered name
   \param name the name of the asr interface
   \return the desired asr interface
  */
-SWITCH_DECLARE(switch_asr_interface_t *) switch_loadable_module_get_asr_interface(char *name);
+SWITCH_DECLARE(switch_asr_interface_t *) switch_loadable_module_get_asr_interface(const char *name);
 
 /*!
   \brief Retrieve the directory interface by it's registered name
   \param name the name of the directory interface
   \return the desired directory interface
  */
-SWITCH_DECLARE(switch_directory_interface_t *) switch_loadable_module_get_directory_interface(char *name);
+SWITCH_DECLARE(switch_directory_interface_t *) switch_loadable_module_get_directory_interface(const char *name);
 
 /*!
   \brief Retrieve the chat interface by it's registered name
   \param name the name of the chat interface
   \return the desired chat interface
  */
-SWITCH_DECLARE(switch_chat_interface_t *) switch_loadable_module_get_chat_interface(char *name);
+SWITCH_DECLARE(switch_chat_interface_t *) switch_loadable_module_get_chat_interface(const char *name);
 
 /*!
   \brief Retrieve the say interface by it's registered name
   \param name the name of the say interface
   \return the desired say interface
  */
-SWITCH_DECLARE(switch_say_interface_t *) switch_loadable_module_get_say_interface(char *name);
+SWITCH_DECLARE(switch_say_interface_t *) switch_loadable_module_get_say_interface(const char *name);
 
 /*!
   \brief Retrieve the management interface by it's registered name
   \param relative_oid the relative oid of the management interface
   \return the desired management interface
  */
-SWITCH_DECLARE(switch_management_interface_t *) switch_loadable_module_get_management_interface(char *relative_oid);
+SWITCH_DECLARE(switch_management_interface_t *) switch_loadable_module_get_management_interface(const char *relative_oid);
 
 /*!
   \brief Retrieve the list of loaded codecs into an array
@@ -226,7 +226,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
   \param stream stream for output
   \return the status returned by the API call
 */
-SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_core_session_t *session, switch_stream_handle_t *stream);
+SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *arg, switch_core_session_t *session, switch_stream_handle_t *stream);
 
 /*!
   \brief Load a module

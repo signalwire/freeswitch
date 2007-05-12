@@ -177,7 +177,7 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int fam
 }
 
 
-SWITCH_DECLARE(switch_time_t) switch_str_time(char *in)
+SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in)
 {
 	switch_time_exp_t tm = { 0 };
 	int proceed = 0, ovector[30];
@@ -229,7 +229,7 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(char *in)
 
 }
 
-SWITCH_DECLARE(char *) switch_priority_name(switch_priority_t priority)
+SWITCH_DECLARE(const char *) switch_priority_name(switch_priority_t priority)
 {
 	switch (priority) {			/*lol */
 	case SWITCH_PRIORITY_NORMAL:
@@ -284,9 +284,10 @@ SWITCH_DECLARE(unsigned char) switch_char_to_rfc2833(char key)
 	return '\0';
 }
 
-SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t *pool, char *in, char *delim, char esc)
+SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t *pool, char *in, const char *delim, char esc)
 {
-	char *data, *p, *d;
+	char *data;
+	const char *p, *d;
 	int count = 1, i = 0;
 
 	p = in;

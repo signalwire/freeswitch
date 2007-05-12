@@ -193,7 +193,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_read(switch_buffer_t *buffer, void *
 	return reading;
 }
 
-SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, void *data, switch_size_t datalen)
+SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, const void *data, switch_size_t datalen)
 {
 	switch_size_t freespace, actual_freespace;
 

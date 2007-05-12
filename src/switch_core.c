@@ -80,7 +80,7 @@ static void heartbeat_callback(switch_scheduler_task_t *task)
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_core_set_console(char *console)
+SWITCH_DECLARE(switch_status_t) switch_core_set_console(const char *console)
 {
 	if ((runtime.console = fopen(console, "a")) == 0) {
 		fprintf(stderr, "Cannot open output file %s.\n", console);
@@ -135,12 +135,12 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_core_get_state_handl
 }
 
 
-SWITCH_DECLARE(char *) switch_core_get_variable(char *varname)
+SWITCH_DECLARE(char *) switch_core_get_variable(const char *varname)
 {
 	return (char *) switch_core_hash_find(runtime.global_vars, varname);
 }
 
-SWITCH_DECLARE(void) switch_core_set_variable(char *varname, char *value)
+SWITCH_DECLARE(void) switch_core_set_variable(const char *varname, const char *value)
 {
 	switch_core_hash_insert(runtime.global_vars, switch_core_strdup(runtime.memory_pool, varname), switch_core_strdup(runtime.memory_pool, value));
 }
@@ -392,7 +392,7 @@ SWITCH_DECLARE(void) switch_core_runtime_loop(int bg)
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err)
+SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, const char **err)
 {
 	switch_xml_t xml = NULL, cfg = NULL;
 	switch_uuid_t uuid;
@@ -538,7 +538,7 @@ static void handle_SIGINT(int sig)
 	if (sig);
 	return;
 }
-SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(char *console, const char **err)
+SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(const char *console, const char **err)
 {
 	switch_event_t *event;
 	if (switch_core_init(console, err) != SWITCH_STATUS_SUCCESS) {

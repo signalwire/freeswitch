@@ -220,7 +220,7 @@ SWITCH_DECLARE(void) switch_core_port_allocator_destroy(switch_core_port_allocat
   \param err a pointer to set any errors to
   \note to be called at application startup
 */
-SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err);
+SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, const char **err);
 
 /*! 
   \brief Initilize the core and load modules
@@ -228,7 +228,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
   \param err a pointer to set any errors to
   \note to be called at application startup instead of switch_core_init.  Includes module loading.
 */
-SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(char *console, const char **err);
+SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(const char *console, const char **err);
 
 /*! 
   \brief Set/Get Session Limit
@@ -503,7 +503,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(char 
 #ifdef SWITCH_DEBUG_RWLOCKS
 #define switch_core_session_locate(uuid_str) switch_core_session_perform_locate(uuid_str, __FILE__, __SWITCH_FUNC__, __LINE__)
 #else
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(char *uuid_str);
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(const char *uuid_str);
 #endif
 
 /*! 
@@ -511,14 +511,14 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(char *uuid_st
   \param varname the name of the variable
   \return the value of the desired variable
 */
-SWITCH_DECLARE(char *) switch_core_get_variable(char *varname);
+SWITCH_DECLARE(char *) switch_core_get_variable(const char *varname);
 
 /*! 
   \brief Add a global variable to the core
   \param varname the name of the variable
   \param value the value of the variable
 */
-SWITCH_DECLARE(void) switch_core_set_variable(char *varname, char *value);
+SWITCH_DECLARE(void) switch_core_set_variable(const char *varname, const char *value);
 
 /*! 
   \brief Hangup All Sessions
@@ -1395,7 +1395,7 @@ SWITCH_DECLARE(void) switch_core_runtime_loop(int bg);
   \brief Set the output console to the desired file
   \param console the file path
 */
-SWITCH_DECLARE(switch_status_t) switch_core_set_console(char *console);
+SWITCH_DECLARE(switch_status_t) switch_core_set_console(const char *console);
 
 /*!
   \brief Breakdown a number of milliseconds into various time spec
