@@ -476,7 +476,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				*proxy = NULL,
 				*context = "default",
 				*expire_seconds = "3600",
-				*retry_seconds = "30";
+				*retry_seconds = "30",
+				*from_domain = "";
 			
 			gateway->pool = profile->pool;
 			gateway->profile = profile;
@@ -510,6 +511,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					expire_seconds = val;
 				} else if (!strcmp(var, "retry-seconds")) {
 					retry_seconds = val;
+				} else if (!strcmp(var, "from-domain")) {
+					from_domain = val;
 				}
 			}
 
@@ -539,6 +542,10 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				gateway->state = REG_STATE_NOREG;
 			}
 
+			if (switch_strlen_zero(from_domain)) {
+				from_domain = realm;
+			}
+
 			gateway->retry_seconds = atoi(retry_seconds);
 			if (gateway->retry_seconds < 10) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "INVALID: retry_seconds correcting the value to 30\n");
@@ -552,7 +559,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			if (switch_true(caller_id_in_from)) {
 				switch_set_flag(gateway, REG_FLAG_CALLERID);
 			}
-			gateway->register_from = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, realm);
+			gateway->register_from = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, from_domain);
 			gateway->register_contact = switch_core_sprintf(gateway->pool, "sip:%s@%s:%d", extension, profile->sipip, profile->sip_port);
 
 			if (!strncasecmp(proxy, "sip:", 4)) {
