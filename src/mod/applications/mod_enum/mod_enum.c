@@ -625,7 +625,7 @@ static void enum_app_function(switch_core_session_t *session, char *data)
 
 }
 
-static switch_status_t enum_function(const char *data, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(enum_function)
 {
 
 	int argc = 0;
@@ -640,7 +640,7 @@ static switch_status_t enum_function(const char *data, switch_core_session_t *se
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!(mydata = strdup(data))) {
+	if (!cmd || !(mydata = strdup(cmd))) {
 		stream->write_function(stream, "Error!\n");
 		return SWITCH_STATUS_FALSE;
 	}

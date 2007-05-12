@@ -1175,7 +1175,7 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t sofia_function(const char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(sofia_function)
 {
 	char *argv[1024] = { 0 };
 	int argc = 0;
@@ -1190,7 +1190,7 @@ static switch_status_t sofia_function(const char *cmd, switch_core_session_t *is
 		"sofia status [[profile | gateway] <name>]\n"
 		"--------------------------------------------------------------------------------\n";
 		
-	if (isession) {
+	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
 	

@@ -2739,15 +2739,15 @@ static void js_thread_launch(const char *text)
 }
 
 
-static switch_status_t launch_async(const char *text, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(launch_async)
 {
 
-	if (switch_strlen_zero(text)) {
+	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", js_run_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	js_thread_launch(text);
+	js_thread_launch(cmd);
 	stream->write_function(stream, "OK\n");
 	return SWITCH_STATUS_SUCCESS;
 }

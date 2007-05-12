@@ -57,7 +57,7 @@ static switch_api_interface_t sched_broadcast_api_interface;
 static switch_api_interface_t sched_transfer_api_interface;
 static switch_api_interface_t sched_hangup_api_interface;
 
-static switch_status_t status_function(const char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(status_function)
 {
 	uint8_t html = 0;
 	switch_core_time_duration_t duration;
@@ -107,18 +107,18 @@ static switch_status_t status_function(const char *cmd, switch_core_session_t *s
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t ctl_function(const char *data, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(ctl_function)
 {
 	int argc;
 	char *mydata, *argv[5];
 	uint32_t arg = 0;
 
-	if (switch_strlen_zero(data)) {
+	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", ctl_api_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if ((mydata = strdup(data))) {
+	if ((mydata = strdup(cmd))) {
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 		if (!strcmp(argv[0], "hupall")) {
@@ -149,7 +149,7 @@ static switch_status_t ctl_function(const char *data, switch_core_session_t *ses
 
 }
 
-static switch_status_t load_function(const char *mod, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(load_function)
 {
 	const char *err;
 
@@ -157,12 +157,12 @@ static switch_status_t load_function(const char *mod, switch_core_session_t *ses
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_strlen_zero(mod)) {
+	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", load_api_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) mod, SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS) {
+	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) cmd, SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "OK\n");
 	} else {
 		stream->write_function(stream, "ERROR [%s]\n", err);
@@ -171,7 +171,7 @@ static switch_status_t load_function(const char *mod, switch_core_session_t *ses
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t unload_function(const char *mod, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(unload_function)
 {
 	const char *err;
 
@@ -179,12 +179,12 @@ static switch_status_t unload_function(const char *mod, switch_core_session_t *s
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_strlen_zero(mod)) {
+	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", unload_api_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (switch_loadable_module_unload_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) mod, &err) == SWITCH_STATUS_SUCCESS) {
+	if (switch_loadable_module_unload_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) cmd, &err) == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "OK\n");
 	} else {
 		stream->write_function(stream, "ERROR [%s]\n", err);
@@ -193,7 +193,7 @@ static switch_status_t unload_function(const char *mod, switch_core_session_t *s
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t reload_function(const char *args, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(reload_function)
 {
 	const char *err;
 	switch_xml_t xml_root;
@@ -211,20 +211,20 @@ static switch_status_t reload_function(const char *args, switch_core_session_t *
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t kill_function(const char *dest, switch_core_session_t *isession, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(kill_function)
 {
-	switch_core_session_t *session = NULL;
+	switch_core_session_t *ksession = NULL;
 
-	if (isession) {
+	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!dest) {
+	if (!cmd) {
 		stream->write_function(stream, "USAGE: %s\n", kill_api_interface.syntax);
-	} else if ((session = switch_core_session_locate(dest))) {
-		switch_channel_t *channel = switch_core_session_get_channel(session);
+	} else if ((ksession = switch_core_session_locate(cmd))) {
+		switch_channel_t *channel = switch_core_session_get_channel(ksession);
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-		switch_core_session_rwunlock(session);
+		switch_core_session_rwunlock(ksession);
 		stream->write_function(stream, "OK\n");
 	} else {
 		stream->write_function(stream, "No Such Channel!\n");
@@ -233,13 +233,13 @@ static switch_status_t kill_function(const char *dest, switch_core_session_t *is
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t transfer_function(const char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(transfer_function)
 {
-	switch_core_session_t *session = NULL;
+	switch_core_session_t *tsession = NULL;
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
 
-	if (isession) {
+	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -251,15 +251,15 @@ static switch_status_t transfer_function(const char *cmd, switch_core_session_t 
 			char *dp = argv[2];
 			char *context = argv[3];
 
-			if ((session = switch_core_session_locate(uuid))) {
+			if ((tsession = switch_core_session_locate(uuid))) {
 
-				if (switch_ivr_session_transfer(session, dest, dp, context) == SWITCH_STATUS_SUCCESS) {
+				if (switch_ivr_session_transfer(tsession, dest, dp, context) == SWITCH_STATUS_SUCCESS) {
 					stream->write_function(stream, "OK\n");
 				} else {
 					stream->write_function(stream, "ERROR\n");
 				}
 
-				switch_core_session_rwunlock(session);
+				switch_core_session_rwunlock(tsession);
 
 			} else {
 				stream->write_function(stream, "No Such Channel!\n");
@@ -276,13 +276,13 @@ done:
 }
 
 
-static switch_status_t sched_transfer_function(const char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(sched_transfer_function)
 {
-	switch_core_session_t *session = NULL;
+	switch_core_session_t *tsession = NULL;
 	char *mycmd = NULL, *argv[6] = { 0 };
 	int argc = 0;
 
-	if (isession) {
+	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -305,10 +305,10 @@ static switch_status_t sched_transfer_function(const char *cmd, switch_core_sess
 			when = atol(argv[0]);
 		}
 
-		if ((session = switch_core_session_locate(uuid))) {
+		if ((tsession = switch_core_session_locate(uuid))) {
 			switch_ivr_schedule_transfer(when, uuid, dest, dp, context);
 			stream->write_function(stream, "OK\n");
-			switch_core_session_rwunlock(session);
+			switch_core_session_rwunlock(tsession);
 		} else {
 			stream->write_function(stream, "No Such Channel!\n");
 		}
@@ -318,13 +318,13 @@ static switch_status_t sched_transfer_function(const char *cmd, switch_core_sess
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t sched_hangup_function(const char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(sched_hangup_function)
 {
-	switch_core_session_t *session = NULL;
+	switch_core_session_t *hsession = NULL;
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
 
-	if (isession) {
+	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -350,10 +350,10 @@ static switch_status_t sched_hangup_function(const char *cmd, switch_core_sessio
 			cause = switch_channel_str2cause(cause_str);
 		}
 
-		if ((session = switch_core_session_locate(uuid))) {
+		if ((hsession = switch_core_session_locate(uuid))) {
 			switch_ivr_schedule_hangup(when, uuid, cause, SWITCH_FALSE);
 			stream->write_function(stream, "OK\n");
-			switch_core_session_rwunlock(session);
+			switch_core_session_rwunlock(hsession);
 		} else {
 			stream->write_function(stream, "No Such Channel!\n");
 		}
@@ -364,13 +364,13 @@ static switch_status_t sched_hangup_function(const char *cmd, switch_core_sessio
 }
 
 
-static switch_status_t uuid_media_function(const char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(uuid_media_function)
 {
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (isession) {
+	if (session) {
 		return status;
 	}
 
@@ -399,13 +399,13 @@ static switch_status_t uuid_media_function(const char *cmd, switch_core_session_
 }
 
 
-static switch_status_t uuid_broadcast_function(const char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(uuid_broadcast_function)
 {
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (isession) {
+	if (session) {
 		return status;
 	}
 
@@ -439,13 +439,13 @@ static switch_status_t uuid_broadcast_function(const char *cmd, switch_core_sess
 }
 
 
-static switch_status_t sched_broadcast_function(const char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(sched_broadcast_function)
 {
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (isession) {
+	if (session) {
 		return status;
 	}
 
@@ -485,13 +485,13 @@ static switch_status_t sched_broadcast_function(const char *cmd, switch_core_ses
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t uuid_hold_function(const char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(uuid_hold_function)
 {
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (isession) {
+	if (session) {
 		return status;
 	}
 
@@ -519,12 +519,12 @@ static switch_status_t uuid_hold_function(const char *cmd, switch_core_session_t
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t uuid_bridge_function(const char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(uuid_bridge_function)
 {
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
 
-	if (isession) {
+	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -544,14 +544,14 @@ static switch_status_t uuid_bridge_function(const char *cmd, switch_core_session
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t session_record_function(const char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(session_record_function)
 {
-	switch_core_session_t *session = NULL;
+	switch_core_session_t *rsession = NULL;
 	char *mycmd = NULL, *argv[4] = { 0 };
 	char *uuid = NULL, *action = NULL, *path = NULL;
 	int argc = 0;
 
-	if (isession) {
+	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -571,7 +571,7 @@ static switch_status_t session_record_function(const char *cmd, switch_core_sess
 	action = argv[1];
 	path = argv[2];
 
-	if (!(session = switch_core_session_locate(uuid))) {
+	if (!(rsession = switch_core_session_locate(uuid))) {
 		stream->write_function(stream, "-Error Cannot locate session!\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -581,9 +581,9 @@ static switch_status_t session_record_function(const char *cmd, switch_core_sess
 	}
 
 	if (!strcasecmp(action, "start")) {
-		switch_ivr_record_session(session, path, NULL);
+		switch_ivr_record_session(rsession, path, NULL);
 	} else if (!strcasecmp(action, "stop")) {
-		switch_ivr_stop_record_session(session, path);
+		switch_ivr_stop_record_session(rsession, path);
 	} else {
 		goto usage;
 	}
@@ -599,20 +599,20 @@ static switch_status_t session_record_function(const char *cmd, switch_core_sess
   done:
 
 	if (session) {
-		switch_core_session_rwunlock(session);
+		switch_core_session_rwunlock(rsession);
 	}
 
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t pause_function(const char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(pause_function)
 {
-	switch_core_session_t *session = NULL;
+	switch_core_session_t *psession = NULL;
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
 
-	if (isession) {
+	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -626,8 +626,8 @@ static switch_status_t pause_function(const char *cmd, switch_core_session_t *is
 		char *uuid = argv[0];
 		char *dest = argv[1];
 
-		if ((session = switch_core_session_locate(uuid))) {
-			switch_channel_t *channel = switch_core_session_get_channel(session);
+		if ((psession = switch_core_session_locate(uuid))) {
+			switch_channel_t *channel = switch_core_session_get_channel(psession);
 
 			if (!strcasecmp(dest, "on")) {
 				switch_channel_set_flag(channel, CF_HOLD);
@@ -635,7 +635,7 @@ static switch_status_t pause_function(const char *cmd, switch_core_session_t *is
 				switch_channel_clear_flag(channel, CF_HOLD);
 			}
 
-			switch_core_session_rwunlock(session);
+			switch_core_session_rwunlock(psession);
 
 		} else {
 			stream->write_function(stream, "No Such Channel!\n");
@@ -646,7 +646,7 @@ static switch_status_t pause_function(const char *cmd, switch_core_session_t *is
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t originate_function(const char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(originate_function)
 {
 	switch_channel_t *caller_channel;
 	switch_core_session_t *caller_session = NULL;
@@ -657,7 +657,7 @@ static switch_status_t originate_function(const char *cmd, switch_core_session_t
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 	uint8_t machine = 1;
 
-	if (isession) {
+	if (session) {
 		stream->write_function(stream, "Illegal Usage\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -775,7 +775,7 @@ static void sch_api_callback(switch_scheduler_task_t *task)
 	switch_safe_free(stream.data);
 }
 
-static switch_status_t sched_del_function(const char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(sched_del_function)
 {
 	uint32_t cnt = 0;
 	
@@ -794,7 +794,7 @@ static switch_status_t sched_del_function(const char *cmd, switch_core_session_t
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t xml_wrap_api_function(const char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(xml_wrap_api_function)
 {
 	char *dcommand, *edata = NULL, *send = NULL, *command, *arg = NULL;
 	switch_stream_handle_t mystream = { 0 };
@@ -843,7 +843,7 @@ static switch_status_t xml_wrap_api_function(const char *cmd, switch_core_sessio
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t sched_api_function(const char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(sched_api_function)
 {
 	char *tm = NULL, *dcmd, *group;
 	time_t when;
@@ -979,7 +979,7 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames)
 	return 0;
 }
 
-static switch_status_t show_function(const char *data, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(show_function)
 {
 	char sql[1024];
 	char *errmsg;
@@ -988,15 +988,15 @@ static switch_status_t show_function(const char *data, switch_core_session_t *se
 	int help = 0;
 	char *mydata = NULL, *argv[6] = {0};
 	int argc;
-	char *cmd = NULL, *as = NULL;
+	char *command = NULL, *as = NULL;
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (data && (mydata = strdup(data))) {
+	if (cmd && (mydata = strdup(cmd))) {
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-		cmd = argv[0];
+		command = argv[0];
 		if (argv[2] && !strcasecmp(argv[1], "as")) {
 			as = argv[2];
 		}
@@ -1010,25 +1010,25 @@ static switch_status_t show_function(const char *data, switch_core_session_t *se
 
 	// If you changes the field qty or order of any of these select
 	// statmements, you must also change show_callback and friends to match!
-	if (!cmd) {
+	if (!command) {
 		stream->write_function(stream, "USAGE: %s\n", show_api_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
-	} else if (!strcmp(cmd, "codec") || !strcmp(cmd, "dialplan") || !strcmp(cmd, "file") || !strcmp(cmd, "timer")) {
-		sprintf(sql, "select type, name from interfaces where type = '%s'", cmd);
-	} else if (!strcmp(cmd, "tasks")) {
-		sprintf(sql, "select * from %s", cmd);
-	} else if (!strcmp(cmd, "application") || !strcmp(cmd, "api")) {
-		sprintf(sql, "select name, description, syntax from interfaces where type = '%s' and description != ''", cmd);
-	} else if (!strcmp(cmd, "calls")) {
+	} else if (!strcmp(command, "codec") || !strcmp(command, "dialplan") || !strcmp(command, "file") || !strcmp(command, "timer")) {
+		sprintf(sql, "select type, name from interfaces where type = '%s'", command);
+	} else if (!strcmp(command, "tasks")) {
+		sprintf(sql, "select * from %s", command);
+	} else if (!strcmp(command, "application") || !strcmp(command, "api")) {
+		sprintf(sql, "select name, description, syntax from interfaces where type = '%s' and description != ''", command);
+	} else if (!strcmp(command, "calls")) {
 		sprintf(sql, "select * from calls");
-	} else if (!strcmp(cmd, "channels")) {
+	} else if (!strcmp(command, "channels")) {
 		sprintf(sql, "select * from channels");
-	} else if (!strncasecmp(cmd, "help", 4)) {
+	} else if (!strncasecmp(command, "help", 4)) {
 		char *cmdname = NULL;
 
 		help = 1;
 		holder.print_title = 0;
-		if ((cmdname = strchr(cmd, ' ')) != 0) {
+		if ((cmdname = strchr(command, ' ')) != 0) {
 			*cmdname++ = '\0';
 			snprintf(sql, sizeof(sql) - 1, "select name, syntax, description from interfaces where type = 'api' and name = '%s'", cmdname);
 		} else {
@@ -1100,7 +1100,7 @@ static switch_status_t show_function(const char *data, switch_core_session_t *se
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t version_function(const char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(version_function)
 {
 	char version_string[1024];
 	snprintf(version_string, sizeof(version_string) - 1, "FreeSwitch Version %s\n", SWITCH_VERSION_FULL);
@@ -1109,7 +1109,7 @@ static switch_status_t version_function(const char *cmd, switch_core_session_t *
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t help_function(const char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(help_function)
 {
 	char showcmd[1024];
 	int all = 0;

@@ -1711,13 +1711,13 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t padep(const char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(padep)
 {
 	stream->write_function(stream, "This command no longer exists (try 'pa help')\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t pa_cmd(const char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(pa_cmd)
 {
 	char *argv[1024] = { 0 };
 	int argc = 0;

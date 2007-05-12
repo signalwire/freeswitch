@@ -151,7 +151,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 	return RUNNING ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_TERM;
 }
 
-static switch_status_t modcdr_reload(const char *dest=0, switch_core_session_t *isession=0, switch_stream_handle_t *stream=0)
+SWITCH_STANDARD_API(modcdr_reload)
 {
 #ifdef SWITCH_QUEUE_ENHANCED
 	switch_thread_rwlock_wrlock(cdr_rwlock);
@@ -164,7 +164,7 @@ static switch_status_t modcdr_reload(const char *dest=0, switch_core_session_t *
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t modcdr_queue_pause(const char *dest=0, switch_core_session_t *isession=0, switch_stream_handle_t *stream=0)
+SWITCH_STANDARD_API(modcdr_queue_pause)
 {
 #ifdef SWITCH_QUEUE_ENHANCED
 	newcdrcontainer->queue_pause(stream);
@@ -174,7 +174,7 @@ static switch_status_t modcdr_queue_pause(const char *dest=0, switch_core_sessio
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t modcdr_queue_resume(const char *dest=0, switch_core_session_t *isession=0, switch_stream_handle_t *stream=0)
+SWITCH_STANDARD_API(modcdr_queue_resume)
 {
 #ifdef SWITCH_QUEUE_ENHANCED
 	newcdrcontainer->queue_resume(stream);
@@ -184,13 +184,13 @@ static switch_status_t modcdr_queue_resume(const char *dest=0, switch_core_sessi
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t modcdr_show_active(const char *dest=0, switch_core_session_t *isession=0, switch_stream_handle_t *stream=0)
+SWITCH_STANDARD_API(modcdr_show_active)
 {
 	newcdrcontainer->active(stream);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t modcdr_show_available(const char *dest=0, switch_core_session_t *isession=0, switch_stream_handle_t *stream=0)
+SWITCH_STANDARD_API(modcdr_show_available)
 {
 	newcdrcontainer->available(stream);
 	return SWITCH_STATUS_SUCCESS;

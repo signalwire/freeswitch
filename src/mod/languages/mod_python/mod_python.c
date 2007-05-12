@@ -161,14 +161,14 @@ static void *SWITCH_THREAD_FUNC py_thread_run(switch_thread_t *thread, void *obj
 	return NULL;
 }
 
-static switch_status_t launch_python(const char *text, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(launch_python)
 {
 	switch_thread_t *thread;
     switch_threadattr_t *thd_attr = NULL;
 	switch_memory_pool_t *pool;
 	struct switch_py_thread *pt;
 
-	if (switch_strlen_zero(text)) {
+	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", python_run_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -180,7 +180,7 @@ static switch_status_t launch_python(const char *text, switch_core_session_t *se
 	assert(pt != NULL);
 
 	pt->pool = pool;
-	pt->args = switch_core_strdup(pt->pool, text);
+	pt->args = switch_core_strdup(pt->pool, cmd);
 	
     switch_threadattr_create(&thd_attr, pt->pool);
     switch_threadattr_detach_set(thd_attr, 1);

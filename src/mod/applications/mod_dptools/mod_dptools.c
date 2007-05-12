@@ -502,14 +502,14 @@ static void strftime_function(switch_core_session_t *session, char *data)
 }
 
 
-static switch_status_t strepoch_api_function(const char *data, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(strepoch_api_function)
 {
 	switch_time_t out;
 
-	if (switch_strlen_zero(data)) {
+	if (switch_strlen_zero(cmd)) {
 		out = switch_time_now();
 	} else {
-		out = switch_str_time(data);
+		out = switch_str_time(cmd);
 	}
 
 	stream->write_function(stream, "%d", (uint32_t) ((out) / (int64_t) (1000000)));
@@ -517,7 +517,7 @@ static switch_status_t strepoch_api_function(const char *data, switch_core_sessi
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t strftime_api_function(const char *fmt, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(strftime_api_function)
 {
 
 	switch_size_t retsize;
@@ -525,20 +525,20 @@ static switch_status_t strftime_api_function(const char *fmt, switch_core_sessio
 	char date[80] = "";
 
 	switch_time_exp_lt(&tm, switch_time_now());
-	switch_strftime(date, &retsize, sizeof(date), fmt ? fmt : "%Y-%m-%d %T", &tm);
+	switch_strftime(date, &retsize, sizeof(date), cmd ? cmd : "%Y-%m-%d %T", &tm);
 	stream->write_function(stream, "%s", date);
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t presence_api_function(const char *fmt, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(presence_api_function)
 {
 	switch_event_t *event;
 	char *lbuf, *argv[4];
 	int argc = 0;
 	switch_event_types_t type = SWITCH_EVENT_PRESENCE_IN;
 
-	if (fmt && (lbuf = strdup(fmt))
+	if (cmd && (lbuf = strdup(cmd))
 		&& (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) > 0) {
 		if (!strcasecmp(argv[0], "out")) {
 			type = SWITCH_EVENT_PRESENCE_OUT;
@@ -568,12 +568,12 @@ static switch_status_t presence_api_function(const char *fmt, switch_core_sessio
 }
 
 
-static switch_status_t chat_api_function(const char *fmt, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(chat_api_function)
 {
 	char *lbuf, *argv[4];
 	int argc = 0;
 
-	if (fmt && (lbuf = strdup(fmt))
+	if (cmd && (lbuf = strdup(cmd))
 		&& (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) == 4) {
 		switch_chat_interface_t *ci;
 

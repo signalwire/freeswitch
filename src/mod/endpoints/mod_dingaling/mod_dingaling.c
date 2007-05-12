@@ -2028,7 +2028,7 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 	}
 }
 
-static switch_status_t dl_debug(const char *tf, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(dl_debug)
 {
 	int on, cur;
 
@@ -2036,8 +2036,8 @@ static switch_status_t dl_debug(const char *tf, switch_core_session_t *session, 
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (tf) {
-		on = switch_true(tf);
+	if (cmd) {
+		on = switch_true(cmd);
 		cur = ldl_global_debug(on);
 	} else {
 		cur = ldl_global_debug(-1);
@@ -2049,7 +2049,7 @@ static switch_status_t dl_debug(const char *tf, switch_core_session_t *session, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t dl_pres(const char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(dl_pres)
 {
 	mdl_profile_t *profile;
 
@@ -2057,26 +2057,26 @@ static switch_status_t dl_pres(const char *profile_name, switch_core_session_t *
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!profile_name) {
+	if (!cmd) {
 		stream->write_function(stream, "USAGE: %s\n", pres_api_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if ((profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
+	if ((profile = switch_core_hash_find(globals.profile_hash, cmd))) {
 		if (profile->user_flags & LDL_FLAG_COMPONENT) {
 			sign_on(profile);
 			stream->write_function(stream, "OK\n");
 		} else {
-			stream->write_function(stream, "NO PROFILE %s NOT A COMPONENT\n", profile_name);
+			stream->write_function(stream, "NO PROFILE %s NOT A COMPONENT\n", cmd);
 		}
 	} else {
-		stream->write_function(stream, "NO SUCH PROFILE %s\n", profile_name);
+		stream->write_function(stream, "NO SUCH PROFILE %s\n", cmd);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t dl_logout(const char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(dl_logout)
 {
 	mdl_profile_t *profile;
 
@@ -2084,22 +2084,22 @@ static switch_status_t dl_logout(const char *profile_name, switch_core_session_t
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!profile_name) {
+	if (!cmd) {
 		stream->write_function(stream, "USAGE: %s\n", logout_api_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if ((profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
+	if ((profile = switch_core_hash_find(globals.profile_hash, cmd))) {
 		ldl_handle_stop(profile->handle);
 		stream->write_function(stream, "OK\n");
 	} else {
-		stream->write_function(stream, "NO SUCH PROFILE %s\n", profile_name);
+		stream->write_function(stream, "NO SUCH PROFILE %s\n", cmd);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t dl_login(const char *arg, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(dl_login)
 {
 	char *argv[10] = { 0 };
 	int argc = 0;
@@ -2111,16 +2111,16 @@ static switch_status_t dl_login(const char *arg, switch_core_session_t *session,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_strlen_zero(arg)) {
+	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", login_api_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	myarg = strdup(arg);
+	myarg = strdup(cmd);
 
 	argc = switch_separate_string(myarg, ';', argv, (sizeof(argv) / sizeof(argv[0])));
 
-	if (switch_strlen_zero(arg) || argc != 1) {
+	if (switch_strlen_zero(cmd) || argc != 1) {
 		stream->write_function(stream, "USAGE: %s\n", login_api_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}

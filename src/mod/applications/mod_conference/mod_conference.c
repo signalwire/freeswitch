@@ -3445,7 +3445,7 @@ switch_status_t conf_api_dispatch(conference_obj_t * conference, switch_stream_h
 }
 
 /* API Interface Function */
-static switch_status_t conf_api_main(const char *buf, switch_core_session_t *session, switch_stream_handle_t *stream)
+SWITCH_STANDARD_API(conf_api_main)
 {
 	char *lbuf = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -3453,8 +3453,8 @@ static switch_status_t conf_api_main(const char *buf, switch_core_session_t *ses
 	int argc;
 	char *argv[25] = { 0 };
 
-	if (!buf) {
-		buf = "help";
+	if (!cmd) {
+		cmd = "help";
 	}
 
 	if (session) {
@@ -3470,7 +3470,7 @@ static switch_status_t conf_api_main(const char *buf, switch_core_session_t *ses
 		stream->write_function(stream, "<pre>\n");
 	}
 
-	if (!(lbuf = strdup(buf))) {
+	if (!(lbuf = strdup(cmd))) {
 		return status;
 	}
 
@@ -3486,7 +3486,7 @@ static switch_status_t conf_api_main(const char *buf, switch_core_session_t *ses
 				goto done;
 			}
 			if (argc >= 2) {
-				conf_api_dispatch(conference, stream, argc, argv, (const char *) buf, 1);
+				conf_api_dispatch(conference, stream, argc, argv, cmd, 1);
 			} else {
 				stream->write_function(stream, "Conference command, not specified.\nTry 'help'\n");
 			}
