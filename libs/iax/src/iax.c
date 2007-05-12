@@ -1586,7 +1586,7 @@ static struct iax_event *handle_event(struct iax_event *event)
 			case IAX_EVENT_POKE:
 				event->etype = IAX_EVENT_PONG;
 				iax_send_pong(event->session, event->ts);
-				destroy_session(event->session);
+				iax_destroy(event->session);
 				iax_event_free(event);
 				break;         
 			default:
@@ -2683,7 +2683,8 @@ static struct iax_event *iax_header_to_event(struct iax_session *session,
 			case IAX_COMMAND_POKE:
 				e->etype = IAX_EVENT_POKE;
 				e->ts = ts;
-				break;			case IAX_COMMAND_PING:
+				break;
+			case IAX_COMMAND_PING:
 				/* PINGS and PONGS don't get scheduled; */
 				e->etype = IAX_EVENT_PING;
 				e->ts = ts;
@@ -2716,6 +2717,14 @@ static struct iax_event *iax_header_to_event(struct iax_session *session,
 					send_command_final(session, AST_FRAME_IAX, IAX_COMMAND_REJECT, 0, ied.buf, ied.pos, -1);
 					e->etype = IAX_EVENT_REJECT;
 				}
+				e = schedule_delivery(e, ts, updatehistory);
+				break;
+			case IAX_COMMAND_REGREQ:
+				e->etype = IAX_EVENT_REGREQ;
+				e = schedule_delivery(e, ts, updatehistory);
+				break;
+			case IAX_COMMAND_REGREL:
+				e->etype = IAX_EVENT_REGREQ;
 				e = schedule_delivery(e, ts, updatehistory);
 				break;
 			case IAX_COMMAND_REGACK:
