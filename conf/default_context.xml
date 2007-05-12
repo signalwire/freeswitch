@@ -42,8 +42,8 @@
 
   <extension name="set_codec" continue="true">
     <condition field="source" expression="mod_portaudio">
-      <action application="set" data="absolute_codec_string=PCMU"/>
-      <action application="set" data="export_vars=absolute_codec_string"/>
+      <action application="export" data="absolute_codec_string=$${global_codec_prefs}"/>
+      <action application="export" data="nolocal:jitterbuffer_msec=180"/>
     </condition>
   </extension>
 
