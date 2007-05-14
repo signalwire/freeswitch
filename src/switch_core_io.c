@@ -32,7 +32,7 @@
  *
  */
 #include <switch.h>
-#include "private/switch_core.h"
+#include "private/switch_core_pvt.h"
 
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, int stream_id)

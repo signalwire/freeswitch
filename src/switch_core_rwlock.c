@@ -32,7 +32,7 @@
  *
  */
 #include <switch.h>
-#include "private/switch_core.h"
+#include "private/switch_core_pvt.h"
 
 #ifdef SWITCH_DEBUG_RWLOCKS
 SWITCH_DECLARE(switch_status_t) switch_core_session_perform_read_lock(switch_core_session_t *session, const char *file, const char *func, int line)

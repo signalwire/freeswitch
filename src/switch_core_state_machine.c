@@ -32,7 +32,7 @@
  *
  */
 #include <switch.h>
-#include "private/switch_core.h"
+#include "private/switch_core_pvt.h"
 
 static void switch_core_standard_on_init(switch_core_session_t *session)
 {

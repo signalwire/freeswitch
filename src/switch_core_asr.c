@@ -32,7 +32,7 @@
  *
  */
 #include <switch.h>
-#include "private/switch_core.h"
+#include "private/switch_core_pvt.h"
 
 SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
 													 char *module_name,

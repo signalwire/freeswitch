@@ -32,7 +32,7 @@
  *
  */
 #include <switch.h>
-#include "private/switch_core.h"
+#include "private/switch_core_pvt.h"
 
 static struct {
 	switch_core_db_t *db;

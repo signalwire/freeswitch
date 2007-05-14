@@ -31,7 +31,7 @@
  */
 
 #include <switch.h>
-#include "private/switch_core.h"
+#include "private/switch_core_pvt.h"
 
 #include <sqlite3.h>
 

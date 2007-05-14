@@ -36,7 +36,7 @@
 
 SWITCH_BEGIN_EXTERN_C
 /**
- * @defgroup switch_regex
+ * @defgroup switch_regex Regular Expressions
  * @ingroup FREESWITCH
  * @{
  */

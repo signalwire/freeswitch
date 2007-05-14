@@ -32,7 +32,7 @@
  *
  */
 #include "switch.h"
-#include "private/switch_core.h"
+#include "private/switch_core_pvt.h"
 
 static void switch_core_media_bug_destroy(switch_media_bug_t *bug)
 {

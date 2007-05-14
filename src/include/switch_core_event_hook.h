@@ -226,7 +226,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_write_frame(switch_co
 /*! 
   \brief Add an event hook to be executed when a session writes a video frame
   \param session session to bind hook to
-  \param write_frame hook to bind
+  \param video_write_frame hook to bind
   \return SWITCH_STATUS_SUCCESS on suceess
 */
 SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_video_write_frame(switch_core_session_t *session, switch_video_write_frame_hook_t video_write_frame);

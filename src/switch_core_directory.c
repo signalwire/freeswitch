@@ -32,7 +32,7 @@
  *
  */
 #include <switch.h>
-#include "private/switch_core.h"
+#include "private/switch_core_pvt.h"
 
 SWITCH_DECLARE(switch_status_t) switch_core_directory_open(switch_directory_handle_t *dh,
 														   char *module_name, char *source, char *dsn, char *passwd, switch_memory_pool_t *pool)

@@ -167,7 +167,7 @@ SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(switch_memory_pool_t *p,
 
 /**
  * Continue iterating over the entries in a hash table.
- * @param hi The iteration state
+ * @param ht The iteration state
  * @return a pointer to the updated iteration state.  NULL if there are no more  
  *         entries.
  */
@@ -520,7 +520,7 @@ SWITCH_DECLARE(switch_status_t) switch_uuid_parse(switch_uuid_t * uuid, const ch
  * create a FIFO queue
  * @param queue The new queue
  * @param queue_capacity maximum size of the queue
- * @param a pool to allocate queue from
+ * @param pool a pool to allocate queue from
  */
 SWITCH_DECLARE(switch_status_t) switch_queue_create(switch_queue_t ** queue, unsigned int queue_capacity, switch_memory_pool_t *pool);
 
@@ -684,7 +684,7 @@ SWITCH_DECLARE(switch_status_t) switch_file_seek(switch_file_t * thefile, switch
 
 /**
  * Close the specified file.
- * @param file The file descriptor to close.
+ * @param thefile The file descriptor to close.
  */
 SWITCH_DECLARE(switch_status_t) switch_file_close(switch_file_t * thefile);
 
@@ -771,7 +771,7 @@ SWITCH_DECLARE(switch_status_t) switch_threadattr_stacksize_set(switch_threadatt
 /**
  * Create and initialize a new threadattr variable
  * @param new_attr The newly created threadattr.
- * @param cont The pool to use
+ * @param pool The pool to use
  */
 SWITCH_DECLARE(switch_status_t) switch_threadattr_create(switch_threadattr_t ** new_attr, switch_memory_pool_t *pool);
 
@@ -904,7 +904,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_listen(switch_socket_t * sock, int
  *                 made the connection request.  This is the socket which should
  *                 be used for all future communication.
  * @param sock The socket we are listening on.
- * @param connection_pool The pool for the new socket.
+ * @param pool The pool for the new socket.
  */
 SWITCH_DECLARE(switch_status_t) switch_socket_accept(switch_socket_t ** new_sock, switch_socket_t * sock, switch_memory_pool_t *pool);
 
@@ -943,7 +943,7 @@ SWITCH_DECLARE(switch_status_t) switch_sockaddr_ip_get(char **addr, switch_socka
  *                                 isn't NULL and APR_HAVE_IPV6; mutually exclusive
  *                                 with APR_IPV4_ADDR_OK
  * </PRE>
- * @param p The pool for the apr_sockaddr_t and associated storage.
+ * @param pool The pool for the apr_sockaddr_t and associated storage.
  */
 SWITCH_DECLARE(switch_status_t) switch_sockaddr_info_get(switch_sockaddr_t ** sa, const char *hostname,
 														 int32_t family, switch_port_t port, int32_t flags, switch_memory_pool_t *pool);
@@ -1148,7 +1148,6 @@ SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t ** p
 
 
 
-/** @} */
 /** @} */
 
 SWITCH_END_EXTERN_C

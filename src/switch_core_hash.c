@@ -32,7 +32,7 @@
  *
  */
 #include <switch.h>
-#include "private/switch_core.h"
+#include "private/switch_core_pvt.h"
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_init(switch_hash_t ** hash, switch_memory_pool_t *pool)
 {

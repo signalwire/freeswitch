@@ -51,7 +51,7 @@ SWITCH_BEGIN_EXTERN_C
 
 /*!
   \brief Schedule a task in the future
-  \param runtime the time in epoch seconds to execute the task.
+  \param task_runtime the time in epoch seconds to execute the task.
   \param func the callback function to execute when the task is executed.
   \param desc an arbitrary description of the task.
   \param group a group id tag to link multiple tasks to a single entity.

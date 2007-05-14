@@ -29,7 +29,7 @@
  *
  */
 #include "switch.h"
-#include "private/switch_core.h"
+#include "private/switch_core_pvt.h"
 
 SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_outgoing(switch_core_session_t *session, switch_outgoing_channel_hook_t outgoing_channel)
 {
