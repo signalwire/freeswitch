@@ -45,6 +45,7 @@ static void session_destroy(JSContext * cx, JSObject * obj);
 static JSBool session_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval);
 static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval);
 static switch_api_interface_t js_run_interface;
+static switch_api_interface_t jsapi_interface;
 
 static struct {
 	size_t gStackChunkSize;
@@ -110,6 +111,190 @@ struct fileio_obj {
 	switch_size_t buflen;
 	int32 bufsize;
 };
+
+struct request_obj {
+	const char *cmd;
+	switch_core_session_t *session;
+	switch_stream_handle_t *stream;
+};
+
+
+/* Request Object */
+/*********************************************************************************/
+
+static JSBool request_write(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	struct request_obj *ro = JS_GetPrivate(cx, obj);
+
+	if (!ro) {
+		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+		return JS_TRUE;
+	}
+
+	if (argc > 0) {
+		char *string = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		ro->stream->write_function(ro->stream, "%s", string);
+		*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
+		return JS_TRUE;
+	}
+
+	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+	return JS_TRUE;
+}
+
+static JSBool request_add_header(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct request_obj *ro = JS_GetPrivate(cx, obj);
+
+	if (!ro) {
+		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+		return JS_TRUE;
+	}
+
+	if (argc > 1) {
+		char *hname = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		char *hval = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		switch_event_add_header(ro->stream->event, SWITCH_STACK_BOTTOM, hname, "%s", hval);
+		*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
+		return JS_TRUE;
+	}
+
+	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+	return JS_TRUE;
+}
+
+static JSBool request_get_header(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	struct request_obj *ro = JS_GetPrivate(cx, obj);
+
+	if (!ro) {
+		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+		return JS_TRUE;
+	}
+
+
+	if (argc > 0) {
+		char *hname = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		char *val = switch_event_get_header(ro->stream->event, hname);
+		*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, val));
+		return JS_TRUE;
+	}
+
+	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+	return JS_TRUE;
+}
+
+static JSBool request_dump_env(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct request_obj *ro = JS_GetPrivate(cx, obj);
+	char *how = "text";
+
+	if (!ro) {
+		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+		return JS_TRUE;
+	}
+
+	if (argc > 0) {
+		how = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+	}
+
+	if (!strcasecmp(how, "xml")) {
+		switch_xml_t xml;
+		char *xmlstr;
+		if ((xml = switch_event_xmlize(ro->stream->event, NULL))) {
+            xmlstr = switch_xml_toxml(xml);
+			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, xmlstr));
+			return JS_TRUE;
+        } 
+	} else {
+		char *buf;
+		switch_event_serialize(ro->stream->event, &buf);
+		if (buf) {
+			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, buf));
+			free(buf);
+			return JS_TRUE;
+		}
+	}
+
+	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+	return JS_FALSE;
+}
+
+static void request_destroy(JSContext * cx, JSObject * obj)
+{
+	
+}
+
+enum request_tinyid {
+	REQUEST_COMMAND
+};
+
+static JSFunctionSpec request_methods[] = {
+	{"write", request_write, 1},
+	{"getHeader", request_get_header, 1},
+	{"addHeader", request_add_header, 1},
+	{"dumpENV", request_dump_env, 1},
+	{0}
+};
+
+static JSPropertySpec request_props[] = {
+	{"command", REQUEST_COMMAND, JSPROP_READONLY | JSPROP_PERMANENT},
+	{0}
+};
+
+
+static JSBool request_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+{
+	JSBool res = JS_TRUE;
+	struct request_obj *ro = JS_GetPrivate(cx, obj);
+	char *name;
+	int param = 0;
+
+	if (!ro) {
+		*vp = BOOLEAN_TO_JSVAL(JS_FALSE);
+		return JS_TRUE;
+	}
+
+
+	name = JS_GetStringBytes(JS_ValueToString(cx, id));
+	/* numbers are our props anything else is a method */
+	if (name[0] >= 48 && name[0] <= 57) {
+		param = atoi(name);
+	} else {
+		return JS_TRUE;
+	}
+
+	switch (param) {
+	case REQUEST_COMMAND:
+		*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, ro->cmd));
+		break;
+	}
+
+	return res;
+}
+
+
+JSClass request_class = {
+	"Request", JSCLASS_HAS_PRIVATE,
+	JS_PropertyStub, JS_PropertyStub, request_getProperty, JS_PropertyStub,
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, request_destroy, NULL, NULL, NULL, NULL
+};
+
+
+static JSObject *new_request(JSContext *cx, JSObject *obj, struct request_obj *ro)
+{
+	JSObject *Request;
+	if ((Request = JS_DefineObject(cx, obj, "request", &request_class, NULL, 0))) {
+		if ((JS_SetPrivate(cx, Request, ro) &&
+			 JS_DefineProperties(cx, Request, request_props) && JS_DefineFunctions(cx, Request, request_methods))) {
+			return Request;
+		}
+	}
+
+	return NULL;
+}
+
+
 
 struct event_obj {
 	switch_event_t *event;
@@ -400,8 +585,6 @@ JSClass event_class = {
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, event_destroy, NULL, NULL, NULL,
 	event_construct
 };
-
-
 
 
 static void js_error(JSContext * cx, const char *message, JSErrorReport * report)
@@ -2649,7 +2832,7 @@ static int env_init(JSContext * cx, JSObject * javascript_object)
 	return 1;
 }
 
-static void js_parse_and_execute(switch_core_session_t *session, char *input_code)
+static void js_parse_and_execute(switch_core_session_t *session, char *input_code, struct request_obj *ro)
 {
 	JSObject *javascript_global_object = NULL;
 	char buf[1024], *script, *arg, *argv[512];
@@ -2671,6 +2854,10 @@ static void js_parse_and_execute(switch_core_session_t *session, char *input_cod
 		if (session && new_js_session(cx, javascript_global_object, session, &jss, "session", flags)) {
 			JS_SetPrivate(cx, javascript_global_object, session);
 		}
+		if (ro) {
+			new_request(cx, javascript_global_object, ro);
+		}
+
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Allocation Error!\n");
 		return;
@@ -2683,7 +2870,11 @@ static void js_parse_and_execute(switch_core_session_t *session, char *input_cod
 		argc = switch_separate_string(arg, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (argc) {					/* create a js doppleganger of this argc/argv */
+	if (!argc) {
+		snprintf(buf, sizeof(buf), "~var argv = new Array();");
+		eval_some_js(buf, cx, javascript_global_object, &rval);
+	} else {
+		/* create a js doppleganger of this argc/argv */
 		snprintf(buf, sizeof(buf), "~var argv = new Array(%d);", argc);
 		eval_some_js(buf, cx, javascript_global_object, &rval);
 		snprintf(buf, sizeof(buf), "~var argc = %d", argc);
@@ -2701,14 +2892,16 @@ static void js_parse_and_execute(switch_core_session_t *session, char *input_cod
 	}
 }
 
-
-
+static void js_dp_function(switch_core_session_t *session, char *input_code)
+{
+	js_parse_and_execute(session, input_code, NULL);
+}
 
 static void *SWITCH_THREAD_FUNC js_thread_run(switch_thread_t * thread, void *obj)
 {
 	char *input_code = obj;
 
-	js_parse_and_execute(NULL, input_code);
+	js_parse_and_execute(NULL, input_code, NULL);
 
 	if (input_code) {
 		free(input_code);
@@ -2738,6 +2931,23 @@ static void js_thread_launch(const char *text)
 	switch_thread_create(&thread, thd_attr, js_thread_run, strdup(text), module_pool);
 }
 
+SWITCH_STANDARD_API(jsapi_function)
+{
+	struct request_obj ro = {0};
+
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "USAGE: %s\n", jsapi_interface.syntax);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	ro.cmd = cmd;
+	ro.session = session;
+	ro.stream = stream;
+	js_parse_and_execute(session, (char *) cmd, &ro);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 SWITCH_STANDARD_API(launch_async)
 {
@@ -2755,7 +2965,7 @@ SWITCH_STANDARD_API(launch_async)
 
 static const switch_application_interface_t ivrtest_application_interface = {
 	/*.interface_name */ "javascript",
-	/*.application_function */ js_parse_and_execute,
+	/*.application_function */ js_dp_function,
 	/* long_desc */ "Run a javascript ivr on a channel",
 	/* short_desc */ "Launch JS ivr.",
 	/* syntax */ "<script> [additional_vars [...]]",
@@ -2764,12 +2974,21 @@ static const switch_application_interface_t ivrtest_application_interface = {
 	/*.next */ NULL
 };
 
+
+static switch_api_interface_t jsapi_interface = {
+	/*.interface_name */ "jsapi",
+	/*.desc */ "execute an api call",
+	/*.function */ jsapi_function,
+	/*.syntax */ "jsapi <script> [additional_vars [...]]",
+	/*.next */ NULL
+};
+
 static switch_api_interface_t js_run_interface = {
 	/*.interface_name */ "jsrun",
 	/*.desc */ "run a script",
 	/*.function */ launch_async,
 	/*.syntax */ "jsrun <script> [additional_vars [...]]",
-	/*.next */ NULL
+	/*.next */ &jsapi_interface
 };
 
 static switch_loadable_module_interface_t spidermonkey_module_interface = {
