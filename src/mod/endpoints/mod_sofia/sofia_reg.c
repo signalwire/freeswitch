@@ -327,10 +327,16 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	}
 
 	if (authorization) {
+		char *v_contact_str;
 		if ((auth_res = sofia_reg_parse_auth(profile, authorization, sip->sip_request->rq_method_name, key, keylen, network_ip, v_event)) == AUTH_STALE) {
 			stale = 1;
 		}
 		
+		if ((v_contact_str = switch_event_get_header(*v_event, "forced-contact"))) {
+			switch_copy_string(contact_str, v_contact_str, sizeof(contact_str));
+		}
+
+
 		if (auth_res != AUTH_OK && !stale) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "send %s for [%s@%s]\n", forbidden ? "forbidden" : "challange", from_user, from_host);
 			if (auth_res == AUTH_FORBIDDEN) {
