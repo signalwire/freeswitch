@@ -96,11 +96,6 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 			break;
 		}
 
-		if (switch_channel_test_flag(chan_a, CF_SUSPEND) || switch_channel_test_flag(chan_b, CF_SUSPEND)) {
-			switch_yield(100000);
-			continue;
-		}
-
 		if (switch_core_session_dequeue_private_event(session_a, &event) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_set_flag(chan_b, CF_SUSPEND);
 			msg.string_arg = data->b_uuid;
@@ -114,6 +109,10 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 			switch_event_destroy(&event);
 		}
 		
+		if (switch_channel_test_flag(chan_a, CF_SUSPEND) || switch_channel_test_flag(chan_b, CF_SUSPEND)) {
+			switch_yield(100000);
+			continue;
+		}
 
 		/* if 1 channel has DTMF pass it to the other */
 		if (switch_channel_has_dtmf(chan_a)) {
