@@ -581,6 +581,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch
 	return status;
 }
 
+
 SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session)
 {
 	switch_channel_t *channel;

@@ -55,6 +55,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 	switch_channel_t *chan_a, *chan_b;
 	switch_frame_t *read_frame;
 	switch_core_session_t *session_a, *session_b;
+	uint32_t loop_count = 0;
 
 	session_a = data->session;
 	if (!(session_b = switch_core_session_locate(data->b_uuid))) {
@@ -80,6 +81,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 		switch_channel_state_t b_state;
 		switch_status_t status;
 		switch_event_t *event;
+		loop_count++;
 
 		/* if you really want to make sure it's not ready, test it twice because it might be just a break */
 		if (!switch_channel_ready(chan_a) && !switch_channel_ready(chan_a)) {
@@ -96,21 +98,20 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 			break;
 		}
 
-		if (switch_core_session_dequeue_private_event(session_a, &event) == SWITCH_STATUS_SUCCESS) {
+		if (loop_count > 10 && switch_core_session_private_event_count(session_a)) {
 			switch_channel_set_flag(chan_b, CF_SUSPEND);
 			msg.string_arg = data->b_uuid;
 			msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
 			msg.from = __FILE__;
 			switch_core_session_receive_message(session_a, &msg);
-			switch_ivr_parse_event(session_a, event);
+			switch_ivr_parse_all_events(session_a);
 			msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
 			switch_core_session_receive_message(session_a, &msg);
 			switch_channel_clear_flag(chan_b, CF_SUSPEND);
-			switch_event_destroy(&event);
 		}
 		
 		if (switch_channel_test_flag(chan_a, CF_SUSPEND) || switch_channel_test_flag(chan_b, CF_SUSPEND)) {
-			switch_yield(100000);
+			switch_yield(1000);
 			continue;
 		}
 

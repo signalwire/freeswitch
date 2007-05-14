@@ -394,11 +394,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 	while (switch_channel_ready(channel)) {
 		switch_size_t len;
-		switch_event_t *event;
 
-		if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
-			switch_ivr_parse_event(session, event);
-			switch_event_destroy(&event);
+		if (switch_core_session_private_event_count(session)) {
+			switch_ivr_parse_all_events(session);
 		}
 
 		if (start && (time(NULL) - start) > limit) {
@@ -425,6 +423,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			}
 
 			if (args->input_callback) {
+				switch_event_t *event = NULL;
+
 				if (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
 					status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
 					switch_event_destroy(&event);
@@ -682,12 +682,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		int done = 0;
 		int do_speed = 1;
 		int last_speed = -1;
-		switch_event_t *event;
 
-
-		if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
-			switch_ivr_parse_event(session, event);
-			switch_event_destroy(&event);
+		if (switch_core_session_private_event_count(session)) {
+			switch_ivr_parse_all_events(session);
 		}
 
 		if (args && (args->input_callback || args->buf || args->buflen)) {
@@ -711,6 +708,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			}
 
 			if (args->input_callback) {
+				switch_event_t *event;
+
 				if (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
 					status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
 					switch_event_destroy(&event);

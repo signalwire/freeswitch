@@ -690,6 +690,11 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			switch_core_session_t *other_session;
 			switch_channel_t *other_channel;
 			char *ip = NULL, *port = NULL;
+
+			if (switch_channel_get_state(channel) >= CS_HANGUP) {
+				return SWITCH_STATUS_FALSE;
+			}
+
 			switch_channel_set_flag(channel, CF_BYPASS_MEDIA);
 			tech_pvt->local_sdp_str = NULL;
 			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
@@ -710,6 +715,11 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		break;
 	case SWITCH_MESSAGE_INDICATE_MEDIA:{
 		uint32_t count = 0;
+
+		if (switch_channel_get_state(channel) >= CS_HANGUP) {
+			return SWITCH_STATUS_FALSE;
+		}
+
 		switch_channel_clear_flag(channel, CF_BYPASS_MEDIA);
 			tech_pvt->local_sdp_str = NULL;
 			if (!switch_rtp_ready(tech_pvt->rtp_session)) {

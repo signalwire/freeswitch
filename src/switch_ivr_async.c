@@ -771,13 +771,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
 
 	if ((session = switch_core_session_locate(uuid))) {
 		char *cause = NULL;
-		char *mypath = strdup(path);
+		char *mypath;
 		char *p;
 
 		master = session;
 
 		channel = switch_core_session_get_channel(session);
 		assert(channel != NULL);
+
+		if ((switch_channel_test_flag(channel, CF_EVENT_PARSE))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Channel [%s] already broadcasting...broadcast aborted\n", 
+							  switch_channel_get_name(channel));
+			switch_core_session_rwunlock(session);
+			return SWITCH_STATUS_FALSE;
+		}
+
+		mypath = strdup(path);
+
 
 		if ((nomedia = switch_channel_test_flag(channel, CF_BYPASS_MEDIA))) {
 			switch_ivr_media(uuid, SMF_REBRIDGE);

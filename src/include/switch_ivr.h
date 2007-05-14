@@ -92,11 +92,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 
 /*!
   \brief Parse command from an event
-  \param session the session to send the message to
-  \param event the event to send
+  \param session the session on which to parse the event
+  \param event the event to parse
   \return SWITCH_STATUS_SUCCESS if successful
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *session, switch_event_t *event);
+
+/*!
+  \brief Parse all commands from an event
+  \param session the session on which to parse the events
+  \return SWITCH_STATUS_SUCCESS if successful
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_events(switch_core_session_t *session);
 
 /*!
   \brief Wait for time to pass for a specified number of milliseconds

@@ -374,6 +374,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 
 }
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_events(switch_core_session_t *session)
+{
+	switch_event_t *event;
+	switch_channel_t *channel;
+
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+	while (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+		switch_ivr_parse_event(session, event);
+		switch_event_fire(&event);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, switch_input_args_t *args)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -383,6 +400,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	switch_event_t *event;
 	switch_unicast_conninfo_t *conninfo = NULL;
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
+
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -467,10 +485,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 				}
 			}
 			
-			if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
-				switch_ivr_parse_event(session, event);
-				switch_channel_event_set_data(switch_core_session_get_channel(session), event);
-				switch_event_fire(&event);
+			if (switch_core_session_private_event_count(session)) {
+				switch_ivr_parse_all_events(session);
 			}
 
 			if (switch_channel_has_dtmf(channel)) {
@@ -540,10 +556,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 			}
 		}
 
-		if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
-			switch_ivr_parse_event(session, event);
-			switch_event_destroy(&event);
-		}
+		if (switch_core_session_private_event_count(session)) {
+            switch_ivr_parse_all_events(session);
+        }
 
 		if (switch_channel_has_dtmf(channel)) {
 			switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
@@ -606,8 +621,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 
 	while (switch_channel_ready(channel)) {
 		switch_frame_t *read_frame;
-		switch_event_t *event;
-
+		
 		if (timeout) {
 			elapsed = (uint32_t) ((switch_time_now() - started) / 1000);
 			if (elapsed >= timeout) {
@@ -615,10 +629,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 			}
 		}
 
-		if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
-			switch_ivr_parse_event(session, event);
-			switch_event_destroy(&event);
-		}
+        if (switch_core_session_private_event_count(session)) {
+            switch_ivr_parse_all_events(session);
+        }
 
 		if (switch_channel_has_dtmf(channel)) {
 			char dtmf[128];
@@ -776,8 +789,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(char *uuid, switch_media_flag
 	switch_core_session_message_t msg = { 0 };
 	switch_status_t status = SWITCH_STATUS_GENERR;
 	uint8_t swap = 0;
-	switch_event_t *event;
-
+	
 	msg.message_id = SWITCH_MESSAGE_INDICATE_NOMEDIA;
 	msg.from = __FILE__;
 
@@ -791,27 +803,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(char *uuid, switch_media_flag
 		}
 
 		if ((flags & SMF_FORCE) || !switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
-			while (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
-				switch_ivr_parse_event(session, event);
-				switch_event_destroy(&event);
-			}
-
-			switch_channel_set_flag(channel, CF_BYPASS_MEDIA);
-			switch_core_session_receive_message(session, &msg);
+			switch_ivr_parse_all_events(session);
+			
 			if ((flags & SMF_REBRIDGE) && (other_uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) &&
 				(other_session = switch_core_session_locate(other_uuid))) {
 				other_channel = switch_core_session_get_channel(other_session);
 				assert(other_channel != NULL);
-
-				while (switch_core_session_dequeue_private_event(other_session, &event) == SWITCH_STATUS_SUCCESS) {
-					switch_ivr_parse_event(other_session, event);
-					switch_event_destroy(&event);
-				}
+				
+				switch_ivr_parse_all_events(other_session);
 
 				switch_core_session_receive_message(other_session, &msg);
 				switch_channel_clear_state_handler(other_channel, NULL);
-
+				
 			}
+
+			switch_channel_set_flag(channel, CF_BYPASS_MEDIA);
+			switch_core_session_receive_message(session, &msg);
+
 			if (other_channel) {
 				switch_channel_clear_state_handler(channel, NULL);
 				if (swap) {
