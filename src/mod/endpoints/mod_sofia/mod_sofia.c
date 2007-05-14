@@ -39,7 +39,7 @@
 #include "mod_sofia.h"
 
 struct mod_sofia_globals mod_sofia_globals;
-
+const switch_endpoint_interface_t sofia_endpoint_interface;
 static switch_frame_t silence_frame = { 0 };
 static char silence_data[13] = "";
 
