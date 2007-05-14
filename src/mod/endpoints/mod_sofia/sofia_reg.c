@@ -332,10 +332,15 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			stale = 1;
 		}
 		
-		if ((v_contact_str = switch_event_get_header(*v_event, "forced-contact"))) {
+		if (v_event && *v_event && (v_contact_str = switch_event_get_header(*v_event, "force-contact"))) {
+			char *p;
 			switch_copy_string(contact_str, v_contact_str, sizeof(contact_str));
+			for(p = contact_str; p && *p; p++) {
+				if (*p == '\'' || *p == '[' || *p == ']') {
+					*p = '"';
+				}
+			}
 		}
-
 
 		if (auth_res != AUTH_OK && !stale) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "send %s for [%s@%s]\n", forbidden ? "forbidden" : "challange", from_user, from_host);
@@ -465,6 +470,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_handle_t * nh, sofia_private_t * sofia_private, sip_t const *sip, tagi_t tags[])
 {
 	char key[128] = "";
+	switch_event_t *v_event = NULL;
 
 	if (!sip || !sip->sip_request || !sip->sip_request->rq_method_name) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received an invalid packet!\n");
@@ -478,7 +484,10 @@ void sofia_reg_handle_sip_i_register(nua_t * nua, sofia_profile_t *profile, nua_
 		return;
 	}
 
-	sofia_reg_handle_register(nua, profile, nh, sip, REG_REGISTER, key, sizeof(key), NULL);
+	sofia_reg_handle_register(nua, profile, nh, sip, REG_REGISTER, key, sizeof(key), &v_event);
+	if (v_event) {
+		switch_event_fire(&v_event);
+	}
 }
 
 
