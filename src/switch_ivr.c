@@ -272,13 +272,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	unsigned long CMD_NOMEDIA = switch_hashfunc_default("nomedia", &hlen);
 	unsigned long CMD_UNICAST = switch_hashfunc_default("unicast", &hlen);
 	char *lead_frames = switch_event_get_header(event, "lead-frames");
-	
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
 	assert(channel != NULL);
 	assert(event != NULL);
 
 	if (switch_strlen_zero(cmd)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Command!\n");
-		return SWITCH_STATUS_FALSE;
+		status = SWITCH_STATUS_FALSE;
+		goto done;
 	}
 
 	hlen = (switch_size_t) strlen(cmd);
@@ -289,12 +291,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	if (lead_frames) {
 		switch_frame_t *read_frame;
 		int frame_count = atoi(lead_frames);
-		switch_status_t status;
-
+		
 		while(frame_count > 0) {
 			status = switch_core_session_read_frame(session, &read_frame, -1, 0);
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
-				return status;
+				goto done;
 			}
 			if (!switch_test_flag(read_frame, SFF_CNG)) {
 				frame_count--;
@@ -365,12 +366,33 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 		switch_channel_hangup(channel, cause);
 	} else if (cmd_hash == CMD_NOMEDIA) {
 		char *uuid = switch_event_get_header(event, "nomedia-uuid");
+		char *waitfor = switch_event_get_header(event, "wait-for");
+		if (waitfor) {
+			switch_core_session_t *w_session;
+			
+			if ((w_session = switch_core_session_locate(waitfor))) {
+				switch_channel_t *w_channel = switch_core_session_get_channel(w_session);
+				int sanity = 0;
+
+				while(switch_channel_test_flag(w_channel, CF_WAIT_FOR_ME)) {
+					switch_yield(1000);
+					if (++sanity > 10000) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Timeout waiting for channel %s\n", switch_channel_get_name(w_channel));
+						switch_channel_clear_flag(w_channel, CF_WAIT_FOR_ME);
+						break;
+					}
+				}
+				switch_core_session_rwunlock(w_session);
+			}
+			
+		}
 		switch_ivr_nomedia(uuid, SMF_REBRIDGE);
 	}
 
-
+ done:
 	switch_channel_clear_flag(channel, CF_EVENT_PARSE);
-	return SWITCH_STATUS_SUCCESS;
+	switch_channel_clear_flag(channel, CF_WAIT_FOR_ME);
+	return status;
 
 }
 

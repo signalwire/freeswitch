@@ -538,7 +538,7 @@ CF_EARLY_MEDIA  = (1 <<  2) - Channel is ready for audio before answer
 CF_ORIGINATOR	= (1 <<  3) - Channel is an originator
 CF_TRANSFER		= (1 <<  4) - Channel is being transfered
 CF_ACCEPT_CNG	= (1 <<  5) - Channel will accept CNG frames
-CF_LOCK_THREAD	= (1 <<  6) - Prevent the channel thread from exiting while this flag is set
+CF_WAIT_FOR_ME	= (1 <<  6) - Channel wants you to wait
 CF_BRIDGED		= (1 <<  7) - Channel in a bridge
 CF_HOLD			= (1 <<  8) - Channel is on hold
 CF_SERVICE		= (1 <<  9) - Channel has a service thread
@@ -565,7 +565,7 @@ typedef enum {
 	CF_ORIGINATOR = (1 << 3),
 	CF_TRANSFER = (1 << 4),
 	CF_ACCEPT_CNG = (1 << 5),
-	CF_LOCK_THREAD = (1 << 6),
+	CF_WAIT_FOR_ME = (1 << 6),
 	CF_BRIDGED = (1 << 7),
 	CF_HOLD = (1 << 8),
 	CF_SERVICE = (1 << 9),

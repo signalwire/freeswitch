@@ -775,10 +775,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
 		char *p;
 
 		master = session;
-
+		
 		channel = switch_core_session_get_channel(session);
 		assert(channel != NULL);
-
+		
 		if ((nomedia = switch_channel_test_flag(channel, CF_BYPASS_MEDIA))) {
 			switch_ivr_media(uuid, SMF_REBRIDGE);
 		}
@@ -796,8 +796,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
 			}
 		}
 
-		if ((flags & SMF_ECHO_BLEG) && (other_uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE))
+		if ((flags & SMF_ECHO_BLEG) && (other_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
 			&& (other_session = switch_core_session_locate(other_uuid))) {
+
 			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-name", "%s", app);
@@ -806,12 +807,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
 				if ((flags & SMF_LOOP)) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "loops", "%d", -1);
 				}
-				
 				switch_core_session_queue_private_event(other_session, &event);
 			}
 			
-			switch_core_session_rwunlock(other_session);
+			
 			master = other_session;
+			switch_core_session_rwunlock(other_session);
+			
 			other_session = NULL;
 		}
 
@@ -833,6 +835,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
 			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-command", "nomedia");
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "nomedia-uuid", "%s", uuid);
+				if ((flags & SMF_ECHO_BLEG) && (flags & SMF_ECHO_ALEG)) {
+					switch_channel_t *channel = switch_core_session_get_channel(master);
+					char *bto = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+					if ((other_session = switch_core_session_locate(bto))) {
+						switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
+						switch_channel_set_flag(other_channel, CF_WAIT_FOR_ME);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "wait-for", "%s", bto);
+						switch_core_session_rwunlock(other_session);
+					}
+				}
+
 				switch_core_session_queue_private_event(master, &event);
 			}
 		}
