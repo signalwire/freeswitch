@@ -176,6 +176,7 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const 
 }
 
 static char hostname[256] = "";
+static int32_t running = 1;
 
 #ifdef SWITCH_HAVE_LIBEDIT
 #include <histedit.h>
@@ -191,33 +192,16 @@ char * prompt(EditLine *e) {
 	
 }
 
-SWITCH_DECLARE(void) switch_console_loop(void)
+static EditLine *el;
+static History *myhistory;
+static HistEvent ev;
+static char *hfile = NULL;
+
+static void *SWITCH_THREAD_FUNC console_thread(switch_thread_t *thread, void *obj)
 {
-	EditLine *el;
-	History *myhistory;
 	int count;
 	const char *line;
-	HistEvent ev;
-	int32_t running = 1;
-	char *hfile;
-
-	el = el_init(__FILE__, switch_core_get_console(), switch_core_get_console(), switch_core_get_console());
-	el_set(el, EL_PROMPT, &prompt);
-	el_set(el, EL_EDITOR, "emacs");
-
-	myhistory = history_init();
-	if (myhistory == 0) {
-		fprintf(stderr, "history could not be initialized\n");
-		return;
-	}
-
-	hfile = switch_mprintf("%s%sfreeswitch.history", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
-	assert(hfile != NULL);
-
-	
-	history(myhistory, &ev, H_SETSIZE, 800);
-	el_set(el, EL_HIST, history, myhistory);
-	history(myhistory, &ev, H_LOAD, hfile);
+	switch_memory_pool_t *pool = (switch_memory_pool_t *) obj;
 
 	while (running) {
 		uint32_t arg;
@@ -245,15 +229,63 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 		}
 	}
 	
+  	switch_core_destroy_memory_pool(&pool);	
+	return NULL;
+}
+
+
+SWITCH_DECLARE(void) switch_console_loop(void)
+{
+	switch_thread_t *thread;
+	switch_threadattr_t *thd_attr = NULL;
+	switch_memory_pool_t *pool;
+	
+	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
+		return;
+	}
+	
+	el = el_init(__FILE__, switch_core_get_console(), switch_core_get_console(), switch_core_get_console());
+	el_set(el, EL_PROMPT, &prompt);
+	el_set(el, EL_EDITOR, "emacs");
+
+	myhistory = history_init();
+	if (myhistory == 0) {
+		fprintf(stderr, "history could not be initialized\n");
+		return;
+	}
+
+	hfile = switch_mprintf("%s%sfreeswitch.history", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
+	assert(hfile != NULL);
+
+	
+	history(myhistory, &ev, H_SETSIZE, 800);
+	el_set(el, EL_HIST, history, myhistory);
+	history(myhistory, &ev, H_LOAD, hfile);
+
+
+	switch_threadattr_create(&thd_attr, pool);
+	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_thread_create(&thread, thd_attr, console_thread, pool, pool);
+	
+	while (running) {
+		uint32_t arg = 0;
+		switch_core_session_ctl(SCSC_CHECK_RUNNING, &arg);
+		if (!arg) {
+			break;
+		}
+		switch_yield(1000000);
+	}
 
 	history(myhistory, &ev, H_SAVE, hfile);
-
 	free(hfile);
 	
 	/* Clean up our memory */
 	history_end(myhistory);
 	el_end(el);
-  	
+
+
 }
 
 #else
@@ -262,7 +294,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 {
 
 	char cmd[2048];
-	int32_t activity = 1, running = 1;
+	int32_t activity = 1;
 	switch_size_t x = 0;
 
 	gethostname(hostname, sizeof(hostname));
