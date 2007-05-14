@@ -22,6 +22,8 @@ echo "           You need autoconf version 2.59 or newer installed"
 echo "           to build FreeSWITCH from SVN."
 exit 1
 fi
+IFS=_; set $ac_version; IFS=' '
+ac_version=$1
 IFS=.; set $ac_version; IFS=' '
 if test "$1" = "2" -a "$2" -lt "59" || test "$1" -lt "2"; then
 echo "bootstrap: autoconf version $ac_version found."
