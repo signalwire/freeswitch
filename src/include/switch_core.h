@@ -491,7 +491,7 @@ SWITCH_DECLARE(char *) switch_core_session_get_uuid(switch_core_session_t *sessi
 SWITCH_DECLARE(char *) switch_core_get_uuid(void);
 
 #ifdef SWITCH_DEBUG_RWLOCKS
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(char *uuid_str, const char *file, const char *func, int line);
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(const char *uuid_str, const char *file, const char *func, int line);
 #endif
 
 /*! 

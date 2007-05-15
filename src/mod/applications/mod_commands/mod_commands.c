@@ -575,7 +575,7 @@ SWITCH_STANDARD_API(session_record_function)
 		stream->write_function(stream, "-Error Cannot locate session!\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
-
+	
 	if (switch_strlen_zero(action) || switch_strlen_zero(path)) {
 		goto usage;
 	}
@@ -594,11 +594,11 @@ SWITCH_STANDARD_API(session_record_function)
 
 	stream->write_function(stream, "USAGE: %s\n", session_record_api_interface.syntax);
 	switch_safe_free(mycmd);
-	return SWITCH_STATUS_SUCCESS;
+
 
   done:
 
-	if (session) {
+	if (rsession) {
 		switch_core_session_rwunlock(rsession);
 	}
 

@@ -644,13 +644,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(char *originator_uuid, ch
 			switch_channel_set_state_flag(originator_channel, CF_TRANSFER);
 			switch_channel_set_state_flag(originatee_channel, CF_TRANSFER);
 
-			/* release the read locks we have on the channels */
-			switch_core_session_rwunlock(originator_session);
-			switch_core_session_rwunlock(originatee_session);
-
 			/* change the states and let the chips fall where they may */
 			switch_channel_set_state(originator_channel, CS_TRANSMIT);
 			switch_channel_set_state(originatee_channel, CS_TRANSMIT);
+
+			/* release the read locks we have on the channels */
+			switch_core_session_rwunlock(originator_session);
+			switch_core_session_rwunlock(originatee_session);
 
 			status = SWITCH_STATUS_SUCCESS;
 
