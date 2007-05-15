@@ -2678,14 +2678,17 @@ static JSBool js_api_use(JSContext * cx, JSObject * obj, uintN argc, jsval * arg
 
 static JSBool js_api_execute(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
-
-	if (argc > 1) {
+	if (argc > 0) {
 		char *cmd = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-		char *arg = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		char *arg = NULL;
 		switch_core_session_t *session = NULL;
 		switch_stream_handle_t stream = { 0 };
 		char retbuf[2048] = "";
 
+		if (argc > 1) {
+			arg = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		}
+		
 		if (argc > 2) {
 			JSObject *session_obj;
 			struct js_session *jss;
@@ -2801,6 +2804,7 @@ static JSBool js_file_unlink(JSContext * cx, JSObject * obj, uintN argc, jsval *
 
 static JSFunctionSpec fs_functions[] = {
 	{"console_log", js_log, 2},
+	{"consoleLog", js_log, 2},
 	{"exit", js_exit, 0},
 	{"include", js_include, 1},
 	{"bridge", js_bridge, 2},
@@ -2853,6 +2857,9 @@ static void js_parse_and_execute(switch_core_session_t *session, char *input_cod
 		/* Emaculent conception of session object into the script if one is available */
 		if (session && new_js_session(cx, javascript_global_object, session, &jss, "session", flags)) {
 			JS_SetPrivate(cx, javascript_global_object, session);
+		} else {
+			snprintf(buf, sizeof(buf), "~var session = false;");
+			eval_some_js(buf, cx, javascript_global_object, &rval);
 		}
 		if (ro) {
 			new_request(cx, javascript_global_object, ro);
