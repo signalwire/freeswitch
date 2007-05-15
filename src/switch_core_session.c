@@ -500,13 +500,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(switch_core_sess
 	return status;
 }
 
-SWITCH_DECLARE(int32_t) switch_core_session_event_count(switch_core_session_t *session)
+SWITCH_DECLARE(uint32_t) switch_core_session_event_count(switch_core_session_t *session)
 {
 	if (session->event_queue) {
-		return (int32_t) switch_queue_size(session->event_queue);
+		return switch_queue_size(session->event_queue);
 	}
 
-	return -1;
+	return 0;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_event(switch_core_session_t *session, switch_event_t **event)
@@ -547,13 +547,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_c
 	return status;
 }
 
-SWITCH_DECLARE(int32_t) switch_core_session_private_event_count(switch_core_session_t *session)
+SWITCH_DECLARE(uint32_t) switch_core_session_private_event_count(switch_core_session_t *session)
 {
 	if (session->private_event_queue) {
-		return (int32_t) switch_queue_size(session->private_event_queue);
+		return switch_queue_size(session->private_event_queue);
 	}
-
-	return -1;
+	
+	return 0;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch_core_session_t *session, switch_event_t **event)

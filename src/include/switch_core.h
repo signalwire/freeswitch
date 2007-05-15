@@ -690,7 +690,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(switch_core_sess
   \param session the session to check
   \return the number of events
 */
-SWITCH_DECLARE(int32_t) switch_core_session_event_count(switch_core_session_t *session);
+SWITCH_DECLARE(uint32_t) switch_core_session_event_count(switch_core_session_t *session);
 
 /*! 
   \brief DE-Queue an event on a given session
@@ -714,7 +714,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_c
   \param session the session to check
   \return the number of events
 */
-SWITCH_DECLARE(int32_t) switch_core_session_private_event_count(switch_core_session_t *session);
+SWITCH_DECLARE(uint32_t) switch_core_session_private_event_count(switch_core_session_t *session);
 
 /*! 
   \brief DE-Queue a private event on a given session
