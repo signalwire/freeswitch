@@ -35,9 +35,71 @@
 #include "openzap.h"
 #include "zap_wanpipe.h"
 
+static ZINT_CONFIGURE_FUNCTION(wanpipe_configure)
+{
+	ZINT_CONFIGURE_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_OPEN_FUNCTION(wanpipe_open) 
+{
+	ZINT_OPEN_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_CLOSE_FUNCTION(wanpipe_close)
+{
+	ZINT_CLOSE_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_SET_CODEC_FUNCTION(wanpipe_set_codec)
+{
+	ZINT_SET_CODEC_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_SET_INTERVAL_FUNCTION(wanpipe_set_interval)
+{
+	ZINT_SET_INTERVAL_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_WAIT_FUNCTION(wanpipe_wait)
+{
+	ZINT_WAIT_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_READ_FUNCTION(wanpipe_read)
+{
+	ZINT_READ_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_WRITE_FUNCTION(wanpipe_write)
+{
+	ZINT_WRITE_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static zap_software_interface_t wanpipe_interface;
+
 zap_status_t wanpipe_init(zap_software_interface_t **zint)
 {
 	assert(zint != NULL);
+	memset(&wanpipe_interface, 0, sizeof(wanpipe_interface));
+
+	wanpipe_interface.name = "wanpipe";
+	wanpipe_interface.configure =  wanpipe_configure;
+	wanpipe_interface.open = wanpipe_open;
+	wanpipe_interface.close = wanpipe_close;
+	wanpipe_interface.set_codec = wanpipe_set_codec;
+	wanpipe_interface.set_interval = wanpipe_set_interval;
+	wanpipe_interface.wait = wanpipe_wait;
+	wanpipe_interface.read = wanpipe_read;
+	wanpipe_interface.write = wanpipe_write;
+	*zint = &wanpipe_interface;
 
 	return ZAP_FAIL;
 }

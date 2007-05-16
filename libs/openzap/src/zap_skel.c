@@ -35,9 +35,71 @@
 #include "openzap.h"
 #include "zap_skel.h"
 
+static ZINT_CONFIGURE_FUNCTION(skel_configure)
+{
+	ZINT_CONFIGURE_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_OPEN_FUNCTION(skel_open) 
+{
+	ZINT_OPEN_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_CLOSE_FUNCTION(skel_close)
+{
+	ZINT_CLOSE_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_SET_CODEC_FUNCTION(skel_set_codec)
+{
+	ZINT_SET_CODEC_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_SET_INTERVAL_FUNCTION(skel_set_interval)
+{
+	ZINT_SET_INTERVAL_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_WAIT_FUNCTION(skel_wait)
+{
+	ZINT_WAIT_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_READ_FUNCTION(skel_read)
+{
+	ZINT_READ_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_WRITE_FUNCTION(skel_write)
+{
+	ZINT_WRITE_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static zap_software_interface_t skel_interface;
+
 zap_status_t skel_init(zap_software_interface_t **zint)
 {
 	assert(zint != NULL);
+	memset(&skel_interface, 0, sizeof(skel_interface));
+
+	skel_interface.name = "skel";
+	skel_interface.configure =  skel_configure;
+	skel_interface.open = skel_open;
+	skel_interface.close = skel_close;
+	skel_interface.set_codec = skel_set_codec;
+	skel_interface.set_interval = skel_set_interval;
+	skel_interface.wait = skel_wait;
+	skel_interface.read = skel_read;
+	skel_interface.write = skel_write;
+	*zint = &skel_interface;
 
 	return ZAP_FAIL;
 }
