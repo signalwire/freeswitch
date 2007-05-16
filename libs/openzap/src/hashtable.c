@@ -22,13 +22,13 @@ static const unsigned int primes[] = {
 805306457, 1610612741
 };
 const unsigned int prime_table_length = sizeof(primes)/sizeof(primes[0]);
-const float max_load_factor = 0.65;
+const float max_load_factor = 0.65f;
 
 /*****************************************************************************/
 struct hashtable *
 create_hashtable(unsigned int minsize,
-                 unsigned int (*hashf) (void*),
-                 int (*eqf) (void*,void*))
+                 unsigned int (*hashf) (const void*),
+                 int (*eqf) (const void*,const void*))
 {
     struct hashtable *h;
     unsigned int pindex, size = primes[0];
@@ -54,7 +54,7 @@ create_hashtable(unsigned int minsize,
 
 /*****************************************************************************/
 unsigned int
-hash(struct hashtable *h, void *k)
+hash(struct hashtable *h, const void *k)
 {
     /* Aim to protect against poor hash functions by adding logic here
      * - logic taken from java 1.4 hashtable source */
@@ -160,7 +160,7 @@ hashtable_insert(struct hashtable *h, void *k, void *v)
 
 /*****************************************************************************/
 void * /* returns value associated with key */
-hashtable_search(struct hashtable *h, void *k)
+hashtable_search(struct hashtable *h, const void *k)
 {
     struct entry *e;
     unsigned int hashvalue, index;

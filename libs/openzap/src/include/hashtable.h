@@ -73,8 +73,8 @@ struct hashtable;
 
 struct hashtable *
 create_hashtable(unsigned int minsize,
-                 unsigned int (*hashfunction) (void*),
-                 int (*key_eq_fn) (void*,void*));
+                 unsigned int (*hashfunction) (const void*),
+                 int (*key_eq_fn) (const void*,const void*));
 
 /*****************************************************************************
  * hashtable_insert
@@ -114,7 +114,7 @@ int fnname (struct hashtable *h, keytype *k, valuetype *v) \
  */
 
 void *
-hashtable_search(struct hashtable *h, void *k);
+hashtable_search(struct hashtable *h, const void *k);
 
 #define DEFINE_HASHTABLE_SEARCH(fnname, keytype, valuetype) \
 valuetype * fnname (struct hashtable *h, keytype *k) \

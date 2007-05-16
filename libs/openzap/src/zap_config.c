@@ -54,7 +54,9 @@ int zap_config_open_file(zap_config_t *cfg, char *file_path)
 	memset(cfg, 0, sizeof(*cfg));
 	cfg->lockto = -1;
 
-	if (!(f = fopen(path, "r"))) {
+	f = fopen(path, "r");
+
+	if (!f) {
 		if (file_path[0] != '/') {
 			int last = -1;
 			char *var, *val;

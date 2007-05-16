@@ -45,12 +45,12 @@ static struct {
 } globals;
 
 
-static int equalkeys(void *k1, void *k2)
+static int equalkeys(const void *k1, const void *k2)
 {
     return strcmp((char *) k1, (char *) k2) ? 0 : 1;
 }
 
-static unsigned hashfromstring(void *ky)
+static unsigned hashfromstring(const void *ky)
 {
 	unsigned char *str = (unsigned char *) ky;
 	unsigned hash = 0;
@@ -102,10 +102,9 @@ zap_status_t zap_span_destroy(zap_span_t **span);
 
 zap_status_t zap_channel_open(const char *name, unsigned span_id, unsigned chan_id, zap_channel_t **zchan)
 {
-	zap_software_interface_t *zint;
+	zap_software_interface_t *zint = (zap_software_interface_t *) hashtable_search(globals.interface_hash, name);
 
-	if (span_id < ZAP_MAX_SPANS_INTERFACE && chan_id < ZAP_MAX_CHANNELS_SPAN && 
-		(zint = (zap_software_interface_t *) hashtable_search(globals.interface_hash, (void *)name))) {
+	if (span_id < ZAP_MAX_SPANS_INTERFACE && chan_id < ZAP_MAX_CHANNELS_SPAN && zint) {
 		zap_channel_t *check;
 		check = &zint->spans[span_id].channels[chan_id];
 		if (zap_test_flag(check, ZAP_CHANNEL_READY) && ! zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
@@ -229,10 +228,10 @@ zap_status_t zap_global_init(void)
 	zap_config_t cfg;
 	char *var, *val;
 	unsigned configured = 0;
-	zap_software_interface_t *zint;
+	zap_software_interface_t *zint = NULL;
 	
-	assert(zint = NULL);
-	
+	zint, 0;
+
 	globals.interface_hash = create_hashtable(16, hashfromstring, equalkeys);
 
 #ifdef ZAP_WANPIPE_SUPPORT
@@ -256,7 +255,8 @@ zap_status_t zap_global_init(void)
 			if (!strcmp(var, "load")) {
 				zap_software_interface_t *zint;
 				
-				if ((zint = (zap_software_interface_t *) hashtable_search(globals.interface_hash, val))) {
+				zint = (zap_software_interface_t *) hashtable_search(globals.interface_hash, val);
+				if (zint) {
 					if (zint->configure(zint) == ZAP_SUCCESS) {
 						configured++;
 					}
