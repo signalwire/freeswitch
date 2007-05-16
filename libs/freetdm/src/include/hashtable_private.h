@@ -19,8 +19,8 @@ struct hashtable {
     unsigned int entrycount;
     unsigned int loadlimit;
     unsigned int primeindex;
-    unsigned int (*hashfn) (void *k);
-    int (*eqfn) (void *k1, void *k2);
+    unsigned int (*hashfn) (const void *k);
+    int (*eqfn) (const void *k1, const void *k2);
 };
 
 /*****************************************************************************/

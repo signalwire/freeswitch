@@ -35,6 +35,24 @@
 #define OPENZAP_H
 
 #define _XOPEN_SOURCE 500
+
+#ifdef _MSC_VER
+#if (_MSC_VER >= 1400)			// VC8+
+#ifndef _CRT_SECURE_NO_DEPRECATE
+#define _CRT_SECURE_NO_DEPRECATE
+#endif
+#ifndef _CRT_NONSTDC_NO_DEPRECATE
+#define _CRT_NONSTDC_NO_DEPRECATE
+#endif
+#endif
+#ifndef strcasecmp
+#define strcasecmp(s1, s2) _stricmp(s1, s2)
+#endif
+#ifndef snprintf
+#define snprintf _snprintf
+#endif
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
