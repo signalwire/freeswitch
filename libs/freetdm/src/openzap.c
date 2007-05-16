@@ -139,8 +139,13 @@ zap_status_t zap_channel_close(zap_channel_t **zchan)
 zap_status_t zap_channel_set_codec(zap_channel_t *zchan, zap_codec_t codec)
 {
 	assert(zchan != NULL);
+	assert(zchan->zint != NULL);
 
 	if (!zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
+		return ZAP_FAIL;
+	}
+	
+	if (!zchan->zint->set_codec) {
 		return ZAP_FAIL;
 	}
 
@@ -151,24 +156,34 @@ zap_status_t zap_channel_set_codec(zap_channel_t *zchan, zap_codec_t codec)
 zap_status_t zap_channel_set_interval(zap_channel_t *zchan, unsigned ms)
 {
 	assert(zchan != NULL);
+	assert(zchan->zint != NULL);
 
     if (!zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
         return ZAP_FAIL;
     }
+
+	if (!zchan->zint->set_interval) {
+		return ZAP_FAIL;
+	}
 
     return zchan->zint->set_interval(zchan, ms);
 
 }
 
-zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t flags)
+zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t flags, unsigned to)
 {
 	assert(zchan != NULL);
+	assert(zchan->zint != NULL);
 
     if (!zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
         return ZAP_FAIL;
     }
 
-    return zchan->zint->wait(zchan, flags);
+	if (!zchan->zint->wait) {
+		return ZAP_FAIL;
+	}
+
+    return zchan->zint->wait(zchan, flags, to);
 
 }
 
@@ -176,10 +191,16 @@ zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t flags)
 zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *datalen)
 {
 	assert(zchan != NULL);
+	assert(zchan->zint != NULL);
+	assert(zchan->zint != NULL);
 
     if (!zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
         return ZAP_FAIL;
     }
+
+	if (!zchan->zint->read) {
+		return ZAP_FAIL;
+	}
 
     return zchan->zint->read(zchan, data, datalen);
 	
@@ -189,10 +210,15 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t *datalen)
 {
 	assert(zchan != NULL);
+	assert(zchan->zint != NULL);
 
     if (!zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
         return ZAP_FAIL;
     }
+
+	if (!zchan->zint->write) {
+		return ZAP_FAIL;
+	}
 
     return zchan->zint->write(zchan, data, datalen);
 	

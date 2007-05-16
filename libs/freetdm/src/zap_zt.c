@@ -35,9 +35,71 @@
 #include "openzap.h"
 #include "zap_zt.h"
 
+static ZINT_CONFIGURE_FUNCTION(zt_configure)
+{
+	ZINT_CONFIGURE_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_OPEN_FUNCTION(zt_open) 
+{
+	ZINT_OPEN_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_CLOSE_FUNCTION(zt_close)
+{
+	ZINT_CLOSE_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_SET_CODEC_FUNCTION(zt_set_codec)
+{
+	ZINT_SET_CODEC_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_SET_INTERVAL_FUNCTION(zt_set_interval)
+{
+	ZINT_SET_INTERVAL_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_WAIT_FUNCTION(zt_wait)
+{
+	ZINT_WAIT_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_READ_FUNCTION(zt_read)
+{
+	ZINT_READ_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_WRITE_FUNCTION(zt_write)
+{
+	ZINT_WRITE_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static zap_software_interface_t zt_interface;
+
 zap_status_t zt_init(zap_software_interface_t **zint)
 {
 	assert(zint != NULL);
+	memset(&zt_interface, 0, sizeof(zt_interface));
+
+	zt_interface.name = "zt";
+	zt_interface.configure =  zt_configure;
+	zt_interface.open = zt_open;
+	zt_interface.close = zt_close;
+	zt_interface.set_codec = zt_set_codec;
+	zt_interface.set_interval = zt_set_interval;
+	zt_interface.wait = zt_wait;
+	zt_interface.read = zt_read;
+	zt_interface.write = zt_write;
+	*zint = &zt_interface;
 
 	return ZAP_FAIL;
 }
