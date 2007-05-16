@@ -98,7 +98,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 			break;
 		}
 
-		if (loop_count > 10 && switch_core_session_private_event_count(session_a)) {
+		if (loop_count > 50 && switch_core_session_private_event_count(session_a)) {
 			switch_channel_set_flag(chan_b, CF_SUSPEND);
 			msg.string_arg = data->b_uuid;
 			msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
@@ -491,7 +491,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 
 	switch_channel_set_state_flag(caller_channel, CF_TRANSFER);
 	switch_channel_set_state_flag(peer_channel, CF_TRANSFER);
-
+	
 
 	switch_channel_set_state(caller_channel, CS_HIBERNATE);
 	switch_channel_set_state(peer_channel, CS_HIBERNATE);

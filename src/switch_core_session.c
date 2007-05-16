@@ -626,7 +626,7 @@ SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_io_event_hook_state_change_t *ptr;
-
+	
 	/* If trylock fails the signal is already awake so we needn't bother */
 	if (switch_mutex_trylock(session->mutex) == SWITCH_STATUS_SUCCESS) {
 		switch_thread_cond_signal(session->cond);
@@ -644,6 +644,7 @@ SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session
 			}
 		}
 	}
+	switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
 }
 
 SWITCH_DECLARE(unsigned int) switch_core_session_running(switch_core_session_t *session)

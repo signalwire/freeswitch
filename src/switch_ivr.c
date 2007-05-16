@@ -749,7 +749,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(char *uuid, switch_media_flag_t
 
 		if (switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
 			status = SWITCH_STATUS_SUCCESS;
-			switch_channel_clear_flag(channel, CF_BYPASS_MEDIA);
 			switch_core_session_receive_message(session, &msg);
 
 			if ((flags & SMF_REBRIDGE)
@@ -765,7 +764,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(char *uuid, switch_media_flag_t
 				switch_channel_clear_state_handler(channel, NULL);
 			}
 		}
-
+		
 		switch_core_session_rwunlock(session);
 
 		if (other_channel) {
@@ -803,22 +802,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(char *uuid, switch_media_flag
 		}
 
 		if ((flags & SMF_FORCE) || !switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
-			switch_ivr_parse_all_events(session);
-			
+			//switch_ivr_parse_all_events(session);
+			switch_core_session_receive_message(session, &msg);
+
 			if ((flags & SMF_REBRIDGE) && (other_uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) &&
 				(other_session = switch_core_session_locate(other_uuid))) {
 				other_channel = switch_core_session_get_channel(other_session);
 				assert(other_channel != NULL);
-				
-				switch_ivr_parse_all_events(other_session);
+				//switch_ivr_parse_all_events(other_session);
 
 				switch_core_session_receive_message(other_session, &msg);
 				switch_channel_clear_state_handler(other_channel, NULL);
 				
 			}
 
-			switch_channel_set_flag(channel, CF_BYPASS_MEDIA);
-			switch_core_session_receive_message(session, &msg);
+			
 
 			if (other_channel) {
 				switch_channel_clear_state_handler(channel, NULL);
