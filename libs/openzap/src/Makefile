@@ -31,7 +31,7 @@
 
 CC=gcc
 OBJS=hashtable.o hashtable_itr.o openzap.o zap_config.o
-CFLAGS=$(USER_CFLAGS) -Wall -Werror -Wextra -std=c99 -pedantic -ansi
+CFLAGS=$(USER_CFLAGS) -Iinclude -Wall -Werror -Wextra -std=c99 -pedantic -ansi
 MYLIB=libopenzap.a
 
 CFLAGS +=-DZAP_WANPIPE_SUPPORT
