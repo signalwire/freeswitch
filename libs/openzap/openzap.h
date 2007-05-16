@@ -1,0 +1,190 @@
+/*
+ * Copyright (c) 2007, Anthony Minessale II
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * 
+ * * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * 
+ * * Neither the name of the original author; nor the names of any contributors
+ * may be used to endorse or promote products derived from this software
+ * without specific prior written permission.
+ * 
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER
+ * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#ifndef OPENZAP_H
+#define OPENZAP_H
+
+#define _XOPEN_SOURCE 500
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#ifndef _MSC_VER
+#include <strings.h>
+#endif
+#include <assert.h>
+#include "hashtable.h"
+#include "zap_config.h"
+
+#define ZAP_MAX_CHANNELS_SPAN 513
+#define ZAP_MAX_SPANS_INTERFACE 33
+
+typedef int zap_socket_t;
+typedef size_t zap_size_t;
+struct zap_software_interface;
+
+#define zap_copy_string(x,y,z) strncpy(x, y, z - 1) 
+
+/*!
+  \brief Test for the existance of a flag on an arbitary object
+  \param obj the object to test
+  \param flag the or'd list of flags to test
+  \return true value if the object has the flags defined
+*/
+#define zap_test_flag(obj, flag) ((obj)->flags & flag)
+
+/*!
+  \brief Set a flag on an arbitrary object
+  \param obj the object to set the flags on
+  \param flag the or'd list of flags to set
+*/
+#define zap_set_flag(obj, flag) (obj)->flags |= (flag)
+
+/*!
+  \brief Clear a flag on an arbitrary object while locked
+  \param obj the object to test
+  \param flag the or'd list of flags to clear
+*/
+#define zap_clear_flag(obj, flag) (obj)->flags &= ~(flag)
+
+/*!
+  \brief Copy flags from one arbitrary object to another
+  \param dest the object to copy the flags to
+  \param src the object to copy the flags from
+  \param flags the flags to copy
+*/
+#define zap_copy_flags(dest, src, flags) (dest)->flags &= ~(flags);	(dest)->flags |= ((src)->flags & (flags))
+
+
+/*!
+  \brief Free a pointer and set it to NULL unless it already is NULL
+  \param it the pointer
+*/
+#define zap_safe_free(it) if (it) {free(it);it=NULL;}
+
+typedef enum {
+	ZAP_SUCCESS,
+	ZAP_FAIL
+} zap_status_t;
+
+typedef enum {
+	ZAP_READ =  (1 <<  0),
+	ZAP_WRITE = (1 <<  1),
+	ZAP_ERROR = (1 <<  2),
+	ZAP_EVENT = (1 <<  3)
+} zap_wait_flag_t;
+
+typedef enum {
+	ZAP_CODEC_ULAW = 0,
+	ZAP_CODEC_ALAW = 8,
+	ZAP_CODEC_SLIN = 10
+} zap_codec_t;
+
+typedef enum {
+	ZAP_SPAN_CONFIGURED = (1 << 0),
+	ZAP_SPAN_READY = (1 << 1)
+} zap_span_flag_t;
+
+typedef enum {
+	ZAP_CHAN_TYPE_B,
+	ZAP_CHAN_TYPE_DQ921,
+	ZAP_CHAN_TYPE_DQ931,
+	ZAP_CHAN_TYPE_FXS,
+	ZAP_CHAN_TYPE_FXO
+} zap_chan_type_t;
+
+typedef enum {
+	ZAP_CHANNEL_CONFIGURED = (1 << 0),
+	ZAP_CHANNEL_READY = (1 << 1),
+	ZAP_CHANNEL_OPEN = (1 << 2)
+} zap_channel_flag_t;
+
+struct zap_channel {
+	unsigned span_id;
+	unsigned chan_id;
+	zap_chan_type_t type;
+	zap_socket_t sockfd;
+	zap_channel_flag_t flags;
+	struct zap_software_interface *zint;
+};
+typedef struct zap_channel zap_channel_t;
+
+struct zap_span {
+	unsigned span_id;
+	unsigned chan_count;
+	zap_span_flag_t flags;
+	struct zap_software_interface *zint;
+	zap_channel_t channels[ZAP_MAX_CHANNELS_SPAN];
+};
+typedef struct zap_span zap_span_t;
+
+typedef zap_status_t (*zint_configure_t)(struct zap_software_interface *zint);
+typedef zap_status_t (*zint_open_t)(unsigned span_id, unsigned chan_id, zap_channel_t **zchan);
+typedef zap_status_t (*zint_close_t)(zap_channel_t **zchan);
+typedef zap_status_t (*zint_set_codec_t)(zap_channel_t *zchan, zap_codec_t codec);
+typedef zap_status_t (*zint_set_interval_t)(zap_channel_t *zchan, unsigned ms);
+typedef zap_status_t (*zint_wait_t)(zap_channel_t *zchan, zap_wait_flag_t flags);
+typedef zap_status_t (*zint_read_t)(zap_channel_t *zchan, void *data, zap_size_t *datalen);
+typedef zap_status_t (*zint_write_t)(zap_channel_t *zchan, void *data, zap_size_t *datalen);
+
+struct zap_software_interface {
+	const char *name;
+	zint_configure_t configure;
+	zint_open_t open;
+	zint_close_t close;
+	zint_set_codec_t set_codec;
+	zint_set_interval_t set_interval;
+	zint_wait_t wait;
+	zint_read_t read;
+	zint_write_t write;
+	unsigned span_index;
+	struct zap_span spans[ZAP_MAX_SPANS_INTERFACE];
+};
+typedef struct zap_software_interface zap_software_interface_t;
+
+zap_status_t zap_span_create(zap_software_interface_t *zint, zap_span_t **span);
+zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_chan_type_t type, zap_channel_t **chan);
+zap_status_t zap_span_destroy(zap_span_t **span);
+
+zap_status_t zap_channel_open(const char *name, unsigned span_id, unsigned chan_id, zap_channel_t **zchan);
+zap_status_t zap_channel_close(zap_channel_t **zchan);
+zap_status_t zap_channel_set_codec(zap_channel_t *zchan, zap_codec_t codec);
+zap_status_t zap_channel_set_interval(zap_channel_t *zchan, unsigned ms);
+zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t flags);
+zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *datalen);
+zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t *datalen);
+zap_status_t zap_global_init(void);
+zap_status_t zap_global_destroy(void);
+
+typedef struct hashtable zap_hash_t;
+
+#endif
