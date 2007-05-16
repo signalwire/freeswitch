@@ -147,14 +147,42 @@ struct zap_span {
 };
 typedef struct zap_span zap_span_t;
 
-typedef zap_status_t (*zint_configure_t)(struct zap_software_interface *zint);
-typedef zap_status_t (*zint_open_t)(unsigned span_id, unsigned chan_id, zap_channel_t **zchan);
-typedef zap_status_t (*zint_close_t)(zap_channel_t **zchan);
-typedef zap_status_t (*zint_set_codec_t)(zap_channel_t *zchan, zap_codec_t codec);
-typedef zap_status_t (*zint_set_interval_t)(zap_channel_t *zchan, unsigned ms);
-typedef zap_status_t (*zint_wait_t)(zap_channel_t *zchan, zap_wait_flag_t flags);
-typedef zap_status_t (*zint_read_t)(zap_channel_t *zchan, void *data, zap_size_t *datalen);
-typedef zap_status_t (*zint_write_t)(zap_channel_t *zchan, void *data, zap_size_t *datalen);
+#define ZINT_CONFIGURE_ARGS (struct zap_software_interface *zint)
+#define ZINT_OPEN_ARGS (unsigned span_id, unsigned chan_id, zap_channel_t **zchan)
+#define ZINT_CLOSE_ARGS (zap_channel_t **zchan)
+#define ZINT_SET_CODEC_ARGS (zap_channel_t *zchan, zap_codec_t codec)
+#define ZINT_SET_INTERVAL_ARGS (zap_channel_t *zchan, unsigned ms)
+#define ZINT_WAIT_ARGS (zap_channel_t *zchan, zap_wait_flag_t flags, unsigned to)
+#define ZINT_READ_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
+#define ZINT_WRITE_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
+
+typedef zap_status_t (*zint_configure_t) ZINT_CONFIGURE_ARGS ;
+typedef zap_status_t (*zint_open_t) ZINT_OPEN_ARGS ;
+typedef zap_status_t (*zint_close_t) ZINT_CLOSE_ARGS ;
+typedef zap_status_t (*zint_set_codec_t) ZINT_SET_CODEC_ARGS ;
+typedef zap_status_t (*zint_set_interval_t) ZINT_SET_INTERVAL_ARGS ;
+typedef zap_status_t (*zint_wait_t) ZINT_WAIT_ARGS ;
+typedef zap_status_t (*zint_read_t) ZINT_READ_ARGS ;
+typedef zap_status_t (*zint_write_t) ZINT_WRITE_ARGS ;
+
+#define ZINT_CONFIGURE_FUNCTION(name) zap_status_t name ZINT_CONFIGURE_ARGS
+#define ZINT_OPEN_FUNCTION(name) zap_status_t name ZINT_OPEN_ARGS
+#define ZINT_CLOSE_FUNCTION(name) zap_status_t name ZINT_CLOSE_ARGS
+#define ZINT_SET_CODEC_FUNCTION(name) zap_status_t name ZINT_SET_CODEC_ARGS
+#define ZINT_SET_INTERVAL_FUNCTION(name) zap_status_t name ZINT_SET_INTERVAL_ARGS
+#define ZINT_WAIT_FUNCTION(name) zap_status_t name ZINT_WAIT_ARGS
+#define ZINT_READ_FUNCTION(name) zap_status_t name ZINT_READ_ARGS
+#define ZINT_WRITE_FUNCTION(name) zap_status_t name ZINT_WRITE_ARGS
+
+#define ZINT_CONFIGURE_MUZZLE assert(zint != NULL)
+#define ZINT_OPEN_MUZZLE assert(span_id != 0); assert(chan_id != 0); assert(zchan != NULL)
+#define ZINT_CLOSE_MUZZLE assert(zchan != NULL)
+#define ZINT_SET_CODEC_MUZZLE assert(zchan != NULL); assert(codec != 0)
+#define ZINT_SET_INTERVAL_MUZZLE assert(zchan != NULL); assert(ms != 0)
+#define ZINT_WAIT_MUZZLE assert(zchan != NULL); assert(flags != 0); assert(to != 0)
+#define ZINT_READ_MUZZLE assert(zchan != NULL); assert(data != NULL); assert(datalen != NULL)
+#define ZINT_WRITE_MUZZLE assert(zchan != NULL); assert(data != NULL); assert(datalen != NULL)
+
 
 struct zap_software_interface {
 	const char *name;
@@ -179,7 +207,7 @@ zap_status_t zap_channel_open(const char *name, unsigned span_id, unsigned chan_
 zap_status_t zap_channel_close(zap_channel_t **zchan);
 zap_status_t zap_channel_set_codec(zap_channel_t *zchan, zap_codec_t codec);
 zap_status_t zap_channel_set_interval(zap_channel_t *zchan, unsigned ms);
-zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t flags);
+zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t flags, unsigned to);
 zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *datalen);
 zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t *datalen);
 zap_status_t zap_global_init(void);
