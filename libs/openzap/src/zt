@@ -1,0 +1,2 @@
+CFLAGS +=-DZAP_ZT_SUPPORT
+OBJS += zap_zt.o

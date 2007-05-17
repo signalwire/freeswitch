@@ -228,17 +228,17 @@ zap_status_t zap_global_init(void)
 	zap_config_t cfg;
 	char *var, *val;
 	unsigned configured = 0;
-	zap_software_interface_t *zint = NULL;
+	zap_software_interface_t *zint;
 	
-	zint, 0;
-
 	globals.interface_hash = create_hashtable(16, hashfromstring, equalkeys);
+	zint = NULL;
 
 #ifdef ZAP_WANPIPE_SUPPORT
 	if (wanpipe_init(&zint) == ZAP_SUCCESS) {
 		hashtable_insert(globals.interface_hash, (void *)zint->name, zint);
 	}
 #endif
+	zint = NULL;
 #ifdef ZAP_ZT_SUPPORT
 	if (zt_init(&zint) == ZAP_SUCCESS) {
 		hashtable_insert(globals.interface_hash, (void *)zint->name, zint);

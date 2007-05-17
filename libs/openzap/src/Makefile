@@ -29,17 +29,11 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-CC=gcc
 OBJS=hashtable.o hashtable_itr.o openzap.o zap_config.o
-CFLAGS=$(USER_CFLAGS) -Iinclude -Wall -Werror -Wextra -std=c99 -pedantic -ansi
+CFLAGS=$(ZAP_CFLAGS) -Iinclude 
 MYLIB=libopenzap.a
 
-CFLAGS +=-DZAP_WANPIPE_SUPPORT
-OBJS += zap_wanpipe.o
-
-#CFLAGS +=-DZAP_ZT_SUPPORT
-#OBJS += zap_zt.o
-
+include general.makefile $(ZAP_MODS)
 
 $(MYLIB): $(OBJS)
 	ar rcs $(MYLIB) $(OBJS)

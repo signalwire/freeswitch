@@ -1,0 +1,2 @@
+CFLAGS +=-DZAP_WANPIPE_SUPPORT
+OBJS += zap_wanpipe.o
