@@ -37,7 +37,7 @@
 #define _XOPEN_SOURCE 500
 
 #ifdef _MSC_VER
-#if (_MSC_VER >= 1400)			// VC8+
+#if (_MSC_VER >= 1400)			/* VC8+ */
 #ifndef _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE
 #endif
@@ -62,6 +62,11 @@
 #include <assert.h>
 #include "hashtable.h"
 #include "zap_config.h"
+
+#ifdef  NDEBUG
+#undef assert
+#define assert(_Expression)     ((void)(_Expression))
+#endif
 
 #define ZAP_MAX_CHANNELS_SPAN 513
 #define ZAP_MAX_SPANS_INTERFACE 33
