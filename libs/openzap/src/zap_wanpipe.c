@@ -46,7 +46,7 @@
 #ifdef _MSC_VER
 /* disable warning for zero length array in a struct */
 /* this will cause errors on c99 and ansi compliant compilers and will need to be fixed in the wanpipe header files */
-#pragma warning(disable:4200)
+#pragma warning(disable:4200 4201 4214)
 #endif
 #include <windows.h>
 #include <winioctl.h>
