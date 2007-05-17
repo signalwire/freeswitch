@@ -29,7 +29,8 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-OBJS=hashtable.o hashtable_itr.o openzap.o zap_config.o
+
+OBJS=hashtable.o hashtable_itr.o openzap.o zap_config.o libteletone_detect.o libteletone_generate.o zap_buffer.o
 CFLAGS=$(ZAP_CFLAGS) -Iinclude 
 MYLIB=libopenzap.a
 
@@ -40,6 +41,9 @@ all: $(MYLIB)
 $(MYLIB): $(OBJS)
 	ar rcs $(MYLIB) $(OBJS)
 	ranlib $(MYLIB)
+
+openzap.o: openzap.c
+	$(CC) $(MOD_CFLAGS) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
 
 zap_wanpipe.o: zap_wanpipe.c
 	$(CC) $(CFLAGS) $(ZAP_CFLAGS) $(WP_CFLAGS) -c $< -o $@

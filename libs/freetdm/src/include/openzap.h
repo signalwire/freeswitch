@@ -62,6 +62,8 @@
 #include <assert.h>
 #include "hashtable.h"
 #include "zap_config.h"
+#include "g711.h"
+#include "libteletone.h"
 
 #ifdef  NDEBUG
 #undef assert
@@ -115,7 +117,8 @@ struct zap_software_interface;
 
 typedef enum {
 	ZAP_SUCCESS,
-	ZAP_FAIL
+	ZAP_FAIL,
+	ZAP_MEMERR
 } zap_status_t;
 
 typedef enum {
@@ -205,6 +208,20 @@ typedef zap_status_t (*zint_write_t) ZINT_WRITE_ARGS ;
 #define ZINT_READ_MUZZLE assert(zchan != NULL); assert(data != NULL); assert(datalen != NULL)
 #define ZINT_WRITE_MUZZLE assert(zchan != NULL); assert(data != NULL); assert(datalen != NULL)
 
+#define ZAP_PRE __FILE__, __FUNCTION__, __LINE__
+#define ZAP_LOG_DEBUG ZAP_PRE, 7
+#define ZAP_LOG_INFO ZAP_PRE, 6
+#define ZAP_LOG_NOTICE ZAP_PRE, 5
+#define ZAP_LOG_WARNING ZAP_PRE, 4
+#define ZAP_LOG_ERROR ZAP_PRE, 3
+#define ZAP_LOG_CRIT ZAP_PRE, 2
+#define ZAP_LOG_ALERT ZAP_PRE, 1
+#define ZAP_LOG_EMERG ZAP_PRE, 0
+
+typedef void (*zap_logger_t)(char *file, const char *func, int line, int level, char *fmt, ...);
+extern zap_logger_t global_logger;
+#define zap_log global_logger;
+
 struct zap_software_interface {
 	const char *name;
 	zint_configure_t configure;
@@ -220,6 +237,7 @@ struct zap_software_interface {
 };
 typedef struct zap_software_interface zap_software_interface_t;
 
+
 zap_status_t zap_span_create(zap_software_interface_t *zint, zap_span_t **span);
 zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_chan_type_t type, zap_channel_t **chan);
 zap_status_t zap_span_destroy(zap_span_t **span);
@@ -233,6 +251,8 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t *datalen);
 zap_status_t zap_global_init(void);
 zap_status_t zap_global_destroy(void);
+void zap_global_set_logger(zap_logger_t logger);
+void zap_global_set_default_logger(void);
 
 typedef struct hashtable zap_hash_t;
 

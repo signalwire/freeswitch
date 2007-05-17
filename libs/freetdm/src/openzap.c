@@ -33,6 +33,7 @@
 
 
 #include "openzap.h"
+#include <stdarg.h>
 #ifdef ZAP_WANPIPE_SUPPORT
 #include "zap_wanpipe.h"
 #endif
@@ -44,6 +45,78 @@ static struct {
 	zap_hash_t *interface_hash;
 } globals;
 
+static char *LEVEL_NAMES[] = {
+	"EMERG",
+	"ALERT",
+	"CRIT",
+	"ERROR",
+	"WARNING",
+	"NOTICE",
+	"INFO",
+	"DEBUG",
+	NULL
+};
+
+static char *cut_path(char *in)
+{
+	char *p, *ret = in;
+	char delims[] = "/\\";
+	char *i;
+
+	for (i = delims; *i; i++) {
+		p = in;
+		while ((p = strchr(p, *i)) != 0) {
+			ret = ++p;
+		}
+	}
+	return ret;
+}
+
+static void null_logger(char *file, const char *func, int line, int level, char *fmt, ...)
+{
+	if (0) {
+		null_logger(file, func, line, level, fmt);
+	}
+}
+
+static void default_logger(char *file, const char *func, int line, int level, char *fmt, ...)
+{
+	char *fp;
+	char data[1024];
+
+	va_list ap;
+	
+	fp = cut_path(file);
+
+	va_start(ap, fmt);
+
+	vsnprintf(data, sizeof(data), fmt, ap);
+
+	if (level < 0 || level > 7) {
+		level = 7;
+	}
+
+	fprintf(stderr, "[%s] %s:%d %s() %s", LEVEL_NAMES[level], file, line, func, data);
+
+	va_end(ap);
+
+}
+
+zap_logger_t global_logger = null_logger;
+
+void zap_global_set_logger(zap_logger_t logger)
+{
+	if (logger) {
+		global_logger = logger;
+	} else {
+		global_logger = null_logger;
+	}
+}
+
+void zap_global_set_default_logger(void)
+{
+	global_logger = default_logger;
+}
 
 static int equalkeys(const void *k1, const void *k2)
 {
