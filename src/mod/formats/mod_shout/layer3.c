@@ -836,11 +836,11 @@ static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], in
 							v = gr_info->pow2gain[sanity];
 							cb = *m++;
 						} else {
-							return 1;
+							return 0;
 						}
 
 					} else {
-						return 1;
+						return 0;
 					}
 
 				}
