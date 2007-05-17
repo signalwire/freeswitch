@@ -334,7 +334,9 @@ static switch_status_t woomera_kill_channel(switch_core_session_t *session, int 
 		{
 			const char p = 0;
 			switch_size_t len = sizeof(p);
-			switch_socket_sendto(tech_pvt->udp_socket, tech_pvt->udpwrite, 0, &p, &len);
+			if (tech_pvt->udp_socket && tech_pvt->udpwrite) {
+				switch_socket_sendto(tech_pvt->udp_socket, tech_pvt->udpwrite, 0, &p, &len);
+			}
 		}
 		break;
 	}
