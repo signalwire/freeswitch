@@ -42,6 +42,9 @@ $(MYLIB): $(OBJS)
 	ar rcs $(MYLIB) $(OBJS)
 	ranlib $(MYLIB)
 
+testapp: testapp.c $(MYLIB)
+	$(CC) -L. -Iinclude testapp.c -o testapp -lopenzap -lm
+
 openzap.o: openzap.c
 	$(CC) $(MOD_CFLAGS) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
 

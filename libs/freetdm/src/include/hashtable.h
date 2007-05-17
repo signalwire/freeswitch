@@ -2,6 +2,11 @@
 
 #ifndef __HASHTABLE_CWC22_H__
 #define __HASHTABLE_CWC22_H__
+#ifdef _MSC_VER
+#ifndef __inline__
+#define __inline__ __inline
+#endif
+#endif
 
 struct hashtable;
 
@@ -73,8 +78,8 @@ struct hashtable;
 
 struct hashtable *
 create_hashtable(unsigned int minsize,
-                 unsigned int (*hashfunction) (const void*),
-                 int (*key_eq_fn) (const void*,const void*));
+                 unsigned int (*hashfunction) (void*),
+                 int (*key_eq_fn) (void*,void*));
 
 /*****************************************************************************
  * hashtable_insert
@@ -114,7 +119,7 @@ int fnname (struct hashtable *h, keytype *k, valuetype *v) \
  */
 
 void *
-hashtable_search(struct hashtable *h, const void *k);
+hashtable_search(struct hashtable *h, void *k);
 
 #define DEFINE_HASHTABLE_SEARCH(fnname, keytype, valuetype) \
 valuetype * fnname (struct hashtable *h, keytype *k) \

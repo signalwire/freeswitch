@@ -28,12 +28,20 @@ hashtable_iterator(struct hashtable *h);
 /* hashtable_iterator_key
  * - return the value of the (key,value) pair at the current position */
 
-#define hashtable_iterator_key(i) (void *)i->e->k
+extern __inline__ void *
+hashtable_iterator_key(struct hashtable_itr *i)
+{
+    return i->e->k;
+}
 
 /*****************************************************************************/
 /* value - return the value of the (key,value) pair at the current position */
 
-#define hashtable_iterator_value (void *)i->e->v
+extern __inline__ void *
+hashtable_iterator_value(struct hashtable_itr *i)
+{
+    return i->e->v;
+}
 
 /*****************************************************************************/
 /* advance - advance the iterator to the next element

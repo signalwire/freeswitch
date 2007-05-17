@@ -209,18 +209,27 @@ typedef zap_status_t (*zint_write_t) ZINT_WRITE_ARGS ;
 #define ZINT_WRITE_MUZZLE assert(zchan != NULL); assert(data != NULL); assert(datalen != NULL)
 
 #define ZAP_PRE __FILE__, __FUNCTION__, __LINE__
-#define ZAP_LOG_DEBUG ZAP_PRE, 7
-#define ZAP_LOG_INFO ZAP_PRE, 6
-#define ZAP_LOG_NOTICE ZAP_PRE, 5
-#define ZAP_LOG_WARNING ZAP_PRE, 4
-#define ZAP_LOG_ERROR ZAP_PRE, 3
-#define ZAP_LOG_CRIT ZAP_PRE, 2
-#define ZAP_LOG_ALERT ZAP_PRE, 1
-#define ZAP_LOG_EMERG ZAP_PRE, 0
+
+#define ZAP_LOG_LEVEL_DEBUG 7
+#define ZAP_LOG_LEVEL_INFO 6
+#define ZAP_LOG_LEVEL_NOTICE 5
+#define ZAP_LOG_LEVEL_WARNING 4
+#define ZAP_LOG_LEVEL_ERROR 3
+#define ZAP_LOG_LEVEL_CRIT 2
+#define ZAP_LOG_LEVEL_ALERT 1
+#define ZAP_LOG_LEVEL_EMERG 0
+
+#define ZAP_LOG_DEBUG ZAP_PRE, ZAP_LOG_LEVEL_DEBUG
+#define ZAP_LOG_INFO ZAP_PRE, ZAP_LOG_LEVEL_INFO
+#define ZAP_LOG_NOTICE ZAP_PRE, ZAP_LOG_LEVEL_NOTICE
+#define ZAP_LOG_WARNING ZAP_PRE, ZAP_LOG_LEVEL_WARNING
+#define ZAP_LOG_ERROR ZAP_PRE, ZAP_LOG_LEVEL_ERROR
+#define ZAP_LOG_CRIT ZAP_PRE, ZAP_LOG_LEVEL_CRIT
+#define ZAP_LOG_ALERT ZAP_PRE, ZAP_LOG_LEVEL_ALERT
+#define ZAP_LOG_EMERG ZAP_PRE, ZAP_LOG_LEVEL_EMERG
 
 typedef void (*zap_logger_t)(char *file, const char *func, int line, int level, char *fmt, ...);
-extern zap_logger_t global_logger;
-#define zap_log global_logger;
+extern zap_logger_t zap_log;
 
 struct zap_software_interface {
 	const char *name;
@@ -252,7 +261,7 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t *dat
 zap_status_t zap_global_init(void);
 zap_status_t zap_global_destroy(void);
 void zap_global_set_logger(zap_logger_t logger);
-void zap_global_set_default_logger(void);
+void zap_global_set_default_logger(int level);
 
 typedef struct hashtable zap_hash_t;
 
