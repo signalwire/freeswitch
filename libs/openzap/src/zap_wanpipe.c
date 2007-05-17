@@ -71,6 +71,8 @@ typedef unsigned __int32 u_int32_t;
 #include <sdla_front_end.h>
 #include <sdla_aft_te1.h>
 
+static zap_software_interface_t wanpipe_interface;
+
 struct wanpipe_channel {
 	struct zap_channel zchan;
 	int x;
@@ -81,18 +83,35 @@ static ZINT_CONFIGURE_FUNCTION(wanpipe_configure)
 	zap_config_t cfg;
 	char *var, *val;
 	int catno = -1;
+	zap_span_t *span = NULL;
 
 	ZINT_CONFIGURE_MUZZLE;
 
+	zap_log(ZAP_LOG_DEBUG, "configuring wanpipe\n");
 	if (!zap_config_open_file(&cfg, "wanpipe.conf")) {
 		return ZAP_FAIL;
 	}
-
+	
 	while (zap_config_next_pair(&cfg, &var, &val)) {
 		if (!strcasecmp(cfg.category, "span")) {
 			if (cfg.catno != catno) {
+				zap_log(ZAP_LOG_DEBUG, "found config for span %d\n", cfg.catno);
+				catno = cfg.catno;
+				if (zap_span_create(&wanpipe_interface, &span) == ZAP_SUCCESS) {
+					zap_log(ZAP_LOG_DEBUG, "created span %d\n", span->span_id);
+				} else {
+					zap_log(ZAP_LOG_CRIT, "failure creating span\n");
+					span = NULL;
+				}
 				
+				continue;
 			}
+			
+			if (!span) {
+				continue;
+			}
+
+			zap_log(ZAP_LOG_DEBUG, "span %d [%s]=[%s]\n", span->span_id, var, val);
 		}
 	}
 	zap_config_close_file(&cfg);
@@ -142,8 +161,6 @@ static ZINT_WRITE_FUNCTION(wanpipe_write)
 	return ZAP_FAIL;
 }
 
-static zap_software_interface_t wanpipe_interface;
-
 zap_status_t wanpipe_init(zap_software_interface_t **zint)
 {
 	assert(zint != NULL);
@@ -160,7 +177,7 @@ zap_status_t wanpipe_init(zap_software_interface_t **zint)
 	wanpipe_interface.write = wanpipe_write;
 	*zint = &wanpipe_interface;
 
-	return ZAP_FAIL;
+	return ZAP_SUCCESS;
 }
 
 zap_status_t wanpipe_destroy(void)

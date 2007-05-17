@@ -74,18 +74,25 @@ static char *cut_path(char *in)
 
 static void null_logger(char *file, const char *func, int line, int level, char *fmt, ...)
 {
-	if (file && func && line && level && fmt) {
-		return;
+	if (0) {
+		null_logger(file, func, line, level, fmt, fmt + sizeof(fmt));
 	}
-	return;
 }
+
+static int zap_log_level;
 
 static void default_logger(char *file, const char *func, int line, int level, char *fmt, ...)
 {
 	char *fp;
 	char data[1024];
-
 	va_list ap;
+
+	if (level < 0 || level > 7) {
+		level = 7;
+	}
+	if (level > zap_log_level) {
+		return;
+	}
 	
 	fp = cut_path(file);
 
@@ -93,9 +100,6 @@ static void default_logger(char *file, const char *func, int line, int level, ch
 
 	vsnprintf(data, sizeof(data), fmt, ap);
 
-	if (level < 0 || level > 7) {
-		level = 7;
-	}
 
 	fprintf(stderr, "[%s] %s:%d %s() %s", LEVEL_NAMES[level], file, line, func, data);
 
@@ -103,37 +107,42 @@ static void default_logger(char *file, const char *func, int line, int level, ch
 
 }
 
-zap_logger_t global_logger = null_logger;
+zap_logger_t zap_log = null_logger;
 
 void zap_global_set_logger(zap_logger_t logger)
 {
 	if (logger) {
-		global_logger = logger;
+		zap_log = logger;
 	} else {
-		global_logger = null_logger;
+		zap_log = null_logger;
 	}
 }
 
-void zap_global_set_default_logger(void)
+void zap_global_set_default_logger(int level)
 {
-	global_logger = default_logger;
+	if (level < 0 || level > 7) {
+		level = 7;
+	}
+
+	zap_log = default_logger;
+	zap_log_level = level;
 }
 
-static int equalkeys(const void *k1, const void *k2)
+static int equalkeys(void *k1, void *k2)
 {
     return strcmp((char *) k1, (char *) k2) ? 0 : 1;
 }
 
-static unsigned hashfromstring(const void *ky)
+static unsigned hashfromstring(void *ky)
 {
 	unsigned char *str = (unsigned char *) ky;
 	unsigned hash = 0;
     int c;
-
+	
 	while ((c = *str++)) {
         hash = c + (hash << 6) + (hash << 16) - hash;
 	}
-	
+
     return hash;
 }
 
@@ -176,7 +185,7 @@ zap_status_t zap_span_destroy(zap_span_t **span);
 
 zap_status_t zap_channel_open(const char *name, unsigned span_id, unsigned chan_id, zap_channel_t **zchan)
 {
-	zap_software_interface_t *zint = (zap_software_interface_t *) hashtable_search(globals.interface_hash, name);
+	zap_software_interface_t *zint = (zap_software_interface_t *) hashtable_search(globals.interface_hash, (char *)name);
 
 	if (span_id < ZAP_MAX_SPANS_INTERFACE && chan_id < ZAP_MAX_CHANNELS_SPAN && zint) {
 		zap_channel_t *check;
@@ -303,37 +312,51 @@ zap_status_t zap_global_init(void)
 	char *var, *val;
 	unsigned configured = 0;
 	zap_software_interface_t *zint;
+	int modcount;
 
 	globals.interface_hash = create_hashtable(16, hashfromstring, equalkeys);
 	zint = NULL;
+	modcount = 0;
 
 #ifdef ZAP_WANPIPE_SUPPORT
 	if (wanpipe_init(&zint) == ZAP_SUCCESS) {
 		hashtable_insert(globals.interface_hash, (void *)zint->name, zint);
+		modcount++;
+	} else {
+		zap_log(ZAP_LOG_ERROR, "Error initilizing wanpipe.\n");	
 	}
 #endif
 	zint = NULL;
 #ifdef ZAP_ZT_SUPPORT
 	if (zt_init(&zint) == ZAP_SUCCESS) {
 		hashtable_insert(globals.interface_hash, (void *)zint->name, zint);
+		modcount++;
+	} else {
+		zap_log(ZAP_LOG_ERROR, "Error initilizing zt.\n");	
 	}
 #endif
 
-	
-	if (!zap_config_open_file(&cfg, "openzap.conf")) {
+	if (!modcount) {
+		zap_log(ZAP_LOG_ERROR, "Error initilizing anything.\n");	
 		return ZAP_FAIL;
 	}
 
+	if (!zap_config_open_file(&cfg, "openzap.conf")) {
+		return ZAP_FAIL;
+	}
+	
 	while (zap_config_next_pair(&cfg, &var, &val)) {
 		if (!strcasecmp(cfg.category, "openzap")) {
 			if (!strcmp(var, "load")) {
 				zap_software_interface_t *zint;
-				
+		
 				zint = (zap_software_interface_t *) hashtable_search(globals.interface_hash, val);
 				if (zint) {
 					if (zint->configure(zint) == ZAP_SUCCESS) {
 						configured++;
 					}
+				} else {
+					zap_log(ZAP_LOG_WARNING, "Attempted to load Non-Existant module '%s'\n", val);
 				}
 			}
 		}
@@ -341,7 +364,12 @@ zap_status_t zap_global_init(void)
 
 	zap_config_close_file(&cfg);
 
-	return configured ? ZAP_SUCCESS : ZAP_FAIL;
+	if (configured) {
+		return ZAP_SUCCESS;
+	}
+
+	zap_log(ZAP_LOG_ERROR, "No modules configured!\n");
+	return ZAP_FAIL;
 }
 
 zap_status_t zap_global_destroy(void)
