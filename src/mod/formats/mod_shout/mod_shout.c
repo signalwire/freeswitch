@@ -271,7 +271,8 @@ static size_t decode_fd(shout_context_t * context, void *data, size_t bytes)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decoder Error!\n");
 				}
 				dlen = 0;
-				continue;
+				//continue;
+                goto error;
 			}
 
 			context->mp3err = 0;
@@ -728,7 +729,11 @@ static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned in
 			} else if (context->fp) {
 				*cur_sample = fseek(context->fp, *cur_sample, whence);
 			}
+
+            ExitMP3(&context->mp);
+            InitMP3(&context->mp, OUTSCALE, context->samplerate);
 			switch_buffer_zero(context->audio_buffer);
+
 		} else {
 			context->err++;
 		}
