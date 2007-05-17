@@ -1,7 +1,6 @@
-CFLAGS +=-DZAP_WANPIPE_SUPPORT
+MOD_CFLAGS +=-DZAP_WANPIPE_SUPPORT
 OBJS += zap_wanpipe.o
 WANPIPE_INCLUDE=/usr/include/wanpipe
-#WANPIPE_INCLUDE=../../wanpipe-3.1.0.p18/patches/kdrivers/include
 
 WP_CFLAGS =-I$(WANPIPE_INCLUDE) -I/usr/local/include -I/usr/src/linux/include -I. -I/usr/include 
 WP_CFLAGS +=-D__LINUX__ -D_REENTRANT -D_GNU_SOURCE -DAFT_A104 -DWANPIPE_TDM_API -D_GNUC_ -DWANPIPE_TDM_API
