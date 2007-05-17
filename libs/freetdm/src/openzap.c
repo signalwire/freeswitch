@@ -189,35 +189,43 @@ zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_cha
 zap_status_t zap_channel_open(const char *name, unsigned span_id, unsigned chan_id, zap_channel_t **zchan)
 {
 	zap_software_interface_t *zint = (zap_software_interface_t *) hashtable_search(globals.interface_hash, (char *)name);
+	zap_status_t status = ZAP_FAIL;
 
 	if (span_id < ZAP_MAX_SPANS_INTERFACE && chan_id < ZAP_MAX_CHANNELS_SPAN && zint) {
 		zap_channel_t *check;
 		check = &zint->spans[span_id].channels[chan_id];
 		if (zap_test_flag(check, ZAP_CHANNEL_READY) && ! zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
-			zap_set_flag(check, ZAP_CHANNEL_OPEN);
-			*zchan = check;
-			return ZAP_SUCCESS;
+			status = check->zint->open(check);
+			if (status == ZAP_SUCCESS) {
+				zap_set_flag(check, ZAP_CHANNEL_OPEN);
+				*zchan = check;
+			}
+			return status;
 		}
 	}
 
-	return ZAP_FAIL;
+	return status;
 }
 
 zap_status_t zap_channel_close(zap_channel_t **zchan)
 {
 	zap_channel_t *check;
+	zap_status_t status = ZAP_FAIL;
+
 	*zchan = NULL;
-	
 	assert(zchan != NULL);
 	check = *zchan;
 	assert(check != NULL);
 	
 	if (zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
-		zap_clear_flag(check, ZAP_CHANNEL_OPEN);
-		return ZAP_SUCCESS;
+		status = check->zint->close(check);
+		if (status == ZAP_SUCCESS) {
+			zap_clear_flag(check, ZAP_CHANNEL_OPEN);
+			*zchan = NULL;
+		}
 	}
 	
-	return ZAP_FAIL;
+	return status;
 }
 
 

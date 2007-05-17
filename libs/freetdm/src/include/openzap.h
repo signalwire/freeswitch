@@ -175,6 +175,7 @@ struct zap_channel {
 	zap_chan_type_t type;
 	zap_socket_t sockfd;
 	zap_channel_flag_t flags;
+	void *mod_data;
 	struct zap_software_interface *zint;
 };
 typedef struct zap_channel zap_channel_t;
@@ -189,8 +190,8 @@ struct zap_span {
 typedef struct zap_span zap_span_t;
 
 #define ZINT_CONFIGURE_ARGS (struct zap_software_interface *zint)
-#define ZINT_OPEN_ARGS (unsigned span_id, unsigned chan_id, zap_channel_t **zchan)
-#define ZINT_CLOSE_ARGS (zap_channel_t **zchan)
+#define ZINT_OPEN_ARGS (zap_channel_t *zchan)
+#define ZINT_CLOSE_ARGS (zap_channel_t *zchan)
 #define ZINT_SET_CODEC_ARGS (zap_channel_t *zchan, zap_codec_t codec)
 #define ZINT_SET_INTERVAL_ARGS (zap_channel_t *zchan, unsigned ms)
 #define ZINT_WAIT_ARGS (zap_channel_t *zchan, zap_wait_flag_t flags, unsigned to)
@@ -216,7 +217,7 @@ typedef zap_status_t (*zint_write_t) ZINT_WRITE_ARGS ;
 #define ZINT_WRITE_FUNCTION(name) zap_status_t name ZINT_WRITE_ARGS
 
 #define ZINT_CONFIGURE_MUZZLE assert(zint != NULL)
-#define ZINT_OPEN_MUZZLE assert(span_id != 0); assert(chan_id != 0); assert(zchan != NULL)
+#define ZINT_OPEN_MUZZLEE assert(zchan != NULL)
 #define ZINT_CLOSE_MUZZLE assert(zchan != NULL)
 #define ZINT_SET_CODEC_MUZZLE assert(zchan != NULL); assert(codec != 0)
 #define ZINT_SET_INTERVAL_MUZZLE assert(zchan != NULL); assert(ms != 0)
