@@ -25,7 +25,7 @@ struct hashtable {
 
 /*****************************************************************************/
 unsigned int
-hash(struct hashtable *h, void *k);
+hash(struct hashtable *h, const void *k);
 
 /*****************************************************************************/
 /* indexFor */
