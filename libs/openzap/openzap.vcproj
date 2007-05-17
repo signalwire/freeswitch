@@ -165,7 +165,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\libteletone_detect.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\libteletone_generate.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\openzap.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\zap_buffer.c"
 				>
 			</File>
 			<File
@@ -209,6 +221,10 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\src\include\g711.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\include\hashtable.h"
 				>
 			</File>
@@ -221,7 +237,23 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\include\libteletone.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\include\libteletone_detect.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\include\libteletone_generate.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\include\openzap.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\include\zap_buffer.h"
 				>
 			</File>
 			<File
