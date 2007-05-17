@@ -79,7 +79,7 @@ static void null_logger(char *file, const char *func, int line, int level, char 
 	}
 }
 
-static int zap_log_level;
+static int zap_log_level = 7;
 
 static void default_logger(char *file, const char *func, int line, int level, char *fmt, ...)
 {
