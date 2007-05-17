@@ -74,58 +74,6 @@ typedef unsigned __int32 u_int32_t;
 
 static zap_software_interface_t wanpipe_interface;
 
-struct wanpipe_channel {
-	struct zap_channel zchan;
-	int x;
-};
-
-
-
-unsigned wp_open_lapd(zap_span_t *span, const char *name)
-{
-	struct wan_sockaddr_ll  sa;
-	zap_socket_t sock = -1;
-
-	errno = 0;
-	sock = socket(AF_WANPIPE, SOCK_RAW, 0);
-	memset(&sa,0,sizeof(struct wan_sockaddr_ll));
-
-	zap_log(ZAP_LOG_DEBUG, "attempting to open lapd device socket %s\n", name);
-
-	if( sock < 0 ) {
-		zap_log(ZAP_LOG_ERROR, "socket error!\n");
-		return 0;
-	} 
-
-	zap_copy_string(sa.sll_device, name, sizeof(sa.sll_device));
-	zap_copy_string(sa.sll_card, "wanpipe1", sizeof(sa.sll_card));
-
-	sa.sll_protocol = htons(PVC_PROT);
-	sa.sll_family = AF_WANPIPE;
-
-	if(bind(sock, (struct sockaddr *)&sa, sizeof(struct wan_sockaddr_ll)) < 0){
-		zap_log(ZAP_LOG_ERROR, "socket bind error!\n");
-        return 0;
-	}
-
-	{
-		unsigned customer_id;
-		int err = ioctl(sock,SIOC_AFT_CUSTOMER_ID,&customer_id);
-		if (err){
-			perror("Customer ID: ");
-		}else{
-			printf("Customer ID 0x%X\n",customer_id);
-			return 1;
-		}
-
-
-	}
-
-	
-	return 0;
-}
-
-
 static zap_socket_t wp_open_device(int span, int chan) 
 {
    	char fname[256];
@@ -186,26 +134,6 @@ static unsigned wp_configure_channel(zap_config_t *cfg, const char *str, zap_spa
 
 	assert(str != NULL);
 	
-	if (type == ZAP_CHAN_TYPE_DQ921) {
-		char *flag, *name;
-		
-		flag = str;
-		if ((name = strchr(flag, ':'))) {
-			name++;
-		} else {
-			name = flag;
-			flag = NULL;
-		}
-
-		if (flag) {
-			if (strstr(flag, "q931")) {
-				type = ZAP_CHAN_TYPE_DQ931;
-				configured += wp_open_lapd(span, name);
-				return configured;
-			}
-
-		}
-	}
 
 	mydata = strdup(str);
 	assert(mydata != NULL);
@@ -315,7 +243,14 @@ static ZINT_CONFIGURE_FUNCTION(wanpipe_configure)
 				if (d) {
 					zap_log(ZAP_LOG_WARNING, "ignoring extra d-channel\n");
 				} else {
-					configured += wp_configure_channel(&cfg, val, span, ZAP_CHAN_TYPE_DQ921);
+					zap_chan_type_t qtype;
+					if (!strncasecmp(val, "lapd:", 5)) {
+						qtype = ZAP_CHAN_TYPE_DQ931;
+						val += 5;
+					} else {
+						qtype = ZAP_CHAN_TYPE_DQ921;
+					}
+					configured += wp_configure_channel(&cfg, val, span, qtype);
 					d++;
 				}
 			}
