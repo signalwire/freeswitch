@@ -31,13 +31,45 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 #include "openzap.h"
 #include "zap_wanpipe.h"
+#include <wanpipe_defines.h>
+#include <wanpipe_cfg.h>
+#include <wanpipe_tdm_api.h>
+#include <sdla_te1_pmc.h>
+#include <sdla_te1.h>
+#include <sdla_56k.h>
+#include <sdla_remora.h>
+#include <sdla_te3.h>	
+#include <sdla_front_end.h>
+#include <sdla_aft_te1.h>
+
+struct wanpipe_channel {
+	struct zap_channel zchan;
+	int x;
+};
 
 static ZINT_CONFIGURE_FUNCTION(wanpipe_configure)
 {
+	zap_config_t cfg;
+	char *var, *val;
+	int catno = -1;
+
 	ZINT_CONFIGURE_MUZZLE;
+
+	if (!zap_config_open_file(&cfg, "wanpipe.conf")) {
+		return ZAP_FAIL;
+	}
+
+	while (zap_config_next_pair(&cfg, &var, &val)) {
+		if (!strcasecmp(cfg.category, "span")) {
+			if (cfg.catno != catno) {
+				
+			}
+		}
+	}
+	zap_config_close_file(&cfg);
+
 	return ZAP_FAIL;
 }
 

@@ -229,7 +229,7 @@ zap_status_t zap_global_init(void)
 	char *var, *val;
 	unsigned configured = 0;
 	zap_software_interface_t *zint;
-	
+
 	globals.interface_hash = create_hashtable(16, hashfromstring, equalkeys);
 	zint = NULL;
 
@@ -264,6 +264,8 @@ zap_status_t zap_global_init(void)
 			}
 		}
 	}
+
+	zap_config_close_file(&cfg);
 
 	return configured ? ZAP_SUCCESS : ZAP_FAIL;
 }

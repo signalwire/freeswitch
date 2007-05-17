@@ -35,13 +35,20 @@ MYLIB=libopenzap.a
 
 include general.makefile $(ZAP_MODS)
 
+all: $(MYLIB)
+
 $(MYLIB): $(OBJS)
 	ar rcs $(MYLIB) $(OBJS)
 	ranlib $(MYLIB)
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
 
-all: $(MYLIB)
+zap_wanpipe.o: zap_wanpipe.c
+	$(CC) $(CFLAGS) $(ZAP_CFLAGS) $(WP_CFLAGS) -c $< -o $@
+
+zap_zt.o: zap_zt.c
+	$(CC) $(CFLAGS) $(ZAP_CFLAGS) $(ZT_CFLAGS) -c $< -o $@
+
+%.o: %.c
+	$(CC) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
 
 clean:
 	rm -f *.o $(MYLIB) *~ \#*
