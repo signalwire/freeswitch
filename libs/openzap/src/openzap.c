@@ -74,9 +74,10 @@ static char *cut_path(char *in)
 
 static void null_logger(char *file, const char *func, int line, int level, char *fmt, ...)
 {
-	if (0) {
-		null_logger(file, func, line, level, fmt, fmt + sizeof(fmt));
+	if (file && func && line && level && fmt) {
+		return;
 	}
+	return;
 }
 
 static int zap_log_level = 7;
