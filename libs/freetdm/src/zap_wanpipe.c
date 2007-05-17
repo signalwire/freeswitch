@@ -31,11 +31,38 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define WANPIPE_TDM_API 1
+
+#ifndef __WINDOWS__
+#if defined(WIN32) || defined(WIN64) || defined(_MSC_VER) || defined(_WIN32)
+#define __WINDOWS__
+#endif
+#endif
+
 #include "openzap.h"
 #include "zap_wanpipe.h"
+
+#ifdef __WINDOWS__
+#ifdef _MSC_VER
+/* disable warning for zero length array in a struct */
+/* this will cause errors on c99 and ansi compliant compilers and will need to be fixed in the wanpipe header files */
+#pragma warning(disable:4200)
+#endif
+#include <windows.h>
+#include <winioctl.h>
+#include <conio.h>
+#include <stddef.h>
+typedef unsigned __int16 u_int16_t;
+typedef unsigned __int32 u_int32_t;
+#endif
+
 #include <wanpipe_defines.h>
 #include <wanpipe_cfg.h>
 #include <wanpipe_tdm_api.h>
+#ifdef __WINDOWS__
+#include <sang_status_defines.h>
+#include <sang_api.h>
+#endif
 #include <sdla_te1_pmc.h>
 #include <sdla_te1.h>
 #include <sdla_56k.h>
