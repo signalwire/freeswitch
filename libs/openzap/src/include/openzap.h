@@ -73,9 +73,23 @@
 #define ZAP_MAX_CHANNELS_SPAN 513
 #define ZAP_MAX_SPANS_INTERFACE 33
 
+#ifdef WIN32
+#include <windows.h>
+typedef HANDLE zap_socket_t;
+#else
 typedef int zap_socket_t;
+#endif
+
 typedef size_t zap_size_t;
 struct zap_software_interface;
+
+#define zap_true(expr)\
+	(expr && ( !strcasecmp(expr, "yes") ||\
+			   !strcasecmp(expr, "on") ||\
+			   !strcasecmp(expr, "true") ||\
+			   !strcasecmp(expr, "enabled") ||\
+			   !strcasecmp(expr, "active") ||\
+			   atoi(expr))) ? 1 : 0
 
 #define zap_copy_string(x,y,z) strncpy(x, y, z - 1) 
 
@@ -114,6 +128,8 @@ struct zap_software_interface;
   \param it the pointer
 */
 #define zap_safe_free(it) if (it) {free(it);it=NULL;}
+
+#define zap_socket_close(it) if (it > -1) { close(it); it = -1;}
 
 typedef enum {
 	ZAP_SUCCESS,
@@ -249,7 +265,6 @@ typedef struct zap_software_interface zap_software_interface_t;
 
 zap_status_t zap_span_create(zap_software_interface_t *zint, zap_span_t **span);
 zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_chan_type_t type, zap_channel_t **chan);
-zap_status_t zap_span_destroy(zap_span_t **span);
 
 zap_status_t zap_channel_open(const char *name, unsigned span_id, unsigned chan_id, zap_channel_t **zchan);
 zap_status_t zap_channel_close(zap_channel_t **zchan);
@@ -262,7 +277,9 @@ zap_status_t zap_global_init(void);
 zap_status_t zap_global_destroy(void);
 void zap_global_set_logger(zap_logger_t logger);
 void zap_global_set_default_logger(int level);
-
+unsigned zap_separate_string(char *buf, char delim, char **array, int arraylen);
 typedef struct hashtable zap_hash_t;
-
+typedef struct hashtable_itr zap_hash_itr_t;
+typedef struct key zap_hash_key_t;
+typedef struct value zap_hash_val_t;
 #endif
