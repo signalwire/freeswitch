@@ -22,7 +22,7 @@ static const unsigned int primes[] = {
 805306457, 1610612741
 };
 const unsigned int prime_table_length = sizeof(primes)/sizeof(primes[0]);
-const float max_load_factor = 0.65;
+const float max_load_factor = 0.65f;
 
 /*****************************************************************************/
 struct hashtable *
