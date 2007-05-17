@@ -53,11 +53,13 @@ zap_status_t zap_buffer_create(zap_buffer_t **buffer, zap_size_t blocksize, zap_
 {
 	zap_buffer_t *new_buffer;
 
-	if ((new_buffer = malloc(sizeof(*new_buffer)))) {
+	new_buffer = malloc(sizeof(*new_buffer));
+	if (new_buffer) {
 		memset(new_buffer, 0, sizeof(*new_buffer));
 
 		if (start_len) {
-			if (!(new_buffer->data = malloc(start_len))) {
+			new_buffer->data = malloc(start_len);
+			if (!new_buffer->data) {
 				free(new_buffer);
 				return ZAP_MEMERR;
 			}
@@ -211,7 +213,8 @@ zap_size_t zap_buffer_write(zap_buffer_t *buffer, const void *data, zap_size_t d
 			new_size = new_block_size;
 		}
 		buffer->head = buffer->data;
-		if (!(buffer->data = realloc(buffer->data, new_size))) {
+		buffer->data = realloc(buffer->data, new_size);
+		if (!buffer->data) {
 			return 0;
 		}
 		buffer->head = buffer->data;
