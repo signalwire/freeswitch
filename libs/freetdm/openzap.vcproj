@@ -193,20 +193,18 @@
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="C:\src\wanpipe-3.1.0.p21\patches\kdrivers\include"
+						AdditionalIncludeDirectories="..\AFT_beta_6_0_2_5\include\api;..\AFT_beta_6_0_2_5\include\pnp"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32"
-					ExcludedFromBuild="true"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories="C:\src\wanpipe-3.1.0.p21\patches\kdrivers\include"
+						AdditionalIncludeDirectories="..\AFT_beta_6_0_2_5\include\api;..\AFT_beta_6_0_2_5\include\pnp"
 					/>
 				</FileConfiguration>
 			</File>
