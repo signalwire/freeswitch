@@ -45,7 +45,7 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				DisableLanguageExtensions="true"
+				DisableLanguageExtensions="false"
 				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
@@ -110,7 +110,7 @@
 				AdditionalIncludeDirectories="src/include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
-				DisableLanguageExtensions="true"
+				DisableLanguageExtensions="false"
 				RuntimeTypeInfo="false"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
@@ -185,6 +185,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="C:\src\wanpipe-3.1.0.p21\patches\kdrivers\include"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -193,6 +194,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories="C:\src\wanpipe-3.1.0.p21\patches\kdrivers\include"
 					/>
 				</FileConfiguration>
 			</File>
