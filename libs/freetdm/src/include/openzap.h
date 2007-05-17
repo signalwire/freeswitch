@@ -102,7 +102,6 @@ struct zap_software_interface;
 */
 #define zap_copy_flags(dest, src, flags) (dest)->flags &= ~(flags);	(dest)->flags |= ((src)->flags & (flags))
 
-
 /*!
   \brief Free a pointer and set it to NULL unless it already is NULL
   \param it the pointer
@@ -200,7 +199,6 @@ typedef zap_status_t (*zint_write_t) ZINT_WRITE_ARGS ;
 #define ZINT_WAIT_MUZZLE assert(zchan != NULL); assert(flags != 0); assert(to != 0)
 #define ZINT_READ_MUZZLE assert(zchan != NULL); assert(data != NULL); assert(datalen != NULL)
 #define ZINT_WRITE_MUZZLE assert(zchan != NULL); assert(data != NULL); assert(datalen != NULL)
-
 
 struct zap_software_interface {
 	const char *name;
