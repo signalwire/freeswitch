@@ -108,6 +108,7 @@ static void default_logger(char *file, const char *func, int line, int level, ch
 
 }
 
+
 zap_logger_t zap_log = null_logger;
 
 void zap_global_set_logger(zap_logger_t logger)
@@ -174,6 +175,8 @@ zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_cha
 		new_chan->type = type;
 		new_chan->sockfd = sockfd;
 		new_chan->zint = span->zint;
+		new_chan->span_id = span->span_id;
+		new_chan->chan_id = span->chan_count;
 		zap_set_flag(new_chan, ZAP_CHANNEL_CONFIGURED | ZAP_CHANNEL_READY);
 		*chan = new_chan;
 		return ZAP_SUCCESS;
@@ -182,7 +185,6 @@ zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_cha
 	return ZAP_FAIL;
 }
 
-zap_status_t zap_span_destroy(zap_span_t **span);
 
 zap_status_t zap_channel_open(const char *name, unsigned span_id, unsigned chan_id, zap_channel_t **zchan)
 {
@@ -375,7 +377,6 @@ zap_status_t zap_global_init(void)
 
 zap_status_t zap_global_destroy(void)
 {
-	hashtable_destroy(globals.interface_hash, 1);
 
 #ifdef ZAP_ZT_SUPPORT
 	zt_destroy();
@@ -383,5 +384,59 @@ zap_status_t zap_global_destroy(void)
 #ifdef ZAP_WANPIPE_SUPPORT
 	wanpipe_destroy();
 #endif
+
+	hashtable_destroy(globals.interface_hash, 0);
+
 	return ZAP_SUCCESS;
+}
+
+
+unsigned zap_separate_string(char *buf, char delim, char **array, int arraylen)
+{
+	int argc;
+	char *ptr;
+	int quot = 0;
+	char qc = '"';
+	char *e;
+	int x;
+
+	if (!buf || !array || !arraylen) {
+		return 0;
+	}
+
+	memset(array, 0, arraylen * sizeof(*array));
+
+	ptr = buf;
+
+	for (argc = 0; *ptr && (argc < arraylen - 1); argc++) {
+		array[argc] = ptr;
+		for (; *ptr; ptr++) {
+			if (*ptr == qc) {
+				if (quot) {
+					quot--;
+				} else {
+					quot++;
+				}
+			} else if ((*ptr == delim) && !quot) {
+				*ptr++ = '\0';
+				break;
+			}
+		}
+	}
+
+	if (*ptr) {
+		array[argc++] = ptr;
+	}
+
+	/* strip quotes */
+	for (x = 0; x < argc; x++) {
+		if (*(array[x]) == qc) {
+			(array[x])++;
+			if ((e = strchr(array[x], qc))) {
+				*e = '\0';
+			}
+		}
+	}
+
+	return argc;
 }

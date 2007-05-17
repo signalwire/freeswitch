@@ -2,8 +2,15 @@
 
 int main(int argc, char *argv[])
 {
-	printf("hello\n");
-
 	zap_global_set_default_logger(ZAP_LOG_LEVEL_DEBUG);
-	zap_global_init();
+
+	if (zap_global_init() != ZAP_SUCCESS) {
+		fprintf(stderr, "Error loading OpenZAP\n");
+		exit(-1);
+	}
+
+	printf("OpenZAP loaded\n");
+	sleep(2);
+	zap_global_destroy();
+
 }
