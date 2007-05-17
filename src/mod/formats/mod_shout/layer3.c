@@ -826,9 +826,23 @@ static int III_dequantize_sample(struct mpstr *mp, real xr[SBLIMIT][SSLIMIT], in
 				int x, y;
 
 				if (!mc) {
+					unsigned sanity;
 					mc = *m++;
-					v = gr_info->pow2gain[((*scf++) + (*pretab++)) << shift];
-					cb = *m++;
+					if ((unsigned)*scf < 100 && (unsigned)*pretab < 100) {
+						sanity = (((*scf++) + (*pretab++)) << shift);
+					
+						//v = gr_info->pow2gain[((*scf++) + (*pretab++)) << shift];
+						if (sanity < 100) {
+							v = gr_info->pow2gain[sanity];
+							cb = *m++;
+						} else {
+							return 1;
+						}
+
+					} else {
+						return 1;
+					}
+
 				}
 				{
 					register short *val = h->table;
