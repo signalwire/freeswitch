@@ -152,6 +152,7 @@ typedef enum {
 } zap_codec_t;
 
 typedef enum {
+	ZAP_COMMAND_NOOP,
 	ZAP_COMMAND_SET_INTERVAL,
 	ZAP_COMMAND_GET_INTERVAL
 } zap_command_t;
