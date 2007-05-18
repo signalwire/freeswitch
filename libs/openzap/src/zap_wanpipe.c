@@ -33,12 +33,6 @@
 
 #define WANPIPE_TDM_API 1
 
-#ifndef __WINDOWS__
-#if defined(WIN32) || defined(WIN64) || defined(_MSC_VER) || defined(_WIN32)
-#define __WINDOWS__
-#endif
-#endif
-
 #include "openzap.h"
 #include "zap_wanpipe.h"
 
@@ -49,28 +43,30 @@
 #pragma warning(disable:4200 4201 4214)
 #endif
 #include <windows.h>
-#include <winioctl.h>
-#include <conio.h>
-#include <stddef.h>
-typedef unsigned __int16 u_int16_t;
-typedef unsigned __int32 u_int32_t;
+#define FNAME_LEN	50
+#define WP_INVALID_SOCKET INVALID_HANDLE_VALUE
+#else
+#define WP_INVALID_SOCKET -1
 #endif
 
 #include <wanpipe_defines.h>
 #include <wanpipe_cfg.h>
 #include <wanpipe_tdm_api.h>
+#include <sdla_te1_pmc.h>
 #ifdef __WINDOWS__
 #include <sang_status_defines.h>
 #include <sang_api.h>
 #endif
-#include <sdla_te1_pmc.h>
-#include <sdla_te1.h>
-#include <sdla_56k.h>
-#include <sdla_remora.h>
-#include <sdla_te3.h>	
-#include <sdla_front_end.h>
 #include <sdla_aft_te1.h>
+
+#ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#endif
+
+#if defined(__WINDOWS__)
+#include <zap_wanpipe_windows.h>
+#endif
+
 
 static zap_software_interface_t wanpipe_interface;
 
@@ -96,6 +92,10 @@ static zap_socket_t wp_open_device(int span, int chan)
 
 	fd = open(fname, O_RDWR);
 
+	if (fd < 0) {
+		fd = WP_INVALID_SOCKET;
+	}
+
 	return fd;  
 #endif
 }            
@@ -106,11 +106,11 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 
 	for(x = start; x < end; x++) {
 		zap_channel_t *chan;
-		zap_socket_t sockfd = -1;
+		zap_socket_t sockfd = WP_INVALID_SOCKET;
 		
 		sockfd = wp_open_device(spanno, x);
 		
-		if (sockfd > -1 && zap_span_add_channel(span, sockfd, type, &chan) == ZAP_SUCCESS) {
+		if (sockfd != WP_INVALID_SOCKET && zap_span_add_channel(span, sockfd, type, &chan) == ZAP_SUCCESS) {
 			zap_log(ZAP_LOG_INFO, "configuring device s%dc%d as OpenZAP device %d:%d fd:%d\n", spanno, x, chan->span_id, chan->chan_id, sockfd);
 			configured++;
 		} else {
@@ -129,7 +129,6 @@ static unsigned wp_configure_channel(zap_config_t *cfg, const char *str, zap_spa
 	int channo;
 	int spanno;
 	int top = 0;
-	int x;
 	unsigned configured = 0;
 
 	assert(str != NULL);
@@ -380,6 +379,8 @@ static ZINT_WAIT_FUNCTION(wanpipe_wait)
 
 }
 
+#ifndef __WINDOWS__
+
 static ZINT_READ_FUNCTION(wanpipe_read_unix)
 {
 	int rx_len = 0;
@@ -416,17 +417,6 @@ static ZINT_READ_FUNCTION(wanpipe_read_unix)
 	return ZAP_SUCCESS;
 }
 
-static ZINT_READ_FUNCTION(wanpipe_read)
-{
-	ZINT_READ_MUZZLE;
-	
-#ifndef WIN32
-	return wanpipe_read_unix(zchan, data, datalen);
-#endif
-	
-	return ZAP_FAIL;
-}
-
 static ZINT_WRITE_FUNCTION(wanpipe_write_unix)
 {
 	int bsent;
@@ -453,6 +443,19 @@ static ZINT_WRITE_FUNCTION(wanpipe_write_unix)
 		bsent -= sizeof(wp_tdm_api_tx_hdr_t);
 	}
 
+}
+
+#endif
+
+static ZINT_READ_FUNCTION(wanpipe_read)
+{
+	ZINT_READ_MUZZLE;
+	
+#ifndef WIN32
+	return wanpipe_read_unix(zchan, data, datalen);
+#endif
+	
+	return ZAP_FAIL;
 }
 
 static ZINT_WRITE_FUNCTION(wanpipe_write)

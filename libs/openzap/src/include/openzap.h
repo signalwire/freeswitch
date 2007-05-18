@@ -36,6 +36,19 @@
 
 #define _XOPEN_SOURCE 500
 
+#ifndef HAVE_STRINGS_H
+#define HAVE_STRINGS_H 1
+#endif
+#ifndef HAVE_SYS_SOCKET_H
+#define HAVE_SYS_SOCKET_H 1
+#endif
+
+#ifndef __WINDOWS__
+#if defined(WIN32) || defined(WIN64) || defined(_MSC_VER) || defined(_WIN32)
+#define __WINDOWS__
+#endif
+#endif
+
 #ifdef _MSC_VER
 #if (_MSC_VER >= 1400)			/* VC8+ */
 #ifndef _CRT_SECURE_NO_DEPRECATE
@@ -51,12 +64,17 @@
 #ifndef snprintf
 #define snprintf _snprintf
 #endif
+#undef HAVE_STRINGS_H
+#undef HAVE_SYS_SOCKET_H
+/* disable warning for zero length array in a struct */
+/* this will cause errors on c99 and ansi compliant compilers and will need to be fixed in the wanpipe header files */
+#pragma warning(disable:4706)
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef _MSC_VER
+#ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
 #include <assert.h>
