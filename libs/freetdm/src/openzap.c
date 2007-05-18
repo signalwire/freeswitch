@@ -206,7 +206,7 @@ zap_status_t zap_channel_open_any(const char *name, unsigned span_id, zap_direct
 		span_max = zint->span_index;
 	}
 
-	if (direction == TOP_DOWN) {
+	if (direction == ZAP_TOP_DOWN) {
 		j = 1;
 	} else {
 		j = span_max;
