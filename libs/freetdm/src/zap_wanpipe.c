@@ -503,7 +503,7 @@ zap_status_t wanpipe_init(zap_software_interface_t **zint)
 
 zap_status_t wanpipe_destroy(void)
 {
-	int i,j;
+	unsigned int i,j;
 
 	for(i = 1; i <= wanpipe_interface.span_index; i++) {
 		zap_span_t *cur_span = &wanpipe_interface.spans[i];
