@@ -190,36 +190,90 @@ zap_status_t zap_channel_open_any(const char *name, unsigned span_id, zap_direct
 {
 	zap_software_interface_t *zint = (zap_software_interface_t *) hashtable_search(globals.interface_hash, (char *)name);
 	zap_status_t status = ZAP_FAIL;
-	
-	if (span_id < ZAP_MAX_SPANS_INTERFACE && zint) {
-		zap_channel_t *check;
-		zap_span_t *span = &zint->spans[span_id];
-		unsigned i;
+	zap_channel_t *check;
+	unsigned i,j;
+	zap_span_t *span;
+	unsigned span_max;
+
+	if (!zint) {
+		zap_log(ZAP_LOG_ERROR, "Invalid interface name!\n");
+		return ZAP_FAIL;
+	}
+
+	if (span_id) {
+		span_max = span_id;
+	} else {
+		span_max = zint->span_index;
+	}
+
+	if (direction == ZAP_BOTTOM_UP) {
+		j = 1;
+	} else {
+		j = span_max;
+	}
+
+	for(;;) {
+		span = &zint->spans[j];
 		
+		if (!zap_test_flag(span, ZAP_SPAN_CONFIGURED)) {
+			goto next_loop;
+		}
+
 		if (direction == ZAP_TOP_DOWN) {
-			for(i = 1; i <= span->chan_count; i++) {
-				check = &span->channels[i];
-				if (zap_test_flag(check, ZAP_CHANNEL_READY) && !zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
-					status = check->zint->open(check);
-					if (status == ZAP_SUCCESS) {
-						zap_set_flag(check, ZAP_CHANNEL_OPEN);
-						*zchan = check;
-						return status;
-					}
+			if (j == span_max) {
+				break;
+			}
+		} else {
+			if (j == 0) {
+				break;
+			}
+		}
+
+		if (direction == ZAP_TOP_DOWN) {
+			i = 1;
+		} else {
+			i = span->chan_count;
+		}	
+		
+		for(;;) {
+		
+			if (direction == ZAP_TOP_DOWN) {
+				if (i == span->chan_count) {
+					break;
+				}
+			} else {
+				if (i == 0) {
+					break;
 				}
 			}
-		} else if (direction == ZAP_BOTTOM_UP) {
-			for(i = span->chan_count; i > 0; i--) {
-				check = &span->channels[i];
-				if (zap_test_flag(check, ZAP_CHANNEL_READY) && !zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
-					status = check->zint->open(check);
-					if (status == ZAP_SUCCESS) {
-						zap_set_flag(check, ZAP_CHANNEL_OPEN);
-						*zchan = check;
-						return status;
-					}
+
+			check = &span->channels[i];
+
+			if (zap_test_flag(check, ZAP_CHANNEL_READY) && !zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
+
+				status = check->zint->open(check);
+
+				if (status == ZAP_SUCCESS) {
+					zap_set_flag(check, ZAP_CHANNEL_OPEN);
+					*zchan = check;
+					return status;
 				}
 			}
+			
+			if (direction == ZAP_TOP_DOWN) {
+				i++;
+			} else {
+				i--;
+			}
+
+		}
+		
+	next_loop:
+
+		if (direction == ZAP_TOP_DOWN) {
+			j++;
+		} else {
+			j--;
 		}
 	}
 
