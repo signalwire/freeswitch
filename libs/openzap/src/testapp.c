@@ -15,8 +15,9 @@ int main(int argc, char *argv[])
 	printf("OpenZAP loaded\n");
 
 	
-	if (zap_channel_open("wanpipe", 1, 1, &chan) == ZAP_SUCCESS) {
+	if (zap_channel_open_any("wanpipe", 0, ZAP_TOP_DOWN, &chan) == ZAP_SUCCESS) {
 		int x = 0;
+		printf("opened channel %d:%d\n", chan->span_id, chan->chan_id);
 
 		if (zap_channel_command(chan, ZAP_COMMAND_SET_INTERVAL, &ms) == ZAP_SUCCESS) {
 			ms = 0;
@@ -53,6 +54,8 @@ int main(int argc, char *argv[])
 				printf("wait fail [%s]\n", chan->last_error);
 			}
 		}
+	} else {
+		printf("open fail [%s]\n", chan->last_error);
 	}
 
 	zap_global_destroy();

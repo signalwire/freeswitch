@@ -212,15 +212,17 @@ zap_status_t zap_channel_open_any(const char *name, unsigned span_id, zap_direct
 		j = span_max;
 	}
 
+	
+
 	for(;;) {
 		span = &zint->spans[j];
-		
+
 		if (!zap_test_flag(span, ZAP_SPAN_CONFIGURED)) {
 			goto next_loop;
 		}
 
 		if (direction == ZAP_TOP_DOWN) {
-			if (j == span_max) {
+			if (j > span_max) {
 				break;
 			}
 		} else {
@@ -228,7 +230,7 @@ zap_status_t zap_channel_open_any(const char *name, unsigned span_id, zap_direct
 				break;
 			}
 		}
-
+		
 		if (direction == ZAP_TOP_DOWN) {
 			i = 1;
 		} else {
@@ -238,7 +240,7 @@ zap_status_t zap_channel_open_any(const char *name, unsigned span_id, zap_direct
 		for(;;) {
 		
 			if (direction == ZAP_TOP_DOWN) {
-				if (i == span->chan_count) {
+				if (i > span->chan_count) {
 					break;
 				}
 			} else {
@@ -246,7 +248,7 @@ zap_status_t zap_channel_open_any(const char *name, unsigned span_id, zap_direct
 					break;
 				}
 			}
-
+			
 			check = &span->channels[i];
 
 			if (zap_test_flag(check, ZAP_CHANNEL_READY) && !zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
