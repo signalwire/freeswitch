@@ -189,6 +189,18 @@ static unsigned wp_configure_channel(zap_config_t *cfg, const char *str, zap_spa
 	return configured;
 }
 
+static zap_status_t wp_tdm_cmd_exec(zap_socket_t fd, wanpipe_tdm_api_t *tdm_api)
+{
+	int err;
+
+#if defined(WIN32)
+	err = tdmv_api_ioctl(fd, &tdm_api->wp_tdm_cmd);
+#else
+	err = ioctl(fd,SIOC_WANPIPE_TDM_API,&tdm_api->wp_tdm_cmd);
+#endif
+	return err ? ZAP_FAIL : ZAP_SUCCESS;
+}
+
 static ZINT_CONFIGURE_FUNCTION(wanpipe_configure)
 {
 	zap_config_t cfg;
@@ -289,7 +301,7 @@ static ZINT_COMMAND_FUNCTION(wanpipe_command)
 		{
 			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_GET_USR_PERIOD;
 
-			if (!(err = sangoma_tdm_cmd_exec(zchan->sockfd, tdm_api))) {
+			if (!(err = wp_tdm_cmd_exec(zchan->sockfd, &tdm_api))) {
 				*((int *)obj) = tdm_api.wp_tdm_cmd.usr_period;
 			}
 
@@ -299,7 +311,7 @@ static ZINT_COMMAND_FUNCTION(wanpipe_command)
 		{
 			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_USR_PERIOD;
 			tdm_api.wp_tdm_cmd.usr_period = *((int *)obj);
-			err = sangoma_tdm_cmd_exec(zchan->sockfd, tdm_api);
+			err = wp_tdm_cmd_exec(zchan->sockfd, &tdm_api);
 		}
 		break;
 	};
@@ -377,7 +389,9 @@ static ZINT_READ_FUNCTION(wanpipe_read_unix)
 	struct iovec iov[2];
 	wp_tdm_api_rx_hdr_t hdrframe;
 
-	memset(&msg, 0, sizeof(struct msghdr));
+	memset(&msg, 0, sizeof(msg));
+	memset(&hdrframe, 0, sizeof(hdrframe));
+	memset(iov, 0, sizeof(iov[0])*2);
 
 	iov[0].iov_len = sizeof(hdrframe);
 	iov[0].iov_base = &hdrframe;
@@ -388,14 +402,17 @@ static ZINT_READ_FUNCTION(wanpipe_read_unix)
 	msg.msg_iovlen = 2;
 	msg.msg_iov = iov;
 
-	rx_len = read(zchan->sockfd, &msg, iov[1].iov_len + sizeof(hdrframe));
+	rx_len = read(zchan->sockfd, &msg, iov[1].iov_len + iov[0].iov_len);
 	
-	if (rx_len <= sizeof(hdrframe)) {
-		return ZAP_FAIL;
+	if (rx_len > 0) {
+		rx_len -= sizeof(hdrframe);
 	}
 
-	rx_len -= sizeof(hdrframe);
 	*datalen = rx_len;
+
+	if (rx_len <= 0) {
+		return ZAP_FAIL;
+	}
 
 	return ZAP_SUCCESS;
 }
@@ -418,7 +435,9 @@ static ZINT_WRITE_FUNCTION(wanpipe_write_unix)
 	struct iovec iov[2];
 	wp_tdm_api_rx_hdr_t hdrframe;
 
-	memset(&msg, 0, sizeof(struct msghdr));
+	memset(&msg, 0, sizeof(msg));
+	memset(&hdrframe, 0, sizeof(hdrframe));
+	memset(iov, 0, sizeof(iov[0])*2);
 	
 	iov[0].iov_len = sizeof(hdrframe);
 	iov[0].iov_base = &hdrframe;
