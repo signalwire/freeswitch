@@ -24,15 +24,21 @@ int main(int argc, char *argv[])
 			printf("set interval failed\n");
 		}
 
-		
 		for(x = 0; x < 25; x++) {
-			unsigned char buf[160];
+			unsigned char buf[80];
 			zap_size_t len = sizeof(buf);
-			if (zap_channel_read(chan, buf, &len) == ZAP_SUCCESS) {
-				printf("READ: %d\n", len); 
+			zap_wait_flag_t flags = ZAP_READ;
+
+			zap_channel_wait(chan, &flags, 0);
+			if (flags & ZAP_READ) {
+				if (zap_channel_read(chan, buf, &len) == ZAP_SUCCESS) {
+					printf("READ: %d\n", len); 
+				} else {
+					printf("READ FAIL! %d\n", len);
+					break;
+				}
 			} else {
-				printf("FAIL! %d\n", len);
-				break;
+				printf("wait fail\n");
 			}
 		}
 	}

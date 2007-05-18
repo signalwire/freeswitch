@@ -326,8 +326,6 @@ static ZINT_WAIT_FUNCTION(wanpipe_wait)
 	int s;
 	struct timeval tv, *tvp = NULL;
 
-	ZINT_WAIT_MUZZLE;
-
 	if (to) {
 		memset(&tv, 0, sizeof(tv));
 		tv.tv_sec = to / 1000;
@@ -357,7 +355,7 @@ static ZINT_WAIT_FUNCTION(wanpipe_wait)
 
 	*flags = ZAP_NO_FLAGS;
 	s = select(zchan->sockfd + 1, r, w, e, tvp);
-	
+
 	if (s < 0) {
 		return ZAP_FAIL;
 	}
@@ -411,6 +409,7 @@ static ZINT_READ_FUNCTION(wanpipe_read_unix)
 	*datalen = rx_len;
 
 	if (rx_len <= 0) {
+		perror("wtf");
 		return ZAP_FAIL;
 	}
 
@@ -433,7 +432,7 @@ static ZINT_WRITE_FUNCTION(wanpipe_write_unix)
 	int bsent;
 	struct msghdr msg;
 	struct iovec iov[2];
-	wp_tdm_api_rx_hdr_t hdrframe;
+	wp_tdm_api_tx_hdr_t hdrframe;
 
 	memset(&msg, 0, sizeof(msg));
 	memset(&hdrframe, 0, sizeof(hdrframe));
