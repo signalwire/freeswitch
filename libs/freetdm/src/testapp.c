@@ -18,27 +18,30 @@ int main(int argc, char *argv[])
 		int x = 0;
 
 		if (zap_channel_command(chan, ZAP_COMMAND_SET_INTERVAL, &ms) == ZAP_SUCCESS) {
-			zap_channel_command(chan, ZAP_COMMAND_SET_INTERVAL, &ms);
+			ms = 0;
+			zap_channel_command(chan, ZAP_COMMAND_GET_INTERVAL, &ms);
 			printf("interval set to %u\n", ms);
 		} else {
-			printf("set interval failed\n");
+			printf("set interval failed [%s]\n", chan->last_error);
 		}
 
 		for(x = 0; x < 25; x++) {
-			unsigned char buf[80];
+			unsigned char buf[2048];
 			zap_size_t len = sizeof(buf);
 			zap_wait_flag_t flags = ZAP_READ;
-
-			zap_channel_wait(chan, &flags, 0);
+			
+			if (zap_channel_wait(chan, &flags, 0) == ZAP_FAIL) {
+				printf("wait FAIL! %d [%s]\n", len, chan->last_error);
+			}
 			if (flags & ZAP_READ) {
 				if (zap_channel_read(chan, buf, &len) == ZAP_SUCCESS) {
 					printf("READ: %d\n", len); 
 				} else {
-					printf("READ FAIL! %d\n", len);
+					printf("READ FAIL! %d [%s]\n", len, chan->last_error);
 					break;
 				}
 			} else {
-				printf("wait fail\n");
+				printf("wait fail [%s]\n", chan->last_error);
 			}
 		}
 	}
