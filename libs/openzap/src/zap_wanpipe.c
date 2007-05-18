@@ -188,16 +188,22 @@ static unsigned wp_configure_channel(zap_config_t *cfg, const char *str, zap_spa
 	return configured;
 }
 
-static zap_status_t wp_tdm_cmd_exec(zap_socket_t fd, wanpipe_tdm_api_t *tdm_api)
+static zap_status_t wp_tdm_cmd_exec(zap_channel_t *zchan, wanpipe_tdm_api_t *tdm_api)
 {
 	int err;
 
 #if defined(WIN32)
-	err = tdmv_api_ioctl(fd, &tdm_api->wp_tdm_cmd);
+	err = tdmv_api_ioctl(zchan->sockfd, &tdm_api->wp_tdm_cmd);
 #else
-	err = ioctl(fd,SIOC_WANPIPE_TDM_API,&tdm_api->wp_tdm_cmd);
+	err = ioctl(zchan->sockfd, SIOC_WANPIPE_TDM_API, &tdm_api->wp_tdm_cmd);
 #endif
-	return err ? ZAP_FAIL : ZAP_SUCCESS;
+	
+	if (err) {
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
+		return ZAP_FAIL;
+	}
+
+	return ZAP_SUCCESS;
 }
 
 static ZINT_CONFIGURE_FUNCTION(wanpipe_configure)
@@ -300,7 +306,7 @@ static ZINT_COMMAND_FUNCTION(wanpipe_command)
 		{
 			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_GET_USR_PERIOD;
 
-			if (!(err = wp_tdm_cmd_exec(zchan->sockfd, &tdm_api))) {
+			if (!(err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
 				*((int *)obj) = tdm_api.wp_tdm_cmd.usr_period;
 			}
 
@@ -310,12 +316,18 @@ static ZINT_COMMAND_FUNCTION(wanpipe_command)
 		{
 			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_USR_PERIOD;
 			tdm_api.wp_tdm_cmd.usr_period = *((int *)obj);
-			err = wp_tdm_cmd_exec(zchan->sockfd, &tdm_api);
+			err = wp_tdm_cmd_exec(zchan, &tdm_api);
 		}
 		break;
 	};
 
-	return err ? ZAP_FAIL : ZAP_SUCCESS;
+	if (err) {
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
+		return ZAP_FAIL;
+	}
+
+
+	return ZAP_SUCCESS;
 }
 
 static ZINT_WAIT_FUNCTION(wanpipe_wait)
@@ -356,6 +368,7 @@ static ZINT_WAIT_FUNCTION(wanpipe_wait)
 	s = select(zchan->sockfd + 1, r, w, e, tvp);
 
 	if (s < 0) {
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
 		return ZAP_FAIL;
 	}
 	
@@ -410,7 +423,7 @@ static ZINT_READ_FUNCTION(wanpipe_read_unix)
 	*datalen = rx_len;
 
 	if (rx_len <= 0) {
-		perror("wtf");
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
 		return ZAP_FAIL;
 	}
 
@@ -443,6 +456,7 @@ static ZINT_WRITE_FUNCTION(wanpipe_write_unix)
 		bsent -= sizeof(wp_tdm_api_tx_hdr_t);
 	}
 
+	*datalen = bsent;
 }
 
 #endif

@@ -200,6 +200,7 @@ struct zap_channel {
 	zap_chan_type_t type;
 	zap_socket_t sockfd;
 	zap_channel_flag_t flags;
+	char last_error[256];
 	void *mod_data;
 	struct zap_software_interface *zint;
 };
