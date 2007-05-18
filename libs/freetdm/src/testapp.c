@@ -5,6 +5,7 @@ int main(int argc, char *argv[])
 	zap_global_set_default_logger(ZAP_LOG_LEVEL_DEBUG);
 	zap_channel_t *chan;
 	unsigned ms = 20;
+	zap_codec_t codec = ZAP_CODEC_SLIN;
 	
 	if (zap_global_init() != ZAP_SUCCESS) {
 		fprintf(stderr, "Error loading OpenZAP\n");
@@ -23,6 +24,14 @@ int main(int argc, char *argv[])
 			printf("interval set to %u\n", ms);
 		} else {
 			printf("set interval failed [%s]\n", chan->last_error);
+		}
+
+		if (zap_channel_command(chan, ZAP_COMMAND_SET_CODEC, &codec) == ZAP_SUCCESS) {
+			codec = 1;
+			zap_channel_command(chan, ZAP_COMMAND_GET_CODEC, &codec);
+			printf("codec set to %u\n", codec);
+		} else {
+			printf("set codec failed [%s]\n", chan->last_error);
 		}
 
 		for(x = 0; x < 25; x++) {
