@@ -319,6 +319,51 @@ static ZINT_COMMAND_FUNCTION(wanpipe_command)
 			err = wp_tdm_cmd_exec(zchan, &tdm_api);
 		}
 		break;
+		
+	case ZAP_COMMAND_SET_CODEC: 
+		{
+			zap_codec_t codec = *((int *)obj);
+			unsigned wp_codec = 0;
+
+			switch(codec) {
+			case ZAP_CODEC_SLIN:
+				wp_codec = WP_SLINEAR;
+				break;
+			default:
+				break;
+			};
+			
+			if (wp_codec) {
+				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_CODEC;
+				tdm_api.wp_tdm_cmd.tdm_codec = wp_codec;
+				err = wp_tdm_cmd_exec(zchan, &tdm_api);
+			} else {
+				snprintf(zchan->last_error, sizeof(zchan->last_error), "Invalid Codec");
+				return ZAP_FAIL;
+			}
+		}
+		break;
+	case ZAP_COMMAND_GET_CODEC: 
+		{
+			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_GET_CODEC;
+			
+			if (!(err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
+				unsigned wp_codec = tdm_api.wp_tdm_cmd.tdm_codec;
+				zap_codec_t codec = ZAP_CODEC_NONE;
+				switch(wp_codec) {
+				case WP_SLINEAR:
+					codec = ZAP_CODEC_SLIN;
+					break;
+				default:
+					break;
+				};
+
+				*((int *)obj) = codec;
+			}
+		}
+		break;
+	default:
+		break;
 	};
 
 	if (err) {
@@ -449,14 +494,16 @@ static ZINT_WRITE_FUNCTION(wanpipe_write_unix)
 	
 	msg.msg_iovlen = 2;
 	msg.msg_iov = iov;
-
-	bsent = write(zchan->sockfd, &msg, iov[1].iov_len + sizeof(hdrframe));
+	
+	bsent = write(zchan->sockfd, &msg, iov[1].iov_len + iov[0].iov_len);
 
 	if (bsent > 0){
 		bsent -= sizeof(wp_tdm_api_tx_hdr_t);
 	}
 
 	*datalen = bsent;
+
+	return ZAP_SUCCESS;
 }
 
 #endif

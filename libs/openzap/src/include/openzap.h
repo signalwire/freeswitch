@@ -150,6 +150,11 @@ struct zap_software_interface;
 #define zap_socket_close(it) if (it > -1) { close(it); it = -1;}
 
 typedef enum {
+	ZAP_TOP_DOWN,
+	ZAP_BOTTOM_UP
+} zap_direction_t;
+
+typedef enum {
 	ZAP_SUCCESS,
 	ZAP_FAIL,
 	ZAP_MEMERR,
@@ -164,6 +169,7 @@ typedef enum {
 } zap_wait_flag_t;
 
 typedef enum {
+	ZAP_CODEC_NONE = (1 << 31),
 	ZAP_CODEC_ULAW = 0,
 	ZAP_CODEC_ALAW = 8,
 	ZAP_CODEC_SLIN = 10
@@ -172,7 +178,9 @@ typedef enum {
 typedef enum {
 	ZAP_COMMAND_NOOP,
 	ZAP_COMMAND_SET_INTERVAL,
-	ZAP_COMMAND_GET_INTERVAL
+	ZAP_COMMAND_GET_INTERVAL,
+	ZAP_COMMAND_SET_CODEC,
+	ZAP_COMMAND_GET_CODEC
 } zap_command_t;
 
 typedef enum {
@@ -289,6 +297,7 @@ zap_status_t zap_span_create(zap_software_interface_t *zint, zap_span_t **span);
 zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_chan_type_t type, zap_channel_t **chan);
 
 zap_status_t zap_channel_open(const char *name, unsigned span_id, unsigned chan_id, zap_channel_t **zchan);
+zap_status_t zap_channel_open_any(const char *name, unsigned span_id, zap_direction_t direction, zap_channel_t **zchan);
 zap_status_t zap_channel_close(zap_channel_t **zchan);
 zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, void *obj);
 zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t *flags, unsigned to);

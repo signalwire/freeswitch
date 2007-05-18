@@ -186,6 +186,46 @@ zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_cha
 }
 
 
+zap_status_t zap_channel_open_any(const char *name, unsigned span_id, zap_direction_t direction, zap_channel_t **zchan)
+{
+	zap_software_interface_t *zint = (zap_software_interface_t *) hashtable_search(globals.interface_hash, (char *)name);
+	zap_status_t status = ZAP_FAIL;
+	
+	if (span_id < ZAP_MAX_SPANS_INTERFACE && zint) {
+		zap_channel_t *check;
+		zap_span_t *span = &zint->spans[span_id];
+		unsigned i;
+		
+		if (direction == ZAP_TOP_DOWN) {
+			for(i = 1; i <= span->chan_count; i++) {
+				check = &span->channels[i];
+				if (zap_test_flag(check, ZAP_CHANNEL_READY) && !zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
+					status = check->zint->open(check);
+					if (status == ZAP_SUCCESS) {
+						zap_set_flag(check, ZAP_CHANNEL_OPEN);
+						*zchan = check;
+						return status;
+					}
+				}
+			}
+		} else if (direction == ZAP_BOTTOM_UP) {
+			for(i = span->chan_count; i > 0; i--) {
+				check = &span->channels[i];
+				if (zap_test_flag(check, ZAP_CHANNEL_READY) && !zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
+					status = check->zint->open(check);
+					if (status == ZAP_SUCCESS) {
+						zap_set_flag(check, ZAP_CHANNEL_OPEN);
+						*zchan = check;
+						return status;
+					}
+				}
+			}
+		}
+	}
+
+	return status;
+}
+
 zap_status_t zap_channel_open(const char *name, unsigned span_id, unsigned chan_id, zap_channel_t **zchan)
 {
 	zap_software_interface_t *zint = (zap_software_interface_t *) hashtable_search(globals.interface_hash, (char *)name);
@@ -212,10 +252,10 @@ zap_status_t zap_channel_close(zap_channel_t **zchan)
 	zap_channel_t *check;
 	zap_status_t status = ZAP_FAIL;
 
-	*zchan = NULL;
 	assert(zchan != NULL);
 	check = *zchan;
 	assert(check != NULL);
+	*zchan = NULL;
 	
 	if (zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
 		status = check->zint->close(check);

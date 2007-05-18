@@ -33,6 +33,7 @@
 OBJS=hashtable.o hashtable_itr.o openzap.o zap_config.o libteletone_detect.o libteletone_generate.o zap_buffer.o
 CFLAGS=$(ZAP_CFLAGS) -Iinclude 
 MYLIB=libopenzap.a
+TMP=-I../../libpri-1.2.4 -Iinclude -I. -w
 
 include general.makefile $(ZAP_MODS)
 
@@ -44,6 +45,16 @@ $(MYLIB): $(OBJS)
 
 testapp: testapp.c $(MYLIB)
 	$(CC) -L. -Iinclude testapp.c -o testapp -lopenzap -lm
+
+
+priserver.o: priserver.c
+	$(CC) $(TMP) -c priserver.c -o priserver.o 
+
+sangoma_pri.o: sangoma_pri.c
+	$(CC) $(TMP) -c sangoma_pri.c -o sangoma_pri.o
+
+priserver: $(MYLIB) priserver.o sangoma_pri.o
+	$(CC) sangoma_pri.o priserver.o -L. -o priserver -lopenzap -lm ../../libpri-1.2.4/libpri.a
 
 openzap.o: openzap.c
 	$(CC) $(MOD_CFLAGS) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
