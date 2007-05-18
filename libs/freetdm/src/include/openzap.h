@@ -95,37 +95,37 @@ struct zap_software_interface;
 
 /*!
   \brief Test for the existance of a flag on an arbitary object
-  \param obj the object to test
-  \param flag the or'd list of flags to test
+  \command obj the object to test
+  \command flag the or'd list of flags to test
   \return true value if the object has the flags defined
 */
 #define zap_test_flag(obj, flag) ((obj)->flags & flag)
 
 /*!
   \brief Set a flag on an arbitrary object
-  \param obj the object to set the flags on
-  \param flag the or'd list of flags to set
+  \command obj the object to set the flags on
+  \command flag the or'd list of flags to set
 */
 #define zap_set_flag(obj, flag) (obj)->flags |= (flag)
 
 /*!
   \brief Clear a flag on an arbitrary object while locked
-  \param obj the object to test
-  \param flag the or'd list of flags to clear
+  \command obj the object to test
+  \command flag the or'd list of flags to clear
 */
 #define zap_clear_flag(obj, flag) (obj)->flags &= ~(flag)
 
 /*!
   \brief Copy flags from one arbitrary object to another
-  \param dest the object to copy the flags to
-  \param src the object to copy the flags from
-  \param flags the flags to copy
+  \command dest the object to copy the flags to
+  \command src the object to copy the flags from
+  \command flags the flags to copy
 */
 #define zap_copy_flags(dest, src, flags) (dest)->flags &= ~(flags);	(dest)->flags |= ((src)->flags & (flags))
 
 /*!
   \brief Free a pointer and set it to NULL unless it already is NULL
-  \param it the pointer
+  \command it the pointer
 */
 #define zap_safe_free(it) if (it) {free(it);it=NULL;}
 
@@ -134,14 +134,15 @@ struct zap_software_interface;
 typedef enum {
 	ZAP_SUCCESS,
 	ZAP_FAIL,
-	ZAP_MEMERR
+	ZAP_MEMERR,
+	ZAP_TIMEOUT
 } zap_status_t;
 
 typedef enum {
+	ZAP_NO_FLAGS = 0,
 	ZAP_READ =  (1 <<  0),
 	ZAP_WRITE = (1 <<  1),
-	ZAP_ERROR = (1 <<  2),
-	ZAP_EVENT = (1 <<  3)
+	ZAP_ERROR = (1 <<  2)
 } zap_wait_flag_t;
 
 typedef enum {
@@ -149,6 +150,11 @@ typedef enum {
 	ZAP_CODEC_ALAW = 8,
 	ZAP_CODEC_SLIN = 10
 } zap_codec_t;
+
+typedef enum {
+	ZAP_COMMAND_SET_INTERVAL,
+	ZAP_COMMAND_GET_INTERVAL
+} zap_command_t;
 
 typedef enum {
 	ZAP_SPAN_CONFIGURED = (1 << 0),
@@ -192,17 +198,15 @@ typedef struct zap_span zap_span_t;
 #define ZINT_CONFIGURE_ARGS (struct zap_software_interface *zint)
 #define ZINT_OPEN_ARGS (zap_channel_t *zchan)
 #define ZINT_CLOSE_ARGS (zap_channel_t *zchan)
-#define ZINT_SET_CODEC_ARGS (zap_channel_t *zchan, zap_codec_t codec)
-#define ZINT_SET_INTERVAL_ARGS (zap_channel_t *zchan, unsigned ms)
-#define ZINT_WAIT_ARGS (zap_channel_t *zchan, zap_wait_flag_t flags, unsigned to)
+#define ZINT_COMMAND_ARGS (zap_channel_t *zchan, zap_command_t command, void *obj)
+#define ZINT_WAIT_ARGS (zap_channel_t *zchan, zap_wait_flag_t *flags, unsigned to)
 #define ZINT_READ_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
 #define ZINT_WRITE_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
 
 typedef zap_status_t (*zint_configure_t) ZINT_CONFIGURE_ARGS ;
 typedef zap_status_t (*zint_open_t) ZINT_OPEN_ARGS ;
 typedef zap_status_t (*zint_close_t) ZINT_CLOSE_ARGS ;
-typedef zap_status_t (*zint_set_codec_t) ZINT_SET_CODEC_ARGS ;
-typedef zap_status_t (*zint_set_interval_t) ZINT_SET_INTERVAL_ARGS ;
+typedef zap_status_t (*zint_command_t) ZINT_COMMAND_ARGS ;
 typedef zap_status_t (*zint_wait_t) ZINT_WAIT_ARGS ;
 typedef zap_status_t (*zint_read_t) ZINT_READ_ARGS ;
 typedef zap_status_t (*zint_write_t) ZINT_WRITE_ARGS ;
@@ -210,17 +214,15 @@ typedef zap_status_t (*zint_write_t) ZINT_WRITE_ARGS ;
 #define ZINT_CONFIGURE_FUNCTION(name) zap_status_t name ZINT_CONFIGURE_ARGS
 #define ZINT_OPEN_FUNCTION(name) zap_status_t name ZINT_OPEN_ARGS
 #define ZINT_CLOSE_FUNCTION(name) zap_status_t name ZINT_CLOSE_ARGS
-#define ZINT_SET_CODEC_FUNCTION(name) zap_status_t name ZINT_SET_CODEC_ARGS
-#define ZINT_SET_INTERVAL_FUNCTION(name) zap_status_t name ZINT_SET_INTERVAL_ARGS
+#define ZINT_COMMAND_FUNCTION(name) zap_status_t name ZINT_COMMAND_ARGS
 #define ZINT_WAIT_FUNCTION(name) zap_status_t name ZINT_WAIT_ARGS
 #define ZINT_READ_FUNCTION(name) zap_status_t name ZINT_READ_ARGS
 #define ZINT_WRITE_FUNCTION(name) zap_status_t name ZINT_WRITE_ARGS
 
 #define ZINT_CONFIGURE_MUZZLE assert(zint != NULL)
-#define ZINT_OPEN_MUZZLEE assert(zchan != NULL)
+#define ZINT_OPEN_MUZZLE assert(zchan != NULL)
 #define ZINT_CLOSE_MUZZLE assert(zchan != NULL)
-#define ZINT_SET_CODEC_MUZZLE assert(zchan != NULL); assert(codec != 0)
-#define ZINT_SET_INTERVAL_MUZZLE assert(zchan != NULL); assert(ms != 0)
+#define ZINT_COMMAND_MUZZLE assert(zchan != NULL); assert(command != 0); assert(obj != NULL)
 #define ZINT_WAIT_MUZZLE assert(zchan != NULL); assert(flags != 0); assert(to != 0)
 #define ZINT_READ_MUZZLE assert(zchan != NULL); assert(data != NULL); assert(datalen != NULL)
 #define ZINT_WRITE_MUZZLE assert(zchan != NULL); assert(data != NULL); assert(datalen != NULL)
@@ -253,8 +255,7 @@ struct zap_software_interface {
 	zint_configure_t configure;
 	zint_open_t open;
 	zint_close_t close;
-	zint_set_codec_t set_codec;
-	zint_set_interval_t set_interval;
+	zint_command_t command;
 	zint_wait_t wait;
 	zint_read_t read;
 	zint_write_t write;
@@ -269,9 +270,8 @@ zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_cha
 
 zap_status_t zap_channel_open(const char *name, unsigned span_id, unsigned chan_id, zap_channel_t **zchan);
 zap_status_t zap_channel_close(zap_channel_t **zchan);
-zap_status_t zap_channel_set_codec(zap_channel_t *zchan, zap_codec_t codec);
-zap_status_t zap_channel_set_interval(zap_channel_t *zchan, unsigned ms);
-zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t flags, unsigned to);
+zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, void *obj);
+zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t *flags, unsigned to);
 zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *datalen);
 zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t *datalen);
 zap_status_t zap_global_init(void);

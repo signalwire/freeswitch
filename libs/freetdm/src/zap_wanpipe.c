@@ -236,7 +236,7 @@ static ZINT_CONFIGURE_FUNCTION(wanpipe_configure)
 			zap_log(ZAP_LOG_DEBUG, "span %d [%s]=[%s]\n", span->span_id, var, val);
 			
 			if (!strcasecmp(var, "enabled")) {
-				zap_log(ZAP_LOG_WARNING, "'enabled' param ignored when it's not the first param in a [span]\n");
+				zap_log(ZAP_LOG_WARNING, "'enabled' command ignored when it's not the first command in a [span]\n");
 			} else if (!strcasecmp(var, "b-channel")) {
 				configured += wp_configure_channel(&cfg, val, span, ZAP_CHAN_TYPE_B);
 			} else if (!strcasecmp(var, "d-channel")) {
@@ -266,42 +266,185 @@ static ZINT_CONFIGURE_FUNCTION(wanpipe_configure)
 static ZINT_OPEN_FUNCTION(wanpipe_open) 
 {
 	ZINT_OPEN_MUZZLE;
-	return ZAP_FAIL;
+	return ZAP_SUCCESS;
 }
 
 static ZINT_CLOSE_FUNCTION(wanpipe_close)
 {
 	ZINT_CLOSE_MUZZLE;
-	return ZAP_FAIL;
+	return ZAP_SUCCESS;
 }
 
-static ZINT_SET_CODEC_FUNCTION(wanpipe_set_codec)
+static ZINT_COMMAND_FUNCTION(wanpipe_command)
 {
-	ZINT_SET_CODEC_MUZZLE;
-	return ZAP_FAIL;
-}
+	wanpipe_tdm_api_t tdm_api;
+	int err;
 
-static ZINT_SET_INTERVAL_FUNCTION(wanpipe_set_interval)
-{
-	ZINT_SET_INTERVAL_MUZZLE;
-	return ZAP_FAIL;
+	ZINT_COMMAND_MUZZLE;
+	
+	memset(&tdm_api, 0, sizeof(tdm_api));
+	
+	switch(command) {
+	case ZAP_COMMAND_GET_INTERVAL:
+		{
+			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_GET_USR_PERIOD;
+
+			if (!(err = sangoma_tdm_cmd_exec(zchan->sockfd, tdm_api))) {
+				*((int *)obj) = tdm_api.wp_tdm_cmd.usr_period;
+			}
+
+		}
+		break;
+	case ZAP_COMMAND_SET_INTERVAL: 
+		{
+			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_USR_PERIOD;
+			tdm_api.wp_tdm_cmd.usr_period = *((int *)obj);
+			err = sangoma_tdm_cmd_exec(zchan->sockfd, tdm_api);
+		}
+		break;
+	};
+
+	return err ? ZAP_FAIL : ZAP_SUCCESS;
 }
 
 static ZINT_WAIT_FUNCTION(wanpipe_wait)
 {
+	fd_set read_fds, write_fds, error_fds, *r = NULL, *w = NULL, *e = NULL;
+	zap_wait_flag_t inflags = *flags;
+	int s;
+	struct timeval tv, *tvp = NULL;
+
 	ZINT_WAIT_MUZZLE;
-	return ZAP_FAIL;
+
+	if (to) {
+		memset(&tv, 0, sizeof(tv));
+		tv.tv_sec = to / 1000;
+		tv.tv_usec = (to % 1000) * 1000;
+		tvp = &tv;
+	}
+
+	FD_ZERO(&read_fds);
+	FD_ZERO(&write_fds);
+	FD_ZERO(&error_fds);
+
+
+	if (inflags & ZAP_READ) {
+		r = &read_fds;
+		FD_SET(zchan->sockfd, r);
+	}
+
+	if (inflags & ZAP_WRITE) {
+		w = &write_fds;
+		FD_SET(zchan->sockfd, w);
+	}
+
+	if (inflags & ZAP_ERROR) {
+		e = &error_fds;
+		FD_SET(zchan->sockfd, e);
+	}
+
+	*flags = ZAP_NO_FLAGS;
+	s = select(zchan->sockfd + 1, r, w, e, tvp);
+	
+	if (s < 0) {
+		return ZAP_FAIL;
+	}
+	
+	if (s > 0) {
+		if (r && FD_ISSET(zchan->sockfd, r)) {
+			*flags |= ZAP_READ;
+		}
+
+		if (w && FD_ISSET(zchan->sockfd, w)) {
+			*flags |= ZAP_WRITE;
+		}
+
+		if (e && FD_ISSET(zchan->sockfd, e)) {
+			*flags |= ZAP_ERROR;
+		}
+	}
+
+	if (s == 0) {
+		return ZAP_TIMEOUT;
+	}
+
+}
+
+static ZINT_READ_FUNCTION(wanpipe_read_unix)
+{
+	int rx_len = 0;
+	struct msghdr msg;
+	struct iovec iov[2];
+	wp_tdm_api_rx_hdr_t hdrframe;
+
+	memset(&msg, 0, sizeof(struct msghdr));
+
+	iov[0].iov_len = sizeof(hdrframe);
+	iov[0].iov_base = &hdrframe;
+	
+	iov[1].iov_len = *datalen;
+	iov[1].iov_base = data;
+
+	msg.msg_iovlen = 2;
+	msg.msg_iov = iov;
+
+	rx_len = read(zchan->sockfd, &msg, iov[1].iov_len + sizeof(hdrframe));
+	
+	if (rx_len <= sizeof(hdrframe)) {
+		return ZAP_FAIL;
+	}
+
+	rx_len -= sizeof(hdrframe);
+	*datalen = rx_len;
+
+	return ZAP_SUCCESS;
 }
 
 static ZINT_READ_FUNCTION(wanpipe_read)
 {
 	ZINT_READ_MUZZLE;
+	
+#ifndef WIN32
+	return wanpipe_read_unix(zchan, data, datalen);
+#endif
+	
 	return ZAP_FAIL;
+}
+
+static ZINT_WRITE_FUNCTION(wanpipe_write_unix)
+{
+	int bsent;
+	struct msghdr msg;
+	struct iovec iov[2];
+	wp_tdm_api_rx_hdr_t hdrframe;
+
+	memset(&msg, 0, sizeof(struct msghdr));
+	
+	iov[0].iov_len = sizeof(hdrframe);
+	iov[0].iov_base = &hdrframe;
+
+	iov[1].iov_len = *datalen;
+	iov[1].iov_base = data;
+	
+	msg.msg_iovlen = 2;
+	msg.msg_iov = iov;
+
+	bsent = write(zchan->sockfd, &msg, iov[1].iov_len + sizeof(hdrframe));
+
+	if (bsent > 0){
+		bsent -= sizeof(wp_tdm_api_tx_hdr_t);
+	}
+
 }
 
 static ZINT_WRITE_FUNCTION(wanpipe_write)
 {
 	ZINT_WRITE_MUZZLE;
+
+#ifndef WIN32
+	return wanpipe_write_unix(zchan, data, datalen);
+#endif
+
 	return ZAP_FAIL;
 }
 
@@ -314,8 +457,7 @@ zap_status_t wanpipe_init(zap_software_interface_t **zint)
 	wanpipe_interface.configure =  wanpipe_configure;
 	wanpipe_interface.open = wanpipe_open;
 	wanpipe_interface.close = wanpipe_close;
-	wanpipe_interface.set_codec = wanpipe_set_codec;
-	wanpipe_interface.set_interval = wanpipe_set_interval;
+	wanpipe_interface.command = wanpipe_command;
 	wanpipe_interface.wait = wanpipe_wait;
 	wanpipe_interface.read = wanpipe_read;
 	wanpipe_interface.write = wanpipe_write;

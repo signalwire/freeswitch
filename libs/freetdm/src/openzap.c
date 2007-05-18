@@ -229,24 +229,7 @@ zap_status_t zap_channel_close(zap_channel_t **zchan)
 }
 
 
-zap_status_t zap_channel_set_codec(zap_channel_t *zchan, zap_codec_t codec)
-{
-	assert(zchan != NULL);
-	assert(zchan->zint != NULL);
-
-	if (!zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
-		return ZAP_FAIL;
-	}
-	
-	if (!zchan->zint->set_codec) {
-		return ZAP_FAIL;
-	}
-
-	return zchan->zint->set_codec(zchan, codec);
-	
-}
-
-zap_status_t zap_channel_set_interval(zap_channel_t *zchan, unsigned ms)
+zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, void *obj)
 {
 	assert(zchan != NULL);
 	assert(zchan->zint != NULL);
@@ -255,15 +238,15 @@ zap_status_t zap_channel_set_interval(zap_channel_t *zchan, unsigned ms)
         return ZAP_FAIL;
     }
 
-	if (!zchan->zint->set_interval) {
+	if (!zchan->zint->command) {
 		return ZAP_FAIL;
 	}
 
-    return zchan->zint->set_interval(zchan, ms);
+    return zchan->zint->command(zchan, command, obj);
 
 }
 
-zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t flags, unsigned to)
+zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t *flags, unsigned to)
 {
 	assert(zchan != NULL);
 	assert(zchan->zint != NULL);
@@ -286,7 +269,7 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 	assert(zchan != NULL);
 	assert(zchan->zint != NULL);
 	assert(zchan->zint != NULL);
-
+	
     if (!zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
         return ZAP_FAIL;
     }
