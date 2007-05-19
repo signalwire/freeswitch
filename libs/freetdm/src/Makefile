@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-OBJS=hashtable.o hashtable_itr.o openzap.o zap_config.o libteletone_detect.o libteletone_generate.o zap_buffer.o
+OBJS=hashtable.o hashtable_itr.o openzap.o zap_config.o g711.o libteletone_detect.o libteletone_generate.o zap_buffer.o
 CFLAGS=$(ZAP_CFLAGS) -Iinclude 
 MYLIB=libopenzap.a
 TMP=-I../../libpri-1.2.4 -Iinclude -I. -w
@@ -69,5 +69,5 @@ zap_zt.o: zap_zt.c
 	$(CC) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f *.o $(MYLIB) *~ \#*
+	rm -f *.o $(MYLIB) *~ \#* testapp priserver
 
