@@ -47,6 +47,7 @@
 #define WP_INVALID_SOCKET INVALID_HANDLE_VALUE
 #else
 #define WP_INVALID_SOCKET -1
+#include <stropts.h>
 #endif
 
 #include <wanpipe_defines.h>
@@ -67,8 +68,29 @@
 #include <zap_wanpipe_windows.h>
 #endif
 
+static struct {
+	unsigned codec_ms;
+} wp_globals;
 
 static zap_software_interface_t wanpipe_interface;
+
+static zap_status_t wp_tdm_cmd_exec(zap_channel_t *zchan, wanpipe_tdm_api_t *tdm_api)
+{
+	int err;
+
+#if defined(WIN32)
+	err = tdmv_api_ioctl(zchan->sockfd, &tdm_api->wp_tdm_cmd);
+#else
+	err = ioctl(zchan->sockfd, SIOC_WANPIPE_TDM_API, &tdm_api->wp_tdm_cmd);
+#endif
+	
+	if (err) {
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
+		return ZAP_FAIL;
+	}
+
+	return ZAP_SUCCESS;
+}
 
 static zap_socket_t wp_open_device(int span, int chan) 
 {
@@ -113,6 +135,7 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 		if (sockfd != WP_INVALID_SOCKET && zap_span_add_channel(span, sockfd, type, &chan) == ZAP_SUCCESS) {
 			zap_log(ZAP_LOG_INFO, "configuring device s%dc%d as OpenZAP device %d:%d fd:%d\n", spanno, x, chan->span_id, chan->chan_id, sockfd);
 			configured++;
+
 		} else {
 			zap_log(ZAP_LOG_ERROR, "failure configuring device s%dc%d\n", spanno, x);
 		}
@@ -188,24 +211,6 @@ static unsigned wp_configure_channel(zap_config_t *cfg, const char *str, zap_spa
 	return configured;
 }
 
-static zap_status_t wp_tdm_cmd_exec(zap_channel_t *zchan, wanpipe_tdm_api_t *tdm_api)
-{
-	int err;
-
-#if defined(WIN32)
-	err = tdmv_api_ioctl(zchan->sockfd, &tdm_api->wp_tdm_cmd);
-#else
-	err = ioctl(zchan->sockfd, SIOC_WANPIPE_TDM_API, &tdm_api->wp_tdm_cmd);
-#endif
-	
-	if (err) {
-		snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
-		return ZAP_FAIL;
-	}
-
-	return ZAP_SUCCESS;
-}
-
 static ZINT_CONFIGURE_FUNCTION(wanpipe_configure)
 {
 	zap_config_t cfg;
@@ -223,7 +228,16 @@ static ZINT_CONFIGURE_FUNCTION(wanpipe_configure)
 	}
 	
 	while (zap_config_next_pair(&cfg, &var, &val)) {
-		if (!strcasecmp(cfg.category, "span")) {
+		if (!strcasecmp(cfg.category, "defaults")) {
+			if (!strcasecmp(var, "codec_ms")) {
+				unsigned codec_ms = atoi(val);
+				if (codec_ms < 10 || codec_ms > 60) {
+					zap_log(ZAP_LOG_WARNING, "invalid codec ms at line %d\n", cfg.lineno);
+				} else {
+					wp_globals.codec_ms = codec_ms;
+				}
+			}
+		} else if (!strcasecmp(cfg.category, "span")) {
 			if (cfg.catno != catno) {
 				zap_log(ZAP_LOG_DEBUG, "found config for span\n");
 				catno = cfg.catno;
@@ -282,7 +296,28 @@ static ZINT_CONFIGURE_FUNCTION(wanpipe_configure)
 
 static ZINT_OPEN_FUNCTION(wanpipe_open) 
 {
-	ZINT_OPEN_MUZZLE;
+
+	wanpipe_tdm_api_t tdm_api;
+
+	if (zchan->type == ZAP_CHAN_TYPE_DQ921 || zchan->type == ZAP_CHAN_TYPE_DQ931) {
+		zchan->native_codec = zchan->effective_codec = ZAP_CODEC_NONE;
+	} else {
+		tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_CODEC;
+		tdm_api.wp_tdm_cmd.tdm_codec = WP_NONE;
+		wp_tdm_cmd_exec(zchan, &tdm_api);
+
+		tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_USR_PERIOD;
+		tdm_api.wp_tdm_cmd.usr_period = wp_globals.codec_ms;
+		wp_tdm_cmd_exec(zchan, &tdm_api);
+
+		tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_GET_HW_CODING;
+		if (tdm_api.wp_tdm_cmd.hw_tdm_coding) {
+			zchan->native_codec = zchan->effective_codec = ZAP_CODEC_ULAW;
+		} else {
+			zchan->native_codec = zchan->effective_codec = ZAP_CODEC_ALAW;
+		}
+	}
+
 	return ZAP_SUCCESS;
 }
 
@@ -307,7 +342,7 @@ static ZINT_COMMAND_FUNCTION(wanpipe_command)
 			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_GET_USR_PERIOD;
 
 			if (!(err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
-				*((int *)obj) = tdm_api.wp_tdm_cmd.usr_period;
+				ZAP_COMMAND_OBJ_INT = tdm_api.wp_tdm_cmd.usr_period;
 			}
 
 		}
@@ -315,51 +350,22 @@ static ZINT_COMMAND_FUNCTION(wanpipe_command)
 	case ZAP_COMMAND_SET_INTERVAL: 
 		{
 			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_USR_PERIOD;
-			tdm_api.wp_tdm_cmd.usr_period = *((int *)obj);
+			tdm_api.wp_tdm_cmd.usr_period = ZAP_COMMAND_OBJ_INT;
 			err = wp_tdm_cmd_exec(zchan, &tdm_api);
 		}
 		break;
-		
+
 	case ZAP_COMMAND_SET_CODEC: 
 		{
-			zap_codec_t codec = *((int *)obj);
-			unsigned wp_codec = 0;
-
-			switch(codec) {
-			case ZAP_CODEC_SLIN:
-				wp_codec = WP_SLINEAR;
-				break;
-			default:
-				break;
-			};
-			
-			if (wp_codec) {
-				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_CODEC;
-				tdm_api.wp_tdm_cmd.tdm_codec = wp_codec;
-				err = wp_tdm_cmd_exec(zchan, &tdm_api);
-			} else {
-				snprintf(zchan->last_error, sizeof(zchan->last_error), "Invalid Codec");
-				return ZAP_FAIL;
-			}
+			zchan->effective_codec = ZAP_COMMAND_OBJ_INT;
+			err = 0;
 		}
 		break;
+
 	case ZAP_COMMAND_GET_CODEC: 
 		{
-			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_GET_CODEC;
-			
-			if (!(err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
-				unsigned wp_codec = tdm_api.wp_tdm_cmd.tdm_codec;
-				zap_codec_t codec = ZAP_CODEC_NONE;
-				switch(wp_codec) {
-				case WP_SLINEAR:
-					codec = ZAP_CODEC_SLIN;
-					break;
-				default:
-					break;
-				};
-
-				*((int *)obj) = codec;
-			}
+			ZAP_COMMAND_OBJ_INT = zchan->effective_codec;
+			err = 0;
 		}
 		break;
 	default:
@@ -413,7 +419,7 @@ static ZINT_WAIT_FUNCTION(wanpipe_wait)
 	s = select(zchan->sockfd + 1, r, w, e, tvp);
 
 	if (s < 0) {
-		snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "select: %s", strerror(errno));
 		return ZAP_FAIL;
 	}
 	
@@ -434,7 +440,8 @@ static ZINT_WAIT_FUNCTION(wanpipe_wait)
 	if (s == 0) {
 		return ZAP_TIMEOUT;
 	}
-
+	
+	return ZAP_SUCCESS;
 }
 
 #ifndef __WINDOWS__
@@ -494,7 +501,6 @@ static ZINT_WRITE_FUNCTION(wanpipe_write_unix)
 	
 	msg.msg_iovlen = 2;
 	msg.msg_iov = iov;
-	
 	bsent = write(zchan->sockfd, &msg, iov[1].iov_len + iov[0].iov_len);
 
 	if (bsent > 0){
@@ -510,13 +516,11 @@ static ZINT_WRITE_FUNCTION(wanpipe_write_unix)
 
 static ZINT_READ_FUNCTION(wanpipe_read)
 {
-	ZINT_READ_MUZZLE;
-	
+
 #ifndef WIN32
 	return wanpipe_read_unix(zchan, data, datalen);
 #endif
-	
-	return ZAP_FAIL;
+
 }
 
 static ZINT_WRITE_FUNCTION(wanpipe_write)
@@ -535,6 +539,7 @@ zap_status_t wanpipe_init(zap_software_interface_t **zint)
 	assert(zint != NULL);
 	memset(&wanpipe_interface, 0, sizeof(wanpipe_interface));
 
+	wp_globals.codec_ms = 20;
 	wanpipe_interface.name = "wanpipe";
 	wanpipe_interface.configure =  wanpipe_configure;
 	wanpipe_interface.open = wanpipe_open;

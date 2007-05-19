@@ -6,7 +6,8 @@ int main(int argc, char *argv[])
 	zap_channel_t *chan;
 	unsigned ms = 20;
 	zap_codec_t codec = ZAP_CODEC_SLIN;
-	
+	unsigned runs = 4;
+
 	if (zap_global_init() != ZAP_SUCCESS) {
 		fprintf(stderr, "Error loading OpenZAP\n");
 		exit(-1);
@@ -14,11 +15,12 @@ int main(int argc, char *argv[])
 
 	printf("OpenZAP loaded\n");
 
-	
+ top:
 	if (zap_channel_open_any("wanpipe", 0, ZAP_TOP_DOWN, &chan) == ZAP_SUCCESS) {
 		int x = 0;
 		printf("opened channel %d:%d\n", chan->span_id, chan->chan_id);
 
+#if 1
 		if (zap_channel_command(chan, ZAP_COMMAND_SET_INTERVAL, &ms) == ZAP_SUCCESS) {
 			ms = 0;
 			zap_channel_command(chan, ZAP_COMMAND_GET_INTERVAL, &ms);
@@ -26,7 +28,7 @@ int main(int argc, char *argv[])
 		} else {
 			printf("set interval failed [%s]\n", chan->last_error);
 		}
-
+#endif
 		if (zap_channel_command(chan, ZAP_COMMAND_SET_CODEC, &codec) == ZAP_SUCCESS) {
 			codec = 1;
 			zap_channel_command(chan, ZAP_COMMAND_GET_CODEC, &codec);
@@ -54,10 +56,14 @@ int main(int argc, char *argv[])
 				printf("wait fail [%s]\n", chan->last_error);
 			}
 		}
+		zap_channel_close(&chan);
 	} else {
 		printf("open fail [%s]\n", chan->last_error);
 	}
 
+	if(--runs) {
+		goto top;
+	}
 	zap_global_destroy();
 
 }

@@ -177,6 +177,7 @@ zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_cha
 		new_chan->zint = span->zint;
 		new_chan->span_id = span->span_id;
 		new_chan->chan_id = span->chan_count;
+		new_chan->span = span;
 		zap_set_flag(new_chan, ZAP_CHANNEL_CONFIGURED | ZAP_CHANNEL_READY);
 		*chan = new_chan;
 		return ZAP_SUCCESS;
@@ -185,6 +186,42 @@ zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_cha
 	return ZAP_FAIL;
 }
 
+zap_status_t zap_span_find(const char *name, unsigned id, zap_span_t **span)
+{
+	zap_software_interface_t *zint = (zap_software_interface_t *) hashtable_search(globals.interface_hash, (char *)name);
+	zap_span_t *fspan;
+
+	if (!zint) {
+		return ZAP_FAIL;
+	}
+
+	if (id > ZAP_MAX_SPANS_INTERFACE) {
+		return ZAP_FAIL;
+	}
+
+	fspan = &zint->spans[id];
+
+	if (!zap_test_flag(fspan, ZAP_SPAN_CONFIGURED)) {
+		return ZAP_FAIL;
+	}
+
+	*span = fspan;
+
+	return ZAP_SUCCESS;
+	
+}
+
+zap_status_t zap_span_set_event_callback(zap_span_t *span, zint_event_cb_t event_callback)
+{
+	span->event_callback = event_callback;
+	return ZAP_SUCCESS;
+}
+
+zap_status_t zap_channel_set_event_callback(zap_channel_t *zchan, zint_event_cb_t event_callback)
+{
+	zchan->event_callback = event_callback;
+	return ZAP_SUCCESS;
+}
 
 zap_status_t zap_channel_open_any(const char *name, unsigned span_id, zap_direction_t direction, zap_channel_t **zchan)
 {
@@ -317,6 +354,9 @@ zap_status_t zap_channel_close(zap_channel_t **zchan)
 		status = check->zint->close(check);
 		if (status == ZAP_SUCCESS) {
 			zap_clear_flag(check, ZAP_CHANNEL_OPEN);
+			check->event_callback = NULL;
+			zap_clear_flag(check, ZAP_CHANNEL_DTMF_DETECT);
+			zap_clear_flag(check, ZAP_CHANNEL_SUPRESS_DTMF);
 			*zchan = NULL;
 		}
 	}
@@ -331,10 +371,50 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 	assert(zchan->zint != NULL);
 
     if (!zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "channel not open");
         return ZAP_FAIL;
     }
 
+	switch(command) {
+	case ZAP_COMMAND_ENABLE_TONE_DETECT:
+		{
+			/* if they don't have thier own, use ours */
+			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF_DETECT)) {
+				zap_tone_type_t tt = ZAP_COMMAND_OBJ_INT;
+				if (tt == ZAP_TONE_DTMF) {
+					teletone_dtmf_detect_init (&zchan->dtmf_detect, 8000);
+					zap_set_flag(zchan, ZAP_CHANNEL_DTMF_DETECT);
+					zap_set_flag(zchan, ZAP_CHANNEL_SUPRESS_DTMF);
+					return ZAP_SUCCESS;
+				} else {
+					snprintf(zchan->last_error, sizeof(zchan->last_error), "invalid command");
+					return ZAP_FAIL;
+				}
+			}
+		}
+		break;
+	case ZAP_COMMAND_DISABLE_TONE_DETECT:
+		{
+			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF_DETECT)) {
+				zap_tone_type_t tt = ZAP_COMMAND_OBJ_INT;
+                if (tt == ZAP_TONE_DTMF) {
+                    teletone_dtmf_detect_init (&zchan->dtmf_detect, 8000);
+                    zap_clear_flag(zchan, ZAP_CHANNEL_DTMF_DETECT);
+					zap_clear_flag(zchan, ZAP_CHANNEL_SUPRESS_DTMF);
+                    return ZAP_SUCCESS;
+                } else {
+                    snprintf(zchan->last_error, sizeof(zchan->last_error), "invalid command");
+                    return ZAP_FAIL;
+                }
+			}
+		}
+		break;
+	default:
+		break;
+	}
+
 	if (!zchan->zint->command) {
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "method not implemented");
 		return ZAP_FAIL;
 	}
 
@@ -348,10 +428,12 @@ zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t *flags, unsi
 	assert(zchan->zint != NULL);
 
     if (!zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "channel not open");
         return ZAP_FAIL;
     }
 
 	if (!zchan->zint->wait) {
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "method not implemented");
 		return ZAP_FAIL;
 	}
 
@@ -359,41 +441,282 @@ zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t *flags, unsi
 
 }
 
+/*******************************/
+ZINT_CODEC_FUNCTION(zint_slin2ulaw)
+{
+	int16_t sln_buf[512] = {0}, *sln = sln_buf;
+	uint8_t *lp = data;
+	unsigned i;
+	zap_size_t len = *datalen;
+
+	if (max > len) {
+		max = len;
+	}
+
+	memcpy(sln, data, max);
+	
+	for(i = 0; i < max; i++) {
+		*lp++ = linear_to_ulaw(*sln++);
+	}
+
+	*datalen = max / 2;
+
+	return ZAP_SUCCESS;
+
+}
+
+
+ZINT_CODEC_FUNCTION(zint_ulaw2slin)
+{
+	int16_t *sln = data;
+	uint8_t law[1024] = {0}, *lp = law;
+	unsigned i;
+	zap_size_t len = *datalen;
+	
+	if (max > len) {
+		max = len;
+	}
+
+	memcpy(law, data, max);
+
+	for(i = 0; i < max; i++) {
+		*sln++ = ulaw_to_linear(*lp++);
+	}
+
+	*datalen = max * 2;
+
+	return ZAP_SUCCESS;
+}
+
+ZINT_CODEC_FUNCTION(zint_slin2alaw)
+{
+	int16_t sln_buf[512] = {0}, *sln = sln_buf;
+	uint8_t *lp = data;
+	unsigned i;
+	zap_size_t len = *datalen;
+
+	if (max > len) {
+		max = len;
+	}
+
+	memcpy(sln, data, max);
+	
+	for(i = 0; i < max; i++) {
+		*lp++ = linear_to_alaw(*sln++);
+	}
+
+	*datalen = max / 2;
+
+	return ZAP_SUCCESS;
+
+}
+
+
+ZINT_CODEC_FUNCTION(zint_alaw2slin)
+{
+	int16_t *sln = data;
+	uint8_t law[1024] = {0}, *lp = law;
+	unsigned i;
+	zap_size_t len = *datalen;
+	
+	if (max > len) {
+		max = len;
+	}
+
+	memcpy(law, data, max);
+
+	for(i = 0; i < max; i++) {
+		*sln++ = alaw_to_linear(*lp++);
+	}
+
+	*datalen = max * 2;
+
+	return ZAP_SUCCESS;
+}
+
+ZINT_CODEC_FUNCTION(zint_ulaw2alaw)
+{
+	zap_size_t len = *datalen;
+	unsigned i;
+	uint8_t *lp = data;
+
+	if (max > len) {
+        max = len;
+    }
+
+	for(i = 0; i < max; i++) {
+		*lp = ulaw_to_alaw(*lp);
+		lp++;
+	}
+
+	return ZAP_SUCCESS;
+}
+
+ZINT_CODEC_FUNCTION(zint_alaw2ulaw)
+{
+	zap_size_t len = *datalen;
+	unsigned i;
+	uint8_t *lp = data;
+
+	if (max > len) {
+        max = len;
+    }
+
+	for(i = 0; i < max; i++) {
+		*lp = alaw_to_ulaw(*lp);
+		lp++;
+	}
+
+	return ZAP_SUCCESS;
+}
+
+/******************************/
 
 zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *datalen)
 {
+	zap_status_t status = ZAP_FAIL;
+	zint_codec_t codec_func;
+	zap_size_t max = *datalen;
+
 	assert(zchan != NULL);
 	assert(zchan->zint != NULL);
 	assert(zchan->zint != NULL);
 	
     if (!zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "channel not open");
         return ZAP_FAIL;
     }
 
 	if (!zchan->zint->read) {
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "method not implemented");
 		return ZAP_FAIL;
 	}
 
-    return zchan->zint->read(zchan, data, datalen);
-	
+    status = zchan->zint->read(zchan, data, datalen);
+
+	if (status == ZAP_SUCCESS && zchan->effective_codec != zchan->native_codec) {
+		if (zchan->native_codec == ZAP_CODEC_ULAW && zchan->effective_codec == ZAP_CODEC_SLIN) {
+			codec_func = zint_ulaw2slin;
+		} else if (zchan->native_codec == ZAP_CODEC_ULAW && zchan->effective_codec == ZAP_CODEC_ALAW) {
+			codec_func = zint_ulaw2alaw;
+		} else if (zchan->native_codec == ZAP_CODEC_ALAW && zchan->effective_codec == ZAP_CODEC_SLIN) {
+			codec_func = zint_alaw2slin;
+		} else if (zchan->native_codec == ZAP_CODEC_ALAW && zchan->effective_codec == ZAP_CODEC_ULAW) {
+			codec_func = zint_alaw2ulaw;
+		}
+
+		if (codec_func) {
+			status = codec_func(data, max, datalen);
+		} else {
+			snprintf(zchan->last_error, sizeof(zchan->last_error), "codec error!");
+			status = ZAP_FAIL;
+		}
+	}
+
+	if (zap_test_flag(zchan, ZAP_CHANNEL_DTMF_DETECT)) {
+		int16_t sln_buf[1024], *sln = sln_buf;
+		zap_size_t slen;
+		char digit_str[80] = "";
+
+		if (zchan->effective_codec == ZAP_CODEC_SLIN) {
+			sln = data;
+			slen = *datalen / 2;
+		} else {
+			zap_size_t len = *datalen;
+			unsigned i;
+			uint8_t *lp = data;
+			slen = max;
+			
+			if (slen > len) {
+				slen = len;
+			}
+
+			if (zchan->effective_codec == ZAP_CODEC_ULAW) {
+				for(i = 0; i < max; i++) {
+					*sln++ = ulaw_to_linear(*lp++);
+				} 
+			} else if (zchan->effective_codec == ZAP_CODEC_ALAW) {
+				for(i = 0; i < max; i++) {
+					*sln++ = alaw_to_linear(*lp++);
+				} 
+			}
+
+			sln = sln_buf;
+		}
+
+		teletone_dtmf_detect (&zchan->dtmf_detect, sln, slen);
+		teletone_dtmf_get(&zchan->dtmf_detect, digit_str, sizeof(digit_str));
+		if(digit_str[0]) {
+			zint_event_cb_t event_callback = NULL;
+			if (zchan->span->event_callback) {
+				event_callback = zchan->span->event_callback;
+			} else if (zchan->event_callback) {
+				event_callback = zchan->event_callback;
+			}
+
+			if (event_callback) {
+				zchan->event_header.e_type = ZAP_EVENT_DTMF;
+				zchan->event_header.data = digit_str;
+				event_callback(zchan, &zchan->event_header);
+				zchan->event_header.e_type = ZAP_EVENT_NONE;
+				zchan->event_header.data = NULL;
+			}
+			if (zap_test_flag(zchan, ZAP_CHANNEL_SUPRESS_DTMF)) {
+				zchan->skip_read_frames = 20;
+			}
+			if (zchan->skip_read_frames > 0) {
+				memset(data, 0, *datalen);
+				zchan->skip_read_frames--;
+			}  
+		}
+	}
+
+	return status;
 }
 
 
 zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t *datalen)
 {
+	zap_status_t status = ZAP_FAIL;
+	zint_codec_t codec_func;
+	zap_size_t max = *datalen;
+
 	assert(zchan != NULL);
 	assert(zchan->zint != NULL);
 
     if (!zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "channel not open");
         return ZAP_FAIL;
     }
 
 	if (!zchan->zint->write) {
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "method not implemented");
 		return ZAP_FAIL;
 	}
-
-    return zchan->zint->write(zchan, data, datalen);
 	
+	
+	if (zchan->effective_codec != zchan->native_codec) {
+		if (zchan->native_codec == ZAP_CODEC_ULAW && zchan->effective_codec == ZAP_CODEC_SLIN) {
+			codec_func = zint_slin2ulaw;
+		} else if (zchan->native_codec == ZAP_CODEC_ULAW && zchan->effective_codec == ZAP_CODEC_ALAW) {
+			codec_func = zint_alaw2ulaw;
+		} else if (zchan->native_codec == ZAP_CODEC_ALAW && zchan->effective_codec == ZAP_CODEC_SLIN) {
+			codec_func = zint_slin2alaw;
+		} else if (zchan->native_codec == ZAP_CODEC_ALAW && zchan->effective_codec == ZAP_CODEC_ULAW) {
+			codec_func = zint_ulaw2alaw;
+		}
+
+		if (codec_func) {
+			status = codec_func(data, max, datalen);
+		} else {
+			snprintf(zchan->last_error, sizeof(zchan->last_error), "codec error!");
+			status = ZAP_FAIL;
+		}
+	}
+
+    status = zchan->zint->write(zchan, data, datalen);
+
+	return status;
 }
 
 zap_status_t zap_global_init(void)
