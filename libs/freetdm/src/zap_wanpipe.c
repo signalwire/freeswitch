@@ -78,7 +78,7 @@ static zap_status_t wp_tdm_cmd_exec(zap_channel_t *zchan, wanpipe_tdm_api_t *tdm
 {
 	int err;
 
-#if defined(WIN32)
+#if defined(__WINDOWS__)
 	err = tdmv_api_ioctl(zchan->sockfd, &tdm_api->wp_tdm_cmd);
 #else
 	err = ioctl(zchan->sockfd, SIOC_WANPIPE_TDM_API, &tdm_api->wp_tdm_cmd);
@@ -95,7 +95,7 @@ static zap_status_t wp_tdm_cmd_exec(zap_channel_t *zchan, wanpipe_tdm_api_t *tdm
 static zap_socket_t wp_open_device(int span, int chan) 
 {
    	char fname[256];
-#if defined(WIN32)
+#if defined(__WINDOWS__)
 
 	_snprintf(fname , FNAME_LEN, "\\\\.\\WANPIPE%d_IF%d", span, chan - 1);
 
@@ -652,34 +652,6 @@ static ZINT_WRITE_FUNCTION(wanpipe_write_unix)
 
 #endif
 
-static ZINT_READ_FUNCTION(wanpipe_read)
-{
-#ifdef __WINDOWS__
-	return wanpipe_read_windows(zchan, data, datalen);
-#else
-	return wanpipe_read_unix(zchan, data, datalen);
-#endif
-
-}
-
-static ZINT_WRITE_FUNCTION(wanpipe_write)
-{
-#ifdef __WINDOWS__
-	return wanpipe_write_windows(zchan, data, datalen);
-#else
-	return wanpipe_write_unix(zchan, data, datalen);
-#endif
-}
-
-static ZINT_WAIT_FUNCTION(wanpipe_wait)
-{
-#ifdef __WINDOWS__
-	return wanpipe_wait_windows(zchan, flags, to);
-#else
-	return wanpipe_wait_unix(zchan, flags, to);
-#endif
-}
-
 zap_status_t wanpipe_init(zap_software_interface_t **zint)
 {
 	assert(zint != NULL);
@@ -691,9 +663,15 @@ zap_status_t wanpipe_init(zap_software_interface_t **zint)
 	wanpipe_interface.open = wanpipe_open;
 	wanpipe_interface.close = wanpipe_close;
 	wanpipe_interface.command = wanpipe_command;
-	wanpipe_interface.wait = wanpipe_wait;
-	wanpipe_interface.read = wanpipe_read;
-	wanpipe_interface.write = wanpipe_write;
+#ifdef __WINDOWS__
+	wanpipe_interface.wait = wanpipe_wait_windows;
+	wanpipe_interface.read = wanpipe_read_windows;
+	wanpipe_interface.write = wanpipe_write_windows;
+#else
+	wanpipe_interface.wait = wanpipe_wait_unix;
+	wanpipe_interface.read = wanpipe_read_unix;
+	wanpipe_interface.write = wanpipe_write_unix;
+#endif
 	*zint = &wanpipe_interface;
 
 	return ZAP_SUCCESS;
