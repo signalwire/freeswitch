@@ -354,20 +354,6 @@ static ZINT_COMMAND_FUNCTION(wanpipe_command)
 			err = wp_tdm_cmd_exec(zchan, &tdm_api);
 		}
 		break;
-
-	case ZAP_COMMAND_SET_CODEC: 
-		{
-			zchan->effective_codec = ZAP_COMMAND_OBJ_INT;
-			err = 0;
-		}
-		break;
-
-	case ZAP_COMMAND_GET_CODEC: 
-		{
-			ZAP_COMMAND_OBJ_INT = zchan->effective_codec;
-			err = 0;
-		}
-		break;
 	default:
 		break;
 	};

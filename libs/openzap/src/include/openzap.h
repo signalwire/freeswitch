@@ -78,10 +78,12 @@
 #include <strings.h>
 #endif
 #include <assert.h>
+#include "zap_types.h"
 #include "hashtable.h"
 #include "zap_config.h"
 #include "g711.h"
 #include "libteletone.h"
+#include "zap_buffer.h"
 
 #ifdef  NDEBUG
 #undef assert
@@ -91,17 +93,7 @@
 #define ZAP_MAX_CHANNELS_SPAN 513
 #define ZAP_MAX_SPANS_INTERFACE 33
 
-#ifdef WIN32
-#include <windows.h>
-typedef HANDLE zap_socket_t;
-#else
-typedef int zap_socket_t;
-#endif
 
-typedef size_t zap_size_t;
-struct zap_software_interface;
-
-#define ZAP_COMMAND_OBJ_INT *((int *)obj)
 
 #define zap_true(expr)\
 	(expr && ( !strcasecmp(expr, "yes") ||\
@@ -156,136 +148,6 @@ struct zap_software_interface;
 
 #define zap_socket_close(it) if (it > -1) { close(it); it = -1;}
 
-typedef enum {
-	ZAP_TOP_DOWN,
-	ZAP_BOTTOM_UP
-} zap_direction_t;
-
-typedef enum {
-	ZAP_SUCCESS,
-	ZAP_FAIL,
-	ZAP_MEMERR,
-	ZAP_TIMEOUT
-} zap_status_t;
-
-typedef enum {
-	ZAP_NO_FLAGS = 0,
-	ZAP_READ =  (1 <<  0),
-	ZAP_WRITE = (1 <<  1),
-	ZAP_ERROR = (1 <<  2)
-} zap_wait_flag_t;
-
-typedef enum {
-	ZAP_CODEC_ULAW = 0,
-	ZAP_CODEC_ALAW = 8,
-	ZAP_CODEC_SLIN = 10,
-	ZAP_CODEC_NONE = (1 << 31)
-} zap_codec_t;
-
-typedef enum {
-	ZAP_TONE_DTMF = (1 << 0)
-} zap_tone_type_t;
-
-typedef enum {
-	ZAP_COMMAND_NOOP,
-	ZAP_COMMAND_SET_INTERVAL,
-	ZAP_COMMAND_GET_INTERVAL,
-	ZAP_COMMAND_SET_CODEC,
-	ZAP_COMMAND_GET_CODEC,
-	ZAP_COMMAND_ENABLE_TONE_DETECT,
-	ZAP_COMMAND_DISABLE_TONE_DETECT
-} zap_command_t;
-
-typedef enum {
-	ZAP_SPAN_CONFIGURED = (1 << 0),
-	ZAP_SPAN_READY = (1 << 1)
-} zap_span_flag_t;
-
-typedef enum {
-	ZAP_CHAN_TYPE_B,
-	ZAP_CHAN_TYPE_DQ921,
-	ZAP_CHAN_TYPE_DQ931,
-	ZAP_CHAN_TYPE_FXS,
-	ZAP_CHAN_TYPE_FXO
-} zap_chan_type_t;
-
-typedef enum {
-	ZAP_CHANNEL_FEATURE_DTMF_DETECT = (1 << 0)
-} zap_channel_feature_t;
-
-typedef enum {
-	ZAP_CHANNEL_CONFIGURED = (1 << 0),
-	ZAP_CHANNEL_READY = (1 << 1),
-	ZAP_CHANNEL_OPEN = (1 << 2),
-	ZAP_CHANNEL_DTMF_DETECT = (1 << 3),
-	ZAP_CHANNEL_SUPRESS_DTMF = (1 << 4)
-} zap_channel_flag_t;
-
-typedef struct zap_channel zap_channel_t;
-typedef struct zap_event zap_event_t;
-
-#define ZINT_EVENT_CB_ARGS (zap_channel_t *zchan, zap_event_t *event)
-#define ZINT_CODEC_ARGS (void *data, zap_size_t max, zap_size_t *datalen)
-#define ZINT_CONFIGURE_ARGS (struct zap_software_interface *zint)
-#define ZINT_OPEN_ARGS (zap_channel_t *zchan)
-#define ZINT_CLOSE_ARGS (zap_channel_t *zchan)
-#define ZINT_COMMAND_ARGS (zap_channel_t *zchan, zap_command_t command, void *obj)
-#define ZINT_WAIT_ARGS (zap_channel_t *zchan, zap_wait_flag_t *flags, unsigned to)
-#define ZINT_READ_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
-#define ZINT_WRITE_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
-
-typedef zap_status_t (*zint_event_cb_t) ZINT_EVENT_CB_ARGS ;
-typedef zap_status_t (*zint_codec_t) ZINT_CODEC_ARGS ;
-typedef zap_status_t (*zint_configure_t) ZINT_CONFIGURE_ARGS ;
-typedef zap_status_t (*zint_open_t) ZINT_OPEN_ARGS ;
-typedef zap_status_t (*zint_close_t) ZINT_CLOSE_ARGS ;
-typedef zap_status_t (*zint_command_t) ZINT_COMMAND_ARGS ;
-typedef zap_status_t (*zint_wait_t) ZINT_WAIT_ARGS ;
-typedef zap_status_t (*zint_read_t) ZINT_READ_ARGS ;
-typedef zap_status_t (*zint_write_t) ZINT_WRITE_ARGS ;
-
-#define ZINT_EVENT_CB_FUNCTION(name) zap_status_t name ZINT_EVENT_CB_ARGS
-#define ZINT_CODEC_FUNCTION(name) zap_status_t name ZINT_CODEC_ARGS
-#define ZINT_CONFIGURE_FUNCTION(name) zap_status_t name ZINT_CONFIGURE_ARGS
-#define ZINT_OPEN_FUNCTION(name) zap_status_t name ZINT_OPEN_ARGS
-#define ZINT_CLOSE_FUNCTION(name) zap_status_t name ZINT_CLOSE_ARGS
-#define ZINT_COMMAND_FUNCTION(name) zap_status_t name ZINT_COMMAND_ARGS
-#define ZINT_WAIT_FUNCTION(name) zap_status_t name ZINT_WAIT_ARGS
-#define ZINT_READ_FUNCTION(name) zap_status_t name ZINT_READ_ARGS
-#define ZINT_WRITE_FUNCTION(name) zap_status_t name ZINT_WRITE_ARGS
-
-#define ZINT_CONFIGURE_MUZZLE assert(zint != NULL)
-#define ZINT_OPEN_MUZZLE assert(zchan != NULL)
-#define ZINT_CLOSE_MUZZLE assert(zchan != NULL)
-#define ZINT_COMMAND_MUZZLE assert(zchan != NULL); assert(command != 0); assert(obj != NULL)
-#define ZINT_WAIT_MUZZLE assert(zchan != NULL); assert(flags != 0); assert(to != 0)
-#define ZINT_READ_MUZZLE assert(zchan != NULL); assert(data != NULL); assert(datalen != NULL)
-#define ZINT_WRITE_MUZZLE assert(zchan != NULL); assert(data != NULL); assert(datalen != NULL)
-
-#define ZAP_PRE __FILE__, __FUNCTION__, __LINE__
-
-#define ZAP_LOG_LEVEL_DEBUG 7
-#define ZAP_LOG_LEVEL_INFO 6
-#define ZAP_LOG_LEVEL_NOTICE 5
-#define ZAP_LOG_LEVEL_WARNING 4
-#define ZAP_LOG_LEVEL_ERROR 3
-#define ZAP_LOG_LEVEL_CRIT 2
-#define ZAP_LOG_LEVEL_ALERT 1
-#define ZAP_LOG_LEVEL_EMERG 0
-
-#define ZAP_LOG_DEBUG ZAP_PRE, ZAP_LOG_LEVEL_DEBUG
-#define ZAP_LOG_INFO ZAP_PRE, ZAP_LOG_LEVEL_INFO
-#define ZAP_LOG_NOTICE ZAP_PRE, ZAP_LOG_LEVEL_NOTICE
-#define ZAP_LOG_WARNING ZAP_PRE, ZAP_LOG_LEVEL_WARNING
-#define ZAP_LOG_ERROR ZAP_PRE, ZAP_LOG_LEVEL_ERROR
-#define ZAP_LOG_CRIT ZAP_PRE, ZAP_LOG_LEVEL_CRIT
-#define ZAP_LOG_ALERT ZAP_PRE, ZAP_LOG_LEVEL_ALERT
-#define ZAP_LOG_EMERG ZAP_PRE, ZAP_LOG_LEVEL_EMERG
-
-typedef enum {
-	ZAP_EVENT_NONE,
-	ZAP_EVENT_DTMF
-} zap_event_type_t;
 
 struct zap_event {
 	zap_event_type_t e_type;
@@ -293,8 +155,8 @@ struct zap_event {
 };
 
 struct zap_channel {
-	unsigned span_id;
-	unsigned chan_id;
+	uint32_t span_id;
+	uint32_t chan_id;
 	zap_chan_type_t type;
 	zap_socket_t sockfd;
 	zap_channel_flag_t flags;
@@ -306,24 +168,26 @@ struct zap_channel {
 	char last_error[256];
 	zint_event_cb_t event_callback;
 	void *mod_data;
-	unsigned skip_read_frames;
+	uint32_t skip_read_frames;
+	zap_buffer_t *dtmf_buffer;
+	uint32_t dtmf_on;
+	uint32_t dtmf_off;
+	teletone_generation_session_t tone_session;
 	struct zap_span *span;
 	struct zap_software_interface *zint;
 };
 
 
 struct zap_span {
-	unsigned span_id;
-	unsigned chan_count;
+	uint32_t span_id;
+	uint32_t chan_count;
 	zap_span_flag_t flags;
 	struct zap_software_interface *zint;
 	zint_event_cb_t event_callback;
 	zap_channel_t channels[ZAP_MAX_CHANNELS_SPAN];
 };
-typedef struct zap_span zap_span_t;
 
 
-typedef void (*zap_logger_t)(char *file, const char *func, int line, int level, char *fmt, ...);
 extern zap_logger_t zap_log;
 
 struct zap_software_interface {
@@ -335,31 +199,26 @@ struct zap_software_interface {
 	zint_wait_t wait;
 	zint_read_t read;
 	zint_write_t write;
-	unsigned span_index;
+	uint32_t span_index;
 	struct zap_span spans[ZAP_MAX_SPANS_INTERFACE];
 };
-typedef struct zap_software_interface zap_software_interface_t;
 
-
-zap_status_t zap_span_find(const char *name, unsigned id, zap_span_t **span);
+zap_status_t zap_span_find(const char *name, uint32_t id, zap_span_t **span);
 zap_status_t zap_span_create(zap_software_interface_t *zint, zap_span_t **span);
 zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_chan_type_t type, zap_channel_t **chan);
 zap_status_t zap_span_set_event_callback(zap_span_t *span, zint_event_cb_t event_callback);
 zap_status_t zap_channel_set_event_callback(zap_channel_t *zchan, zint_event_cb_t event_callback);
-zap_status_t zap_channel_open(const char *name, unsigned span_id, unsigned chan_id, zap_channel_t **zchan);
-zap_status_t zap_channel_open_any(const char *name, unsigned span_id, zap_direction_t direction, zap_channel_t **zchan);
+zap_status_t zap_channel_open(const char *name, uint32_t span_id, uint32_t chan_id, zap_channel_t **zchan);
+zap_status_t zap_channel_open_any(const char *name, uint32_t span_id, zap_direction_t direction, zap_channel_t **zchan);
 zap_status_t zap_channel_close(zap_channel_t **zchan);
 zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, void *obj);
-zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t *flags, unsigned to);
+zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t *flags, uint32_t to);
 zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *datalen);
 zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t *datalen);
 zap_status_t zap_global_init(void);
 zap_status_t zap_global_destroy(void);
 void zap_global_set_logger(zap_logger_t logger);
 void zap_global_set_default_logger(int level);
-unsigned zap_separate_string(char *buf, char delim, char **array, int arraylen);
-typedef struct hashtable zap_hash_t;
-typedef struct hashtable_itr zap_hash_itr_t;
-typedef struct key zap_hash_key_t;
-typedef struct value zap_hash_val_t;
+uint32_t zap_separate_string(char *buf, char delim, char **array, int arraylen);
+
 #endif
