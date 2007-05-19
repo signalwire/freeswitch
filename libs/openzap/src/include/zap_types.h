@@ -37,6 +37,7 @@
 #ifdef WIN32
 #include <windows.h>
 typedef HANDLE zap_socket_t;
+typedef unsigned __int32 uint32_t;
 #else
 #include <stdint.h>
 typedef int zap_socket_t;
