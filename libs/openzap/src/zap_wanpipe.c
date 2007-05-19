@@ -422,13 +422,100 @@ static ZINT_WAIT_FUNCTION(wanpipe_wait_windows)
 
 static ZINT_READ_FUNCTION(wanpipe_read_windows)
 {
-	ZINT_READ_MUZZLE;
-	return ZAP_FAIL;
+	zap_size_t rx_len = 0;
+	zap_status_t status = ZAP_FAIL;
+
+	/* should we just pass in abuffer big enough in the first place instead of having to use rx_data and memcpy here? */
+	static RX_DATA_STRUCT	rx_data;
+
+	if(DoReadCommand(zchan->sockfd, &rx_data)) {
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "Error: DoReadCommand() failed! Check messages log.\n");
+		goto done;
+	}
+
+	switch(rx_data.api_header.operation_status)
+	{
+	case SANG_STATUS_RX_DATA_AVAILABLE:
+		if(rx_data.api_header.data_length > *datalen){
+			snprintf(zchan->last_error, sizeof(zchan->last_error), "Buffer overrun.\n");
+			break;
+		}
+		memcpy(data, rx_data.data, rx_data.api_header.data_length);
+		rx_len = rx_data.api_header.data_length;
+		status = ZAP_SUCCESS;
+		break;
+
+	case SANG_STATUS_TDM_EVENT_AVAILABLE:
+		memcpy(data, rx_data.data, rx_data.api_header.data_length);
+		rx_len = rx_data.api_header.data_length;
+		status = ZAP_SUCCESS;
+		break;
+
+	case SANG_STATUS_RX_DATA_TIMEOUT:
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "Error: Timeout on read.\n");
+		break;
+
+	case SANG_STATUS_BUFFER_TOO_SMALL:
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "Error: Received data longer than buffer passed to API.\n");
+		break;
+
+	case SANG_STATUS_LINE_DISCONNECTED:
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "Error: Line disconnected.\n");
+		break;
+
+	default:
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "Rx:Unknown Operation Status: %d\n", rx_data.api_header.operation_status);
+		break;
+	}
+
+done:
+	*datalen = rx_len;
+	return status;
 }
 
 static ZINT_WRITE_FUNCTION(wanpipe_write_windows)
 {
-	ZINT_WRITE_MUZZLE;
+	static TX_DATA_STRUCT	local_tx_data;
+
+	/* why don't we just provide the big enough buffer to start with so we can avoid the memcpy ? */
+	memcpy(local_tx_data.data, data, *datalen);
+
+	/* queue data for transmission */
+	if(DoWriteCommand(zchan->sockfd, &local_tx_data)) {
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "Error: DoWriteCommand() failed!! Check messages log.\n");
+		*datalen = 0;
+		return ZAP_FAIL;
+	}
+
+	if (local_tx_data.api_header.operation_status == SANG_STATUS_SUCCESS) {
+		return ZAP_SUCCESS;
+	}
+
+	*datalen = 0;
+
+	switch(local_tx_data.api_header.operation_status)
+	{
+	case SANG_STATUS_TX_TIMEOUT:
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "****** Error: SANG_STATUS_TX_TIMEOUT ******\n");
+		break;
+				
+	case SANG_STATUS_TX_DATA_TOO_LONG:
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "****** SANG_STATUS_TX_DATA_TOO_LONG ******\n");
+		break;
+				
+	case SANG_STATUS_TX_DATA_TOO_SHORT:
+		snprintf(zchan->last_error, sizeof(zchan->last_error),  "****** SANG_STATUS_TX_DATA_TOO_SHORT ******\n");
+		break;
+
+	case SANG_STATUS_LINE_DISCONNECTED:
+		snprintf(zchan->last_error, sizeof(zchan->last_error),  "****** SANG_STATUS_LINE_DISCONNECTED ******\n");
+		break;
+
+	default:
+		snprintf(zchan->last_error, sizeof(zchan->last_error),  "Unknown return code (0x%X) on transmission!\n", local_tx_data.api_header.operation_status);
+		break;
+	}
+
 	return ZAP_FAIL;
 }
 
