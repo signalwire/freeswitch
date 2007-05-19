@@ -330,7 +330,7 @@ static ZINT_CLOSE_FUNCTION(wanpipe_close)
 static ZINT_COMMAND_FUNCTION(wanpipe_command)
 {
 	wanpipe_tdm_api_t tdm_api;
-	int err;
+	int err = 0;
 
 	ZINT_COMMAND_MUZZLE;
 	
@@ -367,7 +367,74 @@ static ZINT_COMMAND_FUNCTION(wanpipe_command)
 	return ZAP_SUCCESS;
 }
 
-static ZINT_WAIT_FUNCTION(wanpipe_wait)
+#ifdef __WINDOWS__
+
+static ZINT_WAIT_FUNCTION(wanpipe_wait_windows)
+{
+	API_POLL_STRUCT	api_poll;
+	zap_wait_flag_t inflags = *flags;
+
+	memset(&api_poll, 0x00, sizeof(API_POLL_STRUCT));
+	
+	api_poll.user_flags_bitmap = inflags;
+	api_poll.timeout = to;
+
+	if(DoApiPollCommand(zchan->sockfd, &api_poll)){
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "Poll failed");
+		return ZAP_FAIL;
+	}
+
+	*flags = ZAP_NO_FLAGS;
+
+	switch(api_poll.operation_status)
+	{
+		case SANG_STATUS_RX_DATA_AVAILABLE:
+			break;
+
+		default:
+			snprintf(zchan->last_error, sizeof(zchan->last_error), "Unknown Operation Status: %d\n", api_poll.operation_status);
+			return ZAP_FAIL;
+	}
+
+	if(api_poll.poll_events_bitmap == 0){
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "invalid Poll Events bitmap: 0x%X\n", api_poll.poll_events_bitmap);
+		return ZAP_FAIL;
+	}
+
+	if (api_poll.poll_events_bitmap & POLL_EVENT_TIMEOUT) {
+		return ZAP_TIMEOUT;
+	}
+
+	if (api_poll.poll_events_bitmap & POLL_EVENT_RX_DATA) {
+		*flags |= ZAP_READ;
+	}
+
+	if (api_poll.poll_events_bitmap & POLL_EVENT_TX_READY) {
+		*flags |= ZAP_WRITE;
+	}
+
+	if (api_poll.poll_events_bitmap & POLL_EVENT_LINK_STATE) {
+		*flags |= ZAP_ERROR;
+	}
+
+	return ZAP_SUCCESS;
+}
+
+static ZINT_READ_FUNCTION(wanpipe_read_windows)
+{
+	ZINT_READ_MUZZLE;
+	return ZAP_FAIL;
+}
+
+static ZINT_WRITE_FUNCTION(wanpipe_write_windows)
+{
+	ZINT_WRITE_MUZZLE;
+	return ZAP_FAIL;
+}
+
+#else
+
+static ZINT_WAIT_FUNCTION(wanpipe_wait_unix)
 {
 	fd_set read_fds, write_fds, error_fds, *r = NULL, *w = NULL, *e = NULL;
 	zap_wait_flag_t inflags = *flags;
@@ -429,8 +496,6 @@ static ZINT_WAIT_FUNCTION(wanpipe_wait)
 	
 	return ZAP_SUCCESS;
 }
-
-#ifndef __WINDOWS__
 
 static ZINT_READ_FUNCTION(wanpipe_read_unix)
 {
@@ -502,8 +567,9 @@ static ZINT_WRITE_FUNCTION(wanpipe_write_unix)
 
 static ZINT_READ_FUNCTION(wanpipe_read)
 {
-
-#ifndef WIN32
+#ifdef __WINDOWS__
+	return wanpipe_read_windows(zchan, data, datalen);
+#else
 	return wanpipe_read_unix(zchan, data, datalen);
 #endif
 
@@ -511,13 +577,20 @@ static ZINT_READ_FUNCTION(wanpipe_read)
 
 static ZINT_WRITE_FUNCTION(wanpipe_write)
 {
-	ZINT_WRITE_MUZZLE;
-
-#ifndef WIN32
+#ifdef __WINDOWS__
+	return wanpipe_write_windows(zchan, data, datalen);
+#else
 	return wanpipe_write_unix(zchan, data, datalen);
 #endif
+}
 
-	return ZAP_FAIL;
+static ZINT_WAIT_FUNCTION(wanpipe_wait)
+{
+#ifdef __WINDOWS__
+	return wanpipe_wait_windows(zchan, flags, to);
+#else
+	return wanpipe_wait_unix(zchan, flags, to);
+#endif
 }
 
 zap_status_t wanpipe_init(zap_software_interface_t **zint)
@@ -539,6 +612,12 @@ zap_status_t wanpipe_init(zap_software_interface_t **zint)
 	return ZAP_SUCCESS;
 }
 
+#if defined(__WINDOWS__)
+#define close(handle) CloseHandle(handle)
+#endif
+
+#define zap_wanpipe_socket_close(it) if (it != WP_INVALID_SOCKET) { close(it); it = WP_INVALID_SOCKET;}
+
 zap_status_t wanpipe_destroy(void)
 {
 	unsigned int i,j;
@@ -551,7 +630,7 @@ zap_status_t wanpipe_destroy(void)
 				zap_channel_t *cur_chan = &cur_span->channels[j];
 				if (zap_test_flag(cur_chan, ZAP_CHANNEL_CONFIGURED)) {
 					zap_log(ZAP_LOG_INFO, "Closing channel %u:%u fd:%d\n", cur_chan->span_id, cur_chan->chan_id, cur_chan->sockfd);
-					zap_socket_close(cur_chan->sockfd);
+					zap_wanpipe_socket_close(cur_chan->sockfd);
 				}
 			}
 		}

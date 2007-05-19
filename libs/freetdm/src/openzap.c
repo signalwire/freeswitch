@@ -703,7 +703,7 @@ ZINT_CODEC_FUNCTION(zint_alaw2ulaw)
 zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *datalen)
 {
 	zap_status_t status = ZAP_FAIL;
-	zint_codec_t codec_func;
+	zint_codec_t codec_func = NULL;
 	zap_size_t max = *datalen;
 
 	assert(zchan != NULL);
@@ -772,7 +772,7 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 			sln = sln_buf;
 		}
 
-		teletone_dtmf_detect (&zchan->dtmf_detect, sln, slen);
+		teletone_dtmf_detect(&zchan->dtmf_detect, sln, (int)slen);
 		teletone_dtmf_get(&zchan->dtmf_detect, digit_str, sizeof(digit_str));
 		if(digit_str[0]) {
 			zint_event_cb_t event_callback = NULL;
@@ -806,7 +806,7 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t *datalen)
 {
 	zap_status_t status = ZAP_FAIL;
-	zint_codec_t codec_func;
+	zint_codec_t codec_func = NULL;
 	zap_size_t dtmf_blen, max = *datalen;
 	
 	assert(zchan != NULL);
@@ -844,7 +844,7 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t *dat
 	if (zchan->dtmf_buffer && (dtmf_blen = zap_buffer_inuse(zchan->dtmf_buffer))) {
 		zap_size_t dlen = *datalen;
 		uint8_t auxbuf[1024];
-		uint32_t len, br;
+		zap_size_t len, br;
 
 		if (zchan->native_codec != ZAP_CODEC_SLIN) {
 			dlen *= 2;

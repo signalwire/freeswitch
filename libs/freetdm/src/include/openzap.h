@@ -61,6 +61,9 @@
 #ifndef strcasecmp
 #define strcasecmp(s1, s2) _stricmp(s1, s2)
 #endif
+#ifndef strncasecmp
+#define strncasecmp(s1, s2, n) _strnicmp(s1, s2, n)
+#endif
 #ifndef snprintf
 #define snprintf _snprintf
 #endif
