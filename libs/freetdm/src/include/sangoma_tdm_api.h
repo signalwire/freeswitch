@@ -90,7 +90,7 @@ struct iphdr {
 /* what should the returns from this function be?? */
 /* I dont think they are currently consistant between windows and *nix */
 #ifdef __WINDOWS__
-static __inline__ int tdmv_api_ioctl(sng_fd_t fd, wanpipe_tdm_api_cmd_t *tdm_api_cmd)
+static __inline__ int tdmv_api_ioctl(sng_fd_t fd, wanpipe_tdm_api_t *tdm_api_cmd)
 {
 	/* can we make the structure passed for this on nix and windows the same */
 	/* so we don't have to do the extra 2 memcpy's on windows for this ? */
@@ -129,7 +129,7 @@ static __inline__ int tdmv_api_ioctl(sng_fd_t fd, wanpipe_tdm_api_cmd_t *tdm_api
 }
 
 #else
-static __inline__ int tdmv_api_ioctl(sng_fd_t fd, wanpipe_tdm_api_cmd_t *tdm_api_cmd)
+static __inline__ int tdmv_api_ioctl(sng_fd_t fd, wanpipe_tdm_api_t *tdm_api_cmd)
 {
 	return ioctl(fd, SIOC_WANPIPE_TDM_API, tdm_api_cmd);
 }
