@@ -205,6 +205,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\src\zap_threadmutex.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\zap_wanpipe.c"
 				>
 				<FileConfiguration
@@ -292,6 +296,10 @@
 			</File>
 			<File
 				RelativePath=".\src\include\zap_skel.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\include\zap_threadmutex.h"
 				>
 			</File>
 			<File
