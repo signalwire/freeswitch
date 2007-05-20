@@ -146,6 +146,18 @@ static sng_fd_t tdmv_api_open_span_chan(int span, int chan)
 #endif
 }            
 
+void tdmv_api_close_socket(sng_fd_t *sp) 
+{
+	if(	*sp != INVALID_HANDLE_VALUE){
+#if defined(__WINDOWS__)
+		CloseHandle(*sp);
+#else
+		close(*sp);
+#endif
+		*sp = INVALID_HANDLE_VALUE;
+	}
+}
+
 #ifdef __WINDOWS__
 static int wanpipe_api_ioctl(sng_fd_t fd, wan_cmd_api_t *api_cmd)
 {
