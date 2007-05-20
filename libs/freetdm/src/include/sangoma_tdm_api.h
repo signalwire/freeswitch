@@ -28,6 +28,7 @@
 #else
 #define WP_INVALID_SOCKET -1
 #include <stropts.h>
+#include <poll.h>
 #endif
 
 #include <wanpipe_defines.h>
