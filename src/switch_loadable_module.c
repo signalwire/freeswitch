@@ -1259,7 +1259,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 			if (cur != name) {
 				if (strchr(cur, 'i')) {
 					interval = atoi(cur);
-				} else if (strchr(cur, 'k')) {
+				} else if (strchr(cur, 'k' || strchr(cur, 'h'))) {
 					rate = atoi(cur);
 				}
 			}
