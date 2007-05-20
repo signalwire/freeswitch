@@ -42,25 +42,11 @@
 #include <sdla_aft_te1.h>
 
 #define FNAME_LEN	50
-#define DEV_NAME_LEN	100
-char device_name[DEV_NAME_LEN];
-
-
-#ifdef __WINDOWS__
-
-/* IOCTL management structures and variables*/
-wan_udp_hdr_t	wan_udp;
-
-static wan_cmd_api_t api_cmd;
-static api_tx_hdr_t *tx_hdr = (api_tx_hdr_t *)api_cmd.data;
-
-/* keeps the LAST (and single) event received */
-static wp_tdm_api_rx_hdr_t last_tdm_api_event_buffer;
-#endif
 
 #ifdef __WINDOWS__
 static int tdmv_api_ioctl(sng_fd_t fd, wanpipe_tdm_api_cmd_t *tdm_api_cmd)
 {
+	wan_udp_hdr_t	wan_udp;
 	DWORD			ln;
     unsigned char	id = 0;
 	int				err = 0;
@@ -135,7 +121,7 @@ static sng_fd_t tdmv_api_open_span_chan(int span, int chan)
 #else
   	int fd = WP_INVALID_SOCKET;
 
-	sprintf(fname,"/dev/wptdm_s%dc%d",span,chan);
+	snprintf(fname, FNAME_LEN, "/dev/wptdm_s%dc%d",span,chan);
 
 	fd = open(fname, O_RDWR);
 
@@ -160,6 +146,7 @@ void tdmv_api_close_socket(sng_fd_t *sp)
 }
 
 #ifdef __WINDOWS__
+#if 0
 static int wanpipe_api_ioctl(sng_fd_t fd, wan_cmd_api_t *api_cmd)
 {
 	DWORD			ln;
@@ -204,7 +191,7 @@ static int wanpipe_api_ioctl(sng_fd_t fd, wan_cmd_api_t *api_cmd)
 			sizeof(wan_cmd_api_t));
 	return 0;
 }
-
+#endif
 // Blocking read command. If used after DoApiPollCommand(),
 // it will return immediatly, without blocking.
 static 
