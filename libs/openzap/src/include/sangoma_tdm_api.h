@@ -148,13 +148,13 @@ static sng_fd_t tdmv_api_open_span_chan(int span, int chan)
 
 void tdmv_api_close_socket(sng_fd_t *sp) 
 {
-	if(	*sp != INVALID_HANDLE_VALUE){
+	if(	*sp != WP_INVALID_SOCKET){
 #if defined(__WINDOWS__)
 		CloseHandle(*sp);
 #else
 		close(*sp);
 #endif
-		*sp = INVALID_HANDLE_VALUE;
+		*sp = WP_INVALID_SOCKET;
 	}
 }
 
