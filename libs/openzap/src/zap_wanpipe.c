@@ -323,12 +323,12 @@ static ZINT_WAIT_FUNCTION(wanpipe_wait_windows)
 	api_poll.user_flags_bitmap = inflags;
 	api_poll.timeout = to;
 
+	*flags = ZAP_NO_FLAGS;
+
 	if(DoApiPollCommand(zchan->sockfd, &api_poll)){
 		snprintf(zchan->last_error, sizeof(zchan->last_error), "Poll failed");
 		return ZAP_FAIL;
 	}
-
-	*flags = ZAP_NO_FLAGS;
 
 	switch(api_poll.operation_status)
 	{
