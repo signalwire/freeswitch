@@ -72,6 +72,7 @@ struct iphdr {
 #define WP_INVALID_SOCKET -1
 #include <stropts.h>
 #include <poll.h>
+#include <sys/socket.h>
 #endif
 
 #include <wanpipe_defines.h>
