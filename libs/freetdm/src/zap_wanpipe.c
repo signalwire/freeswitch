@@ -551,7 +551,7 @@ zap_status_t wanpipe_destroy(void)
 				zap_channel_t *cur_chan = &cur_span->channels[j];
 				if (zap_test_flag(cur_chan, ZAP_CHANNEL_CONFIGURED)) {
 					zap_log(ZAP_LOG_INFO, "Closing channel %u:%u fd:%d\n", cur_chan->span_id, cur_chan->chan_id, cur_chan->sockfd);
-					tdmv_api_close_socket(cur_chan->sockfd);
+					tdmv_api_close_socket(&cur_chan->sockfd);
 				}
 			}
 		}
