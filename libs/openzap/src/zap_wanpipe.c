@@ -36,37 +36,12 @@
 #include "openzap.h"
 #include "zap_wanpipe.h"
 
-#ifdef __WINDOWS__
-#ifdef _MSC_VER
-/* disable warning for zero length array in a struct */
-/* this will cause errors on c99 and ansi compliant compilers and will need to be fixed in the wanpipe header files */
-#pragma warning(disable:4200 4201 4214)
-#endif
-#include <windows.h>
-#define FNAME_LEN	50
-#define WP_INVALID_SOCKET INVALID_HANDLE_VALUE
-#else
-#define WP_INVALID_SOCKET -1
-#include <stropts.h>
-#endif
-
-#include <wanpipe_defines.h>
-#include <wanpipe_cfg.h>
-#include <wanpipe_tdm_api.h>
-#include <sdla_te1_pmc.h>
-#ifdef __WINDOWS__
-#include <sang_status_defines.h>
-#include <sang_api.h>
-#endif
-#include <sdla_aft_te1.h>
+#include <sangoma_tdm_api.h>
 
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
 
-#if defined(__WINDOWS__)
-#include <zap_wanpipe_windows.h>
-#endif
 
 static struct {
 	unsigned codec_ms;
@@ -78,11 +53,7 @@ static zap_status_t wp_tdm_cmd_exec(zap_channel_t *zchan, wanpipe_tdm_api_t *tdm
 {
 	int err;
 
-#if defined(__WINDOWS__)
 	err = tdmv_api_ioctl(zchan->sockfd, &tdm_api->wp_tdm_cmd);
-#else
-	err = ioctl(zchan->sockfd, SIOC_WANPIPE_TDM_API, &tdm_api->wp_tdm_cmd);
-#endif
 	
 	if (err) {
 		snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
@@ -92,36 +63,6 @@ static zap_status_t wp_tdm_cmd_exec(zap_channel_t *zchan, wanpipe_tdm_api_t *tdm
 	return ZAP_SUCCESS;
 }
 
-static zap_socket_t wp_open_device(int span, int chan) 
-{
-   	char fname[256];
-#if defined(__WINDOWS__)
-
-	_snprintf(fname , FNAME_LEN, "\\\\.\\WANPIPE%d_IF%d", span, chan - 1);
-
-	return CreateFile(	fname, 
-						GENERIC_READ | GENERIC_WRITE, 
-						FILE_SHARE_READ | FILE_SHARE_WRITE,
-						(LPSECURITY_ATTRIBUTES)NULL, 
-						OPEN_EXISTING,
-						FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH,
-						(HANDLE)NULL
-						);
-#else
-  	int fd=-1;
-
-	sprintf(fname, "/dev/wptdm_s%dc%d", span, chan);
-
-	fd = open(fname, O_RDWR);
-
-	if (fd < 0) {
-		fd = WP_INVALID_SOCKET;
-	}
-
-	return fd;  
-#endif
-}            
-
 static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start, unsigned end, zap_chan_type_t type)
 {
 	unsigned configured = 0, x;
@@ -130,7 +71,7 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 		zap_channel_t *chan;
 		zap_socket_t sockfd = WP_INVALID_SOCKET;
 		
-		sockfd = wp_open_device(spanno, x);
+		sockfd = tdmv_api_open_span_chan(spanno, x);
 		
 		if (sockfd != WP_INVALID_SOCKET && zap_span_add_channel(span, sockfd, type, &chan) == ZAP_SUCCESS) {
 			zap_log(ZAP_LOG_INFO, "configuring device s%dc%d as OpenZAP device %d:%d fd:%d\n", spanno, x, chan->span_id, chan->chan_id, sockfd);
