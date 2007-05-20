@@ -48,7 +48,7 @@ static zap_status_t wp_tdm_cmd_exec(zap_channel_t *zchan, wanpipe_tdm_api_t *tdm
 {
 	int err;
 
-	err = tdmv_api_ioctl(zchan->sockfd, &tdm_api->wp_tdm_cmd);
+	err = tdmv_api_ioctl(zchan->sockfd, tdm_api);
 	
 	if (err) {
 		snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
