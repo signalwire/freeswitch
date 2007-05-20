@@ -441,4 +441,70 @@ static __inline void empty_api_queue(api_queue_t* api_queue)
 ///////////////////////////////////////////////////////////////////////////
 #endif
 
+#if defined(__WINDOWS__)
+/* This is broken, we don't actually get real results for oob messages on windows */
+#define POLLPRI (POLL_EVENT_LINK_STATE | POLL_EVENT_LINK_CONNECT | POLL_EVENT_LINK_DISCONNECT)
+#endif
+
+/* return -1 for error, 0 for timeout, or POLLIN | POLLOUT | POLLPRI based on the result of the poll */
+int tdmv_api_wait_socket(sng_fd_t fd, int timeout, int flags)
+{
+#if defined(__WINDOWS__)
+	API_POLL_STRUCT	api_poll;
+
+	memset(&api_poll, 0x00, sizeof(API_POLL_STRUCT));
+	
+	api_poll.user_flags_bitmap = flags;
+	api_poll.timeout = timeout;
+
+	if(DoApiPollCommand(fd, &api_poll)) {
+		return -1;
+	}
+
+	switch(api_poll.operation_status)
+	{
+		case SANG_STATUS_RX_DATA_AVAILABLE:
+			break;
+
+		case SANG_STATUS_RX_DATA_TIMEOUT:
+			return 0;
+
+		default:
+			return -1;
+	}
+
+	if(api_poll.poll_events_bitmap == 0){
+		return -1;
+	}
+
+	if(api_poll.poll_events_bitmap & POLL_EVENT_TIMEOUT){
+		return 0;
+	}
+
+	return api_poll.poll_events_bitmap;
+#else
+    struct pollfd pfds[1];
+    int res;
+
+    memset(&pfds[0], 0, sizeof(pfds[0]));
+    pfds[0].fd = fd;
+    pfds[0].events = flags;
+    res = poll(pfds, 1, timeout);
+
+	if (res == 0) {
+		return 0;
+	}
+
+	if (res < 0) {
+		return -1;
+	}
+
+	if ((pfds[0].revents & POLLERR)) {
+		return -1;
+	}
+
+    return pfds[0].revents;
+#endif
+}
+
 #endif /* _SANGOMA_TDM_API_H */
