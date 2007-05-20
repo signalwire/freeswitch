@@ -38,11 +38,6 @@
 
 #include <sangoma_tdm_api.h>
 
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
-
-
 static struct {
 	unsigned codec_ms;
 } wp_globals;
