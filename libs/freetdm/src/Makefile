@@ -30,7 +30,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-OBJS=hashtable.o hashtable_itr.o openzap.o zap_config.o g711.o libteletone_detect.o libteletone_generate.o zap_buffer.o
+OBJS=hashtable.o hashtable_itr.o openzap.o zap_config.o g711.o libteletone_detect.o libteletone_generate.o zap_buffer.o zap_threadmutex.o
 CFLAGS=$(ZAP_CFLAGS) -Iinclude 
 MYLIB=libopenzap.a
 TMP=-I../../libpri-1.2.4 -Iinclude -I. -w
