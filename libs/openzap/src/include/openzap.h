@@ -166,6 +166,9 @@ struct zap_channel {
 	zap_channel_feature_t features;
 	zap_codec_t effective_codec;
 	zap_codec_t native_codec;
+	uint32_t effective_interval;
+	uint32_t native_interval;
+	uint32_t packet_len;
 	teletone_dtmf_detect_state_t dtmf_detect;
 	zap_event_t event_header;
 	char last_error[256];
