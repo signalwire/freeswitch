@@ -414,7 +414,29 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
     }
 
 	switch(command) {
-	case ZAP_COMMAND_SET_CODEC: 
+	case ZAP_COMMAND_SET_INTERVAL:
+		{
+			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_INTERVAL)) {
+				zchan->effective_interval = ZAP_COMMAND_OBJ_INT;
+				if (zchan->effective_interval == zchan->native_interval) {
+					zap_clear_flag(zchan, ZAP_CHANNEL_BUFFER);
+				} else {
+					zap_set_flag(zchan, ZAP_CHANNEL_BUFFER);
+				}
+				zchan->packet_len = zchan->native_interval * (zchan->effective_codec == ZAP_CODEC_SLIN ? 16 : 8);
+				return ZAP_SUCCESS;
+			}
+		}
+		break;
+	case ZAP_COMMAND_GET_INTERVAL:
+		{
+			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_INTERVAL)) {
+				ZAP_COMMAND_OBJ_INT = zchan->effective_interval;
+				return ZAP_SUCCESS;
+			}
+		}
+		break;
+	case ZAP_COMMAND_SET_CODEC:
 		{
 			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_CODECS)) {
 				zchan->effective_codec = ZAP_COMMAND_OBJ_INT;
@@ -423,6 +445,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 				} else {
 					zap_set_flag(zchan, ZAP_CHANNEL_TRANSCODE);
 				}
+				zchan->packet_len = zchan->native_interval * (zchan->effective_codec == ZAP_CODEC_SLIN ? 16 : 8);
 				return ZAP_SUCCESS;
 			}
 		}

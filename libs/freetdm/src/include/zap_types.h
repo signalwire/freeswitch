@@ -109,7 +109,8 @@ typedef enum {
 
 typedef enum {
 	ZAP_CHANNEL_FEATURE_DTMF = (1 << 0),
-	ZAP_CHANNEL_FEATURE_CODECS = (1 << 1)
+	ZAP_CHANNEL_FEATURE_CODECS = (1 << 1),
+	ZAP_CHANNEL_FEATURE_INTERVAL = (1 << 2)
 } zap_channel_feature_t;
 
 typedef enum {
@@ -118,7 +119,8 @@ typedef enum {
 	ZAP_CHANNEL_OPEN = (1 << 2),
 	ZAP_CHANNEL_DTMF_DETECT = (1 << 3),
 	ZAP_CHANNEL_SUPRESS_DTMF = (1 << 4),
-	ZAP_CHANNEL_TRANSCODE = (1 << 5)
+	ZAP_CHANNEL_TRANSCODE = (1 << 5),
+	ZAP_CHANNEL_BUFFER = (1 << 6)
 } zap_channel_flag_t;
 
 typedef struct zap_channel zap_channel_t;

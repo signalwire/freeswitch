@@ -76,7 +76,6 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 		if (sockfd != WP_INVALID_SOCKET && zap_span_add_channel(span, sockfd, type, &chan) == ZAP_SUCCESS) {
 			zap_log(ZAP_LOG_INFO, "configuring device s%dc%d as OpenZAP device %d:%d fd:%d\n", spanno, x, chan->span_id, chan->chan_id, sockfd);
 			configured++;
-
 		} else {
 			zap_log(ZAP_LOG_ERROR, "failure configuring device s%dc%d\n", spanno, x);
 		}
@@ -250,7 +249,10 @@ static ZINT_OPEN_FUNCTION(wanpipe_open)
 		tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_USR_PERIOD;
 		tdm_api.wp_tdm_cmd.usr_period = wp_globals.codec_ms;
 		wp_tdm_cmd_exec(zchan, &tdm_api);
-
+		zap_channel_set_feature(zchan, ZAP_CHANNEL_FEATURE_INTERVAL);
+		zchan->effective_interval = zchan->native_interval = wp_globals.codec_ms;
+		zchan->packet_len = zchan->native_interval * 8;
+		
 		tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_GET_HW_CODING;
 		if (tdm_api.wp_tdm_cmd.hw_tdm_coding) {
 			zchan->native_codec = zchan->effective_codec = ZAP_CODEC_ULAW;
@@ -293,6 +295,7 @@ static ZINT_COMMAND_FUNCTION(wanpipe_command)
 			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_USR_PERIOD;
 			tdm_api.wp_tdm_cmd.usr_period = ZAP_COMMAND_OBJ_INT;
 			err = wp_tdm_cmd_exec(zchan, &tdm_api);
+			zchan->packet_len = zchan->native_interval * (zchan->effective_codec == ZAP_CODEC_SLIN ? 16 : 8);
 		}
 		break;
 	default:
