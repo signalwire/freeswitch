@@ -85,7 +85,7 @@
 
 typedef struct
 {
-    char HDLCInQueue[Q921MAXHDLCSPACE];
+    unsigned char HDLCInQueue[Q921MAXHDLCSPACE];
     unsigned char vs;
     unsigned char vr;
     int state;
@@ -95,7 +95,7 @@ void Q921Init();
 void Q921SetHeaderSpace(int hspace);
 void Q921SetTx21CB(int (*callback)(int dev, unsigned char *, int));
 void Q921SetTx23CB(int (*callback)(int dev, unsigned char *, int));
-int Q921QueueHDLCFrame(int trunk, char *b, int size);
+int Q921QueueHDLCFrame(int trunk, unsigned char *b, int size);
 int Q921Rx12(long trunk);
 
 #endif

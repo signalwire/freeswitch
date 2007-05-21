@@ -43,7 +43,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 
 *****************************************************************************/
-#include "Q921.h"
+#include "q921.h"
 #include <stdlib.h>
 #include "mfifo.h"
 
@@ -111,7 +111,7 @@ void Q921SetTx23CB(int (*callback)(int dev, unsigned char *, int))
                 size    size of frame in bytes
 
 *****************************************************************************/
-int Q921QueueHDLCFrame(int trunk, char *b, int size)
+int Q921QueueHDLCFrame(int trunk, unsigned char *b, int size)
 {
     return MFIFOWriteMes(Q921DevSpace[trunk].HDLCInQueue, b, size);
 }
@@ -135,7 +135,7 @@ int Q921QueueHDLCFrame(int trunk, char *b, int size)
   Return Value: 0 if failed, 1 if Send.
 
 *****************************************************************************/
-int Q921SendI(int trunk, unsigned char Sapi, char cr, unsigned char Tei, char pf, char *mes, int size)
+int Q921SendI(int trunk, unsigned char Sapi, char cr, unsigned char Tei, char pf, unsigned char *mes, int size)
 {
     mes[Q921HeaderSpace+0] = (Sapi&0xfc) | ((cr<<1)&0x02);
     mes[Q921HeaderSpace+1] = (Tei<<1) | 0x01;
@@ -164,7 +164,7 @@ int Q921SendI(int trunk, unsigned char Sapi, char cr, unsigned char Tei, char pf
 
 int Q921SendRR(int trunk, int Sapi, int cr, int Tei, int pf)
 {
-    char mes[400];
+    unsigned char mes[400];
 
     mes[Q921HeaderSpace+0] = (Sapi&0xfc) | ((cr<<1)&0x02);
     mes[Q921HeaderSpace+1] = (Tei<<1) | 0x01;
@@ -191,7 +191,7 @@ int Q921SendRR(int trunk, int Sapi, int cr, int Tei, int pf)
 *****************************************************************************/
 int Q921SendRNR(int trunk, int Sapi, int cr, int Tei, int pf)
 {
-    char mes[400];
+    unsigned char mes[400];
 
     mes[Q921HeaderSpace+0] = (Sapi&0xfc) | ((cr<<1)&0x02);
     mes[Q921HeaderSpace+1] = (Tei<<1) | 0x01;
@@ -218,7 +218,7 @@ int Q921SendRNR(int trunk, int Sapi, int cr, int Tei, int pf)
 *****************************************************************************/
 int Q921SendREJ(int trunk, int Sapi, int cr, int Tei, int pf)
 {
-    char mes[400];
+    unsigned char mes[400];
 
     mes[Q921HeaderSpace+0] = (Sapi&0xfc) | ((cr<<1)&0x02);
     mes[Q921HeaderSpace+1] = (Tei<<1) | 0x01;
@@ -245,7 +245,7 @@ int Q921SendREJ(int trunk, int Sapi, int cr, int Tei, int pf)
 *****************************************************************************/
 int Q921SendSABME(int trunk, int Sapi, int cr, int Tei, int pf)
 {
-    char mes[400];
+    unsigned char mes[400];
 
     mes[Q921HeaderSpace+0] = (Sapi&0xfc) | ((cr<<1)&0x02);
     mes[Q921HeaderSpace+1] = (Tei<<1) | 0x01;
@@ -271,7 +271,7 @@ int Q921SendSABME(int trunk, int Sapi, int cr, int Tei, int pf)
 *****************************************************************************/
 int Q921SendDM(int trunk, int Sapi, int cr, int Tei, int pf)
 {
-    char mes[400];
+    unsigned char mes[400];
 
     mes[Q921HeaderSpace+0] = (Sapi&0xfc) | ((cr<<1)&0x02);
     mes[Q921HeaderSpace+1] = (Tei<<1) | 0x01;
@@ -316,7 +316,7 @@ int Q921SendDM(int trunk, int Sapi, int cr, int Tei, int pf)
 *****************************************************************************/
 int Q921SendDISC(int trunk, int Sapi, int cr, int Tei, int pf)
 {
-    char mes[400];
+    unsigned char mes[400];
 
     mes[Q921HeaderSpace+0] = (Sapi&0xfc) | ((cr<<1)&0x02);
     mes[Q921HeaderSpace+1] = (Tei<<1) | 0x01;
@@ -342,7 +342,7 @@ int Q921SendDISC(int trunk, int Sapi, int cr, int Tei, int pf)
 *****************************************************************************/
 int Q921SendUA(int trunk, int Sapi, int cr, int Tei, int pf)
 {
-    char mes[400];
+    unsigned char mes[400];
 
     mes[Q921HeaderSpace+0] = (Sapi&0xfc) | ((cr<<1)&0x02);
     mes[Q921HeaderSpace+1] = (Tei<<1) | 0x01;
@@ -389,7 +389,7 @@ int Q921SendUA(int trunk, int Sapi, int cr, int Tei, int pf)
 //{
 //}
 
-int Q921ProcSABME(int trunk, char *mes, int size)
+int Q921ProcSABME(int trunk, unsigned char *mes, int size)
 {
     Q921DevSpace[trunk].vr=0;
     Q921DevSpace[trunk].vs=0;
@@ -417,9 +417,9 @@ int Q921ProcSABME(int trunk, char *mes, int size)
 *****************************************************************************/
 int Q921Rx12(long trunk)
 {
-    char *mes;
+    unsigned char *mes;
     int rs,size;     /* receive size & Q921 frame size*/
-    char *smes = MFIFOGetMesPtr(Q921DevSpace[trunk].HDLCInQueue, &size);
+    unsigned char *smes = MFIFOGetMesPtr(Q921DevSpace[trunk].HDLCInQueue, &size);
     if(smes != NULL)
     {
         rs = size - Q921HeaderSpace;

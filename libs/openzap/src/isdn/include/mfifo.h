@@ -63,7 +63,7 @@ typedef struct _mfifo
 	int first;                      /* first out                            */
 	int last;                       /* last in + 1                          */
 	int bsize;                      /* buffer size                          */
-	char *buf;                      /* ptr to start of buffer               */
+	unsigned char *buf;                      /* ptr to start of buffer               */
     int ixsize;                     /* index size                           */
     MINDEX ix[1];                   /* message index                        */
 }MFIFO;
@@ -71,13 +71,13 @@ typedef struct _mfifo
 /*****************************************************************************
   Function prototypes.
 *****************************************************************************/
-int MFIFOCreate(char *buf, int size, int index);
-void MFIFOClear(char * buf);
-int MFIFOGetLBOffset(char *buf);
-int MFIFOGetFBOffset(char *buf);
-void MFIFOWriteIX(char *buf, char *mes, int size, int ix, int off);
-int MFIFOWriteMes(char *buf, char *mes, int size);
-char * MFIFOGetMesPtr(char *buf, int *size);
-void MFIFOKillNext(char *buf);
+int MFIFOCreate(unsigned char *buf, int size, int index);
+void MFIFOClear(unsigned char * buf);
+int MFIFOGetLBOffset(unsigned char *buf);
+int MFIFOGetFBOffset(unsigned char *buf);
+void MFIFOWriteIX(unsigned char *buf, unsigned char *mes, int size, int ix, int off);
+int MFIFOWriteMes(unsigned char *buf, unsigned char *mes, int size);
+unsigned char * MFIFOGetMesPtr(unsigned char *buf, int *size);
+void MFIFOKillNext(unsigned char *buf);
 
 #endif

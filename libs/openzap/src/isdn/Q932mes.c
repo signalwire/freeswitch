@@ -48,7 +48,6 @@ L3INT Q932Umes_Facility(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
     L3INT i = IOff;
 	L3INT ir=0;
 	L3INT OOff=0;
-	L3INT rc=Q931E_NO_ERROR;
 	Q932mes_Facility *mes = (Q932mes_Facility*)IBuf;
 
 	//TODO
