@@ -30,8 +30,29 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-OBJS=hashtable.o hashtable_itr.o openzap.o zap_config.o g711.o libteletone_detect.o libteletone_generate.o zap_buffer.o zap_threadmutex.o
-CFLAGS=$(ZAP_CFLAGS) -Iinclude 
+OBJS=hashtable.o \
+hashtable_itr.o \
+openzap.o \
+zap_config.o \
+g711.o \
+libteletone_detect.o \
+libteletone_generate.o \
+zap_buffer.o \
+zap_threadmutex.o \
+isdn/EuroISDNStateNT.o \
+isdn/EuroISDNStateTE.o \
+isdn/mfifo.o \
+isdn/Q921.o \
+isdn/Q931api.o \
+isdn/Q931.o \
+isdn/Q931ie.o \
+isdn/Q931mes.o \
+isdn/Q931StateNT.o \
+isdn/Q931StateTE.o \
+isdn/Q932mes.o 
+
+
+CFLAGS=$(ZAP_CFLAGS) -I`pwd`/include -I`pwd`/isdn/include
 MYLIB=libopenzap.a
 TMP=-I../../libpri-1.2.4 -Iinclude -I. -w
 
