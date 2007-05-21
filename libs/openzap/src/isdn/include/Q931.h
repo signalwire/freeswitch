@@ -117,7 +117,7 @@
 /* warning C4189 : local variable is initialized but not referenced  TODO:  This one should not be disabled */
 /* warning C4554: '&' : check operator precedence for possible error; use parentheses to clarify precedence TODO:  This one should not be disabled */
 /* warning C4267: '=' : conversion from 'size_t' to 'unsigned char', possible loss of data TODO:  This one should not be disabled */
-#pragma warning(disable:4244 4189 4554 4267)
+#pragma warning(disable:4100 4244 4189 4554 4267)
 #endif
 
 /*****************************************************************************

@@ -96,7 +96,7 @@ L3INT (*Q931Tx32Proc)(Q931_TrunkInfo *pTrunk,L3UCHAR *,L3INT);
 									/* callback ptr for messages to be send */
                                     /* to layer 2.                          */
 
-void (*Q931ErrorProc)(Q931_TrunkInfo *pTrunk, L3INT,L3INT,L3INT); 
+L3INT (*Q931ErrorProc)(Q931_TrunkInfo *pTrunk, L3INT,L3INT,L3INT); 
 									/* callback for error messages.         */
 
 L3ULONG (*Q931GetTimeProc) ()=NULL; /* callback for func reading time in ms */
@@ -210,8 +210,9 @@ L3INT Q931TxDummy(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT n)
   Description:  Dummy function for error processing
 
 *****************************************************************************/
-void Q931ErrorDummy(Q931_TrunkInfo *pTrunk,L3INT a, L3INT b, L3INT c)
+L3INT Q931ErrorDummy(Q931_TrunkInfo *pTrunk,L3INT a, L3INT b, L3INT c)
 {
+	return 0;
 }
 
 /*****************************************************************************
