@@ -114,8 +114,7 @@
 
 #ifdef _MSC_VER
 /* warning C4244: conversion from 'type a' to 'type b', possible loss of data  TODO:  This one should not be disabled */
-/* warning C4267: '=' : conversion from 'size_t' to 'unsigned char', possible loss of data TODO:  This one should not be disabled */
-#pragma warning(disable:4100 4244 4267)
+#pragma warning(disable:4100 4244)
 #endif
 
 /*****************************************************************************

@@ -459,7 +459,7 @@ L3INT Q931Uie_CallID(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * 
 
     *IOff = (*IOff) + Octet + Off;
     *OOff = (*OOff) + sizeof(Q931ie_CallID) + x -1;
-    pie->Size = sizeof(Q931ie_CallID) + x -1;
+    pie->Size = (L3UCHAR)sizeof(Q931ie_CallID) + x -1;
 
     Q931SetIE(*pIE, *OOff);
 
@@ -628,7 +628,7 @@ L3INT Q931Uie_CalledSub(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR 
 
     *IOff = (*IOff) + Octet + Off;
     *OOff = (*OOff) + sizeof(Q931ie_CalledSub) + x - 1;
-    pie->Size = sizeof(Q931ie_CalledSub) + x - 1;
+    pie->Size = (L3UCHAR)sizeof(Q931ie_CalledSub) + x - 1;
 
     Q931SetIE(*pIE, *OOff);
 
@@ -721,7 +721,7 @@ L3INT Q931Uie_CalledNum(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR
 
     *IOff = (*IOff) + Octet + Off;
     *OOff = (*OOff) + sizeof(Q931ie_CalledNum) + x - 1;
-    pie->Size = sizeof(Q931ie_CalledNum) + x - 1;
+    pie->Size = (L3UCHAR)sizeof(Q931ie_CalledNum) + x - 1;
 
     Q931SetIE(*pIE, *OOff);
 
@@ -825,7 +825,7 @@ L3INT Q931Uie_CallingNum(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHA
 
     *IOff = (*IOff) + Octet + Off;
     *OOff = (*OOff) + sizeof(Q931ie_CallingNum) + x - 1;
-    pie->Size = sizeof(Q931ie_CallingNum) + x - 1;
+    pie->Size = (L3UCHAR)sizeof(Q931ie_CallingNum) + x - 1;
 
     Q931SetIE(*pIE, *OOff);
 
@@ -931,7 +931,7 @@ L3INT Q931Uie_CallingSub(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR
 
     *IOff = (*IOff) + Octet + Off;
     *OOff = (*OOff) + sizeof(Q931ie_CallingSub) + x -1;
-    pie->Size = sizeof(Q931ie_CallingSub) + x -1;
+    pie->Size = (L3UCHAR)sizeof(Q931ie_CallingSub) + x -1;
 
     Q931SetIE(*pIE, *OOff);
 
@@ -1480,7 +1480,7 @@ L3INT Q931Uie_Display(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR *
 
     *IOff = (*IOff) + Octet + Off;
     *OOff = (*OOff) + sizeof(Q931ie_Display) + x - 1;
-    pie->Size = sizeof(Q931ie_Display) + x - 1;
+    pie->Size = (L3UCHAR)sizeof(Q931ie_Display) + x - 1;
 
     Q931SetIE(*pIE, *OOff);
 
@@ -1684,7 +1684,7 @@ L3INT Q931Uie_KeypadFac(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR 
 
     *IOff = (*IOff) + Octet + Off;
     *OOff = (*OOff) + sizeof(Q931ie_KeypadFac) + x - 1;
-    pie->Size = sizeof(Q931ie_KeypadFac) + x - 1;
+    pie->Size = (L3UCHAR)sizeof(Q931ie_KeypadFac) + x - 1;
 
     Q931SetIE(*pIE, *OOff);
 
@@ -2165,7 +2165,7 @@ L3INT Q931Uie_NetFac(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * O
 
     *IOff = (*IOff) + Octet + Off;
     *OOff = (*OOff) + sizeof(Q931ie_NetFac) + x - 1;
-    pie->Size = sizeof(Q931ie_NetFac) + x - 1;
+    pie->Size = (L3UCHAR)sizeof(Q931ie_NetFac) + x - 1;
 
     Q931SetIE(*pIE, *OOff);
 
@@ -2817,7 +2817,7 @@ L3INT Q931Uie_TransNetSel(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHA
 
     *IOff = (*IOff) + Octet + Off;
     *OOff = (*OOff) + sizeof(Q931ie_TransNetSel) + x - 1;
-    pie->Size = sizeof(Q931ie_TransNetSel) + x - 1;
+    pie->Size = (L3UCHAR)sizeof(Q931ie_TransNetSel) + x - 1;
 
     Q931SetIE(*pIE, *OOff);
 
@@ -2906,7 +2906,7 @@ L3INT Q931Uie_UserUser(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR *
 
     *IOff = (*IOff) + Octet + Off;
     *OOff = (*OOff) + sizeof(Q931ie_UserUser) + x - 1;
-    pie->Size = sizeof(Q931ie_UserUser) + x - 1;
+    pie->Size = (L3UCHAR)sizeof(Q931ie_UserUser) + x - 1;
 
     Q931SetIE(*pIE, *OOff);
 
