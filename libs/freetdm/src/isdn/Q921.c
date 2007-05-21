@@ -43,7 +43,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 
 *****************************************************************************/
-#include "q921.h"
+#include "Q921.h"
 #include <stdlib.h>
 #include "mfifo.h"
 
