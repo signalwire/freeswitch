@@ -548,14 +548,14 @@ L3INT	Q931GetCallState(Q931_TrunkInfo *pTrunk, L3INT iCRV)
                 callindex   call index.
                 iTimer      timer id
 *****************************************************************************/
-L3INT Q931StartTimer(Q931_TrunkInfo *pTrunk, L3INT callIndex, L3INT iTimerID)
+L3INT Q931StartTimer(Q931_TrunkInfo *pTrunk, L3INT callIndex, L3USHORT iTimerID)
 {
     pTrunk->call[callIndex].Timer   = Q931GetTime();  
     pTrunk->call[callIndex].TimerID = iTimerID;
     return 0;
 }
 
-L3INT Q931StopTimer(Q931_TrunkInfo *pTrunk, L3INT callindex, L3INT iTimerID)
+L3INT Q931StopTimer(Q931_TrunkInfo *pTrunk, L3INT callindex, L3USHORT iTimerID)
 {
     if(pTrunk->call[callindex].TimerID == iTimerID)
         pTrunk->call[callindex].TimerID = 0;
@@ -571,7 +571,7 @@ L3INT Q931SetState(Q931_TrunkInfo *pTrunk, L3INT callIndex, L3INT iState)
 
 L3ULONG Q931GetTime()
 {
-    L3ULONG tNow;
+    L3ULONG tNow = 0;
     static L3ULONG tLast={0};
     if(Q931GetTimeProc != NULL)
     {

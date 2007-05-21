@@ -428,11 +428,13 @@ L3INT Q931ProcSetupTE(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	        Q931Disconnect(pTrunk, iFrom, pMes->CRV, 81);
 	        return ret;
 		}
-
+#if 0
+		/* TODO: Unreachable code??? */
         /* Set state U6 */
         Q931SetState(pTrunk, callIndex, Q931_U6);
 
         Q931StartTimer(pTrunk, callIndex, 303);
+#endif
     }
 
 	return rc;
