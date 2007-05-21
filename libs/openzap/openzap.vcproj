@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include"
+				AdditionalIncludeDirectories="src/include;src/isdn/include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -107,7 +107,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="src/include"
+				AdditionalIncludeDirectories="src/include;src/isdn/include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				DisableLanguageExtensions="false"
@@ -336,6 +336,74 @@
 				RelativePath=".\src\zt"
 				>
 			</File>
+		</Filter>
+		<Filter
+			Name="isdn"
+			>
+			<File
+				RelativePath=".\src\isdn\EuroISDNStateNT.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\isdn\EuroISDNStateTE.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\isdn\mfifo.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\isdn\Q921.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\isdn\Q931.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\isdn\Q931api.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\isdn\Q931ie.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\isdn\Q931mes.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\isdn\Q931StateNT.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\isdn\Q931StateTE.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\isdn\Q932mes.c"
+				>
+			</File>
+			<Filter
+				Name="Header Files"
+				>
+				<File
+					RelativePath=".\src\isdn\include\mfifo.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\isdn\include\Q921.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\isdn\include\Q931.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\isdn\include\Q932.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 	</Files>
 	<Globals>
