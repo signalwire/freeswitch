@@ -113,9 +113,11 @@
 #include "stdio.h"
 
 #ifdef _MSC_VER
-/* warning C4100 : unreferenced formal parameter */
-/* warning C4189 : local variable is initialized but not referenced  TODO:  This one should not be disabled*/
-#pragma warning(disable:4100 4189)
+/* warning C4244: conversion from 'type a' to 'type b', possible loss of data  TODO:  This one should not be disabled */
+/* warning C4189 : local variable is initialized but not referenced  TODO:  This one should not be disabled */
+/* warning C4554: '&' : check operator precedence for possible error; use parentheses to clarify precedence TODO:  This one should not be disabled */
+/* warning C4267: '=' : conversion from 'size_t' to 'unsigned char', possible loss of data TODO:  This one should not be disabled */
+#pragma warning(disable:4244 4189 4554 4267)
 #endif
 
 /*****************************************************************************
