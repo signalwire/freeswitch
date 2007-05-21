@@ -47,19 +47,14 @@
 #include <stdlib.h>
 #include "mfifo.h"
 
-#ifdef _MSC_VER
-/* temporary disable */
-#pragma warning(disable: 4244)
-#endif
-
 /*****************************************************************************
   Global Tables & Variables.
 *****************************************************************************/
 Q921Data Q921DevSpace[Q921MAXTRUNK];
 int Q921HeaderSpace={0};
 
-int (*Q921Tx21Proc)(int dev, unsigned char *, int)={NULL};
-int (*Q921Tx23Proc)(int dev, unsigned char *, int)={NULL};
+int (*Q921Tx21Proc)(int dev, L2UCHAR *, int)={NULL};
+int (*Q921Tx23Proc)(int dev, L2UCHAR *, int)={NULL};
 
 /*****************************************************************************
 
@@ -87,12 +82,12 @@ void Q921SetHeaderSpace(int hspace)
     Q921HeaderSpace=hspace;
 }
 
-void Q921SetTx21CB(int (*callback)(int dev, unsigned char *, int))
+void Q921SetTx21CB(int (*callback)(int dev, L2UCHAR *, int))
 {
     Q921Tx21Proc = callback;
 }
 
-void Q921SetTx23CB(int (*callback)(int dev, unsigned char *, int))
+void Q921SetTx23CB(int (*callback)(int dev, L2UCHAR *, int))
 {
     Q921Tx23Proc = callback;
 }
@@ -116,7 +111,7 @@ void Q921SetTx23CB(int (*callback)(int dev, unsigned char *, int))
                 size    size of frame in bytes
 
 *****************************************************************************/
-int Q921QueueHDLCFrame(int trunk, unsigned char *b, int size)
+int Q921QueueHDLCFrame(int trunk, L2UCHAR *b, int size)
 {
     return MFIFOWriteMes(Q921DevSpace[trunk].HDLCInQueue, b, size);
 }
@@ -140,7 +135,7 @@ int Q921QueueHDLCFrame(int trunk, unsigned char *b, int size)
   Return Value: 0 if failed, 1 if Send.
 
 *****************************************************************************/
-int Q921SendI(int trunk, unsigned char Sapi, char cr, unsigned char Tei, char pf, unsigned char *mes, int size)
+int Q921SendI(int trunk, L2UCHAR Sapi, char cr, L2UCHAR Tei, char pf, L2UCHAR *mes, int size)
 {
     mes[Q921HeaderSpace+0] = (Sapi&0xfc) | ((cr<<1)&0x02);
     mes[Q921HeaderSpace+1] = (Tei<<1) | 0x01;
@@ -169,12 +164,12 @@ int Q921SendI(int trunk, unsigned char Sapi, char cr, unsigned char Tei, char pf
 
 int Q921SendRR(int trunk, int Sapi, int cr, int Tei, int pf)
 {
-    unsigned char mes[400];
+    L2UCHAR mes[400];
 
-    mes[Q921HeaderSpace+0] = (Sapi&0xfc) | ((cr<<1)&0x02);
-    mes[Q921HeaderSpace+1] = (Tei<<1) | 0x01;
-    mes[Q921HeaderSpace+2] = 0x01;
-    mes[Q921HeaderSpace+3] = (Q921DevSpace[trunk].vr<<1) | (pf & 0x01);
+    mes[Q921HeaderSpace+0] = (L2UCHAR)((Sapi&0xfc) | ((cr<<1)&0x02));
+    mes[Q921HeaderSpace+1] = (L2UCHAR)((Tei<<1) | 0x01);
+    mes[Q921HeaderSpace+2] = (L2UCHAR)0x01;
+    mes[Q921HeaderSpace+3] = (L2UCHAR)((Q921DevSpace[trunk].vr<<1) | (pf & 0x01));
 
     return Q921Tx21Proc(trunk, mes, Q921HeaderSpace+4);
 }
@@ -196,12 +191,12 @@ int Q921SendRR(int trunk, int Sapi, int cr, int Tei, int pf)
 *****************************************************************************/
 int Q921SendRNR(int trunk, int Sapi, int cr, int Tei, int pf)
 {
-    unsigned char mes[400];
+    L2UCHAR mes[400];
 
-    mes[Q921HeaderSpace+0] = (Sapi&0xfc) | ((cr<<1)&0x02);
-    mes[Q921HeaderSpace+1] = (Tei<<1) | 0x01;
-    mes[Q921HeaderSpace+2] = 0x05;
-    mes[Q921HeaderSpace+3] = (Q921DevSpace[trunk].vr<<1) | (pf & 0x01);
+    mes[Q921HeaderSpace+0] = (L2UCHAR)((Sapi&0xfc) | ((cr<<1)&0x02));
+    mes[Q921HeaderSpace+1] = (L2UCHAR)((Tei<<1) | 0x01);
+    mes[Q921HeaderSpace+2] = (L2UCHAR)0x05;
+    mes[Q921HeaderSpace+3] = (L2UCHAR)((Q921DevSpace[trunk].vr<<1) | (pf & 0x01));
 
     return Q921Tx21Proc(trunk, mes, Q921HeaderSpace+4);
 }
@@ -223,12 +218,12 @@ int Q921SendRNR(int trunk, int Sapi, int cr, int Tei, int pf)
 *****************************************************************************/
 int Q921SendREJ(int trunk, int Sapi, int cr, int Tei, int pf)
 {
-    unsigned char mes[400];
+    L2UCHAR mes[400];
 
-    mes[Q921HeaderSpace+0] = (Sapi&0xfc) | ((cr<<1)&0x02);
-    mes[Q921HeaderSpace+1] = (Tei<<1) | 0x01;
-    mes[Q921HeaderSpace+2] = 0x09;
-    mes[Q921HeaderSpace+3] = (Q921DevSpace[trunk].vr<<1) | (pf & 0x01);
+    mes[Q921HeaderSpace+0] = (L2UCHAR)((Sapi&0xfc) | ((cr<<1)&0x02));
+    mes[Q921HeaderSpace+1] = (L2UCHAR)((Tei<<1) | 0x01);
+    mes[Q921HeaderSpace+2] = (L2UCHAR)0x09;
+    mes[Q921HeaderSpace+3] = (L2UCHAR)((Q921DevSpace[trunk].vr<<1) | (pf & 0x01));
 
     return Q921Tx21Proc(trunk, mes, Q921HeaderSpace+4);
 }
@@ -250,11 +245,11 @@ int Q921SendREJ(int trunk, int Sapi, int cr, int Tei, int pf)
 *****************************************************************************/
 int Q921SendSABME(int trunk, int Sapi, int cr, int Tei, int pf)
 {
-    unsigned char mes[400];
+    L2UCHAR mes[400];
 
-    mes[Q921HeaderSpace+0] = (Sapi&0xfc) | ((cr<<1)&0x02);
-    mes[Q921HeaderSpace+1] = (Tei<<1) | 0x01;
-    mes[Q921HeaderSpace+2] = 0x6f | ((pf<<4)&0x10);
+    mes[Q921HeaderSpace+0] = (L2UCHAR)((Sapi&0xfc) | ((cr<<1)&0x02));
+    mes[Q921HeaderSpace+1] = (L2UCHAR)((Tei<<1) | 0x01);
+    mes[Q921HeaderSpace+2] = (L2UCHAR)(0x6f | ((pf<<4)&0x10));
 
     return Q921Tx21Proc(trunk, mes, Q921HeaderSpace+3);
 }
@@ -276,11 +271,11 @@ int Q921SendSABME(int trunk, int Sapi, int cr, int Tei, int pf)
 *****************************************************************************/
 int Q921SendDM(int trunk, int Sapi, int cr, int Tei, int pf)
 {
-    unsigned char mes[400];
+    L2UCHAR mes[400];
 
-    mes[Q921HeaderSpace+0] = (Sapi&0xfc) | ((cr<<1)&0x02);
-    mes[Q921HeaderSpace+1] = (Tei<<1) | 0x01;
-    mes[Q921HeaderSpace+2] = 0x0f | ((pf<<4)&0x10);
+    mes[Q921HeaderSpace+0] = (L2UCHAR)((Sapi&0xfc) | ((cr<<1)&0x02));
+    mes[Q921HeaderSpace+1] = (L2UCHAR)((Tei<<1) | 0x01);
+    mes[Q921HeaderSpace+2] = (L2UCHAR)(0x0f | ((pf<<4)&0x10));
 
     return Q921Tx21Proc(trunk, mes, Q921HeaderSpace+3);
 }
@@ -302,11 +297,11 @@ int Q921SendDM(int trunk, int Sapi, int cr, int Tei, int pf)
 *****************************************************************************/
 int Q921SendDISC(int trunk, int Sapi, int cr, int Tei, int pf)
 {
-    unsigned char mes[400];
+    L2UCHAR mes[400];
 
-    mes[Q921HeaderSpace+0] = (Sapi&0xfc) | ((cr<<1)&0x02);
-    mes[Q921HeaderSpace+1] = (Tei<<1) | 0x01;
-    mes[Q921HeaderSpace+2] = 0x43 | ((pf<<4)&0x10);
+    mes[Q921HeaderSpace+0] = (L2UCHAR)((Sapi&0xfc) | ((cr<<1)&0x02));
+    mes[Q921HeaderSpace+1] = (L2UCHAR)((Tei<<1) | 0x01);
+    mes[Q921HeaderSpace+2] = (L2UCHAR)(0x43 | ((pf<<4)&0x10));
 
     return Q921Tx21Proc(trunk, mes, Q921HeaderSpace+3);
 }
@@ -328,16 +323,16 @@ int Q921SendDISC(int trunk, int Sapi, int cr, int Tei, int pf)
 *****************************************************************************/
 int Q921SendUA(int trunk, int Sapi, int cr, int Tei, int pf)
 {
-    unsigned char mes[400];
+    L2UCHAR mes[400];
 
-    mes[Q921HeaderSpace+0] = (Sapi&0xfc) | ((cr<<1)&0x02);
-    mes[Q921HeaderSpace+1] = (Tei<<1) | 0x01;
-    mes[Q921HeaderSpace+2] = 0x63 | ((pf<<4)&0x10);
+    mes[Q921HeaderSpace+0] = (L2UCHAR)((Sapi&0xfc) | ((cr<<1)&0x02));
+    mes[Q921HeaderSpace+1] = (L2UCHAR)((Tei<<1) | 0x01);
+    mes[Q921HeaderSpace+2] = (L2UCHAR)(0x63 | ((pf<<4)&0x10));
 
     return Q921Tx21Proc(trunk, mes, Q921HeaderSpace+3);
 }
 
-int Q921ProcSABME(int trunk, unsigned char *mes, int size)
+int Q921ProcSABME(int trunk, L2UCHAR *mes, int size)
 {
 	/* TODO:  Do we need these paramaters? */
 	(void)mes;
@@ -369,9 +364,9 @@ int Q921ProcSABME(int trunk, unsigned char *mes, int size)
 *****************************************************************************/
 int Q921Rx12(long trunk)
 {
-    unsigned char *mes;
+    L2UCHAR *mes;
     int rs,size;     /* receive size & Q921 frame size*/
-    unsigned char *smes = MFIFOGetMesPtr(Q921DevSpace[trunk].HDLCInQueue, &size);
+    L2UCHAR *smes = MFIFOGetMesPtr(Q921DevSpace[trunk].HDLCInQueue, &size);
     if(smes != NULL)
     {
         rs = size - Q921HeaderSpace;

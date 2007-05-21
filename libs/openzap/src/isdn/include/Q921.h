@@ -83,19 +83,34 @@
 #define Q921MAXTRUNK 4
 #define Q921MAXHDLCSPACE 3000
 
+/*****************************************************************************
+
+	Some speed optimization can be achieved by changing all variables to the 
+	word size of your processor. A 32 bit processor have to do a lot of extra 
+	work to read a packed 8 bit integer. Changing all fields to 32 bit integer 
+	will ressult in usage of some extra space, but speed up the stack.
+
+	The stack have been designed to allow L3UCHAR etc. to be any size of 8 bit
+	or larger.
+
+*****************************************************************************/
+
+#define L2UCHAR		unsigned char		/* Min 8 bit						*/
+#define L2INT       int                 /* Min 16 bit signed                */
+
 typedef struct
 {
-    unsigned char HDLCInQueue[Q921MAXHDLCSPACE];
-    unsigned char vs;
-    unsigned char vr;
+    L2UCHAR HDLCInQueue[Q921MAXHDLCSPACE];
+    L2UCHAR vs;
+    L2UCHAR vr;
     int state;
 }Q921Data;
 
 void Q921Init();
 void Q921SetHeaderSpace(int hspace);
-void Q921SetTx21CB(int (*callback)(int dev, unsigned char *, int));
-void Q921SetTx23CB(int (*callback)(int dev, unsigned char *, int));
-int Q921QueueHDLCFrame(int trunk, unsigned char *b, int size);
+void Q921SetTx21CB(int (*callback)(int dev, L2UCHAR *, int));
+void Q921SetTx23CB(int (*callback)(int dev, L2UCHAR *, int));
+int Q921QueueHDLCFrame(int trunk, L2UCHAR *b, int size);
 int Q921Rx12(long trunk);
 
 #endif
