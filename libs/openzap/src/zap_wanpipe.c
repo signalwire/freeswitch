@@ -346,14 +346,26 @@ static ZINT_WRITE_FUNCTION(wanpipe_write)
 
 static ZINT_WAIT_FUNCTION(wanpipe_wait)
 {
-	zap_wait_flag_t inflags = *flags;
+	int32_t inflags = 0;
 	int result;
-	
-	result = tdmv_api_wait_socket(zchan->sockfd, to, inflags);
+
+	if (*flags & ZAP_READ) {
+		inflags |= POLLIN;
+	}
+
+	if (*flags & ZAP_WRITE) {
+		inflags |= POLLOUT;
+	}
+
+	if (*flags & ZAP_EVENTS) {
+		inflags |= POLLPRI;
+	}
+
+	result = tdmv_api_wait_socket(zchan->sockfd, to, &inflags);
 
 	*flags = ZAP_NO_FLAGS;
 
-	if(result < 0){
+	if (result < 0){
 		snprintf(zchan->last_error, sizeof(zchan->last_error), "Poll failed");
 		return ZAP_FAIL;
 	}
@@ -362,16 +374,16 @@ static ZINT_WAIT_FUNCTION(wanpipe_wait)
 		return ZAP_TIMEOUT;
 	}
 
-	if (result & POLLIN) {
+	if (inflags & POLLIN) {
 		*flags |= ZAP_READ;
 	}
 
-	if (result & POLLOUT) {
+	if (inflags & POLLOUT) {
 		*flags |= ZAP_WRITE;
 	}
 
-	if (result & POLLPRI) {
-		*flags |= ZAP_ERROR;
+	if (inflags & POLLPRI) {
+		*flags |= ZAP_EVENTS;
 	}
 
 	return ZAP_SUCCESS;

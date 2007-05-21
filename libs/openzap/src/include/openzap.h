@@ -87,6 +87,7 @@
 #include "g711.h"
 #include "libteletone.h"
 #include "zap_buffer.h"
+#include "zap_threadmutex.h"
 
 #ifdef  NDEBUG
 #undef assert
@@ -96,7 +97,7 @@
 #define ZAP_MAX_CHANNELS_SPAN 513
 #define ZAP_MAX_SPANS_INTERFACE 33
 
-
+#define GOTO_STATUS(label,st) status = st; goto label ;
 
 #define zap_true(expr)\
 	(expr && ( !strcasecmp(expr, "yes") ||\
@@ -190,6 +191,7 @@ struct zap_span {
 	zap_span_flag_t flags;
 	struct zap_software_interface *zint;
 	zint_event_cb_t event_callback;
+	zap_mutex_t *mutex;
 	zap_channel_t channels[ZAP_MAX_CHANNELS_SPAN];
 };
 
@@ -211,6 +213,7 @@ struct zap_software_interface {
 
 zap_status_t zap_span_find(const char *name, uint32_t id, zap_span_t **span);
 zap_status_t zap_span_create(zap_software_interface_t *zint, zap_span_t **span);
+zap_status_t zap_span_close_all(zap_software_interface_t *zint);
 zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_chan_type_t type, zap_channel_t **chan);
 zap_status_t zap_span_set_event_callback(zap_span_t *span, zint_event_cb_t event_callback);
 zap_status_t zap_channel_set_event_callback(zap_channel_t *zchan, zint_event_cb_t event_callback);
@@ -218,7 +221,7 @@ zap_status_t zap_channel_open(const char *name, uint32_t span_id, uint32_t chan_
 zap_status_t zap_channel_open_any(const char *name, uint32_t span_id, zap_direction_t direction, zap_channel_t **zchan);
 zap_status_t zap_channel_close(zap_channel_t **zchan);
 zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, void *obj);
-zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t *flags, uint32_t to);
+zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t *flags, int32_t to);
 zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *datalen);
 zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t *datalen);
 zap_status_t zap_global_init(void);

@@ -170,15 +170,17 @@ done:
 	return status;
 }
 
-zap_status_t zap_mutex_destroy(zap_mutex_t *mutex)
+zap_status_t zap_mutex_destroy(zap_mutex_t **mutex)
 {
+	zap_mutex_t *mp = *mutex;
+	*mutex = NULL;
 #ifdef WIN32
-	DeleteCriticalSection(&mutex->mutex);
+	DeleteCriticalSection(&mp->mutex);
 #else
-	if (pthread_mutex_destroy(&mutex->mutex))
+	if (pthread_mutex_destroy(&mp->mutex))
 		return ZAP_FAIL;
 #endif
-	free(mutex);
+	free(mp);
 	return ZAP_SUCCESS;
 }
 

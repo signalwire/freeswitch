@@ -42,6 +42,7 @@
 
 static struct {
 	zap_hash_t *interface_hash;
+	zap_mutex_t *mutex;
 } globals;
 
 static char *LEVEL_NAMES[] = {
@@ -158,11 +159,27 @@ zap_status_t zap_span_create(zap_software_interface_t *zint, zap_span_t **span)
 		zap_set_flag(new_span, ZAP_SPAN_CONFIGURED);
 		new_span->span_id = zint->span_index;
 		new_span->zint = zint;
+		zap_mutex_create(&new_span->mutex);
 		*span = new_span;
 		return ZAP_SUCCESS;
 	}
 	
 	return ZAP_FAIL;
+}
+
+zap_status_t zap_span_close_all(zap_software_interface_t *zint)
+{
+	zap_span_t *span;
+	uint32_t i;
+
+	for(i = 0; i < zint->span_index; i++) {
+		span = &zint->spans[i];
+		if (span->mutex) {
+			zap_mutex_destroy(&span->mutex);
+		}
+	}
+	
+	return i ? ZAP_SUCCESS : ZAP_FAIL;
 }
 
 zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_chan_type_t type, zap_channel_t **chan)
@@ -186,8 +203,12 @@ zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_cha
 
 zap_status_t zap_span_find(const char *name, uint32_t id, zap_span_t **span)
 {
-	zap_software_interface_t *zint = (zap_software_interface_t *) hashtable_search(globals.interface_hash, (char *)name);
+	zap_software_interface_t *zint;
 	zap_span_t *fspan;
+
+	zap_mutex_lock(globals.mutex);
+	zint = (zap_software_interface_t *) hashtable_search(globals.interface_hash, (char *)name);
+	zap_mutex_unlock(globals.mutex);
 
 	if (!zint) {
 		return ZAP_FAIL;
@@ -211,24 +232,32 @@ zap_status_t zap_span_find(const char *name, uint32_t id, zap_span_t **span)
 
 zap_status_t zap_span_set_event_callback(zap_span_t *span, zint_event_cb_t event_callback)
 {
+	zap_mutex_lock(span->mutex);
 	span->event_callback = event_callback;
+	zap_mutex_unlock(span->mutex);
 	return ZAP_SUCCESS;
 }
 
 zap_status_t zap_channel_set_event_callback(zap_channel_t *zchan, zint_event_cb_t event_callback)
 {
+	zap_mutex_lock(zchan->span->mutex);
 	zchan->event_callback = event_callback;
+	zap_mutex_unlock(zchan->span->mutex);
 	return ZAP_SUCCESS;
 }
 
 zap_status_t zap_channel_open_any(const char *name, uint32_t span_id, zap_direction_t direction, zap_channel_t **zchan)
 {
-	zap_software_interface_t *zint = (zap_software_interface_t *) hashtable_search(globals.interface_hash, (char *)name);
+	zap_software_interface_t *zint;
 	zap_status_t status = ZAP_FAIL;
 	zap_channel_t *check;
 	uint32_t i,j;
 	zap_span_t *span;
 	uint32_t span_max;
+
+	zap_mutex_lock(globals.mutex);
+	zint = (zap_software_interface_t *) hashtable_search(globals.interface_hash, (char *)name);
+	zap_mutex_unlock(globals.mutex);
 
 	if (!zint) {
 		zap_log(ZAP_LOG_ERROR, "Invalid interface name!\n");
@@ -247,7 +276,7 @@ zap_status_t zap_channel_open_any(const char *name, uint32_t span_id, zap_direct
 		j = span_max;
 	}
 
-	
+	zap_mutex_lock(globals.mutex);
 
 	for(;;) {
 		span = &zint->spans[j];
@@ -314,25 +343,60 @@ zap_status_t zap_channel_open_any(const char *name, uint32_t span_id, zap_direct
 		}
 	}
 
+	zap_mutex_unlock(globals.mutex);
+
 	return status;
 }
 
+static zap_status_t zap_channel_reset(zap_channel_t *zchan)
+{
+	zap_clear_flag(zchan, ZAP_CHANNEL_OPEN);
+	zchan->event_callback = NULL;
+	zap_clear_flag(zchan, ZAP_CHANNEL_DTMF_DETECT);
+	zap_clear_flag(zchan, ZAP_CHANNEL_SUPRESS_DTMF);
+	if (zchan->tone_session.buffer) {
+		teletone_destroy_session(&zchan->tone_session);
+		memset(&zchan->tone_session, 0, sizeof(zchan->tone_session));
+	}
+	if (zchan->dtmf_buffer) {
+		zap_buffer_destroy(&zchan->dtmf_buffer);
+	}
+	zchan->dtmf_on = zchan->dtmf_off = 0;
+
+	if (zap_test_flag(zchan, ZAP_CHANNEL_TRANSCODE)) {
+		zchan->effective_codec = zchan->native_codec;
+		zchan->packet_len = zchan->native_interval * (zchan->effective_codec == ZAP_CODEC_SLIN ? 16 : 8);
+		zap_clear_flag(zchan, ZAP_CHANNEL_TRANSCODE);
+	}
+
+	return ZAP_SUCCESS;
+}
+
+
+
 zap_status_t zap_channel_open(const char *name, uint32_t span_id, uint32_t chan_id, zap_channel_t **zchan)
 {
-	zap_software_interface_t *zint = (zap_software_interface_t *) hashtable_search(globals.interface_hash, (char *)name);
+	zap_software_interface_t *zint;
 	zap_status_t status = ZAP_FAIL;
+
+	zap_mutex_lock(globals.mutex);
+    zint = (zap_software_interface_t *) hashtable_search(globals.interface_hash, (char *)name);
+    zap_mutex_unlock(globals.mutex);
+	
 
 	if (span_id < ZAP_MAX_SPANS_INTERFACE && chan_id < ZAP_MAX_CHANNELS_SPAN && zint) {
 		zap_channel_t *check;
+		zap_mutex_lock(zint->spans[span_id].mutex);
 		check = &zint->spans[span_id].channels[chan_id];
+
 		if (zap_test_flag(check, ZAP_CHANNEL_READY) && ! zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
 			status = check->zint->open(check);
 			if (status == ZAP_SUCCESS) {
 				zap_set_flag(check, ZAP_CHANNEL_OPEN);
 				*zchan = check;
 			}
-			return status;
 		}
+		zap_mutex_unlock(zint->spans[span_id].mutex);
 	}
 
 	return status;
@@ -347,25 +411,17 @@ zap_status_t zap_channel_close(zap_channel_t **zchan)
 	check = *zchan;
 	assert(check != NULL);
 	*zchan = NULL;
-	
+
+	zap_mutex_lock(check->span->mutex);
 	if (zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
 		status = check->zint->close(check);
 		if (status == ZAP_SUCCESS) {
-			zap_clear_flag(check, ZAP_CHANNEL_OPEN);
-			check->event_callback = NULL;
-			zap_clear_flag(check, ZAP_CHANNEL_DTMF_DETECT);
-			zap_clear_flag(check, ZAP_CHANNEL_SUPRESS_DTMF);
-			if (check->tone_session.buffer) {
-				teletone_destroy_session(&check->tone_session);
-				memset(&check->tone_session, 0, sizeof(check->tone_session));
-			}
-			if (check->dtmf_buffer) {
-				zap_buffer_destroy(&check->dtmf_buffer);
-			}
-			check->dtmf_on = check->dtmf_off = 0;
+			zap_channel_reset(check);
 			*zchan = NULL;
 		}
 	}
+
+	zap_mutex_unlock(check->span->mutex);
 	
 	return status;
 }
@@ -405,6 +461,8 @@ static zap_status_t zchan_activate_dtmf_buffer(zap_channel_t *zchan)
 
 zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, void *obj)
 {
+	zap_status_t status = ZAP_FAIL;
+
 	assert(zchan != NULL);
 	assert(zchan->zint != NULL);
 
@@ -412,6 +470,8 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 		snprintf(zchan->last_error, sizeof(zchan->last_error), "channel not open");
         return ZAP_FAIL;
     }
+
+	zap_mutex_lock(zchan->span->mutex);
 
 	switch(command) {
 	case ZAP_COMMAND_SET_INTERVAL:
@@ -424,7 +484,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 					zap_set_flag(zchan, ZAP_CHANNEL_BUFFER);
 				}
 				zchan->packet_len = zchan->native_interval * (zchan->effective_codec == ZAP_CODEC_SLIN ? 16 : 8);
-				return ZAP_SUCCESS;
+				GOTO_STATUS(done, ZAP_SUCCESS);
 			}
 		}
 		break;
@@ -432,7 +492,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 		{
 			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_INTERVAL)) {
 				ZAP_COMMAND_OBJ_INT = zchan->effective_interval;
-				return ZAP_SUCCESS;
+				GOTO_STATUS(done, ZAP_SUCCESS);
 			}
 		}
 		break;
@@ -446,7 +506,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 					zap_set_flag(zchan, ZAP_CHANNEL_TRANSCODE);
 				}
 				zchan->packet_len = zchan->native_interval * (zchan->effective_codec == ZAP_CODEC_SLIN ? 16 : 8);
-				return ZAP_SUCCESS;
+				GOTO_STATUS(done, ZAP_SUCCESS);
 			}
 		}
 		break;
@@ -455,7 +515,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 		{
 			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_CODECS)) {
 				ZAP_COMMAND_OBJ_INT = zchan->effective_codec;
-				return ZAP_SUCCESS;
+				GOTO_STATUS(done, ZAP_SUCCESS);
 			}
 		}
 		break;
@@ -468,10 +528,10 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 					teletone_dtmf_detect_init (&zchan->dtmf_detect, 8000);
 					zap_set_flag(zchan, ZAP_CHANNEL_DTMF_DETECT);
 					zap_set_flag(zchan, ZAP_CHANNEL_SUPRESS_DTMF);
-					return ZAP_SUCCESS;
+					GOTO_STATUS(done, ZAP_SUCCESS);
 				} else {
 					snprintf(zchan->last_error, sizeof(zchan->last_error), "invalid command");
-					return ZAP_FAIL;
+					GOTO_STATUS(done, ZAP_FAIL);
 				}
 			}
 		}
@@ -484,10 +544,10 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
                     teletone_dtmf_detect_init (&zchan->dtmf_detect, 8000);
                     zap_clear_flag(zchan, ZAP_CHANNEL_DTMF_DETECT);
 					zap_clear_flag(zchan, ZAP_CHANNEL_SUPRESS_DTMF);
-                    return ZAP_SUCCESS;
+					GOTO_STATUS(done, ZAP_SUCCESS);
                 } else {
                     snprintf(zchan->last_error, sizeof(zchan->last_error), "invalid command");
-                    return ZAP_FAIL;
+					GOTO_STATUS(done, ZAP_FAIL);
                 }
 			}
 		}
@@ -495,7 +555,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 		{
 			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF)) {
 				ZAP_COMMAND_OBJ_INT = zchan->dtmf_on;
-				return ZAP_SUCCESS;
+				GOTO_STATUS(done, ZAP_SUCCESS);
 			}
 		}
 		break;
@@ -503,7 +563,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 		{
 			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF)) {
 				ZAP_COMMAND_OBJ_INT = zchan->dtmf_on;
-				return ZAP_SUCCESS;
+				GOTO_STATUS(done, ZAP_SUCCESS);
 			}
 		}
 		break;
@@ -513,10 +573,10 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 				int val = ZAP_COMMAND_OBJ_INT;
 				if (val > 10 && val < 1000) {
 					zchan->dtmf_on = val;
-					return ZAP_SUCCESS;
+					GOTO_STATUS(done, ZAP_SUCCESS);
 				} else {
 					snprintf(zchan->last_error, sizeof(zchan->last_error), "invalid value %d range 10-1000", val);
-					return ZAP_FAIL;
+					GOTO_STATUS(done, ZAP_FAIL);
 				}
 			}
 		}
@@ -527,10 +587,10 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 				int val = ZAP_COMMAND_OBJ_INT;
 				if (val > 10 && val < 1000) {
 					zchan->dtmf_off = val;
-					return ZAP_SUCCESS;
+					GOTO_STATUS(done, ZAP_SUCCESS);
 				} else {
 					snprintf(zchan->last_error, sizeof(zchan->last_error), "invalid value %d range 10-1000", val);
-					return ZAP_FAIL;
+					GOTO_STATUS(done, ZAP_FAIL);
 				}
 			}
 		}
@@ -538,16 +598,15 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 	case ZAP_COMMAND_SEND_DTMF:
 		{
 			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF)) {
-				zap_status_t status;
 				char *cur;
 				char *digits = ZAP_COMMAND_OBJ_CHAR_P;
 				if (!zchan->dtmf_buffer) {
 					if ((status = zchan_activate_dtmf_buffer(zchan)) != ZAP_SUCCESS) {
-						return status;
+						GOTO_STATUS(done, status);
 					}
 				}
 				zap_log(ZAP_LOG_DEBUG, "Adding DTMF SEQ [%s]\n", digits);	
-
+				
 				for (cur = digits; *cur; cur++) {
 					int wrote = 0;
 					if ((wrote = teletone_mux_tones(&zchan->tone_session, &zchan->tone_session.TONES[(int)*cur]))) {
@@ -556,7 +615,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 				}
 				
 				zchan->skip_read_frames = 200;
-				return ZAP_SUCCESS;
+				GOTO_STATUS(done, ZAP_SUCCESS);
 			}
 		}
 		break;
@@ -566,14 +625,18 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 
 	if (!zchan->zint->command) {
 		snprintf(zchan->last_error, sizeof(zchan->last_error), "method not implemented");
-		return ZAP_FAIL;
+		GOTO_STATUS(done, ZAP_FAIL);
 	}
 
-    return zchan->zint->command(zchan, command, obj);
+    status = zchan->zint->command(zchan, command, obj);
+
+ done:
+	zap_mutex_unlock(zchan->span->mutex);
+	return status;
 
 }
 
-zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t *flags, uint32_t to)
+zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t *flags, int32_t to)
 {
 	assert(zchan != NULL);
 	assert(zchan->zint != NULL);
@@ -899,30 +962,39 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t *dat
 	return status;
 }
 
+static struct {
+	zap_software_interface_t *wanpipe_interface;
+	zap_software_interface_t *zt_interface;
+} interfaces;
+
 zap_status_t zap_global_init(void)
 {
 	zap_config_t cfg;
 	char *var, *val;
 	uint32_t configured = 0;
-	zap_software_interface_t *zint;
 	int modcount;
 
+	memset(&interfaces, 0, sizeof(interfaces));
 	globals.interface_hash = create_hashtable(16, hashfromstring, equalkeys);
-	zint = NULL;
 	modcount = 0;
-
+	zap_mutex_create(&globals.mutex);
+	
 #ifdef ZAP_WANPIPE_SUPPORT
-	if (wanpipe_init(&zint) == ZAP_SUCCESS) {
-		hashtable_insert(globals.interface_hash, (void *)zint->name, zint);
+	if (wanpipe_init(&interfaces.wanpipe_interface) == ZAP_SUCCESS) {
+		zap_mutex_lock(globals.mutex);
+		hashtable_insert(globals.interface_hash, (void *)interfaces.wanpipe_interface->name, interfaces.wanpipe_interface);
+		zap_mutex_unlock(globals.mutex);
 		modcount++;
 	} else {
 		zap_log(ZAP_LOG_ERROR, "Error initilizing wanpipe.\n");	
 	}
 #endif
-	zint = NULL;
+
 #ifdef ZAP_ZT_SUPPORT
-	if (zt_init(&zint) == ZAP_SUCCESS) {
-		hashtable_insert(globals.interface_hash, (void *)zint->name, zint);
+	if (zt_init(&interfaces.zt_interface) == ZAP_SUCCESS) {
+		zap_mutex_lock(globals.mutex);
+		hashtable_insert(globals.interface_hash, (void *)interfaces.zt_interface->name, interfaces.zt_interface);
+		zap_mutex_unlock(globals.mutex);
 		modcount++;
 	} else {
 		zap_log(ZAP_LOG_ERROR, "Error initilizing zt.\n");	
@@ -942,8 +1014,11 @@ zap_status_t zap_global_init(void)
 		if (!strcasecmp(cfg.category, "openzap")) {
 			if (!strcmp(var, "load")) {
 				zap_software_interface_t *zint;
-		
+
+				zap_mutex_lock(globals.mutex);
 				zint = (zap_software_interface_t *) hashtable_search(globals.interface_hash, val);
+				zap_mutex_unlock(globals.mutex);
+
 				if (zint) {
 					if (zint->configure(zint) == ZAP_SUCCESS) {
 						configured++;
@@ -967,16 +1042,21 @@ zap_status_t zap_global_init(void)
 
 zap_status_t zap_global_destroy(void)
 {
-
 #ifdef ZAP_ZT_SUPPORT
-	zt_destroy();
+	if (interfaces.zt_interface) {
+		zt_destroy();
+		zap_span_close_all(interfaces.zt_interface);
+	}
 #endif
 #ifdef ZAP_WANPIPE_SUPPORT
-	wanpipe_destroy();
+	if (interfaces.wanpipe_interface) {
+		wanpipe_destroy();
+		zap_span_close_all(interfaces.wanpipe_interface);
+	}
 #endif
 
 	hashtable_destroy(globals.interface_hash, 0);
-
+	zap_mutex_destroy(&globals.mutex);
 	return ZAP_SUCCESS;
 }
 

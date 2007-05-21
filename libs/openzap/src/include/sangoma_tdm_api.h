@@ -107,7 +107,7 @@ static __inline__ int tdmv_api_ioctl(sng_fd_t fd, wanpipe_tdm_api_t *tdm_api_cmd
 
 	memcpy(	wan_udp.wan_udphdr_data, (void*)tdm_api_cmd, sizeof(wanpipe_tdm_api_cmd_t));
 
-	if(DeviceIoControl(
+	if (DeviceIoControl(
 			fd,
 			IoctlManagementCommand,
 			(LPVOID)&wan_udp,
@@ -120,7 +120,7 @@ static __inline__ int tdmv_api_ioctl(sng_fd_t fd, wanpipe_tdm_api_t *tdm_api_cmd
 		return 1;
 	}
 
-	if(wan_udp.wan_udphdr_return_code != WAN_CMD_OK){
+	if (wan_udp.wan_udphdr_return_code != WAN_CMD_OK){
 		return 2;
 	}
 
@@ -137,7 +137,7 @@ static __inline__ int tdmv_api_ioctl(sng_fd_t fd, wanpipe_tdm_api_t *tdm_api_cmd
 
 void __inline__ tdmv_api_close_socket(sng_fd_t *sp) 
 {
-	if(	*sp != WP_INVALID_SOCKET){
+	if (	*sp != WP_INVALID_SOCKET){
 #if defined(__WINDOWS__)
 		CloseHandle(*sp);
 #else
@@ -186,7 +186,7 @@ static __inline__ sng_fd_t tdmv_api_open_span_chan(int span, int chan)
 		(LPOVERLAPPED)NULL
 		);
 
-	if((wan_udp.wan_udphdr_return_code) || (*(int*)&wan_udp.wan_udphdr_data[0] != 1)){
+	if ((wan_udp.wan_udphdr_return_code) || (*(int*)&wan_udp.wan_udphdr_data[0] != 1)){
 		/* somone already has this channel, or somthing else is not right. */
 		tdmv_api_close_socket(&fd);
 	}
@@ -218,7 +218,7 @@ static __inline__ sng_fd_t tdmv_api_open_span_chan(int span, int chan)
 /* a cross platform way to poll on an actual pollset (span and/or list of spans) will probably also be needed for analog */
 /* so we can have one analong handler thread that will deal with all the idle analog channels for events */
 /* the alternative would be for the driver to provide one socket for all of the oob events for all analog channels */
-static __inline__ int tdmv_api_wait_socket(sng_fd_t fd, int timeout, int flags)
+static __inline__ int tdmv_api_wait_socket(sng_fd_t fd, int timeout, int *flags)
 {
 #if defined(__WINDOWS__)
 	DWORD ln;
@@ -226,7 +226,7 @@ static __inline__ int tdmv_api_wait_socket(sng_fd_t fd, int timeout, int flags)
 
 	memset(&api_poll, 0x00, sizeof(API_POLL_STRUCT));
 	
-	api_poll.user_flags_bitmap = flags;
+	api_poll.user_flags_bitmap = *flags;
 	api_poll.timeout = timeout;
 
 	if (!DeviceIoControl(
@@ -241,6 +241,8 @@ static __inline__ int tdmv_api_wait_socket(sng_fd_t fd, int timeout, int flags)
 		return -1;
 	}
 
+	*flags = 0;
+
 	switch(api_poll.operation_status)
 	{
 		case SANG_STATUS_RX_DATA_AVAILABLE:
@@ -253,37 +255,36 @@ static __inline__ int tdmv_api_wait_socket(sng_fd_t fd, int timeout, int flags)
 			return -1;
 	}
 
-	if(api_poll.poll_events_bitmap == 0){
+	if (api_poll.poll_events_bitmap == 0){
 		return -1;
 	}
 
-	if(api_poll.poll_events_bitmap & POLL_EVENT_TIMEOUT){
+	if (api_poll.poll_events_bitmap & POLL_EVENT_TIMEOUT) {
 		return 0;
 	}
 
-	return api_poll.poll_events_bitmap;
+	*flags = api_poll.poll_events_bitmap;
+
+	return 1;
 #else
     struct pollfd pfds[1];
     int res;
 
     memset(&pfds[0], 0, sizeof(pfds[0]));
     pfds[0].fd = fd;
-    pfds[0].events = flags;
+    pfds[0].events = *flags;
     res = poll(pfds, 1, timeout);
+	*flags = 0;
 
-	if (res == 0) {
-		return 0;
+	if (pfds[0].revents & POLLERR) {
+		res = -1;
 	}
 
-	if (res < 0) {
-		return -1;
+	if (res > 0) {
+		*flags = pfds[0].revents;
 	}
 
-	if ((pfds[0].revents & POLLERR)) {
-		return -1;
-	}
-
-    return pfds[0].revents;
+    return res;
 #endif
 }
 
@@ -303,11 +304,11 @@ static __inline__ int tdmv_api_readmsg_tdm(sng_fd_t fd, void *hdrbuf, int hdrlen
 	wp_tdm_api_rx_hdr_t		*user_buf = (wp_tdm_api_rx_hdr_t*)hdrbuf;
 	DWORD ln;
 
-	if(hdrlen != sizeof(wp_tdm_api_rx_hdr_t)){
+	if (hdrlen != sizeof(wp_tdm_api_rx_hdr_t)){
 		return -1;
 	}
 
-	if(!DeviceIoControl(
+	if (!DeviceIoControl(
 			fd,
 			IoctlReadCommand,
 			(LPVOID)NULL,
@@ -328,7 +329,7 @@ static __inline__ int tdmv_api_readmsg_tdm(sng_fd_t fd, void *hdrbuf, int hdrlen
 	switch(pri->operation_status)
 	{
 	case SANG_STATUS_RX_DATA_AVAILABLE:
-		if(pri->data_length > datalen){
+		if (pri->data_length > datalen){
 			break;
 		}
 		memcpy(databuf, rx_data.data, pri->data_length);
@@ -384,7 +385,7 @@ static __inline__ int tdmv_api_writemsg_tdm(sng_fd_t fd, void *hdrbuf, int hdrle
 	pri->data_length = datalen;
 	memcpy(local_tx_data.data, databuf, pri->data_length);
 
-	if(!DeviceIoControl(
+	if (!DeviceIoControl(
 			fd,
 			IoctlWriteCommand,
 			(LPVOID)&local_tx_data,
@@ -406,18 +407,18 @@ static __inline__ int tdmv_api_writemsg_tdm(sng_fd_t fd, void *hdrbuf, int hdrle
 
 	memset(&msg,0,sizeof(struct msghdr));
 
-	iov[0].iov_len=hdrlen;
-	iov[0].iov_base=hdrbuf;
+	iov[0].iov_len = hdrlen;
+	iov[0].iov_base = hdrbuf;
 
-	iov[1].iov_len=datalen;
-	iov[1].iov_base=databuf;
+	iov[1].iov_len = datalen;
+	iov[1].iov_base = databuf;
 
-	msg.msg_iovlen=2;
-	msg.msg_iov=iov;
+	msg.msg_iovlen = 2;
+	msg.msg_iov = iov;
 
-	bsent = write(fd,&msg,datalen+hdrlen);
+	bsent = write(fd, &msg, datalen + hdrlen);
 	if (bsent > 0){
-		bsent-=sizeof(wp_tdm_api_tx_hdr_t);
+		bsent -= sizeof(wp_tdm_api_tx_hdr_t);
 	}
 #endif
 	return bsent;
