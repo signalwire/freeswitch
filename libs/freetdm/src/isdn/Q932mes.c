@@ -50,7 +50,7 @@ L3INT Q932Umes_Facility(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
 	L3INT OOff=0;
 	Q932mes_Facility *mes = (Q932mes_Facility*)IBuf;
 
-	//TODO
+	/* TODO */
 
     mes->Size = sizeof(Q932mes_Facility) - 1 + OOff;
     return Q931E_NO_ERROR;
@@ -84,7 +84,7 @@ L3INT Q932Umes_Hold(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT I
 	L3INT OOff=0;
 	Q932mes_Hold *mes = (Q932mes_Hold*)IBuf;
 
-	//TODO
+	/* TODO */
 
     mes->Size = sizeof(Q932mes_Hold) - 1 + OOff;
     return Q931E_NO_ERROR;
@@ -118,7 +118,7 @@ L3INT Q932Umes_HoldAck(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3IN
 	L3INT OOff=0;
 	Q932mes_HoldAck *mes = (Q932mes_HoldAck*)IBuf;
 
-	//TODO
+	/* TODO */
 
     mes->Size = sizeof(Q932mes_HoldAck) - 1 + OOff;
     return Q931E_NO_ERROR;
@@ -152,7 +152,7 @@ L3INT Q932Umes_HoldReject(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L
 	L3INT OOff=0;
 	Q932mes_HoldReject *mes = (Q932mes_HoldReject*)IBuf;
 
-	//TODO
+	/* TODO */
 
     mes->Size = sizeof(Q932mes_HoldReject) - 1 + OOff;
     return Q931E_NO_ERROR;
@@ -186,7 +186,7 @@ L3INT Q932Umes_Register(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
 	L3INT OOff=0;
 	Q932mes_Register *mes = (Q932mes_Register*)IBuf;
 
-	//TODO
+	/* TODO */
 
     mes->Size = sizeof(Q932mes_Register) - 1 + OOff;
     return Q931E_NO_ERROR;
@@ -220,7 +220,7 @@ L3INT Q932Umes_Retrieve(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
 	L3INT OOff=0;
 	Q932mes_Retrieve *mes = (Q932mes_Retrieve*)IBuf;
 
-	//TODO
+	/* TODO */
 
     mes->Size = sizeof(Q932mes_Retrieve) - 1 + OOff;
     return Q931E_NO_ERROR;
@@ -254,7 +254,7 @@ L3INT Q932Umes_RetrieveAck(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, 
 	L3INT OOff=0;
 	Q932mes_RetrieveAck *mes = (Q932mes_RetrieveAck*)IBuf;
 
-	//TODO
+	/* TODO */
 
     mes->Size = sizeof(Q932mes_RetrieveAck) - 1 + OOff;
     return Q931E_NO_ERROR;
@@ -288,7 +288,7 @@ L3INT Q932Umes_RetrieveReject(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBu
 	L3INT OOff=0;
 	Q932mes_RetrieveReject *mes = (Q932mes_RetrieveReject*)IBuf;
 
-	//TODO
+	/* TODO */
 
     mes->Size = sizeof(Q932mes_RetrieveReject) - 1 + OOff;
     return Q931E_NO_ERROR;

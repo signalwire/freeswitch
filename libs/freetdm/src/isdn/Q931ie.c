@@ -1580,7 +1580,7 @@ L3INT Q931Uie_HLComp(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * 
         }
         else
         {
-            // error Octet 4a indicated, but invalid value in Octet 4.
+            /* error Octet 4a indicated, but invalid value in Octet 4. */
             Q931SetError(pTrunk,Q931E_HLCOMP, 4, Off);
             return Q931E_HLCOMP;
         }
@@ -2690,7 +2690,6 @@ L3INT Q931Pie_SendComplete(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf,
     Q931ie_SendComplete * pIE = (Q931ie_SendComplete*)IBuf;
     L3INT rc=Q931E_NO_ERROR;
     L3INT Beg=*Octet;
-//    L3INT li;
 
     OBuf[(*Octet)++] = 0x80 | (L3UCHAR)Q931ie_SENDING_COMPLETE;
 

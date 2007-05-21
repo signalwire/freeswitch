@@ -483,7 +483,6 @@ L3INT Q931ProcSetupAckTE(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
 L3INT Q931ProcResumeTE(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     Q931mes_Resume * pMes = (Q931mes_Resume *)&buf[Q931L4HeaderSpace];
-//    L3INT chanIndex;
     L3INT callIndex;
     L3INT ret = Q931E_NO_ERROR;
 
