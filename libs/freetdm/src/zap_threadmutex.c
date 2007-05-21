@@ -104,19 +104,24 @@ zap_status_t zap_thread_create_detached_ex(zap_thread_function_t func, void *dat
 		goto fail;
 	}
 	CloseHandle(thread->handle);
+
+	status = ZAP_SUCCESS;
+	goto done;
 #else
 	
 	if (pthread_attr_init(&thread->attribute) != 0)	goto fail;
 
-	if (pthread_attr_setdetachstate(&thread->attribute, PTHREAD_CREATE_DETACHED) != 0) goto fail;
+	if (pthread_attr_setdetachstate(&thread->attribute, PTHREAD_CREATE_DETACHED) != 0) goto failpthread;
 
-	if (thread->stack_size && pthread_attr_setstacksize(&thread->attribute, thread->stack_size) != 0) goto fail;
+	if (thread->stack_size && pthread_attr_setstacksize(&thread->attribute, thread->stack_size) != 0) goto failpthread;
 
-	if (pthread_create(&thread->handle, &thread->attribute, thread_launch, thread) != 0) goto fail;
+	if (pthread_create(&thread->handle, &thread->attribute, thread_launch, thread) != 0) goto failpthread;
 
-#endif
 	status = ZAP_SUCCESS;
 	goto done;
+failpthread:
+	pthread_attr_destroy(&thread->attribute);
+#endif
 
 fail:
 	if (thread) {
