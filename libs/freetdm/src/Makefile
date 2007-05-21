@@ -90,5 +90,5 @@ zap_zt.o: zap_zt.c
 	$(CC) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f *.o $(MYLIB) *~ \#* testapp priserver
+	rm -f *.o isdn/*.o $(MYLIB) *~ \#* testapp priserver
 
