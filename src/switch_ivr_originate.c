@@ -260,7 +260,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_codec_t write_codec = { 0 };
 	switch_frame_t write_frame = { 0 };
 	uint8_t fdata[1024], pass = 0;
-	char *file = NULL, *key = NULL, *odata, *var;
+	char key[80] = "", file[512] = "", *odata, *var;
 	switch_call_cause_t reason = SWITCH_CAUSE_UNALLOCATED;
 	uint8_t to = 0;
 	char *var_val, *vars = NULL, *ringback_data = NULL;
@@ -362,9 +362,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	if ((var = switch_event_get_header(var_event, "group_confirm_key"))) {
-		key = switch_core_session_strdup(session, var);
+		switch_copy_string(key, var, sizeof(key));
 		if ((var = switch_event_get_header(var_event, "group_confirm_file"))) {
-			file = switch_core_session_strdup(session, var);
+			switch_copy_string(file, var, sizeof(file));
 		}
 	}
 	// When using the AND operator, the fail_on_single_reject flag may be set in order to indicate that a single
@@ -373,8 +373,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		fail_on_single_reject = 1;
 	}
 
-	if (file && !strcmp(file, "undef")) {
-		file = NULL;
+	if (!switch_strlen_zero(file) && !strcmp(file, "undef")) {
+		*file = '\0';
 	}
 
 	if ((var_val = switch_event_get_header(var_event, "ignore_early_media")) && switch_true(var_val)) {
@@ -440,8 +440,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			read_frame = NULL;
 			pool = NULL;
 			pass = 0;
-			file = NULL;
-			key = NULL;
 			var = NULL;
 			to = 0;
 
