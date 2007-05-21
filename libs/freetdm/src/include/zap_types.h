@@ -66,9 +66,9 @@ typedef enum {
 
 typedef enum {
 	ZAP_NO_FLAGS = 0,
-	ZAP_READ =  (1 <<  0),
-	ZAP_WRITE = (1 <<  1),
-	ZAP_ERROR = (1 <<  2)
+	ZAP_READ =  (1 << 0),
+	ZAP_WRITE = (1 << 1),
+	ZAP_EVENTS = (1 << 2)
 } zap_wait_flag_t;
 
 typedef enum {
@@ -139,7 +139,7 @@ typedef struct zap_event zap_event_t;
 #define ZINT_OPEN_ARGS (zap_channel_t *zchan)
 #define ZINT_CLOSE_ARGS (zap_channel_t *zchan)
 #define ZINT_COMMAND_ARGS (zap_channel_t *zchan, zap_command_t command, void *obj)
-#define ZINT_WAIT_ARGS (zap_channel_t *zchan, zap_wait_flag_t *flags, uint32_t to)
+#define ZINT_WAIT_ARGS (zap_channel_t *zchan, zap_wait_flag_t *flags, int32_t to)
 #define ZINT_READ_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
 #define ZINT_WRITE_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
 

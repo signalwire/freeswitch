@@ -44,7 +44,7 @@ $(MYLIB): $(OBJS)
 	ranlib $(MYLIB)
 
 testapp: testapp.c $(MYLIB)
-	$(CC) -L. -Iinclude testapp.c -o testapp -lopenzap -lm
+	$(CC) -L. -Iinclude testapp.c -o testapp -lopenzap -lm -lpthread
 
 
 priserver.o: priserver.c
@@ -54,7 +54,7 @@ sangoma_pri.o: sangoma_pri.c
 	$(CC) $(TMP) -c sangoma_pri.c -o sangoma_pri.o
 
 priserver: $(MYLIB) priserver.o sangoma_pri.o
-	$(CC) sangoma_pri.o priserver.o -L. -o priserver -lopenzap -lm ../../libpri-1.2.4/libpri.a
+	$(CC) sangoma_pri.o priserver.o -L. -o priserver -lopenzap -lm -lpthread ../../libpri-1.2.4/libpri.a
 
 openzap.o: openzap.c
 	$(CC) $(MOD_CFLAGS) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
