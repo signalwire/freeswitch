@@ -779,7 +779,7 @@ L3INT Q931ProcReleaseCompleteTE(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFr
     {
         /* no action */
     }
-	return 0;
+	return ret;
 }
 
 /*****************************************************************************

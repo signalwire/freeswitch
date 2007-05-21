@@ -45,8 +45,8 @@
 
 L3INT Q932Umes_Facility(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+    /* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
 	Q932mes_Facility *mes = (Q932mes_Facility*)IBuf;
 
@@ -79,8 +79,8 @@ L3INT Q932Pmes_Facility(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UC
 
 L3INT Q932Umes_Hold(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+    /* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
 	Q932mes_Hold *mes = (Q932mes_Hold*)IBuf;
 
@@ -113,8 +113,8 @@ L3INT Q932Pmes_Hold(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR 
 
 L3INT Q932Umes_HoldAck(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+    /* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
 	Q932mes_HoldAck *mes = (Q932mes_HoldAck*)IBuf;
 
@@ -147,8 +147,8 @@ L3INT Q932Pmes_HoldAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCH
 
 L3INT Q932Umes_HoldReject(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+    /* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
 	Q932mes_HoldReject *mes = (Q932mes_HoldReject*)IBuf;
 
@@ -181,8 +181,8 @@ L3INT Q932Pmes_HoldReject(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3
 
 L3INT Q932Umes_Register(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+    /* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
 	Q932mes_Register *mes = (Q932mes_Register*)IBuf;
 
@@ -215,8 +215,8 @@ L3INT Q932Pmes_Register(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UC
 
 L3INT Q932Umes_Retrieve(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+    /* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
 	Q932mes_Retrieve *mes = (Q932mes_Retrieve*)IBuf;
 
@@ -249,8 +249,8 @@ L3INT Q932Pmes_Retrieve(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UC
 
 L3INT Q932Umes_RetrieveAck(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+    /* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
 	Q932mes_RetrieveAck *mes = (Q932mes_RetrieveAck*)IBuf;
 
@@ -283,8 +283,8 @@ L3INT Q932Pmes_RetrieveAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L
 
 L3INT Q932Umes_RetrieveReject(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+    /* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
 	Q932mes_RetrieveReject *mes = (Q932mes_RetrieveReject*)IBuf;
 
