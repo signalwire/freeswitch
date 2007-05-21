@@ -47,6 +47,11 @@
 #include <stdlib.h>
 #include "mfifo.h"
 
+#ifdef _MSC_VER
+/* temporary disable */
+#pragma warning(disable: 4244)
+#endif
+
 /*****************************************************************************
   Global Tables & Variables.
 *****************************************************************************/
@@ -334,6 +339,10 @@ int Q921SendUA(int trunk, int Sapi, int cr, int Tei, int pf)
 
 int Q921ProcSABME(int trunk, unsigned char *mes, int size)
 {
+	/* TODO:  Do we need these paramaters? */
+	(void)mes;
+	(void)size;
+
     Q921DevSpace[trunk].vr=0;
     Q921DevSpace[trunk].vs=0;
 
