@@ -1812,7 +1812,13 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	}
 
 	if (sip->sip_to && sip->sip_to->a_url) {
+		char *val;
 		url_set_chanvars(session, sip->sip_to->a_url, sip_to);
+		if ((val = switch_channel_get_variable(channel, "sip_to_uri"))) {
+			tech_pvt->to_uri = switch_core_session_sprintf(session, "sip:%s", val);
+		} else {
+			tech_pvt->to_uri = tech_pvt->profile->url;
+		}
 	}
 
 	if (sip->sip_contact && sip->sip_contact->m_url) {
