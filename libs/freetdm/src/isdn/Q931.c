@@ -286,12 +286,13 @@ void Q931Initialize()
 *****************************************************************************/
 void Q931TimeTick(L3ULONG ms)
 {
-    ms=ms; // avoid warning for now.
+    ms=ms; /* avoid warning for now. */
 
-	// TODO: Loop through all active calls, check timers and call timour procs
-	// if timers are expired.
-	// Implement an function array so each dialect can deal with their own
-	// timeouts.
+	/*  TODO: Loop through all active calls, check timers and call timour procs
+	 *  if timers are expired.
+	 *  Implement an function array so each dialect can deal with their own
+	 *  timeouts.
+	 */
 }
 
 /*****************************************************************************
@@ -578,7 +579,7 @@ L3ULONG Q931GetTime()
         tNow = Q931GetTimeProc();
         if(tNow < tLast)    /* wrapped */
         {
-			// todo
+			/* TODO */
         }
 		tLast = tNow;
     }
@@ -632,7 +633,7 @@ void Q931AddStateEntry(L3UCHAR iD, L3INT iState,	L3INT iMes,	L3UCHAR cDir)
 			Q931st[x].State = iState;
 			Q931st[x].Message = iMes;
 			Q931st[x].Direction = cDir;
-			// TODO Sort table and use bsearch
+			/* TODO Sort table and use bsearch */
 			return;
 		}
 	}
@@ -650,7 +651,7 @@ void Q931AddStateEntry(L3UCHAR iD, L3INT iState,	L3INT iMes,	L3UCHAR cDir)
 L3BOOL Q931IsEventLegal(L3UCHAR iD, L3INT iState, L3INT iMes, L3UCHAR cDir)
 {
 	int x;
-	// TODO Sort table and use bsearch
+	/* TODO Sort table and use bsearch */
 	for(x=0; x < Q931MAXSTATE; x++)
 	{
 		if(		Q931st[x].State == iState
