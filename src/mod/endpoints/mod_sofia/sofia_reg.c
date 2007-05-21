@@ -263,12 +263,14 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	const char *rpid = "unknown";
 	const char *display = "\"user\"";
 	char network_ip[80];
+	int network_port;
 
 	/* all callers must confirm that sip, sip->sip_request and sip->sip_contact are not NULL */
 	assert(sip != NULL && sip->sip_contact != NULL && sip->sip_request != NULL);
 
 	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_addr);
-
+	network_port = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
+	
 	expires = sip->sip_expires;
 	authorization = sip->sip_authorization;
 	contact = sip->sip_contact;
@@ -333,11 +335,20 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		}
 		
 		if (v_event && *v_event && (v_contact_str = switch_event_get_header(*v_event, "force-contact"))) {
-			char *p;
-			switch_copy_string(contact_str, v_contact_str, sizeof(contact_str));
-			for(p = contact_str; p && *p; p++) {
-				if (*p == '\'' || *p == '[' || *p == ']') {
-					*p = '"';
+			if (!strcasecmp(v_contact_str, "nat-connectile-dysfunction")) {
+				if (contact->m_url->url_params) {
+					snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s>",
+							 display, contact->m_url->url_user, network_ip, network_port, contact->m_url->url_params);
+				} else {
+					snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d>", display, contact->m_url->url_user, network_ip, network_port);
+				}
+			} else {
+				char *p;
+				switch_copy_string(contact_str, v_contact_str, sizeof(contact_str));
+				for(p = contact_str; p && *p; p++) {
+					if (*p == '\'' || *p == '[' || *p == ']') {
+						*p = '"';
+					}
 				}
 			}
 		}
