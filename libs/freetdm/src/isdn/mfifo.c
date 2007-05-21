@@ -82,7 +82,7 @@
   Return value: 0 if failure, 1 if ok.
 
 *****************************************************************************/
-int MFIFOCreate(char *buf, int size, int index)
+int MFIFOCreate(unsigned char *buf, int size, int index)
 {
     MFIFO * mf;
     mf = (MFIFO*)buf;
@@ -110,7 +110,7 @@ int MFIFOCreate(char *buf, int size, int index)
   Return Value: none
 
 *****************************************************************************/
-void MFIFOClear(char * buf)
+void MFIFOClear(unsigned char * buf)
 {
     MFIFO * mf;
     mf = (MFIFO*)buf;
@@ -128,7 +128,7 @@ void MFIFOClear(char * buf)
   Return Value: offset.
 
 *****************************************************************************/
-int MFIFOGetLBOffset(char *buf)
+int MFIFOGetLBOffset(unsigned char *buf)
 {
     MFIFO * mf;
     mf = (MFIFO*)buf;
@@ -151,7 +151,7 @@ int MFIFOGetLBOffset(char *buf)
   Return Value: offset
 
 *****************************************************************************/
-int MFIFOGetFBOffset(char *buf)
+int MFIFOGetFBOffset(unsigned char *buf)
 {
     int x;
     MFIFO * mf;
@@ -182,7 +182,7 @@ int MFIFOGetFBOffset(char *buf)
   Return Value: none
 
 *****************************************************************************/
-void MFIFOWriteIX(char *buf, char *mes, int size, int ix, int off)
+void MFIFOWriteIX(unsigned char *buf, unsigned char *mes, int size, int ix, int off)
 {
     int x;
     MFIFO * mf;
@@ -207,7 +207,7 @@ void MFIFOWriteIX(char *buf, char *mes, int size, int ix, int off)
   Return Value:
 
 *****************************************************************************/
-int MFIFOWriteMes(char *buf, char *mes, int size)
+int MFIFOWriteMes(unsigned char *buf, unsigned char *mes, int size)
 {
     int of,ol,x;
     MFIFO * mf;
@@ -260,7 +260,7 @@ int MFIFOWriteMes(char *buf, char *mes, int size)
   Return Value:
 
 *****************************************************************************/
-char * MFIFOGetMesPtr(char *buf, int *size)
+unsigned char * MFIFOGetMesPtr(unsigned char *buf, int *size)
 {
     MFIFO * mf;
     mf = (MFIFO*)buf;
@@ -281,7 +281,7 @@ char * MFIFOGetMesPtr(char *buf, int *size)
   Return Value:
 
 *****************************************************************************/
-void MFIFOKillNext(char *buf)
+void MFIFOKillNext(unsigned char *buf)
 {
     int x;
     MFIFO * mf;
