@@ -1482,7 +1482,7 @@ L3INT Q931Pmes_Setup(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR
 
 	/* Repeat Indicator */
 	if(Q931IsIEPresent(pMes->LLRepeatInd))
-		;//TODO
+		;/* TODO */
 
 	/* Low Layer Compatibility */
 	if(Q931IsIEPresent(pMes->LLComp))

@@ -120,7 +120,7 @@ void Q931CreateNT(L3UCHAR i)
 	/* procs can when search this to find out if the message/state			*/
 	/* combination is legale. If not, the proc for unexpected message apply.*/
 
-	// TODO define state table here
+	/* TODO define state table here */
 }
 
 /*****************************************************************************
