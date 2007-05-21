@@ -51,8 +51,8 @@
 
 L3INT Q931Umes_Alerting(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+	/* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
     Q931mes_Alerting *mes = (Q931mes_Alerting*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
@@ -161,8 +161,8 @@ L3INT Q931Pmes_Alerting(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3INT ISize, L3UCH
 *****************************************************************************/
 L3INT Q931Umes_CallProceeding(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+	/* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
     Q931mes_CallProceeding *mes = (Q931mes_CallProceeding*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
@@ -291,8 +291,8 @@ L3INT Q931Pmes_CongestionControl(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3INT ISi
 *****************************************************************************/
 L3INT Q931Umes_Connect(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+	/* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
     Q931mes_Connect *mes = (Q931mes_Connect*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
@@ -420,8 +420,8 @@ L3INT Q931Pmes_Connect(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCH
 *****************************************************************************/
 L3INT Q931Umes_ConnectAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+	/* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
     Q931mes_ConnectAck *mes = (Q931mes_ConnectAck*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
@@ -489,8 +489,8 @@ L3INT Q931Pmes_ConnectAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3
 *****************************************************************************/
 L3INT Q931Umes_Disconnect(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+	/* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
     Q931mes_Disconnect *mes = (Q931mes_Disconnect*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
@@ -576,8 +576,8 @@ L3INT Q931Pmes_Disconnect(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3
 *****************************************************************************/
 L3INT Q931Umes_Information(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+	/* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
     Q931mes_Information *mes = (Q931mes_Information*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
@@ -671,8 +671,8 @@ L3INT Q931Pmes_Information(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L
 *****************************************************************************/
 L3INT Q931Umes_Notify(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+	/* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
     Q931mes_Notify *mes = (Q931mes_Notify*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
@@ -744,8 +744,8 @@ L3INT Q931Pmes_Notify(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHA
 *****************************************************************************/
 L3INT Q931Umes_Progress(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+	/* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
     Q931mes_Progress *mes = (Q931mes_Progress*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
@@ -840,8 +840,8 @@ L3INT Q931Pmes_Progress(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UC
 *****************************************************************************/
 L3INT Q931Umes_Release(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+	/* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
     Q931mes_Release *mes = (Q931mes_Release*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
@@ -915,8 +915,8 @@ L3INT Q931Pmes_Release(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCH
 *****************************************************************************/
 L3INT Q931Umes_ReleaseComplete(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+	/* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
     Q931mes_ReleaseComplete *mes = (Q931mes_ReleaseComplete*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
@@ -1050,8 +1050,8 @@ L3INT Q931Pmes_RestartAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3
 *****************************************************************************/
 L3INT Q931Umes_Resume(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+	/* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
     Q931mes_Resume *mes = (Q931mes_Resume*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
@@ -1107,8 +1107,8 @@ L3INT Q931Pmes_Resume(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHA
 *****************************************************************************/
 L3INT Q931Umes_ResumeAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+	/* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
     Q931mes_ResumeAck *mes = (Q931mes_ResumeAck*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
@@ -1174,8 +1174,8 @@ L3INT Q931Pmes_ResumeAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3U
 *****************************************************************************/
 L3INT Q931Umes_ResumeReject(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+	/* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
     Q931mes_ResumeReject *mes = (Q931mes_ResumeReject*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
@@ -1255,7 +1255,7 @@ L3INT Q931Pmes_Segment(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCH
 *****************************************************************************/
 L3INT Q931Umes_Setup(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
+	/* L3INT i = IOff; */
 	L3INT ir=0;
 	L3INT OOff=0;
     Q931mes_Setup *mes = (Q931mes_Setup*)OBuf;
@@ -1504,8 +1504,8 @@ L3INT Q931Pmes_Setup(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR
 *****************************************************************************/
 L3INT Q931Umes_SetupAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+	/* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
     Q931mes_SetupAck *mes = (Q931mes_SetupAck*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
@@ -1591,8 +1591,8 @@ L3INT Q931Pmes_SetupAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UC
 *****************************************************************************/
 L3INT Q931Umes_Status(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+	/* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
     Q931mes_Status *mes = (Q931mes_Status*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
@@ -1667,8 +1667,8 @@ L3INT Q931Pmes_Status(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHA
 *****************************************************************************/
 L3INT Q931Umes_StatusEnquiry(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+	/* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
     Q931mes_StatusEnquiry *mes = (Q931mes_StatusEnquiry*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
@@ -1724,8 +1724,8 @@ L3INT Q931Pmes_StatusEnquiry(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize,
 *****************************************************************************/
 L3INT Q931Umes_Suspend(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+	/* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
     Q931mes_Suspend *mes = (Q931mes_Suspend*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
@@ -1781,8 +1781,8 @@ L3INT Q931Pmes_Suspend(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCH
 *****************************************************************************/
 L3INT Q931Umes_SuspendAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+	/* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
     Q931mes_SuspendAck *mes = (Q931mes_SuspendAck*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
@@ -1839,8 +1839,8 @@ L3INT Q931Pmes_SuspendAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3
 *****************************************************************************/
 L3INT Q931Umes_SuspendReject(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3INT i = IOff;
-	L3INT ir=0;
+	/* L3INT i = IOff; */
+	/* L3INT ir=0; */
 	L3INT OOff=0;
     Q931mes_SuspendReject *mes = (Q931mes_SuspendReject*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;

@@ -1121,7 +1121,7 @@ L3INT Q931Pie_CongLevel(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
 {
     Q931ie_CongLevel * pIE = (Q931ie_CongLevel*)IBuf;
     L3INT rc=0;
-    L3INT Beg=*Octet;
+    /* L3INT Beg=*Octet; */
 
     OBuf[(*Octet)++] = Q931ie_CONGESTION_LEVEL | pIE->CongLevel;
     
@@ -2429,7 +2429,7 @@ L3INT Q931Pie_RepeatInd(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
 {
     Q931ie_RepeatInd * pIE = (Q931ie_RepeatInd*)IBuf;
     L3INT rc=0;
-    L3INT Beg=*Octet;
+    /* L3INT Beg=*Octet; */
 
     OBuf[(*Octet)++] = Q931ie_REPEAT_INDICATOR | pIE->RepeatInd;
     
@@ -2687,9 +2687,9 @@ L3INT Q931Uie_SendComplete(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCH
 *****************************************************************************/
 L3INT Q931Pie_SendComplete(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
-    Q931ie_SendComplete * pIE = (Q931ie_SendComplete*)IBuf;
+    /* Q931ie_SendComplete * pIE = (Q931ie_SendComplete*)IBuf; */
     L3INT rc=Q931E_NO_ERROR;
-    L3INT Beg=*Octet;
+    /* L3INT Beg=*Octet; */
 
     OBuf[(*Octet)++] = 0x80 | (L3UCHAR)Q931ie_SENDING_COMPLETE;
 
