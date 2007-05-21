@@ -43,7 +43,7 @@
   POSSIBILITY OF SUCH DAMAGE.
 
 *****************************************************************************/
-#include "q921.h"
+#include "Q921.h"
 #include <stdlib.h>
 #include "mfifo.h"
 
@@ -282,25 +282,6 @@ int Q921SendDM(int trunk, int Sapi, int cr, int Tei, int pf)
 
 /*****************************************************************************
 
-  Function:     Q921
-
-  Description:
-
-  Parameters:   trunk       trunk #
-                Sapi        Sapi
-                cr          C/R field.
-                Tei         Tei.
-                pf          P fiels octet 4
-
-  Return Value: 0 if failed, 1 if Send.
-
-*****************************************************************************/
-//int Q921SendUI(...)
-//{
-//}
-
-/*****************************************************************************
-
   Function:     Q921SendDISC
 
   Description:  Compose and Send Disconnect
@@ -350,44 +331,6 @@ int Q921SendUA(int trunk, int Sapi, int cr, int Tei, int pf)
 
     return Q921Tx21Proc(trunk, mes, Q921HeaderSpace+3);
 }
-
-/*****************************************************************************
-
-  Function:     Q921
-
-  Description:
-
-  Parameters:   trunk       trunk #
-                Sapi        Sapi
-                cr          C/R field.
-                Tei         Tei.
-                pf          P fiels octet 5
-
-  Return Value: 0 if failed, 1 if Send.
-
-*****************************************************************************/
-//int Q921SendFRMR(...)
-//{
-//}
-
-/*****************************************************************************
-
-  Function:     Q921
-
-  Description:
-
-  Parameters:   trunk       trunk #
-                Sapi        Sapi
-                cr          C/R field.
-                Tei         Tei.
-                pf          P fiels octet 5
-
-  Return Value: 0 if failed, 1 if Send.
-
-*****************************************************************************/
-//int Q921SendXID(...)
-//{
-//}
 
 int Q921ProcSABME(int trunk, unsigned char *mes, int size)
 {
@@ -464,7 +407,7 @@ int Q921Rx12(long trunk)
         else
         {
             /* what the ? Issue an error */
-//            Q921ErrorProc(trunk, Q921_UNKNOWNFRAME, mes, rs);
+			/* Q921ErrorProc(trunk, Q921_UNKNOWNFRAME, mes, rs); */
             /* todo: REJ or FRMR */
         }
 
