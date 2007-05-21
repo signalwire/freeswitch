@@ -188,13 +188,13 @@ zap_status_t zap_mutex_lock(zap_mutex_t *mutex)
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_zap_mutex_trylock(zap_mutex_t *mutex)
+zap_status_t zap_mutex_trylock(zap_mutex_t *mutex)
 {
 #ifdef WIN32
 	if (!TryEnterCriticalSection(&mutex->mutex))
 		return ZAP_FAIL;
 #else
-	if (pthread_zap_mutex_trylock(&mutex->mutex))
+	if (pthread_mutex_trylock(&mutex->mutex))
 		return ZAP_FAIL;
 #endif
 	return ZAP_SUCCESS;
