@@ -321,6 +321,22 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
+		<Filter
+			Name="Makefile"
+			>
+			<File
+				RelativePath=".\src\Makefile"
+				>
+			</File>
+			<File
+				RelativePath=".\src\wanpipe"
+				>
+			</File>
+			<File
+				RelativePath=".\src\zt"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

@@ -21,17 +21,19 @@
 #ifndef _ZAP_THREADMUTEX_H
 #define _ZAP_THREADMUTEX_H
 
-typedef struct mutex mutex_t;
+#include "openzap.h"
 
-typedef enum mutex_status {
-	MUTEX_SUCCESS,
-	MUTEX_FAILURE
-} mutex_status_t;
+typedef struct zap_mutex zap_mutex_t;
+typedef struct zap_thread zap_thread_t;
+typedef void *(*zap_thread_function_t) (zap_thread_t *, void *);
 
-mutex_status_t zap_mutex_create(mutex_t **mutex);
-mutex_status_t zap_mutex_destroy(mutex_t *mutex);
-mutex_status_t zap_mutex_lock(mutex_t *mutex);
-mutex_status_t zap_mutex_trylock(mutex_t *mutex);
-mutex_status_t zap_mutex_unlock(mutex_t *mutex);
+zap_status_t zap_thread_create_detached(zap_thread_function_t func, void *data);
+zap_status_t zap_thread_create_detached_ex(zap_thread_function_t func, void *data, zap_size_t stack_size);
+void zap_thread_override_default_stacksize(zap_size_t size);
+zap_status_t zap_mutex_create(zap_mutex_t **mutex);
+zap_status_t zap_mutex_destroy(zap_mutex_t *mutex);
+zap_status_t zap_mutex_lock(zap_mutex_t *mutex);
+zap_status_t zap_mutex_trylock(zap_mutex_t *mutex);
+zap_status_t zap_mutex_unlock(zap_mutex_t *mutex);
 
 #endif

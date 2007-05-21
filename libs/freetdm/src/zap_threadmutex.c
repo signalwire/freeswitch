@@ -17,37 +17,125 @@
  *
  */
 
-#define _XOPEN_SOURCE 600
-#include <stdlib.h>
+#ifdef WIN32
+/* required for TryEnterCriticalSection definition.  Must be defined before windows.h include */
+#define _WIN32_WINNT 0x0400
+#endif
+
+#include "openzap.h"
 #include "zap_threadmutex.h"
 
-
 #ifdef WIN32
-#define _WIN32_WINNT 0x0400
-#include <windows.h>
-struct mutex {
+#include <process.h>
+
+#define ZAP_THREAD_CALLING_CONVENTION __stdcall
+
+struct zap_mutex {
 	CRITICAL_SECTION mutex;
 };
 
 #else
 
 #include <pthread.h>
-struct mutex {
-	pthread_mutex_t mutex;
+
+#define ZAP_THREAD_CALLING_CONVENTION
+
+struct zap_mutex {
+	pthread_zap_mutex_t mutex;
 };
 
 #endif
 
+struct zap_thread {
+#ifdef WIN32
+	void *handle;
+#else
+	pthread_t handle;
+#endif
+	void *private_data;
+	zap_thread_function_t function;
+	zap_size_t stack_size;
+#ifndef WIN32
+	pthread_attr_t attribute;
+#endif
+};
 
-mutex_status_t zap_mutex_create(mutex_t **mutex)
+zap_size_t thread_default_stacksize = 0;
+
+void zap_thread_override_default_stacksize(zap_size_t size)
 {
-	mutex_status_t status = MUTEX_FAILURE;
+	thread_default_stacksize = size;
+}
+
+static void * ZAP_THREAD_CALLING_CONVENTION thread_launch(void *args)
+{
+	void *exit_val;
+    zap_thread_t *thread = (zap_thread_t *)args;
+	exit_val = thread->function(thread, thread->private_data);
+#ifndef WIN32
+	pthread_attr_destroy(&thread->attribute);
+#endif
+	free(thread);
+
+	return exit_val;
+}
+
+zap_status_t zap_thread_create_detached(zap_thread_function_t func, void *data)
+{
+	return zap_thread_create_detached_ex(func, data, thread_default_stacksize);
+}
+
+zap_status_t zap_thread_create_detached_ex(zap_thread_function_t func, void *data, zap_size_t stack_size)
+{
+	zap_thread_t *thread = NULL;
+	zap_status_t status = ZAP_FAIL;
+
+	if (!func || !(thread = (zap_thread_t *)malloc(sizeof(zap_thread_t)))) {
+		goto done;
+	}
+
+	thread->private_data = data;
+	thread->function = func;
+	thread->stack_size = stack_size;
+
+#if defined(WIN32)
+	thread->handle = (void *)_beginthreadex(NULL, (unsigned)thread->stack_size, (unsigned int (__stdcall *)(void *))thread_launch, thread, 0, NULL);
+	if (!thread->handle) {
+		goto fail;
+	}
+	CloseHandle(thread->handle);
+#else
+	
+	if (pthread_attr_init(&thread->attribute) != 0)	goto fail;
+
+	if (pthread_attr_setdetachstate(&thread->attribute, PTHREAD_CREATE_DETACHED) != 0) goto fail;
+
+	if (stacksize && pthread_attr_setstacksize(&thread->attribute, stacksize) != 0) goto fail;
+
+	if (pthread_create(&thread->handle, &thread->attribute, thread_launch, thread) != 0) goto fail;
+
+#endif
+	status = ZAP_SUCCESS;
+	goto done;
+
+fail:
+	if (thread) {
+		free(thread);
+	}
+done:
+	return status;
+}
+
+
+zap_status_t zap_mutex_create(zap_mutex_t **mutex)
+{
+	zap_status_t status = ZAP_FAIL;
 #ifndef WIN32
 	pthread_mutexattr_t attr;
 #endif
-	mutex_t *check = NULL;
+	zap_mutex_t *check = NULL;
 
-	check = (mutex_t *)malloc(sizeof(**mutex));
+	check = (zap_mutex_t *)malloc(sizeof(**mutex));
 	if (!check)
 		goto done;
 #ifdef WIN32
@@ -71,54 +159,54 @@ fail:
 success:
 #endif
 	*mutex = check;
-	status = MUTEX_SUCCESS;
+	status = ZAP_SUCCESS;
 
 done:
 	return status;
 }
 
-mutex_status_t zap_mutex_destroy(mutex_t *mutex)
+zap_status_t zap_mutex_destroy(zap_mutex_t *mutex)
 {
 #ifdef WIN32
 	DeleteCriticalSection(&mutex->mutex);
 #else
 	if (pthread_mutex_destroy(&mutex->mutex))
-		return MUTEX_FAILURE;
+		return ZAP_FAIL;
 #endif
 	free(mutex);
-	return MUTEX_SUCCESS;
+	return ZAP_SUCCESS;
 }
 
-mutex_status_t zap_mutex_lock(mutex_t *mutex)
+zap_status_t zap_mutex_lock(zap_mutex_t *mutex)
 {
 #ifdef WIN32
 	EnterCriticalSection(&mutex->mutex);
 #else
 	if (pthread_mutex_lock(&mutex->mutex))
-		return MUTEX_FAILURE;
+		return ZAP_FAIL;
 #endif
-	return MUTEX_SUCCESS;
+	return ZAP_SUCCESS;
 }
 
-mutex_status_t zap_mutex_trylock(mutex_t *mutex)
+zap_status_t zap_zap_mutex_trylock(zap_mutex_t *mutex)
 {
 #ifdef WIN32
 	if (!TryEnterCriticalSection(&mutex->mutex))
-		return MUTEX_FAILURE;
+		return ZAP_FAIL;
 #else
-	if (pthread_mutex_trylock(&mutex->mutex))
-		return MUTEX_FAILURE;
+	if (pthread_zap_mutex_trylock(&mutex->mutex))
+		return ZAP_FAIL;
 #endif
-	return MUTEX_SUCCESS;
+	return ZAP_SUCCESS;
 }
 
-mutex_status_t zap_mutex_unlock(mutex_t *mutex)
+zap_status_t zap_mutex_unlock(zap_mutex_t *mutex)
 {
 #ifdef WIN32
 	LeaveCriticalSection(&mutex->mutex);
 #else
 	if (pthread_mutex_unlock(&mutex->mutex))
-		return MUTEX_FAILURE;
+		return ZAP_FAIL;
 #endif
-	return MUTEX_SUCCESS;
+	return ZAP_SUCCESS;
 }
