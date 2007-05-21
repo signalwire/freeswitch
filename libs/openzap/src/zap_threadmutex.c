@@ -41,7 +41,7 @@ struct zap_mutex {
 #define ZAP_THREAD_CALLING_CONVENTION
 
 struct zap_mutex {
-	pthread_zap_mutex_t mutex;
+	pthread_mutex_t mutex;
 };
 
 #endif
