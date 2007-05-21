@@ -1348,7 +1348,7 @@ typedef struct
     L3UINT			Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
 }Q931mes_Header;
 
 /*****************************************************************************
@@ -1364,7 +1364,7 @@ typedef struct
     L3UINT			Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
 
     ie              Shift;
     ie              MoreData;
@@ -1424,7 +1424,7 @@ typedef struct
     L3UINT			Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              BearerCap;      /* Bearer Capability                    */
     ie              ChanID;         /* Channel Identification               */
     ie              ProgInd;        /* Progress Indicator                   */
@@ -1445,7 +1445,7 @@ typedef struct
     L3UINT			Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              BearerCap;      /* Bearer Capability                    */
     ie              ChanID;         /* Channel Identification               */
     ie              ProgInd;        /* Progress Indicator                   */
@@ -1465,7 +1465,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              BearerCap;      /* Bearer Capability                    */
     ie              ChanID;         /* Channel Identification               */
     ie              ProgInd;        /* Progress Indicator                   */
@@ -1488,7 +1488,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              Display;        /* Display                              */
     ie              Signal;         /* Signal                               */
     L3UCHAR         buf[1];         /* Dynamic buffer                       */
@@ -1505,7 +1505,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              Cause;          /* Cause                                */
     ie              ProgInd;        /* Progress Indicator                   */
     ie              Display;        /* Display                              */
@@ -1527,7 +1527,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              SendComplete;   /* Sending Complete                     */
     ie              Display;        /* Display                              */
     ie              KeypadFac;      /* Keypad facility                      */
@@ -1550,7 +1550,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              BearerCap;      /* Bearer Capability                    */
     ie              NotifInd;       /* Notification Indicator               */
     ie              Display;        /* Display                              */
@@ -1568,7 +1568,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              BearerCap;      /* Bearer Capability                    */
     ie              Cause;          /* Cause                                */
     ie              ProgInd;        /* Progress Indicator                   */
@@ -1588,7 +1588,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              Cause;          /* Cause                                */
     ie              Display;        /* Display                              */
     ie              Signal;         /* Signal                               */
@@ -1609,7 +1609,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              Cause;          /* Cause                                */
     ie              Display;        /* Display                              */
     ie              Signal;         /* Signal                               */
@@ -1629,7 +1629,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              CallID;         /* Call Identity                        */
 	L3UCHAR			buf[1];
 }Q931mes_Resume;
@@ -1645,7 +1645,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              ChanID;         /* Channel ID                           */
     ie              Display;        /* Display                              */
     L3UCHAR         buf[1];         /* Dynamic buffer                       */
@@ -1662,7 +1662,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              Cause;          /* Cause                                */
     ie              Display;        /* Display                              */
     L3UCHAR         buf[1];         /* Dynamic buffer                       */
@@ -1679,7 +1679,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     L3UCHAR         buf[1];         /* Dynamic buffer                       */
 }Q931mes_Segment;
 
@@ -1694,7 +1694,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              SendComplete;   /* Sending Complete                     */
     ie              RepeatInd;      /* Repeat Indicator                     */
     ie              BearerCap;      /* Bearer Capability                    */
@@ -1743,7 +1743,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              ChanID;         /* Channel ID                           */
     ie              ProgInd;        /* Progress Indicator                   */
     ie              Display;        /* Display                              */
@@ -1762,7 +1762,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              Cause;          /* Cause                                */
     ie              CallState;      /* Call State                           */
     ie              Display;        /* Display                              */
@@ -1780,7 +1780,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              Display;        /* Display                              */
     L3UCHAR         buf[1];         /* Dynamic buffer                       */
 }Q931mes_StatusEnquiry;
@@ -1796,7 +1796,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              CallID;         /* Call Identity                        */
     L3UCHAR         buf[1];         /* Dynamic buffer                       */
 }Q931mes_Suspend;
@@ -1812,7 +1812,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              Display;        /* Display                              */
     L3UCHAR         buf[1];         /* Dynamic buffer                       */
 }Q931mes_SuspendAck;
@@ -1828,7 +1828,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              Cause;          /* Cause                                */
     ie              Display;        /* Display                              */
     L3UCHAR         buf[1];         /* Dynamic buffer                       */
@@ -1845,7 +1845,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              CongLevel;      /* Congestion level                     */
     ie              Cause;          /* Cause                                */
     ie              Display;        /* Display                              */
@@ -1863,7 +1863,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              MoreData;       /* More data                            */
     ie              UserUser;       /* User-user                            */
     L3UCHAR         buf[1];         /* Dynamic buffer                       */
@@ -1880,7 +1880,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              ChanID;         /* Channel identification               */
     ie              Display;        /* Display                              */
     ie              RestartInd;     /* Restart indicator                    */
@@ -1898,7 +1898,7 @@ typedef struct
     L3UINT          Size;           /* Size of message in bytes             */
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
+    L3INT           CRV;            /* Call reference value                 */
     ie              ChanID;         /* Channel identification               */
     ie              Display;        /* Display                              */
     ie              RestartWin;     /* Restart Window                       */
@@ -1946,7 +1946,7 @@ typedef struct
 	{
 		Q931_TrState_NoAlignment=0,	/* Trunk not aligned					*/
 		Q931_TrState_Aligning=1,	/* Aligning in progress					*/
-		Q931_TrState_Aligned=2,		/* Trunk Aligned						*/
+		Q931_TrState_Aligned=2		/* Trunk Aligned						*/
 	}TrunkState;
 
     L3INT       LastCRV;            /* Last used crv for the trunk.         */
@@ -2377,8 +2377,8 @@ L3INT	Q931CreateCRV(Q931_TrunkInfo *pTrunk, L3INT * callIndex);
 L3INT	Q931AllocateCRV(Q931_TrunkInfo *pTrunk, L3INT iCRV, L3INT * callIndex);
 L3INT   Q931FindCRV(Q931_TrunkInfo *pTrunk, L3INT crv, L3INT *callindex);
 L3INT	Q931GetCallState(Q931_TrunkInfo *pTrunk, L3INT iCRV);
-L3INT	Q931StartTimer(Q931_TrunkInfo *pTrunk, L3INT callIndex, L3INT iTimer);
-L3INT	Q931StopTimer(Q931_TrunkInfo *pTrunk, L3INT callindex, L3INT iTimer);
+L3INT	Q931StartTimer(Q931_TrunkInfo *pTrunk, L3INT callIndex, L3USHORT iTimer);
+L3INT	Q931StopTimer(Q931_TrunkInfo *pTrunk, L3INT callindex, L3USHORT iTimer);
 L3INT	Q931SetState(Q931_TrunkInfo *pTrunk, L3INT callIndex, L3INT iState);
 L3ULONG Q931GetTime();
 void	Q931AddStateEntry(L3UCHAR iD, L3INT iState, L3INT iMes, L3UCHAR cDir);

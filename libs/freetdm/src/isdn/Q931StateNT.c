@@ -347,11 +347,15 @@ L3INT Q931ProcSetupNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	        return ret;
 		}
 
+#if 0
+		/* TODO: Unreachable code??? */
         /* Set state U6 */
         Q931SetState(pTrunk, callIndex, Q931_U6);
 
         Q931StartTimer(pTrunk, callIndex, 303);
-    }
+#endif
+
+	}
 
 	return rc;
 }

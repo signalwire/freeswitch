@@ -234,10 +234,11 @@ L3UCHAR * Q931GetIEBuf(L3UCHAR *pm)
     case Q931mes_CONGESTION_CONTROL   :
 		trampoline(Q931mes_CongestionControl);
         break;
-
-//    case Q931mes_FACILITY           :
-//		trampoline(Q931mes_Facility);
-//        break;
+#if 0
+    case Q931mes_FACILITY           :
+		trampoline(Q931mes_Facility);
+        break;
+#endif
 
     case Q931mes_INFORMATION          :
 		trampoline(Q931mes_Information);
@@ -247,9 +248,11 @@ L3UCHAR * Q931GetIEBuf(L3UCHAR *pm)
 		trampoline(Q931mes_Notify);
         break;
 
-//    case Q931mes_REGISTER           :
-//		trampoline(Q931mes_Register);
-//        break;
+#if 0
+    case Q931mes_REGISTER           :
+		trampoline(Q931mes_Register);
+        break;
+#endif
 
     case Q931mes_STATUS               :
 		trampoline(Q931mes_Status);
@@ -301,7 +304,7 @@ ie Q931AppendIE( L3UCHAR *pm, L3UCHAR *pi)
 
 	L3UCHAR *pBuf = Q931GetIEBuf(pm);
 	L3INT Off = pMes->Size - (pBuf - pm);
-	IE = Off | 0x8000;
+	IE = (ie)(Off | 0x8000);
 
 	memcpy(&pm[pMes->Size], pi, iISize);
 
@@ -577,7 +580,9 @@ L3INT Q931InitIELLComp(Q931ie_LLComp * pIE)
 	pIE->Layer3Ident	= 0;        /* Layer 3 ident                        */
 	pIE->OptL3Info		= 0;        /* Optional layer 3 protocol info.      */
 	pIE->ModeL3			= 0;        /* Mode of operation                    */
-//	pIE->ModeX25op		= 0;        /* Mode of operation X.25               */
+#if 0
+	pIE->ModeX25op		= 0;        /* Mode of operation X.25               */
+#endif
 	pIE->DefPackSize	= 0;        /* Default packet size                  */
 	pIE->PackWinSize	= 0;        /* Packet window size                   */
 	pIE->AddL3Info		= 0;        /* Additional Layer 3 protocol info     */
@@ -595,20 +600,40 @@ L3INT Q931InitIEHLComp(Q931ie_HLComp * pIE)
 
 L3INT Q931ProcUnknownMessage(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom)
 {
+	/* TODO:  Unhandled paramaters */
+	(void)pTrunk;
+	(void)b;
+	(void)iFrom;
+
     return 0;
 }
 
 L3INT Q931ProcUnexpectedMessage(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom)
 {
+	/* TODO:  Unhandled paramaters */
+	(void)pTrunk;
+	(void)b;
+	(void)iFrom;
+
     return 0;
 }
 
 L3INT Q931Disconnect(Q931_TrunkInfo *pTrunk, L3INT iTo, L3INT iCRV, L3INT iCause)
 {
+	/* TODO:  Unhandled paramaters */
+	(void)pTrunk;
+	(void)iTo;
+	(void)iCRV;
+	(void)iCause;
+
     return 0;
 }
 
 L3INT Q931ReleaseComplete(Q931_TrunkInfo *pTrunk, L3INT iTo)
 {
-    return 0;
+	/* TODO:  Unhandled paramaters */
+	(void)pTrunk;
+	(void)iTo;
+
+	return 0;
 }
