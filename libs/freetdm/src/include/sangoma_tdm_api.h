@@ -211,7 +211,7 @@ static __inline__ sng_fd_t tdmv_api_open_span_chan(int span, int chan)
 #define POLLPRI (POLL_EVENT_LINK_STATE | POLL_EVENT_LINK_CONNECT | POLL_EVENT_LINK_DISCONNECT)
 #endif
 
-/* return -1 for error, 0 for timeout, or POLLIN | POLLOUT | POLLPRI based on the result of the poll */
+/* return -1 for error, 0 for timeout or 1 for success. *flags is set to the poll evetns POLLIN | POLLOUT | POLLPRI based on the result of the poll */
 /* on windows we actually have POLLPRI defined with several events, so we could theoretically poll */
 /* for specific events.  Is there any way to do this on *nix as well? */ 
 
