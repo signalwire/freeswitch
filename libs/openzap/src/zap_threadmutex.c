@@ -110,7 +110,7 @@ zap_status_t zap_thread_create_detached_ex(zap_thread_function_t func, void *dat
 
 	if (pthread_attr_setdetachstate(&thread->attribute, PTHREAD_CREATE_DETACHED) != 0) goto fail;
 
-	if (stacksize && pthread_attr_setstacksize(&thread->attribute, thread->stack_size) != 0) goto fail;
+	if (thread->stack_size && pthread_attr_setstacksize(&thread->attribute, thread->stack_size) != 0) goto fail;
 
 	if (pthread_create(&thread->handle, &thread->attribute, thread_launch, thread) != 0) goto fail;
 
