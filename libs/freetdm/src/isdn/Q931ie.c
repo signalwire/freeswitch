@@ -1310,6 +1310,8 @@ L3USHORT Q931Uie_CRV(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT
     else
     {
 		/* Long CRV is not used, so we skip this */
+		/* TODO: is it right to set to 0 here? */
+		CRV = 0;
         Octet+=l;
     }
 
