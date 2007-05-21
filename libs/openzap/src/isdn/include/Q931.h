@@ -108,7 +108,7 @@
 #define _Q931_NL
 
 /* uncomment the #define below to add x.25 support to the Q.931				*/
-//#define Q931_X25_SUPPORT
+/* #define Q931_X25_SUPPORT */
 
 #include "stdio.h"
 
