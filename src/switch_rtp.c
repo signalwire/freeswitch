@@ -578,7 +578,7 @@ SWITCH_DECLARE(switch_rtp_t *) switch_rtp_new(const char *rx_host,
 
 SWITCH_DECLARE(void) switch_rtp_set_telephony_event(switch_rtp_t *rtp_session, switch_payload_t te)
 {
-	if (te > 96) {
+	if (te > 95) {
 		rtp_session->te = te;
 	}
 }
