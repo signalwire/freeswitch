@@ -58,7 +58,10 @@ typedef enum {
 	ZAP_SUCCESS,
 	ZAP_FAIL,
 	ZAP_MEMERR,
-	ZAP_TIMEOUT
+	ZAP_TIMEOUT,
+	ZAP_NOTIMPL,
+
+	ZAP_STATUS_COUNT
 } zap_status_t;
 
 typedef enum {
@@ -91,7 +94,9 @@ typedef enum {
 	ZAP_COMMAND_SET_DTMF_ON_PERIOD,
 	ZAP_COMMAND_GET_DTMF_ON_PERIOD,
 	ZAP_COMMAND_SET_DTMF_OFF_PERIOD,
-	ZAP_COMMAND_GET_DTMF_OFF_PERIOD
+	ZAP_COMMAND_GET_DTMF_OFF_PERIOD,
+
+	ZAP_COMMAND_COUNT
 } zap_command_t;
 
 typedef enum {
@@ -104,7 +109,9 @@ typedef enum {
 	ZAP_CHAN_TYPE_DQ921,
 	ZAP_CHAN_TYPE_DQ931,
 	ZAP_CHAN_TYPE_FXS,
-	ZAP_CHAN_TYPE_FXO
+	ZAP_CHAN_TYPE_FXO,
+
+	ZAP_CHAN_TYPE_COUNT
 } zap_chan_type_t;
 
 typedef enum {
@@ -186,7 +193,9 @@ typedef zap_status_t (*zint_write_t) ZINT_WRITE_ARGS ;
 
 typedef enum {
 	ZAP_EVENT_NONE,
-	ZAP_EVENT_DTMF
+	ZAP_EVENT_DTMF,
+
+	ZAP_EVENT_COUNT
 } zap_event_type_t;
 
 typedef struct zap_span zap_span_t;
