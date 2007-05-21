@@ -453,7 +453,7 @@ L3INT Q931Uie_CallID(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * 
         pie->CallId[x] = IBuf[Octet+Off] & 0x7f;
         Off++;
         x++;
-    }while(IBuf[Octet+Off]&0x80 != 0 && x < 10);
+    }while((IBuf[Octet+Off]&0x80) != 0 && x < 10);
 
     Q931IESizeTest(Q931E_CALLID);
 
@@ -622,7 +622,7 @@ L3INT Q931Uie_CalledSub(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR 
         pie->Digit[x] = IBuf[Octet+Off] & 0x7f;
         Off++;
         x++;
-    }while(IBuf[Octet+Off]&0x80 != 0 && x < 20);
+    }while((IBuf[Octet+Off]&0x80) != 0 && x < 20);
 
     Q931IESizeTest(Q931E_CALLEDSUB);
 
@@ -805,7 +805,7 @@ L3INT Q931Uie_CallingNum(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHA
     pie->NumPlanID = IBuf[Octet+Off] & 0x0f;
     
     /* Octet 3a */
-    if(IBuf[Octet+Off] & 0x80 != 0)
+    if((IBuf[Octet+Off] & 0x80) != 0)
     {
         Off++;
         pie->PresInd = (IBuf[Octet+Off] >> 5) & 0x03;
@@ -819,7 +819,7 @@ L3INT Q931Uie_CallingNum(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHA
         pie->Digit[x] = IBuf[Octet+Off] & 0x7f;
         Off++;
         x++;
-    }while(IBuf[Octet+Off]&0x80 != 0 && x < 20);
+    }while((IBuf[Octet+Off]&0x80) != 0 && x < 20);
 
     Q931IESizeTest(Q931E_CALLINGNUM);
 
@@ -925,7 +925,7 @@ L3INT Q931Uie_CallingSub(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR
         pie->Digit[x] = IBuf[Octet+Off] & 0x7f;
         Off++;
         x++;
-    }while(IBuf[Octet+Off]&0x80 != 0 && x < 20);
+    }while((IBuf[Octet+Off]&0x80) != 0 && x < 20);
 
     Q931IESizeTest(Q931E_CALLINGSUB);
 
@@ -1013,7 +1013,7 @@ L3INT Q931Uie_Cause(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * O
     pie->Location = IBuf[Octet+Off] & 0x0f;
 
     /* Octet 3a */
-    if(IBuf[Octet+Off] & 0x80 != 0)
+    if((IBuf[Octet+Off] & 0x80) != 0)
     {
         Off++;
         pie->Recom = IBuf[Octet+Off] & 0x7f;
@@ -1764,7 +1764,7 @@ L3INT Q931Uie_LLComp(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * O
     Octet++;
 
     /* Octet 3a*/
-    if(IBuf[Octet+Off-1] & 0x80 != 0)
+    if((IBuf[Octet+Off-1] & 0x80) != 0)
     {
         pie->NegotInd = (IBuf[Octet+Off] >> 6) & 0x01;
         Off++;
@@ -1784,7 +1784,7 @@ L3INT Q931Uie_LLComp(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * O
     }
 
     /* Octet 5 - Layer 1 Ident */
-    if(IBuf[Octet+Off] & 0x60 == 0x20) /* Layer 1 Ident ? */
+    if((IBuf[Octet+Off] & 0x60) == 0x20) /* Layer 1 Ident ? */
     {
         pie->Layer1Ident = (IBuf[Octet+Off] >> 5) & 0x03;
         pie->UIL1Prot = IBuf[Octet+Off] & 0x1f;
@@ -1792,7 +1792,7 @@ L3INT Q931Uie_LLComp(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * O
         Octet++;
 
         /* Octet 5a */
-        if(IBuf[Octet+Off-1] & 0x80 != 0)
+        if((IBuf[Octet+Off-1] & 0x80) != 0)
         {
             pie->SyncAsync    = (IBuf[Octet+Off] >> 6) & 0x01;
             pie->Negot        = (IBuf[Octet+Off] >> 5) & 0x01;
@@ -1800,7 +1800,7 @@ L3INT Q931Uie_LLComp(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * O
             Off++;
 
             /* Octet 5b - 2 options */
-            if(IBuf[Octet+Off-1] & 0x80 != 0)
+            if((IBuf[Octet+Off-1] & 0x80) != 0)
             {
                 if(pie->UIL1Prot == 0x01) /* V.110, I.460 and X.30*/
                 {
@@ -1833,7 +1833,7 @@ L3INT Q931Uie_LLComp(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * O
                 }
 
                 /* Octet 5c */
-                if(IBuf[Octet+Off-1] & 0x80 != 0)
+                if((IBuf[Octet+Off-1] & 0x80) != 0)
                 {
                     pie->NumStopBits=(IBuf[Octet+Off] >> 5) & 0x03;
                     pie->NumDataBits=(IBuf[Octet+Off] >> 3) & 0x03;
@@ -1841,7 +1841,7 @@ L3INT Q931Uie_LLComp(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * O
                     Off++;
 
                     /* Octet 5d */
-                    if(IBuf[Octet+Off-1] & 0x80 != 0)
+                    if((IBuf[Octet+Off-1] & 0x80) != 0)
                     {
                         pie->DuplexMode    = (IBuf[Octet+Off] >> 6) & 0x01;
                         pie->ModemType    = IBuf[Octet+Off] & 0x3f;
@@ -1854,14 +1854,14 @@ L3INT Q931Uie_LLComp(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * O
     }
 
     /* Octet 6 - Layer 2 Ident */
-    if(IBuf[Octet+Off] & 0x60 == 0x40) /* Layer 1 Ident ? */
+    if((IBuf[Octet+Off] & 0x60) == 0x40) /* Layer 1 Ident ? */
     {
         pie->Layer2Ident= (IBuf[Octet+Off] >>5) & 0x03;
         pie->UIL2Prot    = IBuf[Octet+Off] & 0x1f;
         Octet++;
 
         /* Octet 6a */
-        if(IBuf[Octet+Off-1] & 0x80 != 0)
+        if((IBuf[Octet+Off-1] & 0x80) != 0)
         {
             if(pie->UIL2Prot == 0x10) /* 2nd 6a */
             {
@@ -1875,7 +1875,7 @@ L3INT Q931Uie_LLComp(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * O
                 Off++;
             }
             /* Octet 6b*/
-            if(IBuf[Octet+Off-1] & 0x80 != 0)
+            if((IBuf[Octet+Off-1] & 0x80) != 0)
             {
                 pie->WindowSize = IBuf[Octet+Off] & 0x7f;
                 Off++;
@@ -1884,14 +1884,14 @@ L3INT Q931Uie_LLComp(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * O
     }
 
     /* Octet 7 - layer 3 Ident */
-    if(IBuf[Octet+Off] & 0x60 == 0x60) /* Layer 3 Ident ? */
+    if((IBuf[Octet+Off] & 0x60) == 0x60) /* Layer 3 Ident ? */
     {
         pie->Layer3Ident= (IBuf[Octet+Off] >> 5) & 0x03;
         pie->UIL3Prot    = IBuf[Octet+Off] & 0x1f;
         Octet++;
 
         /* Octet 7a */
-        if(IBuf[Octet+Off-1] & 0x80 != 0)
+        if((IBuf[Octet+Off-1] & 0x80) != 0)
         {
         
             if(pie->UIL3Prot == 0x0b)
@@ -1915,13 +1915,13 @@ L3INT Q931Uie_LLComp(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * O
                 }
 
                 /* Octet 7b*/
-                if(IBuf[Octet+Off-1] & 0x80 != 0)
+                if((IBuf[Octet+Off-1] & 0x80) != 0)
                 {
                     pie->DefPackSize = IBuf[Octet+Off] & 0x0f;
                     Off++;
 
                     /* Octet 7c */
-                    if(IBuf[Octet+Off-1] & 0x80 != 0)
+                    if((IBuf[Octet+Off-1] & 0x80) != 0)
                     {
                         pie->PackWinSize= IBuf[Octet+Off] & 0x7f;
                     }
