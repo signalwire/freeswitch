@@ -113,8 +113,7 @@
 #include "stdio.h"
 
 #ifdef _MSC_VER
-/* warning C4244: conversion from 'type a' to 'type b', possible loss of data  TODO:  This one should not be disabled */
-#pragma warning(disable:4100 4244)
+#pragma warning(disable:4100)
 #endif
 
 /*****************************************************************************
