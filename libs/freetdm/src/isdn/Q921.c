@@ -259,6 +259,15 @@ int Q921SendSABME(L2TRUNK trunk, int Sapi, int cr, int Tei, int pf)
     return Q921Tx21Proc(trunk, mes, trunk->Q921HeaderSpace+3);
 }
 
+int Q921Start(L2TRUNK trunk)
+{
+	return Q921SendSABME(trunk, 
+					trunk->sapi, 
+					trunk->NetUser == Q921_TE ? 0 : 1,
+					trunk->tei, 
+					0);
+}
+
 /*****************************************************************************
 
   Function:     Q921SendDM
