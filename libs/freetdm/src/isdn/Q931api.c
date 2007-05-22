@@ -75,7 +75,8 @@ L3INT Q931Api_InitTrunk(Q931_TrunkInfo *pTrunk,
 						Q931TxCB_t Q931Tx34CBProc,
 						Q931TxCB_t Q931Tx32CBProc,
 						Q931ErrorCB_t Q931ErrorCBProc,
-						void *PrivateData)
+						void *PrivateData32,
+						void *PrivateData34)
 {
 	int y, dchannel, maxchans, has_sync = 0;
 
@@ -105,7 +106,8 @@ L3INT Q931Api_InitTrunk(Q931_TrunkInfo *pTrunk,
 	pTrunk->Q931Tx34CBProc = Q931Tx34CBProc;
 	pTrunk->Q931Tx32CBProc = Q931Tx32CBProc;
 	pTrunk->Q931ErrorCBProc = Q931ErrorCBProc;
-	pTrunk->PrivateData = PrivateData;
+	pTrunk->PrivateData32 = PrivateData32;
+	pTrunk->PrivateData34 = PrivateData34;
 
     pTrunk->LastCRV		= 0;
     pTrunk->Dialect		= Dialect;       
