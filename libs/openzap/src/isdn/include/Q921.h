@@ -124,5 +124,6 @@ void Q921_InitTrunk(L2TRUNK trunk,
 int Q921QueueHDLCFrame(L2TRUNK trunk, L2UCHAR *b, L2INT size);
 int Q921Rx12(L2TRUNK trunk);
 int Q921Rx32(L2TRUNK trunk, L2UCHAR * Mes, L2INT Size);
+int Q921Start(L2TRUNK trunk);
 #endif
 
