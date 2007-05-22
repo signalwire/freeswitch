@@ -1917,6 +1917,10 @@ typedef struct
 				the trunk Info entry.
 
 *****************************************************************************/
+typedef struct Q931_TrunkInfo Q931_TrunkInfo;
+
+typedef L3INT (*Q931TxCB_t) (void *,L3UCHAR *, L3INT);
+typedef L3INT (*Q931ErrorCB_t) (void *,L3INT,L3INT,L3INT);
 
 typedef enum						/* Network/User Mode.                   */
 {
@@ -1953,7 +1957,7 @@ typedef enum {
 	Q931_ChType_Sync=3				/* Sync Channel							*/
 } Q931_ChanType_t;
 
-typedef struct
+struct Q931_TrunkInfo
 {
 	Q931NetUser_t NetUser;			/* Network/User Mode.                   */
 
@@ -1961,7 +1965,12 @@ typedef struct
 
 	Q931_TrunkType_t TrunkType;		/* Trunk Line Type.                     */
 
-    L3UCHAR     Enabled;            /* Enabled/Disabled                     */
+	Q931TxCB_t	Q931Tx34CBProc;
+	Q931TxCB_t	Q931Tx32CBProc;
+	Q931ErrorCB_t Q931ErrorCBProc;
+	void *PrivateData;
+
+	L3UCHAR     Enabled;            /* Enabled/Disabled                     */
                                     /*  0 = Disabled                        */
                                     /*  1 = Enabled                         */
 
@@ -2033,7 +2042,7 @@ typedef struct
 
     }call[Q931MAXCALLPERTRUNK];
 
-}Q931_TrunkInfo;
+};
 
 /*****************************************************************************
   
@@ -2365,9 +2374,9 @@ L3INT   Q931Tx32(Q931_TrunkInfo *pTrunk, L3UCHAR * Mes, L3INT Size);
 L3INT   Q931Rx43(Q931_TrunkInfo *pTrunk, L3UCHAR * Mes, L3INT Size);
 L3INT   Q931Tx34(Q931_TrunkInfo *pTrunk, L3UCHAR * Mes, L3INT Size);
 void    Q931SetError(Q931_TrunkInfo *pTrunk,L3INT ErrID, L3INT ErrPar1, L3INT ErrPar2);
-void	Q931SetTx34CB(L3INT (*Q931Tx34Par)(Q931_TrunkInfo *pTrunk,L3UCHAR * Mes, L3INT Size));
-void	Q931SetTx32CB(L3INT (*Q931Tx32Par)(Q931_TrunkInfo *pTrunk,L3UCHAR * Mes, L3INT Size));
-void	Q931SetErrorCB(L3INT (*Q931ErrorPar)(Q931_TrunkInfo *pTrunk,L3INT,L3INT,L3INT));
+
+void	Q931SetDefaultErrorCB(Q931ErrorCB_t Q931ErrorPar);
+
 void    Q931CreateTE(L3UCHAR i);
 void    Q931CreateNT(L3UCHAR i);
 void    Q931SetMesCreateCB(L3INT (*callback)());
@@ -2424,6 +2433,13 @@ L3INT Q931InitIEHLComp(Q931ie_HLComp * pIE);
 L3INT Q931Disconnect(Q931_TrunkInfo *pTrunk, L3INT iTo, L3INT iCRV, L3INT iCause);
 L3INT Q931ReleaseComplete(Q931_TrunkInfo *pTrunk, L3INT iTo);
 
-L3INT Q931Api_InitTrunk(Q931_TrunkInfo *pTrunk, Q931Dialect_t Dialect, Q931NetUser_t NetUser, Q931_TrunkType_t TrunkType);
+L3INT Q931Api_InitTrunk(Q931_TrunkInfo *pTrunk,
+						Q931Dialect_t Dialect,
+						Q931NetUser_t NetUser,
+						Q931_TrunkType_t TrunkType,
+						Q931TxCB_t Q931Tx34CBProc,
+						Q931TxCB_t Q931Tx32CBProc,
+						Q931ErrorCB_t Q931ErrorCBProc,
+						void *PrivateData);
 
 #endif /* _Q931_NL */

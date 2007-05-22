@@ -88,15 +88,7 @@ L3INT Q931L2HeaderSpace = {4};      /* Q921 header space, sapi, tei etc     */
 
 *****************************************************************************/
 
-L3INT (*Q931Tx34Proc)(Q931_TrunkInfo *pTrunk, L3UCHAR *,L3INT);
-									/* callback for messages to be send to  */
-                                    /* layer 4.                             */
-
-L3INT (*Q931Tx32Proc)(Q931_TrunkInfo *pTrunk,L3UCHAR *,L3INT);
-									/* callback ptr for messages to be send */
-                                    /* to layer 2.                          */
-
-L3INT (*Q931ErrorProc)(Q931_TrunkInfo *pTrunk, L3INT,L3INT,L3INT); 
+Q931ErrorCB_t Q931ErrorProc;
 									/* callback for error messages.         */
 
 L3ULONG (*Q931GetTimeProc) ()=NULL; /* callback for func reading time in ms */
@@ -210,7 +202,7 @@ L3INT Q931TxDummy(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT n)
   Description:  Dummy function for error processing
 
 *****************************************************************************/
-L3INT Q931ErrorDummy(Q931_TrunkInfo *pTrunk,L3INT a, L3INT b, L3INT c)
+L3INT Q931ErrorDummy(void *priv, L3INT a, L3INT b, L3INT c)
 {
 	return 0;
 }
@@ -235,8 +227,6 @@ void Q931Initialize()
     L3INT x,y;
 
 	/* Secure the callbacks to default procs */
-    Q931Tx34Proc = Q931TxDummy;
-    Q931Tx32Proc = Q931TxDummy;
     Q931ErrorProc = Q931ErrorDummy;
 
 	/* The user will only add the message handlers and IE handlers he need, */
@@ -360,7 +350,10 @@ L3INT Q931Rx23(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT Size)
 *****************************************************************************/
 L3INT Q931Tx34(Q931_TrunkInfo *pTrunk, L3UCHAR * Mes, L3INT Size)
 {
-    return Q931Tx34Proc(pTrunk, Mes, Size);
+	if (pTrunk->Q931Tx34CBProc) {
+		return pTrunk->Q931Tx34CBProc(pTrunk->PrivateData, Mes, Size);
+	}
+	return Q931E_MISSING_CB;    
 }
 
 /*****************************************************************************
@@ -415,7 +408,11 @@ L3INT Q931Tx32(Q931_TrunkInfo *pTrunk, L3UCHAR * Mes, L3INT Size)
     RetCode = Q931Pmes[iDialect][ptr->MesType](pTrunk,Mes,Size,&pTrunk->L2Buf[Q931L2HeaderSpace], &OSize);
 	if(RetCode >= Q931E_NO_ERROR)
 	{
-        RetCode = Q931Tx32Proc(pTrunk, pTrunk->L2Buf, Size);
+		if (pTrunk->Q931Tx32CBProc) {
+			RetCode = pTrunk->Q931Tx32CBProc(pTrunk->PrivateData, pTrunk->L2Buf, Size);
+		} else {
+			RetCode = Q931E_MISSING_CB;
+		}
     }
 
     return RetCode;
@@ -436,20 +433,14 @@ L3INT Q931Tx32(Q931_TrunkInfo *pTrunk, L3UCHAR * Mes, L3INT Size)
 *****************************************************************************/
 void Q931SetError(Q931_TrunkInfo *pTrunk,L3INT ErrID, L3INT ErrPar1, L3INT ErrPar2)
 {
-    Q931ErrorProc(pTrunk,ErrID, ErrPar1, ErrPar2);
+	if (pTrunk->Q931ErrorCBProc) {
+		pTrunk->Q931ErrorCBProc(pTrunk->PrivateData, ErrID, ErrPar1, ErrPar2);
+	} else {
+		Q931ErrorProc(pTrunk->PrivateData, ErrID, ErrPar1, ErrPar2);
+	}
 }
 
-void Q931SetTx34CB(L3INT (*Q931Tx34Par)(Q931_TrunkInfo *pTrunk,L3UCHAR * Mes, L3INT Size))
-{
-    Q931Tx34Proc = Q931Tx34Par;
-}
-
-void Q931SetTx32CB(L3INT (*Q931Tx32Par)(Q931_TrunkInfo *pTrunk,L3UCHAR * Mes, L3INT Size))
-{
-    Q931Tx32Proc = Q931Tx32Par;
-}
-
-void Q931SetErrorCB(L3INT (*Q931ErrorPar)(Q931_TrunkInfo *pTrunk,L3INT,L3INT,L3INT))
+void Q931SetDefaultErrorCB(Q931ErrorCB_t Q931ErrorPar)
 {
     Q931ErrorProc = Q931ErrorPar;
 }

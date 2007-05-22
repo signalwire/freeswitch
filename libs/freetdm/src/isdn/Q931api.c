@@ -68,7 +68,14 @@ L3INT Q931CreateIEIndex(L3INT iec)
 }
 */
 
-L3INT Q931Api_InitTrunk(Q931_TrunkInfo *pTrunk, Q931Dialect_t Dialect, Q931NetUser_t NetUser, Q931_TrunkType_t TrunkType)
+L3INT Q931Api_InitTrunk(Q931_TrunkInfo *pTrunk,
+						Q931Dialect_t Dialect,
+						Q931NetUser_t NetUser,
+						Q931_TrunkType_t TrunkType,
+						Q931TxCB_t Q931Tx34CBProc,
+						Q931TxCB_t Q931Tx32CBProc,
+						Q931ErrorCB_t Q931ErrorCBProc,
+						void *PrivateData)
 {
 	int y, dchannel, maxchans, has_sync = 0;
 
@@ -94,6 +101,11 @@ L3INT Q931Api_InitTrunk(Q931_TrunkInfo *pTrunk, Q931Dialect_t Dialect, Q931NetUs
 	default:
 		return 0;
 	}
+
+	pTrunk->Q931Tx34CBProc = Q931Tx34CBProc;
+	pTrunk->Q931Tx32CBProc = Q931Tx32CBProc;
+	pTrunk->Q931ErrorCBProc = Q931ErrorCBProc;
+	pTrunk->PrivateData = PrivateData;
 
     pTrunk->LastCRV		= 0;
     pTrunk->Dialect		= Dialect;       

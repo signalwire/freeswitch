@@ -2,13 +2,7 @@
 
   FileName:     q921.h
 
-  Description:  Contains headers of a Q.921 protocol on top of the Comet 
-                Driver.
-
-                Most of the work required to execute a Q.921 protocol is 
-                taken care of by the Comet ship and it's driver. This layer
-                will simply configure and make use of these features to 
-                complete a Q.921 implementation.
+  Description:  Contains headers of a Q.921 protocol.
 
   Note:         This header file is the only include file that should be 
                 acessed by users of the Q.921 stack.
@@ -19,7 +13,7 @@
                 -   One driver layer.
 
                 The interface layer contains the interface functions required 
-                for a layer 3 stack to be able to send and receive messages.
+                for a layer 2 stack to be able to send and receive messages.
 
                 The driver layer will simply feed bytes into the ship as
                 required and queue messages received out from the ship.
@@ -33,7 +27,8 @@
                 Q921Rx32            Receive message from layer 3. Called by
                                     the layer 3 stack to send a message.
 
-                Q921Tx23            Send a message to layer 3. 
+
+				NOTE: The following are not yet implemented
 
                 OnQ921Error         Function called every if an error is 
                                     deteceted.
@@ -42,6 +37,10 @@
 
 
                 <TODO> Maintenance/Configuration interface
+				<TODO> Logging
+				<TODO> DL_ message passing to layer 3
+				<TODO> Timers
+				<TODO> Api commands to tell 921 to stop and start for a trunk
 
   Created:      27.dec.2000/JVB
 
@@ -80,31 +79,10 @@
 #ifndef _Q921
 #define _Q921
 
-#define Q921MAXTRUNK 4
 #define Q921MAXHDLCSPACE 3000
-
-/*****************************************************************************
-
-	Some speed optimization can be achieved by changing all variables to the 
-	word size of your processor. A 32 bit processor have to do a lot of extra 
-	work to read a packed 8 bit integer. Changing all fields to 32 bit integer 
-	will ressult in usage of some extra space, but speed up the stack.
-
-	The stack have been designed to allow L3UCHAR etc. to be any size of 8 bit
-	or larger.
-
-*****************************************************************************/
-
 #define L2UCHAR		unsigned char		/* Min 8 bit						*/
 #define L2INT       int                 /* Min 16 bit signed                */
-
-#ifdef Q921_HANDLE_STATIC 
-#define L2TRUNK		long
-#define L2TRUNKHANDLE(trunk) Q921DevSpace[trunk]
-#else
-#define L2TRUNK		Q921Data *
-#define L2TRUNKHANDLE(trunk) (*trunk)
-#endif
+#define L2TRUNK		Q921Data_t *
 
 typedef enum					/* Network/User Mode.                   */
 {
@@ -112,8 +90,11 @@ typedef enum					/* Network/User Mode.                   */
     Q921_NT=1                   /*  1 : Network Mode                    */
 } Q921NetUser_t;
 
+typedef struct Q921Data Q921Data_t;
+typedef int (*Q921TxCB_t) (void *, L2UCHAR *, L2INT);
+
 #define INITIALIZED_MAGIC 42
-typedef struct
+struct Q921Data
 {
     L2UCHAR HDLCInQueue[Q921MAXHDLCSPACE];
 	L2INT initialized;
@@ -123,15 +104,22 @@ typedef struct
 	L2UCHAR sapi;
 	L2UCHAR tei;
 	Q921NetUser_t NetUser;
+	Q921TxCB_t Q921Tx21Proc;
+	Q921TxCB_t Q921Tx23Proc;
+	void *PrivateData;
+	L2INT Q921HeaderSpace;
 
-}Q921Data;
+};
 
-void Q921Init();
-void Q921_InitTrunk(L2TRUNK trunk, L2UCHAR sapi, L2UCHAR tei, Q921NetUser_t NetUser);
-void Q921SetHeaderSpace(int hspace);
-void Q921SetTx21CB(int (*callback)(L2TRUNK dev, L2UCHAR *, int));
-void Q921SetTx23CB(int (*callback)(L2TRUNK dev, L2UCHAR *, int));
-int Q921QueueHDLCFrame(L2TRUNK trunk, L2UCHAR *b, int size);
+void Q921_InitTrunk(L2TRUNK trunk,
+					L2UCHAR sapi,
+					L2UCHAR tei,
+					Q921NetUser_t NetUser,
+					L2INT hsize,
+					Q921TxCB_t cb21,
+					Q921TxCB_t cb23,
+					void *priv);
+int Q921QueueHDLCFrame(L2TRUNK trunk, L2UCHAR *b, L2INT size);
 int Q921Rx12(L2TRUNK trunk);
 int Q921Rx32(L2TRUNK trunk, L2UCHAR * Mes, L2INT Size);
 #endif
