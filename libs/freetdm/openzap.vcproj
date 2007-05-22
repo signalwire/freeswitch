@@ -287,6 +287,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\include\sangoma_tdm_api.h"
+				>
+			</File>
+			<File
 				RelativePath=".\src\include\zap_buffer.h"
 				>
 			</File>
@@ -300,6 +304,10 @@
 			</File>
 			<File
 				RelativePath=".\src\include\zap_threadmutex.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\include\zap_types.h"
 				>
 			</File>
 			<File
