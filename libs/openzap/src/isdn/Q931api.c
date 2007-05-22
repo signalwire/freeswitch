@@ -68,27 +68,53 @@ L3INT Q931CreateIEIndex(L3INT iec)
 }
 */
 
-void Q931Api_InitTrunk(Q931_TrunkInfo *pTrunk)
+L3INT Q931Api_InitTrunk(Q931_TrunkInfo *pTrunk, Q931Dialect_t Dialect, Q931NetUser_t NetUser, Q931_TrunkType_t TrunkType)
 {
-	int y;
+	int y, dchannel, maxchans;
+
+	switch(TrunkType)
+	{
+	case Q931_TrType_E1:
+		dchannel = 16;
+		maxchans = 31;
+		break;
+
+	case Q931_TrType_T1:
+	case Q931_TrType_J1:
+		dchannel = 24;
+		maxchans = 24;
+		break;
+
+	case Q931_TrType_BRI:
+		dchannel = 3;
+		maxchans = 3;
+		break;
+
+	default:
+		return 0;
+	}
+
     pTrunk->LastCRV		= 0;
-    pTrunk->Dialect		= 0;       
+    pTrunk->Dialect		= Dialect;       
     pTrunk->Enabled		= 0;
-    pTrunk->TrunkType	= Q931_TrType_E1;
-    pTrunk->NetUser		= Q931_TE;
+    pTrunk->TrunkType	= TrunkType;
+    pTrunk->NetUser		= NetUser;
     pTrunk->TrunkState	= 0;
     for(y=0; y < Q931MAXCHPERTRUNK; y++)
     {
         pTrunk->ch[y].Available = 1;
 
-        /* Set up E1 scheme by default */
-        if(y==0)
+        if(y == 0)
         {
             pTrunk->ch[y].ChanType = Q931_ChType_Sync;
         }
-        else if(y==16)
+        else if(y == dchannel)
         {
             pTrunk->ch[y].ChanType = Q931_ChType_D;
+        }
+        else if(y > maxchans)
+        {
+            pTrunk->ch[y].ChanType = Q931_ChType_NotUsed;
         }
         else
         {
@@ -101,6 +127,7 @@ void Q931Api_InitTrunk(Q931_TrunkInfo *pTrunk)
         pTrunk->call[y].InUse = 0;
 
     }
+	return 1;
 }
 
 void Q931SetMesProc(L3UCHAR mes, L3UCHAR dialect, 

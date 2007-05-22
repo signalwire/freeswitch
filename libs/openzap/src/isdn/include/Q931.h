@@ -1918,34 +1918,54 @@ typedef struct
 
 *****************************************************************************/
 
+typedef enum						/* Network/User Mode.                   */
+{
+	Q931_TE=0,						/*  0 : User Mode                       */
+    Q931_NT=1						/*  1 : Network Mode                    */
+} Q931NetUser_t;
+
+typedef enum						/* Dialect enum                         */
+{
+	Q931_Dialect_Q931 = 0,
+
+	Q931_Dialect_Count
+} Q931Dialect_t;
+
+typedef enum						/* Trunk Line Type.                     */
+{
+	Q931_TrType_E1=0,				/*  0 : E1 Trunk                        */
+    Q931_TrType_T1=1,				/*  1 : T1 Trunk                        */
+    Q931_TrType_J1=2,				/*  2 : J1 Trunk                        */
+    Q931_TrType_BRI=3				/*  3 : BRI Trunk                       */
+} Q931_TrunkType_t;
+
+typedef enum						/* Trunk State							*/
+{
+	Q931_TrState_NoAlignment=0,		/* Trunk not aligned					*/
+	Q931_TrState_Aligning=1,		/* Aligning in progress					*/
+	Q931_TrState_Aligned=2			/* Trunk Aligned						*/
+} Q931_TrunkState_t;
+
+typedef enum {
+	Q931_ChType_NotUsed=0,			/* Unused Channel						*/
+	Q931_ChType_B=1,				/* B Channel (Voice)					*/		
+	Q931_ChType_D=2,				/* D Channel (Signalling)				*/
+	Q931_ChType_Sync=3				/* Sync Channel							*/
+} Q931_ChanType_t;
+
 typedef struct
 {
-	enum _NetUser					/* Network/User Mode.                   */
-	{
-		Q931_TE=0,                  /*  0 : User Mode                       */
-        Q931_NT=1                   /*  1 : Network Mode                    */
-	}NetUser;
+	Q931NetUser_t NetUser;			/* Network/User Mode.                   */
 
-    L3UCHAR     Dialect;            /* Q.931 Based dielact index.           */
+    Q931Dialect_t Dialect;			/* Q.931 Based dielact index.           */
 
-	enum _TrunkType					/* Trunk Line Type.                     */
-	{
-		Q931_TrType_E1=0,           /*  0 : E1 Trunk                        */
-        Q931_TrType_T1=1,           /*  1 : T1 Trunk                        */
-        Q931_TrType_J1=2,           /*  2 : J1 Trunk                        */
-        Q931_TrType_BRI=3           /*  3 : BRI Trunk                       */
-	}TrunkType;
+	Q931_TrunkType_t TrunkType;		/* Trunk Line Type.                     */
 
     L3UCHAR     Enabled;            /* Enabled/Disabled                     */
                                     /*  0 = Disabled                        */
                                     /*  1 = Enabled                         */
 
-	enum _TrState					/* Trunk State							*/
-	{
-		Q931_TrState_NoAlignment=0,	/* Trunk not aligned					*/
-		Q931_TrState_Aligning=1,	/* Aligning in progress					*/
-		Q931_TrState_Aligned=2		/* Trunk Aligned						*/
-	}TrunkState;
+	Q931_TrunkState_t TrunkState;
 
     L3INT       LastCRV;            /* Last used crv for the trunk.         */
 
@@ -1972,12 +1992,7 @@ typedef struct
 	/* channels to fit an E1 since T1/J1 and BRI will fit inside a E1.		*/
     struct _charray
     {
-		enum _ChanType{
-			Q931_ChType_NotUsed=0,	/* Unused Channel						*/
-			Q931_ChType_B=1,		/* B Channel (Voice)					*/		
-			Q931_ChType_D=2,		/* D Channel (Signalling)				*/
-			Q931_ChType_Sync=3		/* Sync Channel							*/
-		}ChanType;
+		Q931_ChanType_t ChanType;	/* Unused, B, D, Sync */
 
         L3UCHAR Available;          /* Channel Available Flag               */
                                     /*  0 : Avaiabled                       */
@@ -2408,5 +2423,7 @@ L3INT Q931InitIEHLComp(Q931ie_HLComp * pIE);
 
 L3INT Q931Disconnect(Q931_TrunkInfo *pTrunk, L3INT iTo, L3INT iCRV, L3INT iCause);
 L3INT Q931ReleaseComplete(Q931_TrunkInfo *pTrunk, L3INT iTo);
+
+L3INT Q931Api_InitTrunk(Q931_TrunkInfo *pTrunk, Q931Dialect_t Dialect, Q931NetUser_t NetUser, Q931_TrunkType_t TrunkType);
 
 #endif /* _Q931_NL */
