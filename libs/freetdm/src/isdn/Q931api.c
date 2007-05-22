@@ -110,7 +110,7 @@ L3INT Q931Api_InitTrunk(Q931_TrunkInfo *pTrunk,
 	pTrunk->PrivateData34 = PrivateData34;
 
     pTrunk->LastCRV		= 0;
-    pTrunk->Dialect		= Dialect;       
+    pTrunk->Dialect		= Dialect + NetUser;       
     pTrunk->Enabled		= 0;
     pTrunk->TrunkType	= TrunkType;
     pTrunk->NetUser		= NetUser;
