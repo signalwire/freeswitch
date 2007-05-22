@@ -110,19 +110,19 @@ typedef struct
     L2UCHAR vs;
     L2UCHAR vr;
     L2INT state;
-	L2INT sapi;
-	L2INT tei;
+	L2UCHAR sapi;
+	L2UCHAR tei;
 	Q921NetUser_t NetUser;
 
 }Q921Data;
 
 void Q921Init();
-int Q921_InitTrunk(long trunk, int sapi, int tei, Q921NetUser_t NetUser);
+int Q921_InitTrunk(long trunk, L2UCHAR sapi, L2UCHAR tei, Q921NetUser_t NetUser);
 void Q921SetHeaderSpace(int hspace);
 void Q921SetTx21CB(int (*callback)(int dev, L2UCHAR *, int));
 void Q921SetTx23CB(int (*callback)(int dev, L2UCHAR *, int));
 int Q921QueueHDLCFrame(int trunk, L2UCHAR *b, int size);
 int Q921Rx12(long trunk);
-
+int Q921Rx32(long trunk, L2UCHAR * Mes, L2INT Size);
 #endif
 
