@@ -351,7 +351,7 @@ L3INT Q931Rx23(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT Size)
 L3INT Q931Tx34(Q931_TrunkInfo *pTrunk, L3UCHAR * Mes, L3INT Size)
 {
 	if (pTrunk->Q931Tx34CBProc) {
-		return pTrunk->Q931Tx34CBProc(pTrunk->PrivateData, Mes, Size);
+		return pTrunk->Q931Tx34CBProc(pTrunk->PrivateData34, Mes, Size);
 	}
 	return Q931E_MISSING_CB;    
 }
@@ -409,7 +409,7 @@ L3INT Q931Tx32(Q931_TrunkInfo *pTrunk, L3UCHAR * Mes, L3INT Size)
 	if(RetCode >= Q931E_NO_ERROR)
 	{
 		if (pTrunk->Q931Tx32CBProc) {
-			RetCode = pTrunk->Q931Tx32CBProc(pTrunk->PrivateData, pTrunk->L2Buf, Size);
+			RetCode = pTrunk->Q931Tx32CBProc(pTrunk->PrivateData32, pTrunk->L2Buf, Size);
 		} else {
 			RetCode = Q931E_MISSING_CB;
 		}
@@ -434,9 +434,9 @@ L3INT Q931Tx32(Q931_TrunkInfo *pTrunk, L3UCHAR * Mes, L3INT Size)
 void Q931SetError(Q931_TrunkInfo *pTrunk,L3INT ErrID, L3INT ErrPar1, L3INT ErrPar2)
 {
 	if (pTrunk->Q931ErrorCBProc) {
-		pTrunk->Q931ErrorCBProc(pTrunk->PrivateData, ErrID, ErrPar1, ErrPar2);
+		pTrunk->Q931ErrorCBProc(pTrunk->PrivateData34, ErrID, ErrPar1, ErrPar2);
 	} else {
-		Q931ErrorProc(pTrunk->PrivateData, ErrID, ErrPar1, ErrPar2);
+		Q931ErrorProc(pTrunk->PrivateData34, ErrID, ErrPar1, ErrPar2);
 	}
 }
 

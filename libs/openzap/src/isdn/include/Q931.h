@@ -1968,7 +1968,8 @@ struct Q931_TrunkInfo
 	Q931TxCB_t	Q931Tx34CBProc;
 	Q931TxCB_t	Q931Tx32CBProc;
 	Q931ErrorCB_t Q931ErrorCBProc;
-	void *PrivateData;
+	void *PrivateData32;
+	void *PrivateData34;
 
 	L3UCHAR     Enabled;            /* Enabled/Disabled                     */
                                     /*  0 = Disabled                        */
@@ -2440,6 +2441,7 @@ L3INT Q931Api_InitTrunk(Q931_TrunkInfo *pTrunk,
 						Q931TxCB_t Q931Tx34CBProc,
 						Q931TxCB_t Q931Tx32CBProc,
 						Q931ErrorCB_t Q931ErrorCBProc,
-						void *PrivateData);
+						void *PrivateData32,
+						void *PrivateData34);
 
 #endif /* _Q931_NL */
