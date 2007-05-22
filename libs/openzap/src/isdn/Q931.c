@@ -247,11 +247,11 @@ void Q931Initialize()
         }
     }
 
-	if(Q931CreateDialectCB[0] == NULL)
-		Q931AddDialect(0, Q931CreateTE);
+	if(Q931CreateDialectCB[Q931_Dialect_Q931 + Q931_TE] == NULL)
+		Q931AddDialect(Q931_Dialect_Q931 + Q931_TE, Q931CreateTE);
 
-	if(Q931CreateDialectCB[1] == NULL)
-		Q931AddDialect(1, Q931CreateNT);
+	if(Q931CreateDialectCB[Q931_Dialect_Q931 + Q931_NT] == NULL)
+		Q931AddDialect(Q931_Dialect_Q931 + Q931_NT, Q931CreateNT);
 
 	/* The last step we do is to call the callbacks to create the dialects  */
 	for(x=0; x< Q931MAXDLCT; x++)
