@@ -70,13 +70,14 @@ L3INT Q931CreateIEIndex(L3INT iec)
 
 L3INT Q931Api_InitTrunk(Q931_TrunkInfo *pTrunk, Q931Dialect_t Dialect, Q931NetUser_t NetUser, Q931_TrunkType_t TrunkType)
 {
-	int y, dchannel, maxchans;
+	int y, dchannel, maxchans, has_sync = 0;
 
 	switch(TrunkType)
 	{
 	case Q931_TrType_E1:
 		dchannel = 16;
 		maxchans = 31;
+		has_sync = 1;
 		break;
 
 	case Q931_TrType_T1:
@@ -104,7 +105,7 @@ L3INT Q931Api_InitTrunk(Q931_TrunkInfo *pTrunk, Q931Dialect_t Dialect, Q931NetUs
     {
         pTrunk->ch[y].Available = 1;
 
-        if(y == 0)
+        if(has_sync && y == 0)
         {
             pTrunk->ch[y].ChanType = Q931_ChType_Sync;
         }
