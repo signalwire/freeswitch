@@ -110,6 +110,28 @@ void sofia_event_callback(nua_event_t event,
 			su_root_break(profile->s_root);
 		}
 		break;
+
+	case nua_r_message:
+		{
+			if (status == 503) {
+				const char *user = NULL, *host = NULL;
+				char *sql;
+
+				if (sip->sip_to && sip->sip_to->a_url) {
+					user = sip->sip_to->a_url->url_user;
+					host = sip->sip_to->a_url->url_host;
+					
+					sql = switch_mprintf("delete from sip_registrations where user='%q' and host='%q'", user, host);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Deleting registration for %s@%s\n", user, host);
+					sofia_glue_execute_sql(profile, SWITCH_TRUE, sql, NULL);
+					switch_safe_free(sql);
+				}
+			} 
+
+			nua_handle_destroy(nh);
+			
+		}
+		break;
 	case nua_r_get_params:
 	case nua_r_invite:
 	case nua_r_unregister:
@@ -120,7 +142,6 @@ void sofia_event_callback(nua_event_t event,
 	case nua_i_bye:
 	case nua_r_unsubscribe:
 	case nua_r_publish:
-	case nua_r_message:
 	case nua_r_notify:
 	case nua_i_notify:
 	case nua_i_cancel:

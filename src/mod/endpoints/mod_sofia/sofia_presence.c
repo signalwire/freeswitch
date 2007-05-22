@@ -94,7 +94,7 @@ switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char
 
 
 		nua_message(msg_nh, SIPTAG_CONTENT_TYPE_STR("text/html"), SIPTAG_PAYLOAD_STR(body), TAG_END());
-
+		
 
 		switch_safe_free(ffrom);
 		free(user);

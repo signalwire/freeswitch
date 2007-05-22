@@ -136,6 +136,24 @@ int sofia_reg_find_callback(void *pArg, int argc, char **argv, char **columnName
 	return 0;
 }
 
+int sofia_reg_nat_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	sofia_profile_t *profile = (sofia_profile_t *) pArg;
+	nua_handle_t *nh;
+	char *contact;
+	char to[128] = "";
+
+	snprintf(to, sizeof(to), "%s@%s", argv[0], argv[1]);
+	contact = sofia_glue_get_url_from_contact(argv[2], 1);
+
+	nh = nua_handle(profile->nua, NULL, SIPTAG_FROM_STR(profile->url), SIPTAG_TO_STR(to), NUTAG_URL(contact), SIPTAG_CONTACT_STR(profile->url), TAG_END());
+	
+	nua_message(nh, SIPTAG_CONTENT_TYPE_STR("text/plain"),
+				SIPTAG_PAYLOAD_STR("You suffer from Connectile Dysfunction.\nYou should use stun....\n"), TAG_END());
+
+	return 0;
+}
+
 int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	switch_event_t *s_event;
@@ -152,6 +170,7 @@ int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames
 	}
 	return 0;
 }
+
 
 void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
 {
@@ -204,6 +223,16 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now)
 		snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0");
 	}
 	sofia_glue_execute_sql(profile, SWITCH_TRUE, sql, NULL);
+
+	if (now) {
+		snprintf(sql, sizeof(sql), "select * from sip_registrations where status like '%%NATHACK%%'");
+		sofia_glue_execute_sql_callback(profile,
+										SWITCH_TRUE,
+										NULL,
+										sql,
+										sofia_reg_nat_callback,
+										profile);
+	}
 
 	switch_mutex_unlock(profile->ireg_mutex);
 
@@ -264,6 +293,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	const char *display = "\"user\"";
 	char network_ip[80];
 	int network_port;
+	int cd = 0;
 
 	/* all callers must confirm that sip, sip->sip_request and sip->sip_contact are not NULL */
 	assert(sip != NULL && sip->sip_contact != NULL && sip->sip_request != NULL);
@@ -342,6 +372,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 				} else {
 					snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d>", display, contact->m_url->url_user, network_ip, network_port);
 				}
+				cd = 1;
 			} else {
 				char *p;
 				switch_copy_string(contact_str, v_contact_str, sizeof(contact_str));
@@ -397,8 +428,8 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 
 	if (exptime) {
 		if (!sofia_reg_find_reg_url(profile, from_user, from_host, buf, sizeof(buf))) {
-			sql = switch_mprintf("insert into sip_registrations values ('%q','%q','%q','Registered', '%q', %ld)",
-								 from_user, from_host, contact_str, rpid, (long) time(NULL) + (long) exptime * 2);
+			sql = switch_mprintf("insert into sip_registrations values ('%q','%q','%q','%q', '%q', %ld)",
+								 from_user, from_host, contact_str, cd ? "Registered(NATHACK)" : "Registered", rpid, (long) time(NULL) + (long) exptime * 2);
 
 		} else {
 			sql =
