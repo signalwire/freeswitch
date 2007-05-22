@@ -42,7 +42,7 @@ static struct {
 	unsigned codec_ms;
 } wp_globals;
 
-static zap_software_interface_t wanpipe_interface;
+static zap_io_interface_t wanpipe_interface;
 
 static zap_status_t wp_tdm_cmd_exec(zap_channel_t *zchan, wanpipe_tdm_api_t *tdm_api)
 {
@@ -146,7 +146,7 @@ static unsigned wp_configure_channel(zap_config_t *cfg, const char *str, zap_spa
 	return configured;
 }
 
-static ZINT_CONFIGURE_FUNCTION(wanpipe_configure)
+static ZIO_CONFIGURE_FUNCTION(wanpipe_configure)
 {
 	zap_config_t cfg;
 	char *var, *val;
@@ -155,7 +155,7 @@ static ZINT_CONFIGURE_FUNCTION(wanpipe_configure)
 	int new_span = 0;
 	unsigned configured = 0, d = 0;
 
-	ZINT_CONFIGURE_MUZZLE;
+	ZIO_CONFIGURE_MUZZLE;
 
 	zap_log(ZAP_LOG_DEBUG, "configuring wanpipe\n");
 	if (!zap_config_open_file(&cfg, "wanpipe.conf")) {
@@ -229,7 +229,7 @@ static ZINT_CONFIGURE_FUNCTION(wanpipe_configure)
 	return configured ? ZAP_SUCCESS : ZAP_FAIL;
 }
 
-static ZINT_OPEN_FUNCTION(wanpipe_open) 
+static ZIO_OPEN_FUNCTION(wanpipe_open) 
 {
 
 	wanpipe_tdm_api_t tdm_api;
@@ -259,18 +259,18 @@ static ZINT_OPEN_FUNCTION(wanpipe_open)
 	return ZAP_SUCCESS;
 }
 
-static ZINT_CLOSE_FUNCTION(wanpipe_close)
+static ZIO_CLOSE_FUNCTION(wanpipe_close)
 {
-	ZINT_CLOSE_MUZZLE;
+	ZIO_CLOSE_MUZZLE;
 	return ZAP_SUCCESS;
 }
 
-static ZINT_COMMAND_FUNCTION(wanpipe_command)
+static ZIO_COMMAND_FUNCTION(wanpipe_command)
 {
 	wanpipe_tdm_api_t tdm_api;
 	int err = 0;
 
-	ZINT_COMMAND_MUZZLE;
+	ZIO_COMMAND_MUZZLE;
 	
 	memset(&tdm_api, 0, sizeof(tdm_api));
 	
@@ -306,7 +306,7 @@ static ZINT_COMMAND_FUNCTION(wanpipe_command)
 	return ZAP_SUCCESS;
 }
 
-static ZINT_READ_FUNCTION(wanpipe_read)
+static ZIO_READ_FUNCTION(wanpipe_read)
 {
 	int rx_len = 0;
 	wp_tdm_api_rx_hdr_t hdrframe;
@@ -325,7 +325,7 @@ static ZINT_READ_FUNCTION(wanpipe_read)
 	return ZAP_SUCCESS;
 }
 
-static ZINT_WRITE_FUNCTION(wanpipe_write)
+static ZIO_WRITE_FUNCTION(wanpipe_write)
 {
 	int bsent;
 	wp_tdm_api_tx_hdr_t hdrframe;
@@ -344,7 +344,7 @@ static ZINT_WRITE_FUNCTION(wanpipe_write)
 }
 
 
-static ZINT_WAIT_FUNCTION(wanpipe_wait)
+static ZIO_WAIT_FUNCTION(wanpipe_wait)
 {
 	int32_t inflags = 0;
 	int result;
@@ -389,9 +389,9 @@ static ZINT_WAIT_FUNCTION(wanpipe_wait)
 	return ZAP_SUCCESS;
 }
 
-zap_status_t wanpipe_init(zap_software_interface_t **zint)
+zap_status_t wanpipe_init(zap_io_interface_t **zio)
 {
-	assert(zint != NULL);
+	assert(zio != NULL);
 	memset(&wanpipe_interface, 0, sizeof(wanpipe_interface));
 
 	wp_globals.codec_ms = 20;
@@ -403,7 +403,7 @@ zap_status_t wanpipe_init(zap_software_interface_t **zint)
 	wanpipe_interface.wait = wanpipe_wait;
 	wanpipe_interface.read = wanpipe_read;
 	wanpipe_interface.write = wanpipe_write;
-	*zint = &wanpipe_interface;
+	*zio = &wanpipe_interface;
 
 	return ZAP_SUCCESS;
 }

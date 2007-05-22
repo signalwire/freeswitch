@@ -32,7 +32,9 @@
 
 OBJS=hashtable.o \
 hashtable_itr.o \
-openzap.o \
+zap_io.o \
+zap_isdn.o \
+zap_analog.o \
 zap_config.o \
 g711.o \
 libteletone_detect.o \
@@ -77,7 +79,7 @@ sangoma_pri.o: sangoma_pri.c
 priserver: $(MYLIB) priserver.o sangoma_pri.o
 	$(CC) sangoma_pri.o priserver.o -L. -o priserver -lopenzap -lm -lpthread ../../libpri-1.2.4/libpri.a
 
-openzap.o: openzap.c
+zap_io.o: zap_io.c
 	$(CC) $(MOD_CFLAGS) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
 
 zap_wanpipe.o: zap_wanpipe.c

@@ -173,7 +173,7 @@ struct zap_channel {
 	teletone_dtmf_detect_state_t dtmf_detect;
 	zap_event_t event_header;
 	char last_error[256];
-	zint_event_cb_t event_callback;
+	zio_event_cb_t event_callback;
 	void *mod_data;
 	uint32_t skip_read_frames;
 	zap_buffer_t *dtmf_buffer;
@@ -181,7 +181,7 @@ struct zap_channel {
 	uint32_t dtmf_off;
 	teletone_generation_session_t tone_session;
 	struct zap_span *span;
-	struct zap_software_interface *zint;
+	struct zap_io_interface *zio;
 };
 
 
@@ -189,34 +189,35 @@ struct zap_span {
 	uint32_t span_id;
 	uint32_t chan_count;
 	zap_span_flag_t flags;
-	struct zap_software_interface *zint;
-	zint_event_cb_t event_callback;
+	struct zap_io_interface *zio;
+	zio_event_cb_t event_callback;
 	zap_mutex_t *mutex;
+	zap_signal_type_t signal_type;
 	zap_channel_t channels[ZAP_MAX_CHANNELS_SPAN];
 };
 
 
 extern zap_logger_t zap_log;
 
-struct zap_software_interface {
+struct zap_io_interface {
 	const char *name;
-	zint_configure_t configure;
-	zint_open_t open;
-	zint_close_t close;
-	zint_command_t command;
-	zint_wait_t wait;
-	zint_read_t read;
-	zint_write_t write;
+	zio_configure_t configure;
+	zio_open_t open;
+	zio_close_t close;
+	zio_command_t command;
+	zio_wait_t wait;
+	zio_read_t read;
+	zio_write_t write;
 	uint32_t span_index;
 	struct zap_span spans[ZAP_MAX_SPANS_INTERFACE];
 };
 
 zap_status_t zap_span_find(const char *name, uint32_t id, zap_span_t **span);
-zap_status_t zap_span_create(zap_software_interface_t *zint, zap_span_t **span);
-zap_status_t zap_span_close_all(zap_software_interface_t *zint);
+zap_status_t zap_span_create(zap_io_interface_t *zio, zap_span_t **span);
+zap_status_t zap_span_close_all(zap_io_interface_t *zio);
 zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_chan_type_t type, zap_channel_t **chan);
-zap_status_t zap_span_set_event_callback(zap_span_t *span, zint_event_cb_t event_callback);
-zap_status_t zap_channel_set_event_callback(zap_channel_t *zchan, zint_event_cb_t event_callback);
+zap_status_t zap_span_set_event_callback(zap_span_t *span, zio_event_cb_t event_callback);
+zap_status_t zap_channel_set_event_callback(zap_channel_t *zchan, zio_event_cb_t event_callback);
 zap_status_t zap_channel_open(const char *name, uint32_t span_id, uint32_t chan_id, zap_channel_t **zchan);
 zap_status_t zap_channel_open_any(const char *name, uint32_t span_id, zap_direction_t direction, zap_channel_t **zchan);
 zap_status_t zap_channel_close(zap_channel_t **zchan);
