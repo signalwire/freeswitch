@@ -50,7 +50,10 @@
 /*****************************************************************************
   Global Tables & Variables.
 *****************************************************************************/
+#ifdef Q921_HANDLE_STATIC 
 Q921Data Q921DevSpace[Q921MAXTRUNK];
+#endif
+
 int Q921HeaderSpace={0};
 
 int (*Q921Tx21Proc)(L2TRUNK dev, L2UCHAR *, int)={NULL};
