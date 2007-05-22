@@ -98,15 +98,25 @@
 #define L2UCHAR		unsigned char		/* Min 8 bit						*/
 #define L2INT       int                 /* Min 16 bit signed                */
 
+#ifdef Q921_HANDLE_STATIC 
+#define L2TRUNK		long
+#define L2TRUNKHANDLE(trunk) Q921DevSpace[trunk]
+#else
+#define L2TRUNK		Q921Data *
+#define L2TRUNKHANDLE(trunk) (*trunk)
+#endif
+
 typedef enum					/* Network/User Mode.                   */
 {
 	Q921_TE=0,                  /*  0 : User Mode                       */
     Q921_NT=1                   /*  1 : Network Mode                    */
 } Q921NetUser_t;
 
+#define INITIALIZED_MAGIC 42
 typedef struct
 {
     L2UCHAR HDLCInQueue[Q921MAXHDLCSPACE];
+	L2INT initialized;
     L2UCHAR vs;
     L2UCHAR vr;
     L2INT state;
@@ -117,12 +127,12 @@ typedef struct
 }Q921Data;
 
 void Q921Init();
-int Q921_InitTrunk(long trunk, L2UCHAR sapi, L2UCHAR tei, Q921NetUser_t NetUser);
+void Q921_InitTrunk(L2TRUNK trunk, L2UCHAR sapi, L2UCHAR tei, Q921NetUser_t NetUser);
 void Q921SetHeaderSpace(int hspace);
-void Q921SetTx21CB(int (*callback)(int dev, L2UCHAR *, int));
-void Q921SetTx23CB(int (*callback)(int dev, L2UCHAR *, int));
-int Q921QueueHDLCFrame(int trunk, L2UCHAR *b, int size);
-int Q921Rx12(long trunk);
-int Q921Rx32(long trunk, L2UCHAR * Mes, L2INT Size);
+void Q921SetTx21CB(int (*callback)(L2TRUNK dev, L2UCHAR *, int));
+void Q921SetTx23CB(int (*callback)(L2TRUNK dev, L2UCHAR *, int));
+int Q921QueueHDLCFrame(L2TRUNK trunk, L2UCHAR *b, int size);
+int Q921Rx12(L2TRUNK trunk);
+int Q921Rx32(L2TRUNK trunk, L2UCHAR * Mes, L2INT Size);
 #endif
 
