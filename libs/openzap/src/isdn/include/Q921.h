@@ -98,15 +98,26 @@
 #define L2UCHAR		unsigned char		/* Min 8 bit						*/
 #define L2INT       int                 /* Min 16 bit signed                */
 
+typedef enum					/* Network/User Mode.                   */
+{
+	Q921_TE=0,                  /*  0 : User Mode                       */
+    Q921_NT=1                   /*  1 : Network Mode                    */
+} Q921NetUser_t;
+
 typedef struct
 {
     L2UCHAR HDLCInQueue[Q921MAXHDLCSPACE];
     L2UCHAR vs;
     L2UCHAR vr;
-    int state;
+    L2INT state;
+	L2INT sapi;
+	L2INT tei;
+	Q921NetUser_t NetUser;
+
 }Q921Data;
 
 void Q921Init();
+int Q921_InitTrunk(long trunk, int sapi, int tei, Q921NetUser_t NetUser);
 void Q921SetHeaderSpace(int hspace);
 void Q921SetTx21CB(int (*callback)(int dev, L2UCHAR *, int));
 void Q921SetTx23CB(int (*callback)(int dev, L2UCHAR *, int));
