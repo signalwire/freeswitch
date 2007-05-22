@@ -51,6 +51,14 @@ struct zap_io_interface;
 #define ZAP_COMMAND_OBJ_CHAR_P (char *)obj
 
 typedef enum {
+	ZAP_TRUNK_E1,
+	ZAP_TRUNK_T1,
+	ZAP_TRUNK_J1,
+	ZAP_TRUNK_BRI,
+	ZAP_TRUNK_NONE
+} zap_trunk_type_t;
+
+typedef enum {
 	ZAP_SIGTYPE_NONE,
 	ZAP_SIGTYPE_ISDN,
 	ZAP_SIGTYPE_RBS,
@@ -71,7 +79,6 @@ typedef enum {
 typedef enum {
 	ZAP_EVENT_NONE,
 	ZAP_EVENT_DTMF,
-
 	ZAP_EVENT_COUNT
 } zap_event_type_t;
 
@@ -158,7 +165,10 @@ typedef enum {
 
 typedef struct zap_channel zap_channel_t;
 typedef struct zap_event zap_event_t;
+typedef struct zap_sigmsg zap_sigmsg_t;
+typedef struct zap_span zap_span_t;
 
+#define ZIO_SIGNAL_CB_ARGS (zap_span_t *span, zap_sigmsg_t *sigmsg, void *raw_data, uint32_t raw_data_len)
 #define ZIO_EVENT_CB_ARGS (zap_channel_t *zchan, zap_event_t *event)
 #define ZIO_CODEC_ARGS (void *data, zap_size_t max, zap_size_t *datalen)
 #define ZIO_CONFIGURE_ARGS (struct zap_io_interface *zio)
@@ -169,6 +179,7 @@ typedef struct zap_event zap_event_t;
 #define ZIO_READ_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
 #define ZIO_WRITE_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
 
+typedef zap_status_t (*zio_signal_cb_t) ZIO_SIGNAL_CB_ARGS ;
 typedef zap_status_t (*zio_event_cb_t) ZIO_EVENT_CB_ARGS ;
 typedef zap_status_t (*zio_codec_t) ZIO_CODEC_ARGS ;
 typedef zap_status_t (*zio_configure_t) ZIO_CONFIGURE_ARGS ;
@@ -179,6 +190,7 @@ typedef zap_status_t (*zio_wait_t) ZIO_WAIT_ARGS ;
 typedef zap_status_t (*zio_read_t) ZIO_READ_ARGS ;
 typedef zap_status_t (*zio_write_t) ZIO_WRITE_ARGS ;
 
+#define ZIO_SIGNAL_CB_FUNCTION(name) zap_status_t name ZIO_SIGNAL_CB_ARGS
 #define ZIO_EVENT_CB_FUNCTION(name) zap_status_t name ZIO_EVENT_CB_ARGS
 #define ZIO_CODEC_FUNCTION(name) zap_status_t name ZIO_CODEC_ARGS
 #define ZIO_CONFIGURE_FUNCTION(name) zap_status_t name ZIO_CONFIGURE_ARGS
@@ -217,7 +229,7 @@ typedef zap_status_t (*zio_write_t) ZIO_WRITE_ARGS ;
 #define ZAP_LOG_ALERT ZAP_PRE, ZAP_LOG_LEVEL_ALERT
 #define ZAP_LOG_EMERG ZAP_PRE, ZAP_LOG_LEVEL_EMERG
 
-typedef struct zap_span zap_span_t;
+
 typedef void (*zap_logger_t)(char *file, const char *func, int line, int level, char *fmt, ...);
 typedef struct zap_io_interface zap_io_interface_t;
 typedef struct hashtable zap_hash_t;

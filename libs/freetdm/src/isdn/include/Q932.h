@@ -154,38 +154,38 @@ typedef struct
 /*****************************************************************************
   Function Prototypes.
 *****************************************************************************/
-L3INT Q932ProcFacilityTE(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT iFrom);
-L3INT Q932ProcHoldTE(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT iFrom);
-L3INT Q932ProcHoldAckTE(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT iFrom);
-L3INT Q932ProcHoldRejectTE(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT iFrom);
-L3INT Q932ProcRegisterTE(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT iFrom);
-L3INT Q932ProcRetrieveTE(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT iFrom);
-L3INT Q932ProcRetrieveAckTE(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT iFrom);
-L3INT Q932ProcRetrieveRejectTE(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT iFrom);
+L3INT Q932ProcFacilityTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom);
+L3INT Q932ProcHoldTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom);
+L3INT Q932ProcHoldAckTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom);
+L3INT Q932ProcHoldRejectTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom);
+L3INT Q932ProcRegisterTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom);
+L3INT Q932ProcRetrieveTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom);
+L3INT Q932ProcRetrieveAckTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom);
+L3INT Q932ProcRetrieveRejectTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom);
 
-L3INT Q932ProcFacilityNT(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT iFrom);
-L3INT Q932ProcHoldNT(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT iFrom);
-L3INT Q932ProcHoldAckNT(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT iFrom);
-L3INT Q932ProcHoldRejectNT(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT iFrom);
-L3INT Q932ProcRegisterNT(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT iFrom);
-L3INT Q932ProcRetrieveNT(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT iFrom);
-L3INT Q932ProcRetrieveAckNT(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT iFrom);
-L3INT Q932ProcRetrieveRejectNT(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT iFrom);
+L3INT Q932ProcFacilityNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom);
+L3INT Q932ProcHoldNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom);
+L3INT Q932ProcHoldAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom);
+L3INT Q932ProcHoldRejectNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom);
+L3INT Q932ProcRegisterNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom);
+L3INT Q932ProcRetrieveNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom);
+L3INT Q932ProcRetrieveAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom);
+L3INT Q932ProcRetrieveRejectNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom);
 
-L3INT Q932Pmes_Facility(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q932Pmes_Hold(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q932Pmes_HoldAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q932Pmes_HoldReject(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q932Pmes_Register(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q932Pmes_Retrieve(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q932Pmes_RetrieveAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q932Pmes_RetrieveReject(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q932Pmes_Facility(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q932Pmes_Hold(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q932Pmes_HoldAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q932Pmes_HoldReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q932Pmes_Register(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q932Pmes_Retrieve(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q932Pmes_RetrieveAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q932Pmes_RetrieveReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
 
-L3INT Q932Umes_Facility(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q932Umes_Hold(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q932Umes_HoldAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q932Umes_HoldReject(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q932Umes_Register(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q932Umes_Retrieve(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q932Umes_RetrieveAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q932Umes_RetrieveReject(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q932Umes_Facility(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q932Umes_Hold(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q932Umes_HoldAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q932Umes_HoldReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q932Umes_Register(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q932Umes_Retrieve(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q932Umes_RetrieveAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q932Umes_RetrieveReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);

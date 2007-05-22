@@ -1917,7 +1917,7 @@ typedef struct
 				the trunk Info entry.
 
 *****************************************************************************/
-typedef struct Q931_TrunkInfo Q931_TrunkInfo;
+typedef struct Q931_TrunkInfo Q931_TrunkInfo_t;
 
 typedef L3INT (*Q931TxCB_t) (void *,L3UCHAR *, L3INT);
 typedef L3INT (*Q931ErrorCB_t) (void *,L3INT,L3INT,L3INT);
@@ -2070,13 +2070,13 @@ typedef struct
   The proc tables are defined in Q931.c and initialized in Q931Initialize.
 
 *****************************************************************************/
-extern L3INT (*Q931Proc  [Q931MAXDLCT][Q931MAXMES])   (Q931_TrunkInfo *pTrunk, L3UCHAR *,L3INT);
+extern L3INT (*Q931Proc  [Q931MAXDLCT][Q931MAXMES])   (Q931_TrunkInfo_t *pTrunk, L3UCHAR *,L3INT);
 
-extern L3INT (*Q931Umes  [Q931MAXDLCT][Q931MAXMES])   (Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size);
-extern L3INT (*Q931Pmes  [Q931MAXDLCT][Q931MAXMES])   (Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+extern L3INT (*Q931Umes  [Q931MAXDLCT][Q931MAXMES])   (Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size);
+extern L3INT (*Q931Pmes  [Q931MAXDLCT][Q931MAXMES])   (Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
 
-extern L3INT (*Q931Uie   [Q931MAXDLCT][Q931MAXIE] )   (Q931_TrunkInfo *pTrunk,ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-extern L3INT (*Q931Pie   [Q931MAXDLCT][Q931MAXIE] )   (Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+extern L3INT (*Q931Uie   [Q931MAXDLCT][Q931MAXIE] )   (Q931_TrunkInfo_t *pTrunk,ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+extern L3INT (*Q931Pie   [Q931MAXDLCT][Q931MAXIE] )   (Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
 
 /*****************************************************************************
     
@@ -2185,7 +2185,7 @@ extern L3INT (*Q931Pie   [Q931MAXDLCT][Q931MAXIE] )   (Q931_TrunkInfo *pTrunk,L3
 
 *****************************************************************************/
 
-extern Q931_TrunkInfo Q931Trunk[Q931MAXTRUNKS];
+extern Q931_TrunkInfo_t Q931Trunk[Q931MAXTRUNKS];
 
 #include "Q932.h"
 
@@ -2195,186 +2195,186 @@ extern Q931_TrunkInfo Q931Trunk[Q931MAXTRUNKS];
 
 *****************************************************************************/
 
-L3INT Q931Pie_BearerCap(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_ChanID(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_ProgInd(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_Display(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_Signal(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_HLComp(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_Segment(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_DateTime(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_Cause(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_SendComplete(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_KeypadFac(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_NotifInd(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_CallID(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_RepeatInd(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_NetFac(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_CallingNum(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_CallingSub(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_CalledNum(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_CalledSub(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_CalledNum(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_TransNetSel(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_LLComp(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_CallState(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_RestartInd(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_UserUser(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_BearerCap(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_ChanID(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_ProgInd(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_Display(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_Signal(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_HLComp(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_Segment(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_DateTime(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_Cause(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_SendComplete(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_KeypadFac(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_NotifInd(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_CallID(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_RepeatInd(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_NetFac(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_CallingNum(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_CallingSub(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_CalledNum(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_CalledSub(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_CalledNum(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_TransNetSel(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_LLComp(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_CallState(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_RestartInd(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT Q931Pie_UserUser(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
 
-L3INT Q931Uie_BearerCap(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3USHORT Q931Uie_CRV(Q931_TrunkInfo *pTrunk,L3UCHAR * IBuf, L3UCHAR *OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_ChanID(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR *OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_ProgInd(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_Display(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_Signal(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_HLComp(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_Segment(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_DateTime(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_Cause(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_SendComplete(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_KeypadFac(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_NotifInd(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_CallID(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_RepeatInd(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_NetFac(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_CallingNum(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_CallingSub(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_CalledNum(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_CalledSub(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_TransNetSel(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_LLComp(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_CallState(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_RestartInd(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_UserUser(Q931_TrunkInfo *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_BearerCap(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3USHORT Q931Uie_CRV(Q931_TrunkInfo_t *pTrunk,L3UCHAR * IBuf, L3UCHAR *OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_ChanID(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR *OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_ProgInd(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_Display(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_Signal(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_HLComp(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_Segment(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_DateTime(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_Cause(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_SendComplete(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_KeypadFac(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_NotifInd(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_CallID(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_RepeatInd(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_NetFac(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_CallingNum(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_CallingSub(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_CalledNum(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_CalledSub(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_TransNetSel(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_LLComp(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_CallState(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_RestartInd(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT Q931Uie_UserUser(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
 
 /*****************************************************************************
 
   Q.931 Message Pack/Unpack functions. Implemented in Q931mes.c
 
 *****************************************************************************/
-L3INT Q931Pmes_Alerting(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_CallProceeding(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_Connect(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_ConnectAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_Progress(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_Setup(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_SetupAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_Resume(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_ResumeAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_ResumeReject(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_Suspend(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_SuspendAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_SuspendReject(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_UserInformation(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_Disconnect(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_Release(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_ReleaseComplete(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_Restart(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_RestartAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_CongestionControl(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_Information(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_Notify(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_Segment(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_Status(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q931Pmes_StatusEnquiry(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_Alerting(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_CallProceeding(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_Connect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_ConnectAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_Progress(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_SetupAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_Resume(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_ResumeAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_ResumeReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_Suspend(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_SuspendAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_SuspendReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_UserInformation(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_Disconnect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_Release(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_ReleaseComplete(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_Restart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_RestartAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_CongestionControl(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_Information(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_Notify(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_Segment(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_Status(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_StatusEnquiry(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
 
-L3INT Q931Umes_Alerting(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_CallProceeding(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_Connect(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_ConnectAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_Progress(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_Setup(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_SetupAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_Resume(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_ResumeAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_ResumeReject(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_Suspend(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_SuspendAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_SuspendReject(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_UserInformation(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_Disconnect(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_Release(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_ReleaseComplete(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_Restart(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_RestartAck(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_CongestionControl(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_Information(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_Notify(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_Segment(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_Status(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q931Umes_StatusEnquiry(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_Alerting(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_CallProceeding(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_Connect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_ConnectAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_Progress(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_SetupAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_Resume(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_ResumeAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_ResumeReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_Suspend(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_SuspendAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_SuspendReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_UserInformation(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_Disconnect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_Release(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_ReleaseComplete(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_Restart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_RestartAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_CongestionControl(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_Information(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_Notify(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_Segment(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_Status(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_StatusEnquiry(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
 
 /*****************************************************************************
 
   Q.931 Process Function Prototyping. Implemented in Q931StateTE.c
 
 *****************************************************************************/
-L3INT Q931ProcAlertingTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcCallProceedingTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcConnectTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcConnectAckTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcProgressTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcSetupTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcSetupAckTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcResumeTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcResumeAckTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcResumeRejectTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcSuspendTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcSuspendAckTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcSuspendRejectTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcUserInformationTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcDisconnectTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcReleaseTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcReleaseCompleteTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcRestartTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcRestartAckTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcCongestionControlTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcInformationTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcNotifyTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcStatusTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcStatusEnquiryTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcSegmentTE(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcAlertingTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcCallProceedingTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcConnectTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcConnectAckTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcProgressTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcSetupTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcSetupAckTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcResumeTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcResumeAckTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcResumeRejectTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcSuspendTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcSuspendAckTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcSuspendRejectTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcUserInformationTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcDisconnectTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcReleaseTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcReleaseCompleteTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcRestartTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcRestartAckTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcCongestionControlTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcInformationTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcNotifyTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcStatusTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcStatusEnquiryTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcSegmentTE(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
 
-L3INT Q931ProcAlertingNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcCallProceedingNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcConnectNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcConnectAckNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcProgressNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcSetupNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcSetupAckNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcResumeNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcResumeAckNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcResumeRejectNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcSuspendNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcSuspendAckNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcSuspendRejectNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcUserInformationNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcDisconnectNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcReleaseNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcReleaseCompleteNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcRestartNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcRestartAckNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcCongestionControlNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcInformationNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcNotifyNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcStatusNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcStatusEnquiryNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcSegmentNT(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcAlertingNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcCallProceedingNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcConnectNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcConnectAckNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcProgressNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcSetupNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcSetupAckNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcResumeNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcResumeAckNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcResumeRejectNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcSuspendNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcSuspendAckNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcSuspendRejectNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcUserInformationNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcDisconnectNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcReleaseNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcReleaseCompleteNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcRestartNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcRestartAckNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcCongestionControlNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcInformationNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcNotifyNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcStatusNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcStatusEnquiryNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcSegmentNT(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
 
-L3INT Q931ProcUnknownMessage(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
-L3INT Q931ProcUnexpectedMessage(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcUnknownMessage(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
+L3INT Q931ProcUnexpectedMessage(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom);
 
 /*****************************************************************************
 
   Interface Function Prototypes. Implemented in Q931.c
 
 *****************************************************************************/
-void    Q931TimeTick(Q931_TrunkInfo *pTrunk, L3ULONG ms);
-L3INT   Q931Rx23(Q931_TrunkInfo *pTrunk, L3UCHAR * Mes, L3INT Size);
-L3INT   Q931Tx32(Q931_TrunkInfo *pTrunk, L3UCHAR * Mes, L3INT Size);
-L3INT   Q931Rx43(Q931_TrunkInfo *pTrunk, L3UCHAR * Mes, L3INT Size);
-L3INT   Q931Tx34(Q931_TrunkInfo *pTrunk, L3UCHAR * Mes, L3INT Size);
-void    Q931SetError(Q931_TrunkInfo *pTrunk,L3INT ErrID, L3INT ErrPar1, L3INT ErrPar2);
+void    Q931TimeTick(Q931_TrunkInfo_t *pTrunk, L3ULONG ms);
+L3INT   Q931Rx23(Q931_TrunkInfo_t *pTrunk, L3UCHAR * Mes, L3INT Size);
+L3INT   Q931Tx32(Q931_TrunkInfo_t *pTrunk, L3UCHAR * Mes, L3INT Size);
+L3INT   Q931Rx43(Q931_TrunkInfo_t *pTrunk, L3UCHAR * Mes, L3INT Size);
+L3INT   Q931Tx34(Q931_TrunkInfo_t *pTrunk, L3UCHAR * Mes, L3INT Size);
+void    Q931SetError(Q931_TrunkInfo_t *pTrunk,L3INT ErrID, L3INT ErrPar1, L3INT ErrPar2);
 
 void	Q931SetDefaultErrorCB(Q931ErrorCB_t Q931ErrorPar);
 
@@ -2384,25 +2384,25 @@ void    Q931SetMesCreateCB(L3INT (*callback)());
 void    Q931SetDialectCreateCB(L3INT (*callback)(L3INT));
 void    Q931SetHeaderSpace(L3INT space);
 void Q931SetMesProc(L3UCHAR mes, L3UCHAR dialect, 
-                L3INT (*Q931ProcFunc)(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT iFrom),
-                L3INT (*Q931UmesFunc)(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size),
-                L3INT (*Q931PmesFunc)(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize));
+                L3INT (*Q931ProcFunc)(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom),
+                L3INT (*Q931UmesFunc)(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size),
+                L3INT (*Q931PmesFunc)(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize));
 
 void Q931SetIEProc(L3UCHAR iec, L3UCHAR dialect, 
-			   L3INT (*Q931PieProc)(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet),
-			   L3INT (*Q931UieProc)(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)); 
+			   L3INT (*Q931PieProc)(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet),
+			   L3INT (*Q931UieProc)(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)); 
 
 void Q931Initialize();
 void Q931AddDialect(L3UCHAR iDialect, void (*Q931CreateDialectCB)(L3UCHAR iDialect));
 L3INT Q931InitMesSetup(Q931mes_Setup *p);
 
-L3INT	Q931CreateCRV(Q931_TrunkInfo *pTrunk, L3INT * callIndex);
-L3INT	Q931AllocateCRV(Q931_TrunkInfo *pTrunk, L3INT iCRV, L3INT * callIndex);
-L3INT   Q931FindCRV(Q931_TrunkInfo *pTrunk, L3INT crv, L3INT *callindex);
-L3INT	Q931GetCallState(Q931_TrunkInfo *pTrunk, L3INT iCRV);
-L3INT	Q931StartTimer(Q931_TrunkInfo *pTrunk, L3INT callIndex, L3USHORT iTimer);
-L3INT	Q931StopTimer(Q931_TrunkInfo *pTrunk, L3INT callindex, L3USHORT iTimer);
-L3INT	Q931SetState(Q931_TrunkInfo *pTrunk, L3INT callIndex, L3INT iState);
+L3INT	Q931CreateCRV(Q931_TrunkInfo_t *pTrunk, L3INT * callIndex);
+L3INT	Q931AllocateCRV(Q931_TrunkInfo_t *pTrunk, L3INT iCRV, L3INT * callIndex);
+L3INT   Q931FindCRV(Q931_TrunkInfo_t *pTrunk, L3INT crv, L3INT *callindex);
+L3INT	Q931GetCallState(Q931_TrunkInfo_t *pTrunk, L3INT iCRV);
+L3INT	Q931StartTimer(Q931_TrunkInfo_t *pTrunk, L3INT callIndex, L3USHORT iTimer);
+L3INT	Q931StopTimer(Q931_TrunkInfo_t *pTrunk, L3INT callindex, L3USHORT iTimer);
+L3INT	Q931SetState(Q931_TrunkInfo_t *pTrunk, L3INT callIndex, L3INT iState);
 L3ULONG Q931GetTime();
 void	Q931AddStateEntry(L3UCHAR iD, L3INT iState, L3INT iMes, L3UCHAR cDir);
 L3BOOL	Q931IsEventLegal(L3UCHAR iD, L3INT iState, L3INT iMes, L3UCHAR cDir);
@@ -2413,7 +2413,7 @@ L3BOOL	Q931IsEventLegal(L3UCHAR iD, L3INT iState, L3INT iMes, L3UCHAR cDir);
 
 *****************************************************************************/
 ie Q931AppendIE(L3UCHAR *pm, L3UCHAR *pi);
-L3INT Q931GetUniqueCRV(Q931_TrunkInfo *pTrunk);
+L3INT Q931GetUniqueCRV(Q931_TrunkInfo_t *pTrunk);
 
 L3INT Q931InitIEBearerCap(Q931ie_BearerCap *p);
 L3INT Q931InitIEChanID(Q931ie_ChanID *p);
@@ -2431,10 +2431,10 @@ L3INT Q931InitIETransNetSel(Q931ie_TransNetSel * pIE);
 L3INT Q931InitIELLComp(Q931ie_LLComp * pIE);
 L3INT Q931InitIEHLComp(Q931ie_HLComp * pIE);
 
-L3INT Q931Disconnect(Q931_TrunkInfo *pTrunk, L3INT iTo, L3INT iCRV, L3INT iCause);
-L3INT Q931ReleaseComplete(Q931_TrunkInfo *pTrunk, L3INT iTo);
+L3INT Q931Disconnect(Q931_TrunkInfo_t *pTrunk, L3INT iTo, L3INT iCRV, L3INT iCause);
+L3INT Q931ReleaseComplete(Q931_TrunkInfo_t *pTrunk, L3INT iTo);
 
-L3INT Q931Api_InitTrunk(Q931_TrunkInfo *pTrunk,
+L3INT Q931Api_InitTrunk(Q931_TrunkInfo_t *pTrunk,
 						Q931Dialect_t Dialect,
 						Q931NetUser_t NetUser,
 						Q931_TrunkType_t TrunkType,

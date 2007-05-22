@@ -55,13 +55,13 @@
   these table entries during system inititialization of a stack.
 
 *****************************************************************************/
-L3INT (*Q931Proc  [Q931MAXDLCT][Q931MAXMES])	(Q931_TrunkInfo *pTrunk, L3UCHAR *,L3INT);
+L3INT (*Q931Proc  [Q931MAXDLCT][Q931MAXMES])	(Q931_TrunkInfo_t *pTrunk, L3UCHAR *,L3INT);
 
-L3INT (*Q931Umes  [Q931MAXDLCT][Q931MAXMES])	(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size);
-L3INT (*Q931Pmes  [Q931MAXDLCT][Q931MAXMES])	(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT (*Q931Umes  [Q931MAXDLCT][Q931MAXMES])	(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size);
+L3INT (*Q931Pmes  [Q931MAXDLCT][Q931MAXMES])	(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
 
-L3INT (*Q931Uie   [Q931MAXDLCT][Q931MAXIE])		(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT (*Q931Pie   [Q931MAXDLCT][Q931MAXIE])		(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+L3INT (*Q931Uie   [Q931MAXDLCT][Q931MAXIE])		(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+L3INT (*Q931Pie   [Q931MAXDLCT][Q931MAXIE])		(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
 
 void  (*Q931CreateDialectCB[Q931MAXDLCT])       (L3UCHAR iDialect)=
 {
@@ -130,7 +130,7 @@ void Q931SetL2HeaderSpace(L3INT space)
   Description:  Dummy function for message processing.
 
 *****************************************************************************/
-L3INT Q931ProcDummy(Q931_TrunkInfo *pTrunk, L3UCHAR * b,L3INT c)
+L3INT Q931ProcDummy(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b,L3INT c)
 {
     return Q931E_INTERNAL;
 }
@@ -142,7 +142,7 @@ L3INT Q931ProcDummy(Q931_TrunkInfo *pTrunk, L3UCHAR * b,L3INT c)
   Description:  Dummy function for message processing
 
 *****************************************************************************/
-L3INT Q931UmesDummy(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
+L3INT Q931UmesDummy(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
     return Q931E_UNKNOWN_MESSAGE;
 }
@@ -154,7 +154,7 @@ L3INT Q931UmesDummy(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT I
   Description:  Dummy function for message processing
 
 *****************************************************************************/
-L3INT Q931UieDummy(Q931_TrunkInfo *pTrunk,ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931UieDummy(Q931_TrunkInfo_t *pTrunk,ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
     return Q931E_UNKNOWN_IE;
 }
@@ -166,7 +166,7 @@ L3INT Q931UieDummy(Q931_TrunkInfo *pTrunk,ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf
   Description:  Dummy function for message processing
 
 *****************************************************************************/
-L3INT Q931PmesDummy(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
+L3INT Q931PmesDummy(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     return Q931E_UNKNOWN_MESSAGE;
 }
@@ -178,7 +178,7 @@ L3INT Q931PmesDummy(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3INT ISize, L3UCHAR *
   Description:  Dummy function for message processing
 
 *****************************************************************************/
-L3INT Q931PieDummy(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931PieDummy(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     return Q931E_UNKNOWN_IE;
 }
@@ -190,7 +190,7 @@ L3INT Q931PieDummy(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *O
   Description:  Dummy function for message processing
 
 *****************************************************************************/
-L3INT Q931TxDummy(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT n)
+L3INT Q931TxDummy(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT n)
 {
     return Q931E_MISSING_CB;
 }
@@ -275,7 +275,7 @@ void Q931Initialize()
   Return Value: none
 
 *****************************************************************************/
-void Q931TimeTick(Q931_TrunkInfo *pTrunk, L3ULONG ms)
+void Q931TimeTick(Q931_TrunkInfo_t *pTrunk, L3ULONG ms)
 {
 	(void)pTrunk;
     ms=ms; /* avoid warning for now. */
@@ -308,26 +308,27 @@ void Q931TimeTick(Q931_TrunkInfo *pTrunk, L3ULONG ms)
 				see q931errors.h for details.
 
 *****************************************************************************/
-L3INT Q931Rx23(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT Size)
+L3INT Q931Rx23(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT Size)
 {
     L3UCHAR *Mes = &buf[Q931L2HeaderSpace];
 	L3INT RetCode = Q931E_NO_ERROR;
-
-    Q931mes_Alerting * m = (Q931mes_Alerting*)Mes;
+    Q931mes_Alerting *m = (Q931mes_Alerting *) pTrunk->L3Buf;
     L3INT ISize;
+
     L3INT IOff = 0;
 
     /* Protocol Discriminator */
     m->ProtDisc = Mes[IOff++];
 
     /* CRV */
-    m->CRV = Q931Uie_CRV(pTrunk, Mes,m->buf, &IOff, &ISize);
+    m->CRV = Q931Uie_CRV(pTrunk, Mes, m->buf, &IOff, &ISize);
 
     /* Message Type */
     m->MesType = Mes[IOff++];
 
     /* Call table proc to unpack codec message */
-	RetCode = Q931Umes[pTrunk->Dialect][m->MesType](pTrunk, Mes, pTrunk->L3Buf,Q931L4HeaderSpace,Size- Q931L4HeaderSpace);
+	RetCode = Q931Umes[pTrunk->Dialect][m->MesType](pTrunk, Mes, pTrunk->L3Buf, Q931L4HeaderSpace, Size - Q931L4HeaderSpace);
+
 	if(RetCode >= Q931E_NO_ERROR)
 	{
 		RetCode=Q931Proc[pTrunk->Dialect][m->MesType](pTrunk, pTrunk->L3Buf, 2);
@@ -349,7 +350,7 @@ L3INT Q931Rx23(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT Size)
 				see q931errors.h for details.
 
 *****************************************************************************/
-L3INT Q931Tx34(Q931_TrunkInfo *pTrunk, L3UCHAR * Mes, L3INT Size)
+L3INT Q931Tx34(Q931_TrunkInfo_t *pTrunk, L3UCHAR * Mes, L3INT Size)
 {
 	if (pTrunk->Q931Tx34CBProc) {
 		return pTrunk->Q931Tx34CBProc(pTrunk->PrivateData34, Mes, Size);
@@ -371,7 +372,7 @@ L3INT Q931Tx34(Q931_TrunkInfo *pTrunk, L3UCHAR * Mes, L3INT Size)
 				see q931errors.h for details.
 
 *****************************************************************************/
-L3INT Q931Rx43(Q931_TrunkInfo *pTrunk,L3UCHAR * buf, L3INT Size)
+L3INT Q931Rx43(Q931_TrunkInfo_t *pTrunk,L3UCHAR * buf, L3INT Size)
 {
     Q931mes_Header *ptr = (Q931mes_Header*)&buf[Q931L4HeaderSpace];
 	L3INT RetCode = Q931E_NO_ERROR;
@@ -398,7 +399,7 @@ L3INT Q931Rx43(Q931_TrunkInfo *pTrunk,L3UCHAR * buf, L3INT Size)
 				see q931errors.h for details.
 
 *****************************************************************************/
-L3INT Q931Tx32(Q931_TrunkInfo *pTrunk, L3UCHAR * Mes, L3INT Size)
+L3INT Q931Tx32(Q931_TrunkInfo_t *pTrunk, L3UCHAR * Mes, L3INT Size)
 {
     L3INT     OSize;
     Q931mes_Alerting *ptr = (Q931mes_Alerting*)Mes;
@@ -432,7 +433,7 @@ L3INT Q931Tx32(Q931_TrunkInfo *pTrunk, L3UCHAR * Mes, L3INT Size)
 
 
 *****************************************************************************/
-void Q931SetError(Q931_TrunkInfo *pTrunk,L3INT ErrID, L3INT ErrPar1, L3INT ErrPar2)
+void Q931SetError(Q931_TrunkInfo_t *pTrunk,L3INT ErrID, L3INT ErrPar1, L3INT ErrPar2)
 {
 	if (pTrunk->Q931ErrorCBProc) {
 		pTrunk->Q931ErrorCBProc(pTrunk->PrivateData34, ErrID, ErrPar1, ErrPar2);
@@ -461,7 +462,7 @@ void Q931SetDefaultErrorCB(Q931ErrorCB_t Q931ErrorPar)
 				see q931errors.h for details.
 
 *****************************************************************************/
-L3INT	Q931CreateCRV(Q931_TrunkInfo *pTrunk, L3INT * callIndex)
+L3INT	Q931CreateCRV(Q931_TrunkInfo_t *pTrunk, L3INT * callIndex)
 {
 	L3INT CRV = Q931GetUniqueCRV(pTrunk);
 
@@ -483,7 +484,7 @@ L3INT	Q931CreateCRV(Q931_TrunkInfo *pTrunk, L3INT * callIndex)
 				see q931errors.h for details.
 
 *****************************************************************************/
-L3INT	Q931AllocateCRV(Q931_TrunkInfo *pTrunk, L3INT iCRV, L3INT * callIndex)
+L3INT	Q931AllocateCRV(Q931_TrunkInfo_t *pTrunk, L3INT iCRV, L3INT * callIndex)
 {
     L3INT x;
 	for(x=0; x < Q931MAXCALLPERTRUNK; x++)
@@ -516,7 +517,7 @@ L3INT	Q931AllocateCRV(Q931_TrunkInfo *pTrunk, L3INT iCRV, L3INT * callIndex)
   Return Value: Call State.
 
 *****************************************************************************/
-L3INT	Q931GetCallState(Q931_TrunkInfo *pTrunk, L3INT iCRV)
+L3INT	Q931GetCallState(Q931_TrunkInfo_t *pTrunk, L3INT iCRV)
 {
     L3INT x;
 	for(x=0; x < Q931MAXCALLPERTRUNK; x++)
@@ -542,21 +543,21 @@ L3INT	Q931GetCallState(Q931_TrunkInfo *pTrunk, L3INT iCRV)
                 callindex   call index.
                 iTimer      timer id
 *****************************************************************************/
-L3INT Q931StartTimer(Q931_TrunkInfo *pTrunk, L3INT callIndex, L3USHORT iTimerID)
+L3INT Q931StartTimer(Q931_TrunkInfo_t *pTrunk, L3INT callIndex, L3USHORT iTimerID)
 {
     pTrunk->call[callIndex].Timer   = Q931GetTime();  
     pTrunk->call[callIndex].TimerID = iTimerID;
     return 0;
 }
 
-L3INT Q931StopTimer(Q931_TrunkInfo *pTrunk, L3INT callindex, L3USHORT iTimerID)
+L3INT Q931StopTimer(Q931_TrunkInfo_t *pTrunk, L3INT callindex, L3USHORT iTimerID)
 {
     if(pTrunk->call[callindex].TimerID == iTimerID)
         pTrunk->call[callindex].TimerID = 0;
     return 0;
 }
 
-L3INT Q931SetState(Q931_TrunkInfo *pTrunk, L3INT callIndex, L3INT iState)
+L3INT Q931SetState(Q931_TrunkInfo_t *pTrunk, L3INT callIndex, L3INT iState)
 {
     pTrunk->call[callIndex].State = iState;
 
@@ -584,7 +585,7 @@ void Q931SetGetTimeCB(L3ULONG (*callback)())
     Q931GetTimeProc = callback;
 }
 
-L3INT Q931FindCRV(Q931_TrunkInfo *pTrunk, L3INT crv, L3INT *callindex)
+L3INT Q931FindCRV(Q931_TrunkInfo_t *pTrunk, L3INT crv, L3INT *callindex)
 {
     L3INT x;
 	for(x=0; x < Q931MAXCALLPERTRUNK; x++)
