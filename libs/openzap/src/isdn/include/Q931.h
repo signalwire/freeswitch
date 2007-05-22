@@ -2395,6 +2395,7 @@ void Q931SetIEProc(L3UCHAR iec, L3UCHAR dialect,
 void Q931Initialize();
 void Q931AddDialect(L3UCHAR iDialect, void (*Q931CreateDialectCB)(L3UCHAR iDialect));
 L3INT Q931InitMesSetup(Q931mes_Setup *p);
+L3INT Q931InitMesRestartAck(Q931mes_RestartAck * pMes);
 
 L3INT	Q931CreateCRV(Q931_TrunkInfo_t *pTrunk, L3INT * callIndex);
 L3INT	Q931AllocateCRV(Q931_TrunkInfo_t *pTrunk, L3INT iCRV, L3INT * callIndex);
