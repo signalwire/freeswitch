@@ -2369,7 +2369,7 @@ L3INT Q931ProcUnexpectedMessage(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom)
   Interface Function Prototypes. Implemented in Q931.c
 
 *****************************************************************************/
-void    Q931TimeTick(L3ULONG ms);
+void    Q931TimeTick(Q931_TrunkInfo *pTrunk, L3ULONG ms);
 L3INT   Q931Rx23(Q931_TrunkInfo *pTrunk, L3UCHAR * Mes, L3INT Size);
 L3INT   Q931Tx32(Q931_TrunkInfo *pTrunk, L3UCHAR * Mes, L3INT Size);
 L3INT   Q931Rx43(Q931_TrunkInfo *pTrunk, L3UCHAR * Mes, L3INT Size);

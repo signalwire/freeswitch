@@ -275,8 +275,9 @@ void Q931Initialize()
   Return Value: none
 
 *****************************************************************************/
-void Q931TimeTick(L3ULONG ms)
+void Q931TimeTick(Q931_TrunkInfo *pTrunk, L3ULONG ms)
 {
+	(void)pTrunk;
     ms=ms; /* avoid warning for now. */
 
 	/*  TODO: Loop through all active calls, check timers and call timour procs
