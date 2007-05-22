@@ -53,8 +53,9 @@ isdn/Q931StateNT.o \
 isdn/Q931StateTE.o \
 isdn/Q932mes.o 
 
-
-CFLAGS=$(ZAP_CFLAGS) -I`pwd`/include -I`pwd`/isdn/include
+PWD=$(shell pwd)
+INCS=-I$(PWD)/include -I$(PWD)/isdn/include
+CFLAGS=$(ZAP_CFLAGS) $(INCS)
 MYLIB=libopenzap.a
 TMP=-I../../libpri-1.2.4 -Iinclude -I. -w
 
@@ -67,14 +68,16 @@ $(MYLIB): $(OBJS)
 	ranlib $(MYLIB)
 
 testapp: testapp.c $(MYLIB)
-	$(CC) -L. -Iinclude testapp.c -o testapp -lopenzap -lm -lpthread
+	$(CC) $(INCS) -L. testapp.c -o testapp -lopenzap -lm -lpthread
 
+testisdn: testisdn.c $(MYLIB)
+	$(CC) $(INCS) -L. testisdn.c -o testisdn -lopenzap -lm -lpthread
 
 priserver.o: priserver.c
-	$(CC) $(TMP) -c priserver.c -o priserver.o 
+	$(CC) $(INCS) $(TMP) -c priserver.c -o priserver.o 
 
 sangoma_pri.o: sangoma_pri.c
-	$(CC) $(TMP) -c sangoma_pri.c -o sangoma_pri.o
+	$(CC) $(INCS) $(TMP) -c sangoma_pri.c -o sangoma_pri.o
 
 priserver: $(MYLIB) priserver.o sangoma_pri.o
 	$(CC) sangoma_pri.o priserver.o -L. -o priserver -lopenzap -lm -lpthread ../../libpri-1.2.4/libpri.a

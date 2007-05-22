@@ -6,7 +6,7 @@ int main(int argc, char *argv[])
 	zap_channel_t *chan;
 	unsigned ms = 20;
 	zap_codec_t codec = ZAP_CODEC_SLIN;
-	unsigned runs = 4;
+	unsigned runs = 1;
 
 	if (zap_global_init() != ZAP_SUCCESS) {
 		fprintf(stderr, "Error loading OpenZAP\n");

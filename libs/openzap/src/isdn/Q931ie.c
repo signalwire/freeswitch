@@ -126,7 +126,7 @@ L3INT Q931ReadExt(L3UCHAR * IBuf, L3INT Off)
 
 *****************************************************************************/
 
-L3INT Q931Uie_BearerCap(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff) 
+L3INT Q931Uie_BearerCap(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff) 
 {
     Q931ie_BearerCap * pie = (Q931ie_BearerCap*)OBuf;
     L3INT Off = 0;
@@ -310,7 +310,7 @@ L3INT Q931Uie_BearerCap(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR
 
 *****************************************************************************/
 
-L3INT Q931Pie_BearerCap(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_BearerCap(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_BearerCap * pIE = (Q931ie_BearerCap*)IBuf;
     L3INT rc=0;
@@ -431,7 +431,7 @@ L3INT Q931Pie_BearerCap(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_CallID(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_CallID(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
     Q931ie_CallID * pie = (Q931ie_CallID*)OBuf;
     L3INT Off = 0;
@@ -478,7 +478,7 @@ L3INT Q931Uie_CallID(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * 
 
 *****************************************************************************/
 
-L3INT Q931Pie_CallID(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_CallID(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_CallID * pIE = (Q931ie_CallID*)IBuf;
     L3INT rc=0;
@@ -517,7 +517,7 @@ L3INT Q931Pie_CallID(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_CallState(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_CallState(Q931_TrunkInfo_t *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
     Q931ie_CallState * pie = (Q931ie_CallState*)OBuf;
     L3INT Off = 0;
@@ -562,7 +562,7 @@ L3INT Q931Uie_CallState(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR 
   Return Value: Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_CallState(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_CallState(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_CallState * pIE = (Q931ie_CallState*)IBuf;
     L3INT rc=0;
@@ -594,7 +594,7 @@ L3INT Q931Pie_CallState(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_CalledSub(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_CalledSub(Q931_TrunkInfo_t *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
     Q931ie_CalledSub * pie = (Q931ie_CalledSub*)OBuf;
     L3INT Off = 0;
@@ -646,7 +646,7 @@ L3INT Q931Uie_CalledSub(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR 
   Return Value:    Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_CalledSub(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_CalledSub(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_CalledSub * pIE = (Q931ie_CalledSub*)IBuf;
     L3INT rc=0;
@@ -690,7 +690,7 @@ L3INT Q931Pie_CalledSub(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_CalledNum(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_CalledNum(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
     Q931ie_CalledNum * pie = (Q931ie_CalledNum*)OBuf;
     L3INT Off = 0;
@@ -739,7 +739,7 @@ L3INT Q931Uie_CalledNum(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR
   Return Value:    Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_CalledNum(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_CalledNum(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_CalledSub * pIE = (Q931ie_CalledSub*)IBuf;
     L3INT rc=0;
@@ -783,7 +783,7 @@ L3INT Q931Pie_CalledNum(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_CallingNum(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_CallingNum(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
      Q931ie_CallingNum * pie = (Q931ie_CallingNum*)OBuf;
     L3INT Off = 0;
@@ -843,7 +843,7 @@ L3INT Q931Uie_CallingNum(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHA
   Return Value:    Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_CallingNum(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_CallingNum(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_CallingSub * pIE = (Q931ie_CallingSub*)IBuf;
     L3INT rc=0;
@@ -897,7 +897,7 @@ L3INT Q931Pie_CallingNum(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_CallingSub(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_CallingSub(Q931_TrunkInfo_t *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
     Q931ie_CallingSub * pie = (Q931ie_CallingSub*)OBuf;
     L3INT Off = 0;
@@ -949,7 +949,7 @@ L3INT Q931Uie_CallingSub(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR
   Return Value:    Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_CallingSub(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_CallingSub(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_CallingSub * pIE = (Q931ie_CallingSub*)IBuf;
     L3INT rc=0;
@@ -993,7 +993,7 @@ L3INT Q931Pie_CallingSub(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_Cause(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff) 
+L3INT Q931Uie_Cause(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff) 
 {
     Q931ie_Cause * pie = (Q931ie_Cause*)OBuf;
     L3INT Off = 0;
@@ -1045,7 +1045,7 @@ L3INT Q931Uie_Cause(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * O
   Return Value:    Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_Cause(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_Cause(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_Cause * pIE = (Q931ie_Cause*)IBuf;
     L3INT rc=0;
@@ -1085,7 +1085,7 @@ L3INT Q931Pie_Cause(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT 
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_CongLevel(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff) 
+L3INT Q931Uie_CongLevel(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff) 
 {
     Q931ie_CongLevel *pie = (Q931ie_CongLevel*)OBuf;
     L3INT Off = 0;
@@ -1117,7 +1117,7 @@ L3INT Q931Uie_CongLevel(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR
   Return Value: Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_CongLevel(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_CongLevel(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_CongLevel * pIE = (Q931ie_CongLevel*)IBuf;
     L3INT rc=0;
@@ -1143,7 +1143,7 @@ L3INT Q931Pie_CongLevel(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
   Return Value:    Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Uie_ChanID(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR *OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_ChanID(Q931_TrunkInfo_t *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR *OBuf, L3INT *IOff, L3INT *OOff)
 {
     Q931ie_ChanID * pie = (Q931ie_ChanID*)OBuf;
     L3INT Off = 0;
@@ -1224,7 +1224,7 @@ L3INT Q931Uie_ChanID(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR *OB
   Return Value:    Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_ChanID(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_ChanID(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_ChanID * pIE = (Q931ie_ChanID*)IBuf;
     L3INT rc=Q931E_NO_ERROR;
@@ -1289,7 +1289,7 @@ L3INT Q931Pie_ChanID(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT
   Return Value: CRV
 
 *****************************************************************************/
-L3USHORT Q931Uie_CRV(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *IOff, L3INT *OOff)
+L3USHORT Q931Uie_CRV(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *IOff, L3INT *OOff)
 {
     L3INT Octet = *IOff;
     L3INT l = IBuf[Octet]; 
@@ -1336,7 +1336,7 @@ L3USHORT Q931Uie_CRV(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_DateTime(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_DateTime(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *IOff, L3INT *OOff)
 {
     Q931ie_DateTime * pie = (Q931ie_DateTime*)OBuf;
     L3INT Off = 0;
@@ -1409,7 +1409,7 @@ L3INT Q931Uie_DateTime(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR *IBuf, L3UCHAR *
   Return Value:    Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_DateTime(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_DateTime(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_DateTime * pIE = (Q931ie_DateTime*)IBuf;
     L3INT rc=0;
@@ -1455,7 +1455,7 @@ L3INT Q931Pie_DateTime(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_Display(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_Display(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
     Q931ie_Display * pie = (Q931ie_Display*)OBuf;
     L3INT Off = 0;
@@ -1498,7 +1498,7 @@ L3INT Q931Uie_Display(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR *
   Return Value:    Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_Display(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_Display(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_Display * pIE = (Q931ie_Display*)IBuf;
     L3INT rc=0;
@@ -1538,7 +1538,7 @@ L3INT Q931Pie_Display(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3IN
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_HLComp(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff) 
+L3INT Q931Uie_HLComp(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff) 
 {
     Q931ie_HLComp * pie = (Q931ie_HLComp*)OBuf;
     L3INT Off = 0;
@@ -1609,7 +1609,7 @@ L3INT Q931Uie_HLComp(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * 
   Return Value:    Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_HLComp(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_HLComp(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_HLComp * pIE = (Q931ie_HLComp*)IBuf;
     L3INT rc=0;
@@ -1659,7 +1659,7 @@ L3INT Q931Pie_HLComp(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_KeypadFac(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_KeypadFac(Q931_TrunkInfo_t *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
     Q931ie_KeypadFac * pie = (Q931ie_KeypadFac*)OBuf;
     L3INT Off = 0;
@@ -1702,7 +1702,7 @@ L3INT Q931Uie_KeypadFac(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR 
   Return Value:    Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_KeypadFac(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_KeypadFac(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_KeypadFac * pIE = (Q931ie_KeypadFac*)IBuf;
     L3INT rc=0;
@@ -1741,7 +1741,7 @@ L3INT Q931Pie_KeypadFac(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_LLComp(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_LLComp(Q931_TrunkInfo_t *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
     Q931ie_LLComp * pie = (Q931ie_LLComp*)OBuf;
     L3INT Off = 0;
@@ -1957,7 +1957,7 @@ L3INT Q931Uie_LLComp(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * O
   Return Value: Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_LLComp(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_LLComp(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_LLComp * pIE = (Q931ie_LLComp*)IBuf;
     L3INT rc=0;
@@ -2122,7 +2122,7 @@ L3INT Q931Pie_LLComp(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_NetFac(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_NetFac(Q931_TrunkInfo_t *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
     Q931ie_NetFac * pie = (Q931ie_NetFac*)OBuf;
     L3INT Off = 0;
@@ -2183,7 +2183,7 @@ L3INT Q931Uie_NetFac(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * O
   Return Value:    Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_NetFac(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_NetFac(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_NetFac * pIE = (Q931ie_NetFac*)IBuf;
     L3INT rc=Q931E_NO_ERROR;
@@ -2232,7 +2232,7 @@ L3INT Q931Pie_NetFac(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_NotifInd(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_NotifInd(Q931_TrunkInfo_t *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
     Q931ie_NotifInd * pie = (Q931ie_NotifInd*)OBuf;
     L3INT Off = 0;
@@ -2275,7 +2275,7 @@ L3INT Q931Uie_NotifInd(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR *
   Return Value:    Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_NotifInd(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_NotifInd(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_NotifInd * pIE = (Q931ie_NotifInd*)IBuf;
     L3INT rc=Q931E_NO_ERROR;
@@ -2308,7 +2308,7 @@ L3INT Q931Pie_NotifInd(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_ProgInd(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_ProgInd(Q931_TrunkInfo_t *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
     Q931ie_ProgInd * pie = (Q931ie_ProgInd*)OBuf;
     L3INT Off = 0;
@@ -2357,7 +2357,7 @@ L3INT Q931Uie_ProgInd(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * 
   Return Value: Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_ProgInd(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_ProgInd(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_ProgInd * pIE = (Q931ie_ProgInd*)IBuf;
     L3INT rc=Q931E_NO_ERROR;
@@ -2393,7 +2393,7 @@ L3INT Q931Pie_ProgInd(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3IN
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_RepeatInd(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_RepeatInd(Q931_TrunkInfo_t *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
     Q931ie_RepeatInd *pie = (Q931ie_RepeatInd*)OBuf;
     L3INT Off = 0;
@@ -2425,7 +2425,7 @@ L3INT Q931Uie_RepeatInd(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR 
   Return Value:    Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_RepeatInd(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_RepeatInd(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_RepeatInd * pIE = (Q931ie_RepeatInd*)IBuf;
     L3INT rc=0;
@@ -2452,7 +2452,7 @@ L3INT Q931Pie_RepeatInd(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_RevChargeInd(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_RevChargeInd(Q931_TrunkInfo_t *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
     ie iE;
     Q931SetIE(iE, *OOff);
@@ -2471,7 +2471,7 @@ L3INT Q931Uie_RevChargeInd(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCH
   Return Value:    Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_RevChargeInd(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_RevChargeInd(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     L3BOOL RetCode = L3FALSE;
 
@@ -2497,7 +2497,7 @@ L3INT Q931Pie_RevChargeInd(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf,
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_RestartInd(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_RestartInd(Q931_TrunkInfo_t *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
     Q931ie_RestartInd * pie = (Q931ie_RestartInd*)OBuf;
     L3INT Off = 0;
@@ -2540,7 +2540,7 @@ L3INT Q931Uie_RestartInd(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR
   Return Value:    Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_RestartInd(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_RestartInd(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_RestartInd * pIE = (Q931ie_RestartInd*)IBuf;
     L3INT rc=Q931E_NO_ERROR;
@@ -2573,7 +2573,7 @@ L3INT Q931Pie_RestartInd(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_Segment(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_Segment(Q931_TrunkInfo_t *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
     Q931ie_Segment * pie = (Q931ie_Segment*)OBuf;
     L3INT Off = 0;
@@ -2619,7 +2619,7 @@ L3INT Q931Uie_Segment(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * 
   Return Value:    Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_Segment(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_Segment(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_Segment * pIE = (Q931ie_Segment*)IBuf;
     L3INT rc=Q931E_NO_ERROR;
@@ -2655,7 +2655,7 @@ L3INT Q931Pie_Segment(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3IN
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_SendComplete(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_SendComplete(Q931_TrunkInfo_t *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
     Q931ie_SendComplete *pie = (Q931ie_SendComplete*)OBuf;
     L3INT Off = 0;
@@ -2685,7 +2685,7 @@ L3INT Q931Uie_SendComplete(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCH
   Return Value: Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_SendComplete(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_SendComplete(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     /* Q931ie_SendComplete * pIE = (Q931ie_SendComplete*)IBuf; */
     L3INT rc=Q931E_NO_ERROR;
@@ -2712,7 +2712,7 @@ L3INT Q931Pie_SendComplete(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf,
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_Signal(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_Signal(Q931_TrunkInfo_t *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
     Q931ie_Signal * pie = (Q931ie_Signal*)OBuf;
     L3INT Off = 0;
@@ -2753,7 +2753,7 @@ L3INT Q931Uie_Signal(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * O
   Return Value:    Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_Signal(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_Signal(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_Signal * pIE = (Q931ie_Signal*)IBuf;
     L3INT rc=Q931E_NO_ERROR;
@@ -2786,7 +2786,7 @@ L3INT Q931Pie_Signal(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_TransNetSel(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_TransNetSel(Q931_TrunkInfo_t *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
     Q931ie_TransNetSel * pie = (Q931ie_TransNetSel*)OBuf;
     L3INT Off = 0;
@@ -2835,7 +2835,7 @@ L3INT Q931Uie_TransNetSel(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHA
   Return Value:    Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_TransNetSel(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_TransNetSel(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_TransNetSel * pIE = (Q931ie_TransNetSel*)IBuf;
     L3INT rc=Q931E_NO_ERROR;
@@ -2877,7 +2877,7 @@ L3INT Q931Pie_TransNetSel(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
   Return Value: Error Message
 
 *****************************************************************************/
-L3INT Q931Uie_UserUser(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+L3INT Q931Uie_UserUser(Q931_TrunkInfo_t *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
 {
     Q931ie_UserUser * pie = (Q931ie_UserUser*)OBuf;
     L3INT Off = 0;
@@ -2924,7 +2924,7 @@ L3INT Q931Uie_UserUser(Q931_TrunkInfo *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHAR *
   Return Value:    Error code, 0 = OK
 
 *****************************************************************************/
-L3INT Q931Pie_UserUser(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+L3INT Q931Pie_UserUser(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
     Q931ie_UserUser * pIE = (Q931ie_UserUser*)IBuf;
     L3INT rc=Q931E_NO_ERROR;

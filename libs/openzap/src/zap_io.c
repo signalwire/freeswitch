@@ -32,6 +32,7 @@
  */
 
 #include "openzap.h"
+#include "zap_isdn.h"
 #include <stdarg.h>
 #ifdef ZAP_WANPIPE_SUPPORT
 #include "zap_wanpipe.h"
@@ -45,6 +46,16 @@ static struct {
 	zap_mutex_t *mutex;
 } globals;
 
+
+static char *TRUNK_TYPE_NAMES[] = {
+	"E1",
+	"T1",
+	"J1",
+	"BRI",
+	"NONE",
+	NULL
+};
+
 static char *LEVEL_NAMES[] = {
 	"EMERG",
 	"ALERT",
@@ -56,6 +67,31 @@ static char *LEVEL_NAMES[] = {
 	"DEBUG",
 	NULL
 };
+
+
+zap_trunk_type_t str2zap_trunk_type(char *name)
+{
+	int i;
+	zap_trunk_type_t t = ZAP_TRUNK_NONE;
+
+	for (i = 0; i < ZAP_TRUNK_NONE; i++) {
+		if (!strcasecmp(name, TRUNK_TYPE_NAMES[i])) {
+			t = (zap_trunk_type_t) i;
+			break;
+		}
+	}
+
+	return t;
+}
+
+char *zap_trunk_type2str(zap_trunk_type_t type)
+{
+	if (type > ZAP_TRUNK_NONE) {
+		type = ZAP_TRUNK_NONE;
+	}
+	return TRUNK_TYPE_NAMES[(int)type];
+}
+
 
 static char *cut_path(char *in)
 {
@@ -176,6 +212,9 @@ zap_status_t zap_span_close_all(zap_io_interface_t *zio)
 		span = &zio->spans[i];
 		if (span->mutex) {
 			zap_mutex_destroy(&span->mutex);
+		}
+		if (span->isdn_data) {
+			free(span->isdn_data);
 		}
 	}
 	
@@ -383,12 +422,11 @@ zap_status_t zap_channel_open(const char *name, uint32_t span_id, uint32_t chan_
     zio = (zap_io_interface_t *) hashtable_search(globals.interface_hash, (char *)name);
     zap_mutex_unlock(globals.mutex);
 	
-
 	if (span_id < ZAP_MAX_SPANS_INTERFACE && chan_id < ZAP_MAX_CHANNELS_SPAN && zio) {
 		zap_channel_t *check;
 		zap_mutex_lock(zio->spans[span_id].mutex);
 		check = &zio->spans[span_id].channels[chan_id];
-
+	
 		if (zap_test_flag(check, ZAP_CHANNEL_READY) && ! zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
 			status = check->zio->open(check);
 			if (status == ZAP_SUCCESS) {
@@ -974,6 +1012,8 @@ zap_status_t zap_global_init(void)
 	uint32_t configured = 0;
 	int modcount;
 
+	zap_isdn_init();
+	
 	memset(&interfaces, 0, sizeof(interfaces));
 	globals.interface_hash = create_hashtable(16, hashfromstring, equalkeys);
 	modcount = 0;
@@ -1110,3 +1150,32 @@ uint32_t zap_separate_string(char *buf, char delim, char **array, int arraylen)
 
 	return argc;
 }
+
+void print_bits(uint8_t *b, int bl, char *buf, int blen, int e)
+{
+	int i,j = 0,k;
+
+	if (blen < (bl * 10) + 2) {
+		return;
+	}
+
+	for (k = 0 ; k < bl; k++) {
+		buf[j++] = '[';
+		if (e) {
+			for(i = 7; i >= 0; i--) {
+				buf[j++] = ((b[k] & (1 << i)) ? '1' : '0');
+			}
+		} else {
+			for(i = 0; i < 8; i++) {
+				buf[j++] = ((b[k] & (1 << i)) ? '1' : '0');
+			}
+		}
+		buf[j++] = ']';
+		buf[j++] = '\n';
+	}
+	
+	buf[j++] = '\0';
+
+}
+
+

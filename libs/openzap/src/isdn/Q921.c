@@ -39,6 +39,7 @@
 *****************************************************************************/
 #include "Q921.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include "mfifo.h"
 
 /*****************************************************************************
@@ -265,7 +266,7 @@ int Q921Start(L2TRUNK trunk)
 					trunk->sapi, 
 					trunk->NetUser == Q921_TE ? 0 : 1,
 					trunk->tei, 
-					0);
+					1);
 }
 
 /*****************************************************************************
@@ -381,10 +382,12 @@ int Q921Rx12(L2TRUNK trunk)
     L2UCHAR *mes;
     L2INT rs,size;     /* receive size & Q921 frame size*/
     L2UCHAR *smes = MFIFOGetMesPtr(trunk->HDLCInQueue, &size);
+	
     if(smes != NULL)
     {
         rs = size - trunk->Q921HeaderSpace;
         mes = &smes[trunk->Q921HeaderSpace];
+
         /* check for I frame */
         if((mes[2] & 0x01) == 0)
         {
@@ -405,7 +408,7 @@ int Q921Rx12(L2TRUNK trunk)
             /* todo: check if RR is responce to I */
             Q921SendRR(trunk, (mes[0]&0xfc)>>2, (mes[0]>>1)&0x01,mes[1]>>1, mes[2]&0x01);
         }
-
+		
         /* check for RNR */
         /* check for REJ */
         /* check for SABME */

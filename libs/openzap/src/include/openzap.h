@@ -88,6 +88,8 @@
 #include "libteletone.h"
 #include "zap_buffer.h"
 #include "zap_threadmutex.h"
+#include "Q931.h"
+#include "Q921.h"
 
 #ifdef  NDEBUG
 #undef assert
@@ -185,6 +187,26 @@ struct zap_channel {
 };
 
 
+struct zap_sigmsg {
+	zap_signal_event_t event_id;
+	uint32_t chan_id;
+	char cid_name[80];
+	char ani[25];
+	char aniII[25];
+	char dnis[25];
+};
+
+
+struct zap_isdn_data {
+	Q921Data_t q921;
+	Q931_TrunkInfo_t q931;
+	zap_channel_t *dchan;
+	zap_channel_t *dchans[2];
+	struct zap_sigmsg sigmsg;
+	zio_signal_cb_t sig_cb;
+	uint32_t flags;
+};
+
 struct zap_span {
 	uint32_t span_id;
 	uint32_t chan_count;
@@ -192,7 +214,10 @@ struct zap_span {
 	struct zap_io_interface *zio;
 	zio_event_cb_t event_callback;
 	zap_mutex_t *mutex;
+	zap_trunk_type_t trunk_type;
 	zap_signal_type_t signal_type;
+	struct zap_isdn_data *isdn_data;
+	char last_error[256];
 	zap_channel_t channels[ZAP_MAX_CHANNELS_SPAN];
 };
 
@@ -212,6 +237,8 @@ struct zap_io_interface {
 	struct zap_span spans[ZAP_MAX_SPANS_INTERFACE];
 };
 
+zap_trunk_type_t str2zap_trunk_type(char *name);
+char *zap_trunk_type2str(zap_trunk_type_t type);
 zap_status_t zap_span_find(const char *name, uint32_t id, zap_span_t **span);
 zap_status_t zap_span_create(zap_io_interface_t *zio, zap_span_t **span);
 zap_status_t zap_span_close_all(zap_io_interface_t *zio);
@@ -230,5 +257,7 @@ zap_status_t zap_global_destroy(void);
 void zap_global_set_logger(zap_logger_t logger);
 void zap_global_set_default_logger(int level);
 uint32_t zap_separate_string(char *buf, char delim, char **array, int arraylen);
+void print_bits(uint8_t *b, int bl, char *buf, int blen, int e);
+
 
 #endif

@@ -128,7 +128,7 @@ void Q931CreateNT(L3UCHAR i)
   Function:		Q931ProcAlertingNT
 
 *****************************************************************************/
-L3INT Q931ProcAlertingNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcAlertingNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -157,7 +157,7 @@ L3INT Q931ProcAlertingNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q931ProcCallProceedingNT
 
 *****************************************************************************/
-L3INT Q931ProcCallProceedingNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcCallProceedingNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -190,7 +190,7 @@ L3INT Q931ProcCallProceedingNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFro
   Function:		Q931ProcConnectNT
 
 *****************************************************************************/
-L3INT Q931ProcConnectNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcConnectNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -223,7 +223,7 @@ L3INT Q931ProcConnectNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q931ProcConnectAckNT
 
 *****************************************************************************/
-L3INT Q931ProcConnectAckNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcConnectAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -256,7 +256,7 @@ L3INT Q931ProcConnectAckNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q931ProcProgressNT
 
 *****************************************************************************/
-L3INT Q931ProcProgressNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcProgressNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -291,7 +291,7 @@ L3INT Q931ProcProgressNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Description:	Process a SETUP message.
 
  *****************************************************************************/
-L3INT Q931ProcSetupNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcSetupNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT rc=0;
 	Q931mes_Setup *pMes = (Q931mes_Setup *)&buf[Q931L4HeaderSpace];
@@ -371,7 +371,7 @@ L3INT Q931ProcSetupNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
 				NT side.
 
 *****************************************************************************/
-L3INT Q931ProcSetupAckNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcSetupAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -404,7 +404,7 @@ L3INT Q931ProcSetupAckNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q931ProcResumeNT
 
 *****************************************************************************/
-L3INT Q931ProcResumeNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcResumeNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -437,7 +437,7 @@ L3INT Q931ProcResumeNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q931ProcResumeAckNT
 
 *****************************************************************************/
-L3INT Q931ProcResumeAckNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcResumeAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -470,7 +470,7 @@ L3INT Q931ProcResumeAckNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q931ProcResumeRejectNT
 
 *****************************************************************************/
-L3INT Q931ProcResumeRejectNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcResumeRejectNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -503,7 +503,7 @@ L3INT Q931ProcResumeRejectNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q931ProcSuspendNT
 
 *****************************************************************************/
-L3INT Q931ProcSuspendNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcSuspendNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -536,7 +536,7 @@ L3INT Q931ProcSuspendNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q931ProcSuspendAckNT
 
 *****************************************************************************/
-L3INT Q931ProcSuspendAckNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcSuspendAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -569,7 +569,7 @@ L3INT Q931ProcSuspendAckNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q931ProcSuspendRejectNT
 
 *****************************************************************************/
-L3INT Q931ProcSuspendRejectNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcSuspendRejectNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -602,7 +602,7 @@ L3INT Q931ProcSuspendRejectNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom
   Function:		Q931ProcInformationNT
 
 *****************************************************************************/
-L3INT Q931ProcUserInformationNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcUserInformationNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -635,7 +635,7 @@ L3INT Q931ProcUserInformationNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFr
   Function:		Q931ProcDisconnectNT
 
 *****************************************************************************/
-L3INT Q931ProcDisconnectNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcDisconnectNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -668,7 +668,7 @@ L3INT Q931ProcDisconnectNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q931ProcReleaseNT
 
 *****************************************************************************/
-L3INT Q931ProcReleaseNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcReleaseNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -701,7 +701,7 @@ L3INT Q931ProcReleaseNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q931ProcReleaseCompleteNT
 
 *****************************************************************************/
-L3INT Q931ProcReleaseCompleteNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcReleaseCompleteNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -734,7 +734,7 @@ L3INT Q931ProcReleaseCompleteNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFr
   Function:		Q931ProcRestartNT
 
 *****************************************************************************/
-L3INT Q931ProcRestartNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcRestartNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -767,7 +767,7 @@ L3INT Q931ProcRestartNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q931ProcRestartAckNT
 
 *****************************************************************************/
-L3INT Q931ProcRestartAckNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcRestartAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -800,7 +800,7 @@ L3INT Q931ProcRestartAckNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q931ProcCongestionControlNT
 
 *****************************************************************************/
-L3INT Q931ProcCongestionControlNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcCongestionControlNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -833,7 +833,7 @@ L3INT Q931ProcCongestionControlNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT i
   Function:		Q931ProcInformationNT
 
 *****************************************************************************/
-L3INT Q931ProcInformationNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcInformationNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -866,7 +866,7 @@ L3INT Q931ProcInformationNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q931ProcNotifyNT
 
 *****************************************************************************/
-L3INT Q931ProcNotifyNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcNotifyNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -899,7 +899,7 @@ L3INT Q931ProcNotifyNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q931ProcStatusNT
 
 *****************************************************************************/
-L3INT Q931ProcStatusNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcStatusNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -932,7 +932,7 @@ L3INT Q931ProcStatusNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q931ProcStatusEnquiryNT
 
 *****************************************************************************/
-L3INT Q931ProcStatusEnquiryNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcStatusEnquiryNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -965,7 +965,7 @@ L3INT Q931ProcStatusEnquiryNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom
   Function:		Q931ProcSegmentNT
 
 *****************************************************************************/
-L3INT Q931ProcSegmentNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q931ProcSegmentNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -1002,7 +1002,7 @@ L3INT Q931ProcSegmentNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q932ProcFacilityNT
 
 *****************************************************************************/
-L3INT Q932ProcFacilityNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q932ProcFacilityNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -1035,7 +1035,7 @@ L3INT Q932ProcFacilityNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q932ProcHoldNT
 
 *****************************************************************************/
-L3INT Q932ProcHoldNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q932ProcHoldNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -1068,7 +1068,7 @@ L3INT Q932ProcHoldNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q932ProcHoldAckNT
 
 *****************************************************************************/
-L3INT Q932ProcHoldAckNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q932ProcHoldAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -1101,7 +1101,7 @@ L3INT Q932ProcHoldAckNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q932ProcHoldRejectNT
 
 *****************************************************************************/
-L3INT Q932ProcHoldRejectNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q932ProcHoldRejectNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -1134,7 +1134,7 @@ L3INT Q932ProcHoldRejectNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q932ProcRegisterTE
 
 *****************************************************************************/
-L3INT Q932ProcRegisterNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q932ProcRegisterNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -1167,7 +1167,7 @@ L3INT Q932ProcRegisterNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q932ProcRetrieveNT
 
 *****************************************************************************/
-L3INT Q932ProcRetrieveNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q932ProcRetrieveNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -1200,7 +1200,7 @@ L3INT Q932ProcRetrieveNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q931ProcRetrieveAckNT
 
 *****************************************************************************/
-L3INT Q932ProcRetrieveAckNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q932ProcRetrieveAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
@@ -1233,7 +1233,7 @@ L3INT Q932ProcRetrieveAckNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
   Function:		Q931ProcRetrieveRejectNT
 
 *****************************************************************************/
-L3INT Q932ProcRetrieveRejectNT(Q931_TrunkInfo *pTrunk, L3UCHAR * buf, L3INT iFrom)
+L3INT Q932ProcRetrieveRejectNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;

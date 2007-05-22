@@ -68,7 +68,7 @@ L3INT Q931CreateIEIndex(L3INT iec)
 }
 */
 
-L3INT Q931Api_InitTrunk(Q931_TrunkInfo *pTrunk,
+L3INT Q931Api_InitTrunk(Q931_TrunkInfo_t *pTrunk,
 						Q931Dialect_t Dialect,
 						Q931NetUser_t NetUser,
 						Q931_TrunkType_t TrunkType,
@@ -146,9 +146,9 @@ L3INT Q931Api_InitTrunk(Q931_TrunkInfo *pTrunk,
 }
 
 void Q931SetMesProc(L3UCHAR mes, L3UCHAR dialect, 
-                L3INT (*Q931ProcFunc)(Q931_TrunkInfo *pTrunk, L3UCHAR * b, L3INT iFrom),
-                L3INT (*Q931UmesFunc)(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size),
-                L3INT (*Q931PmesFunc)(Q931_TrunkInfo *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
+                L3INT (*Q931ProcFunc)(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom),
+                L3INT (*Q931UmesFunc)(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size),
+                L3INT (*Q931PmesFunc)(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 )
 {
     if(Q931ProcFunc != NULL)
@@ -160,8 +160,8 @@ void Q931SetMesProc(L3UCHAR mes, L3UCHAR dialect,
 }
 
 void Q931SetIEProc(L3UCHAR iec, L3UCHAR dialect, 
-			   L3INT (*Q931PieProc)(Q931_TrunkInfo *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet),
-			   L3INT (*Q931UieProc)(Q931_TrunkInfo *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff) 
+			   L3INT (*Q931PieProc)(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet),
+			   L3INT (*Q931UieProc)(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff) 
 )
 {
     if(Q931PieProc != NULL)
@@ -357,7 +357,7 @@ ie Q931AppendIE( L3UCHAR *pm, L3UCHAR *pi)
 
 /*****************************************************************************
 *****************************************************************************/
-L3INT Q931GetUniqueCRV(Q931_TrunkInfo *pTrunk)
+L3INT Q931GetUniqueCRV(Q931_TrunkInfo_t *pTrunk)
 {
 	static L3INT crv={1};
 	return crv++;
@@ -640,7 +640,7 @@ L3INT Q931InitIEHLComp(Q931ie_HLComp * pIE)
 	return 0;
 }
 
-L3INT Q931ProcUnknownMessage(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom)
+L3INT Q931ProcUnknownMessage(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom)
 {
 	/* TODO:  Unhandled paramaters */
 	(void)pTrunk;
@@ -650,7 +650,7 @@ L3INT Q931ProcUnknownMessage(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom)
     return 0;
 }
 
-L3INT Q931ProcUnexpectedMessage(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom)
+L3INT Q931ProcUnexpectedMessage(Q931_TrunkInfo_t *pTrunk,L3UCHAR * b, L3INT iFrom)
 {
 	/* TODO:  Unhandled paramaters */
 	(void)pTrunk;
@@ -660,7 +660,7 @@ L3INT Q931ProcUnexpectedMessage(Q931_TrunkInfo *pTrunk,L3UCHAR * b, L3INT iFrom)
     return 0;
 }
 
-L3INT Q931Disconnect(Q931_TrunkInfo *pTrunk, L3INT iTo, L3INT iCRV, L3INT iCause)
+L3INT Q931Disconnect(Q931_TrunkInfo_t *pTrunk, L3INT iTo, L3INT iCRV, L3INT iCause)
 {
 	/* TODO:  Unhandled paramaters */
 	(void)pTrunk;
@@ -671,7 +671,7 @@ L3INT Q931Disconnect(Q931_TrunkInfo *pTrunk, L3INT iTo, L3INT iCRV, L3INT iCause
     return 0;
 }
 
-L3INT Q931ReleaseComplete(Q931_TrunkInfo *pTrunk, L3INT iTo)
+L3INT Q931ReleaseComplete(Q931_TrunkInfo_t *pTrunk, L3INT iTo)
 {
 	/* TODO:  Unhandled paramaters */
 	(void)pTrunk;
