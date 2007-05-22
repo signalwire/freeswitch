@@ -90,7 +90,7 @@ void Q921Init()
 				if your trunk is not TE (user) mode (i.e. NET).
 
 *****************************************************************************/
-int Q921_InitTrunk(long trunk, int sapi, int tei, Q921NetUser_t NetUser)
+int Q921_InitTrunk(long trunk, L2UCHAR sapi, L2UCHAR tei, Q921NetUser_t NetUser)
 {
 	if (trunk > Q921MAXTRUNK)
 		return 0;
@@ -173,9 +173,9 @@ int Q921SendI(int trunk, L2UCHAR Sapi, char cr, L2UCHAR Tei, char pf, L2UCHAR *m
 int Q921Rx32(long trunk, L2UCHAR * Mes, L2INT Size)
 {
 	return Q921SendI(trunk, 
-					Q921DevSpace[x].sapi, 
-					Q921DevSpace[x].NetUser == Q921_TE ? 0 : 1;
-					Q921DevSpace[x].tei, 
+					Q921DevSpace[trunk].sapi, 
+					Q921DevSpace[trunk].NetUser == Q921_TE ? 0 : 1,
+					Q921DevSpace[trunk].tei, 
 					0, 
 					Mes, 
 					Size);
