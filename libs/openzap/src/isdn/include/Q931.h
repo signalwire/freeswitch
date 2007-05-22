@@ -187,7 +187,7 @@
 
 #define Q931L2BUF	300				/* size of message buffer				*/
 
-#define Q931MAXTRUNKS	1			/* Total number of trunks that will be	*/
+#define Q931MAXTRUNKS	4			/* Total number of trunks that will be	*/
 									/* processed by this instance of the	*/
 									/* stack								*/
 
