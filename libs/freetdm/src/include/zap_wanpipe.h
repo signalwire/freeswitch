@@ -35,7 +35,7 @@
 #define ZAP_WANPIPE_H
 #include "openzap.h"
 
-zap_status_t wanpipe_init(zap_software_interface_t **zint);
+zap_status_t wanpipe_init(zap_io_interface_t **zint);
 zap_status_t wanpipe_destroy(void);
 
 #endif

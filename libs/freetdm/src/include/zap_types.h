@@ -45,10 +45,35 @@ typedef int zap_socket_t;
 #endif
 
 typedef size_t zap_size_t;
-struct zap_software_interface;
+struct zap_io_interface;
 
 #define ZAP_COMMAND_OBJ_INT *((int *)obj)
 #define ZAP_COMMAND_OBJ_CHAR_P (char *)obj
+
+typedef enum {
+	ZAP_SIGTYPE_NONE,
+	ZAP_SIGTYPE_ISDN,
+	ZAP_SIGTYPE_RBS,
+	ZAP_SIGTYPE_ANALOG
+} zap_signal_type_t;
+
+typedef enum {
+	ZAP_SIGEVENT_CALL_START,
+	ZAP_SIGEVENT_CALL_STOP,
+	ZAP_SIGEVENT_CALL_TRANSFER,
+	ZAP_SIGEVENT_ANSWER,
+	ZAP_SIGEVENT_PROGRESS,
+	ZAP_SIGEVENT_PROGRESS_MEDIA,
+	ZAP_SIGEVENT_NOTIFY,
+	ZAP_SIGEVENT_MISC
+} zap_signal_event_t;
+
+typedef enum {
+	ZAP_EVENT_NONE,
+	ZAP_EVENT_DTMF,
+
+	ZAP_EVENT_COUNT
+} zap_event_type_t;
 
 typedef enum {
 	ZAP_TOP_DOWN,
@@ -134,43 +159,43 @@ typedef enum {
 typedef struct zap_channel zap_channel_t;
 typedef struct zap_event zap_event_t;
 
-#define ZINT_EVENT_CB_ARGS (zap_channel_t *zchan, zap_event_t *event)
-#define ZINT_CODEC_ARGS (void *data, zap_size_t max, zap_size_t *datalen)
-#define ZINT_CONFIGURE_ARGS (struct zap_software_interface *zint)
-#define ZINT_OPEN_ARGS (zap_channel_t *zchan)
-#define ZINT_CLOSE_ARGS (zap_channel_t *zchan)
-#define ZINT_COMMAND_ARGS (zap_channel_t *zchan, zap_command_t command, void *obj)
-#define ZINT_WAIT_ARGS (zap_channel_t *zchan, zap_wait_flag_t *flags, int32_t to)
-#define ZINT_READ_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
-#define ZINT_WRITE_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
+#define ZIO_EVENT_CB_ARGS (zap_channel_t *zchan, zap_event_t *event)
+#define ZIO_CODEC_ARGS (void *data, zap_size_t max, zap_size_t *datalen)
+#define ZIO_CONFIGURE_ARGS (struct zap_io_interface *zio)
+#define ZIO_OPEN_ARGS (zap_channel_t *zchan)
+#define ZIO_CLOSE_ARGS (zap_channel_t *zchan)
+#define ZIO_COMMAND_ARGS (zap_channel_t *zchan, zap_command_t command, void *obj)
+#define ZIO_WAIT_ARGS (zap_channel_t *zchan, zap_wait_flag_t *flags, int32_t to)
+#define ZIO_READ_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
+#define ZIO_WRITE_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
 
-typedef zap_status_t (*zint_event_cb_t) ZINT_EVENT_CB_ARGS ;
-typedef zap_status_t (*zint_codec_t) ZINT_CODEC_ARGS ;
-typedef zap_status_t (*zint_configure_t) ZINT_CONFIGURE_ARGS ;
-typedef zap_status_t (*zint_open_t) ZINT_OPEN_ARGS ;
-typedef zap_status_t (*zint_close_t) ZINT_CLOSE_ARGS ;
-typedef zap_status_t (*zint_command_t) ZINT_COMMAND_ARGS ;
-typedef zap_status_t (*zint_wait_t) ZINT_WAIT_ARGS ;
-typedef zap_status_t (*zint_read_t) ZINT_READ_ARGS ;
-typedef zap_status_t (*zint_write_t) ZINT_WRITE_ARGS ;
+typedef zap_status_t (*zio_event_cb_t) ZIO_EVENT_CB_ARGS ;
+typedef zap_status_t (*zio_codec_t) ZIO_CODEC_ARGS ;
+typedef zap_status_t (*zio_configure_t) ZIO_CONFIGURE_ARGS ;
+typedef zap_status_t (*zio_open_t) ZIO_OPEN_ARGS ;
+typedef zap_status_t (*zio_close_t) ZIO_CLOSE_ARGS ;
+typedef zap_status_t (*zio_command_t) ZIO_COMMAND_ARGS ;
+typedef zap_status_t (*zio_wait_t) ZIO_WAIT_ARGS ;
+typedef zap_status_t (*zio_read_t) ZIO_READ_ARGS ;
+typedef zap_status_t (*zio_write_t) ZIO_WRITE_ARGS ;
 
-#define ZINT_EVENT_CB_FUNCTION(name) zap_status_t name ZINT_EVENT_CB_ARGS
-#define ZINT_CODEC_FUNCTION(name) zap_status_t name ZINT_CODEC_ARGS
-#define ZINT_CONFIGURE_FUNCTION(name) zap_status_t name ZINT_CONFIGURE_ARGS
-#define ZINT_OPEN_FUNCTION(name) zap_status_t name ZINT_OPEN_ARGS
-#define ZINT_CLOSE_FUNCTION(name) zap_status_t name ZINT_CLOSE_ARGS
-#define ZINT_COMMAND_FUNCTION(name) zap_status_t name ZINT_COMMAND_ARGS
-#define ZINT_WAIT_FUNCTION(name) zap_status_t name ZINT_WAIT_ARGS
-#define ZINT_READ_FUNCTION(name) zap_status_t name ZINT_READ_ARGS
-#define ZINT_WRITE_FUNCTION(name) zap_status_t name ZINT_WRITE_ARGS
+#define ZIO_EVENT_CB_FUNCTION(name) zap_status_t name ZIO_EVENT_CB_ARGS
+#define ZIO_CODEC_FUNCTION(name) zap_status_t name ZIO_CODEC_ARGS
+#define ZIO_CONFIGURE_FUNCTION(name) zap_status_t name ZIO_CONFIGURE_ARGS
+#define ZIO_OPEN_FUNCTION(name) zap_status_t name ZIO_OPEN_ARGS
+#define ZIO_CLOSE_FUNCTION(name) zap_status_t name ZIO_CLOSE_ARGS
+#define ZIO_COMMAND_FUNCTION(name) zap_status_t name ZIO_COMMAND_ARGS
+#define ZIO_WAIT_FUNCTION(name) zap_status_t name ZIO_WAIT_ARGS
+#define ZIO_READ_FUNCTION(name) zap_status_t name ZIO_READ_ARGS
+#define ZIO_WRITE_FUNCTION(name) zap_status_t name ZIO_WRITE_ARGS
 
-#define ZINT_CONFIGURE_MUZZLE assert(zint != NULL)
-#define ZINT_OPEN_MUZZLE assert(zchan != NULL)
-#define ZINT_CLOSE_MUZZLE assert(zchan != NULL)
-#define ZINT_COMMAND_MUZZLE assert(zchan != NULL); assert(command != 0); assert(obj != NULL)
-#define ZINT_WAIT_MUZZLE assert(zchan != NULL); assert(flags != 0); assert(to != 0)
-#define ZINT_READ_MUZZLE assert(zchan != NULL); assert(data != NULL); assert(datalen != NULL)
-#define ZINT_WRITE_MUZZLE assert(zchan != NULL); assert(data != NULL); assert(datalen != NULL)
+#define ZIO_CONFIGURE_MUZZLE assert(zio != NULL)
+#define ZIO_OPEN_MUZZLE assert(zchan != NULL)
+#define ZIO_CLOSE_MUZZLE assert(zchan != NULL)
+#define ZIO_COMMAND_MUZZLE assert(zchan != NULL); assert(command != 0); assert(obj != NULL)
+#define ZIO_WAIT_MUZZLE assert(zchan != NULL); assert(flags != 0); assert(to != 0)
+#define ZIO_READ_MUZZLE assert(zchan != NULL); assert(data != NULL); assert(datalen != NULL)
+#define ZIO_WRITE_MUZZLE assert(zchan != NULL); assert(data != NULL); assert(datalen != NULL)
 
 #define ZAP_PRE __FILE__, __FUNCTION__, __LINE__
 
@@ -192,16 +217,9 @@ typedef zap_status_t (*zint_write_t) ZINT_WRITE_ARGS ;
 #define ZAP_LOG_ALERT ZAP_PRE, ZAP_LOG_LEVEL_ALERT
 #define ZAP_LOG_EMERG ZAP_PRE, ZAP_LOG_LEVEL_EMERG
 
-typedef enum {
-	ZAP_EVENT_NONE,
-	ZAP_EVENT_DTMF,
-
-	ZAP_EVENT_COUNT
-} zap_event_type_t;
-
 typedef struct zap_span zap_span_t;
 typedef void (*zap_logger_t)(char *file, const char *func, int line, int level, char *fmt, ...);
-typedef struct zap_software_interface zap_software_interface_t;
+typedef struct zap_io_interface zap_io_interface_t;
 typedef struct hashtable zap_hash_t;
 typedef struct hashtable_itr zap_hash_itr_t;
 typedef struct key zap_hash_key_t;
