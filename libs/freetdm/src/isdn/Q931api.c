@@ -404,6 +404,20 @@ L3INT Q931InitMesResume(Q931mes_Resume * pMes)
 	return 0;
 }
 
+L3INT Q931InitMesRestartAck(Q931mes_RestartAck * pMes)
+{
+	pMes->ProtDisc		= 0x80;
+	pMes->CRV			= 0;		/* CRV to be allocated, might be receive*/
+	pMes->MesType		= Q931mes_RESTART_ACKNOWLEDGE;
+
+	pMes->Size			= Q931GetMesSize((L3UCHAR*)pMes);
+    pMes->ChanID        = 0;        /* Channel Identification               */
+	pMes->Display		= 0;
+	pMes->RestartInd	= 0;
+	pMes->RestartWin	= 0;
+	return 0;
+}
+
 L3INT Q931InitIEBearerCap(Q931ie_BearerCap *pIE)
 {
 	pIE->IEId			= Q931ie_BEARER_CAPABILITY;
