@@ -56,7 +56,8 @@ void Q921_InitTrunk(L2TRUNK trunk,
 					L2INT hsize,
 					Q921TxCB_t cb21,
 					Q921TxCB_t cb23,
-					void *priv)
+					void *priv21,
+					void *priv23)
 {
 	if (trunk->initialized != INITIALIZED_MAGIC) {
 		MFIFOCreate(trunk->HDLCInQueue, Q921MAXHDLCSPACE, 10);
@@ -70,18 +71,19 @@ void Q921_InitTrunk(L2TRUNK trunk,
 	trunk->NetUser = NetUser;
 	trunk->Q921Tx21Proc = cb21;
 	trunk->Q921Tx23Proc = cb23;
-	trunk->PrivateData = priv;
+	trunk->PrivateData21 = priv21;
+	trunk->PrivateData23 = priv23;
 	trunk->Q921HeaderSpace = hsize;
 }
 
 static int Q921Tx21Proc(L2TRUNK trunk, L2UCHAR *Msg, L2INT size)
 {
-	return trunk->Q921Tx21Proc(trunk->PrivateData, Msg, size);
+	return trunk->Q921Tx21Proc(trunk->PrivateData21, Msg, size);
 }
 
 int Q921Tx23Proc(L2TRUNK trunk, L2UCHAR *Msg, L2INT size)
 {
-	return trunk->Q921Tx23Proc(trunk->PrivateData, Msg, size);
+	return trunk->Q921Tx23Proc(trunk->PrivateData23, Msg, size);
 
 }
 
