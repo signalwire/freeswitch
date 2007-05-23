@@ -35,7 +35,8 @@
 #include "zap_isdn.h"
 #include "Q931.h"
 #include "Q921.h"
-
+#define LINE "--------------------------------------------------------------------------------"
+#define IODEBUG
 
 static L3INT zap_isdn_931_err(void *pvt, L3INT id, L3INT p1, L3INT p2)
 {
@@ -46,12 +47,27 @@ static L3INT zap_isdn_931_err(void *pvt, L3INT id, L3INT p1, L3INT p2)
 static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 {
 	zap_span_t *span = (zap_span_t *) pvt;
+	zap_isdn_data_t *data = span->isdn_data;
 	Q931mes_Generic *gen = (Q931mes_Generic *) msg;
 
+
+	Q931mes_Restart * restart = (Q931mes_Restart*)msg;
+
+	L3INT ieoff = Q931GetIEOffset(restart->RestartInd);
+	Q931ie_RestartInd * restartind = (void *)(&restart->buf + (ieoff * sizeof(restart->buf[1]))); 
+
+
 	assert(span != NULL);
-	
-	zap_log(ZAP_LOG_DEBUG, "Yay I got an event! %d\n", gen->MesType);
-	
+	assert(data != NULL);
+	printf("WTF: %d", ((Q931mes_Restart*)gen)->Size);
+	zap_log(ZAP_LOG_DEBUG, "Yay I got an event! %d %d\n", gen->MesType, ((Q931mes_Restart*)gen)->Size);
+	zap_log(ZAP_LOG_DEBUG, "send ack %d\n", restartind->Class);
+	zap_log(ZAP_LOG_DEBUG, "send ack %d\n", ((Q931mes_Restart*)gen)->Size);
+
+	printf("XXXXXXXXXXXXx");
+	gen->MesType = Q931mes_RESTART_ACKNOWLEDGE;
+	Q931Rx43(&data->q931, msg, 12);
+
 	return 0;
 }
 
@@ -59,10 +75,16 @@ static int zap_isdn_921_21(void *pvt, L2UCHAR *msg, L2INT mlen)
 {
 	zap_span_t *span = (zap_span_t *) pvt;
 	zap_size_t len = (zap_size_t) mlen;
+#ifdef IODEBUG
+	char bb[512] = "";
+	print_bits(msg, (int)len, bb, sizeof(bb), 1);
+	zap_log(ZAP_LOG_DEBUG, "WRITE %d\n%s\n%s\n\n", (int)len, LINE, bb);
+
+#endif
+
 	assert(span != NULL);
 	return zap_channel_write(span->isdn_data->dchan, msg, &len) == ZAP_SUCCESS ? 0 : -1;
 }
-
 
 static void *zap_isdn_run(zap_thread_t *me, void *obj)
 {
@@ -78,7 +100,7 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 	while(zap_test_flag(data, ZAP_ISDN_RUNNING)) {
 		zap_wait_flag_t flags = ZAP_READ;
 		zap_status_t status = zap_channel_wait(data->dchan, &flags, 100);
-
+		
 		switch(status) {
 		case ZAP_FAIL:
 			{
@@ -98,11 +120,11 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 				if (flags & ZAP_READ) {
 					len = sizeof(buf);
 					if (zap_channel_read(data->dchan, buf, &len) == ZAP_SUCCESS) {
-						/*char bb[512] = "";
-
-						print_bits(buf, (int)len, bb, sizeof(bb), 1);						
-						zap_log(ZAP_LOG_DEBUG, "Read %d bytes\n%s\n", (int)len, bb);
-						*/
+#ifdef IODEBUG
+						char bb[512] = "";
+						print_bits(buf, (int)len, bb, sizeof(bb), 1);
+						zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", (int)len, LINE, bb);
+#endif
 
 						Q921QueueHDLCFrame(&data->q921, buf, (int)len);
 						Q921Rx12(&data->q921);

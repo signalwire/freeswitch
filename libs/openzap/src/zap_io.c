@@ -1153,7 +1153,7 @@ uint32_t zap_separate_string(char *buf, char delim, char **array, int arraylen)
 
 void print_bits(uint8_t *b, int bl, char *buf, int blen, int e)
 {
-	int i,j = 0,k;
+	int i,j = 0, k, l = 0;
 
 	if (blen < (bl * 10) + 2) {
 		return;
@@ -1171,7 +1171,11 @@ void print_bits(uint8_t *b, int bl, char *buf, int blen, int e)
 			}
 		}
 		buf[j++] = ']';
-		buf[j++] = '\n';
+		buf[j++] = ' ';
+		if (++l == 6) {
+			buf[j++] = '\n';
+			l = 0;
+		}
 	}
 	
 	buf[j++] = '\0';
