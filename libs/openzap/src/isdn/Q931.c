@@ -331,7 +331,7 @@ L3INT Q931Rx23(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT Size)
 
 	if(RetCode >= Q931E_NO_ERROR)
 	{
-		RetCode=Q931Proc[pTrunk->Dialect][m->MesType](pTrunk, pTrunk->L3Buf, 2);
+		RetCode = Q931Proc[pTrunk->Dialect][m->MesType](pTrunk, pTrunk->L3Buf, 2);
 	}
 
     return RetCode;
