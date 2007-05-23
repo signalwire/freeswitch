@@ -35,8 +35,25 @@
 #include "zap_isdn.h"
 #include "Q931.h"
 #include "Q921.h"
+#ifdef WIN32
+#include <windows.h>
+#else
+#include <sys/time.h>
+#endif
+
 #define LINE "--------------------------------------------------------------------------------"
 #define IODEBUG
+
+static L2ULONG zap_time_now()
+{
+#ifdef WIN32
+	return timeGetTime();
+#else
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
+#endif
+}
 
 static L3INT zap_isdn_931_err(void *pvt, L3INT id, L3INT p1, L3INT p2)
 {
@@ -93,6 +110,10 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 	unsigned char buf[1024];
 	zap_size_t len = sizeof(buf);
 
+#ifdef WIN32
+    timeBeginPeriod(1);
+#endif
+
 	zap_log(ZAP_LOG_DEBUG, "ISDN thread starting.\n");
 
 	Q921Start(&data->q921);
@@ -100,7 +121,9 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 	while(zap_test_flag(data, ZAP_ISDN_RUNNING)) {
 		zap_wait_flag_t flags = ZAP_READ;
 		zap_status_t status = zap_channel_wait(data->dchan, &flags, 100);
-		
+
+		Q921TimerTick(&data->q921);
+
 		switch(status) {
 		case ZAP_FAIL:
 			{
@@ -144,6 +167,10 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 	zap_channel_close(&data->dchans[1]);
 	zap_clear_flag(span->isdn_data, ZAP_ISDN_RUNNING);
 
+#ifdef WIN32
+    timeEndPeriod(1);
+#endif
+
 	zap_log(ZAP_LOG_DEBUG, "ISDN thread ended.\n");
 	return NULL;
 }
@@ -151,6 +178,8 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 zap_status_t zap_isdn_init(void)
 {
 	Q931Initialize();
+
+	Q921SetGetTimeCB(zap_time_now);
 	
 	return ZAP_SUCCESS;
 }
