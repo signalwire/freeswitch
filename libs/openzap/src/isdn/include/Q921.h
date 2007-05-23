@@ -82,6 +82,7 @@
 #define Q921MAXHDLCSPACE 3000
 #define L2UCHAR		unsigned char		/* Min 8 bit						*/
 #define L2INT       int                 /* Min 16 bit signed                */
+#define L2ULONG		unsigned long		/* Min 32 bit						*/
 #define L2TRUNK		Q921Data_t *
 
 typedef enum					/* Network/User Mode.                   */
@@ -105,6 +106,10 @@ struct Q921Data
 	L2UCHAR sapi;
 	L2UCHAR tei;
 	Q921NetUser_t NetUser;
+	L2ULONG T200;
+	L2ULONG T203;
+	L2ULONG T200Timeout;
+	L2ULONG T203Timeout;
 	Q921TxCB_t Q921Tx21Proc;
 	Q921TxCB_t Q921Tx23Proc;
 	void *PrivateData21;
@@ -126,5 +131,7 @@ int Q921QueueHDLCFrame(L2TRUNK trunk, L2UCHAR *b, L2INT size);
 int Q921Rx12(L2TRUNK trunk);
 int Q921Rx32(L2TRUNK trunk, L2UCHAR * Mes, L2INT Size);
 int Q921Start(L2TRUNK trunk);
+void Q921SetGetTimeCB(L2ULONG (*callback)());
+void Q921TimerTick(L2TRUNK trunk);
 #endif
 
