@@ -177,13 +177,13 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 					(early_ok && len == 1 && switch_channel_test_flag(peer_channels[i], CF_EARLY_MEDIA))) &&
 				   !switch_channel_test_flag(peer_channels[i], CF_TAGGED)) {
 
-			if (key) {
+			if (!switch_strlen_zero(key)) {
 				struct key_collect *collect;
 
 				if ((collect = switch_core_session_alloc(peer_sessions[i], sizeof(*collect)))) {
 					switch_channel_set_flag(peer_channels[i], CF_TAGGED);
 					collect->key = key;
-					if (file) {
+					if (!switch_strlen_zero(file)) {
 						collect->file = switch_core_session_strdup(peer_sessions[i], file);
 					}
 
