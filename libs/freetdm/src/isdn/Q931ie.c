@@ -2520,11 +2520,12 @@ L3INT Q931Uie_RestartInd(Q931_TrunkInfo_t *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCH
 
     Q931IESizeTest(Q931E_RESTARTIND);
 
+    Q931SetIE(*pIE, *OOff);
+
     *IOff = (*IOff) + Octet + Off;
     *OOff = (*OOff) + sizeof(Q931ie_RestartInd);
     pie->Size = sizeof(Q931ie_RestartInd);
 
-    Q931SetIE(*pIE, *OOff);
 
     return Q931E_NO_ERROR;
 }
@@ -2553,7 +2554,7 @@ L3INT Q931Pie_RestartInd(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf,
     /* Octet 3*/
     OBuf[(*Octet)++] = 0x80 | pIE->Class ;
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
