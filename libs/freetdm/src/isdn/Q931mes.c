@@ -988,14 +988,37 @@ L3INT Q931Pmes_ReleaseComplete(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT IS
   Function:     Q931Umes_Restart
 
 *****************************************************************************/
-L3INT Q931Umes_Restart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O)
+L3INT Q931Umes_Restart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3BOOL RetCode = L3FALSE;
-
-    NoWarning(OBuf);
-    NoWarning(IBuf);
-
-    return RetCode;
+    L3INT OOff=0;
+    Q931mes_Restart *mes = (Q931mes_Restart*)OBuf;
+    L3INT rc=Q931E_NO_ERROR;
+    while(IOff < Size)
+    {
+        switch(IBuf[IOff])
+        {
+        case Q931ie_CHANNEL_IDENTIFICATION:
+            rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->ChanID,&IBuf[IOff], &OBuf[OOff], &IOff, &OOff);
+            if(rc != Q931E_NO_ERROR) 
+                return rc;
+            break;
+        case Q931ie_DISPLAY:
+            rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display,&IBuf[IOff], &OBuf[OOff], &IOff, &OOff);
+            if(rc != Q931E_NO_ERROR) 
+                return rc;
+            break;
+        case Q931ie_RESTART_INDICATOR:
+            rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->RestartInd,&IBuf[IOff], &OBuf[OOff], &IOff, &OOff);
+            if(rc != Q931E_NO_ERROR) 
+                return rc;
+            break;
+        default:
+            return Q931E_ILLEGAL_IE;
+            break;
+        }
+    }
+    mes->Size = sizeof(Q931mes_Restart) - 1 + OOff;
+    return Q931E_NO_ERROR;
 }
 
 /*****************************************************************************
@@ -1005,12 +1028,32 @@ L3INT Q931Umes_Restart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, 
 *****************************************************************************/
 L3INT Q931Pmes_Restart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
-    L3BOOL RetCode = L3FALSE;
+    L3INT rc = Q931E_NO_ERROR;
+    Q931mes_Restart *pMes = (Q931mes_Restart *)IBuf;
+    L3INT Octet = 0;
 
-    NoWarning(OBuf);
-    NoWarning(IBuf);
+    /* Q931 Message Header */
 
-    return RetCode;
+    OBuf[Octet++]    = pMes->ProtDisc;        /* Protocol discriminator        */
+    OBuf[Octet++]    = 2;                    /* length is 2 octets            */
+    OBuf[Octet++]    = (L3UCHAR)(pMes->CRV>>8);    /* msb                            */
+    OBuf[Octet++]    = (L3UCHAR)(pMes->CRV);    /* lsb                            */
+    OBuf[Octet++]    = pMes->MesType;        /* message header                */
+    
+    /* ChanID */
+    if(Q931IsIEPresent(pMes->ChanID))
+        if((rc=Q931Pie[pTrunk->Dialect][pMes->MesType](pTrunk, Q931GetIEPtr(pMes->ChanID,pMes->buf), OBuf, &Octet))!=0)
+            return rc;
+    /* Display */
+    if(Q931IsIEPresent(pMes->Display))
+        if((rc=Q931Pie[pTrunk->Dialect][pMes->MesType](pTrunk, Q931GetIEPtr(pMes->Display,pMes->buf), OBuf, &Octet))!=0)
+            return rc;
+    /* RestartInd */
+    if(Q931IsIEPresent(pMes->RestartInd))
+        if((rc=Q931Pie[pTrunk->Dialect][pMes->MesType](pTrunk, Q931GetIEPtr(pMes->RestartInd,pMes->buf), OBuf, &Octet))!=0)
+            return rc;
+
+    return rc;
 }
 
 /*****************************************************************************
@@ -1018,14 +1061,37 @@ L3INT Q931Pmes_Restart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3U
   Function:     Q931Umes_RestartAck
 
 *****************************************************************************/
-L3INT Q931Umes_RestartAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O)
+L3INT Q931Umes_RestartAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
-    L3BOOL RetCode = L3FALSE;
-
-    NoWarning(OBuf);
-    NoWarning(IBuf);
-
-    return RetCode;
+    L3INT OOff=0;
+    Q931mes_RestartAck *mes = (Q931mes_RestartAck*)OBuf;
+    L3INT rc=Q931E_NO_ERROR;
+    while(IOff < Size)
+    {
+        switch(IBuf[IOff])
+        {
+        case Q931ie_CHANNEL_IDENTIFICATION:
+            rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->ChanID,&IBuf[IOff], &OBuf[OOff], &IOff, &OOff);
+            if(rc != Q931E_NO_ERROR) 
+                return rc;
+            break;
+        case Q931ie_DISPLAY:
+            rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display,&IBuf[IOff], &OBuf[OOff], &IOff, &OOff);
+            if(rc != Q931E_NO_ERROR) 
+                return rc;
+            break;
+        case Q931ie_RESTART_INDICATOR:
+            rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->RestartInd,&IBuf[IOff], &OBuf[OOff], &IOff, &OOff);
+            if(rc != Q931E_NO_ERROR) 
+                return rc;
+            break;
+        default:
+            return Q931E_ILLEGAL_IE;
+            break;
+        }
+    }
+    mes->Size = sizeof(Q931mes_RestartAck) - 1 + OOff;
+    return Q931E_NO_ERROR;
 }
 
 /*****************************************************************************
@@ -1035,12 +1101,32 @@ L3INT Q931Umes_RestartAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBu
 *****************************************************************************/
 L3INT Q931Pmes_RestartAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
-    L3BOOL RetCode = L3FALSE;
+    L3INT rc = Q931E_NO_ERROR;
+    Q931mes_RestartAck *pMes = (Q931mes_RestartAck *)IBuf;
+    L3INT Octet = 0;
 
-    NoWarning(OBuf);
-    NoWarning(IBuf);
+    /* Q931 Message Header */
 
-    return RetCode;
+    OBuf[Octet++]    = pMes->ProtDisc;        /* Protocol discriminator        */
+    OBuf[Octet++]    = 2;                    /* length is 2 octets            */
+    OBuf[Octet++]    = (L3UCHAR)(pMes->CRV>>8);    /* msb                            */
+    OBuf[Octet++]    = (L3UCHAR)(pMes->CRV);    /* lsb                            */
+    OBuf[Octet++]    = pMes->MesType;        /* message header                */
+    
+    /* ChanID */
+    if(Q931IsIEPresent(pMes->ChanID))
+        if((rc=Q931Pie[pTrunk->Dialect][pMes->MesType](pTrunk, Q931GetIEPtr(pMes->ChanID,pMes->buf), OBuf, &Octet))!=0)
+            return rc;
+    /* Display */
+    if(Q931IsIEPresent(pMes->Display))
+        if((rc=Q931Pie[pTrunk->Dialect][pMes->MesType](pTrunk, Q931GetIEPtr(pMes->Display,pMes->buf), OBuf, &Octet))!=0)
+            return rc;
+    /* RestartInd */
+    if(Q931IsIEPresent(pMes->RestartInd))
+        if((rc=Q931Pie[pTrunk->Dialect][pMes->MesType](pTrunk, Q931GetIEPtr(pMes->RestartInd,pMes->buf), OBuf, &Octet))!=0)
+            return rc;
+
+    return rc;
 }
 
 /*****************************************************************************
