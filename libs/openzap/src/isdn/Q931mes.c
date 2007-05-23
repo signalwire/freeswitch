@@ -151,6 +151,8 @@ L3INT Q931Pmes_Alerting(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3INT ISize, L3U
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_HIGH_LAYER_COMPATIBILITY](pTrunk, Q931GetIEPtr(pMes->HLComp,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
 
+	*OSize = Octet;	
+
     return rc;
 }
 
@@ -250,6 +252,8 @@ L3INT Q931Pmes_CallProceeding(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3INT ISiz
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_HIGH_LAYER_COMPATIBILITY](pTrunk, Q931GetIEPtr(pMes->HLComp,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
 
+	*OSize = Octet;	
+
     return rc;
 }
 
@@ -280,6 +284,8 @@ L3INT Q931Pmes_CongestionControl(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3INT I
 
     NoWarning(OBuf);
     NoWarning(IBuf);
+
+	*OSize = 0;	
 
     return RetCode;
 }
@@ -410,6 +416,8 @@ L3INT Q931Pmes_Connect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3U
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_HIGH_LAYER_COMPATIBILITY](pTrunk, Q931GetIEPtr(pMes->HLComp,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
 
+	*OSize = Octet;	
+
     return rc;
 }
 
@@ -478,6 +486,8 @@ L3INT Q931Pmes_ConnectAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, 
 	if(Q931IsIEPresent(pMes->Signal))
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_SIGNAL](pTrunk, Q931GetIEPtr(pMes->Signal,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
+
+	*OSize = Octet;	
 
     return rc;
 }
@@ -565,6 +575,8 @@ L3INT Q931Pmes_Disconnect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, 
 	if(Q931IsIEPresent(pMes->Signal))
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_SIGNAL](pTrunk, Q931GetIEPtr(pMes->Signal,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
+
+	*OSize = Octet;	
 
     return rc;
 }
@@ -661,6 +673,8 @@ L3INT Q931Pmes_Information(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize,
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_CALLED_PARTY_NUMBER](pTrunk, Q931GetIEPtr(pMes->CalledNum,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
 
+	*OSize = Octet;	
+
     return rc;
 }
 
@@ -733,6 +747,8 @@ L3INT Q931Pmes_Notify(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UC
 	if(Q931IsIEPresent(pMes->Display))
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_DISPLAY](pTrunk, Q931GetIEPtr(pMes->Display,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
+
+	*OSize = Octet;	
 
     return rc;
 }
@@ -830,6 +846,8 @@ L3INT Q931Pmes_Progress(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_HIGH_LAYER_COMPATIBILITY](pTrunk, Q931GetIEPtr(pMes->HLComp,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
 
+	*OSize = Octet;	
+
     return rc;
 }
 
@@ -904,6 +922,8 @@ L3INT Q931Pmes_Release(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3U
 	if(Q931IsIEPresent(pMes->Signal))
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_SIGNAL](pTrunk, Q931GetIEPtr(pMes->Signal,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
+
+	*OSize = Octet;	
 
     return rc;
 }
@@ -980,6 +1000,8 @@ L3INT Q931Pmes_ReleaseComplete(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT IS
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_SIGNAL](pTrunk, Q931GetIEPtr(pMes->Signal,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
 
+	*OSize = Octet;	
+
     return rc;
 }
 
@@ -1053,6 +1075,8 @@ L3INT Q931Pmes_Restart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3U
         if((rc=Q931Pie[pTrunk->Dialect][Q931ie_RESTART_INDICATOR](pTrunk, Q931GetIEPtr(pMes->RestartInd,pMes->buf), OBuf, &Octet))!=0)
             return rc;
 
+	*OSize = Octet;	
+
     return rc;
 }
 
@@ -1125,6 +1149,8 @@ L3INT Q931Pmes_RestartAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, 
     if(Q931IsIEPresent(pMes->RestartInd))
         if((rc=Q931Pie[pTrunk->Dialect][Q931ie_RESTART_INDICATOR](pTrunk, Q931GetIEPtr(pMes->RestartInd,pMes->buf), OBuf, &Octet))!=0)
             return rc;
+	
+	*OSize = Octet;	
 
     return rc;
 }
@@ -1182,6 +1208,8 @@ L3INT Q931Pmes_Resume(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UC
 	if(Q931IsIEPresent(pMes->CallID))
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_CALL_IDENTITY](pTrunk, Q931GetIEPtr(pMes->CallID,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
+
+	*OSize = Octet;	
 
     return rc;
 }
@@ -1250,6 +1278,8 @@ L3INT Q931Pmes_ResumeAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_DISPLAY](pTrunk, Q931GetIEPtr(pMes->Display,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
 
+	*OSize = Octet;	
+
     return rc;
 }
 
@@ -1317,6 +1347,8 @@ L3INT Q931Pmes_ResumeReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_DISPLAY](pTrunk, Q931GetIEPtr(pMes->Display,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
 
+	*OSize = Octet;	
+
     return rc;
 }
 
@@ -1330,6 +1362,8 @@ L3INT Q931Umes_Segment(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L
 L3INT Q931Pmes_Segment(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3BOOL RetCode = L3FALSE;
+
+	*OSize = 0;	
 
     return RetCode;
 }
@@ -1580,6 +1614,8 @@ L3INT Q931Pmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCH
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_HIGH_LAYER_COMPATIBILITY](pTrunk, Q931GetIEPtr(pMes->HLComp,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
 
+	*OSize = Octet;	
+
     return rc;
 }
 
@@ -1667,6 +1703,8 @@ L3INT Q931Pmes_SetupAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_SIGNAL](pTrunk, Q931GetIEPtr(pMes->Signal,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
 
+	*OSize = Octet;	
+
     return rc;
 }
 
@@ -1743,6 +1781,8 @@ L3INT Q931Pmes_Status(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UC
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_DISPLAY](pTrunk, Q931GetIEPtr(pMes->Display,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
 
+	*OSize = Octet;	
+
     return rc;
 }
 
@@ -1799,6 +1839,8 @@ L3INT Q931Pmes_StatusEnquiry(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISiz
 	if(Q931IsIEPresent(pMes->Display))
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_DISPLAY](pTrunk, Q931GetIEPtr(pMes->Display,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
+
+	*OSize = Octet;	
 
     return rc;
 }
@@ -1857,6 +1899,8 @@ L3INT Q931Pmes_Suspend(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3U
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_CALL_IDENTITY](pTrunk, Q931GetIEPtr(pMes->CallID,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
 
+	*OSize = Octet;	
+
     return rc;
 }
 
@@ -1914,6 +1958,8 @@ L3INT Q931Pmes_SuspendAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, 
 	if(Q931IsIEPresent(pMes->Display))
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_DISPLAY](pTrunk, Q931GetIEPtr(pMes->Display,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
+
+	*OSize = Octet;	
 
     return rc;
 }
@@ -1982,6 +2028,8 @@ L3INT Q931Pmes_SuspendReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISiz
 		if((rc=Q931Pie[pTrunk->Dialect][Q931ie_DISPLAY](pTrunk, Q931GetIEPtr(pMes->Display,pMes->buf), OBuf, &Octet))!=0)
 			return rc;
 
+	*OSize = Octet;	
+
     return rc;
 }
 
@@ -2011,6 +2059,8 @@ L3INT Q931Pmes_UserInformation(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT IS
 
     NoWarning(OBuf);
     NoWarning(IBuf);
+
+	*OSize = 0;	
 
     return RetCode;
 }
