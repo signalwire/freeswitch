@@ -327,7 +327,7 @@ L3INT Q931Rx23(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT Size)
     m->MesType = Mes[IOff++];
 
     /* Call table proc to unpack codec message */
-	RetCode = Q931Umes[pTrunk->Dialect][m->MesType](pTrunk, Mes, pTrunk->L3Buf, Q931L4HeaderSpace, Size - Q931L4HeaderSpace);
+	RetCode = Q931Umes[pTrunk->Dialect][m->MesType](pTrunk, Mes, pTrunk->L3Buf, Q931L4HeaderSpace + IOff , Size - Q931L4HeaderSpace - IOff + 1);
 
 	if(RetCode >= Q931E_NO_ERROR)
 	{
@@ -411,7 +411,7 @@ L3INT Q931Tx32(Q931_TrunkInfo_t *pTrunk, L3UCHAR * Mes, L3INT Size)
 	if(RetCode >= Q931E_NO_ERROR)
 	{
 		if (pTrunk->Q931Tx32CBProc) {
-			RetCode = pTrunk->Q931Tx32CBProc(pTrunk->PrivateData32, pTrunk->L2Buf, Size);
+			RetCode = pTrunk->Q931Tx32CBProc(pTrunk->PrivateData32, pTrunk->L2Buf, OSize + Q931L2HeaderSpace);
 		} else {
 			RetCode = Q931E_MISSING_CB;
 		}
