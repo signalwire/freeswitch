@@ -42,6 +42,8 @@
 #include <stdio.h>
 #include "mfifo.h"
 
+int Q921SendRR(L2TRUNK trunk, int Sapi, int cr, int Tei, int pf);
+
 /*****************************************************************************
 
   Function:     Q921_InitTrunk
@@ -76,6 +78,10 @@ void Q921_InitTrunk(L2TRUNK trunk,
 	trunk->PrivateData21 = priv21;
 	trunk->PrivateData23 = priv23;
 	trunk->Q921HeaderSpace = hsize;
+	trunk->T200 = 0;
+	trunk->T203 = 0;
+	trunk->T200Timeout = 1000;
+	trunk->T203Timeout = 10000;
 }
 
 static int Q921Tx21Proc(L2TRUNK trunk, L2UCHAR *Msg, L2INT size)
@@ -87,6 +93,98 @@ int Q921Tx23Proc(L2TRUNK trunk, L2UCHAR *Msg, L2INT size)
 {
 	return trunk->Q921Tx23Proc(trunk->PrivateData23, Msg, size);
 
+}
+
+/*****************************************************************************
+
+  Function:     Q921TimeTick
+
+  Description:  Called periodically from an external source to allow the 
+                stack to process and maintain it's own timers.
+
+  Return Value: none
+
+*****************************************************************************/
+L2ULONG (*Q921GetTimeProc) ()=NULL; /* callback for func reading time in ms */
+static L2ULONG tLast={0};
+
+L2ULONG Q921GetTime()
+{
+    L2ULONG tNow = 0;
+    if(Q921GetTimeProc != NULL)
+    {
+        tNow = Q921GetTimeProc();
+        if(tNow < tLast)    /* wrapped */
+        {
+			/* TODO */
+        }
+		tLast = tNow;
+    }
+    return tNow;
+}
+
+void Q921T200TimerStart(L2TRUNK trunk)
+{
+	if (!trunk->T200) {
+		trunk->T200 = Q921GetTime() + trunk->T200Timeout;
+	}
+}
+
+void Q921T200TimerStop(L2TRUNK trunk)
+{
+	trunk->T200 = 0;
+}
+
+void Q921T200TimerReset(L2TRUNK trunk)
+{
+	Q921T200TimerStop(trunk);
+	Q921T200TimerStart(trunk);
+}
+
+void Q921T203TimerStart(L2TRUNK trunk)
+{
+	if (!trunk->T203) {
+		trunk->T203 = Q921GetTime() + trunk->T203Timeout;
+	}
+}
+
+void Q921T203TimerStop(L2TRUNK trunk)
+{
+	trunk->T203 = 0;
+}
+
+void Q921T203TimerReset(L2TRUNK trunk)
+{
+	Q921T203TimerStop(trunk);
+	Q921T203TimerStart(trunk);
+}
+
+void Q921T200TimerExpire(L2TRUNK trunk)
+{
+	(void)trunk;
+}
+
+void Q921T203TimerExpire(L2TRUNK trunk)
+{
+	Q921T203TimerReset(trunk);
+	Q921SendRR(trunk, trunk->sapi, trunk->NetUser == Q921_TE ? 0 : 1, trunk->tei, 1);
+}
+
+void Q921TimerTick(L2TRUNK trunk)
+{
+	L2ULONG tNow = Q921GetTime();
+	if (trunk->T200 && tNow > trunk->T200) {
+		Q921T200TimerExpire(trunk);
+	}
+	if (trunk->T203 && tNow > trunk->T203) {
+		Q921T203TimerExpire(trunk);		
+	}
+}
+
+
+void Q921SetGetTimeCB(L2ULONG (*callback)())
+{
+    Q921GetTimeProc = callback;
 }
 
 /*****************************************************************************
@@ -388,6 +486,9 @@ int Q921Rx12(L2TRUNK trunk)
 
     if(smes != NULL)
     {
+        rs = size - trunk->Q921HeaderSpace;
+        mes = &smes[trunk->Q921HeaderSpace];
+
 		if ((mes[2] & 3) != 3) {
 			/* we have an S or I frame */
 			/* if nr is between va and vs, update our va counter */
@@ -396,9 +497,6 @@ int Q921Rx12(L2TRUNK trunk)
 				trunk->va = nr;
 			}
 		}
-
-        rs = size - trunk->Q921HeaderSpace;
-        mes = &smes[trunk->Q921HeaderSpace];
 
         /* check for I frame */
         if((mes[2] & 0x01) == 0)
@@ -409,7 +507,7 @@ int Q921Rx12(L2TRUNK trunk)
             if(Q921Tx23Proc(trunk, smes, size-2) >= 0) /* -2 to clip away CRC */
             {
 				if (vs == trunk->vs) {
-					Q921SendRR(trunk, (mes[0]&0xfc)>>2, (mes[0]>>1)&0x01,mes[1]>>1, mes[3]&0x01);
+					Q921SendRR(trunk, (mes[0]&0xfc)>>2, (mes[0]>>1)&0x01, mes[1]>>1, mes[3]&0x01);
 				}        
 			}
             else
@@ -425,7 +523,7 @@ int Q921Rx12(L2TRUNK trunk)
 			
 			/* todo: we probably should schedule to send RR at timeout here */
             /* todo: check if RR is responce to I */
-            Q921SendRR(trunk, (mes[0]&0xfc)>>2, (mes[0]>>1)&0x01,mes[1]>>1, mes[2]&0x01);
+            Q921T203TimerStart(trunk);
         }
 		
         /* check for RNR */

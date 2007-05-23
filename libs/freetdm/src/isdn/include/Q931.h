@@ -2406,6 +2406,7 @@ L3INT	Q931StartTimer(Q931_TrunkInfo_t *pTrunk, L3INT callIndex, L3USHORT iTimer)
 L3INT	Q931StopTimer(Q931_TrunkInfo_t *pTrunk, L3INT callindex, L3USHORT iTimer);
 L3INT	Q931SetState(Q931_TrunkInfo_t *pTrunk, L3INT callIndex, L3INT iState);
 L3ULONG Q931GetTime();
+void Q931SetGetTimeCB(L3ULONG (*callback)());
 void	Q931AddStateEntry(L3UCHAR iD, L3INT iState, L3INT iMes, L3UCHAR cDir);
 L3BOOL	Q931IsEventLegal(L3UCHAR iD, L3INT iState, L3INT iMes, L3UCHAR cDir);
 
