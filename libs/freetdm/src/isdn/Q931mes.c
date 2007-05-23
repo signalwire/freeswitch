@@ -1114,7 +1114,6 @@ L3INT Q931Pmes_RestartAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, 
     OBuf[Octet++]    = (L3UCHAR)(pMes->CRV);    /* lsb                            */
     OBuf[Octet++]    = pMes->MesType;        /* message header                */
     
-	printf("WTF: %d\n", Octet);
     /* ChanID */
     if(Q931IsIEPresent(pMes->ChanID))
         if((rc=Q931Pie[pTrunk->Dialect][pMes->MesType](pTrunk, Q931GetIEPtr(pMes->ChanID,pMes->buf), OBuf, &Octet))!=0)
@@ -1127,7 +1126,6 @@ L3INT Q931Pmes_RestartAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, 
     if(Q931IsIEPresent(pMes->RestartInd))
         if((rc=Q931Pie[pTrunk->Dialect][Q931ie_RESTART_INDICATOR](pTrunk, Q931GetIEPtr(pMes->RestartInd,pMes->buf), OBuf, &Octet))!=0)
             return rc;
-	printf("WTF: %d\n", Octet);
 	*OSize = Octet;
     return rc;
 }
