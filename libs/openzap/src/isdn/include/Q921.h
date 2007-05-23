@@ -98,6 +98,7 @@ struct Q921Data
 {
     L2UCHAR HDLCInQueue[Q921MAXHDLCSPACE];
 	L2INT initialized;
+	L2UCHAR va;
     L2UCHAR vs;
     L2UCHAR vr;
     L2INT state;
