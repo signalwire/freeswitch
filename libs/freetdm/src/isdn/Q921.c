@@ -64,8 +64,9 @@ void Q921_InitTrunk(L2TRUNK trunk,
 		MFIFOCreate(trunk->HDLCInQueue, Q921MAXHDLCSPACE, 10);
 		trunk->initialized = INITIALIZED_MAGIC;
 	}
+	trunk->va = 0;
+	trunk->vs = 0;	
 	trunk->vr = 0;
-	trunk->vs = 0;
 	trunk->state = 0;
 	trunk->sapi = sapi;
 	trunk->tei = tei;
@@ -355,6 +356,7 @@ int Q921ProcSABME(L2TRUNK trunk, L2UCHAR *mes, L2INT size)
 
     trunk->vr=0;
     trunk->vs=0;
+	trunk->va=0;
 
     return 1;
 }
@@ -382,29 +384,46 @@ int Q921Rx12(L2TRUNK trunk)
     L2UCHAR *mes;
     L2INT rs,size;     /* receive size & Q921 frame size*/
     L2UCHAR *smes = MFIFOGetMesPtr(trunk->HDLCInQueue, &size);
-	
+	L2UCHAR nr;
+
     if(smes != NULL)
     {
+		if ((mes[2] & 3) != 3) {
+			/* we have an S or I frame */
+			/* if nr is between va and vs, update our va counter */
+			nr = (mes[3] >> 1);
+			if (nr >= trunk->va && nr <= trunk->vs) {
+				trunk->va = nr;
+			}
+		}
+
         rs = size - trunk->Q921HeaderSpace;
         mes = &smes[trunk->Q921HeaderSpace];
 
         /* check for I frame */
         if((mes[2] & 0x01) == 0)
         {
-            if(Q921Tx23Proc(trunk, smes, size-2)) /* -2 to clip away CRC */
+			L2INT vs = trunk->vs;
+			/* we increment before we "really" know its good so that if we send in the callback, we use the right nr */
+			trunk->vr++;
+            if(Q921Tx23Proc(trunk, smes, size-2) >= 0) /* -2 to clip away CRC */
             {
-                trunk->vr++;
-                Q921SendRR(trunk, (mes[0]&0xfc)>>2, (mes[0]>>1)&0x01,mes[1]>>1, mes[3]&0x01);
-            }
+				if (vs == trunk->vs) {
+					Q921SendRR(trunk, (mes[0]&0xfc)>>2, (mes[0]>>1)&0x01,mes[1]>>1, mes[3]&0x01);
+				}        
+			}
             else
             {
                 /* todo: whatever*/
-            }
+				trunk->vr--;
+           }
         }
 
         /* check for RR */
         else if(mes[2] ==0x01)
         {
+			
+			/* todo: we probably should schedule to send RR at timeout here */
             /* todo: check if RR is responce to I */
             Q921SendRR(trunk, (mes[0]&0xfc)>>2, (mes[0]>>1)&0x01,mes[1]>>1, mes[2]&0x01);
         }
