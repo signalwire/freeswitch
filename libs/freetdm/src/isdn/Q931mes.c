@@ -998,17 +998,17 @@ L3INT Q931Umes_Restart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L
         switch(IBuf[IOff])
         {
         case Q931ie_CHANNEL_IDENTIFICATION:
-            rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->ChanID,&IBuf[IOff], &OBuf[OOff], &IOff, &OOff);
+            rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->ChanID,&IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
             if(rc != Q931E_NO_ERROR) 
                 return rc;
             break;
         case Q931ie_DISPLAY:
-            rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display,&IBuf[IOff], &OBuf[OOff], &IOff, &OOff);
+            rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display,&IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
             if(rc != Q931E_NO_ERROR) 
                 return rc;
             break;
         case Q931ie_RESTART_INDICATOR:
-            rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->RestartInd,&IBuf[IOff], &OBuf[OOff], &IOff, &OOff);
+            rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->RestartInd,&IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
             if(rc != Q931E_NO_ERROR) 
                 return rc;
             break;
@@ -1104,6 +1104,7 @@ L3INT Q931Pmes_RestartAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, 
     L3INT rc = Q931E_NO_ERROR;
     Q931mes_RestartAck *pMes = (Q931mes_RestartAck *)IBuf;
     L3INT Octet = 0;
+	*OSize = 0;
 
     /* Q931 Message Header */
 
@@ -1113,6 +1114,7 @@ L3INT Q931Pmes_RestartAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, 
     OBuf[Octet++]    = (L3UCHAR)(pMes->CRV);    /* lsb                            */
     OBuf[Octet++]    = pMes->MesType;        /* message header                */
     
+	printf("WTF: %d\n", Octet);
     /* ChanID */
     if(Q931IsIEPresent(pMes->ChanID))
         if((rc=Q931Pie[pTrunk->Dialect][pMes->MesType](pTrunk, Q931GetIEPtr(pMes->ChanID,pMes->buf), OBuf, &Octet))!=0)
@@ -1123,9 +1125,10 @@ L3INT Q931Pmes_RestartAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, 
             return rc;
     /* RestartInd */
     if(Q931IsIEPresent(pMes->RestartInd))
-        if((rc=Q931Pie[pTrunk->Dialect][pMes->MesType](pTrunk, Q931GetIEPtr(pMes->RestartInd,pMes->buf), OBuf, &Octet))!=0)
+        if((rc=Q931Pie[pTrunk->Dialect][Q931ie_RESTART_INDICATOR](pTrunk, Q931GetIEPtr(pMes->RestartInd,pMes->buf), OBuf, &Octet))!=0)
             return rc;
-
+	printf("WTF: %d\n", Octet);
+	*OSize = Octet;
     return rc;
 }
 
