@@ -1881,6 +1881,7 @@ typedef struct
     L3INT           CRV;            /* Call reference value                 */
     ie              ChanID;         /* Channel identification               */
     ie              Display;        /* Display                              */
+    ie              RestartWin;     /* Restart Window                       */
     ie              RestartInd;     /* Restart indicator                    */
     L3UCHAR         buf[1];         /* Dynamic buffer                       */
 }Q931mes_Restart;
@@ -2127,7 +2128,7 @@ extern L3INT (*Q931Pie   [Q931MAXDLCT][Q931MAXIE] )   (Q931_TrunkInfo_t *pTrunk,
   Description:  Compute a Ptr to the information element.
 
 *****************************************************************************/
-#define Q931GetIEPtr(ie,buf) (&buf[Q931GetIEOffset(ie)])
+#define Q931GetIEPtr(ie,buf) ((void *)&buf[Q931GetIEOffset(ie)])
 
 /*****************************************************************************
 
