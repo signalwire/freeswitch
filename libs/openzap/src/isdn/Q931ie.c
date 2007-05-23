@@ -410,7 +410,7 @@ L3INT Q931Pie_BearerCap(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
         }
     }
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
@@ -497,7 +497,7 @@ L3INT Q931Pie_CallID(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
 
     OBuf[(*Octet)-1] |= 0x80; /* set complete flag at last octet*/
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
@@ -574,7 +574,7 @@ L3INT Q931Pie_CallState(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
 
     OBuf[(*Octet)++] = 0x80 | (pIE->CodStand<<6) | pIE->CallState;
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
@@ -670,7 +670,7 @@ L3INT Q931Pie_CalledSub(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
 
     OBuf[(*Octet)-1] |= 0x80; /* Terminate bit */
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
@@ -763,7 +763,7 @@ L3INT Q931Pie_CalledNum(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
 
     OBuf[(*Octet)-1] |= 0x80; /* Terminate bit */
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
@@ -877,7 +877,7 @@ L3INT Q931Pie_CallingNum(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf,
 
     OBuf[(*Octet)-1] |= 0x80; /* Terminate bit */
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
@@ -973,7 +973,7 @@ L3INT Q931Pie_CallingSub(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf,
 
     OBuf[(*Octet)-1] |= 0x80; /* Terminate bit */
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
@@ -1065,7 +1065,7 @@ L3INT Q931Pie_Cause(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3IN
 
     /* Octet 5 - diagnostics not supported in send */
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
@@ -1261,7 +1261,7 @@ L3INT Q931Pie_ChanID(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
         }
     }
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
@@ -1435,7 +1435,7 @@ L3INT Q931Pie_DateTime(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L
         }
     }
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
@@ -1518,7 +1518,7 @@ L3INT Q931Pie_Display(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
         OBuf[(*Octet)++] = pIE->Display[x];
     }
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
@@ -1639,7 +1639,7 @@ L3INT Q931Pie_HLComp(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
         OBuf[(*Octet)-1] |= 0x80;
     }
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
@@ -1721,7 +1721,7 @@ L3INT Q931Pie_KeypadFac(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
         OBuf[(*Octet)++] = pIE->KeypadFac[x];
     }
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
@@ -2102,7 +2102,7 @@ L3INT Q931Pie_LLComp(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
         rc = Q931E_LLCOMP;
     }
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
@@ -2212,7 +2212,7 @@ L3INT Q931Pie_NetFac(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
     /* Octet 4*/
     OBuf[(*Octet)++] = pIE->NetFac;
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
@@ -2288,7 +2288,7 @@ L3INT Q931Pie_NotifInd(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L
     /* Octet 3*/
     OBuf[(*Octet)++] = pIE->Notification;
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
@@ -2373,7 +2373,7 @@ L3INT Q931Pie_ProgInd(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
     /* Octet 4*/
     OBuf[(*Octet)++] = 0x80 | pIE->ProgDesc;
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
@@ -2636,7 +2636,7 @@ L3INT Q931Pie_Segment(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
     /* Octet 4 */
     OBuf[(*Octet)++] = pIE->SegType;
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
@@ -2767,7 +2767,7 @@ L3INT Q931Pie_Signal(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
     /* Octet 3*/
     OBuf[(*Octet)++] = pIE->Signal;
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
@@ -2858,7 +2858,7 @@ L3INT Q931Pie_TransNetSel(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf
         OBuf[(*Octet)++] = pIE->NetID[x];
     }
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
@@ -2947,7 +2947,7 @@ L3INT Q931Pie_UserUser(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L
         OBuf[(*Octet)++] = pIE->User[x];
     }
 
-    OBuf[li] = (L3UCHAR)((*Octet)-Beg);
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;
 }
 
