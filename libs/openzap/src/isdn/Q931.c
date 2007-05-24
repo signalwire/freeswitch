@@ -64,6 +64,156 @@ L3INT (*Q931Pmes  [Q931MAXDLCT][Q931MAXMES])	(Q931_TrunkInfo_t *pTrunk, Q931mes_
 L3INT (*Q931Uie   [Q931MAXDLCT][Q931MAXIE])		(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
 L3INT (*Q931Pie   [Q931MAXDLCT][Q931MAXIE])		(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
 
+L3UINT Q931MsgieOffset[Q931MAXIE];
+
+void Q931Initialize_MsgieOffset()
+{
+	L3INT x;
+	Q931mes_Generic msg;
+	ie *index;
+	
+	for(x=0; x<Q931MAXIE; x++) {
+		switch(x)
+		{
+		case Q931ie_SWITCHOOK:
+			index = &msg.Switchhook;
+			break;
+		case Q931ie_FEATURE_ACTIVATION:
+			index = &msg.FeatAct;
+			break;
+		case Q931ie_FEATURE_INDICATION:
+			index = &msg.FeatInd;
+			break;
+		case Q931ie_CALL_IDENTITY:
+			index = &msg.CallID;
+			break;
+		case Q931ie_SHIFT:
+			index = &msg.Shift;
+			break;
+		case Q931ie_MORE_DATA:
+			index = &msg.MoreData;
+			break;
+		case Q931ie_SENDING_COMPLETE:
+			index = &msg.SendComplete;
+			break;
+		case Q931ie_CONGESTION_LEVEL:
+			index = &msg.CongestionLevel;
+			break;
+		case Q931ie_REPEAT_INDICATOR:
+			index = &msg.RepeatInd;
+			break;
+		case Q931ie_SEGMENTED_MESSAGE:
+			index = &msg.Segment;
+			break;
+		case Q931ie_BEARER_CAPABILITY:
+			index = &msg.BearerCap;
+			break;
+		case Q931ie_CAUSE:
+			index = &msg.Cause;
+			break;
+		case Q931ie_CALL_STATE:
+			index = &msg.CallState;
+			break;
+		case Q931ie_CHANNEL_IDENTIFICATION:
+			index = &msg.ChanID;
+			break;
+		case Q931ie_PROGRESS_INDICATOR:
+			index = &msg.ProgInd;
+			break;
+		case Q931ie_NETWORK_SPECIFIC_FACILITIES:
+			index = &msg.NetFac;
+			break;
+		case Q931ie_NOTIFICATION_INDICATOR:
+			index = &msg.NotifInd;
+			break;
+		case Q931ie_DISPLAY:
+			index = &msg.Display;
+			break;
+		case Q931ie_DATETIME:
+			index = &msg.DateTime;
+			break;
+		case Q931ie_KEYPAD_FACILITY:
+			index = &msg.KeypadFac;
+			break;
+		case Q931ie_SIGNAL:
+			index = &msg.Signal;
+			break;
+		case Q931ie_INFORMATION_RATE:
+			index = &msg.InfoRate;
+			break;
+		case Q931ie_END_TO_END_TRANSIT_DELAY:
+			index = &msg.EndEndTxDelay;
+			break;
+		case Q931ie_TRANSIT_DELAY_SELECTION_AND_IND:
+			index = &msg.TransDelSelInd;
+			break;
+		case Q931ie_PACKED_LAYER_BIMARY_PARAMETERS:
+			index = &msg.PackParam;
+			break;
+		case Q931ie_PACKED_LAYER_WINDOW_SIZE:
+			index = &msg.PackWinSize;
+			break;
+		case Q931ie_PACKED_SIZE:
+			index = &msg.PackSize;
+			break;
+		case Q931ie_CALLING_PARTY_NUMBER:
+			index = &msg.CallingNum;
+			break;
+		case Q931ie_CALLING_PARTY_SUBADDRESS:
+			index = &msg.CallingSub;
+			break;
+		case Q931ie_CALLED_PARTY_NUMBER:
+			index = &msg.CalledNum;
+			break;
+		case Q931ie_CALLED_PARTY_SUBADDRESS:
+			index = &msg.CalledSub;
+			break;
+		case Q931ie_REDIRECTING_NUMBER:
+			index = &msg.RedirNum;
+			break;
+		case Q931ie_TRANSIT_NETWORK_SELECTION:
+			index = &msg.TransNetSel;
+			break;
+		case Q931ie_RESTART_INDICATOR:
+			index = &msg.RestartInd;
+			break;
+		case Q931ie_LOW_LAYER_COMPATIBILITY:
+			index = &msg.LLComp;
+			break;
+		case Q931ie_HIGH_LAYER_COMPATIBILITY:
+			index = &msg.HLComp;
+			break;
+		case Q931ie_USER_USER:
+			index = &msg.UserUser;
+			break;
+		case Q931ie_ESCAPE_FOR_EX:
+			index = &msg.Escape;
+			break;
+		default:
+			index = NULL;
+			break;
+		}
+
+		if (index) {
+			Q931MsgieOffset[x] = (L3UINT)((L3UCHAR *)index - (L3UCHAR *)&msg);
+		} else {
+			Q931MsgieOffset[x] = 0;
+		}
+	}
+}
+
+ie *Q931MegGetIE(Q931mes_Generic *msg, L3UINT ie_type)
+{
+	L3UINT offset = Q931MsgieOffset[ie_type];
+
+	if (!offset) {
+		return NULL;
+	}
+	
+	return (ie *)((L3UCHAR *)msg + offset);
+
+}
+
 void  (*Q931CreateDialectCB[Q931MAXDLCT])       (L3UCHAR iDialect)=
 {
 	NULL,
@@ -226,6 +376,9 @@ L3INT Q931ErrorDummy(void *priv, L3INT a, L3INT b, L3INT c)
 void Q931Initialize()
 {
     L3INT x,y;
+
+	/* Initialize the Message offset ie Table */
+	Q931Initialize_MsgieOffset();
 
 	/* Secure the callbacks to default procs */
     Q931ErrorProc = Q931ErrorDummy;
