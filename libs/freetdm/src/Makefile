@@ -104,6 +104,8 @@ zap_zt.o: zap_zt.c
 %.o: %.c
 	$(CC) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
 
+dox:
+	cd docs && doxygen $(PWD)/docs/Doxygen.conf
 clean:
 	rm -f *.o isdn/*.o $(MYLIB) *~ \#* testapp priserver testisdn testanalog
 
