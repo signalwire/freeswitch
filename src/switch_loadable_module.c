@@ -785,7 +785,6 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, ch
 
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, char *fname, const char **err)
 {
-	switch_size_t len = 0;
 	char *path = NULL;
 	char *file = NULL;
 	switch_loadable_module_t *module = NULL;
@@ -808,17 +807,9 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, 
 		path = strdup(file);
 	} else {
 		if (strchr(file, '.')) {
-			len = strlen(dir);
-			len += strlen(file);
-			len += 4;
-			path = (char *) switch_core_alloc(loadable_modules.pool, len);
-			snprintf(path, len, "%s%s%s", dir, SWITCH_PATH_SEPARATOR, file);
+			path = switch_mprintf("%s%s%s", dir, SWITCH_PATH_SEPARATOR, file);
 		} else {
-			len = strlen(dir);
-			len += strlen(file);
-			len += 8;
-			path = (char *) malloc(len);
-			snprintf(path, len, "%s%s%s%s", dir, SWITCH_PATH_SEPARATOR, file, ext);
+			path = switch_mprintf("%s%s%s%s", dir, SWITCH_PATH_SEPARATOR, file, ext);
 		}
 	}
 
@@ -833,6 +824,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, 
 			do_shutdown(module);
 		}
 	} else {
+		*err = "No such module!";
 		status = SWITCH_STATUS_FALSE;
 	}
 	switch_mutex_unlock(loadable_modules.mutex);
