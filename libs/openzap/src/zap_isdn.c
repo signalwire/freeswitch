@@ -192,7 +192,7 @@ zap_status_t zap_isdn_start(zap_span_t *span)
 
 zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931Dialect_t dialect, zio_signal_cb_t sig_cb)
 {
-	uint32_t x,i;
+	uint32_t i, x = 0;
 	zap_channel_t *dchans[2] = {0};
 
 	if (span->signal_type) {
