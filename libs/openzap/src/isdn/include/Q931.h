@@ -1445,7 +1445,7 @@ typedef enum						/* Network/User Mode.                   */
 typedef enum						/* Dialect enum                         */
 {
 	Q931_Dialect_Q931 = 0,
-	Q931_Dialect_National = 1,
+	Q931_Dialect_National = 2,
 
 	Q931_Dialect_Count
 } Q931Dialect_t;
