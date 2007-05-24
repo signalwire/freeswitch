@@ -121,36 +121,45 @@
   Error Codes
 
 *****************************************************************************/
-#define Q931E_NO_ERROR					0
-#define Q931E_UNKNOWN_MESSAGE			-3001
-#define Q931E_ILLEGAL_IE				-3002
-#define Q931E_UNKNOWN_IE				-3003
-#define Q931E_BEARERCAP					-3004
-#define Q931E_HLCOMP					-3005
-#define Q931E_LLCOMP					-3006
-#define Q931E_INTERNAL                  -3007
-#define Q931E_MISSING_CB                -3008
-#define Q931E_UNEXPECTED_MESSAGE        -3009
-#define Q931E_ILLEGAL_MESSAGE			-3010
-#define Q931E_TOMANYCALLS               -3011
-#define Q931E_INVALID_CRV               -3012
-#define Q931E_CALLID                    -3013
-#define Q931E_CALLSTATE                 -3014
-#define Q931E_CALLEDSUB                 -3015
-#define Q931E_CALLEDNUM                 -3016
-#define Q931E_CALLINGNUM                -3017
-#define Q931E_CALLINGSUB                -3018
-#define Q931E_CAUSE                     -3019
-#define Q931E_CHANID                    -3020
-#define Q931E_DATETIME                  -3021
-#define Q931E_DISPLAY                   -3022
-#define Q931E_KEYPADFAC                 -3023
-#define Q931E_NETFAC                    -3024
-#define Q931E_NOTIFIND                  -3025
-#define Q931E_PROGIND                   -3026
-#define Q931E_RESTARTIND                -3027
-#define Q931E_SEGMENT                   -3028
-#define Q931E_SIGNAL                    -3029
+typedef enum {
+
+	Q931E_NO_ERROR				=	0,
+
+	Q931E_UNKNOWN_MESSAGE		=	-3001,
+	Q931E_ILLEGAL_IE			=	-3002,
+	Q931E_UNKNOWN_IE			=	-3003,
+	Q931E_BEARERCAP				=	-3004,
+	Q931E_HLCOMP				=	-3005,
+	Q931E_LLCOMP				=	-3006,
+	Q931E_INTERNAL              =	-3007,
+	Q931E_MISSING_CB            =	-3008,
+	Q931E_UNEXPECTED_MESSAGE    =	-3009,
+	Q931E_ILLEGAL_MESSAGE		=	-3010,
+	Q931E_TOMANYCALLS           =	-3011,
+	Q931E_INVALID_CRV           =	-3012,
+	Q931E_CALLID                =	-3013,
+	Q931E_CALLSTATE             =	-3014,
+	Q931E_CALLEDSUB             =	-3015,
+	Q931E_CALLEDNUM             =	-3016,
+	Q931E_CALLINGNUM            =	-3017,
+	Q931E_CALLINGSUB            =	-3018,
+	Q931E_CAUSE                 =	-3019,
+	Q931E_CHANID                =	-3020,
+	Q931E_DATETIME              =	-3021,
+	Q931E_DISPLAY               =	-3022,
+	Q931E_KEYPADFAC             =	-3023,
+	Q931E_NETFAC                =	-3024,
+	Q931E_NOTIFIND              =	-3025,
+	Q931E_PROGIND               =	-3026,
+	Q931E_RESTARTIND            =	-3027,
+	Q931E_SEGMENT               =	-3028,
+	Q931E_SIGNAL                =	-3029
+
+} q931_error_t;
+
+/* The q931_error_t enum should be kept in sync with the q931_error_names array in Q931.c */ 
+
+const char *q931_error_to_name(q931_error_t error);
 
 /*****************************************************************************
 

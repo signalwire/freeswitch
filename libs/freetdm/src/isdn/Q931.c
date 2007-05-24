@@ -664,3 +664,61 @@ L3BOOL Q931IsEventLegal(L3UCHAR iD, L3INT iState, L3INT iMes, L3UCHAR cDir)
 	}
 	return L3FALSE;	
 }
+
+/*****************************************************************************
+  Function:		q931_error_to_name()
+
+  Description:	Check state table for matching criteria to indicate if this
+				Message is legal in this state or not.
+
+  Note:			Someone write a bsearch or invent something smart here
+				please - sequensial is ok for now.
+*****************************************************************************/
+static const char *q931_error_names[] = {
+	"Q931E_NO_ERROR",				/* 0 */
+
+	"Q931E_UNKNOWN_MESSAGE",		/* -3001 */
+	"Q931E_ILLEGAL_IE",				/* -3002 */
+	"Q931E_UNKNOWN_IE",				/* -3003 */
+	"Q931E_BEARERCAP",				/* -3004 */
+	"Q931E_HLCOMP",					/* -3005 */
+	"Q931E_LLCOMP",					/* -3006 */
+	"Q931E_INTERNAL",				/* -3007 */
+	"Q931E_MISSING_CB",				/* -3008 */
+	"Q931E_UNEXPECTED_MESSAGE",		/* -3009 */
+	"Q931E_ILLEGAL_MESSAGE",		/* -3010 */
+	"Q931E_TOMANYCALLS",			/* -3011 */
+	"Q931E_INVALID_CRV",			/* -3012 */
+	"Q931E_CALLID",					/* -3013 */
+	"Q931E_CALLSTATE",				/* -3014 */
+	"Q931E_CALLEDSUB",				/* -3015 */
+	"Q931E_CALLEDNUM",				/* -3016 */
+	"Q931E_CALLINGNUM",				/* -3017 */
+	"Q931E_CALLINGSUB",				/* -3018 */
+	"Q931E_CAUSE",					/* -3019 */
+	"Q931E_CHANID",					/* -3020 */
+	"Q931E_DATETIME",				/* -3021 */
+	"Q931E_DISPLAY",				/* -3022 */
+	"Q931E_KEYPADFAC",				/* -3023 */
+	"Q931E_NETFAC",					/* -3024 */
+	"Q931E_NOTIFIND",				/* -3025 */
+	"Q931E_PROGIND",				/* -3026 */
+	"Q931E_RESTARTIND",				/* -3027 */
+	"Q931E_SEGMENT",				/* -3028 */
+	"Q931E_SIGNAL",					/* -3029 */
+
+};
+
+#define Q931_MAX_ERROR 29
+
+const char *q931_error_to_name(q931_error_t error)
+{
+	int index = 0;
+	if ((int)error < 0) {
+		index = (((int)error * -1) -3000);
+	}
+	if (index < 0 || index > Q931_MAX_ERROR) {
+		return "";
+	}
+	return q931_error_names[index];
+}
