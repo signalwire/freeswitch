@@ -58,8 +58,8 @@
 *****************************************************************************/
 L3INT (*Q931Proc  [Q931MAXDLCT][Q931MAXMES])	(Q931_TrunkInfo_t *pTrunk, L3UCHAR *,L3INT);
 
-L3INT (*Q931Umes  [Q931MAXDLCT][Q931MAXMES])	(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size);
-L3INT (*Q931Pmes  [Q931MAXDLCT][Q931MAXMES])	(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT (*Q931Umes  [Q931MAXDLCT][Q931MAXMES])	(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size);
+L3INT (*Q931Pmes  [Q931MAXDLCT][Q931MAXMES])	(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
 
 L3INT (*Q931Uie   [Q931MAXDLCT][Q931MAXIE])		(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
 L3INT (*Q931Pie   [Q931MAXDLCT][Q931MAXIE])		(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
@@ -143,7 +143,7 @@ L3INT Q931ProcDummy(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b,L3INT c)
   Description:  Dummy function for message processing
 
 *****************************************************************************/
-L3INT Q931UmesDummy(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
+L3INT Q931UmesDummy(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size)
 {
     return Q931E_UNKNOWN_MESSAGE;
 }
@@ -167,7 +167,7 @@ L3INT Q931UieDummy(Q931_TrunkInfo_t *pTrunk,ie *pIE,L3UCHAR * IBuf, L3UCHAR * OB
   Description:  Dummy function for message processing
 
 *****************************************************************************/
-L3INT Q931PmesDummy(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
+L3INT Q931PmesDummy(Q931_TrunkInfo_t *pTrunk,Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     return Q931E_UNKNOWN_MESSAGE;
 }
@@ -334,7 +334,7 @@ L3INT Q931Rx23(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT Size)
     m->MesType = Mes[IOff++];
 
     /* Call table proc to unpack codec message */
-	RetCode = Q931Umes[pTrunk->Dialect][m->MesType](pTrunk, Mes, pTrunk->L3Buf, Q931L4HeaderSpace + IOff , Size - Q931L4HeaderSpace - IOff + 1);
+	RetCode = Q931Umes[pTrunk->Dialect][m->MesType](pTrunk, Mes, (Q931mes_Generic *)pTrunk->L3Buf, Q931L4HeaderSpace + IOff , Size - Q931L4HeaderSpace - IOff + 1);
 
 	if(RetCode >= Q931E_NO_ERROR)
 	{
@@ -414,7 +414,7 @@ L3INT Q931Tx32(Q931_TrunkInfo_t *pTrunk, L3UCHAR * Mes, L3INT Size)
     L3INT iDialect = pTrunk->Dialect;
 
     /* Call pack function through table. */
-    RetCode = Q931Pmes[iDialect][ptr->MesType](pTrunk,Mes,Size,&pTrunk->L2Buf[Q931L2HeaderSpace], &OSize);
+    RetCode = Q931Pmes[iDialect][ptr->MesType](pTrunk, (Q931mes_Generic *)Mes, Size, &pTrunk->L2Buf[Q931L2HeaderSpace], &OSize);
 	if(RetCode >= Q931E_NO_ERROR)
 	{
 		if (pTrunk->Q931Tx32CBProc) {

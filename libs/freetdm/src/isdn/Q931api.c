@@ -147,8 +147,8 @@ L3INT Q931Api_InitTrunk(Q931_TrunkInfo_t *pTrunk,
 
 void Q931SetMesProc(L3UCHAR mes, L3UCHAR dialect, 
                 L3INT (*Q931ProcFunc)(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom),
-                L3INT (*Q931UmesFunc)(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size),
-                L3INT (*Q931PmesFunc)(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
+                L3INT (*Q931UmesFunc)(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size),
+                L3INT (*Q931PmesFunc)(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 )
 {
     if(Q931ProcFunc != NULL)

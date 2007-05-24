@@ -43,16 +43,16 @@
 
 *****************************************************************************/
 
-L3INT Q932Umes_Facility(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
+L3INT Q932Umes_Facility(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size)
 {
     /* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-	Q932mes_Facility *mes = (Q932mes_Facility*)IBuf;
+	Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 
 	/* TODO */
 
-    mes->Size = sizeof(Q932mes_Facility) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -61,7 +61,7 @@ L3INT Q932Umes_Facility(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L
   Function:     Q931Pmes_Facility
 
 *****************************************************************************/
-L3INT Q932Pmes_Facility(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
+L3INT Q932Pmes_Facility(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3BOOL RetCode = L3FALSE;
 
@@ -77,16 +77,16 @@ L3INT Q932Pmes_Facility(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3
 
 *****************************************************************************/
 
-L3INT Q932Umes_Hold(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
+L3INT Q932Umes_Hold(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size)
 {
     /* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-	Q932mes_Hold *mes = (Q932mes_Hold*)IBuf;
+	Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 
 	/* TODO */
 
-    mes->Size = sizeof(Q932mes_Hold) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -95,7 +95,7 @@ L3INT Q932Umes_Hold(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT
   Function:     Q931Pmes_Hold
 
 *****************************************************************************/
-L3INT Q932Pmes_Hold(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
+L3INT Q932Pmes_Hold(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3BOOL RetCode = L3FALSE;
 
@@ -111,16 +111,16 @@ L3INT Q932Pmes_Hold(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHA
 
 *****************************************************************************/
 
-L3INT Q932Umes_HoldAck(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
+L3INT Q932Umes_HoldAck(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size)
 {
     /* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-	Q932mes_HoldAck *mes = (Q932mes_HoldAck*)IBuf;
+	Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 
 	/* TODO */
 
-    mes->Size = sizeof(Q932mes_HoldAck) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -129,7 +129,7 @@ L3INT Q932Umes_HoldAck(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3
   Function:     Q931Pmes_HoldAck
 
 *****************************************************************************/
-L3INT Q932Pmes_HoldAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
+L3INT Q932Pmes_HoldAck(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3BOOL RetCode = L3FALSE;
 
@@ -145,16 +145,16 @@ L3INT Q932Pmes_HoldAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3U
 
 *****************************************************************************/
 
-L3INT Q932Umes_HoldReject(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
+L3INT Q932Umes_HoldReject(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size)
 {
     /* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-	Q932mes_HoldReject *mes = (Q932mes_HoldReject*)IBuf;
+	Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 
 	/* TODO */
 
-    mes->Size = sizeof(Q932mes_HoldReject) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -163,7 +163,7 @@ L3INT Q932Umes_HoldReject(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf,
   Function:     Q931Pmes_HoldReject
 
 *****************************************************************************/
-L3INT Q932Pmes_HoldReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
+L3INT Q932Pmes_HoldReject(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3BOOL RetCode = L3FALSE;
 
@@ -179,16 +179,16 @@ L3INT Q932Pmes_HoldReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, 
 
 *****************************************************************************/
 
-L3INT Q932Umes_Register(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
+L3INT Q932Umes_Register(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size)
 {
     /* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-	Q932mes_Register *mes = (Q932mes_Register*)IBuf;
+	Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 
 	/* TODO */
 
-    mes->Size = sizeof(Q932mes_Register) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -197,7 +197,7 @@ L3INT Q932Umes_Register(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L
   Function:     Q931Pmes_Register
 
 *****************************************************************************/
-L3INT Q932Pmes_Register(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
+L3INT Q932Pmes_Register(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3BOOL RetCode = L3FALSE;
 
@@ -213,16 +213,16 @@ L3INT Q932Pmes_Register(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3
 
 *****************************************************************************/
 
-L3INT Q932Umes_Retrieve(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
+L3INT Q932Umes_Retrieve(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size)
 {
     /* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-	Q932mes_Retrieve *mes = (Q932mes_Retrieve*)IBuf;
+	Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 
 	/* TODO */
 
-    mes->Size = sizeof(Q932mes_Retrieve) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -231,7 +231,7 @@ L3INT Q932Umes_Retrieve(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L
   Function:     Q931Pmes_Retrieve
 
 *****************************************************************************/
-L3INT Q932Pmes_Retrieve(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
+L3INT Q932Pmes_Retrieve(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3BOOL RetCode = L3FALSE;
 
@@ -247,16 +247,16 @@ L3INT Q932Pmes_Retrieve(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3
 
 *****************************************************************************/
 
-L3INT Q932Umes_RetrieveAck(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
+L3INT Q932Umes_RetrieveAck(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size)
 {
     /* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-	Q932mes_RetrieveAck *mes = (Q932mes_RetrieveAck*)IBuf;
+	Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 
 	/* TODO */
 
-    mes->Size = sizeof(Q932mes_RetrieveAck) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -265,7 +265,7 @@ L3INT Q932Umes_RetrieveAck(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf
   Function:     Q931Pmes_RetrieveAck
 
 *****************************************************************************/
-L3INT Q932Pmes_RetrieveAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
+L3INT Q932Pmes_RetrieveAck(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3BOOL RetCode = L3FALSE;
 
@@ -281,16 +281,16 @@ L3INT Q932Pmes_RetrieveAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize,
 
 *****************************************************************************/
 
-L3INT Q932Umes_RetrieveReject(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
+L3INT Q932Umes_RetrieveReject(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size)
 {
     /* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-	Q932mes_RetrieveReject *mes = (Q932mes_RetrieveReject*)IBuf;
+	Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 
 	/* TODO */
 
-    mes->Size = sizeof(Q932mes_RetrieveReject) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -299,7 +299,7 @@ L3INT Q932Umes_RetrieveReject(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *O
   Function:     Q931Pmes_RetrieveReject
 
 *****************************************************************************/
-L3INT Q932Pmes_RetrieveReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
+L3INT Q932Pmes_RetrieveReject(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3BOOL RetCode = L3FALSE;
 
