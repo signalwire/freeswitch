@@ -66,10 +66,10 @@
                 the current IE.
 
 *****************************************************************************/
-#define Q931MoreIE() (Octet+Off - 2 < IESize)
+#define Q931MoreIE() (Octet+Off - 2< IESize)
 
 #define Q931IESizeTest(x)   {\
-                            if(Octet+Off-2 != IESize)\
+                            if(Octet + Off - 2!= IESize)\
                             {\
                                 Q931SetError(pTrunk,x, Octet, Off);\
                                 return x;\
