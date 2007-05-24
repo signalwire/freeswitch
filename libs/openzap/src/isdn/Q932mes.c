@@ -43,12 +43,9 @@
 
 *****************************************************************************/
 
-L3INT Q932Umes_Facility(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size)
+L3INT Q932Umes_Facility(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *mes, L3INT IOff, L3INT Size)
 {
-    /* L3INT i = IOff; */
-	/* L3INT ir=0; */
 	L3INT OOff=0;
-	Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 
 	/* TODO */
 
@@ -77,12 +74,9 @@ L3INT Q932Pmes_Facility(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT I
 
 *****************************************************************************/
 
-L3INT Q932Umes_Hold(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size)
+L3INT Q932Umes_Hold(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *mes, L3INT IOff, L3INT Size)
 {
-    /* L3INT i = IOff; */
-	/* L3INT ir=0; */
 	L3INT OOff=0;
-	Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 
 	/* TODO */
 
@@ -111,12 +105,9 @@ L3INT Q932Pmes_Hold(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize
 
 *****************************************************************************/
 
-L3INT Q932Umes_HoldAck(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size)
+L3INT Q932Umes_HoldAck(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *mes, L3INT IOff, L3INT Size)
 {
-    /* L3INT i = IOff; */
-	/* L3INT ir=0; */
 	L3INT OOff=0;
-	Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 
 	/* TODO */
 
@@ -145,12 +136,9 @@ L3INT Q932Pmes_HoldAck(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT IS
 
 *****************************************************************************/
 
-L3INT Q932Umes_HoldReject(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size)
+L3INT Q932Umes_HoldReject(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *mes, L3INT IOff, L3INT Size)
 {
-    /* L3INT i = IOff; */
-	/* L3INT ir=0; */
 	L3INT OOff=0;
-	Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 
 	/* TODO */
 
@@ -179,12 +167,9 @@ L3INT Q932Pmes_HoldReject(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT
 
 *****************************************************************************/
 
-L3INT Q932Umes_Register(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size)
+L3INT Q932Umes_Register(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *mes, L3INT IOff, L3INT Size)
 {
-    /* L3INT i = IOff; */
-	/* L3INT ir=0; */
 	L3INT OOff=0;
-	Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 
 	/* TODO */
 
@@ -213,12 +198,9 @@ L3INT Q932Pmes_Register(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT I
 
 *****************************************************************************/
 
-L3INT Q932Umes_Retrieve(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size)
+L3INT Q932Umes_Retrieve(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *mes, L3INT IOff, L3INT Size)
 {
-    /* L3INT i = IOff; */
-	/* L3INT ir=0; */
 	L3INT OOff=0;
-	Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 
 	/* TODO */
 
@@ -247,12 +229,9 @@ L3INT Q932Pmes_Retrieve(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT I
 
 *****************************************************************************/
 
-L3INT Q932Umes_RetrieveAck(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size)
+L3INT Q932Umes_RetrieveAck(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *mes, L3INT IOff, L3INT Size)
 {
-    /* L3INT i = IOff; */
-	/* L3INT ir=0; */
 	L3INT OOff=0;
-	Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 
 	/* TODO */
 
@@ -281,12 +260,9 @@ L3INT Q932Pmes_RetrieveAck(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3IN
 
 *****************************************************************************/
 
-L3INT Q932Umes_RetrieveReject(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size)
+L3INT Q932Umes_RetrieveReject(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, Q931mes_Generic *mes, L3INT IOff, L3INT Size)
 {
-    /* L3INT i = IOff; */
-	/* L3INT ir=0; */
 	L3INT OOff=0;
-	Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 
 	/* TODO */
 
