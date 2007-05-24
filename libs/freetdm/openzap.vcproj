@@ -369,6 +369,22 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\isdn\nationalie.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\isdn\nationalmes.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\isdn\nationalStateNT.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\isdn\nationalStateTE.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\isdn\Q921.c"
 				>
 			</File>
@@ -405,6 +421,10 @@
 				>
 				<File
 					RelativePath=".\src\isdn\include\mfifo.h"
+					>
+				</File>
+				<File
+					RelativePath=".\src\isdn\include\national.h"
 					>
 				</File>
 				<File
