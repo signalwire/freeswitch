@@ -39,7 +39,9 @@
 #include <sangoma_tdm_api.h>
 
 static struct {
-	unsigned codec_ms;
+	uint32_t codec_ms;
+	uint32_t wink_ms;
+	uint32_t flash_ms;
 } wp_globals;
 
 static zap_io_interface_t wanpipe_interface;
@@ -70,6 +72,25 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 		
 		if (sockfd != WP_INVALID_SOCKET && zap_span_add_channel(span, sockfd, type, &chan) == ZAP_SUCCESS) {
 			zap_log(ZAP_LOG_INFO, "configuring device s%dc%d as OpenZAP device %d:%d fd:%d\n", spanno, x, chan->span_id, chan->chan_id, sockfd);
+			if (type == ZAP_CHAN_TYPE_FXS || type == ZAP_CHAN_TYPE_FXO) {
+				wanpipe_tdm_api_t tdm_api;
+
+				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_ENABLE_RXHOOK_EVENTS;
+				wp_tdm_cmd_exec(chan, &tdm_api);
+
+				if (type == ZAP_CHAN_TYPE_FXS) {
+					tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_ENABLE_RING_DETECT_EVENTS;
+					wp_tdm_cmd_exec(chan, &tdm_api);
+				}
+
+				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_GET_HW_CODING;
+				wp_tdm_cmd_exec(chan, &tdm_api);
+				if (tdm_api.wp_tdm_cmd.hw_tdm_coding) {
+					chan->native_codec = chan->effective_codec = ZAP_CODEC_ALAW;
+				} else {
+					chan->native_codec = chan->effective_codec = ZAP_CODEC_ULAW;
+				}
+			}
 			configured++;
 		} else {
 			zap_log(ZAP_LOG_ERROR, "failure configuring device s%dc%d\n", spanno, x);
@@ -206,6 +227,10 @@ static ZIO_CONFIGURE_FUNCTION(wanpipe_configure)
 			} else if (!strcasecmp(var, "trunk_type")) {
 				span->trunk_type = str2zap_trunk_type(val);
 				zap_log(ZAP_LOG_DEBUG, "setting trunk type to '%s'\n", zap_trunk_type2str(span->trunk_type)); 
+			} else if (!strcasecmp(var, "fxo-channel")) {
+				configured += wp_configure_channel(&cfg, val, span, ZAP_CHAN_TYPE_FXO);
+			} else if (!strcasecmp(var, "fxs-channel")) {
+				configured += wp_configure_channel(&cfg, val, span, ZAP_CHAN_TYPE_FXS);
 			} else if (!strcasecmp(var, "b-channel")) {
 				configured += wp_configure_channel(&cfg, val, span, ZAP_CHAN_TYPE_B);
 			} else if (!strcasecmp(var, "d-channel")) {
@@ -250,13 +275,8 @@ static ZIO_OPEN_FUNCTION(wanpipe_open)
 		zap_channel_set_feature(zchan, ZAP_CHANNEL_FEATURE_INTERVAL);
 		zchan->effective_interval = zchan->native_interval = wp_globals.codec_ms;
 		zchan->packet_len = zchan->native_interval * 8;
-		
-		tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_GET_HW_CODING;
-		if (tdm_api.wp_tdm_cmd.hw_tdm_coding) {
-			zchan->native_codec = zchan->effective_codec = ZAP_CODEC_ULAW;
-		} else {
-			zchan->native_codec = zchan->effective_codec = ZAP_CODEC_ALAW;
-		}
+		zchan->native_codec = zchan->effective_codec;
+
 	}
 
 	return ZAP_SUCCESS;
@@ -392,12 +412,140 @@ static ZIO_WAIT_FUNCTION(wanpipe_wait)
 	return ZAP_SUCCESS;
 }
 
+ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
+{
+	struct pollfd pfds[ZAP_MAX_CHANNELS_SPAN];
+	int i, j = 0, k = 0, r;
+	
+	for(i = 1; i <= span->chan_count; i++) {
+		memset(&pfds[j], 0, sizeof(pfds[j]));
+		pfds[j].fd = span->channels[i].sockfd;
+		pfds[j].events = POLLPRI;
+		//printf("set %d=%d\n", j, pfds[j].fd);
+		j++;
+	}
+
+    r = poll(pfds, j, ms);
+	
+	if (r == 0) {
+		return ZAP_TIMEOUT;
+	} else if (r < 0) {
+		snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
+		return ZAP_FAIL;
+	}
+	
+	for(i = 1; i <= span->chan_count; i++) {
+		if (pfds[i-1].revents & POLLPRI) {
+			zap_set_flag((&span->channels[i]), ZAP_CHANNEL_EVENT);
+			span->channels[i].last_event_time = zap_current_time_in_ms();
+			k++;
+		}
+	}
+	
+	return k ? ZAP_SUCCESS : ZAP_FAIL;
+}
+
+ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
+{
+	int i;
+	zap_oob_event_t event_id;
+	
+	for(i = 1; i <= span->chan_count; i++) {
+		if (span->channels[i].last_event_time && !zap_test_flag((&span->channels[i]), ZAP_CHANNEL_EVENT)) {
+			uint32_t diff = zap_current_time_in_ms() - span->channels[i].last_event_time;
+			XX printf("%u %u %u\n", diff, (unsigned)zap_current_time_in_ms(), (unsigned)span->channels[i].last_event_time);
+			if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_WINK)) {
+				if (diff > wp_globals.wink_ms) {
+					zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_WINK);
+					zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_FLASH);
+					event_id = ZAP_OOB_OFFHOOK;
+					goto event;
+				}
+			}
+
+			if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_FLASH)) {
+				if (diff > wp_globals.flash_ms) {
+					zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_FLASH);
+					zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_WINK);
+					event_id = ZAP_OOB_ONHOOK;
+					goto event;
+				}
+			}
+		}
+		if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_EVENT)) {
+			wanpipe_tdm_api_t tdm_api;
+			zap_clear_flag((&span->channels[i]), ZAP_CHANNEL_EVENT);
+
+			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_READ_EVENT;
+			if (wp_tdm_cmd_exec(&span->channels[i], &tdm_api) != ZAP_SUCCESS) {
+				snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
+				return ZAP_FAIL;
+			}
+			
+			switch(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type) {
+			case WP_TDM_EVENT_RXHOOK:
+				{
+					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_rxhook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? ZAP_OOB_OFFHOOK : ZAP_OOB_ONHOOK;
+					
+					if (event_id == ZAP_OOB_OFFHOOK) {
+						if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_FLASH)) {
+							zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_FLASH);
+							zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_WINK);
+							event_id = ZAP_OOB_FLASH;
+							goto event;
+						} else {
+							zap_set_flag_locked((&span->channels[i]), ZAP_CHANNEL_WINK);
+						}
+					} else {
+						if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_WINK)) {
+							zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_WINK);
+							zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_FLASH);
+							event_id = ZAP_OOB_WINK;
+							goto event;
+						} else {
+							zap_set_flag_locked((&span->channels[i]), ZAP_CHANNEL_FLASH);
+						}
+					}
+					continue;
+				}
+				break;
+			case WP_TDM_EVENT_RING_DETECT:
+				{
+					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state & WP_TDMAPI_EVENT_RING_PRESENT ? ZAP_OOB_RING_START : ZAP_OOB_RING_STOP;
+					tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_DISABLE_RING_DETECT_EVENTS;
+					wp_tdm_cmd_exec(&span->channels[i], &tdm_api);
+				}
+				break;
+			default:
+				{
+					zap_log(ZAP_LOG_WARNING, "Unhandled event %d\n", tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type);
+					event_id = ZAP_OOB_INVALID;
+				}
+				break;
+			}
+
+		event:
+			span->channels[i].last_event_time = 0;
+			span->event_header.e_type = ZAP_EVENT_OOB;
+			span->event_header.enum_id = event_id;
+			span->event_header.channel = &span->channels[i];
+			*event = &span->event_header;
+			return ZAP_SUCCESS;
+		}
+	}
+
+	return ZAP_FAIL;
+	
+}
+
 zap_status_t wanpipe_init(zap_io_interface_t **zio)
 {
 	assert(zio != NULL);
 	memset(&wanpipe_interface, 0, sizeof(wanpipe_interface));
 
 	wp_globals.codec_ms = 20;
+	wp_globals.wink_ms = 150;
+	wp_globals.flash_ms = 750;
 	wanpipe_interface.name = "wanpipe";
 	wanpipe_interface.configure =  wanpipe_configure;
 	wanpipe_interface.open = wanpipe_open;
@@ -406,6 +554,8 @@ zap_status_t wanpipe_init(zap_io_interface_t **zio)
 	wanpipe_interface.wait = wanpipe_wait;
 	wanpipe_interface.read = wanpipe_read;
 	wanpipe_interface.write = wanpipe_write;
+	wanpipe_interface.poll_event = wanpipe_poll_event;
+	wanpipe_interface.next_event = wanpipe_next_event;
 	*zio = &wanpipe_interface;
 
 	return ZAP_SUCCESS;

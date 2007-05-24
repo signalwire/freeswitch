@@ -74,6 +74,11 @@
 #pragma warning(disable:4706)
 #endif
 
+#ifndef WIN32
+#include <time.h>
+#include <sys/time.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -90,6 +95,8 @@
 #include "zap_threadmutex.h"
 #include "Q931.h"
 #include "Q921.h"
+
+#define XX if (0)
 
 #ifdef  NDEBUG
 #undef assert
@@ -131,12 +138,23 @@
 */
 #define zap_set_flag(obj, flag) (obj)->flags |= (flag)
 
+#define zap_set_flag_locked(obj, flag) assert(obj->mutex != NULL);\
+zap_mutex_lock(obj->mutex);\
+(obj)->flags |= (flag);\
+zap_mutex_unlock(obj->mutex);
+
 /*!
   \brief Clear a flag on an arbitrary object while locked
   \command obj the object to test
   \command flag the or'd list of flags to clear
 */
 #define zap_clear_flag(obj, flag) (obj)->flags &= ~(flag)
+
+#define zap_clear_flag_locked(obj, flag) assert(obj->mutex != NULL); zap_mutex_lock(obj->mutex); (obj)->flags &= ~(flag); zap_mutex_unlock(obj->mutex);
+
+#define zap_set_state_locked(obj, s) assert(obj->mutex != NULL); zap_mutex_lock(obj->mutex); obj->state = s; zap_mutex_unlock(obj->mutex);
+
+#define zap_is_dtmf(key)  ((key > 47 && key < 58) || (key > 64 && key < 69) || (key > 96 && key < 101) || key == 35 || key == 42 || key == 87 || key == 119)
 
 /*!
   \brief Copy flags from one arbitrary object to another
@@ -157,6 +175,8 @@
 
 struct zap_event {
 	zap_event_type_t e_type;
+	uint32_t enum_id;
+	zap_channel_t *channel;
 	void *data;
 };
 
@@ -172,6 +192,8 @@ struct zap_channel {
 	uint32_t effective_interval;
 	uint32_t native_interval;
 	uint32_t packet_len;
+	zap_channel_state_t state;
+	zap_mutex_t *mutex;
 	teletone_dtmf_detect_state_t dtmf_detect;
 	zap_event_t event_header;
 	char last_error[256];
@@ -179,9 +201,11 @@ struct zap_channel {
 	void *mod_data;
 	uint32_t skip_read_frames;
 	zap_buffer_t *dtmf_buffer;
+	zap_buffer_t *digit_buffer;
 	uint32_t dtmf_on;
 	uint32_t dtmf_off;
 	teletone_generation_session_t tone_session;
+	zap_time_t last_event_time;
 	struct zap_span *span;
 	struct zap_io_interface *zio;
 };
@@ -207,6 +231,10 @@ struct zap_isdn_data {
 	uint32_t flags;
 };
 
+struct zap_analog_data {
+	uint32_t flags;
+};
+
 struct zap_span {
 	uint32_t span_id;
 	uint32_t chan_count;
@@ -217,6 +245,8 @@ struct zap_span {
 	zap_trunk_type_t trunk_type;
 	zap_signal_type_t signal_type;
 	struct zap_isdn_data *isdn_data;
+	struct zap_analog_data *analog_data;
+	zap_event_t event_header;
 	char last_error[256];
 	zap_channel_t channels[ZAP_MAX_CHANNELS_SPAN];
 };
@@ -233,12 +263,21 @@ struct zap_io_interface {
 	zio_wait_t wait;
 	zio_read_t read;
 	zio_write_t write;
+	zio_span_poll_event_t poll_event;
+	zio_span_next_event_t next_event;
 	uint32_t span_index;
 	struct zap_span spans[ZAP_MAX_SPANS_INTERFACE];
 };
 
+zap_size_t zap_channel_dequeue_dtmf(zap_channel_t *zchan, char *dtmf, zap_size_t len);
+zap_status_t zap_channel_queue_dtmf(zap_channel_t *zchan, const char *dtmf);
+zap_time_t zap_current_time_in_ms(void);
+zap_oob_event_t str2zap_oob_signal(char *name);
+char *zap_oob_signal2str(zap_oob_event_t type);
 zap_trunk_type_t str2zap_trunk_type(char *name);
 char *zap_trunk_type2str(zap_trunk_type_t type);
+zap_status_t zap_span_poll_event(zap_span_t *span, uint32_t ms);
+zap_status_t zap_span_next_event(zap_span_t *span, zap_event_t **event);
 zap_status_t zap_span_find(const char *name, uint32_t id, zap_span_t **span);
 zap_status_t zap_span_create(zap_io_interface_t *zio, zap_span_t **span);
 zap_status_t zap_span_close_all(zap_io_interface_t *zio);
@@ -246,6 +285,7 @@ zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_cha
 zap_status_t zap_span_set_event_callback(zap_span_t *span, zio_event_cb_t event_callback);
 zap_status_t zap_channel_set_event_callback(zap_channel_t *zchan, zio_event_cb_t event_callback);
 zap_status_t zap_channel_open(const char *name, uint32_t span_id, uint32_t chan_id, zap_channel_t **zchan);
+zap_status_t zap_channel_open_chan(zap_channel_t *zchan);
 zap_status_t zap_channel_open_any(const char *name, uint32_t span_id, zap_direction_t direction, zap_channel_t **zchan);
 zap_status_t zap_channel_close(zap_channel_t **zchan);
 zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, void *obj);

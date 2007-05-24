@@ -73,6 +73,9 @@ testapp: testapp.c $(MYLIB)
 testisdn: testisdn.c $(MYLIB)
 	$(CC) $(INCS) -L. testisdn.c -o testisdn -lopenzap -lm -lpthread
 
+testanalog: testanalog.c $(MYLIB)
+	$(CC) $(INCS) -L. testanalog.c -o testanalog -lopenzap -lm -lpthread
+
 priserver.o: priserver.c
 	$(CC) $(INCS) $(TMP) -c priserver.c -o priserver.o 
 
@@ -95,5 +98,5 @@ zap_zt.o: zap_zt.c
 	$(CC) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f *.o isdn/*.o $(MYLIB) *~ \#* testapp priserver
+	rm -f *.o isdn/*.o $(MYLIB) *~ \#* testapp priserver testisdn testanalog
 
