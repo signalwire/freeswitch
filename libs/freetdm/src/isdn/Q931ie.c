@@ -820,7 +820,7 @@ L3INT Q931Uie_CallingNum(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UC
         Off++;
         x++;
 /*    }while((IBuf[Octet+Off]&0x80) != 0 && x < 20); Temporary dirty hack. */
-	}while(Octet+Off < IESize);
+	}while(Q931MoreIE());
 
     Q931IESizeTest(Q931E_CALLINGNUM);
 
