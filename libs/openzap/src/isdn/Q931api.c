@@ -182,47 +182,47 @@ void Q931SetIEProc(L3UCHAR iec, L3UCHAR dialect,
 L3UCHAR * Q931GetIEBuf(L3UCHAR *pm)
 {
 	L3UCHAR * s=NULL;
-	Q931mes_Alerting * pMes= (Q931mes_Alerting *)pm;
+	Q931mes_Generic * pMes= (Q931mes_Generic *)pm;
 	switch(pMes->MesType)
 	{
     case Q931mes_ALERTING             :
-		trampoline(Q931mes_Alerting);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_CALL_PROCEEDING      :
-		trampoline(Q931mes_CallProceeding);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_CONNECT              :      
-		trampoline(Q931mes_Connect);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_CONNECT_ACKNOWLEDGE  :
-		trampoline(Q931mes_ConnectAck);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_PROGRESS             :
-		trampoline(Q931mes_Progress);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_SETUP                :
-		trampoline(Q931mes_Setup);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_SETUP_ACKNOWLEDGE    :
-		trampoline(Q931mes_SetupAck);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_RESUME               :
-		trampoline(Q931mes_Resume);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_RESUME_ACKNOWLEDGE   :
-		trampoline(Q931mes_ResumeAck);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_RESUME_REJECT        :
-		trampoline(Q931mes_ResumeReject);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q932mes_RETRIEVE             :
@@ -238,43 +238,43 @@ L3UCHAR * Q931GetIEBuf(L3UCHAR *pm)
         break;
 
     case Q931mes_SUSPEND              :
-		trampoline(Q931mes_Suspend);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_SUSPEND_ACKNOWLEDGE  :
-		trampoline(Q931mes_SuspendAck);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_SUSPEND_REJECT       :
-		trampoline(Q931mes_SuspendReject);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_USER_INFORMATION     :
-		trampoline(Q931mes_UserInformation);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_DISCONNECT           :
-		trampoline(Q931mes_Disconnect);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_RELEASE              :
-		trampoline(Q931mes_Release);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_RELEASE_COMPLETE     :
-		trampoline(Q931mes_ReleaseComplete);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_RESTART              :
-		trampoline(Q931mes_Restart);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_RESTART_ACKNOWLEDGE  :
-		trampoline(Q931mes_RestartAck);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_CONGESTION_CONTROL   :
-		trampoline(Q931mes_CongestionControl);
+		trampoline(Q931mes_Generic);
         break;
 #if 0
     case Q931mes_FACILITY           :
@@ -283,11 +283,11 @@ L3UCHAR * Q931GetIEBuf(L3UCHAR *pm)
 #endif
 
     case Q931mes_INFORMATION          :
-		trampoline(Q931mes_Information);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_NOTIFY               :
-		trampoline(Q931mes_Notify);
+		trampoline(Q931mes_Generic);
         break;
 
 #if 0
@@ -297,15 +297,15 @@ L3UCHAR * Q931GetIEBuf(L3UCHAR *pm)
 #endif
 
     case Q931mes_STATUS               :
-		trampoline(Q931mes_Status);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_STATUS_ENQUIRY       :
-		trampoline(Q931mes_StatusEnquiry);
+		trampoline(Q931mes_Generic);
         break;
 
     case Q931mes_SEGMENT              :
-		trampoline(Q931mes_Segment);
+		trampoline(Q931mes_Generic);
         break;
 
     default:
@@ -340,7 +340,7 @@ L3INT Q931GetMesSize(L3UCHAR *pMes)
 ie Q931AppendIE( L3UCHAR *pm, L3UCHAR *pi)
 {
 	ie IE = 0;
-	Q931mes_Alerting * pMes= (Q931mes_Alerting *)pm;
+	Q931mes_Generic * pMes= (Q931mes_Generic *)pm;
 	Q931ie_BearerCap * pIE= (Q931ie_BearerCap *)pi;
 	L3INT iISize = pIE->Size;
 
@@ -363,7 +363,7 @@ L3INT Q931GetUniqueCRV(Q931_TrunkInfo_t *pTrunk)
 	return crv++;
 }
 
-L3INT Q931InitMesSetup(Q931mes_Setup *pMes)
+L3INT Q931InitMesSetup(Q931mes_Generic *pMes)
 {
 	pMes->ProtDisc		= 0x80;
 	pMes->CRV			= 0;		/* CRV to be allocated, might be receive*/
@@ -393,7 +393,7 @@ L3INT Q931InitMesSetup(Q931mes_Setup *pMes)
 	return 0;
 }
 
-L3INT Q931InitMesResume(Q931mes_Resume * pMes)
+L3INT Q931InitMesResume(Q931mes_Generic * pMes)
 {
 	pMes->ProtDisc		= 0x80;
 	pMes->CRV			= 0;		/* CRV to be allocated, might be receive*/
@@ -404,7 +404,7 @@ L3INT Q931InitMesResume(Q931mes_Resume * pMes)
 	return 0;
 }
 
-L3INT Q931InitMesRestartAck(Q931mes_RestartAck * pMes)
+L3INT Q931InitMesRestartAck(Q931mes_Generic * pMes)
 {
 	pMes->ProtDisc		= 0x80;
 	pMes->CRV			= 0;		/* CRV to be allocated, might be receive*/

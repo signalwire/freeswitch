@@ -376,7 +376,7 @@ L3INT Q931ProcProgressTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 L3INT Q931ProcSetupTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT rc=0;
-	Q931mes_Setup *pMes = (Q931mes_Setup *)&buf[Q931L4HeaderSpace];
+	Q931mes_Generic *pMes = (Q931mes_Generic *)&buf[Q931L4HeaderSpace];
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
 
@@ -482,7 +482,7 @@ L3INT Q931ProcSetupAckTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q931ProcResumeTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    Q931mes_Resume * pMes = (Q931mes_Resume *)&buf[Q931L4HeaderSpace];
+    Q931mes_Generic * pMes = (Q931mes_Generic *)&buf[Q931L4HeaderSpace];
     L3INT callIndex;
     L3INT ret = Q931E_NO_ERROR;
 
@@ -750,7 +750,7 @@ L3INT Q931ProcDisconnectTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q931ProcReleaseTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    Q931mes_Release *pMes = (Q931mes_Release *)&buf[Q931L4HeaderSpace];
+    Q931mes_Generic *pMes = (Q931mes_Generic *)&buf[Q931L4HeaderSpace];
     L3INT state = Q931GetCallState(pTrunk, pMes->CRV);
     L3INT ret = Q931E_NO_ERROR;
     if(state == Q931_U0 && iFrom == 2)
@@ -772,7 +772,7 @@ L3INT Q931ProcReleaseTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 *****************************************************************************/
 L3INT Q931ProcReleaseCompleteTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
-    Q931mes_ReleaseComplete *pMes = (Q931mes_ReleaseComplete *)&buf[Q931L4HeaderSpace];
+    Q931mes_Generic *pMes = (Q931mes_Generic *)&buf[Q931L4HeaderSpace];
     L3INT state = Q931GetCallState(pTrunk, pMes->CRV);
     L3INT ret = Q931E_NO_ERROR;
     if(state == Q931_U0 && iFrom == 2)
