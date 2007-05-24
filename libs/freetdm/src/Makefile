@@ -51,6 +51,7 @@ isdn/Q931ie.o \
 isdn/Q931mes.o \
 isdn/Q931StateNT.o \
 isdn/Q931StateTE.o \
+isdn/nationalStateNT.o\
 isdn/Q932mes.o 
 
 PWD=$(shell pwd)
