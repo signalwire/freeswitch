@@ -45,7 +45,7 @@ static int time_is_init = 0;
 
 static void time_init(void)
 {
-#ifdef WIN32_TIME_GET_TIME
+#ifdef WIN32
 	timeBeginPeriod(1);
 #endif
 	time_is_init = 1;
@@ -53,7 +53,7 @@ static void time_init(void)
 
 static void time_end(void)
 {
-#ifdef WIN32_TIME_GET_TIME
+#ifdef WIN32
 	timeEndPeriod(1);
 #endif
 	time_is_init = 0;
@@ -61,7 +61,7 @@ static void time_end(void)
 
 zap_time_t zap_current_time_in_ms(void)
 {
-#ifdef WIN32_TIME_GET_TIME
+#ifdef WIN32
 	return timeGetTime();
 #else
 	struct timeval tv;
@@ -518,7 +518,7 @@ static zap_status_t zap_channel_reset(zap_channel_t *zchan)
 
 zap_status_t zap_channel_open_chan(zap_channel_t *zchan)
 {
-	zap_status_t status;
+	zap_status_t status = ZAP_FAIL;
 
 	zap_mutex_lock(zchan->span->mutex);
 	if (zap_test_flag(zchan, ZAP_CHANNEL_READY) && ! zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
@@ -1064,7 +1064,7 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 
 			sln = sln_buf;
 		}
-		XX printf("WTF %d\n", (int) slen);
+
 		teletone_dtmf_detect(&zchan->dtmf_detect, sln, (int)slen);
 		teletone_dtmf_get(&zchan->dtmf_detect, digit_str, sizeof(digit_str));
 
