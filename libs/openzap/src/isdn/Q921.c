@@ -501,14 +501,12 @@ int Q921Rx12(L2TRUNK trunk)
         /* check for I frame */
         if((mes[2] & 0x01) == 0)
         {
-			L2INT vs = trunk->vs;
+
 			/* we increment before we "really" know its good so that if we send in the callback, we use the right nr */
 			trunk->vr++;
             if(Q921Tx23Proc(trunk, smes, size-2) >= 0) /* -2 to clip away CRC */
             {
-				if (vs == trunk->vs) {
-					Q921SendRR(trunk, (mes[0]&0xfc)>>2, (mes[0]>>1)&0x01, mes[1]>>1, mes[3]&0x01);
-				}        
+				Q921SendRR(trunk, (mes[0]&0xfc)>>2, (mes[0]>>1)&0x01, mes[1]>>1, mes[3]&0x01);
 			}
             else
             {
@@ -519,11 +517,11 @@ int Q921Rx12(L2TRUNK trunk)
 
         /* check for RR */
         else if(mes[2] ==0x01)
-        {
-			
-			/* todo: we probably should schedule to send RR at timeout here */
-            /* todo: check if RR is responce to I */
-            Q921T203TimerStart(trunk);
+		{
+			if (((mes[0]>>1)&0x01) == (trunk->NetUser == Q921_TE ? 1 : 0)) { /* if this is a command */
+				Q921SendRR(trunk, (mes[0]&0xfc)>>2, (mes[0]>>1)&0x01, mes[1]>>1, mes[2]&0x01);
+			}
+
         }
 		
         /* check for RNR */
