@@ -56,102 +56,6 @@
 #define Q932ie_FACILITY                         0x1c /* 0001 1100       */
 
 /*****************************************************************************
-  Struct:		Q932ie_Facility
-*****************************************************************************/
-typedef struct
-{
-    L3UINT			Size;           /* Size of message in bytes             */
-    L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
-    L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
-    L3UCHAR         buf[1];         /* Dynamic buffer                       */
-}Q932mes_Facility;
-
-/*****************************************************************************
-  Struct:		Q932ie_Hold
-*****************************************************************************/
-typedef struct
-{
-    L3UINT			Size;           /* Size of message in bytes             */
-    L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
-    L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
-    L3UCHAR         buf[1];         /* Dynamic buffer                       */
-}Q932mes_Hold;
-
-/*****************************************************************************
-  Struct:		Q932ie_HoldAck
-*****************************************************************************/
-typedef struct
-{
-    L3UINT			Size;           /* Size of message in bytes             */
-    L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
-    L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
-    L3UCHAR         buf[1];         /* Dynamic buffer                       */
-}Q932mes_HoldAck;
-
-/*****************************************************************************
-  Struct:		Q932ie_HoldReject
-*****************************************************************************/
-typedef struct
-{
-    L3UINT			Size;           /* Size of message in bytes             */
-    L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
-    L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
-    L3UCHAR         buf[1];         /* Dynamic buffer                       */
-}Q932mes_HoldReject;
-
-/*****************************************************************************
-  Struct:		Q932ie_Register
-*****************************************************************************/
-typedef struct
-{
-    L3UINT			Size;           /* Size of message in bytes             */
-    L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
-    L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
-    L3UCHAR         buf[1];         /* Dynamic buffer                       */
-}Q932mes_Register;
-
-/*****************************************************************************
-  Struct:		Q932ie_Retrieve
-*****************************************************************************/
-typedef struct
-{
-    L3UINT			Size;           /* Size of message in bytes             */
-    L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
-    L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
-    L3UCHAR         buf[1];         /* Dynamic buffer                       */
-}Q932mes_Retrieve;
-
-/*****************************************************************************
-  Struct:		Q932ie_RetrieveAck
-*****************************************************************************/
-typedef struct
-{
-    L3UINT			Size;           /* Size of message in bytes             */
-    L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
-    L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
-    L3UCHAR         buf[1];         /* Dynamic buffer                       */
-}Q932mes_RetrieveAck;
-
-/*****************************************************************************
-  Struct:		Q932ie_RetrieveReject
-*****************************************************************************/
-typedef struct
-{
-    L3UINT			Size;           /* Size of message in bytes             */
-    L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
-    L3UCHAR         MesType;        /* Message type                         */
-    L3USHORT        CRV;            /* Call reference value                 */
-    L3UCHAR         buf[1];         /* Dynamic buffer                       */
-}Q932mes_RetrieveReject;
-
-/*****************************************************************************
   Function Prototypes.
 *****************************************************************************/
 L3INT Q932ProcFacilityTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom);
@@ -172,20 +76,20 @@ L3INT Q932ProcRetrieveNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom);
 L3INT Q932ProcRetrieveAckNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom);
 L3INT Q932ProcRetrieveRejectNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom);
 
-L3INT Q932Pmes_Facility(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q932Pmes_Hold(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q932Pmes_HoldAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q932Pmes_HoldReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q932Pmes_Register(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q932Pmes_Retrieve(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q932Pmes_RetrieveAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
-L3INT Q932Pmes_RetrieveReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q932Pmes_Facility(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q932Pmes_Hold(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q932Pmes_HoldAck(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q932Pmes_HoldReject(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q932Pmes_Register(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q932Pmes_Retrieve(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q932Pmes_RetrieveAck(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q932Pmes_RetrieveReject(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
 
-L3INT Q932Umes_Facility(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q932Umes_Hold(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q932Umes_HoldAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q932Umes_HoldReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q932Umes_Register(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q932Umes_Retrieve(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q932Umes_RetrieveAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
-L3INT Q932Umes_RetrieveReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * OBuf, L3INT I, L3INT O);
+L3INT Q932Umes_Facility(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic * OBuf, L3INT I, L3INT O);
+L3INT Q932Umes_Hold(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic * OBuf, L3INT I, L3INT O);
+L3INT Q932Umes_HoldAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic * OBuf, L3INT I, L3INT O);
+L3INT Q932Umes_HoldReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic * OBuf, L3INT I, L3INT O);
+L3INT Q932Umes_Register(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic * OBuf, L3INT I, L3INT O);
+L3INT Q932Umes_Retrieve(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic * OBuf, L3INT I, L3INT O);
+L3INT Q932Umes_RetrieveAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic * OBuf, L3INT I, L3INT O);
+L3INT Q932Umes_RetrieveReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic * OBuf, L3INT I, L3INT O);
