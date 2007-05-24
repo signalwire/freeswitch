@@ -94,15 +94,18 @@ typedef enum {
 } zap_signal_type_t;
 
 typedef enum {
-	ZAP_SIGEVENT_CALL_START,
-	ZAP_SIGEVENT_CALL_STOP,
-	ZAP_SIGEVENT_CALL_TRANSFER,
+	ZAP_SIGEVENT_START,
+	ZAP_SIGEVENT_STOP,
+	ZAP_SIGEVENT_TRANSFER,
 	ZAP_SIGEVENT_ANSWER,
 	ZAP_SIGEVENT_PROGRESS,
 	ZAP_SIGEVENT_PROGRESS_MEDIA,
 	ZAP_SIGEVENT_NOTIFY,
-	ZAP_SIGEVENT_MISC
+	ZAP_SIGEVENT_MISC,
+	ZAP_SIGEVENT_INVALID
 } zap_signal_event_t;
+#define SIGNAL_STRINGS "START", "STOP", "TRANSFER", "ANSWER", "PROGRESS", "PROGRESS_MEDIA", "NOTIFY", "MISC", "INVALID"
+ZAP_STR2ENUM_P(zap_str2zap_signal_event, zap_signal_event2str, zap_signal_event_t)
 
 typedef enum {
 	ZAP_EVENT_NONE,
@@ -185,8 +188,15 @@ typedef enum {
 	ZAP_CHANNEL_STATE_DOWN,
 	ZAP_CHANNEL_STATE_UP,
 	ZAP_CHANNEL_STATE_DIALTONE,
-	ZAP_CHANNEL_STATE_COLLECT
+	ZAP_CHANNEL_STATE_COLLECT,
+	ZAP_CHANNEL_STATE_RING,
+	ZAP_CHANNEL_STATE_BUSY,
+	ZAP_CHANNEL_STATE_ATTN,
+	ZAP_CHANNEL_STATE_IDLE,
+	ZAP_CHANNEL_STATE_INVALID
 } zap_channel_state_t;
+#define CHANNEL_STATE_STRINGS "DOWN", "UP", "DIALTONE", "COLLECT", "RING", "BUSY", "ATTN", "IDLE", "INVALID"
+ZAP_STR2ENUM_P(zap_str2zap_channel_state, zap_channel_state2str, zap_channel_state_t)
 
 typedef enum {
 	ZAP_CHANNEL_CONFIGURED = (1 << 0),
@@ -199,7 +209,8 @@ typedef enum {
 	ZAP_CHANNEL_EVENT = (1 << 7),
 	ZAP_CHANNEL_INTHREAD = (1 << 8),
 	ZAP_CHANNEL_WINK = (1 << 9),
-	ZAP_CHANNEL_FLASH = (1 << 10)
+	ZAP_CHANNEL_FLASH = (1 << 10),
+	ZAP_CHANNEL_STATE_CHANGE = (1 << 11)
 } zap_channel_flag_t;
 
 
@@ -210,7 +221,7 @@ typedef struct zap_span zap_span_t;
 
 #define ZIO_SPAN_POLL_EVENT_ARGS (zap_span_t *span, uint32_t ms)
 #define ZIO_SPAN_NEXT_EVENT_ARGS (zap_span_t *span, zap_event_t **event)
-#define ZIO_SIGNAL_CB_ARGS (zap_span_t *span, zap_sigmsg_t *sigmsg, void *raw_data, uint32_t raw_data_len)
+#define ZIO_SIGNAL_CB_ARGS (zap_sigmsg_t *sigmsg)
 #define ZIO_EVENT_CB_ARGS (zap_channel_t *zchan, zap_event_t *event)
 #define ZIO_CODEC_ARGS (void *data, zap_size_t max, zap_size_t *datalen)
 #define ZIO_CONFIGURE_ARGS (struct zap_io_interface *zio)

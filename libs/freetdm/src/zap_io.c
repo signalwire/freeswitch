@@ -86,6 +86,11 @@ ZAP_STR2ENUM(zap_str2zap_oob_event, zap_oob_event2str, zap_oob_event_t, OOB_NAME
 ZAP_ENUM_NAMES(TRUNK_TYPE_NAMES, TRUNK_STRINGS)
 ZAP_STR2ENUM(zap_str2zap_trunk_type, zap_trunk_type2str, zap_trunk_type_t, TRUNK_TYPE_NAMES, ZAP_TRUNK_NONE)
 
+ZAP_ENUM_NAMES(SIGNAL_NAMES, SIGNAL_STRINGS)
+ZAP_STR2ENUM(zap_str2zap_signal_event, zap_signal_event2str, zap_signal_event_t, SIGNAL_NAMES, ZAP_SIGEVENT_INVALID)
+
+ZAP_ENUM_NAMES(CHANNEL_STATE_NAMES, CHANNEL_STATE_STRINGS)
+ZAP_STR2ENUM(zap_str2zap_channel_state, zap_channel_state2str, zap_channel_state_t, CHANNEL_STATE_NAMES, ZAP_CHANNEL_STATE_INVALID)
 
 static char *cut_path(char *in)
 {
@@ -259,7 +264,7 @@ zap_status_t zap_span_load_tones(zap_span_t *span, char *mapname)
 			if (index > ZAP_TONEMAP_INVALID) {
 				zap_log(ZAP_LOG_WARNING, "Unknown tone name %s\n", var);
 			} else {
-				zap_log(ZAP_LOG_DEBUG, "added tone [%s] = [%s] %d\n", var, val, index);
+				zap_log(ZAP_LOG_DEBUG, "added tone [%s] = [%s]\n", var, val);
 				zap_copy_string(span->tone_map[index], val, sizeof(span->tone_map[index]));
 				x++;
 			}
@@ -637,6 +642,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 		{
 			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_CODECS)) {
 				zchan->effective_codec = ZAP_COMMAND_OBJ_INT;
+				
 				if (zchan->effective_codec == zchan->native_codec) {
 					zap_clear_flag(zchan, ZAP_CHANNEL_TRANSCODE);
 				} else {

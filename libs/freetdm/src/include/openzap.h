@@ -131,6 +131,12 @@
 
 #define XX if (0)
 
+#ifdef WIN32
+#define zap_sleep(x) Sleep(x)
+#else
+#define zap_sleep(x) usleep(x * 1000)
+#endif
+
 #ifdef  NDEBUG
 #undef assert
 #define assert(_Expression)     ((void)(_Expression))
@@ -177,7 +183,10 @@
 
 #define zap_clear_flag_locked(obj, flag) assert(obj->mutex != NULL); zap_mutex_lock(obj->mutex); (obj)->flags &= ~(flag); zap_mutex_unlock(obj->mutex);
 
-#define zap_set_state_locked(obj, s) assert(obj->mutex != NULL); zap_mutex_lock(obj->mutex); obj->state = s; zap_mutex_unlock(obj->mutex);
+#define zap_set_state_locked(obj, s) assert(obj->mutex != NULL); zap_mutex_lock(obj->mutex);\
+	zap_log(ZAP_LOG_DEBUG, "Changing state from %s to %s\n", zap_channel_state2str(obj->state), zap_channel_state2str(s));\
+	zap_set_flag(obj, ZAP_CHANNEL_STATE_CHANGE);\
+	obj->last_state = obj->state; obj->state = s; zap_mutex_unlock(obj->mutex);
 
 #define zap_is_dtmf(key)  ((key > 47 && key < 58) || (key > 64 && key < 69) || (key > 96 && key < 101) || key == 35 || key == 42 || key == 87 || key == 119)
 
@@ -218,6 +227,7 @@ struct zap_channel {
 	uint32_t native_interval;
 	uint32_t packet_len;
 	zap_channel_state_t state;
+	zap_channel_state_t last_state;
 	zap_mutex_t *mutex;
 	teletone_dtmf_detect_state_t dtmf_detect;
 	zap_event_t event_header;
@@ -239,10 +249,15 @@ struct zap_channel {
 struct zap_sigmsg {
 	zap_signal_event_t event_id;
 	uint32_t chan_id;
+	uint32_t span_id;
+	zap_channel_t *channel;
+	zap_span_t *span;
 	char cid_name[80];
 	char ani[25];
 	char aniII[25];
 	char dnis[25];
+	void *raw_data;
+	uint32_t raw_data_len;
 };
 
 
@@ -258,6 +273,9 @@ struct zap_isdn_data {
 
 struct zap_analog_data {
 	uint32_t flags;
+	uint32_t max_dialstr;
+	uint32_t digit_timeout;
+	zio_signal_cb_t sig_cb;
 };
 
 struct zap_span {
