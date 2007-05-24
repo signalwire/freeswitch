@@ -76,85 +76,15 @@ static struct {
 } globals;
 
 
-static char *TRUNK_TYPE_NAMES[] = {
-	"E1",
-	"T1",
-	"J1",
-	"BRI",
-	"NONE",
-	NULL
-};
+/* enum lookup funcs */
+ZAP_ENUM_NAMES(TONEMAP_NAMES, TONEMAP_STRINGS)
+ZAP_STR2ENUM(zap_str2zap_tonemap, zap_tonemap2str, zap_tonemap_t, TONEMAP_NAMES, ZAP_TONEMAP_INVALID)
 
-static char *OOB_NAMES[] = {
-	"ZAP_OOB_DTMF",
-	"ZAP_OOB_ONHOOK",
-	"ZAP_OOB_OFFHOOK",
-	"WINK",
-	"FLASH",
-	"ZAP_OOB_RING_START",
-	"ZAP_OOB_RING_STOP",
-	"INVALID",
-	NULL
-};
+ZAP_ENUM_NAMES(OOB_NAMES, OOB_STRINGS)
+ZAP_STR2ENUM(zap_str2zap_oob_event, zap_oob_event2str, zap_oob_event_t, OOB_NAMES, ZAP_OOB_INVALID)
 
-zap_oob_event_t str2zap_oob_signal(char *name)
-{
-	int i;
-	zap_trunk_type_t t = ZAP_OOB_INVALID;
-
-	for (i = 0; i < ZAP_OOB_INVALID; i++) {
-		if (!strcasecmp(name, OOB_NAMES[i])) {
-			t = (zap_oob_event_t) i;
-			break;
-		}
-	}
-
-	return t;
-}
-
-char *zap_oob_signal2str(zap_oob_event_t type)
-{
-	if (type > ZAP_OOB_INVALID) {
-		type = ZAP_OOB_INVALID;
-	}
-	return OOB_NAMES[(int)type];
-}
-
-static char *LEVEL_NAMES[] = {
-	"EMERG",
-	"ALERT",
-	"CRIT",
-	"ERROR",
-	"WARNING",
-	"NOTICE",
-	"INFO",
-	"DEBUG",
-	NULL
-};
-
-
-zap_trunk_type_t str2zap_trunk_type(char *name)
-{
-	int i;
-	zap_trunk_type_t t = ZAP_TRUNK_NONE;
-
-	for (i = 0; i < ZAP_TRUNK_NONE; i++) {
-		if (!strcasecmp(name, TRUNK_TYPE_NAMES[i])) {
-			t = (zap_trunk_type_t) i;
-			break;
-		}
-	}
-
-	return t;
-}
-
-char *zap_trunk_type2str(zap_trunk_type_t type)
-{
-	if (type > ZAP_TRUNK_NONE) {
-		type = ZAP_TRUNK_NONE;
-	}
-	return TRUNK_TYPE_NAMES[(int)type];
-}
+ZAP_ENUM_NAMES(TRUNK_TYPE_NAMES, TRUNK_STRINGS)
+ZAP_STR2ENUM(zap_str2zap_trunk_type, zap_trunk_type2str, zap_trunk_type_t, TRUNK_TYPE_NAMES, ZAP_TRUNK_NONE)
 
 
 static char *cut_path(char *in)
@@ -179,6 +109,19 @@ static void null_logger(char *file, const char *func, int line, int level, char 
 	}
 	return;
 }
+
+
+static char *LEVEL_NAMES[] = {
+	"EMERG",
+	"ALERT",
+	"CRIT",
+	"ERROR",
+	"WARNING",
+	"NOTICE",
+	"INFO",
+	"DEBUG",
+	NULL
+};
 
 static int zap_log_level = 7;
 
@@ -260,6 +203,10 @@ zap_status_t zap_span_create(zap_io_interface_t *zio, zap_span_t **span)
 		new_span->span_id = zio->span_index;
 		new_span->zio = zio;
 		zap_mutex_create(&new_span->mutex);
+		zap_copy_string(new_span->tone_map[ZAP_TONEMAP_DIAL], "%(1000,0,350,440)", ZAP_TONEMAP_LEN);
+		zap_copy_string(new_span->tone_map[ZAP_TONEMAP_RING], "%(2000,4000,440,480)", ZAP_TONEMAP_LEN);
+		zap_copy_string(new_span->tone_map[ZAP_TONEMAP_BUSY], "%(500,500,480,620)", ZAP_TONEMAP_LEN);
+		zap_copy_string(new_span->tone_map[ZAP_TONEMAP_ATTN], "%(100,100,1400,2060,2450,2600)", ZAP_TONEMAP_LEN);
 		*span = new_span;
 		return ZAP_SUCCESS;
 	}
@@ -293,6 +240,39 @@ zap_status_t zap_span_close_all(zap_io_interface_t *zio)
 	}
 	
 	return i ? ZAP_SUCCESS : ZAP_FAIL;
+}
+
+zap_status_t zap_span_load_tones(zap_span_t *span, char *mapname)
+{
+	zap_config_t cfg;
+	char *var, *val;
+	int x = 0;
+
+	if (!zap_config_open_file(&cfg, "tones.conf")) {
+		snprintf(span->last_error, sizeof(span->last_error), "error loading tones.");
+		return ZAP_FAIL;
+	}
+	
+	while (zap_config_next_pair(&cfg, &var, &val)) {
+		if (!strcasecmp(cfg.category, mapname) && var && val) {
+			int index = zap_str2zap_tonemap(var);
+			if (index > ZAP_TONEMAP_INVALID) {
+				zap_log(ZAP_LOG_WARNING, "Unknown tone name %s\n", var);
+			} else {
+				zap_log(ZAP_LOG_DEBUG, "added tone [%s] = [%s] %d\n", var, val, index);
+				zap_copy_string(span->tone_map[index], val, sizeof(span->tone_map[index]));
+				x++;
+			}
+		}
+	}
+	
+	if (!x) {
+		snprintf(span->last_error, sizeof(span->last_error), "error loading tones.");
+		return ZAP_FAIL;
+	}
+
+	return ZAP_SUCCESS;
+	
 }
 
 zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_chan_type_t type, zap_channel_t **chan)

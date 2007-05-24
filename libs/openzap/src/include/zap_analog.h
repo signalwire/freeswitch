@@ -43,6 +43,5 @@ typedef enum {
 typedef struct zap_analog_data zap_analog_data_t;
 
 zap_status_t zap_analog_start(zap_span_t *span);
-zap_status_t zap_analog_configure_span(zap_span_t *span, zio_signal_cb_t sig_cb);
-
+zap_status_t zap_analog_configure_span(zap_span_t *span, char *tonemap, zio_signal_cb_t sig_cb);
 #endif

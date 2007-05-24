@@ -225,7 +225,7 @@ static ZIO_CONFIGURE_FUNCTION(wanpipe_configure)
 			if (!strcasecmp(var, "enabled")) {
 				zap_log(ZAP_LOG_WARNING, "'enabled' command ignored when it's not the first command in a [span]\n");
 			} else if (!strcasecmp(var, "trunk_type")) {
-				span->trunk_type = str2zap_trunk_type(val);
+				span->trunk_type = zap_str2zap_trunk_type(val);
 				zap_log(ZAP_LOG_DEBUG, "setting trunk type to '%s'\n", zap_trunk_type2str(span->trunk_type)); 
 			} else if (!strcasecmp(var, "fxo-channel")) {
 				configured += wp_configure_channel(&cfg, val, span, ZAP_CHAN_TYPE_FXO);
