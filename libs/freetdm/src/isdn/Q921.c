@@ -504,7 +504,7 @@ int Q921Rx12(L2TRUNK trunk)
 
 			/* we increment before we "really" know its good so that if we send in the callback, we use the right nr */
 			trunk->vr++;
-            if(Q921Tx23Proc(trunk, smes, size-2) >= 0) /* -2 to clip away CRC */
+            if(Q921Tx23Proc(trunk, smes, size-2)) /* -2 to clip away CRC */
             {
 				Q921SendRR(trunk, (mes[0]&0xfc)>>2, (mes[0]>>1)&0x01, mes[1]>>1, mes[3]&0x01);
 			}

@@ -88,6 +88,11 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 	return 0;
 }
 
+static int zap_isdn_921_23(void *pvt, L2UCHAR *msg, L2INT mlen)
+{
+	return ((Q931Rx23(pvt, msg, mlen) >= 0) ? 1 : 0);
+}
+
 static int zap_isdn_921_21(void *pvt, L2UCHAR *msg, L2INT mlen)
 {
 	zap_span_t *span = (zap_span_t *) pvt;
@@ -235,7 +240,7 @@ zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931D
 				   mode,
 				   0,
 				   zap_isdn_921_21,
-				   (Q921TxCB_t)Q931Rx23,
+				   (Q921TxCB_t)zap_isdn_921_23,
 				   span,
 				   &span->isdn_data->q931);
 	
