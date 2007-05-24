@@ -37,6 +37,7 @@
 *****************************************************************************/
 
 #include "Q931.h"
+#include "national.h"
 
 /*****************************************************************************
 
@@ -252,6 +253,12 @@ void Q931Initialize()
 
 	if(Q931CreateDialectCB[Q931_Dialect_Q931 + Q931_NT] == NULL)
 		Q931AddDialect(Q931_Dialect_Q931 + Q931_NT, Q931CreateNT);
+
+	if(Q931CreateDialectCB[Q931_Dialect_National + Q931_TE] == NULL)
+		Q931AddDialect(Q931_Dialect_National + Q931_TE, nationalCreateTE);
+
+	if(Q931CreateDialectCB[Q931_Dialect_National + Q931_NT] == NULL)
+		Q931AddDialect(Q931_Dialect_National + Q931_NT, nationalCreateNT);
 
 	/* The last step we do is to call the callbacks to create the dialects  */
 	for(x=0; x< Q931MAXDLCT; x++)

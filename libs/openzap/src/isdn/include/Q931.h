@@ -222,7 +222,7 @@
 /* WARNING! Initialize Q931CreateDialectCB[] will NULL when increasing the  */
 /* Q931MAXDLCT value to avoid Q931Initialize from crashing if one entry is  */
 /* not used.																*/
-#define Q931MAXDLCT 2               /* Max dialects included in this        */
+#define Q931MAXDLCT 4               /* Max dialects included in this        */
                                     /* compile. User and Network count as   */
                                     /* one dialect each.                    */
 
@@ -1932,6 +1932,7 @@ typedef enum						/* Network/User Mode.                   */
 typedef enum						/* Dialect enum                         */
 {
 	Q931_Dialect_Q931 = 0,
+	Q931_Dialect_National = 1,
 
 	Q931_Dialect_Count
 } Q931Dialect_t;
