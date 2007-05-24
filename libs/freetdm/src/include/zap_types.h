@@ -51,7 +51,18 @@ struct zap_io_interface;
 #define ZAP_COMMAND_OBJ_INT *((int *)obj)
 #define ZAP_COMMAND_OBJ_CHAR_P (char *)obj
 
-typedef uint64_t zap_time_t;
+typedef uint64_t zap_time_t; 
+
+#define ZAP_TONEMAP_LEN 128
+typedef enum {
+	ZAP_TONEMAP_DIAL,
+	ZAP_TONEMAP_RING,
+	ZAP_TONEMAP_BUSY,
+	ZAP_TONEMAP_ATTN,
+	ZAP_TONEMAP_INVALID
+} zap_tonemap_t;
+#define TONEMAP_STRINGS "DIAL", "RING", "BUSY", "ATTN", "INVALID"
+ZAP_STR2ENUM_P(zap_str2zap_tonemap, zap_tonemap2str, zap_tonemap_t)
 
 typedef enum {
 	ZAP_TRUNK_E1,
@@ -60,6 +71,20 @@ typedef enum {
 	ZAP_TRUNK_BRI,
 	ZAP_TRUNK_NONE
 } zap_trunk_type_t;
+#define TRUNK_STRINGS "E1", "T1", "J1", "BRI", "NONE"
+ZAP_STR2ENUM_P(zap_str2zap_trunk_type, zap_trunk_type2str, zap_trunk_type_t)
+
+typedef enum {
+	ZAP_OOB_DTMF, ZAP_OOB_ONHOOK,
+	ZAP_OOB_OFFHOOK,
+	ZAP_OOB_WINK,
+	ZAP_OOB_FLASH,
+	ZAP_OOB_RING_START,
+	ZAP_OOB_RING_STOP,
+	ZAP_OOB_INVALID
+} zap_oob_event_t;
+#define OOB_STRINGS "DTMF", "ONHOOK", "OFFHOOK", "WINK", "FLASH", "RING_START", "RING_STOP", "INVALID"
+ZAP_STR2ENUM_P(zap_str2zap_oob_event, zap_oob_event2str, zap_oob_event_t)
 
 typedef enum {
 	ZAP_SIGTYPE_NONE,
@@ -177,16 +202,6 @@ typedef enum {
 	ZAP_CHANNEL_FLASH = (1 << 10)
 } zap_channel_flag_t;
 
-typedef enum {
-	ZAP_OOB_DTMF,
-	ZAP_OOB_ONHOOK,
-	ZAP_OOB_OFFHOOK,
-	ZAP_OOB_WINK,
-	ZAP_OOB_FLASH,
-	ZAP_OOB_RING_START,
-	ZAP_OOB_RING_STOP,
-	ZAP_OOB_INVALID
-} zap_oob_event_t;
 
 typedef struct zap_channel zap_channel_t;
 typedef struct zap_event zap_event_t;

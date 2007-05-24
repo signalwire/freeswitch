@@ -74,6 +74,39 @@
 #pragma warning(disable:4706)
 #endif
 
+#define ZAP_ENUM_NAMES(_NAME, _STRINGS) static char * _NAME [] = { _STRINGS , NULL };
+#define ZAP_STR2ENUM_P(_FUNC1, _FUNC2, _TYPE) _TYPE _FUNC1 (char *name); char * _FUNC2 (_TYPE type);
+#define ZAP_STR2ENUM(_FUNC1, _FUNC2, _TYPE, _STRINGS, _MAX)	\
+	_TYPE _FUNC1 (char *name)								\
+	{														\
+		int i;												\
+		_TYPE t = _MAX ;									\
+															\
+		for (i = 0; i < _MAX ; i++) {						\
+			if (!strcasecmp(name, _STRINGS[i])) {			\
+				t = (_TYPE) i;								\
+				break;										\
+			}												\
+		}													\
+															\
+		return t;											\
+	}														\
+	char * _FUNC2 (_TYPE type)								\
+	{														\
+		if (type > _MAX) {									\
+			type = _MAX;									\
+		}													\
+		return _STRINGS[(int)type];							\
+	}														\
+	
+#define zap_true(expr)							\
+	(expr && ( !strcasecmp(expr, "yes") ||		\
+			   !strcasecmp(expr, "on") ||		\
+			   !strcasecmp(expr, "true") ||		\
+			   !strcasecmp(expr, "enabled") ||	\
+			   !strcasecmp(expr, "active") ||	\
+			   atoi(expr))) ? 1 : 0
+
 #ifndef WIN32
 #include <time.h>
 #include <sys/time.h>
@@ -108,14 +141,6 @@
 
 #define GOTO_STATUS(label,st) status = st; goto label ;
 
-#define zap_true(expr)\
-	(expr && ( !strcasecmp(expr, "yes") ||\
-			   !strcasecmp(expr, "on") ||\
-			   !strcasecmp(expr, "true") ||\
-			   !strcasecmp(expr, "enabled") ||\
-			   !strcasecmp(expr, "active") ||\
-			   atoi(expr))) ? 1 : 0
-
 #define zap_copy_string(x,y,z) strncpy(x, y, z - 1) 
 
 
@@ -138,10 +163,10 @@
 */
 #define zap_set_flag(obj, flag) (obj)->flags |= (flag)
 
-#define zap_set_flag_locked(obj, flag) assert(obj->mutex != NULL);\
-zap_mutex_lock(obj->mutex);\
-(obj)->flags |= (flag);\
-zap_mutex_unlock(obj->mutex);
+#define zap_set_flag_locked(obj, flag) assert(obj->mutex != NULL);	\
+	zap_mutex_lock(obj->mutex);										\
+	(obj)->flags |= (flag);											\
+	zap_mutex_unlock(obj->mutex);
 
 /*!
   \brief Clear a flag on an arbitrary object while locked
@@ -248,6 +273,7 @@ struct zap_span {
 	struct zap_analog_data *analog_data;
 	zap_event_t event_header;
 	char last_error[256];
+	char tone_map[ZAP_TONEMAP_INVALID+1][ZAP_TONEMAP_LEN];
 	zap_channel_t channels[ZAP_MAX_CHANNELS_SPAN];
 };
 
@@ -269,13 +295,11 @@ struct zap_io_interface {
 	struct zap_span spans[ZAP_MAX_SPANS_INTERFACE];
 };
 
+
+zap_status_t zap_span_load_tones(zap_span_t *span, char *mapname);
 zap_size_t zap_channel_dequeue_dtmf(zap_channel_t *zchan, char *dtmf, zap_size_t len);
 zap_status_t zap_channel_queue_dtmf(zap_channel_t *zchan, const char *dtmf);
 zap_time_t zap_current_time_in_ms(void);
-zap_oob_event_t str2zap_oob_signal(char *name);
-char *zap_oob_signal2str(zap_oob_event_t type);
-zap_trunk_type_t str2zap_trunk_type(char *name);
-char *zap_trunk_type2str(zap_trunk_type_t type);
 zap_status_t zap_span_poll_event(zap_span_t *span, uint32_t ms);
 zap_status_t zap_span_next_event(zap_span_t *span, zap_event_t **event);
 zap_status_t zap_span_find(const char *name, uint32_t id, zap_span_t **span);

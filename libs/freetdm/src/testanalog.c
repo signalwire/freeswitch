@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 	}
 	
 	
-	zap_analog_configure_span(span, on_signal);
+	zap_analog_configure_span(span, "us", on_signal);
 	zap_analog_start(span);
 
 	while(zap_test_flag(span->analog_data, ZAP_ANALOG_RUNNING)) {
