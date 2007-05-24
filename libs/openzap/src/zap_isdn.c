@@ -57,7 +57,7 @@ static L2ULONG zap_time_now()
 
 static L3INT zap_isdn_931_err(void *pvt, L3INT id, L3INT p1, L3INT p2)
 {
-	zap_log(ZAP_LOG_ERROR, "ERROR: %d %d %d", id, p1, p2);
+	zap_log(ZAP_LOG_ERROR, "ERROR: [%s] [%d] [%d]\n", q931_error_to_name(id), p1, p2);
 	return 0;
 }
 
@@ -82,7 +82,7 @@ static int zap_isdn_921_23(void *pvt, L2UCHAR *msg, L2INT mlen)
 {
 	int ret = Q931Rx23(pvt, msg, mlen);
 	if (ret != 0)
-		zap_log(ZAP_LOG_DEBUG, "931 parse error [%d] \n", ret);
+		zap_log(ZAP_LOG_DEBUG, "931 parse error [%d] [%s]\n", ret, q931_error_to_name(ret));
 	return ((ret >= 0) ? 1 : 0);
 }
 
