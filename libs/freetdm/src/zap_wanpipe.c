@@ -416,20 +416,26 @@ static ZIO_WAIT_FUNCTION(wanpipe_wait)
 ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 {
 	struct pollfd pfds[ZAP_MAX_CHANNELS_SPAN];
-	int i, j = 0, k = 0, r;
+	int i, j = 0, k = 0, l = 0, r;
 	
 	for(i = 1; i <= span->chan_count; i++) {
 		memset(&pfds[j], 0, sizeof(pfds[j]));
 		pfds[j].fd = span->channels[i].sockfd;
 		pfds[j].events = POLLPRI;
-		//printf("set %d=%d\n", j, pfds[j].fd);
+		if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_WINK) || zap_test_flag((&span->channels[i]), ZAP_CHANNEL_FLASH)) {
+			l++;
+		}
 		j++;
 	}
 
+	if (l) {
+		ms = 5;
+	}
+	
     r = poll(pfds, j, ms);
 	
 	if (r == 0) {
-		return ZAP_TIMEOUT;
+		return l ? ZAP_SUCCESS : ZAP_TIMEOUT;
 	} else if (r < 0) {
 		snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
 		return ZAP_FAIL;

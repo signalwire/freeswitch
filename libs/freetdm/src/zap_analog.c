@@ -201,7 +201,6 @@ static void *zap_analog_run(zap_thread_t *me, void *obj)
 		status = zap_span_poll_event(span, waitms);
 		
 		switch(status) {
-		case ZAP_TIMEOUT:
 		case ZAP_SUCCESS:
 			{
 				zap_event_t *event;
