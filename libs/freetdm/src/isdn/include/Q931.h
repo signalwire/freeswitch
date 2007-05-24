@@ -1413,6 +1413,10 @@ typedef struct
     ie              HLComp;         /* High Layer Compatibility             */
     ie              UserUser;       /* User-user                            */
     ie              Escape;         /* Escape for extension                 */
+	ie				Switchhook;
+	ie				FeatAct;
+	ie				FeatInd;
+
 	L3UCHAR			buf[1];			/* Buffer for IE's						*/
 
 }Q931mes_Generic;
@@ -1592,6 +1596,8 @@ extern L3INT (*Q931Pmes  [Q931MAXDLCT][Q931MAXMES])   (Q931_TrunkInfo_t *pTrunk,
 
 extern L3INT (*Q931Uie   [Q931MAXDLCT][Q931MAXIE] )   (Q931_TrunkInfo_t *pTrunk,ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
 extern L3INT (*Q931Pie   [Q931MAXDLCT][Q931MAXIE] )   (Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+
+extern L3UINT Q931MsgieOffset[Q931MAXIE];
 
 /*****************************************************************************
     
@@ -1923,6 +1929,8 @@ L3ULONG Q931GetTime();
 void Q931SetGetTimeCB(L3ULONG (*callback)());
 void	Q931AddStateEntry(L3UCHAR iD, L3INT iState, L3INT iMes, L3UCHAR cDir);
 L3BOOL	Q931IsEventLegal(L3UCHAR iD, L3INT iState, L3INT iMes, L3UCHAR cDir);
+
+ie *Q931MegGetIE(Q931mes_Generic *msg, L3UINT ie_type);
 
 /*****************************************************************************
 
