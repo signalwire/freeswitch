@@ -21,15 +21,22 @@ int main(int argc, char *argv[])
 
 	if (zap_span_find("wanpipe", 1, &span) != ZAP_SUCCESS) {
 		fprintf(stderr, "Error finding OpenZAP span\n");
+		goto done;
 	}
 	
 	
-	zap_isdn_configure_span(span, Q931_TE, 0, on_signal);
-	zap_isdn_start(span);
+	if (zap_isdn_configure_span(span, Q931_TE, 0, on_signal) == ZAP_SUCCESS) {
+		zap_isdn_start(span);
+	} else {
+		fprintf(stderr, "Error starting ISDN D-Channel\n");
+		goto done;
+	}
 
 	while(zap_test_flag(span->isdn_data, ZAP_ISDN_RUNNING)) {
 		sleep(1);
 	}
+
+ done:
 
 	zap_global_destroy();
 
