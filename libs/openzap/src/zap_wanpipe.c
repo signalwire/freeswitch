@@ -412,6 +412,7 @@ static ZIO_WAIT_FUNCTION(wanpipe_wait)
 	return ZAP_SUCCESS;
 }
 
+#ifndef WIN32
 ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 {
 	struct pollfd pfds[ZAP_MAX_CHANNELS_SPAN];
@@ -445,15 +446,17 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 	return k ? ZAP_SUCCESS : ZAP_FAIL;
 }
 
+#endif
+
 ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 {
-	int i;
+	uint32_t i;
 	zap_oob_event_t event_id;
 	
 	for(i = 1; i <= span->chan_count; i++) {
 		if (span->channels[i].last_event_time && !zap_test_flag((&span->channels[i]), ZAP_CHANNEL_EVENT)) {
-			uint32_t diff = zap_current_time_in_ms() - span->channels[i].last_event_time;
-			XX printf("%u %u %u\n", diff, (unsigned)zap_current_time_in_ms(), (unsigned)span->channels[i].last_event_time);
+			uint32_t diff = (uint32_t)(zap_current_time_in_ms() - span->channels[i].last_event_time);
+			/* XX printf("%u %u %u\n", diff, (unsigned)zap_current_time_in_ms(), (unsigned)span->channels[i].last_event_time); */
 			if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_WINK)) {
 				if (diff > wp_globals.wink_ms) {
 					zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_WINK);
@@ -554,7 +557,9 @@ zap_status_t wanpipe_init(zap_io_interface_t **zio)
 	wanpipe_interface.wait = wanpipe_wait;
 	wanpipe_interface.read = wanpipe_read;
 	wanpipe_interface.write = wanpipe_write;
+#ifndef WIN32
 	wanpipe_interface.poll_event = wanpipe_poll_event;
+#endif
 	wanpipe_interface.next_event = wanpipe_next_event;
 	*zio = &wanpipe_interface;
 
