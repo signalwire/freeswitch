@@ -319,7 +319,7 @@ L3INT Q931Rx23(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT Size)
 {
     L3UCHAR *Mes = &buf[Q931L2HeaderSpace];
 	L3INT RetCode = Q931E_NO_ERROR;
-    Q931mes_Alerting *m = (Q931mes_Alerting *) pTrunk->L3Buf;
+    Q931mes_Generic *m = (Q931mes_Generic *) pTrunk->L3Buf;
     L3INT ISize;
 
     L3INT IOff = 0;
@@ -409,7 +409,7 @@ L3INT Q931Rx43(Q931_TrunkInfo_t *pTrunk,L3UCHAR * buf, L3INT Size)
 L3INT Q931Tx32(Q931_TrunkInfo_t *pTrunk, L3UCHAR * Mes, L3INT Size)
 {
     L3INT     OSize;
-    Q931mes_Alerting *ptr = (Q931mes_Alerting*)Mes;
+    Q931mes_Generic *ptr = (Q931mes_Generic*)Mes;
 	L3INT RetCode = Q931E_NO_ERROR;
     L3INT iDialect = pTrunk->Dialect;
 

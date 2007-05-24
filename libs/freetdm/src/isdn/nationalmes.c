@@ -56,7 +56,7 @@ L3INT nationalUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf,
 	/* L3INT i = IOff; */
 	L3INT ir=0;
 	L3INT OOff=0;
-    Q931mes_Setup *mes = (Q931mes_Setup*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	while(IOff < Size)
 	{
@@ -166,7 +166,7 @@ L3INT nationalUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf,
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_Setup) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -174,7 +174,7 @@ L3INT nationalUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf,
 
   Function:     nationalPmes_Setup
 
-  Decription:	Pack a Q931mes_Setup into a real Q.931 message. The user will
+  Decription:	Pack a Q931mes_Generic into a real Q.931 message. The user will
 				set up a SETUP message and issue this to the stack where it
 				is processed by Q931ProcSetup that processes and validates
 				it before it actually sends it out. This function is called
@@ -191,7 +191,7 @@ L3INT nationalUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf,
 L3INT nationalPmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-	Q931mes_Setup *pMes = (Q931mes_Setup *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */

@@ -294,7 +294,7 @@ L3INT Q931ProcProgressNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 L3INT Q931ProcSetupNT(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     L3INT rc=0;
-	Q931mes_Setup *pMes = (Q931mes_Setup *)&buf[Q931L4HeaderSpace];
+	Q931mes_Generic *pMes = (Q931mes_Generic *)&buf[Q931L4HeaderSpace];
     L3INT callIndex;
     L3INT ret=Q931E_NO_ERROR;
 

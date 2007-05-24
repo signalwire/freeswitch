@@ -68,7 +68,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 	Q931mes_Generic *gen = (Q931mes_Generic *) msg;
 
 
-	Q931mes_Restart * restart = (Q931mes_Restart*)msg;
+	Q931mes_Generic * restart = (Q931mes_Generic*)msg;
 
 	L3INT ieoff = Q931GetIEOffset(restart->RestartInd);
 	Q931ie_RestartInd * restartind = (void *)(&restart->buf + (ieoff * sizeof(restart->buf[1]))); 
@@ -76,10 +76,10 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 
 	assert(span != NULL);
 	assert(data != NULL);
-	printf("WTF: %d", ((Q931mes_Restart*)gen)->Size);
-	zap_log(ZAP_LOG_DEBUG, "Yay I got an event! %d %d\n", gen->MesType, ((Q931mes_Restart*)gen)->Size);
+	printf("WTF: %d", ((Q931mes_Generic*)gen)->Size);
+	zap_log(ZAP_LOG_DEBUG, "Yay I got an event! %d %d\n", gen->MesType, ((Q931mes_Generic*)gen)->Size);
 	zap_log(ZAP_LOG_DEBUG, "send ack %d\n", restartind->Class);
-	zap_log(ZAP_LOG_DEBUG, "send ack %d\n", ((Q931mes_Restart*)gen)->Size);
+	zap_log(ZAP_LOG_DEBUG, "send ack %d\n", ((Q931mes_Generic*)gen)->Size);
 
 	printf("XXXXXXXXXXXXx");
 	gen->MesType = Q931mes_RESTART_ACKNOWLEDGE;

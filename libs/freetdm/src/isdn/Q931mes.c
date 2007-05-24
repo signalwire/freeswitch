@@ -54,7 +54,7 @@ L3INT Q931Umes_Alerting(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
 	/* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-    Q931mes_Alerting *mes = (Q931mes_Alerting*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	L3UCHAR mescode = (L3UCHAR)IBuf[IOff];
 	while(IOff < Size)
@@ -96,7 +96,7 @@ L3INT Q931Umes_Alerting(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_Alerting) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -108,7 +108,7 @@ L3INT Q931Umes_Alerting(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
 L3INT Q931Pmes_Alerting(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-	Q931mes_Alerting *pMes = (Q931mes_Alerting *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
@@ -166,7 +166,7 @@ L3INT Q931Umes_CallProceeding(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *O
 	/* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-    Q931mes_CallProceeding *mes = (Q931mes_CallProceeding*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	while(IOff < Size)
 	{
@@ -202,7 +202,7 @@ L3INT Q931Umes_CallProceeding(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *O
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_CallProceeding) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -214,7 +214,7 @@ L3INT Q931Umes_CallProceeding(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *O
 L3INT Q931Pmes_CallProceeding(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-	Q931mes_CallProceeding *pMes = (Q931mes_CallProceeding *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
@@ -300,7 +300,7 @@ L3INT Q931Umes_Connect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L
 	/* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-    Q931mes_Connect *mes = (Q931mes_Connect*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	while(IOff < Size)
 	{
@@ -351,7 +351,7 @@ L3INT Q931Umes_Connect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_Connect) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -363,7 +363,7 @@ L3INT Q931Umes_Connect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L
 L3INT Q931Pmes_Connect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-	Q931mes_Connect *pMes = (Q931mes_Connect *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
@@ -431,7 +431,7 @@ L3INT Q931Umes_ConnectAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf
 	/* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-    Q931mes_ConnectAck *mes = (Q931mes_ConnectAck*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	while(IOff < Size)
 	{
@@ -453,7 +453,7 @@ L3INT Q931Umes_ConnectAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_ConnectAck) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -466,7 +466,7 @@ L3INT Q931Umes_ConnectAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf
 L3INT Q931Pmes_ConnectAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-	Q931mes_ConnectAck *pMes = (Q931mes_ConnectAck *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
@@ -502,7 +502,7 @@ L3INT Q931Umes_Disconnect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf
 	/* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-    Q931mes_Disconnect *mes = (Q931mes_Disconnect*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	while(IOff < Size)
 	{
@@ -533,7 +533,7 @@ L3INT Q931Umes_Disconnect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_Disconnect) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -545,7 +545,7 @@ L3INT Q931Umes_Disconnect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf
 L3INT Q931Pmes_Disconnect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-	Q931mes_Disconnect *pMes = (Q931mes_Disconnect *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
@@ -591,7 +591,7 @@ L3INT Q931Umes_Information(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBu
 	/* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-    Q931mes_Information *mes = (Q931mes_Information*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	while(IOff < Size)
 	{
@@ -626,7 +626,7 @@ L3INT Q931Umes_Information(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBu
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_Information) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -638,7 +638,7 @@ L3INT Q931Umes_Information(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBu
 L3INT Q931Pmes_Information(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-	Q931mes_Information *pMes = (Q931mes_Information *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
@@ -688,7 +688,7 @@ L3INT Q931Umes_Notify(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
 	/* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-    Q931mes_Notify *mes = (Q931mes_Notify*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	while(IOff < Size)
 	{
@@ -713,7 +713,7 @@ L3INT Q931Umes_Notify(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_Notify) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -725,7 +725,7 @@ L3INT Q931Umes_Notify(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
 L3INT Q931Pmes_Notify(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-	Q931mes_Notify *pMes = (Q931mes_Notify *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
@@ -763,7 +763,7 @@ L3INT Q931Umes_Progress(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
 	/* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-    Q931mes_Progress *mes = (Q931mes_Progress*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	while(IOff < Size)
 	{
@@ -799,7 +799,7 @@ L3INT Q931Umes_Progress(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_Progress) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -811,7 +811,7 @@ L3INT Q931Umes_Progress(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
 L3INT Q931Pmes_Progress(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-	Q931mes_Progress *pMes = (Q931mes_Progress *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
@@ -861,7 +861,7 @@ L3INT Q931Umes_Release(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L
 	/* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-    Q931mes_Release *mes = (Q931mes_Release*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	while(IOff < Size)
 	{
@@ -887,7 +887,7 @@ L3INT Q931Umes_Release(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_Release) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -899,7 +899,7 @@ L3INT Q931Umes_Release(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L
 L3INT Q931Pmes_Release(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-	Q931mes_Release *pMes = (Q931mes_Release *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
@@ -938,7 +938,7 @@ L3INT Q931Umes_ReleaseComplete(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR 
 	/* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-    Q931mes_ReleaseComplete *mes = (Q931mes_ReleaseComplete*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	while(IOff < Size)
 	{
@@ -964,7 +964,7 @@ L3INT Q931Umes_ReleaseComplete(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR 
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_ReleaseComplete) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -976,7 +976,7 @@ L3INT Q931Umes_ReleaseComplete(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR 
 L3INT Q931Pmes_ReleaseComplete(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-	Q931mes_ReleaseComplete *pMes = (Q931mes_ReleaseComplete *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
@@ -1013,7 +1013,7 @@ L3INT Q931Pmes_ReleaseComplete(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT IS
 L3INT Q931Umes_Restart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
     L3INT OOff=0;
-    Q931mes_Restart *mes = (Q931mes_Restart*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
     L3INT rc=Q931E_NO_ERROR;
     while(IOff < Size)
     {
@@ -1039,7 +1039,7 @@ L3INT Q931Umes_Restart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L
             break;
         }
     }
-    mes->Size = sizeof(Q931mes_Restart) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -1051,7 +1051,7 @@ L3INT Q931Umes_Restart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L
 L3INT Q931Pmes_Restart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-    Q931mes_Restart *pMes = (Q931mes_Restart *)IBuf;
+    Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
     L3INT Octet = 0;
 
     /* Q931 Message Header */
@@ -1088,7 +1088,7 @@ L3INT Q931Pmes_Restart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3U
 L3INT Q931Umes_RestartAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT IOff, L3INT Size)
 {
     L3INT OOff=0;
-    Q931mes_RestartAck *mes = (Q931mes_RestartAck*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
     L3INT rc=Q931E_NO_ERROR;
     while(IOff < Size)
     {
@@ -1114,7 +1114,7 @@ L3INT Q931Umes_RestartAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf
             break;
         }
     }
-    mes->Size = sizeof(Q931mes_RestartAck) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -1126,7 +1126,7 @@ L3INT Q931Umes_RestartAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf
 L3INT Q931Pmes_RestartAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-    Q931mes_RestartAck *pMes = (Q931mes_RestartAck *)IBuf;
+    Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
     L3INT Octet = 0;
 
     /* Q931 Message Header */
@@ -1165,7 +1165,7 @@ L3INT Q931Umes_Resume(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
 	/* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-    Q931mes_Resume *mes = (Q931mes_Resume*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	while(IOff < Size)
 	{
@@ -1181,7 +1181,7 @@ L3INT Q931Umes_Resume(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_Resume) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -1193,7 +1193,7 @@ L3INT Q931Umes_Resume(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
 L3INT Q931Pmes_Resume(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-	Q931mes_Resume *pMes = (Q931mes_Resume *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
@@ -1224,7 +1224,7 @@ L3INT Q931Umes_ResumeAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf,
 	/* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-    Q931mes_ResumeAck *mes = (Q931mes_ResumeAck*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	while(IOff < Size)
 	{
@@ -1245,7 +1245,7 @@ L3INT Q931Umes_ResumeAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf,
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_ResumeAck) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -1258,7 +1258,7 @@ L3INT Q931Umes_ResumeAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf,
 L3INT Q931Pmes_ResumeAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-	Q931mes_ResumeAck *pMes = (Q931mes_ResumeAck *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
@@ -1293,7 +1293,7 @@ L3INT Q931Umes_ResumeReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * O
 	/* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-    Q931mes_ResumeReject *mes = (Q931mes_ResumeReject*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	while(IOff < Size)
 	{
@@ -1314,7 +1314,7 @@ L3INT Q931Umes_ResumeReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * O
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_ResumeReject) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -1327,7 +1327,7 @@ L3INT Q931Umes_ResumeReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR * O
 L3INT Q931Pmes_ResumeReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
 	L3INT rc = Q931E_NO_ERROR;
-	Q931mes_ResumeReject *pMes = (Q931mes_ResumeReject *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header	*/
@@ -1378,7 +1378,7 @@ L3INT Q931Umes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
 	/* L3INT i = IOff; */
 	L3INT ir=0;
 	L3INT OOff=0;
-    Q931mes_Setup *mes = (Q931mes_Setup*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	while(IOff < Size)
 	{
@@ -1485,7 +1485,7 @@ L3INT Q931Umes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_Setup) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -1493,7 +1493,7 @@ L3INT Q931Umes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
 
   Function:     Q931Pmes_Setup
 
-  Decription:	Pack a Q931mes_Setup into a real Q.931 message. The user will
+  Decription:	Pack a Q931mes_Generic into a real Q.931 message. The user will
 				set up a SETUP message and issue this to the stack where it
 				is processed by Q931ProcSetup that processes and validates
 				it before it actually sends it out. This function is called
@@ -1510,7 +1510,7 @@ L3INT Q931Umes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
 L3INT Q931Pmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-	Q931mes_Setup *pMes = (Q931mes_Setup *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
@@ -1629,7 +1629,7 @@ L3INT Q931Umes_SetupAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
 	/* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-    Q931mes_SetupAck *mes = (Q931mes_SetupAck*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	while(IOff < Size)
 	{
@@ -1660,7 +1660,7 @@ L3INT Q931Umes_SetupAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_SetupAck) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -1672,7 +1672,7 @@ L3INT Q931Umes_SetupAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
 L3INT Q931Pmes_SetupAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-	Q931mes_SetupAck *pMes = (Q931mes_SetupAck *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
@@ -1718,7 +1718,7 @@ L3INT Q931Umes_Status(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
 	/* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-    Q931mes_Status *mes = (Q931mes_Status*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	while(IOff < Size)
 	{
@@ -1744,7 +1744,7 @@ L3INT Q931Umes_Status(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_Status) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -1757,7 +1757,7 @@ L3INT Q931Umes_Status(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3
 L3INT Q931Pmes_Status(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-	Q931mes_Status *pMes = (Q931mes_Status *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
@@ -1796,7 +1796,7 @@ L3INT Q931Umes_StatusEnquiry(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *O
 	/* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-    Q931mes_StatusEnquiry *mes = (Q931mes_StatusEnquiry*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	while(IOff < Size)
 	{
@@ -1812,7 +1812,7 @@ L3INT Q931Umes_StatusEnquiry(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *O
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_StatusEnquiry) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -1824,7 +1824,7 @@ L3INT Q931Umes_StatusEnquiry(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *O
 L3INT Q931Pmes_StatusEnquiry(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-	Q931mes_StatusEnquiry *pMes = (Q931mes_StatusEnquiry *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
@@ -1855,7 +1855,7 @@ L3INT Q931Umes_Suspend(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L
 	/* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-    Q931mes_Suspend *mes = (Q931mes_Suspend*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	while(IOff < Size)
 	{
@@ -1871,7 +1871,7 @@ L3INT Q931Umes_Suspend(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_Suspend) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -1883,7 +1883,7 @@ L3INT Q931Umes_Suspend(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L
 L3INT Q931Pmes_Suspend(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-	Q931mes_Suspend *pMes = (Q931mes_Suspend *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
@@ -1914,7 +1914,7 @@ L3INT Q931Umes_SuspendAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf
 	/* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-    Q931mes_SuspendAck *mes = (Q931mes_SuspendAck*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	while(IOff < Size)
 
@@ -1931,7 +1931,7 @@ L3INT Q931Umes_SuspendAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_SuspendAck) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -1943,7 +1943,7 @@ L3INT Q931Umes_SuspendAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf
 L3INT Q931Pmes_SuspendAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-	Q931mes_SuspendAck *pMes = (Q931mes_SuspendAck *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
@@ -1974,7 +1974,7 @@ L3INT Q931Umes_SuspendReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *O
 	/* L3INT i = IOff; */
 	/* L3INT ir=0; */
 	L3INT OOff=0;
-    Q931mes_SuspendReject *mes = (Q931mes_SuspendReject*)OBuf;
+    Q931mes_Generic *mes = (Q931mes_Generic*)OBuf;
 	L3INT rc=Q931E_NO_ERROR;
 	while(IOff < Size)
 	{
@@ -1995,7 +1995,7 @@ L3INT Q931Umes_SuspendReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *O
 			break;
 		}
 	}
-    mes->Size = sizeof(Q931mes_SuspendReject) - 1 + OOff;
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
     return Q931E_NO_ERROR;
 }
 
@@ -2007,7 +2007,7 @@ L3INT Q931Umes_SuspendReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *O
 L3INT Q931Pmes_SuspendReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
-	Q931mes_SuspendReject *pMes = (Q931mes_SuspendReject *)IBuf;
+	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
 	L3INT Octet = 0;
 
 	/* Q931 Message Header */
