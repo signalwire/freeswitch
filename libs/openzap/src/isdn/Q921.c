@@ -511,7 +511,9 @@ int Q921Rx12(L2TRUNK trunk)
             else
             {
                 /* todo: whatever*/
-				trunk->vr--;
+				/* trunk->vr--; */
+				/* for now, lets just respond for easier debugging on errors */
+				Q921SendRR(trunk, (mes[0]&0xfc)>>2, (mes[0]>>1)&0x01, mes[1]>>1, mes[3]&0x01);
            }
         }
 
