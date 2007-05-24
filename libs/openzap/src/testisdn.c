@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 	}
 	
 	
-	if (zap_isdn_configure_span(span, Q931_TE, 0, on_signal) == ZAP_SUCCESS) {
+	if (zap_isdn_configure_span(span, Q931_TE, Q931_Dialect_National, on_signal) == ZAP_SUCCESS) {
 		zap_isdn_start(span);
 	} else {
 		fprintf(stderr, "Error starting ISDN D-Channel\n");
