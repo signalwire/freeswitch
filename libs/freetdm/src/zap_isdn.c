@@ -90,7 +90,10 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 
 static int zap_isdn_921_23(void *pvt, L2UCHAR *msg, L2INT mlen)
 {
-	return ((Q931Rx23(pvt, msg, mlen) >= 0) ? 1 : 0);
+	int ret = Q931Rx23(pvt, msg, mlen);
+	if (ret != 0)
+		zap_log(ZAP_LOG_DEBUG, "931 parse error [%d] \n", ret);
+	return ((ret >= 0) ? 1 : 0);
 }
 
 static int zap_isdn_921_21(void *pvt, L2UCHAR *msg, L2INT mlen)
