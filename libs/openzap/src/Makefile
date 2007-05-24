@@ -57,6 +57,9 @@ isdn/nationalStateNT.o \
 isdn/nationalStateTE.o \
 isdn/Q932mes.o 
 
+HEADERS=isdn/include/Q931.h \
+	include/openzap.h 
+
 PWD=$(shell pwd)
 INCS=-I$(PWD)/include -I$(PWD)/isdn/include
 CFLAGS=$(ZAP_CFLAGS) $(INCS)
@@ -67,7 +70,7 @@ include general.makefile $(ZAP_MODS)
 
 all: $(MYLIB)
 
-$(MYLIB): $(OBJS)
+$(MYLIB): $(OBJS) $(HEADERS)
 	ar rcs $(MYLIB) $(OBJS)
 	ranlib $(MYLIB)
 

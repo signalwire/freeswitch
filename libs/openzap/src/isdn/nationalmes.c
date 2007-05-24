@@ -159,6 +159,11 @@ L3INT nationalUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generi
 			break;
 		case nationalie_GENERIC_DIGITS:
 			/* TODO: Implement this ie */
+			IOff = IOff + 4;
+			break;
+		case Q931ie_SHIFT:
+			/* TODO: Implement this ie */
+			IOff++;
 			break;
 		default:
 			return Q931E_ILLEGAL_IE;
