@@ -185,6 +185,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\zap_isdn.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\zap_skel.c"
 				>
 				<FileConfiguration
@@ -302,6 +306,10 @@
 			</File>
 			<File
 				RelativePath=".\src\include\zap_config.h"
+				>
+			</File>
+			<File
+				RelativePath=".\src\include\zap_isdn.h"
 				>
 			</File>
 			<File
