@@ -114,8 +114,9 @@ SWITCH_DECLARE(switch_status_t) switch_log_bind_logger(switch_log_function_t fun
 static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t * thread, void *obj)
 {
 
-	/* To Be or Not To Be */
-	assert(obj == NULL || obj != NULL);
+	if (!obj) {
+		obj = NULL;
+	}
 	THREAD_RUNNING = 1;
 
 	while (THREAD_RUNNING == 1) {
