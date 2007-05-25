@@ -110,18 +110,10 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 	}
 
 	zap_set_flag_locked(chan, ZAP_CHANNEL_INTHREAD);
-
-	
-
 	teletone_init_session(&ts, 0, teletone_handler, dt_buffer);
-#if 0
-	ts.debug = 1;
-	ts.debug_stream = stdout;
-#endif
 	ts.rate = 8000;
 	zap_channel_command(chan, ZAP_COMMAND_GET_CODEC, &old_codec);
 	zap_channel_command(chan, ZAP_COMMAND_GET_INTERVAL, &interval);
-
 	zap_buffer_set_loops(dt_buffer, -1);
 
 	while (zap_test_flag(chan, ZAP_CHANNEL_INTHREAD)) {
@@ -132,7 +124,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 		
 		elapsed += interval;
 		state_counter += interval;
-		XX printf("WTF %s %s\n", zap_channel_state2str(chan->state), zap_channel_state2str(chan->last_state));
+		
 		if (!zap_test_flag(chan, ZAP_CHANNEL_STATE_CHANGE)) {
 			switch(chan->state) {
 			case ZAP_CHANNEL_STATE_DIALTONE:
@@ -152,7 +144,8 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 			case ZAP_CHANNEL_STATE_UP:
 			case ZAP_CHANNEL_STATE_IDLE:
 				{
-					zap_sleep(interval * 1000);
+					zap_sleep(interval);
+					continue;
 				}
 				break;
 			default:

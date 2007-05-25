@@ -212,6 +212,7 @@ zap_status_t zap_span_create(zap_io_interface_t *zio, zap_span_t **span)
 		zap_copy_string(new_span->tone_map[ZAP_TONEMAP_RING], "%(2000,4000,440,480)", ZAP_TONEMAP_LEN);
 		zap_copy_string(new_span->tone_map[ZAP_TONEMAP_BUSY], "%(500,500,480,620)", ZAP_TONEMAP_LEN);
 		zap_copy_string(new_span->tone_map[ZAP_TONEMAP_ATTN], "%(100,100,1400,2060,2450,2600)", ZAP_TONEMAP_LEN);
+		new_span->trunk_type = ZAP_TRUNK_NONE;
 		*span = new_span;
 		return ZAP_SUCCESS;
 	}
@@ -363,9 +364,9 @@ zap_status_t zap_span_next_event(zap_span_t *span, zap_event_t **event)
 
 zap_status_t zap_channel_set_event_callback(zap_channel_t *zchan, zio_event_cb_t event_callback)
 {
-	zap_mutex_lock(zchan->span->mutex);
+	zap_mutex_lock(zchan->mutex);
 	zchan->event_callback = event_callback;
-	zap_mutex_unlock(zchan->span->mutex);
+	zap_mutex_unlock(zchan->mutex);
 	return ZAP_SUCCESS;
 }
 
@@ -504,15 +505,17 @@ static zap_status_t zap_channel_reset(zap_channel_t *zchan)
 zap_status_t zap_channel_open_chan(zap_channel_t *zchan)
 {
 	zap_status_t status = ZAP_FAIL;
-
-	zap_mutex_lock(zchan->span->mutex);
+	
+	if ((status = zap_mutex_trylock(zchan->mutex)) != ZAP_SUCCESS) {
+		return status;
+	}
 	if (zap_test_flag(zchan, ZAP_CHANNEL_READY) && ! zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
 		status = zchan->span->zio->open(zchan);
 		if (status == ZAP_SUCCESS) {
 			zap_set_flag(zchan, ZAP_CHANNEL_OPEN);
 		}
 	}
-	zap_mutex_unlock(zchan->span->mutex);
+	zap_mutex_unlock(zchan->mutex);
 
 	return status;
 }
@@ -528,9 +531,12 @@ zap_status_t zap_channel_open(const char *name, uint32_t span_id, uint32_t chan_
 	
 	if (span_id < ZAP_MAX_SPANS_INTERFACE && chan_id < ZAP_MAX_CHANNELS_SPAN && zio) {
 		zap_channel_t *check;
-		zap_mutex_lock(zio->spans[span_id].mutex);
+
 		check = &zio->spans[span_id].channels[chan_id];
-	
+		if ((status = zap_mutex_trylock(check->mutex)) != ZAP_SUCCESS) {
+			return status;
+		}
+
 		if (zap_test_flag(check, ZAP_CHANNEL_READY) && ! zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
 			status = check->zio->open(check);
 			if (status == ZAP_SUCCESS) {
@@ -538,7 +544,7 @@ zap_status_t zap_channel_open(const char *name, uint32_t span_id, uint32_t chan_
 				*zchan = check;
 			}
 		}
-		zap_mutex_unlock(zio->spans[span_id].mutex);
+		zap_mutex_unlock(check->mutex);
 	}
 
 	return status;
@@ -554,7 +560,7 @@ zap_status_t zap_channel_close(zap_channel_t **zchan)
 	assert(check != NULL);
 	*zchan = NULL;
 
-	zap_mutex_lock(check->span->mutex);
+	zap_mutex_lock(check->mutex);
 	if (zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
 		status = check->zio->close(check);
 		if (status == ZAP_SUCCESS) {
@@ -563,7 +569,7 @@ zap_status_t zap_channel_close(zap_channel_t **zchan)
 		}
 	}
 
-	zap_mutex_unlock(check->span->mutex);
+	zap_mutex_unlock(check->mutex);
 	
 	return status;
 }
@@ -613,7 +619,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
         return ZAP_FAIL;
     }
 
-	zap_mutex_lock(zchan->span->mutex);
+	zap_mutex_lock(zchan->mutex);
 
 	switch(command) {
 	case ZAP_COMMAND_SET_INTERVAL:
@@ -774,7 +780,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
     status = zchan->zio->command(zchan, command, obj);
 
  done:
-	zap_mutex_unlock(zchan->span->mutex);
+	zap_mutex_unlock(zchan->mutex);
 	return status;
 
 }
