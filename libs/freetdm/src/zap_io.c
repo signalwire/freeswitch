@@ -1045,11 +1045,11 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 			}
 
 			if (zchan->effective_codec == ZAP_CODEC_ULAW) {
-				for(i = 0; i < max; i++) {
+				for(i = 0; i < slen; i++) {
 					*sln++ = ulaw_to_linear(*lp++);
 				} 
 			} else if (zchan->effective_codec == ZAP_CODEC_ALAW) {
-				for(i = 0; i < max; i++) {
+				for(i = 0; i < slen; i++) {
 					*sln++ = alaw_to_linear(*lp++);
 				} 
 			}
