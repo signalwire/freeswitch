@@ -751,9 +751,14 @@ static void do_2833(switch_rtp_t *rtp_session)
 		rtp_session->dtmf_data.out_digit_packet[2] = (unsigned char) (duration >> 8);
 		rtp_session->dtmf_data.out_digit_packet[3] = (unsigned char) duration;
 
+		if (loops != 1) {
+			rtp_session->dtmf_data.out_digit_seq++;
+		}
 
 		for (x = 0; x < loops; x++) {
-			rtp_session->dtmf_data.out_digit_seq++;
+			if (loops == 1) {
+				rtp_session->dtmf_data.out_digit_seq++;
+			}
 			switch_rtp_write_manual(rtp_session,
 									rtp_session->dtmf_data.out_digit_packet,
 									4,
@@ -769,6 +774,8 @@ static void do_2833(switch_rtp_t *rtp_session)
 
 		if (loops == 1) {
 			rtp_session->last_write_seq = 0;
+		} else {
+			rtp_session->dtmf_data.out_digit_seq = 0;
 		}
 	}
 
@@ -1409,7 +1416,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 	}
 
 
-	if (rtp_session->last_write_seq >0 && rtp_session->last_write_seq <= rtp_session->dtmf_data.out_digit_seq) {
+	if (rtp_session->last_write_seq > 0 && rtp_session->last_write_seq <= rtp_session->dtmf_data.out_digit_seq) {
 		send = 0;
 	}
 
