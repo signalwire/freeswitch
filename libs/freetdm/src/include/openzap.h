@@ -188,8 +188,8 @@
 
 #define zap_set_state_locked(obj, s) assert(obj->mutex != NULL); zap_mutex_lock(obj->mutex);\
 	zap_log(ZAP_LOG_DEBUG, "Changing state from %s to %s\n", zap_channel_state2str(obj->state), zap_channel_state2str(s));\
-	zap_set_flag(obj, ZAP_CHANNEL_STATE_CHANGE);\
-	obj->last_state = obj->state; obj->state = s; zap_mutex_unlock(obj->mutex);
+	zap_channel_set_state(obj, s);
+
 
 #define zap_is_dtmf(key)  ((key > 47 && key < 58) || (key > 64 && key < 69) || (key > 96 && key < 101) || key == 35 || key == 42 || key == 87 || key == 119)
 
@@ -319,7 +319,7 @@ struct zap_io_interface {
 	struct zap_span spans[ZAP_MAX_SPANS_INTERFACE];
 };
 
-
+zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t state);
 zap_status_t zap_span_load_tones(zap_span_t *span, char *mapname);
 zap_size_t zap_channel_dequeue_dtmf(zap_channel_t *zchan, char *dtmf, zap_size_t len);
 zap_status_t zap_channel_queue_dtmf(zap_channel_t *zchan, const char *dtmf);
@@ -346,6 +346,12 @@ void zap_global_set_logger(zap_logger_t logger);
 void zap_global_set_default_logger(int level);
 uint32_t zap_separate_string(char *buf, char delim, char **array, int arraylen);
 void print_bits(uint8_t *b, int bl, char *buf, int blen, int e);
+ZIO_CODEC_FUNCTION(zio_slin2ulaw);
+ZIO_CODEC_FUNCTION(zio_ulaw2slin);
+ZIO_CODEC_FUNCTION(zio_slin2alaw);
+ZIO_CODEC_FUNCTION(zio_alaw2slin);
+ZIO_CODEC_FUNCTION(zio_ulaw2alaw);
+ZIO_CODEC_FUNCTION(zio_alaw2ulaw);
 
 
 #endif

@@ -370,6 +370,39 @@ zap_status_t zap_channel_set_event_callback(zap_channel_t *zchan, zio_event_cb_t
 	return ZAP_SUCCESS;
 }
 
+
+zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t state)
+{
+	int ok = 1;
+
+	zap_mutex_unlock(zchan->mutex);
+
+	if (zchan->state == ZAP_CHANNEL_STATE_DOWN) {
+
+		switch(state) {
+		case ZAP_CHANNEL_STATE_BUSY:
+			ok = 0;
+			break;
+		default:
+			break;
+		}
+	}
+
+	if (state == zchan->state) {
+		ok = 0;
+	}
+
+	if (ok) {
+		zap_set_flag(zchan, ZAP_CHANNEL_STATE_CHANGE);	
+		zchan->last_state = zchan->state; 
+		zchan->state = state;
+	}
+
+	zap_mutex_unlock(zchan->mutex);
+
+	return ok ? ZAP_SUCCESS : ZAP_FAIL;
+}
+
 zap_status_t zap_channel_open_any(const char *name, uint32_t span_id, zap_direction_t direction, zap_channel_t **zchan)
 {
 	zap_io_interface_t *zio;
@@ -660,10 +693,29 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 		}
 		break;
 
+	case ZAP_COMMAND_SET_NATIVE_CODEC:
+		{
+			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_CODECS)) {
+				zchan->effective_codec = zchan->native_codec;
+				zap_clear_flag(zchan, ZAP_CHANNEL_TRANSCODE);
+				zchan->packet_len = zchan->native_interval * (zchan->effective_codec == ZAP_CODEC_SLIN ? 16 : 8);
+				GOTO_STATUS(done, ZAP_SUCCESS);
+			}
+		}
+		break;
+
 	case ZAP_COMMAND_GET_CODEC: 
 		{
 			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_CODECS)) {
 				ZAP_COMMAND_OBJ_INT = zchan->effective_codec;
+				GOTO_STATUS(done, ZAP_SUCCESS);
+			}
+		}
+		break;
+	case ZAP_COMMAND_GET_NATIVE_CODEC: 
+		{
+			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_CODECS)) {
+				ZAP_COMMAND_OBJ_INT = zchan->native_codec;
 				GOTO_STATUS(done, ZAP_SUCCESS);
 			}
 		}
@@ -937,15 +989,17 @@ ZIO_CODEC_FUNCTION(zio_alaw2ulaw)
 
 zap_size_t zap_channel_dequeue_dtmf(zap_channel_t *zchan, char *dtmf, zap_size_t len)
 {
-	zap_size_t bytes;
+	zap_size_t bytes = 0;
 
 	assert(zchan != NULL);
 
-	zap_mutex_lock(zchan->mutex);
-	if ((bytes = zap_buffer_read(zchan->digit_buffer, dtmf, len)) > 0) {
-		*(dtmf + bytes) = '\0';
+	if (zap_buffer_inuse(zchan->digit_buffer)) {
+		zap_mutex_lock(zchan->mutex);
+		if ((bytes = zap_buffer_read(zchan->digit_buffer, dtmf, len)) > 0) {
+			*(dtmf + bytes) = '\0';
+		}
+		zap_mutex_unlock(zchan->mutex);
 	}
-	zap_mutex_unlock(zchan->mutex);
 
 	return bytes;
 }
@@ -1027,8 +1081,9 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 	}
 
 	if (zap_test_flag(zchan, ZAP_CHANNEL_DTMF_DETECT)) {
-		int16_t sln_buf[1024], *sln = sln_buf;
-		zap_size_t slen;
+		uint8_t sln_buf[2048] = {0};
+		int16_t *sln;
+		zap_size_t slen = 0;
 		char digit_str[80] = "";
 
 		if (zchan->effective_codec == ZAP_CODEC_SLIN) {
@@ -1038,23 +1093,25 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 			zap_size_t len = *datalen;
 			uint32_t i;
 			uint8_t *lp = data;
-			slen = max;
+
+			slen = sizeof(sln_buf);
+			if (len > slen) {
+				len = slen;
+			}
 			
-			if (slen > len) {
-				slen = len;
-			}
-
-			if (zchan->effective_codec == ZAP_CODEC_ULAW) {
-				for(i = 0; i < slen; i++) {
+			sln = (int16_t *) sln_buf;
+			for(i = 0; i < len; i++) {
+				if (zchan->effective_codec == ZAP_CODEC_ULAW) {
 					*sln++ = ulaw_to_linear(*lp++);
-				} 
-			} else if (zchan->effective_codec == ZAP_CODEC_ALAW) {
-				for(i = 0; i < slen; i++) {
+				} else if (zchan->effective_codec == ZAP_CODEC_ALAW) {
 					*sln++ = alaw_to_linear(*lp++);
-				} 
+				} else {
+					snprintf(zchan->last_error, sizeof(zchan->last_error), "codec error!");
+					return ZAP_FAIL;
+				}
 			}
-
-			sln = sln_buf;
+			sln = (int16_t *) sln_buf;
+			slen = len;
 		}
 
 		teletone_dtmf_detect(&zchan->dtmf_detect, sln, (int)slen);
