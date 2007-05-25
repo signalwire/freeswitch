@@ -9,9 +9,9 @@ static void *test_call(zap_thread_t *me, void *obj)
 	zap_size_t len;
 
 
-	sleep(5);
+	sleep(10);
 	
-	printf("answer call\n");
+	zap_log(ZAP_LOG_DEBUG, "answer call and start echo test\n");
 
 	zap_set_state_locked(chan, ZAP_CHANNEL_STATE_UP);
 	
@@ -24,7 +24,7 @@ static void *test_call(zap_thread_t *me, void *obj)
 		len = sizeof(frame);
 		if (flags & ZAP_READ) {
 			if (zap_channel_read(chan, frame, &len) == ZAP_SUCCESS) {
-				//printf("WRITE %d\n", len);
+				//zap_log(ZAP_LOG_DEBUG, "WRITE %d\n", len);
 				zap_channel_write(chan, frame, &len);
 			} else {
 				break;
@@ -36,18 +36,18 @@ static void *test_call(zap_thread_t *me, void *obj)
 		zap_set_state_locked(chan, ZAP_CHANNEL_STATE_BUSY);
 	}
 
-	printf("call over\n");
+	zap_log(ZAP_LOG_DEBUG, "call over\n");
 
 }
 
 static ZIO_SIGNAL_CB_FUNCTION(on_signal)
 {
-	printf("got sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
+	zap_log(ZAP_LOG_DEBUG, "got sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
 
 	switch(sigmsg->event_id) {
 	case ZAP_SIGEVENT_START:
 		zap_set_state_locked(sigmsg->channel, ZAP_CHANNEL_STATE_RING);
-		printf("launching thread and indicating ring\n");
+		zap_log(ZAP_LOG_DEBUG, "launching thread and indicating ring\n");
 		zap_thread_create_detached(test_call, sigmsg->channel);
 		break;
 	default:
@@ -64,16 +64,15 @@ int main(int argc, char *argv[])
 	zap_global_set_default_logger(ZAP_LOG_LEVEL_DEBUG);
 
 	if (zap_global_init() != ZAP_SUCCESS) {
-		fprintf(stderr, "Error loading OpenZAP\n");
+		zap_log(ZAP_LOG_ERROR, "Error loading OpenZAP\n");
 		exit(-1);
 	}
 
-	printf("OpenZAP loaded\n");
+	zap_log(ZAP_LOG_DEBUG, "OpenZAP loaded\n");
 
 	if (zap_span_find("wanpipe", 1, &span) != ZAP_SUCCESS) {
-		fprintf(stderr, "Error finding OpenZAP span\n");
+		zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span\n");
 	}
-	
 	
 	zap_analog_configure_span(span, "us", 2000, 11, on_signal);
 	zap_analog_start(span);

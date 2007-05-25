@@ -228,9 +228,25 @@ static ZIO_CONFIGURE_FUNCTION(wanpipe_configure)
 				span->trunk_type = zap_str2zap_trunk_type(val);
 				zap_log(ZAP_LOG_DEBUG, "setting trunk type to '%s'\n", zap_trunk_type2str(span->trunk_type)); 
 			} else if (!strcasecmp(var, "fxo-channel")) {
-				configured += wp_configure_channel(&cfg, val, span, ZAP_CHAN_TYPE_FXO);
+				if (span->trunk_type == ZAP_TRUNK_NONE) {
+					span->trunk_type = ZAP_TRUNK_FXO;
+					zap_log(ZAP_LOG_DEBUG, "setting trunk type to '%s'\n", zap_trunk_type2str(span->trunk_type)); 
+				}
+				if (span->trunk_type == ZAP_TRUNK_FXO) {
+					configured += wp_configure_channel(&cfg, val, span, ZAP_CHAN_TYPE_FXO);
+				} else {
+					zap_log(ZAP_LOG_WARNING, "Cannot add FXO channels to an FXS trunk!\n");
+				}
 			} else if (!strcasecmp(var, "fxs-channel")) {
-				configured += wp_configure_channel(&cfg, val, span, ZAP_CHAN_TYPE_FXS);
+				if (span->trunk_type == ZAP_TRUNK_NONE) {
+					span->trunk_type = ZAP_TRUNK_FXS;
+					zap_log(ZAP_LOG_DEBUG, "setting trunk type to '%s'\n", zap_trunk_type2str(span->trunk_type)); 
+				}
+				if (span->trunk_type == ZAP_TRUNK_FXS) {
+					configured += wp_configure_channel(&cfg, val, span, ZAP_CHAN_TYPE_FXS);
+				} else {
+					zap_log(ZAP_LOG_WARNING, "Cannot add FXS channels to an FXO trunk!\n");
+				}
 			} else if (!strcasecmp(var, "b-channel")) {
 				configured += wp_configure_channel(&cfg, val, span, ZAP_CHAN_TYPE_B);
 			} else if (!strcasecmp(var, "d-channel")) {
