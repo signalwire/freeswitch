@@ -60,7 +60,7 @@ static zap_status_t wp_tdm_cmd_exec(zap_channel_t *zchan, wanpipe_tdm_api_t *tdm
 	return ZAP_SUCCESS;
 }
 
-static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start, unsigned end, zap_chan_type_t type)
+static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start, unsigned end, zap_chan_type_t type, char *name, char *number)
 {
 	unsigned configured = 0, x;
 
@@ -91,6 +91,12 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 					chan->native_codec = chan->effective_codec = ZAP_CODEC_ULAW;
 				}
 			}
+			if (!zap_strlen_zero(name)) {
+				zap_copy_string(chan->chan_name, name, sizeof(chan->chan_name));
+			}
+			if (!zap_strlen_zero(number)) {
+				zap_copy_string(chan->chan_number, number, sizeof(chan->chan_number));
+			}
 			configured++;
 		} else {
 			zap_log(ZAP_LOG_ERROR, "failure configuring device s%dc%d\n", spanno, x);
@@ -100,7 +106,7 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 	return configured;
 }
 
-static unsigned wp_configure_channel(zap_config_t *cfg, const char *str, zap_span_t *span, zap_chan_type_t type)
+static unsigned wp_configure_channel(zap_config_t *cfg, const char *str, zap_span_t *span, zap_chan_type_t type, char *name, char *number)
 {
 	int items, i;
     char *mydata, *item_list[10];
@@ -158,7 +164,7 @@ static unsigned wp_configure_channel(zap_config_t *cfg, const char *str, zap_spa
 			continue;
 		}
 
-		configured += wp_open_range(span, spanno, channo, top, type);
+		configured += wp_open_range(span, spanno, channo, top, type, name, number);
 
 	}
 	
@@ -175,6 +181,8 @@ static ZIO_CONFIGURE_FUNCTION(wanpipe_configure)
 	zap_span_t *span = NULL;
 	int new_span = 0;
 	unsigned configured = 0, d = 0;
+	char name[80] = "";
+	char number[25] = "";
 
 	ZIO_CONFIGURE_MUZZLE;
 
@@ -227,13 +235,25 @@ static ZIO_CONFIGURE_FUNCTION(wanpipe_configure)
 			} else if (!strcasecmp(var, "trunk_type")) {
 				span->trunk_type = zap_str2zap_trunk_type(val);
 				zap_log(ZAP_LOG_DEBUG, "setting trunk type to '%s'\n", zap_trunk_type2str(span->trunk_type)); 
+			} else if (!strcasecmp(var, "name")) {
+				if (!strcasecmp(val, "undef")) {
+					*name = '\0';
+				} else {
+					zap_copy_string(name, val, sizeof(name));
+				}
+			} else if (!strcasecmp(var, "number")) {
+				if (!strcasecmp(val, "undef")) {
+					*number = '\0';
+				} else {
+					zap_copy_string(number, val, sizeof(number));
+				}
 			} else if (!strcasecmp(var, "fxo-channel")) {
 				if (span->trunk_type == ZAP_TRUNK_NONE) {
 					span->trunk_type = ZAP_TRUNK_FXO;
 					zap_log(ZAP_LOG_DEBUG, "setting trunk type to '%s'\n", zap_trunk_type2str(span->trunk_type)); 
 				}
 				if (span->trunk_type == ZAP_TRUNK_FXO) {
-					configured += wp_configure_channel(&cfg, val, span, ZAP_CHAN_TYPE_FXO);
+					configured += wp_configure_channel(&cfg, val, span, ZAP_CHAN_TYPE_FXO, name, number);
 				} else {
 					zap_log(ZAP_LOG_WARNING, "Cannot add FXO channels to an FXS trunk!\n");
 				}
@@ -243,12 +263,12 @@ static ZIO_CONFIGURE_FUNCTION(wanpipe_configure)
 					zap_log(ZAP_LOG_DEBUG, "setting trunk type to '%s'\n", zap_trunk_type2str(span->trunk_type)); 
 				}
 				if (span->trunk_type == ZAP_TRUNK_FXS) {
-					configured += wp_configure_channel(&cfg, val, span, ZAP_CHAN_TYPE_FXS);
+					configured += wp_configure_channel(&cfg, val, span, ZAP_CHAN_TYPE_FXS, name, number);
 				} else {
 					zap_log(ZAP_LOG_WARNING, "Cannot add FXS channels to an FXO trunk!\n");
 				}
 			} else if (!strcasecmp(var, "b-channel")) {
-				configured += wp_configure_channel(&cfg, val, span, ZAP_CHAN_TYPE_B);
+				configured += wp_configure_channel(&cfg, val, span, ZAP_CHAN_TYPE_B, name, number);
 			} else if (!strcasecmp(var, "d-channel")) {
 				if (d) {
 					zap_log(ZAP_LOG_WARNING, "ignoring extra d-channel\n");
@@ -260,7 +280,7 @@ static ZIO_CONFIGURE_FUNCTION(wanpipe_configure)
 					} else {
 						qtype = ZAP_CHAN_TYPE_DQ921;
 					}
-					configured += wp_configure_channel(&cfg, val, span, qtype);
+					configured += wp_configure_channel(&cfg, val, span, qtype, name, number);
 					d++;
 				}
 			}

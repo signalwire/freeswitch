@@ -34,7 +34,9 @@
 #ifndef OPENZAP_H
 #define OPENZAP_H
 
+#ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 500
+#endif
 
 #ifndef HAVE_STRINGS_H
 #define HAVE_STRINGS_H 1
@@ -148,6 +150,7 @@
 #define GOTO_STATUS(label,st) status = st; goto label ;
 
 #define zap_copy_string(x,y,z) strncpy(x, y, z - 1) 
+#define zap_strlen_zero(s) (!s || *s == '\0')
 
 
 #define zap_channel_test_feature(obj, flag) ((obj)->features & flag)
@@ -241,6 +244,8 @@ struct zap_channel {
 	uint32_t dtmf_off;
 	teletone_generation_session_t tone_session;
 	zap_time_t last_event_time;
+	char chan_name[80];
+	char chan_number[25];
 	struct zap_span *span;
 	struct zap_io_interface *zio;
 };
@@ -293,6 +298,7 @@ struct zap_span {
 	char last_error[256];
 	char tone_map[ZAP_TONEMAP_INVALID+1][ZAP_TONEMAP_LEN];
 	zap_channel_t channels[ZAP_MAX_CHANNELS_SPAN];
+	void *app_data;
 };
 
 
