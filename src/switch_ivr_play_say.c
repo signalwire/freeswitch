@@ -830,7 +830,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			status = SWITCH_STATUS_SUCCESS;
 			continue;
 		} else if (status != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Bad Write\n");
 			done = 1;
 			break;
 		}
@@ -851,6 +850,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_yield(10000);
 			}
 			status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
 			}
@@ -1042,7 +1042,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 			write_frame.timestamp = timer->samplecount;
 		}
 		if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Bad Write\n");
 			done = 1;
 			break;
 		}
@@ -1124,7 +1123,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 					write_frame.timestamp = timer->samplecount;
 				}
 				if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Bad Write\n");
 					done = 1;
 					break;
 				}
@@ -1145,7 +1143,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 			write_frame.timestamp = timer->samplecount;
 		}
 		if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Bad Write\n");
 			done = 1;
 			break;
 		}

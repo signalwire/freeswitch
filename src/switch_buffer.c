@@ -260,6 +260,7 @@ SWITCH_DECLARE(void) switch_buffer_zero(switch_buffer_t *buffer)
 	assert(buffer->data != NULL);
 
 	buffer->used = 0;
+	buffer->actually_used = 0;
 	buffer->head = buffer->data;
 }
 

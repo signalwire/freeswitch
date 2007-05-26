@@ -52,7 +52,9 @@
 #define FREESWITCH_ITAD "543"
 #define __EXTENSIONS__ 1
 #ifndef MACOSX
+#ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 600
+#endif
 #endif
 #include <stdlib.h>
 #include <stdio.h>
