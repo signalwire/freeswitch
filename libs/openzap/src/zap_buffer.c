@@ -242,6 +242,7 @@ void zap_buffer_zero(zap_buffer_t *buffer)
 	assert(buffer->data != NULL);
 
 	buffer->used = 0;
+	buffer->actually_used = 0;
 	buffer->head = buffer->data;
 }
 
