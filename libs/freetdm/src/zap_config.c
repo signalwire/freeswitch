@@ -91,7 +91,6 @@ int zap_config_open_file(zap_config_t *cfg, char *file_path)
 	}
 }
 
-
 void zap_config_close_file(zap_config_t *cfg)
 {
 

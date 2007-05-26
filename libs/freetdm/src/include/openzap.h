@@ -306,6 +306,7 @@ extern zap_logger_t zap_log;
 
 struct zap_io_interface {
 	const char *name;
+	zio_configure_span_t configure_span;
 	zio_configure_t configure;
 	zio_open_t open;
 	zio_close_t close;
