@@ -65,7 +65,9 @@ PWD=$(shell pwd)
 INCS=-I$(PWD)/$(SRC)//include -I$(PWD)/$(SRC)//isdn/include
 CFLAGS=$(ZAP_CFLAGS) $(INCS)
 MYLIB=libopenzap.a
-TMP=-I../libpri-1.2.4 -I$(SRC)/include -I./src -w
+LIBPRIA=libpri.a
+LIBPRI=./libpri
+TMP=-I$(LIBPRI) -I$(SRC)/include -I./src -w
 
 include general.makefile $(ZAP_MODS)
 
@@ -84,14 +86,17 @@ testisdn: $(SRC)/testisdn.c $(MYLIB)
 testanalog: $(SRC)/testanalog.c $(MYLIB)
 	$(CC) $(INCS) -L. $(SRC)/testanalog.c -o testanalog -lopenzap -lm -lpthread
 
-priserver.o: $(SRC)/priserver.c
+$(SRC)/priserver.o: $(SRC)/priserver.c
 	$(CC) $(INCS) $(TMP) -c $(SRC)/priserver.c -o $(SRC)/priserver.o 
 
 $(SRC)/sangoma_pri.o: $(SRC)/sangoma_pri.c
 	$(CC) $(INCS) $(TMP) -c $(SRC)/sangoma_pri.c -o $(SRC)/sangoma_pri.o
 
-priserver: $(MYLIB) $(SRC)/priserver.o $(SRC)/sangoma_pri.o
-	$(CC) $(SRC)/sangoma_pri.o $(SRC)/priserver.o -L. -o priserver -lopenzap -lm -lpthread ../../libpri-1.2.4/libpri.a
+$(LIBPRI)/$(LIBPRIA):
+	cd libpri && make
+
+priserver: $(MYLIB) $(SRC)/priserver.o $(SRC)/sangoma_pri.o $(LIBPRI)/$(LIBPRIA)
+	$(CC) $(SRC)/sangoma_pri.o $(SRC)/priserver.o -L. -o priserver -lopenzap -lm -lpthread $(LIBPRI)/$(LIBPRIA)
 
 $(SRC)/zap_io.o: $(SRC)/zap_io.c
 	$(CC) $(MOD_CFLAGS) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
@@ -117,8 +122,9 @@ mod_openzap-install: mod_openzap
 	cd mod_openzap && make install
 
 mod_openzap-clean:
-	cd mod_openzap && make clean
+	@if [ -f mod_openzap/mod_openzap.so ] ; then cd mod_openzap && make clean ; fi
 
 clean: mod_openzap-clean
 	rm -f $(SRC)/*.o $(SRC)/isdn/*.o $(MYLIB) *~ \#* testapp priserver testisdn testanalog
+	@if [ -f $(LIBPRI)/$(LIBPRIA) ] ; then cd $(LIBPRI) && make clean ; fi
 
