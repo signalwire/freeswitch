@@ -1081,7 +1081,7 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 	}
 
 	if (zap_test_flag(zchan, ZAP_CHANNEL_DTMF_DETECT)) {
-		uint8_t sln_buf[2048] = {0};
+		uint8_t sln_buf[1024] = {0};
 		int16_t *sln;
 		zap_size_t slen = 0;
 		char digit_str[80] = "";
@@ -1094,11 +1094,11 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 			uint32_t i;
 			uint8_t *lp = data;
 
-			slen = sizeof(sln_buf);
+			slen = sizeof(sln_buf) / 2;
 			if (len > slen) {
 				len = slen;
 			}
-			
+
 			sln = (int16_t *) sln_buf;
 			for(i = 0; i < len; i++) {
 				if (zchan->effective_codec == ZAP_CODEC_ULAW) {
