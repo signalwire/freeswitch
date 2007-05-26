@@ -1,5 +1,5 @@
 MOD_CFLAGS +=-DZAP_WANPIPE_SUPPORT
-OBJS += zap_wanpipe.o
+OBJS += $(SRC)/zap_wanpipe.o
 WANPIPE_INCLUDE=/usr/include/wanpipe
 
 WP_CFLAGS =-Wall -Werror -I$(WANPIPE_INCLUDE) -I/usr/local/include -I/usr/src/linux/include -I. -I/usr/include 

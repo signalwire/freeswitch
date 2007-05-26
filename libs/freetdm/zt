@@ -1,2 +1,2 @@
 MOD_CFLAGS +=-DZAP_ZT_SUPPORT
-OBJS += zap_zt.o
+OBJS += $(SRC)/zap_zt.o
