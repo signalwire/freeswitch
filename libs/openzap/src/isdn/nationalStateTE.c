@@ -114,7 +114,7 @@ void nationalCreateTE(L3UCHAR i)
     Q931SetIEProc(Q931ie_KEYPAD_FACILITY,                  i,Q931Pie_KeypadFac,			Q931Uie_KeypadFac);
     Q931SetIEProc(Q931ie_SIGNAL,                           i,Q931Pie_Signal,			Q931Uie_Signal);
     Q931SetIEProc(Q931ie_TRANSIT_DELAY_SELECTION_AND_IND,  i,Q931Pie_TransNetSel,		Q931Uie_TransNetSel);
-    Q931SetIEProc(Q931ie_CALLING_PARTY_NUMBER,             i,nationalPie_CallingNum,	nationalUie_CallingNum);
+    Q931SetIEProc(Q931ie_CALLING_PARTY_NUMBER,             i,Q931Pie_CallingNum,		Q931Uie_CallingNum);
     Q931SetIEProc(Q931ie_CALLING_PARTY_SUBADDRESS,         i,Q931Pie_CallingSub,		Q931Uie_CallingSub);
     Q931SetIEProc(Q931ie_CALLED_PARTY_NUMBER,              i,Q931Pie_CalledNum,			Q931Uie_CalledNum);
     Q931SetIEProc(Q931ie_CALLED_PARTY_SUBADDRESS,          i,Q931Pie_CalledSub,			Q931Uie_CalledSub);
