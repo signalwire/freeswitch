@@ -93,9 +93,6 @@ typedef struct
 *****************************************************************************/
 
 L3INT nationalPie_GenericDigits(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT nationalPie_CallingNum(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-
-L3INT nationalUie_CallingNum(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
 L3INT nationalUie_GenericDigits(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR *OBuf, L3INT *IOff, L3INT *OOff);
 
 

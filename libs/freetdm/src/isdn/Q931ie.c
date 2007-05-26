@@ -453,7 +453,7 @@ L3INT Q931Uie_CallID(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR 
         pie->CallId[x] = IBuf[Octet+Off] & 0x7f;
         Off++;
         x++;
-    }while((IBuf[Octet+Off]&0x80) != 0 && x < 10);
+    }while(Q931MoreIE());
 
     Q931IESizeTest(Q931E_CALLID);
 
@@ -622,7 +622,7 @@ L3INT Q931Uie_CalledSub(Q931_TrunkInfo_t *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCHA
         pie->Digit[x] = IBuf[Octet+Off] & 0x7f;
         Off++;
         x++;
-    }while((IBuf[Octet+Off]&0x80) != 0 && x < 20);
+    }while(Q931MoreIE() && x < 20);
 
     Q931IESizeTest(Q931E_CALLEDSUB);
 
@@ -713,7 +713,7 @@ L3INT Q931Uie_CalledNum(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCH
     Octet ++;
     
     /* Octet 4*/
-    for (x = 0; x < IESize && x < 20; x++)
+    for (x = 0; x < IESize; x++)
     {
         pie->Digit[x] = IBuf[Octet+Off] & 0x7f;
         Off++;
@@ -819,7 +819,7 @@ L3INT Q931Uie_CallingNum(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UC
         pie->Digit[x] = IBuf[Octet+Off] & 0x7f;
         Off++;
         x++;
-    }while((IBuf[Octet+Off]&0x80) != 0 && x < 20);
+    }while((IBuf[Octet+Off]&0x80) == 0 && Q931MoreIE());
 
     Q931IESizeTest(Q931E_CALLINGNUM);
 
@@ -925,7 +925,7 @@ L3INT Q931Uie_CallingSub(Q931_TrunkInfo_t *pTrunk, ie *pIE,L3UCHAR * IBuf, L3UCH
         pie->Digit[x] = IBuf[Octet+Off] & 0x7f;
         Off++;
         x++;
-    }while((IBuf[Octet+Off]&0x80) != 0 && x < 20);
+    }while(Q931MoreIE() && x < 20);
 
     Q931IESizeTest(Q931E_CALLINGSUB);
 
