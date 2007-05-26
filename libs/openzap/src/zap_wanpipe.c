@@ -106,7 +106,23 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 	return configured;
 }
 
-static unsigned wp_configure_channel(zap_config_t *cfg, const char *str, zap_span_t *span, zap_chan_type_t type, char *name, char *number)
+static ZIO_CONFIGURE_FUNCTION(wanpipe_configure)
+{
+	if (!strcasecmp(category, "defaults")) {
+		if (!strcasecmp(var, "codec_ms")) {
+			unsigned codec_ms = atoi(val);
+			if (codec_ms < 10 || codec_ms > 60) {
+				zap_log(ZAP_LOG_WARNING, "invalid codec ms at line %d\n", lineno);
+			} else {
+				wp_globals.codec_ms = codec_ms;
+			}
+		}
+	}
+
+	return ZAP_SUCCESS;
+}
+
+static ZIO_CONFIGURE_SPAN_FUNCTION(wanpipe_configure_span)
 {
 	int items, i;
     char *mydata, *item_list[10];
@@ -132,7 +148,7 @@ static unsigned wp_configure_channel(zap_config_t *cfg, const char *str, zap_spa
 		}
 
 		if (!(sp && ch)) {
-			zap_log(ZAP_LOG_ERROR, "Invalid input on line %d\n", cfg->lineno);
+			zap_log(ZAP_LOG_ERROR, "Invalid input\n");
 			continue;
 		}
 
@@ -171,126 +187,6 @@ static unsigned wp_configure_channel(zap_config_t *cfg, const char *str, zap_spa
 	free(mydata);
 
 	return configured;
-}
-
-static ZIO_CONFIGURE_FUNCTION(wanpipe_configure)
-{
-	zap_config_t cfg;
-	char *var, *val;
-	int catno = -1;
-	zap_span_t *span = NULL;
-	int new_span = 0;
-	unsigned configured = 0, d = 0;
-	char name[80] = "";
-	char number[25] = "";
-
-	ZIO_CONFIGURE_MUZZLE;
-
-	zap_log(ZAP_LOG_DEBUG, "configuring wanpipe\n");
-	if (!zap_config_open_file(&cfg, "wanpipe.conf")) {
-		return ZAP_FAIL;
-	}
-	
-	while (zap_config_next_pair(&cfg, &var, &val)) {
-		if (!strcasecmp(cfg.category, "defaults")) {
-			if (!strcasecmp(var, "codec_ms")) {
-				unsigned codec_ms = atoi(val);
-				if (codec_ms < 10 || codec_ms > 60) {
-					zap_log(ZAP_LOG_WARNING, "invalid codec ms at line %d\n", cfg.lineno);
-				} else {
-					wp_globals.codec_ms = codec_ms;
-				}
-			}
-		} else if (!strcasecmp(cfg.category, "span")) {
-			if (cfg.catno != catno) {
-				zap_log(ZAP_LOG_DEBUG, "found config for span\n");
-				catno = cfg.catno;
-				new_span = 1;				
-				span = NULL;
-			}
-			
-			if (new_span) {
-				if (!strcasecmp(var, "enabled") && ! zap_true(val)) {
-					zap_log(ZAP_LOG_DEBUG, "span (disabled)\n");
-				} else {
-					if (zap_span_create(&wanpipe_interface, &span) == ZAP_SUCCESS) {
-						zap_log(ZAP_LOG_DEBUG, "created span %d\n", span->span_id);
-					} else {
-						zap_log(ZAP_LOG_CRIT, "failure creating span\n");
-						span = NULL;
-					}
-				}
-				new_span = 0;
-				continue;
-			}
-
-			if (!span) {
-				continue;
-			}
-
-			zap_log(ZAP_LOG_DEBUG, "span %d [%s]=[%s]\n", span->span_id, var, val);
-			
-			if (!strcasecmp(var, "enabled")) {
-				zap_log(ZAP_LOG_WARNING, "'enabled' command ignored when it's not the first command in a [span]\n");
-			} else if (!strcasecmp(var, "trunk_type")) {
-				span->trunk_type = zap_str2zap_trunk_type(val);
-				zap_log(ZAP_LOG_DEBUG, "setting trunk type to '%s'\n", zap_trunk_type2str(span->trunk_type)); 
-			} else if (!strcasecmp(var, "name")) {
-				if (!strcasecmp(val, "undef")) {
-					*name = '\0';
-				} else {
-					zap_copy_string(name, val, sizeof(name));
-				}
-			} else if (!strcasecmp(var, "number")) {
-				if (!strcasecmp(val, "undef")) {
-					*number = '\0';
-				} else {
-					zap_copy_string(number, val, sizeof(number));
-				}
-			} else if (!strcasecmp(var, "fxo-channel")) {
-				if (span->trunk_type == ZAP_TRUNK_NONE) {
-					span->trunk_type = ZAP_TRUNK_FXO;
-					zap_log(ZAP_LOG_DEBUG, "setting trunk type to '%s'\n", zap_trunk_type2str(span->trunk_type)); 
-				}
-				if (span->trunk_type == ZAP_TRUNK_FXO) {
-					configured += wp_configure_channel(&cfg, val, span, ZAP_CHAN_TYPE_FXO, name, number);
-				} else {
-					zap_log(ZAP_LOG_WARNING, "Cannot add FXO channels to an FXS trunk!\n");
-				}
-			} else if (!strcasecmp(var, "fxs-channel")) {
-				if (span->trunk_type == ZAP_TRUNK_NONE) {
-					span->trunk_type = ZAP_TRUNK_FXS;
-					zap_log(ZAP_LOG_DEBUG, "setting trunk type to '%s'\n", zap_trunk_type2str(span->trunk_type)); 
-				}
-				if (span->trunk_type == ZAP_TRUNK_FXS) {
-					configured += wp_configure_channel(&cfg, val, span, ZAP_CHAN_TYPE_FXS, name, number);
-				} else {
-					zap_log(ZAP_LOG_WARNING, "Cannot add FXS channels to an FXO trunk!\n");
-				}
-			} else if (!strcasecmp(var, "b-channel")) {
-				configured += wp_configure_channel(&cfg, val, span, ZAP_CHAN_TYPE_B, name, number);
-			} else if (!strcasecmp(var, "d-channel")) {
-				if (d) {
-					zap_log(ZAP_LOG_WARNING, "ignoring extra d-channel\n");
-				} else {
-					zap_chan_type_t qtype;
-					if (!strncasecmp(val, "lapd:", 5)) {
-						qtype = ZAP_CHAN_TYPE_DQ931;
-						val += 5;
-					} else {
-						qtype = ZAP_CHAN_TYPE_DQ921;
-					}
-					configured += wp_configure_channel(&cfg, val, span, qtype, name, number);
-					d++;
-				}
-			}
-		}
-	}
-	zap_config_close_file(&cfg);
-
-	zap_log(ZAP_LOG_INFO, "wanpipe configured %u channel(s)\n", configured);
-	
-	return configured ? ZAP_SUCCESS : ZAP_FAIL;
 }
 
 static ZIO_OPEN_FUNCTION(wanpipe_open) 
@@ -592,7 +488,8 @@ zap_status_t wanpipe_init(zap_io_interface_t **zio)
 	wp_globals.wink_ms = 150;
 	wp_globals.flash_ms = 750;
 	wanpipe_interface.name = "wanpipe";
-	wanpipe_interface.configure =  wanpipe_configure;
+	wanpipe_interface.configure_span = wanpipe_configure_span;
+	wanpipe_interface.configure = wanpipe_configure;
 	wanpipe_interface.open = wanpipe_open;
 	wanpipe_interface.close = wanpipe_close;
 	wanpipe_interface.command = wanpipe_command;

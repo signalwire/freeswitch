@@ -1228,6 +1228,125 @@ static struct {
 	zap_io_interface_t *zt_interface;
 } interfaces;
 
+
+static uint32_t load_config(zap_io_interface_t *zio)
+{
+	char cfg_name[256];
+	zap_config_t cfg;
+	char *var, *val;
+	int catno = -1;
+	zap_span_t *span = NULL;
+	int new_span = 0;
+	unsigned configured = 0, d = 0;
+	char name[80] = "";
+	char number[25] = "";
+
+	assert(zio != NULL);
+	snprintf(cfg_name, sizeof(cfg_name), "%s.conf", zio->name);
+
+	zap_log(ZAP_LOG_DEBUG, "configuring %s\n", zio->name);
+
+	if (!zap_config_open_file(&cfg, cfg_name)) {
+		return ZAP_FAIL;
+	}
+	
+	while (zap_config_next_pair(&cfg, &var, &val)) {
+		if (!strcasecmp(cfg.category, "span")) {
+			if (cfg.catno != catno) {
+				zap_log(ZAP_LOG_DEBUG, "found config for span\n");
+				catno = cfg.catno;
+				new_span = 1;				
+				span = NULL;
+			}
+			
+			if (new_span) {
+				if (!strcasecmp(var, "enabled") && ! zap_true(val)) {
+					zap_log(ZAP_LOG_DEBUG, "span (disabled)\n");
+				} else {
+					if (zap_span_create(zio, &span) == ZAP_SUCCESS) {
+						zap_log(ZAP_LOG_DEBUG, "created span %d\n", span->span_id);
+					} else {
+						zap_log(ZAP_LOG_CRIT, "failure creating span\n");
+						span = NULL;
+					}
+				}
+				new_span = 0;
+				continue;
+			}
+
+			if (!span) {
+				continue;
+			}
+
+			zap_log(ZAP_LOG_DEBUG, "span %d [%s]=[%s]\n", span->span_id, var, val);
+			
+			if (!strcasecmp(var, "enabled")) {
+				zap_log(ZAP_LOG_WARNING, "'enabled' command ignored when it's not the first command in a [span]\n");
+			} else if (!strcasecmp(var, "trunk_type")) {
+				span->trunk_type = zap_str2zap_trunk_type(val);
+				zap_log(ZAP_LOG_DEBUG, "setting trunk type to '%s'\n", zap_trunk_type2str(span->trunk_type)); 
+			} else if (!strcasecmp(var, "name")) {
+				if (!strcasecmp(val, "undef")) {
+					*name = '\0';
+				} else {
+					zap_copy_string(name, val, sizeof(name));
+				}
+			} else if (!strcasecmp(var, "number")) {
+				if (!strcasecmp(val, "undef")) {
+					*number = '\0';
+				} else {
+					zap_copy_string(number, val, sizeof(number));
+				}
+			} else if (!strcasecmp(var, "fxo-channel")) {
+				if (span->trunk_type == ZAP_TRUNK_NONE) {
+					span->trunk_type = ZAP_TRUNK_FXO;
+					zap_log(ZAP_LOG_DEBUG, "setting trunk type to '%s'\n", zap_trunk_type2str(span->trunk_type)); 
+				}
+				if (span->trunk_type == ZAP_TRUNK_FXO) {
+					configured += zio->configure_span(span, val, ZAP_CHAN_TYPE_FXO, name, number);
+				} else {
+					zap_log(ZAP_LOG_WARNING, "Cannot add FXO channels to an FXS trunk!\n");
+				}
+			} else if (!strcasecmp(var, "fxs-channel")) {
+				if (span->trunk_type == ZAP_TRUNK_NONE) {
+					span->trunk_type = ZAP_TRUNK_FXS;
+					zap_log(ZAP_LOG_DEBUG, "setting trunk type to '%s'\n", zap_trunk_type2str(span->trunk_type)); 
+				}
+				if (span->trunk_type == ZAP_TRUNK_FXS) {
+					configured += zio->configure_span(span, val, ZAP_CHAN_TYPE_FXS, name, number);
+				} else {
+					zap_log(ZAP_LOG_WARNING, "Cannot add FXS channels to an FXO trunk!\n");
+				}
+			} else if (!strcasecmp(var, "b-channel")) {
+				configured += zio->configure_span(span, val, ZAP_CHAN_TYPE_B, name, number);
+			} else if (!strcasecmp(var, "d-channel")) {
+				if (d) {
+					zap_log(ZAP_LOG_WARNING, "ignoring extra d-channel\n");
+				} else {
+					zap_chan_type_t qtype;
+					if (!strncasecmp(val, "lapd:", 5)) {
+						qtype = ZAP_CHAN_TYPE_DQ931;
+						val += 5;
+					} else {
+						qtype = ZAP_CHAN_TYPE_DQ921;
+					}
+					configured += zio->configure_span(span, val, qtype, name, number);
+					d++;
+				}
+			}
+		} else if (zio->configure) {
+			zio->configure(cfg.category, var, val, cfg.lineno);
+		} else {
+			zap_log(ZAP_LOG_ERROR, "unknown param [%s] '%s' / '%s'\n", cfg.category, var, val);
+		}
+	}
+	zap_config_close_file(&cfg);
+
+	zap_log(ZAP_LOG_INFO, "wanpipe configured %u channel(s)\n", configured);
+	
+	return configured;
+}
+
 zap_status_t zap_global_init(void)
 {
 	zap_config_t cfg;
@@ -1285,9 +1404,7 @@ zap_status_t zap_global_init(void)
 				zap_mutex_unlock(globals.mutex);
 
 				if (zio) {
-					if (zio->configure(zio) == ZAP_SUCCESS) {
-						configured++;
-					}
+					configured += load_config(zio);
 				} else {
 					zap_log(ZAP_LOG_WARNING, "Attempted to load Non-Existant module '%s'\n", val);
 				}

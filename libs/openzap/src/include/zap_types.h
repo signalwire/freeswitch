@@ -229,7 +229,8 @@ typedef struct zap_span zap_span_t;
 #define ZIO_SIGNAL_CB_ARGS (zap_sigmsg_t *sigmsg)
 #define ZIO_EVENT_CB_ARGS (zap_channel_t *zchan, zap_event_t *event)
 #define ZIO_CODEC_ARGS (void *data, zap_size_t max, zap_size_t *datalen)
-#define ZIO_CONFIGURE_ARGS (struct zap_io_interface *zio)
+#define ZIO_CONFIGURE_SPAN_ARGS (zap_span_t *span, const char *str, zap_chan_type_t type, char *name, char *number)
+#define ZIO_CONFIGURE_ARGS (const char *category, const char *var, const char *val, int lineno)
 #define ZIO_OPEN_ARGS (zap_channel_t *zchan)
 #define ZIO_CLOSE_ARGS (zap_channel_t *zchan)
 #define ZIO_COMMAND_ARGS (zap_channel_t *zchan, zap_command_t command, void *obj)
@@ -242,6 +243,7 @@ typedef zap_status_t (*zio_span_next_event_t) ZIO_SPAN_NEXT_EVENT_ARGS ;
 typedef zap_status_t (*zio_signal_cb_t) ZIO_SIGNAL_CB_ARGS ;
 typedef zap_status_t (*zio_event_cb_t) ZIO_EVENT_CB_ARGS ;
 typedef zap_status_t (*zio_codec_t) ZIO_CODEC_ARGS ;
+typedef zap_status_t (*zio_configure_span_t) ZIO_CONFIGURE_SPAN_ARGS ;
 typedef zap_status_t (*zio_configure_t) ZIO_CONFIGURE_ARGS ;
 typedef zap_status_t (*zio_open_t) ZIO_OPEN_ARGS ;
 typedef zap_status_t (*zio_close_t) ZIO_CLOSE_ARGS ;
@@ -255,6 +257,7 @@ typedef zap_status_t (*zio_write_t) ZIO_WRITE_ARGS ;
 #define ZIO_SIGNAL_CB_FUNCTION(name) zap_status_t name ZIO_SIGNAL_CB_ARGS
 #define ZIO_EVENT_CB_FUNCTION(name) zap_status_t name ZIO_EVENT_CB_ARGS
 #define ZIO_CODEC_FUNCTION(name) zap_status_t name ZIO_CODEC_ARGS
+#define ZIO_CONFIGURE_SPAN_FUNCTION(name) zap_status_t name ZIO_CONFIGURE_SPAN_ARGS
 #define ZIO_CONFIGURE_FUNCTION(name) zap_status_t name ZIO_CONFIGURE_ARGS
 #define ZIO_OPEN_FUNCTION(name) zap_status_t name ZIO_OPEN_ARGS
 #define ZIO_CLOSE_FUNCTION(name) zap_status_t name ZIO_CLOSE_ARGS
@@ -263,7 +266,7 @@ typedef zap_status_t (*zio_write_t) ZIO_WRITE_ARGS ;
 #define ZIO_READ_FUNCTION(name) zap_status_t name ZIO_READ_ARGS
 #define ZIO_WRITE_FUNCTION(name) zap_status_t name ZIO_WRITE_ARGS
 
-#define ZIO_CONFIGURE_MUZZLE assert(zio != NULL)
+#define ZIO_CONFIGURE_SPAN_MUZZLE assert(zio != NULL)
 #define ZIO_OPEN_MUZZLE assert(zchan != NULL)
 #define ZIO_CLOSE_MUZZLE assert(zchan != NULL)
 #define ZIO_COMMAND_MUZZLE assert(zchan != NULL); assert(command != 0); assert(obj != NULL)
