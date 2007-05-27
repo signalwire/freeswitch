@@ -231,16 +231,26 @@ const char *q931_error_to_name(q931_error_t error);
 /* WARNING! Initialize Q931CreateDialectCB[] will NULL when increasing the  */
 /* Q931MAXDLCT value to avoid Q931Initialize from crashing if one entry is  */
 /* not used.																*/
-#define Q931MAXDLCT 4               /* Max dialects included in this        */
-                                    /* compile. User and Network count as   */
-                                    /* one dialect each.                    */
+#define Q931MAXDLCT 4           /* Max dialects included in this        */
+                                /* compile. User and Network count as   */
+                                /* one dialect each.                    */
 
 
-#define Q931MAXMES  255             /* Number of messages                   */
+#define Q931MAXMES  128         /* Number of messages							*/
 
-#define Q931MAXIE  255              /* Number of IE                         */
+#define Q931MAXIE  255          /* Number of IE									*/
+
+#define Q931MAXUSEDIE 50		/* Maximum number of ie types per Dialect		*/
+
+#define Q931MAXCODESETS 7		/* Maximum number of codests (by spec, 0-7		*/
 
 #define Q931MAXSTATE 100			/* Size of state tables					*/
+
+/*****************************************************************************
+
+  
+
+*****************************************************************************/
 
 /*****************************************************************************
 
