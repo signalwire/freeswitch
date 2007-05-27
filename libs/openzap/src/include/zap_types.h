@@ -192,6 +192,7 @@ typedef enum {
 typedef enum {
 	ZAP_CHANNEL_STATE_DOWN,
 	ZAP_CHANNEL_STATE_UP,
+	ZAP_CHANNEL_STATE_HANGUP,
 	ZAP_CHANNEL_STATE_DIALTONE,
 	ZAP_CHANNEL_STATE_COLLECT,
 	ZAP_CHANNEL_STATE_RING,
@@ -200,7 +201,7 @@ typedef enum {
 	ZAP_CHANNEL_STATE_IDLE,
 	ZAP_CHANNEL_STATE_INVALID
 } zap_channel_state_t;
-#define CHANNEL_STATE_STRINGS "DOWN", "UP", "DIALTONE", "COLLECT", "RING", "BUSY", "ATTN", "IDLE", "INVALID"
+#define CHANNEL_STATE_STRINGS "DOWN", "UP", "HANGUP", "DIALTONE", "COLLECT", "RING", "BUSY", "ATTN", "IDLE", "INVALID"
 ZAP_STR2ENUM_P(zap_str2zap_channel_state, zap_channel_state2str, zap_channel_state_t)
 
 typedef enum {

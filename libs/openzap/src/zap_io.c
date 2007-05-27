@@ -370,6 +370,18 @@ zap_status_t zap_channel_set_event_callback(zap_channel_t *zchan, zio_event_cb_t
 	return ZAP_SUCCESS;
 }
 
+zap_status_t zap_channel_set_token(zap_channel_t *zchan, char *token)
+{
+	zap_mutex_lock(zchan->mutex);
+	if (token) {
+		zap_copy_string(zchan->token, token, sizeof(zchan->token));
+	} else {
+		*zchan->token = '\0';
+	}
+	zap_mutex_unlock(zchan->mutex);
+	return ZAP_SUCCESS;
+}
+
 
 zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t state)
 {

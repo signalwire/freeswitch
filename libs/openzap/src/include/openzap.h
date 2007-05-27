@@ -245,8 +245,9 @@ struct zap_channel {
 	uint32_t dtmf_off;
 	teletone_generation_session_t tone_session;
 	zap_time_t last_event_time;
-	char chan_name[80];
-	char chan_number[25];
+	char token[128];
+	char chan_name[128];
+	char chan_number[32];
 	struct zap_span *span;
 	struct zap_io_interface *zio;
 };
@@ -321,6 +322,7 @@ struct zap_io_interface {
 	struct zap_span spans[ZAP_MAX_SPANS_INTERFACE];
 };
 
+zap_status_t zap_channel_set_token(zap_channel_t *zchan, char *token);
 zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t state);
 zap_status_t zap_span_load_tones(zap_span_t *span, char *mapname);
 zap_size_t zap_channel_dequeue_dtmf(zap_channel_t *zchan, char *dtmf, zap_size_t len);

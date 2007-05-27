@@ -145,6 +145,13 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 					}
 				}
 				break;
+			case ZAP_CHANNEL_STATE_HANGUP:
+				{
+					if (state_counter > 2000) {
+						zap_set_state_locked(chan, ZAP_CHANNEL_STATE_BUSY);
+					}
+				}
+				break;
 			case ZAP_CHANNEL_STATE_UP:
 			case ZAP_CHANNEL_STATE_IDLE:
 				{
