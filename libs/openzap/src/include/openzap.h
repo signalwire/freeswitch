@@ -157,6 +157,7 @@
 #define zap_channel_test_feature(obj, flag) ((obj)->features & flag)
 #define zap_channel_set_feature(obj, flag) (obj)->features |= (flag)
 #define zap_channel_clear_feature(obj, flag) (obj)->features &= ~(flag)
+#define zap_channel_set_member_locked(obj, _m, _v) zap_mutex_lock(obj->mutex); obj->_m = _v; zap_mutex_unlock(obj->mutex)
 
 /*!
   \brief Test for the existance of a flag on an arbitary object
@@ -218,6 +219,9 @@ struct zap_event {
 	void *data;
 };
 
+#define ZAP_TOKEN_STRLEN 128
+#define ZAP_MAX_TOKENS 10
+
 struct zap_channel {
 	uint32_t span_id;
 	uint32_t chan_id;
@@ -245,7 +249,8 @@ struct zap_channel {
 	uint32_t dtmf_off;
 	teletone_generation_session_t tone_session;
 	zap_time_t last_event_time;
-	char token[128];
+	char tokens[ZAP_MAX_TOKENS+1][ZAP_TOKEN_STRLEN];
+	uint32_t token_count;
 	char chan_name[128];
 	char chan_number[32];
 	struct zap_span *span;
@@ -322,7 +327,9 @@ struct zap_io_interface {
 	struct zap_span spans[ZAP_MAX_SPANS_INTERFACE];
 };
 
-zap_status_t zap_channel_set_token(zap_channel_t *zchan, char *token);
+void zap_channel_rotate_tokens(zap_channel_t *zchan);
+zap_status_t zap_channel_clear_token(zap_channel_t *zchan, int32_t token_id);
+zap_status_t zap_channel_add_token(zap_channel_t *zchan, char *token);
 zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t state);
 zap_status_t zap_span_load_tones(zap_span_t *span, char *mapname);
 zap_size_t zap_channel_dequeue_dtmf(zap_channel_t *zchan, char *dtmf, zap_size_t len);

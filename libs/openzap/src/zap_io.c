@@ -370,16 +370,54 @@ zap_status_t zap_channel_set_event_callback(zap_channel_t *zchan, zio_event_cb_t
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_channel_set_token(zap_channel_t *zchan, char *token)
+zap_status_t zap_channel_clear_token(zap_channel_t *zchan, int32_t token_id)
 {
+	zap_status_t status = ZAP_FAIL;
+	
 	zap_mutex_lock(zchan->mutex);
-	if (token) {
-		zap_copy_string(zchan->token, token, sizeof(zchan->token));
-	} else {
-		*zchan->token = '\0';
+	if (token_id == -1) {
+		memset(zchan->tokens, 0, sizeof(zchan->tokens));
+		zchan->token_count = 0;
+	} else if (*zchan->tokens[token_id] != '\0') {
+		char tokens[ZAP_MAX_TOKENS][ZAP_TOKEN_STRLEN];
+		int32_t i, count = zchan->token_count;
+		memcpy(tokens, zchan->tokens, sizeof(tokens));
+		memset(zchan->tokens, 0, sizeof(zchan->tokens));
+		zchan->token_count = 0;		
+
+		for (i = 0; i < count; i++) {
+			if (i != token_id) {
+				zap_copy_string(zchan->tokens[zchan->token_count], tokens[i], sizeof(zchan->tokens[zchan->token_count]));
+				zchan->token_count++;
+			}
+		}
+
+		status = ZAP_SUCCESS;
 	}
 	zap_mutex_unlock(zchan->mutex);
-	return ZAP_SUCCESS;
+
+	return status;
+}
+
+void zap_channel_rotate_tokens(zap_channel_t *zchan)
+{
+	memmove(zchan->tokens[1], zchan->tokens[0], zchan->token_count * ZAP_TOKEN_STRLEN);
+	zap_copy_string(zchan->tokens[0], zchan->tokens[zchan->token_count], ZAP_TOKEN_STRLEN);
+	*zchan->tokens[zchan->token_count] = '\0';
+}
+
+zap_status_t zap_channel_add_token(zap_channel_t *zchan, char *token)
+{
+	zap_status_t status = ZAP_FAIL;
+
+	zap_mutex_lock(zchan->mutex);
+	if (zchan->token_count < ZAP_MAX_TOKENS) {
+		zap_copy_string(zchan->tokens[zchan->token_count], token, sizeof(zchan->tokens[zchan->token_count]));
+		zchan->token_count++;
+	}
+	zap_mutex_unlock(zchan->mutex);
+
+	return status;
 }
 
 
@@ -523,6 +561,10 @@ static zap_status_t zap_channel_reset(zap_channel_t *zchan)
 	zchan->event_callback = NULL;
 	zap_clear_flag(zchan, ZAP_CHANNEL_DTMF_DETECT);
 	zap_clear_flag(zchan, ZAP_CHANNEL_SUPRESS_DTMF);
+	zap_clear_flag_locked(zchan, ZAP_CHANNEL_HOLD);
+	memset(zchan->tokens, 0, sizeof(zchan->tokens));
+	zchan->token_count = 0;
+
 	if (zchan->tone_session.buffer) {
 		teletone_destroy_session(&zchan->tone_session);
 		memset(&zchan->tone_session, 0, sizeof(zchan->tone_session));
@@ -604,6 +646,7 @@ zap_status_t zap_channel_close(zap_channel_t **zchan)
 	check = *zchan;
 	assert(check != NULL);
 	*zchan = NULL;
+
 
 	zap_mutex_lock(check->mutex);
 	if (zap_test_flag(check, ZAP_CHANNEL_OPEN)) {

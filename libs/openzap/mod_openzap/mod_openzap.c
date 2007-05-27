@@ -52,7 +52,8 @@ typedef enum {
 	TFLAG_OUTBOUND = (1 << 1),
 	TFLAG_DTMF = (1 << 2),
 	TFLAG_CODEC = (1 << 3),
-	TFLAG_BREAK = (1 << 4)
+	TFLAG_BREAK = (1 << 4),
+	TFLAG_HOLD = (1 << 5)
 } TFLAGS;
 
 static struct {
@@ -76,6 +77,8 @@ struct private_object {
 	switch_codec_t write_codec;
 	switch_frame_t read_frame;
 	unsigned char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	switch_frame_t cng_frame;
+	unsigned char cng_databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	switch_core_session_t *session;
 	switch_caller_profile_t *caller_profile;
 	unsigned int codec;
@@ -84,6 +87,7 @@ struct private_object {
 	switch_mutex_t *mutex;
 	switch_mutex_t *flag_mutex;
 	zap_channel_t *zchan;
+	int32_t token_id;
 };
 
 typedef struct private_object private_t;
@@ -111,6 +115,9 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	tech_pvt->zchan = zchan;
 	tech_pvt->read_frame.data = tech_pvt->databuf;
 	tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
+	tech_pvt->cng_frame.data = tech_pvt->cng_databuf;
+	tech_pvt->cng_frame.buflen = sizeof(tech_pvt->cng_databuf);
+	memset(tech_pvt->cng_frame.data, 255, tech_pvt->cng_frame.buflen);
 	switch_mutex_init(&tech_pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_core_session_set_private(session, tech_pvt);
@@ -241,7 +248,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	zap_channel_set_token(tech_pvt->zchan, NULL);
+	zap_channel_clear_token(tech_pvt->zchan, tech_pvt->token_id);
 	
 	switch (tech_pvt->zchan->type) {
 	case ZAP_CHAN_TYPE_FXO:
@@ -367,6 +374,17 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	assert(tech_pvt->zchan != NULL);
 
+	if (switch_test_flag(tech_pvt, TFLAG_HOLD)) {
+		switch_yield(tech_pvt->zchan->effective_interval * 1000);
+		*frame = &tech_pvt->cng_frame;
+		tech_pvt->cng_frame.datalen = tech_pvt->zchan->packet_len;
+		tech_pvt->cng_frame.samples = tech_pvt->cng_frame.datalen;
+		if (tech_pvt->zchan->effective_codec == ZAP_CODEC_SLIN) {
+			tech_pvt->cng_frame.samples /= 2;
+		}
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -419,6 +437,10 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	assert(tech_pvt != NULL);
 
 	assert(tech_pvt->zchan != NULL);
+
+	if (switch_test_flag(tech_pvt, TFLAG_HOLD)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
 		return SWITCH_STATUS_FALSE;
@@ -593,10 +615,24 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
 		return ZAP_FAIL;
 	}
 
-	switch_copy_string(sigmsg->channel->token, switch_core_session_get_uuid(session), sizeof(sigmsg->channel->token));
+	if ((tech_pvt->token_id = zap_channel_add_token(sigmsg->channel, switch_core_session_get_uuid(session))) < 0) {
+		switch_core_session_destroy(&session);
+		return ZAP_FAIL;
+	}
 	*sp = session;
 
     return ZAP_SUCCESS;
+}
+
+static switch_core_session_t *zap_channel_get_session(zap_channel_t *channel, int32_t id)
+{
+	switch_core_session_t *session = NULL;
+
+	if (!switch_strlen_zero(channel->tokens[id])) {
+		session = switch_core_session_locate(channel->tokens[id]);
+	}
+
+	return session;
 }
 
 static ZIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
@@ -609,17 +645,10 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
+	private_t *tech_pvt = NULL;
 	zap_status_t status;
-	int rwlock = 0;
 
     zap_log(ZAP_LOG_DEBUG, "got sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
-
-	if (!switch_strlen_zero(sigmsg->channel->token)) {
-		if ((session = switch_core_session_locate(sigmsg->channel->token))) {
-			channel = switch_core_session_get_channel(session);
-			rwlock++;
-		}
-	}
 
     switch(sigmsg->event_id) {
     case ZAP_SIGEVENT_START:
@@ -632,16 +661,48 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 		break;
     case ZAP_SIGEVENT_STOP:
 		{
-			if (channel) {
+			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				zap_channel_clear_token(sigmsg->channel, 0);
+				channel = switch_core_session_get_channel(session);
 				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-				zap_channel_set_token(sigmsg->channel, NULL);
+				switch_core_session_rwunlock(session);
 			}
 		}
 		break;
-	}
 
-	if (session && rwlock) {
-		switch_core_session_rwunlock(session);
+    case ZAP_SIGEVENT_FLASH:
+		{
+			uint32_t i = 0;
+			for (i = 0; i < sigmsg->channel->token_count; i++) {
+				if ((session = zap_channel_get_session(sigmsg->channel, i))) {
+					tech_pvt = switch_core_session_get_private(session);
+					if (i) {
+						switch_set_flag_locked(tech_pvt, TFLAG_HOLD);
+					} else {
+						switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
+					}
+					switch_core_session_rwunlock(session);
+				}
+			}
+		}
+    case ZAP_SIGEVENT_HOLD:
+		{
+			if ((session = zap_channel_get_session(sigmsg->channel, sigmsg->channel->token_count-1))) {
+				tech_pvt = switch_core_session_get_private(session);
+				switch_set_flag_locked(tech_pvt, TFLAG_HOLD);
+				switch_core_session_rwunlock(session);
+			}
+		}
+		break;
+    case ZAP_SIGEVENT_UNHOLD:
+		{
+			if ((session = zap_channel_get_session(sigmsg->channel, sigmsg->channel->token_count-1))) {
+				tech_pvt = switch_core_session_get_private(session);
+				switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
+				switch_core_session_rwunlock(session);
+			}
+		}
+		break;
 	}
 
 	return status;
