@@ -338,7 +338,6 @@ static switch_status_t channel_waitfor_write(switch_core_session_t *session, int
 static switch_status_t channel_send_dtmf(switch_core_session_t *session, char *dtmf)
 {
 	private_t *tech_pvt = NULL;
-	char *digit;
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
@@ -352,9 +351,9 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
-	zap_size_t len;
+	uint32_t len;
 	zap_wait_flag_t wflags = ZAP_READ;
-	uint8_t dtmf[128] = "";
+	char dtmf[128] = "";
 	zap_status_t status;
 
 	channel = switch_core_session_get_channel(session);
@@ -509,8 +508,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		private_t *tech_pvt;
 		switch_channel_t *channel;
 		switch_caller_profile_t *caller_profile;
-		unsigned int req = 0, cap = 0;
-		unsigned short samprate = 0;
 
 		switch_core_session_add_stream(*new_session, NULL);
 		if ((tech_pvt = (private_t *) switch_core_session_alloc(*new_session, sizeof(private_t))) != 0) {
@@ -637,7 +634,7 @@ static void zap_logger(char *file, const char *func, int line, int level, char *
 static switch_status_t load_config(void)
 {
 	char *cf = "openzap.conf";
-	switch_xml_t cfg, xml, settings, param, spans, span;
+	switch_xml_t cfg, xml, settings, param, spans, myspan;
 
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
@@ -658,9 +655,9 @@ static switch_status_t load_config(void)
 	}
 
 	if ((spans = switch_xml_child(cfg, "analog_spans"))) {
-		for (span = switch_xml_child(spans, "span"); span; span = span->next) {
-			char *mod = (char *) switch_xml_attr_soft(span, "module");
-			char *id = (char *) switch_xml_attr_soft(span, "id");
+		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
+			char *mod = (char *) switch_xml_attr_soft(myspan, "module");
+			char *id = (char *) switch_xml_attr_soft(myspan, "id");
 			char *context = "default";
 			char *dialplan = "XML";
 			char *tonegroup = NULL;
@@ -669,7 +666,7 @@ static switch_status_t load_config(void)
 			uint32_t span_id = 0, to = 0, max = 0;
 			zap_span_t *span = NULL;
 
-			for (param = switch_xml_child(span, "param"); param; param = param->next) {
+			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 
