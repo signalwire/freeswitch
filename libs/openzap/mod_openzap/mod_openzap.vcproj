@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="testanalog"
-	ProjectGUID="{BB833648-BAFF-4BE2-94DB-F8BB043C588C}"
-	RootNamespace="testanalog"
+	Name="mod_openzap"
+	ProjectGUID="{FE3540C5-3303-46E0-A69E-D92F775687F1}"
+	RootNamespace="mod_openzap"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -17,11 +17,11 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
-			CharacterSet="1"
-			BuildLogFile="$(IntDir)\BuildLog-testanalog.htm"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -41,8 +41,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../src/include;../../src/isdn/include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				AdditionalIncludeDirectories="../../freeswitch.trunk/src/include;../src/include;../src/isdn/include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -50,7 +50,7 @@
 				WarningLevel="4"
 				WarnAsError="true"
 				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -63,9 +63,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="FreeSwitchCore.lib"
+				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="2"
+				AdditionalLibraryDirectories="&quot;../../freeswitch.trunk/w32/Library/$(OutDir)&quot;"
 				GenerateDebugInformation="true"
-				SubSystem="1"
+				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
+				SubSystem="2"
+				ImportLibrary="$(OutDir)/mod_openzap.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -95,12 +100,11 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
-			CharacterSet="1"
-			WholeProgramOptimization="1"
-			BuildLogFile="$(IntDir)\BuildLog-testanalog.htm"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -119,8 +123,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="../../src/include;../../src/isdn/include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				AdditionalIncludeDirectories="../../freeswitch.trunk/src/include;../src/include;../src/isdn/include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
@@ -139,11 +143,17 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="FreeSwitchCore.lib"
+				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;../../freeswitch.trunk/w32/Library/$(OutDir)&quot;"
 				GenerateDebugInformation="true"
-				SubSystem="1"
+				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
+				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
+				LinkTimeCodeGeneration="1"
+				ImportLibrary="$(OutDir)/mod_openzap.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -177,11 +187,11 @@
 	<Files>
 		<Filter
 			Name="Source Files"
-			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
+			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\src\testanalog.c"
+				RelativePath=".\mod_openzap.c"
 				>
 			</File>
 		</Filter>
