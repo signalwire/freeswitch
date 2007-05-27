@@ -47,19 +47,13 @@ struct span_config {
 
 static struct span_config SPAN_CONFIG[ZAP_MAX_SPANS_INTERFACE] = {0};
 
-
 typedef enum {
 	TFLAG_IO = (1 << 0),
-	TFLAG_INBOUND = (1 << 1),
-	TFLAG_OUTBOUND = (1 << 2),
-	TFLAG_DTMF = (1 << 3),
-	TFLAG_VOICE = (1 << 4),
-	TFLAG_HANGUP = (1 << 5),
-	TFLAG_LINEAR = (1 << 6),
-	TFLAG_CODEC = (1 << 7),
-	TFLAG_BREAK = (1 << 8)
+	TFLAG_OUTBOUND = (1 << 1),
+	TFLAG_DTMF = (1 << 2),
+	TFLAG_CODEC = (1 << 3),
+	TFLAG_BREAK = (1 << 4)
 } TFLAGS;
-
 
 static struct {
 	int debug;
@@ -247,12 +241,25 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
-	switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
+	zap_channel_set_token(tech_pvt->zchan, NULL);
 	
-	if (tech_pvt->zchan->state != ZAP_CHANNEL_STATE_DOWN) {
-		zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_BUSY);
+	switch (tech_pvt->zchan->type) {
+	case ZAP_CHAN_TYPE_FXO:
+	case ZAP_CHAN_TYPE_FXS:
+		{
+			if (tech_pvt->zchan->state != ZAP_CHANNEL_STATE_DOWN) {
+				zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_HANGUP);
+			}
+		}
+		break;
+	default: 
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled type for channel %s\n", switch_channel_get_name(channel));
+		}
+		break;
 	}
+
+	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 
 	if (tech_pvt->read_codec.implementation) {
 		switch_core_codec_destroy(&tech_pvt->read_codec);
@@ -287,10 +294,6 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	switch (sig) {
 	case SWITCH_SIG_KILL:
 		switch_clear_flag_locked(tech_pvt, TFLAG_IO);
-		switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
-		if (tech_pvt->zchan->state != ZAP_CHANNEL_STATE_DOWN) {
-			zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_BUSY);
-		}
 		break;
 	case SWITCH_SIG_BREAK:
 		switch_set_flag_locked(tech_pvt, TFLAG_BREAK);
@@ -364,8 +367,8 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	assert(tech_pvt->zchan != NULL);
 
-	if (tech_pvt->zchan->state != ZAP_CHANNEL_STATE_UP) {
-		return SWITCH_STATUS_GENERR;
+	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
+		return SWITCH_STATUS_FALSE;
 	}
 
 	status = zap_channel_wait(tech_pvt->zchan, &wflags, timeout);
@@ -416,10 +419,6 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	assert(tech_pvt != NULL);
 
 	assert(tech_pvt->zchan != NULL);
-
-	if (tech_pvt->zchan->state != ZAP_CHANNEL_STATE_UP) {
-		return SWITCH_STATUS_GENERR;
-	}
 
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
 		return SWITCH_STATUS_FALSE;
@@ -545,75 +544,130 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 }
 
-static ZIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
-{
-	zap_log(ZAP_LOG_DEBUG, "got sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
-	return ZAP_SUCCESS;
-}
-static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
+zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t **sp)
 {
 	switch_core_session_t *session = NULL;
 	private_t *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
 	char name[128];
-    zap_log(ZAP_LOG_DEBUG, "got sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
 
-    switch(sigmsg->event_id) {
-    case ZAP_SIGEVENT_START:
-		if (!(session = switch_core_session_request(&channel_endpoint_interface, NULL))) {
-			zap_set_state_locked(sigmsg->channel, ZAP_CHANNEL_STATE_BUSY);
-			return ZAP_SUCCESS;
-		}
+	*sp = NULL;
+	
+	if (!(session = switch_core_session_request(&channel_endpoint_interface, NULL))) {
+		return ZAP_FAIL;
+	}
+	
+	switch_core_session_add_stream(session, NULL);
+	
+	tech_pvt = (private_t *) switch_core_session_alloc(session, sizeof(private_t));
+	assert(tech_pvt != NULL);
+	channel = switch_core_session_get_channel(session);
+	if (tech_init(tech_pvt, session, sigmsg->channel) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Initilization Error!\n");
+		switch_core_session_destroy(&session);
+		return ZAP_FAIL;
+	}
+		
+	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
+														 "OpenZAP",
+														 SPAN_CONFIG[sigmsg->span->span_id].dialplan,
+														 sigmsg->channel->chan_name,
+														 sigmsg->channel->chan_number,
+														 NULL,
+														 sigmsg->channel->chan_number,
+														 NULL,
+														 NULL,
+														 (char *) modname,
+														 SPAN_CONFIG[sigmsg->span->span_id].context,
+														 sigmsg->dnis);
+	assert(tech_pvt->caller_profile != NULL);
+		
+	snprintf(name, sizeof(name), "OpenZAP/%s", tech_pvt->caller_profile->destination_number);
+	switch_channel_set_name(channel, name);
+	switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
+		
+	switch_channel_set_state(channel, CS_INIT);
+	if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
+		switch_core_session_destroy(&session);
+		return ZAP_FAIL;
+	}
 
-		switch_core_session_add_stream(session, NULL);
-		
-		tech_pvt = (private_t *) switch_core_session_alloc(session, sizeof(private_t));
-		assert(tech_pvt != NULL);
-		channel = switch_core_session_get_channel(session);
-		if (tech_init(tech_pvt, session, sigmsg->channel) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Initilization Error!\n");
-			switch_core_session_destroy(&session);
-			zap_set_state_locked(sigmsg->channel, ZAP_CHANNEL_STATE_BUSY);
-			return ZAP_SUCCESS;
-		}
-		
-		tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
-															 "OpenZAP",
-															 SPAN_CONFIG[sigmsg->span->span_id].dialplan,
-															 sigmsg->channel->chan_name,
-															 sigmsg->channel->chan_number,
-															 NULL,
-															 sigmsg->channel->chan_number,
-															 NULL,
-															 NULL,
-															 (char *) modname,
-															 SPAN_CONFIG[sigmsg->span->span_id].context,
-															 sigmsg->dnis);
-		assert(tech_pvt->caller_profile != NULL);
-		
-		snprintf(name, sizeof(name), "OpenZAP/%s", tech_pvt->caller_profile->destination_number);
-		switch_channel_set_name(channel, name);
-		switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
-		
-		switch_channel_set_state(channel, CS_INIT);
-		if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
-			switch_core_session_destroy(&session);
-			zap_set_state_locked(sigmsg->channel, ZAP_CHANNEL_STATE_BUSY);
-			return ZAP_SUCCESS;
-		}
-
-        //zap_set_state_locked(sigmsg->channel, ZAP_CHANNEL_STATE_RING);
-
-        break;
-    default:
-        break;
-    }
+	switch_copy_string(sigmsg->channel->token, switch_core_session_get_uuid(session), sizeof(sigmsg->channel->token));
+	*sp = session;
 
     return ZAP_SUCCESS;
 }
 
+static ZIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
+{
+	zap_log(ZAP_LOG_DEBUG, "got sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
+	return ZAP_SUCCESS;
+}
 
+static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
+{
+	switch_core_session_t *session = NULL;
+	switch_channel_t *channel = NULL;
+	zap_status_t status;
+	int rwlock = 0;
+
+    zap_log(ZAP_LOG_DEBUG, "got sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
+
+	if (!switch_strlen_zero(sigmsg->channel->token)) {
+		if ((session = switch_core_session_locate(sigmsg->channel->token))) {
+			channel = switch_core_session_get_channel(session);
+			rwlock++;
+		}
+	}
+
+    switch(sigmsg->event_id) {
+    case ZAP_SIGEVENT_START:
+		{
+			status = zap_channel_from_event(sigmsg, &session);
+			if (status != ZAP_SUCCESS) {
+				zap_set_state_locked(sigmsg->channel, ZAP_CHANNEL_STATE_BUSY);
+			}
+		}
+		break;
+    case ZAP_SIGEVENT_STOP:
+		{
+			if (channel) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+				zap_channel_set_token(sigmsg->channel, NULL);
+			}
+		}
+		break;
+	}
+
+	if (session && rwlock) {
+		switch_core_session_rwunlock(session);
+	}
+
+	return status;
+}
+
+static ZIO_SIGNAL_CB_FUNCTION(on_zap_signal)
+{
+	switch (sigmsg->channel->type) {
+	case ZAP_CHAN_TYPE_FXO:
+		{
+			on_fxo_signal(sigmsg);
+		}
+		break;
+	case ZAP_CHAN_TYPE_FXS:
+		{
+			on_fxs_signal(sigmsg);
+		}
+		break;
+	default: 
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled type for channel %d:%d\n",
+							  sigmsg->channel->span_id, sigmsg->channel->chan_id);
+		}
+		break;
+	}
+}
 
 static void zap_logger(char *file, const char *func, int line, int level, char *fmt, ...)
 {
@@ -710,7 +764,7 @@ static switch_status_t load_config(void)
 				continue;
 			}
 
-			if (zap_analog_configure_span(span, tonegroup, to, max, span->trunk_type == ZAP_TRUNK_FXS ? on_fxs_signal : on_fxo_signal) != ZAP_SUCCESS) {
+			if (zap_analog_configure_span(span, tonegroup, to, max, on_zap_signal) != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %s:%d\n", mod, span_id);
 				continue;
 			}

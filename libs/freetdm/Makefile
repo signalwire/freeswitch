@@ -113,7 +113,7 @@ $(SRC)/zap_zt.o: $(SRC)/zap_zt.c
 dox:
 	cd docs && doxygen $(PWD)/docs/Doxygen.conf
 
-mod_openzap/mod_openzap.so: $(MYLIB)
+mod_openzap/mod_openzap.so: $(MYLIB) mod_openzap/mod_openzap.c
 	cd mod_openzap && make
 
 mod_openzap: mod_openzap/mod_openzap.so
