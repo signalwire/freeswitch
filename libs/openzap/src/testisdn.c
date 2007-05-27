@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 	}
 
 	while(zap_test_flag(span->isdn_data, ZAP_ISDN_RUNNING)) {
-		sleep(1);
+		zap_sleep(1 * 1000);
 	}
 
  done:

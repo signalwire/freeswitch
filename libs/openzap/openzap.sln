@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "openzap", "msvc\openzap.vcproj", "{93B8812C-3EC4-4F78-8970-FFBFC99E167D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Unix Makefiles", "Unix Makefiles", "{214C60D6-6E30-4912-B919-DB76A20CC682}"
+	ProjectSection(SolutionItems) = preProject
+		general.makefile = general.makefile
+		Makefile = Makefile
+		wanpipe = wanpipe
+		zt = zt
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testanalog", "msvc\testanalog\testanalog.vcproj", "{BB833648-BAFF-4BE2-94DB-F8BB043C588C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D} = {93B8812C-3EC4-4F78-8970-FFBFC99E167D}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testisdn", "msvc\testisdn\testisdn.vcproj", "{6DA6FD42-641D-4147-92F5-3BC4AAA6589B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D} = {93B8812C-3EC4-4F78-8970-FFBFC99E167D}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D}.Debug|Win32.Build.0 = Debug|Win32
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D}.Release|Win32.ActiveCfg = Release|Win32
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D}.Release|Win32.Build.0 = Release|Win32
+		{BB833648-BAFF-4BE2-94DB-F8BB043C588C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{BB833648-BAFF-4BE2-94DB-F8BB043C588C}.Debug|Win32.Build.0 = Debug|Win32
+		{BB833648-BAFF-4BE2-94DB-F8BB043C588C}.Release|Win32.ActiveCfg = Release|Win32
+		{BB833648-BAFF-4BE2-94DB-F8BB043C588C}.Release|Win32.Build.0 = Release|Win32
+		{6DA6FD42-641D-4147-92F5-3BC4AAA6589B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{6DA6FD42-641D-4147-92F5-3BC4AAA6589B}.Debug|Win32.Build.0 = Debug|Win32
+		{6DA6FD42-641D-4147-92F5-3BC4AAA6589B}.Release|Win32.ActiveCfg = Release|Win32
+		{6DA6FD42-641D-4147-92F5-3BC4AAA6589B}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -88,7 +88,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 	zap_size_t len, rlen;
 	zap_tone_type_t tt = ZAP_TONE_DTMF;
 	char dtmf[128];
-	int dtmf_offset = 0;
+	zap_size_t dtmf_offset = 0;
 	zap_analog_data_t *data = chan->span->analog_data;
 	zap_channel_t *closed_chan;
 	uint32_t state_counter = 0, elapsed = 0, interval = 0, last_digit = 0, indicate = 0;
@@ -96,6 +96,8 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 	zap_status_t status;
 
 	zap_log(ZAP_LOG_DEBUG, "ANALOG CHANNEL thread starting.\n");
+
+	ts.buffer = NULL;
 
 	if (zap_channel_open_chan(chan) != ZAP_SUCCESS) {
 		goto done;
