@@ -74,6 +74,7 @@
 /* disable warning for zero length array in a struct */
 /* this will cause errors on c99 and ansi compliant compilers and will need to be fixed in the wanpipe header files */
 #pragma warning(disable:4706)
+#pragma comment(lib, "Winmm")
 #endif
 
 #define ZAP_ENUM_NAMES(_NAME, _STRINGS) static char * _NAME [] = { _STRINGS , NULL };

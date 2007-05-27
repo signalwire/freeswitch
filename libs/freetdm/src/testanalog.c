@@ -9,7 +9,7 @@ static void *test_call(zap_thread_t *me, void *obj)
 	zap_size_t len;
 
 
-	sleep(10);
+	zap_sleep(10 * 1000);
 	
 	zap_log(ZAP_LOG_DEBUG, "answer call and start echo test\n");
 
@@ -38,6 +38,7 @@ static void *test_call(zap_thread_t *me, void *obj)
 
 	zap_log(ZAP_LOG_DEBUG, "call over\n");
 
+	return 0;
 }
 
 static ZIO_SIGNAL_CB_FUNCTION(on_signal)
@@ -78,7 +79,7 @@ int main(int argc, char *argv[])
 	zap_analog_start(span);
 
 	while(zap_test_flag(span->analog_data, ZAP_ANALOG_RUNNING)) {
-		sleep(1);
+		zap_sleep(1 * 1000);
 	}
 
 	zap_global_destroy();
