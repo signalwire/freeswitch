@@ -179,6 +179,10 @@
 						>
 					</File>
 					<File
+						RelativePath="..\src\isdn\include\Q931ie.h"
+						>
+					</File>
+					<File
 						RelativePath="..\src\isdn\include\Q932.h"
 						>
 					</File>
