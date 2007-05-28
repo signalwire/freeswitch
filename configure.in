@@ -139,6 +139,9 @@ case "$host" in
     *-solaris2*)
         APR_ADDTO(SWITCH_AM_CFLAGS, -DPATH_MAX=2048)
     ;;
+    *bsd*)
+        APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/local/include)
+    ;;
 esac
 
 APR_REMOVEFROM(SWITCH_AM_CXXFLAGS, -std=c99)
