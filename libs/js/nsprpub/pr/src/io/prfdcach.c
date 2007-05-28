@@ -259,8 +259,8 @@ void _PR_InitFdCache(void)
     ** be overridden at runtime using environment variables
     ** or a super-wiz-bang API.
     */
-    //const char *low = PR_GetEnv("NSPR_FD_CACHE_SIZE_LOW");
-    //const char *high = PR_GetEnv("NSPR_FD_CACHE_SIZE_HIGH");
+    /* const char *low = PR_GetEnv("NSPR_FD_CACHE_SIZE_LOW"); */
+    /* const char *high = PR_GetEnv("NSPR_FD_CACHE_SIZE_HIGH"); */
 
     /* 
     ** _low is allowed to be zero, _high is not.
@@ -274,8 +274,8 @@ void _PR_InitFdCache(void)
     _pr_fd_cache.limit_high = 0;
 #endif  /* defined(DEBUG) */
 
-    //if (NULL != low) _pr_fd_cache.limit_low = atoi(low);
-    //if (NULL != high) _pr_fd_cache.limit_high = atoi(high);
+    /*if (NULL != low) _pr_fd_cache.limit_low = atoi(low);*/
+    /*if (NULL != high) _pr_fd_cache.limit_high = atoi(high);*/
 
     if (_pr_fd_cache.limit_high < _pr_fd_cache.limit_low)
         _pr_fd_cache.limit_high = _pr_fd_cache.limit_low;

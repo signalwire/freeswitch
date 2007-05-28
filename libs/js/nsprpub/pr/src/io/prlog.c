@@ -208,7 +208,7 @@ void _PR_InitLog(void)
 
     _pr_logLock = PR_NewLock();
 
-//    ev = PR_GetEnv("NSPR_LOG_MODULES");
+    /*   ev = PR_GetEnv("NSPR_LOG_MODULES"); */
     if (ev && ev[0]) {
         char module[64];  /* Security-Critical: If you change this
                            * size, you must also change the sscanf
@@ -255,7 +255,7 @@ void _PR_InitLog(void)
         }
         PR_SetLogBuffering(isSync ? bufSize : 0);
 
-        //ev = PR_GetEnv("NSPR_LOG_FILE");
+        /* ev = PR_GetEnv("NSPR_LOG_FILE"); */
         if (ev && ev[0]) {
             if (!PR_SetLogFile(ev)) {
 #ifdef XP_PC
@@ -318,7 +318,7 @@ static void _PR_SetLogModuleLevel( PRLogModuleInfo *lm )
 {
     char *ev = NULL;
 
-    //ev = PR_GetEnv("NSPR_LOG_MODULES");
+    /* ev = PR_GetEnv("NSPR_LOG_MODULES"); */
     if (ev && ev[0]) {
         char module[64];  /* Security-Critical: If you change this
                            * size, you must also change the sscanf

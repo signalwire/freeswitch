@@ -202,7 +202,6 @@ static void _PR_InitStuff(void)
     _PR_InitSegs();
     _PR_InitStacks();
 	_PR_InitTPD();
-    //_PR_InitEnv();
     _PR_InitLayerCache();
     _PR_InitClock();
 
@@ -234,22 +233,10 @@ static void _PR_InitStuff(void)
     _PR_InitMem();
 #endif
 
-    //_PR_InitCMon();
     _PR_InitIO();
-    //_PR_InitNet();
     _PR_InitLog();
-    //_PR_InitLinker();
     _PR_InitCallOnce();
-    //_PR_InitDtoa();
     _PR_InitMW();
-    //_PR_InitRWLocks();
-
-    //nspr_InitializePRErrorTable();
-
-#if !defined(_PR_INET6) || defined(_PR_INET6_PROBE)
-	//_pr_init_ipv6();
-#endif
-	
     _PR_MD_FINAL_INIT();
 }
 
@@ -420,9 +407,7 @@ PR_IMPLEMENT(PRStatus) PR_Cleanup()
 #endif
 
         _PR_CleanupMW();
-        //_PR_CleanupDtoa();
         _PR_CleanupCallOnce();
-		//_PR_ShutdownLinker();
         /* Release the primordial thread's private data, etc. */
         _PR_CleanupThread(me);
 
@@ -452,7 +437,6 @@ PR_IMPLEMENT(PRStatus) PR_Cleanup()
          * Ideally, for each _PR_InitXXX(), there should be a corresponding
          * _PR_XXXCleanup() that we can call here.
          */
-        //_PR_CleanupNet();
         _PR_CleanupIO();
 #ifdef WINNT
         _PR_CleanupCPUs();
@@ -461,7 +445,6 @@ PR_IMPLEMENT(PRStatus) PR_Cleanup()
         PR_DestroyLock(_pr_sleeplock);
         _pr_sleeplock = NULL;
         _PR_CleanupLayerCache();
-        //_PR_CleanupEnv();
         _PR_CleanupStacks();
         _PR_CleanupBeforeExit();
         _pr_initialized = PR_FALSE;
