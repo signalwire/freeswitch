@@ -55,6 +55,9 @@
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 600
 #endif
+#ifndef __BSD_VISIBLE
+#define __BSD_VISIBLE 1
+#endif
 #endif
 #include <stdlib.h>
 #include <stdio.h>
