@@ -98,7 +98,7 @@ typedef enum {
 
 /* Variable Length Codeset 6 Information Elements */
 
-#define Q931ie_GENERIC_DIGITS  Q931_CODESET_6 | 0x37 /* 0011 0111       */
+#define Q931ie_GENERIC_DIGITS (Q931_CODESET_6 | 0x37) /* 0011 0111       */
 
 
 
