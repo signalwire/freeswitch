@@ -371,6 +371,11 @@ typedef struct
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
     L3INT           CRV;            /* Call reference value                 */
+	L3UINT			codeset;		/* Current Codeset - Temporary variable	*/
+									/* used for the Q931Uie functions		*/
+									/* in a parsed message this will only	*/
+									/* indicate the codeset of the last		*/
+									/* ie parsed							*/
 
     ie              Shift;
     ie              MoreData;
@@ -588,15 +593,21 @@ typedef struct
   The proc tables are defined in Q931.c and initialized in Q931Initialize.
 
 *****************************************************************************/
-extern L3INT (*Q931Proc  [Q931MAXDLCT][Q931MAXMES])   (Q931_TrunkInfo_t *pTrunk, L3UCHAR *,L3INT);
+typedef L3INT (q931proc_func_t) (Q931_TrunkInfo_t *pTrunk, L3UCHAR *, L3INT);
 
-extern L3INT (*Q931Umes  [Q931MAXDLCT][Q931MAXMES])   (Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size);
-extern L3INT (*Q931Pmes  [Q931MAXDLCT][Q931MAXMES])   (Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+typedef L3INT (q931umes_func_t) (Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size);
+typedef L3INT (q931pmes_func_t) (Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
 
-extern L3INT (*Q931Uie   [Q931MAXDLCT][Q931MAXIE] )   (Q931_TrunkInfo_t *pTrunk,ie *pIE,L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-extern L3INT (*Q931Pie   [Q931MAXDLCT][Q931MAXIE] )   (Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+typedef L3INT (q931uie_func_t) (Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+typedef L3INT (q931pie_func_t) (Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
 
-extern L3UINT Q931MsgieOffset[Q931MAXIE];
+extern q931proc_func_t *Q931Proc[Q931MAXDLCT][Q931MAXMES];
+
+extern q931umes_func_t *Q931Umes[Q931MAXDLCT][Q931MAXMES];
+extern q931pmes_func_t *Q931Pmes[Q931MAXDLCT][Q931MAXMES];
+
+extern q931uie_func_t *Q931Uie[Q931MAXDLCT][Q931MAXIE];
+extern q931pie_func_t *Q931Pie[Q931MAXDLCT][Q931MAXIE];
 
 /*****************************************************************************
     
@@ -704,8 +715,6 @@ extern L3UINT Q931MsgieOffset[Q931MAXIE];
   External references. See Q931.c for details.
 
 *****************************************************************************/
-
-extern Q931_TrunkInfo_t Q931Trunk[Q931MAXTRUNKS];
 
 #include "Q931ie.h"
 
@@ -847,14 +856,9 @@ void    Q931CreateNT(L3UCHAR i);
 void    Q931SetMesCreateCB(L3INT (*callback)());
 void    Q931SetDialectCreateCB(L3INT (*callback)(L3INT));
 void    Q931SetHeaderSpace(L3INT space);
-void Q931SetMesProc(L3UCHAR mes, L3UCHAR dialect, 
-                L3INT (*Q931ProcFunc)(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom),
-                L3INT (*Q931UmesFunc)(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size),
-                L3INT (*Q931PmesFunc)(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize));
 
-void Q931SetIEProc(L3UCHAR iec, L3UCHAR dialect, 
-			   L3INT (*Q931PieProc)(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet),
-			   L3INT (*Q931UieProc)(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)); 
+void Q931SetMesProc(L3UCHAR mes, L3UCHAR dialect, q931proc_func_t *Q931ProcFunc, q931umes_func_t *Q931UmesFunc, q931pmes_func_t *Q931PmesFunc);
+void Q931SetIEProc(L3UCHAR iec, L3UCHAR dialect, q931pie_func_t *Q931PieProc, q931uie_func_t *Q931UieProc);
 
 void Q931Initialize();
 void Q931AddDialect(L3UCHAR iDialect, void (*Q931CreateDialectCB)(L3UCHAR iDialect));
@@ -872,8 +876,6 @@ L3ULONG Q931GetTime();
 void Q931SetGetTimeCB(L3ULONG (*callback)());
 void	Q931AddStateEntry(L3UCHAR iD, L3INT iState, L3INT iMes, L3UCHAR cDir);
 L3BOOL	Q931IsEventLegal(L3UCHAR iD, L3INT iState, L3INT iMes, L3UCHAR cDir);
-
-ie *Q931MegGetIE(Q931mes_Generic *msg, L3UINT ie_type);
 
 /*****************************************************************************
 

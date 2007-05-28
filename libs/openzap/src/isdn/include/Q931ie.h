@@ -96,6 +96,9 @@ typedef enum {
 #define Q931ie_USER_USER                        0x7e /* 0111 1110       */
 #define Q931ie_ESCAPE_FOR_EX                    0x7f /* 0111 1111       */
 
+#define Q931ie_GENERIC_DIGITS               0x37 /* 0011 0111       */
+
+
 
 /*****************************************************************************
 
@@ -1061,6 +1064,19 @@ typedef struct
                                     /*  111 All interfaces                  */
 }Q931ie_RestartInd;
 
+/*****************************************************************************
+
+  Struct:       Q931ie_GenericDigits
+
+
+*****************************************************************************/
+
+typedef struct
+{
+    L3UCHAR IEId;                   /* 00110111                             */
+    L3UCHAR Size;                   /* Length of Information Element        */
+} Q931ie_GenericDigits;
+
 
 /*****************************************************************************
 
@@ -1068,56 +1084,61 @@ typedef struct
 
 *****************************************************************************/
 
-L3INT Q931Pie_BearerCap(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_ChanID(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_ProgInd(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_Display(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_Signal(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_HLComp(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_Segment(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_DateTime(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_Cause(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_SendComplete(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_KeypadFac(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_NotifInd(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_CallID(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_RepeatInd(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_NetFac(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_CallingNum(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_CallingSub(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_CalledNum(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_CalledSub(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_CalledNum(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_TransNetSel(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_LLComp(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_CallState(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_RestartInd(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT Q931Pie_UserUser(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
+q931pie_func_t Q931Pie_BearerCap;
+q931pie_func_t Q931Pie_ChanID;
+q931pie_func_t Q931Pie_ProgInd;
+q931pie_func_t Q931Pie_Display;
+q931pie_func_t Q931Pie_Signal;
+q931pie_func_t Q931Pie_HLComp;
+q931pie_func_t Q931Pie_Segment;
+q931pie_func_t Q931Pie_DateTime;
+q931pie_func_t Q931Pie_Cause;
+q931pie_func_t Q931Pie_SendComplete;
+q931pie_func_t Q931Pie_KeypadFac;
+q931pie_func_t Q931Pie_NotifInd;
+q931pie_func_t Q931Pie_CallID;
+q931pie_func_t Q931Pie_RepeatInd;
+q931pie_func_t Q931Pie_NetFac;
+q931pie_func_t Q931Pie_CallingNum;
+q931pie_func_t Q931Pie_CallingSub;
+q931pie_func_t Q931Pie_CalledNum;
+q931pie_func_t Q931Pie_CalledSub;
+q931pie_func_t Q931Pie_CalledNum;
+q931pie_func_t Q931Pie_TransNetSel;
+q931pie_func_t Q931Pie_LLComp;
+q931pie_func_t Q931Pie_CallState;
+q931pie_func_t Q931Pie_RestartInd;
+q931pie_func_t Q931Pie_UserUser;
 
-L3INT Q931Uie_BearerCap(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+q931pie_func_t Q931Pie_GenericDigits;
+
 L3USHORT Q931Uie_CRV(Q931_TrunkInfo_t *pTrunk,L3UCHAR * IBuf, L3UCHAR *OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_ChanID(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR *OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_ProgInd(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_Display(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_Signal(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_HLComp(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_Segment(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_DateTime(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_Cause(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_SendComplete(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_KeypadFac(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_NotifInd(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_CallID(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_RepeatInd(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_NetFac(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_CallingNum(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_CallingSub(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_CalledNum(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_CalledSub(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_TransNetSel(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_LLComp(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_CallState(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_RestartInd(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
-L3INT Q931Uie_UserUser(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff);
+
+q931uie_func_t Q931Uie_BearerCap;
+q931uie_func_t Q931Uie_ChanID;
+q931uie_func_t Q931Uie_ProgInd;
+q931uie_func_t Q931Uie_Display;
+q931uie_func_t Q931Uie_Signal;
+q931uie_func_t Q931Uie_HLComp;
+q931uie_func_t Q931Uie_Segment;
+q931uie_func_t Q931Uie_DateTime;
+q931uie_func_t Q931Uie_Cause;
+q931uie_func_t Q931Uie_SendComplete;
+q931uie_func_t Q931Uie_KeypadFac;
+q931uie_func_t Q931Uie_NotifInd;
+q931uie_func_t Q931Uie_CallID;
+q931uie_func_t Q931Uie_RepeatInd;
+q931uie_func_t Q931Uie_NetFac;
+q931uie_func_t Q931Uie_CallingNum;
+q931uie_func_t Q931Uie_CallingSub;
+q931uie_func_t Q931Uie_CalledNum;
+q931uie_func_t Q931Uie_CalledSub;
+q931uie_func_t Q931Uie_TransNetSel;
+q931uie_func_t Q931Uie_LLComp;
+q931uie_func_t Q931Uie_CallState;
+q931uie_func_t Q931Uie_RestartInd;
+q931uie_func_t Q931Uie_UserUser;
+
+q931uie_func_t Q931Uie_GenericDigits;
 
 #endif /* _Q931IE_NL */

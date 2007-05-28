@@ -145,11 +145,7 @@ L3INT Q931Api_InitTrunk(Q931_TrunkInfo_t *pTrunk,
 	return 1;
 }
 
-void Q931SetMesProc(L3UCHAR mes, L3UCHAR dialect, 
-                L3INT (*Q931ProcFunc)(Q931_TrunkInfo_t *pTrunk, L3UCHAR * b, L3INT iFrom),
-                L3INT (*Q931UmesFunc)(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size),
-                L3INT (*Q931PmesFunc)(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
-)
+void Q931SetMesProc(L3UCHAR mes, L3UCHAR dialect, q931proc_func_t *Q931ProcFunc, q931umes_func_t *Q931UmesFunc, q931pmes_func_t *Q931PmesFunc)
 {
     if(Q931ProcFunc != NULL)
         Q931Proc[dialect][mes] = Q931ProcFunc;
@@ -159,10 +155,7 @@ void Q931SetMesProc(L3UCHAR mes, L3UCHAR dialect,
         Q931Pmes[dialect][mes] = Q931PmesFunc;
 }
 
-void Q931SetIEProc(L3UCHAR iec, L3UCHAR dialect, 
-			   L3INT (*Q931PieProc)(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet),
-			   L3INT (*Q931UieProc)(Q931_TrunkInfo_t *pTrunk, ie *pIE, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff) 
-)
+void Q931SetIEProc(L3UCHAR iec, L3UCHAR dialect, q931pie_func_t *Q931PieProc, q931uie_func_t *Q931UieProc)
 {
     if(Q931PieProc != NULL)
         Q931Pie[dialect][iec] = Q931PieProc;
