@@ -106,7 +106,7 @@ __weak_alias(vis,_vis)
 #undef BELL
 #define BELL '\a'
 
-#define isoctal(c)	(((u_char)(c)) >= '0' && ((u_char)(c)) <= '7')
+#define isoctal(c)	(((unsigned char)(c)) >= '0' && ((unsigned char)(c)) <= '7')
 #define iswhite(c)	(c == ' ' || c == '\t' || c == '\n')
 #define issafe(c)	(c == '\b' || c == BELL || c == '\r')
 #define xtoa(c)		"0123456789abcdef"[c]
@@ -208,8 +208,8 @@ do {									      \
 	}								      \
 	if (isextra || ((c & 0177) == ' ') || (flag & VIS_OCTAL)) {	      \
 		*dst++ = '\\';						      \
-		*dst++ = (u_char)(((u_int32_t)(u_char)c >> 6) & 03) + '0';    \
-		*dst++ = (u_char)(((u_int32_t)(u_char)c >> 3) & 07) + '0';    \
+		*dst++ = (unsigned char)(((u_int32_t)(unsigned char)c >> 6) & 03) + '0';    \
+		*dst++ = (unsigned char)(((u_int32_t)(unsigned char)c >> 3) & 07) + '0';    \
 		*dst++ =			     (c	      & 07) + '0';    \
 	} else {							      \
 		if ((flag & VIS_NOSLASH) == 0) *dst++ = '\\';		      \

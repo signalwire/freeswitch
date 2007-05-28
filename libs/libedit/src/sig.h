@@ -48,6 +48,7 @@
  * Define here all the signals we are going to handle
  * The _DO macro is used to iterate in the source code
  */
+#ifdef SIGWINCH
 #define	ALLSIGS		\
 	_DO(SIGINT)	\
 	_DO(SIGTSTP)	\
@@ -57,6 +58,16 @@
 	_DO(SIGTERM)	\
 	_DO(SIGCONT)	\
 	_DO(SIGWINCH)
+#else
+#define ALLSIGS     \
+    _DO(SIGINT) \
+    _DO(SIGTSTP)    \
+    _DO(SIGSTOP)    \
+    _DO(SIGQUIT)    \
+    _DO(SIGHUP) \
+    _DO(SIGTERM)    \
+    _DO(SIGCONT)
+#endif
 
 typedef void (*el_signalhandler_t)(int);
 typedef el_signalhandler_t *el_signal_t;

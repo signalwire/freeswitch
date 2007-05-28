@@ -63,7 +63,7 @@ __weak_alias(strunvis,_strunvis)
 #define	S_HEX1		7	/* hex digit */
 #define	S_HEX2		8	/* hex digit 2 */
 
-#define	isoctal(c)	(((u_char)(c)) >= '0' && ((u_char)(c)) <= '7')
+#define	isoctal(c)	(((unsigned char)(c)) >= '0' && ((unsigned char)(c)) <= '7')
 #define xtod(c)		(isdigit(c) ? (c - '0') : ((tolower(c) - 'a') + 10))
 
 /*

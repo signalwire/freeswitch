@@ -905,7 +905,9 @@ term_set(EditLine *el, const char *term)
 	int lins, cols;
 
 	(void) sigemptyset(&nset);
+#ifdef SIGWINCH
 	(void) sigaddset(&nset, SIGWINCH);
+#endif
 	(void) sigprocmask(SIG_BLOCK, &nset, &oset);
 
 	area = buf;

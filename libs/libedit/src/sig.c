@@ -83,9 +83,11 @@ sig_handler(int signo)
 		term__flush();
 		break;
 
+#ifdef SIGWINCH
 	case SIGWINCH:
 		el_resize(sel);
 		break;
+#endif
 
 	default:
 		tty_cookedmode(sel);

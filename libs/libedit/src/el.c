@@ -522,7 +522,9 @@ el_resize(EditLine *el)
 	sigset_t oset, nset;
 
 	(void) sigemptyset(&nset);
+#ifdef SIGWINCH
 	(void) sigaddset(&nset, SIGWINCH);
+#endif
 	(void) sigprocmask(SIG_BLOCK, &nset, &oset);
 
 	/* get the correct window size */
