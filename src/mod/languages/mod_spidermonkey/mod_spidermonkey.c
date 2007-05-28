@@ -201,7 +201,7 @@ static JSBool request_dump_env(JSContext *cx, JSObject *obj, uintN argc, jsval *
 	if (!strcasecmp(how, "xml")) {
 		switch_xml_t xml;
 		char *xmlstr;
-		if ((xml = switch_event_xmlize(ro->stream->event, NULL))) {
+		if ((xml = switch_event_xmlize(ro->stream->event, SWITCH_VA_NONE))) {
             xmlstr = switch_xml_toxml(xml);
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, xmlstr));
 			return JS_TRUE;
