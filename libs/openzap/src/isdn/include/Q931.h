@@ -330,6 +330,20 @@ const char *q931_error_to_name(q931_error_t error);
 #define Q931mes_STATUS_ENQUIRY       0x75 /* 0111 0101                   */
 #define Q931mes_SEGMENT              0x60 /* 0110 0000                   */
 
+/* Codesets */
+
+typedef enum {
+
+	Q931_CODESET_0			= ( 0 ),
+	Q931_CODESET_1			= ( 1 << 8 ),
+	Q931_CODESET_2			= ( 2 << 8 ),
+	Q931_CODESET_3			= ( 3 << 8 ),
+	Q931_CODESET_4			= ( 4 << 8 ),
+	Q931_CODESET_5			= ( 5 << 8 ),
+	Q931_CODESET_6			= ( 6 << 8 ),
+	Q931_CODESET_7			= ( 7 << 8 )
+
+} q931_codeset_t
 
 /* Single octet information elements                                */
 #define Q931ie_SHIFT                            0x90 /* 1001 ----       */
