@@ -420,6 +420,7 @@ typedef struct
 	ie				Switchhook;
 	ie				FeatAct;
 	ie				FeatInd;
+	ie				GenericDigits;
 
 	L3UCHAR			buf[1];			/* Buffer for IE's						*/
 

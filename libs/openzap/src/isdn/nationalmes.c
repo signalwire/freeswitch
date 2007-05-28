@@ -56,10 +56,22 @@ L3INT nationalUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generi
 	L3INT ir=0;
 	L3INT OOff=0;
 	L3INT rc=Q931E_NO_ERROR;
+	L3UINT last_codeset = mes->codeset;
+	L3UCHAR shift_lock = 1;
 
 	while(IOff < Size)
 	{
-		switch(IBuf[IOff])
+		if (!shift_lock) {
+			mes->codeset = last_codeset;
+		}
+
+		if ((IBuf[IOff] & 0xF0) == Q931ie_SHIFT ) {
+			mes->codeset = ((IBuf[IOff] & 0x07) << 8);
+			shift_lock = (IBuf[IOff] & 0x08);
+			IOff++;
+		}
+
+		switch(mes->codeset | IBuf[IOff])
 		{
 		case Q931ie_SENDING_COMPLETE:
 		case Q931ie_BEARER_CAPABILITY:
@@ -92,10 +104,6 @@ L3INT nationalUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generi
 		case Q931ie_GENERIC_DIGITS:
 			/* TODO: Implement this ie */
 			IOff = IOff + 4;
-			break;
-		case Q931ie_SHIFT:
-			/* TODO: Implement this ie */
-			IOff++;
 			break;
 		default:
 			return Q931E_ILLEGAL_IE;

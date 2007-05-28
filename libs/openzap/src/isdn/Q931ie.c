@@ -2977,3 +2977,66 @@ L3INT Q931Pie_UserUser(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L
     return rc;
 }
 
+/*****************************************************************************
+
+  Function:     Q931Uie_GenericDigits
+
+  Parameters:   pIE[OUT]        ptr to Information Element id.
+                IBuf[IN]        ptr to a packed ie.
+                OBuf[OUT]       ptr to buffer for Unpacked ie.
+                IOff[IN\OUT]    Input buffer offset
+                OOff[IN\OUT]    Output buffer offset
+
+
+                Ibuf and OBuf points directly to buffers. The IOff and OOff
+                must be updated, but are otherwise not used in the ie unpack.
+
+  Return Value: Error Message
+
+*****************************************************************************/
+L3INT Q931Uie_GenericDigits(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+{
+    Q931ie_GenericDigits * pie = (Q931ie_GenericDigits*)OBuf;
+	ie *pIE = &pMsg->GenericDigits;
+    L3INT Off = 0;
+    L3INT Octet = 0;
+    L3INT x=0;
+    L3INT IESize;
+
+    *pIE=0;
+
+    /* Octet 1 */
+    pie->IEId        = IBuf[Octet++];
+
+    /* Octet 2 */
+    IESize = IBuf[Octet++]; 
+
+    Q931SetIE(*pIE, *OOff);
+
+	*IOff = (*IOff) + Octet + Off;
+    *OOff = (*OOff) + sizeof(Q931ie_GenericDigits) + x -1;
+    
+	pie->Size = (L3UCHAR)(sizeof(Q931ie_GenericDigits) + x -1);
+
+    return Q931E_NO_ERROR;
+}
+
+/*****************************************************************************
+
+  Function:     Q931Pie_GenericDigits
+
+  Parameters:   IBuf[IN]        Ptr to struct.
+                OBuf[OUT]        Ptr tp packed output buffer.
+                Octet[IN/OUT]    Offset into OBuf.
+
+  Return Value:    Error code, 0 = OK
+
+*****************************************************************************/
+
+L3INT Q931Pie_GenericDigits(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+{
+	OBuf[(*Octet)++] = (Q931ie_GENERIC_DIGITS & 0xFF);
+    OBuf[(*Octet)++] = 2;
+
+    return Q931E_NO_ERROR;
+}

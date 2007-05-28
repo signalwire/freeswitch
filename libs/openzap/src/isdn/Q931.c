@@ -334,6 +334,9 @@ L3INT Q931Rx23(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT Size)
     /* Message Type */
     m->MesType = Mes[IOff++];
 
+    /* Starting Codeset */
+	m->codeset = Q931_CODESET_0;
+
     /* Call table proc to unpack codec message */
 	RetCode = Q931Umes[pTrunk->Dialect][m->MesType](pTrunk, Mes, (Q931mes_Generic *)pTrunk->L3Buf, Q931L4HeaderSpace + IOff , Size - Q931L4HeaderSpace - IOff + 1);
 
