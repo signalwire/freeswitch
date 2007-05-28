@@ -203,10 +203,6 @@
 						>
 					</File>
 					<File
-						RelativePath="..\src\isdn\nationalie.c"
-						>
-					</File>
-					<File
 						RelativePath="..\src\isdn\nationalmes.c"
 						>
 					</File>

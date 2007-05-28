@@ -65,37 +65,6 @@
 *****************************************************************************/
 
 
-/* Single octet information elements                                */
-
-/* Variable Length Information Elements */
-#define nationalie_GENERIC_DIGITS               0x37 /* 0011 0111       */
-
-
-
-/*****************************************************************************
-
-  Struct:       nationalie_GenericDigits
-
-
-*****************************************************************************/
-
-typedef struct
-{
-    L3UCHAR IEId;                   /* 00110111                             */
-    L3UCHAR Size;                   /* Length of Information Element        */
-}nationalie_GenericDigits;
-
-
-/*****************************************************************************
-
-  Q.931 Information Element Pack/Unpack functions. Implemented in nationalie.c
-
-*****************************************************************************/
-
-L3INT nationalPie_GenericDigits(Q931_TrunkInfo_t *pTrunk,L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet);
-L3INT nationalUie_GenericDigits(Q931_TrunkInfo_t *pTrunk,ie *pIE, L3UCHAR * IBuf, L3UCHAR *OBuf, L3INT *IOff, L3INT *OOff);
-
-
 /*****************************************************************************
 
   Q.931 Message Pack/Unpack functions. Implemented in nationalmes.c

@@ -52,7 +52,6 @@ $(SRC)/isdn/Q931ie.o \
 $(SRC)/isdn/Q931mes.o \
 $(SRC)/isdn/Q931StateNT.o \
 $(SRC)/isdn/Q931StateTE.o \
-$(SRC)/isdn/nationalie.o \
 $(SRC)/isdn/nationalmes.o \
 $(SRC)/isdn/nationalStateNT.o \
 $(SRC)/isdn/nationalStateTE.o \

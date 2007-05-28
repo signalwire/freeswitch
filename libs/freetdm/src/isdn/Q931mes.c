@@ -59,32 +59,12 @@ L3INT Q931Umes_Alerting(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic
 		switch(IBuf[IOff])
 		{
 		case Q931ie_BEARER_CAPABILITY: 
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->BearerCap, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_CHANNEL_IDENTIFICATION:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->ChanID, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_PROGRESS_INDICATOR:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->ProgInd, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_DISPLAY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_SIGNAL:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Signal, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_HIGH_LAYER_COMPATIBILITY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->HLComp, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
@@ -168,27 +148,11 @@ L3INT Q931Umes_CallProceeding(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_G
 		switch(IBuf[IOff])
 		{
 		case Q931ie_BEARER_CAPABILITY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->BearerCap, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_CHANNEL_IDENTIFICATION:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->ChanID, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_PROGRESS_INDICATOR:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->ProgInd, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_DISPLAY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_HIGH_LAYER_COMPATIBILITY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->HLComp, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
@@ -300,42 +264,14 @@ L3INT Q931Umes_Connect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic 
 		switch(IBuf[IOff])
 		{
 		case Q931ie_BEARER_CAPABILITY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->BearerCap, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_CHANNEL_IDENTIFICATION:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->ChanID, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_PROGRESS_INDICATOR:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->ProgInd, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_DISPLAY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_DATETIME:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->DateTime, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_SIGNAL:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Signal, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_LOW_LAYER_COMPATIBILITY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->LLComp, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_HIGH_LAYER_COMPATIBILITY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->HLComp, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
@@ -429,13 +365,8 @@ L3INT Q931Umes_ConnectAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Gener
 		switch(IBuf[IOff])
 		{
 		case Q931ie_DISPLAY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-
 		case Q931ie_SIGNAL:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Signal, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
@@ -498,22 +429,10 @@ L3INT Q931Umes_Disconnect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Gener
 		switch(IBuf[IOff])
 		{
 		case Q931ie_CAUSE:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Cause, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_PROGRESS_INDICATOR:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->ProgInd, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_DISPLAY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_SIGNAL:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Signal, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
@@ -585,29 +504,13 @@ L3INT Q931Umes_Information(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Gene
 		switch(IBuf[IOff])
 		{
 		case Q931ie_SENDING_COMPLETE:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->SendComplete, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-
 		case Q931ie_DISPLAY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-
 		case Q931ie_KEYPAD_FACILITY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->KeypadFac, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-
 		case Q931ie_CALLED_PARTY_NUMBER:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->CalledNum, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
-
 		default:
 			return Q931E_ILLEGAL_IE;
 			break;
@@ -680,19 +583,9 @@ L3INT Q931Umes_Notify(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *
 		switch(IBuf[IOff])
 		{
 		case Q931ie_BEARER_CAPABILITY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->BearerCap, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-
 		case Q931ie_NOTIFICATION_INDICATOR:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->NotifInd, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-
 		case Q931ie_DISPLAY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
@@ -753,27 +646,11 @@ L3INT Q931Umes_Progress(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic
 		switch(IBuf[IOff])
 		{
 		case Q931ie_BEARER_CAPABILITY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->BearerCap, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_CAUSE:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Cause, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_PROGRESS_INDICATOR:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->ProgInd, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_DISPLAY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_HIGH_LAYER_COMPATIBILITY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->HLComp, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
@@ -849,17 +726,9 @@ L3INT Q931Umes_Release(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic 
 		switch(IBuf[IOff])
 		{
 		case Q931ie_CAUSE:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Cause, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_DISPLAY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_SIGNAL:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Signal, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
@@ -924,17 +793,9 @@ L3INT Q931Umes_ReleaseComplete(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_
 		switch(IBuf[IOff])
 		{
 		case Q931ie_CAUSE:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Cause, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_DISPLAY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_SIGNAL:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Signal, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
@@ -999,17 +860,9 @@ L3INT Q931Umes_Restart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic 
         switch(IBuf[IOff])
         {
         case Q931ie_CHANNEL_IDENTIFICATION:
-            rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->ChanID, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-            if(rc != Q931E_NO_ERROR) 
-                return rc;
-            break;
         case Q931ie_DISPLAY:
-            rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-            if(rc != Q931E_NO_ERROR) 
-                return rc;
-            break;
         case Q931ie_RESTART_INDICATOR:
-            rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->RestartInd, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+            rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
             if(rc != Q931E_NO_ERROR) 
                 return rc;
             break;
@@ -1074,17 +927,9 @@ L3INT Q931Umes_RestartAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Gener
         switch(IBuf[IOff])
         {
         case Q931ie_CHANNEL_IDENTIFICATION:
-            rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->ChanID, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-            if(rc != Q931E_NO_ERROR) 
-                return rc;
-            break;
         case Q931ie_DISPLAY:
-            rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-            if(rc != Q931E_NO_ERROR) 
-                return rc;
-            break;
         case Q931ie_RESTART_INDICATOR:
-            rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->RestartInd, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+            rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
             if(rc != Q931E_NO_ERROR) 
                 return rc;
             break;
@@ -1149,7 +994,7 @@ L3INT Q931Umes_Resume(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *
 		switch(IBuf[IOff])
 		{
 		case Q931ie_CALL_IDENTITY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->CallID, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
@@ -1206,12 +1051,8 @@ L3INT Q931Umes_ResumeAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generi
 		switch(IBuf[IOff])
 		{
 		case Q931ie_CHANNEL_IDENTIFICATION:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->ChanID, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_DISPLAY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
@@ -1273,12 +1114,8 @@ L3INT Q931Umes_ResumeReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Gen
 		switch(IBuf[IOff])
 		{
 		case Q931ie_CAUSE:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Cause, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_DISPLAY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
@@ -1357,100 +1194,32 @@ L3INT Q931Umes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *m
 		switch(IBuf[IOff])
 		{
 		case Q931ie_SENDING_COMPLETE:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->SendComplete, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+		case Q931ie_BEARER_CAPABILITY:
+		case Q931ie_CHANNEL_IDENTIFICATION:
+		case Q931ie_PROGRESS_INDICATOR:
+		case Q931ie_NETWORK_SPECIFIC_FACILITIES:
+		case Q931ie_DISPLAY:
+		case Q931ie_DATETIME:
+		case Q931ie_KEYPAD_FACILITY:
+		case Q931ie_SIGNAL:
+		case Q931ie_CALLING_PARTY_NUMBER:
+		case Q931ie_CALLING_PARTY_SUBADDRESS:
+		case Q931ie_CALLED_PARTY_NUMBER:
+		case Q931ie_CALLED_PARTY_SUBADDRESS:
+		case Q931ie_TRANSIT_NETWORK_SELECTION:
+		case Q931ie_LOW_LAYER_COMPATIBILITY:
+		case Q931ie_HIGH_LAYER_COMPATIBILITY:
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
 		case Q931ie_REPEAT_INDICATOR:
-			if(ir==0)
-			{
-				rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->RepeatInd, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			if(ir < 2) {
+				rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 				ir++;
-			}
-			else if(ir==1)
-			{
-				rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->LLRepeatInd, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-				ir++;
-			}
-			else
-			{
+			} else {
 				return Q931E_ILLEGAL_IE;
 			}
-			break;
-		case Q931ie_BEARER_CAPABILITY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->BearerCap, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-		case Q931ie_CHANNEL_IDENTIFICATION:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->ChanID, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-		case Q931ie_PROGRESS_INDICATOR:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->ProgInd, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-		case Q931ie_NETWORK_SPECIFIC_FACILITIES:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->NetFac, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-		case Q931ie_DISPLAY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-		case Q931ie_DATETIME:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->DateTime, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-		case Q931ie_KEYPAD_FACILITY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->KeypadFac, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-		case Q931ie_SIGNAL:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Signal, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-		case Q931ie_CALLING_PARTY_NUMBER:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->CallingNum, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-		case Q931ie_CALLING_PARTY_SUBADDRESS:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->CallingSub, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-		case Q931ie_CALLED_PARTY_NUMBER:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->CalledSub, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-		case Q931ie_CALLED_PARTY_SUBADDRESS:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->CalledSub, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-		case Q931ie_TRANSIT_NETWORK_SELECTION:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->TransNetSel, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-		case Q931ie_LOW_LAYER_COMPATIBILITY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->LLComp, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-		case Q931ie_HIGH_LAYER_COMPATIBILITY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->HLComp, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
 			break;
 		default:
 			return Q931E_ILLEGAL_IE;
@@ -1606,22 +1375,10 @@ L3INT Q931Umes_SetupAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic
 		switch(IBuf[IOff])
 		{
 		case Q931ie_CHANNEL_IDENTIFICATION:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->ChanID, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_PROGRESS_INDICATOR:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->ProgInd, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_DISPLAY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_SIGNAL:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Signal, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
@@ -1693,17 +1450,9 @@ L3INT Q931Umes_Status(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *
 		switch(IBuf[IOff])
 		{
 		case Q931ie_CAUSE:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Cause, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_CALL_STATE:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->CallState, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_DISPLAY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
@@ -1769,7 +1518,7 @@ L3INT Q931Umes_StatusEnquiry(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Ge
 		switch(IBuf[IOff])
 		{
 		case Q931ie_DISPLAY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
@@ -1826,7 +1575,7 @@ L3INT Q931Umes_Suspend(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic 
 		switch(IBuf[IOff])
 		{
 		case Q931ie_CALL_IDENTITY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->CallID, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
@@ -1884,7 +1633,7 @@ L3INT Q931Umes_SuspendAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Gener
 		switch(IBuf[IOff])
 		{
 		case Q931ie_DISPLAY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
@@ -1941,12 +1690,8 @@ L3INT Q931Umes_SuspendReject(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Ge
 		switch(IBuf[IOff])
 		{
 		case Q931ie_CAUSE:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Cause, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
 		case Q931ie_DISPLAY:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, &mes->Display, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
