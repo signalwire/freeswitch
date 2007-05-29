@@ -83,6 +83,25 @@ struct zt_gains {
 	unsigned char transmit_gain[256];	/* Transmit gain table				*/
 };
 
+/* Used with ioctl: ZT_SPANSTAT */
+struct zt_spaninfo {
+	int span_no;						/* span number (-1 to use name)				*/
+	char name[20];						/* Name of span								*/
+	char description[40];				/* Description of span						*/
+	int alarms;							/* alarms status							*/
+	int transmit_level;					/* Transmit level							*/
+	int receive_level;					/* Receive level							*/
+	int bpv_count;						/* Current BPV count						*/
+	int crc4_count;						/* Current CRC4 error count					*/
+	int ebit_count;						/* Current E-bit error count				*/
+	int fas_count;						/* Current FAS error count					*/
+	int irq_misses;						/* Current IRQ misses						*/
+	int sync_src;						/* Span # of sync source (0 = free run)		*/
+	int configured_chan_count;			/* Count of channels configured on the span	*/
+	int channel_count;					/* Total count of channels on the span		*/
+	int span_count;						/* Total count of zaptel spans on the system*/
+};
+
 /* Enumerations */
 
 /* Values in zt_params structure for member g711_type */
@@ -159,6 +178,7 @@ typedef enum {
 #define		ZT_HOOK				_IOW  (ZT_CODE, 7, int)					/* Set Hookswitch Status */
 #define		ZT_GETEVENT			_IOR  (ZT_CODE, 8, int)					/* Get Signalling Event */
 #define		ZT_IOMUX			_IOWR (ZT_CODE, 9, int)					/* Wait for something to happen (IO Mux) */
+#define		ZT_SPANSTAT			_IOWR (ZT_CODE, 10, struct zt_spaninfo) /* Get Span Status */
 
 #define		ZT_GETCONF			_IOWR (ZT_CODE, 12, struct zt_confinfo)	/* Get Conference Mode */
 #define		ZT_SETCONF			_IOWR (ZT_CODE, 13, struct zt_confinfo)	/* Set Conference Mode */
