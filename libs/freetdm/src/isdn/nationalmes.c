@@ -89,6 +89,7 @@ L3INT nationalUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generi
 		case Q931ie_TRANSIT_NETWORK_SELECTION:
 		case Q931ie_LOW_LAYER_COMPATIBILITY:
 		case Q931ie_HIGH_LAYER_COMPATIBILITY:
+		case Q931ie_GENERIC_DIGITS:
 			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
@@ -100,10 +101,6 @@ L3INT nationalUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generi
 			} else {
 				return Q931E_ILLEGAL_IE;
 			}
-			break;
-		case Q931ie_GENERIC_DIGITS:
-			/* TODO: Implement this ie */
-			IOff = IOff + 4;
 			break;
 		default:
 			return Q931E_ILLEGAL_IE;
