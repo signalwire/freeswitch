@@ -1077,6 +1077,9 @@ typedef struct
 {
     L3UCHAR IEId;                   /* 00110111                             */
     L3UCHAR Size;                   /* Length of Information Element        */
+    L3UCHAR Type;					/* Type of number                       */
+    L3UCHAR Encoding;				/* Encoding of number                   */
+    L3UCHAR Digit[1];				/* Number digits (IA5)                  */
 } Q931ie_GenericDigits;
 
 
