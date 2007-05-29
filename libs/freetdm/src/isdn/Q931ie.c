@@ -706,8 +706,7 @@ L3INT Q931Uie_CalledNum(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR
     *pIE=0;
 
     /* Octet 1 */
-    pie->IEId        = IBuf[Octet];
-    Octet ++;
+    pie->IEId        = IBuf[Octet++];
 
     /* Octet 2 */
     IESize = IBuf[Octet ++]; 
@@ -718,7 +717,7 @@ L3INT Q931Uie_CalledNum(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR
     Octet ++;
     
     /* Octet 4*/
-    for (x = 0; x < IESize; x++)
+    for (x = 0; x < IESize - 1; x++)
     {
         pie->Digit[x] = IBuf[Octet+Off] & 0x7f;
         Off++;
