@@ -337,6 +337,10 @@ L3INT Q931Rx23(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT Size)
     /* Starting Codeset */
 	m->codeset = Q931_CODESET_0;
 
+	if (m->ProtDisc != 8) {
+		return Q931E_UNKNOWN_MESSAGE;
+	}
+
     /* Call table proc to unpack codec message */
 	RetCode = Q931Umes[pTrunk->Dialect][m->MesType](pTrunk, Mes, (Q931mes_Generic *)pTrunk->L3Buf, Q931L4HeaderSpace + IOff , Size - Q931L4HeaderSpace - IOff + 1);
 
@@ -533,7 +537,7 @@ L3INT	Q931GetCallState(Q931_TrunkInfo_t *pTrunk, L3INT iCRV)
     L3INT x;
 	for(x=0; x < Q931MAXCALLPERTRUNK; x++)
 	{
-		if(!pTrunk->call[x].InUse)
+		if(pTrunk->call[x].InUse)
 		{
             if(pTrunk->call[x].CRV == iCRV)
             {
@@ -601,7 +605,7 @@ L3INT Q931FindCRV(Q931_TrunkInfo_t *pTrunk, L3INT crv, L3INT *callindex)
     L3INT x;
 	for(x=0; x < Q931MAXCALLPERTRUNK; x++)
 	{
-		if(!pTrunk->call[x].InUse)
+		if(pTrunk->call[x].InUse)
 		{
             if(pTrunk->call[x].CRV == crv)
             {
