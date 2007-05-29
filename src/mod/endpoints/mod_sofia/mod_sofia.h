@@ -114,6 +114,11 @@ typedef enum {
 	PFLAG_RESPAWN = (1 << 9)
 } PFLAGS;
 
+
+typedef enum {
+	PFLAG_NDLB_TO_IN_200_CONTACT = (1 << 1)
+} sofia_NDLB_t;
+
 typedef enum {
 	TFLAG_IO = (1 << 0),
 	TFLAG_CHANGE_MEDIA = (1 << 1),
@@ -223,6 +228,7 @@ struct sofia_profile {
 	int dtmf_duration;
 	unsigned int flags;
 	unsigned int pflags;
+	unsigned int ndlb;
 	uint32_t max_calls;
 	uint32_t nonce_ttl;
 	nua_t *nua;
@@ -287,6 +293,7 @@ struct private_object {
 	switch_port_t adv_sdp_audio_port;
 	char *proxy_sdp_audio_ip;
 	switch_port_t proxy_sdp_audio_port;
+	char *reply_contact;
 	char *from_uri;
 	char *to_uri;
 	char *from_address;

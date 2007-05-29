@@ -365,7 +365,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		}
 		
 		if (v_event && *v_event && (v_contact_str = switch_event_get_header(*v_event, "force-contact"))) {
-			if (!strcasecmp(v_contact_str, "nat-connectile-dysfunction")) {
+			if (!strcasecmp(v_contact_str, "nat-connectile-dysfunction") || !strcasecmp(v_contact_str, "NDLB-connectile-dysfunction")) {
 				if (contact->m_url->url_params) {
 					snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s>",
 							 display, contact->m_url->url_user, network_ip, network_port, contact->m_url->url_params);

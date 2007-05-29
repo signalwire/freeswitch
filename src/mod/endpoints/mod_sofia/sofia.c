@@ -789,6 +789,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_PRESENCE;
 						}
+					} else if (!strcasecmp(var, "NDLB-to-in-200-contact")) {
+						if (switch_true(val)) {
+							profile->ndlb |= PFLAG_NDLB_TO_IN_200_CONTACT;
+						}
 					} else if (!strcasecmp(var, "pass-rfc2833")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_PASS_RFC2833;
@@ -1837,8 +1841,14 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		url_set_chanvars(session, sip->sip_to->a_url, sip_to);
 		if ((val = switch_channel_get_variable(channel, "sip_to_uri"))) {
 			tech_pvt->to_uri = switch_core_session_sprintf(session, "sip:%s", val);
+			if (profile->ndlb & PFLAG_NDLB_TO_IN_200_CONTACT) {
+				tech_pvt->reply_contact = tech_pvt->to_uri;
+			} else {
+				tech_pvt->reply_contact = tech_pvt->profile->url;
+			}
 		} else {
 			tech_pvt->to_uri = tech_pvt->profile->url;
+			tech_pvt->reply_contact = tech_pvt->profile->url;
 		}
 	}
 
