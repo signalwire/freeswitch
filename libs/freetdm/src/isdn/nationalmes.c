@@ -70,7 +70,7 @@ L3INT nationalUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generi
 			if (shift_lock) {
 				last_codeset = codeset;
 			}
-			codeset = ((IBuf[IOff] & 0x07) << 8);
+			codeset = ((IBuf[IOff] & 0x07));
 			IOff++;
 		}
 
