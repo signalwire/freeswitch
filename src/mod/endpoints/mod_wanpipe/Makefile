@@ -17,6 +17,13 @@ LOCAL_OBJS = ss7boost_client.o $(LIBPRI_DIR)/copy_string.o $(LIBPRI_DIR)/pri.o $
 
 include $(BASE)/build/modmake.rules 
 
+
+$(LIBSANGOMA_DIR)/libsangoma.o:  $(LIBSANGOMA_DIR)/libsangoma.c
+	$(CC) -c -I$(WANPIPE_DIR) $(LOCAL_CFLAGS) $(LIBSANGOMA_DIR)/libsangoma.c -o $(LIBSANGOMA_DIR)/libsangoma.o
+
+$(LIBSANGOMA_DIR)/sangoma_pri.o: $(LIBSANGOMA_DIR)/sangoma_pri.c
+	$(CC) -c -I$(WANPIPE_DIR) $(LOCAL_CFLAGS) $(LIBSANGOMA_DIR)/sangoma_pri.c -o $(LIBSANGOMA_DIR)/sangoma_pri.o
+
 testapp: testapp.c $(LIBSANGOMA_DIR)/libsangoma.o
 	$(CC) -I$(WANPIPE_DIR)/api/lib $(CFLAGS) $(LOCAL_CFLAGS) lib_api.c testapp.c $(LIBSANGOMA_DIR)/libsangoma.o -o testapp
 
