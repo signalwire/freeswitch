@@ -334,9 +334,6 @@ L3INT Q931Rx23(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT Size)
     /* Message Type */
     m->MesType = Mes[IOff++];
 
-    /* Starting Codeset */
-	m->codeset = Q931_CODESET_0;
-
 	if (m->ProtDisc != 8) {
 		return Q931E_UNKNOWN_MESSAGE;
 	}

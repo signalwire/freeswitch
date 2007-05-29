@@ -56,55 +56,74 @@ L3INT nationalUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generi
 	L3INT ir=0;
 	L3INT OOff=0;
 	L3INT rc=Q931E_NO_ERROR;
-	L3UINT last_codeset = mes->codeset;
+	L3UCHAR last_codeset = 0, codeset = 0;
 	L3UCHAR shift_lock = 1;
 
 	while(IOff < Size)
 	{
 		if (!shift_lock) {
-			mes->codeset = last_codeset;
+			codeset = last_codeset;
 		}
 
 		if ((IBuf[IOff] & 0xF0) == Q931ie_SHIFT ) {
-			mes->codeset = ((IBuf[IOff] & 0x07) << 8);
 			shift_lock = (IBuf[IOff] & 0x08);
+			if (shift_lock) {
+				last_codeset = codeset;
+			}
+			codeset = ((IBuf[IOff] & 0x07) << 8);
 			IOff++;
 		}
 
-		switch(mes->codeset | IBuf[IOff])
-		{
-		case Q931ie_SENDING_COMPLETE:
-		case Q931ie_BEARER_CAPABILITY:
-		case Q931ie_CHANNEL_IDENTIFICATION:
-		case Q931ie_PROGRESS_INDICATOR:
-		case Q931ie_NETWORK_SPECIFIC_FACILITIES:
-		case Q931ie_DISPLAY:
-		case Q931ie_DATETIME:
-		case Q931ie_KEYPAD_FACILITY:
-		case Q931ie_SIGNAL:
-		case Q931ie_CALLING_PARTY_NUMBER:
-		case Q931ie_CALLING_PARTY_SUBADDRESS:
-		case Q931ie_CALLED_PARTY_NUMBER:
-		case Q931ie_CALLED_PARTY_SUBADDRESS:
-		case Q931ie_TRANSIT_NETWORK_SELECTION:
-		case Q931ie_LOW_LAYER_COMPATIBILITY:
-		case Q931ie_HIGH_LAYER_COMPATIBILITY:
-		case Q931ie_GENERIC_DIGITS:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-			if(rc != Q931E_NO_ERROR) 
-				return rc;
-			break;
-		case Q931ie_REPEAT_INDICATOR:
-			if(ir < 2) {
+		if (codeset == 0) {
+			switch(IBuf[IOff])
+			{
+			case Q931ie_SENDING_COMPLETE:
+			case Q931ie_BEARER_CAPABILITY:
+			case Q931ie_CHANNEL_IDENTIFICATION:
+			case Q931ie_PROGRESS_INDICATOR:
+			case Q931ie_NETWORK_SPECIFIC_FACILITIES:
+			case Q931ie_DISPLAY:
+			case Q931ie_DATETIME:
+			case Q931ie_KEYPAD_FACILITY:
+			case Q931ie_SIGNAL:
+			case Q931ie_CALLING_PARTY_NUMBER:
+			case Q931ie_CALLING_PARTY_SUBADDRESS:
+			case Q931ie_CALLED_PARTY_NUMBER:
+			case Q931ie_CALLED_PARTY_SUBADDRESS:
+			case Q931ie_TRANSIT_NETWORK_SELECTION:
+			case Q931ie_LOW_LAYER_COMPATIBILITY:
+			case Q931ie_HIGH_LAYER_COMPATIBILITY:
 				rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
-				ir++;
-			} else {
+				if(rc != Q931E_NO_ERROR) 
+					return rc;
+				break;
+			case Q931ie_REPEAT_INDICATOR:
+				if(ir < 2) {
+					rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+					ir++;
+				} else {
+					return Q931E_ILLEGAL_IE;
+				}
+				break;
+			default:
 				return Q931E_ILLEGAL_IE;
+				break;
 			}
-			break;
-		default:
+		} else if (codeset == 6) {
+			switch(IBuf[IOff])
+			{
+			case Q931ie_GENERIC_DIGITS:
+				rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+				if(rc != Q931E_NO_ERROR) 
+					return rc;
+				break;
+			default:
+				return Q931E_ILLEGAL_IE;
+				break;
+			}
+
+		} else {
 			return Q931E_ILLEGAL_IE;
-			break;
 		}
 	}
     mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;

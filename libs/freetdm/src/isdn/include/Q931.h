@@ -372,11 +372,6 @@ typedef struct
     L3UCHAR         ProtDisc;       /* Protocol Discriminator               */
     L3UCHAR         MesType;        /* Message type                         */
     L3INT           CRV;            /* Call reference value                 */
-	L3UINT			codeset;		/* Current Codeset - Temporary variable	*/
-									/* used for the Q931Uie functions		*/
-									/* in a parsed message this will only	*/
-									/* indicate the codeset of the last		*/
-									/* ie parsed							*/
 
     ie              Shift;
     ie              MoreData;
