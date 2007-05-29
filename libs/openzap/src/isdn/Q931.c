@@ -714,7 +714,7 @@ static const char *q931_error_names[] = {
 
 };
 
-#define Q931_MAX_ERROR 29
+#define Q931_MAX_ERROR 30
 
 const char *q931_error_to_name(q931_error_t error)
 {
