@@ -813,6 +813,9 @@ L3INT Q931ProcRestartTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	}
 	else if (iFrom ==2)
 	{
+		if (pTrunk->autoRestartAck) {
+			Q931AckRestart(pTrunk, buf);
+		}
 		/* TODO Add proc here*/
         ret = Q931Tx34(pTrunk,buf,pMes->Size);
 	}
