@@ -102,6 +102,11 @@ struct zt_spaninfo {
 	int span_count;						/* Total count of zaptel spans on the system*/
 };
 
+struct zt_maintinfo {
+	int span_no;						/* span number											*/
+	int command;						/* Maintenance mode to set (from zt_maintenance_mode_t)	*/
+};
+
 /* Enumerations */
 
 /* Values in zt_params structure for member g711_type */
@@ -159,6 +164,15 @@ typedef enum {
 	ZT_RINGOFF				= 6
 } zt_hookstate_t;
 
+typedef enum {
+	ZT_MAINT_NONE			= 0, /* Normal Mode				*/
+	ZT_MAINT_LOCALLOOP		= 1, /* Local Loopback			*/
+	ZT_MAINT_REMOTELOOP		= 2, /* Remote Loopback			*/
+	ZT_MAINT_LOOPUP			= 3, /* Send Loopup Code		*/
+	ZT_MAINT_LOOPDOWN		= 4, /* Send Loopdown Code		*/
+	ZT_MAINT_LOOPSTOP		= 5, /* Stop Sending Loop Codes	*/
+} zt_maintenance_mode_t;
+
 
 /* Defines */
 
@@ -179,7 +193,7 @@ typedef enum {
 #define		ZT_GETEVENT			_IOR  (ZT_CODE, 8, int)					/* Get Signalling Event */
 #define		ZT_IOMUX			_IOWR (ZT_CODE, 9, int)					/* Wait for something to happen (IO Mux) */
 #define		ZT_SPANSTAT			_IOWR (ZT_CODE, 10, struct zt_spaninfo) /* Get Span Status */
-
+#define		ZT_MAINT			_IOW  (ZT_CODE, 11, struct zt_maintinfo)/* Set Maintenance Mode for a span */
 #define		ZT_GETCONF			_IOWR (ZT_CODE, 12, struct zt_confinfo)	/* Get Conference Mode */
 #define		ZT_SETCONF			_IOWR (ZT_CODE, 13, struct zt_confinfo)	/* Set Conference Mode */
 #define		ZT_CONFLINK			_IOW  (ZT_CODE, 14, struct zt_confinfo)	/* Setup or Remove Conference Link */
