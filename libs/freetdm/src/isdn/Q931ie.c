@@ -3017,14 +3017,14 @@ L3INT Q931Uie_GenericDigits(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3U
     Octet ++;
     
     /* Octet 4*/
-	if (pie->Type == 0) { /* BCD Even */
+	if (pie->Encoding == 0) { /* BCD Even */
 		x = 0;
 		do {
 			pie->Digit[x++] = IBuf[Octet+Off] & 0x0f;
 			pie->Digit[x++] = (IBuf[Octet+Off] >> 4) & 0x0f;
 			Off++;
 		} while (Q931MoreIE());
-	} else if (pie->Type == 1) { /* BCD Odd */
+	} else if (pie->Encoding == 1) { /* BCD Odd */
 		x = 0;
 		do {
 			pie->Digit[x++] = IBuf[Octet+Off] & 0x0f;
@@ -3034,7 +3034,7 @@ L3INT Q931Uie_GenericDigits(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3U
 			x++;
 			Off++;
 		} while (Q931MoreIE());
-	} else if (pie->Type == 2) { /* IA5 */
+	} else if (pie->Encoding == 2) { /* IA5 */
 		x = 0;
 		do {
 			pie->Digit[x++] = IBuf[Octet+Off] & 0x7f;
