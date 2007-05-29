@@ -793,15 +793,19 @@ L3INT Q931ProcRestartTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
     L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
 
-	/* Find the call using CRV */
-	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
-		return ret;
+
+	if (pMes->CRV) {
+		/* Find the call using CRV */
+		ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
+		if(ret != Q931E_NO_ERROR)
+			return ret;
+
+		/* TODO - Set correct timer here */
+		Q931StartTimer(pTrunk, callIndex, 303);
+	}
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
-	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
@@ -826,15 +830,17 @@ L3INT Q931ProcRestartAckTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
     L3INT ret=Q931E_NO_ERROR;
 	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
 
-	/* Find the call using CRV */
-	ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
-	if(ret != Q931E_NO_ERROR)
-		return ret;
+	if (pMes->CRV) {
+		/* Find the call using CRV */
+		ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
+		if(ret != Q931E_NO_ERROR)
+			return ret;
+		/* TODO - Set correct timer here */
+		Q931StartTimer(pTrunk, callIndex, 303);
+	}
 
 	/* TODO chack against state table for illegal or unexpected message here*/
 
-	/* TODO - Set correct timer here */
-    Q931StartTimer(pTrunk, callIndex, 303);
 	if(iFrom == 4)
 	{
 		/* TODO Add proc here*/
