@@ -3000,23 +3000,60 @@ L3INT Q931Uie_GenericDigits(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3U
 	ie *pIE = &pMsg->GenericDigits;
     L3INT Off = 0;
     L3INT Octet = 0;
-    L3INT x=0;
+    L3INT x;
     L3INT IESize;
 
     *pIE=0;
 
     /* Octet 1 */
-    pie->IEId        = IBuf[Octet++];
+    pie->IEId        = IBuf[Octet];
+    Octet ++;
 
     /* Octet 2 */
-    IESize = IBuf[Octet++]; 
+    IESize = IBuf[Octet ++]; 
+
+    /* Octet 3 */
+    pie->Type = (IBuf[Octet]) & 0x1F;
+    pie->Encoding = (IBuf[Octet] >> 5) & 0x07;
+    Octet ++;
+    
+    /* Octet 4*/
+	if (pie->Type == 0) { /* BCD Even */
+		x = 0;
+		do {
+			pie->Digit[x++] = IBuf[Octet+Off] & 0x0f;
+			pie->Digit[x++] = (IBuf[Octet+Off] >> 4) & 0x0f;
+			Off++;
+		} while (Q931MoreIE());
+	} else if (pie->Type == 1) { /* BCD Odd */
+		x = 0;
+		do {
+			pie->Digit[x++] = IBuf[Octet+Off] & 0x0f;
+			if (Q931MoreIE()) {
+				pie->Digit[x] = (IBuf[Octet+Off] >> 4) & 0x0f;
+			}
+			x++;
+			Off++;
+		} while (Q931MoreIE());
+	} else if (pie->Type == 2) { /* IA5 */
+		x = 0;
+		do {
+			pie->Digit[x++] = IBuf[Octet+Off] & 0x7f;
+			Off++;
+		} while (Q931MoreIE());
+	} else {
+		/* Binary encoding type unkown */
+		Q931SetError(pTrunk, Q931E_GENERIC_DIGITS, Octet, Off);
+		return Q931E_GENERIC_DIGITS;
+	}
+
+    Q931IESizeTest(Q931E_GENERIC_DIGITS);
 
     Q931SetIE(*pIE, *OOff);
 
-	*IOff = (*IOff) + Octet + Off;
-    *OOff = (*OOff) + sizeof(Q931ie_GenericDigits) + x -1;
-    
-	pie->Size = (L3UCHAR)(sizeof(Q931ie_GenericDigits) + x -1);
+    *IOff = (*IOff) + Octet + Off;
+    *OOff = (*OOff) + sizeof(Q931ie_CallingSub) + x -1;
+    pie->Size = (L3UCHAR)(sizeof(Q931ie_CallingSub) + x -1);
 
     return Q931E_NO_ERROR;
 }
@@ -3036,7 +3073,7 @@ L3INT Q931Uie_GenericDigits(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3U
 L3INT Q931Pie_GenericDigits(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
 	OBuf[(*Octet)++] = (Q931ie_GENERIC_DIGITS & 0xFF);
-    OBuf[(*Octet)++] = 2;
+    OBuf[(*Octet)++] = 0;
 
     return Q931E_NO_ERROR;
 }

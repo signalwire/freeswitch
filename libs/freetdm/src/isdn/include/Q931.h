@@ -153,7 +153,8 @@ typedef enum {
 	Q931E_PROGIND               =	-3026,
 	Q931E_RESTARTIND            =	-3027,
 	Q931E_SEGMENT               =	-3028,
-	Q931E_SIGNAL                =	-3029
+	Q931E_SIGNAL                =	-3029,
+	Q931E_GENERIC_DIGITS		=	-3030
 
 } q931_error_t;
 
