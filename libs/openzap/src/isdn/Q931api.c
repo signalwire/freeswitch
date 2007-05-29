@@ -39,6 +39,8 @@
 #include "Q931.h"
 #include "memory.h"
 
+extern L3INT Q931L4HeaderSpace;
+
 /*
 L3INT Q931CreateMesIndex(L3INT mc)
 {
@@ -109,12 +111,13 @@ L3INT Q931Api_InitTrunk(Q931_TrunkInfo_t *pTrunk,
 	pTrunk->PrivateData32 = PrivateData32;
 	pTrunk->PrivateData34 = PrivateData34;
 
-    pTrunk->LastCRV		= 0;
-    pTrunk->Dialect		= Dialect + NetUser;       
-    pTrunk->Enabled		= 0;
-    pTrunk->TrunkType	= TrunkType;
-    pTrunk->NetUser		= NetUser;
-    pTrunk->TrunkState	= 0;
+    pTrunk->LastCRV			= 0;
+    pTrunk->Dialect			= Dialect + NetUser;       
+    pTrunk->Enabled			= 0;
+    pTrunk->TrunkType		= TrunkType;
+    pTrunk->NetUser			= NetUser;
+    pTrunk->TrunkState		= 0;
+	pTrunk->autoRestartAck	= 0;
     for(y=0; y < Q931MAXCHPERTRUNK; y++)
     {
         pTrunk->ch[y].Available = 1;
@@ -540,4 +543,16 @@ L3INT Q931ReleaseComplete(Q931_TrunkInfo_t *pTrunk, L3INT iTo)
 	(void)iTo;
 
 	return 0;
+}
+
+L3INT Q931AckRestart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf)
+{
+	L3INT RetCode;
+
+    Q931mes_Header *ptr = (Q931mes_Header*)&buf[Q931L4HeaderSpace];
+	ptr->MesType = Q931mes_RESTART_ACKNOWLEDGE;
+
+	RetCode = Q931Proc[pTrunk->Dialect][ptr->MesType](pTrunk, buf, 4);
+
+    return RetCode;
 }

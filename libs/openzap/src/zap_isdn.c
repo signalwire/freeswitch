@@ -72,9 +72,6 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 
 	zap_log(ZAP_LOG_DEBUG, "Yay I got an event! Type:[%d] Size:[%d]\n", gen->MesType, gen->Size);
 
-	gen->MesType = Q931mes_RESTART_ACKNOWLEDGE;
-	Q931Rx43(&data->q931, msg, gen->Size);
-
 	return 0;
 }
 
@@ -246,7 +243,8 @@ zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931D
 					  zap_isdn_931_err,
 					  &span->isdn_data->q921,
 					  span);
-	
+
+	span->isdn_data->q931.autoRestartAck = 1;
 
 	span->signal_type = ZAP_SIGTYPE_ISDN;
 	
