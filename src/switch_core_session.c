@@ -681,6 +681,7 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	switch_core_media_bug_remove_all(*session);
 	switch_buffer_destroy(&(*session)->raw_read_buffer);
 	switch_buffer_destroy(&(*session)->raw_write_buffer);
+
 	switch_channel_uninit((*session)->channel);
 
 	pool = (*session)->pool;
@@ -721,19 +722,26 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(switch_core_se
 	switch_threadattr_t *thd_attr;;
 	switch_threadattr_create(&thd_attr, session->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
+	switch_mutex_lock(session->mutex);
+	
 	if (!session->thread_running) {
+		session->thread_running = 1;
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 		if (switch_thread_create(&thread, thd_attr, switch_core_session_thread, session, session->pool) == SWITCH_STATUS_SUCCESS) {
-			return SWITCH_STATUS_SUCCESS;
+			status = SWITCH_STATUS_SUCCESS;
 		} else {
+			session->thread_running = 0;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot create thread!\n");
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot double-launch thread!\n");
 	}
 
-	return SWITCH_STATUS_FALSE;
+	switch_mutex_unlock(session->mutex);
+
+	return status;
 }
 
 

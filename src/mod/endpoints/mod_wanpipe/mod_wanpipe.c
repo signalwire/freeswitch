@@ -1568,7 +1568,6 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 			ret = 0;
 			goto done;
 		}
-		switch_core_session_thread_launch(session);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create new Inbound Channel!\n");
 	}
