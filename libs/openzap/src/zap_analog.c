@@ -253,6 +253,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 			}
 		}
 
+		
 		if (last_digit && ((elapsed - last_digit > data->digit_timeout) || strlen(dtmf) > data->max_dialstr)) {
 			zap_log(ZAP_LOG_DEBUG, "Number obtained [%s]\n", dtmf);
 			zap_set_state_locked(chan, ZAP_CHANNEL_STATE_IDLE);

@@ -229,9 +229,11 @@ zap_status_t zap_span_close_all(zap_io_interface_t *zio)
 		span = &zio->spans[i];
 
 		for(j = 0; j < span->chan_count; j++) {
-			zap_mutex_destroy(&span->channels[j].mutex);
-			zap_buffer_destroy(&span->channels[j].digit_buffer);
-			zap_buffer_destroy(&span->channels[j].dtmf_buffer);
+			if (zap_test_flag((&span->channels[j]), ZAP_CHANNEL_CONFIGURED)) {
+				zap_mutex_destroy(&span->channels[j].mutex);
+				zap_buffer_destroy(&span->channels[j].digit_buffer);
+				zap_buffer_destroy(&span->channels[j].dtmf_buffer);
+			}
 		}
 
 		if (span->mutex) {
@@ -1417,7 +1419,8 @@ zap_status_t zap_global_init(void)
 	modcount = 0;
 	zap_mutex_create(&globals.mutex);
 	
-#ifdef ZAP_WANPIPE_SUPPORT
+#ifdef Z
+AP_WANPIPE_SUPPORT
 	if (wanpipe_init(&interfaces.wanpipe_interface) == ZAP_SUCCESS) {
 		zap_mutex_lock(globals.mutex);
 		hashtable_insert(globals.interface_hash, (void *)interfaces.wanpipe_interface->name, interfaces.wanpipe_interface);
@@ -1483,18 +1486,20 @@ zap_status_t zap_global_destroy(void)
 
 #ifdef ZAP_ZT_SUPPORT
 	if (interfaces.zt_interface) {
-		zt_destroy();
 		zap_span_close_all(interfaces.zt_interface);
+		zt_destroy();		
 	}
 #endif
 #ifdef ZAP_WANPIPE_SUPPORT
 	if (interfaces.wanpipe_interface) {
-		wanpipe_destroy();
 		zap_span_close_all(interfaces.wanpipe_interface);
+		wanpipe_destroy();
 	}
 #endif
 
-	hashtable_destroy(globals.interface_hash, 0);
+	zap_mutex_lock(globals.mutex);
+	hashtable_destroy(globals.interface_hash, 0, 0);
+	zap_mutex_unlock(globals.mutex);
 	zap_mutex_destroy(&globals.mutex);
 	return ZAP_SUCCESS;
 }
