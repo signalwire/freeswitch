@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 
  top:
 	//if (zap_channel_open_any("wanpipe", 0, ZAP_TOP_DOWN, &chan) == ZAP_SUCCESS) {
-	if (zap_channel_open("wanpipe", 1, 1, &chan) == ZAP_SUCCESS) {
+	if (zap_channel_open("zt", 1, 1, &chan) == ZAP_SUCCESS) {
 		int x = 0;
 		printf("opened channel %d:%d\n", chan->span_id, chan->chan_id);
 
@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 			unsigned char buf[2048];
 			zap_size_t len = sizeof(buf);
 			zap_wait_flag_t flags = ZAP_READ;
-			
+
 			if (zap_channel_wait(chan, &flags, -1) == ZAP_FAIL) {
 				printf("wait FAIL! %d [%s]\n", len, chan->last_error);
 			}

@@ -9,6 +9,6 @@ include $(BASE)/build/modmake.rules
 local_depend: $(OZA)
 
 $(OZA): 
-	cd $(OZ_DIR) && $(MAKE) ZAP_MODS=wanpipe
+	cd $(OZ_DIR) && $(MAKE) ZAP_MODS="wanpipe zt" ZAP_CFLAGS="-g -ggdb"
 
 

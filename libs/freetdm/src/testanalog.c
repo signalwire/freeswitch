@@ -71,11 +71,15 @@ int main(int argc, char *argv[])
 
 	zap_log(ZAP_LOG_DEBUG, "OpenZAP loaded\n");
 
-	if (zap_span_find("wanpipe", 1, &span) != ZAP_SUCCESS) {
+	if (zap_span_find("zt", 1, &span) != ZAP_SUCCESS) {
 		zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span\n");
+		exit(-1);
 	}
 	
-	zap_analog_configure_span(span, "us", 2000, 11, on_signal);
+	if (zap_analog_configure_span(span, "us", 2000, 11, on_signal) != ZAP_SUCCESS) {
+		zap_log(ZAP_LOG_ERROR, "Error configuring OpenZAP span\n");
+		exit(-1);
+	}
 	zap_analog_start(span);
 
 	while(zap_test_flag(span->analog_data, ZAP_ANALOG_RUNNING)) {

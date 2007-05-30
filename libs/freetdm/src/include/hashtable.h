@@ -166,7 +166,7 @@ hashtable_count(struct hashtable *h);
  */
 
 void
-hashtable_destroy(struct hashtable *h, int free_values);
+hashtable_destroy(struct hashtable *h, int free_keys, int free_values);
 
 #endif /* __HASHTABLE_CWC22_H__ */
 

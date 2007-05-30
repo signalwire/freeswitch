@@ -46,6 +46,7 @@ typedef int zap_socket_t;
 #endif
 
 typedef size_t zap_size_t;
+typedef ssize_t zap_ssize_t;
 struct zap_io_interface;
 
 #define ZAP_COMMAND_OBJ_INT *((int *)obj)

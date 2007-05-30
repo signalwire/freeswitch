@@ -213,29 +213,19 @@ hashtable_remove(struct hashtable *h, void *k)
 /*****************************************************************************/
 /* destroy */
 void
-hashtable_destroy(struct hashtable *h, int free_values)
+hashtable_destroy(struct hashtable *h, int free_keys, int free_values)
 {
     unsigned int i;
     struct entry *e, *f;
     struct entry **table = h->table;
-    if (free_values)
-    {
-        for (i = 0; i < h->tablelength; i++)
+
+	for (i = 0; i < h->tablelength; i++)
         {
             e = table[i];
             while (NULL != e)
-            { f = e; e = e->next; freekey(f->k); free(f->v); free(f); }
+				{ f = e; e = e->next; if (free_keys) freekey(f->k); if (free_values) free(f->v); free(f); }
         }
-    }
-    else
-    {
-        for (i = 0; i < h->tablelength; i++)
-        {
-            e = table[i];
-            while (NULL != e)
-            { f = e; e = e->next; freekey(f->k); free(f); }
-        }
-    }
+    
     free(h->table);
     free(h);
 }

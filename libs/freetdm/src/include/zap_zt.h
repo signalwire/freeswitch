@@ -34,6 +34,8 @@
 #ifndef ZAP_ZT_H
 #define ZAP_ZT_H
 #include "openzap.h"
+#include <sys/ioctl.h>
+#include <poll.h>
 
 /* Hardware interface structures and defines */
 /* Based on documentation of the structures required for the hardware interface */
@@ -68,6 +70,8 @@ struct zt_params {
 	int pulse_make_time;
 	int pulse_after_time;
 };
+
+typedef struct zt_params zt_params_t;
 
 /* Used with ioctl: ZT_CONFLINK, ZT_GETCONF and ZT_SETCONF */
 struct zt_confinfo {
@@ -170,7 +174,7 @@ typedef enum {
 	ZT_MAINT_REMOTELOOP		= 2, /* Remote Loopback			*/
 	ZT_MAINT_LOOPUP			= 3, /* Send Loopup Code		*/
 	ZT_MAINT_LOOPDOWN		= 4, /* Send Loopdown Code		*/
-	ZT_MAINT_LOOPSTOP		= 5, /* Stop Sending Loop Codes	*/
+	ZT_MAINT_LOOPSTOP		= 5  /* Stop Sending Loop Codes	*/
 } zt_maintenance_mode_t;
 
 
