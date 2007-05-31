@@ -346,6 +346,8 @@ zap_status_t zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t 
 zap_status_t zap_channel_open_chan(zap_channel_t *zchan);
 zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, zap_channel_t **zchan);
 zap_status_t zap_channel_close(zap_channel_t **zchan);
+zap_status_t zap_channel_done(zap_channel_t *zchan);
+zap_status_t zap_channel_use(zap_channel_t *zchan);
 zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, void *obj);
 zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t *flags, int32_t to);
 zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *datalen);

@@ -167,6 +167,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				break;
 			case ZAP_CHANNEL_STATE_DOWN:
 				{
+					zap_channel_done(chan);
 					goto done;
 				}
 				break;
@@ -180,6 +181,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 			switch(chan->state) {
 			case ZAP_CHANNEL_STATE_UP:
 				{
+					zap_channel_use(chan);
 					if (zap_test_flag(chan, ZAP_CHANNEL_HOLD)) {
 						zap_clear_flag(chan, ZAP_CHANNEL_HOLD);
 						sig.event_id = ZAP_SIGEVENT_FLASH;
@@ -193,6 +195,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				break;
 			case ZAP_CHANNEL_STATE_IDLE:
 				{
+					zap_channel_use(chan);
 					sig.event_id = ZAP_SIGEVENT_START;
 					zap_copy_string(sig.dnis, dtmf, sizeof(sig.dnis));
 					data->sig_cb(&sig);
@@ -201,6 +204,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				break;
 			case ZAP_CHANNEL_STATE_DOWN:
 				{
+					zap_channel_done(chan);
 					sig.event_id = ZAP_SIGEVENT_STOP;
 					data->sig_cb(&sig);
 					goto done;
@@ -208,6 +212,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				break;
 			case ZAP_CHANNEL_STATE_DIALTONE:
 				{
+					zap_channel_done(chan);
 					*dtmf = '\0';
 					dtmf_offset = 0;
 					zap_buffer_zero(dt_buffer);
@@ -217,6 +222,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				break;
 			case ZAP_CHANNEL_STATE_RING:
 				{
+					zap_channel_done(chan);
 					zap_buffer_zero(dt_buffer);
 					teletone_run(&ts, chan->span->tone_map[ZAP_TONEMAP_RING]);
 					indicate = 1;
@@ -224,6 +230,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				break;
 			case ZAP_CHANNEL_STATE_BUSY:
 				{
+					zap_channel_done(chan);
 					zap_buffer_zero(dt_buffer);
 					teletone_run(&ts, chan->span->tone_map[ZAP_TONEMAP_BUSY]);
 					indicate = 1;
@@ -231,12 +238,14 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				break;
 			case ZAP_CHANNEL_STATE_ATTN:
 				{
+					zap_channel_done(chan);
 					zap_buffer_zero(dt_buffer);
 					teletone_run(&ts, chan->span->tone_map[ZAP_TONEMAP_ATTN]);
 					indicate = 1;
 				}
 				break;
 			default:
+				zap_channel_done(chan);
 				break;
 			}
 		}
