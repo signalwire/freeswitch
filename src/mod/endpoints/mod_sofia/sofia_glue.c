@@ -162,10 +162,11 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t por
 	}
 
 
-	if (switch_test_flag(tech_pvt, TFLAG_VIDEO)) {
+	if (switch_test_flag(tech_pvt, TFLAG_VIDEO) && tech_pvt->video_rm_encoding) {
 		sofia_glue_tech_choose_video_port(tech_pvt);
 		if ((v_port = tech_pvt->adv_sdp_video_port)) {
 			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "m=video %d RTP/AVP", v_port);
+			
 			sofia_glue_tech_set_video_codec(tech_pvt, 0);	
 
 
@@ -955,7 +956,6 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt)
 
 		if (switch_test_flag(tech_pvt, TFLAG_VIDEO) && tech_pvt->video_rm_encoding) {
 			flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_NOBLOCK | SWITCH_RTP_FLAG_RAW_WRITE);
-
 			sofia_glue_tech_set_video_codec(tech_pvt, 0);
 
 			tech_pvt->video_rtp_session = switch_rtp_new(tech_pvt->local_sdp_audio_ip,
