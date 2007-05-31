@@ -40,13 +40,14 @@ typedef HANDLE zap_socket_t;
 typedef unsigned __int64 uint64_t;
 typedef unsigned __int32 uint32_t;
 typedef __int32 int32_t;
+typedef intptr_t zap_ssize_t;
 #else
 #include <stdint.h>
 typedef int zap_socket_t;
+typedef ssize_t zap_ssize_t;
 #endif
 
 typedef size_t zap_size_t;
-typedef ssize_t zap_ssize_t;
 struct zap_io_interface;
 
 #define ZAP_COMMAND_OBJ_INT *((int *)obj)
