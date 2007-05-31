@@ -718,11 +718,12 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t * thr
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_thread_launch(switch_core_session_t *session)
 {
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;;
+
 	switch_threadattr_create(&thd_attr, session->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
-	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	switch_mutex_lock(session->mutex);
 	
