@@ -53,25 +53,12 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 	for(x = start; x < end; x++) {
 		zap_channel_t *chan;
 		zap_socket_t sockfd = ZT_INVALID_SOCKET;
-		int command;
 		int len;
 
 		snprintf(path, sizeof(path), "/dev/zap/%d", x);
 		sockfd = open(path, O_RDWR);
 		
 		if (sockfd != ZT_INVALID_SOCKET && zap_span_add_channel(span, sockfd, type, &chan) == ZAP_SUCCESS) {
-			command = ZT_START;
-#if 0
-
-			if (ioctl(sockfd, ZT_HOOK, &command)) {
-				zap_log(ZAP_LOG_INFO, "failure configuring device %s as OpenZAP device %d:%d fd:%d err:%s\n", 
-						path, chan->span_id, chan->chan_id, sockfd, strerror(errno));
-
-				continue;
-			}
-#endif
-
-
 			len = zt_globals.codec_ms * 8;
 			if (ioctl(chan->sockfd, ZT_SET_BLOCKSIZE, &len)) {
 				zap_log(ZAP_LOG_INFO, "failure configuring device %s as OpenZAP device %d:%d fd:%d err:%s\n", 
@@ -218,13 +205,11 @@ static ZIO_CONFIGURE_FUNCTION(zt_configure)
 
 static ZIO_OPEN_FUNCTION(zt_open) 
 {
-	ZIO_OPEN_MUZZLE;
 	return ZAP_SUCCESS;
 }
 
 static ZIO_CLOSE_FUNCTION(zt_close)
 {
-	ZIO_CLOSE_MUZZLE;
 	return ZAP_SUCCESS;
 }
 
@@ -233,9 +218,47 @@ static ZIO_COMMAND_FUNCTION(zt_command)
 	zt_params_t ztp = {0};
 	int err = 0;
 
-	ZIO_COMMAND_MUZZLE;
-	
 	switch(command) {
+	case ZAP_COMMAND_OFFHOOK:
+		{
+			int command = ZT_OFFHOOK;
+			if (ioctl(zchan->sockfd, ZT_HOOK, &command)) {
+				snprintf(zchan->last_error, sizeof(zchan->last_error), "OFFHOOK Failed");
+				return ZAP_FAIL;
+			}
+			zap_set_flag_locked(zchan, ZAP_CHANNEL_OFFHOOK);
+		}
+		break;
+	case ZAP_COMMAND_ONHOOK:
+		{
+			int command = ZT_ONHOOK;
+			if (ioctl(zchan->sockfd, ZT_HOOK, &command)) {
+				snprintf(zchan->last_error, sizeof(zchan->last_error), "ONHOOK Failed");
+				return ZAP_FAIL;
+			}
+			zap_clear_flag_locked(zchan, ZAP_CHANNEL_OFFHOOK);
+		}
+		break;
+	case ZAP_COMMAND_GENERATE_RING_ON:
+		{
+			int command = ZT_RING;
+			if (ioctl(zchan->sockfd, ZT_HOOK, &command)) {
+				snprintf(zchan->last_error, sizeof(zchan->last_error), "Ring Failed");
+				return ZAP_FAIL;
+			}
+			zap_set_flag_locked(zchan, ZAP_CHANNEL_RINGING);
+		}
+		break;
+	case ZAP_COMMAND_GENERATE_RING_OFF:
+		{
+			int command = ZT_RINGOFF;
+			if (ioctl(zchan->sockfd, ZT_HOOK, &command)) {
+				snprintf(zchan->last_error, sizeof(zchan->last_error), "Ring-off failed");
+				return ZAP_FAIL;
+			}
+			zap_clear_flag_locked(zchan, ZAP_CHANNEL_RINGING);
+		}
+		break;
 	case ZAP_COMMAND_GET_INTERVAL:
 		{
 			if (!(err = ioctl(zchan->sockfd, ZT_GET_BLOCKSIZE, &zchan->packet_len))) {
@@ -344,11 +367,9 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
 	int i, j = 0, k = 0, r, e;
 	
 	for(i = 1; i <= span->chan_count; i++) {
-		e = ZT_IOMUX_SIGEVENT;
 		memset(&pfds[j], 0, sizeof(pfds[j]));
 		pfds[j].fd = span->channels[i].sockfd;
 		pfds[j].events = POLLPRI;
-		ioctl(span->channels[i].sockfd ,ZT_IOMUX, &e);
 		j++;
 	}
 
@@ -386,6 +407,21 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 			}
 
 			switch(zt_event_id) {
+			case ZT_EVENT_RINGEROFF:
+				{
+					return ZAP_FAIL;
+				}
+				break;
+			case ZT_EVENT_RINGERON:
+				{
+					return ZAP_FAIL;
+				}
+				break;
+			case ZT_EVENT_RINGBEGIN:
+				{
+					event_id = ZAP_OOB_RING_START;
+				}
+				break;
 			case ZT_EVENT_ONHOOK:
 				{
 					event_id = ZAP_OOB_ONHOOK;
@@ -486,6 +522,7 @@ zap_status_t zt_init(zap_io_interface_t **zio)
 	zt_interface.configure_span = zt_configure_span;
 	zt_interface.open = zt_open;
 	zt_interface.close = zt_close;
+	zt_interface.command = zt_command;
 	zt_interface.wait = zt_wait;
 	zt_interface.read = zt_read;
 	zt_interface.write = zt_write;

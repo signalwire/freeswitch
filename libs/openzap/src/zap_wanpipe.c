@@ -232,7 +232,6 @@ static ZIO_OPEN_FUNCTION(wanpipe_open)
 
 static ZIO_CLOSE_FUNCTION(wanpipe_close)
 {
-	ZIO_CLOSE_MUZZLE;
 	return ZAP_SUCCESS;
 }
 
@@ -241,8 +240,6 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 	wanpipe_tdm_api_t tdm_api;
 	int err = 0;
 
-	ZIO_COMMAND_MUZZLE;
-	
 	memset(&tdm_api, 0, sizeof(tdm_api));
 	
 	switch(command) {

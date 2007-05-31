@@ -474,19 +474,18 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, z
 
 	if (span_id) {
 		span_max = span_id;
+		j = span_id;
 	} else {
 		span_max = globals.span_index;
-	}
-
-	if (direction == ZAP_TOP_DOWN) {
-		j = 1;
-	} else {
-		j = span_max;
+		if (direction == ZAP_TOP_DOWN) {
+			j = 1;
+		} else {
+			j = span_max;
+		}
 	}
 
 	for(;;) {
 		span = &globals.spans[j];
-
 		if (!zap_test_flag(span, ZAP_SPAN_CONFIGURED)) {
 			goto next_loop;
 		}
@@ -527,6 +526,7 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, z
 				
 				if (status == ZAP_SUCCESS) {
 					zap_set_flag(check, ZAP_CHANNEL_INUSE);
+					zap_channel_open_chan(check);
 					*zchan = check;
 					return status;
 				}
@@ -560,7 +560,7 @@ static zap_status_t zap_channel_reset(zap_channel_t *zchan)
 	zchan->event_callback = NULL;
 	zap_clear_flag(zchan, ZAP_CHANNEL_DTMF_DETECT);
 	zap_clear_flag(zchan, ZAP_CHANNEL_SUPRESS_DTMF);
-	zap_clear_flag(zchan, ZAP_CHANNEL_INUSE);
+	zap_channel_done(zchan);
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_HOLD);
 	memset(zchan->tokens, 0, sizeof(zchan->tokens));
 	zchan->token_count = 0;
@@ -644,11 +644,24 @@ zap_status_t zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t 
 	return status;
 }
 
+zap_status_t zap_channel_outgoing_call(zap_channel_t *zchan)
+{
+	assert(zchan != NULL);
+	if (zchan->span->outgoing_call) {
+		return zchan->span->outgoing_call(zchan);
+	} else {
+		zap_log(ZAP_LOG_ERROR, "outgoing_call method not implemented!\n");
+	}
+	
+	return ZAP_FAIL;
+}
+
 zap_status_t zap_channel_done(zap_channel_t *zchan)
 {
 
 	assert(zchan != NULL);
 
+	memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_INUSE);
 
 	return ZAP_SUCCESS;
@@ -727,11 +740,6 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 
 	assert(zchan != NULL);
 	assert(zchan->zio != NULL);
-
-    if (!zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
-		snprintf(zchan->last_error, sizeof(zchan->last_error), "channel not open");
-        return ZAP_FAIL;
-    }
 
 	zap_mutex_lock(zchan->mutex);
 
