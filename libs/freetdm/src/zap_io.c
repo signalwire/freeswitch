@@ -73,6 +73,8 @@ zap_time_t zap_current_time_in_ms(void)
 static struct {
 	zap_hash_t *interface_hash;
 	zap_mutex_t *mutex;
+	struct zap_span spans[ZAP_MAX_SPANS_INTERFACE];
+	uint32_t span_index;
 } globals;
 
 
@@ -198,14 +200,16 @@ static uint32_t hashfromstring(void *ky)
 zap_status_t zap_span_create(zap_io_interface_t *zio, zap_span_t **span)
 {
 	zap_span_t *new_span = NULL;
+	zap_status_t status = ZAP_FAIL;
 
 	assert(zio != NULL);
 
-	if (zio->span_index < ZAP_MAX_SPANS_INTERFACE) {
-		new_span = &zio->spans[++zio->span_index];
+	zap_mutex_lock(globals.mutex);
+	if (globals.span_index < ZAP_MAX_SPANS_INTERFACE) {
+		new_span = &globals.spans[++globals.span_index];
 		memset(new_span, 0, sizeof(*new_span));
 		zap_set_flag(new_span, ZAP_SPAN_CONFIGURED);
-		new_span->span_id = zio->span_index;
+		new_span->span_id = globals.span_index;
 		new_span->zio = zio;
 		zap_mutex_create(&new_span->mutex);
 		zap_copy_string(new_span->tone_map[ZAP_TONEMAP_DIAL], "%(1000,0,350,440)", ZAP_TONEMAP_LEN);
@@ -214,10 +218,11 @@ zap_status_t zap_span_create(zap_io_interface_t *zio, zap_span_t **span)
 		zap_copy_string(new_span->tone_map[ZAP_TONEMAP_ATTN], "%(100,100,1400,2060,2450,2600)", ZAP_TONEMAP_LEN);
 		new_span->trunk_type = ZAP_TRUNK_NONE;
 		*span = new_span;
-		return ZAP_SUCCESS;
+		status = ZAP_SUCCESS;
 	}
-	
-	return ZAP_FAIL;
+	zap_mutex_unlock(globals.mutex);	
+
+	return status;
 }
 
 zap_status_t zap_span_close_all(zap_io_interface_t *zio)
@@ -225,8 +230,9 @@ zap_status_t zap_span_close_all(zap_io_interface_t *zio)
 	zap_span_t *span;
 	uint32_t i, j;
 
-	for(i = 0; i < zio->span_index; i++) {
-		span = &zio->spans[i];
+	zap_mutex_lock(globals.mutex);
+	for(i = 0; i < globals.span_index; i++) {
+		span = &globals.spans[i];
 
 		for(j = 0; j < span->chan_count; j++) {
 			if (zap_test_flag((&span->channels[j]), ZAP_CHANNEL_CONFIGURED)) {
@@ -246,7 +252,8 @@ zap_status_t zap_span_close_all(zap_io_interface_t *zio)
 			free(span->isdn_data);
 		}
 	}
-	
+	zap_mutex_unlock(globals.mutex);
+
 	return i ? ZAP_SUCCESS : ZAP_FAIL;
 }
 
@@ -304,24 +311,17 @@ zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_cha
 	return ZAP_FAIL;
 }
 
-zap_status_t zap_span_find(const char *name, uint32_t id, zap_span_t **span)
+zap_status_t zap_span_find(uint32_t id, zap_span_t **span)
 {
-	zap_io_interface_t *zio;
 	zap_span_t *fspan;
-
-	zap_mutex_lock(globals.mutex);
-	zio = (zap_io_interface_t *) hashtable_search(globals.interface_hash, (char *)name);
-	zap_mutex_unlock(globals.mutex);
-
-	if (!zio) {
-		return ZAP_FAIL;
-	}
 
 	if (id > ZAP_MAX_SPANS_INTERFACE) {
 		return ZAP_FAIL;
 	}
 
-	fspan = &zio->spans[id];
+	zap_mutex_lock(globals.mutex);
+	fspan = &globals.spans[id];
+	zap_mutex_unlock(globals.mutex);
 
 	if (!zap_test_flag(fspan, ZAP_SPAN_CONFIGURED)) {
 		return ZAP_FAIL;
@@ -348,6 +348,8 @@ zap_status_t zap_span_poll_event(zap_span_t *span, uint32_t ms)
 
 	if (span->zio->poll_event) {
 		return span->zio->poll_event(span, ms);
+	} else {
+		zap_log(ZAP_LOG_ERROR, "poll_event method not implemented in module %s!", span->zio->name);
 	}
 
 	return ZAP_NOTIMPL;
@@ -359,8 +361,10 @@ zap_status_t zap_span_next_event(zap_span_t *span, zap_event_t **event)
 
 	if (span->zio->next_event) {
 		return span->zio->next_event(span, event);
+	} else {
+		zap_log(ZAP_LOG_ERROR, "next_event method not implemented in module %s!", span->zio->name);
 	}
-
+	
 	return ZAP_NOTIMPL;
 }
 
@@ -403,9 +407,11 @@ zap_status_t zap_channel_clear_token(zap_channel_t *zchan, int32_t token_id)
 
 void zap_channel_rotate_tokens(zap_channel_t *zchan)
 {
-	memmove(zchan->tokens[1], zchan->tokens[0], zchan->token_count * ZAP_TOKEN_STRLEN);
-	zap_copy_string(zchan->tokens[0], zchan->tokens[zchan->token_count], ZAP_TOKEN_STRLEN);
-	*zchan->tokens[zchan->token_count] = '\0';
+	if (zchan->token_count) {
+		memmove(zchan->tokens[1], zchan->tokens[0], zchan->token_count * ZAP_TOKEN_STRLEN);
+		zap_copy_string(zchan->tokens[0], zchan->tokens[zchan->token_count], ZAP_TOKEN_STRLEN);
+		*zchan->tokens[zchan->token_count] = '\0';
+	}
 }
 
 zap_status_t zap_channel_add_token(zap_channel_t *zchan, char *token)
@@ -414,7 +420,8 @@ zap_status_t zap_channel_add_token(zap_channel_t *zchan, char *token)
 
 	zap_mutex_lock(zchan->mutex);
 	if (zchan->token_count < ZAP_MAX_TOKENS) {
-		zap_copy_string(zchan->tokens[zchan->token_count], token, sizeof(zchan->tokens[zchan->token_count]));
+		memmove(zchan->tokens[1], zchan->tokens[0], zchan->token_count * ZAP_TOKEN_STRLEN);
+		zap_copy_string(zchan->tokens[0], token, ZAP_TOKEN_STRLEN);
 		zchan->token_count++;
 	}
 	zap_mutex_unlock(zchan->mutex);
@@ -455,9 +462,8 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 	return ok ? ZAP_SUCCESS : ZAP_FAIL;
 }
 
-zap_status_t zap_channel_open_any(const char *name, uint32_t span_id, zap_direction_t direction, zap_channel_t **zchan)
+zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, zap_channel_t **zchan)
 {
-	zap_io_interface_t *zio;
 	zap_status_t status = ZAP_FAIL;
 	zap_channel_t *check;
 	uint32_t i,j;
@@ -465,18 +471,11 @@ zap_status_t zap_channel_open_any(const char *name, uint32_t span_id, zap_direct
 	uint32_t span_max;
 
 	zap_mutex_lock(globals.mutex);
-	zio = (zap_io_interface_t *) hashtable_search(globals.interface_hash, (char *)name);
-	zap_mutex_unlock(globals.mutex);
-
-	if (!zio) {
-		zap_log(ZAP_LOG_ERROR, "Invalid interface name!\n");
-		return ZAP_FAIL;
-	}
 
 	if (span_id) {
 		span_max = span_id;
 	} else {
-		span_max = zio->span_index;
+		span_max = globals.span_index;
 	}
 
 	if (direction == ZAP_TOP_DOWN) {
@@ -485,10 +484,8 @@ zap_status_t zap_channel_open_any(const char *name, uint32_t span_id, zap_direct
 		j = span_max;
 	}
 
-	zap_mutex_lock(globals.mutex);
-
 	for(;;) {
-		span = &zio->spans[j];
+		span = &globals.spans[j];
 
 		if (!zap_test_flag(span, ZAP_SPAN_CONFIGURED)) {
 			goto next_loop;
@@ -523,13 +520,13 @@ zap_status_t zap_channel_open_any(const char *name, uint32_t span_id, zap_direct
 			}
 			
 			check = &span->channels[i];
-
-			if (zap_test_flag(check, ZAP_CHANNEL_READY) && !zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
+			
+			if (zap_test_flag(check, ZAP_CHANNEL_READY) && !zap_test_flag(check, ZAP_CHANNEL_INUSE)) {
 
 				status = check->zio->open(check);
-
+				
 				if (status == ZAP_SUCCESS) {
-					zap_set_flag(check, ZAP_CHANNEL_OPEN);
+					zap_set_flag(check, ZAP_CHANNEL_INUSE);
 					*zchan = check;
 					return status;
 				}
@@ -563,6 +560,7 @@ static zap_status_t zap_channel_reset(zap_channel_t *zchan)
 	zchan->event_callback = NULL;
 	zap_clear_flag(zchan, ZAP_CHANNEL_DTMF_DETECT);
 	zap_clear_flag(zchan, ZAP_CHANNEL_SUPRESS_DTMF);
+	zap_clear_flag(zchan, ZAP_CHANNEL_INUSE);
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_HOLD);
 	memset(zchan->tokens, 0, sizeof(zchan->tokens));
 	zchan->token_count = 0;
@@ -598,7 +596,7 @@ zap_status_t zap_channel_open_chan(zap_channel_t *zchan)
 	if ((status = zap_mutex_trylock(zchan->mutex)) != ZAP_SUCCESS) {
 		return status;
 	}
-	if (zap_test_flag(zchan, ZAP_CHANNEL_READY) && ! zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
+	if (zap_test_flag(zchan, ZAP_CHANNEL_READY) && !zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
 		status = zchan->span->zio->open(zchan);
 		if (status == ZAP_SUCCESS) {
 			zap_set_flag(zchan, ZAP_CHANNEL_OPEN);
@@ -609,32 +607,39 @@ zap_status_t zap_channel_open_chan(zap_channel_t *zchan)
 	return status;
 }
 
-zap_status_t zap_channel_open(const char *name, uint32_t span_id, uint32_t chan_id, zap_channel_t **zchan)
+zap_status_t zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t **zchan)
 {
-	zap_io_interface_t *zio;
 	zap_status_t status = ZAP_FAIL;
 
 	zap_mutex_lock(globals.mutex);
-    zio = (zap_io_interface_t *) hashtable_search(globals.interface_hash, (char *)name);
-    zap_mutex_unlock(globals.mutex);
-	
-	if (span_id < ZAP_MAX_SPANS_INTERFACE && chan_id < ZAP_MAX_CHANNELS_SPAN && zio) {
+
+	if (span_id < ZAP_MAX_SPANS_INTERFACE && chan_id < ZAP_MAX_CHANNELS_SPAN) {
 		zap_channel_t *check;
 
-		check = &zio->spans[span_id].channels[chan_id];
-		if ((status = zap_mutex_trylock(check->mutex)) != ZAP_SUCCESS) {
-			return status;
-		}
+		check = &globals.spans[span_id].channels[chan_id];
 
-		if (zap_test_flag(check, ZAP_CHANNEL_READY) && ! zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
-			status = check->zio->open(check);
-			if (status == ZAP_SUCCESS) {
-				zap_set_flag(check, ZAP_CHANNEL_OPEN);
-				*zchan = check;
+		if ((status = zap_mutex_trylock(check->mutex)) != ZAP_SUCCESS) {
+			goto done;
+		}
+		
+		if (zap_test_flag(check, ZAP_CHANNEL_READY) && !zap_test_flag(check, ZAP_CHANNEL_INUSE)) {
+			if (!zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
+				status = check->zio->open(check);
+				if (status == ZAP_SUCCESS) {
+					zap_set_flag(check, ZAP_CHANNEL_OPEN);
+				}
+			} else {
+				status = ZAP_SUCCESS;
 			}
+			zap_set_flag(check, ZAP_CHANNEL_INUSE);
+			*zchan = check;
 		}
 		zap_mutex_unlock(check->mutex);
 	}
+
+ done:
+	
+	zap_mutex_unlock(globals.mutex);
 
 	return status;
 }
@@ -648,7 +653,6 @@ zap_status_t zap_channel_close(zap_channel_t **zchan)
 	check = *zchan;
 	assert(check != NULL);
 	*zchan = NULL;
-
 
 	zap_mutex_lock(check->mutex);
 	if (zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
@@ -1286,49 +1290,56 @@ static struct {
 } interfaces;
 
 
-static uint32_t load_config(zap_io_interface_t *zio)
+static zap_status_t load_config(void)
 {
-	char cfg_name[256];
+	char cfg_name[] = "openzap.conf";
 	zap_config_t cfg;
 	char *var, *val;
 	int catno = -1;
 	zap_span_t *span = NULL;
-	int new_span = 0;
 	unsigned configured = 0, d = 0;
 	char name[80] = "";
 	char number[25] = "";
-
-	assert(zio != NULL);
-	snprintf(cfg_name, sizeof(cfg_name), "%s.conf", zio->name);
-
-	zap_log(ZAP_LOG_DEBUG, "configuring %s\n", zio->name);
+	zap_io_interface_t *zio = NULL;
 
 	if (!zap_config_open_file(&cfg, cfg_name)) {
 		return ZAP_FAIL;
 	}
 	
 	while (zap_config_next_pair(&cfg, &var, &val)) {
-		if (!strcasecmp(cfg.category, "span")) {
+		if (!strncasecmp(cfg.category, "span", 4)) {
 			if (cfg.catno != catno) {
+				char *type = cfg.category + 4;
+				if (*type == ' ') {
+					type++;
+				}
+
 				zap_log(ZAP_LOG_DEBUG, "found config for span\n");
 				catno = cfg.catno;
-				new_span = 1;				
-				span = NULL;
-			}
-			
-			if (new_span) {
-				if (!strcasecmp(var, "enabled") && ! zap_true(val)) {
-					zap_log(ZAP_LOG_DEBUG, "span (disabled)\n");
-				} else {
-					if (zap_span_create(zio, &span) == ZAP_SUCCESS) {
-						zap_log(ZAP_LOG_DEBUG, "created span %d\n", span->span_id);
-					} else {
-						zap_log(ZAP_LOG_CRIT, "failure creating span\n");
-						span = NULL;
-					}
+				
+				if (zap_strlen_zero(type)) {
+					zap_log(ZAP_LOG_CRIT, "failure creating span, no type specified.\n");
+					span = NULL;
+					continue;
 				}
-				new_span = 0;
-				continue;
+
+				zap_mutex_lock(globals.mutex);
+				zio = (zap_io_interface_t *) hashtable_search(globals.interface_hash, type);
+				zap_mutex_unlock(globals.mutex);
+
+				if (!zio) {
+					zap_log(ZAP_LOG_CRIT, "failure creating span, no such type '%s'\n", type);
+					span = NULL;
+					continue;
+				}
+
+				if (zap_span_create(zio, &span) == ZAP_SUCCESS) {
+					zap_log(ZAP_LOG_DEBUG, "created span %d of type %s\n", span->span_id, type);
+				} else {
+					zap_log(ZAP_LOG_CRIT, "failure creating span of type %s\n", type);
+					span = NULL;
+					continue;
+				}
 			}
 
 			if (!span) {
@@ -1337,9 +1348,7 @@ static uint32_t load_config(zap_io_interface_t *zio)
 
 			zap_log(ZAP_LOG_DEBUG, "span %d [%s]=[%s]\n", span->span_id, var, val);
 			
-			if (!strcasecmp(var, "enabled")) {
-				zap_log(ZAP_LOG_WARNING, "'enabled' command ignored when it's not the first command in a [span]\n");
-			} else if (!strcasecmp(var, "trunk_type")) {
+			if (!strcasecmp(var, "trunk_type")) {
 				span->trunk_type = zap_str2zap_trunk_type(val);
 				zap_log(ZAP_LOG_DEBUG, "setting trunk type to '%s'\n", zap_trunk_type2str(span->trunk_type)); 
 			} else if (!strcasecmp(var, "name")) {
@@ -1391,24 +1400,47 @@ static uint32_t load_config(zap_io_interface_t *zio)
 					d++;
 				}
 			}
-		} else if (zio->configure) {
-			zio->configure(cfg.category, var, val, cfg.lineno);
 		} else {
 			zap_log(ZAP_LOG_ERROR, "unknown param [%s] '%s' / '%s'\n", cfg.category, var, val);
 		}
 	}
 	zap_config_close_file(&cfg);
 
-	zap_log(ZAP_LOG_INFO, "wanpipe configured %u channel(s)\n", configured);
+	zap_log(ZAP_LOG_INFO, "Configured %u channel(s)\n", configured);
 	
-	return configured;
+	return configured ? ZAP_SUCCESS : ZAP_FAIL;
+}
+
+static zap_status_t process_module_config(zap_io_interface_t *zio)
+{
+	zap_config_t cfg;
+	char *var, *val;
+	char filename[256] = "";
+	assert(zio != NULL);
+
+	snprintf(filename, sizeof(filename), "%s.conf", zio->name);
+
+	if (!zio->configure) {
+		zap_log(ZAP_LOG_ERROR, "Module %s does not support configuration.\n", zio->name);	
+		return ZAP_FAIL;
+	}
+
+	if (!zap_config_open_file(&cfg, filename)) {
+		zap_log(ZAP_LOG_ERROR, "Cannot open %s\n", filename);	
+		return ZAP_FAIL;
+	}
+
+	while (zap_config_next_pair(&cfg, &var, &val)) {
+		zio->configure(cfg.category, var, val, cfg.lineno);
+	}
+
+	zap_config_close_file(&cfg);	
+
+	return ZAP_SUCCESS;
 }
 
 zap_status_t zap_global_init(void)
 {
-	zap_config_t cfg;
-	char *var, *val;
-	uint32_t configured = 0;
 	int modcount;
 
 	time_init();
@@ -1419,11 +1451,11 @@ zap_status_t zap_global_init(void)
 	modcount = 0;
 	zap_mutex_create(&globals.mutex);
 	
-#ifdef Z
-AP_WANPIPE_SUPPORT
+#ifdef ZAP_WANPIPE_SUPPORT
 	if (wanpipe_init(&interfaces.wanpipe_interface) == ZAP_SUCCESS) {
 		zap_mutex_lock(globals.mutex);
 		hashtable_insert(globals.interface_hash, (void *)interfaces.wanpipe_interface->name, interfaces.wanpipe_interface);
+		process_module_config(interfaces.wanpipe_interface);
 		zap_mutex_unlock(globals.mutex);
 		modcount++;
 	} else {
@@ -1435,6 +1467,7 @@ AP_WANPIPE_SUPPORT
 	if (zt_init(&interfaces.zt_interface) == ZAP_SUCCESS) {
 		zap_mutex_lock(globals.mutex);
 		hashtable_insert(globals.interface_hash, (void *)interfaces.zt_interface->name, interfaces.zt_interface);
+		process_module_config(interfaces.zt_interface);
 		zap_mutex_unlock(globals.mutex);
 		modcount++;
 	} else {
@@ -1447,32 +1480,7 @@ AP_WANPIPE_SUPPORT
 		return ZAP_FAIL;
 	}
 
-	if (!zap_config_open_file(&cfg, "openzap.conf")) {
-		zap_log(ZAP_LOG_ERROR, "Cannot open openzap.conf!\n");	
-		return ZAP_FAIL;
-	}
-	
-	while (zap_config_next_pair(&cfg, &var, &val)) {
-		if (!strcasecmp(cfg.category, "openzap")) {
-			if (!strcmp(var, "load")) {
-				zap_io_interface_t *zio;
-
-				zap_mutex_lock(globals.mutex);
-				zio = (zap_io_interface_t *) hashtable_search(globals.interface_hash, val);
-				zap_mutex_unlock(globals.mutex);
-
-				if (zio) {
-					configured += load_config(zio);
-				} else {
-					zap_log(ZAP_LOG_WARNING, "Attempted to load Non-Existant module '%s'\n", val);
-				}
-			}
-		}
-	}
-
-	zap_config_close_file(&cfg);
-
-	if (configured) {
+	if (load_config() == ZAP_SUCCESS) {
 		return ZAP_SUCCESS;
 	}
 
@@ -1482,7 +1490,31 @@ AP_WANPIPE_SUPPORT
 
 zap_status_t zap_global_destroy(void)
 {
+	unsigned int i,j;
 	time_end();
+	
+	for(i = 1; i <= globals.span_index; i++) {
+		zap_span_t *cur_span = &globals.spans[i];
+
+		if (zap_test_flag(cur_span, ZAP_SPAN_CONFIGURED)) {
+			zap_mutex_lock(cur_span->mutex);
+			for(j = 1; j <= cur_span->chan_count; j++) {
+				zap_channel_t *cur_chan = &cur_span->channels[j];
+				if (zap_test_flag(cur_chan, ZAP_CHANNEL_CONFIGURED)) {
+					if (cur_span->zio->destroy_channel) {
+						zap_log(ZAP_LOG_INFO, "Closing channel %u:%u fd:%d\n", cur_chan->span_id, cur_chan->chan_id, cur_chan->sockfd);
+						if (cur_span->zio->destroy_channel(cur_chan) == ZAP_SUCCESS) {
+							zap_clear_flag_locked(cur_chan, ZAP_CHANNEL_CONFIGURED);
+						} else {
+							zap_log(ZAP_LOG_ERROR, "Error Closing channel %u:%u fd:%d\n", cur_chan->span_id, cur_chan->chan_id, cur_chan->sockfd);
+						}
+					}
+				}
+			}
+			zap_mutex_unlock(cur_span->mutex);
+		}
+	}
+
 
 #ifdef ZAP_ZT_SUPPORT
 	if (interfaces.zt_interface) {

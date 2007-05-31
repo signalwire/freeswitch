@@ -108,13 +108,29 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 
 static ZIO_CONFIGURE_FUNCTION(wanpipe_configure)
 {
+	int num;
+
 	if (!strcasecmp(category, "defaults")) {
 		if (!strcasecmp(var, "codec_ms")) {
-			unsigned codec_ms = atoi(val);
-			if (codec_ms < 10 || codec_ms > 60) {
+			num = atoi(val);
+			if (num < 10 || num > 60) {
 				zap_log(ZAP_LOG_WARNING, "invalid codec ms at line %d\n", lineno);
 			} else {
-				wp_globals.codec_ms = codec_ms;
+				wp_globals.codec_ms = num;
+			}
+		} else if (!strcasecmp(var, "wink_ms")) {
+			num = atoi(val);
+			if (num < 500 || num > 2000) {
+				zap_log(ZAP_LOG_WARNING, "invalid wink ms at line %d\n", lineno);
+			} else {
+				wp_globals.wink_ms = num;
+			}
+		} else if (!strcasecmp(var, "flash_ms")) {
+			num = atoi(val);
+			if (num < 500 || num > 2000) {
+				zap_log(ZAP_LOG_WARNING, "invalid flash ms at line %d\n", lineno);
+			} else {
+				wp_globals.flash_ms = num;
 			}
 		}
 	}
@@ -479,6 +495,14 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 	
 }
 
+static ZIO_DESTROY_CHANNEL_FUNCTION(wanpipe_destroy_channel)
+{
+	tdmv_api_close_socket(&zchan->sockfd);
+	zchan->sockfd = WP_INVALID_SOCKET;
+
+	return ZAP_SUCCESS;
+}
+
 zap_status_t wanpipe_init(zap_io_interface_t **zio)
 {
 	assert(zio != NULL);
@@ -500,6 +524,7 @@ zap_status_t wanpipe_init(zap_io_interface_t **zio)
 	wanpipe_interface.poll_event = wanpipe_poll_event;
 #endif
 	wanpipe_interface.next_event = wanpipe_next_event;
+	wanpipe_interface.destroy_channel = wanpipe_destroy_channel;
 	*zio = &wanpipe_interface;
 
 	return ZAP_SUCCESS;
@@ -507,23 +532,6 @@ zap_status_t wanpipe_init(zap_io_interface_t **zio)
 
 zap_status_t wanpipe_destroy(void)
 {
-	unsigned int i,j;
-
-	for(i = 1; i <= wanpipe_interface.span_index; i++) {
-		zap_span_t *cur_span = &wanpipe_interface.spans[i];
-
-		if (zap_test_flag(cur_span, ZAP_SPAN_CONFIGURED)) {
-			for(j = 1; j <= cur_span->chan_count; j++) {
-				zap_channel_t *cur_chan = &cur_span->channels[j];
-				if (zap_test_flag(cur_chan, ZAP_CHANNEL_CONFIGURED)) {
-					zap_log(ZAP_LOG_INFO, "Closing channel %u:%u fd:%d\n", cur_chan->span_id, cur_chan->chan_id, cur_chan->sockfd);
-					tdmv_api_close_socket(&cur_chan->sockfd);
-				}
-			}
-		}
-	}
-
 	memset(&wanpipe_interface, 0, sizeof(wanpipe_interface));
-	
 	return ZAP_SUCCESS;
 }

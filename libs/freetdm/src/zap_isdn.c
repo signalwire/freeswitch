@@ -202,7 +202,7 @@ zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931D
 	
 	for(i = 1; i <= span->chan_count; i++) {
 		if (span->channels[i].type == ZAP_CHAN_TYPE_DQ921) {
-			if (zap_channel_open(span->zio->name, span->span_id, i, &dchans[x]) == ZAP_SUCCESS) {
+			if (zap_channel_open(span->span_id, i, &dchans[x]) == ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_DEBUG, "opening d-channel #%d %d:%d\n", x, dchans[x]->span_id, dchans[x]->chan_id);
 				x++;
 			}

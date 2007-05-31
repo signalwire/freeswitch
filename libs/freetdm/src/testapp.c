@@ -8,6 +8,12 @@ int main(int argc, char *argv[])
 	zap_codec_t codec = ZAP_CODEC_SLIN;
 	unsigned runs = 1;
 
+	if (!argv[1]) {
+		printf("usage %s <modname>\n", argv[0]);
+		exit(-1);
+	}
+
+
 	if (zap_global_init() != ZAP_SUCCESS) {
 		fprintf(stderr, "Error loading OpenZAP\n");
 		exit(-1);
@@ -17,7 +23,7 @@ int main(int argc, char *argv[])
 
  top:
 	//if (zap_channel_open_any("wanpipe", 0, ZAP_TOP_DOWN, &chan) == ZAP_SUCCESS) {
-	if (zap_channel_open("zt", 1, 1, &chan) == ZAP_SUCCESS) {
+	if (zap_channel_open(argv[1], 1, 1, &chan) == ZAP_SUCCESS) {
 		int x = 0;
 		printf("opened channel %d:%d\n", chan->span_id, chan->chan_id);
 
@@ -65,6 +71,9 @@ int main(int argc, char *argv[])
 	if(--runs) {
 		goto top;
 	}
+
+ end:
+
 	zap_global_destroy();
 
 }
