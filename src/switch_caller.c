@@ -193,6 +193,16 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 		snprintf(header_name, sizeof(header_name), "%s-Channel-Name", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->chan_name);
 	}
+	if (caller_profile->times) {
+		snprintf(header_name, sizeof(header_name), "%s-Channel-Created-Time", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->created);
+		snprintf(header_name, sizeof(header_name), "%s-Channel-Answered-Time", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->answered);
+		snprintf(header_name, sizeof(header_name), "%s-Channel-Hangup-Time", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->hungup);
+		snprintf(header_name, sizeof(header_name), "%s-Channel-Transfer-Time", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%" SWITCH_TIME_T_FMT, caller_profile->times->transferred);
+	}
 
 	snprintf(header_name, sizeof(header_name), "%s-Screen-Bit", prefix);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_SCREEN) ? "yes" : "no");
@@ -203,7 +213,7 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 	snprintf(header_name, sizeof(header_name), "%s-Privacy-Hide-Number", prefix);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER) ? "yes" : "no");
 
-
+	
 
 }
 

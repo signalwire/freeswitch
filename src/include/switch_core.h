@@ -130,7 +130,7 @@ struct switch_core_port_allocator;
 */
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t *session,
 														  switch_media_bug_callback_t callback,
-														  void *user_data, switch_media_bug_flag_t flags, switch_media_bug_t **new_bug);
+														  void *user_data, time_t stop_time, switch_media_bug_flag_t flags, switch_media_bug_t **new_bug);
 /*!
   \brief Obtain private data from a media bug
   \param bug the bug to get the data from

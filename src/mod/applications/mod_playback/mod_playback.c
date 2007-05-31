@@ -142,6 +142,11 @@ static void record_function(switch_core_session_t *session, char *data)
 
 	path = switch_core_session_strdup(session, data);
 	if ((p = strchr(path, '+'))) {
+		char *q = p - 1;
+		while(q && *q == ' ') {
+			*q = '\0';
+			q--;
+		}
 		*p++ = '\0';
 		limit = atoi(p);
 	}
@@ -158,10 +163,24 @@ static void record_function(switch_core_session_t *session, char *data)
 static void record_session_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
+	char *p, *path = NULL;
+	uint32_t limit = 0;
+
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
-	switch_ivr_record_session(session, data, NULL);
+	path = switch_core_session_strdup(session, data);
+	if ((p = strchr(path, '+'))) {
+		char *q = p - 1;
+		while(q && *q == ' ') {
+			*q = '\0';
+			q--;
+		}
+		*p++ = '\0';
+		limit = atoi(p);
+	}
+	
+	switch_ivr_record_session(session, path, limit, NULL);
 }
 
 

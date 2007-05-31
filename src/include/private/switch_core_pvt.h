@@ -136,6 +136,7 @@ struct switch_media_bug {
 	void *user_data;
 	uint32_t flags;
 	uint8_t ready;
+	time_t stop_time;
 	struct switch_media_bug *next;
 };
 

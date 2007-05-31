@@ -147,7 +147,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_record_session(switch_core_sessi
 
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t *session, char *file, switch_file_handle_t *fh)
+SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t *session, char *file, uint32_t limit, switch_file_handle_t *fh)
 {
 	switch_channel_t *channel;
 	switch_codec_t *read_codec;
@@ -155,6 +155,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	const char *vval;
 	switch_media_bug_t *bug;
 	switch_status_t status;
+	time_t to = 0;
 
 	if (!fh) {
 		if (!(fh = switch_core_session_alloc(session, sizeof(*fh)))) {
@@ -220,9 +221,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		switch_channel_set_variable(channel, "RECORD_DATE", NULL);
 	}
 
+	if (limit) {
+		to = time(NULL) + limit;
+	}
 
-
-	if ((status = switch_core_media_bug_add(session, record_callback, fh, SMBF_BOTH, &bug)) != SWITCH_STATUS_SUCCESS) {
+	if ((status = switch_core_media_bug_add(session, record_callback, fh, to, SMBF_BOTH, &bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_core_file_close(fh);
 		return status;
 	}
@@ -312,7 +315,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_session(switch_core_sessi
 
 	switch_channel_answer(channel);
 
-	if ((status = switch_core_media_bug_add(session, inband_dtmf_callback, pvt, SMBF_READ_STREAM, &bug)) != SWITCH_STATUS_SUCCESS) {
+	if ((status = switch_core_media_bug_add(session, inband_dtmf_callback, pvt, 0, SMBF_READ_STREAM, &bug)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 
@@ -597,7 +600,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 	sth->session = session;
 	sth->ah = ah;
 
-	if ((status = switch_core_media_bug_add(session, speech_callback, sth, SMBF_READ_STREAM, &sth->bug)) != SWITCH_STATUS_SUCCESS) {
+	if ((status = switch_core_media_bug_add(session, speech_callback, sth, 0, SMBF_READ_STREAM, &sth->bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_core_asr_close(ah, &flags);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return status;

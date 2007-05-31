@@ -144,7 +144,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 #define MAX_BUG_BUFFER 1024 * 512
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t *session,
 														  switch_media_bug_callback_t callback,
-														  void *user_data, switch_media_bug_flag_t flags, switch_media_bug_t **new_bug)
+														  void *user_data, time_t stop_time, switch_media_bug_flag_t flags, switch_media_bug_t **new_bug)
 {
 	switch_media_bug_t *bug, *bp;
 	switch_size_t bytes;
@@ -170,6 +170,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	bug->session = session;
 	bug->flags = flags;
 	bug->ready = 1;
+	bug->stop_time = stop_time;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attaching BUG to %s\n", switch_channel_get_name(session->channel));
 	bytes = session->read_codec->implementation->bytes_per_frame;
 

@@ -550,6 +550,7 @@ SWITCH_STANDARD_API(session_record_function)
 	char *mycmd = NULL, *argv[4] = { 0 };
 	char *uuid = NULL, *action = NULL, *path = NULL;
 	int argc = 0;
+	uint32_t limit = 0;
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
@@ -570,7 +571,8 @@ SWITCH_STANDARD_API(session_record_function)
 	uuid = argv[0];
 	action = argv[1];
 	path = argv[2];
-
+	limit = argv[3] ? atoi(argv[3]) : 0;
+	
 	if (!(rsession = switch_core_session_locate(uuid))) {
 		stream->write_function(stream, "-Error Cannot locate session!\n");
 		return SWITCH_STATUS_SUCCESS;
@@ -581,7 +583,7 @@ SWITCH_STANDARD_API(session_record_function)
 	}
 
 	if (!strcasecmp(action, "start")) {
-		switch_ivr_record_session(rsession, path, NULL);
+		switch_ivr_record_session(rsession, path, limit, NULL);
 	} else if (!strcasecmp(action, "stop")) {
 		switch_ivr_stop_record_session(rsession, path);
 	} else {
@@ -1230,7 +1232,7 @@ static switch_api_interface_t session_record_api_interface = {
 	/*.interface_name */ "session_record",
 	/*.desc */ "session record",
 	/*.function */ session_record_function,
-	/*.syntax */ "<uuid> [start|stop] <path>",
+	/*.syntax */ "<uuid> [start|stop] <path> [<limit>]",
 	/*.next */ &broadcast_api_interface
 };
 
