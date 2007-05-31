@@ -49,11 +49,10 @@ static struct span_config SPAN_CONFIG[ZAP_MAX_SPANS_INTERFACE] = {0};
 
 typedef enum {
 	TFLAG_IO = (1 << 0),
-	TFLAG_OUTBOUND = (1 << 1),
-	TFLAG_DTMF = (1 << 2),
-	TFLAG_CODEC = (1 << 3),
-	TFLAG_BREAK = (1 << 4),
-	TFLAG_HOLD = (1 << 5)
+	TFLAG_DTMF = (1 << 1),
+	TFLAG_CODEC = (1 << 2),
+	TFLAG_BREAK = (1 << 3),
+	TFLAG_HOLD = (1 << 4)
 } TFLAGS;
 
 static struct {
@@ -540,6 +539,33 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool)
 {
+
+	char *dest;
+	int span_id = 0;
+	zap_channel_t *zchan = NULL;
+	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+	char name[128];
+
+	if (!outbound_profile) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing caller profile\n");
+		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+	}
+
+	if ((dest = strchr('/', outbound_profile->destination_number))) {
+		dest++;
+		span_id = atoi(outbound_profile->destination_number);
+	}
+
+	if (!span_id) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing span\n");
+		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+	}
+	
+	if (zap_channel_open_any(span_id, ZAP_TOP_DOWN, &zchan) != ZAP_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No channels available\n");
+		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+	}
+
 	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, pool)) != 0) {
 		private_t *tech_pvt;
 		switch_channel_t *channel;
@@ -548,36 +574,33 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		switch_core_session_add_stream(*new_session, NULL);
 		if ((tech_pvt = (private_t *) switch_core_session_alloc(*new_session, sizeof(private_t))) != 0) {
 			channel = switch_core_session_get_channel(*new_session);
-			tech_init(tech_pvt, *new_session, NULL);
+			tech_init(tech_pvt, *new_session, zchan);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(new_session);
-			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+			goto fail;
 		}
 
-		if (outbound_profile) {
-			char name[128];
+		snprintf(name, sizeof(name), "OPENZAP/%s", outbound_profile->destination_number);
+		switch_channel_set_name(channel, name);
+		
+		caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
+		switch_channel_set_caller_profile(channel, caller_profile);
+		tech_pvt->caller_profile = caller_profile;
 
-			snprintf(name, sizeof(name), "OPENZAP/%s-%04x", outbound_profile->destination_number, rand() & 0xffff);
-			switch_channel_set_name(channel, name);
-
-			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
-			switch_channel_set_caller_profile(channel, caller_profile);
-			tech_pvt->caller_profile = caller_profile;
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Doh! no caller profile\n");
-			switch_core_session_destroy(new_session);
-			return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-		}
-
-
+		
 		switch_channel_set_flag(channel, CF_OUTBOUND);
-		switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);
 		return SWITCH_CAUSE_SUCCESS;
 	}
 
-	return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+
+ fail:
+	if (zchan) {
+		zap_channel_done(zchan);
+	}
+	return cause;
 
 }
 

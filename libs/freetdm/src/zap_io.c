@@ -644,6 +644,26 @@ zap_status_t zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t 
 	return status;
 }
 
+zap_status_t zap_channel_done(zap_channel_t *zchan)
+{
+
+	assert(zchan != NULL);
+
+	zap_clear_flag_locked(zchan, ZAP_CHANNEL_INUSE);
+
+	return ZAP_SUCCESS;
+}
+
+zap_status_t zap_channel_use(zap_channel_t *zchan)
+{
+
+	assert(zchan != NULL);
+
+	zap_set_flag_locked(zchan, ZAP_CHANNEL_INUSE);
+
+	return ZAP_SUCCESS;
+}
+
 zap_status_t zap_channel_close(zap_channel_t **zchan)
 {
 	zap_channel_t *check;
