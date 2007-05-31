@@ -61,6 +61,14 @@ static ZIO_SIGNAL_CB_FUNCTION(on_signal)
 int main(int argc, char *argv[])
 {
 	zap_span_t *span;
+	int span_id;
+	
+	if (argc < 2) {
+		printf("usage %s <spanno>\n", argv[0]);
+		exit(-1);
+	}
+
+	span_id = atoi(argv[1]);
 
 	zap_global_set_default_logger(ZAP_LOG_LEVEL_DEBUG);
 
@@ -71,20 +79,23 @@ int main(int argc, char *argv[])
 
 	zap_log(ZAP_LOG_DEBUG, "OpenZAP loaded\n");
 
-	if (zap_span_find("zt", 1, &span) != ZAP_SUCCESS) {
+	if (zap_span_find(span_id, &span) != ZAP_SUCCESS) {
 		zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span\n");
-		exit(-1);
+		goto done;
 	}
 	
 	if (zap_analog_configure_span(span, "us", 2000, 11, on_signal) != ZAP_SUCCESS) {
 		zap_log(ZAP_LOG_ERROR, "Error configuring OpenZAP span\n");
-		exit(-1);
+		goto done;
 	}
 	zap_analog_start(span);
 
 	while(zap_test_flag(span->analog_data, ZAP_ANALOG_RUNNING)) {
 		zap_sleep(1 * 1000);
 	}
+
+
+ done:
 
 	zap_global_destroy();
 

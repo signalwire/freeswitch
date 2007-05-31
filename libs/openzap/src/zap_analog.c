@@ -165,6 +165,11 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 					continue;
 				}
 				break;
+			case ZAP_CHANNEL_STATE_DOWN:
+				{
+					goto done;
+				}
+				break;
 			default:
 				break;
 			}
@@ -176,10 +181,12 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 			case ZAP_CHANNEL_STATE_UP:
 				{
 					if (zap_test_flag(chan, ZAP_CHANNEL_HOLD)) {
-						sig.event_id = ZAP_SIGEVENT_UNHOLD;
+						zap_clear_flag(chan, ZAP_CHANNEL_HOLD);
+						sig.event_id = ZAP_SIGEVENT_FLASH;
 					} else {
 						sig.event_id = ZAP_SIGEVENT_UP;
 					}
+
 					data->sig_cb(&sig);
 					continue;
 				}
@@ -197,14 +204,6 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 					sig.event_id = ZAP_SIGEVENT_STOP;
 					data->sig_cb(&sig);
 					goto done;
-				}
-				break;
-			case ZAP_CHANNEL_STATE_HOLD:
-				{
-					sig.event_id = ZAP_SIGEVENT_HOLD;
-					data->sig_cb(&sig);
-					zap_set_flag_locked(chan, ZAP_CHANNEL_HOLD);
-					zap_set_state_locked(chan, ZAP_CHANNEL_STATE_DIALTONE);
 				}
 				break;
 			case ZAP_CHANNEL_STATE_DIALTONE:
@@ -242,126 +241,127 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 			}
 		}
 
-		if ((dlen = zap_channel_dequeue_dtmf(chan, dtmf + dtmf_offset, sizeof(dtmf) - strlen(dtmf)))) {
-			if (chan->state == ZAP_CHANNEL_STATE_DIALTONE || chan->state == ZAP_CHANNEL_STATE_COLLECT) {
-				zap_log(ZAP_LOG_DEBUG, "DTMF %s\n", dtmf + dtmf_offset);
-				if (chan->state == ZAP_CHANNEL_STATE_DIALTONE) {
-					zap_set_state_locked(chan, ZAP_CHANNEL_STATE_COLLECT);
-				}
-				dtmf_offset = strlen(dtmf);
-				last_digit = elapsed;
-			}
-		}
-
-		
-		if (last_digit && ((elapsed - last_digit > data->digit_timeout) || strlen(dtmf) > data->max_dialstr)) {
-			zap_log(ZAP_LOG_DEBUG, "Number obtained [%s]\n", dtmf);
-			zap_set_state_locked(chan, ZAP_CHANNEL_STATE_IDLE);
-			last_digit = 0;
-		}
-		
-		if (zap_channel_wait(chan, &flags, interval * 2) != ZAP_SUCCESS) {
-			continue;
-		}
-		
-		if (!(flags & ZAP_READ)) {
-			continue;
-		}
-
-		if (zap_channel_read(chan, frame, &len) != ZAP_SUCCESS) {
-			goto done;
-		}
-		
-		if (!indicate) {
-			continue;
-		}
-
-		if (chan->effective_codec != ZAP_CODEC_SLIN) {
-			len *= 2;
-		}
-		
-		rlen = zap_buffer_read_loop(dt_buffer, frame, len);					
-		
-		if (chan->effective_codec != ZAP_CODEC_SLIN) {
-			zio_codec_t codec_func = NULL;
-
-			if (chan->native_codec == ZAP_CODEC_ULAW) {
-				codec_func = zio_slin2ulaw;
-			} else if (chan->native_codec == ZAP_CODEC_ALAW) {
-				codec_func = zio_slin2alaw;
-			}
-			
-			if (codec_func) {
-				status = codec_func(frame, sizeof(frame), &rlen);
-			} else {
-				snprintf(chan->last_error, sizeof(chan->last_error), "codec error!");
-				goto done;
-			}
-		}
-
-		zap_channel_write(chan, frame, &rlen);
-	}
-
- done:
-
-	closed_chan = chan;
-	zap_channel_close(&chan);
-	
-	zap_channel_command(closed_chan, ZAP_COMMAND_SET_NATIVE_CODEC, NULL);
-
-	if (ts.buffer) {
-		teletone_destroy_session(&ts);
-	}
-
-	if (dt_buffer) {
-		zap_buffer_destroy(&dt_buffer);
-	}
-
-	zap_clear_flag(closed_chan, ZAP_CHANNEL_INTHREAD);
-	
-	zap_log(ZAP_LOG_DEBUG, "ANALOG CHANNEL thread ended.\n");
-
-	return NULL;
-}
-
-static zap_status_t process_event(zap_span_t *span, zap_event_t *event)
-{
-	zap_log(ZAP_LOG_DEBUG, "EVENT [%s][%d:%d]\n", zap_oob_event2str(event->enum_id), event->channel->span_id, event->channel->chan_id);
-
-	zap_mutex_lock(event->channel->mutex);
+		 if ((dlen = zap_channel_dequeue_dtmf(chan, dtmf + dtmf_offset, sizeof(dtmf) - strlen(dtmf)))) {
+			 if (chan->state == ZAP_CHANNEL_STATE_DIALTONE || chan->state == ZAP_CHANNEL_STATE_COLLECT) {
+				 zap_log(ZAP_LOG_DEBUG, "DTMF %s\n", dtmf + dtmf_offset);
+				 if (chan->state == ZAP_CHANNEL_STATE_DIALTONE) {
+					 zap_set_state_locked(chan, ZAP_CHANNEL_STATE_COLLECT);
+				 }
+				 dtmf_offset = strlen(dtmf);
+				 last_digit = elapsed;
+			 }
+		 }
 
 
-	switch(event->enum_id) {
-	case ZAP_OOB_ONHOOK:
-		{
-			zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_DOWN);
-		}
-		break;
-	case ZAP_OOB_FLASH:
-		{
-			zap_sigmsg_t sig;
-			zap_analog_data_t *data = event->channel->span->analog_data;
-			memset(&sig, 0, sizeof(sig));
-			sig.chan_id = event->channel->chan_id;
-			sig.span_id = event->channel->span_id;
-			sig.channel = event->channel;
-			sig.span = event->channel->span;
-			
-			if (event->channel->state == ZAP_CHANNEL_STATE_UP) {
-				if (event->channel->token_count > 1) {
-					zap_channel_rotate_tokens(event->channel);
-					sig.event_id = ZAP_SIGEVENT_FLASH;
-					data->sig_cb(&sig);
-				} else {
-					if (zap_test_flag(event->channel, ZAP_CHANNEL_HOLD)) {
-						zap_clear_flag_locked(event->channel, ZAP_CHANNEL_HOLD);
-						zap_set_state_locked(event->channel,  ZAP_CHANNEL_STATE_UP);
-					} else {
-						zap_set_state_locked(event->channel,  ZAP_CHANNEL_STATE_HOLD);
-					}
-				}
-			}
-		}
+		 if (last_digit && ((elapsed - last_digit > data->digit_timeout) || strlen(dtmf) > data->max_dialstr)) {
+			 zap_log(ZAP_LOG_DEBUG, "Number obtained [%s]\n", dtmf);
+			 zap_set_state_locked(chan, ZAP_CHANNEL_STATE_IDLE);
+			 last_digit = 0;
+		 }
+
+		 if (zap_channel_wait(chan, &flags, interval * 2) != ZAP_SUCCESS) {
+			 continue;
+		 }
+
+		 if (!(flags & ZAP_READ)) {
+			 continue;
+		 }
+
+		 if (zap_channel_read(chan, frame, &len) != ZAP_SUCCESS) {
+			 goto done;
+		 }
+
+		 if (!indicate) {
+			 continue;
+		 }
+
+		 if (chan->effective_codec != ZAP_CODEC_SLIN) {
+			 len *= 2;
+		 }
+
+		 rlen = zap_buffer_read_loop(dt_buffer, frame, len);					
+
+		 if (chan->effective_codec != ZAP_CODEC_SLIN) {
+			 zio_codec_t codec_func = NULL;
+
+			 if (chan->native_codec == ZAP_CODEC_ULAW) {
+				 codec_func = zio_slin2ulaw;
+			 } else if (chan->native_codec == ZAP_CODEC_ALAW) {
+				 codec_func = zio_slin2alaw;
+			 }
+
+			 if (codec_func) {
+				 status = codec_func(frame, sizeof(frame), &rlen);
+			 } else {
+				 snprintf(chan->last_error, sizeof(chan->last_error), "codec error!");
+				 goto done;
+			 }
+		 }
+
+		 zap_channel_write(chan, frame, &rlen);
+	 }
+
+  done:
+
+	 closed_chan = chan;
+	 zap_channel_close(&chan);
+
+	 zap_channel_command(closed_chan, ZAP_COMMAND_SET_NATIVE_CODEC, NULL);
+
+	 if (ts.buffer) {
+		 teletone_destroy_session(&ts);
+	 }
+
+	 if (dt_buffer) {
+		 zap_buffer_destroy(&dt_buffer);
+	 }
+
+	 zap_clear_flag(closed_chan, ZAP_CHANNEL_INTHREAD);
+
+	 zap_log(ZAP_LOG_DEBUG, "ANALOG CHANNEL thread ended.\n");
+
+	 return NULL;
+ }
+
+ static zap_status_t process_event(zap_span_t *span, zap_event_t *event)
+ {
+	 zap_sigmsg_t sig;
+	 zap_analog_data_t *data = event->channel->span->analog_data;
+
+	 memset(&sig, 0, sizeof(sig));
+	 sig.chan_id = event->channel->chan_id;
+	 sig.span_id = event->channel->span_id;
+	 sig.channel = event->channel;
+	 sig.span = event->channel->span;
+
+	 zap_log(ZAP_LOG_DEBUG, "EVENT [%s][%d:%d] STATE [%s]\n", 
+			 zap_oob_event2str(event->enum_id), event->channel->span_id, event->channel->chan_id, zap_channel_state2str(event->channel->state));
+
+	 zap_mutex_lock(event->channel->mutex);
+
+
+	 switch(event->enum_id) {
+	 case ZAP_OOB_ONHOOK:
+		 {
+			 zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_DOWN);
+		 }
+		 break;
+	 case ZAP_OOB_FLASH:
+		 {
+
+			 sig.event_id = ZAP_SIGEVENT_FLASH;
+			 zap_channel_rotate_tokens(event->channel);
+
+			 if (zap_test_flag(event->channel, ZAP_CHANNEL_HOLD)) {
+				 zap_set_state_locked(event->channel,  ZAP_CHANNEL_STATE_UP);
+			 } else {
+				 data->sig_cb(&sig);
+				 if (event->channel->token_count == 1) {
+					 zap_set_flag_locked(event->channel, ZAP_CHANNEL_HOLD);
+					 zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_DIALTONE);
+				 }
+			 }
+		 }
 		break;
 	case ZAP_OOB_OFFHOOK:
 		{

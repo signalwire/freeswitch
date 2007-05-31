@@ -102,8 +102,6 @@ typedef enum {
 	ZAP_SIGEVENT_TRANSFER,
 	ZAP_SIGEVENT_ANSWER,
 	ZAP_SIGEVENT_UP,
-	ZAP_SIGEVENT_HOLD,
-	ZAP_SIGEVENT_UNHOLD,
 	ZAP_SIGEVENT_FLASH,
 	ZAP_SIGEVENT_PROGRESS,
 	ZAP_SIGEVENT_PROGRESS_MEDIA,
@@ -111,7 +109,7 @@ typedef enum {
 	ZAP_SIGEVENT_MISC,
 	ZAP_SIGEVENT_INVALID
 } zap_signal_event_t;
-#define SIGNAL_STRINGS "START", "STOP", "TRANSFER", "ANSWER", "UP", "HOLD", "UNHOLD", "FLASH", "PROGRESS", "PROGRESS_MEDIA", "NOTIFY", "MISC", "INVALID"
+#define SIGNAL_STRINGS "START", "STOP", "TRANSFER", "ANSWER", "UP", "FLASH", "PROGRESS", "PROGRESS_MEDIA", "NOTIFY", "MISC", "INVALID"
 ZAP_STR2ENUM_P(zap_str2zap_signal_event, zap_signal_event2str, zap_signal_event_t)
 
 typedef enum {
@@ -222,7 +220,8 @@ typedef enum {
 	ZAP_CHANNEL_WINK = (1 << 9),
 	ZAP_CHANNEL_FLASH = (1 << 10),
 	ZAP_CHANNEL_STATE_CHANGE = (1 << 11),
-	ZAP_CHANNEL_HOLD = (1 << 12)
+	ZAP_CHANNEL_HOLD = (1 << 12),
+	ZAP_CHANNEL_INUSE = (1 << 13)
 } zap_channel_flag_t;
 
 
@@ -240,6 +239,7 @@ typedef struct zap_span zap_span_t;
 #define ZIO_CONFIGURE_ARGS (const char *category, const char *var, const char *val, int lineno)
 #define ZIO_OPEN_ARGS (zap_channel_t *zchan)
 #define ZIO_CLOSE_ARGS (zap_channel_t *zchan)
+#define ZIO_DESTROY_CHANNEL_ARGS (zap_channel_t *zchan)
 #define ZIO_COMMAND_ARGS (zap_channel_t *zchan, zap_command_t command, void *obj)
 #define ZIO_WAIT_ARGS (zap_channel_t *zchan, zap_wait_flag_t *flags, int32_t to)
 #define ZIO_READ_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
@@ -254,6 +254,7 @@ typedef zap_status_t (*zio_configure_span_t) ZIO_CONFIGURE_SPAN_ARGS ;
 typedef zap_status_t (*zio_configure_t) ZIO_CONFIGURE_ARGS ;
 typedef zap_status_t (*zio_open_t) ZIO_OPEN_ARGS ;
 typedef zap_status_t (*zio_close_t) ZIO_CLOSE_ARGS ;
+typedef zap_status_t (*zio_destroy_channel_t) ZIO_DESTROY_CHANNEL_ARGS ;
 typedef zap_status_t (*zio_command_t) ZIO_COMMAND_ARGS ;
 typedef zap_status_t (*zio_wait_t) ZIO_WAIT_ARGS ;
 typedef zap_status_t (*zio_read_t) ZIO_READ_ARGS ;
@@ -268,6 +269,7 @@ typedef zap_status_t (*zio_write_t) ZIO_WRITE_ARGS ;
 #define ZIO_CONFIGURE_FUNCTION(name) zap_status_t name ZIO_CONFIGURE_ARGS
 #define ZIO_OPEN_FUNCTION(name) zap_status_t name ZIO_OPEN_ARGS
 #define ZIO_CLOSE_FUNCTION(name) zap_status_t name ZIO_CLOSE_ARGS
+#define ZIO_DESTROY_CHANNEL_FUNCTION(name) zap_status_t name ZIO_DESTROY_CHANNEL_ARGS
 #define ZIO_COMMAND_FUNCTION(name) zap_status_t name ZIO_COMMAND_ARGS
 #define ZIO_WAIT_FUNCTION(name) zap_status_t name ZIO_WAIT_ARGS
 #define ZIO_READ_FUNCTION(name) zap_status_t name ZIO_READ_ARGS

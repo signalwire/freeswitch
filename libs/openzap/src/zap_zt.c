@@ -54,7 +54,7 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 		zap_channel_t *chan;
 		zap_socket_t sockfd = ZT_INVALID_SOCKET;
 		int command;
-		int len = zt_globals.codec_ms * 8;
+		int len;
 
 		snprintf(path, sizeof(path), "/dev/zap/%d", x);
 		sockfd = open(path, O_RDWR);
@@ -70,25 +70,26 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 				continue;
 			}
 #endif
-	
+
+
+			len = zt_globals.codec_ms * 8;
 			if (ioctl(chan->sockfd, ZT_SET_BLOCKSIZE, &len)) {
 				zap_log(ZAP_LOG_INFO, "failure configuring device %s as OpenZAP device %d:%d fd:%d err:%s\n", 
 						path, chan->span_id, chan->chan_id, sockfd, strerror(errno));
 				close(sockfd);
 				continue;
-			} else {
-                chan->packet_len = len;
-                chan->effective_interval = chan->native_interval = chan->packet_len / 8;
-				
-                if (chan->effective_codec == ZAP_CODEC_SLIN) {
-                    chan->packet_len *= 2;
-                }
+			}
+
+			chan->packet_len = len;
+			chan->effective_interval = chan->native_interval = chan->packet_len / 8;
+			
+			if (chan->effective_codec == ZAP_CODEC_SLIN) {
+				chan->packet_len *= 2;
 			}
 			
-			
 			if (ioctl(sockfd, ZT_GET_PARAMS, &ztp) < 0) {
-				close(sockfd);
 				zap_log(ZAP_LOG_INFO, "failure configuring device %s as OpenZAP device %d:%d fd:%d\n", path, chan->span_id, chan->chan_id, sockfd);
+				close(sockfd);
 				continue;
 			}
 			zap_log(ZAP_LOG_INFO, "configuring device %s as OpenZAP device %d:%d fd:%d\n", path, chan->span_id, chan->chan_id, sockfd);
@@ -100,7 +101,16 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 					chan->native_codec = chan->effective_codec = ZAP_CODEC_ULAW;
 				}
 			}
+			
+			ztp.wink_time = zt_globals.wink_ms;
+			ztp.flash_time = zt_globals.flash_ms;
 
+			if (ioctl(sockfd, ZT_SET_PARAMS, &ztp) < 0) {
+				zap_log(ZAP_LOG_INFO, "failure configuring device %s as OpenZAP device %d:%d fd:%d\n", path, chan->span_id, chan->chan_id, sockfd);
+				close(sockfd);
+				continue;
+			}
+			
 			if (!zap_strlen_zero(name)) {
 				zap_copy_string(chan->chan_name, name, sizeof(chan->chan_name));
 			}
@@ -175,17 +185,34 @@ static ZIO_CONFIGURE_SPAN_FUNCTION(zt_configure_span)
 
 static ZIO_CONFIGURE_FUNCTION(zt_configure)
 {
+
+	int num;
+
 	if (!strcasecmp(category, "defaults")) {
 		if (!strcasecmp(var, "codec_ms")) {
-			unsigned codec_ms = atoi(val);
-			if (codec_ms < 10 || codec_ms > 60) {
+			num = atoi(val);
+			if (num < 10 || num > 60) {
 				zap_log(ZAP_LOG_WARNING, "invalid codec ms at line %d\n", lineno);
 			} else {
-				zt_globals.codec_ms = codec_ms;
+				zt_globals.codec_ms = num;
+			}
+		} else if (!strcasecmp(var, "wink_ms")) {
+			num = atoi(val);
+			if (num < 500 || num > 2000) {
+				zap_log(ZAP_LOG_WARNING, "invalid wink ms at line %d\n", lineno);
+			} else {
+				zt_globals.wink_ms = num;
+			}
+		} else if (!strcasecmp(var, "flash_ms")) {
+			num = atoi(val);
+			if (num < 500 || num > 2000) {
+				zap_log(ZAP_LOG_WARNING, "invalid flash ms at line %d\n", lineno);
+			} else {
+				zt_globals.flash_ms = num;
 			}
 		}
 	}
-	
+
 	return ZAP_SUCCESS;
 }
 
@@ -364,6 +391,15 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 					event_id = ZAP_OOB_ONHOOK;
 				}
 				break;
+			case ZT_EVENT_WINKFLASH:
+				{
+					if (span->channels[i].state == ZAP_CHANNEL_STATE_DOWN) {
+						event_id = ZAP_OOB_WINK;
+					} else {
+						event_id = ZAP_OOB_FLASH;
+					}
+				}
+				break;
 			case ZT_EVENT_RINGOFFHOOK:
 				{
 					if (span->channels[i].type == ZAP_CHAN_TYPE_FXS) {
@@ -425,6 +461,14 @@ static ZIO_WRITE_FUNCTION(zt_write)
 	return ZAP_FAIL;
 }
 
+static ZIO_DESTROY_CHANNEL_FUNCTION(zt_destroy_channel)
+{
+	close(zchan->sockfd);
+	zchan->sockfd = ZT_INVALID_SOCKET;
+
+	return ZAP_SUCCESS;
+}
+
 static zap_io_interface_t zt_interface;
 
 zap_status_t zt_init(zap_io_interface_t **zio)
@@ -447,6 +491,7 @@ zap_status_t zt_init(zap_io_interface_t **zio)
 	zt_interface.write = zt_write;
 	zt_interface.poll_event = zt_poll_event;
 	zt_interface.next_event = zt_next_event;
+	zt_interface.destroy_channel = zt_destroy_channel;
 
 	*zio = &zt_interface;
 
@@ -455,5 +500,7 @@ zap_status_t zt_init(zap_io_interface_t **zio)
 
 zap_status_t zt_destroy(void)
 {
-	return ZAP_FAIL;
+
+	memset(&zt_interface, 0, sizeof(zt_interface));
+	return ZAP_SUCCESS;
 }

@@ -88,6 +88,7 @@ struct private_object {
 	switch_mutex_t *flag_mutex;
 	zap_channel_t *zchan;
 	int32_t token_id;
+	uint32_t wr_error;
 };
 
 typedef struct private_object private_t;
@@ -365,6 +366,8 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	zap_wait_flag_t wflags = ZAP_READ;
 	char dtmf[128] = "";
 	zap_status_t status;
+	int total_to = timeout;
+	int chunk;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -374,6 +377,8 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	assert(tech_pvt->zchan != NULL);
 
+	chunk = tech_pvt->zchan->effective_interval * 2;
+ top:
 	if (switch_test_flag(tech_pvt, TFLAG_HOLD)) {
 		switch_yield(tech_pvt->zchan->effective_interval * 1000);
 		*frame = &tech_pvt->cng_frame;
@@ -389,14 +394,20 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		return SWITCH_STATUS_FALSE;
 	}
 
-	status = zap_channel_wait(tech_pvt->zchan, &wflags, timeout);
+	status = zap_channel_wait(tech_pvt->zchan, &wflags, chunk);
 
 	if (status == ZAP_FAIL) {
 		return SWITCH_STATUS_GENERR;
 	}
-
+	
 	if (status == ZAP_TIMEOUT) {
-		return SWITCH_STATUS_BREAK;
+		if (timeout > 0 && !switch_test_flag(tech_pvt, TFLAG_HOLD)) {
+			total_to -= chunk;
+			if (total_to <= 0) {
+				return SWITCH_STATUS_BREAK;
+			}
+		}
+		goto top;
 	}
 
 	if (!(wflags & ZAP_READ)) {
@@ -445,11 +456,15 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
 		return SWITCH_STATUS_FALSE;
 	}
-
+	
 	len = frame->datalen;
 	if (zap_channel_write(tech_pvt->zchan, frame->data, &len) != ZAP_SUCCESS) {
-		return SWITCH_STATUS_GENERR;
+		if (++tech_pvt->wr_error > 10) {
+			return SWITCH_STATUS_GENERR;
+		}
 	}
+
+	tech_pvt->wr_error = 0;
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -628,6 +643,10 @@ static switch_core_session_t *zap_channel_get_session(zap_channel_t *channel, in
 {
 	switch_core_session_t *session = NULL;
 
+	if (id > ZAP_MAX_TOKENS) {
+		return NULL;
+	}
+
 	if (!switch_strlen_zero(channel->tokens[id])) {
 		session = switch_core_session_locate(channel->tokens[id]);
 	}
@@ -648,7 +667,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 	private_t *tech_pvt = NULL;
 	zap_status_t status;
 
-    zap_log(ZAP_LOG_DEBUG, "got sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
+    zap_log(ZAP_LOG_DEBUG, "got fxs sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
 
     switch(sigmsg->event_id) {
     case ZAP_SIGEVENT_START:
@@ -676,30 +695,19 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			for (i = 0; i < sigmsg->channel->token_count; i++) {
 				if ((session = zap_channel_get_session(sigmsg->channel, i))) {
 					tech_pvt = switch_core_session_get_private(session);
-					if (i) {
+					if (sigmsg->channel->token_count == 1) {
+						if (switch_test_flag(tech_pvt, TFLAG_HOLD)) {
+							switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
+						} else {
+							switch_set_flag_locked(tech_pvt, TFLAG_HOLD);
+						}
+					} else if (i) {
 						switch_set_flag_locked(tech_pvt, TFLAG_HOLD);
 					} else {
 						switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
 					}
 					switch_core_session_rwunlock(session);
 				}
-			}
-		}
-    case ZAP_SIGEVENT_HOLD:
-		{
-			if ((session = zap_channel_get_session(sigmsg->channel, sigmsg->channel->token_count-1))) {
-				tech_pvt = switch_core_session_get_private(session);
-				switch_set_flag_locked(tech_pvt, TFLAG_HOLD);
-				switch_core_session_rwunlock(session);
-			}
-		}
-		break;
-    case ZAP_SIGEVENT_UNHOLD:
-		{
-			if ((session = zap_channel_get_session(sigmsg->channel, sigmsg->channel->token_count-1))) {
-				tech_pvt = switch_core_session_get_private(session);
-				switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
-				switch_core_session_rwunlock(session);
 			}
 		}
 		break;
@@ -771,7 +779,6 @@ static switch_status_t load_config(void)
 
 	if ((spans = switch_xml_child(cfg, "analog_spans"))) {
 		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
-			char *mod = (char *) switch_xml_attr_soft(myspan, "module");
 			char *id = (char *) switch_xml_attr_soft(myspan, "id");
 			char *context = "default";
 			char *dialplan = "XML";
@@ -798,10 +805,6 @@ static switch_status_t load_config(void)
 				}
 			}
 				
-			if (!mod) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param 'module'\n");
-			}
-
 			if (!id) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param 'id'\n");
 			}
@@ -820,13 +823,13 @@ static switch_status_t load_config(void)
 				max = atoi(max_digits);
 			}
 
-			if (zap_span_find(mod, span_id, &span) != ZAP_SUCCESS) {
-				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span %s:%d\n", mod, span_id);
+			if (zap_span_find(span_id, &span) != ZAP_SUCCESS) {
+				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span %d\n", span_id);
 				continue;
 			}
 
 			if (zap_analog_configure_span(span, tonegroup, to, max, on_zap_signal) != ZAP_SUCCESS) {
-				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %s:%d\n", mod, span_id);
+				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d\n", span_id);
 				continue;
 			}
 
