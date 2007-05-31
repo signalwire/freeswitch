@@ -151,6 +151,7 @@
 #define GOTO_STATUS(label,st) status = st; goto label ;
 
 #define zap_copy_string(x,y,z) strncpy(x, y, z - 1) 
+#define zap_set_string(x,y) strncpy(x, y, sizeof(x)-1) 
 #define zap_strlen_zero(s) (!s || *s == '\0')
 
 
@@ -222,6 +223,15 @@ struct zap_event {
 #define ZAP_TOKEN_STRLEN 128
 #define ZAP_MAX_TOKENS 10
 
+
+
+struct zap_caller_data {
+	char cid_name[80];
+	char ani[25];
+	char aniII[25];
+	char dnis[25];
+};
+
 struct zap_channel {
 	uint32_t span_id;
 	uint32_t chan_id;
@@ -253,6 +263,7 @@ struct zap_channel {
 	uint32_t token_count;
 	char chan_name[128];
 	char chan_number[32];
+	struct zap_caller_data caller_data;
 	struct zap_span *span;
 	struct zap_io_interface *zio;
 };
@@ -263,11 +274,6 @@ struct zap_sigmsg {
 	uint32_t chan_id;
 	uint32_t span_id;
 	zap_channel_t *channel;
-	zap_span_t *span;
-	char cid_name[80];
-	char ani[25];
-	char aniII[25];
-	char dnis[25];
 	void *raw_data;
 	uint32_t raw_data_len;
 };
@@ -305,6 +311,7 @@ struct zap_span {
 	char last_error[256];
 	char tone_map[ZAP_TONEMAP_INVALID+1][ZAP_TONEMAP_LEN];
 	zap_channel_t channels[ZAP_MAX_CHANNELS_SPAN];
+	zio_channel_outgoing_call_t outgoing_call;
 	void *app_data;
 };
 
@@ -326,6 +333,7 @@ struct zap_io_interface {
 	zio_span_next_event_t next_event;
 };
 
+zap_status_t zap_channel_outgoing_call(zap_channel_t *zchan);
 void zap_channel_rotate_tokens(zap_channel_t *zchan);
 zap_status_t zap_channel_clear_token(zap_channel_t *zchan, int32_t token_id);
 zap_status_t zap_channel_add_token(zap_channel_t *zchan, char *token);

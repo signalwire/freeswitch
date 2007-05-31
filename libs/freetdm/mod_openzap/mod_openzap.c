@@ -126,7 +126,6 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	zap_channel_command(zchan, ZAP_COMMAND_GET_INTERVAL, &interval);
 	zap_channel_command(zchan, ZAP_COMMAND_GET_CODEC, &codec);
 
-
 	switch(codec) {
 	case ZAP_CODEC_ULAW:
 		{
@@ -252,6 +251,12 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	
 	switch (tech_pvt->zchan->type) {
 	case ZAP_CHAN_TYPE_FXO:
+		{
+			if (tech_pvt->zchan->state != ZAP_CHANNEL_STATE_DOWN) {
+				zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_HANGUP);
+			}
+		}
+		break;
 	case ZAP_CHAN_TYPE_FXS:
 		{
 			if (tech_pvt->zchan->state != ZAP_CHANNEL_STATE_DOWN) {
@@ -366,7 +371,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	char dtmf[128] = "";
 	zap_status_t status;
 	int total_to = timeout;
-	int chunk;
+	int chunk, do_break = 0;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -377,8 +382,15 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	assert(tech_pvt->zchan != NULL);
 
 	chunk = tech_pvt->zchan->effective_interval * 2;
+
  top:
-	if (switch_test_flag(tech_pvt, TFLAG_HOLD)) {
+
+	if (switch_test_flag(tech_pvt, TFLAG_BREAK)) {
+		switch_clear_flag_locked(tech_pvt, TFLAG_BREAK);
+		do_break = 1;
+	}
+
+	if (switch_test_flag(tech_pvt, TFLAG_HOLD) || do_break) {
 		switch_yield(tech_pvt->zchan->effective_interval * 1000);
 		*frame = &tech_pvt->cng_frame;
 		tech_pvt->cng_frame.datalen = tech_pvt->zchan->packet_len;
@@ -406,6 +418,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 				return SWITCH_STATUS_BREAK;
 			}
 		}
+
 		goto top;
 	}
 
@@ -461,15 +474,20 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		if (++tech_pvt->wr_error > 10) {
 			return SWITCH_STATUS_GENERR;
 		}
+	} else {
+		tech_pvt->wr_error = 0;
 	}
-
-	tech_pvt->wr_error = 0;
 
 	return SWITCH_STATUS_SUCCESS;
 
 }
 
-static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
+static switch_status_t channel_receive_message_b(switch_core_session_t *session, switch_core_session_message_t *msg)
+{
+	return SWITCH_STATUS_FALSE;
+}
+
+static switch_status_t channel_receive_message_fxo(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
 	switch_channel_t *channel;
 	private_t *tech_pvt;
@@ -481,8 +499,36 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	assert(tech_pvt != NULL);
 
 	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
-		zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_UP);
+		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_UP);
+		}
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t channel_receive_message_fxs(switch_core_session_t *session, switch_core_session_message_t *msg)
+{
+	switch_channel_t *channel;
+	private_t *tech_pvt;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+			
+	tech_pvt = (private_t *) switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+
+	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_PROGRESS:
+	case SWITCH_MESSAGE_INDICATE_ANSWER:
+		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_UP);
+		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_RINGING:
 		zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_RING);
@@ -492,6 +538,25 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	}
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
+{
+	private_t *tech_pvt;
+			
+	tech_pvt = (private_t *) switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+
+	switch (tech_pvt->zchan->type) {
+	case ZAP_CHAN_TYPE_FXS:
+		return channel_receive_message_fxs(session, msg);
+	case ZAP_CHAN_TYPE_FXO:
+		return channel_receive_message_fxo(session, msg);
+	case ZAP_CHAN_TYPE_B:
+		return channel_receive_message_b(session, msg);
+	default:
+		return SWITCH_STATUS_FALSE;
+	}
 }
 
 static const switch_state_handler_table_t channel_event_handlers = {
@@ -540,20 +605,25 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_core_session_t **new_session, switch_memory_pool_t **pool)
 {
 
-	char *dest;
-	int span_id = 0;
+	char *p, *dest;
+	int span_id = 0, chan_id = 0;
 	zap_channel_t *zchan = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	char name[128];
+	zap_status_t status;
 
 	if (!outbound_profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing caller profile\n");
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
 
-	if ((dest = strchr('/', outbound_profile->destination_number))) {
-		dest++;
+	if ((p = strchr(outbound_profile->destination_number, '/'))) {
+		dest = p + 1;
 		span_id = atoi(outbound_profile->destination_number);
+		if ((p = strchr(dest, '/'))) {
+			chan_id = atoi(dest);
+			dest = p + 1;
+		}
 	}
 
 	if (!span_id) {
@@ -561,7 +631,14 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
 	
-	if (zap_channel_open_any(span_id, ZAP_TOP_DOWN, &zchan) != ZAP_SUCCESS) {
+	if (chan_id) {
+		status = zap_channel_open(span_id, chan_id, &zchan);
+	} else {
+		status = zap_channel_open_any(span_id, ZAP_TOP_DOWN, &zchan);
+		
+	}
+
+	if (status != ZAP_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No channels available\n");
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
@@ -582,9 +659,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			goto fail;
 		}
 
-		snprintf(name, sizeof(name), "OPENZAP/%s", outbound_profile->destination_number);
+		snprintf(name, sizeof(name), "OPENZAP/%s", dest);
 		switch_channel_set_name(channel, name);
-		
+		zap_set_string(zchan->caller_data.ani, dest);
 		caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 		switch_channel_set_caller_profile(channel, caller_profile);
 		tech_pvt->caller_profile = caller_profile;
@@ -592,6 +669,13 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		
 		switch_channel_set_flag(channel, CF_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);
+		if ((tech_pvt->token_id = zap_channel_add_token(zchan, switch_core_session_get_uuid(*new_session))) < 0) {
+			switch_core_session_destroy(new_session);
+			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+            goto fail;
+		}
+
+		zap_channel_outgoing_call(zchan);
 		return SWITCH_CAUSE_SUCCESS;
 	}
 
@@ -630,7 +714,7 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
 		
 	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 														 "OpenZAP",
-														 SPAN_CONFIG[sigmsg->span->span_id].dialplan,
+														 SPAN_CONFIG[sigmsg->channel->span_id].dialplan,
 														 sigmsg->channel->chan_name,
 														 sigmsg->channel->chan_number,
 														 NULL,
@@ -638,8 +722,8 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
 														 NULL,
 														 NULL,
 														 (char *) modname,
-														 SPAN_CONFIG[sigmsg->span->span_id].context,
-														 sigmsg->dnis);
+														 SPAN_CONFIG[sigmsg->channel->span_id].context,
+														 sigmsg->channel->caller_data.dnis);
 	assert(tech_pvt->caller_profile != NULL);
 		
 	snprintf(name, sizeof(name), "OpenZAP/%s", tech_pvt->caller_profile->destination_number);
@@ -679,7 +763,22 @@ static switch_core_session_t *zap_channel_get_session(zap_channel_t *channel, in
 
 static ZIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 {
-	zap_log(ZAP_LOG_DEBUG, "got sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
+	switch_core_session_t *session = NULL;
+	zap_status_t status;
+
+	zap_log(ZAP_LOG_DEBUG, "got fxo sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
+
+    switch(sigmsg->event_id) {
+    case ZAP_SIGEVENT_START:
+		{
+			status = zap_channel_from_event(sigmsg, &session);
+			if (status != ZAP_SUCCESS) {
+				zap_set_state_locked(sigmsg->channel, ZAP_CHANNEL_STATE_DOWN);
+			}
+		}
+		break;
+	}
+
 	return ZAP_SUCCESS;
 }
 
@@ -693,6 +792,15 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
     zap_log(ZAP_LOG_DEBUG, "got fxs sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
 
     switch(sigmsg->event_id) {
+    case ZAP_SIGEVENT_UP:
+		{
+			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				channel = switch_core_session_get_channel(session);
+				switch_channel_mark_answered(channel);
+				switch_core_session_rwunlock(session);
+			}
+		}
+		break;
     case ZAP_SIGEVENT_START:
 		{
 			status = zap_channel_from_event(sigmsg, &session);

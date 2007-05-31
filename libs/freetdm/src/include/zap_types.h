@@ -79,7 +79,8 @@ typedef enum {
 ZAP_STR2ENUM_P(zap_str2zap_trunk_type, zap_trunk_type2str, zap_trunk_type_t)
 
 typedef enum {
-	ZAP_OOB_DTMF, ZAP_OOB_ONHOOK,
+	ZAP_OOB_DTMF, 
+	ZAP_OOB_ONHOOK,
 	ZAP_OOB_OFFHOOK,
 	ZAP_OOB_WINK,
 	ZAP_OOB_FLASH,
@@ -168,7 +169,10 @@ typedef enum {
 	ZAP_COMMAND_GET_DTMF_ON_PERIOD,
 	ZAP_COMMAND_SET_DTMF_OFF_PERIOD,
 	ZAP_COMMAND_GET_DTMF_OFF_PERIOD,
-
+	ZAP_COMMAND_GENERATE_RING_ON,
+	ZAP_COMMAND_GENERATE_RING_OFF,
+	ZAP_COMMAND_OFFHOOK,
+	ZAP_COMMAND_ONHOOK,
 	ZAP_COMMAND_COUNT
 } zap_command_t;
 
@@ -203,9 +207,10 @@ typedef enum {
 	ZAP_CHANNEL_STATE_BUSY,
 	ZAP_CHANNEL_STATE_ATTN,
 	ZAP_CHANNEL_STATE_IDLE,
+	ZAP_CHANNEL_STATE_GENRING,
 	ZAP_CHANNEL_STATE_INVALID
 } zap_channel_state_t;
-#define CHANNEL_STATE_STRINGS "DOWN", "UP", "HANGUP", "HOLD", "DIALTONE", "COLLECT", "RING", "BUSY", "ATTN", "IDLE", "INVALID"
+#define CHANNEL_STATE_STRINGS "DOWN", "UP", "HANGUP", "HOLD", "DIALTONE", "COLLECT", "RING", "BUSY", "ATTN", "IDLE", "GENRING", "INVALID"
 ZAP_STR2ENUM_P(zap_str2zap_channel_state, zap_channel_state2str, zap_channel_state_t)
 
 typedef enum {
@@ -222,7 +227,9 @@ typedef enum {
 	ZAP_CHANNEL_FLASH = (1 << 10),
 	ZAP_CHANNEL_STATE_CHANGE = (1 << 11),
 	ZAP_CHANNEL_HOLD = (1 << 12),
-	ZAP_CHANNEL_INUSE = (1 << 13)
+	ZAP_CHANNEL_INUSE = (1 << 13),
+	ZAP_CHANNEL_OFFHOOK = (1 << 14),
+	ZAP_CHANNEL_RINGING = (1 << 15)
 } zap_channel_flag_t;
 
 
@@ -231,6 +238,7 @@ typedef struct zap_event zap_event_t;
 typedef struct zap_sigmsg zap_sigmsg_t;
 typedef struct zap_span zap_span_t;
 
+#define ZIO_CHANNEL_OUTGOING_CALL_ARGS (zap_channel_t *zchan)
 #define ZIO_SPAN_POLL_EVENT_ARGS (zap_span_t *span, uint32_t ms)
 #define ZIO_SPAN_NEXT_EVENT_ARGS (zap_span_t *span, zap_event_t **event)
 #define ZIO_SIGNAL_CB_ARGS (zap_sigmsg_t *sigmsg)
@@ -246,6 +254,7 @@ typedef struct zap_span zap_span_t;
 #define ZIO_READ_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
 #define ZIO_WRITE_ARGS (zap_channel_t *zchan, void *data, zap_size_t *datalen)
 
+typedef zap_status_t (*zio_channel_outgoing_call_t) ZIO_CHANNEL_OUTGOING_CALL_ARGS ;
 typedef zap_status_t (*zio_span_poll_event_t) ZIO_SPAN_POLL_EVENT_ARGS ;
 typedef zap_status_t (*zio_span_next_event_t) ZIO_SPAN_NEXT_EVENT_ARGS ;
 typedef zap_status_t (*zio_signal_cb_t) ZIO_SIGNAL_CB_ARGS ;
@@ -261,6 +270,7 @@ typedef zap_status_t (*zio_wait_t) ZIO_WAIT_ARGS ;
 typedef zap_status_t (*zio_read_t) ZIO_READ_ARGS ;
 typedef zap_status_t (*zio_write_t) ZIO_WRITE_ARGS ;
 
+#define ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(name) zap_status_t name ZIO_CHANNEL_OUTGOING_CALL_ARGS
 #define ZIO_SPAN_POLL_EVENT_FUNCTION(name) zap_status_t name ZIO_SPAN_POLL_EVENT_ARGS
 #define ZIO_SPAN_NEXT_EVENT_FUNCTION(name) zap_status_t name ZIO_SPAN_NEXT_EVENT_ARGS
 #define ZIO_SIGNAL_CB_FUNCTION(name) zap_status_t name ZIO_SIGNAL_CB_ARGS
@@ -276,16 +286,7 @@ typedef zap_status_t (*zio_write_t) ZIO_WRITE_ARGS ;
 #define ZIO_READ_FUNCTION(name) zap_status_t name ZIO_READ_ARGS
 #define ZIO_WRITE_FUNCTION(name) zap_status_t name ZIO_WRITE_ARGS
 
-#define ZIO_CONFIGURE_SPAN_MUZZLE assert(zio != NULL)
-#define ZIO_OPEN_MUZZLE assert(zchan != NULL)
-#define ZIO_CLOSE_MUZZLE assert(zchan != NULL)
-#define ZIO_COMMAND_MUZZLE assert(zchan != NULL); assert(command != 0); assert(obj != NULL)
-#define ZIO_WAIT_MUZZLE assert(zchan != NULL); assert(flags != 0); assert(to != 0)
-#define ZIO_READ_MUZZLE assert(zchan != NULL); assert(data != NULL); assert(datalen != NULL)
-#define ZIO_WRITE_MUZZLE assert(zchan != NULL); assert(data != NULL); assert(datalen != NULL)
-
 #define ZAP_PRE __FILE__, __FUNCTION__, __LINE__
-
 #define ZAP_LOG_LEVEL_DEBUG 7
 #define ZAP_LOG_LEVEL_INFO 6
 #define ZAP_LOG_LEVEL_NOTICE 5

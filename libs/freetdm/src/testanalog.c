@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 {
 	zap_span_t *span;
 	int span_id;
-	
+
 	if (argc < 2) {
 		printf("usage %s <spanno>\n", argv[0]);
 		exit(-1);
