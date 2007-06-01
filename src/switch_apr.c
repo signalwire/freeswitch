@@ -335,6 +335,15 @@ SWITCH_DECLARE(switch_status_t) switch_file_write(switch_file_t * thefile, const
 	return apr_file_write(thefile, buf, nbytes);
 }
 
+SWITCH_DECLARE(int) switch_file_printf(switch_file_t *thefile, const char *format, ...)
+{
+	va_list ap;
+    int ret;
+	ret = apr_file_printf(thefile, format, ap);
+	va_end(ap);
+    return ret;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_file_mktemp(switch_file_t **thefile, char *templ, int32_t flags, switch_memory_pool_t *pool)
 {
 	return apr_file_mktemp(thefile, templ, flags, pool);

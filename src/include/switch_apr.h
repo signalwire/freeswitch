@@ -732,6 +732,7 @@ SWITCH_DECLARE(switch_status_t) switch_file_read(switch_file_t * thefile, void *
  * be returned.  APR_EINTR is never returned.
  */
 SWITCH_DECLARE(switch_status_t) switch_file_write(switch_file_t * thefile, const void *buf, switch_size_t *nbytes);
+SWITCH_DECLARE(int) switch_file_printf(switch_file_t *thefile, const char *format, ...);
 
 SWITCH_DECLARE(switch_status_t) switch_file_mktemp(switch_file_t **thefile, char *templ, int32_t flags, switch_memory_pool_t *pool);
 
