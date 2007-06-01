@@ -261,12 +261,13 @@ struct zap_channel {
 	teletone_generation_session_t tone_session;
 	zap_time_t last_event_time;
 	char tokens[ZAP_MAX_TOKENS+1][ZAP_TOKEN_STRLEN];
-	uint8_t need_tone[ZAP_TONEMAP_INVALID+1];
+	uint8_t needed_tones[ZAP_TONEMAP_INVALID];
+	uint8_t detected_tones[ZAP_TONEMAP_INVALID];
+	zap_tonemap_t last_detected_tone;
+	
 	uint32_t token_count;
 	char chan_name[128];
 	char chan_number[32];
-	zap_tonemap_t detected_tone;
-	zap_tonemap_t last_detected_tone;
 	struct zap_caller_data caller_data;
 	struct zap_span *span;
 	struct zap_io_interface *zio;
@@ -341,6 +342,8 @@ struct zap_io_interface {
 
 zap_status_t zap_channel_outgoing_call(zap_channel_t *zchan);
 void zap_channel_rotate_tokens(zap_channel_t *zchan);
+void zap_channel_clear_detected_tones(zap_channel_t *zchan);
+void zap_channel_clear_needed_tones(zap_channel_t *zchan);
 zap_status_t zap_channel_clear_token(zap_channel_t *zchan, int32_t token_id);
 zap_status_t zap_channel_add_token(zap_channel_t *zchan, char *token);
 zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t state);
