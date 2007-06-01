@@ -581,8 +581,9 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				switch_set_flag(gateway, REG_FLAG_CALLERID);
 			}
 			gateway->register_from = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, from_domain);
-			gateway->register_contact = switch_core_sprintf(gateway->pool, "sip:%s@%s:%d", extension, profile->sipip, profile->sip_port);
-
+			gateway->register_contact = switch_core_sprintf(gateway->pool, "sip:%s@%s:%d", extension,
+															profile->extsipip ? profile->extsipip : profile->sipip, profile->sip_port);
+			
 			if (!strncasecmp(proxy, "sip:", 4)) {
 				gateway->register_proxy = switch_core_strdup(gateway->pool, proxy);
 				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy + 4);
