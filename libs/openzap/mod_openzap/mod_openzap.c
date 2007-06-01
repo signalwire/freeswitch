@@ -605,7 +605,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_core_session_t **new_session, switch_memory_pool_t **pool)
 {
 
-	char *p, *dest;
+	char *p, *dest = NULL;
 	int span_id = 0, chan_id = 0;
 	zap_channel_t *zchan = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -624,6 +624,11 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			chan_id = atoi(dest);
 			dest = p + 1;
 		}
+	}
+
+	if (!dest) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid dial string\n");
+		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
 
 	if (!span_id) {
@@ -797,7 +802,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
-	zap_status_t status;
+	zap_status_t status = ZAP_SUCCESS;
 
     zap_log(ZAP_LOG_DEBUG, "got fxs sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
 
@@ -877,6 +882,8 @@ static ZIO_SIGNAL_CB_FUNCTION(on_zap_signal)
 		}
 		break;
 	}
+
+	return ZAP_SUCCESS;
 }
 
 static void zap_logger(char *file, const char *func, int line, int level, char *fmt, ...)
