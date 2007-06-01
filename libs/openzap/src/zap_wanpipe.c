@@ -120,14 +120,14 @@ static ZIO_CONFIGURE_FUNCTION(wanpipe_configure)
 			}
 		} else if (!strcasecmp(var, "wink_ms")) {
 			num = atoi(val);
-			if (num < 500 || num > 2000) {
+			if (num < 50 || num > 3000) {
 				zap_log(ZAP_LOG_WARNING, "invalid wink ms at line %d\n", lineno);
 			} else {
 				wp_globals.wink_ms = num;
 			}
 		} else if (!strcasecmp(var, "flash_ms")) {
 			num = atoi(val);
-			if (num < 500 || num > 2000) {
+			if (num < 50 || num > 3000) {
 				zap_log(ZAP_LOG_WARNING, "invalid flash ms at line %d\n", lineno);
 			} else {
 				wp_globals.flash_ms = num;
