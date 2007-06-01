@@ -1,0 +1,14 @@
+<configuration name="openzap.conf" description="OpenZAP Configuration">
+  <settings>
+    <param name="debug" value="0"/>
+  </settings>
+  <analog_spans>
+    <span id="1">
+      <param name="tonegroup" value="us"/>
+      <param name="digit_timeout" value="2000"/>
+      <param name="max_digits" value="11"/>
+      <param name="dialplan" value="XML"/>
+      <param name="context" value="default"/>
+    </span>
+  </analog_spans>
+</configuration>
