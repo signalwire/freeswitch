@@ -57,7 +57,7 @@ static void bcast_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
 	switch_socket_t *socket;
-	switch_sockaddr_t *audio_addr, *control_packet_addr;
+	switch_sockaddr_t *audio_addr = NULL, *control_packet_addr;
 	switch_frame_t *read_frame;
 	switch_status_t status;
 	switch_size_t bytes;
@@ -65,7 +65,7 @@ static void bcast_function(switch_core_session_t *session, char *data)
 	switch_codec_t *read_codec;
 	uint32_t flags = 0;
 	const char *err;
-	switch_rtp_t *rtp_session;
+	switch_rtp_t *rtp_session = NULL;
 	switch_port_t rtp_port;
 	char guess_ip[25];
 	ls_how_t ready = SEND_TYPE_UNKNOWN;
@@ -215,7 +215,7 @@ static void bcast_function(switch_core_session_t *session, char *data)
 
  fail:
 
-	if (ready == SEND_TYPE_RTP && switch_rtp_ready(rtp_session)) {
+	if (rtp_session && ready == SEND_TYPE_RTP && switch_rtp_ready(rtp_session)) {
 		switch_rtp_destroy(&rtp_session);
 	}	
 
