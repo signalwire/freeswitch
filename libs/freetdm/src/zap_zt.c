@@ -40,6 +40,7 @@ static struct {
 	uint32_t codec_ms;
 	uint32_t wink_ms;
 	uint32_t flash_ms;
+	uint32_t eclevel;
 } zt_globals;
 
 #define ZT_INVALID_SOCKET -1
@@ -59,7 +60,7 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 		sockfd = open(path, O_RDWR);
 		
 		if (sockfd != ZT_INVALID_SOCKET && zap_span_add_channel(span, sockfd, type, &chan) == ZAP_SUCCESS) {
-			len = 64;
+			len = zt_globals.eclevel;
 			if (ioctl(chan->sockfd, ZT_ECHOCANCEL, &len)) {
 				zap_log(ZAP_LOG_INFO, "failure configuring device %s as OpenZAP device %d:%d fd:%d err:%s\n", 
 						path, chan->span_id, chan->chan_id, sockfd, strerror(errno));
@@ -193,18 +194,26 @@ static ZIO_CONFIGURE_FUNCTION(zt_configure)
 			}
 		} else if (!strcasecmp(var, "wink_ms")) {
 			num = atoi(val);
-			if (num < 500 || num > 2000) {
+			if (num < 50 || num > 3000) {
 				zap_log(ZAP_LOG_WARNING, "invalid wink ms at line %d\n", lineno);
 			} else {
 				zt_globals.wink_ms = num;
 			}
 		} else if (!strcasecmp(var, "flash_ms")) {
 			num = atoi(val);
-			if (num < 500 || num > 2000) {
+			if (num < 50 || num > 3000) {
 				zap_log(ZAP_LOG_WARNING, "invalid flash ms at line %d\n", lineno);
 			} else {
 				zt_globals.flash_ms = num;
 			}
+		} else if (!strcasecmp(var, "echo_cancel_level")) {
+			num = atoi(val);
+			if (num < 0 || num > 256) {
+                zap_log(ZAP_LOG_WARNING, "invalid echo can val at line %d\n", lineno);
+            } else {
+                zt_globals.eclevel = num;
+            }
+			
 		}
 	}
 
@@ -524,7 +533,8 @@ zap_status_t zt_init(zap_io_interface_t **zio)
 	zt_globals.codec_ms = 20;
 	zt_globals.wink_ms = 150;
 	zt_globals.flash_ms = 750;
-
+	zt_globals.eclevel = 64;
+	
 	zt_interface.name = "zt";
 	zt_interface.configure = zt_configure;
 	zt_interface.configure_span = zt_configure_span;
