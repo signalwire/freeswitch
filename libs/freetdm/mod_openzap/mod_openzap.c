@@ -470,7 +470,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	}
 	
 	len = frame->datalen;
-	if (zap_channel_write(tech_pvt->zchan, frame->data, &len) != ZAP_SUCCESS) {
+	if (zap_channel_write(tech_pvt->zchan, frame->data, frame->buflen, &len) != ZAP_SUCCESS) {
 		if (++tech_pvt->wr_error > 10) {
 			return SWITCH_STATUS_GENERR;
 		}
@@ -764,11 +764,21 @@ static switch_core_session_t *zap_channel_get_session(zap_channel_t *channel, in
 static ZIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 {
 	switch_core_session_t *session = NULL;
+	switch_channel_t *channel = NULL;
 	zap_status_t status;
 
 	zap_log(ZAP_LOG_DEBUG, "got fxo sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
 
     switch(sigmsg->event_id) {
+    case ZAP_SIGEVENT_UP:
+		{
+			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				channel = switch_core_session_get_channel(session);
+				switch_channel_mark_answered(channel);
+				switch_core_session_rwunlock(session);
+			}
+		}
+		break;
     case ZAP_SIGEVENT_START:
 		{
 			status = zap_channel_from_event(sigmsg, &session);

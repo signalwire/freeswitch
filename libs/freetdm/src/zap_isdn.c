@@ -95,7 +95,7 @@ static int zap_isdn_921_21(void *pvt, L2UCHAR *msg, L2INT mlen)
 #endif
 
 	assert(span != NULL);
-	return zap_channel_write(span->isdn_data->dchan, msg, &len) == ZAP_SUCCESS ? 0 : -1;
+	return zap_channel_write(span->isdn_data->dchan, msg, len, &len) == ZAP_SUCCESS ? 0 : -1;
 }
 
 static void *zap_isdn_run(zap_thread_t *me, void *obj)

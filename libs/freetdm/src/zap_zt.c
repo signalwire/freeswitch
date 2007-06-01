@@ -59,6 +59,14 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 		sockfd = open(path, O_RDWR);
 		
 		if (sockfd != ZT_INVALID_SOCKET && zap_span_add_channel(span, sockfd, type, &chan) == ZAP_SUCCESS) {
+			len = 64;
+			if (ioctl(chan->sockfd, ZT_ECHOCANCEL, &len)) {
+				zap_log(ZAP_LOG_INFO, "failure configuring device %s as OpenZAP device %d:%d fd:%d err:%s\n", 
+						path, chan->span_id, chan->chan_id, sockfd, strerror(errno));
+				close(sockfd);
+				continue;
+			}
+			
 			len = zt_globals.codec_ms * 8;
 			if (ioctl(chan->sockfd, ZT_SET_BLOCKSIZE, &len)) {
 				zap_log(ZAP_LOG_INFO, "failure configuring device %s as OpenZAP device %d:%d fd:%d err:%s\n", 

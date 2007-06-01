@@ -207,7 +207,7 @@ typedef enum {
 #define		ZT_SETGAINS			_IOWR (ZT_CODE, 17, struct zt_gains)	/* Set Channel audio gains */
 
 #define		ZT_AUDIOMODE		_IOW  (ZT_CODE, 32, int)				/* Set a clear channel into audio mode */
-
+#define		ZT_ECHOCANCEL		_IOW  (ZT_CODE, 33, int)				/* Control Echo Canceller */
 #define		ZT_HDLCRAWMODE		_IOW  (ZT_CODE, 36, int)				/* Set a clear channel into HDLC w/out FCS checking/calculation mode */
 #define		ZT_HDLCFCSMODE		_IOW  (ZT_CODE, 37, int)				/* Set a clear channel into HDLC w/ FCS mode */
 
@@ -221,7 +221,7 @@ typedef enum {
 #define		ZT_SETLINEAR		_IOW  (ZT_CODE, 40, int)
 
 #define		ZT_GETCONFMUTE		_IOR  (ZT_CODE, 49, int)				/* Get Conference to mute mode */
-
+#define		ZT_ECHOTRAIN		_IOW  (ZT_CODE, 50, int)				/* Control Echo Trainer */
 
 
 /* Openzap ZT hardware interface functions */

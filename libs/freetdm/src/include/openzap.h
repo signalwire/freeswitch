@@ -248,6 +248,7 @@ struct zap_channel {
 	zap_channel_state_t last_state;
 	zap_mutex_t *mutex;
 	teletone_dtmf_detect_state_t dtmf_detect;
+	uint32_t dtmf_delay;
 	zap_event_t event_header;
 	char last_error[256];
 	zio_event_cb_t event_callback;
@@ -260,9 +261,12 @@ struct zap_channel {
 	teletone_generation_session_t tone_session;
 	zap_time_t last_event_time;
 	char tokens[ZAP_MAX_TOKENS+1][ZAP_TOKEN_STRLEN];
+	uint8_t need_tone[ZAP_TONEMAP_INVALID+1];
 	uint32_t token_count;
 	char chan_name[128];
 	char chan_number[32];
+	zap_tonemap_t detected_tone;
+	zap_tonemap_t last_detected_tone;
 	struct zap_caller_data caller_data;
 	struct zap_span *span;
 	struct zap_io_interface *zio;
@@ -310,6 +314,8 @@ struct zap_span {
 	zap_event_t event_header;
 	char last_error[256];
 	char tone_map[ZAP_TONEMAP_INVALID+1][ZAP_TONEMAP_LEN];
+	teletone_tone_map_t tone_detect_map[ZAP_TONEMAP_INVALID+1];
+	teletone_multi_tone_t tone_finder[ZAP_TONEMAP_INVALID+1];
 	zap_channel_t channels[ZAP_MAX_CHANNELS_SPAN];
 	zio_channel_outgoing_call_t outgoing_call;
 	void *app_data;
@@ -359,7 +365,7 @@ zap_status_t zap_channel_use(zap_channel_t *zchan);
 zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, void *obj);
 zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t *flags, int32_t to);
 zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *datalen);
-zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t *datalen);
+zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t datasize, zap_size_t *datalen);
 zap_status_t zap_global_init(void);
 zap_status_t zap_global_destroy(void);
 void zap_global_set_logger(zap_logger_t logger);
