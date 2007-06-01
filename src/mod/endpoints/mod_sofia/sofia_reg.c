@@ -66,7 +66,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 		case REG_STATE_NOREG:
 			break;
 		case REG_STATE_REGISTER:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "registered %s\n", gateway_ptr->name);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "registered %s\n", gateway_ptr->name);
 			gateway_ptr->expires = now + gateway_ptr->freq;
 			gateway_ptr->state = REG_STATE_REGED;
 			break;

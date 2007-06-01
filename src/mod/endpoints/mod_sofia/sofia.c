@@ -600,7 +600,6 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			}
 			gateway->freq -= 2;
 
-			
 			if ((gp = sofia_reg_find_gateway(gateway->name))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate gateway '%s'\n", gateway->name);
 				sofia_reg_release_gateway(gp);
@@ -608,7 +607,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate uri '%s'\n", gateway->register_from);
 				sofia_reg_release_gateway(gp);
 			} else if ((gp=sofia_reg_find_gateway(gateway->register_contact))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate contact '%s'\n", gateway->register_from);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate contact '%s'\n", gateway->register_contact);
 				sofia_reg_release_gateway(gp);
 			} else {
 				gateway->next = profile->gateways;
