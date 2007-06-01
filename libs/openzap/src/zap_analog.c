@@ -38,6 +38,14 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj);
 
 static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxo_outgoing_call)
 {
+	if (!zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK) && !zap_test_flag(zchan, ZAP_CHANNEL_INTHREAD)) {		
+		zap_channel_command(zchan, ZAP_COMMAND_OFFHOOK, NULL);
+		zap_channel_command(zchan, ZAP_COMMAND_ENABLE_PROGRESS_DETECT, NULL);
+		zchan->need_tone[ZAP_TONEMAP_DIAL] = 1;
+		zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DIALING);
+		zap_thread_create_detached(zap_analog_channel_run, zchan);
+		return ZAP_SUCCESS;
+	}
 	return ZAP_FAIL;
 }
 
@@ -114,6 +122,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 	zap_sigmsg_t sig;
 	zap_status_t status;
 
+	
 	zap_log(ZAP_LOG_DEBUG, "ANALOG CHANNEL thread starting.\n");
 
 	ts.buffer = NULL;
@@ -156,6 +165,17 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 
 		if (!zap_test_flag(chan, ZAP_CHANNEL_STATE_CHANGE)) {
 			switch(chan->state) {
+			case ZAP_CHANNEL_STATE_DIALING:
+				{
+					if (state_counter > 5000) {
+						if (chan->need_tone[ZAP_TONEMAP_DIAL]) {
+							zap_set_state_locked(chan, ZAP_CHANNEL_STATE_BUSY);
+						} else {
+							zap_set_state_locked(chan, ZAP_CHANNEL_STATE_UP);
+						}
+					} 
+				}
+				break;
 			case ZAP_CHANNEL_STATE_GENRING:
 				{
 					if (state_counter > 60000) {
@@ -183,7 +203,11 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 			case ZAP_CHANNEL_STATE_HANGUP:
 				{
 					if (state_counter > 2000) {
-						zap_set_state_locked(chan, ZAP_CHANNEL_STATE_BUSY);
+						if (chan->type == ZAP_CHAN_TYPE_FXO) {
+							zap_set_state_locked(chan, ZAP_CHANNEL_STATE_DOWN);
+						} else {
+							zap_set_state_locked(chan, ZAP_CHANNEL_STATE_BUSY);
+						}
 					}
 				}
 				break;
@@ -229,6 +253,11 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 
 					data->sig_cb(&sig);
 					continue;
+				}
+				break;
+			case ZAP_CHANNEL_STATE_DIALING:
+				{
+					zap_channel_use(chan);
 				}
 				break;
 			case ZAP_CHANNEL_STATE_IDLE:
@@ -323,6 +352,55 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 			goto done;
 		}
 
+		if (chan->detected_tone) {
+			zap_sigmsg_t sig;
+			memset(&sig, 0, sizeof(sig));
+			sig.chan_id = chan->chan_id;
+			sig.span_id = chan->span_id;
+			sig.channel = chan;
+			sig.event_id = ZAP_SIGEVENT_TONE_DETECTED;
+			zap_log(ZAP_LOG_DEBUG, "Detected tone %s\n", zap_tonemap2str(chan->detected_tone));
+			data->sig_cb(&sig);
+			
+			if (chan->type == ZAP_CHAN_TYPE_FXO) {
+
+				if (chan->need_tone[chan->detected_tone]) {
+					switch (chan->detected_tone) {
+					case ZAP_TONEMAP_DIAL:
+						{
+							zap_channel_command(chan, ZAP_COMMAND_SEND_DTMF, chan->caller_data.ani);
+							state_counter = 0;
+							chan->need_tone[ZAP_TONEMAP_RING] = 1;
+							chan->need_tone[ZAP_TONEMAP_BUSY] = 1;
+						}
+						break;
+					case ZAP_TONEMAP_RING:
+						{
+							zap_set_state_locked(chan, ZAP_CHANNEL_STATE_UP);
+						}
+						break;
+					case ZAP_TONEMAP_BUSY:
+						{
+							zap_set_state_locked(chan, ZAP_CHANNEL_STATE_BUSY);
+						}
+						break;
+					default:
+						break;
+					}
+					chan->need_tone[chan->detected_tone] = 0;
+				}
+			}
+			chan->detected_tone = 0;
+		}
+
+		if (chan->dtmf_buffer && zap_buffer_inuse(chan->dtmf_buffer)) {
+			rlen = len;
+			memset(frame, 0, len);
+			zap_channel_write(chan, frame, sizeof(frame), &rlen);
+			continue;
+		}
+
+
 		if (!indicate) {
 			continue;
 		}
@@ -337,6 +415,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 
 		rlen = zap_buffer_read_loop(dt_buffer, frame, len);					
 
+		
 		if (chan->effective_codec != ZAP_CODEC_SLIN) {
 			zio_codec_t codec_func = NULL;
 
@@ -354,7 +433,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 			}
 		}
 
-		zap_channel_write(chan, frame, &rlen);
+		zap_channel_write(chan, frame, sizeof(frame), &rlen);
 	}
 
  done:

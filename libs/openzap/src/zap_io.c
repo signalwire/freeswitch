@@ -271,9 +271,30 @@ zap_status_t zap_span_load_tones(zap_span_t *span, char *mapname)
 	while (zap_config_next_pair(&cfg, &var, &val)) {
 		if (!strcasecmp(cfg.category, mapname) && var && val) {
 			int index = zap_str2zap_tonemap(var);
-			if (index > ZAP_TONEMAP_INVALID) {
+			char valbuf[512];
+
+			if (index > ZAP_TONEMAP_INVALID || index == ZAP_TONEMAP_NONE) {
 				zap_log(ZAP_LOG_WARNING, "Unknown tone name %s\n", var);
 			} else {
+				char *p, *next;
+				int i = 0;
+				zap_set_string(valbuf, val);
+				val = valbuf;
+				if ((p = strchr(val, ':'))) {
+					*p++ = '\0';
+					do {
+						teletone_process_t this;
+						next = strchr(p, ',');
+						this = atof(p);
+						span->tone_detect_map[index].freqs[i++] = this;
+						if (next) {
+							p = next + 1;
+						}
+					} while (next);
+
+					zap_copy_string(span->tone_map[index], val, sizeof(span->tone_map[index]));
+					
+				}
 				zap_log(ZAP_LOG_DEBUG, "added tone [%s] = [%s]\n", var, val);
 				zap_copy_string(span->tone_map[index], val, sizeof(span->tone_map[index]));
 				x++;
@@ -718,7 +739,7 @@ static zap_status_t zchan_activate_dtmf_buffer(zap_channel_t *zchan)
 	}
 	
 	if (!zchan->dtmf_on) {
-		zchan->dtmf_on = 150;
+		zchan->dtmf_on = 250;
 	}
 
 	if (!zchan->dtmf_off) {
@@ -726,11 +747,16 @@ static zap_status_t zchan_activate_dtmf_buffer(zap_channel_t *zchan)
 	}
 	
 	memset(&zchan->tone_session, 0, sizeof(zchan->tone_session));
-	teletone_init_session(&zchan->tone_session, 1024, NULL, NULL);
+	teletone_init_session(&zchan->tone_session, 0, NULL, NULL);
 	
 	zchan->tone_session.rate = 8000;
 	zchan->tone_session.duration = zchan->dtmf_on * (zchan->tone_session.rate / 1000);
 	zchan->tone_session.wait = zchan->dtmf_off * (zchan->tone_session.rate / 1000);
+	/*
+	  zchan->tone_session.debug = 1;
+	  zchan->tone_session.debug_stream = stdout;
+	*/
+
 	return ZAP_SUCCESS;
 }
 
@@ -809,6 +835,22 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 			}
 		}
 		break;
+	case ZAP_COMMAND_ENABLE_PROGRESS_DETECT:
+		{
+			/* if they don't have thier own, use ours */
+			teletone_multi_tone_init(&zchan->span->tone_finder[ZAP_TONEMAP_DIAL], &zchan->span->tone_detect_map[ZAP_TONEMAP_DIAL]);
+			teletone_multi_tone_init(&zchan->span->tone_finder[ZAP_TONEMAP_RING], &zchan->span->tone_detect_map[ZAP_TONEMAP_RING]);
+			teletone_multi_tone_init(&zchan->span->tone_finder[ZAP_TONEMAP_BUSY], &zchan->span->tone_detect_map[ZAP_TONEMAP_BUSY]);
+			zap_set_flag(zchan, ZAP_CHANNEL_PROGRESS_DETECT);
+			GOTO_STATUS(done, ZAP_SUCCESS);
+		}
+		break;
+	case ZAP_COMMAND_DISABLE_PROGRESS_DETECT:
+		{
+			zap_clear_flag_locked(zchan, ZAP_CHANNEL_PROGRESS_DETECT);
+			GOTO_STATUS(done, ZAP_SUCCESS);
+		}
+		break;
 	case ZAP_COMMAND_ENABLE_TONE_DETECT:
 		{
 			/* if they don't have thier own, use ours */
@@ -816,8 +858,8 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 				zap_tone_type_t tt = ZAP_COMMAND_OBJ_INT;
 				if (tt == ZAP_TONE_DTMF) {
 					teletone_dtmf_detect_init (&zchan->dtmf_detect, 8000);
-					zap_set_flag(zchan, ZAP_CHANNEL_DTMF_DETECT);
-					zap_set_flag(zchan, ZAP_CHANNEL_SUPRESS_DTMF);
+					zap_set_flag_locked(zchan, ZAP_CHANNEL_DTMF_DETECT);
+					zap_set_flag_locked(zchan, ZAP_CHANNEL_SUPRESS_DTMF);
 					GOTO_STATUS(done, ZAP_SUCCESS);
 				} else {
 					snprintf(zchan->last_error, sizeof(zchan->last_error), "invalid command");
@@ -890,6 +932,8 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF)) {
 				char *cur;
 				char *digits = ZAP_COMMAND_OBJ_CHAR_P;
+				int x = 0;
+
 				if (!zchan->dtmf_buffer) {
 					if ((status = zchan_activate_dtmf_buffer(zchan)) != ZAP_SUCCESS) {
 						GOTO_STATUS(done, status);
@@ -901,10 +945,11 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 					int wrote = 0;
 					if ((wrote = teletone_mux_tones(&zchan->tone_session, &zchan->tone_session.TONES[(int)*cur]))) {
 						zap_buffer_write(zchan->dtmf_buffer, zchan->tone_session.buffer, wrote * 2);
+						x++;
 					}
 				}
 				
-				zchan->skip_read_frames = 200;
+				zchan->skip_read_frames = 200 * x;
 				GOTO_STATUS(done, ZAP_SUCCESS);
 			}
 		}
@@ -1169,7 +1214,7 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 		}
 	}
 
-	if (zap_test_flag(zchan, ZAP_CHANNEL_DTMF_DETECT)) {
+	if (zap_test_flag(zchan, ZAP_CHANNEL_DTMF_DETECT) || zap_test_flag(zchan, ZAP_CHANNEL_PROGRESS_DETECT)) {
 		uint8_t sln_buf[1024] = {0};
 		int16_t *sln;
 		zap_size_t slen = 0;
@@ -1203,47 +1248,62 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 			slen = len;
 		}
 
-		teletone_dtmf_detect(&zchan->dtmf_detect, sln, (int)slen);
-		teletone_dtmf_get(&zchan->dtmf_detect, digit_str, sizeof(digit_str));
-
-		if(*digit_str) {
-			zio_event_cb_t event_callback = NULL;
-
-			zap_channel_queue_dtmf(zchan, digit_str);
-
-			if (zchan->span->event_callback) {
-				event_callback = zchan->span->event_callback;
-			} else if (zchan->event_callback) {
-				event_callback = zchan->event_callback;
+		if (zap_test_flag(zchan, ZAP_CHANNEL_PROGRESS_DETECT)) {
+			uint32_t i;
+			
+			for (i = 0; i < ZAP_TONEMAP_INVALID+1; i++) {
+				if (zchan->span->tone_finder[i].tone_count) {
+					if (teletone_multi_tone_detect(&zchan->span->tone_finder[i], sln, (int)slen) && i != zchan->last_detected_tone) {
+						zchan->detected_tone = i;
+						zchan->last_detected_tone = i;
+					}
+				}
 			}
+		}
 
-			if (event_callback) {
-				zchan->event_header.channel = zchan;
-				zchan->event_header.e_type = ZAP_EVENT_DTMF;
-				zchan->event_header.data = digit_str;
-				event_callback(zchan, &zchan->event_header);
-				zchan->event_header.e_type = ZAP_EVENT_NONE;
-				zchan->event_header.data = NULL;
+		if (zap_test_flag(zchan, ZAP_CHANNEL_DTMF_DETECT)) {
+
+			teletone_dtmf_detect(&zchan->dtmf_detect, sln, (int)slen);
+			teletone_dtmf_get(&zchan->dtmf_detect, digit_str, sizeof(digit_str));
+
+			if(*digit_str) {
+				zio_event_cb_t event_callback = NULL;
+
+				zap_channel_queue_dtmf(zchan, digit_str);
+
+				if (zchan->span->event_callback) {
+					event_callback = zchan->span->event_callback;
+				} else if (zchan->event_callback) {
+					event_callback = zchan->event_callback;
+				}
+
+				if (event_callback) {
+					zchan->event_header.channel = zchan;
+					zchan->event_header.e_type = ZAP_EVENT_DTMF;
+					zchan->event_header.data = digit_str;
+					event_callback(zchan, &zchan->event_header);
+					zchan->event_header.e_type = ZAP_EVENT_NONE;
+					zchan->event_header.data = NULL;
+				}
+				if (zap_test_flag(zchan, ZAP_CHANNEL_SUPRESS_DTMF)) {
+					zchan->skip_read_frames = 20;
+				}
+				if (zchan->skip_read_frames > 0) {
+					memset(data, 0, *datalen);
+					zchan->skip_read_frames--;
+				}  
 			}
-			if (zap_test_flag(zchan, ZAP_CHANNEL_SUPRESS_DTMF)) {
-				zchan->skip_read_frames = 20;
-			}
-			if (zchan->skip_read_frames > 0) {
-				memset(data, 0, *datalen);
-				zchan->skip_read_frames--;
-			}  
 		}
 	}
-
 	return status;
 }
 
 
-zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t *datalen)
+zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t datasize, zap_size_t *datalen)
 {
 	zap_status_t status = ZAP_FAIL;
 	zio_codec_t codec_func = NULL;
-	zap_size_t dtmf_blen, max = *datalen;
+	zap_size_t dtmf_blen, max = datasize;
 	
 	assert(zchan != NULL);
 	assert(zchan->zio != NULL);
@@ -1277,11 +1337,11 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t *dat
 		}
 	}
 
-	if (zchan->dtmf_buffer && (dtmf_blen = zap_buffer_inuse(zchan->dtmf_buffer))) {
+	if (zchan->dtmf_buffer && (dtmf_blen = zap_buffer_inuse(zchan->dtmf_buffer)) && (!zchan->dtmf_delay || --zchan->dtmf_delay == 0)) {
 		zap_size_t dlen = *datalen;
 		uint8_t auxbuf[1024];
 		zap_size_t len, br;
-
+		
 		if (zchan->native_codec != ZAP_CODEC_SLIN) {
 			dlen *= 2;
 		}
@@ -1305,6 +1365,7 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t *dat
 				zio_slin2alaw(data, max, datalen);
 			}
 		}
+		
 	} 
 
     status = zchan->zio->write(zchan, data, datalen);

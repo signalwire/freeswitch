@@ -25,7 +25,7 @@ static void *test_call(zap_thread_t *me, void *obj)
 		if (flags & ZAP_READ) {
 			if (zap_channel_read(chan, frame, &len) == ZAP_SUCCESS) {
 				//zap_log(ZAP_LOG_DEBUG, "WRITE %d\n", len);
-				zap_channel_write(chan, frame, &len);
+				zap_channel_write(chan, frame, sizeof(frame), &len);
 			} else {
 				break;
 			}
