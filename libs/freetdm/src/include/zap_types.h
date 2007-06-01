@@ -61,10 +61,13 @@ typedef enum {
 	ZAP_TONEMAP_DIAL,
 	ZAP_TONEMAP_RING,
 	ZAP_TONEMAP_BUSY,
+	ZAP_TONEMAP_FAIL1,
+	ZAP_TONEMAP_FAIL2,
+	ZAP_TONEMAP_FAIL3,
 	ZAP_TONEMAP_ATTN,
 	ZAP_TONEMAP_INVALID
 } zap_tonemap_t;
-#define TONEMAP_STRINGS "NONE", "DIAL", "RING", "BUSY", "ATTN", "INVALID"
+#define TONEMAP_STRINGS "NONE", "DIAL", "RING", "BUSY", "FAIL1", "FAIL2", "FAIL3", "ATTN", "INVALID"
 ZAP_STR2ENUM_P(zap_str2zap_tonemap, zap_tonemap2str, zap_tonemap_t)
 
 typedef enum {

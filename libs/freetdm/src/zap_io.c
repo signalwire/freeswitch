@@ -269,19 +269,27 @@ zap_status_t zap_span_load_tones(zap_span_t *span, char *mapname)
 	}
 	
 	while (zap_config_next_pair(&cfg, &var, &val)) {
-		if (!strcasecmp(cfg.category, mapname) && var && val) {
-			int index = zap_str2zap_tonemap(var);
-			char valbuf[512];
+		int detect = 0;
 
-			if (index > ZAP_TONEMAP_INVALID || index == ZAP_TONEMAP_NONE) {
-				zap_log(ZAP_LOG_WARNING, "Unknown tone name %s\n", var);
+		if (!strcasecmp(cfg.category, mapname) && var && val) {
+			uint32_t index;
+			char *mapname;
+
+			if (!strncasecmp(var, "detect-", 7)) {
+				mapname = var + 7;
+				detect = 1;
+			} else if (!strncasecmp(var, "generate-", 9)) {
+				mapname = var + 9;
+			}
+
+			index = zap_str2zap_tonemap(mapname);
+
+			if (index >= ZAP_TONEMAP_INVALID || index == ZAP_TONEMAP_NONE) {
+				zap_log(ZAP_LOG_WARNING, "Unknown tone name %s\n", mapname);
 			} else {
-				char *p, *next;
-				int i = 0;
-				zap_set_string(valbuf, val);
-				val = valbuf;
-				if ((p = strchr(val, ':'))) {
-					*p++ = '\0';
+				if (detect) {
+					char *p = val, *next;
+					int i = 0;
 					do {
 						teletone_process_t this;
 						next = strchr(p, ',');
@@ -291,12 +299,11 @@ zap_status_t zap_span_load_tones(zap_span_t *span, char *mapname)
 							p = next + 1;
 						}
 					} while (next);
-
+					zap_log(ZAP_LOG_DEBUG, "added tone detect [%s] = [%s]\n", mapname, val);
+				}  else {
+					zap_log(ZAP_LOG_DEBUG, "added tone generation [%s] = [%s]\n", mapname, val);
 					zap_copy_string(span->tone_map[index], val, sizeof(span->tone_map[index]));
-					
 				}
-				zap_log(ZAP_LOG_DEBUG, "added tone [%s] = [%s]\n", var, val);
-				zap_copy_string(span->tone_map[index], val, sizeof(span->tone_map[index]));
 				x++;
 			}
 		}
@@ -848,6 +855,8 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 	case ZAP_COMMAND_DISABLE_PROGRESS_DETECT:
 		{
 			zap_clear_flag_locked(zchan, ZAP_CHANNEL_PROGRESS_DETECT);
+			zap_channel_clear_detected_tones(zchan);
+			zap_channel_clear_needed_tones(zchan);
 			GOTO_STATUS(done, ZAP_SUCCESS);
 		}
 		break;
@@ -1121,6 +1130,16 @@ ZIO_CODEC_FUNCTION(zio_alaw2ulaw)
 
 /******************************/
 
+void zap_channel_clear_detected_tones(zap_channel_t *zchan)
+{
+	memset(zchan->detected_tones, 0, sizeof(zchan->detected_tones[0]) * ZAP_TONEMAP_INVALID);
+}
+
+void zap_channel_clear_needed_tones(zap_channel_t *zchan)
+{
+	memset(zchan->needed_tones, 0, sizeof(zchan->needed_tones[0]) * ZAP_TONEMAP_INVALID);
+}
+
 zap_size_t zap_channel_dequeue_dtmf(zap_channel_t *zchan, char *dtmf, zap_size_t len)
 {
 	zap_size_t bytes = 0;
@@ -1251,11 +1270,12 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 		if (zap_test_flag(zchan, ZAP_CHANNEL_PROGRESS_DETECT)) {
 			uint32_t i;
 			
-			for (i = 0; i < ZAP_TONEMAP_INVALID+1; i++) {
+			for (i = 1; i < ZAP_TONEMAP_INVALID; i++) {
 				if (zchan->span->tone_finder[i].tone_count) {
-					if (teletone_multi_tone_detect(&zchan->span->tone_finder[i], sln, (int)slen) && i != zchan->last_detected_tone) {
-						zchan->detected_tone = i;
-						zchan->last_detected_tone = i;
+					if (zchan->needed_tones[i] && teletone_multi_tone_detect(&zchan->span->tone_finder[i], sln, (int)slen)) {
+						zchan->detected_tones[i] = 1;
+						zchan->needed_tones[i] = 0;
+						zchan->detected_tones[0]++;
 					}
 				}
 			}
