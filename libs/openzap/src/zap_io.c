@@ -273,19 +273,22 @@ zap_status_t zap_span_load_tones(zap_span_t *span, char *mapname)
 
 		if (!strcasecmp(cfg.category, mapname) && var && val) {
 			uint32_t index;
-			char *mapname;
+			char *name = NULL;
 
 			if (!strncasecmp(var, "detect-", 7)) {
-				mapname = var + 7;
+				name = var + 7;
 				detect = 1;
 			} else if (!strncasecmp(var, "generate-", 9)) {
-				mapname = var + 9;
+				name = var + 9;
+			} else {
+				zap_log(ZAP_LOG_WARNING, "Unknown tone name %s\n", var);
+				continue;
 			}
 
-			index = zap_str2zap_tonemap(mapname);
+			index = zap_str2zap_tonemap(name);
 
 			if (index >= ZAP_TONEMAP_INVALID || index == ZAP_TONEMAP_NONE) {
-				zap_log(ZAP_LOG_WARNING, "Unknown tone name %s\n", mapname);
+				zap_log(ZAP_LOG_WARNING, "Unknown tone name %s\n", name);
 			} else {
 				if (detect) {
 					char *p = val, *next;
@@ -299,9 +302,9 @@ zap_status_t zap_span_load_tones(zap_span_t *span, char *mapname)
 							p = next + 1;
 						}
 					} while (next);
-					zap_log(ZAP_LOG_DEBUG, "added tone detect [%s] = [%s]\n", mapname, val);
+					zap_log(ZAP_LOG_DEBUG, "added tone detect [%s] = [%s]\n", name, val);
 				}  else {
-					zap_log(ZAP_LOG_DEBUG, "added tone generation [%s] = [%s]\n", mapname, val);
+					zap_log(ZAP_LOG_DEBUG, "added tone generation [%s] = [%s]\n", name, val);
 					zap_copy_string(span->tone_map[index], val, sizeof(span->tone_map[index]));
 				}
 				x++;
