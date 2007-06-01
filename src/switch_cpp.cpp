@@ -77,7 +77,9 @@ void CoreSession::execute(char *app, char *data)
 	sanity_check();
 
 	if ((application_interface = switch_loadable_module_get_application_interface(app))) {
+		begin_allow_threads();
 		switch_core_session_exec(session, application_interface, data);
+		end_allow_threads();
 	}
 }
 
@@ -88,9 +90,11 @@ int CoreSession::playFile(char *file, char *timer_name)
     if (switch_strlen_zero(timer_name)) {
         timer_name = NULL;
     }
-
+	begin_allow_threads();
 	status = switch_ivr_play_file(session, NULL, file, ap);
+	end_allow_threads();
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
+
 }
 
 void CoreSession::setDTMFCallback(switch_input_callback_function_t cb, void *buf, uint32_t buflen)
@@ -114,7 +118,9 @@ int CoreSession::speakText(char *text)
 
 	sanity_check(-1);
     codec = switch_core_session_get_read_codec(session);
+	begin_allow_threads();
 	status = switch_ivr_speak_text(session, tts_name, voice_name, codec->implementation->samples_per_second, text, ap);
+	end_allow_threads();
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
@@ -131,7 +137,9 @@ int CoreSession::getDigits(char *dtmf_buf, int len, char *terminators, char *ter
 {
     switch_status_t status;
 	sanity_check(-1);
+	begin_allow_threads();
     status = switch_ivr_collect_digits_count(session, dtmf_buf,(uint32_t) len,(uint32_t) len, terminators, terminator, (uint32_t) timeout);
+	end_allow_threads();
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
@@ -143,16 +151,36 @@ int CoreSession::transfer(char *extension, char *dialplan, char *context)
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-int CoreSession::playAndgetDigits(int min_digits, int max_digits, int max_tries, int timeout, char *terminators, 
+int CoreSession::playAndGetDigits(int min_digits, int max_digits, int max_tries, int timeout, char *terminators, 
                 char *audio_files, char *bad_input_audio_files, char *dtmf_buf, char *digits_regex)
 {
     switch_status_t status;
 	sanity_check(-1);
-    status = switch_play_and_get_digits( session, (uint32_t) min_digits,(uint32_t) max_digits,
-            (uint32_t) max_tries, (uint32_t) timeout, 
-            terminators, audio_files, bad_input_audio_files, dtmf_buf, 128, digits_regex);
+	begin_allow_threads();
+    status = switch_play_and_get_digits( session, 
+										 (uint32_t) min_digits,
+										 (uint32_t) max_digits,
+										 (uint32_t) max_tries, 
+										 (uint32_t) timeout, 
+										 terminators, 
+										 audio_files, 
+										 bad_input_audio_files, 
+										 dtmf_buf, 128, 
+										 digits_regex);
+	end_allow_threads();
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
+
+int CoreSession::streamfile(char *file, void *cb_func, char *funcargs, int starting_sample_count) {
+	return 0;
+}
+
+void CoreSession::begin_allow_threads() { 
+}
+
+void CoreSession::end_allow_threads() { 
+}
+
 
 
 /* For Emacs:

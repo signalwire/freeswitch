@@ -44,7 +44,7 @@
 #include <switch.h>
 
 
-static PyThreadState *mainThreadState = NULL;
+PyThreadState *mainThreadState = NULL;
 
 void init_freeswitch(void);
 static switch_api_interface_t python_run_interface;
@@ -111,7 +111,7 @@ static void eval_some_python(char *uuid, char *args)
 		PyRun_SimpleString("from freeswitch import *");
 		if (uuid) {
 			char code[128];
-			snprintf(code, sizeof(code), "session = SessionContainer(\"%s\");", uuid);
+			snprintf(code, sizeof(code), "session = PySession(\"%s\");", uuid);
 			PyRun_SimpleString(code);
 		}
 		PySys_SetArgv(argc - lead, &argv[lead]);

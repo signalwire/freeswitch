@@ -17,7 +17,7 @@ local_depend:
 	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install Python-2.5.1.tgz --prefix=$(PREFIX) --enable-threads CFLAGSFORSHARED="-fPIC"
 
 reswig: 
-	swig -python -shadow -c++ -o mod_python_wrap.cpp mod_python.i
+	swig -python -shadow -c++ -I../../../../src/include -o mod_python_wrap.cpp mod_python.i
 
 switch_swig_wrap.o: switch_swig_wrap.c Makefile
 	$(CC)  -w $(CFLAGS) -c $< -o $@
