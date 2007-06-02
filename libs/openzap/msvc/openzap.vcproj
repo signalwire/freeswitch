@@ -461,6 +461,38 @@
 				</File>
 			</Filter>
 		</Filter>
+		<Filter
+			Name="Dsp"
+			>
+			<File
+				RelativePath="..\src\dsp\readme.txt"
+				>
+			</File>
+			<Filter
+				Name="Header Files"
+				>
+				<File
+					RelativePath="..\src\dsp\bell202.h"
+					>
+				</File>
+				<File
+					RelativePath="..\src\dsp\uart.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="Source Files"
+				>
+				<File
+					RelativePath="..\src\dsp\bell202.c"
+					>
+				</File>
+				<File
+					RelativePath="..\src\dsp\uart.c"
+					>
+				</File>
+			</Filter>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>
