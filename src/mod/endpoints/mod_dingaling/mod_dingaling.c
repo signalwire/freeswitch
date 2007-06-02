@@ -439,7 +439,7 @@ static void pres_event_handler(switch_event_t *event)
 			}
 
 			if (f_host && (profile = switch_core_hash_find(globals.profile_hash, f_host))) {
-				if (to && (sql = switch_mprintf("select * from jabber_subscriptions where sub_to='%q'", to))) {
+				if (to && (sql = switch_mprintf("select * from jabber_subscriptions where sub_to='%q' and sub_from='%q'", to, from))) {
 					mdl_execute_sql_callback(profile, profile->mutex, sql, sin_callback, profile);
 					switch_safe_free(sql);
 				}
@@ -1599,7 +1599,7 @@ static const switch_endpoint_interface_t channel_endpoint_interface = {
 
 static switch_api_interface_t debug_api_interface = {
 	/*.interface_name */ "dl_debug",
-	/*.desc */ "DingaLing Presence",
+	/*.desc */ "DingaLing Debug",
 	/*.function */ dl_debug,
 	/*.syntax */ "dl_debug [true|false]",
 	/*.next */ NULL
