@@ -46,8 +46,7 @@
  *	attributes structure is used.
 */
 
-void
-dsp_uart_attr_init (dsp_uart_attr_t *attr)
+void dsp_uart_attr_init (dsp_uart_attr_t *attr)
 {
 	memset (attr, 0, sizeof (*attr));
 }
@@ -61,22 +60,19 @@ dsp_uart_attr_init (dsp_uart_attr_t *attr)
  *	zero == ok, -1 == fail.
 */
 
-void (*
-dsp_uart_attr_get_bytehandler (dsp_uart_attr_t *attr, void **bytehandler_arg)) (void *, int)
+bytehandler_func_t dsp_uart_attr_get_bytehandler (dsp_uart_attr_t *attr, void **bytehandler_arg)
 {
 	*bytehandler_arg = attr -> bytehandler_arg;
 	return (attr -> bytehandler);
 }
 
-void
-dsp_uart_attr_set_bytehandler (dsp_uart_attr_t *attr, void (*bytehandler) (void *, int ), void *bytehandler_arg)
+void dsp_uart_attr_set_bytehandler (dsp_uart_attr_t *attr, bytehandler_func_t bytehandler, void *bytehandler_arg)
 {
 	attr -> bytehandler = bytehandler;
 	attr -> bytehandler_arg = bytehandler_arg;
 }
 
-dsp_uart_handle_t *
-dsp_uart_create (dsp_uart_attr_t *attr)
+dsp_uart_handle_t *dsp_uart_create (dsp_uart_attr_t *attr)
 {
 	dsp_uart_handle_t	*handle;
 
@@ -86,21 +82,28 @@ dsp_uart_create (dsp_uart_attr_t *attr)
 	}
 	memset (handle, 0, sizeof (handle));
 
-	// fill the attributes member
+	/* fill the attributes member */
 	memcpy (&handle -> attr, attr, sizeof (*attr));
 
 	return (handle);
 }
 
-void
-dsp_uart_bit_handler (void *x, int bit)
+void dsp_uart_destroy (dsp_uart_handle_t **handle)
+{
+	if (*handle) {
+		free(*handle);
+		*handle = NULL;
+	}
+}
+
+
+void dsp_uart_bit_handler (void *x, int bit)
 {
 	dsp_uart_handle_t *handle = (dsp_uart_handle_t *) x;
 
-//	printf ("bit %d handle -> have_start %d handle -> data %02X handle -> nbits %d\n", bit, handle -> have_start, handle -> data, handle -> nbits);
 	if (!handle -> have_start) {
 		if (bit) {
-			return;		// waiting for start bit (0)
+			return;		/* waiting for start bit (0) */
 		}
 		handle -> have_start = 1;
 		handle -> data = 0;
@@ -118,11 +121,11 @@ dsp_uart_bit_handler (void *x, int bit)
 		handle -> data = 0;
 		handle -> have_start = 0;
 
-// might consider handling errors in the future...
+/* might consider handling errors in the future... */
 #if 0
 	} else if (handle -> nbits > 8) {
 		if (!bit) {
-			// framing error; expected stop bit (mark, 1)
+			/* framing error; expected stop bit (mark, 1) */
 			printf ("FRAME"); fflush (stdout);
 		} else {
 			handle -> have_start = 0;
