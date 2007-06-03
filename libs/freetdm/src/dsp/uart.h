@@ -35,18 +35,20 @@
 #ifndef	__UART_H__
 #define	__UART_H__
 
+typedef void (*bytehandler_func_t) (void *, int);
+
 typedef struct dsp_uart_attr_s
 {
-	void				(*bytehandler) (void *, int);	// byte handler
-	void				*bytehandler_arg;				// arbitrary ID passed to bytehandler as first argument
+	bytehandler_func_t	bytehandler;					/* byte handler */
+	void				*bytehandler_arg;				/* arbitrary ID passed to bytehandler as first argument */
 }	dsp_uart_attr_t;
 
 typedef struct
 {
 	dsp_uart_attr_t		attr;
-	int					have_start;						// wait for start bit to show up
-	int					data;							// data buffer
-	int					nbits;							// number of bits accumulated so far
+	int					have_start;						/* wait for start bit to show up */
+	int					data;							/* data buffer */
+	int					nbits;							/* number of bits accumulated so far */
 }	dsp_uart_handle_t;
 
 /*
@@ -56,24 +58,18 @@ typedef struct
  *		a) create the attributes structure (dsp_uart_attr_init)
  *		b) initialize fields in the attributes structure (dsp_uart_attr_set_*)
  *		c) create a Bell-202 handle (dsp_uart_create)
- *		d) feed samples through the handler (dsp_uart_sample)
+ *		d) feed bits through dsp_uart_bit_handler
 */
 
-extern	void					dsp_uart_attr_init (dsp_uart_attr_t *attributes);
+void					dsp_uart_attr_init (dsp_uart_attr_t *attributes);
 
-extern  void					(*dsp_uart_attr_get_bithandler (dsp_uart_attr_t *attributes, void **bithandler_arg)) (void *, int);
-extern	void					dsp_uart_attr_set_bithandler (dsp_uart_attr_t *attributes, void (*bithandler) (void *, int ), void *bithandler_arg);
-extern  void					(*dsp_uart_attr_get_bytehandler (dsp_uart_attr_t *attributes, void **bytehandler_arg)) (void *, int);
-extern	void					dsp_uart_attr_set_bytehandler (dsp_uart_attr_t *attributes, void (*bytehandler) (void *, int ), void *bytehandler_arg);
-extern	int						dsp_uart_attr_get_samplerate (dsp_uart_attr_t *attributes);
-extern	int						dsp_uart_attr_set_samplerate (dsp_uart_attr_t *attributes, int samplerate);
+bytehandler_func_t		dsp_uart_attr_get_bytehandler (dsp_uart_attr_t *attributes, void **bytehandler_arg);
+void					dsp_uart_attr_set_bytehandler (dsp_uart_attr_t *attributes, bytehandler_func_t bytehandler, void *bytehandler_arg);
 
-extern	dsp_uart_handle_t *		dsp_uart_create (dsp_uart_attr_t *attributes);
-extern	void					dsp_uart_destroy (dsp_uart_handle_t *handle);
+dsp_uart_handle_t *		dsp_uart_create (dsp_uart_attr_t *attributes);
+void					dsp_uart_destroy (dsp_uart_handle_t **handle);
 
-extern	void					dsp_uart_sample (dsp_uart_handle_t *handle, double normalized_sample);
-
-extern	void					dsp_uart_bit_handler (void *handle, int bit);
+void					dsp_uart_bit_handler (void *handle, int bit);
 
 #endif	// __UART_H__
 
