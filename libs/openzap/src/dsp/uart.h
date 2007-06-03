@@ -61,15 +61,15 @@ typedef struct
  *		d) feed bits through dsp_uart_bit_handler
 */
 
-void					dsp_uart_attr_init (dsp_uart_attr_t *attributes);
+void					dsp_uart_attr_init(dsp_uart_attr_t *attributes);
 
-bytehandler_func_t		dsp_uart_attr_get_bytehandler (dsp_uart_attr_t *attributes, void **bytehandler_arg);
-void					dsp_uart_attr_set_bytehandler (dsp_uart_attr_t *attributes, bytehandler_func_t bytehandler, void *bytehandler_arg);
+bytehandler_func_t		dsp_uart_attr_get_bytehandler(dsp_uart_attr_t *attributes, void **bytehandler_arg);
+void					dsp_uart_attr_set_bytehandler(dsp_uart_attr_t *attributes, bytehandler_func_t bytehandler, void *bytehandler_arg);
 
-dsp_uart_handle_t *		dsp_uart_create (dsp_uart_attr_t *attributes);
-void					dsp_uart_destroy (dsp_uart_handle_t **handle);
+dsp_uart_handle_t *		dsp_uart_create(dsp_uart_attr_t *attributes);
+void					dsp_uart_destroy(dsp_uart_handle_t **handle);
 
-void					dsp_uart_bit_handler (void *handle, int bit);
+void					dsp_uart_bit_handler(void *handle, int bit);
 
 #endif	// __UART_H__
 
