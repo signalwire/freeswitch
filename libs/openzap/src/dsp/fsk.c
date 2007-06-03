@@ -51,61 +51,65 @@
 #define	BELL202_SPACE			2200
 #define	BELL202_BAUD			1200
 
+#define V23_MARK				1300
+#define V23_SPACE				2100
+#define V23_BAUD				1200
+
 /*
- *	dsp_bell202_attr_init
+ *	dsp_fsk_attr_init
  *
  *	Initializes the attributes structure; this must be done before the
  *	attributes structure is used.
 */
 
-void dsp_bell202_attr_init (dsp_bell202_attr_t *attr)
+void dsp_fsk_attr_init (dsp_fsk_attr_t *attr)
 {
 	memset(attr, 0, sizeof(*attr));
 }
 
 /*
- *	dsp_bell202_attr_get_bithandler
- *	dsp_bell202_attr_set_bithandler
- *	dsp_bell202_attr_get_bytehandler
- *	dsp_bell202_attr_set_bytehandler
- *	dsp_bell202_attr_getsamplerate
- *	dsp_bell202_attr_setsamplerate
+ *	dsp_fsk_attr_get_bithandler
+ *	dsp_fsk_attr_set_bithandler
+ *	dsp_fsk_attr_get_bytehandler
+ *	dsp_fsk_attr_set_bytehandler
+ *	dsp_fsk_attr_getsamplerate
+ *	dsp_fsk_attr_setsamplerate
  *
  *	These functions get and set their respective elements from the
  *	attributes structure.  If an error code is returned, it is just
  *	zero == ok, -1 == fail.
 */
 
-bithandler_func_t dsp_bell202_attr_get_bithandler(dsp_bell202_attr_t *attr, void **bithandler_arg)
+bithandler_func_t dsp_fsk_attr_get_bithandler(dsp_fsk_attr_t *attr, void **bithandler_arg)
 {
 	*bithandler_arg = attr->bithandler_arg;
 	return attr->bithandler;
 }
 
-void dsp_bell202_attr_set_bithandler(dsp_bell202_attr_t *attr, bithandler_func_t bithandler, void *bithandler_arg)
+void dsp_fsk_attr_set_bithandler(dsp_fsk_attr_t *attr, bithandler_func_t bithandler, void *bithandler_arg)
 {
 	attr->bithandler = bithandler;
 	attr->bithandler_arg = bithandler_arg;
 }
 
-bytehandler_func_t dsp_bell202_attr_get_bytehandler(dsp_bell202_attr_t *attr, void **bytehandler_arg)
+bytehandler_func_t dsp_fsk_attr_get_bytehandler(dsp_fsk_attr_t *attr, void **bytehandler_arg)
 {
 	*bytehandler_arg = attr->bytehandler_arg;
 	return attr->bytehandler;
 }
 
-void dsp_bell202_attr_set_bytehandler(dsp_bell202_attr_t *attr, bytehandler_func_t bytehandler, void *bytehandler_arg)
+void dsp_fsk_attr_set_bytehandler(dsp_fsk_attr_t *attr, bytehandler_func_t bytehandler, void *bytehandler_arg)
 {
 	attr->bytehandler = bytehandler;
 	attr->bytehandler_arg = bytehandler_arg;
 }
 
-int dsp_bell202_attr_get_samplerate (dsp_bell202_attr_t *attr)
+int dsp_fsk_attr_get_samplerate (dsp_fsk_attr_t *attr)
 {
 	return attr->sample_rate;
 }
 
-int dsp_bell202_attr_set_samplerate (dsp_bell202_attr_t *attr, int samplerate)
+int dsp_fsk_attr_set_samplerate (dsp_fsk_attr_t *attr, int samplerate)
 {
 	if (samplerate <= 0) {
 		return -1;
@@ -115,7 +119,7 @@ int dsp_bell202_attr_set_samplerate (dsp_bell202_attr_t *attr, int samplerate)
 }
 
 /*
- *	dsp_bell202_create
+ *	dsp_fsk_create
  *
  *	Creates a handle for subsequent use.  The handle is created to contain
  *	a context data structure for use by the sample handler function.  The
@@ -125,11 +129,11 @@ int dsp_bell202_attr_set_samplerate (dsp_bell202_attr_t *attr, int samplerate)
  *	Once created, the handle can be used until it is destroyed.
 */
 
-dsp_bell202_handle_t *dsp_bell202_create(dsp_bell202_attr_t *attr)
+dsp_fsk_handle_t *dsp_fsk_create(dsp_fsk_attr_t *attr)
 {
 	int						i;
 	double					phi_mark, phi_space;
-	dsp_bell202_handle_t	*handle;
+	dsp_fsk_handle_t	*handle;
 
 	handle = malloc(sizeof(*handle));
 	if (!handle) {
@@ -157,7 +161,7 @@ dsp_bell202_handle_t *dsp_bell202_create(dsp_bell202_attr_t *attr)
 		handle->correlates[i] = malloc(sizeof(double) * handle->corrsize);
 		if (handle->correlates[i] == NULL) {
 			/* some failed, back out memory allocations */
-			dsp_bell202_destroy(&handle);
+			dsp_fsk_destroy(&handle);
 			return NULL;
 		}
 	}
@@ -176,7 +180,7 @@ dsp_bell202_handle_t *dsp_bell202_create(dsp_bell202_attr_t *attr)
 	/* initialize the ring buffer */
 	handle->buffer = malloc(sizeof(double) * handle->corrsize);
 	if (!handle->buffer) {				/* failed; back out memory allocations */
-		dsp_bell202_destroy(&handle);
+		dsp_fsk_destroy(&handle);
 		return NULL;
 	}
 	memset(handle->buffer, 0, sizeof(double) * handle->corrsize);
@@ -195,7 +199,7 @@ dsp_bell202_handle_t *dsp_bell202_create(dsp_bell202_attr_t *attr)
 		dsp_uart_attr_set_bytehandler(&uart_attr, handle->attr.bytehandler, handle->attr.bytehandler_arg);
 		uart_handle = dsp_uart_create(&uart_attr);
 		if (uart_handle == NULL) {
-			dsp_bell202_destroy(&handle);
+			dsp_fsk_destroy(&handle);
 			return NULL;
 		}
 		handle->attr.bithandler = dsp_uart_bit_handler;
@@ -206,13 +210,13 @@ dsp_bell202_handle_t *dsp_bell202_create(dsp_bell202_attr_t *attr)
 }
 
 /*
- *	dsp_bell202_destroy
+ *	dsp_fsk_destroy
  *
  *	Destroys a handle, releasing any associated memory.  Sets handle pointer to NULL 
  *	so A destroyed handle can not be used for anything after the destroy.
 */
 
-void dsp_bell202_destroy(dsp_bell202_handle_t **handle)
+void dsp_fsk_destroy(dsp_fsk_handle_t **handle)
 {
 	int		i;
 
@@ -242,7 +246,7 @@ void dsp_bell202_destroy(dsp_bell202_handle_t **handle)
 }
 
 /*
- *	dsp_bell202_sample
+ *	dsp_fsk_sample
  *
  *	This is the main processing entry point.  The function accepts a normalized
  *	sample (i.e., one whose range is between -1 and +1).  The function performs
@@ -254,7 +258,7 @@ void dsp_bell202_destroy(dsp_bell202_handle_t **handle)
 */
 
 void
-dsp_bell202_sample (dsp_bell202_handle_t *handle, double normalized_sample)
+dsp_fsk_sample (dsp_fsk_handle_t *handle, double normalized_sample)
 {
 	double	val;
 	double	factors[4];

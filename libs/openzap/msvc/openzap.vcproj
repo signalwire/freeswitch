@@ -472,7 +472,7 @@
 				Name="Header Files"
 				>
 				<File
-					RelativePath="..\src\dsp\bell202.h"
+					RelativePath="..\src\dsp\fsk.h"
 					>
 				</File>
 				<File
@@ -484,7 +484,7 @@
 				Name="Source Files"
 				>
 				<File
-					RelativePath="..\src\dsp\bell202.c"
+					RelativePath="..\src\dsp\fsk.c"
 					>
 				</File>
 				<File
