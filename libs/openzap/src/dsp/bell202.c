@@ -233,6 +233,10 @@ void dsp_bell202_destroy(dsp_bell202_handle_t **handle)
 		(*handle)->buffer = NULL;
 	}
 
+	if ((*handle)->attr.bytehandler) {
+		dsp_uart_destroy((dsp_uart_handle_t**)&(*handle)->attr.bithandler_arg);
+	}
+
 	free(*handle);
 	*handle = NULL;
 }
