@@ -2,29 +2,29 @@ I have only tested the library with samples at 8kHz.  It *should* work with arbi
 
 The first thing you need to do is initialize a context structure:
 
-	dsp_bell202_attr_t		fsk1200_attr;				// attributes structure for FSK 1200 baud modem
-	dsp_bell202_handle_t	*fsk1200_handle;			// context structure for FSK 1200 baud modem
+	dsp_fsk_attr_t		fsk1200_attr;				// attributes structure for FSK 1200 baud modem
+	dsp_fsk_handle_t	*fsk1200_handle;			// context structure for FSK 1200 baud modem
 
 	// initialize:
-	dsp_bell202_attr_init (&fsk1200_attr);				// clear attributes structure
-	dsp_bell202_attr_set_samplerate (&fsk1200_attr, optr);	// set sample rate
-	dsp_bell202_attr_set_bytehandler (&fsk1200_attr, clid_byte_handler, ch);	// bind byte handler
+	dsp_fsk_attr_init (&fsk1200_attr);				// clear attributes structure
+	dsp_fsk_attr_set_samplerate (&fsk1200_attr, optr);	// set sample rate
+	dsp_fsk_attr_set_bytehandler (&fsk1200_attr, clid_byte_handler, ch);	// bind byte handler
 
 	// create context:
-	fsk1200_handle = dsp_bell202_create (&fsk1200_attr);
+	fsk1200_handle = dsp_fsk_create (&fsk1200_attr);
 
 	// error check:
 	if (fsk1200_handle == NULL) {
-		fprintf (stderr, "%s:  can't dsp_bell202_create, errno %d (%s)\n", progname, errno, strerror (errno));
+		fprintf (stderr, "%s:  can't dsp_fsk_create, errno %d (%s)\n", progname, errno, strerror (errno));
 		exit (EXIT_FAILURE);
 	}
 
 If you are decoding multiple channels, you will need multiple context structures; one per channel.
-The attributes ("dsp_bell202_attr_t") do not have to be persistent, but the handle does.
-There's even a "dsp_bell202_destroy()" function call to remove the context structure; I don't believe I've ever used it, my stuff hangs around forever.
+The attributes ("dsp_fsk_attr_t") do not have to be persistent, but the handle does.
+There's even a "dsp_fsk_destroy()" function call to remove the context structure; I don't believe I've ever used it, my stuff hangs around forever.
 
 Then, you need to feed samples into the software modem:
-	dsp_bell202_sample (fsk1200_handle, (double) sample / 32767.);
+	dsp_fsk_sample (fsk1200_handle, (double) sample / 32767.);
 
 It assumes the samples are between -1 and 1 as a double.
 
