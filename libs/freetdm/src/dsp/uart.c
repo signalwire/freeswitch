@@ -60,35 +60,33 @@ void dsp_uart_attr_init (dsp_uart_attr_t *attr)
  *	zero == ok, -1 == fail.
 */
 
-bytehandler_func_t dsp_uart_attr_get_bytehandler (dsp_uart_attr_t *attr, void **bytehandler_arg)
+bytehandler_func_t dsp_uart_attr_get_bytehandler(dsp_uart_attr_t *attr, void **bytehandler_arg)
 {
-	*bytehandler_arg = attr -> bytehandler_arg;
-	return (attr -> bytehandler);
+	*bytehandler_arg = attr->bytehandler_arg;
+	return attr->bytehandler;
 }
 
-void dsp_uart_attr_set_bytehandler (dsp_uart_attr_t *attr, bytehandler_func_t bytehandler, void *bytehandler_arg)
+void dsp_uart_attr_set_bytehandler(dsp_uart_attr_t *attr, bytehandler_func_t bytehandler, void *bytehandler_arg)
 {
-	attr -> bytehandler = bytehandler;
-	attr -> bytehandler_arg = bytehandler_arg;
+	attr->bytehandler = bytehandler;
+	attr->bytehandler_arg = bytehandler_arg;
 }
 
-dsp_uart_handle_t *dsp_uart_create (dsp_uart_attr_t *attr)
+dsp_uart_handle_t *dsp_uart_create(dsp_uart_attr_t *attr)
 {
-	dsp_uart_handle_t	*handle;
+	dsp_uart_handle_t *handle;
 
-	handle = malloc (sizeof (*handle));
-	if (handle == NULL) {
-		return (handle);
+	handle = malloc(sizeof (*handle));
+	if (handle) {
+		memset(handle, 0, sizeof (handle));
+
+		/* fill the attributes member */
+		memcpy(&handle->attr, attr, sizeof (*attr));
 	}
-	memset (handle, 0, sizeof (handle));
-
-	/* fill the attributes member */
-	memcpy (&handle -> attr, attr, sizeof (*attr));
-
-	return (handle);
+	return handle;
 }
 
-void dsp_uart_destroy (dsp_uart_handle_t **handle)
+void dsp_uart_destroy(dsp_uart_handle_t **handle)
 {
 	if (*handle) {
 		free(*handle);
@@ -97,41 +95,30 @@ void dsp_uart_destroy (dsp_uart_handle_t **handle)
 }
 
 
-void dsp_uart_bit_handler (void *x, int bit)
+void dsp_uart_bit_handler(void *x, int bit)
 {
 	dsp_uart_handle_t *handle = (dsp_uart_handle_t *) x;
 
-	if (!handle -> have_start) {
+	if (!handle->have_start) {
 		if (bit) {
 			return;		/* waiting for start bit (0) */
 		}
-		handle -> have_start = 1;
-		handle -> data = 0;
-		handle -> nbits = 0;
+		handle->have_start = 1;
+		handle->data = 0;
+		handle->nbits = 0;
 		return;
 	}
 
-	handle -> data >>= 1;
-	handle -> data |= 0x80 * !!bit;
+	handle->data >>= 1;
+	handle->data |= 0x80 * !!bit;
 	
-	handle -> nbits++;
-	if (handle -> nbits == 8) {
-		(*handle -> attr.bytehandler) (handle -> attr.bytehandler_arg, handle -> data);
-		handle -> nbits = 0;
-		handle -> data = 0;
-		handle -> have_start = 0;
-
-/* might consider handling errors in the future... */
-#if 0
-	} else if (handle -> nbits > 8) {
-		if (!bit) {
-			/* framing error; expected stop bit (mark, 1) */
-			printf ("FRAME"); fflush (stdout);
-		} else {
-			handle -> have_start = 0;
-			handle -> nbits = 0;
-		}
-#endif
+	handle->nbits++;
+	if (handle->nbits == 8) {
+		handle->attr.bytehandler(handle->attr.bytehandler_arg, handle->data);
+		handle->nbits = 0;
+		handle->data = 0;
+		handle->have_start = 0;
 	}
+/* might consider handling errors in the future... */
 }
 
