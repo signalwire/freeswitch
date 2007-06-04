@@ -72,6 +72,8 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 		
 		if (sockfd != WP_INVALID_SOCKET && zap_span_add_channel(span, sockfd, type, &chan) == ZAP_SUCCESS) {
 			zap_log(ZAP_LOG_INFO, "configuring device s%dc%d as OpenZAP device %d:%d fd:%d\n", spanno, x, chan->span_id, chan->chan_id, sockfd);
+			chan->physical_span_id = spanno;
+			chan->physical_chan_id = x;
 			if (type == ZAP_CHAN_TYPE_FXS || type == ZAP_CHAN_TYPE_FXO) {
 				wanpipe_tdm_api_t tdm_api;
 
@@ -532,3 +534,14 @@ zap_status_t wanpipe_destroy(void)
 	memset(&wanpipe_interface, 0, sizeof(wanpipe_interface));
 	return ZAP_SUCCESS;
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

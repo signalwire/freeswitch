@@ -197,11 +197,11 @@ zap_size_t zap_buffer_write(zap_buffer_t *buffer, const void *data, zap_size_t d
 	freespace = buffer->datalen - buffer->used;
 
 	/*
-	   if (buffer->data != buffer->head) {
-	   memmove(buffer->data, buffer->head, buffer->used);
-	   buffer->head = buffer->data;
-	   }
-	 */
+	  if (buffer->data != buffer->head) {
+	  memmove(buffer->data, buffer->head, buffer->used);
+	  buffer->head = buffer->data;
+	  }
+	*/
 	
 	if (freespace < datalen) {
 		zap_size_t new_size, new_block_size;

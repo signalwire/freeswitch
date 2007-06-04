@@ -41,10 +41,12 @@ typedef unsigned __int64 uint64_t;
 typedef unsigned __int32 uint32_t;
 typedef __int32 int32_t;
 typedef intptr_t zap_ssize_t;
+typedef int zap_filehandle_t;
 #else
 #include <stdint.h>
 typedef int zap_socket_t;
 typedef ssize_t zap_ssize_t;
+typedef int zap_filehandle_t;
 #endif
 
 typedef size_t zap_size_t;
@@ -167,8 +169,8 @@ typedef enum {
 	ZAP_COMMAND_GET_CODEC,
 	ZAP_COMMAND_SET_NATIVE_CODEC,
 	ZAP_COMMAND_GET_NATIVE_CODEC,
-	ZAP_COMMAND_ENABLE_TONE_DETECT,
-	ZAP_COMMAND_DISABLE_TONE_DETECT,
+	ZAP_COMMAND_ENABLE_DTMF_DETECT,
+	ZAP_COMMAND_DISABLE_DTMF_DETECT,
 	ZAP_COMMAND_SEND_DTMF,
 	ZAP_COMMAND_SET_DTMF_ON_PERIOD,
 	ZAP_COMMAND_GET_DTMF_ON_PERIOD,
@@ -180,6 +182,8 @@ typedef enum {
 	ZAP_COMMAND_ONHOOK,
 	ZAP_COMMAND_ENABLE_PROGRESS_DETECT,
 	ZAP_COMMAND_DISABLE_PROGRESS_DETECT,
+	ZAP_COMMAND_TRACE_INPUT,
+	ZAP_COMMAND_TRACE_OUTPUT,
 	ZAP_COMMAND_COUNT
 } zap_command_t;
 
@@ -322,3 +326,15 @@ typedef struct hashtable_itr zap_hash_itr_t;
 typedef struct key zap_hash_key_t;
 typedef struct value zap_hash_val_t;
 #endif
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */
+

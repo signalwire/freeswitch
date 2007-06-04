@@ -189,8 +189,8 @@
 
 #define zap_clear_flag_locked(obj, flag) assert(obj->mutex != NULL); zap_mutex_lock(obj->mutex); (obj)->flags &= ~(flag); zap_mutex_unlock(obj->mutex);
 
-#define zap_set_state_locked(obj, s) assert(obj->mutex != NULL); zap_mutex_lock(obj->mutex);\
-	zap_log(ZAP_LOG_DEBUG, "Changing state from %s to %s\n", zap_channel_state2str(obj->state), zap_channel_state2str(s));\
+#define zap_set_state_locked(obj, s) assert(obj->mutex != NULL); zap_mutex_lock(obj->mutex); \
+	zap_log(ZAP_LOG_DEBUG, "Changing state from %s to %s\n", zap_channel_state2str(obj->state), zap_channel_state2str(s)); \
 	zap_channel_set_state(obj, s);
 
 
@@ -235,6 +235,8 @@ struct zap_caller_data {
 struct zap_channel {
 	uint32_t span_id;
 	uint32_t chan_id;
+	uint32_t physical_span_id;
+	uint32_t physical_chan_id;
 	zap_chan_type_t type;
 	zap_socket_t sockfd;
 	zap_channel_flag_t flags;
@@ -263,11 +265,11 @@ struct zap_channel {
 	char tokens[ZAP_MAX_TOKENS+1][ZAP_TOKEN_STRLEN];
 	uint8_t needed_tones[ZAP_TONEMAP_INVALID];
 	uint8_t detected_tones[ZAP_TONEMAP_INVALID];
-	zap_tonemap_t last_detected_tone;
-	
+	zap_tonemap_t last_detected_tone;	
 	uint32_t token_count;
 	char chan_name[128];
 	char chan_number[32];
+	zap_filehandle_t fds[2];
 	struct zap_caller_data caller_data;
 	struct zap_span *span;
 	struct zap_io_interface *zio;
@@ -384,3 +386,14 @@ ZIO_CODEC_FUNCTION(zio_alaw2ulaw);
 
 
 #endif
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

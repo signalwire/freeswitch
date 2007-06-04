@@ -135,7 +135,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 		goto done;
 	}
 
-	if (zap_channel_command(chan, ZAP_COMMAND_ENABLE_TONE_DETECT, &tt) != ZAP_SUCCESS) {
+	if (zap_channel_command(chan, ZAP_COMMAND_ENABLE_DTMF_DETECT, &tt) != ZAP_SUCCESS) {
 		snprintf(chan->last_error, sizeof(chan->last_error), "error initilizing tone detector!");
 		goto done;
 	}
@@ -483,6 +483,7 @@ static zap_status_t process_event(zap_span_t *span, zap_event_t *event)
 		{
 
 			if (event->channel->state == ZAP_CHANNEL_STATE_DOWN && !zap_test_flag(event->channel, ZAP_CHANNEL_INTHREAD)) {
+				/*zap_channel_command(event->channel, ZAP_COMMAND_TRACE_INPUT, "/tmp/inbound.ul");*/
 				sig.event_id = ZAP_SIGEVENT_START;
 				zap_set_string(event->channel->caller_data.dnis, event->channel->chan_number);
 				data->sig_cb(&sig);
@@ -585,3 +586,13 @@ zap_status_t zap_analog_start(zap_span_t *span)
 	return zap_thread_create_detached(zap_analog_run, span);
 }
 
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

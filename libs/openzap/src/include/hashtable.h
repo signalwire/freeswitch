@@ -103,11 +103,11 @@ create_hashtable(unsigned int minsize,
 int 
 hashtable_insert(struct hashtable *h, void *k, void *v);
 
-#define DEFINE_HASHTABLE_INSERT(fnname, keytype, valuetype) \
-int fnname (struct hashtable *h, keytype *k, valuetype *v) \
-{ \
-    return hashtable_insert(h,k,v); \
-}
+#define DEFINE_HASHTABLE_INSERT(fnname, keytype, valuetype)		\
+	int fnname (struct hashtable *h, keytype *k, valuetype *v)	\
+	{															\
+		return hashtable_insert(h,k,v);							\
+	}
 
 /*****************************************************************************
  * hashtable_search
@@ -122,10 +122,10 @@ void *
 hashtable_search(struct hashtable *h, void *k);
 
 #define DEFINE_HASHTABLE_SEARCH(fnname, keytype, valuetype) \
-valuetype * fnname (struct hashtable *h, keytype *k) \
-{ \
-    return (valuetype *) (hashtable_search(h,k)); \
-}
+	valuetype * fnname (struct hashtable *h, keytype *k)	\
+	{														\
+		return (valuetype *) (hashtable_search(h,k));		\
+	}
 
 /*****************************************************************************
  * hashtable_remove
@@ -140,10 +140,10 @@ void * /* returns value */
 hashtable_remove(struct hashtable *h, void *k);
 
 #define DEFINE_HASHTABLE_REMOVE(fnname, keytype, valuetype) \
-valuetype * fnname (struct hashtable *h, keytype *k) \
-{ \
-    return (valuetype *) (hashtable_remove(h,k)); \
-}
+	valuetype * fnname (struct hashtable *h, keytype *k)	\
+	{														\
+		return (valuetype *) (hashtable_remove(h,k));		\
+	}
 
 
 /*****************************************************************************
@@ -201,4 +201,15 @@ hashtable_destroy(struct hashtable *h, int free_keys, int free_values);
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

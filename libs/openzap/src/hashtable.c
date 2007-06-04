@@ -8,18 +8,18 @@
 #include <math.h>
 
 /*
-Credit for primes table: Aaron Krowne
- http://br.endernet.org/~akrowne/
- http://planetmath.org/encyclopedia/GoodHashTablePrimes.html
+  Credit for primes table: Aaron Krowne
+  http://br.endernet.org/~akrowne/
+  http://planetmath.org/encyclopedia/GoodHashTablePrimes.html
 */
 static const unsigned int primes[] = {
-53, 97, 193, 389,
-769, 1543, 3079, 6151,
-12289, 24593, 49157, 98317,
-196613, 393241, 786433, 1572869,
-3145739, 6291469, 12582917, 25165843,
-50331653, 100663319, 201326611, 402653189,
-805306457, 1610612741
+	53, 97, 193, 389,
+	769, 1543, 3079, 6151,
+	12289, 24593, 49157, 98317,
+	196613, 393241, 786433, 1572869,
+	3145739, 6291469, 12582917, 25165843,
+	50331653, 100663319, 201326611, 402653189,
+	805306457, 1610612741
 };
 const unsigned int prime_table_length = sizeof(primes)/sizeof(primes[0]);
 const float max_load_factor = 0.65f;
@@ -81,45 +81,45 @@ hashtable_expand(struct hashtable *h)
 
     newtable = (struct entry **)malloc(sizeof(struct entry*) * newsize);
     if (NULL != newtable)
-    {
-        memset(newtable, 0, newsize * sizeof(struct entry *));
-        /* This algorithm is not 'stable'. ie. it reverses the list
-         * when it transfers entries between the tables */
-        for (i = 0; i < h->tablelength; i++) {
-            while (NULL != (e = h->table[i])) {
-                h->table[i] = e->next;
-                index = indexFor(newsize,e->h);
-                e->next = newtable[index];
-                newtable[index] = e;
-            }
-        }
-        free(h->table);
-        h->table = newtable;
-    }
+		{
+			memset(newtable, 0, newsize * sizeof(struct entry *));
+			/* This algorithm is not 'stable'. ie. it reverses the list
+			 * when it transfers entries between the tables */
+			for (i = 0; i < h->tablelength; i++) {
+				while (NULL != (e = h->table[i])) {
+					h->table[i] = e->next;
+					index = indexFor(newsize,e->h);
+					e->next = newtable[index];
+					newtable[index] = e;
+				}
+			}
+			free(h->table);
+			h->table = newtable;
+		}
     /* Plan B: realloc instead */
     else 
-    {
-        newtable = (struct entry **)
-                   realloc(h->table, newsize * sizeof(struct entry *));
-        if (NULL == newtable) { (h->primeindex)--; return 0; }
-        h->table = newtable;
-        memset(newtable[h->tablelength], 0, newsize - h->tablelength);
-        for (i = 0; i < h->tablelength; i++) {
-            for (pE = &(newtable[i]), e = *pE; e != NULL; e = *pE) {
-                index = indexFor(newsize,e->h);
-                if (index == i)
-                {
-                    pE = &(e->next);
-                }
-                else
-                {
-                    *pE = e->next;
-                    e->next = newtable[index];
-                    newtable[index] = e;
-                }
-            }
-        }
-    }
+		{
+			newtable = (struct entry **)
+				realloc(h->table, newsize * sizeof(struct entry *));
+			if (NULL == newtable) { (h->primeindex)--; return 0; }
+			h->table = newtable;
+			memset(newtable[h->tablelength], 0, newsize - h->tablelength);
+			for (i = 0; i < h->tablelength; i++) {
+				for (pE = &(newtable[i]), e = *pE; e != NULL; e = *pE) {
+					index = indexFor(newsize,e->h);
+					if (index == i)
+						{
+							pE = &(e->next);
+						}
+					else
+						{
+							*pE = e->next;
+							e->next = newtable[index];
+							newtable[index] = e;
+						}
+				}
+			}
+		}
     h->tablelength = newsize;
     h->loadlimit   = (unsigned int) ceil(newsize * max_load_factor);
     return -1;
@@ -140,13 +140,13 @@ hashtable_insert(struct hashtable *h, void *k, void *v)
     unsigned int index;
     struct entry *e;
     if (++(h->entrycount) > h->loadlimit)
-    {
-        /* Ignore the return value. If expand fails, we should
-         * still try cramming just this value into the existing table
-         * -- we may not have memory for a larger table, but one more
-         * element may be ok. Next time we insert, we'll try expanding again.*/
-        hashtable_expand(h);
-    }
+		{
+			/* Ignore the return value. If expand fails, we should
+			 * still try cramming just this value into the existing table
+			 * -- we may not have memory for a larger table, but one more
+			 * element may be ok. Next time we insert, we'll try expanding again.*/
+			hashtable_expand(h);
+		}
     e = (struct entry *)malloc(sizeof(struct entry));
     if (NULL == e) { --(h->entrycount); return 0; } /*oom*/
     e->h = hash(h,k);
@@ -168,11 +168,11 @@ hashtable_search(struct hashtable *h, void *k)
     index = indexFor(h->tablelength,hashvalue);
     e = h->table[index];
     while (NULL != e)
-    {
-        /* Check hash value to short circuit heavier comparison */
-        if ((hashvalue == e->h) && (h->eqfn(k, e->k))) return e->v;
-        e = e->next;
-    }
+		{
+			/* Check hash value to short circuit heavier comparison */
+			if ((hashvalue == e->h) && (h->eqfn(k, e->k))) return e->v;
+			e = e->next;
+		}
     return NULL;
 }
 
@@ -193,20 +193,20 @@ hashtable_remove(struct hashtable *h, void *k)
     pE = &(h->table[index]);
     e = *pE;
     while (NULL != e)
-    {
-        /* Check hash value to short circuit heavier comparison */
-        if ((hashvalue == e->h) && (h->eqfn(k, e->k)))
-        {
-            *pE = e->next;
-            h->entrycount--;
-            v = e->v;
-            freekey(e->k);
-            free(e);
-            return v;
-        }
-        pE = &(e->next);
-        e = e->next;
-    }
+		{
+			/* Check hash value to short circuit heavier comparison */
+			if ((hashvalue == e->h) && (h->eqfn(k, e->k)))
+				{
+					*pE = e->next;
+					h->entrycount--;
+					v = e->v;
+					freekey(e->k);
+					free(e);
+					return v;
+				}
+			pE = &(e->next);
+			e = e->next;
+		}
     return NULL;
 }
 
@@ -261,4 +261,16 @@ hashtable_destroy(struct hashtable *h, int free_keys, int free_values)
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */
+
