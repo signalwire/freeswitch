@@ -32,11 +32,9 @@
  *	2005 03 20	R. Krten		created
 */
 
-#ifndef	__BELL202_H__
-#define	__BELL202_H__
-
-typedef void (*bytehandler_func_t) (void *, int);
-typedef void (*bithandler_func_t) (void *, int);
+#ifndef	__FSK_H__
+#define	__FSK_H__
+#include "uart.h"
 
 typedef struct dsp_fsk_attr_s
 {
@@ -86,5 +84,5 @@ void					dsp_fsk_destroy(dsp_fsk_handle_t **handle);
 
 void					dsp_fsk_sample(dsp_fsk_handle_t *handle, double normalized_sample);
 
-#endif	// __BELL202_H__
+#endif	// __FSK_H__
 
