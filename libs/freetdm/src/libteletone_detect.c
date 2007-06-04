@@ -208,8 +208,8 @@ void teletone_multi_tone_init(teletone_multi_tone_t *mt, teletone_tone_map_t *ma
 }
 
 int teletone_multi_tone_detect (teletone_multi_tone_t *mt,
-					   int16_t sample_buffer[],
-					   int samples)
+								int16_t sample_buffer[],
+								int samples)
 {
 	int sample, limit, j, x = 0;
 	teletone_process_t v1, famp;
@@ -295,8 +295,8 @@ int teletone_multi_tone_detect (teletone_multi_tone_t *mt,
 
 
 int teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detect_state,
-                 int16_t sample_buffer[],
-                 int samples)
+						  int16_t sample_buffer[],
+						  int samples)
 {
     teletone_process_t row_energy[GRID_FACTOR];
     teletone_process_t col_energy[GRID_FACTOR];
@@ -426,8 +426,8 @@ int teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detect_state,
 
 
 int teletone_dtmf_get (teletone_dtmf_detect_state_t *dtmf_detect_state,
-              char *buf,
-              int max)
+					   char *buf,
+					   int max)
 {
     if (max > dtmf_detect_state->current_digits) {
         max = dtmf_detect_state->current_digits;

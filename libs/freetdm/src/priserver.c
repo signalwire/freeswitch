@@ -137,11 +137,11 @@ static void launch_channel(struct sangoma_pri *spri, int channo)
 
 		if (!lead && loops == 300) {
 #if 1
-	if (zap_channel_command(chan, ZAP_COMMAND_SEND_DTMF, dtmf) != ZAP_SUCCESS) {
-		printf("Critical Error: Failed to send dtmf\n");
-		zap_channel_close(&chan);
-		exit(-1);
-	}
+			if (zap_channel_command(chan, ZAP_COMMAND_SEND_DTMF, dtmf) != ZAP_SUCCESS) {
+				printf("Critical Error: Failed to send dtmf\n");
+				zap_channel_close(&chan);
+				exit(-1);
+			}
 #endif
 
 		}
@@ -314,3 +314,13 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

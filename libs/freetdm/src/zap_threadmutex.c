@@ -119,15 +119,15 @@ zap_status_t zap_thread_create_detached_ex(zap_thread_function_t func, void *dat
 
 	status = ZAP_SUCCESS;
 	goto done;
-failpthread:
+ failpthread:
 	pthread_attr_destroy(&thread->attribute);
 #endif
 
-fail:
+ fail:
 	if (thread) {
 		free(thread);
 	}
-done:
+ done:
 	return status;
 }
 
@@ -157,16 +157,16 @@ zap_status_t zap_mutex_create(zap_mutex_t **mutex)
 
 	goto success;
 
-fail:
-        pthread_mutexattr_destroy(&attr);
-		goto done;
+ fail:
+	pthread_mutexattr_destroy(&attr);
+	goto done;
 
-success:
+ success:
 #endif
 	*mutex = check;
 	status = ZAP_SUCCESS;
 
-done:
+ done:
 	return status;
 }
 
@@ -217,3 +217,14 @@ zap_status_t zap_mutex_unlock(zap_mutex_t *mutex)
 #endif
 	return ZAP_SUCCESS;
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

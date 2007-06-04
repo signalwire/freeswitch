@@ -90,6 +90,9 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 			}
 			zap_log(ZAP_LOG_INFO, "configuring device %s as OpenZAP device %d:%d fd:%d\n", path, chan->span_id, chan->chan_id, sockfd);
 
+			chan->physical_span_id = ztp.span_no;
+			chan->physical_chan_id = ztp.chan_no;
+			
 			if (type == ZAP_CHAN_TYPE_FXS || type == ZAP_CHAN_TYPE_FXO) {
 				if (ztp.g711_type == ZT_G711_ALAW) {
 					chan->native_codec = chan->effective_codec = ZAP_CODEC_ALAW;
@@ -559,3 +562,14 @@ zap_status_t zt_destroy(void)
 	memset(&zt_interface, 0, sizeof(zt_interface));
 	return ZAP_SUCCESS;
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

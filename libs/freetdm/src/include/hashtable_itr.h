@@ -62,17 +62,17 @@ hashtable_iterator_remove(struct hashtable_itr *itr);
 /*****************************************************************************/
 /* search - overwrite the supplied iterator, to point to the entry
  *          matching the supplied key.
-            h points to the hashtable to be searched.
+ h points to the hashtable to be searched.
  *          returns zero if not found. */
 int
 hashtable_iterator_search(struct hashtable_itr *itr,
                           struct hashtable *h, void *k);
 
-#define DEFINE_HASHTABLE_ITERATOR_SEARCH(fnname, keytype) \
-int fnname (struct hashtable_itr *i, struct hashtable *h, keytype *k) \
-{ \
-    return (hashtable_iterator_search(i,h,k)); \
-}
+#define DEFINE_HASHTABLE_ITERATOR_SEARCH(fnname, keytype)				\
+	int fnname (struct hashtable_itr *i, struct hashtable *h, keytype *k) \
+	{																	\
+		return (hashtable_iterator_search(i,h,k));						\
+	}
 
 
 
@@ -109,4 +109,16 @@ int fnname (struct hashtable_itr *i, struct hashtable *h, keytype *k) \
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */
+

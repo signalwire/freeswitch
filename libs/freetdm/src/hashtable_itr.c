@@ -23,14 +23,14 @@ hashtable_iterator(struct hashtable *h)
     if (0 == h->entrycount) return itr;
 
     for (i = 0; i < tablelength; i++)
-    {
-        if (NULL != h->table[i])
-        {
-            itr->e = h->table[i];
-            itr->index = i;
-            break;
-        }
-    }
+		{
+			if (NULL != h->table[i])
+				{
+					itr->e = h->table[i];
+					itr->index = i;
+					break;
+				}
+		}
     return itr;
 }
 
@@ -48,28 +48,28 @@ hashtable_iterator_advance(struct hashtable_itr *itr)
 
     next = itr->e->next;
     if (NULL != next)
-    {
-        itr->parent = itr->e;
-        itr->e = next;
-        return -1;
-    }
+		{
+			itr->parent = itr->e;
+			itr->e = next;
+			return -1;
+		}
     tablelength = itr->h->tablelength;
     itr->parent = NULL;
     if (tablelength <= (j = ++(itr->index)))
-    {
-        itr->e = NULL;
-        return 0;
-    }
+		{
+			itr->e = NULL;
+			return 0;
+		}
     table = itr->h->table;
     while (NULL == (next = table[j]))
-    {
-        if (++j >= tablelength)
-        {
-            itr->index = tablelength;
-            itr->e = NULL;
-            return 0;
-        }
-    }
+		{
+			if (++j >= tablelength)
+				{
+					itr->index = tablelength;
+					itr->e = NULL;
+					return 0;
+				}
+		}
     itr->index = j;
     itr->e = next;
     return -1;
@@ -91,10 +91,10 @@ hashtable_iterator_remove(struct hashtable_itr *itr)
 
     /* Do the removal */
     if (NULL == (itr->parent))
-    {
-        /* element is head of a chain */
-        itr->h->table[itr->index] = itr->e->next;
-    } else {
+		{
+			/* element is head of a chain */
+			itr->h->table[itr->index] = itr->e->next;
+		} else {
         /* element is mid-chain */
         itr->parent->next = itr->e->next;
     }
@@ -125,19 +125,19 @@ hashtable_iterator_search(struct hashtable_itr *itr,
     e = h->table[index];
     parent = NULL;
     while (NULL != e)
-    {
-        /* Check hash value to short circuit heavier comparison */
-        if ((hashvalue == e->h) && (h->eqfn(k, e->k)))
-        {
-            itr->index = index;
-            itr->e = e;
-            itr->parent = parent;
-            itr->h = h;
-            return -1;
-        }
-        parent = e;
-        e = e->next;
-    }
+		{
+			/* Check hash value to short circuit heavier comparison */
+			if ((hashvalue == e->h) && (h->eqfn(k, e->k)))
+				{
+					itr->index = index;
+					itr->e = e;
+					itr->parent = parent;
+					itr->h = h;
+					return -1;
+				}
+			parent = e;
+			e = e->next;
+		}
     return 0;
 }
 
@@ -173,4 +173,16 @@ hashtable_iterator_search(struct hashtable_itr *itr,
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */
+

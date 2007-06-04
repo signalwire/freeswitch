@@ -43,10 +43,10 @@ struct iphdr {
 	
 #if defined(__LITTLE_ENDIAN_BITFIELD)
 	unsigned    ihl:4,
-							version:4;
+		version:4;
 #elif defined (__BIG_ENDIAN_BITFIELD)
 	unsigned    version:4,
-							ihl:4;
+		ihl:4;
 #else
 # error  "unknown byteorder!"
 #endif
@@ -108,15 +108,15 @@ static __inline__ int tdmv_api_ioctl(sng_fd_t fd, wanpipe_tdm_api_t *tdm_api_cmd
 	memcpy(	wan_udp.wan_udphdr_data, (void*)tdm_api_cmd, sizeof(wanpipe_tdm_api_cmd_t));
 
 	if (DeviceIoControl(
-			fd,
-			IoctlManagementCommand,
-			(LPVOID)&wan_udp,
-			sizeof(wan_udp_hdr_t),
-			(LPVOID)&wan_udp,
-			sizeof(wan_udp_hdr_t),
-			(LPDWORD)(&ln),
-			(LPOVERLAPPED)NULL
-			) == FALSE){
+						fd,
+						IoctlManagementCommand,
+						(LPVOID)&wan_udp,
+						sizeof(wan_udp_hdr_t),
+						(LPVOID)&wan_udp,
+						sizeof(wan_udp_hdr_t),
+						(LPDWORD)(&ln),
+						(LPOVERLAPPED)NULL
+						) == FALSE){
 		return 1;
 	}
 
@@ -176,15 +176,15 @@ static __inline__ sng_fd_t tdmv_api_open_span_chan(int span, int chan)
 	wan_udp.wan_udphdr_data_len = 0;
 
 	DeviceIoControl(
-		fd,
-		IoctlManagementCommand,
-		(LPVOID)&wan_udp,
-		sizeof(wan_udp_hdr_t),
-		(LPVOID)&wan_udp,
-		sizeof(wan_udp_hdr_t),
-		(LPDWORD)(&ln),
-		(LPOVERLAPPED)NULL
-		);
+					fd,
+					IoctlManagementCommand,
+					(LPVOID)&wan_udp,
+					sizeof(wan_udp_hdr_t),
+					(LPVOID)&wan_udp,
+					sizeof(wan_udp_hdr_t),
+					(LPDWORD)(&ln),
+					(LPOVERLAPPED)NULL
+					);
 
 	if ((wan_udp.wan_udphdr_return_code) || (*(int*)&wan_udp.wan_udphdr_data[0] != 1)){
 		/* somone already has this channel, or somthing else is not right. */
@@ -230,21 +230,21 @@ static __inline__ int tdmv_api_wait_socket(sng_fd_t fd, int timeout, int *flags)
 	api_poll.timeout = timeout;
 
 	if (!DeviceIoControl(
-			fd,
-			IoctlApiPoll,
-			(LPVOID)NULL,
-			0L,
-			(LPVOID)&api_poll,
-			sizeof(API_POLL_STRUCT),
-			(LPDWORD)(&ln),
-			(LPOVERLAPPED)NULL)) {
+						 fd,
+						 IoctlApiPoll,
+						 (LPVOID)NULL,
+						 0L,
+						 (LPVOID)&api_poll,
+						 sizeof(API_POLL_STRUCT),
+						 (LPDWORD)(&ln),
+						 (LPOVERLAPPED)NULL)) {
 		return -1;
 	}
 
 	*flags = 0;
 
 	switch(api_poll.operation_status)
-	{
+		{
 		case SANG_STATUS_RX_DATA_AVAILABLE:
 			break;
 
@@ -253,7 +253,7 @@ static __inline__ int tdmv_api_wait_socket(sng_fd_t fd, int timeout, int *flags)
 
 		default:
 			return -1;
-	}
+		}
 
 	if (api_poll.poll_events_bitmap == 0){
 		return -1;
@@ -309,15 +309,15 @@ static __inline__ int tdmv_api_readmsg_tdm(sng_fd_t fd, void *hdrbuf, int hdrlen
 	}
 
 	if (!DeviceIoControl(
-			fd,
-			IoctlReadCommand,
-			(LPVOID)NULL,
-			0L,
-			(LPVOID)&rx_data,
-			sizeof(RX_DATA_STRUCT),
-			(LPDWORD)(&ln),
-			(LPOVERLAPPED)NULL
-			)){
+						 fd,
+						 IoctlReadCommand,
+						 (LPVOID)NULL,
+						 0L,
+						 (LPVOID)&rx_data,
+						 sizeof(RX_DATA_STRUCT),
+						 (LPDWORD)(&ln),
+						 (LPOVERLAPPED)NULL
+						 )){
 		return -1;
 	}
 
@@ -327,18 +327,18 @@ static __inline__ int tdmv_api_readmsg_tdm(sng_fd_t fd, void *hdrbuf, int hdrlen
 	user_buf->wp_tdm_api_event_type = pri->operation_status;
 
 	switch(pri->operation_status)
-	{
-	case SANG_STATUS_RX_DATA_AVAILABLE:
-		if (pri->data_length > datalen){
+		{
+		case SANG_STATUS_RX_DATA_AVAILABLE:
+			if (pri->data_length > datalen){
+				break;
+			}
+			memcpy(databuf, rx_data.data, pri->data_length);
+			rx_len = pri->data_length;
+			break;
+
+		default:
 			break;
 		}
-		memcpy(databuf, rx_data.data, pri->data_length);
-		rx_len = pri->data_length;
-		break;
-
-	default:
-		break;
-	}
 
 #else
 	struct msghdr msg;
@@ -386,15 +386,15 @@ static __inline__ int tdmv_api_writemsg_tdm(sng_fd_t fd, void *hdrbuf, int hdrle
 	memcpy(local_tx_data.data, databuf, pri->data_length);
 
 	if (!DeviceIoControl(
-			fd,
-			IoctlWriteCommand,
-			(LPVOID)&local_tx_data,
-			(ULONG)sizeof(TX_DATA_STRUCT),
-			(LPVOID)&local_tx_data,
-			sizeof(TX_DATA_STRUCT),
-			(LPDWORD)(&ln),
-			(LPOVERLAPPED)NULL
-			)){
+						 fd,
+						 IoctlWriteCommand,
+						 (LPVOID)&local_tx_data,
+						 (ULONG)sizeof(TX_DATA_STRUCT),
+						 (LPVOID)&local_tx_data,
+						 sizeof(TX_DATA_STRUCT),
+						 (LPDWORD)(&ln),
+						 (LPOVERLAPPED)NULL
+						 )){
 		return -1;
 	}
 
@@ -425,3 +425,15 @@ static __inline__ int tdmv_api_writemsg_tdm(sng_fd_t fd, void *hdrbuf, int hdrle
 }
 
 #endif /* _SANGOMA_TDM_API_H */
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */
+

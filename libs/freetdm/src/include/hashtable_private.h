@@ -37,10 +37,10 @@ indexFor(unsigned int tablelength, unsigned int hashvalue) {
 
 /* Only works if tablelength == 2^N */
 /*static inline unsigned int
-indexFor(unsigned int tablelength, unsigned int hashvalue)
-{
-    return (hashvalue & (tablelength - 1u));
-}
+  indexFor(unsigned int tablelength, unsigned int hashvalue)
+  {
+  return (hashvalue & (tablelength - 1u));
+  }
 */
 
 /*****************************************************************************/
@@ -83,4 +83,14 @@ indexFor(unsigned int tablelength, unsigned int hashvalue)
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

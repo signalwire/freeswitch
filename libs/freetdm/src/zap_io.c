@@ -332,6 +332,8 @@ zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_cha
 		new_chan->span_id = span->span_id;
 		new_chan->chan_id = span->chan_count;
 		new_chan->span = span;
+		new_chan->fds[0] = -1;
+		new_chan->fds[1] = -1;
 		zap_mutex_create(&new_chan->mutex);
 		zap_buffer_create(&new_chan->digit_buffer, 128, 128, 0);
 		zap_set_flag(new_chan, ZAP_CHANNEL_CONFIGURED | ZAP_CHANNEL_READY);
@@ -689,12 +691,18 @@ zap_status_t zap_channel_outgoing_call(zap_channel_t *zchan)
 
 zap_status_t zap_channel_done(zap_channel_t *zchan)
 {
+	int i;
 
 	assert(zchan != NULL);
 
 	memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_INUSE);
-
+	for (i = 0; i < 2; i++) {
+		if (zchan->fds[i] > -1) {
+			close(zchan->fds[i]);
+			zchan->fds[i] = -1;
+		}
+	}
 	return ZAP_SUCCESS;
 }
 
@@ -780,6 +788,36 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 	zap_mutex_lock(zchan->mutex);
 
 	switch(command) {
+	case ZAP_COMMAND_TRACE_INPUT:
+		{
+			char *path = (char *) obj;
+			if (zchan->fds[0] > 0) {
+				close(zchan->fds[0]);
+				zchan->fds[0] = -1;
+			}
+			if ((zchan->fds[0] = open(path, O_WRONLY|O_CREAT|O_TRUNC, 755)) > -1) {
+				GOTO_STATUS(done, ZAP_SUCCESS);
+			}
+			
+			snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
+			GOTO_STATUS(done, ZAP_FAIL);
+		}
+		break;
+	case ZAP_COMMAND_TRACE_OUTPUT:
+		{
+			char *path = (char *) obj;
+			if (zchan->fds[1] > 0) {
+				close(zchan->fds[0]);
+				zchan->fds[1] = -1;
+			}
+			if ((zchan->fds[1] = open(path, O_WRONLY|O_CREAT|O_TRUNC, 755)) > -1) {
+				GOTO_STATUS(done, ZAP_SUCCESS);
+			}
+			
+			snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
+			GOTO_STATUS(done, ZAP_FAIL);
+		}
+		break;
 	case ZAP_COMMAND_SET_INTERVAL:
 		{
 			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_INTERVAL)) {
@@ -863,7 +901,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 			GOTO_STATUS(done, ZAP_SUCCESS);
 		}
 		break;
-	case ZAP_COMMAND_ENABLE_TONE_DETECT:
+	case ZAP_COMMAND_ENABLE_DTMF_DETECT:
 		{
 			/* if they don't have thier own, use ours */
 			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF)) {
@@ -880,7 +918,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 			}
 		}
 		break;
-	case ZAP_COMMAND_DISABLE_TONE_DETECT:
+	case ZAP_COMMAND_DISABLE_DTMF_DETECT:
 		{
 			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF)) {
 				zap_tone_type_t tt = ZAP_COMMAND_OBJ_INT;
@@ -1216,6 +1254,9 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 	}
 
     status = zchan->zio->read(zchan, data, datalen);
+	if (zchan->fds[0]) {
+		write(zchan->fds[0], data, *datalen);
+	}
 
 	if (status == ZAP_SUCCESS && zap_test_flag(zchan, ZAP_CHANNEL_TRANSCODE) && zchan->effective_codec != zchan->native_codec) {
 		if (zchan->native_codec == ZAP_CODEC_ULAW && zchan->effective_codec == ZAP_CODEC_SLIN) {
@@ -1390,6 +1431,10 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t data
 		}
 		
 	} 
+
+	if (zchan->fds[1]) {
+		write(zchan->fds[1], data, *datalen);
+	}
 
     status = zchan->zio->write(zchan, data, datalen);
 
@@ -1731,3 +1776,13 @@ void print_bits(uint8_t *b, int bl, char *buf, int blen, int e)
 }
 
 
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */
