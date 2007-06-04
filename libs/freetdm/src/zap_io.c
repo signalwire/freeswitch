@@ -34,6 +34,9 @@
 #include "openzap.h"
 #include "zap_isdn.h"
 #include <stdarg.h>
+#ifdef WIN32
+#include <io.h>
+#endif
 #ifdef ZAP_WANPIPE_SUPPORT
 #include "zap_wanpipe.h"
 #endif
@@ -1255,7 +1258,8 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 
     status = zchan->zio->read(zchan, data, datalen);
 	if (zchan->fds[0]) {
-		write(zchan->fds[0], data, *datalen);
+		unsigned int dlen = (unsigned int) *datalen;
+		write(zchan->fds[0], data, dlen);
 	}
 
 	if (status == ZAP_SUCCESS && zap_test_flag(zchan, ZAP_CHANNEL_TRANSCODE) && zchan->effective_codec != zchan->native_codec) {
@@ -1433,7 +1437,8 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t data
 	} 
 
 	if (zchan->fds[1]) {
-		write(zchan->fds[1], data, *datalen);
+		unsigned int dlen = (unsigned int) *datalen;
+		write(zchan->fds[1], data, dlen);
 	}
 
     status = zchan->zio->write(zchan, data, datalen);
