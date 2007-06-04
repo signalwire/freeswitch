@@ -39,7 +39,7 @@
 #include <errno.h>
 #include <math.h>
 
-#include "bell202.h"
+#include "fsk.h"
 #include "uart.h"
 
 #ifndef M_PI

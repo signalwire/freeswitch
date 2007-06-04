@@ -35,7 +35,7 @@
 #ifndef	__UART_H__
 #define	__UART_H__
 
-typedef void (*bytehandler_func_t) (void *, int);
+#include <fsk.h>
 
 typedef struct dsp_uart_attr_s
 {
