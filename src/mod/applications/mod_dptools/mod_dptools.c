@@ -649,6 +649,27 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 }
 
 
+static void dtm_session_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	switch_ivr_inband_dtmf_session(session);
+}
+
+
+static void stop_dtmf_session_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	switch_ivr_stop_inband_dtmf_session(session);
+}
+
 static const switch_api_interface_t strepoch_api_interface = {
 	/*.interface_name */ "strepoch",
 	/*.desc */ "Convert a date string into epoch time",
@@ -681,6 +702,25 @@ static const switch_api_interface_t presence_api_interface = {
 	/*.next */ &dptools_api_interface
 };
 
+static const switch_application_interface_t dtmf_application_interface = {
+	/*.interface_name */ "start_dtmf",
+	/*.application_function */ dtm_session_function,
+	/* long_desc */ "Detect inband dtmf on the session",
+	/* short_desc */ "Detect dtmf",
+	/* syntax */ "",
+	/* flags */ SAF_NONE,
+	NULL
+};
+
+static const switch_application_interface_t stop_dtmf_application_interface = {
+	/*.interface_name */ "stop_dtmf",
+	/*.application_function */ stop_dtmf_session_function,
+	/* long_desc */ "Stop detecting inband dtmf.",
+	/* short_desc */ "stop inband dtmf.",
+	/* syntax */ "<path>",
+	/* flags */ SAF_NONE,
+	&dtmf_application_interface
+};
 
 static const switch_application_interface_t exe_application_interface = {
 	/*.interface_name */ "execute_extension",
@@ -689,7 +729,7 @@ static const switch_application_interface_t exe_application_interface = {
 	/*.short_desc */ "Execute an extension",
 	/*.syntax */ "<extension> <dialplan> <context>",
 	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */
+	/*.next */ &stop_dtmf_application_interface
 };
 
 static const switch_application_interface_t sched_transfer_application_interface = {
