@@ -339,6 +339,7 @@ SWITCH_DECLARE(int) switch_file_printf(switch_file_t *thefile, const char *forma
 {
 	va_list ap;
     int ret;
+	va_start(ap, format);
 	ret = apr_file_printf(thefile, format, ap);
 	va_end(ap);
     return ret;
