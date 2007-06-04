@@ -25,6 +25,7 @@
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
  * Michael Jerris <mike@jerris.com>
+ * Bret McDanel <bret AT 0xdecafbad dot com>
  *
  * switch_ivr_async.c -- IVR Library (async operations)
  *
@@ -323,6 +324,122 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_session(switch_core_sessi
 
 	return SWITCH_STATUS_SUCCESS;
 }
+
+
+typedef struct {
+  switch_core_session_t *session;
+  teletone_multi_tone_t mt;
+} switch_fax_detect_t;
+
+static switch_bool_t fax_detect_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+{
+  switch_fax_detect_t *pvt = (switch_fax_detect_t *) user_data;
+  uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
+  switch_frame_t frame = { 0 };
+  //  switch_channel_t *channel = switch_core_session_get_channel(pvt->session);
+
+  //  assert(channel != NULL);
+  frame.data = data;
+  frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+
+  switch (type) {
+  case SWITCH_ABC_TYPE_INIT:
+    break;
+  case SWITCH_ABC_TYPE_CLOSE:
+    break;
+  case SWITCH_ABC_TYPE_READ:
+    if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
+      if(teletone_multi_tone_detect(&pvt->mt, frame.data, frame.samples)) {
+	switch_event_t *event;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FAX CNG DETECTED\n");
+
+	if (switch_event_create(&event, SWITCH_EVENT_DETECTED_FAX) == SWITCH_STATUS_SUCCESS) {
+	  switch_event_t *dup;
+
+	  switch_event_add_header(event, SWITCH_STACK_BOTTOM, "fax", "detected");
+	    
+	  if (switch_event_dup(&dup, event) == SWITCH_STATUS_SUCCESS) {
+	    switch_event_fire(&dup);
+	  }
+	    
+
+	  if (switch_core_session_queue_event(pvt->session, &event) != SWITCH_STATUS_SUCCESS) {
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Event queue failed!\n");
+	    switch_event_add_header(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
+	    switch_event_fire(&event);
+	  }
+	}
+      }
+    }
+    break;
+  case SWITCH_ABC_TYPE_WRITE:
+  default:
+    break;
+  }
+  return SWITCH_TRUE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_stop_fax_detect_session(switch_core_session_t *session)
+{
+  switch_media_bug_t *bug;
+  switch_channel_t *channel = switch_core_session_get_channel(session);
+
+  assert(channel != NULL);
+  if ((bug = switch_channel_get_private(channel, "fax"))) {
+    switch_channel_set_private(channel, "fax", NULL);
+    switch_core_media_bug_remove(session, &bug);
+    return SWITCH_STATUS_SUCCESS;
+  }
+
+  return SWITCH_STATUS_FALSE;
+
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_fax_detect_session(switch_core_session_t *session)
+{
+  switch_channel_t *channel;
+  switch_codec_t *read_codec;
+  switch_media_bug_t *bug;
+  switch_status_t status;
+  switch_fax_detect_t *pvt;
+  teletone_tone_map_t *map;
+  int i;
+
+  channel = switch_core_session_get_channel(session);
+  assert(channel != NULL);
+
+
+  read_codec = switch_core_session_get_read_codec(session);
+  assert(read_codec != NULL);
+
+  if (!(pvt = switch_core_session_alloc(session, sizeof(*pvt)))) {
+    return SWITCH_STATUS_MEMERR;
+  }
+
+  if (!(map = switch_core_session_alloc(session, sizeof(*map)))) {
+    return SWITCH_STATUS_MEMERR;
+  }
+
+  for(i=0;i<TELETONE_MAX_TONES;i++) {
+    map->freqs[i] = 1100.0;
+  }
+  pvt->mt.sample_rate = read_codec->implementation->samples_per_second;
+  pvt->session = session;
+
+  teletone_multi_tone_init(&pvt->mt, map);
+
+  switch_channel_answer(channel);
+
+  if ((status = switch_core_media_bug_add(session, fax_detect_callback, pvt, 0, SMBF_READ_STREAM, &bug)) != SWITCH_STATUS_SUCCESS) {
+    return status;
+  }
+
+  switch_channel_set_private(channel, "fax", bug);
+
+  return SWITCH_STATUS_SUCCESS;
+}
+
 
 struct speech_thread_handle {
 	switch_core_session_t *session;

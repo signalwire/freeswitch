@@ -25,7 +25,7 @@
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
  * Neal Horman <neal at wanlink dot com>
- *
+ * Bret McDanel <trixter AT 0xdecafbad dot com>
  *
  * switch_ivr.h -- IVR Library
  *
@@ -208,9 +208,42 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_stop_record_session(switch_core_session_t *session, char *file);
 
+/*!
+  \brief Start looking for DTMF inband
+  \param session the session to start looking
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
 SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_session(switch_core_session_t *session);
+
+/*!
+  \brief Stop looking for DTMF inband
+  \param session the session to stop looking
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
 SWITCH_DECLARE(switch_status_t) switch_ivr_stop_inband_dtmf_session(switch_core_session_t *session);
+
+/*!
+  \brief XXX DESCRIBE ME
+  \param session the session to act on
+  \return SWITCH_STATUS_SUCCESS if all is well - maybe more XXX FIXME
+*/
 SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session);
+
+/*!
+  \brief Stop looking for FAX CNG
+  \param session the session to stop looking
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_stop_fax_detect_session(switch_core_session_t *session);
+
+/*!
+  \brief Start looking for FAX CNG
+  \param session the session to start looking
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_fax_detect_session(switch_core_session_t *session);
+
+
 
 /*!
   \brief play a file from the disk to the session

@@ -27,6 +27,7 @@
  * Ken Rice, Asteria Solutions Group, Inc <ken@asteriasgi.com>
  * Michael Murdock <mike at mmurdock dot org>
  * Neal Horman <neal at wanlink dot com>
+ * Bret McDanel <trixter AT 0xdecafbad dot com>
  *
  * mod_dptools.c -- Raw Audio File Streaming Application Module
  *
@@ -651,24 +652,27 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 
 static void dtm_session_function(switch_core_session_t *session, char *data)
 {
-	switch_channel_t *channel;
-
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
-
 	switch_ivr_inband_dtmf_session(session);
 }
 
 
 static void stop_dtmf_session_function(switch_core_session_t *session, char *data)
 {
-	switch_channel_t *channel;
-
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
-
 	switch_ivr_stop_inband_dtmf_session(session);
 }
+
+static void fax_detect_session_function(switch_core_session_t *session, char *data)
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Enabling fax detection\n");
+	switch_ivr_fax_detect_session(session);
+}
+
+static void stop_fax_detect_session_function(switch_core_session_t *session, char *data)
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Disabling fax detection\n");
+	switch_ivr_stop_fax_detect_session(session);
+}
+
 
 static const switch_api_interface_t strepoch_api_interface = {
 	/*.interface_name */ "strepoch",
@@ -702,6 +706,27 @@ static const switch_api_interface_t presence_api_interface = {
 	/*.next */ &dptools_api_interface
 };
 
+
+static const switch_application_interface_t fax_detect_application_interface = {
+	/*.interface_name */ "fax_detect",
+	/*.application_function */ fax_detect_session_function,
+	/* long_desc */ "Detect fax send tone",
+	/* short_desc */ "Detect faxes",
+	/* syntax */ "",
+	/* flags */ SAF_NONE,
+	/*.next */ NULL
+};
+
+static const switch_application_interface_t stop_fax_detect_application_interface = {
+	/*.interface_name */ "stop_fax_detect",
+	/*.application_function */ stop_fax_detect_session_function,
+	/* long_desc */ "Stop detecting fax send tones",
+	/* short_desc */ "stop detecting faxes",
+	/* syntax */ "",
+	/* flags */ SAF_NONE,
+	/* next */ &fax_detect_application_interface
+};
+
 static const switch_application_interface_t dtmf_application_interface = {
 	/*.interface_name */ "start_dtmf",
 	/*.application_function */ dtm_session_function,
@@ -709,7 +734,7 @@ static const switch_application_interface_t dtmf_application_interface = {
 	/* short_desc */ "Detect dtmf",
 	/* syntax */ "",
 	/* flags */ SAF_NONE,
-	NULL
+	/* next */ &stop_fax_detect_application_interface
 };
 
 static const switch_application_interface_t stop_dtmf_application_interface = {
@@ -717,7 +742,7 @@ static const switch_application_interface_t stop_dtmf_application_interface = {
 	/*.application_function */ stop_dtmf_session_function,
 	/* long_desc */ "Stop detecting inband dtmf.",
 	/* short_desc */ "stop inband dtmf.",
-	/* syntax */ "<path>",
+	/* syntax */ "",
 	/* flags */ SAF_NONE,
 	&dtmf_application_interface
 };

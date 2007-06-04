@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
+ * Bret McDanel <trixter AT 0xdecafbad dot com>
  *
  * switch_types.h -- Data Types
  *
@@ -832,6 +833,7 @@ typedef enum {
 	SWITCH_EVENT_CODEC				- Codec Change
 	SWITCH_EVENT_BACKGROUND_JOB		- Background Job
 	SWITCH_EVENT_DETECTED_SPEECH	- Detected Speech
+	SWITCH_EVENT_DETECTED_FAX       - Detected Fax CNG Tone
 	SWITCH_EVENT_PRIVATE_COMMAND	- A private command event 
 	SWITCH_EVENT_HEARTBEAT			- Machine is alive
 	SWITCH_EVENT_TRAP				- Error Trap
@@ -881,6 +883,7 @@ typedef enum {
 	SWITCH_EVENT_CODEC,
 	SWITCH_EVENT_BACKGROUND_JOB,
 	SWITCH_EVENT_DETECTED_SPEECH,
+	SWITCH_EVENT_DETECTED_FAX,
 	SWITCH_EVENT_PRIVATE_COMMAND,
 	SWITCH_EVENT_HEARTBEAT,
 	SWITCH_EVENT_TRAP,
