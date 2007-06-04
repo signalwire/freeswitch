@@ -316,7 +316,7 @@ void client_run(int client_socket, char *local_ip, int local_port, char *remote_
 			continue;
 		}
 
-        if ((read_bytes = recvfrom(usock, audiobuf, sizeof(audiobuf), 0, (struct sockaddr *) &local_addr, &cliAddrLen)) < 0) {
+        if ((read_bytes = recvfrom(usock, audiobuf, sizeof(audiobuf), 0, (struct sockaddr *) &local_addr, cliAddrLen)) < 0) {
 			die("recvfrom() failed");
 		}
 
