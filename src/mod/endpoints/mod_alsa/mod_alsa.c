@@ -152,7 +152,8 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
 static switch_status_t engage_device(unsigned int samplerate, int codec_ms);
 static switch_status_t load_config(void);
-static switch_status_t pa_cmd(char *dest, switch_core_session_t *session, switch_stream_handle_t *stream);
+SWITCH_STANDARD_API(pa_cmd);
+
 
 
 /* 
@@ -1529,7 +1530,7 @@ SWITCH_STANDARD_API(pa_cmd)
 	char *mycmd = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	pa_command_t func = NULL;
-	int lead = 1, devval = 0;
+	int lead = 1;
 	char *wcmd = NULL, *action = NULL;
 	char cmd_buf[1024] = "";
 	char *http = NULL;
