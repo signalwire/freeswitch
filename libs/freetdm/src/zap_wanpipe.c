@@ -31,13 +31,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define WANPIPE_TDM_API 1
-
 #include "openzap.h"
 #include "zap_wanpipe.h"
+#include <stropts.h>
+#include <poll.h>
+#include <sys/socket.h>
 
-/*#include <sangoma_tdm_api.h>*/
-#include <wanpipe_tdm_api.h>
+#define WP_INVALID_SOCKET -1
+
+#include <wanpipe_tdm_api_iface.h>
 
 static struct {
 	uint32_t codec_ms;
@@ -45,14 +47,288 @@ static struct {
 	uint32_t flash_ms;
 } wp_globals;
 
+#define SIOC_WANPIPE_TDM_API 1
+
+/* on windows right now, there is no way to specify if we want to read events here or not, we allways get them here */
+/* we need some what to select if we are reading regular tdm msgs or events */
+/* need to either have 2 functions, 1 for events, 1 for regural read, or a flag on this function to choose */
+/* 2 functions preferred.  Need implementation for the event function for both nix and windows that is threadsafe */
+static __inline__ int tdmv_api_readmsg_tdm(sng_fd_t fd, void *hdrbuf, int hdrlen, void *databuf, int datalen)
+{
+	/* What do we need to do here to avoid having to do all */
+	/* the memcpy's on windows and still maintain api compat with nix */
+	uint32_t rx_len=0;
+#if defined(__WINDOWS__)
+	static RX_DATA_STRUCT	rx_data;
+	api_header_t			*pri;
+	wp_tdm_api_rx_hdr_t		*tdm_api_rx_hdr;
+	wp_tdm_api_rx_hdr_t		*user_buf = (wp_tdm_api_rx_hdr_t*)hdrbuf;
+	DWORD ln;
+
+	if (hdrlen != sizeof(wp_tdm_api_rx_hdr_t)){
+		return -1;
+	}
+
+	if (!DeviceIoControl(
+						 fd,
+						 IoctlReadCommand,
+						 (LPVOID)NULL,
+						 0L,
+						 (LPVOID)&rx_data,
+						 sizeof(RX_DATA_STRUCT),
+						 (LPDWORD)(&ln),
+						 (LPOVERLAPPED)NULL
+						 )){
+		return -1;
+	}
+
+	pri = &rx_data.api_header;
+	tdm_api_rx_hdr = (wp_tdm_api_rx_hdr_t*)rx_data.data;
+
+	user_buf->wp_tdm_api_event_type = pri->operation_status;
+
+	switch(pri->operation_status)
+		{
+		case SANG_STATUS_RX_DATA_AVAILABLE:
+			if (pri->data_length > datalen){
+				break;
+			}
+			memcpy(databuf, rx_data.data, pri->data_length);
+			rx_len = pri->data_length;
+			break;
+
+		default:
+			break;
+		}
+
+#else
+	struct msghdr msg;
+	struct iovec iov[2];
+
+	memset(&msg,0,sizeof(struct msghdr));
+
+	iov[0].iov_len=hdrlen;
+	iov[0].iov_base=hdrbuf;
+
+	iov[1].iov_len=datalen;
+	iov[1].iov_base=databuf;
+
+	msg.msg_iovlen=2;
+	msg.msg_iov=iov;
+
+	rx_len = read(fd,&msg,datalen+hdrlen);
+
+	if (rx_len <= sizeof(wp_tdm_api_rx_hdr_t)){
+		return -EINVAL;
+	}
+
+	rx_len-=sizeof(wp_tdm_api_rx_hdr_t);
+#endif
+    return rx_len;
+}                    
+
+static __inline__ int tdmv_api_writemsg_tdm(sng_fd_t fd, void *hdrbuf, int hdrlen, void *databuf, unsigned short datalen)
+{
+	/* What do we need to do here to avoid having to do all */
+	/* the memcpy's on windows and still maintain api compat with nix */
+	int bsent = 0;
+#if defined(__WINDOWS__)
+	static TX_DATA_STRUCT	local_tx_data;
+	api_header_t			*pri;
+	DWORD ln;
+
+	/* Are these really not needed or used???  What about for nix?? */
+	(void)hdrbuf;
+	(void)hdrlen;
+
+	pri = &local_tx_data.api_header;
+
+	pri->data_length = datalen;
+	memcpy(local_tx_data.data, databuf, pri->data_length);
+
+	if (!DeviceIoControl(
+						 fd,
+						 IoctlWriteCommand,
+						 (LPVOID)&local_tx_data,
+						 (ULONG)sizeof(TX_DATA_STRUCT),
+						 (LPVOID)&local_tx_data,
+						 sizeof(TX_DATA_STRUCT),
+						 (LPDWORD)(&ln),
+						 (LPOVERLAPPED)NULL
+						 )){
+		return -1;
+	}
+
+	if (local_tx_data.api_header.operation_status == SANG_STATUS_SUCCESS) {
+		bsent = datalen;
+	}
+#else
+	struct msghdr msg;
+	struct iovec iov[2];
+
+	memset(&msg,0,sizeof(struct msghdr));
+
+	iov[0].iov_len = hdrlen;
+	iov[0].iov_base = hdrbuf;
+
+	iov[1].iov_len = datalen;
+	iov[1].iov_base = databuf;
+
+	msg.msg_iovlen = 2;
+	msg.msg_iov = iov;
+
+	bsent = write(fd, &msg, datalen + hdrlen);
+	if (bsent > 0){
+		bsent -= sizeof(wp_tdm_api_tx_hdr_t);
+	}
+#endif
+	return bsent;
+}
+
+/* a cross platform way to poll on an actual pollset (span and/or list of spans) will probably also be needed for analog */
+/* so we can have one analong handler thread that will deal with all the idle analog channels for events */
+/* the alternative would be for the driver to provide one socket for all of the oob events for all analog channels */
+static __inline__ int tdmv_api_wait_socket(sng_fd_t fd, int timeout, int *flags)
+{
+#if defined(__WINDOWS__)
+	DWORD ln;
+	API_POLL_STRUCT	api_poll;
+
+	memset(&api_poll, 0x00, sizeof(API_POLL_STRUCT));
+	
+	api_poll.user_flags_bitmap = *flags;
+	api_poll.timeout = timeout;
+
+	if (!DeviceIoControl(
+						 fd,
+						 IoctlApiPoll,
+						 (LPVOID)NULL,
+						 0L,
+						 (LPVOID)&api_poll,
+						 sizeof(API_POLL_STRUCT),
+						 (LPDWORD)(&ln),
+						 (LPOVERLAPPED)NULL)) {
+		return -1;
+	}
+
+	*flags = 0;
+
+	switch(api_poll.operation_status)
+		{
+		case SANG_STATUS_RX_DATA_AVAILABLE:
+			break;
+
+		case SANG_STATUS_RX_DATA_TIMEOUT:
+			return 0;
+
+		default:
+			return -1;
+		}
+
+	if (api_poll.poll_events_bitmap == 0){
+		return -1;
+	}
+
+	if (api_poll.poll_events_bitmap & POLL_EVENT_TIMEOUT) {
+		return 0;
+	}
+
+	*flags = api_poll.poll_events_bitmap;
+
+	return 1;
+#else
+    struct pollfd pfds[1];
+    int res;
+
+    memset(&pfds[0], 0, sizeof(pfds[0]));
+    pfds[0].fd = fd;
+    pfds[0].events = *flags;
+    res = poll(pfds, 1, timeout);
+	*flags = 0;
+
+	if (pfds[0].revents & POLLERR) {
+		res = -1;
+	}
+
+	if (res > 0) {
+		*flags = pfds[0].revents;
+	}
+
+    return res;
+#endif
+}
+
+#define FNAME_LEN 128
+static __inline__ sng_fd_t tdmv_api_open_span_chan(int span, int chan) 
+{
+   	char fname[FNAME_LEN];
+	sng_fd_t fd = WP_INVALID_SOCKET;
+#if defined(__WINDOWS__)
+	DWORD			ln;
+	wan_udp_hdr_t	wan_udp;
+
+	/* NOTE: under Windows Interfaces are zero based but 'chan' is 1 based. */
+	/*		Subtract 1 from 'chan'. */
+	_snprintf(fname , FNAME_LEN, "\\\\.\\WANPIPE%d_IF%d", span, chan - 1);
+
+	fd = CreateFile(	fname, 
+						GENERIC_READ | GENERIC_WRITE, 
+						FILE_SHARE_READ | FILE_SHARE_WRITE,
+						(LPSECURITY_ATTRIBUTES)NULL, 
+						OPEN_EXISTING,
+						FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH,
+						(HANDLE)NULL
+						);
+
+	/* make sure that we are the only ones who have this chan open */
+	/* is this a threadsafe way to make sure that we are ok and will */
+	/* never return a valid handle to more than one thread for the same channel? */
+
+	wan_udp.wan_udphdr_command = GET_OPEN_HANDLES_COUNTER; 
+	wan_udp.wan_udphdr_data_len = 0;
+
+	DeviceIoControl(
+					fd,
+					IoctlManagementCommand,
+					(LPVOID)&wan_udp,
+					sizeof(wan_udp_hdr_t),
+					(LPVOID)&wan_udp,
+					sizeof(wan_udp_hdr_t),
+					(LPDWORD)(&ln),
+					(LPOVERLAPPED)NULL
+					);
+
+	if ((wan_udp.wan_udphdr_return_code) || (*(int*)&wan_udp.wan_udphdr_data[0] != 1)){
+		/* somone already has this channel, or somthing else is not right. */
+		tdmv_api_close_socket(&fd);
+	}
+
+#else
+	/* Does this fail if another thread already has this chan open? */
+	/* if not, we need to add some code to make sure it does */
+	snprintf(fname, FNAME_LEN, "/dev/wptdm_s%dc%d",span,chan);
+
+	fd = open(fname, O_RDWR);
+
+	if (fd < 0) {
+		fd = WP_INVALID_SOCKET;
+	}
+
+#endif
+	return fd;  
+}            
+
+
+
 static zap_io_interface_t wanpipe_interface;
 
 static zap_status_t wp_tdm_cmd_exec(zap_channel_t *zchan, wanpipe_tdm_api_t *tdm_api)
 {
 	int err;
 
-	err = tdmv_api_ioctl(zchan->sockfd, tdm_api);
-	
+	/* I'm told the 2nd arg is ignored but i send it as the cmd anyway for good measure */
+	err = ioctl(zchan->sockfd, tdm_api->wp_tdm_cmd.cmd, &tdm_api->wp_tdm_cmd);
+
 	if (err) {
 		snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
 		return ZAP_FAIL;
@@ -80,11 +356,14 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 			if (type == ZAP_CHAN_TYPE_FXS || type == ZAP_CHAN_TYPE_FXO) {
 				wanpipe_tdm_api_t tdm_api;
 
-				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_ENABLE_RXHOOK_EVENTS;
+				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
+				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RXHOOK;
+				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
 				wp_tdm_cmd_exec(chan, &tdm_api);
-
+				
 				if (type == ZAP_CHAN_TYPE_FXS) {
-					tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_ENABLE_RING_DETECT_EVENTS;
+					tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RING;
+					tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
 					wp_tdm_cmd_exec(chan, &tdm_api);
 				}
 
@@ -219,7 +498,7 @@ static ZIO_OPEN_FUNCTION(wanpipe_open)
 		zchan->native_codec = zchan->effective_codec = ZAP_CODEC_NONE;
 	} else {
 		tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_CODEC;
-		tdm_api.wp_tdm_cmd.tdm_codec = WP_NONE;
+		tdm_api.wp_tdm_cmd.tdm_codec = 0;
 		wp_tdm_cmd_exec(zchan, &tdm_api);
 
 		tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_USR_PERIOD;
@@ -366,7 +645,8 @@ static ZIO_WAIT_FUNCTION(wanpipe_wait)
 ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 {
 	struct pollfd pfds[ZAP_MAX_CHANNELS_SPAN];
-	int i, j = 0, k = 0, l = 0, r;
+	uint32_t i, j = 0, k = 0, l = 0;
+	int r;
 	
 	for(i = 1; i <= span->chan_count; i++) {
 		memset(&pfds[j], 0, sizeof(pfds[j]));
@@ -442,9 +722,9 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 			}
 			
 			switch(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type) {
-			case WP_TDM_EVENT_RXHOOK:
+			case WP_TDMAPI_EVENT_RXHOOK:
 				{
-					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_rxhook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? ZAP_OOB_OFFHOOK : ZAP_OOB_ONHOOK;
+					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_hook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? ZAP_OOB_OFFHOOK : ZAP_OOB_ONHOOK;
 					
 					if (event_id == ZAP_OOB_OFFHOOK) {
 						if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_FLASH)) {
@@ -468,11 +748,10 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 					continue;
 				}
 				break;
-			case WP_TDM_EVENT_RING_DETECT:
+			case WP_TDMAPI_EVENT_RING_DETECT:
 				{
 					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state & WP_TDMAPI_EVENT_RING_PRESENT ? ZAP_OOB_RING_START : ZAP_OOB_RING_STOP;
-					tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_DISABLE_RING_DETECT_EVENTS;
-					wp_tdm_cmd_exec(&span->channels[i], &tdm_api);
+
 				}
 				break;
 			default:
@@ -499,8 +778,10 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 
 static ZIO_DESTROY_CHANNEL_FUNCTION(wanpipe_destroy_channel)
 {
-	tdmv_api_close_socket(&zchan->sockfd);
-	zchan->sockfd = WP_INVALID_SOCKET;
+	if (zchan->sockfd > -1) {
+		close(zchan->sockfd);
+		zchan->sockfd = WP_INVALID_SOCKET;
+	}
 
 	return ZAP_SUCCESS;
 }
