@@ -237,6 +237,7 @@ struct zap_channel {
 	uint32_t chan_id;
 	uint32_t physical_span_id;
 	uint32_t physical_chan_id;
+	uint32_t rate;
 	zap_chan_type_t type;
 	zap_socket_t sockfd;
 	zap_channel_flag_t flags;

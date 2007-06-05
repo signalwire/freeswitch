@@ -770,7 +770,7 @@ static zap_status_t zchan_activate_dtmf_buffer(zap_channel_t *zchan)
 	memset(&zchan->tone_session, 0, sizeof(zchan->tone_session));
 	teletone_init_session(&zchan->tone_session, 0, NULL, NULL);
 	
-	zchan->tone_session.rate = 8000;
+	zchan->tone_session.rate = zchan->rate;
 	zchan->tone_session.duration = zchan->dtmf_on * (zchan->tone_session.rate / 1000);
 	zchan->tone_session.wait = zchan->dtmf_off * (zchan->tone_session.rate / 1000);
 	/*
@@ -910,7 +910,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF)) {
 				zap_tone_type_t tt = ZAP_COMMAND_OBJ_INT;
 				if (tt == ZAP_TONE_DTMF) {
-					teletone_dtmf_detect_init (&zchan->dtmf_detect, 8000);
+					teletone_dtmf_detect_init (&zchan->dtmf_detect, zchan->rate);
 					zap_set_flag_locked(zchan, ZAP_CHANNEL_DTMF_DETECT);
 					zap_set_flag_locked(zchan, ZAP_CHANNEL_SUPRESS_DTMF);
 					GOTO_STATUS(done, ZAP_SUCCESS);
@@ -926,7 +926,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF)) {
 				zap_tone_type_t tt = ZAP_COMMAND_OBJ_INT;
                 if (tt == ZAP_TONE_DTMF) {
-                    teletone_dtmf_detect_init (&zchan->dtmf_detect, 8000);
+                    teletone_dtmf_detect_init (&zchan->dtmf_detect, zchan->rate);
                     zap_clear_flag(zchan, ZAP_CHANNEL_DTMF_DETECT);
 					zap_clear_flag(zchan, ZAP_CHANNEL_SUPRESS_DTMF);
 					GOTO_STATUS(done, ZAP_SUCCESS);

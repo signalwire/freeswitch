@@ -90,6 +90,7 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 			}
 			zap_log(ZAP_LOG_INFO, "configuring device %s as OpenZAP device %d:%d fd:%d\n", path, chan->span_id, chan->chan_id, sockfd);
 
+			chan->rate = 8000;
 			chan->physical_span_id = ztp.span_no;
 			chan->physical_chan_id = ztp.chan_no;
 			
