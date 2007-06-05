@@ -49,7 +49,9 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 {
 	unsigned configured = 0, x;
 	char path[128] = "";
-	zt_params_t ztp = {0};
+	zt_params_t ztp;
+
+	memset(&ztp, 0, sizeof(ztp));
 
 	for(x = start; x < end; x++) {
 		zap_channel_t *chan;
@@ -236,8 +238,10 @@ static ZIO_CLOSE_FUNCTION(zt_close)
 
 static ZIO_COMMAND_FUNCTION(zt_command)
 {
-	zt_params_t ztp = {0};
+	zt_params_t ztp;
 	int err = 0;
+
+	memset(&ztp, 0, sizeof(ztp));
 
 	switch(command) {
 	case ZAP_COMMAND_OFFHOOK:
@@ -385,7 +389,8 @@ static ZIO_WAIT_FUNCTION(zt_wait)
 ZIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
 {
 	struct pollfd pfds[ZAP_MAX_CHANNELS_SPAN];
-	int i, j = 0, k = 0, r, e;
+	uint32_t i, j = 0, k = 0;
+	int r;
 	
 	for(i = 1; i <= span->chan_count; i++) {
 		memset(&pfds[j], 0, sizeof(pfds[j]));
@@ -474,7 +479,6 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 				break;
 			}
 
-		event:
 			span->channels[i].last_event_time = 0;
 			span->event_header.e_type = ZAP_EVENT_OOB;
 			span->event_header.enum_id = event_id;

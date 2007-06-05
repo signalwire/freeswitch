@@ -38,8 +38,8 @@ $(SRC)/zap_isdn.o \
 $(SRC)/zap_analog.o \
 $(SRC)/zap_config.o \
 $(SRC)/zap_callerid.o \
-$(SRC)/dsp/fsk.o \
-$(SRC)/dsp/uart.o \
+$(SRC)/fsk.o \
+$(SRC)/uart.o \
 $(SRC)/g711.o \
 $(SRC)/libteletone_detect.o \
 $(SRC)/libteletone_generate.o \
@@ -58,20 +58,23 @@ $(SRC)/isdn/Q931StateTE.o \
 $(SRC)/isdn/nationalmes.o \
 $(SRC)/isdn/nationalStateNT.o \
 $(SRC)/isdn/nationalStateTE.o \
-$(SRC)/isdn/Q932mes.o 
+$(SRC)/isdn/Q932mes.o \
+$(SRC)/zap_zt.o \
+$(SRC)/zap_wanpipe.o
+
 
 HEADERS=$(SRC)/isdn/include/Q931.h \
 	$(SRC)/include/openzap.h 
 
 PWD=$(shell pwd)
-INCS=-I$(PWD)/$(SRC)//include -I$(PWD)/$(SRC)//isdn/include -I$(PWD)/src/dsp
+INCS=-I$(PWD)/$(SRC)//include -I$(PWD)/$(SRC)//isdn/include
 CFLAGS=$(ZAP_CFLAGS) $(INCS)
 MYLIB=libopenzap.a
 LIBPRIA=libpri.a
 LIBPRI=./libpri
 TMP=-I$(LIBPRI) -I$(SRC)/include -I./src -w
 
-include general.makefile $(ZAP_MODS)
+include general.makefile
 
 all: $(MYLIB)
 
@@ -105,12 +108,6 @@ priserver: $(MYLIB) $(SRC)/priserver.o $(SRC)/sangoma_pri.o $(LIBPRI)/$(LIBPRIA)
 
 $(SRC)/zap_io.o: $(SRC)/zap_io.c
 	$(CC) $(MOD_CFLAGS) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
-
-$(SRC)/zap_wanpipe.o: $(SRC)/zap_wanpipe.c
-	$(CC) $(CFLAGS) $(ZAP_CFLAGS) $(WP_CFLAGS) -c $< -o $@
-
-$(SRC)/zap_zt.o: $(SRC)/zap_zt.c
-	$(CC) $(CFLAGS) $(ZAP_CFLAGS) $(ZT_CFLAGS) -c $< -o $@
 
 %.o: %.c
 	$(CC) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
