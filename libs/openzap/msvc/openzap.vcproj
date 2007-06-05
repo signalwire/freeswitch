@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../src/include;../src/isdn/include;../src/dsp"
+				AdditionalIncludeDirectories="../src/include;../src/isdn/include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -109,7 +109,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="../src/include;../src/isdn/include;../src/dsp"
+				AdditionalIncludeDirectories="../src/include;../src/isdn/include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				DisableLanguageExtensions="false"
@@ -324,6 +324,7 @@
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
+						ExcludedFromBuild="true"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
@@ -332,6 +333,7 @@
 					</FileConfiguration>
 					<FileConfiguration
 						Name="Release|Win32"
+						ExcludedFromBuild="true"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
@@ -370,6 +372,10 @@
 				UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 				>
 				<File
+					RelativePath="..\src\fsk.c"
+					>
+				</File>
+				<File
 					RelativePath="..\src\g711.c"
 					>
 				</File>
@@ -387,6 +393,10 @@
 				</File>
 				<File
 					RelativePath="..\src\libteletone_generate.c"
+					>
+				</File>
+				<File
+					RelativePath="..\src\uart.c"
 					>
 				</File>
 				<File
@@ -411,6 +421,10 @@
 				Filter="h;hpp;hxx;hm;inl;inc;xsd"
 				UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 				>
+				<File
+					RelativePath="..\src\include\fsk.h"
+					>
+				</File>
 				<File
 					RelativePath="..\src\include\g711.h"
 					>
@@ -444,6 +458,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\src\include\uart.h"
+					>
+				</File>
+				<File
 					RelativePath="..\src\include\zap_buffer.h"
 					>
 				</File>
@@ -457,38 +475,6 @@
 				</File>
 				<File
 					RelativePath="..\src\include\zap_types.h"
-					>
-				</File>
-			</Filter>
-		</Filter>
-		<Filter
-			Name="Dsp"
-			>
-			<File
-				RelativePath="..\src\dsp\readme.txt"
-				>
-			</File>
-			<Filter
-				Name="Header Files"
-				>
-				<File
-					RelativePath="..\src\dsp\fsk.h"
-					>
-				</File>
-				<File
-					RelativePath="..\src\dsp\uart.h"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Source Files"
-				>
-				<File
-					RelativePath="..\src\dsp\fsk.c"
-					>
-				</File>
-				<File
-					RelativePath="..\src\dsp\uart.c"
 					>
 				</File>
 			</Filter>
