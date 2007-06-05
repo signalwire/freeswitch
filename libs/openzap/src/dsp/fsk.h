@@ -42,6 +42,7 @@ typedef struct {
 } fsk_modem_definition_t;
 
 /* Must be kept in sync with fsk_modem_definitions array in fsk.c	*/
+/* V.23 definitions: http://www.itu.int/rec/recommendation.asp?type=folders&lang=e&parent=T-REC-V.23 */
 typedef enum {
     FSK_V23_FORWARD_MODE1 = 0,	/* Maximum 600 bps for long haul	*/
     FSK_V23_FORWARD_MODE2,		/* Standard 1200 bps V.23			*/
