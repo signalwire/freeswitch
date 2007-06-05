@@ -35,6 +35,20 @@
 #define	__FSK_H__
 #include "uart.h"
 
+typedef struct {
+    int freq_space;		/* Frequency of the 0 bit				*/
+    int freq_mark;		/* Frequency of the 1 bit				*/
+    int baud_rate;		/* baud rate for the modem				*/
+} fsk_modem_definition_t;
+
+/* Must be kept in sync with fsk_modem_definitions array in fsk.c	*/
+typedef enum {
+    FSK_V23_FORWARD_MODE1 = 0,	/* Maximum 600 bps for long haul	*/
+    FSK_V23_FORWARD_MODE2,		/* Standard 1200 bps V.23			*/
+    FSK_V23_BACKWARD,			/* 75 bps return path for V.23		*/
+    FSK_BELL202					/* Bell 202 half-duplex 1200 bps	*/
+} fsk_modem_types_t;
+
 typedef enum {
 	FSK_STATE_CHANSEIZE = 0,
 	FSK_STATE_CARRIERSIG,
