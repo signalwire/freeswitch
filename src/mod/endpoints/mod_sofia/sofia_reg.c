@@ -24,7 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
- * Ken Rice, Asteria Solutions Group, Inc <ken@asteriasgi.com>
+ * Ken Rice, krice@suspicious.org  (work sponsored by CopperCom, Inc and Asteria Solutions Group, Inc)
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
@@ -275,14 +275,14 @@ char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const c
 uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_handle_t * nh, sip_t const *sip, sofia_regtype_t regtype, char *key,
 								  uint32_t keylen, switch_event_t **v_event)
 {
-	sip_from_t const *from = NULL;
+	sip_to_t const *to = NULL;
 	sip_expires_t const *expires = NULL;
 	sip_authorization_t const *authorization = NULL;
 	sip_contact_t const *contact = NULL;
 	char *sql;
 	switch_event_t *s_event;
-	const char *from_user = NULL;
-	const char *from_host = NULL;
+	const char *to_user = NULL;
+	const char *to_host = NULL;
 	char contact_str[1024] = "";
 	char buf[512];
 	uint8_t stale = 0, forbidden = 0;
@@ -304,14 +304,14 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	expires = sip->sip_expires;
 	authorization = sip->sip_authorization;
 	contact = sip->sip_contact;
-	from = sip->sip_from;
+	to = sip->sip_to;
 
-	if (from) {
-		from_user = from->a_url->url_user;
-		from_host = from->a_url->url_host;
+	if (to) {
+		to_user = to->a_url->url_user;
+		to_host = to->a_url->url_host;
 	}
 
-	if (!from_user || !from_host) {
+	if (!to_user || !to_host) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can not do authorization without a complete from header\n");
 		nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), TAG_END());
 		return 1;
@@ -322,8 +322,8 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		display = contact->m_display;
 
 		if (switch_strlen_zero(display)) {
-			if (from) {
-				display = from->a_display;
+			if (to) {
+				display = to->a_display;
 				if (switch_strlen_zero(display)) {
 					display = "\"user\"";
 				}
@@ -385,7 +385,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		}
 
 		if (auth_res != AUTH_OK && !stale) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "send %s for [%s@%s]\n", forbidden ? "forbidden" : "challange", from_user, from_host);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "send %s for [%s@%s]\n", forbidden ? "forbidden" : "challange", to_user, to_host);
 			if (auth_res == AUTH_FORBIDDEN) {
 				nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
 			} else {
@@ -412,10 +412,10 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		switch_mutex_unlock(profile->ireg_mutex);
 
 		auth_str =
-			switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", from_host, uuid_str, stale ? " stale=\"true\"," : "");
+			switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", to_host, uuid_str, stale ? " stale=\"true\"," : "");
 
 		if (regtype == REG_REGISTER) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Requesting Registration from: [%s@%s]\n", from_user, from_host);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Requesting Registration from: [%s@%s]\n", to_user, to_host);
 			nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), SIPTAG_WWW_AUTHENTICATE_STR(auth_str), TAG_END());
 		} else if (regtype == REG_INVITE) {
 			nua_respond(nh, SIP_407_PROXY_AUTH_REQUIRED, NUTAG_WITH_THIS(nua), SIPTAG_PROXY_AUTHENTICATE_STR(auth_str), TAG_END());
@@ -427,22 +427,22 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
   reg:
 
 	if (exptime) {
-		if (!sofia_reg_find_reg_url(profile, from_user, from_host, buf, sizeof(buf))) {
+		if (!sofia_reg_find_reg_url(profile, to_user, to_host, buf, sizeof(buf))) {
 			sql = switch_mprintf("insert into sip_registrations values ('%q','%q','%q','%q', '%q', %ld)",
-								 from_user, from_host, contact_str, cd ? "Registered(NATHACK)" : "Registered", rpid, (long) time(NULL) + (long) exptime * 2);
+								 to_user, to_host, contact_str, cd ? "Registered(NATHACK)" : "Registered", rpid, (long) time(NULL) + (long) exptime * 2);
 
 		} else {
 			sql =
 				switch_mprintf
 				("update sip_registrations set contact='%q', expires=%ld, rpid='%q' where user='%q' and host='%q'",
-				 contact_str, (long) time(NULL) + (long) exptime * 2, rpid, from_user, from_host);
+				 contact_str, (long) time(NULL) + (long) exptime * 2, rpid, to_user, to_host);
 
 		}
 
 		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_REGISTER) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile-name", "%s", profile->name);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-user", "%s", from_user);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-host", "%s", from_host);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-user", "%s", to_user);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-host", "%s", to_host);
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s", contact_str);
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "rpid", "%s", rpid);
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
@@ -456,26 +456,26 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-						  "Register:\nFrom:    [%s@%s]\nContact: [%s]\nExpires: [%ld]\n", from_user, from_host, contact_str, (long) exptime);
+						  "Register:\nFrom:    [%s@%s]\nContact: [%s]\nExpires: [%ld]\n", to_user, to_host, contact_str, (long) exptime);
 
 
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "sip");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->url);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "%s", rpid);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", from_user, from_host);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, to_host);
 
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Registered");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 			switch_event_fire(&event);
 		}
 	} else {
-		if ((sql = switch_mprintf("delete from sip_subscriptions where user='%q' and host='%q'", from_user, from_host))) {
+		if ((sql = switch_mprintf("delete from sip_subscriptions where user='%q' and host='%q'", to_user, to_host))) {
 			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 			switch_safe_free(sql);
 			sql = NULL;
 		}
-		if ((sql = switch_mprintf("delete from sip_registrations where user='%q' and host='%q'", from_user, from_host))) {
+		if ((sql = switch_mprintf("delete from sip_registrations where user='%q' and host='%q'", to_user, to_host))) {
 			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 			switch_safe_free(sql);
 			sql = NULL;
@@ -483,7 +483,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "sip");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->url);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s+%s@%s", SOFIA_CHAT_PROTO, from_user, from_host);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s+%s@%s", SOFIA_CHAT_PROTO, to_user, to_host);
 
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "unavailable");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "%s", rpid);
@@ -495,7 +495,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 
 	if (switch_event_create(&event, SWITCH_EVENT_ROSTER) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "sip");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", from_user, from_host);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, to_host);
 		switch_event_fire(&event);
 	}
 
