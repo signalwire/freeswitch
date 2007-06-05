@@ -31,7 +31,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef WIN32
 #define ZAP_ZT_SUPPORT
+#endif
 #define ZAP_WANPIPE_SUPPORT
 #include "openzap.h"
 #include "zap_isdn.h"
