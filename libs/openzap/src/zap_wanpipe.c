@@ -36,7 +36,8 @@
 #include "openzap.h"
 #include "zap_wanpipe.h"
 
-#include <sangoma_tdm_api.h>
+/*#include <sangoma_tdm_api.h>*/
+#include <wanpipe_tdm_api.h>
 
 static struct {
 	uint32_t codec_ms;
@@ -74,6 +75,8 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 			zap_log(ZAP_LOG_INFO, "configuring device s%dc%d as OpenZAP device %d:%d fd:%d\n", spanno, x, chan->span_id, chan->chan_id, sockfd);
 			chan->physical_span_id = spanno;
 			chan->physical_chan_id = x;
+			chan->rate = 8000;
+
 			if (type == ZAP_CHAN_TYPE_FXS || type == ZAP_CHAN_TYPE_FXO) {
 				wanpipe_tdm_api_t tdm_api;
 
