@@ -1844,11 +1844,10 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			if (profile->ndlb & PFLAG_NDLB_TO_IN_200_CONTACT) {
 				tech_pvt->reply_contact = tech_pvt->to_uri;
 			} else {
-				tech_pvt->to_uri = switch_core_session_strdup(session, profile->url);
+				tech_pvt->reply_contact = switch_core_session_strdup(session, profile->url);
 			}
 		} else {
-			tech_pvt->to_uri = switch_core_session_strdup(session, profile->url);
-			tech_pvt->reply_contact = tech_pvt->to_uri;
+			tech_pvt->reply_contact = switch_core_session_strdup(session, profile->url);
 		}
 	}
 
