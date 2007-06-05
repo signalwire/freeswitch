@@ -36,9 +36,6 @@
 #include <stropts.h>
 #include <poll.h>
 #include <sys/socket.h>
-
-#define WP_INVALID_SOCKET -1
-
 #include <wanpipe_tdm_api_iface.h>
 
 static struct {
@@ -47,8 +44,9 @@ static struct {
 	uint32_t flash_ms;
 } wp_globals;
 
-#define SIOC_WANPIPE_TDM_API 1
+/* a bunch of this stuff should go into the wanpipe_tdm_api_iface.h */
 
+#define WP_INVALID_SOCKET -1
 /* on windows right now, there is no way to specify if we want to read events here or not, we allways get them here */
 /* we need some what to select if we are reading regular tdm msgs or events */
 /* need to either have 2 functions, 1 for events, 1 for regural read, or a flag on this function to choose */
