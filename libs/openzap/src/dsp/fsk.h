@@ -1,4 +1,3 @@
-
 /*
  *	bell202.h
  *
@@ -84,5 +83,5 @@ void					dsp_fsk_destroy(dsp_fsk_handle_t **handle);
 
 void					dsp_fsk_sample(dsp_fsk_handle_t *handle, double normalized_sample);
 
-#endif	// __FSK_H__
+#endif	
 

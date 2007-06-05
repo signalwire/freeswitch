@@ -37,6 +37,9 @@ $(SRC)/zap_io.o \
 $(SRC)/zap_isdn.o \
 $(SRC)/zap_analog.o \
 $(SRC)/zap_config.o \
+$(SRC)/zap_callerid.o \
+$(SRC)/dsp/fsk.o \
+$(SRC)/dsp/uart.o \
 $(SRC)/g711.o \
 $(SRC)/libteletone_detect.o \
 $(SRC)/libteletone_generate.o \
@@ -61,7 +64,7 @@ HEADERS=$(SRC)/isdn/include/Q931.h \
 	$(SRC)/include/openzap.h 
 
 PWD=$(shell pwd)
-INCS=-I$(PWD)/$(SRC)//include -I$(PWD)/$(SRC)//isdn/include
+INCS=-I$(PWD)/$(SRC)//include -I$(PWD)/$(SRC)//isdn/include -I$(PWD)/src/dsp
 CFLAGS=$(ZAP_CFLAGS) $(INCS)
 MYLIB=libopenzap.a
 LIBPRIA=libpri.a
@@ -78,6 +81,9 @@ $(MYLIB): $(OBJS) $(HEADERS)
 
 testapp: $(SRC)/testapp.c $(MYLIB)
 	$(CC) $(INCS) -L. $(SRC)/testapp.c -o testapp -lopenzap -lm -lpthread
+
+testcid: $(SRC)/testcid.c $(MYLIB)
+	$(CC) $(INCS) -L. $(SRC)/testcid.c -o testcid -lopenzap -lm -lpthread
 
 testisdn: $(SRC)/testisdn.c $(MYLIB)
 	$(CC) $(INCS) -L. $(SRC)/testisdn.c -o testisdn -lopenzap -lm -lpthread
@@ -124,6 +130,6 @@ mod_openzap-clean:
 	@if [ -f mod_openzap/mod_openzap.so ] ; then cd mod_openzap && make clean ; fi
 
 clean: mod_openzap-clean
-	rm -f $(SRC)/*.o $(SRC)/isdn/*.o $(MYLIB) *~ \#* testapp priserver testisdn testanalog
+	rm -f $(SRC)/*.o $(SRC)/isdn/*.o $(MYLIB) *~ \#* testapp testcid priserver testisdn testanalog
 	@if [ -f $(LIBPRI)/$(LIBPRIA) ] ; then cd $(LIBPRI) && make clean ; fi
 

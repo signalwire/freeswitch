@@ -33,6 +33,7 @@
 
 #ifndef ZAP_TYPES_H
 #define ZAP_TYPES_H
+#include "fsk.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -56,6 +57,32 @@ struct zap_io_interface;
 #define ZAP_COMMAND_OBJ_CHAR_P (char *)obj
 
 typedef uint64_t zap_time_t; 
+
+typedef enum {
+	MDMF_DATETIME = 1,
+	MDMF_PHONE_NUM = 2,
+	MDMF_NO_NUM = 4,
+	MDMF_NAME = 7,
+	MDMF_NO_NAME = 8
+} zap_mdmf_type_t;
+
+
+struct zap_fsk_data_state {
+	dsp_fsk_handle_t *fsk1200_handle;
+	uint8_t init;
+	uint8_t *buf;
+	size_t bufsize;
+	int blen;
+	int bpos;
+	int dlen;
+	int ppos;
+	uint8_t checksum;
+};
+typedef struct zap_fsk_data_state zap_fsk_data_state_t;
+
+typedef int (*zap_fsk_data_decoder_t)(zap_fsk_data_state_t *state);
+
+
 
 #define ZAP_TONEMAP_LEN 128
 typedef enum {
@@ -139,7 +166,7 @@ typedef enum {
 	ZAP_MEMERR,
 	ZAP_TIMEOUT,
 	ZAP_NOTIMPL,
-
+	ZAP_CHECKSUM_ERROR,
 	ZAP_STATUS_COUNT
 } zap_status_t;
 

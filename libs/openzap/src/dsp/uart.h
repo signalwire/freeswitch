@@ -1,4 +1,3 @@
-
 /*
  *	uart.h
  *
@@ -73,5 +72,5 @@ void					dsp_uart_destroy(dsp_uart_handle_t **handle);
 
 void					dsp_uart_bit_handler(void *handle, int bit);
 
-#endif	// __UART_H__
+#endif
 

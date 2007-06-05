@@ -342,6 +342,11 @@ struct zap_io_interface {
 	zio_span_next_event_t next_event;
 };
 
+zap_status_t zap_fsk_data_parse(zap_fsk_data_state_t *state, zap_size_t *type, zap_size_t *len, char *data, size_t datalen);
+zap_status_t zap_fsk_demod_feed(zap_fsk_data_state_t *state, int16_t *data, size_t samples);
+zap_status_t zap_fsk_demod_destroy(zap_fsk_data_state_t *state);
+int zap_fsk_demod_init(zap_fsk_data_state_t *state, int rate, uint8_t *buf, size_t bufsize);
+
 zap_status_t zap_channel_outgoing_call(zap_channel_t *zchan);
 void zap_channel_rotate_tokens(zap_channel_t *zchan);
 void zap_channel_clear_detected_tones(zap_channel_t *zchan);
