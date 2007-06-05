@@ -46,15 +46,6 @@
 #define M_PI        3.14159265358979323846
 #endif
 
-/* local constants */
-#define	BELL202_MARK			1200
-#define	BELL202_SPACE			2200
-#define	BELL202_BAUD			1200
-
-#define V23_MARK				1300
-#define V23_SPACE				2100
-#define V23_BAUD				1200
-
 static fsk_modem_definition_t fsk_modem_definitions[] =
 {
     { /* FSK_V23_FORWARD_MODE1	*/	1700,	1300,	600		},
@@ -154,15 +145,15 @@ dsp_fsk_handle_t *dsp_fsk_create(dsp_fsk_attr_t *attr)
 	memcpy(&handle->attr, attr, sizeof(*attr));
 
 	/* see if we can do downsampling.  We only really need 6 samples to "match" */
-	if (attr->sample_rate / BELL202_MARK > 6) {
-		handle->downsampling_count = attr->sample_rate / BELL202_MARK / 6;
+	if (attr->sample_rate / fsk_modem_definitions[FSK_BELL202].freq_mark > 6) {
+		handle->downsampling_count = attr->sample_rate / fsk_modem_definitions[FSK_BELL202].freq_mark / 6;
 	} else {
 		handle->downsampling_count = 1;
 	}
 	handle->current_downsample = 1;
 
 	/* calculate the correlate size (number of samples required for slowest wave) */
-	handle->corrsize = attr->sample_rate / handle->downsampling_count / BELL202_MARK;
+	handle->corrsize = attr->sample_rate / handle->downsampling_count / fsk_modem_definitions[FSK_BELL202].freq_mark;
 
 	/* allocate the correlation sin/cos arrays and initialize */
 	for (i = 0; i < 4; i++) {
@@ -175,8 +166,8 @@ dsp_fsk_handle_t *dsp_fsk_create(dsp_fsk_attr_t *attr)
 	}
 
 	/* now initialize them */
-	phi_mark = 2. * M_PI / ((double) attr->sample_rate / (double) handle->downsampling_count / (double) BELL202_MARK);
-	phi_space = 2. * M_PI / ((double) attr->sample_rate / (double) handle->downsampling_count / (double) BELL202_SPACE);
+	phi_mark = 2. * M_PI / ((double) attr->sample_rate / (double) handle->downsampling_count / (double) fsk_modem_definitions[FSK_BELL202].freq_mark);
+	phi_space = 2. * M_PI / ((double) attr->sample_rate / (double) handle->downsampling_count / (double) fsk_modem_definitions[FSK_BELL202].freq_space);
 
 	for (i = 0; i < handle->corrsize; i++) {
 		handle->correlates[0][i] = sin(phi_mark * (double) i);
@@ -196,7 +187,7 @@ dsp_fsk_handle_t *dsp_fsk_create(dsp_fsk_attr_t *attr)
 
 	/* initalize intra-cell position */
 	handle->cellpos = 0;
-	handle->celladj = BELL202_BAUD / (double) attr->sample_rate * (double) handle->downsampling_count;
+	handle->celladj = fsk_modem_definitions[FSK_BELL202].baud_rate / (double) attr->sample_rate * (double) handle->downsampling_count;
 
 	/* if they have provided a byte handler, add a UART to the processing chain */
 	if (handle->attr.bytehandler) {
