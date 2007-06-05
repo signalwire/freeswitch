@@ -7,7 +7,8 @@ int main(int argc, char *argv[])
 	int16_t buf[160] = {0};
 	ssize_t len = 0;
 	int type, mlen;
-	char str[128];
+	char *sp;
+	char str[128] = "";
 	char fbuf[256];
 
 	if (argc < 2 || zap_fsk_demod_init(&state, 8000, fbuf, sizeof(fbuf))) {
@@ -26,10 +27,14 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	while(zap_fsk_data_parse(&state, &type, &mlen, str, sizeof(str)) == ZAP_SUCCESS) {
-		printf("TYPE %d LEN %d VAL [%s]\n", type, mlen, str);
+	while(zap_fsk_data_parse(&state, &type, &sp, &mlen) == ZAP_SUCCESS) {
+		zap_copy_string(str, sp, mlen+1);
+		*(str+mlen) = '\0';
+		zap_clean_string(str);
+		printf("TYPE %d (%s) LEN %d VAL [%s]\n", type, zap_mdmf_type2str(type), mlen, str);
 	}
 
+	zap_fsk_demod_destroy(&state);
 
 	close(fd);
 }

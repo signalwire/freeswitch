@@ -101,6 +101,9 @@ ZAP_STR2ENUM(zap_str2zap_signal_event, zap_signal_event2str, zap_signal_event_t,
 ZAP_ENUM_NAMES(CHANNEL_STATE_NAMES, CHANNEL_STATE_STRINGS)
 ZAP_STR2ENUM(zap_str2zap_channel_state, zap_channel_state2str, zap_channel_state_t, CHANNEL_STATE_NAMES, ZAP_CHANNEL_STATE_INVALID)
 
+ZAP_ENUM_NAMES(MDMF_TYPE_NAMES, MDMF_STRINGS)
+ZAP_STR2ENUM(zap_str2zap_mdmf_type, zap_mdmf_type2str, zap_mdmf_type_t, MDMF_TYPE_NAMES, MDMF_INVALID)
+
 static char *cut_path(char *in)
 {
 	char *p, *ret = in;
@@ -795,6 +798,26 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 	zap_mutex_lock(zchan->mutex);
 
 	switch(command) {
+
+	case ZAP_COMMAND_ENABLE_CALLERID_DETECT:
+		{
+			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_CALLERID)) {
+				if (zap_fsk_demod_init(&zchan->fsk, zchan->rate, zchan->fsk_buf, sizeof(zchan->fsk_buf)) != ZAP_SUCCESS) {
+					snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
+					GOTO_STATUS(done, ZAP_FAIL);
+				}
+				zap_set_flag_locked(zchan, ZAP_CHANNEL_CALLERID_DETECT);
+			}
+		}
+		break;
+	case ZAP_COMMAND_DISABLE_CALLERID_DETECT:
+		{
+			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_CALLERID)) {
+				zap_fsk_demod_destroy(&zchan->fsk);
+				zap_clear_flag_locked(zchan, ZAP_CHANNEL_CALLERID_DETECT);
+			}
+		}
+		break;
 	case ZAP_COMMAND_TRACE_INPUT:
 		{
 			char *path = (char *) obj;
@@ -1285,7 +1308,8 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 		}
 	}
 
-	if (zap_test_flag(zchan, ZAP_CHANNEL_DTMF_DETECT) || zap_test_flag(zchan, ZAP_CHANNEL_PROGRESS_DETECT)) {
+	if (zap_test_flag(zchan, ZAP_CHANNEL_DTMF_DETECT) || zap_test_flag(zchan, ZAP_CHANNEL_PROGRESS_DETECT) || 
+		zap_test_flag(zchan, ZAP_CHANNEL_CALLERID_DETECT)) {
 		uint8_t sln_buf[1024] = {0};
 		int16_t *sln;
 		zap_size_t slen = 0;
@@ -1317,6 +1341,61 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 			}
 			sln = (int16_t *) sln_buf;
 			slen = len;
+		}
+
+		if (zap_test_flag(zchan, ZAP_CHANNEL_CALLERID_DETECT)) {
+			if (zap_fsk_demod_feed(&zchan->fsk, sln, slen) != ZAP_SUCCESS) {
+				uint32_t type, mlen;
+				char str[128], *sp;
+
+
+				while(zap_fsk_data_parse(&zchan->fsk, &type, &sp, &mlen) == ZAP_SUCCESS) {
+					*(str+mlen) = '\0';
+					zap_copy_string(str, sp, ++mlen);
+					zap_clean_string(str);
+					zap_log(ZAP_LOG_DEBUG, "FSK: TYPE %s LEN %d VAL [%s]\n", zap_mdmf_type2str(type), mlen-1, str);
+					
+					switch(type) {
+					case MDMF_DDN:
+					case MDMF_PHONE_NUM:
+						{
+							if (mlen > sizeof(zchan->caller_data.ani)) {
+								mlen = sizeof(zchan->caller_data.ani);
+							}
+							zap_set_string(zchan->caller_data.ani, str);
+							zap_set_string(zchan->caller_data.cid_num, zchan->caller_data.ani);
+						}
+						break;
+					case MDMF_NO_NUM:
+						{
+							zap_set_string(zchan->caller_data.ani, *str == 'P' ? "private" : "unknown");
+							zap_set_string(zchan->caller_data.cid_name, zchan->caller_data.ani);
+						}
+						break;
+					case MDMF_PHONE_NAME:
+						{
+							if (mlen > sizeof(zchan->caller_data.cid_name)) {
+								mlen = sizeof(zchan->caller_data.cid_name);
+							}
+							zap_set_string(zchan->caller_data.cid_name, str);
+						}
+						break;
+					case MDMF_NO_NAME:
+						{
+							zap_set_string(zchan->caller_data.cid_name, *str == 'P' ? "private" : "unknown");
+						}
+					case MDMF_DATETIME:
+						{
+							if (mlen > sizeof(zchan->caller_data.cid_date)) {
+								mlen = sizeof(zchan->caller_data.cid_date);
+							}
+							zap_set_string(zchan->caller_data.cid_date, str);
+						}
+						break;
+					}
+				}
+				zap_channel_command(zchan, ZAP_COMMAND_DISABLE_CALLERID_DETECT, NULL);
+			}
 		}
 
 		if (zap_test_flag(zchan, ZAP_CHANNEL_PROGRESS_DETECT)) {

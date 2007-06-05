@@ -223,13 +223,28 @@ struct zap_event {
 #define ZAP_TOKEN_STRLEN 128
 #define ZAP_MAX_TOKENS 10
 
+static __inline__ char *zap_clean_string(char *s)
+{
+	char *p;
 
+	for (p = s; p && *p; p++) {
+		uint8_t x = (uint8_t) *p;
+		if (x < 32 || x > 127) {
+			*p = ' ';
+		}
+	}
+
+	return s;
+}
 
 struct zap_caller_data {
 	char cid_name[80];
+	char cid_num[80];
+	char cid_date[8];
 	char ani[25];
 	char aniII[25];
 	char dnis[25];
+	char rdnis[25];
 };
 
 struct zap_channel {
@@ -271,6 +286,8 @@ struct zap_channel {
 	char chan_name[128];
 	char chan_number[32];
 	zap_filehandle_t fds[2];
+	zap_fsk_data_state_t fsk;
+	uint8_t fsk_buf[80];
 	struct zap_caller_data caller_data;
 	struct zap_span *span;
 	struct zap_io_interface *zio;
@@ -343,7 +360,7 @@ struct zap_io_interface {
 	zio_span_next_event_t next_event;
 };
 
-zap_status_t zap_fsk_data_parse(zap_fsk_data_state_t *state, zap_size_t *type, zap_size_t *len, char *data, size_t datalen);
+zap_status_t zap_fsk_data_parse(zap_fsk_data_state_t *state, zap_size_t *type, char **data, zap_size_t *len);
 zap_status_t zap_fsk_demod_feed(zap_fsk_data_state_t *state, int16_t *data, size_t samples);
 zap_status_t zap_fsk_demod_destroy(zap_fsk_data_state_t *state);
 int zap_fsk_demod_init(zap_fsk_data_state_t *state, int rate, uint8_t *buf, size_t bufsize);

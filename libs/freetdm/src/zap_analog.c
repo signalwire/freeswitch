@@ -164,6 +164,13 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 
 		if (!zap_test_flag(chan, ZAP_CHANNEL_STATE_CHANGE)) {
 			switch(chan->state) {
+			case ZAP_CHANNEL_STATE_GET_CALLERID:
+				{
+					if (state_counter > 5000 || !zap_test_flag(chan, ZAP_CHANNEL_CALLERID_DETECT)) {
+						zap_set_state_locked(chan, ZAP_CHANNEL_STATE_IDLE);
+					}
+				}
+				break;
 			case ZAP_CHANNEL_STATE_DIALING:
 				{
 					if (state_counter > dial_timeout) {
@@ -199,14 +206,17 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 					}
 				}
 				break;
+			case ZAP_CHANNEL_STATE_ATTN:
+				{
+					if (state_counter > 20000) {
+						zap_set_state_locked(chan, ZAP_CHANNEL_STATE_DOWN);
+					}
+				}
+				break;
 			case ZAP_CHANNEL_STATE_HANGUP:
 				{
-					if (state_counter > 2000) {
-						if (chan->type == ZAP_CHAN_TYPE_FXO) {
-							zap_set_state_locked(chan, ZAP_CHANNEL_STATE_DOWN);
-						} else {
-							zap_set_state_locked(chan, ZAP_CHANNEL_STATE_BUSY);
-						}
+					if (state_counter > 1000) {
+						zap_set_state_locked(chan, ZAP_CHANNEL_STATE_BUSY);
 					}
 				}
 				break;
@@ -230,6 +240,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 			zap_clear_flag_locked(chan, ZAP_CHANNEL_STATE_CHANGE);
 			indicate = 0;
 			state_counter = 0;
+			zap_log(ZAP_LOG_DEBUG, "Executing state handler for %s\n", zap_channel_state2str(chan->state));
 			switch(chan->state) {
 			case ZAP_CHANNEL_STATE_UP:
 				{
@@ -264,7 +275,13 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				{
 					zap_channel_use(chan);
 					sig.event_id = ZAP_SIGEVENT_START;
-					zap_copy_string(chan->caller_data.dnis, dtmf, sizeof(chan->caller_data.dnis));
+
+					if (chan->type == ZAP_CHAN_TYPE_FXO) {
+						zap_set_string(chan->caller_data.dnis, chan->chan_number);
+					} else {
+						zap_set_string(chan->caller_data.dnis, dtmf);
+					}
+
 					data->sig_cb(&sig);
 					continue;
 				}
@@ -292,12 +309,18 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 					zap_channel_command(chan, ZAP_COMMAND_GENERATE_RING_ON, NULL);
 				}
 				break;
-			case ZAP_CHANNEL_STATE_RING:
+			case ZAP_CHANNEL_STATE_GET_CALLERID:
 				{
 					zap_channel_done(chan);
+					zap_channel_command(chan, ZAP_COMMAND_ENABLE_CALLERID_DETECT, NULL);
+				}
+				break;
+			case ZAP_CHANNEL_STATE_RING:
+				{
 					zap_buffer_zero(dt_buffer);
 					teletone_run(&ts, chan->span->tone_map[ZAP_TONEMAP_RING]);
 					indicate = 1;
+					
 				}
 				break;
 			case ZAP_CHANNEL_STATE_BUSY:
@@ -317,7 +340,6 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				}
 				break;
 			default:
-				zap_channel_done(chan);
 				break;
 			}
 		}
@@ -393,8 +415,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 			zap_channel_write(chan, frame, sizeof(frame), &rlen);
 			continue;
 		}
-
-
+		
 		if (!indicate) {
 			continue;
 		}
@@ -408,7 +429,6 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 		}
 
 		rlen = zap_buffer_read_loop(dt_buffer, frame, len);					
-
 		
 		if (chan->effective_codec != ZAP_CODEC_SLIN) {
 			zio_codec_t codec_func = NULL;
@@ -431,7 +451,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 	}
 
  done:
-
+	zap_channel_done(chan);
 	if (chan->type == ZAP_CHAN_TYPE_FXO && zap_test_flag(chan, ZAP_CHANNEL_OFFHOOK)) {
 		zap_channel_command(chan, ZAP_COMMAND_ONHOOK, NULL);
 	}
@@ -484,11 +504,7 @@ static zap_status_t process_event(zap_span_t *span, zap_event_t *event)
 
 			if (event->channel->state == ZAP_CHANNEL_STATE_DOWN && !zap_test_flag(event->channel, ZAP_CHANNEL_INTHREAD)) {
 				/*zap_channel_command(event->channel, ZAP_COMMAND_TRACE_INPUT, "/tmp/inbound.ul");*/
-				sig.event_id = ZAP_SIGEVENT_START;
-				zap_set_string(event->channel->caller_data.dnis, event->channel->chan_number);
-				data->sig_cb(&sig);
-				zap_channel_command(event->channel, ZAP_COMMAND_OFFHOOK, NULL);
-				zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_RING);
+				zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_GET_CALLERID);
 				zap_thread_create_detached(zap_analog_channel_run, event->channel);
 			}
 		}

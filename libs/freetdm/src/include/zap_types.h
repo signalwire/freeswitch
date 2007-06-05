@@ -64,13 +64,21 @@ struct zap_io_interface;
 typedef uint64_t zap_time_t; 
 
 typedef enum {
+	ZAP_CID_TYPE_SDMF = 0x04,
+	ZAP_CID_TYPE_MDMF = 0x80
+} zap_cid_type_t;
+
+typedef enum {
 	MDMF_DATETIME = 1,
 	MDMF_PHONE_NUM = 2,
+	MDMF_DDN = 3,
 	MDMF_NO_NUM = 4,
-	MDMF_NAME = 7,
-	MDMF_NO_NAME = 8
+	MDMF_PHONE_NAME = 7,
+	MDMF_NO_NAME = 8,
+	MDMF_INVALID = 9
 } zap_mdmf_type_t;
-
+#define MDMF_STRINGS "X", "DATETIME", "PHONE_NUM", "DDN", "NO_NUM", "X", "X", "PHONE_NAME", "NO_NAME", "INVALID"
+ZAP_STR2ENUM_P(zap_str2zap_mdmf_type, zap_mdmf_type2str, zap_mdmf_type_t)
 
 struct zap_fsk_data_state {
 	dsp_fsk_handle_t *fsk1200_handle;
@@ -216,6 +224,8 @@ typedef enum {
 	ZAP_COMMAND_DISABLE_PROGRESS_DETECT,
 	ZAP_COMMAND_TRACE_INPUT,
 	ZAP_COMMAND_TRACE_OUTPUT,
+	ZAP_COMMAND_ENABLE_CALLERID_DETECT,
+	ZAP_COMMAND_DISABLE_CALLERID_DETECT,
 	ZAP_COMMAND_COUNT
 } zap_command_t;
 
@@ -236,7 +246,8 @@ typedef enum {
 typedef enum {
 	ZAP_CHANNEL_FEATURE_DTMF = (1 << 0),
 	ZAP_CHANNEL_FEATURE_CODECS = (1 << 1),
-	ZAP_CHANNEL_FEATURE_INTERVAL = (1 << 2)
+	ZAP_CHANNEL_FEATURE_INTERVAL = (1 << 2),
+	ZAP_CHANNEL_FEATURE_CALLERID = (1 << 3)
 } zap_channel_feature_t;
 
 typedef enum {
@@ -252,9 +263,11 @@ typedef enum {
 	ZAP_CHANNEL_STATE_IDLE,
 	ZAP_CHANNEL_STATE_GENRING,
 	ZAP_CHANNEL_STATE_DIALING,
+	ZAP_CHANNEL_STATE_GET_CALLERID,
 	ZAP_CHANNEL_STATE_INVALID
 } zap_channel_state_t;
-#define CHANNEL_STATE_STRINGS "DOWN", "UP", "HANGUP", "HOLD", "DIALTONE", "COLLECT", "RING", "BUSY", "ATTN", "IDLE", "GENRING", "DIALING", "INVALID"
+#define CHANNEL_STATE_STRINGS "DOWN", "UP", "HANGUP", "HOLD", "DIALTONE", "COLLECT", \
+		"RING", "BUSY", "ATTN", "IDLE", "GENRING", "DIALING", "GET_CALLERID", "INVALID"
 ZAP_STR2ENUM_P(zap_str2zap_channel_state, zap_channel_state2str, zap_channel_state_t)
 
 typedef enum {
@@ -274,7 +287,8 @@ typedef enum {
 	ZAP_CHANNEL_INUSE = (1 << 13),
 	ZAP_CHANNEL_OFFHOOK = (1 << 14),
 	ZAP_CHANNEL_RINGING = (1 << 15),
-	ZAP_CHANNEL_PROGRESS_DETECT = (1 << 16)
+	ZAP_CHANNEL_PROGRESS_DETECT = (1 << 16),
+	ZAP_CHANNEL_CALLERID_DETECT = (1 << 17)
 } zap_channel_flag_t;
 
 
