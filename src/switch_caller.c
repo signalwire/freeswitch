@@ -51,17 +51,17 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 		if (!context) {
 			context = "default";
 		}
-		profile->username = switch_core_strdup(pool, switch_str_nil(username));
-		profile->dialplan = switch_core_strdup(pool, switch_str_nil(dialplan));
-		profile->caller_id_name = switch_core_strdup(pool, switch_str_nil(caller_id_name));
-		profile->caller_id_number = switch_core_strdup(pool, switch_str_nil(caller_id_number));
-		profile->network_addr = switch_core_strdup(pool, switch_str_nil(network_addr));
-		profile->ani = switch_core_strdup(pool, switch_str_nil(ani));
-		profile->aniii = switch_core_strdup(pool, switch_str_nil(aniii));
-		profile->rdnis = switch_core_strdup(pool, switch_str_nil(rdnis));
-		profile->source = switch_core_strdup(pool, switch_str_nil(source));
-		profile->context = switch_core_strdup(pool, switch_str_nil(context));
-		profile->destination_number = switch_core_strdup(pool, switch_str_nil(destination_number));
+		profile->username = switch_clean_string(switch_core_strdup(pool, switch_str_nil(username)));
+		profile->dialplan = switch_clean_string(switch_core_strdup(pool, switch_str_nil(dialplan)));
+		profile->caller_id_name = switch_clean_string(switch_core_strdup(pool, switch_str_nil(caller_id_name)));
+		profile->caller_id_number = switch_clean_string(switch_core_strdup(pool, switch_str_nil(caller_id_number)));
+		profile->network_addr = switch_clean_string(switch_core_strdup(pool, switch_str_nil(network_addr)));
+		profile->ani = switch_clean_string(switch_core_strdup(pool, switch_str_nil(ani)));
+		profile->aniii = switch_clean_string(switch_core_strdup(pool, switch_str_nil(aniii)));
+		profile->rdnis = switch_clean_string(switch_core_strdup(pool, switch_str_nil(rdnis)));
+		profile->source = switch_clean_string(switch_core_strdup(pool, switch_str_nil(source)));
+		profile->context = switch_clean_string(switch_core_strdup(pool, switch_str_nil(context)));
+		profile->destination_number = switch_clean_string(switch_core_strdup(pool, switch_str_nil(destination_number)));
 		switch_set_flag(profile, SWITCH_CPF_SCREEN);
 	}
 

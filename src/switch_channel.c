@@ -389,7 +389,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *ch
 		switch_mutex_lock(channel->profile_mutex);
 		switch_core_hash_delete(channel->variables, varname);
 		if (!switch_strlen_zero(value)) {
-			switch_core_hash_insert_dup(channel->variables, varname, switch_core_session_strdup(channel->session, value));
+			switch_core_hash_insert_dup(channel->variables, varname, switch_clean_string(switch_core_session_strdup(channel->session, value)));
 		} else {
 			switch_core_hash_delete(channel->variables, varname);
 		}
