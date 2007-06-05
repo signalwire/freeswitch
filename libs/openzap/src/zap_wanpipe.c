@@ -358,12 +358,13 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RXHOOK;
 				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
 				wp_tdm_cmd_exec(chan, &tdm_api);
-				
+#if 0				
 				if (type == ZAP_CHAN_TYPE_FXS) {
 					tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RING;
 					tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
 					wp_tdm_cmd_exec(chan, &tdm_api);
 				}
+#endif
 
 				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_GET_HW_CODING;
 				wp_tdm_cmd_exec(chan, &tdm_api);

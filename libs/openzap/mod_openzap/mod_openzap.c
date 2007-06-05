@@ -699,7 +699,7 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
 	private_t *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
 	char name[128];
-
+	
 	*sp = NULL;
 	
 	if (!(session = switch_core_session_request(&channel_endpoint_interface, NULL))) {
@@ -716,16 +716,29 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
 		switch_core_session_destroy(&session);
 		return ZAP_FAIL;
 	}
-		
+	
+
+	if (switch_strlen_zero(sigmsg->channel->caller_data.cid_name)) {
+		switch_set_string(sigmsg->channel->caller_data.cid_name, sigmsg->channel->chan_name);
+	}
+
+	if (switch_strlen_zero(sigmsg->channel->caller_data.cid_num)) {
+		if (!switch_strlen_zero(sigmsg->channel->caller_data.ani)) {
+			switch_set_string(sigmsg->channel->caller_data.cid_num, sigmsg->channel->caller_data.ani);
+		} else {
+			switch_set_string(sigmsg->channel->caller_data.cid_num, sigmsg->channel->chan_number);
+		}
+	}
+	
 	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 														 "OpenZAP",
 														 SPAN_CONFIG[sigmsg->channel->span_id].dialplan,
-														 sigmsg->channel->chan_name,
-														 sigmsg->channel->chan_number,
+														 sigmsg->channel->caller_data.cid_name,
+														 sigmsg->channel->caller_data.cid_num,
 														 NULL,
-														 sigmsg->channel->chan_number,
-														 NULL,
-														 NULL,
+														 sigmsg->channel->caller_data.ani,
+														 sigmsg->channel->caller_data.aniII,
+														 sigmsg->channel->caller_data.rdnis,
 														 (char *) modname,
 														 SPAN_CONFIG[sigmsg->channel->span_id].context,
 														 sigmsg->channel->caller_data.dnis);
