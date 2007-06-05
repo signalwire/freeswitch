@@ -248,7 +248,7 @@ void client_run(int client_socket, char *local_ip, int local_port, char *remote_
 
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    sendaddr.sin_addr.s_addr = inet_addr(remote_ip);
+    addr.sin_addr.s_addr = inet_addr(remote_ip);
     addr.sin_port = htons(remote_port);
 
     sendaddr.sin_family = AF_INET;

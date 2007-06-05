@@ -175,6 +175,7 @@ switch_mutex_unlock(obj->flag_mutex);
 */
 #define switch_copy_flags(dest, src, flags) (dest)->flags &= ~(flags);	(dest)->flags |= ((src)->flags & (flags))
 
+#define switch_set_string(_dst, _src) switch_copy_string(_dst, _src, sizeof(_dst))
 
 /*!
   \brief Free a pointer and set it to NULL unless it already is NULL
