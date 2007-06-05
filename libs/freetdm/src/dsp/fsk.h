@@ -35,6 +35,12 @@
 #define	__FSK_H__
 #include "uart.h"
 
+typedef enum {
+	FSK_STATE_CHANSEIZE = 0,
+	FSK_STATE_CARRIERSIG,
+	FSK_STATE_DATA
+} fsk_state_t;
+
 typedef struct dsp_fsk_attr_s
 {
 	int					sample_rate;					/* sample rate in HZ */
@@ -46,7 +52,8 @@ typedef struct dsp_fsk_attr_s
 
 typedef struct
 {
-	dsp_fsk_attr_t	attr;							/* attributes structure */
+	fsk_state_t			state;
+	dsp_fsk_attr_t		attr;							/* attributes structure */
 	double				*correlates[4];					/* one for each of sin/cos for mark/space */
 	int					corrsize;						/* correlate size (also number of samples in ring buffer) */
 	double				*buffer;						/* sample ring buffer */
@@ -55,8 +62,10 @@ typedef struct
 	double				celladj;						/* bit cell adjustment for each sample */
 	int					previous_bit;					/* previous bit (for detecting a transition to sync-up cell position) */
 	int					current_bit;					/* current bit */
+	int					last_bit;
 	int					downsampling_count;				/* number of samples to skip */
 	int					current_downsample;				/* current skip count */
+	int					conscutive_state_bits;			/* number of bits in a row that matches the pattern for the current state */
 }	dsp_fsk_handle_t;
 
 /*
