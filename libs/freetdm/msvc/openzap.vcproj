@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../src/include;../src/isdn/include"
+				AdditionalIncludeDirectories="../src/include;../src/isdn/include;../src/dsp"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -109,7 +109,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="../src/include;../src/isdn/include"
+				AdditionalIncludeDirectories="../src/include;../src/isdn/include;../src/dsp"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				DisableLanguageExtensions="false"
