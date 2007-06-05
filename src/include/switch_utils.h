@@ -177,6 +177,15 @@ switch_mutex_unlock(obj->flag_mutex);
 
 #define switch_set_string(_dst, _src) switch_copy_string(_dst, _src, sizeof(_dst))
 
+static __inline__ void switch_clean_string(char *s)
+{                                                                                                                                                                   char *p;
+
+    for (p = s; p && *p; p++) {                                                                                                                                         uint8_t x = (uint8_t) *p;                                                                                                                                       if (x < 32 || x > 127) {                                                                                                                                            *p = ' ';                                                                                                                                                   }
+    }
+}
+
+
+
 /*!
   \brief Free a pointer and set it to NULL unless it already is NULL
   \param it the pointer
