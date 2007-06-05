@@ -55,6 +55,14 @@
 #define V23_SPACE				2100
 #define V23_BAUD				1200
 
+static fsk_modem_definition_t fsk_modem_definitions[] =
+{
+    { /* FSK_V23_FORWARD_MODE1	*/	1700,	1300,	600		},
+    { /* FSK_V23_FORWARD_MODE2	*/	2100,	1300,	1200	},
+    { /* FSK_V23_BACKWARD		*/	450,	390,	75		},
+    { /* FSK_BELL202			*/	2200,	1200,	1200	},
+};
+
 /*
  *	dsp_fsk_attr_init
  *
