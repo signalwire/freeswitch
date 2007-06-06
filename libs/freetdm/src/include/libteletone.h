@@ -73,32 +73,37 @@
 
 #ifdef __cplusplus
 extern "C" {
+#ifdef _doh
+}
 #endif
+#endif
+
 #define	TELETONE_MAX_DTMF_DIGITS 128
 #define TELETONE_MAX_TONES 6
 #define TELETONE_TONE_RANGE 127
 
-	typedef double teletone_process_t;
+typedef double teletone_process_t;
 
-	/*! \file libteletone.h
-	  \brief Top level include file
+/*! \file libteletone.h
+  \brief Top level include file
 
-	  This file should be included by applications using the library
-	*/
+  This file should be included by applications using the library
+*/
 
-	/*! \brief An abstraction to store a tone mapping */
-	typedef struct {
-		/*! An array of tone frequencies */
-		teletone_process_t freqs[TELETONE_MAX_TONES];
-	} teletone_tone_map_t;
+/*! \brief An abstraction to store a tone mapping */
+typedef struct {
+	/*! An array of tone frequencies */
+	teletone_process_t freqs[TELETONE_MAX_TONES];
+} teletone_tone_map_t;
+
 
 #if !defined(M_PI)
-	/* C99 systems may not define M_PI */
+/* C99 systems may not define M_PI */
 #define M_PI 3.14159265358979323846264338327
 #endif
 
 #ifdef _MSC_VER
-	typedef __int16 int16_t;
+typedef __int16 int16_t;
 #endif
 
 #include <libteletone_generate.h>
