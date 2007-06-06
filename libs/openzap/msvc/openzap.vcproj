@@ -404,6 +404,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\src\zap_callerid.c"
+					>
+				</File>
+				<File
 					RelativePath="..\src\zap_config.c"
 					>
 				</File>
