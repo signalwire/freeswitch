@@ -90,7 +90,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <math.h>
+#include <libteletone_detect.h>
+
 #ifndef _MSC_VER
 #include <stdint.h>
 #endif
@@ -98,7 +99,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <fcntl.h>
-#include <libteletone_detect.h>
+
 
 static teletone_detection_descriptor_t dtmf_detect_row[GRID_FACTOR];
 static teletone_detection_descriptor_t dtmf_detect_col[GRID_FACTOR];

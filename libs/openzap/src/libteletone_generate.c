@@ -70,6 +70,7 @@
  */
 
 #include <libteletone.h>
+
 #define SMAX 32767
 #define SMIN -32768
 #define normalize_to_16bit(n) if (n > SMAX) n = SMAX; else if (n < SMIN) n = SMIN;
@@ -77,6 +78,25 @@
 #ifdef _MSC_VER
 #pragma warning(disable:4706)
 #endif
+
+const int16_t TELETONE_SINES[SINE_TABLE_MAX] = {
+	0x00c9, 0x025b, 0x03ed, 0x057f, 0x0711, 0x08a2, 0x0a33, 0x0bc4,
+	0x0d54, 0x0ee4, 0x1073, 0x1201, 0x138f, 0x151c, 0x16a8, 0x1833,
+	0x19be, 0x1b47, 0x1cd0, 0x1e57, 0x1fdd, 0x2162, 0x22e5, 0x2467,
+	0x25e8, 0x2768, 0x28e5, 0x2a62, 0x2bdc, 0x2d55, 0x2ecc, 0x3042,
+	0x31b5, 0x3327, 0x3497, 0x3604, 0x3770, 0x38d9, 0x3a40, 0x3ba5,
+	0x3d08, 0x3e68, 0x3fc6, 0x4121, 0x427a, 0x43d1, 0x4524, 0x4675,
+	0x47c4, 0x490f, 0x4a58, 0x4b9e, 0x4ce1, 0x4e21, 0x4f5e, 0x5098,
+	0x51cf, 0x5303, 0x5433, 0x5560, 0x568a, 0x57b1, 0x58d4, 0x59f4,
+	0x5b10, 0x5c29, 0x5d3e, 0x5e50, 0x5f5e, 0x6068, 0x616f, 0x6272,
+	0x6371, 0x646c, 0x6564, 0x6657, 0x6747, 0x6832, 0x691a, 0x69fd,
+	0x6add, 0x6bb8, 0x6c8f, 0x6d62, 0x6e31, 0x6efb, 0x6fc2, 0x7083,
+	0x7141, 0x71fa, 0x72af, 0x735f, 0x740b, 0x74b3, 0x7556, 0x75f4,
+	0x768e, 0x7723, 0x77b4, 0x7840, 0x78c8, 0x794a, 0x79c9, 0x7a42,
+	0x7ab7, 0x7b27, 0x7b92, 0x7bf9, 0x7c5a, 0x7cb7, 0x7d0f, 0x7d63,
+	0x7db1, 0x7dfb, 0x7e3f, 0x7e7f, 0x7eba, 0x7ef0, 0x7f22, 0x7f4e,
+	0x7f75, 0x7f98, 0x7fb5, 0x7fce, 0x7fe2, 0x7ff1, 0x7ffa, 0x7fff
+};
 
 
 int teletone_set_tone(teletone_generation_session_t *ts, int index, ...)
@@ -122,8 +142,9 @@ int teletone_init_session(teletone_generation_session_t *ts, int buflen, tone_ha
 	ts->tmp_wait = -1;
 	ts->handler = handler;
 	ts->user_data = user_data;
-	ts->volume = 1500;
+	ts->volume = -7;
 	ts->decay_step = 0;
+	ts->decay_factor = 1;
 	if (buflen) {
 		if ((ts->buffer = calloc(buflen, sizeof(teletone_audio_t))) == 0) {
 			return -1;
@@ -181,34 +202,24 @@ static int ensure_buffer(teletone_generation_session_t *ts, int need)
 
 int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *map)
 {
-	teletone_process_t period = (1.0 / ts->rate) / ts->channels;
+	/*teletone_process_t period = (1.0 / ts->rate) / ts->channels;*/
 	int i, c;
 	int freqlen = 0;
-	teletone_process_t tones[TELETONE_MAX_TONES];
-	int decay = 0;
+	teletone_dds_state_t tones[TELETONE_MAX_TONES];
+	//int decay = 0;
 	int duration;
 	int wait = 0;
-	teletone_process_t sample;
-	
+	int32_t sample;
+	int32_t dc = 0;
+	float vol = ts->volume;
 	ts->samples = 0;
-
+	memset(tones, 0, sizeof(tones[0]) * TELETONE_MAX_TONES);
 	duration = (ts->tmp_duration > -1) ? ts->tmp_duration : ts->duration;
 	wait = (ts->tmp_wait > -1) ? ts->tmp_wait : ts->wait;
 
 	if (map->freqs[0] > 0) {
-		if (ts->decay_step) {
-			if (ts->decay_factor) {
-				decay = (duration - (duration / ts->decay_factor));
-			} else {
-				decay = 0;
-			}
-		}
-		if (ts->volume < 0) {
-			ts->volume = 0;
-		}
-	
 		for (freqlen = 0; map->freqs[freqlen] && freqlen < TELETONE_MAX_TONES; freqlen++) {
-			tones[freqlen] = (teletone_process_t) map->freqs[freqlen] * (2 * M_PI);
+			teletone_dds_state_set_tone(&tones[freqlen], map->freqs[freqlen], ts->rate, vol);
 		}
 	
 		if (ts->channels > 1) {
@@ -220,17 +231,28 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
 				return -1;
 			}
 		}
+
 		for (ts->samples = 0; ts->samples < ts->datalen && ts->samples < duration; ts->samples++) {
-			if (ts->decay_step && !(ts->samples % ts->decay_step) && ts->volume > 0 && ts->samples > decay) {
-				ts->volume += ts->decay_direction;
+			if (ts->decay_direction && ++dc >= ts->decay_step) {
+				float nvol = vol + ts->decay_direction * ts->decay_factor;
+				int j;
+
+				if (nvol <= TELETONE_VOL_DB_MAX && nvol >= TELETONE_VOL_DB_MIN) {
+					vol = nvol;
+					for (j = 0; map->freqs[j] && j < TELETONE_MAX_TONES; j++) {					
+						teletone_dds_state_set_tx_level(&tones[j], vol);
+					}
+					dc = 0;
+				}
 			}
 
-			sample = (teletone_process_t) 128;
+			sample = 128;
 
 			for (i = 0; i < freqlen; i++) {
-				sample += ((teletone_process_t) 2 * (ts->volume > 0 ? ts->volume : 1) * cos(tones[i] * ts->samples * period));
+				int32_t s = teletone_dds_modulate_sample(&tones[i]);
+				sample += s;
 			}
-			normalize_to_16bit(sample);
+			sample /= freqlen;
 			ts->buffer[ts->samples] = (teletone_audio_t)sample;
 			
 			for (c = 1; c < ts->channels; c++) {
@@ -261,7 +283,8 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
 				fprintf(ts->debug_stream, "%s%0.2f", i == 0 ? "" : "+",map->freqs[i]);
 			}
 			 
-			fprintf(ts->debug_stream, ") [volume %d; samples %d(%dms) x %d channel%s; wait %d(%dms); decay_factor %d; decay_step %d; wrote %d bytes]\n",
+			fprintf(ts->debug_stream, 
+					") [volume %0.2fDb; samples %d(%dms) x %d channel%s; wait %d(%dms); decay_factor %0.2f; decay_step %d(%dms); wrote %d bytes]\n",
 					ts->volume,
 					duration,
 					duration / (ts->rate / 1000), 
@@ -271,6 +294,7 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
 					wait / (ts->rate / 1000),
 					ts->decay_factor,
 					ts->decay_step,
+					ts->decay_step / (ts->rate / 1000),					
 					ts->samples * 2);
 		}
 	}	
@@ -330,18 +354,23 @@ int teletone_run(teletone_generation_session_t *ts, char *cmd)
 					ts->duration = atoi(cur + 2) * (ts->rate / 1000);
 					break;
 				case 'v':
-					ts->volume = atoi(cur + 2);
+					{
+						float vol = atof(cur + 2);
+						if (vol <= TELETONE_VOL_DB_MAX && vol >= TELETONE_VOL_DB_MIN) {
+							ts->volume = vol;
+						}
+					}
 					break;
 				case '>':
-					ts->decay_factor = atoi(cur + 2);
+					ts->decay_step = atoi(cur + 2) * (ts->rate / 1000);
 					ts->decay_direction = -1;
 					break;
 				case '<':
-					ts->decay_factor = atoi(cur + 2);
+					ts->decay_step = atoi(cur + 2) * (ts->rate / 1000);
 					ts->decay_direction = 1;
 					break;
 				case '+':
-					ts->decay_step = atoi(cur + 2);
+					ts->decay_factor = atof(cur + 2);
 					break;
 				case 'w':
 					ts->wait = atoi(cur + 2) * (ts->rate / 1000);

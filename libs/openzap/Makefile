@@ -63,8 +63,34 @@ $(SRC)/zap_zt.o \
 $(SRC)/zap_wanpipe.o
 
 
-HEADERS=$(SRC)/isdn/include/Q931.h \
-	$(SRC)/include/openzap.h 
+HEADERS= $(SRC)/include/fsk.h \
+$(SRC)/include/g711.h \
+$(SRC)/include/hashtable.h \
+$(SRC)/include/hashtable_itr.h \
+$(SRC)/include/hashtable_private.h \
+$(SRC)/include/libteletone_detect.h \
+$(SRC)/include/libteletone_generate.h \
+$(SRC)/include/libteletone.h \
+$(SRC)/include/openzap.h \
+$(SRC)/include/sangoma_tdm_api.h \
+$(SRC)/include/uart.h \
+$(SRC)/include/wanpipe_tdm_api_iface.h \
+$(SRC)/include/zap_analog.h \
+$(SRC)/include/zap_buffer.h \
+$(SRC)/include/zap_config.h \
+$(SRC)/include/zap_isdn.h \
+$(SRC)/include/zap_skel.h \
+$(SRC)/include/zap_threadmutex.h \
+$(SRC)/include/zap_types.h \
+$(SRC)/include/zap_wanpipe.h \
+$(SRC)/include/zap_zt.h \
+$(SRC)/isdn/include/mfifo.h \
+$(SRC)/isdn/include/national.h \
+$(SRC)/isdn/include/Q921.h \
+$(SRC)/isdn/include/Q931.h \
+$(SRC)/isdn/include/Q931ie.h \
+$(SRC)/isdn/include/Q932.h 
+
 
 PWD=$(shell pwd)
 INCS=-I$(PWD)/$(SRC)//include -I$(PWD)/$(SRC)//isdn/include
@@ -76,10 +102,12 @@ TMP=-I$(LIBPRI) -I$(SRC)/include -I./src -w
 
 include general.makefile
 
+$(OBJS): $(HEADERS)
+
 all: $(MYLIB)
 
 $(MYLIB): $(OBJS) $(HEADERS)
-	ar rcs $(MYLIB) $(OBJS)
+	ar rcs $(MYLIB) $(OBJS) 
 	ranlib $(MYLIB)
 
 testapp: $(SRC)/testapp.c $(MYLIB)
@@ -87,6 +115,9 @@ testapp: $(SRC)/testapp.c $(MYLIB)
 
 testcid: $(SRC)/testcid.c $(MYLIB)
 	$(CC) $(INCS) -L. $(SRC)/testcid.c -o testcid -lopenzap -lm -lpthread
+
+testtones: $(SRC)/testtones.c $(MYLIB)
+	$(CC) $(INCS) -L. $(SRC)/testtones.c -o testtones -lopenzap -lm -lpthread
 
 testisdn: $(SRC)/testisdn.c $(MYLIB)
 	$(CC) $(INCS) -L. $(SRC)/testisdn.c -o testisdn -lopenzap -lm -lpthread
@@ -109,7 +140,7 @@ priserver: $(MYLIB) $(SRC)/priserver.o $(SRC)/sangoma_pri.o $(LIBPRI)/$(LIBPRIA)
 $(SRC)/zap_io.o: $(SRC)/zap_io.c
 	$(CC) $(MOD_CFLAGS) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
 
-%.o: %.c
+%.o: %.c 
 	$(CC) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
 
 dox:
@@ -127,6 +158,6 @@ mod_openzap-clean:
 	@if [ -f mod_openzap/mod_openzap.so ] ; then cd mod_openzap && make clean ; fi
 
 clean: mod_openzap-clean
-	rm -f $(SRC)/*.o $(SRC)/isdn/*.o $(MYLIB) *~ \#* testapp testcid priserver testisdn testanalog
+	rm -f $(SRC)/*.o $(SRC)/isdn/*.o $(MYLIB) *~ \#* testapp testcid testtones priserver testisdn testanalog
 	@if [ -f $(LIBPRI)/$(LIBPRIA) ] ; then cd $(LIBPRI) && make clean ; fi
 
