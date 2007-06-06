@@ -72,13 +72,30 @@
 #define LIBTELETONE_GENERATE_H
 #ifdef __cplusplus
 extern "C" {
+#ifdef _doh
+}
 #endif
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <math.h>
+#if !defined(powf)
+extern float powf (float, float);
+#endif
+#include <string.h>
+#include <errno.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 #ifndef _MSC_VER
 #include <unistd.h>
+#include <stdint.h>
 #endif
 #include <fcntl.h>
 #include <sys/types.h>
@@ -87,12 +104,71 @@ extern "C" {
 #include <stdarg.h>
 #include <libteletone.h>
 
+#define TELETONE_VOL_DB_MAX 0
+#define TELETONE_VOL_DB_MIN -63
+
+struct teletone_dds_state {
+	uint32_t phase_rate;
+	uint32_t scale_factor;
+	uint32_t phase_accumulator;
+	int16_t sample;
+	float tx_level;
+};
+typedef struct teletone_dds_state teletone_dds_state_t;
+
+#define SINE_TABLE_MAX 128
+#define SINE_TABLE_LEN (SINE_TABLE_MAX - 1)
+#define MAX_PHASE_ACCUMULATOR 0x10000 * 0x10000
+/* 3.14 == the max power on ulaw (alaw is 3.17) */
+/* 3.02 represents twice the power */
+#define DBM0_MAX_POWER (3.14f + 3.02f)
+
+extern int16_t TELETONE_SINES[SINE_TABLE_MAX];
+
+static __inline__ int16_t teletone_dds_modulate_sample(teletone_dds_state_t *dds)
+{
+    int32_t bitmask = dds->phase_accumulator, sine_index = (bitmask >>= 23) & SINE_TABLE_LEN;
+	int16_t sample;
+
+    if (bitmask & SINE_TABLE_MAX) {
+        sine_index = SINE_TABLE_LEN - sine_index;
+	}
+
+    sample = TELETONE_SINES[sine_index];
+	
+    if (bitmask & (SINE_TABLE_MAX * 2)) {
+		sample *= -1;
+	}
+
+	dds->phase_accumulator += dds->phase_rate;
+
+    return (int16_t) (sample * dds->scale_factor >> 15);
+}
+
+static __inline__ void teletone_dds_state_set_tone(teletone_dds_state_t *dds, float tone, uint32_t rate, float tx_level)
+{
+	dds->phase_accumulator = 0;
+	dds->phase_rate = (int32_t) ((tone * MAX_PHASE_ACCUMULATOR) / rate);
+
+
+	if (dds->tx_level != tx_level || !dds->scale_factor) {
+		dds->scale_factor = (int) (powf(10.0f, (tx_level - DBM0_MAX_POWER) / 20.0f) * (32767.0f * 1.414214f));
+	}
+	
+	dds->tx_level = tx_level;
+}
+
+static __inline__ void teletone_dds_state_set_tx_level(teletone_dds_state_t *dds, float tx_level)
+{
+	dds->scale_factor = (int) (powf(10.0f, (tx_level - DBM0_MAX_POWER) / 20.0f) * (32767.0f * 1.414214f));
+}
+
 
 
 /*! \file libteletone_generate.h
-    \brief Tone Generation Routines
+  \brief Tone Generation Routines
 
-	This module is responsible for tone generation specifics
+  This module is responsible for tone generation specifics
 */
 
 typedef int16_t teletone_audio_t;
@@ -120,13 +196,13 @@ struct teletone_generation_session {
 	/*! Number of loops to repeat the entire set of instructions*/
 	int LOOPS;
 	/*! Number to mutiply total samples by to determine when to begin ascent or decent e.g. 0=beginning 4=(last 25%) */
-	int decay_factor;
+	float decay_factor;
 	/*! Direction to perform volume increase/decrease 1/-1*/
 	int decay_direction;
 	/*! Number of samples between increase/decrease of volume */
 	int decay_step;
 	/*! Volume factor of the tone */
-	int volume;
+	float volume;
 	/*! Debug on/off */
 	int debug;
 	/*! FILE stream to write debug data to */
