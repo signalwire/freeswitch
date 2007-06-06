@@ -284,7 +284,7 @@ void client_run(int client_socket, char *local_ip, int local_port, char *remote_
 
 	for (;;) {
 		struct sockaddr_in local_addr = {0};
-        int cliAddrLen = sizeof(local_addr);
+        size_t cliAddrLen = sizeof(local_addr);
 		unsigned char audiobuf[1024], rawbuf[1024], outbuf[1024];
 		short *usebuf = NULL;
 		int tx, tx_bytes, bigger, sample_count;
@@ -316,7 +316,7 @@ void client_run(int client_socket, char *local_ip, int local_port, char *remote_
 			continue;
 		}
 
-        if ((read_bytes = recvfrom(usock, audiobuf, sizeof(audiobuf), 0, (struct sockaddr *) &local_addr, cliAddrLen)) < 0) {
+        if ((read_bytes = recvfrom(usock, audiobuf, sizeof(audiobuf), 0, (struct sockaddr *) &local_addr, &cliAddrLen)) < 0) {
 			die("recvfrom() failed");
 		}
 
