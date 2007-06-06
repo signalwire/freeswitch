@@ -85,11 +85,11 @@ struct zap_fsk_data_state {
 	uint8_t init;
 	uint8_t *buf;
 	size_t bufsize;
-	int blen;
-	int bpos;
-	int dlen;
-	int ppos;
-	uint8_t checksum;
+	zap_size_t blen;
+	zap_size_t bpos;
+	zap_size_t dlen;
+	zap_size_t ppos;
+	int checksum;
 };
 typedef struct zap_fsk_data_state zap_fsk_data_state_t;
 

@@ -6,7 +6,7 @@
 static void fsk_byte_handler (void *x, int data)
 {
 	zap_fsk_data_state_t *state = (zap_fsk_data_state_t *) x;
-	uint8_t byte = data;
+	uint8_t byte = (uint8_t)data;
 
  top:
 
@@ -39,7 +39,8 @@ static void fsk_byte_handler (void *x, int data)
 zap_status_t zap_fsk_data_parse(zap_fsk_data_state_t *state, zap_size_t *type, char **data, zap_size_t *len)
 {
 
-	int i, sum = 0;
+	zap_size_t i;
+	int sum = 0;
 	
  top:
 
