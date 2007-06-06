@@ -112,7 +112,7 @@ struct teletone_dds_state {
 	uint32_t scale_factor;
 	uint32_t phase_accumulator;
 	int16_t sample;
-	int32_t tx_level;
+	float tx_level;
 };
 typedef struct teletone_dds_state teletone_dds_state_t;
 
@@ -123,7 +123,7 @@ typedef struct teletone_dds_state teletone_dds_state_t;
 /* 3.02 represents twice the power */
 #define DBM0_MAX_POWER (3.14f + 3.02f)
 
-const int16_t TELETONE_SINES[SINE_TABLE_MAX];
+extern int16_t TELETONE_SINES[SINE_TABLE_MAX];
 
 static __inline__ int16_t teletone_dds_modulate_sample(teletone_dds_state_t *dds)
 {
