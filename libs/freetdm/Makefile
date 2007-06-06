@@ -62,6 +62,7 @@ $(SRC)/isdn/Q932mes.o \
 $(SRC)/zap_zt.o \
 $(SRC)/zap_wanpipe.o
 
+#SRCS=$(shell echo $(OBJS) | sed "s/\.o/\.c/g")
 
 HEADERS= $(SRC)/include/fsk.h \
 $(SRC)/include/g711.h \
@@ -102,8 +103,6 @@ TMP=-I$(LIBPRI) -I$(SRC)/include -I./src -w
 
 include general.makefile
 
-$(OBJS): $(HEADERS)
-
 all: $(MYLIB)
 
 $(MYLIB): $(OBJS) $(HEADERS)
@@ -140,7 +139,7 @@ priserver: $(MYLIB) $(SRC)/priserver.o $(SRC)/sangoma_pri.o $(LIBPRI)/$(LIBPRIA)
 $(SRC)/zap_io.o: $(SRC)/zap_io.c
 	$(CC) $(MOD_CFLAGS) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
 
-%.o: %.c 
+%.o: %.c $(HEADERS)
 	$(CC) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
 
 dox:
