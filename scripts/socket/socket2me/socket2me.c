@@ -371,7 +371,7 @@ void client_run(int client_socket, char *local_ip, int local_port, char *remote_
 		
 
 		cliAddrLen = sizeof(sendaddr);
-        if (sendto(usock, usebuf, tx_bytes, 0, (struct sockaddr *) &sendaddr, sizeof(sendaddr)) != sample_count) {
+        if (sendto(usock, usebuf, tx_bytes, 0, (struct sockaddr *) &sendaddr, sizeof(sendaddr)) != tx_bytes) {
 			die("sendto() sent a different number of bytes than expected");
 		}
 	}
