@@ -219,7 +219,8 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
 
 	if (map->freqs[0] > 0) {
 		for (freqlen = 0; map->freqs[freqlen] && freqlen < TELETONE_MAX_TONES; freqlen++) {
-			teletone_dds_state_set_tone(&tones[freqlen], map->freqs[freqlen], ts->rate, vol);
+			teletone_dds_state_set_tone(&tones[freqlen], map->freqs[freqlen], ts->rate, 0);
+			teletone_dds_state_set_tx_level(&tones[freqlen], vol);
 		}
 	
 		if (ts->channels > 1) {
@@ -249,7 +250,7 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
 			sample = 128;
 
 			for (i = 0; i < freqlen; i++) {
-				int32_t s = teletone_dds_modulate_sample(&tones[i]);
+				int32_t s = teletone_dds_state_modulate_sample(&tones[i], 0);
 				sample += s;
 			}
 			sample /= freqlen;
