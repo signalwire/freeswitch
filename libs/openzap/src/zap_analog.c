@@ -143,7 +143,10 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 	zap_set_flag_locked(chan, ZAP_CHANNEL_INTHREAD);
 	teletone_init_session(&ts, 0, teletone_handler, dt_buffer);
 	ts.rate = 8000;
-
+#if 0
+	ts.debug = 1;
+	ts.debug_stream = stdout;
+#endif
 	zap_channel_command(chan, ZAP_COMMAND_GET_INTERVAL, &interval);
 	zap_buffer_set_loops(dt_buffer, -1);
 	
