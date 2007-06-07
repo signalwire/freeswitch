@@ -1152,7 +1152,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					
 					if (map->rm_pt == 9) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Oh sure! You say 8000, but you mean 16000! This is, of course, stupid!\n");
-						codec_rate = 16000;
+						codec_rate = 8000;
 					}
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Audio Codec Compare [%s:%d:%u]/[%s:%d:%u]\n",
 									  rm_encoding, map->rm_pt, (int)map->rm_rate, imp->iananame, imp->ianacode, codec_rate);
