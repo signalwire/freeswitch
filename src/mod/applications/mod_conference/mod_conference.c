@@ -720,6 +720,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 												imember->mux_resampler->from_len, imember->mux_resampler->to, imember->mux_resampler->to_size, 0);
 					switch_float_to_short(imember->mux_resampler->to, out, len);
 					len = imember->mux_resampler->to_len * 2;
+					
 					switch_buffer_write(imember->resample_buffer, out, len);
 					if (switch_buffer_inuse(imember->resample_buffer) >= bytes) {
 						imember->read = (uint32_t) switch_buffer_read(imember->resample_buffer, imember->frame, bytes);
@@ -1406,8 +1407,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t * thread, 
 		if ((talking || energy_level == 0) && switch_test_flag(member, MFLAG_CAN_SPEAK)) {
 			if (member->read_resampler) {
 				int16_t *bptr = (int16_t *) read_frame->data;
-				int len = (int) read_frame->datalen;;
-
+				int len = (int) read_frame->datalen;
 				member->read_resampler->from_len = switch_short_to_float(bptr, member->read_resampler->from, (int) len / 2);
 				member->read_resampler->to_len =
 					switch_resample_process(member->read_resampler, member->read_resampler->from,
@@ -1477,8 +1477,8 @@ static void conference_loop_output(conference_member_t * member)
 	switch_timer_t timer = { 0 };
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(member->session);
 	uint32_t interval = read_codec->implementation->microseconds_per_frame / 1000;
-	//uint32_t samples = switch_bytes_per_frame(member->conference->rate, member->conference->interval);
-	uint32_t samples = switch_bytes_per_frame(read_codec->implementation->samples_per_second, interval);
+	//uint32_t csamples = switch_bytes_per_frame(member->conference->rate, member->conference->interval);
+	uint32_t samples = switch_bytes_per_frame(member->conference->rate, interval);
 	uint32_t low_count = 0, bytes = samples * 2;
 	call_list_t *call_list = NULL, *cp = NULL;
 
@@ -4135,10 +4135,13 @@ static void conference_function(switch_core_session_t *session, char *data)
 		if (switch_resample_create(resampler,
 								   read_codec->implementation->samples_per_second,
 								   read_codec->implementation->samples_per_second * 20,
-								   conference->rate, conference->rate * 20, member.pool) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to crete resampler!\n");
+								   conference->rate,
+								   conference->rate * 20,
+								   member.pool) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to create resampler!\n");
 			goto done;
 		}
+
 
 		/* Setup an audio buffer for the resampled audio */
 		if (switch_buffer_create_dynamic(&member.resample_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX)
@@ -4151,7 +4154,8 @@ static void conference_function(switch_core_session_t *session, char *data)
 	if (switch_core_codec_init(&member.write_codec,
 							   "L16",
 							   NULL,
-							   read_codec->implementation->samples_per_second,
+							   //read_codec->implementation->samples_per_second,
+							   conference->rate,
 							   read_codec->implementation->microseconds_per_frame / 1000,
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, member.pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
