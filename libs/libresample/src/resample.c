@@ -87,7 +87,7 @@ void *resample_open(int highQuality, double minFactor, double maxFactor)
 
    /* Just exit if we get invalid factors */
    if (minFactor <= 0.0 || maxFactor <= 0.0 || maxFactor < minFactor) {
-#ifdef DEBUG
+#ifdef DEBUG_TRACE
       fprintf(stderr,
               "libresample: "
               "minFactor and maxFactor must be positive real numbers,\n"
@@ -187,7 +187,7 @@ int resample_process(void   *handle,
    int Nx;
    int i, len;
 
-#ifdef DEBUG
+#ifdef DEBUG_TRACE
    fprintf(stderr, "resample_process: in=%d, out=%d lastFlag=%d\n",
            inBufferLen, outBufferLen, lastFlag);
 #endif
@@ -197,7 +197,7 @@ int resample_process(void   *handle,
    outSampleCount = 0;
 
    if (factor < hp->minFactor || factor > hp->maxFactor) {
-#ifdef DEBUG
+#ifdef DEBUG_TRACE
       fprintf(stderr,
               "libresample: factor %f is not between "
               "minFactor=%f and maxFactor=%f",
@@ -232,7 +232,7 @@ int resample_process(void   *handle,
       /* This is the maximum number of samples we can process
          per loop iteration */
 
-      #ifdef DEBUG
+      #ifdef DEBUG_TRACE
       printf("XSize: %d Xoff: %d Xread: %d Xp: %d lastFlag: %d\n",
              hp->XSize, hp->Xoff, hp->Xread, hp->Xp, lastFlag);
       #endif
@@ -260,7 +260,7 @@ int resample_process(void   *handle,
       else
          Nx = hp->Xread - 2 * hp->Xoff;
 
-      #ifdef DEBUG
+      #ifdef DEBUG_TRACE
       fprintf(stderr, "new len=%d Nx=%d\n", len, Nx);
       #endif
 
@@ -277,7 +277,7 @@ int resample_process(void   *handle,
                          Nwing, LpScl, Imp, ImpD, interpFilt);
       }
 
-      #ifdef DEBUG
+      #ifdef DEBUG_TRACE
       printf("Nout: %d\n", Nout);
       #endif
       
@@ -297,7 +297,7 @@ int resample_process(void   *handle,
       for (i=0; i<Nreuse; i++)
          hp->X[i] = hp->X[i + (hp->Xp - hp->Xoff)];
 
-      #ifdef DEBUG
+      #ifdef DEBUG_TRACE
       printf("New Xread=%d\n", Nreuse);
       #endif
 
@@ -306,7 +306,7 @@ int resample_process(void   *handle,
       
       /* Check to see if output buff overflowed (shouldn't happen!) */
       if (Nout > hp->YSize) {
-         #ifdef DEBUG
+         #ifdef DEBUG_TRACE
          printf("Nout: %d YSize: %d\n", Nout, hp->YSize);
          #endif
          fprintf(stderr, "libresample: Output array overflow!\n");
