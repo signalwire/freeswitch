@@ -94,7 +94,7 @@ typedef struct {
 
 #if !defined(M_PI)
 /* C99 systems may not define M_PI */
-#define M_PI 3.14159265358979323846264338327f
+#define M_PI 3.14159265358979323846264338327
 #endif
 
 #ifdef _MSC_VER

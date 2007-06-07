@@ -211,7 +211,7 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
 	int wait = 0;
 	int32_t sample;
 	int32_t dc = 0;
-	teletone_process_t vol = ts->volume;
+	float vol = ts->volume;
 	ts->samples = 0;
 	memset(tones, 0, sizeof(tones[0]) * TELETONE_MAX_TONES);
 	duration = (ts->tmp_duration > -1) ? ts->tmp_duration : ts->duration;
@@ -234,7 +234,7 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
 
 		for (ts->samples = 0; ts->samples < ts->datalen && ts->samples < duration; ts->samples++) {
 			if (ts->decay_direction && ++dc >= ts->decay_step) {
-				teletone_process_t nvol = vol + ts->decay_direction * ts->decay_factor;
+				float nvol = vol + ts->decay_direction * ts->decay_factor;
 				int j;
 
 				if (nvol <= TELETONE_VOL_DB_MAX && nvol >= TELETONE_VOL_DB_MIN) {
@@ -355,7 +355,7 @@ int teletone_run(teletone_generation_session_t *ts, char *cmd)
 					break;
 				case 'v':
 					{
-						teletone_process_t vol = (teletone_process_t)atof(cur + 2);
+						float vol = atof(cur + 2);
 						if (vol <= TELETONE_VOL_DB_MAX && vol >= TELETONE_VOL_DB_MIN) {
 							ts->volume = vol;
 						}
@@ -370,7 +370,7 @@ int teletone_run(teletone_generation_session_t *ts, char *cmd)
 					ts->decay_direction = 1;
 					break;
 				case '+':
-					ts->decay_factor = (teletone_process_t)atof(cur + 2);
+					ts->decay_factor = atof(cur + 2);
 					break;
 				case 'w':
 					ts->wait = atoi(cur + 2) * (ts->rate / 1000);
@@ -419,7 +419,7 @@ int teletone_run(teletone_generation_session_t *ts, char *cmd)
 									ts->tmp_wait = atoi(p) * (ts->rate / 1000);
 									i++;
 								} else {
-									mymap.freqs[i++ - 2] = (teletone_process_t)atof(p);
+									mymap.freqs[i++ - 2] = atof(p);
 								}
 								p = next;
 

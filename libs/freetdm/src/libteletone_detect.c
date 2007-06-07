@@ -145,16 +145,16 @@ void teletone_dtmf_detect_init (teletone_dtmf_detect_state_t *dtmf_detect_state,
 
     for (i = 0;  i < GRID_FACTOR;  i++) {
         theta = M_TWO_PI*(dtmf_row[i]/(teletone_process_t)sample_rate);
-        dtmf_detect_row[i].fac = (teletone_process_t)(2.0f*cos(theta));
+        dtmf_detect_row[i].fac = 2.0*cos(theta);
 
         theta = M_TWO_PI*(dtmf_col[i]/(teletone_process_t)sample_rate);
-        dtmf_detect_col[i].fac = (teletone_process_t)(2.0f*cos(theta));
+        dtmf_detect_col[i].fac = 2.0*cos(theta);
     
-        theta = M_TWO_PI*(dtmf_row[i]*2.0f/(teletone_process_t)sample_rate);
-        dtmf_detect_row_2nd[i].fac = (teletone_process_t)(2.0f*cos(theta));
+        theta = M_TWO_PI*(dtmf_row[i]*2.0/(teletone_process_t)sample_rate);
+        dtmf_detect_row_2nd[i].fac = 2.0*cos(theta);
 
-        theta = M_TWO_PI*(dtmf_col[i]*2.0f/(teletone_process_t)sample_rate);
-        dtmf_detect_col_2nd[i].fac = (teletone_process_t)(2.0f*cos(theta));
+        theta = M_TWO_PI*(dtmf_col[i]*2.0/(teletone_process_t)sample_rate);
+        dtmf_detect_col_2nd[i].fac = 2.0*cos(theta);
     
 		goertzel_init (&dtmf_detect_state->row_out[i], &dtmf_detect_row[i]);
     	goertzel_init (&dtmf_detect_state->col_out[i], &dtmf_detect_col[i]);
@@ -201,7 +201,7 @@ void teletone_multi_tone_init(teletone_multi_tone_t *mt, teletone_tone_map_t *ma
 		}
 		mt->tone_count++;
 		theta = M_TWO_PI*(map->freqs[x]/(teletone_process_t)mt->sample_rate);
-		mt->tdd[x].fac = (teletone_process_t)(2.0f * cos(theta));
+		mt->tdd[x].fac = 2.0 * cos(theta);
 		goertzel_init (&mt->gs[x], &mt->tdd[x]);
 		goertzel_init (&mt->gs2[x], &mt->tdd[x]);
 	}
