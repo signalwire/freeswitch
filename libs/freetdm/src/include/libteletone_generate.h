@@ -112,12 +112,12 @@ extern float powf (float, float);
 
 #define TELETONE_VOL_DB_MAX 0
 #define TELETONE_VOL_DB_MIN -63
+#define MAX_PHASE_TONES 4
 
 struct teletone_dds_state {
-	uint32_t phase_rate;
+	uint32_t phase_rate[MAX_PHASE_TONES];
 	uint32_t scale_factor;
 	uint32_t phase_accumulator;
-	int16_t sample;
 	teletone_process_t tx_level;
 };
 typedef struct teletone_dds_state teletone_dds_state_t;
@@ -131,10 +131,19 @@ typedef struct teletone_dds_state teletone_dds_state_t;
 
 extern int16_t TELETONE_SINES[SINE_TABLE_MAX];
 
-static __inline__ int16_t teletone_dds_modulate_sample(teletone_dds_state_t *dds)
+static __inline__ int32_t teletone_dds_phase_rate(teletone_process_t tone, uint32_t rate)
+{
+	return (int32_t) ((tone * MAX_PHASE_ACCUMULATOR) / rate);
+}
+
+static __inline__ int16_t teletone_dds_state_modulate_sample(teletone_dds_state_t *dds, uint32_t pindex)
 {
     int32_t bitmask = dds->phase_accumulator, sine_index = (bitmask >>= 23) & SINE_TABLE_LEN;
 	int16_t sample;
+
+	if (pindex >= MAX_PHASE_TONES)  {
+		pindex = 0;
+	}
 
     if (bitmask & SINE_TABLE_MAX) {
         sine_index = SINE_TABLE_LEN - sine_index;
@@ -146,7 +155,7 @@ static __inline__ int16_t teletone_dds_modulate_sample(teletone_dds_state_t *dds
 		sample *= -1;
 	}
 
-	dds->phase_accumulator += dds->phase_rate;
+	dds->phase_accumulator += dds->phase_rate[pindex];
 
     return (int16_t) (sample * dds->scale_factor >> 15);
 }
@@ -154,19 +163,22 @@ static __inline__ int16_t teletone_dds_modulate_sample(teletone_dds_state_t *dds
 static __inline__ void teletone_dds_state_set_tx_level(teletone_dds_state_t *dds, float tx_level)
 {
 	dds->scale_factor = (int) (powf(10.0f, (tx_level - DBM0_MAX_POWER) / 20.0f) * (32767.0f * 1.414214f));
+	dds->tx_level = tx_level;
 }
 
-static __inline__ void teletone_dds_state_set_tone(teletone_dds_state_t *dds, teletone_process_t tone, uint32_t rate, float tx_level)
+static __inline__ void teletone_dds_state_reset_accum(teletone_dds_state_t *dds)
 {
 	dds->phase_accumulator = 0;
-	dds->phase_rate = (int32_t) ((tone * MAX_PHASE_ACCUMULATOR) / rate);
-	
+}
 
-	if (dds->tx_level != tx_level || !dds->scale_factor) {
-		teletone_dds_state_set_tx_level(dds, tx_level);
+static __inline__ int teletone_dds_state_set_tone(teletone_dds_state_t *dds, teletone_process_t tone, uint32_t rate, uint32_t pindex)
+{
+	if (pindex < MAX_PHASE_TONES)  {
+		dds->phase_rate[pindex] = teletone_dds_phase_rate(tone, rate);
+		return 0;
 	}
 	
-	dds->tx_level = tx_level;
+	return -1;
 }
 
 
