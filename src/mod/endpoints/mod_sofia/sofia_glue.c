@@ -1145,19 +1145,24 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 
 				for (i = 0; i < tech_pvt->num_codecs; i++) {
 					const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
-
+					uint32_t codec_rate = imp->samples_per_second;
 					if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
 						continue;
 					}
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Audio Codec Compare [%s:%d]/[%s:%d]\n",
-									  rm_encoding, map->rm_pt, imp->iananame, imp->ianacode);
+					
+					if (map->rm_pt == 9) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Oh sure! You say 8000, but you mean 16000! This is, of course, stupid!\n");
+						codec_rate = 16000;
+					}
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Audio Codec Compare [%s:%d:%u]/[%s:%d:%u]\n",
+									  rm_encoding, map->rm_pt, (int)map->rm_rate, imp->iananame, imp->ianacode, codec_rate);
 					if (map->rm_pt < 96) {
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 					} else {
 						match = strcasecmp(rm_encoding, imp->iananame) ? 0 : 1;
 					}
 					
-					if (match && (map->rm_rate == imp->samples_per_second)) {
+					if (match && (map->rm_rate == codec_rate)) {
 						if (ptime && ptime * 1000 != imp->microseconds_per_frame) {
 							near_match = imp;
 							match = 0;
