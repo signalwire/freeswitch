@@ -79,11 +79,9 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdlib.h>
-#ifdef WIN32
 #ifdef _MSC_VER
 #ifndef __inline__
 #define __inline__ __inline
-#endif
 #endif
 typedef unsigned __int64 uint64_t;
 typedef unsigned __int32 uint32_t;
@@ -153,22 +151,22 @@ static __inline__ int16_t teletone_dds_modulate_sample(teletone_dds_state_t *dds
     return (int16_t) (sample * dds->scale_factor >> 15);
 }
 
-static __inline__ void teletone_dds_state_set_tone(teletone_dds_state_t *dds, teletone_process_t tone, uint32_t rate, teletone_process_t tx_level)
+static __inline__ void teletone_dds_state_set_tx_level(teletone_dds_state_t *dds, float tx_level)
+{
+	dds->scale_factor = (int) (powf(10.0f, (tx_level - DBM0_MAX_POWER) / 20.0f) * (32767.0f * 1.414214f));
+}
+
+static __inline__ void teletone_dds_state_set_tone(teletone_dds_state_t *dds, teletone_process_t tone, uint32_t rate, float tx_level)
 {
 	dds->phase_accumulator = 0;
 	dds->phase_rate = (int32_t) ((tone * MAX_PHASE_ACCUMULATOR) / rate);
-
+	
 
 	if (dds->tx_level != tx_level || !dds->scale_factor) {
-		dds->scale_factor = (int) (powf(10.0f, (tx_level - DBM0_MAX_POWER) / 20.0f) * (32767.0f * 1.414214f));
+		teletone_dds_state_set_tx_level(dds, tx_level);
 	}
 	
 	dds->tx_level = tx_level;
-}
-
-static __inline__ void teletone_dds_state_set_tx_level(teletone_dds_state_t *dds, teletone_process_t tx_level)
-{
-	dds->scale_factor = (int) (powf(10.0f, (tx_level - DBM0_MAX_POWER) / 20.0f) * (32767.0f * 1.414214f));
 }
 
 
@@ -204,13 +202,13 @@ struct teletone_generation_session {
 	/*! Number of loops to repeat the entire set of instructions*/
 	int LOOPS;
 	/*! Number to mutiply total samples by to determine when to begin ascent or decent e.g. 0=beginning 4=(last 25%) */
-	teletone_process_t decay_factor;
+	float decay_factor;
 	/*! Direction to perform volume increase/decrease 1/-1*/
 	int decay_direction;
 	/*! Number of samples between increase/decrease of volume */
 	int decay_step;
 	/*! Volume factor of the tone */
-	teletone_process_t volume;
+	float volume;
 	/*! Debug on/off */
 	int debug;
 	/*! FILE stream to write debug data to */

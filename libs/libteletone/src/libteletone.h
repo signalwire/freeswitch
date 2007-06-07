@@ -78,7 +78,7 @@ extern "C" {
 #define TELETONE_MAX_TONES 6
 #define TELETONE_TONE_RANGE 127
 
-typedef float teletone_process_t;
+typedef double teletone_process_t;
 
 /*! \file libteletone.h
     \brief Top level include file
