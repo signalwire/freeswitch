@@ -112,7 +112,7 @@ struct teletone_dds_state {
 	uint32_t scale_factor;
 	uint32_t phase_accumulator;
 	int16_t sample;
-	float tx_level;
+	teletone_process_t tx_level;
 };
 typedef struct teletone_dds_state teletone_dds_state_t;
 
@@ -145,22 +145,22 @@ static __inline__ int16_t teletone_dds_modulate_sample(teletone_dds_state_t *dds
     return (int16_t) (sample * dds->scale_factor >> 15);
 }
 
-static __inline__ void teletone_dds_state_set_tone(teletone_dds_state_t *dds, float tone, uint32_t rate, float tx_level)
+static __inline__ void teletone_dds_state_set_tx_level(teletone_dds_state_t *dds, teletone_process_t tx_level)
+{
+	dds->scale_factor = (int) (powf(10.0f, (tx_level - DBM0_MAX_POWER) / 20.0f) * (32767.0f * 1.414214f));
+}
+
+static __inline__ void teletone_dds_state_set_tone(teletone_dds_state_t *dds, teletone_process_t tone, uint32_t rate, teletone_process_t tx_level)
 {
 	dds->phase_accumulator = 0;
 	dds->phase_rate = (int32_t) ((tone * MAX_PHASE_ACCUMULATOR) / rate);
-
+	
 
 	if (dds->tx_level != tx_level || !dds->scale_factor) {
-		dds->scale_factor = (int) (powf(10.0f, (tx_level - DBM0_MAX_POWER) / 20.0f) * (32767.0f * 1.414214f));
+		teletone_dds_state_set_tx_level(dds, tx_level);
 	}
 	
 	dds->tx_level = tx_level;
-}
-
-static __inline__ void teletone_dds_state_set_tx_level(teletone_dds_state_t *dds, float tx_level)
-{
-	dds->scale_factor = (int) (powf(10.0f, (tx_level - DBM0_MAX_POWER) / 20.0f) * (32767.0f * 1.414214f));
 }
 
 
