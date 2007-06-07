@@ -1477,7 +1477,7 @@ static void conference_loop_output(conference_member_t * member)
 	switch_timer_t timer = { 0 };
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(member->session);
 	uint32_t interval = read_codec->implementation->microseconds_per_frame / 1000;
-	//uint32_t csamples = switch_bytes_per_frame(member->conference->rate, member->conference->interval);
+	uint32_t csamples = switch_bytes_per_frame(member->conference->rate, member->conference->interval);
 	uint32_t samples = switch_bytes_per_frame(member->conference->rate, interval);
 	uint32_t low_count = 0, bytes = samples * 2;
 	call_list_t *call_list = NULL, *cp = NULL;
@@ -1549,8 +1549,8 @@ static void conference_loop_output(conference_member_t * member)
 		   && switch_channel_ready(channel)) {
 		char dtmf[128] = "";
 		uint8_t file_frame[CONF_BUFFER_SIZE] = { 0 };
-		switch_size_t file_data_len = samples * 2;
-		switch_size_t file_sample_len = samples;
+		switch_size_t file_data_len = csamples * 2;
+		switch_size_t file_sample_len = csamples;
 		char *digit;
 		switch_event_t *event;
 		caller_control_action_t *caller_action = NULL;
