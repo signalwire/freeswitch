@@ -284,7 +284,7 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
 			}
 			 
 			fprintf(ts->debug_stream, 
-					") [volume %0.2fDb; samples %d(%dms) x %d channel%s; wait %d(%dms); decay_factor %0.2f; decay_step %d(%dms); wrote %d bytes]\n",
+					") [volume %0.2fdB; samples %d(%dms) x %d channel%s; wait %d(%dms); decay_factor %0.2fdB; decay_step %d(%dms); wrote %d bytes]\n",
 					ts->volume,
 					duration,
 					duration / (ts->rate / 1000), 
