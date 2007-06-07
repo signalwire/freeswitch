@@ -53,6 +53,9 @@
 #endif
 
 #ifdef _MSC_VER
+#ifndef __inline__
+#define __inline__ __inline
+#endif
 #if (_MSC_VER >= 1400)			/* VC8+ */
 #ifndef _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE

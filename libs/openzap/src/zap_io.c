@@ -306,7 +306,7 @@ zap_status_t zap_span_load_tones(zap_span_t *span, char *mapname)
 					do {
 						teletone_process_t this;
 						next = strchr(p, ',');
-						this = atof(p);
+						this = (teletone_process_t)atof(p);
 						span->tone_detect_map[index].freqs[i++] = this;
 						if (next) {
 							p = next + 1;
