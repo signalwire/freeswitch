@@ -132,7 +132,7 @@ extern "C" {
 #define DTMF_2ND_HARMONIC_COL       63.1    /* 18dB */
 #define GRID_FACTOR 4
 #define BLOCK_LEN 102
-#define M_TWO_PI 2.0f*M_PI
+#define M_TWO_PI 2.0*M_PI
 
 	/*! \brief A continer for the elements of a Goertzel Algorithm (The names are from his formula) */
 	typedef struct {
