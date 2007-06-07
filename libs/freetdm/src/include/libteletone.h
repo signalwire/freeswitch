@@ -78,7 +78,7 @@ extern "C" {
 #define TELETONE_MAX_TONES 6
 #define TELETONE_TONE_RANGE 127
 
-typedef double teletone_process_t;
+typedef float teletone_process_t;
 
 /*! \file libteletone.h
     \brief Top level include file
@@ -94,7 +94,7 @@ typedef struct {
 
 #if !defined(M_PI)
 /* C99 systems may not define M_PI */
-#define M_PI 3.14159265358979323846264338327
+#define M_PI 3.14159265358979323846264338327f
 #endif
 
 #ifdef _MSC_VER
