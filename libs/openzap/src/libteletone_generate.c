@@ -355,7 +355,7 @@ int teletone_run(teletone_generation_session_t *ts, char *cmd)
 					break;
 				case 'v':
 					{
-						float vol = atof(cur + 2);
+						float vol = (float)atof(cur + 2);
 						if (vol <= TELETONE_VOL_DB_MAX && vol >= TELETONE_VOL_DB_MIN) {
 							ts->volume = vol;
 						}
@@ -370,7 +370,7 @@ int teletone_run(teletone_generation_session_t *ts, char *cmd)
 					ts->decay_direction = 1;
 					break;
 				case '+':
-					ts->decay_factor = atof(cur + 2);
+					ts->decay_factor = (float)atof(cur + 2);
 					break;
 				case 'w':
 					ts->wait = atoi(cur + 2) * (ts->rate / 1000);
