@@ -79,7 +79,21 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef _MSC_VER
+#ifndef __inline__
+#define __inline__ __inline
+#endif
+typedef unsigned __int64 uint64_t;
+typedef unsigned __int32 uint32_t;
+typedef unsigned __int16 uint16_t;
+typedef unsigned __int8 uint8_t;
+typedef __int64 int64_t;
+typedef __int32 int32_t;
+typedef __int16 int16_t;
+typedef __int8 int8_t;
+#else
 #include <stdint.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -89,17 +103,9 @@ extern float powf (float, float);
 #endif
 #include <string.h>
 #include <errno.h>
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #ifndef _MSC_VER
 #include <unistd.h>
-#include <stdint.h>
 #endif
-#include <fcntl.h>
-#include <sys/types.h>
-#include <errno.h>
 #include <assert.h>
 #include <stdarg.h>
 #include <libteletone.h>
