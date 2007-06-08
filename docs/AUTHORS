@@ -32,7 +32,8 @@ that much better:
  Johny Kadarisman <jkr888 at gmail.com> - mod_python fixups.
  Michael Murdock <mike at mmurdock dot org> - testing, documentation, bug finding and usability enhancements.
  Matt Klein <mklein@nmedia.net>
-
+ Jonas Gauffin <jonas at gauffin dot org> - Bugfixes and additions in mod_spidermonkey_odbc
+ 
 A big THANK YOU goes to:
 
 Justin Cassidy - Build related cleanups and automatic build setup.

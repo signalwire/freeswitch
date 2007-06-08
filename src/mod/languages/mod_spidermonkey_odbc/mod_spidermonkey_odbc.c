@@ -52,6 +52,7 @@ static odbc_obj_t *new_odbc_obj(char *dsn, char *username, char *password)
 		goto err;
 	}
 
+	memset(new_obj, 0, sizeof(odbc_obj_t));
 	if (!(new_obj->handle = switch_odbc_handle_new(dsn, username, password))) {
 		goto err;
 	}
@@ -79,11 +80,11 @@ static void destroy_odbc_obj(odbc_obj_t ** objp)
 {
 	odbc_obj_t *obj = *objp;
 
-	if (obj->handle) {
-		switch_odbc_handle_destroy(&obj->handle);
-	}
 	if (obj->stmt) {
 		SQLFreeHandle(SQL_HANDLE_STMT, obj->stmt);
+	}
+	if (obj->handle) {
+		switch_odbc_handle_destroy(&obj->handle);
 	}
 	switch_safe_free(obj->colbuf);
 	switch_safe_free(obj->code);
@@ -180,6 +181,40 @@ static JSBool odbc_connect(JSContext * cx, JSObject * obj, uintN argc, jsval *ar
 	return JS_TRUE;
 }
 
+static JSBool odbc_execute(JSContext * cx, JSObject * obj, uintN argc, jsval *argv, jsval *rval)
+{
+	odbc_obj_t *odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
+	char *sql;
+	JSBool tf = JS_FALSE;
+	SQLHSTMT stmt;
+
+	if (argc < 1) {
+		goto done;
+	}
+
+	if (switch_odbc_handle_get_state(odbc_obj->handle) != SWITCH_ODBC_STATE_CONNECTED) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database is not connected!\n");
+		goto done;
+	}
+
+	sql = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+
+	if (switch_odbc_handle_exec(odbc_obj->handle, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "[ODBC] Execute failed for: %s\n", sql);
+		goto done;
+	}
+
+	SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+
+	tf = JS_TRUE;
+
+  done:
+
+	*rval = BOOLEAN_TO_JSVAL(tf);
+
+	return JS_TRUE;
+}
+
 static JSBool odbc_exec(JSContext * cx, JSObject * obj, uintN argc, jsval *argv, jsval *rval)
 {
 	odbc_obj_t *odbc_obj = (odbc_obj_t *) JS_GetPrivate(cx, obj);
@@ -202,8 +237,8 @@ static JSBool odbc_exec(JSContext * cx, JSObject * obj, uintN argc, jsval *argv,
 
 	sql = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 
-
 	if (switch_odbc_handle_exec(odbc_obj->handle, sql, &odbc_obj->stmt) != SWITCH_ODBC_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "[ODBC] query failed: %s\n", sql);
 		goto done;
 	}
 
@@ -265,7 +300,7 @@ static JSBool odbc_next_row(JSContext * cx, JSObject * obj, uintN argc, jsval *a
 	return JS_TRUE;
 }
 
-static char *escape_data(char *in)
+static char *escape_data(char *in, char escapeChar)
 {
 	switch_size_t nlen = strlen(in);
 	uint32_t qc = 0;
@@ -273,6 +308,9 @@ static char *escape_data(char *in)
 
 	for (p = in; p && *p; p++) {
 		if (*p == '"') {
+			qc += 2;
+		}
+		if (*p == '\'') {
 			qc += 2;
 		}
 	}
@@ -287,7 +325,10 @@ static char *escape_data(char *in)
 	qc = 0;
 	for (p = in; p && *p; p++) {
 		if (*p == '"') {
-			*r++ = '\\';
+			*r++ = escapeChar;
+		}
+		if (*p == '\'') {
+			*r++ = escapeChar;
 		}
 		*r++ = *p;
 		if (++qc > nlen) {
@@ -338,7 +379,7 @@ static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval *a
 				SQLGetData(odbc_obj->stmt, x, SQL_C_CHAR, odbc_obj->colbuf, odbc_obj->cblen, NULL);
 
 				if (strchr((char *) odbc_obj->colbuf, '"')) {	/* please don't */
-					esc = (SQLCHAR *) escape_data((char *) odbc_obj->colbuf);
+					esc = (SQLCHAR *) escape_data((char *) odbc_obj->colbuf, '\\');
 					data = esc;
 				}
 
@@ -373,6 +414,8 @@ enum odbc_tinyid {
 static JSFunctionSpec odbc_methods[] = {
 	{"connect", odbc_connect, 1},
 	{"exec", odbc_exec, 1},
+	{"query", odbc_exec, 1},
+	{"execute", odbc_execute, 1},
 	{"numRows", odbc_num_rows, 1},
 	{"nextRow", odbc_next_row, 1},
 	{"getData", odbc_get_data, 1},

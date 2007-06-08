@@ -38,6 +38,8 @@ struct switch_odbc_handle {
 	SQLHENV env;
 	SQLHDBC con;
 	switch_odbc_state_t state;
+	char odbc_driver[256];
+	BOOL is_firebird;
 };
 
 
@@ -110,6 +112,8 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 	SQLINTEGER err;
 	int16_t mlen;
 	unsigned char msg[200], stat[10];
+	SQLSMALLINT valueLength = 0;
+	int i = 0;
 
 	if (handle->env == SQL_NULL_HANDLE) {
 		result = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &handle->env);
@@ -156,12 +160,24 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 		}
 		SQLFreeHandle(SQL_HANDLE_ENV, handle->env);
 		return SWITCH_ODBC_FAIL;
-	} else {
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connected to [%s]\n", handle->dsn);
-		handle->state = SWITCH_ODBC_STATE_CONNECTED;
-		return SWITCH_ODBC_SUCCESS;
 	}
+
+	result = SQLGetInfo(handle->con, SQL_DRIVER_NAME, (SQLCHAR*)handle->odbc_driver, 255, &valueLength);
+	if ( result == SQL_SUCCESS || result == SQL_SUCCESS_WITH_INFO)
+	{
+		for (i = 0; i < valueLength; ++i)
+			handle->odbc_driver[i] = (char)toupper(handle->odbc_driver[i]);
+	}
+
+	//Firebird do not support "SELECT 1"
+	if (strstr(handle->odbc_driver, "FIREBIRD") != 0 || strstr(handle->odbc_driver, "FB32") != 0 || strstr(handle->odbc_driver, "FB64") != 0)
+		handle->is_firebird = TRUE;
+	else
+		handle->is_firebird = FALSE;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connected to [%s]\n", handle->dsn);
+	handle->state = SWITCH_ODBC_STATE_CONNECTED;
+	return SWITCH_ODBC_SUCCESS;
 
 }
 
@@ -172,9 +188,16 @@ static int db_is_up(switch_odbc_handle_t *handle)
 	SQLINTEGER m = 0;
 	int result;
 	switch_event_t *event;
-	switch_odbc_status_t recon;
+	switch_odbc_status_t recon = 0;
 	char *err_str = NULL;
-	SQLCHAR sql[] = "select 1";
+	SQLCHAR sql[255];
+
+	//Firebird do not support "SELECT 1"
+	sql[0] = 0;
+	if (handle->is_firebird)
+		strcpy((char*)sql, "select first 1 * from RDB$RELATIONS");
+	else
+		strcpy((char*)sql, "select 1");
 
 	if (!handle) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No DB Handle\n");
@@ -197,9 +220,14 @@ static int db_is_up(switch_odbc_handle_t *handle)
 	goto done;
 
  error:
-	
-	recon = switch_odbc_handle_connect(handle);
 	err_str = switch_odbc_handle_get_error(handle, stmt);
+
+	// No need to reconnect if we can get the string anyway.
+	if (err_str == 0)
+	{
+		recon = switch_odbc_handle_connect(handle);
+		err_str = switch_odbc_handle_get_error(handle, stmt);
+	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Failure-Message", "The sql server is not responding for DSN %s [%s]", 
