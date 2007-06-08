@@ -60,8 +60,14 @@ struct zap_io_interface;
 
 #define ZAP_COMMAND_OBJ_INT *((int *)obj)
 #define ZAP_COMMAND_OBJ_CHAR_P (char *)obj
+#define ZAP_FSK_MOD_FACTOR 0x10000
 
 typedef uint64_t zap_time_t; 
+
+typedef enum {
+	ZAP_ENDIAN_BIG = 1,
+	ZAP_ENDIAN_LITTLE = -1
+} zap_endian_t;
 
 typedef enum {
 	ZAP_CID_TYPE_SDMF = 0x04,
@@ -75,27 +81,11 @@ typedef enum {
 	MDMF_NO_NUM = 4,
 	MDMF_PHONE_NAME = 7,
 	MDMF_NO_NAME = 8,
-	MDMF_INVALID = 9
+	MDMF_ALT_ROUTE = 9,
+	MDMF_INVALID = 10
 } zap_mdmf_type_t;
-#define MDMF_STRINGS "X", "DATETIME", "PHONE_NUM", "DDN", "NO_NUM", "X", "X", "PHONE_NAME", "NO_NAME", "INVALID"
+#define MDMF_STRINGS "X", "DATETIME", "PHONE_NUM", "DDN", "NO_NUM", "X", "X", "PHONE_NAME", "NO_NAME", "ALT_ROUTE", "INVALID"
 ZAP_STR2ENUM_P(zap_str2zap_mdmf_type, zap_mdmf_type2str, zap_mdmf_type_t)
-
-struct zap_fsk_data_state {
-	dsp_fsk_handle_t *fsk1200_handle;
-	uint8_t init;
-	uint8_t *buf;
-	size_t bufsize;
-	zap_size_t blen;
-	zap_size_t bpos;
-	zap_size_t dlen;
-	zap_size_t ppos;
-	int checksum;
-};
-typedef struct zap_fsk_data_state zap_fsk_data_state_t;
-
-typedef int (*zap_fsk_data_decoder_t)(zap_fsk_data_state_t *state);
-
-
 
 #define ZAP_TONEMAP_LEN 128
 typedef enum {
@@ -364,13 +354,18 @@ typedef zap_status_t (*zio_write_t) ZIO_WRITE_ARGS ;
 #define ZAP_LOG_ALERT ZAP_PRE, ZAP_LOG_LEVEL_ALERT
 #define ZAP_LOG_EMERG ZAP_PRE, ZAP_LOG_LEVEL_EMERG
 
-
+typedef struct zap_fsk_data_state zap_fsk_data_state_t;
+typedef int (*zap_fsk_data_decoder_t)(zap_fsk_data_state_t *state);
+typedef zap_status_t (*zap_fsk_write_sample_t)(int16_t *buf, zap_size_t buflen, void *user_data);
 typedef void (*zap_logger_t)(char *file, const char *func, int line, int level, char *fmt, ...);
 typedef struct zap_io_interface zap_io_interface_t;
 typedef struct hashtable zap_hash_t;
 typedef struct hashtable_itr zap_hash_itr_t;
 typedef struct key zap_hash_key_t;
 typedef struct value zap_hash_val_t;
+typedef struct zap_bitstream zap_bitstream_t;
+typedef struct zap_fsk_modulator zap_fsk_modulator_t;
+
 #endif
 
 /* For Emacs:

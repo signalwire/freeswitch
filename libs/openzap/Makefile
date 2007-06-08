@@ -113,7 +113,7 @@ testapp: $(SRC)/testapp.c $(MYLIB)
 	$(CC) $(INCS) -L. $(SRC)/testapp.c -o testapp -lopenzap -lm -lpthread
 
 testcid: $(SRC)/testcid.c $(MYLIB)
-	$(CC) $(INCS) -L. $(SRC)/testcid.c -o testcid -lopenzap -lm -lpthread
+	$(CC) $(INCS) -L. -g -ggdb $(SRC)/testcid.c -o testcid -lopenzap -lm -lpthread
 
 testtones: $(SRC)/testtones.c $(MYLIB)
 	$(CC) $(INCS) -L. $(SRC)/testtones.c -o testtones -lopenzap -lm -lpthread

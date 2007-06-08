@@ -241,6 +241,46 @@ static __inline__ char *zap_clean_string(char *s)
 	return s;
 }
 
+struct zap_bitstream {
+	uint8_t *data;
+	uint32_t datalen;
+	uint32_t byte_index;
+	uint8_t bit_index;
+	int8_t endian;
+	uint8_t top;
+	uint8_t bot;
+	uint8_t ss;
+	uint8_t ssv;
+};
+
+struct zap_fsk_data_state {
+	dsp_fsk_handle_t *fsk1200_handle;
+	uint8_t init;
+	uint8_t *buf;
+	size_t bufsize;
+	zap_size_t blen;
+	zap_size_t bpos;
+	zap_size_t dlen;
+	zap_size_t ppos;
+	int checksum;
+};
+
+struct zap_fsk_modulator {
+	teletone_dds_state_t dds;
+	zap_bitstream_t bs;
+	uint32_t carrier_bits_start;
+	uint32_t carrier_bits_stop;
+	uint32_t chan_sieze_bits;
+	uint32_t bit_factor;
+	uint32_t bit_accum;
+	uint32_t sample_counter;
+	fsk_modem_types_t modem_type;
+	zap_fsk_data_state_t *fsk_data;
+	zap_fsk_write_sample_t write_sample_callback;
+	void *user_data;
+	int16_t sample_buffer[64];
+};
+
 struct zap_caller_data {
 	char cid_name[80];
 	char cid_num[80];
@@ -364,11 +404,31 @@ struct zap_io_interface {
 	zio_span_next_event_t next_event;
 };
 
+#define zap_fsk_modulator_send_all(_it) zap_fsk_modulator_generate_chan_sieze(_it); \
+	zap_fsk_modulator_generate_carrier_bits(_it, _it->carrier_bits_start); \
+	zap_fsk_modulator_send_data(_it); \
+	zap_fsk_modulator_generate_carrier_bits(_it, _it->carrier_bits_stop)
+
+zap_status_t zap_fsk_modulator_init(zap_fsk_modulator_t *fsk_trans,
+									fsk_modem_types_t modem_type,
+									uint32_t sample_rate,
+									zap_fsk_data_state_t *fsk_data,
+									float db_level,
+									uint32_t carrier_bits_start,
+									uint32_t carrier_bits_stop,
+									uint32_t chan_sieze_bits,
+									zap_fsk_write_sample_t write_sample_callback,
+									void *user_data);
+int8_t zap_bitstream_get_bit(zap_bitstream_t *bsp);
+void zap_bitstream_init(zap_bitstream_t *bsp, uint8_t *data, uint32_t datalen, zap_endian_t endian, int ss);
 zap_status_t zap_fsk_data_parse(zap_fsk_data_state_t *state, zap_size_t *type, char **data, zap_size_t *len);
 zap_status_t zap_fsk_demod_feed(zap_fsk_data_state_t *state, int16_t *data, size_t samples);
 zap_status_t zap_fsk_demod_destroy(zap_fsk_data_state_t *state);
 int zap_fsk_demod_init(zap_fsk_data_state_t *state, int rate, uint8_t *buf, size_t bufsize);
-
+zap_status_t zap_fsk_data_init(zap_fsk_data_state_t *state, uint8_t *data, uint32_t datalen);
+zap_status_t zap_fsk_data_add_mdmf(zap_fsk_data_state_t *state, zap_mdmf_type_t type, int8_t *data, uint32_t datalen);
+zap_status_t zap_fsk_data_add_checksum(zap_fsk_data_state_t *state);
+zap_status_t zap_fsk_data_add_sdmf(zap_fsk_data_state_t *state, char *date, char *number);
 zap_status_t zap_channel_outgoing_call(zap_channel_t *zchan);
 void zap_channel_rotate_tokens(zap_channel_t *zchan);
 void zap_channel_clear_detected_tones(zap_channel_t *zchan);
@@ -403,7 +463,7 @@ zap_status_t zap_global_destroy(void);
 void zap_global_set_logger(zap_logger_t logger);
 void zap_global_set_default_logger(int level);
 uint32_t zap_separate_string(char *buf, char delim, char **array, int arraylen);
-void print_bits(uint8_t *b, int bl, char *buf, int blen, int e);
+void print_bits(uint8_t *b, int bl, char *buf, int blen, int e, int ss);
 ZIO_CODEC_FUNCTION(zio_slin2ulaw);
 ZIO_CODEC_FUNCTION(zio_ulaw2slin);
 ZIO_CODEC_FUNCTION(zio_slin2alaw);

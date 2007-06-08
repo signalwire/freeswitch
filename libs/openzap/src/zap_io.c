@@ -1832,34 +1832,95 @@ uint32_t zap_separate_string(char *buf, char delim, char **array, int arraylen)
 	return argc;
 }
 
-void print_bits(uint8_t *b, int bl, char *buf, int blen, int e)
+void zap_bitstream_init(zap_bitstream_t *bsp, uint8_t *data, uint32_t datalen, zap_endian_t endian, int ss)
 {
-	int i,j = 0, k, l = 0;
+	memset(bsp, 0, sizeof(*bsp));
+	bsp->data = data;
+	bsp->datalen = datalen;
+	bsp->endian = endian;
+	bsp->ss = ss;
+	
+	if (endian < 0) {
+		bsp->top = bsp->bit_index = 7;
+		bsp->bot = 0;
+	} else {
+		bsp->top = bsp->bit_index = 0;
+		bsp->bot = 7;
+	}
+
+}
+
+int8_t zap_bitstream_get_bit(zap_bitstream_t *bsp)
+{
+	int8_t bit = -1;
+	
+
+	if (bsp->byte_index >= bsp->datalen) {
+		goto done;
+	}
+
+	if (bsp->ss) {
+		if (!bsp->ssv) {
+			bsp->ssv = 1;
+			return 0;
+		} else if (bsp->ssv == 2) {
+			bsp->byte_index++;
+			bsp->ssv = 0;
+			return 1;
+		}
+	}
+
+
+
+
+	bit = (bsp->data[bsp->byte_index] >> (bsp->bit_index)) & 1;
+	
+	if (bsp->bit_index == bsp->bot) {
+		bsp->bit_index = bsp->top;
+		if (bsp->ss) {
+			bsp->ssv = 2;
+			goto done;
+		} 
+
+		if (++bsp->byte_index > bsp->datalen) {
+			bit = -1;
+			goto done;
+		}
+		
+	} else {
+		bsp->bit_index += bsp->endian;
+	}
+
+
+ done:
+	return bit;
+}
+
+
+void print_bits(uint8_t *b, int bl, char *buf, int blen, zap_endian_t e, int ss)
+{
+	zap_bitstream_t bs;
+	int j = 0, c = 0;
+	int8_t bit;
+	uint32_t last;
 
 	if (blen < (bl * 10) + 2) {
-		return;
-	}
-
-	for (k = 0 ; k < bl; k++) {
-		buf[j++] = '[';
-		if (e) {
-			for(i = 7; i >= 0; i--) {
-				buf[j++] = ((b[k] & (1 << i)) ? '1' : '0');
-			}
-		} else {
-			for(i = 0; i < 8; i++) {
-				buf[j++] = ((b[k] & (1 << i)) ? '1' : '0');
-			}
-		}
-		buf[j++] = ']';
-		buf[j++] = ' ';
-		if (++l == 6) {
-			buf[j++] = '\n';
-			l = 0;
-		}
-	}
+        return;
+    }
 	
-	buf[j++] = '\0';
+	zap_bitstream_init(&bs, b, bl, e, ss);
+	last = bs.byte_index;	
+	while((bit = zap_bitstream_get_bit(&bs)) > -1) {
+		buf[j++] = bit ? '1' : '0';
+		if (bs.byte_index != last) {
+			buf[j++] = ' ';
+			last = bs.byte_index;
+			if (++c == 8) {
+				buf[j++] = '\n';
+				c = 0;
+			}
+		}
+	}
 
 }
 
