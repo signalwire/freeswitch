@@ -1763,6 +1763,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			}
 			return;
 		}
+		switch_channel_set_variable(channel, "sip_authorized", "true");
 	}
 	
 	if (!(session = switch_core_session_request(&sofia_endpoint_interface, NULL))) {
@@ -1786,7 +1787,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_addr);
 
 	channel = switch_core_session_get_channel(session);
-	switch_channel_set_variable(channel, "sip_authorized", "true");
+
+
 
 
 	if (v_event) {
