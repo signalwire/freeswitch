@@ -35,6 +35,12 @@
       <!-- optionally use this instead if you want to store the hash of user:domain:pass-->
       <!--<param name="a1-hash" value="c6440e5de50b403206989679159de89a"/>-->
     </params>
+    <variables>
+      <!--all variables here will be set on all inbound calls that originate from this user -->
+      <variable name="testing" value="this"/>
+      <!--<variable name="force-contact" value="nat-connectile-dysfunction"/>-->
+    </variables>
+
     <vcard>
       <!-- insert optional compliant vcard xml here-->
     </vcard>
