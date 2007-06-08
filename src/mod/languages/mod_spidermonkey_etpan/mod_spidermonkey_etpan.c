@@ -128,7 +128,7 @@ static JSBool js_email(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 			if (file) {
 				snprintf(buf, B64BUFFLEN, "\n\n--%s\nContent-Type: application/octet-stream\n"
 						 "Content-Transfer-Encoding: base64\n"
-						 "Content-Description: Sound attachment.\n" "Content-Disposition: attachment; filename=\"%s\"\n\n", bound, file);
+						 "Content-Description: Sound attachment.\n" "Content-Disposition: attachment; filename=\"%s\"\n\n", bound, (argc > 5) ? JS_GetStringBytes(JS_ValueToString(cx,argv[5])) : switch_cut_path(file));
 				if (!write_buf(fd, buf))
 					return JS_FALSE;
 
