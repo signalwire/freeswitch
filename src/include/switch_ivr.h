@@ -562,7 +562,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
 	 typedef enum {
 		 SWITCH_IVR_MENU_FLAG_FALLTOMAIN = (1 << 0),
 		 SWITCH_IVR_MENU_FLAG_FREEPOOL = (1 << 1),
-		 SWITCH_IVR_MENU_FLAG_STACK = (1 << 2),
+		 SWITCH_IVR_MENU_FLAG_STACK = (1 << 2)
 	 } switch_ivr_menu_flags;
 /* Actions are either set in switch_ivr_menu_bind_function or returned by a callback */
 	 typedef enum {
@@ -575,7 +575,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
 		 SWITCH_IVR_ACTION_BACK,	/* Go back 1 menu.                 */
 		 SWITCH_IVR_ACTION_TOMAIN,	/* Go back to the top level menu.  */
 		 SWITCH_IVR_ACTION_TRANSFER,	/* Transfer caller to another ext. */
-		 SWITCH_IVR_ACTION_NOOP,	/* No operation                    */
+		 SWITCH_IVR_ACTION_NOOP	/* No operation                    */
 	 } switch_ivr_action_t;
 	 struct switch_ivr_menu;
 	 typedef switch_ivr_action_t switch_ivr_menu_action_function_t(struct switch_ivr_menu *, char *, char *, size_t, void *);

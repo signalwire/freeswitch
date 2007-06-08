@@ -53,7 +53,9 @@
 #define __EXTENSIONS__ 1
 #ifndef MACOSX
 #ifndef _XOPEN_SOURCE
+#ifndef __cplusplus
 #define _XOPEN_SOURCE 600
+#endif
 #endif
 #ifndef __BSD_VISIBLE
 #define __BSD_VISIBLE 1

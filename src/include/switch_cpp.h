@@ -26,7 +26,7 @@ class CoreSession {
 	switch_input_args_t *ap;
  public:
 	CoreSession(char *uuid);
-	CoreSession(switch_core_session_t *session);
+	CoreSession(switch_core_session_t *new_session);
 	~CoreSession();
 	switch_core_session_t *session;
 	switch_channel_t *channel;

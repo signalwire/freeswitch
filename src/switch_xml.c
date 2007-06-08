@@ -60,6 +60,9 @@
 
 #ifdef HAVE_MMAP
 #include <sys/mman.h>
+#ifdef __sun
+extern int madvise(caddr_t, size_t, int);
+#endif
 #endif
 
 #define SWITCH_XML_WS   "\t\r\n "	// whitespace

@@ -106,12 +106,12 @@ typedef struct {
 typedef struct {
 	int16_t type;
 	uint16_t length;
-	char value[];
+	char value[1];
 } switch_stun_packet_attribute_t;
 
 typedef struct {
 	switch_stun_packet_header_t header;
-	uint8_t first_attribute[];
+	uint8_t first_attribute[1];
 } switch_stun_packet_t;
 
 typedef struct {

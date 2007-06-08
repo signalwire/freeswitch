@@ -6,6 +6,7 @@
 #endif
 
 #define sanity_check(x) do { if (!session) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return x;}} while(0)
+#define sanity_check_noreturn do { if (!session) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return;}} while(0)
 #define init_vars() do { session = NULL; channel = NULL; uuid = NULL; tts_name = NULL; voice_name = NULL; memset(&args, 0, sizeof(args)); ap = NULL;} while(0)
 
 CoreSession::CoreSession(char *nuuid)
@@ -17,9 +18,10 @@ CoreSession::CoreSession(char *nuuid)
     }
 }
 
-CoreSession::CoreSession(switch_core_session_t *session)
+CoreSession::CoreSession(switch_core_session_t *new_session)
 {
 	init_vars();
+	session = new_session;
 	channel = switch_core_session_get_channel(session);
 	switch_core_session_read_lock(session);
 }
@@ -55,13 +57,13 @@ int CoreSession::preAnswer()
 
 void CoreSession::hangup(char *cause)
 {
-	sanity_check();
+	sanity_check_noreturn;
     switch_channel_hangup(channel, switch_channel_str2cause(cause));
 }
 
 void CoreSession::setVariable(char *var, char *val)
 {
-	sanity_check();
+	sanity_check_noreturn;
     switch_channel_set_variable(channel, var, val);
 }
 
@@ -74,7 +76,7 @@ char *CoreSession::getVariable(char *var)
 void CoreSession::execute(char *app, char *data)
 {
 	const switch_application_interface_t *application_interface;
-	sanity_check();
+	sanity_check_noreturn;
 
 	if ((application_interface = switch_loadable_module_get_application_interface(app))) {
 		begin_allow_threads();
@@ -99,7 +101,7 @@ int CoreSession::playFile(char *file, char *timer_name)
 
 void CoreSession::setDTMFCallback(switch_input_callback_function_t cb, void *buf, uint32_t buflen)
 {
-	sanity_check();
+	sanity_check_noreturn;
 	if (cb) {
 		args.buf = buf;
 		args.buflen = buflen;
@@ -126,7 +128,7 @@ int CoreSession::speakText(char *text)
 
 void CoreSession::set_tts_parms(char *tts_name_p, char *voice_name_p)
 {
-	sanity_check();
+	sanity_check_noreturn;
 	switch_safe_free(tts_name);
 	switch_safe_free(voice_name);
     tts_name = strdup(tts_name_p);

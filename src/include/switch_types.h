@@ -161,7 +161,7 @@ typedef enum {
 	SST_POSTAL_ADDRESS,
 	SST_ACCOUNT_NUMBER,
 	SST_NAME_SPELLED,
-	SST_NAME_PHONETIC,
+	SST_NAME_PHONETIC
 } switch_say_type_t;
 
 typedef enum {
@@ -196,7 +196,7 @@ typedef enum {
 	SWITCH_ABC_TYPE_READ,
 	SWITCH_ABC_TYPE_WRITE,
 	SWITCH_ABC_TYPE_WRITE_REPLACE,
-	SWITCH_ABC_TYPE_CLOSE,
+	SWITCH_ABC_TYPE_CLOSE
 } switch_abc_type_t;
 
 typedef struct {
@@ -332,7 +332,7 @@ typedef enum {
 typedef enum {
 	SWITCH_PRIORITY_NORMAL,
 	SWITCH_PRIORITY_LOW,
-	SWITCH_PRIORITY_HIGH,
+	SWITCH_PRIORITY_HIGH
 } switch_priority_t;
 
 /*!
@@ -702,7 +702,7 @@ SWITCH_DIRECTORY_FLAG_FREE_POOL =		(1 <<  0) - Free interface's pool on destruct
 </pre>
 */
 typedef enum {
-	SWITCH_DIRECTORY_FLAG_FREE_POOL = (1 << 0),
+	SWITCH_DIRECTORY_FLAG_FREE_POOL = (1 << 0)
 
 } switch_directory_flag_t;
 
@@ -732,7 +732,7 @@ SWITCH_TIMER_FLAG_FREE_POOL =		(1 <<  0) - Free timer's pool on destruction
 </pre>
 */
 typedef enum {
-	SWITCH_TIMER_FLAG_FREE_POOL = (1 << 0),
+	SWITCH_TIMER_FLAG_FREE_POOL = (1 << 0)
 } switch_timer_flag_t;
 
 
@@ -786,7 +786,7 @@ typedef enum {
 } switch_file_flag_t;
 
 typedef enum {
-	SWITCH_IO_FLAG_NOOP = 0,
+	SWITCH_IO_FLAG_NOOP = 0
 } switch_io_flag_t;
 
 /* make sure this is synced with the EVENT_NAMES array in switch_event.c
