@@ -19,6 +19,25 @@
     </condition>
   </extension>
 
+  <!-- Example extension for require auth per-call. -->
+  <extension name="9191">
+    <!-- Match the destination digits of 9191 -->
+    <condition field="destination_number" expression="^9191$"/>
+    <!-- Make sure the sip_authorized variable is set (set on all authed calls) 
+	 If it isn't, then send an auth challange.
+    -->
+    <condition field="${sip_authorized}" expression="true">
+      <anti-action application="reject" data="407"/>
+    </condition>
+
+    <!-- If you made it here all is well and the call is authed.
+	 Do whatever you wish.
+    -->
+    <condition>
+      <action application="playback" data="/tmp/itworked.wav"/>
+    </condition>
+  </extension>
+
   <extension name="tollfree">
     <condition field="destination_number" expression="^(18(0{2}|8{2}|7{2}|6{2})\d{7})$">
       <action application="enum" data="$1"/>

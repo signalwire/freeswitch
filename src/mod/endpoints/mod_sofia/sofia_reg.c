@@ -272,6 +272,36 @@ char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const c
 	}
 }
 
+
+void sofia_reg_auth_challange(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_regtype_t regtype, const char *realm, int stale)
+{
+	switch_uuid_t uuid;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	char *sql, *auth_str;
+
+	switch_uuid_get(&uuid);
+	switch_uuid_format(uuid_str, &uuid);
+
+	switch_mutex_lock(profile->ireg_mutex);
+	sql = switch_mprintf("insert into sip_authentication (nonce, expires) values('%q', %ld)",
+						 uuid_str, time(NULL) + profile->nonce_ttl);
+	assert(sql != NULL);
+	sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
+	switch_safe_free(sql);
+	switch_mutex_unlock(profile->ireg_mutex);
+
+	auth_str =
+		switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", realm, uuid_str, stale ? " stale=\"true\"," : "");
+
+	if (regtype == REG_REGISTER) {
+		nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_IF(nua, NUTAG_WITH_THIS(nua)), SIPTAG_WWW_AUTHENTICATE_STR(auth_str), TAG_END());
+	} else if (regtype == REG_INVITE) {
+		nua_respond(nh, SIP_407_PROXY_AUTH_REQUIRED, TAG_IF(nua, NUTAG_WITH_THIS(nua)), SIPTAG_PROXY_AUTHENTICATE_STR(auth_str), TAG_END());
+	}
+
+	switch_safe_free(auth_str);
+}
+
 uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_handle_t * nh, sip_t const *sip, sofia_regtype_t regtype, char *key,
 								  uint32_t keylen, switch_event_t **v_event)
 {
@@ -396,32 +426,11 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	}
 
 	if (!authorization || stale) {
-		switch_uuid_t uuid;
-		char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
-		char *sql, *auth_str;
-
-		switch_uuid_get(&uuid);
-		switch_uuid_format(uuid_str, &uuid);
-
-		switch_mutex_lock(profile->ireg_mutex);
-		sql = switch_mprintf("insert into sip_authentication (nonce, expires) values('%q', %ld)",
-							uuid_str, time(NULL) + profile->nonce_ttl);
-		assert(sql != NULL);
-		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
-		switch_safe_free(sql);
-		switch_mutex_unlock(profile->ireg_mutex);
-
-		auth_str =
-			switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", to_host, uuid_str, stale ? " stale=\"true\"," : "");
+		sofia_reg_auth_challange(nua, profile, nh, regtype, to_host, stale);
 
 		if (regtype == REG_REGISTER) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Requesting Registration from: [%s@%s]\n", to_user, to_host);
-			nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), SIPTAG_WWW_AUTHENTICATE_STR(auth_str), TAG_END());
-		} else if (regtype == REG_INVITE) {
-			nua_respond(nh, SIP_407_PROXY_AUTH_REQUIRED, NUTAG_WITH_THIS(nua), SIPTAG_PROXY_AUTHENTICATE_STR(auth_str), TAG_END());
 		}
-
-		switch_safe_free(auth_str);
 		return 1;
 	}
   reg:

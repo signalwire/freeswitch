@@ -1756,7 +1756,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		return;
 	}
 
-	if ((profile->pflags & PFLAG_AUTH_CALLS)) {
+	if ((profile->pflags & PFLAG_AUTH_CALLS) || sip->sip_proxy_authorization || sip->sip_authorization) {
 		if (sofia_reg_handle_register(nua, profile, nh, sip, REG_INVITE, key, sizeof(key), &v_event)) {
 			if (v_event) {
 				switch_event_destroy(&v_event);
@@ -1786,6 +1786,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_addr);
 
 	channel = switch_core_session_get_channel(session);
+	switch_channel_set_variable(channel, "sip_authorized", "true");
+
 
 	if (v_event) {
 		switch_event_header_t *hp;
