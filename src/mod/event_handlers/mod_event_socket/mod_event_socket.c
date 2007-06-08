@@ -129,19 +129,24 @@ static void event_handler(switch_event_t *event)
 		if (!switch_test_flag(l, LFLAG_EVENTS)) {
 			continue;
 		}
-
-		if (l->event_list[(uint8_t) SWITCH_EVENT_ALL]) {
+		
+		if (l->event_list[SWITCH_EVENT_ALL]) {
 			send = 1;
-		} else if ((l->event_list[(uint8_t) event->event_id])) {
+		} else if ((l->event_list[event->event_id])) {
 			if (event->event_id != SWITCH_EVENT_CUSTOM || (event->subclass && switch_core_hash_find(l->event_hash, event->subclass->name))) {
 				send = 1;
+			}
+		} else {
+			int x;
+			for(x = 0; x <= SWITCH_EVENT_ALL; x++) {
+				printf("%d ", l->event_list[x]);
 			}
 		}
 
 		if (send && switch_test_flag(l, LFLAG_MYEVENTS)) {
 			char *uuid = switch_event_get_header(event, "unique-id");
 			if (!uuid || strcmp(uuid, switch_core_session_get_uuid(l->session))) {
-				send = 1;
+				send = 0;
 			}
 		}
 
