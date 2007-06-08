@@ -80,9 +80,8 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef _MSC_VER
-#ifndef __inline__
-#define __inline__ __inline
-#endif
+#undef inline
+#define inline __inline
 typedef unsigned __int64 uint64_t;
 typedef unsigned __int32 uint32_t;
 typedef unsigned __int16 uint16_t;
@@ -131,7 +130,7 @@ typedef struct teletone_dds_state teletone_dds_state_t;
 
 extern int16_t TELETONE_SINES[SINE_TABLE_MAX];
 
-static __inline__ int16_t teletone_dds_modulate_sample(teletone_dds_state_t *dds)
+static inline int16_t teletone_dds_modulate_sample(teletone_dds_state_t *dds)
 {
     int32_t bitmask = dds->phase_accumulator, sine_index = (bitmask >>= 23) & SINE_TABLE_LEN;
 	int16_t sample;
@@ -151,12 +150,12 @@ static __inline__ int16_t teletone_dds_modulate_sample(teletone_dds_state_t *dds
     return (int16_t) (sample * dds->scale_factor >> 15);
 }
 
-static __inline__ void teletone_dds_state_set_tx_level(teletone_dds_state_t *dds, float tx_level)
+static inline void teletone_dds_state_set_tx_level(teletone_dds_state_t *dds, float tx_level)
 {
 	dds->scale_factor = (int) (powf(10.0f, (tx_level - DBM0_MAX_POWER) / 20.0f) * (32767.0f * 1.414214f));
 }
 
-static __inline__ void teletone_dds_state_set_tone(teletone_dds_state_t *dds, teletone_process_t tone, uint32_t rate, float tx_level)
+static inline void teletone_dds_state_set_tone(teletone_dds_state_t *dds, teletone_process_t tone, uint32_t rate, float tx_level)
 {
 	dds->phase_accumulator = 0;
 	dds->phase_rate = (int32_t) ((tone * MAX_PHASE_ACCUMULATOR) / rate);
