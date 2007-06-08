@@ -156,7 +156,6 @@ static __inline__ int16_t teletone_dds_state_modulate_sample(teletone_dds_state_
 	}
 
 	dds->phase_accumulator += dds->phase_rate[pindex];
-
     return (int16_t) (sample * dds->scale_factor >> 15);
 }
 

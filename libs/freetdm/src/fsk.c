@@ -46,7 +46,7 @@
 #define M_PI        3.14159265358979323846
 #endif
 
-static fsk_modem_definition_t fsk_modem_definitions[] =
+fsk_modem_definition_t fsk_modem_definitions[] =
 {
     { /* FSK_V23_FORWARD_MODE1	*/	1700,	1300,	600		},
     { /* FSK_V23_FORWARD_MODE2	*/	2100,	1300,	1200	},

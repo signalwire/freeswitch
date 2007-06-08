@@ -89,7 +89,7 @@ static int zap_isdn_921_21(void *pvt, L2UCHAR *msg, L2INT mlen)
 	zap_size_t len = (zap_size_t) mlen;
 #ifdef IODEBUG
 	char bb[4096] = "";
-	print_bits(msg, (int)len, bb, sizeof(bb), 1);
+	print_bits(msg, (int)len, bb, sizeof(bb), 1, 0);
 	zap_log(ZAP_LOG_DEBUG, "WRITE %d\n%s\n%s\n\n", (int)len, LINE, bb);
 
 #endif
@@ -140,7 +140,7 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 					if (zap_channel_read(data->dchan, buf, &len) == ZAP_SUCCESS) {
 #ifdef IODEBUG
 						char bb[4096] = "";
-						print_bits(buf, (int)len, bb, sizeof(bb), 1);
+						print_bits(buf, (int)len, bb, sizeof(bb), 1, 0);
 						zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", (int)len, LINE, bb);
 #endif
 
