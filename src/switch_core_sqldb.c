@@ -64,9 +64,10 @@ static switch_status_t switch_core_db_persistant_execute_trans(switch_core_db_t 
 
 		if (errmsg) {
 			begin_retries--;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n", errmsg);
 			if (strstr(errmsg, "cannot start a transaction within a transaction")) {
 				again = 1;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL Retry [%s]\n", errmsg);
 			}
 			switch_core_db_free(errmsg);
 
