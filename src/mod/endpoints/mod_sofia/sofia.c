@@ -1737,6 +1737,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	switch_event_t *v_event = NULL;
 	uint32_t sess_count = switch_core_session_count();
 	uint32_t sess_max = switch_core_session_limit(0);
+	int is_auth = 0;
 
 	if ((profile->soft_max && sess_count >= profile->soft_max) || sess_count >= sess_max) {
 		nua_respond(nh, 480, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
@@ -1755,7 +1756,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		nua_respond(nh, 400, "Missing Contact Header", TAG_END());
 		return;
 	}
-
+	
 	if ((profile->pflags & PFLAG_AUTH_CALLS) || sip->sip_proxy_authorization || sip->sip_authorization) {
 		if (sofia_reg_handle_register(nua, profile, nh, sip, REG_INVITE, key, sizeof(key), &v_event)) {
 			if (v_event) {
@@ -1763,7 +1764,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			}
 			return;
 		}
-		switch_channel_set_variable(channel, "sip_authorized", "true");
+		is_auth++;
 	}
 	
 	if (!(session = switch_core_session_request(&sofia_endpoint_interface, NULL))) {
@@ -1787,8 +1788,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_addr);
 
 	channel = switch_core_session_get_channel(session);
-
-
+	if (is_auth) {
+		switch_channel_set_variable(channel, "sip_authorized", "true");
+	}
 
 
 	if (v_event) {
