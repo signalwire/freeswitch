@@ -9,10 +9,6 @@ zap_status_t my_write_sample(int16_t *buf, zap_size_t buflen, void *user_data)
 	int x ;
 
 	struct helper *foo = (struct helper *) user_data;
-	for (x = 0; x < buflen; x++) {
-		printf("%x ", buf[x]);
-	}
-	printf("\n");
 	write(foo->fd, buf, buflen * 2);
 }
 
