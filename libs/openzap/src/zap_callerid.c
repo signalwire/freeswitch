@@ -65,7 +65,7 @@ zap_status_t zap_fsk_data_add_mdmf(zap_fsk_data_state_t *state, zap_mdmf_type_t 
 {
 	state->buf[0] = ZAP_CID_TYPE_MDMF;
 	state->buf[state->bpos++] = type;
-	state->buf[state->bpos++] = datalen;
+	state->buf[state->bpos++] = (uint8_t)datalen;
 	memcpy(&state->buf[state->bpos], data, datalen);
 	state->bpos += datalen;
 	return ZAP_SUCCESS;
@@ -77,10 +77,10 @@ zap_status_t zap_fsk_data_add_checksum(zap_fsk_data_state_t *state)
 	uint32_t i;
 	uint8_t check = 0;
 
-	state->buf[1] = state->bpos - 2;
+	state->buf[1] = (uint8_t)(state->bpos - 2);
 
 	for (i = 0; i < state->bpos; i++) {
-		check += state->buf[i];
+		check = check + state->buf[i];
 	}
 
 	state->checksum = state->buf[state->bpos] = 256 - check;
@@ -219,7 +219,7 @@ int32_t zap_fsk_modulator_generate_carrier_bits(zap_fsk_modulator_t *fsk_trans, 
 {
 	uint32_t i = 0;
 	zap_size_t r = 0;
-	int bit = 1;
+	int8_t bit = 1;
 
 	for (i = 0; i < bits; i++) {
 		if ((r = zap_fsk_modulator_generate_bit(fsk_trans, bit, fsk_trans->sample_buffer, sizeof(fsk_trans->sample_buffer) / 2))) {
@@ -239,7 +239,7 @@ void zap_fsk_modulator_generate_chan_sieze(zap_fsk_modulator_t *fsk_trans)
 {
 	uint32_t i = 0;
 	zap_size_t r = 0;
-	int bit = 0;
+	int8_t bit = 0;
 	
 	for (i = 0; i < fsk_trans->chan_sieze_bits; i++) {
 		if ((r = zap_fsk_modulator_generate_bit(fsk_trans, bit, fsk_trans->sample_buffer, sizeof(fsk_trans->sample_buffer) / 2))) {
@@ -288,13 +288,13 @@ zap_status_t zap_fsk_modulator_init(zap_fsk_modulator_t *fsk_trans,
 	fsk_trans->modem_type = modem_type;
 	teletone_dds_state_set_tone(&fsk_trans->dds, fsk_modem_definitions[fsk_trans->modem_type].freq_space, sample_rate, 0);
 	teletone_dds_state_set_tone(&fsk_trans->dds, fsk_modem_definitions[fsk_trans->modem_type].freq_mark, sample_rate, 1);
-	fsk_trans->bit_factor = (fsk_modem_definitions[fsk_trans->modem_type].baud_rate * ZAP_FSK_MOD_FACTOR) / (float)sample_rate;
+	fsk_trans->bit_factor = (uint32_t)((fsk_modem_definitions[fsk_trans->modem_type].baud_rate * ZAP_FSK_MOD_FACTOR) / (float)sample_rate);
 	fsk_trans->samples_per_bit = (uint32_t) (sample_rate / fsk_modem_definitions[fsk_trans->modem_type].baud_rate);
-	fsk_trans->est_bytes = ((fsk_data->dlen * 10) + carrier_bits_start + carrier_bits_stop + chan_sieze_bits) * ((fsk_trans->samples_per_bit + 1) * 2);
+	fsk_trans->est_bytes = (int32_t)(((fsk_data->dlen * 10) + carrier_bits_start + carrier_bits_stop + chan_sieze_bits) * ((fsk_trans->samples_per_bit + 1) * 2));
 	fsk_trans->bit_accum = 0;
 	fsk_trans->fsk_data = fsk_data;
 	teletone_dds_state_set_tx_level(&fsk_trans->dds, db_level);
-	zap_bitstream_init(&fsk_trans->bs, fsk_trans->fsk_data->buf, fsk_trans->fsk_data->dlen, ZAP_ENDIAN_BIG, 1);
+	zap_bitstream_init(&fsk_trans->bs, fsk_trans->fsk_data->buf, (uint32_t)fsk_trans->fsk_data->dlen, ZAP_ENDIAN_BIG, 1);
 	fsk_trans->carrier_bits_start = carrier_bits_start;
 	fsk_trans->carrier_bits_stop = carrier_bits_stop;
 	fsk_trans->chan_sieze_bits = chan_sieze_bits;

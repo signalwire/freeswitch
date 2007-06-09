@@ -1486,7 +1486,7 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t data
 {
 	zap_status_t status = ZAP_FAIL;
 	zio_codec_t codec_func = NULL;
-	zap_size_t blen, max = datasize;
+	zap_size_t blen = 0, max = datasize;
 	zap_buffer_t *buffer = NULL;
 
 	assert(zchan != NULL);
@@ -1871,7 +1871,7 @@ uint32_t zap_separate_string(char *buf, char delim, char **array, int arraylen)
 	return argc;
 }
 
-void zap_bitstream_init(zap_bitstream_t *bsp, uint8_t *data, uint32_t datalen, zap_endian_t endian, int ss)
+void zap_bitstream_init(zap_bitstream_t *bsp, uint8_t *data, uint32_t datalen, zap_endian_t endian, uint8_t ss)
 {
 	memset(bsp, 0, sizeof(*bsp));
 	bsp->data = data;
@@ -1927,7 +1927,7 @@ int8_t zap_bitstream_get_bit(zap_bitstream_t *bsp)
 		}
 		
 	} else {
-		bsp->bit_index += bsp->endian;
+		bsp->bit_index = bsp->bit_index + bsp->endian;
 	}
 
 
@@ -1936,7 +1936,7 @@ int8_t zap_bitstream_get_bit(zap_bitstream_t *bsp)
 }
 
 
-void print_bits(uint8_t *b, int bl, char *buf, int blen, zap_endian_t e, int ss)
+void print_bits(uint8_t *b, int bl, char *buf, int blen, zap_endian_t e, uint8_t ss)
 {
 	zap_bitstream_t bs;
 	int j = 0, c = 0;

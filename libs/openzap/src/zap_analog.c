@@ -331,7 +331,12 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 					zap_mdmf_type_t mt = MDMF_INVALID;
 
 					time(&now);
+#ifdef WIN32
+					_tzset();
+				   _localtime64_s(&tm, &now);
+#else
 					localtime_r(&now, &tm);
+#endif
 					strftime(time_str, sizeof(time_str), "%m%d%H%M", &tm);
 
 					zap_fsk_data_init(&fsk_data, databuf, sizeof(databuf));
@@ -345,7 +350,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 					} else {
 						mt = MDMF_PHONE_NUM;
 					}
-					zap_fsk_data_add_mdmf(&fsk_data, mt, (uint8_t *) chan->caller_data.cid_num, strlen(chan->caller_data.cid_num));
+					zap_fsk_data_add_mdmf(&fsk_data, mt, (uint8_t *) chan->caller_data.cid_num, (uint8_t)strlen(chan->caller_data.cid_num));
 
 					if (zap_strlen_zero(chan->caller_data.cid_name)) {
 						mt = MDMF_NO_NAME;
@@ -355,7 +360,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 					} else {
 						mt = MDMF_PHONE_NAME;
 					}
-					zap_fsk_data_add_mdmf(&fsk_data, mt, (uint8_t *) chan->caller_data.cid_name, strlen(chan->caller_data.cid_name));
+					zap_fsk_data_add_mdmf(&fsk_data, mt, (uint8_t *) chan->caller_data.cid_name, (uint8_t)strlen(chan->caller_data.cid_name));
 					
 					zap_fsk_data_add_checksum(&fsk_data);
 					zap_channel_send_fsk_data(chan, &fsk_data, -14);
