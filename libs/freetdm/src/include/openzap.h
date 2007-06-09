@@ -274,6 +274,8 @@ struct zap_fsk_modulator {
 	uint32_t bit_factor;
 	uint32_t bit_accum;
 	uint32_t sample_counter;
+	int32_t samples_per_bit;
+	int32_t est_bytes;
 	fsk_modem_types_t modem_type;
 	zap_fsk_data_state_t *fsk_data;
 	zap_fsk_write_sample_t write_sample_callback;
@@ -310,7 +312,7 @@ struct zap_channel {
 	zap_channel_state_t last_state;
 	zap_mutex_t *mutex;
 	teletone_dtmf_detect_state_t dtmf_detect;
-	uint32_t dtmf_delay;
+	uint32_t buffer_delay;
 	zap_event_t event_header;
 	char last_error[256];
 	zio_event_cb_t event_callback;
@@ -318,6 +320,7 @@ struct zap_channel {
 	uint32_t skip_read_frames;
 	zap_buffer_t *dtmf_buffer;
 	zap_buffer_t *digit_buffer;
+	zap_buffer_t *fsk_buffer;
 	uint32_t dtmf_on;
 	uint32_t dtmf_off;
 	teletone_generation_session_t tone_session;
@@ -404,6 +407,10 @@ struct zap_io_interface {
 	zio_span_next_event_t next_event;
 };
 
+zap_size_t zap_fsk_modulator_generate_bit(zap_fsk_modulator_t *fsk_trans, int8_t bit, int16_t *buf, zap_size_t buflen);
+int32_t zap_fsk_modulator_generate_carrier_bits(zap_fsk_modulator_t *fsk_trans, uint32_t bits);
+void zap_fsk_modulator_generate_chan_sieze(zap_fsk_modulator_t *fsk_trans);
+void zap_fsk_modulator_send_data(zap_fsk_modulator_t *fsk_trans);
 #define zap_fsk_modulator_send_all(_it) zap_fsk_modulator_generate_chan_sieze(_it); \
 	zap_fsk_modulator_generate_carrier_bits(_it, _it->carrier_bits_start); \
 	zap_fsk_modulator_send_data(_it); \
@@ -433,6 +440,7 @@ zap_status_t zap_channel_outgoing_call(zap_channel_t *zchan);
 void zap_channel_rotate_tokens(zap_channel_t *zchan);
 void zap_channel_clear_detected_tones(zap_channel_t *zchan);
 void zap_channel_clear_needed_tones(zap_channel_t *zchan);
+zap_status_t zap_channel_send_fsk_data(zap_channel_t *zchan, zap_fsk_data_state_t *fsk_data, float db_level);
 zap_status_t zap_channel_clear_token(zap_channel_t *zchan, int32_t token_id);
 zap_status_t zap_channel_add_token(zap_channel_t *zchan, char *token);
 zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t state);
