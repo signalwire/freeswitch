@@ -257,7 +257,7 @@ static const switch_codec_implementation_t raw_16k_30ms_implementation = {
 static const switch_codec_implementation_t raw_16k_20ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 117,
-	/*.iananame */ "L16",
+	/*.iananame */ "L16_16k",
 	/*.fmtp */ NULL,
 	/*.samples_per_second = */ 16000,
 	/*.bits_per_second = */ 256000,

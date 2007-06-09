@@ -1365,7 +1365,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 						}
 						send = 1;
 					} else {
-						if (score > rtp_session->vad_data.bg_level) {
+						if (score > rtp_session->vad_data.bg_level && !switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING)) {
 							uint32_t diff = score - rtp_session->vad_data.bg_level;
 
 							if (rtp_session->vad_data.hangover_hits) {
@@ -1373,6 +1373,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 							}
 
 							if (diff >= rtp_session->vad_data.diff_level || ++rtp_session->vad_data.hangunder_hits >= rtp_session->vad_data.hangunder) {
+
 								switch_set_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING);
 								send_msg->header.m = 1;
 								rtp_session->vad_data.hangover_hits = rtp_session->vad_data.hangunder_hits = rtp_session->vad_data.cng_count = 0;

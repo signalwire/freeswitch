@@ -283,7 +283,7 @@ static const switch_codec_implementation_t speex_32k_implementation = {
 
 static const switch_codec_implementation_t speex_16k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 99,
+	/*.ianacode */ 100,
 	/*.iananame */ "speex",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 16000,
