@@ -620,11 +620,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	if ((p = strchr(outbound_profile->destination_number, '/'))) {
 		dest = p + 1;
 		span_id = atoi(outbound_profile->destination_number);
-		if ((p = strchr(dest, '/'))) {
-			chan_id = atoi(dest);
-			dest = p + 1;
-		}
+		chan_id = atoi(dest);		
 	}
+
+	dest = outbound_profile->destination_number;
 
 	if (!dest) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid dial string\n");
@@ -642,6 +641,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		status = zap_channel_open_any(span_id, ZAP_TOP_DOWN, &zchan);
 		
 	}
+
 
 	if (status != ZAP_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No channels available\n");
@@ -667,6 +667,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		snprintf(name, sizeof(name), "OPENZAP/%s", dest);
 		switch_channel_set_name(channel, name);
 		zap_set_string(zchan->caller_data.ani, dest);
+		zap_set_string(zchan->caller_data.cid_name, outbound_profile->caller_id_name);
+		zap_set_string(zchan->caller_data.cid_num, outbound_profile->caller_id_number);
 		caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 		switch_channel_set_caller_profile(channel, caller_profile);
 		tech_pvt->caller_profile = caller_profile;
@@ -681,6 +683,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		}
 
 		zap_channel_outgoing_call(zchan);
+
 		return SWITCH_CAUSE_SUCCESS;
 	}
 
