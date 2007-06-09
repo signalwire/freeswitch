@@ -29,7 +29,9 @@ int main(int argc, char *argv[])
 	uint8_t databuf[1024] = "";
 	struct helper foo = {0};
 	int x, bytes, start_bits = 180, stop_bits = 5, sbits = 300;
-	
+	char time_str[9];
+	struct tm tm;
+	time_t now;
 	
 	if (argc < 2) {
 		int x;
@@ -41,10 +43,16 @@ int main(int argc, char *argv[])
 		}
 
 
+		time(&now);
+		localtime_r(&now, &tm);
+		strftime(time_str, sizeof(time_str), "%m%d%H%M", &tm);
+
 		zap_fsk_data_init(&fsk_data, databuf, sizeof(databuf));
 #if 1
-		zap_fsk_data_add_mdmf(&fsk_data, MDMF_DATETIME, "06061234", 8);
-		zap_fsk_data_add_mdmf(&fsk_data, MDMF_PHONE_NUM, "5551212", 7);
+		
+		zap_fsk_data_add_mdmf(&fsk_data, MDMF_DATETIME, time_str, strlen(time_str));
+		//zap_fsk_data_add_mdmf(&fsk_data, MDMF_DATETIME, "06091213", 8);
+		zap_fsk_data_add_mdmf(&fsk_data, MDMF_PHONE_NUM, "14149361212", 7);
 		zap_fsk_data_add_mdmf(&fsk_data, MDMF_PHONE_NAME, "Fred Smith", 10);
 		for(x = 0; x < 0; x++)
 			zap_fsk_data_add_mdmf(&fsk_data, MDMF_ALT_ROUTE, url, strlen(url));

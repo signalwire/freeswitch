@@ -465,6 +465,7 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 			case ZT_EVENT_RINGOFFHOOK:
 				{
 					if (span->channels[i].type == ZAP_CHAN_TYPE_FXS) {
+						zap_set_flag_locked((&span->channels[i]), ZAP_CHANNEL_OFFHOOK);
 						event_id = ZAP_OOB_OFFHOOK;
 					} else if (span->channels[i].type == ZAP_CHAN_TYPE_FXO) {
 						event_id = ZAP_OOB_RING_START;

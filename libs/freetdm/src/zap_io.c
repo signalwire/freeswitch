@@ -235,7 +235,7 @@ zap_status_t zap_span_create(zap_io_interface_t *zio, zap_span_t **span)
 	return status;
 }
 
-zap_status_t zap_span_close_all(zap_io_interface_t *zio)
+zap_status_t zap_span_close_all(void)
 {
 	zap_span_t *span;
 	uint32_t i, j;
@@ -425,9 +425,9 @@ zap_status_t zap_channel_send_fsk_data(zap_channel_t *zchan, zap_fsk_data_state_
 	if (!zchan->fsk_buffer) {
 		zap_buffer_create(&zchan->fsk_buffer, 128, 128, 0);
 	}
-	zap_fsk_modulator_init(&fsk_trans, FSK_BELL202, zchan->rate, fsk_data, -14, 180, 5, 180, zchan_fsk_write_sample, zchan);
+	zap_fsk_modulator_init(&fsk_trans, FSK_BELL202, zchan->rate, fsk_data, db_level, 180, 5, 180, zchan_fsk_write_sample, zchan);
 	zap_fsk_modulator_send_all((&fsk_trans));
-	zchan->buffer_delay = 2000 / zchan->effective_interval;
+	zchan->buffer_delay = 3500 / zchan->effective_interval;
 	return ZAP_SUCCESS;
 }
 
@@ -497,13 +497,24 @@ zap_status_t zap_channel_add_token(zap_channel_t *zchan, char *token)
 zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t state)
 {
 	int ok = 1;
-
-	zap_mutex_unlock(zchan->mutex);
+	
+	zap_mutex_lock(zchan->mutex);
 
 	if (zchan->state == ZAP_CHANNEL_STATE_DOWN) {
 
 		switch(state) {
 		case ZAP_CHANNEL_STATE_BUSY:
+			ok = 0;
+			break;
+		default:
+			break;
+		}
+	}
+
+	if (zchan->state == ZAP_CHANNEL_STATE_BUSY) {
+
+		switch(state) {
+		case ZAP_CHANNEL_STATE_UP:
 			ok = 0;
 			break;
 		default:
@@ -660,7 +671,7 @@ zap_status_t zap_channel_open_chan(zap_channel_t *zchan)
 	if ((status = zap_mutex_trylock(zchan->mutex)) != ZAP_SUCCESS) {
 		return status;
 	}
-	if (zap_test_flag(zchan, ZAP_CHANNEL_READY) && !zap_test_flag(zchan, ZAP_CHANNEL_OPEN)) {
+	if (zap_test_flag(zchan, ZAP_CHANNEL_READY)) {
 		status = zchan->span->zio->open(zchan);
 		if (status == ZAP_SUCCESS) {
 			zap_set_flag(zchan, ZAP_CHANNEL_OPEN);
@@ -701,7 +712,7 @@ zap_status_t zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t 
 		zap_mutex_unlock(check->mutex);
 	}
 
- done:
+	done:
 	
 	zap_mutex_unlock(globals.mutex);
 
@@ -1526,11 +1537,10 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t data
 		if (zchan->native_codec != ZAP_CODEC_SLIN) {
 			dlen *= 2;
 		}
-
+		
 		len = blen > dlen ? dlen : blen;
 
 		br = zap_buffer_read(buffer, auxbuf, len);		
-
 		if (br < dlen) {
 			memset(auxbuf + br, 0, dlen - br);
 		}
@@ -1548,7 +1558,6 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t data
 		}
 		
 	} 
-
 	if (zchan->fds[1]) {
 		unsigned int dlen = (unsigned int) *datalen;
 		write(zchan->fds[1], data, dlen);
@@ -1792,14 +1801,14 @@ zap_status_t zap_global_destroy(void)
 
 
 #ifdef ZAP_ZT_SUPPORT
+	zap_span_close_all();
+
 	if (interfaces.zt_interface) {
-		zap_span_close_all(interfaces.zt_interface);
 		zt_destroy();		
 	}
 #endif
 #ifdef ZAP_WANPIPE_SUPPORT
 	if (interfaces.wanpipe_interface) {
-		zap_span_close_all(interfaces.wanpipe_interface);
 		wanpipe_destroy();
 	}
 #endif

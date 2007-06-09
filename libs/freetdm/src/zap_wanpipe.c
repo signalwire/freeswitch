@@ -696,6 +696,7 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 				if (diff > wp_globals.wink_ms) {
 					zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_WINK);
 					zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_FLASH);
+					zap_set_flag_locked((&span->channels[i]), ZAP_CHANNEL_OFFHOOK);
 					event_id = ZAP_OOB_OFFHOOK;
 					goto event;
 				}
@@ -705,6 +706,7 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 				if (diff > wp_globals.flash_ms) {
 					zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_FLASH);
 					zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_WINK);
+					zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_OFFHOOK);
 					event_id = ZAP_OOB_ONHOOK;
 					goto event;
 				}

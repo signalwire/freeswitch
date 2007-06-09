@@ -1,3 +1,3 @@
 CC=gcc 
-CC_CFLAGS += -Wall -Werror -Wextra -std=c99 -pedantic -Wno-unused-parameter
+CC_CFLAGS += -Wall -Werror -Wextra -Wno-unused-parameter #-std=c99 -pedantic -Wno-unused-parameter
 

@@ -178,7 +178,6 @@
   \command flag the or'd list of flags to set
 */
 #define zap_set_flag(obj, flag) (obj)->flags |= (flag)
-
 #define zap_set_flag_locked(obj, flag) assert(obj->mutex != NULL);	\
 	zap_mutex_lock(obj->mutex);										\
 	(obj)->flags |= (flag);											\
@@ -193,9 +192,14 @@
 
 #define zap_clear_flag_locked(obj, flag) assert(obj->mutex != NULL); zap_mutex_lock(obj->mutex); (obj)->flags &= ~(flag); zap_mutex_unlock(obj->mutex);
 
-#define zap_set_state_locked(obj, s) assert(obj->mutex != NULL); zap_mutex_lock(obj->mutex); \
-	zap_log(ZAP_LOG_DEBUG, "Changing state from %s to %s\n", zap_channel_state2str(obj->state), zap_channel_state2str(s)); \
-	zap_channel_set_state(obj, s);
+#define zap_set_state_locked(obj, s) if ( obj->state == s ) {			\
+		zap_log(ZAP_LOG_WARNING, "Why bother changing state from %s to %s\n", zap_channel_state2str(obj->state), zap_channel_state2str(s)); \
+	} else {															\
+		int st = obj->state;											\
+		zap_channel_set_state(obj, s);									\
+		if (obj->state == s) zap_log(ZAP_LOG_DEBUG, "Changing state from %s to %s\n", zap_channel_state2str(st), zap_channel_state2str(s)); \
+		else zap_log(ZAP_LOG_WARNING, "VETO Changing state from %s to %s\n", zap_channel_state2str(st), zap_channel_state2str(s)); \
+	}
 
 
 #define zap_is_dtmf(key)  ((key > 47 && key < 58) || (key > 64 && key < 69) || (key > 96 && key < 101) || key == 35 || key == 42 || key == 87 || key == 119)
@@ -433,7 +437,7 @@ zap_status_t zap_fsk_demod_feed(zap_fsk_data_state_t *state, int16_t *data, size
 zap_status_t zap_fsk_demod_destroy(zap_fsk_data_state_t *state);
 int zap_fsk_demod_init(zap_fsk_data_state_t *state, int rate, uint8_t *buf, size_t bufsize);
 zap_status_t zap_fsk_data_init(zap_fsk_data_state_t *state, uint8_t *data, uint32_t datalen);
-zap_status_t zap_fsk_data_add_mdmf(zap_fsk_data_state_t *state, zap_mdmf_type_t type, int8_t *data, uint32_t datalen);
+zap_status_t zap_fsk_data_add_mdmf(zap_fsk_data_state_t *state, zap_mdmf_type_t type, uint8_t *data, uint32_t datalen);
 zap_status_t zap_fsk_data_add_checksum(zap_fsk_data_state_t *state);
 zap_status_t zap_fsk_data_add_sdmf(zap_fsk_data_state_t *state, char *date, char *number);
 zap_status_t zap_channel_outgoing_call(zap_channel_t *zchan);
@@ -452,7 +456,7 @@ zap_status_t zap_span_poll_event(zap_span_t *span, uint32_t ms);
 zap_status_t zap_span_next_event(zap_span_t *span, zap_event_t **event);
 zap_status_t zap_span_find(uint32_t id, zap_span_t **span);
 zap_status_t zap_span_create(zap_io_interface_t *zio, zap_span_t **span);
-zap_status_t zap_span_close_all(zap_io_interface_t *zio);
+zap_status_t zap_span_close_all(void);
 zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_chan_type_t type, zap_channel_t **chan);
 zap_status_t zap_span_set_event_callback(zap_span_t *span, zio_event_cb_t event_callback);
 zap_status_t zap_channel_set_event_callback(zap_channel_t *zchan, zio_event_cb_t event_callback);
