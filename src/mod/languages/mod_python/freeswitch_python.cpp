@@ -9,6 +9,7 @@ int PySession::streamfile(char *file, PyObject *pyfunc, char *funcargs, int star
     switch_input_args_t args = { 0 }, *ap = NULL;
     struct input_callback_state cb_state = { 0 };
     switch_file_handle_t fh = { 0 };
+	char *prebuf;
 
     sanity_check(-1);
     cb_state.funcargs = funcargs;
@@ -29,6 +30,13 @@ int PySession::streamfile(char *file, PyObject *pyfunc, char *funcargs, int star
 	args.buflen = sizeof(cb_state);  // not sure what this is used for, copy mod_spidermonkey
         args.input_callback = PythonDTMFCallback;  // defined in mod_python.i, will use ptrs in cb_state
 	ap = &args;
+    }
+
+	if ((prebuf = switch_channel_get_variable(this->channel, "stream_prebuffer"))) {
+        int maybe = atoi(prebuf);
+        if (maybe > 0) {
+            fh.prebuf = maybe;
+        }
     }
 
 

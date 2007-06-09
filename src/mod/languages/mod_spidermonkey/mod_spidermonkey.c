@@ -1357,6 +1357,7 @@ static JSBool session_streamfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	switch_file_handle_t fh = { 0 };
 	JSFunction *function;
 	switch_input_args_t args = { 0 };
+	char *prebuf;
 
 	if (!jss || !jss->session) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
@@ -1404,6 +1405,14 @@ static JSBool session_streamfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 		JS_ValueToInt32(cx, argv[3], &samps);
 		fh.samples = samps;
 	}
+	
+    if ((prebuf = switch_channel_get_variable(channel, "stream_prebuffer"))) {
+        int maybe = atoi(prebuf);
+        if (maybe > 0) {
+            fh.prebuf = maybe;
+        }
+    }
+
 
 	cb_state.extra = &fh;
 	cb_state.ret = BOOLEAN_TO_JSVAL(JS_FALSE);
