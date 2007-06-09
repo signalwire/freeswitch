@@ -411,6 +411,27 @@ zap_status_t zap_span_next_event(zap_span_t *span, zap_event_t **event)
 	return ZAP_NOTIMPL;
 }
 
+static zap_status_t zchan_fsk_write_sample(int16_t *buf, zap_size_t buflen, void *user_data)
+{
+	zap_channel_t *zchan = (zap_channel_t *) user_data;
+	zap_buffer_write(zchan->fsk_buffer, buf, buflen * 2);
+	return ZAP_SUCCESS;
+}
+
+zap_status_t zap_channel_send_fsk_data(zap_channel_t *zchan, zap_fsk_data_state_t *fsk_data, float db_level)
+{
+	struct zap_fsk_modulator fsk_trans;
+
+	if (!zchan->fsk_buffer) {
+		zap_buffer_create(&zchan->fsk_buffer, 128, 128, 0);
+	}
+	zap_fsk_modulator_init(&fsk_trans, FSK_BELL202, zchan->rate, fsk_data, -14, 180, 5, 180, zchan_fsk_write_sample, zchan);
+	zap_fsk_modulator_send_all((&fsk_trans));
+	zchan->buffer_delay = 2000 / zchan->effective_interval;
+	return ZAP_SUCCESS;
+}
+
+
 zap_status_t zap_channel_set_event_callback(zap_channel_t *zchan, zio_event_cb_t event_callback)
 {
 	zap_mutex_lock(zchan->mutex);
@@ -1454,8 +1475,9 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t data
 {
 	zap_status_t status = ZAP_FAIL;
 	zio_codec_t codec_func = NULL;
-	zap_size_t dtmf_blen, max = datasize;
-	
+	zap_size_t blen, max = datasize;
+	zap_buffer_t *buffer = NULL;
+
 	assert(zchan != NULL);
 	assert(zchan->zio != NULL);
 
@@ -1488,7 +1510,15 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t data
 		}
 	}
 
-	if (zchan->dtmf_buffer && (dtmf_blen = zap_buffer_inuse(zchan->dtmf_buffer)) && (!zchan->dtmf_delay || --zchan->dtmf_delay == 0)) {
+	if (!zchan->buffer_delay || --zchan->buffer_delay == 0) {
+		if (zchan->fsk_buffer && (blen = zap_buffer_inuse(zchan->fsk_buffer))) {
+			buffer = zchan->fsk_buffer;
+		} else if (zchan->dtmf_buffer && (blen = zap_buffer_inuse(zchan->dtmf_buffer))) {
+			buffer = zchan->dtmf_buffer;
+		}
+	}
+
+	if (buffer) {
 		zap_size_t dlen = *datalen;
 		uint8_t auxbuf[1024];
 		zap_size_t len, br;
@@ -1497,9 +1527,9 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t data
 			dlen *= 2;
 		}
 
-		len = dtmf_blen > dlen ? dlen : dtmf_blen;
+		len = blen > dlen ? dlen : blen;
 
-		br = zap_buffer_read(zchan->dtmf_buffer, auxbuf, len);		
+		br = zap_buffer_read(buffer, auxbuf, len);		
 
 		if (br < dlen) {
 			memset(auxbuf + br, 0, dlen - br);

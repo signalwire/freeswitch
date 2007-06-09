@@ -223,7 +223,9 @@ int32_t zap_fsk_modulator_generate_carrier_bits(zap_fsk_modulator_t *fsk_trans, 
 
 	for (i = 0; i < bits; i++) {
 		if ((r = zap_fsk_modulator_generate_bit(fsk_trans, bit, fsk_trans->sample_buffer, sizeof(fsk_trans->sample_buffer) / 2))) {
-			fsk_trans->write_sample_callback(fsk_trans->sample_buffer, r, fsk_trans->user_data);
+			if (fsk_trans->write_sample_callback(fsk_trans->sample_buffer, r, fsk_trans->user_data) != ZAP_SUCCESS) {
+				break;
+			}
 		} else {
 			break;
 		}
@@ -241,7 +243,9 @@ void zap_fsk_modulator_generate_chan_sieze(zap_fsk_modulator_t *fsk_trans)
 	
 	for (i = 0; i < fsk_trans->chan_sieze_bits; i++) {
 		if ((r = zap_fsk_modulator_generate_bit(fsk_trans, bit, fsk_trans->sample_buffer, sizeof(fsk_trans->sample_buffer) / 2))) {
-			fsk_trans->write_sample_callback(fsk_trans->sample_buffer, r, fsk_trans->user_data);
+			if (fsk_trans->write_sample_callback(fsk_trans->sample_buffer, r, fsk_trans->user_data) != ZAP_SUCCESS) {
+				break;
+			}
 		} else {
 			break;
 		}
@@ -259,7 +263,9 @@ void zap_fsk_modulator_send_data(zap_fsk_modulator_t *fsk_trans)
 
 	while((bit = zap_bitstream_get_bit(&fsk_trans->bs)) > -1) {
 		if ((r = zap_fsk_modulator_generate_bit(fsk_trans, bit, fsk_trans->sample_buffer, sizeof(fsk_trans->sample_buffer) / 2))) {
-			fsk_trans->write_sample_callback(fsk_trans->sample_buffer, r, fsk_trans->user_data);
+			if (fsk_trans->write_sample_callback(fsk_trans->sample_buffer, r, fsk_trans->user_data) != ZAP_SUCCESS) {
+				break;
+			}
 		} else {
 			break;
 		}
@@ -283,6 +289,8 @@ zap_status_t zap_fsk_modulator_init(zap_fsk_modulator_t *fsk_trans,
 	teletone_dds_state_set_tone(&fsk_trans->dds, fsk_modem_definitions[fsk_trans->modem_type].freq_space, sample_rate, 0);
 	teletone_dds_state_set_tone(&fsk_trans->dds, fsk_modem_definitions[fsk_trans->modem_type].freq_mark, sample_rate, 1);
 	fsk_trans->bit_factor = (fsk_modem_definitions[fsk_trans->modem_type].baud_rate * ZAP_FSK_MOD_FACTOR) / (float)sample_rate;
+	fsk_trans->samples_per_bit = (uint32_t) (sample_rate / fsk_modem_definitions[fsk_trans->modem_type].baud_rate);
+	fsk_trans->est_bytes = ((fsk_data->dlen * 10) + carrier_bits_start + carrier_bits_stop + chan_sieze_bits) * ((fsk_trans->samples_per_bit + 1) * 2);
 	fsk_trans->bit_accum = 0;
 	fsk_trans->fsk_data = fsk_data;
 	teletone_dds_state_set_tx_level(&fsk_trans->dds, db_level);

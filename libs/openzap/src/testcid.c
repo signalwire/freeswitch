@@ -2,6 +2,7 @@
 
 struct helper {
 	int fd;
+	int wrote;
 };
 
 zap_status_t my_write_sample(int16_t *buf, zap_size_t buflen, void *user_data)
@@ -10,6 +11,8 @@ zap_status_t my_write_sample(int16_t *buf, zap_size_t buflen, void *user_data)
 
 	struct helper *foo = (struct helper *) user_data;
 	write(foo->fd, buf, buflen * 2);
+	foo->wrote += buflen * 2;
+	return ZAP_SUCCESS;
 }
 
 int main(int argc, char *argv[])
@@ -24,8 +27,8 @@ int main(int argc, char *argv[])
 	char str[128] = "";
 	char fbuf[256];
 	uint8_t databuf[1024] = "";
-	struct helper foo;
-	
+	struct helper foo = {0};
+	int x, bytes, start_bits = 180, stop_bits = 5, sbits = 300;
 	
 	
 	if (argc < 2) {
@@ -43,7 +46,8 @@ int main(int argc, char *argv[])
 		zap_fsk_data_add_mdmf(&fsk_data, MDMF_DATETIME, "06061234", 8);
 		zap_fsk_data_add_mdmf(&fsk_data, MDMF_PHONE_NUM, "5551212", 7);
 		zap_fsk_data_add_mdmf(&fsk_data, MDMF_PHONE_NAME, "Fred Smith", 10);
-		//zap_fsk_data_add_mdmf(&fsk_data, MDMF_ALT_ROUTE, url, strlen(url));
+		for(x = 0; x < 0; x++)
+			zap_fsk_data_add_mdmf(&fsk_data, MDMF_ALT_ROUTE, url, strlen(url));
 #else
 		zap_fsk_data_add_sdmf(&fsk_data, "06061234", "0");
 		//zap_fsk_data_add_sdmf(&state, "06061234", "5551212");
@@ -55,6 +59,8 @@ int main(int argc, char *argv[])
 
 		zap_fsk_modulator_init(&fsk_trans, FSK_BELL202, 8000, &fsk_data, -14, 180, 5, 300, my_write_sample, &foo);
 		zap_fsk_modulator_send_all((&fsk_trans));
+
+		printf("%d %d %d\n", fsk_data.dlen, foo.wrote, fsk_trans.est_bytes);
 
 		if (fd > -1) {
 			close (fd);
