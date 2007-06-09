@@ -114,8 +114,9 @@
 			   !strcasecmp(expr, "active") ||	\
 			   atoi(expr))) ? 1 : 0
 
-#ifndef WIN32
+
 #include <time.h>
+#ifndef WIN32
 #include <sys/time.h>
 #endif
 
@@ -431,7 +432,7 @@ zap_status_t zap_fsk_modulator_init(zap_fsk_modulator_t *fsk_trans,
 									zap_fsk_write_sample_t write_sample_callback,
 									void *user_data);
 int8_t zap_bitstream_get_bit(zap_bitstream_t *bsp);
-void zap_bitstream_init(zap_bitstream_t *bsp, uint8_t *data, uint32_t datalen, zap_endian_t endian, int ss);
+void zap_bitstream_init(zap_bitstream_t *bsp, uint8_t *data, uint32_t datalen, zap_endian_t endian, uint8_t ss);
 zap_status_t zap_fsk_data_parse(zap_fsk_data_state_t *state, zap_size_t *type, char **data, zap_size_t *len);
 zap_status_t zap_fsk_demod_feed(zap_fsk_data_state_t *state, int16_t *data, size_t samples);
 zap_status_t zap_fsk_demod_destroy(zap_fsk_data_state_t *state);
@@ -475,7 +476,7 @@ zap_status_t zap_global_destroy(void);
 void zap_global_set_logger(zap_logger_t logger);
 void zap_global_set_default_logger(int level);
 uint32_t zap_separate_string(char *buf, char delim, char **array, int arraylen);
-void print_bits(uint8_t *b, int bl, char *buf, int blen, int e, int ss);
+void print_bits(uint8_t *b, int bl, char *buf, int blen, int e, uint8_t ss);
 ZIO_CODEC_FUNCTION(zio_slin2ulaw);
 ZIO_CODEC_FUNCTION(zio_ulaw2slin);
 ZIO_CODEC_FUNCTION(zio_slin2alaw);
