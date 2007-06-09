@@ -505,12 +505,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	char *ext;
 	char *prefix;
 	char *timer_name;
+	char *prebuf;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
 	prefix = switch_channel_get_variable(channel, "sound_prefix");
 	timer_name = switch_channel_get_variable(channel, "timer_name");
+
 
 	if (!file) {
 		return SWITCH_STATUS_FALSE;
@@ -551,6 +553,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		sample_start = fh->samples;
 		fh->samples = 0;
 	}
+
+	if ((prebuf = switch_channel_get_variable(channel, "stream_prebuffer"))) {
+		int maybe = atoi(prebuf);
+		if (maybe > 0) {
+			fh->prebuf = maybe;
+		}
+	}
+	
+
 
 	if (switch_core_file_open(fh,
 							  file,

@@ -19,6 +19,16 @@
     </condition>
   </extension>
 
+  <extension name="9192">
+    <condition field="destination_number" expression="^9192$">
+      <!-- Maintain Buffer of 128k of audio (default is 64k) -->
+      <action application="set" data="stream_prebuffer=131072"/>
+      <!-- Play a stream -->
+      <action application="playback" data="shout://mp3.ihets.org/wfyihd132"/>
+    </condition>
+  </extension>
+
+
   <!-- Example extension for require auth per-call. -->
   <extension name="9191">
     <!-- Match the destination digits of 9191 -->

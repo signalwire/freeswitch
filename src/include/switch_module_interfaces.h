@@ -221,6 +221,8 @@ struct switch_file_handle {
 	int speed;
 	/*! the handle's memory pool */
 	switch_memory_pool_t *memory_pool;
+	/*! pre-buffer x bytes for streams */
+	uint32_t prebuf;
 	/*! private data for the format module to store handle specific info */
 	void *private_info;
 	char *handler;

@@ -65,6 +65,7 @@ struct shout_context {
 	int samplerate;
 	uint8_t thread_running;
 	uint8_t shout_init;
+    uint32_t prebuf;
 };
 
 typedef struct shout_context shout_context_t;
@@ -336,6 +337,10 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 
 	error_check();
 
+    if (context->prebuf) {
+        buf_size = context->prebuf;
+    }
+
 	/* make sure we aren't over zealous by slowing down the stream when the buffer is too full */
 	for (;;) {
 		error_check();
@@ -350,10 +355,11 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 		switch_mutex_unlock(context->audio_mutex);
 
 		if (used < buf_size) {
+            //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Buffered %u/%u!\n", used, buf_size);
 			break;
 		}
 
-		switch_yield(1000000);
+		switch_yield(500000);
 	}
 
 	error_check();
@@ -556,6 +562,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, char *path)
 		InitMP3(&context->mp, OUTSCALE, context->samplerate);
 		if (handle->handler) {
 			context->stream_url = switch_core_sprintf(context->memory_pool, "http://%s", path);
+            context->prebuf = handle->prebuf;
 			launch_read_stream_thread(context);
 		} else {
 			if (switch_file_open(&context->fd, path, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, handle->memory_pool) !=
