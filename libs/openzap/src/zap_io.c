@@ -249,6 +249,7 @@ zap_status_t zap_span_close_all(void)
 				zap_mutex_destroy(&span->channels[j].mutex);
 				zap_buffer_destroy(&span->channels[j].digit_buffer);
 				zap_buffer_destroy(&span->channels[j].dtmf_buffer);
+				zap_buffer_destroy(&span->channels[j].fsk_buffer);
 			}
 		}
 
