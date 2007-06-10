@@ -797,6 +797,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_PASS_RFC2833;
 						}
+					} else if (!strcasecmp(var, "inbound-codec-negotiation")) {
+						if (!strcasecmp(val, "greedy")) {
+							profile->pflags |= PFLAG_GREEDY;
+						}
 					} else if (!strcasecmp(var, "disable-transcoding")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_DISABLE_TRANSCODING;

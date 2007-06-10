@@ -1042,12 +1042,25 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 	private_object_t *tech_pvt;
 	sdp_media_t *m;
 	sdp_attribute_t *a;
-
+	int first = 0, last = 0;
 	int ptime = 0, dptime = 0;
+	int greedy = 0, x = 0, skip = 0, mine = 0;
+	switch_channel_t *channel = NULL;
+	char *val;
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+	
+	greedy = !!(tech_pvt->profile->pflags & PFLAG_GREEDY);
+	
+	if (!greedy) {
+		if ((val = switch_channel_get_variable(channel, "sip_codec_negotiation")) && !strcasecmp(val, "greedy")) {
+			greedy = 1;
+		}
+	}
 
 	if ((tech_pvt->origin = switch_core_session_strdup(session, (char *) sdp->sdp_origin->o_username))) {
 		if (strstr(tech_pvt->origin, "CiscoSystemsSIP-GW-UserAgent")) {
@@ -1108,12 +1121,18 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 				match = 0;
 				break;
 			}
-
+			
+		greed:
+			x = 0;
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 				int32_t i;
 				const switch_codec_implementation_t *mimp = NULL, *near_match = NULL;
 				const char *rm_encoding;
-
+				
+				if (x++ < skip) {
+					printf("skip %s\n", map->rm_encoding);
+					continue;
+				}
 
 				if (!(rm_encoding = map->rm_encoding)) {
 					rm_encoding = "";
@@ -1135,15 +1154,22 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 						switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_AUTO_CNG);
 					}
 				}
-
+				
 				if (match) {
 					if (te && cng_pt) {
 						break;
 					}
 					continue;
 				}
+				
+				if (greedy) {
+					first = mine;
+					last = first + 1;
+				} else {
+					first = 0; last = tech_pvt->num_codecs;
+				}
 
-				for (i = 0; i < tech_pvt->num_codecs; i++) {
+				for (i = first; i < last && i < tech_pvt->num_codecs; i++) {
 					const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
 					uint32_t codec_rate = imp->samples_per_second;
 					if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
@@ -1174,6 +1200,11 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 						match = 0;
 					}
 				}
+				
+				if (!match && greedy) {
+					skip++;
+					continue;
+				}
 
 				if (!match && near_match) {
 					const switch_codec_implementation_t *search[1];
@@ -1182,7 +1213,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					int num;
 
 					snprintf(tmp, sizeof(tmp), "%s@%uk@%ui", near_match->iananame, near_match->samples_per_second, ptime);
-
+					
 					prefs[0] = tmp;
 					num = switch_loadable_module_get_codecs_sorted(search, 1, prefs, 1);
 
@@ -1221,6 +1252,13 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					}
 				}
 			}
+
+			if (!match && greedy && mine < tech_pvt->num_codecs) {
+				mine++;
+				skip = 0;
+				goto greed;
+			}
+
 		} else if (m->m_type == sdp_media_video) { 
 			sdp_rtpmap_t *map;
 			const char *rm_encoding;
