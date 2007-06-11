@@ -41,7 +41,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t por
 {
 	char buf[2048];
 	int ptime = 0;
-	int rate = 0;
+	uint32_t rate = 0;
 	uint32_t v_port;
 
 	if (!force && !ip && !sr && switch_channel_test_flag(tech_pvt->channel, CF_BYPASS_MEDIA)) {
@@ -112,7 +112,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t por
 
 	if (tech_pvt->rm_encoding) {
 		rate = tech_pvt->rm_rate;
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%ld\n", tech_pvt->pt, tech_pvt->rm_encoding, tech_pvt->rm_rate);
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", tech_pvt->pt, tech_pvt->rm_encoding, rate);
 		if (tech_pvt->fmtp_out) {
 			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->pt, tech_pvt->fmtp_out);
 		}
@@ -124,24 +124,18 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t por
 		int i;
 		for (i = 0; i < tech_pvt->num_codecs; i++) {
 			const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
-			uint32_t rfc_3551_sucks = imp->samples_per_second;
 
 			if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
 				continue;
 			}
 
-			if (!rate) {
-				rate = imp->samples_per_second;
-			}
+			rate = imp->samples_per_second;
+			
 			if (ptime && ptime != imp->microseconds_per_frame / 1000) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ptime %u != advertised ptime %u\n", imp->microseconds_per_frame / 1000, ptime);
 			}
 
-			if (rfc_3551_sucks && imp->ianacode == 9) {
-				rfc_3551_sucks = 8000;
-			}
-
-			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", imp->ianacode, imp->iananame, rfc_3551_sucks);
+			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", imp->ianacode, imp->iananame, rate);
 			if (imp->fmtp) {
 				snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", imp->ianacode, imp->fmtp);
 			}
@@ -152,7 +146,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t por
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
 	}
 	if (tech_pvt->cng_pt) {
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d CN/%d\n", tech_pvt->cng_pt, rate);
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d CN/8000\n", tech_pvt->cng_pt);
 		if (!tech_pvt->rm_encoding) {
 			tech_pvt->cng_pt = 0;
 		}
@@ -814,8 +808,10 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 			int ms;
 			tech_pvt->read_frame.rate = tech_pvt->rm_rate;
 			ms = tech_pvt->write_codec.implementation->microseconds_per_frame / 1000;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Codec %s %s/%ld %d ms\n",
-							  switch_channel_get_name(tech_pvt->channel), tech_pvt->rm_encoding, tech_pvt->rm_rate, tech_pvt->codec_ms);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Codec %s %s/%ld %d ms %d samples\n",
+							  switch_channel_get_name(tech_pvt->channel), tech_pvt->rm_encoding, tech_pvt->rm_rate, tech_pvt->codec_ms,
+							  tech_pvt->read_codec.implementation->samples_per_frame
+							  );
 			tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 			
 			switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
@@ -1176,10 +1172,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 						continue;
 					}
 					
-					if (map->rm_pt == 9) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Oh sure! You say 8000, but you mean 16000! This is, of course, stupid!\n");
-						codec_rate = 8000;
-					}
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Audio Codec Compare [%s:%d:%u]/[%s:%d:%u]\n",
 									  rm_encoding, map->rm_pt, (int)map->rm_rate, imp->iananame, imp->ianacode, codec_rate);
 					if (map->rm_pt < 96) {

@@ -1281,11 +1281,15 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 		send_msg = (rtp_msg_t *) data;
 	} else {
 		uint8_t m = 0;
-		if (rtp_session->ts > rtp_session->last_write_ts + rtp_session->samples_per_interval || rtp_session->ts == rtp_session->samples_per_interval) {
+
+		if ((rtp_session->ts > (rtp_session->last_write_ts + (rtp_session->samples_per_interval * 10)))
+			|| rtp_session->ts == rtp_session->samples_per_interval) {
 			m++;
 		}
+
 		if (rtp_session->cn && payload != rtp_session->cng_pt) {
 			rtp_session->cn = 0;
+			m++;
 		}
 
 		send_msg = &rtp_session->send_msg;
