@@ -114,7 +114,42 @@
 
 #ifdef _MSC_VER
 #pragma warning(disable:4100)
+#ifndef strcasecmp
+#define strcasecmp(s1, s2) _stricmp(s1, s2)
 #endif
+#endif
+#include <string.h>
+
+
+/*****************************************************************************
+
+  Enum helper macros
+
+*****************************************************************************/
+#define Q931_ENUM_NAMES(_NAME, _STRINGS) static char * _NAME [] = { _STRINGS , NULL };
+#define Q931_STR2ENUM_P(_FUNC1, _FUNC2, _TYPE) _TYPE _FUNC1 (char *name); char * _FUNC2 (_TYPE type);
+#define Q931_STR2ENUM(_FUNC1, _FUNC2, _TYPE, _STRINGS, _MAX)	\
+	_TYPE _FUNC1 (char *name)								\
+	{														\
+		int i;												\
+		_TYPE t = _MAX ;									\
+															\
+		for (i = 0; i < _MAX ; i++) {						\
+			if (!strcasecmp(name, _STRINGS[i])) {			\
+				t = (_TYPE) i;								\
+				break;										\
+			}												\
+		}													\
+															\
+		return t;											\
+	}														\
+	char * _FUNC2 (_TYPE type)								\
+	{														\
+		if (type > _MAX) {									\
+			type = _MAX;									\
+		}													\
+		return _STRINGS[(int)type];							\
+	}														\
 
 /*****************************************************************************
 
@@ -454,6 +489,8 @@ typedef enum						/* Dialect enum                         */
 
 	Q931_Dialect_Count
 } Q931Dialect_t;
+#define DIALECT_STRINGS "q931", "", "national"
+Q931_STR2ENUM_P(q931_str2Q931Diaelct_type, q931_Q931Diaelct_type2str, Q931Dialect_t)
 
 typedef enum						/* Trunk Line Type.                     */
 {
