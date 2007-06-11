@@ -1286,7 +1286,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 		}
 		if (rtp_session->cn && payload != rtp_session->cng_pt) {
 			rtp_session->cn = 0;
-			m++;
 		}
 
 		send_msg = &rtp_session->send_msg;
