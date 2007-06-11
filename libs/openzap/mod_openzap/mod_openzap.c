@@ -86,7 +86,6 @@ struct private_object {
 	switch_mutex_t *mutex;
 	switch_mutex_t *flag_mutex;
 	zap_channel_t *zchan;
-	int32_t token_id;
 	uint32_t wr_error;
 };
 
@@ -104,6 +103,54 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
+
+
+static switch_core_session_t *zap_channel_get_session(zap_channel_t *channel, int32_t id)
+{
+	switch_core_session_t *session = NULL;
+
+	if (id > ZAP_MAX_TOKENS) {
+		return NULL;
+	}
+
+	if (!switch_strlen_zero(channel->tokens[id])) {
+		session = switch_core_session_locate(channel->tokens[id]);
+	}
+
+	return session;
+}
+
+
+static void cycle_foreground(zap_channel_t *zchan, int flash) {
+	uint32_t i = 0;
+	switch_core_session_t *session;
+	switch_channel_t *channel;
+	private_t *tech_pvt;
+	
+	for (i = 0; i < zchan->token_count; i++) {
+		if ((session = zap_channel_get_session(zchan, i))) {
+			tech_pvt = switch_core_session_get_private(session);
+			channel = switch_core_session_get_channel(session);
+			if (zchan->token_count == 1 && flash) {
+				if (switch_test_flag(tech_pvt, TFLAG_HOLD)) {
+					switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
+				} else {
+					switch_set_flag_locked(tech_pvt, TFLAG_HOLD);
+				}
+			} else if (i) {
+				switch_set_flag_locked(tech_pvt, TFLAG_HOLD);
+			} else {
+				switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
+				if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
+					switch_channel_mark_answered(channel);
+				}
+			}
+			switch_core_session_rwunlock(session);
+		}
+	}
+}
+
+
 
 
 static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *session, zap_channel_t *zchan)
@@ -247,7 +294,8 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	zap_channel_clear_token(tech_pvt->zchan, tech_pvt->token_id);
+
+	zap_channel_clear_token(tech_pvt->zchan, switch_core_session_get_uuid(session));
 	
 	switch (tech_pvt->zchan->type) {
 	case ZAP_CHAN_TYPE_FXO:
@@ -260,7 +308,11 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	case ZAP_CHAN_TYPE_FXS:
 		{
 			if (tech_pvt->zchan->state != ZAP_CHANNEL_STATE_DOWN) {
-				zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_HANGUP);
+				if (tech_pvt->zchan->token_count) {
+					cycle_foreground(tech_pvt->zchan, 0);
+				} else {
+					zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_HANGUP);
+				}
 			}
 		}
 		break;
@@ -639,14 +691,14 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		status = zap_channel_open(span_id, chan_id, &zchan);
 	} else {
 		status = zap_channel_open_any(span_id, ZAP_TOP_DOWN, &zchan);
-		
 	}
-
-
+	
 	if (status != ZAP_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No channels available\n");
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
+
+
 
 	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, pool)) != 0) {
 		private_t *tech_pvt;
@@ -676,13 +728,27 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		
 		switch_channel_set_flag(channel, CF_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);
-		if ((tech_pvt->token_id = zap_channel_add_token(zchan, switch_core_session_get_uuid(*new_session))) < 0) {
+		if (zap_channel_add_token(zchan, switch_core_session_get_uuid(*new_session), zchan->token_count) != ZAP_SUCCESS) {
 			switch_core_session_destroy(new_session);
 			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
             goto fail;
 		}
 
-		zap_channel_outgoing_call(zchan);
+
+		if (zap_channel_outgoing_call(zchan) != ZAP_SUCCESS) {
+			if (tech_pvt->read_codec.implementation) {
+				switch_core_codec_destroy(&tech_pvt->read_codec);
+			}
+			
+			if (tech_pvt->write_codec.implementation) {
+				switch_core_codec_destroy(&tech_pvt->write_codec);
+			}
+			switch_core_session_destroy(new_session);
+            cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+            goto fail;
+
+		}
+
 
 		return SWITCH_CAUSE_SUCCESS;
 	}
@@ -758,7 +824,7 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
 		return ZAP_FAIL;
 	}
 
-	if ((tech_pvt->token_id = zap_channel_add_token(sigmsg->channel, switch_core_session_get_uuid(session))) < 0) {
+	if (zap_channel_add_token(sigmsg->channel, switch_core_session_get_uuid(session), 0) != ZAP_SUCCESS) {
 		switch_core_session_destroy(&session);
 		return ZAP_FAIL;
 	}
@@ -767,20 +833,6 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
     return ZAP_SUCCESS;
 }
 
-static switch_core_session_t *zap_channel_get_session(zap_channel_t *channel, int32_t id)
-{
-	switch_core_session_t *session = NULL;
-
-	if (id > ZAP_MAX_TOKENS) {
-		return NULL;
-	}
-
-	if (!switch_strlen_zero(channel->tokens[id])) {
-		session = switch_core_session_locate(channel->tokens[id]);
-	}
-
-	return session;
-}
 
 static ZIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 {
@@ -853,24 +905,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 
     case ZAP_SIGEVENT_FLASH:
 		{
-			uint32_t i = 0;
-			for (i = 0; i < sigmsg->channel->token_count; i++) {
-				if ((session = zap_channel_get_session(sigmsg->channel, i))) {
-					tech_pvt = switch_core_session_get_private(session);
-					if (sigmsg->channel->token_count == 1) {
-						if (switch_test_flag(tech_pvt, TFLAG_HOLD)) {
-							switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
-						} else {
-							switch_set_flag_locked(tech_pvt, TFLAG_HOLD);
-						}
-					} else if (i) {
-						switch_set_flag_locked(tech_pvt, TFLAG_HOLD);
-					} else {
-						switch_clear_flag_locked(tech_pvt, TFLAG_HOLD);
-					}
-					switch_core_session_rwunlock(session);
-				}
-			}
+			cycle_foreground(sigmsg->channel, 1);
 		}
 		break;
 	}

@@ -426,9 +426,14 @@ zap_status_t zap_channel_send_fsk_data(zap_channel_t *zchan, zap_fsk_data_state_
 	if (!zchan->fsk_buffer) {
 		zap_buffer_create(&zchan->fsk_buffer, 128, 128, 0);
 	}
-	zap_fsk_modulator_init(&fsk_trans, FSK_BELL202, zchan->rate, fsk_data, db_level, 180, 5, 180, zchan_fsk_write_sample, zchan);
-	zap_fsk_modulator_send_all((&fsk_trans));
-	zchan->buffer_delay = 3500 / zchan->effective_interval;
+	if (zchan->token_count > 1) {
+		zap_fsk_modulator_init(&fsk_trans, FSK_BELL202, zchan->rate, fsk_data, db_level, 80, 5, 0, zchan_fsk_write_sample, zchan);
+		zap_fsk_modulator_send_all((&fsk_trans));
+	} else {
+		zap_fsk_modulator_init(&fsk_trans, FSK_BELL202, zchan->rate, fsk_data, db_level, 180, 5, 300, zchan_fsk_write_sample, zchan);
+		zap_fsk_modulator_send_all((&fsk_trans));
+		zchan->buffer_delay = 3500 / zchan->effective_interval;
+	}
 	return ZAP_SUCCESS;
 }
 
@@ -441,15 +446,15 @@ zap_status_t zap_channel_set_event_callback(zap_channel_t *zchan, zio_event_cb_t
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_channel_clear_token(zap_channel_t *zchan, int32_t token_id)
+zap_status_t zap_channel_clear_token(zap_channel_t *zchan, const char *token)
 {
 	zap_status_t status = ZAP_FAIL;
 	
 	zap_mutex_lock(zchan->mutex);
-	if (token_id == -1) {
+	if (token == NULL) {
 		memset(zchan->tokens, 0, sizeof(zchan->tokens));
 		zchan->token_count = 0;
-	} else if (*zchan->tokens[token_id] != '\0') {
+	} else if (*token != '\0') {
 		char tokens[ZAP_MAX_TOKENS][ZAP_TOKEN_STRLEN];
 		int32_t i, count = zchan->token_count;
 		memcpy(tokens, zchan->tokens, sizeof(tokens));
@@ -457,7 +462,7 @@ zap_status_t zap_channel_clear_token(zap_channel_t *zchan, int32_t token_id)
 		zchan->token_count = 0;		
 
 		for (i = 0; i < count; i++) {
-			if (i != token_id) {
+			if (strcmp(tokens[i], token)) {
 				zap_copy_string(zchan->tokens[zchan->token_count], tokens[i], sizeof(zchan->tokens[zchan->token_count]));
 				zchan->token_count++;
 			}
@@ -479,15 +484,20 @@ void zap_channel_rotate_tokens(zap_channel_t *zchan)
 	}
 }
 
-zap_status_t zap_channel_add_token(zap_channel_t *zchan, char *token)
+zap_status_t zap_channel_add_token(zap_channel_t *zchan, char *token, int end)
 {
 	zap_status_t status = ZAP_FAIL;
 
 	zap_mutex_lock(zchan->mutex);
 	if (zchan->token_count < ZAP_MAX_TOKENS) {
-		memmove(zchan->tokens[1], zchan->tokens[0], zchan->token_count * ZAP_TOKEN_STRLEN);
-		zap_copy_string(zchan->tokens[0], token, ZAP_TOKEN_STRLEN);
-		zchan->token_count++;
+		if (end) {
+			zap_copy_string(zchan->tokens[zchan->token_count++], token, ZAP_TOKEN_STRLEN);
+		} else {
+			memmove(zchan->tokens[1], zchan->tokens[0], zchan->token_count * ZAP_TOKEN_STRLEN);
+			zap_copy_string(zchan->tokens[0], token, ZAP_TOKEN_STRLEN);
+			zchan->token_count++;
+		}
+		status = ZAP_SUCCESS;
 	}
 	zap_mutex_unlock(zchan->mutex);
 
@@ -672,6 +682,9 @@ zap_status_t zap_channel_open_chan(zap_channel_t *zchan)
 	if ((status = zap_mutex_trylock(zchan->mutex)) != ZAP_SUCCESS) {
 		return status;
 	}
+
+	status = ZAP_FAIL;
+
 	if (zap_test_flag(zchan, ZAP_CHANNEL_READY)) {
 		status = zchan->span->zio->open(zchan);
 		if (status == ZAP_SUCCESS) {
@@ -698,7 +711,10 @@ zap_status_t zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t 
 			goto done;
 		}
 		
-		if (zap_test_flag(check, ZAP_CHANNEL_READY) && !zap_test_flag(check, ZAP_CHANNEL_INUSE)) {
+		status = ZAP_FAIL;
+
+		if (zap_test_flag(check, ZAP_CHANNEL_READY) && (!zap_test_flag(check, ZAP_CHANNEL_INUSE) || 
+														(check->type == ZAP_CHAN_TYPE_FXS && check->token_count == 1))) {
 			if (!zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
 				status = check->zio->open(check);
 				if (status == ZAP_SUCCESS) {
@@ -714,7 +730,6 @@ zap_status_t zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t 
 	}
 
 	done:
-	
 	zap_mutex_unlock(globals.mutex);
 
 	return status;
@@ -824,7 +839,7 @@ static zap_status_t zchan_activate_dtmf_buffer(zap_channel_t *zchan)
 zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, void *obj)
 {
 	zap_status_t status = ZAP_FAIL;
-
+	
 	assert(zchan != NULL);
 	assert(zchan->zio != NULL);
 
@@ -1453,29 +1468,33 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 			if(*digit_str) {
 				zio_event_cb_t event_callback = NULL;
 
-				zap_channel_queue_dtmf(zchan, digit_str);
+				if (zchan->state == ZAP_CHANNEL_STATE_CALLWAITING && (*digit_str == 'D' || *digit_str == 'A')) {
+					zchan->detected_tones[ZAP_TONEMAP_CALLWAITING_ACK]++;
+				} else {
+					zap_channel_queue_dtmf(zchan, digit_str);
 
-				if (zchan->span->event_callback) {
-					event_callback = zchan->span->event_callback;
-				} else if (zchan->event_callback) {
-					event_callback = zchan->event_callback;
-				}
+					if (zchan->span->event_callback) {
+						event_callback = zchan->span->event_callback;
+					} else if (zchan->event_callback) {
+						event_callback = zchan->event_callback;
+					}
 
-				if (event_callback) {
-					zchan->event_header.channel = zchan;
-					zchan->event_header.e_type = ZAP_EVENT_DTMF;
-					zchan->event_header.data = digit_str;
-					event_callback(zchan, &zchan->event_header);
-					zchan->event_header.e_type = ZAP_EVENT_NONE;
-					zchan->event_header.data = NULL;
+					if (event_callback) {
+						zchan->event_header.channel = zchan;
+						zchan->event_header.e_type = ZAP_EVENT_DTMF;
+						zchan->event_header.data = digit_str;
+						event_callback(zchan, &zchan->event_header);
+						zchan->event_header.e_type = ZAP_EVENT_NONE;
+						zchan->event_header.data = NULL;
+					}
+					if (zap_test_flag(zchan, ZAP_CHANNEL_SUPRESS_DTMF)) {
+						zchan->skip_read_frames = 20;
+					}
+					if (zchan->skip_read_frames > 0) {
+						memset(data, 0, *datalen);
+						zchan->skip_read_frames--;
+					}  
 				}
-				if (zap_test_flag(zchan, ZAP_CHANNEL_SUPRESS_DTMF)) {
-					zchan->skip_read_frames = 20;
-				}
-				if (zchan->skip_read_frames > 0) {
-					memset(data, 0, *datalen);
-					zchan->skip_read_frames--;
-				}  
 			}
 		}
 	}
@@ -1523,10 +1542,10 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t data
 	}
 
 	if (!zchan->buffer_delay || --zchan->buffer_delay == 0) {
-		if (zchan->fsk_buffer && (blen = zap_buffer_inuse(zchan->fsk_buffer))) {
-			buffer = zchan->fsk_buffer;
-		} else if (zchan->dtmf_buffer && (blen = zap_buffer_inuse(zchan->dtmf_buffer))) {
+		if (zchan->dtmf_buffer && (blen = zap_buffer_inuse(zchan->dtmf_buffer))) {
 			buffer = zchan->dtmf_buffer;
+		} else if (zchan->fsk_buffer && (blen = zap_buffer_inuse(zchan->fsk_buffer))) {
+			buffer = zchan->fsk_buffer;			
 		}
 	}
 

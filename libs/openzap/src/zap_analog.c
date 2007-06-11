@@ -46,13 +46,16 @@ static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxo_outgoing_call)
 		zap_thread_create_detached(zap_analog_channel_run, zchan);
 		return ZAP_SUCCESS;
 	}
+
 	return ZAP_FAIL;
 }
 
 static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxs_outgoing_call)
 {
 
-	if (!zap_test_flag(zchan, ZAP_CHANNEL_INTHREAD)) {
+	if (zap_test_flag(zchan, ZAP_CHANNEL_INTHREAD)) {
+		zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_CALLWAITING);
+	} else {
 		zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_GENRING);
 		zap_thread_create_detached(zap_analog_channel_run, zchan);
 	}
@@ -104,6 +107,51 @@ static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map
 	wrote = teletone_mux_tones(ts, map);
 	zap_buffer_write(dt_buffer, ts->buffer, wrote * 2);
 	return 0;
+}
+
+static void send_caller_id(zap_channel_t *chan)
+{
+	zap_fsk_data_state_t fsk_data;
+	uint8_t databuf[1024] = "";
+	char time_str[9];
+	struct tm tm;
+	time_t now;
+	zap_mdmf_type_t mt = MDMF_INVALID;
+
+	time(&now);
+#ifdef WIN32
+	_tzset();
+	_localtime64_s(&tm, &now);
+#else
+	localtime_r(&now, &tm);
+#endif
+	strftime(time_str, sizeof(time_str), "%m%d%H%M", &tm);
+
+	zap_fsk_data_init(&fsk_data, databuf, sizeof(databuf));
+	zap_fsk_data_add_mdmf(&fsk_data, MDMF_DATETIME, (uint8_t *) time_str, 8);
+					
+	if (zap_strlen_zero(chan->caller_data.cid_num)) {
+		mt = MDMF_NO_NUM;
+		zap_set_string(chan->caller_data.cid_num, "O");
+	} else if (!strcasecmp(chan->caller_data.cid_num, "P") || !strcasecmp(chan->caller_data.cid_num, "O")) {
+		mt = MDMF_NO_NUM;
+	} else {
+		mt = MDMF_PHONE_NUM;
+	}
+	zap_fsk_data_add_mdmf(&fsk_data, mt, (uint8_t *) chan->caller_data.cid_num, (uint8_t)strlen(chan->caller_data.cid_num));
+
+	if (zap_strlen_zero(chan->caller_data.cid_name)) {
+		mt = MDMF_NO_NAME;
+		zap_set_string(chan->caller_data.cid_name, "O");
+	} else if (!strcasecmp(chan->caller_data.cid_name, "P") || !strcasecmp(chan->caller_data.cid_name, "O")) {
+		mt = MDMF_NO_NAME;
+	} else {
+		mt = MDMF_PHONE_NAME;
+	}
+	zap_fsk_data_add_mdmf(&fsk_data, mt, (uint8_t *) chan->caller_data.cid_name, (uint8_t)strlen(chan->caller_data.cid_name));
+					
+	zap_fsk_data_add_checksum(&fsk_data);
+	zap_channel_send_fsk_data(chan, &fsk_data, -14);
 }
 
 static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
@@ -231,6 +279,37 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 					}
 				}
 				break;
+			case ZAP_CHANNEL_STATE_CALLWAITING:
+				{
+					int done = 0;
+					
+					if (chan->detected_tones[ZAP_TONEMAP_CALLWAITING_ACK] == 1) {
+						send_caller_id(chan);
+						chan->detected_tones[ZAP_TONEMAP_CALLWAITING_ACK]++;
+					} else if (state_counter > 600 && !chan->detected_tones[ZAP_TONEMAP_CALLWAITING_ACK]) {
+						send_caller_id(chan);
+						chan->detected_tones[ZAP_TONEMAP_CALLWAITING_ACK]++;
+					} else if (state_counter > 1000 && !chan->detected_tones[ZAP_TONEMAP_CALLWAITING_ACK]) {
+						done = 1;
+					} else if (state_counter > 10000) {
+						if (chan->fsk_buffer) {
+							zap_buffer_zero(chan->fsk_buffer);
+						} else {
+							zap_buffer_create(&chan->fsk_buffer, 128, 128, 0);
+						}
+						
+						ts.user_data = chan->fsk_buffer;
+						teletone_run(&ts, chan->span->tone_map[ZAP_TONEMAP_CALLWAITING_SAS]);
+						ts.user_data = dt_buffer;
+						done = 1;
+					}
+
+					if (done) {
+						zap_set_state_locked(chan, ZAP_CHANNEL_STATE_UP);
+						zap_clear_flag_locked(chan, ZAP_CHANNEL_STATE_CHANGE);
+						chan->detected_tones[ZAP_TONEMAP_CALLWAITING_ACK] = 0;
+					}
+				}
 			case ZAP_CHANNEL_STATE_UP:
 			case ZAP_CHANNEL_STATE_IDLE:
 				{
@@ -266,7 +345,6 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 						zap_log(ZAP_LOG_DEBUG, "Cancel FSK transmit due to early answer.\n");
 						zap_buffer_zero(chan->fsk_buffer);
 					}
-
 
 					if (chan->type == ZAP_CHAN_TYPE_FXS && zap_test_flag(chan, ZAP_CHANNEL_RINGING)) {
 						zap_channel_command(chan, ZAP_COMMAND_GENERATE_RING_OFF, NULL);
@@ -321,49 +399,24 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 					indicate = 1;
 				}
 				break;
+			case ZAP_CHANNEL_STATE_CALLWAITING:
+				{
+					chan->detected_tones[ZAP_TONEMAP_CALLWAITING_ACK] = 0;
+					if (chan->fsk_buffer) {
+						zap_buffer_zero(chan->fsk_buffer);
+					} else {
+						zap_buffer_create(&chan->fsk_buffer, 128, 128, 0);
+					}
+					
+					ts.user_data = chan->fsk_buffer;
+					teletone_run(&ts, chan->span->tone_map[ZAP_TONEMAP_CALLWAITING_SAS]);
+					teletone_run(&ts, chan->span->tone_map[ZAP_TONEMAP_CALLWAITING_CAS]);
+					ts.user_data = dt_buffer;
+				}
+				break;
 			case ZAP_CHANNEL_STATE_GENRING:
 				{
-					zap_fsk_data_state_t fsk_data;
-					uint8_t databuf[1024] = "";
-					char time_str[9];
-					struct tm tm;
-					time_t now;
-					zap_mdmf_type_t mt = MDMF_INVALID;
-
-					time(&now);
-#ifdef WIN32
-					_tzset();
-				   _localtime64_s(&tm, &now);
-#else
-					localtime_r(&now, &tm);
-#endif
-					strftime(time_str, sizeof(time_str), "%m%d%H%M", &tm);
-
-					zap_fsk_data_init(&fsk_data, databuf, sizeof(databuf));
-					zap_fsk_data_add_mdmf(&fsk_data, MDMF_DATETIME, (uint8_t *) time_str, 8);
-					
-					if (zap_strlen_zero(chan->caller_data.cid_num)) {
-						mt = MDMF_NO_NUM;
-						zap_set_string(chan->caller_data.cid_num, "O");
-					} else if (!strcasecmp(chan->caller_data.cid_num, "P") || !strcasecmp(chan->caller_data.cid_num, "O")) {
-						mt = MDMF_NO_NUM;
-					} else {
-						mt = MDMF_PHONE_NUM;
-					}
-					zap_fsk_data_add_mdmf(&fsk_data, mt, (uint8_t *) chan->caller_data.cid_num, (uint8_t)strlen(chan->caller_data.cid_num));
-
-					if (zap_strlen_zero(chan->caller_data.cid_name)) {
-						mt = MDMF_NO_NAME;
-						zap_set_string(chan->caller_data.cid_name, "O");
-					} else if (!strcasecmp(chan->caller_data.cid_name, "P") || !strcasecmp(chan->caller_data.cid_name, "O")) {
-						mt = MDMF_NO_NAME;
-					} else {
-						mt = MDMF_PHONE_NAME;
-					}
-					zap_fsk_data_add_mdmf(&fsk_data, mt, (uint8_t *) chan->caller_data.cid_name, (uint8_t)strlen(chan->caller_data.cid_name));
-					
-					zap_fsk_data_add_checksum(&fsk_data);
-					zap_channel_send_fsk_data(chan, &fsk_data, -14);
+					send_caller_id(chan);
 					//zap_channel_command(chan, ZAP_COMMAND_TRACE_OUTPUT, "/tmp/outbound.ul");
 					zap_channel_command(chan, ZAP_COMMAND_GENERATE_RING_ON, NULL);
 				}
@@ -575,13 +628,18 @@ static zap_status_t process_event(zap_span_t *span, zap_event_t *event)
 		break;
 	case ZAP_OOB_FLASH:
 		{
+			if (event->channel->state == ZAP_CHANNEL_STATE_CALLWAITING) {
+				zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_UP);
+				zap_clear_flag_locked(event->channel, ZAP_CHANNEL_STATE_CHANGE);
+				event->channel->detected_tones[ZAP_TONEMAP_CALLWAITING_ACK] = 0;
+			} 
 
-			sig.event_id = ZAP_SIGEVENT_FLASH;
 			zap_channel_rotate_tokens(event->channel);
-
+			
 			if (zap_test_flag(event->channel, ZAP_CHANNEL_HOLD)) {
 				zap_set_state_locked(event->channel,  ZAP_CHANNEL_STATE_UP);
 			} else {
+				sig.event_id = ZAP_SIGEVENT_FLASH;
 				data->sig_cb(&sig);
 				if (event->channel->token_count == 1) {
 					zap_set_flag_locked(event->channel, ZAP_CHANNEL_HOLD);
