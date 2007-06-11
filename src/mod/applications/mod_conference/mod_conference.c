@@ -175,6 +175,7 @@ typedef struct conference_obj {
 	char *enter_sound;
 	char *exit_sound;
 	char *alone_sound;
+	char *perpetual_sound;
 	char *ack_sound;
 	char *nack_sound;
 	char *muted_sound;
@@ -516,7 +517,7 @@ static switch_status_t conference_add_member(conference_obj_t * conference, conf
 				if (conference->count >= conference->anounce_count && conference->anounce_count > 1) {
 					snprintf(msg, sizeof(msg), "There are %d callers", conference->count);
 					conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
-				} else if (conference->count == 1) {
+				} else if (conference->count == 1 && !conference->perpetual_sound) {
 					if (conference->alone_sound) {
 						conference_play_file(conference, conference->alone_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 0);
 					} else {
@@ -683,6 +684,10 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 		switch_size_t file_sample_len = samples;
 		switch_size_t file_data_len = samples * 2;
 		int has_file_data = 0;
+
+		if (conference->perpetual_sound && !conference->fnode) {
+			conference_play_file(conference, conference->perpetual_sound, CONF_DEFAULT_LEADIN, NULL, 0);
+		}
 
 		/* Sync the conference to a single timing source */
 		if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
@@ -4536,6 +4541,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	char *caller_id_number = NULL;
 	char *caller_controls = NULL;
 	char *member_flags = NULL;
+	char *perpetual_sound = NULL;
 	uint32_t max_members = 0;
 	uint32_t anounce_count = 0;
 	char *maxmember_sound = NULL;
@@ -4583,6 +4589,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 			exit_sound = val;
 		} else if (!strcasecmp(var, "alone-sound")) {
 			alone_sound = val;
+		} else if (!strcasecmp(var, "perpetual-sound")) {
+			perpetual_sound = val;
 		} else if (!strcasecmp(var, "ack-sound")) {
 			ack_sound = val;
 		} else if (!strcasecmp(var, "nack-sound")) {
@@ -4696,7 +4704,13 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	conference->caller_id_name = switch_core_strdup(conference->pool, caller_id_name);
 	conference->caller_id_number = switch_core_strdup(conference->pool, caller_id_number);
 
-	conference->mflags = MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR;
+
+	if (!switch_strlen_zero(perpetual_sound)) {
+		conference->perpetual_sound = switch_core_strdup(conference->pool, perpetual_sound);
+		conference->mflags = MFLAG_CAN_HEAR;
+	} else {
+		conference->mflags = MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR;
+	}
 
 	if (member_flags) {
 		set_mflags(member_flags, &conference->mflags);
