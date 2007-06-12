@@ -208,7 +208,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 
 	assert(channel != NULL);
 
-	switch_mutex_lock(channel->dtmf_mutex);
+	switch_mutex_lock(channel->dtmf_mutex);	
+
+	if ((status = switch_core_session_recv_dtmf(channel->session, dtmf) != SWITCH_STATUS_SUCCESS)) {
+		goto done;
+	}
 
 	inuse = switch_buffer_inuse(channel->dtmf_buffer);
 	len = strlen(dtmf);
@@ -227,6 +231,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 		p++;
 	}
 	status = switch_buffer_write(channel->dtmf_buffer, dtmf, wr) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_MEMERR;
+
+ done:
+
 	switch_mutex_unlock(channel->dtmf_mutex);
 
 	return status;

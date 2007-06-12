@@ -32,7 +32,8 @@
 #define SWITCH_EVENT_HOOKS_H
 
 #include <switch.h>
-SWITCH_BEGIN_EXTERN_C typedef struct switch_io_event_hooks switch_io_event_hooks_t;
+SWITCH_BEGIN_EXTERN_C 
+typedef struct switch_io_event_hooks switch_io_event_hooks_t;
 
 typedef struct switch_io_event_hook_outgoing_channel switch_io_event_hook_outgoing_channel_t;
 typedef struct switch_io_event_hook_receive_message switch_io_event_hook_receive_message_t;
@@ -45,9 +46,8 @@ typedef struct switch_io_event_hook_kill_channel switch_io_event_hook_kill_chann
 typedef struct switch_io_event_hook_waitfor_read switch_io_event_hook_waitfor_read_t;
 typedef struct switch_io_event_hook_waitfor_write switch_io_event_hook_waitfor_write_t;
 typedef struct switch_io_event_hook_send_dtmf switch_io_event_hook_send_dtmf_t;
+typedef struct switch_io_event_hook_recv_dtmf switch_io_event_hook_recv_dtmf_t;
 typedef struct switch_io_event_hook_state_change switch_io_event_hook_state_change_t;
-
-
 typedef switch_status_t (*switch_outgoing_channel_hook_t) (switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t *);
 typedef switch_status_t (*switch_receive_message_hook_t) (switch_core_session_t *, switch_core_session_message_t *);
 typedef switch_status_t (*switch_receive_event_hook_t) (switch_core_session_t *, switch_event_t *);
@@ -58,23 +58,23 @@ typedef switch_status_t (*switch_video_write_frame_hook_t) (switch_core_session_
 typedef switch_status_t (*switch_kill_channel_hook_t) (switch_core_session_t *, int);
 typedef switch_status_t (*switch_waitfor_read_hook_t) (switch_core_session_t *, int, int);
 typedef switch_status_t (*switch_waitfor_write_hook_t) (switch_core_session_t *, int, int);
-typedef switch_status_t (*switch_send_dtmf_hook_t) (switch_core_session_t *, char *);
+typedef switch_status_t (*switch_send_dtmf_hook_t) (switch_core_session_t *, const char *);
+typedef switch_status_t (*switch_recv_dtmf_hook_t) (switch_core_session_t *, const char *);
 typedef switch_status_t (*switch_state_change_hook_t) (switch_core_session_t *);
 
 
-/*! \brief Node in which to store custom outgoing channel callback hooks */
+/*! \brief Node in which to store custom receive message callback hooks */
 struct switch_io_event_hook_outgoing_channel {
-	/*! the outgoing channel callback hook */
 	switch_outgoing_channel_hook_t outgoing_channel;
 	struct switch_io_event_hook_outgoing_channel *next;
 };
 
 /*! \brief Node in which to store custom receive message callback hooks */
 struct switch_io_event_hook_receive_message {
-	/*! the message callback hook */
 	switch_receive_message_hook_t receive_message;
 	struct switch_io_event_hook_receive_message *next;
 };
+
 
 /*! \brief Node in which to store custom receive message callback hooks */
 struct switch_io_event_hook_receive_event {
@@ -139,9 +139,16 @@ struct switch_io_event_hook_send_dtmf {
 	struct switch_io_event_hook_send_dtmf *next;
 };
 
+/*! \brief Node in which to store custom recv dtmf channel callback hooks */
+struct switch_io_event_hook_recv_dtmf {
+	/*! the recv dtmf channel callback hook */
+	switch_recv_dtmf_hook_t recv_dtmf;
+	struct switch_io_event_hook_recv_dtmf *next;
+};
+
 /*! \brief Node in which to store state change callback hooks */
 struct switch_io_event_hook_state_change {
-	/*! the send dtmf channel callback hook */
+	/*! the state change channel callback hook */
 	switch_state_change_hook_t state_change;
 	struct switch_io_event_hook_state_change *next;
 };
@@ -170,106 +177,82 @@ struct switch_io_event_hooks {
 	switch_io_event_hook_waitfor_write_t *waitfor_write;
 	/*! a list of send dtmf hooks */
 	switch_io_event_hook_send_dtmf_t *send_dtmf;
+	/*! a list of recv dtmf hooks */
+	switch_io_event_hook_recv_dtmf_t *recv_dtmf;
 	/*! a list of state change hooks */
 	switch_io_event_hook_state_change_t *state_change;
 };
 
 extern switch_io_event_hooks_t switch_core_session_get_event_hooks(switch_core_session_t *session);
 
+#define NEW_HOOK_DECL_ADD_P(_NAME) SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_##_NAME \
+															   (switch_core_session_t *session, switch_##_NAME##_hook_t _NAME)
+
+#define NEW_HOOK_DECL_REM_P(_NAME) SWITCH_DECLARE(switch_status_t) switch_core_event_hook_remove_##_NAME \
+																   (switch_core_session_t *session, switch_##_NAME##_hook_t _NAME)
+
+#define NEW_HOOK_DECL(_NAME) NEW_HOOK_DECL_ADD_P(_NAME)					\
+	{																	\
+		switch_io_event_hook_##_NAME##_t *hook, *ptr;					\
+		assert(_NAME != NULL);											\
+		if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) { \
+			hook->_NAME = _NAME ;										\
+			if (! session->event_hooks._NAME ) {						\
+				session->event_hooks._NAME = hook;						\
+			} else {													\
+				for (ptr = session->event_hooks._NAME; ptr && ptr->next; ptr = ptr->next); \
+				ptr->next = hook;										\
+			}															\
+			return SWITCH_STATUS_SUCCESS;								\
+		}																\
+		return SWITCH_STATUS_MEMERR;									\
+	}																	\
+	NEW_HOOK_DECL_REM_P(_NAME)											\
+	{																	\
+		switch_io_event_hook_##_NAME##_t *ptr, *last = NULL;			\
+		assert(_NAME != NULL);											\
+		for (ptr = session->event_hooks._NAME; ptr; ptr = ptr->next) {	\
+			if (ptr->_NAME == _NAME) {									\
+				if (last) {												\
+					last->next = ptr->next;								\
+				} else {												\
+					session->event_hooks._NAME = ptr->next;				\
+				}														\
+				return SWITCH_STATUS_SUCCESS;							\
+			}															\
+			last = ptr;													\
+		}																\
+		return SWITCH_STATUS_FALSE;										\
+	}																	
 
 
-///\defgroup shooks Session Hook Callbacks
-///\ingroup core1
-///\{
+NEW_HOOK_DECL_ADD_P(outgoing_channel);
+NEW_HOOK_DECL_ADD_P(receive_message);
+NEW_HOOK_DECL_ADD_P(receive_event);
+NEW_HOOK_DECL_ADD_P(state_change);
+NEW_HOOK_DECL_ADD_P(read_frame);
+NEW_HOOK_DECL_ADD_P(write_frame);
+NEW_HOOK_DECL_ADD_P(video_read_frame);
+NEW_HOOK_DECL_ADD_P(video_write_frame);
+NEW_HOOK_DECL_ADD_P(kill_channel);
+NEW_HOOK_DECL_ADD_P(waitfor_read);
+NEW_HOOK_DECL_ADD_P(waitfor_write);
+NEW_HOOK_DECL_ADD_P(send_dtmf);
+NEW_HOOK_DECL_ADD_P(recv_dtmf);
 
-/*! 
-  \brief Add an event hook to be executed when a session requests an outgoing extension
-  \param session session to bind hook to
-  \param outgoing_channel hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_outgoing_channel(switch_core_session_t *session,
-																			switch_outgoing_channel_hook_t outgoing_channel);
-
-/*! 
-  \brief Add an event hook to be executed when a session sends a message
-  \param session session to bind hook to
-  \param receive_message hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_receive_message(switch_core_session_t *session, switch_receive_message_hook_t receive_message);
-
-/*! 
-  \brief Add an event hook to be executed when a session reads a frame
-  \param session session to bind hook to
-  \param  read_frame hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_read_frame(switch_core_session_t *session, switch_read_frame_hook_t read_frame);
-
-/*! 
-  \brief Add an event hook to be executed when a session reads a frame
-  \param session session to bind hook to
-  \param  video_read_frame hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_video_read_frame(switch_core_session_t *session, switch_read_frame_hook_t video_read_frame);
-
-/*! 
-  \brief Add an event hook to be executed when a session writes a frame
-  \param session session to bind hook to
-  \param write_frame hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_write_frame(switch_core_session_t *session, switch_write_frame_hook_t write_frame);
-
-/*! 
-  \brief Add an event hook to be executed when a session writes a video frame
-  \param session session to bind hook to
-  \param video_write_frame hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_video_write_frame(switch_core_session_t *session, switch_video_write_frame_hook_t video_write_frame);
-
-/*! 
-  \brief Add an event hook to be executed when a session kills a channel
-  \param session session to bind hook to
-  \param kill_channel hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_kill_channel(switch_core_session_t *session, switch_kill_channel_hook_t kill_channel);
-
-/*! 
-  \brief Add an event hook to be executed when a session waits for a read event
-  \param session session to bind hook to
-  \param waitfor_read hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_waitfor_read(switch_core_session_t *session, switch_waitfor_read_hook_t waitfor_read);
-
-/*! 
-  \brief Add an event hook to be executed when a session waits for a write event
-  \param session session to bind hook to
-  \param waitfor_write hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_waitfor_write(switch_core_session_t *session, switch_waitfor_write_hook_t waitfor_write);
-
-/*! 
-  \brief Add an event hook to be executed when a session sends dtmf
-  \param session session to bind hook to
-  \param send_dtmf hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_send_dtmf(switch_core_session_t *session, switch_send_dtmf_hook_t send_dtmf);
-
-/*! 
-  \brief Add an event hook to be executed when a session receives a state change signal
-  \param session session to bind hook to
-  \param state_change hook to bind
-  \return SWITCH_STATUS_SUCCESS on suceess
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_event_hook_add_state_change(switch_core_session_t *session, switch_state_change_hook_t state_change);
+NEW_HOOK_DECL_REM_P(outgoing_channel);
+NEW_HOOK_DECL_REM_P(receive_message);
+NEW_HOOK_DECL_REM_P(receive_event);
+NEW_HOOK_DECL_REM_P(state_change);
+NEW_HOOK_DECL_REM_P(read_frame);
+NEW_HOOK_DECL_REM_P(write_frame);
+NEW_HOOK_DECL_REM_P(video_read_frame);
+NEW_HOOK_DECL_REM_P(video_write_frame);
+NEW_HOOK_DECL_REM_P(kill_channel);
+NEW_HOOK_DECL_REM_P(waitfor_read);
+NEW_HOOK_DECL_REM_P(waitfor_write);
+NEW_HOOK_DECL_REM_P(send_dtmf);
+NEW_HOOK_DECL_REM_P(recv_dtmf);
 ///\}
 
 SWITCH_END_EXTERN_C

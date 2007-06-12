@@ -871,6 +871,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 			context = new_profile->context;
 		}
 
+		if (switch_strlen_zero(context)) {
+			context = "default";
+		}
+
+		if (switch_strlen_zero(dialplan)) {
+			context = "XML";
+		}
+
 
 		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, NULL);
 		if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))

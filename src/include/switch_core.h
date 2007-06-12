@@ -789,7 +789,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_waitfor_write(switch_core_se
   \param dtmf string to send to the session
   \return SWITCH_STATUS_SUCCESS if the dtmf was written
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_session_t *session, char *dtmf);
+SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_session_t *session, const char *dtmf);
+
+/*! 
+  \brief RECV DTMF on a session
+  \param session session to recv DTMF from
+  \param dtmf string to recv from the session
+  \return SWITCH_STATUS_SUCCESS if the dtmf is ok to queue
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_session_t *session, const char *dtmf);
 
 ///\}
 

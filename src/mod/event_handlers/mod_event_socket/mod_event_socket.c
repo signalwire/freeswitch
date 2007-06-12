@@ -136,11 +136,6 @@ static void event_handler(switch_event_t *event)
 			if (event->event_id != SWITCH_EVENT_CUSTOM || (event->subclass && switch_core_hash_find(l->event_hash, event->subclass->name))) {
 				send = 1;
 			}
-		} else {
-			int x;
-			for(x = 0; x <= SWITCH_EVENT_ALL; x++) {
-				printf("%d ", l->event_list[x]);
-			}
 		}
 
 		if (send && switch_test_flag(l, LFLAG_MYEVENTS)) {

@@ -120,7 +120,6 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 			char dtmf[128];
 			switch_channel_dequeue_dtmf(chan_a, dtmf, sizeof(dtmf));
 			switch_core_session_send_dtmf(session_b, dtmf);
-
 			if (input_callback) {
 				if (input_callback(session_a, dtmf, SWITCH_INPUT_TYPE_DTMF, user_data, 0) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s ended call via DTMF\n", switch_channel_get_name(chan_a));
@@ -526,13 +525,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	switch_copy_string(b_leg->b_uuid, switch_core_session_get_uuid(session), sizeof(b_leg->b_uuid));
 	b_leg->stream_id = stream_id;
 	b_leg->input_callback = input_callback;
-	b_leg->session_data = session_data;
+	b_leg->session_data = peer_session_data;
 
 	a_leg->session = session;
 	switch_copy_string(a_leg->b_uuid, switch_core_session_get_uuid(peer_session), sizeof(a_leg->b_uuid));
-	b_leg->stream_id = stream_id;
-	b_leg->input_callback = input_callback;
-	b_leg->session_data = peer_session_data;
+	a_leg->stream_id = stream_id;
+	a_leg->input_callback = input_callback;
+	a_leg->session_data = session_data;
 
 	switch_channel_add_state_handler(peer_channel, &audio_bridge_peer_state_handlers);
 
@@ -543,6 +542,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
 		switch_event_t *event;
 		switch_core_session_message_t msg = { 0 };
+		const switch_application_interface_t *application_interface;
+		char *app, *data;
 
 		switch_channel_set_state(peer_channel, CS_HOLD);
 
@@ -555,6 +556,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			switch_channel_set_variable(caller_channel, SWITCH_BRIDGE_VARIABLE, switch_core_session_get_uuid(peer_session));
 			switch_channel_set_variable(peer_channel, SWITCH_BRIDGE_VARIABLE, switch_core_session_get_uuid(session));
 
+			if ((app = switch_channel_get_variable(caller_channel, "bridge_pre_execute_aleg_app"))) {
+				data = switch_channel_get_variable(caller_channel, "bridge_pre_execute_aleg_data");
+				if ((application_interface = switch_loadable_module_get_application_interface(app))) {
+					switch_core_session_exec(session, application_interface, data);
+				}
+			}
+			
+			if ((app = switch_channel_get_variable(caller_channel, "bridge_pre_execute_bleg_app"))) {
+				data = switch_channel_get_variable(caller_channel, "bridge_pre_execute_bleg_data");
+				if ((application_interface = switch_loadable_module_get_application_interface(app))) {
+					switch_core_session_exec(peer_session, application_interface, data);
+				}
+			}
+
+			
 			msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
 			msg.from = __FILE__;
 			msg.string_arg = switch_core_session_strdup(peer_session, switch_core_session_get_uuid(session));

@@ -464,7 +464,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			session->write_resampler->from_len = write_frame->datalen / 2;
 			switch_short_to_float(data, session->write_resampler->from, session->write_resampler->from_len);
 
-
+			
 
 			session->write_resampler->to_len = (uint32_t)
 				switch_resample_process(session->write_resampler, session->write_resampler->from,
@@ -497,7 +497,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				} else if (switch_test_flag(bp, SMBF_WRITE_REPLACE)) {
 					do_bugs = 0;
 					if (bp->callback) {
-						bp->replace_frame_in = frame;
+						bp->replace_frame_in = write_frame;
 						bp->replace_frame_out = NULL;
 						if ((ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_WRITE_REPLACE)) == SWITCH_TRUE) {
 							write_frame = bp->replace_frame_out;
@@ -790,14 +790,34 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_waitfor_write(switch_core_se
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_session_t *session, char *dtmf)
+SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_session_t *session, const char *dtmf)
+{
+	switch_io_event_hook_recv_dtmf_t *ptr;	
+	switch_status_t status;
+
+	for (ptr = session->event_hooks.recv_dtmf; ptr; ptr = ptr->next) {
+		if ((status = ptr->recv_dtmf(session, dtmf)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_session_t *session, const char *dtmf)
 {
 	switch_io_event_hook_send_dtmf_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-
+	
+	
+	for (ptr = session->event_hooks.send_dtmf; ptr; ptr = ptr->next) {
+		if ((status = ptr->send_dtmf(session, dtmf)) != SWITCH_STATUS_SUCCESS) {
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+	
 	if (session->endpoint_interface->io_routines->send_dtmf) {
 		if (strchr(dtmf, 'w') || strchr(dtmf, 'W')) {
-			char *d;
+			const char *d;
 			for (d = dtmf; d && *d; d++) {
 				char digit[2] = { 0 };
 
@@ -815,16 +835,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 				}
 			}
 		} else {
-			status = session->endpoint_interface->io_routines->send_dtmf(session, dtmf);
+			status = session->endpoint_interface->io_routines->send_dtmf(session, (char *)dtmf);
 		}
 
-		if (status == SWITCH_STATUS_SUCCESS) {
-			for (ptr = session->event_hooks.send_dtmf; ptr; ptr = ptr->next) {
-				if ((status = ptr->send_dtmf(session, dtmf)) != SWITCH_STATUS_SUCCESS) {
-					break;
-				}
-			}
-		}
 	}
 
 	return status;
