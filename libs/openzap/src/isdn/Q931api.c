@@ -214,32 +214,11 @@ L3INT Q931GetUniqueCRV(Q931_TrunkInfo_t *pTrunk)
 	return crv++;
 }
 
-L3INT Q931InitMesSetup(Q931mes_Generic *pMes)
+L3INT Q931InitMesGeneric(Q931mes_Generic *pMes)
 {
+	memset(pMes, 0, sizeof(*pMes));
 	pMes->ProtDisc		= 0x80;
-	pMes->CRV			= 0;		/* CRV to be allocated, might be receive*/
-	pMes->MesType		= Q931mes_SETUP;
-
 	pMes->Size			= Q931GetMesSize(pMes);
-
-    pMes->SendComplete	=0;			/* Sending Complete                     */
-    pMes->RepeatInd		=0;			/* Repeat Indicator                     */
-    pMes->BearerCap		=0;			/* Bearer Capability                    */
-    pMes->ChanID		=0;         /* Channel ID                           */
-    pMes->ProgInd		=0;			/* Progress Indicator                   */
-    pMes->NetFac		=0;         /* Network-specific facilities          */
-    pMes->Display		=0;			/* Display                              */
-    pMes->DateTime		=0;			/* Date/Time                            */
-    pMes->KeypadFac		=0;			/* Keypad Facility                      */
-    pMes->Signal		=0;         /* Signal                               */
-    pMes->CallingNum	=0;			/* Calling party number                 */
-    pMes->CallingSub	=0;			/* Calling party sub address            */
-    pMes->CalledNum		=0;			/* Called party number                  */
-    pMes->CalledSub		=0;			/* Called party sub address             */
-    pMes->TransNetSel	=0;			/* Transit network selection            */
-    pMes->LLRepeatInd	=0;			/* Repeat Indicator 2 LLComp            */
-    pMes->LLComp		=0;         /* Low layer compatibility              */
-    pMes->HLComp		=0;         /* High layer compatibility             */
 
 	return 0;
 }
@@ -551,6 +530,30 @@ L3INT Q931AckRestart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf)
 
     Q931mes_Header *ptr = (Q931mes_Header*)&buf[Q931L4HeaderSpace];
 	ptr->MesType = Q931mes_RESTART_ACKNOWLEDGE;
+
+	RetCode = Q931Proc[pTrunk->Dialect][ptr->MesType](pTrunk, buf, 4);
+
+    return RetCode;
+}
+
+L3INT Q931AckSetup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf)
+{
+	L3INT RetCode;
+
+    Q931mes_Header *ptr = (Q931mes_Header*)&buf[Q931L4HeaderSpace];
+	ptr->MesType = Q931mes_SETUP_ACKNOWLEDGE;
+
+	RetCode = Q931Proc[pTrunk->Dialect][ptr->MesType](pTrunk, buf, 4);
+
+    return RetCode;
+}
+
+L3INT Q931AckConnect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf)
+{
+	L3INT RetCode;
+
+    Q931mes_Header *ptr = (Q931mes_Header*)&buf[Q931L4HeaderSpace];
+	ptr->MesType = Q931mes_CONNECT_ACKNOWLEDGE;
 
 	RetCode = Q931Proc[pTrunk->Dialect][ptr->MesType](pTrunk, buf, 4);
 

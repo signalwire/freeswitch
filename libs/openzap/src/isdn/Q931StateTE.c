@@ -298,6 +298,10 @@ L3INT Q931ProcConnectTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	{
 		/* TODO Add proc here*/
         ret = Q931Tx34(pTrunk,buf,pMes->Size);
+		if (pTrunk->autoConnectAck) {
+			Q931AckConnect(pTrunk, buf);
+		}
+
 	}
 	return ret;
 }
@@ -419,8 +423,12 @@ L3INT Q931ProcSetupTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 
         /* Send setup indication to user */
         ret = Q931Tx34(pTrunk,(L3UCHAR*)pMes,pMes->Size);
-        if(ret != Q931E_NO_ERROR)
+		if(ret != Q931E_NO_ERROR) {
+			if (pTrunk->autoSetupAck) {
+				Q931AckSetup(pTrunk, buf);
+			}
             return ret;
+		}
 		else
 		{
 			/* Must be full queue, meaning we can't process the call */
