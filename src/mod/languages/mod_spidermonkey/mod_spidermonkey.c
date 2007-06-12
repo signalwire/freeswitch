@@ -2392,6 +2392,8 @@ static void session_destroy(JSContext * cx, JSObject * obj)
 				switch_channel_set_private(channel, "jss", NULL);
 			}
 
+			switch_core_event_hook_remove_state_change(jss->session, hanguphook);
+			
 			if (channel && switch_test_flag(jss, S_HUP)) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 			}
