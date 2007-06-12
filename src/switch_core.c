@@ -58,7 +58,7 @@ static void send_heartbeat(void)
 								"%u minute%s, "
 								"%u second%s, "
 								"%u millisecond%s, "
-								"%u microsecond%s\n",
+								"%u microsecond%s",
 								duration.yr, duration.yr == 1 ? "" : "s",
 								duration.day, duration.day == 1 ? "" : "s",
 								duration.hr, duration.hr == 1 ? "" : "s",
