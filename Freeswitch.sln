@@ -584,6 +584,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Build System", "_Build Sys
 		configure.in = configure.in
 		Makefile.am = Makefile.am
 		build\modmake.sh = build\modmake.sh
+		libs\win32\util.vbs = libs\win32\util.vbs
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "m4", "m4", "{CDE9B06A-3C27-4987-8FAE-DF1006BC705D}"
