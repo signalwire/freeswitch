@@ -641,6 +641,7 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 	switch_loadable_module_t *module = NULL;
 	switch_dso_handle_t *dso = NULL;
 	apr_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_dso_handle_sym_t interface_struct_handle = NULL;
 	switch_loadable_module_function_table_t *mod_interface_functions = NULL;
 	char *struct_name = NULL;
 	switch_dso_handle_sym_t load_function_handle = NULL;
@@ -671,8 +672,9 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 		}
 
 		struct_name = switch_core_sprintf(pool, "%s_module_interface", filename);
-		status = switch_dso_sym(&mod_interface_functions, dso, struct_name);
-		if (mod_interface_functions) {
+		status = switch_dso_sym(&interface_struct_handle, dso, struct_name);
+		if (interface_struct_handle) {
+			mod_interface_functions = interface_struct_handle;
 			load_func_ptr = mod_interface_functions->load;
 		} else {
 			status = switch_dso_sym(&load_function_handle, dso, "switch_module_load");
