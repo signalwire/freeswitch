@@ -86,7 +86,7 @@ static switch_status_t switch_raw_destroy(switch_codec_t *codec)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static const switch_codec_implementation_t raw_32k_60ms_implementation = {
+static switch_codec_implementation_t raw_32k_60ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 119,
 	/*.iananame */ "L16",
@@ -107,7 +107,7 @@ static const switch_codec_implementation_t raw_32k_60ms_implementation = {
 		/*.next = */
 };
 
-static const switch_codec_implementation_t raw_32k_30ms_implementation = {
+static switch_codec_implementation_t raw_32k_30ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 119,
 	/*.iananame */ "L16",
@@ -128,7 +128,7 @@ static const switch_codec_implementation_t raw_32k_30ms_implementation = {
 	/*.next = */ &raw_32k_60ms_implementation
 };
 
-static const switch_codec_implementation_t raw_32k_20ms_implementation = {
+static switch_codec_implementation_t raw_32k_20ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 119,
 	/*.iananame */ "L16",
@@ -149,7 +149,7 @@ static const switch_codec_implementation_t raw_32k_20ms_implementation = {
 	/*.next = */ &raw_32k_30ms_implementation
 };
 
-static const switch_codec_implementation_t raw_32k_10ms_implementation = {
+static switch_codec_implementation_t raw_32k_10ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 119,
 	/*.iananame */ "L16",
@@ -170,7 +170,7 @@ static const switch_codec_implementation_t raw_32k_10ms_implementation = {
 	/*.next = */ &raw_32k_20ms_implementation
 };
 
-static const switch_codec_implementation_t raw_22k_20ms_implementation = {
+static switch_codec_implementation_t raw_22k_20ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 118,
 	/*.iananame */ "L16",
@@ -191,7 +191,7 @@ static const switch_codec_implementation_t raw_22k_20ms_implementation = {
 	/*.next = */ &raw_32k_10ms_implementation
 };
 
-static const switch_codec_implementation_t raw_16k_120ms_implementation = {
+static switch_codec_implementation_t raw_16k_120ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 117,
 	/*.iananame */ "L16",
@@ -212,7 +212,7 @@ static const switch_codec_implementation_t raw_16k_120ms_implementation = {
 	/*.next */ &raw_22k_20ms_implementation
 };
 
-static const switch_codec_implementation_t raw_16k_60ms_implementation = {
+static switch_codec_implementation_t raw_16k_60ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 117,
 	/*.iananame */ "L16",
@@ -233,7 +233,7 @@ static const switch_codec_implementation_t raw_16k_60ms_implementation = {
 	/*.next */ &raw_16k_120ms_implementation
 };
 
-static const switch_codec_implementation_t raw_16k_30ms_implementation = {
+static switch_codec_implementation_t raw_16k_30ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 117,
 	/*.iananame */ "L16",
@@ -254,7 +254,7 @@ static const switch_codec_implementation_t raw_16k_30ms_implementation = {
 	/*.next */ &raw_16k_60ms_implementation
 };
 
-static const switch_codec_implementation_t raw_16k_20ms_implementation = {
+static switch_codec_implementation_t raw_16k_20ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 117,
 	/*.iananame */ "L16",
@@ -275,7 +275,7 @@ static const switch_codec_implementation_t raw_16k_20ms_implementation = {
 	/*.next = */ &raw_16k_30ms_implementation
 };
 
-static const switch_codec_implementation_t raw_16k_10ms_implementation = {
+static switch_codec_implementation_t raw_16k_10ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 117,
 	/*.iananame */ "L16",
@@ -299,7 +299,7 @@ static const switch_codec_implementation_t raw_16k_10ms_implementation = {
 ///////////////////////////////
 
 
-static const switch_codec_implementation_t raw_8k_120ms_implementation = {
+static switch_codec_implementation_t raw_8k_120ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 10,
 	/*.iananame */ "L16",
@@ -321,7 +321,7 @@ static const switch_codec_implementation_t raw_8k_120ms_implementation = {
 };
 
 
-static const switch_codec_implementation_t raw_8k_60ms_implementation = {
+static switch_codec_implementation_t raw_8k_60ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 10,
 	/*.iananame */ "L16",
@@ -342,7 +342,7 @@ static const switch_codec_implementation_t raw_8k_60ms_implementation = {
 	/*.next */ &raw_8k_120ms_implementation
 };
 
-static const switch_codec_implementation_t raw_8k_30ms_implementation = {
+static switch_codec_implementation_t raw_8k_30ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 10,
 	/*.iananame */ "L16",
@@ -362,7 +362,7 @@ static const switch_codec_implementation_t raw_8k_30ms_implementation = {
 	/*.destroy */ switch_raw_destroy,
 	/*.next */ &raw_8k_60ms_implementation
 };
-static const switch_codec_implementation_t raw_8k_20ms_implementation = {
+static switch_codec_implementation_t raw_8k_20ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 10,
 	/*.iananame */ "L16",
@@ -385,7 +385,7 @@ static const switch_codec_implementation_t raw_8k_20ms_implementation = {
 
 
 
-static const switch_codec_implementation_t raw_8k_10ms_implementation = {
+static switch_codec_implementation_t raw_8k_10ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 10,
 	/*.iananame */ "L16",
@@ -407,7 +407,7 @@ static const switch_codec_implementation_t raw_8k_10ms_implementation = {
 };
 
 
-static const switch_codec_interface_t raw_codec_interface = {
+static switch_codec_interface_t raw_codec_interface = {
 	/*.interface_name */ "raw signed linear (16 bit)",
 	/*.implementations */ &raw_8k_10ms_implementation
 };

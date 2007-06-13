@@ -151,13 +151,13 @@ static switch_caller_extension_t *directory_dialplan_hunt(switch_core_session_t 
 }
 
 
-static const switch_dialplan_interface_t directory_dialplan_interface = {
+static switch_dialplan_interface_t directory_dialplan_interface = {
 	/*.interface_name = */ "directory",
 	/*.hunt_function = */ directory_dialplan_hunt
 		/*.next = NULL */
 };
 
-static const switch_loadable_module_interface_t directory_dialplan_module_interface = {
+static switch_loadable_module_interface_t directory_dialplan_module_interface = {
 	/*.module_name = */ modname,
 	/*.endpoint_interface = */ NULL,
 	/*.timer_interface = */ NULL,

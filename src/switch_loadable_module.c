@@ -44,7 +44,7 @@ struct switch_loadable_module {
 	char *key;
 	char *filename;
 	int perm;
-	const switch_loadable_module_interface_t *module_interface;
+	switch_loadable_module_interface_t *module_interface;
 	void *lib;
 	switch_module_load_t switch_module_load;
 	switch_module_runtime_t switch_module_runtime;
@@ -650,7 +650,7 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 	switch_module_load_t load_func_ptr = NULL;
 	int loading = 1;
 	const char *err = NULL;
-	const switch_loadable_module_interface_t *module_interface = NULL;
+	switch_loadable_module_interface_t *module_interface = NULL;
 	char derr[512] = "";
 	switch_memory_pool_t *pool;
 
@@ -686,7 +686,7 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 			break;
 		}
 
-		status = load_func_ptr(&module_interface, filename);
+		status = load_func_ptr(&module_interface, pool);
 
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_NOUNLOAD) {
 			err = "Module load routine returned an error";
@@ -830,7 +830,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filen
 	switch_module_load_t load_func_ptr = NULL;
 	int loading = 1;
 	const char *err = NULL;
-	const switch_loadable_module_interface_t *module_interface = NULL;
+	switch_loadable_module_interface_t *module_interface = NULL;
 	switch_memory_pool_t *pool;
 
 	
@@ -855,7 +855,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filen
 			break;
 		}
 
-		status = load_func_ptr(&module_interface, filename);
+		status = load_func_ptr(&module_interface, pool);
 
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_NOUNLOAD) {
 			err = "Module load routine returned an error";
@@ -1197,7 +1197,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool
 		/* oh well we will use what we have */
 		array[i++] = codec_interface->implementations;
 
-	  found:
+	found:
 
 		if (i > arraylen) {
 			break;
@@ -1282,7 +1282,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 				}
 			}
 
-		  found:
+		found:
 
 			if (i > arraylen) {
 				break;
@@ -1331,6 +1331,84 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 
 
 	return status;
+}
+
+
+SWITCH_DECLARE(switch_loadable_module_interface_t *) switch_loadable_module_create_module_interface(switch_memory_pool_t *pool, const char *name)
+{
+	switch_loadable_module_interface_t *mod;
+
+	mod = switch_core_alloc(pool, sizeof(switch_loadable_module_interface_t));
+	assert(mod != NULL);
+
+	mod->pool = pool;
+
+	mod->module_name = switch_core_strdup(mod->pool, name);
+	
+	return mod;
+}
+
+#define ALLOC_INTERFACE(_TYPE_)	do {									\
+		switch_##_TYPE_##_interface_t *i, *ptr;							\
+		i = switch_core_alloc(mod->pool, sizeof(switch_##_TYPE_##_interface_t)); \
+		assert(i != NULL);												\
+		for (ptr = mod->_TYPE_##_interface; ptr && ptr->next; ptr = ptr->next); \
+		if (ptr) {														\
+			ptr->next = i;												\
+		} else {														\
+			mod->_TYPE_##_interface = i;								\
+		}																\
+																		\
+		return i; } while(0)
+
+
+SWITCH_DECLARE(void *) switch_loadable_module_create_interface(switch_loadable_module_interface_t *mod, switch_module_interface_name_t iname)
+{
+
+	switch(iname) {
+	case SWITCH_ENDPOINT_INTERFACE:
+		ALLOC_INTERFACE(endpoint);
+
+	case SWITCH_TIMER_INTERFACE:
+		ALLOC_INTERFACE(timer);
+		
+	case SWITCH_DIALPLAN_INTERFACE:
+		ALLOC_INTERFACE(dialplan);
+		
+	case SWITCH_CODEC_INTERFACE:
+		ALLOC_INTERFACE(codec);
+		
+	case SWITCH_APPLICATION_INTERFACE:
+		ALLOC_INTERFACE(application);
+		
+	case SWITCH_API_INTERFACE:
+		ALLOC_INTERFACE(api);
+		
+	case SWITCH_FILE_INTERFACE:
+		ALLOC_INTERFACE(file);
+		
+	case SWITCH_SPEECH_INTERFACE:
+		ALLOC_INTERFACE(speech);
+		
+	case SWITCH_DIRECTORY_INTERFACE:
+		ALLOC_INTERFACE(directory);
+		
+	case SWITCH_CHAT_INTERFACE:
+		ALLOC_INTERFACE(chat);
+		
+	case SWITCH_SAY_INTERFACE:
+		ALLOC_INTERFACE(say);
+		
+	case SWITCH_ASR_INTERFACE:
+		ALLOC_INTERFACE(asr);
+		
+	case SWITCH_MANAGEMENT_INTERFACE:
+		ALLOC_INTERFACE(management);
+		
+	default:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid Module Type!\n");
+		return NULL;
+	}
 }
 
 /* For Emacs:

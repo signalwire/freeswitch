@@ -685,13 +685,13 @@ SWITCH_STANDARD_API(enum_function)
 }
 
 
-static const switch_dialplan_interface_t enum_dialplan_interface = {
+static switch_dialplan_interface_t enum_dialplan_interface = {
 	/*.interface_name = */ "enum",
 	/*.hunt_function = */ enum_dialplan_hunt
 		/*.next = NULL */
 };
 
-static const switch_application_interface_t enum_application_interface = {
+static switch_application_interface_t enum_application_interface = {
 	/*.interface_name */ "enum",
 	/*.application_function */ enum_app_function,
 	/* long_desc */ "Perform an ENUM lookup",

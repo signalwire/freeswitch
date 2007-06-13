@@ -402,7 +402,7 @@ static void cepstral_float_param_tts(switch_speech_handle_t *sh, char *param, do
 
 }
 
-static const switch_speech_interface_t cepstral_speech_interface = {
+static switch_speech_interface_t cepstral_speech_interface = {
 	/*.interface_name */ "cepstral",
 	/*.speech_open */ cepstral_speech_open,
 	/*.speech_close */ cepstral_speech_close,
@@ -414,7 +414,7 @@ static const switch_speech_interface_t cepstral_speech_interface = {
 	/*.speech_numeric_param_tts */ cepstral_float_param_tts
 };
 
-static const switch_loadable_module_interface_t cepstral_module_interface = {
+static switch_loadable_module_interface_t cepstral_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,

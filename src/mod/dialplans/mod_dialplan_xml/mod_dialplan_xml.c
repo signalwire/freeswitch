@@ -378,13 +378,13 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, 
 }
 
 
-static const switch_dialplan_interface_t dialplan_interface = {
+static switch_dialplan_interface_t dialplan_interface = {
 	/*.interface_name = */ "XML",
 	/*.hunt_function = */ dialplan_hunt
 		/*.next = NULL */
 };
 
-static const switch_loadable_module_interface_t dialplan_module_interface = {
+static switch_loadable_module_interface_t dialplan_module_interface = {
 	/*.module_name = */ modname,
 	/*.endpoint_interface = */ NULL,
 	/*.timer_interface = */ NULL,

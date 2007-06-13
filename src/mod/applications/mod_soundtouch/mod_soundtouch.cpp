@@ -306,7 +306,7 @@ static void soundtouch_start_function(switch_core_session_t *session, char *data
 	switch_channel_set_private(channel, "_soundtouch_", bug);
     
 }
-static const switch_application_interface_t soundtouch_application_interface = {
+static switch_application_interface_t soundtouch_application_interface = {
 	/*.interface_name */ "soundtouch",
 	/*.application_function */ soundtouch_start_function,
 	/* long_desc */ "Alter the audio stream",

@@ -3549,7 +3549,7 @@ static switch_status_t audio_bridge_on_ring(switch_core_session_t *session)
 	return SWITCH_STATUS_FALSE;
 }
 
-static const switch_state_handler_table_t audio_bridge_peer_state_handlers = {
+static switch_state_handler_table_t audio_bridge_peer_state_handlers = {
 	/*.on_init */ NULL,
 	/*.on_ring */ audio_bridge_on_ring,
 	/*.on_execute */ NULL,
@@ -4321,7 +4321,7 @@ static void launch_conference_record_thread(conference_obj_t * conference, char 
 	switch_thread_create(&thread, thd_attr, conference_record_thread_run, rec, rec->pool);
 }
 
-static const switch_application_interface_t conference_autocall_application_interface = {
+static switch_application_interface_t conference_autocall_application_interface = {
 	/*.interface_name */ "conference_set_auto_outcall",
 	/*.application_function */ conference_auto_function,
 	NULL, NULL, NULL,
@@ -4329,7 +4329,7 @@ static const switch_application_interface_t conference_autocall_application_inte
 	/*.next */
 };
 
-static const switch_application_interface_t conference_application_interface = {
+static switch_application_interface_t conference_application_interface = {
 	/*.interface_name */ global_app_name,
 	/*.application_function */ conference_function,
 	NULL, NULL, NULL,
@@ -4414,7 +4414,7 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static const switch_chat_interface_t conference_chat_interface = {
+static switch_chat_interface_t conference_chat_interface = {
 	/*.name */ CONF_CHAT_PROTO,
 	/*.chat_send */ chat_send,
 

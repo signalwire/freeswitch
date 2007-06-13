@@ -228,7 +228,7 @@ static void bcast_function(switch_core_session_t *session, char *data)
 }
 
 
-static const switch_application_interface_t bcast_application_interface = {
+static switch_application_interface_t bcast_application_interface = {
 	/*.interface_name */ "esf_ls_page_group",
 	/*.application_function */ bcast_function,
 	NULL, NULL, NULL,
@@ -236,7 +236,7 @@ static const switch_application_interface_t bcast_application_interface = {
 	/*.next */ NULL
 };
 
-static const switch_loadable_module_interface_t mod_ivrtest_module_interface = {
+static switch_loadable_module_interface_t mod_ivrtest_module_interface = {
 	/*.module_name = */ modname,
 	/*.endpoint_interface = */ NULL,
 	/*.timer_interface = */ NULL,

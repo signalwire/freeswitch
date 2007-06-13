@@ -55,7 +55,7 @@ SWITCH_BEGIN_EXTERN_C
  * @{
  */
 /** The fundamental pool type */
-	typedef struct apr_pool_t switch_memory_pool_t;
+/* see switch types.h 	typedef struct apr_pool_t switch_memory_pool_t;*/
 
 
 /**

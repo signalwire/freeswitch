@@ -37,8 +37,8 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load);
 SWITCH_MODULE_DEFINITION(mod_dptools, mod_dptools_load, NULL, NULL);
 
-static const switch_application_interface_t detect_speech_application_interface;
-static const switch_application_interface_t exe_application_interface;
+static switch_application_interface_t detect_speech_application_interface;
+static switch_application_interface_t exe_application_interface;
 
 static void detect_speech_function(switch_core_session_t *session, char *data)
 {
@@ -943,7 +943,7 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 	}
 }
 
-static const switch_api_interface_t strepoch_api_interface = {
+static switch_api_interface_t strepoch_api_interface = {
 	/*.interface_name */ "strepoch",
 	/*.desc */ "Convert a date string into epoch time",
 	/*.function */ strepoch_api_function,
@@ -951,7 +951,7 @@ static const switch_api_interface_t strepoch_api_interface = {
 	/*.next */ NULL
 };
 
-static const switch_api_interface_t chat_api_interface = {
+static switch_api_interface_t chat_api_interface = {
 	/*.interface_name */ "chat",
 	/*.desc */ "chat",
 	/*.function */ chat_api_function,
@@ -959,7 +959,7 @@ static const switch_api_interface_t chat_api_interface = {
 	/*.next */ &strepoch_api_interface
 };
 
-static const switch_api_interface_t dptools_api_interface = {
+static switch_api_interface_t dptools_api_interface = {
 	/*.interface_name */ "strftime",
 	/*.desc */ "strftime",
 	/*.function */ strftime_api_function,
@@ -967,7 +967,7 @@ static const switch_api_interface_t dptools_api_interface = {
 	/*.next */ &chat_api_interface
 };
 
-static const switch_api_interface_t presence_api_interface = {
+static switch_api_interface_t presence_api_interface = {
 	/*.interface_name */ "presence",
 	/*.desc */ "presence",
 	/*.function */ presence_api_function,
@@ -976,7 +976,7 @@ static const switch_api_interface_t presence_api_interface = {
 };
 
 
-static const switch_application_interface_t bridge_application_interface = {
+static switch_application_interface_t bridge_application_interface = {
 	/*.interface_name */ "bridge",
 	/*.application_function */ audio_bridge_function,
 	/* long_desc */ "Bridge the audio between two sessions",
@@ -985,7 +985,7 @@ static const switch_application_interface_t bridge_application_interface = {
 	/* flags */ SAF_SUPPORT_NOMEDIA
 };
 
-static const switch_application_interface_t speak_application_interface = {
+static switch_application_interface_t speak_application_interface = {
 	/*.interface_name */ "speak",
 	/*.application_function */ speak_function,
 	/* long_desc */ "Speak text to a channel via the tts interface",
@@ -995,7 +995,7 @@ static const switch_application_interface_t speak_application_interface = {
 	&bridge_application_interface
 };
 
-static const switch_application_interface_t record_application_interface = {
+static switch_application_interface_t record_application_interface = {
 	/*.interface_name */ "record",
 	/*.application_function */ record_function,
 	/* long_desc */ "Record a file from the channels input",
@@ -1006,7 +1006,7 @@ static const switch_application_interface_t record_application_interface = {
 };
 
 
-static const switch_application_interface_t record_session_application_interface = {
+static switch_application_interface_t record_session_application_interface = {
 	/*.interface_name */ "record_session",
 	/*.application_function */ record_session_function,
 	/* long_desc */ "Starts a background recording of the entire session",
@@ -1017,7 +1017,7 @@ static const switch_application_interface_t record_session_application_interface
 };
 
 
-static const switch_application_interface_t stop_record_session_application_interface = {
+static switch_application_interface_t stop_record_session_application_interface = {
 	/*.interface_name */ "stop_record_session",
 	/*.application_function */ stop_record_session_function,
 	/* long_desc */ "Stops a background recording of the entire session",
@@ -1027,7 +1027,7 @@ static const switch_application_interface_t stop_record_session_application_inte
 	&record_session_application_interface
 };
 
-static const switch_application_interface_t playback_application_interface = {
+static switch_application_interface_t playback_application_interface = {
 	/*.interface_name */ "playback",
 	/*.application_function */ playback_function,
 	/* long_desc */ "Playback a file to the channel",
@@ -1036,7 +1036,7 @@ static const switch_application_interface_t playback_application_interface = {
 	/* flags */ SAF_NONE,
 	/*.next */ &stop_record_session_application_interface
 };
-static const switch_application_interface_t park_application_interface = {
+static switch_application_interface_t park_application_interface = {
 	/*.interface_name */ "park",
 	/*.application_function */ park_function,
 	/* long_desc */ NULL,
@@ -1046,7 +1046,7 @@ static const switch_application_interface_t park_application_interface = {
 	/*.next */ &playback_application_interface
 };
 
-static const switch_application_interface_t echo_application_interface = {
+static switch_application_interface_t echo_application_interface = {
 	/*.interface_name */ "echo",
 	/*.application_function */ echo_function,
 	/* long_desc */ "Perform an echo test against the calling channel",
@@ -1056,7 +1056,7 @@ static const switch_application_interface_t echo_application_interface = {
 	/*.next */ &park_application_interface
 };
 
-static const switch_application_interface_t fax_detect_application_interface = {
+static switch_application_interface_t fax_detect_application_interface = {
 	/*.interface_name */ "fax_detect",
 	/*.application_function */ fax_detect_session_function,
 	/* long_desc */ "Detect fax send tone",
@@ -1066,7 +1066,7 @@ static const switch_application_interface_t fax_detect_application_interface = {
 	/*.next */ &echo_application_interface
 };
 
-static const switch_application_interface_t stop_fax_detect_application_interface = {
+static switch_application_interface_t stop_fax_detect_application_interface = {
 	/*.interface_name */ "stop_fax_detect",
 	/*.application_function */ stop_fax_detect_session_function,
 	/* long_desc */ "Stop detecting fax send tones",
@@ -1076,7 +1076,7 @@ static const switch_application_interface_t stop_fax_detect_application_interfac
 	/* next */ &fax_detect_application_interface
 };
 
-static const switch_application_interface_t dtmf_application_interface = {
+static switch_application_interface_t dtmf_application_interface = {
 	/*.interface_name */ "start_dtmf",
 	/*.application_function */ dtm_session_function,
 	/* long_desc */ "Detect inband dtmf on the session",
@@ -1086,7 +1086,7 @@ static const switch_application_interface_t dtmf_application_interface = {
 	/* next */ &stop_fax_detect_application_interface
 };
 
-static const switch_application_interface_t stop_dtmf_application_interface = {
+static switch_application_interface_t stop_dtmf_application_interface = {
 	/*.interface_name */ "stop_dtmf",
 	/*.application_function */ stop_dtmf_session_function,
 	/* long_desc */ "Stop detecting inband dtmf.",
@@ -1096,7 +1096,7 @@ static const switch_application_interface_t stop_dtmf_application_interface = {
 	&dtmf_application_interface
 };
 
-static const switch_application_interface_t exe_application_interface = {
+static switch_application_interface_t exe_application_interface = {
 	/*.interface_name */ "execute_extension",
 	/*.application_function */ exe_function,
 	/*.long_desc */ "Execute an extension",
@@ -1106,7 +1106,7 @@ static const switch_application_interface_t exe_application_interface = {
 	/*.next */ &stop_dtmf_application_interface
 };
 
-static const switch_application_interface_t sched_transfer_application_interface = {
+static switch_application_interface_t sched_transfer_application_interface = {
 	/*.interface_name */ "sched_transfer",
 	/*.application_function */ sched_transfer_function,
 	/*.long_desc */ "Schedule a transfer in the future",
@@ -1116,7 +1116,7 @@ static const switch_application_interface_t sched_transfer_application_interface
 	/*.next */ &exe_application_interface
 };
 
-static const switch_application_interface_t sched_broadcast_application_interface = {
+static switch_application_interface_t sched_broadcast_application_interface = {
 	/*.interface_name */ "sched_broadcast",
 	/*.application_function */ sched_broadcast_function,
 	/*.long_desc */ "Schedule a broadcast in the future",
@@ -1126,7 +1126,7 @@ static const switch_application_interface_t sched_broadcast_application_interfac
 	/*.next */ &sched_transfer_application_interface
 };
 
-static const switch_application_interface_t sched_hangup_application_interface = {
+static switch_application_interface_t sched_hangup_application_interface = {
 	/*.interface_name */ "sched_hangup",
 	/*.application_function */ sched_hangup_function,
 	/*.long_desc */ "Schedule a hangup in the future",
@@ -1137,7 +1137,7 @@ static const switch_application_interface_t sched_hangup_application_interface =
 };
 
 
-static const switch_application_interface_t queuedtmf_application_interface = {
+static switch_application_interface_t queuedtmf_application_interface = {
 	/*.interface_name */ "queue_dtmf",
 	/*.application_function */ queue_dtmf_function,
 	/* long_desc */ "Queue dtmf to be sent from a session",
@@ -1147,7 +1147,7 @@ static const switch_application_interface_t queuedtmf_application_interface = {
 	/*.next */ &sched_hangup_application_interface
 };
 
-static const switch_application_interface_t reject_application_interface = {
+static switch_application_interface_t reject_application_interface = {
 	/*.interface_name */ "reject",
 	/*.application_function */ reject_function,
 	/* long_desc */ "Send a reject message to a session.",
@@ -1157,7 +1157,7 @@ static const switch_application_interface_t reject_application_interface = {
 	/*.next */ &queuedtmf_application_interface
 };
 
-static const switch_application_interface_t redirect_application_interface = {
+static switch_application_interface_t redirect_application_interface = {
 	/*.interface_name */ "redirect",
 	/*.application_function */ redirect_function,
 	/* long_desc */ "Send a redirect message to a session.",
@@ -1167,7 +1167,7 @@ static const switch_application_interface_t redirect_application_interface = {
 	/*.next */ &reject_application_interface
 };
 
-static const switch_application_interface_t ivr_application_interface = {
+static switch_application_interface_t ivr_application_interface = {
 	/*.interface_name */ "ivr",
 	/*.application_function */ ivr_application_function,
 	/* long_desc */ "Run an ivr menu.",
@@ -1177,7 +1177,7 @@ static const switch_application_interface_t ivr_application_interface = {
 	/*.next */ &redirect_application_interface
 };
 
-static const switch_application_interface_t detect_speech_application_interface = {
+static switch_application_interface_t detect_speech_application_interface = {
 	/*.interface_name */ "detect_speech",
 	/*.application_function */ detect_speech_function,
 	/* long_desc */ "Detect speech on a channel.",
@@ -1187,7 +1187,7 @@ static const switch_application_interface_t detect_speech_application_interface 
 	/*.next */ &ivr_application_interface
 };
 
-static const switch_application_interface_t ring_ready_application_interface = {
+static switch_application_interface_t ring_ready_application_interface = {
 	/*.interface_name */ "ring_ready",
 	/*.application_function */ ring_ready_function,
 	/* long_desc */ "Indicate Ring_Ready on a channel.",
@@ -1197,7 +1197,7 @@ static const switch_application_interface_t ring_ready_application_interface = {
 	/*.next */ &detect_speech_application_interface
 };
 
-static const switch_application_interface_t unset_application_interface = {
+static switch_application_interface_t unset_application_interface = {
 	/*.interface_name */ "unset",
 	/*.application_function */ unset_function,
 	/* long_desc */ "Unset a channel varaible for the channel calling the application.",
@@ -1207,7 +1207,7 @@ static const switch_application_interface_t unset_application_interface = {
 	/*.next */ &ring_ready_application_interface
 };
 
-static const switch_application_interface_t set_application_interface = {
+static switch_application_interface_t set_application_interface = {
 	/*.interface_name */ "set",
 	/*.application_function */ set_function,
 	/* long_desc */ "Set a channel varaible for the channel calling the application.",
@@ -1217,7 +1217,7 @@ static const switch_application_interface_t set_application_interface = {
 	/*.next */ &unset_application_interface
 };
 
-static const switch_application_interface_t export_application_interface = {
+static switch_application_interface_t export_application_interface = {
 	/*.interface_name */ "export",
 	/*.application_function */ export_function,
 	/* long_desc */ "Set and export a channel varaible for the channel calling the application.",
@@ -1227,7 +1227,7 @@ static const switch_application_interface_t export_application_interface = {
 	/*.next */ &set_application_interface
 };
 
-static const switch_application_interface_t info_application_interface = {
+static switch_application_interface_t info_application_interface = {
 	/*.interface_name */ "info",
 	/*.application_function */ info_function,
 	/* long_desc */ "Display Call Info",
@@ -1237,7 +1237,7 @@ static const switch_application_interface_t info_application_interface = {
 	/*.next */ &export_application_interface
 };
 
-static const switch_application_interface_t log_application_interface = {
+static switch_application_interface_t log_application_interface = {
 	/*.interface_name */ "log",
 	/*.application_function */ log_function,
 	/* long_desc */ "Logs a channel varaible for the channel calling the application.",
@@ -1248,7 +1248,7 @@ static const switch_application_interface_t log_application_interface = {
 };
 
 
-static const switch_application_interface_t hangup_application_interface = {
+static switch_application_interface_t hangup_application_interface = {
 	/*.interface_name */ "hangup",
 	/*.application_function */ hangup_function,
 	/* long_desc */ "Hangup the call for a channel.",
@@ -1258,7 +1258,7 @@ static const switch_application_interface_t hangup_application_interface = {
 	/*.next */ &log_application_interface
 };
 
-static const switch_application_interface_t answer_application_interface = {
+static switch_application_interface_t answer_application_interface = {
 	/*.interface_name */ "answer",
 	/*.application_function */ answer_function,
 	/* long_desc */ "Answer the call for a channel.",
@@ -1268,7 +1268,7 @@ static const switch_application_interface_t answer_application_interface = {
 	/*.next */ &hangup_application_interface
 };
 
-static const switch_application_interface_t pre_answer_application_interface = {
+static switch_application_interface_t pre_answer_application_interface = {
 	/*.interface_name */ "pre_answer",
 	/*.application_function */ pre_answer_function,
 	/* long_desc */ "Pre-Answer the call for a channel.",
@@ -1278,7 +1278,7 @@ static const switch_application_interface_t pre_answer_application_interface = {
 	/*.next */ &answer_application_interface
 };
 
-static const switch_application_interface_t eval_application_interface = {
+static switch_application_interface_t eval_application_interface = {
 	/*.interface_name */ "eval",
 	/*.application_function */ eval_function,
 	/* long_desc */ "Do Nothing",
@@ -1288,7 +1288,7 @@ static const switch_application_interface_t eval_application_interface = {
 	/*.next */ &pre_answer_application_interface
 };
 
-static const switch_application_interface_t phrase_application_interface = {
+static switch_application_interface_t phrase_application_interface = {
 	/*.interface_name */ "phrase",
 	/*.application_function */ phrase_function,
 	/* long_desc */ "Say a Phrase",
@@ -1298,7 +1298,7 @@ static const switch_application_interface_t phrase_application_interface = {
 	/*.next */ &eval_application_interface
 };
 
-static const switch_application_interface_t strftime_application_interface = {
+static switch_application_interface_t strftime_application_interface = {
 	/*.interface_name */ "strftime",
 	/*.application_function */ strftime_function,
 	/* long_desc */ NULL,
@@ -1308,7 +1308,7 @@ static const switch_application_interface_t strftime_application_interface = {
 	/*.next */ &phrase_application_interface
 };
 
-static const switch_application_interface_t sleep_application_interface = {
+static switch_application_interface_t sleep_application_interface = {
 	/*.interface_name */ "sleep",
 	/*.application_function */ sleep_function,
 	/* long_desc */
@@ -1319,7 +1319,7 @@ static const switch_application_interface_t sleep_application_interface = {
 	/* next */ &strftime_application_interface
 };
 
-static const switch_application_interface_t transfer_application_interface = {
+static switch_application_interface_t transfer_application_interface = {
 	/*.interface_name */ "transfer",
 	/*.application_function */ transfer_function,
 	/* long_desc */ "Immediatly transfer the calling channel to a new extension",
@@ -1329,7 +1329,7 @@ static const switch_application_interface_t transfer_application_interface = {
 	/* next */ &sleep_application_interface
 };
 
-static const switch_application_interface_t privacy_application_interface = {
+static switch_application_interface_t privacy_application_interface = {
 	/*.interface_name */ "privacy",
 	/*.application_function */ privacy_function,
 	/* long_desc */ "Set caller privacy on calls.",
@@ -1339,7 +1339,7 @@ static const switch_application_interface_t privacy_application_interface = {
 	/*.next */ &transfer_application_interface
 };
 
-static const switch_loadable_module_interface_t dptools_module_interface = {
+static switch_loadable_module_interface_t dptools_module_interface = {
 	/*.module_name = */ modname,
 	/*.endpoint_interface = */ NULL,
 	/*.timer_interface = */ NULL,

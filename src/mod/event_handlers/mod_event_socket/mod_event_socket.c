@@ -251,7 +251,7 @@ static void socket_function(switch_core_session_t *session, char *data)
 }
 
 
-static const switch_application_interface_t socket_application_interface = {
+static switch_application_interface_t socket_application_interface = {
 	/*.interface_name */ "socket",
 	/*.application_function */ socket_function,
 	/* long_desc */ "Connect to a socket",

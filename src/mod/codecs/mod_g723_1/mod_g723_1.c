@@ -169,7 +169,7 @@ static switch_status_t switch_g723_decode(switch_codec_t *codec,
 
 /* Registration */
 
-static const switch_codec_implementation_t g723_1_implementation = {
+static switch_codec_implementation_t g723_1_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 4,
 	/*.iananame */ "G723",
@@ -189,7 +189,7 @@ static const switch_codec_implementation_t g723_1_implementation = {
 	/*.destroy */ switch_g723_destroy,
 };
 
-static const switch_codec_interface_t g723_1_codec_interface = {
+static switch_codec_interface_t g723_1_codec_interface = {
 	/*.interface_name */ "g723.1 6.3k",
 	/*.implementations */ &g723_1_implementation,
 };

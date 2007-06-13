@@ -182,7 +182,7 @@ static switch_status_t switch_g711a_destroy(switch_codec_t *codec)
 /* Registration */
 
 
-static const switch_codec_implementation_t g711u_8k_120ms_implementation = {
+static switch_codec_implementation_t g711u_8k_120ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 0,
 	/*.iananame */ "PCMU",
@@ -202,7 +202,7 @@ static const switch_codec_implementation_t g711u_8k_120ms_implementation = {
 	/*.destroy */ switch_g711u_destroy
 };
 
-static const switch_codec_implementation_t g711u_8k_60ms_implementation = {
+static switch_codec_implementation_t g711u_8k_60ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 0,
 	/*.iananame */ "PCMU",
@@ -223,7 +223,7 @@ static const switch_codec_implementation_t g711u_8k_60ms_implementation = {
 	/*.next */ &g711u_8k_120ms_implementation
 };
 
-static const switch_codec_implementation_t g711u_8k_30ms_implementation = {
+static switch_codec_implementation_t g711u_8k_30ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 0,
 	/*.iananame */ "PCMU",
@@ -244,7 +244,7 @@ static const switch_codec_implementation_t g711u_8k_30ms_implementation = {
 	/*.next */ &g711u_8k_60ms_implementation
 };
 
-static const switch_codec_implementation_t g711u_8k_20ms_implementation = {
+static switch_codec_implementation_t g711u_8k_20ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 0,
 	/*.iananame */ "PCMU",
@@ -265,7 +265,7 @@ static const switch_codec_implementation_t g711u_8k_20ms_implementation = {
 	/*.next */ &g711u_8k_30ms_implementation
 };
 
-static const switch_codec_implementation_t g711u_8k_10ms_implementation = {
+static switch_codec_implementation_t g711u_8k_10ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 0,
 	/*.iananame */ "PCMU",
@@ -288,7 +288,7 @@ static const switch_codec_implementation_t g711u_8k_10ms_implementation = {
 
 
 
-static const switch_codec_implementation_t g711a_8k_120ms_implementation = {
+static switch_codec_implementation_t g711a_8k_120ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 8,
 	/*.iananame */ "PCMA",
@@ -308,7 +308,7 @@ static const switch_codec_implementation_t g711a_8k_120ms_implementation = {
 	/*.destroy */ switch_g711a_destroy
 };
 
-static const switch_codec_implementation_t g711a_8k_60ms_implementation = {
+static switch_codec_implementation_t g711a_8k_60ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 8,
 	/*.iananame */ "PCMA",
@@ -329,7 +329,7 @@ static const switch_codec_implementation_t g711a_8k_60ms_implementation = {
 	/*.next */ &g711a_8k_120ms_implementation
 };
 
-static const switch_codec_implementation_t g711a_8k_30ms_implementation = {
+static switch_codec_implementation_t g711a_8k_30ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 8,
 	/*.iananame */ "PCMA",
@@ -350,7 +350,7 @@ static const switch_codec_implementation_t g711a_8k_30ms_implementation = {
 	/*.next */ &g711a_8k_60ms_implementation
 };
 
-static const switch_codec_implementation_t g711a_8k_20ms_implementation = {
+static switch_codec_implementation_t g711a_8k_20ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 8,
 	/*.iananame */ "PCMA",
@@ -371,7 +371,7 @@ static const switch_codec_implementation_t g711a_8k_20ms_implementation = {
 	/*.next */ &g711a_8k_30ms_implementation
 };
 
-static const switch_codec_implementation_t g711a_8k_10ms_implementation = {
+static switch_codec_implementation_t g711a_8k_10ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 8,
 	/*.iananame */ "PCMA",
@@ -394,12 +394,12 @@ static const switch_codec_implementation_t g711a_8k_10ms_implementation = {
 
 
 
-static const switch_codec_interface_t g711a_codec_interface = {
+static switch_codec_interface_t g711a_codec_interface = {
 	/*.interface_name */ "g711 alaw",
 	/*.implementations */ &g711a_8k_10ms_implementation
 };
 
-static const switch_codec_interface_t g711u_codec_interface = {
+static switch_codec_interface_t g711u_codec_interface = {
 	/*.interface_name */ "g711 ulaw",
 	/*.implementations */ &g711u_8k_10ms_implementation,
 	/*.next */ &g711a_codec_interface

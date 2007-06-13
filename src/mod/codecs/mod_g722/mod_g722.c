@@ -118,7 +118,7 @@ static switch_status_t switch_g722_destroy(switch_codec_t *codec)
 
 /* Registration */
 
-static const switch_codec_implementation_t g722_8k_implementation = {
+static switch_codec_implementation_t g722_8k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 109,
 	/*.iananame */ "G722_8",
@@ -138,7 +138,7 @@ static const switch_codec_implementation_t g722_8k_implementation = {
 	/*.destroy */ switch_g722_destroy,
 };
 
-static const switch_codec_implementation_t g722_16k_implementation = {
+static switch_codec_implementation_t g722_16k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 9,
 	/*.iananame */ "G722",
@@ -159,7 +159,7 @@ static const switch_codec_implementation_t g722_16k_implementation = {
 	/*.next */ &g722_8k_implementation
 };
 
-static const switch_codec_interface_t g722_codec_interface = {
+static switch_codec_interface_t g722_codec_interface = {
 	/*.interface_name */ "g722",
 	/*.implementations */ &g722_16k_implementation
 };

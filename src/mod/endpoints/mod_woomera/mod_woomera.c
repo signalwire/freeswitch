@@ -441,7 +441,7 @@ static switch_status_t woomera_write_frame(switch_core_session_t *session, switc
 	return SWITCH_STATUS_GENERR;
 }
 
-static const switch_state_handler_table_t woomera_event_handlers = {
+static switch_state_handler_table_t woomera_event_handlers = {
 	/*.on_init */ woomera_on_init,
 	/*.on_ring */ woomera_on_ring,
 	/*.on_execute */ woomera_on_execute,
@@ -450,7 +450,7 @@ static const switch_state_handler_table_t woomera_event_handlers = {
 	/*.on_transmit */ woomera_on_transmit
 };
 
-static const switch_io_routines_t woomera_io_routines = {
+static switch_io_routines_t woomera_io_routines = {
 	/*.outgoing_channel */ woomera_outgoing_channel,
 	/*.read_frame */ woomera_read_frame,
 	/*.write_frame */ woomera_write_frame,
@@ -459,7 +459,7 @@ static const switch_io_routines_t woomera_io_routines = {
 	/*.waitfor_write */ woomera_waitfor_write
 };
 
-static const switch_endpoint_interface_t woomera_endpoint_interface = {
+static switch_endpoint_interface_t woomera_endpoint_interface = {
 	/*.interface_name */ "woomera",
 	/*.io_routines */ &woomera_io_routines,
 	/*.event_handlers */ &woomera_event_handlers,
@@ -467,7 +467,7 @@ static const switch_endpoint_interface_t woomera_endpoint_interface = {
 	/*.next */ NULL
 };
 
-static const switch_loadable_module_interface_t woomera_module_interface = {
+static switch_loadable_module_interface_t woomera_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ &woomera_endpoint_interface,
 	/*.timer_interface */ NULL,

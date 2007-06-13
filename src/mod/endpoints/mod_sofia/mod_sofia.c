@@ -43,7 +43,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown);
 SWITCH_MODULE_DEFINITION(mod_sofia, mod_sofia_load, mod_sofia_shutdown, NULL);
 
 struct mod_sofia_globals mod_sofia_globals;
-const switch_endpoint_interface_t sofia_endpoint_interface;
+switch_endpoint_interface_t sofia_endpoint_interface;
 static switch_frame_t silence_frame = { 0 };
 static char silence_data[13] = "";
 
@@ -465,7 +465,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 
 	if (switch_test_flag(tech_pvt, TFLAG_IO)) {
 		switch_status_t status;
-
+		
 		if (!switch_test_flag(tech_pvt, TFLAG_RTP)) {
 			return SWITCH_STATUS_GENERR;
 		}
@@ -1264,7 +1264,7 @@ SWITCH_STANDARD_API(sofia_function)
 
 }
 
-static const switch_io_routines_t sofia_io_routines = {
+static switch_io_routines_t sofia_io_routines = {
 	/*.outgoing_channel */ sofia_outgoing_channel,
 	/*.read_frame */ sofia_read_frame,
 	/*.write_frame */ sofia_write_frame,
@@ -1279,7 +1279,7 @@ static const switch_io_routines_t sofia_io_routines = {
 	/*.write_video_frame*/ sofia_write_video_frame
 };
 
-static const switch_state_handler_table_t sofia_event_handlers = {
+static switch_state_handler_table_t sofia_event_handlers = {
 	/*.on_init */ sofia_on_init,
 	/*.on_ring */ sofia_on_ring,
 	/*.on_execute */ sofia_on_execute,
@@ -1288,7 +1288,7 @@ static const switch_state_handler_table_t sofia_event_handlers = {
 	/*.on_transmit */ sofia_on_transmit
 };
 
-const switch_endpoint_interface_t sofia_endpoint_interface = {
+switch_endpoint_interface_t sofia_endpoint_interface = {
 	/*.interface_name */ "sofia",
 	/*.io_routines */ &sofia_io_routines,
 	/*.event_handlers */ &sofia_event_handlers,
@@ -1296,7 +1296,7 @@ const switch_endpoint_interface_t sofia_endpoint_interface = {
 	/*.next */ NULL
 };
 
-static const switch_chat_interface_t sofia_chat_interface = {
+static switch_chat_interface_t sofia_chat_interface = {
 	/*.name */ SOFIA_CHAT_PROTO,
 	/*.sofia_presence_chat_send */ sofia_presence_chat_send,
 
@@ -1307,7 +1307,7 @@ static switch_status_t sofia_manage(char *relative_oid, switch_management_action
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static const switch_management_interface_t sofia_management_interface = {
+static switch_management_interface_t sofia_management_interface = {
 	/*.relative_oid */ "1",
 	/*.management_function */ sofia_manage
 };
@@ -1320,7 +1320,7 @@ static switch_api_interface_t sofia_api_interface = {
 	/*.next */ NULL
 };
 
-static const switch_loadable_module_interface_t sofia_module_interface = {
+static switch_loadable_module_interface_t sofia_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ &sofia_endpoint_interface,
 	/*.timer_interface */ NULL,

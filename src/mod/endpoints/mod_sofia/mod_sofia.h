@@ -465,7 +465,7 @@ switch_call_cause_t sofia_glue_sip_cause_to_freeswitch(int status);
 void sofia_glue_do_xfer_invite(switch_core_session_t *session);
 uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, 
 								  sofia_regtype_t regtype, char *key, uint32_t keylen, switch_event_t **v_event);
-extern const switch_endpoint_interface_t sofia_endpoint_interface;
+extern switch_endpoint_interface_t sofia_endpoint_interface;
 void sofia_presence_set_chat_hash(private_object_t *tech_pvt, sip_t const *sip);
 switch_status_t sofia_on_hangup(switch_core_session_t *session);
 char *sofia_glue_get_url_from_contact(char *buf, uint8_t to_dup);

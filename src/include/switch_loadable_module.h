@@ -54,31 +54,32 @@ SWITCH_BEGIN_EXTERN_C
 	/*! the name of the module */
 	const char *module_name;
 	/*! the table of endpoints the module has implmented */
-	const switch_endpoint_interface_t *endpoint_interface;
+	switch_endpoint_interface_t *endpoint_interface;
 	/*! the table of timers the module has implmented */
-	const switch_timer_interface_t *timer_interface;
+	switch_timer_interface_t *timer_interface;
 	/*! the table of dialplans the module has implmented */
-	const switch_dialplan_interface_t *dialplan_interface;
+	switch_dialplan_interface_t *dialplan_interface;
 	/*! the table of codecs the module has implmented */
-	const switch_codec_interface_t *codec_interface;
+	switch_codec_interface_t *codec_interface;
 	/*! the table of applications the module has implmented */
-	const switch_application_interface_t *application_interface;
+	switch_application_interface_t *application_interface;
 	/*! the table of api functions the module has implmented */
-	const switch_api_interface_t *api_interface;
+	switch_api_interface_t *api_interface;
 	/*! the table of file formats the module has implmented */
-	const switch_file_interface_t *file_interface;
+	switch_file_interface_t *file_interface;
 	/*! the table of speech interfaces the module has implmented */
-	const switch_speech_interface_t *speech_interface;
+	switch_speech_interface_t *speech_interface;
 	/*! the table of directory interfaces the module has implmented */
-	const switch_directory_interface_t *directory_interface;
+	switch_directory_interface_t *directory_interface;
 	/*! the table of chat interfaces the module has implmented */
-	const switch_chat_interface_t *chat_interface;
+	switch_chat_interface_t *chat_interface;
 	/*! the table of say interfaces the module has implmented */
-	const switch_say_interface_t *say_interface;
+	switch_say_interface_t *say_interface;
 	/*! the table of asr interfaces the module has implmented */
-	const switch_asr_interface_t *asr_interface;
+	switch_asr_interface_t *asr_interface;
 	/*! the table of management interfaces the module has implmented */
-	const switch_management_interface_t *management_interface;
+	switch_management_interface_t *management_interface;
+	switch_memory_pool_t *pool;
 };
 
 /*!

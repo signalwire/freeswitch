@@ -204,7 +204,7 @@ static switch_status_t switch_g726_decode(switch_codec_t *codec,
 
 /* Registration */
 
-static const switch_codec_implementation_t g726_16k_implementation = {
+static switch_codec_implementation_t g726_16k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 127,
 	/*.iananame */ "G726-16",
@@ -225,7 +225,7 @@ static const switch_codec_implementation_t g726_16k_implementation = {
 };
 
 
-static const switch_codec_implementation_t g726_24k_implementation = {
+static switch_codec_implementation_t g726_24k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 126,
 	/*.iananame */ "G726-24",
@@ -245,7 +245,7 @@ static const switch_codec_implementation_t g726_24k_implementation = {
 	/*.destroy */ switch_g726_destroy,
 };
 
-static const switch_codec_implementation_t g726_32k_implementation = {
+static switch_codec_implementation_t g726_32k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 2,
 	/*.iananame */ "G726-32",
@@ -265,7 +265,7 @@ static const switch_codec_implementation_t g726_32k_implementation = {
 	/*.destroy */ switch_g726_destroy,
 };
 
-static const switch_codec_implementation_t g726_40k_implementation = {
+static switch_codec_implementation_t g726_40k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 125,
 	/*.iananame */ "G726-40",
@@ -287,7 +287,7 @@ static const switch_codec_implementation_t g726_40k_implementation = {
 
 
 
-static const switch_codec_implementation_t aal2_g726_16k_implementation = {
+static switch_codec_implementation_t aal2_g726_16k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 124,
 	/*.iananame */ "AAL2-G726-16",
@@ -308,7 +308,7 @@ static const switch_codec_implementation_t aal2_g726_16k_implementation = {
 };
 
 
-static const switch_codec_implementation_t aal2_g726_24k_implementation = {
+static switch_codec_implementation_t aal2_g726_24k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 123,
 	/*.iananame */ "AAL2-G726-24",
@@ -328,7 +328,7 @@ static const switch_codec_implementation_t aal2_g726_24k_implementation = {
 	/*.destroy */ switch_g726_destroy,
 };
 
-static const switch_codec_implementation_t aal2_g726_32k_implementation = {
+static switch_codec_implementation_t aal2_g726_32k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 2,
 	/*.iananame */ "AAL2-G726-32",
@@ -348,7 +348,7 @@ static const switch_codec_implementation_t aal2_g726_32k_implementation = {
 	/*.destroy */ switch_g726_destroy,
 };
 
-static const switch_codec_implementation_t aal2_g726_40k_implementation = {
+static switch_codec_implementation_t aal2_g726_40k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 122,
 	/*.iananame */ "AAL2-G726-40",

@@ -290,7 +290,7 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 
 /* Registration */
 
-static const switch_codec_implementation_t amr_implementation = {
+static switch_codec_implementation_t amr_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 96,
 	/*.iananame */ "AMR",
@@ -310,7 +310,7 @@ static const switch_codec_implementation_t amr_implementation = {
 	/*.destroy */ switch_amr_destroy,
 };
 
-static const switch_codec_interface_t amr_codec_interface = {
+static switch_codec_interface_t amr_codec_interface = {
 	/*.interface_name */ "GSM-AMR",
 	/*.implementations */ &amr_implementation,
 };

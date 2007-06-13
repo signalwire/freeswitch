@@ -82,7 +82,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static const switch_state_handler_table_t state_handlers = {
+static switch_state_handler_table_t state_handlers = {
 	/*.on_init */ NULL,
 	/*.on_ring */ NULL,
 	/*.on_execute */ NULL,
@@ -92,7 +92,7 @@ static const switch_state_handler_table_t state_handlers = {
 };
 
 
-static const switch_loadable_module_interface_t xml_cdr_module_interface = {
+static switch_loadable_module_interface_t xml_cdr_module_interface = {
 	/*.module_name = */ modname,
 	/*.endpoint_interface = */ NULL,
 	/*.timer_interface = */ NULL,

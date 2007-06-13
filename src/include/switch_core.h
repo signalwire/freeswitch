@@ -1461,6 +1461,10 @@ SWITCH_DECLARE(void) switch_core_set_globals(void);
   \return TRUE or FALSE
 */
 SWITCH_DECLARE(uint8_t) switch_core_session_compare(switch_core_session_t *a, switch_core_session_t *b);
+
+
+SWITCH_DECLARE(switch_loadable_module_interface_t *) switch_loadable_module_create_module_interface(switch_memory_pool_t *pool, const char *name);
+SWITCH_DECLARE(void *) switch_loadable_module_create_interface(switch_loadable_module_interface_t *mod, switch_module_interface_name_t iname);
 ///\}
 
 /*!

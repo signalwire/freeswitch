@@ -125,6 +125,22 @@ SWITCH_BEGIN_EXTERN_C
 
 
 typedef enum {
+	SWITCH_ENDPOINT_INTERFACE,
+	SWITCH_TIMER_INTERFACE,
+	SWITCH_DIALPLAN_INTERFACE,
+	SWITCH_CODEC_INTERFACE,
+	SWITCH_APPLICATION_INTERFACE,
+	SWITCH_API_INTERFACE,
+	SWITCH_FILE_INTERFACE,
+	SWITCH_SPEECH_INTERFACE,
+	SWITCH_DIRECTORY_INTERFACE,
+	SWITCH_CHAT_INTERFACE,
+	SWITCH_SAY_INTERFACE,
+	SWITCH_ASR_INTERFACE,
+	SWITCH_MANAGEMENT_INTERFACE
+} switch_module_interface_name_t;
+
+typedef enum {
 	SUF_NONE = 0,
 	SUF_THREAD_RUNNING = (1 << 0),
 	SUF_READY = (1 << 1),
@@ -971,6 +987,7 @@ typedef enum {
 	SCSC_CHECK_RUNNING
 } switch_session_ctl_t;
 
+typedef struct apr_pool_t switch_memory_pool_t;
 typedef uint16_t switch_port_t;
 typedef uint8_t switch_payload_t;
 typedef struct switch_app_log switch_app_log_t;
@@ -1053,7 +1070,7 @@ typedef switch_xml_t(*switch_xml_search_function_t) (const char *section,
 
 
 #define SWITCH_API_VERSION 1
-#define SWITCH_MODULE_LOAD_ARGS (const switch_loadable_module_interface_t **module_interface, char *filename)
+#define SWITCH_MODULE_LOAD_ARGS (switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool)
 #define SWITCH_MODULE_RUNTIME_ARGS (void)
 #define SWITCH_MODULE_SHUTDOWN_ARGS (void)
 typedef switch_status_t (*switch_module_load_t) SWITCH_MODULE_LOAD_ARGS ;

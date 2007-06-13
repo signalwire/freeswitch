@@ -613,7 +613,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 	switch_core_session_reset(session);
 }
 
-static const switch_application_interface_t rss_application_interface = {
+static switch_application_interface_t rss_application_interface = {
 	/*.interface_name */ "rss",
 	/*.application_function */ rss_function,
 	NULL, NULL, NULL,

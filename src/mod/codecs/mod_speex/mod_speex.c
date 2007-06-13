@@ -36,7 +36,7 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_speex_load);
 SWITCH_MODULE_DEFINITION(mod_speex, mod_speex_load, NULL, NULL);
 
-static const switch_codec_settings_t default_codec_settings = {
+static switch_codec_settings_t default_codec_settings = {
 	/*.quality */ 5,
 	/*.complexity */ 5,
 	/*.enhancement */ 1,
@@ -262,7 +262,7 @@ static switch_status_t switch_speex_destroy(switch_codec_t *codec)
 }
 
 /* Registration */
-static const switch_codec_implementation_t speex_32k_implementation = {
+static switch_codec_implementation_t speex_32k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 102,
 	/*.iananame */ "speex",
@@ -282,7 +282,7 @@ static const switch_codec_implementation_t speex_32k_implementation = {
 	/*.destroy */ switch_speex_destroy
 };
 
-static const switch_codec_implementation_t speex_16k_implementation = {
+static switch_codec_implementation_t speex_16k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 99,
 	/*.iananame */ "speex",
@@ -304,7 +304,7 @@ static const switch_codec_implementation_t speex_16k_implementation = {
 };
 
 
-static const switch_codec_implementation_t speex_8k_60ms_implementation = {
+static switch_codec_implementation_t speex_8k_60ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 98,
 	/*.iananame */ "speex",
@@ -325,7 +325,7 @@ static const switch_codec_implementation_t speex_8k_60ms_implementation = {
 	/*.next */ &speex_16k_implementation
 };
 
-static const switch_codec_implementation_t speex_8k_40ms_implementation = {
+static switch_codec_implementation_t speex_8k_40ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 98,
 	/*.iananame */ "speex",
@@ -348,7 +348,7 @@ static const switch_codec_implementation_t speex_8k_40ms_implementation = {
 };
 
 
-static const switch_codec_implementation_t speex_8k_30ms_implementation = {
+static switch_codec_implementation_t speex_8k_30ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 98,
 	/*.iananame */ "speex",
@@ -369,7 +369,7 @@ static const switch_codec_implementation_t speex_8k_30ms_implementation = {
 	/*.next */ &speex_8k_40ms_implementation
 };
 
-static const switch_codec_implementation_t speex_8k_20ms_implementation = {
+static switch_codec_implementation_t speex_8k_20ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 98,
 	/*.iananame */ "speex",
@@ -390,7 +390,7 @@ static const switch_codec_implementation_t speex_8k_20ms_implementation = {
 	/*.next */ &speex_8k_30ms_implementation
 };
 
-static const switch_codec_interface_t speex_codec_interface = {
+static switch_codec_interface_t speex_codec_interface = {
 	/*.interface_name */ "speex",
 	/*.implementations */ &speex_8k_20ms_implementation
 };

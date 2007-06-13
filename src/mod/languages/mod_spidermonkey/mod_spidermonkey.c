@@ -2984,7 +2984,7 @@ SWITCH_STANDARD_API(launch_async)
 }
 
 
-static const switch_application_interface_t ivrtest_application_interface = {
+static switch_application_interface_t ivrtest_application_interface = {
 	/*.interface_name */ "javascript",
 	/*.application_function */ js_dp_function,
 	/* long_desc */ "Run a javascript ivr on a channel",

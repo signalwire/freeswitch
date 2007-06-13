@@ -193,7 +193,7 @@ SWITCH_STANDARD_API(launch_python)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static const switch_application_interface_t python_application_interface = {
+static switch_application_interface_t python_application_interface = {
 	/*.interface_name */ "python",
 	/*.application_function */ python_function,
 	NULL, NULL, NULL,

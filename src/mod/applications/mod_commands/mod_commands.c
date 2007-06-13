@@ -1319,7 +1319,7 @@ static switch_api_interface_t originate_api_interface = {
 	/*.next */ &kill_api_interface
 };
 
-static const switch_loadable_module_interface_t commands_module_interface = {
+static switch_loadable_module_interface_t commands_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,

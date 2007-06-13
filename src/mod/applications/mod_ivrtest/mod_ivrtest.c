@@ -423,7 +423,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 
 }
 
-static const switch_state_handler_table_t state_handlers = {
+static switch_state_handler_table_t state_handlers = {
 	/*.on_init */ NULL,
 	/*.on_ring */ NULL,
 	/*.on_execute */ NULL,
@@ -434,7 +434,7 @@ static const switch_state_handler_table_t state_handlers = {
 
 
 
-static const switch_application_interface_t bug_application_interface = {
+static switch_application_interface_t bug_application_interface = {
 	/*.interface_name */ "bugtest",
 	/*.application_function */ bugtest_function,
 	NULL, NULL, NULL,
@@ -442,7 +442,7 @@ static const switch_application_interface_t bug_application_interface = {
 	/*.next */ NULL
 };
 
-static const switch_application_interface_t ivr_application_interface = {
+static switch_application_interface_t ivr_application_interface = {
 	/*.interface_name */ "ivrmenu",
 	/*.application_function */ ivr_application_function,
 	NULL, NULL, NULL,
@@ -450,7 +450,7 @@ static const switch_application_interface_t ivr_application_interface = {
 	/*.next */ &bug_application_interface
 };
 
-static const switch_application_interface_t xml_application_interface = {
+static switch_application_interface_t xml_application_interface = {
 	/*.interface_name */ "xml",
 	/*.application_function */ xml_function,
 	NULL, NULL, NULL,
@@ -458,7 +458,7 @@ static const switch_application_interface_t xml_application_interface = {
 	/*.next */ &ivr_application_interface
 };
 
-static const switch_application_interface_t disast_application_interface = {
+static switch_application_interface_t disast_application_interface = {
 	/*.interface_name */ "disast",
 	/*.application_function */ disast_function,
 	NULL, NULL, NULL,
@@ -466,7 +466,7 @@ static const switch_application_interface_t disast_application_interface = {
 	/*.next */ &xml_application_interface
 };
 
-static const switch_application_interface_t tts_application_interface = {
+static switch_application_interface_t tts_application_interface = {
 	/*.interface_name */ "tts",
 	/*.application_function */ tts_function,
 	NULL, NULL, NULL,
@@ -474,7 +474,7 @@ static const switch_application_interface_t tts_application_interface = {
 	/*.next */ &disast_application_interface
 };
 
-static const switch_application_interface_t dirtest_application_interface = {
+static switch_application_interface_t dirtest_application_interface = {
 	/*.interface_name */ "dirtest",
 	/*.application_function */ dirtest_function,
 	NULL, NULL, NULL,
@@ -482,7 +482,7 @@ static const switch_application_interface_t dirtest_application_interface = {
 	/*.next */ &tts_application_interface
 };
 
-static const switch_application_interface_t ivrtest_application_interface = {
+static switch_application_interface_t ivrtest_application_interface = {
 	/*.interface_name */ "ivrtest",
 	/*.application_function */ ivrtest_function,
 	NULL, NULL, NULL,
@@ -490,7 +490,7 @@ static const switch_application_interface_t ivrtest_application_interface = {
 	/*.next */ &dirtest_application_interface
 };
 
-static const switch_application_interface_t asrtest_application_interface = {
+static switch_application_interface_t asrtest_application_interface = {
 	/*.interface_name */ "asrtest",
 	/*.application_function */ asrtest_function,
 	NULL, NULL, NULL,
@@ -498,7 +498,7 @@ static const switch_application_interface_t asrtest_application_interface = {
 	/*.next */ &ivrtest_application_interface
 };
 
-static const switch_loadable_module_interface_t ivrtest_module_interface = {
+static switch_loadable_module_interface_t ivrtest_module_interface = {
 	/*.module_name = */ modname,
 	/*.endpoint_interface = */ NULL,
 	/*.timer_interface = */ NULL,

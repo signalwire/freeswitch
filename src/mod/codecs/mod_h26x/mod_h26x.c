@@ -75,7 +75,7 @@ static switch_status_t switch_h26x_destroy(switch_codec_t *codec)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static const switch_codec_implementation_t h264_90000_implementation = {
+static switch_codec_implementation_t h264_90000_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_VIDEO,
 	/*.ianacode */ 99,
 	/*.iananame */ "H264",
@@ -96,7 +96,7 @@ static const switch_codec_implementation_t h264_90000_implementation = {
 	/*.next = */
 };
 
-static const switch_codec_implementation_t h263_90000_implementation = {
+static switch_codec_implementation_t h263_90000_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_VIDEO,
 	/*.ianacode */ 34,
 	/*.iananame */ "H263",
@@ -117,7 +117,7 @@ static const switch_codec_implementation_t h263_90000_implementation = {
 	/*.next = */&h264_90000_implementation
 };
 
-static const switch_codec_interface_t h26x_codec_interface = {
+static switch_codec_interface_t h26x_codec_interface = {
 	/*.interface_name */ "h26x video (passthru)",
 	/*.implementations */ &h263_90000_implementation
 };

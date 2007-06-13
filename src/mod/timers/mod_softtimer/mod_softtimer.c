@@ -186,7 +186,7 @@ static inline switch_status_t timer_destroy(switch_timer_t *timer)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static const switch_timer_interface_t timer_interface = {
+static switch_timer_interface_t timer_interface = {
 	/*.interface_name */ "soft",
 	/*.timer_init */ timer_init,
 	/*.timer_next */ timer_next,
@@ -195,7 +195,7 @@ static const switch_timer_interface_t timer_interface = {
 	/*.timer_destroy */ timer_destroy
 };
 
-static const switch_loadable_module_interface_t softtimer_module_interface = {
+static switch_loadable_module_interface_t softtimer_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ &timer_interface

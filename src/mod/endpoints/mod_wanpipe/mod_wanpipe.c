@@ -963,7 +963,7 @@ static switch_status_t wanpipe_kill_channel(switch_core_session_t *session, int 
 }
 
 
-static const switch_io_routines_t wanpipe_io_routines = {
+static switch_io_routines_t wanpipe_io_routines = {
 	/*.outgoing_channel */ wanpipe_outgoing_channel,
 	/*.read_frame */ wanpipe_read_frame,
 	/*.write_frame */ wanpipe_write_frame,
@@ -974,7 +974,7 @@ static const switch_io_routines_t wanpipe_io_routines = {
 	/*.receive_message*/ wanpipe_receive_message
 };
 
-static const switch_state_handler_table_t wanpipe_state_handlers = {
+static switch_state_handler_table_t wanpipe_state_handlers = {
 	/*.on_init */ wanpipe_on_init,
 	/*.on_ring */ wanpipe_on_ring,
 	/*.on_execute */ NULL,
@@ -983,7 +983,7 @@ static const switch_state_handler_table_t wanpipe_state_handlers = {
 	/*.on_transmit */ wanpipe_on_transmit
 };
 
-static const switch_endpoint_interface_t wanpipe_endpoint_interface = {
+static switch_endpoint_interface_t wanpipe_endpoint_interface = {
 	/*.interface_name */ "wanpipe",
 	/*.io_routines */ &wanpipe_io_routines,
 	/*.state_handlers */ &wanpipe_state_handlers,
@@ -991,7 +991,7 @@ static const switch_endpoint_interface_t wanpipe_endpoint_interface = {
 	/*.next */ NULL
 };
 
-static const switch_loadable_module_interface_t wanpipe_module_interface = {
+static switch_loadable_module_interface_t wanpipe_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ &wanpipe_endpoint_interface,
 	/*.timer_interface */ NULL,

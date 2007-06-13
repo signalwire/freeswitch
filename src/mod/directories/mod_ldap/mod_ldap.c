@@ -198,7 +198,7 @@ static switch_status_t mod_ldap_next_pair(switch_directory_handle_t *dh, char **
 }
 
 
-static const switch_directory_interface_t ldap_directory_interface = {
+static switch_directory_interface_t ldap_directory_interface = {
 	/*.interface_name */ "ldap",
 	/*.directory_open */ mod_ldap_open,
 	/*.directory_close */ mod_ldap_close,

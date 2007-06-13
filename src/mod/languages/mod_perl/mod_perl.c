@@ -79,7 +79,7 @@ static void perl_function(switch_core_session_t *session, char *data)
 	destroy_perl(&my_perl);
 }
 
-static const switch_application_interface_t perl_application_interface = {
+static switch_application_interface_t perl_application_interface = {
 	/*.interface_name */ "perl",
 	/*.application_function */ perl_function,
 	NULL, NULL, NULL,

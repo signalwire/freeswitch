@@ -156,7 +156,7 @@ static switch_status_t switch_lpc10_decode(switch_codec_t *codec,
 
 /* Registration */
 
-static const switch_codec_implementation_t lpc10_implementation = {
+static switch_codec_implementation_t lpc10_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 7,
 	/*.iananame */ "LPC",
