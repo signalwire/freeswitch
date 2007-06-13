@@ -225,7 +225,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 		if (session->bugs) {
 			switch_media_bug_t *bp, *dp, *last = NULL;
-
+			switch_bool_t ok = SWITCH_TRUE;
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			for (bp = session->bugs; bp; bp = bp->next) {
 				if (bp->ready && switch_test_flag(bp, SMBF_READ_STREAM)) {
@@ -233,23 +233,35 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					switch_buffer_write(bp->raw_read_buffer, read_frame->data, read_frame->datalen);
 					if (bp->callback) {
 						if (bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ) == SWITCH_FALSE || (bp->stop_time && bp->stop_time >= time(NULL))) {
-							bp->ready = 0;
-							if (last) {
-								last->next = bp->next;
-							} else {
-								session->bugs = bp->next;
-							}
-							switch_mutex_unlock(bp->read_mutex);
-							dp = bp;
-							bp = last;
-							switch_core_media_bug_close(&dp);
-							if (!bp) {
-								break;
-							}
-							continue;
+							ok = SWITCH_FALSE;
 						}
 					}
 					switch_mutex_unlock(bp->read_mutex);
+				} else if (switch_test_flag(bp, SMBF_READ_REPLACE)) {
+					do_bugs = 0;
+					if (bp->callback) {
+						bp->read_replace_frame_in = read_frame;
+						bp->read_replace_frame_out = NULL;
+						if ((ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ_REPLACE)) == SWITCH_TRUE) {
+							read_frame = bp->read_replace_frame_out;
+						}
+					}
+				}
+
+				if (ok == SWITCH_FALSE) {
+					bp->ready = 0;
+					if (last) {
+						last->next = bp->next;
+					} else {
+						session->bugs = bp->next;
+					}
+					dp = bp;
+					bp = last;
+					switch_core_media_bug_close(&dp);
+					if (!bp) {
+						break;
+					}
+					continue;
 				}
 				last = bp;
 			}
@@ -497,10 +509,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				} else if (switch_test_flag(bp, SMBF_WRITE_REPLACE)) {
 					do_bugs = 0;
 					if (bp->callback) {
-						bp->replace_frame_in = write_frame;
-						bp->replace_frame_out = NULL;
+						bp->write_replace_frame_in = write_frame;
+						bp->write_replace_frame_out = NULL;
 						if ((ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_WRITE_REPLACE)) == SWITCH_TRUE) {
-							write_frame = bp->replace_frame_out;
+							write_frame = bp->write_replace_frame_out;
 						}
 					}
 				}

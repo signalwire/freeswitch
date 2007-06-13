@@ -8,6 +8,7 @@ applications/mod_echo
 applications/mod_enum
 #applications/mod_ivrtest
 #applications/mod_park
+#applications/mod_soundtouch
 applications/mod_playback
 #applications/mod_rss
 #applications/mod_skel

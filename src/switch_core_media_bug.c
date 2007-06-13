@@ -41,14 +41,24 @@ static void switch_core_media_bug_destroy(switch_media_bug_t *bug)
 }
 
 
-SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_replace_frame(switch_media_bug_t *bug)
+SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_write_replace_frame(switch_media_bug_t *bug)
 {
-	return bug->replace_frame_in;
+	return bug->write_replace_frame_in;
 }
 
-SWITCH_DECLARE(void) switch_core_media_bug_set_replace_frame(switch_media_bug_t *bug, switch_frame_t *frame)
+SWITCH_DECLARE(void) switch_core_media_bug_set_write_replace_frame(switch_media_bug_t *bug, switch_frame_t *frame)
 {
-	bug->replace_frame_out = frame;
+	bug->write_replace_frame_out = frame;
+}
+
+SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_read_replace_frame(switch_media_bug_t *bug)
+{
+	return bug->read_replace_frame_in;
+}
+
+SWITCH_DECLARE(void) switch_core_media_bug_set_read_replace_frame(switch_media_bug_t *bug, switch_frame_t *frame)
+{
+	bug->read_replace_frame_out = frame;
 }
 
 SWITCH_DECLARE(void *) switch_core_media_bug_get_user_data(switch_media_bug_t *bug)
@@ -153,6 +163,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
 			if (switch_test_flag(bp, SMBF_WRITE_REPLACE)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Only one bug of this type allowed!\n");
+				switch_thread_rwlock_unlock(session->bug_rwlock);
+				return SWITCH_STATUS_GENERR;
+			}
+		}
+		switch_thread_rwlock_unlock(session->bug_rwlock);
+	}
+
+	if (flags & SMBF_READ_REPLACE) {
+		switch_thread_rwlock_wrlock(session->bug_rwlock);
+		for (bp = session->bugs; bp; bp = bp->next) {
+			if (switch_test_flag(bp, SMBF_READ_REPLACE)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Only one bug of this type allowed!\n");
 				switch_thread_rwlock_unlock(session->bug_rwlock);
 				return SWITCH_STATUS_GENERR;

@@ -215,7 +215,7 @@ static switch_bool_t soundtouch_callback(switch_media_bug_t *bug, void *user_dat
             assert(sth != NULL);
             assert(sth->st != NULL);
 
-            frame = switch_core_media_bug_get_replace_frame(bug);
+            frame = switch_core_media_bug_get_write_replace_frame(bug);
             sth->st->putSamples((SAMPLETYPE *)frame->data, frame->samples);
 
             if (sth->st->numSamples() >= frame->samples * 2) {
@@ -225,7 +225,7 @@ static switch_bool_t soundtouch_callback(switch_media_bug_t *bug, void *user_dat
                 memset(frame->data, 0, frame->datalen);
             }
             
-            switch_core_media_bug_set_replace_frame(bug, frame);
+            switch_core_media_bug_set_write_replace_frame(bug, frame);
             
             
         }
