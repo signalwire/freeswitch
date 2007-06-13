@@ -36,7 +36,8 @@
 #define closesocket close
 #endif
 
-static const char modname[] = "mod_enum";
+SWITCH_MODULE_LOAD_FUNCTION(mod_enum_load);
+SWITCH_MODULE_DEFINITION(mod_enum, mod_enum_load, NULL, NULL);
 
 struct enum_record {
 	int order;
@@ -721,7 +722,7 @@ static switch_loadable_module_interface_t enum_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_enum_load)
 {
 
 	if (dns_init(0) < 0) {

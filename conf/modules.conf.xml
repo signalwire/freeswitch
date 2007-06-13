@@ -33,13 +33,9 @@
     <!-- <load module="mod_woomera"/> -->
 
     <!-- Applications -->
-    <load module="mod_bridgecall"/>
     <load module="mod_commands"/>
     <load module="mod_conference"/>
     <load module="mod_dptools"/>
-    <load module="mod_echo"/>
-    <!--<load module="mod_park"/>-->
-    <load module="mod_playback"/>
 
     <!-- Dialplan Interfaces -->
     <!-- <load module="mod_dialplan_directory"/> -->

@@ -36,8 +36,9 @@
 #include <switch.h>
 #include <switch_version.h>
 
+SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load);
+SWITCH_MODULE_DEFINITION(mod_commands, mod_commands_load, NULL, NULL);
 
-static const char modname[] = "mod_commands";
 static switch_api_interface_t ctl_api_interface;
 static switch_api_interface_t uuid_bridge_api_interface;
 static switch_api_interface_t session_record_api_interface;
@@ -1318,7 +1319,7 @@ static switch_api_interface_t originate_api_interface = {
 	/*.next */ &kill_api_interface
 };
 
-static const switch_loadable_module_interface_t mod_commands_module_interface = {
+static const switch_loadable_module_interface_t commands_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
@@ -1328,10 +1329,10 @@ static const switch_loadable_module_interface_t mod_commands_module_interface = 
 	/*.api_interface */ &originate_api_interface
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &mod_commands_module_interface;
+	*module_interface = &commands_module_interface;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;

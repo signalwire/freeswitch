@@ -31,7 +31,8 @@
  */
 #include <switch.h>
 
-static const char modname[] = "mod_esf";
+SWITCH_MODULE_LOAD_FUNCTION(mod_esf_load);
+SWITCH_MODULE_DEFINITION(mod_esf, mod_esf_load, NULL, NULL);
 
 struct ls_control_packet {
 	uint32_t unique_id;
@@ -244,7 +245,7 @@ static const switch_loadable_module_interface_t mod_ivrtest_module_interface = {
 	/*.application_interface */ &bcast_application_interface
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_esf_load)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */

@@ -34,7 +34,8 @@
  */
 #include <switch.h>
 
-static const char modname[] = "mod_dptools";
+SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load);
+SWITCH_MODULE_DEFINITION(mod_dptools, mod_dptools_load, NULL, NULL);
 
 static const switch_application_interface_t detect_speech_application_interface;
 static const switch_application_interface_t exe_application_interface;
@@ -673,6 +674,274 @@ static void stop_fax_detect_session_function(switch_core_session_t *session, cha
 	switch_ivr_stop_fax_detect_session(session);
 }
 
+static void echo_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	switch_channel_answer(channel);
+
+	switch_channel_set_state(channel, CS_LOOPBACK);
+}
+
+static void park_function(switch_core_session_t *session, char *data)
+{
+	switch_ivr_park(session, NULL);
+
+}
+
+/********************************************************************************/
+/*						Playback/Record Functions								*/
+/********************************************************************************/
+
+/*
+  dtmf handler function you can hook up to be executed when a digit is dialed during playback 
+   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
+*/
+static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
+{
+
+
+	switch (itype) {
+	case SWITCH_INPUT_TYPE_DTMF:{
+			char *dtmf = (char *) input;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digits %s\n", dtmf);
+
+			if (*dtmf == '*') {
+				return SWITCH_STATUS_BREAK;
+			}
+		}
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static void speak_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+	char buf[10];
+	char *argv[4] = { 0 };
+	int argc;
+	char *engine = NULL;
+	char *voice = NULL;
+	char *text = NULL;
+	char *mydata = NULL;
+	switch_codec_t *codec;
+	switch_input_args_t args = { 0 };
+
+	codec = switch_core_session_get_read_codec(session);
+	assert(codec != NULL);
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	mydata = switch_core_session_strdup(session, data);
+	argc = switch_separate_string(mydata, '|', argv, sizeof(argv) / sizeof(argv[0]));
+
+	engine = argv[0];
+	voice = argv[1];
+	text = argv[2];
+
+	if (!(engine && voice && text)) {
+		if (!engine) {
+			engine = "NULL";
+		}
+		if (!voice) {
+			voice = "NULL";
+		}
+		if (!text) {
+			text = "NULL";
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Params! [%s][%s][%s]\n", engine, voice, text);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+	}
+
+	switch_channel_pre_answer(channel);
+
+	args.input_callback = on_dtmf;
+	args.buf = buf;
+	args.buflen = sizeof(buf);
+	switch_ivr_speak_text(session, engine, voice, codec->implementation->samples_per_second, text, &args);
+
+}
+
+static void playback_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+	char *file_name = NULL;
+	switch_input_args_t args = { 0 };
+
+	file_name = switch_core_session_strdup(session, data);
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	switch_channel_pre_answer(channel);
+
+	args.input_callback = on_dtmf;
+	switch_ivr_play_file(session, NULL, file_name, &args);
+
+}
+
+
+static void record_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+	switch_status_t status;
+	uint32_t limit = 0;
+	char *path;
+	char *p;
+	switch_input_args_t args = { 0 };
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	path = switch_core_session_strdup(session, data);
+	if ((p = strchr(path, '+'))) {
+		char *q = p - 1;
+		while(q && *q == ' ') {
+			*q = '\0';
+			q--;
+		}
+		*p++ = '\0';
+		limit = atoi(p);
+	}
+
+	args.input_callback = on_dtmf;
+	status = switch_ivr_record_file(session, NULL, path, &args, limit);
+
+	if (!switch_channel_ready(channel) || (status != SWITCH_STATUS_SUCCESS && !SWITCH_STATUS_IS_BREAK(status))) {
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+	}
+}
+
+
+static void record_session_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+	char *p, *path = NULL;
+	uint32_t limit = 0;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	path = switch_core_session_strdup(session, data);
+	if ((p = strchr(path, '+'))) {
+		char *q = p - 1;
+		while(q && *q == ' ') {
+			*q = '\0';
+			q--;
+		}
+		*p++ = '\0';
+		limit = atoi(p);
+	}
+	
+	switch_ivr_record_session(session, path, limit, NULL);
+}
+
+
+static void stop_record_session_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	switch_ivr_stop_record_session(session, data);
+}
+
+/********************************************************************************/
+/*								Bridge Functions								*/
+/********************************************************************************/
+
+static void audio_bridge_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *caller_channel;
+	switch_core_session_t *peer_session = NULL;
+	unsigned int timelimit = 60;
+	char *var;
+	uint8_t no_media_bridge = 0;
+	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
+	uint8_t do_continue = 0;
+
+	if (switch_strlen_zero(data)) {
+		return;
+	}
+
+	caller_channel = switch_core_session_get_channel(session);
+	assert(caller_channel != NULL);
+
+	if ((var = switch_channel_get_variable(caller_channel, "call_timeout"))) {
+		timelimit = atoi(var);
+	}
+
+	if ((var = switch_channel_get_variable(caller_channel, "continue_on_fail"))) {
+		do_continue = switch_true(var);
+	}
+
+	if (switch_channel_test_flag(caller_channel, CF_BYPASS_MEDIA)
+		|| ((var = switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_VARIABLE)) && switch_true(var))) {
+		if (!switch_channel_test_flag(caller_channel, CF_ANSWERED)
+			&& !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
+			switch_channel_set_flag(caller_channel, CF_BYPASS_MEDIA);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already up, delaying point-to-point mode 'till both legs are up.\n");
+			no_media_bridge = 1;
+		}
+	}
+
+	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n", switch_channel_cause2str(cause));
+		if (!do_continue && cause != SWITCH_CAUSE_NO_ANSWER) {
+			/* All Causes besides NO_ANSWER terminate the originating session unless continue_on_fail is set.
+			   We will pass the fail cause on when we hangup. */
+			switch_channel_hangup(caller_channel, cause);
+		}
+		/* Otherwise.. nobody answered.  Go back to the dialplan instructions in case there was more to do. */
+		return;
+	} else {
+		if (no_media_bridge) {
+			switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
+			switch_frame_t *read_frame;
+			/* SIP won't let us redir media until the call has been answered #$^#%& so we will proxy any early media until they do */
+			while (switch_channel_ready(caller_channel) && switch_channel_ready(peer_channel)
+				   && !switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
+				switch_status_t status = switch_core_session_read_frame(peer_session, &read_frame, -1, 0);
+				uint8_t bad = 1;
+
+				if (SWITCH_READ_ACCEPTABLE(status)
+					&& switch_core_session_write_frame(session, read_frame, -1, 0) == SWITCH_STATUS_SUCCESS) {
+					bad = 0;
+				}
+				if (bad) {
+					switch_channel_hangup(caller_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					switch_channel_hangup(peer_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					goto end;
+				}
+			}
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Redirecting media to point-to-point mode.\n");
+			switch_ivr_nomedia(switch_core_session_get_uuid(session), SMF_FORCE);
+			switch_ivr_nomedia(switch_core_session_get_uuid(peer_session), SMF_FORCE);
+			switch_ivr_signal_bridge(session, peer_session);
+		} else {
+			if (switch_channel_test_flag(caller_channel, CF_BYPASS_MEDIA)) {
+				switch_ivr_signal_bridge(session, peer_session);
+			} else {
+				switch_ivr_multi_threaded_bridge(session, peer_session, NULL, NULL, NULL);
+			}
+		}
+	end:
+		if (peer_session) {
+			switch_core_session_rwunlock(peer_session);
+		}
+	}
+}
 
 static const switch_api_interface_t strepoch_api_interface = {
 	/*.interface_name */ "strepoch",
@@ -707,6 +976,86 @@ static const switch_api_interface_t presence_api_interface = {
 };
 
 
+static const switch_application_interface_t bridge_application_interface = {
+	/*.interface_name */ "bridge",
+	/*.application_function */ audio_bridge_function,
+	/* long_desc */ "Bridge the audio between two sessions",
+	/* short_desc */ "Bridge Audio",
+	/* syntax */ "<channel_url>",
+	/* flags */ SAF_SUPPORT_NOMEDIA
+};
+
+static const switch_application_interface_t speak_application_interface = {
+	/*.interface_name */ "speak",
+	/*.application_function */ speak_function,
+	/* long_desc */ "Speak text to a channel via the tts interface",
+	/* short_desc */ "Speak text",
+	/* syntax */ "<engine>|<voice>|<text>",
+	/* flags */ SAF_NONE,
+	&bridge_application_interface
+};
+
+static const switch_application_interface_t record_application_interface = {
+	/*.interface_name */ "record",
+	/*.application_function */ record_function,
+	/* long_desc */ "Record a file from the channels input",
+	/* short_desc */ "Record File",
+	/* syntax */ "<path> [+time_limit_ms]",
+	/* flags */ SAF_NONE,
+	&speak_application_interface
+};
+
+
+static const switch_application_interface_t record_session_application_interface = {
+	/*.interface_name */ "record_session",
+	/*.application_function */ record_session_function,
+	/* long_desc */ "Starts a background recording of the entire session",
+	/* short_desc */ "Record Session",
+	/* syntax */ "<path>",
+	/* flags */ SAF_NONE,
+	&record_application_interface
+};
+
+
+static const switch_application_interface_t stop_record_session_application_interface = {
+	/*.interface_name */ "stop_record_session",
+	/*.application_function */ stop_record_session_function,
+	/* long_desc */ "Stops a background recording of the entire session",
+	/* short_desc */ "Stop Record Session",
+	/* syntax */ "<path>",
+	/* flags */ SAF_NONE,
+	&record_session_application_interface
+};
+
+static const switch_application_interface_t playback_application_interface = {
+	/*.interface_name */ "playback",
+	/*.application_function */ playback_function,
+	/* long_desc */ "Playback a file to the channel",
+	/* short_desc */ "Playback File",
+	/* syntax */ "<path>",
+	/* flags */ SAF_NONE,
+	/*.next */ &stop_record_session_application_interface
+};
+static const switch_application_interface_t park_application_interface = {
+	/*.interface_name */ "park",
+	/*.application_function */ park_function,
+	/* long_desc */ NULL,
+	/* short_desc */ NULL,
+	/* syntax */ NULL,
+	/* flags */ SAF_NONE,
+	/*.next */ &playback_application_interface
+};
+
+static const switch_application_interface_t echo_application_interface = {
+	/*.interface_name */ "echo",
+	/*.application_function */ echo_function,
+	/* long_desc */ "Perform an echo test against the calling channel",
+	/* short_desc */ "Echo",
+	/* syntax */ "",
+	/* flags */ SAF_NONE,
+	/*.next */ &park_application_interface
+};
+
 static const switch_application_interface_t fax_detect_application_interface = {
 	/*.interface_name */ "fax_detect",
 	/*.application_function */ fax_detect_session_function,
@@ -714,7 +1063,7 @@ static const switch_application_interface_t fax_detect_application_interface = {
 	/* short_desc */ "Detect faxes",
 	/* syntax */ "",
 	/* flags */ SAF_NONE,
-	/*.next */ NULL
+	/*.next */ &echo_application_interface
 };
 
 static const switch_application_interface_t stop_fax_detect_application_interface = {
@@ -990,7 +1339,7 @@ static const switch_application_interface_t privacy_application_interface = {
 	/*.next */ &transfer_application_interface
 };
 
-static const switch_loadable_module_interface_t mod_dptools_module_interface = {
+static const switch_loadable_module_interface_t dptools_module_interface = {
 	/*.module_name = */ modname,
 	/*.endpoint_interface = */ NULL,
 	/*.timer_interface = */ NULL,
@@ -1000,23 +1349,17 @@ static const switch_loadable_module_interface_t mod_dptools_module_interface = {
 	/*.api_interface */ &presence_api_interface
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &mod_dptools_module_interface;
+	*module_interface = &dptools_module_interface;
 
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/* 'switch_module_runtime' will start up in a thread by itself just by having it exist 
-if it returns anything but SWITCH_STATUS_TERM it will be called again automaticly
-*/
-
-
-//switch_status_t switch_module_runtime(void)
 
 /* For Emacs:
  * Local Variables:

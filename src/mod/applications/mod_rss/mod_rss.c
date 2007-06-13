@@ -31,7 +31,8 @@
  */
 #include <switch.h>
 
-static const char modname[] = "mod_rss";
+SWITCH_MODULE_LOAD_FUNCTION(mod_rss_load);
+SWITCH_MODULE_DEFINITION(mod_rss, mod_rss_load, NULL, NULL);
 
 typedef enum {
 	SFLAG_INSTRUCT = (1 << 0),
@@ -635,7 +636,7 @@ static switch_loadable_module_interface_t rss_module_interface = {
 };
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_rss_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &rss_module_interface;

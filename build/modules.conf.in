@@ -1,17 +1,12 @@
 loggers/mod_console
 loggers/mod_syslog
-applications/mod_bridgecall
 applications/mod_commands
 applications/mod_conference
 applications/mod_dptools
-applications/mod_echo
 applications/mod_enum
 #applications/mod_ivrtest
-#applications/mod_park
 #applications/mod_soundtouch
-applications/mod_playback
 #applications/mod_rss
-#applications/mod_skel
 #asr_tts/mod_cepstral
 #codecs/mod_amr
 codecs/mod_g711

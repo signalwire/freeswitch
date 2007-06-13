@@ -33,7 +33,10 @@
  */
 #include <switch.h>
 
-static const char modname[] = "mod_conference";
+SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_conference_shutdown);
+SWITCH_MODULE_DEFINITION(mod_conference, mod_conference_load, mod_conference_shutdown, NULL);
+
 static const char global_app_name[] = "conference";
 static char *global_cf_name = "conference.conf";
 static switch_api_interface_t conf_api_interface;
@@ -4909,7 +4912,7 @@ static void send_presence(switch_event_types_t id)
 }
 
 /* Called by FreeSWITCH when the module loads */
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
 {
 	uint32_t i;
 	size_t nl, ol = 0;
@@ -4974,7 +4977,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	return status;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_conference_shutdown)
 {
 	if (globals.running) {
 
