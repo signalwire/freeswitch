@@ -43,7 +43,9 @@
 #define DL_EVENT_CONNECTED "dingaling::connected"
 #define MDL_CHAT_PROTO "jingle"
 
-static const char modname[] = "mod_dingaling";
+SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_dingaling_shutdown);
+SWITCH_MODULE_DEFINITION(mod_dingaling, mod_dingaling_load, mod_dingaling_shutdown, NULL);
 
 static switch_memory_pool_t *module_pool = NULL;
 
@@ -1824,7 +1826,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load)
 {
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
@@ -1927,8 +1929,7 @@ static switch_status_t init_profile(mdl_profile_t *profile, uint8_t login)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_dingaling_shutdown)
 {
 	sign_off();
 

@@ -51,7 +51,8 @@
 #undef SWIFT_FAILED
 #define SWIFT_FAILED(r) ((void *)(r) < (void *)0)
 
-static const char modname[] = "mod_cepstral";
+SWITCH_MODULE_LOAD_FUNCTION(mod_cepstral_load);
+SWITCH_MODULE_DEFINITION(mod_cepstral, mod_cepstral_load, NULL, NULL);
 
 static swift_engine *engine;
 
@@ -426,7 +427,7 @@ static const switch_loadable_module_interface_t cepstral_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-switch_status_t switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_cepstral_load)
 {
 
 	/* Open the Swift TTS Engine */

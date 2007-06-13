@@ -31,8 +31,8 @@
  */
 #include <switch.h>
 
-static const char modname[] = "mod_l16";
-
+SWITCH_MODULE_LOAD_FUNCTION(mod_l16_load);
+SWITCH_MODULE_DEFINITION(mod_l16, mod_l16_load, NULL, NULL);
 
 static switch_status_t switch_raw_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
@@ -424,7 +424,7 @@ static switch_loadable_module_interface_t raw_module_interface = {
 };
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_l16_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &raw_module_interface;

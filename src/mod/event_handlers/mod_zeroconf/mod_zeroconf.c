@@ -35,7 +35,10 @@
 #endif
 #include <howl.h>
 
-static const char modname[] = "mod_zeroconf";
+SWITCH_MODULE_LOAD_FUNCTION(mod_zeroconf_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_zeroconf_shutdown);
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_zeroconf_runtime);
+SWITCH_MODULE_DEFINITION(mod_zeroconf, mod_zeroconf_load, mod_zeroconf_shutdown, mod_zeroconf_runtime);
 
 static switch_memory_pool_t *module_pool = NULL;
 
@@ -249,7 +252,7 @@ static switch_loadable_module_interface_t zeroconf_module_interface = {
 
 static int RUNNING = 0;
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_zeroconf_shutdown)
 {
 	if (RUNNING == 1) {
 		RUNNING = -1;
@@ -258,8 +261,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_zeroconf_load)
 {
 
 	memset(&globals, 0, sizeof(globals));
@@ -298,7 +300,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 }
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_zeroconf_runtime)
 {
 
 	RUNNING = 1;

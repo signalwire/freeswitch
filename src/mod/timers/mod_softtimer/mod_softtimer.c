@@ -46,7 +46,11 @@ static struct {
 	switch_mutex_t *mutex;
 } globals;
 
-static const char modname[] = "mod_softtimer";
+SWITCH_MODULE_LOAD_FUNCTION(mod_softtimer_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_softtimer_shutdown);
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_softtimer_runtime);
+SWITCH_MODULE_DEFINITION(mod_softtimer, mod_softtimer_load, mod_softtimer_shutdown, mod_softtimer_runtime);
+
 #define MAX_ELEMENTS 1000
 
 struct timer_private {
@@ -191,13 +195,13 @@ static const switch_timer_interface_t timer_interface = {
 	/*.timer_destroy */ timer_destroy
 };
 
-static const switch_loadable_module_interface_t mod_softtimer_module_interface = {
+static const switch_loadable_module_interface_t softtimer_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ &timer_interface
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_softtimer_load)
 {
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
@@ -206,7 +210,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	}
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &mod_softtimer_module_interface;
+	*module_interface = &softtimer_module_interface;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -218,7 +222,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 #define STEP_MS 1
 #define STEP_MIC 1000
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
+
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_softtimer_runtime)
 {
 	switch_time_t reference = switch_time_now();
 	uint32_t current_ms = 0;
@@ -267,8 +272,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 	return SWITCH_STATUS_TERM;
 }
 
-
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_softtimer_shutdown)
 {
 
 	if (globals.RUNNING) {

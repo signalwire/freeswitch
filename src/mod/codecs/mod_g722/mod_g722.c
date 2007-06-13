@@ -33,7 +33,8 @@
 #include <switch.h>
 #include "g7xx/g722.h"
 
-static const char modname[] = "mod_g722";
+SWITCH_MODULE_LOAD_FUNCTION(mod_g722_load);
+SWITCH_MODULE_DEFINITION(mod_g722, mod_g722_load, NULL, NULL);
 
 struct g722_context {
 	g722_decode_state_t decoder_object;
@@ -172,7 +173,7 @@ static switch_loadable_module_interface_t g722_module_interface = {
 	/*.application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_g722_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &g722_module_interface;

@@ -33,8 +33,8 @@
 #include <math.h>
 #include <ctype.h>
 
-static const char modname[] = "mod_say_en";
-
+SWITCH_MODULE_LOAD_FUNCTION(mod_say_en_load);
+SWITCH_MODULE_DEFINITION(mod_say_en, mod_say_en_load, NULL, NULL);
 
 #define say_num(num, t) {							\
 		char tmp[80];\
@@ -537,7 +537,7 @@ static switch_loadable_module_interface_t say_en_module_interface = {
 	/*.asr_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_say_en_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &say_en_module_interface;

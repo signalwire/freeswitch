@@ -31,7 +31,8 @@
  */
 #include <switch.h>
 
-static const char modname[] = "mod_native_file";
+SWITCH_MODULE_LOAD_FUNCTION(mod_native_file_load);
+SWITCH_MODULE_DEFINITION(mod_native_file, mod_native_file_load, NULL, NULL);
 
 struct native_file_context {
 	switch_file_t *fd;
@@ -163,7 +164,7 @@ static switch_loadable_module_interface_t native_file_module_interface = {
 
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_native_file_load)
 {
 
 	const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];

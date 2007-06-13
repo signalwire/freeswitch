@@ -31,10 +31,10 @@
  * mod_g729.c -- G729 Codec Module
  *
  */
-
-static const char modname[] = "mod_g729";
-
 #include "switch.h"
+
+SWITCH_MODULE_LOAD_FUNCTION(mod_g729_load);
+SWITCH_MODULE_DEFINITION(mod_g729, mod_g729_load, NULL, NULL);
 
 #ifndef G729_PASSTHROUGH
 #include "g729/g729.h"
@@ -310,7 +310,7 @@ static switch_loadable_module_interface_t g729_module_interface = {
 	/*.application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_g729_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &g729_module_interface;

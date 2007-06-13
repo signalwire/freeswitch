@@ -32,7 +32,8 @@
 #include <switch.h>
 #include <sndfile.h>
 
-static const char modname[] = "mod_sndfile";
+SWITCH_MODULE_LOAD_FUNCTION(mod_sndfile_load);
+SWITCH_MODULE_DEFINITION(mod_sndfile, mod_sndfile_load, NULL, NULL);
 
 static switch_memory_pool_t *module_pool = NULL;
 
@@ -361,7 +362,7 @@ static switch_status_t setup_formats(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_sndfile_load)
 {
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {

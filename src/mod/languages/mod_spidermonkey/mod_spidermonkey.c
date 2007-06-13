@@ -38,8 +38,9 @@
 #include <curl/curl.h>
 #endif
 
-static const char modname[] = "mod_spidermonkey";
-
+SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spidermonkey_shutdown);
+SWITCH_MODULE_DEFINITION(mod_spidermonkey, mod_spidermonkey_load, mod_spidermonkey_shutdown, NULL);
 
 static void session_destroy(JSContext * cx, JSObject * obj);
 static JSBool session_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval);
@@ -3046,7 +3047,7 @@ static void  message_query_handler(switch_event_t *event)
 
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 {
 	switch_status_t status;
 
@@ -3069,7 +3070,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spidermonkey_shutdown)
 {
 	curl_global_cleanup();
 	return SWITCH_STATUS_SUCCESS;

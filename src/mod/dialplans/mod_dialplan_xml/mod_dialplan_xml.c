@@ -34,7 +34,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-static const char modname[] = "mod_dialplan_xml";
+SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_xml_load);
+SWITCH_MODULE_DEFINITION(mod_dialplan_xml, mod_dialplan_xml_load, NULL, NULL);
 
 typedef enum {
 	BREAK_ON_TRUE,
@@ -392,7 +393,7 @@ static const switch_loadable_module_interface_t dialplan_module_interface = {
 	/*.application_interface = */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_xml_load)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */

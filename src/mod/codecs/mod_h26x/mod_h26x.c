@@ -31,8 +31,8 @@
  */
 #include <switch.h>
 
-static const char modname[] = "mod_h26x";
-
+SWITCH_MODULE_LOAD_FUNCTION(mod_h26x_load);
+SWITCH_MODULE_DEFINITION(mod_h26x, mod_h26x_load, NULL, NULL);
 
 static switch_status_t switch_h26x_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
@@ -132,8 +132,7 @@ static switch_loadable_module_interface_t h26x_module_interface = {
 	/*.api_interface */ NULL,
 };
 
-
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_h26x_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &h26x_module_interface;

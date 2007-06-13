@@ -32,7 +32,11 @@
 #include <switch.h>
 #define CMD_BUFLEN 1024 * 1000
 
-static const char modname[] = "mod_event_socket";
+SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown);
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime);
+SWITCH_MODULE_DEFINITION(mod_event_socket, mod_event_socket_load, mod_event_socket_shutdown, mod_event_socket_runtime);
+
 static char *MARKER = "1";
 
 typedef enum {
@@ -280,7 +284,7 @@ static void close_socket(switch_socket_t ** sock)
 	switch_mutex_unlock(listen_list.sock_mutex);
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown)
 {
 	listener_t *l;
 
@@ -300,8 +304,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 }
 
 
-
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &event_socket_module_interface;
@@ -1188,7 +1191,7 @@ static int config(void)
 }
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 {
 	switch_memory_pool_t *pool = NULL, *listener_pool = NULL;
 	switch_status_t rv;

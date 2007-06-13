@@ -33,7 +33,8 @@
 #include <speex/speex.h>
 #include <speex/speex_preprocess.h>
 
-static const char modname[] = "mod_speex";
+SWITCH_MODULE_LOAD_FUNCTION(mod_speex_load);
+SWITCH_MODULE_DEFINITION(mod_speex, mod_speex_load, NULL, NULL);
 
 static const switch_codec_settings_t default_codec_settings = {
 	/*.quality */ 5,
@@ -403,7 +404,7 @@ static switch_loadable_module_interface_t speex_module_interface = {
 	/*.application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_speex_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &speex_module_interface;

@@ -32,7 +32,8 @@
 #include <sys/stat.h>
 #include <switch.h>
 
-static const char modname[] = "mod_xml_cdr";
+SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load);
+SWITCH_MODULE_DEFINITION(mod_xml_cdr, mod_xml_cdr_load, NULL, NULL);
 
 static switch_status_t my_on_hangup(switch_core_session_t *session)
 {
@@ -91,7 +92,7 @@ static const switch_state_handler_table_t state_handlers = {
 };
 
 
-static const switch_loadable_module_interface_t mod_xml_cdr_module_interface = {
+static const switch_loadable_module_interface_t xml_cdr_module_interface = {
 	/*.module_name = */ modname,
 	/*.endpoint_interface = */ NULL,
 	/*.timer_interface = */ NULL,
@@ -100,12 +101,12 @@ static const switch_loadable_module_interface_t mod_xml_cdr_module_interface = {
 	/*.application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 {
 	/* test global state handlers */
 	switch_core_add_state_handler(&state_handlers);
 
-	*module_interface = &mod_xml_cdr_module_interface;
+	*module_interface = &xml_cdr_module_interface;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

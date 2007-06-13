@@ -32,7 +32,10 @@
 #include <switch.h>
 #include <iksemel.h>
 
-static const char modname[] = "mod_xmpp_event";
+SWITCH_MODULE_LOAD_FUNCTION(mod_xmpp_event_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xmpp_event_shutdown);
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_xmpp_event_runtime);
+SWITCH_MODULE_DEFINITION(mod_xmpp_event, mod_xmpp_event_load, mod_xmpp_event_shutdown, mod_xmpp_event_runtime);
 
 static int RUNNING = 0;
 static iksfilter *my_filter;
@@ -397,7 +400,7 @@ static switch_loadable_module_interface_t xmpp_event_module_interface = {
 	/*.application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_xmpp_event_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &xmpp_event_module_interface;
@@ -411,7 +414,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 }
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xmpp_event_shutdown)
 {
 
 	if (RUNNING) {
@@ -424,7 +427,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_xmpp_event_runtime)
 {
 	RUNNING = 1;
 	xmpp_connect(globals.jid, globals.passwd);

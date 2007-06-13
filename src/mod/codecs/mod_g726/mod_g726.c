@@ -33,7 +33,8 @@
 #include "g72x.h"
 #include "switch_bitpack.h"
 
-static const char modname[] = "mod_g726";
+SWITCH_MODULE_LOAD_FUNCTION(mod_g726_load);
+SWITCH_MODULE_DEFINITION(mod_g726, mod_g726_load, NULL, NULL);
 
 typedef int (*encoder_t) (int, int, g726_state *);
 typedef int (*decoder_t) (int, int, g726_state *);
@@ -427,7 +428,7 @@ static switch_loadable_module_interface_t g726_module_interface = {
 	/*.application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_g726_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &g726_module_interface;

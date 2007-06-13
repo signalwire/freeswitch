@@ -43,7 +43,9 @@
 static char *embedding[] = { "", "-e", "" };
 EXTERN_C void xs_init(pTHX);
 
-static const char modname[] = "mod_perl";
+SWITCH_MODULE_LOAD_FUNCTION(mod_perl_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_perl_shutdown);
+SWITCH_MODULE_DEFINITION(mod_perl, mod_perl_load, mod_perl_shutdown, NULL);
 
 static struct {
 	PerlInterpreter *my_perl;
@@ -100,7 +102,7 @@ static switch_loadable_module_interface_t perl_module_interface = {
 };
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_perl_shutdown)
 {
 	if (globals.my_perl) {
 		perl_destruct(globals.my_perl);
@@ -111,7 +113,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_perl_load)
 {
 
 	PerlInterpreter *my_perl;

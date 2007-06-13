@@ -34,8 +34,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-
-static const char modname[] = "mod_dialplan_directory";
+SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_directory_load);
+SWITCH_MODULE_DEFINITION(mod_dialplan_directory, mod_dialplan_directory_load, NULL, NULL);
 
 static struct {
 	char *directory_name;
@@ -166,7 +166,7 @@ static const switch_loadable_module_interface_t directory_dialplan_module_interf
 	/*.application_interface = */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_directory_load)
 {
 
 	load_config();

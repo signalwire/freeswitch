@@ -49,7 +49,8 @@ Flag UseVx = True;
 enum Crate WrkRate = Rate63;
 #endif
 
-static const char modname[] = "mod_g723_1";
+SWITCH_MODULE_LOAD_FUNCTION(mod_g723_1_load);
+SWITCH_MODULE_DEFINITION(mod_g723_1, mod_g723_1_load, NULL, NULL);
 
 #ifndef G723_PASSTHROUGH
 struct g723_context {
@@ -202,7 +203,7 @@ static switch_loadable_module_interface_t g723_module_interface = {
 	/*.application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_g723_1_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &g723_module_interface;

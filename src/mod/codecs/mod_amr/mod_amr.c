@@ -32,7 +32,9 @@
  *
  */
 #include "switch.h"
-static const char modname[] = "mod_amr";
+
+SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load);
+SWITCH_MODULE_DEFINITION(mod_amr, mod_amr_load, NULL, NULL);
 
 #ifndef AMR_PASSTHROUGH
 #include "amr/interf_enc.h"
@@ -322,7 +324,7 @@ static switch_loadable_module_interface_t amr_module_interface = {
 	/*.application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 {
 #ifndef AMR_PASSTHROUGH
 	char *cf = "amr.conf";

@@ -34,7 +34,8 @@
 #include "iLBC_decode.h"
 #include "iLBC_define.h"
 
-static const char modname[] = "mod_ilbc";
+SWITCH_MODULE_LOAD_FUNCTION(mod_ilbc_load);
+SWITCH_MODULE_DEFINITION(mod_ilbc, mod_ilbc_load, NULL, NULL);
 
 struct ilbc_context {
 	iLBC_Enc_Inst_t encoder;
@@ -314,9 +315,7 @@ static switch_loadable_module_interface_t ilbc_module_interface = {
 	/*.application_interface */ NULL
 };
 
-
-
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_ilbc_load)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */

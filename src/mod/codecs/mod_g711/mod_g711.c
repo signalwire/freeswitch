@@ -32,8 +32,8 @@
 #include <switch.h>
 #include <g7xx/g711.h>
 
-
-static const char modname[] = "mod_g711";
+SWITCH_MODULE_LOAD_FUNCTION(mod_g711_load);
+SWITCH_MODULE_DEFINITION(mod_g711, mod_g711_load, NULL, NULL);
 
 
 static switch_status_t switch_g711u_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
@@ -415,7 +415,7 @@ static switch_loadable_module_interface_t g711_module_interface = {
 };
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_g711_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &g711_module_interface;

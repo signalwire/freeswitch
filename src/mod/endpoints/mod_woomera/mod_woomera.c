@@ -48,7 +48,10 @@
 //#define MEDIA_ANSWER "ANSWER"
 //#define USE_ANSWER 1
 
-static const char modname[] = "mod_woomera";
+SWITCH_MODULE_LOAD_FUNCTION(mod_woomera_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_woomera_shutdown);
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_woomera_runtime);
+SWITCH_MODULE_DEFINITION(mod_woomera, mod_woomera_load, mod_woomera_shutdown, mod_woomera_runtime);
 
 static switch_memory_pool_t *module_pool = NULL;
 
@@ -1269,7 +1272,7 @@ static void *woomera_thread_run(void *obj)
 	return NULL;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_woomera_runtime)
 {
 
 	woomera_thread_run(&default_profile);
@@ -1277,7 +1280,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 	return SWITCH_STATUS_TERM;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_woomera_shutdown)
 {
 	int x = 0;
 	woomera_profile_thread_running(&default_profile, 1, 0);
@@ -1291,7 +1294,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_woomera_load)
 {
 
 	struct woomera_profile *profile = &default_profile;

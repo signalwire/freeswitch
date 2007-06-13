@@ -40,7 +40,11 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-static const char modname[] = "mod_cdr - CDR Engine";
+SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cdr_shutdown);
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_cdr_runtime);
+SWITCH_MODULE_DEFINITION(mod_cdr, mod_cdr_load, mod_cdr_shutdown, mod_cdr_runtime);
+
 static int RUNNING = 0;
 static CDRContainer *newcdrcontainer;
 static switch_memory_pool_t *module_pool;
@@ -122,10 +126,10 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
-	*interface = &cdr_module_interface;
+	*module_interface = &cdr_module_interface;
 	
 	switch_core_add_state_handler(&state_handlers);
 	
@@ -142,7 +146,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_cdr_runtime)
 {
 	RUNNING = 1;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mod_cdr made it to runtime.  Wee!\n");
@@ -196,7 +200,7 @@ SWITCH_STANDARD_API(modcdr_show_available)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cdr_shutdown)
 {
 	delete newcdrcontainer;
 	switch_thread_rwlock_destroy(cdr_rwlock);

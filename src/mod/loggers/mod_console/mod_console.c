@@ -31,7 +31,9 @@
  */
 #include <switch.h>
 
-static const char modname[] = "mod_console";
+SWITCH_MODULE_LOAD_FUNCTION(mod_console_load);
+SWITCH_MODULE_DEFINITION(mod_console, mod_console_load, NULL, NULL);
+
 static const uint8_t STATIC_LEVELS[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
 static int COLORIZE = 0;
 #ifdef WIN32
@@ -188,7 +190,7 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_console_load)
 {
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");

@@ -40,7 +40,8 @@
 #include <ldap.h>
 #endif
 
-static const char modname[] = "mod_ldap";
+SWITCH_MODULE_LOAD_FUNCTION(mod_ldap_load);
+SWITCH_MODULE_DEFINITION(mod_ldap, mod_ldap_load, NULL, NULL);
 
 struct ldap_context {
 	LDAP *ld;
@@ -207,7 +208,7 @@ static const switch_directory_interface_t ldap_directory_interface = {
 };
 
 
-static switch_loadable_module_interface_t skel_module_interface = {
+static switch_loadable_module_interface_t ldap_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
@@ -220,10 +221,10 @@ static switch_loadable_module_interface_t skel_module_interface = {
 	/*.directory_interface */ &ldap_directory_interface
 };
 
-switch_status_t switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_ldap_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &skel_module_interface;
+	*module_interface = &ldap_module_interface;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

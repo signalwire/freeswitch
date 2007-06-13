@@ -31,7 +31,10 @@
  */
 #include "switch.h"
 #include "gsm.h"
-static const char modname[] = "mod_gsm";
+
+SWITCH_MODULE_LOAD_FUNCTION(mod_gsm_load);
+SWITCH_MODULE_DEFINITION(mod_gsm, mod_gsm_load, NULL, NULL);
+
 struct gsm_context {
 	gsm encoder;
 	gsm decoder;
@@ -162,7 +165,8 @@ static switch_loadable_module_interface_t gsm_module_interface = {
 	/*.codec_interface */ &gsm_codec_interface,
 	/*.application_interface */ NULL
 };
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+
+SWITCH_MODULE_LOAD_FUNCTION(mod_gsm_load)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */

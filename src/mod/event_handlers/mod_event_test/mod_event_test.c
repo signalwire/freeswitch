@@ -31,7 +31,8 @@
  */
 #include <switch.h>
 
-static const char modname[] = "mod_event_test";
+SWITCH_MODULE_LOAD_FUNCTION(mod_event_test_load);
+SWITCH_MODULE_DEFINITION(mod_event_test, mod_event_test_load, NULL, NULL);
 
 //#define TORTURE_ME
 
@@ -124,8 +125,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 }
 #endif
 
-
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_event_test_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &event_test_module_interface;

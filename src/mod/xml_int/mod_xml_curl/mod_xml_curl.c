@@ -31,7 +31,9 @@
 #include <switch.h>
 #include <curl/curl.h>
 
-static const char modname[] = "mod_xml_curl";
+SWITCH_MODULE_LOAD_FUNCTION(mod_xml_curl_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_curl_shutdown);
+SWITCH_MODULE_DEFINITION(mod_xml_curl, mod_xml_curl_load, mod_xml_curl_shutdown, NULL);
 
 struct xml_binding {
 	char *url;
@@ -229,7 +231,7 @@ static switch_status_t do_config(void)
 }
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_xml_curl_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &xml_curl_module_interface;
@@ -244,7 +246,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_curl_shutdown)
 {
 	curl_global_cleanup();
 	return SWITCH_STATUS_SUCCESS;

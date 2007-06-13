@@ -42,7 +42,10 @@
 #include <xmlrpc-c/server.h>
 #include <xmlrpc-c/server_abyss.h>
 
-static const char modname[] = "mod_xml_rpc";
+SWITCH_MODULE_LOAD_FUNCTION(mod_xml_rpc_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown);
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime);
+SWITCH_MODULE_DEFINITION(mod_xml_rpc, mod_xml_rpc_load, mod_xml_rpc_shutdown, mod_xml_rpc_runtime);
 
 static switch_loadable_module_interface_t xml_rpc_module_interface = {
 	/*.module_name */ modname,
@@ -112,7 +115,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_realm, globals.realm)
 }
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_xml_rpc_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &xml_rpc_module_interface;
@@ -357,7 +360,7 @@ static xmlrpc_value *freeswitch_man(xmlrpc_env * const envP, xmlrpc_value * cons
 	return val;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 {
 	TServer abyssServer;
 	xmlrpc_registry *registryP;
@@ -402,7 +405,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown)
 {
 	globals.running = 0;
 	return SWITCH_STATUS_SUCCESS;

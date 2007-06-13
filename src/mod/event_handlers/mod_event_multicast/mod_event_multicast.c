@@ -32,7 +32,10 @@
 #include <switch.h>
 static char *MARKER = "1";
 
-static const char modname[] = "mod_event_multicast";
+SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_multicast_shutdown);
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime);
+SWITCH_MODULE_DEFINITION(mod_event_multicast, mod_event_multicast_load, mod_event_multicast_shutdown, mod_event_multicast_runtime);
 
 static switch_memory_pool_t *module_pool = NULL;
 
@@ -183,7 +186,7 @@ static switch_loadable_module_interface_t event_test_module_interface = {
 };
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 {
 
 	memset(&globals, 0, sizeof(globals));
@@ -246,7 +249,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 }
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_multicast_shutdown)
 {
 	int x = 0;
 
@@ -259,8 +262,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 {
 	switch_event_t *local_event;
 	char buf[65536] = { 0 };
