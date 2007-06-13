@@ -296,6 +296,9 @@ struct zap_caller_data {
 	char aniII[25];
 	char dnis[25];
 	char rdnis[25];
+	int CRV;
+	uint8_t raw_data[1024];
+	uint32_t raw_data_len;
 };
 
 struct zap_channel {

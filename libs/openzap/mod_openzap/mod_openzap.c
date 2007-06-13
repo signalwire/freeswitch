@@ -316,6 +316,13 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 			}
 		}
 		break;
+	case ZAP_CHAN_TYPE_B:
+		{
+			if (tech_pvt->zchan->state != ZAP_CHANNEL_STATE_DOWN) {
+				zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_HANGUP);
+			}
+		}
+		break;
 	default: 
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled type for channel %s\n", switch_channel_get_name(channel));
@@ -536,7 +543,27 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 static switch_status_t channel_receive_message_b(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
-	return SWITCH_STATUS_FALSE;
+	switch_channel_t *channel;
+	private_t *tech_pvt;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+			
+	tech_pvt = (private_t *) switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+	
+	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_PROGRESS:
+	case SWITCH_MESSAGE_INDICATE_ANSWER:
+		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_UP);
+		}
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t channel_receive_message_fxo(switch_core_session_t *session, switch_core_session_message_t *msg)
@@ -913,7 +940,46 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 	return status;
 }
 
-static ZIO_SIGNAL_CB_FUNCTION(on_zap_signal)
+static ZIO_SIGNAL_CB_FUNCTION(on_isdn_signal)
+{
+	switch_core_session_t *session = NULL;
+	switch_channel_t *channel = NULL;
+	zap_status_t status;
+
+	zap_log(ZAP_LOG_DEBUG, "got ISDN sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
+
+    switch(sigmsg->event_id) {
+    case ZAP_SIGEVENT_START:
+		{
+			return zap_channel_from_event(sigmsg, &session);
+		}
+		break;
+    case ZAP_SIGEVENT_STOP:
+		{
+			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				zap_channel_clear_token(sigmsg->channel, 0);
+				channel = switch_core_session_get_channel(session);
+				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+				switch_core_session_rwunlock(session);
+			}
+		}
+		break;
+    case ZAP_SIGEVENT_UP:
+		{
+			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				channel = switch_core_session_get_channel(session);
+				switch_channel_mark_answered(channel);
+				switch_core_session_rwunlock(session);
+			}
+		}
+		break;
+	}
+
+	return ZAP_SUCCESS;
+}
+
+
+static ZIO_SIGNAL_CB_FUNCTION(on_analog_signal)
 {
 	switch (sigmsg->channel->type) {
 	case ZAP_CHAN_TYPE_FXO:
@@ -1027,7 +1093,7 @@ static switch_status_t load_config(void)
 				continue;
 			}
 
-			if (zap_analog_configure_span(span, tonegroup, to, max, on_zap_signal) != ZAP_SUCCESS) {
+			if (zap_analog_configure_span(span, tonegroup, to, max, on_analog_signal) != ZAP_SUCCESS) {
 				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d\n", span_id);
 				continue;
 			}
@@ -1038,6 +1104,65 @@ static switch_status_t load_config(void)
 
 			
 			zap_analog_start(span);
+		}
+	}
+
+	if ((spans = switch_xml_child(cfg, "pri_spans"))) {
+		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
+			char *id = (char *) switch_xml_attr_soft(myspan, "id");
+			char *context = "default";
+			char *dialplan = "XML";
+			Q921NetUser_t mode = Q931_TE;
+			Q931Dialect_t dialect = Q931_Dialect_National;
+			uint32_t span_id = 0;
+			zap_span_t *span = NULL;
+			char *tonegroup = NULL;
+
+			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
+				char *var = (char *) switch_xml_attr_soft(param, "name");
+				char *val = (char *) switch_xml_attr_soft(param, "value");
+
+				if (!strcasecmp(var, "tonegroup")) {
+					tonegroup = val;
+				} else if (!strcasecmp(var, "mode")) {
+					mode = strcasecmp(val, "net") ? Q931_TE : Q931_NT;
+				} else if (!strcasecmp(var, "dialect")) {
+					dialect = q931_str2Q931Diaelct_type(val);
+					if (dialect == Q931_Dialect_Count) {
+						dialect = Q931_Dialect_National;
+					}
+				} else if (!strcasecmp(var, "context")) {
+					context = val;
+				} else if (!strcasecmp(var, "dialplan")) {
+					dialplan = val;
+				} 
+			}
+				
+			if (!id) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param 'id'\n");
+			}
+
+			span_id = atoi(id);
+			
+			if (!tonegroup) {
+				tonegroup = "us";
+			}
+			
+			if (zap_span_find(span_id, &span) != ZAP_SUCCESS) {
+				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span %d\n", span_id);
+				continue;
+			}
+
+			if (zap_isdn_configure_span(span, mode, dialect, on_isdn_signal) != ZAP_SUCCESS) {
+				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d mode: %d dialect: %d error: %s\n", span_id, mode, dialect, span->last_error);
+				continue;
+			}
+
+			SPAN_CONFIG[span->span_id].span = span;
+			switch_copy_string(SPAN_CONFIG[span->span_id].context, context, sizeof(SPAN_CONFIG[span->span_id].context));
+			switch_copy_string(SPAN_CONFIG[span->span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span->span_id].dialplan));
+
+			zap_isdn_start(span);
 		}
 	}
 

@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 
 	printf("OpenZAP loaded\n");
 
-	if (zap_span_find("wanpipe", 1, &span) != ZAP_SUCCESS) {
+	if (zap_span_find(1, &span) != ZAP_SUCCESS) {
 		fprintf(stderr, "Error finding OpenZAP span\n");
 		goto done;
 	}
