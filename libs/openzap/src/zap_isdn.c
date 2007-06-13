@@ -95,10 +95,10 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 				
 				memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
 
-				zap_copy_string(zchan->caller_data.cid_num, callingnum->Digit, callingnum->Size - 3);
-				zap_copy_string(zchan->caller_data.cid_name, callingnum->Digit, callingnum->Size - 3);
-				zap_copy_string(zchan->caller_data.ani, callingnum->Digit, callingnum->Size - 3);
-				zap_copy_string(zchan->caller_data.dnis, callednum->Digit, callednum->Size - 3);
+				zap_copy_string(zchan->caller_data.cid_num, (char *)callingnum->Digit, callingnum->Size - 3);
+				zap_copy_string(zchan->caller_data.cid_name, (char *)callingnum->Digit, callingnum->Size - 3);
+				zap_copy_string(zchan->caller_data.ani, (char *)callingnum->Digit, callingnum->Size - 3);
+				zap_copy_string(zchan->caller_data.dnis, (char *)callednum->Digit, callednum->Size - 3);
 
 				zchan->caller_data.CRV = gen->CRV;
 				if (cplen > sizeof(zchan->caller_data.raw_data)) {
