@@ -300,6 +300,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					enc_frame = &session->raw_read_frame;
 				}
 				session->enc_read_frame.datalen = session->enc_read_frame.buflen;
+
 				assert(session->read_codec != NULL);
 				assert(enc_frame != NULL);
 				assert(enc_frame->data != NULL);
@@ -316,7 +317,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				case SWITCH_STATUS_RESAMPLE:
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "fixme 1\n");
 				case SWITCH_STATUS_SUCCESS:
-					session->enc_read_frame.codec = session->read_codec;
 					session->enc_read_frame.samples = session->read_codec->implementation->bytes_per_frame / sizeof(int16_t);
 					session->enc_read_frame.timestamp = read_frame->timestamp;
 					session->enc_read_frame.rate = read_frame->rate;
@@ -327,7 +327,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					*frame = &session->enc_read_frame;
 					break;
 				case SWITCH_STATUS_NOOP:
-					session->raw_read_frame.codec = session->read_codec;
 					session->raw_read_frame.samples = enc_frame->codec->implementation->samples_per_frame;
 					session->raw_read_frame.timestamp = read_frame->timestamp;
 					session->raw_read_frame.payload = enc_frame->codec->implementation->ianacode;

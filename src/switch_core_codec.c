@@ -48,6 +48,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 	}
 
 	session->read_codec = codec;
+	session->raw_read_frame.codec = session->read_codec;
+	session->raw_write_frame.codec = session->read_codec;
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
