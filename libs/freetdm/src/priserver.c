@@ -88,7 +88,7 @@ static void launch_channel(struct sangoma_pri *spri, int channo)
 	memset(inframe, 0, MAX_BYTES);
 	memset(outframe, 0, MAX_BYTES);
 		
-	if (zap_channel_open("wanpipe", spri->span, channo, &chan) != ZAP_SUCCESS) {
+	if (zap_channel_open(spri->span, channo, &chan) != ZAP_SUCCESS) {
 		printf("DEBUG cant open fd!\n");
 	}
 	
@@ -103,7 +103,7 @@ static void launch_channel(struct sangoma_pri *spri, int channo)
 #endif
 	
 #if 1
-	if (zap_channel_command(chan, ZAP_COMMAND_ENABLE_TONE_DETECT, &tt) != ZAP_SUCCESS) {
+	if (zap_channel_command(chan, ZAP_COMMAND_ENABLE_DTMF_DETECT, &tt) != ZAP_SUCCESS) {
 		printf("Critical Error: Failed to set dtmf detect!\n");
 		zap_channel_close(&chan);
 		exit(-1);
@@ -167,7 +167,7 @@ static void launch_channel(struct sangoma_pri *spri, int channo)
 			if (lead) {
 				continue;
 			} 
-			zap_channel_write(chan, outframe, &len);
+			zap_channel_write(chan, outframe, sizeof(outframe), &len);
 		} else {
 			printf("BREAK");
 			break;
@@ -289,7 +289,8 @@ int main(int argc, char *argv[])
     printf("OpenZAP loaded\n");
 
 
-	
+	debug = PRI_DEBUG_Q931_DUMP | PRI_DEBUG_Q931_STATE;
+
 	if (sangoma_init_pri(&spri,
 						 1,  // span
 						 24, // dchan

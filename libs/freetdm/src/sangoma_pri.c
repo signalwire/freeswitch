@@ -105,8 +105,8 @@ static int __pri_sangoma_read(struct pri *pri, void *buf, int buflen)
 	memset(&((unsigned char*)buf)[res],0,2);
 	res+=2;
 
-	print_bits(buf, res-2, bb, sizeof(bb), 1);
-	zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", res-2, LINE, bb);
+	//print_bits(buf, res-2, bb, sizeof(bb), 1, 0);
+	//zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", res-2, LINE, bb);
 
 	return res;
 }
@@ -118,13 +118,13 @@ static int __pri_sangoma_write(struct pri *pri, void *buf, int buflen)
 	zap_size_t len = buflen -2;
 	char bb[4096] = "";
 
-	if (zap_channel_write(spri->zdchan, buf, &len) != ZAP_SUCCESS) {
+	if (zap_channel_write(spri->zdchan, buf, buflen, &len) != ZAP_SUCCESS) {
 		printf("D-WRITE FAIL! [%s]\n", spri->zdchan->last_error);
         return 0;
 	}
 	
-	print_bits(buf, (int)buflen-2, bb, sizeof(bb), 1);
-	zap_log(ZAP_LOG_DEBUG, "WRITE %d\n%s\n%s\n\n", (int)buflen-2, LINE, bb);
+	//print_bits(buf, (int)buflen-2, bb, sizeof(bb), 1, 0);
+	//zap_log(ZAP_LOG_DEBUG, "WRITE %d\n%s\n%s\n\n", (int)buflen-2, LINE, bb);
 
 	return (int) buflen;
 }
@@ -136,7 +136,7 @@ int sangoma_init_pri(struct sangoma_pri *spri, int span, int dchan, int swtype, 
 
 	memset(spri, 0, sizeof(struct sangoma_pri));
 
-	if (zap_channel_open("wanpipe", span, dchan, &spri->zdchan) != ZAP_SUCCESS) {
+	if (zap_channel_open(span, dchan, &spri->zdchan) != ZAP_SUCCESS) {
 		fprintf(stderr, "Unable to open DCHAN %d for span %d (%s)\n", dchan, span, strerror(errno));
 	} else {
 		if ((spri->pri = pri_new_cb(spri->zdchan->sockfd, node, swtype, __pri_sangoma_read, __pri_sangoma_write, spri))){

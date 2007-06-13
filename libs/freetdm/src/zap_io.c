@@ -781,8 +781,11 @@ zap_status_t zap_channel_close(zap_channel_t **zchan)
 
 	assert(zchan != NULL);
 	check = *zchan;
-	assert(check != NULL);
 	*zchan = NULL;
+
+	if (!check) {
+		return ZAP_FAIL;
+	}
 
 	zap_mutex_lock(check->mutex);
 	if (zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
@@ -1966,7 +1969,7 @@ void print_bits(uint8_t *b, int bl, char *buf, int blen, zap_endian_t e, uint8_t
 	if (blen < (bl * 10) + 2) {
         return;
     }
-	
+
 	zap_bitstream_init(&bs, b, bl, e, ss);
 	last = bs.byte_index;	
 	while((bit = zap_bitstream_get_bit(&bs)) > -1) {
