@@ -38,7 +38,9 @@
 #include <switch.h>
 #include <sstream>
 
-static const char modname[] = "mod_lumenvox";
+SWITCH_MODULE_LOAD_FUNCTION(mod_lumenvox_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lumenvox_shutdown);
+SWITCH_MODULE_DEFINITION(mod_lumenvox, mod_lumenvox_load, mod_lumenvox_shutdown, NULL);
 
 typedef enum {
 	LVFLAG_HAS_TEXT = (1 << 0),
@@ -441,7 +443,7 @@ static const switch_loadable_module_interface_t lumenvox_module_interface = {
 	/*.asr_interface */ &lumenvox_asr_interface
 };
 
-switch_status_t switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_lumenvox_load)
 {
 	LVSpeechPort::RegisterAppLogMsg(log_callback, NULL, 5);
 	//LVSpeechPort::SetClientPropertyEx(PROP_EX_SRE_SERVERS, PROP_EX_VALUE_TYPE_STRING, (void *)"127.0.0.1");
@@ -453,7 +455,7 @@ switch_status_t switch_module_load(const switch_loadable_module_interface_t **mo
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lumenvox_shutdown)
 {
 	return SWITCH_STATUS_UNLOAD;
 }

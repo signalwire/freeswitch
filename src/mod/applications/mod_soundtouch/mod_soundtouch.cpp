@@ -35,12 +35,12 @@
 using namespace soundtouch;
 using namespace std;
 
-
 #include <switch.h>
 #define STSTART 1024 * 2
 #define STBLOCK 1024
 
-static const char modname[] = "mod_soundtouch";
+SWITCH_MODULE_LOAD_FUNCTION(mod_soundtouch_load);
+SWITCH_MODULE_DEFINITION(mod_soundtouch, mod_soundtouch_load, NULL, NULL);
 
 struct soundtouch_helper {
     SoundTouch *st;
@@ -331,7 +331,7 @@ static switch_loadable_module_interface_t soundtouch_module_interface = {
 };
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_soundtouch_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &soundtouch_module_interface;

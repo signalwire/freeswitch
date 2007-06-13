@@ -41,7 +41,9 @@
 #endif
 
 //#define DOTRACE
-static const char modname[] = "mod_wanpipe";
+SWITCH_MODULE_LOAD_FUNCTION(mod_wanpipe_load);
+SWITCH_MODULE_DEFINITION(mod_wanpipe, mod_wanpipe_load, NULL, NULL);
+
 #define STRLEN 15
 
 static switch_memory_pool_t *module_pool = NULL;
@@ -1308,7 +1310,7 @@ static void s_pri_message(struct pri *pri, char *s)
 }
 #endif
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_wanpipe_load)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 

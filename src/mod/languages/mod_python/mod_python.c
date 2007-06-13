@@ -49,7 +49,9 @@ PyThreadState *mainThreadState = NULL;
 void init_freeswitch(void);
 static switch_api_interface_t python_run_interface;
 
-const char modname[] = "mod_python";
+SWITCH_MODULE_LOAD_FUNCTION(mod_python_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown);
+SWITCH_MODULE_DEFINITION(mod_python, mod_python_load, mod_python_shutdown, NULL);
 
 static void eval_some_python(char *uuid, char *args)
 {
@@ -221,7 +223,7 @@ static switch_loadable_module_interface_t python_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &python_module_interface;
@@ -242,7 +244,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 /*
   Called when the system shuts down*/
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown)
 {
     PyInterpreterState *mainInterpreterState;
     PyThreadState *myThreadState;

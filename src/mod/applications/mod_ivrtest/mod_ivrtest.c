@@ -31,9 +31,8 @@
  */
 #include <switch.h>
 
-
-static const char modname[] = "mod_ivrtest";
-
+SWITCH_MODULE_LOAD_FUNCTION(mod_ivrtest_load);
+SWITCH_MODULE_DEFINITION(mod_ivrtest, mod_ivrtest_load, NULL, NULL);
 
 /*
   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
@@ -499,7 +498,7 @@ static const switch_application_interface_t asrtest_application_interface = {
 	/*.next */ &ivrtest_application_interface
 };
 
-static const switch_loadable_module_interface_t mod_ivrtest_module_interface = {
+static const switch_loadable_module_interface_t ivrtest_module_interface = {
 	/*.module_name = */ modname,
 	/*.endpoint_interface = */ NULL,
 	/*.timer_interface = */ NULL,
@@ -508,11 +507,11 @@ static const switch_loadable_module_interface_t mod_ivrtest_module_interface = {
 	/*.application_interface */ &asrtest_application_interface
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_ivrtest_load)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &mod_ivrtest_module_interface;
+	*module_interface = &ivrtest_module_interface;
 
 	/* test global state handlers */
 	switch_core_add_state_handler(&state_handlers);
@@ -521,12 +520,6 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/* 'switch_module_runtime' will start up in a thread by itself just by having it exist 
-   if it returns anything but SWITCH_STATUS_TERM it will be called again automaticly
-*/
-
-
-//switch_status_t switch_module_runtime(void)
 
 /* For Emacs:
  * Local Variables:

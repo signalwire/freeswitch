@@ -39,7 +39,10 @@
 #define DEFAULT_FORMAT   "[message]"
 #define MAX_LENGTH       1024
 
-static const char modname[] = "mod_syslog";
+SWITCH_MODULE_LOAD_FUNCTION(mod_syslog_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_syslog_shutdown);
+SWITCH_MODULE_DEFINITION(mod_syslog, mod_syslog_load, mod_syslog_shutdown, NULL);
+
 static switch_status_t load_config(void);
 
 static struct {
@@ -148,7 +151,7 @@ static switch_status_t load_config(void)
 	return 0;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_syslog_load)
 {
 	switch_status_t status;
 	*interface = &console_module_interface;
@@ -164,7 +167,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_unload(const switch_loadable_module_interface_t **interface)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_syslog_shutdown)
 {
 	closelog();
 

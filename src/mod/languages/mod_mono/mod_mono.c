@@ -50,7 +50,10 @@ MonoClass *mod_mono_find_assembly_class(MonoImage * image);
 /* Managed functions */
 void mod_mono_switch_console_printf(switch_text_channel_t channel, char *file, const char *func, int line, char *fmt, char *msg);
 
-static const char modname[] = "mod_mono";
+SWITCH_MODULE_LOAD_FUNCTION(mod_mono_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_mono_shutdown);
+SWITCH_MODULE_DEFINITION(mod_mono, mod_mono_load, mod_mono_shutdown, NULL);
+
 static switch_memory_pool_t *mono_pool = NULL;
 
 static struct {
@@ -74,9 +77,9 @@ static switch_loadable_module_interface_t mono_module_interface = {
  * This function will initialise the memory pool and plugin hash for this module,
  * it will then initialise a new mono domain.
  */
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_mono_load)
 {
-	*interface = &mono_module_interface;
+	*module_interface = &mono_module_interface;
 
 	/* Initialise memory pool */
 	if (switch_core_new_memory_pool(&mono_pool) != SWITCH_STATUS_SUCCESS) {
@@ -158,7 +161,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
  * Function for cleanly shutting down mod_mono
  * 
  */
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_mono_shutdown)
 {
 	if (globals.domain) {
 		mono_jit_cleanup(globals.domain);

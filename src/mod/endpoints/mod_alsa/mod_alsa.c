@@ -39,7 +39,9 @@
 
 #define MY_EVENT_RINGING "alsa::ringing"
 
-static const char modname[] = "mod_alsa";
+SWITCH_MODULE_LOAD_FUNCTION(mod_alsa_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_alsa_shutdown);
+SWITCH_MODULE_DEFINITION(mod_alsa, mod_alsa_load, mod_alsa_shutdown, NULL);
 
 static switch_memory_pool_t *module_pool = NULL;
 //static int running = 1;
@@ -825,7 +827,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 }
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_alsa_load);
 {
 
 	switch_status_t status;
@@ -943,7 +945,7 @@ static switch_status_t load_config(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_alsa_shutdown)
 {
 	deactivate_audio_device();
 

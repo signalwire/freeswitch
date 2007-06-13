@@ -32,7 +32,11 @@
  */
 #include <switch.h>
 
-static const char modname[] = "mod_skel";
+//SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skel_shutdown);
+//SWITCH_MODULE_RUNTIME_FUNCTION(mod_skel_runtime);
+
+SWITCH_MODULE_LOAD_FUNCTION(mod_skel_load);
+SWITCH_MODULE_DEFINITION(mod_skel, mod_skel_load, NULL, NULL);
 
 static switch_loadable_module_interface_t skel_module_interface = {
 	/*.module_name */ modname,
@@ -47,7 +51,7 @@ static switch_loadable_module_interface_t skel_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_skel_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &skel_module_interface;
@@ -60,7 +64,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 /*
   Called when the system shuts down
-SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skel_shutdown);
 {
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -69,7 +73,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 /*
   If it exists, this is called in it's own thread when the module-load completes
   If it returns anything but SWITCH_STATUS_TERM it will be called again automaticly
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_skel_runtime);
 {
 	while(looping)
 	{

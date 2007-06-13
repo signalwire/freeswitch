@@ -37,14 +37,13 @@
 #include <lame.h>
 #include <curl/curl.h>
 
-
 #define OUTSCALE 8192
 #define MP3_SCACHE 16384
 #define MP3_DCACHE 8192
 
-static const char modname[] = "mod_shout";
-
-
+SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_shout_shutdown);
+SWITCH_MODULE_DEFINITION(mod_shout, mod_shout_load, mod_shout_shutdown, NULL);
 
 static char *supported_formats[SWITCH_MAX_CODECS] = { 0 };
 
@@ -890,7 +889,7 @@ static switch_loadable_module_interface_t shout_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 {
 	supported_formats[0] = "shout";
 	supported_formats[1] = "mp3";
@@ -909,7 +908,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 }
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_shout_shutdown)
 {
 	curl_global_cleanup();
 	return SWITCH_STATUS_SUCCESS;
