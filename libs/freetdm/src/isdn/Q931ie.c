@@ -1029,7 +1029,6 @@ L3INT Q931Uie_Cause(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * I
 
     /* Octet 4 */
     pie->Value = IBuf[Octet+Off] & 0x7f;
-    Octet++;
 
     Q931IESizeTest(Q931E_CAUSE);
 
