@@ -368,50 +368,48 @@ static switch_codec_implementation_t aal2_g726_40k_implementation = {
 	/*.destroy */ switch_g726_destroy,
 };
 
-const switch_codec_interface_t g726_16k_codec_interface = {
+static switch_codec_interface_t g726_16k_codec_interface = {
 	/*.interface_name */ "G.726 16k",
 	/*.implementations */ &g726_16k_implementation,
 };
 
-const switch_codec_interface_t g726_24k_codec_interface = {
+static switch_codec_interface_t g726_24k_codec_interface = {
 	/*.interface_name */ "G.726 24k",
 	/*.implementations */ &g726_24k_implementation,
 	/*.next */ &g726_16k_codec_interface
 };
 
-const switch_codec_interface_t g726_32k_codec_interface = {
+static switch_codec_interface_t g726_32k_codec_interface = {
 	/*.interface_name */ "G.726 32k",
 	/*.implementations */ &g726_32k_implementation,
 	/*.next */ &g726_24k_codec_interface
 };
 
-const switch_codec_interface_t g726_40k_codec_interface = {
+static switch_codec_interface_t g726_40k_codec_interface = {
 	/*.interface_name */ "G.726 40k",
 	/*.implementations */ &g726_40k_implementation,
 	/*.next */ &g726_32k_codec_interface
 };
 
-
-
-const switch_codec_interface_t aal2_g726_16k_codec_interface = {
+static switch_codec_interface_t aal2_g726_16k_codec_interface = {
 	/*.interface_name */ "G.726 16k (aal2)",
 	/*.implementations */ &aal2_g726_16k_implementation,
 	/*.next */ &g726_40k_codec_interface
 };
 
-const switch_codec_interface_t aal2_g726_24k_codec_interface = {
+static switch_codec_interface_t aal2_g726_24k_codec_interface = {
 	/*.interface_name */ "G.726 24k (aal2)",
 	/*.implementations */ &aal2_g726_24k_implementation,
 	/*.next */ &aal2_g726_16k_codec_interface
 };
 
-const switch_codec_interface_t aal2_g726_32k_codec_interface = {
+static switch_codec_interface_t aal2_g726_32k_codec_interface = {
 	/*.interface_name */ "G.726 32k (aal2)",
 	/*.implementations */ &aal2_g726_32k_implementation,
 	/*.next */ &aal2_g726_24k_codec_interface
 };
 
-const switch_codec_interface_t aal2_g726_40k_codec_interface = {
+static switch_codec_interface_t aal2_g726_40k_codec_interface = {
 	/*.interface_name */ "G.726 40k (aal2)",
 	/*.implementations */ &aal2_g726_40k_implementation,
 	/*.next */ &aal2_g726_32k_codec_interface

@@ -1348,7 +1348,7 @@ SWITCH_DECLARE(switch_loadable_module_interface_t *) switch_loadable_module_crea
 	return mod;
 }
 
-#define ALLOC_INTERFACE(_TYPE_)	do {									\
+#define ALLOC_INTERFACE(_TYPE_)	for(;;) {									\
 		switch_##_TYPE_##_interface_t *i, *ptr;							\
 		i = switch_core_alloc(mod->pool, sizeof(switch_##_TYPE_##_interface_t)); \
 		assert(i != NULL);												\
@@ -1359,7 +1359,7 @@ SWITCH_DECLARE(switch_loadable_module_interface_t *) switch_loadable_module_crea
 			mod->_TYPE_##_interface = i;								\
 		}																\
 																		\
-		return i; } while(0)
+		return i; }
 
 
 SWITCH_DECLARE(void *) switch_loadable_module_create_interface(switch_loadable_module_interface_t *mod, switch_module_interface_name_t iname)

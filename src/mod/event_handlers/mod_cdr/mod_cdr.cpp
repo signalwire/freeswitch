@@ -108,7 +108,7 @@ static switch_api_interface_t modcdr_reload_interface_api = {
 	/*.next */ &modcdr_queue_pause_api
 };
 
-static const switch_loadable_module_interface_t cdr_module_interface = {
+static switch_loadable_module_interface_t cdr_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
