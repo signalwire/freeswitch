@@ -636,11 +636,13 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 }
 
 
-static switch_status_t switch_loadable_module_load_file(char *filename, switch_loadable_module_t **new_module)
+static switch_status_t switch_loadable_module_load_file(char *path, char *filename, switch_loadable_module_t **new_module)
 {
 	switch_loadable_module_t *module = NULL;
 	switch_dso_handle_t *dso = NULL;
 	apr_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_loadable_module_function_table_t *mod_interface_functions = NULL;
+	char *struct_name = NULL;
 	switch_dso_handle_sym_t load_function_handle = NULL;
 	switch_dso_handle_sym_t shutdown_function_handle = NULL;
 	switch_dso_handle_sym_t runtime_function_handle = NULL;
@@ -651,10 +653,10 @@ static switch_status_t switch_loadable_module_load_file(char *filename, switch_l
 	char derr[512] = "";
 	switch_memory_pool_t *pool;
 
-	assert(filename != NULL);
+	assert(path != NULL);
 
 	*new_module = NULL;
-	status = switch_dso_load(&dso, filename, loadable_modules.pool);
+	status = switch_dso_load(&dso, path, loadable_modules.pool);
 
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
@@ -668,8 +670,14 @@ static switch_status_t switch_loadable_module_load_file(char *filename, switch_l
 			break;
 		}
 
-		status = switch_dso_sym(&load_function_handle, dso, "switch_module_load");
-		load_func_ptr = (switch_module_load_t) (intptr_t) load_function_handle;
+		struct_name = switch_core_sprintf(pool, "%s_module_interface", filename);
+		status = switch_dso_sym(&mod_interface_functions, dso, struct_name);
+		if (mod_interface_functions) {
+			load_func_ptr = mod_interface_functions->load;
+		} else {
+			status = switch_dso_sym(&load_function_handle, dso, "switch_module_load");
+			load_func_ptr = (switch_module_load_t) (intptr_t) load_function_handle;
+		}
 
 		if (load_func_ptr == NULL) {
 			err = "Cannot locate symbol 'switch_module_load' please make sure this is a vaild module.";
@@ -701,19 +709,24 @@ static switch_status_t switch_loadable_module_load_file(char *filename, switch_l
 		if (pool) {
 			switch_core_destroy_memory_pool(&pool);
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Loading module %s\n**%s**\n", filename, err);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Loading module %s\n**%s**\n", path, err);
 		return SWITCH_STATUS_GENERR;
 	}
 
 	module->pool = pool;
-	module->filename = switch_core_strdup(module->pool, filename);
+	module->filename = switch_core_strdup(module->pool, path);
 	module->module_interface = module_interface;
 	module->switch_module_load = load_func_ptr;
 
-	switch_dso_sym(&shutdown_function_handle, dso, "switch_module_shutdown");
-	module->switch_module_shutdown = (switch_module_shutdown_t) (intptr_t) shutdown_function_handle;
-	switch_dso_sym(&runtime_function_handle, dso, "switch_module_runtime");
-	module->switch_module_runtime = (switch_module_runtime_t) (intptr_t) runtime_function_handle;
+	if (mod_interface_functions) {
+		module->switch_module_shutdown = mod_interface_functions->shutdown;
+		module->switch_module_runtime = mod_interface_functions->runtime;
+	} else {
+		switch_dso_sym(&shutdown_function_handle, dso, "switch_module_shutdown");
+		module->switch_module_shutdown = (switch_module_shutdown_t) (intptr_t) shutdown_function_handle;
+		switch_dso_sym(&runtime_function_handle, dso, "switch_module_runtime");
+		module->switch_module_runtime = (switch_module_runtime_t) (intptr_t) runtime_function_handle;
+	}
 
 	module->lib = dso;
 
@@ -728,7 +741,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, ch
 {
 	switch_size_t len = 0;
 	char *path;
-	char *file;
+	char *file, *dot;
 	switch_loadable_module_t *new_module = NULL;
 	switch_status_t status;
 
@@ -747,20 +760,19 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, ch
 
 	if (*file == '/') {
 		path = switch_core_strdup(loadable_modules.pool, file);
-	} else {
-		if (strchr(file, '.')) {
-			len = strlen(dir);
-			len += strlen(file);
-			len += 4;
-			path = (char *) switch_core_alloc(loadable_modules.pool, len);
-			snprintf(path, len, "%s%s%s", dir, SWITCH_PATH_SEPARATOR, file);
-		} else {
-			len = strlen(dir);
-			len += strlen(file);
-			len += 8;
-			path = (char *) switch_core_alloc(loadable_modules.pool, len);
-			snprintf(path, len, "%s%s%s%s", dir, SWITCH_PATH_SEPARATOR, file, ext);
+		file = (char *)switch_cut_path(file);
+		if ((dot = strchr(file, '.'))) {
+			dot = '\0';
 		}
+	} else {
+		if ((dot = strchr(file, '.'))) {
+			dot = '\0';
+		}
+		len = strlen(dir);
+		len += strlen(file);
+		len += 8;
+		path = (char *) switch_core_alloc(loadable_modules.pool, len);
+		snprintf(path, len, "%s%s%s%s", dir, SWITCH_PATH_SEPARATOR, file, ext);
 	}
 
 	switch_mutex_lock(loadable_modules.mutex);
@@ -768,8 +780,8 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, ch
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Module %s Already Loaded!\n", file);
 		*err = "Module already loadedn\n";
 		status = SWITCH_STATUS_FALSE;
-	} else if ((status = switch_loadable_module_load_file(path, &new_module) == SWITCH_STATUS_SUCCESS)) {
-		if ((status = switch_loadable_module_process((char *) file, new_module)) == SWITCH_STATUS_SUCCESS && runtime) {
+	} else if ((status = switch_loadable_module_load_file(path, file, &new_module) == SWITCH_STATUS_SUCCESS)) {
+		if ((status = switch_loadable_module_process(file, new_module)) == SWITCH_STATUS_SUCCESS && runtime) {
 			if (new_module->switch_module_runtime) {
 				switch_core_launch_thread(switch_loadable_module_exec, new_module, new_module->pool);
 			}
@@ -785,37 +797,11 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, ch
 
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, char *fname, const char **err)
 {
-	char *path = NULL;
-	char *file = NULL;
 	switch_loadable_module_t *module = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-#ifdef WIN32
-	const char *ext = ".dll";
-#elif defined (MACOSX) || defined (DARWIN)
-	const char *ext = ".dylib";
-#else
-	const char *ext = ".so";
-#endif
-
-
-	if (!(file = strdup(fname))) {
-		abort();
-	}
-	
-	if (*file == '/') {
-		path = strdup(file);
-	} else {
-		if (strchr(file, '.')) {
-			path = switch_mprintf("%s%s%s", dir, SWITCH_PATH_SEPARATOR, file);
-		} else {
-			path = switch_mprintf("%s%s%s%s", dir, SWITCH_PATH_SEPARATOR, file, ext);
-		}
-	}
-
-
 	switch_mutex_lock(loadable_modules.mutex);
-	if ((module = switch_core_hash_find(loadable_modules.module_hash, file))) {
+	if ((module = switch_core_hash_find(loadable_modules.module_hash, fname))) {
 		if (module->perm) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Module is not unloadable.\n");
 			*err = "Module is not unloadable";
@@ -828,9 +814,6 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, 
 		status = SWITCH_STATUS_FALSE;
 	}
 	switch_mutex_unlock(loadable_modules.mutex);
-
-	switch_safe_free(file);
-	switch_safe_free(path);
 
 	return status;
 

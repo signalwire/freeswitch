@@ -45,7 +45,7 @@
 #include <switch_odbc.h>
 #endif
 
-static const char modname[] = "mod_sofia";
+#define MODNAME "mod_sofia"
 static const switch_state_handler_table_t noop_state_handler = { 0 };
 struct sofia_gateway;
 typedef struct sofia_gateway sofia_gateway_t;

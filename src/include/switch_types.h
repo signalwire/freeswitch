@@ -1045,18 +1045,40 @@ typedef struct {
 } switch_input_args_t;
 typedef switch_status_t (*switch_say_callback_t) (switch_core_session_t *session,
 												  char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args);
-typedef switch_status_t (*switch_module_load_t) (switch_loadable_module_interface_t **, char *);
-typedef switch_status_t (*switch_module_reload_t) (void);
-typedef switch_status_t (*switch_module_pause_t) (void);
-typedef switch_status_t (*switch_module_resume_t) (void);
-typedef switch_status_t (*switch_module_status_t) (void);
-typedef switch_status_t (*switch_module_runtime_t) (void);
-typedef switch_status_t (*switch_module_shutdown_t) (void);
 typedef struct switch_xml *switch_xml_t;
 typedef struct switch_core_time_duration switch_core_time_duration_t;
 typedef switch_xml_t(*switch_xml_search_function_t) (const char *section,
 													 const char *tag_name, const char *key_name, const char *key_value, const char *params,
 													 void *user_data);
+
+
+#define SWITCH_API_VERSION 1
+#define SWITCH_MODULE_LOAD_ARGS (const switch_loadable_module_interface_t **module_interface, char *filename)
+#define SWITCH_MODULE_RUNTIME_ARGS (void)
+#define SWITCH_MODULE_SHUTDOWN_ARGS (void)
+typedef switch_status_t (*switch_module_load_t) SWITCH_MODULE_LOAD_ARGS ;
+typedef switch_status_t (*switch_module_runtime_t) SWITCH_MODULE_RUNTIME_ARGS ;
+typedef switch_status_t (*switch_module_shutdown_t) SWITCH_MODULE_SHUTDOWN_ARGS ;
+#define SWITCH_MODULE_LOAD_FUNCTION(name) switch_status_t name SWITCH_MODULE_LOAD_ARGS
+#define SWITCH_MODULE_RUNTIME_FUNCTION(name) switch_status_t name SWITCH_MODULE_RUNTIME_ARGS
+#define SWITCH_MODULE_SHUTDOWN_FUNCTION(name) switch_status_t name SWITCH_MODULE_SHUTDOWN_ARGS
+
+typedef struct switch_loadable_module_function_table {
+	int switch_api_version;
+	switch_module_load_t load;
+	switch_module_shutdown_t shutdown;
+	switch_module_runtime_t runtime;
+} switch_loadable_module_function_table_t;
+
+#define SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime)								\
+static const char modname[] =  #name ;														\
+SWITCH_MOD_DECLARE_DATA switch_loadable_module_function_table_t name##_module_interface = {	\
+	SWITCH_API_VERSION,																		\
+	load,																					\
+	shutdown,																				\
+	runtime																					\
+}
+
 
 /* things we don't deserve to know about */
 /*! \brief A channel */

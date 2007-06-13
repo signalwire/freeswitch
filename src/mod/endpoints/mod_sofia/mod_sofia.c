@@ -38,6 +38,10 @@
 
 #include "mod_sofia.h"
 
+SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown);
+SWITCH_MODULE_DEFINITION(mod_sofia, mod_sofia_load, mod_sofia_shutdown, NULL);
+
 struct mod_sofia_globals mod_sofia_globals;
 const switch_endpoint_interface_t sofia_endpoint_interface;
 static switch_frame_t silence_frame = { 0 };
@@ -1497,7 +1501,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	return cause;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 {
 
 	silence_frame.data = silence_data;
@@ -1575,7 +1579,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 {
 	int sanity = 0;
 	
