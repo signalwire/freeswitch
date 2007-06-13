@@ -92,7 +92,7 @@ L3INT Q931Pmes_Alerting(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT I
 
 	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
 	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8);	/* msb							*/
+	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 	
@@ -180,7 +180,7 @@ L3INT Q931Pmes_CallProceeding(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L
 
 	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
 	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8);	/* msb							*/
+	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 	
@@ -299,7 +299,7 @@ L3INT Q931Pmes_Connect(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT IS
 
 	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
 	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8);	/* msb							*/
+	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 	
@@ -395,7 +395,7 @@ L3INT Q931Pmes_ConnectAck(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT
 
 	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
 	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8);	/* msb							*/
+	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 	
@@ -460,7 +460,7 @@ L3INT Q931Pmes_Disconnect(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT
 
 	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
 	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8);	/* msb							*/
+	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 	
@@ -535,7 +535,7 @@ L3INT Q931Pmes_Information(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3IN
 
 	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
 	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8);	/* msb							*/
+	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 	
@@ -610,7 +610,7 @@ L3INT Q931Pmes_Notify(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISi
 
 	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
 	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8);	/* msb							*/
+	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 	
@@ -678,7 +678,7 @@ L3INT Q931Pmes_Progress(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT I
 
 	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
 	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8);	/* msb							*/
+	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 	
@@ -756,7 +756,7 @@ L3INT Q931Pmes_Release(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT IS
 
 	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
 	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8);	/* msb							*/
+	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 	
@@ -823,7 +823,7 @@ L3INT Q931Pmes_ReleaseComplete(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, 
 
 	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
 	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8);	/* msb							*/
+	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 	
@@ -890,7 +890,7 @@ L3INT Q931Pmes_Restart(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT IS
 
     OBuf[Octet++]    = pMes->ProtDisc;        /* Protocol discriminator        */
     OBuf[Octet++]    = 2;                    /* length is 2 octets            */
-    OBuf[Octet++]    = (L3UCHAR)(pMes->CRV>>8);    /* msb                            */
+    OBuf[Octet++]    = (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);    /* msb                            */
     OBuf[Octet++]    = (L3UCHAR)(pMes->CRV);    /* lsb                            */
     OBuf[Octet++]    = pMes->MesType;        /* message header                */
     
@@ -957,7 +957,7 @@ L3INT Q931Pmes_RestartAck(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT
 
     OBuf[Octet++]    = pMes->ProtDisc;        /* Protocol discriminator        */
     OBuf[Octet++]    = 2;                    /* length is 2 octets            */
-    OBuf[Octet++]    = (L3UCHAR)(pMes->CRV>>8);    /* msb                            */
+    OBuf[Octet++]    = (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);    /* msb                            */
     OBuf[Octet++]    = (L3UCHAR)(pMes->CRV);    /* lsb                            */
     OBuf[Octet++]    = pMes->MesType;        /* message header                */
     
@@ -1022,7 +1022,7 @@ L3INT Q931Pmes_Resume(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISi
 
 	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
 	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8);	/* msb							*/
+	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 	
@@ -1081,7 +1081,7 @@ L3INT Q931Pmes_ResumeAck(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT 
 
 	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
 	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8);	/* msb							*/
+	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 	
@@ -1143,7 +1143,7 @@ L3INT Q931Pmes_ResumeReject(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3I
 	/* Q931 Message Header	*/
 	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
 	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8);	/* msb						*/
+	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb						*/
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 
@@ -1258,7 +1258,7 @@ L3INT Q931Pmes_Setup(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISiz
 
 	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
 	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8);	/* msb						*/
+	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb						*/
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 	
@@ -1406,7 +1406,7 @@ L3INT Q931Pmes_SetupAck(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT I
 
 	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
 	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8);	/* msb							*/
+	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 	
@@ -1481,7 +1481,7 @@ L3INT Q931Pmes_Status(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISi
 
 	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
 	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8);	/* msb							*/
+	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 	
@@ -1546,7 +1546,7 @@ L3INT Q931Pmes_StatusEnquiry(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3
 
 	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
 	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8);	/* msb							*/
+	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 	
@@ -1603,7 +1603,7 @@ L3INT Q931Pmes_Suspend(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT IS
 
 	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
 	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8);	/* msb							*/
+	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 	
@@ -1661,7 +1661,7 @@ L3INT Q931Pmes_SuspendAck(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT
 
 	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
 	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8);	/* msb							*/
+	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 	
@@ -1719,7 +1719,7 @@ L3INT Q931Pmes_SuspendReject(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3
 
 	OBuf[Octet++]	= pMes->ProtDisc;		/* Protocol discriminator		*/
 	OBuf[Octet++]	= 2;					/* length is 2 octets			*/
-	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8);	/* msb							*/
+	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV>>8) | (pMes->CRVFlag << 7);	/* msb							*/
 	OBuf[Octet++]	= (L3UCHAR)(pMes->CRV);	/* lsb							*/
 	OBuf[Octet++]	= pMes->MesType;		/* message header				*/
 	

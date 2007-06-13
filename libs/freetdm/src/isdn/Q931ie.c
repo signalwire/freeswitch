@@ -1307,12 +1307,12 @@ L3USHORT Q931Uie_CRV(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3I
 
     if(l == 1) /* One octet CRV */
     {
-        CRV = IBuf[Octet];
+        CRV = IBuf[Octet] & 0x7F;
         Octet++;
     }
     else if(l==2) /* two octet CRV */
     {
-        CRV = IBuf[Octet] << 8;
+        CRV = (IBuf[Octet] << 8) & 0x7F;
         CRV = CRV + IBuf[Octet+1];
         Octet += 2;
     }
