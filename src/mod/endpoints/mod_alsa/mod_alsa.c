@@ -827,7 +827,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 }
 
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_alsa_load);
+SWITCH_MODULE_LOAD_FUNCTION(mod_alsa_load)
 {
 
 	switch_status_t status;

@@ -1337,7 +1337,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_wanpipe_load)
 	}
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*interface = &wanpipe_module_interface;
+	*module_interface = &wanpipe_module_interface;
 
 	/* indicate that the module should continue to be loaded */
 	return status;
