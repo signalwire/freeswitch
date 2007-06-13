@@ -154,7 +154,7 @@ static switch_status_t load_config(void)
 SWITCH_MODULE_LOAD_FUNCTION(mod_syslog_load)
 {
 	switch_status_t status;
-	*interface = &console_module_interface;
+	*module_interface = &console_module_interface;
 
 	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
 		return status;
