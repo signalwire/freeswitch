@@ -650,7 +650,7 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 	switch_module_load_t load_func_ptr = NULL;
 	int loading = 1;
 	const char *err = NULL;
-	switch_loadable_module_interface_t *module_interface = NULL;
+	const switch_loadable_module_interface_t *module_interface = NULL;
 	char derr[512] = "";
 	switch_memory_pool_t *pool;
 
@@ -830,7 +830,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filen
 	switch_module_load_t load_func_ptr = NULL;
 	int loading = 1;
 	const char *err = NULL;
-	switch_loadable_module_interface_t *module_interface = NULL;
+	const switch_loadable_module_interface_t *module_interface = NULL;
 	switch_memory_pool_t *pool;
 
 	
