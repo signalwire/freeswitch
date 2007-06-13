@@ -46,6 +46,7 @@ struct soundtouch_helper {
     SoundTouch *st;
     switch_core_session_t *session;
     int send;
+    int read;
     float pitch;
     float octaves;
     float semi;
@@ -208,6 +209,7 @@ static switch_bool_t soundtouch_callback(switch_media_bug_t *bug, void *user_dat
 	case SWITCH_ABC_TYPE_READ:
 	case SWITCH_ABC_TYPE_WRITE:
         break;
+	case SWITCH_ABC_TYPE_READ_REPLACE:
 	case SWITCH_ABC_TYPE_WRITE_REPLACE:
         {
             switch_frame_t *frame;
@@ -215,7 +217,12 @@ static switch_bool_t soundtouch_callback(switch_media_bug_t *bug, void *user_dat
             assert(sth != NULL);
             assert(sth->st != NULL);
 
-            frame = switch_core_media_bug_get_write_replace_frame(bug);
+            if (sth->read) {
+                frame = switch_core_media_bug_get_read_replace_frame(bug);
+            } else {
+                frame = switch_core_media_bug_get_write_replace_frame(bug);
+            }
+
             sth->st->putSamples((SAMPLETYPE *)frame->data, frame->samples);
 
             if (sth->st->numSamples() >= frame->samples * 2) {
@@ -224,9 +231,12 @@ static switch_bool_t soundtouch_callback(switch_media_bug_t *bug, void *user_dat
             } else {
                 memset(frame->data, 0, frame->datalen);
             }
-            
-            switch_core_media_bug_set_write_replace_frame(bug, frame);
-            
+
+            if (sth->read) {
+                switch_core_media_bug_set_read_replace_frame(bug, frame);
+            } else {
+                switch_core_media_bug_set_write_replace_frame(bug, frame);
+            }
             
         }
 	default:
@@ -258,14 +268,15 @@ static void soundtouch_start_function(switch_core_session_t *session, char *data
 
 	if (data && (lbuf = switch_core_session_strdup(session, data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-        if (!strcasecmp(argv[0], "send") && argc >= 1) {
-            sth->send = 1;
-        } else {
-            sth->send = 0;
-        }
-        
-        for(x = 1; x < argc; x++) {
-            if (strchr(argv[x], 'p')) {
+        sth->send = 0;
+        sth->read = 0;
+        sth->pitch = 1;
+        for(x = 0; x < argc; x++) {
+            if (!strncasecmp(argv[x], "send", 4)) {
+                sth->send = 1;
+            } else if (!strncasecmp(argv[x], "read", 4)) {
+                sth->read = 1;
+            } else if (strchr(argv[x], 'p')) {
                 if ((sth->pitch = atof(argv[x]) < 0)) {
                     sth->pitch = 0;
                 }
@@ -286,7 +297,8 @@ static void soundtouch_start_function(switch_core_session_t *session, char *data
 
     sth->session = session;
 
-	if ((status = switch_core_media_bug_add(session, soundtouch_callback, sth, 0, SMBF_WRITE_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
+	if ((status = switch_core_media_bug_add(session, soundtouch_callback, sth, 0, 
+                                            sth->read ? SMBF_READ_REPLACE : SMBF_WRITE_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failure!\n");
 		return;
 	}

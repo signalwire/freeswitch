@@ -28,6 +28,7 @@
 	   a.k.a. by the dtmf of the A leg.
 	   if it were 'recv' then it would be parsed when the dtmf was 
 	   received *from* the b leg so it could control itself.
+	   The optional keywords "read" and "write" will also change the stream replaced
       -->
       <action application="set" data="bridge_pre_execute_bleg_data=send -4s"/>
       <action application="bridge" data="sofia/$${domain}/foo"/>
