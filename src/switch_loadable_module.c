@@ -780,7 +780,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, ch
 	switch_mutex_lock(loadable_modules.mutex);
 	if (switch_core_hash_find(loadable_modules.module_hash, file)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Module %s Already Loaded!\n", file);
-		*err = "Module already loadedn\n";
+		*err = "Module already loaded";
 		status = SWITCH_STATUS_FALSE;
 	} else if ((status = switch_loadable_module_load_file(path, file, &new_module) == SWITCH_STATUS_SUCCESS)) {
 		if ((status = switch_loadable_module_process(file, new_module)) == SWITCH_STATUS_SUCCESS && runtime) {
