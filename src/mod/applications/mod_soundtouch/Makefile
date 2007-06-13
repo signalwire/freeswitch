@@ -8,7 +8,7 @@ LOCAL_CFLAGS += -I$(DIRECTORY)/include -DINTEGER_SAMPLES
 LOCAL_LIBADD=$(LA)
 DEFAULT_ARGS=--prefix=$(PREFIX) --disable-shared --with-pic
 
-include /usr/src/freeswitch.trunk/build/modmake.rules
+include $(BASE)/build/modmake.rules
 
 $(DIRECTORY):
 	$(GETLIB) $(VERSION).tar.gz
