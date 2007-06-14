@@ -122,10 +122,10 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 				if (zchan->state == ZAP_CHANNEL_STATE_DOWN) {
 					memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
 
-					zap_set_string(zchan->caller_data.cid_num, callingnum->Digit);
-					zap_set_string(zchan->caller_data.cid_name, callingnum->Digit);
-					zap_set_string(zchan->caller_data.ani, callingnum->Digit);
-					zap_set_string(zchan->caller_data.dnis, callednum->Digit);
+					zap_set_string(zchan->caller_data.cid_num, (char *)callingnum->Digit);
+					zap_set_string(zchan->caller_data.cid_name, (char *)callingnum->Digit);
+					zap_set_string(zchan->caller_data.ani, (char *)callingnum->Digit);
+					zap_set_string(zchan->caller_data.dnis, (char *)callednum->Digit);
 
 					zchan->caller_data.CRV = gen->CRV;
 					if (cplen > sizeof(zchan->caller_data.raw_data)) {
@@ -226,7 +226,8 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			Q931InitIECallingNum(&CallingNum);
 			Q931InitIECalledNum(&CalledNum);
 			
-			ChanID.ChanSlot = zchan->chan_id;
+			//is cast right here?
+			ChanID.ChanSlot = (unsigned char)zchan->chan_id;
 
 			//CallingNum.Digits
 
@@ -249,7 +250,8 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			cause.CodStand  = 0;
 			cause.Location = 1;
 			cause.Recom = 1;
-			cause.Value = zchan->caller_data.hangup_cause;
+			//should we be casting here.. or do we need to translate value?
+			cause.Value = (unsigned char) zchan->caller_data.hangup_cause;
 			*cause.Diag = '\0';
 			gen->Cause = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &cause);
 			Q931Rx43(&data->q931, (L3UCHAR *) gen, gen->Size);
