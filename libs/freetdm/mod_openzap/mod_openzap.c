@@ -774,18 +774,17 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			switch_core_session_destroy(new_session);
             cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
             goto fail;
-
 		}
-
 
 		return SWITCH_CAUSE_SUCCESS;
 	}
 
-
  fail:
+
 	if (zchan) {
 		zap_channel_done(zchan);
 	}
+
 	return cause;
 
 }

@@ -55,6 +55,13 @@ static L2ULONG zap_time_now()
 #endif
 }
 
+static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(isdn_outgoing_call)
+{
+	zap_status_t status = ZAP_SUCCESS;
+	zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DIALING);
+	return status;
+}
+
 static L3INT zap_isdn_931_err(void *pvt, L3INT id, L3INT p1, L3INT p2)
 {
 	zap_log(ZAP_LOG_ERROR, "ERROR: [%s] [%d] [%d]\n", q931_error_to_name(id), p1, p2);
@@ -205,6 +212,32 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			gen->MesType = Q931mes_CONNECT;
 			gen->BearerCap = 0;
 			Q931Rx43(&data->q931, (void *)gen, zchan->caller_data.raw_data_len);
+		}
+		break;
+	case ZAP_CHANNEL_STATE_DIALING:
+		{
+			Q931ie_BearerCap BearerCap;
+			Q931ie_ChanID ChanID;
+			Q931ie_CallingNum CallingNum;
+			Q931ie_CalledNum CalledNum;
+			
+			Q931InitIEBearerCap(&BearerCap);
+			Q931InitIEChanID(&ChanID);
+			Q931InitIECallingNum(&CallingNum);
+			Q931InitIECalledNum(&CalledNum);
+			
+			ChanID.ChanSlot = zchan->chan_id;
+
+			//CallingNum.Digits
+
+
+			//Q931InitMesGeneric(gen);
+			gen->MesType = Q931mes_SETUP;
+			gen->BearerCap = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &BearerCap);
+			gen->ChanID = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &ChanID);
+			gen->CallingNum = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &CallingNum);
+			gen->CalledNum = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &CalledNum);
+			
 		}
 		break;
 	case ZAP_CHANNEL_STATE_HANGUP:
@@ -399,9 +432,8 @@ zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931D
 					  span);
 
 	span->isdn_data->q931.autoRestartAck = 1;
-
-
 	span->signal_type = ZAP_SIGTYPE_ISDN;
+	span->outgoing_call = isdn_outgoing_call;
 	
 	return ZAP_SUCCESS;
 }
