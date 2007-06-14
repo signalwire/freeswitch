@@ -232,7 +232,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			//CallingNum.Digits
 
 
-			//Q931InitMesGeneric(gen);
+			Q931InitMesGeneric(gen);
 			gen->MesType = Q931mes_SETUP;
 			gen->BearerCap = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &BearerCap);
 			gen->ChanID = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &ChanID);
