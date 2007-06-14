@@ -515,13 +515,12 @@ L3INT Q931Disconnect(Q931_TrunkInfo_t *pTrunk, L3INT iTo, L3INT iCRV, L3INT iCau
     return 0;
 }
 
-L3INT Q931ReleaseComplete(Q931_TrunkInfo_t *pTrunk, L3INT iTo)
+L3INT Q931ReleaseComplete(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf)
 {
-	/* TODO:  Unhandled paramaters */
-	(void)pTrunk;
-	(void)iTo;
+    Q931mes_Header *ptr = (Q931mes_Header*)&buf[Q931L4HeaderSpace];
+	ptr->MesType = Q931mes_RESTART_ACKNOWLEDGE;
 
-	return 0;
+	return Q931Tx32(pTrunk,buf,ptr->Size);
 }
 
 L3INT Q931AckRestart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf)
@@ -529,7 +528,7 @@ L3INT Q931AckRestart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf)
 	L3INT RetCode;
 
     Q931mes_Header *ptr = (Q931mes_Header*)&buf[Q931L4HeaderSpace];
-	ptr->MesType = Q931mes_RESTART_ACKNOWLEDGE;
+	ptr->MesType = Q931mes_RELEASE_COMPLETE;
 
 	RetCode = Q931Proc[pTrunk->Dialect][ptr->MesType](pTrunk, buf, 4);
 
