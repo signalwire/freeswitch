@@ -913,6 +913,20 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt)
 		uint8_t vad_out = switch_test_flag(tech_pvt, TFLAG_VAD_OUT) ? 1 : 0;
 		uint8_t inb = switch_test_flag(tech_pvt, TFLAG_OUTBOUND) ? 0 : 1;
 
+		if ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_enable_vad_in")) && switch_true(val)) {
+			vad_in = 1;
+		}
+		if ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_enable_vad_out")) && switch_true(val)) {
+			vad_out = 1;
+		}
+
+		if ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_disable_vad_in")) && switch_true(val)) {
+			vad_in = 0;
+		}
+		if ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_disable_vad_out")) && switch_true(val)) {
+			vad_out = 0;
+		}
+
 		tech_pvt->ssrc = switch_rtp_get_ssrc(tech_pvt->rtp_session);
 		switch_set_flag_locked(tech_pvt, TFLAG_RTP);
 		switch_set_flag_locked(tech_pvt, TFLAG_IO);

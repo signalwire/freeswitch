@@ -1435,6 +1435,10 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 			rtp_session->last_write_samplecount = rtp_session->timer.samplecount;
 		}
 		switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void *) send_msg, &bytes);
+	} else if (!fwd) {
+		/* nevermind save this seq inc for next time */
+		rtp_session->seq--;
+		rtp_session->send_msg.header.seq = htons(rtp_session->seq);
 	}
 
 	if (rtp_session->ice_user) {
