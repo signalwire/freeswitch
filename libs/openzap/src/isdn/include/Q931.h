@@ -900,6 +900,7 @@ void Q931Initialize();
 void Q931AddDialect(L3UCHAR iDialect, void (*Q931CreateDialectCB)(L3UCHAR iDialect));
 L3INT Q931InitMesSetup(Q931mes_Generic *p);
 L3INT Q931InitMesRestartAck(Q931mes_Generic * pMes);
+L3INT Q931InitMesGeneric(Q931mes_Generic *pMes);
 
 L3INT	Q931CreateCRV(Q931_TrunkInfo_t *pTrunk, L3INT * callIndex);
 L3INT	Q931AllocateCRV(Q931_TrunkInfo_t *pTrunk, L3INT iCRV, L3INT * callIndex);
