@@ -511,26 +511,35 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 	
 	zap_mutex_lock(zchan->mutex);
 
-	if (zchan->state == ZAP_CHANNEL_STATE_DOWN) {
-
-		switch(state) {
-		case ZAP_CHANNEL_STATE_BUSY:
-			ok = 0;
-			break;
-		default:
-			break;
-		}
+	if (!zap_test_flag(zchan, ZAP_CHANNEL_READY)) {
+		return ZAP_FAIL;
 	}
 
-	if (zchan->state == ZAP_CHANNEL_STATE_BUSY) {
-
-		switch(state) {
-		case ZAP_CHANNEL_STATE_UP:
-			ok = 0;
-			break;
-		default:
-			break;
+	switch(zchan->state) {
+	case ZAP_CHANNEL_STATE_DOWN:
+		{
+			switch(state) {
+			case ZAP_CHANNEL_STATE_BUSY:
+			case ZAP_CHANNEL_STATE_HANGUP:
+			case ZAP_CHANNEL_STATE_TERMINATING:
+				ok = 0;
+				break;
+			default:
+				break;
+			}
 		}
+	case ZAP_CHANNEL_STATE_BUSY:
+		{
+			switch(state) {
+			case ZAP_CHANNEL_STATE_UP:
+				ok = 0;
+				break;
+			default:
+				break;
+			}
+		}
+	default:
+		break;
 	}
 
 	if (state == zchan->state) {
@@ -539,6 +548,7 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 
 	if (ok) {
 		zap_set_flag(zchan, ZAP_CHANNEL_STATE_CHANGE);	
+		zap_set_flag(zchan->span, ZAP_SPAN_STATE_CHANGE);
 		zchan->last_state = zchan->state; 
 		zchan->state = state;
 	}

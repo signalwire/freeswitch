@@ -195,7 +195,7 @@
 
 #define zap_set_state_locked(obj, s) if ( obj->state == s ) {			\
 		zap_log(ZAP_LOG_WARNING, "Why bother changing state from %s to %s\n", zap_channel_state2str(obj->state), zap_channel_state2str(s)); \
-	} else {															\
+	} else if (zap_test_flag(obj, ZAP_CHANNEL_READY)) {									\
 		int st = obj->state;											\
 		zap_channel_set_state(obj, s);									\
 		if (obj->state == s) zap_log(ZAP_LOG_DEBUG, "Changing state from %s to %s\n", zap_channel_state2str(st), zap_channel_state2str(s)); \
@@ -297,6 +297,7 @@ struct zap_caller_data {
 	char dnis[25];
 	char rdnis[25];
 	int CRV;
+	int hangup_cause;	
 	uint8_t raw_data[1024];
 	uint32_t raw_data_len;
 };
