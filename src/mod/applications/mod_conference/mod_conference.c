@@ -57,7 +57,8 @@ static switch_api_interface_t conf_api_interface;
 
 typedef enum {
 	FILE_STOP_CURRENT,
-	FILE_STOP_ALL
+	FILE_STOP_ALL,
+	FILE_STOP_ASYNC
 } file_stop_t;
 
 /* Global Values */
@@ -179,6 +180,7 @@ typedef struct conference_obj {
 	char *exit_sound;
 	char *alone_sound;
 	char *perpetual_sound;
+	char *moh_sound;
 	char *ack_sound;
 	char *nack_sound;
 	char *muted_sound;
@@ -503,8 +505,14 @@ static switch_status_t conference_add_member(conference_obj_t * conference, conf
 			switch_event_fire(&event);
 		}
 
-		if (conference->count > 1 && conference->enter_sound) {
-			conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 0);
+		if (conference->count > 1) {
+			if(conference->moh_sound) {
+				/* stop MoH if any */
+				conference_stop_file(conference, FILE_STOP_ASYNC);
+			}
+			if(conference->enter_sound) {
+				conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 0);
+			}
 		}
 
 		channel = switch_core_session_get_channel(member->session);
@@ -544,6 +552,7 @@ static switch_status_t conference_add_member(conference_obj_t * conference, conf
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", "%s", conference->name);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "add-member");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Size", "%u", conference->count);
 			switch_event_fire(&event);
 		}
 	}
@@ -641,6 +650,7 @@ static switch_status_t conference_del_member(conference_obj_t * conference, conf
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", "%s", conference->name);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "del-member");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Size", "%u", conference->count);
 			switch_event_fire(&event);
 		}
 	}
@@ -689,7 +699,9 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 		int has_file_data = 0;
 
 		if (conference->perpetual_sound && !conference->fnode) {
-			conference_play_file(conference, conference->perpetual_sound, CONF_DEFAULT_LEADIN, NULL, 0);
+			conference_play_file(conference, conference->perpetual_sound, CONF_DEFAULT_LEADIN, NULL, 1);
+		} else if (conference->moh_sound && conference->count == 1 && !conference->fnode) {
+			conference_play_file(conference, conference->moh_sound, CONF_DEFAULT_LEADIN, NULL, 1);
 		}
 
 		/* Sync the conference to a single timing source */
@@ -1934,6 +1946,11 @@ static uint32_t conference_stop_file(conference_obj_t * conference, file_stop_t 
 			nptr->done++;
 			count++;
 		}
+		if (conference->async_fnode) {
+			conference->async_fnode->done++;
+			count++;
+		}
+	} else if (stop == FILE_STOP_ASYNC) {
 		if (conference->async_fnode) {
 			conference->async_fnode->done++;
 			count++;
@@ -4546,6 +4563,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	char *caller_controls = NULL;
 	char *member_flags = NULL;
 	char *perpetual_sound = NULL;
+	char *moh_sound = NULL;
 	uint32_t max_members = 0;
 	uint32_t anounce_count = 0;
 	char *maxmember_sound = NULL;
@@ -4595,6 +4613,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 			alone_sound = val;
 		} else if (!strcasecmp(var, "perpetual-sound")) {
 			perpetual_sound = val;
+		} else if (!strcasecmp(var, "moh-sound")) {
+			moh_sound = val;
 		} else if (!strcasecmp(var, "ack-sound")) {
 			ack_sound = val;
 		} else if (!strcasecmp(var, "nack-sound")) {
@@ -4714,6 +4734,10 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 		conference->mflags = MFLAG_CAN_HEAR;
 	} else {
 		conference->mflags = MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR;
+	}
+
+	if (!switch_strlen_zero(moh_sound)) {
+		conference->moh_sound = switch_core_strdup(conference->pool, moh_sound);
 	}
 
 	if (member_flags) {
