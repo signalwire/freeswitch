@@ -307,6 +307,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 					if (done) {
 						zap_set_state_locked(chan, ZAP_CHANNEL_STATE_UP);
 						zap_clear_flag_locked(chan, ZAP_CHANNEL_STATE_CHANGE);
+						zap_clear_flag_locked(chan->span, ZAP_SPAN_STATE_CHANGE);
 						chan->detected_tones[ZAP_TONEMAP_CALLWAITING_ACK] = 0;
 					}
 				}
@@ -328,6 +329,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 			}
 		} else {
 			zap_clear_flag_locked(chan, ZAP_CHANNEL_STATE_CHANGE);
+			zap_clear_flag_locked(chan->span, ZAP_SPAN_STATE_CHANGE);
 			indicate = 0;
 			state_counter = 0;
 			zap_log(ZAP_LOG_DEBUG, "Executing state handler for %s\n", zap_channel_state2str(chan->state));
@@ -631,6 +633,7 @@ static zap_status_t process_event(zap_span_t *span, zap_event_t *event)
 			if (event->channel->state == ZAP_CHANNEL_STATE_CALLWAITING) {
 				zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_UP);
 				zap_clear_flag_locked(event->channel, ZAP_CHANNEL_STATE_CHANGE);
+				zap_clear_flag_locked(event->channel->span, ZAP_SPAN_STATE_CHANGE);
 				event->channel->detected_tones[ZAP_TONEMAP_CALLWAITING_ACK] = 0;
 			} 
 

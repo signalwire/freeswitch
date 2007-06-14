@@ -224,7 +224,8 @@ typedef enum {
 
 typedef enum {
 	ZAP_SPAN_CONFIGURED = (1 << 0),
-	ZAP_SPAN_READY = (1 << 1)
+	ZAP_SPAN_READY = (1 << 1),
+	ZAP_SPAN_STATE_CHANGE = (1 << 2)
 } zap_span_flag_t;
 
 typedef enum {
@@ -258,10 +259,13 @@ typedef enum {
 	ZAP_CHANNEL_STATE_DIALING,
 	ZAP_CHANNEL_STATE_GET_CALLERID,
 	ZAP_CHANNEL_STATE_CALLWAITING,
+	ZAP_CHANNEL_STATE_TERMINATING,
+	ZAP_CHANNEL_STATE_RESTART,
 	ZAP_CHANNEL_STATE_INVALID
 } zap_channel_state_t;
 #define CHANNEL_STATE_STRINGS "DOWN", "UP", "HANGUP", "HOLD", "DIALTONE", "COLLECT", \
-		"RING", "BUSY", "ATTN", "IDLE", "GENRING", "DIALING", "GET_CALLERID", "CALLWAITING", "INVALID"
+		"RING", "BUSY", "ATTN", "IDLE", "GENRING", "DIALING", "GET_CALLERID", "CALLWAITING", \
+		"TERMINATING", "RESTART", "INVALID"
 ZAP_STR2ENUM_P(zap_str2zap_channel_state, zap_channel_state2str, zap_channel_state_t)
 
 typedef enum {
@@ -284,7 +288,6 @@ typedef enum {
 	ZAP_CHANNEL_PROGRESS_DETECT = (1 << 16),
 	ZAP_CHANNEL_CALLERID_DETECT = (1 << 17)
 } zap_channel_flag_t;
-
 
 typedef struct zap_channel zap_channel_t;
 typedef struct zap_event zap_event_t;

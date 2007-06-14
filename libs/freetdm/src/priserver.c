@@ -180,7 +180,7 @@ static void launch_channel(struct sangoma_pri *spri, int channo)
 	close(file);
 	//close(ifd);
 
-
+	pri_hangup(spri->pri, channo, 16);
 	if (zap_channel_close(&chan) != ZAP_SUCCESS) {
 		printf("Critical Error: Failed to close channel [%s]\n", chan->last_error);
 	}

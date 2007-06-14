@@ -715,19 +715,22 @@ L3INT Q931Uie_CalledNum(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR
     pie->TypNum = (IBuf[Octet+Off] >> 4) & 0x07;
     pie->NumPlanID = IBuf[Octet+Off] & 0x0f;
     Octet ++;
-    
+
     /* Octet 4*/
-    for (x = 0; x < IESize - 1; x++)
-    {
+    x=0;
+    do{
         pie->Digit[x] = IBuf[Octet+Off] & 0x7f;
         Off++;
-    }
+        x++;
+    } while((IBuf[Octet+Off]&0x80) == 0 && Q931MoreIE());
+
+	pie->Digit[x] = '\0';
 
     Q931SetIE(*pIE, *OOff);
 
 	*IOff = (*IOff) + Octet + Off;
-    *OOff = (*OOff) + sizeof(Q931ie_CalledNum) + x - 1;
-    pie->Size = (L3UCHAR)(sizeof(Q931ie_CalledNum) + x - 1);
+    *OOff = (*OOff) + sizeof(Q931ie_CalledNum) + x;
+    pie->Size = (L3UCHAR)(sizeof(Q931ie_CalledNum) + x);
 
     return Q931E_NO_ERROR;
 }
@@ -824,15 +827,17 @@ L3INT Q931Uie_CallingNum(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHA
         pie->Digit[x] = IBuf[Octet+Off] & 0x7f;
         Off++;
         x++;
-    }while((IBuf[Octet+Off]&0x80) == 0 && Q931MoreIE());
+    } while((IBuf[Octet+Off]&0x80) == 0 && Q931MoreIE());
+
+	pie->Digit[x] = '\0';
 
     Q931IESizeTest(Q931E_CALLINGNUM);
 
     Q931SetIE(*pIE, *OOff);
 
     *IOff = (*IOff) + Octet + Off;
-    *OOff = (*OOff) + sizeof(Q931ie_CallingNum) + x - 1;
-    pie->Size = (L3UCHAR)(sizeof(Q931ie_CallingNum) + x - 1);
+    *OOff = (*OOff) + sizeof(Q931ie_CallingNum) + x;
+    pie->Size = (L3UCHAR)(sizeof(Q931ie_CallingNum) + x);
 
     return Q931E_NO_ERROR;
 }

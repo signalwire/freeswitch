@@ -66,52 +66,74 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 	zap_span_t *span = (zap_span_t *) pvt;
 	zap_isdn_data_t *data = span->isdn_data;
 	Q931mes_Generic *gen = (Q931mes_Generic *) msg;
-
+	Q931ie_ChanID *chanid = Q931GetIEPtr(gen->ChanID, gen->buf);
+	int chan_id = chanid->ChanSlot;
+	zap_channel_t *zchan = NULL;
+	
 	assert(span != NULL);
 	assert(data != NULL);
+	
+	if (chan_id) {
+		zchan = &span->channels[chan_id];
+	}
 
-	zap_log(ZAP_LOG_DEBUG, "Yay I got an event! Type:[%d] Size:[%d]\n", gen->MesType, gen->Size);
+	zap_log(ZAP_LOG_DEBUG, "Yay I got an event! Type:[%02x] Size:[%d]\n", gen->MesType, gen->Size);
 	switch(gen->MesType) {
+	case Q931mes_RESTART:
+		{
+			if (zchan) {
+				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RESTART);
+			} else {
+				uint32_t i;
+				for (i = 0; i < span->chan_count; i++) {
+					zap_set_state_locked((&span->channels[i]), ZAP_CHANNEL_STATE_RESTART);
+				}
+			}
+		}
+		break;
+	case Q931mes_RELEASE_COMPLETE:
+		{
+			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+		}
+		break;
+	case Q931mes_DISCONNECT:
+		{
+			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_TERMINATING);
+		}
+		break;
 	case Q931mes_SETUP:
 		{
-			Q931ie_ChanID *chanid = Q931GetIEPtr(gen->ChanID, gen->buf);
+
 			Q931ie_CallingNum *callingnum = Q931GetIEPtr(gen->CallingNum, gen->buf);
 			Q931ie_CalledNum *callednum = Q931GetIEPtr(gen->CalledNum, gen->buf);
-			int chan_id = chanid->ChanSlot;
-			zap_channel_t *zchan;
 			zap_status_t status;
-			zap_sigmsg_t sig;
-			zap_isdn_data_t *data;
 			int fail = 1;
 			uint32_t cplen = mlen;
 
+
 			if ((status = zap_channel_open(span->span_id, chan_id, &zchan) == ZAP_SUCCESS)) {
-				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RING);
-				sig.chan_id = zchan->chan_id;
-				sig.span_id = zchan->span_id;
-				sig.channel = zchan;
-				sig.event_id = ZAP_SIGEVENT_START;
-				data = zchan->span->isdn_data;
-				
-				memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
+				if (zchan->state == ZAP_CHANNEL_STATE_DOWN) {
+					memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
 
-				zap_copy_string(zchan->caller_data.cid_num, (char *)callingnum->Digit, callingnum->Size - 3);
-				zap_copy_string(zchan->caller_data.cid_name, (char *)callingnum->Digit, callingnum->Size - 3);
-				zap_copy_string(zchan->caller_data.ani, (char *)callingnum->Digit, callingnum->Size - 3);
-				zap_copy_string(zchan->caller_data.dnis, (char *)callednum->Digit, callednum->Size - 3);
+					zap_set_string(zchan->caller_data.cid_num, callingnum->Digit);
+					zap_set_string(zchan->caller_data.cid_name, callingnum->Digit);
+					zap_set_string(zchan->caller_data.ani, callingnum->Digit);
+					zap_set_string(zchan->caller_data.dnis, callednum->Digit);
 
-				zchan->caller_data.CRV = gen->CRV;
-				if (cplen > sizeof(zchan->caller_data.raw_data)) {
-					cplen = sizeof(zchan->caller_data.raw_data);
-				}
-				memcpy(zchan->caller_data.raw_data, msg, cplen);
-				zchan->caller_data.raw_data_len = cplen;
-				if ((status = data->sig_cb(&sig) == ZAP_SUCCESS)) {
+					zchan->caller_data.CRV = gen->CRV;
+					if (cplen > sizeof(zchan->caller_data.raw_data)) {
+						cplen = sizeof(zchan->caller_data.raw_data);
+					}
+					gen->CRVFlag = !(gen->CRVFlag);
+					memcpy(zchan->caller_data.raw_data, msg, cplen);
+					zchan->caller_data.raw_data_len = cplen;
+					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RING);
 					fail = 0;
-				}
+				} 
 			} 
 
 			if (fail) {
+				zap_log(ZAP_LOG_CRIT, "FIX ME!\n");
 				// add me 
 			}
 			
@@ -147,39 +169,80 @@ static int zap_isdn_921_21(void *pvt, L2UCHAR *msg, L2INT mlen)
 	return zap_channel_write(span->isdn_data->dchan, msg, len, &len) == ZAP_SUCCESS ? 0 : -1;
 }
 
-static void state_advance(zap_channel_t *zchan)
+static __inline__ void state_advance(zap_channel_t *zchan)
 {
 	Q931mes_Generic *gen = (Q931mes_Generic *) zchan->caller_data.raw_data;
 	zap_isdn_data_t *data = zchan->span->isdn_data;
+	zap_sigmsg_t sig;
+	zap_status_t status;
 
 	zap_log(ZAP_LOG_ERROR, "%d:%d STATE [%s]\n", 
 			zchan->span_id, zchan->chan_id, zap_channel_state2str(zchan->state));
 
+	memset(&sig, 0, sizeof(sig));
+	sig.chan_id = zchan->chan_id;
+	sig.span_id = zchan->span_id;
+	sig.channel = zchan;
 
 	switch (zchan->state) {
+	case ZAP_CHANNEL_STATE_RING:
+		{
+			sig.event_id = ZAP_SIGEVENT_START;
+			if ((status = data->sig_cb(&sig) != ZAP_SUCCESS)) {
+				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
+			}
+
+		}
+		break;
+	case ZAP_CHANNEL_STATE_RESTART:
+		{
+			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+			zap_channel_close(&zchan);
+		}
+		break;
 	case ZAP_CHANNEL_STATE_UP:
 		{
-			printf("XXXXXXXXXXXXXXXX answer %d\n", zchan->caller_data.raw_data_len);
 			gen->MesType = Q931mes_CONNECT;
 			gen->BearerCap = 0;
-			gen->CRVFlag = 1;//!(gen->CRVFlag);
 			Q931Rx43(&data->q931, (void *)gen, zchan->caller_data.raw_data_len);
 		}
 		break;
+	case ZAP_CHANNEL_STATE_HANGUP:
+		{
+			Q931ie_Cause cause;
+			gen->MesType = Q931mes_DISCONNECT;
+			cause.IEId = Q931ie_CAUSE;
+			cause.Size = sizeof(Q931ie_Cause);
+			cause.CodStand  = 0;
+			cause.Location = 1;
+			cause.Recom = 1;
+			cause.Value = zchan->caller_data.hangup_cause;
+			*cause.Diag = '\0';
+			gen->Cause = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &cause);
+			Q931Rx43(&data->q931, (L3UCHAR *) gen, gen->Size);
+		}
+		break;
+	case ZAP_CHANNEL_STATE_TERMINATING:
+		{
+			gen->MesType = Q931mes_RELEASE;
+			Q931Rx43(&data->q931, (void *)gen, gen->Size);
+		}
 	default:
 		break;
 	}
 }
 
-static void check_state(zap_span_t *span)
+static __inline__ void check_state(zap_span_t *span)
 {
-	uint32_t j;
-	
-	for(j = 1; j <= span->chan_count; j++) {
-		if (zap_test_flag((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE)) {
-			state_advance(&span->channels[j]);
-			zap_clear_flag_locked((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE);
+	if (zap_test_flag(span, ZAP_SPAN_STATE_CHANGE)) {
+		uint32_t j;
+		for(j = 1; j <= span->chan_count; j++) {
+			if (zap_test_flag((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE)) {
+				state_advance(&span->channels[j]);
+				zap_clear_flag_locked((&span->channels[j]), ZAP_CHANNEL_STATE_CHANGE);
+			}
 		}
+		zap_clear_flag_locked(span, ZAP_SPAN_STATE_CHANGE);
 	}
 }
 

@@ -319,6 +319,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	case ZAP_CHAN_TYPE_B:
 		{
 			if (tech_pvt->zchan->state != ZAP_CHANNEL_STATE_DOWN) {
+				tech_pvt->zchan->caller_data.hangup_cause = switch_channel_get_cause(channel);
 				zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_HANGUP);
 			}
 		}
@@ -638,7 +639,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	}
 }
 
-static const switch_state_handler_table_t channel_event_handlers = {
+static switch_state_handler_table_t channel_event_handlers = {
 	/*.on_init */ channel_on_init,
 	/*.on_ring */ channel_on_ring,
 	/*.on_execute */ channel_on_execute,
@@ -647,7 +648,7 @@ static const switch_state_handler_table_t channel_event_handlers = {
 	/*.on_transmit */ channel_on_transmit
 };
 
-static const switch_io_routines_t channel_io_routines = {
+static switch_io_routines_t channel_io_routines = {
 	/*.outgoing_channel */ channel_outgoing_channel,
 	/*.read_frame */ channel_read_frame,
 	/*.write_frame */ channel_write_frame,
@@ -658,7 +659,7 @@ static const switch_io_routines_t channel_io_routines = {
 	/*.receive_message*/ channel_receive_message
 };
 
-static const switch_endpoint_interface_t channel_endpoint_interface = {
+static switch_endpoint_interface_t channel_endpoint_interface = {
 	/*.interface_name */ "openzap",
 	/*.io_routines */ &channel_io_routines,
 	/*.event_handlers */ &channel_event_handlers,
@@ -666,7 +667,7 @@ static const switch_endpoint_interface_t channel_endpoint_interface = {
 	/*.next */ NULL
 };
 
-static const switch_loadable_module_interface_t channel_module_interface = {
+static switch_loadable_module_interface_t channel_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ &channel_endpoint_interface,
 	/*.timer_interface */ NULL,
