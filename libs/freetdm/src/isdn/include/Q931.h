@@ -938,7 +938,7 @@ L3INT Q931InitIELLComp(Q931ie_LLComp * pIE);
 L3INT Q931InitIEHLComp(Q931ie_HLComp * pIE);
 
 L3INT Q931Disconnect(Q931_TrunkInfo_t *pTrunk, L3INT iTo, L3INT iCRV, L3INT iCause);
-L3INT Q931ReleaseComplete(Q931_TrunkInfo_t *pTrunk, L3INT iTo);
+L3INT Q931ReleaseComplete(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf);
 L3INT Q931AckRestart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf);
 L3INT Q931AckConnect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf);
 L3INT Q931AckSetup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf);
