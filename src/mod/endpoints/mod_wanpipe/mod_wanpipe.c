@@ -111,7 +111,8 @@ static struct {
 	uint32_t samples_per_frame;
 	int dtmf_on;
 	int dtmf_off;
-	int suppres_dtmf_tone;
+	int suppress_dtmf_tone;
+	int ignore_dtmf_tone;
 	int configured_spans;
 	int configured_boost_spans;
 	char *dialplan;
@@ -524,8 +525,11 @@ static switch_status_t wanpipe_codec_init(private_object_t *tech_pvt)
 	tech_pvt->tone_session.rate = rate;
 	tech_pvt->tone_session.duration = globals.dtmf_on * (tech_pvt->tone_session.rate / 1000);
 	tech_pvt->tone_session.wait = globals.dtmf_off * (tech_pvt->tone_session.rate / 1000);
+
+	if (!globals.ignore_dtmf_tone) {	
+		teletone_dtmf_detect_init (&tech_pvt->dtmf_detect, rate);
+	}
 	
-	teletone_dtmf_detect_init (&tech_pvt->dtmf_detect, rate);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Audio init %s\n", switch_channel_get_name(channel));
 
 	switch_set_flag(tech_pvt, TFLAG_CODEC);
@@ -786,25 +790,26 @@ static switch_status_t wanpipe_read_frame(switch_core_session_t *session, switch
 
 	tech_pvt->read_frame.datalen = bytes;
 	tech_pvt->read_frame.samples = bytes / 2;
-
-	teletone_dtmf_detect (&tech_pvt->dtmf_detect, tech_pvt->read_frame.data, tech_pvt->read_frame.samples);
-	teletone_dtmf_get(&tech_pvt->dtmf_detect, digit_str, sizeof(digit_str));
 	
-	if(digit_str[0]) {
-		switch_channel_queue_dtmf(channel, digit_str);
-		if (globals.debug) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF DETECTED: [%s]\n", digit_str);
+	if (!globals.ignore_dtmf_tone) {
+		teletone_dtmf_detect (&tech_pvt->dtmf_detect, tech_pvt->read_frame.data, tech_pvt->read_frame.samples);
+		teletone_dtmf_get(&tech_pvt->dtmf_detect, digit_str, sizeof(digit_str));
+	
+		if(digit_str[0]) {
+			switch_channel_queue_dtmf(channel, digit_str);
+			if (globals.debug) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF DETECTED: [%s]\n", digit_str);
+			}
+			if (globals.suppress_dtmf_tone) {
+				tech_pvt->skip_read_frames = 20;
+			}
 		}
-		if (globals.suppres_dtmf_tone) {
-			tech_pvt->skip_read_frames = 20;
+
+		if (tech_pvt->skip_read_frames > 0) {
+			memset(tech_pvt->read_frame.data, 0, tech_pvt->read_frame.datalen);
+			tech_pvt->skip_read_frames--;
 		}
 	}
-
-	if (tech_pvt->skip_read_frames > 0) {
-		memset(tech_pvt->read_frame.data, 0, tech_pvt->read_frame.datalen);
-		tech_pvt->skip_read_frames--;
-	}
-
 #ifdef DOTRACE	
 	write(tech_pvt->fd2, tech_pvt->read_frame.data, (int) tech_pvt->read_frame.datalen);
 #endif
@@ -2220,8 +2225,10 @@ static switch_status_t config_wanpipe(int reload)
 				globals.dtmf_off = atoi(val);
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);
-			} else if (!strcmp(var, "suppres-dtmf-tone")) {
-				globals.suppres_dtmf_tone = switch_true(val);
+			} else if (!strcmp(var, "suppress-dtmf-tone")) {
+				globals.suppress_dtmf_tone = switch_true(val);
+			} else if (!strcmp(var, "ignore-dtmf-tone")) {
+				globals.ignore_dtmf_tone = switch_true(val);
 			}
 		}
 	}
