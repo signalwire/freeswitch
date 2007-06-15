@@ -74,7 +74,7 @@ static JSBool skel_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval *
 
 JSClass skel_class = {
 	modname, JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, skel_getProperty, JS_PropertyStub,
+	JS_PropertyStub, JS_PropertyStub, skel_getProperty, DEFAULT_SET_PROPERTY,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, skel_destroy, NULL, NULL, NULL,
 	skel_construct
 };

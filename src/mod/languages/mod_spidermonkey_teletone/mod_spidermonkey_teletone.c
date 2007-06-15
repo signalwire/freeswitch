@@ -331,7 +331,7 @@ static JSBool teletone_getProperty(JSContext * cx, JSObject * obj, jsval id, jsv
 
 JSClass teletone_class = {
 	modname, JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, teletone_getProperty, JS_PropertyStub,
+	JS_PropertyStub, JS_PropertyStub, teletone_getProperty, DEFAULT_SET_PROPERTY,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, teletone_destroy, NULL, NULL, NULL,
 	teletone_construct
 };

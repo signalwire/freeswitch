@@ -438,7 +438,7 @@ static JSBool odbc_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval *
 
 JSClass odbc_class = {
 	modname, JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, odbc_getProperty, JS_PropertyStub,
+	JS_PropertyStub, JS_PropertyStub, odbc_getProperty, DEFAULT_SET_PROPERTY,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, odbc_destroy, NULL, NULL, NULL,
 	odbc_construct
 };

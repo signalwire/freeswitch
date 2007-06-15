@@ -45,10 +45,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spidermonkey_shutdown);
 SWITCH_MODULE_DEFINITION(mod_spidermonkey, mod_spidermonkey_load, mod_spidermonkey_shutdown, NULL);
 
 #define METHOD_SANITY_CHECK() do {												\
-if (jss->sanity_code != SANITY_CODE_VAL) {								\
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Object! Avoiding Initial SegFault!\n"); \
-	return JS_TRUE;													\
- }																		\
 if (!jss || !jss->session) {											\
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n"); \
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);									\
@@ -84,7 +80,7 @@ static struct {
 
 static JSClass global_class = {
 	"Global", JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
+	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, DEFAULT_SET_PROPERTY,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
 };
 
@@ -299,7 +295,7 @@ static JSBool request_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval 
 
 JSClass request_class = {
 	"Request", JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, request_getProperty, JS_PropertyStub,
+	JS_PropertyStub, JS_PropertyStub, request_getProperty, DEFAULT_SET_PROPERTY,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, request_destroy, NULL, NULL, NULL, NULL
 };
 
@@ -604,7 +600,7 @@ static JSBool event_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval 
 
 JSClass event_class = {
 	"Event", JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, event_getProperty, JS_PropertyStub,
+	JS_PropertyStub, JS_PropertyStub, event_getProperty, DEFAULT_SET_PROPERTY,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, event_destroy, NULL, NULL, NULL,
 	event_construct
 };
@@ -2040,6 +2036,7 @@ static JSPropertySpec session_props[] = {
 	{0}
 };
 
+
 static JSBool session_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval * vp)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
@@ -2133,7 +2130,7 @@ static JSBool session_getProperty(JSContext * cx, JSObject * obj, jsval id, jsva
 
 JSClass session_class = {
 	"Session", JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, session_getProperty, JS_PropertyStub,
+	JS_PropertyStub, JS_PropertyStub, session_getProperty, DEFAULT_SET_PROPERTY,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, session_destroy, NULL, NULL, NULL,
 	session_construct
 };
@@ -2149,7 +2146,6 @@ static JSObject *new_js_session(JSContext * cx, JSObject * obj, switch_core_sess
 		jss->cx = cx;
 		jss->obj = session_obj;
 		jss->stack_depth = 0;
-		jss->sanity_code = SANITY_CODE_VAL;
 		if ((JS_SetPrivate(cx, session_obj, jss) &&
 			 JS_DefineProperties(cx, session_obj, session_props) && JS_DefineFunctions(cx, session_obj, session_methods))) {
 			return session_obj;
@@ -2170,7 +2166,6 @@ static JSBool session_construct(JSContext * cx, JSObject * obj, uintN argc, jsva
 	memset(jss, 0, sizeof(*jss));
 	jss->cx = cx;
 	jss->obj = obj;
-	jss->sanity_code = SANITY_CODE_VAL;
 	switch_set_flag(jss, S_FREE);
 
 	JS_SetPrivate(cx, obj, jss);
@@ -2513,7 +2508,7 @@ static JSBool fileio_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval
 
 JSClass fileio_class = {
 	"FileIO", JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, fileio_getProperty, JS_PropertyStub,
+	JS_PropertyStub, JS_PropertyStub, fileio_getProperty, DEFAULT_SET_PROPERTY,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, fileio_destroy, NULL, NULL, NULL,
 	fileio_construct
 };

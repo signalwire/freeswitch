@@ -268,7 +268,7 @@ static JSBool db_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval * v
 
 JSClass db_class = {
 	modname, JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, db_getProperty, JS_PropertyStub,
+	JS_PropertyStub, JS_PropertyStub, db_getProperty, DEFAULT_SET_PROPERTY,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, db_destroy, NULL, NULL, NULL,
 	db_construct
 };
