@@ -111,7 +111,7 @@ static struct {
 	uint32_t samples_per_frame;
 	int dtmf_on;
 	int dtmf_off;
-	int supress_dtmf_tone;
+	int suppres_dtmf_tone;
 	int configured_spans;
 	int configured_boost_spans;
 	char *dialplan;
@@ -795,7 +795,7 @@ static switch_status_t wanpipe_read_frame(switch_core_session_t *session, switch
 		if (globals.debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF DETECTED: [%s]\n", digit_str);
 		}
-		if (globals.supress_dtmf_tone) {
+		if (globals.suppres_dtmf_tone) {
 			tech_pvt->skip_read_frames = 20;
 		}
 	}
@@ -2220,8 +2220,8 @@ static switch_status_t config_wanpipe(int reload)
 				globals.dtmf_off = atoi(val);
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);
-			} else if (!strcmp(var, "supress-dtmf-tone")) {
-				globals.supress_dtmf_tone = switch_true(val);
+			} else if (!strcmp(var, "suppres-dtmf-tone")) {
+				globals.suppres_dtmf_tone = switch_true(val);
 			}
 		}
 	}
