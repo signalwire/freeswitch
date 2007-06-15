@@ -33,7 +33,6 @@
 
 #include "openzap.h"
 #include "zap_wanpipe.h"
-#include <stropts.h>
 #include <poll.h>
 #include <sys/socket.h>
 #include <wanpipe_tdm_api_iface.h>
