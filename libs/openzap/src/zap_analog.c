@@ -34,6 +34,11 @@
 #include "openzap.h"
 #include "zap_analog.h"
 
+#ifndef localtime_r
+struct tm * localtime_r(const time_t *clock, struct tm *result);
+#endif
+
+
 static void *zap_analog_channel_run(zap_thread_t *me, void *obj);
 
 static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxo_outgoing_call)

@@ -50,6 +50,8 @@ typedef intptr_t zap_ssize_t;
 typedef int zap_filehandle_t;
 #else
 #include <stdint.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
 typedef int zap_socket_t;
 typedef ssize_t zap_ssize_t;
 typedef int zap_filehandle_t;
