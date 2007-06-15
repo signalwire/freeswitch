@@ -344,6 +344,7 @@ struct zap_channel {
 	zap_filehandle_t fds[2];
 	zap_fsk_data_state_t fsk;
 	uint8_t fsk_buf[80];
+	uint32_t ring_count;
 	struct zap_caller_data caller_data;
 	struct zap_span *span;
 	struct zap_io_interface *zio;

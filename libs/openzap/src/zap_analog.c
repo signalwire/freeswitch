@@ -426,7 +426,9 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 			case ZAP_CHANNEL_STATE_GET_CALLERID:
 				{
 					zap_channel_done(chan);
+					zap_channel_command(chan, ZAP_COMMAND_TRACE_INPUT, "/tmp/wtf.ul");
 					zap_channel_command(chan, ZAP_COMMAND_ENABLE_CALLERID_DETECT, NULL);
+					continue;
 				}
 				break;
 			case ZAP_CHANNEL_STATE_RING:
@@ -619,7 +621,10 @@ static zap_status_t process_event(zap_span_t *span, zap_event_t *event)
 
 			if (event->channel->state == ZAP_CHANNEL_STATE_DOWN && !zap_test_flag(event->channel, ZAP_CHANNEL_INTHREAD)) {
 				zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_GET_CALLERID);
+				event->channel->ring_count = 1;
 				zap_thread_create_detached(zap_analog_channel_run, event->channel);
+			} else {
+				event->channel->ring_count++;
 			}
 		}
 		break;
