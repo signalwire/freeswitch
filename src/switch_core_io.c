@@ -241,7 +241,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					do_bugs = 0;
 					if (bp->callback) {
 						bp->read_replace_frame_in = read_frame;
-						bp->read_replace_frame_out = NULL;
+						bp->read_replace_frame_out = read_frame;
 						if ((ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ_REPLACE)) == SWITCH_TRUE) {
 							read_frame = bp->read_replace_frame_out;
 						}
@@ -509,7 +509,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					do_bugs = 0;
 					if (bp->callback) {
 						bp->write_replace_frame_in = write_frame;
-						bp->write_replace_frame_out = NULL;
+						bp->write_replace_frame_out = write_frame;
 						if ((ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_WRITE_REPLACE)) == SWITCH_TRUE) {
 							write_frame = bp->write_replace_frame_out;
 						}

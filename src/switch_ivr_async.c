@@ -96,6 +96,151 @@ SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session)
 }
 
 
+typedef struct {
+	switch_file_handle_t fh;
+	int mux;
+} displace_helper_t;
+
+static switch_bool_t displace_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+{
+	displace_helper_t *dh = (displace_helper_t *) user_data;
+	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	switch_frame_t frame = { 0 };
+
+	frame.data = data;
+	frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+
+	switch (type) {
+	case SWITCH_ABC_TYPE_INIT:
+		break;
+	case SWITCH_ABC_TYPE_CLOSE:
+		if (dh) {
+			switch_core_file_close(&dh->fh);
+		}
+		break;
+	case SWITCH_ABC_TYPE_READ_REPLACE:
+		{
+			switch_frame_t *frame = switch_core_media_bug_get_read_replace_frame(bug);
+			if (dh && !dh->mux) {
+				memset(frame->data, 255, frame->datalen);
+			}
+			switch_core_media_bug_set_read_replace_frame(bug, frame);
+		}
+		break;
+	case SWITCH_ABC_TYPE_WRITE_REPLACE:
+		if (dh) {
+			switch_frame_t *frame = NULL;
+			switch_size_t len;
+
+			frame = switch_core_media_bug_get_write_replace_frame(bug);
+			len = frame->samples;
+
+			if (dh->mux) {
+				int16_t buf[1024];
+				int16_t *fp = frame->data;
+				int x;
+				
+				switch_core_file_read(&dh->fh, buf, &len);
+				
+				for(x = 0; x < len; x++) {
+					int32_t mixed = fp[x] + buf[x];
+					switch_normalize_to_16bit(mixed);
+					fp[x] = (int16_t) mixed;
+				}
+			} else {
+				switch_core_file_read(&dh->fh, frame->data, &len);
+				frame->samples = len;
+				frame->datalen = frame->samples * 2;
+			}
+			switch_core_media_bug_set_write_replace_frame(bug, frame);
+		}
+		break;
+	case SWITCH_ABC_TYPE_WRITE:
+	default:
+		break;
+	}
+
+	return SWITCH_TRUE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_stop_displace_session(switch_core_session_t *session, char *file)
+{
+	switch_media_bug_t *bug;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	assert(channel != NULL);
+	if ((bug = switch_channel_get_private(channel, file))) {
+		switch_channel_set_private(channel, file, NULL);
+		switch_core_media_bug_remove(session, &bug);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_t *session, char *file, uint32_t limit, const char *flags)
+{
+	switch_channel_t *channel;
+	switch_codec_t *read_codec;
+	switch_media_bug_t *bug;
+	switch_status_t status;
+	time_t to = 0;
+	displace_helper_t *dh;
+
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	if ((bug = switch_channel_get_private(channel, file))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Only 1 of the same file per channel please!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!(dh = switch_core_session_alloc(session, sizeof(*dh)))) {
+		return SWITCH_STATUS_MEMERR;
+	}
+
+
+
+	read_codec = switch_core_session_get_read_codec(session);
+	assert(read_codec != NULL);
+
+	dh->fh.channels = read_codec->implementation->number_of_channels;
+	dh->fh.samplerate = read_codec->implementation->samples_per_second;
+
+
+	if (switch_core_file_open(&dh->fh,
+							  file,
+							  read_codec->implementation->number_of_channels,
+							  read_codec->implementation->samples_per_second,
+							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
+							  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		switch_core_session_reset(session);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	switch_channel_answer(channel);
+
+	if (limit) {
+		to = time(NULL) + limit;
+	}
+
+	if (flags && strchr(flags, 'm')) {
+		dh->mux++;
+	}
+
+	if ((status = switch_core_media_bug_add(session, displace_callback, dh, to, SMBF_WRITE_REPLACE | SMBF_READ_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
+		switch_core_file_close(&dh->fh);
+		return status;
+	}
+
+	switch_channel_set_private(channel, file, bug);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
@@ -158,14 +303,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	switch_status_t status;
 	time_t to = 0;
 
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	if ((bug = switch_channel_get_private(channel, file))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Only 1 of the same file per channel please!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (!fh) {
 		if (!(fh = switch_core_session_alloc(session, sizeof(*fh)))) {
 			return SWITCH_STATUS_MEMERR;
 		}
 	}
 
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
 
 	read_codec = switch_core_session_get_read_codec(session);
 	assert(read_codec != NULL);

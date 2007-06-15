@@ -789,6 +789,43 @@ static void playback_function(switch_core_session_t *session, char *data)
 
 }
 
+static void displace_session_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+	char *path = NULL;
+	uint32_t limit = 0;
+    char *argv[6];
+	int x, argc;
+	char *lbuf = NULL;
+	char *flags = NULL;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	if (data && (lbuf = switch_core_session_strdup(session, data))
+		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+		path = argv[0];
+		for(x = 0; x < argc; x++) {
+			if (strchr(argv[x], '+')) {
+				limit = atoi(argv[x]);
+			} else if (!switch_strlen_zero(argv[x])) {
+				flags = argv[x];
+			}
+		}
+		switch_ivr_displace_session(session, path, limit, flags);
+	}
+}
+
+
+static void stop_displace_session_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	switch_ivr_stop_displace_session(session, data);
+}
+
 
 static void record_function(switch_core_session_t *session, char *data)
 {
@@ -995,6 +1032,26 @@ static switch_application_interface_t speak_application_interface = {
 	&bridge_application_interface
 };
 
+static switch_application_interface_t displace_application_interface = {
+	/*.interface_name */ "displace",
+	/*.application_function */ displace_session_function,
+	/* long_desc */ "Displace audio from a file to the channels input",
+	/* short_desc */ "Displace File",
+	/* syntax */ "<path> [+time_limit_ms] [mux]",
+	/* flags */ SAF_NONE,
+	&speak_application_interface
+};
+
+static switch_application_interface_t stop_displace_application_interface = {
+	/*.interface_name */ "displace",
+	/*.application_function */ stop_displace_session_function,
+	/* long_desc */ "Stop Displacing to a file",
+	/* short_desc */ "Stop Displace File",
+	/* syntax */ "<path>",
+	/* flags */ SAF_NONE,
+	&displace_application_interface
+};
+
 static switch_application_interface_t record_application_interface = {
 	/*.interface_name */ "record",
 	/*.application_function */ record_function,
@@ -1002,7 +1059,7 @@ static switch_application_interface_t record_application_interface = {
 	/* short_desc */ "Record File",
 	/* syntax */ "<path> [+time_limit_ms]",
 	/* flags */ SAF_NONE,
-	&speak_application_interface
+	&stop_displace_application_interface
 };
 
 

@@ -565,7 +565,7 @@ SWITCH_STANDARD_API(session_record_function)
 		goto usage;
 	}
 
-	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) != 3) {
+	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 3) {
 		goto usage;
 	}
 
@@ -596,6 +596,73 @@ SWITCH_STANDARD_API(session_record_function)
   usage:
 
 	stream->write_function(stream, "USAGE: %s\n", session_record_api_interface.syntax);
+	switch_safe_free(mycmd);
+
+
+  done:
+
+	if (rsession) {
+		switch_core_session_rwunlock(rsession);
+	}
+
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_STANDARD_API(session_displace_function)
+{
+	switch_core_session_t *rsession = NULL;
+	char *mycmd = NULL, *argv[5] = { 0 };
+	char *uuid = NULL, *action = NULL, *path = NULL;
+	int argc = 0;
+	uint32_t limit = 0;
+	char *flags = NULL;
+
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_strlen_zero(cmd)) {
+		goto usage;
+	}
+
+	if (!(mycmd = strdup(cmd))) {
+		goto usage;
+	}
+
+	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 3) {
+		goto usage;
+	}
+
+	uuid = argv[0];
+	action = argv[1];
+	path = argv[2];
+	limit = argv[3] ? atoi(argv[3]) : 0;
+	flags = argv[4];
+
+	if (!(rsession = switch_core_session_locate(uuid))) {
+		stream->write_function(stream, "-Error Cannot locate session!\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	if (switch_strlen_zero(action) || switch_strlen_zero(path)) {
+		goto usage;
+	}
+
+	if (!strcasecmp(action, "start")) {
+		switch_ivr_displace_session(rsession, path, limit, flags);
+	} else if (!strcasecmp(action, "stop")) {
+		switch_ivr_stop_displace_session(rsession, path);
+	} else {
+		goto usage;
+	}
+
+	goto done;
+
+  usage:
+
+	stream->write_function(stream, "INVALID SYNTAX\n");
 	switch_safe_free(mycmd);
 
 
@@ -1237,12 +1304,20 @@ static switch_api_interface_t session_record_api_interface = {
 	/*.next */ &broadcast_api_interface
 };
 
+static switch_api_interface_t session_displace_api_interface = {
+	/*.interface_name */ "session_displace",
+	/*.desc */ "session displace",
+	/*.function */ session_displace_function,
+	/*.syntax */ "<uuid> [start|stop] <path> [<limit>] [mux]",
+	/*.next */ &broadcast_api_interface
+};
+
 static switch_api_interface_t uuid_bridge_api_interface = {
 	/*.interface_name */ "uuid_bridge",
 	/*.desc */ "uuid_bridge",
 	/*.function */ uuid_bridge_function,
 	/*.syntax */ "<uuid> <other_uuid>",
-	/*.next */ &session_record_api_interface
+	/*.next */ &session_displace_api_interface
 };
 
 static switch_api_interface_t status_api_interface = {

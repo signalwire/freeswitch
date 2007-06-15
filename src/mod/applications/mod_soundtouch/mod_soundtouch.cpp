@@ -257,8 +257,13 @@ static void soundtouch_start_function(switch_core_session_t *session, char *data
 	char *lbuf = NULL;
     int x;
  
-    if (switch_channel_get_private(channel, "_soundtouch_")) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot run 2 at once on the same channel!\n");
+    if ((bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_soundtouch_"))) {
+        if (!switch_strlen_zero(data) && !strcasecmp(data, "stop")) {
+            switch_channel_set_private(channel, "_soundtouch_", NULL);
+            switch_core_media_bug_remove(session, &bug);
+        } else {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot run 2 at once on the same channel!\n");
+        }
         return;
     }
 
