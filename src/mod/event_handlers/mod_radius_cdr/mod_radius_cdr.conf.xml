@@ -1,0 +1,17 @@
+<configuration name="mod_radius_cdr.conf" description="RADIUS CDR Configuration">
+	<settings>
+		<!-- location of the radius dictionary files -->
+		<param name="dictionary" value="/usr/local/freeswitch/conf/radius/dictionary"/>
+		<!-- number of retries for each server -->
+		<param name="radius_retries" value="3"/>
+		<!-- number of seconds to wait between retries -->
+		<param name="radius_timeout" value="5"/>
+		<!-- accounting servers, up to 8 allowed -->
+		<!-- value is "host:port:secret", port is optional -->
+		<!-- use IP ADDRESSES, not hostnames -->
+		<param name="acct_server" value="127.0.0.1:1813:testing123"/>
+		<param name="acct_server" value="10.0.0.254:1813:testing123"/>
+		<param name="acct_server" value="192.168.10.10:1813:testing123"/>
+	</settings>
+</configuration>
+

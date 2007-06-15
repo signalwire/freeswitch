@@ -34,16 +34,16 @@ Building:
 event_handlers/mod_radius_cdr
 ...
 
-3) Re-run configure ??? ( does this need to be done? )
+3) Re-run configure ??? ( does this need to be done???)
 
-4) Run make
+4) Run make, and make install.  Make sure the module is built and installed.
 
-5) Edit freeswitch configuration
+5) Configure FreeSWITCH to load it
 
-   - Make sure the module is loaded
-   - Make sure the module XML config file is included
-
-6) Edit the module config file for your system specifics ( servers, secrets, etc. )
+   - Copy the 'mod_radius_cdr.conf.xml' file to the FreeSWITCH conf directory
+   - Copy the 'radius/' directory to the FreeSWITCH conf directory
+   - Edit 'conf/modules.conf' to load mod_radius_cdr
+   - Edit 'conf/freeswitch.xml' to include 'mod_radius_cdr.conf.xml'
 
 =========================================================================================
 
