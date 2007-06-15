@@ -78,7 +78,7 @@ dsp_uart_handle_t *dsp_uart_create(dsp_uart_attr_t *attr)
 
 	handle = malloc(sizeof (*handle));
 	if (handle) {
-		memset(handle, 0, sizeof (handle));
+		memset(handle, 0, sizeof (*handle));
 
 		/* fill the attributes member */
 		memcpy(&handle->attr, attr, sizeof (*attr));
@@ -111,8 +111,8 @@ void dsp_uart_bit_handler(void *x, int bit)
 
 	handle->data >>= 1;
 	handle->data |= 0x80 * !!bit;
-	
 	handle->nbits++;
+
 	if (handle->nbits == 8) {
 		handle->attr.bytehandler(handle->attr.bytehandler_arg, handle->data);
 		handle->nbits = 0;

@@ -1408,13 +1408,12 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 			if (zap_fsk_demod_feed(&zchan->fsk, sln, slen) != ZAP_SUCCESS) {
 				uint32_t type, mlen;
 				char str[128], *sp;
-
-
+				
 				while(zap_fsk_data_parse(&zchan->fsk, &type, &sp, &mlen) == ZAP_SUCCESS) {
 					*(str+mlen) = '\0';
 					zap_copy_string(str, sp, ++mlen);
 					zap_clean_string(str);
-					zap_log(ZAP_LOG_DEBUG, "FSK: TYPE %s LEN %d VAL [%s]\n", zap_mdmf_type2str(type), mlen-1, str);
+					zap_log(ZAP_LOG_ERROR, "FSK: TYPE %s LEN %d VAL [%s]\n", zap_mdmf_type2str(type), mlen-1, str);
 					
 					switch(type) {
 					case MDMF_DDN:

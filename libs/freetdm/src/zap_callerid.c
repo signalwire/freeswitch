@@ -182,6 +182,8 @@ int zap_fsk_demod_init(zap_fsk_data_state_t *state, int rate, uint8_t *buf, zap_
 		dsp_fsk_destroy(&state->fsk1200_handle);
 	}
 
+	memset(state, 0, sizeof(*state));
+	memset(buf, 0, bufsize);
 	state->buf = buf;
 	state->bufsize = bufsize;
 	
