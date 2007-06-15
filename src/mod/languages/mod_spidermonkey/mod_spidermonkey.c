@@ -37,10 +37,32 @@
 #ifdef HAVE_CURL
 #include <curl/curl.h>
 #endif
+static int foo = 0;
+
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spidermonkey_shutdown);
 SWITCH_MODULE_DEFINITION(mod_spidermonkey, mod_spidermonkey_load, mod_spidermonkey_shutdown, NULL);
+
+#define METHOD_SANITY_CHECK() do {												\
+if (jss->sanity_code != SANITY_CODE_VAL) {								\
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Object! Avoiding Initial SegFault!\n"); \
+	return JS_TRUE;													\
+ }																		\
+if (!jss || !jss->session) {											\
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n"); \
+	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);									\
+	return JS_TRUE;														\
+ }																		\
+	} while(foo == 1)
+
+#define CHANNEL_SANITY_CHECK() do {				\
+		if (!switch_channel_ready(channel)) {							\
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n"); \
+			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);							\
+			return JS_TRUE;												\
+		}																\
+	} while (foo == 1)
 
 static void session_destroy(JSContext * cx, JSObject * obj);
 static JSBool session_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval);
@@ -818,11 +840,9 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 	uintN argc = 0;
 	jsval argv[4];
 	JSObject *Event = NULL;
+	jsval nval , *rval = &nval; 
 
-	if (!jss || !jss->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
-		return SWITCH_STATUS_FALSE;
-	}
+	METHOD_SANITY_CHECK();
 
 	jss->stack_depth++;
 
@@ -1012,11 +1032,7 @@ static JSBool session_flush_digits(JSContext * cx, JSObject * obj, uintN argc, j
 	switch_size_t has;
 	switch_channel_t *channel;
 
-	if (!jss || !jss->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	METHOD_SANITY_CHECK();
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -1067,20 +1083,12 @@ static JSBool session_recordfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	int32 limit = 0;
 	switch_input_args_t args = { 0 };
 
-	if (!jss || !jss->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	METHOD_SANITY_CHECK();
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
 
-	if (!switch_channel_ready(channel)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	CHANNEL_SANITY_CHECK();
 
 
 	if (argc > 0) {
@@ -1150,21 +1158,12 @@ static JSBool session_collect_input(JSContext * cx, JSObject * obj, uintN argc, 
 	switch_input_args_t args = { 0 };
 
 
-	if (!jss || !jss->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	METHOD_SANITY_CHECK();
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
 
-	if (!switch_channel_ready(channel)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
-
+	CHANNEL_SANITY_CHECK();
 
 	if (argc > 0) {
 		if ((function = JS_ValueToFunction(cx, argv[0]))) {
@@ -1217,21 +1216,12 @@ static JSBool session_sayphrase(JSContext * cx, JSObject * obj, uintN argc, jsva
 	JSFunction *function;
 	switch_input_args_t args = { 0 };
 
-	if (!jss || !jss->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	METHOD_SANITY_CHECK();
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
 
-	if (!switch_channel_ready(channel)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
-
+	CHANNEL_SANITY_CHECK();
 
 	if (argc > 0) {
 		phrase_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
@@ -1360,20 +1350,12 @@ static JSBool session_streamfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	switch_input_args_t args = { 0 };
 	char *prebuf;
 
-	if (!jss || !jss->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	METHOD_SANITY_CHECK();
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
 
-	if (!switch_channel_ready(channel)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	CHANNEL_SANITY_CHECK();
 
 
 	if (argc > 0) {
@@ -1433,11 +1415,7 @@ static JSBool session_set_variable(JSContext * cx, JSObject * obj, uintN argc, j
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 	switch_channel_t *channel;
 
-	if (!jss || !jss->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	METHOD_SANITY_CHECK();
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -1503,21 +1481,12 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	JSFunction *function;
 	switch_input_args_t args = { 0 };
 
-	if (!jss || !jss->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	METHOD_SANITY_CHECK();
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
 
-	if (!switch_channel_ready(channel)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
-
+	CHANNEL_SANITY_CHECK();
 
 	if (argc > 0) {
 		tts_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
@@ -1571,21 +1540,12 @@ static JSBool session_get_digits(JSContext * cx, JSObject * obj, uintN argc, jsv
 	int32 digits = 0, timeout = 5000;
 	switch_channel_t *channel;
 
-	if (!jss || !jss->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	METHOD_SANITY_CHECK();
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
 
-	if (!switch_channel_ready(channel)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
-
+	CHANNEL_SANITY_CHECK();
 
 	if (argc > 0) {
 		char term;
@@ -1617,11 +1577,7 @@ static JSBool session_autohangup(JSContext * cx, JSObject * obj, uintN argc, jsv
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 
-	if (!jss || !jss->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	METHOD_SANITY_CHECK();
 
 	if (argv[0]) {
 		JSBool tf;
@@ -1642,21 +1598,12 @@ static JSBool session_answer(JSContext * cx, JSObject * obj, uintN argc, jsval *
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 	switch_channel_t *channel;
 
-	if (!jss || !jss->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	METHOD_SANITY_CHECK();
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
 
-	if (!switch_channel_ready(channel)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
-
+	CHANNEL_SANITY_CHECK();
 
 	switch_channel_answer(channel);
 	return JS_TRUE;
@@ -1671,10 +1618,7 @@ static JSBool session_cdr(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 	/*Always a pessimist... sheesh! */
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 
-	if (!jss || !jss->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
-		return JS_TRUE;
-	}
+	METHOD_SANITY_CHECK();
 
 	if (switch_ivr_generate_xml_cdr(jss->session, &cdr) == SWITCH_STATUS_SUCCESS) {
 		char *xml_text;
@@ -1693,11 +1637,7 @@ static JSBool session_ready(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 	switch_channel_t *channel;
 
-	if (!jss || !jss->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	METHOD_SANITY_CHECK();
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -1717,11 +1657,7 @@ static JSBool session_wait_for_media(JSContext * cx, JSObject * obj, uintN argc,
 	unsigned int elapsed;
 	int32 timeout = 60;
 
-	if (!jss || !jss->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	METHOD_SANITY_CHECK();
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -1760,11 +1696,7 @@ static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc
 	unsigned int elapsed;
 	int32 timeout = 60;
 
-	if (!jss || !jss->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	METHOD_SANITY_CHECK();
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -1799,20 +1731,13 @@ static JSBool session_execute(JSContext * cx, JSObject * obj, uintN argc, jsval 
 	switch_channel_t *channel;
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 
-	if (!jss || !jss->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	METHOD_SANITY_CHECK();
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
 
-	if (!switch_channel_ready(channel)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+
+	CHANNEL_SANITY_CHECK();
 
 
 	if (argc > 1) {
@@ -1822,11 +1747,7 @@ static JSBool session_execute(JSContext * cx, JSObject * obj, uintN argc, jsval 
 		struct js_session *jss = JS_GetPrivate(cx, obj);
 		jsrefcount saveDepth;
 
-		if (!jss || !jss->session) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
-			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-			return JS_TRUE;
-		}
+		METHOD_SANITY_CHECK();
 
 		if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
 			if (application_interface->application_function) {
@@ -1847,11 +1768,7 @@ static JSBool session_get_event(JSContext * cx, JSObject * obj, uintN argc, jsva
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 	switch_event_t *event;
 
-	if (!jss || !jss->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	METHOD_SANITY_CHECK();
 
 	if (switch_core_session_dequeue_event(jss->session, &event) == SWITCH_STATUS_SUCCESS) {
 		JSObject *Event;
@@ -1881,11 +1798,7 @@ static JSBool session_send_event(JSContext * cx, JSObject * obj, uintN argc, jsv
 	JSObject *Event;
 	struct event_obj *eo;
 
-	if (!jss || !jss->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	METHOD_SANITY_CHECK();
 
 	if (argc > 0) {
 		if (JS_ValueToObject(cx, argv[0], &Event)) {
@@ -1913,20 +1826,12 @@ static JSBool session_hangup(JSContext * cx, JSObject * obj, uintN argc, jsval *
 	char *cause_name = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
-	if (!jss || !jss->session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	METHOD_SANITY_CHECK();
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
 
-	if (!switch_channel_ready(channel)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	CHANNEL_SANITY_CHECK();
 
 	if (argc > 1) {
 		cause_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
@@ -2244,6 +2149,7 @@ static JSObject *new_js_session(JSContext * cx, JSObject * obj, switch_core_sess
 		jss->cx = cx;
 		jss->obj = session_obj;
 		jss->stack_depth = 0;
+		jss->sanity_code = SANITY_CODE_VAL;
 		if ((JS_SetPrivate(cx, session_obj, jss) &&
 			 JS_DefineProperties(cx, session_obj, session_props) && JS_DefineFunctions(cx, session_obj, session_methods))) {
 			return session_obj;
@@ -2264,6 +2170,7 @@ static JSBool session_construct(JSContext * cx, JSObject * obj, uintN argc, jsva
 	memset(jss, 0, sizeof(*jss));
 	jss->cx = cx;
 	jss->obj = obj;
+	jss->sanity_code = SANITY_CODE_VAL;
 	switch_set_flag(jss, S_FREE);
 
 	JS_SetPrivate(cx, obj, jss);

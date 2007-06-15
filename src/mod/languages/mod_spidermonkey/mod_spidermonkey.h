@@ -122,6 +122,7 @@ struct sm_module_interface {
 typedef struct sm_module_interface sm_module_interface_t;
 typedef switch_status_t (*spidermonkey_init_t) (const sm_module_interface_t ** module_interface);
 
+#define SANITY_CODE_VAL 424242
 struct js_session {
 	switch_core_session_t *session;
 	JSContext *cx;
@@ -131,6 +132,7 @@ struct js_session {
 	JSFunction *on_hangup;
 	int stack_depth;
 	switch_channel_state_t hook_state;
+	int sanity_code;
 };
 
 
