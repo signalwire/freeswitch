@@ -1406,7 +1406,7 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 
 		if (zap_test_flag(zchan, ZAP_CHANNEL_CALLERID_DETECT)) {
 			if (zap_fsk_demod_feed(&zchan->fsk, sln, slen) != ZAP_SUCCESS) {
-				uint32_t type, mlen;
+				zap_size_t type, mlen;
 				char str[128], *sp;
 				
 				while(zap_fsk_data_parse(&zchan->fsk, &type, &sp, &mlen) == ZAP_SUCCESS) {
