@@ -3,62 +3,53 @@
 #define sanity_check(x) do { if (!session) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return x;}} while(0)
 
 
-int PySession::streamfile(char *file, PyObject *pyfunc, char *funcargs, int starting_sample_count)
+void PySession::setDTMFCallback(PyObject *pyfunc, char *funcargs)
 {
-    switch_status_t status;
-    switch_input_args_t args = { 0 }, *ap = NULL;
-    struct input_callback_state cb_state = { 0 };
-    switch_file_handle_t fh = { 0 };
-	char *prebuf;
-
-    sanity_check(-1);
-    cb_state.funcargs = funcargs;
-    fh.samples = starting_sample_count;
+    sanity_check();
 
     if (!PyCallable_Check(pyfunc)) {
-        dtmfCallbackFunction = NULL;
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "DTMF function is not a python function.");
-    }       
-    else {
-        dtmfCallbackFunction = pyfunc;
     }
+    else {
+	cb_state.funcargs = funcargs;
+	cb_state.function = (void *) pyfunc;
 
-    if (dtmfCallbackFunction) {
-	cb_state.function = dtmfCallbackFunction;
-	cb_state.extra = &fh;
 	args.buf = &cb_state; 
 	args.buflen = sizeof(cb_state);  // not sure what this is used for, copy mod_spidermonkey
-        args.input_callback = PythonDTMFCallback;  // defined in mod_python.i, will use ptrs in cb_state
+        
+	// we cannot set the actual callback to a python function, because
+	// the callback is a function pointer with a specific signature.
+	// so, set it to the following c function which will act as a proxy,
+	// finding the python callback in the args callback args structure
+	args.input_callback = PythonDTMFCallback;  // defined in mod_python.i
 	ap = &args;
+
     }
 
-	if ((prebuf = switch_channel_get_variable(this->channel, "stream_prebuffer"))) {
-        int maybe = atoi(prebuf);
-        if (maybe > 0) {
-            fh.prebuf = maybe;
-        }
-    }
-
-
-    this->begin_allow_threads();
-    cb_state.threadState = threadState;  // pass threadState so the dtmfhandler can pick it up
-    status = switch_ivr_play_file(session, &fh, file, ap);
-    this->end_allow_threads();
-
-    return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "dtmf callback was set, pyfunc: %p.  cb_state: %p\n", pyfunc, &cb_state);
 
 }
 
 
 void PySession::begin_allow_threads(void) { 
-    threadState = PyEval_SaveThread();
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "PySession::begin_allow_threads() called\n");
+
+    threadState = (void *) PyEval_SaveThread();
+    cb_state.threadState = threadState;
+    // cb_state.extra = &fh;
+    args.buf = &cb_state;     
+    ap = &args;
 }
 
 void PySession::end_allow_threads(void) { 
-    PyEval_RestoreThread(threadState);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "PySession::end_allow_threads() called\n");
+    PyEval_RestoreThread(((PyThreadState *)threadState));
 }
 
 PySession::~PySession() {
     // Should we do any cleanup here?
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "PySession::~PySession desctructor\n");
 }
+
+
 

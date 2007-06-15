@@ -28,6 +28,7 @@ CoreSession::CoreSession(switch_core_session_t *new_session)
 
 CoreSession::~CoreSession()
 {
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::~CoreSession desctructor");
 
 	if (session) {
 		switch_core_session_rwunlock(session);
@@ -57,6 +58,7 @@ int CoreSession::preAnswer()
 
 void CoreSession::hangup(char *cause)
 {
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::hangup\n");
 	sanity_check_noreturn;
     switch_channel_hangup(channel, switch_channel_str2cause(cause));
 }
@@ -88,20 +90,25 @@ void CoreSession::execute(char *app, char *data)
 int CoreSession::playFile(char *file, char *timer_name)
 {
     switch_status_t status;
+    switch_file_handle_t fh = { 0 };
 	sanity_check(-1);
     if (switch_strlen_zero(timer_name)) {
         timer_name = NULL;
     }
+	store_file_handle(&fh);
 	begin_allow_threads();
-	status = switch_ivr_play_file(session, NULL, file, ap);
+	status = switch_ivr_play_file(session, &fh, file, ap);
 	end_allow_threads();
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 
 }
 
-void CoreSession::setDTMFCallback(switch_input_callback_function_t cb, void *buf, uint32_t buflen)
+void CoreSession::setDTMFCallback(switch_input_callback_function_t cb, 
+								  void *buf, 
+								  uint32_t buflen)
 {
 	sanity_check_noreturn;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::setDTMFCallback.");
 	if (cb) {
 		args.buf = buf;
 		args.buflen = buflen;
@@ -113,12 +120,23 @@ void CoreSession::setDTMFCallback(switch_input_callback_function_t cb, void *buf
 	}
 }
 
-int CoreSession::speakText(char *text)
+
+int CoreSession::speak(char *text)
 {
     switch_status_t status;
     switch_codec_t *codec;
 
 	sanity_check(-1);
+	if (!tts_name) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No TTS engine specified");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!voice_name) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No TTS voice specified");
+		return SWITCH_STATUS_FALSE;
+	}
+
     codec = switch_core_session_get_read_codec(session);
 	begin_allow_threads();
 	status = switch_ivr_speak_text(session, tts_name, voice_name, codec->implementation->samples_per_second, text, ap);
@@ -135,12 +153,22 @@ void CoreSession::set_tts_parms(char *tts_name_p, char *voice_name_p)
     voice_name = strdup(voice_name_p);
 }
 
-int CoreSession::getDigits(char *dtmf_buf, int len, char *terminators, char *terminator, int timeout)
+int CoreSession::getDigits(char *dtmf_buf, 
+						   int len, 
+						   char *terminators, 
+						   char *terminator, 
+						   int timeout)
 {
     switch_status_t status;
 	sanity_check(-1);
 	begin_allow_threads();
-    status = switch_ivr_collect_digits_count(session, dtmf_buf,(uint32_t) len,(uint32_t) len, terminators, terminator, (uint32_t) timeout);
+    status = switch_ivr_collect_digits_count(session, 
+											 dtmf_buf,
+											 (uint32_t) len,
+											 (uint32_t) len, 
+											 terminators, 
+											 terminator, 
+											 (uint32_t) timeout);
 	end_allow_threads();
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
@@ -153,8 +181,15 @@ int CoreSession::transfer(char *extension, char *dialplan, char *context)
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-int CoreSession::playAndGetDigits(int min_digits, int max_digits, int max_tries, int timeout, char *terminators, 
-                char *audio_files, char *bad_input_audio_files, char *dtmf_buf, char *digits_regex)
+int CoreSession::playAndGetDigits(int min_digits, 
+								  int max_digits, 
+								  int max_tries, 
+								  int timeout, 
+								  char *terminators, 
+								  char *audio_files, 
+								  char *bad_input_audio_files, 
+								  char *dtmf_buf, 
+								  char *digits_regex)
 {
     switch_status_t status;
 	sanity_check(-1);
@@ -173,16 +208,72 @@ int CoreSession::playAndGetDigits(int min_digits, int max_digits, int max_tries,
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-int CoreSession::streamfile(char *file, void *cb_func, char *funcargs, int starting_sample_count) {
-	return 0;
+int CoreSession::streamfile(char *file, int starting_sample_count) {
+
+    switch_status_t status;
+    switch_file_handle_t fh = { 0 };
+    unsigned int samps;
+    unsigned int pos = 0;
+	char *prebuf;
+
+    sanity_check(-1);
+    fh.samples = starting_sample_count;
+	store_file_handle(&fh);
+
+    begin_allow_threads();
+    status = switch_ivr_play_file(session, &fh, file, ap);
+    end_allow_threads();
+
+	if ((prebuf = switch_channel_get_variable(this->channel, "stream_prebuffer"))) {
+        int maybe = atoi(prebuf);
+        if (maybe > 0) {
+            fh.prebuf = maybe;
+        }
+	}
+
+    return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
+
+}
+
+bool CoreSession::ready() {
+
+	switch_channel_t *channel;
+
+	if (!session) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "You must call the session.originate method before calling this method!\n");
+		return false;
+	}
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+	
+	return switch_channel_ready(channel) != 0;
+
+
 }
 
 void CoreSession::begin_allow_threads() { 
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::begin_allow_threads() called and does nothing\n");
 }
 
 void CoreSession::end_allow_threads() { 
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::end_allow_threads() called and does nothing\n");
 }
 
+/** \brief Store a file handle in the callback args
+ * 
+ * In a few of the methods like playFile and streamfile,
+ * an empty switch_file_handle_t is created and passed
+ * to core, and stored in callback args so that the callback
+ * handler can retrieve it for pausing, ff, rewinding file ptr. 
+ * 
+ * \param fh - a switch_file_handle_t
+ */
+void CoreSession::store_file_handle(switch_file_handle_t *fh) {
+    cb_state.extra = fh;  // set a file handle so callback handler can pause
+    args.buf = &cb_state;     
+    ap = &args;
+}
 
 
 /* For Emacs:

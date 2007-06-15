@@ -56,87 +56,115 @@ SWITCH_MODULE_DEFINITION(mod_python, mod_python_load, mod_python_shutdown, NULL)
 static void eval_some_python(char *uuid, char *args)
 {
 	PyThreadState *tstate = NULL;
-	FILE *pythonfile = NULL;
 	char *dupargs = NULL;
 	char *argv[128] = {0};
 	int argc;
 	int lead = 0;
-	char *script = NULL, *script_path = NULL, *path = NULL;
+	char *script = NULL;
+	PyObject *module = NULL;
+	PyObject *function = NULL;
+	PyObject *arg = NULL;
+	PyObject *result = NULL;
 
 	if (args) {
-		dupargs = strdup(args);
+	    dupargs = strdup(args);
 	} else {
-		return;
+	    return;
 	}
 
 	assert(dupargs != NULL);
 	
 	if (!(argc = switch_separate_string(dupargs, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No script name specified!\n");
-		goto done;
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No module name specified!\n");
+	    goto done;
 	}
 
 	script = argv[0];
 	lead = 1;
 
-	if (switch_is_file_path(script)) {
-		script_path = script;
-		if ((script = strrchr(script_path, *SWITCH_PATH_SEPARATOR))) {
-			script++;
-		} else {
-			script = script_path;
-		}
-	} else if ((path = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.script_dir, SWITCH_PATH_SEPARATOR, script))) {
-		script_path = path;
-	}
-	if (script_path) {
-		if (!switch_file_exists(script_path, NULL) == SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Open File: %s\n", script_path);
-			goto done;
-		}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Invoking py module: %s\n", script);
+
+	tstate = PyThreadState_New(mainThreadState->interp);
+	if (!tstate) {
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error acquiring tstate\n");
+	    goto done;
 	}
 
+	// swap in thread state
+	PyEval_AcquireThread(tstate);
+	init_freeswitch(); 
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "running %s\n", script_path);
+	// import the module
+	module = PyImport_ImportModule( (char *) script);
+	if (!module) {
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error importing module\n");
+	    PyErr_Print();
+	    PyErr_Clear();
+	    goto done_swap_out;
+	}	        
 
+	// reload the module
+	module = PyImport_ReloadModule(module);
+	if (!module) {
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error reloading module\n");
+	    PyErr_Print();
+	    PyErr_Clear();
+	    goto done_swap_out;
+	}	        
 
-	if ((pythonfile = fopen(script_path, "r"))) {
+	// get the handler function to be called
+	function = PyObject_GetAttrString(module, "handler");
+	if (!function) {
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Module does not define handler(uuid)\n");
+	    PyErr_Print();
+	    PyErr_Clear();
+	    goto done_swap_out;
+	}	        
 
-		PyEval_AcquireLock();
-		tstate = PyThreadState_New(mainThreadState->interp);
-		if (!tstate) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error acquiring tstate\n");
-			goto done;
-		}
-		PyThreadState_Swap(tstate);
-		init_freeswitch(); 
-		PyRun_SimpleString("from freeswitch import *");
-		if (uuid) {
-			char code[128];
-			snprintf(code, sizeof(code), "session = PySession(\"%s\");", uuid);
-			PyRun_SimpleString(code);
-		}
-		PySys_SetArgv(argc - lead, &argv[lead]);
-		PyRun_SimpleFile(pythonfile, script);
-		PyThreadState_Swap(NULL);
-		PyThreadState_Clear(tstate);
-		PyThreadState_Delete(tstate);
-		PyEval_ReleaseLock();
-
-		
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error running %s\n", script_path);
+	if (uuid) {
+	    // build a tuple to pass the args, the uuid of session
+	    arg = Py_BuildValue("(s)", uuid);
+	    if (!arg) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error building args\n");
+		PyErr_Print();
+		PyErr_Clear();
+		goto done_swap_out;
+	    }
+	}
+	else {
+	    arg = PyTuple_New(1);
+	    PyObject *nada = Py_BuildValue("");
+	    PyTuple_SetItem(arg, 0, nada);
 	}
 
+	// invoke the handler 
+	result = PyEval_CallObjectWithKeywords(function, arg, (PyObject *)NULL);
+
+	// check the result and print out any errors
+	if (!result) {
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error calling python script\n");
+	    PyErr_Print();
+	    PyErr_Clear();
+	}
+
+	goto done_swap_out;
 
  done:
+	switch_safe_free(dupargs);
 
-	if (pythonfile) {
-		fclose(pythonfile);
-	}
+ done_swap_out:
+	// decrement ref counts 
+	Py_XDECREF(module);
+	Py_XDECREF(function);
+	Py_XDECREF(arg);
+	Py_XDECREF(result);
+
+	// swap out thread state
+	PyEval_ReleaseThread(tstate);
 
 	switch_safe_free(dupargs);
-	switch_safe_free(path);
+
+
 }
 
 static void python_function(switch_core_session_t *session, char *data)
@@ -229,14 +257,25 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 	*module_interface = &python_module_interface;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Python Framework Loading...\n");
 	
-	Py_Initialize();
-	PyEval_InitThreads();
+	if (!Py_IsInitialized()) {
 
-	mainThreadState = PyThreadState_Get();
+	    // initialize python system
+	    Py_Initialize();
 
-	PyThreadState_Swap(NULL); 
+	    // create GIL and a threadstate
+	    PyEval_InitThreads();
 
-	PyEval_ReleaseLock();	
+	    // save threadstate since it's interp field will be needed
+	    // to create new threadstates, and will be needed for shutdown
+	    mainThreadState = PyThreadState_Get();
+	    
+	    // swap out threadstate since the call threads will create
+	    // their own and swap in their threadstate
+	    PyThreadState_Swap(NULL); 
+
+	    // release GIL
+	    PyEval_ReleaseLock();	
+	}
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

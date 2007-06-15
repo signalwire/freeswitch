@@ -47,44 +47,6 @@ console_clean_log = _freeswitch.console_clean_log
 api_execute = _freeswitch.api_execute
 api_reply_delete = _freeswitch.api_reply_delete
 process_callback_result = _freeswitch.process_callback_result
-class CoreSession(_object):
-    __swig_setmethods__ = {}
-    __setattr__ = lambda self, name, value: _swig_setattr(self, CoreSession, name, value)
-    __swig_getmethods__ = {}
-    __getattr__ = lambda self, name: _swig_getattr(self, CoreSession, name)
-    __repr__ = _swig_repr
-    def __init__(self, *args): 
-        this = _freeswitch.new_CoreSession(*args)
-        try: self.this.append(this)
-        except: self.this = this
-    __swig_destroy__ = _freeswitch.delete_CoreSession
-    __del__ = lambda self : None;
-    __swig_setmethods__["session"] = _freeswitch.CoreSession_session_set
-    __swig_getmethods__["session"] = _freeswitch.CoreSession_session_get
-    if _newclass:session = property(_freeswitch.CoreSession_session_get, _freeswitch.CoreSession_session_set)
-    __swig_setmethods__["channel"] = _freeswitch.CoreSession_channel_set
-    __swig_getmethods__["channel"] = _freeswitch.CoreSession_channel_get
-    if _newclass:channel = property(_freeswitch.CoreSession_channel_get, _freeswitch.CoreSession_channel_set)
-    def answer(*args): return _freeswitch.CoreSession_answer(*args)
-    def preAnswer(*args): return _freeswitch.CoreSession_preAnswer(*args)
-    def hangup(*args): return _freeswitch.CoreSession_hangup(*args)
-    def setVariable(*args): return _freeswitch.CoreSession_setVariable(*args)
-    def getVariable(*args): return _freeswitch.CoreSession_getVariable(*args)
-    def playFile(*args): return _freeswitch.CoreSession_playFile(*args)
-    def setDTMFCallback(*args): return _freeswitch.CoreSession_setDTMFCallback(*args)
-    def speakText(*args): return _freeswitch.CoreSession_speakText(*args)
-    def set_tts_parms(*args): return _freeswitch.CoreSession_set_tts_parms(*args)
-    def getDigits(*args): return _freeswitch.CoreSession_getDigits(*args)
-    def transfer(*args): return _freeswitch.CoreSession_transfer(*args)
-    def playAndGetDigits(*args): return _freeswitch.CoreSession_playAndGetDigits(*args)
-    def streamfile(*args): return _freeswitch.CoreSession_streamfile(*args)
-    def execute(*args): return _freeswitch.CoreSession_execute(*args)
-    def begin_allow_threads(*args): return _freeswitch.CoreSession_begin_allow_threads(*args)
-    def end_allow_threads(*args): return _freeswitch.CoreSession_end_allow_threads(*args)
-CoreSession_swigregister = _freeswitch.CoreSession_swigregister
-CoreSession_swigregister(CoreSession)
-
-PythonDTMFCallback = _freeswitch.PythonDTMFCallback
 class input_callback_state(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, input_callback_state, name, value)
@@ -112,6 +74,48 @@ class input_callback_state(_object):
 input_callback_state_swigregister = _freeswitch.input_callback_state_swigregister
 input_callback_state_swigregister(input_callback_state)
 
+class CoreSession(_object):
+    __swig_setmethods__ = {}
+    __setattr__ = lambda self, name, value: _swig_setattr(self, CoreSession, name, value)
+    __swig_getmethods__ = {}
+    __getattr__ = lambda self, name: _swig_getattr(self, CoreSession, name)
+    __repr__ = _swig_repr
+    def __init__(self, *args): 
+        this = _freeswitch.new_CoreSession(*args)
+        try: self.this.append(this)
+        except: self.this = this
+    __swig_destroy__ = _freeswitch.delete_CoreSession
+    __del__ = lambda self : None;
+    __swig_setmethods__["session"] = _freeswitch.CoreSession_session_set
+    __swig_getmethods__["session"] = _freeswitch.CoreSession_session_get
+    if _newclass:session = property(_freeswitch.CoreSession_session_get, _freeswitch.CoreSession_session_set)
+    __swig_setmethods__["channel"] = _freeswitch.CoreSession_channel_set
+    __swig_getmethods__["channel"] = _freeswitch.CoreSession_channel_get
+    if _newclass:channel = property(_freeswitch.CoreSession_channel_get, _freeswitch.CoreSession_channel_set)
+    __swig_setmethods__["cb_state"] = _freeswitch.CoreSession_cb_state_set
+    __swig_getmethods__["cb_state"] = _freeswitch.CoreSession_cb_state_get
+    if _newclass:cb_state = property(_freeswitch.CoreSession_cb_state_get, _freeswitch.CoreSession_cb_state_set)
+    def answer(*args): return _freeswitch.CoreSession_answer(*args)
+    def preAnswer(*args): return _freeswitch.CoreSession_preAnswer(*args)
+    def hangup(*args): return _freeswitch.CoreSession_hangup(*args)
+    def setVariable(*args): return _freeswitch.CoreSession_setVariable(*args)
+    def getVariable(*args): return _freeswitch.CoreSession_getVariable(*args)
+    def playFile(*args): return _freeswitch.CoreSession_playFile(*args)
+    def setDTMFCallback(*args): return _freeswitch.CoreSession_setDTMFCallback(*args)
+    def speak(*args): return _freeswitch.CoreSession_speak(*args)
+    def set_tts_parms(*args): return _freeswitch.CoreSession_set_tts_parms(*args)
+    def getDigits(*args): return _freeswitch.CoreSession_getDigits(*args)
+    def transfer(*args): return _freeswitch.CoreSession_transfer(*args)
+    def playAndGetDigits(*args): return _freeswitch.CoreSession_playAndGetDigits(*args)
+    def streamfile(*args): return _freeswitch.CoreSession_streamfile(*args)
+    def ready(*args): return _freeswitch.CoreSession_ready(*args)
+    def execute(*args): return _freeswitch.CoreSession_execute(*args)
+    def begin_allow_threads(*args): return _freeswitch.CoreSession_begin_allow_threads(*args)
+    def end_allow_threads(*args): return _freeswitch.CoreSession_end_allow_threads(*args)
+CoreSession_swigregister = _freeswitch.CoreSession_swigregister
+CoreSession_swigregister(CoreSession)
+
+PythonDTMFCallback = _freeswitch.PythonDTMFCallback
 class PySession(CoreSession):
     __swig_setmethods__ = {}
     for _s in [CoreSession]: __swig_setmethods__.update(_s.__swig_setmethods__)
@@ -126,7 +130,7 @@ class PySession(CoreSession):
         except: self.this = this
     __swig_destroy__ = _freeswitch.delete_PySession
     __del__ = lambda self : None;
-    def streamfile(*args): return _freeswitch.PySession_streamfile(*args)
+    def setDTMFCallback(*args): return _freeswitch.PySession_setDTMFCallback(*args)
     def begin_allow_threads(*args): return _freeswitch.PySession_begin_allow_threads(*args)
     def end_allow_threads(*args): return _freeswitch.PySession_end_allow_threads(*args)
 PySession_swigregister = _freeswitch.PySession_swigregister

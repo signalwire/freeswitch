@@ -26,26 +26,17 @@ void console_clean_log(char *msg);
 char *api_execute(char *cmd, char *arg);
 void api_reply_delete(char *reply);
 
-struct input_callback_state {
-    PyObject *function;
-    PyThreadState *threadState;
-    void *extra;
-    char *funcargs; 
-};
-
 class PySession : public CoreSession {
  private:
-	PyObject *dtmfCallbackFunction;
-	PyThreadState *threadState;
+    void *threadState;
  public:
-	PySession(char *uuid) : CoreSession(uuid) {};
-	PySession(switch_core_session_t *session) : CoreSession(session) {};
-	~PySession();        
-	int streamfile(char *file, PyObject *pyfunc, char *funcargs, int starting_sample_count);
-	void begin_allow_threads();
-	void end_allow_threads();
+    PySession(char *uuid) : CoreSession(uuid) {}
+    PySession(switch_core_session_t *session) : CoreSession(session) {}
+    ~PySession();        
+    void setDTMFCallback(PyObject *pyfunc, char *funcargs);
+    void begin_allow_threads();
+    void end_allow_threads();
 
- protected:
 };
 
 #ifdef __cplusplus
