@@ -516,6 +516,19 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 	}
 
 	switch(zchan->state) {
+	case ZAP_CHANNEL_STATE_HANGUP:
+	case ZAP_CHANNEL_STATE_TERMINATING:
+		{
+			ok = 0;
+			switch(state) {
+			case ZAP_CHANNEL_STATE_DOWN:
+				ok = 1;
+				break;
+			default:
+				break;
+			}
+		}
+		break;
 	case ZAP_CHANNEL_STATE_UP:
 		{
 			switch(state) {

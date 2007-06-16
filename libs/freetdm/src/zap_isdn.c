@@ -105,6 +105,8 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 		break;
 	case Q931mes_DISCONNECT:
 		{
+			Q931ie_Cause *cause = Q931GetIEPtr(gen->Cause, gen->buf);
+			zchan->caller_data.hangup_cause = cause->Value;
 			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_TERMINATING);
 		}
 		break;
@@ -172,8 +174,8 @@ static int zap_isdn_921_23(void *pvt, L2UCHAR *msg, L2INT mlen)
 {
 	int ret;
 	char bb[4096] = "";
-	print_hex_bytes(msg, mlen, bb, sizeof(bb));
-	zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", (int)mlen, LINE, bb);
+	print_hex_bytes(msg+4, mlen-2, bb, sizeof(bb));
+	zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", (int)mlen-2, LINE, bb);
 
 	ret = Q931Rx23(pvt, msg, mlen);
 	if (ret != 0)
@@ -342,7 +344,6 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 #endif
 			CalledNum.TypNum = 2;
 			CalledNum.NumPlanID = 1;
-			printf("WTF: [%s]\n", zchan->caller_data.ani);
 			CalledNum.Size += strlen(zchan->caller_data.ani);
 			gen->CalledNum = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &CalledNum);
 			ptrCalledNum = Q931GetIEPtr(gen->CalledNum, gen->buf);
@@ -370,6 +371,8 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		break;
 	case ZAP_CHANNEL_STATE_TERMINATING:
 		{
+			sig.event_id = ZAP_SIGEVENT_STOP;
+			status = data->sig_cb(&sig);
 			gen->MesType = Q931mes_RELEASE;
 			Q931Rx43(&data->q931, (void *)gen, gen->Size);
 		}
