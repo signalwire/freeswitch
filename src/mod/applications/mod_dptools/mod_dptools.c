@@ -1064,7 +1064,7 @@ static switch_application_interface_t speak_application_interface = {
 };
 
 static switch_application_interface_t displace_application_interface = {
-	/*.interface_name */ "displace",
+	/*.interface_name */ "displace_session",
 	/*.application_function */ displace_session_function,
 	/* long_desc */ "Displace audio from a file to the channels input",
 	/* short_desc */ "Displace File",
@@ -1074,7 +1074,7 @@ static switch_application_interface_t displace_application_interface = {
 };
 
 static switch_application_interface_t stop_displace_application_interface = {
-	/*.interface_name */ "displace",
+	/*.interface_name */ "stop_displace_session",
 	/*.application_function */ stop_displace_session_function,
 	/* long_desc */ "Stop Displacing to a file",
 	/* short_desc */ "Stop Displace File",
