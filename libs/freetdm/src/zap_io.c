@@ -658,6 +658,7 @@ static zap_status_t zap_channel_reset(zap_channel_t *zchan)
 	zap_clear_flag(zchan, ZAP_CHANNEL_SUPRESS_DTMF);
 	zap_channel_done(zchan);
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_HOLD);
+
 	memset(zchan->tokens, 0, sizeof(zchan->tokens));
 	zchan->token_count = 0;
 
@@ -747,9 +748,15 @@ zap_status_t zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t 
 
 zap_status_t zap_channel_outgoing_call(zap_channel_t *zchan)
 {
+	zap_status_t status;
+
 	assert(zchan != NULL);
+	
 	if (zchan->span->outgoing_call) {
-		return zchan->span->outgoing_call(zchan);
+		if ((status = zchan->span->outgoing_call(zchan)) == ZAP_SUCCESS) {
+			zap_set_flag(zchan, ZAP_CHANNEL_OUTBOUND);
+		}
+		return status;
 	} else {
 		zap_log(ZAP_LOG_ERROR, "outgoing_call method not implemented!\n");
 	}
@@ -765,6 +772,7 @@ zap_status_t zap_channel_done(zap_channel_t *zchan)
 
 	memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_INUSE);
+	zap_clear_flag_locked(zchan, ZAP_CHANNEL_OUTBOUND);
 	for (i = 0; i < 2; i++) {
 		if (zchan->fds[i] > -1) {
 			close(zchan->fds[i]);
@@ -1967,6 +1975,28 @@ int8_t zap_bitstream_get_bit(zap_bitstream_t *bsp)
 	return bit;
 }
 
+void print_hex_bytes(uint8_t *data, zap_size_t dlen, uint8_t *buf, zap_size_t blen)
+{
+	char *bp = buf;
+	uint8_t *byte = data;
+	uint32_t i, j = 0;
+
+	if (blen < (dlen * 3) + 2) {
+        return;
+    }
+
+	*bp++ = '[';
+	j++;
+
+	for(i = 0; i < dlen; i++) {
+		snprintf(bp, blen-j, "%02x ", *byte++);
+		bp += 3;
+		j += 3;
+	}
+
+	*--bp = ']';
+
+}
 
 void print_bits(uint8_t *b, int bl, char *buf, int blen, zap_endian_t e, uint8_t ss)
 {

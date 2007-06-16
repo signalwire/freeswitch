@@ -554,7 +554,14 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 	assert(tech_pvt != NULL);
 	
 	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_RINGING:
+		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS);
+		}
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
+		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_EARLY_MEDIA);
+		}
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
 			zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_UP);
@@ -697,13 +704,16 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
 
+	dest = outbound_profile->destination_number;
+
 	if ((p = strchr(outbound_profile->destination_number, '/'))) {
 		dest = p + 1;
 		span_id = atoi(outbound_profile->destination_number);
 		chan_id = atoi(dest);		
+		if ((p = strchr(dest, '/'))) {
+			dest = p + 1;
+		}
 	}
-
-	dest = outbound_profile->destination_number;
 
 	if (!dest) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid dial string\n");
@@ -969,6 +979,23 @@ static ZIO_SIGNAL_CB_FUNCTION(on_isdn_signal)
 			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
 				channel = switch_core_session_get_channel(session);
 				switch_channel_mark_answered(channel);
+				switch_core_session_rwunlock(session);
+			}
+		}
+    case ZAP_SIGEVENT_PROGRESS_MEDIA:
+		{
+			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				channel = switch_core_session_get_channel(session);
+				switch_channel_mark_pre_answered(channel);
+				switch_core_session_rwunlock(session);
+			}
+		}
+		break;
+    case ZAP_SIGEVENT_PROGRESS:
+		{
+			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				channel = switch_core_session_get_channel(session);
+				switch_channel_mark_ring_ready(channel);
 				switch_core_session_rwunlock(session);
 			}
 		}
