@@ -33,7 +33,7 @@
  * Exception:
  * The author hereby grants the use of this source code under the 
  * following license if and only if the source code is distributed
- * as part of the openzap library.  Any use or distribution of this
+ * as part of the openzap library.	Any use or distribution of this
  * source code outside the scope of the openzap library will nullify the
  * following license and reinact the MPL 1.1 as stated above.
  *
@@ -59,7 +59,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER
+ * A PARTICULAR PURPOSE ARE DISCLAIMED.	 IN NO EVENT SHALL THE COPYRIGHT OWNER
  * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
  * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
  * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -138,25 +138,25 @@ static __inline__ int32_t teletone_dds_phase_rate(teletone_process_t tone, uint3
 
 static __inline__ int16_t teletone_dds_state_modulate_sample(teletone_dds_state_t *dds, uint32_t pindex)
 {
-    int32_t bitmask = dds->phase_accumulator, sine_index = (bitmask >>= 23) & SINE_TABLE_LEN;
+	int32_t bitmask = dds->phase_accumulator, sine_index = (bitmask >>= 23) & SINE_TABLE_LEN;
 	int16_t sample;
 
-	if (pindex >= MAX_PHASE_TONES)  {
+	if (pindex >= MAX_PHASE_TONES)	{
 		pindex = 0;
 	}
 
-    if (bitmask & SINE_TABLE_MAX) {
-        sine_index = SINE_TABLE_LEN - sine_index;
+	if (bitmask & SINE_TABLE_MAX) {
+		sine_index = SINE_TABLE_LEN - sine_index;
 	}
 
-    sample = TELETONE_SINES[sine_index];
+	sample = TELETONE_SINES[sine_index];
 	
-    if (bitmask & (SINE_TABLE_MAX * 2)) {
+	if (bitmask & (SINE_TABLE_MAX * 2)) {
 		sample *= -1;
 	}
 
 	dds->phase_accumulator += dds->phase_rate[pindex];
-    return (int16_t) (sample * dds->scale_factor >> 15);
+	return (int16_t) (sample * dds->scale_factor >> 15);
 }
 
 static __inline__ void teletone_dds_state_set_tx_level(teletone_dds_state_t *dds, float tx_level)
