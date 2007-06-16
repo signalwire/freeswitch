@@ -232,7 +232,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					switch_mutex_lock(bp->read_mutex);
 					switch_buffer_write(bp->raw_read_buffer, read_frame->data, read_frame->datalen);
 					if (bp->callback) {
-						if (bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ) == SWITCH_FALSE || (bp->stop_time && bp->stop_time >= time(NULL))) {
+						if (bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ) == SWITCH_FALSE || (bp->stop_time && bp->stop_time <= time(NULL))) {
 							ok = SWITCH_FALSE;
 						}
 					}
@@ -516,7 +516,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					}
 				}
 
-				if (bp->stop_time && bp->stop_time >= time(NULL)) {
+				if (bp->stop_time && bp->stop_time <= time(NULL)) {
 					ok = SWITCH_FALSE;
 				}
 

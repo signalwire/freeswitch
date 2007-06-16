@@ -284,7 +284,9 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 	time_t to = 0;
 	switch_core_session_t *rsession;
 	
-	mydata = switch_core_session_strdup(session, cmd);
+	mydata = strdup(cmd);
+	assert(mydata != NULL);
+
 	if ((argc = switch_separate_string(mydata, ' ', argv, sizeof(argv) / sizeof(argv[0]))) < 3) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID ARGS!\n");
 	}
@@ -296,15 +298,15 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 
 	if (argv[4]) {
 		uint32_t mto;
-		if (*argv[2] == '+') {
-			if ((mto = atoi(argv[3]+1)) > 0) {
+		if (*argv[4] == '+') {
+			if ((mto = atoi(argv[4]+1)) > 0) {
 				to = time(NULL) + mto;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID Timeout!\n");
 				goto done;
 			}
 		} else {
-			if ((to = atoi(argv[3])) < time(NULL)) {
+			if ((to = atoi(argv[4])) < time(NULL)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID Timeout!\n");
 				to = 0;
 				goto done;
@@ -317,6 +319,7 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 
  done:
 
+	free(mydata);
 	switch_core_session_rwunlock(rsession);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1431,7 +1434,7 @@ static switch_api_interface_t kill_api_interface = {
 };
 
 static switch_api_interface_t tone_detect_session_interface = {
-	/*.interface_name */ "tone_Detect",
+	/*.interface_name */ "tone_detect",
 	/*.desc */ "Start Tone Detection on a channel",
 	/*.function */ tone_detect_session_function,
 	/*.syntax */

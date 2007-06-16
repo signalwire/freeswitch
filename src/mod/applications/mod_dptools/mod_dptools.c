@@ -680,14 +680,14 @@ static void tone_detect_session_function(switch_core_session_t *session, char *d
 	}
 	if (argv[3]) {
 		uint32_t mto;
-		if (*argv[2] == '+') {
-			if ((mto = atoi(argv[2]+1)) > 0) {
+		if (*argv[3] == '+') {
+			if ((mto = atol(argv[3]+1)) > 0) {
 				to = time(NULL) + mto;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID Timeout!\n");
 			}
 		} else {
-			if ((to = atoi(argv[2])) < time(NULL)) {
+			if ((to = atol(argv[3])) < time(NULL)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID Timeout!\n");
 				to = 0;
 			}

@@ -519,7 +519,8 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 				if (cont->list[i].up && teletone_multi_tone_detect(&cont->list[i].mt, frame->data, frame->samples)) {
 					switch_event_t *event;
 					
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "TONE %s DETECTED\n", cont->list[i].key);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TONE %s DETECTED\n", cont->list[i].key);
+					cont->list[i].up = 0;
 
 					if (cont->list[i].app) {
 						if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
@@ -530,8 +531,6 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 							switch_core_session_queue_private_event(cont->session, &event);
 						}
 					}
-
-					cont->list[cont->index].up = 0;
 
 					if (switch_event_create(&event, SWITCH_EVENT_DETECTED_TONE) == SWITCH_STATUS_SUCCESS) {
 						switch_event_t *dup;
@@ -641,6 +640,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 		  p = next + 1;
 	  }
   } while (next);
+  cont->list[cont->index].map.freqs[i++] = 0;
 
   if (!ok) {
 	  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid tone spec!\n");
@@ -674,6 +674,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 		  bflags |= SMBF_WRITE_REPLACE;
 	  }
   }
+
 
   if ((status = switch_core_media_bug_add(session, tone_detect_callback, cont, timeout, bflags, &cont->bug)) != SWITCH_STATUS_SUCCESS) {
 	  return status;
