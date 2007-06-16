@@ -516,6 +516,18 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 	}
 
 	switch(zchan->state) {
+	case ZAP_CHANNEL_STATE_UP:
+		{
+			switch(state) {
+			case ZAP_CHANNEL_STATE_PROGRESS:
+			case ZAP_CHANNEL_STATE_PROGRESS_MEDIA:
+				ok = 0;
+				break;
+			default:
+				break;
+			}
+		}
+		break;
 	case ZAP_CHANNEL_STATE_DOWN:
 		{
 			switch(state) {
@@ -528,6 +540,7 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 				break;
 			}
 		}
+		break;
 	case ZAP_CHANNEL_STATE_BUSY:
 		{
 			switch(state) {
@@ -538,6 +551,7 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 				break;
 			}
 		}
+		break;
 	default:
 		break;
 	}
@@ -771,8 +785,10 @@ zap_status_t zap_channel_done(zap_channel_t *zchan)
 	assert(zchan != NULL);
 
 	memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
+
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_INUSE);
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_OUTBOUND);
+
 	for (i = 0; i < 2; i++) {
 		if (zchan->fds[i] > -1) {
 			close(zchan->fds[i]);

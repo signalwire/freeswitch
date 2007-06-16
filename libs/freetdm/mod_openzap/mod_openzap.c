@@ -555,16 +555,24 @@ static switch_status_t channel_receive_message_b(switch_core_session_t *session,
 	
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_RINGING:
-		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
-			zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS);
+		{
+			if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
+				zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS);
+			}
 		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
-		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
-			zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_EARLY_MEDIA);
+		{
+			if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
+				zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_PROGRESS_MEDIA);
+			}
 		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
-		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
-			zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_UP);
+		{
+			if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
+				zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_UP);
+			}
 		}
 		break;
 	default:
@@ -877,7 +885,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 	switch_channel_t *channel = NULL;
 	zap_status_t status;
 
-	zap_log(ZAP_LOG_DEBUG, "got fxo sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
+	zap_log(ZAP_LOG_DEBUG, "got FXO sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
 
     switch(sigmsg->event_id) {
     case ZAP_SIGEVENT_UP:
@@ -909,7 +917,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 	private_t *tech_pvt = NULL;
 	zap_status_t status = ZAP_SUCCESS;
 
-    zap_log(ZAP_LOG_DEBUG, "got fxs sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
+    zap_log(ZAP_LOG_DEBUG, "got FXS sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
 
     switch(sigmsg->event_id) {
     case ZAP_SIGEVENT_UP:

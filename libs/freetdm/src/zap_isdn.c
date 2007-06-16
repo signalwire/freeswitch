@@ -110,7 +110,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 		break;
 	case Q931mes_ALERTING:
 		{
-			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_EARLY_MEDIA);
+			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_PROGRESS_MEDIA);
 		}
 		break;
 	case Q931mes_PROGRESS:
@@ -248,7 +248,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			zap_channel_close(&zchan);
 		}
 		break;
-	case ZAP_CHANNEL_STATE_EARLY_MEDIA:
+	case ZAP_CHANNEL_STATE_PROGRESS_MEDIA:
 		{
 			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
 				sig.event_id = ZAP_SIGEVENT_PROGRESS_MEDIA;
