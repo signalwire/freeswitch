@@ -212,8 +212,6 @@ int CoreSession::streamfile(char *file, int starting_sample_count) {
 
     switch_status_t status;
     switch_file_handle_t fh = { 0 };
-    unsigned int samps;
-    unsigned int pos = 0;
 	char *prebuf;
 
     sanity_check(-1);

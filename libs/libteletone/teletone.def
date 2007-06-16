@@ -5,7 +5,6 @@ teletone_destroy_session
 teletone_init_session
 teletone_set_map
 teletone_set_tone
-teletone_goertzel_result
 teletone_goertzel_update
 teletone_dtmf_get
 teletone_dtmf_detect

@@ -28,7 +28,7 @@ typedef struct input_callback_state {
                               // eg, PyThreadState *threadState
     void *extra;              // currently used to store a switch_file_handle_t
     char *funcargs;           // extra string that will be passed to callback function 
-};
+} input_callback_state;
 
 
 class CoreSession {
