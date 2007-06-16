@@ -318,7 +318,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		break;
 	case ZAP_CHAN_TYPE_B:
 		{
-			if (tech_pvt->zchan->state != ZAP_CHANNEL_STATE_DOWN) {
+			if (tech_pvt->zchan->state != ZAP_CHANNEL_STATE_DOWN && tech_pvt->zchan->state != ZAP_CHANNEL_STATE_TERMINATING) {
 				tech_pvt->zchan->caller_data.hangup_cause = switch_channel_get_cause(channel);
 				zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_HANGUP);
 			}
@@ -977,7 +977,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_isdn_signal)
 			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
 				zap_channel_clear_token(sigmsg->channel, 0);
 				channel = switch_core_session_get_channel(session);
-				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
 				switch_core_session_rwunlock(session);
 			}
 		}

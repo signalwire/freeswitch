@@ -1018,7 +1018,7 @@ L3INT Q931Uie_Cause(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * I
     pie->Location = IBuf[Octet+Off] & 0x0f;
 
     /* Octet 3a */
-    if((IBuf[Octet+Off] & 0x80) != 0)
+    if((IBuf[Octet+Off] & 0x80) == 0)
     {
         Off++;
         pie->Recom = IBuf[Octet+Off] & 0x7f;
@@ -1027,6 +1027,7 @@ L3INT Q931Uie_Cause(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * I
 
     /* Octet 4 */
     pie->Value = IBuf[Octet+Off] & 0x7f;
+	Octet++;
 
     Q931IESizeTest(Q931E_CAUSE);
 
