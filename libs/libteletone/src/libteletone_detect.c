@@ -106,9 +106,8 @@ static teletone_detection_descriptor_t dtmf_detect_col[GRID_FACTOR];
 static teletone_detection_descriptor_t dtmf_detect_row_2nd[GRID_FACTOR];
 static teletone_detection_descriptor_t dtmf_detect_col_2nd[GRID_FACTOR];
 
-static teletone_process_t dtmf_row[] = {697.0,  770.0,  852.0,  941.0};
-static teletone_process_t dtmf_col[] = {1209.0, 1336.0, 1477.0, 1633.0};
-
+static float dtmf_row[] = {697.0f,  770.0f,  852.0f,  941.0f};
+static float dtmf_col[] = {1209.0f, 1336.0f, 1477.0f, 1633.0f};
 
 static char dtmf_positions[] = "123A" "456B" "789C" "*0#D";
 
@@ -122,7 +121,7 @@ void teletone_goertzel_update(teletone_goertzel_state_t *goertzel_state,
 							  int samples)
 {
     int i;
-    teletone_process_t v1;
+    float v1;
     
     for (i = 0;  i < samples;  i++) {
         v1 = goertzel_state->v2;
@@ -131,29 +130,26 @@ void teletone_goertzel_update(teletone_goertzel_state_t *goertzel_state,
     }
 }
 
-teletone_process_t teletone_goertzel_result (teletone_goertzel_state_t *goertzel_state)
-{
-    return goertzel_state->v3 * goertzel_state->v3 + goertzel_state->v2 * goertzel_state->v2 - goertzel_state->v2 * goertzel_state->v3 * goertzel_state->fac;
-}
+#define teletone_goertzel_result(gs) ((gs)->v3 * (gs)->v3 + (gs)->v2 * (gs)->v2 - (gs)->v2 * (gs)->v3 * (gs)->fac)
 
 void teletone_dtmf_detect_init (teletone_dtmf_detect_state_t *dtmf_detect_state, int sample_rate)
 {
     int i;
-    teletone_process_t theta;
+    float theta;
 
     dtmf_detect_state->hit1 = dtmf_detect_state->hit2 = 0;
 
     for (i = 0;  i < GRID_FACTOR;  i++) {
-        theta = M_TWO_PI*(dtmf_row[i]/(teletone_process_t)sample_rate);
+        theta = M_TWO_PI*(dtmf_row[i]/(float)sample_rate);
         dtmf_detect_row[i].fac = 2.0*cos(theta);
 
-        theta = M_TWO_PI*(dtmf_col[i]/(teletone_process_t)sample_rate);
+        theta = M_TWO_PI*(dtmf_col[i]/(float)sample_rate);
         dtmf_detect_col[i].fac = 2.0*cos(theta);
     
-        theta = M_TWO_PI*(dtmf_row[i]*2.0/(teletone_process_t)sample_rate);
+        theta = M_TWO_PI*(dtmf_row[i]*2.0/(float)sample_rate);
         dtmf_detect_row_2nd[i].fac = 2.0*cos(theta);
 
-        theta = M_TWO_PI*(dtmf_col[i]*2.0/(teletone_process_t)sample_rate);
+        theta = M_TWO_PI*(dtmf_col[i]*2.0/(float)sample_rate);
         dtmf_detect_col_2nd[i].fac = 2.0*cos(theta);
     
 		goertzel_init (&dtmf_detect_state->row_out[i], &dtmf_detect_row[i]);
@@ -172,7 +168,7 @@ void teletone_dtmf_detect_init (teletone_dtmf_detect_state_t *dtmf_detect_state,
 
 void teletone_multi_tone_init(teletone_multi_tone_t *mt, teletone_tone_map_t *map)
 {
-	teletone_process_t theta = 0;
+	float theta = 0;
 	int x = 0;
 
 	if(!mt->min_samples) {
@@ -200,7 +196,7 @@ void teletone_multi_tone_init(teletone_multi_tone_t *mt, teletone_tone_map_t *ma
 			break;
 		}
 		mt->tone_count++;
-		theta = M_TWO_PI*(map->freqs[x]/(teletone_process_t)mt->sample_rate);
+		theta = M_TWO_PI*(map->freqs[x]/(float)mt->sample_rate);
 		mt->tdd[x].fac = 2.0 * cos(theta);
 		goertzel_init (&mt->gs[x], &mt->tdd[x]);
 		goertzel_init (&mt->gs2[x], &mt->tdd[x]);
@@ -213,8 +209,8 @@ int teletone_multi_tone_detect (teletone_multi_tone_t *mt,
 								int samples)
 {
 	int sample, limit, j, x = 0;
-	teletone_process_t v1, famp;
-	teletone_process_t eng_sum = 0, eng_all[TELETONE_MAX_TONES];
+	float v1, famp;
+	float eng_sum = 0, eng_all[TELETONE_MAX_TONES];
 	int gtest = 0, see_hit = 0;
 
     for (sample = 0;  sample < samples;  sample = limit) {
@@ -299,10 +295,10 @@ int teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detect_state,
 						  int16_t sample_buffer[],
 						  int samples)
 {
-    teletone_process_t row_energy[GRID_FACTOR];
-    teletone_process_t col_energy[GRID_FACTOR];
-    teletone_process_t famp;
-    teletone_process_t v1;
+    float row_energy[GRID_FACTOR];
+    float col_energy[GRID_FACTOR];
+    float famp;
+    float v1;
     int i;
     int j;
     int sample;

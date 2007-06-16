@@ -503,7 +503,7 @@ static switch_bool_t fax_detect_callback(switch_media_bug_t *bug, void *user_dat
       if(teletone_multi_tone_detect(&pvt->mt, frame.data, frame.samples)) {
 	switch_event_t *event;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FAX CNG DETECTED\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "FAX CNG DETECTED\n");
 
 	if (switch_event_create(&event, SWITCH_EVENT_DETECTED_FAX) == SWITCH_STATUS_SUCCESS) {
 	  switch_event_t *dup;
