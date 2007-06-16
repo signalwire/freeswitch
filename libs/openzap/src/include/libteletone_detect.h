@@ -136,9 +136,9 @@ extern "C" {
 
 	/*! \brief A continer for the elements of a Goertzel Algorithm (The names are from his formula) */
 	typedef struct {
-		teletone_process_t v2;
-		teletone_process_t v3;
-		teletone_process_t fac;
+		float v2;
+		float v3;
+		double fac;
 	} teletone_goertzel_state_t;
 	
 	/*! \brief A container for a DTMF detection state.*/
@@ -153,7 +153,7 @@ extern "C" {
 		teletone_goertzel_state_t col_out[GRID_FACTOR];
 		teletone_goertzel_state_t row_out2nd[GRID_FACTOR];
 		teletone_goertzel_state_t col_out2nd[GRID_FACTOR];
-		teletone_process_t energy;
+		float energy;
     
 		int current_sample;
 		char digits[TELETONE_MAX_DTMF_DIGITS + 1];
@@ -165,7 +165,7 @@ extern "C" {
 
 	/*! \brief An abstraction to store the coefficient of a tone frequency */
 	typedef struct {
-		teletone_process_t fac;
+		float fac;
 	} teletone_detection_descriptor_t;
 
 	/*! \brief A container for a single multi-tone detection 
@@ -180,7 +180,7 @@ extern "C" {
 		teletone_goertzel_state_t gs2[TELETONE_MAX_TONES];
 		int tone_count;
 
-		teletone_process_t energy;
+		float energy;
 		int current_sample;
 	
 		int min_samples;
@@ -252,13 +252,6 @@ extern "C" {
 	void teletone_goertzel_update(teletone_goertzel_state_t *goertzel_state,
 								  int16_t sample_buffer[],
 								  int samples);
-
-	/*! 
-	  \brief Compute the result of the last applied step of the Goertzel Algorithm
-	  \param goertzel_state the goertzel state to retrieve from
-	  \return the computed value for consideration in furthur audio tests
-	*/
-	teletone_process_t teletone_goertzel_result (teletone_goertzel_state_t *goertzel_state);
 
 
 
