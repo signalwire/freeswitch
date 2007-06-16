@@ -54,7 +54,7 @@
  * Exception:
  * The author hereby grants the use of this source code under the 
  * following license if and only if the source code is distributed
- * as part of the openzap library.  Any use or distribution of this
+ * as part of the openzap library.	Any use or distribution of this
  * source code outside the scope of the openzap library will nullify the
  * following license and reinact the MPL 1.1 as stated above.
  *
@@ -80,7 +80,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER
+ * A PARTICULAR PURPOSE ARE DISCLAIMED.	 IN NO EVENT SHALL THE COPYRIGHT OWNER
  * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
  * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
  * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -105,9 +105,9 @@ extern "C" {
 	*/
 
 #ifndef FALSE
-#define FALSE   0
+#define FALSE	0
 #ifndef TRUE
-#define TRUE    (!FALSE)
+#define TRUE	(!FALSE)
 #endif
 #endif
 
@@ -123,13 +123,13 @@ extern "C" {
 	 * Frequency tolerance +- 1.5% will detect, +-3.5% will reject
 	 */
 
-#define DTMF_THRESHOLD              8.0e7
-#define DTMF_NORMAL_TWIST           6.3     /* 8dB */
-#define DTMF_REVERSE_TWIST          2.5     /* 4dB */
-#define DTMF_RELATIVE_PEAK_ROW      6.3     /* 8dB */
-#define DTMF_RELATIVE_PEAK_COL      6.3     /* 8dB */
-#define DTMF_2ND_HARMONIC_ROW       2.5     /* 4dB */
-#define DTMF_2ND_HARMONIC_COL       63.1    /* 18dB */
+#define DTMF_THRESHOLD				8.0e7
+#define DTMF_NORMAL_TWIST			6.3		/* 8dB */
+#define DTMF_REVERSE_TWIST			2.5		/* 4dB */
+#define DTMF_RELATIVE_PEAK_ROW		6.3		/* 8dB */
+#define DTMF_RELATIVE_PEAK_COL		6.3		/* 8dB */
+#define DTMF_2ND_HARMONIC_ROW		2.5		/* 4dB */
+#define DTMF_2ND_HARMONIC_COL		63.1	/* 18dB */
 #define GRID_FACTOR 4
 #define BLOCK_LEN 102
 #define M_TWO_PI 2.0*M_PI
@@ -154,7 +154,7 @@ extern "C" {
 		teletone_goertzel_state_t row_out2nd[GRID_FACTOR];
 		teletone_goertzel_state_t col_out2nd[GRID_FACTOR];
 		float energy;
-    
+	
 		int current_sample;
 		char digits[TELETONE_MAX_DTMF_DIGITS + 1];
 		int current_digits;
