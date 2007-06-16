@@ -482,6 +482,7 @@ void zap_global_set_logger(zap_logger_t logger);
 void zap_global_set_default_logger(int level);
 uint32_t zap_separate_string(char *buf, char delim, char **array, int arraylen);
 void print_bits(uint8_t *b, int bl, char *buf, int blen, int e, uint8_t ss);
+void print_hex_bytes(uint8_t *data, zap_size_t dlen, uint8_t *buf, zap_size_t blen);
 ZIO_CODEC_FUNCTION(zio_slin2ulaw);
 ZIO_CODEC_FUNCTION(zio_ulaw2slin);
 ZIO_CODEC_FUNCTION(zio_slin2alaw);

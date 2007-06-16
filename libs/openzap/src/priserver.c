@@ -290,6 +290,7 @@ int main(int argc, char *argv[])
 
 
 	debug = PRI_DEBUG_Q931_DUMP | PRI_DEBUG_Q931_STATE;
+	printf("WTF %d\n", debug);
 
 	if (sangoma_init_pri(&spri,
 						 1,  // span

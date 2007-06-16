@@ -108,6 +108,21 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_TERMINATING);
 		}
 		break;
+	case Q931mes_ALERTING:
+		{
+			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_EARLY_MEDIA);
+		}
+		break;
+	case Q931mes_PROGRESS:
+		{
+			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_PROGRESS);
+		}
+		break;
+	case Q931mes_CONNECT:
+		{
+			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_UP);
+		}
+		break;
 	case Q931mes_SETUP:
 		{
 
@@ -155,7 +170,12 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 
 static int zap_isdn_921_23(void *pvt, L2UCHAR *msg, L2INT mlen)
 {
-	int ret = Q931Rx23(pvt, msg, mlen);
+	int ret;
+	char bb[4096] = "";
+	print_hex_bytes(msg, mlen, bb, sizeof(bb));
+	zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", (int)mlen, LINE, bb);
+
+	ret = Q931Rx23(pvt, msg, mlen);
 	if (ret != 0)
 		zap_log(ZAP_LOG_DEBUG, "931 parse error [%d] [%s]\n", ret, q931_error_to_name(ret));
 	return ((ret >= 0) ? 1 : 0);
@@ -166,9 +186,10 @@ static int zap_isdn_921_21(void *pvt, L2UCHAR *msg, L2INT mlen)
 	zap_span_t *span = (zap_span_t *) pvt;
 	zap_size_t len = (zap_size_t) mlen;
 #ifdef IODEBUG
-	char bb[4096] = "";
-	print_bits(msg, (int)len, bb, sizeof(bb), ZAP_ENDIAN_LITTLE, 0);
-	zap_log(ZAP_LOG_DEBUG, "WRITE %d\n%s\n%s\n\n", (int)len, LINE, bb);
+	//char bb[4096] = "";
+	//print_hex_bytes(msg, len, bb, sizeof(bb));
+	//print_bits(msg, (int)len, bb, sizeof(bb), ZAP_ENDIAN_LITTLE, 0);
+	//zap_log(ZAP_LOG_DEBUG, "WRITE %d\n%s\n%s\n\n", (int)len, LINE, bb);
 
 #endif
 
@@ -192,11 +213,31 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	sig.channel = zchan;
 
 	switch (zchan->state) {
+	case ZAP_CHANNEL_STATE_DOWN:
+		{
+			zap_channel_done(zchan);
+		}
+		break;
+	case ZAP_CHANNEL_STATE_PROGRESS:
+		{
+			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
+				sig.event_id = ZAP_SIGEVENT_PROGRESS;
+				if ((status = data->sig_cb(&sig) != ZAP_SUCCESS)) {
+					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
+				}
+			} else {
+				gen->MesType = Q931mes_PROGRESS;
+				Q931Rx43(&data->q931, (void *)gen, gen->Size);
+			}
+		}
+		break;
 	case ZAP_CHANNEL_STATE_RING:
 		{
-			sig.event_id = ZAP_SIGEVENT_START;
-			if ((status = data->sig_cb(&sig) != ZAP_SUCCESS)) {
-				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
+			if (!zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
+				sig.event_id = ZAP_SIGEVENT_START;
+				if ((status = data->sig_cb(&sig) != ZAP_SUCCESS)) {
+					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
+				}
 			}
 
 		}
@@ -207,11 +248,31 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			zap_channel_close(&zchan);
 		}
 		break;
+	case ZAP_CHANNEL_STATE_EARLY_MEDIA:
+		{
+			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
+				sig.event_id = ZAP_SIGEVENT_PROGRESS_MEDIA;
+				if ((status = data->sig_cb(&sig) != ZAP_SUCCESS)) {
+					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
+				}
+			} else {
+				gen->MesType = Q931mes_ALERTING;
+				Q931Rx43(&data->q931, (void *)gen, gen->Size);
+			}
+		}
+		break;
 	case ZAP_CHANNEL_STATE_UP:
 		{
-			gen->MesType = Q931mes_CONNECT;
-			gen->BearerCap = 0;
-			Q931Rx43(&data->q931, (void *)gen, zchan->caller_data.raw_data_len);
+			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
+				sig.event_id = ZAP_SIGEVENT_UP;
+				if ((status = data->sig_cb(&sig) != ZAP_SUCCESS)) {
+					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
+				}
+			} else {
+				gen->MesType = Q931mes_CONNECT;
+				gen->BearerCap = 0;
+				Q931Rx43(&data->q931, (void *)gen, zchan->caller_data.raw_data_len);
+			}
 		}
 		break;
 	case ZAP_CHANNEL_STATE_DIALING:
@@ -220,25 +281,75 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			Q931ie_ChanID ChanID;
 			Q931ie_CallingNum CallingNum;
 			Q931ie_CalledNum CalledNum;
+			Q931ie_CalledNum *ptrCalledNum;
 			
 			Q931InitIEBearerCap(&BearerCap);
 			Q931InitIEChanID(&ChanID);
 			Q931InitIECallingNum(&CallingNum);
 			Q931InitIECalledNum(&CalledNum);
-			
-			//is cast right here?
-			ChanID.ChanSlot = (unsigned char)zchan->chan_id;
-
-			//CallingNum.Digits
-
 
 			Q931InitMesGeneric(gen);
 			gen->MesType = Q931mes_SETUP;
+
+			BearerCap.CodStand = 0; /* ITU-T = 0, ISO/IEC = 1, National = 2, Network = 3 */
+			BearerCap.ITC = 0; /* Speech */
+			BearerCap.TransMode = 0; /* Circuit = 0, Packet = 1 */
+			BearerCap.ITR = 16; /* 64k */
+			BearerCap.Layer1Ident = 1;
+			BearerCap.UIL1Prot = 2; /* U-law (a-law = 3)*/
+#if 0
+			BearerCap.SyncAsync = ;
+			BearerCap.Negot = ;
+			BearerCap.UserRate = ;
+			BearerCap.InterRate = ;
+			BearerCap.NIConTx = ;
+			BearerCap.FlowCtlTx = ;
+			BearerCap.HDR = ;
+			BearerCap.MultiFrame = ;
+			BearerCap.Mode = ;
+			BearerCap.LLInegot = ;
+			BearerCap.Assignor = ;
+			BearerCap.InBandNeg = ;
+			BearerCap.NumStopBits = ;
+			BearerCap.NumDataBits = ;
+			BearerCap.Parity = ;
+			BearerCap.DuplexMode = ;
+			BearerCap.ModemType = ;
+			BearerCap.Layer2Ident = ;
+			BearerCap.UIL2Prot = ;
+			BearerCap.Layer3Ident = ;
+			BearerCap.UIL3Prot = ;
+			BearerCap.AL3Info1 = ;
+			BearerCap.AL3Info2 = ;
+#endif
+
 			gen->BearerCap = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &BearerCap);
+
+			//is cast right here?
+			ChanID.IntType = 1; /* PRI = 1, BRI = 0 */
+			ChanID.InfoChanSel = 1;
+			ChanID.ChanMapType = 3; /* B-Chan */
+			ChanID.ChanSlot = (unsigned char)zchan->chan_id;
 			gen->ChanID = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &ChanID);
-			gen->CallingNum = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &CallingNum);
+#if 0
+			CallingNum.Size += strlen(zchan->caller_data.cid_num);
+			gen->CallingNum = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &CallingNum);			
+			zap_set_string((char *)CallingNum.Digit, zchan->caller_data.cid_num);
+			gen->Size += strlen(zchan->caller_data.cid_num);
+
+			//zap_set_string(zchan->caller_data.dnis, (char *)callednum->Digit);
+
+#endif
+			CalledNum.TypNum = 2;
+			CalledNum.NumPlanID = 1;
+			printf("WTF: [%s]\n", zchan->caller_data.ani);
+			CalledNum.Size += strlen(zchan->caller_data.ani);
 			gen->CalledNum = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &CalledNum);
-			
+			ptrCalledNum = Q931GetIEPtr(gen->CalledNum, gen->buf);
+			zap_copy_string((char *)ptrCalledNum->Digit, zchan->caller_data.ani, strlen(zchan->caller_data.ani)+1);
+
+			//gen->Size += strlen(zchan->caller_data.ani);
+			Q931Rx43(&data->q931, (L3UCHAR *) gen, gen->Size);
 		}
 		break;
 	case ZAP_CHANNEL_STATE_HANGUP:
@@ -328,9 +439,11 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 					len = sizeof(buf);
 					if (zap_channel_read(data->dchan, buf, &len) == ZAP_SUCCESS) {
 #ifdef IODEBUG
-						char bb[4096] = "";
-						print_bits(buf, (int)len, bb, sizeof(bb), ZAP_ENDIAN_LITTLE, 0);
-						zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", (int)len, LINE, bb);
+						//char bb[4096] = "";
+						//print_hex_bytes(buf, len, bb, sizeof(bb));
+
+						//print_bits(buf, (int)len, bb, sizeof(bb), ZAP_ENDIAN_LITTLE, 0);
+						//zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", (int)len, LINE, bb);
 #endif
 
 						Q921QueueHDLCFrame(&data->q921, buf, (int)len);
@@ -372,6 +485,16 @@ zap_status_t zap_isdn_start(zap_span_t *span)
 {
 	zap_set_flag(span->isdn_data, ZAP_ISDN_RUNNING);
 	return zap_thread_create_detached(zap_isdn_run, span);
+}
+
+static int q931_rx_32(void *pvt,L3UCHAR *msg, L3INT mlen)
+{
+	int ret;
+	char bb[4096] = "";
+	ret = Q921Rx32(pvt, msg, mlen);
+	print_hex_bytes(msg, mlen, bb, sizeof(bb));
+	zap_log(ZAP_LOG_DEBUG, "WRITE %d\n%s\n%s\n\n", (int)mlen, LINE, bb);
+	return ret;
 }
 
 zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931Dialect_t dialect, zio_signal_cb_t sig_cb)
@@ -428,12 +551,13 @@ zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931D
 					  mode,
 					  span->trunk_type,
 					  zap_isdn_931_34,
-					  (Q931TxCB_t)Q921Rx32,
+					  (Q931TxCB_t)q931_rx_32,
 					  zap_isdn_931_err,
 					  &span->isdn_data->q921,
 					  span);
 
 	span->isdn_data->q931.autoRestartAck = 1;
+	span->isdn_data->q931.autoConnectAck = 1;
 	span->signal_type = ZAP_SIGTYPE_ISDN;
 	span->outgoing_call = isdn_outgoing_call;
 	

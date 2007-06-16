@@ -322,17 +322,12 @@ L3INT Q931Pie_BearerCap(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
     li=(*Octet)++;    /* remember length position */
 
     /* Octet 3 - Coding standard / Information transfer capability */
-    OBuf[(*Octet)++] = 0x80 | (pIE->CodStand<<5) | (pIE->ITR & 0x1f);
+    OBuf[(*Octet)++] = 0x80 | (pIE->CodStand<<5) | (pIE->ITC & 0x1f);
 
     /* Octet 4 - Transfer mode / Information transfer rate */
+	OBuf[(*Octet)++] = 0x80 | (pIE->TransMode<<5) | (pIE->ITR & 0x1f);
     if(pIE->ITR == 0x18)
     {
-        OBuf[(*Octet)++] = 0x80 | (pIE->TransMode<<5) | (pIE->ITR & 0x1f);
-    }
-    else
-    {
-        OBuf[(*Octet)++] = 0x00 | (pIE->TransMode<<5) | (pIE->ITR & 0x1f);
-
         /* Octet 4.1 - Rate Multiplier */
         OBuf[(*Octet)++] = 0x80 | pIE->RateMul;
     }
@@ -382,7 +377,7 @@ L3INT Q931Pie_BearerCap(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
         }
         else
         {
-            OBuf[(*Octet)++] = 0x80 | (pIE->Layer1Ident<<5) | (pIE->UIL1Prot & 0x15);
+            OBuf[(*Octet)++] = 0x80 | (pIE->Layer1Ident<<5) | (pIE->UIL1Prot & 0x1F);
         }
     }
 
@@ -748,11 +743,11 @@ L3INT Q931Uie_CalledNum(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR
 *****************************************************************************/
 L3INT Q931Pie_CalledNum(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
 {
-    Q931ie_CalledSub * pIE = (Q931ie_CalledSub*)IBuf;
+    Q931ie_CalledNum * pIE = (Q931ie_CalledNum*)IBuf;
     L3INT rc=0;
     L3INT Beg=*Octet;
     L3INT li;
-    L3INT sN = pIE->Size - sizeof(Q931ie_CalledSub) + 1;
+    L3INT sN = pIE->Size - sizeof(Q931ie_CalledNum);
     L3INT x;
 
     /* Octet 1 */
@@ -760,15 +755,13 @@ L3INT Q931Pie_CalledNum(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, 
     li=(*Octet)++;
 
     /* Octet 3 */
-    OBuf[(*Octet)++] = 0x80 | (pIE->TypNum << 4) | (pIE->OddEvenInd << 3);
+    OBuf[(*Octet)++] = 0x80 | (pIE->TypNum << 4) | (pIE->NumPlanID);
     
     /* Octet 4 */
     for(x=0;x<sN;x++)
     {
         OBuf[(*Octet)++] = pIE->Digit[x];
     }
-
-    OBuf[(*Octet)-1] |= 0x80; /* Terminate bit */
 
     OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
     return rc;

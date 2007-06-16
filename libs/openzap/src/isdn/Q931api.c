@@ -217,7 +217,7 @@ L3INT Q931GetUniqueCRV(Q931_TrunkInfo_t *pTrunk)
 L3INT Q931InitMesGeneric(Q931mes_Generic *pMes)
 {
 	memset(pMes, 0, sizeof(*pMes));
-	pMes->ProtDisc		= 0x80;
+	pMes->ProtDisc		= 0x08;
 	pMes->Size			= Q931GetMesSize(pMes);
 
 	return 0;
@@ -225,7 +225,7 @@ L3INT Q931InitMesGeneric(Q931mes_Generic *pMes)
 
 L3INT Q931InitMesResume(Q931mes_Generic * pMes)
 {
-	pMes->ProtDisc		= 0x80;
+	pMes->ProtDisc		= 0x08;
 	pMes->CRV			= 0;		/* CRV to be allocated, might be receive*/
 	pMes->MesType		= Q931mes_RESUME;
 
@@ -236,7 +236,7 @@ L3INT Q931InitMesResume(Q931mes_Generic * pMes)
 
 L3INT Q931InitMesRestartAck(Q931mes_Generic * pMes)
 {
-	pMes->ProtDisc		= 0x80;
+	pMes->ProtDisc		= 0x08;
 	pMes->CRV			= 0;		/* CRV to be allocated, might be receive*/
 	pMes->MesType		= Q931mes_RESTART_ACKNOWLEDGE;
 
