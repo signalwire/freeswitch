@@ -233,18 +233,27 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_inband_dtmf_session(switch_core_
 SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session);
 
 /*!
-  \brief Stop looking for FAX CNG
+  \brief Stop looking for TONES
   \param session the session to stop looking
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_stop_fax_detect_session(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_ivr_stop_tone_detect_session(switch_core_session_t *session);
 
 /*!
-  \brief Start looking for FAX CNG
+  \brief Start looking for TONES
   \param session the session to start looking
+  \param key the name of the tone.
+  \param tone_spec comma sep list of tone freqs
+  \param flags one or both of 'r' and 'w'
+  \param timeout timeout
+  \param app optional application to execute when tone is found
+  \param data optional data for appliaction
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_fax_detect_session(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_session_t *session, 
+															   const char *key, const char *tone_spec,
+															   const char *flags, time_t timeout,
+															   const char *app, const char *data);
 
 
 

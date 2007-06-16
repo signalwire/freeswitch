@@ -276,6 +276,51 @@ done:
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(tone_detect_session_function)
+{
+	char *argv[6] = { 0 };
+	int argc;
+	char *mydata = NULL;
+	time_t to = 0;
+	switch_core_session_t *rsession;
+	
+	mydata = switch_core_session_strdup(session, cmd);
+	if ((argc = switch_separate_string(mydata, ' ', argv, sizeof(argv) / sizeof(argv[0]))) < 3) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID ARGS!\n");
+	}
+
+	if (!(rsession = switch_core_session_locate(argv[0]))) {
+		stream->write_function(stream, "-Error Cannot locate session!\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (argv[4]) {
+		uint32_t mto;
+		if (*argv[2] == '+') {
+			if ((mto = atoi(argv[3]+1)) > 0) {
+				to = time(NULL) + mto;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID Timeout!\n");
+				goto done;
+			}
+		} else {
+			if ((to = atoi(argv[3])) < time(NULL)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID Timeout!\n");
+				to = 0;
+				goto done;
+			}
+		}
+	}
+
+	switch_ivr_tone_detect_session(rsession, argv[1], argv[2], argv[3], to, argv[5], argv[6]);
+	stream->write_function(stream, "Enabling tone detection '%s' '%s' '%s'\n", argv[1], argv[2], argv[3]);
+
+ done:
+
+	switch_core_session_rwunlock(rsession);
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 SWITCH_STANDARD_API(sched_transfer_function)
 {
@@ -1385,13 +1430,22 @@ static switch_api_interface_t kill_api_interface = {
 	/*.next */ &reload_api_interface
 };
 
+static switch_api_interface_t tone_detect_session_interface = {
+	/*.interface_name */ "tone_Detect",
+	/*.desc */ "Start Tone Detection on a channel",
+	/*.function */ tone_detect_session_function,
+	/*.syntax */
+	"<uuid> <key> <tone_spec> [<flags> <timeout> <app> <args>]",
+	/*.next */ &kill_api_interface
+};
+
 static switch_api_interface_t originate_api_interface = {
 	/*.interface_name */ "originate",
 	/*.desc */ "Originate a Call",
 	/*.function */ originate_function,
 	/*.syntax */
 	"<call url> <exten>|&<application_name>(<app_args>) [<dialplan>] [<context>] [<cid_name>] [<cid_num>] [<timeout_sec>]",
-	/*.next */ &kill_api_interface
+	/*.next */ &tone_detect_session_interface
 };
 
 static switch_loadable_module_interface_t commands_module_interface = {

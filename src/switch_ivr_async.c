@@ -138,18 +138,18 @@ static switch_bool_t displace_callback(switch_media_bug_t *bug, void *user_data,
 			if (dh->mux) {
 				int16_t buf[1024];
 				int16_t *fp = frame->data;
-				int x;
+				uint32_t x;
 				
 				switch_core_file_read(&dh->fh, buf, &len);
 				
-				for(x = 0; x < len; x++) {
+				for(x = 0; x < (uint32_t) len; x++) {
 					int32_t mixed = fp[x] + buf[x];
 					switch_normalize_to_16bit(mixed);
 					fp[x] = (int16_t) mixed;
 				}
 			} else {
 				switch_core_file_read(&dh->fh, frame->data, &len);
-				frame->samples = len;
+				frame->samples = (uint32_t) len;
 				frame->datalen = frame->samples * 2;
 			}
 			switch_core_media_bug_set_write_replace_frame(bug, frame);
@@ -477,117 +477,211 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_session(switch_core_sessi
 }
 
 
+#define MAX_TONES 16
 typedef struct {
-  switch_core_session_t *session;
-  teletone_multi_tone_t mt;
-} switch_fax_detect_t;
+	teletone_multi_tone_t mt;
+	char *app;
+	char *data;
+	char *key;
+	teletone_tone_map_t map;
+	int up;
+} switch_tone_detect_t;
 
-static switch_bool_t fax_detect_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+
+typedef struct {
+	switch_tone_detect_t list[MAX_TONES+1];
+	int index;
+	switch_media_bug_t *bug;
+	switch_core_session_t *session;
+} switch_tone_container_t;
+
+static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
-  switch_fax_detect_t *pvt = (switch_fax_detect_t *) user_data;
-  uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
-  switch_frame_t frame = { 0 };
-  //  switch_channel_t *channel = switch_core_session_get_channel(pvt->session);
+	switch_tone_container_t *cont = (switch_tone_container_t *) user_data;
+	switch_frame_t *frame = NULL;
+	int i = 0;
 
-  //  assert(channel != NULL);
-  frame.data = data;
-  frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+	switch (type) {
+	case SWITCH_ABC_TYPE_INIT:
+		break;
+	case SWITCH_ABC_TYPE_CLOSE:
+		break;
+	case SWITCH_ABC_TYPE_READ_REPLACE:
+		frame = switch_core_media_bug_get_read_replace_frame(bug);
+	case SWITCH_ABC_TYPE_WRITE_REPLACE:
+		{
 
-  switch (type) {
-  case SWITCH_ABC_TYPE_INIT:
-    break;
-  case SWITCH_ABC_TYPE_CLOSE:
-    break;
-  case SWITCH_ABC_TYPE_READ:
-    if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
-      if(teletone_multi_tone_detect(&pvt->mt, frame.data, frame.samples)) {
-	switch_event_t *event;
+			if (!frame) {
+				frame = switch_core_media_bug_get_write_replace_frame(bug);
+			}
+			
+			for (i = 0 ; i < cont->index; cont++) {
+				if (cont->list[i].up && teletone_multi_tone_detect(&cont->list[i].mt, frame->data, frame->samples)) {
+					switch_event_t *event;
+					
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "TONE %s DETECTED\n", cont->list[i].key);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "FAX CNG DETECTED\n");
+					if (cont->list[i].app) {
+						if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-name", "%s", cont->list[i].app);
+							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-arg", "%s", cont->list[i].data);
+							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
+							switch_core_session_queue_private_event(cont->session, &event);
+						}
+					}
 
-	if (switch_event_create(&event, SWITCH_EVENT_DETECTED_FAX) == SWITCH_STATUS_SUCCESS) {
-	  switch_event_t *dup;
+					cont->list[cont->index].up = 0;
 
-	  switch_event_add_header(event, SWITCH_STACK_BOTTOM, "fax", "detected");
+					if (switch_event_create(&event, SWITCH_EVENT_DETECTED_TONE) == SWITCH_STATUS_SUCCESS) {
+						switch_event_t *dup;
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Detected-Tone", "%s", cont->list[i].key);
+						
+						if (switch_event_dup(&dup, event) == SWITCH_STATUS_SUCCESS) {
+							switch_event_fire(&dup);
+						}
 	    
-	  if (switch_event_dup(&dup, event) == SWITCH_STATUS_SUCCESS) {
-	    switch_event_fire(&dup);
-	  }
-	    
-
-	  if (switch_core_session_queue_event(pvt->session, &event) != SWITCH_STATUS_SUCCESS) {
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Event queue failed!\n");
-	    switch_event_add_header(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
-	    switch_event_fire(&event);
-	  }
+						if (switch_core_session_queue_event(cont->session, &event) != SWITCH_STATUS_SUCCESS) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Event queue failed!\n");
+							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
+							switch_event_fire(&event);
+						}
+					}
+				}
+			}
+		}
+		break;
+	case SWITCH_ABC_TYPE_WRITE:
+	default:
+		break;
 	}
-      }
-    }
-    break;
-  case SWITCH_ABC_TYPE_WRITE:
-  default:
-    break;
-  }
-  return SWITCH_TRUE;
+	return SWITCH_TRUE;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_stop_fax_detect_session(switch_core_session_t *session)
+SWITCH_DECLARE(switch_status_t) switch_ivr_stop_tone_detect_session(switch_core_session_t *session)
 {
-  switch_media_bug_t *bug;
-  switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_tone_container_t *cont;
+	
+	assert(channel != NULL);
+	if ((cont = switch_channel_get_private(channel, "_tone_detect_"))) {
+		switch_channel_set_private(channel, "_tone_detect_", NULL);
+		switch_core_media_bug_remove(session, &cont->bug);
+		return SWITCH_STATUS_SUCCESS;
+	}
 
-  assert(channel != NULL);
-  if ((bug = switch_channel_get_private(channel, "fax"))) {
-    switch_channel_set_private(channel, "fax", NULL);
-    switch_core_media_bug_remove(session, &bug);
-    return SWITCH_STATUS_SUCCESS;
-  }
-
-  return SWITCH_STATUS_FALSE;
-
+	return SWITCH_STATUS_FALSE;
+	
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_fax_detect_session(switch_core_session_t *session)
+SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_session_t *session, 
+															   const char *key, const char *tone_spec,
+															   const char *flags, time_t timeout,
+															   const char *app, const char *data)
 {
   switch_channel_t *channel;
   switch_codec_t *read_codec;
-  switch_media_bug_t *bug;
   switch_status_t status;
-  switch_fax_detect_t *pvt;
-  teletone_tone_map_t *map;
-  int i;
+  switch_tone_container_t *cont = NULL;
+  char *p, *next;
+  int i = 0, ok = 0;
+
+  switch_media_bug_flag_t bflags = 0;
 
   channel = switch_core_session_get_channel(session);
   assert(channel != NULL);
 
-
   read_codec = switch_core_session_get_read_codec(session);
   assert(read_codec != NULL);
+  
+  if (switch_strlen_zero(key)) {
+	  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Key Specified!\n");
+	  return SWITCH_STATUS_FALSE;
+  }
+  
+  if ((cont = switch_channel_get_private(channel, "_tone_detect_"))) {
+	  if (cont->index >= MAX_TONES) {
+		  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max Tones Reached!\n");
+		  return SWITCH_STATUS_FALSE;
+	  }
 
-  if (!(pvt = switch_core_session_alloc(session, sizeof(*pvt)))) {
-    return SWITCH_STATUS_MEMERR;
+	  for(i = 0; i < cont->index; i++) {
+		  if (!strcasecmp(key, cont->list[cont->index].key )) {
+			  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Renabling %s\n", key);
+			  cont->list[cont->index].up = 1;
+			  teletone_multi_tone_init(&cont->list[i].mt, &cont->list[i].map);
+			  return SWITCH_STATUS_SUCCESS;
+		  }
+	  }
   }
 
-  if (!(map = switch_core_session_alloc(session, sizeof(*map)))) {
-    return SWITCH_STATUS_MEMERR;
+  if (switch_strlen_zero(tone_spec)) {
+	  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Spec Specified!\n");
+	  return SWITCH_STATUS_FALSE;
   }
 
-  for(i=0;i<TELETONE_MAX_TONES;i++) {
-    map->freqs[i] = 1100.0;
+  if (!cont && !(cont = switch_core_session_alloc(session, sizeof(*cont)))) {
+	  return SWITCH_STATUS_MEMERR;
   }
-  pvt->mt.sample_rate = read_codec->implementation->samples_per_second;
-  pvt->session = session;
 
-  teletone_multi_tone_init(&pvt->mt, map);
+  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Adding tone spec %s index %d\n", tone_spec, cont->index);
 
+  i = 0;
+  p = (char *) tone_spec;
+
+  do {
+	  teletone_process_t this;
+	  next = strchr(p, ',');
+	  while(*p == ' ') p++;
+	  if ((this = (teletone_process_t) atof(p))) {
+		  ok++;
+		  cont->list[cont->index].map.freqs[i++] = this;
+	  }
+	  if (next) {
+		  p = next + 1;
+	  }
+  } while (next);
+
+  if (!ok) {
+	  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid tone spec!\n");
+	  return SWITCH_STATUS_FALSE;
+
+  }
+
+  cont->list[cont->index].key = switch_core_session_strdup(session, key);
+
+  if (app) {
+	  cont->list[cont->index].app = switch_core_session_strdup(session, app);
+  }
+  
+  if (data) {
+	  cont->list[cont->index].data = switch_core_session_strdup(session, data);
+  }
+
+  cont->list[cont->index].up = 1;
+  cont->list[cont->index].mt.sample_rate = read_codec->implementation->samples_per_second;
+  teletone_multi_tone_init(&cont->list[cont->index].mt, &cont->list[cont->index].map);
+  cont->session = session;
+  
   switch_channel_answer(channel);
-
-  if ((status = switch_core_media_bug_add(session, fax_detect_callback, pvt, 0, SMBF_READ_STREAM, &bug)) != SWITCH_STATUS_SUCCESS) {
-    return status;
+  
+  if (switch_strlen_zero(flags)) {
+	  bflags = SMBF_READ_REPLACE;
+  } else {
+	  if (strchr(flags, 'r')) {
+		  bflags |= SMBF_READ_REPLACE;
+	  } else if (strchr(flags, 'w')) {
+		  bflags |= SMBF_WRITE_REPLACE;
+	  }
   }
 
-  switch_channel_set_private(channel, "fax", bug);
+  if ((status = switch_core_media_bug_add(session, tone_detect_callback, cont, timeout, bflags, &cont->bug)) != SWITCH_STATUS_SUCCESS) {
+	  return status;
+  }
 
+  switch_channel_set_private(channel, "_tone_detect_", cont);
+  cont->index++;
+  
   return SWITCH_STATUS_SUCCESS;
 }
 

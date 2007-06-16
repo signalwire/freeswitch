@@ -664,20 +664,45 @@ static void stop_dtmf_session_function(switch_core_session_t *session, char *dat
 
 static void fax_detect_session_function(switch_core_session_t *session, char *data)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Enabling fax detection\n");
-	switch_ivr_fax_detect_session(session);
+	switch_ivr_tone_detect_session(session, "fax", "1100.0", "r", 0, NULL, NULL);
 }
 
-static void system_session_function(switch_core_session_t *session, char *data)
+static void tone_detect_session_function(switch_core_session_t *session, char *data)
 {
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Executing command: %s\n",data);
-    system(data);
+	char *argv[6] = { 0 };
+	int argc;
+	char *mydata = NULL;
+	time_t to = 0;
+
+	mydata = switch_core_session_strdup(session, data);
+	if ((argc = switch_separate_string(mydata, ' ', argv, sizeof(argv) / sizeof(argv[0]))) < 2) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID ARGS!\n");
+	}
+	if (argv[3]) {
+		uint32_t mto;
+		if (*argv[2] == '+') {
+			if ((mto = atoi(argv[2]+1)) > 0) {
+				to = time(NULL) + mto;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID Timeout!\n");
+			}
+		} else {
+			if ((to = atoi(argv[2])) < time(NULL)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID Timeout!\n");
+				to = 0;
+			}
+		}
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Enabling tone detection '%s' '%s'\n", argv[0], argv[1]);
+	
+	switch_ivr_tone_detect_session(session, argv[0], argv[1], argv[2], to, argv[4], argv[5]);
 }
 
 static void stop_fax_detect_session_function(switch_core_session_t *session, char *data)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Disabling fax detection\n");
-	switch_ivr_stop_fax_detect_session(session);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Disabling tone detection\n");
+	switch_ivr_stop_tone_detect_session(session);
 }
 
 static void echo_function(switch_core_session_t *session, char *data)
@@ -1018,15 +1043,6 @@ static switch_api_interface_t presence_api_interface = {
 	/*.next */ &dptools_api_interface
 };
 
-static switch_application_interface_t system_application_interface = {
-    /*.interface_name */ "system",
-    /*.application_function */ system_session_function,
-    /* long_desc */ "Execute a system command",
-    /* short_desc */ "Execute a system command",
-    /* syntax */ "<command>",
-    /* flags */ SAF_NONE,
-    /*.next */ NULL
-};
 
 static switch_application_interface_t bridge_application_interface = {
 	/*.interface_name */ "bridge",
@@ -1034,8 +1050,7 @@ static switch_application_interface_t bridge_application_interface = {
 	/* long_desc */ "Bridge the audio between two sessions",
 	/* short_desc */ "Bridge Audio",
 	/* syntax */ "<channel_url>",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/* next */ &system_application_interface
+	/* flags */ SAF_SUPPORT_NOMEDIA
 };
 
 static switch_application_interface_t speak_application_interface = {
@@ -1129,6 +1144,17 @@ static switch_application_interface_t echo_application_interface = {
 	/*.next */ &park_application_interface
 };
 
+
+static switch_application_interface_t tone_detect_application_interface = {
+	/*.interface_name */ "tone_detect",
+	/*.application_function */ tone_detect_session_function,
+	/* long_desc */ "Detect tones",
+	/* short_desc */ "Detect tones",
+	/* syntax */ "",
+	/* flags */ SAF_NONE,
+	/*.next */ &echo_application_interface
+};
+
 static switch_application_interface_t fax_detect_application_interface = {
 	/*.interface_name */ "fax_detect",
 	/*.application_function */ fax_detect_session_function,
@@ -1136,14 +1162,14 @@ static switch_application_interface_t fax_detect_application_interface = {
 	/* short_desc */ "Detect faxes",
 	/* syntax */ "",
 	/* flags */ SAF_NONE,
-	/*.next */ &echo_application_interface
+	/*.next */ &tone_detect_application_interface
 };
 
-static switch_application_interface_t stop_fax_detect_application_interface = {
-	/*.interface_name */ "stop_fax_detect",
+static switch_application_interface_t stop_tone_detect_application_interface = {
+	/*.interface_name */ "stop_tone_detect",
 	/*.application_function */ stop_fax_detect_session_function,
-	/* long_desc */ "Stop detecting fax send tones",
-	/* short_desc */ "stop detecting faxes",
+	/* long_desc */ "Stop detecting tones",
+	/* short_desc */ "stop detecting tones",
 	/* syntax */ "",
 	/* flags */ SAF_NONE,
 	/* next */ &fax_detect_application_interface
@@ -1156,7 +1182,7 @@ static switch_application_interface_t dtmf_application_interface = {
 	/* short_desc */ "Detect dtmf",
 	/* syntax */ "",
 	/* flags */ SAF_NONE,
-	/* next */ &stop_fax_detect_application_interface
+	/* next */ &stop_tone_detect_application_interface
 };
 
 static switch_application_interface_t stop_dtmf_application_interface = {
