@@ -357,12 +357,17 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RING_DETECT;
 				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
 				wp_tdm_cmd_exec(chan, &tdm_api);
-#if 0
-				tdm_api.wp_tdm_cmd.cmd=SIOC_WP_TDM_SET_EVENT;
-				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_KEWL;
+
+				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
+				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RING_TRIP_DETECT;
 				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
 				wp_tdm_cmd_exec(chan, &tdm_api);
-#endif
+
+				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
+				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RXHOOK;
+				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
+				wp_tdm_cmd_exec(chan, &tdm_api);
+
 				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_GET_HW_CODING;
 				wp_tdm_cmd_exec(chan, &tdm_api);
 				if (tdm_api.wp_tdm_cmd.hw_tdm_coding) {
@@ -797,6 +802,12 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 			case WP_TDMAPI_EVENT_RING_DETECT:
 				{
 					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state & WP_TDMAPI_EVENT_RING_PRESENT ? ZAP_OOB_RING_START : ZAP_OOB_RING_STOP;
+
+				}
+				break;
+			case WP_TDMAPI_EVENT_RING_TRIP_DETECT:
+				{
+					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state & WP_TDMAPI_EVENT_RING_PRESENT ? ZAP_OOB_ONHOOK : ZAP_OOB_OFFHOOK;
 
 				}
 				break;
