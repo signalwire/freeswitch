@@ -126,11 +126,11 @@ void teletone_goertzel_update(teletone_goertzel_state_t *goertzel_state,
 	for (i = 0;	 i < samples;  i++) {
 		v1 = goertzel_state->v2;
 		goertzel_state->v2 = goertzel_state->v3;
-		goertzel_state->v3 = goertzel_state->fac*goertzel_state->v2 - v1 + sample_buffer[i];
+		goertzel_state->v3 = (float)(goertzel_state->fac*goertzel_state->v2 - v1 + sample_buffer[i]);
 	}
 }
 
-#define teletone_goertzel_result(gs) ((gs)->v3 * (gs)->v3 + (gs)->v2 * (gs)->v2 - (gs)->v2 * (gs)->v3 * (gs)->fac)
+#define teletone_goertzel_result(gs) (float)(((gs)->v3 * (gs)->v3 + (gs)->v2 * (gs)->v2 - (gs)->v2 * (gs)->v3 * (gs)->fac))
 
 void teletone_dtmf_detect_init (teletone_dtmf_detect_state_t *dtmf_detect_state, int sample_rate)
 {
@@ -140,17 +140,17 @@ void teletone_dtmf_detect_init (teletone_dtmf_detect_state_t *dtmf_detect_state,
 	dtmf_detect_state->hit1 = dtmf_detect_state->hit2 = 0;
 
 	for (i = 0;	 i < GRID_FACTOR;  i++) {
-		theta = M_TWO_PI*(dtmf_row[i]/(float)sample_rate);
-		dtmf_detect_row[i].fac = 2.0*cos(theta);
+		theta = (float)(M_TWO_PI*(dtmf_row[i]/(float)sample_rate));
+		dtmf_detect_row[i].fac = (float)(2.0*cos(theta));
 
-		theta = M_TWO_PI*(dtmf_col[i]/(float)sample_rate);
-		dtmf_detect_col[i].fac = 2.0*cos(theta);
+		theta = (float)(M_TWO_PI*(dtmf_col[i]/(float)sample_rate));
+		dtmf_detect_col[i].fac = (float)(2.0*cos(theta));
 	
-		theta = M_TWO_PI*(dtmf_row[i]*2.0/(float)sample_rate);
-		dtmf_detect_row_2nd[i].fac = 2.0*cos(theta);
+		theta = (float)(M_TWO_PI*(dtmf_row[i]*2.0/(float)sample_rate));
+		dtmf_detect_row_2nd[i].fac = (float)(2.0*cos(theta));
 
-		theta = M_TWO_PI*(dtmf_col[i]*2.0/(float)sample_rate);
-		dtmf_detect_col_2nd[i].fac = 2.0*cos(theta);
+		theta = (float)(M_TWO_PI*(dtmf_col[i]*2.0/(float)sample_rate));
+		dtmf_detect_col_2nd[i].fac = (float)(2.0*cos(theta));
 	
 		goertzel_init (&dtmf_detect_state->row_out[i], &dtmf_detect_row[i]);
 		goertzel_init (&dtmf_detect_state->col_out[i], &dtmf_detect_col[i]);
@@ -196,8 +196,8 @@ void teletone_multi_tone_init(teletone_multi_tone_t *mt, teletone_tone_map_t *ma
 			break;
 		}
 		mt->tone_count++;
-		theta = M_TWO_PI*(map->freqs[x]/(float)mt->sample_rate);
-		mt->tdd[x].fac = 2.0 * cos(theta);
+		theta = (float)(M_TWO_PI*(map->freqs[x]/(float)mt->sample_rate));
+		mt->tdd[x].fac = (float)(2.0 * cos(theta));
 		goertzel_init (&mt->gs[x], &mt->tdd[x]);
 		goertzel_init (&mt->gs2[x], &mt->tdd[x]);
 	}
@@ -230,11 +230,11 @@ int teletone_multi_tone_detect (teletone_multi_tone_t *mt,
 			for(x = 0; x < mt->tone_count; x++) {
 				v1 = mt->gs[x].v2;
 				mt->gs[x].v2 = mt->gs[x].v3;
-				mt->gs[x].v3 = mt->gs[x].fac * mt->gs[x].v2 - v1 + famp;
+				mt->gs[x].v3 = (float)(mt->gs[x].fac * mt->gs[x].v2 - v1 + famp);
 	
 				v1 = mt->gs2[x].v2;
 				mt->gs2[x].v2 = mt->gs2[x].v3;
-				mt->gs2[x].v3 = mt->gs2[x].fac*mt->gs2[x].v2 - v1 + famp;
+				mt->gs2[x].v3 = (float)(mt->gs2[x].fac*mt->gs2[x].v2 - v1 + famp);
 			}
 		}
 
@@ -245,7 +245,7 @@ int teletone_multi_tone_detect (teletone_multi_tone_t *mt,
 
 		eng_sum = 0;
 		for(x = 0; x < mt->tone_count; x++) {
-			eng_all[x] = teletone_goertzel_result (&mt->gs[x]);
+			eng_all[x] = (float)(teletone_goertzel_result (&mt->gs[x]));
 			eng_sum += eng_all[x];
 		}
 
@@ -325,19 +325,19 @@ int teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detect_state,
 			for(x = 0; x < GRID_FACTOR; x++) {
 				v1 = dtmf_detect_state->row_out[x].v2;
 				dtmf_detect_state->row_out[x].v2 = dtmf_detect_state->row_out[x].v3;
-				dtmf_detect_state->row_out[x].v3 = dtmf_detect_state->row_out[x].fac*dtmf_detect_state->row_out[x].v2 - v1 + famp;
+				dtmf_detect_state->row_out[x].v3 = (float)(dtmf_detect_state->row_out[x].fac*dtmf_detect_state->row_out[x].v2 - v1 + famp);
 	
 				v1 = dtmf_detect_state->col_out[x].v2;
 				dtmf_detect_state->col_out[x].v2 = dtmf_detect_state->col_out[x].v3;
-				dtmf_detect_state->col_out[x].v3 = dtmf_detect_state->col_out[x].fac*dtmf_detect_state->col_out[x].v2 - v1 + famp;
+				dtmf_detect_state->col_out[x].v3 = (float)(dtmf_detect_state->col_out[x].fac*dtmf_detect_state->col_out[x].v2 - v1 + famp);
 
 				v1 = dtmf_detect_state->col_out2nd[x].v2;
 				dtmf_detect_state->col_out2nd[x].v2 = dtmf_detect_state->col_out2nd[x].v3;
-				dtmf_detect_state->col_out2nd[x].v3 = dtmf_detect_state->col_out2nd[x].fac*dtmf_detect_state->col_out2nd[x].v2 - v1 + famp;
+				dtmf_detect_state->col_out2nd[x].v3 = (float)(dtmf_detect_state->col_out2nd[x].fac*dtmf_detect_state->col_out2nd[x].v2 - v1 + famp);
 		
 				v1 = dtmf_detect_state->row_out2nd[x].v2;
 				dtmf_detect_state->row_out2nd[x].v2 = dtmf_detect_state->row_out2nd[x].v3;
-				dtmf_detect_state->row_out2nd[x].v3 = dtmf_detect_state->row_out2nd[x].fac*dtmf_detect_state->row_out2nd[x].v2 - v1 + famp;
+				dtmf_detect_state->row_out2nd[x].v3 = (float)(dtmf_detect_state->row_out2nd[x].fac*dtmf_detect_state->row_out2nd[x].v2 - v1 + famp);
 			}
 
 		}
