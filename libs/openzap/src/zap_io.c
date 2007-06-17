@@ -2007,7 +2007,7 @@ int8_t zap_bitstream_get_bit(zap_bitstream_t *bsp)
 	return bit;
 }
 
-void print_hex_bytes(uint8_t *data, zap_size_t dlen, uint8_t *buf, zap_size_t blen)
+void print_hex_bytes(uint8_t *data, zap_size_t dlen, char *buf, zap_size_t blen)
 {
 	char *bp = buf;
 	uint8_t *byte = data;

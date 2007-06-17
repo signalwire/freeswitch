@@ -344,7 +344,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 #endif
 			CalledNum.TypNum = 2;
 			CalledNum.NumPlanID = 1;
-			CalledNum.Size += strlen(zchan->caller_data.ani);
+			CalledNum.Size = CalledNum.Size + (unsigned char)strlen(zchan->caller_data.ani);
 			gen->CalledNum = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &CalledNum);
 			ptrCalledNum = Q931GetIEPtr(gen->CalledNum, gen->buf);
 			zap_copy_string((char *)ptrCalledNum->Digit, zchan->caller_data.ani, strlen(zchan->caller_data.ani)+1);
