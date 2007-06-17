@@ -820,6 +820,35 @@ static void playback_function(switch_core_session_t *session, char *data)
 
 }
 
+static void gentones_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+	char *tone_script = NULL;
+	switch_input_args_t args = { 0 };
+	char *l;
+	int32_t loops = 0;
+
+	tone_script = switch_core_session_strdup(session, data);
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+	
+	switch_channel_pre_answer(channel);
+
+	if ((l = strchr(tone_script, '|'))) {
+		*l++ = '\0';
+		loops = atoi(l);
+
+		if (loops < 0) {
+			loops = -1;
+		}
+	}
+
+	args.input_callback = on_dtmf;
+	switch_ivr_gentones(session, tone_script, loops, &args);
+
+}
+
 static void displace_session_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
@@ -1124,6 +1153,17 @@ static switch_application_interface_t playback_application_interface = {
 	/* flags */ SAF_NONE,
 	/*.next */ &stop_record_session_application_interface
 };
+
+static switch_application_interface_t gentones_application_interface = {
+	/*.interface_name */ "gentones",
+	/*.application_function */ gentones_function,
+	/* long_desc */ "Generate tones to the channel",
+	/* short_desc */ "Generate Tones",
+	/* syntax */ "<tgml_script>[|<loops>]",
+	/* flags */ SAF_NONE,
+	/*.next */ &playback_application_interface
+};
+
 static switch_application_interface_t park_application_interface = {
 	/*.interface_name */ "park",
 	/*.application_function */ park_function,
@@ -1131,7 +1171,7 @@ static switch_application_interface_t park_application_interface = {
 	/* short_desc */ NULL,
 	/* syntax */ NULL,
 	/* flags */ SAF_NONE,
-	/*.next */ &playback_application_interface
+	/*.next */ &gentones_application_interface
 };
 
 static switch_application_interface_t echo_application_interface = {

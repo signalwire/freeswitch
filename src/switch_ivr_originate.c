@@ -663,6 +663,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 							} else {
 								teletone_init_session(&ringback.ts, 0, teletone_handler, &ringback);
+								ringback.ts.rate = read_codec->implementation->samples_per_second;
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play Ringback Tone [%s]\n", ringback_data);
 								//ringback.ts.debug = 1;
 								//ringback.ts.debug_stream = switch_core_get_console();

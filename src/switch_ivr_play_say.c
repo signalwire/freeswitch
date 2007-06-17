@@ -477,6 +477,94 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	return status;
 }
 
+static int teletone_handler(teletone_generation_session_t * ts, teletone_tone_map_t * map)
+{
+	switch_buffer_t *audio_buffer = ts->user_data;
+	int wrote;
+
+	if (!audio_buffer) {
+		return -1;
+	}
+
+	wrote = teletone_mux_tones(ts, map);
+	switch_buffer_write(audio_buffer, ts->buffer, wrote * 2);
+
+	return 0;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *session, char *script, int32_t loops, switch_input_args_t *args)
+{
+	teletone_generation_session_t ts;
+	switch_buffer_t *audio_buffer;
+	switch_frame_t *read_frame = NULL;
+	switch_codec_t *read_codec = NULL, write_codec;
+	switch_frame_t write_frame;
+	switch_byte_t data[1024];
+	switch_channel_t *channel;
+
+	assert(session != NULL);
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	switch_channel_pre_answer(channel);
+	read_codec = switch_core_session_get_read_codec(session);
+
+	if (switch_core_codec_init(&write_codec,
+							   "L16",
+							   NULL,
+							   read_codec->implementation->samples_per_second,
+							   read_codec->implementation->microseconds_per_frame / 1000,
+							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, 
+							   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+
+		return SWITCH_STATUS_FALSE;
+	}
+
+	write_frame.codec = &write_codec;
+	write_frame.data = data;
+
+	switch_buffer_create_dynamic(&audio_buffer, 512, 1024, 0);
+	teletone_init_session(&ts, 0, teletone_handler, audio_buffer);
+	ts.rate = read_codec->implementation->samples_per_second;
+
+	teletone_run(&ts, script);
+
+	if (loops) {
+		switch_buffer_set_loops(audio_buffer, loops);
+	}
+
+	while(switch_channel_ready(channel)) {
+		switch_status_t status = switch_core_session_read_frame(session, &read_frame, 1000, 0);
+		
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			break;
+		}
+
+		if (read_frame->datalen < 2 || switch_test_flag(read_frame, SFF_CNG)) {
+			continue;
+		}
+
+		if ((write_frame.datalen = (uint32_t) switch_buffer_read_loop(audio_buffer, write_frame.data,
+																	  read_frame->codec->implementation->bytes_per_frame)) <= 0) {
+			break;
+		}
+
+		write_frame.samples = write_frame.datalen / 2;
+		
+		if (switch_core_session_write_frame(session, &write_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
+			break;
+		}
+	}
+
+	switch_core_codec_destroy(&write_codec);
+	switch_buffer_destroy(&audio_buffer);
+	teletone_destroy_session(&ts);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 #define FILE_STARTSAMPLES 1024 * 32
 #define FILE_BLOCKSIZE 1024 * 8
 #define FILE_BUFSIZE 1024 * 64
