@@ -522,6 +522,7 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 			ok = 0;
 			switch(state) {
 			case ZAP_CHANNEL_STATE_DOWN:
+			case ZAP_CHANNEL_STATE_BUSY:
 				ok = 1;
 				break;
 			default:
@@ -716,8 +717,10 @@ static zap_status_t zap_channel_reset(zap_channel_t *zchan)
 zap_status_t zap_channel_open_chan(zap_channel_t *zchan)
 {
 	zap_status_t status = ZAP_FAIL;
-	
-	if ((status = zap_mutex_trylock(zchan->mutex)) != ZAP_SUCCESS) {
+
+	assert(zchan != NULL);
+
+	if (!zap_test_flag(zchan, ZAP_CHANNEL_READY) || (status = zap_mutex_trylock(zchan->mutex)) != ZAP_SUCCESS) {
 		return status;
 	}
 
@@ -745,7 +748,7 @@ zap_status_t zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t 
 
 		check = &globals.spans[span_id].channels[chan_id];
 
-		if ((status = zap_mutex_trylock(check->mutex)) != ZAP_SUCCESS) {
+		if (!zap_test_flag(check, ZAP_CHANNEL_READY) || (status = zap_mutex_trylock(check->mutex)) != ZAP_SUCCESS) {
 			goto done;
 		}
 		
