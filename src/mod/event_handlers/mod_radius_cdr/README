@@ -28,17 +28,31 @@ Building:
 
 1) Compile and install freeradius-client library.
 
-2) Edit the top-level 'modules.conf'.  Add the following entry:
+2) Edit the top level 'configure.in'.  At approx line 336 you need to add:
+
+---
+AC_CONFIG_FILES([Makefile
+                src/Makefile
+                src/mod/Makefile
+                src/mod/event_handlers/mod_cdr/Makefile
++               src/mod/event_handlers/mod_radius_cdr/Makefile
+                src/mod/endpoints/mod_sofia/Makefile
+                src/include/switch_am_config.h
+                build/getlib.sh
+                build/modmake.rules])
+---
+
+3) Rerun bootstrap, re-run configure
+
+4) Edit the top-level 'modules.conf'.  Add the following entry:
 
 ...
 event_handlers/mod_radius_cdr
 ...
 
-3) Re-run configure ??? ( does this need to be done???)
+5) Run make, and make install.  Make sure the module is built and installed.
 
-4) Run make, and make install.  Make sure the module is built and installed.
-
-5) Configure FreeSWITCH to load it
+6) Configure FreeSWITCH to load mod_radius_cdr
 
    - Copy the 'mod_radius_cdr.conf.xml' file to the FreeSWITCH conf directory
    - Copy the 'radius/' directory to the FreeSWITCH conf directory
