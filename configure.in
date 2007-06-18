@@ -334,6 +334,7 @@ AC_CONFIG_FILES([Makefile
                 src/mod/Makefile
                 src/mod/event_handlers/mod_cdr/Makefile
                 src/mod/endpoints/mod_sofia/Makefile
+                src/mod/event_handlers/mod_radius_cdr/Makefile
                 src/include/switch_am_config.h
                 build/getlib.sh
                 build/modmake.rules])
