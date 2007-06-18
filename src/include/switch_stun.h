@@ -106,12 +106,12 @@ typedef struct {
 typedef struct {
 	int16_t type;
 	uint16_t length;
-	char value[1];
+	char value[];
 } switch_stun_packet_attribute_t;
 
 typedef struct {
 	switch_stun_packet_header_t header;
-	uint8_t first_attribute[1];
+	uint8_t first_attribute[];
 } switch_stun_packet_t;
 
 typedef struct {
@@ -228,7 +228,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
   \param packet the packet in question
   \return the size in bytes (host order) of the entire packet
 */
-#define switch_stun_packet_length(packet) ntohs(packet->header.length) + sizeof(switch_stun_packet_header_t)
+#define switch_stun_packet_length(packet) ntohs(packet->header.length) + (sizeof(switch_stun_packet_header_t))
 ///\}
 
 SWITCH_END_EXTERN_C
