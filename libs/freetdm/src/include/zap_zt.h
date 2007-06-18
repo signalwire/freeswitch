@@ -111,6 +111,26 @@ struct zt_maintinfo {
 	int command;						/* Maintenance mode to set (from zt_maintenance_mode_t)	*/
 };
 
+struct zt_lineconfig {
+/* Used in ZT_SPANCONFIG */
+	int span;							/* Which span number (0 to use name)		*/
+	char name[20];						/* Name of span to use						*/
+	int lbo;							/* line build-outs							*/
+	int lineconfig;						/* line config parameters (framing, coding) */
+	int sync;							/* what level of sync source we are			*/
+}
+
+struct zt_chanconfig {
+/* Used in ZT_CHANCONFIG */
+	int chan;							/* Channel we're applying this to (0 to use name)										*/
+	char name[40];						/* Name of channel to use																*/
+	int sigtype;						/* Signal type																			*/
+	int deflaw;							/* Default law (ZT_LAW_DEFAULT, ZT_LAW_MULAW, or ZT_LAW_ALAW							*/
+	int master;							/* Master channel if sigtype is ZT_SLAVE												*/
+	int idlebits;						/* Idle bits (if this is a CAS channel) or channel to monitor (if this is DACS channel) */
+	char netdev_name[16];				/* name for the hdlc network device														*/
+}
+
 /* Enumerations */
 
 /* Values in zt_params structure for member g711_type */
