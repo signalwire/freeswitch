@@ -44,6 +44,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj);
 static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxo_outgoing_call)
 {
 	if (!zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK) && !zap_test_flag(zchan, ZAP_CHANNEL_INTHREAD)) {		
+		//zap_channel_command(zchan, ZAP_COMMAND_TRACE_INPUT, "/tmp/inbound.ul");
 		zap_channel_command(zchan, ZAP_COMMAND_OFFHOOK, NULL);
 		zap_channel_command(zchan, ZAP_COMMAND_ENABLE_PROGRESS_DETECT, NULL);
 		zchan->needed_tones[ZAP_TONEMAP_DIAL] = 1;
@@ -424,7 +425,6 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 			case ZAP_CHANNEL_STATE_GENRING:
 				{
 					send_caller_id(chan);
-					//zap_channel_command(chan, ZAP_COMMAND_TRACE_OUTPUT, "/tmp/outbound.ul");
 					zap_channel_command(chan, ZAP_COMMAND_GENERATE_RING_ON, NULL);
 				}
 				break;
