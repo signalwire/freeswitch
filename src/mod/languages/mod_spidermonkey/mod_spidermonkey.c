@@ -80,7 +80,7 @@ static struct {
 
 static JSClass global_class = {
 	"Global", JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, DEFAULT_SET_PROPERTY,
+	JS_PropertyStub, JS_PropertyStub, JS_PropertyStub, JS_PropertyStub,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, JS_FinalizeStub
 };
 
@@ -2196,7 +2196,8 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		char *context = "";
 		char *username = NULL;
 		char *to = NULL;
-
+		char *tmp;
+			
 		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 
 		if (JS_ValueToObject(cx, argv[0], &session_obj)) {
@@ -2223,34 +2224,60 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		}
 
 		if (argc > 2) {
-			dialplan = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
+			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
+			if (!switch_strlen_zero(tmp)) {
+				dialplan = tmp;
+			}
 		}
 		if (argc > 3) {
-			context = JS_GetStringBytes(JS_ValueToString(cx, argv[3]));
+			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[3]));
+			if (!switch_strlen_zero(tmp)) {
+				context = tmp;
+			}
 		}
 		if (argc > 4) {
-			cid_name = JS_GetStringBytes(JS_ValueToString(cx, argv[4]));
+			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[4]));
+			if (!switch_strlen_zero(tmp)) {
+				cid_name = tmp;
+			}
 		}
 		if (argc > 5) {
-			cid_num = JS_GetStringBytes(JS_ValueToString(cx, argv[5]));
+			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[5]));
+			if (!switch_strlen_zero(tmp)) {
+				cid_num = tmp;
+			}
 		}
 		if (argc > 6) {
-			network_addr = JS_GetStringBytes(JS_ValueToString(cx, argv[6]));
+			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[6]));
+			if (!switch_strlen_zero(tmp)) {
+				network_addr = tmp;
+			}
 		}
 		if (argc > 7) {
-			ani = JS_GetStringBytes(JS_ValueToString(cx, argv[7]));
-		}
+			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[7]));
+			if (!switch_strlen_zero(tmp)) {
+				ani = tmp;
+			}		}
 		if (argc > 8) {
-			aniii = JS_GetStringBytes(JS_ValueToString(cx, argv[8]));
-		}
+			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[8]));
+			if (!switch_strlen_zero(tmp)) {
+				aniii = tmp;
+			}		}
 		if (argc > 9) {
-			rdnis = JS_GetStringBytes(JS_ValueToString(cx, argv[9]));
-		}
+			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[9]));
+			if (!switch_strlen_zero(tmp)) {
+				rdnis = tmp;
+			}		}
 		if (argc > 10) {
-			username = JS_GetStringBytes(JS_ValueToString(cx, argv[10]));
-		}
+			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[10]));
+			if (!switch_strlen_zero(tmp)) {
+				username = tmp;
+			}		}
 		if (argc > 11) {
-			to = JS_GetStringBytes(JS_ValueToString(cx, argv[11]));
+			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[11]));
+			if (!switch_strlen_zero(tmp)) {
+				to = tmp;
+			}	
 		}
 
 		if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
@@ -2293,16 +2320,16 @@ static void session_destroy(JSContext * cx, JSObject * obj)
 			if (jss->session) {
 				channel = switch_core_session_get_channel(jss->session);
 				switch_channel_set_private(channel, "jss", NULL);
-			}
+				switch_core_event_hook_remove_state_change(jss->session, hanguphook);
 
-			switch_core_event_hook_remove_state_change(jss->session, hanguphook);
-			
-			if (channel && switch_test_flag(jss, S_HUP)) {
-				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-			}
+				if (switch_test_flag(jss, S_HUP)) {
+					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+				}
 
-			if (jss->session && switch_test_flag(jss, S_RDLOCK)) {
-				switch_core_session_rwunlock(jss->session);
+				if (switch_test_flag(jss, S_RDLOCK)) {
+					switch_core_session_rwunlock(jss->session);
+				}
+
 			}
 			
 			if (switch_test_flag(jss, S_FREE)) {
