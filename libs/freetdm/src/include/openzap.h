@@ -386,6 +386,7 @@ struct zap_span {
 	zio_event_cb_t event_callback;
 	zap_mutex_t *mutex;
 	zap_trunk_type_t trunk_type;
+	zap_analog_start_type_t start_type;
 	zap_signal_type_t signal_type;
 	struct zap_isdn_data *isdn_data;
 	struct zap_analog_data *analog_data;

@@ -118,7 +118,7 @@ struct zt_lineconfig {
 	int lbo;							/* line build-outs							*/
 	int lineconfig;						/* line config parameters (framing, coding) */
 	int sync;							/* what level of sync source we are			*/
-}
+};
 
 struct zt_chanconfig {
 /* Used in ZT_CHANCONFIG */
@@ -129,7 +129,7 @@ struct zt_chanconfig {
 	int master;							/* Master channel if sigtype is ZT_SLAVE												*/
 	int idlebits;						/* Idle bits (if this is a CAS channel) or channel to monitor (if this is DACS channel) */
 	char netdev_name[16];				/* name for the hdlc network device														*/
-}
+};
 
 /* Enumerations */
 
@@ -238,7 +238,8 @@ ZT_SIG_EM					= (1 << 6)					/* E&M */
 
 #define		ZT_GETGAINS			_IOWR (ZT_CODE, 16, struct zt_gains)	/* Get Channel audio gains */
 #define		ZT_SETGAINS			_IOWR (ZT_CODE, 17, struct zt_gains)	/* Set Channel audio gains */
-
+#define		ZT_SPANCONFIG		_IOW (ZT_CODE, 18, struct zt_lineconfig) /*Set Line (T1) Configurations and start system  */
+#define		ZT_CHANCONFIG		_IOW (ZT_CODE, 19, struct zt_chanconfig) /* Set Channel Configuration  */
 #define		ZT_AUDIOMODE		_IOW  (ZT_CODE, 32, int)				/* Set a clear channel into audio mode */
 #define		ZT_ECHOCANCEL		_IOW  (ZT_CODE, 33, int)				/* Control Echo Canceller */
 #define		ZT_HDLCRAWMODE		_IOW  (ZT_CODE, 36, int)				/* Set a clear channel into HDLC w/out FCS checking/calculation mode */

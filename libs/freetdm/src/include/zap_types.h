@@ -120,6 +120,15 @@ typedef enum {
 ZAP_STR2ENUM_P(zap_str2zap_trunk_type, zap_trunk_type2str, zap_trunk_type_t)
 
 typedef enum {
+	ZAP_ANALOG_START_KEWL,
+	ZAP_ANALOG_START_LOOP,
+	ZAP_ANALOG_START_GROUND,
+	ZAP_ANALOG_START_INVALID
+} zap_analog_start_type_t;
+#define START_TYPE_STRINGS "KEWL", "LOOP", "GROUND", "INVALID"
+ZAP_STR2ENUM_P(zap_str2zap_analog_start_type, zap_analog_start_type2str, zap_analog_start_type_t)
+
+typedef enum {
 	ZAP_OOB_DTMF, 
 	ZAP_OOB_ONHOOK,
 	ZAP_OOB_OFFHOOK,

@@ -801,12 +801,14 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 				break;
 			case WP_TDMAPI_EVENT_RING_DETECT:
 				{
+					printf("you fucking suck: ring\n");
 					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state & WP_TDMAPI_EVENT_RING_PRESENT ? ZAP_OOB_RING_START : ZAP_OOB_RING_STOP;
 
 				}
 				break;
 			case WP_TDMAPI_EVENT_RING_TRIP_DETECT:
 				{
+					printf("you fucking suck: trip\n");
 					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state & WP_TDMAPI_EVENT_RING_PRESENT ? ZAP_OOB_ONHOOK : ZAP_OOB_OFFHOOK;
 
 				}

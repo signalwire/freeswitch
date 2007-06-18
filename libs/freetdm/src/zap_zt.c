@@ -48,8 +48,16 @@ static struct {
 static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, zap_chan_type_t type, char *name, char *number)
 {
 	unsigned configured = 0, x;
+	const char ctlpath[] = "/dev/zap/ctl";
 	char path[128] = "";
 	zt_params_t ztp;
+	zap_socket_t ctlfd = ZT_INVALID_SOCKET;
+
+
+	if ((ctlfd = open(ctlpath, O_RDWR)) < 0) {
+		zap_log(ZAP_LOG_ERROR, "Cannot open control device\n");
+		return 0;
+	}
 
 	memset(&ztp, 0, sizeof(ztp));
 
@@ -62,6 +70,56 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 		sockfd = open(path, O_RDWR);
 		
 		if (sockfd != ZT_INVALID_SOCKET && zap_span_add_channel(span, sockfd, type, &chan) == ZAP_SUCCESS) {
+			if (type == ZAP_CHAN_TYPE_FXS || type == ZAP_CHAN_TYPE_FXO) {
+				struct zt_chanconfig cc;
+				memset(&cc, 0, sizeof(cc));
+				cc.chan = cc.master = x;
+				switch(type) {
+				case ZAP_CHAN_TYPE_FXS:
+					{
+						switch(span->start_type) {
+						case ZAP_ANALOG_START_KEWL:
+							cc.sigtype = ZT_SIG_FXOKS;
+							break;
+						case ZAP_ANALOG_START_LOOP:
+							cc.sigtype = ZT_SIG_FXOLS;
+							break;
+						case ZAP_ANALOG_START_GROUND:
+							cc.sigtype = ZT_SIG_FXOGS;
+							break;
+						default:
+							break;
+						}
+					}
+					break;
+				case ZAP_CHAN_TYPE_FXO:
+					{
+						switch(span->start_type) {
+						case ZAP_ANALOG_START_KEWL:
+							cc.sigtype = ZT_SIG_FXSKS;
+							break;
+						case ZAP_ANALOG_START_LOOP:
+							cc.sigtype = ZT_SIG_FXSLS;
+							break;
+						case ZAP_ANALOG_START_GROUND:
+							cc.sigtype = ZT_SIG_FXSGS;
+							break;
+						default:
+							break;
+						}
+					}
+					break;
+				default:
+					break;
+				}
+				if (ioctl(ctlfd, ZT_CHANCONFIG, &cc)) {
+					zap_log(ZAP_LOG_INFO, "failure configuring device %s chan %d fd %d (%s)\n", 
+							path, x, ctlfd, strerror(errno));
+					close(sockfd);
+					break;
+				}
+			}
+
 			len = zt_globals.eclevel;
 			if (ioctl(chan->sockfd, ZT_ECHOCANCEL, &len)) {
 				zap_log(ZAP_LOG_INFO, "failure configuring device %s as OpenZAP device %d:%d fd:%d err:%s\n", 
@@ -91,6 +149,8 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 				continue;
 			}
 			zap_log(ZAP_LOG_INFO, "configuring device %s as OpenZAP device %d:%d fd:%d\n", path, chan->span_id, chan->chan_id, sockfd);
+
+			
 
 			chan->rate = 8000;
 			chan->physical_span_id = ztp.span_no;
@@ -125,6 +185,8 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 		}
 	}
 	
+	close(ctlfd);
+
 	return configured;
 }
 
