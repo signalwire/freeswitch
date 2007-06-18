@@ -197,6 +197,19 @@ typedef enum {
 	ZT_MAINT_LOOPSTOP		= 5  /* Stop Sending Loop Codes	*/
 } zt_maintenance_mode_t;
 
+typedef enum {
+/* Signalling type */
+ZT_SIG_NONE					= 0,						/* chan not configured. */
+
+ZT_SIG_FXSLS				= ((1 << 0) | (1 << 13)),	/* FXS, Loopstart */
+ZT_SIG_FXSGS				= ((1 << 1) | (1 << 13)),	/* FXS, Groundstart */
+ZT_SIG_FXSKS				= ((1 << 2) | (1 << 13)),	/* FXS, Kewlstart */
+ZT_SIG_FXOLS				= ((1 << 3) | (1 << 12)),	/* FXO, Loopstart */
+ZT_SIG_FXOGS				= ((1 << 4) | (1 << 12)),	/* FXO, Groupstart */
+ZT_SIG_FXOKS				= ((1 << 5) | (1 << 12)),	/* FXO, Kewlstart */
+ZT_SIG_EM					= (1 << 6)					/* E&M */
+} zt_sigtype_t;
+
 
 /* Defines */
 
