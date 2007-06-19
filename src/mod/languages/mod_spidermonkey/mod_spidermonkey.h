@@ -131,6 +131,16 @@ struct js_session {
 	JSFunction *on_hangup;
 	int stack_depth;
 	switch_channel_state_t hook_state;
+	char *destination_number;
+	char *dialplan;
+	char *caller_id_name;
+	char *caller_id_number;
+	char *network_addr;
+	char *ani;
+	char *aniii;
+	char *rdnis;
+	char *context;
+	char *username;
 };
 
 JSBool DEFAULT_SET_PROPERTY(JSContext * cx, JSObject *obj, jsval id, jsval *vp)

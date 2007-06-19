@@ -63,6 +63,7 @@ if (!jss || !jss->session) {											\
 static void session_destroy(JSContext * cx, JSObject * obj);
 static JSBool session_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval);
 static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval);
+static JSBool session_set_callerdata(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval);
 static switch_api_interface_t js_run_interface;
 static switch_api_interface_t jsapi_interface;
 
@@ -1994,6 +1995,7 @@ enum session_tinyid {
 
 static JSFunctionSpec session_methods[] = {
 	{"originate", session_originate, 2},
+	{"setCallerData", session_set_callerdata, 2},
 	{"setHangupHook", session_hanguphook, 1},
 	{"setAutoHangup", session_autohangup, 1},
 	{"sayPhrase", session_sayphrase, 1},
@@ -2173,6 +2175,51 @@ static JSBool session_construct(JSContext * cx, JSObject * obj, uintN argc, jsva
 	return JS_TRUE;
 }
 
+static JSBool session_set_callerdata(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	struct js_session *jss = NULL;
+	jss = JS_GetPrivate(cx, obj);
+	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+
+	if (argc > 1) {
+		char *var, *val, **toset = NULL;
+		var = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		val = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		
+		if (!strcasecmp(var, "dialplan")) {
+			toset = &jss->dialplan;
+		} else if (!strcasecmp(var, "username")) {
+			toset = &jss->username;
+		} else if (!strcasecmp(var, "caller_id_name")) {
+			toset = &jss->caller_id_name;
+		} else if (!strcasecmp(var, "ani")) {
+			toset = &jss->ani;
+		} else if (!strcasecmp(var, "aniii")) {
+			toset = &jss->aniii;
+		} else if (!strcasecmp(var, "caller_id_number")) {
+			toset = &jss->caller_id_number;
+		} else if (!strcasecmp(var, "network_addr")) {
+			toset = &jss->network_addr;
+		} else if (!strcasecmp(var, "rdnis")) {
+			toset = &jss->rdnis;
+		} else if (!strcasecmp(var, "destination_number")) {
+			toset = &jss->destination_number;
+		} else if (!strcasecmp(var, "context")) {
+			toset = &jss->context;
+		} 
+		
+		if (toset) {
+			switch_safe_free(*toset);
+			*toset = strdup(val);
+		}
+
+	}
+	
+	return JS_TRUE;
+
+}
+
+
 static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	struct js_session *jss = NULL;
@@ -2216,6 +2263,15 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 			}
 		}
 
+		if (!switch_strlen_zero(jss->dialplan)) dialplan = jss->dialplan;
+		if (!switch_strlen_zero(jss->caller_id_name)) cid_name = jss->caller_id_name;
+		if (!switch_strlen_zero(jss->caller_id_number)) cid_num = jss->caller_id_number;
+		if (!switch_strlen_zero(jss->ani)) ani = jss->ani;
+		if (!switch_strlen_zero(jss->aniii)) aniii = jss->aniii;
+		if (!switch_strlen_zero(jss->rdnis)) rdnis = jss->rdnis;
+		if (!switch_strlen_zero(jss->context)) context = jss->context;
+		if (!switch_strlen_zero(jss->username)) username = jss->username;
+
 		dest = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 
 		if (!strchr(dest, '/')) {
@@ -2226,60 +2282,10 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		if (argc > 2) {
 			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
 			if (!switch_strlen_zero(tmp)) {
-				dialplan = tmp;
-			}
-		}
-		if (argc > 3) {
-			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[3]));
-			if (!switch_strlen_zero(tmp)) {
-				context = tmp;
-			}
-		}
-		if (argc > 4) {
-			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[4]));
-			if (!switch_strlen_zero(tmp)) {
-				cid_name = tmp;
-			}
-		}
-		if (argc > 5) {
-			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[5]));
-			if (!switch_strlen_zero(tmp)) {
-				cid_num = tmp;
-			}
-		}
-		if (argc > 6) {
-			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[6]));
-			if (!switch_strlen_zero(tmp)) {
-				network_addr = tmp;
-			}
-		}
-		if (argc > 7) {
-			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[7]));
-			if (!switch_strlen_zero(tmp)) {
-				ani = tmp;
-			}		}
-		if (argc > 8) {
-			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[8]));
-			if (!switch_strlen_zero(tmp)) {
-				aniii = tmp;
-			}		}
-		if (argc > 9) {
-			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[9]));
-			if (!switch_strlen_zero(tmp)) {
-				rdnis = tmp;
-			}		}
-		if (argc > 10) {
-			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[10]));
-			if (!switch_strlen_zero(tmp)) {
-				username = tmp;
-			}		}
-		if (argc > 11) {
-			tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[11]));
-			if (!switch_strlen_zero(tmp)) {
 				to = tmp;
 			}	
 		}
-
+		
 		if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
 			return JS_FALSE;
@@ -2330,8 +2336,18 @@ static void session_destroy(JSContext * cx, JSObject * obj)
 					switch_core_session_rwunlock(jss->session);
 				}
 
+				switch_safe_free(jss->dialplan);
+				switch_safe_free(jss->username);
+				switch_safe_free(jss->caller_id_name);
+				switch_safe_free(jss->ani);
+				switch_safe_free(jss->aniii);
+				switch_safe_free(jss->caller_id_number);
+				switch_safe_free(jss->network_addr);
+				switch_safe_free(jss->rdnis);
+				switch_safe_free(jss->destination_number);
+				switch_safe_free(jss->context);
 			}
-			
+
 			if (switch_test_flag(jss, S_FREE)) {
 				free(jss);
 			}
