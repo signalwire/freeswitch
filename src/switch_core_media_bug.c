@@ -156,10 +156,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 														  switch_media_bug_callback_t callback,
 														  void *user_data, time_t stop_time, switch_media_bug_flag_t flags, switch_media_bug_t **new_bug)
 {
-	switch_media_bug_t *bug, *bp;
+	switch_media_bug_t *bug;//, *bp;
 	switch_size_t bytes;
 
 	if (flags & SMBF_WRITE_REPLACE) {
+#if 0
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
 			if (switch_test_flag(bp, SMBF_WRITE_REPLACE)) {
@@ -169,9 +170,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 			}
 		}
 		switch_thread_rwlock_unlock(session->bug_rwlock);
+#endif
 	}
 
 	if (flags & SMBF_READ_REPLACE) {
+#if 0
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
 			if (switch_test_flag(bp, SMBF_READ_REPLACE)) {
@@ -181,6 +184,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 			}
 		}
 		switch_thread_rwlock_unlock(session->bug_rwlock);
+#endif
 	}
 
 	if (!(bug = switch_core_session_alloc(session, sizeof(*bug)))) {
