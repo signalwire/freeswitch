@@ -663,7 +663,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
   teletone_multi_tone_init(&cont->list[cont->index].mt, &cont->list[cont->index].map);
   cont->session = session;
   
-  switch_channel_answer(channel);
+  switch_channel_pre_answer(channel);
   
   if (switch_strlen_zero(flags)) {
 	  bflags = SMBF_READ_REPLACE;
