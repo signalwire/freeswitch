@@ -227,6 +227,8 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		switch_core_session_rwunlock(a_session);
 	}
 
+	switch_mutex_lock(tech_pvt->profile->flag_mutex);
+
 	if (tech_pvt->nh) {
 		if (!switch_test_flag(tech_pvt, TFLAG_BYE)) {
 			if (switch_test_flag(tech_pvt, TFLAG_ANS)) {
@@ -241,13 +243,11 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					nua_cancel(tech_pvt->nh, TAG_END());
 				}
 			}
-			switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+			switch_set_flag(tech_pvt, TFLAG_BYE);
 		}
 	}
 
-	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
-
-
+	switch_clear_flag(tech_pvt, TFLAG_IO);
 	tech_pvt->profile->inuse--;
 	switch_mutex_unlock(tech_pvt->profile->flag_mutex);
 
