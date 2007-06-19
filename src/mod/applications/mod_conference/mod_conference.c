@@ -2118,7 +2118,7 @@ static switch_status_t conference_member_play_file(conference_member_t * member,
 	char *dfile = NULL, *expanded = NULL;
 
 	if (member != NULL && file != NULL) {
-		conference_file_node_t *fnode, *nptr;
+		conference_file_node_t *fnode, *nptr = NULL;
 		switch_memory_pool_t *pool;
 
 		if ((expanded = switch_channel_expand_variables(switch_core_session_get_channel(member->session), file)) != file) {
@@ -2128,7 +2128,7 @@ static switch_status_t conference_member_play_file(conference_member_t * member,
 		}
 
 		if (!strncasecmp(file, "say:", 4)) {
-			status = conference_say(member->conference, file + 4, leadin);
+			status = conference_member_say(member, file + 4, leadin);
 			goto done;
 		}
 
@@ -2139,7 +2139,7 @@ static switch_status_t conference_member_play_file(conference_member_t * member,
 				}
 				file = dfile;
 			} else {
-				status = conference_say(member->conference, file, leadin);
+				status = conference_member_say(member, file, leadin);
 				goto done;
 			}
 		}
