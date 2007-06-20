@@ -37,7 +37,10 @@
 #include <freeradius-client.h>
 #include "mod_radius_cdr.h"
 
-static const char modname[] = "mod_radius_cdr";
+SWITCH_MODULE_LOAD_FUNCTION(mod_radius_cdr_load);
+SWITCH_MODULE_DEFINITION(mod_radius_cdr, mod_radius_cdr_load, NULL, NULL);
+
+static switch_memory_pool_t *module_pool = NULL;
 
 static char		cf[] = "mod_radius_cdr.conf";
 static char		my_dictionary[PATH_MAX];
@@ -466,18 +469,10 @@ static const switch_state_handler_table_t state_handlers = {
 	/*.on_transmit */ NULL
 };
 
-
-static const switch_loadable_module_interface_t mod_radius_cdr_module_interface = {
-	/*.module_name = */ modname,
-	/*.endpoint_interface = */ NULL,
-	/*.timer_interface = */ NULL,
-	/*.dialplan_interface = */ NULL,
-	/*.codec_interface = */ NULL,
-	/*.application_interface */ NULL
-};
-
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_radius_cdr_load)
 {
+	module_pool = pool;
+
 	if (load_config() != SWITCH_STATUS_SUCCESS) {
                 return SWITCH_STATUS_TERM;
         }
@@ -485,7 +480,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	/* test global state handlers */
 	switch_core_add_state_handler(&state_handlers);
 
-	*module_interface = &mod_radius_cdr_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
