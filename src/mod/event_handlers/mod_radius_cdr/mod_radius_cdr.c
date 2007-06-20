@@ -40,8 +40,6 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_radius_cdr_load);
 SWITCH_MODULE_DEFINITION(mod_radius_cdr, mod_radius_cdr_load, NULL, NULL);
 
-static switch_memory_pool_t *module_pool = NULL;
-
 static char		cf[] = "mod_radius_cdr.conf";
 static char		my_dictionary[PATH_MAX];
 static char *		my_timeout; /* 5 */
@@ -471,8 +469,6 @@ static const switch_state_handler_table_t state_handlers = {
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_radius_cdr_load)
 {
-	module_pool = pool;
-
 	if (load_config() != SWITCH_STATUS_SUCCESS) {
                 return SWITCH_STATUS_TERM;
         }
