@@ -49,7 +49,7 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 {
 	unsigned configured = 0, x;
 	const char ctlpath[] = "/dev/zap/ctl";
-	char path[128] = "";
+	char path[] = "/dev/zap/channel";
 	zt_params_t ztp;
 	zap_socket_t ctlfd = ZT_INVALID_SOCKET;
 
@@ -66,10 +66,12 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 		zap_socket_t sockfd = ZT_INVALID_SOCKET;
 		int len;
 
-		snprintf(path, sizeof(path), "/dev/zap/%d", x);
+		//snprintf(path, sizeof(path), "/dev/zap/%d", x);
 		sockfd = open(path, O_RDWR);
 		
 		if (sockfd != ZT_INVALID_SOCKET && zap_span_add_channel(span, sockfd, type, &chan) == ZAP_SUCCESS) {
+			ioctl(sockfd, ZT_SPECIFY, &x); 
+
 			if (type == ZAP_CHAN_TYPE_FXS || type == ZAP_CHAN_TYPE_FXO) {
 				struct zt_chanconfig cc;
 				memset(&cc, 0, sizeof(cc));
@@ -118,29 +120,31 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 					close(sockfd);
 					break;
 				}
+			
+				len = zt_globals.eclevel;
+				if (ioctl(chan->sockfd, ZT_ECHOCANCEL, &len)) {
+					zap_log(ZAP_LOG_INFO, "failure configuring device %s as OpenZAP device %d:%d fd:%d err:%s\n", 
+							path, chan->span_id, chan->chan_id, sockfd, strerror(errno));
+					close(sockfd);
+					continue;
+				}
 			}
 
-			len = zt_globals.eclevel;
-			if (ioctl(chan->sockfd, ZT_ECHOCANCEL, &len)) {
-				zap_log(ZAP_LOG_INFO, "failure configuring device %s as OpenZAP device %d:%d fd:%d err:%s\n", 
-						path, chan->span_id, chan->chan_id, sockfd, strerror(errno));
-				close(sockfd);
-				continue;
-			}
-			
-			len = zt_globals.codec_ms * 8;
-			if (ioctl(chan->sockfd, ZT_SET_BLOCKSIZE, &len)) {
-				zap_log(ZAP_LOG_INFO, "failure configuring device %s as OpenZAP device %d:%d fd:%d err:%s\n", 
-						path, chan->span_id, chan->chan_id, sockfd, strerror(errno));
-				close(sockfd);
-				continue;
-			}
+			if (chan->type != ZAP_CHAN_TYPE_DQ921 && chan->type != ZAP_CHAN_TYPE_DQ931) {
+				len = zt_globals.codec_ms * 8;
+				if (ioctl(chan->sockfd, ZT_SET_BLOCKSIZE, &len)) {
+					zap_log(ZAP_LOG_INFO, "failure configuring device %s as OpenZAP device %d:%d fd:%d err:%s\n", 
+							path, chan->span_id, chan->chan_id, sockfd, strerror(errno));
+					close(sockfd);
+					continue;
+				}
 
-			chan->packet_len = len;
-			chan->effective_interval = chan->native_interval = chan->packet_len / 8;
+				chan->packet_len = len;
+				chan->effective_interval = chan->native_interval = chan->packet_len / 8;
 			
-			if (chan->effective_codec == ZAP_CODEC_SLIN) {
-				chan->packet_len *= 2;
+				if (chan->effective_codec == ZAP_CODEC_SLIN) {
+					chan->packet_len *= 2;
+				}
 			}
 			
 			if (ioctl(sockfd, ZT_GET_PARAMS, &ztp) < 0) {
@@ -164,6 +168,20 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 				}
 			}
 			
+			if (chan->type == ZAP_CHAN_TYPE_DQ921) {
+				struct zt_bufferinfo binfo;
+				memset(&binfo, 0, sizeof(binfo));
+				binfo.txbufpolicy = 0;
+				binfo.rxbufpolicy = 0;
+				binfo.numbufs = 32;
+				binfo.bufsize = 1024;
+				if (ioctl(sockfd, ZT_SET_BUFINFO, &binfo)) {
+					zap_log(ZAP_LOG_INFO, "failure configuring device %s as OpenZAP device %d:%d fd:%d\n", path, chan->span_id, chan->chan_id, sockfd);
+					close(sockfd);
+					continue;
+				}
+			}
+
 			ztp.wink_time = zt_globals.wink_ms;
 			ztp.flash_time = zt_globals.flash_ms;
 
@@ -290,6 +308,22 @@ static ZIO_CONFIGURE_FUNCTION(zt_configure)
 
 static ZIO_OPEN_FUNCTION(zt_open) 
 {
+	if (zchan->type == ZAP_CHAN_TYPE_DQ921 || zchan->type == ZAP_CHAN_TYPE_DQ931) {
+		zchan->native_codec = zchan->effective_codec = ZAP_CODEC_NONE;
+	} else {
+		int ms = zt_globals.codec_ms;
+		int err;
+		if ((err = ioctl(zchan->sockfd, ZT_SET_BLOCKSIZE, &ms))) {
+			snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
+			return ZAP_FAIL;
+		} else {
+			zap_channel_set_feature(zchan, ZAP_CHANNEL_FEATURE_INTERVAL);
+			zchan->effective_interval = zchan->native_interval = ms;
+			zchan->packet_len = zchan->native_interval * 8;
+			zchan->native_codec = zchan->effective_codec;
+		}
+		
+	}
 	return ZAP_SUCCESS;
 }
 

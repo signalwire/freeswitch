@@ -441,13 +441,13 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 				if (flags & ZAP_READ) {
 					len = sizeof(buf);
 					if (zap_channel_read(data->dchan, buf, &len) == ZAP_SUCCESS) {
-#ifdef IODEBUG
-						//char bb[4096] = "";
-						//print_hex_bytes(buf, len, bb, sizeof(bb));
+						//#ifdef IODEBUG
+						char bb[4096] = "";
+						print_hex_bytes(buf, len, bb, sizeof(bb));
 
-						//print_bits(buf, (int)len, bb, sizeof(bb), ZAP_ENDIAN_LITTLE, 0);
-						//zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", (int)len, LINE, bb);
-#endif
+						print_bits(buf, (int)len, bb, sizeof(bb), ZAP_ENDIAN_LITTLE, 0);
+						zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", (int)len, LINE, bb);
+						//#endif
 
 						Q921QueueHDLCFrame(&data->q921, buf, (int)len);
 						Q921Rx12(&data->q921);
