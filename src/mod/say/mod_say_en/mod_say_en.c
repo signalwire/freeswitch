@@ -510,37 +510,18 @@ static switch_status_t en_say(switch_core_session_t *session, char *tosay, switc
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_say_interface_t es_say_interface = {
-	/*.name */ "es",
-	/*.say_function */ en_say,
-};
-
-static switch_say_interface_t en_say_interface = {
-	/*.name */ "en",
-	/*.say_function */ en_say,
-	/*.next */ &es_say_interface
-};
-
-static switch_loadable_module_interface_t say_en_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL,
-	/*.api_interface */ NULL,
-	/*.file_interface */ NULL,
-	/*.speech_interface */ NULL,
-	/*.directory_interface */ NULL,
-	/*.chat_interface */ NULL,
-	/*.say_inteface */ &en_say_interface,
-	/*.asr_interface */ NULL
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_say_en_load)
 {
+	switch_say_interface_t *say_interface;
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &say_en_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	say_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_SAY_INTERFACE);
+	say_interface->interface_name = "en";
+	say_interface->say_function = en_say;
+	say_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_SAY_INTERFACE);
+	say_interface->interface_name = "es";
+	say_interface->say_function = en_say;
+
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

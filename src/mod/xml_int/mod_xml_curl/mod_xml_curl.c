@@ -143,20 +143,6 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	return xml;
 }
 
-
-static switch_loadable_module_interface_t xml_curl_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL,
-	/*.api_interface */ NULL,
-	/*.file_interface */ NULL,
-	/*.speech_interface */ NULL,
-	/*.directory_interface */ NULL
-};
-
 static switch_status_t do_config(void)
 {
 	char *cf = "xml_curl.conf";
@@ -234,7 +220,7 @@ static switch_status_t do_config(void)
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_curl_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &xml_curl_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	if (do_config() == SWITCH_STATUS_SUCCESS) {
 		curl_global_init(CURL_GLOBAL_ALL);

@@ -2914,7 +2914,6 @@ SWITCH_STANDARD_API(jsapi_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 SWITCH_STANDARD_API(launch_async)
 {
 
@@ -2927,48 +2926,6 @@ SWITCH_STANDARD_API(launch_async)
 	stream->write_function(stream, "OK\n");
 	return SWITCH_STATUS_SUCCESS;
 }
-
-
-static switch_application_interface_t ivrtest_application_interface = {
-	/*.interface_name */ "javascript",
-	/*.application_function */ js_dp_function,
-	/* long_desc */ "Run a javascript ivr on a channel",
-	/* short_desc */ "Launch JS ivr.",
-	/* syntax */ "<script> [additional_vars [...]]",
-	/* flags */ SAF_NONE,
-	/* should we support no media mode here?  If so, we need to detect the mode, and either disable the media functions or indicate media if/when we need */
-	/*.next */ NULL
-};
-
-
-static switch_api_interface_t jsapi_interface = {
-	/*.interface_name */ "jsapi",
-	/*.desc */ "execute an api call",
-	/*.function */ jsapi_function,
-	/*.syntax */ "jsapi <script> [additional_vars [...]]",
-	/*.next */ NULL
-};
-
-static switch_api_interface_t js_run_interface = {
-	/*.interface_name */ "jsrun",
-	/*.desc */ "run a script",
-	/*.function */ launch_async,
-	/*.syntax */ "jsrun <script> [additional_vars [...]]",
-	/*.next */ &jsapi_interface
-};
-
-static switch_loadable_module_interface_t spidermonkey_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ &ivrtest_application_interface,
-	/*.api_interface */ &js_run_interface,
-	/*.file_interface */ NULL,
-	/*.speech_interface */ NULL,
-	/*.directory_interface */ NULL
-};
 
 static void  message_query_handler(switch_event_t *event)
 {
@@ -2994,6 +2951,8 @@ static void  message_query_handler(switch_event_t *event)
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 {
+	switch_api_interface_t *api_interface;
+	switch_application_interface_t *app_interface;
 	switch_status_t status;
 
 	if ((status = init_js()) != SWITCH_STATUS_SUCCESS) {
@@ -3007,7 +2966,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 	}
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &spidermonkey_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	SWITCH_ADD_API(api_interface, "jsrun", "run a script", launch_async, "jsrun <script> [additional_vars [...]]");
+	SWITCH_ADD_API(api_interface, "jsapi", "execute an api call", jsapi_function, "jsapi <script> [additional_vars [...]]");
+	SWITCH_ADD_APP(app_interface, "javascript", "Launch JS ivr", "Run a javascript ivr on a channel", js_dp_function, "<script> [additional_vars [...]]", SAF_NONE);
 
 	curl_global_init(CURL_GLOBAL_ALL);
 

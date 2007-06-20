@@ -91,22 +91,12 @@ static switch_state_handler_table_t state_handlers = {
 	/*.on_transmit */ NULL
 };
 
-
-static switch_loadable_module_interface_t xml_cdr_module_interface = {
-	/*.module_name = */ modname,
-	/*.endpoint_interface = */ NULL,
-	/*.timer_interface = */ NULL,
-	/*.dialplan_interface = */ NULL,
-	/*.codec_interface = */ NULL,
-	/*.application_interface */ NULL
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 {
 	/* test global state handlers */
 	switch_core_add_state_handler(&state_handlers);
 
-	*module_interface = &xml_cdr_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

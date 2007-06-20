@@ -47,19 +47,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime);
 SWITCH_MODULE_DEFINITION(mod_xml_rpc, mod_xml_rpc_load, mod_xml_rpc_shutdown, mod_xml_rpc_runtime);
 
-static switch_loadable_module_interface_t xml_rpc_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL,
-	/*.api_interface */ NULL,
-	/*.file_interface */ NULL,
-	/*.speech_interface */ NULL,
-	/*.directory_interface */ NULL
-};
-
 static struct {
 	uint16_t port;
 	uint8_t running;
@@ -69,10 +56,10 @@ static struct {
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_realm, globals.realm)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_user, globals.user)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_pass, globals.pass)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_user, globals.user)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_pass, globals.pass)
 
-	 static switch_status_t do_config(void)
+ static switch_status_t do_config(void)
 {
 	char *cf = "xml_rpc.conf";
 	switch_xml_t cfg, xml, settings, param;
@@ -118,7 +105,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_realm, globals.realm)
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_rpc_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &xml_rpc_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	memset(&globals, 0, sizeof(globals));
 

@@ -186,31 +186,20 @@ static inline switch_status_t timer_destroy(switch_timer_t *timer)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_timer_interface_t timer_interface = {
-	/*.interface_name */ "soft",
-	/*.timer_init */ timer_init,
-	/*.timer_next */ timer_next,
-	/*.timer_step */ timer_step,
-	/*.timer_check */ timer_check,
-	/*.timer_destroy */ timer_destroy
-};
-
-static switch_loadable_module_interface_t softtimer_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ &timer_interface
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_softtimer_load)
 {
-
-	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
-		return SWITCH_STATUS_MEMERR;
-	}
+	switch_timer_interface_t *timer_interface;
+	module_pool = pool;
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &softtimer_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	timer_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_TIMER_INTERFACE);
+	timer_interface->interface_name = "soft";
+	timer_interface->timer_init = timer_init;
+	timer_interface->timer_next = timer_next;
+	timer_interface->timer_step = timer_step;
+	timer_interface->timer_check = timer_check;
+	timer_interface->timer_destroy = timer_destroy;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

@@ -79,29 +79,6 @@ static void perl_function(switch_core_session_t *session, char *data)
 	destroy_perl(&my_perl);
 }
 
-static switch_application_interface_t perl_application_interface = {
-	/*.interface_name */ "perl",
-	/*.application_function */ perl_function,
-	NULL, NULL, NULL,
-	/* flags */ SAF_NONE,
-	/* should we support no media mode here?  If so, we need to detect the mode, and either disable the media functions or indicate media if/when we need */
-	/*.next */ NULL
-};
-
-static switch_loadable_module_interface_t perl_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ &perl_application_interface,
-	/*.api_interface */ NULL,
-	/*.file_interface */ NULL,
-	/*.speech_interface */ NULL,
-	/*.directory_interface */ NULL
-};
-
-
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_perl_shutdown)
 {
 	if (globals.my_perl) {
@@ -115,7 +92,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_perl_shutdown)
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_perl_load)
 {
-
+	switch_application_interface_t *app_interface;
 	PerlInterpreter *my_perl;
 	char code[1024];
 
@@ -135,7 +112,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_perl_load)
 
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &perl_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	SWITCH_ADD_APP(app_interface, "perl", NULL, NULL, perl_function, NULL, SAF_NONE);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
