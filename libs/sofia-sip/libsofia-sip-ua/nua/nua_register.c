@@ -1271,7 +1271,7 @@ nua_stack_init_registrations(nua_t *nua)
     }
   }
 
-  nta_agent_bind_tport_update(nua->nua_nta, nua, nua_stack_tport_update);
+  nta_agent_bind_tport_update(nua->nua_nta, (nta_update_magic_t *)nua, nua_stack_tport_update);
 
   return 0;
 }
