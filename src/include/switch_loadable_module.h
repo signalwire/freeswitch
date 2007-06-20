@@ -257,18 +257,24 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, 
   \return SWITCH_STATUS_SUCCESS on a successful load
 */
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename);
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_reload(void);
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_pause(void);
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_resume(void);
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_status(void);
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void);
-
 
 /*!
   \brief Shutdown a module
   \return SWITCH_STATUS_SUCCESS on a successful shutdown
 */
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void);
+
+#define SWITCH_ADD_API(api_int, int_name, descript, funcptr, syntax_string) \
+	for (;;) { \
+	api_int = switch_loadable_module_create_interface(*module_interface, SWITCH_API_INTERFACE); \
+	api_int->interface_name = int_name; \
+	api_int->desc = descript; \
+	api_int->function = funcptr; \
+	api_int->syntax = syntax_string; \
+	break; \
+	}
+
 ///\}
 
 SWITCH_END_EXTERN_C

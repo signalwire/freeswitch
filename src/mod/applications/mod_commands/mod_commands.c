@@ -39,25 +39,6 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load);
 SWITCH_MODULE_DEFINITION(mod_commands, mod_commands_load, NULL, NULL);
 
-static switch_api_interface_t ctl_api_interface;
-static switch_api_interface_t uuid_bridge_api_interface;
-static switch_api_interface_t session_record_api_interface;
-static switch_api_interface_t status_api_interface;
-static switch_api_interface_t show_api_interface;
-static switch_api_interface_t pause_api_interface;
-static switch_api_interface_t transfer_api_interface;
-static switch_api_interface_t load_api_interface;
-static switch_api_interface_t unload_api_interface;
-static switch_api_interface_t reload_api_interface;
-static switch_api_interface_t kill_api_interface;
-static switch_api_interface_t originate_api_interface;
-static switch_api_interface_t media_api_interface;
-static switch_api_interface_t hold_api_interface;
-static switch_api_interface_t broadcast_api_interface;
-static switch_api_interface_t sched_broadcast_api_interface;
-static switch_api_interface_t sched_transfer_api_interface;
-static switch_api_interface_t sched_hangup_api_interface;
-
 SWITCH_STANDARD_API(status_function)
 {
 	uint8_t html = 0;
@@ -108,6 +89,7 @@ SWITCH_STANDARD_API(status_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define CTL_SYNTAX "[hupall|pause|resume|shutdown]"
 SWITCH_STANDARD_API(ctl_function)
 {
 	int argc;
@@ -115,7 +97,7 @@ SWITCH_STANDARD_API(ctl_function)
 	uint32_t arg = 0;
 
 	if (switch_strlen_zero(cmd)) {
-		stream->write_function(stream, "USAGE: %s\n", ctl_api_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", CTL_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -150,6 +132,7 @@ SWITCH_STANDARD_API(ctl_function)
 
 }
 
+#define LOAD_SYNTAX "<mod_name>"
 SWITCH_STANDARD_API(load_function)
 {
 	const char *err;
@@ -159,7 +142,7 @@ SWITCH_STANDARD_API(load_function)
 	}
 
 	if (switch_strlen_zero(cmd)) {
-		stream->write_function(stream, "USAGE: %s\n", load_api_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", LOAD_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -181,7 +164,7 @@ SWITCH_STANDARD_API(unload_function)
 	}
 
 	if (switch_strlen_zero(cmd)) {
-		stream->write_function(stream, "USAGE: %s\n", unload_api_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", LOAD_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -212,6 +195,7 @@ SWITCH_STANDARD_API(reload_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define KILL_SYNTAX "<uuid>"
 SWITCH_STANDARD_API(kill_function)
 {
 	switch_core_session_t *ksession = NULL;
@@ -221,7 +205,7 @@ SWITCH_STANDARD_API(kill_function)
 	}
 
 	if (!cmd) {
-		stream->write_function(stream, "USAGE: %s\n", kill_api_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", KILL_SYNTAX);
 	} else if ((ksession = switch_core_session_locate(cmd))) {
 		switch_channel_t *channel = switch_core_session_get_channel(ksession);
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
@@ -234,6 +218,7 @@ SWITCH_STANDARD_API(kill_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define TRANSFER_SYNTAX "<uuid> <dest-exten> [<dialplan>] [<context>]"
 SWITCH_STANDARD_API(transfer_function)
 {
 	switch_core_session_t *tsession = NULL;
@@ -269,13 +254,14 @@ SWITCH_STANDARD_API(transfer_function)
 		}
 	}
 
-	stream->write_function(stream, "USAGE: %s\n", transfer_api_interface.syntax);
+	stream->write_function(stream, "USAGE: %s\n", TRANSFER_SYNTAX);
 
 done:
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define TONE_DETECT_SYNTAX "<uuid> <key> <tone_spec> [<flags> <timeout> <app> <args>]"
 SWITCH_STANDARD_API(tone_detect_session_function)
 {
 	char *argv[6] = { 0 };
@@ -325,6 +311,7 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define SCHED_TRANSFER_SYNTAX "[+]<time> <uuid> <extension> [<dialplan>] [<context>]"
 SWITCH_STANDARD_API(sched_transfer_function)
 {
 	switch_core_session_t *tsession = NULL;
@@ -340,7 +327,7 @@ SWITCH_STANDARD_API(sched_transfer_function)
 	}
 
 	if (switch_strlen_zero(cmd) || argc < 2 || argc > 5) {
-		stream->write_function(stream, "USAGE: %s\n", sched_transfer_api_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", SCHED_TRANSFER_SYNTAX);
 	} else {
 		char *uuid = argv[1];
 		char *dest = argv[2];
@@ -367,6 +354,7 @@ SWITCH_STANDARD_API(sched_transfer_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define SCHED_HANGUP_SYNTAX "[+]<time> <uuid> [<cause>]"
 SWITCH_STANDARD_API(sched_hangup_function)
 {
 	switch_core_session_t *hsession = NULL;
@@ -382,7 +370,7 @@ SWITCH_STANDARD_API(sched_hangup_function)
 	}
 
 	if (switch_strlen_zero(cmd) || argc < 1) {
-		stream->write_function(stream, "USAGE: %s\n", sched_hangup_api_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", SCHED_HANGUP_SYNTAX);
 	} else {
 		char *uuid = argv[1];
 		char *cause_str = argv[2];
@@ -412,7 +400,7 @@ SWITCH_STANDARD_API(sched_hangup_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
+#define MEDIA_SYNTAX "<uuid>"
 SWITCH_STANDARD_API(uuid_media_function)
 {
 	char *mycmd = NULL, *argv[4] = { 0 };
@@ -428,7 +416,7 @@ SWITCH_STANDARD_API(uuid_media_function)
 	}
 
 	if (switch_strlen_zero(cmd) || argc < 1) {
-		stream->write_function(stream, "USAGE: %s\n", media_api_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", MEDIA_SYNTAX);
 	} else {
 		if (!strcmp(argv[0], "off")) {
 			status = switch_ivr_nomedia(argv[1], SMF_REBRIDGE);
@@ -447,7 +435,7 @@ SWITCH_STANDARD_API(uuid_media_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
+#define BROADCAST_SYNTAX "<uuid> <path> [aleg|bleg|both]"
 SWITCH_STANDARD_API(uuid_broadcast_function)
 {
 	char *mycmd = NULL, *argv[4] = { 0 };
@@ -463,7 +451,7 @@ SWITCH_STANDARD_API(uuid_broadcast_function)
 	}
 
 	if (switch_strlen_zero(cmd) || argc < 2) {
-		stream->write_function(stream, "USAGE: %s\n", broadcast_api_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", BROADCAST_SYNTAX);
 	} else {
 		switch_media_flag_t flags = SMF_NONE;
 
@@ -487,7 +475,7 @@ SWITCH_STANDARD_API(uuid_broadcast_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
+#define SCHED_BROADCAST_SYNTAX "[+]<time> <uuid> <path> [aleg|bleg|both]"
 SWITCH_STANDARD_API(sched_broadcast_function)
 {
 	char *mycmd = NULL, *argv[4] = { 0 };
@@ -503,7 +491,7 @@ SWITCH_STANDARD_API(sched_broadcast_function)
 	}
 
 	if (switch_strlen_zero(cmd) || argc < 3) {
-		stream->write_function(stream, "USAGE: %s\n", sched_broadcast_api_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", SCHED_BROADCAST_SYNTAX);
 	} else {
 		switch_media_flag_t flags = SMF_NONE;
 		time_t when;
@@ -534,6 +522,7 @@ SWITCH_STANDARD_API(sched_broadcast_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define HOLD_SYNTAX "<uuid>"
 SWITCH_STANDARD_API(uuid_hold_function)
 {
 	char *mycmd = NULL, *argv[4] = { 0 };
@@ -549,7 +538,7 @@ SWITCH_STANDARD_API(uuid_hold_function)
 	}
 
 	if (switch_strlen_zero(cmd) || argc < 1) {
-		stream->write_function(stream, "USAGE: %s\n", hold_api_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", HOLD_SYNTAX);
 	} else {
 		if (!strcmp(argv[0], "off")) {
 			status = switch_ivr_unhold_uuid(argv[1]);
@@ -568,6 +557,7 @@ SWITCH_STANDARD_API(uuid_hold_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define UUID_SYNTAX "<uuid> <other_uuid>"
 SWITCH_STANDARD_API(uuid_bridge_function)
 {
 	char *mycmd = NULL, *argv[4] = { 0 };
@@ -582,7 +572,7 @@ SWITCH_STANDARD_API(uuid_bridge_function)
 	}
 
 	if (switch_strlen_zero(cmd) || argc != 2) {
-		stream->write_function(stream, "USAGE: %s\n", uuid_bridge_api_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", UUID_SYNTAX);
 	} else {
 		if (switch_ivr_uuid_bridge(argv[0], argv[1]) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "Invalid uuid\n");
@@ -593,6 +583,7 @@ SWITCH_STANDARD_API(uuid_bridge_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define SESS_REC_SYNTAX "<uuid> [start|stop] <path> [<limit>]"
 SWITCH_STANDARD_API(session_record_function)
 {
 	switch_core_session_t *rsession = NULL;
@@ -643,7 +634,7 @@ SWITCH_STANDARD_API(session_record_function)
 
   usage:
 
-	stream->write_function(stream, "USAGE: %s\n", session_record_api_interface.syntax);
+	stream->write_function(stream, "USAGE: %s\n", SESS_REC_SYNTAX);
 	switch_safe_free(mycmd);
 
 
@@ -724,6 +715,7 @@ SWITCH_STANDARD_API(session_displace_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define PAUSE_SYNTAX "<uuid> <on|off>"
 SWITCH_STANDARD_API(pause_function)
 {
 	switch_core_session_t *psession = NULL;
@@ -739,7 +731,7 @@ SWITCH_STANDARD_API(pause_function)
 	}
 
 	if (switch_strlen_zero(cmd) || argc < 2) {
-		stream->write_function(stream, "USAGE: %s\n", pause_api_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", PAUSE_SYNTAX);
 	} else {
 		char *uuid = argv[0];
 		char *dest = argv[1];
@@ -764,6 +756,7 @@ SWITCH_STANDARD_API(pause_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define ORIGINATE_SYNTAX "<call url> <exten>|&<application_name>(<app_args>) [<dialplan>] [<context>] [<cid_name>] [<cid_num>] [<timeout_sec>]"
 SWITCH_STANDARD_API(originate_function)
 {
 	switch_channel_t *caller_channel;
@@ -785,7 +778,7 @@ SWITCH_STANDARD_API(originate_function)
 	}
 
 	if (switch_strlen_zero(cmd) || argc < 2 || argc > 7) {
-		stream->write_function(stream, "USAGE: %s\n", originate_api_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", ORIGINATE_SYNTAX);
 		switch_safe_free(mycmd);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1097,6 +1090,7 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames)
 	return 0;
 }
 
+#define SHOW_SYNTAX "codec|application|api|dialplan|file|timer|calls|channels"
 SWITCH_STANDARD_API(show_function)
 {
 	char sql[1024];
@@ -1129,7 +1123,7 @@ SWITCH_STANDARD_API(show_function)
 	// If you changes the field qty or order of any of these select
 	// statmements, you must also change show_callback and friends to match!
 	if (!command) {
-		stream->write_function(stream, "USAGE: %s\n", show_api_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", SHOW_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	} else if (!strcmp(command, "codec") || !strcmp(command, "dialplan") || !strcmp(command, "file") || !strcmp(command, "timer")) {
 		sprintf(sql, "select type, name from interfaces where type = '%s'", command);
@@ -1153,7 +1147,7 @@ SWITCH_STANDARD_API(show_function)
 			snprintf(sql, sizeof(sql) - 1, "select name, syntax, description from interfaces where type = 'api'");
 		}
 	} else {
-		stream->write_function(stream, "USAGE: %s\n", show_api_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", SHOW_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1247,224 +1241,36 @@ SWITCH_STANDARD_API(help_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
-static switch_api_interface_t xml_wrap_api_interface = {
-	/*.interface_name */ "xml_wrap",
-	/*.desc */ "Wrap another api command in xml",
-	/*.function */ xml_wrap_api_function,
-	/*.syntax */ "<command> <args>",
-	/*.next */ NULL
-};
-
-static switch_api_interface_t sched_del_api_interface = {
-	/*.interface_name */ "sched_del",
-	/*.desc */ "Delete a Scheduled task",
-	/*.function */ sched_del_function,
-	/*.syntax */ "<task_id>|<group_id>",
-	/*.next */ &xml_wrap_api_interface
-};
-
-static switch_api_interface_t sched_api_api_interface = {
-	/*.interface_name */ "sched_api",
-	/*.desc */ "Schedule an api command",
-	/*.function */ sched_api_function,
-	/*.syntax */ "[+]<time> <group_name> <command_string>",
-	/*.next */ &sched_del_api_interface
-};
-
-static switch_api_interface_t sched_transfer_api_interface = {
-	/*.interface_name */ "sched_transfer",
-	/*.desc */ "Schedule a broadcast event to a running call",
-	/*.function */ sched_transfer_function,
-	/*.syntax */ "[+]<time> <uuid> <extension> [<dialplan>] [<context>]",
-	/*.next */ &sched_api_api_interface
-};
-
-static switch_api_interface_t sched_broadcast_api_interface = {
-	/*.interface_name */ "sched_broadcast",
-	/*.desc */ "Schedule a broadcast event to a running call",
-	/*.function */ sched_broadcast_function,
-	/*.syntax */ "[+]<time> <uuid> <path> [aleg|bleg|both]",
-	/*.next */ &sched_transfer_api_interface
-};
-
-static switch_api_interface_t sched_hangup_api_interface = {
-	/*.interface_name */ "sched_hangup",
-	/*.desc */ "Schedule a running call to hangup",
-	/*.function */ sched_hangup_function,
-	/*.syntax */ "[+]<time> <uuid> [<cause>]",
-	/*.next */ &sched_broadcast_api_interface
-};
-
-static switch_api_interface_t version_api_interface = {
-	/*.interface_name */ "version",
-	/*.desc */ "Show version of the switch",
-	/*.function */ version_function,
-	/*.syntax */ "",
-	/*.next */ &sched_hangup_api_interface
-};
-
-static switch_api_interface_t help_api_interface = {
-	/*.interface_name */ "help",
-	/*.desc */ "Show help for all the api commands",
-	/*.function */ help_function,
-	/*.syntax */ "",
-	/*.next */ &version_api_interface,
-};
-
-static switch_api_interface_t ctl_api_interface = {
-	/*.interface_name */ "fsctl",
-	/*.desc */ "control messages",
-	/*.function */ ctl_function,
-	/*.syntax */ "[hupall|pause|resume|shutdown]",
-	/*.next */ &help_api_interface
-};
-
-static switch_api_interface_t media_api_interface = {
-	/*.interface_name */ "media",
-	/*.desc */ "media",
-	/*.function */ uuid_media_function,
-	/*.syntax */ "<uuid>",
-	/*.next */ &ctl_api_interface
-};
-
-static switch_api_interface_t hold_api_interface = {
-	/*.interface_name */ "hold",
-	/*.desc */ "hold",
-	/*.function */ uuid_hold_function,
-	/*.syntax */ "<uuid>",
-	/*.next */ &media_api_interface
-};
-
-static switch_api_interface_t broadcast_api_interface = {
-	/*.interface_name */ "broadcast",
-	/*.desc */ "broadcast",
-	/*.function */ uuid_broadcast_function,
-	/*.syntax */ "<uuid> <path> [aleg|bleg|both]",
-	/*.next */ &hold_api_interface
-};
-
-static switch_api_interface_t session_record_api_interface = {
-	/*.interface_name */ "session_record",
-	/*.desc */ "session record",
-	/*.function */ session_record_function,
-	/*.syntax */ "<uuid> [start|stop] <path> [<limit>]",
-	/*.next */ &broadcast_api_interface
-};
-
-static switch_api_interface_t session_displace_api_interface = {
-	/*.interface_name */ "session_displace",
-	/*.desc */ "session displace",
-	/*.function */ session_displace_function,
-	/*.syntax */ "<uuid> [start|stop] <path> [<limit>] [mux]",
-	/*.next */ &broadcast_api_interface
-};
-
-static switch_api_interface_t uuid_bridge_api_interface = {
-	/*.interface_name */ "uuid_bridge",
-	/*.desc */ "uuid_bridge",
-	/*.function */ uuid_bridge_function,
-	/*.syntax */ "<uuid> <other_uuid>",
-	/*.next */ &session_displace_api_interface
-};
-
-static switch_api_interface_t status_api_interface = {
-	/*.interface_name */ "status",
-	/*.desc */ "status",
-	/*.function */ status_function,
-	/*.syntax */ "",
-	/*.next */ &uuid_bridge_api_interface
-};
-
-static switch_api_interface_t show_api_interface = {
-	/*.interface_name */ "show",
-	/*.desc */ "Show",
-	/*.function */ show_function,
-	/*.syntax */ "codec|application|api|dialplan|file|timer|calls|channels",
-	/*.next */ &status_api_interface
-};
-
-static switch_api_interface_t pause_api_interface = {
-	/*.interface_name */ "pause",
-	/*.desc */ "Pause",
-	/*.function */ pause_function,
-	/*.syntax */ "<uuid> <on|off>",
-	/*.next */ &show_api_interface
-};
-
-static switch_api_interface_t transfer_api_interface = {
-	/*.interface_name */ "transfer",
-	/*.desc */ "Transfer",
-	/*.function */ transfer_function,
-	/*.syntax */ "<uuid> <dest-exten> [<dialplan>] [<context>]",
-	/*.next */ &pause_api_interface
-};
-
-static switch_api_interface_t load_api_interface = {
-	/*.interface_name */ "load",
-	/*.desc */ "Load Module",
-	/*.function */ load_function,
-	/*.syntax */ "<mod_name>",
-	/*.next */ &transfer_api_interface
-};
-
-static switch_api_interface_t unload_api_interface = {
-	/*.interface_name */ "unload",
-	/*.desc */ "Unoad Module",
-	/*.function */ unload_function,
-	/*.syntax */ "<mod_name>",
-	/*.next */ &load_api_interface
-};
-
-static switch_api_interface_t reload_api_interface = {
-	/*.interface_name */ "reloadxml",
-	/*.desc */ "Reload XML",
-	/*.function */ reload_function,
-	/*.syntax */ "",
-	/*.next */ &unload_api_interface,
-
-};
-
-static switch_api_interface_t kill_api_interface = {
-	/*.interface_name */ "killchan",
-	/*.desc */ "Kill Channel",
-	/*.function */ kill_function,
-	/*.syntax */ "<uuid>",
-	/*.next */ &reload_api_interface
-};
-
-static switch_api_interface_t tone_detect_session_interface = {
-	/*.interface_name */ "tone_detect",
-	/*.desc */ "Start Tone Detection on a channel",
-	/*.function */ tone_detect_session_function,
-	/*.syntax */
-	"<uuid> <key> <tone_spec> [<flags> <timeout> <app> <args>]",
-	/*.next */ &kill_api_interface
-};
-
-static switch_api_interface_t originate_api_interface = {
-	/*.interface_name */ "originate",
-	/*.desc */ "Originate a Call",
-	/*.function */ originate_function,
-	/*.syntax */
-	"<call url> <exten>|&<application_name>(<app_args>) [<dialplan>] [<context>] [<cid_name>] [<cid_num>] [<timeout_sec>]",
-	/*.next */ &tone_detect_session_interface
-};
-
-static switch_loadable_module_interface_t commands_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL,
-	/*.api_interface */ &originate_api_interface
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 {
-	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &commands_module_interface;
+	switch_api_interface_t *commands_api_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+
+	SWITCH_ADD_API(commands_api_interface, "originate", "Originate a Call", originate_function, ORIGINATE_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "tone_detect", "Start Tone Detection on a channel", tone_detect_session_function, TONE_DETECT_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "killchan", "Kill Channel", kill_function, KILL_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "reloadxml", "Reload XML", reload_function, "");
+	SWITCH_ADD_API(commands_api_interface, "unload", "Unload Module", unload_function, LOAD_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "load", "Load Module", unload_function, LOAD_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "transfer", "Transfer Module", transfer_function, TRANSFER_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "pause", "Pause", pause_function, PAUSE_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "show", "Show", show_function, SHOW_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "status", "status", status_function, "");
+	SWITCH_ADD_API(commands_api_interface, "uuid_bridge", "uuid_bridge", uuid_bridge_function, UUID_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "session_displace", "session displace", session_displace_function, "<uuid> [start|stop] <path> [<limit>] [mux]");
+	SWITCH_ADD_API(commands_api_interface, "session_record", "session record", session_record_function, SESS_REC_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "broadcast", "broadcast", uuid_broadcast_function, BROADCAST_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "hold", "hold", uuid_hold_function, HOLD_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "media", "media", uuid_media_function, MEDIA_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "fsctl", "control messages", ctl_function, CTL_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "help", "Show help for all the api commands", help_function, "");
+	SWITCH_ADD_API(commands_api_interface, "version", "Show version of the switch", version_function, "");
+	SWITCH_ADD_API(commands_api_interface, "sched_hangup", "Schedule a running call to hangup", sched_hangup_function, SCHED_HANGUP_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "sched_broadcast", "Schedule a broadcast event to a running call", sched_broadcast_function, SCHED_BROADCAST_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "sched_transfer", "Schedule a broadcast event to a running call", sched_transfer_function, SCHED_TRANSFER_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "sched_api", "Schedule an api command", sched_api_function, "[+]<time> <group_name> <command_string>");
+	SWITCH_ADD_API(commands_api_interface, "sched_del", "Delete a Scheduled task", sched_del_function, "<task_id>|<group_id>");
+	SWITCH_ADD_API(commands_api_interface, "xml_wrap", "Wrap another api command in xml", xml_wrap_api_function, "<command> <args>");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
