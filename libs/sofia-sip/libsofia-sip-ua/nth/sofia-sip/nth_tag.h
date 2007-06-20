@@ -101,7 +101,7 @@ NTH_DLL extern tag_typedef_t nthtag_error_msg;
 NTH_DLL extern tag_typedef_t nthtag_error_msg_ref;
 #define NTHTAG_ERROR_MSG_REF(x) nthtag_error_msg_ref, tag_bool_vr(&(x))
 
-#if SU_HAVE_INLINE
+#if SU_INLINE_TAG_CAST
 struct nth_client_s;
 su_inline tag_value_t nthtag_template_v(struct nth_client_s const *v)
 { return (tag_value_t)v; }
@@ -119,7 +119,7 @@ NTH_DLL extern tag_typedef_t nthtag_template;
 NTH_DLL extern tag_typedef_t nthtag_template_ref;
 #define NTHTAG_TEMPLATE_REF(x) nthtag_template_ref, nthtag_template_vr(&(x))
 
-#if SU_HAVE_INLINE
+#if SU_INLINE_TAG_CAST
 su_inline tag_value_t nthtag_message_v(struct msg_s *v)
 { return (tag_value_t)v; }
 su_inline tag_value_t nthtag_message_vr(struct msg_s **vp)

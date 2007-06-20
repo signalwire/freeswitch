@@ -214,6 +214,15 @@ int test_any(void)
     TEST_S(u->url_fragment, "foo");
   }
 
+  {
+    url_t u[1];
+    char b2[6] = "";
+
+    memset(u, 0xff, sizeof u);
+    TEST(url_d(u, b2), 0);
+    TEST(u->url_type, url_unknown);
+  }
+
   su_home_deinit(home);
   
   END();

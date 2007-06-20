@@ -211,6 +211,18 @@ int main(int argc, char *argv[])
     else if (strcmp(argv[i], "--loop") == 0) {
       o_alarm = 0, o_loop = 1;
     }
+    else if (strcmp(argv[i], "--print-tags") == 0) {
+      ctx->print_tags = 1;
+    }
+    else if (strcmp(argv[i], "--tags=a") == 0) {
+      ctx->a.print_tags = 1;
+    }
+    else if (strcmp(argv[i], "--tags=b") == 0) {
+      ctx->b.print_tags = 1;
+    }
+    else if (strcmp(argv[i], "--tags=c") == 0) {
+      ctx->c.print_tags = 1;
+    }
     else if (strcmp(argv[i], "--log=a") == 0) {
       ctx->a.logging = 1;
     }
@@ -317,8 +329,8 @@ int main(int argc, char *argv[])
       retval |= test_rejects(ctx); SINGLE_FAILURE_CHECK();
       retval |= test_call_cancel(ctx); SINGLE_FAILURE_CHECK();
       retval |= test_call_destroy(ctx); SINGLE_FAILURE_CHECK();
-      retval |= test_offer_answer(ctx); SINGLE_FAILURE_CHECK();
       retval |= test_early_bye(ctx); SINGLE_FAILURE_CHECK();
+      retval |= test_offer_answer(ctx); SINGLE_FAILURE_CHECK();
       retval |= test_reinvites(ctx); SINGLE_FAILURE_CHECK();
       retval |= test_session_timer(ctx); SINGLE_FAILURE_CHECK();
       retval |= test_refer(ctx); SINGLE_FAILURE_CHECK();

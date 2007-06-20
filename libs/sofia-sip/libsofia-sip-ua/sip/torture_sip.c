@@ -405,6 +405,8 @@ int test_basic(void)
 
     TEST_1(!sip_from_create(home, (void *)"sip:joe@[baa"));
 
+    TEST_1(!sip_from_make(home, (void *)"tester <>;tag=fasjfuios"));
+
     TEST_1(f = sip_from_make(home, (void *)"sip:joe@bar (foo)"));
     su_free(home, f);
 

@@ -1520,7 +1520,7 @@ int test_rejects(struct context *ctx)
     test_reject_302(ctx) ||
     test_reject_401(ctx) ||
     test_mime_negotiation(ctx) ||
-    test_call_timeouts(ctx) ||
     test_reject_401_aka(ctx) ||
+    test_call_timeouts(ctx) ||
     0;
 }

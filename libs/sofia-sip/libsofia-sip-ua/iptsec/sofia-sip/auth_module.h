@@ -253,7 +253,7 @@ SOFIAPUBVAR tag_typedef_t authtag_module;
 #define AUTHTAG_MODULE_REF(x)	authtag_module_ref, authtag_module_vr((&x))
 SOFIAPUBVAR tag_typedef_t authtag_module_ref;
 
-#if SU_HAVE_INLINE
+#if SU_INLINE_TAG_CAST
 su_inline tag_value_t authtag_module_v(auth_mod_t *v) {
   return (tag_value_t)v;
 }

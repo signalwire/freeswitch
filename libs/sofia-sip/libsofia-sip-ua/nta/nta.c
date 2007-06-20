@@ -2198,7 +2198,8 @@ void agent_recv_request(nta_agent_t *agent,
 		       TPTAG_SDWN_AFTER(stream),
 		       TAG_END());
       }
-    } else {
+    }
+    else {
       msg_destroy(msg);
       if (stream)		/* Send FIN */
 	tport_shutdown(tport, 1);
@@ -6172,13 +6173,6 @@ size_t incoming_mass_destroy(nta_agent_t *sa, incoming_queue_t *q)
 HTABLE_BODIES_WITH(outgoing_htable, oht, nta_outgoing_t, HTABLE_HASH_ORQ,
 		   size_t, hash_value_t);
 
-static nta_outgoing_t *outgoing_create(nta_agent_t *agent,
-				       nta_response_f *callback,
-				       nta_outgoing_magic_t *magic,
-				       url_string_t const *route_url,
-				       tp_name_t const *tpn,
-				       msg_t *msg,
-				       tag_type_t tag, tag_value_t value, ...);
 static int outgoing_features(nta_agent_t *agent, nta_outgoing_t *orq,
 			      msg_t *msg, sip_t *sip,
 			      tagi_t *tags);
@@ -6815,7 +6809,11 @@ nta_outgoing_t *outgoing_create(nta_agent_t *agent,
   /* select the tport to use for the outgoing message  */
   if (override_tport) {
     /* note: no ref taken to the tport as its only used once here */
-    tpn = tport_name(override_tport);
+    if (tport_is_secondary(override_tport)) {
+      tpn = tport_name(override_tport);
+      orq->orq_user_tport = 1;
+    }
+    
   }
 
   if (route_url) {
@@ -7095,8 +7093,10 @@ outgoing_send(nta_outgoing_t *orq, int retransmit)
     if (cc)
       nta_compartment_decref(&cc);
 
+    if (orq->orq_user_tport)
+      /* No retries */;
     /* RFC3261, 18.1.1 */
-    if (err == EMSGSIZE && !orq->orq_try_tcp_instead) {
+    else if (err == EMSGSIZE && !orq->orq_try_tcp_instead) {
       if (strcasecmp(tpn->tpn_proto, "udp") == 0 ||
 	  strcasecmp(tpn->tpn_proto, "*") == 0) {
 	outgoing_try_tcp_instead(orq);
@@ -10217,6 +10217,10 @@ nta_transport_(nta_agent_t *agent,
 }
 
 
+/** Return a new reference to the transaction transport.
+ *
+ * @note The referenced transport must be unreferenced with tport_unref()
+ */
 tport_t *
 nta_incoming_transport(nta_agent_t *agent,
 		       nta_incoming_t *irq,

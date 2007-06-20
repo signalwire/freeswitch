@@ -570,6 +570,7 @@ static int send_request(tester_t *t, char const *req, size_t reqlen,
 
   if (c == INVALID_SOCKET) {
     c = su_socket(t->t_addr->su_family, SOCK_STREAM, 0); TEST_1(c != SOCK_STREAM);
+    TEST_1(su_setblocking(c, 1) != -1);
     TEST_1(connect(c, &t->t_addr->su_sa, t->t_addrlen) != -1);
 
     while (su_root_step(t->t_root, 1) == 0);

@@ -48,7 +48,10 @@
 /* ======================================================================== */
 /* MESSAGE */
 
-/** Send an instant message. 
+/**@fn void nua_message( \
+ *       nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...);
+ *
+ * Send an instant message. 
  *
  * Send an instant message using SIP MESSAGE method.
  *

@@ -504,6 +504,7 @@ struct nta_outgoing_s
   unsigned orq_completed : 1;
   unsigned orq_delayed : 1;
   unsigned orq_stripped_uri : 1;
+  unsigned orq_user_tport : 1;	/**< Application provided tport - don't retry */
   unsigned orq_try_tcp_instead : 1;
   unsigned orq_try_udp_instead : 1;
   unsigned orq_reliable : 1; /**< Transport is reliable */

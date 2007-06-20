@@ -88,6 +88,9 @@
 /** Define as suitable declarator static inline functions */
 #undef su_inline
 
+/** Define as 1 the tag value casts use inlined functions */
+#undef SU_INLINE_TAG_CAST
+
 /** Define this as 1 if we can use tags directly from stack. */
 #undef SU_HAVE_TAGSTACK 
 

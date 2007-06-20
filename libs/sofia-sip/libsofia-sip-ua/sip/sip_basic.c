@@ -718,6 +718,9 @@ issize_t sip_name_addr_d(su_home_t *home,
    * it is like "Contact: url:foo,sip:bar,sip:zunk"
    */
   c = *s; *s = '\0';		/* terminate temporarily */
+  /* Do not accept an empty URL */
+  if (addr_spec[0] == '\0')
+    return -1;
   if (url_d(return_url, addr_spec) == -1)
     return -1;
   *s = c;			/* return terminator */

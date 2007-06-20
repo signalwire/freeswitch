@@ -200,6 +200,10 @@ int test_register_to_proxy(struct context *ctx)
     m->m_display = "B";
     m->m_url->url_user = "b";
 
+    /* Include "tcp" transport parameter in Contact */
+    if (ctx->p)
+      m->m_url->url_params = "transport=tcp";
+
     REGISTER(b, b_reg, b_reg->nh, SIPTAG_TO(b->to), 
 	     SIPTAG_CONTACT(m),
 	     /* Do not include credentials unless challenged */
@@ -229,11 +233,14 @@ int test_register_to_proxy(struct context *ctx)
   TEST_S(sip->sip_contact->m_display, "B");
   TEST_S(sip->sip_contact->m_url->url_user, "b");
   free_events_in_list(ctx, b->events);
+
   if (print_headings)
     printf("TEST NUA-2.3.2: PASSED\n");
 
-  if (ctx->p)
+  if (ctx->p) {
+    test_proxy_close_tports(ctx->p);
     test_proxy_set_expiration(ctx->p, 600, 3600, 36000);
+  }
 
   if (print_headings)
     printf("TEST NUA-2.3.3: REGISTER c\n");

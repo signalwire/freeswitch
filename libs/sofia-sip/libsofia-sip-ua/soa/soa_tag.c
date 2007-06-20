@@ -604,3 +604,32 @@ tag_typedef_t soatag_srtp_integrity = BOOLTAG_TYPEDEF(srtp_integrity);
  * @sa soa_set_params(), nua_invite(), @ref nua_event_diagram_call_hold
  */
 tag_typedef_t soatag_hold = STRTAG_TYPEDEF(hold);
+
+
+/**@def SOATAG_ORDERED_USER(x)
+ *
+ * Take account strict ordering of user SDP m=lines. If user SDP has been
+ * updated, the new media lines replace old ones even if the media type has
+ * been changed. This allows the application to replace @b m=audio with
+ * @b m=image/t38, for instance.
+ *
+ * @par Used with
+ *    soa_set_params(), soa_get_params(), soa_get_paramlist() \n
+ *
+ * @par Parameter type
+ *    boolean
+ *
+ * @par Values
+ *   - false (0) - update session with user SDP based on media type
+ *   - true (1) - update session with m= line in user SDP based on their order
+ *
+ * The default value is false and session are updated based on media types.
+ * 
+ *
+ * Corresponding tag taking a reference parameter is SOATAG_RTP_SELECT_REF().
+ *
+ * @sa @RFC3264 section 8.3.3, T.38
+ */
+tag_typedef_t soatag_ordered_user = BOOLTAG_TYPEDEF(ordered_user);
+
+tag_typedef_t soatag_reuse_rejected = BOOLTAG_TYPEDEF(reuse_rejected);

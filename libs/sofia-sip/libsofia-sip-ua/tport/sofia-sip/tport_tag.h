@@ -403,7 +403,7 @@ TPORT_DLL extern tag_typedef_t tptag_log;
  * Use with tport_tcreate(), nua_create(), nta_agent_create(), 
  * nth_engine_create(), or initial nth_site_create().
  *
- * @sa #TPORT_DUMP, TPTAG_DUMP()
+ * @sa #TPORT_LOG environment variable, TPTAG_DUMP()
  *
  * @NEW_1_12_5
  */
@@ -418,7 +418,7 @@ TPORT_DLL extern tag_typedef_t tptag_dump;
  * Use with tport_tcreate(), nta_agent_create(), nua_create(),
  * nth_engine_create(), or initial nth_site_create().
  *
- * @sa #TPORT_DUMP, TPTAG_LOG().
+ * @sa #TPORT_DUMP environment variable, TPTAG_LOG().
  *
  * @NEW_1_12_5
  */

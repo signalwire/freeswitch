@@ -24,6 +24,9 @@ API/ABI changes and versioning
 New features in API are marked with Doxytag macro @VERSION_1_12_7.
 
 libsofia-sip-ua:
+- Removed extra system headers from <sofia-sip/stun_common.h>
+- Added global variable su_socket_blocking. If it is set to true,
+  sockets are created as blocking.
 - Added accessor function nta_outgoing_branch()
 - **template**: Added foobar() function (sofia-sip/foobar.h).
 - This release is ABI/API compatible with applications linked against 

@@ -37,6 +37,8 @@
 /** @internal SU network changed detector argument pointer type */
 #define SU_NETWORK_CHANGED_MAGIC_T struct nua_s
 
+#define TP_CLIENT_T          struct register_usage
+
 #include <sofia-sip/string0.h>
 #include <sofia-sip/su_strlst.h>
 #include <sofia-sip/su_uniqueid.h>
@@ -46,7 +48,7 @@
 #include <sofia-sip/sip_util.h>
 #include <sofia-sip/sip_status.h>
 
-#define NTA_UPDATE_MAGIC_T   struct nua_s
+#define NTA_UPDATE_MAGIC_T   struct nua_handle_s
 
 #include "nua_stack.h"
 
@@ -126,6 +128,7 @@ struct register_usage {
 
   /** Status of registration */
   unsigned nr_ready:1;
+
   /** Kind of registration.
    *
    * If nr_default is true, this is not a real registration but placeholder
@@ -138,7 +141,11 @@ struct register_usage {
   unsigned nr_default:1, nr_secure:1, nr_public:1, nr_ip4:1, nr_ip6:1;
 
   /** Stack-generated contact */
-  unsigned nr_by_stack:1, :0;
+  unsigned nr_by_stack:1;
+
+  unsigned:0;
+  
+  int nr_error_report_id;	/**< ID used to ask for error reports from tport */
 
   sip_route_t *nr_route;	/**< Outgoing Service-Route */
   sip_path_t *nr_path;		/**< Incoming Path */
@@ -205,6 +212,12 @@ static void nua_register_usage_remove(nua_handle_t *nh,
   nr->nr_compartment = NULL;
 #endif
 
+  if (nr->nr_error_report_id)
+    tport_release(nr->nr_tport, nr->nr_error_report_id, NULL, NULL, nr, 0);
+
+  if (nr->nr_tport)
+    tport_unref(nr->nr_tport), nr->nr_tport = NULL;
+
   ds->ds_has_register = 0;	/* There can be only one */
 }
 
@@ -221,6 +234,12 @@ static void nua_register_usage_peer_info(nua_dialog_usage_t *du,
 
 /* ======================================================================== */
 /* REGISTER */
+
+static void nua_register_connection_closed(tp_stack_t *sip_stack,
+					   nua_registration_t *nr,
+					   tport_t *tport,
+					   msg_t *msg,
+					   int error);
 
 /* Interface towards outbound_t */
 sip_contact_t *nua_handle_contact_by_via(nua_handle_t *nh,
@@ -764,6 +783,7 @@ int nua_register_client_request(nua_client_request_t *cr,
 				  TAG_IF(unreg, NTATAG_SIGCOMP_CLOSE(1)),
 				  TAG_IF(!unreg, NTATAG_COMP("sigcomp")),
 #endif
+				  NTATAG_TPORT(nr->nr_tport),
 				  TAG_NEXT(tags));
 }
 
@@ -826,6 +846,8 @@ static int nua_register_client_response(nua_client_request_t *cr,
 
     msg_t *_reqmsg = nta_outgoing_getrequest(cr->cr_orq);
     sip_t *req = sip_object(_reqmsg);
+
+    tport_t *tport;
 
     msg_destroy(_reqmsg);
 
@@ -927,10 +949,26 @@ static int nua_register_client_response(nua_client_request_t *cr,
       outbound_start_keepalive(nr->nr_ob, cr->cr_orq);
     }
 
-    /* persistant connection for registration */
-    if (!nr->nr_tport)
-      /* note: nta_outgoing_transport() takes a ref */
-      nr->nr_tport = nta_outgoing_transport (cr->cr_orq); 
+    tport = nta_outgoing_transport (cr->cr_orq);
+
+    /* cache persistant connection for registration */
+    if (tport && tport != nr->nr_tport) {
+      if (nr->nr_error_report_id) {
+	if (tport_release(nr->nr_tport, nr->nr_error_report_id, NULL, NULL, nr, 0) < 0)
+	  SU_DEBUG_1(("nua_register: tport_release() failed\n"));
+	nr->nr_error_report_id = 0;
+      }
+      tport_unref(nr->nr_tport);
+      nr->nr_tport = tport;
+
+      if (tport_is_secondary(tport)) {
+	tport_set_params(tport, TPTAG_SDWN_ERROR(1), TAG_END());
+	nr->nr_error_report_id = 
+	  tport_pend(tport, NULL, nua_register_connection_closed, nr);
+      }
+    }
+    else
+      tport_unref(tport);    /* note: nta_outgoing_transport() makes a ref */
 
     nua_registration_set_ready(nr, 1);
   }
@@ -943,15 +981,39 @@ static int nua_register_client_response(nua_client_request_t *cr,
     outbound_stop_keepalive(nr->nr_ob);
 
     /* release the persistant transport for registration */
-    if (nr->nr_tport)
-      tport_decref(&nr->nr_tport), nr->nr_tport = NULL;
+    if (nr->nr_tport) {
+      if (nr->nr_error_report_id) {
+	if (tport_release(nr->nr_tport, nr->nr_error_report_id, NULL, NULL, nr, 0) < 0)
+	  SU_DEBUG_1(("nua_register: tport_release() failed\n"));
+	nr->nr_error_report_id = 0;
+      }
 
+      tport_unref(nr->nr_tport), nr->nr_tport = NULL;
+    }
     nua_registration_set_ready(nr, 0);
   }
 
 
   return nua_base_client_response(cr, status, phrase, sip, NULL);
 }
+
+static
+void nua_register_connection_closed(tp_stack_t *sip_stack,
+				    nua_registration_t *nr,
+				    tport_t *tport,
+				    msg_t *msg,
+				    int error)
+{
+  if (tport_release(nr->nr_tport, nr->nr_error_report_id, NULL, NULL, nr, 0) < 0)
+    SU_DEBUG_1(("nua_register: tport_release() failed\n"));
+
+  nr->nr_error_report_id = 0;
+  tport_unref(nr->nr_tport), nr->nr_tport = NULL;
+
+  /* Schedule re-REGISTER immediately */
+  nua_dialog_usage_refresh_at(nua_dialog_usage_public(nr), sip_now());
+}
+
 
 static void nua_register_usage_refresh(nua_handle_t *nh,
 				       nua_dialog_state_t *ds,
@@ -978,8 +1040,8 @@ static void nua_register_usage_refresh(nua_handle_t *nh,
  * @retval <0  try again later
  */
 static int nua_register_usage_shutdown(nua_handle_t *nh,
-				     nua_dialog_state_t *ds,
-				     nua_dialog_usage_t *du)
+				       nua_dialog_state_t *ds,
+				       nua_dialog_usage_t *du)
 {
   nua_client_request_t *cr = du->du_cr;
   nua_registration_t *nr = nua_dialog_usage_private(du);

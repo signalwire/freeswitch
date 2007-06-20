@@ -121,7 +121,9 @@ void nua_subscribe_usage_remove(nua_handle_t *nh,
 /* ====================================================================== */
 /* SUBSCRIBE */
 
-/** Subscribe to a SIP event. 
+/**@fn void nua_subscribe(nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...);
+ *
+ *  Subscribe to a SIP event. 
  *
  * Subscribe a SIP event using the SIP SUBSCRIBE request. If the 
  * SUBSCRBE is successful a subscription state is established and 
@@ -145,7 +147,9 @@ void nua_subscribe_usage_remove(nua_handle_t *nh,
  * @sa NUTAG_SUBSTATE(), @RFC3265
  */
 
-/** Unsubscribe an event. 
+/**@fn void nua_unsubscribe(nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...);
+ *
+ * Unsubscribe an event. 
  *
  * Unsubscribe an active or pending subscription with SUBSCRIBE request 
  * containing Expires: header with value 0. The dialog associated with 
@@ -689,7 +693,9 @@ int nua_notify_server_report(nua_server_request_t *sr, tagi_t const *tags)
 /* ======================================================================== */
 /* REFER */
 
-/** Transfer a call. 
+/**@fn void nua_refer(nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...);
+ *
+ * Transfer a call. 
  * 
  * Send a REFER request asking the recipient to transfer the call. 
  *

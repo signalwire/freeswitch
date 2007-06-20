@@ -1840,6 +1840,8 @@ char *msg_as_string(su_home_t *home, msg_t *msg, msg_pub_t *pub, int flags,
 	return NULL;
       }
 
+      b = b2;
+
       continue;
     }
   }

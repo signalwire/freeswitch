@@ -2,10 +2,10 @@ dnl ======================================================================
 dnl su module
 dnl ======================================================================
 
+AC_DEFUN([SAC_SU])
+
 AC_DEFUN([SAC_SOFIA_SU], [
 # Beginning of SAC_SOFIA_SU
-
-AC_REQUIRE([SAC_WITH_RT])
 
 # ======================================================================
 # Check for features used by su
@@ -66,6 +66,16 @@ AC_REQUIRE([AC_C_MACRO_FUNCTION])
 
 AC_REQUIRE([AC_C_INLINE])
 
+AC_ARG_ENABLE(tag-cast,
+[  --disable-tag-cast      cast tag values with inlined functions [[enabled]]],
+ , enable_tag_cast=yes)
+
+if test "$enable_tag_cast" = "yes"; then
+    tag_cast=1
+else
+    tag_cast=0
+fi
+
 case "$ac_cv_c_inline" in
   yes) SAC_SU_DEFINE(su_inline, static inline, [
 		Define to declarator for static inline functions.
@@ -76,15 +86,20 @@ case "$ac_cv_c_inline" in
        SAC_SU_DEFINE(SU_HAVE_INLINE, 1, [
 		Define to 1 if you have inline functions.
 	])dnl
+       SAC_SU_DEFINE_UNQUOTED(SU_INLINE_TAG_CAST, $tag_cast, [
+		Define to 1 if you use inline function to cast tag values.
+	])dnl
   ;;
   no | "" )
        SAC_SU_DEFINE(su_inline, static)dnl
        SAC_SU_DEFINE(SU_INLINE, /*inline*/)dnl
        SAC_SU_DEFINE(SU_HAVE_INLINE, 0)dnl
+       SAC_SU_DEFINE(SU_INLINE_TAG_CAST, 0)dnl
   ;;
   *)   SAC_SU_DEFINE_UNQUOTED(su_inline, static $ac_cv_c_inline)dnl
        SAC_SU_DEFINE_UNQUOTED(SU_INLINE, $ac_cv_c_inline)dnl
        SAC_SU_DEFINE(SU_HAVE_INLINE, 1)dnl
+       SAC_SU_DEFINE_UNQUOTED(SU_INLINE_TAG_CAST, $tag_cast)dnl
   ;;
 esac
 
@@ -368,7 +383,15 @@ fi
 # Checks for libraries
 # ===========================================================================
 
-SAC_CHECK_SU_LIBS
+AC_CHECK_LIB(pthread, pthread_create)
+AC_CHECK_LIB(socket, socketpair,,,-lnsl)
+
+AC_ARG_WITH(rt,  
+[  --with-rt               use POSIX realtime library [[used by default]]])
+if test "${with_rt}" != no; then
+	AC_SEARCH_LIBS(clock_gettime, rt)
+        AC_CHECK_FUNCS([clock_gettime clock_getcpuclockid])
+fi
 
 # No GLib path explicitly defined, use pkg-config
 AC_ARG_WITH(glib,
@@ -468,11 +491,6 @@ fi
 if test $ac_cv_func_if_nameindex = yes ; then
   SAC_SU_DEFINE([SU_HAVE_IF_NAMEINDEX], 1, 
     [Define to 1 if you have if_nameindex().])
-fi
-
-AC_REQUIRE([SAC_WITH_RT])
-if test "${with_rt}" != no; then
-    AC_CHECK_FUNCS([clock_gettime clock_getcpuclockid])
 fi
 
 SAC_REPLACE_FUNCS([memmem memccpy memspn memcspn strcasestr strtoull \

@@ -519,7 +519,7 @@ int test_static_offer_answer(struct context *ctx)
   /* 'B' will reject. */ 
   TEST(soa_set_params(a,
 		      SOATAG_HOLD(NULL),  /* 'A' will release hold. */ 
-		      SOATAG_USER_SDP_STR("m=audio 5004 RTP/AVP 0 8\r\n"
+		      SOATAG_USER_SDP_STR("m=audio 5008 RTP/AVP 0 8\r\ni=x\r\n"
 					  "m=video 5006 RTP/AVP 34\r\n"),
 		      TAG_END()), 2);
 
@@ -663,7 +663,7 @@ int test_codec_selection(struct context *ctx)
   TEST_1(m = b_sdp->sdp_media); TEST_1(m->m_rejected);
   TEST_1(rm = m->m_rtpmaps); TEST(rm->rm_pt, 96);
   TEST_S(rm->rm_encoding, "G7231");
-  /* Not using payload type 97 from offer */
+  /* Not reusing payload type 97 from offer */
   TEST_1(rm = rm->rm_next); TEST(rm->rm_pt, 98);
   TEST_S(rm->rm_encoding, "G729");
   TEST_1(!rm->rm_next);
@@ -1141,6 +1141,128 @@ int test_codec_selection(struct context *ctx)
   END();
 }
 
+int test_media_replace(struct context *ctx)
+{
+  BEGIN();
+  int n;
+  
+  soa_session_t *a, *b;
+
+  char const *offer = NONE, *answer = NONE;
+  isize_t offerlen = (isize_t)-1, answerlen = (isize_t)-1;
+
+  sdp_session_t const *a_sdp, *b_sdp;
+  sdp_media_t const *m;
+
+  char const a_caps[] = 
+    "v=0\r\n"
+    "o=left 219498671 2 IN IP4 127.0.0.2\r\n"
+    "c=IN IP4 127.0.0.2\r\n"
+    "m=audio 5008 RTP/AVP 0 8\r\n"
+    ;
+
+  char const b_caps[] = 
+    "m=audio 5004 RTP/AVP 0 8\n"
+    "a=rtpmap:96 G7231/8000\n"
+    "a=rtpmap:97 G729/8000\n"
+    "m=image 5556 UDPTL t38\r\n"
+    "a=T38FaxVersion:0\r\n"
+    "a=T38MaxBitRate:9600\r\n"
+    "a=T38FaxFillBitRemoval:0\r\n"
+    "a=T38FaxTranscodingMMR:0\r\n"
+    "a=T38FaxTranscodingJBIG:0\r\n"
+    "a=T38FaxRateManagement:transferredTCF\r\n"
+    "a=T38FaxMaxDatagram:400\r\n";
+
+  TEST_1(a = soa_create("static", ctx->root, ctx));
+  TEST_1(b = soa_create("static", ctx->root, ctx));
+
+  TEST(soa_set_user_sdp(a, 0, a_caps, strlen(a_caps)), 1);
+  TEST(soa_set_user_sdp(b, 0, b_caps, strlen(b_caps)), 1);
+
+  n = soa_generate_offer(a, 1, test_completed); TEST(n, 0);
+  n = soa_get_local_sdp(a, NULL, &offer, &offerlen); TEST(n, 1);
+  TEST_1(offer != NULL && offer != NONE);
+  n = soa_set_remote_sdp(b, 0, offer, offerlen); TEST(n, 1);
+  n = soa_get_local_sdp(b, NULL, &answer, &answerlen); TEST(n, 0);
+  n = soa_generate_answer(b, test_completed); TEST(n, 0);
+  n = soa_get_local_sdp(b, &b_sdp, &answer, &answerlen); TEST(n, 1);
+  TEST_1(answer != NULL && answer != NONE);
+  n = soa_set_remote_sdp(a, 0, answer, -1); TEST(n, 1);
+  n = soa_process_answer(a, test_completed); TEST(n, 0);
+
+  TEST_1(soa_is_complete(b));
+  TEST(soa_activate(b, NULL), 0);
+
+  TEST_1(soa_is_complete(a));
+  TEST(soa_activate(a, NULL), 0);
+
+  TEST(soa_is_audio_active(a), SOA_ACTIVE_SENDRECV);
+  TEST(soa_is_remote_audio_active(a), SOA_ACTIVE_SENDRECV);
+
+  /* ---------------------------------------------------------------------- */
+
+  /* Re-O/A: replace media stream */
+
+  /* Accept media without common codecs */
+  TEST_1(soa_set_params(a, SOATAG_RTP_MISMATCH(0),
+			SOATAG_ORDERED_USER(1),
+			SOATAG_USER_SDP_STR(
+    "v=0\r\n"
+    "o=left 219498671 2 IN IP4 127.0.0.2\r\n"
+    "c=IN IP4 127.0.0.2\r\n"
+    "m=image 16384 UDPTL t38\r\n"
+    "a=T38FaxVersion:0\r\n"
+    "a=T38MaxBitRate:9600\r\n"
+    "a=T38FaxFillBitRemoval:0\r\n"
+    "a=T38FaxTranscodingMMR:0\r\n"
+    "a=T38FaxTranscodingJBIG:0\r\n"
+    "a=T38FaxRateManagement:transferredTCF\r\n"
+    "a=T38FaxMaxDatagram:400\r\n"
+    ),			
+			TAG_END()));
+
+  n = soa_generate_offer(a, 1, test_completed); TEST(n, 0);
+  n = soa_get_local_sdp(a, &a_sdp, &offer, &offerlen); TEST(n, 1);
+  TEST_1(offer != NULL && offer != NONE);
+  n = soa_set_remote_sdp(b, 0, offer, offerlen); TEST(n, 1);
+  n = soa_generate_answer(b, test_completed); TEST(n, 0);
+  n = soa_get_local_sdp(b, &b_sdp, &answer, &answerlen); TEST(n, 1);
+  TEST_1(answer != NULL && answer != NONE);
+  n = soa_set_remote_sdp(a, 0, answer, -1); TEST(n, 1);
+  n = soa_process_answer(a, test_completed); TEST(n, 0);
+  n = soa_get_local_sdp(a, &a_sdp, NULL, NULL); TEST(n, 1);
+
+  TEST_1(soa_is_complete(b));
+  TEST(soa_activate(b, NULL), 0);
+
+  TEST_1(soa_is_complete(a));
+  TEST(soa_activate(a, NULL), 0);
+
+  TEST_1(m = a_sdp->sdp_media); TEST_1(!m->m_rejected);
+  TEST(m->m_type, sdp_media_image);
+  TEST(m->m_proto, sdp_proto_udptl);
+  TEST_1(m->m_format); 
+  TEST_S(m->m_format->l_text, "t38"); 
+
+  TEST_1(m = b_sdp->sdp_media); TEST_1(!m->m_rejected);
+  TEST(m->m_type, sdp_media_image);
+  TEST(m->m_proto, sdp_proto_udptl);
+  TEST_1(m->m_format); 
+  TEST_S(m->m_format->l_text, "t38"); 
+
+  TEST(soa_is_audio_active(a), SOA_ACTIVE_DISABLED);
+  TEST(soa_is_remote_audio_active(a), SOA_ACTIVE_DISABLED);
+
+  TEST_VOID(soa_terminate(a, NULL));
+  TEST_VOID(soa_terminate(b, NULL));
+  
+  TEST_VOID(soa_destroy(a));
+  TEST_VOID(soa_destroy(b));
+
+  END();
+}
+
 
 int test_asynch_offer_answer(struct context *ctx)
 {
@@ -1332,6 +1454,7 @@ int main(int argc, char *argv[])
     retval |= test_params(ctx); SINGLE_FAILURE_CHECK();
     retval |= test_static_offer_answer(ctx); SINGLE_FAILURE_CHECK();
     retval |= test_codec_selection(ctx); SINGLE_FAILURE_CHECK();
+    retval |= test_media_replace(ctx); SINGLE_FAILURE_CHECK();
 
     retval |= test_asynch_offer_answer(ctx); SINGLE_FAILURE_CHECK();
   }

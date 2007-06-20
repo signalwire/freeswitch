@@ -124,6 +124,7 @@ struct context
   su_root_t *root;
 
   int threading, proxy_tests, expensive, quit_on_single_failure, osx_runloop;
+  int print_tags;
   char const *external_proxy;
 
   int proxy_logging;
@@ -133,6 +134,7 @@ struct context
     struct context *ctx;	/* Backpointer */
 
     int logging;
+    int print_tags;
 
     int running;
 
@@ -195,6 +197,9 @@ void free_events_in_list(struct context *,
 void free_event_in_list(struct context *ctx,
 			struct eventlist *list,
 			struct event *e);
+
+struct event *event_by_type(struct event *e, nua_event_t);
+size_t count_events(struct event const *e);
 
 #define CONDITION_PARAMS			\
   nua_event_t event,				\

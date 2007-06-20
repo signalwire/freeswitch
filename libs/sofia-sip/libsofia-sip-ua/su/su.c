@@ -51,14 +51,18 @@
 #endif
 
 int su_socket_close_on_exec = 0;
+int su_socket_blocking = 0;
 
 /** Create an endpoint for communication. */
 su_socket_t su_socket(int af, int socktype, int proto)
 {
   su_socket_t s = socket(af, socktype, proto);
 #if SU_HAVE_BSDSOCK
-  if (s != INVALID_SOCKET && su_socket_close_on_exec) {
-    fcntl(s, F_SETFD, FD_CLOEXEC); /* Close on exec */
+  if (s != INVALID_SOCKET) {
+    if (su_socket_close_on_exec)
+      fcntl(s, F_SETFD, FD_CLOEXEC); /* Close on exec */
+    if (!su_socket_blocking)	/* All sockets are born blocking */
+      su_setblocking(s, 0);
   }
 #endif
   return s;

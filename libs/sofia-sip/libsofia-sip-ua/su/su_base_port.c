@@ -540,7 +540,6 @@ int su_base_port_start_shared(su_root_t *parent,
       init(child, magic) == 0)
     return 0;
 
-  deinit(child, magic);
   su_msg_destroy(return_clone);
   su_root_destroy(child);
   return -1;

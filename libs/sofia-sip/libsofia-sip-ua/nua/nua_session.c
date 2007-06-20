@@ -1627,7 +1627,8 @@ static int nua_prack_client_report(nua_client_request_t *cr,
  *               (maybe NULL if call handle was created for this call)
  * @param sip    incoming INVITE request
  * @param tags   SOATAG_ACTIVE_AUDIO(), SOATAG_ACTIVE_VIDEO()
- * 
+ *
+ * @par
  * @par Responding to INVITE with nua_respond()
  *
  * If @a status in #nua_i_invite event is below 200, the application should
@@ -1700,6 +1701,7 @@ static int nua_prack_client_report(nua_client_request_t *cr,
  * #nua_i_prack, #nua_i_update, nua_update(),
  * nua_invite(), #nua_r_invite
  *
+ * @par
  * @par Third Party Call Control
  *
  * When so called 2rd party call control is used, the initial @b INVITE may

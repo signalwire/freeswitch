@@ -252,9 +252,9 @@ int tport_recv_stream(tport_t *self)
     tport_dump_iovec(self, msg, n, iovec, veclen, "recv", "from");
 
   /* Mark buffer as used */
-  msg_recv_commit(msg, n, 0);
+  msg_recv_commit(msg, n, n == 0);
 
-  return 1;
+  return n != 0;
 }
 
 ssize_t tport_send_stream(tport_t const *self, msg_t *msg, 

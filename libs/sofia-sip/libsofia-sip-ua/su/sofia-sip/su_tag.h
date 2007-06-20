@@ -171,7 +171,7 @@ SOFIAPUBFUN void    tl_vfree(tagi_t *t);
 #define SU_ALIGN(x) \
 ((sizeof(void *) - ((intptr_t)(x) & (sizeof(void *) - 1))) & (sizeof(void *) - 1))
 
-#if SU_HAVE_INLINE
+#if SU_INLINE_TAG_CAST
 su_inline tag_value_t tag_int_v(int v) { return (tag_value_t)v; }
 su_inline tag_value_t tag_int_vr(int *vp) { return (tag_value_t)vp; }
 su_inline tag_value_t tag_uint_v(unsigned v) { return (tag_value_t)v; }

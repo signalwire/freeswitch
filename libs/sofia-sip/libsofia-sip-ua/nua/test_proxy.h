@@ -56,6 +56,8 @@ void test_proxy_get_session_timer(struct proxy *p,
 				  sip_time_t *return_session_expires,
 				  sip_time_t *return_min_se);
 
+int test_proxy_close_tports(struct proxy *p);
+
 SOFIA_END_DECLS
 
 #endif

@@ -70,8 +70,9 @@ int test_nua_init(struct context *ctx,
   sip_allow_t const *allow = NULL;
   sip_supported_t const *supported = NULL;
   char const *appl_method = NULL;
-  url_t const *p_uri, *a_uri;		/* Proxy URI */
+  url_t const *p_uri, *a_uri, *b_uri;		/* Proxy URI */
   char const *a_bind, *a_bind2;
+  url_t b_proxy[1];
 
   a_bind = a_bind2 = "sip:0.0.0.0:*";
 
@@ -121,7 +122,7 @@ int test_nua_init(struct context *ctx,
       printf("TEST NUA-2.1.1: PASSED\n");
   }
 
-  p_uri = a_uri = test_proxy_uri(ctx->p);
+  p_uri = a_uri = b_uri = test_proxy_uri(ctx->p);
 
   if (start_nat && p_uri == NULL)
     p_uri = url_hdup(ctx->home, (void *)o_proxy);
@@ -257,8 +258,15 @@ int test_nua_init(struct context *ctx,
 
   ctx->b.instance = nua_generate_instance_identifier(ctx->home);
 
+  if (ctx->p) {
+    /* B uses TCP when talking with proxy */
+    *b_proxy = *b_uri;
+    b_uri = b_proxy;
+    b_proxy->url_params = "transport=tcp";
+  }
+
   ctx->b.nua = nua_create(ctx->root, b_callback, ctx,
-			  NUTAG_PROXY(p_uri ? p_uri : o_proxy),
+			  NUTAG_PROXY(b_uri ? b_uri : o_proxy),
 			  SIPTAG_FROM_STR("sip:bob@example.org"),
 			  NUTAG_URL("sip:0.0.0.0:*"),
 			  SOATAG_USER_SDP_STR("m=audio 5006 RTP/AVP 8 0"),

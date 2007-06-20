@@ -69,7 +69,6 @@ AM_CONDITIONAL([HAVE_DOXYGEN], [test $DOXYGEN != echo])
 SAC_SOFIA_SU
 SAC_OPENSSL
 SAC_TPORT
-SAC_SU
 
 ### internal modules
 ### ----------------

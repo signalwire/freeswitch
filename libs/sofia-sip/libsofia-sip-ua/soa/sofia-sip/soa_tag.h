@@ -244,6 +244,20 @@ SOFIAPUBVAR tag_typedef_t soatag_hold;
 #define SOATAG_HOLD_REF(x)       soatag_hold_ref, tag_str_vr(&(x))
 SOFIAPUBVAR tag_typedef_t soatag_hold_ref;
 
+#define SOATAG_ORDERED_USER(x) soatag_ordered_user, tag_bool_v(x)
+SOFIAPUBVAR tag_typedef_t soatag_ordered_user;
+
+#define SOATAG_ORDERED_USER_REF(x) \
+  soatag_ordered_user_ref, tag_bool_vr(&(x))
+SOFIAPUBVAR tag_typedef_t soatag_ordered_user_ref;
+
+#define SOATAG_REUSE_REJECTED(x) soatag_reuse_rejected, tag_bool_v(x)
+SOFIAPUBVAR tag_typedef_t soatag_reuse_rejected;
+
+#define SOATAG_REUSE_REJECTED_REF(x) \
+  soatag_reuse_rejected_ref, tag_bool_vr(&(x))
+SOFIAPUBVAR tag_typedef_t soatag_reuse_rejected_ref;
+
 SOFIA_END_DECLS
 
 #endif /* SOA_TAG_H */

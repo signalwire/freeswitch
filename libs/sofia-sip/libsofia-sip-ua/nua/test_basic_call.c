@@ -1100,7 +1100,7 @@ int test_basic_call_5(struct context *ctx)
   nua_handle_destroy(b_call->nh), b_call->nh = NULL;
 
   if (print_headings)
-    printf("TEST NUA-3.4: PASSED\n");
+    printf("TEST NUA-3.5: PASSED\n");
 
   END();
 }

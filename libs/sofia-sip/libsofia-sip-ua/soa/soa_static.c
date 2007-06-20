@@ -80,8 +80,18 @@ typedef struct soa_static_session
 {
   soa_session_t sss_session[1];
   char *sss_audio_aux;
+  int sss_ordered_user;  /**< User SDP is ordered */
+  int sss_reuse_rejected; /**< Try to reuse rejected media line slots */
+
+  /** Mapping from user SDP m= lines to session SDP m= lines */
+  int  *sss_u2s;
+  /** Mapping from session SDP m= lines to user SDP m= lines */
+  int *sss_s2u;
 }
 soa_static_session_t;
+
+#define U2S_NOT_USED (-1)
+#define U2S_SENTINEL (-2)
 
 static int soa_static_init(char const *, soa_session_t *, soa_session_t *);
 static void soa_static_deinit(soa_session_t *);
@@ -152,10 +162,14 @@ static int soa_static_set_params(soa_session_t *ss, tagi_t const *tags)
 {
   soa_static_session_t *sss = (soa_static_session_t *)ss;
   char const *audio_aux = sss->sss_audio_aux;
+  int ordered_user = sss->sss_ordered_user;
+  int reuse_rejected = sss->sss_reuse_rejected;
   int n, m;
 
   n = tl_gets(tags,
 	      SOATAG_AUDIO_AUX_REF(audio_aux),
+	      SOATAG_ORDERED_USER_REF(ordered_user),
+	      SOATAG_REUSE_REJECTED_REF(reuse_rejected),
 	      TAG_END());
 
   if (n > 0 && str0casecmp(audio_aux, sss->sss_audio_aux)) {
@@ -166,6 +180,9 @@ static int soa_static_set_params(soa_session_t *ss, tagi_t const *tags)
     if (tbf)
       su_free(ss->ss_home, tbf);
   }
+
+  sss->sss_ordered_user = ordered_user != 0;
+  sss->sss_reuse_rejected = reuse_rejected != 0;
 
   m = soa_base_set_params(ss, tags);
   if (m < 0)
@@ -182,6 +199,8 @@ static int soa_static_get_params(soa_session_t const *ss, tagi_t *tags)
 
   n = tl_tgets(tags,
 	       SOATAG_AUDIO_AUX(sss->sss_audio_aux),
+	       SOATAG_ORDERED_USER(sss->sss_ordered_user),
+	       SOATAG_REUSE_REJECTED(sss->sss_reuse_rejected),
 	       TAG_END());
   m = soa_base_get_params(ss, tags);
   if (m < 0)
@@ -204,6 +223,10 @@ static tagi_t *soa_static_get_paramlist(soa_session_t const *ss,
   tl = soa_base_get_paramlist(ss,
 			      TAG_IF(sss->sss_audio_aux,
 				     SOATAG_AUDIO_AUX(sss->sss_audio_aux)),
+			      TAG_IF(sss->sss_ordered_user,
+				     SOATAG_ORDERED_USER(1)),
+			      TAG_IF(sss->sss_reuse_rejected,
+				     SOATAG_REUSE_REJECTED(1)),
 			      TAG_NEXT(ta_args(ta)));
 
   ta_end(ta);
@@ -239,6 +262,7 @@ static int soa_static_set_user_sdp(soa_session_t *ss,
 }
 
 /** Generate a rejected m= line */
+static
 sdp_media_t *soa_sdp_make_rejected_media(su_home_t *home, 
 					 sdp_media_t const *m,
 					 sdp_session_t *sdp,
@@ -263,6 +287,7 @@ sdp_media_t *soa_sdp_make_rejected_media(su_home_t *home,
 
 /** Expand a @a truncated SDP.
  */
+static
 sdp_session_t *soa_sdp_expand_media(su_home_t *home,
 				    sdp_session_t const *truncated,
 				    sdp_session_t const *complete)
@@ -312,6 +337,7 @@ int soa_sdp_upgrade_is_needed(sdp_session_t const *session,
 }
 
 /** Check if codec is in auxiliary list */
+static
 int soa_sdp_is_auxiliary_codec(sdp_rtpmap_t const *rm, char const *auxiliary)
 {
   char const *codec;
@@ -342,68 +368,84 @@ int soa_sdp_is_auxiliary_codec(sdp_rtpmap_t const *rm, char const *auxiliary)
   return 0;
 }
 
+static
+sdp_rtpmap_t *soa_sdp_media_matching_rtpmap(sdp_rtpmap_t const *from,
+					    sdp_rtpmap_t const *anylist,
+					    char const *auxiliary)
+{
+  sdp_rtpmap_t const *rm;
 
-/** Find first matching media in table. */
-sdp_media_t *soa_sdp_matching(soa_session_t *ss, 
-			      sdp_media_t *mm[],
-			      sdp_media_t const *with,
-			      int *return_common_codecs)
+  for (rm = anylist; rm; rm = rm->rm_next) {
+    /* Ignore auxiliary codecs */
+    if (auxiliary && soa_sdp_is_auxiliary_codec(rm, auxiliary))
+      continue;
+
+    if (sdp_rtpmap_find_matching(from, rm))
+      return (sdp_rtpmap_t *)rm;
+  }
+
+  return NULL;
+}
+
+#define SDP_MEDIA_NONE ((sdp_media_t *)-1)
+
+/** Find first matching media in table @a mm.
+ *
+ * - if allow_rtp_mismatch == 0, search for a matching codec 
+ * - if allow_rtp_mismatch == 1, prefer m=line with matching codec
+ * - if allow_rtp_mismatch > 1, ignore codecs
+ */
+static
+int soa_sdp_matching_mindex(soa_session_t *ss, 
+			    sdp_media_t *mm[],
+			    sdp_media_t const *with,
+			    int *return_codec_mismatch)
 {
   int i, j = -1;
-  sdp_media_t *m;
-  sdp_rtpmap_t const *rm;
   soa_static_session_t *sss = (soa_static_session_t *)ss;
-  char const *auxiliary;
+  int rtp = sdp_media_uses_rtp(with), dummy;
+  char const *auxiliary = NULL;
 
-  auxiliary = with->m_type == sdp_media_audio ? sss->sss_audio_aux : NULL;
+  if (return_codec_mismatch == NULL)
+    return_codec_mismatch = &dummy;
 
-  /* Looking for a single codec */
-  if (with->m_rtpmaps && with->m_rtpmaps->rm_next == NULL)
-    auxiliary = NULL;
+  if (with->m_type == sdp_media_audio) {
+    auxiliary = sss->sss_audio_aux;
+    /* Looking for a single codec */
+    if (with->m_rtpmaps && with->m_rtpmaps->rm_next == NULL)
+      auxiliary = NULL;
+  }
 
   for (i = 0; mm[i]; i++) {
+    if (mm[i] == SDP_MEDIA_NONE)
+      continue;
+
     if (!sdp_media_match_with(mm[i], with))
       continue;
     
-    if (!sdp_media_uses_rtp(with))
+    if (!rtp)
       break;
 
-    if (!return_common_codecs)
+    if (soa_sdp_media_matching_rtpmap(with->m_rtpmaps, 
+				      mm[i]->m_rtpmaps,
+				      auxiliary))
       break;
 
-    /* Check also rtpmaps  */
-    for (rm = mm[i]->m_rtpmaps; rm; rm = rm->rm_next) {
-      /* Ignore auxiliary codecs */
-      if (auxiliary && soa_sdp_is_auxiliary_codec(rm, auxiliary))
-	continue;
-
-      if (sdp_rtpmap_find_matching(with->m_rtpmaps, rm))
-	break;
-    }
-    if (rm)
-      break;
     if (j == -1)
       j = i;
   }
 
-  if (return_common_codecs)
-    *return_common_codecs = mm[i] != NULL;
-
-  if (mm[i] == NULL && j != -1)
-    i = j;			/* return m= line without common codecs */
-
-  m = mm[i];
-
-  for (; mm[i]; i++)
-    mm[i] = mm[i + 1];
-
-  return m;
+  if (mm[i])
+    return *return_codec_mismatch = 0, i;
+  else
+    return *return_codec_mismatch = 1, j;
 }
 
 /** Set payload types in @a l_m according to the values in @a r_m.
  * 
  * @retval number of common codecs
  */
+static
 int soa_sdp_set_rtpmap_pt(sdp_media_t *l_m, 
 			  sdp_media_t const *r_m)
 {
@@ -511,6 +553,7 @@ int soa_sdp_set_rtpmap_pt(sdp_media_t *l_m,
  *
  * @return Number of common codecs
  */
+static
 int soa_sdp_sort_rtpmap(sdp_rtpmap_t **inout_list, 
 			sdp_rtpmap_t const *rrm,
 			char const *auxiliary)
@@ -564,6 +607,7 @@ int soa_sdp_sort_rtpmap(sdp_rtpmap_t **inout_list,
  *
  * @return Number of common codecs
  */
+static
 int soa_sdp_select_rtpmap(sdp_rtpmap_t **inout_list, 
 			  sdp_rtpmap_t const *rrm,
 			  char const *auxiliary,
@@ -597,139 +641,220 @@ int soa_sdp_select_rtpmap(sdp_rtpmap_t **inout_list,
   return common_codecs;
 }
 
-/** Sort and select rtpmaps within session */ 
-int soa_sdp_upgrade_rtpmaps(soa_session_t *ss,
-			    sdp_session_t *session,
-			    sdp_session_t const *remote)
+
+/** Sort and select rtpmaps  */ 
+static
+int soa_sdp_media_upgrade_rtpmaps(soa_session_t *ss,
+				  sdp_media_t *sm,
+				  sdp_media_t const *rm)
 {
   soa_static_session_t *sss = (soa_static_session_t *)ss;
+  char const *auxiliary = NULL;
+  int common_codecs;
+
+  common_codecs = soa_sdp_set_rtpmap_pt(sm, rm);
+
+  if (rm->m_type == sdp_media_audio)
+    auxiliary = sss->sss_audio_aux;
+
+  if (ss->ss_rtp_sort == SOA_RTP_SORT_REMOTE || 
+      (ss->ss_rtp_sort == SOA_RTP_SORT_DEFAULT &&
+       rm->m_mode == sdp_recvonly)) {
+    soa_sdp_sort_rtpmap(&sm->m_rtpmaps, rm->m_rtpmaps, auxiliary);
+  }
+
+  if (common_codecs == 0)
+    ;
+  else if (ss->ss_rtp_select == SOA_RTP_SELECT_SINGLE) {
+    soa_sdp_select_rtpmap(&sm->m_rtpmaps, rm->m_rtpmaps, auxiliary, 1);
+  }
+  else if (ss->ss_rtp_select == SOA_RTP_SELECT_COMMON) {
+    soa_sdp_select_rtpmap(&sm->m_rtpmaps, rm->m_rtpmaps, auxiliary, 0);
+  }
+
+  return common_codecs;
+}
+
+
+/** Sort and select rtpmaps within session */ 
+static
+int soa_sdp_session_upgrade_rtpmaps(soa_session_t *ss,
+				    sdp_session_t *session,
+				    sdp_session_t const *remote)
+{
   sdp_media_t *sm;
   sdp_media_t const *rm;
 
   for (sm = session->sdp_media, rm = remote->sdp_media; 
        sm && rm; 
        sm = sm->m_next, rm = rm->m_next) {
-    if (sm->m_rejected)
-      continue;
-    if (sdp_media_uses_rtp(sm)) {
-      int common_codecs = soa_sdp_set_rtpmap_pt(sm, rm);
-
-      char const *auxiliary =
-	rm->m_type == sdp_media_audio ? sss->sss_audio_aux : NULL;
-
-      if (ss->ss_rtp_sort == SOA_RTP_SORT_REMOTE || 
-	  (ss->ss_rtp_sort == SOA_RTP_SORT_DEFAULT &&
-	   rm->m_mode == sdp_recvonly)) {
-	soa_sdp_sort_rtpmap(&sm->m_rtpmaps, rm->m_rtpmaps, auxiliary);
-      }
-
-      if (common_codecs == 0)
-	;
-      else if (ss->ss_rtp_select == SOA_RTP_SELECT_SINGLE) {
-	soa_sdp_select_rtpmap(&sm->m_rtpmaps, rm->m_rtpmaps, auxiliary, 1);
-      }
-      else if (ss->ss_rtp_select == SOA_RTP_SELECT_COMMON) {
-	soa_sdp_select_rtpmap(&sm->m_rtpmaps, rm->m_rtpmaps, auxiliary, 0);
-      }
-    }
+    if (!sm->m_rejected && sdp_media_uses_rtp(sm))
+      soa_sdp_media_upgrade_rtpmaps(ss, sm, rm);
   }
 
   return 0;
 }
 
-
 /** Upgrade m= lines within session */ 
+static
 int soa_sdp_upgrade(soa_session_t *ss,
 		    su_home_t *home,
 		    sdp_session_t *session,
-		    sdp_session_t const *caps,
-		    sdp_session_t const *upgrader)
+		    sdp_session_t const *user,
+		    sdp_session_t const *remote,
+		    int **return_u2s,
+		    int **return_s2u)
 {
   soa_static_session_t *sss = (soa_static_session_t *)ss;
 
-  int Ns, Nc, Nu, size, i, j;
-  sdp_media_t *m, **mm, *cm;
-  sdp_media_t **s_media, **o_media, **c_media;
-  sdp_media_t const **u_media;
+  int Ns, Nu, Nr, size, i, j;
+  sdp_media_t *m, **mm, *um;
+  sdp_media_t **s_media, **o_media, **u_media;
+  sdp_media_t const *rm, **r_media;
+  int *u2s = NULL, *s2u = NULL;
+
+  if (session == NULL || user == NULL)
+    return (errno = EFAULT), -1;
 
   Ns = sdp_media_count(session, sdp_media_any, 0, 0, 0);
-  Nc = sdp_media_count(caps, sdp_media_any, 0, 0, 0);
-  Nu = sdp_media_count(upgrader, sdp_media_any, 0, 0, 0);
+  Nu = sdp_media_count(user, sdp_media_any, 0, 0, 0);
+  Nr = sdp_media_count(remote, sdp_media_any, 0, 0, 0);
 
-  if (caps == upgrader)
-    size = Ns + Nc + 1;
-  else if (Ns < Nu)
-    size = Nu + 1;
+  if (remote == NULL)
+    size = Ns + Nu + 1;
+  else if (Ns < Nr)
+    size = Nr + 1;
   else
     size = Ns + 1;
 
   s_media = su_zalloc(home, size * (sizeof *s_media));
   o_media = su_zalloc(home, (Ns + 1) * (sizeof *o_media));
-  c_media = su_zalloc(home, (Nc + 1) * (sizeof *c_media));
   u_media = su_zalloc(home, (Nu + 1) * (sizeof *u_media));
+  r_media = su_zalloc(home, (Nr + 1) * (sizeof *r_media));
 
-  cm = sdp_media_dup_all(home, caps->sdp_media, session); 
+  um = sdp_media_dup_all(home, user->sdp_media, session); 
 
-  if (!s_media || !c_media || !u_media || !cm)
+  if (!s_media || !u_media || !r_media || !um)
     return -1;
+
+  u2s = su_alloc(home, (Nu + 1) * sizeof(*u2s));
+  s2u = su_alloc(home, size * sizeof(*s2u));
+  if (!u2s || !s2u)
+    return -1;
+
+  for (i = 0; i < Nu; i++)
+    u2s[i] = U2S_NOT_USED;
+  u2s[i] = U2S_SENTINEL;
+
+  for (i = 0; i <= size; i++)
+    s2u[i] = U2S_NOT_USED;
+  s2u[i] = U2S_SENTINEL;
 
   for (i = 0, m = session->sdp_media; m && i < Ns; m = m->m_next)
     o_media[i++] = m;
   assert(i == Ns);
-  for (i = 0, m = cm; m && i < Nc; m = m->m_next)
-    c_media[i++] = m;
-  assert(i == Nc);
-  for (i = 0, m = upgrader->sdp_media; m && i < Nu; m = m->m_next)
+  for (i = 0, m = um; m && i < Nu; m = m->m_next)
     u_media[i++] = m;
   assert(i == Nu);
+  m = remote ? remote->sdp_media : NULL;
+  for (i = 0; m && i < Nr; m = m->m_next)
+      r_media[i++] = m;
+  assert(i == Nr);
 
-  if (caps != upgrader) {
+  if (sss->sss_ordered_user && sss->sss_u2s) {     /* User SDP is ordered */
+    for (j = 0; sss->sss_u2s[j] != U2S_SENTINEL; j++) {
+      i = sss->sss_u2s[j];
+      if (i == U2S_NOT_USED)
+	continue;
+      if (j >= Nu) /* lines removed from user SDP */
+	continue;
+      s_media[i] = u_media[j], u_media[j] = SDP_MEDIA_NONE;
+      u2s[j] = i, s2u[i] = j;
+    }
+  }
+
+  if (remote) {
     /* Update session according to remote */
-    for (i = 0; i < Nu; i++) {
-      int common_codecs = 0;
+    for (i = 0; i < Nr; i++) {
+      rm = r_media[i];
+      m = s_media[i];
 
-      m = soa_sdp_matching(ss, c_media, u_media[i], &common_codecs);
+      if (!m) {
+	int codec_mismatch = 0;
 
-      if (!m || u_media[i]->m_rejected) {
-	m = soa_sdp_make_rejected_media(home, u_media[i], session, 0);
-      }
-      else if (sdp_media_uses_rtp(m)) {
-	/* Process rtpmaps */
-	char const *auxiliary =
-	  m->m_type == sdp_media_audio ? sss->sss_audio_aux : NULL;
+	if (!rm->m_rejected)
+	  j = soa_sdp_matching_mindex(ss, u_media, rm, &codec_mismatch);
+	else
+	  j = -1;
 
-	if (!common_codecs && !ss->ss_rtp_mismatch)
-	  m = soa_sdp_make_rejected_media(home, m, session, 1);
-	soa_sdp_set_rtpmap_pt(m, u_media[i]);
-
-	if (ss->ss_rtp_sort == SOA_RTP_SORT_REMOTE || 
-	    (ss->ss_rtp_sort == SOA_RTP_SORT_DEFAULT &&
-	     u_media[i]->m_mode == sdp_recvonly)) {
-	  soa_sdp_sort_rtpmap(&m->m_rtpmaps, u_media[i]->m_rtpmaps, auxiliary);
+	if (j == -1) {
+	  s_media[i] = soa_sdp_make_rejected_media(home, rm, session, 0);
+	  continue;
+	}
+	else if (codec_mismatch && !ss->ss_rtp_mismatch) {
+	  m = soa_sdp_make_rejected_media(home, u_media[j], session, 1);
+	  soa_sdp_set_rtpmap_pt(s_media[i] = m, rm);
+	  continue;
 	}
 
-	if (common_codecs &&
-	    (ss->ss_rtp_select == SOA_RTP_SELECT_SINGLE ||
-	     ss->ss_rtp_select == SOA_RTP_SELECT_COMMON)) {
-	  soa_sdp_select_rtpmap(&m->m_rtpmaps, u_media[i]->m_rtpmaps, auxiliary,
-				ss->ss_rtp_select == SOA_RTP_SELECT_SINGLE);
-	}
+	s_media[i] = m = u_media[j]; u_media[j] = SDP_MEDIA_NONE;
+	u2s[j] = i, s2u[i] = j;
       }
 
-      s_media[i] = m;
+      if (sdp_media_uses_rtp(rm))
+	soa_sdp_media_upgrade_rtpmaps(ss, m, rm);
+    }
+  }
+  else if (sss->sss_ordered_user) {
+    /* Update session with unused media in u_media */
+
+    if (!sss->sss_reuse_rejected) {
+      /* Mark previously used slots */
+      for (i = 0; i < Ns; i++) {
+	if (s_media[i])
+	  continue;
+	s_media[i] = soa_sdp_make_rejected_media(home, o_media[i], session, 0);
+      }
+    }
+
+    for (j = 0; j < Nu; j++) {
+      if (u_media[j] == SDP_MEDIA_NONE)
+	continue;
+
+      for (i = 0; i < size - 1; i++) {
+	if (s_media[i] != NULL)
+	  continue;
+	s_media[i] = u_media[j], u_media[j] = SDP_MEDIA_NONE;
+	u2s[j] = i, s2u[i] = j;
+      }
+
+      assert(i != size);
     }
   }
   else {
-    /* Update session according to local */
+    /* Match unused user media by media types with the existing session */
     for (i = 0; i < Ns; i++) {
-      m = soa_sdp_matching(ss, c_media, o_media[i], NULL);
-      if (!m)
-	m = soa_sdp_make_rejected_media(home, o_media[i], session, 0);
-      s_media[i] = m;
+      if (s_media[i])
+	continue;
+
+      j = soa_sdp_matching_mindex(ss, u_media, o_media[i], NULL);
+      if (j == -1) {
+	s_media[i] = soa_sdp_make_rejected_media(home, o_media[i], session, 0);
+	continue;
+      }
+
+      s_media[i] = u_media[j], u_media[j] = SDP_MEDIA_NONE;
+      u2s[j] = i, s2u[i] = j;
     }
+
     /* Here we just append new media at the end */
-    for (j = 0; c_media[j]; j++)
-      s_media[i++] = c_media[j];
+    for (j = 0; j < Nu; j++) {
+      if (u_media[j] != SDP_MEDIA_NONE) {
+	s_media[i] = u_media[j], u_media[j] = SDP_MEDIA_NONE;
+	u2s[j] = i, s2u[i] = j;
+	i++;
+      }
+    }
     assert(i <= size);
   }
 
@@ -739,10 +864,46 @@ int soa_sdp_upgrade(soa_session_t *ss,
   }
   *mm = NULL;
 
+#ifndef NDEBUG
+  for (j = i; j < size; j++)
+    assert(s2u[j] == U2S_NOT_USED);
+#endif
+
+  s2u[size = i] = U2S_SENTINEL;
+  *return_u2s = u2s;
+  *return_s2u = s2u;
+
+#ifndef NDEBUG			/* X check */
+  for (j = 0; j < Nu; j++) {
+    i = u2s[j];
+    assert(i == U2S_NOT_USED || s2u[i] == j);
+  }
+  for (i = 0; i < size; i++) {
+    j = s2u[i];
+    assert(j == U2S_NOT_USED || u2s[j] == i);
+  }
+#endif
+
   return 0;
 }
 
+int *u2s_alloc(su_home_t *home, int const *u2s)
+{
+  if (u2s) {
+    int i, *a;
+    for (i = 0; u2s[i] != U2S_SENTINEL; i++)
+      ;
+    a = su_alloc(home, (i + 1) * (sizeof *u2s));
+    if (a)
+      memcpy(a, u2s, (i + 1) * (sizeof *u2s));
+    return a;
+  }
+
+  return NULL;
+}
+
 /** Check if @a session contains media that are rejected by @a remote. */ 
+static
 int soa_sdp_reject_is_needed(sdp_session_t const *session,
 			     sdp_session_t const *remote)
 {
@@ -774,6 +935,7 @@ int soa_sdp_reject_is_needed(sdp_session_t const *session,
 }
 
 /** If m= line is rejected by remote mark m= line rejected within session */ 
+static
 int soa_sdp_reject(su_home_t *home,
 		   sdp_session_t *session,
 		   sdp_session_t const *remote)
@@ -813,6 +975,7 @@ int soa_sdp_reject(su_home_t *home,
 }
 
 /** Check if @a session mode should be changed. */ 
+static
 int soa_sdp_mode_set_is_needed(sdp_session_t const *session,
 			       sdp_session_t const *remote,
 			       char const *hold)
@@ -855,6 +1018,7 @@ int soa_sdp_mode_set_is_needed(sdp_session_t const *session,
 
 
 /** Update mode within session */ 
+static
 int soa_sdp_mode_set(sdp_session_t *session,
 		     sdp_session_t const *remote,
 		     char const *hold)
@@ -908,6 +1072,8 @@ static int offer_answer_step(soa_session_t *ss,
 			     enum offer_answer_action action,
 			     char const *by)
 {
+  soa_static_session_t *sss = (soa_static_session_t *)ss;
+
   char c_address[64];
   sdp_session_t *local = ss->ss_local->ssd_sdp;
   sdp_session_t local0[1];
@@ -921,6 +1087,8 @@ static int offer_answer_step(soa_session_t *ss,
   sdp_origin_t o[1] = {{ sizeof(o) }};
   sdp_connection_t *c, c0[1] = {{ sizeof(c0) }};
   sdp_time_t t[1] = {{ sizeof(t) }};
+
+  int *u2s = NULL, *s2u = NULL, *tbf;
 
   char const *phrase = "Internal Media Error";
 
@@ -991,7 +1159,7 @@ static int offer_answer_step(soa_session_t *ss,
       *local0 = *local, local = local0;
     SU_DEBUG_7(("soa_static(%p, %s): %s\n", (void *)ss, by, 
 		"upgrade with local description"));
-    soa_sdp_upgrade(ss, tmphome, local, user, user);
+    soa_sdp_upgrade(ss, tmphome, local, user, NULL, &u2s, &s2u);
     break;
   case generate_answer:
     /* Upgrade local SDP based on remote SDP */
@@ -1003,7 +1171,7 @@ static int offer_answer_step(soa_session_t *ss,
 	*local0 = *local, local = local0;
       SU_DEBUG_7(("soa_static(%p, %s): %s\n", (void *)ss, by,
 		  "upgrade with remote description"));
-      soa_sdp_upgrade(ss, tmphome, local, user, remote);
+      soa_sdp_upgrade(ss, tmphome, local, user, remote, &u2s, &s2u);
     }
     break;
   case process_answer:
@@ -1074,7 +1242,7 @@ static int offer_answer_step(soa_session_t *ss,
 	*local0 = *local, local = local0; 
 	DUP_LOCAL(local);
       }
-      soa_sdp_upgrade_rtpmaps(ss, local, remote);
+      soa_sdp_session_upgrade_rtpmaps(ss, local, remote);
     }
     break;
   case generate_offer:
@@ -1125,9 +1293,16 @@ static int offer_answer_step(soa_session_t *ss,
 
   soa_description_free(ss, ss->ss_previous);
 
+  if (u2s) {
+    u2s = u2s_alloc(ss->ss_home, u2s); 
+    s2u = u2s_alloc(ss->ss_home, s2u);
+    if (!u2s || !s2u)
+      goto internal_error;
+  }
+
   if (ss->ss_local->ssd_sdp != local &&
       sdp_session_cmp(ss->ss_local->ssd_sdp, local)) {
-    /* We have modfied local session: update origin-line */
+    /* We have modified local session: update origin-line */
     if (local->sdp_origin != o)
       *o = *local->sdp_origin, local->sdp_origin = o;
     o->o_version++;
@@ -1151,8 +1326,22 @@ static int offer_answer_step(soa_session_t *ss,
 
     /* Update the unparsed and pretty-printed descriptions  */
     if (soa_description_set(ss, ss->ss_local, local, NULL, 0) < 0) {
+      if (action == generate_offer) {
+	/* Remove 2nd reference to local session state */
+	memset(ss->ss_previous, 0, (sizeof *ss->ss_previous));
+	ss->ss_previous_user_version = 0;
+	ss->ss_previous_remote_version = 0;
+      }
+      
+      su_free(ss->ss_home, u2s), su_free(ss->ss_home, s2u);
+
       goto internal_error;
     }
+  }
+
+  if (u2s) {
+    tbf = sss->sss_u2s, sss->sss_u2s = u2s, su_free(ss->ss_home, tbf);
+    tbf = sss->sss_s2u, sss->sss_s2u = s2u, su_free(ss->ss_home, tbf);
   }
 
   /* Update version numbers */

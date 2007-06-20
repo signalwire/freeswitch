@@ -29,9 +29,13 @@
 #
 # --------------------------------------------------------------------
 
-echo "Hiding email addresses in ${1:-.}"
+echo "Postprocessing HTML in ${1:-.}: hiding email addresses, fixing links"
 
 find ${1:-.} -name '*.html' -print0 | 
 xargs -0 \
-sed -r -i 's/([:>;][a-z][-a-z.]*)(@[a-z][a-z]*)\.[a-z][a-z]*(["<\&])/\1\2-email.address.hidden\3/gi'
-
+sed -r -i '
+# Hide e-mail addresses
+s/([:>;][a-z][-a-z.]*)(@[a-z][a-z]*)\.[a-z][a-z]*(["<\&])/\1\2-email.address.hidden\3/gi;
+# Fix cross-module links
+s!doxygen="([a-z]*).doxytags:../\1/" href="../\1/\1_index.html"!doxygen="\1.doxytags:../\1/" href="../\1/index.html"!g;
+'

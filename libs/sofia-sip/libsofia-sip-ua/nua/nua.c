@@ -1049,7 +1049,7 @@ msg_t *nua_current_request(nua_t const *nua)
 /** Get request message from saved nua event. @NEW_1_12_4. */
 msg_t *nua_saved_event_request(nua_saved_event_t const *saved)
 {
-  return saved ? su_msg_data(saved)->e_msg : NULL;
+  return saved && saved[0] ? su_msg_data(saved)->e_msg : NULL;
 }
 
 /** Save nua event and its arguments */

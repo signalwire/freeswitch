@@ -48,7 +48,7 @@ SOFIA_BEGIN_DECLS
 
 SOFIAPUBFUN void tl_print(FILE *f, char const *title, tagi_t const lst[]);
 
-#if SU_HAVE_INLINE
+#if SU_INLINE_TAG_CAST
 su_inline tag_value_t tag_socket_v(su_socket_t v) {
   return (tag_value_t)v;
 }

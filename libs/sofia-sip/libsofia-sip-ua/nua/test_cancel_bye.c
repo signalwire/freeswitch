@@ -1349,11 +1349,14 @@ int test_bye_to_invalid_contact(struct context *ctx)
   struct endpoint *a = &ctx->a,  *b = &ctx->b;
   struct call *a_call = a->call, *b_call = b->call;
   struct event *e;
+  sip_t *sip = NULL;
+
+  int seen_401;
 
   a_call->sdp = "m=audio 5008 RTP/AVP 8";
   b_call->sdp = "m=audio 5010 RTP/AVP 0 8";
 
-/* Early BYE 2
+/* Bad Contact URI
 
    A			B
    |-------INVITE------>|
@@ -1362,14 +1365,17 @@ int test_bye_to_invalid_contact(struct context *ctx)
    |<----180 Ringing----|
    |<-------200---------|
    |			|
-   |--------BYE-------->|
-   |<------200 OK-------|
    |--------ACK-------->|
    |			|
+   |<-------BYE---------|
+   |--------400-------->|
+   |			|
+   |--------BYE-------->|
+   |<------200 OK-------|
    |			|
 */
   if (print_headings)
-    printf("TEST NUA-6.4.3: BYE call when completing\n");
+    printf("TEST NUA-6.4.3: Test dialog with bad Contact info\n");
 
   TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
 
@@ -1447,6 +1453,42 @@ int test_bye_to_invalid_contact(struct context *ctx)
 
   if (print_headings)
     printf("TEST NUA-6.4.3: PASSED\n");
+
+  if (!ctx->p)
+    return 0;
+
+  if (print_headings)
+    printf("TEST NUA-6.4.4: Wait for re-REGISTER after connection has been closed\n");
+
+  /* B is supposed to re-register pretty soon, wait for re-registration */
+
+  run_b_until(ctx, -1, save_until_final_response);
+
+  seen_401 = 0;
+
+  for (e = b->events->head; e; e = e->next) {
+    TEST_E(e->data->e_event, nua_r_register);
+    TEST_1(sip = sip_object(e->data->e_msg));
+
+    if (e->data->e_status == 200) {
+      TEST(e->data->e_status, 200);
+      TEST_1(seen_401);
+      TEST_1(sip->sip_contact);
+    }
+    else if (sip->sip_status && sip->sip_status->st_status == 401) {
+      seen_401 = 1;
+    }
+
+    if (!e->next)
+      break;
+  }
+  TEST_1(e);
+  TEST_S(sip->sip_contact->m_expires, "3600");
+  TEST_1(!e->next);
+  free_events_in_list(ctx, b->events);
+
+  if (print_headings)
+    printf("TEST NUA-6.4.4: PASSED\n");
 
   END();
 }

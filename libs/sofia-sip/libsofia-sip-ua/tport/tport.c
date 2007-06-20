@@ -166,7 +166,7 @@ int tport_is_secondary(tport_t const *self)
     self->tp_pri->pri_primary != self;
 }
 
-/** Test if transport has been registered */
+/** Test if transport has been registered to su_root_t */
 int tport_is_registered(tport_t const *self)
 {
   return self->tp_index != 0;
@@ -289,6 +289,19 @@ su_inline int tport_is_bound(tport_t const *self)
 int tport_is_connected(tport_t const *self)
 {
   return self->tp_is_connected;
+}
+
+/** Test if transport can be used to send message. @NEW_1_12_7 */
+int tport_is_clear_to_send(tport_t const *self)
+{
+  return
+    tport_is_master(self) || 
+    tport_is_primary(self) || 
+    (tport_is_secondary(self) &&
+     tport_is_registered(self) &&
+     self->tp_reusable &&
+     !self->tp_closed &&
+     !self->tp_send_close);
 }
 
 /** MTU for transport  */
@@ -1164,7 +1177,7 @@ int tport_set_params(tport_t *self,
   if (self == NULL)
     return su_seterrno(EINVAL);
 
-  memcpy(tpp, tpp0 = self->tp_params, sizeof *tpp);
+  memcpy(tpp, tpp0 = self->tp_params, sizeof tpp);
 
   mtu = tpp->tpp_mtu;
   connect = tpp->tpp_conn_orient;
@@ -1220,9 +1233,10 @@ int tport_set_params(tport_t *self,
   if (tport_is_secondary(self) && 
       self->tp_params == self->tp_pri->pri_primary->tp_params) {
     tpp0 = su_zalloc(self->tp_home, sizeof *tpp0); if (!tpp0) return -1;
+    self->tp_params = tpp0;
   }
 
-  memcpy(tpp0, tpp, sizeof *tpp);
+  memcpy(tpp0, tpp, sizeof tpp);
 
   return n;
 }
@@ -1963,7 +1977,7 @@ int tport_addrinfo_copy(su_addrinfo_t *dst, void *addr, socklen_t addrlen,
  */
 void tport_close(tport_t *self)
 {
-	SU_DEBUG_5(("%s(%p): " TPN_FORMAT "\n", "tport_close", (void *)self,
+  SU_DEBUG_5(("%s(%p): " TPN_FORMAT "\n", "tport_close", (void *)self,
 	      TPN_ARGS(self->tp_name)));
 
   self->tp_closed = 1;
@@ -2360,6 +2374,7 @@ void tport_error_report(tport_t *self, int errcode,
   else if (errcode > 0)
     errmsg = su_strerror(errcode);
   else
+    /* Should be something  like ENOTCONN */
     errcode = 0, errmsg = "stream closed";
 
   if (addr && addr->su_family == AF_UNSPEC)
@@ -2369,11 +2384,11 @@ void tport_error_report(tport_t *self, int errcode,
   if (errcode > 0 && tport_has_connection(self))
     self->tp_reusable = 0;
 
-  if (addr == NULL && tport_is_connection_oriented(self))
-    addr = self->tp_addr;
-
   /* Report error */
   if (addr && tport_pending_error(self, addr, errcode))
+    ;
+  else if (tport_is_secondary(self) &&
+	   tport_pending_error(self, NULL, errcode) > 0)
     ;
   else if (self->tp_master->mr_tpac->tpac_error) {
     char *dstname = NULL;
@@ -3070,30 +3085,24 @@ tport_t *tport_tsend(tport_t *self,
     /* Select a primary protocol, make a fresh connection */
     self = primary->pri_primary;
   }
+  else if (tport_is_secondary(self) && tport_is_clear_to_send(self)) {
+    self = self;
+  }
+  /*
+   * Try to find an already open connection to the destination, 
+   * or get a primary protocol 
+   */
   else {
-    if (tport_is_secondary(self) && 
-	tport_is_registered(self) && 
-	self->tp_reusable &&
-	!self->tp_closed &&
-	!self->tp_send_close) {
-      self = self;
+    /* If primary, resolve the destination address, store it in the msg */
+    if (tport_resolve(primary->pri_primary, msg, tpn) < 0) {
+      return NULL;
     }
-    /*
-     * Try to find an already open connection to the destination, 
-     * or get a primary protocol 
-     */
-    else {
-      /* If primary, resolve the destination address, store it in the msg */
-      if (tport_resolve(primary->pri_primary, msg, tpn) < 0) {
-	return NULL;
-      }
-      resolved = 1;
+    resolved = 1;
+    
+    self = tport_by_addrinfo(primary, msg_addrinfo(msg), tpn);
 
-      self = tport_by_addrinfo(primary, msg_addrinfo(msg), tpn);
-
-      if (!self)
-	self = primary->pri_primary;
-    }
+    if (!self)
+      self = primary->pri_primary;
   }
 
   if (tport_is_primary(self)) {
@@ -3878,9 +3887,12 @@ int tport_pend(tport_t *self,
 {
   tport_pending_t *pending;
 
-  if (self == NULL || msg == NULL || callback == NULL || client == NULL)
+  if (self == NULL || callback == NULL || client == NULL)
     return -1;
-  
+
+  if (msg == NULL && tport_is_primary(self))
+    return -1;
+
   SU_DEBUG_7(("tport_pend(%p): pending %p for %s/%s:%s (already %u)\n", 
 			  (void *)self, (void *)msg, 
 	      self->tp_protoname, self->tp_host, self->tp_port,
@@ -3930,7 +3942,7 @@ int tport_release(tport_t *self,
 {
   tport_pending_t *pending;
 
-  if (self == NULL || msg == NULL || pendd <= 0 || pendd > (int)self->tp_plen)
+  if (self == NULL || pendd <= 0 || pendd > (int)self->tp_plen)
     return su_seterrno(EINVAL), -1;
 
   pending = self->tp_pending + (pendd - 1);
@@ -3968,7 +3980,7 @@ tport_pending_error(tport_t *self, su_sockaddr_t const *dst, int error)
   msg_t *msg;
   su_addrinfo_t const *ai;
 
-  assert(self); assert(dst);
+  assert(self);
 
   callbacks = 0;
   reported = ++self->tp_reported;
@@ -3979,21 +3991,24 @@ tport_pending_error(tport_t *self, su_sockaddr_t const *dst, int error)
   for (i = 0; i < self->tp_plen; i++) {
     pending = self->tp_pending + i;
 
-    if (!pending->p_callback || !pending->p_msg)
+    if (!pending->p_callback)
       continue;
 
     if (pending->p_reported == reported)
       continue;
 
     msg = pending->p_msg;
-    ai = msg_addrinfo(msg);
 
-    if (su_cmp_sockaddr(dst, (su_sockaddr_t *)ai->ai_addr) != 0)
-      continue;
+    if (dst && msg) {
+      ai = msg_addrinfo(msg);
 
-    pending->p_reported = reported;
+      if (su_cmp_sockaddr(dst, (su_sockaddr_t *)ai->ai_addr) != 0)
+	continue;
+    }
 
     msg_set_errno(msg, error);
+
+    pending->p_reported = reported;
 
     pending->p_callback(self->TP_STACK, pending->p_client, self, msg, error);
 

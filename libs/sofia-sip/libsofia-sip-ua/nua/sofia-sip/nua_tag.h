@@ -166,7 +166,7 @@ SOFIAPUBVAR tag_typedef_t nutag_with;
  *    nua_respond()
  *
  * @par Parameter type
- *    msg_t *
+ *    nua_saved_event_t *
  *
  * @par Values
  *   Pointer to a saved event.
@@ -2270,7 +2270,7 @@ SOFIAPUBVAR tag_typedef_t nutag_detect_network_updates;
 SOFIAPUBVAR tag_typedef_t nutag_detect_network_updates_ref;
 
 /* Pass nua handle as tagged argument */
-#if SU_HAVE_INLINE
+#if SU_INLINE_TAG_CAST
 su_inline tag_value_t nutag_handle_v(nua_handle_t *v) { return (tag_value_t)v; }
 su_inline tag_value_t nutag_handle_vr(nua_handle_t **vp) {return(tag_value_t)vp;}
 #else

@@ -190,7 +190,8 @@ void print_event(nua_event_t event,
 	      ep->name, (void *)nh, operation);
   }
 
-  if ((tstflags & tst_verbatim) && tags)
+  if (tags && 
+      ((tstflags & tst_verbatim) || ctx->print_tags || ep->print_tags))
     tl_print(stderr, "", tags);
 }
 
@@ -498,6 +499,27 @@ void free_event_in_list(struct context *ctx,
       list->tail = &list->head;
   }
 }			      
+
+struct event *event_by_type(struct event *e, nua_event_t etype)
+{
+  for (; e; e = e->next) {
+    if (e->data->e_event == etype)
+      break;
+  }
+
+  return e;
+}
+
+size_t count_events(struct event const *e)
+{
+  size_t n;
+
+  for (n = 0; e; e = e->next)
+    n++;
+
+  return n;
+}
+
 
 int is_special(nua_event_t e)
 {
