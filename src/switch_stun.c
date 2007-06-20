@@ -31,6 +31,7 @@
  *
  */
 #include <switch.h>
+#include <switch_stun.h>
 
 struct value_mapping {
 	const uint32_t value;

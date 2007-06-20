@@ -32,6 +32,7 @@
  */
 
 #include <switch.h>
+#include <switch_stun.h>
 #undef PACKAGE_NAME
 #undef PACKAGE_STRING
 #undef PACKAGE_TARNAME

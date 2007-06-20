@@ -99,7 +99,6 @@
 #include <switch_resample.h>
 #include <switch_ivr.h>
 #include <switch_rtp.h>
-#include <switch_stun.h>
 #include <switch_log.h>
 #include <switch_xml.h>
 #include <switch_core_event_hook.h>

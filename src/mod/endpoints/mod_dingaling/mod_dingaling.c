@@ -30,6 +30,7 @@
  *
  */
 #include <switch.h>
+#include <switch_stun.h>
 #include <libdingaling.h>
 #ifdef SWITCH_HAVE_ODBC
 #include <switch_odbc.h>

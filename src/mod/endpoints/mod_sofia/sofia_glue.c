@@ -33,6 +33,7 @@
  *
  */
 #include "mod_sofia.h"
+#include <switch_stun.h>
 
 switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt);
 switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int force);
