@@ -222,7 +222,7 @@ static void wp_logger(char *file, const char *func, int line, int level, char *f
 
 	va_start(ap, fmt);
 	if ((ret = switch_vasprintf(&data, fmt, ap)) != -1) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, level, "%s", data);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, level, "%s", data);
 	}
 	va_end(ap);
 }
