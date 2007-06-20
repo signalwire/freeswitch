@@ -277,7 +277,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				{
 						
 					if (state_counter > 500) {
-						if (zap_test_flag(chan, ZAP_CHANNEL_OFFHOOK)) {
+						if (zap_test_flag(chan, ZAP_CHANNEL_OFFHOOK) && chan->state >= ZAP_CHANNEL_STATE_IDLE) {
 							zap_set_state_locked(chan, ZAP_CHANNEL_STATE_BUSY);
 						} else {
 							zap_set_state_locked(chan, ZAP_CHANNEL_STATE_DOWN);
@@ -663,14 +663,23 @@ static zap_status_t process_event(zap_span_t *span, zap_event_t *event)
 		break;
 	case ZAP_OOB_OFFHOOK:
 		{
-			if (zap_test_flag(event->channel, ZAP_CHANNEL_INTHREAD)) {
-				if (event->channel->type == ZAP_CHAN_TYPE_FXS && zap_test_flag(event->channel, ZAP_CHANNEL_RINGING)) {
-					zap_channel_command(event->channel, ZAP_COMMAND_GENERATE_RING_OFF, NULL);
+			if (event->channel->type == ZAP_CHAN_TYPE_FXS) {
+				if (zap_test_flag(event->channel, ZAP_CHANNEL_INTHREAD)) {
+					if (zap_test_flag(event->channel, ZAP_CHANNEL_RINGING)) {
+						zap_channel_command(event->channel, ZAP_COMMAND_GENERATE_RING_OFF, NULL);
+					}
+					zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_UP);
+				} else {
+					zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_DIALTONE);
+					zap_thread_create_detached(zap_analog_channel_run, event->channel);
 				}
-				zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_UP);
 			} else {
-				zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_DIALTONE);
-				zap_thread_create_detached(zap_analog_channel_run, event->channel);
+				if (!zap_test_flag(event->channel, ZAP_CHANNEL_INTHREAD)) {
+					if (zap_test_flag(event->channel, ZAP_CHANNEL_OFFHOOK)) {
+						zap_channel_command(event->channel, ZAP_COMMAND_ONHOOK, NULL);
+					}
+				}
+				zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_DOWN);
 			}
 		}
 	}
@@ -697,6 +706,9 @@ static void *zap_analog_run(zap_thread_t *me, void *obj)
 			{
 				zap_event_t *event;
 				while (zap_span_next_event(span, &event) == ZAP_SUCCESS) {
+					if (event->e_type == ZAP_OOB_NOOP) {
+						continue;
+					}
 					if (process_event(span, event) != ZAP_SUCCESS) {
 						goto end;
 					}

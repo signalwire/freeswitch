@@ -172,6 +172,7 @@
   \return true value if the object has the flags defined
 */
 #define zap_test_flag(obj, flag) ((obj)->flags & flag)
+#define zap_test_pflag(obj, flag) ((obj)->pflags & flag)
 
 /*!
   \brief Set a flag on an arbitrary object
@@ -184,6 +185,12 @@
 	(obj)->flags |= (flag);											\
 	zap_mutex_unlock(obj->mutex);
 
+#define zap_set_pflag(obj, flag) (obj)->pflags |= (flag)
+#define zap_set_pflag_locked(obj, flag) assert(obj->mutex != NULL);	\
+	zap_mutex_lock(obj->mutex);										\
+	(obj)->pflags |= (flag);											\
+	zap_mutex_unlock(obj->mutex);
+
 /*!
   \brief Clear a flag on an arbitrary object while locked
   \command obj the object to test
@@ -192,6 +199,11 @@
 #define zap_clear_flag(obj, flag) (obj)->flags &= ~(flag)
 
 #define zap_clear_flag_locked(obj, flag) assert(obj->mutex != NULL); zap_mutex_lock(obj->mutex); (obj)->flags &= ~(flag); zap_mutex_unlock(obj->mutex);
+
+#define zap_clear_pflag(obj, flag) (obj)->pflags &= ~(flag)
+
+#define zap_clear_pflag_locked(obj, flag) assert(obj->mutex != NULL); zap_mutex_lock(obj->mutex); (obj)->pflags &= ~(flag); zap_mutex_unlock(obj->mutex);
+
 
 #define zap_set_state_locked(obj, s) if ( obj->state == s ) {			\
 		zap_log(ZAP_LOG_WARNING, "Why bother changing state from %s to %s\n", zap_channel_state2str(obj->state), zap_channel_state2str(s)); \
@@ -311,6 +323,7 @@ struct zap_channel {
 	zap_chan_type_t type;
 	zap_socket_t sockfd;
 	zap_channel_flag_t flags;
+	uint32_t pflags;
 	zap_channel_feature_t features;
 	zap_codec_t effective_codec;
 	zap_codec_t native_codec;
@@ -334,6 +347,7 @@ struct zap_channel {
 	uint32_t dtmf_off;
 	teletone_generation_session_t tone_session;
 	zap_time_t last_event_time;
+	zap_time_t ring_time;
 	char tokens[ZAP_MAX_TOKENS+1][ZAP_TOKEN_STRLEN];
 	uint8_t needed_tones[ZAP_TONEMAP_INVALID];
 	uint8_t detected_tones[ZAP_TONEMAP_INVALID];

@@ -96,7 +96,7 @@ ZAP_ENUM_NAMES(TRUNK_TYPE_NAMES, TRUNK_STRINGS)
 ZAP_STR2ENUM(zap_str2zap_trunk_type, zap_trunk_type2str, zap_trunk_type_t, TRUNK_TYPE_NAMES, ZAP_TRUNK_NONE)
 
 ZAP_ENUM_NAMES(START_TYPE_NAMES, START_TYPE_STRINGS)
-ZAP_STR2ENUM(zap_str2zap_analog_start_type, zap_analog_start_type2str, zap_analog_start_type_t, START_TYPE_NAMES, ZAP_ANALOG_START_INVALID)
+ZAP_STR2ENUM(zap_str2zap_analog_start_type, zap_analog_start_type2str, zap_analog_start_type_t, START_TYPE_NAMES, ZAP_ANALOG_START_NA)
 
 ZAP_ENUM_NAMES(SIGNAL_NAMES, SIGNAL_STRINGS)
 ZAP_STR2ENUM(zap_str2zap_signal_event, zap_signal_event2str, zap_signal_event_t, SIGNAL_NAMES, ZAP_SIGEVENT_INVALID)
@@ -1660,6 +1660,7 @@ static zap_status_t load_config(void)
 	char name[80] = "";
 	char number[25] = "";
 	zap_io_interface_t *zio = NULL;
+	zap_analog_start_type_t tmp;
 
 	if (!zap_config_open_file(&cfg, cfg_name)) {
 		return ZAP_FAIL;
@@ -1722,23 +1723,20 @@ static zap_status_t load_config(void)
 				} else {
 					zap_copy_string(number, val, sizeof(number));
 				}
-			} else if (!strncasecmp(var, "fxo-channel", 11)) {
-				if (span->trunk_type == ZAP_TRUNK_NONE) {
-					char *stype = var + 11;
-					zap_analog_start_type_t tmp, start_type = ZAP_ANALOG_START_KEWL;
-
-					span->trunk_type = ZAP_TRUNK_FXO;										
-					if (stype) {
-						while(*stype == '-') stype++;
-						if ((tmp = zap_str2zap_analog_start_type(stype)) != ZAP_ANALOG_START_INVALID) {
-							start_type = tmp;
-						}
-
+			} else if (!strcasecmp(var, "analog-start-type")) {
+				if (span->trunk_type == ZAP_TRUNK_FXS || span->trunk_type == ZAP_TRUNK_FXO) {
+					if ((tmp = zap_str2zap_analog_start_type(val)) != ZAP_ANALOG_START_NA) {
+						span->start_type = tmp;
+						zap_log(ZAP_LOG_DEBUG, "changing start type to '%s'\n", zap_analog_start_type2str(span->start_type)); 
 					}
-
-					span->start_type = start_type;
-					zap_log(ZAP_LOG_DEBUG, "setting trunk type to '%s' (%s)\n", zap_trunk_type2str(span->trunk_type), 
-							zap_analog_start_type2str(start_type)); 
+				} else {
+					zap_log(ZAP_LOG_ERROR, "This option is only valid on analog trunks!\n");
+				}
+			} else if (!strcasecmp(var, "fxo-channel")) {
+				if (span->trunk_type == ZAP_TRUNK_NONE) {
+					span->trunk_type = ZAP_TRUNK_FXO;										
+					zap_log(ZAP_LOG_DEBUG, "setting trunk type to '%s' start(%s)\n", zap_trunk_type2str(span->trunk_type), 
+							zap_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == ZAP_TRUNK_FXO) {
 					configured += zio->configure_span(span, val, ZAP_CHAN_TYPE_FXO, name, number);
@@ -1747,21 +1745,9 @@ static zap_status_t load_config(void)
 				}
 			} else if (!strcasecmp(var, "fxs-channel")) {
 				if (span->trunk_type == ZAP_TRUNK_NONE) {
-					char *stype = var + 11;
-					zap_analog_start_type_t tmp, start_type = ZAP_ANALOG_START_KEWL;
-
-					span->trunk_type = ZAP_TRUNK_FXS;										
-					if (stype) {
-						while(*stype == '-') stype++;
-						if ((tmp = zap_str2zap_analog_start_type(stype)) != ZAP_ANALOG_START_INVALID) {
-							start_type = tmp;
-						}
-
-					}
-
-					span->start_type = start_type;
-					zap_log(ZAP_LOG_DEBUG, "setting trunk type to '%s' (%s)\n", zap_trunk_type2str(span->trunk_type), 
-							zap_analog_start_type2str(start_type)); 
+					span->trunk_type = ZAP_TRUNK_FXS;
+					zap_log(ZAP_LOG_DEBUG, "setting trunk type to '%s' start(%s)\n", zap_trunk_type2str(span->trunk_type), 
+							zap_analog_start_type2str(span->start_type));
 				}
 				if (span->trunk_type == ZAP_TRUNK_FXS) {
 					configured += zio->configure_span(span, val, ZAP_CHAN_TYPE_FXS, name, number);

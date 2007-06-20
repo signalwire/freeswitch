@@ -37,10 +37,16 @@
 #include <sys/socket.h>
 #include <wanpipe_tdm_api_iface.h>
 
+typedef enum {
+	WP_RINGING = (1 << 0)
+} wp_flag_t;
+
 static struct {
 	uint32_t codec_ms;
 	uint32_t wink_ms;
 	uint32_t flash_ms;
+	uint32_t ring_on_ms;
+	uint32_t ring_off_ms;
 } wp_globals;
 
 /* a bunch of this stuff should go into the wanpipe_tdm_api_iface.h */
@@ -353,20 +359,31 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 			if (type == ZAP_CHAN_TYPE_FXS || type == ZAP_CHAN_TYPE_FXO) {
 				wanpipe_tdm_api_t tdm_api;
 
+#if 1
+				if (type == ZAP_CHAN_TYPE_FXO) {
+					tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
+					tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_ONHOOK;
+					tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
+					wp_tdm_cmd_exec(chan, &tdm_api);
+				}
+#endif
+
 				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
 				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RING_DETECT;
 				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
 				wp_tdm_cmd_exec(chan, &tdm_api);
-
+#if 1
 				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
 				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RING_TRIP_DETECT;
 				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
 				wp_tdm_cmd_exec(chan, &tdm_api);
-
+#endif
 				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
 				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RXHOOK;
 				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
 				wp_tdm_cmd_exec(chan, &tdm_api);
+
+
 
 				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_GET_HW_CODING;
 				wp_tdm_cmd_exec(chan, &tdm_api);
@@ -530,8 +547,9 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 	switch(command) {
 	case ZAP_COMMAND_OFFHOOK:
 		{
-			tdm_api.wp_tdm_cmd.cmd=SIOC_WP_TDM_SET_EVENT;
-			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_OFFHOOK;
+			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
+			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = zchan->span->start_type == ZAP_ANALOG_START_KEWL ? 
+				WP_TDMAPI_EVENT_TXSIG_START : WP_TDMAPI_EVENT_TXSIG_KEWL;
 			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
 			if ((err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
 				snprintf(zchan->last_error, sizeof(zchan->last_error), "OFFHOOK Failed");
@@ -542,9 +560,9 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 		break;
 	case ZAP_COMMAND_ONHOOK:
 		{
-			tdm_api.wp_tdm_cmd.cmd=SIOC_WP_TDM_SET_EVENT;
-			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_OFFHOOK;
-			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode=WP_TDMAPI_EVENT_DISABLE;
+			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
+			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_ONHOOK;
+			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
 			if ((err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
 				snprintf(zchan->last_error, sizeof(zchan->last_error), "ONHOOK Failed");
 				return ZAP_FAIL;
@@ -554,7 +572,7 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 		break;
 	case ZAP_COMMAND_GENERATE_RING_ON:
 		{
-			tdm_api.wp_tdm_cmd.cmd=SIOC_WP_TDM_SET_EVENT;
+			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
 			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RING;
 			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
 			if ((err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
@@ -562,13 +580,15 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 				return ZAP_FAIL;
 			}
 			zap_set_flag_locked(zchan, ZAP_CHANNEL_RINGING);
+			zap_set_pflag_locked(zchan, WP_RINGING);
+			zchan->ring_time = zap_current_time_in_ms() + wp_globals.ring_on_ms;
 		}
 		break;
 	case ZAP_COMMAND_GENERATE_RING_OFF:
 		{
-			tdm_api.wp_tdm_cmd.cmd=SIOC_WP_TDM_SET_EVENT;
+			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
 			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RING;
-			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode=WP_TDMAPI_EVENT_ENABLE;
+			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_DISABLE;
 			if ((err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
 				snprintf(zchan->last_error, sizeof(zchan->last_error), "Ring-off Failed");
 				return ZAP_FAIL;
@@ -698,17 +718,53 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 	int r;
 	
 	for(i = 1; i <= span->chan_count; i++) {
+		zap_channel_t *zchan = &span->channels[i];
 		memset(&pfds[j], 0, sizeof(pfds[j]));
 		pfds[j].fd = span->channels[i].sockfd;
 		pfds[j].events = POLLPRI;
-		if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_WINK) || zap_test_flag((&span->channels[i]), ZAP_CHANNEL_FLASH)) {
-			l++;
+
+		/* The driver probably should be able to do this wink/flash/ringing by itself this is sort of a hack to make it work! */
+
+		if (zap_test_flag(zchan, ZAP_CHANNEL_WINK) || zap_test_flag(zchan, ZAP_CHANNEL_FLASH)) {
+			l = 5;
 		}
+
 		j++;
+
+		if (zap_test_flag(zchan, ZAP_CHANNEL_RINGING)) {
+			l = 5;
+		}
+
+		if (zap_test_flag(zchan, ZAP_CHANNEL_RINGING) && zap_current_time_in_ms() >= zchan->ring_time) {
+			wanpipe_tdm_api_t tdm_api;
+			int err;
+			memset(&tdm_api, 0, sizeof(tdm_api));
+			if (zap_test_pflag(zchan, WP_RINGING)) {
+				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
+				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RING;
+				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_DISABLE;
+				if ((err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
+					snprintf(zchan->last_error, sizeof(zchan->last_error), "Ring-off Failed");
+					return ZAP_FAIL;
+				}
+				zap_clear_pflag_locked(zchan, WP_RINGING);
+				zchan->ring_time = zap_current_time_in_ms() + wp_globals.ring_off_ms;
+			} else {
+				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
+				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RING;
+				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
+				if ((err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
+					snprintf(zchan->last_error, sizeof(zchan->last_error), "Ring Failed");
+					return ZAP_FAIL;
+				}
+				zap_set_pflag_locked(zchan, WP_RINGING);
+				zchan->ring_time = zap_current_time_in_ms() + wp_globals.ring_on_ms;
+			}
+		}
 	}
 
 	if (l) {
-		ms = 5;
+		ms = l;
 	}
 	
     r = poll(pfds, j, ms);
@@ -721,13 +777,17 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 	}
 	
 	for(i = 1; i <= span->chan_count; i++) {
+		zap_channel_t *zchan = &span->channels[i];
+
 		if (pfds[i-1].revents & POLLPRI) {
-			zap_set_flag((&span->channels[i]), ZAP_CHANNEL_EVENT);
-			span->channels[i].last_event_time = zap_current_time_in_ms();
+			zap_set_flag(zchan, ZAP_CHANNEL_EVENT);
+			zchan->last_event_time = zap_current_time_in_ms();
 			k++;
 		}
 	}
 	
+
+
 	return k ? ZAP_SUCCESS : ZAP_FAIL;
 }
 
@@ -758,12 +818,22 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 					zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_WINK);
 					zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_OFFHOOK);
 					event_id = ZAP_OOB_ONHOOK;
+
+					if (span->channels[i].type == ZAP_CHAN_TYPE_FXO) {
+						wanpipe_tdm_api_t tdm_api;
+						memset(&tdm_api, 0, sizeof(tdm_api));
+						tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
+						tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_ONHOOK;
+						tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
+						wp_tdm_cmd_exec(&span->channels[i], &tdm_api);
+					}
 					goto event;
 				}
 			}
 		}
 		if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_EVENT)) {
 			wanpipe_tdm_api_t tdm_api;
+			memset(&tdm_api, 0, sizeof(tdm_api));
 			zap_clear_flag((&span->channels[i]), ZAP_CHANNEL_EVENT);
 
 			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_READ_EVENT;
@@ -775,42 +845,50 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 			switch(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type) {
 			case WP_TDMAPI_EVENT_RXHOOK:
 				{
-					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_hook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? ZAP_OOB_OFFHOOK : ZAP_OOB_ONHOOK;
-					
-					if (event_id == ZAP_OOB_OFFHOOK) {
-						if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_FLASH)) {
-							zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_FLASH);
-							zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_WINK);
-							event_id = ZAP_OOB_FLASH;
-							goto event;
+					if (span->channels[i].type == ZAP_CHAN_TYPE_FXS) {
+						event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_hook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? ZAP_OOB_OFFHOOK : ZAP_OOB_ONHOOK;
+						if (event_id == ZAP_OOB_OFFHOOK) {
+							if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_FLASH)) {
+								zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_FLASH);
+								zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_WINK);
+								event_id = ZAP_OOB_FLASH;
+								goto event;
+							} else {
+								zap_set_flag_locked((&span->channels[i]), ZAP_CHANNEL_WINK);
+							}
 						} else {
-							zap_set_flag_locked((&span->channels[i]), ZAP_CHANNEL_WINK);
-						}
+							if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_WINK)) {
+								zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_WINK);
+								zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_FLASH);
+								event_id = ZAP_OOB_WINK;
+								goto event;
+							} else {
+								zap_set_flag_locked((&span->channels[i]), ZAP_CHANNEL_FLASH);
+							}
+						}					
+						continue;
 					} else {
-						if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_WINK)) {
-							zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_WINK);
-							zap_clear_flag_locked((&span->channels[i]), ZAP_CHANNEL_FLASH);
-							event_id = ZAP_OOB_WINK;
-							goto event;
-						} else {
-							zap_set_flag_locked((&span->channels[i]), ZAP_CHANNEL_FLASH);
+						int err;
+						
+						tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
+						tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_ONHOOK;
+						tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
+						if ((err = wp_tdm_cmd_exec(&span->channels[i], &tdm_api))) {
+							snprintf(span->channels[i].last_error, sizeof(span->channels[i].last_error), "ONHOOK Failed");
+							return ZAP_FAIL;
 						}
+						event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_hook_state & WP_TDMAPI_EVENT_RXHOOK_OFF ? ZAP_OOB_ONHOOK : ZAP_OOB_NOOP;	
 					}
-					continue;
 				}
 				break;
 			case WP_TDMAPI_EVENT_RING_DETECT:
 				{
-					printf("you fucking suck: ring\n");
-					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state & WP_TDMAPI_EVENT_RING_PRESENT ? ZAP_OOB_RING_START : ZAP_OOB_RING_STOP;
-
+					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state == WP_TDMAPI_EVENT_RING_PRESENT ? ZAP_OOB_RING_START : ZAP_OOB_RING_STOP;
 				}
 				break;
 			case WP_TDMAPI_EVENT_RING_TRIP_DETECT:
 				{
-					printf("you fucking suck: trip\n");
-					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state & WP_TDMAPI_EVENT_RING_PRESENT ? ZAP_OOB_ONHOOK : ZAP_OOB_OFFHOOK;
-
+					event_id = tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_ring_state == WP_TDMAPI_EVENT_RING_PRESENT ? ZAP_OOB_ONHOOK : ZAP_OOB_OFFHOOK;
 				}
 				break;
 			default:
@@ -822,6 +900,7 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 			}
 
 		event:
+
 			span->channels[i].last_event_time = 0;
 			span->event_header.e_type = ZAP_EVENT_OOB;
 			span->event_header.enum_id = event_id;
@@ -853,6 +932,8 @@ zap_status_t wanpipe_init(zap_io_interface_t **zio)
 	wp_globals.codec_ms = 20;
 	wp_globals.wink_ms = 150;
 	wp_globals.flash_ms = 750;
+	wp_globals.ring_on_ms = 2000;
+	wp_globals.ring_off_ms = 4000;
 	wanpipe_interface.name = "wanpipe";
 	wanpipe_interface.configure_span = wanpipe_configure_span;
 	wanpipe_interface.configure = wanpipe_configure;
