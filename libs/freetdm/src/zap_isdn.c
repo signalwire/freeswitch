@@ -173,9 +173,9 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 static int zap_isdn_921_23(void *pvt, L2UCHAR *msg, L2INT mlen)
 {
 	int ret;
-	char bb[4096] = "";
-	print_hex_bytes(msg+4, mlen-2, bb, sizeof(bb));
-	zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", (int)mlen-2, LINE, bb);
+	//char bb[4096] = "";
+	//print_hex_bytes(msg+4, mlen-2, bb, sizeof(bb));
+	//zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", (int)mlen-2, LINE, bb);
 
 	ret = Q931Rx23(pvt, msg, mlen);
 	if (ret != 0)
@@ -441,14 +441,14 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 				if (flags & ZAP_READ) {
 					len = sizeof(buf);
 					if (zap_channel_read(data->dchan, buf, &len) == ZAP_SUCCESS) {
-						//#ifdef IODEBUG
-						char bb[4096] = "";
-						print_hex_bytes(buf, len, bb, sizeof(bb));
+#ifdef IODEBUG
+						//char bb[4096] = "";
+						//print_hex_bytes(buf, len, bb, sizeof(bb));
 
-						print_bits(buf, (int)len, bb, sizeof(bb), ZAP_ENDIAN_LITTLE, 0);
-						zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", (int)len, LINE, bb);
-						//#endif
-
+						//print_bits(buf, (int)len, bb, sizeof(bb), ZAP_ENDIAN_LITTLE, 0);
+						//zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", (int)len, LINE, bb);
+#endif
+						
 						Q921QueueHDLCFrame(&data->q921, buf, (int)len);
 						Q921Rx12(&data->q921);
 					}

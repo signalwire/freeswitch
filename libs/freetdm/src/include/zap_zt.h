@@ -217,7 +217,10 @@ ZT_SIG_FXSKS				= ((1 << 2) | (1 << 13)),	/* FXS, Kewlstart */
 ZT_SIG_FXOLS				= ((1 << 3) | (1 << 12)),	/* FXO, Loopstart */
 ZT_SIG_FXOGS				= ((1 << 4) | (1 << 12)),	/* FXO, Groupstart */
 ZT_SIG_FXOKS				= ((1 << 5) | (1 << 12)),	/* FXO, Kewlstart */
-ZT_SIG_EM					= (1 << 6)					/* E&M */
+ZT_SIG_EM					= (1 << 6),					/* E&M */
+ZT_SIG_CLEAR				= (1 << 7),
+ZT_SIG_HDLCRAW				= ((1 << 8)  | ZT_SIG_CLEAR),
+ZT_SIG_HDLCFCS				= ((1 << 9)  | ZT_SIG_HDLCRAW)
 } zt_sigtype_t;
 
 
