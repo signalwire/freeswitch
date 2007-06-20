@@ -43,7 +43,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown);
 SWITCH_MODULE_DEFINITION(mod_sofia, mod_sofia_load, mod_sofia_shutdown, NULL);
 
 struct mod_sofia_globals mod_sofia_globals;
-switch_endpoint_interface_t sofia_endpoint_interface;
+switch_endpoint_interface_t *sofia_endpoint_interface;
 static switch_frame_t silence_frame = { 0 };
 static char silence_data[13] = "";
 
@@ -1288,55 +1288,10 @@ static switch_state_handler_table_t sofia_event_handlers = {
 	/*.on_transmit */ sofia_on_transmit
 };
 
-switch_endpoint_interface_t sofia_endpoint_interface = {
-	/*.interface_name */ "sofia",
-	/*.io_routines */ &sofia_io_routines,
-	/*.event_handlers */ &sofia_event_handlers,
-	/*.private */ NULL,
-	/*.next */ NULL
-};
-
-static switch_chat_interface_t sofia_chat_interface = {
-	/*.name */ SOFIA_CHAT_PROTO,
-	/*.sofia_presence_chat_send */ sofia_presence_chat_send,
-
-};
-
 static switch_status_t sofia_manage(char *relative_oid, switch_management_action_t action, char *data, switch_size_t datalen)
 {
 	return SWITCH_STATUS_SUCCESS;
 }
-
-static switch_management_interface_t sofia_management_interface = {
-	/*.relative_oid */ "1",
-	/*.management_function */ sofia_manage
-};
-
-static switch_api_interface_t sofia_api_interface = {
-	/*.interface_name */ "sofia",
-	/*.desc */ "Sofia Controls",
-	/*.function */ sofia_function,
-	/*.syntax */ "<cmd> <args>",
-	/*.next */ NULL
-};
-
-static switch_loadable_module_interface_t sofia_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ &sofia_endpoint_interface,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL,
-	/*.api_interface */ &sofia_api_interface,
-	/*.file_interface */ NULL,
-	/*.speech_interface */ NULL,
-	/*.directory_interface */ NULL,
-	/*.chat_interface */ &sofia_chat_interface,
-	/*.say_interface */ NULL,
-	/*.asr_interface */ NULL,
-	/*.management_interface */ &sofia_management_interface
-};
-
 
 
 static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session,
@@ -1354,7 +1309,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 	*new_session = NULL;
 
-	if (!(nsession = switch_core_session_request(&sofia_endpoint_interface, pool))) {
+	if (!(nsession = switch_core_session_request(sofia_endpoint_interface, pool))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
 		goto done;
 	}
@@ -1503,6 +1458,9 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 {
+	switch_chat_interface_t *chat_interface;
+	switch_api_interface_t *api_interface;
+	switch_management_interface_t *management_interface;
 
 	silence_frame.data = silence_data;
 	silence_frame.datalen = sizeof(silence_data);
@@ -1510,10 +1468,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	silence_frame.flags = SFF_CNG;
 
 
-	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
-		return SWITCH_STATUS_TERM;
-	}
+	module_pool = pool;
 
 	memset(&mod_sofia_globals, 0, sizeof(mod_sofia_globals));
 	switch_mutex_init(&mod_sofia_globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
@@ -1536,43 +1491,54 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for profiles to start\n");
 	switch_yield(1500000);
 
-	if (switch_event_bind((char *) modname, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_bind(modname, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_TERM;
 	}
 
-	if (switch_event_bind((char *) modname, SWITCH_EVENT_PRESENCE_IN, SWITCH_EVENT_SUBCLASS_ANY, sofia_presence_event_handler, NULL)
+	if (switch_event_bind(modname, SWITCH_EVENT_PRESENCE_IN, SWITCH_EVENT_SUBCLASS_ANY, sofia_presence_event_handler, NULL)
 		!= SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_event_bind((char *) modname, SWITCH_EVENT_PRESENCE_OUT, SWITCH_EVENT_SUBCLASS_ANY, sofia_presence_event_handler, NULL)
+	if (switch_event_bind(modname, SWITCH_EVENT_PRESENCE_OUT, SWITCH_EVENT_SUBCLASS_ANY, sofia_presence_event_handler, NULL)
 		!= SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_event_bind((char *) modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY, sofia_presence_event_handler, NULL)
+	if (switch_event_bind(modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY, sofia_presence_event_handler, NULL)
 		!= SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_event_bind((char *) modname, SWITCH_EVENT_ROSTER, SWITCH_EVENT_SUBCLASS_ANY, sofia_presence_event_handler, NULL)
+	if (switch_event_bind(modname, SWITCH_EVENT_ROSTER, SWITCH_EVENT_SUBCLASS_ANY, sofia_presence_event_handler, NULL)
 		!= SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_event_bind((char *) modname, SWITCH_EVENT_MESSAGE_WAITING, SWITCH_EVENT_SUBCLASS_ANY, sofia_presence_mwi_event_handler, NULL)
+	if (switch_event_bind(modname, SWITCH_EVENT_MESSAGE_WAITING, SWITCH_EVENT_SUBCLASS_ANY, sofia_presence_mwi_event_handler, NULL)
 		!= SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &sofia_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	sofia_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+	sofia_endpoint_interface->interface_name = modname;
+	sofia_endpoint_interface->io_routines = &sofia_io_routines;
+	sofia_endpoint_interface->state_handler = &sofia_event_handlers;
+
+	management_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_MANAGEMENT_INTERFACE);
+	management_interface->relative_oid = "1";
+	management_interface->management_function = sofia_manage;
+
+	SWITCH_ADD_API(api_interface, "sofia", "Sofia Controls", sofia_function, "<cmd> <args>");
+	SWITCH_ADD_CHAT(chat_interface, SOFIA_CHAT_PROTO, sofia_presence_chat_send);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

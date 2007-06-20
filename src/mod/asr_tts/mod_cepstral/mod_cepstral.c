@@ -402,33 +402,9 @@ static void cepstral_float_param_tts(switch_speech_handle_t *sh, char *param, do
 
 }
 
-static switch_speech_interface_t cepstral_speech_interface = {
-	/*.interface_name */ "cepstral",
-	/*.speech_open */ cepstral_speech_open,
-	/*.speech_close */ cepstral_speech_close,
-	/*.speech_feed_tts */ cepstral_speech_feed_tts,
-	/*.speech_read_tts */ cepstral_speech_read_tts,
-	/*.speech_flush_tts */ cepstral_speech_flush_tts,
-	/*.speech_text_param_tts */ cepstral_text_param_tts,
-	/*.speech_numeric_param_tts */ cepstral_numeric_param_tts,
-	/*.speech_numeric_param_tts */ cepstral_float_param_tts
-};
-
-static switch_loadable_module_interface_t cepstral_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL,
-	/*.api_interface */ NULL,
-	/*.file_interface */ NULL,
-	/*.speech_interface */ &cepstral_speech_interface,
-	/*.directory_interface */ NULL
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_cepstral_load)
 {
+	switch_speech_interface_t *speech_interface;
 
 	/* Open the Swift TTS Engine */
 	if (SWIFT_FAILED(engine = swift_engine_open(NULL))) {
@@ -437,7 +413,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cepstral_load)
 	}
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &cepstral_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	speech_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_SPEECH_INTERFACE);
+	speech_interface->interface_name = "cepstral";
+	speech_interface->speech_open = cepstral_speech_open;
+	speech_interface->speech_close = cepstral_speech_close;
+	speech_interface->speech_feed_tts = cepstral_speech_feed_tts;
+	speech_interface->speech_read_tts = cepstral_speech_read_tts;
+	speech_interface->speech_flush_tts = cepstral_speech_flush_tts;
+	speech_interface->speech_text_param_tts = cepstral_text_param_tts;
+	speech_interface->speech_numeric_param_tts = cepstral_numeric_param_tts;
+	speech_interface->speech_float_param_tts = cepstral_float_param_tts;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

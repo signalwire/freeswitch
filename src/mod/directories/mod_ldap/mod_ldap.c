@@ -198,33 +198,19 @@ static switch_status_t mod_ldap_next_pair(switch_directory_handle_t *dh, char **
 }
 
 
-static switch_directory_interface_t ldap_directory_interface = {
-	/*.interface_name */ "ldap",
-	/*.directory_open */ mod_ldap_open,
-	/*.directory_close */ mod_ldap_close,
-	/*.directory_query */ mod_ldap_query,
-	/*.directory_next */ mod_ldap_next,
-	/*.directory_next_pair */ mod_ldap_next_pair
-};
-
-
-static switch_loadable_module_interface_t ldap_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL,
-	/*.api_interface */ NULL,
-	/*.file_interface */ NULL,
-	/*.speech_interface */ NULL,
-	/*.directory_interface */ &ldap_directory_interface
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_ldap_load)
 {
+	switch_directory_interface_t *dir_interface;
+
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &ldap_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	dir_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_DIRECTORY_INTERFACE);
+	dir_interface->interface_name = "ldap";
+	dir_interface->directory_open = mod_ldap_open;
+	dir_interface->directory_close = mod_ldap_close;
+	dir_interface->directory_query = mod_ldap_query;
+	dir_interface->directory_next = mod_ldap_next;
+	dir_interface->directory_next_pair = mod_ldap_next_pair;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

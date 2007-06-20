@@ -48,6 +48,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_dingaling_shutdown);
 SWITCH_MODULE_DEFINITION(mod_dingaling, mod_dingaling_load, mod_dingaling_shutdown, NULL);
 
 static switch_memory_pool_t *module_pool = NULL;
+static switch_endpoint_interface_t *channel_endpoint_interface;
 
 static char sub_sql[] =
 	"CREATE TABLE jabber_subscriptions (\n"
@@ -1590,65 +1591,6 @@ static switch_io_routines_t channel_io_routines = {
 	/*.receive_event */ channel_receive_event
 };
 
-static switch_endpoint_interface_t channel_endpoint_interface = {
-	/*.interface_name */ "dingaling",
-	/*.io_routines */ &channel_io_routines,
-	/*.event_handlers */ &channel_event_handlers,
-	/*.private */ NULL,
-	/*.next */ NULL
-};
-
-
-static switch_api_interface_t debug_api_interface = {
-	/*.interface_name */ "dl_debug",
-	/*.desc */ "DingaLing Debug",
-	/*.function */ dl_debug,
-	/*.syntax */ "dl_debug [true|false]",
-	/*.next */ NULL
-};
-
-static switch_api_interface_t pres_api_interface = {
-	/*.interface_name */ "dl_pres",
-	/*.desc */ "DingaLing Presence",
-	/*.function */ dl_pres,
-	/*.syntax */ "dl_pres <profile_name>",
-	/*.next */ &debug_api_interface
-};
-
-static switch_api_interface_t logout_api_interface = {
-	/*.interface_name */ "dl_logout",
-	/*.desc */ "DingaLing Logout",
-	/*.function */ dl_logout,
-	/*.syntax */ "dl_logout <profile_name>",
-	/*.next */ &pres_api_interface
-};
-
-static switch_api_interface_t login_api_interface = {
-	/*.interface_name */ "dl_login",
-	/*.desc */ "DingaLing Login",
-	/*.function */ dl_login,
-	/*.syntax */ "dl_login <profile_name>",
-	/*.next */ &logout_api_interface
-};
-
-static switch_chat_interface_t channel_chat_interface = {
-	/*.name */ MDL_CHAT_PROTO,
-	/*.chat_send */ chat_send,
-};
-
-static switch_loadable_module_interface_t channel_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ &channel_endpoint_interface,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL,
-	/*.api_interface */ &login_api_interface,
-	/*.file_interface */ NULL,
-	/*.speech_interface */ NULL,
-	/*.directory_interface */ NULL,
-	/*.chat_interface */ &channel_chat_interface
-};
 
 
 /* Make sure when you have 2 sessions in the same scope that you pass the appropriate one to the routines
@@ -1658,7 +1600,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool)
 {
-	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, pool)) != 0) {
+	if ((*new_session = switch_core_session_request(channel_endpoint_interface, pool)) != 0) {
 		struct private_object *tech_pvt;
 		switch_channel_t *channel;
 		switch_caller_profile_t *caller_profile = NULL;
@@ -1828,11 +1770,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load)
 {
+	switch_chat_interface_t *chat_interface;
+	switch_api_interface_t *api_interface;
 
-	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "OH OH no pool\n");
-		return SWITCH_STATUS_TERM;
-	}
+	module_pool = pool;
 
 	load_config();
 
@@ -1873,7 +1814,22 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load)
 	}
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &channel_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	channel_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+	channel_endpoint_interface->interface_name = modname;
+	channel_endpoint_interface->io_routines = &channel_io_routines;
+	channel_endpoint_interface->state_handler = &channel_event_handlers;
+
+#define PRES_SYNTAX "dl_pres <profile_name>"
+#define LOGOUT_SYNTAX "dl_logout <profile_name>"
+#define LOGIN_SYNTAX "dl_login <profile_name>"
+#define DEBUG_SYNTAX "dl_debug [true|false]"
+
+	SWITCH_ADD_API(api_interface, "dl_debug", "DingaLing Debug", dl_debug, DEBUG_SYNTAX);
+	SWITCH_ADD_API(api_interface, "dl_pres", "DingaLing Presence", dl_pres, PRES_SYNTAX);
+	SWITCH_ADD_API(api_interface, "dl_logout", "DingaLing Logout", dl_logout, LOGOUT_SYNTAX);
+	SWITCH_ADD_API(api_interface, "dl_login", "DingaLing Login", dl_login, LOGIN_SYNTAX);
+	SWITCH_ADD_CHAT(chat_interface, MDL_CHAT_PROTO, chat_send);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -2059,7 +2015,7 @@ SWITCH_STANDARD_API(dl_pres)
 	}
 
 	if (!cmd) {
-		stream->write_function(stream, "USAGE: %s\n", pres_api_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", PRES_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -2086,7 +2042,7 @@ SWITCH_STANDARD_API(dl_logout)
 	}
 
 	if (!cmd) {
-		stream->write_function(stream, "USAGE: %s\n", logout_api_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", LOGOUT_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -2113,7 +2069,7 @@ SWITCH_STANDARD_API(dl_login)
 	}
 
 	if (switch_strlen_zero(cmd)) {
-		stream->write_function(stream, "USAGE: %s\n", login_api_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", LOGIN_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -2122,7 +2078,7 @@ SWITCH_STANDARD_API(dl_login)
 	argc = switch_separate_string(myarg, ';', argv, (sizeof(argv) / sizeof(argv[0])));
 
 	if (switch_strlen_zero(cmd) || argc != 1) {
-		stream->write_function(stream, "USAGE: %s\n", login_api_interface.syntax);
+		stream->write_function(stream, "USAGE: %s\n", LOGIN_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -2603,7 +2559,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 			status = LDL_STATUS_FALSE;
 			goto done;
 		}
-		if ((session = switch_core_session_request(&channel_endpoint_interface, NULL)) != 0) {
+		if ((session = switch_core_session_request(channel_endpoint_interface, NULL)) != 0) {
 			switch_core_session_add_stream(session, NULL);
 
 			

@@ -870,7 +870,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *fun
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_event_bind(char *id, switch_event_types_t event, char *subclass_name, switch_event_callback_t callback,
+SWITCH_DECLARE(switch_status_t) switch_event_bind(const char *id, switch_event_types_t event, char *subclass_name, switch_event_callback_t callback,
 												  void *user_data)
 {
 	switch_event_node_t *event_node;

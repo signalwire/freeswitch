@@ -54,6 +54,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_woomera_runtime);
 SWITCH_MODULE_DEFINITION(mod_woomera, mod_woomera_load, mod_woomera_shutdown, mod_woomera_runtime);
 
 static switch_memory_pool_t *module_pool = NULL;
+static switch_endpoint_interface_t *woomera_endpoint_interface;
 
 #define STRLEN 15
 #define FRAME_LEN 480
@@ -459,24 +460,6 @@ static switch_io_routines_t woomera_io_routines = {
 	/*.waitfor_write */ woomera_waitfor_write
 };
 
-static switch_endpoint_interface_t woomera_endpoint_interface = {
-	/*.interface_name */ "woomera",
-	/*.io_routines */ &woomera_io_routines,
-	/*.event_handlers */ &woomera_event_handlers,
-	/*.private */ NULL,
-	/*.next */ NULL
-};
-
-static switch_loadable_module_interface_t woomera_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ &woomera_endpoint_interface,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL
-};
-
-
 /* Make sure when you have 2 sessions in the same scope that you pass the appropriate one to the routines
    that allocate memory or you will have 1 channel with memory allocated from another channel's pool!
 */
@@ -484,7 +467,7 @@ static switch_call_cause_t woomera_outgoing_channel(switch_core_session_t *sessi
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool)
 {
-	if ((*new_session = switch_core_session_request(&woomera_endpoint_interface, pool)) != 0) {
+	if ((*new_session = switch_core_session_request(woomera_endpoint_interface, pool)) != 0) {
 		struct private_object *tech_pvt;
 		switch_channel_t *channel;
 
@@ -1226,7 +1209,7 @@ static void *woomera_thread_run(void *obj)
 				}
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New Inbound Channel %s!\n", name);
-				if ((session = switch_core_session_request(&woomera_endpoint_interface, NULL)) != 0) {
+				if ((session = switch_core_session_request(woomera_endpoint_interface, NULL)) != 0) {
 					struct private_object *tech_pvt;
 					switch_channel_t *channel;
 
@@ -1294,9 +1277,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_woomera_shutdown)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_woomera_load)
 {
-
 	struct woomera_profile *profile = &default_profile;
 	char *cf = "woomera.conf";
 	switch_xml_t cfg, xml, settings, param, xmlp;
@@ -1360,27 +1343,19 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_woomera_load)
 
 	switch_xml_free(xml);
 
-
-	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
-		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "OH OH no pool\n");
-
-		if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
-			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "OH OH no pool\n");
-			return SWITCH_STATUS_MEMERR;
-		}
-		return SWITCH_STATUS_MEMERR;
-	}
-
-
+	module_pool = pool;
 
 	if (switch_mutex_init(&default_profile.iolock, SWITCH_MUTEX_NESTED, module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no lock\n");
 		return SWITCH_STATUS_TERM;
 	}
 
-
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &woomera_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	woomera_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+	woomera_endpoint_interface->interface_name = modname;
+	woomera_endpoint_interface->io_routines = &woomera_io_routines;
+	woomera_endpoint_interface->state_handler = &woomera_event_handlers;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
