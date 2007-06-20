@@ -138,34 +138,10 @@ static switch_status_t native_file_file_get_string(switch_file_handle_t *handle,
 
 static char *supported_formats[SWITCH_MAX_CODECS] = { 0 };
 
-static switch_file_interface_t native_file_file_interface = {
-	/*.interface_name */ modname,
-	/*.file_open */ native_file_file_open,
-	/*.file_close */ native_file_file_close,
-	/*.file_read */ native_file_file_read,
-	/*.file_write */ native_file_file_write,
-	/*.file_seek */ native_file_file_seek,
-	/*.file_set_string */ native_file_file_set_string,
-	/*.file_get_string */ native_file_file_get_string,
-	/*.extens */ NULL,
-	/*.next */ NULL,
-};
-
-static switch_loadable_module_interface_t native_file_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL,
-	/*.api_interface */ NULL,
-	/*.file_interface */ &native_file_file_interface
-};
-
-
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_native_file_load)
 {
+	switch_file_interface_t *file_interface;
 
 	const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];
 	uint32_t num_codecs = switch_loadable_module_get_codecs(NULL, codecs, sizeof(codecs) / sizeof(codecs[0]));
@@ -175,9 +151,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_native_file_load)
 		supported_formats[x] = codecs[x]->iananame;
 	}
 
-	/* connect my internal structure to the blank pointer passed to me */
-	native_file_file_interface.extens = supported_formats;
-	*module_interface = &native_file_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
+	file_interface->interface_name = modname;
+	file_interface->extens = supported_formats;
+	file_interface->file_open = native_file_file_open;
+	file_interface->file_close = native_file_file_close;
+	file_interface->file_read = native_file_file_read;
+	file_interface->file_write = native_file_file_write;
+	file_interface->file_seek = native_file_file_seek;
+	file_interface->file_set_string = native_file_file_set_string;
+	file_interface->file_get_string = native_file_file_get_string;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

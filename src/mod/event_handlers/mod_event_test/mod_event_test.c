@@ -71,19 +71,7 @@ static void event_handler(switch_event_t *event)
 	}
 }
 
-
-
-static switch_loadable_module_interface_t event_test_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL
-};
-
 #define MY_EVENT_COOL "test::cool"
-
 
 #ifdef TORTURE_ME
 #define TTHREADS 500
@@ -128,14 +116,14 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_test_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &event_test_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	if (switch_event_reserve_subclass(MY_EVENT_COOL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!");
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_event_bind((char *) modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_bind(modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}

@@ -68,56 +68,6 @@ static const switch_state_handler_table_t state_handlers = {
 	/*.on_transmit */ NULL
 };
 
-static switch_api_interface_t modcdr_show_available_api = {
-	/*.interface_name */ "modcdr_show_available",
-	/*.desc */ "Displays the currently compiled-in mod_cdr backend loggers.",
-	/*.function */ modcdr_show_available,
-	/*.syntax */ "modcdr_queue_show_available",
-	/*.next */ 0
-};
-
-static switch_api_interface_t modcdr_show_active_api = {
-	/*.interface_name */ "modcdr_show_active",
-	/*.desc */ "Displays the currently active mod_cdr backend loggers.",
-	/*.function */ modcdr_show_active,
-	/*.syntax */ "modcdr_queue_show_active",
-	/*.next */ &modcdr_show_available_api
-};
-
-static switch_api_interface_t modcdr_queue_resume_api = {
-	/*.interface_name */ "modcdr_queue_resume",
-	/*.desc */ "Manually resumes the popping of objects from the queue.",
-	/*.function */ modcdr_queue_resume,
-	/*.syntax */ "modcdr_queue_resume",
-	/*.next */ &modcdr_show_active_api
-};
-
-static switch_api_interface_t modcdr_queue_pause_api = {
-	/*.interface_name */ "modcdr_queue_pause",
-	/*.desc */ "Manually pauses the popping of objects from the queue. (DANGER: Can suck your memory away rather quickly.)",
-	/*.function */ modcdr_queue_pause,
-	/*.syntax */ "modcdr_queue_pause",
-	/*.next */ &modcdr_queue_resume_api
-};
-
-static switch_api_interface_t modcdr_reload_interface_api = {
-	/*.interface_name */ "modcdr_reload",
-	/*.desc */ "Reload mod_cdr's configuration",
-	/*.function */ modcdr_reload,
-	/*.syntax */ "modcdr_reload",
-	/*.next */ &modcdr_queue_pause_api
-};
-
-static switch_loadable_module_interface_t cdr_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL,
-	/* api_interface */ &modcdr_reload_interface_api
-};
-
 static switch_status_t my_on_hangup(switch_core_session_t *session)
 {
 	switch_thread_rwlock_rdlock(cdr_rwlock);
@@ -126,18 +76,25 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define AVAIL_DESCR "Displays the currently compiled-in mod_cdr backend loggers."
+#define ACTIVE_DESCR "Displays the currently active mod_cdr backend loggers."
+#define RESUME_DESCR "Manually resumes the popping of objects from the queue."
+#define PAUSE_DESCR "Manually pauses the popping of objects from the queue. (DANGER: Can suck your memory away rather quickly.)"
 SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_load)
 {
+	switch_api_interface_t *api_interface;
+
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &cdr_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	SWITCH_ADD_API(api_interface, "modcdr_reload", "Reload mod_cdr's configuration", modcdr_reload, "");
+	SWITCH_ADD_API(api_interface, "modcdr_queue_pause", PAUSE_DESCR, modcdr_queue_pause, "");
+	SWITCH_ADD_API(api_interface, "modcdr_queue_resume", RESUME_DESCR, modcdr_queue_resume, "");
+	SWITCH_ADD_API(api_interface, "modcdr_show_active", ACTIVE_DESCR, modcdr_show_active, "");
+	SWITCH_ADD_API(api_interface, "modcdr_show_available", AVAIL_DESCR, modcdr_show_available, "");
 	
 	switch_core_add_state_handler(&state_handlers);
 	
-	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) 
-	{
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH - Can't swim, no pool\n");
-		return SWITCH_STATUS_TERM;
-	}
+	module_pool = pool;
 
 	switch_thread_rwlock_create(&cdr_rwlock,module_pool);
 	newcdrcontainer = new CDRContainer(module_pool);  // Instantiates the new object, automatically loads config

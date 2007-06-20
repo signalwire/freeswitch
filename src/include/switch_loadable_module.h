@@ -267,7 +267,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void);
 
 #define SWITCH_ADD_API(api_int, int_name, descript, funcptr, syntax_string) \
 	for (;;) { \
-	api_int = switch_loadable_module_create_interface(*module_interface, SWITCH_API_INTERFACE); \
+	api_int = (switch_api_interface_t *)switch_loadable_module_create_interface(*module_interface, SWITCH_API_INTERFACE); \
 	api_int->interface_name = int_name; \
 	api_int->desc = descript; \
 	api_int->function = funcptr; \
@@ -277,7 +277,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void);
 
 #define SWITCH_ADD_CHAT(chat_int, int_name, funcptr) \
 	for (;;) { \
-	chat_int = switch_loadable_module_create_interface(*module_interface, SWITCH_CHAT_INTERFACE); \
+	chat_int = (switch_chat_interface_t *)switch_loadable_module_create_interface(*module_interface, SWITCH_CHAT_INTERFACE); \
 	chat_int->chat_send = funcptr; \
 	chat_int->interface_name = int_name; \
 	break; \
@@ -285,7 +285,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void);
 
 #define SWITCH_ADD_APP(app_int, int_name, short_descript, long_descript, funcptr, syntax_string, app_flags) \
 	for (;;) { \
-	app_int = switch_loadable_module_create_interface(*module_interface, SWITCH_APPLICATION_INTERFACE); \
+	app_int = (switch_application_interface_t *)switch_loadable_module_create_interface(*module_interface, SWITCH_APPLICATION_INTERFACE); \
 	app_int->interface_name = int_name; \
 	app_int->application_function = funcptr; \
 	app_int->short_desc = short_descript; \
@@ -297,7 +297,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void);
 
 #define SWITCH_ADD_DIALPLAN(dp_int, int_name, funcptr) \
 	for (;;) { \
-	dp_int = switch_loadable_module_create_interface(*module_interface, SWITCH_DIALPLAN_INTERFACE); \
+	dp_int = (switch_dialplan_interface_t *)switch_loadable_module_create_interface(*module_interface, SWITCH_DIALPLAN_INTERFACE); \
 	dp_int->hunt_function = funcptr; \
 	dp_int->interface_name = int_name; \
 	break; \

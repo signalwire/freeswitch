@@ -237,16 +237,6 @@ static switch_status_t load_config(void)
 
 }
 
-
-static switch_loadable_module_interface_t zeroconf_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL
-};
-
 #define MY_EVENT_PUBLISH "zeroconf::broadcast"
 #define MY_EVENT_UNPUBLISH "zeroconf::unbroadcast"
 
@@ -266,10 +256,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_zeroconf_load)
 
 	memset(&globals, 0, sizeof(globals));
 
-	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
-		return SWITCH_STATUS_TERM;
-	}
+	module_pool = pool;
 
 	switch_mutex_init(&globals.zc_lock, SWITCH_MUTEX_NESTED, module_pool);
 
@@ -293,7 +280,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_zeroconf_load)
 	}
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &zeroconf_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

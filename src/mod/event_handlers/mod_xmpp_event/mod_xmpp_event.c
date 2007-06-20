@@ -391,19 +391,10 @@ static void xmpp_connect(char *jabber_id, char *pass)
 
 }
 
-static switch_loadable_module_interface_t xmpp_event_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_xmpp_event_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &xmpp_event_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	if (load_config() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;

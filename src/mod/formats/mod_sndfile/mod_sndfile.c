@@ -253,30 +253,6 @@ static switch_status_t sndfile_file_get_string(switch_file_handle_t *handle, swi
 
 static char **supported_formats;
 
-static switch_file_interface_t sndfile_file_interface = {
-	/*.interface_name */ modname,
-	/*.file_open */ sndfile_file_open,
-	/*.file_close */ sndfile_file_close,
-	/*.file_read */ sndfile_file_read,
-	/*.file_write */ sndfile_file_write,
-	/*.file_seek */ sndfile_file_seek,
-	/*.file_set_string */ sndfile_file_set_string,
-	/*.file_get_string */ sndfile_file_get_string,
-	/*.extens */ NULL,
-	/*.next */ NULL,
-};
-
-static switch_loadable_module_interface_t sndfile_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL,
-	/*.api_interface */ NULL,
-	/*.file_interface */ &sndfile_file_interface
-};
-
 static switch_status_t setup_formats(void)
 {
 	SF_FORMAT_INFO info;
@@ -364,6 +340,7 @@ static switch_status_t setup_formats(void)
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_sndfile_load)
 {
+	switch_file_interface_t *file_interface;
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
@@ -377,8 +354,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sndfile_load)
 	}
 
 	/* connect my internal structure to the blank pointer passed to me */
-	sndfile_file_interface.extens = supported_formats;
-	*module_interface = &sndfile_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
+	file_interface->interface_name = modname;
+	file_interface->extens = supported_formats;
+	file_interface->file_open = sndfile_file_open;
+	file_interface->file_close = sndfile_file_close;
+	file_interface->file_read = sndfile_file_read;
+	file_interface->file_write = sndfile_file_write;
+	file_interface->file_seek = sndfile_file_seek;
+	file_interface->file_set_string = sndfile_file_set_string;
+	file_interface->file_get_string = sndfile_file_get_string;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

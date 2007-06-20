@@ -176,25 +176,12 @@ static void event_handler(switch_event_t *event)
 }
 
 
-static switch_loadable_module_interface_t event_test_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL
-};
-
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 {
 
 	memset(&globals, 0, sizeof(globals));
 
-	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
-		return SWITCH_STATUS_TERM;
-	}
+	module_pool = pool;
 
 	switch_core_hash_init(&globals.event_hash, module_pool);
 
@@ -231,10 +218,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 		return SWITCH_STATUS_TERM;
 	}
 
-
-
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &event_test_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 
 	if (switch_event_bind((char *) modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {

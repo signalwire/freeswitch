@@ -161,7 +161,7 @@ static void event_handler(switch_event_t *event)
 	switch_mutex_unlock(listen_list.mutex);
 }
 
-static void socket_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(socket_function)
 {
 	char *host, *port_name;
 	switch_socket_t *new_sock;
@@ -251,28 +251,6 @@ static void socket_function(switch_core_session_t *session, char *data)
 }
 
 
-static switch_application_interface_t socket_application_interface = {
-	/*.interface_name */ "socket",
-	/*.application_function */ socket_function,
-	/* long_desc */ "Connect to a socket",
-	/* short_desc */ "Connect to a socket",
-	/* syntax */ "<ip>[:<port>]",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ NULL
-};
-
-
-
-static switch_loadable_module_interface_t event_socket_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ &socket_application_interface
-};
-
-
 static void close_socket(switch_socket_t ** sock)
 {
 	switch_mutex_lock(listen_list.sock_mutex);
@@ -303,11 +281,13 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load)
 {
+	switch_application_interface_t *app_interface;
+
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &event_socket_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	SWITCH_ADD_APP(app_interface, "socket", "Connect to a socket", "Connect to a socket", socket_function, "<ip>[:<port>]", SAF_SUPPORT_NOMEDIA);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

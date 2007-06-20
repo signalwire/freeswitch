@@ -56,19 +56,6 @@ static const char *COLORS[] = { SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRE
 };
 #endif
 
-static switch_loadable_module_interface_t console_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL,
-	/*.api_interface */ NULL,
-	/*.file_interface */ NULL,
-	/*.speech_interface */ NULL,
-	/*.directory_interface */ NULL
-};
-
 static switch_memory_pool_t *module_pool = NULL;
 static switch_hash_t *log_hash = NULL;
 static switch_hash_t *name_hash = NULL;
@@ -192,14 +179,10 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_console_load)
 {
-	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
-		return SWITCH_STATUS_TERM;
-	}
-
+	module_pool = pool;
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &console_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	/* setup my logger function */
 	switch_log_bind_logger(switch_console_logger, SWITCH_LOG_DEBUG);
