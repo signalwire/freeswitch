@@ -1353,7 +1353,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_woomera_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	woomera_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
-	woomera_endpoint_interface->interface_name = modname;
+	woomera_endpoint_interface->interface_name = "woomera";
 	woomera_endpoint_interface->io_routines = &woomera_io_routines;
 	woomera_endpoint_interface->state_handler = &woomera_event_handlers;
 
