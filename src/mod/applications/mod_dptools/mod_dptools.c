@@ -667,6 +667,12 @@ static void fax_detect_session_function(switch_core_session_t *session, char *da
 	switch_ivr_tone_detect_session(session, "fax", "1100.0", "r", 0, NULL, NULL);
 }
 
+static void system_session_function(switch_core_session_t *session, char *data)
+{
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Executing command: %s\n",data);
+    system(data);
+}
+
 static void tone_detect_session_function(switch_core_session_t *session, char *data)
 {
 	char *argv[6] = { 0 };
@@ -1072,6 +1078,15 @@ static switch_api_interface_t presence_api_interface = {
 	/*.next */ &dptools_api_interface
 };
 
+static switch_application_interface_t system_application_interface = {
+    /*.interface_name */ "system",
+    /*.application_function */ system_session_function,
+    /* long_desc */ "Execute a system command",
+    /* short_desc */ "Execute a system command",
+    /* syntax */ "<command>",
+    /* flags */ SAF_NONE,
+    /*.next */ NULL
+};
 
 static switch_application_interface_t bridge_application_interface = {
 	/*.interface_name */ "bridge",
@@ -1079,7 +1094,8 @@ static switch_application_interface_t bridge_application_interface = {
 	/* long_desc */ "Bridge the audio between two sessions",
 	/* short_desc */ "Bridge Audio",
 	/* syntax */ "<channel_url>",
-	/* flags */ SAF_SUPPORT_NOMEDIA
+	/* flags */ SAF_SUPPORT_NOMEDIA,
+	/* next */ &system_application_interface
 };
 
 static switch_application_interface_t speak_application_interface = {
