@@ -1650,12 +1650,6 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_STANDARD_API(padep)
-{
-	stream->write_function(stream, "This command no longer exists (try 'pa help')\n");
-	return SWITCH_STATUS_SUCCESS;
-}
-
 SWITCH_STANDARD_API(pa_cmd)
 {
 	char *argv[1024] = { 0 };
