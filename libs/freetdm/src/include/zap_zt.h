@@ -131,6 +131,16 @@ struct zt_chanconfig {
 	char netdev_name[16];				/* name for the hdlc network device														*/
 };
 
+struct zt_bufferinfo {
+/* used in ZT_SET_BUFINFO and ZT_GET_BUFINFO */
+	int txbufpolicy;					/* Policy for handling receive buffers			*/
+	int rxbufpolicy;					/* Policy for handling receive buffers			*/
+	int numbufs;						/* How many buffers to use						*/
+	int bufsize;						/* How big each buffer is						*/
+	int readbufs;						/* How many read buffers are full (read-only)	*/
+	int writebufs;						/* How many write buffers are full (read-only)	*/
+};
+
 /* Enumerations */
 
 /* Values in zt_params structure for member g711_type */
@@ -238,8 +248,10 @@ ZT_SIG_EM					= (1 << 6)					/* E&M */
 
 #define		ZT_GETGAINS			_IOWR (ZT_CODE, 16, struct zt_gains)	/* Get Channel audio gains */
 #define		ZT_SETGAINS			_IOWR (ZT_CODE, 17, struct zt_gains)	/* Set Channel audio gains */
-#define		ZT_SPANCONFIG		_IOW (ZT_CODE, 18, struct zt_lineconfig) /*Set Line (T1) Configurations and start system  */
-#define		ZT_CHANCONFIG		_IOW (ZT_CODE, 19, struct zt_chanconfig) /* Set Channel Configuration  */
+#define		ZT_SPANCONFIG		_IOW (ZT_CODE, 18, struct zt_lineconfig)/* Set Line (T1) Configurations and start system  */
+#define		ZT_CHANCONFIG		_IOW (ZT_CODE, 19, struct zt_chanconfig)/* Set Channel Configuration  */
+#define		ZT_SET_BUFINFO		_IOW (ZT_CODE, 27, struct zt_bufferinfo)/* Set buffer policy */
+#define		ZT_GET_BUFINFO		_IOR (ZT_CODE, 28, struct zt_bufferinfo)/* Get current buffer info */
 #define		ZT_AUDIOMODE		_IOW  (ZT_CODE, 32, int)				/* Set a clear channel into audio mode */
 #define		ZT_ECHOCANCEL		_IOW  (ZT_CODE, 33, int)				/* Control Echo Canceller */
 #define		ZT_HDLCRAWMODE		_IOW  (ZT_CODE, 36, int)				/* Set a clear channel into HDLC w/out FCS checking/calculation mode */
