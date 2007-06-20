@@ -37,9 +37,7 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load);
 SWITCH_MODULE_DEFINITION(mod_dptools, mod_dptools_load, NULL, NULL);
 
-static switch_application_interface_t detect_speech_application_interface;
-static switch_application_interface_t exe_application_interface;
-
+#define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR pause OR resume"
 static void detect_speech_function(switch_core_session_t *session, char *data)
 {
 	char *argv[4];
@@ -62,11 +60,12 @@ static void detect_speech_function(switch_core_session_t *session, char *data)
 			switch_ivr_detect_speech(session, argv[0], argv[1], argv[2], argv[3], NULL);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", detect_speech_application_interface.syntax);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", DETECT_SPEECH_SYNTAX);
 	}
 
 }
 
+#define EXE_SYNTAX "<extension> <dialplan> <context>"
 static void exe_function(switch_core_session_t *session, char *data)
 {
 	char *argv[4];
@@ -83,7 +82,7 @@ static void exe_function(switch_core_session_t *session, char *data)
 		context = argv[2];
 		switch_core_session_execute_exten(session, extension, dialplan, context);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", exe_application_interface.syntax);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", EXE_SYNTAX);
 	}
 }
 
@@ -651,7 +650,7 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 }
 
 
-static void dtm_session_function(switch_core_session_t *session, char *data)
+static void dtmf_session_function(switch_core_session_t *session, char *data)
 {
 	switch_ivr_inband_dtmf_session(session);
 }
@@ -1046,470 +1045,73 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 	}
 }
 
-static switch_api_interface_t strepoch_api_interface = {
-	/*.interface_name */ "strepoch",
-	/*.desc */ "Convert a date string into epoch time",
-	/*.function */ strepoch_api_function,
-	/*.syntax */ "<string>",
-	/*.next */ NULL
-};
 
-static switch_api_interface_t chat_api_interface = {
-	/*.interface_name */ "chat",
-	/*.desc */ "chat",
-	/*.function */ chat_api_function,
-	/*.syntax */ "<proto>|<from>|<to>|<message>",
-	/*.next */ &strepoch_api_interface
-};
-
-static switch_api_interface_t dptools_api_interface = {
-	/*.interface_name */ "strftime",
-	/*.desc */ "strftime",
-	/*.function */ strftime_api_function,
-	/*.syntax */ "<format_string>",
-	/*.next */ &chat_api_interface
-};
-
-static switch_api_interface_t presence_api_interface = {
-	/*.interface_name */ "presence",
-	/*.desc */ "presence",
-	/*.function */ presence_api_function,
-	/*.syntax */ "<user> <rpid> <message>",
-	/*.next */ &dptools_api_interface
-};
-
-static switch_application_interface_t system_application_interface = {
-    /*.interface_name */ "system",
-    /*.application_function */ system_session_function,
-    /* long_desc */ "Execute a system command",
-    /* short_desc */ "Execute a system command",
-    /* syntax */ "<command>",
-    /* flags */ SAF_NONE,
-    /*.next */ NULL
-};
-
-static switch_application_interface_t bridge_application_interface = {
-	/*.interface_name */ "bridge",
-	/*.application_function */ audio_bridge_function,
-	/* long_desc */ "Bridge the audio between two sessions",
-	/* short_desc */ "Bridge Audio",
-	/* syntax */ "<channel_url>",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/* next */ &system_application_interface
-};
-
-static switch_application_interface_t speak_application_interface = {
-	/*.interface_name */ "speak",
-	/*.application_function */ speak_function,
-	/* long_desc */ "Speak text to a channel via the tts interface",
-	/* short_desc */ "Speak text",
-	/* syntax */ "<engine>|<voice>|<text>",
-	/* flags */ SAF_NONE,
-	&bridge_application_interface
-};
-
-static switch_application_interface_t displace_application_interface = {
-	/*.interface_name */ "displace_session",
-	/*.application_function */ displace_session_function,
-	/* long_desc */ "Displace audio from a file to the channels input",
-	/* short_desc */ "Displace File",
-	/* syntax */ "<path> [+time_limit_ms] [mux]",
-	/* flags */ SAF_NONE,
-	&speak_application_interface
-};
-
-static switch_application_interface_t stop_displace_application_interface = {
-	/*.interface_name */ "stop_displace_session",
-	/*.application_function */ stop_displace_session_function,
-	/* long_desc */ "Stop Displacing to a file",
-	/* short_desc */ "Stop Displace File",
-	/* syntax */ "<path>",
-	/* flags */ SAF_NONE,
-	&displace_application_interface
-};
-
-static switch_application_interface_t record_application_interface = {
-	/*.interface_name */ "record",
-	/*.application_function */ record_function,
-	/* long_desc */ "Record a file from the channels input",
-	/* short_desc */ "Record File",
-	/* syntax */ "<path> [+time_limit_ms]",
-	/* flags */ SAF_NONE,
-	&stop_displace_application_interface
-};
-
-
-static switch_application_interface_t record_session_application_interface = {
-	/*.interface_name */ "record_session",
-	/*.application_function */ record_session_function,
-	/* long_desc */ "Starts a background recording of the entire session",
-	/* short_desc */ "Record Session",
-	/* syntax */ "<path>",
-	/* flags */ SAF_NONE,
-	&record_application_interface
-};
-
-
-static switch_application_interface_t stop_record_session_application_interface = {
-	/*.interface_name */ "stop_record_session",
-	/*.application_function */ stop_record_session_function,
-	/* long_desc */ "Stops a background recording of the entire session",
-	/* short_desc */ "Stop Record Session",
-	/* syntax */ "<path>",
-	/* flags */ SAF_NONE,
-	&record_session_application_interface
-};
-
-static switch_application_interface_t playback_application_interface = {
-	/*.interface_name */ "playback",
-	/*.application_function */ playback_function,
-	/* long_desc */ "Playback a file to the channel",
-	/* short_desc */ "Playback File",
-	/* syntax */ "<path>",
-	/* flags */ SAF_NONE,
-	/*.next */ &stop_record_session_application_interface
-};
-
-static switch_application_interface_t gentones_application_interface = {
-	/*.interface_name */ "gentones",
-	/*.application_function */ gentones_function,
-	/* long_desc */ "Generate tones to the channel",
-	/* short_desc */ "Generate Tones",
-	/* syntax */ "<tgml_script>[|<loops>]",
-	/* flags */ SAF_NONE,
-	/*.next */ &playback_application_interface
-};
-
-static switch_application_interface_t park_application_interface = {
-	/*.interface_name */ "park",
-	/*.application_function */ park_function,
-	/* long_desc */ NULL,
-	/* short_desc */ NULL,
-	/* syntax */ NULL,
-	/* flags */ SAF_NONE,
-	/*.next */ &gentones_application_interface
-};
-
-static switch_application_interface_t echo_application_interface = {
-	/*.interface_name */ "echo",
-	/*.application_function */ echo_function,
-	/* long_desc */ "Perform an echo test against the calling channel",
-	/* short_desc */ "Echo",
-	/* syntax */ "",
-	/* flags */ SAF_NONE,
-	/*.next */ &park_application_interface
-};
-
-
-static switch_application_interface_t tone_detect_application_interface = {
-	/*.interface_name */ "tone_detect",
-	/*.application_function */ tone_detect_session_function,
-	/* long_desc */ "Detect tones",
-	/* short_desc */ "Detect tones",
-	/* syntax */ "",
-	/* flags */ SAF_NONE,
-	/*.next */ &echo_application_interface
-};
-
-static switch_application_interface_t fax_detect_application_interface = {
-	/*.interface_name */ "fax_detect",
-	/*.application_function */ fax_detect_session_function,
-	/* long_desc */ "Detect fax send tone",
-	/* short_desc */ "Detect faxes",
-	/* syntax */ "",
-	/* flags */ SAF_NONE,
-	/*.next */ &tone_detect_application_interface
-};
-
-static switch_application_interface_t stop_tone_detect_application_interface = {
-	/*.interface_name */ "stop_tone_detect",
-	/*.application_function */ stop_fax_detect_session_function,
-	/* long_desc */ "Stop detecting tones",
-	/* short_desc */ "stop detecting tones",
-	/* syntax */ "",
-	/* flags */ SAF_NONE,
-	/* next */ &fax_detect_application_interface
-};
-
-static switch_application_interface_t dtmf_application_interface = {
-	/*.interface_name */ "start_dtmf",
-	/*.application_function */ dtm_session_function,
-	/* long_desc */ "Detect inband dtmf on the session",
-	/* short_desc */ "Detect dtmf",
-	/* syntax */ "",
-	/* flags */ SAF_NONE,
-	/* next */ &stop_tone_detect_application_interface
-};
-
-static switch_application_interface_t stop_dtmf_application_interface = {
-	/*.interface_name */ "stop_dtmf",
-	/*.application_function */ stop_dtmf_session_function,
-	/* long_desc */ "Stop detecting inband dtmf.",
-	/* short_desc */ "stop inband dtmf.",
-	/* syntax */ "",
-	/* flags */ SAF_NONE,
-	&dtmf_application_interface
-};
-
-static switch_application_interface_t exe_application_interface = {
-	/*.interface_name */ "execute_extension",
-	/*.application_function */ exe_function,
-	/*.long_desc */ "Execute an extension",
-	/*.short_desc */ "Execute an extension",
-	/*.syntax */ "<extension> <dialplan> <context>",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ &stop_dtmf_application_interface
-};
-
-static switch_application_interface_t sched_transfer_application_interface = {
-	/*.interface_name */ "sched_transfer",
-	/*.application_function */ sched_transfer_function,
-	/*.long_desc */ "Schedule a transfer in the future",
-	/*.short_desc */ "Schedule a transfer in the future",
-	/*.syntax */ "[+]<time> <extension> <dialplan> <context>",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ &exe_application_interface
-};
-
-static switch_application_interface_t sched_broadcast_application_interface = {
-	/*.interface_name */ "sched_broadcast",
-	/*.application_function */ sched_broadcast_function,
-	/*.long_desc */ "Schedule a broadcast in the future",
-	/*.short_desc */ "Schedule a broadcast in the future",
-	/*.syntax */ "[+]<time> <path> [aleg|bleg|both]",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ &sched_transfer_application_interface
-};
-
-static switch_application_interface_t sched_hangup_application_interface = {
-	/*.interface_name */ "sched_hangup",
-	/*.application_function */ sched_hangup_function,
-	/*.long_desc */ "Schedule a hangup in the future",
-	/*.short_desc */ "Schedule a hangup in the future",
-	/*.syntax */ "[+]<time> [<cause>]",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ &sched_broadcast_application_interface
-};
-
-
-static switch_application_interface_t queuedtmf_application_interface = {
-	/*.interface_name */ "queue_dtmf",
-	/*.application_function */ queue_dtmf_function,
-	/* long_desc */ "Queue dtmf to be sent from a session",
-	/* short_desc */ "Queue dtmf to be sent",
-	/* syntax */ "<dtmf_data>",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ &sched_hangup_application_interface
-};
-
-static switch_application_interface_t reject_application_interface = {
-	/*.interface_name */ "reject",
-	/*.application_function */ reject_function,
-	/* long_desc */ "Send a reject message to a session.",
-	/* short_desc */ "Send session reject",
-	/* syntax */ "<reject_data>",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ &queuedtmf_application_interface
-};
-
-static switch_application_interface_t redirect_application_interface = {
-	/*.interface_name */ "redirect",
-	/*.application_function */ redirect_function,
-	/* long_desc */ "Send a redirect message to a session.",
-	/* short_desc */ "Send session redirect",
-	/* syntax */ "<redirect_data>",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ &reject_application_interface
-};
-
-static switch_application_interface_t ivr_application_interface = {
-	/*.interface_name */ "ivr",
-	/*.application_function */ ivr_application_function,
-	/* long_desc */ "Run an ivr menu.",
-	/* short_desc */ "Run an ivr menu",
-	/* syntax */ "<menu_name>",
-	/* flags */ SAF_NONE,
-	/*.next */ &redirect_application_interface
-};
-
-static switch_application_interface_t detect_speech_application_interface = {
-	/*.interface_name */ "detect_speech",
-	/*.application_function */ detect_speech_function,
-	/* long_desc */ "Detect speech on a channel.",
-	/* short_desc */ "Detect speech",
-	/* syntax */ "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR pause OR resume",
-	/* flags */ SAF_NONE,
-	/*.next */ &ivr_application_interface
-};
-
-static switch_application_interface_t ring_ready_application_interface = {
-	/*.interface_name */ "ring_ready",
-	/*.application_function */ ring_ready_function,
-	/* long_desc */ "Indicate Ring_Ready on a channel.",
-	/* short_desc */ "Indicate Ring_Ready",
-	/* syntax */ "",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ &detect_speech_application_interface
-};
-
-static switch_application_interface_t unset_application_interface = {
-	/*.interface_name */ "unset",
-	/*.application_function */ unset_function,
-	/* long_desc */ "Unset a channel varaible for the channel calling the application.",
-	/* short_desc */ "Unset a channel varaible",
-	/* syntax */ "<varname>",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ &ring_ready_application_interface
-};
-
-static switch_application_interface_t set_application_interface = {
-	/*.interface_name */ "set",
-	/*.application_function */ set_function,
-	/* long_desc */ "Set a channel varaible for the channel calling the application.",
-	/* short_desc */ "Set a channel varaible",
-	/* syntax */ "<varname>=<value>",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ &unset_application_interface
-};
-
-static switch_application_interface_t export_application_interface = {
-	/*.interface_name */ "export",
-	/*.application_function */ export_function,
-	/* long_desc */ "Set and export a channel varaible for the channel calling the application.",
-	/* short_desc */ "Export a channel varaible across a bridge",
-	/* syntax */ "<varname>=<value>",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ &set_application_interface
-};
-
-static switch_application_interface_t info_application_interface = {
-	/*.interface_name */ "info",
-	/*.application_function */ info_function,
-	/* long_desc */ "Display Call Info",
-	/* short_desc */ "Display Call Info",
-	/* syntax */ "",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ &export_application_interface
-};
-
-static switch_application_interface_t log_application_interface = {
-	/*.interface_name */ "log",
-	/*.application_function */ log_function,
-	/* long_desc */ "Logs a channel varaible for the channel calling the application.",
-	/* short_desc */ "Logs a channel varaible",
-	/* syntax */ "<varname>",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ &info_application_interface
-};
-
-
-static switch_application_interface_t hangup_application_interface = {
-	/*.interface_name */ "hangup",
-	/*.application_function */ hangup_function,
-	/* long_desc */ "Hangup the call for a channel.",
-	/* short_desc */ "Hangup the call",
-	/* syntax */ "[<cause>]",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ &log_application_interface
-};
-
-static switch_application_interface_t answer_application_interface = {
-	/*.interface_name */ "answer",
-	/*.application_function */ answer_function,
-	/* long_desc */ "Answer the call for a channel.",
-	/* short_desc */ "Answer the call",
-	/* syntax */ "",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ &hangup_application_interface
-};
-
-static switch_application_interface_t pre_answer_application_interface = {
-	/*.interface_name */ "pre_answer",
-	/*.application_function */ pre_answer_function,
-	/* long_desc */ "Pre-Answer the call for a channel.",
-	/* short_desc */ "Pre-Answer the call",
-	/* syntax */ "",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ &answer_application_interface
-};
-
-static switch_application_interface_t eval_application_interface = {
-	/*.interface_name */ "eval",
-	/*.application_function */ eval_function,
-	/* long_desc */ "Do Nothing",
-	/* short_desc */ "Do Nothing",
-	/* syntax */ "",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ &pre_answer_application_interface
-};
-
-static switch_application_interface_t phrase_application_interface = {
-	/*.interface_name */ "phrase",
-	/*.application_function */ phrase_function,
-	/* long_desc */ "Say a Phrase",
-	/* short_desc */ "Say a Phrase",
-	/* syntax */ "<macro_name>,<data>",
-	/* flags */ SAF_NONE,
-	/*.next */ &eval_application_interface
-};
-
-static switch_application_interface_t strftime_application_interface = {
-	/*.interface_name */ "strftime",
-	/*.application_function */ strftime_function,
-	/* long_desc */ NULL,
-	/* short_desc */ NULL,
-	/* syntax */ NULL,
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ &phrase_application_interface
-};
-
-static switch_application_interface_t sleep_application_interface = {
-	/*.interface_name */ "sleep",
-	/*.application_function */ sleep_function,
-	/* long_desc */
-	"Pause the channel for a given number of milliseconds, consuming the audio for that period of time.",
-	/* short_desc */ "Pause a channel",
-	/* syntax */ "<pausemilliseconds>",
-	/* flags */ SAF_NONE,
-	/* next */ &strftime_application_interface
-};
-
-static switch_application_interface_t transfer_application_interface = {
-	/*.interface_name */ "transfer",
-	/*.application_function */ transfer_function,
-	/* long_desc */ "Immediatly transfer the calling channel to a new extension",
-	/* short_desc */ "Transfer a channel",
-	/* syntax */ "<exten> [<dialplan> <context>]",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/* next */ &sleep_application_interface
-};
-
-static switch_application_interface_t privacy_application_interface = {
-	/*.interface_name */ "privacy",
-	/*.application_function */ privacy_function,
-	/* long_desc */ "Set caller privacy on calls.",
-	/* short_desc */ "Set privacy on calls",
-	/* syntax */ "off|on|name|full|number",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ &transfer_application_interface
-};
-
-static switch_loadable_module_interface_t dptools_module_interface = {
-	/*.module_name = */ modname,
-	/*.endpoint_interface = */ NULL,
-	/*.timer_interface = */ NULL,
-	/*.dialplan_interface = */ NULL,
-	/*.codec_interface = */ NULL,
-	/*.application_interface */ &privacy_application_interface,
-	/*.api_interface */ &presence_api_interface
-};
-
+#define SPEAK_DESC "Speak text to a channel via the tts interface"
+#define DISPLACE_DESC "Displace audio from a file to the channels input"
+#define SESS_REC_DESC "Starts a background recording of the entire session"
+#define STOP_SESS_REC_DESC "Stops a background recording of the entire session"
+#define SCHED_TRANSF_DESCR "Schedule a transfer in the future"
+#define SCHED_BROADCAST_DESCR "Schedule a broadcast in the future"
+#define SCHED_HANGUP_DESCR "Schedule a hangup in the future"
+#define UNSET_LONG_DESC "Unset a channel varaible for the channel calling the application."
+#define SET_LONG_DESC "Set a channel varaible for the channel calling the application."
+#define EXPORT_LONG_DESC "Set and export a channel varaible for the channel calling the application."
+#define LOG_LONG_DESC "Logs a channel varaible for the channel calling the application."
+#define TRANSFER_LONG_DESC "Immediatly transfer the calling channel to a new extension"
+#define SLEEP_LONG_DESC "Pause the channel for a given number of milliseconds, consuming the audio for that period of time."
 SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 {
+	switch_api_interface_t *api_interface;
+	switch_application_interface_t *app_interface;
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &dptools_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
+ 	SWITCH_ADD_API(api_interface, "strepoch", "Convert a date string into epoch time", strepoch_api_function, "<string>");
+	SWITCH_ADD_API(api_interface, "chat", "chat", chat_api_function, "<proto>|<from>|<to>|<message>");
+	SWITCH_ADD_API(api_interface, "strftime", "strftime", strftime_api_function, "<format_string>");
+	SWITCH_ADD_API(api_interface, "presence", "presence", presence_api_function, "<user> <rpid> <message>");
+	SWITCH_ADD_APP(app_interface, "privacy", "Set privacy on calls", "Set caller privacy on calls.", privacy_function, "off|on|name|full|number", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "transfer", "Transfer a channel", TRANSFER_LONG_DESC, transfer_function, "<exten> [<dialplan> <context>]", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "sleep", "Pause a channel", SLEEP_LONG_DESC, sleep_function, "<pausemilliseconds>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "strftime", NULL, NULL, strftime_function, NULL, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "phrase", "Say a Phrase", "Say a Phrase", phrase_function, "<macro_name>,<data>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "eval", "Do Nothing", "Do Nothing", eval_function, "", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "pre_answer", "Pre-Answer the call", "Pre-Answer the call for a channel.", pre_answer_function, "", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "answer", "Answer the call", "Answer the call for a channel.", answer_function, "", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "hangup", "Hangup the call", "Hangup the call for a channel.", hangup_function, "[<cause>]", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "log", "Logs a channel varaible", LOG_LONG_DESC, log_function, "<varname>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "info", "Display Call Info", "Display Call Info", info_function, "", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "export", "Export a channel varaible across a bridge", EXPORT_LONG_DESC, export_function, "<varname>=<value>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "set", "Set a channel varaible", SET_LONG_DESC, set_function, "<varname>=<value>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "unset", "Unset a channel varaible", UNSET_LONG_DESC, unset_function, "<varname>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "ring_ready", "Indicate Ring_Ready", "Indicate Ring_Ready on a channel.", ring_ready_function, "", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "detect_speech", "Detect speech", "Detect speech on a channel.", detect_speech_function, DETECT_SPEECH_SYNTAX, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "ivr", "Run an ivr menu", "Run an ivr menu.", ivr_application_function, "<menu_name>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "redirect", "Send session redirect", "Send a redirect message to a session.", redirect_function, "<redirect_data>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "reject", "Send session reject", "Send a reject message to a session.", reject_function, "<reject_data>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "queue_dtmf", "Queue dtmf to be sent", "Queue dtmf to be sent from a session", queue_dtmf_function, "<dtmf_data>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "sched_hangup", SCHED_HANGUP_DESCR, SCHED_HANGUP_DESCR, sched_hangup_function, "[+]<time> [<cause>]", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "sched_broadcast", SCHED_BROADCAST_DESCR, SCHED_BROADCAST_DESCR, sched_broadcast_function, "[+]<time> <path> [aleg|bleg|both]", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "sched_transfer", SCHED_TRANSF_DESCR, SCHED_TRANSF_DESCR, sched_transfer_function, "[+]<time> <extension> <dialplan> <context>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "execute_extension", "Execute an extension", "Execute an extension", exe_function, EXE_SYNTAX, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "stop_dtmf", "stop inband dtmf", "Stop detecting inband dtmf.", stop_dtmf_session_function, "", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "start_dtmf", "Detect dtmf", "Detect inband dtmf on the session", dtmf_session_function, "", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "stop_tone_detect", "stop detecting tones", "Stop detecting tones", stop_fax_detect_session_function, "", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "fax_detect", "Detect faxes", "Detect fax send tone", fax_detect_session_function, "", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "tone_detect", "Detect tones", "Detect tones", tone_detect_session_function, "", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "echo", "Echo", "Perform an echo test against the calling channel", echo_function, "", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "park", NULL, NULL, park_function, NULL, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "gentones", "Generate Tones", "Generate tones to the channel", gentones_function, "<tgml_script>[|<loops>]", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "playback", "Playback File", "Playback a file to the channel", playback_function, "<path>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "stop_record_session", "Stop Record Session", STOP_SESS_REC_DESC, stop_record_session_function, "<path>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "record_session", "Record Session", SESS_REC_DESC, record_session_function, "<path>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "record", "Record File", "Record a file from the channels input", record_function, "<path> [+time_limit_ms]", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "stop_displace_session", "Stop Displace File", "Stop Displacing to a file", stop_displace_session_function, "<path>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "displace_session", "Displace File", DISPLACE_DESC, displace_session_function, "<path> [+time_limit_ms] [mux]", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "speak", "Speak text", SPEAK_DESC, speak_function, "<engine>|<voice>|<text>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "bridge", "Bridge Audio", "Bridge the audio between two sessions", audio_bridge_function, "<channel_url>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "system", "Execute a system command", "Execute a system command", system_session_function, "<command>", SAF_SUPPORT_NOMEDIA);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
