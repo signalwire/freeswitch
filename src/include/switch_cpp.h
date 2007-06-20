@@ -68,6 +68,17 @@ class CoreSession {
 	void setVariable(char *var, char *val);
 	char *getVariable(char *var);
 
+
+	/** \brief Record to a file
+	 * \param filename 
+	 * \param <[max_len]> maximum length of the recording in seconds
+     * \param <[silence_threshold]> energy level audio must fall below 
+	 *        to be considered silence (500 is a good starting point).
+	 * \param <[silence_secs]> seconds of silence to interrupt the record.
+	 */
+	int recordFile(char *file_name, int max_len=0, int silence_threshold=0, int silence_secs=0);
+
+
 	/** \brief Set attributes of caller data for purposes of outgoing calls
 	 * \param var - the variable name, eg, "caller_id_name"
 	 * \param val - the data to set, eg, "bob"

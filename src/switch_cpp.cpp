@@ -303,6 +303,20 @@ int CoreSession::originate(CoreSession *aleg_session,
 	return SWITCH_STATUS_FALSE;
 }
 
+int CoreSession::recordFile(char *file_name, int max_len, int silence_threshold, int silence_secs) 
+{
+	switch_file_handle_t fh = { 0 };
+	switch_status_t status;
+
+	fh.thresh = silence_threshold;
+	fh.silence_hits = silence_secs;
+	store_file_handle(&fh);
+	begin_allow_threads();
+	status = switch_ivr_record_file(session, &fh, file_name, &args, max_len);
+	end_allow_threads();
+    return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
+
+}
 
 void CoreSession::setCallerData(char *var, char *val) {
 
