@@ -111,13 +111,6 @@ static switch_status_t load_config(void)
 	switch_xml_t cfg, xml = NULL, param, settings, route, routes;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	memset(&globals, 0, sizeof(globals));
-	if (switch_core_new_memory_pool(&globals.pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
-		status = SWITCH_STATUS_TERM;
-		goto done;
-	}
-
 	switch_core_hash_init(&globals.routes, globals.pool);
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -564,7 +557,7 @@ static switch_caller_extension_t *enum_dialplan_hunt(switch_core_session_t *sess
 
 }
 
-static void enum_app_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(enum_app_function)
 {
 	int argc = 0;
 	char *argv[4] = { 0 };
@@ -685,54 +678,26 @@ SWITCH_STANDARD_API(enum_function)
 }
 
 
-static switch_dialplan_interface_t enum_dialplan_interface = {
-	/*.interface_name = */ "enum",
-	/*.hunt_function = */ enum_dialplan_hunt
-		/*.next = NULL */
-};
-
-static switch_application_interface_t enum_application_interface = {
-	/*.interface_name */ "enum",
-	/*.application_function */ enum_app_function,
-	/* long_desc */ "Perform an ENUM lookup",
-	/* short_desc */ "Perform an ENUM lookup",
-	/* syntax */ "<number> [<root>]",
-	/* flags */ SAF_SUPPORT_NOMEDIA,
-	/*.next */ NULL
-};
-
-static switch_api_interface_t enum_api_interface = {
-	/*.interface_name */ "enum",
-	/*.desc */ "ENUM",
-	/*.function */ enum_function,
-	/*.syntax */ "",
-	/*.next */ NULL
-};
-
-static switch_loadable_module_interface_t enum_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ &enum_dialplan_interface,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ &enum_application_interface,
-	/*.api_interface */ &enum_api_interface,
-	/*.file_interface */ NULL,
-	/*.speech_interface */ NULL,
-	/*.directory_interface */ NULL
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_enum_load)
 {
+	switch_api_interface_t *api_interface;
+	switch_application_interface_t *app_interface;
+	switch_dialplan_interface_t *dp_interface;
 
 	if (dns_init(0) < 0) {
 		return SWITCH_STATUS_FALSE;
 	}
 
+	memset(&globals, 0, sizeof(globals));
+	globals.pool = pool;
+
 	load_config();
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &enum_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	SWITCH_ADD_API(api_interface, "enum", "ENUM", enum_function, "");
+	SWITCH_ADD_APP(app_interface, "enum", "Perform an ENUM lookup", "Perform an ENUM lookup", enum_app_function, "<number> [<root>]", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_DIALPLAN(dp_interface, "enum", enum_dialplan_hunt);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

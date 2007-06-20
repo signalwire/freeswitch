@@ -152,7 +152,7 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void rss_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(rss_function)
 {
 	switch_channel_t *channel;
 	switch_status_t status;
@@ -613,33 +613,14 @@ static void rss_function(switch_core_session_t *session, char *data)
 	switch_core_session_reset(session);
 }
 
-static switch_application_interface_t rss_application_interface = {
-	/*.interface_name */ "rss",
-	/*.application_function */ rss_function,
-	NULL, NULL, NULL,
-	/* flags */ SAF_NONE,
-	/*.next */ NULL
-};
-
-
-static switch_loadable_module_interface_t rss_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ &rss_application_interface,
-	/*.api_interface */ NULL,
-	/*.file_interface */ NULL,
-	/*.speech_interface */ NULL,
-	/*.directory_interface */ NULL
-};
-
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_rss_load)
 {
+	switch_application_interface_t *app_interface;
+
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &rss_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	SWITCH_ADD_APP(app_interface, "rss", NULL, NULL, rss_function, NULL, SAF_NONE);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

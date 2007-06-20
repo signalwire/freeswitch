@@ -54,7 +54,7 @@ typedef enum {
 	SEND_TYPE_NOMEDIA = 3
 } ls_how_t;
 
-static void bcast_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(bcast_function)
 {
 	switch_channel_t *channel;
 	switch_socket_t *socket;
@@ -228,35 +228,17 @@ static void bcast_function(switch_core_session_t *session, char *data)
 }
 
 
-static switch_application_interface_t bcast_application_interface = {
-	/*.interface_name */ "esf_ls_page_group",
-	/*.application_function */ bcast_function,
-	NULL, NULL, NULL,
-	/* flags */ SAF_NONE,
-	/*.next */ NULL
-};
-
-static switch_loadable_module_interface_t mod_ivrtest_module_interface = {
-	/*.module_name = */ modname,
-	/*.endpoint_interface = */ NULL,
-	/*.timer_interface = */ NULL,
-	/*.dialplan_interface = */ NULL,
-	/*.codec_interface = */ NULL,
-	/*.application_interface */ &bcast_application_interface
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_esf_load)
 {
+	switch_application_interface_t *app_interface;
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &mod_ivrtest_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	SWITCH_ADD_APP(app_interface, "esf_ls_page_group", NULL, NULL, bcast_function, NULL, SAF_NONE);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
-
-
-//switch_status_t switch_module_runtime(void)
 
 /* For Emacs:
  * Local Variables:

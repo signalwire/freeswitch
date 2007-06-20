@@ -295,6 +295,14 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void);
 	break; \
 	}
 
+#define SWITCH_ADD_DIALPLAN(dp_int, int_name, funcptr) \
+	for (;;) { \
+	dp_int = switch_loadable_module_create_interface(*module_interface, SWITCH_DIALPLAN_INTERFACE); \
+	dp_int->hunt_function = funcptr; \
+	dp_int->interface_name = int_name; \
+	break; \
+	}
+
 ///\}
 
 SWITCH_END_EXTERN_C
