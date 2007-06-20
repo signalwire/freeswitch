@@ -158,8 +158,6 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 	 static int get_dev_by_name(char *name, int in);
 	 static int get_dev_by_number(int number, int in);
 	 static switch_status_t pa_cmd(const char *dest, switch_core_session_t *session, switch_stream_handle_t *stream);
-	 static switch_status_t padep(const char *dest, switch_core_session_t *session, switch_stream_handle_t *stream);
-
 
 /* 
    State methods they get called when the state changes to the specific state 
