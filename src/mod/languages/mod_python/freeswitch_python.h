@@ -14,12 +14,12 @@ extern "C" {
 
 
 
-// declaration for function that is defined in mod_python.i
-extern switch_status_t PythonDTMFCallback(switch_core_session *session, 
-					  void *input, 
-					  switch_input_type_t itype, 
-					  void *buf, 
-					  unsigned int buflen);
+switch_status_t PythonDTMFCallback(switch_core_session *session, 
+				   void *input, 
+				   switch_input_type_t itype, 
+				   void *buf, 
+				   unsigned int buflen);
+
 
 void console_log(char *level_str, char *msg);
 void console_clean_log(char *msg);
@@ -30,14 +30,16 @@ class PySession : public CoreSession {
  private:
     void *threadState;
  public:
-    PySession(char *uuid) : CoreSession(uuid) {}
-    PySession(switch_core_session_t *session) : CoreSession(session) {}
+    PySession();
+    PySession(char *uuid);
+    PySession(switch_core_session_t *session);
     ~PySession();        
     void setDTMFCallback(PyObject *pyfunc, char *funcargs);
     void begin_allow_threads();
     void end_allow_threads();
 
 };
+
 
 #ifdef __cplusplus
 }

@@ -16,6 +16,16 @@ void console_log(char *level_str, char *msg);
 void console_clean_log(char *msg);
 char *api_execute(char *cmd, char *arg);
 void api_reply_delete(char *reply);
+
+
+/**
+ * \brief - process language specific callback results
+ * 
+ * First the actual callback is called, (in the case of python, 
+ * PythonDTMFCallback), it then calls the language specific callback defined
+ * by the user (eg, some python method), and then _this_ function is called
+ * with the results of the language specific callback.
+ */
 switch_status_t process_callback_result(char *raw_result,
 										struct input_callback_state *cb_state,
 										switch_core_session_t *session);
@@ -28,29 +38,54 @@ typedef struct input_callback_state {
                               // eg, PyThreadState *threadState
     void *extra;              // currently used to store a switch_file_handle_t
     char *funcargs;           // extra string that will be passed to callback function 
-} input_callback_state;
+} input_callback_state_t;
 
 
 class CoreSession {
  protected:
-	switch_input_args_t args;
-	switch_input_args_t *ap;
+	switch_input_args_t args; // holds ptr to cb function and input_callback_state struct
+                              // which has a language specific callback function
+	switch_input_args_t *ap;  // ptr to args .. (is this really needed?)
+	switch_caller_profile_t caller_profile; // avoid passing so many args to originate, 
+	                                        // instead set them here first
 	char *uuid;
 	char *tts_name;
 	char *voice_name;
 	void store_file_handle(switch_file_handle_t *fh);
  public:
+	CoreSession();
 	CoreSession(char *uuid);
 	CoreSession(switch_core_session_t *new_session);
 	virtual ~CoreSession();
 	switch_core_session_t *session;
 	switch_channel_t *channel;
-	input_callback_state cb_state;
+	input_callback_state cb_state; // callback state, always pointed to by the buf
+                                   // field in this->args
+
 	int answer();
 	int preAnswer();
 	void hangup(char *cause);
 	void setVariable(char *var, char *val);
 	char *getVariable(char *var);
+
+	/** \brief Set attributes of caller data for purposes of outgoing calls
+	 * \param var - the variable name, eg, "caller_id_name"
+	 * \param val - the data to set, eg, "bob"
+	 */
+	void setCallerData(char *var, char *val);
+
+	/** \brief Originate a call to a destination
+	 *
+	 * \param old_session - the session where the call is originating from 
+     *                      and also the session in which _this_ session was 
+     *                      created
+	 * \param dest - a string representing destination, eg, sofia/mydomain.com/foo@bar.com
+	 * \return an int status code indicating success or failure
+     *
+	 */
+	int originate(CoreSession *aleg_session, 
+				  char *dest, 
+				  int timeout=60);
 
 	/** \brief Play a file that resides on disk into the channel
 	 *
@@ -125,8 +160,33 @@ class CoreSession {
 	virtual void begin_allow_threads();
 	virtual void end_allow_threads();
 
+	/** \brief Get the uuid of this session	
+	 * \return the uuid of this session
+	 */
+	char* get_uuid() const { return uuid; };
+
+	/** \brief Get the callback function arguments associated with this session
+	 * \return a const reference to the callback function arguments
+	 */
+	const switch_input_args_t& get_cb_args() const { return args; };
+
 
 };
+
+
+/* ---- functions not bound to CoreSession instance ----- */
+
+void console_log(char *level_str, char *msg);
+void console_clean_log(char *msg);
+char *api_execute(char *cmd, char *arg);
+void api_reply_delete(char *reply);
+
+/** \brief bridge the audio of session_b into session_a
+ * 
+ * NOTE: the stuff regarding the dtmf callback might be completely
+ *       wrong and has not been reviewed or tested
+ */
+void bridge(CoreSession &session_a, CoreSession &session_b);
 
 
 #ifdef __cplusplus

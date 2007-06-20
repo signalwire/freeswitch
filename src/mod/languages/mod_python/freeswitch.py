@@ -53,32 +53,32 @@ console_clean_log = _freeswitch.console_clean_log
 api_execute = _freeswitch.api_execute
 api_reply_delete = _freeswitch.api_reply_delete
 process_callback_result = _freeswitch.process_callback_result
-class input_callback_state(_object):
+class input_callback_state_t(_object):
     __swig_setmethods__ = {}
-    __setattr__ = lambda self, name, value: _swig_setattr(self, input_callback_state, name, value)
+    __setattr__ = lambda self, name, value: _swig_setattr(self, input_callback_state_t, name, value)
     __swig_getmethods__ = {}
-    __getattr__ = lambda self, name: _swig_getattr(self, input_callback_state, name)
+    __getattr__ = lambda self, name: _swig_getattr(self, input_callback_state_t, name)
     __repr__ = _swig_repr
-    __swig_setmethods__["function"] = _freeswitch.input_callback_state_function_set
-    __swig_getmethods__["function"] = _freeswitch.input_callback_state_function_get
-    if _newclass:function = _swig_property(_freeswitch.input_callback_state_function_get, _freeswitch.input_callback_state_function_set)
-    __swig_setmethods__["threadState"] = _freeswitch.input_callback_state_threadState_set
-    __swig_getmethods__["threadState"] = _freeswitch.input_callback_state_threadState_get
-    if _newclass:threadState = _swig_property(_freeswitch.input_callback_state_threadState_get, _freeswitch.input_callback_state_threadState_set)
-    __swig_setmethods__["extra"] = _freeswitch.input_callback_state_extra_set
-    __swig_getmethods__["extra"] = _freeswitch.input_callback_state_extra_get
-    if _newclass:extra = _swig_property(_freeswitch.input_callback_state_extra_get, _freeswitch.input_callback_state_extra_set)
-    __swig_setmethods__["funcargs"] = _freeswitch.input_callback_state_funcargs_set
-    __swig_getmethods__["funcargs"] = _freeswitch.input_callback_state_funcargs_get
-    if _newclass:funcargs = _swig_property(_freeswitch.input_callback_state_funcargs_get, _freeswitch.input_callback_state_funcargs_set)
+    __swig_setmethods__["function"] = _freeswitch.input_callback_state_t_function_set
+    __swig_getmethods__["function"] = _freeswitch.input_callback_state_t_function_get
+    if _newclass:function = _swig_property(_freeswitch.input_callback_state_t_function_get, _freeswitch.input_callback_state_t_function_set)
+    __swig_setmethods__["threadState"] = _freeswitch.input_callback_state_t_threadState_set
+    __swig_getmethods__["threadState"] = _freeswitch.input_callback_state_t_threadState_get
+    if _newclass:threadState = _swig_property(_freeswitch.input_callback_state_t_threadState_get, _freeswitch.input_callback_state_t_threadState_set)
+    __swig_setmethods__["extra"] = _freeswitch.input_callback_state_t_extra_set
+    __swig_getmethods__["extra"] = _freeswitch.input_callback_state_t_extra_get
+    if _newclass:extra = _swig_property(_freeswitch.input_callback_state_t_extra_get, _freeswitch.input_callback_state_t_extra_set)
+    __swig_setmethods__["funcargs"] = _freeswitch.input_callback_state_t_funcargs_set
+    __swig_getmethods__["funcargs"] = _freeswitch.input_callback_state_t_funcargs_get
+    if _newclass:funcargs = _swig_property(_freeswitch.input_callback_state_t_funcargs_get, _freeswitch.input_callback_state_t_funcargs_set)
     def __init__(self, *args): 
-        this = _freeswitch.new_input_callback_state(*args)
+        this = _freeswitch.new_input_callback_state_t(*args)
         try: self.this.append(this)
         except: self.this = this
-    __swig_destroy__ = _freeswitch.delete_input_callback_state
+    __swig_destroy__ = _freeswitch.delete_input_callback_state_t
     __del__ = lambda self : None;
-input_callback_state_swigregister = _freeswitch.input_callback_state_swigregister
-input_callback_state_swigregister(input_callback_state)
+input_callback_state_t_swigregister = _freeswitch.input_callback_state_t_swigregister
+input_callback_state_t_swigregister(input_callback_state_t)
 
 class CoreSession(_object):
     __swig_setmethods__ = {}
@@ -106,6 +106,8 @@ class CoreSession(_object):
     def hangup(*args): return _freeswitch.CoreSession_hangup(*args)
     def setVariable(*args): return _freeswitch.CoreSession_setVariable(*args)
     def getVariable(*args): return _freeswitch.CoreSession_getVariable(*args)
+    def setCallerData(*args): return _freeswitch.CoreSession_setCallerData(*args)
+    def originate(*args): return _freeswitch.CoreSession_originate(*args)
     def playFile(*args): return _freeswitch.CoreSession_playFile(*args)
     def setDTMFCallback(*args): return _freeswitch.CoreSession_setDTMFCallback(*args)
     def speak(*args): return _freeswitch.CoreSession_speak(*args)
@@ -118,9 +120,12 @@ class CoreSession(_object):
     def execute(*args): return _freeswitch.CoreSession_execute(*args)
     def begin_allow_threads(*args): return _freeswitch.CoreSession_begin_allow_threads(*args)
     def end_allow_threads(*args): return _freeswitch.CoreSession_end_allow_threads(*args)
+    def get_uuid(*args): return _freeswitch.CoreSession_get_uuid(*args)
+    def get_cb_args(*args): return _freeswitch.CoreSession_get_cb_args(*args)
 CoreSession_swigregister = _freeswitch.CoreSession_swigregister
 CoreSession_swigregister(CoreSession)
 
+bridge = _freeswitch.bridge
 PythonDTMFCallback = _freeswitch.PythonDTMFCallback
 class PySession(CoreSession):
     __swig_setmethods__ = {}
