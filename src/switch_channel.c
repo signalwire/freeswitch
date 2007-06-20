@@ -319,9 +319,10 @@ SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, co
 	if (!(v = switch_core_hash_find(channel->variables, varname))) {
 		if (!channel->caller_profile || !(v = switch_caller_get_field_by_name(channel->caller_profile, varname))) {
 			if (!strcmp(varname, "base_dir")) {
-				return SWITCH_GLOBAL_dirs.base_dir;
+				v = SWITCH_GLOBAL_dirs.base_dir;
+			} else {
+				v = switch_core_get_variable(varname);
 			}
-			v = switch_core_get_variable(varname);
 		}
 	}
 	switch_mutex_unlock(channel->profile_mutex);
