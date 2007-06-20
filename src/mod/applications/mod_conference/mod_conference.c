@@ -307,7 +307,7 @@ static switch_status_t conference_outcall(conference_obj_t * conference,
 static switch_status_t conference_outcall_bg(conference_obj_t * conference,
 											 char *conference_name,
 											 switch_core_session_t *session, char *bridgeto, uint32_t timeout, char *flags, char *cid_name, char *cid_num);
-static void conference_function(switch_core_session_t *session, char *data);
+SWITCH_STANDARD_APP(conference_function);
 static void launch_conference_thread(conference_obj_t * conference);
 static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t * thread, void *obj);
 static switch_status_t conference_local_play_file(conference_obj_t * conference,
@@ -3855,7 +3855,7 @@ static void set_mflags(char *flags, member_flag_t * f)
 
 }
 
-static void conference_auto_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(conference_auto_function)
 {
 	switch_channel_t *channel = NULL;
 	call_list_t *call_list, *np;
@@ -3890,7 +3890,7 @@ static void conference_auto_function(switch_core_session_t *session, char *data)
 }
 
 /* Application interface function that is called from the dialplan to join the channel to a conference */
-static void conference_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(conference_function)
 {
 	switch_codec_t *read_codec = NULL;
 	uint32_t flags = 0;

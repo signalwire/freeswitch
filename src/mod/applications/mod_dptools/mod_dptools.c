@@ -38,7 +38,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load);
 SWITCH_MODULE_DEFINITION(mod_dptools, mod_dptools_load, NULL, NULL);
 
 #define DETECT_SPEECH_SYNTAX "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR pause OR resume"
-static void detect_speech_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(detect_speech_function)
 {
 	char *argv[4];
 	int argc;
@@ -66,7 +66,7 @@ static void detect_speech_function(switch_core_session_t *session, char *data)
 }
 
 #define EXE_SYNTAX "<extension> <dialplan> <context>"
-static void exe_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(exe_function)
 {
 	char *argv[4];
 	int argc;
@@ -86,7 +86,7 @@ static void exe_function(switch_core_session_t *session, char *data)
 	}
 }
 
-static void ring_ready_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(ring_ready_function)
 {
 	switch_channel_t *channel;
 	channel = switch_core_session_get_channel(session);
@@ -94,7 +94,7 @@ static void ring_ready_function(switch_core_session_t *session, char *data)
 	switch_channel_ring_ready(channel);
 }
 
-static void queue_dtmf_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(queue_dtmf_function)
 {
 	switch_channel_t *channel;
 	if (!switch_strlen_zero(data)) {
@@ -104,7 +104,7 @@ static void queue_dtmf_function(switch_core_session_t *session, char *data)
 	}
 }
 
-static void transfer_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(transfer_function)
 {
 	int argc;
 	char *argv[4] = { 0 };
@@ -119,7 +119,7 @@ static void transfer_function(switch_core_session_t *session, char *data)
 	}
 }
 
-static void sched_transfer_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(sched_transfer_function)
 {
 	int argc;
 	char *argv[4] = { 0 };
@@ -142,7 +142,7 @@ static void sched_transfer_function(switch_core_session_t *session, char *data)
 	}
 }
 
-static void sched_hangup_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(sched_hangup_function)
 {
 	int argc;
 	char *argv[5] = { 0 };
@@ -176,7 +176,7 @@ static void sched_hangup_function(switch_core_session_t *session, char *data)
 }
 
 
-static void sched_broadcast_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(sched_broadcast_function)
 {
 	int argc;
 	char *argv[6] = { 0 };
@@ -212,7 +212,7 @@ static void sched_broadcast_function(switch_core_session_t *session, char *data)
 	}
 }
 
-static void sleep_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(sleep_function)
 {
 
 	if (switch_strlen_zero(data)) {
@@ -223,12 +223,12 @@ static void sleep_function(switch_core_session_t *session, char *data)
 	}
 }
 
-static void eval_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(eval_function)
 {
 	return;
 }
 
-static void phrase_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(phrase_function)
 {
 	switch_channel_t *channel;
 	char *mydata = NULL;
@@ -254,7 +254,7 @@ static void phrase_function(switch_core_session_t *session, char *data)
 }
 
 
-static void hangup_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(hangup_function)
 {
 	switch_channel_t *channel;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
@@ -269,7 +269,7 @@ static void hangup_function(switch_core_session_t *session, char *data)
 	switch_channel_hangup(channel, cause);
 }
 
-static void answer_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(answer_function)
 {
 	switch_channel_t *channel;
 	channel = switch_core_session_get_channel(session);
@@ -278,7 +278,7 @@ static void answer_function(switch_core_session_t *session, char *data)
 	switch_channel_answer(channel);
 }
 
-static void pre_answer_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(pre_answer_function)
 {
 	switch_channel_t *channel;
 	channel = switch_core_session_get_channel(session);
@@ -287,7 +287,7 @@ static void pre_answer_function(switch_core_session_t *session, char *data)
 	switch_channel_pre_answer(channel);
 }
 
-static void redirect_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(redirect_function)
 {
 	switch_core_session_message_t msg = { 0 };
 
@@ -299,7 +299,7 @@ static void redirect_function(switch_core_session_t *session, char *data)
 
 }
 
-static void reject_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(reject_function)
 {
 	switch_core_session_message_t msg = { 0 };
 
@@ -312,7 +312,7 @@ static void reject_function(switch_core_session_t *session, char *data)
 }
 
 
-static void set_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(set_function)
 {
 	switch_channel_t *channel;
 	char *var, *val = NULL;
@@ -338,7 +338,7 @@ static void set_function(switch_core_session_t *session, char *data)
 	}
 }
 
-static void export_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(export_function)
 {
 	switch_channel_t *channel;
 	char *exports, *new_exports = NULL, *new_exports_d = NULL, *var, *val = NULL, *var_name = NULL;
@@ -386,7 +386,7 @@ static void export_function(switch_core_session_t *session, char *data)
 	}
 }
 
-static void unset_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(unset_function)
 {
 	switch_channel_t *channel;
 
@@ -401,7 +401,7 @@ static void unset_function(switch_core_session_t *session, char *data)
 	}
 }
 
-static void log_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(log_function)
 {
 	switch_channel_t *channel;
 	char *level, *log_str;
@@ -425,7 +425,7 @@ static void log_function(switch_core_session_t *session, char *data)
 }
 
 
-static void info_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(info_function)
 {
 	switch_channel_t *channel;
 	switch_event_t *event;
@@ -443,7 +443,7 @@ static void info_function(switch_core_session_t *session, char *data)
 
 }
 
-static void privacy_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(privacy_function)
 {
 	switch_channel_t *channel;
 	switch_caller_profile_t *caller_profile;
@@ -479,7 +479,7 @@ static void privacy_function(switch_core_session_t *session, char *data)
 	}
 }
 
-static void strftime_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(strftime_function)
 {
 	char *argv[2];
 	int argc;
@@ -606,7 +606,7 @@ static switch_ivr_action_t menu_handler(switch_ivr_menu_t * menu, char *param, c
 }
 #endif
 
-static void ivr_application_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(ivr_application_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *params;
@@ -650,29 +650,29 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 }
 
 
-static void dtmf_session_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(dtmf_session_function)
 {
 	switch_ivr_inband_dtmf_session(session);
 }
 
 
-static void stop_dtmf_session_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(stop_dtmf_session_function)
 {
 	switch_ivr_stop_inband_dtmf_session(session);
 }
 
-static void fax_detect_session_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(fax_detect_session_function)
 {
 	switch_ivr_tone_detect_session(session, "fax", "1100.0", "r", 0, NULL, NULL);
 }
 
-static void system_session_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(system_session_function)
 {
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Executing command: %s\n",data);
     system(data);
 }
 
-static void tone_detect_session_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(tone_detect_session_function)
 {
 	char *argv[6] = { 0 };
 	int argc;
@@ -704,13 +704,13 @@ static void tone_detect_session_function(switch_core_session_t *session, char *d
 	switch_ivr_tone_detect_session(session, argv[0], argv[1], argv[2], to, argv[4], argv[5]);
 }
 
-static void stop_fax_detect_session_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(stop_fax_detect_session_function)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Disabling tone detection\n");
 	switch_ivr_stop_tone_detect_session(session);
 }
 
-static void echo_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(echo_function)
 {
 	switch_channel_t *channel;
 
@@ -722,7 +722,7 @@ static void echo_function(switch_core_session_t *session, char *data)
 	switch_channel_set_state(channel, CS_LOOPBACK);
 }
 
-static void park_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(park_function)
 {
 	switch_ivr_park(session, NULL);
 
@@ -758,7 +758,7 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 }
 
 
-static void speak_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(speak_function)
 {
 	switch_channel_t *channel;
 	char buf[10];
@@ -807,7 +807,7 @@ static void speak_function(switch_core_session_t *session, char *data)
 
 }
 
-static void playback_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(playback_function)
 {
 	switch_channel_t *channel;
 	char *file_name = NULL;
@@ -825,7 +825,7 @@ static void playback_function(switch_core_session_t *session, char *data)
 
 }
 
-static void gentones_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(gentones_function)
 {
 	switch_channel_t *channel;
 	char *tone_script = NULL;
@@ -854,7 +854,7 @@ static void gentones_function(switch_core_session_t *session, char *data)
 
 }
 
-static void displace_session_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(displace_session_function)
 {
 	switch_channel_t *channel;
 	char *path = NULL;
@@ -882,7 +882,7 @@ static void displace_session_function(switch_core_session_t *session, char *data
 }
 
 
-static void stop_displace_session_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(stop_displace_session_function)
 {
 	switch_channel_t *channel;
 	channel = switch_core_session_get_channel(session);
@@ -892,7 +892,7 @@ static void stop_displace_session_function(switch_core_session_t *session, char 
 }
 
 
-static void record_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(record_function)
 {
 	switch_channel_t *channel;
 	switch_status_t status;
@@ -924,7 +924,7 @@ static void record_function(switch_core_session_t *session, char *data)
 }
 
 
-static void record_session_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(record_session_function)
 {
 	switch_channel_t *channel;
 	char *p, *path = NULL;
@@ -948,7 +948,7 @@ static void record_session_function(switch_core_session_t *session, char *data)
 }
 
 
-static void stop_record_session_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(stop_record_session_function)
 {
 	switch_channel_t *channel;
 	channel = switch_core_session_get_channel(session);
@@ -961,7 +961,7 @@ static void stop_record_session_function(switch_core_session_t *session, char *d
 /*								Bridge Functions								*/
 /********************************************************************************/
 
-static void audio_bridge_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(audio_bridge_function)
 {
 	switch_channel_t *caller_channel;
 	switch_core_session_t *peer_session = NULL;
