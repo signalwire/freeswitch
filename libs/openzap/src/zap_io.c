@@ -1695,6 +1695,7 @@ static zap_status_t load_config(void)
 
 				if (zap_span_create(zio, &span) == ZAP_SUCCESS) {
 					zap_log(ZAP_LOG_DEBUG, "created span %d of type %s\n", span->span_id, type);
+					d = 0;
 				} else {
 					zap_log(ZAP_LOG_CRIT, "failure creating span of type %s\n", type);
 					span = NULL;
