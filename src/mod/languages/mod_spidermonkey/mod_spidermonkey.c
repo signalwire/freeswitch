@@ -629,7 +629,7 @@ static void js_error(JSContext * cx, const char *message, JSErrorReport * report
 		message = "(N/A)";
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, filename, modname, line, SWITCH_LOG_ERROR, "%s %s%s\n", ex, message, text);
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, filename, modname, line, NULL, SWITCH_LOG_ERROR, "%s %s%s\n", ex, message, text);
 
 }
 
@@ -2588,12 +2588,12 @@ static JSBool js_log(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, j
 		}
 
 		if ((msg = JS_GetStringBytes(JS_ValueToString(cx, argv[1])))) {
-			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "console_log", line, level, "%s", msg);
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "console_log", line, NULL, level, "%s", msg);
 			return JS_TRUE;
 		}
 	} else if (argc > 0) {
 		if ((msg = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
-			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "console_log", line, level, "%s", msg);
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "console_log", line, NULL, level, "%s", msg);
 			return JS_TRUE;
 		}
 	}
