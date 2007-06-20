@@ -287,40 +287,14 @@ static switch_codec_implementation_t ilbc_8k_20ms_nonext_implementation = {
 	/*.destroy */ switch_ilbc_destroy
 };
 
-
-static switch_codec_interface_t ilbc_20ms_codec_interface = {
-	/*.interface_name */ "ilbc",
-	/*.implementations */ &ilbc_8k_20ms_nonext_implementation
-};
-
-static switch_codec_interface_t ilbc_102_codec_interface = {
-	/*.interface_name */ "ilbc",
-	/*.implementations */ &ilbc_102_8k_20ms_implementation,
-	/*.next */ &ilbc_20ms_codec_interface
-};
-
-static switch_codec_interface_t ilbc_codec_interface = {
-	/*.interface_name */ "ilbc",
-	/*.implementations */ &ilbc_8k_20ms_implementation,
-	/*.next */ &ilbc_102_codec_interface
-};
-
-
-static switch_loadable_module_interface_t ilbc_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ &ilbc_codec_interface,
-	/*.application_interface */ NULL
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_ilbc_load)
 {
-
+	switch_codec_interface_t *codec_interface;
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &ilbc_module_interface;
-
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	SWITCH_ADD_CODEC(codec_interface, "ilbc", &ilbc_8k_20ms_implementation);
+	SWITCH_ADD_CODEC(codec_interface, "ilbc", &ilbc_102_8k_20ms_implementation);
+	SWITCH_ADD_CODEC(codec_interface, "ilbc", &ilbc_8k_20ms_nonext_implementation);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

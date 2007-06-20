@@ -117,25 +117,13 @@ static switch_codec_implementation_t h263_90000_implementation = {
 	/*.next = */&h264_90000_implementation
 };
 
-static switch_codec_interface_t h26x_codec_interface = {
-	/*.interface_name */ "h26x video (passthru)",
-	/*.implementations */ &h263_90000_implementation
-};
-
-static switch_loadable_module_interface_t h26x_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ &h26x_codec_interface,
-	/*.application_interface */ NULL,
-	/*.api_interface */ NULL,
-};
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_h26x_load)
 {
+	switch_codec_interface_t *codec_interface;
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &h26x_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	SWITCH_ADD_CODEC(codec_interface, "h26x video (passthru)", &h263_90000_implementation);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

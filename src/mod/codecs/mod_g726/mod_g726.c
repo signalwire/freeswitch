@@ -368,68 +368,19 @@ static switch_codec_implementation_t aal2_g726_40k_implementation = {
 	/*.destroy */ switch_g726_destroy,
 };
 
-static switch_codec_interface_t g726_16k_codec_interface = {
-	/*.interface_name */ "G.726 16k",
-	/*.implementations */ &g726_16k_implementation,
-};
-
-static switch_codec_interface_t g726_24k_codec_interface = {
-	/*.interface_name */ "G.726 24k",
-	/*.implementations */ &g726_24k_implementation,
-	/*.next */ &g726_16k_codec_interface
-};
-
-static switch_codec_interface_t g726_32k_codec_interface = {
-	/*.interface_name */ "G.726 32k",
-	/*.implementations */ &g726_32k_implementation,
-	/*.next */ &g726_24k_codec_interface
-};
-
-static switch_codec_interface_t g726_40k_codec_interface = {
-	/*.interface_name */ "G.726 40k",
-	/*.implementations */ &g726_40k_implementation,
-	/*.next */ &g726_32k_codec_interface
-};
-
-static switch_codec_interface_t aal2_g726_16k_codec_interface = {
-	/*.interface_name */ "G.726 16k (aal2)",
-	/*.implementations */ &aal2_g726_16k_implementation,
-	/*.next */ &g726_40k_codec_interface
-};
-
-static switch_codec_interface_t aal2_g726_24k_codec_interface = {
-	/*.interface_name */ "G.726 24k (aal2)",
-	/*.implementations */ &aal2_g726_24k_implementation,
-	/*.next */ &aal2_g726_16k_codec_interface
-};
-
-static switch_codec_interface_t aal2_g726_32k_codec_interface = {
-	/*.interface_name */ "G.726 32k (aal2)",
-	/*.implementations */ &aal2_g726_32k_implementation,
-	/*.next */ &aal2_g726_24k_codec_interface
-};
-
-static switch_codec_interface_t aal2_g726_40k_codec_interface = {
-	/*.interface_name */ "G.726 40k (aal2)",
-	/*.implementations */ &aal2_g726_40k_implementation,
-	/*.next */ &aal2_g726_32k_codec_interface
-};
-
-
-
-static switch_loadable_module_interface_t g726_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ &aal2_g726_40k_codec_interface,
-	/*.application_interface */ NULL
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_g726_load)
 {
+	switch_codec_interface_t *codec_interface;
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &g726_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	SWITCH_ADD_CODEC(codec_interface, "G.726 40k (aal2)", &aal2_g726_40k_implementation);
+	SWITCH_ADD_CODEC(codec_interface, "G.726 32k (aal2)", &aal2_g726_32k_implementation);
+	SWITCH_ADD_CODEC(codec_interface, "G.726 24k (aal2)", &aal2_g726_24k_implementation);
+	SWITCH_ADD_CODEC(codec_interface, "G.726 16k (aal2)", &aal2_g726_16k_implementation);
+	SWITCH_ADD_CODEC(codec_interface, "G.726 40k", &g726_40k_implementation);
+	SWITCH_ADD_CODEC(codec_interface, "G.726 32k", &g726_32k_implementation);
+	SWITCH_ADD_CODEC(codec_interface, "G.726 24k", &g726_24k_implementation);
+	SWITCH_ADD_CODEC(codec_interface, "G.726 16k", &g726_16k_implementation);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

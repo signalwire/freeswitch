@@ -390,24 +390,12 @@ static switch_codec_implementation_t speex_8k_20ms_implementation = {
 	/*.next */ &speex_8k_30ms_implementation
 };
 
-static switch_codec_interface_t speex_codec_interface = {
-	/*.interface_name */ "speex",
-	/*.implementations */ &speex_8k_20ms_implementation
-};
-
-static switch_loadable_module_interface_t speex_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ &speex_codec_interface,
-	/*.application_interface */ NULL
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_speex_load)
 {
+	switch_codec_interface_t *codec_interface;
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &speex_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	SWITCH_ADD_CODEC(codec_interface, "speex", &speex_8k_20ms_implementation);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

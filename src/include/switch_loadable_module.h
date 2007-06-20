@@ -303,6 +303,14 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void);
 	break; \
 	}
 
+#define SWITCH_ADD_CODEC(codec_int, int_name, implementation) \
+	for (;;) { \
+	codec_int = (switch_codec_interface_t *)switch_loadable_module_create_interface(*module_interface, SWITCH_CODEC_INTERFACE); \
+	codec_int->implementations = implementation; \
+	codec_int->interface_name = int_name; \
+	break; \
+	}
+
 ///\}
 
 SWITCH_END_EXTERN_C

@@ -310,22 +310,9 @@ static switch_codec_implementation_t amr_implementation = {
 	/*.destroy */ switch_amr_destroy,
 };
 
-static switch_codec_interface_t amr_codec_interface = {
-	/*.interface_name */ "GSM-AMR",
-	/*.implementations */ &amr_implementation,
-};
-
-static switch_loadable_module_interface_t amr_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ &amr_codec_interface,
-	/*.application_interface */ NULL
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 {
+	switch_codec_interface_t *codec_interface;
 #ifndef AMR_PASSTHROUGH
 	char *cf = "amr.conf";
 	switch_xml_t cfg, xml, settings, param;
@@ -347,7 +334,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 #endif
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &amr_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	SWITCH_ADD_CODEC(codec_interface, "GSM-AMR", &amr_implementation);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

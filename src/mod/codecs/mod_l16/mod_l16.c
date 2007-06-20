@@ -406,28 +406,12 @@ static switch_codec_implementation_t raw_8k_10ms_implementation = {
 	/*.next */ &raw_8k_20ms_implementation
 };
 
-
-static switch_codec_interface_t raw_codec_interface = {
-	/*.interface_name */ "raw signed linear (16 bit)",
-	/*.implementations */ &raw_8k_10ms_implementation
-};
-
-static switch_loadable_module_interface_t raw_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ &raw_codec_interface,
-	/*.application_interface */ NULL,
-	/*.api_interface */ NULL,
-	///*.file_interface*/                   &raw_file_interface
-};
-
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_l16_load)
 {
+	switch_codec_interface_t *codec_interface;
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &raw_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	SWITCH_ADD_CODEC(codec_interface, "raw signed linear (16 bit)", &raw_8k_10ms_implementation);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

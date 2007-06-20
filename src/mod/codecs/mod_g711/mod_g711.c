@@ -392,33 +392,13 @@ static switch_codec_implementation_t g711a_8k_10ms_implementation = {
 	/*.next */ &g711a_8k_20ms_implementation
 };
 
-
-
-static switch_codec_interface_t g711a_codec_interface = {
-	/*.interface_name */ "g711 alaw",
-	/*.implementations */ &g711a_8k_10ms_implementation
-};
-
-static switch_codec_interface_t g711u_codec_interface = {
-	/*.interface_name */ "g711 ulaw",
-	/*.implementations */ &g711u_8k_10ms_implementation,
-	/*.next */ &g711a_codec_interface
-};
-
-static switch_loadable_module_interface_t g711_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ &g711u_codec_interface,
-	/*.application_interface */ NULL
-};
-
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_g711_load)
 {
+	switch_codec_interface_t *codec_interface;
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &g711_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	SWITCH_ADD_CODEC(codec_interface, "g711 ulaw", &g711u_8k_10ms_implementation);
+	SWITCH_ADD_CODEC(codec_interface, "g711 alaw", &g711a_8k_10ms_implementation);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

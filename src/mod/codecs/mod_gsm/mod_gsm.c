@@ -153,24 +153,13 @@ static switch_codec_implementation_t gsm_8k_implementation = {
 	/*.decode */ switch_gsm_decode,
 	/*.destroy */ switch_gsm_destroy,
 };
-static switch_codec_interface_t gsm_codec_interface = {
-	/*.interface_name */ "gsm",
-	/*.implementations */ &gsm_8k_implementation,
-};
-static switch_loadable_module_interface_t gsm_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ &gsm_codec_interface,
-	/*.application_interface */ NULL
-};
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_gsm_load)
 {
-
+	switch_codec_interface_t *codec_interface;
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &gsm_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	SWITCH_ADD_CODEC(codec_interface, "gsm", &gsm_8k_implementation);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

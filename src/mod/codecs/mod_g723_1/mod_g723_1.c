@@ -189,24 +189,12 @@ static switch_codec_implementation_t g723_1_implementation = {
 	/*.destroy */ switch_g723_destroy,
 };
 
-static switch_codec_interface_t g723_1_codec_interface = {
-	/*.interface_name */ "g723.1 6.3k",
-	/*.implementations */ &g723_1_implementation,
-};
-
-static switch_loadable_module_interface_t g723_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ &g723_1_codec_interface,
-	/*.application_interface */ NULL
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_g723_1_load)
 {
+	switch_codec_interface_t *codec_interface;
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &g723_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	SWITCH_ADD_CODEC(codec_interface, "g723.1 6.3k", &g723_1_implementation);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
