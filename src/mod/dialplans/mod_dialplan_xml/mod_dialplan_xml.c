@@ -292,7 +292,7 @@ static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switc
 	return status;
 }
 
-static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, void *arg, switch_caller_profile_t *caller_profile)
+SWITCH_STANDARD_DIALPLAN(dialplan_hunt)
 {
 	switch_caller_extension_t *extension = NULL;
 	switch_channel_t *channel;
@@ -377,27 +377,13 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session, 
 	return extension;
 }
 
-
-static switch_dialplan_interface_t dialplan_interface = {
-	/*.interface_name = */ "XML",
-	/*.hunt_function = */ dialplan_hunt
-		/*.next = NULL */
-};
-
-static switch_loadable_module_interface_t dialplan_module_interface = {
-	/*.module_name = */ modname,
-	/*.endpoint_interface = */ NULL,
-	/*.timer_interface = */ NULL,
-	/*.dialplan_interface = */ &dialplan_interface,
-	/*.codec_interface = */ NULL,
-	/*.application_interface = */ NULL
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_xml_load)
 {
+	switch_dialplan_interface_t *dp_interface;
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &dialplan_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	SWITCH_ADD_DIALPLAN(dp_interface, "XML", dialplan_hunt);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

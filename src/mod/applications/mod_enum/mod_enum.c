@@ -514,7 +514,7 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t ** result
 }
 
 
-static switch_caller_extension_t *enum_dialplan_hunt(switch_core_session_t *session, void *arg, switch_caller_profile_t *caller_profile)
+SWITCH_STANDARD_DIALPLAN(enum_dialplan_hunt)
 {
 	switch_caller_extension_t *extension = NULL;
 	enum_record_t *results, *rp;
