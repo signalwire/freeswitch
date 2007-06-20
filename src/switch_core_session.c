@@ -658,7 +658,7 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	switch_memory_pool_t *pool;
 	switch_event_t *event;
 
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_NOTICE, "Close Channel %s [%s]\n", 
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Close Channel %s [%s]\n", 
 					  switch_channel_get_name((*session)->channel),
 					  switch_channel_state_name(switch_channel_get_state((*session)->channel)));
 	

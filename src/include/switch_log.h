@@ -61,7 +61,7 @@ SWITCH_BEGIN_EXTERN_C
 	switch_time_t timestamp;
 	/*! A pointer to where the actual content of the message starts (skipping past the preformatted portion) */
 	char *content;
-
+	const char *userdata;
 	/* To maintain abi, only add new elements to the end of this struct and do not delete any elements */
 
 } switch_log_node_t;
@@ -95,7 +95,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void);
   \note there are channel macros to supply the first 4 parameters
 */
 SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char *file, const char *func, int line,
-									   switch_log_level_t level, const char *fmt, ...) PRINTF_FUNCTION(6, 7);
+									   const char *userdata, switch_log_level_t level, const char *fmt, ...) PRINTF_FUNCTION(6, 7);
 
 /*! 
   \brief Shut down  the logging engine

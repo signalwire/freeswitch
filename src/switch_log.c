@@ -164,7 +164,7 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t * thread, void *obj)
 }
 
 SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char *file, const char *func, int line,
-									   switch_log_level_t level, const char *fmt, ...)
+									   const char *userdata, switch_log_level_t level, const char *fmt, ...)
 {
 	char *data = NULL;
 	char *new_fmt = NULL;
