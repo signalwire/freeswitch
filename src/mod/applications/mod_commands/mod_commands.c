@@ -1251,7 +1251,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "killchan", "Kill Channel", kill_function, KILL_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "reloadxml", "Reload XML", reload_function, "");
 	SWITCH_ADD_API(commands_api_interface, "unload", "Unload Module", unload_function, LOAD_SYNTAX);
-	SWITCH_ADD_API(commands_api_interface, "load", "Load Module", unload_function, LOAD_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "load", "Load Module", load_function, LOAD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "transfer", "Transfer Module", transfer_function, TRANSFER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "pause", "Pause", pause_function, PAUSE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "show", "Show", show_function, SHOW_SYNTAX);
