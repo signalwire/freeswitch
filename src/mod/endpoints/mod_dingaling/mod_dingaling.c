@@ -732,7 +732,7 @@ static void dl_logger(char *file, const char *func, int line, int level, char *f
 					if (strlen(xmltxt) > 2) {
 						xml = switch_xml_parse_str(xmltxt, strlen(xmltxt));
 						form = switch_xml_toxml(xml);
-						switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, level, 
+						switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, level,
 										  "%s:\n-------------------------------------------------------------------------------\n"
 										  "%s\n", ll, form);
 						switch_xml_free(xml);
@@ -741,7 +741,7 @@ static void dl_logger(char *file, const char *func, int line, int level, char *f
 				}
 			}
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, level, "%s\n", data);
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, level, "%s\n", data);
 		}
 	}
 	va_end(ap);
