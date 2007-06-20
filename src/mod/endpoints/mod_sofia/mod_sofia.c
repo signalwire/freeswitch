@@ -1529,7 +1529,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	sofia_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
-	sofia_endpoint_interface->interface_name = modname;
+	sofia_endpoint_interface->interface_name = "sofia";
 	sofia_endpoint_interface->io_routines = &sofia_io_routines;
 	sofia_endpoint_interface->state_handler = &sofia_event_handlers;
 
