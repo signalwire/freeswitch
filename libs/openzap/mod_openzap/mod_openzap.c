@@ -914,7 +914,6 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
-	private_t *tech_pvt = NULL;
 	zap_status_t status = ZAP_SUCCESS;
 
     zap_log(ZAP_LOG_DEBUG, "got FXS sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
@@ -962,7 +961,6 @@ static ZIO_SIGNAL_CB_FUNCTION(on_isdn_signal)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
-	zap_status_t status;
 
 	zap_log(ZAP_LOG_DEBUG, "got ISDN sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
 
@@ -1046,7 +1044,7 @@ static void zap_logger(char *file, const char *func, int line, int level, char *
     va_start(ap, fmt);
 
 	if (switch_vasprintf(&data, fmt, ap) != -1) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, level, data);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, level, data);
 		free(data);
 	}
 	
