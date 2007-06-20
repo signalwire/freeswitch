@@ -39,7 +39,7 @@ SWITCH_MODULE_DEFINITION(mod_conference, mod_conference_load, mod_conference_shu
 
 static const char global_app_name[] = "conference";
 static char *global_cf_name = "conference.conf";
-static switch_api_interface_t conf_api_interface;
+static char *api_syntax;
 
 /* Size to allocate for audio buffers */
 #define CONF_BUFFER_SIZE 1024 * 128
@@ -3523,7 +3523,7 @@ SWITCH_STANDARD_API(conf_api_main)
 			if (strcasecmp(argv[0], "list") == 0) {
 				conf_api_sub_list(NULL, stream, argc, argv);
 			} else if (strcasecmp(argv[0], "help") == 0 || strcasecmp(argv[0], "commands") == 0) {
-				stream->write_function(stream, "%s\n", conf_api_interface.syntax);
+				stream->write_function(stream, "%s\n", api_syntax);
 			} else if (argv[1] && strcasecmp(argv[1], "dial") == 0) {
 				if (conf_api_sub_dial(NULL, stream, argc, argv) != SWITCH_STATUS_SUCCESS) {
 					/* command returned error, so show syntax usage */
@@ -4338,30 +4338,6 @@ static void launch_conference_record_thread(conference_obj_t * conference, char 
 	switch_thread_create(&thread, thd_attr, conference_record_thread_run, rec, rec->pool);
 }
 
-static switch_application_interface_t conference_autocall_application_interface = {
-	/*.interface_name */ "conference_set_auto_outcall",
-	/*.application_function */ conference_auto_function,
-	NULL, NULL, NULL,
-	/* flags */ SAF_NONE,
-	/*.next */
-};
-
-static switch_application_interface_t conference_application_interface = {
-	/*.interface_name */ global_app_name,
-	/*.application_function */ conference_function,
-	NULL, NULL, NULL,
-	/* flags */ SAF_NONE,
-	/*.next */ &conference_autocall_application_interface
-};
-
-static switch_api_interface_t conf_api_interface = {
-	/*.interface_name */ "conference",
-	/*.desc */ "Conference module commands",
-	/*.function */ conf_api_main,
-	/*.syntax *//* see switch_module_load, this is built on the fly */
-	/*.next */
-};
-
 static switch_status_t chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint)
 {
 	char name[512] = "", *p, *lbuf = NULL;
@@ -4412,7 +4388,7 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 #if 0
 			else {
 				if (strcasecmp(argv[0], "help") == 0 || strcasecmp(argv[0], "commands") == 0) {
-					stream.write_function(&stream, "%s\n", conf_api_interface.syntax);
+					stream.write_function(&stream, "%s\n", api_syntax);
 					/* find a normal command */
 				} else {
 					conf_api_dispatch(conference, &stream, argc, argv, (const char *) body, 0);
@@ -4430,26 +4406,6 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
-static switch_chat_interface_t conference_chat_interface = {
-	/*.name */ CONF_CHAT_PROTO,
-	/*.chat_send */ chat_send,
-
-};
-
-static switch_loadable_module_interface_t conference_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ &conference_application_interface,
-	/*.api_interface */ &conf_api_interface,
-	/*.file_interface */ NULL,
-	/*.speech_interface */ NULL,
-	/*.directory_interface */ NULL,
-	/*.chat_interface */ &conference_chat_interface
-};
 
 static switch_status_t conf_default_controls(conference_obj_t * conference)
 {
@@ -4941,9 +4897,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
 	uint32_t i;
 	size_t nl, ol = 0;
 	char *p = NULL;
+	switch_chat_interface_t *chat_interface;
+	switch_api_interface_t *api_interface;
+	switch_application_interface_t *app_interface;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	memset(&globals, 0, sizeof(globals));
+
+	/* Connect my internal structure to the blank pointer passed to me */
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	/* build api interface help ".syntax" field string */
 	p = strdup("");
@@ -4962,13 +4924,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
 		}
 
 	}
-	/* install api interface help ".syntax" field string */
-	if (p != NULL) {
-		conf_api_interface.syntax = p;
-	}
+	api_syntax = p;
 
-	/* Connect my internal structure to the blank pointer passed to me */
-	*module_interface = &conference_module_interface;
+	SWITCH_ADD_API(api_interface, "conference", "Conference module commands", conf_api_main, p);
+	SWITCH_ADD_APP(app_interface, global_app_name, global_app_name, NULL, conference_function, NULL, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "conference_set_auto_outcall", "conference_set_auto_outcall", NULL, conference_auto_function, NULL, SAF_NONE);
+	SWITCH_ADD_CHAT(chat_interface, CONF_CHAT_PROTO, chat_send);
 
 	/* create/register custom event message type */
 	if (switch_event_reserve_subclass(CONF_EVENT_MAINT) != SWITCH_STATUS_SUCCESS) {
@@ -4977,10 +4938,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
 	}
 
 	/* Setup the pool */
-	if (switch_core_new_memory_pool(&globals.conference_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no conference pool\n");
-		return SWITCH_STATUS_TERM;
-	}
+	globals.conference_pool = pool;
 
 	/* Setup a hash to store conferences by name */
 	switch_core_hash_init(&globals.conference_hash, globals.conference_pool);
@@ -5015,9 +4973,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_conference_shutdown)
 		}
 
 		/* free api interface help ".syntax" field string */
-		if (conf_api_interface.syntax != NULL) {
-			free((char *) conf_api_interface.syntax);
-		}
+		switch_safe_free(api_syntax);
 	}
 
 	return SWITCH_STATUS_SUCCESS;

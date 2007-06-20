@@ -275,6 +275,26 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void);
 	break; \
 	}
 
+#define SWITCH_ADD_CHAT(chat_int, int_name, funcptr) \
+	for (;;) { \
+	chat_int = switch_loadable_module_create_interface(*module_interface, SWITCH_CHAT_INTERFACE); \
+	chat_int->chat_send = funcptr; \
+	chat_int->interface_name = int_name; \
+	break; \
+	}
+
+#define SWITCH_ADD_APP(app_int, int_name, short_descript, long_descript, funcptr, syntax_string, app_flags) \
+	for (;;) { \
+	app_int = switch_loadable_module_create_interface(*module_interface, SWITCH_APPLICATION_INTERFACE); \
+	app_int->interface_name = int_name; \
+	app_int->application_function = funcptr; \
+	app_int->short_desc = short_descript; \
+	app_int->long_desc = long_descript; \
+	app_int->syntax = syntax_string; \
+	app_interface->flags = app_flags; \
+	break; \
+	}
+
 ///\}
 
 SWITCH_END_EXTERN_C
