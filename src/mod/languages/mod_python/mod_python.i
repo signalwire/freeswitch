@@ -1,6 +1,14 @@
 %module freeswitch
 %include "cstring.i"
 
+/** 
+ * tell swig to treat these variables as mutable so they
+ * can be used to return values.
+ * See http://www.swig.org/Doc1.3/Library.html
+ */
+%cstring_bounded_mutable(char *dtmf_buf, 128);
+%cstring_bounded_mutable(char *terminator, 8);
+
 /** insert the following includes into generated code so it compiles */
 %{
 #include "switch_cpp.h"
@@ -14,8 +22,5 @@
 %include switch_cpp.h
 %include freeswitch_python.h
 
-/** hmm .. dunno why this is here */
-%cstring_bounded_mutable(char *dtmf_buf, 128);
-%cstring_bounded_mutable(char *terminator, 8);
 
 
