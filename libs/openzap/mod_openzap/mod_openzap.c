@@ -1044,7 +1044,7 @@ static void zap_logger(char *file, const char *func, int line, int level, char *
     va_start(ap, fmt);
 
 	if (switch_vasprintf(&data, fmt, ap) != -1) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, level, data);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, (char *)func, line, NULL, level, data);
 		free(data);
 	}
 	

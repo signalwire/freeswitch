@@ -210,6 +210,35 @@ static uint32_t hashfromstring(void *ky)
     return hash;
 }
 
+
+static zap_status_t zap_destroy_channel(zap_channel_t *zchan)
+{
+
+	if (zap_test_flag(zchan, ZAP_CHANNEL_CONFIGURED)) {
+		zap_mutex_destroy(&zchan->mutex);
+		zap_buffer_destroy(&zchan->digit_buffer);
+		zap_buffer_destroy(&zchan->dtmf_buffer);
+		zap_buffer_destroy(&zchan->fsk_buffer);
+
+		if (zchan->tone_session.buffer) {
+			teletone_destroy_session(&zchan->tone_session);
+			memset(&zchan->tone_session, 0, sizeof(zchan->tone_session));
+		}
+
+		
+		if (zchan->span->zio->destroy_channel) {
+			zap_log(ZAP_LOG_INFO, "Closing channel %u:%u fd:%d\n", zchan->span_id, zchan->chan_id, zchan->sockfd);
+			if (zchan->span->zio->destroy_channel(zchan) == ZAP_SUCCESS) {
+				zap_clear_flag_locked(zchan, ZAP_CHANNEL_CONFIGURED);
+			} else {
+				zap_log(ZAP_LOG_ERROR, "Error Closing channel %u:%u fd:%d\n", zchan->span_id, zchan->chan_id, zchan->sockfd);
+			}
+		}
+	}
+	
+	return ZAP_SUCCESS;
+}
+
 zap_status_t zap_span_create(zap_io_interface_t *zio, zap_span_t **span)
 {
 	zap_span_t *new_span = NULL;
@@ -248,12 +277,7 @@ zap_status_t zap_span_close_all(void)
 		span = &globals.spans[i];
 
 		for(j = 0; j < span->chan_count; j++) {
-			if (zap_test_flag((&span->channels[j]), ZAP_CHANNEL_CONFIGURED)) {
-				zap_mutex_destroy(&span->channels[j].mutex);
-				zap_buffer_destroy(&span->channels[j].digit_buffer);
-				zap_buffer_destroy(&span->channels[j].dtmf_buffer);
-				zap_buffer_destroy(&span->channels[j].fsk_buffer);
-			}
+			zap_destroy_channel(&span->channels[i]);
 		}
 
 		if (span->mutex) {
@@ -348,6 +372,13 @@ zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_cha
 		new_chan->span = span;
 		new_chan->fds[0] = -1;
 		new_chan->fds[1] = -1;
+		if (!new_chan->dtmf_on) {
+			new_chan->dtmf_on = ZAP_DEFAULT_DTMF_ON;
+		}
+
+		if (!new_chan->dtmf_off) {
+			new_chan->dtmf_off = ZAP_DEFAULT_DTMF_OFF;
+		}
 		zap_mutex_create(&new_chan->mutex);
 		zap_buffer_create(&new_chan->digit_buffer, 128, 128, 0);
 		zap_set_flag(new_chan, ZAP_CHANNEL_CONFIGURED | ZAP_CHANNEL_READY);
@@ -693,11 +724,6 @@ static zap_status_t zap_channel_reset(zap_channel_t *zchan)
 	memset(zchan->tokens, 0, sizeof(zchan->tokens));
 	zchan->token_count = 0;
 
-	if (zchan->tone_session.buffer) {
-		teletone_destroy_session(&zchan->tone_session);
-		memset(&zchan->tone_session, 0, sizeof(zchan->tone_session));
-	}
-
 	if (zchan->dtmf_buffer) {
 		zap_buffer_zero(zchan->dtmf_buffer);
 	}
@@ -706,8 +732,14 @@ static zap_status_t zap_channel_reset(zap_channel_t *zchan)
 		zap_buffer_zero(zchan->digit_buffer);
 	}
 
-	zchan->dtmf_on = zchan->dtmf_off = 0;
+	if (!zchan->dtmf_on) {
+		zchan->dtmf_on = ZAP_DEFAULT_DTMF_ON;
+	}
 
+	if (!zchan->dtmf_off) {
+		zchan->dtmf_off = ZAP_DEFAULT_DTMF_OFF;
+	}
+	
 	if (zap_test_flag(zchan, ZAP_CHANNEL_TRANSCODE)) {
 		zchan->effective_codec = zchan->native_codec;
 		zchan->packet_len = zchan->native_interval * (zchan->effective_codec == ZAP_CODEC_SLIN ? 16 : 8);
@@ -858,29 +890,21 @@ zap_status_t zap_channel_close(zap_channel_t **zchan)
 static zap_status_t zchan_activate_dtmf_buffer(zap_channel_t *zchan)
 {
 
-	if (zchan->dtmf_buffer) {
-		return ZAP_SUCCESS;
+	if (!zchan->dtmf_buffer) {
+		if (zap_buffer_create(&zchan->dtmf_buffer, 1024, 3192, 0) != ZAP_SUCCESS) {
+			zap_log(ZAP_LOG_ERROR, "Failed to allocate DTMF Buffer!\n");
+			snprintf(zchan->last_error, sizeof(zchan->last_error), "buffer error");
+			return ZAP_FAIL;
+		} else {
+			zap_log(ZAP_LOG_DEBUG, "Created DTMF Buffer!\n");
+		}
+	}
+	
+	if (!zchan->tone_session.buffer) {
+		memset(&zchan->tone_session, 0, sizeof(zchan->tone_session));
+		teletone_init_session(&zchan->tone_session, 0, NULL, NULL);
 	}
 
-	if (zap_buffer_create(&zchan->dtmf_buffer, 1024, 3192, 0) != ZAP_SUCCESS) {
-		zap_log(ZAP_LOG_ERROR, "Failed to allocate DTMF Buffer!\n");
-		snprintf(zchan->last_error, sizeof(zchan->last_error), "buffer error");
-		return ZAP_FAIL;
-	} else {
-		zap_log(ZAP_LOG_DEBUG, "Created DTMF Buffer!\n");
-	}
-	
-	if (!zchan->dtmf_on) {
-		zchan->dtmf_on = 250;
-	}
-
-	if (!zchan->dtmf_off) {
-		zchan->dtmf_off = 50;
-	}
-	
-	memset(&zchan->tone_session, 0, sizeof(zchan->tone_session));
-	teletone_init_session(&zchan->tone_session, 0, NULL, NULL);
-	
 	zchan->tone_session.rate = zchan->rate;
 	zchan->tone_session.duration = zchan->dtmf_on * (zchan->tone_session.rate / 1000);
 	zchan->tone_session.wait = zchan->dtmf_off * (zchan->tone_session.rate / 1000);
@@ -1118,11 +1142,10 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 				char *digits = ZAP_COMMAND_OBJ_CHAR_P;
 				int x = 0;
 
-				if (!zchan->dtmf_buffer) {
-					if ((status = zchan_activate_dtmf_buffer(zchan)) != ZAP_SUCCESS) {
-						GOTO_STATUS(done, status);
-					}
+				if ((status = zchan_activate_dtmf_buffer(zchan)) != ZAP_SUCCESS) {
+					GOTO_STATUS(done, status);
 				}
+				
 				zap_log(ZAP_LOG_DEBUG, "Adding DTMF SEQ [%s]\n", digits);	
 				
 				for (cur = digits; *cur; cur++) {
@@ -1130,6 +1153,9 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 					if ((wrote = teletone_mux_tones(&zchan->tone_session, &zchan->tone_session.TONES[(int)*cur]))) {
 						zap_buffer_write(zchan->dtmf_buffer, zchan->tone_session.buffer, wrote * 2);
 						x++;
+					} else {
+						zap_log(ZAP_LOG_ERROR, "Problem Adding DTMF SEQ [%s]\n", digits);	
+						GOTO_STATUS(done, ZAP_FAIL);
 					}
 				}
 				
@@ -1860,11 +1886,15 @@ zap_status_t zap_global_init(void)
 	return ZAP_FAIL;
 }
 
+
+
 zap_status_t zap_global_destroy(void)
 {
 	unsigned int i,j;
 	time_end();
 	
+	zap_span_close_all();
+
 	for(i = 1; i <= globals.span_index; i++) {
 		zap_span_t *cur_span = &globals.spans[i];
 
@@ -1873,14 +1903,7 @@ zap_status_t zap_global_destroy(void)
 			for(j = 1; j <= cur_span->chan_count; j++) {
 				zap_channel_t *cur_chan = &cur_span->channels[j];
 				if (zap_test_flag(cur_chan, ZAP_CHANNEL_CONFIGURED)) {
-					if (cur_span->zio->destroy_channel) {
-						zap_log(ZAP_LOG_INFO, "Closing channel %u:%u fd:%d\n", cur_chan->span_id, cur_chan->chan_id, cur_chan->sockfd);
-						if (cur_span->zio->destroy_channel(cur_chan) == ZAP_SUCCESS) {
-							zap_clear_flag_locked(cur_chan, ZAP_CHANNEL_CONFIGURED);
-						} else {
-							zap_log(ZAP_LOG_ERROR, "Error Closing channel %u:%u fd:%d\n", cur_chan->span_id, cur_chan->chan_id, cur_chan->sockfd);
-						}
-					}
+					zap_destroy_channel(cur_chan);
 				}
 			}
 			zap_mutex_unlock(cur_span->mutex);
@@ -1889,8 +1912,6 @@ zap_status_t zap_global_destroy(void)
 
 
 #ifdef ZAP_ZT_SUPPORT
-	zap_span_close_all();
-
 	if (interfaces.zt_interface) {
 		zt_destroy();		
 	}

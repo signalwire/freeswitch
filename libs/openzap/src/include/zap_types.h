@@ -63,6 +63,8 @@ struct zap_io_interface;
 #define ZAP_COMMAND_OBJ_INT *((int *)obj)
 #define ZAP_COMMAND_OBJ_CHAR_P (char *)obj
 #define ZAP_FSK_MOD_FACTOR 0x10000
+#define ZAP_DEFAULT_DTMF_ON 250
+#define ZAP_DEFAULT_DTMF_OFF 50
 
 typedef uint64_t zap_time_t; 
 
