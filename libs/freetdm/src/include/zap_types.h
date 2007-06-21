@@ -303,7 +303,8 @@ typedef enum {
 	ZAP_CHANNEL_RINGING = (1 << 15),
 	ZAP_CHANNEL_PROGRESS_DETECT = (1 << 16),
 	ZAP_CHANNEL_CALLERID_DETECT = (1 << 17),
-	ZAP_CHANNEL_OUTBOUND = (1 << 18)
+	ZAP_CHANNEL_OUTBOUND = (1 << 18),
+	ZAP_CHANNEL_SUSPENDED = (1 << 19)
 } zap_channel_flag_t;
 
 typedef struct zap_channel zap_channel_t;
