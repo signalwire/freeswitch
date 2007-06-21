@@ -424,21 +424,39 @@ static JSFunctionSpec odbc_methods[] = {
 
 
 static JSPropertySpec odbc_props[] = {
-//  {"name", odbc_NAME, JSPROP_READONLY|JSPROP_PERMANENT}, 
+	{"name", odbc_NAME, JSPROP_READONLY|JSPROP_PERMANENT}, 
 	{0}
 };
 
-
-static JSBool odbc_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval * vp)
+static JSBool odbc_setProperty(JSContext * cx, JSObject * obj, jsval id, jsval *vp)
 {
-	JSBool res = JS_TRUE;
+	char *name = JS_GetStringBytes(JS_ValueToString(cx, id));
 
-	return res;
+	if (strcmp(name, "_oDbC_dB_RoW_DaTa_")) {
+		*vp = BOOLEAN_TO_JSVAL(JS_FALSE);
+	}
+	return JS_TRUE;
+}
+
+static JSBool odbc_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval *vp)
+{
+	int param;
+	char *name = JS_GetStringBytes(JS_ValueToString(cx, id));
+	
+	/* numbers are our props anything else is a method */
+	if (name[0] >= 48 && name[0] <= 57) {
+		param = atoi(name);
+	} else {
+		return JS_TRUE;
+	}
+
+	*vp = BOOLEAN_TO_JSVAL(JS_FALSE);
+	return JS_TRUE;
 }
 
 JSClass odbc_class = {
 	modname, JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, odbc_getProperty, DEFAULT_SET_PROPERTY,
+	JS_PropertyStub, JS_PropertyStub, odbc_getProperty, odbc_setProperty,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, odbc_destroy, NULL, NULL, NULL,
 	odbc_construct
 };
