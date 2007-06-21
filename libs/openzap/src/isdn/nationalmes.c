@@ -259,3 +259,42 @@ L3INT nationalPmes_Setup(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT 
 
     return rc;
 }
+
+
+/*****************************************************************************
+
+  Function:     DMSUmes_0x0f
+
+*****************************************************************************/
+L3INT DMSUmes_0x0f(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *mes, L3INT IOff, L3INT Size)
+//L3INT Q931Umes_ConnectAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *mes, L3INT IOff, L3INT Size)
+{
+	L3INT OOff=0;
+	L3INT rc=Q931E_NO_ERROR;
+
+	if (mes->ProtDisc == 8) {
+		Q931Umes_ConnectAck(pTrunk, IBuf, mes, IOff, Size);
+	}
+
+	while(IOff < Size)
+	{
+		switch(IBuf[IOff])
+		{
+		case Q931ie_CHANNEL_IDENTIFICATION:
+			rc = Q931Uie[pTrunk->Dialect][Q931ie_RESTART_INDICATOR](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			if(rc != Q931E_NO_ERROR) 
+				return rc;
+			break;
+		case Q931ie_CHANGE_STATUS:
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			if(rc != Q931E_NO_ERROR) 
+				return rc;
+			break;
+		default:
+			return Q931E_ILLEGAL_IE;
+			break;
+		}
+	}
+    mes->Size = sizeof(Q931mes_Generic) - 1 + OOff;
+    return Q931E_NO_ERROR;
+}

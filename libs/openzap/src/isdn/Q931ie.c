@@ -2533,6 +2533,7 @@ L3INT Q931Uie_RestartInd(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHA
 
     /* Octet 3 */
     pie->Class = IBuf[Octet+Off] & 0x07;
+    pie->Spare = IBuf[Octet+Off] & 0x78;
 
     Off = Q931ReadExt(&IBuf[Octet], Off);
     Octet++;
