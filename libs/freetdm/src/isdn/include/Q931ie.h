@@ -63,6 +63,7 @@ typedef enum {
 
 /* Variable Length Information Elements */
 #define Q931ie_SEGMENTED_MESSAGE                0x00 /* 0000 0000       */
+#define Q931ie_CHANGE_STATUS                    0x01 /* 0000 0001       */
 #define Q931ie_BEARER_CAPABILITY                0x04 /* 0000 0100       */
 #define Q931ie_CAUSE                            0x08 /* 0000 1000       */
 #define Q931ie_CALL_IDENTITY                    0x10 /* 0001 0000       */
@@ -1060,6 +1061,7 @@ typedef struct
 {
     L3UCHAR IEId;                   /* 01110100                             */
     L3UCHAR Size;                   /* Length of Information Element        */
+    L3UCHAR Spare;                  /* Spare                                */
     L3UCHAR Class;                  /* Class                                */
                                     /*  000 Indicate channels               */
                                     /*  110 Single interface                */

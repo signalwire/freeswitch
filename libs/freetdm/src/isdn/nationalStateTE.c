@@ -67,7 +67,7 @@ void nationalCreateTE(L3UCHAR i)
     Q931SetMesProc(Q931mes_ALERTING,            i,Q931ProcAlertingTE,          Q931Umes_Alerting,          Q931Pmes_Alerting);
     Q931SetMesProc(Q931mes_CALL_PROCEEDING,     i,Q931ProcCallProceedingTE,    Q931Umes_CallProceeding,    Q931Pmes_CallProceeding);
     Q931SetMesProc(Q931mes_CONNECT,             i,Q931ProcConnectTE,           Q931Umes_Connect,           Q931Pmes_Connect);
-    Q931SetMesProc(Q931mes_CONNECT_ACKNOWLEDGE, i,Q931ProcConnectAckTE,        Q931Umes_ConnectAck,        Q931Pmes_ConnectAck);
+    Q931SetMesProc(Q931mes_CONNECT_ACKNOWLEDGE, i,Q931ProcConnectAckTE,        DMSUmes_0x0f,		        Q931Pmes_ConnectAck);
     Q931SetMesProc(Q931mes_PROGRESS,            i,Q931ProcProgressTE,          Q931Umes_Progress,          Q931Pmes_Progress);
     Q931SetMesProc(Q931mes_SETUP,               i,Q931ProcSetupTE,             nationalUmes_Setup,         nationalPmes_Setup);
     Q931SetMesProc(Q931mes_SETUP_ACKNOWLEDGE,   i,Q931ProcSetupAckTE,          Q931Umes_SetupAck,          Q931Pmes_SetupAck);
