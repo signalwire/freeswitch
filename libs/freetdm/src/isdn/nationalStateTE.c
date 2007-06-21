@@ -52,6 +52,8 @@
 *****************************************************************************/
 
 #include "national.h"
+extern L3INT Q931L4HeaderSpace;
+L3INT DMSProc0x0fTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom);
 
 /*****************************************************************************
   Function:		nationalCreateTE
@@ -67,7 +69,7 @@ void nationalCreateTE(L3UCHAR i)
     Q931SetMesProc(Q931mes_ALERTING,            i,Q931ProcAlertingTE,          Q931Umes_Alerting,          Q931Pmes_Alerting);
     Q931SetMesProc(Q931mes_CALL_PROCEEDING,     i,Q931ProcCallProceedingTE,    Q931Umes_CallProceeding,    Q931Pmes_CallProceeding);
     Q931SetMesProc(Q931mes_CONNECT,             i,Q931ProcConnectTE,           Q931Umes_Connect,           Q931Pmes_Connect);
-    Q931SetMesProc(Q931mes_CONNECT_ACKNOWLEDGE, i,Q931ProcConnectAckTE,        DMSUmes_0x0f,		        Q931Pmes_ConnectAck);
+    Q931SetMesProc(Q931mes_CONNECT_ACKNOWLEDGE, i,DMSProc0x0fTE,		       DMSUmes_0x0f,		       Q931Pmes_ConnectAck);
     Q931SetMesProc(Q931mes_PROGRESS,            i,Q931ProcProgressTE,          Q931Umes_Progress,          Q931Pmes_Progress);
     Q931SetMesProc(Q931mes_SETUP,               i,Q931ProcSetupTE,             nationalUmes_Setup,         nationalPmes_Setup);
     Q931SetMesProc(Q931mes_SETUP_ACKNOWLEDGE,   i,Q931ProcSetupAckTE,          Q931Umes_SetupAck,          Q931Pmes_SetupAck);
@@ -207,4 +209,41 @@ void nationalCreateTE(L3UCHAR i)
 	Q931AddStateEntry(i,Q931_U19,
 	Q931AddStateEntry(i,Q931_U25,
 */
+}
+
+/*****************************************************************************
+
+  Function:		Q931ProcConnectAckTE
+
+*****************************************************************************/
+L3INT DMSProc0x0fTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
+{
+    L3INT callIndex;
+    L3INT ret=Q931E_NO_ERROR;
+	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+
+	if (pMes->ProtDisc == 8) {
+		/* Find the call using CRV */
+		ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
+		if(ret != Q931E_NO_ERROR)
+			return ret;
+
+
+		/* TODO chack against state table for illegal or unexpected message here*/
+
+		/* TODO - Set correct timer here */
+		Q931StartTimer(pTrunk, callIndex, 303);
+	}
+	if(iFrom == 4)
+	{
+		/* TODO Add proc here*/
+        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+	}
+	else if (iFrom ==2)
+	{
+		/* TODO Add proc here*/
+        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	}
+	return ret;
+
 }
