@@ -1205,7 +1205,10 @@ L3INT Q931Uie_ChanID(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * 
             /* Octet 3.3 */
             /* Temp fix. Assume B channel. H channels not supported */
             pie->ChanSlot = IBuf[Octet+Off] & 0x7f;
-            Off = Q931ReadExt(&IBuf[Octet+Off], Off);
+			/* Some dialects don't follow the extension coding properly for this, but this should be safe for all */
+			if (Octet + Off -1 != IESize) {
+				Off = Q931ReadExt(&IBuf[Octet+Off], Off);
+			}
             Off++;
         }
     }
