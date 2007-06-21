@@ -280,7 +280,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				{
 						
 					if (state_counter > 500) {
-						if (zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK) && zchan->state >= ZAP_CHANNEL_STATE_IDLE) {
+						if (zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK) && zchan->last_state >= ZAP_CHANNEL_STATE_IDLE) {
 							zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_BUSY);
 						} else {
 							zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
