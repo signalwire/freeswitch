@@ -29,7 +29,7 @@
  * mod_portaudio.c -- PortAudio Endpoint Module
  *
  */
-#include <switch.h>
+#include "switch.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,8 +47,7 @@ static switch_memory_pool_t *module_pool = NULL;
 static switch_endpoint_interface_t *channel_endpoint_interface;
 
 #define SAMPLE_TYPE  paInt16
-//#define SAMPLE_TYPE  paFloat32
-typedef short SAMPLE;
+typedef int16_t SAMPLE;
 
 typedef switch_status_t (*pa_command_t) (char **argv, int argc, switch_stream_handle_t *stream);
 
@@ -268,7 +267,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 						if (olen == 0) {
 							break;
 						}
-						WriteAudioStream(globals.ring_stream, abuf, (long) olen);
+						WriteAudioStream(globals.ring_stream, abuf, (long) olen, globals.read_codec.implementation->microseconds_per_frame / 1000);
 					}
 				}
 			}
@@ -638,7 +637,12 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	switch_mutex_lock(globals.device_lock);
 
-	if ((samples = ReadAudioStream(globals.audio_stream, globals.read_frame.data, globals.read_codec.implementation->samples_per_frame)) != 0) {
+	if ((samples = ReadAudioStream(globals.audio_stream, globals.read_frame.data, 
+								   globals.read_codec.implementation->samples_per_frame, 
+								   globals.read_codec.implementation->microseconds_per_frame / 1000)) == 0) {
+
+		goto cng;
+	} else {
 		globals.read_frame.datalen = samples * 2;
 		globals.read_frame.samples = samples;
 
@@ -682,7 +686,8 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 	if (globals.audio_stream) {
 		if (switch_test_flag((&globals), GFLAG_EAR)) {
-			WriteAudioStream(globals.audio_stream, (short *) frame->data, (int) (frame->datalen / sizeof(SAMPLE)));
+			WriteAudioStream(globals.audio_stream, (short *) frame->data, (int) (frame->datalen / sizeof(SAMPLE)),
+							 globals.read_codec.implementation->microseconds_per_frame / 1000);
 		}
 		status = SWITCH_STATUS_SUCCESS;
 	}

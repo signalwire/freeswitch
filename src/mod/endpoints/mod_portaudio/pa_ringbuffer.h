@@ -51,17 +51,19 @@
 */
 
 #ifdef __cplusplus
-extern "C" {
-#endif							/* __cplusplus */
+extern "C"
+{
+#endif /* __cplusplus */
 
-	typedef struct PaUtilRingBuffer {
-		long bufferSize;		/* Number of bytes in FIFO. Power of 2. Set by PaUtil_InitRingBuffer. */
-		long writeIndex;		/* Index of next writable byte. Set by PaUtil_AdvanceRingBufferWriteIndex. */
-		long readIndex;			/* Index of next readable byte. Set by PaUtil_AdvanceRingBufferReadIndex. */
-		long bigMask;			/* Used for wrapping indices with extra bit to distinguish full/empty. */
-		long smallMask;			/* Used for fitting indices to buffer. */
-		char *buffer;
-	} PaUtilRingBuffer;
+typedef struct PaUtilRingBuffer
+{
+    long   bufferSize; /* Number of bytes in FIFO. Power of 2. Set by PaUtil_InitRingBuffer. */
+    long   writeIndex; /* Index of next writable byte. Set by PaUtil_AdvanceRingBufferWriteIndex. */
+    long   readIndex;  /* Index of next readable byte. Set by PaUtil_AdvanceRingBufferReadIndex. */
+    long   bigMask;    /* Used for wrapping indices with extra bit to distinguish full/empty. */
+    long   smallMask;  /* Used for fitting indices to buffer. */
+    char  *buffer;
+}PaUtilRingBuffer;
 
 /** Initialize Ring Buffer.
 
@@ -74,13 +76,13 @@ extern "C" {
 
  @return -1 if numBytes is not a power of 2, otherwise 0.
 */
-	long PaUtil_InitializeRingBuffer(PaUtilRingBuffer * rbuf, long numBytes, void *dataPtr);
+long PaUtil_InitializeRingBuffer( PaUtilRingBuffer *rbuf, long numBytes, void *dataPtr );
 
 /** Clear buffer. Should only be called when buffer is NOT being read.
 
  @param rbuf The ring buffer.
 */
-	void PaUtil_FlushRingBuffer(PaUtilRingBuffer * rbuf);
+void PaUtil_FlushRingBuffer( PaUtilRingBuffer *rbuf );
 
 /** Retrieve the number of bytes available in the ring buffer for writing.
 
@@ -88,7 +90,7 @@ extern "C" {
 
  @return The number of bytes available for writing.
 */
-	long PaUtil_GetRingBufferWriteAvailable(PaUtilRingBuffer * rbuf);
+long PaUtil_GetRingBufferWriteAvailable( PaUtilRingBuffer *rbuf );
 
 /** Retrieve the number of bytes available in the ring buffer for reading.
 
@@ -96,7 +98,7 @@ extern "C" {
 
  @return The number of bytes available for reading.
 */
-	long PaUtil_GetRingBufferReadAvailable(PaUtilRingBuffer * rbuf);
+long PaUtil_GetRingBufferReadAvailable( PaUtilRingBuffer *rbuf );
 
 /** Write data to the ring buffer.
 
@@ -108,7 +110,7 @@ extern "C" {
 
  @return The number of bytes written.
 */
-	long PaUtil_WriteRingBuffer(PaUtilRingBuffer * rbuf, const void *data, long numBytes);
+long PaUtil_WriteRingBuffer( PaUtilRingBuffer *rbuf, const void *data, long numBytes );
 
 /** Read data from the ring buffer.
 
@@ -120,7 +122,7 @@ extern "C" {
 
  @return The number of bytes read.
 */
-	long PaUtil_ReadRingBuffer(PaUtilRingBuffer * rbuf, void *data, long numBytes);
+long PaUtil_ReadRingBuffer( PaUtilRingBuffer *rbuf, void *data, long numBytes );
 
 /** Get address of region(s) to which we can write data.
 
@@ -142,7 +144,9 @@ extern "C" {
 
  @return The room available to be written or numBytes, whichever is smaller.
 */
-	long PaUtil_GetRingBufferWriteRegions(PaUtilRingBuffer * rbuf, long numBytes, void **dataPtr1, long *sizePtr1, void **dataPtr2, long *sizePtr2);
+long PaUtil_GetRingBufferWriteRegions( PaUtilRingBuffer *rbuf, long numBytes,
+                                       void **dataPtr1, long *sizePtr1,
+                                       void **dataPtr2, long *sizePtr2 );
 
 /** Advance the write index to the next location to be written.
 
@@ -152,7 +156,7 @@ extern "C" {
 
  @return The new position.
 */
-	long PaUtil_AdvanceRingBufferWriteIndex(PaUtilRingBuffer * rbuf, long numBytes);
+long PaUtil_AdvanceRingBufferWriteIndex( PaUtilRingBuffer *rbuf, long numBytes );
 
 /** Get address of region(s) from which we can write data.
 
@@ -174,7 +178,9 @@ extern "C" {
 
  @return The number of bytes available for reading.
 */
-	long PaUtil_GetRingBufferReadRegions(PaUtilRingBuffer * rbuf, long numBytes, void **dataPtr1, long *sizePtr1, void **dataPtr2, long *sizePtr2);
+long PaUtil_GetRingBufferReadRegions( PaUtilRingBuffer *rbuf, long numBytes,
+                                      void **dataPtr1, long *sizePtr1,
+                                      void **dataPtr2, long *sizePtr2 );
 
 /** Advance the read index to the next location to be read.
 
@@ -184,9 +190,9 @@ extern "C" {
 
  @return The new position.
 */
-	long PaUtil_AdvanceRingBufferReadIndex(PaUtilRingBuffer * rbuf, long numBytes);
+long PaUtil_AdvanceRingBufferReadIndex( PaUtilRingBuffer *rbuf, long numBytes );
 
 #ifdef __cplusplus
 }
-#endif							/* __cplusplus */
-#endif							/* PA_RINGBUFFER_H */
+#endif /* __cplusplus */
+#endif /* PA_RINGBUFFER_H */

@@ -49,11 +49,12 @@
 #include <string.h>
 #include <time.h>
 
+
 /************************************************************************/
 /******** Constants *****************************************************/
 /************************************************************************/
 
-#define FRAMES_PER_BUFFER    (256)
+#define FRAMES_PER_BUFFER    (128)
 
 /************************************************************************/
 /******** Prototypes ****************************************************/
@@ -117,17 +118,24 @@ static PaError PABLIO_TermFIFO(PaUtilRingBuffer * rbuf)
  * Write data to ring buffer.
  * Will not return until all the data has been written.
  */
-long WriteAudioStream(PABLIO_Stream * aStream, void *data, long numFrames)
+long WriteAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, int timeout)
 {
 	long bytesWritten;
 	char *p = (char *) data;
 	long numBytes = aStream->bytesPerFrame * numFrames;
+	int time = 0;
+
 	while (numBytes > 0) {
 		bytesWritten = PaUtil_WriteRingBuffer(&aStream->outFIFO, p, numBytes);
 		numBytes -= bytesWritten;
 		p += bytesWritten;
-		if (numBytes > 0)
-			Pa_Sleep(10);
+		if (numBytes > 0) {
+			Pa_Sleep(1);
+			if (++time >= timeout * 2) {
+				PaUtil_FlushRingBuffer(&aStream->outFIFO);
+				return 0;
+			}
+		}
 	}
 	return numFrames;
 }
@@ -136,19 +144,27 @@ long WriteAudioStream(PABLIO_Stream * aStream, void *data, long numFrames)
  * Read data from ring buffer.
  * Will not return until all the data has been read.
  */
-long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames)
+long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, int timeout)
 {
 	long bytesRead;
 	char *p = (char *) data;
 	long numBytes = aStream->bytesPerFrame * numFrames;
-
+	int time = 0;
+	
 	while (numBytes > 0) {
 		bytesRead = PaUtil_ReadRingBuffer(&aStream->inFIFO, p, numBytes);
 		numBytes -= bytesRead;
 		p += bytesRead;
-		if (numBytes > 0)
-			Pa_Sleep(10);
+		if (numBytes > 0) {
+			Pa_Sleep(1);
+			time++;
+			if (time > timeout * 2) {
+				PaUtil_FlushRingBuffer(&aStream->inFIFO);
+				return 0;
+			}
+		}
 	}
+	//printf("%d\n", time);
 	return numFrames;
 }
 
@@ -172,18 +188,20 @@ long GetAudioStreamReadable(PABLIO_Stream * aStream)
 	return bytesFull / aStream->bytesPerFrame;
 }
 
-/************************************************************/
+/***********************************************************
 static unsigned long RoundUpToNextPowerOf2(unsigned long n)
 {
 	long numBits = 0;
 	if (((n - 1) & n) == 0)
-		return n;				/* Already Power of two. */
+		return n;				
 	while (n > 0) {
 		n = n >> 1;
 		numBits++;
 	}
 	return (1 << numBits);
 }
+*/
+
 
 /************************************************************
  * Opens a PortAudio stream with default characteristics.
@@ -194,11 +212,11 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 						const PaStreamParameters * inputParameters, const PaStreamParameters * outputParameters, double sampleRate,
 						PaStreamFlags streamFlags)
 {
-	long bytesPerSample;
+	long bytesPerSample = 2;
 	PaError err;
 	PABLIO_Stream *aStream;
 	long numFrames;
-	long numBytes;
+	//long numBytes;
 	int channels = 1;
 
 	/* Allocate PABLIO_Stream structure for caller. */
@@ -218,12 +236,8 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 		channels = outputParameters->channelCount;
 	}
 
-	numFrames = 4 * FRAMES_PER_BUFFER;
-	numFrames = RoundUpToNextPowerOf2(numFrames);
-
-	bytesPerSample = 2;
-	aStream->samplesPerFrame = channels;
-	aStream->bytesPerFrame = bytesPerSample * aStream->samplesPerFrame;
+	numFrames = FRAMES_PER_BUFFER;
+	aStream->bytesPerFrame = bytesPerSample;
 
 	/* Initialize Ring Buffers */
 
@@ -240,8 +254,8 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 	}
 
 	/* Make Write FIFO appear full initially. */
-	numBytes = PaUtil_GetRingBufferWriteAvailable(&aStream->outFIFO);
-	PaUtil_AdvanceRingBufferWriteIndex(&aStream->outFIFO, numBytes);
+	//numBytes = PaUtil_GetRingBufferWriteAvailable(&aStream->outFIFO);
+	//PaUtil_AdvanceRingBufferWriteIndex(&aStream->outFIFO, numBytes);
 
 
 	/* Open a PortAudio stream that we will use to communicate with the underlying

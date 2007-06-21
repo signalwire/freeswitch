@@ -61,7 +61,6 @@ extern "C" {
 		PaUtilRingBuffer outFIFO;
 		PaStream *stream;
 		int bytesPerFrame;
-		int samplesPerFrame;
 	} PABLIO_Stream;
 
 /* Values for flags for OpenAudioStream(). */
@@ -75,13 +74,13 @@ extern "C" {
  * Write data to ring buffer.
  * Will not return until all the data has been written.
  */
-	long WriteAudioStream(PABLIO_Stream * aStream, void *data, long numFrames);
+	long WriteAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, int timeout);
 
 /************************************************************
  * Read data from ring buffer.
  * Will not return until all the data has been read.
  */
-	long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames);
+	long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, int timeout);
 
 /************************************************************
  * Return the number of frames that could be written to the stream without
