@@ -273,7 +273,7 @@ L3INT DMSUmes_0x0f(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *mes
 	L3INT rc=Q931E_NO_ERROR;
 
 	if (mes->ProtDisc == 8) {
-		Q931Umes_ConnectAck(pTrunk, IBuf, mes, IOff, Size);
+		return Q931Umes_ConnectAck(pTrunk, IBuf, mes, IOff, Size);
 	}
 
 	while(IOff < Size)
@@ -281,12 +281,12 @@ L3INT DMSUmes_0x0f(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *mes
 		switch(IBuf[IOff])
 		{
 		case Q931ie_CHANNEL_IDENTIFICATION:
-			rc = Q931Uie[pTrunk->Dialect][Q931ie_RESTART_INDICATOR](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
 		case Q931ie_CHANGE_STATUS:
-			rc = Q931Uie[pTrunk->Dialect][IBuf[IOff]](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
+			rc = Q931Uie[pTrunk->Dialect][Q931ie_RESTART_INDICATOR](pTrunk, mes, &IBuf[IOff], &mes->buf[OOff], &IOff, &OOff);
 			if(rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
