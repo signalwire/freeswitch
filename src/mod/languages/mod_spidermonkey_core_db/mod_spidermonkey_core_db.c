@@ -242,6 +242,16 @@ static JSPropertySpec db_props[] = {
 };
 
 
+static JSBool db_setProperty(JSContext * cx, JSObject * obj, jsval id, jsval *vp)
+{
+	char *name = JS_GetStringBytes(JS_ValueToString(cx, id));
+
+	if (strcmp(name, "_dB_RoW_DaTa_")) {
+		*vp = BOOLEAN_TO_JSVAL(JS_FALSE);
+	}
+	return JS_TRUE;
+}
+
 static JSBool db_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval * vp)
 {
 	JSBool res = JS_TRUE;
@@ -268,7 +278,7 @@ static JSBool db_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval * v
 
 JSClass db_class = {
 	modname, JSCLASS_HAS_PRIVATE,
-	JS_PropertyStub, JS_PropertyStub, db_getProperty, DEFAULT_SET_PROPERTY,
+	JS_PropertyStub, JS_PropertyStub, db_getProperty, db_setProperty,
 	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, db_destroy, NULL, NULL, NULL,
 	db_construct
 };
