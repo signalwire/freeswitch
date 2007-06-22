@@ -1005,9 +1005,14 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 
 		if (bytes && rtp_session->cng_pt && rtp_session->recv_msg.header.pt == rtp_session->cng_pt) {
+			if (rtp_session->ms_per_packet) {
+				switch_yield((rtp_session->ms_per_packet / 1000) * 750);
+			} else {
+				switch_yield(1000);
+			}
 			continue;
 		}
-
+		
 
 		
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_GOOGLEHACK) && rtp_session->recv_msg.header.pt == 102) {
