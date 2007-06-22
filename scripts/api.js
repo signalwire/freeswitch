@@ -53,10 +53,12 @@ request.write("<input type=submit value=\"Execute\">");
 request.write("</form><hr noshade size=1><br>");
 
 if ((command = request.getHeader("command"))) {
-	cmd_list = command.split(" ", 2);
+	cmd_list = command.split(" ");
+    cmd = cmd_list.shift();
+    args = cmd_list.join(" ");
 
-	if ((reply = apiExecute(cmd_list[0], cmd_list[1]))) {
-		request.write("<B>Command Result</b><br><pre>" + reply + "\n</pre>");
+	if ((reply = apiExecute(cmd, args))) {
+		request.write("<br><B>Command Result</b><br><pre>" + reply + "\n</pre>");
 	}
 }
 
