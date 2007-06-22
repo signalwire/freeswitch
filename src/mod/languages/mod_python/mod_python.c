@@ -49,11 +49,12 @@ PyThreadState *mainThreadState = NULL;
 void init_freeswitch(void);
 static switch_api_interface_t python_run_interface;
 
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_python_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown);
 SWITCH_MODULE_DEFINITION(mod_python, mod_python_load, mod_python_shutdown, NULL);
 
-static void eval_some_python(char *uuid, char *args)
+static void eval_some_python(char *uuid, char *args, switch_core_session_t *session)
 {
 	PyThreadState *tstate = NULL;
 	char *dupargs = NULL;
@@ -92,6 +93,11 @@ static void eval_some_python(char *uuid, char *args)
 
 	// swap in thread state
 	PyEval_AcquireThread(tstate);
+	if (session) {
+	    // record the fact that thread state is swapped in
+	    switch_channel_t *channel = switch_core_session_get_channel(session);
+	    switch_channel_set_private(channel, "SwapInThreadState", NULL);
+	}
 	init_freeswitch(); 
 
 	// import the module
@@ -138,7 +144,9 @@ static void eval_some_python(char *uuid, char *args)
 	}
 
 	// invoke the handler 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call python script \n");
 	result = PyEval_CallObjectWithKeywords(function, arg, (PyObject *)NULL);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Finished calling python script \n");
 
 	// check the result and print out any errors
 	if (!result) {
@@ -160,7 +168,29 @@ static void eval_some_python(char *uuid, char *args)
 	Py_XDECREF(result);
 
 	// swap out thread state
-	PyEval_ReleaseThread(tstate);
+	if (session) {
+	    // record the fact that thread state is swapped in
+	    switch_channel_t *channel = switch_core_session_get_channel(session);
+	    PyThreadState *swapin_tstate = (PyThreadState *) switch_channel_get_private(channel, "SwapInThreadState");
+	    // so lets assume nothing in the python script swapped any thread state in
+            // or out .. thread state will currently be swapped in, and the SwapInThreadState 
+	    // will be null
+	    if (swapin_tstate == NULL) {
+		// swap it out
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Threadstate mod_python.c swap-out! \n");
+		// PyEval_ReleaseThread(cur_tstate);
+		swapin_tstate = (void *) PyEval_SaveThread();
+		switch_channel_set_private(channel, "SwapInThreadState", (void *) swapin_tstate);
+	    }
+	    else {
+		// thread state is already swapped out, so, nothing for us to do
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "according to chan priv data, already swapped out \n");
+	    }
+ 	}
+	else {
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Threadstate mod_python.c swap-out! \n");
+	    PyEval_ReleaseThread(tstate);
+	}
 
 	switch_safe_free(dupargs);
 
@@ -169,7 +199,7 @@ static void eval_some_python(char *uuid, char *args)
 
 static void python_function(switch_core_session_t *session, char *data)
 {
-	eval_some_python(switch_core_session_get_uuid(session), (char *)data);
+	eval_some_python(switch_core_session_get_uuid(session), (char *)data, session);
 	
 }
 
@@ -183,7 +213,7 @@ static void *SWITCH_THREAD_FUNC py_thread_run(switch_thread_t *thread, void *obj
 	switch_memory_pool_t *pool;
 	struct switch_py_thread *pt = (struct switch_py_thread *) obj;
 
-	eval_some_python(NULL, strdup(pt->args));
+	eval_some_python(NULL, strdup(pt->args), NULL);
 
 	pool = pt->pool;
 	switch_core_destroy_memory_pool(&pool);

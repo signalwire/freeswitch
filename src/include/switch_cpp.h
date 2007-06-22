@@ -11,6 +11,50 @@ extern "C" {
 
 #include <switch.h>
 
+//
+// C++ Interface: switch_to_cpp_mempool
+//
+// Description: This class allows for overloading the new operator to allocate from a switch_memory_pool_t
+//
+// Author: Yossi Neiman <freeswitch@cartissolutions.com>, (C) 2007
+//
+// Copyright: See COPYING file that comes with this distribution
+//
+
+
+#ifndef SWITCHTOMEMPOOL
+#define SWITCHTOMEMPOOL
+class SwitchToMempool {
+	public:
+		SwitchToMempool() { }
+		SwitchToMempool(switch_memory_pool_t *mem) { memorypool = mem; }
+		void *operator new(switch_size_t num_bytes, switch_memory_pool_t *mem)
+		{
+			void *ptr = switch_core_alloc(mem, (switch_size_t) num_bytes);
+			return ptr;
+		}
+	protected:
+		switch_memory_pool_t *memorypool;
+};
+#endif
+
+
+/*
+
+Overview: once you create an object that inherits this class, since
+          the memory pool is then a class data member, you can continue to
+          allocate objects from the memory pool.
+          objects from within the class
+
+Notes on usage:
+
+1.  The derived class will need to also overload the ctor so that it accepts a memory pool object as a parameter.
+2.  Instantiation of a class would then look something like this:   Foo *bar = new(memory_pool) Foo(memory_pool);
+
+Note that the first parameter to the new operator is implicitly handled by c++...  not sure I like that but it's how it is...
+
+*/
+
 
 void console_log(char *level_str, char *msg);
 void console_clean_log(char *msg);
@@ -40,6 +84,12 @@ typedef struct input_callback_state {
     char *funcargs;           // extra string that will be passed to callback function 
 } input_callback_state_t;
 
+typedef enum {
+	S_HUP = (1 << 0),
+	S_FREE = (1 << 1),
+	S_RDLOCK = (1 << 2)
+} session_flag_t;
+
 
 class CoreSession {
  protected:
@@ -52,6 +102,9 @@ class CoreSession {
 	char *tts_name;
 	char *voice_name;
 	void store_file_handle(switch_file_handle_t *fh);
+	void *on_hangup; // language specific callback function, cast as void * 
+
+
  public:
 	CoreSession();
 	CoreSession(char *uuid);
@@ -59,12 +112,14 @@ class CoreSession {
 	virtual ~CoreSession();
 	switch_core_session_t *session;
 	switch_channel_t *channel;
+	unsigned int flags;
 	input_callback_state cb_state; // callback state, always pointed to by the buf
                                    // field in this->args
+	switch_channel_state_t hook_state; // store hookstate for on_hangup callback
 
 	int answer();
 	int preAnswer();
-	void hangup(char *cause);
+	virtual void hangup(char *cause);
 	void setVariable(char *var, char *val);
 	char *getVariable(char *var);
 
@@ -118,19 +173,16 @@ class CoreSession {
      * is pressed by user during playFile(), streamfile(), and 
      * certain other methods are executing.
      *
-     * Note that language specific sessions might need to create
-     * their own version of this with a slightly different signature
-     * (as done in freeswitch_python.h)
 	 */
-	void setDTMFCallback(switch_input_callback_function_t cb, 
-						 void *buf, 
-						 uint32_t buflen);
+	void setDTMFCallback(void *cbfunc, char *funcargs);
+
 
 	int speak(char *text);
 	void set_tts_parms(char *tts_name, char *voice_name);
 
 	int getDigits(char *dtmf_buf, 
-				  int len, 
+				  int buflen, 
+				  int maxdigits, 
 				  char *terminators, 
 				  char *terminator, 
 				  int timeout);
@@ -165,11 +217,26 @@ class CoreSession {
 	 */
 	int streamfile(char *file, int starting_sample_count);
 
+	/** \brief flush any pending events
+	 */
+	int flushEvents();
+
+	/** \brief flush any pending digits
+	 */
+	int flushDigits();
+
+	int setAutoHangup(bool val);
+
+	/** \brief Set the hangup callback function
+	 * \param hangup_func - language specific function ptr cast into void *
+	 */
+	void setHangupHook(void *hangup_func);
+
 	bool ready();
 
 	void execute(char *app, char *data);
-	virtual void begin_allow_threads();
-	virtual void end_allow_threads();
+	virtual bool begin_allow_threads() = 0;
+	virtual bool end_allow_threads() = 0;
 
 	/** \brief Get the uuid of this session	
 	 * \return the uuid of this session
@@ -181,6 +248,12 @@ class CoreSession {
 	 */
 	const switch_input_args_t& get_cb_args() const { return args; };
 
+	/** \brief Callback to the language specific hangup callback
+	 */
+	virtual void check_hangup_hook() = 0;
+
+	virtual switch_status_t run_dtmf_callback(void *input, 
+											  switch_input_type_t itype) = 0;
 
 };
 
@@ -198,6 +271,19 @@ void api_reply_delete(char *reply);
  *       wrong and has not been reviewed or tested
  */
 void bridge(CoreSession &session_a, CoreSession &session_b);
+
+
+/** \brief the actual hangup hook called back by freeswitch core
+ *         which in turn gets the session and calls the appropriate
+ *         instance method to complete the callback.
+ */
+switch_status_t hanguphook(switch_core_session_t *session);
+
+switch_status_t dtmf_callback(switch_core_session_t *session, 
+							  void *input, 
+							  switch_input_type_t itype, 
+							  void *buf,  
+							  unsigned int buflen);
 
 
 #ifdef __cplusplus

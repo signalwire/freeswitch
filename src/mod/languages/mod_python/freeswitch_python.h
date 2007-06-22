@@ -14,12 +14,10 @@ extern "C" {
 
 
 
-switch_status_t PythonDTMFCallback(switch_core_session *session, 
-				   void *input, 
-				   switch_input_type_t itype, 
-				   void *buf, 
-				   unsigned int buflen);
-
+typedef enum {
+	S_SWAPPED_IN = (1 << 0),
+	S_SWAPPED_OUT = (1 << 1)
+} swap_state_t;
 
 void console_log(char *level_str, char *msg);
 void console_clean_log(char *msg);
@@ -29,14 +27,21 @@ void api_reply_delete(char *reply);
 class PySession : public CoreSession {
  private:
     void *threadState;
+    int swapstate;
  public:
     PySession();
     PySession(char *uuid);
     PySession(switch_core_session_t *session);
     ~PySession();        
     void setDTMFCallback(PyObject *pyfunc, char *funcargs);
-    void begin_allow_threads();
-    void end_allow_threads();
+    void setHangupHook(PyObject *pyfunc);
+    void check_hangup_hook();
+    void hangup(char *cause);
+    bool begin_allow_threads();
+    bool end_allow_threads();
+
+    switch_status_t run_dtmf_callback(void *input, 
+				      switch_input_type_t itype);
 
 };
 

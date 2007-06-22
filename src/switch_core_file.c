@@ -95,6 +95,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh,
 SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, void *data, switch_size_t *len)
 {
 	assert(fh != NULL);
+	assert(fh->file_interface != NULL);
 
 	return fh->file_interface->file_read(fh, data, len);
 }
@@ -102,6 +103,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh, void *data, switch_size_t *len)
 {
 	assert(fh != NULL);
+	assert(fh->file_interface != NULL);
 
 	return fh->file_interface->file_write(fh, data, len);
 }
@@ -109,6 +111,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, unsigned int *cur_pos, int64_t samples, int whence)
 {
 	assert(fh != NULL);
+	assert(fh->file_interface != NULL);
 
 	switch_set_flag(fh, SWITCH_FILE_SEEK);
 	return fh->file_interface->file_seek(fh, cur_pos, samples, whence);
@@ -117,6 +120,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, 
 SWITCH_DECLARE(switch_status_t) switch_core_file_set_string(switch_file_handle_t *fh, switch_audio_col_t col, const char *string)
 {
 	assert(fh != NULL);
+	assert(fh->file_interface != NULL);
 
 	return fh->file_interface->file_set_string(fh, col, string);
 }
@@ -124,6 +128,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_set_string(switch_file_handle_t
 SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(switch_file_handle_t *fh, switch_audio_col_t col, const char **string)
 {
 	assert(fh != NULL);
+	assert(fh->file_interface != NULL);
 
 	return fh->file_interface->file_get_string(fh, col, string);
 
@@ -132,6 +137,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(switch_file_handle_t
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 {
+	assert(fh != NULL);
+	assert(fh->file_interface != NULL);
+
 	switch_clear_flag(fh, SWITCH_FILE_OPEN);
 	return fh->file_interface->file_close(fh);
 

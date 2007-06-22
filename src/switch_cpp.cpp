@@ -7,7 +7,7 @@
 
 #define sanity_check(x) do { if (!session) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return x;}} while(0)
 #define sanity_check_noreturn do { if (!session) { switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "session is not initalized\n"); return;}} while(0)
-#define init_vars() do { session = NULL; channel = NULL; uuid = NULL; tts_name = NULL; voice_name = NULL; memset(&args, 0, sizeof(args)); ap = NULL; caller_profile.source = "mod_unknown";  caller_profile.dialplan = ""; caller_profile.context = ""; caller_profile.caller_id_name = ""; caller_profile.caller_id_number = ""; caller_profile.network_addr = ""; caller_profile.ani = ""; caller_profile.aniii = ""; caller_profile.rdnis = "";  caller_profile.username = ""; } while(0)
+#define init_vars() do { session = NULL; channel = NULL; uuid = NULL; tts_name = NULL; voice_name = NULL; memset(&args, 0, sizeof(args)); ap = NULL; caller_profile.source = "mod_unknown";  caller_profile.dialplan = ""; caller_profile.context = ""; caller_profile.caller_id_name = ""; caller_profile.caller_id_number = ""; caller_profile.network_addr = ""; caller_profile.ani = ""; caller_profile.aniii = ""; caller_profile.rdnis = "";  caller_profile.username = ""; on_hangup = NULL; cb_state.function = NULL; } while(0)
 
 
 
@@ -36,8 +36,13 @@ CoreSession::CoreSession(switch_core_session_t *new_session)
 CoreSession::~CoreSession()
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::~CoreSession desctructor");
+	switch_channel_t *channel = NULL;
 
 	if (session) {
+		channel = switch_core_session_get_channel(session);
+		if (channel && switch_test_flag(this, S_HUP)) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+		}
 		switch_core_session_rwunlock(session);
 	}
 
@@ -103,30 +108,35 @@ int CoreSession::playFile(char *file, char *timer_name)
         timer_name = NULL;
     }
 	store_file_handle(&fh);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "playFile begin_allow_threads\n");
 	begin_allow_threads();
 	status = switch_ivr_play_file(session, &fh, file, ap);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "playFile end_allow_threads\n");
 	end_allow_threads();
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 
 }
 
-void CoreSession::setDTMFCallback(switch_input_callback_function_t cb, 
-								  void *buf, 
-								  uint32_t buflen)
-{
-	sanity_check_noreturn;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::setDTMFCallback.");
-	if (cb) {
-		args.buf = buf;
-		args.buflen = buflen;
-		args.input_callback = cb;
-		ap = &args;
-	} else {
-		memset(&args, 0, sizeof(args));
-		ap = NULL;
-	}
-}
 
+void CoreSession::setDTMFCallback(void *cbfunc, char *funcargs) {
+
+	cb_state.funcargs = funcargs;
+	cb_state.function = cbfunc;
+
+	args.buf = &cb_state; 
+	args.buflen = sizeof(cb_state);  // not sure what this is used for, copy mod_spidermonkey
+
+    switch_channel_set_private(channel, "CoreSession", this);
+        
+	// we cannot set the actual callback to a python function, because
+	// the callback is a function pointer with a specific signature.
+	// so, set it to the following c function which will act as a proxy,
+	// finding the python callback in the args callback args structure
+	args.input_callback = dtmf_callback;  
+	ap = &args;
+
+
+}
 
 int CoreSession::speak(char *text)
 {
@@ -134,6 +144,12 @@ int CoreSession::speak(char *text)
     switch_codec_t *codec;
 
 	sanity_check(-1);
+
+	// create and store an empty filehandle in callback args 
+	// to workaround a bug in the presumptuous process_callback_result()
+    switch_file_handle_t fh = { 0 };
+	store_file_handle(&fh);
+
 	if (!tts_name) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No TTS engine specified");
 		return SWITCH_STATUS_FALSE;
@@ -161,7 +177,8 @@ void CoreSession::set_tts_parms(char *tts_name_p, char *voice_name_p)
 }
 
 int CoreSession::getDigits(char *dtmf_buf, 
-						   int len, 
+						   int buflen, 
+						   int maxdigits, 
 						   char *terminators, 
 						   char *terminator, 
 						   int timeout)
@@ -169,13 +186,16 @@ int CoreSession::getDigits(char *dtmf_buf,
     switch_status_t status;
 	sanity_check(-1);
 	begin_allow_threads();
+
     status = switch_ivr_collect_digits_count(session, 
 											 dtmf_buf,
-											 (uint32_t) len,
-											 (uint32_t) len, 
+											 (uint32_t) buflen,
+											 (uint32_t) maxdigits, 
 											 terminators, 
 											 terminator, 
 											 (uint32_t) timeout);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "getDigits dtmf_buf: %s\n", dtmf_buf);
 	end_allow_threads();
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
@@ -213,6 +233,9 @@ int CoreSession::playAndGetDigits(int min_digits,
 										 bad_input_audio_files, 
 										 dtmf_buf, 128, 
 										 digits_regex);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "playAndGetDigits dtmf_buf: %s\n", dtmf_buf);
+
 	end_allow_threads();
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
@@ -318,6 +341,52 @@ int CoreSession::recordFile(char *file_name, int max_len, int silence_threshold,
 
 }
 
+int CoreSession::flushEvents() 
+{
+	switch_event_t *event;
+	switch_channel_t *channel;
+
+	if (!session) {
+		return SWITCH_STATUS_FALSE;
+	}
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	while (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+		switch_event_destroy(&event);
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+int CoreSession::flushDigits() 
+{
+	char buf[256];
+	switch_size_t has;
+	switch_channel_t *channel;
+
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	while ((has = switch_channel_has_dtmf(channel))) {
+		switch_channel_dequeue_dtmf(channel, buf, sizeof(buf));
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+int CoreSession::setAutoHangup(bool val) 
+{
+	if (!session) {
+		return SWITCH_STATUS_FALSE;
+	}	
+	if (val) {
+		switch_set_flag(this, S_HUP);
+	} else {
+		switch_clear_flag(this, S_HUP);
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
 void CoreSession::setCallerData(char *var, char *val) {
 
 	if (strcmp(var, "dialplan") == 0) {
@@ -350,12 +419,17 @@ void CoreSession::setCallerData(char *var, char *val) {
 
 }
 
-void CoreSession::begin_allow_threads() { 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::begin_allow_threads() called and does nothing\n");
-}
+void CoreSession::setHangupHook(void *hangup_func) {
 
-void CoreSession::end_allow_threads() { 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::end_allow_threads() called and does nothing\n");
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::seHangupHook, hangup_func: %p\n", hangup_func);
+    on_hangup = hangup_func;
+    switch_channel_t *channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+    hook_state = switch_channel_get_state(channel);
+    switch_channel_set_private(channel, "CoreSession", this);
+    switch_core_event_hook_add_state_change(session, hanguphook);
+
 }
 
 /** \brief Store a file handle in the callback args
@@ -424,6 +498,64 @@ void bridge(CoreSession &session_a, CoreSession &session_b)
 }
 
 
+switch_status_t hanguphook(switch_core_session_t *session_hungup) 
+{
+	switch_channel_t *channel;
+	CoreSession *coresession = NULL;
+	switch_channel_state_t state;
+
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hangup_hook called\n");
+	fflush(stdout);
+
+	channel = switch_core_session_get_channel(session_hungup);
+	assert(channel != NULL);
+
+	state = switch_channel_get_state(channel);
+
+	if ((coresession = (CoreSession *) switch_channel_get_private(channel, "CoreSession"))) {
+		if (coresession->hook_state != state) {
+			coresession->hook_state = state;
+			coresession->check_hangup_hook();
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+switch_status_t dtmf_callback(switch_core_session_t *session_cb, 
+							  void *input, 
+							  switch_input_type_t itype, 
+							  void *buf,  
+							  unsigned int buflen) {
+	
+	switch_channel_t *channel;
+	CoreSession *coresession = NULL;
+	switch_status_t result;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "dtmf_callback called\n");
+	fflush(stdout);
+
+	channel = switch_core_session_get_channel(session_cb);
+	assert(channel != NULL);
+
+	coresession = (CoreSession *) switch_channel_get_private(channel, "CoreSession");
+	if (!coresession) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid CoreSession\n");		
+		return SWITCH_STATUS_FALSE;
+	}
+
+	result = coresession->run_dtmf_callback(input, itype);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "process_callback_result returned\n");
+	if (result) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "process_callback_result returned: %d\n", result);
+	}
+	return result;
+
+}
+
+
 
 switch_status_t process_callback_result(char *ret, 
 					struct input_callback_state *cb_state,
@@ -431,15 +563,39 @@ switch_status_t process_callback_result(char *ret,
 {
 	
     switch_file_handle_t *fh = NULL;	   
+
+    if (!cb_state) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Process callback result aborted because cb_state is null\n");
+		return SWITCH_STATUS_FALSE;	
+    }
+
+    if (!cb_state->extra) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Process callback result aborted because cb_state->extra is null\n");
+		return SWITCH_STATUS_FALSE;	
+    }
+
     fh = (switch_file_handle_t *) cb_state->extra;    
 
     if (!fh) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Process callback result aborted because fh is null\n");
+		return SWITCH_STATUS_FALSE;	
+    }
+
+    if (!fh->file_interface) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Process callback result aborted because fh->file_interface is null\n");
 		return SWITCH_STATUS_FALSE;	
     }
 
     if (!ret) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Process callback result aborted because ret is null\n");
 		return SWITCH_STATUS_FALSE;	
     }
+
+    if (!session) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Process callback result aborted because session is null\n");
+		return SWITCH_STATUS_FALSE;	
+    }
+
 
     if (!strncasecmp(ret, "speed", 4)) {
 		char *p;
@@ -481,7 +637,7 @@ switch_status_t process_callback_result(char *ret,
 		unsigned int pos = 0;
 		char *p;
 		codec = switch_core_session_get_read_codec(session);
-
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got codec\n");
 		if ((p = strchr(ret, ':'))) {
 			p++;
 			if (*p == '+' || *p == '-') {
@@ -491,14 +647,20 @@ switch_status_t process_callback_result(char *ret,
 				}
 				if (step > 0) {
 					samps = step * (codec->implementation->samples_per_second / 1000);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "going to seek\n");
 					switch_core_file_seek(fh, &pos, samps, SEEK_CUR);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done seek\n");
 				} else {
 					samps = step * (codec->implementation->samples_per_second / 1000);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "going to seek\n");
 					switch_core_file_seek(fh, &pos, fh->pos - samps, SEEK_SET);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done seek\n");
 				}
 			} else {
 				samps = atoi(p) * (codec->implementation->samples_per_second / 1000);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "going to seek\n");
 				switch_core_file_seek(fh, &pos, samps, SEEK_SET);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done seek\n");
 			}
 		}
 
@@ -506,9 +668,11 @@ switch_status_t process_callback_result(char *ret,
     }
 
     if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "return success\n");
 		return SWITCH_STATUS_SUCCESS;
     }
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no match, return false\n");
     return SWITCH_STATUS_FALSE;
 
 
