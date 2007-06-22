@@ -1817,7 +1817,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	channel_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
-	channel_endpoint_interface->interface_name = "digngaling";
+	channel_endpoint_interface->interface_name = "dingaling";
 	channel_endpoint_interface->io_routines = &channel_io_routines;
 	channel_endpoint_interface->state_handler = &channel_event_handlers;
 
