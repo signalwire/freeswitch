@@ -44,19 +44,19 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spidermonkey_shutdown);
 SWITCH_MODULE_DEFINITION(mod_spidermonkey, mod_spidermonkey_load, mod_spidermonkey_shutdown, NULL);
 
-#define METHOD_SANITY_CHECK() do {												\
+#define METHOD_SANITY_CHECK() do {										\
 if (!jss || !jss->session) {											\
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You must call the session.originate method before calling this method!\n"); \
+	eval_some_js("~throw new Error(\"You must call the session.originate method before calling this method!\");", cx, obj, rval); \
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);									\
-	return JS_TRUE;														\
+	return JS_FALSE;													\
  }																		\
 	} while(foo == 1)
 
-#define CHANNEL_SANITY_CHECK() do {				\
+#define CHANNEL_SANITY_CHECK() do {										\
 		if (!switch_channel_ready(channel)) {							\
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n"); \
+			eval_some_js("~throw new Error(\"Session is not active!\");", cx, obj, rval); \
 			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);							\
-			return JS_TRUE;												\
+			return JS_FALSE;											\
 		}																\
 	} while (foo == 1)
 
@@ -838,6 +838,9 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 	jsval argv[4];
 	JSObject *Event = NULL;
 	jsval nval , *rval = &nval; 
+	JSContext *cx = cb_state->cx;
+	JSObject *obj = cb_state->obj;
+	
 
 	METHOD_SANITY_CHECK();
 
@@ -2561,6 +2564,13 @@ JSClass fileio_class = {
 /*********************************************************************************/
 static JSBool js_exit(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
+	char *supplied_error, code_buf[256] = "";
+	
+	if (argc > 0 && (supplied_error = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
+		snprintf(code_buf, sizeof(code_buf), "~throw new Error(\"%s\");", supplied_error);
+		eval_some_js(code_buf, cx, obj, rval);
+	}
+
 	return JS_FALSE;
 }
 

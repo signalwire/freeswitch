@@ -145,6 +145,7 @@ struct js_session {
 
 JSBool DEFAULT_SET_PROPERTY(JSContext * cx, JSObject *obj, jsval id, jsval *vp)
 {
+	eval_some_js("~throw new Error(\"this property cannot be changed!\");", cx, obj, vp);
 	return JS_FALSE;
 }
 

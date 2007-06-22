@@ -433,6 +433,7 @@ static JSBool odbc_setProperty(JSContext * cx, JSObject * obj, jsval id, jsval *
 	char *name = JS_GetStringBytes(JS_ValueToString(cx, id));
 
 	if (strcmp(name, "_oDbC_dB_RoW_DaTa_")) {
+		eval_some_js("~throw new Error(\"this property cannot be changed!\");", cx, obj, vp);
 		*vp = BOOLEAN_TO_JSVAL(JS_FALSE);
 	}
 	return JS_TRUE;
