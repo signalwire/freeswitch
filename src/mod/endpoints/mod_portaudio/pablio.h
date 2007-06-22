@@ -74,13 +74,13 @@ extern "C" {
  * Write data to ring buffer.
  * Will not return until all the data has been written.
  */
-	long WriteAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, int timeout);
+	long WriteAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switch_timer_t *timer);
 
 /************************************************************
  * Read data from ring buffer.
  * Will not return until all the data has been read.
  */
-	long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, int timeout);
+	long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switch_timer_t *timer);
 
 /************************************************************
  * Return the number of frames that could be written to the stream without
@@ -104,7 +104,7 @@ extern "C" {
  */
 	PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 							const PaStreamParameters * inputParameters,
-							const PaStreamParameters * outputParameters, double sampleRate, PaStreamCallbackFlags statusFlags);
+							const PaStreamParameters * outputParameters, double sampleRate, PaStreamCallbackFlags statusFlags, long samples_per_frame);
 
 	PaError CloseAudioStream(PABLIO_Stream * aStream);
 
