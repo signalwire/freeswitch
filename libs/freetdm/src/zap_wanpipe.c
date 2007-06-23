@@ -914,7 +914,7 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 	
 }
 
-static ZIO_DESTROY_CHANNEL_FUNCTION(wanpipe_destroy_channel)
+static ZIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
 {
 	if (zchan->sockfd > -1) {
 		close(zchan->sockfd);
@@ -947,7 +947,7 @@ zap_status_t wanpipe_init(zap_io_interface_t **zio)
 	wanpipe_interface.poll_event = wanpipe_poll_event;
 #endif
 	wanpipe_interface.next_event = wanpipe_next_event;
-	wanpipe_interface.destroy_channel = wanpipe_destroy_channel;
+	wanpipe_interface.channel_destroy = wanpipe_channel_destroy;
 	*zio = &wanpipe_interface;
 
 	return ZAP_SUCCESS;

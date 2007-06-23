@@ -46,13 +46,7 @@
 
 static L2ULONG zap_time_now()
 {
-#ifdef WIN32
-	return timeGetTime();
-#else
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	return ((tv.tv_sec * 1000) + (tv.tv_usec / 1000));
-#endif
+	return zap_current_time_in_ms();
 }
 
 static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(isdn_outgoing_call)
@@ -173,9 +167,9 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 static int zap_isdn_921_23(void *pvt, L2UCHAR *msg, L2INT mlen)
 {
 	int ret;
-	//char bb[4096] = "";
-	//print_hex_bytes(msg+4, mlen-2, bb, sizeof(bb));
-	//zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", (int)mlen-2, LINE, bb);
+	char bb[4096] = "";
+	print_hex_bytes(msg+4, mlen-2, bb, sizeof(bb));
+	zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", (int)mlen-2, LINE, bb);
 
 	ret = Q931Rx23(pvt, msg, mlen);
 	if (ret != 0)
@@ -395,6 +389,79 @@ static __inline__ void check_state(zap_span_t *span)
 	}
 }
 
+static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *event)
+{
+	zap_sigmsg_t sig;
+	zap_isdn_data_t *data = span->isdn_data;
+
+	memset(&sig, 0, sizeof(sig));
+	sig.chan_id = event->channel->chan_id;
+	sig.span_id = event->channel->span_id;
+	sig.channel = event->channel;
+
+	zap_log(ZAP_LOG_DEBUG, "EVENT [%s][%d:%d] STATE [%s]\n", 
+			zap_oob_event2str(event->enum_id), event->channel->span_id, event->channel->chan_id, zap_channel_state2str(event->channel->state));
+
+	switch(event->enum_id) {
+	case ZAP_OOB_ALARM_TRAP:
+		{
+			sig.event_id = ZAP_OOB_ALARM_TRAP;
+			if (event->channel->state != ZAP_CHANNEL_STATE_DOWN) {
+				zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_TERMINATING);
+			}
+			zap_set_flag(event->channel, ZAP_CHANNEL_SUSPENDED);
+			zap_channel_get_alarms(event->channel);
+			data->sig_cb(&sig);
+			zap_log(ZAP_LOG_WARNING, "channel %d:%d (%d:%d) has alarms [%s]\n", 
+					event->channel->span_id, event->channel->chan_id, 
+					event->channel->physical_span_id, event->channel->physical_chan_id, 
+					event->channel->last_error);
+		}
+		break;
+	case ZAP_OOB_ALARM_CLEAR:
+		{
+			sig.event_id = ZAP_OOB_ALARM_CLEAR;
+			zap_clear_flag(event->channel, ZAP_CHANNEL_SUSPENDED);
+			zap_channel_get_alarms(event->channel);
+			data->sig_cb(&sig);
+		}
+		break;
+	}
+
+	return ZAP_SUCCESS;
+}
+
+
+static __inline__ void check_events(zap_span_t *span)
+{
+	zap_status_t status;
+
+	status = zap_span_poll_event(span, 5);
+
+	switch(status) {
+	case ZAP_SUCCESS:
+		{
+			zap_event_t *event;
+			while (zap_span_next_event(span, &event) == ZAP_SUCCESS) {
+				if (event->enum_id == ZAP_OOB_NOOP) {
+					continue;
+				}
+				if (process_event(span, event) != ZAP_SUCCESS) {
+					break;
+				}
+			}
+		}
+		break;
+	case ZAP_FAIL:
+		{
+			zap_log(ZAP_LOG_DEBUG, "Event Failure!\n");
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 static void *zap_isdn_run(zap_thread_t *me, void *obj)
 {
 	zap_span_t *span = (zap_span_t *) obj;
@@ -417,7 +484,8 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 
 		Q921TimerTick(&data->q921);
 		check_state(span);
-		
+		check_events(span);
+
 		switch(status) {
 		case ZAP_FAIL:
 			{

@@ -605,7 +605,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 	return NULL;
 }
 
-static zap_status_t process_event(zap_span_t *span, zap_event_t *event)
+static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *event)
 {
 	zap_sigmsg_t sig;
 	zap_analog_data_t *data = event->channel->span->analog_data;
@@ -708,7 +708,7 @@ static void *zap_analog_run(zap_thread_t *me, void *obj)
 			{
 				zap_event_t *event;
 				while (zap_span_next_event(span, &event) == ZAP_SUCCESS) {
-					if (event->e_type == ZAP_OOB_NOOP) {
+					if (event->enum_id == ZAP_OOB_NOOP) {
 						continue;
 					}
 					if (process_event(span, event) != ZAP_SUCCESS) {

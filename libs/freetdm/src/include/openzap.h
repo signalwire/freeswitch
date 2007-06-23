@@ -174,6 +174,11 @@
 #define zap_test_flag(obj, flag) ((obj)->flags & flag)
 #define zap_test_pflag(obj, flag) ((obj)->pflags & flag)
 
+
+#define zap_set_alarm_flag(obj, flag) (obj)->alarm_flags |= (flag)
+#define zap_clear_alarm_flag(obj, flag) (obj)->alarm_flags &= ~(flag)
+#define zap_test_alarm_flag(obj, flag) ((obj)->alarm_flags & flag)
+
 /*!
   \brief Set a flag on an arbitrary object
   \command obj the object to set the flags on
@@ -324,6 +329,7 @@ struct zap_channel {
 	zap_socket_t sockfd;
 	zap_channel_flag_t flags;
 	uint32_t pflags;
+	zap_alarm_flag_t alarm_flags;
 	zap_channel_feature_t features;
 	zap_codec_t effective_codec;
 	zap_codec_t native_codec;
@@ -423,7 +429,8 @@ struct zap_io_interface {
 	zio_configure_t configure;
 	zio_open_t open;
 	zio_close_t close;
-	zio_destroy_channel_t destroy_channel;
+	zio_channel_destroy_t channel_destroy;
+	zio_get_alarms_t get_alarms;
 	zio_command_t command;
 	zio_wait_t wait;
 	zio_read_t read;
@@ -465,6 +472,7 @@ zap_status_t zap_channel_outgoing_call(zap_channel_t *zchan);
 void zap_channel_rotate_tokens(zap_channel_t *zchan);
 void zap_channel_clear_detected_tones(zap_channel_t *zchan);
 void zap_channel_clear_needed_tones(zap_channel_t *zchan);
+zap_status_t zap_channel_get_alarms(zap_channel_t *zchan);
 zap_status_t zap_channel_send_fsk_data(zap_channel_t *zchan, zap_fsk_data_state_t *fsk_data, float db_level);
 zap_status_t zap_channel_clear_token(zap_channel_t *zchan, const char *token);
 zap_status_t zap_channel_add_token(zap_channel_t *zchan, char *token, int end);
