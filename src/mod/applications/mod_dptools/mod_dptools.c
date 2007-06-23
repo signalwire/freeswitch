@@ -443,6 +443,53 @@ SWITCH_STANDARD_APP(info_function)
 
 }
 
+
+
+SWITCH_STANDARD_APP(event_function)
+{
+	switch_channel_t *channel;
+	switch_event_t *event;
+	char *argv[25];
+	int argc = 0;
+	char *lbuf;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_APPLICATION) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+		if (data && (lbuf = switch_core_session_strdup(session, data))
+			&& (argc = switch_separate_string(lbuf, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+			int x = 0;
+
+			for (x = 0; x < argc; x++) {
+				char *p, *this = argv[x];
+				p = this;
+				while(*p == ' ') *p++ = '\0';
+				this = p;
+				
+				if (this) {
+					char *var = this, *val = NULL;
+					if ((val = strchr(var, '='))) {
+						p = val - 1;
+						*val++ = '\0';
+						while(*p == ' ') *p-- = '\0';
+						p = val;
+						while(*p == ' ') *p++ = '\0';
+						val = p;
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, var, "%s", val);
+					}
+				}
+
+			}
+		}
+		
+		switch_event_fire(&event);
+	}
+
+}
+
+
 SWITCH_STANDARD_APP(privacy_function)
 {
 	switch_channel_t *channel;
@@ -1082,6 +1129,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "hangup", "Hangup the call", "Hangup the call for a channel.", hangup_function, "[<cause>]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "log", "Logs a channel varaible", LOG_LONG_DESC, log_function, "<varname>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "info", "Display Call Info", "Display Call Info", info_function, "", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "event", "Fire an event", "Fire an event", event_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "export", "Export a channel varaible across a bridge", EXPORT_LONG_DESC, export_function, "<varname>=<value>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "set", "Set a channel varaible", SET_LONG_DESC, set_function, "<varname>=<value>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "unset", "Unset a channel varaible", UNSET_LONG_DESC, unset_function, "<varname>", SAF_SUPPORT_NOMEDIA);

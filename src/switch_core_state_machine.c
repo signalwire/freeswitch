@@ -108,7 +108,6 @@ static void switch_core_standard_on_ring(switch_core_session_t *session)
 static void switch_core_standard_on_execute(switch_core_session_t *session)
 {
 	switch_caller_extension_t *extension;
-	switch_event_t *event;
 	const switch_application_interface_t *application_interface;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard EXECUTE\n");
@@ -148,15 +147,6 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Expanded String %s(%s)\n", extension->current_application->application_name,
 							  expanded);
 		}
-
-		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
-			switch_channel_event_set_data(session->channel, event);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application", "%s", extension->current_application->application_name);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data-Orig", "%s", extension->current_application->application_data);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", "%s", expanded);
-			switch_event_fire(&event);
-		}
-
 
 		if (switch_channel_get_variable(session->channel, "presence_id")) {
 			char *arg = switch_mprintf("%s(%s)", extension->current_application->application_name, expanded);

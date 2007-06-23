@@ -912,7 +912,8 @@ SWITCH_DECLARE(switch_app_log_t *) switch_core_session_get_app_log(switch_core_s
 SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *session,
 														 const switch_application_interface_t *application_interface, char *arg) {
 	switch_app_log_t *log, *lp;
-	
+	switch_event_t *event;
+
 	log = switch_core_session_alloc(session, sizeof(*log));
 
 	assert(log != NULL);
@@ -928,7 +929,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 		session->app_log = log;
 	}
 	
+	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(session->channel, event);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application", "%s", application_interface->interface_name);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", "%s", arg);
+		switch_event_fire(&event);
+	}
+
 	application_interface->application_function(session, arg);
+	
+	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE_COMPLETE) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(session->channel, event);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application", "%s", application_interface->interface_name);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", "%s", arg);
+		switch_event_fire(&event);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
