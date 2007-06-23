@@ -21,12 +21,12 @@ print "Call: $data->{'caller-channel-name'} $data->{'unique-id'}\n";
 
 $o = $fs->call_command("answer");
 #to turn on events when in async mode
-#$o = $fs->raw_command("myevents");
+$o = $fs->raw_command("myevents");
 $o = $fs->call_command("playback", "/ram/swimp.raw");
 $o = $fs->call_command("hangup");
 
 #comment exit in async mode
-exit;
+#exit;
 
 while(my $r = $fs->readhash(undef)) {
   if ($r->{socketerror}) {
