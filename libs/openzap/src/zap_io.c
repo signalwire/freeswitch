@@ -211,7 +211,7 @@ static uint32_t hashfromstring(void *ky)
 }
 
 
-static zap_status_t zap_destroy_channel(zap_channel_t *zchan)
+static zap_status_t zap_channel_destroy(zap_channel_t *zchan)
 {
 
 	if (zap_test_flag(zchan, ZAP_CHANNEL_CONFIGURED)) {
@@ -226,9 +226,9 @@ static zap_status_t zap_destroy_channel(zap_channel_t *zchan)
 		}
 
 		
-		if (zchan->span->zio->destroy_channel) {
+		if (zchan->span->zio->channel_destroy) {
 			zap_log(ZAP_LOG_INFO, "Closing channel %u:%u fd:%d\n", zchan->span_id, zchan->chan_id, zchan->sockfd);
-			if (zchan->span->zio->destroy_channel(zchan) == ZAP_SUCCESS) {
+			if (zchan->span->zio->channel_destroy(zchan) == ZAP_SUCCESS) {
 				zap_clear_flag_locked(zchan, ZAP_CHANNEL_CONFIGURED);
 			} else {
 				zap_log(ZAP_LOG_ERROR, "Error Closing channel %u:%u fd:%d\n", zchan->span_id, zchan->chan_id, zchan->sockfd);
@@ -237,6 +237,42 @@ static zap_status_t zap_destroy_channel(zap_channel_t *zchan)
 	}
 	
 	return ZAP_SUCCESS;
+}
+
+
+
+zap_status_t zap_channel_get_alarms(zap_channel_t *zchan)
+{
+	zap_status_t status = ZAP_FAIL;
+
+	if (zap_test_flag(zchan, ZAP_CHANNEL_CONFIGURED)) {
+		if (zchan->span->zio->get_alarms) {
+			if ((status = zchan->span->zio->get_alarms(zchan)) == ZAP_SUCCESS) {
+				*zchan->last_error = '\0';
+				if (zap_test_alarm_flag(zchan, ZAP_ALARM_RED)) {
+					snprintf(zchan->last_error + strlen(zchan->last_error), sizeof(zchan->last_error) - strlen(zchan->last_error), "RED/");
+				}
+				if (zap_test_alarm_flag(zchan, ZAP_ALARM_YELLOW)) {
+					snprintf(zchan->last_error + strlen(zchan->last_error), sizeof(zchan->last_error) - strlen(zchan->last_error), "YELLOW/");
+				}
+				if (zap_test_alarm_flag(zchan, ZAP_ALARM_BLUE)) {
+					snprintf(zchan->last_error + strlen(zchan->last_error), sizeof(zchan->last_error) - strlen(zchan->last_error), "BLUE/");
+				}
+				if (zap_test_alarm_flag(zchan, ZAP_ALARM_LOOPBACK)) {
+					snprintf(zchan->last_error + strlen(zchan->last_error), sizeof(zchan->last_error) - strlen(zchan->last_error), "LOOP/");
+				}
+				if (zap_test_alarm_flag(zchan, ZAP_ALARM_RECOVER)) {
+					snprintf(zchan->last_error + strlen(zchan->last_error), sizeof(zchan->last_error) - strlen(zchan->last_error), "RECOVER/");
+				}
+				*(zchan->last_error + strlen(zchan->last_error) - 1) = '\0';
+
+			}
+		} else {
+			status = ZAP_NOTIMPL;
+		}
+	}
+	
+	return status;
 }
 
 zap_status_t zap_span_create(zap_io_interface_t *zio, zap_span_t **span)
@@ -277,7 +313,7 @@ zap_status_t zap_span_close_all(void)
 		span = &globals.spans[i];
 
 		for(j = 0; j < span->chan_count; j++) {
-			zap_destroy_channel(&span->channels[i]);
+			zap_channel_destroy(&span->channels[i]);
 		}
 
 		if (span->mutex) {
@@ -1903,7 +1939,7 @@ zap_status_t zap_global_destroy(void)
 			for(j = 1; j <= cur_span->chan_count; j++) {
 				zap_channel_t *cur_chan = &cur_span->channels[j];
 				if (zap_test_flag(cur_chan, ZAP_CHANNEL_CONFIGURED)) {
-					zap_destroy_channel(cur_chan);
+					zap_channel_destroy(cur_chan);
 				}
 			}
 			zap_mutex_unlock(cur_span->mutex);

@@ -45,19 +45,14 @@ static struct {
 } zt_globals;
 
 #define ZT_INVALID_SOCKET -1
+static const char ctlpath[] = "/dev/zap/ctl";
+static zap_socket_t CONTROL_FD = ZT_INVALID_SOCKET;
 
 static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, zap_chan_type_t type, char *name, char *number)
 {
 	unsigned configured = 0, x;
-	const char ctlpath[] = "/dev/zap/ctl";
 	char path[] = "/dev/zap/channel";
 	zt_params_t ztp;
-	zap_socket_t ctlfd = ZT_INVALID_SOCKET;
-
-	if ((ctlfd = open(ctlpath, O_RDWR)) < 0) {
-		zap_log(ZAP_LOG_ERROR, "Cannot open control device\n");
-		return 0;
-	}
 
 	memset(&ztp, 0, sizeof(ztp));
 
@@ -71,7 +66,7 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 		if (sockfd != ZT_INVALID_SOCKET && zap_span_add_channel(span, sockfd, type, &zchan) == ZAP_SUCCESS) {
 
 			if (ioctl(sockfd, ZT_SPECIFY, &x)) {
-				zap_log(ZAP_LOG_ERROR, "failure configuring device %s chan %d fd %d (%s)\n", path, x, ctlfd, strerror(errno));
+				zap_log(ZAP_LOG_ERROR, "failure configuring device %s chan %d fd %d (%s)\n", path, x, sockfd, strerror(errno));
 				close(sockfd);
 				continue;
 			}
@@ -132,9 +127,9 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 				default:
 					break;
 				}
-				if (ioctl(ctlfd, ZT_CHANCONFIG, &cc)) {
+				if (ioctl(CONTROL_FD, ZT_CHANCONFIG, &cc)) {
 					zap_log(ZAP_LOG_ERROR, "failure configuring device %s chan %d fd %d (%s)\n", 
-							path, x, ctlfd, strerror(errno));
+							path, x, CONTROL_FD, strerror(errno));
 					close(sockfd);
 					break;
 				}
@@ -208,7 +203,7 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 		}
 	}
 	
-	close(ctlfd);
+
 
 	return configured;
 }
@@ -448,6 +443,25 @@ static ZIO_COMMAND_FUNCTION(zt_command)
 	return ZAP_SUCCESS;
 }
 
+static ZIO_GET_ALARMS_FUNCTION(zt_get_alarms)
+{
+	struct zt_spaninfo info;
+
+	memset(&info, 0, sizeof(info));
+	info.span_no = zchan->physical_span_id;
+
+	if (ioctl(CONTROL_FD, ZT_SPANSTAT, &info)) {
+		snprintf(zchan->last_error, sizeof(zchan->last_error), "ioctl failed (%s)", strerror(errno));
+		snprintf(zchan->span->last_error, sizeof(zchan->span->last_error), "ioctl failed (%s)", strerror(errno));
+		return ZAP_FAIL;
+	}
+
+	zchan->alarm_flags = info.alarms;
+
+	return ZAP_SUCCESS;
+}
+
+
 static ZIO_WAIT_FUNCTION(zt_wait)
 {
 	int32_t inflags = 0;
@@ -478,9 +492,8 @@ static ZIO_WAIT_FUNCTION(zt_wait)
 	}
 
 	if (result > 0) {
-		*flags = pfds[0].revents;
+		inflags = pfds[0].revents;
 	}
-
 
 	*flags = ZAP_NO_FLAGS;
 
@@ -595,6 +608,16 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 					}
 				}
 				break;
+			case ZT_EVENT_ALARM:
+				{
+					event_id = ZAP_OOB_ALARM_TRAP;
+				}
+				break;
+			case ZT_EVENT_NOALARM:
+				{
+					event_id = ZAP_OOB_ALARM_CLEAR;
+				}
+				break;
 			default:
 				{
 					zap_log(ZAP_LOG_WARNING, "Unhandled event %d\n", zt_event_id);
@@ -655,7 +678,7 @@ static ZIO_WRITE_FUNCTION(zt_write)
 	return ZAP_FAIL;
 }
 
-static ZIO_DESTROY_CHANNEL_FUNCTION(zt_destroy_channel)
+static ZIO_CHANNEL_DESTROY_FUNCTION(zt_channel_destroy)
 {
 	close(zchan->sockfd);
 	zchan->sockfd = ZT_INVALID_SOCKET;
@@ -670,6 +693,11 @@ zap_status_t zt_init(zap_io_interface_t **zio)
 	assert(zio != NULL);
 	memset(&zt_interface, 0, sizeof(zt_interface));
 	memset(&zt_globals, 0, sizeof(zt_globals));
+
+	if ((CONTROL_FD = open(ctlpath, O_RDWR)) < 0) {
+		zap_log(ZAP_LOG_ERROR, "Cannot open control device\n");
+		return 0;
+	}
 
 	zt_globals.codec_ms = 20;
 	zt_globals.wink_ms = 150;
@@ -688,8 +716,8 @@ zap_status_t zt_init(zap_io_interface_t **zio)
 	zt_interface.write = zt_write;
 	zt_interface.poll_event = zt_poll_event;
 	zt_interface.next_event = zt_next_event;
-	zt_interface.destroy_channel = zt_destroy_channel;
-
+	zt_interface.channel_destroy = zt_channel_destroy;
+	zt_interface.get_alarms = zt_get_alarms;
 	*zio = &zt_interface;
 
 	return ZAP_SUCCESS;
@@ -697,7 +725,7 @@ zap_status_t zt_init(zap_io_interface_t **zio)
 
 zap_status_t zt_destroy(void)
 {
-
+	close(CONTROL_FD);
 	memset(&zt_interface, 0, sizeof(zt_interface));
 	return ZAP_SUCCESS;
 }

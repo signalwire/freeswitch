@@ -119,7 +119,7 @@ testtones: $(SRC)/testtones.c $(MYLIB)
 	$(CC) $(INCS) -L. $(SRC)/testtones.c -o testtones -lopenzap -lm -lpthread
 
 testisdn: $(SRC)/testisdn.c $(MYLIB)
-	$(CC) $(INCS) -L. $(SRC)/testisdn.c -o testisdn -lopenzap -lm -lpthread
+	$(CC) $(INCS) $(ZAP_CFLAGS) -L. $(SRC)/testisdn.c -o testisdn -lopenzap -lm -lpthread
 
 testanalog: $(SRC)/testanalog.c $(MYLIB)
 	$(CC) $(INCS) -L. $(SRC)/testanalog.c -o testanalog -lopenzap -lm -lpthread

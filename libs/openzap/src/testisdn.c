@@ -9,8 +9,13 @@ static ZIO_SIGNAL_CB_FUNCTION(on_signal)
 int main(int argc, char *argv[])
 {
 	zap_span_t *span;
-
+	
 	zap_global_set_default_logger(ZAP_LOG_LEVEL_DEBUG);
+
+	if (argc < 2) {
+		printf("umm no\n");
+		exit(-1);
+	}
 
 	if (zap_global_init() != ZAP_SUCCESS) {
 		fprintf(stderr, "Error loading OpenZAP\n");
@@ -19,7 +24,7 @@ int main(int argc, char *argv[])
 
 	printf("OpenZAP loaded\n");
 
-	if (zap_span_find(1, &span) != ZAP_SUCCESS) {
+	if (zap_span_find(atoi(argv[1]), &span) != ZAP_SUCCESS) {
 		fprintf(stderr, "Error finding OpenZAP span\n");
 		goto done;
 	}
