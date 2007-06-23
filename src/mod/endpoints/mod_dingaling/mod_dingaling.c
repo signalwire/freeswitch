@@ -859,7 +859,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SETUP RTP %s:%d -> %s:%d\n", tech_pvt->profile->ip,
 					  tech_pvt->local_port, tech_pvt->remote_ip, tech_pvt->remote_port);
 	
-	flags = SWITCH_RTP_FLAG_GOOGLEHACK | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_RAW_WRITE | SWITCH_RTP_FLAG_AUTO_CNG;
+	flags = SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_GOOGLEHACK | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_RAW_WRITE | SWITCH_RTP_FLAG_AUTO_CNG;
 
 	if (switch_test_flag(tech_pvt->profile, TFLAG_TIMER)) {
 		flags |= SWITCH_RTP_FLAG_USE_TIMER;
