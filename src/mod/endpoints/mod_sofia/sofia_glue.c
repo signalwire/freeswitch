@@ -1055,6 +1055,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 	sdp_attribute_t *a;
 	int first = 0, last = 0;
 	int ptime = 0, dptime = 0;
+	int sendonly = 0;
 	int greedy = 0, x = 0, skip = 0, mine = 0;
 	switch_channel_t *channel = NULL;
 	char *val;
@@ -1080,32 +1081,43 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 		}
 	}
 
+	if (((m = sdp->sdp_media)) && m->m_mode == sdp_sendonly) {
+		sendonly = 1;
+	}
+
 	for (a = sdp->sdp_attributes; a; a = a->a_next) {
 		if (switch_strlen_zero(a->a_name)) {
 			continue;
 		}
 
 		if (!strcasecmp(a->a_name, "sendonly")) {
-			if (!switch_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
-				char *stream;
-				switch_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
-				if (!(stream = switch_channel_get_variable(tech_pvt->channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
-					stream = tech_pvt->profile->hold_music;
-				}
-				if (stream) {
-					switch_ivr_broadcast(switch_core_session_get_uuid(tech_pvt->session), stream, SMF_ECHO_BLEG | SMF_LOOP);
-				}
-			}
+			sendonly = 1;
 		} else if (!strcasecmp(a->a_name, "sendrecv")) {
-			if (switch_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
-				switch_channel_clear_flag_partner(tech_pvt->channel, CF_BROADCAST);
-				switch_channel_set_flag_partner(tech_pvt->channel, CF_BREAK);
-				switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
-			}
+			sendonly = 0;
 		} else if (!strcasecmp(a->a_name, "ptime")) {
 			dptime = atoi(a->a_value);
 		}
 	}
+
+	if (sendonly) {
+		if (!switch_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
+			char *stream;
+			switch_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+			if (!(stream = switch_channel_get_variable(tech_pvt->channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
+				stream = tech_pvt->profile->hold_music;
+			}
+			if (stream) {
+				switch_ivr_broadcast(switch_core_session_get_uuid(tech_pvt->session), stream, SMF_ECHO_BLEG | SMF_LOOP);
+			}
+		}
+	} else {
+		if (switch_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
+			switch_channel_clear_flag_partner(tech_pvt->channel, CF_BROADCAST);
+			switch_channel_set_flag_partner(tech_pvt->channel, CF_BREAK);
+			switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+		}
+	}
+
 
 	for (m = sdp->sdp_media; m; m = m->m_next) {
 		sdp_connection_t *connection;
