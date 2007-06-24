@@ -125,6 +125,7 @@
     <!-- Say -->
     <!-- none for mod_say_en -->
     <!--#include "mod_cdr.conf.xml"-->
+    <!--#include "mod_local_stream.conf.xml"-->
   </section>
   
   <section name="dialplan" description="Regex/XML Dialplan">

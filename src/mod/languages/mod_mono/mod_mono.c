@@ -194,12 +194,13 @@ switch_status_t mod_mono_load_modules(const char *module_dir)
 	iter = NULL;
 	mono_plugin *plugin = NULL;
     const char *fname = NULL;
+    char buf[512] = "";
 
 	if (switch_dir_open(&module_dir_handle, module_dir, mono_pool) != SWITCH_STATUS_SUCCESS)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Could not open directory: %s\n", module_dir);
 
 	/* Read the modules directory */
-	while ((fname = switch_dir_next_file(module_dir_handle))) {
+	while ((fname = switch_dir_next_file(module_dir_handle, buf, sizeof(buf)))) {
 		assembly = (MonoAssembly *) switch_core_alloc(mono_pool, sizeof(assembly));
 		image = (MonoImage *) switch_core_alloc(mono_pool, sizeof(image));
 

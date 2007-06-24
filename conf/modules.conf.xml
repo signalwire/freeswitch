@@ -53,6 +53,8 @@
     <load module="mod_native_file"/>
     <!--For icecast/mp3 streams/files-->
     <!--<load module="mod_shout"/>-->
+    <!--For local streams (play all the files in a directory)-->
+    <!--<load module="mod_local_stream"/>-->
 
     <!-- Timers -->
     <load module="mod_softtimer"/>

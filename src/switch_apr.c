@@ -391,26 +391,46 @@ struct switch_dir {
 SWITCH_DECLARE(switch_status_t) switch_dir_open(switch_dir_t **new_dir, const char *dirname, switch_memory_pool_t *pool)
 {
 	switch_status_t status;
-	switch_dir_t *dir = switch_core_alloc(pool, sizeof(switch_dir_t));
-	status = apr_dir_open(&(dir->dir_handle), dirname, pool);
-	*new_dir = dir;
+	switch_dir_t *dir = malloc(sizeof(*dir));
+
+	memset(dir, 0, sizeof(*dir));
+	if ((status = apr_dir_open(&(dir->dir_handle), dirname, pool)) == APR_SUCCESS) {
+		*new_dir = dir;
+	} else {
+		free(dir);
+		*new_dir = NULL;
+	}
+
 	return status;	 
 }
 
 SWITCH_DECLARE(switch_status_t) switch_dir_close(switch_dir_t *thedir)
 {
 	return apr_dir_close(thedir->dir_handle);
+
+	free(thedir);
 }
 
 SWITCH_DECLARE(const char *) switch_dir_next_file(switch_dir_t *thedir, char *buf, switch_size_t len) 
 {
 	const char *fname = NULL;
 	apr_int32_t finfo_flags = APR_FINFO_DIRENT | APR_FINFO_TYPE | APR_FINFO_NAME;
+	const char *name;
+	
 	while (apr_dir_read(&(thedir->finfo), finfo_flags, thedir->dir_handle) == SWITCH_STATUS_SUCCESS) {
-		if (thedir->finfo.filetype != APR_REG)
+		if (thedir->finfo.filetype != APR_REG) {
 			continue;
-		if (thedir->finfo.fname) {
-			switch_copy_string(buf, thedir->finfo.fname, len);
+		}
+		if (!(name = thedir->finfo.fname)) {
+			name = thedir->finfo.name;
+		}
+		
+		if (!name) {
+			continue;
+		}
+
+		if (name) {
+			switch_copy_string(buf, name, len);
 			fname = buf;
 		} else {
 			continue;

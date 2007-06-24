@@ -43,6 +43,7 @@ static switch_memory_pool_t *module_pool = NULL;
 
 static struct {
 	int32_t RUNNING;
+	int32_t STARTED;
 	switch_mutex_t *mutex;
 } globals;
 
@@ -76,6 +77,14 @@ static timer_matrix_t TIMER_MATRIX[MAX_ELEMENTS + 1];
 static inline switch_status_t timer_init(switch_timer_t *timer)
 {
 	timer_private_t *private_info;
+	int sanity = 0;
+
+	while(globals.STARTED == 0) {
+		switch_yield(100000);
+		if (++sanity == 10) {
+			break;
+		}
+	}
 
 	if (globals.RUNNING != 1 || !globals.mutex) {
 		return SWITCH_STATUS_FALSE;
@@ -220,9 +229,9 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_softtimer_runtime)
 
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
-
-	globals.RUNNING = 1;
-
+	
+	globals.STARTED = globals.RUNNING = 1;
+	
 	while (globals.RUNNING == 1) {
 		reference += STEP_MIC;
 
