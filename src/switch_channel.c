@@ -772,6 +772,8 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 	const void *var;
 	char state_num[25];
 
+	switch_mutex_lock(channel->profile_mutex);
+
 	if ((caller_profile = switch_channel_get_caller_profile(channel))) {
 		originator_caller_profile = caller_profile->originator_caller_profile;
 		originatee_caller_profile = caller_profile->originatee_caller_profile;
@@ -818,7 +820,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 		}
 	}
 
-
+	switch_mutex_unlock(channel->profile_mutex);
 
 }
 
