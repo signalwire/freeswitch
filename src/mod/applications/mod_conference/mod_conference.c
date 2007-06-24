@@ -1576,6 +1576,8 @@ static void conference_loop_output(conference_member_t * member)
 		switch_event_t *event;
 		caller_control_action_t *caller_action = NULL;
 
+		switch_mutex_lock(member->flag_mutex);
+
 		if (switch_core_session_dequeue_event(member->session, &event) == SWITCH_STATUS_SUCCESS) {
 			char *from = switch_event_get_header(event, "from");
 			char *to = switch_event_get_header(event, "to");
@@ -1649,7 +1651,6 @@ static void conference_loop_output(conference_member_t * member)
 
 		/* handle file and TTS frames */
 		if (member->fnode) {
-			switch_mutex_lock(member->flag_mutex);
 			/* if we are done, clean it up */
 			if (member->fnode->done) {
 				conference_file_node_t *fnode;
@@ -1707,7 +1708,6 @@ static void conference_loop_output(conference_member_t * member)
 					}
 				}
 			}
-			switch_mutex_unlock(member->flag_mutex);
 		} else {				/* send the conferecne frame to the call leg */
 			switch_buffer_t *use_buffer = NULL;
 			uint32_t mux_used = (uint32_t) switch_buffer_inuse(member->mux_buffer);
@@ -1770,6 +1770,7 @@ static void conference_loop_output(conference_member_t * member)
 				switch_core_timer_next(&timer);
 			}
 		}
+		switch_mutex_unlock(member->flag_mutex);
 	}							/* Rinse ... Repeat */
 
 	if (member->digit_stream != NULL) {
@@ -3229,12 +3230,13 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t * conference, swit
 			}
 
 			/* move the member from the old conference to the new one */
+			switch_mutex_lock(member->flag_mutex);
 			conference_del_member(conference, member);
 			conference_add_member(new_conference, member);
 			switch_mutex_unlock(new_conference->mutex);
-
+			switch_mutex_unlock(member->flag_mutex);
 			stream->write_function(stream, "OK Members sent to conference %s.\n", argv[2]);
-
+			
 			/* tell them what happened */
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 				switch_channel_event_set_data(channel, event);
