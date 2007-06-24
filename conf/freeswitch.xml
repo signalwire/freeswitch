@@ -74,6 +74,7 @@
 
     <!-- XML Interfaces --> 
     <!--#include "xml_rpc.conf.xml"-->
+    <!--#include "xml_cdr.conf.xml"-->
     <!--#include "xml_curl.conf.xml"-->
     <!-- none for mod_xml_cdr -->
 

@@ -41,8 +41,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -63,6 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="Ws2_32.lib Winmm.lib"
 				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\$(OutDir)"
@@ -122,8 +123,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;CURL_STATICLIB"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
@@ -142,6 +143,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="Ws2_32.lib Winmm.lib"
 				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\$(OutDir)"

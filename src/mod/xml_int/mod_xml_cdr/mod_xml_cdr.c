@@ -24,13 +24,23 @@
  * Contributor(s):
  * 
  * Brian West <brian.west@mac.com>
+ * Bret McDanel <trixter AT 0xdecafbad.com>
  *
- *
- * mod_xml_cdr.c -- XML CDR Module
+ * mod_xml_cdr.c -- XML CDR Module to files or curl
  *
  */
 #include <sys/stat.h>
 #include <switch.h>
+#include <curl/curl.h>
+
+static struct {
+	char *cred;
+	char *url;
+	char *logDir;
+	char *errLogDir;
+	uint32_t delay;
+	uint32_t retries;
+} globals;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load);
 SWITCH_MODULE_DEFINITION(mod_xml_cdr, mod_xml_cdr_load, NULL, NULL);
@@ -38,25 +48,34 @@ SWITCH_MODULE_DEFINITION(mod_xml_cdr, mod_xml_cdr_load, NULL, NULL);
 static switch_status_t my_on_hangup(switch_core_session_t *session)
 {
 	switch_xml_t cdr;
+	char *xml_text;
+	char *path;
+	int fd = -1;
+	uint32_t curTry;
+	long httpRes;
+	CURL *curl_handle = NULL;
+	char *curl_xml_text;
+	char *logdir;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
-		switch_channel_t *channel = switch_core_session_get_channel(session);
-		char *xml_text;
-		char *path;
-		int fd = -1;
-		const char *header = "<?xml version=\"1.0\"?>\n";
-		char *uuid_str = switch_core_session_get_uuid(session);
-		char *logdir = SWITCH_GLOBAL_dirs.log_dir;
-		char *alt;
 
-		if ((alt = switch_channel_get_variable(channel, "xml_cdr_base"))) {
-			logdir = alt;
+		/* build the XML */
+		if(!(xml_text = switch_mprintf("<?xml version=\"1.0\"?>\n%s",switch_xml_toxml(cdr)) )) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+			return SWITCH_STATUS_FALSE;
 		}
 
-		if ((path = switch_mprintf("%s/xml_cdr/%s.cdr.xml", logdir, uuid_str))) {
-			if ((xml_text = switch_xml_toxml(cdr))) {
+		/* do we log to the disk no matter what? */
+		/* all previous functionality is retained */
+
+		if (!(logdir = switch_channel_get_variable(channel, "xml_cdr_base"))) {
+			logdir = globals.logDir;
+		}
+
+		if(!switch_strlen_zero(logdir)) {
+			if ((path = switch_mprintf("%s/xml_cdr/%s.cdr.xml", logdir, switch_core_session_get_uuid(session)))) {
 				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
-					write(fd, header, (unsigned) strlen(header));
 					write(fd, xml_text, (unsigned) strlen(xml_text));
 					close(fd);
 					fd = -1;
@@ -69,14 +88,134 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 #endif
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error![%s]\n", ebuf);
 				}
+				free(path);
+			}
+		}
+
+		/* try to post it to the web server */
+		if(!switch_strlen_zero(globals.url)) {
+			curl_handle = curl_easy_init();
+			if(!(curl_xml_text = switch_mprintf("cdr=%s",xml_text) )) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 				free(xml_text);
+				return SWITCH_STATUS_FALSE;
+			}
+
+			if (!switch_strlen_zero(globals.cred)) {
+				curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+				curl_easy_setopt(curl_handle, CURLOPT_USERPWD, globals.cred);
+			}
+
+			curl_easy_setopt(curl_handle, CURLOPT_POST, 1);
+			curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, curl_xml_text);
+			curl_easy_setopt(curl_handle, CURLOPT_URL, globals.url);
+			curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-xml/1.0");
+
+			/* these were used for testing, optionally they may be enabled if someone desires
+			curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 120); // tcp timeout
+			curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1); // 302 recursion level
+			*/
+
+			for(curTry=0;curTry<=globals.retries;curTry++) {
+				curl_easy_perform(curl_handle);
+				curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE,&httpRes);
+				if(httpRes==200) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DEBUG XXX success posting\n");
+					curl_easy_cleanup(curl_handle);
+					free(curl_xml_text);
+					free(xml_text);
+					return SWITCH_STATUS_SUCCESS;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got error [%ld] posting to web server\n",httpRes);
+				}
+
+				/* bug?  feature?  we sleep even on the last failure before writing the file */
+				switch_sleep(globals.delay * 1000);
+			}
+			free(curl_xml_text);
+			curl_easy_cleanup(curl_handle);
+		}
+
+		/* if we are here the web post failed for some reason */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to post to web server, writing to file\n");
+
+		if ((path = switch_mprintf("%s/%s.cdr.xml", globals.errLogDir, switch_core_session_get_uuid(session)))) {
+			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+				write(fd, xml_text, (unsigned) strlen(xml_text));
+				close(fd);
+				fd = -1;
+			} else {
+				char ebuf[512] = { 0 };
+#ifdef WIN32
+				strerror_s(ebuf, sizeof(ebuf), errno);
+#else
+				strerror_r(errno, ebuf, sizeof(ebuf));
+#endif
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error![%s]\n", ebuf);
 			}
 			free(path);
 		}
 
+		free(xml_text);
 		switch_xml_free(cdr);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Generating Data!\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t do_config(void)
+{
+	char *cf = "xml_cdr.conf";
+	switch_xml_t cfg, xml, settings, param;
+
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+		return SWITCH_STATUS_TERM;
+	}
+
+	if ((settings = switch_xml_child(cfg, "settings"))) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+
+			if (!strcasecmp(var, "cred")) {
+				globals.cred = val;
+			} else if (!strcasecmp(var, "url")) {
+				globals.url = val;
+			} else if (!strcasecmp(var, "delay")) {
+				globals.delay = (uint32_t) atoi(val);
+			} else if (!strcasecmp(var, "retries")) {
+				globals.retries = (uint32_t) atoi(val);
+			} else if (!strcasecmp(var, "logDir")) {
+				if (switch_strlen_zero(val)) {
+					globals.logDir = SWITCH_GLOBAL_dirs.log_dir;
+				} else {
+					globals.logDir = val;
+				}
+			} else if (!strcasecmp(var, "errLogDir")) {
+				globals.errLogDir = val;
+			}
+
+		}
+	}
+	if(globals.retries < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "retries is negative, setting to 0\n");
+		globals.retries = 0;
+	}
+
+
+	if(globals.retries && globals.delay<=0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "retries set but delay 0 setting to 5000ms\n");
+		globals.delay = 5000;
+	}
+
+	if(!switch_strlen_zero(globals.url) && switch_strlen_zero(globals.errLogDir)) {
+		if ((globals.errLogDir = switch_mprintf("%s/xml_cdr", SWITCH_GLOBAL_dirs.log_dir))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+			return SWITCH_STATUS_FALSE;
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -97,6 +236,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 	switch_core_add_state_handler(&state_handlers);
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+
+	memset(&globals,0,sizeof(globals));
+	do_config();
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
