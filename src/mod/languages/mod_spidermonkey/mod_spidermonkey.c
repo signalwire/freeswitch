@@ -58,6 +58,19 @@ if (!jss || !jss->session) {											\
 			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);							\
 			return JS_FALSE;											\
 		}																\
+		if (!((switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_test_flag(channel, CF_EARLY_MEDIA)))) {							\
+			eval_some_js("~throw new Error(\"Session is not answered!\");", cx, obj, rval); \
+			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);							\
+			return JS_FALSE;											\
+		}																\
+	} while (foo == 1)
+
+#define CHANNEL_SANITY_CHECK_ANSWER() do {										\
+		if (!switch_channel_ready(channel)) {							\
+			eval_some_js("~throw new Error(\"Session is not active!\");", cx, obj, rval); \
+			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);							\
+			return JS_FALSE;											\
+		}																\
 	} while (foo == 1)
 
 static void session_destroy(JSContext * cx, JSObject * obj);
@@ -1603,12 +1616,27 @@ static JSBool session_answer(JSContext * cx, JSObject * obj, uintN argc, jsval *
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
 
-	CHANNEL_SANITY_CHECK();
+	CHANNEL_SANITY_CHECK_ANSWER();
 
 	switch_channel_answer(channel);
 	return JS_TRUE;
 }
 
+static JSBool session_pre_answer(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	struct js_session *jss = JS_GetPrivate(cx, obj);
+	switch_channel_t *channel;
+
+	METHOD_SANITY_CHECK();
+
+	channel = switch_core_session_get_channel(jss->session);
+	assert(channel != NULL);
+
+	CHANNEL_SANITY_CHECK_ANSWER();
+
+	switch_channel_pre_answer(channel);
+	return JS_TRUE;
+}
 
 static JSBool session_cdr(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
@@ -2012,6 +2040,7 @@ static JSFunctionSpec session_methods[] = {
 	{"getVariable", session_get_variable, 1},
 	{"getDigits", session_get_digits, 1},
 	{"answer", session_answer, 0},
+	{"preAnswer", session_pre_answer, 0},
 	{"generateXmlCdr", session_cdr, 0},
 	{"ready", session_ready, 0},
 	{"waitForAnswer", session_wait_for_answer, 0},
