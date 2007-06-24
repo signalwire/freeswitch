@@ -402,18 +402,19 @@ SWITCH_DECLARE(switch_status_t) switch_dir_close(switch_dir_t *thedir)
 	return apr_dir_close(thedir->dir_handle);
 }
 
-SWITCH_DECLARE(const char *) switch_dir_next_file(switch_dir_t *thedir) 
+SWITCH_DECLARE(const char *) switch_dir_next_file(switch_dir_t *thedir, char *buf, switch_size_t len) 
 {
 	const char *fname = NULL;
 	apr_int32_t finfo_flags = APR_FINFO_DIRENT | APR_FINFO_TYPE | APR_FINFO_NAME;
 	while (apr_dir_read(&(thedir->finfo), finfo_flags, thedir->dir_handle) == SWITCH_STATUS_SUCCESS) {
 		if (thedir->finfo.filetype != APR_REG)
 			continue;
-		fname = thedir->finfo.fname;
-		if (!fname)
-			fname = thedir->finfo.name;
-		if (!fname)
+		if (thedir->finfo.fname) {
+			switch_copy_string(buf, thedir->finfo.fname, len);
+			fname = buf;
+		} else {
 			continue;
+		}
 	}
 	return fname;
 }
