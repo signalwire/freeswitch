@@ -177,18 +177,19 @@ static void eval_some_python(char *uuid, char *args, switch_core_session_t *sess
 	    // will be null
 	    if (swapin_tstate == NULL) {
 		// swap it out
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Threadstate mod_python.c swap-out! \n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Threadstate mod_python.c swap-out! \n");
 		// PyEval_ReleaseThread(cur_tstate);
 		swapin_tstate = (void *) PyEval_SaveThread();
 		switch_channel_set_private(channel, "SwapInThreadState", (void *) swapin_tstate);
 	    }
 	    else {
 		// thread state is already swapped out, so, nothing for us to do
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "according to chan priv data, already swapped out \n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "according to chan priv data, already swapped out \n");
 	    }
  	}
 	else {
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Threadstate mod_python.c swap-out! \n");
+	    // they ran python script from cmd line, behave a bit differently (untested)
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Threadstate mod_python.c swap-out! \n");
 	    PyEval_ReleaseThread(tstate);
 	}
 

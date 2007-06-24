@@ -142,28 +142,16 @@ class CoreSession {
 
 	/** \brief Originate a call to a destination
 	 *
-	 * \param old_session - the session where the call is originating from 
-     *                      and also the session in which _this_ session was 
-     *                      created
+	 * \param a_leg_sessoin - the session where the call is originating from 
+     *                        and also the session in which _this_ session was 
+     *                        created
 	 * \param dest - a string representing destination, eg, sofia/mydomain.com/foo@bar.com
 	 * \return an int status code indicating success or failure
      *
 	 */
-	int originate(CoreSession *aleg_session, 
+	int originate(CoreSession *a_leg_session, 
 				  char *dest, 
 				  int timeout=60);
-
-	/** \brief Play a file that resides on disk into the channel
-	 *
-	 * \param file - the path to the .wav/.mp3 to be played
-	 * \param timer_name - ?? does not seem to be used, what is this?
-	 * \return an int status code indicating success or failure
-	 *
-	 * NOTE: if a dtmf callback is installed before calling this 
-     *       function, that callback will be called upon receiving any
-     *       dtmfs 
-	 */
-	int playFile(char *file, char *timer_name);
 
 
 	/** \brief set a DTMF callback function
@@ -215,7 +203,7 @@ class CoreSession {
 	 * \return an int status code indicating success or failure
 	 *
 	 */
-	int streamfile(char *file, int starting_sample_count);
+	int streamFile(char *file, int starting_sample_count=0);
 
 	/** \brief flush any pending events
 	 */

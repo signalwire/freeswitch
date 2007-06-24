@@ -175,6 +175,11 @@ switch_status_t PySession::run_dtmf_callback(void *input,
 bool PySession::begin_allow_threads(void) { 
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "PySession::begin_allow_threads() called\n");
 
+    if (!session) {
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No valid session\n");	
+	return false;
+    }
+
     // swap out threadstate and store in instance variable 
     switch_channel_t *channel = switch_core_session_get_channel(session);
     PyThreadState *swapin_tstate = (PyThreadState *) switch_channel_get_private(channel, "SwapInThreadState");
@@ -196,7 +201,6 @@ bool PySession::begin_allow_threads(void) {
     }
     else {
 	// currently swapped out
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Threadstate already swapd-out! Skipping\n");	
 	return false;
     }
 
@@ -205,11 +209,15 @@ bool PySession::begin_allow_threads(void) {
 bool PySession::end_allow_threads(void) { 
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "PySession::end_allow_threads() called\n");
     // swap in threadstate from instance variable saved earlier
+    if (!session) {
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No valid session\n");	
+	return false;
+    }
+
     switch_channel_t *channel = switch_core_session_get_channel(session);
     PyThreadState *swapin_tstate = (PyThreadState *) switch_channel_get_private(channel, "SwapInThreadState");
     if (swapin_tstate == NULL) {
 	// currently swapped in
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Threadstate double swap-in! Skipping\n");	
 	return false;
     }
     else {

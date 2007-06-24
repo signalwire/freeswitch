@@ -92,31 +92,13 @@ void CoreSession::execute(char *app, char *data)
 	const switch_application_interface_t *application_interface;
 	sanity_check_noreturn;
 
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::execute.  data:%s\n", data);
 	if ((application_interface = switch_loadable_module_get_application_interface(app))) {
 		begin_allow_threads();
 		switch_core_session_exec(session, application_interface, data);
 		end_allow_threads();
 	}
 }
-
-int CoreSession::playFile(char *file, char *timer_name)
-{
-    switch_status_t status;
-    switch_file_handle_t fh = { 0 };
-	sanity_check(-1);
-    if (switch_strlen_zero(timer_name)) {
-        timer_name = NULL;
-    }
-	store_file_handle(&fh);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "playFile begin_allow_threads\n");
-	begin_allow_threads();
-	status = switch_ivr_play_file(session, &fh, file, ap);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "playFile end_allow_threads\n");
-	end_allow_threads();
-    return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
-
-}
-
 
 void CoreSession::setDTMFCallback(void *cbfunc, char *funcargs) {
 
@@ -206,6 +188,7 @@ int CoreSession::transfer(char *extension, char *dialplan, char *context)
 	sanity_check(-1);
     begin_allow_threads();
     status = switch_ivr_session_transfer(session, extension, dialplan, context);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "transfer result: %d\n", status);
     end_allow_threads();
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
@@ -240,7 +223,7 @@ int CoreSession::playAndGetDigits(int min_digits,
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-int CoreSession::streamfile(char *file, int starting_sample_count) {
+int CoreSession::streamFile(char *file, int starting_sample_count) {
 
     switch_status_t status;
     switch_file_handle_t fh = { 0 };
@@ -282,7 +265,7 @@ bool CoreSession::ready() {
 
 }
 
-int CoreSession::originate(CoreSession *aleg_session, 
+int CoreSession::originate(CoreSession *a_leg_session, 
 						   char *dest, 
 						   int timeout)
 {
@@ -293,11 +276,15 @@ int CoreSession::originate(CoreSession *aleg_session,
 
 	cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 
-	if (aleg_session != NULL) {
-		aleg_core_session = aleg_session->session;
+	if (a_leg_session != NULL) {
+		aleg_core_session = a_leg_session->session;
 	}
 
-    begin_allow_threads();
+	// this session has no valid switch_core_session_t at this point, and therefore
+	// no valid channel.  since the threadstate is stored in the channel, and there 
+	// is none, if we try to call begin_alllow_threads it will fail miserably.
+	// use the 'a leg session' to do the thread swapping stuff.
+    a_leg_session->begin_allow_threads();
 
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
@@ -318,11 +305,11 @@ int CoreSession::originate(CoreSession *aleg_session,
 
 	}
 
-    end_allow_threads();
+    a_leg_session->end_allow_threads();
 	return SWITCH_STATUS_SUCCESS;
 
  failed:
-    end_allow_threads();
+    a_leg_session->end_allow_threads();
 	return SWITCH_STATUS_FALSE;
 }
 
