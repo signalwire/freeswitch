@@ -341,6 +341,7 @@ void BaseCDR::process_channel_variables(const std::list<std::string>& stringlist
 			tempstring_second = (char *) val;
 			chanvars_supp[tempstring_first] = tempstring_second;
 		}
+		switch_channel_variable_last(channel);
 	}
 	else
 	{
