@@ -59,7 +59,7 @@ typedef struct local_stream_context local_stream_context_t;
 struct local_stream_source {
 	char *name;
 	char *location;
-	int channels;
+	uint8_t channels;
 	int rate;
 	int interval;
 	int samples;
@@ -312,7 +312,7 @@ static void launch_threads(void)
 			} else if (!strcasecmp(var, "channels")) {
 				int tmp = atoi(val);
 				if (tmp == 1 || tmp == 2) {
-					source->channels = tmp;
+					source->channels = (uint8_t)tmp;
 				}
 			} else if (!strcasecmp(var, "interval")) {
 				source->interval = atoi(val);
