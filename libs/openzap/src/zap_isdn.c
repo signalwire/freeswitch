@@ -80,20 +80,6 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 
 	zap_log(ZAP_LOG_DEBUG, "Yay I got an event! Type:[%02x] Size:[%d]\n", gen->MesType, gen->Size);
 
-#if 0
-	typedef struct
-{
-    L3UCHAR IEId;                   /* 01110100                             */
-    L3UCHAR Size;                   /* Length of Information Element        */
-	L3UCHAR Preference;             /* Preference 0 = reserved, 1 = channel */
-	L3UCHAR Spare;                  /* Spare                                */
-    L3UCHAR NewStatus;              /* NewStatus                            */
-                                    /*  000 In service                      */
-                                    /*  001 Maintenance                     */
-                                    /*  010 Out of service                  */
-}Q931ie_ChangeStatus;
-
-#endif
 	if (gen->ProtDisc == 3) {
 		switch(gen->MesType) {
 		case Q931mes_SERVICE:
