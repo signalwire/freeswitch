@@ -715,6 +715,31 @@ SWITCH_STANDARD_API(session_displace_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define BREAK_SYNTAX "<uuid>"
+SWITCH_STANDARD_API(break_function)
+{
+	switch_core_session_t *psession = NULL;
+
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "USAGE: %s\n", BREAK_SYNTAX);
+	} else {
+		if ((psession = switch_core_session_locate(cmd))) {
+			switch_channel_t *channel = switch_core_session_get_channel(psession);
+			switch_channel_set_flag(channel, CF_BREAK);
+			switch_core_session_rwunlock(psession);
+		} else {
+			stream->write_function(stream, "No Such Channel!\n");
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 #define PAUSE_SYNTAX "<uuid> <on|off>"
 SWITCH_STANDARD_API(pause_function)
 {
@@ -1254,6 +1279,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "load", "Load Module", load_function, LOAD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "transfer", "Transfer Module", transfer_function, TRANSFER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "pause", "Pause", pause_function, PAUSE_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "break", "Break", break_function, BREAK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "show", "Show", show_function, SHOW_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "status", "status", status_function, "");
 	SWITCH_ADD_API(commands_api_interface, "uuid_bridge", "uuid_bridge", uuid_bridge_function, UUID_SYNTAX);
