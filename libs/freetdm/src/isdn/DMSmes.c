@@ -1,8 +1,8 @@
 /*****************************************************************************
 
-  FileName:		nationalmes.c
+  FileName:		DMSmes.c
 
-  Contents:		Pack/Unpack functions. These functions will unpack a National ISDN
+  Contents:		Pack/Unpack functions. These functions will unpack a DMS-100 ISDN
 				message from the bit packed original format into structs
 				that contains variables sized by the user. It will also pack
 				the struct back into a Q.931 message as required.
@@ -44,14 +44,14 @@
 
 *****************************************************************************/
 
-#include "national.h"
+#include "DMS.h"
 
 /*****************************************************************************
 
-  Function:     nationalUmes_Setup
+  Function:     DMSUmes_Setup
 
 *****************************************************************************/
-L3INT nationalUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *mes, L3INT IOff, L3INT Size)
+L3INT DMSUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *mes, L3INT IOff, L3INT Size)
 {
 	L3INT ir=0;
 	L3INT OOff=0;
@@ -132,7 +132,7 @@ L3INT nationalUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generi
 
 /*****************************************************************************
 
-  Function:     nationalPmes_Setup
+  Function:     DMSPmes_Setup
 
   Decription:	Pack a Q931mes_Generic into a real Q.931 message. The user will
 				set up a SETUP message and issue this to the stack where it
@@ -148,7 +148,7 @@ L3INT nationalUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generi
   Called By:	Q931ProcSetup
 
 *****************************************************************************/
-L3INT nationalPmes_Setup(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
+L3INT DMSPmes_Setup(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
 {
     L3INT rc = Q931E_NO_ERROR;
 	Q931mes_Generic *pMes = (Q931mes_Generic *)IBuf;
@@ -261,3 +261,78 @@ L3INT nationalPmes_Setup(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT 
 }
 
 
+/*****************************************************************************
+
+  Function:     DMSUmes_0x0f
+
+*****************************************************************************/
+L3INT DMSUmes_0x0f(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *mes, L3INT IOff, L3INT Size)
+{
+	if (mes->ProtDisc == 8) {
+		return Q931Umes_ConnectAck(pTrunk, IBuf, mes, IOff, Size);
+	}
+
+	if (mes->ProtDisc == 3) {
+		return Q931Umes_Service(pTrunk, IBuf, mes, IOff, Size);
+	}
+
+	return Q931E_UNKNOWN_MESSAGE;
+}
+
+/*****************************************************************************
+
+  Function:     DMSPmes_0x0f
+
+*****************************************************************************/
+L3INT DMSPmes_0x0f(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
+{
+	Q931mes_Generic *mes = (Q931mes_Generic *)IBuf;
+
+	if (mes->ProtDisc == 8) {
+		return Q931Pmes_ConnectAck(pTrunk, IBuf, ISize, OBuf, OSize);
+	}
+
+	if (mes->ProtDisc == 3) {
+		return Q931Pmes_Service(pTrunk, IBuf, ISize, OBuf, OSize);
+	}
+
+	return Q931E_UNKNOWN_MESSAGE;
+}
+
+/*****************************************************************************
+
+  Function:     DMSUmes_0x07
+
+*****************************************************************************/
+L3INT DMSUmes_0x07(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *mes, L3INT IOff, L3INT Size)
+{
+	if (mes->ProtDisc == 8) {
+		return Q931Umes_Connect(pTrunk, IBuf, mes, IOff, Size);
+	}
+
+	if (mes->ProtDisc == 3) {
+		return Q931Umes_ServiceAck(pTrunk, IBuf, mes, IOff, Size);
+	}
+
+	return Q931E_UNKNOWN_MESSAGE;
+}
+
+/*****************************************************************************
+
+  Function:     DMSPmes_0x07
+
+*****************************************************************************/
+L3INT DMSPmes_0x07(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize)
+{
+	Q931mes_Generic *mes = (Q931mes_Generic *)IBuf;
+
+	if (mes->ProtDisc == 8) {
+		return Q931Pmes_Connect(pTrunk, IBuf, ISize, OBuf, OSize);
+	}
+
+	if (mes->ProtDisc == 3) {
+		return Q931Pmes_ServiceAck(pTrunk, IBuf, ISize, OBuf, OSize);
+	}
+
+	return Q931E_UNKNOWN_MESSAGE;
+}

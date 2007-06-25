@@ -283,7 +283,7 @@ typedef L3USHORT ie;                /* Special data type to hold a dynamic  */
 /* WARNING! Initialize Q931CreateDialectCB[] will NULL when increasing the  */
 /* Q931MAXDLCT value to avoid Q931Initialize from crashing if one entry is  */
 /* not used.																*/
-#define Q931MAXDLCT 4           /* Max dialects included in this        */
+#define Q931MAXDLCT 6           /* Max dialects included in this        */
                                 /* compile. User and Network count as   */
                                 /* one dialect each.                    */
 
@@ -377,6 +377,9 @@ typedef L3USHORT ie;                /* Special data type to hold a dynamic  */
 #define Q931mes_STATUS_ENQUIRY       0x75 /* 0111 0101                   */
 #define Q931mes_SEGMENT              0x60 /* 0110 0000                   */
 
+#define Q931mes_SERVICE              0x0f /* 0000 1111                   */
+#define Q931mes_SERVICE_ACKNOWLEDGE  0x07 /* 0000 0111                   */
+
 
 /*****************************************************************************
 
@@ -422,6 +425,7 @@ typedef struct
     ie              CallState;      /* Call State                           */
     ie              CallID;			/* Call Identity                        */
     ie              ChanID;         /* Channel Identification               */
+    ie              ChangeStatus;   /* Change Staus                         */
     ie              ProgInd;        /* Progress Indicator                   */
     ie              NetFac;         /* Network Spesific Facilities          */
     ie              NotifInd;       /* Notification Indicator               */
@@ -488,10 +492,11 @@ typedef enum						/* Dialect enum                         */
 {
 	Q931_Dialect_Q931 = 0,
 	Q931_Dialect_National = 2,
+	Q931_Dialect_DMS = 4,
 
 	Q931_Dialect_Count
 } Q931Dialect_t;
-#define DIALECT_STRINGS "q931", "", "national"
+#define DIALECT_STRINGS "q931", "", "national", "", "dms"
 Q931_STR2ENUM_P(q931_str2Q931Diaelct_type, q931_Q931Diaelct_type2str, Q931Dialect_t)
 
 typedef enum						/* Trunk Line Type.                     */
@@ -557,7 +562,10 @@ struct Q931_TrunkInfo
 	L3BOOL  autoRestartAck;			/* Indicate if the stack should send    */
 									/* RESTART ACK or not. 0=No, 1=Yes.		*/
 
-    /* channel array holding info per channel. Usually defined to 32		*/
+	L3BOOL  autoServiceAck;			/* Indicate if the stack should send    */
+									/* SERVICE ACK or not. 0=No, 1=Yes.		*/
+
+	/* channel array holding info per channel. Usually defined to 32		*/
 	/* channels to fit an E1 since T1/J1 and BRI will fit inside a E1.		*/
     struct _charray
     {
@@ -786,6 +794,9 @@ L3INT Q931Pmes_Notify(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISi
 L3INT Q931Pmes_Segment(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
 L3INT Q931Pmes_Status(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
 L3INT Q931Pmes_StatusEnquiry(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_Service(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT Q931Pmes_ServiceAck(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+
 
 L3INT Q931Umes_Alerting(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT I, L3INT O);
 L3INT Q931Umes_CallProceeding(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT I, L3INT O);
@@ -812,6 +823,9 @@ L3INT Q931Umes_Notify(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *
 L3INT Q931Umes_Segment(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT I, L3INT O);
 L3INT Q931Umes_Status(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT I, L3INT O);
 L3INT Q931Umes_StatusEnquiry(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT I, L3INT O);
+L3INT Q931Umes_Service(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *mes, L3INT IOff, L3INT Size);
+L3INT Q931Umes_ServiceAck(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *mes, L3INT IOff, L3INT Size);
+
 
 /*****************************************************************************
 
@@ -943,6 +957,7 @@ L3INT Q931ReleaseComplete(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf);
 L3INT Q931AckRestart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf);
 L3INT Q931AckConnect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf);
 L3INT Q931AckSetup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf);
+L3INT Q931AckService(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf);
 
 L3INT Q931Api_InitTrunk(Q931_TrunkInfo_t *pTrunk,
 						Q931Dialect_t Dialect,

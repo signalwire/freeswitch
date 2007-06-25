@@ -562,5 +562,20 @@ L3INT Q931AckConnect(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf)
     return RetCode;
 }
 
+L3INT Q931AckService(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf)
+{
+	L3INT RetCode;
+
+    Q931mes_Header *ptr = (Q931mes_Header*)&buf[Q931L4HeaderSpace];
+	ptr->MesType = Q931mes_SERVICE_ACKNOWLEDGE;
+	if (ptr->CRV) {
+		ptr->CRVFlag = !(ptr->CRVFlag);
+	}
+
+	RetCode = Q931Proc[pTrunk->Dialect][ptr->MesType](pTrunk, buf, 4);
+
+    return RetCode;
+}
+
 Q931_ENUM_NAMES(DIALECT_TYPE_NAMES, DIALECT_STRINGS)
 Q931_STR2ENUM(q931_str2Q931Diaelct_type, q931_Q931Diaelct_type2str, Q931Dialect_t, DIALECT_TYPE_NAMES, Q931_Dialect_Count)

@@ -38,6 +38,7 @@
 
 #include "Q931.h"
 #include "national.h"
+#include "DMS.h"
 
 /*****************************************************************************
 
@@ -260,6 +261,12 @@ void Q931Initialize()
 
 	if(Q931CreateDialectCB[Q931_Dialect_National + Q931_NT] == NULL)
 		Q931AddDialect(Q931_Dialect_National + Q931_NT, nationalCreateNT);
+
+	if(Q931CreateDialectCB[Q931_Dialect_DMS + Q931_TE] == NULL)
+		Q931AddDialect(Q931_Dialect_DMS + Q931_TE, DMSCreateTE);
+
+	if(Q931CreateDialectCB[Q931_Dialect_DMS + Q931_NT] == NULL)
+		Q931AddDialect(Q931_Dialect_DMS + Q931_NT, DMSCreateNT);
 
 	/* The last step we do is to call the callbacks to create the dialects  */
 	for(x=0; x< Q931MAXDLCT; x++)

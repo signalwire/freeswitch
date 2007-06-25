@@ -1068,6 +1068,18 @@ typedef struct
                                     /*  111 All interfaces                  */
 }Q931ie_RestartInd;
 
+typedef struct
+{
+    L3UCHAR IEId;                   /* 01110100                             */
+    L3UCHAR Size;                   /* Length of Information Element        */
+	L3UCHAR Preference;             /* Preference 0 = reserved, 1 = channel */
+	L3UCHAR Spare;                  /* Spare                                */
+    L3UCHAR NewStatus;              /* NewStatus                            */
+                                    /*  000 In service                      */
+                                    /*  001 Maintenance                     */
+                                    /*  010 Out of service                  */
+}Q931ie_ChangeStatus;
+
 /*****************************************************************************
 
   Struct:       Q931ie_GenericDigits
@@ -1090,7 +1102,7 @@ typedef struct
   Q.931 Information Element Pack/Unpack functions. Implemented in Q931ie.c
 
 *****************************************************************************/
-
+q931pie_func_t Q931Pie_ChangeStatus;
 q931pie_func_t Q931Pie_BearerCap;
 q931pie_func_t Q931Pie_ChanID;
 q931pie_func_t Q931Pie_ProgInd;
@@ -1121,6 +1133,7 @@ q931pie_func_t Q931Pie_GenericDigits;
 
 L3USHORT Q931Uie_CRV(Q931_TrunkInfo_t *pTrunk,L3UCHAR * IBuf, L3UCHAR *OBuf, L3INT *IOff, L3INT *OOff);
 
+q931uie_func_t Q931Uie_ChangeStatus;
 q931uie_func_t Q931Uie_BearerCap;
 q931uie_func_t Q931Uie_ChanID;
 q931uie_func_t Q931Uie_ProgInd;

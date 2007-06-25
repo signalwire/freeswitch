@@ -3079,3 +3079,80 @@ L3INT Q931Pie_GenericDigits(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OB
 
     return Q931E_NO_ERROR;
 }
+
+/*****************************************************************************
+
+  Function:     Q931Uie_ChangeStatus
+
+  Parameters:   pIE[OUT]        ptr to Information Element id.
+                IBuf[IN]        ptr to a packed ie.
+                OBuf[OUT]       ptr to buffer for Unpacked ie.
+                IOff[IN\OUT]    Input buffer offset
+                OOff[IN\OUT]    Output buffer offset
+
+                Ibuf and OBuf points directly to buffers. The IOff and OOff
+                must be updated, but are otherwise not used in the ie unpack.
+
+  Return Value: Error Message
+
+*****************************************************************************/
+L3INT Q931Uie_ChangeStatus(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * IBuf, L3UCHAR * OBuf, L3INT *IOff, L3INT *OOff)
+{
+    Q931ie_ChangeStatus * pie = (Q931ie_ChangeStatus*)OBuf;
+	ie *pIE = &pMsg->ChangeStatus;
+    L3INT Off = 0;
+    L3INT Octet = 0;
+    L3INT IESize;
+
+    *pIE=0;
+
+    pie->IEId        = IBuf[Octet];
+    Octet ++;
+
+    /* Octet 2*/
+    IESize = IBuf[Octet ++]; 
+
+    /* Octet 3 */
+	pie->Preference = (IBuf[Octet+Off] >> 6) & 0x01;
+    pie->Spare = IBuf[Octet+Off] & 0x38;
+    pie->NewStatus = IBuf[Octet+Off] & 0x07;
+
+    Octet++;
+
+    Q931SetIE(*pIE, *OOff);
+
+    *IOff = (*IOff) + Octet + Off;
+    *OOff = (*OOff) + sizeof(Q931ie_ChangeStatus);
+    pie->Size = sizeof(Q931ie_ChangeStatus);
+
+
+    return Q931E_NO_ERROR;
+}
+
+/*****************************************************************************
+
+  Function:     Q931Pie_ChangeStatus
+
+  Parameters:   IBuf[IN]        Ptr to struct.
+                OBuf[OUT]        Ptr tp packed output buffer.
+                Octet[IN/OUT]    Offset into OBuf.
+
+  Return Value:    Error code, 0 = OK
+
+*****************************************************************************/
+L3INT Q931Pie_ChangeStatus(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, L3UCHAR *OBuf, L3INT *Octet)
+{
+    Q931ie_ChangeStatus * pIE = (Q931ie_ChangeStatus*)IBuf;
+    L3INT rc=Q931E_NO_ERROR;
+    L3INT Beg=*Octet;
+    L3INT li;
+
+    OBuf[(*Octet)++] = Q931ie_CHANGE_STATUS;
+    li=(*Octet)++;
+
+    /* Octet 3*/
+    OBuf[(*Octet)++] = 0x80 | pIE->NewStatus | ((pIE->Preference & 0x01) << 6);
+
+    OBuf[li] = (L3UCHAR)((*Octet)-Beg) - 2;
+    return rc;
+}

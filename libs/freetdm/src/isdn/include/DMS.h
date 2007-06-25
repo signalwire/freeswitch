@@ -51,8 +51,8 @@
   POSSIBILITY OF SUCH DAMAGE.
 ******************************************************************************/
 
-#ifndef _national_NATIONAL_NL
-#define _national_NATIONAL_NL
+#ifndef _DMS_NL
+#define _DMS_NL
 
 #include "Q931.h"
 
@@ -70,10 +70,13 @@
   Q.931 Message Pack/Unpack functions. Implemented in nationalmes.c
 
 *****************************************************************************/
-L3INT nationalUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size);
-L3INT nationalPmes_Setup(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT DMSUmes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *OBuf, L3INT IOff, L3INT Size);
+L3INT DMSPmes_Setup(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT DMSUmes_0x07(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *mes, L3INT IOff, L3INT Size);
+L3INT DMSPmes_0x07(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
+L3INT DMSUmes_0x0f(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *mes, L3INT IOff, L3INT Size);
+L3INT DMSPmes_0x0f(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT ISize, L3UCHAR *OBuf, L3INT *OSize);
 
-#include "DMS.h"
 
 
 /*****************************************************************************
@@ -82,9 +85,11 @@ L3INT nationalPmes_Setup(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *IBuf, L3INT 
 
 *****************************************************************************/
 
+L3INT DMSProc0x0fTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom);
+L3INT DMSProc0x07TE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom);
 
 
-void nationalCreateTE(L3UCHAR i);
-void nationalCreateNT(L3UCHAR i);
+void DMSCreateTE(L3UCHAR i);
+void DMSCreateNT(L3UCHAR i);
 
-#endif /* _national_NATIONAL_NL */
+#endif /* _DMS_NL */
