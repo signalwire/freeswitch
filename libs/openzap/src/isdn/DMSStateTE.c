@@ -51,11 +51,11 @@
   POSSIBILITY OF SUCH DAMAGE.
 *****************************************************************************/
 
-#include "national.h"
+#include "DMS.h"
 extern L3INT Q931L4HeaderSpace;
 
 /*****************************************************************************
-  Function:		nationalCreateTE
+  Function:		DMSCreateTE
 
   Description:	Will create the National TE as a Dialect in the stack. The first
 				bulk set up the message handlers, the second bulk the IE
@@ -63,14 +63,14 @@ extern L3INT Q931L4HeaderSpace;
 
   Parameters:	i		Dialect index
 *****************************************************************************/
-void nationalCreateTE(L3UCHAR i)
+void DMSCreateTE(L3UCHAR i)
 {
     Q931SetMesProc(Q931mes_ALERTING,            i,Q931ProcAlertingTE,          Q931Umes_Alerting,          Q931Pmes_Alerting);
     Q931SetMesProc(Q931mes_CALL_PROCEEDING,     i,Q931ProcCallProceedingTE,    Q931Umes_CallProceeding,    Q931Pmes_CallProceeding);
     Q931SetMesProc(Q931mes_CONNECT,             i,DMSProc0x07TE,	           DMSUmes_0x07,	           DMSPmes_0x07);
     Q931SetMesProc(Q931mes_CONNECT_ACKNOWLEDGE, i,DMSProc0x0fTE,		       DMSUmes_0x0f,		       DMSPmes_0x0f);
     Q931SetMesProc(Q931mes_PROGRESS,            i,Q931ProcProgressTE,          Q931Umes_Progress,          Q931Pmes_Progress);
-    Q931SetMesProc(Q931mes_SETUP,               i,Q931ProcSetupTE,             nationalUmes_Setup,         nationalPmes_Setup);
+    Q931SetMesProc(Q931mes_SETUP,               i,Q931ProcSetupTE,             DMSUmes_Setup,         DMSPmes_Setup);
     Q931SetMesProc(Q931mes_SETUP_ACKNOWLEDGE,   i,Q931ProcSetupAckTE,          Q931Umes_SetupAck,          Q931Pmes_SetupAck);
     Q931SetMesProc(Q931mes_RESUME,              i,Q931ProcResumeTE,            Q931Umes_Resume,            Q931Pmes_Resume);
     Q931SetMesProc(Q931mes_RESUME_ACKNOWLEDGE,  i,Q931ProcResumeAckTE,         Q931Umes_ResumeAck,         Q931Pmes_ResumeAck);
@@ -211,3 +211,81 @@ void nationalCreateTE(L3UCHAR i)
 */
 }
 
+/*****************************************************************************
+
+  Function:		DMSProc0x0fTE
+
+*****************************************************************************/
+L3INT DMSProc0x0fTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
+{
+    L3INT callIndex;
+    L3INT ret=Q931E_NO_ERROR;
+	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+
+	if (pMes->ProtDisc == 8) {
+		/* Find the call using CRV */
+		ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
+		if(ret != Q931E_NO_ERROR)
+			return ret;
+
+
+		/* TODO chack against state table for illegal or unexpected message here*/
+
+		/* TODO - Set correct timer here */
+		Q931StartTimer(pTrunk, callIndex, 303);
+	}
+	if(iFrom == 4)
+	{
+		/* TODO Add proc here*/
+        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+	}
+	else if (iFrom ==2)
+	{
+		/* TODO Add proc here*/
+        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+
+		if (pMes->ProtDisc == 3 && pTrunk->autoServiceAck) {
+			Q931AckService(pTrunk, buf);
+		}
+
+	}
+	return ret;
+
+}
+
+/*****************************************************************************
+
+  Function:		DMSProc0x07TE
+
+*****************************************************************************/
+L3INT DMSProc0x07TE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
+{
+    L3INT callIndex;
+    L3INT ret=Q931E_NO_ERROR;
+	Q931mes_Header *pMes = (Q931mes_Header *)&buf[Q931L4HeaderSpace];
+
+	if (pMes->ProtDisc == 8) {
+		/* Find the call using CRV */
+		ret = Q931FindCRV(pTrunk, pMes->CRV, &callIndex);
+		if(ret != Q931E_NO_ERROR)
+			return ret;
+
+
+		/* TODO chack against state table for illegal or unexpected message here*/
+
+		/* TODO - Set correct timer here */
+		Q931StartTimer(pTrunk, callIndex, 303);
+	}
+	if(iFrom == 4)
+	{
+		/* TODO Add proc here*/
+        ret = Q931Tx32(pTrunk,buf,pMes->Size);
+	}
+	else if (iFrom ==2)
+	{
+		/* TODO Add proc here*/
+        ret = Q931Tx34(pTrunk,buf,pMes->Size);
+	}
+	return ret;
+
+}

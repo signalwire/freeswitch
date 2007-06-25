@@ -46,7 +46,7 @@
 
 static L2ULONG zap_time_now()
 {
-	return zap_current_time_in_ms();
+	return (L2ULONG)zap_current_time_in_ms();
 }
 
 static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(isdn_outgoing_call)
@@ -79,86 +79,129 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 	}
 
 	zap_log(ZAP_LOG_DEBUG, "Yay I got an event! Type:[%02x] Size:[%d]\n", gen->MesType, gen->Size);
-	switch(gen->MesType) {
-	case Q931mes_RESTART:
-		{
-			if (zchan) {
-				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RESTART);
-			} else {
-				uint32_t i;
-				for (i = 0; i < span->chan_count; i++) {
-					zap_set_state_locked((&span->channels[i]), ZAP_CHANNEL_STATE_RESTART);
+
+#if 0
+	typedef struct
+{
+    L3UCHAR IEId;                   /* 01110100                             */
+    L3UCHAR Size;                   /* Length of Information Element        */
+	L3UCHAR Preference;             /* Preference 0 = reserved, 1 = channel */
+	L3UCHAR Spare;                  /* Spare                                */
+    L3UCHAR NewStatus;              /* NewStatus                            */
+                                    /*  000 In service                      */
+                                    /*  001 Maintenance                     */
+                                    /*  010 Out of service                  */
+}Q931ie_ChangeStatus;
+
+#endif
+	if (gen->ProtDisc == 3) {
+		switch(gen->MesType) {
+		case Q931mes_SERVICE:
+			{
+				Q931ie_ChangeStatus *changestatus = Q931GetIEPtr(gen->ChangeStatus, gen->buf);
+				/* TODO: Handle this properly */
+				if (zchan) {
+					switch (changestatus->NewStatus) {
+					case 0: /* change status to "in service" */
+						//zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RESTART);
+						break;
+					case 1: /* change status to "maintenance" */
+						//zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RESTART);
+						break;
+					case 2: /* change status to "out of service" */
+						//zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RESTART);
+						break;
+					default: /* unknown */
+						break;
+					}
 				}
 			}
+			break;
+		default:
+			break;
 		}
-		break;
-	case Q931mes_RELEASE_COMPLETE:
-		{
-			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
-		}
-		break;
-	case Q931mes_DISCONNECT:
-		{
-			Q931ie_Cause *cause = Q931GetIEPtr(gen->Cause, gen->buf);
-			zchan->caller_data.hangup_cause = cause->Value;
-			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_TERMINATING);
-		}
-		break;
-	case Q931mes_ALERTING:
-		{
-			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_PROGRESS_MEDIA);
-		}
-		break;
-	case Q931mes_PROGRESS:
-		{
-			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_PROGRESS);
-		}
-		break;
-	case Q931mes_CONNECT:
-		{
-			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_UP);
-		}
-		break;
-	case Q931mes_SETUP:
-		{
-
-			Q931ie_CallingNum *callingnum = Q931GetIEPtr(gen->CallingNum, gen->buf);
-			Q931ie_CalledNum *callednum = Q931GetIEPtr(gen->CalledNum, gen->buf);
-			zap_status_t status;
-			int fail = 1;
-			uint32_t cplen = mlen;
-
-
-			if ((status = zap_channel_open(span->span_id, chan_id, &zchan) == ZAP_SUCCESS)) {
-				if (zchan->state == ZAP_CHANNEL_STATE_DOWN) {
-					memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
-
-					zap_set_string(zchan->caller_data.cid_num, (char *)callingnum->Digit);
-					zap_set_string(zchan->caller_data.cid_name, (char *)callingnum->Digit);
-					zap_set_string(zchan->caller_data.ani, (char *)callingnum->Digit);
-					zap_set_string(zchan->caller_data.dnis, (char *)callednum->Digit);
-
-					zchan->caller_data.CRV = gen->CRV;
-					if (cplen > sizeof(zchan->caller_data.raw_data)) {
-						cplen = sizeof(zchan->caller_data.raw_data);
+	} else {
+		switch(gen->MesType) {
+		case Q931mes_RESTART:
+			{
+				if (zchan) {
+					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RESTART);
+				} else {
+					uint32_t i;
+					for (i = 0; i < span->chan_count; i++) {
+						zap_set_state_locked((&span->channels[i]), ZAP_CHANNEL_STATE_RESTART);
 					}
-					gen->CRVFlag = !(gen->CRVFlag);
-					memcpy(zchan->caller_data.raw_data, msg, cplen);
-					zchan->caller_data.raw_data_len = cplen;
-					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RING);
-					fail = 0;
-				} 
-			} 
-
-			if (fail) {
-				zap_log(ZAP_LOG_CRIT, "FIX ME!\n");
-				// add me 
+				}
 			}
-			
+			break;
+		case Q931mes_RELEASE_COMPLETE:
+			{
+				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+			}
+			break;
+		case Q931mes_DISCONNECT:
+			{
+				Q931ie_Cause *cause = Q931GetIEPtr(gen->Cause, gen->buf);
+				zchan->caller_data.hangup_cause = cause->Value;
+				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_TERMINATING);
+			}
+			break;
+		case Q931mes_ALERTING:
+			{
+				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_PROGRESS_MEDIA);
+			}
+			break;
+		case Q931mes_PROGRESS:
+			{
+				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_PROGRESS);
+			}
+			break;
+		case Q931mes_CONNECT:
+			{
+				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_UP);
+			}
+			break;
+		case Q931mes_SETUP:
+			{
+
+				Q931ie_CallingNum *callingnum = Q931GetIEPtr(gen->CallingNum, gen->buf);
+				Q931ie_CalledNum *callednum = Q931GetIEPtr(gen->CalledNum, gen->buf);
+				zap_status_t status;
+				int fail = 1;
+				uint32_t cplen = mlen;
+
+
+				if ((status = zap_channel_open(span->span_id, chan_id, &zchan) == ZAP_SUCCESS)) {
+					if (zchan->state == ZAP_CHANNEL_STATE_DOWN) {
+						memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
+
+						zap_set_string(zchan->caller_data.cid_num, (char *)callingnum->Digit);
+						zap_set_string(zchan->caller_data.cid_name, (char *)callingnum->Digit);
+						zap_set_string(zchan->caller_data.ani, (char *)callingnum->Digit);
+						zap_set_string(zchan->caller_data.dnis, (char *)callednum->Digit);
+
+						zchan->caller_data.CRV = gen->CRV;
+						if (cplen > sizeof(zchan->caller_data.raw_data)) {
+							cplen = sizeof(zchan->caller_data.raw_data);
+						}
+						gen->CRVFlag = !(gen->CRVFlag);
+						memcpy(zchan->caller_data.raw_data, msg, cplen);
+						zchan->caller_data.raw_data_len = cplen;
+						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RING);
+						fail = 0;
+					} 
+				} 
+
+				if (fail) {
+					zap_log(ZAP_LOG_CRIT, "FIX ME!\n");
+					// add me 
+				}
+				
+			}
+			break;
+		default:
+			break;
 		}
-		break;
-	default:
-		break;
 	}
 
 	return 0;
@@ -632,6 +675,7 @@ zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931D
 
 	isdn_data->q931.autoRestartAck = 1;
 	isdn_data->q931.autoConnectAck = 1;
+	isdn_data->q931.autoServiceAck = 1;
 	span->signal_data = isdn_data;
 	span->signal_type = ZAP_SIGTYPE_ISDN;
 	span->outgoing_call = isdn_outgoing_call;
