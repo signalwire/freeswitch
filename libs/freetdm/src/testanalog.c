@@ -62,6 +62,7 @@ int main(int argc, char *argv[])
 {
 	zap_span_t *span;
 	int span_id;
+	zap_analog_data_t *analog_data;
 
 	if (argc < 2) {
 		printf("usage %s <spanno>\n", argv[0]);
@@ -88,9 +89,10 @@ int main(int argc, char *argv[])
 		zap_log(ZAP_LOG_ERROR, "Error configuring OpenZAP span\n");
 		goto done;
 	}
+	analog_data = span->signal_data;
 	zap_analog_start(span);
 
-	while(zap_test_flag(span->analog_data, ZAP_ANALOG_RUNNING)) {
+	while(zap_test_flag(analog_data, ZAP_ANALOG_RUNNING)) {
 		zap_sleep(1 * 1000);
 	}
 

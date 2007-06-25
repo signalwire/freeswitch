@@ -65,14 +65,14 @@ static L3INT zap_isdn_931_err(void *pvt, L3INT id, L3INT p1, L3INT p2)
 static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 {
 	zap_span_t *span = (zap_span_t *) pvt;
-	zap_isdn_data_t *data = span->isdn_data;
+	zap_isdn_data_t *isdn_data = span->signal_data;
 	Q931mes_Generic *gen = (Q931mes_Generic *) msg;
 	Q931ie_ChanID *chanid = Q931GetIEPtr(gen->ChanID, gen->buf);
 	int chan_id = chanid->ChanSlot;
 	zap_channel_t *zchan = NULL;
 	
 	assert(span != NULL);
-	assert(data != NULL);
+	assert(isdn_data != NULL);
 	
 	if (chan_id) {
 		zchan = &span->channels[chan_id];
@@ -181,6 +181,8 @@ static int zap_isdn_921_21(void *pvt, L2UCHAR *msg, L2INT mlen)
 {
 	zap_span_t *span = (zap_span_t *) pvt;
 	zap_size_t len = (zap_size_t) mlen;
+	zap_isdn_data_t *isdn_data = span->signal_data;
+
 #ifdef IODEBUG
 	//char bb[4096] = "";
 	//print_hex_bytes(msg, len, bb, sizeof(bb));
@@ -190,13 +192,13 @@ static int zap_isdn_921_21(void *pvt, L2UCHAR *msg, L2INT mlen)
 #endif
 
 	assert(span != NULL);
-	return zap_channel_write(span->isdn_data->dchan, msg, len, &len) == ZAP_SUCCESS ? 0 : -1;
+	return zap_channel_write(isdn_data->dchan, msg, len, &len) == ZAP_SUCCESS ? 0 : -1;
 }
 
 static __inline__ void state_advance(zap_channel_t *zchan)
 {
 	Q931mes_Generic *gen = (Q931mes_Generic *) zchan->caller_data.raw_data;
-	zap_isdn_data_t *data = zchan->span->isdn_data;
+	zap_isdn_data_t *isdn_data = zchan->span->signal_data;
 	zap_sigmsg_t sig;
 	zap_status_t status;
 
@@ -218,12 +220,12 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
 				sig.event_id = ZAP_SIGEVENT_PROGRESS;
-				if ((status = data->sig_cb(&sig) != ZAP_SUCCESS)) {
+				if ((status = isdn_data->sig_cb(&sig) != ZAP_SUCCESS)) {
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 				}
 			} else {
 				gen->MesType = Q931mes_PROGRESS;
-				Q931Rx43(&data->q931, (void *)gen, gen->Size);
+				Q931Rx43(&isdn_data->q931, (void *)gen, gen->Size);
 			}
 		}
 		break;
@@ -231,7 +233,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			if (!zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
 				sig.event_id = ZAP_SIGEVENT_START;
-				if ((status = data->sig_cb(&sig) != ZAP_SUCCESS)) {
+				if ((status = isdn_data->sig_cb(&sig) != ZAP_SUCCESS)) {
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 				}
 			}
@@ -248,12 +250,12 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
 				sig.event_id = ZAP_SIGEVENT_PROGRESS_MEDIA;
-				if ((status = data->sig_cb(&sig) != ZAP_SUCCESS)) {
+				if ((status = isdn_data->sig_cb(&sig) != ZAP_SUCCESS)) {
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 				}
 			} else {
 				gen->MesType = Q931mes_ALERTING;
-				Q931Rx43(&data->q931, (void *)gen, gen->Size);
+				Q931Rx43(&isdn_data->q931, (void *)gen, gen->Size);
 			}
 		}
 		break;
@@ -261,13 +263,13 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		{
 			if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
 				sig.event_id = ZAP_SIGEVENT_UP;
-				if ((status = data->sig_cb(&sig) != ZAP_SUCCESS)) {
+				if ((status = isdn_data->sig_cb(&sig) != ZAP_SUCCESS)) {
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 				}
 			} else {
 				gen->MesType = Q931mes_CONNECT;
 				gen->BearerCap = 0;
-				Q931Rx43(&data->q931, (void *)gen, zchan->caller_data.raw_data_len);
+				Q931Rx43(&isdn_data->q931, (void *)gen, zchan->caller_data.raw_data_len);
 			}
 		}
 		break;
@@ -344,7 +346,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			zap_copy_string((char *)ptrCalledNum->Digit, zchan->caller_data.ani, strlen(zchan->caller_data.ani)+1);
 
 			//gen->Size += strlen(zchan->caller_data.ani);
-			Q931Rx43(&data->q931, (L3UCHAR *) gen, gen->Size);
+			Q931Rx43(&isdn_data->q931, (L3UCHAR *) gen, gen->Size);
 		}
 		break;
 	case ZAP_CHANNEL_STATE_HANGUP:
@@ -360,15 +362,15 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			cause.Value = (unsigned char) zchan->caller_data.hangup_cause;
 			*cause.Diag = '\0';
 			gen->Cause = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &cause);
-			Q931Rx43(&data->q931, (L3UCHAR *) gen, gen->Size);
+			Q931Rx43(&isdn_data->q931, (L3UCHAR *) gen, gen->Size);
 		}
 		break;
 	case ZAP_CHANNEL_STATE_TERMINATING:
 		{
 			sig.event_id = ZAP_SIGEVENT_STOP;
-			status = data->sig_cb(&sig);
+			status = isdn_data->sig_cb(&sig);
 			gen->MesType = Q931mes_RELEASE;
-			Q931Rx43(&data->q931, (void *)gen, gen->Size);
+			Q931Rx43(&isdn_data->q931, (void *)gen, gen->Size);
 		}
 	default:
 		break;
@@ -392,7 +394,7 @@ static __inline__ void check_state(zap_span_t *span)
 static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *event)
 {
 	zap_sigmsg_t sig;
-	zap_isdn_data_t *data = span->isdn_data;
+	zap_isdn_data_t *isdn_data = span->signal_data;
 
 	memset(&sig, 0, sizeof(sig));
 	sig.chan_id = event->channel->chan_id;
@@ -411,7 +413,7 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 			}
 			zap_set_flag(event->channel, ZAP_CHANNEL_SUSPENDED);
 			zap_channel_get_alarms(event->channel);
-			data->sig_cb(&sig);
+			isdn_data->sig_cb(&sig);
 			zap_log(ZAP_LOG_WARNING, "channel %d:%d (%d:%d) has alarms [%s]\n", 
 					event->channel->span_id, event->channel->chan_id, 
 					event->channel->physical_span_id, event->channel->physical_chan_id, 
@@ -423,7 +425,7 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 			sig.event_id = ZAP_OOB_ALARM_CLEAR;
 			zap_clear_flag(event->channel, ZAP_CHANNEL_SUSPENDED);
 			zap_channel_get_alarms(event->channel);
-			data->sig_cb(&sig);
+			isdn_data->sig_cb(&sig);
 		}
 		break;
 	}
@@ -465,7 +467,7 @@ static __inline__ void check_events(zap_span_t *span)
 static void *zap_isdn_run(zap_thread_t *me, void *obj)
 {
 	zap_span_t *span = (zap_span_t *) obj;
-	zap_isdn_data_t *data = span->isdn_data;
+	zap_isdn_data_t *isdn_data = span->signal_data;
 	unsigned char buf[1024];
 	zap_size_t len = sizeof(buf);
 	int errs = 0;
@@ -476,13 +478,13 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 
 	zap_log(ZAP_LOG_DEBUG, "ISDN thread starting.\n");
 
-	Q921Start(&data->q921);
+	Q921Start(&isdn_data->q921);
 
-	while(zap_test_flag(data, ZAP_ISDN_RUNNING)) {
+	while(zap_test_flag(isdn_data, ZAP_ISDN_RUNNING)) {
 		zap_wait_flag_t flags = ZAP_READ;
-		zap_status_t status = zap_channel_wait(data->dchan, &flags, 100);
+		zap_status_t status = zap_channel_wait(isdn_data->dchan, &flags, 100);
 
-		Q921TimerTick(&data->q921);
+		Q921TimerTick(&isdn_data->q921);
 		check_state(span);
 		check_events(span);
 
@@ -499,7 +501,7 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 		case ZAP_TIMEOUT:
 			{
 				/*zap_log(ZAP_LOG_DEBUG, "Timeout!\n");*/
-				/*Q931TimeTick(data->q931, L3ULONG ms);*/
+				/*Q931TimeTick(isdn_data->q931, L3ULONG ms);*/
 				errs = 0;
 			}
 			break;
@@ -508,7 +510,7 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 				errs = 0;
 				if (flags & ZAP_READ) {
 					len = sizeof(buf);
-					if (zap_channel_read(data->dchan, buf, &len) == ZAP_SUCCESS) {
+					if (zap_channel_read(isdn_data->dchan, buf, &len) == ZAP_SUCCESS) {
 #ifdef IODEBUG
 						//char bb[4096] = "";
 						//print_hex_bytes(buf, len, bb, sizeof(bb));
@@ -517,8 +519,8 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 						//zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", (int)len, LINE, bb);
 #endif
 						
-						Q921QueueHDLCFrame(&data->q921, buf, (int)len);
-						Q921Rx12(&data->q921);
+						Q921QueueHDLCFrame(&isdn_data->q921, buf, (int)len);
+						Q921Rx12(&isdn_data->q921);
 					}
 				} else {
 					zap_log(ZAP_LOG_DEBUG, "No Read FLAG!\n");
@@ -531,9 +533,9 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 	
  done:
 
-	zap_channel_close(&data->dchans[0]);
-	zap_channel_close(&data->dchans[1]);
-	zap_clear_flag(span->isdn_data, ZAP_ISDN_RUNNING);
+	zap_channel_close(&isdn_data->dchans[0]);
+	zap_channel_close(&isdn_data->dchans[1]);
+	zap_clear_flag(isdn_data, ZAP_ISDN_RUNNING);
 
 #ifdef WIN32
     timeEndPeriod(1);
@@ -554,7 +556,8 @@ zap_status_t zap_isdn_init(void)
 
 zap_status_t zap_isdn_start(zap_span_t *span)
 {
-	zap_set_flag(span->isdn_data, ZAP_ISDN_RUNNING);
+	zap_isdn_data_t *isdn_data = span->signal_data;
+	zap_set_flag(isdn_data, ZAP_ISDN_RUNNING);
 	return zap_thread_create_detached(zap_isdn_run, span);
 }
 
@@ -572,7 +575,7 @@ zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931D
 {
 	uint32_t i, x = 0;
 	zap_channel_t *dchans[2] = {0};
-
+	zap_isdn_data_t *isdn_data;
 	if (span->signal_type) {
 		snprintf(span->last_error, sizeof(span->last_error), "Span is already configured for signalling [%d].", span->signal_type);
 		return ZAP_FAIL;
@@ -598,16 +601,16 @@ zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931D
 	}
 
 	
-	span->isdn_data = malloc(sizeof(*span->isdn_data));
-	assert(span->isdn_data != NULL);
-	memset(span->isdn_data, 0, sizeof(*span->isdn_data));
+	isdn_data = malloc(sizeof(*isdn_data));
+	assert(isdn_data != NULL);
+	memset(isdn_data, 0, sizeof(*isdn_data));
 	
-	span->isdn_data->sig_cb = sig_cb;
-	span->isdn_data->dchans[0] = dchans[0];
-	span->isdn_data->dchans[1] = dchans[1];
-	span->isdn_data->dchan = span->isdn_data->dchans[0];
+	isdn_data->sig_cb = sig_cb;
+	isdn_data->dchans[0] = dchans[0];
+	isdn_data->dchans[1] = dchans[1];
+	isdn_data->dchan = isdn_data->dchans[0];
 	
-	Q921_InitTrunk(&span->isdn_data->q921,
+	Q921_InitTrunk(&isdn_data->q921,
 				   0,
 				   0,
 				   mode,
@@ -615,20 +618,21 @@ zap_status_t zap_isdn_configure_span(zap_span_t *span, Q921NetUser_t mode, Q931D
 				   zap_isdn_921_21,
 				   (Q921TxCB_t)zap_isdn_921_23,
 				   span,
-				   &span->isdn_data->q931);
+				   &isdn_data->q931);
 	
-	Q931Api_InitTrunk(&span->isdn_data->q931,
+	Q931Api_InitTrunk(&isdn_data->q931,
 					  dialect,
 					  mode,
 					  span->trunk_type,
 					  zap_isdn_931_34,
 					  (Q931TxCB_t)q931_rx_32,
 					  zap_isdn_931_err,
-					  &span->isdn_data->q921,
+					  &isdn_data->q921,
 					  span);
 
-	span->isdn_data->q931.autoRestartAck = 1;
-	span->isdn_data->q931.autoConnectAck = 1;
+	isdn_data->q931.autoRestartAck = 1;
+	isdn_data->q931.autoConnectAck = 1;
+	span->signal_data = isdn_data;
 	span->signal_type = ZAP_SIGTYPE_ISDN;
 	span->outgoing_call = isdn_outgoing_call;
 	

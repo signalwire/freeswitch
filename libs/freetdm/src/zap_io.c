@@ -319,12 +319,8 @@ zap_status_t zap_span_close_all(void)
 		if (span->mutex) {
 			zap_mutex_destroy(&span->mutex);
 		}
-		if (span->isdn_data) {
-			free(span->isdn_data);
-		}
-		if (span->analog_data) {
-			free(span->isdn_data);
-		}
+
+		zap_safe_free(span->signal_data);
 	}
 	zap_mutex_unlock(globals.mutex);
 
