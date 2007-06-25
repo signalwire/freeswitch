@@ -58,6 +58,9 @@ $(SRC)/isdn/Q931StateTE.o \
 $(SRC)/isdn/nationalmes.o \
 $(SRC)/isdn/nationalStateNT.o \
 $(SRC)/isdn/nationalStateTE.o \
+$(SRC)/isdn/DMSmes.o \
+$(SRC)/isdn/DMSStateNT.o \
+$(SRC)/isdn/DMSStateTE.o \
 $(SRC)/isdn/Q932mes.o \
 $(SRC)/zap_zt.o \
 $(SRC)/zap_wanpipe.o
