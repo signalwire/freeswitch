@@ -513,11 +513,6 @@ SWITCH_DECLARE(uint8_t) switch_channel_ready(switch_channel_t *channel)
 		ret++;
 	}
 
-	if (switch_test_flag(channel, CF_BREAK)) {
-		switch_clear_flag_locked(channel, CF_BREAK);
-		ret = (uint8_t) 0;
-	}
-
 	return ret;
 }
 

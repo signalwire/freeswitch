@@ -573,6 +573,7 @@ CF_BREAK        = (1 << 19) - Channel should stop what it's doing
 CF_BROADCAST    = (1 << 20) - Channel is broadcasting
 CF_UNICAST      = (1 << 21) - Channel has a unicast connection
 CF_VIDEO		= (1 << 22) - Channel has video
+CF_EVENT_LOCK   = (1 << 23) - Don't parse events
 </pre>
  */
 
@@ -599,7 +600,8 @@ typedef enum {
 	CF_BREAK = (1 << 19),
 	CF_BROADCAST = (1 << 20),
 	CF_UNICAST = (1 << 21),
-	CF_VIDEO = (1 << 22)
+	CF_VIDEO = (1 << 22),
+	CF_EVENT_LOCK = (1 << 23)
 } switch_channel_flag_t;
 
 

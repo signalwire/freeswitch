@@ -684,7 +684,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 			}
 		}
 
-		snprintf(buf + len, dlen - len, "%s: %s\n", hp->name, encode_buf);
+		snprintf(buf + len, dlen - len, "%s: %s\n", hp->name, switch_strlen_zero(encode_buf) ? "_undef_" : encode_buf);
 		len = strlen(buf);
 
 	}

@@ -1179,6 +1179,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-name", "%s", app);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-arg", "%s", path);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event-lock", "%s", "true");
 				if ((flags & SMF_LOOP)) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "loops", "%d", -1);
 				}
@@ -1197,6 +1198,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-name", "%s", app);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-arg", "%s", path);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event-lock", "%s", "true");
 				if ((flags & SMF_LOOP)) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "loops", "%d", -1);
 				}
@@ -1209,6 +1211,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
 			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-command", "nomedia");
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "nomedia-uuid", "%s", uuid);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event-lock", "%s", "true");
 				switch_core_session_queue_private_event(master, &event);
 			}
 		}
@@ -1218,7 +1221,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-name", "hangup");
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "execute-app-arg", "%s", cause);
-
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event-lock", "%s", "true");
 				switch_core_session_queue_private_event(session, &event);
 			}
 		}

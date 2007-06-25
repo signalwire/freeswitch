@@ -272,7 +272,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	unsigned long CMD_NOMEDIA = switch_hashfunc_default("nomedia", &hlen);
 	unsigned long CMD_UNICAST = switch_hashfunc_default("unicast", &hlen);
 	char *lead_frames = switch_event_get_header(event, "lead-frames");
-	
+	char *event_lock = switch_event_get_header(event, "event-lock");
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
 	assert(channel != NULL);
 	assert(event != NULL);
 
@@ -286,15 +288,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 
 	switch_channel_set_flag(channel, CF_EVENT_PARSE);
 
+	if (switch_true(event_lock)) {
+		switch_channel_set_flag(channel, CF_EVENT_LOCK);
+	}
+
+
 	if (lead_frames) {
 		switch_frame_t *read_frame;
 		int frame_count = atoi(lead_frames);
-		switch_status_t status;
 
 		while(frame_count > 0) {
 			status = switch_core_session_read_frame(session, &read_frame, -1, 0);
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
-				return status;
+				goto done;
 			}
 			if (!switch_test_flag(read_frame, SFF_CNG)) {
 				frame_count--;
@@ -308,12 +314,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 		char *app_arg = switch_event_get_header(event, "execute-app-arg");
 		char *loop_h = switch_event_get_header(event, "loops");
 		int loops = 1;
-	
+
 		if (loop_h) {
 			loops = atoi(loop_h);
 		}
-
-		if (app_name && app_arg) {
+		
+		if (app_name) {
 			if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
 				if (application_interface->application_function) {
 					int x;
@@ -368,9 +374,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 		switch_ivr_nomedia(uuid, SMF_REBRIDGE);
 	}
 
+	status = SWITCH_STATUS_SUCCESS;
 
+ done:
 	switch_channel_clear_flag(channel, CF_EVENT_PARSE);
-	return SWITCH_STATUS_SUCCESS;
+	switch_channel_clear_flag(channel, CF_EVENT_LOCK);
+
+	return status;
 
 }
 
@@ -906,6 +916,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 
 		switch_channel_set_caller_profile(channel, new_profile);
 		switch_channel_set_flag(channel, CF_TRANSFER);
+
 		switch_channel_set_state(channel, CS_RING);
 
 		msg.message_id = SWITCH_MESSAGE_INDICATE_TRANSFER;

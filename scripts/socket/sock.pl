@@ -23,7 +23,7 @@ $o = $fs->call_command("answer");
 #to turn on events when in async mode
 $o = $fs->raw_command("myevents");
 $o = $fs->call_command("playback", "/ram/swimp.raw");
-$o = $fs->call_command("hangup");
+
 
 #comment exit in async mode
 #exit;
@@ -36,7 +36,11 @@ while(my $r = $fs->readhash(undef)) {
   if ($r->{has_event}) {
     print Dumper $r->{event};
   }
-
+  if ($r->{event}->{'event-name'} !~ /execute/i) {
+    printf "wtf $data->{'unique-id'}\n";
+    $o = $fs->call_command("break");
+    $o = $fs->call_command("hangup");
+  }
 }
 
 $fs->disconnect();

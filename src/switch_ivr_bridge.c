@@ -274,6 +274,7 @@ static switch_status_t uuid_bridge_on_transmit(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CUSTOM TRANSMIT\n");
 	switch_channel_clear_state_handler(channel, NULL);
 
+	switch_channel_set_flag(channel, CF_BREAK);
 
 	if (!switch_channel_test_flag(channel, CF_ORIGINATOR)) {
 		return SWITCH_STATUS_FALSE;
@@ -656,6 +657,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(char *originator_uuid, ch
 			switch_channel_set_flag(originatee_channel, CF_TAGGED);
 			switch_channel_set_private(originator_channel, SWITCH_UUID_BRIDGE, originatee_session);
 
+			switch_channel_set_flag(originator_channel, CF_BREAK);
+			switch_channel_set_flag(originatee_channel, CF_BREAK);
+			
 			/* switch_channel_set_state_flag sets flags you want to be set when the next state change happens */
 			switch_channel_set_state_flag(originator_channel, CF_TRANSFER);
 			switch_channel_set_state_flag(originatee_channel, CF_TRANSFER);

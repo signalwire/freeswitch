@@ -94,6 +94,14 @@ SWITCH_STANDARD_APP(ring_ready_function)
 	switch_channel_ring_ready(channel);
 }
 
+SWITCH_STANDARD_APP(break_function)
+{
+	switch_channel_t *channel;
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+	switch_channel_set_flag(channel, CF_BREAK);
+}
+
 SWITCH_STANDARD_APP(queue_dtmf_function)
 {
 	switch_channel_t *channel;
@@ -1134,6 +1142,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "set", "Set a channel varaible", SET_LONG_DESC, set_function, "<varname>=<value>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "unset", "Unset a channel varaible", UNSET_LONG_DESC, unset_function, "<varname>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "ring_ready", "Indicate Ring_Ready", "Indicate Ring_Ready on a channel.", ring_ready_function, "", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "break", "Break", "Set the break flag.", break_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "detect_speech", "Detect speech", "Detect speech on a channel.", detect_speech_function, DETECT_SPEECH_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "ivr", "Run an ivr menu", "Run an ivr menu.", ivr_application_function, "<menu_name>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "redirect", "Send session redirect", "Send a redirect message to a session.", redirect_function, "<redirect_data>", SAF_SUPPORT_NOMEDIA);
