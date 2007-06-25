@@ -406,9 +406,10 @@ SWITCH_DECLARE(switch_status_t) switch_dir_open(switch_dir_t **new_dir, const ch
 
 SWITCH_DECLARE(switch_status_t) switch_dir_close(switch_dir_t *thedir)
 {
-	return apr_dir_close(thedir->dir_handle);
+	switch_status_t status = apr_dir_close(thedir->dir_handle);
 
 	free(thedir);
+	return status;
 }
 
 SWITCH_DECLARE(const char *) switch_dir_next_file(switch_dir_t *thedir, char *buf, switch_size_t len) 
