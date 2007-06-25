@@ -74,7 +74,7 @@ static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxs_outgoing_call)
 
 zap_status_t zap_analog_configure_span(zap_span_t *span, char *tonemap, uint32_t digit_timeout, uint32_t max_dialstr, zio_signal_cb_t sig_cb)
 {
-
+	zap_analog_data_t *analog_data;
 	assert(sig_cb != NULL);
 
 	if (span->signal_type) {
@@ -90,14 +90,15 @@ zap_status_t zap_analog_configure_span(zap_span_t *span, char *tonemap, uint32_t
 		max_dialstr = 11;
 	}
 
-	span->analog_data = malloc(sizeof(*span->analog_data));
-	memset(span->analog_data, 0, sizeof(*span->analog_data));
-	assert(span->analog_data != NULL);
+	analog_data = malloc(sizeof(*analog_data));
+	memset(analog_data, 0, sizeof(*analog_data));
+	assert(analog_data != NULL);
 
-	span->analog_data->digit_timeout = digit_timeout;
-	span->analog_data->max_dialstr = max_dialstr;
-	span->analog_data->sig_cb = sig_cb;
+	analog_data->digit_timeout = digit_timeout;
+	analog_data->max_dialstr = max_dialstr;
+	analog_data->sig_cb = sig_cb;
 	span->signal_type = ZAP_SIGTYPE_ANALOG;
+	span->signal_data = analog_data;
 	span->outgoing_call = span->trunk_type == ZAP_TRUNK_FXS ? analog_fxs_outgoing_call : analog_fxo_outgoing_call;
 	zap_span_load_tones(span, tonemap);
 
@@ -173,7 +174,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 	zap_tone_type_t tt = ZAP_TONE_DTMF;
 	char dtmf[128] = "";
 	zap_size_t dtmf_offset = 0;
-	zap_analog_data_t *data = zchan->span->analog_data;
+	zap_analog_data_t *analog_data = zchan->span->signal_data;
 	zap_channel_t *closed_chan;
 	uint32_t state_counter = 0, elapsed = 0, interval = 0, last_digit = 0, indicate = 0, dial_timeout = 30000;
 	zap_sigmsg_t sig;
@@ -368,7 +369,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 						sig.event_id = ZAP_SIGEVENT_UP;
 					}
 
-					data->sig_cb(&sig);
+					analog_data->sig_cb(&sig);
 					continue;
 				}
 				break;
@@ -388,7 +389,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 						zap_set_string(zchan->caller_data.dnis, dtmf);
 					}
 
-					data->sig_cb(&sig);
+					analog_data->sig_cb(&sig);
 					continue;
 				}
 				break;
@@ -396,7 +397,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				{
 					zap_channel_done(zchan);
 					sig.event_id = ZAP_SIGEVENT_STOP;
-					data->sig_cb(&sig);
+					analog_data->sig_cb(&sig);
 					goto done;
 				}
 				break;
@@ -479,7 +480,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 		}
 
 
-		if (last_digit && ((elapsed - last_digit > data->digit_timeout) || strlen(dtmf) > data->max_dialstr)) {
+		if (last_digit && ((elapsed - last_digit > analog_data->digit_timeout) || strlen(dtmf) > analog_data->max_dialstr)) {
 			zap_log(ZAP_LOG_DEBUG, "Number obtained [%s]\n", dtmf);
 			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_IDLE);
 			last_digit = 0;
@@ -511,7 +512,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				if (zchan->detected_tones[i]) {
 					zap_log(ZAP_LOG_DEBUG, "Detected tone %s\n", zap_tonemap2str(zchan->detected_tones[i]));
 					sig.raw_data = &i;
-					data->sig_cb(&sig);
+					analog_data->sig_cb(&sig);
 				}
 			}
 			
@@ -608,7 +609,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *event)
 {
 	zap_sigmsg_t sig;
-	zap_analog_data_t *data = event->channel->span->analog_data;
+	zap_analog_data_t *analog_data = event->channel->span->signal_data;
 
 	memset(&sig, 0, sizeof(sig));
 	sig.chan_id = event->channel->chan_id;
@@ -655,7 +656,7 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 				zap_set_state_locked(event->channel,  ZAP_CHANNEL_STATE_UP);
 			} else {
 				sig.event_id = ZAP_SIGEVENT_FLASH;
-				data->sig_cb(&sig);
+				analog_data->sig_cb(&sig);
 				if (event->channel->token_count == 1) {
 					zap_set_flag_locked(event->channel, ZAP_CHANNEL_HOLD);
 					zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_DIALTONE);
@@ -693,11 +694,11 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 static void *zap_analog_run(zap_thread_t *me, void *obj)
 {
 	zap_span_t *span = (zap_span_t *) obj;
-	zap_analog_data_t *data = span->analog_data;
+	zap_analog_data_t *analog_data = span->signal_data;
 
 	zap_log(ZAP_LOG_DEBUG, "ANALOG thread starting.\n");
 
-	while(zap_test_flag(data, ZAP_ANALOG_RUNNING)) {
+	while(zap_test_flag(analog_data, ZAP_ANALOG_RUNNING)) {
 		int waitms = 10;
 		zap_status_t status;
 
@@ -731,7 +732,7 @@ static void *zap_analog_run(zap_thread_t *me, void *obj)
 
  end:
 
-	zap_clear_flag(data, ZAP_ANALOG_RUNNING);
+	zap_clear_flag(analog_data, ZAP_ANALOG_RUNNING);
 	
 	zap_log(ZAP_LOG_DEBUG, "ANALOG thread ending.\n");
 
@@ -742,7 +743,8 @@ static void *zap_analog_run(zap_thread_t *me, void *obj)
 
 zap_status_t zap_analog_start(zap_span_t *span)
 {
-	zap_set_flag(span->analog_data, ZAP_ANALOG_RUNNING);
+	zap_analog_data_t *analog_data = span->signal_data;
+	zap_set_flag(analog_data, ZAP_ANALOG_RUNNING);
 	return zap_thread_create_detached(zap_analog_run, span);
 }
 

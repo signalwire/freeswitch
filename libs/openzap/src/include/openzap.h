@@ -408,8 +408,7 @@ struct zap_span {
 	zap_trunk_type_t trunk_type;
 	zap_analog_start_type_t start_type;
 	zap_signal_type_t signal_type;
-	struct zap_isdn_data *isdn_data;
-	struct zap_analog_data *analog_data;
+	void *signal_data;
 	zap_event_t event_header;
 	char last_error[256];
 	char tone_map[ZAP_TONEMAP_INVALID+1][ZAP_TONEMAP_LEN];

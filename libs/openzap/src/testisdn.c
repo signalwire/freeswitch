@@ -9,7 +9,8 @@ static ZIO_SIGNAL_CB_FUNCTION(on_signal)
 int main(int argc, char *argv[])
 {
 	zap_span_t *span;
-	
+	zap_isdn_data_t *data;
+
 	zap_global_set_default_logger(ZAP_LOG_LEVEL_DEBUG);
 
 	if (argc < 2) {
@@ -31,13 +32,14 @@ int main(int argc, char *argv[])
 	
 	
 	if (zap_isdn_configure_span(span, Q931_TE, Q931_Dialect_National, on_signal) == ZAP_SUCCESS) {
+		data = span->signal_data;
 		zap_isdn_start(span);
 	} else {
 		fprintf(stderr, "Error starting ISDN D-Channel\n");
 		goto done;
 	}
 
-	while(zap_test_flag(span->isdn_data, ZAP_ISDN_RUNNING)) {
+	while(zap_test_flag(data, ZAP_ISDN_RUNNING)) {
 		zap_sleep(1 * 1000);
 	}
 
