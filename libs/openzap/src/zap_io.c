@@ -710,7 +710,7 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, z
 			
 			check = &span->channels[i];
 			
-			if (zap_test_flag(check, ZAP_CHANNEL_READY) && !zap_test_flag(check, ZAP_CHANNEL_INUSE)) {
+			if (zap_test_flag(check, ZAP_CHANNEL_READY) && !zap_test_flag(check, ZAP_CHANNEL_INUSE) && !zap_test_flag(check, ZAP_CHANNEL_SUSPENDED)) {
 
 				status = check->zio->open(check);
 				
@@ -787,6 +787,10 @@ zap_status_t zap_channel_open_chan(zap_channel_t *zchan)
 
 	assert(zchan != NULL);
 
+	if (zap_test_flag(zchan, ZAP_CHANNEL_SUSPENDED)) {
+		return ZAP_FAIL;
+	}
+
 	if (!zap_test_flag(zchan, ZAP_CHANNEL_READY) || (status = zap_mutex_trylock(zchan->mutex)) != ZAP_SUCCESS) {
 		return status;
 	}
@@ -815,7 +819,8 @@ zap_status_t zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t 
 
 		check = &globals.spans[span_id].channels[chan_id];
 
-		if (!zap_test_flag(check, ZAP_CHANNEL_READY) || (status = zap_mutex_trylock(check->mutex)) != ZAP_SUCCESS) {
+		if (zap_test_flag(check, ZAP_CHANNEL_SUSPENDED) || 
+			!zap_test_flag(check, ZAP_CHANNEL_READY) || (status = zap_mutex_trylock(check->mutex)) != ZAP_SUCCESS) {
 			goto done;
 		}
 		

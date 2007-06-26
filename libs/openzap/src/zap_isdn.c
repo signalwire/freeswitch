@@ -85,17 +85,29 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 		case Q931mes_SERVICE:
 			{
 				Q931ie_ChangeStatus *changestatus = Q931GetIEPtr(gen->ChangeStatus, gen->buf);
-				/* TODO: Handle this properly */
 				if (zchan) {
 					switch (changestatus->NewStatus) {
 					case 0: /* change status to "in service" */
-						//zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RESTART);
-						break;
+						zap_clear_flag_locked(zchan, ZAP_CHANNEL_SUSPENDED);
+						zap_log(ZAP_LOG_DEBUG, "Channel %d:%d in service\n", zchan->span_id, zchan->chan_id);
+						switch(zchan->state) {
+						case ZAP_CHANNEL_STATE_UP:
+						case ZAP_CHANNEL_STATE_IDLE:
+							zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_TERMINATING);
+							break;
+						case ZAP_CHANNEL_STATE_DOWN:
+							break;
+						default:
+							zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+							break;
+						}
 					case 1: /* change status to "maintenance" */
-						//zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RESTART);
+						zap_set_flag_locked(zchan, ZAP_CHANNEL_SUSPENDED);
+						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_SUSPENDED);
 						break;
 					case 2: /* change status to "out of service" */
-						//zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RESTART);
+						zap_set_flag_locked(zchan, ZAP_CHANNEL_SUSPENDED);
+						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_SUSPENDED);
 						break;
 					default: /* unknown */
 						break;
