@@ -129,7 +129,6 @@ long WriteAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switc
 		if (numBytes > 0) {
 			if (switch_core_timer_check(timer) == SWITCH_STATUS_SUCCESS) {
 				PaUtil_FlushRingBuffer(&aStream->outFIFO);
-				printf("ASS\n");
 				return 0;
 			}
 			switch_yield(1000);
