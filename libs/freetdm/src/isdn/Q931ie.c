@@ -1157,7 +1157,7 @@ L3INT Q931Uie_ChanID(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * 
     L3INT Off = 0;
     L3INT Octet = 0;
     L3INT IESize;
-
+//18 04 e1 80 83 01
     *pIE=0;
 
     /* Octet 1 */
@@ -1190,8 +1190,8 @@ L3INT Q931Uie_ChanID(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * 
         Off = Q931ReadExt(&IBuf[Octet+Off], Off);
         Off++;
     }
-    else
-    {
+
+    if (Octet + Off -2 != IESize) {
         /* Octet 3.2 */
         if(pie->IntType == 1)        /* PRI etc */
         {
