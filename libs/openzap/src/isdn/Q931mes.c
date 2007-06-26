@@ -1194,6 +1194,8 @@ L3INT Q931Umes_Setup(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *m
 		switch(IBuf[IOff])
 		{
 		case Q931ie_SENDING_COMPLETE:
+			IOff++;
+			break;
 		case Q931ie_BEARER_CAPABILITY:
 		case Q931ie_CHANNEL_IDENTIFICATION:
 		case Q931ie_PROGRESS_INDICATOR:
