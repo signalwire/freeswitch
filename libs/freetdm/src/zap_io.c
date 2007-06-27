@@ -215,7 +215,7 @@ static zap_status_t zap_channel_destroy(zap_channel_t *zchan)
 {
 
 	if (zap_test_flag(zchan, ZAP_CHANNEL_CONFIGURED)) {
-		zap_mutex_destroy(&zchan->mutex);
+
 		zap_buffer_destroy(&zchan->digit_buffer);
 		zap_buffer_destroy(&zchan->dtmf_buffer);
 		zap_buffer_destroy(&zchan->fsk_buffer);
@@ -234,6 +234,8 @@ static zap_status_t zap_channel_destroy(zap_channel_t *zchan)
 				zap_log(ZAP_LOG_ERROR, "Error Closing channel %u:%u fd:%d\n", zchan->span_id, zchan->chan_id, zchan->sockfd);
 			}
 		}
+
+		zap_mutex_destroy(&zchan->mutex);
 	}
 	
 	return ZAP_SUCCESS;
