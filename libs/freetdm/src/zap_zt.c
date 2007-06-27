@@ -61,7 +61,6 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 		zap_socket_t sockfd = ZT_INVALID_SOCKET;
 		int len;
 
-		//snprintf(path, sizeof(path), "/dev/zap/%d", x);
 		sockfd = open(path, O_RDWR);
 		if (sockfd != ZT_INVALID_SOCKET && zap_span_add_channel(span, sockfd, type, &zchan) == ZAP_SUCCESS) {
 
@@ -308,6 +307,8 @@ static ZIO_CONFIGURE_FUNCTION(zt_configure)
 
 static ZIO_OPEN_FUNCTION(zt_open) 
 {
+	zap_channel_set_feature(zchan, ZAP_CHANNEL_FEATURE_INTERVAL);
+	
 	if (zchan->type == ZAP_CHAN_TYPE_DQ921 || zchan->type == ZAP_CHAN_TYPE_DQ931) {
 		zchan->native_codec = zchan->effective_codec = ZAP_CODEC_NONE;
 	} else {
@@ -317,7 +318,6 @@ static ZIO_OPEN_FUNCTION(zt_open)
 			snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
 			return ZAP_FAIL;
 		} else {
-			zap_channel_set_feature(zchan, ZAP_CHANNEL_FEATURE_INTERVAL);
 			zchan->effective_interval = zchan->native_interval;
 			zchan->packet_len = blocksize;
 			zchan->native_codec = zchan->effective_codec;
@@ -404,14 +404,14 @@ static ZIO_COMMAND_FUNCTION(zt_command)
 		break;
 	case ZAP_COMMAND_GET_INTERVAL:
 		{
+
 			if (!(err = ioctl(zchan->sockfd, ZT_GET_BLOCKSIZE, &zchan->packet_len))) {
 				zchan->native_interval = zchan->packet_len / 8;
 				if (zchan->effective_codec == ZAP_CODEC_SLIN) {
 					zchan->packet_len *= 2;
 				}
 				ZAP_COMMAND_OBJ_INT = zchan->native_interval;
-			}
-
+			} 			
 		}
 		break;
 	case ZAP_COMMAND_SET_INTERVAL: 

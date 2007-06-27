@@ -543,7 +543,7 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 	int err = 0;
 
 	memset(&tdm_api, 0, sizeof(tdm_api));
-	
+
 	switch(command) {
 	case ZAP_COMMAND_OFFHOOK:
 		{
@@ -593,6 +593,7 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 				snprintf(zchan->last_error, sizeof(zchan->last_error), "Ring-off Failed");
 				return ZAP_FAIL;
 			}
+			zap_clear_pflag_locked(zchan, WP_RINGING);
 			zap_clear_flag_locked(zchan, ZAP_CHANNEL_RINGING);
 		}
 		break;
