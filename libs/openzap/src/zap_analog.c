@@ -215,7 +215,8 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 	sig.chan_id = zchan->chan_id;
 	sig.span_id = zchan->span_id;
 	sig.channel = zchan;
-
+	
+	assert(interval != 0);
 
 	while (zap_test_flag(zchan, ZAP_CHANNEL_INTHREAD)) {
 		zap_wait_flag_t flags = ZAP_READ;
@@ -279,11 +280,14 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				break;
 			case ZAP_CHANNEL_STATE_HANGUP:
 				{
-						
 					if (state_counter > 500) {
+
 						if (zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK) && zchan->last_state >= ZAP_CHANNEL_STATE_IDLE) {
 							zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_BUSY);
 						} else {
+							if (zap_test_flag(zchan, ZAP_CHANNEL_RINGING)) {
+								zap_channel_command(zchan, ZAP_COMMAND_GENERATE_RING_OFF, NULL);
+							}
 							zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
 						}
 					}
@@ -577,6 +581,8 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 
  done:
 	zap_channel_done(zchan);
+
+
 	if (zchan->type == ZAP_CHAN_TYPE_FXO && zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK)) {
 		zap_channel_command(zchan, ZAP_COMMAND_ONHOOK, NULL);
 	}
@@ -638,6 +644,9 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 		break;
 	case ZAP_OOB_ONHOOK:
 		{
+			if (zap_test_flag(event->channel, ZAP_CHANNEL_RINGING)) {
+				zap_channel_command(event->channel, ZAP_COMMAND_GENERATE_RING_OFF, NULL);
+			}
 			zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_DOWN);
 		}
 		break;

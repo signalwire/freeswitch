@@ -233,7 +233,8 @@ ZT_SIG_HDLCFCS				= ((1 << 9)  | ZT_SIG_HDLCRAW)
 
 #define		ZT_CODE				'J'
 
-#define		ZT_GET_BLOCKSIZE	_IOW  (ZT_CODE, 1, int)					/* Get Transfer Block Size. */
+
+#define		ZT_GET_BLOCKSIZE	_IOR  (ZT_CODE, 1, int)					/* Get Transfer Block Size. */
 #define		ZT_SET_BLOCKSIZE	_IOW  (ZT_CODE, 2, int)					/* Set Transfer Block Size. */
 #define		ZT_FLUSH			_IOW  (ZT_CODE, 3, int)					/* Flush Buffer(s) and stop I/O */
 #define		ZT_SYNC				_IOW  (ZT_CODE, 4, int)					/* Wait for Write to Finish */
