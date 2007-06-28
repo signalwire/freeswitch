@@ -1226,6 +1226,8 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 		last = name = next = cur = buf;
 
 		for (;;) {
+
+
 			if (!next) {
 				break;
 			}
@@ -1233,10 +1235,11 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 				*p++ = '\0';
 			}
 			next = p;
+
 			if (cur != name) {
 				if (strchr(cur, 'i')) {
 					interval = atoi(cur);
-				} else if (strchr(cur, 'k' || strchr(cur, 'h'))) {
+				} else if ((strchr(cur, 'k') || strchr(cur, 'h'))) {
 					rate = atoi(cur);
 				}
 			}
