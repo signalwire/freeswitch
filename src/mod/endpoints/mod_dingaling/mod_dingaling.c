@@ -687,7 +687,7 @@ static void terminate_session(switch_core_session_t **session, int line, switch_
 
 		tech_pvt = switch_core_session_get_private(*session);
 
-		if (!tech_pvt || !switch_test_flag(tech_pvt, TFLAG_READY)) {
+		if (!switch_core_session_running(*session) && (!tech_pvt || !switch_test_flag(tech_pvt, TFLAG_READY))) {
 			switch_core_session_destroy(session);
 			return;
 		}
