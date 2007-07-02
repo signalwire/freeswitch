@@ -1780,7 +1780,7 @@ L3INT Q931Uie_LLComp(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * 
     Octet++;
 
     /* Octet 3a*/
-    if((IBuf[Octet+Off-1] & 0x80) != 0)
+    if(IsQ931Ext(IBuf[Octet+Off-1]))
     {
         pie->NegotInd = (IBuf[Octet+Off] >> 6) & 0x01;
         Off++;
@@ -1808,7 +1808,7 @@ L3INT Q931Uie_LLComp(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * 
         Octet++;
 
         /* Octet 5a */
-        if((IBuf[Octet+Off-1] & 0x80) != 0)
+        if(IsQ931Ext(IBuf[Octet+Off-1]))
         {
             pie->SyncAsync    = (IBuf[Octet+Off] >> 6) & 0x01;
             pie->Negot        = (IBuf[Octet+Off] >> 5) & 0x01;
@@ -1816,7 +1816,7 @@ L3INT Q931Uie_LLComp(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * 
             Off++;
 
             /* Octet 5b - 2 options */
-            if((IBuf[Octet+Off-1] & 0x80) != 0)
+            if(IsQ931Ext(IBuf[Octet+Off-1]))
             {
                 if(pie->UIL1Prot == 0x01) /* V.110, I.460 and X.30*/
                 {
@@ -1849,7 +1849,7 @@ L3INT Q931Uie_LLComp(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * 
                 }
 
                 /* Octet 5c */
-                if((IBuf[Octet+Off-1] & 0x80) != 0)
+                if(IsQ931Ext(IBuf[Octet+Off-1]))
                 {
                     pie->NumStopBits=(IBuf[Octet+Off] >> 5) & 0x03;
                     pie->NumDataBits=(IBuf[Octet+Off] >> 3) & 0x03;
@@ -1857,7 +1857,7 @@ L3INT Q931Uie_LLComp(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * 
                     Off++;
 
                     /* Octet 5d */
-                    if((IBuf[Octet+Off-1] & 0x80) != 0)
+                    if(IsQ931Ext(IBuf[Octet+Off-1]))
                     {
                         pie->DuplexMode    = (IBuf[Octet+Off] >> 6) & 0x01;
                         pie->ModemType    = IBuf[Octet+Off] & 0x3f;
@@ -1877,7 +1877,7 @@ L3INT Q931Uie_LLComp(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * 
         Octet++;
 
         /* Octet 6a */
-        if((IBuf[Octet+Off-1] & 0x80) != 0)
+        if(IsQ931Ext(IBuf[Octet+Off-1]))
         {
             if(pie->UIL2Prot == 0x10) /* 2nd 6a */
             {
@@ -1891,7 +1891,7 @@ L3INT Q931Uie_LLComp(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * 
                 Off++;
             }
             /* Octet 6b*/
-            if((IBuf[Octet+Off-1] & 0x80) != 0)
+            if(IsQ931Ext(IBuf[Octet+Off-1]))
             {
                 pie->WindowSize = IBuf[Octet+Off] & 0x7f;
                 Off++;
@@ -1907,7 +1907,7 @@ L3INT Q931Uie_LLComp(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * 
         Octet++;
 
         /* Octet 7a */
-        if((IBuf[Octet+Off-1] & 0x80) != 0)
+        if(IsQ931Ext(IBuf[Octet+Off-1]))
         {
         
             if(pie->UIL3Prot == 0x0b)
@@ -1931,24 +1931,19 @@ L3INT Q931Uie_LLComp(Q931_TrunkInfo_t *pTrunk, Q931mes_Generic *pMsg, L3UCHAR * 
                 }
 
                 /* Octet 7b*/
-                if((IBuf[Octet+Off-1] & 0x80) != 0)
+                if(IsQ931Ext(IBuf[Octet+Off-1]))
                 {
                     pie->DefPackSize = IBuf[Octet+Off] & 0x0f;
                     Off++;
 
                     /* Octet 7c */
-                    if((IBuf[Octet+Off-1] & 0x80) != 0)
+                    if(IsQ931Ext(IBuf[Octet+Off-1]))
                     {
                         pie->PackWinSize= IBuf[Octet+Off] & 0x7f;
                     }
                 }
             }
         }
-    }
-    else
-    {
-        Q931SetError(pTrunk,Q931E_LLCOMP, 7,0);
-        return Q931E_LLCOMP;
     }
 
     Q931IESizeTest(Q931E_LLCOMP);
