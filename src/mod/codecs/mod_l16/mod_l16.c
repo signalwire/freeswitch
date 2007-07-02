@@ -55,8 +55,9 @@ static switch_status_t switch_raw_encode(switch_codec_t *codec,
 										 uint32_t decoded_rate, void *encoded_data, uint32_t * encoded_data_len, uint32_t * encoded_rate,
 										 unsigned int *flag)
 {
+	printf("WTF %d %d\n", codec->implementation->samples_per_second , other_codec->implementation->samples_per_second );
 	/* NOOP indicates that the audio in is already the same as the audio out, so no conversion was necessary. */
-	if (codec && other_codec && codec->implementation->samples_per_second != other_codec->implementation->samples_per_second) {
+	if (codec && other_codec && codec->implementation && other_codec->implementation && codec->implementation->samples_per_second != other_codec->implementation->samples_per_second) {
 		memcpy(encoded_data, decoded_data, decoded_data_len);
 		*encoded_data_len = decoded_data_len;
 		return SWITCH_STATUS_RESAMPLE;
@@ -71,7 +72,7 @@ static switch_status_t switch_raw_decode(switch_codec_t *codec,
 										 uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
 										 unsigned int *flag)
 {
-	if (codec && other_codec && codec->implementation->samples_per_second != other_codec->implementation->samples_per_second) {
+	if (codec && other_codec && codec->implementation && other_codec->implementation && codec->implementation->samples_per_second != other_codec->implementation->samples_per_second) {
 		memcpy(decoded_data, encoded_data, encoded_data_len);
 		*decoded_data_len = encoded_data_len;
 		return SWITCH_STATUS_RESAMPLE;

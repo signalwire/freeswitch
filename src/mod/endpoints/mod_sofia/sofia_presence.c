@@ -756,7 +756,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		free(sql);
 		sql = switch_mprintf("insert into sip_subscriptions values ('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld)",
 							 proto, from_user, from_host, to_user, to_host, event, contact_str, call_id, full_from, full_via, exp);
-
+		
 		assert(sql != NULL);
 		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
 		free(sql);
@@ -772,6 +772,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 					SIPTAG_TO(sip->sip_from),
 					SIPTAG_CONTACT_STR(contact_str),
 					TAG_END());
+
 
 
 

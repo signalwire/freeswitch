@@ -94,7 +94,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 {
 	switch_io_event_hook_read_frame_t *ptr;
 	switch_status_t status;
-	int need_codec, perfect, do_bugs = 0;
+	int need_codec, perfect, do_bugs = 0, do_resample = 0;
 	unsigned int flag = 0;
   top:
 
@@ -149,6 +149,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		goto done;
 	}
 
+	if ((*frame)->codec->implementation->samples_per_second != session->write_codec->implementation->samples_per_second) {
+		do_resample = 1;
+	}
+
 	if (session->bugs && !need_codec) {
 		do_bugs = 1;
 		need_codec = 1;
@@ -165,6 +169,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 											  read_frame->datalen,
 											  session->read_codec->implementation->samples_per_second,
 											  session->raw_read_frame.data, &session->raw_read_frame.datalen, &session->raw_read_frame.rate, &flag);
+
+			if (do_resample && status == SWITCH_STATUS_SUCCESS) {
+				status = SWITCH_STATUS_RESAMPLE;
+			}
 
 			switch (status) {
 			case SWITCH_STATUS_RESAMPLE:
@@ -384,7 +392,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_frame_t *enc_frame = NULL, *write_frame = frame;
-	unsigned int flag = 0, need_codec = 0, perfect = 0, do_bugs = 0, do_write = 0;
+	unsigned int flag = 0, need_codec = 0, perfect = 0, do_bugs = 0, do_write = 0, do_resample = 0;
 	switch_io_flag_t io_flag = SWITCH_IO_FLAG_NOOP;
 
 	assert(session != NULL);
@@ -423,6 +431,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		need_codec = 1;
 	}
 
+	if (frame->codec->implementation->samples_per_second != session->read_codec->implementation->samples_per_second) {
+		need_codec = 1;
+		do_resample = 1;
+	}
+
 	if (need_codec) {
 		if (frame->codec) {
 			session->raw_write_frame.datalen = session->raw_write_frame.buflen;
@@ -433,6 +446,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 											  session->write_codec->implementation->samples_per_second,
 											  session->raw_write_frame.data, &session->raw_write_frame.datalen, &session->raw_write_frame.rate, &flag);
 
+
+
+
+			if (do_resample && status == SWITCH_STATUS_SUCCESS) {
+				status = SWITCH_STATUS_RESAMPLE;
+			}
 
 			switch (status) {
 			case SWITCH_STATUS_RESAMPLE:
@@ -570,7 +589,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				}
 			}
 
-
 			if (perfect) {
 				enc_frame = write_frame;
 				session->enc_write_frame.datalen = session->enc_write_frame.buflen;
@@ -630,16 +648,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					for (x = 0; x < frames; x++) {
 						if ((session->raw_write_frame.datalen = (uint32_t)
 							 switch_buffer_read(session->raw_write_buffer, session->raw_write_frame.data, bytes)) != 0) {
+							int rate;
 							enc_frame = &session->raw_write_frame;
 							session->raw_write_frame.rate = session->write_codec->implementation->samples_per_second;
 							session->enc_write_frame.datalen = session->enc_write_frame.buflen;
 
+							if (frame->codec && frame->codec->implementation) {
+								rate = frame->codec->implementation->samples_per_second;
+							} else {
+								rate = session->write_codec->implementation->samples_per_second;
+							} 
 
+							printf("WTF %d %d %d\n", rate, enc_frame->datalen, session->enc_write_frame.datalen);
+							
 							status = switch_core_codec_encode(session->write_codec,
 															  frame->codec,
 															  enc_frame->data,
 															  enc_frame->datalen,
-															  frame->codec->implementation->samples_per_second,
+															  rate,
 															  session->enc_write_frame.data,
 															  &session->enc_write_frame.datalen, &session->enc_write_frame.rate, &flag);
 
