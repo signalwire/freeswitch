@@ -1575,6 +1575,7 @@ static void conference_loop_output(conference_member_t * member)
 		char *digit;
 		switch_event_t *event;
 		caller_control_action_t *caller_action = NULL;
+		int use_timer = 0;
 
 		switch_mutex_lock(member->flag_mutex);
 
@@ -1757,7 +1758,7 @@ static void conference_loop_output(conference_member_t * member)
 				}
 
 				switch_mutex_unlock(member->audio_out_mutex);
-				switch_core_timer_next(&timer);
+				use_timer = 1;
 
 			} else {
 				if (switch_test_flag(member, MFLAG_WASTE_BANDWIDTH)) {
@@ -1767,11 +1768,17 @@ static void conference_loop_output(conference_member_t * member)
 					write_frame.timestamp = timer.samplecount;
 					switch_core_session_write_frame(member->session, &write_frame, -1, 0);
 				}
-				switch_core_timer_next(&timer);
+				use_timer = 1;
 			}
 		}
+
 		switch_mutex_unlock(member->flag_mutex);
-	}							/* Rinse ... Repeat */
+
+		if (use_timer) {
+			switch_core_timer_next(&timer);
+		}
+
+	} /* Rinse ... Repeat */
 
 	if (member->digit_stream != NULL) {
 		switch_ivr_digit_stream_destroy(member->digit_stream);
