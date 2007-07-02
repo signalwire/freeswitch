@@ -196,11 +196,12 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 						zchan->caller_data.raw_data_len = cplen;
 						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RING);
 						fail = 0;
+						zap_log(ZAP_LOG_CRIT, "hi %s\n", zchan->caller_data.cid_num);
 					} 
 				} 
 
 				if (fail) {
-					zap_log(ZAP_LOG_CRIT, "FIX ME!\n");
+					zap_log(ZAP_LOG_CRIT, "FIX ME! %s\n", zap_channel_state2str(zchan->state));
 					// add me 
 				}
 				

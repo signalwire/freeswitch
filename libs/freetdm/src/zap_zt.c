@@ -171,11 +171,22 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 			zchan->physical_span_id = ztp.span_no;
 			zchan->physical_chan_id = ztp.chan_no;
 			
-			if (type == ZAP_CHAN_TYPE_FXS || type == ZAP_CHAN_TYPE_FXO) {
+			if (type == ZAP_CHAN_TYPE_FXS || type == ZAP_CHAN_TYPE_FXO || type == ZAP_CHAN_TYPE_B) {
 				if (ztp.g711_type == ZT_G711_ALAW) {
 					zchan->native_codec = zchan->effective_codec = ZAP_CODEC_ALAW;
-				} else {
+				} else if (ztp.g711_type == ZT_G711_MULAW) {
 					zchan->native_codec = zchan->effective_codec = ZAP_CODEC_ULAW;
+				} else {
+					int type;
+
+					if (zchan->span->trunk_type == ZAP_TRUNK_E1) {
+						type = ZAP_CODEC_ALAW;
+					} else {
+						type = ZAP_CODEC_ULAW;
+					}
+
+					zchan->native_codec = zchan->effective_codec = type;
+
 				}
 			}
 			
