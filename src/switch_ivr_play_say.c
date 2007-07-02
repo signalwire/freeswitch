@@ -392,14 +392,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		org_silence_hits = fh->silence_hits;
 	}
 
-	while (switch_channel_ready(channel)) {
+	for(;;) {
 		switch_size_t len;
 
-		if (switch_channel_test_flag(channel, CF_BREAK)) {
-			switch_channel_clear_flag(channel, CF_BREAK);
+		if (!switch_channel_ready(channel)) {
+			status = SWITCH_STATUS_FALSE;
 			break;
 		}
 
+		if (switch_channel_test_flag(channel, CF_BREAK)) {
+			switch_channel_clear_flag(channel, CF_BREAK);
+			status = SWITCH_STATUS_BREAK;
+			break;
+		}
+		
 		if (switch_core_session_private_event_count(session)) {
 			switch_ivr_parse_all_events(session);
 		}
@@ -539,9 +545,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 		switch_buffer_set_loops(audio_buffer, loops);
 	}
 
-	while(switch_channel_ready(channel)) {
+	for(;;) {
 		switch_status_t status = switch_core_session_read_frame(session, &read_frame, 1000, 0);
 		
+		if (!switch_channel_ready(channel)) {
+            status = SWITCH_STATUS_FALSE;
+            break;
+        }
+
+
 		if (switch_channel_test_flag(channel, CF_BREAK)) {
 			switch_channel_clear_flag(channel, CF_BREAK);
 			break;
@@ -1150,6 +1162,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	write_frame.samples = len / 2;
 	write_frame.codec = codec;
 
+	assert(codec->implementation != NULL);
+
 	for (x = 0; !done && x < lead_in_out; x++) {
 		switch_yield(codec->implementation->microseconds_per_frame);
 		if (timer) {
@@ -1322,6 +1336,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 
 	timer_name = switch_channel_get_variable(channel, "timer_name");
 
+	switch_core_session_reset(session);
+
 	if (rate == 0) {
 		read_codec = switch_core_session_get_read_codec(session);
 		rate = read_codec->implementation->samples_per_second;
@@ -1359,7 +1375,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	if (timer_name) {
 		if (switch_core_timer_init(&timer, timer_name, interval, (int) samples, pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup timer failed!\n");
-			switch_core_codec_destroy(&codec);
+			switch_core_codec_destroy(write_frame.codec);
 			flags = 0;
 			switch_core_speech_close(&sh, &flags);
 
@@ -1374,7 +1390,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 		}
 	}
 
-	status = switch_ivr_speak_text_handle(session, &sh, &codec, timer_name ? &timer : NULL, text, args);
+	status = switch_ivr_speak_text_handle(session, &sh, write_frame.codec, timer_name ? &timer : NULL, text, args);
 	flags = 0;
 	switch_core_speech_close(&sh, &flags);
 	switch_core_codec_destroy(&codec);
