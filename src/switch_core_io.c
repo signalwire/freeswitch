@@ -659,8 +659,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 								rate = session->write_codec->implementation->samples_per_second;
 							} 
 
-							printf("WTF %d %d %d\n", rate, enc_frame->datalen, session->enc_write_frame.datalen);
-							
 							status = switch_core_codec_encode(session->write_codec,
 															  frame->codec,
 															  enc_frame->data,

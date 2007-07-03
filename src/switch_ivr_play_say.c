@@ -805,8 +805,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		int do_speed = 1;
 		int last_speed = -1;
 
-		//printf("xxxxxxxxxxxWTF %d %d %d\n", switch_channel_get_state(channel), switch_channel_ready(channel), switch_channel_test_flag(channel, CF_TRANSFER));
-		
 		if (!switch_channel_ready(channel)) {
             status = SWITCH_STATUS_FALSE;
             break;

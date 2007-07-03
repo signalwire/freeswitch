@@ -345,7 +345,6 @@ static switch_status_t iax_set_codec(private_t * tech_pvt, struct iax_session *i
 		unsigned short samples = iax_build_codec_rates();
 		unsigned short mixed = ((tech_pvt->samprate ? tech_pvt->samprate : *samprate) & samples);
 
-		//printf("\n\n******WTF %u %u %u\n******\n", *samprate, samples, mixed);
 		srate = 8000;
 
 		if (mixed & IAX_RATE_16KHZ) {
