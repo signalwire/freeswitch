@@ -34,7 +34,10 @@
 #include "zap_analog.h"
 #include "zap_isdn.h"
 
-static const char modname[] = "mod_openzap";
+SWITCH_MODULE_LOAD_FUNCTION(mod_openzap_load);
+SWITCH_MODULE_DEFINITION(mod_openzap, mod_openzap_load, NULL, NULL);
+
+static switch_endpoint_interface_t *channel_endpoint_interface;
 
 static switch_memory_pool_t *module_pool = NULL;
 static int running = 1;
@@ -654,7 +657,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	}
 }
 
-static switch_state_handler_table_t channel_event_handlers = {
+static switch_state_handler_table_t channel_state_handlers = {
 	/*.on_init */ channel_on_init,
 	/*.on_ring */ channel_on_ring,
 	/*.on_execute */ channel_on_execute,
@@ -673,24 +676,6 @@ static switch_io_routines_t channel_io_routines = {
 	/*.send_dtmf */ channel_send_dtmf,
 	/*.receive_message*/ channel_receive_message
 };
-
-static switch_endpoint_interface_t channel_endpoint_interface = {
-	/*.interface_name */ "openzap",
-	/*.io_routines */ &channel_io_routines,
-	/*.event_handlers */ &channel_event_handlers,
-	/*.private */ NULL,
-	/*.next */ NULL
-};
-
-static switch_loadable_module_interface_t channel_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ &channel_endpoint_interface,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL
-};
-
 
 /* Make sure when you have 2 sessions in the same scope that you pass the appropriate one to the routines
 that allocate memory or you will have 1 channel with memory allocated from another channel's pool!
@@ -1205,13 +1190,10 @@ static switch_status_t load_config(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_openzap_load)
 {
 
-	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
-		return SWITCH_STATUS_TERM;
-	}
+	module_pool = pool;
 
 	zap_global_set_logger(zap_logger);
 	
@@ -1225,8 +1207,12 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 		return SWITCH_STATUS_TERM;
 	}
 
-	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &channel_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	channel_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+	channel_endpoint_interface->interface_name = "openzap";
+	channel_endpoint_interface->io_routines = &channel_io_routines;
+	channel_endpoint_interface->state_handler = &channel_state_handlers;
+
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
