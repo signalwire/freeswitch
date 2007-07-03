@@ -139,9 +139,13 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2cause(const char *str)
 	uint8_t x;
 	switch_call_cause_t cause = SWITCH_CAUSE_UNALLOCATED;
 
-	for (x = 0; CAUSE_CHART[x].name; x++) {
-		if (!strcasecmp(CAUSE_CHART[x].name, str)) {
-			cause = CAUSE_CHART[x].cause;
+	if (*str > 47 && *str < 58) {
+		cause = atoi(str);
+	} else {
+		for (x = 0; CAUSE_CHART[x].name; x++) {
+			if (!strcasecmp(CAUSE_CHART[x].name, str)) {
+				cause = CAUSE_CHART[x].cause;
+			}
 		}
 	}
 	return cause;
