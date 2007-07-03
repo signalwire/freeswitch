@@ -527,6 +527,7 @@ CS_EXECUTE   - Channel is executing it's dialplan
 CS_LOOPBACK  - Channel is in loopback
 CS_HOLD		 - Channel is on hold
 CS_HIBERNATE - Channel is in a sleep state
+CS_RESET 	 - Channel is in a reset state
 CS_HANGUP    - Channel is flagged for hangup and ready to end
 CS_DONE      - Channel is ready to be destroyed and out of the state machine
 </pre>
@@ -540,6 +541,7 @@ typedef enum {
 	CS_LOOPBACK,
 	CS_HOLD,
 	CS_HIBERNATE,
+	CS_RESET,
 	CS_HANGUP,
 	CS_DONE
 } switch_channel_state_t;

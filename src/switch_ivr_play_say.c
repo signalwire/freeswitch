@@ -394,7 +394,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 	for(;;) {
 		switch_size_t len;
-
+		
 		if (!switch_channel_ready(channel)) {
 			status = SWITCH_STATUS_FALSE;
 			break;
@@ -547,7 +547,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 
 	for(;;) {
 		switch_status_t status = switch_core_session_read_frame(session, &read_frame, 1000, 0);
-		
+
 		if (!switch_channel_ready(channel)) {
             status = SWITCH_STATUS_FALSE;
             break;
@@ -556,6 +556,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 
 		if (switch_channel_test_flag(channel, CF_BREAK)) {
 			switch_channel_clear_flag(channel, CF_BREAK);
+			status = SWITCH_STATUS_BREAK;
 			break;
 		}
 
@@ -799,13 +800,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 	ilen = samples;
 
-	while (switch_channel_ready(channel)) {
+	for(;;) {
 		int done = 0;
 		int do_speed = 1;
 		int last_speed = -1;
 
+		//printf("xxxxxxxxxxxWTF %d %d %d\n", switch_channel_get_state(channel), switch_channel_ready(channel), switch_channel_test_flag(channel, CF_TRANSFER));
+		
+		if (!switch_channel_ready(channel)) {
+            status = SWITCH_STATUS_FALSE;
+            break;
+        }
+
 		if (switch_channel_test_flag(channel, CF_BREAK)) {
 			switch_channel_clear_flag(channel, CF_BREAK);
+			status = SWITCH_STATUS_BREAK;
 			break;
 		}
 
@@ -1176,11 +1185,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	}
 
 	ilen = len;
-	while (switch_channel_ready(channel)) {
+	for(;;) {
 		switch_event_t *event;
+
+		if (!switch_channel_ready(channel)) {
+            status = SWITCH_STATUS_FALSE;
+            break;
+        }
 
 		if (switch_channel_test_flag(channel, CF_BREAK)) {
 			switch_channel_clear_flag(channel, CF_BREAK);
+			status = SWITCH_STATUS_BREAK;
 			break;
 		}
 

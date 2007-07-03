@@ -256,7 +256,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, 
   \param filename the path to the module's dll or so file
   \return SWITCH_STATUS_SUCCESS on a successful load
 */
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename);
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load( switch_loadable_module_interface_t **module_interface, char *filename);
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void);
 
 /*!

@@ -509,7 +509,8 @@ SWITCH_DECLARE(uint8_t) switch_channel_ready(switch_channel_t *channel)
 
 	assert(channel != NULL);
 	
-	if (!channel->hangup_cause && channel->state > CS_RING && channel->state < CS_HANGUP && !switch_test_flag(channel, CF_TRANSFER)) {
+	if (!channel->hangup_cause && channel->state > CS_RING && channel->state < CS_HANGUP && channel->state != CS_RESET && 
+		!switch_test_flag(channel, CF_TRANSFER)) {
 		ret++;
 	}
 
@@ -525,6 +526,7 @@ static const char *state_names[] = {
 	"CS_LOOPBACK",
 	"CS_HOLD",
 	"CS_HIBERNATE",
+	"CS_RESET",
 	"CS_HANGUP",
 	"CS_DONE",
 	NULL
@@ -589,6 +591,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 
 	switch (last_state) {
 	case CS_NEW:
+	case CS_RESET:
 		switch (state) {
 		default:
 			ok++;
@@ -604,6 +607,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		case CS_EXECUTE:
 		case CS_HOLD:
 		case CS_HIBERNATE:
+		case CS_RESET:
 			ok++;
 		default:
 			break;
@@ -617,6 +621,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		case CS_EXECUTE:
 		case CS_HOLD:
 		case CS_HIBERNATE:
+		case CS_RESET:
 			ok++;
 		default:
 			break;
@@ -630,6 +635,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		case CS_EXECUTE:
 		case CS_HOLD:
 		case CS_HIBERNATE:
+		case CS_RESET:
 			ok++;
 		default:
 			break;
@@ -643,6 +649,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		case CS_EXECUTE:
 		case CS_TRANSMIT:
 		case CS_HIBERNATE:
+		case CS_RESET:
 			ok++;
 		default:
 			break;
@@ -655,6 +662,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		case CS_EXECUTE:
 		case CS_TRANSMIT:
 		case CS_HOLD:
+		case CS_RESET:
 			ok++;
 		default:
 			break;
@@ -669,6 +677,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		case CS_TRANSMIT:
 		case CS_HOLD:
 		case CS_HIBERNATE:
+		case CS_RESET:
 			ok++;
 		default:
 			break;
@@ -682,6 +691,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		case CS_RING:
 		case CS_HOLD:
 		case CS_HIBERNATE:
+		case CS_RESET:
 			ok++;
 		default:
 			break;
@@ -752,6 +762,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 	if (channel->state_flags) {
 		channel->flags |= channel->state_flags;
 		channel->state_flags = 0;
+
 	}
 
 	switch_mutex_unlock(channel->flag_mutex);

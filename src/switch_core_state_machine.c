@@ -47,6 +47,14 @@ static void switch_core_standard_on_hangup(switch_core_session_t *session)
 
 }
 
+static void switch_core_standard_on_reset(switch_core_session_t *session)
+{
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard RESET %s\n",
+					  switch_channel_get_name(session->channel));
+	
+}
+
 static void switch_core_standard_on_ring(switch_core_session_t *session)
 {
 	switch_dialplan_interface_t *dialplan_interface = NULL;
@@ -430,6 +438,41 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					}
 					if (proceed) {
 						switch_core_standard_on_ring(session);
+					}
+				}
+				break;
+			case CS_RESET:		/* Look for a dialplan and find something to do */
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State RESET\n", switch_channel_get_name(session->channel));
+				if (!driver_state_handler->on_reset
+					|| (driver_state_handler->on_reset && driver_state_handler->on_reset(session) == SWITCH_STATUS_SUCCESS
+						&& midstate == switch_channel_get_state(session->channel))) {
+					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
+						if (!application_state_handler || !application_state_handler->on_reset
+							|| (application_state_handler->on_reset
+								&& application_state_handler->on_reset(session) == SWITCH_STATUS_SUCCESS
+								&& midstate == switch_channel_get_state(session->channel))) {
+							proceed++;
+							continue;
+						} else {
+							proceed = 0;
+							break;
+						}
+					}
+					index = 0;
+					while (proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
+						if (!application_state_handler || !application_state_handler->on_reset ||
+							(application_state_handler->on_reset &&
+							 application_state_handler->on_reset(session) == SWITCH_STATUS_SUCCESS
+							 && midstate == switch_channel_get_state(session->channel))) {
+							proceed++;
+							continue;
+						} else {
+							proceed = 0;
+							break;
+						}
+					}
+					if (proceed) {
+						switch_core_standard_on_reset(session);
 					}
 				}
 				break;
