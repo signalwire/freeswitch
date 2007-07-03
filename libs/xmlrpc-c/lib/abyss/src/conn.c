@@ -277,7 +277,7 @@ abyss_bool ConnReadLine(TConn *c,char **z,uint32_t timeout)
 {
     char *p,*t;
     abyss_bool first=TRUE;
-    uint32_t to,start;
+    clock_t to,start;
 
     p=*z=c->buffer+c->bufferpos;
     start=clock();
