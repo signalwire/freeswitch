@@ -50,7 +50,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="0"
 				Detect64BitPortabilityProblems="false"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 				CompileAs="1"
 				ForcedIncludeFiles="$(ProjectDir)../../libetpan/build-windows/StdAfx.h"
 			/>
@@ -68,7 +68,7 @@
 				AdditionalOptions="/DLL"
 				AdditionalDependencies="oldnames.lib Ws2_32.lib mswsock.lib"
 				OutputFile="$(SolutionDir)$(IntDir)/libetpan.dll"
-				LinkIncremental="2"
+				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				IgnoreDefaultLibraryNames="C"
 				ModuleDefinitionFile=""
@@ -1081,6 +1081,7 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
+							MinimalRebuild="false"
 							CompileAs="2"
 						/>
 					</FileConfiguration>
