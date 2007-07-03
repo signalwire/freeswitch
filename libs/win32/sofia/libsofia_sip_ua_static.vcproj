@@ -26,7 +26,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\sofia-sip\win32\gawk.exe&quot; cscript /nologo &quot;$(ProjectDir)..\util.vbs&quot; Get http://svn.freeswitch.org/downloads/win32/gawk.exe &quot;$(ProjectDir)..\..\sofia-sip\win32\&quot;&#x0D;&#x0A;cd /D &quot;$(ProjectDir)..\..\sofia-sip\win32\&quot;&#x0D;&#x0A;&quot;autogen.cmd&quot;&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\sofia-sip\win32\gawk.exe&quot; cscript /nologo &quot;$(ProjectDir)..\util.vbs&quot; Get http://svn.freeswitch.org/downloads/win32/gawk.exe &quot;$(ProjectDir)..\..\sofia-sip\win32\&quot;&#x0D;&#x0A;cd /D &quot;$(ProjectDir)..\..\sofia-sip\win32\&quot;&#x0D;&#x0A;set AWK=&quot;$(ProjectDir)..\..\sofia-sip\win32\gawk.exe&quot;&#x0D;&#x0A;&quot;autogen.cmd&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -105,7 +105,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\sofia-sip\win32\gawk.exe&quot; cscript /nologo &quot;$(ProjectDir)..\util.vbs&quot; Get http://svn.freeswitch.org/downloads/win32/gawk.exe &quot;$(ProjectDir)..\..\sofia-sip\win32\&quot;&#x0D;&#x0A;cd /D &quot;$(ProjectDir)..\..\sofia-sip\win32\&quot;&#x0D;&#x0A;&quot;autogen.cmd&quot;&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\sofia-sip\win32\gawk.exe&quot; cscript /nologo &quot;$(ProjectDir)..\util.vbs&quot; Get http://svn.freeswitch.org/downloads/win32/gawk.exe &quot;$(ProjectDir)..\..\sofia-sip\win32\&quot;&#x0D;&#x0A;cd /D &quot;$(ProjectDir)..\..\sofia-sip\win32\&quot;&#x0D;&#x0A;set AWK=&quot;$(ProjectDir)..\..\sofia-sip\win32\gawk.exe&quot;&#x0D;&#x0A;&quot;autogen.cmd&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
