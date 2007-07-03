@@ -619,7 +619,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	if ((samples = ReadAudioStream(globals.audio_stream, globals.read_frame.data, 
 								   globals.read_codec.implementation->samples_per_frame, 
 								   &globals.timer)) == 0) {
-
+		switch_mutex_unlock(globals.device_lock);
 		goto cng;
 	} else {
 		globals.read_frame.datalen = samples * 2;
