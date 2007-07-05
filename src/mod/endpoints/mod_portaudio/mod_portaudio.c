@@ -242,6 +242,8 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 		switch_channel_mark_ring_ready(channel);
 
 		while (switch_channel_get_state(channel) == CS_INIT && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
+			switch_size_t olen = globals.timer.samples;
+				
 			if (switch_time_now() - last >= waitsec) {
 				char buf[512];
 				switch_event_t *event;
@@ -254,25 +256,22 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 					switch_channel_event_set_data(channel, event);
 					switch_event_fire(&event);
 				}
-
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s\n", buf);
 				last = switch_time_now();
-				if (ring_file) {
+			}
+			
+			if (ring_file) {
+				if (switch_core_timer_next(&globals.timer) != SWITCH_STATUS_SUCCESS) {
+					switch_core_file_close(&fh);
+					break;
+				}
+				switch_core_file_read(&fh, abuf, &olen);
+				if (olen == 0) {
 					unsigned int pos = 0;
 					switch_core_file_seek(&fh, &pos, 0, SEEK_SET);
-					for (;;) {
-						switch_size_t olen = 1024;
-						switch_core_file_read(&fh, abuf, &olen);
-						if (olen == 0) {
-							break;
-						}
-						WriteAudioStream(globals.ring_stream, abuf, (long) olen, &globals.timer);
-					}
 				}
+				WriteAudioStream(globals.ring_stream, abuf, (long) olen, &globals.timer);
 			}
-
-			switch_yield(globals.read_codec.implementation->microseconds_per_frame);
-
 		}
 		switch_clear_flag_locked((&globals), GFLAG_RING);
 	}
