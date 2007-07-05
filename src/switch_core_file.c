@@ -110,11 +110,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, unsigned int *cur_pos, int64_t samples, int whence)
 {
+	switch_status_t status;
+
 	assert(fh != NULL);
 	assert(fh->file_interface != NULL);
 
 	switch_set_flag(fh, SWITCH_FILE_SEEK);
-	return fh->file_interface->file_seek(fh, cur_pos, samples, whence);
+	status = fh->file_interface->file_seek(fh, cur_pos, samples, whence);
+	if (samples) {
+		fh->offset_pos = *cur_pos;
+	}
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_file_set_string(switch_file_handle_t *fh, switch_audio_col_t col, const char *string)

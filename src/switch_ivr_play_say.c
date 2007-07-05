@@ -692,6 +692,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 	if (sample_start > 0) {
 		uint32_t pos = 0;
+		switch_core_file_seek(fh, &pos, 0, SEEK_SET);
 		switch_core_file_seek(fh, &pos, sample_start, SEEK_CUR);
 	}
 
@@ -879,6 +880,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		if (done || olen <= 0) {
 			break;
 		}
+		
 
 		if (!asis) {
 			if (fh->speed > 2) {
@@ -940,8 +942,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			olen = llen;
 		}
 
-		write_frame.datalen = (uint32_t) (olen * (asis ? 1 : 2));
-		write_frame.samples = (uint32_t) olen;
+		write_frame.samples = olen;
+
+		if (asis) {
+			write_frame.datalen = olen;
+		} else {
+			write_frame.datalen = write_frame.samples * 2;
+		}
+
+
 
 		llen = olen;
 
@@ -957,8 +966,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 #endif
 		stream_id = 0;
 
-		status = switch_core_session_write_frame(session, &write_frame, -1, stream_id);
+		if (fh->vol) {
+			switch_change_sln_volume(write_frame.data, write_frame.datalen / 2, fh->vol);
+		}
 
+		fh->offset_pos += write_frame.samples / 2;
+		status = switch_core_session_write_frame(session, &write_frame, -1, stream_id);
+		
 		if (status == SWITCH_STATUS_MORE_DATA) {
 			status = SWITCH_STATUS_SUCCESS;
 			continue;
@@ -991,6 +1005,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done playing file\n");
+	switch_core_file_seek(fh, &fh->last_pos, 0, SEEK_CUR);
+	
 	switch_core_file_close(fh);
 	switch_buffer_destroy(&fh->audio_buffer);
 	if (!asis) {

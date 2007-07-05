@@ -284,6 +284,9 @@ struct switch_file_handle {
 	switch_buffer_t *audio_buffer;
 	uint32_t thresh;
 	uint32_t silence_hits;
+	uint32_t offset_pos;
+	uint32_t last_pos;
+	int32_t vol;
 };
 
 /*! \brief Abstract interface to an asr module */

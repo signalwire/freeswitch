@@ -311,6 +311,19 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+SWITCH_STANDARD_API(uuid_function)
+{
+	switch_uuid_t uuid;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+
+	switch_uuid_get(&uuid);
+    switch_uuid_format(uuid_str, &uuid);
+	stream->write_function(stream, "%s", uuid_str);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 #define SCHED_TRANSFER_SYNTAX "[+]<time> <uuid> <extension> [<dialplan>] [<context>]"
 SWITCH_STANDARD_API(sched_transfer_function)
 {
@@ -1282,7 +1295,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "break", "Break", break_function, BREAK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "show", "Show", show_function, SHOW_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "status", "status", status_function, "");
-	SWITCH_ADD_API(commands_api_interface, "uuid_bridge", "uuid_bridge", uuid_bridge_function, UUID_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_bridge", "uuid_bridge", uuid_bridge_function, "");
 	SWITCH_ADD_API(commands_api_interface, "session_displace", "session displace", session_displace_function, "<uuid> [start|stop] <path> [<limit>] [mux]");
 	SWITCH_ADD_API(commands_api_interface, "session_record", "session record", session_record_function, SESS_REC_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "broadcast", "broadcast", uuid_broadcast_function, BROADCAST_SYNTAX);
@@ -1294,6 +1307,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "sched_hangup", "Schedule a running call to hangup", sched_hangup_function, SCHED_HANGUP_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "sched_broadcast", "Schedule a broadcast event to a running call", sched_broadcast_function, SCHED_BROADCAST_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "sched_transfer", "Schedule a broadcast event to a running call", sched_transfer_function, SCHED_TRANSFER_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "create_uuid", "Create a uuid", uuid_function, UUID_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "sched_api", "Schedule an api command", sched_api_function, "[+]<time> <group_name> <command_string>");
 	SWITCH_ADD_API(commands_api_interface, "sched_del", "Delete a Scheduled task", sched_del_function, "<task_id>|<group_id>");
 	SWITCH_ADD_API(commands_api_interface, "xml_wrap", "Wrap another api command in xml", xml_wrap_api_function, "<command> <args>");

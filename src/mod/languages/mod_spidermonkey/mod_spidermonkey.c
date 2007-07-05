@@ -930,6 +930,29 @@ static switch_status_t js_stream_input_callback(switch_core_session_t *session, 
 			}
 
 			return SWITCH_STATUS_FALSE;
+		} else if (!strncasecmp(ret, "volume", 6)) {
+			char *p;
+
+			if ((p = strchr(ret, ':'))) {
+				p++;
+				if (*p == '+' || *p == '-') {
+					int step;
+					if (!(step = atoi(p))) {
+						step = 1;
+					}
+					fh->vol += step;
+				} else {
+					int vol = atoi(p);
+					fh->vol = vol;
+				}
+				return SWITCH_STATUS_SUCCESS;
+			}
+
+			if (fh->vol) {
+				switch_normalize_volume(fh->vol);
+			}
+
+			return SWITCH_STATUS_FALSE;
 		} else if (!strcasecmp(ret, "pause")) {
 			if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
 				switch_clear_flag(fh, SWITCH_FILE_PAUSE);
@@ -1361,8 +1384,8 @@ static JSBool session_streamfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	switch_file_handle_t fh = { 0 };
 	JSFunction *function;
 	switch_input_args_t args = { 0 };
-	char *prebuf;
-
+	char *prebuf, posbuf[35] = "";
+	
 	METHOD_SANITY_CHECK();
 
 	channel = switch_core_session_get_channel(jss->session);
@@ -1419,6 +1442,9 @@ static JSBool session_streamfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	switch_ivr_play_file(jss->session, &fh, file_name, &args);
 	JS_ResumeRequest(cx, cb_state.saveDepth);
 	*rval = cb_state.ret;
+
+	snprintf(posbuf, sizeof(posbuf), "%u", fh.offset_pos);
+	switch_channel_set_variable(channel, "last_file_position", posbuf);
 
 	return JS_TRUE;
 }
@@ -1768,14 +1794,18 @@ static JSBool session_execute(JSContext * cx, JSObject * obj, uintN argc, jsval 
 	CHANNEL_SANITY_CHECK();
 
 
-	if (argc > 1) {
+	if (argc > 0) {
 		const switch_application_interface_t *application_interface;
 		char *app_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-		char *app_arg = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		char *app_arg = NULL;
 		struct js_session *jss = JS_GetPrivate(cx, obj);
 		jsrefcount saveDepth;
 
 		METHOD_SANITY_CHECK();
+
+		if (argc > 1) {
+			app_arg = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		}
 
 		if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
 			if (application_interface->application_function) {
