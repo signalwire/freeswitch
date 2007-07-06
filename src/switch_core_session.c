@@ -767,7 +767,10 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 	switch_uuid_t uuid;
 	uint32_t count = 0;
 
-	assert(endpoint_interface != NULL);
+	if (!switch_core_ready() || endpoint_interface == NULL) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "The system cannot create any sessions at this time.\n");
+		return NULL;
+	}
 
 	switch_mutex_lock(session_manager.session_table_mutex);
 	count = session_manager.session_count;
@@ -775,11 +778,6 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 
 	if ((count + 1) > session_manager.session_limit) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Limit!\n");
-		return NULL;
-	}
-
-	if (!switch_core_ready()) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read my lips: no new sessions!\n");
 		return NULL;
 	}
 

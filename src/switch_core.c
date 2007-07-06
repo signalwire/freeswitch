@@ -398,6 +398,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, const char
 	switch_uuid_t uuid;
 	memset(&runtime, 0, sizeof(runtime));
 
+	runtime.no_new_sessions = 1;
+
 	/* INIT APR and Create the pool context */
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
 		*err = "FATAL ERROR! Could not initilize APR\n";
@@ -577,6 +579,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(const char *console
 					  "\nFreeSWITCH Version %s Started.\nCrash Protection [%s]\nMax Sessions[%u]\n\n", SWITCH_VERSION_FULL, 
 					  runtime.crash_prot ? "Enabled" : "Disabled",
 					  switch_core_session_limit(0));
+
+	runtime.no_new_sessions = 0;
+
 	return SWITCH_STATUS_SUCCESS;
 
 }
