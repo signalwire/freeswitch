@@ -865,7 +865,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt)
 	}
 
 	if (!((tech_pvt->profile->pflags & PFLAG_REWRITE_TIMESTAMPS) || 
-		  ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_rewrite_timestamps")) && switch_true(val)))) {
+		  ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_rewrite_timestamps")) && !switch_true(val)))) {
 		flags |= SWITCH_RTP_FLAG_RAW_WRITE;
 	}
 

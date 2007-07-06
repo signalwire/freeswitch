@@ -110,7 +110,6 @@ struct switch_rtp_rfc2833_data {
 	unsigned int out_digit_sofar;
 	unsigned int out_digit_dur;
 	uint16_t in_digit_seq;
-	uint16_t out_digit_seq;
 	uint32_t out_digit_ssrc;
 	int32_t timestamp_dtmf;
 	char last_digit;
@@ -135,6 +134,7 @@ struct switch_rtp {
 
 	uint16_t seq;
 	uint16_t rseq;
+	uint8_t sending_dtmf;
 	switch_payload_t payload;
 	switch_payload_t rpayload;
 	switch_rtp_invalid_handler_t invalid_handler;
@@ -431,7 +431,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	}
 
 
-
+	rtp_session->dtmf_data.out_digit_ssrc = ssrc;
 	rtp_session->pool = pool;
 	rtp_session->te = 101;
 
@@ -758,27 +758,26 @@ static void do_2833(switch_rtp_t *rtp_session)
 
 		
 		for (x = 0; x < loops; x++) {
-			rtp_session->dtmf_data.out_digit_seq++;
+			rtp_session->seq++;
 
 			switch_rtp_write_manual(rtp_session,
 									rtp_session->dtmf_data.out_digit_packet,
 									4,
 									0,
 									rtp_session->te,
-									rtp_session->dtmf_data.timestamp_dtmf, rtp_session->dtmf_data.out_digit_seq, rtp_session->dtmf_data.out_digit_ssrc,
+									rtp_session->dtmf_data.timestamp_dtmf, rtp_session->seq, rtp_session->dtmf_data.out_digit_ssrc,
 									&flags);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s packet for [%c] ts=%d sofar=%u dur=%d seq=%d\n",
 							  loops == 1 ? "middle" : "end", rtp_session->dtmf_data.out_digit, rtp_session->dtmf_data.timestamp_dtmf,
-							  rtp_session->dtmf_data.out_digit_sofar, duration, rtp_session->dtmf_data.out_digit_seq);
+							  rtp_session->dtmf_data.out_digit_sofar, duration, rtp_session->seq);
 
 			
 		}
 
-		if (loops == 1) {
-			rtp_session->last_write_seq = 0;
-		} else {
-			rtp_session->dtmf_data.out_digit_seq = 0;
+		if (loops != 1) {
+			rtp_session->sending_dtmf = 0;
 		}
+
 	}
 
 	if (!rtp_session->dtmf_data.out_digit_dur && rtp_session->dtmf_data.dtmf_queue && switch_queue_size(rtp_session->dtmf_data.dtmf_queue)) {
@@ -800,25 +799,24 @@ static void do_2833(switch_rtp_t *rtp_session)
 			} else {
 				rtp_session->dtmf_data.timestamp_dtmf = rtp_session->last_write_ts;
 			}
-
-			rtp_session->dtmf_data.out_digit_seq = rtp_session->last_write_seq;
-			rtp_session->dtmf_data.out_digit_ssrc = rtp_session->last_write_ssrc;
-
+			
+			rtp_session->sending_dtmf = 1;
 
 			for (x = 0; x < 3; x++) {
-				rtp_session->dtmf_data.out_digit_seq++;
+				rtp_session->seq++;
 				switch_rtp_write_manual(rtp_session,
 										rtp_session->dtmf_data.out_digit_packet,
 										4,
 										switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BUGGY_2833) ? 0 : 1,
 										rtp_session->te,
 										rtp_session->dtmf_data.timestamp_dtmf,
-										rtp_session->dtmf_data.out_digit_seq, rtp_session->dtmf_data.out_digit_ssrc, &flags);
+										rtp_session->seq, 
+										rtp_session->dtmf_data.out_digit_ssrc, &flags);
 				switch_log_printf(SWITCH_CHANNEL_LOG,
 								  SWITCH_LOG_DEBUG,
 								  "Send start packet for [%c] ts=%d sofar=%u dur=%d seq=%d\n",
 								  rtp_session->dtmf_data.out_digit,
-								  rtp_session->dtmf_data.timestamp_dtmf, rtp_session->dtmf_data.out_digit_sofar, 0, rtp_session->dtmf_data.out_digit_seq);
+								  rtp_session->dtmf_data.timestamp_dtmf, rtp_session->dtmf_data.out_digit_sofar, 0, rtp_session->seq);
 			}
 			rtp_session->dtmf_data.timestamp_dtmf += samples;
 			free(rdigit);
@@ -1027,6 +1025,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if ((time(NULL) - rtp_session->dtmf_data.last_digit_time) > 2) {
 				rtp_session->dtmf_data.last_digit = 0;
 				rtp_session->dtmf_data.dc = 0;
+				rtp_session->dtmf_data.in_digit_seq = 0;
 			}
 			if (in_digit_seq > rtp_session->dtmf_data.in_digit_seq) {
 				rtp_session->dtmf_data.in_digit_seq = in_digit_seq;
@@ -1295,7 +1294,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 			rtp_session->cn = 0;
 			m++;
 		}
-
+		
 		send_msg = &rtp_session->send_msg;
 		send_msg->header.pt = payload;
 		send_msg->header.m = m ? 1 : 0;
@@ -1424,8 +1423,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 		}
 	}
 
-
-	if (rtp_session->last_write_seq > 0 && rtp_session->last_write_seq <= rtp_session->dtmf_data.out_digit_seq) {
+	if (rtp_session->sending_dtmf) {
 		send = 0;
 	}
 
