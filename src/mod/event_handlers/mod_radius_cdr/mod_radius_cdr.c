@@ -30,8 +30,6 @@
  *
  */
 
-#define _BSD_SOURCE 1
-
 #include <switch.h>
 #include <sys/stat.h>
 #include <freeradius-client.h>
@@ -130,8 +128,8 @@ static switch_status_t my_on_ring(switch_core_session_t *session)
 	rc_handle 	*rad_config;
 	int             retval = 0;
 	VALUE_PAIR      *send = NULL;
-	UINT4           client_port = 0;
-	UINT4           status_type = PW_STATUS_START;
+	uint32_t           client_port = 0;
+	uint32_t           status_type = PW_STATUS_START;
 
 	char 		*uuid_str;
 
@@ -249,14 +247,14 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	rc_handle 	*rad_config;
 	int             retval = 0;
 	VALUE_PAIR      *send = NULL;
-	UINT4           client_port = 0;
-	UINT4           status_type = PW_STATUS_STOP;
+	uint32_t           client_port = 0;
+	uint32_t           status_type = PW_STATUS_STOP;
 	switch_time_t	callstartdate = 0;
 	switch_time_t	callanswerdate = 0;
 	switch_time_t	callenddate = 0;
 	switch_time_t	calltransferdate = 0;
 	switch_time_t	billusec = 0;
-	UINT4		billsec = 0;
+	uint32_t		billsec = 0;
 	char 		*uuid_str;
 	
 
@@ -375,7 +373,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			} 
 			if (rc_avpair_add(rad_config, &send, PW_FS_BILLUSEC, &billusec, -1, PW_FS_PEC) == NULL) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
-						"failed adding Freeswitch-Billusec: %u\n", (UINT4)billusec);
+						"failed adding Freeswitch-Billusec: %u\n", (uint32_t)billusec);
 				rc_destroy(rad_config);
 				return SWITCH_STATUS_TERM;
 			}
