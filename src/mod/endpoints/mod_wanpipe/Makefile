@@ -1,9 +1,9 @@
 BASE=../../../..
 LIBPRI_HOST=http://ftp.digium.com/pub/libpri
-LIBPRI=libpri-1.2.4
+LIBPRI=libpri-1.2.5
 LIBPRI_FILE=$(LIBPRI).tar.gz
 LIBPRI_DIR=$(BASE)/libs/$(LIBPRI)
-WANPIPE=wanpipe-3.1.0
+WANPIPE=wanpipe-3.1.1
 WANPIPE_HOST=ftp://ftp.sangoma.com/linux/current_wanpipe/
 WANPIPE_FILE=$(WANPIPE).tgz
 WANPIPE_DIR=$(BASE)/libs/$(WANPIPE)
