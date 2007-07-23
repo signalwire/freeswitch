@@ -942,10 +942,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			olen = llen;
 		}
 
-		write_frame.samples = olen;
+		write_frame.samples = (uint32_t)olen;
 
 		if (asis) {
-			write_frame.datalen = olen;
+			write_frame.datalen = (uint32_t)olen;
 		} else {
 			write_frame.datalen = write_frame.samples * 2;
 		}
