@@ -354,12 +354,12 @@ static JSBool event_construct(JSContext * cx, JSObject * obj, uintN argc, jsval 
 
 			if (etype == SWITCH_EVENT_CUSTOM) {
 				char *subclass_name;
-				if (argc < 1) {
-					*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-					return JS_TRUE;
+				if (argc > 1) {
+					subclass_name = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+				} else {
+					subclass_name = "none";
 				}
 
-				subclass_name = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 				if (switch_event_create_subclass(&event, etype, subclass_name) != SWITCH_STATUS_SUCCESS) {
 					*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 					return JS_TRUE;

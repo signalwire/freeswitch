@@ -83,10 +83,12 @@ static struct {
 } listen_list;
 
 static struct {
+	switch_mutex_t *mutex;
 	char *ip;
 	uint16_t port;
 	char *password;
 	int done;
+	int threads;
 } prefs;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_ip, prefs.ip)
@@ -137,7 +139,7 @@ static void event_handler(switch_event_t *event)
 		if (l->event_list[SWITCH_EVENT_ALL]) {
 			send = 1;
 		} else if ((l->event_list[event->event_id])) {
-			if (event->event_id != SWITCH_EVENT_CUSTOM || (event->subclass && switch_core_hash_find(l->event_hash, event->subclass->name))) {
+			if (event->event_id != SWITCH_EVENT_CUSTOM || !event->subclass || (switch_core_hash_find(l->event_hash, event->subclass->name))) {
 				send = 1;
 			}
 		}
@@ -265,10 +267,18 @@ static void close_socket(switch_socket_t ** sock)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown)
 {
 	listener_t *l;
+	int sanity = 0;
 
 	prefs.done = 1;
 
 	close_socket(&listen_list.sock);
+
+	while(prefs.threads) {
+		switch_yield(10000);
+		if (++sanity == 1000) {
+			break;
+		}
+	}
 
 	switch_mutex_lock(listen_list.mutex);
 	for (l = listen_list.listeners; l; l = l->next) {
@@ -346,7 +356,7 @@ static switch_status_t read_packet(listener_t * listener, switch_event_t **event
 	start = time(NULL);
 	ptr = mbuf;
 
-	while (listener->sock) {
+	while (listener->sock && !prefs.done) {
 		uint8_t do_sleep = 1;
 		mlen = 1;
 		status = switch_socket_recv(listener->sock, ptr, &mlen);
@@ -857,7 +867,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 					if (type == SWITCH_EVENT_ALL) {
 						uint32_t x = 0;
 						for (x = 0; x < SWITCH_EVENT_ALL; x++) {
-							listener->event_list[x] = 0;
+							listener->event_list[x] = 1;
 						}
 					}
 					listener->event_list[type] = 1;
@@ -904,8 +914,9 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 					uint32_t x = 0;
 					key_count++;
 
-					if (type == SWITCH_EVENT_ALL) {
-
+					if (type == SWITCH_EVENT_CUSTOM) {
+						custom++;
+					} else if (type == SWITCH_EVENT_ALL) {
 						for (x = 0; x <= SWITCH_EVENT_ALL; x++) {
 							listener->event_list[x] = 0;
 						}
@@ -917,10 +928,6 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 							}
 						}
 						listener->event_list[type] = 0;
-					}
-
-					if (type == SWITCH_EVENT_CUSTOM) {
-						custom++;
 					}
 				}
 
@@ -980,6 +987,9 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 
+	switch_mutex_lock(listen_list.mutex);
+	prefs.threads++;
+	switch_mutex_unlock(listen_list.mutex);
 
 	assert(listener != NULL);
 
@@ -1113,6 +1123,9 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj
 		switch_core_destroy_memory_pool(&pool);
 	}
 
+	switch_mutex_lock(listen_list.mutex);
+	prefs.threads--;
+	switch_mutex_unlock(listen_list.mutex);
 
 	return NULL;
 }
@@ -1226,7 +1239,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 	switch_log_bind_logger(socket_logger, SWITCH_LOG_DEBUG);
 
 
-	for (;;) {
+	for(;;) {
 		if (switch_core_new_memory_pool(&listener_pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
 			goto fail;
