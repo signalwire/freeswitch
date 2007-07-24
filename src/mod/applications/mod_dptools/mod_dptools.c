@@ -953,25 +953,54 @@ SWITCH_STANDARD_APP(record_function)
 	switch_status_t status;
 	uint32_t limit = 0;
 	char *path;
-	char *p;
 	switch_input_args_t args = { 0 };
-
+	switch_file_handle_t fh = { 0 };
+	int argc;
+    char *mydata, *argv[4] = { 0 };
+	char *l = NULL;
+	
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
+	
+	if (data && (mydata = switch_core_session_strdup(session, data))) {
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No file specified.\n");		
+		return;
+	}
+	
+	path = argv[0];
+	l = argv[1];
 
-	path = switch_core_session_strdup(session, data);
-	if ((p = strchr(path, '+'))) {
-		char *q = p - 1;
-		while(q && *q == ' ') {
-			*q = '\0';
-			q--;
+	if (l) {
+		if (*l == '+') {
+			l++;
+			if (l) {
+				limit = atoi(l);
+				if (limit < 0) {
+					limit = 0;
+				}
+			}
 		}
-		*p++ = '\0';
-		limit = atoi(p);
+	}
+	
+
+	if (argv[2]) {
+		fh.thresh = atoi(argv[2]);
+		if (fh.thresh < 0) {
+			fh.thresh = 0;
+		}
+	}
+
+	if (argv[3]) {
+		fh.silence_hits = atoi(argv[3]);
+		if (fh.silence_hits < 0) {
+			fh.silence_hits = 0;
+		}
 	}
 
 	args.input_callback = on_dtmf;
-	status = switch_ivr_record_file(session, NULL, path, &args, limit);
+	status = switch_ivr_record_file(session, &fh, path, &args, limit);
 
 	if (!switch_channel_ready(channel) || (status != SWITCH_STATUS_SUCCESS && !SWITCH_STATUS_IS_BREAK(status))) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
