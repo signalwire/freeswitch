@@ -117,6 +117,8 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_LOCAL_VIDEO_IP_VARIABLE "local_video_ip"
 #define SWITCH_LOCAL_VIDEO_PORT_VARIABLE "local_video_port"
 #define SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE "hangup_after_bridge"
+#define SWITCH_EXEC_AFTER_BRIDGE_APP_VARIABLE "exec_after_bridge_app"
+#define SWITCH_EXEC_AFTER_BRIDGE_ARG_VARIABLE "exec_after_bridge_arg"
 #define SWITCH_MAX_FORWARDS_VARIABLE "max_forwards"
 #define SWITCH_SPEECH_KEY "speech"
 #define SWITCH_UUID_BRIDGE "uuid_bridge"
@@ -576,6 +578,7 @@ CF_BROADCAST    = (1 << 20) - Channel is broadcasting
 CF_UNICAST      = (1 << 21) - Channel has a unicast connection
 CF_VIDEO		= (1 << 22) - Channel has video
 CF_EVENT_LOCK   = (1 << 23) - Don't parse events
+CF_RESET        = (1 << 24) - Tell extension parser to reset
 </pre>
  */
 
@@ -603,7 +606,8 @@ typedef enum {
 	CF_BROADCAST = (1 << 20),
 	CF_UNICAST = (1 << 21),
 	CF_VIDEO = (1 << 22),
-	CF_EVENT_LOCK = (1 << 23)
+	CF_EVENT_LOCK = (1 << 23),
+	CF_RESET = (1 << 24)
 } switch_channel_flag_t;
 
 

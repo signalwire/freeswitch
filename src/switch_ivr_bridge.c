@@ -56,6 +56,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 	switch_frame_t *read_frame;
 	switch_core_session_t *session_a, *session_b;
 	uint32_t loop_count = 0;
+	char *app_name = NULL, *app_arg = NULL;
 
 	session_a = data->session;
 	if (!(session_b = switch_core_session_locate(data->b_uuid))) {
@@ -185,6 +186,27 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 	msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
 	msg.from = __FILE__;
 	switch_core_session_receive_message(session_a, &msg);
+
+
+	if ((app_name = switch_channel_get_variable(chan_a, SWITCH_EXEC_AFTER_BRIDGE_APP_VARIABLE))) {
+		switch_caller_extension_t *extension = NULL;
+		if ((extension = switch_caller_extension_new(session_a, app_name, app_name)) == 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
+			goto end;
+		}
+		app_arg = switch_channel_get_variable(chan_a, SWITCH_EXEC_AFTER_BRIDGE_ARG_VARIABLE);
+
+		switch_caller_extension_add_application(session_a, extension, (char *) app_name, app_arg);
+		switch_channel_set_caller_extension(chan_a, extension);
+
+		if (switch_channel_get_state(chan_a) == CS_EXECUTE) {
+			switch_channel_set_flag(chan_a, CF_RESET);
+		} else {
+			switch_channel_set_state(chan_a, CS_EXECUTE);
+		}
+	}
+
+ end:
 
 	switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 	switch_core_session_reset(session_a);
@@ -641,8 +663,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
   done:
 
-	if (switch_channel_get_state(caller_channel) < CS_HANGUP
-		&& switch_true(switch_channel_get_variable(caller_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
+	if (switch_channel_get_state(caller_channel) < CS_HANGUP && 
+		switch_true(switch_channel_get_variable(caller_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
 		switch_channel_hangup(caller_channel, switch_channel_get_cause(peer_channel));
 	}
 

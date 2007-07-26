@@ -120,6 +120,9 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard EXECUTE\n");
 
+ top:
+	switch_channel_clear_flag(session->channel, CF_RESET);
+
 	if ((extension = switch_channel_get_caller_extension(session->channel)) == 0) {
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		return;
@@ -169,6 +172,11 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 		if (expanded != extension->current_application->application_data) {
 			switch_safe_free(expanded);
 		}
+
+		if (switch_channel_test_flag(session->channel, CF_RESET)) {
+			goto top;
+		}
+
 		extension->current_application = extension->current_application->next;
 	}
 

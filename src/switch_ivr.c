@@ -283,7 +283,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 		return SWITCH_STATUS_FALSE;
 	}
 
-	hlen = (switch_size_t) strlen(cmd);
 	cmd_hash = switch_hashfunc_default(cmd, &hlen);
 
 	switch_channel_set_flag(channel, CF_EVENT_PARSE);
