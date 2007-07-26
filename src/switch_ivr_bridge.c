@@ -187,22 +187,23 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 	msg.from = __FILE__;
 	switch_core_session_receive_message(session_a, &msg);
 
+	if (switch_channel_get_state(chan_a) < CS_HANGUP) {
+		if ((app_name = switch_channel_get_variable(chan_a, SWITCH_EXEC_AFTER_BRIDGE_APP_VARIABLE))) {
+			switch_caller_extension_t *extension = NULL;
+			if ((extension = switch_caller_extension_new(session_a, app_name, app_name)) == 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
+				goto end;
+			}
+			app_arg = switch_channel_get_variable(chan_a, SWITCH_EXEC_AFTER_BRIDGE_ARG_VARIABLE);
 
-	if ((app_name = switch_channel_get_variable(chan_a, SWITCH_EXEC_AFTER_BRIDGE_APP_VARIABLE))) {
-		switch_caller_extension_t *extension = NULL;
-		if ((extension = switch_caller_extension_new(session_a, app_name, app_name)) == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
-			goto end;
-		}
-		app_arg = switch_channel_get_variable(chan_a, SWITCH_EXEC_AFTER_BRIDGE_ARG_VARIABLE);
+			switch_caller_extension_add_application(session_a, extension, (char *) app_name, app_arg);
+			switch_channel_set_caller_extension(chan_a, extension);
 
-		switch_caller_extension_add_application(session_a, extension, (char *) app_name, app_arg);
-		switch_channel_set_caller_extension(chan_a, extension);
-
-		if (switch_channel_get_state(chan_a) == CS_EXECUTE) {
-			switch_channel_set_flag(chan_a, CF_RESET);
-		} else {
-			switch_channel_set_state(chan_a, CS_EXECUTE);
+			if (switch_channel_get_state(chan_a) == CS_EXECUTE) {
+				switch_channel_set_flag(chan_a, CF_RESET);
+			} else {
+				switch_channel_set_state(chan_a, CS_EXECUTE);
+			}
 		}
 	}
 
