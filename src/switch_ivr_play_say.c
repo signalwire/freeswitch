@@ -1156,7 +1156,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	int lead_in_out = 10;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
-	uint32_t rate = 0, samples = 0;
+	uint32_t rate = 0;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -1170,9 +1170,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	write_frame.data = abuf;
 	write_frame.buflen = sizeof(abuf);
 
-	samples = (uint32_t) (sh->rate / 50);
-	len = samples * 2;
-
+	len = sh->samples * 2;
+	
 	flags = 0;
 	switch_sleep(200000);
 	switch_core_speech_feed_tts(sh, text, &flags);
@@ -1345,7 +1344,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 {
 	switch_channel_t *channel;
 	int interval = 0;
-	uint32_t samples = 0;
 	uint32_t len = 0;
 	switch_frame_t write_frame = { 0 };
 	switch_timer_t timer;
@@ -1366,9 +1364,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	timer_name = switch_channel_get_variable(channel, "timer_name");
 
 	switch_core_session_reset(session);
-
+	read_codec = switch_core_session_get_read_codec(session);
+	
 	if (rate == 0) {
-		read_codec = switch_core_session_get_read_codec(session);
 		rate = read_codec->implementation->samples_per_second;
 	}
 
@@ -1382,9 +1380,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	switch_channel_answer(channel);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "OPEN TTS %s\n", tts_name);
 
-	interval = 20;
-	samples = (uint32_t) (rate / 50);
-	len = samples * 2;
+	interval = read_codec->implementation->microseconds_per_frame / 1000;
+	sh.samples = switch_bytes_per_frame(rate, interval);
+	len = sh.samples * 2;
 
 	codec_name = "L16";
 
@@ -1402,7 +1400,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	}
 
 	if (timer_name) {
-		if (switch_core_timer_init(&timer, timer_name, interval, (int) samples, pool) != SWITCH_STATUS_SUCCESS) {
+		if (switch_core_timer_init(&timer, timer_name, interval, (int) sh.samples, pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup timer failed!\n");
 			switch_core_codec_destroy(write_frame.codec);
 			flags = 0;

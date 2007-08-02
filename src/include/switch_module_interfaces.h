@@ -365,6 +365,7 @@ struct switch_speech_handle {
 	/*! The Rate */
 	uint32_t rate;
 	uint32_t speed;
+	uint32_t samples;
 	char voice[80];
 	char engine[80];
 	/*! the handle's memory pool */
