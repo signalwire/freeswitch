@@ -529,9 +529,9 @@ L3INT Q931AckRestart(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf)
 
     Q931mes_Header *ptr = (Q931mes_Header*)&buf[Q931L4HeaderSpace];
 	ptr->MesType = Q931mes_RESTART_ACKNOWLEDGE;
-	if (ptr->CRV) {
+	//if (ptr->CRV) {
 		ptr->CRVFlag = !(ptr->CRVFlag);
-	}
+		//}
 
 	RetCode = Q931Proc[pTrunk->Dialect][ptr->MesType](pTrunk, buf, 4);
 
