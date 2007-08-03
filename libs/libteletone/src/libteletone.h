@@ -74,6 +74,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <math.h>
+
 #define	TELETONE_MAX_DTMF_DIGITS 128
 #define TELETONE_MAX_TONES 6
 #define TELETONE_TONE_RANGE 127
