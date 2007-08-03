@@ -182,7 +182,7 @@ static inline char *switch_clean_string(char *s)
 	char *p;
 	for (p = s; p && *p; p++) {
 		uint8_t x = (uint8_t) *p;
-		if (x < 32 || x > 127) {
+		if ((x < 32 || x > 127) && x != '\n' && x != '\r') {
 			*p = ' ';
 		}
 	}
