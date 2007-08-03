@@ -264,7 +264,7 @@ done:
 #define TONE_DETECT_SYNTAX "<uuid> <key> <tone_spec> [<flags> <timeout> <app> <args>]"
 SWITCH_STANDARD_API(tone_detect_session_function)
 {
-	char *argv[6] = { 0 };
+	char *argv[7] = { 0 };
 	int argc;
 	char *mydata = NULL;
 	time_t to = 0;
