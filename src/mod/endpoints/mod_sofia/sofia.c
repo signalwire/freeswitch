@@ -1771,7 +1771,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		is_auth++;
 	}
 	
-	if (!(session = switch_core_session_request(sofia_endpoint_interface, NULL))) {
+	if (!sofia_endpoint_interface || !(session = switch_core_session_request(sofia_endpoint_interface, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Session Alloc Failed!\n");
 		nua_respond(nh, SIP_503_SERVICE_UNAVAILABLE, TAG_END());
 		return;
