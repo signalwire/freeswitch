@@ -72,6 +72,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	xml_binding_t *binding = (xml_binding_t *) user_data;
 	char *file_url;
 	struct curl_slist *slist = NULL;
+	long httpRes;
 
 	if (!binding) {
 		return NULL;
@@ -126,6 +127,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		}
 
 		curl_easy_perform(curl_handle);
+		curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE,&httpRes);
 		curl_easy_cleanup(curl_handle);
 		close(config_data.fd);
 	} else {
@@ -134,8 +136,13 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 
 	switch_safe_free(data);
 
-	if (!(xml = switch_xml_parse_file(filename))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing Result!\n");
+	if(httpRes==200) {
+		if (!(xml = switch_xml_parse_file(filename))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing Result!\n");
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received HTTP error %ld trying to fetch %s\n",httpRes,key_value);
+		xml=NULL;
 	}
 
 	unlink(filename);
