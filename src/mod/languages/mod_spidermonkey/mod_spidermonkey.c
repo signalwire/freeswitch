@@ -2311,7 +2311,7 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 
 		if (JS_ValueToObject(cx, argv[0], &session_obj)) {
 			struct js_session *old_jss = NULL;
-			if ((old_jss = JS_GetPrivate(cx, session_obj))) {
+			if ((old_jss = JS_GetPrivate(cx, session_obj)) && old_jss->session) {
 				session = old_jss->session;
 				orig_caller_profile = switch_channel_get_caller_profile(switch_core_session_get_channel(session));
 				dialplan = orig_caller_profile->dialplan;
