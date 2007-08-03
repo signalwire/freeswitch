@@ -40,10 +40,21 @@ static struct {
 	char *errLogDir;
 	uint32_t delay;
 	uint32_t retries;
+	uint32_t shutdown;
 } globals;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_cdr_shutdown);
 SWITCH_MODULE_DEFINITION(mod_xml_cdr, mod_xml_cdr_load, NULL, NULL);
+
+/* this function would have access to the HTML returned by the webserver, we dont need it 
+ * and the default curl activity is to print to stdout, something not as desirable
+ * so we have a dummy function here
+ */
+static void httpCallBack()
+{
+	return;
+}
 
 static switch_status_t my_on_hangup(switch_core_session_t *session)
 {
@@ -57,6 +68,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	char *curl_xml_text;
 	char *logdir;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	int i;
 
 	if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
 
@@ -110,6 +122,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, curl_xml_text);
 			curl_easy_setopt(curl_handle, CURLOPT_URL, globals.url);
 			curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-xml/1.0");
+			curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, httpCallBack);
 
 			/* these were used for testing, optionally they may be enabled if someone desires
 			curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 120); // tcp timeout
@@ -120,7 +133,6 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 				curl_easy_perform(curl_handle);
 				curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE,&httpRes);
 				if(httpRes==200) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DEBUG XXX success posting\n");
 					curl_easy_cleanup(curl_handle);
 					free(curl_xml_text);
 					free(xml_text);
@@ -129,33 +141,40 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got error [%ld] posting to web server\n",httpRes);
 				}
 
-				/* bug?  feature?  we sleep even on the last failure before writing the file */
-				switch_sleep(globals.delay * 1000);
+				/* make sure we dont sleep on the last try */
+				for(i=0;i<globals.delay && (curTry != (globals.retries));i++) {
+					switch_sleep(1000);
+					if(globals.shutdown) {
+						/* we are shutting down so dont try to webpost any more */
+						i=globals.delay;
+						curTry=globals.retries;
+					}
+				}
+						
 			}
 			free(curl_xml_text);
 			curl_easy_cleanup(curl_handle);
-		}
 
-		/* if we are here the web post failed for some reason */
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to post to web server, writing to file\n");
+			/* if we are here the web post failed for some reason */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to post to web server, writing to file\n");
 
-		if ((path = switch_mprintf("%s/%s.cdr.xml", globals.errLogDir, switch_core_session_get_uuid(session)))) {
-			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
-				write(fd, xml_text, (unsigned) strlen(xml_text));
-				close(fd);
-				fd = -1;
-			} else {
-				char ebuf[512] = { 0 };
+			if ((path = switch_mprintf("%s/%s.cdr.xml", globals.errLogDir, switch_core_session_get_uuid(session)))) {
+				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+					write(fd, xml_text, (unsigned) strlen(xml_text));
+					close(fd);
+					fd = -1;
+				} else {
+					char ebuf[512] = { 0 };
 #ifdef WIN32
-				strerror_s(ebuf, sizeof(ebuf), errno);
+					strerror_s(ebuf, sizeof(ebuf), errno);
 #else
-				strerror_r(errno, ebuf, sizeof(ebuf));
+					strerror_r(errno, ebuf, sizeof(ebuf));
 #endif
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error![%s]\n", ebuf);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error![%s]\n", ebuf);
+				}
+				free(path);
 			}
-			free(path);
 		}
-
 		free(xml_text);
 		switch_xml_free(cdr);
 	} else {
@@ -165,11 +184,30 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t do_config(void)
+
+static switch_state_handler_table_t state_handlers = {
+	/*.on_init */ NULL,
+	/*.on_ring */ NULL,
+	/*.on_execute */ NULL,
+	/*.on_hangup */ my_on_hangup,
+	/*.on_loopback */ NULL,
+	/*.on_transmit */ NULL
+};
+
+SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 {
 	char *cf = "xml_cdr.conf";
 	switch_xml_t cfg, xml, settings, param;
 
+
+	/* test global state handlers */
+	switch_core_add_state_handler(&state_handlers);
+
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+
+	memset(&globals,0,sizeof(globals));
+
+	/* parse the config */
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
@@ -218,31 +256,20 @@ static switch_status_t do_config(void)
 		}
 	}
 
-	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_state_handler_table_t state_handlers = {
-	/*.on_init */ NULL,
-	/*.on_ring */ NULL,
-	/*.on_execute */ NULL,
-	/*.on_hangup */ my_on_hangup,
-	/*.on_loopback */ NULL,
-	/*.on_transmit */ NULL
-};
-
-SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
-{
-	/* test global state handlers */
-	switch_core_add_state_handler(&state_handlers);
-
-	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-
-	memset(&globals,0,sizeof(globals));
-	do_config();
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
+
+
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_cdr_shutdown)
+{
+	
+	globals.shutdown=1;
+    return SWITCH_STATUS_SUCCESS;
+}
+
+
 
 /* For Emacs:
  * Local Variables:
