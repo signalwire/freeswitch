@@ -68,7 +68,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	char *curl_xml_text;
 	char *logdir;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	int i;
+	uint32_t i;
 
 	if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
 
