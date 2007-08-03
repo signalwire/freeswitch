@@ -1527,15 +1527,15 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 
 	CHANNEL_SANITY_CHECK();
 
-	if (argc > 0) {
-		tts_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+	if (argc < 3) {
+		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+		return JS_FALSE;
 	}
-	if (argc > 1) {
-		voice_name = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
-	}
-	if (argc > 2) {
-		text = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
-	}
+
+	tts_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+	voice_name = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+	text = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
+
 	if (argc > 3) {
 		if ((function = JS_ValueToFunction(cx, argv[3]))) {
 			memset(&cb_state, 0, sizeof(cb_state));
