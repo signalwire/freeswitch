@@ -65,13 +65,8 @@ extern int madvise(caddr_t, size_t, int);
 #endif
 #endif
 
-#include <dirent.h>
-#include <glob.h>
-
 #define SWITCH_XML_WS   "\t\r\n "	// whitespace
 #define SWITCH_XML_ERRL 128		// maximum error string length
-
-static int preprocess(const char *file, int write_fd, int rlevel);
 
 typedef struct switch_xml_root *switch_xml_root_t;
 struct switch_xml_root {		// additional data for the root tag
@@ -938,49 +933,6 @@ static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_
 
 }
 
-static int preprocess_glob(const char *pattern, int write_fd, int rlevel)
-{
-	glob_t globbuf;
-	int i;
-
-	if (glob(pattern, GLOB_NOCHECK|GLOB_MARK, NULL, &globbuf)) {
-		globfree(&globbuf);
-		return -1;
-	}
-
-	for (i = 0; i < globbuf.gl_pathc; i++) {
-		char *path = globbuf.gl_pathv[i];
-		if (*(path + strlen(path)) != '/') {
-			if (preprocess(path, write_fd, rlevel) < 0) {
-				fprintf(stderr, "Error including %s (%s)\n", path, strerror(errno));
-			}
-			
-		} else {
-			char *filename = NULL;
-			struct dirent *entry;
-			DIR *dir;
-
-			dir = opendir(path);
-			if (!dir) {
-				fprintf(stderr, "Error including %s (%s)\n", path, strerror(errno));
-				continue;
-			}
-			while ((entry = readdir(dir)) != NULL) {
-				if (strcmp(entry->d_name, ".") == 0) continue;
-				if (strcmp(entry->d_name, "..") == 0) continue;
-				filename = switch_mprintf("%s%s", path, entry->d_name);
-				if (preprocess(filename, write_fd, rlevel) < 0) {
-					fprintf(stderr, "Error including %s (%s)\n", filename, strerror(errno));
-				}
-				switch_safe_free(filename);
-			}
-			closedir(dir);
-		}
-	}
-	globfree(&globbuf);
-	return write_fd;
-}
-
 static int preprocess(const char *file, int write_fd, int rlevel)
 {
 	int read_fd = -1;
@@ -1066,7 +1018,9 @@ static int preprocess(const char *file, int write_fd, int rlevel)
 						fme = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, arg);
 						ifile = fme;
 					}
-					preprocess_glob(ifile, write_fd, rlevel + 1);
+					if (preprocess(ifile, write_fd, rlevel + 1) < 0) {
+						fprintf(stderr, "Error including %s (%s)\n", ifile, strerror(errno));
+					}
 					switch_safe_free(fme);
 				}				/* else NO OP */
 			}
