@@ -890,8 +890,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 
 
 		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, NULL);
-		if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
-			&& (other_session = switch_core_session_locate(uuid))) {
+
+		/* If HANGUP_AFTER_BRIDGE is set to 'true', SWITCH_SIGNAL_BRIDGE_VARIABLE 
+		 * will not have a value, so we need to check SWITCH_BRIDGE_VARIABLE */
+
+		uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE);
+		
+		if(!uuid) {
+			uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE);
+		}
+
+		if (uuid && (other_session = switch_core_session_locate(uuid))) {
 			switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BOND_VARIABLE, NULL);
 			switch_core_session_rwunlock(other_session);
 		}
@@ -906,6 +915,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 
 			switch_channel_set_variable(channel, SWITCH_BRIDGE_VARIABLE, NULL);
 			switch_channel_set_variable(other_channel, SWITCH_BRIDGE_VARIABLE, NULL);
+
+			/* If we are transferring the CALLER out of the bridge, we do not want to hang up on them */
+			switch_channel_set_variable(channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "false");
 
 			switch_channel_hangup(other_channel, SWITCH_CAUSE_BLIND_TRANSFER);
 			switch_ivr_media(uuid, SMF_NONE);
