@@ -6,7 +6,7 @@
  *
  * The contents of this file are subject to the Mozilla Public License Version
  * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
+ * the License. You may obtain a copy of the License `
  * http://www.mozilla.org/MPL/
  *
  * Software distributed under the License is distributed on an "AS IS" basis,
@@ -270,7 +270,9 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 					unsigned int pos = 0;
 					switch_core_file_seek(&fh, &pos, 0, SEEK_SET);
 				}
-				WriteAudioStream(globals.ring_stream, abuf, (long) olen, &globals.timer);
+				if (globals.ring_stream) {
+					WriteAudioStream(globals.ring_stream, abuf, (long) olen, &globals.timer);
+				}
 			}
 		}
 		switch_clear_flag_locked((&globals), GFLAG_RING);
