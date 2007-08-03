@@ -809,6 +809,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *fun
 	switch_time_exp_t tm;
 	char date[80] = "";
 	switch_size_t retsize;
+	switch_time_t ts = switch_time_now();
 
 	assert(BLOCK != NULL);
 	assert(RUNTIME_POOL != NULL);
@@ -825,11 +826,12 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *fun
 
 	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Name", "%s", switch_event_name((*event)->event_id));
 	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Core-UUID", "%s", switch_core_get_uuid());
-	switch_time_exp_lt(&tm, switch_time_now());
+	switch_time_exp_lt(&tm, ts);
 	switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Date-Local", "%s", date);
-	switch_rfc822_date(date, switch_time_now());
+	switch_rfc822_date(date, ts);
 	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Date-GMT", "%s", date);
+	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Date-timestamp", "%"SWITCH_UINT64_T_FMT, (uint64_t)ts);
 	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Calling-File", "%s", switch_cut_path(file));
 	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Calling-Function", "%s", func);
 	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Calling-Line-Number", "%d", line);
