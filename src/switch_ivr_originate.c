@@ -373,7 +373,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		fail_on_single_reject = 1;
 	}
 
-	if ((!switch_strlen_zero(file)) && (!strcmp(file, "undef"))) {
+	if ((*file != '\0') && (!strcmp(file, "undef"))) {
 		*file = '\0';
 	}
 

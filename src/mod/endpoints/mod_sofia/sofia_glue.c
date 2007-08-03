@@ -582,10 +582,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	}
 
 	nua_invite(tech_pvt->nh,
-			   TAG_IF(!switch_strlen_zero(rpid), SIPTAG_HEADER_STR(rpid)),
-			   TAG_IF(!switch_strlen_zero(alert_info), SIPTAG_HEADER_STR(alert_info)),
+			   TAG_IF(*rpid != '\0', SIPTAG_HEADER_STR(rpid)),
+			   TAG_IF(*alert_info != '\0', SIPTAG_HEADER_STR(alert_info)),
 			   TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
-			   TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
+			   TAG_IF(*max_forwards != '\0', SIPTAG_MAX_FORWARDS_STR(max_forwards)),
 			   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 			   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
 			   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), SOATAG_HOLD(holdstr), TAG_END());
@@ -600,7 +600,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 void sofia_glue_do_xfer_invite(switch_core_session_t *session)
 {
-	char rpid[1024];
 	private_object_t *tech_pvt;
 	switch_channel_t *channel = NULL;
 	switch_caller_profile_t *caller_profile;
@@ -630,7 +629,6 @@ void sofia_glue_do_xfer_invite(switch_core_session_t *session)
 		nua_handle_bind(tech_pvt->nh2, tech_pvt->sofia_private);
 
 		nua_invite(tech_pvt->nh2,
-				   TAG_IF(rpid, SIPTAG_HEADER_STR(rpid)),
 				   SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 				   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 				   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE), SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), TAG_END());

@@ -1033,7 +1033,7 @@ void sofia_presence_handle_sip_i_message(int status,
 				if ((ci = switch_loadable_module_get_chat_interface(proto))) {
 					ci->chat_send(SOFIA_CHAT_PROTO, from_addr, to_addr, "", msg, full_from);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Chat Interface [%s]!\n", proto ? proto : "(none)");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Chat Interface [%s]!\n", proto);
 				}
 
 			}

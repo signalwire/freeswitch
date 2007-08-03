@@ -278,8 +278,8 @@ static switch_status_t iax_set_codec(private_t * tech_pvt, struct iax_session *i
 			char pref_str[256] = "(";
 
 			for (x = 0; x < len; x++) {
-				strncat(pref_str, ast2str(prefs[x]), sizeof(pref_str));
-				strncat(pref_str, x == len - 1 ? ")" : ",", sizeof(pref_str));
+				strncat(pref_str, ast2str(prefs[x]), sizeof(pref_str)-1);
+				strncat(pref_str, x == len - 1 ? ")" : ",", sizeof(pref_str)-1);
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Codec Prefs Detected: %s\n", pref_str);

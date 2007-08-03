@@ -724,7 +724,9 @@ SWITCH_STANDARD_APP(fax_detect_session_function)
 SWITCH_STANDARD_APP(system_session_function)
 {
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Executing command: %s\n",data);
-    system(data);
+    if(!system(data)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Failed to execute command: %s\n",data);
+	}
 }
 
 SWITCH_STANDARD_APP(tone_detect_session_function)

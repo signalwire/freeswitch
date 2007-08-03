@@ -1785,7 +1785,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	}
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 
-	if (!switch_strlen_zero(key)) {
+	if (*key != '\0') {
 		tech_pvt->key = switch_core_session_strdup(session, key);
 	}
 

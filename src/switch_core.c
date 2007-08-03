@@ -355,7 +355,9 @@ SWITCH_DECLARE(int32_t) set_high_priority(void)
 #ifdef WIN32
 	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 #else
-	nice(-10);
+	if(nice(-10)!= -10) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not set nice level\n");
+	}
 #endif
 
 #define USE_MLOCKALL

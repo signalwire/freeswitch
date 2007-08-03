@@ -327,12 +327,12 @@ static xmlrpc_value *freeswitch_man(xmlrpc_env * const envP, xmlrpc_value * cons
 	if (action) {
 		if (switch_core_management_exec(relative_oid, action, buf, sizeof(buf)) == SWITCH_STATUS_SUCCESS) {
 			if (action == SMA_SET) {
-				if (switch_strlen_zero(buf)) {
+				if (*buf != '\0') {
 					snprintf(buf, sizeof(buf), "OK\n");
 				}
 			}
 		} else {
-			if (switch_strlen_zero(buf)) {
+			if (*buf != '\0') {
 				snprintf(buf, sizeof(buf), "ERROR\n");
 			}
 		}

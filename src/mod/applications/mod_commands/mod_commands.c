@@ -1059,7 +1059,8 @@ static int show_as_xml_callback(void *pArg, int argc, char **argv, char **column
 	}
 
 	snprintf(id, sizeof(id), "%d", holder->rows);
-	switch_xml_set_attr_d(row, "row_id", id);
+
+	switch_xml_set_attr(switch_xml_set_flag(row, SWITCH_XML_DUP), strdup("row_id"), strdup(id));
 
 	for(x = 0; x < argc; x++) {
 		char *name = columnNames[x];
@@ -1229,7 +1230,8 @@ SWITCH_STANDARD_API(show_function)
 			char count[50];
 			char *xmlstr;
 			snprintf(count, sizeof(count), "%d", holder.count);
-			switch_xml_set_attr_d(holder.xml, "row_count", count);
+
+			switch_xml_set_attr(switch_xml_set_flag(holder.xml, SWITCH_XML_DUP), strdup("row_count"), strdup(count));
 			xmlstr = switch_xml_toxml(holder.xml);
 
 			if (xmlstr) {

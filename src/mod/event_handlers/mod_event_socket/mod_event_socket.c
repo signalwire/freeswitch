@@ -1065,7 +1065,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj
 				switch_clear_flag_locked(listener, LFLAG_RUNNING);
 				goto done;
 			}
-			if (!switch_strlen_zero(reply)) {
+			if (*reply != '\0') {
 				snprintf(buf, sizeof(buf), "Content-Type: command/reply\nReply-Text: %s\n\n", reply);
 				len = strlen(buf);
 				switch_socket_send(listener->sock, buf, &len);
@@ -1094,7 +1094,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj
 			break;
 		}
 
-		if (!switch_strlen_zero(reply)) {
+		if (*reply != '\0') {
 			snprintf(buf, sizeof(buf), "Content-Type: command/reply\nReply-Text: %s\n\n", reply);
 			len = strlen(buf);
 			switch_socket_send(listener->sock, buf, &len);

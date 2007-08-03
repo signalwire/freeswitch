@@ -180,7 +180,10 @@ static JSBool js_email(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 			close(ifd);
 		}
 		snprintf(buf, B64BUFFLEN, "/bin/cat %s | /usr/sbin/sendmail -tf \"%s\" %s", filename, from, to);
-		system(buf);
+		if(!system(buf)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to execute command: %s\n",buf);
+		}
+
 		unlink(filename);
 
 

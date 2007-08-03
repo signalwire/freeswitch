@@ -715,7 +715,7 @@ static switch_status_t sm_load_file(char *filename)
 
 }
 
-static switch_status_t sm_load_module(char *dir, char *fname)
+static switch_status_t sm_load_module(const char *dir, const char *fname)
 {
 	switch_size_t len = 0;
 	char *path;
@@ -788,7 +788,7 @@ static switch_status_t load_modules(void)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
 					continue;
 				}
-				sm_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val);
+				sm_load_module(SWITCH_GLOBAL_dirs.mod_dir, val);
 				count++;
 			}
 		}
@@ -1964,7 +1964,9 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	register unsigned int realsize = (unsigned int) (size * nmemb);
 	struct config_data *config_data = data;
 
-	write(config_data->fd, ptr, realsize);
+	if ((write(config_data->fd, ptr, realsize) != (int)realsize)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to write all bytes!\n");
+	}
 	return realsize;
 }
 
