@@ -458,7 +458,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Default", "Default", "{3B08
 		conf\event_multicast.conf.xml = conf\event_multicast.conf.xml
 		conf\event_socket.conf.xml = conf\event_socket.conf.xml
 		conf\freeswitch.xml = conf\freeswitch.xml
-		conf\freeswitch_combined.xml = conf\freeswitch_combined.xml
 		conf\iax.conf.xml = conf\iax.conf.xml
 		conf\ivr.conf.xml = conf\ivr.conf.xml
 		conf\lang_en.xml = conf\lang_en.xml
