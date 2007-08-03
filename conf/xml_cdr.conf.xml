@@ -10,7 +10,7 @@
     <!-- <param name="retries" value="2"/> -->
 
     <!-- delay between retries in seconds, default is 5 seconds -->
-    <!-- <param name="retries" value="1"/> -->
+    <!-- <param name="delay" value="1"/> -->
 
     <!-- optional: full path to the error log dir for failed web posts if not specified its <freeswitch>/logs/xml_cdr_curl -->
     <!-- <param name="errLogDir" value="/tmp"/> -->
