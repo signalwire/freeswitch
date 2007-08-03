@@ -623,7 +623,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 	  return SWITCH_STATUS_MEMERR;
   }
 
-  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Adding tone spec %s index %d\n", tone_spec, cont->index);
+  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding tone spec %s index %d\n", tone_spec, cont->index);
 
   i = 0;
   p = (char *) tone_spec;
