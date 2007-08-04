@@ -1281,6 +1281,53 @@ SWITCH_STANDARD_API(help_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define SETVAR_SYNTAX "<uuid> <var> <value>"
+SWITCH_STANDARD_API(uuid_setvar_function)
+{
+	switch_core_session_t *psession = NULL;
+	char *mycmd = NULL, *argv[3] = { 0 };
+	int argc = 0;
+
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		if (argc == 3) {
+			char *uuid = argv[0];
+			char *var_name = argv[1];
+			char *var_value = argv[2];
+
+			if ((psession = switch_core_session_locate(uuid))) {
+				switch_channel_t *channel;
+				channel = switch_core_session_get_channel(psession);
+
+				assert(channel != NULL);
+
+				if (switch_strlen_zero(var_name)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SET [%s]=[%s]\n", var_name, var_value ? var_value : "UNDEF");
+					switch_channel_set_variable(channel, var_name, var_value);
+				}
+
+				switch_core_session_rwunlock(psession);
+
+			} else {
+				stream->write_function(stream, "No Such Channel!\n");
+			}
+			goto done;
+		}
+	}
+
+	stream->write_function(stream, "USAGE: %s\n", SETVAR_SYNTAX);
+
+done:
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+} 
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 {
 	switch_api_interface_t *commands_api_interface;
@@ -1298,6 +1345,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "show", "Show", show_function, SHOW_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "status", "status", status_function, "");
 	SWITCH_ADD_API(commands_api_interface, "uuid_bridge", "uuid_bridge", uuid_bridge_function, "");
+	SWITCH_ADD_API(commands_api_interface, "uuid_setvar", "uuid_setvar", uuid_setvar_function, SETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "session_displace", "session displace", session_displace_function, "<uuid> [start|stop] <path> [<limit>] [mux]");
 	SWITCH_ADD_API(commands_api_interface, "session_record", "session record", session_record_function, SESS_REC_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "broadcast", "broadcast", uuid_broadcast_function, BROADCAST_SYNTAX);
