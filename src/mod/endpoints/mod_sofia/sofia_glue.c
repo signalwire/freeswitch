@@ -1088,7 +1088,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 			continue;
 		}
 
-		if (!strcasecmp(a->a_name, "sendonly")) {
+		if ((!strcasecmp(a->a_name, "sendonly")) || (!strcasecmp(a->a_name, "inactive"))) {
 			sendonly = 1;
 		} else if (!strcasecmp(a->a_name, "sendrecv")) {
 			sendonly = 0;
