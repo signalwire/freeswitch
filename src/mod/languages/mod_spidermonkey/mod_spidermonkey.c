@@ -693,7 +693,7 @@ static switch_status_t sm_load_file(char *filename)
 	}
 
 	if (err) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Error Loading module %s\n**%s**\n", filename, err);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Loading module %s\n**%s**\n", filename, err);
 		return SWITCH_STATUS_GENERR;
 	}
 
