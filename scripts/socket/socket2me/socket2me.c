@@ -131,42 +131,86 @@ void die(char *error_str)
 }
 
 
+static void set_vars(char *data)
+{
+  char *start, *end, *p=malloc(strlen(data)+1);
+  char name[8192],value[8192];
+
+  if(!p) {
+    perror("malloc");
+    exit(1);
+  }
+
+  memcpy(p,data,strlen(data)+1);
+  start=p;
+
+
+  while(start != 0 && *start != '\0') {
+    if(end = strchr(start,'\r')) {
+      *end = '\0';
+      if(*(end + 1) == '\n') {
+	end+=2;
+      } else {
+	end++;
+      }
+    } else {
+      return;
+    }
+
+    sscanf(start,"%s: %s",name,value);
+    setenv(name,value,1);
+    start = end;
+  }
+  free(p);
+}
+
+
+
 static int cheezy_get_var(char *data, char *name, char *buf, size_t buflen)
 {
-	char *p;
+  char *p=data;
 
-	if ((p = strstr(data, name))) {
-		char *v, *e;
+  /* the old way didnt make sure that variable values were used for the name hunt
+   * and didnt ensure that only a full match of the variable name was used
+   */
 
-		if ((v = strchr(p, ':'))) {
-			v++;
-			while(v && *v == ' ') {
-				v++;
-			}
-			if (v)  {
-				if (!(e = strchr(v, '\r'))) {
-					e = strchr(v, '\n');
-				}
-			}
-			
-			if (v && e) {
-				int cplen;
-				int len = e - v;
+  do {
+    if(!strncmp(p,name,strlen(name)) && *(p+strlen(name))==':') break;
+  } while((p = (strstr(p,"\n")+1))!=(char *)1);
 
-				if (len > buflen - 1) {
-					cplen = buflen -1;
-				} else {
-					cplen = len;
-				}
 
-				strncpy(buf, v, cplen);
-				*(buf+cplen) = '\0';
-				return 1;
-			}
-			
-		}
+  if (p != (char *)1 && *p!='\0') {
+    char *v, *e;
+
+    if ((v = strchr(p, ':'))) {
+      v++;
+      while(v && *v == ' ') {
+	v++;
+      }
+      if (v)  {
+	if (!(e = strchr(v, '\r'))) {
+	  e = strchr(v, '\n');
 	}
-	return 0;
+      }
+			
+      if (v && e) {
+	int cplen;
+	int len = e - v;
+	
+	if (len > buflen - 1) {
+	  cplen = buflen -1;
+	} else {
+	  cplen = len;
+	}
+	
+	strncpy(buf, v, cplen);
+	*(buf+cplen) = '\0';
+	return 1;
+      }
+      
+    }
+  }
+  return 0;
 }
 
 void client_run(int client_socket, char *local_ip, int local_port, char *remote_ip, int remote_port)
@@ -227,6 +271,12 @@ void client_run(int client_socket, char *local_ip, int local_port, char *remote_
 			send_fax = TRUE;
 		}
 	}
+
+	if (cheezy_get_var(infobuf, "variable_fax_preexec", tmp, sizeof(tmp))) {
+	  set_vars(infobuf);
+	  system(tmp);
+	}
+
 #if SOCKET2ME_DEBUG
 	printf("SEND: [%s]\n", sendbuf);
 #endif
@@ -382,6 +432,10 @@ void client_run(int client_socket, char *local_ip, int local_port, char *remote_
     t30_terminate(&fax.t30_state);
     fax_release(&fax);
 
+    if (cheezy_get_var(infobuf, "variable_fax_postexec", tmp, sizeof(tmp))) {
+      set_vars(infobuf);
+      system(tmp);
+    }
 	printf("Done\n");
 	snprintf(sendbuf, sizeof(sendbuf), "hangup\n\n");
 	send(client_socket, sendbuf, strlen(sendbuf), 0);
