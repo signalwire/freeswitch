@@ -1103,7 +1103,7 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 				if (num && *num > 47 && *num < 58) {
 					span = atoi(num);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invlid Syntax\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Syntax\n");
 					switch_core_session_destroy(new_session);
 					cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 					goto error;
@@ -1119,14 +1119,14 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 				} else if (num && *num > 47 && *num < 58) {
 					callno = atoi(num);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invlid Syntax\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Syntax\n");
 					switch_core_session_destroy(new_session);
 					cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 					goto error;
 				}
 				caller_profile->destination_number = p;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invlid Syntax\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Syntax\n");
 				switch_core_session_destroy(new_session);
 				cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 				goto error;
