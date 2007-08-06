@@ -17,11 +17,9 @@ INCLUDES = 		-I$(srcdir)/../url -I../url \
 
 noinst_LTLIBRARIES = 	libsresolv.la
 
-check_PROGRAMS = 	test_sresolv
+check_PROGRAMS = 	torture_sresolv test_sresolv 
 
-TESTS = 		run_test_sresolv
-
-TESTS_ENVIRONMENT =	$(SHELL)
+TESTS = 		torture_sresolv run_test_sresolv 
 
 CLEANFILES =		resolv.conf error.conf named.conf.tmp \
 			.test_sresolv.api.conf.?????? \

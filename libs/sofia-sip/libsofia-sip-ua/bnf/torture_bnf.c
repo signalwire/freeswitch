@@ -320,12 +320,13 @@ int host_test(void)
   TEST(host_has_domain_invalid("valid."), 0);
   TEST(host_has_domain_invalid("1-.invalid."), 0);
 
-  /* Invalid IP4 addresses (extra leading zeros) */
+  /* Invalid IP4 address (extra leading zeros) */
   TEST_1(!host_cmp("127.0.0.1", "127.0.0.01"));
-  TEST_1(!host_cmp("[ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255]", 
-		  "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"));
   /* Invalid reference (extra leading zeros) */
   TEST_1(host_cmp("[0ffff:0ffff:0ffff:0ffff:0ffff:0ffff:255.255.255.255]", 
+		  "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"));
+#if SU_HAVE_IN6
+  TEST_1(!host_cmp("[ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255]", 
 		  "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"));
   TEST_1(!host_cmp("::1", "::001"));
   TEST_1(!host_cmp("[::1]", "::1"));
@@ -334,6 +335,7 @@ int host_test(void)
   TEST_1(!host_cmp("::ffff:127.0.0.1", "::ffff:7f00:1"));
   TEST_1(!host_cmp("::ffff:127.0.0.1", "::ffff:7f00:1"));
   TEST_1(!host_cmp("[::ffff:127.0.0.1]", "[::7f00:1]"));
+#endif
   TEST_1(host_cmp("::", "0.0.0.0"));
   TEST_1(host_cmp("::1", "0.0.0.1"));
 

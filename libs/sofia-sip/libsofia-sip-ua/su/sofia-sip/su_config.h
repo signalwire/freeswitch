@@ -36,7 +36,7 @@
  */
 
 #ifndef SU_CONFIGURE_H
-#include "sofia-sip/su_configure.h"
+#include <sofia-sip/su_configure.h>
 #endif
 
 #if defined(__GNUC__)

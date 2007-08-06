@@ -110,6 +110,8 @@
 %CHECK%
 %TAG_AWK% NO_DLL=1 %P%/tport/tport_tag.c  < NUL
 %CHECK%
+%TAG_AWK% NO_DLL=1 %P%/su/su_tag.c  < NUL
+%CHECK%
 %TAG_AWK% NO_DLL=1 %P%/url/url_tag.c  < NUL
 %CHECK%
 

@@ -28,19 +28,20 @@
  * Obtain list of local addresses.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
+ * @author Martti Mela <Martti.Mela@nokia.com>
  * 
  * @date Created: Wed Oct  4 14:09:29 EET 2000 ppessi
  */
 
 #include "config.h"
 
-#include "sofia-sip/su.h"
-#include "sofia-sip/su_localinfo.h"
-#include "su_module_debug.h"
-
 #if HAVE_SYS_SOCKIO_H
 #include <sys/sockio.h>
 #endif
+
+#include <sofia-sip/su.h>
+#include <sofia-sip/su_localinfo.h>
+#include "su_module_debug.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -409,9 +410,14 @@ int su_sockaddr_scope(su_sockaddr_t const *su, socklen_t sulen)
   return 0;
 }
 
+#if HAVE_OPEN_C
+extern int su_get_local_ip_addr(su_sockaddr_t *su);
+#endif
+
 #if USE_LOCALINFO0
 
 #elif HAVE_IFCONF
+#if __APPLE_CC__
 /** Build a list of local IPv4 addresses and append it to *rresult. */
 static
 int localinfo4(su_localinfo_t const *hints, su_localinfo_t **rresult)
@@ -434,6 +440,10 @@ int localinfo4(su_localinfo_t const *hints, su_localinfo_t **rresult)
   char *buffer;
   struct ifreq *ifr, *ifr_next;
 
+  su_sockaddr_t *sa;
+  socklen_t salen = sizeof(*sa);
+  int scope = 0, gni_flags = 0;
+
   s = su_socket(AF_INET, SOCK_DGRAM, 0);
   if (s == -1) {
     SU_DEBUG_1(("su_localinfo: su_socket failed: %s\n", 
@@ -441,70 +451,105 @@ int localinfo4(su_localinfo_t const *hints, su_localinfo_t **rresult)
     return ELI_SYSTEM;
   }
 
-#if defined(__APPLE_CC__)
-  {
-    su_sockaddr_t *sa;
-    socklen_t salen = sizeof(*sa);
-    int scope = 0, gni_flags = 0;
 
-    li = calloc(1, sizeof(su_localinfo_t));
-    sa = calloc(1, sizeof(su_sockaddr_t));
+  li = calloc(1, sizeof(su_localinfo_t));
+  sa = calloc(1, sizeof(su_sockaddr_t));
 
-    error = getsockname(s, (struct sockaddr *) sa, &salen);
-    if (error < 0 && errno == SOCKET_ERROR) {
-      SU_DEBUG_1(("%s: getsockname() failed: %s\n", __func__,
-		  su_strerror(su_errno())));
-    }
-
-    error = bind(s, (struct sockaddr *) sa, salen);
-
-    if (error < 0) {
-      SU_DEBUG_1(("%s: bind() failed: %s\n", __func__,
-		  su_strerror(su_errno())));
-      goto err;
-    }
-
-    su_close(s);
-
-    scope = li_scope4(sa->su_sin.sin_addr.s_addr);
-
-    if (scope == LI_SCOPE_HOST || scope == LI_SCOPE_LINK)
-      gni_flags = NI_NUMERICHOST;
-    
-    if (su_xtra) {
-      /* Map IPv4 address to IPv6 address */
-      memset(sa, 0, sizeof(*sa));
-      sa->su_family = AF_INET6;
-      ((int32_t*)&sa->su_sin6.sin6_addr)[3] = sa->su_sin.sin_addr.s_addr;
-      ((int32_t*)&sa->su_sin6.sin6_addr)[2] = htonl(0xffff);
-    }
-
-    li->li_family = sa->su_family;
-    li->li_scope = scope;
-    li->li_index = 0;
-    li->li_addrlen = su_sockaddr_size(sa);
-    li->li_addr = sa;
-
-    if ((error = li_name(hints, gni_flags, sa, &canonname)) < 0)
-      goto err;
-
-    if (canonname) {
-      if (strchr(canonname, ':') ||
-	  strspn(canonname, "0123456789.") == strlen(canonname))
-	    li->li_flags |= LI_NUMERIC;
-    }
-    else
-      li->li_flags = 0;
-
-    li->li_canonname = canonname;
-
-    canonname = NULL;
-
-    *rresult = li;
-    return 0;
+  error = getsockname(s, (struct sockaddr *) sa, &salen);
+  if (error < 0 && errno == SOCKET_ERROR) {
+    SU_DEBUG_1(("%s: getsockname() failed: %s\n", __func__,
+                su_strerror(su_errno())));
   }
+
+  error = bind(s, (struct sockaddr *) sa, salen);
+
+  if (error < 0) {
+    SU_DEBUG_1(("%s: bind() failed: %s\n", __func__,
+                su_strerror(su_errno())));
+    goto err;
+  }
+
+  su_close(s);
+
+  scope = li_scope4(sa->su_sin.sin_addr.s_addr);
+
+  if (scope == LI_SCOPE_HOST || scope == LI_SCOPE_LINK)
+    gni_flags = NI_NUMERICHOST;
+    
+  if (su_xtra) {
+    /* Map IPv4 address to IPv6 address */
+    memset(sa, 0, sizeof(*sa));
+    sa->su_family = AF_INET6;
+    ((int32_t*)&sa->su_sin6.sin6_addr)[3] = sa->su_sin.sin_addr.s_addr;
+      ((int32_t*)&sa->su_sin6.sin6_addr)[2] = htonl(0xffff);
+  }
+
+  li->li_family = sa->su_family;
+  li->li_scope = scope;
+  li->li_index = 0;
+  li->li_addrlen = su_sockaddr_size(sa);
+  li->li_addr = sa;
+
+  if ((error = li_name(hints, gni_flags, sa, &canonname)) < 0)
+    goto err;
+
+  if (canonname) {
+    if (strchr(canonname, ':') ||
+       strspn(canonname, "0123456789.") == strlen(canonname))
+	  li->li_flags |= LI_NUMERIC;
+  }
+  else
+    li->li_flags = 0;
+  
+  li->li_canonname = canonname;
+
+  canonname = NULL;
+
+  *rresult = li;
+  return 0;
+
+err:
+  if (canonname) free(canonname);
+  if (li_first) free(li_first);
+  su_freelocalinfo(tbf);
+  su_close(s);
+
+  return error;
+}
+#else /* !__APPLE_CC__ */
+/** Build a list of local IPv4 addresses and append it to *rresult. */
+static
+int localinfo4(su_localinfo_t const *hints, su_localinfo_t **rresult)
+{
+  su_localinfo_t *tbf = NULL, **lli = &tbf;
+  su_localinfo_t *li = NULL, *li_first = NULL;
+  su_sockaddr_t *su;
+  int error = ELI_NOADDRESS;
+  char *canonname = NULL;
+  su_socket_t s;
+
+#if SU_HAVE_IN6
+  int su_xtra = (hints->li_flags & LI_V4MAPPED) ? sizeof(*su) : 0;
+#else
+  int const su_xtra = 0;
 #endif
 
+  struct ifconf ifc;
+  int numifs;
+  char *buffer;
+  struct ifreq *ifr, *ifr_next;
+
+#if HAVE_OPEN_C
+    su_sockaddr_t *sa;
+    socklen_t salen = sizeof(*sa);
+#endif
+
+  s = su_socket(AF_INET, SOCK_DGRAM, 0);
+  if (s == -1) {
+    SU_DEBUG_1(("su_localinfo: su_socket failed: %s\n", 
+		su_strerror(su_errno())));
+    return ELI_SYSTEM;
+  }
 
 # if HAVE_IFNUM
   /* Get the list of known IP address from the kernel */
@@ -539,16 +584,25 @@ int localinfo4(su_localinfo_t const *hints, su_localinfo_t **rresult)
     error = ELI_MEMORY;
     goto err;
   }
-
+  
   li_first = (su_localinfo_t *)buffer;
   memset(li_first, 0, sizeof(su_localinfo_t) + su_xtra);
   ifc.ifc_buf = buffer + sizeof(su_localinfo_t) + su_xtra;
+#if HAVE_OPEN_C
+  if (ioctl(s, SIOCGIFACTIVECONF, (char *)&ifc) < 0) {
+    SU_DEBUG_1(("su_localinfo: SIOCGIFCONF failed: %s\n", 
+		su_strerror(su_errno())));
+    error = ELI_SYSTEM;
+    goto err;
+  }
+#else
   if (ioctl(s, SIOCGIFCONF, (char *)&ifc) < 0) {
     SU_DEBUG_1(("su_localinfo: SIOCGIFCONF failed: %s\n", 
 		su_strerror(su_errno())));
     error = ELI_SYSTEM;
     goto err;
   }
+#endif
 
   buffer = ifc.ifc_buf + ifc.ifc_len;
 
@@ -593,6 +647,42 @@ int localinfo4(su_localinfo_t const *hints, su_localinfo_t **rresult)
 #endif
 
     SU_DEBUG_9(("su_localinfo: if %s with index %d\n", if_name, if_index));
+
+
+#if HAVE_OPEN_C
+    su_close(s);
+
+    li = calloc(1, sizeof(su_localinfo_t));
+    sa = calloc(1, sizeof(su_sockaddr_t));
+
+    if (su_get_local_ip_addr(sa) < 0)
+      goto err;
+      
+    li->li_family = sa->su_family;
+    li->li_scope = LI_SCOPE_GLOBAL /* scope */;
+    li->li_index = if_index;
+    li->li_addrlen = su_sockaddr_size(sa);
+    li->li_addr = sa;
+
+    if ((error = li_name(hints, gni_flags, sa, &canonname)) < 0)
+      goto err;
+
+    if (canonname) {
+      if (strchr(canonname, ':') ||
+	  strspn(canonname, "0123456789.") == strlen(canonname))
+	    li->li_flags |= LI_NUMERIC;
+    }
+    else
+      li->li_flags = 0;
+
+    li->li_canonname = canonname;
+
+    canonname = NULL;
+
+    *rresult = li;
+
+    return 0;
+#endif
 
 #if defined(SIOCGIFFLAGS)
     ifreq[0] = *ifr;
@@ -703,6 +793,7 @@ err:
 
   return error;
 }
+#endif /* __APPLE_CC__ */
 #else
 static
 int localinfo4(su_localinfo_t const *hints, su_localinfo_t **rresult)

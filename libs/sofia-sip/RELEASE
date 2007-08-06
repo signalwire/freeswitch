@@ -9,6 +9,9 @@ Changes since last release
  and in less than 10 lines, written in 3rd person English, with
  complete sentences />
 
+The stack now compiles and runs on Symbian SDK with Open C support
+enabled.
+
 Bugs in blaa and foo have been fixed. The stack now supports
 use of foobar...
 
@@ -24,10 +27,13 @@ API/ABI changes and versioning
 New features in API are marked with Doxytag macro @VERSION_1_12_7.
 
 libsofia-sip-ua:
+- Added access point selection functionality for Open C / Symbian
 - Removed extra system headers from <sofia-sip/stun_common.h>
 - Added global variable su_socket_blocking. If it is set to true,
   sockets are created as blocking.
 - Added accessor function nta_outgoing_branch()
+- Added SIP headers Alert-Info and Reply-To.
+- Added macros SIP_HAVE_XXXX for extra headers, e.g., SIP_HAVE_ALERT_INFO().
 - **template**: Added foobar() function (sofia-sip/foobar.h).
 - This release is ABI/API compatible with applications linked against 
   any 1.12.x release. However, applications built against this release won't 
@@ -52,7 +58,7 @@ Contributors to this release
  - roughly sorted by number of patches accepted
 /> 
 
-- **template**: First Surname (patch to nua/soa/msg)
+- Kai Vehmanen (fixes to win32 VC6/2005 project files)
 
 See the AUTHORS file in the distribution package.
 
@@ -65,6 +71,13 @@ Notes on new features
  - section may be omitted for minor releases
 /> 
 
+IPv6 support can now be disabled in VC6/VC2005 builds, by
+setting SU_HAVE_IN6 to zero `win32/sofia-sip/su_configure.h'.
+
+Symbian Open C build and packaging (SIS) files for libsofia-sip-ua,
+libsofia-sip-ua-glib and for several test apps have been added under
+sofia-sip/open_c.
+
 Bugs fixed in this release
 --------------------------
 
@@ -74,6 +87,5 @@ Bugs fixed in this release
  - other bugs as fixed in CVS/darcs
 />
 
-- **template**: #9499652 sf.net bug item title
 - Fixed #1472682 sf.net bug: ACK does not find INVITE when
   To URI has been changed.

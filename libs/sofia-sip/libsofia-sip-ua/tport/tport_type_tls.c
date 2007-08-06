@@ -50,7 +50,7 @@
 /* ---------------------------------------------------------------------- */
 /* TLS */
 
-#include <tport_tls.h>
+#include "tport_tls.h"
 
 static int tport_tls_init_primary(tport_primary_t *,
 				  tp_name_t tpn[1], 

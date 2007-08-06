@@ -147,8 +147,8 @@ int main(int argc, char *argv[])
   char *argv0 = argv[0];
   char *s;
   int use_t1 = 0;
-  su_time_t now, started;
-  intptr_t i, N = 500;
+  su_time_t now, started, inserted;
+  unsigned i, N = 500;
 
   struct timing timing[1] = {{ 0 }};
   struct tester tester[1] = {{ 0 }};
@@ -240,22 +240,34 @@ int main(int argc, char *argv[])
   timers = calloc(N, sizeof *timers);
   if (!timers) { perror("calloc"); exit(1); }
 
-  now = started = su_now();
-
   for (i = 0; i < N; i++) {
     t = su_timer_create(su_root_task(root), 1000);
     if (!t) { perror("su_timer_create"); exit(1); }
-    if (++now.tv_usec == 0) ++now.tv_sec;
-    su_timer_set_at(t, increment, (void *)i, now);
     timers[i] = t;
   }
 
-  tester->sentinel = (void*)(i - 1);
+  now = started = su_now();
+
+  for (i = 0; i < N; i++) {
+    if (++now.tv_usec == 0) ++now.tv_sec;
+    su_timer_set_at(timers[i], increment, (void *)(intptr_t)i, now);
+  }
+
+  tester->sentinel = (void*)(intptr_t)(i - 1);
+
+  inserted = su_now();
 
   su_root_run(root);
 
-  printf("Processing %u timers took %f millisec (%f expected)\n",
-	 (unsigned)i, su_time_diff(su_now(), started) * 1000, (double)i / 1000);
+  now = su_now();
+
+  printf("Inserting %u timers took %f millisec\n", 
+	 i, su_time_diff(inserted, started) * 1000);
+
+  printf("Processing %u/%u timers took %f millisec (%f expected)\n",
+	 tester->times, i,
+	 su_time_diff(now, started) * 1000,
+	 (double)i / 1000);
 
   for (i = 0; i < N; i++) {
     su_timer_destroy(timers[i]);

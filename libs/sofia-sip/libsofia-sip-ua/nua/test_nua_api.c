@@ -179,7 +179,8 @@ int test_stack_errors(struct context *ctx)
   if (print_headings)
     printf("TEST NUA-1.2.2: BYE without INVITE\n");
 
-  TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
+  a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END());
+  TEST_1(a_call->nh);
 
   BYE(a, a_call, a_call->nh, TAG_END());
 
@@ -203,7 +204,8 @@ int test_stack_errors(struct context *ctx)
   if (print_headings)
     printf("TEST NUA-1.2.3: unregister without register\n");
 
-  TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(a->to), TAG_END()));
+  a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(a->to), TAG_END());
+  TEST_1(a_call->nh);
 
   UNREGISTER(a, a_call, a_call->nh, TAG_END());
 
@@ -227,7 +229,8 @@ int test_stack_errors(struct context *ctx)
   if (print_headings)
     printf("TEST NUA-1.2.4: unpublish without publish\n");
 
-  TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
+  a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END());
+  TEST_1(a_call->nh);
 
   UNPUBLISH(a, a_call, a_call->nh, TAG_END());
 

@@ -32,9 +32,7 @@
  * @date Created: Thu Mar 18 19:40:51 1999 pessi
  */
 
-#if HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <stdlib.h>
 #include <string.h>
@@ -52,6 +50,7 @@ struct pinger;
 #include "sofia-sip/su_wait.h"
 #include "sofia-sip/su_log.h"
 
+#include <glib/gthread.h>
 #include "sofia-sip/su_glib.h"
 
 struct pinger {
@@ -373,11 +372,13 @@ init_ping(struct pinger *p, su_msg_r msg, su_sockaddr_t *arg)
   }
 }
 
+#if HAVE_SIGNAL
 static
 RETSIGTYPE term(int n)
 {
   exit(1);
 }
+#endif
 
 void
 time_test(void)
@@ -433,6 +434,10 @@ int main(int argc, char *argv[])
 
   char *argv0 = argv[0];
 
+#if HAVE_OPEN_C
+  dup2(1, 2);
+#endif
+  
   while (argv[1]) {
     if (strcmp(argv[1], "-v") == 0) {
       opt_verbatim = 1;
@@ -457,7 +462,15 @@ int main(int argc, char *argv[])
     }
   }
 
+#if HAVE_OPEN_C
+  opt_verbatim = 1;
+  opt_singlethread = 1;
+  su_log_soft_set_level(su_log_default, 9);  
+#endif
+  
+#if HAVE_SIGNAL
   signal(SIGTERM, term);
+#endif
 
   su_init(); atexit(su_deinit);
 
@@ -509,9 +522,15 @@ int main(int argc, char *argv[])
     printf("%s exiting\n", argv0); 
 
 #ifndef HAVE_WIN32
+#if HAVE_SIGNAL
    if (sleeppid)
      kill(sleeppid, SIGTERM);
 #endif
+#endif
 
+#if HAVE_OPEN_C
+   sleep(7);
+#endif
+   
   return 0;
 }

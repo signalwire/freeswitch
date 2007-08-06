@@ -66,7 +66,7 @@ unsigned longlong strtoull(const char *, char **, int);
  *
  * Object-oriented tag routines for Sofia utility library.
  *
- * The <su_tag.h> defines a interface to object-oriented tag list routines. 
+ * The <sofia-sip/su_tag.h> defines a interface to object-oriented tag list routines. 
  * A tag list is a linear list (array) of tag items, tagi_t structures,
  * terminated by a TAG_END() item. Each tag item has a label, tag, (@c
  * t_tag) and a value (@c t_value). The tag is a pointer (tag_type_t) to a
@@ -112,7 +112,7 @@ unsigned longlong strtoull(const char *, char **, int);
  * - TAG_NEXT() - contains a pointer to the next tag list.
  *
  * The tag type structures are declared as tag_typedef_t. They can be
- * defined by the macros found in <su_tag_class.h>. See nta_tag.c or
+ * defined by the macros found in <sofia-sip/su_tag_class.h>. See nta_tag.c or
  * su_tag_test.c for an example.
  *
  */

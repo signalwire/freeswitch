@@ -117,6 +117,10 @@ int main(int argc, char *argv[])
 
   struct context ctx[1] = {{{ SU_HOME_INIT(ctx) }}};
 
+#if HAVE_OPEN_C
+  dup2(1, 2);
+#endif
+  
   if (getenv("EXPENSIVE_CHECKS"))
     o_expensive = 1;
 
@@ -272,6 +276,25 @@ int main(int argc, char *argv[])
   }
 #endif
 
+#if HAVE_OPEN_C
+  tstflags |= tst_verbatim;
+  level = 9;
+  o_inat = 1; /* No NATs */
+  ctx->threading = 1;
+  ctx->quit_on_single_failure = 1;
+  su_log_soft_set_level(nua_log, level);
+  su_log_soft_set_level(soa_log, level);
+  su_log_soft_set_level(su_log_default, level);
+  su_log_soft_set_level(nea_log, level);
+  su_log_soft_set_level(nta_log, level);
+  su_log_soft_set_level(tport_log, level);
+  setenv("SU_DEBUG", "9", 1);
+  setenv("NUA_DEBUG", "9", 1);
+  setenv("NTA_DEBUG", "9", 1);
+  setenv("TPORT_DEBUG", "9", 1);
+  o_events_a = o_events_b = 1;
+#endif
+
   su_init();
 
   if (!(TSTFLAGS & tst_verbatim)) {
@@ -279,6 +302,7 @@ int main(int argc, char *argv[])
       level = 1;
     su_log_soft_set_level(nua_log, level);
     su_log_soft_set_level(soa_log, level);
+    su_log_soft_set_level(su_log_default, level);
     su_log_soft_set_level(nea_log, level);
     su_log_soft_set_level(nta_log, level);
     su_log_soft_set_level(tport_log, level);
@@ -288,16 +312,28 @@ int main(int argc, char *argv[])
       || o_events_a || o_events_b || o_events_c)
     print_headings = 1;
 
+#if !HAVE_OPEN_C
 #define SINGLE_FAILURE_CHECK()						\
   do { fflush(stdout);							\
     if (retval && ctx->quit_on_single_failure) {			\
       su_deinit(); return retval; }					\
   } while(0)
+#else
+#define SINGLE_FAILURE_CHECK()						\
+  do { fflush(stdout);							\
+    if (retval && ctx->quit_on_single_failure) {			\
+      su_deinit(); sleep(10); return retval; }					\
+  } while(0)
+#endif
 
   ctx->a.printer = o_events_init ? print_event : NULL;
 
+  sleep(2);
+
   retval |= test_nua_api_errors(ctx); SINGLE_FAILURE_CHECK();
+  
   retval |= test_tag_filter(); SINGLE_FAILURE_CHECK();
+
   retval |= test_nua_params(ctx); SINGLE_FAILURE_CHECK();
 
   retval |= test_nua_init(ctx, o_iproxy, o_proxy, o_inat,
@@ -350,6 +386,10 @@ int main(int argc, char *argv[])
   su_home_deinit(ctx->home);
 
   su_deinit();
+
+#if HAVE_OPEN_C
+  sleep(7);
+#endif
 
   return retval;
 }

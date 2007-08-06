@@ -77,7 +77,7 @@ extern char const TPORT_DUMP[];	/* dummy declaration for Doxygen */
  * The TPORT_DEBUG environment variable is used to determine the debug logging
  * level for @b tport module. The default level is 3.
  * 
- * @sa <su_debug.h>, tport_log, SOFIA_DEBUG
+ * @sa <sofia-sip/su_debug.h>, tport_log, SOFIA_DEBUG
  */
 #ifdef DOXYGEN
 extern char const TPORT_DEBUG[]; /* dummy declaration for Doxygen */

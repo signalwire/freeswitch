@@ -172,6 +172,7 @@ typedef struct event_s {
 /** NUA module version */
 SOFIAPUBVAR char const nua_version[];
 
+/** Typedef of NUA event callback. */
 typedef void (*nua_callback_f)(nua_event_t event,
 			       int status, char const *phrase,
 			       nua_t *nua, nua_magic_t *magic,
@@ -349,9 +350,10 @@ SOFIAPUBFUN void nua_respond(nua_handle_t *nh,
 /** Check if event can be responded with nua_respond() */
 SOFIAPUBFUN int nua_event_is_incoming_request(nua_event_t e);
 
+/** Cast a #nua_handle_t pointer to a #su_home_t. */
 #define nua_handle_home(nh) ((su_home_t *)(nh))
 
-/** Generate an instance identifier */
+/** Generate an instance identifier. */
 SOFIAPUBFUN char const *nua_generate_instance_identifier(su_home_t *);
 
 #ifndef NUA_SAVED_EVENT_T

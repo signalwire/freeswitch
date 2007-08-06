@@ -76,6 +76,7 @@ tag_typedef_t ntatag_sip_t1x64 = UINTTAG_TYPEDEF(sip_t1x64);
 tag_typedef_t ntatag_sip_t2 = UINTTAG_TYPEDEF(sip_t2);
 tag_typedef_t ntatag_sip_t4 = UINTTAG_TYPEDEF(sip_t4);
 tag_typedef_t ntatag_progress = UINTTAG_TYPEDEF(progress);
+tag_typedef_t ntatag_timer_c = UINTTAG_TYPEDEF(timer_c);
 tag_typedef_t ntatag_blacklist = UINTTAG_TYPEDEF(blacklist);
 tag_typedef_t ntatag_debug_drop_prob = UINTTAG_TYPEDEF(debug_drop_prob);
 

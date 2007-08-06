@@ -6,7 +6,7 @@
  *
  * Sofia Event API provides an interface to different events used in SIP
  * presence and conferencing. Interface used both in client and server sides
- * is presented in <nea.h>.
+ * is presented in <sofia-sip/nea.h>.
  *
  * @CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
  *

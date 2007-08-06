@@ -92,7 +92,7 @@ HEADER {
 	 "#include \"config.h\"\n\n"\
 	 "#include <sofia-sip/su_tag_class.h>\n"\
 	 "\n"\
-	 "#ifdef _WIN32\n"\
+	 "#if defined _WIN32 || defined HAVE_OPEN_C\n"\
 	 "#define EXPORT __declspec(dllexport)\n"\
 	 "#else\n"\
 	 "#define EXPORT\n"\

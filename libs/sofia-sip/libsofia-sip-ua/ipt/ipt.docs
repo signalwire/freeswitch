@@ -15,9 +15,6 @@
  * @section ipt_overview Overview
  *
  * This module contain some routines useful for IPT applications, like 
- * - base64.h BASE64 encoding/decoding, 
- * - token64.h encoding/decoding binary as SIP/HTTP token, 
- * - utf8.h UTF8 encoding/decoding, 
- * - sha1.h SHA1 hash routines, and
- * - rc4.h arcfour random number generator.
+ * - <sofia-sip/base64.h> BASE64 encoding/decoding, 
+ * - <sofia-sip/token64.h> encoding/decoding binary as SIP/HTTP token, 
  */

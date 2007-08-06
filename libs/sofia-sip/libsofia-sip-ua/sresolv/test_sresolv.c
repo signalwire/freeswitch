@@ -1152,7 +1152,7 @@ int test_cache(sres_context_t *ctx)
 
 #if HAVE_SIN6
   sres_query(res, test_answer_multi, ctx,
-		  sres_type_aaaa, "mgw02.example.com");
+	     sres_type_aaaa, "mgw02.example.com");
 
   inet_pton(AF_INET6, 
             "3ffe:1200:3012:c000:0a08:20ff:fe7d:e7ac", 
@@ -1161,7 +1161,7 @@ int test_cache(sres_context_t *ctx)
   sin6.sin6_family = AF_INET6;
 
   query = sres_query_sockaddr(res, test_answer_multi, ctx,
-				   sres_qtype_any, (struct sockaddr *)&sin6);
+			      sres_qtype_any, (struct sockaddr *)&sin6);
 
   TEST_1(query != NULL);
 #endif
@@ -1770,97 +1770,6 @@ int test_net(sres_context_t *ctx)
   END();
 }
 
-
-/* Test API function argument validation */
-static
-int test_api_errors(sres_context_t *noctx)
-{
-  sres_context_t ctx[1];
-  sres_resolver_t *res;
-  int s, fd;
-  int sockets[20];
-  struct sockaddr sa[1] = {{ 0 }};
-  char *template = NULL;
-  FILE *f;
-
-  BEGIN();
-
-  memset(ctx, 0, sizeof ctx);
-
-  template = su_sprintf(ctx->home, ".test_sresolv_api.conf.XXXXXX");
-  TEST_1(template);
-  
-  TEST_1(res = sres_resolver_new(NULL));
-  TEST(su_home_threadsafe((su_home_t *)res), 0);
-  TEST_VOID(sres_resolver_unref(res));
-
-#ifndef _WIN32
-  fd = mkstemp(template); TEST_1(fd != -1);
-#else
-  fd = open(template, O_WRONLY); TEST_1(fd != -1);
-#endif  
-
-  f = fdopen(fd, "w"); TEST_1(f);
-  fprintf(f, "domain example.com\n");
-  fclose(f);
-
-  /* Test also LOCALDOMAIN handling */
-  putenv("LOCALDOMAIN=localdomain");
-
-  TEST_1(res = sres_resolver_new(template));
-  TEST(su_home_threadsafe((su_home_t *)res), 0);
-
-  unlink(template);
-  
-  s = sockets[0];
-  
-  TEST_P(sres_resolver_ref(NULL), NULL);
-  TEST(errno, EFAULT);
-  sres_resolver_unref(NULL);
-
-  TEST_P(sres_resolver_set_userdata(NULL, NULL), NULL);
-  TEST(errno, EFAULT);
-
-  TEST_P(sres_resolver_get_userdata(NULL), NULL);
-
-  TEST_P(sres_resolver_get_userdata(res), NULL);
-  TEST_P(sres_resolver_set_userdata(res, sa), NULL);
-  TEST_P(sres_resolver_get_userdata(res), sa);
-  TEST_P(sres_resolver_set_userdata(res, NULL), sa); 
-  TEST_P(sres_resolver_get_userdata(res), NULL);
-
-  errno = 0;
-  TEST_P(sres_query(NULL, test_answer, ctx, sres_type_a, "com"), NULL);
-  TEST(errno, EFAULT); errno = 0;
-  TEST_P(sres_query(res, test_answer, ctx, sres_type_a, NULL), NULL);
-  TEST(errno, EFAULT); errno = 0;
-  TEST_P(sres_query_sockaddr(res, test_answer, ctx,
-			     sres_qtype_any, sa), NULL);
-  TEST(errno, EAFNOSUPPORT); errno = 0;
-
-  TEST_P(sres_cached_answers(NULL, sres_qtype_any, "example.com"), NULL);
-  TEST(errno, EFAULT); errno = 0;
-  TEST_P(sres_cached_answers(res, sres_qtype_any, NULL), NULL);
-  TEST(errno, EFAULT); errno = 0;
-  TEST_P(sres_cached_answers(res, sres_qtype_any, name2048), NULL);
-  TEST(errno, ENAMETOOLONG); errno = 0;
-  TEST_P(sres_cached_answers_sockaddr(res, sres_qtype_any, sa), NULL);
-  TEST(errno, EAFNOSUPPORT); errno = 0;
-
-  sres_free_answer(res, NULL);
-  sres_free_answers(res, NULL);
-  sres_sort_answers(res, NULL);
-
-  sres_free_answer(NULL, NULL);
-  sres_free_answers(NULL, NULL);
-  sres_sort_answers(NULL, NULL);
-
-  sres_resolver_unref(res);
-  
-  END();
-}
-
-
 static
 int test_init(sres_context_t *ctx, char const *conf_file)
 {
@@ -2086,8 +1995,6 @@ int main(int argc, char **argv)
       error |= test_conf_errors(ctx, argv[i + 1]);
     }
   }
-
-  error |= test_api_errors(ctx);
 
   return error;
 }

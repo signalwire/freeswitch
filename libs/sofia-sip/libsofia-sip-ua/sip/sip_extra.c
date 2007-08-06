@@ -202,6 +202,163 @@ issize_t sip_error_info_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
 			 NULL, 1, ei->ei_url, ei->ei_params, NULL);
 }
 
+/* ====================================================================== */
+
+/**@SIP_HEADER sip_alert_info Alert-Info Header
+ *
+ * When present in an INVITE request, the Alert-Info header field
+ * specifies an alternative ring tone to the UAS.  When present in a 180
+ * (Ringing) response, the Alert-Info header field specifies an
+ * alternative ringback tone to the UAC.  A typical usage is for a proxy
+ * to insert this header field to provide a distinctive ring feature.
+ *
+ * @code
+ *    Alert-Info   =  "Alert-Info" HCOLON alert-param *(COMMA alert-param)
+ *    alert-param  =  LAQUOT absoluteURI RAQUOT *(SEMI generic-param)
+ * @endcode
+ *
+ * The parsed Alert-Info header is stored in #sip_alert_info_t structure.
+ *
+ * @NEW_1_12_7
+ */
+
+/**@ingroup sip_alert_info
+ * @typedef struct sip_alert_info_s sip_alert_info_t;
+ *
+ * The structure #sip_alert_info_t contains representation of an
+ * @AlertInfo header.
+ *
+ * The #sip_alert_info_t is defined as follows:
+ * @code
+ * struct sip_alert_info_s
+ * {
+ *   sip_common_t        ai_common[1]; // Common fragment info
+ *   sip_alert_info_t   *ai_next;      // Link to next @AlertInfo
+ *   url_t               ai_url[1];    // URI to alert info
+ *   msg_param_t const  *ai_params;    // List of optional parameters
+ * };
+ * @endcode
+ *
+ * @NEW_1_12_7
+ */
+
+msg_hclass_t sip_alert_info_class[] =
+SIP_HEADER_CLASS(alert_info, "Alert-Info", "",
+		 ai_params, append, info);
+
+issize_t sip_alert_info_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
+{
+  return sip_info_d(home, h, s, slen);
+}
+
+issize_t sip_alert_info_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
+{
+  sip_alert_info_t *ai = (sip_alert_info_t *)h;
+  return sip_name_addr_e(b, bsiz, f, NULL, 1, ai->ai_url, ai->ai_params, NULL);
+}
+
+/* ====================================================================== */
+
+/**@SIP_HEADER sip_reply_to Reply-To Header
+ *
+ * The @b Reply-To header field contains a logical return URI that may be
+ * different from the @From header field. For example, the URI MAY be used to
+ * return missed calls or unestablished sessions. If the user wished to
+ * remain anonymous, the header field SHOULD either be omitted from the
+ * request or populated in such a way that does not reveal any private
+ * information. Its syntax is defined in @RFC3261 as follows:
+ *
+ * @code
+ *   Reply-To      =  "Reply-To" HCOLON rplyto-spec
+ *   rplyto-spec   =  ( name-addr / addr-spec )
+ *                   *( SEMI rplyto-param )
+ *   rplyto-param  =  generic-param
+ * @endcode
+ *
+ * The parsed Reply-To header is stored in #sip_reply_to_t structure.
+ */
+
+/**@ingroup sip_reply_to
+ * @typedef struct msg_list_s sip_reply_to_t;
+ *
+ * The structure #sip_reply_to_t contains representation of SIP
+ * @ReplyTo header.
+ *
+ * The #sip_reply_to_t is defined as follows:
+ * @code
+ * struct sip_reply_to_s
+ * {
+ *   sip_common_t       rplyto_common[1]; // Common fragment info
+
+ *   sip_error_t       *rplyto_next;	 // Dummy link to next header
+ *   char const        *rplyto_display;	 // Display name
+ *   url_t              rplyto_url[1];	 // Return URI
+ *   msg_param_t const *rplyto_params;	 // List of optional parameters
+ * };
+ * @endcode
+ */
+
+static isize_t sip_reply_to_dup_xtra(sip_header_t const *h, isize_t offset);
+static char *sip_reply_to_dup_one(sip_header_t *dst,
+				  sip_header_t const *src,
+				  char *b,
+				  isize_t xtra);
+#define sip_reply_to_update NULL
+
+msg_hclass_t sip_reply_to_class[] =
+  SIP_HEADER_CLASS(reply_to, "Reply-To", "", rplyto_params, single, reply_to);
+
+issize_t sip_reply_to_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
+{
+  sip_reply_to_t *rplyto = (sip_reply_to_t *)h;
+
+  return sip_name_addr_d(home,
+			 &s,
+			 &rplyto->rplyto_display,
+			 rplyto->rplyto_url,
+			 &rplyto->rplyto_params,
+			 NULL);
+}
+
+issize_t sip_reply_to_e(char b[], isize_t bsiz, sip_header_t const *h, int flags)
+{
+  sip_reply_to_t *rplyto = (sip_reply_to_t *)h;
+
+  return sip_name_addr_e(b, bsiz,
+			 flags,
+			 rplyto->rplyto_display,
+			 MSG_IS_CANONIC(flags), rplyto->rplyto_url,
+			 rplyto->rplyto_params,
+			 NULL);
+}
+
+static isize_t sip_reply_to_dup_xtra(sip_header_t const *h, isize_t offset)
+{
+  sip_reply_to_t const *rplyto = (sip_reply_to_t const *)h;
+
+  MSG_PARAMS_SIZE(offset, rplyto->rplyto_params);
+  offset += MSG_STRING_SIZE(rplyto->rplyto_display);
+  offset += url_xtra(rplyto->rplyto_url);
+
+  return offset;
+}
+
+/**@internal Duplicate one sip_reply_to_t object. */
+static char *sip_reply_to_dup_one(sip_header_t *dst, sip_header_t const *src,
+				  char *b, isize_t xtra)
+{
+  sip_reply_to_t *rplyto = (sip_reply_to_t *)dst;
+  sip_reply_to_t const *o = (sip_reply_to_t *)src;
+  char *end = b + xtra;
+
+  b = msg_params_dup(&rplyto->rplyto_params, o->rplyto_params, b, xtra);
+  MSG_STRING_DUP(b, rplyto->rplyto_display, o->rplyto_display);
+  URL_DUP(b, end, rplyto->rplyto_url, o->rplyto_url);
+
+  assert(b <= end);
+
+  return b;
+}
 
 /* ====================================================================== */
 
@@ -231,7 +388,7 @@ issize_t sip_error_info_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
  *   msg_common_t       k_common[1];  // Common fragment info
  *   msg_list_t        *k_next;       // Link to next header
  *   msg_param_t       *k_items;      // List of call ids
- * } sip_allow_events_t;
+ * } sip_in_reply_to_t;
  * @endcode
  */
 
@@ -248,7 +405,6 @@ issize_t sip_in_reply_to_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
   assert(sip_in_reply_to_p(h));
   return msg_list_e(b, bsiz, h, f);
 }
-
 
 /* ====================================================================== */
 

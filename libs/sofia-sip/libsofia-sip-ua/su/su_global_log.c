@@ -45,7 +45,7 @@
  * The SU_DEBUG environment variable is used to determine the debug logging
  * level for @b su module. The default level is 3.
  * 
- * @sa <su_debug.h>, su_log_global
+ * @sa <sofia-sip/su_debug.h>, su_log_global
  */
 extern char const SU_DEBUG[];
 

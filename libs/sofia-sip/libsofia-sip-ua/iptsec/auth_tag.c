@@ -64,7 +64,7 @@ tag_typedef_t authtag_module = PTRTAG_TYPEDEF(module);
  * authentication module, like "Digest" or "Basic", or an plugin module,
  * like "SGMF+Digest". 
  *
- * @sa See <auth_plugin.h> for plugin interface.
+ * @sa See <sofia-sip/auth_plugin.h> for plugin interface.
  */
 tag_typedef_t authtag_method = STRTAG_TYPEDEF(method);
 
@@ -149,6 +149,17 @@ tag_typedef_t authtag_expires = UINTTAG_TYPEDEF(expires);
  * the nonce lifetime is unbounded. The default time is 3600 seconds.
  */
 tag_typedef_t authtag_next_expires = UINTTAG_TYPEDEF(next_expires);
+
+/**@def AUTHTAG_MAX_NCOUNT()
+ *
+ * Max nonce count value.
+ * 
+ * The tag AUTHTAG_MAX_NCOUNT() specifies the maximum number of times a
+ * nonce should be used. 
+ *
+ * @todo Count actual usages and don't trust "nc" parameter only.
+ */
+tag_typedef_t authtag_max_ncount = UINTTAG_TYPEDEF(max_ncount);
 
 /**@def AUTHTAG_BLACKLIST()
  *

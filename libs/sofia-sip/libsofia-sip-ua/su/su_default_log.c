@@ -53,7 +53,7 @@ static void default_logger(void *stream, char const *fmt, va_list ap)
  * The SOFIA_DEBUG environment variable is used to determine the default
  * debug logging level. The normal level is 3.
  * 
- * @sa <su_debug.h>, su_log_global
+ * @sa <sofia-sip/su_debug.h>, su_log_global
  */
 extern char const SOFIA_DEBUG[];
 

@@ -999,7 +999,7 @@ static int nua_invite_client_report(nua_client_request_t *cr,
  *    nothing
  *
  * @par Related Tags:
- *    Tags in <sip_tag.h>
+ *    Header tags defined in <sofia-sip/sip_tag.h>
  *
  * @par Events:
  *    #nua_i_media_error \n
@@ -1217,7 +1217,7 @@ static int nua_invite_client_deinit(nua_client_request_t *cr)
  *    nothing
  *
  * @par Related Tags:
- *    Tags in <sip_tag.h>
+ *    Header tags defined in <sofia-sip/sip_tag.h>
  *
  * @par Events:
  *    #nua_r_cancel, #nua_i_state  (#nua_i_active, #nua_i_terminated)
@@ -2714,7 +2714,7 @@ nh_referral_respond(nua_handle_t *nh, int status, char const *phrase)
  *    nothing
  *
  * @par Related Tags:
- *    Tags in <sip_tag.h>.
+ *    Header tags defined in <sofia-sip/sip_tag.h>.
  *
  * @par Events:
  *    #nua_r_info

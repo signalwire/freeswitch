@@ -60,7 +60,7 @@ typedef union sres_record sres_record_t;
 
 enum {
   /** Cache cleanup interval in seconds. */
-  SRES_CACHE_TIMER_INTERVAL = 30,
+  SRES_CACHE_TIMER_INTERVAL = 5,
 #define SRES_CACHE_TIMER_INTERVAL (SRES_CACHE_TIMER_INTERVAL)
 };
 

@@ -15,7 +15,7 @@
  *
  * @section sip_overview Overview
  *
- * The structure of each header is defined in @b <sip.h>. In addition to the
+ * The structure of each header is defined in @b <sofia-sip/sip.h>. In addition to the
  * header structure, there is defined a @em header @em class structure and
  * some standard functions for each header in the include file @b
  * <sofia-sip/sip_header.h>. For header @c X, there are types, functions,
@@ -68,7 +68,7 @@
  * structure. The fragments form a dual-linked list known as @e fragment @e
  * chain as shown in the above figure. The buffers for the message, the
  * fragment chain, and a whole other stuff is held by the generic message
- * type, #msg_t, defined in <msg.h>. The internal structure of #msg_t is
+ * type, #msg_t, defined in <sofia-sip/msg.h>. The internal structure of #msg_t is
  * known only within @b msg module and it is hidden from other modules.
  * 
  * The abstract message module @b msg also drives the reverse process,
@@ -168,7 +168,7 @@
  * structure. The @e sip_size indicates the size of the structure - the
  * application can extend the parser and #sip_t structure beyond the
  * original size. The @e sip_flags contains various flags used during the
- * parsing and printing process. They are documented in the <msg.h>. These
+ * parsing and printing process. They are documented in the <sofia-sip/msg.h>. These
  * boilerplate members are followed by the pointers to various message
  * elements and headers.
  *
@@ -572,14 +572,14 @@ int sip_X_e(char buf[], int bsiz, sip_header_t const *h, int flags);
 /**@defgroup sip_status_codes SIP Status Codes and Reason Phrases
  *
  * The macros and variables for the standard SIP status codes and reason
- * phrases are defined in <sip_status.h>.
+ * phrases are defined in <sofia-sip/sip_status.h>.
  */
 
 /**@defgroup sip_tag SIP Tags
  *
  * SIP headers in tag item lists and tagged argument lists. 
  *
- * The include file <sip_tag.h> defines tags and tag items for including SIP
+ * The include file <sofia-sip/sip_tag.h> defines tags and tag items for including SIP
  * headers in tag item lists or tagged argument lists. For each header,
  * there is a tag for pointer to header object and an another tag for string
  * containing header value. For example, @From header has tags

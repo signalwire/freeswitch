@@ -61,7 +61,7 @@
 
 #include <sofia-sip/su_debug.h>
 
-#if !defined(MSG_NOSIGNAL) || defined(__CYGWIN__)
+#if !defined(MSG_NOSIGNAL) || defined(__CYGWIN__) || defined(SYMBIAN)
 #undef MSG_NOSIGNAL
 #define MSG_NOSIGNAL (0)
 #endif

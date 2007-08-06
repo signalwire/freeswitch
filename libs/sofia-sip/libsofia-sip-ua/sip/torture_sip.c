@@ -694,6 +694,40 @@ int test_basic(void)
     su_free(home, ci0);
   }
 
+  {
+    sip_alert_info_t *ai, *ai0;
+
+    TEST_1(ai = sip_alert_info_make(home, "<http://www.nokia.com/ringtone.mp3>;x-format=mp3"));
+    TEST_1(ai0 = sip_alert_info_dup(home, ai));
+
+    TEST(msg_header_remove_param(ai->ai_common, "x-format"), 1);
+    TEST(msg_header_remove_param(ai0->ai_common, "x-format"), 1);
+
+    su_free(home, ai);
+    su_free(home, ai0);
+  }
+
+  {
+    sip_reply_to_t *rplyto, *rplyto0;
+
+    TEST_1(rplyto = sip_reply_to_make(home, "sip:joe@bar"));
+    TEST_1(msg_header_add_param(home, (msg_common_t *)rplyto, "x-extra=extra") == 0);
+    while (rplyto->rplyto_params && rplyto->rplyto_params[0])
+      msg_header_remove_param(rplyto->rplyto_common, rplyto->rplyto_params[0]);
+    su_free(home, rplyto);
+
+    TEST_1(!sip_reply_to_make(home, (void *)"sip:joe@[baa"));
+
+    TEST_1(rplyto = sip_reply_to_make(home, (void *)"sip:joe@bar"));
+    su_free(home, rplyto);
+
+    TEST_1(rplyto = sip_reply_to_make(home, (void *)"Joe <sip:joe@bar;user=ip>;x-extra=extra"));
+    TEST_1(rplyto0 = sip_reply_to_dup(home, rplyto));
+    su_free(home, rplyto);
+    su_free(home, rplyto0);
+  }
+
+
   su_home_check(home);
   su_home_zap(home);
 
@@ -891,6 +925,8 @@ static int test_encoding(void)
     "Warning: 399 presence.bar:5060 \"Unimplemented filter\"\r\n"
     "RSeq: 421414\r\n"
     "Refer-To: <sip:hsdf@cdwf.xcfw.com?Subject=test&Organization=Bar>\r\n"
+    "Alert-Info: <http://alert.example.org/test.mp3>\r\n"		     
+    "Reply-To: Bob <sip:bob@example.com>\r\n"		     
     "WWW-Authenticate: Digest realm=\"foo\"\r\n"
     "Proxy-Authenticate: Digest realm=\"foo\"\r\n"
     "Security-Server: tls;q=0.2\r\n"
@@ -1555,6 +1591,10 @@ static int parser_test(void)
 
   TEST_SIZE(sip_error_info_class->hc_params, 
 	    offsetof(sip_error_info_t, ei_params));
+  TEST_SIZE(sip_alert_info_class->hc_params, 
+	    offsetof(sip_alert_info_t, ai_params));
+  TEST_SIZE(sip_reply_to_class->hc_params, 
+	    offsetof(sip_reply_to_t, rplyto_params));
   TEST_SIZE(sip_warning_class->hc_params, 0);
 		       
   TEST_SIZE(sip_mime_version_class->hc_params, 0);

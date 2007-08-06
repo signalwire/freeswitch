@@ -1385,6 +1385,10 @@ int main(int argc, char *argv[])
       usage(1);
   }
 
+#if HAVE_OPEN_C
+  tstflags |= tst_verbatim;
+#endif
+
   /* Use log */
   if (flags & tst_verbatim)
     tport_log->log_default = 9;
@@ -1410,6 +1414,10 @@ int main(int argc, char *argv[])
   }
 
   su_deinit();
+
+#if HAVE_OPEN_C
+  sleep(10);
+#endif
 
   return retval;
 }

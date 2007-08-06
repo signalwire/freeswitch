@@ -14,6 +14,7 @@ TAGFILES           += ../docs/msg.doxytags=../msg
 TAGFILES           += ../docs/sip.doxytags=../sip
 TAGFILES           += ../docs/sresolv.doxytags=../sresolv
 TAGFILES           += ../docs/tport.doxytags=../tport
+TAGFILES           += ../docs/nua.doxytags=../nua
 
 GENERATE_TAGFILE    = ../docs/nta.doxytags
 

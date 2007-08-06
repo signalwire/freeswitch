@@ -44,7 +44,7 @@
  * The IPTSEC_DEBUG environment variable is used to determine the debug
  * logging level for @b iptsec module. The default level is 3.
  * 
- * @sa <su_debug.h>, iptsec_log, SOFIA_DEBUG
+ * @sa <sofia-sip/su_debug.h>, iptsec_log, SOFIA_DEBUG
  */
 extern char const IPTSEC_DEBUG[];
 

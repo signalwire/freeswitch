@@ -802,10 +802,10 @@ issize_t sip_name_addr_e(char b[], isize_t bsiz,
 }
 
 /** Parse @To or @From headers */
-issize_t sip_addr_d(su_home_t *home,
-		    sip_header_t *h,
-		    char *s,
-		    isize_t slen)
+static issize_t sip_addr_d(su_home_t *home,
+			   sip_header_t *h,
+			   char *s,
+			   isize_t slen)
 {
   sip_addr_t *a = (sip_addr_t *)h;
   char const *comment = NULL;

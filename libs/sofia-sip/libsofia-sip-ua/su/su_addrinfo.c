@@ -47,6 +47,10 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#ifndef EAI_NODATA
+#define EAI_NODATA 7
+#endif
+
 /*
  * "#ifdef FAITH" part is local hack for supporting IPv4-v6 translator.
  *

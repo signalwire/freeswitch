@@ -313,7 +313,7 @@ int su_task_detach(su_task_r self)
  * @return A timer list of the task. If there are no timers, it returns
  * NULL.
  */
-su_timer_t **su_task_timers(su_task_r const task)
+su_timer_queue_t *su_task_timers(su_task_r const task)
 {
   return task ? su_port_timers(task->sut_port) : NULL;
 }
@@ -901,7 +901,7 @@ int su_msg_report(su_msg_r msg,
  * @retval -1 otherwise.
  */
 
-int su_msg_reply(su_msg_r reply, su_msg_r const msg,
+int su_msg_reply(su_msg_r reply, su_msg_cr msg,
 		 su_msg_f wakeup, isize_t size)
 {
   su_msg_r msg0;

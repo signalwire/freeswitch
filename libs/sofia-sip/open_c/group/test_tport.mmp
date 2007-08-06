@@ -1,0 +1,63 @@
+// part of Symbian build files for sofia-sip package
+//
+// Copyright (C) 2005,2006,2007 Nokia Corporation
+// Contact: Pekka Pessi <pekka.pessi@nokia.com>
+// Licensed under LGPL. See file COPYING.
+
+// General properties
+TARGET          test_tport.exe
+TARGETTYPE      exe
+CAPABILITY      All -Tcb //NetworkServices
+UID             0x100039CE 0x1F001AC5
+VENDORID        0
+OPTION CW       -warn nounusedarg,nounusedvar
+
+START RESOURCE  test_tport_reg.rss
+#ifdef WINSCW
+TARGETPATH 	    \private\10003a3f\apps
+#else
+TARGETPATH 	    \private\10003a3f\import\apps
+#endif
+END //RESOURCE
+
+EPOCHEAPSIZE 4 4194304
+
+// Allow global writeable static data
+EPOCALLOWDLLDATA
+
+MACRO       SYMBIAN
+MACRO       IN_LIBSOFIA_SIP_UA
+MACRO       IN_LIBSOFIA_SRES
+
+// Source files
+SOURCEPATH 			..\..\libsofia-sip-ua\msg
+SOURCE          test_class.c
+SOURCE          test_table.c
+
+SOURCEPATH      ..\..\libsofia-sip-ua\tport
+SOURCE          test_tport.c
+
+USERINCLUDE     ..
+USERINCLUDE     ..\..\libsofia-sip-ua\msg
+USERINCLUDE     ..\..\libsofia-sip-ua\tport
+
+SYSTEMINCLUDE   \epoc32\include
+SYSTEMINCLUDE 	\epoc32\include\osextensions
+SYSTEMINCLUDE 	\epoc32\include\stdapis
+SYSTEMINCLUDE   \epoc32\include\stdapis\openssl
+
+
+// Library dependencies
+LIBRARY         commdb.lib
+STATICLIBRARY   libcrt0.lib
+LIBRARY         libc.lib
+LIBRARY         libm.lib
+LIBRARY         libpthread.lib
+LIBRARY         libcrypto.lib
+LIBRARY         libssl.lib
+LIBRARY         euser.lib
+LIBRARY         insock.lib
+LIBRARY         esock.lib
+
+// Sofia-SIP libs
+LIBRARY         libsofia-sip-ua.lib

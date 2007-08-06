@@ -20,7 +20,7 @@
  * documented in a <a href="modules.html">submodule</a> for the header. In
  * addition to the header structure, there is defined a @em header @em class
  * structure and some standard functions for each header in the
- * <http_header.h> include file. For header @c X, there are types,
+ * <sofia-sip/http_header.h> include file. For header @c X, there are types,
  * functions, macros and header class as follows:
  *
  *  - @c http_X_t is the structure used to store parsed header,

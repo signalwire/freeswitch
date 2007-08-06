@@ -140,7 +140,7 @@ char *http_request_dup_one(http_header_t *dst, http_header_t const *src,
  *
  * Note that version string is not copied; it @b MUST remain constant during
  * lifetime of the @c http_request_t object. You can use constants
- * http_version_1_1 or http_version_1_0 declared in <http_header.h>.
+ * http_version_1_1 or http_version_1_0 declared in <sofia-sip/http_header.h>.
  */
 http_request_t *http_request_create(su_home_t *home,
 				    http_method_t method, char const *name,

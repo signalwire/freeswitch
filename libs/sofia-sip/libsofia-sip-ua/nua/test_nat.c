@@ -79,7 +79,7 @@ STORAGE void PREFIX ##_remove(T *node)			 \
 }							 \
 extern int LIST_DUMMY_VARIABLE
 
-#include <test_nat.h>
+#include "test_nat.h"
 
 struct nat {
   su_home_t    home[1];

@@ -26,18 +26,18 @@ The NUA API gives the high-level application programmer transparent and
 full control to the SIP protocol engine below it. NUA provides the call
 semantics on top of existing transaction semantics found in
 <a href="../nta/index.html"><b>nta</b></a> module.
-API makes it possible to create different kind of User Agents,
+With NUA it is possible to create different kind of SIP User Agents,
 like terminals, gateways or MCUs.
 
 The @b nua engine hides many low-level signaling and media management
 aspects from the application programmer. It is possible to use different
 kind of media interfaces - even remote ones - in a fully transparent way.
 
-The application and the protocol engine within User Agent library can be
-run in separate threads. Communications from the protocol engine is
-conveyed through a callback function. The callback function is called
-within context of the application, so the application must provide
-appropriate handle to a #su_root_t object.
+The application and the protocol engine within User Agent library can be run
+in separate threads. The protocol engine communicates with the application
+using @ref nua_event_e "events", delivered to the application with a a
+callback function. The callback function is called within the thread context
+of the application, represented with a #su_root_t object.
 
 @section nua_concepts_user Sofia Concepts for NUA User
 
@@ -74,14 +74,14 @@ the main event loop of the task. Through the root object the task code
 can access its context information (magic) and thread-synchronization
 features like wait objects, timers, and messages.
 
-An application using NUA services must create a root object and the
-callback routine to handle events. The root object is created with
-su_root_create() function and the callback routine is registered with
+An application using NUA services must create a root object and the callback
+routine to handle @ref nua_event_e "NUA events". The root object is created
+with su_root_create() function and the callback routine is registered with
 nua_create() function.
 
 Root object has type #su_root_t.
 
-See documentation of <su_wait.h> and <su_root.c> for more information
+See documentation of <sofia-sip/su_wait.h> and <su_root.c> for more information
 of root object.
 
 See section #nua_event_e for more information of the callback function.
@@ -109,8 +109,8 @@ separately.
 An application using NUA services can use the memory management services
 provided by the SU library but it is not mandatory.
 
-See documentation of <su_alloc.h> for more information of memory management
-services.
+See documentation of <sofia-sip/su_alloc.h> for more information of memory
+management services.
 
 @subsection nua_tags Tags
 
@@ -169,14 +169,14 @@ An application using NUA services must use tagged arguments for passing the
 parameters to functions. See nua_invite() for discussion on how a SIP
 message is constructed from the tags.
 
-See documentation of <su_tag.h> for more information of tags and the
+See documentation of <sofia-sip/su_tag.h> for more information of tags and the
 module-specific documentation of each Sofia module for information of
 tags specific for that module.
 
 @subsection nua_debugandlogging Debugging and Logging
 
 The modules of Sofia stack contain configurable debugging and logging
-functionality based on the services defined in <su_log.h>. The debugging
+functionality based on the services defined in <sofia-sip/su_log.h>. The debugging
 and logging details (for example level of details on output and output
 file name) can be configured by environment variables, directives in
 configuration files and compilation directives in the source files.
@@ -201,7 +201,7 @@ The defined debug output levels are:
 An application using NUA services can also use the debugging and
 logging services provided by the Sofia stack but it is not mandatory.
 
-See documentation of <su_log.h> for more information of debugging and
+See documentation of <sofia-sip/su_log.h> for more information of debugging and
 logging services.
 
 @section nua_concepts NUA Concepts
@@ -2089,6 +2089,8 @@ NUTAG_AUTOANSWER(0) on B side, NUTAG_AUTOACK(0) on A side.
  * #nua_r_unregister  \n
  * #nua_r_unsubscribe \n
  * #nua_r_update
+ * 
+ * @sa nua_event_is_incoming_request(), nua_event_name()
  */
 
 /** @NUA_EVENT nua_i_chat

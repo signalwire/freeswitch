@@ -36,11 +36,14 @@
  * 
  */
 
-#if HAVE_CONFIG_H
 #include "config.h"
-#endif
 
 #include <glib.h>
+
+#if HAVE_OPEN_C
+#include <glib/gthread.h>
+#include <glib_global.h>
+#endif
 
 #define SU_PORT_IMPLEMENTATION 1
 

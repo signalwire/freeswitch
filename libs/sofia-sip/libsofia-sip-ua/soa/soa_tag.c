@@ -41,6 +41,8 @@
 #endif
 
 #include <sofia-sip/soa.h>
+#include <sofia-sip/soa_tag.h>
+
 #include <sofia-sip/su_tag_class.h>
 #include <sofia-sip/sdp_tag.h>
 

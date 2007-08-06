@@ -8,6 +8,7 @@ INPUT 		     = @srcdir@/su.docs @srcdir@/sofia-sip sofia-sip @srcdir@ .
 
 TAGFILES           += ../docs/msg.doxytags=../msg
 TAGFILES           += ../docs/sip.doxytags=../sip
+TAGFILES           += ../docs/utils.doxytags=../utils
 TAGFILES           += ../docs/docs.doxytags=..
 
 GENERATE_TAGFILE     = ../docs/su.doxytags

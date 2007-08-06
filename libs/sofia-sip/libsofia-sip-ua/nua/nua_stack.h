@@ -62,7 +62,7 @@
 
 #ifndef NUA_DIALOG_H
 #define NUA_OWNER_T struct nua_handle_s
-#include <nua_dialog.h>
+#include "nua_dialog.h"
 #endif
 
 SOFIA_BEGIN_DECLS
@@ -72,7 +72,7 @@ SOFIA_BEGIN_DECLS
 #endif
 
 #ifndef NUA_PARAMS_H
-#include <nua_params.h>
+#include "nua_params.h"
 #endif
 
 typedef struct event_s event_t;

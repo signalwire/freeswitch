@@ -2,21 +2,51 @@
 win32/README.txt / Sofia-SIP for win32
 ======================================
 
-The win32 subdirectory contains the build environment for Win32 environment
-using MSVC. In order to compile the code with Windows 2000 SDK you have to
-install so called "IPv6 Technology Preview for Windows 2000". The preview
-contains updated IPv6 API in <tpipv6.h> and <wspiapi.h> header files.
+The win32 subdirectory contains the build environment for Win32 
+environment using MSVC.
 
-http://msdn.microsoft.com/downloads/sdks/platform/tpipv6.asp
+Currently, the provided workspace/solution files will create both
+shared and static libraries for libsofia-sip-ua, and a few test 
+programs. The test programs can be run with the script check.cmd.
+
+Preparing the build tree
+------------------------
+
+The script autogen.cmd should be used to prepare source tree before
+compiling Sofia SIP. Note that it uses AWK, so an AWK interpreter
+is needed. You can for example use gawk (3.1.5 or newer) or mawk (tested
+with 1.3.3) implementations. Precompiled binaries are available
+for instance at:
+ 
+  - http://gnuwin32.sourceforge.net/packages/mawk.htm
+  - http://ftp.uni-kl.de/pub/windows/cygwin/release/gawk/
+  - plus many sites, a web search for "win32 awk" will
+    provide you many more links
+
+Notes pthread support
+---------------------
 
 There is a pthread implementation for Visual C on Win32 included.
 Source code and documentation for the pthread library can also be
 downloaded from http://sources.redhat.com/pthreads-win32/.
 
-The script autogen.cmd should be used to prepare source tree before
-compiling Sofia SIP. Note that it uses the gawk utility - see
-http://unxutils.sourceforge.net.
+MS-VC6 specific notes
+---------------------
 
-Currently, the SofiaSIP.dsw workspace creates a shared library for
-sofia-sip-ua and a few test programs. The tests programs can be run 
-with the script check.cmd.
+The MSVC6 workspace file is "SofiaSIP.dsw".
+
+With Visual Studio 6, and Windows 2000 or older Platform SDK, you 
+need to have so called "IPv6 Technology Preview for Windows 2000" 
+installed, in order to compile Sofia-SIP. This is required even
+if IPv6 support is disabled (the socket APIs of older Platfrom SDKs
+are insufficient).
+
+You can download the preview SDK from:
+http://msdn.microsoft.com/downloads/sdks/platform/tpipv6.asp
+
+With newer Platform SDKs, the IPv6 Preview SDK is not needed.
+
+MSVC2005 specific notes
+------------------------
+
+The MSVC2005 solution file is "SofiaSIP.sln".

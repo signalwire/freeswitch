@@ -354,21 +354,109 @@ SOFIAPUBFUN int sip_is_allowed(sip_allow_t const *allow,
   (sip_method_unknown < (method) && (method) < 32 && \
    (allow) && ((allow)->k_bitmap & (1 << (method))) != 0)
 
-/* ---------------------------------------------------------------------------
- * Bitmasks for header classifications
+/**
+ * Bitmasks for header classifications.
+ *
+ * If parsing of a particular header fails, the error bits in #msg_t are
+ * updated. The error bits can be obtained via msg_extract_errors() after
+ * parsing. The header-specific bits are stored along with the
+ * @ref msg_hclass_t "header class" in the #msg_href_t structure, found in
+ * the parser tables of the #msg_mclass_t object.
+ *
+ * @sa NTATAG_BAD_REQ_MASK(), NTATAG_BAD_RESP_MASK(),
+ * #msg_mclass_t, struct #msg_mclass_s, msg_mclass_clone(),
+ * msg_mclass_insert_with_mask(),
+ * #msg_href_t, struct #msg_href_s, msg_mclass_insert().
  */
-enum {
-  sip_mask_request = 1,
-  sip_mask_response = 2,
-  sip_mask_ua = 4,
-  sip_mask_proxy = 8,
-  sip_mask_registrar = 16,
-  sip_mask_100rel = 32,
-  sip_mask_events = 64,
-  sip_mask_timer = 128,
-  sip_mask_privacy = 256,
-  sip_mask_pref = 512,
-  sip_mask_publish = 1024
+enum sip_bad_mask {
+  /** Bit marking essential headers in a request message.
+   *
+   * @ref sip_request \"request line\"", @From, @To, @CSeq, @CallID,
+   * @ContentLength, @Via
+   */
+  sip_mask_request = (1 << 0),
+
+  /** Bit marking essential headers in a response message.
+   *
+   * @ref sip_status \"status line\"", @From, @To, @CSeq, @CallID,
+   * @ContentLength, @Via
+   */
+  sip_mask_response = (1 << 1),
+
+  /** Bit marking essential headers for User-Agent.
+   *
+   * @ContentType, @ContentDisposition, @ContentEncoding, @Supported,
+   * @Contact, @Require, and @RecordRoute.
+   */
+  sip_mask_ua = (1 << 2),
+
+  /** Bit marking essential headers for proxy server.
+   *
+   * @Route, @MaxForwards, @ProxyRequire, @ProxyAuthorization, @Supported,
+   * @Contact, and @RecordRoute.
+   */
+  sip_mask_proxy = (1 << 3),
+
+  /** Bit marking essential headers for registrar server.
+   *
+   * @MinExpires, @Authorization, @Path, @Supported, @Contact, @Require, and
+   * @Expires.
+   * 
+   */
+  sip_mask_registrar = (1 << 4),
+
+  /** Bit marking essential headers for 100rel extension.
+   *
+   * @RAck and @RSeq.
+   *
+   * @sa @RFC3262.
+   */
+  sip_mask_100rel = (1 << 5),
+
+  /** Bit marking essential headers for SIP events.
+   *
+   * @Event, @Expires, and @SubscriptionState.
+   * 
+   * @sa @RFC3265.
+   */
+  sip_mask_events = (1 << 6),
+
+  /** Bit marking essential headers for session timer extension.
+   *
+   * @SessionExpires, and @MinSE.
+   * 
+   * @RFC4028
+   */
+  sip_mask_timer = (1 << 7),
+
+  /** Bit marking essential headers for privacy extension.
+   *
+   * @Privacy.
+   * 
+   * @sa @RFC3323
+   */
+  sip_mask_privacy = (1 << 8),
+
+  /** Bit marking essential headers for caller preference extension.
+   *
+   * @RequestDisposition, @AcceptContact, and @RejectContact.
+   * 
+   * @sa @RFC3841.
+   */
+  sip_mask_pref = (1 << 9),
+
+  /** Bit marking essential headers for PUBLISH servers and clients.
+   *
+   * @SIPEtag, and @SIPIfMatch.
+   * 
+   * @sa @RFC3903.
+   */
+  sip_mask_publish = (1 << 10)
+
+  /* NOTE:
+   * When adding bits, please update nta_agent_create() and 
+   * NTATAG_BAD_RESP_MASK()/NTATAG_BAD_REQ_MASK() documentation.
+   */
 };
 
 /* ------------------------------------------------------------------------- */

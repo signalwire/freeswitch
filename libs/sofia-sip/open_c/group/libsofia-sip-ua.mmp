@@ -1,12 +1,19 @@
+// part of Symbian build files for sofia-sip package
+//
+// Copyright (C) 2005,2006,2007 Nokia Corporation
+// Contact: Pekka Pessi <pekka.pessi@nokia.com>
+// Licensed under LGPL. See file COPYING.
+
 // General properties
-TARGET          libsofia-sip-ua.lib
-TARGETTYPE      lib
-CAPABILITY      ALL -TCB
+TARGET          libsofia-sip-ua.dll
+TARGETTYPE      dll
+CAPABILITY      All -Tcb //NetworkServices
 UID             0x1000008D 0xA000017E
 VENDORID        0
 OPTION CW       -dialect c99 -inline on -warn nounusedarg,nounusedvar
+//CAPABILITY      NetworkServices NetworkControl CommDD UserEnvironment
 
-//EPOCHEAPSIZE 4 4194304 // min. 4KB ja max 4MB
+//EPOCHEAPSIZE 4 4194304
 
 // Allow global writeable static data
 EPOCALLOWDLLDATA
@@ -16,6 +23,8 @@ MACRO           IN_LIBSOFIA_SIP_UA
 MACRO           IN_LIBSOFIA_SRES
 
 SOURCEPATH      ..\..\libsofia-sip-ua\su
+
+SOURCE          su_open_c_localinfo.cpp
 
 SOURCE          su.c
 SOURCE          su_errno.c
@@ -268,35 +277,20 @@ USERINCLUDE		..\..\libsofia-sip-ua\nth
 USERINCLUDE		..\..\libsofia-sip-ua\nea
 USERINCLUDE		..\..\libsofia-sip-ua\nua
 
-SYSTEMINCLUDE		..
-SYSTEMINCLUDE		..\..\libsofia-sip-ua/features
-SYSTEMINCLUDE		..\..\libsofia-sip-ua\su
-SYSTEMINCLUDE		..\..\libsofia-sip-ua\bnf
-SYSTEMINCLUDE		..\..\libsofia-sip-ua\ipt
-SYSTEMINCLUDE		..\..\libsofia-sip-ua\iptsec
-SYSTEMINCLUDE		..\..\libsofia-sip-ua\url
-SYSTEMINCLUDE		..\..\libsofia-sip-ua\msg
-SYSTEMINCLUDE		..\..\libsofia-sip-ua\sresolv
-SYSTEMINCLUDE		..\..\libsofia-sip-ua\stun
-SYSTEMINCLUDE		..\..\libsofia-sip-ua\soa
-SYSTEMINCLUDE		..\..\libsofia-sip-ua\sdp
-SYSTEMINCLUDE		..\..\libsofia-sip-ua\http
-SYSTEMINCLUDE		..\..\libsofia-sip-ua\tport
-SYSTEMINCLUDE		..\..\libsofia-sip-ua\sip
-SYSTEMINCLUDE		..\..\libsofia-sip-ua\nta
-SYSTEMINCLUDE		..\..\libsofia-sip-ua\nth
-SYSTEMINCLUDE		..\..\libsofia-sip-ua\nea
-SYSTEMINCLUDE		..\..\libsofia-sip-ua\nua
-
-SYSTEMINCLUDE \Epoc32\include
-SYSTEMINCLUDE	\Epoc32\include\osextensions\stdapis
-SYSTEMINCLUDE   \epoc32\include\libc
-SYSTEMINCLUDE   \epoc32\include\osextensions\stdapis\openssl
+SYSTEMINCLUDE   \epoc32\include
+SYSTEMINCLUDE   \epoc32\include\stdapis
+SYSTEMINCLUDE   \epoc32\include\stdapis\openssl
+SYSTEMINCLUDE   \epoc32\include\osextensions
 
 // Library dependencies
+
+LIBRARY         commdb.lib
+STATICLIBRARY   libcrt0.lib
 LIBRARY         libc.lib
 LIBRARY         libm.lib
 LIBRARY         libpthread.lib
 LIBRARY         libcrypto.lib
 LIBRARY         libssl.lib
 LIBRARY         euser.lib
+LIBRARY         insock.lib
+LIBRARY         esock.lib

@@ -1180,7 +1180,7 @@ int sdp_session_cmp(sdp_session_t const *a, sdp_session_t const *b)
       return rv;
 
   for (am = a->sdp_media, bm = b->sdp_media; 
-       am || bb; 
+       am || bm; 
        am = am->m_next, bm = bm->m_next)
     if ((rv = sdp_media_cmp(am, bm)))
       return rv;

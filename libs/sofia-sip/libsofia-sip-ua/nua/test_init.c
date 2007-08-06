@@ -72,6 +72,7 @@ int test_nua_init(struct context *ctx,
   char const *appl_method = NULL;
   url_t const *p_uri, *a_uri, *b_uri;		/* Proxy URI */
   char const *a_bind, *a_bind2;
+  int err = -1;
   url_t b_proxy[1];
 
   a_bind = a_bind2 = "sip:0.0.0.0:*";
@@ -235,13 +236,15 @@ int test_nua_init(struct context *ctx,
   nua_get_params(ctx->a.nua, TAG_ANY(), TAG_END());
   run_a_until(ctx, nua_r_get_params, save_until_final_response);
   TEST_1(e = ctx->a.specials->head);
-  TEST(tl_gets(e->data->e_tags,
-	       NTATAG_CONTACT_REF(m),
-	       SIPTAG_FROM_REF(sipaddress),
-	       SIPTAG_ALLOW_REF(allow),
-	       NUTAG_APPL_METHOD_REF(appl_method),
-	       SIPTAG_SUPPORTED_REF(supported),
-	       TAG_END()), 5); TEST_1(m);
+  err = tl_gets(e->data->e_tags,
+	            NTATAG_CONTACT_REF(m),
+	            SIPTAG_FROM_REF(sipaddress),
+	            SIPTAG_ALLOW_REF(allow),
+	            NUTAG_APPL_METHOD_REF(appl_method),
+	            SIPTAG_SUPPORTED_REF(supported),
+	            TAG_END());
+  TEST(err, 5);
+  TEST_1(m);
   TEST_1(ctx->a.contact = sip_contact_dup(ctx->home, m));
   TEST_1(ctx->a.to = sip_to_dup(ctx->home, sipaddress));
   TEST_1(ctx->a.allow = sip_allow_dup(ctx->home, allow));
@@ -280,13 +283,14 @@ int test_nua_init(struct context *ctx,
   nua_get_params(ctx->b.nua, TAG_ANY(), TAG_END());
   run_b_until(ctx, nua_r_get_params, save_until_final_response);
   TEST_1(e = ctx->b.specials->head);
-  TEST(tl_gets(e->data->e_tags,
-	       NTATAG_CONTACT_REF(m),
-	       SIPTAG_FROM_REF(sipaddress),
-	       SIPTAG_ALLOW_REF(allow),
-	       NUTAG_APPL_METHOD_REF(appl_method),
-	       SIPTAG_SUPPORTED_REF(supported),
-	       TAG_END()), 5); TEST_1(m);
+  err = tl_gets(e->data->e_tags,
+	            NTATAG_CONTACT_REF(m),
+	            SIPTAG_FROM_REF(sipaddress),
+	            SIPTAG_ALLOW_REF(allow),
+	            NUTAG_APPL_METHOD_REF(appl_method),
+	            SIPTAG_SUPPORTED_REF(supported),
+	            TAG_END());
+  TEST(err, 5); TEST_1(m);
 
   TEST_1(ctx->b.contact = sip_contact_dup(ctx->home, m));
   TEST_1(ctx->b.to = sip_to_dup(ctx->home, sipaddress));
@@ -317,13 +321,15 @@ int test_nua_init(struct context *ctx,
   nua_get_params(ctx->c.nua, TAG_ANY(), TAG_END());
   run_c_until(ctx, nua_r_get_params, save_until_final_response);
   TEST_1(e = ctx->c.specials->head);
-  TEST(tl_gets(e->data->e_tags,
-	       NTATAG_CONTACT_REF(m),
-	       SIPTAG_FROM_REF(sipaddress),
-	       SIPTAG_ALLOW_REF(allow),
-	       NUTAG_APPL_METHOD_REF(appl_method),
-	       SIPTAG_SUPPORTED_REF(supported),
-	       TAG_END()), 5); TEST_1(m);
+  err = tl_gets(e->data->e_tags,
+	            NTATAG_CONTACT_REF(m),
+	            SIPTAG_FROM_REF(sipaddress),
+	            SIPTAG_ALLOW_REF(allow),
+	            NUTAG_APPL_METHOD_REF(appl_method),
+	            SIPTAG_SUPPORTED_REF(supported),
+	            TAG_END());
+  
+  TEST(err, 5); TEST_1(m);
   TEST_1(ctx->c.contact = sip_contact_dup(ctx->home, m));
   TEST_1(ctx->c.to = sip_to_dup(ctx->home, sipaddress));
   TEST_1(ctx->c.allow = sip_allow_dup(ctx->home, allow));

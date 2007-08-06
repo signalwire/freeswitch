@@ -160,10 +160,13 @@ struct nta_agent_s
   /** Progress timer - interval between provisional responses sent */
   unsigned              sa_progress;
 
+  /** SIP timer C - interval between provisional responses receivedxs */
+  unsigned              sa_timer_c;
+
   /** Blacklisting period */
   unsigned              sa_blacklist;
 
-  /** NTA is used to test packet drop */
+    /** NTA is used to test packet drop */
   unsigned              sa_drop_prob : 10;
   /** NTA is acting as an User Agent server */
   unsigned              sa_is_a_uas : 1;
@@ -226,6 +229,9 @@ struct nta_agent_s
 
   /** Set when executing timer */
   unsigned              sa_in_timer:1;
+  
+  /** Set if application has set value for timer C */
+  unsigned              sa_use_timer_c:1;
 
   unsigned              :0;
 
@@ -307,7 +313,7 @@ struct nta_agent_s
 
     /* Special queues (states) for outgoing INVITE transactions */
     outgoing_queue_t  inv_calling[1];	/* Timer B/A */
-    outgoing_queue_t  inv_proceeding[1];
+    outgoing_queue_t  inv_proceeding[1]; /* Timer C */
     outgoing_queue_t  inv_completed[1];	/* Timer D */
 
     /* Temporary queue for transactions waiting to be freed */
@@ -517,6 +523,7 @@ struct nta_outgoing_s
   unsigned orq_sigcomp_zap:1;	/**< Reset SigComp after completing */
   unsigned orq_must_100rel : 1;
   unsigned orq_timestamp : 1;	/**< Insert @Timestamp header. */
+  unsigned orq_100rel:1;	/**< Support 100rel */
   unsigned : 0;	/* pad */
 
 #if HAVE_SOFIA_SRESOLV

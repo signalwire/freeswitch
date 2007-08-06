@@ -1,5 +1,5 @@
 #
-# nta has a bad_mask specifying which headers cause nta to automatically
+# nta has an error mask specifying which headers cause nta to automatically
 # return 400 Bad Message if a critical header or pseudoheader in a request
 # has a parsing error.
 #
@@ -7,11 +7,16 @@
 #
 # See <sip_parser.h> for definition of mask values.
 #
-# The mask can be set when header is added with
-# msg_mclass_insert_header_flags().  
+# The error flags for a particular header can be set when header is added
+# with msg_mclass_insert_header_flags().
 #
 # The flags of existing headers can be modified, if a copy of message class
 # is first made with msg_mclass_clone().
+#
+
+#
+# When updating this file, please update 
+# NTATAG_BAD_RESP_MASK()/NTATAG_BAD_REQ_MASK() documentation, too.
 #
 
 #
@@ -53,7 +58,7 @@ Path = sip_mask_registrar
 #
 Supported = sip_mask_ua | sip_mask_proxy | sip_mask_registrar
 Contact = sip_mask_ua | sip_mask_proxy | sip_mask_registrar
-Require = sip_mask_ua | sip_mask_registrar
+Require = sip_mask_ua | sip_mask_registrar | sip_mask_timer
 Record-Route = sip_mask_ua | sip_mask_proxy
 
 Expires = sip_mask_registrar | sip_mask_events

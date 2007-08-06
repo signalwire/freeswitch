@@ -24,8 +24,9 @@
  * (#nta_incoming_t).
  * 
  * NTA also uses SIP message objects #msg_t and #sip_t for handling
- * messages, as defined in <msg.h> and <sip.h>, respectively. The various
- * SIP headers are also defined in <sip.h>.
+ * messages, as defined in <sofia-sip/msg.h> and <sofia-sip/sip.h>,
+ * respectively. The various SIP headers are also defined in
+ * <sofia-sip/sip.h>.
  * 
  * @section nta_agent_t Creating an NTA Agent
  * 

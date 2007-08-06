@@ -7,23 +7,25 @@
 # Licensed under LGPL. See file COPYING.
 #
 
-PROJECT_NAME         = "sofia-sip"
+PROJECT_NAME         = "sofia-sip-utils"
 
 PROJECT_NUMBER       = @VERSION@
 
-INPUT 		      = @srcdir@
+INPUT 		      = @srcdir@/utils.docs
+INPUT 		     += @srcdir@
 INPUT                += @top_srcdir@/libsofia-sip-ua/su/localinfo.c
 INPUT                += @top_srcdir@/libsofia-sip-ua/su/addrinfo.c
 INPUT                += @top_srcdir@/libsofia-sip-ua/stun/stunc.c
 
 OUTPUT_DIRECTORY     = ../man
 
+HTML_OUTPUT          = ../libsofia-sip-ua/docs/html/utils
+GENERATE_TAGFILE     = ../libsofia-sip-ua/docs/utils.doxytags
+
 @INCLUDE_PATH = . @srcdir@
 
 @INCLUDE = ../libsofia-sip-ua/docs/Doxyfile.aliases
-# @INCLUDE = ../libsofia-sip-ua/docs/Doxyfile.rfc
-# Only @RFC3263 is used now
-ALIASES += RFC3263="<a href=\"http://www.faqs.org/rfcs/rfc3263.html\">RFC 3263</a>"
+@INCLUDE = ../libsofia-sip-ua/docs/Doxyfile.rfc
 
 FILE_PATTERNS        = *.h *.c 
 

@@ -73,13 +73,20 @@ enum {
  */
 typedef uint64_t su_ntp_t;
 
-/** Represent NTP consttant */
+/** Represent NTP constant */
 #define SU_NTP_C(x) SU_U64_C(x)
 
 #define SU_TIME_CMP(t1, t2) su_time_cmp(t1, t2)
 
 /** Seconds from 1.1.1900 to 1.1.1970. @NEW_1_12_4 */
 #define SU_TIME_EPOCH 2208988800UL 
+
+typedef uint64_t su_nanotime_t;
+
+#define SU_E9 (1000000000U) 
+
+SOFIAPUBFUN su_nanotime_t su_nanotime(su_nanotime_t *return_time);
+SOFIAPUBFUN su_nanotime_t su_monotime(su_nanotime_t *return_time);
 
 SOFIAPUBFUN su_time_t su_now(void);
 SOFIAPUBFUN void su_time(su_time_t *tv);

@@ -92,11 +92,9 @@ char const name[] = "test_auth_digest";
 
 unsigned offset;
 
-void su_time(su_time_t *tv)
+void offset_time(su_time_t *tv)
 {
-  tv->tv_sec = time(NULL) + offset + 
-    /* Seconds from 1.1.1900 to 1.1.1970 */ 2208988800UL ;
-  tv->tv_usec = 555555;
+  tv->tv_sec += offset;
 }
 
 int test_digest()
@@ -896,6 +894,7 @@ int test_digest_client()
 				AUTHTAG_QOP("auth,auth-int"),
 				AUTHTAG_FORBIDDEN(1),
 				AUTHTAG_ANONYMOUS(1),
+				AUTHTAG_MAX_NCOUNT(1),
 				TAG_END()));
 
     reinit_as(as);
@@ -942,6 +941,36 @@ int test_digest_client()
     TEST(as->as_status, 401);
     TEST_1(au = (void *)as->as_response); TEST_1(au->au_params);
     TEST_S(msg_params_find(au->au_params, "stale="), "true");
+
+    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response, 
+		       sip_authorization_class), 1);
+    msg_header_remove(m2, (void *)sip, (void *)sip->sip_authorization);
+    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
+			   (url_t *)"sip:surf3@ims3.so.noklab.net", 
+			   sip->sip_payload), 1);
+    TEST_1(sip->sip_authorization);
+    TEST_S(msg_header_find_param(sip->sip_authorization->au_common, "nc="),
+	   "00000001");
+
+    reinit_as(as);
+    auth_mod_check_client(am, as, sip->sip_authorization, ach);
+    TEST(as->as_status, 0);
+
+    /* Test nonce count check */
+    msg_header_remove(m2, (void *)sip, (void *)sip->sip_authorization);
+    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
+			   (url_t *)"sip:surf3@ims3.so.noklab.net", 
+			   sip->sip_payload), 1);
+    TEST_1(sip->sip_authorization);
+    TEST_S(msg_header_find_param(sip->sip_authorization->au_common, "nc="),
+	   "00000002");
+
+    reinit_as(as);
+    auth_mod_check_client(am, as, sip->sip_authorization, ach);
+    TEST(as->as_status, 401);
+    TEST_1(au = (void *)as->as_response); TEST_1(au->au_params);
+    TEST_S(msg_params_find(au->au_params, "stale="), "true");
+
     aucs = NULL;
 
     /* Test anonymous operation */
@@ -1210,6 +1239,9 @@ int main(int argc, char *argv[])
 {
   int retval = 0;
   int i;
+  extern void (*_su_time)(su_time_t *tv);
+
+  _su_time = offset_time;
 
   argv0 = argv[0];
 

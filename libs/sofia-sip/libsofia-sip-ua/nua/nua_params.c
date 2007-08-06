@@ -1088,6 +1088,11 @@ static int nua_handle_param_filter(tagi_t const *f, tagi_t const *t);
 /** Save taglist to a handle */
 int nua_handle_save_tags(nua_handle_t *nh, tagi_t *tags)
 {
+#if HAVE_OPEN_C
+  /* Nice. An old symbian compiler */
+  tagi_t tagfilter[2];
+  tagi_t paramfilter[2];
+#else
   tagi_t const tagfilter[] = {
     { TAG_FILTER(nua_handle_tags_filter) },
     { TAG_NULL() }
@@ -1096,6 +1101,7 @@ int nua_handle_save_tags(nua_handle_t *nh, tagi_t *tags)
     { TAG_FILTER(nua_handle_param_filter) },
     { TAG_NULL() }
   };
+#endif
 
   /* Initialization parameters */
   url_string_t const *url = NULL;
@@ -1111,6 +1117,18 @@ int nua_handle_save_tags(nua_handle_t *nh, tagi_t *tags)
   su_home_t tmphome[SU_HOME_AUTO_SIZE(1024)];
 
   int error;
+
+#if HAVE_OPEN_C
+  tagfilter[0].t_tag = tag_filter;
+  tagfilter[0].t_value = tag_filter_v(nua_handle_tags_filter);
+  tagfilter[1].t_tag = (tag_type_t)0;
+  tagfilter[1].t_value = (tag_value_t)0;
+
+  paramfilter[0].t_tag = tag_filter;
+  paramfilter[0].t_value = tag_filter_v(nua_handle_param_filter);
+  paramfilter[1].t_tag = (tag_type_t)0;
+  paramfilter[1].t_value = (tag_value_t)0;
+#endif
 
   for (t = tags; t; t = tl_next(t)) {
     if (t->t_tag == NULL)

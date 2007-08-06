@@ -164,6 +164,8 @@ struct auth_mod_t
   
   su_md5_t       am_hmac_ipad;	/**< MD5 with inner pad */
   su_md5_t       am_hmac_opad;	/**< MD5 with outer pad */
+
+  unsigned       am_max_ncount:1; /**< If nonzero, challenge with new nonce after ncount */
 };
 
 SOFIAPUBFUN

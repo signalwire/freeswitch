@@ -138,7 +138,7 @@ void nua_publish_usage_remove(nua_handle_t *nh,
  * @par Related Tags:
  *    NUTAG_URL() \n
  *    Tags of nua_set_hparams() \n
- *    Tags in <sip_tag.h>
+ *    Header tags defined in <sofia-sip/sip_tag.h>
  *
  * @par Events:
  *    #nua_r_publish
@@ -196,7 +196,7 @@ void nua_unpublish(nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...);
  *    SIPTAG_IF_MATCH(), SIPTAG_IF_MATCH_STR() \n
  *    SIPTAG_EVENT(), SIPTAG_EVENT_STR() \n
  *    Tags of nua_set_hparams() \n
- *    Tags in <sip_tag.h>
+ *    Other header tags defined in <sofia-sip/sip_tag.h> except SIPTAG_EXPIRES() or SIPTAG_EXPIRES_STR()
  *
  * @par Events:
  *    #nua_r_unpublish

@@ -19,11 +19,10 @@
  *
  * @section auth_module Server Verifying Authentication
  *
- * The file <auth_module.h> defines the interface used by a server verifying
- * the authentication from client. After the server has created an @ref
- * auth_mod_t "authentication module", the usual authentication operation is
- * simple enough:
-
+ * The file <sofia-sip/auth_module.h> defines the interface used by a server
+ * verifying the authentication from client. After the server has created an
+ * @ref auth_mod_t "authentication module", the usual authentication
+ * operation is simple enough:
  * -# server initializes an #auth_status_t structure with information from
  *    the request
  * -# server calls auth_mod_method() 
@@ -42,8 +41,8 @@
  *
  * When the server creates the authentication module with auth_mod_create(),
  * it can specify numerous parameters affecting the authentication protocol
- * and algorithms. The parameter tags are defined in <auth_module.h>. The
- * most important parameters include:
+ * and algorithms. The parameter tags are defined in
+ * <sofia-sip/auth_module.h>. The most important parameters include:
  *
  * - AUTHTAG_METHOD(),
  * - AUTHTAG_ALGORITHM(),
@@ -52,7 +51,7 @@
  *
  * @section auth_client Client Authenticating User
  *
- * The file <auth_client.h> defines the interface used by a client
+ * The file <sofia-sip/auth_client.h> defines the interface used by a client
  * authenticating a user with a server. Because there may be multiple
  * servers or proxies requiring authentication, the client-side
  * authentication information is represented using a list of #auth_client_t

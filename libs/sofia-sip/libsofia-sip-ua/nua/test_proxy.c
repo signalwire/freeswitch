@@ -83,7 +83,7 @@ STORAGE void PREFIX ##_remove(T *node)			 \
 }							 \
 extern int LIST_DUMMY_VARIABLE
 
-#include <test_proxy.h>
+#include "test_proxy.h"
 
 struct proxy {
   su_home_t    home[1];

@@ -9,6 +9,8 @@
 #### EXTRA HEADER LIST STARTS HERE ####
 
 refer_sub @NEW_1_12_5 /**< Refer-Sub header */
+alert_info @NEW_1_12_7 /**< Alert-Info header */
+reply_to @NEW_1_12_7 /**< Reply-To header */
 
 #### EXPERIMENTAL HEADER LIST STARTS HERE ####
 

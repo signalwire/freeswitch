@@ -453,84 +453,129 @@ int api_test_params(agent_t *ag)
 
   sip_contact_t const *aliases = (void *)-1;
   msg_mclass_t *mclass = (void *)-1;
+  sip_contact_t *contact = (void *)-1;
+  url_string_t const *default_proxy = (void *)-1;
+  void *smime = (void *)-1;
+
+  unsigned blacklist = -1;
+  unsigned debug_drop_prob = -1;
+  unsigned max_forwards = -1;
+  unsigned maxsize = -1;
+  unsigned preload = -1;
+  unsigned progress = -1;
   unsigned sip_t1 = -1;
   unsigned sip_t2 = -1;
-  unsigned sip_t4    = -1;
-  unsigned debug_drop_prob = -1;
-  int ua              = -1;
-  int user_via        = -1;
-  int extra_100       = -1;
-  int pass_100        = -1;
-  int timeout_408     = -1;
-  int pass_408        = -1;
-  int merge_482       = -1;
+  unsigned sip_t4 = -1;
+  unsigned timer_c = -1;
+  unsigned udp_mtu = -1;
+
   int cancel_2543     = -1;
   int cancel_487      = -1;
+  int client_rport    = -1;
+  int extra_100       = -1;
+  int merge_482       = -1;
+  int pass_100        = -1;
+  int pass_408        = -1;
   int rel100          = -1;
-  int use_timestamp   = -1;
+  int server_rport    = -1;
+  int stateless       = -1;
+  int tag_3261        = -1;
+  int timeout_408     = -1;
+  int ua              = -1;
   int use_naptr       = -1;
   int use_srv         = -1;
-  unsigned preload = (unsigned)-1;
+  int use_timestamp   = -1;
+  int user_via        = -1;
+
   char const *s = NONE;
 
   TEST_1(nta = nta_agent_create(ag->ag_root, (url_string_t *)"sip:*:*",
 				NULL, NULL, TAG_END()));
   TEST(nta_agent_get_params(nta,
-			    NTATAG_MCLASS_REF(mclass),
 			    NTATAG_ALIASES_REF(aliases),
+			    NTATAG_BLACKLIST_REF(blacklist),
+			    NTATAG_CANCEL_2543_REF(cancel_2543),
+			    NTATAG_CANCEL_487_REF(cancel_487),
+			    NTATAG_CLIENT_RPORT_REF(client_rport),
+			    NTATAG_CONTACT_REF(contact),
+			    NTATAG_DEBUG_DROP_PROB_REF(debug_drop_prob),
+			    NTATAG_DEFAULT_PROXY_REF(default_proxy),
+			    NTATAG_EXTRA_100_REF(extra_100),
+			    NTATAG_MAXSIZE_REF(maxsize),
+			    NTATAG_MAX_FORWARDS_REF(max_forwards),
+			    NTATAG_MCLASS_REF(mclass),
+			    NTATAG_MERGE_482_REF(merge_482),
+			    NTATAG_PASS_100_REF(pass_100),
+			    NTATAG_PASS_408_REF(pass_408),
+			    NTATAG_PRELOAD_REF(preload),
+			    NTATAG_PROGRESS_REF(progress),
+			    NTATAG_REL100_REF(rel100),
+			    NTATAG_SERVER_RPORT_REF(server_rport),
 			    NTATAG_SIP_T1_REF(sip_t1),
 			    NTATAG_SIP_T2_REF(sip_t2),
 			    NTATAG_SIP_T4_REF(sip_t4),
-			    NTATAG_DEBUG_DROP_PROB_REF(debug_drop_prob),
-			    NTATAG_UA_REF(ua),
-			    NTATAG_USER_VIA_REF(user_via),
-			    NTATAG_EXTRA_100_REF(extra_100),
-			    NTATAG_PASS_100_REF(pass_100),
+			    NTATAG_SMIME_REF(smime),
+			    NTATAG_STATELESS_REF(stateless),
+			    NTATAG_TAG_3261_REF(tag_3261),
 			    NTATAG_TIMEOUT_408_REF(timeout_408),
-			    NTATAG_PASS_408_REF(pass_408),
-			    NTATAG_MERGE_482_REF(merge_482),
-			    NTATAG_CANCEL_2543_REF(cancel_2543),
-			    NTATAG_CANCEL_487_REF(cancel_487),
-			    NTATAG_REL100_REF(rel100),
-			    NTATAG_USE_TIMESTAMP_REF(use_timestamp),
+			    NTATAG_TIMER_C_REF(timer_c),
+			    NTATAG_UA_REF(ua),
+			    NTATAG_UDP_MTU_REF(udp_mtu),
+			    NTATAG_USER_VIA_REF(user_via),
 			    NTATAG_USE_NAPTR_REF(use_naptr),
 			    NTATAG_USE_SRV_REF(use_srv),
+			    NTATAG_USE_TIMESTAMP_REF(use_timestamp),
 			    TAG_END()), 
-       /* Number of parameters */ 19);
+       /* Number of parameters */ 33);
   
   TEST_P(mclass, sip_default_mclass());
   TEST_P(aliases, NULL);
+  TEST_1(contact != (void *)-1 && contact != NULL);
+  TEST_1(default_proxy == NULL);
+  TEST_1(smime == NULL);
+
+  TEST_1(blacklist != -1);
+  TEST(debug_drop_prob, 0);
+  TEST_1(max_forwards >= 20);
+  TEST_1(maxsize >= 65536);
+  TEST_1(preload != -1);
+  TEST_1(progress <= 60 * 1000);
   TEST(sip_t1, NTA_SIP_T1);
   TEST(sip_t2, NTA_SIP_T2);
   TEST(sip_t4, NTA_SIP_T4);
-  TEST(debug_drop_prob, 0);
-  TEST(ua,              0);
-  TEST(user_via,        0);
-  TEST(extra_100,       0);
-  TEST(pass_100,        0);
-  TEST(timeout_408,     1);
-  TEST(pass_408,        0);
-  TEST(merge_482,       0);
-  TEST(cancel_2543,     0);
-  TEST(cancel_487,      1);
-  TEST(rel100,          0);
-  TEST(use_timestamp,   0);
-  TEST(use_naptr,       1);
-  TEST(use_srv,         1);
+  TEST_1(timer_c > 180 * 1000);
+  TEST(udp_mtu, 1300);
+
+  TEST_1(cancel_2543 != -1);
+  TEST_1(cancel_487 != -1);
+  TEST_1(client_rport != -1);
+  TEST_1(extra_100 != -1);
+  TEST_1(merge_482 != -1);
+  TEST_1(pass_100 != -1);
+  TEST_1(pass_408 != -1);
+  TEST_1(rel100 != -1);
+  TEST_1(server_rport != -1);
+  TEST_1(stateless == 0);
+  TEST_1(timeout_408 != -1);
+  TEST_1(ua == 0);
+  TEST_1(use_naptr != -1);
+  TEST_1(use_srv != -1);
+  TEST_1(use_timestamp != -1);
+  TEST_1(user_via == 0);
 
   TEST(nta_agent_set_params(NULL, 
-      		      NTATAG_PRELOAD(2048),
-      		      TAG_END()), -1);
+			    NTATAG_PRELOAD(2048),
+			    TAG_END()), -1);
   TEST(nta_agent_get_params(NULL, 
-      		      NTATAG_PRELOAD_REF(preload),
-      		      TAG_END()), -1);
+			    NTATAG_PRELOAD_REF(preload),
+			    TAG_END()), -1);
 
   TEST(nta_agent_set_params(nta, 
-      		      NTATAG_PRELOAD(2048),
-      		      TAG_END()), 1);
+			    NTATAG_PRELOAD(2048),
+			    TAG_END()), 1);
   TEST(nta_agent_get_params(nta, 
-      		      NTATAG_PRELOAD_REF(preload),
-      		      TAG_END()), 1);
+			    NTATAG_PRELOAD_REF(preload),
+			    TAG_END()), 1);
   TEST(preload, 2048);
 
   TEST(nta_agent_set_params(nta, 

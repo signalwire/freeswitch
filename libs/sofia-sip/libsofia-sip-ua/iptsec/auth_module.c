@@ -133,6 +133,7 @@ int auth_init_default(auth_mod_t *am,
   char const *realm = NULL, *opaque = NULL, *db = NULL, *allows = NULL;
   char const *qop = NULL, *algorithm = NULL;
   unsigned expires = 60 * 60, next_expires = 5 * 60;
+  unsigned max_ncount = 0;
   unsigned blacklist = 5;
   int forbidden = 0;
   int anonymous = 0;
@@ -152,6 +153,7 @@ int auth_init_default(auth_mod_t *am,
 	  AUTHTAG_ALGORITHM_REF(algorithm),
 	  AUTHTAG_EXPIRES_REF(expires),
 	  AUTHTAG_NEXT_EXPIRES_REF(next_expires),
+	  AUTHTAG_MAX_NCOUNT_REF(max_ncount),
 	  AUTHTAG_BLACKLIST_REF(blacklist),
 	  AUTHTAG_FORBIDDEN_REF(forbidden),
 	  AUTHTAG_ANONYMOUS_REF(anonymous),
@@ -172,6 +174,7 @@ int auth_init_default(auth_mod_t *am,
     msg_commalist_d(am->am_home, &s, &am->am_allow, NULL);
   am->am_expires = expires;
   am->am_next_exp = next_expires;
+  am->am_max_ncount = max_ncount;
   am->am_blacklist = blacklist;
   am->am_forbidden = forbidden;
   am->am_anonymous = anonymous;
@@ -1435,6 +1438,16 @@ int auth_validate_digest_nonce(auth_mod_t *am,
 		"(lifetime %u)\n",
 		now - (nonce->issued + expires), expires));
     as->as_stale = 1;
+  }
+
+  if (am->am_max_ncount && ar->ar_nc) {
+    unsigned long nc = strtoul(ar->ar_nc, NULL, 10);
+
+    if (nc == 0 || nc > am->am_max_ncount) {
+      SU_DEBUG_5(("auth_method_digest: nonce used %s times, max %u\n",
+		  ar->ar_nc, am->am_max_ncount));
+      as->as_stale = 1;
+    }
   }
 
   /* We should also check cnonce, nc... */

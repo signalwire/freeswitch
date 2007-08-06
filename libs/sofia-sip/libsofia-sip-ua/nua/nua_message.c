@@ -64,7 +64,7 @@
  * @par Related Tags:
  *    NUTAG_URL() \n
  *    Tags of nua_set_hparams() \n
- *    Tags in <sip_tag.h>
+ *    Header tags defined in <sofia-sip/sip_tag.h>
  *
  * @par Events:
  *    #nua_r_message

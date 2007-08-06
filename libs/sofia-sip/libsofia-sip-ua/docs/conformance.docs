@@ -66,9 +66,9 @@ below.
    <th>Notes</td>
 </tr>
 
+<a name="3261"></a>
 <tr valign=top>
     <th align="left">
-       <a name="3261"></a>
 	@RFC3261: Basic SIP Protocol
     </th>
     <td>
@@ -90,9 +90,9 @@ below.
     </td>
 </tr>
 
+<a name="3261.19"></a> <a name="3261.20"></a>
 <tr valign=top>
     <th align="left">
-       <a name="3261.19"></a> <a name="3261.20"></a>
 	@RFC3261 Sections&nbsp;19&nbsp;and&nbsp;20:<br>
 	Syntax and encoding
     </td>
@@ -116,6 +116,7 @@ below.
 	@ref sip_accept "Accept",
 	@ref sip_accept_encoding "Accept-Encoding",
 	@ref sip_accept_language "Accept-Language",
+	@ref sip_alert_info "Alert-Info" (@VERSION_1_12_7),
 	@ref sip_allow "Allow",
 	@ref sip_authentication_info "Authentication-Info",
 	@ref sip_authorization "Authorization",
@@ -142,6 +143,7 @@ below.
 	@ref sip_proxy_authorization "Proxy-Authorization",
 	@ref sip_proxy_require "Proxy-Require",
 	@ref sip_record_route "Record-Route",
+	@ref sip_reply_to "Reply-To" (@VERSION_1_12_7),
 	@ref sip_require "Require",
 	@ref sip_retry_after "Retry-After",
 	@ref sip_route "Route",
@@ -163,18 +165,15 @@ below.
         parsers.
     </td>
     <td>
-    	- Unsupported headers:
-	  Alert-Info,
-	  Reply-To
 	- Automatic escaping of reserved characters has not been
 	  implemented.
 	- Using NUL (zero byte) in doublequoted strings has not been implemented
    </td>
 </tr>
 
+<a name="3261.18"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3261.18"></a>
 	@RFC3261 Section 18:<br>
 	UDP and TCP transports
     </th>
@@ -201,9 +200,9 @@ below.
     </td>
 </tr>
 
+<a name="3261.17"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3261.17"></a>
 	@RFC3261 Section 17:<br> Transactions
     </th>
     <td>
@@ -214,7 +213,7 @@ below.
 
 	Default values for SIP timers are those specified by @RFC3261. The
 	defaults for T1, T1x64, T2 and T4 can be changed via
-        configuration tags defined in <nta_tag.h>.
+        configuration tags defined in <sofia-sip/nta_tag.h>.
     </td>
     <td>
 	&nbsp;
@@ -222,9 +221,9 @@ below.
 </tr>
 
 
+<a name="3261.26"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3261.26"></a>
 	@RFC3261 Section 26:<br> Security
     </th>
     <td>
@@ -234,19 +233,19 @@ below.
     </td>
     <td>
 	Missing:
-	- TLS certificate checking
+	- Authorizing connections with TLS certificates
 	- S/MIME
     </td>
 </tr>
 
+<a name="2617"></a>
 <tr valign=top>
     <th align="left">
-	<a name="2617"></a>
 	@RFC2617: HTTP Digest Authentication
     </th>
     <td>
-	Sofia-SIP an authentication client and server modules implementing
-        HTTP Digest authentication.
+	Sofia-SIP includes authentication client and server modules
+	implementing HTTP Digest authentication.
 
 	HTTP Digest is a simple challenge-response authentication
 	scheme defined in @RFC2617 based on the UA sending a checksum
@@ -283,9 +282,9 @@ below.
     </td>
 </tr>
 
+<a name="3262"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3262"></a>
 	@RFC3262: PRACK and 100rel
     </th>
     <td>
@@ -305,9 +304,9 @@ below.
     </td>
 </tr>
 
+<a name="3263"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3263"></a>
 	@RFC3263: Locating SIP Servers
     </th>
     <td>
@@ -320,9 +319,9 @@ below.
     </td>
 </tr>
 
+<a name="3265"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3265"></a>
 	@RFC3265: SIP Event Notifications
     </th>
     <td>
@@ -347,9 +346,9 @@ below.
     </td>
 </tr>
 
+<a name="2806"></a>
 <tr valign=top>
     <th align="left">
-	<a name="2806"></a>
 	@RFC2806: tel URI
     </th>
     <td>
@@ -362,9 +361,9 @@ below.
     </td>
 </tr>
 
+<a name="2976"></a>
 <tr valign=top>
     <th align="left">
-	<a name="2976"></a>
 	@RFC2976: INFO
     </th>
     <td>
@@ -377,9 +376,9 @@ below.
 </tr>
 
 
+<a name="3311"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3311"></a>
 	@RFC3311: UPDATE
     </th>
     <td>
@@ -396,9 +395,9 @@ below.
 </tr>
 
 
+<a name="3313"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3313"></a>
 	@RFC3313: Media Authentication
     </th>
     <td>
@@ -413,9 +412,9 @@ below.
 </tr>
 
 
+<a name="3323"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3323"></a>
 	@RFC3323: Privacy
     </th>
     <td>
@@ -441,9 +440,9 @@ below.
 </tr>
 
 
+<a name="3326"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3326"></a>
 	@RFC3326: Reason
     </th>
     <td>
@@ -457,9 +456,9 @@ below.
 </tr>
 
 
+<a name="3325"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3325"></a>
 	@RFC3325: Asserted Identity
     </th>
     <td>
@@ -476,9 +475,9 @@ below.
     </td>
 </tr>
 
+<a name="3327"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3327"></a>
 	@RFC3327: Path
     </th>
     <td>
@@ -493,9 +492,9 @@ below.
     </td>
 </tr>
 
+<a name="3329"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3329"></a>
 	@RFC3329:
 	Security Agreement
     </th>
@@ -517,9 +516,9 @@ below.
     </td>
 </tr>
 
+<a name="3361"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3361"></a>
 	@RFC3361: DHCPv4 option for locating SIP servers.
     </th>
     <td>
@@ -532,9 +531,9 @@ below.
     </td>
 </tr>
 
+<a name="3420"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3420"></a>
 	@RFC3420: message/sipfrag
     </th>
     <td>
@@ -547,9 +546,9 @@ below.
     </td>
 </tr>
 
+<a name="3428"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3428"></a>
 	@RFC3428: MESSAGE
     </th>
     <td>
@@ -560,9 +559,9 @@ below.
     </td>
 </tr>
 
+<a name="3486"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3486"></a>
 	@RFC3486: Compressing SIP
     </th>
     <td>
@@ -575,9 +574,9 @@ below.
     </td>
 </tr>
 
+<a name="3515"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3515"></a>
 	@RFC3515: REFER
     </th>
     <td>
@@ -600,9 +599,9 @@ below.
     </td>
 </tr>
 
+<a name="3608"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3608"></a>
 	@RFC3608: Service-Route
     </th>
     <td>
@@ -619,9 +618,9 @@ below.
     </td>
 </tr>
 
+<a name="3680"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3680"></a>
 	@RFC3680: "reg" event
     </th>
     <td>
@@ -643,9 +642,9 @@ below.
     </td>
 </tr>
 
+<a name="3824"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3824"></a>
 	@RFC3824: ENUM
     </th>
     <td>
@@ -659,9 +658,9 @@ below.
     </td>
 </tr>
 
+<a name="3840"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3840"></a>
 	@RFC3840: Callee Capabilities
     </th>
     <td>
@@ -681,9 +680,9 @@ below.
 </tr>
 
 
+<a name="3841"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3841"></a>
 	@RFC3841: Caller Preferences
     </th>
     <td>
@@ -712,9 +711,9 @@ below.
     </td>
 </tr>
 
+<a name="3842"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3842"></a>
 	@RFC3842: Message waiting event
     </th>
     <td>
@@ -734,9 +733,9 @@ below.
     </td>
 </tr>
 
+<a name="3856"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3856"></a>
 	@RFC3856: Presence
     </th>
     <td>
@@ -760,9 +759,9 @@ below.
     </td>
 </tr>
 
+<a name="3857"></a> <a name="3858"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3857"></a> <a name="3858"></a>
 	@RFC3857: "winfo" event template package<br>
 	@RFC3858: winfo format
     </th>
@@ -783,9 +782,9 @@ below.
     </td>
 </tr>
 
+<a name="3891"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3891"></a>
 	@RFC3891: Replaces
     </th>
     <td>
@@ -799,9 +798,9 @@ below.
     </td>
 </tr>
 
+<a name="3892"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3892"></a>
 	@RFC3892: Referred-By
     </th>
     <td>
@@ -819,9 +818,9 @@ below.
     </td>
 </tr>
 
+<a name="3903"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3903"></a>
 	@RFC3903: PUBLISH
     </th>
     <td>
@@ -839,9 +838,9 @@ below.
     </td>
 </tr>
 
+<a name="4028"></a>
 <tr valign=top>
     <th align="left">
-	<a name="4028"></a>
 	@RFC4028: Session Timers
     </th>
     <td>
@@ -865,9 +864,9 @@ below.
     </td>
 </tr>
 
+<a name="4320"></a>
 <tr valign=top>
     <th align="left">
-	<a name="4320"></a>
 	@RFC4320: Actions Addressing Identified Issues with SIP's Non-INVITE Transaction
     </th>
     <td>
@@ -896,10 +895,12 @@ below.
    <th>Notes</td>
 </tr>
 
+<a name="4566"></a>
+<a name="2327"></a>
+<a name="3266"></a>
 <tr valign=top>
     <th align="left" align="left">
-	<a name="2327"></a>
-	@RFC2327: SDP (Session Description Protocol)
+	@RFC4566: SDP: Session Description Protocol
     </th>
     <td>
 	Generic support (generating, parsing and syntax checking) for SDP.
@@ -920,17 +921,20 @@ below.
 	The attributes "a=sendrecv", "a=sendonly", "a=recvonly",
 	"a=inactive", @ref sdp_rtpmap_s "a=rtpmap", and "a=fmtp" are parsed.
 
-	The implementation tries to follow draft-ietf-mmusic-sdp-new-25,
-	draft Internet Standard for SDP in progress.
+	The implementation partially implements @RFC4566. Note that
+	definiton of 'token' was updated in @RFC4566 and the parser has not
+	been updated yet.
     </td>
     <td>
-    - see also <a href="#4566">RFC 4566</a>
+      @RFC4566 obsoletes
+      - @RFC2327: SDP (Session Description Protocol)
+      - @RFC3266: IP6 in SDP
     </td>
 </tr>
 
+<a name="3264"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3264"></a>
 	@RFC3264: SDP Offer/Answer Negotiation
     </th>
     <td>
@@ -942,22 +946,9 @@ below.
     </td>
 </tr>
 
+<a name="3312"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3266"></a>
-	@RFC3266: IP6 in SDP
-    </th>
-    <td>
-	Representation of IP6 addresses within SDP message.
-    </td>
-    <td>
-    - see also <a href="#4566">RFC 4566</a>
-    </td>
-</tr>
-
-<tr valign=top>
-    <th align="left">
-	<a name="3312"></a>
 	@RFC3312: Preconditions
     </th>
     <td>
@@ -978,9 +969,9 @@ below.
     </td>
 </tr>
 
+<a name="3388"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3388"></a>
 	@RFC3388: Grouping of Media Lines
     </th>
     <td>
@@ -998,9 +989,9 @@ below.
 </tr>
 
 
+<a name="3407"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3407"></a>
 	@RFC3407: Capability Declaration
     </th>
     <td>
@@ -1016,9 +1007,9 @@ below.
 </tr>
 
 
+<a name="3524"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3524"></a>
 	@RFC3524: SRF
     </th>
     <td>
@@ -1032,9 +1023,9 @@ below.
     </td>
 </tr>
 
+<a name="3556"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3556"></a>
 	@RFC3556: Bandwidth
     </th>
     <td>
@@ -1048,9 +1039,9 @@ below.
     </td>
 </tr>
 
+<a name="3605"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3605"></a>
 	@RFC3605: RTCP attribute
     </th>
     <td>
@@ -1064,9 +1055,9 @@ below.
     </td>
 </tr>
 
+<a name="3890"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3890"></a>
 	@RFC3890: TIAS
     </th>
     <td>
@@ -1080,9 +1071,16 @@ below.
     </td>
 </tr>
 
+</table>
+
+
+*/
+
+/* Overflow:
+
+<a name="4566"></a>
 <tr valign=top>
     <th align="left">
-	<a name="4566"></a>
 	@RFC4566: SDP: Session Description Protocol
     </th>
     <td>
@@ -1093,15 +1091,10 @@ below.
     </td>
 </tr>
 
-</table>
 
-*/
-
-/* Overflow:
-
+<a name="3320"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3320"></a>
 	@RFC3320: SigComp
     </th>
     <td>
@@ -1116,9 +1109,9 @@ below.
     </td>
 </tr>
 
+<a name="3321"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3321"></a>
 	@RFC3321: SigComp Extended operations
     </th>
     <td>
@@ -1132,9 +1125,9 @@ below.
     </td>
 </tr>
 
+<a name="3325"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3325"></a>
 	@RFC3325: Asserted Identity
     </th>
     <td>
@@ -1147,9 +1140,9 @@ below.
     </td>
 </tr>
 
+<a name="3485"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3485"></a>
 	@RFC3485: SIP/SDP Dictionary
     </th>
     <td>
@@ -1166,9 +1159,9 @@ below.
 
 	- Implicitly registered user identities
 
+<a name="3959"></a>
 <tr valign=top>
     <th align="left">
-	<a name="3959"></a>
 	@RFC3959: early-session
     </th>
     <td>

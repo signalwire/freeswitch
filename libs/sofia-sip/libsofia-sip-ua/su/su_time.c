@@ -61,7 +61,7 @@
  * OS-independent timing functions and types for the @b su library.
  *  
  * The @b su library provides three different time formats with different
- * ranges and epochs in the file @b su_time.h:
+ * ranges and epochs in <sofia-sip/su_time.h>:
  *
  *   - #su_time_t, second and microsecond as 32-bit values since 1900,
  *   - #su_duration_t, milliseconds between two times, and
@@ -209,6 +209,8 @@ const su_t64_t su_res64 = (su_t64_t)1000000UL;
   (su_res64 * (su_t64_t)(tv).tv_sec + (su_t64_t)(tv).tv_usec)
 #define SU_DUR_TO_T64(d) (1000 * (int64_t)(d))
 
+#define E9 (1000000000)
+
 /** Get NTP timestamp.
  *
  * The function su_ntp_now() returns the current NTP timestamp.  NTP
@@ -219,22 +221,36 @@ const su_t64_t su_res64 = (su_t64_t)1000000UL;
  */
 su_ntp_t su_ntp_now(void)
 {
-  su_time_t t;
-  uint32_t sec, usec;
+  su_nanotime_t now;
 
-  su_time(&t);
+  su_nanotime(&now);
 
-  sec = t.tv_sec;
-  usec = t.tv_usec;
+  if (sizeof(long) == sizeof(now)) {
+    return ((now / E9) << 32) | ((((now % E9) << 32) + E9/2) / E9);
+  }
+  else {
+    su_nanotime_t usec;
+    int nsec;
+    unsigned rem;
 
-  /*
-   * Multiply usec by 4294.967296 (ie. 2**32 / 1E6)
-   * 
-   * Utilize fact that 4294.967296 == 4295 - 511 / 15625 
-   */
-  usec = 4295 * usec - (511 * usec + 7812) / 15625;
+    usec = now / 1000;
+    nsec = now % 1000;
+    
+    /*
+     * Multiply usec by 4294.967296 (ie. 2**32 / 1E6)
+     * 
+     * Utilize fact that 4294.967296 == 4295 - 511 / 15625 
+     */
+    now = 4295 * usec - 511 * usec / 15625;
+    rem = (511U * usec) % 15625U;
   
-  return ((su_ntp_t)sec << 32) + (su_ntp_t)usec;
+    /* Multiply nsec by 4.294967296 */
+    nsec = 4295 * 125 * nsec - (511 * nsec) / 125;
+    nsec -= 8 * rem; /* usec rounding */
+    nsec = (nsec + (nsec < 0 ? -62499 : +62499)) / 125000;
+    
+    return now + nsec;
+  }
 }
 
 /** Get NTP seconds.
@@ -262,7 +278,6 @@ uint32_t su_ntp_hi(su_ntp_t ntp)
 {
   return (uint32_t) (ntp >> 32) & 0xffffffffLU;
 }
-
 
 su_ntp_t su_ntp_hilo(uint32_t hi, uint32_t lo)
 {
@@ -464,8 +479,3 @@ uint64_t su_nanocounter(void)
 }
 
 #endif /* WIN32 */
-
-
-
-
-

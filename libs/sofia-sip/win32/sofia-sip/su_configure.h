@@ -45,6 +45,9 @@
 #define SU_HAVE_BSDSOCK         0
 #define SU_HAVE_STDINT          (0)
 #define SU_HAVE_NT              0
+
+/* note: on Windows 2000 and older (WINVER<=500), IPv6-tech-preview 
+ * is needed for IPv4 support as well, so SU_HAVE_IN6 must be set */
 #define SU_HAVE_IN6             1
 
 #define SU_HAVE_PTHREADS        (1)

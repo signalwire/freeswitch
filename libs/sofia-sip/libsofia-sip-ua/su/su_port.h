@@ -123,7 +123,7 @@ typedef struct su_port_vtable {
   int (*su_port_remove_prepoll)(su_port_t *port,
 				su_root_t *root);
 
-  su_timer_t **(*su_port_timers)(su_port_t *port);
+  su_timer_queue_t *(*su_port_timers)(su_port_t *port);
 
   int (*su_port_multishot)(su_port_t *port, int multishot);
 
@@ -443,7 +443,7 @@ typedef struct su_base_port_s {
   su_msg_t        *sup_head, **sup_tail;
 
   /* Timer list */
-  su_timer_t      *sup_timers;
+  su_timer_queue_t sup_timers;
 
   unsigned         sup_running;	  /**< In su_root_run() loop? */
 } su_base_port_t;

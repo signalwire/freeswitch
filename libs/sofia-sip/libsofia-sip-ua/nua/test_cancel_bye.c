@@ -97,7 +97,10 @@ int cancel_when_calling(CONDITION_PARAMS)
 
   switch (callstate(tags)) {
   case nua_callstate_calling:
-    CANCEL(ep, call, nh, TAG_END());
+    CANCEL(ep, call, nh,
+	   /* sf.net bug #173323 */
+	   SIPTAG_CALL_ID_STR("non-existing-call-id"),
+	   TAG_END());
     return 0;
   case nua_callstate_terminated:
     return 1;

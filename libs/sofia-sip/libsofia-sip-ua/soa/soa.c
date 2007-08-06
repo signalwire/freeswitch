@@ -122,7 +122,7 @@ static int soa_set_sdp(soa_session_t *ss,
  * The SOA_DEBUG environment variable is used to determine the default
  * debug logging level. The normal level is 3.
  *
- * @sa <su_debug.h>, su_log_global, SOFIA_DEBUG
+ * @sa <sofia-sip/su_debug.h>, su_log_global, SOFIA_DEBUG
  */
 extern char const SOA_DEBUG[];
 

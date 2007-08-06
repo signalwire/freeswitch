@@ -67,7 +67,7 @@
  * The NEA_DEBUG environment variable is used to determine the debug
  * logging level for @b nea module. The default level is 3.
  * 
- * @sa <su_debug.h>, nea_log, SOFIA_DEBUG
+ * @sa <sofia-sip/su_debug.h>, nea_log, SOFIA_DEBUG
  */
 extern char const NEA_DEBUG[];
 

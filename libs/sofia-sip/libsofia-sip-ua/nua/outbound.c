@@ -36,7 +36,7 @@
 
 #define NTA_OUTGOING_MAGIC_T struct outbound
 
-#include <outbound.h>
+#include "outbound.h"
 
 #include <sofia-sip/hostdomain.h>
 #include <sofia-sip/sip.h>

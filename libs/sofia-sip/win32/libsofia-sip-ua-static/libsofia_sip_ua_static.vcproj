@@ -229,6 +229,28 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\..\libsofia-sip-ua\su\string0.c"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\$(InputName)1.obj"
+							XMLDocumentationFileName="$(IntDir)\$(InputName)1.xdc"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="..\..\libsofia-sip-ua\su\su.c"
 					>
 					<FileConfiguration
@@ -844,28 +866,6 @@
 				</File>
 				<File
 					RelativePath="..\..\libsofia-sip-ua\ipt\rc4.c"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\libsofia-sip-ua\ipt\string0.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3825,6 +3825,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\libsofia-sip-ua\su\sofia-sip\string0.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\libsofia-sip-ua\su\sofia-sip\su.h"
 					>
 				</File>
@@ -3958,10 +3962,6 @@
 				</File>
 				<File
 					RelativePath="..\..\libsofia-sip-ua\ipt\sofia-sip\rc4.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\libsofia-sip-ua\ipt\sofia-sip\string0.h"
 					>
 				</File>
 				<File

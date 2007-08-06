@@ -3746,6 +3746,11 @@ tport_resolve(tport_t *self, msg_t *msg, tp_name_t const *tpn)
   hints->ai_socktype = self->tp_addrinfo->ai_socktype;
   hints->ai_protocol = self->tp_addrinfo->ai_protocol;
 
+#if HAVE_OPEN_C
+  if (host_is_ip_address(tpn->tpn_host))
+    hints->ai_flags |= AI_NUMERICHOST;
+#endif
+  
   if (tpn->tpn_host[0] == '[') {
     /* Remove [] around IPv6 address */
     char *end;

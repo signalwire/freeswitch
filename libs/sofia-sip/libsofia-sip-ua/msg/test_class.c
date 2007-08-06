@@ -42,10 +42,10 @@
 
 #define TAG_NAMESPACE "tst"
 
-#include <test_class.h>
+#include "test_class.h"
 #include <sofia-sip/msg_parser.h>
 #include <sofia-sip/msg_mclass.h>
-#include <test_protos.h>
+#include "test_protos.h"
 #include <sofia-sip/msg_addr.h>
 
 extern msg_mclass_t const msg_test_mclass[1];

@@ -25,7 +25,7 @@
 /**@page sip-options Query SIP OPTIONS
  * 
  * @section synopsis Synopsis
- * <tt>sip-options [--bind=url] [--from=url] [-a|--all] to </tt>
+ * <tt>sip-options [OPTIONS] target-uri </tt>
  *
  * @section description Description
  * The @em sip-options utility sends a SIP OPTIONS request (or any other SIP

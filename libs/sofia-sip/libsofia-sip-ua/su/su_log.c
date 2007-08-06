@@ -246,6 +246,10 @@ void su_log_soft_set_level(su_log_t *log, unsigned level)
   } else {
     log->log_level = level;
     log->log_init = 2;
+
+    if (explicitly_initialized == not_initialized)
+      explicitly_initialized = getenv("SHOW_DEBUG_LEVELS");
+
     if (explicitly_initialized)
       su_llog(log, 0, "%s: soft set log to level %u\n", 
 	      log->log_name, log->log_level);

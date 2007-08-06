@@ -322,6 +322,13 @@ SOFIAPUBVAR tag_typedef_t authtag_next_expires;
   authtag_next_expires_ref, tag_uint_vr((&x))
 SOFIAPUBVAR tag_typedef_t authtag_next_expires_ref;
 
+/** Maximum nonce count allowed. */
+#define AUTHTAG_MAX_NCOUNT(x)    authtag_max_ncount, tag_uint_v((x))
+SOFIAPUBVAR tag_typedef_t authtag_max_ncount;
+
+#define AUTHTAG_MAX_NCOUNT_REF(x)    authtag_max_ncount_ref, tag_uint_vr((&x))
+SOFIAPUBVAR tag_typedef_t authtag_max_ncount_ref;
+
 /** Extra delay when responding if provided invalid credentials or nonce. */
 #define AUTHTAG_BLACKLIST(x)    authtag_blacklist, tag_uint_v((x))
 SOFIAPUBVAR tag_typedef_t authtag_blacklist;
@@ -342,13 +349,6 @@ SOFIAPUBVAR tag_typedef_t authtag_anonymous;
 
 #define AUTHTAG_ANONYMOUS_REF(x)    authtag_anonymous_ref, tag_bool_vr((&x))
 SOFIAPUBVAR tag_typedef_t authtag_anonymous_ref;
-
-/** Fake authentication procedure - do not check result. */
-#define AUTHTAG_FAKE(x)    authtag_fake, tag_bool_v((x))
-SOFIAPUBVAR tag_typedef_t authtag_fake;
-
-#define AUTHTAG_FAKE_REF(x)    authtag_fake_ref, tag_bool_vr((&x))
-SOFIAPUBVAR tag_typedef_t authtag_fake_ref;
 
 /** HSS client structure. */
 #define AUTHTAG_HSS(x)        authtag_hss, tag_ptr_v((x))

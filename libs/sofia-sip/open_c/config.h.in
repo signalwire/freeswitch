@@ -441,4 +441,4 @@
 /* #undef size_t */
 
 /* Define to 1 if compiling on Open C environment */
-/* #undef HAVE_OPEN_C */
+#define HAVE_OPEN_C 1

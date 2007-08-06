@@ -48,7 +48,7 @@
 #include <sofia-sip/sip_util.h>
 #include <sofia-sip/sip_status.h>
 
-#define NTA_UPDATE_MAGIC_T   struct nua_handle_s
+#define NTA_UPDATE_MAGIC_T   struct nua_s
 
 #include "nua_stack.h"
 
@@ -516,7 +516,7 @@ outbound_owner_vtable nua_stack_outbound_callbacks = {
  *
  * @par Related tags:
  *     NUTAG_REGISTRAR() \n
- *     Tags in <sip_tag.h> except SIPTAG_EXPIRES() or SIPTAG_EXPIRES_STR()
+ *     Header tags defined in <sofia-sip/sip_tag.h> except SIPTAG_EXPIRES() or SIPTAG_EXPIRES_STR()
  *
  * @par Events:
  *     #nua_r_unregister

@@ -58,7 +58,7 @@
  *    nothing
  *
  * @par Related Tags:
- *    Tags in <sip_tag.h>
+ *    Header tags defined in <sofia-sip/sip_tag.h>
  *
  * @par Events:
  *    #nua_r_options

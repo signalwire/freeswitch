@@ -112,6 +112,10 @@ int main(int argc, char *argv[])
       usage(1);
   }
 
+#if HAVE_OPEN_C
+  tstflags |= tst_verbatim;
+#endif
+
   if (!test_mclass)
     test_mclass = http_default_mclass();
 
@@ -124,6 +128,10 @@ int main(int argc, char *argv[])
   retval |= test_http_encoding(); fflush(stdout);
   retval |= http_chunk_test(); fflush(stdout);
   retval |= test_query_parser(); fflush(stdout);
+
+#if HAVE_OPEN_C
+  sleep(5);
+#endif
 
   return retval;
 }

@@ -101,11 +101,11 @@ su_log_t nua_log[] = { SU_LOG_INIT("nua", "NUA_DEBUG", SU_DEBUG) };
  *     NUTAG_URL()              \n
  *     NUTAG_SIPS_URL()         \n
  *     NUTAG_SIP_PARSER()       \n
- *     NUTAG_UICC()             \n
  *     NUTAG_CERTIFICATE_DIR()  \n
- *     and all tags listed in nua_set_params(), \n
- *     and all relevant NTATAG_* are passed to NTA \n
- *     and all tport tags listed in <sofia-sip/tport_tag.h>
+ *     all tags listed in nua_set_params(), \n
+ *     all NTATAG_* are passed to NTA listed in <sofia-sip/nta_tag.h> \n
+ *     all tport tags listed in <sofia-sip/tport_tag.h> \n
+ *     STUNTAG_DOMAIN(), STUNTAG_SERVER() \n
  *
  * @note
  * From the @VERSION_1_12_2 all the nua_set_params() tags are processed.
@@ -119,7 +119,7 @@ su_log_t nua_log[] = { SU_LOG_INIT("nua", "NUA_DEBUG", SU_DEBUG) };
  * @par Events:
  *     none
  *
- * @sa nua_shutdown(), nua_destroy(), nua_handle()
+ * @sa nua_shutdown(), nua_destroy(), nua_handle(), nta_agent_create().
  */
 nua_t *nua_create(su_root_t *root,
 		  nua_callback_f callback,
@@ -1040,19 +1040,30 @@ void nua_event(nua_t *root_magic, su_msg_r sumsg, event_t *e)
   su_msg_destroy(nua->nua_current);
 }
 
-/** Get current request message. @NEW_1_12_4. */
+/** Get current request message. @NEW_1_12_4.
+ *
+ * @note A response message is returned when processing response message.
+ *
+ * @sa #nua_event_e, nua_respond(), NUTAG_WITH_CURRENT()
+ */
 msg_t *nua_current_request(nua_t const *nua)
 {
   return nua && nua->nua_current ? su_msg_data(nua->nua_current)->e_msg : NULL;
 }
 
-/** Get request message from saved nua event. @NEW_1_12_4. */
+/** Get request message from saved nua event. @NEW_1_12_4. 
+ *
+ * @sa nua_save_event(), nua_respond(), NUTAG_WITH_SAVED(), 
+ */
 msg_t *nua_saved_event_request(nua_saved_event_t const *saved)
 {
   return saved && saved[0] ? su_msg_data(saved)->e_msg : NULL;
 }
 
-/** Save nua event and its arguments */
+/** Save nua event and its arguments.
+ *
+ * @sa #nua_event_e, nua_event_data() nua_saved_event_request(), nua_destroy_event()
+ */
 int nua_save_event(nua_t *nua, nua_saved_event_t return_saved[1])
 {
   if (nua && return_saved) {
@@ -1066,13 +1077,19 @@ int nua_save_event(nua_t *nua, nua_saved_event_t return_saved[1])
   return 0;
 }
 
-/** Get event data */
+/** Get event data.
+ *
+ * @sa #nua_event_e, nua_event_save(), nua_saved_event_request(), nua_destroy_event().
+ */
 nua_event_data_t const *nua_event_data(nua_saved_event_t const saved[1])
 {
   return saved ? su_msg_data(saved) : NULL;
 }
 
-/** Destroy saved event */
+/** Destroy saved event.
+ *
+ * @sa #nua_event_e, nua_event_save(), nua_event_data(), nua_saved_event_request().
+ */
 void nua_destroy_event(nua_saved_event_t saved[1])
 {
   if (su_msg_is_non_null(saved)) {
@@ -1136,7 +1153,14 @@ sip_replaces_t *nua_handle_make_replaces(nua_handle_t *nh,
 					 int early_only)
 {
   if (nh && nh->nh_valid && nh->nh_nua) {
+#if HAVE_OPEN_C
+    struct nua_stack_handle_make_replaces_args a = { NULL, NULL, NULL, 0 };
+    a.nh = nh;
+    a.home = home;
+    a.early_only = early_only;
+#else
     struct nua_stack_handle_make_replaces_args a = { NULL, nh, home, early_only };
+#endif
 
     if (su_task_execute(nh->nh_nua->nua_server,
 			nua_stack_handle_make_replaces_call, (void *)&a,
@@ -1176,7 +1200,14 @@ static int nua_stack_handle_by_replaces_call(void *arg)
 nua_handle_t *nua_handle_by_replaces(nua_t *nua, sip_replaces_t const *r)
 {
   if (nua) {
+#if HAVE_OPEN_C
+    struct nua_stack_handle_by_replaces_args a;
+	a.retval = NULL;
+    a.nua = nua;
+    a.r = r;
+#else
     struct nua_stack_handle_by_replaces_args a = { NULL, nua, r };
+#endif
 
     if (su_task_execute(nua->nua_server,
 			nua_stack_handle_by_replaces_call, (void *)&a,

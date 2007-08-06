@@ -1,4 +1,8 @@
-// sofiatest component properties
+// part of Symbian build files for sofia-sip package
+//
+// Copyright (C) 2005,2006,2007 Nokia Corporation
+// Contact: Pekka Pessi <pekka.pessi@nokia.com>
+// Licensed under LGPL. See file COPYING.
 
 // General properties
 TARGET          torture_sip.exe
@@ -16,7 +20,7 @@ TARGETPATH 	    \private\10003a3f\import\apps
 #endif
 END //RESOURCE
 
-//EPOCHEAPSIZE 4 4194304 // min. 4KB ja max 4MB
+EPOCHEAPSIZE 4 4194304 // min. 4KB ja max 4MB
 
 // Allow global writeable static data
 EPOCALLOWDLLDATA

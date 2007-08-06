@@ -781,10 +781,6 @@ int nua_stack_init_handle(nua_t *nua, nua_handle_t *nh,
   if (nua_stack_set_params(nua, nh, nua_i_error, ta_args(ta)) < 0)
     retval = -1;
 
-  if (!retval && nh->nh_soa)
-    if (soa_set_params(nh->nh_soa, ta_tags(ta)) < 0)
-      retval = -1;
-
   ta_end(ta);
 
   if (retval || nh->nh_init) /* Already initialized? */
@@ -1338,7 +1334,7 @@ void nua_server_request_destroy(nua_server_request_t *sr)
  *    SOATAG_AF() \n
  *    SOATAG_HOLD() \n
  *    Tags used with nua_set_hparams() \n
- *    Tags in <sip_tag.h>.
+ *    Header tags defined in <sofia-sip/sip_tag.h>.
  *
  * @par Events:
  *    #nua_i_state \n
@@ -1445,12 +1441,24 @@ int nua_server_respond(nua_server_request_t *sr, tagi_t const *tags)
   nua_handle_t *nh = sr->sr_owner;
   sip_method_t method = sr->sr_method;
   struct { msg_t *msg; sip_t *sip; } next = { NULL, NULL };
-  tagi_t next_tags[2] = {{ SIPTAG_END() }, { TAG_NEXT(tags) }};
   int retval;
+#if HAVE_OPEN_C
+  /* Nice. And old arm symbian compiler; see below. */
+  tagi_t next_tags[2];
+#else
+  tagi_t next_tags[2] = {{ SIPTAG_END() }, { TAG_NEXT(tags) }};
+#endif
 
   msg_t *msg = sr->sr_response.msg;
   sip_t *sip = sr->sr_response.sip;
   sip_contact_t *m = sr->sr_request.sip->sip_contact;
+
+#if HAVE_OPEN_C
+  next_tags[0].t_tag   = siptag_end;
+  next_tags[0].t_value = (tag_value_t)0;
+  next_tags[1].t_tag   = tag_next;
+  next_tags[1].t_value = (tag_value_t)(tags);
+#endif
 
   if (sr->sr_response.msg == NULL) {
     assert(sr->sr_status == 500);

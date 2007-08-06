@@ -16,23 +16,9 @@ noinst_LTLIBRARIES = 	libsu.la
 
 bin_PROGRAMS = 		addrinfo localinfo 
 
-if COREFOUNDATION
-OSXSOURCES = \
-	su_osx_runloop.c
-OSXHEADERS = \
-	sofia-sip/su_osx_runloop.h
-OSXPROGS = \
-	torture_su_root_osx test_su_osx
-OSXTESTS = \
-	torture_su_root_osx run_test_su_osx
-else
-OSXSOURCES =
-OSXHEADERS =
-endif
-
 check_PROGRAMS = 	torture_su torture_su_port \
 			torture_su_alloc torture_su_time torture_su_tag \
-			test_htable torture_rbtree \
+			test_htable torture_rbtree torture_heap \
 			test_memmem torture_su_bm \
 			torture_su_root torture_su_timer \
 			test_su su_proxy test_poll $(OSXPROGS)
@@ -42,7 +28,7 @@ check_PROGRAMS = 	torture_su torture_su_port \
 
 TESTS = 		torture_su torture_su_port \
 			torture_su_alloc torture_su_time torture_su_tag \
-			test_htable torture_rbtree \
+			test_htable torture_rbtree torture_heap \
 			test_memmem torture_su_bm \
 			torture_su_root torture_su_timer \
 			run_addrinfo run_localinfo run_test_su \
@@ -63,8 +49,8 @@ nobase_include_sofia_HEADERS = \
 			sofia-sip/su_tag_class.h sofia-sip/su_tagarg.h \
 			sofia-sip/su_tag_io.h sofia-sip/su_tag_inline.h \
 			sofia-sip/htable.h sofia-sip/htable2.h \
-			sofia-sip/rbtree.h sofia-sip/su_debug.h \
-			sofia-sip/su_log.h \
+			sofia-sip/rbtree.h sofia-sip/heap.h \
+			sofia-sip/su_debug.h sofia-sip/su_log.h \
 			sofia-sip/su_config.h sofia-sip/su_md5.h \
 			sofia-sip/su_uniqueid.h sofia-sip/su_bm.h \
 			sofia-sip/tstdef.h sofia-sip/su_os_nw.h \
@@ -122,3 +108,15 @@ AUTOMAKE_OPTIONS = 	foreign
 # Sofia specific rules
 
 include $(top_srcdir)/rules/sofia.am
+
+# ----------------------------------------------------------------------
+# OS X stuff
+
+if COREFOUNDATION
+OSXSOURCES =  su_osx_runloop.c
+OSXHEADERS =  sofia-sip/su_osx_runloop.h
+OSXPROGS =    torture_su_root_osx test_su_osx
+OSXTESTS =    torture_su_root_osx run_test_su_osx
+endif
+
+EXTRA_DIST += su_osx_runloop.c sofia-sip/su_osx_runloop.h

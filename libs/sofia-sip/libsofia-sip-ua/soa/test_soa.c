@@ -1423,6 +1423,10 @@ int main(int argc, char *argv[])
       usage(1);
   }
 
+#if HAVE_OPEN_C
+  tstflags |= tst_verbatim;
+#endif
+
   if (o_attach) {
     char line[10];
     printf("%s: pid %u\n", name, getpid());
@@ -1461,6 +1465,10 @@ int main(int argc, char *argv[])
   retval |= test_deinit(ctx); SINGLE_FAILURE_CHECK();
 
   su_deinit();
+
+#if HAVE_OPEN_C
+  sleep(5);
+#endif
 
   return retval;
 }

@@ -50,62 +50,37 @@
 
 char const *name = "torture_su_time.c";
 
+int expensive_tests = 0;
+
 static int test1(int flags);
 static int test2(int flags);
 static int test3(int flags);
 
-void usage(int exitcode)
-{
-  fprintf(stderr, 
-	  "usage: %s [-v] [-a]\n", 
-	  name);
-  exit(exitcode);
-}
-
-char *lastpart(char *path)
-{
-  if (strchr(path, '/')) 
-    return strrchr(path, '/') + 1;
-  else
-    return path;
-}
-
-int main(int argc, char *argv[])
-{
-  int flags = 0;
-  int retval = 0;
-  int i;
-
-  name = lastpart(argv[0]);  /* Set our name */
-
-  for (i = 1; argv[i]; i++) {
-    if (strcmp(argv[i], "-v") == 0)
-      flags |= tst_verbatim;
-    else if (strcmp(argv[i], "-a") == 0)
-      flags |= tst_abort;
-    else
-      usage(1);
-  }
-
-  retval |= test1(flags); fflush(stdout);
-  retval |= test2(flags); fflush(stdout);
-  retval |= test3(flags); fflush(stdout);
-
-  return retval;
-}
-
 su_time_t tv0;
 
-void su_time(su_time_t *tv)
+void su_time0(su_time_t *tv)
 {
   *tv = tv0;
 }
+
+uint64_t nanotime;
+
+uint64_t su_nanotime0(uint64_t *retval)
+{
+  if (nanotime)
+    return *retval = nanotime;
+  else
+    return *retval = (uint64_t)tv0.tv_sec * 1000000000U + tv0.tv_usec * 1000U;
+}
+
+#define E9 (1000000000U)
 
 int test1(int flags)
 {
   uint32_t ntp_hi, ntp_lo, ntp_mw;
   su_time_t now;
   su_ntp_t ntp, ntp0, ntp1;
+  uint64_t increment = 3019;
   
   BEGIN();
 
@@ -136,7 +111,19 @@ int test1(int flags)
   TEST64(su_ntp_hi(ntp), ntp_hi);
   TEST64(su_ntp_lo(ntp), 0);
   TEST64(su_ntp_mw(ntp), (ntp_hi & 0xffff) << 16);
+
   TEST(su_ntp_fraq(tv0), su_ntp_mw(ntp));
+
+  if (expensive_tests)
+    increment = 1;
+
+  for (nanotime = 1; nanotime <= 2 * E9; nanotime += increment) {
+    ntp = su_ntp_now();
+    ntp0 = ((nanotime / E9) << 32) | ((((nanotime % E9) << 32) + E9/2) / E9);
+    TEST(ntp, ntp0);
+  }
+
+  nanotime = 0;
 
   END();
 }
@@ -157,6 +144,7 @@ int test2(int flags)
 
   BEGIN();
 
+  nanotime = 0;
   tv0.tv_sec = 268435455;
   tv0.tv_usec = 98765;
 
@@ -165,10 +153,10 @@ int test2(int flags)
 
   su_guid_generate(g1);
   seq1 = ((g1->s.clock_seq_hi_and_reserved & 0x3f) << 8) + g1->s.clock_seq_low;
-  TEST(g1->s.time_low, htonl(tl & 0xffffFFFFU));
-  TEST(g1->s.time_mid, htons((tl >> 32) & 0xffffU));
-  TEST(g1->s.time_high_and_version, htons(((tl >> 48) & 0xfffU) | 0x1000));
   TEST(g1->s.clock_seq_hi_and_reserved & 0xc0, 0x80);
+  TEST(g1->s.time_high_and_version, htons(((tl >> 48) & 0xfffU) | 0x1000));
+  TEST(ntohs(g1->s.time_mid), (tl >> 32) & 0xffffU);
+  //TEST(ntohl(g1->s.time_low), tl & 0xffffFFFFU);
 
   TEST(i = su_guid_sprintf(buf, sizeof(buf), g1), su_guid_strlen);
   TEST_SIZE(strlen(buf), i);
@@ -218,4 +206,57 @@ int test3(int flags)
   TEST_1(SU_TIME_CMP(c, a) < 0);
 
   END();
+}
+
+void su_time0(su_time_t *tv);
+uint64_t su_nanotime0(uint64_t *);
+
+extern void (*_su_time)(su_time_t *tv);
+extern uint64_t (*_su_nanotime)(uint64_t *);
+
+void usage(int exitcode)
+{
+  fprintf(stderr, 
+	  "usage: %s [-v] [-a]\n", 
+	  name);
+  exit(exitcode);
+}
+
+char *lastpart(char *path)
+{
+  if (strchr(path, '/')) 
+    return strrchr(path, '/') + 1;
+  else
+    return path;
+}
+
+int main(int argc, char *argv[])
+{
+  int flags = 0;
+  int retval = 0;
+  int i;
+
+  name = lastpart(argv[0]);  /* Set our name */
+
+  for (i = 1; argv[i]; i++) {
+    if (strcmp(argv[i], "-v") == 0)
+      flags |= tst_verbatim;
+    else if (strcmp(argv[i], "-x") == 0)
+      expensive_tests = 1;
+    else if (strcmp(argv[i], "-a") == 0)
+      flags |= tst_abort;
+    else
+      usage(1);
+  }
+
+  if (getenv("EXPENSIVE_CHECKS"))
+    expensive_tests = 1;
+
+  _su_time = su_time0, _su_nanotime = su_nanotime0;
+
+  retval |= test1(flags); fflush(stdout);
+  retval |= test2(flags); fflush(stdout);
+  retval |= test3(flags); fflush(stdout);
+
+  return retval;
 }

@@ -32,6 +32,7 @@
 
 #include "config.h"
 
+#include "su_port.h"
 #include "sofia-sip/su.h"
 #include "sofia-sip/su_wait.h"
 #include "sofia-sip/su_alloc.h"
@@ -182,8 +183,8 @@ enum sut_running {
 
 RBTREE_PROTOS(su_inline, timers, su_timer_t);
 
-su_inline int timers_append(su_timer_t **, su_timer_t *);
-su_inline void timers_remove(su_timer_t **, su_timer_t *);
+su_inline int timers_append(su_timer_queue_t *, su_timer_t *);
+su_inline void timers_remove(su_timer_queue_t *, su_timer_t *);
 su_inline su_timer_t *timers_succ(su_timer_t const *);
 su_inline su_timer_t *timers_prec(su_timer_t const *);
 su_inline su_timer_t *timers_first(su_timer_t const *);
@@ -199,7 +200,7 @@ RBTREE_BODIES(su_inline, timers, su_timer_t,
  * @retval 0 when successful (always)
  */
 su_inline int
-su_timer_set0(su_timer_t **timers,
+su_timer_set0(su_timer_queue_t *timers,
 	      su_timer_t *t,
 	      su_timer_f wakeup,
 	      su_wakeup_arg_t *arg,
@@ -221,7 +222,7 @@ su_timer_set0(su_timer_t **timers,
  * @retval 0 when successful (always)
  */
 su_inline int
-su_timer_reset0(su_timer_t **timers,
+su_timer_reset0(su_timer_queue_t *timers,
 		su_timer_t *t)
 {
   if (SU_TIMER_IS_SET(t))
@@ -242,11 +243,11 @@ su_timer_reset0(su_timer_t **timers,
  * @retval NULL upon an error
  */
 static
-su_timer_t **su_timer_tree(su_timer_t const *t,
-			   int use_sut_duration,
-			   char const *caller)
+su_timer_queue_t *su_timer_tree(su_timer_t const *t,
+				int use_sut_duration,
+				char const *caller)
 {
-  su_timer_t **timers;
+  su_timer_queue_t *timers;
 
   if (t == NULL) {
     SU_DEBUG_1(("%s(%p): %s\n", caller, (void *)t,
@@ -286,11 +287,10 @@ su_timer_t *su_timer_create(su_task_r const task, su_duration_t msec)
 
   assert(msec >= 0);
 
-  if (su_task_cmp(task, su_task_null))
-    retval = su_zalloc(NULL, sizeof(*retval));
-  else
-    retval = NULL;
+  if (!su_task_cmp(task, su_task_null))
+    return NULL;
 
+  retval = su_zalloc(NULL, sizeof(*retval));
   if (retval) {
     su_task_copy(retval->sut_task, task);
     retval->sut_duration = msec;
@@ -308,7 +308,7 @@ su_timer_t *su_timer_create(su_task_r const task, su_duration_t msec)
 void su_timer_destroy(su_timer_t *t)
 {
   if (t) {
-    su_timer_t **timers = su_task_timers(t->sut_task);
+    su_timer_queue_t *timers = su_task_timers(t->sut_task);
     if (timers)
       su_timer_reset0(timers, t);
     su_task_deinit(t->sut_task);
@@ -332,7 +332,7 @@ int su_timer_set_interval(su_timer_t *t,
 			  su_timer_arg_t *arg,
 			  su_duration_t interval)
 {
-  su_timer_t **timers = su_timer_tree(t, 0, "su_timer_set_interval");
+  su_timer_queue_t *timers = su_timer_tree(t, 0, "su_timer_set_interval");
 
   if (t == NULL)
     return -1;
@@ -356,7 +356,7 @@ int su_timer_set(su_timer_t *t,
 		 su_timer_f wakeup,
 		 su_timer_arg_t *arg)
 {
-  su_timer_t **timers = su_timer_tree(t, 1, "su_timer_set");
+  su_timer_queue_t *timers = su_timer_tree(t, 1, "su_timer_set");
 
   if (timers == NULL)
     return -1;
@@ -380,7 +380,7 @@ int su_timer_set_at(su_timer_t *t,
 		    su_wakeup_arg_t *arg,
 		    su_time_t when)
 {
-  su_timer_t **timers = su_timer_tree(t, 0, "su_timer_set_at");
+  su_timer_queue_t *timers = su_timer_tree(t, 0, "su_timer_set_at");
 
   if (timers == NULL)
     return -1;
@@ -410,7 +410,7 @@ int su_timer_run(su_timer_t *t,
 		 su_timer_f wakeup,
 		 su_timer_arg_t *arg)
 {
-  su_timer_t **timers = su_timer_tree(t, 1, "su_timer_run");
+  su_timer_queue_t *timers = su_timer_tree(t, 1, "su_timer_run");
   su_time_t now;
 
   if (timers == NULL)
@@ -443,7 +443,7 @@ int su_timer_set_for_ever(su_timer_t *t,
 			  su_timer_f wakeup,
 			  su_timer_arg_t *arg)
 {
-  su_timer_t **timers = su_timer_tree(t, 1, "su_timer_set_for_ever");
+  su_timer_queue_t *timers = su_timer_tree(t, 1, "su_timer_set_for_ever");
   su_time_t now;
 
   if (timers == NULL)
@@ -466,7 +466,7 @@ int su_timer_set_for_ever(su_timer_t *t,
  */
 int su_timer_reset(su_timer_t *t)
 {
-  su_timer_t **timers = su_timer_tree(t, 0, "su_timer_reset");
+  su_timer_queue_t *timers = su_timer_tree(t, 0, "su_timer_reset");
 
   if (timers == NULL)
     return -1;
@@ -487,7 +487,7 @@ int su_timer_reset(su_timer_t *t)
  * @return
  * The number of expired timers.
  */
-int su_timer_expire(su_timer_t ** const timers,
+int su_timer_expire(su_timer_queue_t * const timers,
 		    su_duration_t *timeout,
 		    su_time_t now)
 {
@@ -571,7 +571,7 @@ su_duration_t su_timer_next_expires(su_timer_t const * t, su_time_t now)
  *
  * @return Number of timers reset.
  */
-int su_timer_reset_all(su_timer_t **timers, su_task_r task)
+int su_timer_reset_all(su_timer_queue_t *timers, su_task_r task)
 {
   su_timer_t *t, *t_next;
   int n = 0;

@@ -459,8 +459,10 @@ int su_pthread_port_execute(su_task_r const task,
   struct su_pthread_port_execute frame = {
     { PTHREAD_MUTEX_INITIALIZER },
     { _ENeedsNormalInit, NULL },
-    function, arg, 0
+    NULL, NULL, 0
   };
+  frame.function = function;
+  frame.arg = arg;
 #else
   struct su_pthread_port_execute frame = {
     { PTHREAD_MUTEX_INITIALIZER },

@@ -23,14 +23,14 @@ TESTS = 		torture_base64
 # Rules for building the targets
 
 nobase_include_sofia_HEADERS = \
-			sofia-sip/rc4.h \
 			sofia-sip/base64.h \
-		  sofia-sip/token64.h \
+			sofia-sip/token64.h \
 			sofia-sip/uniqueid.h
 
 libipt_la_SOURCES = 	base64.c token64.c
 
 EXTRA_DIST = 		sofia-sip/utf8.h \
+			sofia-sip/rc4.h \
 			utf8internal.h \
 			utf8.c ucs2.c ucs4.c rc4.c \
 			utf8test.c

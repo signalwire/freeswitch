@@ -6,8 +6,8 @@
  *
  * NTH provides interface to simple HTTP transaction engines for both HTTP
  * servers and clients. The transaction interface for both client and server
- * is available through <nth.h>, tags controlling the options in
- * <nth_tag.h>.
+ * is available through <sofia-sip/nth.h>, tags controlling the options in
+ * <sofia-sip/nth_tag.h>.
  *
  * @CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
  *

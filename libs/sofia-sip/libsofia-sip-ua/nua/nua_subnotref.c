@@ -138,7 +138,7 @@ void nua_subscribe_usage_remove(nua_handle_t *nh,
  *
  * @par Related Tags:
  *    NUTAG_URL()
- *    Tags in <sip_tag.h>
+ *    Header tags defined in <sofia-sip/sip_tag.h>
  *
  * @par Events:
  *    #nua_r_subscribe \n
@@ -164,7 +164,7 @@ void nua_subscribe_usage_remove(nua_handle_t *nh,
  *
  * @par Related Tags:
  *    SIPTAG_EVENT() or SIPTAG_EVENT_STR() \n
- *    Tags in <sip_tag.h> except SIPTAG_EXPIRES() or SIPTAG_EXPIRES_STR()
+ *    Header tags defined in <sofia-sip/sip_tag.h> except SIPTAG_EXPIRES() or SIPTAG_EXPIRES_STR()
  *
  * @par Events:
  *    #nua_r_unsubscribe 
@@ -401,9 +401,10 @@ static int nua_subscribe_client_response(nua_client_request_t *cr,
       /* let nua_base_client_tresponse to remove usage */
       cr->cr_terminated = 1;	
   }
-  
+
   return nua_base_client_tresponse(cr, status, phrase, sip, 
 				   NUTAG_SUBSTATE(substate),
+				   SIPTAG_EVENT(du ? du->du_event : NULL),
 				   TAG_END());
 }
 
@@ -727,7 +728,7 @@ int nua_notify_server_report(nua_server_request_t *sr, tagi_t const *tags)
  * @par Related Tags:
  *    NUTAG_URL() \n
  *    Tags of nua_set_hparams() \n
- *    Tags in <sip_tag.h>
+ *    Header tags defined in <sofia-sip/sip_tag.h>
  *
  * @par Events:
  *    #nua_r_refer \n
@@ -852,6 +853,7 @@ static int nua_refer_client_request(nua_client_request_t *cr,
     nua_stack_tevent(nh->nh_nua, nh, NULL,
 		     cr->cr_event, SIP_100_TRYING,
 		     NUTAG_REFER_EVENT(event),
+		     SIPTAG_EVENT(event),
 		     TAG_END());
     su_free(nh->nh_home, event);
   }
@@ -885,5 +887,6 @@ static int nua_refer_client_response(nua_client_request_t *cr,
   
   return nua_base_client_tresponse(cr, status, phrase, sip, 
 				   NUTAG_SUBSTATE(substate),
+				   SIPTAG_EVENT(du ? du->du_event : NULL),
 				   TAG_END());
 }

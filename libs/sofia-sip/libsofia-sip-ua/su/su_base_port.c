@@ -477,7 +477,7 @@ int su_base_port_remove_prepoll(su_port_t *self,
  * Timers
  */
 
-su_timer_t **su_base_port_timers(su_port_t *self)
+su_timer_queue_t *su_base_port_timers(su_port_t *self)
 {
   return &self->sup_timers;
 }

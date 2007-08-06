@@ -341,6 +341,12 @@ typedef void (*su_timer_f)(su_root_magic_t *magic,
 			   su_timer_t *t,
 			   su_timer_arg_t *arg);
 
+#ifndef SU_TIMER_QUEUE_T
+#define SU_TIMER_QUEUE_T su_timer_t *
+#endif
+
+typedef SU_TIMER_QUEUE_T su_timer_queue_t;
+
 /* ---------------------------------------------------------------------- */
 
 /* Tasks */
@@ -487,7 +493,7 @@ SOFIAPUBFUN int su_timer_reset(su_timer_t *);
 
 SOFIAPUBFUN su_root_t *su_timer_root(su_timer_t const *);
 
-SOFIAPUBFUN int su_timer_expire(su_timer_t ** const, 
+SOFIAPUBFUN int su_timer_expire(su_timer_queue_t * const, 
 				su_duration_t *tout,
 				su_time_t now);
 
@@ -505,7 +511,7 @@ SOFIAPUBFUN int su_task_cmp(su_task_r const, su_task_r const);
 SOFIAPUBFUN int su_task_is_running(su_task_r const);
 
 SOFIAPUBFUN su_root_t *su_task_root(su_task_r const self);
-SOFIAPUBFUN su_timer_t **su_task_timers(su_task_r const self);
+SOFIAPUBFUN su_timer_queue_t *su_task_timers(su_task_r const self);
 
 SOFIAPUBFUN int su_task_execute(su_task_r const task,
 				int (*function)(void *), void *arg,

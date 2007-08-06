@@ -47,8 +47,8 @@
 #include <stddef.h>
 #include <string.h>
 
-#include <test_class.h>
-#include <test_protos.h>
+#include "test_class.h"
+#include "test_protos.h"
 #include <sofia-sip/msg_mime_protos.h>
 
 #include <sofia-sip/msg_mclass.h>
