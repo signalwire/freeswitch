@@ -749,8 +749,6 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, ch
 
 #ifdef WIN32
 	const char *ext = ".dll";
-#elif defined (MACOSX) || defined (DARWIN)
-	const char *ext = ".dylib";
 #else
 	const char *ext = ".so";
 #endif

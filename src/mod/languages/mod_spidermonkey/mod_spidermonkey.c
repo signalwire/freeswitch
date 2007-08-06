@@ -723,8 +723,6 @@ static switch_status_t sm_load_module(const char *dir, const char *fname)
 
 #ifdef WIN32
 	const char *ext = ".dll";
-#elif defined (MACOSX) || defined (DARWIN)
-	const char *ext = ".dylib";
 #else
 	const char *ext = ".so";
 #endif
