@@ -27,17 +27,21 @@ $(LOCAL_OBJS): $(LOCAL_SOURCES)
 
 $(LAME_DIR):
 	$(GETLIB) $(LAME).tar.gz
+
+$(LAME_DIR)/Makefile: $(LAME_DIR)
 	cd $(LAME_DIR) && ./configure $(DEFAULT_ARGS) --disable-decoder
 
-$(LAMELA): $(LAME_DIR)
+$(LAMELA): $(LAME_DIR)/Makefile
 	cd $(LAME_DIR) && $(MAKE)
 	$(TOUCH_TARGET)
 
 $(SHOUT_DIR):
 	$(GETLIB) $(SHOUT).tar.gz
+
+$(SHOUT_DIR)/Makefile: $(SHOUT_DIR)
 	cd $(SHOUT_DIR) && ./configure $(DEFAULT_ARGS) --with-speex=no
 
-$(SHOUTLA): $(SHOUT_DIR)
+$(SHOUTLA): $(SHOUT_DIR)/Makefile
 	cd $(SHOUT_DIR) && $(MAKE)
 	$(TOUCH_TARGET)
 
