@@ -4047,7 +4047,7 @@ SWITCH_STANDARD_APP(conference_function)
 		rl++;
 
 		/* if this is not an outbound call, deal with conference pins */
-		if (!switch_channel_test_flag(channel, CF_OUTBOUND) && conference->pin) {
+		if (!switch_channel_test_flag(channel, CF_OUTBOUND) && conference->pin && *(conference->pin)) {
 			char pin_buf[80] = "";
 			int pin_retries = 3;	/* XXX - this should be configurable - i'm too lazy to do it right now... */
 			int pin_valid = 0;
