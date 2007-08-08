@@ -116,6 +116,7 @@ static struct {
 	int configured_spans;
 	int configured_boost_spans;
 	char *dialplan;
+	char *context;
 	switch_hash_t *call_hash;
 	switch_mutex_t *hash_mutex;
 	switch_mutex_t *channel_mutex;
@@ -387,6 +388,16 @@ static void set_global_dialplan(char *dialplan)
 	globals.dialplan = strdup(dialplan);
 }
 
+static void set_global_context(char *context)
+{
+	if (globals.context) {
+		free(globals.context);
+		globals.context = NULL;
+	}
+
+	globals.context = strdup(context);
+}
+
 
 static int str2node(char *node)
 {
@@ -446,6 +457,7 @@ static int str2dp(char *dp)
 
 
 static void set_global_dialplan(char *dialplan);
+static void set_global_context(char *context);
 static int str2node(char *node);
 static int str2switch(char *swtype);
 static switch_status_t wanpipe_on_init(switch_core_session_t *session);
@@ -1546,7 +1558,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 																  NULL,
 																  NULL,
 																  (char *)modname,
-																  NULL,
+																  globals.context,
 																  pevent->ring.callednum))) {
 			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 		}
@@ -2225,6 +2237,8 @@ static switch_status_t config_wanpipe(int reload)
 				globals.dtmf_off = atoi(val);
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);
+			} else if (!strcmp(var, "context")) {
+				set_global_context(val);
 			} else if (!strcmp(var, "suppress-dtmf-tone")) {
 				globals.suppress_dtmf_tone = switch_true(val);
 			} else if (!strcmp(var, "ignore-dtmf-tone")) {
