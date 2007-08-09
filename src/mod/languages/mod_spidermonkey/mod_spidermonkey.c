@@ -1788,9 +1788,9 @@ static JSBool session_execute(JSContext * cx, JSObject * obj, uintN argc, jsval 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
 
-
-	CHANNEL_SANITY_CHECK();
-
+	/* you can execute some apps before you answer */
+	/* CHANNEL_SANITY_CHECK(); */
+	
 
 	if (argc > 0) {
 		const switch_application_interface_t *application_interface;
