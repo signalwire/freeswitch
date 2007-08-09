@@ -4451,7 +4451,10 @@ static switch_status_t conference_new_install_caller_controls_custom(conference_
 	switch_xml_t xml_kvp;
 
 	assert(conference != NULL);
-	assert(xml_controls != NULL);
+
+	if (!xml_controls) {
+		return status;
+	}
 
 	/* parse the controls tree for caller control digit strings */
 	for (xml_kvp = switch_xml_child(xml_controls, "control"); xml_kvp; xml_kvp = xml_kvp->next) {
