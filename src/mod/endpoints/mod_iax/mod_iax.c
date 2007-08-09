@@ -767,6 +767,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		{
 			if (tech_pvt->iax_session) {
 				iax_reject(tech_pvt->iax_session, msg->string_arg ? msg->string_arg : "Call Rejected");
+				switch_set_flag(tech_pvt, TFLAG_HANGUP);
 			}
 		}
 		break;
