@@ -73,17 +73,33 @@ static JSBool db_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * a
 	return JS_FALSE;
 }
 
-static void db_destroy(JSContext * cx, JSObject * obj)
+static JSBool db_close(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct db_obj *dbo = JS_GetPrivate(cx, obj);
+	
+	if (dbo) {
+		if (dbo->stmt) {
+			switch_core_db_finalize(dbo->stmt);
+			dbo->stmt = NULL;
+		}
+		if (dbo->db) {
+			switch_core_db_close(dbo->db);
+			dbo->db = NULL;
+		}
+	}
+
+	return JS_TRUE;
+}
+
+static void db_destroy(JSContext *cx, JSObject *obj)
 {
 	struct db_obj *dbo = JS_GetPrivate(cx, obj);
 
 	if (dbo) {
 		switch_memory_pool_t *pool = dbo->pool;
-		if (dbo->stmt) {
-			switch_core_db_finalize(dbo->stmt);
-			dbo->stmt = NULL;
-		}
-		switch_core_db_close(dbo->db);
+		jsval rval = JS_TRUE;
+
+		db_close(cx, obj, 0, NULL, &rval);
 		switch_core_destroy_memory_pool(&pool);
 		pool = NULL;
 	}
@@ -119,6 +135,10 @@ static JSBool db_exec(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, 
 	struct db_obj *dbo = JS_GetPrivate(cx, obj);
 	*rval = INT_TO_JSVAL(0);
 
+	if (!dbo->db) {
+		return JS_FALSE;
+	}
+
 	if (argc > 0) {
 		char *sql = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		char *err = NULL;
@@ -153,6 +173,10 @@ static JSBool db_next(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, 
 	struct db_obj *dbo = JS_GetPrivate(cx, obj);
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 
+	if (!dbo->db) {
+		return JS_FALSE;
+	}
+
 	if (dbo->stmt) {
 		int running = 1;
 		while (running < 5000) {
@@ -179,6 +203,10 @@ static JSBool db_fetch(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 	int colcount = switch_core_db_column_count(dbo->stmt);
 	char code[1024];
 	int x;
+
+	if (!dbo->db) {
+		return JS_FALSE;
+	}
 
 	snprintf(code, sizeof(code), "~var _dB_RoW_DaTa_ = {}");
 	eval_some_js(code, dbo->cx, dbo->obj, rval);
@@ -207,6 +235,10 @@ static JSBool db_prepare(JSContext * cx, JSObject * obj, uintN argc, jsval * arg
 
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 
+	if (!dbo->db) {
+		return JS_FALSE;
+	}
+
 	if (dbo->stmt) {
 		switch_core_db_finalize(dbo->stmt);
 		dbo->stmt = NULL;
@@ -229,6 +261,7 @@ enum db_tinyid {
 
 static JSFunctionSpec db_methods[] = {
 	{"exec", db_exec, 1},
+	{"close", db_close, 0},
 	{"next", db_next, 0},
 	{"fetch", db_fetch, 1},
 	{"prepare", db_prepare, 0},
