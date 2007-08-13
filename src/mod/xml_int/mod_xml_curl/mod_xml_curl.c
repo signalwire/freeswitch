@@ -164,7 +164,7 @@ static switch_status_t do_config(void)
 
 	if (!(bindings_tag = switch_xml_child(cfg, "bindings"))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing <bindings> tag!\n");
-		return SWITCH_STATUS_FALSE;
+		goto done;
 	}
 
 	for (binding_tag = switch_xml_child(bindings_tag, "binding"); binding_tag; binding_tag = binding_tag->next) {
@@ -195,7 +195,7 @@ static switch_status_t do_config(void)
 		}
 
 		if (!(binding = malloc(sizeof(*binding)))) {
-			return SWITCH_STATUS_FALSE;
+			goto done;
 		}
 		memset(binding, 0, sizeof(*binding));
 
@@ -218,6 +218,7 @@ static switch_status_t do_config(void)
 		binding = NULL;
 	}
 
+ done:
 	switch_xml_free(xml);
 
 	return x ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
