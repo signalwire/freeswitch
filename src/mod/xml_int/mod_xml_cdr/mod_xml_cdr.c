@@ -198,7 +198,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 {
 	char *cf = "xml_cdr.conf";
 	switch_xml_t cfg, xml, settings, param;
-
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	/* test global state handlers */
 	switch_core_add_state_handler(&state_handlers);
@@ -212,7 +212,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
-
+	
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -252,13 +252,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 	if(!switch_strlen_zero(globals.url) && switch_strlen_zero(globals.errLogDir)) {
 		if ((globals.errLogDir = switch_mprintf("%s/xml_cdr", SWITCH_GLOBAL_dirs.log_dir))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-			return SWITCH_STATUS_FALSE;
+			status = SWITCH_STATUS_FALSE;
+			goto done;
 		}
 	}
 
 
-	/* indicate that the module should continue to be loaded */
-	return SWITCH_STATUS_SUCCESS;
+ done:
+	switch_xml_free(xml);
+	return status;
 }
 
 
