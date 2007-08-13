@@ -87,7 +87,7 @@
 #include <switch.h>
 	
 #define OPENMRCP_WAIT_TIMEOUT 5000
-#define MY_BUF_LEN 1024 * 32
+#define MY_BUF_LEN 1024 * 128
 #define MY_BLOCK_SIZE MY_BUF_LEN
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_openmrcp_load);
@@ -176,7 +176,8 @@ static const audio_sink_method_set_t audio_sink_method_set = {
 typedef enum {
 	FLAG_HAS_TEXT = (1 << 0),
 	FLAG_BARGE = (1 << 1),
-	FLAG_READY = (1 << 2)
+	FLAG_READY = (1 << 2),
+	FLAG_SPEAK_COMPLETE = (1 << 3)
 } mrcp_flag_t;
 
 typedef struct {
@@ -260,6 +261,8 @@ static mrcp_status_t tts_session_destroy(tts_session_t *tts_session)
 	if(!tts_session) {
 		return MRCP_STATUS_FAILURE;
 	}
+
+	switch_buffer_destroy(&tts_session->audio_buffer);
 
 	if(tts_session->pool) {
 		apr_pool_destroy(tts_session->pool);
@@ -499,8 +502,21 @@ static mrcp_status_t tts_on_channel_modify(mrcp_client_context_t *context, mrcp_
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "!tts_session\n");
 		return MRCP_STATUS_FAILURE;
 	}
+
+	if (mrcp_message->start_line.method_name) {
+		if (!strcmp(mrcp_message->start_line.method_name,"SPEAK-COMPLETE")) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setting FLAG_SPEAK_COMPLETE\n");
+			switch_set_flag_locked(tts_session, FLAG_SPEAK_COMPLETE);
+		}
+		else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ignoring method: %s\n", mrcp_message->start_line.method_name);
+		}
+	}
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mrcp msg body: %s\n", mrcp_message->body);
 		
+	
+
 	return tts_session_signal_event(tts_session,OPENMRCP_EVENT_CHANNEL_MODIFY);
 }
 
@@ -579,60 +595,6 @@ static apr_status_t openmrcp_tts_write_frame(audio_sink_t *sink, media_frame_t *
 	return MRCP_STATUS_SUCCESS;
 
 }
-
-
-/**
- * Called back by openmrcp client thread every time it receives audio 
- * from the TTS server we are connected to.  Puts audio in a queueu
- * and it will be pulled out from read_tts
-
-static apr_status_t openmrcp_tts_write_frame_NEW(audio_sink_t *sink, media_frame_t *frame)
-{
-	tts_session_t *tts_session = sink->object;	
-	media_frame_t *media_frame;
-	switch_byte_t *buffer;
-	size_t len;
-
-	len = frame->codec_frame.size;
-
-	// create new media frame 
-	media_frame = (media_frame_t *) switch_core_alloc(tts_session->pool, sizeof(media_frame_t));
-	if (!media_frame) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "media_frame creation failed\n");
-		return SWITCH_STATUS_MEMERR;
-	}
-	
-	// since *frame might get freed by caller (true or false?), allocate a
-	// new buffer and copy *data into it.
-	buffer = (switch_byte_t *) switch_core_alloc(tts_session->pool, sizeof(switch_byte_t)*len);
-	if (!buffer) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate buffer\n");
-		return SWITCH_STATUS_MEMERR;
-	}
-	buffer = memcpy(buffer, frame->codec_frame.buffer, len);
-	media_frame->codec_frame.buffer = buffer;
-	media_frame->codec_frame.size = len;  
-	media_frame->type = MEDIA_FRAME_TYPE_AUDIO;
-
-
-	// add audio to buffer 
-	switch_mutex_lock(tts_session->audio_lock);
-	if (switch_buffer_write(tts_session->audio_buffer, buffer, len) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Could not write to buffer\n");
-	}
-	switch_mutex_unlock(tts_session->audio_lock);
-
-	switch_mutex_unlock(tts_session->audio_lock);
-
-	if (switch_queue_trypush(tts_session->audio_queue, (void *) media_frame)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "could not push audio to queue\n");
-		return MRCP_STATUS_FAILURE;
-	}
-
-	return MRCP_STATUS_SUCCESS;
-
-}
-*/
 
 
 /** 
@@ -1140,6 +1102,8 @@ static switch_status_t openmrcp_tts_close(switch_speech_handle_t *sh, switch_spe
 	synth_stop(tts_client_context,tts_session); // TODO
 	wait_for_event(tts_session->event_queue,OPENMRCP_EVENT_CHANNEL_MODIFY,5000);
 
+	
+
 	/* terminate tts session */
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Terminate tts_session\n");
 	mrcp_client_context_session_terminate(tts_client_context,tts_session->client_session);
@@ -1191,18 +1155,62 @@ static switch_status_t openmrcp_read_tts(switch_speech_handle_t *sh, void *data,
 {
 	media_frame_t *queue_frame = NULL;
 	tts_session_t *tts_session = (tts_session_t *) sh->private_info;
+	size_t return_len=0;
+	size_t amt2copy=0;
+	size_t desired = *datalen;
+	switch_byte_t *audiodata = (switch_byte_t *) data;
 
-	if (switch_queue_trypop(tts_session->audio_queue, (void *) &queue_frame)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "could not pop from queue\n");
-		return SWITCH_STATUS_SUCCESS;	
-	}
-	else {
-		memcpy(data, queue_frame->codec_frame.buffer, queue_frame->codec_frame.size);
-		*datalen = queue_frame->codec_frame.size;
-		*rate = 8000;
-		return SWITCH_STATUS_SUCCESS;	
+	while(return_len < desired) {
+
+		if (switch_test_flag(tts_session, FLAG_SPEAK_COMPLETE)) {
+			// tell fs we are done
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FLAG_SPEAK_COMPLETE\n");
+			return SWITCH_STATUS_BREAK;
+		}
+
+		if (switch_queue_pop(tts_session->audio_queue, (void *) &queue_frame)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "could not pop from queue\n");
+			if (switch_test_flag(tts_session, FLAG_SPEAK_COMPLETE)) {
+				// tell fs we are done
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FLAG_SPEAK_COMPLETE\n");
+				return SWITCH_STATUS_BREAK;
+			}
+			break;
+		}
+		else {
+			if (switch_test_flag(tts_session, FLAG_SPEAK_COMPLETE)) {
+				// tell fs we are done
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FLAG_SPEAK_COMPLETE\n");
+				return SWITCH_STATUS_BREAK;
+			}
+
+			if (queue_frame->codec_frame.size >= desired) {
+				amt2copy = desired;
+			}
+			else {
+				// limit the amt we copy to audiodata to be LTE datalen
+				// if the queue frame has _more_, just ignore it (TODO: fix this!)
+				amt2copy = queue_frame->codec_frame.size;
+			}
+			memcpy(audiodata, queue_frame->codec_frame.buffer, amt2copy);
+			return_len += amt2copy;
+			*datalen = return_len;
+			audiodata += amt2copy;  // move pointer forward
+			*rate = 8000;
+		}
+
 	}
 
+	// double check we actually read something
+	if (*datalen == 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no data read from buffer\n");
+		return SWITCH_STATUS_FALSE;	
+	}
+	else if (*datalen < desired) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "return_len: (%d) < desired: (%d)\n", return_len, desired);
+	}
+
+	return SWITCH_STATUS_SUCCESS;	
 }
 
 
@@ -1314,6 +1322,8 @@ static switch_status_t do_config(void)
 
 		}
 	}
+
+	switch_xml_free(xml);
 
 	return SWITCH_STATUS_SUCCESS;
 }
