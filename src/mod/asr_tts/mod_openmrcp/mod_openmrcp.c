@@ -68,21 +68,6 @@
 #include "mrcp_recognizer.h"
 #include "mrcp_synthesizer.h"
 #include "mrcp_generic_header.h"
-#include "rtp_session.h"
-#include "mrcp_client.h"
-#include "mrcp_client_context.h"
-#include "mrcp_client_defs.h"
-#include "mrcp_client_session.h"
-#include "mrcp_client_resource.h"
-#include "mrcp_client_signaling_agent.h"
-#include "mrcp_media_agent.h"
-#include "mrcp_resource.h"
-#include "mrcp_consumer_task.h"
-#include <apr_general.h>
-#include <apr_file_io.h>
-#include <apr_thread_proc.h>
-#include <apr_thread_cond.h>
-#include <apr_strings.h>
 
 #include <switch.h>
 	
@@ -777,11 +762,12 @@ static switch_status_t openmrcp_asr_load_grammar(switch_asr_handle_t *ah, char *
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Create Recognizer Channel\n");
 	asr_session->channel = mrcp_client_recognizer_channel_create(asr_client_context, asr_session->client_session, source);
-
 	if (!asr_session->channel) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create recognizer channel\n");
 		return SWITCH_STATUS_FALSE;
 	}
+
+	mrcp_client_context_channel_add(asr_client_context, asr_session->client_session, asr_session->channel, NULL);
 	
 	/* wait for recognizer channel creation */
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "WAITING FOR CHAN CREATE\n");
@@ -1128,6 +1114,13 @@ static switch_status_t openmrcp_feed_tts(switch_speech_handle_t *sh, char *text,
 	/* create synthesizer channel */
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Create Synthesizer Channel\n");
 	tts_session->channel = mrcp_client_synthesizer_channel_create(tts_client_context,tts_session->client_session,sink);
+	if (!tts_session->channel) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create synthesizer channel\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	mrcp_client_context_channel_add(tts_client_context, tts_session->client_session, tts_session->channel, NULL);
+	
 	/* wait for synthesizer channel creation */
 	if(wait_for_event(tts_session->event_queue,OPENMRCP_EVENT_CHANNEL_CREATE,5000) == MRCP_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Got channel create event\n");
