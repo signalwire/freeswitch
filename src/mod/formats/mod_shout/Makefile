@@ -30,6 +30,7 @@ $(LAME_DIR):
 
 $(LAME_DIR)/Makefile: $(LAME_DIR)
 	cd $(LAME_DIR) && ./configure $(DEFAULT_ARGS) --disable-decoder
+	$(TOUCH_TARGET)
 
 $(LAMELA): $(LAME_DIR)/Makefile
 	cd $(LAME_DIR) && $(MAKE)
@@ -40,6 +41,7 @@ $(SHOUT_DIR):
 
 $(SHOUT_DIR)/Makefile: $(SHOUT_DIR)
 	cd $(SHOUT_DIR) && ./configure $(DEFAULT_ARGS) --with-speex=no
+	$(TOUCH_TARGET)
 
 $(SHOUTLA): $(SHOUT_DIR)/Makefile
 	cd $(SHOUT_DIR) && $(MAKE)

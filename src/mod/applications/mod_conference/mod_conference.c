@@ -1703,7 +1703,6 @@ static void conference_loop_output(conference_member_t * member)
 						write_frame.timestamp = timer.samplecount;
 						switch_core_session_write_frame(member->session, &write_frame, -1, 0);
 						switch_core_timer_next(&timer);
-
 						/* forget the conference data we played file node data instead */
 						switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
 					}
@@ -1775,7 +1774,7 @@ static void conference_loop_output(conference_member_t * member)
 		switch_mutex_unlock(member->flag_mutex);
 
 		if (use_timer) {
-			switch_core_timer_next(&timer);
+			//switch_core_timer_next(&timer);
 		}
 
 	} /* Rinse ... Repeat */
