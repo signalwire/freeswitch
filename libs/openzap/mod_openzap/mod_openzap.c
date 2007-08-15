@@ -731,7 +731,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 
 
-	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, pool)) != 0) {
+	if ((*new_session = switch_core_session_request(channel_endpoint_interface, pool)) != 0) {
 		private_t *tech_pvt;
 		switch_channel_t *channel;
 		switch_caller_profile_t *caller_profile;
@@ -801,7 +801,7 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
 	
 	*sp = NULL;
 	
-	if (!(session = switch_core_session_request(&channel_endpoint_interface, NULL))) {
+	if (!(session = switch_core_session_request(channel_endpoint_interface, NULL))) {
 		return ZAP_FAIL;
 	}
 	
