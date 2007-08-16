@@ -435,6 +435,10 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	}
   reg:
 
+	if (regtype != REG_REGISTER) {
+		return 0;
+	}
+
 	if (exptime) {
 		if (!sofia_reg_find_reg_url(profile, to_user, to_host, buf, sizeof(buf))) {
 			sql = switch_mprintf("insert into sip_registrations values ('%q','%q','%q','%q', '%q', %ld)",
