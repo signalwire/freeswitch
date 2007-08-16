@@ -36,10 +36,6 @@
  * TODO
  * =======
  *
- * - MAJOR DESIGN ISSUE!!  It is way too expensive to be calling malloc on every audio frame,
- * this needs to send the packet directly.  OpenMrcp will need a way to disable their own
- * timer so that the fs timer is the only one driving the media.
- * 
  * - There are two memory pools in use.  One in asr_session which is managed
  * by this module, and one in the switch_asr_handle_t, which is managed by freeswitch.
  * These need to be consolidated into one.  (basically throw away the one in asr_session)
@@ -49,9 +45,6 @@
  * 
  * - openmrcp_flush_tts, openmrcp_text_param_tts, openmrcp_numeric_param_tts, 
  * openmrcp_float_param_tts need to have functionality added
- *
- * - fix audio problem with TTS, convert from using queue to using a switch_buffer
- * (in progress)
  *
  * - use a regex for extracting xml from raw result received from mrcp recognition
  * server
@@ -118,10 +111,9 @@ typedef struct asr_session_t asr_session_t;
 struct asr_session_t {
 	mrcp_session_t        *client_session;
 	mrcp_client_channel_t *channel;
-	switch_queue_t        *audio_queue;
+	mrcp_audio_channel_t  *audio_channel;
 	switch_queue_t        *event_queue;
 	mrcp_message_t        *mrcp_message_last_rcvd;
-	audio_source_t        *source;
 	apr_pool_t            *pool;
 	uint32_t 			   flags;
 	switch_mutex_t        *flag_mutex;
@@ -131,31 +123,11 @@ typedef struct tts_session_t tts_session_t;
 struct tts_session_t {
 	mrcp_session_t        *client_session;
 	mrcp_client_channel_t *channel;
-	switch_queue_t        *audio_queue;  // TO BE REMOVED
+	mrcp_audio_channel_t  *audio_channel;
 	switch_queue_t        *event_queue;
-	switch_mutex_t        *audio_lock;
-	switch_buffer_t       *audio_buffer;
-	audio_sink_t          *sink;
 	apr_pool_t            *pool;
-	switch_speech_flag_t  flags;
+	switch_speech_flag_t   flags;
 	switch_mutex_t        *flag_mutex;
-};
-
-static apr_status_t openmrcp_recognizer_read_frame(audio_source_t *source, media_frame_t *frame);
-static apr_status_t openmrcp_tts_write_frame(audio_sink_t *sink, media_frame_t *frame);
-
-static const audio_source_method_set_t audio_source_method_set = {
-	NULL,
-	NULL,
-	NULL,
-	openmrcp_recognizer_read_frame
-};
-
-static const audio_sink_method_set_t audio_sink_method_set = {
-	NULL,
-	NULL,
-	NULL,
-	openmrcp_tts_write_frame
 };
 
 typedef enum {
@@ -188,7 +160,7 @@ static asr_session_t* asr_session_create()
 	asr_session->pool = session_pool;
 	asr_session->client_session = NULL;
 	asr_session->channel = NULL;
-	asr_session->audio_queue = NULL;
+	asr_session->audio_channel = NULL;
 	asr_session->event_queue = NULL;
 
 
@@ -215,7 +187,7 @@ static tts_session_t* tts_session_create()
 	tts_session->pool = session_pool;
 	tts_session->client_session = NULL;
 	tts_session->channel = NULL;
-	tts_session->audio_queue = NULL;
+	tts_session->audio_channel = NULL;
 	tts_session->event_queue = NULL;
 
 	/* create an event queue */
@@ -246,8 +218,6 @@ static mrcp_status_t tts_session_destroy(tts_session_t *tts_session)
 	if(!tts_session) {
 		return MRCP_STATUS_FAILURE;
 	}
-
-	switch_buffer_destroy(&tts_session->audio_buffer);
 
 	if(tts_session->pool) {
 		apr_pool_destroy(tts_session->pool);
@@ -362,13 +332,14 @@ static mrcp_status_t asr_on_session_terminate(mrcp_client_context_t *context, mr
 	return asr_session_signal_event(asr_session,OPENMRCP_EVENT_SESSION_TERMINATE);
 }
 
-static mrcp_status_t asr_on_channel_add(mrcp_client_context_t *context, mrcp_session_t *session, mrcp_client_channel_t *channel)
+static mrcp_status_t asr_on_channel_add(mrcp_client_context_t *context, mrcp_session_t *session, mrcp_client_channel_t *control_channel, mrcp_audio_channel_t *audio_channel)
 {
 	asr_session_t *asr_session = mrcp_client_context_session_object_get(session);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "asr_on_channel_add called\n");
 	if(!asr_session) {
 		return MRCP_STATUS_FAILURE;
 	}
+	asr_session->audio_channel = audio_channel;
 	return asr_session_signal_event(asr_session,OPENMRCP_EVENT_CHANNEL_CREATE);
 }
 
@@ -454,13 +425,14 @@ static mrcp_status_t tts_on_session_terminate(mrcp_client_context_t *context, mr
 	return tts_session_signal_event(tts_session,OPENMRCP_EVENT_SESSION_TERMINATE);
 }
 
-static mrcp_status_t tts_on_channel_add(mrcp_client_context_t *context, mrcp_session_t *session, mrcp_client_channel_t *channel)
+static mrcp_status_t tts_on_channel_add(mrcp_client_context_t *context, mrcp_session_t *session, mrcp_client_channel_t *control_channel, mrcp_audio_channel_t *audio_channel)
 {
 	tts_session_t *tts_session = mrcp_client_context_session_object_get(session);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "tts_on_channel_add called\n");
 	if(!tts_session) {
 		return MRCP_STATUS_FAILURE;
 	}
+	tts_session->audio_channel = audio_channel;
 	return tts_session_signal_event(tts_session,OPENMRCP_EVENT_CHANNEL_CREATE);
 }
 
@@ -531,92 +503,10 @@ static apr_status_t set_default_tts_options(openmrcp_client_options_t *options)
 	return APR_SUCCESS;
 }
 
-
-/**
- * Called back by openmrcp client thread every time it receives audio 
- * from the TTS server we are connected to.  Puts audio in a queueu
- * and it will be pulled out from read_tts
- */
-static apr_status_t openmrcp_tts_write_frame(audio_sink_t *sink, media_frame_t *frame)
-{
-	tts_session_t *tts_session = sink->object;	
-	media_frame_t *media_frame;
-	switch_byte_t *buffer;
-	size_t len;
-
-	len = frame->codec_frame.size;
-
-	/* create new media frame */
-	media_frame = (media_frame_t *) switch_core_alloc(tts_session->pool, sizeof(media_frame_t));
-	if (!media_frame) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "media_frame creation failed\n");
-		return SWITCH_STATUS_MEMERR;
-	}
-	
-	/**
-	 * since *frame might get freed by caller (true or false?), allocate a
-	 * new buffer and copy *data into it.
-	 **/
-	buffer = (switch_byte_t *) switch_core_alloc(tts_session->pool, sizeof(switch_byte_t)*len);
-	if (!buffer) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate buffer\n");
-		return SWITCH_STATUS_MEMERR;
-	}
-	buffer = memcpy(buffer, frame->codec_frame.buffer, len);
-	media_frame->codec_frame.buffer = buffer;
-	media_frame->codec_frame.size = len;  
-	media_frame->type = MEDIA_FRAME_TYPE_AUDIO;
-
-
-	/* push audio to queue */
-	if (switch_queue_trypush(tts_session->audio_queue, (void *) media_frame)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "could not push audio to queue\n");
-		return MRCP_STATUS_FAILURE;
-	}
-
-	return MRCP_STATUS_SUCCESS;
-
-}
-
-
-/** 
- * Called back by openmcp client thread every time its ready for more audio to send
- * the recognition server we are connected to.  Reads data that was put into a 
- * shared fifo queue upon receiving audio frames from asr_feed()
- */
-static apr_status_t openmrcp_recognizer_read_frame(audio_source_t *source, media_frame_t *frame)
-{
-	asr_session_t *asr_session = source->object;
-	apr_status_t result;
-	media_frame_t *queue_frame = NULL;
-	frame->type = MEDIA_FRAME_TYPE_NONE;
-
-	/* pop next media frame data from incoming queue into frame */
-	if(asr_session->audio_queue) {
-		if (switch_queue_trypop(asr_session->audio_queue, (void *) &queue_frame)) {
-			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "could not pop from queue\n");
-			result = MRCP_STATUS_FAILURE;
-		}
-		else {
-			frame->codec_frame.size = queue_frame->codec_frame.size; 
-			frame->codec_frame.buffer = queue_frame->codec_frame.buffer;
-			frame->type = MEDIA_FRAME_TYPE_AUDIO;
-			result = APR_SUCCESS;
-		}
-	}
-	else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no audio queue\n");
-		result = MRCP_STATUS_FAILURE;
-	}
-
-	return result;
-}
-
 /** Read in the grammar and construct an MRCP Recognize message that has
     The grammar attached as the payload */
 static mrcp_status_t openmrcp_recog_start(mrcp_client_context_t *context, asr_session_t *asr_session, char *path)
 {
-
 	mrcp_generic_header_t *generic_header;
 	apr_status_t rv;
 	apr_file_t *fp;
@@ -654,7 +544,6 @@ static mrcp_status_t openmrcp_recog_start(mrcp_client_context_t *context, asr_se
 
 	/* send the MRCP RECOGNIZE message to MRCP server */
 	return mrcp_client_context_channel_modify(context, asr_session->client_session, mrcp_message);
-
 }
 
 
@@ -670,7 +559,6 @@ static switch_status_t openmrcp_asr_open(switch_asr_handle_t *ah, char *codec, i
 {
 	mrcp_client_context_t *asr_client_context = openmrcp_module.asr_client_context ;
 	asr_session_t *asr_session;
-	audio_source_t *source;
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "asr_open called, codec: %s, rate: %d\n", codec, rate);
 
@@ -696,15 +584,6 @@ static switch_status_t openmrcp_asr_open(switch_asr_handle_t *ah, char *codec, i
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Sorry, only 8kz supported\n");
 		return SWITCH_STATUS_GENERR;		
 	}
-#if 0
-	if (CODEC_FRAME_TIME_BASE != 20) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "You must recompile openmrcp with #define CODEC_FRAME_TIME_BASE 20\n");
-		return SWITCH_STATUS_GENERR;				
-	}
-	else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CODEC_FRAME_TIME_BASE: %d\n", CODEC_FRAME_TIME_BASE);
-	}
-#endif
 	/* create session */
 	asr_session = asr_session_create();
 	if (!asr_session) {
@@ -717,29 +596,12 @@ static switch_status_t openmrcp_asr_open(switch_asr_handle_t *ah, char *codec, i
 		return SWITCH_STATUS_GENERR;
 	}
 
-	/* create audio source */
-	source = mrcp_palloc(asr_session->pool,sizeof(audio_source_t)); 
-	source->method_set = &audio_source_method_set;
-	source->object = asr_session;
-	asr_session->source = source;
-	
-	/**
-	 * create a new fifo queue.  incoming audio received from freeswitch
-	 * will be put into this queue, and it will be later pulled out by 
-	 * the openmrcp client thread.
-	 */
-	if (switch_queue_create(&asr_session->audio_queue, 10000, asr_session->pool)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "audio queue creation failed\n");
-		return SWITCH_STATUS_MEMERR;
-	}
-	
 	asr_session->flags = *flags;
 	switch_mutex_init(&asr_session->flag_mutex, SWITCH_MUTEX_NESTED, asr_session->pool);
 
 	ah->private_info = asr_session;
 
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 /* function to load a grammar to the asr interface */
@@ -753,13 +615,12 @@ static switch_status_t openmrcp_asr_load_grammar(switch_asr_handle_t *ah, char *
 	
 	asr_session_t *asr_session = (asr_session_t *) ah->private_info;
 	mrcp_client_context_t *asr_client_context = openmrcp_module.asr_client_context;
-	audio_source_t *source = asr_session->source;
 		
 	/* create recognizer channel, also starts outgoing rtp media */
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loading grammar\n");
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Create Recognizer Channel\n");
-	asr_session->channel = mrcp_client_recognizer_channel_create(asr_client_context, asr_session->client_session, source);
+	asr_session->channel = mrcp_client_recognizer_channel_create(asr_client_context, asr_session->client_session, NULL);
 	if (!asr_session->channel) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create recognizer channel\n");
 		return SWITCH_STATUS_FALSE;
@@ -792,47 +653,26 @@ static switch_status_t openmrcp_asr_load_grammar(switch_asr_handle_t *ah, char *
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 /*! function to feed audio to the ASR*/
 static switch_status_t openmrcp_asr_feed(switch_asr_handle_t *ah, void *data, unsigned int len, switch_asr_flag_t *flags)
 {
-
 	asr_session_t *asr_session = (asr_session_t *) ah->private_info;
-	media_frame_t *media_frame;
-	switch_byte_t *buffer;
-	
-	/* create new media frame */
-	media_frame = (media_frame_t *) switch_core_alloc(asr_session->pool, sizeof(media_frame_t));
-	if (!media_frame) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "media_frame creation failed\n");
-		return SWITCH_STATUS_MEMERR;
-	}
-	
-	/**
-	 * since *data buffer might get freed by caller (true or false?), allocate a
-	 * new buffer and copy *data into it.
-	 *
-	 * MAJOR DESIGN ISSUE!!  It is way too expensive to be calling malloc on every audio frame,
-	 * this needs to send the packet directly.  OpenMrcp will need a way to disable their own
-	 * timer so that the fs timer is the only one driving the media.
-	 **/
-	buffer = (switch_byte_t *) switch_core_alloc(asr_session->pool, sizeof(switch_byte_t)*len);
-	if (!buffer) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate buffer\n");
-		return SWITCH_STATUS_MEMERR;
-	}
-	buffer = memcpy(buffer, data, len);
-	
-	media_frame->codec_frame.buffer = buffer;
-	media_frame->codec_frame.size = len;  
-	media_frame->type = MEDIA_FRAME_TYPE_AUDIO;
-	
-	/* push audio to queue */
-	if (switch_queue_trypush(asr_session->audio_queue, (void *) media_frame)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "could not push audio to queue\n");
-		return SWITCH_STATUS_GENERR;
-	}
+	media_frame_t media_frame;
+	audio_sink_t *audio_sink = mrcp_client_audio_sink_get(asr_session->audio_channel);
 
+	media_frame.type = MEDIA_FRAME_TYPE_AUDIO;
+	/* sampling rate and frame size should be retrieved from audio sink */
+	media_frame.codec_frame.size = 160;
+	media_frame.codec_frame.buffer = data;
+	while(len >= media_frame.codec_frame.size) {
+		audio_sink->method_set->write_frame(audio_sink,&media_frame);
+		
+		len -= (unsigned int)media_frame.codec_frame.size;
+		media_frame.codec_frame.buffer = (char*)media_frame.codec_frame.buffer + media_frame.codec_frame.size;
+	}
+	if(len > 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Not framed alligned data len [%d]\n",len);
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1025,9 +865,7 @@ static mrcp_status_t synth_stop(mrcp_client_context_t *context, tts_session_t *t
 
 static switch_status_t openmrcp_tts_open(switch_speech_handle_t *sh, char *voice_name, int rate, switch_speech_flag_t *flags) 
 {
-
 	tts_session_t *tts_session;
-	audio_sink_t *sink;
 	mrcp_client_context_t *tts_client_context = openmrcp_module.tts_client_context ;
 
 	/* create session */
@@ -1042,32 +880,6 @@ static switch_status_t openmrcp_tts_open(switch_speech_handle_t *sh, char *voice
 		return SWITCH_STATUS_GENERR;
 	}
 
-
-	/* create audio sink */
-	sink = mrcp_palloc(tts_session->pool,sizeof(audio_sink_t));
-	sink->method_set = &audio_sink_method_set;
-	sink->object = tts_session;
-	tts_session->sink = sink;
-	
-
-	/**
-	 * create a new fifo queue.  
-	 */
-	if (switch_queue_create(&tts_session->audio_queue, 10000, tts_session->pool)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "audio queue creation failed\n");
-		return SWITCH_STATUS_MEMERR;
-	}
-
-	/* create mutex that will be used to lock audio buffer */
-	switch_mutex_init(&tts_session->audio_lock, SWITCH_MUTEX_NESTED, sh->memory_pool);
-
-	/* create audio buffer */
-	if (switch_buffer_create_dynamic(&tts_session->audio_buffer, MY_BLOCK_SIZE, MY_BUF_LEN, 0) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write Buffer Creation Failed!\n");
-		return SWITCH_STATUS_MEMERR;
-	}
-
-	
 	tts_session->flags = *flags;
 	switch_mutex_init(&tts_session->flag_mutex, SWITCH_MUTEX_NESTED, tts_session->pool);
 
@@ -1104,14 +916,12 @@ static switch_status_t openmrcp_tts_close(switch_speech_handle_t *sh, switch_spe
 
 static switch_status_t openmrcp_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags)
 {
-
 	tts_session_t *tts_session = (tts_session_t *) sh->private_info;
 	mrcp_client_context_t *tts_client_context = openmrcp_module.tts_client_context ;
-	audio_sink_t *sink = tts_session->sink;
 
 	/* create synthesizer channel */
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Create Synthesizer Channel\n");
-	tts_session->channel = mrcp_client_synthesizer_channel_create(tts_client_context,tts_session->client_session,sink);
+	tts_session->channel = mrcp_client_synthesizer_channel_create(tts_client_context,tts_session->client_session,NULL);
 	if (!tts_session->channel) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create synthesizer channel\n");
 		return SWITCH_STATUS_FALSE;
@@ -1144,63 +954,34 @@ static switch_status_t openmrcp_feed_tts(switch_speech_handle_t *sh, char *text,
  */
 static switch_status_t openmrcp_read_tts(switch_speech_handle_t *sh, void *data, size_t *datalen, uint32_t *rate, switch_speech_flag_t *flags)
 {
-	media_frame_t *queue_frame = NULL;
 	tts_session_t *tts_session = (tts_session_t *) sh->private_info;
 	size_t return_len=0;
-	size_t amt2copy=0;
-	size_t desired = *datalen;
-	switch_byte_t *audiodata = (switch_byte_t *) data;
+	media_frame_t media_frame;
+	audio_source_t *audio_source;
 
-	while(return_len < desired) {
-
-		if (switch_test_flag(tts_session, FLAG_SPEAK_COMPLETE)) {
-			// tell fs we are done
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FLAG_SPEAK_COMPLETE\n");
-			return SWITCH_STATUS_BREAK;
-		}
-
-		if (switch_queue_pop(tts_session->audio_queue, (void *) &queue_frame)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "could not pop from queue\n");
-			if (switch_test_flag(tts_session, FLAG_SPEAK_COMPLETE)) {
-				// tell fs we are done
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FLAG_SPEAK_COMPLETE\n");
-				return SWITCH_STATUS_BREAK;
-			}
-			break;
-		}
-		else {
-			if (switch_test_flag(tts_session, FLAG_SPEAK_COMPLETE)) {
-				// tell fs we are done
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FLAG_SPEAK_COMPLETE\n");
-				return SWITCH_STATUS_BREAK;
-			}
-
-			if (queue_frame->codec_frame.size >= desired) {
-				amt2copy = desired;
-			}
-			else {
-				// limit the amt we copy to audiodata to be LTE datalen
-				// if the queue frame has _more_, just ignore it (TODO: fix this!)
-				amt2copy = queue_frame->codec_frame.size;
-			}
-			memcpy(audiodata, queue_frame->codec_frame.buffer, amt2copy);
-			return_len += amt2copy;
-			*datalen = return_len;
-			audiodata += amt2copy;  // move pointer forward
-			*rate = 8000;
-		}
-
+	if (switch_test_flag(tts_session, FLAG_SPEAK_COMPLETE)) {
+		/* tell fs we are done */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FLAG_SPEAK_COMPLETE\n");
+		return SWITCH_STATUS_BREAK;
 	}
 
-	// double check we actually read something
-	if (*datalen == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no data read from buffer\n");
-		return SWITCH_STATUS_FALSE;	
-	}
-	else if (*datalen < desired) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "return_len: (%d) < desired: (%d)\n", return_len, desired);
+	audio_source = mrcp_client_audio_source_get(tts_session->audio_channel);
+	if(!audio_source) {
+		return SWITCH_STATUS_BREAK;
 	}
 
+	/* sampling rate and frame size should be retrieved from audio source */
+	*rate = 8000;
+	media_frame.codec_frame.size = 160;
+	while(return_len < *datalen) {
+		media_frame.codec_frame.buffer = (char*)data + return_len;
+		audio_source->method_set->read_frame(audio_source,&media_frame);
+		if(media_frame.type != MEDIA_FRAME_TYPE_AUDIO) {
+			memset(media_frame.codec_frame.buffer,0,media_frame.codec_frame.size);
+		}
+		return_len += media_frame.codec_frame.size;
+	}
+	*datalen = return_len;
 	return SWITCH_STATUS_SUCCESS;	
 }
 
@@ -1248,7 +1029,6 @@ static switch_speech_interface_t openmrcp_tts_interface = {
 	/*.speech_text_param_tts*/ openmrcp_text_param_tts,
 	/*.speech_numeric_param_tts*/ openmrcp_numeric_param_tts,
 	/*.speech_float_param_tts*/	openmrcp_float_param_tts,
-
 };
 
 static switch_loadable_module_interface_t openmrcp_module_interface = {
@@ -1334,7 +1114,6 @@ static switch_status_t mrcp_init()
 	/*!
 	Perform one-time initialization of asr client library
 	*/
-	
 	pool = mrcp_global_pool_get();
 	asr_options = mrcp_palloc(pool,sizeof(openmrcp_client_options_t));
 	asr_event_handler = mrcp_palloc(pool,sizeof(mrcp_client_event_handler_t));
@@ -1404,7 +1183,6 @@ static switch_status_t mrcp_init()
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_openmrcp_load)
 {
-
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &openmrcp_module_interface;
 
