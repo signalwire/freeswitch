@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Traun Leyden <tleyden@branchcut.com>
+ * Arsen Chaloyan <achaloyan@yahoo.com>
  *
  * Module which acts as an MRCP client to an MRCP speech recognition
  * server.  In other words it bridges freeswitch to an external speech
@@ -404,19 +405,6 @@ static switch_status_t openmrcp_asr_open(switch_asr_handle_t *ah, char *codec, i
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "asr_open called, codec: %s, rate: %d\n", codec, rate);
 
-	/*! 
-	  NOTE: According to the current FS media bugs design, the media bug can only feed audio
-	  data in SLIN (L16) format.  So we dont need to worry about other codecs.
-
-	  NOTE: forcing MRCP to use 20 as the CODEC_FRAME_TIME_BASE effectively ensures
-	  that it matches with 16-bit audio at 8kz with 320 byte frames.  in testing, leaving
-	  CODEC_FRAME_TIME_BASE at 10 and using pop (instead of trypop) in 
-	  openmrcp_recognizer_read_frame() actually produces clean audio, however it causes 
-      other problems as the full channel/session cleanup never completes in openmrcp, most 
-	  likely due to a thread being blocked on a pop call from audio queue.  but with trypop 
-	  (to avoid the cleanup problem), it only produces clean audio when CODEC_FRAME_TIME_BASE 
-	  is set to 20. 
-	 */
 	if (strcmp(codec,"L16")) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Sorry, only L16 codec supported\n");
 		return SWITCH_STATUS_GENERR;		
@@ -501,6 +489,9 @@ static switch_status_t openmrcp_asr_feed(switch_asr_handle_t *ah, void *data, un
 	media_frame.codec_frame.size = 160;
 	media_frame.codec_frame.buffer = data;
 	while(len >= media_frame.codec_frame.size) {
+		if (!audio_sink) {
+			return SWITCH_STATUS_GENERR;
+		}
 		audio_sink->method_set->write_frame(audio_sink,&media_frame);
 		
 		len -= (unsigned int)media_frame.codec_frame.size;
@@ -653,7 +644,6 @@ static mrcp_status_t synth_speak(mrcp_client_context_t *context, openmrcp_sessio
 	mrcp_generic_header_t *generic_header;
 	mrcp_message_t *mrcp_message;
 
-	//buffer = (switch_byte_t *) switch_core_alloc(asr_session->pool, sizeof(switch_byte_t)*len);
 	char *text2speak;
 	const char xml_head[] = 
 		"<?xml version=\"1.0\"?>\r\n"
@@ -899,6 +889,9 @@ static switch_status_t do_config()
 			}
 		}
 	}
+	else {
+		goto error;
+	}
 	if ((profiles = switch_xml_child(cfg, "profiles"))) {
 		for (xprofile = switch_xml_child(profiles, "profile"); xprofile; xprofile = xprofile->next) {
 			const char *profile_name = switch_xml_attr_soft(xprofile, "name");
@@ -963,10 +956,18 @@ static switch_status_t do_config()
 			}
 		}
 	}
+	else {
+		goto error;
+	}
 
 	switch_xml_free(xml);
-
 	return SWITCH_STATUS_SUCCESS;
+
+ error:
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load module configuration\n");
+	switch_xml_free(xml);
+	return SWITCH_STATUS_TERM;
+
 }
 
 static switch_status_t openmrcp_profile_run(openmrcp_profile_t *profile)
@@ -1015,7 +1016,9 @@ static switch_status_t openmrcp_init()
 	switch_core_hash_init(&openmrcp_module.profile_hash,openmrcp_module.pool);
 
 	/* read config */
-	do_config();
+	if (do_config() != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	/* run default asr/tts profiles */
 	if(openmrcp_module.asr_profile) {
@@ -1036,7 +1039,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_openmrcp_load)
 	mrcp_global_init();
 	
 	/* initialize openmrcp */
-	openmrcp_init();
+	if (openmrcp_init() != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_FALSE;		
+	}
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
