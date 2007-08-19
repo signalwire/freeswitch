@@ -1,4 +1,4 @@
-BASE=/usr/src/freeswitch.trunk
+BASE=../../..
 OZ_DIR=..
 VERBOSE=1
 OZA=$(OZ_DIR)/libopenzap.a
