@@ -18,6 +18,8 @@ LOCAL_CFLAGS+= -Wno-comment -Wno-sign-compare $(OPENMRCP_INCLUDE) $(MRCP_APR_INC
 
 LOCAL_LIBADD=$(OPENMRCP_LIBS)
 
+LOCAL_INSERT_LDFLAGS=if test $$osarch = "Darwin" ; then echo "-framework CoreFoundation -framework SystemConfiguration -lssl -lcrypto" ; fi ;
+
 include ../../../../build/modmake.rules
 
 $(OPENMRCP_DIR)/Makefile:
