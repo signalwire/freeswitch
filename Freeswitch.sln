@@ -550,13 +550,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Build System", "_Build System", "{DB1024A8-41BF-4AD7-9AE6-13202230D1F3}"
 	ProjectSection(SolutionItems) = preProject
 		acsite.m4 = acsite.m4
-		build\addenv.sh = build\addenv.sh
-		build\build.sh = build\build.sh
 		build\buildlib.sh = build\buildlib.sh
-		build\checkversion.sh = build\checkversion.sh
 		configure.in = configure.in
 		Makefile.am = Makefile.am
-		build\modmake.sh = build\modmake.sh
 		build\modules.conf.in = build\modules.conf.in
 		libs\win32\util.vbs = libs\win32\util.vbs
 	EndProjectSection
