@@ -117,13 +117,33 @@ static switch_codec_implementation_t h263_90000_implementation = {
 	/*.next = */&h264_90000_implementation
 };
 
+static switch_codec_implementation_t h261_90000_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_VIDEO,
+	/*.ianacode */ 31,
+	/*.iananame */ "H261",
+	/*.fmtp */ NULL,
+	/*.samples_per_second = */ 90000,
+	/*.bits_per_second = */ 0,
+	/*.microseconds_per_frame = */ 0,
+	/*.samples_per_frame = */ 0,
+	/*.bytes_per_frame = */ 0,
+	/*.encoded_bytes_per_frame = */ 0,
+	/*.number_of_channels = */ 1,
+	/*.pref_frames_per_packet = */ 1,
+	/*.max_frames_per_packet = */ 1,
+	/*.init = */ switch_h26x_init,
+	/*.encode = */ switch_h26x_encode,
+	/*.decode = */ switch_h26x_decode,
+	/*.destroy = */ switch_h26x_destroy,
+	/*.next = */&h263_90000_implementation
+};
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_h26x_load)
 {
 	switch_codec_interface_t *codec_interface;
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	SWITCH_ADD_CODEC(codec_interface, "h26x video (passthru)", &h263_90000_implementation);
+	SWITCH_ADD_CODEC(codec_interface, "h26x video (passthru)", &h261_90000_implementation);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
