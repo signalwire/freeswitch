@@ -199,6 +199,30 @@ Function Showpath(folderspec)
 	showpath = f.path & "\"
 End Function
 
+
+Function FindVersionStringInConfigure(strConfigFile, strVersionString)
+
+Set objRegEx = CreateObject("VBScript.RegExp")
+objRegEx.Pattern = "[^#]AC_SUBST\(" & strVersionString & ".*\[([^\[]*)\]"
+ 
+Set objFSO = CreateObject("Scripting.FileSystemObject")
+Set objFile = objFSO.OpenTextFile(strConfigFile, 1)
+strSearchString = objFile.ReadAll
+objFile.Close
+
+Set colMatches = objRegEx.Execute(strSearchString)  
+
+strResult = ""
+If colMatches.Count > 0 Then
+   For Each strMatch in colMatches   
+	strResult = objRegEx.Replace(strMatch.Value, "$1")
+    Next
+End If
+
+	FindVersionStringInConfigure = strResult
+
+End Function
+
 Sub FindReplaceInFile(FileName, sFind, sReplace)
 	Const OpenAsASCII = 0  ' Opens the file as ASCII (TristateFalse) 
 	Const OpenAsUnicode = -1  ' Opens the file as Unicode (TristateTrue) 
@@ -219,30 +243,43 @@ End Sub
 
 Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 	Dim oExec
+	
+	strVerMajor = FindVersionStringInConfigure(VersionDir & "configure.in", "SWITCH_VERSION_MAJOR")
+	strVerMinor = FindVersionStringInConfigure(VersionDir & "configure.in", "SWITCH_VERSION_MINOR")
+	strVerMicro = FindVersionStringInConfigure(VersionDir & "configure.in", "SWITCH_VERSION_MICRO")
+	strVerRev   = FindVersionStringInConfigure(VersionDir & "configure.in", "SWITCH_VERSION_REVISION")
+	
 	If Right(tmpFolder, 1) <> "\" Then tmpFolder = tmpFolder & "\" End If
 	If Not FSO.FileExists(tmpFolder & "svnversion.exe") Then 
 		Wget ToolsBase & "svnversion.exe", tmpFolder
 	End If	
 	Dim sLastFile
-	Const OverwriteIfExist = -1 
-	Const ForReading       =  1 
-	VersionCmd="svnversion " & quote & VersionDir & "." & quote &  " -n"
-	Set MyFile = fso.CreateTextFile(tmpFolder & "tmpVersion.Bat", True)
-	MyFile.WriteLine("@" & "cd " & quote & tmpFolder & quote )
-	MyFile.WriteLine("@" & VersionCmd)
-	MyFile.Close
-	Set oExec = WshShell.Exec("cmd /C " & quote & tmpFolder & "tmpVersion.Bat" & quote)
-	Do
-		strFromProc = OExec.StdOut.ReadLine()
-		VERSION=strFromProc
-	Loop While Not OExec.StdOut.atEndOfStream
-	sLastVersion = ""
-	Set sLastFile = FSO.OpenTextFile(tmpFolder & "lastversion", ForReading, true, OpenAsASCII)
-	If Not sLastFile.atEndOfStream Then
-		sLastVersion = sLastFile.ReadLine()
-	End If
-	sLastFile.Close
+	Const OverwriteIfExist = -1
+	Const ForReading       =  1
+
+	if strVerRev = "" Then
+	    VersionCmd="svnversion " & quote & VersionDir & "." & quote &  " -n"
+	    Set MyFile = fso.CreateTextFile(tmpFolder & "tmpVersion.Bat", True)
+	    MyFile.WriteLine("@" & "cd " & quote & tmpFolder & quote )
+	    MyFile.WriteLine("@" & VersionCmd)
+	    MyFile.Close
+	    Set oExec = WshShell.Exec("cmd /C " & quote & tmpFolder & "tmpVersion.Bat" & quote)
+	    Do
+		    strFromProc = OExec.StdOut.ReadLine()
+		    VERSION=strFromProc
+	    Loop While Not OExec.StdOut.atEndOfStream
+	    sLastVersion = ""
+	    Set sLastFile = FSO.OpenTextFile(tmpFolder & "lastversion", ForReading, true, OpenAsASCII)
+	    If Not sLastFile.atEndOfStream Then
+		    sLastVersion = sLastFile.ReadLine()
+	    End If
+	    sLastFile.Close
+    End If
 	
+	if strVerRev <> "" Then
+	    VERSION = strVerRev
+	End If
+
 	If VERSION = "" Then
 		VERSION = "UNKNOWN"
 	End If
@@ -253,7 +290,11 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 		MyFile.Close
 	
 		FSO.CopyFile includebase, includedest, true
-		FindReplaceInFile includedest, "@SVN_VERSION@", VERSION
+		FindReplaceInFile includedest, "@SWITCH_VERSION_REVISION@", VERSION
+		FindReplaceInFile includedest, "@SWITCH_VERSION_MAJOR@", strVerMajor
+		FindReplaceInFile includedest, "@SWITCH_VERSION_MINOR@", strVerMinor
+		FindReplaceInFile includedest, "@SWITCH_VERSION_MICRO@", strVerMicro
+
 	End If
 	
 End Sub
