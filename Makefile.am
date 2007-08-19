@@ -161,13 +161,20 @@ install-data-local:
 	touch .version
 
 src/include/switch_version.h: $(top_srcdir)/src/include/switch_version.h.in .version $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
-	@force=0 ; \
-	version=`svnversion . -n || echo hacked` ; \
-	oldversion=`cat .version 2>/dev/null || echo "0"` ; \
-	test ! -f src/include/switch_version.h || grep "@SVN_VERSION@" src/include/switch_version.h && force=1 ; \
-	if test "$$oldversion" != "$$version" || test $$force = 1 ; then \
-	  cat src/include/switch_version.h.in | sed "s/@SVN_VERSION@/$$version/g" > src/include/switch_version.h ; \
-	  echo $$version > .version ; \
+	@have_version=1 ; \
+	force=0 ; \
+	grep "@SWITCH_VERSION_REVISION@" src/include/switch_version.h.in > /dev/null  && have_version=0 ; \
+	test ! -f src/include/switch_version.h || grep "@SWITCH_VERSION_REVISION@" src/include/switch_version.h > /dev/null && force=1 ; \
+	if test $$have_version = 1 ; then \
+	  cat src/include/switch_version.h.in > src/include/switch_version.h ; \
+	  touch .version ; \
+	else \
+	  version=`svnversion . -n || echo hacked` ; \
+	  oldversion=`cat .version 2>/dev/null || echo "0"` ; \
+	  if test "$$oldversion" != "$$version" || test $$force = 1 ; then \
+	    cat src/include/switch_version.h.in | sed "s/@SWITCH_VERSION_REVISION@/$$version/g" > src/include/switch_version.h ; \
+	    echo $$version > .version ; \
+	  fi ; \
 	fi ;
 
 update:

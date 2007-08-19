@@ -576,7 +576,7 @@
 			Name="Generated Header Files"
 			>
 			<File
-				RelativePath="..\..\src\include\switch_am_config.h.in"
+				RelativePath="..\..\src\include\switch_am_config.h.template"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -596,7 +596,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\src\include\switch_version.h.in"
+				RelativePath="..\..\src\include\switch_version.h.template"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -604,7 +604,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating switch_version.h"
-						CommandLine="cscript /nologo &quot;$(ProjectDir)..\..\libs\win32\util.vbs&quot; Version  &quot;$(ProjectDir)&quot; &quot;$(ProjectDir)..\..\&quot; &quot;$(ProjectDir)..\..\src\include\switch_version.h.in&quot; &quot;$(ProjectDir)..\..\src\include\switch_version.h&quot;&#x0D;&#x0A;"
+						CommandLine="cscript /nologo &quot;$(ProjectDir)..\..\libs\win32\util.vbs&quot; Version  &quot;$(ProjectDir)&quot; &quot;$(ProjectDir)..\..\&quot; &quot;$(ProjectDir)..\..\src\include\switch_version.h.template&quot; &quot;$(ProjectDir)..\..\src\include\switch_version.h&quot;&#x0D;&#x0A;"
 						AdditionalDependencies="..\..\src\include\switch.h;..\..\src\include\switch_apr.h;..\..\src\include\switch_buffer.h;..\..\src\include\switch_caller.h;..\..\src\include\switch_channel.h;..\..\src\include\switch_console.h;..\..\src\include\switch_core.h;..\..\src\include\switch_event.h;..\..\src\include\switch_frame.h;..\..\src\include\switch_ivr.h;..\..\src\include\switch_loadable_module.h;..\..\src\include\switch_log.h;..\..\src\include\switch_module_interfaces.h;..\..\src\include\switch_platform.h;..\..\src\include\switch_resample.h;..\..\src\include\switch_rtp.h;..\..\src\include\switch_sqlite.h;..\..\src\include\switch_stun.h;..\..\src\include\switch_types.h;..\..\src\include\switch_utils.h;..\..\src\include\switch_xml.h;..\..\src\switch_buffer.c;..\..\src\switch_caller.c;..\..\src\switch_channel.c;..\..\src\switch_config.c;..\..\src\switch_console.c;..\..\src\switch_core.c;..\..\src\switch_event.c;..\..\src\switch_ivr.c;..\..\src\switch_loadable_module.c;..\..\src\switch_log.c;..\..\src\switch_resample.c;..\..\src\switch_rtp.c;..\..\src\switch_stun.c;..\..\src\switch_utils.c;..\..\src\switch_xml.c"
 						Outputs="..\..\src\include\switch_version.h;lastversion"
 					/>
@@ -615,7 +615,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Generating switch_version.h"
-						CommandLine="cscript /nologo &quot;$(ProjectDir)..\..\libs\win32\util.vbs&quot; Version  &quot;$(ProjectDir)&quot; &quot;$(ProjectDir)..\..\&quot; &quot;$(ProjectDir)..\..\src\include\switch_version.h.in&quot; &quot;$(ProjectDir)..\..\src\include\switch_version.h&quot;&#x0D;&#x0A;"
+						CommandLine="cscript /nologo &quot;$(ProjectDir)..\..\libs\win32\util.vbs&quot; Version  &quot;$(ProjectDir)&quot; &quot;$(ProjectDir)..\..\&quot; &quot;$(ProjectDir)..\..\src\include\switch_version.h.template&quot; &quot;$(ProjectDir)..\..\src\include\switch_version.h&quot;&#x0D;&#x0A;"
 						AdditionalDependencies="..\..\src\include\switch.h;..\..\src\include\switch_apr.h;..\..\src\include\switch_buffer.h;..\..\src\include\switch_caller.h;..\..\src\include\switch_channel.h;..\..\src\include\switch_console.h;..\..\src\include\switch_core.h;..\..\src\include\switch_event.h;..\..\src\include\switch_frame.h;..\..\src\include\switch_ivr.h;..\..\src\include\switch_loadable_module.h;..\..\src\include\switch_log.h;..\..\src\include\switch_module_interfaces.h;..\..\src\include\switch_platform.h;..\..\src\include\switch_resample.h;..\..\src\include\switch_rtp.h;..\..\src\include\switch_sqlite.h;..\..\src\include\switch_stun.h;..\..\src\include\switch_types.h;..\..\src\include\switch_utils.h;..\..\src\include\switch_xml.h;..\..\src\switch_buffer.c;..\..\src\switch_caller.c;..\..\src\switch_channel.c;..\..\src\switch_config.c;..\..\src\switch_console.c;..\..\src\switch_core.c;..\..\src\switch_event.c;..\..\src\switch_ivr.c;..\..\src\switch_loadable_module.c;..\..\src\switch_log.c;..\..\src\switch_resample.c;..\..\src\switch_rtp.c;..\..\src\switch_stun.c;..\..\src\switch_utils.c;..\..\src\switch_xml.c"
 						Outputs="..\..\src\include\switch_version.h;lastversion"
 					/>
