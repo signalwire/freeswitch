@@ -23,7 +23,7 @@ LOCAL_INSERT_LDFLAGS=if test $$osarch = "Darwin" ; then echo "-framework CoreFou
 include ../../../../build/modmake.rules
 
 $(OPENMRCP_DIR)/Makefile:
-	cd $(OPENMRCP_DIR) && ./configure --with-apr=../apr --with-apr-util=../apr-util --with-sofia-sip=../sofia-sip
+	cd $(OPENMRCP_DIR) && ./bootstrap && ./configure --with-apr=../apr --with-apr-util=../apr-util --with-sofia-sip=../sofia-sip
 
 $(OPENMRCP_LIBS): $(OPENMRCP_DIR)/Makefile
 	cd $(OPENMRCP_DIR) && make
