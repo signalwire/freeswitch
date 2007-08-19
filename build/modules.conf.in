@@ -8,6 +8,7 @@ applications/mod_enum
 #applications/mod_soundtouch
 #applications/mod_rss
 #asr_tts/mod_cepstral
+#asr_tts/mod_openmrcp
 #codecs/mod_amr
 codecs/mod_g711
 #codecs/mod_g722
@@ -28,6 +29,7 @@ endpoints/mod_portaudio
 endpoints/mod_sofia
 #endpoints/mod_wanpipe
 endpoints/mod_woomera
+#../../libs/openzap/mod_openzap
 #event_handlers/mod_cdr
 #event_handlers/mod_event_multicast
 event_handlers/mod_event_socket
