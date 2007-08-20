@@ -105,10 +105,12 @@ void PySession::check_hangup_hook() {
 }
 
 switch_status_t PySession::run_dtmf_callback(void *input, 
-					     switch_input_type_t itype) {
+											 switch_input_type_t itype) {
 
    PyObject *func, *arglist;
    PyObject *pyresult;
+   PyObject* headerdict;
+
    char *resultStr;
    char *funcargs;
    switch_file_handle_t *fh = NULL;	
@@ -137,7 +139,47 @@ switch_status_t PySession::run_dtmf_callback(void *input,
 
    funcargs = (char *) cb_state.funcargs;
 
-   arglist = Py_BuildValue("(sis)", input, itype, funcargs);
+   if (itype == SWITCH_INPUT_TYPE_DTMF) {
+
+	 arglist = Py_BuildValue("(sis)", input, itype, funcargs);
+   }
+   else if (itype == SWITCH_INPUT_TYPE_EVENT) {
+	 // DUNNO if this is correct in the case we have an event
+	 // will be of type switch_event_t *event;
+	 // http://www.freeswitch.org/docs/structswitch__event.html
+	 switch_event_t *event = (switch_event_t *) input;
+	 arglist = Py_BuildValue("({s:s}is)",
+							 "body", event->body, 
+							 itype, 
+							 funcargs);
+
+	 // build a dictionary with all the headers
+
+	 switch_event_header_t *hp;
+	 headerdict = PyDict_New();	
+	 for (hp = event->headers; hp; hp = hp->next) {
+	   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding event header to result");	
+	   PyDict_SetItem(headerdict, 
+					  Py_BuildValue("s", hp->name),
+					  Py_BuildValue("s", hp->value));
+
+	 }
+
+	 // add it to the main event dictionary (first arg in list)
+	 // under key 'headers'
+	 PyObject *dict = PyTuple_GetItem(arglist, 0);
+	 PyDict_SetItemString(dict,
+						  "headers",
+						  headerdict);
+
+	 //arglist = Py_BuildValue("(sis)", event->body, itype, funcargs);
+   }
+   else {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown input type: %d\n", itype);	
+	return SWITCH_STATUS_FALSE;
+   }
+
+
    if (!arglist) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error building arglist");	
 	return SWITCH_STATUS_FALSE;
@@ -150,13 +192,15 @@ switch_status_t PySession::run_dtmf_callback(void *input,
    
 
    Py_XDECREF(arglist);                           // Trash arglist
+   Py_XDECREF(headerdict);                          
+
    if (pyresult && pyresult != Py_None) {                       
        resultStr = (char *) PyString_AsString(pyresult);
        switch_status_t cbresult = process_callback_result(resultStr, &cb_state, session);
        return cbresult;
    }
    else {
-       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error calling python callback\n");
+       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Python callback\n returned None");
        PyErr_Print();
        PyErr_Clear();
    }

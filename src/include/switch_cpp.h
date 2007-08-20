@@ -158,7 +158,7 @@ class CoreSession {
      * 
      * The DTMF callback function will be set and persist
      * for the life of the session, and be called when a dtmf
-     * is pressed by user during playFile(), streamfile(), and 
+     * is pressed by user during streamfile(), collectDigits(), and 
      * certain other methods are executing.
      *
 	 */
@@ -168,6 +168,19 @@ class CoreSession {
 	int speak(char *text);
 	void set_tts_parms(char *tts_name, char *voice_name);
 
+	/**
+     * For timeout milliseconds, call the dtmf function set previously
+	 * by setDTMFCallback whenever a dtmf or event is received
+	 */
+	int collectDigits(int timeout);
+
+	/** 
+     * Collect up to maxdigits digits worth of digits
+     * and store them in dtmf_buf.  In the case of mod_python, the 
+	 * dtmf_buf parameter is configured to act as a _return_ value,
+	 * (see mod_python.i).  This does NOT call any callbacks upon
+	 * receiving dtmf digits.  For that, use collectDigits.
+	 */
 	int getDigits(char *dtmf_buf, 
 				  int buflen, 
 				  int maxdigits, 

@@ -4080,6 +4080,37 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_CoreSession_collectDigits(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  int arg2 ;
+  int result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO:CoreSession_collectDigits",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_collectDigits" "', argument " "1"" of type '" "CoreSession *""'"); 
+  }
+  arg1 = reinterpret_cast< CoreSession * >(argp1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "CoreSession_collectDigits" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  result = (int)(arg1)->collectDigits(arg2);
+  resultobj = SWIG_From_int(static_cast< int >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_CoreSession_getDigits(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   CoreSession *arg1 = (CoreSession *) 0 ;
@@ -5228,6 +5259,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"CoreSession_setDTMFCallback", _wrap_CoreSession_setDTMFCallback, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_speak", _wrap_CoreSession_speak, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_set_tts_parms", _wrap_CoreSession_set_tts_parms, METH_VARARGS, NULL},
+	 { (char *)"CoreSession_collectDigits", _wrap_CoreSession_collectDigits, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_getDigits", _wrap_CoreSession_getDigits, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_transfer", _wrap_CoreSession_transfer, METH_VARARGS, NULL},
 	 { (char *)"CoreSession_playAndGetDigits", _wrap_CoreSession_playAndGetDigits, METH_VARARGS, NULL},

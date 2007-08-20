@@ -92,7 +92,7 @@ void CoreSession::execute(char *app, char *data)
 	const switch_application_interface_t *application_interface;
 	sanity_check_noreturn;
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::execute.  data:%s\n", data);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::execute.  app: %s data:%s\n", app, data);
 	if ((application_interface = switch_loadable_module_get_application_interface(app))) {
 		begin_allow_threads();
 		switch_core_session_exec(session, application_interface, data);
@@ -158,6 +158,15 @@ void CoreSession::set_tts_parms(char *tts_name_p, char *voice_name_p)
     voice_name = strdup(voice_name_p);
 }
 
+
+
+int CoreSession::collectDigits(int timeout) {
+	sanity_check(-1);
+    begin_allow_threads();
+	switch_ivr_collect_digits_callback(session, ap, timeout);
+    end_allow_threads();
+} 
+
 int CoreSession::getDigits(char *dtmf_buf, 
 						   int buflen, 
 						   int maxdigits, 
@@ -214,7 +223,8 @@ int CoreSession::playAndGetDigits(int min_digits,
 										 terminators, 
 										 audio_files, 
 										 bad_input_audio_files, 
-										 dtmf_buf, 128, 
+										 dtmf_buf, 
+										 128, 
 										 digits_regex);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "playAndGetDigits dtmf_buf: %s\n", dtmf_buf);
@@ -521,7 +531,7 @@ switch_status_t dtmf_callback(switch_core_session_t *session_cb,
 	CoreSession *coresession = NULL;
 	switch_status_t result;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "dtmf_callback called\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "dtmf_callback called\n");
 	fflush(stdout);
 
 	channel = switch_core_session_get_channel(session_cb);

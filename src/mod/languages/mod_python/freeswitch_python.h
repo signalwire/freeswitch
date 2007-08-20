@@ -40,8 +40,19 @@ class PySession : public CoreSession {
     bool begin_allow_threads();
     bool end_allow_threads();
 
+	/**
+	 * Run DTMF callback
+	 * 
+     * A static method in CoreSession is the first thing called
+	 * upon receving a dtmf/event callback from fs engine, and then
+	 * it gets the PySession instance and calls this method with
+	 * dtmf/event object.
+	 *
+	 * @param input - a dtmf char buffer, or an event 'object' (not sure..)
+	 * @param itype - a SWITCH_INPUT_TYPE_DTMF or a SWITCH_INPUT_TYPE_EVENT
+     */
     switch_status_t run_dtmf_callback(void *input, 
-				      switch_input_type_t itype);
+									  switch_input_type_t itype);
 
 };
 
