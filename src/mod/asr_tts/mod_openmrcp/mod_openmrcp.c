@@ -920,5 +920,5 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_openmrcp_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_openmrcp_shutdown)
 {
-	return SWITCH_STATUS_UNLOAD;
+	return SWITCH_STATUS_SUCCESS;
 }
