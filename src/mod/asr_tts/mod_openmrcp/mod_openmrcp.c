@@ -487,15 +487,21 @@ static switch_status_t openmrcp_asr_get_results(switch_asr_handle_t *ah, char **
           </result>
 		*/
 
-		char *marker = "?>";  // FIXME -- lame and brittle way of doing this.  use regex or better.
-		char *position = strstr(asr_session->mrcp_message_last_rcvd->body, marker);
-		if (!position) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad result received from mrcp server: %s", asr_session->mrcp_message_last_rcvd->body);
-			ret = SWITCH_STATUS_FALSE;
+		if(asr_session->mrcp_message_last_rcvd && asr_session->mrcp_message_last_rcvd->body) {
+			char *marker = "?>";  // FIXME -- lame and brittle way of doing this.  use regex or better.
+			char *position = strstr(asr_session->mrcp_message_last_rcvd->body, marker);
+			if (!position) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad result received from mrcp server: %s", asr_session->mrcp_message_last_rcvd->body);
+				ret = SWITCH_STATUS_FALSE;
+			}
+			else {
+				position += strlen(marker);
+				*xmlstr = strdup(position);
+			}
 		}
 		else {
-			position += strlen(marker);
-			*xmlstr = strdup(position);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No result received from mrcp server: %s");
+			ret = SWITCH_STATUS_FALSE;
 		}
 
 		// since we are returning our result here, future calls to check_results
