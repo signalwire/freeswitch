@@ -74,7 +74,7 @@ static timer_matrix_t TIMER_MATRIX[MAX_ELEMENTS + 1];
 #define IDLE_SPEED 100
 
 
-static inline switch_status_t timer_init(switch_timer_t *timer)
+static switch_status_t timer_init(switch_timer_t *timer)
 {
 	timer_private_t *private_info;
 	int sanity = 0;
@@ -112,7 +112,7 @@ static inline switch_status_t timer_init(switch_timer_t *timer)
 
 
 
-static inline switch_status_t timer_step(switch_timer_t *timer)
+static switch_status_t timer_step(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
 	uint64_t samples;
@@ -136,7 +136,7 @@ static inline switch_status_t timer_step(switch_timer_t *timer)
 }
 
 
-static inline switch_status_t timer_next(switch_timer_t *timer)
+static switch_status_t timer_next(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
 
@@ -154,7 +154,7 @@ static inline switch_status_t timer_next(switch_timer_t *timer)
 	return SWITCH_STATUS_FALSE;
 }
 
-static inline switch_status_t timer_check(switch_timer_t *timer)
+static switch_status_t timer_check(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -182,7 +182,7 @@ static inline switch_status_t timer_check(switch_timer_t *timer)
 }
 
 
-static inline switch_status_t timer_destroy(switch_timer_t *timer)
+static switch_status_t timer_destroy(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
 	switch_mutex_lock(globals.mutex);
