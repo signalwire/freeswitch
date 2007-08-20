@@ -951,8 +951,8 @@ static int preprocess(const char *file, int write_fd, int rlevel)
 		char *arg, *e;
 		char *bp = expand_vars(buf, ebuf, sizeof(ebuf), &cur);
 
-		/* we ignore <include> or </include> for the sake of validators */
-		if (strstr(buf, "<include>") || strstr(buf, "</include>")) {
+		/* we ignore <include> or </include> for the sake of validators as well as <?xml version="1.0"?> type stuff */
+		if (strstr(buf, "<include>") || strstr(buf, "</include>") || strstr(buf, "<?")) {
 			continue;
 		}
 
