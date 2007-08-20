@@ -761,6 +761,7 @@ static switch_status_t do_config()
 		return SWITCH_STATUS_TERM;
 	}
 
+	mrcp_logger.priority = MRCP_PRIO_EMERGENCY;
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			const char *var = switch_xml_attr_soft(param, "name");
@@ -770,6 +771,8 @@ static switch_status_t do_config()
 				asr_profile_name = val;
 			} else if (!strcasecmp(var, "tts_default_profile")) {
 				tts_profile_name = val;
+			} else if (!strcasecmp(var, "log_level")) {
+				mrcp_logger.priority = atoi(val);
 			}
 		}
 	}
