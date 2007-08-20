@@ -2752,24 +2752,31 @@ static JSBool js_bridge(JSContext * cx, JSObject * obj, uintN argc, jsval * argv
 	struct input_callback_state cb_state = { 0 };
 	JSFunction *function;
 
+	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+
 	if (argc > 1) {
 		if (JS_ValueToObject(cx, argv[0], &session_obj_a)) {
 			if (!(jss_a = JS_GetPrivate(cx, session_obj_a))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Find Session [1]\n");
-				return JS_FALSE;
+				eval_some_js("~throw new Error(\"Cannot find session A\");", cx, obj, rval);
+				return JS_TRUE;
 			}
 		}
 		if (JS_ValueToObject(cx, argv[1], &session_obj_b)) {
 			if (!(jss_b = JS_GetPrivate(cx, session_obj_b))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Find Session [1]\n");
-				return JS_FALSE;
+				eval_some_js("~throw new Error(\"Cannot find session B\");", cx, obj, rval);
+				return JS_TRUE;
 			}
 		}
 	}
 
-	if (!(jss_a && jss_b)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failure! %s %s\n", jss_a ? "y" : "n", jss_b ? "y" : "n");
-		return JS_FALSE;
+	if (!(jss_a && jss_a->session)) {
+		eval_some_js("~throw new Error(\"session A is not ready!\");", cx, obj, rval);
+		return JS_TRUE;
+	}
+
+	if (!(jss_b && jss_b->session)) {
+		eval_some_js("~throw new Error(\"session B is not ready!\");", cx, obj, rval);
+		return JS_TRUE;
 	}
 
 
@@ -2796,6 +2803,7 @@ static JSBool js_bridge(JSContext * cx, JSObject * obj, uintN argc, jsval * argv
 	switch_ivr_multi_threaded_bridge(jss_a->session, jss_b->session, dtmf_func, bp, bp);
 	JS_ResumeRequest(cx, cb_state.saveDepth);
 
+	*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
 
 	return JS_TRUE;
 }

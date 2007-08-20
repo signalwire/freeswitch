@@ -551,6 +551,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	int stream_id = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	
+	assert(session != NULL);
+	assert(peer_session != NULL);
+
 	caller_channel = switch_core_session_get_channel(session);
 	assert(caller_channel != NULL);
 
