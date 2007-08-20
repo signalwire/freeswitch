@@ -1047,6 +1047,7 @@ static void do_shutdown(switch_loadable_module_t *module)
 	assert(module != NULL);
 
 	switch_loadable_module_unprocess(module);
+    switch_core_hash_delete_locked(loadable_modules.module_hash, module->key, loadable_modules.mutex);
 
 	if (module->switch_module_shutdown) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping: %s\n", module->module_interface->module_name);
@@ -1067,7 +1068,7 @@ static void do_shutdown(switch_loadable_module_t *module)
 	}
 
 	
-    switch_core_hash_delete_locked(loadable_modules.module_hash, module->key, loadable_modules.mutex);
+
 		
 }
 
