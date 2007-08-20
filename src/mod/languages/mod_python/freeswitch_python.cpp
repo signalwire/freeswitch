@@ -109,7 +109,7 @@ switch_status_t PySession::run_dtmf_callback(void *input,
 
    PyObject *func, *arglist;
    PyObject *pyresult;
-   PyObject* headerdict;
+   PyObject *headerdict;
 
    char *resultStr;
    char *funcargs;
@@ -159,6 +159,10 @@ switch_status_t PySession::run_dtmf_callback(void *input,
 	 headerdict = PyDict_New();	
 	 for (hp = event->headers; hp; hp = hp->next) {
 	   switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding event header to result");	
+	
+	   // TODO: create PyObject pointers for name and value
+	   // and explicitly decref them.  all ref counting stuff is 
+	   // a mess and needs to be tested and looked at closer.
 	   PyDict_SetItem(headerdict, 
 					  Py_BuildValue("s", hp->name),
 					  Py_BuildValue("s", hp->value));
@@ -172,7 +176,9 @@ switch_status_t PySession::run_dtmf_callback(void *input,
 						  "headers",
 						  headerdict);
 
-	 //arglist = Py_BuildValue("(sis)", event->body, itype, funcargs);
+	 Py_XDECREF(headerdict);                          
+
+
    }
    else {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown input type: %d\n", itype);	
@@ -189,10 +195,9 @@ switch_status_t PySession::run_dtmf_callback(void *input,
    did_swap_in = end_allow_threads();
 	
    pyresult = PyEval_CallObject(func, arglist);    
-   
+
 
    Py_XDECREF(arglist);                           // Trash arglist
-   Py_XDECREF(headerdict);                          
 
    if (pyresult && pyresult != Py_None) {                       
        resultStr = (char *) PyString_AsString(pyresult);
@@ -200,7 +205,7 @@ switch_status_t PySession::run_dtmf_callback(void *input,
        return cbresult;
    }
    else {
-       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Python callback\n returned None");
+       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Python callback\n returned None");
        PyErr_Print();
        PyErr_Clear();
    }
