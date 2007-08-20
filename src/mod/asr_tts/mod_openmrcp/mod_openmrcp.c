@@ -705,47 +705,6 @@ static void openmrcp_float_param_tts(switch_speech_handle_t *sh, char *param, do
 
 }
 
-static switch_asr_interface_t openmrcp_asr_interface = {
-	/*.interface_name*/			"openmrcp",
-	/*.asr_open*/				openmrcp_asr_open,
-	/*.asr_load_grammar*/		openmrcp_asr_load_grammar,
-	/*.asr_unload_grammar*/		openmrcp_asr_unload_grammar,
-	/*.asr_close*/				openmrcp_asr_close,
-	/*.asr_feed*/				openmrcp_asr_feed,
-	/*.asr_resume*/				openmrcp_asr_resume,
-	/*.asr_pause*/				openmrcp_asr_pause,
-	/*.asr_check_results*/		openmrcp_asr_check_results,
-	/*.asr_get_results*/		openmrcp_asr_get_results
-};
-
-static switch_speech_interface_t openmrcp_tts_interface = {
-	/*.interface_name*/			"openmrcp",
-	/*.speech_open*/ openmrcp_tts_open,
-	/*.speech_close*/ openmrcp_tts_close,
-	/*.speech_feed_tts*/ openmrcp_feed_tts,
-	/*.speech_read_tts*/ openmrcp_read_tts,
-	/*.speech_flush_tts*/ openmrcp_flush_tts,
-	/*.speech_text_param_tts*/ openmrcp_text_param_tts,
-	/*.speech_numeric_param_tts*/ openmrcp_numeric_param_tts,
-	/*.speech_float_param_tts*/	openmrcp_float_param_tts,
-};
-
-static switch_loadable_module_interface_t openmrcp_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL,
-	/*.api_interface */ NULL,
-	/*.file_interface */ NULL,
-	/*.speech_interface */ &openmrcp_tts_interface,
-	/*.directory_interface */ NULL,
-	/*.chat_interface */ NULL,
-	/*.say_interface */ NULL,
-	/*.asr_interface */ &openmrcp_asr_interface
-};
-
 
 static switch_status_t do_config()
 {
@@ -920,8 +879,33 @@ static switch_status_t openmrcp_init()
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_openmrcp_load)
 {
+
+	switch_speech_interface_t *speech_interface;
+	switch_asr_interface_t *asr_interface;
+
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &openmrcp_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	speech_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_SPEECH_INTERFACE);
+	speech_interface->interface_name = "openmrcp";
+	speech_interface->speech_open = openmrcp_tts_open;
+	speech_interface->speech_close = openmrcp_tts_close;
+	speech_interface->speech_feed_tts = openmrcp_feed_tts;
+	speech_interface->speech_read_tts = openmrcp_read_tts;
+	speech_interface->speech_flush_tts = openmrcp_flush_tts;
+	speech_interface->speech_text_param_tts = openmrcp_text_param_tts;
+	speech_interface->speech_numeric_param_tts = openmrcp_numeric_param_tts;
+	speech_interface->speech_float_param_tts = openmrcp_float_param_tts;
+	asr_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ASR_INTERFACE);
+	asr_interface->interface_name = "openmrcp";
+	asr_interface->asr_open = openmrcp_asr_open;
+	asr_interface->asr_load_grammar = openmrcp_asr_load_grammar;
+	asr_interface->asr_unload_grammar = openmrcp_asr_unload_grammar;
+	asr_interface->asr_close = openmrcp_asr_close;
+	asr_interface->asr_feed = openmrcp_asr_feed;
+	asr_interface->asr_resume = openmrcp_asr_resume;
+	asr_interface->asr_pause = openmrcp_asr_pause;
+	asr_interface->asr_check_results = openmrcp_asr_check_results;
+	asr_interface->asr_get_results = openmrcp_asr_get_results;
 
 	mrcp_global_init();
 	
