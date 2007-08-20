@@ -165,6 +165,7 @@ int CoreSession::collectDigits(int timeout) {
     begin_allow_threads();
 	switch_ivr_collect_digits_callback(session, ap, timeout);
     end_allow_threads();
+    return SWITCH_STATUS_SUCCESS;
 } 
 
 int CoreSession::getDigits(char *dtmf_buf, 
