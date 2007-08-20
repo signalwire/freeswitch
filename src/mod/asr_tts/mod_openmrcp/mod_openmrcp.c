@@ -508,7 +508,7 @@ static switch_status_t openmrcp_asr_get_results(switch_asr_handle_t *ah, char **
 			}
 		}
 		else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No result received from mrcp server: %s");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No result received from mrcp server");
 			ret = SWITCH_STATUS_FALSE;
 		}
 
