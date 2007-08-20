@@ -121,6 +121,7 @@
     <!-- ASR /TTS -->
     <!-- none for mod_cepstral -->
     <!--#include "rss.conf.xml"-->
+    <!--#include "mod_openmrcp.conf.xml"-->
 
     <!-- Say -->
     <!-- none for mod_say_en -->
