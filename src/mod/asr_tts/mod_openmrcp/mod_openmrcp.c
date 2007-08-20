@@ -331,9 +331,8 @@ static switch_status_t openmrcp_asr_open(switch_asr_handle_t *ah, char *codec, i
 		return SWITCH_STATUS_FALSE;
 	}
 
-	mrcp_client_context_channel_add(asr_session->profile->mrcp_context, asr_session->client_session, asr_channel, NULL);
-
 	switch_mutex_lock(asr_session->flag_mutex);
+	mrcp_client_context_channel_add(asr_session->profile->mrcp_context, asr_session->client_session, asr_channel, NULL);
 	if(switch_thread_cond_timedwait(asr_session->wait_object,asr_session->flag_mutex,5000*1000) != APR_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No response from client stack\n");
 	}
@@ -577,9 +576,8 @@ static switch_status_t openmrcp_tts_open(switch_speech_handle_t *sh, char *voice
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create synthesizer channel\n");
 		return SWITCH_STATUS_FALSE;
 	}
-	mrcp_client_context_channel_add(tts_session->profile->mrcp_context, tts_session->client_session, tts_channel, NULL);
-
 	switch_mutex_lock(tts_session->flag_mutex);
+	mrcp_client_context_channel_add(tts_session->profile->mrcp_context, tts_session->client_session, tts_channel, NULL);
 	if(switch_thread_cond_timedwait(tts_session->wait_object,tts_session->flag_mutex,5000*1000) != APR_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No response from client stack\n");
 	}
