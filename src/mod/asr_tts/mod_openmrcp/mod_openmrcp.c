@@ -99,7 +99,8 @@ typedef enum {
 	FLAG_BARGE =          (1 << 1),
 	FLAG_READY =          (1 << 2),
 	FLAG_SPEAK_COMPLETE = (1 << 3),
-	FLAG_FEED_STARTED =   (1 << 4)
+	FLAG_FEED_STARTED =   (1 << 4),
+	FLAG_TERMINATING =    (1 << 5)
 } mrcp_flag_t;
 
 typedef struct {
@@ -173,7 +174,13 @@ static mrcp_status_t openmrcp_on_session_terminate(mrcp_client_context_t *contex
 	if(!openmrcp_session) {
 		return MRCP_STATUS_FAILURE;
 	}
-	openmrcp_session_destroy(openmrcp_session);
+
+	if (switch_test_flag(openmrcp_session, FLAG_TERMINATING)) {
+		openmrcp_session_destroy(openmrcp_session);
+	}
+	else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "abnormal session terminate\n");
+	}
 	return MRCP_STATUS_SUCCESS;
 }
 
@@ -436,6 +443,7 @@ static switch_status_t openmrcp_asr_close(switch_asr_handle_t *ah, switch_asr_fl
 
 	// terminate client session
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Going to TERMINATE SESSION\n");
+	switch_set_flag_locked(asr_session, FLAG_TERMINATING);
 	mrcp_client_context_session_terminate(context, asr_session->client_session);
 	
 	switch_set_flag(ah, SWITCH_ASR_FLAG_CLOSED);
@@ -605,6 +613,7 @@ static switch_status_t openmrcp_tts_close(switch_speech_handle_t *sh, switch_spe
 
 	/* terminate tts session */
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "terminate tts_session\n");
+	switch_set_flag_locked(tts_session, FLAG_TERMINATING);
 	mrcp_client_context_session_terminate(context,tts_session->client_session);
 	return SWITCH_STATUS_SUCCESS;	
 }
