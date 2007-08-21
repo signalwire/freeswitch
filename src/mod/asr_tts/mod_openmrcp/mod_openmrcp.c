@@ -278,21 +278,23 @@ static mrcp_status_t openmrcp_recog_start(mrcp_client_context_t *context, openmr
 	mp = mrcp_message->pool;
 	if ((rv = apr_file_open(&fp, path, APR_READ, APR_OS_DEFAULT, mp)) != APR_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not read grammar\n");
-	    return -1;
+		return -1;
 	}
 	rv = apr_file_info_get(&finfo, APR_FINFO_NORM, fp);
 	
-	buf1 = apr_palloc(mp, (apr_size_t)finfo.size);
+	buf1 = apr_palloc(mp, (apr_size_t)finfo.size + 1);
 	bytes2read = (apr_size_t)finfo.size;
 	rv = apr_file_read(fp, buf1, &bytes2read);
+	buf1[bytes2read] = '\0';
+
 	generic_header = mrcp_generic_header_prepare(mrcp_message);
 	if(!generic_header) {
-	    return MRCP_STATUS_FAILURE;
+		return MRCP_STATUS_FAILURE;
 	}
 
-	generic_header->content_type = mrcp_str_pdup(mrcp_message->pool,"application/srgs+xml");
+	generic_header->content_type = "application/srgs+xml";
 	mrcp_generic_header_property_add(mrcp_message,GENERIC_HEADER_CONTENT_TYPE);
-	mrcp_message->body = mrcp_str_pdup(mrcp_message->pool,buf1);
+	mrcp_message->body = buf1;
 
 	/* send the MRCP RECOGNIZE message to MRCP server */
 	return mrcp_client_context_channel_modify(context, asr_session->client_session, mrcp_message);
@@ -508,7 +510,7 @@ static switch_status_t openmrcp_asr_get_results(switch_asr_handle_t *ah, char **
 			}
 		}
 		else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No result received from mrcp server");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No result received from mrcp server\n");
 			ret = SWITCH_STATUS_FALSE;
 		}
 
@@ -553,9 +555,9 @@ static mrcp_status_t synth_speak(mrcp_client_context_t *context, openmrcp_sessio
 		return MRCP_STATUS_FAILURE;
 	}
 
-	generic_header->content_type = mrcp_str_pdup(mrcp_message->pool,"application/synthesis+ssml");
+	generic_header->content_type = "application/synthesis+ssml";
 	mrcp_generic_header_property_add(mrcp_message,GENERIC_HEADER_CONTENT_TYPE);
-	mrcp_message->body = mrcp_str_pdup(mrcp_message->pool,text2speak);
+	mrcp_message->body = text2speak;
 
 	return mrcp_client_context_channel_modify(context,tts_session->client_session,mrcp_message);
 }
