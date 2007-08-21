@@ -962,5 +962,5 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_openmrcp_shutdown)
 {
 	/* destroy openmrcp */
 	openmrcp_destroy();
-	return SWITCH_STATUS_UNLOAD;
+	return SWITCH_STATUS_SUCCESS;
 }
