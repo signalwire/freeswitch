@@ -179,7 +179,7 @@ static mrcp_status_t openmrcp_on_session_terminate(mrcp_client_context_t *contex
 		openmrcp_session_destroy(openmrcp_session);
 	}
 	else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "abnormal session terminate\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "abnormal session terminate\n");
 	}
 	return MRCP_STATUS_SUCCESS;
 }
@@ -289,6 +289,7 @@ static mrcp_status_t openmrcp_recog_start(mrcp_client_context_t *context, openmr
 
 	generic_header = mrcp_generic_header_prepare(mrcp_message);
 	if(!generic_header) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not prepare generic_header\n");
 		return MRCP_STATUS_FAILURE;
 	}
 
@@ -390,7 +391,15 @@ static switch_status_t openmrcp_asr_feed(switch_asr_handle_t *ah, void *data, un
 	media_frame.codec_frame.buffer = data;
 	while(len >= media_frame.codec_frame.size) {
 		if (!audio_sink) {
-			return SWITCH_STATUS_GENERR;
+			/*!
+			  If there is no audio_sink established yet, discard the audio and
+			  return SUCCESS.  returning anything other than success causes freeswitch
+			  to abort the call and tear down the channel.  One reason there might
+			  not be an audio sink is that the openmrcp client lib is still in the startup
+			  process.  
+			*/
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "!audio_sink\n");
+			return SWITCH_STATUS_SUCCESS;  
 		}
 		audio_sink->method_set->write_frame(audio_sink,&media_frame);
 		
@@ -445,7 +454,7 @@ static switch_status_t openmrcp_asr_close(switch_asr_handle_t *ah, switch_asr_fl
 
 	// terminate client session
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Going to TERMINATE SESSION\n");
-	switch_set_flag_locked(asr_session, FLAG_TERMINATING);
+	switch_set_flag_locked(asr_session, FLAG_TERMINATING);  
 	mrcp_client_context_session_terminate(context, asr_session->client_session);
 	
 	switch_set_flag(ah, SWITCH_ASR_FLAG_CLOSED);
@@ -661,7 +670,7 @@ static switch_status_t openmrcp_read_tts(switch_speech_handle_t *sh, void *data,
 	}
 
 	if (!switch_test_flag(tts_session, FLAG_FEED_STARTED)) {
-		switch_set_flag(tts_session, FLAG_FEED_STARTED);
+		switch_set_flag(tts_session, FLAG_FEED_STARTED);  // shouldn't this use set_flag_locked? -tl
 		if(audio_source->method_set->open) {
 			audio_source->method_set->open(audio_source);
 		}
