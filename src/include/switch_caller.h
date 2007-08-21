@@ -67,16 +67,24 @@ SWITCH_BEGIN_EXTERN_C
 	char *caller_id_name;
 	/*! Caller ID Number */
 	char *caller_id_number;
+	uint8_t caller_ton;
+	uint8_t caller_numplan;
 	/*! Caller Network Address (when applicable) */
 	char *network_addr;
 	/*! ANI (when applicable) */
 	char *ani;
+	uint8_t ani_ton;
+	uint8_t ani_numplan;
 	/*! ANI II (when applicable) */
 	char *aniii;
 	/*! RDNIS */
 	char *rdnis;
+	uint8_t rdnis_ton;
+	uint8_t rdnis_numplan;
 	/*! Destination Number */
 	char *destination_number;
+	uint8_t destination_number_ton;
+	uint8_t destination_number_numplan;
 	/*! channel type */
 	char *source;
 	/*! channel name */

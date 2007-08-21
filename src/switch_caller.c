@@ -86,6 +86,14 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_cor
 		profile->source = switch_core_session_strdup(session, tocopy->source);
 		profile->context = switch_core_session_strdup(session, tocopy->context);
 		profile->chan_name = switch_core_session_strdup(session, tocopy->chan_name);
+		profile->caller_ton = tocopy->caller_ton;
+		profile->caller_numplan = tocopy->caller_numplan;
+		profile->ani_ton = tocopy->ani_ton;
+		profile->ani_numplan = tocopy->ani_numplan;
+		profile->rdnis_ton = tocopy->rdnis_ton;
+		profile->rdnis_numplan = tocopy->rdnis_numplan;
+		profile->destination_number_ton = tocopy->destination_number_ton;
+		profile->destination_number_numplan = tocopy->destination_number_numplan;
 		profile->flags = tocopy->flags;
 	}
 
