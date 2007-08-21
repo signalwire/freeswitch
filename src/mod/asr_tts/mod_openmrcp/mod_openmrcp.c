@@ -855,6 +855,9 @@ static switch_status_t openmrcp_profile_run(openmrcp_profile_t *profile)
 
 static switch_status_t openmrcp_init()
 {
+	/* one-time mrcp global initialization */
+	mrcp_global_init();
+
 	openmrcp_module.pool = mrcp_global_pool_get();
 	openmrcp_module.asr_profile = NULL;
 	openmrcp_module.tts_profile = NULL;
@@ -877,9 +880,37 @@ static switch_status_t openmrcp_init()
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t openmrcp_destroy()
+{
+	/* destroy asr/tts profiles */
+	if(openmrcp_module.asr_profile) {
+		/* shutdown client engine */
+		openmrcp_client_shutdown(openmrcp_module.asr_profile->mrcp_client);
+		/* destroy client context */
+		mrcp_client_context_destroy(openmrcp_module.asr_profile->mrcp_context);
+		if(openmrcp_module.tts_profile == openmrcp_module.asr_profile) {
+			openmrcp_module.tts_profile = NULL;
+		}
+		openmrcp_module.asr_profile = NULL;
+	}
+	if(openmrcp_module.tts_profile) {
+		/* shutdown client engine */
+		openmrcp_client_shutdown(openmrcp_module.tts_profile->mrcp_client);
+		/* destroy client context */
+		mrcp_client_context_destroy(openmrcp_module.tts_profile->mrcp_context);
+		openmrcp_module.tts_profile = NULL;
+	}
+
+	switch_core_hash_destroy(openmrcp_module.profile_hash);
+	openmrcp_module.profile_hash = NULL;
+
+	/* one-time mrcp global destroy */
+	mrcp_global_destroy();
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_openmrcp_load)
 {
-
 	switch_speech_interface_t *speech_interface;
 	switch_asr_interface_t *asr_interface;
 
@@ -907,8 +938,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_openmrcp_load)
 	asr_interface->asr_check_results = openmrcp_asr_check_results;
 	asr_interface->asr_get_results = openmrcp_asr_get_results;
 
-	mrcp_global_init();
-	
 	/* initialize openmrcp */
 	if (openmrcp_init() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;		
@@ -920,5 +949,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_openmrcp_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_openmrcp_shutdown)
 {
-	return SWITCH_STATUS_SUCCESS;
+	/* destroy openmrcp */
+	openmrcp_destroy();
+	return SWITCH_STATUS_UNLOAD;
 }
