@@ -1242,6 +1242,7 @@ static JSBool session_sayphrase(JSContext * cx, JSObject * obj, uintN argc, jsva
 	char *phrase_name = NULL;
 	char *phrase_data = NULL;
 	char *phrase_lang = NULL;
+	char *tmp = NULL;
 	//char *input_callback = NULL;
 	void *bp = NULL;
 	int len = 0;
@@ -1268,11 +1269,20 @@ static JSBool session_sayphrase(JSContext * cx, JSObject * obj, uintN argc, jsva
 
 
 	if (argc > 1) {
-		phrase_data = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		if (!switch_strlen_zero(tmp)) {
+			phrase_data = tmp;
+		} else {
+			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
+			return JS_TRUE;
+		}
 	}
 
 	if (argc > 2) {
-		phrase_lang = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
+		tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
+		if (!switch_strlen_zero(tmp)) {
+			phrase_lang = tmp;
+		}
 	}
 
 	if (argc > 3) {
