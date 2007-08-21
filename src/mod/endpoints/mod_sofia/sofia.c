@@ -793,6 +793,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (switch_true(val)) {
 							profile->ndlb |= PFLAG_NDLB_TO_IN_200_CONTACT;
 						}
+					} else if (!strcasecmp(var, "NDLB-broken-auth-hash")) {
+						if (switch_true(val)) {
+							profile->ndlb |= PFLAG_NDLB_BROKEN_AUTH_HASH;
+						}
 					} else if (!strcasecmp(var, "pass-rfc2833")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_PASS_RFC2833;

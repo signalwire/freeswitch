@@ -725,8 +725,11 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	char bigdigest[2 * SU_MD5_DIGEST_SIZE + 1];
 	char *username, *realm, *nonce, *uri, *qop, *cnonce, *nc, *response, *input = NULL, *input2 = NULL;
 	auth_res_t ret = AUTH_FORBIDDEN;
-	char *npassword = NULL;
-	int cnt = 0;
+	int cnt = 0, first = 0;
+	const char *passwd = NULL;
+	const char *a1_hash = NULL;
+	char *sql;
+	switch_xml_t domain, xml, user, param, xparams;	
 
 	username = realm = nonce = uri = qop = cnonce = nc = response = NULL;
 	
@@ -783,11 +786,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	}
 
 	if (switch_strlen_zero(np)) {
-		switch_xml_t domain, xml, user, param, xparams;
-		const char *passwd = NULL;
-		const char *a1_hash = NULL;
-		char *sql;
-
+		first = 1;
 		sql = switch_mprintf("select nonce from sip_authentication where nonce='%q'", nonce);
 		assert(sql != NULL);
 		if (!sofia_glue_execute_sql2str(profile, profile->ireg_mutex, sql, np, nplen)) {
@@ -796,72 +795,72 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 			goto end;
 		}
 		free(sql);
-
-		if (switch_xml_locate_user(username, realm, ip, &xml, &domain, &user) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", username, realm);
-			ret = AUTH_FORBIDDEN;
-			goto end;
+	} 
+	
+	if (switch_xml_locate_user(username, realm, ip, &xml, &domain, &user) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", username, realm);
+		ret = AUTH_FORBIDDEN;
+		goto end;
+	}
+		
+	if (!(xparams = switch_xml_child(user, "params"))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find params for user [%s@%s]\n", username, realm);
+		switch_xml_free(xml);
+		ret = AUTH_FORBIDDEN;
+		goto end;
+	}
+		
+	for (param = switch_xml_child(xparams, "param"); param; param = param->next) {
+		const char *var = switch_xml_attr_soft(param, "name");
+		const char *val = switch_xml_attr_soft(param, "value");
+				
+		if (!strcasecmp(var, "password")) {
+			passwd = val;
 		}
 		
-		if (!(xparams = switch_xml_child(user, "params"))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find params for user [%s@%s]\n", username, realm);
-			ret = AUTH_FORBIDDEN;
-			goto end;
+		if (!strcasecmp(var, "a1-hash")) {
+			a1_hash = val;
 		}
-		
-		for (param = switch_xml_child(xparams, "param"); param; param = param->next) {
-			const char *var = switch_xml_attr_soft(param, "name");
-			const char *val = switch_xml_attr_soft(param, "value");
+	}
 
-			if (!strcasecmp(var, "password")) {
-				passwd = val;
-			}
-
-			if (!strcasecmp(var, "a1-hash")) {
-				a1_hash = val;
-			}
-		}
-
+	if (first) {
 		if (v_event && (xparams = switch_xml_child(user, "variables"))) {
 			if (switch_event_create(v_event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 				for (param = switch_xml_child(xparams, "variable"); param; param = param->next) {
 					const char *var = switch_xml_attr_soft(param, "name");
 					const char *val = switch_xml_attr_soft(param, "value");
-
+					
 					if (!switch_strlen_zero(var) && !switch_strlen_zero(val)) {
 						switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, var, "%s", val);
 					}
 				}
 			}
 		}
-
-
-		if (switch_strlen_zero(passwd) && switch_strlen_zero(a1_hash)) {
-			ret = AUTH_OK;
-			goto end;
-		}
-
-		if (!a1_hash) {
-			su_md5_t ctx;
-			char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1];
-			char *input;
-
-			input = switch_mprintf("%s:%s:%s", username, realm, passwd);
-			su_md5_init(&ctx);
-			su_md5_strupdate(&ctx, input);
-			su_md5_hexdigest(&ctx, hexdigest);
-			su_md5_deinit(&ctx);
-			switch_safe_free(input);
-			a1_hash = hexdigest;
-			
-		}
-
-		np = strdup(a1_hash);
-
-		switch_xml_free(xml);
 	}
 
-	npassword = np;
+	switch_xml_free(xml);
+
+	if (switch_strlen_zero(passwd) && switch_strlen_zero(a1_hash)) {
+		ret = AUTH_OK;
+		goto end;
+	}
+
+	if (!a1_hash) {
+		su_md5_t ctx;
+		char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1];
+		char *input;
+
+		input = switch_mprintf("%s:%s:%s", username, realm, passwd);
+		su_md5_init(&ctx);
+		su_md5_strupdate(&ctx, input);
+		su_md5_hexdigest(&ctx, hexdigest);
+		su_md5_deinit(&ctx);
+		switch_safe_free(input);
+		a1_hash = hexdigest;
+			
+	}
+
+ for_the_sake_of_interop:
 
 	if ((input = switch_mprintf("%s:%q", regstr, uri))) {
 		su_md5_init(&ctx);
@@ -870,7 +869,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 		su_md5_deinit(&ctx);
 	}
 
-	if ((input2 = switch_mprintf("%q:%q:%q:%q:%q:%q", npassword, nonce, nc, cnonce, qop, uridigest))) {
+	if ((input2 = switch_mprintf("%q:%q:%q:%q:%q:%q", a1_hash, nonce, nc, cnonce, qop, uridigest))) {
 		memset(&ctx, 0, sizeof(ctx));
 		su_md5_init(&ctx);
 		su_md5_strupdate(&ctx, input2);
@@ -880,6 +879,16 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 		if (!strcasecmp(bigdigest, response)) {
 			ret = AUTH_OK;
 		} else {
+			if ((profile->ndlb & PFLAG_NDLB_BROKEN_AUTH_HASH) && strcasecmp(regstr, "REGISTER") && strcasecmp(regstr, "INVITE")) {
+				/* some clients send an ACK with the method 'INVITE' in the hash which will break auth so we will
+				   try again with INVITE so we don't get people complaining to us when someone else's client has a bug......
+				 */
+				switch_safe_free(input);
+				switch_safe_free(input2);
+				regstr = "INVITE";
+				goto for_the_sake_of_interop;
+			}
+
 			ret = AUTH_FORBIDDEN;
 		}
 	}
