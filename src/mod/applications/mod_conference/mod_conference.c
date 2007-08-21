@@ -1720,7 +1720,7 @@ static void conference_loop_output(conference_member_t * member)
 						switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
 					}
 					mux_used = 0;
-				} else if (mux_used > bytes * 2) {
+				} else if (mux_used > bytes * 4) {
 					/* getting behind, clear the buffer */
 					switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
 				}
