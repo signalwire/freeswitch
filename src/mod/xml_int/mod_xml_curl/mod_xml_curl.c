@@ -72,7 +72,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	xml_binding_t *binding = (xml_binding_t *) user_data;
 	char *file_url;
 	struct curl_slist *slist = NULL;
-	long httpRes;
+	long httpRes = 0;
 
 	if (!binding) {
 		return NULL;
