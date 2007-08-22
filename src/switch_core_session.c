@@ -218,6 +218,11 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 																 caller_profile->rdnis,
 																 caller_profile->source, caller_profile->context, caller_profile->destination_number);
 					outgoing_profile->flags = caller_profile->flags;
+					outgoing_profile->caller_ton = caller_profile->caller_ton;
+					outgoing_profile->caller_numplan = caller_profile->caller_numplan;
+					outgoing_profile->destination_number_ton = caller_profile->destination_number_ton;
+					outgoing_profile->destination_number_numplan = caller_profile->destination_number_numplan;
+
 				}
 			}
 			if (!outgoing_profile) {
