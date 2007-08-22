@@ -489,6 +489,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 															caller_caller_profile->rdnis,
 															caller_caller_profile->source, caller_caller_profile->context, chan_data);
 					new_profile->flags = caller_caller_profile->flags;
+					new_profile->caller_ton = caller_caller_profile->caller_ton;
+					new_profile->caller_numplan = caller_caller_profile->caller_numplan;
+					new_profile->destination_number_ton = caller_caller_profile->destination_number_ton;
+					new_profile->destination_number_numplan = caller_caller_profile->destination_number_numplan;
 					pool = NULL;
 				} else {
 					if (!cid_name_override) {
@@ -515,6 +519,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 																 caller_profile_override->aniii,
 																 caller_profile_override->rdnis,
 																 caller_profile_override->source, caller_profile_override->context, chan_data);
+						new_profile->caller_ton = caller_profile_override->caller_ton;
+						new_profile->caller_numplan = caller_profile_override->caller_numplan;
+						new_profile->destination_number_ton = caller_profile_override->destination_number_ton;
+						new_profile->destination_number_numplan = caller_profile_override->destination_number_numplan;
 					} else {
 						new_profile = switch_caller_profile_new(pool,
 																 NULL,
