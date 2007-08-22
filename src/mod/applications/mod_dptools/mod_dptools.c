@@ -346,6 +346,88 @@ SWITCH_STANDARD_APP(set_function)
 	}
 }
 
+
+SWITCH_STANDARD_APP(set_profile_var_function)
+{
+	switch_channel_t *channel;
+	switch_caller_profile_t *caller_profile;
+	char *name, *val = NULL;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	caller_profile = switch_channel_get_caller_profile(channel);
+
+	if (switch_strlen_zero(data)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
+	} else {
+		name = switch_core_session_strdup(session, data);
+		val = strchr(name, '=');
+
+		if (val) {
+			*val++ = '\0';
+			if (switch_strlen_zero(val)) {
+				val = NULL;
+			}
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SET_PROFILE_VAR [%s]=[%s]\n", name, val ? val : "UNDEF");
+
+		if (!strcasecmp(name, "dialplan")) {
+			caller_profile->dialplan = val;
+		}
+		if (!strcasecmp(name, "username")) {
+			caller_profile->username = val;
+		}
+		if (!strcasecmp(name, "caller_id_name")) {
+			caller_profile->caller_id_name = val;
+		}
+		if (!strcasecmp(name, "caller_id_number")) {
+			caller_profile->caller_id_number = val;
+		}
+		if (!strcasecmp(name, "caller_ton")) {
+			caller_profile->caller_ton = (uint8_t)atoi(val);
+		}
+		if (!strcasecmp(name, "caller_numplan")) {
+			caller_profile->caller_numplan = (uint8_t)atoi(val);
+		}
+		if (!strcasecmp(name, "destination_number_ton")) {
+			caller_profile->destination_number_ton = (uint8_t)atoi(val);
+		}
+		if (!strcasecmp(name, "destination_number_numplan")) {
+			caller_profile->destination_number_numplan = (uint8_t)atoi(val);
+		}
+		if (!strcasecmp(name, "ani")) {
+			caller_profile->ani = val;
+		}
+		if (!strcasecmp(name, "aniii")) {
+			caller_profile->aniii = val;
+		}
+		if (!strcasecmp(name, "network_addr")) {
+			caller_profile->network_addr = val;
+		}
+		if (!strcasecmp(name, "rdnis")) {
+			caller_profile->rdnis = val;
+		}
+		if (!strcasecmp(name, "destination_number")) {
+			caller_profile->destination_number = val;
+		}
+		if (!strcasecmp(name, "uuid")) {
+			caller_profile->uuid = val;
+		}
+		if (!strcasecmp(name, "source")) {
+			caller_profile->source = val;
+		}
+		if (!strcasecmp(name, "context")) {
+			caller_profile->context = val;
+		}
+		if (!strcasecmp(name, "chan_name")) {
+			caller_profile->chan_name = val;
+		}
+	}
+}
+
+
 SWITCH_STANDARD_APP(export_function)
 {
 	switch_channel_t *channel;
@@ -1141,6 +1223,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 #define SCHED_HANGUP_DESCR "Schedule a hangup in the future"
 #define UNSET_LONG_DESC "Unset a channel varaible for the channel calling the application."
 #define SET_LONG_DESC "Set a channel varaible for the channel calling the application."
+#define SET_PROFILE_VAR_LONG_DESC "Set a caller profile varaible for the channel calling the application."
 #define EXPORT_LONG_DESC "Set and export a channel varaible for the channel calling the application."
 #define LOG_LONG_DESC "Logs a channel varaible for the channel calling the application."
 #define TRANSFER_LONG_DESC "Immediatly transfer the calling channel to a new extension"
@@ -1171,6 +1254,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "event", "Fire an event", "Fire an event", event_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "export", "Export a channel varaible across a bridge", EXPORT_LONG_DESC, export_function, "<varname>=<value>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "set", "Set a channel varaible", SET_LONG_DESC, set_function, "<varname>=<value>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "set_profile_var", "Set a caller profile varaible", SET_PROFILE_VAR_LONG_DESC, set_profile_var_function, "<varname>=<value>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "unset", "Unset a channel varaible", UNSET_LONG_DESC, unset_function, "<varname>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "ring_ready", "Indicate Ring_Ready", "Indicate Ring_Ready on a channel.", ring_ready_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "break", "Break", "Set the break flag.", break_function, "", SAF_SUPPORT_NOMEDIA);
