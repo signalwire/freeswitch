@@ -62,14 +62,9 @@
 #include "mrcp_recognizer.h"
 #include "mrcp_synthesizer.h"
 #include "mrcp_generic_header.h"
-#include "mrcp_resource_set.h"
 
 #include <switch.h>
 	
-#define OPENMRCP_WAIT_TIMEOUT 5000
-#define MY_BUF_LEN 1024 * 128
-#define MY_BLOCK_SIZE MY_BUF_LEN
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_openmrcp_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_openmrcp_shutdown);
 SWITCH_MODULE_DEFINITION(mod_openmrcp, mod_openmrcp_load, 
@@ -95,12 +90,9 @@ typedef struct {
 } openmrcp_session_t;
 
 typedef enum {
-	FLAG_HAS_TEXT =       (1 << 0),
-	FLAG_BARGE =          (1 << 1),
-	FLAG_READY =          (1 << 2),
-	FLAG_SPEAK_COMPLETE = (1 << 3),
-	FLAG_FEED_STARTED =   (1 << 4),
-	FLAG_TERMINATING =    (1 << 5)
+	FLAG_HAS_MESSAGE =    (1 << 0),
+	FLAG_FEED_STARTED =   (1 << 1),
+	FLAG_TERMINATING =    (1 << 2)
 } mrcp_flag_t;
 
 typedef struct {
@@ -220,38 +212,19 @@ static mrcp_status_t openmrcp_on_channel_modify(mrcp_client_context_t *context, 
 		return MRCP_STATUS_FAILURE;
 	}
 
-	if (mrcp_message->start_line.message_type != MRCP_MESSAGE_TYPE_EVENT) {
+	if (mrcp_message->start_line.message_type == MRCP_MESSAGE_TYPE_RESPONSE && mrcp_message->start_line.request_state == MRCP_REQUEST_STATE_INPROGRESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ignoring mrcp response\n");
 		return MRCP_STATUS_SUCCESS;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mrcp msg body: %s\n", mrcp_message->body);
+	if (switch_test_flag(openmrcp_session, FLAG_HAS_MESSAGE)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "already has message\n");
+		return MRCP_STATUS_SUCCESS;
+	}
 
-	if (mrcp_message->channel_id.resource_id == MRCP_RESOURCE_RECOGNIZER) {
-		if (mrcp_message->start_line.method_id == RECOGNIZER_RECOGNITION_COMPLETE) {
-			openmrcp_session->mrcp_message_last_rcvd = mrcp_message;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "setting FLAG_HAS_TEXT\n");
-			switch_set_flag_locked(openmrcp_session, FLAG_HAS_TEXT);
-		}
-		else if (mrcp_message->start_line.method_id == RECOGNIZER_START_OF_INPUT) {
-			openmrcp_session->mrcp_message_last_rcvd = mrcp_message;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "setting FLAG_BARGE\n");
-			switch_set_flag_locked(openmrcp_session, FLAG_BARGE);
-		}
-		else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ignoring event: %s\n", mrcp_message->start_line.method_name);
-		}
-	}
-	else if(mrcp_message->channel_id.resource_id == MRCP_RESOURCE_SYNTHESIZER) {
-		if (mrcp_message->start_line.method_id == SYNTHESIZER_SPEAK_COMPLETE) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setting FLAG_SPEAK_COMPLETE\n");
-			switch_set_flag_locked(openmrcp_session, FLAG_SPEAK_COMPLETE);
-		}
-		else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ignoring event: %s\n", mrcp_message->start_line.method_name);
-		}
-	}
-		
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "setting FLAG_HAS_MESSAGE\n");
+	openmrcp_session->mrcp_message_last_rcvd = mrcp_message;
+	switch_set_flag_locked(openmrcp_session, FLAG_HAS_MESSAGE);
 	return MRCP_STATUS_SUCCESS;
 }
 
@@ -473,8 +446,8 @@ static switch_status_t openmrcp_asr_check_results(switch_asr_handle_t *ah, switc
 {
 	openmrcp_session_t *asr_session = (openmrcp_session_t *) ah->private_info;
 	
-	switch_status_t rv = (switch_test_flag(asr_session, FLAG_HAS_TEXT) || switch_test_flag(asr_session, FLAG_BARGE)) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
-	
+	switch_status_t rv = (switch_test_flag(asr_session, FLAG_HAS_MESSAGE)) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+
 	return rv;
 }
 
@@ -483,50 +456,61 @@ static switch_status_t openmrcp_asr_get_results(switch_asr_handle_t *ah, char **
 {
 	openmrcp_session_t *asr_session = (openmrcp_session_t *) ah->private_info;
 	switch_status_t ret = SWITCH_STATUS_SUCCESS;
+	mrcp_message_t *message;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "openmrcp_asr_get_results called\n");
 
-	if (switch_test_flag(asr_session, FLAG_BARGE)) {
-		switch_clear_flag_locked(asr_session, FLAG_BARGE);
-		ret = SWITCH_STATUS_BREAK;
-	}
-	
-	if (switch_test_flag(asr_session, FLAG_HAS_TEXT)) {
-		/*! 
-		   we have to extract the XML but stripping off the <?xml version="1.0"?>
-		   header.  the body looks like:
-		
-		   Completion-Cause:001 no-match
-		   Content-Type: application/nlsml+xml
-		   Content-Length: 260
-		 
-		  <?xml version="1.0"?>
-          <result xmlns="http://www.ietf.org/xml/ns/mrcpv2" xmlns:ex="http://www.example.com/example" score="100" grammar="session:request1@form-level.store">
-            <interpretation>             <input mode="speech">open a</input>
-            </interpretation>
-          </result>
-		*/
+	message = asr_session->mrcp_message_last_rcvd;
+	asr_session->mrcp_message_last_rcvd = NULL;
+	// since we are returning our result here, future calls to check_results
+	// should return False
+	switch_clear_flag_locked(asr_session, FLAG_HAS_MESSAGE);
 
-		if(asr_session->mrcp_message_last_rcvd && asr_session->mrcp_message_last_rcvd->body) {
-			char *marker = "?>";  // FIXME -- lame and brittle way of doing this.  use regex or better.
-			char *position = strstr(asr_session->mrcp_message_last_rcvd->body, marker);
-			if (!position) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad result received from mrcp server: %s", asr_session->mrcp_message_last_rcvd->body);
-				ret = SWITCH_STATUS_FALSE;
-			}
-			else {
-				position += strlen(marker);
-				*xmlstr = strdup(position);
-			}
-		}
-		else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No result received from mrcp server\n");
+	if (message->start_line.message_type == MRCP_MESSAGE_TYPE_RESPONSE) {
+		if (message->start_line.status_code != MRCP_STATUS_CODE_SUCCESS && 
+			message->start_line.status_code != MRCP_STATUS_CODE_SUCCESS_WITH_IGNORE) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "error code received [%d]\n", message->start_line.status_code);
 			ret = SWITCH_STATUS_FALSE;
 		}
+	} 
+	else if (message->start_line.message_type == MRCP_MESSAGE_TYPE_EVENT) {
+		if (message->start_line.method_id == RECOGNIZER_RECOGNITION_COMPLETE) {
+			/*! 
+			   we have to extract the XML but stripping off the <?xml version="1.0"?>
+			   header.  the body looks like:
+			
+			   Completion-Cause:001 no-match
+			   Content-Type: application/nlsml+xml
+			   Content-Length: 260
+			 
+			  <?xml version="1.0"?>
+			  <result xmlns="http://www.ietf.org/xml/ns/mrcpv2" xmlns:ex="http://www.example.com/example" score="100" grammar="session:request1@form-level.store">
+				<interpretation>             <input mode="speech">open a</input>
+				</interpretation>
+			  </result>
+			*/
 
-		// since we are returning our result here, future calls to check_results
-		// should return False
-		switch_clear_flag_locked(asr_session, FLAG_HAS_TEXT);
-		ret = SWITCH_STATUS_SUCCESS;	
+			if(message->body) {
+				char *marker = "?>";  // FIXME -- lame and brittle way of doing this.  use regex or better.
+				char *position = strstr(message->body, marker);
+				if (!position) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad result received from mrcp server: %s", message->body);
+					ret = SWITCH_STATUS_FALSE;
+				}
+				else {
+					position += strlen(marker);
+					*xmlstr = strdup(position);
+				}
+			}
+			else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No result received from mrcp server\n");
+				ret = SWITCH_STATUS_FALSE;
+			}
+
+			ret = SWITCH_STATUS_SUCCESS;	
+		} 
+		else if (message->start_line.method_id == RECOGNIZER_START_OF_INPUT) {
+			ret = SWITCH_STATUS_BREAK;
+		}
 	}
 	return ret;
 }
@@ -658,10 +642,25 @@ static switch_status_t openmrcp_read_tts(switch_speech_handle_t *sh, void *data,
 	media_frame_t media_frame;
 	audio_source_t *audio_source;
 
-	if (switch_test_flag(tts_session, FLAG_SPEAK_COMPLETE)) {
-		/* tell fs we are done */
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FLAG_SPEAK_COMPLETE\n");
-		return SWITCH_STATUS_BREAK;
+	if (switch_test_flag(tts_session, FLAG_HAS_MESSAGE)) {
+		mrcp_message_t *message = tts_session->mrcp_message_last_rcvd;
+		tts_session->mrcp_message_last_rcvd = NULL;
+		switch_clear_flag_locked(tts_session, FLAG_HAS_MESSAGE);
+
+		if (message->start_line.message_type == MRCP_MESSAGE_TYPE_RESPONSE) {
+			if (message->start_line.status_code != MRCP_STATUS_CODE_SUCCESS && 
+				message->start_line.status_code != MRCP_STATUS_CODE_SUCCESS_WITH_IGNORE) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "error code received [%d]\n", message->start_line.status_code);
+				return SWITCH_STATUS_BREAK;
+			}
+		} 
+		else if (message->start_line.message_type == MRCP_MESSAGE_TYPE_EVENT) {
+			if (message->start_line.method_id == SYNTHESIZER_SPEAK_COMPLETE) {
+				/* tell fs we are done */
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FLAG_SPEAK_COMPLETE\n");
+				return SWITCH_STATUS_BREAK;
+			}
+		}
 	}
 
 	audio_source = mrcp_client_audio_source_get(tts_session->audio_channel);
