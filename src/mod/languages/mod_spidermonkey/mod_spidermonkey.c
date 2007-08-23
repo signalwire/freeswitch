@@ -1269,13 +1269,7 @@ static JSBool session_sayphrase(JSContext * cx, JSObject * obj, uintN argc, jsva
 
 
 	if (argc > 1) {
-		tmp = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
-		if (!switch_strlen_zero(tmp)) {
-			phrase_data = tmp;
-		} else {
-			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-			return JS_TRUE;
-		}
+		phrase_data = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 	}
 
 	if (argc > 2) {
