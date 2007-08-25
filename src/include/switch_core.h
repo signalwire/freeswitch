@@ -1173,13 +1173,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
   \param module_name the speech module to use
   \param voice_name the desired voice name
   \param rate the sampling rate
+  \param interval the sampling interval
   \param flags tts flags
   \param pool the pool to use (NULL for new pool)
   \return SWITCH_STATUS_SUCCESS if the handle is opened
 */
 SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *sh,
 														char *module_name,
-														char *voice_name, unsigned int rate, switch_speech_flag_t *flags, switch_memory_pool_t *pool);
+														char *voice_name, 
+														unsigned int rate, 
+														unsigned int interval, 
+														switch_speech_flag_t *flags, switch_memory_pool_t *pool);
 /*! 
   \brief Feed text to the TTS module
   \param sh the speech handle to feed

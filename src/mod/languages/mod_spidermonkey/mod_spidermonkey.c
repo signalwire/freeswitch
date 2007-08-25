@@ -1506,6 +1506,53 @@ static JSBool session_get_variable(JSContext * cx, JSObject * obj, uintN argc, j
 	return JS_TRUE;
 }
 
+static void destroy_speech_engine(struct js_session *jss)
+{
+	if (jss->speech) {
+		switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
+		switch_core_codec_destroy(&jss->speech->codec);
+		switch_core_speech_close(&jss->speech->sh, &flags);
+		jss->speech = NULL;
+	}
+}
+
+
+static switch_status_t init_speech_engine(struct js_session *jss, char *engine, char *voice)
+{
+	switch_codec_t *read_codec;
+	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
+	uint32_t rate = 0;
+	int interval = 0;
+
+	read_codec = switch_core_session_get_read_codec(jss->session);
+	rate = read_codec->implementation->samples_per_second;
+	interval = read_codec->implementation->microseconds_per_frame / 1000;
+
+	if (switch_core_codec_init(&jss->speech->codec,
+							   "L16",
+							   NULL,
+							   rate,
+							   interval,
+							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+							   switch_core_session_get_pool(jss->session)) == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Success L16@%uhz 1 channel %dms\n", rate, interval);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n", rate, interval);
+		return SWITCH_STATUS_FALSE;
+	}
+
+
+	if (switch_core_speech_open(&jss->speech->sh, engine, voice, rate, interval,
+								&flags, switch_core_session_get_pool(jss->session)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module!\n");
+		switch_core_codec_destroy(&jss->speech->codec);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
 
 static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
@@ -1524,19 +1571,47 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 
 	METHOD_SANITY_CHECK();
 
+	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
 
 	CHANNEL_SANITY_CHECK();
 
 	if (argc < 3) {
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 		return JS_FALSE;
 	}
 
 	tts_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 	voice_name = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 	text = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
+
+
+	if (switch_strlen_zero(tts_name)) {
+		eval_some_js("~throw new Error(\"Invalid TTS Name\");", cx, obj, rval);
+		return JS_TRUE;
+	}
+
+	if (switch_strlen_zero(text)) {
+		eval_some_js("~throw new Error(\"Invalid Text\");", cx, obj, rval);
+		return JS_TRUE;
+	}
+
+
+	if (jss->speech && strcasecmp(jss->speech->sh.name, tts_name)) {
+		destroy_speech_engine(jss);
+	}
+	
+	if (jss->speech) {
+		switch_core_speech_text_param_tts(&jss->speech->sh, "voice", voice_name);
+	} else {
+		jss->speech = switch_core_session_alloc(jss->session, sizeof(*jss->speech));
+		assert(jss->speech != NULL);
+		if (init_speech_engine(jss, tts_name, voice_name) != SWITCH_STATUS_SUCCESS) {
+			eval_some_js("~throw new Error(\"Cannot allocate speech engine!\");", cx, obj, rval);
+			jss->speech = NULL;
+			return JS_TRUE;
+		}
+	}
 
 	if (argc > 3) {
 		if ((function = JS_ValueToFunction(cx, argv[3]))) {
@@ -1555,9 +1630,6 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 		}
 	}
 
-	if (!tts_name && text) {
-		return JS_FALSE;
-	}
 
 	codec = switch_core_session_get_read_codec(jss->session);
 	cb_state.ret = BOOLEAN_TO_JSVAL(JS_FALSE);
@@ -1565,8 +1637,9 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	args.input_callback = dtmf_func;
 	args.buf = bp;
 	args.buflen = len;
-	switch_ivr_speak_text(jss->session, tts_name, voice_name
-						  && strlen(voice_name) ? voice_name : NULL, codec->implementation->samples_per_second, text, &args);
+	
+	switch_core_speech_flush_tts(&jss->speech->sh);
+	switch_ivr_speak_text_handle(jss->session, &jss->speech->sh, &jss->speech->codec, NULL, text, &args);
 	JS_ResumeRequest(cx, cb_state.saveDepth);
 	*rval = cb_state.ret;
 
@@ -2389,6 +2462,8 @@ static void session_destroy(JSContext * cx, JSObject * obj)
 
 	if (cx && obj) {
 		if ((jss = JS_GetPrivate(cx, obj))) {
+			destroy_speech_engine(jss);
+			
 			if (jss->session) {
 				channel = switch_core_session_get_channel(jss->session);
 				switch_channel_set_private(channel, "jss", NULL);

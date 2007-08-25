@@ -243,7 +243,7 @@ SWITCH_STANDARD_APP(rss_function)
 	}
 
 	memset(&sh, 0, sizeof(sh));
-	if (switch_core_speech_open(&sh, engine, voice, rate, &flags, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_speech_open(&sh, engine, voice, rate, interval, &flags, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module!\n");
 		return;
 	}

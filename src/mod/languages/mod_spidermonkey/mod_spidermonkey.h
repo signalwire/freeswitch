@@ -122,6 +122,11 @@ struct sm_module_interface {
 typedef struct sm_module_interface sm_module_interface_t;
 typedef switch_status_t (*spidermonkey_init_t) (const sm_module_interface_t ** module_interface);
 
+struct js_session_speech {
+	switch_speech_handle_t sh;
+	switch_codec_t codec;
+};
+
 struct js_session {
 	switch_core_session_t *session;
 	JSContext *cx;
@@ -141,6 +146,7 @@ struct js_session {
 	char *rdnis;
 	char *context;
 	char *username;
+	struct js_session_speech *speech;
 };
 
 JSBool DEFAULT_SET_PROPERTY(JSContext * cx, JSObject *obj, jsval id, jsval *vp)

@@ -1344,7 +1344,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 {
 	switch_channel_t *channel;
 	int interval = 0;
-	uint32_t len = 0;
 	switch_frame_t write_frame = { 0 };
 	switch_timer_t timer;
 	switch_core_thread_session_t thread_session;
@@ -1371,7 +1370,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	}
 
 	memset(&sh, 0, sizeof(sh));
-	if (switch_core_speech_open(&sh, tts_name, voice_name, (uint32_t) rate, &flags, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_speech_open(&sh, tts_name, voice_name, (uint32_t) rate, interval, 
+								&flags, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module!\n");
 		switch_core_session_reset(session);
 		return SWITCH_STATUS_FALSE;
@@ -1381,9 +1381,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "OPEN TTS %s\n", tts_name);
 
 	interval = read_codec->implementation->microseconds_per_frame / 1000;
-	sh.samples = switch_bytes_per_frame(rate, interval);
-	len = sh.samples * 2;
-
 	codec_name = "L16";
 
 	if (switch_core_codec_init(&codec,
@@ -1409,7 +1406,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 			switch_core_session_reset(session);
 			return SWITCH_STATUS_GENERR;
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer success %u bytes per %d ms!\n", len, interval);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer success %u bytes per %d ms!\n", sh.samples * 2, interval);
 
 		/* start a thread to absorb incoming audio */
 		for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {

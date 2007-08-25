@@ -155,7 +155,7 @@ typedef enum {
 
 typedef struct conference_file_node {
 	switch_file_handle_t fh;
-	switch_speech_handle_t sh;
+	switch_speech_handle_t *sh;
 	node_type_t type;
 	uint8_t done;
 	uint8_t async;
@@ -218,6 +218,8 @@ typedef struct conference_obj {
 	uint32_t count;
 	int32_t energy_level;
 	uint8_t min;
+	switch_speech_handle_t lsh;
+	switch_speech_handle_t *sh;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -257,6 +259,8 @@ struct conference_member {
 	conference_file_node_t *fnode;
 	conference_relationship_t *relationships;
 	switch_ivr_digit_stream_t *digit_stream;
+	switch_speech_handle_t lsh;
+	switch_speech_handle_t *sh;
 	struct conference_member *next;
 };
 
@@ -607,8 +611,8 @@ static switch_status_t conference_del_member(conference_obj_t * conference, conf
 			fnode = fnode->next;
 
 			if (cur->type == NODE_TYPE_SPEECH) {
-				switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
-				switch_core_speech_close(&cur->sh, &flags);
+				//switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
+				//switch_core_speech_close(&cur->sh, &flags);
 			} else {
 				switch_core_file_close(&cur->fh);
 			}
@@ -616,6 +620,12 @@ static switch_status_t conference_del_member(conference_obj_t * conference, conf
 			pool = cur->pool;
 			switch_core_destroy_memory_pool(&pool);
 		}
+	}
+
+	if (member->sh) {
+		switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
+		switch_core_speech_close(member->sh, &flags);
+		member->sh = NULL;
 	}
 
 	member->conference = NULL;
@@ -763,7 +773,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 					switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_BLOCKING;
 					uint32_t rate = conference->rate;
 
-					if (switch_core_speech_read_tts(&conference->fnode->sh, file_frame, &file_data_len, &rate, &flags) == SWITCH_STATUS_SUCCESS) {
+					if (switch_core_speech_read_tts(conference->fnode->sh, file_frame, &file_data_len, &rate, &flags) == SWITCH_STATUS_SUCCESS) {
 						file_sample_len = file_data_len / 2;
 					} else {
 						file_sample_len = file_data_len = 0;
@@ -897,8 +907,8 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 			switch_memory_pool_t *pool;
 
 			if (conference->fnode->type == NODE_TYPE_SPEECH) {
-				switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
-				switch_core_speech_close(&conference->fnode->sh, &flags);
+				//switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
+				//switch_core_speech_close(conference->fnode->sh, &flags);
 			} else {
 				switch_core_file_close(&conference->fnode->fh);
 			}
@@ -943,8 +953,8 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 				fnode = fnode->next;
 
 				if (cur->type == NODE_TYPE_SPEECH) {
-					switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
-					switch_core_speech_close(&cur->sh, &flags);
+					//switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
+					//switch_core_speech_close(&cur->sh, &flags);
 				} else {
 					switch_core_file_close(&cur->fh);
 				}
@@ -990,6 +1000,12 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Lock OFF\n");
 
 		switch_ivr_digit_stream_parser_destroy(conference->dtmf_parser);
+
+		if (conference->sh) {
+			switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
+			switch_core_speech_close(conference->sh, &flags);
+			conference->sh = NULL;
+		}
 
 		if (conference->pool) {
 			switch_memory_pool_t *pool = conference->pool;
@@ -1658,8 +1674,8 @@ static void conference_loop_output(conference_member_t * member)
 				switch_memory_pool_t *pool;
 
 				if (member->fnode->type == NODE_TYPE_SPEECH) {
-					switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
-					switch_core_speech_close(&member->fnode->sh, &flags);
+					//switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
+					//switch_core_speech_close(&member->fnode->sh, &flags);
 				} else {
 					switch_core_file_close(&member->fnode->fh);
 				}
@@ -1680,7 +1696,7 @@ static void conference_loop_output(conference_member_t * member)
 						switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_BLOCKING;
 						uint32_t rate = member->conference->rate;
 
-						if (switch_core_speech_read_tts(&member->fnode->sh, file_frame, &file_data_len, &rate, &flags) == SWITCH_STATUS_SUCCESS) {
+						if (switch_core_speech_read_tts(member->fnode->sh, file_frame, &file_data_len, &rate, &flags) == SWITCH_STATUS_SUCCESS) {
 							file_sample_len = file_data_len / 2;
 						} else {
 							file_sample_len = file_data_len = 0;
@@ -2238,11 +2254,15 @@ static switch_status_t conference_member_say(conference_member_t * member, char 
 		fnode->leadin = leadin;
 		fnode->pool = pool;
 
-		memset(&fnode->sh, 0, sizeof(fnode->sh));
-		if (switch_core_speech_open(&fnode->sh, conference->tts_engine, conference->tts_voice, conference->rate, &flags, fnode->pool) !=
-			SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module [%s]!\n", conference->tts_engine);
-			return SWITCH_STATUS_FALSE;
+		if (!member->sh) {
+			memset(&member->lsh, 0, sizeof(member->lsh));
+			if (switch_core_speech_open(&member->lsh, conference->tts_engine, conference->tts_voice, 
+										conference->rate, conference->interval, &flags, fnode->pool) !=
+				SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module [%s]!\n", conference->tts_engine);
+				return SWITCH_STATUS_FALSE;
+			}
+			member->sh = &member->lsh;
 		}
 
 		/* Queue the node */
@@ -2254,10 +2274,24 @@ static switch_status_t conference_member_say(conference_member_t * member, char 
 		} else {
 			member->fnode = fnode;
 		}
-
+		
+		fnode->sh = member->sh;
 		/* Begin Generation */
 		switch_sleep(200000);
-		switch_core_speech_feed_tts(&fnode->sh, text, &flags);
+
+		if (*text == '#') {
+			char *tmp = (char *)text + 1;
+			char *vp = tmp, voice[128] = "";
+			if ((tmp = strchr(tmp, '#'))) {
+				text = tmp + 1;
+				switch_copy_string(voice, vp, (tmp - vp) + 1);
+				switch_core_speech_text_param_tts(fnode->sh, "voice", voice);
+			}
+		} else {
+			switch_core_speech_text_param_tts(fnode->sh, "voice", conference->tts_voice);
+		}
+		
+		switch_core_speech_feed_tts(fnode->sh, text, &flags);
 		switch_mutex_unlock(member->flag_mutex);
 
 		status = SWITCH_STATUS_SUCCESS;
@@ -2309,12 +2343,16 @@ static switch_status_t conference_say(conference_obj_t * conference, const char 
 
 	fnode->type = NODE_TYPE_SPEECH;
 	fnode->leadin = leadin;
-
-	memset(&fnode->sh, 0, sizeof(fnode->sh));
-	if (switch_core_speech_open(&fnode->sh, conference->tts_engine, conference->tts_voice, conference->rate, &flags, conference->pool) !=
-		SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module [%s]!\n", conference->tts_engine);
-		return SWITCH_STATUS_FALSE;
+	
+	if (!conference->sh) {
+		memset(&conference->lsh, 0, sizeof(conference->lsh));
+		if (switch_core_speech_open(&conference->lsh, conference->tts_engine, conference->tts_voice, 
+									conference->rate, conference->interval, &flags, conference->pool) !=
+			SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module [%s]!\n", conference->tts_engine);
+			return SWITCH_STATUS_FALSE;
+		}
+		conference->sh = &conference->lsh;
 	}
 
 	fnode->pool = pool;
@@ -2329,9 +2367,22 @@ static switch_status_t conference_say(conference_obj_t * conference, const char 
 		conference->fnode = fnode;
 	}
 
+	fnode->sh = conference->sh;
+	if (*text == '#') {
+		char *tmp = (char *)text + 1;
+		char *vp = tmp, voice[128] = "";
+		if ((tmp = strchr(tmp, '#'))) {
+			text = tmp + 1;
+			switch_copy_string(voice, vp, (tmp - vp) + 1);
+			switch_core_speech_text_param_tts(fnode->sh, "voice", voice);
+		}
+	} else {
+		switch_core_speech_text_param_tts(fnode->sh, "voice", conference->tts_voice);
+	}
+
 	/* Begin Generation */
 	switch_sleep(200000);
-	switch_core_speech_feed_tts(&fnode->sh, (char *) text, &flags);
+	switch_core_speech_feed_tts(fnode->sh, (char *) text, &flags);
 	switch_mutex_unlock(conference->mutex);
 
 	status = SWITCH_STATUS_SUCCESS;

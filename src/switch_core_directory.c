@@ -76,28 +76,3 @@ SWITCH_DECLARE(switch_status_t) switch_core_directory_close(switch_directory_han
 	return dh->directory_interface->directory_close(dh);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *sh,
-														char *module_name,
-														char *voice_name, unsigned int rate, switch_speech_flag_t *flags, switch_memory_pool_t *pool)
-{
-	switch_status_t status;
-
-	if ((sh->speech_interface = switch_loadable_module_get_speech_interface(module_name)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid speech module [%s]!\n", module_name);
-		return SWITCH_STATUS_GENERR;
-	}
-
-	switch_copy_string(sh->engine, module_name, sizeof(sh->engine));
-	sh->flags = *flags;
-	if (pool) {
-		sh->memory_pool = pool;
-	} else {
-		if ((status = switch_core_new_memory_pool(&sh->memory_pool)) != SWITCH_STATUS_SUCCESS) {
-			return status;
-		}
-		switch_set_flag(sh, SWITCH_SPEECH_FLAG_FREE_POOL);
-	}
-	sh->rate = rate;
-	sh->name = switch_core_strdup(pool, module_name);
-	return sh->speech_interface->speech_open(sh, voice_name, rate, flags);
-}
