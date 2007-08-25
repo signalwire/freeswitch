@@ -83,6 +83,7 @@ class SpeechObtainer:
         self.max_tries=max_tries        
 
         self.detected_phrases = []
+        self.failed = False
         
     def setGrammar(self, grammar):
         """
@@ -124,7 +125,8 @@ class SpeechObtainer:
         console_log("debug", "starting run() while loop\n")        
         while (session.ready() and 
                num_tries < self.max_tries and
-               len(self.detected_phrases) < self.required_phrases):
+               len(self.detected_phrases) < self.required_phrases and
+               not self.failed):
             console_log("debug", "top of run() while loop\n")        
             session.collectDigits(self.wait_time)
             num_tries += 1
@@ -172,6 +174,12 @@ class SpeechObtainer:
             # unicode strings.
             # TODO: check the score
             body = event['body']
+            if not body or len(body) == 0 or body == "(null)":
+                # freeswitch returned a completely empty result
+                self.failed = True
+                # do we want to return stop?  what should we return?
+                return "stop"
+
             dom = minidom.parseString(body)
             phrase = dom.getElementsByTagName(self.grammar.obj_path)[0]
             phrase_text = self.getText(phrase)
