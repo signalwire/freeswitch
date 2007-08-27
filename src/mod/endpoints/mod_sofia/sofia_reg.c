@@ -839,8 +839,6 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 		}
 	}
 
-	switch_xml_free(xml);
-
 	if (switch_strlen_zero(passwd) && switch_strlen_zero(a1_hash)) {
 		ret = AUTH_OK;
 		goto end;
@@ -894,6 +892,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	}
 
   end:
+	switch_xml_free(xml);
 	switch_safe_free(input);
 	switch_safe_free(input2);
 	switch_safe_free(username);
