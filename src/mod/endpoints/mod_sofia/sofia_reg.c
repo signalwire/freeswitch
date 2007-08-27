@@ -730,7 +730,8 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	const char *a1_hash = NULL;
 	char *sql;
 	switch_xml_t domain, xml, user, param, xparams;	
-
+	char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1] = "";
+	
 	username = realm = nonce = uri = qop = cnonce = nc = response = NULL;
 	
 	if (authorization->au_params) {
@@ -847,7 +848,6 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 
 	if (!a1_hash) {
 		su_md5_t ctx;
-		char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1];
 		char *input;
 
 		input = switch_mprintf("%s:%s:%s", username, realm, passwd);
