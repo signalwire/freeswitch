@@ -201,28 +201,14 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 				ecaller_id_number = switch_channel_get_variable(channel, "effective_caller_id_number");
 
 				if (ecaller_id_name || ecaller_id_number) {
-					if (!ecaller_id_name) {
-						ecaller_id_name = caller_profile->caller_id_name;
-					}
-					if (!ecaller_id_number) {
-						ecaller_id_number = caller_profile->caller_id_number;
-					}
-					outgoing_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
-																 caller_profile->username,
-																 caller_profile->dialplan,
-																 ecaller_id_name,
-																 ecaller_id_number,
-																 caller_profile->network_addr,
-																 caller_profile->ani,
-																 caller_profile->aniii,
-																 caller_profile->rdnis,
-																 caller_profile->source, caller_profile->context, caller_profile->destination_number);
-					outgoing_profile->flags = caller_profile->flags;
-					outgoing_profile->caller_ton = caller_profile->caller_ton;
-					outgoing_profile->caller_numplan = caller_profile->caller_numplan;
-					outgoing_profile->destination_number_ton = caller_profile->destination_number_ton;
-					outgoing_profile->destination_number_numplan = caller_profile->destination_number_numplan;
+					outgoing_profile = switch_caller_profile_clone(session, caller_profile);
 
+					if (ecaller_id_name) {
+						outgoing_profile->caller_id_name = ecaller_id_name;
+					}
+					if (ecaller_id_number) {
+						outgoing_profile->caller_id_number = ecaller_id_number;
+					}
 				}
 			}
 			if (!outgoing_profile) {
