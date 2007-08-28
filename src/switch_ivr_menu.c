@@ -263,7 +263,7 @@ static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_me
 		} else {
 			if (strlen(sound) > 4 && strncmp(sound, "say:", 4) == 0) {
 				if (menu->tts_engine && menu->tts_voice) {
-					status = switch_ivr_speak_text(session, menu->tts_engine, menu->tts_voice, 0, sound + 4, &args);
+					status = switch_ivr_speak_text(session, menu->tts_engine, menu->tts_voice, sound + 4, &args);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No TTS engine to play sound\n");
 				}
@@ -369,7 +369,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 						status = switch_ivr_play_file(session, NULL, aptr, NULL);
 						break;
 					case SWITCH_IVR_ACTION_SAYTEXT:
-						status = switch_ivr_speak_text(session, menu->tts_engine, menu->tts_voice, 0, aptr, NULL);
+						status = switch_ivr_speak_text(session, menu->tts_engine, menu->tts_voice, aptr, NULL);
 						break;
 					case SWITCH_IVR_ACTION_SAYPHRASE:
 						status = switch_ivr_phrase_macro(session, aptr, "", menu->phrase_lang, NULL);

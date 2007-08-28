@@ -3877,7 +3877,7 @@ static switch_status_t conference_local_play_file(conference_obj_t * conference,
 			if (!(conference->tts_engine && conference->tts_voice)) {
 				status = SWITCH_STATUS_FALSE;
 			} else {
-				status = switch_ivr_speak_text(session, conference->tts_engine, conference->tts_voice, 0, path + 4, NULL);
+				status = switch_ivr_speak_text(session, conference->tts_engine, conference->tts_voice, path + 4, NULL);
 			}
 			goto done;
 		}

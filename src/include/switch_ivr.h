@@ -317,13 +317,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
   \param session the session to speak on
   \param tts_name the desired tts module
   \param voice_name the desired voice
-  \param rate the sample rate
   \param text the text to speak
   \param args arguements to pass for callbacks etc
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *session,
-													  char *tts_name, char *voice_name, uint32_t rate, char *text, switch_input_args_t *args);
+													  char *tts_name, char *voice_name, char *text, switch_input_args_t *args);
 
 /*!
   \brief Make an outgoing call

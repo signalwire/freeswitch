@@ -260,11 +260,11 @@ int fs_switch_ivr_session_transfer(switch_core_session_t *session, char *extensi
 	return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-int fs_switch_ivr_speak_text(switch_core_session_t *session, char *tts_name, char *voice_name, uint32_t rate, char *text)
+int fs_switch_ivr_speak_text(switch_core_session_t *session, char *tts_name, char *voice_name, char *text)
 {
 	switch_status_t status;
 
-	status = switch_ivr_speak_text(session, tts_name, voice_name, rate, text, NULL);
+	status = switch_ivr_speak_text(session, tts_name, voice_name, text, NULL);
 	return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 

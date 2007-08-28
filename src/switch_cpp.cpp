@@ -123,7 +123,6 @@ void CoreSession::setDTMFCallback(void *cbfunc, char *funcargs) {
 int CoreSession::speak(char *text)
 {
     switch_status_t status;
-    switch_codec_t *codec;
 
 	sanity_check(-1);
 
@@ -142,9 +141,9 @@ int CoreSession::speak(char *text)
 		return SWITCH_STATUS_FALSE;
 	}
 
-    codec = switch_core_session_get_read_codec(session);
+
 	begin_allow_threads();
-	status = switch_ivr_speak_text(session, tts_name, voice_name, codec->implementation->samples_per_second, text, ap);
+	status = switch_ivr_speak_text(session, tts_name, voice_name, text, ap);
 	end_allow_threads();
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }

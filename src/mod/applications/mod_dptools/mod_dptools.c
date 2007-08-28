@@ -942,7 +942,7 @@ SWITCH_STANDARD_APP(speak_function)
 	args.input_callback = on_dtmf;
 	args.buf = buf;
 	args.buflen = sizeof(buf);
-	switch_ivr_speak_text(session, engine, voice, codec->implementation->samples_per_second, text, &args);
+	switch_ivr_speak_text(session, engine, voice, text, &args);
 
 }
 

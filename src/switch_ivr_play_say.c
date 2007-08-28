@@ -250,11 +250,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid SAY Interface [%s]!\n", chan_lang);
 						}
 					} else if (!strcasecmp(func, "speak-text")) {
-						switch_codec_t *read_codec;
-						if ((read_codec = switch_core_session_get_read_codec(session))) {
-
-							status = switch_ivr_speak_text(session, tts_engine, tts_voice, read_codec->implementation->samples_per_second, odata, args);
-						}
+						status = switch_ivr_speak_text(session, tts_engine, tts_voice, odata, args);
 					}
 				}
 			}
@@ -1340,9 +1336,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *session,
-													  char *tts_name, char *voice_name, uint32_t rate, char *text, switch_input_args_t *args)
+													  char *tts_name, char *voice_name, char *text, switch_input_args_t *args)
 {
 	switch_channel_t *channel;
+	uint32_t rate = 0;
 	int interval = 0;
 	switch_frame_t write_frame = { 0 };
 	switch_timer_t timer;
@@ -1365,9 +1362,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	switch_core_session_reset(session);
 	read_codec = switch_core_session_get_read_codec(session);
 	
-	if (rate == 0) {
-		rate = read_codec->implementation->samples_per_second;
-	}
+	rate = read_codec->implementation->samples_per_second;
+	interval = read_codec->implementation->microseconds_per_frame / 1000;
 
 	memset(&sh, 0, sizeof(sh));
 	if (switch_core_speech_open(&sh, tts_name, voice_name, (uint32_t) rate, interval, 
@@ -1380,7 +1376,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	switch_channel_answer(channel);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "OPEN TTS %s\n", tts_name);
 
-	interval = read_codec->implementation->microseconds_per_frame / 1000;
+
 	codec_name = "L16";
 
 	if (switch_core_codec_init(&codec,

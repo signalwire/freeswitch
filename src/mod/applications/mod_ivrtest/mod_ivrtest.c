@@ -207,7 +207,7 @@ static void tts_function(switch_core_session_t *session, char *data)
 	args.input_callback = show_dtmf;
 	args.buf = buf;
 	args.buflen = sizeof(buf);
-	switch_ivr_speak_text(session, tts_name, voice_name, codec->implementation->samples_per_second, text, &args);
+	switch_ivr_speak_text(session, tts_name, voice_name, text, &args);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Done\n");
 }
 
@@ -405,7 +405,7 @@ static void ivrtest_function(switch_core_session_t *session, char *data)
 		}
 		snprintf(say, sizeof(say), "You Dialed [%s]\n", buf);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, say);
-		switch_ivr_speak_text(session, "cepstral", "david", codec->implementation->samples_per_second, say, NULL);
+		switch_ivr_speak_text(session, "cepstral", "david", say, NULL);
 	}
 
 }
