@@ -63,29 +63,31 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 		profile->context = switch_clean_string(switch_core_strdup(pool, switch_str_nil(context)));
 		profile->destination_number = switch_clean_string(switch_core_strdup(pool, switch_str_nil(destination_number)));
 		switch_set_flag(profile, SWITCH_CPF_SCREEN);
+		profile->pool = pool;
 	}
 
 	return profile;
 }
 
 
-SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_core_session_t *session, switch_caller_profile_t *tocopy)
+SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_dup(switch_memory_pool_t *pool, switch_caller_profile_t *tocopy)
 {
 	switch_caller_profile_t *profile = NULL;
-	if ((profile = switch_core_session_alloc(session, sizeof(switch_caller_profile_t))) != 0) {
-		profile->username = switch_core_session_strdup(session, tocopy->username);
-		profile->dialplan = switch_core_session_strdup(session, tocopy->dialplan);
-		profile->caller_id_name = switch_core_session_strdup(session, tocopy->caller_id_name);
-		profile->ani = switch_core_session_strdup(session, tocopy->ani);
-		profile->aniii = switch_core_session_strdup(session, tocopy->aniii);
-		profile->caller_id_number = switch_core_session_strdup(session, tocopy->caller_id_number);
-		profile->network_addr = switch_core_session_strdup(session, tocopy->network_addr);
-		profile->rdnis = switch_core_session_strdup(session, tocopy->rdnis);
-		profile->destination_number = switch_core_session_strdup(session, tocopy->destination_number);
-		profile->uuid = switch_core_session_strdup(session, tocopy->uuid);
-		profile->source = switch_core_session_strdup(session, tocopy->source);
-		profile->context = switch_core_session_strdup(session, tocopy->context);
-		profile->chan_name = switch_core_session_strdup(session, tocopy->chan_name);
+
+	if ((profile = switch_core_alloc(pool, sizeof(switch_caller_profile_t))) != 0) {
+		profile->username = switch_core_strdup(pool, tocopy->username);
+		profile->dialplan = switch_core_strdup(pool, tocopy->dialplan);
+		profile->caller_id_name = switch_core_strdup(pool, tocopy->caller_id_name);
+		profile->ani = switch_core_strdup(pool, tocopy->ani);
+		profile->aniii = switch_core_strdup(pool, tocopy->aniii);
+		profile->caller_id_number = switch_core_strdup(pool, tocopy->caller_id_number);
+		profile->network_addr = switch_core_strdup(pool, tocopy->network_addr);
+		profile->rdnis = switch_core_strdup(pool, tocopy->rdnis);
+		profile->destination_number = switch_core_strdup(pool, tocopy->destination_number);
+		profile->uuid = switch_core_strdup(pool, tocopy->uuid);
+		profile->source = switch_core_strdup(pool, tocopy->source);
+		profile->context = switch_core_strdup(pool, tocopy->context);
+		profile->chan_name = switch_core_strdup(pool, tocopy->chan_name);
 		profile->caller_ton = tocopy->caller_ton;
 		profile->caller_numplan = tocopy->caller_numplan;
 		profile->ani_ton = tocopy->ani_ton;
@@ -95,10 +97,22 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_cor
 		profile->destination_number_ton = tocopy->destination_number_ton;
 		profile->destination_number_numplan = tocopy->destination_number_numplan;
 		profile->flags = tocopy->flags;
+		profile->pool = pool;
 	}
 
 	return profile;
 }
+
+
+SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_core_session_t *session, switch_caller_profile_t *tocopy)
+{
+	switch_memory_pool_t *pool;
+
+	pool = switch_core_session_get_pool(session);
+
+	return switch_caller_profile_dup(pool, tocopy);
+}
+
 
 SWITCH_DECLARE(char *) switch_caller_get_field_by_name(switch_caller_profile_t *caller_profile, const char *name)
 {
@@ -140,6 +154,30 @@ SWITCH_DECLARE(char *) switch_caller_get_field_by_name(switch_caller_profile_t *
 	}
 	if (!strcasecmp(name, "chan_name")) {
 		return caller_profile->chan_name;
+	}
+	if (!strcasecmp(name, "caller_ton")) {
+		return switch_core_sprintf(caller_profile->pool, "%u", caller_profile->caller_ton);
+	}
+	if (!strcasecmp(name, "caller_numplan")) {
+		return switch_core_sprintf(caller_profile->pool, "%u", caller_profile->caller_numplan);
+	}
+	if (!strcasecmp(name, "destination_number_ton")) {
+		return switch_core_sprintf(caller_profile->pool, "%u", caller_profile->destination_number_ton);
+	}
+	if (!strcasecmp(name, "destination_number_numplan")) {
+		return switch_core_sprintf(caller_profile->pool, "%u", caller_profile->destination_number_numplan);
+	}
+	if (!strcasecmp(name, "ani_ton")) {
+		return switch_core_sprintf(caller_profile->pool, "%u", caller_profile->ani_ton);
+	}
+	if (!strcasecmp(name, "ani_numplan")) {
+		return switch_core_sprintf(caller_profile->pool, "%u", caller_profile->ani_numplan);
+	}
+	if (!strcasecmp(name, "rdnis_ton")) {
+		return switch_core_sprintf(caller_profile->pool, "%u", caller_profile->rdnis_ton);
+	}
+	if (!strcasecmp(name, "rdnis_numplan")) {
+		return switch_core_sprintf(caller_profile->pool, "%u", caller_profile->rdnis_numplan);
 	}
 	return NULL;
 }

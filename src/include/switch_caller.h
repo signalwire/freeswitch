@@ -99,6 +99,7 @@ SWITCH_BEGIN_EXTERN_C
 	struct switch_caller_profile *originatee_caller_profile;
 	struct switch_channel_timetable *times;
 	struct switch_caller_extension *caller_extension;
+	switch_memory_pool_t *pool;
 	struct switch_caller_profile *next;
 };
 
@@ -189,8 +190,14 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
   \param session session associated with the profile (bound by scope)
   \param tocopy the existing profile
 */
-
 SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_core_session_t *session, switch_caller_profile_t *tocopy);
+
+/*!
+  \brief Duplicate an existing caller profile object
+  \param pool pool to duplicate with
+  \param tocopy the existing profile
+*/
+SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_dup(switch_memory_pool_t *pool, switch_caller_profile_t *tocopy);
 
 /*!
   \brief Add headers to an existing event in regards to a specific profile
