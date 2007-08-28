@@ -470,38 +470,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 
 					caller_caller_profile = caller_profile_override ? caller_profile_override : switch_channel_get_caller_profile(caller_channel);
+					new_profile = switch_caller_profile_clone(session, caller_caller_profile);
+					new_profile->destination_number = chan_data;
 
-					if (!cid_name_override) {
-						cid_name_override = caller_caller_profile->caller_id_name;
+					if (cid_name_override) {
+						new_profile->caller_id_name = cid_name_override;
 					}
-					if (!cid_num_override) {
-						cid_num_override = caller_caller_profile->caller_id_number;
+					if (cid_num_override) {
+						new_profile->caller_id_number = cid_num_override;
 					}
 
-					new_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
-															caller_caller_profile->username,
-															caller_caller_profile->dialplan,
-															cid_name_override,
-															cid_num_override,
-															caller_caller_profile->network_addr,
-															NULL,
-															NULL,
-															caller_caller_profile->rdnis,
-															caller_caller_profile->source, caller_caller_profile->context, chan_data);
-					new_profile->flags = caller_caller_profile->flags;
-					new_profile->caller_ton = caller_caller_profile->caller_ton;
-					new_profile->caller_numplan = caller_caller_profile->caller_numplan;
-					new_profile->destination_number_ton = caller_caller_profile->destination_number_ton;
-					new_profile->destination_number_numplan = caller_caller_profile->destination_number_numplan;
 					pool = NULL;
 				} else {
-					if (!cid_name_override) {
-						cid_name_override = "FreeSWITCH";
-					}
-					if (!cid_num_override) {
-						cid_num_override = "0000000000";
-					}
-
 					if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
 						status = SWITCH_STATUS_TERM;
@@ -509,21 +489,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 
 					if (caller_profile_override) {
-						new_profile = switch_caller_profile_new(pool,
-																 caller_profile_override->username,
-																 caller_profile_override->dialplan,
-																 caller_profile_override->caller_id_name,
-																 caller_profile_override->caller_id_number,
-																 caller_profile_override->network_addr,
-																 caller_profile_override->ani,
-																 caller_profile_override->aniii,
-																 caller_profile_override->rdnis,
-																 caller_profile_override->source, caller_profile_override->context, chan_data);
-						new_profile->caller_ton = caller_profile_override->caller_ton;
-						new_profile->caller_numplan = caller_profile_override->caller_numplan;
-						new_profile->destination_number_ton = caller_profile_override->destination_number_ton;
-						new_profile->destination_number_numplan = caller_profile_override->destination_number_numplan;
+						new_profile = switch_caller_profile_dup(pool, caller_profile_override);
+						new_profile->destination_number = chan_data;
 					} else {
+						if (!cid_name_override) {
+							cid_name_override = "FreeSWITCH";
+						}
+						if (!cid_num_override) {
+							cid_num_override = "0000000000";
+						}
+
 						new_profile = switch_caller_profile_new(pool,
 																 NULL,
 																 NULL,
