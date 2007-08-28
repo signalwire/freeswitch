@@ -2650,12 +2650,11 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 																			  cid_name,
 																			  cid_num,
 																			  ldl_session_get_ip(dlsession),
-																			  ldl_session_get_value(dlsession,
-																									"ani"),
-																			  ldl_session_get_value(dlsession,
-																									"aniii"),
-																			  ldl_session_get_value(dlsession,
-																									"rdnis"), (char *) modname, context,
+																			  ldl_session_get_value(dlsession, "ani"),
+																			  ldl_session_get_value(dlsession, "aniii"),
+																			  ldl_session_get_value(dlsession, "rdnis"),
+																			  modname,
+																			  context,
 																			  exten)) != 0) {
 						char name[128];
 						snprintf(name, sizeof(name), "DingaLing/%s", tech_pvt->caller_profile->destination_number);

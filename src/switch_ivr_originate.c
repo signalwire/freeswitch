@@ -500,10 +500,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						}
 
 						new_profile = switch_caller_profile_new(pool,
-																 NULL,
-																 NULL,
-																 cid_name_override, cid_num_override, NULL, NULL, NULL, NULL, __FILE__, NULL,
-																 chan_data);
+																NULL,
+																NULL,
+																cid_name_override,
+																cid_num_override,
+																NULL, NULL, NULL, NULL, __FILE__, NULL,
+																chan_data);
 					}
 				}
 				

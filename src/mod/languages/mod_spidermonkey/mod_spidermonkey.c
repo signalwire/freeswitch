@@ -2430,9 +2430,8 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 			return JS_FALSE;
 		}
 
-		caller_profile = switch_caller_profile_new(pool,
-												   username, dialplan, cid_name, cid_num, network_addr, ani, aniii, rdnis, (char *) modname, context,
-												   dest);
+		caller_profile = switch_caller_profile_new(pool,username, dialplan, cid_name, cid_num, network_addr,
+												   ani, aniii, rdnis, modname, context, dest);
 
 		if (switch_ivr_originate(session, &peer_session, &jss->cause, dest, to ? atoi(to) : 60, NULL, NULL, NULL, caller_profile) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot Create Outgoing Channel! [%s]\n", dest);

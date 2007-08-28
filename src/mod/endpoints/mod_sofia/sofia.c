@@ -1935,7 +1935,10 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 														 from_user,
 														 profile->dialplan,
-														 displayname, from_user, network_ip, NULL, NULL, NULL, MODNAME, context, destination_number);
+														 displayname,
+														 from_user,
+														 network_ip,
+														 NULL, NULL, NULL, MODNAME, context, destination_number);
 
 	if (tech_pvt->caller_profile) {
 

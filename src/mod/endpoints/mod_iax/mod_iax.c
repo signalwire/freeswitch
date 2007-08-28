@@ -1107,8 +1107,9 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 																				  iaxevent->ies.calling_ani,
 																				  NULL,
 																				  NULL,
-																				  (char *) modname,
-																				  iaxevent->ies.called_context, iaxevent->ies.called_number)) != 0) {
+																				  modname,
+																				  iaxevent->ies.called_context,
+																				  iaxevent->ies.called_number)) != 0) {
 							char name[128];
 							snprintf(name, sizeof(name), "IAX/%s-%04x", tech_pvt->caller_profile->destination_number, rand() & 0xffff);
 							switch_channel_set_name(channel, name);
