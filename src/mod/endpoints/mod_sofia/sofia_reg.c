@@ -729,7 +729,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	const char *passwd = NULL;
 	const char *a1_hash = NULL;
 	char *sql;
-	switch_xml_t domain, xml, user, param, xparams;	
+	switch_xml_t domain, xml = NULL, user, param, xparams;	
 	char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1] = "";
 	
 	username = realm = nonce = uri = qop = cnonce = nc = response = NULL;
@@ -806,7 +806,6 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 		
 	if (!(xparams = switch_xml_child(user, "params"))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find params for user [%s@%s]\n", username, realm);
-		switch_xml_free(xml);
 		ret = AUTH_FORBIDDEN;
 		goto end;
 	}
@@ -892,7 +891,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	}
 
   end:
-	switch_xml_free(xml);
+	if (xml) {
+		switch_xml_free(xml);
+	}
 	switch_safe_free(input);
 	switch_safe_free(input2);
 	switch_safe_free(username);
