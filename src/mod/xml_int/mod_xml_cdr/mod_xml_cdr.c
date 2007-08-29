@@ -88,7 +88,8 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 		if(!switch_strlen_zero(logdir)) {
 			if ((path = switch_mprintf("%s/xml_cdr/%s.cdr.xml", logdir, switch_core_session_get_uuid(session)))) {
 				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
-					write(fd, xml_text, (unsigned) strlen(xml_text));
+					int wrote;
+					wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
 					close(fd);
 					fd = -1;
 				} else {
@@ -160,7 +161,8 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 
 			if ((path = switch_mprintf("%s/%s.cdr.xml", globals.errLogDir, switch_core_session_get_uuid(session)))) {
 				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
-					write(fd, xml_text, (unsigned) strlen(xml_text));
+					int wrote;
+					wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
 					close(fd);
 					fd = -1;
 				} else {
