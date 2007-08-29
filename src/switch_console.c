@@ -183,7 +183,7 @@ static int32_t running = 1;
 static char prompt_str[512] = "";
 
 char * prompt(EditLine *e) {
-	if (switch_strlen_zero(prompt_str)) {
+	if (*prompt_str == '\0') {
 		gethostname(hostname, sizeof(hostname));
 		snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", hostname);
 	}	
