@@ -84,12 +84,14 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 		switch_event_t *event;
 		loop_count++;
 
-		/* if you really want to make sure it's not ready, test it twice because it might be just a break */
-		if (!switch_channel_ready(chan_a) && !switch_channel_ready(chan_a)) {
+		if (!switch_channel_ready(chan_a)) {
 			break;
 		}
 
 		if ((b_state = switch_channel_get_state(chan_b)) >= CS_HANGUP) {
+			if (originator && !ans_a && !ans_b) {
+				switch_channel_hangup(chan_a, switch_channel_get_cause(chan_b));
+			}
 			break;
 		}
 
@@ -163,8 +165,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 				continue;
 			}
 		}
-
-
+		
 		/* read audio from 1 channel and write it to the other */
 		status = switch_core_session_read_frame(session_a, &read_frame, -1, stream_id);
 
