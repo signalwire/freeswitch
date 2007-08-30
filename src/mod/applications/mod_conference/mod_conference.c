@@ -610,10 +610,7 @@ static switch_status_t conference_del_member(conference_obj_t * conference, conf
 			cur = fnode;
 			fnode = fnode->next;
 
-			if (cur->type == NODE_TYPE_SPEECH) {
-				//switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
-				//switch_core_speech_close(&cur->sh, &flags);
-			} else {
+			if (cur->type != NODE_TYPE_SPEECH) {
 				switch_core_file_close(&cur->fh);
 			}
 
@@ -624,7 +621,7 @@ static switch_status_t conference_del_member(conference_obj_t * conference, conf
 
 	if (member->sh) {
 		switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
-		switch_core_speech_close(member->sh, &flags);
+		switch_core_speech_close(&member->lsh, &flags);
 		member->sh = NULL;
 	}
 
@@ -906,10 +903,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 			conference_file_node_t *fnode;
 			switch_memory_pool_t *pool;
 
-			if (conference->fnode->type == NODE_TYPE_SPEECH) {
-				//switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
-				//switch_core_speech_close(conference->fnode->sh, &flags);
-			} else {
+			if (conference->fnode->type != NODE_TYPE_SPEECH) {
 				switch_core_file_close(&conference->fnode->fh);
 			}
 
@@ -952,10 +946,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 				cur = fnode;
 				fnode = fnode->next;
 
-				if (cur->type == NODE_TYPE_SPEECH) {
-					//switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
-					//switch_core_speech_close(&cur->sh, &flags);
-				} else {
+				if (cur->type != NODE_TYPE_SPEECH) {
 					switch_core_file_close(&cur->fh);
 				}
 
@@ -1003,7 +994,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 
 		if (conference->sh) {
 			switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
-			switch_core_speech_close(conference->sh, &flags);
+			switch_core_speech_close(&conference->lsh, &flags);
 			conference->sh = NULL;
 		}
 
@@ -1673,10 +1664,7 @@ static void conference_loop_output(conference_member_t * member)
 				conference_file_node_t *fnode;
 				switch_memory_pool_t *pool;
 
-				if (member->fnode->type == NODE_TYPE_SPEECH) {
-					//switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
-					//switch_core_speech_close(&member->fnode->sh, &flags);
-				} else {
+				if (member->fnode->type != NODE_TYPE_SPEECH) {
 					switch_core_file_close(&member->fnode->fh);
 				}
 
