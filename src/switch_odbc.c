@@ -415,14 +415,14 @@ SWITCH_DECLARE(switch_odbc_state_t) switch_odbc_handle_get_state(switch_odbc_han
 
 SWITCH_DECLARE(char *) switch_odbc_handle_get_error(switch_odbc_handle_t *handle, SQLHSTMT stmt)
 {
-	char buffer[SQL_MAX_MESSAGE_LENGTH + 1];
-	char sqlstate[SQL_SQLSTATE_SIZE + 1];
+	char buffer[SQL_MAX_MESSAGE_LENGTH + 1] = "";
+	char sqlstate[SQL_SQLSTATE_SIZE + 1] = "";
 	SQLINTEGER sqlcode;
 	SQLSMALLINT length;
 	char *ret = NULL;
 
 	if (SQLError(handle->env, handle->con, stmt, (SQLCHAR *)sqlstate, &sqlcode, (SQLCHAR *)buffer, sizeof(buffer), &length) == SQL_SUCCESS) {
-		ret = switch_mprintf("STATE: %s CODE %ld ERROR: %s\n", switch_str_nil(sqlstate),  sqlcode,  switch_str_nil(buffer));
+		ret = switch_mprintf("STATE: %s CODE %ld ERROR: %s\n", sqlstate,  sqlcode, buffer);
 	};
 
 	return ret;
