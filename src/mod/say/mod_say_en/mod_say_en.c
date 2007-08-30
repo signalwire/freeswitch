@@ -156,7 +156,8 @@ static switch_status_t en_say_general_count(switch_core_session_t *session,
 {
 	switch_channel_t *channel;
 	int in;
-	int x = 0, places[9] = { 0 };
+	uint32_t x = 0;
+	int places[9] = { 0 };
 	char sbuf[13] = "";
 	switch_status_t status;
 
