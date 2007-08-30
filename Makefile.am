@@ -90,7 +90,8 @@ src/include/switch_xml.h\
 src/include/switch_cpp.h\
 libs/libteletone/src/libteletone_detect.h\
 libs/libteletone/src/libteletone_generate.h\
-libs/libteletone/src/libteletone.h
+libs/libteletone/src/libteletone.h\
+src/include/switch_odbc.h
 
 CORE_CFLAGS     = `$(switch_srcdir)/libs/apr/apr-1-config --cflags --cppflags --includes`
 CORE_CFLAGS    += `$(switch_srcdir)/libs/apr-util/apu-1-config --includes`
@@ -104,11 +105,6 @@ CORE_CFLAGS    += $(RESAMPLE_CFLAGS)
 CORE_LIBS      = libs/apr/libapr-1.la libs/apr-util/libaprutil-1.la
 CORE_LIBS     += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la
 CORE_LIBS     += libs/srtp/libsrtp.la $(RESAMPLE_LIB)
-if ADD_ODBC
-libfreeswitch_la_SOURCES += src/switch_odbc.c
-library_include_HEADERS += src/include/switch_odbc.h
-CORE_LIBS     += -lodbc
-endif
 
 lib_LTLIBRARIES	          = libfreeswitch.la
 libfreeswitch_la_CFLAGS   = $(CORE_CFLAGS) $(AM_CFLAGS)
@@ -136,6 +132,10 @@ CORE_LIBS      += libs/libedit/src/.libs/libedit.a
 freeswitch_LDADD += -lcurses
 endif
 
+if ADD_ODBC
+libfreeswitch_la_SOURCES += src/switch_odbc.c
+CORE_LIBS     += -lodbc
+endif
 
 
 libs/libedit/Makefile:
