@@ -505,10 +505,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
 			priv = "name";
 			if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
-				priv = "yes";
+				priv = "full";
 			}
 		} else if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
-			priv = "yes";
+			priv = "full";
 		}
 		if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
 			screen = "yes";
