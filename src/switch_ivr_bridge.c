@@ -89,9 +89,6 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 		}
 
 		if ((b_state = switch_channel_get_state(chan_b)) >= CS_HANGUP) {
-			if (originator && !ans_a && !ans_b) {
-				switch_channel_hangup(chan_a, switch_channel_get_cause(chan_b));
-			}
 			break;
 		}
 
@@ -180,6 +177,12 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "read: %s Bad Frame.... Bubye!\n", switch_channel_get_name(chan_a));
 			break;
+		}
+	}
+
+	if (switch_channel_get_state(chan_b) >= CS_HANGUP) {	
+		if (originator && switch_channel_ready(chan_a) && !switch_channel_test_flag(chan_a, CF_ANSWERED)) {
+			switch_channel_hangup(chan_a, switch_channel_get_cause(chan_b));
 		}
 	}
 
