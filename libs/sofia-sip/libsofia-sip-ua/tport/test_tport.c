@@ -33,6 +33,9 @@
  * @date Created: Wed Apr  3 11:25:13 2002 ppessi
  */
 
+/* always assert()s */
+#undef NDEBUG
+
 #include "config.h"
 
 #include <stddef.h>
@@ -48,6 +51,8 @@ typedef struct tp_test_s tp_test_t;
  
 #include <sofia-sip/su_wait.h>
 #include <sofia-sip/su_md5.h>
+
+#include "tport_internal.h"	/* Get SU_DEBUG_*() */
 
 #include "test_class.h"
 #include "test_protos.h"
@@ -101,6 +106,9 @@ struct tp_test_s {
   int        tt_received;
   msg_t     *tt_rmsg;
   uint8_t    tt_digest[SU_MD5_DIGEST_SIZE];
+
+  su_addrinfo_t const *tt_tcp_addr;
+  tport_t   *tt_tcp;
 };
 
 int tstflags;
@@ -359,7 +367,11 @@ static void tp_test_recv(tp_test_t *tt,
   tt->tt_status = 1;
   tt->tt_received++;
 
-  if (test_msg_md5(tt, msg))
+  if (msg_has_error(msg)) {
+    tt->tt_status = -1;
+    tt->tt_rtport = tp;
+  }
+  else if (test_msg_md5(tt, msg))
     msg_destroy(msg);
   else if (tt->tt_rmsg) 
     msg_destroy(msg);
@@ -451,7 +463,7 @@ tp_stack_class_t const tp_test_class[1] =
 static int init_test(tp_test_t *tt)
 {
   tp_name_t myname[1] = {{ "*", "*", "*", "*", "sigcomp" }};
-#if HAVE_NETINET_SCTP_H
+#if HAVE_SCTP
   char const * transports[] = { "udp", "tcp", "sctp", NULL };
 #else
   char const * transports[] = { "udp", "tcp", NULL };
@@ -635,7 +647,7 @@ static int init_test(tp_test_t *tt)
   for (tp = tport_primaries(tt->tt_srv_tports); tp; tp = tport_next(tp)) {
     TEST_1(tpn = tport_name(tp));
 
-    if (1 || tt->tt_flags & tst_verbatim) {
+    if (tt->tt_flags & tst_verbatim) {
       char const *host = tpn->tpn_host != tpn->tpn_canon ? tpn->tpn_host : "";
       printf("bound transport to %s/%s:%s%s%s%s%s\n",
 	     tpn->tpn_proto, tpn->tpn_canon, tpn->tpn_port, 
@@ -661,6 +673,11 @@ static int init_test(tp_test_t *tt)
       tt->tt_tcp_name->tpn_ident = NULL;
       *tt->tt_tcp_comp = *tpn;
       tt->tt_tcp_comp->tpn_ident = NULL;
+
+      if (tt->tt_tcp_addr == NULL) {
+	tt->tt_tcp_addr = tport_get_address(tp); 
+	tt->tt_tcp = tp;
+      }
     } 
     else if (strcmp(tpn->tpn_proto, "sctp") == 0) {
       *tt->tt_sctp_name = *tpn;
@@ -738,7 +755,7 @@ static int udp_test(tp_test_t *tt)
 
   TEST_1(md5 = msg_content_md5_make(home, "R6nitdrtJFpxYzrPaSXfrA=="));
   TEST(msg_header_insert(msg, (void *)tst, (msg_header_t *)md5), 0);
-  
+
   TEST_1(sep = msg_separator_create(home));
   TEST(msg_header_insert(msg, (void *)tst, (msg_header_t *)sep), 0);
 
@@ -778,23 +795,72 @@ static int udp_test(tp_test_t *tt)
   END();
 }
 
+int pending_server_close, pending_client_close;
+
+void server_closed_callback(tp_stack_t *tt, tp_client_t *client,
+       		     tport_t *tp, msg_t *msg, int error)
+{
+  assert(msg == NULL);
+  assert(client == NULL);
+  if (msg == NULL) {
+    tport_release(tp, pending_server_close, NULL, NULL, client, 0);
+    pending_server_close = 0;
+  }
+}
+
+void client_closed_callback(tp_stack_t *tt, tp_client_t *client,
+       		     tport_t *tp, msg_t *msg, int error)
+{
+  assert(msg == NULL);
+  assert(client == NULL);
+  if (msg == NULL) {
+    tport_release(tp, pending_client_close, NULL, NULL, client, 0);
+    pending_client_close = 0;
+  }
+}
+
 static int tcp_test(tp_test_t *tt)
 {
   BEGIN();
-
-#ifndef WIN32			/* Windows seems to be buffering too much */
 
   msg_t *msg = NULL;
   int i;
   tport_t *tp, *tp0;
   char ident[16];
+  su_time_t started;
+
+  /* Send a single message */
+  TEST_1(!new_test_msg(tt, &msg, "tcp-first", 1, 1024));
+  TEST_1(tp = tport_tsend(tt->tt_tports, msg, tt->tt_tcp_name, TAG_END()));
+  TEST_S(tport_name(tp)->tpn_ident, "client");
+  tp0 = tport_incref(tp);
+  msg_destroy(msg);
+
+  tport_set_params(tp,
+       	    TPTAG_KEEPALIVE(100), 
+       	    TPTAG_PINGPONG(500),
+       	    TPTAG_IDLE(500),
+       	    TAG_END());
+
+  TEST(tport_test_run(tt, 5), 1);
+  TEST_1(!check_msg(tt, tt->tt_rmsg, "tcp-first"));
+  msg_destroy(tt->tt_rmsg), tt->tt_rmsg = NULL;
+
+  /* Ask for notification upon close */
+  pending_client_close = tport_pend(tp0, NULL, client_closed_callback, NULL);
+  TEST_1(pending_client_close > 0);
+  tp = tt->tt_rtport;
+  pending_server_close = tport_pend(tp, NULL, server_closed_callback, NULL);
+  TEST_1(pending_server_close > 0);
+
+#ifndef WIN32			/* Windows seems to be buffering too much */
 
   /* Create a large message, just to force queueing in sending end */
   TEST(new_test_msg(tt, &msg, "tcp-0", 1, 16 * 64 * 1024), 0);
   test_create_md5(tt, msg);
   TEST_1(tp = tport_tsend(tt->tt_tports, msg, tt->tt_tcp_name, TAG_END()));
   TEST_S(tport_name(tp)->tpn_ident, "client");
-  tp0 = tport_incref(tp);
+  TEST_P(tport_incref(tp), tp0); tport_decref(&tp);
   msg_destroy(msg);
 
   /* Fill up the queue */
@@ -827,10 +893,12 @@ static int tcp_test(tp_test_t *tt)
     msg_destroy(tt->tt_rmsg), tt->tt_rmsg = NULL;
   }
 
+#endif
+
   /* This uses a new connection */
   TEST_1(!new_test_msg(tt, &msg, "tcp-no-reuse", 1, 1024));
   TEST_1(tp = tport_tsend(tt->tt_tports, msg, tt->tt_tcp_name, 
-			  TPTAG_REUSE(0), TAG_END()));
+       		   TPTAG_REUSE(0), TAG_END()));
   TEST_S(tport_name(tp)->tpn_ident, "client");
   TEST_1(tport_incref(tp) != tp0); tport_decref(&tp);
   msg_destroy(msg);
@@ -838,7 +906,7 @@ static int tcp_test(tp_test_t *tt)
   /* This uses the old connection */
   TEST_1(!new_test_msg(tt, &msg, "tcp-reuse", 1, 1024));
   TEST_1(tp = tport_tsend(tt->tt_tports, msg, tt->tt_tcp_name, 
-			  TPTAG_REUSE(1), TAG_END()));
+       		   TPTAG_REUSE(1), TAG_END()));
   TEST_S(tport_name(tp)->tpn_ident, "client");
   TEST_1(tport_incref(tp) == tp0); tport_decref(&tp);
   msg_destroy(msg);
@@ -863,9 +931,99 @@ static int tcp_test(tp_test_t *tt)
   TEST_1(!check_msg(tt, tt->tt_rmsg, "tcp-last"));
   msg_destroy(tt->tt_rmsg), tt->tt_rmsg = NULL;
 
+  TEST_1(pending_server_close && pending_client_close);
+  SU_DEBUG_3(("tport_test(%p): waiting for PONG timeout\n", (void *)tp0));
+
+  /* Wait until notifications - 
+     client closes when no pong is received and notifys pending, 
+     then server closes and notifys pending */
+  while (pending_server_close || pending_client_close)
+    su_root_step(tt->tt_root, 50);
+
   tport_decref(&tp0);
 
-#endif
+  /* Again a single message */
+  TEST_1(!new_test_msg(tt, &msg, "tcp-pingpong", 1, 512));
+  TEST_1(tp = tport_tsend(tt->tt_tports, msg, tt->tt_tcp_name, TAG_END()));
+  TEST_S(tport_name(tp)->tpn_ident, "client");
+  tp0 = tport_incref(tp);
+  msg_destroy(msg);
+
+  tport_set_params(tp0,
+       	    TPTAG_KEEPALIVE(250), 
+       	    TPTAG_PINGPONG(200),
+       	    TAG_END());
+
+  TEST(tport_test_run(tt, 5), 1);
+  TEST_1(!check_msg(tt, tt->tt_rmsg, "tcp-pingpong"));
+  msg_destroy(tt->tt_rmsg), tt->tt_rmsg = NULL;
+
+  /* Ask for notifications upon close */
+  pending_client_close = tport_pend(tp0, NULL, client_closed_callback, NULL);
+  TEST_1(pending_client_close > 0);
+
+  tp = tt->tt_rtport;
+  pending_server_close = tport_pend(tp, NULL, server_closed_callback, NULL);
+  TEST_1(pending_server_close > 0);
+
+  /* Now server responds with pong ... */
+  TEST(tport_set_params(tp, TPTAG_PONG2PING(1), TAG_END()), 1);
+
+  started = su_now();
+
+  while (pending_server_close && pending_client_close) {
+    su_root_step(tt->tt_root, 50);
+    if (su_duration(su_now(), started) > 1000)
+      break;
+  }
+
+  /* ... and we are still pending after a second */
+  TEST_1(pending_client_close && pending_server_close);
+  TEST_1(su_duration(su_now(), started) > 1000);
+
+  tport_shutdown(tp0, 2);
+  tport_unref(tp0);
+
+  while (pending_server_close || pending_client_close)
+    su_root_step(tt->tt_root, 50);
+
+  END();
+}
+
+static int test_incomplete(tp_test_t *tt)
+{
+  BEGIN();
+  
+  su_addrinfo_t const *ai = tt->tt_tcp_addr;
+  su_socket_t s;
+  int connected;
+
+  TEST_1(ai != NULL);
+
+  TEST(tport_set_params(tt->tt_tcp, TPTAG_TIMEOUT(500), TAG_END()), 1);
+
+  s = su_socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+  TEST_1(s != SOCKET_ERROR);
+
+  connected = connect(s, ai->ai_addr, ai->ai_addrlen);
+
+  su_root_step(tt->tt_root, 50);
+  
+  TEST(send(s, "F", 1, 0), 1);
+  su_root_step(tt->tt_root, 50);
+  TEST(send(s, "O", 1, 0), 1);
+  su_root_step(tt->tt_root, 50);
+  TEST(send(s, "O", 1, 0), 1);
+  su_root_step(tt->tt_root, 50);
+  TEST(send(s, " ", 1, 0), 1);
+  su_root_step(tt->tt_root, 50);
+  
+  tt->tt_received = 0;
+  TEST(tport_test_run(tt, 5), -1);
+  TEST(tt->tt_received, 1);
+  TEST_P(tt->tt_rmsg, NULL);
+  
+  su_close(s);
 
   END();
 }
@@ -967,34 +1125,48 @@ static int sctp_test(tp_test_t *tt)
 
   msg_t *msg = NULL;
   int i, n;
-  tport_t *tp;
+  tport_t *tp, *tp0;
   char buffer[32];
 
   if (!tt->tt_sctp_name->tpn_proto) 
     return 0;
 
   /* Just a small and nice message first */
-  TEST_1(!new_test_msg(tt, &msg, "sctp-small", 1, 1024));
+  TEST_1(!new_test_msg(tt, &msg, "cid:sctp-first", 1, 1024));
   test_create_md5(tt, msg);
   TEST_1(tp = tport_tsend(tt->tt_tports, msg, tt->tt_sctp_name, TAG_END()));
   TEST_S(tport_name(tp)->tpn_ident, "client");
   msg_destroy(msg);
-  
+
+  tport_set_params(tp, TPTAG_KEEPALIVE(100), TPTAG_IDLE(500), TAG_END());
+
   TEST(tport_test_run(tt, 5), 1);
     
   TEST_1(!check_msg(tt, tt->tt_rmsg, NULL));
   test_check_md5(tt, tt->tt_rmsg);
   msg_destroy(tt->tt_rmsg), tt->tt_rmsg = NULL;
 
-  if (1)
-    return 0;			/* SCTP does not work reliably. Really. */
+  tp0 = tport_ref(tp);
+
+  pending_server_close = pending_client_close = 0;
+
+  /* Ask for notification upon close */
+  pending_client_close = tport_pend(tp, NULL, client_closed_callback, NULL);
+  TEST_1(pending_client_close > 0);
+  tp = tt->tt_rtport;
+  pending_server_close = tport_pend(tp, NULL, server_closed_callback, NULL);
+  TEST_1(pending_server_close > 0);
+
+  if (0) { /* SCTP does not work reliably. Really. */
+
+  tt->tt_received = 0;
 
   /* Create large messages, just to force queueing in sending end */
   for (n = 0; !tport_queuelen(tp); n++) {
     snprintf(buffer, sizeof buffer, "cid:sctp-%u", n);
     TEST_1(!new_test_msg(tt, &msg, buffer, 1, 32000));
     test_create_md5(tt, msg);
-    TEST_1(tport_tsend(tp, msg, tt->tt_sctp_name, TAG_END()));
+    TEST_1(tp = tport_tsend(tp0, msg, tt->tt_sctp_name, TAG_END()));
     TEST_S(tport_name(tp)->tpn_ident, "client");
     msg_destroy(msg);
   }
@@ -1003,11 +1175,11 @@ static int sctp_test(tp_test_t *tt)
   for (i = 1; i < TPORT_QUEUESIZE; i++) {
     snprintf(buffer, sizeof buffer, "cid:sctp-%u", n + i);
     TEST_1(!new_test_msg(tt, &msg, buffer, 1, 1024));
-    TEST_1(tport_tsend(tp, msg, tt->tt_sctp_name, TAG_END()));
+    TEST_1(tp = tport_tsend(tp0, msg, tt->tt_sctp_name, TAG_END()));
     msg_destroy(msg);
   }
 
-  /* This overflows the queue */
+  /* Try to overflow the queue */
   snprintf(buffer, sizeof buffer, "cid:sctp-%u", n + i);
   TEST_1(!new_test_msg(tt, &msg, buffer, 1, 1024));
   TEST_1(!tport_tsend(tt->tt_tports, msg, tt->tt_sctp_name, TAG_END()));
@@ -1020,13 +1192,13 @@ static int sctp_test(tp_test_t *tt)
   msg_destroy(tt->tt_rmsg), tt->tt_rmsg = NULL;
 
   /* This uses a new connection */
-  TEST_1(!new_test_msg(tt, &msg, "cid-sctp-new", 1, 1024));
+  TEST_1(!new_test_msg(tt, &msg, "cid:sctp-new", 1, 1024));
   TEST_1(tport_tsend(tt->tt_tports, msg, tt->tt_sctp_name, 
 		     TPTAG_REUSE(0), TAG_END()));
   msg_destroy(msg);
 
   /* Receive every message from queue */
-  for (tt->tt_received = 0; tt->tt_received < TPORT_QUEUESIZE + n;) {
+  for (; tt->tt_received < n + TPORT_QUEUESIZE - 1;) {
     TEST(tport_test_run(tt, 10), 1);
     /* Validate message */
     TEST_1(!check_msg(tt, tt->tt_rmsg, NULL));
@@ -1034,7 +1206,7 @@ static int sctp_test(tp_test_t *tt)
   }
   
   /* Try to send a single message */
-  TEST_1(!new_test_msg(tt, &msg, "cid:sctp-final", 1, 1024));
+  TEST_1(!new_test_msg(tt, &msg, "cid:sctp-final", 1, 512));
   TEST_1(tport_tsend(tt->tt_tports, msg, tt->tt_sctp_name, TAG_END()));
   msg_destroy(msg);
   
@@ -1042,6 +1214,15 @@ static int sctp_test(tp_test_t *tt)
   
   TEST_1(!check_msg(tt, tt->tt_rmsg, NULL));
   msg_destroy(tt->tt_rmsg), tt->tt_rmsg = NULL;
+  }
+
+  tport_unref(tp0);
+
+  /* Wait until notifications - 
+     client closes when idle and notifys pending, 
+     then server closes and notifys pending */
+  while (pending_server_close || pending_client_close)
+    su_root_step(tt->tt_root, 50);
 
   END();
 }
@@ -1055,15 +1236,35 @@ static int tls_test(tp_test_t *tt)
   msg_t *msg = NULL;
   int i;
   char ident[16];
+  tport_t *tp, *tp0;
 
   TEST_S(dst->tpn_proto, "tls");
 
-  tt->tt_received = 0;
+  /* Send a single message */
+  TEST_1(!new_test_msg(tt, &msg, "tls-first", 1, 1024));
+  TEST_1(tp = tport_tsend(tt->tt_tports, msg, dst, TAG_END()));
+  TEST_1(tp0 = tport_ref(tp));
+  msg_destroy(msg);
 
-  /* Create a large message, just to force queueing in sending end */
-  TEST_1(!new_test_msg(tt, &msg, "tls-0", 16, 64 * 1024));
+  TEST(tport_test_run(tt, 5), 1);
+
+  TEST_1(!check_msg(tt, tt->tt_rmsg, "tls-first"));
+  msg_destroy(tt->tt_rmsg), tt->tt_rmsg = NULL;
+
+  tport_set_params(tp, TPTAG_KEEPALIVE(100), TPTAG_IDLE(500), TAG_END());
+
+  /* Ask for notification upon close */
+  pending_client_close = tport_pend(tp0, NULL, client_closed_callback, NULL);
+  TEST_1(pending_client_close > 0);
+  tp = tt->tt_rtport;
+  pending_server_close = tport_pend(tp, NULL, server_closed_callback, NULL);
+  TEST_1(pending_server_close > 0);
+
+  /* Send a largish message */
+  TEST_1(!new_test_msg(tt, &msg, "tls-0", 16, 16 * 1024));
   test_create_md5(tt, msg);
-  TEST_1(tport_tsend(tt->tt_tports, msg, dst, TAG_END()));
+  TEST_1(tp = tport_tsend(tt->tt_tports, msg, dst, TAG_END()));
+  TEST_1(tp == tp0);
   msg_destroy(msg);
 
   /* Fill up the queue */
@@ -1071,24 +1272,19 @@ static int tls_test(tp_test_t *tt)
     snprintf(ident, sizeof ident, "tls-%u", i);
 
     TEST_1(!new_test_msg(tt, &msg, ident, 2, 512));
-    TEST_1(tport_tsend(tt->tt_tports, msg, dst, TAG_END()));
+    TEST_1(tp = tport_tsend(tt->tt_tports, msg, dst, TAG_END()));
+    TEST_1(tp == tp0);
     msg_destroy(msg);
   }
 
-  /* This overflows the queue */
-  TEST_1(!new_test_msg(tt, &msg, "tls-overflow", 1, 1024));
-  TEST_1(!tport_tsend(tt->tt_tports, msg, dst, TAG_END()));
-  msg_destroy(msg);
-
-  TEST(tport_test_run(tt, 60), 1);
-
-  msg_destroy(tt->tt_rmsg), tt->tt_rmsg = NULL;
-
   /* This uses a new connection */
   TEST_1(!new_test_msg(tt, &msg, "tls-no-reuse", 1, 1024));
-  TEST_1(tport_tsend(tt->tt_tports, msg, dst, 
+  TEST_1(tp = tport_tsend(tt->tt_tports, msg, dst, 
 		     TPTAG_REUSE(0), TAG_END()));
+  TEST_1(tp != tp0);
   msg_destroy(msg);
+
+  tt->tt_received = 0;
 
   /* Receive every message from queue */
   while (tt->tt_received < TPORT_QUEUESIZE + 1) {
@@ -1107,6 +1303,14 @@ static int tls_test(tp_test_t *tt)
   TEST_1(!check_msg(tt, tt->tt_rmsg, "tls-last"));
   msg_destroy(tt->tt_rmsg), tt->tt_rmsg = NULL;
 
+  tport_decref(&tp0);
+
+  /* Wait until notifications - 
+     client closes when idle and notifys pending, 
+     then server closes and notifys pending */
+  while (pending_server_close || pending_client_close)
+    su_root_step(tt->tt_root, 50);
+  
 #endif
 
   END();
@@ -1363,9 +1567,24 @@ static int filter_test(tp_test_t *tt)
   END();
 }
 
+#if HAVE_ALARM
+#include <signal.h>
+
+static RETSIGTYPE sig_alarm(int s)
+{
+  fprintf(stderr, "%s: FAIL! test timeout!\n", name);
+  exit(1);
+}
+
+char const alarm_option[] = " [--no-alarm]";
+
+#else
+char const alarm_option[] = "";
+#endif
+
 void usage(int exitcode)
 {
-  fprintf(stderr, "usage: %s [-v] [-a]\n", name);
+  fprintf(stderr, "usage: %s [-v] [-a]%s\n", name, alarm_option);
   exit(exitcode);
 }
 
@@ -1373,7 +1592,9 @@ int main(int argc, char *argv[])
 {
   int flags = 0;	/* XXX */
   int retval = 0;
+  int no_alarm = 0;
   int i;
+
   tp_test_t tt[1] = {{{ SU_HOME_INIT(tt) }}};
 
   for (i = 1; argv[i]; i++) {
@@ -1381,12 +1602,21 @@ int main(int argc, char *argv[])
       tstflags |= tst_verbatim;
     else if (strcmp(argv[i], "-a") == 0 || strcmp(argv[i], "--abort") == 0)
       tstflags |= tst_abort;
+    else if (strcmp(argv[i], "--no-alarm") == 0)
+      no_alarm = 1;
     else
       usage(1);
   }
 
 #if HAVE_OPEN_C
   tstflags |= tst_verbatim;
+#endif
+
+#if HAVE_ALARM
+  if (!no_alarm) {
+    signal(SIGALRM, sig_alarm);
+    alarm(120);
+  }
 #endif
 
   /* Use log */
@@ -1406,6 +1636,7 @@ int main(int argc, char *argv[])
     retval |= sctp_test(tt); fflush(stdout);
     retval |= udp_test(tt); fflush(stdout);
     retval |= tcp_test(tt); fflush(stdout);
+    retval |= test_incomplete(tt); fflush(stdout);
     retval |= reuse_test(tt); fflush(stdout);
     retval |= tls_test(tt); fflush(stdout);
     if (0)			/* Not yet working... */

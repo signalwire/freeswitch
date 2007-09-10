@@ -31,6 +31,7 @@
 SOFIA_BEGIN_DECLS
 
 struct proxy;
+struct domain;
 
 struct proxy *test_proxy_create(su_root_t *, tag_type_t, tag_value_t, ...);
 
@@ -38,15 +39,19 @@ void test_proxy_destroy(struct proxy *);
 
 url_t const *test_proxy_uri(struct proxy const *);
 
-void test_proxy_set_expiration(struct proxy *,
-			       sip_time_t min_expires, 
-			       sip_time_t expires, 
-			       sip_time_t max_expires);
+struct domain *test_proxy_add_domain(struct proxy *,
+				     url_t const *domain,
+				     tag_type_t, tag_value_t, ...);
 
-void test_proxy_get_expiration(struct proxy *,
-			       sip_time_t *return_min_expires, 
-			       sip_time_t *return_expires, 
-			       sip_time_t *return_max_expires);
+void test_proxy_domain_set_expiration(struct domain *,
+				      sip_time_t min_expires, 
+				      sip_time_t expires, 
+				      sip_time_t max_expires);
+
+void test_proxy_domain_get_expiration(struct domain *,
+				      sip_time_t *return_min_expires, 
+				      sip_time_t *return_expires, 
+				      sip_time_t *return_max_expires);
 
 void test_proxy_set_session_timer(struct proxy *p,
 				  sip_time_t session_expires, 
@@ -55,6 +60,14 @@ void test_proxy_set_session_timer(struct proxy *p,
 void test_proxy_get_session_timer(struct proxy *p,
 				  sip_time_t *return_session_expires,
 				  sip_time_t *return_min_se);
+
+void test_proxy_domain_set_authorize(struct domain *d, int authorize);
+void test_proxy_domain_get_authorize(struct domain *d, int *return_authorize);
+
+void test_proxy_domain_set_outbound(struct domain *d,
+				    int use_outbound);
+void test_proxy_domain_get_outbound(struct domain *d,
+				    int *return_use_outbound);
 
 int test_proxy_close_tports(struct proxy *p);
 

@@ -587,6 +587,10 @@ int tls_error(tls_t *tls, int ret, char const *who, char const *operation,
     return 0;
 
   case SSL_ERROR_SYSCALL:
+    if (SSL_get_shutdown(tls->con) & SSL_RECEIVED_SHUTDOWN)
+      return 0;			/* EOS */
+    if (errno == 0)
+      return 0;			/* EOS */
     return -1;
 
   default:
@@ -665,10 +669,12 @@ int tls_want_read(tls_t *tls, int events)
   if (tls && (events & tls->read_events)) {
     int ret = tls_read(tls);
 
-    if (ret >= 0)
+    if (ret > 0)
       return 1;
-    else if (errno == EAGAIN)
+    else if (ret == 0)
       return 0;
+    else if (errno == EAGAIN)
+      return 2;
     else
       return -1;
   }

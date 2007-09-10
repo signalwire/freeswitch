@@ -35,10 +35,6 @@
  * @date Created: Wed Mar  8 11:38:18 EET 2006  ppessi
  */
 
-typedef struct nua_dialog_state nua_dialog_state_t;
-typedef struct nua_dialog_usage nua_dialog_usage_t;
-typedef struct nua_remote_s nua_remote_t;
-
 #ifndef NUA_OWNER_T
 #define NUA_OWNER_T struct nua_owner_s
 #endif
@@ -48,10 +44,13 @@ typedef NUA_OWNER_T nua_owner_t;
 #include <sofia-sip/nta.h>
 #endif
 
-typedef su_msg_r nua_saved_signal_t;
-
+typedef struct nua_dialog_state nua_dialog_state_t;
+typedef struct nua_dialog_usage nua_dialog_usage_t;
 typedef struct nua_server_request nua_server_request_t; 
 typedef struct nua_client_request nua_client_request_t; 
+typedef struct nua_dialog_peer_info nua_dialog_peer_info_t;
+
+typedef su_msg_r nua_saved_signal_t;
 
 typedef struct {
   sip_method_t sm_method; 
@@ -272,6 +271,8 @@ struct nua_client_request
 
   nta_outgoing_t     *cr_orq;
 
+  su_timer_t         *cr_timer;	        /**< Expires or retry timer */
+
   /*nua_event_t*/ int cr_event;		/**< Request event */
   sip_method_t        cr_method;
   char const         *cr_method_name;
@@ -303,8 +304,10 @@ struct nua_client_request
   unsigned cr_dialog:1;		/**< Request can initiate dialog */
 
   /* Current state */
+  unsigned cr_waiting:1;	/**< Request is waiting */
   unsigned cr_challenged:1;	/**< Request was challenged */
   unsigned cr_wait_for_cred:1;	/**< Request is pending authentication */
+  unsigned cr_wait_for_timer:1;	/**< Request is waiting for a timer to expire  */
   unsigned cr_restarting:1;	/**< Request is being restarted */
   unsigned cr_reporting:1;	/**< Reporting in progress */
   unsigned cr_terminating:1;	/**< Request terminates the usage */
@@ -316,6 +319,9 @@ struct nua_client_request
 
 struct nua_dialog_state
 {
+  /** Dialog owner */
+  nua_owner_t            *ds_owner;
+
   /** Dialog usages. */
   nua_dialog_usage_t     *ds_usage;
 
@@ -346,12 +352,13 @@ struct nua_dialog_state
   sip_from_t const *ds_local;		/**< Local address */
   sip_to_t const *ds_remote;		/**< Remote address */
   nta_leg_t      *ds_leg;
+  sip_contact_t  *ds_ltarget;	        /**< Local target */
   char const     *ds_remote_tag;	/**< Remote tag (if any). 
 					 * Should be non-NULL 
 					 * if dialog is established.
 					 */
-
-  struct nua_remote_s {
+  
+  struct nua_dialog_peer_info {
     sip_allow_t      *nr_allow;
     sip_accept_t     *nr_accept;
     sip_require_t    *nr_require;
@@ -359,10 +366,6 @@ struct nua_dialog_state
     sip_user_agent_t *nr_user_agent;
   } ds_remote_ua[1];
 };
-
-typedef void nh_pending_f(nua_owner_t *, 
-			  nua_dialog_usage_t *du,
-			  sip_time_t now);
 
 /** Virtual function pointer table for dialog usage. */
 typedef struct {
@@ -388,6 +391,7 @@ typedef struct {
 struct nua_dialog_usage {
   nua_dialog_usage_t *du_next;
   nua_usage_class const *du_class;
+  nua_dialog_state_t *du_dialog;
   nua_client_request_t *du_cr;	        /**< Client request bound with usage */
 
   unsigned     du_ready:1;	        /**< Established usage */
@@ -440,13 +444,16 @@ void nua_dialog_deinit(nua_owner_t *own,
 
 int nua_dialog_shutdown(nua_owner_t *owner, nua_dialog_state_t *ds);
 
+int nua_dialog_repeat_shutdown(nua_owner_t *owner,
+			       nua_dialog_state_t *ds);
+
 void nua_dialog_usage_set_refresh(nua_dialog_usage_t *du, unsigned delta);
 
-void nua_dialog_usage_refresh_range(nua_dialog_usage_t *du, 
-				    unsigned min, unsigned max);
+void nua_dialog_usage_set_refresh_range(nua_dialog_usage_t *du, 
+					unsigned min, unsigned max);
 
-void nua_dialog_usage_refresh_at(nua_dialog_usage_t *du, 
-				 sip_time_t target);
+void nua_dialog_usage_set_refresh_at(nua_dialog_usage_t *du, 
+				     sip_time_t target);
 
 void nua_dialog_usage_reset_refresh(nua_dialog_usage_t *du);
 

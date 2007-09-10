@@ -57,9 +57,6 @@ int test_register_to_proxy(struct context *ctx)
   sip_cseq_t cseq[1];
   int seen_401;
 
-  if (ctx->p)
-    test_proxy_set_expiration(ctx->p, 5, 5, 10);
-
   if (print_headings)
     printf("TEST NUA-2.3.0.1: un-REGISTER a\n");
 
@@ -108,7 +105,6 @@ int test_register_to_proxy(struct context *ctx)
   if (print_headings)
     printf("TEST NUA-2.3.0.3: PASSED\n");
 
-
 /* REGISTER test
 
    A			B
@@ -122,6 +118,8 @@ int test_register_to_proxy(struct context *ctx)
 
   if (print_headings)
     printf("TEST NUA-2.3.1: REGISTER a\n");
+
+  test_proxy_domain_set_expiration(ctx->a.domain, 5, 5, 10);
 
   TEST_1(a_reg->nh = nua_handle(a->nua, a_reg, TAG_END()));
 
@@ -142,7 +140,7 @@ int test_register_to_proxy(struct context *ctx)
 
   TEST_1(e = a->events->head);
   TEST_1(sip = sip_object(e->data->e_msg));
-  if (ctx->nat) {
+  if (ctx->nat && e->data->e_status == 100) {
     TEST_E(e->data->e_event, nua_r_register);
     TEST(e->data->e_status, 100);
     TEST(sip->sip_status->st_status, 406);
@@ -184,11 +182,15 @@ int test_register_to_proxy(struct context *ctx)
     TEST_1(e = a->specials->head);
   }
 
+  test_proxy_domain_set_expiration(ctx->a.domain, 600, 3600, 36000);
+
   if (print_headings)
     printf("TEST NUA-2.3.1: PASSED\n");
 
   if (print_headings)
     printf("TEST NUA-2.3.2: REGISTER b\n");
+
+  test_proxy_domain_set_expiration(ctx->b.domain, 5, 5, 10);
 
   TEST_1(b_reg->nh = nua_handle(b->nua, b_reg, TAG_END()));
 
@@ -237,13 +239,13 @@ int test_register_to_proxy(struct context *ctx)
   if (print_headings)
     printf("TEST NUA-2.3.2: PASSED\n");
 
-  if (ctx->p) {
-    test_proxy_close_tports(ctx->p);
-    test_proxy_set_expiration(ctx->p, 600, 3600, 36000);
-  }
+  test_proxy_domain_set_expiration(ctx->b.domain, 600, 3600, 36000);
 
   if (print_headings)
     printf("TEST NUA-2.3.3: REGISTER c\n");
+
+  test_proxy_domain_set_expiration(ctx->c.domain, 600, 3600, 36000);
+  test_proxy_domain_set_authorize(ctx->c.domain, 2);
 
   TEST_1(c_reg->nh = nua_handle(c->nua, c_reg, TAG_END()));
 
@@ -279,7 +281,12 @@ int test_register_to_proxy(struct context *ctx)
   TEST_1(sip = sip_object(e->data->e_msg));
   TEST(sip->sip_status->st_status, 423);
   TEST_1(e = e->next);
-  TEST(e->data->e_status, 200);
+  if (e->data->e_status == 100 && e->data->e_event == nua_r_register) {
+    TEST_1(sip = sip_object(e->data->e_msg));
+    TEST(sip->sip_status->st_status, 401);
+    TEST_1(e = e->next);
+  }
+  TEST(e->data->e_status, 200); TEST_E(e->data->e_event, nua_r_register);
   TEST_1(sip = sip_object(e->data->e_msg));
   TEST_1(sip->sip_contact);
   TEST_S(sip->sip_contact->m_display, "C");
@@ -365,6 +372,30 @@ int test_register_to_proxy(struct context *ctx)
 
   if (print_headings)
     printf("TEST NUA-2.3.4: PASSED\n");
+
+  if (!ctx->p)
+    return 0;
+
+  if (print_headings)
+    printf("TEST NUA-2.3.5: re-REGISTER when TCP connection is closed\n");
+
+  test_proxy_close_tports(ctx->p);
+
+  run_b_until(ctx, -1, save_until_final_response);
+
+  TEST_1(e = b->events->head);
+  TEST_E(e->data->e_event, nua_r_register);
+  if (e->data->e_status == 100)
+    TEST_1(e = e->next);
+  TEST_1(sip = sip_object(e->data->e_msg));
+  TEST_1(sip->sip_contact);
+  TEST_S(sip->sip_contact->m_expires, "3600");
+  TEST_1(!e->next);
+
+  free_events_in_list(ctx, b->events);
+
+  if (print_headings)
+    printf("TEST NUA-2.3.5: PASSED\n");
 
   END();
 }

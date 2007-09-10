@@ -26,7 +26,8 @@ endif
 # note: order does matter in the subdir list
 SUBDIRS = su features bnf sresolv sdp url msg sip $(OPT_SUBDIRS_STUN) ipt soa \
 	  tport nta nea iptsec $(OPT_SUBDIRS_NTH) nua
-DIST_SUBDIRS = $(SUBDIRS) docs
+DIST_SUBDIRS = su features bnf sresolv sdp url msg sip stun ipt soa \
+	  tport nta nea iptsec nth http nua docs
 
 DOXYGEN = doxygen
 

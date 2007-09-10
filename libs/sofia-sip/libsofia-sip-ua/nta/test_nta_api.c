@@ -453,7 +453,7 @@ int api_test_params(agent_t *ag)
 
   sip_contact_t const *aliases = (void *)-1;
   msg_mclass_t *mclass = (void *)-1;
-  sip_contact_t *contact = (void *)-1;
+  sip_contact_t const *contact = (void *)-1;
   url_string_t const *default_proxy = (void *)-1;
   void *smime = (void *)-1;
 
@@ -859,6 +859,7 @@ static int api_test_default(agent_t *ag)
   nta_incoming_t *irq;
   nta_outgoing_t *orq;
   sip_via_t via[1];
+  su_nanotime_t nano;
 
   TEST_1(nta = ag->ag_agent);
 
@@ -876,7 +877,9 @@ static int api_test_default(agent_t *ag)
   TEST_S(nta_incoming_method_name(irq), "*");
   TEST_P(nta_incoming_url(irq), NULL);
   TEST(nta_incoming_cseq(irq), 0);
-  
+
+  TEST(nta_incoming_received(irq, &nano), nano / 1000000000);
+
   TEST(nta_incoming_set_params(irq, TAG_END()), 0);
   
   TEST_P(nta_incoming_getrequest(irq), NULL);
@@ -944,6 +947,7 @@ static int api_test_errors(agent_t *ag)
   nta_agent_t *nta;
   su_root_t *root;
   su_home_t home[1];
+  su_nanotime_t nano;
 
   BEGIN();
 
@@ -1044,6 +1048,8 @@ static int api_test_errors(agent_t *ag)
   TEST_P(nta_incoming_method_name(NULL), NULL);
   TEST_P(nta_incoming_url(NULL), NULL);
   TEST(nta_incoming_cseq(NULL), 0);
+  TEST(nta_incoming_received(NULL, &nano), 0);
+  TEST64(nano, 0);
 
   TEST(nta_incoming_set_params(NULL, TAG_END()), -1);
 

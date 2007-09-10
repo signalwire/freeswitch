@@ -139,6 +139,7 @@ struct context
 
     int running;
 
+    struct domain *domain;
     condition_function *next_condition;
     nua_event_t next_event, last_event;
     nua_t *nua;

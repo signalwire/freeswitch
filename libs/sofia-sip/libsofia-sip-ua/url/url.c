@@ -129,6 +129,8 @@
   else if (a < 128)				\
     mask96 &= ~(1U << (127 - a))
 
+#define NUL '\0'
+#define NULNULNUL '\0', '\0', '\0'
 
 #define RMASK1 0xbe19003f
 #define RMASK2 0x8000001e
@@ -141,8 +143,10 @@
 
 /* Internal prototypes */
 static char *url_canonize(char *d, char const *s, size_t n,
+			  unsigned syn33,
 			  char const allowed[]);
 static char *url_canonize2(char *d, char const *s, size_t n, 
+			   unsigned syn33,
 			   unsigned m32, unsigned m64, unsigned m96);
 static int url_tel_cmp_numbers(char const *A, char const *B);
 
@@ -322,18 +326,24 @@ char *url_unescape(char *d, char const *s)
 
 /** Canonize a URL component */
 static
-char *url_canonize(char *d, char const *s, size_t n, char const allowed[])
+char *url_canonize(char *d, char const *s, size_t n,
+		   unsigned syn33,
+		   char const allowed[])
 {
   unsigned mask32 = 0xbe19003f, mask64 = 0x8000001e, mask96 = 0x8000001d;
 
   MASKS_WITH_ALLOWED(allowed, mask32, mask64, mask96);
 
-  return url_canonize2(d, s, n, mask32, mask64, mask96);
+  return url_canonize2(d, s, n, syn33, mask32, mask64, mask96);
 }
+
+#define SYN33(c) (1 << (c - 33))
+#define IS_SYN33(syn33, c) ((syn33 & (1 << (c - 33))) != 0)
 
 /** Canonize a URL component (with precomputed mask) */
 static
-char *url_canonize2(char *d, char const * const s, size_t n, 
+char *url_canonize2(char *d, char const * const s, size_t n,
+		    unsigned syn33,
 		    unsigned m32, unsigned m64, unsigned m96)
 {
   size_t i = 0;
@@ -347,7 +357,7 @@ char *url_canonize2(char *d, char const * const s, size_t n,
     unsigned char c = s[i], h1, h2;
 
     if (c != '%') {
-      if (IS_EXCLUDED(c, m32, m64, m96))
+      if (!IS_SYN33(syn33, c) && IS_EXCLUDED(c, m32, m64, m96))
 	return NULL;
       *d = c;
       continue;
@@ -393,7 +403,7 @@ char *url_canonize2(char *d, char const * const s, size_t n,
  * be escaped.
  */
 static
-char *url_canonize3(char *d, char const * const s, size_t n, 
+char *url_canonize3(char *d, char const * const s, size_t n,
 		    unsigned m32, unsigned m64, unsigned m96)
 {
   size_t i = 0;
@@ -575,7 +585,7 @@ int _url_d(url_t *url, char *s)
     char *scheme;
     url->url_scheme = scheme = s; s[n] = '\0'; s = s + n + 1;
 
-    if (!(scheme = url_canonize(scheme, scheme, SIZE_MAX, "+")))
+    if (!(scheme = url_canonize(scheme, scheme, SIZE_MAX, 0, "+")))
       return -1;
 
     n = scheme - url->url_scheme;
@@ -694,7 +704,7 @@ int _url_d(url_t *url, char *s)
       case url_file:
       case url_rtsp:
       case url_rtspu:
-	if (!url_canonize2(port, port, SIZE_MAX, RESERVED_MASK))
+	if (!url_canonize2(port, port, SIZE_MAX, 0, RESERVED_MASK))
 	  return -1;
 
 	/* Check that port is really numeric or wildcard */
@@ -758,14 +768,14 @@ int url_d(url_t *url, char *s)
 
 #   define SIP_USER_UNRESERVED "&=+$,;?/"
     s = (char *)url->url_user;
-    if (s && !url_canonize(s, s, SIZE_MAX, SIP_USER_UNRESERVED))
+    if (s && !url_canonize(s, s, SIZE_MAX, 0, SIP_USER_UNRESERVED))
       return -1;
 
     /* Having different charset in user and password does not make sense */
     /* but that is how it is defined in RFC 3261 */
 #   define SIP_PASS_UNRESERVED "&=+$,"
     s = (char *)url->url_password;
-    if (s && !url_canonize(s, s, SIZE_MAX, SIP_PASS_UNRESERVED))
+    if (s && !url_canonize(s, s, SIZE_MAX, 0, SIP_PASS_UNRESERVED))
       return -1;
 
   }
@@ -773,31 +783,37 @@ int url_d(url_t *url, char *s)
 
 #   define USER_UNRESERVED "&=+$,;"
     s = (char *)url->url_user;
-    if (s && !url_canonize(s, s, SIZE_MAX, USER_UNRESERVED))
+    if (s && !url_canonize(s, s, SIZE_MAX, 0, USER_UNRESERVED))
       return -1;
 
 #   define PASS_UNRESERVED "&=+$,;:"
     s = (char *)url->url_password;
-    if (s && !url_canonize(s, s, SIZE_MAX, PASS_UNRESERVED))
+    if (s && !url_canonize(s, s, SIZE_MAX, 0, PASS_UNRESERVED))
       return -1;
   }
 
   s = (char *)url->url_host;
-  if (s && !url_canonize2(s, s, SIZE_MAX, RESERVED_MASK))
+  if (s && !url_canonize2(s, s, SIZE_MAX, 0, RESERVED_MASK))
     return -1;
 
   /* port is canonized by _url_d() */
-
-  /* Allow all URI characters but ? and ; */
-# define PATH_UNRESERVED "/:@&=+$,"
   s = (char *)url->url_path;
-  if (s && !url_canonize(s, s, SIZE_MAX, PATH_UNRESERVED))
+  if (s && !url_canonize(s, s, SIZE_MAX, 
+			 /* Allow all URI characters but ? */
+			 /* Allow unescaped /;?@, - but do not convert */
+			 SYN33('/') | SYN33(';') | SYN33('=') | SYN33('@') |
+			 SYN33(','),
+			 /* Convert escaped :&+$ to unescaped */
+			 ":&+$"))
     return -1;
 
-  /* Allow all URI characters but ? */
-# define PARAMS_UNRESERVED ";" PATH_UNRESERVED
   s = (char *)url->url_params;
-  if (s && !url_canonize(s, s, SIZE_MAX, PARAMS_UNRESERVED))
+  if (s && !url_canonize(s, s, SIZE_MAX,
+			 /* Allow all URI characters but ? */
+			 /* Allow unescaped ;=@, - but do not convert */
+			 SYN33(';') | SYN33('=') | SYN33('@') | SYN33(','),
+			 /* Convert escaped /:&+$ to unescaped */
+			 "/:&+$"))
     return -1;
   
   /* Unhex alphanumeric and unreserved URI characters */
@@ -807,7 +823,7 @@ int url_d(url_t *url, char *s)
 
   /* Allow all URI characters (including reserved ones) */
   s = (char *)url->url_fragment;
-  if (s && !url_canonize2(s, s, SIZE_MAX, URIC_MASK))
+  if (s && !url_canonize2(s, s, SIZE_MAX, 0, URIC_MASK))
     return -1;
 
   return 0;
@@ -1927,7 +1943,7 @@ void url_string_update(su_md5_t *md5, char const *s)
     su_md5_update(md5, ":", 1);
   }
   else if (n && s[n] == ':' ) {
-    at = url_canonize(schema, s, n, "+");
+    at = url_canonize(schema, s, n, 0, "+");
 
     type = url_get_type(schema, at - schema);
     su_md5_iupdate(md5, schema, at - schema);

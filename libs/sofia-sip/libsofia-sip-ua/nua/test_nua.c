@@ -65,6 +65,8 @@ int tstflags = 0;
 static RETSIGTYPE sig_alarm(int s)
 {
   fprintf(stderr, "%s: FAIL! test timeout!\n", name);
+  if (tstflags & tst_abort)
+    abort();
   exit(1);
 }
 #endif

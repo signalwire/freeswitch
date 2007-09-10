@@ -55,9 +55,10 @@ Or post to the Sofia-SIP mailing list:
 
 @section subdirs Directory Structure
 
-In libsofia-sip-ua, there are subdirectories
+In libsofia-sip-ua, there are subdirectories for different modules listed
+below.
 
-Terminal and high-level libraries utilizing for both signaling and media:
+Terminal and high-level libraries used for both signaling and media:
 
 Common runtime library:
  - <a href="su/index.html">"su" - sockets, memory management, threads</a>

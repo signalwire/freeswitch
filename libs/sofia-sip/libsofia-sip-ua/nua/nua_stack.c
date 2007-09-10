@@ -46,6 +46,7 @@
 
 #define SU_ROOT_MAGIC_T   struct nua_s
 #define SU_MSG_ARG_T      struct event_s
+#define SU_TIMER_ARG_T    struct nua_client_request
 
 #define NUA_SAVED_EVENT_T su_msg_t *
 
@@ -271,9 +272,7 @@ int nua_stack_event(nua_t *nua, nua_handle_t *nh, msg_t *msg,
   if ((event > nua_r_authenticate && event <= nua_r_ack)
       || event < nua_i_error
       || (nh && !nh->nh_valid)
-	  /* disable hiding all events after shutdown so that we can get state callbacks to properly tear down our calls */
-      /* || (nua->nua_shutdown && event != nua_r_shutdown) */
-	  ) {
+      || (nua->nua_shutdown && event != nua_r_shutdown)) {
     if (msg)
       msg_destroy(msg);
     return event;
@@ -486,7 +485,8 @@ void nua_stack_timer(nua_t *nua, su_timer_t *t, su_timer_arg_t *a)
   su_timer_set(t, nua_stack_timer, a);
 
   if (nua->nua_shutdown) {
-	  nua_stack_shutdown(nua);
+    nua_stack_shutdown(nua);
+    return;
   }
 
   for (nh = nua->nua_handles; nh; nh = nh_next) {
@@ -605,21 +605,10 @@ void nua_stack_shutdown(nua_t *nua)
 
   for (nh = nua->nua_handles; nh; nh = nh_next) {
     nua_dialog_state_t *ds = nh->nh_ds;
-    nua_server_request_t *sr, *sr_next;
 
     nh_next = nh->nh_next;
 
-    for (sr = ds->ds_sr; sr; sr = sr_next) {
-      sr_next = sr->sr_next;
-
-      if (nua_server_request_is_pending(sr)) {
-	SR_STATUS1(sr, SIP_410_GONE); /* 410 terminates dialog */
-	nua_server_respond(sr, NULL);
-	nua_server_report(sr);
-      }
-    }
-
-    busy += nh_call_pending(nh, 0);
+    busy += nua_dialog_repeat_shutdown(nh, ds);
 
     if (nh->nh_soa) {
       soa_destroy(nh->nh_soa), nh->nh_soa = NULL;
@@ -992,6 +981,7 @@ nua_stack_authenticate(nua_t *nua, nua_handle_t *nh, nua_event_t e,
 
   if (status > 0) {
     if (cr && cr->cr_wait_for_cred) {
+      cr->cr_waiting = cr->cr_wait_for_cred = 0;
       nua_client_restart_request(cr, cr->cr_terminating, tags);
     }
     else {
@@ -1001,8 +991,8 @@ nua_stack_authenticate(nua_t *nua, nua_handle_t *nh, nua_event_t e,
     }
   }
   else if (cr && cr->cr_wait_for_cred) {
-    cr->cr_wait_for_cred = 0;
-
+    cr->cr_waiting = cr->cr_wait_for_cred = 0;
+    
     if (status < 0)
       nua_client_response(cr, 900, "Cannot add credentials", NULL);
     else
@@ -1439,9 +1429,10 @@ int nua_server_trespond(nua_server_request_t *sr,
 int nua_server_respond(nua_server_request_t *sr, tagi_t const *tags)
 {
   nua_handle_t *nh = sr->sr_owner;
+  nua_dialog_state_t *ds = nh->nh_ds;
   sip_method_t method = sr->sr_method;
   struct { msg_t *msg; sip_t *sip; } next = { NULL, NULL };
-  int retval;
+  int retval, user_contact = 1;
 #if HAVE_OPEN_C
   /* Nice. And old arm symbian compiler; see below. */
   tagi_t next_tags[2];
@@ -1496,14 +1487,25 @@ int nua_server_respond(nua_server_request_t *sr, tagi_t const *tags)
 	   sip_add_dup(msg, sip, (void *)NH_PGET(nh, allow_events)) < 0)
     ;
   else if (!sip->sip_contact && sr->sr_status < 300 && sr->sr_add_contact &&
-	   nua_registration_add_contact_to_response(nh, msg, sip, NULL, m) < 0)
+	   (user_contact = 0,
+	    ds->ds_ltarget 
+	    ? sip_add_dup(msg, sip, (sip_header_t *)ds->ds_ltarget) 
+	    : nua_registration_add_contact_to_response(nh, msg, sip, NULL, m))
+	   < 0)
     ;
   else {
     int term;
-    
+    sip_contact_t *ltarget = NULL;
+
     term = sip_response_terminates_dialog(sr->sr_status, sr->sr_method, NULL);
 
     sr->sr_terminating = (term < 0) ? -1 : (term > 0 || sr->sr_terminating);
+
+    if (sr->sr_target_refresh && sr->sr_status < 300 && !sr->sr_terminating && 
+	user_contact && sip->sip_contact) {
+      /* Save Contact given by application */
+      ltarget = sip_contact_dup(nh->nh_home, sip->sip_contact);
+    }
 
     retval = sr->sr_methods->sm_respond(sr, next_tags);
 
@@ -1513,6 +1515,16 @@ int nua_server_respond(nua_server_request_t *sr, tagi_t const *tags)
       msg_destroy(next.msg);
 
     assert(sr->sr_status >= 200 || sr->sr_response.msg);
+
+    if (ltarget) {
+      if (sr->sr_status < 300) {
+	nua_dialog_state_t *ds = nh->nh_ds;
+	msg_header_free(nh->nh_home, (msg_header_t *)ds->ds_ltarget);
+	ds->ds_ltarget = ltarget;	
+      }
+      else 
+	msg_header_free(nh->nh_home, (msg_header_t *)ltarget);
+    }
 
     return retval;
   }
@@ -1714,6 +1726,9 @@ int nua_base_server_report(nua_server_request_t *sr, tagi_t const *tags)
 static int nua_client_request_try(nua_client_request_t *cr);
 static int nua_client_request_sendmsg(nua_client_request_t *cr,
   				      msg_t *msg, sip_t *sip);
+static void nua_client_restart_after(su_root_magic_t *magic,
+				     su_timer_t *timer,
+				     nua_client_request_t *cr);
 
 /**Create a client request.
  *
@@ -1859,6 +1874,9 @@ void nua_client_request_destroy(nua_client_request_t *cr)
     nta_outgoing_destroy(cr->cr_orq);
 
   cr->cr_orq = NULL;
+
+  if (cr->cr_timer)
+    su_timer_destroy(cr->cr_timer), cr->cr_timer = NULL;
 
   if (cr->cr_target)
     su_free(nh->nh_home, cr->cr_target);
@@ -2255,9 +2273,20 @@ int nua_client_request_sendmsg(nua_client_request_t *cr, msg_t *msg, sip_t *sip)
    * registrar is also added to the request message.
    */
   if (cr->cr_method != sip_method_register) {
+    if (cr->cr_contactize && cr->cr_has_contact) {
+      sip_contact_t *ltarget = sip_contact_dup(nh->nh_home, sip->sip_contact);
+      if (ds->ds_ltarget) 
+	msg_header_free(nh->nh_home, (msg_header_t *)ds->ds_ltarget);
+      ds->ds_ltarget = ltarget;
+    }
+
+    if (ds->ds_ltarget && !cr->cr_has_contact)
+      sip_add_dup(msg, sip, (sip_header_t *)ds->ds_ltarget);
+
     if (nua_registration_add_contact_to_request(nh, msg, sip,
 						cr->cr_contactize &&
-						!cr->cr_has_contact,
+						!cr->cr_has_contact &&
+						!ds->ds_ltarget,
 						!ds->ds_route) < 0)
       return -1;
   }
@@ -2443,7 +2472,7 @@ int nua_client_response(nua_client_request_t *cr,
 
 /** Check if request should be restarted.
  *
- * @retval 1 if restarted or waring for restart
+ * @retval 1 if restarted or waiting for restart
  * @retval 0 otherwise
  */
 int nua_client_check_restart(nua_client_request_t *cr,
@@ -2470,8 +2499,7 @@ int nua_base_client_check_restart(nua_client_request_t *cr,
 				  sip_t const *sip)
 {
   nua_handle_t *nh = cr->cr_owner; 
-
-  /* XXX - handle Retry-After */
+  nta_outgoing_t *orq;
 
   if (status == 302 || status == 305) {
     sip_route_t r[1];
@@ -2520,7 +2548,6 @@ int nua_base_client_check_restart(nua_client_request_t *cr,
   if ((status == 401 && sip->sip_www_authenticate) ||
       (status == 407 && sip->sip_proxy_authenticate)) {
     int server = 0, proxy = 0;
-    nta_outgoing_t *orq;
 
     if (sip->sip_www_authenticate)
       server = auc_challenge(&nh->nh_auth, nh->nh_home,
@@ -2544,7 +2571,8 @@ int nua_base_client_check_restart(nua_client_request_t *cr,
 	return nua_client_restart(cr, 100, "Request Authorized by Cache");
 
       orq = cr->cr_orq, cr->cr_orq = NULL;
-      cr->cr_wait_for_cred = 1;
+
+      cr->cr_waiting = cr->cr_wait_for_cred = 1;
       nua_client_report(cr, status, phrase, NULL, orq, NULL);
       nta_outgoing_destroy(orq);
 
@@ -2552,7 +2580,42 @@ int nua_base_client_check_restart(nua_client_request_t *cr,
     }
   }
 
+  if (500 <= status && status < 600 && 
+      sip->sip_retry_after && 
+      sip->sip_retry_after->af_delta < 32) {
+    char phrase[18];		/* Retry-After: XXXX\0 */
+
+    if (cr->cr_timer == NULL)
+      cr->cr_timer = su_timer_create(su_root_task(nh->nh_nua->nua_root), 0);
+
+    if (su_timer_set_interval(cr->cr_timer, nua_client_restart_after, cr,
+			      sip->sip_retry_after->af_delta * 1000) < 0)
+      return 0; /* Too bad */
+
+    snprintf(phrase, sizeof phrase, "Retry After %u", 
+	     (unsigned)sip->sip_retry_after->af_delta);
+
+    orq = cr->cr_orq, cr->cr_orq = NULL;
+    cr->cr_waiting = cr->cr_wait_for_timer = 1;
+    nua_client_report(cr, 100, phrase, NULL, orq, NULL);
+    nta_outgoing_destroy(orq);
+    return 1;
+  }
+
   return 0;  /* This was a final response that cannot be restarted. */
+}
+
+/** Request restarted by timer */
+static
+void nua_client_restart_after(su_root_magic_t *magic,
+			      su_timer_t *timer,
+			      nua_client_request_t *cr) 
+{
+  if (!cr->cr_wait_for_timer)
+    return;
+
+  cr->cr_waiting = cr->cr_wait_for_timer = 0;
+  nua_client_restart_request(cr, cr->cr_terminating, NULL);
 }
 
 /** Restart request.
@@ -2586,7 +2649,6 @@ int nua_client_restart(nua_client_request_t *cr,
     if (error !=0 && error != -2)
       msg_destroy(msg);
   }
-
 
   if (error) {
     cr->cr_graceful = graceful;

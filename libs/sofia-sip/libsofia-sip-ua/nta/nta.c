@@ -2690,12 +2690,14 @@ void agent_recv_response(nta_agent_t *agent,
       && sip->sip_via && !sip->sip_via->v_next 
       && agent_has_via(agent, sip->sip_via)) {
     agent->sa_stats->as_trless_200++;
+#if nomore /* sf.net bug #1750691. Let UAS to cope with it. */
     if (agent->sa_is_a_uas) {
       /* Orphan 200 Ok to INVITE. ACK and BYE it */
       SU_DEBUG_5(("nta: %03d %s %s\n", status, phrase, "is ACK&BYE"));
       if (nta_msg_ackbye(agent, msg) != -1)
 	return;
     }
+#endif
   }
 
   SU_DEBUG_5(("nta: %03d %s %s\n", status, phrase, "was discarded"));
@@ -3067,15 +3069,19 @@ int complete_response(msg_t *response,
 
 /** ACK and BYE an unknown 200 OK response to INVITE.
  *
- * A UAS may still return a 2XX series response to an INVITE request after
- * the client transaction has been terminated. In that case, the UAC can not
- * really accept the call, but it may send a ACK request to UAS followed
- * immediately by BYE using nta_msg_ackbye(). The function does not create a
- * transaction objects, but just sends the ACK and BYE request messages
- * according to the @RecordRoute and @Contact headers in the @a msg.
+ * A UAS may still return a 2XX series response to client request after the
+ * client transactions has been terminated. In that case, the UAC can not
+ * really accept the call. This function was used to accept and immediately
+ * terminate such a call.
+ *
+ * @deprecated This was a bad idea: see sf.net bug #1750691. It can be used
+ * to amplify DoS attacks. Let UAS take care of retransmission timeout and
+ * let it terminate the session. As of @VERSION_1_12_7, this function just
+ * returns -1.
  */
 int nta_msg_ackbye(nta_agent_t *agent, msg_t *msg)
 {
+#if nomore
   sip_t *sip = sip_object(msg);
   msg_t *amsg = nta_msg_create(agent, 0);
   sip_t *asip = sip_object(amsg);
@@ -3164,6 +3170,8 @@ int nta_msg_ackbye(nta_agent_t *agent, msg_t *msg)
  err:
   msg_destroy(amsg);
   msg_destroy(bmsg);
+#endif
+  (void)agent; (void)msg;
   return -1;
 }
 
@@ -5121,6 +5129,21 @@ nta_incoming_magic_t *nta_incoming_magic(nta_incoming_t *irq,
   return irq && irq->irq_callback == callback ? irq->irq_magic : NULL;
 }
 
+/** When received */
+sip_time_t nta_incoming_received(nta_incoming_t *irq,
+				 su_nanotime_t *return_nano)
+{
+  su_time_t tv = { 0, 0 };
+
+  if (irq)
+    tv = irq->irq_received;
+
+  if (return_nano)
+    *return_nano = (su_nanotime_t)tv.tv_sec * 1000000000 + tv.tv_usec * 1000;
+
+  return tv.tv_sec;
+}
+
 /** Find incoming transaction. */
 nta_incoming_t *nta_incoming_find(nta_agent_t const *agent,
 				  sip_t const *sip,
@@ -7007,6 +7030,7 @@ nta_outgoing_t *outgoing_create(nta_agent_t *agent,
   orq->orq_via_branch = branch;
 
   if (orq->orq_method == sip_method_ack) {
+    /* Find the original INVITE which we are ACKing */
     if (ack_branch != NULL && ack_branch != NONE) {
       if (strncasecmp(ack_branch, "branch=", 7) == 0)
 	orq->orq_branch = su_strdup(home, ack_branch);
@@ -7313,16 +7337,11 @@ outgoing_send(nta_outgoing_t *orq, int retransmit)
   if (retransmit)
     return;
 
-  /* Set timers */
-  if (orq->orq_method == sip_method_ack) {
-    /* ACK */
-    outgoing_complete(orq); /* Timer K */
-    return;
-  }
-
   outgoing_trying(orq);		/* Timer B / F */
 
-  if (!orq->orq_reliable)
+  if (orq->orq_method == sip_method_ack)
+    ;
+  else if (!orq->orq_reliable)
     outgoing_set_timer(orq, agent->sa_t1); /* Timer A/E */
   else if (orq->orq_try_tcp_instead && !tport_is_connected(tp))
     outgoing_set_timer(orq, agent->sa_t4); /* Timer N3 */
@@ -7771,11 +7790,11 @@ void outgoing_destroy(nta_outgoing_t *orq)
   if (orq->orq_terminated || orq->orq_default) {
     outgoing_free(orq);
   }
-  /* We have to handle 200 OK statelessly => 
-     kill transaction immediately */
+  /* Application is expected to handle 200 OK statelessly
+     => kill transaction immediately */
   else if (orq->orq_method == sip_method_invite && !orq->orq_completed
-	   /* (unless we have to wait to send CANCEL) */
-	   && !orq->orq_cancel) {
+	   /* (unless we the transaction has been canceled) */
+	   && !orq->orq_canceled) {
     orq->orq_destroyed = 1;
     outgoing_terminate(orq);
   }
@@ -7927,10 +7946,14 @@ size_t outgoing_timer_bf(outgoing_queue_t *q,
     timeout++;
     
     SU_DEBUG_5(("nta: timer %s fired, %s %s (%u)\n",
-		timer, "timeout", 
+		timer, 
+		orq->orq_method != sip_method_ack ? "timeout" : "terminating",
 		orq->orq_method_name, orq->orq_cseq->cs_seq));
 
-    outgoing_timeout(orq, now);
+    if (orq->orq_method != sip_method_ack)
+      outgoing_timeout(orq, now);
+    else
+      outgoing_terminate(orq);
 
     assert(q->q_head != orq || orq->orq_timeout - now > 0);
   }
@@ -8002,10 +8025,7 @@ int outgoing_complete(nta_outgoing_t *orq)
 
   outgoing_reset_timer(orq); /* Timer A/E */
 
-  if (orq->orq_stateless)
-    return outgoing_terminate(orq);
-
-  if (orq->orq_reliable && orq->orq_method != sip_method_ack)
+  if (orq->orq_stateless || orq->orq_reliable)
     return outgoing_terminate(orq);
 
   if (orq->orq_method == sip_method_invite) {
@@ -8607,7 +8627,7 @@ int outgoing_reply(nta_outgoing_t *orq, int status, char const *phrase,
 		  (void *)orq, status, phrase));
     orq->orq_status = status;
     if (orq->orq_queue == NULL)
-      outgoing_complete(orq);	/* Timer D/K */
+      outgoing_trying(orq);	/* Timer F */
     return 0;
   }
     

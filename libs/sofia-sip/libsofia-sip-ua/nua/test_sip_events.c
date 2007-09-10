@@ -64,9 +64,15 @@ int save_until_notified(CONDITION_PARAMS)
 int save_until_notified_and_responded(CONDITION_PARAMS)
 {
   save_event_in_list(ctx, event, ep, call);
+
   if (event == nua_i_notify) ep->flags.bit0 = 1;
   if (event == nua_r_subscribe || event == nua_r_unsubscribe) {
-    if (status >= 300)
+    if (status == 407) {
+      AUTHENTICATE(ep, call, nh,
+		   NUTAG_AUTH("Digest:\"test-proxy\":charlie:secret"),
+		   TAG_END());
+    }
+    else if (status >= 300) 
       return 1;
     else if (status >= 200)
       ep->flags.bit1 = 1;

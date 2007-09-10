@@ -389,7 +389,7 @@ static int nua_subscribe_client_response(nua_client_request_t *cr,
       if (eu->eu_substate == nua_substate_terminated)
 	eu->eu_substate = nua_substate_embryonic;
 
-      nua_dialog_usage_refresh_range(du, delta, delta);
+      nua_dialog_usage_set_refresh_range(du, delta, delta);
     }
     else {
       eu->eu_substate = nua_substate_terminated;
@@ -635,6 +635,7 @@ int nua_notify_server_report(nua_server_request_t *sr, tagi_t const *tags)
   sip_t const *sip = sr->sr_request.sip;
   enum nua_substate substate = nua_substate_terminated;
   sip_time_t delta = SIP_TIME_MAX;
+  sip_event_t const *o = sip->sip_event;
   int retry = -1;
   int retval;
 
@@ -670,6 +671,7 @@ int nua_notify_server_report(nua_server_request_t *sr, tagi_t const *tags)
   
   retval = nua_base_server_treport(sr, /* can destroy sr */
 				   NUTAG_SUBSTATE(substate),
+				   SIPTAG_EVENT(o),
 				   TAG_NEXT(tags)); 
 
   if (retval != 1 || du == NULL)
@@ -681,7 +683,7 @@ int nua_notify_server_report(nua_server_request_t *sr, tagi_t const *tags)
   else if (retry >= 0) {		/* Try to subscribe again */
     /* XXX - this needs through testing */
     nua_dialog_remove(nh, nh->nh_ds, du); /* tear down */
-    nua_dialog_usage_refresh_range(du, retry, retry + 5);
+    nua_dialog_usage_set_refresh_range(du, retry, retry + 5);
   }
   else {
     nua_dialog_usage_set_refresh(du, delta);

@@ -225,6 +225,66 @@ TPORT_DLL extern tag_typedef_t tptag_timeout;
 TPORT_DLL extern tag_typedef_t tptag_timeout_ref;
 #define TPTAG_TIMEOUT_REF(x) tptag_timeout_ref, tag_uint_vr(&(x))
 
+TPORT_DLL extern tag_typedef_t tptag_keepalive;
+/**Keepalive interval in milliseconds.
+ *
+ * If 0 or UINT_MAX, do not use keepalives. Default value is 0.
+ *
+ * On TCP, the keepalive if a CR-LF-CR-LF sequence.
+ *
+ * Use with tport_tcreate(), tport_tbind(), tport_set_params(), nua_create(),
+ * nta_agent_create(), nta_agent_add_tport(), nth_engine_create(), or
+ * initial nth_site_create().
+ *
+ * @sa TPTAG_PINGPONG(), TPTAG_PONG2PING(), TPTAG_TIMEOUT(), TPTAG_IDLE()
+ */
+#define TPTAG_KEEPALIVE(x) tptag_keepalive, tag_uint_v((x))
+
+TPORT_DLL extern tag_typedef_t tptag_keepalive_ref;
+#define TPTAG_KEEPALIVE_REF(x) tptag_keepalive_ref, tag_uint_vr(&(x))
+
+TPORT_DLL extern tag_typedef_t tptag_pingpong;
+/**Ping-pong interval in milliseconds.
+ *
+ * If 0 or UINT_MAX, do not check for PONGs. Default value is 0. 
+ *
+ * If set, the ping-pong protocol is used on TCP connections. If pinger
+ * sends a ping and receives no data in the specified ping-pong interval, it
+ * considers the connection failed and closes it. The value recommended in
+ * draft-ietf-sip-outbound-10 is 10 seconds (10000 milliseconds).
+ *
+ * Use with tport_tcreate(), tport_tbind(), tport_set_params(), nua_create(),
+ * nta_agent_create(), nta_agent_add_tport(), nth_engine_create(), or
+ * initial nth_site_create().
+ *
+ * @sa TPTAG_PONG2PING(), TPTAG_KEEPALIVE(), TPTAG_TIMEOUT(), TPTAG_IDLE(),
+ * draft-ietf-sip-outbound-10.txt
+ */
+#define TPTAG_PINGPONG(x) tptag_pingpong, tag_uint_v((x))
+
+TPORT_DLL extern tag_typedef_t tptag_pingpong_ref;
+#define TPTAG_PINGPONG_REF(x) tptag_pingpong_ref, tag_uint_vr(&(x))
+
+TPORT_DLL extern tag_typedef_t tptag_pong2ping;
+/**Respond PING with PONG.
+ *
+ * If true, respond with PONG to PING. Default value is 0 (false).
+ *
+ * If set, the ping-pong protocol is used on TCP connections. If a ping (at
+ * least 4 whitespace characters) is received within messages, a pong
+ * (CR-LF) is sent in response.
+ *
+ * Use with tport_tcreate(), tport_tbind(), tport_set_params(), nua_create(),
+ * nta_agent_create(), nta_agent_add_tport(), nth_engine_create(), or
+ * initial nth_site_create().
+ *
+ * @sa TPTAG_PINGPONG(), TPTAG_KEEPALIVE(), TPTAG_TIMEOUT(), TPTAG_IDLE()
+ */
+#define TPTAG_PONG2PING(x) tptag_pong2ping, tag_bool_v((x))
+
+TPORT_DLL extern tag_typedef_t tptag_pong2ping_ref;
+#define TPTAG_PONG2PING_REF(x) tptag_pong2ping_ref, tag_bool_vr(&(x))
+
 TPORT_DLL extern tag_typedef_t tptag_sigcomp_lifetime;
 /**Default SigComp lifetime in seconds.
  *

@@ -196,7 +196,7 @@ int test_180rel(struct context *ctx)
   ei = event_by_type(e->next, nua_r_invite);
   ep = event_by_type(e->next, nua_r_prack);
   if (!ep) {
-    run_a_until(ctx, -1, until_final_response);
+    run_a_until(ctx, -1, save_until_final_response);
     ep = event_by_type(e->next, nua_r_prack);
   }
 
@@ -332,10 +332,9 @@ int test_prack_auth(struct context *ctx)
   struct event *e, *ep, *ei;
   sip_t *sip;
   sip_proxy_authenticate_t *au;
-  char const *md5 = NULL, *md5sess = NULL;
 
   if (print_headings)
-    printf("TEST NUA-10.1.3: Call with 100rel and 180\n");
+    printf("TEST NUA-10.1.3: Call with 100rel, PRACK is challenged\n");
 
 /* Test for authentication during 100rel
 
@@ -396,10 +395,6 @@ int test_prack_auth(struct context *ctx)
   TEST(e->data->e_status, 407);
   TEST_1(sip = sip_object(e->data->e_msg));
   TEST_1(au = sip->sip_proxy_authenticate); 
-  TEST_1(auth_get_params(NULL, au->au_params, 
-			 "algorithm=md5", &md5,
-			 "algorithm=md5-sess", &md5sess,
-			 NULL) > 0);
 
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_calling); /* CALLING */
@@ -415,24 +410,15 @@ int test_prack_auth(struct context *ctx)
 
   ei = event_by_type(e->next, nua_r_invite);
   ep = event_by_type(e->next, nua_r_prack);
-  if (!ep) {
-    run_a_until(ctx, -1, until_final_response);
-    ep = event_by_type(e->next, nua_r_prack);
-  }
 
   TEST_1(e = ep); TEST_E(e->data->e_event, nua_r_prack);
-  if (e->data->e_status != 200 && md5 && !md5sess) {
-    if (e->data->e_status != 100) {
-      TEST(e->data->e_status, 407);
-    }
-
-    TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
-    TEST(callstate(e->data->e_tags), nua_callstate_proceeding);
-    TEST_1(!is_answer_recv(e->data->e_tags));
-    TEST_1(!is_offer_sent(e->data->e_tags));
-
-    TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_prack);
+  if (e->data->e_status == 100 || e->data->e_status == 407) {
+    /* The final response to PRACK may be received after ACK is sent */
+    if (!event_by_type(e->next, nua_r_prack))
+      run_bc_until(ctx, -1, save_events, -1, save_until_final_response);
+    TEST_1(e = ep = event_by_type(e->next, nua_r_prack));
   }
+  TEST_E(e->data->e_event, nua_r_prack);
   TEST(e->data->e_status, 200);
 
   TEST_1(e = ei); TEST_E(e->data->e_event, nua_r_invite);
@@ -441,7 +427,7 @@ int test_prack_auth(struct context *ctx)
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_ready); /* READY */
   TEST_1(!is_offer_answer_done(e->data->e_tags));
-  TEST_1(!e->next || !ep->next || (ep->data->e_status != 200 && !e->next->next->next));
+  TEST_1(!e->next || !ep->next);
   free_events_in_list(ctx, c->events);
 
   /*
@@ -626,7 +612,7 @@ int test_183rel(struct context *ctx)
   ei = event_by_type(e->next, nua_r_invite);
   ep = event_by_type(e->next, nua_r_prack);
   if (!ep) {
-    run_a_until(ctx, -1, until_final_response);
+    run_a_until(ctx, -1, save_until_final_response);
     ep = event_by_type(e->next, nua_r_prack);
   }
 
@@ -1024,7 +1010,7 @@ int test_preconditions(struct context *ctx)
   ei = event_by_type(e->next, nua_r_invite);
   ep = event_by_type(e->next, nua_r_prack);
   if (!ep) {
-    run_a_until(ctx, -1, until_final_response);
+    run_a_until(ctx, -1, save_until_final_response);
     ep = event_by_type(e->next, nua_r_prack);
   }
 
@@ -1213,6 +1199,7 @@ int test_preconditions2(struct context *ctx)
   struct endpoint *a = &ctx->a,  *b = &ctx->b;
   struct call *a_call = a->call, *b_call = b->call;
   struct event *e, *eu, *ei;
+  enum nua_callstate ustate, istate;
 
   if (print_headings)
     printf("TEST NUA-10.4.1: Call with preconditions and non-100rel 180\n");
@@ -1227,15 +1214,23 @@ int test_preconditions2(struct context *ctx)
    |-------PRACK------->|
    |<-------200---------|
    |			|
-   |<-------180---------|
-   |			|
-   |<------200 OK-------|
+   |-------UPDATE------>|
+ +------------------------+
+ | |<-------200---------| |
+ | |			| |
+ | |<-------180---------| |
+ | |			| |
+ | |<------200 OK-------| |
+ +------------------------+
    |--------ACK-------->|
    |			|
    |<-------BYE---------|
    |-------200 OK-------|
    |			|
 
+   Note that the boxed responses above can be re-ordered 
+   (180 or 200 OK to INVITE is received before 200 OK to UPDATE).
+   ACK, however, is sent only after 200 OK to both UPDATE and INVITE. 
 */
 
   a_call->sdp = "m=audio 5008 RTP/AVP 8";
@@ -1280,6 +1275,7 @@ int test_preconditions2(struct context *ctx)
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_proceeding);
   TEST_1(is_answer_recv(e->data->e_tags));
+  /* Offer is sent in PRACK */
   TEST_1(is_offer_sent(e->data->e_tags));
 
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_prack);
@@ -1296,13 +1292,14 @@ int test_preconditions2(struct context *ctx)
   TEST_1(!is_answer_recv(e->data->e_tags));
   TEST_1(is_offer_sent(e->data->e_tags));
 
+  /* The final response to the UPDATE and INVITE can be received in any order */
   eu = event_by_type(e->next, nua_r_update);
   ei = event_by_type(e->next, nua_r_invite);
 
   TEST_1(e = eu); TEST_E(e->data->e_event, nua_r_update);
   TEST(e->data->e_status, 200);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
-  TEST(callstate(e->data->e_tags), nua_callstate_proceeding);
+  ustate = callstate(e->data->e_tags);
   TEST_1(is_answer_recv(e->data->e_tags));
   TEST_1(!is_offer_sent(e->data->e_tags));
 
@@ -1312,14 +1309,25 @@ int test_preconditions2(struct context *ctx)
   TEST(callstate(e->data->e_tags), nua_callstate_proceeding); /* PROCEEDING */
   TEST_1(!is_offer_answer_done(e->data->e_tags));
 
-  TEST_1(e = eu->next->next == ei ? ei->next->next : eu->next->next);
+  /* Final response to INVITE  */
+  TEST_1(ei = event_by_type(ei->next, nua_r_invite));
 
-  TEST_E(e->data->e_event, nua_r_invite); TEST(e->data->e_status, 200);
-
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
-  TEST(callstate(e->data->e_tags), nua_callstate_ready); /* READY */
+  TEST_E(ei->data->e_event, nua_r_invite); TEST(ei->data->e_status, 200);
+  TEST_1(e = ei->next); TEST_E(e->data->e_event, nua_i_state);
+  istate = callstate(e->data->e_tags);
   TEST_1(!is_offer_answer_done(e->data->e_tags));
-  TEST_1(!e->next);
+
+  if (eu == e->next) {
+    /* 200 OK to UPDATE is received after 200 OK to INVITE */
+    TEST(ustate, nua_callstate_ready);
+    TEST(istate, nua_callstate_completing);
+  }
+  else {
+    /* 200 OK to UPDATE is received before 200 OK to INVITE */
+    TEST(ustate, nua_callstate_proceeding);
+    TEST(istate, nua_callstate_ready);
+  }
+
   free_events_in_list(ctx, a->events);
 
   /*
@@ -1499,7 +1507,7 @@ int test_update_by_uas(struct context *ctx)
   if (print_headings)
     printf("TEST NUA-10.5.1: Call with dual UPDATE\n");
 
-/* Test for precondition:
+/* Test for update by UAS.
 
    A			B
    |-------INVITE------>|
@@ -1510,9 +1518,11 @@ int test_update_by_uas(struct context *ctx)
    |<-------200---------|
    |			|
    |-------UPDATE------>|
-   |<-------200---------|
-   |			|
-   |<------UPDATE-------|
+ +------------------------+
+ | |<-------200---------| |
+ | |			| |
+ | |<------UPDATE-------| |
+ +------------------------+
    |--------200-------->|
    |			|
    |<-------180---------|
@@ -1526,6 +1536,9 @@ int test_update_by_uas(struct context *ctx)
    |-------200 OK-------|
    |			|
 
+ Note that the 200 OK to UPDATE from A and UPDATE from B may be re-ordered
+ In that case, A will respond with 500/Retry-After and B will retry UPDATE.
+ See do {} while () loop below.
 */
 
   a_call->sdp = "m=audio 5008 RTP/AVP 8";
@@ -1612,7 +1625,7 @@ int test_update_by_uas(struct context *ctx)
   ei = event_by_type(e->next, nua_r_invite);
   ep = event_by_type(e->next, nua_r_prack);
   if (!ep) {
-    run_a_until(ctx, -1, until_final_response);
+    run_a_until(ctx, -1, save_until_final_response);
     ep = event_by_type(e->next, nua_r_prack);
   }
 
@@ -1672,17 +1685,24 @@ int test_update_by_uas(struct context *ctx)
   TEST_1(is_answer_sent(e->data->e_tags));
 
   /* sent UPDATE */
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
-  TEST(callstate(e->data->e_tags), nua_callstate_early); /* EARLY */
-  TEST_1(is_offer_sent(e->data->e_tags)); 
-  TEST_1(!is_offer_recv(e->data->e_tags));
-  TEST_1(!is_answer_sent(e->data->e_tags));
-  TEST_1(!is_answer_recv(e->data->e_tags));
+  do {
+    TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+    TEST(callstate(e->data->e_tags), nua_callstate_early); /* EARLY */
+    TEST_1(is_offer_sent(e->data->e_tags)); 
+    TEST_1(!is_offer_recv(e->data->e_tags));
+    TEST_1(!is_answer_sent(e->data->e_tags));
+    TEST_1(!is_answer_recv(e->data->e_tags));
 
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_update);
+    TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_update);
+    if (e->data->e_status == 100) {
+      TEST_1(sip = sip_object(e->data->e_msg));
+      TEST(sip->sip_status->st_status, 500); TEST_1(sip->sip_retry_after);
+    }
+  } while (e->data->e_status == 100);
+  TEST(e->data->e_status, 200);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_early); /* EARLY */
-  TEST_1(!is_offer_sent(e->data->e_tags)); 
+  TEST_1(!is_offer_sent(e->data->e_tags)); /* XXX */
   TEST_1(!is_offer_recv(e->data->e_tags));
   TEST_1(!is_answer_sent(e->data->e_tags));
   TEST_1(is_answer_recv(e->data->e_tags));
@@ -2060,7 +2080,7 @@ int test_180rel_cancel2(struct context *ctx)
 
 int test_100rel(struct context *ctx)
 {
-  int retval;
+  int retval = 0;
   
   retval = test_180rel(ctx); RETURN_ON_SINGLE_FAILURE(retval);
   retval = test_prack_auth(ctx); RETURN_ON_SINGLE_FAILURE(retval);

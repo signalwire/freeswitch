@@ -1174,9 +1174,9 @@ follows:
     <td rowspan=2>terminating*</td>
     <td rowspan=2>-</td>
     <td>
-   The cannot be terminated with BYE before the dialog is established with a
-   non-100 preliminary response. So, instead of @b BYE, stack sends a @b
-   CANCEL request, and enters terminating state.
+   The call cannot be terminated with BYE before the dialog is established
+   with a non-100 preliminary response. So, instead of a @b BYE, stack sends
+   a @b CANCEL request, and enters terminating state.
 
    However, there is a race condition and the server can respond with a
    succesful 2XX response before receiving CANCEL. If the server responds with

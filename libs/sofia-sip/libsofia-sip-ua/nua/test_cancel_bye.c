@@ -109,6 +109,24 @@ int cancel_when_calling(CONDITION_PARAMS)
   }
 }
 
+int bye_when_calling(CONDITION_PARAMS)
+{
+  if (!(check_handle(ep, call, nh, SIP_500_INTERNAL_SERVER_ERROR)))
+    return 0;
+
+  save_event_in_list(ctx, event, ep, call);
+
+  switch (callstate(tags)) {
+  case nua_callstate_calling:
+    BYE(ep, call, nh, TAG_END());
+    return 0;
+  case nua_callstate_terminated:
+    return 1;
+  default:
+    return 0;
+  }
+}
+
 
 int cancel_when_ringing(CONDITION_PARAMS)
 {
@@ -163,7 +181,7 @@ int test_call_cancel(struct context *ctx)
   b_call->sdp = "m=audio 5010 RTP/AVP 0 8";
 
   if (print_headings)
-    printf("TEST NUA-5.1: cancel call\n");
+    printf("TEST NUA-5.1.1: cancel call\n");
 
   TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
 
@@ -212,10 +230,65 @@ int test_call_cancel(struct context *ctx)
   nua_handle_destroy(b_call->nh), b_call->nh = NULL;
 
   if (print_headings)
-    printf("TEST NUA-5.1: PASSED\n");
+    printf("TEST NUA-5.1.1: PASSED\n");
 
   /* ------------------------------------------------------------------------ */
 
+  if (print_headings)
+    printf("TEST NUA-5.1.2: cancel call (with nua_bye())\n");
+
+  TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
+
+  INVITE(a, a_call, a_call->nh,
+	 TAG_IF(!ctx->proxy_tests, NUTAG_URL(b->contact->m_url)),
+	 SIPTAG_SUBJECT_STR("TEST NUA-5.1.2"),
+	 SOATAG_USER_SDP_STR(a_call->sdp),
+	 TAG_END());
+
+  run_ab_until(ctx, -1, bye_when_calling, -1, until_terminated);
+
+  /* Client transitions:
+     INIT -(C1)-> CALLING: nua_invite(), nua_i_state, nua_cancel()
+     CALLING -(C6a)-> TERMINATED: nua_r_invite(487), nua_i_state
+  */
+  TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_calling); /* CALLING */
+  TEST_1(is_offer_sent(e->data->e_tags));
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_bye);
+  TEST(e->data->e_status, 200);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
+  TEST(e->data->e_status, 487);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_terminated); /* TERMINATED */
+  TEST_1(!e->next);
+
+  /*
+   Server transitions:
+   INIT -(S1)-> RECEIVED: nua_i_invite, nua_i_state
+   RECEIVED -(S6a)--> TERMINATED: nua_i_cancel, nua_i_state
+  */
+  TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_invite);
+  TEST(e->data->e_status, 100);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_received); /* RECEIVED */
+  TEST_1(is_offer_recv(e->data->e_tags));
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_cancel);
+  TEST(e->data->e_status, 200);
+  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+  TEST(callstate(e->data->e_tags), nua_callstate_terminated); /* TERMINATED */
+  TEST_1(!e->next);
+
+  free_events_in_list(ctx, a->events);
+  nua_handle_destroy(a_call->nh), a_call->nh = NULL;
+
+  free_events_in_list(ctx, b->events);
+  nua_handle_destroy(b_call->nh), b_call->nh = NULL;
+
+  if (print_headings)
+    printf("TEST NUA-5.1.2: PASSED\n");
+
+ /* ----------------------------------------------------------------------- */
+ 
   if (print_headings)
     printf("TEST NUA-5.2.1: cancel call when ringing\n");
 
@@ -679,20 +752,24 @@ int test_call_destroy_4(struct context *ctx)
   TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_calling); /* CALLING */
   TEST_1(is_offer_sent(e->data->e_tags));
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
-  TEST(e->data->e_status, 180);
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
-  TEST(callstate(e->data->e_tags), nua_callstate_proceeding); /* PROCEEDING */
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
-  TEST(e->data->e_status, 200);
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
-  TEST(callstate(e->data->e_tags), nua_callstate_completing); /* COMPLETING */
-  TEST_1(is_answer_recv(e->data->e_tags));
-  TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_bye);
+  TEST_1(e = e->next); if (e->data->e_event == nua_r_invite) {
+    TEST_E(e->data->e_event, nua_r_invite);
+    TEST(e->data->e_status, 180);
+    TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+    TEST(callstate(e->data->e_tags), nua_callstate_proceeding); /* PROCEEDING */
+    TEST_1(e = e->next); 
+  }
+  if (e->data->e_event == nua_r_invite) {
+    TEST_E(e->data->e_event, nua_r_invite);
+    TEST(e->data->e_status, 200);
+    TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
+    TEST(callstate(e->data->e_tags), nua_callstate_completing); /* COMPLETING */
+    TEST_1(is_answer_recv(e->data->e_tags));
+    TEST_1(e = e->next); 
+  }
+  TEST_E(e->data->e_event, nua_i_bye);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_terminated); /* TERMINATED */
-  TEST_1(!e->next);
-  TEST_1(!e->next);
 
   free_events_in_list(ctx, a->events);
   nua_handle_destroy(a_call->nh), a_call->nh = NULL;
@@ -1445,8 +1522,6 @@ int test_bye_to_invalid_contact(struct context *ctx)
   TEST_1(e = b->events->head);  TEST_E(e->data->e_event, nua_r_bye);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_terminated); /* TERMINATED */
-  TEST_1(!e->next);
-  free_events_in_list(ctx, b->events);
 
   TEST_1(!nua_handle_has_active_call(b_call->nh));
   TEST_1(nua_handle_has_active_call(a_call->nh));
@@ -1457,19 +1532,21 @@ int test_bye_to_invalid_contact(struct context *ctx)
   if (print_headings)
     printf("TEST NUA-6.4.3: PASSED\n");
 
-  if (!ctx->p)
+  if (!ctx->p) {
+    free_events_in_list(ctx, b->events);
     return 0;
+  }
 
   if (print_headings)
     printf("TEST NUA-6.4.4: Wait for re-REGISTER after connection has been closed\n");
 
-  /* B is supposed to re-register pretty soon, wait for re-registration */
-
-  run_b_until(ctx, -1, save_until_final_response);
+  if (!e->next || (!e->next->next || !e->next->data->e_status != 200))
+    /* B is supposed to re-register pretty soon, wait for re-registration */
+    run_b_until(ctx, -1, save_until_final_response);
 
   seen_401 = 0;
 
-  for (e = b->events->head; e; e = e->next) {
+  for (e = e->next; e; e = e->next) {
     TEST_E(e->data->e_event, nua_r_register);
     TEST_1(sip = sip_object(e->data->e_msg));
 

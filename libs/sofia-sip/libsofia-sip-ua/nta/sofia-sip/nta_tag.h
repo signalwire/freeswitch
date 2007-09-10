@@ -1725,15 +1725,15 @@ NTA_DLL extern tag_typedef_t ntatag_s_trless_response_ref;
 /** Get number of responses without matching request.
  *
  * Return number of received responses for which no matching client
- * transaction was found. Such responses are processed either by the default
+ * transaction was found. Such responses are processed either by the
  * client transaction created with nta_outgoing_default(), the
  * #nta_message_f message callback given to nta_agent_create(), or, missing
  * both the default client transaction and message callback, they are
  * silently discarded.
  *
- * When stack is in UA mode, the successful 2XX responses to the INVITE
- * transaction are an exception: when such a response is received the stack
- * tries to send an ACK and BYE requests to the originator of 2XX response.
+ * The NTATAG_S_TRLESS_200_REF() counter counts those successful 2XX
+ * responses to the INVITE without client transaction which are silently
+ * discarded.
  *
  * @sa nta_agent_get_stats(), nta_outgoing_default(), nta_agent_create(),
  * <sofia-sip/nta_stateless.h>, #nta_message_f, nta_msg_ackbye(),
@@ -1752,10 +1752,6 @@ NTA_DLL extern tag_typedef_t ntatag_s_trless_200_ref;
  * no matching client transaction was found nor which were processed by a
  * default client transaction created with nta_outgoing_default() or
  * #nta_message_f message callback given to nta_agent_create().
- *
- * When such a successful 2XX responses to the INVITE is received but it is
- * not processed, the stack tries to send an ACK and BYE requests to the
- * originator of 2XX response if stack is in UA mode (set by NTATAG_UA(1). 
  *
  * @sa nta_agent_get_stats(), nta_outgoing_default(), nta_agent_create(),
  * <sofia-sip/nta_stateless.h>, #nta_message_f, nta_msg_ackbye(),

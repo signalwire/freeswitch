@@ -42,6 +42,7 @@ $(dist_man_MANS): manpages
 manpages:
 	-mkdir -p man man/man1 2> /dev/null
 if HAVE_DOXYGEN
+	$(MAKE) $(AM_MAKEFLAGS) -C libsofia-sip-ua/docs built-sources
 	@echo 'cd utils && $(DOXYGEN)'
 	@cd utils && \
 	{ exec 3>&1 1>&2; { $(DOXYGEN) 2>&1; echo $$? >& 3 ;} | \

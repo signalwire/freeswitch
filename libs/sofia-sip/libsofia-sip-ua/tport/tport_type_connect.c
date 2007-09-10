@@ -201,6 +201,8 @@ static tport_t *tport_http_connect(tport_primary_t *pri, su_addrinfo_t *ai,
     return NULL;
   }  
 
+  tport_set_secondary_timer(tport);
+
   return tport;
 }
 

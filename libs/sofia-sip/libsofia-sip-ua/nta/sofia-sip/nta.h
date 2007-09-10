@@ -284,6 +284,7 @@ SOFIAPUBFUN sip_method_t nta_incoming_method(nta_incoming_t const *irq);
 SOFIAPUBFUN char const *nta_incoming_method_name(nta_incoming_t const *irq);
 SOFIAPUBFUN url_t const *nta_incoming_url(nta_incoming_t const *irq);
 SOFIAPUBFUN uint32_t nta_incoming_cseq(nta_incoming_t const *irq);
+SOFIAPUBFUN sip_time_t nta_incoming_received(nta_incoming_t *irq, su_nanotime_t *nano);
 
 SOFIAPUBFUN int nta_incoming_set_params(nta_incoming_t *irq,
 					tag_type_t tag, tag_value_t value, ...);

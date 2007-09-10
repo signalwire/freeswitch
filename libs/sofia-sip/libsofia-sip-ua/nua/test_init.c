@@ -36,6 +36,7 @@
 #include "test_nua.h"
 
 #include <sofia-sip/tport_tag.h>
+#include <sofia-sip/auth_module.h>
 
 #if HAVE_FUNC
 #elif HAVE_FUNCTION
@@ -107,17 +108,52 @@ int test_nua_init(struct context *ctx,
     TEST_1(close(temp) == 0);
 
     ctx->p = test_proxy_create(ctx->root,
-			       AUTHTAG_METHOD("Digest"),
-			       AUTHTAG_REALM("test-proxy"),
-			       AUTHTAG_OPAQUE("kuik"),
-			       AUTHTAG_DB(passwd_name),
-			       AUTHTAG_QOP("auth-int"),
-			       AUTHTAG_ALGORITHM("md5"),
-			       AUTHTAG_NEXT_EXPIRES(60),
 			       TAG_IF(ctx->proxy_logging, TPTAG_LOG(1)),
 			       TAG_END());
 
-    ctx->proxy_tests = ctx->p != NULL;
+    if (ctx->p) {
+      ctx->a.domain = 
+	test_proxy_add_domain(ctx->p,
+			      URL_STRING_MAKE("sip:example.com")->us_url,
+			      AUTHTAG_METHOD("Digest"),
+			      AUTHTAG_REALM("test-proxy"),
+			      AUTHTAG_OPAQUE("kuik"),
+			      AUTHTAG_DB(passwd_name),
+			      AUTHTAG_QOP("auth-int"),
+			      AUTHTAG_ALGORITHM("md5"),
+			      AUTHTAG_NEXT_EXPIRES(60),
+			      TAG_END());
+
+      ctx->b.domain = 
+	test_proxy_add_domain(ctx->p,
+			      URL_STRING_MAKE("sip:example.org")->us_url,
+			      AUTHTAG_METHOD("Digest"),
+			      AUTHTAG_REALM("test-proxy"),
+			      AUTHTAG_OPAQUE("kuik"),
+			      AUTHTAG_DB(passwd_name),
+			      AUTHTAG_QOP("auth-int"),
+			      AUTHTAG_ALGORITHM("md5"),
+			      AUTHTAG_NEXT_EXPIRES(60),
+			      TAG_END());
+
+      test_proxy_domain_set_outbound(ctx->b.domain, 1);
+
+      ctx->c.domain = 
+	test_proxy_add_domain(ctx->p,
+			      URL_STRING_MAKE("sip:example.net")->us_url,
+			      AUTHTAG_METHOD("Digest"),
+			      AUTHTAG_REALM("test-proxy"),
+			      AUTHTAG_OPAQUE("kuik"),
+			      AUTHTAG_DB(passwd_name),
+			      AUTHTAG_QOP("auth-int"),
+			      AUTHTAG_ALGORITHM("md5"),
+			      AUTHTAG_NEXT_EXPIRES(60),
+			      AUTHTAG_MAX_NCOUNT(1),
+			      TAG_END());
+
+      ctx->proxy_tests = 1;
+    }
+
 
     if (print_headings)
       printf("TEST NUA-2.1.1: PASSED\n");
@@ -276,6 +312,7 @@ int test_nua_init(struct context *ctx,
 			  NUTAG_INSTANCE(ctx->b.instance),
 			  /* Quicker timeout */
 			  NTATAG_SIP_T1X64(2000),
+			  TPTAG_KEEPALIVE(100),
 			  TAG_IF(ctx->b.logging, TPTAG_LOG(1)),
 			  TAG_END());
   TEST_1(ctx->b.nua);

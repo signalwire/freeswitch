@@ -1158,7 +1158,7 @@ int nua_handle_save_tags(nua_handle_t *nh, tagi_t *tags)
       url = (url_string_t *)t->t_value;
     }
     /* NUTAG_SIPS_URL_REF(url) */
-    else if (t->t_tag == nutag_url) {
+    else if (t->t_tag == nutag_sips_url) {
       url = (url_string_t *)t->t_value;
     }
   }

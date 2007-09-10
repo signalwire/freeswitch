@@ -307,6 +307,8 @@ int tport_tls_events(tport_t *self, int events)
     ret = tls_want_read(tlstp->tlstp_context, events);
     if (ret > 0)
       tport_recv_event(self);
+    else if (ret == 0)		/* End-of-stream */
+      tport_shutdown0(self, 2);
     else if (ret < 0)
       tport_error_report(self, errno, NULL);
   }

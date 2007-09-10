@@ -814,6 +814,7 @@ static
 size_t change_status_to_483(void *a, void *message, size_t len);
 int save_until_notified_and_responded_twice(CONDITION_PARAMS);
 int save_until_notify_responded_twice(CONDITION_PARAMS);
+int accept_subscription_until_terminated(CONDITION_PARAMS);
 
 int test_subscribe_notify_graceful(struct context *ctx)
 {
@@ -902,7 +903,7 @@ int test_subscribe_notify_graceful(struct context *ctx)
   SUBSCRIBE(a, a_call, a_call->nh, TAG_END());
 
   run_ab_until(ctx, -1, save_until_notified_and_responded_twice, 
-	       -1, save_until_notify_responded_twice);
+	       -1, accept_subscription_until_terminated);
 
 #if 0
   /* Client events:

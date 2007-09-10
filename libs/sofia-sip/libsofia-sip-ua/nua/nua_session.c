@@ -173,6 +173,8 @@ typedef struct nua_session_usage
   char const     *ss_oa_recv, *ss_oa_sent;
 } nua_session_usage_t;
 
+static char const Offer[] = "offer", Answer[] = "answer";
+
 static char const *nua_session_usage_name(nua_dialog_usage_t const *du);
 static int nua_session_usage_add(nua_handle_t *nh,
 				 nua_dialog_state_t *ds,
@@ -579,7 +581,7 @@ static int nua_invite_client_init(nua_client_request_t *cr,
 
   cr->cr_usage = du = nua_dialog_usage_for_session(nh->nh_ds);
   /* Errors returned by nua_invite_client_init() 
-     are neutral to session state */
+     do not change the session state */
   cr->cr_neutral = 1;	
   
   if (nh_is_special(nh) || 
@@ -640,7 +642,7 @@ static int nua_invite_client_request(nua_client_request_t *cr,
     invite_timeout = UINT_MAX;
   /* Send CANCEL if we don't get response within timeout*/
   /* nua_dialog_usage_set_expires(du, invite_timeout); Xyzzy */
-  nua_dialog_usage_set_refresh(du, 0);
+  nua_dialog_usage_reset_refresh(du);
 
   /* Add session timer headers */
   if (session_timer_is_supported(ss->ss_timer))
@@ -689,10 +691,10 @@ static int nua_invite_client_request(nua_client_request_t *cr,
 				    NTATAG_REL100(ss->ss_100rel),
 				    TAG_NEXT(tags));
   if (retval == 0) {
-    cr->cr_offer_sent = offer_sent;
-    ss->ss_oa_sent = offer_sent ? "offer" : NULL;
+    if ((cr->cr_offer_sent = offer_sent))
+      ss->ss_oa_sent = Offer;
 
-    if (!cr->cr_restarting)
+    if (!cr->cr_restarting) /* Restart logic calls nua_invite_client_report */
       signal_call_state_change(nh, ss, 0, "INVITE sent", 
 			       nua_callstate_calling);
   }
@@ -807,9 +809,9 @@ static int nua_session_client_response(nua_client_request_t *cr,
     sdp = NULL;
   }
   else if (cr->cr_offer_sent) {
-    /* case 1: incoming answer */
+    /* case 1: answer to our offer */
     cr->cr_answer_recv = status;
-    received = "answer";
+    received = Answer;
 
     if (nh->nh_soa == NULL)
       LOG5("got SDP");
@@ -836,9 +838,9 @@ static int nua_session_client_response(nua_client_request_t *cr,
     sdp = NULL;
   }
   else {
-    /* case 2: answer to our offer */
+    /* case 2: new offer */
     cr->cr_offer_recv = 1, cr->cr_answer_sent = 0;
-    received = "offer";
+    received = Offer;
 
     if (nh->nh_soa && soa_set_remote_sdp(nh->nh_soa, NULL, sdp, len) < 0) {
       LOG3("error parsing SDP");
@@ -868,12 +870,13 @@ static int nua_invite_client_report(nua_client_request_t *cr,
 				    tagi_t const *tags)
 {
   nua_handle_t *nh = cr->cr_owner;
+  nua_dialog_state_t *ds = nh->nh_ds;
   nua_dialog_usage_t *du = cr->cr_usage;
   nua_session_usage_t *ss = nua_dialog_usage_private(du);
   unsigned next_state;
   int error;
 
-  nh_referral_respond(nh, status, phrase);
+  nh_referral_respond(nh, status, phrase); /* XXX - restarting after 401/407 */
 
   nua_stack_event(nh->nh_nua, nh, 
 		  nta_outgoing_getresponse(orq),
@@ -881,7 +884,8 @@ static int nua_invite_client_report(nua_client_request_t *cr,
 		  status, phrase,
 		  tags);
 
-  if (orq != cr->cr_orq && status != 100)
+  if (cr->cr_waiting)
+    /* Do not report call state change if waiting for restart */
     return 1;
 
   if (ss == NULL) {
@@ -897,7 +901,10 @@ static int nua_invite_client_report(nua_client_request_t *cr,
     return 1;
   }
 
-  if (status == 100) {
+  if (orq != cr->cr_orq && cr->cr_orq) {	/* Being restarted */
+    next_state = nua_callstate_calling;
+  }
+  else if (status == 100) {
     next_state = nua_callstate_calling;
   }
   else if (status < 300 && cr->cr_graceful) {
@@ -953,8 +960,16 @@ static int nua_invite_client_report(nua_client_request_t *cr,
 	/* Auto-ACK response to re-INVITE unless auto_ack is set to 0 */
 	(ss->ss_state == nua_callstate_ready &&
 	 !NH_PISSET(nh, auto_ack))) {
+      nua_client_request_t *cru;
 
-      if (nua_invite_client_ack(cr, NULL) > 0)
+      for (cru = ds->ds_cr; cru; cru = cru->cr_next) {
+	if (cr != cru && cru->cr_offer_sent && !cru->cr_answer_recv)
+	  break;
+      }
+
+      if (cru)
+	/* A final response to UPDATE or PRACK with answer on its way? */;
+      else if (nua_invite_client_ack(cr, NULL) > 0)
 	next_state = nua_callstate_ready;
       else
 	next_state = nua_callstate_terminating;
@@ -1129,7 +1144,7 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
     else if (cr->cr_offer_recv && !cr->cr_answer_sent) {
       if (nh->nh_soa == NULL) {
 	if (session_get_description(sip, NULL, NULL))
-	  cr->cr_answer_sent = 1, ss->ss_oa_sent = "answer";
+	  cr->cr_answer_sent = 1, ss->ss_oa_sent = Answer;
       }
       else if (soa_generate_answer(nh->nh_soa, NULL) < 0 ||
 	  session_include_description(nh->nh_soa, 1, msg, sip) < 0) {
@@ -1138,23 +1153,33 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
 	/* reason = soa_error_as_sip_reason(nh->nh_soa); */
       }
       else {
-	cr->cr_answer_sent = 1, ss->ss_oa_sent = "answer";
+	cr->cr_answer_sent = 1, ss->ss_oa_sent = Answer;
       }
     }
 
     if (ss == NULL || ss->ss_state >= nua_callstate_ready || reason)
       ;
-    else if (nh->nh_soa
-	     ? soa_is_complete(nh->nh_soa)
-	     : !(cr->cr_offer_sent && !cr->cr_answer_recv)) {
-      /* signal that O/A round(s) is (are) complete */
-      if (nh->nh_soa) 
+    else if (nh->nh_soa && soa_is_complete(nh->nh_soa)) {
+      /* signal SOA that O/A round(s) is (are) complete */
 	soa_activate(nh->nh_soa, NULL);
     }
+    else if (nh->nh_soa == NULL && !(cr->cr_offer_sent && !cr->cr_answer_recv)) {
+      ;
+    }
     else {
-      /* No SDP answer -> terminate call */
-      status = 988, phrase = "Incomplete offer/answer";
-      reason = "SIP;cause=488;text=\"Incomplete offer/answer\"";
+      nua_client_request_t *cru;
+
+      /* Final response to UPDATE or PRACK may be on its way ... */
+      for (cru = ds->ds_cr; cru; cru = cru->cr_next) {
+	if (cr != cru && cru->cr_offer_sent && !cru->cr_answer_recv)
+	  break;
+      }
+
+      if (cru == NULL) {
+	/* No SDP answer -> terminate call */
+	status = 988, phrase = "Incomplete offer/answer";
+	reason = "SIP;cause=488;text=\"Incomplete offer/answer\"";
+      }
     }
     
     if ((ack = nta_outgoing_mcreate(nh->nh_nua->nua_nta, NULL, NULL, NULL,
@@ -1561,15 +1586,13 @@ static int nua_prack_client_request(nua_client_request_t *cr,
     cr->cr_offer_sent = offer_sent;
     cr->cr_answer_sent = answer_sent;
 
-    if (!cr->cr_restarting) {
-      if (offer_sent) 
-	ss->ss_oa_sent = "offer";
-      else if (answer_sent)
-	ss->ss_oa_sent = "answer";
+    if (offer_sent) 
+      ss->ss_oa_sent = Offer;
+    else if (answer_sent)
+      ss->ss_oa_sent = Answer;
 
-      if (!ss->ss_reporting)
-	signal_call_state_change(nh, ss, status, phrase, ss->ss_state);
-    }
+    if (!cr->cr_restarting) /* Restart logic calls nua_prack_client_report */
+      signal_call_state_change(nh, ss, status, phrase, ss->ss_state);
   }
 
   return retval;
@@ -1591,7 +1614,8 @@ static int nua_prack_client_report(nua_client_request_t *cr,
 				   tagi_t const *tags)
 {
   nua_handle_t *nh = cr->cr_owner;
-  nua_session_usage_t *ss = nua_dialog_usage_private(cr->cr_usage);
+  nua_dialog_usage_t *du = cr->cr_usage;
+  nua_session_usage_t *ss = nua_dialog_usage_private(du);
 
   nua_stack_event(nh->nh_nua, nh, 
 		  nta_outgoing_getresponse(orq),
@@ -1599,11 +1623,34 @@ static int nua_prack_client_report(nua_client_request_t *cr,
 		  status, phrase,
 		  tags);
 
-  if (!ss || orq != cr->cr_orq || cr->cr_terminated || cr->cr_graceful)
+  if (!ss || cr->cr_terminated || cr->cr_graceful)
     return 1;
 
-  if (cr->cr_offer_sent)
-    signal_call_state_change(nh, ss, status, phrase, ss->ss_state);
+  if (cr->cr_waiting)
+    /* Do not report call state change if restarting later */
+    return 1;
+
+  if (cr->cr_offer_sent || cr->cr_answer_sent) {
+    unsigned next_state = ss->ss_state;
+
+    if (status < 200)
+      ;
+    else if (du->du_cr && du->du_cr->cr_orq && du->du_cr->cr_status >= 200) {
+      /* There is an un-ACK-ed INVITE there */
+      assert(du->du_cr->cr_method == sip_method_invite);
+      if (NH_PGET(nh, auto_ack) || 
+	  /* Auto-ACK response to re-INVITE unless auto_ack is set to 0 */
+	  (ss->ss_state == nua_callstate_ready && !NH_PISSET(nh, auto_ack))) {
+	/* No UPDATE with offer/answer if PRACK with offer/answer was ongoing! */
+	if (nua_invite_client_ack(du->du_cr, NULL) > 0)
+	  next_state = nua_callstate_ready;
+	else
+	  next_state = nua_callstate_terminating;
+      }
+    }
+
+    signal_call_state_change(nh, ss, status, phrase, next_state);
+  }
 
   if (ss->ss_update_needed && 200 <= status && status < 300 &&
       !SIP_IS_ALLOWED(NH_PGET(nh, appl_method), sip_method_update))
@@ -1904,7 +1951,7 @@ int nua_invite_server_preprocess(nua_server_request_t *sr)
   ss = nua_dialog_usage_private(sr->sr_usage);
 
   if (sr->sr_offer_recv)
-    ss->ss_oa_recv = "offer";
+    ss->ss_oa_recv = Offer;
 
   ss->ss_100rel = NH_PGET(nh, early_media);
   ss->ss_precondition = sip_has_feature(request->sip_require, "precondition");
@@ -2049,9 +2096,9 @@ int nua_invite_server_respond(nua_server_request_t *sr, tagi_t const *tags)
     if (nh->nh_soa && session_include_description(nh->nh_soa, 1, msg, sip) < 0)
       SR_STATUS1(sr, SIP_500_INTERNAL_SERVER_ERROR);
     else if (offer)
-      sr->sr_offer_sent = 1 + reliable, ss->ss_oa_sent = "offer";
+      sr->sr_offer_sent = 1 + reliable, ss->ss_oa_sent = Offer;
     else if (answer)
-      sr->sr_answer_sent = 1 + reliable, ss->ss_oa_sent = "answer";
+      sr->sr_answer_sent = 1 + reliable, ss->ss_oa_sent = Answer;
   }
 
   if (reliable && sr->sr_status < 200) {
@@ -2236,7 +2283,7 @@ int process_ack(nua_server_request_t *sr,
     int error;
 
     if (session_get_description(sip, &sdp, &len))
-      recv = "answer";
+      recv = Answer;
 
     if (recv) {
       assert(ss->ss_oa_recv == NULL);
@@ -2474,14 +2521,14 @@ int nua_prack_server_init(nua_server_request_t *sr)
     /* XXX - check for overlap? */
     
     if (sri->sr_offer_sent)
-      sr->sr_answer_recv = 1, ss->ss_oa_recv = "answer";
+      sr->sr_answer_recv = 1, ss->ss_oa_recv = Answer;
     else 
-      sr->sr_offer_recv = 1, ss->ss_oa_recv = "offer";
+      sr->sr_offer_recv = 1, ss->ss_oa_recv = Offer;
 
     if (nh->nh_soa &&
 	soa_set_remote_sdp(nh->nh_soa, NULL, sr->sr_sdp, sr->sr_sdp_len) < 0) {
       SU_DEBUG_5(("nua(%p): %s server: error parsing %s\n", (void *)nh,
-		  "PRACK", "offer"));
+		  "PRACK", Offer));
       return 
 	sr->sr_status = soa_error_as_sip_response(nh->nh_soa, &sr->sr_phrase);
     }
@@ -2504,21 +2551,21 @@ int nua_prack_server_respond(nua_server_request_t *sr, tagi_t const *tags)
 
     if (nh->nh_soa == NULL) {
       if (sr->sr_offer_recv && session_get_description(sip, NULL, NULL))
-	sr->sr_answer_sent = 1, ss->ss_oa_sent = "answer";
+	sr->sr_answer_sent = 1, ss->ss_oa_sent = Answer;
     }
     else if ((sr->sr_offer_recv && soa_generate_answer(nh->nh_soa, NULL) < 0) ||
 	     (sr->sr_answer_recv && soa_process_answer(nh->nh_soa, NULL) < 0)) {
       SU_DEBUG_5(("nua(%p): %s server: %s %s\n", 
 		  (void *)nh, "PRACK", 
 		  "error processing",
-		  sr->sr_offer_recv ? "offer" : "answer"));
+		  sr->sr_offer_recv ? Offer : Answer));
       sr->sr_status = soa_error_as_sip_response(nh->nh_soa, &sr->sr_phrase);
     }
     else if (sr->sr_offer_recv) {
       if (session_include_description(nh->nh_soa, 1, msg, sip) < 0)
 	sr_status(sr, SIP_500_INTERNAL_SERVER_ERROR);
       else
-      sr->sr_answer_sent = 1, ss->ss_oa_sent = "answer";
+      sr->sr_answer_sent = 1, ss->ss_oa_sent = Answer;
     }
   }
 
@@ -2976,20 +3023,18 @@ static int nua_update_client_request(nua_client_request_t *cr,
   retval = nua_base_client_request(cr, msg, sip, NULL);
 
   if (retval == 0) {
+    enum nua_callstate state = ss->ss_state;
     cr->cr_offer_sent = offer_sent;
     ss->ss_update_needed = 0;
 
-    if (!cr->cr_restarting) {
-      enum nua_callstate state = ss->ss_state;
+    if (state == nua_callstate_ready)
+      state = nua_callstate_calling; /* XXX */
 
-      if (state == nua_callstate_ready)
-	state = nua_callstate_calling;
+    if (offer_sent)
+      ss->ss_oa_sent = Offer;
 
-      if (offer_sent)
-	ss->ss_oa_sent = "offer";
-
+    if (!cr->cr_restarting)	/* Restart logic calls nua_update_client_report */
       signal_call_state_change(nh, ss, 0, "UPDATE sent", state);
-    }
   }
 
   return retval;
@@ -3057,6 +3102,7 @@ static int nua_update_client_report(nua_client_request_t *cr,
   nua_handle_t *nh = cr->cr_owner;
   nua_dialog_usage_t *du = cr->cr_usage;
   nua_session_usage_t *ss = nua_dialog_usage_private(du);
+  unsigned next_state = ss->ss_state;
 
   nua_stack_event(nh->nh_nua, nh, 
 		  nta_outgoing_getresponse(orq),
@@ -3064,11 +3110,32 @@ static int nua_update_client_report(nua_client_request_t *cr,
 		  status, phrase,
 		  tags);
 
-  if (!ss || orq != cr->cr_orq || 
-      cr->cr_terminated || cr->cr_graceful || !cr->cr_offer_sent)
+  if (!ss || cr->cr_terminated || cr->cr_graceful)
     return 1;
 
-  signal_call_state_change(nh, ss, status, phrase, ss->ss_state);
+  if (cr->cr_waiting)
+    /* Do not report call state change if restarting later */
+    return 1;
+
+  if (cr->cr_offer_sent) {
+    if (status < 200)
+      ;
+    else if (du->du_cr && du->du_cr->cr_orq && du->du_cr->cr_status >= 200) {
+      /* There is an un-ACK-ed INVITE there */
+      assert(du->du_cr->cr_method == sip_method_invite);
+
+      if (NH_PGET(nh, auto_ack) || 
+	  /* Auto-ACK response to re-INVITE unless auto_ack is set to 0 */
+	  (ss->ss_state == nua_callstate_ready && !NH_PISSET(nh, auto_ack))) {
+	if (nua_invite_client_ack(du->du_cr, NULL) > 0)
+	  next_state = nua_callstate_ready;
+	else
+	  next_state = nua_callstate_terminating;
+      }
+    }
+
+    signal_call_state_change(nh, ss, status, phrase, next_state);
+  }
 
   return 1;
 }
@@ -3148,13 +3215,13 @@ int nua_update_server_init(nua_server_request_t *sr)
     if (nh->nh_soa &&
 	soa_set_remote_sdp(nh->nh_soa, NULL, sr->sr_sdp, sr->sr_sdp_len) < 0) {
       SU_DEBUG_5(("nua(%p): %s server: error parsing %s\n", (void *)nh,
-		  "UPDATE", "offer"));
+		  "UPDATE", Offer));
       return 
 	sr->sr_status = soa_error_as_sip_response(nh->nh_soa, &sr->sr_phrase);
     }
 
     sr->sr_offer_recv = 1;
-    ss->ss_oa_recv = "offer";
+    ss->ss_oa_recv = Offer;
   }
 
   return 0;
@@ -3172,11 +3239,11 @@ int nua_update_server_respond(nua_server_request_t *sr, tagi_t const *tags)
 
   if (200 <= sr->sr_status && sr->sr_status < 300 && sr->sr_sdp) {
     if (nh->nh_soa == NULL) {
-      sr->sr_answer_sent = 1, ss->ss_oa_sent = "answer";
+      sr->sr_answer_sent = 1, ss->ss_oa_sent = Answer;
     }
     else if (soa_generate_answer(nh->nh_soa, NULL) < 0) {
       SU_DEBUG_5(("nua(%p): %s server: %s %s\n", 
-		  (void *)nh, "UPDATE", "error processing", "offer"));
+		  (void *)nh, "UPDATE", "error processing", Offer));
       sr->sr_status = soa_error_as_sip_response(nh->nh_soa, &sr->sr_phrase);
     }
     else if (soa_activate(nh->nh_soa, NULL) < 0) {
@@ -3188,7 +3255,7 @@ int nua_update_server_respond(nua_server_request_t *sr, tagi_t const *tags)
       sr_status(sr, SIP_500_INTERNAL_SERVER_ERROR);
     }
     else {
-      sr->sr_answer_sent = 1, ss->ss_oa_sent = "answer";
+      sr->sr_answer_sent = 1, ss->ss_oa_sent = Answer;
     }
   }
 
@@ -3639,14 +3706,17 @@ static void signal_call_state_change(nua_handle_t *nh,
     oa_recv = ss->ss_oa_recv, ss->ss_oa_recv = NULL;
     oa_sent = ss->ss_oa_sent, ss->ss_oa_sent = NULL;
 
+    assert(oa_sent == Offer || oa_sent == Answer || oa_sent == NULL);
+    assert(oa_recv == Offer || oa_recv == Answer || oa_recv == NULL);
+
     if (oa_recv) {
-      offer_recv = strcasecmp(oa_recv, "offer") == 0;
-      answer_recv = strcasecmp(oa_recv, "answer") == 0;
+      offer_recv = oa_recv == Offer;
+      answer_recv = oa_recv == Answer;
     }
 
     if (oa_sent) {
-      offer_sent = strcasecmp(oa_sent, "offer") == 0;
-      answer_sent = strcasecmp(oa_sent, "answer") == 0;
+      offer_sent = oa_sent == Offer;
+      answer_sent = oa_sent == Answer;
     }
   }
 
@@ -4061,7 +4131,7 @@ session_timer_set(nua_session_usage_t *ss)
     if (t->interval >= 90)
       low -=5, high += 5;
 
-    nua_dialog_usage_refresh_range(du, low, high);
+    nua_dialog_usage_set_refresh_range(du, low, high);
     t->timer_set = 1;
   }
   else if (t->refresher == nua_remote_refresher) {
@@ -4074,7 +4144,7 @@ session_timer_set(nua_session_usage_t *ss)
 
     interval -= 32 > interval / 6 ? interval / 3 : 32 + interval / 3;
 
-    nua_dialog_usage_refresh_range(du, interval, interval);
+    nua_dialog_usage_set_refresh_range(du, interval, interval);
     t->timer_set = 1;
   }
   else {

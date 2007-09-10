@@ -37,12 +37,12 @@
 
 #include "config.h"
 
+#if HAVE_SCTP
+
 #include "tport_internal.h"
 
 #if HAVE_NETINET_SCTP_H
 #include <netinet/sctp.h>
-#undef HAVE_SCTP
-#define HAVE_SCTP 1
 #endif
 
 #include <stdlib.h>
@@ -63,7 +63,6 @@
 #define SOL_SCTP IPPROTO_SCTP
 #endif
 
-
 enum { MAX_STREAMS = 1 };
 typedef struct tport_sctp_t
 {
@@ -80,8 +79,6 @@ typedef struct tport_sctp_t
 } tport_sctp_t;
 
 #define TP_SCTP_MSG_MAX (65536)
-
-#if HAVE_SCTP
 
 static int tport_sctp_init_primary(tport_primary_t *, 
 				   tp_name_t tpn[1], 
@@ -100,6 +97,9 @@ static int tport_recv_sctp(tport_t *self);
 static ssize_t tport_send_sctp(tport_t const *self, msg_t *msg,
 			       msg_iovec_t iov[], size_t iovused);
 
+static int tport_sctp_next_timer(tport_t *self, su_time_t *, char const **);
+static void tport_sctp_timer(tport_t *self, su_time_t);
+
 tport_vtable_t const tport_sctp_client_vtable =
 {
   "sctp", tport_type_client,
@@ -116,10 +116,13 @@ tport_vtable_t const tport_sctp_client_vtable =
   NULL,
   tport_recv_sctp,
   tport_send_sctp,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  tport_sctp_next_timer,
+  tport_sctp_timer,
 };
-
-#undef NEXT_VTABLE
-#define NEXT_VTABLE &tport_sctp_client_vtable
 
 tport_vtable_t const tport_sctp_vtable =
 {
@@ -137,10 +140,13 @@ tport_vtable_t const tport_sctp_vtable =
   NULL,
   tport_recv_sctp,
   tport_send_sctp,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  tport_sctp_next_timer,
+  tport_sctp_timer,
 };
-
-#undef NEXT_VTABLE
-#define NEXT_VTABLE &tport_sctp_vtable
 
 static int tport_sctp_init_primary(tport_primary_t *pri, 
 				   tp_name_t tpn[1],
@@ -261,6 +267,58 @@ static ssize_t tport_send_sctp(tport_t const *self, msg_t *msg,
   
 
   return su_vsend(self->tp_socket, iov, iovused, MSG_NOSIGNAL, NULL, 0);
+}
+
+/** Calculate tick timer if send is pending. */
+int tport_next_sctp_send_tick(tport_t *self,
+			    su_time_t *return_target, 
+			    char const **return_why)
+{
+  unsigned timeout = 100;  /* Retry 10 times a second... */
+
+  if (tport_has_queued(self)) {
+    su_time_t ntime = su_time_add(self->tp_ktime, timeout);
+    if (su_time_cmp(ntime, *return_target) < 0)
+      *return_target = ntime, *return_why = "send tick";
+  }
+
+  return 0;
+}
+
+/** Tick timer if send is pending */
+void tport_sctp_send_tick_timer(tport_t *self, su_time_t now)
+{
+  unsigned timeout = 100;
+
+  /* Send timeout */
+  if (tport_has_queued(self) && 
+      su_time_cmp(su_time_add(self->tp_ktime, timeout), now) < 0) {
+    uint64_t bytes = self->tp_stats.sent_bytes;
+    su_time_t stime = self->tp_stime;
+
+    tport_send_queue(self);
+
+    if (self->tp_stats.sent_bytes == bytes)
+      self->tp_stime = stime;	/* Restore send timestamp */
+  }
+}
+
+/** Calculate next timer for SCTP. */
+int tport_sctp_next_timer(tport_t *self,
+			 su_time_t *return_target, 
+			 char const **return_why)
+{
+  return 
+    tport_next_recv_timeout(self, return_target, return_why) |
+    tport_next_sctp_send_tick(self, return_target, return_why);
+}
+
+/** SCTP timer. */
+void tport_sctp_timer(tport_t *self, su_time_t now)
+{
+  tport_sctp_send_tick_timer(self, now);
+  tport_recv_timeout_timer(self, now);
+  tport_base_timer(self, now);
 }
 
 #endif

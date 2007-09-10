@@ -973,7 +973,7 @@ static int nua_register_client_response(nua_client_request_t *cr,
     nua_registration_set_ready(nr, 1);
   }
   else if (du) {
-    nua_dialog_usage_set_refresh(du, 0);
+    nua_dialog_usage_reset_refresh(du);
 
     su_free(nh->nh_home, nr->nr_route);
     nr->nr_route = NULL;
@@ -1004,14 +1004,31 @@ void nua_register_connection_closed(tp_stack_t *sip_stack,
 				    msg_t *msg,
 				    int error)
 {
-  if (tport_release(nr->nr_tport, nr->nr_error_report_id, NULL, NULL, nr, 0) < 0)
-    SU_DEBUG_1(("nua_register: tport_release() failed\n"));
+  tp_name_t const *tpn;
+  int pending = nr->nr_error_report_id;
 
+  assert(tport == nr->nr_tport);
+
+  if (!nr->nr_tport)
+    return;
+
+  if (tport_release(nr->nr_tport, pending, NULL, NULL, nr, 0) < 0)
+    SU_DEBUG_1(("nua_register: tport_release() failed\n"));
   nr->nr_error_report_id = 0;
+
+  tpn = tport_name(nr->nr_tport);
+
+  SU_DEBUG_5(("nua_register(%p): tport to %s/%s:%s%s%s closed %s\n", 
+	      nua_dialog_usage_public(nr)->du_dialog->ds_owner,
+	      tpn->tpn_proto, tpn->tpn_host, tpn->tpn_port,
+	      tpn->tpn_comp ? ";comp=" : "",
+	      tpn->tpn_comp ? tpn->tpn_comp : "",
+	      error != 0 ? su_strerror(error) : ""));
+
   tport_unref(nr->nr_tport), nr->nr_tport = NULL;
 
   /* Schedule re-REGISTER immediately */
-  nua_dialog_usage_refresh_at(nua_dialog_usage_public(nr), sip_now());
+  nua_dialog_usage_set_refresh_range(nua_dialog_usage_public(nr), 0, 0);
 }
 
 

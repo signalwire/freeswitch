@@ -146,47 +146,59 @@ void print_event(nua_event_t event,
 		 tagi_t tags[])
 {
   tagi_t const *t;
+  static su_nanotime_t started = 0;
+  su_nanotime_t now;
+  char timestamp[32];
+
+  su_nanotime(&now);
+
+  if (started == 0) started = now;
+
+  now -= started; now /= 1000000;
+
+  snprintf(timestamp, sizeof timestamp, "%03u.%03u",
+	   (unsigned)(now / 1000), (unsigned)(now % 1000));
 
   if (event == nua_i_state) {
-    fprintf(stderr, "%s.nua(%p): event %s %s\n",
+    fprintf(stderr, "%s %s.nua(%p): event %s %s\n", timestamp,
 	    ep->name, (void *)nh, nua_event_name(event),
 	    nua_callstate_name(callstate(tags)));
   }
   else if ((int)event >= nua_r_set_params) {
     t = tl_find(tags, nutag_substate);
     if (t) {
-      fprintf(stderr, "%s.nua(%p): event %s status %u %s (%s)\n",
+      fprintf(stderr, "%s %s.nua(%p): event %s status %u %s (%s)\n", timestamp,
 	      ep->name, (void*)nh, nua_event_name(event), status, phrase,
 	      nua_substate_name(t->t_value));
     }
     else {
-      fprintf(stderr, "%s.nua(%p): event %s status %u %s\n",
+      fprintf(stderr, "%s %s.nua(%p): event %s status %u %s\n", timestamp,
 	      ep->name, (void *)nh, nua_event_name(event), status, phrase);
     }
   }
   else if (event == nua_i_notify) {
     t = tl_find(tags, nutag_substate);
-    fprintf(stderr, "%s.nua(%p): event %s %s (%s)\n",
+    fprintf(stderr, "%s %s.nua(%p): event %s %s (%s)\n", timestamp,
 	    ep->name, (void *)nh, nua_event_name(event), phrase,
 	    nua_substate_name(t ? t->t_value : 0));
   }
   else if ((int)event >= 0) {
-    fprintf(stderr, "%s.nua(%p): event %s %s\n",
+    fprintf(stderr, "%s %s.nua(%p): event %s %s\n", timestamp,
 	    ep->name, (void *)nh, nua_event_name(event), phrase);
   }
   else if (status > 0) {
-    fprintf(stderr, "%s.nua(%p): call %s() with status %u %s\n",
+    fprintf(stderr, "%s %s.nua(%p): call %s() with status %u %s\n", timestamp,
 	    ep->name, (void *)nh, operation, status, phrase);
   }
   else {
     t = tl_find(tags, siptag_subject_str);
     if (t && t->t_value) {
       char const *subject = (char const *)t->t_value;
-      fprintf(stderr, "%s.nua(%p): call %s() \"%s\"\n",
+      fprintf(stderr, "%s %s.nua(%p): call %s() \"%s\"\n", timestamp,
 	      ep->name, (void *)nh, operation, subject);
     }
     else
-      fprintf(stderr, "%s.nua(%p): call %s()\n",
+      fprintf(stderr, "%s %s.nua(%p): call %s()\n", timestamp,
 	      ep->name, (void *)nh, operation);
   }
 
@@ -292,7 +304,7 @@ void run_abc_until(struct context *ctx,
   memset(&c->flags, 0, sizeof c->flags);
 
   for (; a->running || b->running || c->running;) {
-    su_root_step(ctx->root, 1000);
+    su_root_step(ctx->root, 100);
   }
 }
 

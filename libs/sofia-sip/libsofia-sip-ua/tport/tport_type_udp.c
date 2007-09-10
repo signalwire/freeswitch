@@ -198,6 +198,9 @@ static void tport_check_trunc(tport_t *tp, su_addrinfo_t *ai)
 		"TEST", 4, 0,
 		(void *)ai->ai_addr, ai->ai_addrlen);
 
+  if (n != 4)
+    return;
+
   for (;;) {
     n = su_recvfrom(tp->tp_socket, buffer, sizeof buffer, MSG_TRUNC, 
 		    (void *)&su, &sulen);
