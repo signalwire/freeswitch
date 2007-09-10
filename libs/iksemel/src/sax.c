@@ -231,7 +231,7 @@ sax_core (iksparser *prs, char *buf, int len)
 				} else {
 					return IKS_BADXML;
 				}
-				if ((c & mask) == 0) return IKS_BADXML;
+				/* if ((c & mask) == 0) return IKS_BADXML; I AM WRONG */
 				prs->uni_len = 1;
 				if (stack_old == -1
 					&& (prs->context == C_TAG
