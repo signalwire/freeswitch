@@ -1688,7 +1688,7 @@ const char *_url_set_chanvars(switch_core_session_t *session, url_t *url, const 
 void process_rpid(sip_unknown_t *un, private_object_t *tech_pvt)
 {
 	int argc, x, screen = 1;
-	char *mydata, *user, *argv[10] = { 0 };
+	char *mydata, *argv[10] = { 0 };
 	char *display = NULL;
 	size_t n = 0;
 	
@@ -1702,7 +1702,7 @@ void process_rpid(sip_unknown_t *un, private_object_t *tech_pvt)
 					tech_pvt->caller_profile->caller_id_name = switch_core_session_strdup(tech_pvt->session, display);
 			}
 			if (*argv[0] == '<') {
-				char *start, *end;
+				char *end;
 				argv[0]++;
 				n = strcspn(argv[0], ":");
 				argv[0] += (n + 1);
