@@ -2007,6 +2007,7 @@ void sofia_handle_sip_i_options(int status,
 						  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
 {
 	nua_respond(nh, SIP_200_OK,
+				NUTAG_WITH_THIS(nua),
 				//SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 				//SOATAG_AUDIO_AUX("cn telephone-event"),
 				//NUTAG_INCLUDE_EXTRA_SDP(1),
