@@ -341,12 +341,12 @@ static JSBool pcre_construct(JSContext * cx, JSObject * obj, uintN argc, jsval *
 {
 	struct pcre_obj *pcre_obj;
 
-	if ((pcre_obj = malloc(sizeof(*pcre_obj)))) {
-		memset(pcre_obj, 0, sizeof(*pcre_obj));
-		JS_SetPrivate(cx, obj, pcre_obj);
-		return JS_TRUE;
+	if (!((pcre_obj = malloc(sizeof(*pcre_obj))))) {
+		abort();
 	}
-	abort();
+	memset(pcre_obj, 0, sizeof(*pcre_obj));
+	JS_SetPrivate(cx, obj, pcre_obj);
+	return JS_TRUE;
 
 }
 
