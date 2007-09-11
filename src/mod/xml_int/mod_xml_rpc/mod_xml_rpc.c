@@ -272,7 +272,7 @@ abyss_bool HandleHook(TSession * r)
 
 static xmlrpc_value *freeswitch_api(xmlrpc_env * const envP, xmlrpc_value * const paramArrayP, void *const userData)
 {
-	char *command, *arg;
+	char *command = NULL, *arg = NULL;
 	switch_stream_handle_t stream = { 0 };
 	xmlrpc_value *val = NULL;
 
@@ -280,7 +280,7 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env * const envP, xmlrpc_value * cons
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(envP, paramArrayP, "(ss)", &command, &arg);
 	if (envP->fault_occurred) {
-		return NULL;
+		goto done;
 	}
 
 	SWITCH_STANDARD_STREAM(stream);
@@ -292,20 +292,24 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env * const envP, xmlrpc_value * cons
 		val = xmlrpc_build_value(envP, "s", "ERROR!");
 	}
 
+done:
+	/* xmlrpc-c requires us to free memory it malloced from xmlrpc_decompose_value */
+	switch_safe_free(command);
+	switch_safe_free(arg);
 	return val;
 }
 
 static xmlrpc_value *freeswitch_man(xmlrpc_env * const envP, xmlrpc_value * const paramArrayP, void *const userData)
 {
-	char *oid, *relative_oid, *s_action, *data;
+	char *oid = NULL, *relative_oid, *s_action = NULL, *data = NULL;
 	char buf[SWITCH_MAX_MANAGEMENT_BUFFER_LEN] = "";
 	switch_management_action_t action = SMA_NONE;
-	xmlrpc_value *val;
+	xmlrpc_value *val = NULL;
 
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(envP, paramArrayP, "(sss)", &oid, &s_action, &data);
 	if (envP->fault_occurred) {
-		return NULL;
+		goto done;
 	}
 
 	if (!strncasecmp(oid, FREESWITCH_OID_PREFIX, strlen(FREESWITCH_OID_PREFIX))) {
@@ -343,7 +347,11 @@ static xmlrpc_value *freeswitch_man(xmlrpc_env * const envP, xmlrpc_value * cons
 	/* Return our result. */
 	val = xmlrpc_build_value(envP, "s", buf);
 
-
+done:
+	/* xmlrpc-c requires us to free memory it malloced from xmlrpc_decompose_value */
+	switch_safe_free(oid);
+	switch_safe_free(s_action);
+	switch_safe_free(data);
 	return val;
 }
 
