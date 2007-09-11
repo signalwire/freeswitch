@@ -161,6 +161,7 @@ typedef struct conference_file_node {
 	uint8_t async;
 	switch_memory_pool_t *pool;
 	uint32_t leadin;
+	int nv;
 	struct conference_file_node *next;
 } conference_file_node_t;
 
@@ -2274,9 +2275,11 @@ static switch_status_t conference_member_say(conference_member_t * member, char 
 				text = tmp + 1;
 				switch_copy_string(voice, vp, (tmp - vp) + 1);
 				switch_core_speech_text_param_tts(fnode->sh, "voice", voice);
+				fnode->nv = 1;
 			}
-		} else {
+		} else if (fnode->nv) {
 			switch_core_speech_text_param_tts(fnode->sh, "voice", conference->tts_voice);
+			fnode->nv = 0;
 		}
 		
 		switch_core_speech_feed_tts(fnode->sh, text, &flags);
@@ -2363,9 +2366,11 @@ static switch_status_t conference_say(conference_obj_t * conference, const char 
 			text = tmp + 1;
 			switch_copy_string(voice, vp, (tmp - vp) + 1);
 			switch_core_speech_text_param_tts(fnode->sh, "voice", voice);
+			fnode->nv = 1;
 		}
-	} else {
+	} else if (fnode->nv) {
 		switch_core_speech_text_param_tts(fnode->sh, "voice", conference->tts_voice);
+		fnode->nv = 0;
 	}
 
 	/* Begin Generation */
