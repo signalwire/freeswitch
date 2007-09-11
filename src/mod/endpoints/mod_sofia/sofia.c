@@ -34,6 +34,8 @@
  *
  */
 #include "mod_sofia.h"
+#include "sofia-sip/msg_parser.h"
+
 extern su_log_t tport_log[];
 
 static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
@@ -1686,13 +1688,29 @@ const char *_url_set_chanvars(switch_core_session_t *session, url_t *url, const 
 void process_rpid(sip_unknown_t *un, private_object_t *tech_pvt)
 {
 	int argc, x, screen = 1;
-	char *mydata, *argv[10] = { 0 };
+	char *mydata, *user, *argv[10] = { 0 };
+	char *display = NULL;
+	size_t n = 0;
+	
 	if (!switch_strlen_zero(un->un_value)) {
 		if ((mydata = strdup(un->un_value))) {
 			argc = switch_separate_string(mydata, ';', argv, (sizeof(argv) / sizeof(argv[0])));
 
-			// Do We really need this at this time 
-			// clid_uri = argv[0];
+			/* FIXME: This is completely insufficient parsing code, and should use the parsers from sofia-sip */ 
+			if (*argv[0] == '"') {
+				if (msg_quoted_d(&argv[0], &display) != -1)
+					tech_pvt->caller_profile->caller_id_name = switch_core_session_strdup(tech_pvt->session, display);
+			}
+			if (*argv[0] == '<') {
+				char *start, *end;
+				argv[0]++;
+				n = strcspn(argv[0], ":");
+				argv[0] += (n + 1);
+				n = strcspn(argv[0], "@");
+				end = argv[0] + n;
+				if (*end) *end++ = '\0';
+				tech_pvt->caller_profile->caller_id_number = switch_core_session_strdup(tech_pvt->session, argv[0]);
+			}
 
 			for (x = 1; x < argc && argv[x]; x++) {
 				// we dont need to do anything with party yet we should only be seeing party=calling here anyway
@@ -1701,7 +1719,7 @@ void process_rpid(sip_unknown_t *un, private_object_t *tech_pvt)
 				//  party = argv[x];
 				// } else 
 				if (!strncasecmp(argv[x], "privacy=", 8)) {
-					char *arg = argv[x] + 9;
+					char *arg = argv[x] + 8;
 
 					if (!strcasecmp(arg, "yes")) {
 						switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
