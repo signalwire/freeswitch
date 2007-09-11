@@ -1726,12 +1726,12 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 
 	if (switch_strlen_zero(tts_name)) {
 		eval_some_js("~throw new Error(\"Invalid TTS Name\");", cx, obj, rval);
-		return JS_TRUE;
+		return JS_FALSE;
 	}
 
 	if (switch_strlen_zero(text)) {
 		eval_some_js("~throw new Error(\"Invalid Text\");", cx, obj, rval);
-		return JS_TRUE;
+		return JS_FALSE;
 	}
 
 
@@ -1747,7 +1747,7 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 		if (init_speech_engine(jss, tts_name, voice_name) != SWITCH_STATUS_SUCCESS) {
 			eval_some_js("~throw new Error(\"Cannot allocate speech engine!\");", cx, obj, rval);
 			jss->speech = NULL;
-			return JS_TRUE;
+			return JS_FALSE;
 		}
 	}
 
@@ -2886,6 +2886,23 @@ static JSBool js_log(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, j
 	return JS_FALSE;
 }
 
+
+
+static JSBool js_global(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	char *var_name = NULL, *val = NULL;
+
+	if (argc > 0) {
+		var_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		val = switch_core_get_variable(var_name);
+		*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, val));
+		return JS_TRUE;
+	}
+
+	eval_some_js("~throw new Error(\"var name not supplied!\");", cx, obj, rval);
+	return JS_FALSE;
+}
+
 static JSBool js_include(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	char *code;
@@ -2974,25 +2991,25 @@ static JSBool js_bridge(JSContext * cx, JSObject * obj, uintN argc, jsval * argv
 		if (JS_ValueToObject(cx, argv[0], &session_obj_a)) {
 			if (!(jss_a = JS_GetPrivate(cx, session_obj_a))) {
 				eval_some_js("~throw new Error(\"Cannot find session A\");", cx, obj, rval);
-				return JS_TRUE;
+				return JS_FALSE;
 			}
 		}
 		if (JS_ValueToObject(cx, argv[1], &session_obj_b)) {
 			if (!(jss_b = JS_GetPrivate(cx, session_obj_b))) {
 				eval_some_js("~throw new Error(\"Cannot find session B\");", cx, obj, rval);
-				return JS_TRUE;
+				return JS_FALSE;
 			}
 		}
 	}
 
 	if (!(jss_a && jss_a->session)) {
 		eval_some_js("~throw new Error(\"session A is not ready!\");", cx, obj, rval);
-		return JS_TRUE;
+		return JS_FALSE;
 	}
 
 	if (!(jss_b && jss_b->session)) {
 		eval_some_js("~throw new Error(\"session B is not ready!\");", cx, obj, rval);
-		return JS_TRUE;
+		return JS_FALSE;
 	}
 
 
@@ -3057,6 +3074,7 @@ static JSBool js_file_unlink(JSContext * cx, JSObject * obj, uintN argc, jsval *
 static JSFunctionSpec fs_functions[] = {
 	{"console_log", js_log, 2},
 	{"consoleLog", js_log, 2},
+	{"getGlobalVariable", js_global, 2},
 	{"exit", js_exit, 0},
 	{"include", js_include, 1},
 	{"bridge", js_bridge, 2},
