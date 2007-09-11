@@ -327,7 +327,145 @@ static JSObject *new_request(JSContext *cx, JSObject *obj, struct request_obj *r
 	return NULL;
 }
 
+struct pcre_obj {
+	switch_regex_t *re;
+	char *string;
+	int proceed;
+	int ovector[30];
+	int freed;
+};
 
+/* Pcre Object */
+/*********************************************************************************/
+static JSBool pcre_construct(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	struct pcre_obj *pcre_obj;
+
+	if ((pcre_obj = malloc(sizeof(*pcre_obj)))) {
+		memset(pcre_obj, 0, sizeof(*pcre_obj));
+		JS_SetPrivate(cx, obj, pcre_obj);
+		return JS_TRUE;
+	}
+	abort();
+
+}
+
+static void pcre_destroy(JSContext * cx, JSObject * obj)
+{
+	struct pcre_obj *pcre_obj = JS_GetPrivate(cx, obj);
+
+	if (pcre_obj) {
+		if (!pcre_obj->freed && pcre_obj->re) {
+			switch_regex_safe_free(pcre_obj->re);
+			switch_safe_free(pcre_obj->string);
+		}
+		switch_safe_free(pcre_obj);
+	}
+}
+
+static JSBool pcre_compile(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	struct pcre_obj *pcre_obj = JS_GetPrivate(cx, obj);
+	char *string, *regex_string;
+
+	if (argc > 1) {
+        string = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+        regex_string = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		switch_regex_safe_free(pcre_obj->re);
+		switch_safe_free(pcre_obj->string);
+		pcre_obj->string = strdup(string);
+		pcre_obj->proceed = switch_regex_perform(pcre_obj->string, regex_string, &pcre_obj->re, pcre_obj->ovector, 
+												 sizeof(pcre_obj->ovector) / sizeof(pcre_obj->ovector[0]));
+		*rval = BOOLEAN_TO_JSVAL(pcre_obj->proceed ? JS_TRUE : JS_FALSE);
+	} else {
+		eval_some_js("~throw new Error(\"Invalid Args\");", cx, obj, rval);
+		return JS_FALSE;
+	}
+
+	return JS_TRUE;
+}
+
+static JSBool pcre_substitute(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	struct pcre_obj *pcre_obj = JS_GetPrivate(cx, obj);
+	char *subst_string;
+	char *substituted;
+
+	if (!pcre_obj->proceed) {
+		eval_some_js("~throw new Error(\"REGEX is not compiled or has no matches\");", cx, obj, rval);
+		return JS_FALSE;
+	}
+	
+	if (argc > 0) {
+		uint32_t len;
+        subst_string = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		len = (uint32_t) (strlen(pcre_obj->string) + strlen(subst_string) + 10);
+		substituted = malloc(len);
+		assert(substituted != NULL);
+		switch_perform_substitution(pcre_obj->re, pcre_obj->proceed, subst_string, pcre_obj->string, substituted, len, pcre_obj->ovector);
+		*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, substituted));
+		free(substituted);
+	} else {
+		eval_some_js("~throw new Error(\"Invalid Args\");", cx, obj, rval);
+		return JS_FALSE;
+	}
+
+	return JS_TRUE;
+}
+
+enum pcre_tinyid {
+	PCRE_READY
+};
+
+static JSFunctionSpec pcre_methods[] = {
+	{"compile", pcre_compile, 2},
+	{"substitute", pcre_substitute, 2},
+	{0}
+};
+
+
+static JSPropertySpec pcre_props[] = {
+	{"ready", PCRE_READY, JSPROP_READONLY | JSPROP_PERMANENT},
+	{0}
+};
+
+
+static JSBool pcre_getProperty(JSContext * cx, JSObject * obj, jsval id, jsval * vp)
+{
+	JSBool res = JS_TRUE;
+	struct pcre_obj *pcre_obj = JS_GetPrivate(cx, obj);
+	char *name;
+	int param = 0;
+
+	if (!pcre_obj) {
+		*vp = BOOLEAN_TO_JSVAL(JS_FALSE);
+		return JS_TRUE;
+	}
+
+
+	name = JS_GetStringBytes(JS_ValueToString(cx, id));
+	/* numbers are our props anything else is a method */
+	if (name[0] >= 48 && name[0] <= 57) {
+		param = atoi(name);
+	} else {
+		return JS_TRUE;
+	}
+
+	switch (param) {
+	case PCRE_READY:
+		*vp = BOOLEAN_TO_JSVAL(JS_TRUE);
+		break;
+	}
+
+	return res;
+}
+
+JSClass pcre_class = {
+	"PCRE", JSCLASS_HAS_PRIVATE,
+	JS_PropertyStub, JS_PropertyStub, pcre_getProperty, DEFAULT_SET_PROPERTY,
+	JS_EnumerateStub, JS_ResolveStub, JS_ConvertStub, pcre_destroy, NULL, NULL, NULL,
+	pcre_construct
+};
 
 struct event_obj {
 	switch_event_t *event;
@@ -2946,6 +3084,8 @@ static int env_init(JSContext * cx, JSObject * javascript_object)
 	JS_InitClass(cx, javascript_object, NULL, &fileio_class, fileio_construct, 3, fileio_props, fileio_methods, fileio_props, fileio_methods);
 
 	JS_InitClass(cx, javascript_object, NULL, &event_class, event_construct, 3, event_props, event_methods, event_props, event_methods);
+
+	JS_InitClass(cx, javascript_object, NULL, &pcre_class, pcre_construct, 3, pcre_props, pcre_methods, pcre_props, pcre_methods);
 
 	return 1;
 }
