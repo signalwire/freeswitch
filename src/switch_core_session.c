@@ -305,7 +305,6 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 				if (session && (cloned_profile = switch_caller_profile_clone(session, peer_profile)) != 0) {
 					switch_channel_set_originatee_caller_profile(channel, cloned_profile);
 				}
-				printf("XXXXXXXXXXWTF [%s] [%s] [%s]\n", profile->uuid, peer_profile->uuid, cloned_profile->uuid);
 			}
 		}
 
