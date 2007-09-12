@@ -313,7 +313,7 @@ int tport_recv_stream(tport_t *self)
     if (i + self->tp_ping >= 4)
       tport_tcp_pong(self);
     else
-      self->tp_ping += i;
+      self->tp_ping += (unsigned short)i;
 
     if (i == iovec->siv_len && veclen == 1) {
       SU_DEBUG_7(("%s(%p): received %u bytes of keepalive\n",
