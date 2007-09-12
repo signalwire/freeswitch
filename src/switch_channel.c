@@ -836,21 +836,24 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 
 SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile)
 {
+	char *uuid = NULL;
 	assert(channel != NULL);
 	assert(channel->session != NULL);
 	switch_mutex_lock(channel->profile_mutex);
 	assert(caller_profile != NULL);
-
-	if (!caller_profile->uuid) {
-		caller_profile->uuid = switch_core_session_strdup(channel->session, switch_core_session_get_uuid(channel->session));
+	
+	uuid = switch_core_session_get_uuid(channel->session);
+	
+	if (!caller_profile->uuid || strcasecmp(caller_profile->uuid, uuid)) {
+		caller_profile->uuid = switch_core_session_strdup(channel->session, uuid);
 	}
 
-	if (!caller_profile->chan_name) {
+	if (!caller_profile->chan_name || strcasecmp(caller_profile->chan_name, channel->name)) {
 		caller_profile->chan_name = switch_core_session_strdup(channel->session, channel->name);
 	}
 
 	if (!caller_profile->context) {
-		caller_profile->chan_name = switch_core_session_strdup(channel->session, "default");
+		caller_profile->context = switch_core_session_strdup(channel->session, "default");
 	}
 
 	if (!channel->caller_profile) {
