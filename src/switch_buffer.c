@@ -266,12 +266,13 @@ SWITCH_DECLARE(void) switch_buffer_zero(switch_buffer_t *buffer)
 
 SWITCH_DECLARE(void) switch_buffer_destroy(switch_buffer_t **buffer)
 {
-	if (*buffer && switch_test_flag((*buffer), SWITCH_BUFFER_FLAG_DYNAMIC)) {
-		free((*buffer)->data);
-		free(*buffer);
+	if (buffer && *buffer) { 
+		if ((switch_test_flag((*buffer), SWITCH_BUFFER_FLAG_DYNAMIC))) {
+			switch_safe_free((*buffer)->data);
+			free(*buffer);
+		}
+		*buffer = NULL;
 	}
-
-	*buffer = NULL;
 }
 
 /* For Emacs:
