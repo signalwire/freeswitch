@@ -70,6 +70,16 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			gateway_ptr->expires = now + gateway_ptr->freq;
 			gateway_ptr->state = REG_STATE_REGED;
 			break;
+
+		case REG_STATE_UNREGISTER:
+			nua_unregister(gateway_ptr->nh,
+						   SIPTAG_FROM_STR(gateway_ptr->register_from),
+						   SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
+						   SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
+						   NUTAG_REGISTRAR(gateway_ptr->register_proxy),
+						   NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
+			gateway_ptr->state = REG_STATE_NOREG;
+			break;
 		case REG_STATE_UNREGED:
 			if ((gateway_ptr->nh = nua_handle(gateway_ptr->profile->nua, NULL,
 											  NUTAG_URL(gateway_ptr->register_proxy),
@@ -322,6 +332,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	const char *rpid = "unknown";
 	const char *display = "\"user\"";
 	char network_ip[80];
+	char *register_gateway = NULL;
 	int network_port;
 	int cd = 0;
 
@@ -390,25 +401,30 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 
 	if (authorization) {
 		char *v_contact_str;
-		if ((auth_res = sofia_reg_parse_auth(profile, authorization, sip->sip_request->rq_method_name, key, keylen, network_ip, v_event)) == AUTH_STALE) {
+		if ((auth_res = sofia_reg_parse_auth(profile, authorization, sip->sip_request->rq_method_name, key, keylen, network_ip, v_event, exptime)) 
+			== AUTH_STALE) {
 			stale = 1;
 		}
 		
-		if (v_event && *v_event && (v_contact_str = switch_event_get_header(*v_event, "force-contact"))) {
-			if (!strcasecmp(v_contact_str, "nat-connectile-dysfunction") || !strcasecmp(v_contact_str, "NDLB-connectile-dysfunction")) {
-				if (contact->m_url->url_params) {
-					snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s>",
-							 display, contact->m_url->url_user, network_ip, network_port, contact->m_url->url_params);
+		if (v_event && *v_event) {
+			register_gateway = switch_event_get_header(*v_event, "register-gateway");
+				
+			if ((v_contact_str = switch_event_get_header(*v_event, "force-contact"))) {
+				if (!strcasecmp(v_contact_str, "nat-connectile-dysfunction") || !strcasecmp(v_contact_str, "NDLB-connectile-dysfunction")) {
+					if (contact->m_url->url_params) {
+						snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s>",
+								 display, contact->m_url->url_user, network_ip, network_port, contact->m_url->url_params);
+					} else {
+						snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d>", display, contact->m_url->url_user, network_ip, network_port);
+					}
+					cd = 1;
 				} else {
-					snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d>", display, contact->m_url->url_user, network_ip, network_port);
-				}
-				cd = 1;
-			} else {
-				char *p;
-				switch_copy_string(contact_str, v_contact_str, sizeof(contact_str));
-				for(p = contact_str; p && *p; p++) {
-					if (*p == '\'' || *p == '[' || *p == ']') {
-						*p = '"';
+					char *p;
+					switch_copy_string(contact_str, v_contact_str, sizeof(contact_str));
+					for(p = contact_str; p && *p; p++) {
+						if (*p == '\'' || *p == '[' || *p == ']') {
+							*p = '"';
+						}
 					}
 				}
 			}
@@ -438,12 +454,11 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	if (regtype != REG_REGISTER) {
 		return 0;
 	}
-
+	
 	if (exptime) {
 		if (!sofia_reg_find_reg_url(profile, to_user, to_host, buf, sizeof(buf))) {
 			sql = switch_mprintf("insert into sip_registrations values ('%q','%q','%q','%q', '%q', %ld)",
 								 to_user, to_host, contact_str, cd ? "Registered(NATHACK)" : "Registered", rpid, (long) time(NULL) + (long) exptime * 2);
-
 		} else {
 			sql =
 				switch_mprintf
@@ -716,7 +731,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 }
 
 auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, 
-								const char *regstr, char *np, size_t nplen, char *ip, switch_event_t **v_event)
+								const char *regstr, char *np, size_t nplen, char *ip, switch_event_t **v_event, long exptime)
 {
 	int indexnum;
 	const char *cur;
@@ -829,9 +844,59 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 				for (param = switch_xml_child(xparams, "variable"); param; param = param->next) {
 					const char *var = switch_xml_attr_soft(param, "name");
 					const char *val = switch_xml_attr_soft(param, "value");
-					
+					sofia_gateway_t *gateway_ptr = NULL;
+
 					if (!switch_strlen_zero(var) && !switch_strlen_zero(val)) {
 						switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, var, "%s", val);
+						
+						if (!strcasecmp(var, "register-gateway")) {
+							if (!strcasecmp(val, "all")) {
+								switch_xml_t gateways_tag, gateway_tag;
+								if ((gateways_tag = switch_xml_child(user, "gateways"))) {
+									for (gateway_tag = switch_xml_child(gateways_tag, "gateway"); gateway_tag; gateway_tag = gateway_tag->next) {
+										char *name = (char *) switch_xml_attr_soft(gateway_tag, "name");
+										if (switch_strlen_zero(name)) {
+											name = "anonymous";
+										}
+									
+										if ((gateway_ptr = sofia_reg_find_gateway(name))) {
+											gateway_ptr->retry = 0;
+											if (exptime) {
+												gateway_ptr->state = REG_STATE_UNREGED;
+											} else {
+												gateway_ptr->state = REG_STATE_UNREGISTER;
+											}
+											sofia_reg_release_gateway(gateway_ptr);
+										}
+	
+									}
+								}
+							} else {
+								int x, argc;
+								char *mydata, *argv[50];
+
+								mydata = strdup(val);
+								assert(mydata != NULL);
+								
+								argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+
+								for (x = 0; x < argc; x++) {
+									if ((gateway_ptr = sofia_reg_find_gateway((char *)argv[x]))) {
+										gateway_ptr->retry = 0;
+										if (exptime) {
+											gateway_ptr->state = REG_STATE_UNREGED;
+										} else {
+											gateway_ptr->state = REG_STATE_UNREGISTER;
+										}
+										sofia_reg_release_gateway(gateway_ptr);
+									} else {
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Gateway '%s' not found.\n", argv[x]);
+									}
+								}
+
+								free(mydata);
+							}
+						}
 					}
 				}
 			}

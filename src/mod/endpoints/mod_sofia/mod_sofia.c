@@ -942,9 +942,11 @@ static const char *sofia_state_names[] = { "UNREGED",
 										   "TRYING",
 										   "REGISTER",
 										   "REGED",
+										   "UNREGISTER",
 										   "FAILED",
 										   "EXPIRED",
-										   "NOREG" };
+										   "NOREG",
+										   NULL};
 
 struct cb_helper {
 	sofia_profile_t *profile;
@@ -1159,6 +1161,34 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		} else if ((gateway_ptr = sofia_reg_find_gateway(gname))) {
 			gateway_ptr->retry = 0;
 			gateway_ptr->state = REG_STATE_UNREGED;
+			stream->write_function(stream, "+OK\n");
+			sofia_reg_release_gateway(gateway_ptr);
+		} else {
+			stream->write_function(stream, "Invalid gateway!\n");
+		}
+		
+		goto done;
+	}
+
+
+	if (!strcasecmp(argv[1], "unregister")) {
+		char *gname = argv[2];
+		sofia_gateway_t *gateway_ptr;
+
+		if (switch_strlen_zero(gname)) {
+			stream->write_function(stream, "No gateway name provided!\n");
+			goto done;
+		}
+
+		if (!strcasecmp(gname, "all")) {
+			for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
+				gateway_ptr->retry = 0;
+				gateway_ptr->state = REG_STATE_UNREGISTER;
+			}
+			stream->write_function(stream, "+OK\n");
+		} else if ((gateway_ptr = sofia_reg_find_gateway(gname))) {
+			gateway_ptr->retry = 0;
+			gateway_ptr->state = REG_STATE_UNREGISTER;
 			stream->write_function(stream, "+OK\n");
 			sofia_reg_release_gateway(gateway_ptr);
 		} else {

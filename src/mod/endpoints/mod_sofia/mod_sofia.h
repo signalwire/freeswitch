@@ -174,6 +174,7 @@ typedef enum {
 	REG_STATE_TRYING,
 	REG_STATE_REGISTER,
 	REG_STATE_REGED,
+	REG_STATE_UNREGISTER,
 	REG_STATE_FAILED,
 	REG_STATE_EXPIRED,
 	REG_STATE_NOREG,
@@ -432,7 +433,7 @@ void sofia_presence_cancel(void);
 switch_status_t config_sofia(int reload, char *profile_name);
 void sofia_reg_auth_challange(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_regtype_t regtype, const char *realm, int stale);
 auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, 
-								const char *regstr, char *np, size_t nplen, char *ip, switch_event_t **v_event);
+								const char *regstr, char *np, size_t nplen, char *ip, switch_event_t **v_event, long exptime);
 void sofia_reg_handle_sip_r_challenge(int status,
 					 char const *phrase,
 					 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[]);
