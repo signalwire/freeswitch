@@ -196,6 +196,7 @@ struct sofia_gateway {
 	char *register_proxy;
 	char *register_context;
 	char *expires_str;
+	char *register_url;
 	uint32_t freq;
 	time_t expires;
 	time_t retry;

@@ -501,7 +501,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				*expire_seconds = "3600",
 				*retry_seconds = "30",
 				*from_domain = "",
-				*to_domain = "";
+				*to_domain = "",
+				*register_proxy = NULL;
 			
 			gateway->pool = profile->pool;
 			gateway->profile = profile;
@@ -539,13 +540,11 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					from_domain = val;
 				} else if (!strcmp(var, "to-domain")) {
 					to_domain = val;
+				} else if (!strcmp(var, "register-proxy")) {
+					register_proxy = val;
 				}
 			}
-
-			if (switch_strlen_zero(to_domain)) {
-				to_domain = proxy;
-			}
-
+			
 			if (switch_strlen_zero(realm)) {
 				realm = name;
 			}
@@ -563,7 +562,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			if (switch_strlen_zero(extension)) {
 				extension = username;
 			}
-
+			
 			if (switch_strlen_zero(proxy)) {
 				proxy = realm;
 			}
@@ -574,6 +573,14 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 
 			if (switch_strlen_zero(from_domain)) {
 				from_domain = realm;
+			}
+
+			if (switch_strlen_zero(register_proxy)) {
+				register_proxy = proxy;
+			}
+
+			if (switch_strlen_zero(to_domain)) {
+				to_domain = proxy;
 			}
 
 			gateway->retry_seconds = atoi(retry_seconds);
@@ -589,6 +596,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			if (switch_true(caller_id_in_from)) {
 				switch_set_flag(gateway, REG_FLAG_CALLERID);
 			}
+			gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s", register_proxy);
 			gateway->register_from = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, from_domain);
 			gateway->register_contact = switch_core_sprintf(gateway->pool, "sip:%s@%s:%d", extension,
 															profile->extsipip ? profile->extsipip : profile->sipip, profile->sip_port);

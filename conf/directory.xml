@@ -19,6 +19,8 @@
       <!--<param name="extension" value="cluecon"/>-->
       <!--/// proxy host: *optional* same as realm, if blank ///-->
       <!--<param name="proxy" value="asterlink.com"/>-->
+      <!--/// send register to this proxy: *optional* same as proxy, if blank ///-->
+      <!--<param name="register-proxy" value="mysbc.com"/>-->
       <!--/// expire in seconds: *optional* 3600, if blank ///-->
       <!--<param name="expire-seconds" value="60"/>-->
       <!--/// do not register ///-->

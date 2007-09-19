@@ -73,6 +73,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 
 		case REG_STATE_UNREGISTER:
 			nua_unregister(gateway_ptr->nh,
+						   NUTAG_URL(gateway_ptr->register_url),
 						   SIPTAG_FROM_STR(gateway_ptr->register_from),
 						   SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
 						   SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
@@ -97,6 +98,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 
 				if (now) {
 					nua_register(gateway_ptr->nh,
+								 NUTAG_URL(gateway_ptr->register_url),
 								 SIPTAG_FROM_STR(gateway_ptr->register_from),
 								 SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
 								 SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
@@ -105,6 +107,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 					gateway_ptr->retry = now + gateway_ptr->retry_seconds;
 				} else {
 					nua_unregister(gateway_ptr->nh,
+								   NUTAG_URL(gateway_ptr->register_url),
 								   SIPTAG_FROM_STR(gateway_ptr->register_from),
 								   SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
 								   SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
@@ -700,7 +703,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 			goto cancel;
 		}
 	}
-	
+
 	snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, gateway->register_username, gateway->register_password);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Authenticating '%s' with '%s'.\n", profile->username, authentication);
