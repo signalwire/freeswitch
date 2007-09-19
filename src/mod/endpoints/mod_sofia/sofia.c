@@ -1210,6 +1210,19 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 			if (r_sdp) { 
 				if (switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
+					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
+						&& (other_session = switch_core_session_locate(uuid))) {
+						switch_core_session_message_t msg = { 0 };
+
+						msg.message_id = SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT;
+						msg.from = __FILE__;
+						msg.string_arg = (char *) r_sdp;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Passing SDP to other leg.\n%s\n", r_sdp);
+						switch_core_session_receive_message(other_session, &msg);
+						switch_core_session_rwunlock(other_session);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Re-INVITE to a no-media channel that is not in a bridge.\n");
+					}
 					goto done;
 				} else {
 					if (tech_pvt->num_codecs) {

@@ -689,7 +689,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		switch_channel_mark_answered(channel);
 	}
 		break;
-	case SWITCH_MESSAGE_INDICATE_NOMEDIA: {
+	case SWITCH_MESSAGE_INDICATE_NOMEDIA: 
+		{
 			char *uuid;
 			switch_core_session_t *other_session;
 			switch_channel_t *other_channel;
@@ -715,16 +716,26 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				sofia_glue_tech_absorb_sdp(tech_pvt);
 			}
 			sofia_glue_do_invite(session);
-	}
-		break;
-	case SWITCH_MESSAGE_INDICATE_MEDIA:{
-		uint32_t count = 0;
-
-		if (switch_channel_get_state(channel) >= CS_HANGUP) {
-			return SWITCH_STATUS_FALSE;
 		}
+		break;
 
-		switch_channel_clear_flag(channel, CF_BYPASS_MEDIA);
+	case SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT:
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending media re-direct:\n%s\n", msg->string_arg);
+			tech_pvt->local_sdp_str = switch_core_session_strdup(session, msg->string_arg);
+			sofia_glue_do_invite(session);
+		}
+		break;
+
+	case SWITCH_MESSAGE_INDICATE_MEDIA:
+		{
+			uint32_t count = 0;
+
+			if (switch_channel_get_state(channel) >= CS_HANGUP) {
+				return SWITCH_STATUS_FALSE;
+			}
+
+			switch_channel_clear_flag(channel, CF_BYPASS_MEDIA);
 			tech_pvt->local_sdp_str = NULL;
 			if (!switch_rtp_ready(tech_pvt->rtp_session)) {
 				sofia_glue_tech_prepare_codecs(tech_pvt);
@@ -751,13 +762,15 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		}
 		break;
 
-	case SWITCH_MESSAGE_INDICATE_HOLD:{
+	case SWITCH_MESSAGE_INDICATE_HOLD:
+		{
 			switch_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 			sofia_glue_do_invite(session);
 		}
 		break;
-
-	case SWITCH_MESSAGE_INDICATE_UNHOLD:{
+		
+	case SWITCH_MESSAGE_INDICATE_UNHOLD:
+		{
 			switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 			sofia_glue_do_invite(session);
 		}
