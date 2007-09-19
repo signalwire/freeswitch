@@ -108,7 +108,7 @@ typedef struct nua_handle_preferences
   /* Subscriber state, i.e. nua_substate_pending */
   unsigned         nhp_substate;
 
-  /* REGISTER Keepalive intervals */
+  /* REGISTER keepalive intervals */
   unsigned         nhp_keepalive, nhp_keepalive_stream;
   char const      *nhp_registrar;
 
@@ -124,13 +124,16 @@ typedef struct nua_handle_preferences
   char const         *nhp_m_features;
   char const         *nhp_instance;
 
-  /**< Outbound OPTIONS */
+  /** Outbound OPTIONS */
   char const         *nhp_outbound; 
   
-  /**< Network detection: NONE, INFORMAL, TRY_FULL */
+  /** Network detection: NONE, INFORMAL, TRY_FULL */
   int                 nhp_detect_network_updates;
   
   sip_allow_t        *nhp_appl_method;
+
+  /** Initial route set */
+  sip_route_t        *nhp_initial_route;
 
   union { struct {
     /* A bit for each feature set by application */
@@ -182,6 +185,7 @@ typedef struct nua_handle_preferences
     unsigned nhb_outbound:1;
     unsigned nhb_detect_network_updates:1;
     unsigned nhb_appl_method:1;
+    unsigned nhb_initial_route:1;
     unsigned :0;
   } set_bits; 
     unsigned set_unsigned[2];

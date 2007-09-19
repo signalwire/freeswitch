@@ -112,10 +112,13 @@ issize_t msg_numeric_d(su_home_t *home,
 		      char *s,
 		      isize_t slen)
 {
+  msg_numeric_t *x = (msg_numeric_t *)h;
   uint32_t value = 0;
   issize_t retval = msg_uint32_d(&s, &value);
 
-  h->sh_numeric->x_value = value;
+  assert(x->x_common->h_class->hc_size >= sizeof *x);
+
+  x->x_value = value;
 
   if (*s)
     return -1;
@@ -125,12 +128,14 @@ issize_t msg_numeric_d(su_home_t *home,
 
 issize_t msg_numeric_e(char b[], isize_t bsiz, msg_header_t const *h, int flags)
 {
-  uint32_t value = h->sh_numeric->x_value;
+  msg_numeric_t *x = (msg_numeric_t *)h;
 
-  if (h->sh_numeric->x_value > 0xffffffff)
+  assert(x->x_common->h_class->hc_size >= sizeof *x);
+
+  if (x->x_value > 0xffffffffU)
     return -1;
 
-  return snprintf(b, bsiz, "%lu", (unsigned long)value);
+  return snprintf(b, bsiz, "%lu", x->x_value);
 }
 
 /* ====================================================================== */

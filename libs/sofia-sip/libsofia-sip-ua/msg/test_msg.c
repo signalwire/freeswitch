@@ -127,7 +127,7 @@ static int msg_time_test(void)
     char *s;
     msg_numeric_t x[1];
 
-    memset(x, 0, sizeof (x));
+    memset(x, 0, sizeof (x)); x->x_common->h_class = test_numeric_class;
 
     TEST_1(msg_numeric_d(NULL, (msg_header_t *)x, s = error1, strlen(error1)) < 0);
   }

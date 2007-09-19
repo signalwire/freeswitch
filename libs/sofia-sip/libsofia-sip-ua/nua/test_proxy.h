@@ -39,6 +39,9 @@ void test_proxy_destroy(struct proxy *);
 
 url_t const *test_proxy_uri(struct proxy const *);
 
+char const *test_proxy_route_uri(struct proxy const *p,
+				 sip_route_t const **return_route);
+
 struct domain *test_proxy_add_domain(struct proxy *,
 				     url_t const *domain,
 				     tag_type_t, tag_value_t, ...);

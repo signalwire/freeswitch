@@ -287,6 +287,8 @@ int nua_stack_init_instance(nua_handle_t *nh, tagi_t const *tags)
  *   NUTAG_ENABLEINVITE() \n
  *   NUTAG_ENABLEMESSAGE() \n
  *   NUTAG_ENABLEMESSENGER() \n
+ *   NUTAG_INITIAL_ROUTE() \n
+ *   NUTAG_INITIAL_ROUTE_STR() \n
  *   NUTAG_INSTANCE() \n
  *   NUTAG_INVITE_TIMER() \n
  *   NUTAG_KEEPALIVE() \n
@@ -404,6 +406,8 @@ int nua_stack_init_instance(nua_handle_t *nh, tagi_t const *tags)
  *   NUTAG_ENABLEINVITE() \n
  *   NUTAG_ENABLEMESSAGE() \n
  *   NUTAG_ENABLEMESSENGER() \n
+ *   NUTAG_INITIAL_ROUTE() \n
+ *   NUTAG_INITIAL_ROUTE_STR() \n
  *   NUTAG_INSTANCE() \n
  *   NUTAG_INVITE_TIMER() \n
  *   NUTAG_KEEPALIVE() \n
@@ -635,10 +639,10 @@ static int nhp_set_tags(su_home_t *home,
   }
 
 /* Set copy of header to handle pref structure */
-#define NHP_SET_HEADER(nhp, name, v)				 \
+#define NHP_SET_HEADER(nhp, name, hdr, v)			 \
   if ((v) != 0) {						 \
-    sip_##name##_t const *_value = (sip_##name##_t const *)(v);	 \
-    sip_##name##_t *_new = NULL;				 \
+    sip_##hdr##_t const *_value = (sip_##hdr##_t const *)(v);	 \
+    sip_##hdr##_t *_new = NULL;				 \
     if (_value != SIP_NONE)					 \
       _new = sip_##name##_dup(home, _value);			 \
     if (NHP_ISSET(nhp, name))					 \
@@ -649,10 +653,10 @@ static int nhp_set_tags(su_home_t *home,
   }
 
 /* Set header made of string to handle pref structure */
-#define NHP_SET_HEADER_STR(nhp, name, v)			 \
+#define NHP_SET_HEADER_STR(nhp, name, hdr, v)			 \
   if ((v) != 0) {						 \
     char const *_value = (char const *)(v);			 \
-    sip_##name##_t *_new = NULL;				 \
+    sip_##hdr##_t *_new = NULL;				 \
     if (_value != SIP_NONE)					 \
       _new = sip_##name##_make(home, _value);			 \
     if (NHP_ISSET(nhp, name))					 \
@@ -660,6 +664,26 @@ static int nhp_set_tags(su_home_t *home,
     NHP_SET(nhp, name, _new);					 \
     if (_new == NULL && _value != SIP_NONE)			 \
       return -1;						 \
+  }
+
+/* Append copy of header to handle pref structure */
+#define NHP_APPEND_HEADER(nhp, name, hdr, is_str, next, v)	 \
+  {								 \
+    sip_##hdr##_t const *_value = (sip_##hdr##_t const *)(v);	 \
+    char const *_str = (char const *)(v);			 \
+    sip_##hdr##_t *_new = NULL;					 \
+    sip_##hdr##_t **_end = &nhp->nhp_##name;			 \
+    if (_value != SIP_NONE && _value != NULL) {			 \
+      _new = (is_str)						 \
+	? sip_##hdr##_make(home, _str)				 \
+	: sip_##hdr##_dup(home, _value);			 \
+      if (_new == NULL) return -1;				 \
+    }								 \
+    if (NHP_ISSET(nhp, name))					 \
+      while(*_end)						 \
+	_end = next(*_end);					 \
+    nhp->nhp_set.nhb_##name = 1;				 \
+    *_end = _new;						 \
   }
 
 /* Set copy of string from header to handle pref structure */
@@ -894,6 +918,15 @@ static int nhp_set_tags(su_home_t *home,
 	  NHP_SET(nhp, appl_method, (sip_allow_t *)appl_method);
       }
     }
+    else if (tag == nutag_initial_route ||
+	     tag == nutag_initial_route_str) {
+#define next_route(r) (&(r)->r_next)
+      NHP_APPEND_HEADER(nhp, initial_route, route,
+			(tag == nutag_initial_route_str),
+			next_route,
+			t->t_value);
+      sip_route_fix(nhp->nhp_initial_route);
+    }
     /* SIPTAG_USER_AGENT(user_agent) */
     else if (tag == siptag_user_agent) {
       NHP_SET_STR_BY_HEADER(nhp, user_agent, value);
@@ -1078,6 +1111,14 @@ nua_handle_preferences_t *nhp_move_params(su_home_t *home,
   NHP_ZAP_OVERRIDEN(tbf, dst, m_params);
   NHP_ZAP_OVERRIDEN(tbf, dst, m_features);
   NHP_ZAP_OVERRIDEN(tbf, dst, outbound);
+
+#define NHP_ZAP_OVERRIDEN_HDR(tbf, nhp, pref)				\
+  (((tbf)->nhp_set.nhb_##pref						\
+    && (tbf)->nhp_##pref != (nhp)->nhp_##pref				\
+    ? msg_header_free(home, (void *)(tbf)->nhp_##pref) : (void)0),		\
+   (void)(!(nhp)->nhp_set.nhb_##pref ? (nhp)->nhp_##pref = NULL : NULL))
+
+  NHP_ZAP_OVERRIDEN_HDR(tbf, dst, initial_route);
 
   return dst;
 }
@@ -1399,6 +1440,8 @@ int nua_stack_set_smime_params(nua_t *nua, tagi_t const *tags)
  *   NUTAG_ENABLEINVITE() \n
  *   NUTAG_ENABLEMESSAGE() \n
  *   NUTAG_ENABLEMESSENGER() \n
+ *   NUTAG_INITIAL_ROUTE() \n
+ *   NUTAG_INITIAL_ROUTE_STR() \n
  *   NUTAG_INSTANCE() \n
  *   NUTAG_INVITE_TIMER() \n
  *   NUTAG_KEEPALIVE() \n
@@ -1523,15 +1566,16 @@ int nua_stack_get_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
   TAG_IF(nhp->nhp_set.nhb_##pref, TAG(nhp->nhp_##pref))
 
   /* Include tag in the list returned to user
-   * if it has been earlier set (by user) returning default parameters */
+   * if it has been earlier set (by user) 
+   * but always include in the default parameters */
 #define TIFD(TAG, pref) \
   TAG_IF(nh == dnh || nhp->nhp_set.nhb_##pref, TAG(nhp->nhp_##pref))
 
   /* Include string tag made out of SIP header
    * if it has been earlier set (by user) */
 #define TIF_STR(TAG, pref)						\
-  TAG_IF(nhp->nhp_set.nhb_##pref,				\
-	 TAG(nhp->nhp_set.nhb_##pref && nhp->nhp_##pref	\
+  TAG_IF(nhp->nhp_set.nhb_##pref,					\
+	 TAG(nhp->nhp_set.nhb_##pref && nhp->nhp_##pref			\
 	     ? sip_header_as_string(tmphome, (void *)nhp->nhp_##pref) : NULL))
 
   /* Include header tag made out of string
@@ -1596,6 +1640,9 @@ int nua_stack_get_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
 
      TIF_SIP(SIPTAG_ORGANIZATION, organization),
      TIF(SIPTAG_ORGANIZATION_STR, organization),
+
+     TIF(NUTAG_INITIAL_ROUTE, initial_route),
+     TIF_STR(NUTAG_INITIAL_ROUTE_STR, initial_route),
 
      TIF(NUTAG_REGISTRAR, registrar),
      TIF(NUTAG_KEEPALIVE, keepalive),

@@ -72,6 +72,7 @@ int test_nua_init(struct context *ctx,
   sip_supported_t const *supported = NULL;
   char const *appl_method = NULL;
   url_t const *p_uri, *a_uri, *b_uri;		/* Proxy URI */
+  char const *initial_route = NULL;	/* Initial route towards internal proxy */
   char const *a_bind, *a_bind2;
   int err = -1;
   url_t b_proxy[1];
@@ -163,6 +164,9 @@ int test_nua_init(struct context *ctx,
 
   if (start_nat && p_uri == NULL)
     p_uri = url_hdup(ctx->home, (void *)o_proxy);
+
+  if (ctx->p)
+    initial_route = test_proxy_route_uri(ctx->p, &ctx->lr);
 
   if (start_nat && p_uri != NULL) {
     int family = 0;
@@ -259,6 +263,7 @@ int test_nua_init(struct context *ctx,
 
   ctx->a.nua = nua_create(ctx->root, a_callback, ctx,
 			  NUTAG_PROXY(a_uri ? a_uri : o_proxy),
+			  NUTAG_INITIAL_ROUTE_STR(initial_route),
 			  SIPTAG_FROM_STR("sip:alice@example.com"),
 			  NUTAG_URL(a_bind),
 			  TAG_IF(a_bind != a_bind2, NUTAG_SIPS_URL(a_bind2)),

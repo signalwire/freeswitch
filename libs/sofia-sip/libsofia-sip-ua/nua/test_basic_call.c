@@ -1436,12 +1436,13 @@ int test_basic_call_6(struct context *ctx)
   struct endpoint *a = &ctx->a,  *b = &ctx->b;
   struct call *a_call = a->call, *b_call = b->call;
   struct event *e;
+  sip_route_t *r, rb[1];
   sip_t *sip;
 
   sip_contact_t ma[1], mb[1];
 
   if (print_headings)
-    printf("TEST NUA-3.1: Basic call\n");
+    printf("TEST NUA-3.6: Basic call\n");
 
   a_call->sdp = "m=audio 5008 RTP/AVP 8";
   b_call->sdp = "m=audio 5010 RTP/AVP 0 8";
@@ -1460,9 +1461,17 @@ int test_basic_call_6(struct context *ctx)
   mb->m_url->url_user = "b++b";
 
   contact_for_b = mb;
-
+  
+  sip_route_init(rb)->r_url[0] = b->contact->m_url[0];
+  rb->r_url->url_user = "bob+0";
+  url_param_add(nua_handle_home(a_call->nh), rb->r_url, "lr");
+  
   INVITE(a, a_call, a_call->nh,
-	 TAG_IF(!ctx->proxy_tests, NUTAG_URL(b->contact->m_url)),
+	 NUTAG_URL("sip:bob@example.org"), /* Expanded by proxy */
+	 SIPTAG_ROUTE_STR("B2 <sip:bob+2@example.org>;bar=foo"), /* Last in list */
+	 NUTAG_INITIAL_ROUTE(ctx->lr), /* Removed by proxy (if any) */
+	 NUTAG_INITIAL_ROUTE(rb), /* Used to route request to b (not removed)  */
+	 NUTAG_INITIAL_ROUTE_STR("B1 <sip:bob+1@example.org;lr>;foo=bar"), /* Next in list */
 	 SOATAG_USER_SDP_STR(a_call->sdp),
 	 SIPTAG_CONTACT(ma),
 	 TAG_END());
@@ -1517,6 +1526,14 @@ int test_basic_call_6(struct context *ctx)
   TEST_1(sip->sip_contact);
   TEST_S(sip->sip_contact->m_display, "Alice B.");
   TEST_S(sip->sip_contact->m_url->url_user, "a++a");
+  TEST_1(r = sip->sip_route);
+  TEST_S(r->r_url->url_user, "bob+0");
+  TEST_1(r = r->r_next);
+  TEST_S(r->r_url->url_user, "bob+1");
+  TEST_1(r = r->r_next);
+  TEST_S(r->r_url->url_user, "bob+2");
+  TEST_1(!r->r_next);
+
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_received); /* RECEIVED */
   TEST_1(is_offer_recv(e->data->e_tags));
@@ -1598,7 +1615,7 @@ int test_basic_call_6(struct context *ctx)
   nua_handle_destroy(b_call->nh), b_call->nh = NULL;
 
   if (print_headings)
-    printf("TEST NUA-3.1: PASSED\n");
+    printf("TEST NUA-3.6: PASSED\n");
 
   END();
 }

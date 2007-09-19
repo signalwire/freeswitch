@@ -1484,13 +1484,18 @@ issize_t sip_content_length_d(su_home_t *home,
 			      char *s,
 			      isize_t slen)
 {
-  return sip_numeric_d(home, h, s, slen);
+  sip_content_length_t *l = (sip_content_length_t *)h;
+  issize_t retval = msg_uint32_d(&s, &l->l_length);
+  if (*s)
+    retval = -1;
+  return retval;
 }
 
 issize_t sip_content_length_e(char b[], isize_t bsiz, sip_header_t const *h, int flags)
 {
+  sip_content_length_t const *l = (sip_content_length_t const *)h;
   assert(sip_is_content_length(h));
-  return sip_numeric_e(b, bsiz, h, flags);
+  return snprintf(b, bsiz, "%lu", (unsigned long)l->l_length);
 }
 
 /**@ingroup sip_content_length 

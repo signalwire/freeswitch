@@ -61,6 +61,10 @@
  * <dt>--method=s</dt>
  * <dd>Specify the request method (defaults to OPTIONS).
  * </dd>
+ * <dt>--extra | -x/dt>
+ * <dd>Read extra headers (and optionally a message body) from the standard
+ *     input
+ * </dd>
  * </dl>
  *
  * @section return Return Codes

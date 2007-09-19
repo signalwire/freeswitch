@@ -581,7 +581,10 @@ int outbound_gruuize(outbound_t *ob, sip_t const *sip)
     return 0;
   }
 
-  gruu = (char *)msg_header_find_param(m->m_common, "gruu=");
+  gruu = (char *)msg_header_find_param(m->m_common, "pub-gruu=");
+  
+  if (gruu == NULL || gruu[0] == '\0')
+    gruu = (char *)msg_header_find_param(m->m_common, "gruu=");
 
   if (gruu == NULL || gruu[0] == '\0')
     return 0;
@@ -1004,14 +1007,14 @@ int outbound_contacts_from_via(outbound_t *ob, sip_via_t const *via)
 
   v = v0; *v0 = *via; v0->v_next = NULL;
 
-  dcontact = ob->ob_oo->oo_contact(ob->ob_owner, home, 1,
-				   NULL, v, v->v_protocol, NULL);
+  dcontact = ob->ob_oo->oo_contact(ob->ob_owner, home, 1, 
+				   v, v->v_protocol, NULL);
 
   if (ob->ob_instance && ob->ob_reg_id != 0)
     snprintf(reg_id_param, sizeof reg_id_param, ";reg-id=%u", ob->ob_reg_id);
 
   rcontact = ob->ob_oo->oo_contact(ob->ob_owner, home, 0,
-				   NULL, v, v->v_protocol, 
+				   v, v->v_protocol, 
 				   ob->ob_instance, reg_id_param, NULL);
     
   v = sip_via_dup(home, v);
@@ -1112,7 +1115,7 @@ int outbound_set_contact(outbound_t *ob,
     char reg_id_param[20];
 
     dcontact = ob->ob_oo->oo_contact(ob->ob_owner, home, 1, 
-				     NULL, v, tport, NULL);
+				     v, tport, NULL);
     if (!dcontact)
       return -1;
 
@@ -1120,7 +1123,7 @@ int outbound_set_contact(outbound_t *ob,
       snprintf(reg_id_param, sizeof reg_id_param, ";reg-id=%u", ob->ob_reg_id);
 
     rcontact = ob->ob_oo->oo_contact(ob->ob_owner, home, 0,
-				     NULL, v, v->v_protocol, 
+				     v, v->v_protocol, 
 				     ob->ob_instance, reg_id_param, NULL);
     if (!rcontact)
       return -1;

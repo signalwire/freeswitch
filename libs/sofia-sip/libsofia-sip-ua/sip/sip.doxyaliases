@@ -65,6 +65,8 @@ ALIASES += \
  "WWWAuthenticate=@ref sip_www_authenticate \"WWW-Authenticate\"" \
  "Warning=@ref sip_warning \"Warning\"" \
  "ReferSub=@ref sip_refer_sub \"Refer-Sub\"" \
+ "AlertInfo=@ref sip_alert_info \"Alert-Info\"" \
+ "ReplyTo=@ref sip_reply_to \"Reply-To\"" \
  "SuppressBodyIfMatch=@ref sip_suppress_body_if_match \"Suppress-Body-If-Match\"" \
  "SuppressNotifyIfMatch=@ref sip_suppress_notify_if_match \"Suppress-Notify-If-Match\"" \
   

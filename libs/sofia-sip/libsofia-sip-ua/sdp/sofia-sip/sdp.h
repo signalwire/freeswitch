@@ -320,7 +320,7 @@ struct sdp_rtpmap_s {
   unsigned       rm_predef : 1;	        /**< is this entry well-known? */
   unsigned       rm_pt : 7;		/**< Payload type */
   unsigned       rm_any : 1;	        /**< Wildcard entry */
-  int       :0;
+  unsigned       :0;
 };
 
 SOFIAPUBVAR sdp_rtpmap_t const * const sdp_rtpmap_well_known[128];

@@ -43,6 +43,8 @@
 #define __func__ "test_nua_params"
 #endif
 
+sip_route_t *GLOBAL_ROUTE;
+
 int test_tag_filter(void)
 {
   BEGIN();
@@ -104,7 +106,6 @@ int test_nua_params(struct context *ctx)
   ctx->root = su_root_create(NULL);
   TEST_1(ctx->root);
 
-  /* Disable threading by command line switch? */
   su_root_threading(ctx->root, ctx->threading);
 
   ctx->a.nua = nua_create(ctx->root, a_callback, ctx,
@@ -153,7 +154,6 @@ int test_nua_params(struct context *ctx)
 		 SIPTAG_ALLOW_EVENTS_STR("reg"),
 		 SIPTAG_USER_AGENT_STR("test_nua/1.0"),
 
-
 		 SIPTAG_ORGANIZATION_STR("Open Laboratory"),
 		 
 		 NUTAG_M_DISPLAY("XXX"),
@@ -162,6 +162,12 @@ int test_nua_params(struct context *ctx)
 		 NUTAG_M_FEATURES("language=\"fi\""),
 		 NUTAG_INSTANCE("urn:uuid:3eb007b1-6d7f-472e-8b64-29e482795da8"),
 		 NUTAG_OUTBOUND("bar"),
+
+		 NUTAG_INITIAL_ROUTE(NULL),
+		 NUTAG_INITIAL_ROUTE(sip_route_make(tmphome, "<sip:tst@example.net;lr>")),
+		 NUTAG_INITIAL_ROUTE_STR("<sip:str1@example.net;lr>"),
+		 NUTAG_INITIAL_ROUTE_STR("sip:str2@example.net;lr=foo"),
+		 NUTAG_INITIAL_ROUTE_STR(NULL),
 
 		 TAG_END());
 
@@ -221,6 +227,12 @@ int test_nua_params(struct context *ctx)
 		 SIPTAG_ALLOW_EVENTS(sip_allow_events_make(tmphome, "presence")),
 		 NUTAG_ALLOW_EVENTS("presence.winfo"),
 
+		 NUTAG_INITIAL_ROUTE(NULL),
+		 NUTAG_INITIAL_ROUTE(sip_route_make(nua_handle_home(nh), "<sip:1@example.com;lr>")),
+		 NUTAG_INITIAL_ROUTE_STR("<sip:2@example.com;lr>"),
+		 /* Check for sip_route_fix() */
+		 NUTAG_INITIAL_ROUTE_STR("sip:3@example.com;lr=foo"),
+		 NUTAG_INITIAL_ROUTE_STR(NULL),
 
 		 SIPTAG_USER_AGENT(sip_user_agent_make(tmphome, "test_nua")),
 
@@ -287,6 +299,9 @@ int test_nua_params(struct context *ctx)
     sip_organization_t const *organization = NONE;
     char const *organization_str = "NONE";
 
+    sip_route_t *initial_route = NONE;
+    char const *initial_route_str = NONE;
+
     char const *outbound = "NONE";
     char const *m_display = "NONE";
     char const *m_username = "NONE";
@@ -352,6 +367,9 @@ int test_nua_params(struct context *ctx)
 	       	SIPTAG_ORGANIZATION_REF(organization),
 	       	SIPTAG_ORGANIZATION_STR_REF(organization_str),
 
+		NUTAG_INITIAL_ROUTE_REF(initial_route),
+		NUTAG_INITIAL_ROUTE_STR_REF(initial_route_str),
+
 	       	NUTAG_REGISTRAR_REF(registrar),
 		NUTAG_KEEPALIVE_REF(keepalive),
 		NUTAG_KEEPALIVE_STREAM_REF(keepalive_stream),
@@ -364,7 +382,7 @@ int test_nua_params(struct context *ctx)
 		NUTAG_INSTANCE_REF(instance),
 
 		TAG_END());
-    TEST(n, 48);
+    TEST(n, 50);
 
     TEST_S(sip_header_as_string(tmphome, (void *)from), Alice);
     TEST_S(from_str, Alice);
@@ -413,6 +431,17 @@ int test_nua_params(struct context *ctx)
     TEST_S(sip_header_as_string(tmphome, (void *)organization),
 	   "Pussy Galore's Flying Circus");
     TEST_S(organization_str, "Pussy Galore's Flying Circus");
+
+    TEST_1(initial_route); TEST_1(initial_route != (void *)-1);
+    TEST_S(initial_route->r_url->url_user, "1");
+    TEST_1(url_has_param(initial_route->r_url, "lr"));
+    TEST_1(initial_route->r_next);
+    TEST_S(initial_route->r_next->r_url->url_user, "2");
+    TEST_1(url_has_param(initial_route->r_next->r_url, "lr"));
+    TEST_1(initial_route->r_next->r_next);
+    TEST_S(initial_route->r_next->r_next->r_url->url_user, "3");
+    TEST_1(url_has_param(initial_route->r_next->r_next->r_url, "lr"));
+    TEST_1(!initial_route->r_next->r_next->r_next);
 
     TEST_S(url_as_string(tmphome, registrar->us_url),
 	   "sip:sip.wonderland.org");
@@ -472,6 +501,9 @@ int test_nua_params(struct context *ctx)
     char const *user_agent_str = "NONE";
     sip_organization_t const *organization = NONE;
     char const *organization_str = "NONE";
+
+    sip_route_t *initial_route = NONE;
+    char const *initial_route_str = "NONE";
 
     url_string_t const *registrar = NONE;
 
@@ -584,6 +616,9 @@ int test_nua_params(struct context *ctx)
     TEST_S(user_agent_str, "NONE");
     TEST_P(organization, NONE);
     TEST_S(organization_str, "NONE");
+
+    TEST_1(initial_route == (void *)-1);
+    TEST_S(initial_route_str, "NONE");
 
     TEST_S(outbound, "NONE");
     TEST_S(m_display, "NONE");

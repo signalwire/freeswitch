@@ -484,7 +484,7 @@ int test_digest_client()
       "From:surf3.ims3.so.noklab.net <sip:surf3@ims3.so.noklab.net>;tag=I8hFdg0H3OK\r\n"
       "To:<sip:surf3@ims3.so.noklab.net>\r\n"
       "Via:SIP/2.0/UDP 10.21.36.70:23800;branch=z9hG4bKJjKGu9vIHqf;received=10.21.36.70;rport\r\n"
-      "WWW-Authenticate:Digest algorithm=MD5,nonce=\"h7wIpP+atU+/+Zau5UwLMA==\",realm=\"ims3.so.noklab.net\"\r\n"
+      "WWW-Authenticate:DIGEST algorithm=MD5,nonce=\"h7wIpP+atU+/+Zau5UwLMA==\",realm=\"ims3.so.noklab.net\"\r\n"
       "Content-Length:0\r\n"
       "Security-Server:digest\r\n"
       "r\n";
@@ -526,11 +526,13 @@ int test_digest_client()
     TEST_1(m1 = read_message(MSG_DO_EXTRACT_COPY, challenge));
     TEST_1(sip = sip_object(m1));
     
+    TEST_1(aucs == NULL);
     TEST(auc_challenge(&aucs, home, sip->sip_www_authenticate, 
 		       sip_authorization_class), 1);
+    TEST_1(aucs != NULL);
     msg_destroy(m1);
-    
-    TEST(auc_all_credentials(&aucs, "Digest", "\"ims3.so.noklab.net\"", 
+
+    TEST(auc_all_credentials(&aucs, "DIGEST", "\"ims3.so.noklab.net\"", 
 			     "surf3.private@ims3.so.noklab.net", "1234"), 1);
 
     TEST_1(m2 = read_message(MSG_DO_EXTRACT_COPY, request));

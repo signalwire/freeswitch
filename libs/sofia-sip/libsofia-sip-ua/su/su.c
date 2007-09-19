@@ -337,6 +337,17 @@ int su_soerror(su_socket_t s)
   return error;
 }
 
+int su_getsocktype(su_socket_t s)
+{
+  int socktype = 0;
+  socklen_t intlen = sizeof(socktype);
+
+  if (getsockopt(s, SOL_SOCKET, SO_TYPE, (void *)&socktype, &intlen) < 0)
+    return -1;
+
+  return socktype;
+}
+
 int su_setreuseaddr(su_socket_t s, int reuse)
 {
   return setsockopt(s, SOL_SOCKET, SO_REUSEADDR, 

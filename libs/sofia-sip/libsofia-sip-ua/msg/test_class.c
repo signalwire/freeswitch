@@ -193,6 +193,14 @@ char *msg_status_dup_one(msg_header_t *dst, msg_header_t const *src,
   return b;
 }
 
+msg_hclass_t test_numeric_class[] =
+  MSG_HEADER_CLASS(msg_, numeric, "Numeric", "", x_common,
+		   single, msg_generic, msg_generic);
+
+msg_hclass_t test_auth_class[] =
+  MSG_HEADER_CLASS(msg_, auth, "Auth", "", au_params,
+		   append, msg_auth, msg_generic);
+
 /** Extract the message body, including separator line. 
  *
  * @param[in,out] msg  message object 
@@ -411,3 +419,4 @@ int tst_add_tl(msg_t *msg, msg_test_t *tst,
 
   return t ? -1 : 0;
 }
+

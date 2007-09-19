@@ -313,6 +313,7 @@ int tport_recv_stream(tport_t *self)
     if (i + self->tp_ping >= 4)
       tport_tcp_pong(self);
     else
+
       self->tp_ping += (unsigned short)i;
 
     if (i == iovec->siv_len && veclen == 1) {

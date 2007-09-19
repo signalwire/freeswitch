@@ -65,6 +65,22 @@ SOFIA_BEGIN_DECLS
   {{ TAG_NAMESPACE, #t, sipmsgtag_class, \
      (tag_value_t)SIP_PROTOCOL_TAG }}
 
+/** Tag class for SIP headers */
+SOFIAPUBVAR tag_class_t siphdrtag_class[1];
+/** Tag class for string values of SIP headers */
+SOFIAPUBVAR tag_class_t sipstrtag_class[1];
+/** Tag class for SIP message */
+SOFIAPUBVAR tag_class_t sipmsgtag_class[1];
+
+/** Define a named tag type using structure of SIP header @a t. */
+#define SIPEXTHDRTAG_TYPEDEF(n, t) \
+{{ TAG_NAMESPACE, #n, sipexthdrtag_class, \
+  (tag_value_t)sip_##t##_class }}
+
+/** Tag class using SIP header structure */
+SOFIAPUBVAR tag_class_t sipexthdrtag_class[1];
+
+
 /**@internal Filter SIP header tag items. */ 
 SOFIAPUBFUN tagi_t *siptag_filter(tagi_t *dst, tagi_t const f[],
 				  tagi_t const *src, 

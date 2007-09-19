@@ -1086,6 +1086,85 @@ SOFIAPUBVAR tag_typedef_t nutag_sips_url_ref;
 #define NUTAG_PROXY_REF(x)      NTATAG_DEFAULT_PROXY_REF(x)
 #define nutag_proxy             ntatag_default_proxy
 
+
+/** Specify initial route set.
+ *
+ * The initial route set is used instead or or in addition to the outbound
+ * proxy URL given by NUTAG_PROXY(). The NUTAG_INITIAL_ROUTE() accepts a
+ * list of parsed @Route header structures, NUTAG_INITIAL_ROUTE_STR() an
+ * unparsed string. 
+ * 
+ * If a tag list contains multiple NUTAG_INITIAL_ROUTE() or
+ * NUTAG_INITIAL_ROUTE_STR() tags, the route set is constructed from them
+ * all.
+ *
+ * @par Used with
+ *    nua_set_params() \n
+ *    nua_set_hparams() \n
+ *    any handle-specific nua call
+ *
+ * @par Parameter type
+ *    sip_route_t const *
+ *
+ * @par Values
+ *    Linked list of #sip_route_t structures
+ *
+ * Corresponding tag taking reference parameter is NUTAG_INITIAL_ROUTE_REF().
+ *
+ * @since @NEW_1_12_7.
+ */
+#define NUTAG_INITIAL_ROUTE(x)     nutag_initial_route, siptag_route_v(x)
+SOFIAPUBVAR tag_typedef_t nutag_initial_route;
+
+#define NUTAG_INITIAL_ROUTE_REF(x) nutag_initial_route_ref, siptag_route_vr(&(x))
+SOFIAPUBVAR tag_typedef_t nutag_initial_route_ref;
+
+
+/** Specify initial route set.
+ *
+ * The initial route set is used instead or or in addition to the outbound
+ * proxy URL given by NUTAG_PROXY(). The NUTAG_INITIAL_ROUTE() accepts a
+ * list of parsed @Route header structures, NUTAG_INITIAL_ROUTE_STR() a
+ * unparsed string containing route URIs, quoted with <> and separated by
+ * commas.
+ *
+ * Please note that the syntax requires <> around the @Route URIs if they
+ * contain parameters, e.g., "lr". 
+ *
+ * If a tag list contains multiple NUTAG_INITIAL_ROUTE() or
+ * NUTAG_INITIAL_ROUTE_STR() tags, the route set is constructed from them
+ * all. 
+ *
+ * The initial route set can be reset with NUTAG_INITIAL_ROUTE(NULL).
+ *
+ * If a tag list of a request contains SIPTAG_ROUTE() or
+ * SIPTAG_ROUTE_STR() tags, the resulting route set will contain first the
+ * initial route entries followed by the route URIs given with the
+ * SIPTAG_ROUTE()/SIPTAG_ROUTE_STR() tags.
+ *
+ * @par Used with
+ *    nua_set_params() \n
+ *    nua_set_hparams() \n
+ *    any handle-specific nua call
+ *
+ * @par Parameter type
+ *    sip_route_t const *
+ *
+ * @par Values
+ *    Linked list of #sip_route_t structures
+ *
+ * Corresponding tag taking reference parameter is NUTAG_INITIAL_ROUTE_STR_REF().
+ *
+ * @since @NEW_1_12_7.
+ */
+#define NUTAG_INITIAL_ROUTE_STR(x)     nutag_initial_route_str, tag_str_v(x)
+SOFIAPUBVAR tag_typedef_t nutag_initial_route_str;
+
+#define NUTAG_INITIAL_ROUTE_STR_REF(x) nutag_initial_route_str_ref, tag_str_vr(&(x))
+SOFIAPUBVAR tag_typedef_t nutag_initial_route_str_ref;
+
+
+
 /** Registrar URL
  *
  * @par Used with
@@ -1461,7 +1540,7 @@ SOFIAPUBVAR tag_typedef_t nutag_m_username_ref;
 
 /**URL parameters for @Contact.
  *
- * Specify URL parameters for the Contact header URI generated for
+ * Specify URL parameters for the @Contact header URI generated for
  * registration request and dialog-creating requests/responses.
  *
  * Please note that some proxies may remove even the non-transport

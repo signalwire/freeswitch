@@ -1997,6 +1997,12 @@ int nua_client_init_request(nua_client_request_t *cr)
     t = nh->nh_tags, sip_add_tagis(msg, sip, &t);
   }
 
+  if (!ds->ds_route) {
+    sip_route_t *initial_route = NH_PGET(nh, initial_route);
+    if (initial_route)
+      sip_add_dup(msg, sip, (sip_header_t *)initial_route);
+  }
+
   for (t = cr->cr_tags; t; t = t_next(t)) {
     if (t->t_tag == siptag_contact ||
 	t->t_tag == siptag_contact_str)

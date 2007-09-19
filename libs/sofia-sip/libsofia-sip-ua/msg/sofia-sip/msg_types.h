@@ -134,7 +134,8 @@ struct msg_pub_s {
 
 /** Numeric header. 
  *
- * A numeric header has a 32-bit integer as its value.
+ * A numeric header has value range of a 32-bit, 0..4294967295. The @a
+ * x_value field is unsigned long, however.
  */
 struct msg_numeric_s {
   msg_common_t   x_common[1];	    /**< Common fragment info */

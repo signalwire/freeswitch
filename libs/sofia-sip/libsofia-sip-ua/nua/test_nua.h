@@ -180,6 +180,7 @@ struct context
   } a, b, c;
 
   struct proxy *p;
+  sip_route_t const *lr;
   struct nat *nat;
 };
 

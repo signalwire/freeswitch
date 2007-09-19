@@ -119,7 +119,6 @@ struct outbound_owner_vtable
   sip_contact_t *(*oo_contact)(outbound_owner_t *,
 			       su_home_t *home,
 			       int used_in_dialog,
-			       char const *extra_username,
 			       sip_via_t const *v,
 			       char const *transport,
 			       char const *m_param,

@@ -48,6 +48,28 @@
 #include <string.h>
 #include <limits.h>
 
+/** Tag class for tags containing SIP headers. @HIDE
+ *
+ * Tags in this class are not automatically added to the message with
+ * sip_add_tl() or sip_add_tagis().
+ */
+tag_class_t sipexthdrtag_class[1] = 
+  {{
+    sizeof(siphdrtag_class),
+    /* tc_next */     NULL,
+    /* tc_len */      NULL,
+    /* tc_move */     NULL,
+    /* tc_xtra */     msghdrtag_xtra,
+    /* tc_dup */      msghdrtag_dup,
+    /* tc_free */     NULL,
+    /* tc_find */     NULL,
+    /* tc_snprintf */ msghdrtag_snprintf,
+    /* tc_filter */   siptag_filter,
+    /* tc_ref_set */  t_ptr_ref_set,
+    /* tc_scan */     msghdrtag_scan,
+  }};
+
+
 /** Tag class for SIP header tags. @HIDE */
 tag_class_t siphdrtag_class[1] = 
   {{

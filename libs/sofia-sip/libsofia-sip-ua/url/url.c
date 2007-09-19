@@ -337,8 +337,8 @@ char *url_canonize(char *d, char const *s, size_t n,
   return url_canonize2(d, s, n, syn33, mask32, mask64, mask96);
 }
 
-#define SYN33(c) (1 << (c - 33))
-#define IS_SYN33(syn33, c) ((syn33 & (1 << (c - 33))) != 0)
+#define SYN33(c) (1U << (c - 33))
+#define IS_SYN33(syn33, c) ((syn33 & (1U << (c - 33))) != 0)
 
 /** Canonize a URL component (with precomputed mask) */
 static

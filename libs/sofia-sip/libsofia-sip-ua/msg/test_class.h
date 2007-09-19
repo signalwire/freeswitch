@@ -110,6 +110,9 @@ typedef struct msg_test_s {
   msg_content_encoding_t *msg_content_encoding; 
 						/**< Content-Encoding */
   msg_content_length_t   *msg_content_length;	/**< Content-Length */
+
+  msg_auth_t             *msg_auth; 		/**< Auth (testing) */
+  msg_numeric_t          *msg_numeric;		/**< Numeric (testing) */
   /* === Headers end here */
 
   msg_unknown_t      *msg_unknown;
@@ -159,6 +162,17 @@ msg_test_t *msg_test_public(msg_t *msg)
 {
   return (msg_test_t *)msg_public(msg, MSG_TEST_PROTOCOL_TAG);
 }
+
+#define msg_auth_class test_auth_class
+
+#define msg_numeric_class test_numeric_class
+
+enum {
+  msg_auth_hash = 22894,
+  msg_numeric_hash = 24435
+};
+
+SOFIAPUBVAR msg_hclass_t test_auth_class[1], test_numeric_class[1];
 
 SOFIA_END_DECLS
 

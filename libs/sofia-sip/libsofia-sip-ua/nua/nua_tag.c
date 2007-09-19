@@ -103,6 +103,10 @@ tag_typedef_t nutag_sips_url = URLTAG_TYPEDEF(sips_url);
 tag_typedef_t nutag_certificate_dir = STRTAG_TYPEDEF(certificate_dir);
 tag_typedef_t nutag_certificate_phrase = STRTAG_TYPEDEF(certificate_phrase);
 
+extern msg_hclass_t sip_route_class[];
+tag_typedef_t nutag_initial_route = SIPEXTHDRTAG_TYPEDEF(initial_route, route);
+tag_typedef_t nutag_initial_route_str = STRTAG_TYPEDEF(inital_route_str);
+
 tag_typedef_t nutag_registrar = URLTAG_TYPEDEF(registrar);
 tag_typedef_t nutag_identity = PTRTAG_TYPEDEF(identity);
 tag_typedef_t nutag_m_display = STRTAG_TYPEDEF(m_display);

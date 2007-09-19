@@ -160,7 +160,7 @@ int ca_challenge(auth_client_t *ca,
   if (!ca || !ch)
     return -1;
 
-  if (strcmp(ca->ca_scheme, scheme))
+  if (strcasecmp(ca->ca_scheme, scheme))
     return 0;
   if (strcmp(ca->ca_realm, realm))
     return 0;
@@ -433,7 +433,7 @@ int auc_copy_credentials(auth_client_t **dst,
 	continue;
       if (AUTH_CLIENT_IS_EXTENDED(ca) && ca->ca_clear)
 	continue;
-      if (!ca->ca_scheme[0] || strcmp(ca->ca_scheme, d->ca_scheme))
+      if (!ca->ca_scheme[0] || strcasecmp(ca->ca_scheme, d->ca_scheme))
 	continue;
       if (!ca->ca_realm[0] || strcmp(ca->ca_realm, d->ca_realm))
 	continue;
@@ -1011,6 +1011,8 @@ auth_client_t *ca_create(su_home_t *home,
     if (!auc || strcasecmp(auc->auc_name, scheme) == 0)
       break;
   }
+
+  /* XXX - should report error if the auth scheme is not known? */
 
   aucsize = auc ? (size_t)auc->auc_size : (sizeof *ca);
   size = aucsize + realmlen;

@@ -100,6 +100,8 @@ struct proxy {
  
   nta_agent_t *agent;
   url_t const *uri;
+  sip_route_t *lr;
+  char const *lr_str;
   url_t const *rr_uri;
 
   nta_leg_t *defleg;
@@ -326,7 +328,12 @@ test_proxy_init(su_root_t *root, struct proxy *proxy)
     return -1;
 
   proxy->uri = nta_agent_contact(proxy->agent)->m_url;
-				  
+  proxy->lr_str = su_sprintf(proxy->home, "<" URL_PRINT_FORMAT ";lr>", URL_PRINT_ARGS(proxy->uri));
+  proxy->lr = sip_route_make(proxy->home, proxy->lr_str);
+
+  if (!proxy->lr)
+    return -1;
+  				  
   return 0;
 }
 
@@ -389,6 +396,19 @@ void test_proxy_destroy(struct proxy *p)
 url_t const *test_proxy_uri(struct proxy const *p)
 {
   return p ? p->uri : NULL;
+}
+
+/* Return the proxy route URI */
+char const *test_proxy_route_uri(struct proxy const *p,
+				 sip_route_t const **return_route)
+{
+  if (p == NULL)
+    return NULL;
+
+  if (return_route)
+    *return_route = p->lr;
+
+  return p->lr_str;
 }
 
 void test_proxy_domain_set_expiration(struct domain *d,
@@ -796,8 +816,9 @@ static int validate_transaction(struct proxy_tr *t)
 
   /* Remove our routes */
   while (t->sip->sip_route && 
-	 url_has_param(t->sip->sip_route->r_url, "lr") &&
-	 url_cmp(t->proxy->rr_uri, t->sip->sip_route->r_url) == 0) {
+	 url_has_param(t->sip->sip_route->r_url, "lr") && 
+	 (url_cmp(t->proxy->lr->r_url, t->sip->sip_route->r_url) == 0 ||
+	  url_cmp(t->proxy->rr_uri, t->sip->sip_route->r_url) == 0)) {
     sip_route_remove(t->msg, t->sip);
     /* add record-route also to the forwarded request  */
     t->rr = 1;			

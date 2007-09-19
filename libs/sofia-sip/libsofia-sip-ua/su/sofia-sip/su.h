@@ -293,6 +293,9 @@ SOFIAPUBFUN int su_setblocking(su_socket_t s, int blocking);
 SOFIAPUBFUN int su_setreuseaddr(su_socket_t s, int reuse);
 /** Get the error code associated with the socket. */
 SOFIAPUBFUN int su_soerror(su_socket_t s);
+/** Get the socket type. */
+SOFIAPUBFUN int su_getsocktype(su_socket_t s);
+
 /** Get size of message available in socket. */
 SOFIAPUBFUN issize_t su_getmsgsize(su_socket_t s);
 
