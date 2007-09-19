@@ -1487,7 +1487,7 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 			tech_pvt->sample_rate = atoi(argv[4]);
 		}
 
-		if (!switch_strlen_zero(argv[4])) {
+		if (!switch_strlen_zero(argv[5])) {
 			tech_pvt->codec_ms = atoi(argv[5]);
 		}
 
