@@ -841,7 +841,60 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 		}
 	}
 
-	if (first) {
+	if (switch_strlen_zero(passwd) && switch_strlen_zero(a1_hash)) {
+		ret = AUTH_OK;
+		goto end;
+	}
+
+	if (!a1_hash) {
+		su_md5_t ctx;
+		char *input;
+
+		input = switch_mprintf("%s:%s:%s", username, realm, passwd);
+		su_md5_init(&ctx);
+		su_md5_strupdate(&ctx, input);
+		su_md5_hexdigest(&ctx, hexdigest);
+		su_md5_deinit(&ctx);
+		switch_safe_free(input);
+		a1_hash = hexdigest;
+			
+	}
+
+ for_the_sake_of_interop:
+
+	if ((input = switch_mprintf("%s:%q", regstr, uri))) {
+		su_md5_init(&ctx);
+		su_md5_strupdate(&ctx, input);
+		su_md5_hexdigest(&ctx, uridigest);
+		su_md5_deinit(&ctx);
+	}
+
+	if ((input2 = switch_mprintf("%q:%q:%q:%q:%q:%q", a1_hash, nonce, nc, cnonce, qop, uridigest))) {
+		memset(&ctx, 0, sizeof(ctx));
+		su_md5_init(&ctx);
+		su_md5_strupdate(&ctx, input2);
+		su_md5_hexdigest(&ctx, bigdigest);
+		su_md5_deinit(&ctx);
+
+		if (!strcasecmp(bigdigest, response)) {
+			ret = AUTH_OK;
+		} else {
+			if ((profile->ndlb & PFLAG_NDLB_BROKEN_AUTH_HASH) && strcasecmp(regstr, "REGISTER") && strcasecmp(regstr, "INVITE")) {
+				/* some clients send an ACK with the method 'INVITE' in the hash which will break auth so we will
+				   try again with INVITE so we don't get people complaining to us when someone else's client has a bug......
+				 */
+				switch_safe_free(input);
+				switch_safe_free(input2);
+				regstr = "INVITE";
+				goto for_the_sake_of_interop;
+			}
+
+			ret = AUTH_FORBIDDEN;
+		}
+	}
+
+
+	if (first && ret == AUTH_OK) {
 		if (v_event && (xparams = switch_xml_child(user, "variables"))) {
 			if (switch_event_create(v_event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 				for (param = switch_xml_child(xparams, "variable"); param; param = param->next) {
@@ -906,57 +959,6 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 		}
 	}
 
-	if (switch_strlen_zero(passwd) && switch_strlen_zero(a1_hash)) {
-		ret = AUTH_OK;
-		goto end;
-	}
-
-	if (!a1_hash) {
-		su_md5_t ctx;
-		char *input;
-
-		input = switch_mprintf("%s:%s:%s", username, realm, passwd);
-		su_md5_init(&ctx);
-		su_md5_strupdate(&ctx, input);
-		su_md5_hexdigest(&ctx, hexdigest);
-		su_md5_deinit(&ctx);
-		switch_safe_free(input);
-		a1_hash = hexdigest;
-			
-	}
-
- for_the_sake_of_interop:
-
-	if ((input = switch_mprintf("%s:%q", regstr, uri))) {
-		su_md5_init(&ctx);
-		su_md5_strupdate(&ctx, input);
-		su_md5_hexdigest(&ctx, uridigest);
-		su_md5_deinit(&ctx);
-	}
-
-	if ((input2 = switch_mprintf("%q:%q:%q:%q:%q:%q", a1_hash, nonce, nc, cnonce, qop, uridigest))) {
-		memset(&ctx, 0, sizeof(ctx));
-		su_md5_init(&ctx);
-		su_md5_strupdate(&ctx, input2);
-		su_md5_hexdigest(&ctx, bigdigest);
-		su_md5_deinit(&ctx);
-
-		if (!strcasecmp(bigdigest, response)) {
-			ret = AUTH_OK;
-		} else {
-			if ((profile->ndlb & PFLAG_NDLB_BROKEN_AUTH_HASH) && strcasecmp(regstr, "REGISTER") && strcasecmp(regstr, "INVITE")) {
-				/* some clients send an ACK with the method 'INVITE' in the hash which will break auth so we will
-				   try again with INVITE so we don't get people complaining to us when someone else's client has a bug......
-				 */
-				switch_safe_free(input);
-				switch_safe_free(input2);
-				regstr = "INVITE";
-				goto for_the_sake_of_interop;
-			}
-
-			ret = AUTH_FORBIDDEN;
-		}
-	}
 
   end:
 	if (xml) {
