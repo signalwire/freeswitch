@@ -304,6 +304,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created agent for %s\n", profile->name);
 
 	nua_set_params(profile->nua,
+				   NUTAG_APPL_METHOD("OPTIONS"),
 				   //NUTAG_EARLY_MEDIA(1),                 
 				   NUTAG_AUTOANSWER(0),
 				   NUTAG_AUTOALERT(0),
@@ -328,6 +329,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 							   NUTAG_URL(node->url), TAG_END());	/* Last tag should always finish the sequence */
 
 		nua_set_params(node->nua,
+					   NUTAG_APPL_METHOD("OPTIONS"),
 					   NUTAG_EARLY_MEDIA(1),
 					   NUTAG_AUTOANSWER(0),
 					   NUTAG_AUTOALERT(0),
@@ -2054,6 +2056,7 @@ void sofia_handle_sip_i_options(int status,
 				//SOATAG_AUDIO_AUX("cn telephone-event"),
 				//NUTAG_INCLUDE_EXTRA_SDP(1),
 				TAG_END());
+	nua_handle_destroy(nh);
 }
 
 
