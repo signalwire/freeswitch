@@ -471,6 +471,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 					caller_caller_profile = caller_profile_override ? caller_profile_override : switch_channel_get_caller_profile(caller_channel);
 					new_profile = switch_caller_profile_clone(session, caller_caller_profile);
+					new_profile->uuid = NULL;
+					new_profile->chan_name = NULL;
 					new_profile->destination_number = chan_data;
 
 					if (cid_name_override) {
@@ -491,6 +493,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					if (caller_profile_override) {
 						new_profile = switch_caller_profile_dup(pool, caller_profile_override);
 						new_profile->destination_number = chan_data;
+						new_profile->uuid = NULL;
+						new_profile->chan_name = NULL;
 					} else {
 						if (!cid_name_override) {
 							cid_name_override = "FreeSWITCH";
