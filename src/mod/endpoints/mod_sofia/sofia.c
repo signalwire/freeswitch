@@ -500,7 +500,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				*context = "default",
 				*expire_seconds = "3600",
 				*retry_seconds = "30",
-				*from_domain = "";
+				*from_domain = "",
+				*to_domain = "";
 			
 			gateway->pool = profile->pool;
 			gateway->profile = profile;
@@ -536,7 +537,13 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					retry_seconds = val;
 				} else if (!strcmp(var, "from-domain")) {
 					from_domain = val;
+				} else if (!strcmp(var, "to-domain")) {
+					to_domain = val;
 				}
+			}
+
+			if (switch_strlen_zero(to_domain)) {
+				to_domain = proxy;
 			}
 
 			if (switch_strlen_zero(realm)) {
@@ -586,12 +593,12 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			gateway->register_contact = switch_core_sprintf(gateway->pool, "sip:%s@%s:%d", extension,
 															profile->extsipip ? profile->extsipip : profile->sipip, profile->sip_port);
 			
-			if (!strncasecmp(proxy, "sip:", 4)) {
+			if (!strncasecmp(to_domain, "sip:", 4)) {
 				gateway->register_proxy = switch_core_strdup(gateway->pool, proxy);
-				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy + 4);
+				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, to_domain + 4);
 			} else {
 				gateway->register_proxy = switch_core_sprintf(gateway->pool, "sip:%s", proxy);
-				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy);
+				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, to_domain);
 			}
 
 			gateway->expires_str = switch_core_strdup(gateway->pool, expire_seconds);
