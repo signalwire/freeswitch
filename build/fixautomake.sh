@@ -1,9 +1,9 @@
 cd /tmp
 mkdir fix_automake
 cd fix_automake
-wget http://mirrors.kernel.org/gnu/automake/automake-1.9.tar.gz
-tar -zxvf automake-1.9.tar.gz
-cd automake-1.9
+wget http://mirrors.kernel.org/gnu/automake/automake-1.10.tar.gz
+tar -zxvf automake-1.10.tar.gz
+cd automake-1.10
 ./configure --prefix=/usr
 make
 make install
