@@ -131,7 +131,8 @@ typedef enum {
 	MFLAG_NOCHANNEL = (1 << 5),
 	MFLAG_INTREE = (1 << 6),
 	MFLAG_WASTE_BANDWIDTH = (1 << 7),
-	MFLAG_FLUSH_BUFFER = (1 << 8)
+	MFLAG_FLUSH_BUFFER = (1 << 8),
+	MFLAG_ENDCONF = (1 << 9)
 } member_flag_t;
 
 typedef enum {
@@ -624,6 +625,10 @@ static switch_status_t conference_del_member(conference_obj_t * conference, conf
 		switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 		switch_core_speech_close(&member->lsh, &flags);
 		member->sh = NULL;
+	}
+
+	if (switch_test_flag(member, MFLAG_ENDCONF)) {
+		switch_set_flag_locked(member->conference, CFLAG_DESTRUCT);
 	}
 
 	member->conference = NULL;
@@ -3903,6 +3908,8 @@ static void set_mflags(char *flags, member_flag_t * f)
 			*f &= ~MFLAG_CAN_HEAR;
 		} else if (strstr(flags, "waste")) {
 			*f |= MFLAG_WASTE_BANDWIDTH;
+		} else if (strstr(flags, "endconf")) {
+			*f |= MFLAG_ENDCONF;
 		}
 	}
 
@@ -3973,6 +3980,15 @@ SWITCH_STANDARD_APP(conference_function)
 		return;
 	}
 
+	if ((flags_str = strstr(mydata, flags_prefix))) {
+		char *p;
+
+		*flags_str = '\0';
+		flags_str += strlen(flags_prefix);
+		if ((p = strchr(flags_str, '}'))) {
+			*p = '\0';
+		}
+	}
 
 	/* is this a bridging conference ? */
 	if (!strncasecmp(mydata, bridge_prefix, strlen(bridge_prefix))) {
@@ -4269,15 +4285,6 @@ SWITCH_STANDARD_APP(conference_function)
 	/* Install our Signed Linear codec so we get the audio in that format */
 	switch_core_session_set_read_codec(member.session, &member.read_codec);
 
-	if ((flags_str = strstr(mydata, flags_prefix))) {
-		char *p;
-
-		*flags_str = '\0';
-		flags_str += strlen(flags_prefix);
-		if ((p = strchr(flags_str, '}'))) {
-			*p = '\0';
-		}
-	}
 
 	mflags = conference->mflags;
 	set_mflags(flags_str, &mflags);
