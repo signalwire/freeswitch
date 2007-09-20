@@ -175,8 +175,8 @@ static switch_status_t en_say_general_count(switch_core_session_t *session,
 	if (in != 0) {
 		for (x = 8; x >= 0; x--) {
 			int num = (int) pow(10, x);
-			if ((places[x] = in / num)) {
-				in -= places[x] * num;
+			if ((places[(uint32_t)x] = in / num)) {
+				in -= places[(uint32_t)x] * num;
 			}
 		}
 
@@ -197,9 +197,7 @@ static switch_status_t en_say_general_count(switch_core_session_t *session,
 			{
 				char *p;
 				for (p = tosay; p && *p; p++) {
-					if (places[x] > -1) {
-						say_file("digits/%c.wav", *p);
-					}
+					say_file("digits/%c.wav", *p);
 				}
 			}
 			break;
