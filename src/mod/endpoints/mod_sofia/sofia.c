@@ -1881,7 +1881,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			}
 			displayname = tmp;
 		} else {
-			displayname = switch_strlen_zero(from_user) ? "unkonwn" : from_user;
+			displayname = switch_strlen_zero(from_user) ? "unknown" : from_user;
 		}
 	}
 
