@@ -322,7 +322,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(char *user_name, char *do
 													   char *ip, 
 													   switch_xml_t *root,
 													   switch_xml_t *domain,
-													   switch_xml_t *user);
+													   switch_xml_t *user,
+													   char *profile_name);
 
 ///\brief open a config in the core registry
 ///\param file_path the name of the config section e.g. modules.conf

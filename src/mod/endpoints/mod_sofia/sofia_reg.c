@@ -816,7 +816,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 		free(sql);
 	} 
 	
-	if (switch_xml_locate_user(username, realm, ip, &xml, &domain, &user) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user(username, realm, ip, &xml, &domain, &user, profile->name) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", username, realm);
 		ret = AUTH_FORBIDDEN;
 		goto end;
