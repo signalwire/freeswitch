@@ -351,7 +351,12 @@ static switch_status_t openmrcp_asr_load_grammar(switch_asr_handle_t *ah, char *
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/*! function to feed audio to the ASR*/
+/** 
+ * function to feed audio to the ASR
+ * asr_open and asr_feed appear to be called asynchronously -- in other 
+ * words asr_open is not completed yet, but asr_feed is already called 
+ * from another thread.
+ */
 static switch_status_t openmrcp_asr_feed(switch_asr_handle_t *ah, void *data, unsigned int len, switch_asr_flag_t *flags)
 {
 	openmrcp_session_t *asr_session = (openmrcp_session_t *) ah->private_info;
