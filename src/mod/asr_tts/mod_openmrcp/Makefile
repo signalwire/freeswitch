@@ -20,10 +20,22 @@ LOCAL_LIBADD=$(OPENMRCP_LIBS)
 
 LOCAL_INSERT_LDFLAGS=if test $$osarch = "Darwin" ; then echo "-framework CoreFoundation -framework SystemConfiguration -lssl -lcrypto" ; fi ;
 
+SOFIA_DIR=../../../../libs/sofia-sip
+SOFIAUA_DIR=$(SOFIA_DIR)/libsofia-sip-ua
+SOFIALA=$(SOFIAUA_DIR)/libsofia-sip-ua.la
+
 include ../../../../build/modmake.rules
 
 $(OPENMRCP_DIR)/Makefile:
 	cd $(OPENMRCP_DIR) && ./bootstrap && ./configure --with-apr=../apr --with-apr-util=../apr-util --with-sofia-sip=../sofia-sip
 
-$(OPENMRCP_LIBS): $(OPENMRCP_DIR)/Makefile
-	cd $(OPENMRCP_DIR) && make
+$(OPENMRCP_LIBS): $(OPENMRCP_DIR)/Makefile $(SOFIALA)
+	cd $(OPENMRCP_DIR) && $(MAKE)
+
+$(SOFIALA): $(SOFIA_DIR) $(SOFIA_DIR)/.update
+	cd $(SOFIA_DIR) && $(MAKE)
+	$(TOUCH_TARGET)
+
+../../../../libs/sofia-sip/libsofia-sip-ua/nua/sofia-sip/nua_tag.h: $(SOFIALA)
+
+
