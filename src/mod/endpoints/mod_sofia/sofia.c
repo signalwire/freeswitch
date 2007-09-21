@@ -1868,6 +1868,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			}
 		}
 
+		switch_channel_set_variable(channel, "sofia_profile_name", profile->name);
+
 		if (!switch_strlen_zero(sip->sip_from->a_display)) {
 			char *tmp;
 			tmp = switch_core_session_strdup(session, sip->sip_from->a_display);

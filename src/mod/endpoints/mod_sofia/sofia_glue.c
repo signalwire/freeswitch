@@ -559,6 +559,9 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	holdstr = switch_test_flag(tech_pvt, TFLAG_SIP_HOLD) ? "*" : "";
 
+	if (!switch_channel_get_variable(channel, "sofia_profile_name")) {
+		switch_channel_set_variable(channel, "sofia_profile_name", tech_pvt->profile->name);
+	}
 
 	SWITCH_STANDARD_STREAM(stream);
 	if ((hi = switch_channel_variable_first(channel, switch_core_session_get_pool(tech_pvt->session)))) {
