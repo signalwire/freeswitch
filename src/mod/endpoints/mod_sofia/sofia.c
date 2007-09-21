@@ -1994,6 +1994,16 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				}
 			} else if (!strncasecmp(un->un_name, "Remote-Party-ID", 15)) {
 				process_rpid(un, tech_pvt);
+			} else if (!strncasecmp(un->un_name, "Diversion", 9)) {
+				// Basic Diversion Support for Diversion Indication in SIP
+				// draft-levy-sip-diversion-08
+				if (!switch_strlen_zero(un->un_value)) {
+					char *tmp_name;
+					if ((tmp_name = switch_mprintf("%s%s", SOFIA_SIP_HEADER_PREFIX, un->un_name))) {
+						switch_channel_set_variable(channel, tmp_name, un->un_value);
+						free(tmp_name);
+					}
+				}
 			} else if (!strncasecmp(un->un_name, "X-", 2) || !strncasecmp(un->un_name, "P-", 2)) {
 				if (!switch_strlen_zero(un->un_value)) {
 					char *new_name;
