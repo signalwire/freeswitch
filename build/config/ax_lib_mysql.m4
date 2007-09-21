@@ -82,7 +82,7 @@ AC_DEFUN([AX_LIB_MYSQL],
             AC_MSG_CHECKING([for MySQL libraries])
 
             MYSQL_CFLAGS="`$MYSQL_CONFIG --cflags`"
-            MYSQL_LDFLAGS="`$MYSQL_CONFIG --libs`"
+            MYSQL_LDFLAGS="`$MYSQL_CONFIG --libs_r`"
 
             MYSQL_VERSION=`$MYSQL_CONFIG --version`
 
