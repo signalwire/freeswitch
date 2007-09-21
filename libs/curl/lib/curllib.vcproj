@@ -222,14 +222,25 @@
 <File RelativePath="setup_once.h"></File>
 <File RelativePath="socks.h"></File>
 <File RelativePath="config-win32.h"></File>
-
-		</Filter>
-		<Filter
-			Name="Resource Files"
-			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
-			>
-		</Filter>
-	</Files>
-	<Globals>
-	</Globals>
-</VisualStudioProject>
+
+
+		</Filter>
+
+		<Filter
+
+			Name="Resource Files"
+
+			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
+
+			>
+
+		</Filter>
+
+	</Files>
+
+	<Globals>
+
+	</Globals>
+
+</VisualStudioProject>
+
