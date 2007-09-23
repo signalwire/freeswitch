@@ -428,9 +428,9 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt)
 
 switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 {
-	char rpid[1024] = { 0 };
-	char alert_info[1024] = { 0 };
-	char max_forwards[8] = { 0 };
+	char *rpid = NULL;
+	char *alert_info = NULL;
+	char *max_forwards = NULL;
 	char *alertbuf;
 	char *forwardbuf;
 	int forwardval;
@@ -473,24 +473,18 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	}
 
-	if (!tech_pvt->from_str) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
-		return SWITCH_STATUS_FALSE;
-	}
-
+	assert(tech_pvt->from_str != NULL);
 	
-
-
 	if ((alertbuf = switch_channel_get_variable(channel, "alert_info"))) {
-		snprintf(alert_info, sizeof(alert_info) - 1, "Alert-Info: %s", alertbuf);
+		alert_info = switch_core_session_sprintf(tech_pvt->session, "Alert-Info: %s", alertbuf);
 	}
 
 	if ((forwardbuf = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE))) {
 		forwardval = atoi(forwardbuf) - 1;
-		snprintf(max_forwards, sizeof(max_forwards) - 1, "%d", forwardval);
+		switch_core_session_sprintf(tech_pvt->session, "%d", forwardval);
 	}
 
-	if (sofia_glue_tech_choose_port(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+	if ((status = sofia_glue_tech_choose_port(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 
@@ -514,12 +508,23 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			screen = "yes";
 		}
 
-		snprintf(rpid, sizeof(rpid) - 1, "Remote-Party-ID: %s;party=calling;screen=%s;privacy=%s", tech_pvt->from_str, screen, priv);
-
+		rpid = switch_core_session_sprintf(tech_pvt->session, "Remote-Party-ID: %s;party=calling;screen=%s;privacy=%s", tech_pvt->from_str, screen, priv);
 	}
 
 	if (!tech_pvt->nh) {
-		char *url = sofia_glue_get_url_from_contact(tech_pvt->dest, 1);
+		char *d_url = NULL, *url = NULL;
+
+		if (switch_strlen_zero(tech_pvt->dest)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "URL Error! [%s]\n", tech_pvt->dest);
+			return SWITCH_STATUS_FALSE;
+		}
+		
+		if ((d_url = sofia_glue_get_url_from_contact(tech_pvt->dest, 1))) {
+			url = d_url;
+		} else {
+			url = tech_pvt->dest;
+		}
+
 		tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
 								  NUTAG_URL(url),
 								  SIPTAG_TO_STR(tech_pvt->dest_to),
@@ -528,23 +533,28 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 								  TAG_IF(tech_pvt->invite_contact, SIPTAG_CONTACT_STR(tech_pvt->invite_contact)),
 								  TAG_IF(!tech_pvt->invite_contact, SIPTAG_CONTACT_STR(tech_pvt->profile->url)),
 								  TAG_END());
-		switch_safe_free(url);
 
+		switch_safe_free(d_url);
+		
 		if (!(tech_pvt->sofia_private = malloc(sizeof(*tech_pvt->sofia_private)))) {
 			abort();
 		}
 		memset(tech_pvt->sofia_private, 0, sizeof(*tech_pvt->sofia_private));
+
 		tech_pvt->sofia_private->home = su_home_new(sizeof(*tech_pvt->sofia_private->home));
 		switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));
 		nua_handle_bind(tech_pvt->nh, tech_pvt->sofia_private);
 
 	}
 
-
-	if (tech_pvt->e_dest && (e_dest = strdup(tech_pvt->e_dest))) {
-		char *user = e_dest, *host = NULL;
+	if (tech_pvt->e_dest) {
+		char *user = NULL, *host = NULL;
 		char hash_key[256] = "";
 
+		e_dest = strdup(tech_pvt->e_dest);
+		assert(e_dest != NULL);
+		user = e_dest;
+		
 		if ((host = strchr(user, '@'))) {
 			*host++ = '\0';
 		}
@@ -585,10 +595,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	}
 
 	nua_invite(tech_pvt->nh,
-			   TAG_IF(*rpid != '\0', SIPTAG_HEADER_STR(rpid)),
-			   TAG_IF(*alert_info != '\0', SIPTAG_HEADER_STR(alert_info)),
+			   TAG_IF(!switch_strlen_zero(rpid), SIPTAG_HEADER_STR(rpid)),
+			   TAG_IF(!switch_strlen_zero(alert_info), SIPTAG_HEADER_STR(alert_info)),
 			   TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
-			   TAG_IF(*max_forwards != '\0', SIPTAG_MAX_FORWARDS_STR(max_forwards)),
+			   TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
 			   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 			   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
 			   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), SOATAG_HOLD(holdstr), TAG_END());

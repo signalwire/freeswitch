@@ -1516,22 +1516,38 @@ SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml)
 	switch_xml_t p = (xml) ? xml->parent : NULL, o = (xml) ? xml->ordered : NULL;
 	switch_xml_root_t root = (switch_xml_root_t) xml;
 	switch_size_t len = 0, max = SWITCH_XML_BUFSIZE;
-	char *s = strcpy(malloc(max), ""), *t, *n;
+	char *s, *t, *n, *r;
 	int i, j, k;
 	uint32_t count = 0;
+	
+	s = malloc(max);
+	assert(s != NULL);
+	memset(s, 0, max);
+	
 
-	if (!xml || !xml->name)
-		return realloc(s, len + 1);
-	while (root->xml.parent)
+	if (!xml || !xml->name) {
+		if (!(r = realloc(s, len + 1))) {
+			abort();
+		}
+		return r;
+	}
+
+	while (root->xml.parent) {
 		root = (switch_xml_root_t) root->xml.parent;	// root tag
+	}
 
 	for (i = 0; !p && root->pi[i]; i++) {	// pre-root processing instructions
 		for (k = 2; root->pi[i][k - 1]; k++);
 		for (j = 1; (n = root->pi[i][j]); j++) {
-			if (root->pi[i][k][j - 1] == '>')
+			if (root->pi[i][k][j - 1] == '>') {
 				continue;		// not pre-root
-			while (len + strlen(t = root->pi[i][0]) + strlen(n) + 7 > max)
-				s = realloc(s, max += SWITCH_XML_BUFSIZE);
+			}
+			while (len + strlen(t = root->pi[i][0]) + strlen(n) + 7 > max) {
+				if (!(r = realloc(s, max += SWITCH_XML_BUFSIZE))) {
+					abort();
+				}
+				s = r;
+			}
 			len += sprintf(s + len, "<?%s%s%s?>", t, *n ? " " : "", n);
 		}
 	}
@@ -1544,14 +1560,24 @@ SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml)
 	for (i = 0; !p && root->pi[i]; i++) {	// post-root processing instructions
 		for (k = 2; root->pi[i][k - 1]; k++);
 		for (j = 1; (n = root->pi[i][j]); j++) {
-			if (root->pi[i][k][j - 1] == '<')
+			if (root->pi[i][k][j - 1] == '<') {
 				continue;		// not post-root
-			while (len + strlen(t = root->pi[i][0]) + strlen(n) + 7 > max)
-				s = realloc(s, max += SWITCH_XML_BUFSIZE);
+			}
+			while (len + strlen(t = root->pi[i][0]) + strlen(n) + 7 > max) {
+				if (!(r = realloc(s, max += SWITCH_XML_BUFSIZE))) {
+					abort();
+				}
+				s = r;
+			}
 			len += sprintf(s + len, "\n<?%s%s%s?>", t, *n ? " " : "", n);
 		}
 	}
-	return realloc(s, len + 1);
+
+	if (!(r = realloc(s, len + 1))) {
+		abort();
+	}
+
+	return r;
 }
 
 // free the memory allocated for the switch_xml structure
