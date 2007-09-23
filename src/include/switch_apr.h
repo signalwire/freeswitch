@@ -742,6 +742,20 @@ SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename, switch_
 
 typedef struct switch_dir switch_dir_t;
 
+struct switch_array_header_t {
+    /** The pool the array is allocated out of */
+    switch_memory_pool_t *pool;
+    /** The amount of memory allocated for each element of the array */
+    int elt_size;
+    /** The number of active elements in the array */
+    int nelts;
+    /** The number of elements allocated in the array */
+    int nalloc;
+    /** The elements in the array */
+    char *elts;
+};
+typedef struct switch_array_header_t switch_array_header_t;
+
 SWITCH_DECLARE(switch_status_t) switch_dir_open(switch_dir_t **new_dir, const char *dirname, switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_status_t) switch_dir_close(switch_dir_t *thedir);
 SWITCH_DECLARE(const char *) switch_dir_next_file(switch_dir_t *thedir, char *buf, switch_size_t len);
@@ -1142,6 +1156,8 @@ SWITCH_DECLARE(switch_status_t) switch_poll(switch_pollfd_t * aprset, int32_t nu
   \return SWITCH_STATUS_SUCCESS when successful
 */
 SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t ** poll, switch_socket_t * sock, int16_t flags, switch_memory_pool_t *pool);
+
+SWITCH_DECLARE(switch_status_t) switch_match_glob(const char *pattern, switch_array_header_t **result, switch_memory_pool_t *p);
 
 
  /** @} */

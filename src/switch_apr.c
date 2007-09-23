@@ -53,6 +53,9 @@
 #define APR_WANT_STDIO
 #define APR_WANT_STRFUNC
 #include <apr_want.h>
+#include <apr_file_info.h>
+#include <apr_fnmatch.h>
+#include <apr_tables.h>
 
 /* apr_vformatter_buff_t definition*/
 #include <apr_lib.h>
@@ -714,7 +717,12 @@ SWITCH_DECLARE(int) switch_vasprintf(char **ret, const char *fmt, va_list ap)
 #endif
 }
 
+SWITCH_DECLARE(switch_status_t) switch_match_glob(const char *pattern, switch_array_header_t **result, switch_memory_pool_t *p)
+{
+	return apr_match_glob(pattern, (apr_array_header_t **)result, p);
+}
 
+													
 /* For Emacs:
  * Local Variables:
  * mode:c

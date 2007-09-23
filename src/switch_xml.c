@@ -68,6 +68,8 @@ extern int madvise(caddr_t, size_t, int);
 #define SWITCH_XML_WS   "\t\r\n "	// whitespace
 #define SWITCH_XML_ERRL 128		// maximum error string length
 
+static int preprocess(const char *file, int write_fd, int rlevel);
+
 typedef struct switch_xml_root *switch_xml_root_t;
 struct switch_xml_root {		// additional data for the root tag
 	struct switch_xml xml;		// is a super-struct built on top of switch_xml struct
@@ -933,6 +935,57 @@ static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_
 
 }
 
+/* for apr file and directory handling */
+#include <apr_file_io.h>
+
+static int preprocess_glob(const char *pattern, int write_fd, int rlevel)
+{
+
+	switch_array_header_t *result;
+	switch_memory_pool_t *pool;
+	char **list;
+	int i;
+	char *p, *dir_path = NULL;
+
+	switch_core_new_memory_pool(&pool);
+	assert(pool != NULL);
+	
+	if (switch_is_file_path(pattern)) {
+		dir_path = switch_core_strdup(pool, pattern);
+		if ((p = strrchr(dir_path, *SWITCH_PATH_SEPARATOR))) {
+			*p = '\0';
+		}
+	} else {
+		dir_path = SWITCH_GLOBAL_dirs.conf_dir;
+		p = switch_core_sprintf(pool, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, pattern);
+		pattern = p;
+	}
+
+	switch_match_glob(pattern, &result, pool);
+
+	list = (char **)result->elts;
+
+    for (i = 0; i < result->nelts; i++) {
+		char *path = list[i];
+
+		if (strcmp(path, ".") && strcmp(path, "..")) {
+			p = switch_core_sprintf(pool, "%s%s%s", dir_path, SWITCH_PATH_SEPARATOR, path);
+			if (preprocess(p, write_fd, rlevel) < 0) {
+				const char *reason = strerror(errno);
+				if (rlevel > 100) {
+					reason = "Maximum recursion limit reached";
+				}
+				fprintf(stderr, "Error including %s (%s)\n", p, reason);
+			}
+		}
+	}
+
+	switch_core_destroy_memory_pool(&pool);
+	
+
+	return write_fd;
+}
+
 static int preprocess(const char *file, int write_fd, int rlevel)
 {
 	int read_fd = -1;
@@ -1016,17 +1069,8 @@ static int preprocess(const char *file, int write_fd, int rlevel)
 					}
 
 				} else if (!strcasecmp(cmd, "include")) {
-					char *fme = NULL, *ifile = arg;
-
-					if (!switch_is_file_path(ifile)) {
-						fme = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, arg);
-						ifile = fme;
-					}
-					if (preprocess(ifile, write_fd, rlevel + 1) < 0) {
-						fprintf(stderr, "Error including %s (%s)\n", ifile, strerror(errno));
-					}
-					switch_safe_free(fme);
-				}				/* else NO OP */
+					preprocess_glob(arg, write_fd, rlevel + 1);
+				}
 			}
 
 			continue;
