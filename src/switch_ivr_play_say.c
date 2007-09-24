@@ -504,8 +504,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 	teletone_generation_session_t ts;
 	switch_buffer_t *audio_buffer;
 	switch_frame_t *read_frame = NULL;
-	switch_codec_t *read_codec = NULL, write_codec;
-	switch_frame_t write_frame;
+	switch_codec_t *read_codec = NULL, write_codec = { 0 };
+	switch_frame_t write_frame = { 0 };
 	switch_byte_t data[1024];
 	switch_channel_t *channel;
 
@@ -516,7 +516,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 
 	switch_channel_pre_answer(channel);
 	read_codec = switch_core_session_get_read_codec(session);
-
+	
 	if (switch_core_codec_init(&write_codec,
 							   "L16",
 							   NULL,
@@ -527,14 +527,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 
 		return SWITCH_STATUS_FALSE;
 	}
-
+	memset(&ts, 0, sizeof(ts));
 	write_frame.codec = &write_codec;
 	write_frame.data = data;
 
 	switch_buffer_create_dynamic(&audio_buffer, 512, 1024, 0);
 	teletone_init_session(&ts, 0, teletone_handler, audio_buffer);
 	ts.rate = read_codec->implementation->samples_per_second;
-
+	ts.channels = 1;
 	teletone_run(&ts, script);
 
 	if (loops) {
@@ -570,7 +570,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 		}
 
 		write_frame.samples = write_frame.datalen / 2;
-		
+
 		if (switch_core_session_write_frame(session, &write_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
 			break;
 		}
