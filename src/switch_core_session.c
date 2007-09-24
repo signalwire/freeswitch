@@ -81,7 +81,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 	uint32_t loops = 0;
 
 	switch_mutex_lock(session_manager.session_table_mutex);
-	for (hi = switch_hash_first(session_manager.memory_pool, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		if (val) {
 			session = (switch_core_session_t *) val;
@@ -388,10 +388,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_message(switch_core_se
 
 	assert(session != NULL);
 
-	if (!session->message_queue) {
-		switch_queue_create(&session->message_queue, SWITCH_MESSAGE_QUEUE_LEN, session->pool);
-	}
-
 	if (session->message_queue) {
 		if (switch_queue_trypush(session->message_queue, message) == SWITCH_STATUS_SUCCESS) {
 			status = SWITCH_STATUS_SUCCESS;
@@ -477,10 +473,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(switch_core_sess
 
 	assert(session != NULL);
 
-	if (!session->event_queue) {
-		switch_queue_create(&session->event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
-	}
-
 	if (session->event_queue) {
 		if (switch_queue_trypush(session->event_queue, *event) == SWITCH_STATUS_SUCCESS) {
 			*event = NULL;
@@ -521,10 +513,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_c
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	assert(session != NULL);
-
-	if (!session->private_event_queue) {
-		switch_queue_create(&session->private_event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
-	}
 
 	if (session->private_event_queue) {
 		(*event)->event_id = SWITCH_EVENT_PRIVATE_COMMAND;
@@ -818,6 +806,9 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 	switch_thread_rwlock_create(&session->bug_rwlock, session->pool);
 	switch_thread_cond_create(&session->cond, session->pool);
 	switch_thread_rwlock_create(&session->rwlock, session->pool);
+	switch_queue_create(&session->message_queue, SWITCH_MESSAGE_QUEUE_LEN, session->pool);
+	switch_queue_create(&session->event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
+	switch_queue_create(&session->private_event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
 
 	snprintf(session->name, sizeof(session->name), "%"SWITCH_SIZE_T_FMT, session->id);
 	switch_mutex_lock(session_manager.session_table_mutex);

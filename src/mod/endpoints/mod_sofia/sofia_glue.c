@@ -264,7 +264,7 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 		}
 	} else {
 		tech_pvt->num_codecs =
-			switch_loadable_module_get_codecs(switch_core_session_get_pool(tech_pvt->session), tech_pvt->codecs,
+			switch_loadable_module_get_codecs(tech_pvt->codecs,
 											  sizeof(tech_pvt->codecs) / sizeof(tech_pvt->codecs[0]));
 	}
 
@@ -574,7 +574,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	}
 
 	SWITCH_STANDARD_STREAM(stream);
-	if ((hi = switch_channel_variable_first(channel, switch_core_session_get_pool(tech_pvt->session)))) {
+	if ((hi = switch_channel_variable_first(channel))) {
 		for (; hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, &vvar, NULL, &vval);
 			if (vvar && vval) {
@@ -1540,14 +1540,14 @@ void sofia_glue_del_profile(sofia_profile_t *profile)
 
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
-	for (hi = switch_hash_first(switch_hash_pool_get(mod_sofia_globals.profile_hash), mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, &vvar, NULL, &vval);
 		this_profile = (sofia_profile_t *) vval;
 		if (this_profile == profile) {
 			switch_core_hash_delete(mod_sofia_globals.profile_hash, vvar);
 		}
 	}
-	for (hi = switch_hash_first(switch_hash_pool_get(mod_sofia_globals.gateway_hash), mod_sofia_globals.gateway_hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_hash_first(NULL, mod_sofia_globals.gateway_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, &vvar, NULL, &vval);
         this_gateway = (sofia_gateway_t *) vval;
 

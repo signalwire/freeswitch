@@ -200,12 +200,11 @@ SWITCH_DECLARE(switch_management_interface_t *) switch_loadable_module_get_manag
 
 /*!
   \brief Retrieve the list of loaded codecs into an array
-  \param pool the memory pool to use for the hash index
   \param array the array to populate
   \param arraylen the max size in elements of the array
   \return the number of elements added to the array
  */
-SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool, const switch_codec_implementation_t **array, int arraylen);
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_implementation_t **array, int arraylen);
 
 
 /*!

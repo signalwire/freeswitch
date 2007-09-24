@@ -342,15 +342,17 @@ SWITCH_DECLARE(void) switch_channel_variable_last(switch_channel_t *channel)
 	}
 }
 
-SWITCH_DECLARE(switch_hash_index_t *) switch_channel_variable_first(switch_channel_t *channel, switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_hash_index_t *) switch_channel_variable_first(switch_channel_t *channel)
 {
 	switch_hash_index_t *hi;
 
 	assert(channel != NULL);
 
-	if ((hi = switch_hash_first(pool, channel->variables))) {
-		switch_mutex_lock(channel->profile_mutex);
+	switch_mutex_lock(channel->profile_mutex);
+	if ((hi = switch_hash_first(NULL, channel->variables))) {
 		channel->vi = 1;
+	} else {
+		switch_mutex_unlock(channel->profile_mutex);
 	}
 
 	return hi;
@@ -818,7 +820,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 	}
 
 	/* Index Variables */
-	for (hi = switch_hash_first(switch_core_session_get_pool(channel->session), channel->variables); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_hash_first(NULL, channel->variables); hi; hi = switch_hash_next(hi)) {
 		char buf[1024];
 		switch_hash_this(hi, &var, NULL, &val);
 		if (var && val) {

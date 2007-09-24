@@ -477,7 +477,7 @@ static void pres_event_handler(switch_event_t *event)
 	sql = switch_mprintf("select sub_from, sub_to,'%q','%q','%q','%q' from jabber_subscriptions where sub_to like '%%%q'", type, rpid, status, proto, from);
 
 
-	for (hi = switch_hash_first(switch_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		profile = (mdl_profile_t *) val;
 
@@ -572,7 +572,7 @@ static void roster_event_handler(switch_event_t *event)
 		sql = switch_mprintf("select *,'%q' from jabber_subscriptions", status ? status : "");
 	}
 
-	for (hi = switch_hash_first(switch_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		profile = (mdl_profile_t *) val;
 
@@ -642,7 +642,7 @@ static void sign_off(void)
 	sql = switch_mprintf("select * from jabber_subscriptions");
 
 
-	for (hi = switch_hash_first(switch_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		profile = (mdl_profile_t *) val;
 
@@ -760,7 +760,7 @@ static int get_codecs(struct private_object *tech_pvt)
 				return 0;
 			}
 		} else if (((tech_pvt->num_codecs =
-					 switch_loadable_module_get_codecs(switch_core_session_get_pool(tech_pvt->session), tech_pvt->codecs, SWITCH_MAX_CODECS))) <= 0) {
+					 switch_loadable_module_get_codecs(tech_pvt->codecs, SWITCH_MAX_CODECS))) <= 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO codecs?\n");
 			return 0;
 		}

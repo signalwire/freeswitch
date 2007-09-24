@@ -230,7 +230,7 @@ static switch_status_t iax_set_codec(private_t * tech_pvt, struct iax_session *i
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO codecs?\n");
 			return SWITCH_STATUS_GENERR;
 		}
-	} else if (((num_codecs = switch_loadable_module_get_codecs(switch_core_session_get_pool(tech_pvt->session), codecs, SWITCH_MAX_CODECS))) <= 0) {
+	} else if (((num_codecs = switch_loadable_module_get_codecs(codecs, SWITCH_MAX_CODECS))) <= 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO codecs?\n");
 		return SWITCH_STATUS_GENERR;
 	}

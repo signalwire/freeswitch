@@ -116,7 +116,7 @@ void sofia_presence_cancel(void)
 
 	if ((sql = switch_mprintf("select 0,'unavailable','unavailable',* from sip_subscriptions where event='presence'"))) {
 		switch_mutex_lock(mod_sofia_globals.hash_mutex);
-		for (hi = switch_hash_first(switch_hash_pool_get(mod_sofia_globals.profile_hash), mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);
 			profile = (sofia_profile_t *) val;
 			if (!(profile->pflags & PFLAG_PRESENCE)) {
@@ -294,7 +294,7 @@ void sofia_presence_event_handler(switch_event_t *event)
 		
 		assert(sql != NULL);
 		switch_mutex_lock(mod_sofia_globals.hash_mutex);
-		for (hi = switch_hash_first(switch_hash_pool_get(mod_sofia_globals.profile_hash), mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);
 			profile = (sofia_profile_t *) val;
 			if (!(profile->pflags & PFLAG_PRESENCE)) {
@@ -396,7 +396,7 @@ void sofia_presence_event_handler(switch_event_t *event)
 	}
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
-	for (hi = switch_hash_first(switch_hash_pool_get(mod_sofia_globals.profile_hash), mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		profile = (sofia_profile_t *) val;
 		if (!(profile->pflags & PFLAG_PRESENCE)) {

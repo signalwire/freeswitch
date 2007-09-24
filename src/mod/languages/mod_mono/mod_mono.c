@@ -142,7 +142,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_mono_load)
 	/* Finally, go through and initialise each plugin before returning SUCCESS */
 	switch_hash_index_t *p = NULL;
 
-	for (p = switch_hash_first(mono_pool, globals.plugins); p; p = switch_hash_next(p)) {
+	for (p = switch_hash_first(NULL, globals.plugins); p; p = switch_hash_next(p)) {
 		mono_plugin *plugin = (mono_plugin *) switch_core_alloc(mono_pool, sizeof(*plugin));
 		switch_ssize_t *key_length = NULL;
 		const void *key = NULL;

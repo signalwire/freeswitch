@@ -586,7 +586,7 @@ SWITCH_STANDARD_APP(enum_app_function)
 			void *vval;
 			const void *vvar;
 
-			if ((hi = switch_channel_variable_first(channel, switch_core_session_get_pool(session)))) {
+			if ((hi = switch_channel_variable_first(channel))) {
 				for (; hi; hi = switch_hash_next(hi)) {
 					switch_hash_this(hi, &vvar, NULL, &vval);
 					if (vvar && !strncmp(vvar, "enum_", 5)) {

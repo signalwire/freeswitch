@@ -252,7 +252,7 @@ static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switc
 		stream.write_function(&stream, "%s=%s&", prof_names[x], encode_buf);
 	}
 
-	if ((hi = switch_channel_variable_first(channel, switch_core_session_get_pool(session)))) {
+	if ((hi = switch_channel_variable_first(channel))) {
 		for (; hi; hi = switch_hash_next(hi)) {
 			void *val;
 			const void *var;

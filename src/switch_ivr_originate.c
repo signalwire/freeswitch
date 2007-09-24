@@ -323,7 +323,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		assert(caller_channel != NULL);
 
 		/* Copy all the channel variables into the event */
-		if ((hi = switch_channel_variable_first(caller_channel, switch_core_session_get_pool(session)))) {
+		if ((hi = switch_channel_variable_first(caller_channel))) {
 			for (; hi; hi = switch_hash_next(hi)) {
 				switch_hash_this(hi, &vvar, NULL, &vval);
 				if (vvar && vval) {

@@ -108,7 +108,7 @@ static void switch_loadable_module_runtime(void)
 	switch_loadable_module_t *module;
 
 	switch_mutex_lock(loadable_modules.mutex);
-	for (hi = switch_hash_first(loadable_modules.pool, loadable_modules.module_hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_hash_first(NULL, loadable_modules.module_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		module = (switch_loadable_module_t *) val;
 
@@ -1078,7 +1078,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 	void *val;
 	switch_loadable_module_t *module;
 	
-	for (hi = switch_hash_first(loadable_modules.pool, loadable_modules.module_hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_hash_first(NULL, loadable_modules.module_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		module = (switch_loadable_module_t *) val;
 		do_shutdown(module);
@@ -1174,7 +1174,7 @@ SWITCH_DECLARE(switch_management_interface_t *) switch_loadable_module_get_manag
 	return switch_core_hash_find_locked(loadable_modules.management_hash, relative_oid, loadable_modules.mutex);
 }
 
-SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool, const switch_codec_implementation_t **array, int arraylen)
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_implementation_t **array, int arraylen)
 {
 	switch_hash_index_t *hi;
 	void *val;
@@ -1183,7 +1183,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool
 	const switch_codec_implementation_t *imp;
 
 	switch_mutex_lock(loadable_modules.mutex);
-	for (hi = switch_hash_first(pool, loadable_modules.codec_hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_hash_first(NULL, loadable_modules.codec_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		codec_interface = (switch_codec_interface_t *) val;
 		/* Look for a 20ms implementation because it's the safest choice */

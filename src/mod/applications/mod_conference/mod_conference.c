@@ -2822,7 +2822,7 @@ static switch_status_t conf_api_sub_list(conference_obj_t * conference, switch_s
 	}
 
 	if (conference == NULL) {
-		for (hi = switch_hash_first(globals.conference_pool, globals.conference_hash); hi; hi = switch_hash_next(hi)) {
+		for (hi = switch_hash_first(NULL, globals.conference_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);
 			conference = (conference_obj_t *) val;
 

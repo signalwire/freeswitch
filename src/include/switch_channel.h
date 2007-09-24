@@ -227,7 +227,7 @@ SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, co
  *          pool is NULL, then an internal, non-thread-safe iterator is used.
  * @remark  Use switch_hash_next and switch_hash_this with this function to iterate all the channel variables
  */
-SWITCH_DECLARE(switch_hash_index_t *) switch_channel_variable_first(switch_channel_t *channel, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_hash_index_t *) switch_channel_variable_first(switch_channel_t *channel);
 SWITCH_DECLARE(void) switch_channel_variable_last(switch_channel_t *channel);
 
 /*!

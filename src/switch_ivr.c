@@ -967,7 +967,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session
 		void *vval;
 		const void *vvar;
 
-		if ((hi = switch_channel_variable_first(chana, switch_core_session_get_pool(sessa)))) {
+		if ((hi = switch_channel_variable_first(chana))) {
 			for (; hi; hi = switch_hash_next(hi)) {
 				switch_hash_this(hi, &vvar, NULL, &vval);
 				if (vvar && vval && (!prefix || (var && !strncmp((char *) vvar, var, strlen(var))))) {
@@ -1330,7 +1330,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 		}
 	}
 
-	if (((hi = switch_channel_variable_first(channel, switch_core_session_get_pool(session))))) {
+	if (((hi = switch_channel_variable_first(channel)))) {
 		for (; hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, &vvar, NULL, &vval);
 			if (vvar && vval) {
