@@ -360,7 +360,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_private(switch_channel_t *cha
 {
 	assert(channel != NULL);
 	switch_mutex_lock(channel->profile_mutex);
-	switch_core_hash_insert_dup(channel->private_hash, switch_core_session_strdup(channel->session, key), private_info);
+	switch_core_hash_insert_dup_locked(channel->private_hash, switch_core_session_strdup(channel->session, key), private_info, channel->flag_mutex);
 	switch_mutex_unlock(channel->profile_mutex);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -400,11 +400,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *ch
 
 	if (varname) {
 		switch_mutex_lock(channel->profile_mutex);
-		switch_core_hash_delete(channel->variables, varname);
+		switch_core_hash_delete_locked(channel->variables, varname, channel->flag_mutex);
 		if (!switch_strlen_zero(value)) {
-			switch_core_hash_insert_dup(channel->variables, varname, switch_clean_string(switch_core_session_strdup(channel->session, value)));
+			switch_core_hash_insert_dup_locked(channel->variables, varname, 
+											   switch_clean_string(switch_core_session_strdup(channel->session, value)), channel->flag_mutex);
 		} else {
-			switch_core_hash_delete(channel->variables, varname);
+			switch_core_hash_delete_locked(channel->variables, varname, channel->flag_mutex);
 		}
 		switch_mutex_unlock(channel->profile_mutex);
 		return SWITCH_STATUS_SUCCESS;
@@ -419,11 +420,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_nodup(switch_channel
 
 	if (varname) {
 		switch_mutex_lock(channel->profile_mutex);
-		switch_core_hash_delete(channel->variables, varname);
+		switch_core_hash_delete_locked(channel->variables, varname, channel->flag_mutex);
 		if (!switch_strlen_zero(value)) {
-			switch_core_hash_insert_dup(channel->variables, varname, value);
+			switch_core_hash_insert_dup_locked(channel->variables, varname, value, channel->flag_mutex);
 		} else {
-			switch_core_hash_delete(channel->variables, varname);
+			switch_core_hash_delete_locked(channel->variables, varname, channel->flag_mutex);
 		}
 		switch_mutex_unlock(channel->profile_mutex);
 		return SWITCH_STATUS_SUCCESS;
