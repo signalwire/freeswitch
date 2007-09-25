@@ -117,6 +117,7 @@
     <!-- Languages -->
     <!--#include "spidermonkey.conf.xml"-->
     <!-- none for mod_perl -->
+    <!--#include "java.conf.xml"-->
 
     <!-- ASR /TTS -->
     <!-- none for mod_cepstral -->

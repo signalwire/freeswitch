@@ -337,6 +337,7 @@ AC_ARG_ENABLE(core-libedit-support,
 
 #AX_LIB_MYSQL([MINIMUM-VERSION]) 
 AX_LIB_MYSQL
+AX_CHECK_JAVA
 
 AM_CONDITIONAL([ADD_ODBC],[test "x$enable_core_odbc_support" != "xno"])
 AM_CONDITIONAL([ADD_LIBEDIT],[test "x$enable_core_libedit_support" != "xno"])
@@ -348,6 +349,7 @@ AC_CONFIG_FILES([Makefile
                 src/mod/event_handlers/mod_cdr/Makefile
                 src/mod/endpoints/mod_sofia/Makefile
                 src/mod/event_handlers/mod_radius_cdr/Makefile
+                src/mod/languages/mod_java/Makefile
                 src/include/switch_am_config.h
                 build/getlib.sh
                 build/modmake.rules])

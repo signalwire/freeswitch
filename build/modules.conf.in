@@ -41,6 +41,7 @@ formats/mod_native_file
 formats/mod_sndfile
 #formats/mod_shout
 #formats/mod_local_stream
+#languages/mod_java
 #languages/mod_perl
 #languages/mod_python
 #languages/mod_spidermonkey
