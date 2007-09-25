@@ -333,7 +333,7 @@ void BaseCDR::process_channel_variables(const std::list<std::string>& stringlist
 		const void *var;
 		switch_memory_pool_t *sessionpool;
 		sessionpool = switch_core_session_get_pool(coresession);
-		for (hi = switch_channel_variable_first(channel,sessionpool); hi; hi = switch_hash_next(hi)) 
+		for (hi = switch_channel_variable_first(channel); hi; hi = switch_hash_next(hi)) 
 		{
 			switch_hash_this(hi, &var, 0, &val);
 			std::string tempstring_first, tempstring_second;
