@@ -59,23 +59,25 @@ static void httpCallBack()
 static switch_status_t my_on_hangup(switch_core_session_t *session)
 {
 	switch_xml_t cdr;
-	char *xml_text;
-	char *path;
+	char *xml_text = NULL;
+	char *path = NULL;
+	char *curl_xml_text = NULL;
+	char *logdir = NULL;
+	char *xml_text_escaped = NULL;
 	int fd = -1;
 	uint32_t curTry;
 	long httpRes;
 	CURL *curl_handle = NULL;
-	char *curl_xml_text;
-	char *logdir;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	uint32_t i;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
 
 		/* build the XML */
 		if(!(xml_text = switch_mprintf("<?xml version=\"1.0\"?>\n%s",switch_xml_toxml(cdr)) )) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-			return SWITCH_STATUS_FALSE;
+			goto error;
 		}
 
 		/* do we log to the disk no matter what? */
@@ -101,17 +103,24 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 #endif
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error![%s]\n", ebuf);
 				}
-				free(path);
+				switch_safe_free(path);
 			}
 		}
 
 		/* try to post it to the web server */
-		if(!switch_strlen_zero(globals.url)) {
+		if (!switch_strlen_zero(globals.url)) {
 			curl_handle = curl_easy_init();
-			if(!(curl_xml_text = switch_mprintf("cdr=%s",xml_text) )) {
+
+			xml_text_escaped = curl_easy_escape(curl_handle, (const char*) xml_text, (int)strlen(xml_text));
+
+			if (switch_strlen_zero(xml_text_escaped)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-				free(xml_text);
-				return SWITCH_STATUS_FALSE;
+				goto error;
+			}
+
+			if (!(curl_xml_text = switch_mprintf("cdr=%s", xml_text_escaped))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+				goto error;
 			}
 
 			if (!switch_strlen_zero(globals.cred)) {
@@ -130,30 +139,25 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1); // 302 recursion level
 			*/
 
-			for(curTry=0;curTry<=globals.retries;curTry++) {
+			for (curTry=0;curTry<=globals.retries;curTry++) {
 				curl_easy_perform(curl_handle);
 				curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE,&httpRes);
-				if(httpRes==200) {
-					curl_easy_cleanup(curl_handle);
-					free(curl_xml_text);
-					free(xml_text);
-					return SWITCH_STATUS_SUCCESS;
+				if (httpRes==200) {
+					goto success;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got error [%ld] posting to web server\n",httpRes);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got error [%ld] posting to web server [%s]\n",httpRes, globals.url);
 				}
 
 				/* make sure we dont sleep on the last try */
-				for(i=0;i<globals.delay && (curTry != (globals.retries));i++) {
+				for (i=0;i<globals.delay && (curTry != (globals.retries));i++) {
 					switch_sleep(1000);
 					if(globals.shutdown) {
 						/* we are shutting down so dont try to webpost any more */
 						i=globals.delay;
 						curTry=globals.retries;
 					}
-				}
-						
+				}		
 			}
-			free(curl_xml_text);
 			curl_easy_cleanup(curl_handle);
 
 			/* if we are here the web post failed for some reason */
@@ -174,16 +178,27 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 #endif
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error![%s]\n", ebuf);
 				}
-				free(path);
 			}
 		}
-		free(xml_text);
-		switch_xml_free(cdr);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Generating Data!\n");
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+
+success:
+	status = SWITCH_STATUS_SUCCESS;
+
+error:
+	if (curl_handle) {	
+		curl_easy_cleanup(curl_handle);
+	}
+	switch_safe_free(curl_xml_text);
+	switch_safe_free(xml_text_escaped);
+	switch_safe_free(path);
+	switch_safe_free(xml_text);
+	switch_xml_free(cdr);
+
+	return status;
 }
 
 
@@ -221,9 +236,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 
 			if (!strcasecmp(var, "cred")) {
-				globals.cred = val;
+				globals.cred = strdup(val);
 			} else if (!strcasecmp(var, "url")) {
-				globals.url = val;
+				globals.url = strdup(val);
 			} else if (!strcasecmp(var, "delay")) {
 				globals.delay = (uint32_t) atoi(val);
 			} else if (!strcasecmp(var, "retries")) {
@@ -232,10 +247,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				if (switch_strlen_zero(val)) {
 					globals.logDir = SWITCH_GLOBAL_dirs.log_dir;
 				} else {
-					globals.logDir = val;
+					globals.logDir = strdup(val);
 				}
 			} else if (!strcasecmp(var, "errLogDir")) {
-				globals.errLogDir = val;
+				globals.errLogDir = strdup(val);
 			}
 
 		}
