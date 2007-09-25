@@ -157,7 +157,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_read_loop(switch_buffer_t *buffer, v
 {
 	switch_size_t len;
 	if ((len = switch_buffer_read(buffer, data, datalen)) == 0) {
-		if (buffer->loops >= 0) {
+		if (buffer->loops > 0) {
 			buffer->loops--;
 		}
 		if (buffer->loops == 0) {
