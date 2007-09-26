@@ -145,6 +145,8 @@ sub command($$) {
 
   if ($r->{body}) {
     $reply = $r->{body};
+  } elsif ($r->{'reply-text'}) {
+    $reply = $r->{'reply-text'};
   } else {
     $reply = "socketerror";
   }
