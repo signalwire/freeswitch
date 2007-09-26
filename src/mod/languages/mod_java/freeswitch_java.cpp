@@ -17,7 +17,7 @@ JavaSession::~JavaSession()
     JNIEnv *env;
     jint res;
 
-    res = javaVM->GetEnv((void**)&env, JNI_VERSION_1_6);
+    res = javaVM->GetEnv((void**)&env, JNI_VERSION_1_4);
     if (res == JNI_OK)
     {
         if (cb_state.function)
@@ -57,7 +57,7 @@ void JavaSession::setDTMFCallback(jobject dtmfCallback, char *funcargs)
     jobject globalArgs = NULL;
     jint res;
 
-    res = javaVM->GetEnv((void**)&env, JNI_VERSION_1_6);
+    res = javaVM->GetEnv((void**)&env, JNI_VERSION_1_4);
     if (res != JNI_OK)
     {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error getting JNIEnv!\n");
@@ -104,7 +104,7 @@ void JavaSession::setHangupHook(jobject hangupHook)
     jobject globalHangupHook;
     jint res;
 
-    res = javaVM->GetEnv((void**)&env, JNI_VERSION_1_6);
+    res = javaVM->GetEnv((void**)&env, JNI_VERSION_1_4);
     if (res != JNI_OK)
     {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error getting JNIEnv!\n");
@@ -143,7 +143,7 @@ void JavaSession::check_hangup_hook()
         return;
     }
 
-    res = javaVM->GetEnv((void**)&env, JNI_VERSION_1_6);
+    res = javaVM->GetEnv((void**)&env, JNI_VERSION_1_4);
     if (res == JNI_EDETACHED)
     {
         res = javaVM->AttachCurrentThread((void**)&env, NULL);
@@ -185,7 +185,7 @@ switch_status_t JavaSession::run_dtmf_callback(void *input, switch_input_type_t 
         return SWITCH_STATUS_FALSE;
     }
 
-    res = javaVM->GetEnv((void**)&env, JNI_VERSION_1_6);
+    res = javaVM->GetEnv((void**)&env, JNI_VERSION_1_4);
     if (res != JNI_OK)
     {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error getting JNIEnv!\n");

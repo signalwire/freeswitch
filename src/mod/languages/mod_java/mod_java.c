@@ -229,7 +229,7 @@ static switch_status_t create_java_vm(JavaVMOption *options, int optionCount)
         jint res;
 
         memset(&initArgs, 0, sizeof(initArgs));
-        initArgs.version = JNI_VERSION_1_6;
+        initArgs.version = JNI_VERSION_1_4;
         initArgs.nOptions = optionCount;
         initArgs.options = options;
         initArgs.ignoreUnrecognized = JNI_TRUE;

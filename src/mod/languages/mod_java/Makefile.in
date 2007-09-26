@@ -4,7 +4,6 @@
 # and define these variables to impact your build
 
 JAVA_FLAGS=@JAVA_FLAGS@
-JAVA_HOME=@JAVA_HOME@
 # Without -fno-strict-aliasing, g++ generates invalid code for Java_org_freeswitch_freeswitchJNI_SWIGJavaSessionUpcast, which segfaults
 LOCAL_CFLAGS=$(JAVA_FLAGS) -fno-strict-aliasing
 LOCAL_OBJS=freeswitch_java.o switch_swig_wrap.o
@@ -19,8 +18,8 @@ include ../../../../build/modmake.rules
 
 local_depend:
 	mkdir -p classes
-	$(JAVA_HOME)/bin/javac -sourcepath src -d classes $(CLASSES)
-	$(JAVA_HOME)/bin/jar cf freeswitch.jar -C classes org
+	javac -sourcepath src -d classes $(CLASSES)
+	jar cf freeswitch.jar -C classes org
 
 reswig:
 	rm -f switch_swig_wrap.cpp
