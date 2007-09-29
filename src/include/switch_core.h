@@ -230,18 +230,20 @@ SWITCH_DECLARE(void) switch_core_port_allocator_destroy(switch_core_port_allocat
 /*! 
   \brief Initilize the core
   \param console optional FILE stream for output
+  \param flags core flags
   \param err a pointer to set any errors to
   \note to be called at application startup
 */
-SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, const char **err);
+SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, switch_core_flag_t flags, const char **err);
 
 /*! 
   \brief Initilize the core and load modules
   \param console optional FILE stream for output
+  \param flags core flags
   \param err a pointer to set any errors to
   \note to be called at application startup instead of switch_core_init.  Includes module loading.
 */
-SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(const char *console, const char **err);
+SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(const char *console, switch_core_flag_t flags, const char **err);
 
 /*! 
   \brief Set/Get Session Limit
@@ -326,6 +328,7 @@ SWITCH_DECLARE(int) switch_core_add_state_handler(const switch_state_handler_tab
 SWITCH_DECLARE(const switch_state_handler_table_t *) switch_core_get_state_handler(int index);
 ///\}
 
+SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memory_pool_t **pool, const char *file, const char *func, int line);
 
 ///\defgroup memp Memory Pooling/Allocation
 ///\ingroup core1
@@ -334,13 +337,14 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_core_get_state_handl
   \brief Create a new sub memory pool from the core's master pool
   \return SWITCH_STATUS_SUCCESS on success
 */
-SWITCH_DECLARE(switch_status_t) switch_core_new_memory_pool(switch_memory_pool_t **pool);
+#define switch_core_new_memory_pool(p) switch_core_perform_new_memory_pool(p, __FILE__, __SWITCH_FUNC__, __LINE__)
 
+SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(switch_memory_pool_t **pool, const char *file, const char *func, int line);
 /*! 
   \brief Returns a subpool back to the main pool
   \return SWITCH_STATUS_SUCCESS on success
 */
-SWITCH_DECLARE(switch_status_t) switch_core_destroy_memory_pool(switch_memory_pool_t **pool);
+#define switch_core_destroy_memory_pool(p) switch_core_perform_destroy_memory_pool(p, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 /*! 
   \brief Start the session's state machine
@@ -831,7 +835,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_init(switch_hash_t ** hash, swi
   \param hash the hash to destroy
   \return SWITCH_STATUS_SUCCESS if the hash is destroyed
 */
-SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(switch_hash_t * hash);
+SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(switch_hash_t **hash);
 
 /*! 
   \brief Insert data into a hash
@@ -853,25 +857,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert(switch_hash_t * hash, co
   \note the string key must be a constant or a dynamic string
 */
 SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_locked(switch_hash_t * hash, const char *key, const void *data, switch_mutex_t *mutex);
-
-/*! 
-  \brief Insert data into a hash with dynamicly allocated key name
-  \param hash the hash to add data to
-  \param key the name of the key to add the data to
-  \param data the data to add
-  \return SWITCH_STATUS_SUCCESS if the data is added
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup(switch_hash_t * hash, const char *key, const void *data);
-
-/*! 
-  \brief Insert data into a hash with dynamicly allocated key name
-  \param hash the hash to add data to
-  \param key the name of the key to add the data to
-  \param data the data to add
-  \param mutex optional mutex to lock
-  \return SWITCH_STATUS_SUCCESS if the data is added
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup_locked(switch_hash_t * hash, const char *key, const void *data, switch_mutex_t *mutex);
 
 /*! 
   \brief Delete data from a hash based on desired key
@@ -907,6 +892,10 @@ SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash_t * hash, const char *k
   \return a pointer to the data held in the key
 */
 SWITCH_DECLARE(void *) switch_core_hash_find_locked(switch_hash_t * hash, const char *key, switch_mutex_t *mutex);
+
+SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(char *depricate_me, switch_hash_t *hash);
+SWITCH_DECLARE(switch_hash_index_t *) switch_hash_next(switch_hash_index_t *hi);
+SWITCH_DECLARE(void) switch_hash_this(switch_hash_index_t *hi, const void **key, switch_ssize_t *klen, void **val);
 
 ///\}
 
@@ -1392,6 +1381,12 @@ SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel);
   \return SWITCH_TRUE or SWITCH_FALSE
 */
 SWITCH_DECLARE(switch_bool_t) switch_core_ready(void);
+
+/*! 
+  \brief return core flags
+  \return core flags
+*/
+SWITCH_DECLARE(switch_core_flag_t) switch_core_flags(void);
 
 /*! 
   \brief Execute a management operation.

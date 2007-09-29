@@ -365,6 +365,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_local_stream_shutdown)
 {
 	RUNNING = 0;
 	switch_yield(500000);
+	switch_core_hash_destroy(&globals.source_hash);
 	return SWITCH_STATUS_SUCCESS;
 }
 

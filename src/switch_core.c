@@ -394,13 +394,13 @@ SWITCH_DECLARE(void) switch_core_runtime_loop(int bg)
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, const char **err)
+SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, switch_core_flag_t flags, const char **err)
 {
 	switch_xml_t xml = NULL, cfg = NULL;
 	switch_uuid_t uuid;
 	memset(&runtime, 0, sizeof(runtime));
 
-	runtime.no_new_sessions = 1;
+	switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
 
 	/* INIT APR and Create the pool context */
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
@@ -417,7 +417,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, const char
 	switch_core_set_globals();
 	switch_core_session_init(runtime.memory_pool);
 	switch_core_hash_init(&runtime.global_vars, runtime.memory_pool);
-
+	runtime.flags = flags;
 
 
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
@@ -435,7 +435,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, const char
 				const char *val = switch_xml_attr_soft(param, "value");
 
 				if (!strcasecmp(var, "crash-protection")) {
-					runtime.crash_prot = switch_true(val);
+					if (switch_true(val)) {
+						switch_set_flag((&runtime), SCF_CRASH_PROT);
+					}
 				} else if (!strcasecmp(var, "max-sessions")) {
 					switch_core_session_limit(atoi(val));
 				}
@@ -485,7 +487,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, const char
 	switch_log_init(runtime.memory_pool);
 	switch_event_init(runtime.memory_pool);
 
-	switch_core_sqldb_start(runtime.memory_pool);
+	if (switch_test_flag((&runtime), SCF_USE_SQL)) {
+		switch_core_sqldb_start(runtime.memory_pool);
+	}
 	switch_rtp_init(runtime.memory_pool);
 	runtime.running = 1;
 
@@ -542,10 +546,10 @@ static void handle_SIGINT(int sig)
 	if (sig);
 	return;
 }
-SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(const char *console, const char **err)
+SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(const char *console, switch_core_flag_t flags, const char **err)
 {
 	switch_event_t *event;
-	if (switch_core_init(console, err) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_init(console, flags, err) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -578,11 +582,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(const char *console
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
-					  "\nFreeSWITCH Version %s Started.\nCrash Protection [%s]\nMax Sessions[%u]\n\n", SWITCH_VERSION_FULL, 
-					  runtime.crash_prot ? "Enabled" : "Disabled",
-					  switch_core_session_limit(0));
+					  "\nFreeSWITCH Version %s Started.\nCrash Protection [%s]\nMax Sessions[%u]\nSQL [%s]\n", SWITCH_VERSION_FULL, 
+					  switch_test_flag((&runtime), SCF_CRASH_PROT) ? "Enabled" : "Disabled",
+					  switch_core_session_limit(0),
+					  switch_test_flag((&runtime), SCF_USE_SQL) ? "Enabled" : "Disabled"
+					  );
 
-	runtime.no_new_sessions = 0;
+	switch_clear_flag((&runtime), SCF_NO_NEW_SESSIONS);
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -612,13 +618,17 @@ SWITCH_DECLARE(switch_time_t) switch_core_uptime(void)
 
 SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, uint32_t * val)
 {
-	if (runtime.shutting_down) {
+	if (switch_test_flag((&runtime), SCF_SHUTTING_DOWN)) {
 		return -1;
 	}
 
 	switch (cmd) {
 	case SCSC_PAUSE_INBOUND:
-		runtime.no_new_sessions = *val;
+		if (*val) {
+			switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
+		} else {
+			switch_clear_flag((&runtime), SCF_NO_NEW_SESSIONS);
+		}
 		break;
 	case SCSC_HUPALL:
 		switch_core_session_hupall(SWITCH_CAUSE_MANAGER_REQUEST);
@@ -634,9 +644,15 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, uint32
 	return 0;
 }
 
+
+SWITCH_DECLARE(switch_core_flag_t) switch_core_flags(void)
+{
+	return runtime.flags;
+}
+
 SWITCH_DECLARE(switch_bool_t) switch_core_ready(void)
 {
-	return (runtime.shutting_down || runtime.no_new_sessions) ? SWITCH_FALSE : SWITCH_TRUE;
+	return (switch_test_flag((&runtime), SCF_SHUTTING_DOWN) || switch_test_flag((&runtime), SCF_NO_NEW_SESSIONS)) ? SWITCH_FALSE : SWITCH_TRUE;
 }
 
 
@@ -647,8 +663,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Info", "System Shutting Down");
 		switch_event_fire(&event);
 	}
-	runtime.shutting_down = 1;
-	runtime.no_new_sessions = 1;
+
+	switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
+	switch_set_flag((&runtime), SCF_SHUTTING_DOWN);
 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "End existing sessions\n");
@@ -659,10 +676,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Closing Event Engine.\n");
 	switch_event_shutdown();
 
-	switch_core_sqldb_stop();
+	if (switch_test_flag((&runtime), SCF_USE_SQL)) {
+		switch_core_sqldb_stop();
+	}
 	switch_scheduler_task_thread_stop();
 
 	switch_xml_destroy();
+	switch_core_memory_stop();
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Finalizing Shutdown.\n");
 	switch_log_shutdown();
 
@@ -682,6 +702,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_safe_free(SWITCH_GLOBAL_dirs.htdocs_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.grammar_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.temp_dir);
+
+
+	switch_core_hash_destroy(&runtime.global_vars);
 
 	if (runtime.memory_pool) {
 		apr_pool_destroy(runtime.memory_pool);

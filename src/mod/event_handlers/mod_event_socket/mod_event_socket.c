@@ -510,6 +510,7 @@ struct api_command_struct {
 	listener_t *listener;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	uint8_t bg;
+	switch_memory_pool_t *pool;
 };
 
 static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t * thread, void *obj)
@@ -520,7 +521,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t * thread, void *obj)
 	char *reply, *freply = NULL;
 	switch_status_t status;
 
-	if (switch_thread_rwlock_tryrdlock(acs->listener->rwlock) != SWITCH_STATUS_SUCCESS) {
+	if (!acs->listener || !acs->listener->rwlock || switch_thread_rwlock_tryrdlock(acs->listener->rwlock) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! cannot get read lock.\n");
 		goto done;
 	}
@@ -560,18 +561,16 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t * thread, void *obj)
 	switch_safe_free(stream.data);
 	switch_safe_free(freply);
 
-	switch_thread_rwlock_unlock(acs->listener->rwlock);
-
+	if (acs->listener->rwlock) {
+		switch_thread_rwlock_unlock(acs->listener->rwlock);
+	}
 
   done:
 	if (acs && acs->bg) {
-		if (acs->api_cmd) {
-			free(acs->api_cmd);
-		}
-		if (acs->arg) {
-			free(acs->arg);
-		}
-		free(acs);
+		switch_memory_pool_t *pool = acs->pool;
+		acs = NULL;
+		switch_core_destroy_memory_pool(&pool);
+		pool = NULL;
 	}
 	return NULL;
 
@@ -758,45 +757,45 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 
 		return SWITCH_STATUS_SUCCESS;
 	} else if (!strncasecmp(cmd, "bgapi ", 6)) {
-		struct api_command_struct *acs;
+		struct api_command_struct *acs = NULL;
 		char *api_cmd = cmd + 6;
 		char *arg = NULL;
 		char *uuid_str = NULL;
+		switch_memory_pool_t *pool;
+		switch_thread_t *thread;
+		switch_threadattr_t *thd_attr = NULL;
+		switch_uuid_t uuid;
+
 		strip_cr(api_cmd);
 
 		if ((arg = strchr(api_cmd, ' '))) {
 			*arg++ = '\0';
 		}
 
-		if ((acs = malloc(sizeof(*acs)))) {
-			switch_thread_t *thread;
-			switch_threadattr_t *thd_attr = NULL;
-			switch_uuid_t uuid;
-
-			memset(acs, 0, sizeof(*acs));
-			acs->listener = listener;
-			if (api_cmd) {
-				acs->api_cmd = strdup(api_cmd);
-			}
-			if (arg) {
-				acs->arg = strdup(arg);
-			}
-			acs->bg = 1;
-			switch_threadattr_create(&thd_attr, listener->pool);
-			switch_threadattr_detach_set(thd_attr, 1);
-			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-			switch_thread_create(&thread, thd_attr, api_exec, acs, listener->pool);
-			if ((uuid_str = switch_event_get_header(event, "job-uuid"))) {
-				switch_copy_string(acs->uuid_str, uuid_str, sizeof(acs->uuid_str));
-			} else {
-				switch_uuid_get(&uuid);
-				switch_uuid_format(acs->uuid_str, &uuid);
-			}
-			snprintf(reply, reply_len, "+OK Job-UUID: %s", acs->uuid_str);
-		} else {
-			snprintf(reply, reply_len, "-ERR memory error!");
+		switch_core_new_memory_pool(&pool);
+		acs = switch_core_alloc(pool, sizeof(*acs));
+		assert(acs);
+		acs->pool = pool;
+		acs->listener = listener;
+		if (api_cmd) {
+			acs->api_cmd = switch_core_strdup(acs->pool, api_cmd);
 		}
-
+		if (arg) {
+			acs->arg = switch_core_strdup(acs->pool, arg);
+		}
+		acs->bg = 1;
+		switch_threadattr_create(&thd_attr, acs->pool);
+		switch_threadattr_detach_set(thd_attr, 1);
+		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+		switch_thread_create(&thread, thd_attr, api_exec, acs, acs->pool);
+		if ((uuid_str = switch_event_get_header(event, "job-uuid"))) {
+			switch_copy_string(acs->uuid_str, uuid_str, sizeof(acs->uuid_str));
+		} else {
+			switch_uuid_get(&uuid);
+			switch_uuid_format(acs->uuid_str, &uuid);
+		}
+		snprintf(reply, reply_len, "+OK Job-UUID: %s", acs->uuid_str);
+		
 		return SWITCH_STATUS_SUCCESS;
 	} else if (!strncasecmp(cmd, "log", 3)) {
 
@@ -861,7 +860,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 				}
 
 				if (custom) {
-					switch_core_hash_insert_dup(listener->event_hash, cur, MARKER);
+					switch_core_hash_insert(listener->event_hash, cur, MARKER);
 				} else if (switch_name_event(cur, &type) == SWITCH_STATUS_SUCCESS) {
 					key_count++;
 					if (type == SWITCH_EVENT_ALL) {
@@ -957,6 +956,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 				listener->event_list[x] = 0;
 			}
 			/* wipe the hash */
+			switch_core_hash_destroy(&listener->event_hash);
 			switch_core_hash_init(&listener->event_hash, listener->pool);
 			snprintf(reply, reply_len, "+OK no longer listening for events");
 		} else {
@@ -1105,14 +1105,15 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj
   done:
 
 	remove_listener(listener);
-	close_socket(&listener->sock);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session complete, waiting for children\n");
 
 	switch_thread_rwlock_wrlock(listener->rwlock);
 	switch_thread_rwlock_unlock(listener->rwlock);
+	close_socket(&listener->sock);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Closed\n");
+	switch_core_hash_destroy(&listener->event_hash);
 
 	if (session) {
 		switch_channel_clear_flag(switch_core_session_get_channel(session), CF_CONTROLLED);

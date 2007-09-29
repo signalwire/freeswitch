@@ -32,9 +32,12 @@
 #include <switch.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_console_load);
-SWITCH_MODULE_DEFINITION(mod_console, mod_console_load, NULL, NULL);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_console_shutdown);
+SWITCH_MODULE_DEFINITION(mod_console, mod_console_load, mod_console_shutdown, NULL);
 
 static const uint8_t STATIC_LEVELS[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
+static int RUNNING = 0;
+
 static int COLORIZE = 0;
 #ifdef WIN32
 static HANDLE hStdout;
@@ -98,6 +101,12 @@ static switch_status_t config_logger(void)
 		return SWITCH_STATUS_TERM;
 	}
 
+	if (log_hash) {
+		switch_core_hash_destroy(&log_hash);
+	}
+	if (name_hash) {
+		switch_core_hash_destroy(&name_hash);
+	}
 	switch_core_hash_init(&log_hash, module_pool);
 	switch_core_hash_init(&name_hash, module_pool);
 
@@ -137,7 +146,11 @@ static switch_status_t config_logger(void)
 static switch_status_t switch_console_logger(const switch_log_node_t *node, switch_log_level_t level)
 {
 	FILE *handle;
-
+	/*
+	if (!RUNNING) {
+		return SWITCH_STATUS_FALSE;
+	}
+	*/
 	if ((handle = switch_core_data_channel(SWITCH_CHANNEL_ID_LOG))) {
 		uint8_t *lookup = NULL;
 		switch_log_level_t level = SWITCH_LOG_DEBUG;
@@ -188,8 +201,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_console_load)
 	switch_log_bind_logger(switch_console_logger, SWITCH_LOG_DEBUG);
 
 	config_logger();
-
+	RUNNING = 1;
 	/* indicate that the module should continue to be loaded */
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_console_shutdown)
+{
+	//switch_core_hash_destroy(&log_hash);
+	//switch_core_hash_destroy(&name_hash);
+	RUNNING = 0;
 	return SWITCH_STATUS_SUCCESS;
 }
 

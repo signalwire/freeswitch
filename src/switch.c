@@ -213,6 +213,7 @@ int main(int argc, char *argv[])
 	char *usageDesc;
 	int alt_dirs = 0;
 	int known_opt;
+	switch_core_flag_t flags = SCF_USE_SQL;
 
 #ifdef WIN32
 	SERVICE_TABLE_ENTRY dispatchTable[] = {
@@ -224,6 +225,7 @@ int main(int argc, char *argv[])
 		"\t-install         -- install freeswitch as a service\n"
 		"\t-uninstall       -- remove freeswitch as a service\n"
 		"\t-hp              -- enable high priority settings\n"
+		"\t-nosql           -- disable internal sql scoreboard\n"
 		"\t-stop            -- stop freeswitch\n"
 		"\t-nc              -- do not output to a console and background\n"
 		"\t-conf [confdir]  -- specify an alternate config dir\n"
@@ -233,6 +235,7 @@ int main(int argc, char *argv[])
 		"\t-help            -- this message\n"
 		"\t-nf              -- no forking\n"
 		"\t-hp              -- enable high priority settings\n"
+		"\t-nosql           -- disable internal sql scoreboard\n"
 		"\t-stop            -- stop freeswitch\n"
 		"\t-nc              -- do not output to a console and background\n"
 		"\t-conf [confdir]  -- specify an alternate config dir\n"
@@ -288,6 +291,11 @@ int main(int argc, char *argv[])
 #endif
 		if (argv[x] && !strcmp(argv[x], "-hp")) {
 			set_high_priority();
+			known_opt++;
+		}
+
+		if (argv[x] && !strcmp(argv[x], "-nosql")) {
+			flags &= ~SCF_USE_SQL;
 			known_opt++;
 		}
 
@@ -372,7 +380,7 @@ int main(int argc, char *argv[])
 #endif
 	}
 
-	if (switch_core_init_and_modload(nc ? lfile : NULL, &err) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_init_and_modload(nc ? lfile : NULL, flags, &err) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Cannot Initilize [%s]\n", err);
 		return 255;
 	}

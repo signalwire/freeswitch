@@ -33,7 +33,8 @@
 #include <sndfile.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_sndfile_load);
-SWITCH_MODULE_DEFINITION(mod_sndfile, mod_sndfile_load, NULL, NULL);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sndfile_shutdown);
+SWITCH_MODULE_DEFINITION(mod_sndfile, mod_sndfile_load, mod_sndfile_shutdown, NULL);
 
 static switch_memory_pool_t *module_pool = NULL;
 
@@ -367,6 +368,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sndfile_load)
 	file_interface->file_get_string = sndfile_file_get_string;
 
 	/* indicate that the module should continue to be loaded */
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sndfile_shutdown)
+{
+	switch_core_hash_destroy(&globals.format_hash);
 	return SWITCH_STATUS_SUCCESS;
 }
 

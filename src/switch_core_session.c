@@ -306,11 +306,11 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 					switch_channel_set_originatee_caller_profile(channel, cloned_profile);
 				}
 			}
-		}
 
-		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_OUTGOING) == SWITCH_STATUS_SUCCESS) {
-			switch_channel_event_set_data(peer_channel, event);
-			switch_event_fire(&event);
+			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_OUTGOING) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_event_set_data(peer_channel, event);
+				switch_event_fire(&event);
+			}
 		}
 	}
 
@@ -664,13 +664,12 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	switch_channel_uninit((*session)->channel);
 
 	pool = (*session)->pool;
-#ifndef NDEBUG
-	memset(*session, 0, sizeof(switch_core_session_t));
-#endif
+	//#ifndef NDEBUG
+	//memset(*session, 0, sizeof(switch_core_session_t));
+	//#endif
 	*session = NULL;
-	apr_pool_destroy(pool);
-	pool = NULL;
-
+	switch_core_destroy_memory_pool(&pool);
+	
 }
 
 static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t * thread, void *obj)
@@ -770,13 +769,13 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 
 	if ((session = switch_core_alloc(usepool, sizeof(switch_core_session_t))) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not allocate session\n");
-		apr_pool_destroy(usepool);
+		switch_core_destroy_memory_pool(&usepool);
 		return NULL;
 	}
 
 	if (switch_channel_alloc(&session->channel, usepool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate channel structure\n");
-		apr_pool_destroy(usepool);
+		switch_core_destroy_memory_pool(&usepool);
 		return NULL;
 	}
 
@@ -883,6 +882,10 @@ void switch_core_session_init(switch_memory_pool_t *pool)
 	switch_mutex_init(&session_manager.session_table_mutex, SWITCH_MUTEX_NESTED, session_manager.memory_pool);
 }
 
+void switch_core_session_uninit(void)
+{
+	switch_core_hash_destroy(&session_manager.session_table);
+}
 
 SWITCH_DECLARE(switch_app_log_t *) switch_core_session_get_app_log(switch_core_session_t *session)
 {

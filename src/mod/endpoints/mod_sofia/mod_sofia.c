@@ -1360,6 +1360,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	if (!(tech_pvt = (struct private_object *) switch_core_session_alloc(nsession, sizeof(*tech_pvt)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
 		switch_core_session_destroy(&nsession);
+		*pool = NULL;
 		goto done;
 	}
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(nsession));
@@ -1375,6 +1376,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
 			switch_core_session_destroy(&nsession);
 			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
+			*pool = NULL;
 			goto done;
 		}
 
@@ -1384,6 +1386,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
 			switch_core_session_destroy(&nsession);
 			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
+			*pool = NULL;
 			goto done;
 		}
 
@@ -1393,6 +1396,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Gateway\n");
 			switch_core_session_destroy(&nsession);
 			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
+			*pool = NULL;
 			goto done;
 		}
 
@@ -1411,6 +1415,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
 			switch_core_session_destroy(&nsession);
 			cause = SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
+			*pool = NULL;
 			goto done;
 		}
 		*dest++ = '\0';
@@ -1419,6 +1424,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile\n");
 			switch_core_session_destroy(&nsession);
 			cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+			*pool = NULL;
 			goto done;
 		}
 
@@ -1440,6 +1446,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", dest, host);
 				cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
 				switch_core_session_destroy(&nsession);
+				*pool = NULL;
 				goto done;
 			}
 		} else if (!strchr(dest, '@')) {
@@ -1452,6 +1459,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", dest, profile_name);
 				cause = SWITCH_CAUSE_NO_ROUTE_DESTINATION;
 				switch_core_session_destroy(&nsession);
+				*pool = NULL;
 				goto done;
 			}
 		} else {
@@ -1608,6 +1616,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 	}
 
 	su_deinit();
+
+	switch_core_hash_destroy(&mod_sofia_globals.profile_hash);
+	switch_core_hash_destroy(&mod_sofia_globals.gateway_hash);
 
 	return SWITCH_STATUS_SUCCESS;
 }

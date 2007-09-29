@@ -3293,6 +3293,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spidermonkey_shutdown)
 {
 	curl_global_cleanup();
+	switch_core_hash_destroy(&module_manager.mod_hash);
+	switch_core_hash_destroy(&module_manager.load_hash);
 	return SWITCH_STATUS_SUCCESS;
 }
 

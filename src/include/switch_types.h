@@ -37,6 +37,7 @@
 
 #include <switch.h>
 SWITCH_BEGIN_EXTERN_C
+#define SWITCH_BLANK_STRING ""
 #define SWITCH_SEQ_ESC "\033["
 /* Ansi Control character suffixes */
 #define SWITCH_SEQ_HOME_CHAR 'H'
@@ -123,8 +124,15 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_SPEECH_KEY "speech"
 #define SWITCH_UUID_BRIDGE "uuid_bridge"
 #define SWITCH_BITS_PER_BYTE 8
-	typedef uint8_t switch_byte_t;
+typedef uint8_t switch_byte_t;
 
+typedef enum {
+	SCF_NONE = 0,
+	SCF_USE_SQL = ( 1 << 0),
+	SCF_NO_NEW_SESSIONS = (1 << 1),
+	SCF_SHUTTING_DOWN = (1 << 2),
+	SCF_CRASH_PROT = (1 << 3)
+} switch_core_flag_t;
 
 typedef enum {
 	SWITCH_ENDPOINT_INTERFACE,
@@ -1086,6 +1094,10 @@ typedef struct switch_core_time_duration switch_core_time_duration_t;
 typedef switch_xml_t(*switch_xml_search_function_t) (const char *section,
 													 const char *tag_name, const char *key_name, const char *key_value, const char *params,
 													 void *user_data);
+
+typedef struct switch_hash switch_hash_t;
+struct HashElem;
+typedef struct HashElem switch_hash_index_t;
 
 
 #define SWITCH_API_VERSION 1

@@ -956,6 +956,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_alsa_shutdown)
 	if (globals.write_codec.implementation) {
 		switch_core_codec_destroy(&globals.write_codec);
 	}
+	switch_core_hash_destroy(&globals.call_hash);
 
 	return SWITCH_STATUS_SUCCESS;
 }

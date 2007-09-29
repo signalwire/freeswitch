@@ -174,6 +174,8 @@ SWITCH_DECLARE(char *) switch_event_get_body(switch_event_t *event);
 SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, switch_stack_t stack,
 														const char *header_name, const char *fmt, ...) PRINTF_FUNCTION(4, 5);
 
+SWITCH_DECLARE(switch_status_t) switch_event_del_header(switch_event_t *event, const char *header_name);
+
 /*!
   \brief Destroy an event
   \param event pointer to the pointer to event to destroy

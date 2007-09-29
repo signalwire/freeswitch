@@ -5038,6 +5038,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_conference_shutdown)
 		/* free api interface help ".syntax" field string */
 		switch_safe_free(api_syntax);
 	}
+	switch_core_hash_destroy(&globals.conference_hash);
 
 	return SWITCH_STATUS_SUCCESS;
 }

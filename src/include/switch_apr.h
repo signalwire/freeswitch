@@ -133,6 +133,7 @@ SWITCH_DECLARE(char *) switch_copy_string(char *dst, const char *src, switch_siz
 
 /** @} */
 
+#if 0
 /**
  * @defgroup apr_hash Hash Tables
  * @ingroup switch_apr
@@ -184,6 +185,15 @@ SWITCH_DECLARE(switch_hash_index_t *) switch_hash_next(switch_hash_index_t * ht)
  */
 SWITCH_DECLARE(void) switch_hash_this(switch_hash_index_t * hi, const void **key, switch_ssize_t *klen, void **val);
 
+
+
+SWITCH_DECLARE(switch_memory_pool_t *) switch_hash_pool_get(switch_hash_t * ht);
+
+/** @} */
+
+
+#endif
+
 /**
  * The default hash function.
  * @param key pointer to the key.
@@ -192,9 +202,7 @@ SWITCH_DECLARE(void) switch_hash_this(switch_hash_index_t * hi, const void **key
  */
 SWITCH_DECLARE(unsigned int) switch_hashfunc_default(const char *key, switch_ssize_t *klen);
 
-SWITCH_DECLARE(switch_memory_pool_t *) switch_hash_pool_get(switch_hash_t * ht);
 
-/** @} */
  /**
  * @defgroup switch_time Time Routines
  * @ingroup switch_apr 

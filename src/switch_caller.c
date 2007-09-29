@@ -32,6 +32,10 @@
 #include <switch.h>
 #include <switch_caller.h>
 
+
+#define profile_dup(a,b,p) if (!switch_strlen_zero(a)) { b = switch_core_strdup(p, a); } else { b = SWITCH_BLANK_STRING; }
+#define profile_dup_clean(a,b,p) if (!switch_strlen_zero(a)) { b = switch_clean_string(switch_core_strdup(p, a)); } else { b = SWITCH_BLANK_STRING; }
+
 SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memory_pool_t *pool,
 																	const char *username,
 																	const char *dialplan,
@@ -40,32 +44,38 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 																	const char *network_addr,
 																	const char *ani,
 																	const char *aniii,
-																	const char *rdnis, const char *source, const char *context,
+																	const char *rdnis, 
+																	const char *source, 
+																	const char *context,
 																	const char *destination_number)
 {
 
 
 	switch_caller_profile_t *profile = NULL;
 
-	if ((profile = switch_core_alloc(pool, sizeof(switch_caller_profile_t))) != 0) {
-		if (!context) {
-			context = "default";
-		}
-		profile->username = switch_clean_string(switch_core_strdup(pool, switch_str_nil(username)));
-		profile->dialplan = switch_clean_string(switch_core_strdup(pool, switch_str_nil(dialplan)));
-		profile->caller_id_name = switch_clean_string(switch_core_strdup(pool, switch_str_nil(caller_id_name)));
-		profile->caller_id_number = switch_clean_string(switch_core_strdup(pool, switch_str_nil(caller_id_number)));
-		profile->network_addr = switch_clean_string(switch_core_strdup(pool, switch_str_nil(network_addr)));
-		profile->ani = switch_clean_string(switch_core_strdup(pool, switch_str_nil(ani)));
-		profile->aniii = switch_clean_string(switch_core_strdup(pool, switch_str_nil(aniii)));
-		profile->rdnis = switch_clean_string(switch_core_strdup(pool, switch_str_nil(rdnis)));
-		profile->source = switch_clean_string(switch_core_strdup(pool, switch_str_nil(source)));
-		profile->context = switch_clean_string(switch_core_strdup(pool, switch_str_nil(context)));
-		profile->destination_number = switch_clean_string(switch_core_strdup(pool, switch_str_nil(destination_number)));
-		switch_set_flag(profile, SWITCH_CPF_SCREEN);
-		profile->pool = pool;
+	profile = switch_core_alloc(pool, sizeof(*profile));
+	assert(profile != NULL);
+		
+	if (!context) {
+		context = "default";
 	}
 
+	profile_dup_clean(username, profile->username, pool);
+	profile_dup_clean(dialplan, profile->dialplan, pool);
+	profile_dup_clean(caller_id_name, profile->caller_id_name, pool);
+	profile_dup_clean(caller_id_number, profile->caller_id_number, pool);
+	profile_dup_clean(network_addr, profile->network_addr, pool);
+	profile_dup_clean(ani, profile->ani, pool);
+	profile_dup_clean(aniii, profile->aniii, pool);
+	profile_dup_clean(rdnis, profile->rdnis, pool);
+	profile_dup_clean(source, profile->source, pool);
+	profile_dup_clean(context, profile->context, pool);
+	profile_dup_clean(destination_number, profile->destination_number, pool);
+	profile->uuid = SWITCH_BLANK_STRING;
+	profile->chan_name = SWITCH_BLANK_STRING;
+
+	switch_set_flag(profile, SWITCH_CPF_SCREEN);
+	profile->pool = pool;
 	return profile;
 }
 
@@ -74,31 +84,33 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_dup(switch_memor
 {
 	switch_caller_profile_t *profile = NULL;
 
-	if ((profile = switch_core_alloc(pool, sizeof(switch_caller_profile_t))) != 0) {
-		profile->username = switch_core_strdup(pool, tocopy->username);
-		profile->dialplan = switch_core_strdup(pool, tocopy->dialplan);
-		profile->caller_id_name = switch_core_strdup(pool, tocopy->caller_id_name);
-		profile->ani = switch_core_strdup(pool, tocopy->ani);
-		profile->aniii = switch_core_strdup(pool, tocopy->aniii);
-		profile->caller_id_number = switch_core_strdup(pool, tocopy->caller_id_number);
-		profile->network_addr = switch_core_strdup(pool, tocopy->network_addr);
-		profile->rdnis = switch_core_strdup(pool, tocopy->rdnis);
-		profile->destination_number = switch_core_strdup(pool, tocopy->destination_number);
-		profile->uuid = switch_core_strdup(pool, tocopy->uuid);
-		profile->source = switch_core_strdup(pool, tocopy->source);
-		profile->context = switch_core_strdup(pool, tocopy->context);
-		profile->chan_name = switch_core_strdup(pool, tocopy->chan_name);
-		profile->caller_ton = tocopy->caller_ton;
-		profile->caller_numplan = tocopy->caller_numplan;
-		profile->ani_ton = tocopy->ani_ton;
-		profile->ani_numplan = tocopy->ani_numplan;
-		profile->rdnis_ton = tocopy->rdnis_ton;
-		profile->rdnis_numplan = tocopy->rdnis_numplan;
-		profile->destination_number_ton = tocopy->destination_number_ton;
-		profile->destination_number_numplan = tocopy->destination_number_numplan;
-		profile->flags = tocopy->flags;
-		profile->pool = pool;
-	}
+	profile = switch_core_alloc(pool, sizeof(*profile));
+	assert(profile != NULL);
+
+	profile_dup(tocopy->username, profile->username, pool);
+	profile_dup(tocopy->dialplan, profile->dialplan, pool);
+	profile_dup(tocopy->caller_id_name, profile->caller_id_name, pool);
+	profile_dup(tocopy->caller_id_number, profile->caller_id_number, pool);
+	profile_dup(tocopy->network_addr, profile->network_addr, pool);
+	profile_dup(tocopy->ani, profile->ani, pool);
+	profile_dup(tocopy->aniii, profile->aniii, pool);
+	profile_dup(tocopy->rdnis, profile->rdnis, pool);
+	profile_dup(tocopy->source, profile->source, pool);
+	profile_dup(tocopy->context, profile->context, pool);
+	profile_dup(tocopy->destination_number, profile->destination_number, pool);
+	profile_dup(tocopy->uuid, profile->uuid, pool);
+	profile_dup(tocopy->chan_name, profile->chan_name, pool);
+
+	profile->caller_ton = tocopy->caller_ton;
+	profile->caller_numplan = tocopy->caller_numplan;
+	profile->ani_ton = tocopy->ani_ton;
+	profile->ani_numplan = tocopy->ani_numplan;
+	profile->rdnis_ton = tocopy->rdnis_ton;
+	profile->rdnis_numplan = tocopy->rdnis_numplan;
+	profile->destination_number_ton = tocopy->destination_number_ton;
+	profile->destination_number_numplan = tocopy->destination_number_numplan;
+	profile->flags = tocopy->flags;
+	profile->pool = pool;
 
 	return profile;
 }

@@ -37,7 +37,8 @@
 #endif
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_enum_load);
-SWITCH_MODULE_DEFINITION(mod_enum, mod_enum_load, NULL, NULL);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_enum_shutdown);
+SWITCH_MODULE_DEFINITION(mod_enum, mod_enum_load, mod_enum_shutdown, NULL);
 
 struct enum_record {
 	int order;
@@ -582,13 +583,10 @@ SWITCH_STANDARD_APP(enum_app_function)
 		dest = argv[0];
 		root = argv[1] ? argv[1] : globals.root;
 		if (enum_lookup(root, data, &results) == SWITCH_STATUS_SUCCESS) {
-			switch_hash_index_t *hi;
-			void *vval;
-			const void *vvar;
-
+			switch_event_header_t *hi;
 			if ((hi = switch_channel_variable_first(channel))) {
-				for (; hi; hi = switch_hash_next(hi)) {
-					switch_hash_this(hi, &vvar, NULL, &vval);
+				for (; hi; hi = hi->next) {
+					char *vvar = hi->name;
 					if (vvar && !strncmp(vvar, "enum_", 5)) {
 						switch_channel_set_variable(channel, (char *) vvar, NULL);
 					}
@@ -700,5 +698,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_enum_load)
 	SWITCH_ADD_DIALPLAN(dp_interface, "enum", enum_dialplan_hunt);
 
 	/* indicate that the module should continue to be loaded */
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_enum_shutdown)
+{
+	switch_core_hash_destroy(&globals.routes);
 	return SWITCH_STATUS_SUCCESS;
 }

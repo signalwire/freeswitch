@@ -1905,6 +1905,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_dingaling_shutdown)
 			ldl_global_destroy();
 		}
 	}
+	switch_core_hash_destroy(&globals.profile_hash);
 	return SWITCH_STATUS_SUCCESS;
 }
 

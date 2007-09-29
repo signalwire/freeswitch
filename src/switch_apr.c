@@ -73,6 +73,7 @@ SWITCH_DECLARE(void) switch_pool_clear(switch_memory_pool_t *p)
 	apr_pool_clear(p);
 }
 
+#if 0
 /* Hash tables */
 
 SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(switch_memory_pool_t *p, switch_hash_t * ht)
@@ -87,18 +88,27 @@ SWITCH_DECLARE(switch_hash_index_t *) switch_hash_next(switch_hash_index_t * ht)
 
 SWITCH_DECLARE(void) switch_hash_this(switch_hash_index_t * hi, const void **key, switch_ssize_t *klen, void **val)
 {
+	if (key) {
+		*key = NULL;
+	}
+	if (val) {
+		*val = NULL;
+	}
 	apr_hash_this(hi, key, klen, val);
 }
+
+
+SWITCH_DECLARE(switch_memory_pool_t *) switch_hash_pool_get(switch_hash_t * ht)
+{
+	return apr_hash_pool_get(ht);
+}
+#endif
 
 SWITCH_DECLARE(unsigned int) switch_hashfunc_default(const char *key, switch_ssize_t *klen)
 {
 	return apr_hashfunc_default(key, klen);
 }
 
-SWITCH_DECLARE(switch_memory_pool_t *) switch_hash_pool_get(switch_hash_t * ht)
-{
-	return apr_hash_pool_get(ht);
-}
 
 /* DSO functions */
 
@@ -367,9 +377,7 @@ SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename, switch_
 	apr_finfo_t info = { 0 };
 
 	if (!pool) {
-		if ((apr_pool_create(&our_pool, NULL)) != SWITCH_STATUS_SUCCESS) {
-			return SWITCH_STATUS_MEMERR;
-		}
+		switch_core_new_memory_pool(&our_pool);
 	}
 
 	if (filename) {
@@ -380,7 +388,7 @@ SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename, switch_
 	}
 
 	if (our_pool) {
-		apr_pool_destroy(our_pool);
+		switch_core_destroy_memory_pool(&our_pool);
 	}
 
 	return status;

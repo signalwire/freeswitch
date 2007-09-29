@@ -33,49 +33,40 @@
  */
 #include <switch.h>
 #include "private/switch_core_pvt.h"
+#include <sqlite3.h>
+#include "../../../libs/sqlite/src/hash.h"
+
+
+struct switch_hash {
+	Hash table;
+};
+
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_init(switch_hash_t ** hash, switch_memory_pool_t *pool)
 {
-	assert(pool != NULL);
+	switch_hash_t *newhash;
+	
+	newhash = switch_core_alloc(pool, sizeof(*newhash));
+	assert(newhash);
 
-	if ((*hash = apr_hash_make(pool)) != 0) {
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	return SWITCH_STATUS_GENERR;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(switch_hash_t * hash)
-{
-	assert(hash != NULL);
+	sqlite3HashInit(&newhash->table, SQLITE_HASH_STRING, 1);
+	*hash = newhash;
+	
 	return SWITCH_STATUS_SUCCESS;
+
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup(switch_hash_t * hash, const char *key, const void *data)
+SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(switch_hash_t **hash)
 {
-	apr_hash_set(hash, switch_core_strdup(apr_hash_pool_get(hash), key), APR_HASH_KEY_STRING, data);
-	return SWITCH_STATUS_SUCCESS;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup_locked(switch_hash_t * hash, const char *key, const void *data, switch_mutex_t *mutex)
-{
-	if (mutex) {
-        switch_mutex_lock(mutex);
-    }
-
-	apr_hash_set(hash, switch_core_strdup(apr_hash_pool_get(hash), key), APR_HASH_KEY_STRING, data);
-
-	if (mutex) {
-        switch_mutex_unlock(mutex);
-    }
-
-
+	assert(hash != NULL && *hash != NULL);
+	sqlite3HashClear(&(*hash)->table);
+	*hash = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_insert(switch_hash_t * hash, const char *key, const void *data)
 {
-	apr_hash_set(hash, key, APR_HASH_KEY_STRING, data);
+	sqlite3HashInsert(&hash->table, key, strlen(key)+1, (void *)data);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -84,8 +75,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_locked(switch_hash_t * h
 	if (mutex) {
         switch_mutex_lock(mutex);
     }
-	
-	apr_hash_set(hash, key, APR_HASH_KEY_STRING, data);
+
+	sqlite3HashInsert(&hash->table, key, strlen(key)+1, (void *)data);
 
 	if (mutex) {
         switch_mutex_unlock(mutex);
@@ -96,7 +87,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_locked(switch_hash_t * h
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(switch_hash_t * hash, const char *key)
 {
-	apr_hash_set(hash, key, APR_HASH_KEY_STRING, NULL);
+	sqlite3HashInsert(&hash->table, key, strlen(key)+1, NULL);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -106,8 +97,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(switch_hash_t * h
         switch_mutex_lock(mutex);
     }
 	
-	apr_hash_set(hash, key, APR_HASH_KEY_STRING, NULL);
-
+	sqlite3HashInsert(&hash->table, key, strlen(key)+1, NULL);
+	
 	if (mutex) {
         switch_mutex_unlock(mutex);
     }
@@ -118,7 +109,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(switch_hash_t * h
 
 SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash_t * hash, const char *key)
 {
-	return apr_hash_get(hash, key, APR_HASH_KEY_STRING);
+	return sqlite3HashFind(&hash->table, key, strlen(key)+1);
 }
 
 SWITCH_DECLARE(void *) switch_core_hash_find_locked(switch_hash_t * hash, const char *key, switch_mutex_t *mutex)
@@ -129,11 +120,36 @@ SWITCH_DECLARE(void *) switch_core_hash_find_locked(switch_hash_t * hash, const 
 		switch_mutex_lock(mutex);
 	}
 
-	val = apr_hash_get(hash, key, APR_HASH_KEY_STRING);
-
+	val = sqlite3HashFind(&hash->table, key, strlen(key)+1);
+	
 	if (mutex) {
 		switch_mutex_unlock(mutex);
 	}
 
 	return val;
+}
+
+
+SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(char *depricate_me, switch_hash_t *hash)
+{
+	return (switch_hash_index_t *) sqliteHashFirst(&hash->table);
+}
+
+
+SWITCH_DECLARE(switch_hash_index_t *) switch_hash_next(switch_hash_index_t *hi)
+{
+	return (switch_hash_index_t *) sqliteHashNext((HashElem *) hi);
+}
+
+SWITCH_DECLARE(void) switch_hash_this(switch_hash_index_t *hi, const void **key, switch_ssize_t *klen, void **val)
+{
+	if (key) {
+		*key = sqliteHashKey((HashElem *) hi);
+	}
+	if (klen) {
+		*klen = strlen((char *) *key) + 1;
+	}
+	if (val) {
+		*val = sqliteHashData((HashElem *) hi);
+	}
 }

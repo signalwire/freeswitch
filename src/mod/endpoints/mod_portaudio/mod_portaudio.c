@@ -973,6 +973,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_portaudio_shutdown)
 
 	switch_core_timer_destroy(&globals.timer);
 	Pa_Terminate();
+	switch_core_hash_destroy(&globals.call_hash);
 
 	return SWITCH_STATUS_SUCCESS;
 }

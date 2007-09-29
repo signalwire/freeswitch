@@ -204,15 +204,6 @@ SWITCH_DECLARE(char *) switch_channel_get_uuid(switch_channel_t *channel);
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *channel, const char *varname, const char *value);
 
 /*!
-  \brief Set a variable on a given channel, without duplicating the value from the session pool.
-  \param channel channel to set variable on
-  \param varname the name of the variable
-  \param value the vaule of the variable (MUST BE ALLOCATED FROM THE SESSION POOL ALREADY)
-  \returns SWITCH_STATUS_SUCCESS if successful
-*/
-SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_nodup(switch_channel_t *channel, const char *varname, char *value);
-
-/*!
   \brief Retrieve a variable from a given channel
   \param channel channel to retrieve variable from
   \param varname the name of the variable
@@ -227,7 +218,9 @@ SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, co
  *          pool is NULL, then an internal, non-thread-safe iterator is used.
  * @remark  Use switch_hash_next and switch_hash_this with this function to iterate all the channel variables
  */
-SWITCH_DECLARE(switch_hash_index_t *) switch_channel_variable_first(switch_channel_t *channel);
+SWITCH_DECLARE(switch_event_header_t *) switch_channel_variable_first(switch_channel_t *channel);
+
+
 SWITCH_DECLARE(void) switch_channel_variable_last(switch_channel_t *channel);
 
 /*!

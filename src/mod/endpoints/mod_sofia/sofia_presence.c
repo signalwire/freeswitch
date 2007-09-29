@@ -1051,15 +1051,20 @@ void sofia_presence_set_chat_hash(private_object_t *tech_pvt, sip_t const *sip)
 {
 	char hash_key[256] = "";
 	char buf[512];
+	su_home_t *home = NULL;
 
 	if (tech_pvt->hash_key || !sip || !sip->sip_from || !sip->sip_from->a_url || !sip->sip_from->a_url->url_user || !sip->sip_from->a_url->url_host) {
 		return;
 	}
 
 	if (sofia_reg_find_reg_url(tech_pvt->profile, sip->sip_from->a_url->url_user, sip->sip_from->a_url->url_host, buf, sizeof(buf))) {
-		tech_pvt->chat_from = sip_header_as_string(tech_pvt->sofia_private->home, (const sip_header_t *) sip->sip_to);
+		home = su_home_new(sizeof(*home));
+		assert(home != NULL);		
+		tech_pvt->chat_from = sip_header_as_string(home, (const sip_header_t *) sip->sip_to);
 		tech_pvt->chat_to = switch_core_session_strdup(tech_pvt->session, buf);
 		sofia_presence_set_hash_key(hash_key, sizeof(hash_key), sip);
+		su_home_unref(home);
+		home = NULL;
 	} else {
 		return;
 	}

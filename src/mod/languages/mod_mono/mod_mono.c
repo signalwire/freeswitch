@@ -168,6 +168,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_mono_shutdown)
 		globals.domain = NULL;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deallocated mono runtime.\n");
 	}
+	switch_core_hash_destroy(&globals.plugins);
 
 	return SWITCH_STATUS_SUCCESS;
 }

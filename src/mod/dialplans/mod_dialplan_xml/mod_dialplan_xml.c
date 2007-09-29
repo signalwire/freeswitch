@@ -197,7 +197,7 @@ static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switc
 	char *encode_buf = NULL;
 	char *prof[12] = { 0 }, *prof_names[12] = {
 	0}, *e = NULL;
-	switch_hash_index_t *hi;
+	switch_event_header_t *hi;
 	uint32_t x = 0;
 
 	channel = switch_core_session_get_channel(session);
@@ -253,10 +253,9 @@ static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switc
 	}
 
 	if ((hi = switch_channel_variable_first(channel))) {
-		for (; hi; hi = switch_hash_next(hi)) {
-			void *val;
-			const void *var;
-			switch_hash_this(hi, &var, NULL, &val);
+		for (; hi; hi = hi->next) {
+			char *var = hi->name;
+			char *val = hi->value;
 			
 			new_len = (strlen((char *) var) * 3) + 1;
 			if (encode_len < new_len) {

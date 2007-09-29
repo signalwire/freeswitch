@@ -419,6 +419,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 
 	sofia_glue_del_profile(profile);
+	switch_core_hash_destroy(&profile->chat_hash);
 
 	switch_thread_rwlock_unlock(profile->rwlock);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write unlock %s\n", profile->name);
@@ -1146,38 +1147,46 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					if (match) {
 						nua_handle_t *bnh;
 						sip_replaces_t *replaces;
+						su_home_t *home = NULL;
 						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED");
 						switch_set_flag_locked(tech_pvt, TFLAG_READY);
 						switch_channel_set_state(channel, CS_INIT);
 						//switch_core_session_thread_launch(session);
 
-						if (replaces_str && (replaces = sip_replaces_make(tech_pvt->sofia_private->home, replaces_str))
-							&& (bnh = nua_handle_by_replaces(nua, replaces))) {
-							sofia_private_t *b_private;
+						if (replaces_str) {
+							home = su_home_new(sizeof(*home));
+							assert(home != NULL);
+							if ((replaces = sip_replaces_make(home, replaces_str))
+								&& (bnh = nua_handle_by_replaces(nua, replaces))) {
+								sofia_private_t *b_private;
 
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Processing Replaces Attended Transfer\n");
-							while (switch_channel_get_state(channel) < CS_EXECUTE) {
-								switch_yield(10000);
-							}
-
-							if ((b_private = nua_handle_magic(bnh))) {
-								char *br_b = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
-								char *br_a = b_private->uuid;
-
-								if (br_b) {
-									switch_ivr_uuid_bridge(br_a, br_b);
-									switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
-									switch_channel_hangup(channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Processing Replaces Attended Transfer\n");
+								while (switch_channel_get_state(channel) < CS_EXECUTE) {
+									switch_yield(10000);
+								}
+								
+								if ((b_private = nua_handle_magic(bnh))) {
+									char *br_b = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+									char *br_a = b_private->uuid;
+									
+									if (br_b) {
+										switch_ivr_uuid_bridge(br_a, br_b);
+										switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER");
+										switch_channel_hangup(channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
+									} else {
+										switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER_ERROR");
+										switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+									}
 								} else {
 									switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER_ERROR");
 									switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 								}
-							} else {
-								switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "ATTENDED_TRANSFER_ERROR");
-								switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+								nua_handle_unref(bnh);
 							}
-							nua_handle_unref(bnh);
+							su_home_unref(home);
+							home = NULL;
 						}
+
 						goto done;
 					}
 
@@ -1351,9 +1360,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			}
 			
 			if (tech_pvt->sofia_private) {
-				if (tech_pvt->sofia_private->home) {
-					su_home_unref(tech_pvt->sofia_private->home);
-				}
 				free(tech_pvt->sofia_private);
 				tech_pvt->sofia_private = NULL;
 			}
@@ -1362,9 +1368,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 
 		} else if (sofia_private) {
-			if (sofia_private->home) {
-				su_home_unref(sofia_private->home);
-			}
 			free(sofia_private);
 		}
 
@@ -1391,6 +1394,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	private_object_t *tech_pvt = NULL;
 	char *etmp = NULL, *exten = NULL;
 	switch_channel_t *channel_a = NULL, *channel_b = NULL;
+	su_home_t *home = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
 	channel_a = switch_core_session_get_channel(session);
@@ -1427,9 +1431,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 			if ((rep = strchr(refer_to->r_url->url_headers, '='))) {
 				char *br_a = NULL, *br_b = NULL;
 				char *buf;
+
 				rep++;
-
-
 
 				if ((buf = switch_core_session_alloc(session, strlen(rep) + 1))) {
 					rep = url_unescape(buf, (const char *) rep);
@@ -1438,7 +1441,11 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
 					goto done;
 				}
-				if ((replaces = sip_replaces_make(tech_pvt->sofia_private->home, rep))
+				
+				home = su_home_new(sizeof(*home));
+				assert(home != NULL);
+
+				if ((replaces = sip_replaces_make(home, rep))
 					&& (bnh = nua_handle_by_replaces(nua, replaces))) {
 					sofia_private_t *b_private = NULL;
 					private_object_t *b_tech_pvt = NULL;
@@ -1612,6 +1619,11 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	}
 
   done:
+	if (home) {
+		su_home_unref(home);
+		home = NULL;
+	}
+
 	if (exten && strchr(exten, '@')) {
 		switch_safe_free(exten);
 	}
@@ -1704,7 +1716,7 @@ const char *_url_set_chanvars(switch_core_session_t *session, url_t *url, const 
 		} else {
 			uri = switch_core_session_sprintf(session, "%s:%s", host, port);
 		}
-		switch_channel_set_variable_nodup(channel, uri_var, uri);
+		switch_channel_set_variable(channel, uri_var, uri);
 		switch_channel_set_variable(channel, host_var, host);
 	}
 
@@ -2024,8 +2036,10 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		abort();
 	}
 	memset(tech_pvt->sofia_private, 0, sizeof(*tech_pvt->sofia_private));
-	tech_pvt->sofia_private->home = su_home_new(sizeof(*tech_pvt->sofia_private->home));
-	sofia_presence_set_chat_hash(tech_pvt, sip);
+
+	if ((profile->pflags & PFLAG_PRESENCE)) {
+		sofia_presence_set_chat_hash(tech_pvt, sip);
+	}
 	switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));
 	nua_handle_bind(nh, tech_pvt->sofia_private);
 	tech_pvt->nh = nh;

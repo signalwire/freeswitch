@@ -76,7 +76,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t * thread, voi
 {
 	struct key_collect *collect = (struct key_collect *) obj;
 	switch_channel_t *channel = switch_core_session_get_channel(collect->session);
-	char buf[10] = "";
+	char buf[10] = SWITCH_BLANK_STRING;
 	char *p, term;
 
 
@@ -129,7 +129,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t * thread, voi
 			args.buflen = sizeof(buf);
 			switch_ivr_play_file(collect->session, NULL, collect->file, &args);
 		} else {
-			switch_ivr_collect_digits_count(collect->session, buf, sizeof(buf), 1, "", &term, 0);
+			switch_ivr_collect_digits_count(collect->session, buf, sizeof(buf), 1, SWITCH_BLANK_STRING, &term, 0);
 		}
 
 		for (p = buf; *p; p++) {
@@ -260,7 +260,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_codec_t write_codec = { 0 };
 	switch_frame_t write_frame = { 0 };
 	uint8_t fdata[1024], pass = 0;
-	char key[80] = "", file[512] = "", *odata, *var;
+	char key[80] = SWITCH_BLANK_STRING, file[512] = SWITCH_BLANK_STRING, *odata, *var;
 	switch_call_cause_t reason = SWITCH_CAUSE_UNALLOCATED;
 	uint8_t to = 0;
 	char *var_val, *vars = NULL, *ringback_data = NULL;
@@ -315,14 +315,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	if (session) {
-		switch_hash_index_t *hi;
-		void *vval;
-		const void *vvar;
+		switch_event_header_t *hi;
 
 		caller_channel = switch_core_session_get_channel(session);
 		assert(caller_channel != NULL);
 
 		/* Copy all the channel variables into the event */
+		if ((hi = switch_channel_variable_first(caller_channel))) {
+			for (; hi; hi = hi->next) {
+				switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, (char *)hi->name, "%s", (char *) hi->value);
+			}
+			switch_channel_variable_last(caller_channel);
+		}
+		/*
 		if ((hi = switch_channel_variable_first(caller_channel))) {
 			for (; hi; hi = switch_hash_next(hi)) {
 				switch_hash_this(hi, &vvar, NULL, &vval);
@@ -332,7 +337,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 			switch_channel_variable_last(caller_channel);
 		}
-
+		*/
 	}
 
 	if (vars) {					/* Parse parameters specified from the dialstring */
@@ -471,30 +476,26 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 					caller_caller_profile = caller_profile_override ? caller_profile_override : switch_channel_get_caller_profile(caller_channel);
 					new_profile = switch_caller_profile_clone(session, caller_caller_profile);
-					new_profile->uuid = NULL;
-					new_profile->chan_name = NULL;
-					new_profile->destination_number = chan_data;
+					new_profile->uuid = SWITCH_BLANK_STRING;
+					new_profile->chan_name = SWITCH_BLANK_STRING;
+					new_profile->destination_number = switch_core_strdup(new_profile->pool, chan_data);
 
 					if (cid_name_override) {
-						new_profile->caller_id_name = cid_name_override;
+						new_profile->caller_id_name = switch_core_strdup(new_profile->pool, cid_name_override);
 					}
 					if (cid_num_override) {
-						new_profile->caller_id_number = cid_num_override;
+						new_profile->caller_id_number = switch_core_strdup(new_profile->pool, cid_num_override);
 					}
 
 					pool = NULL;
 				} else {
-					if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
-						status = SWITCH_STATUS_TERM;
-						goto done;
-					}
+					switch_core_new_memory_pool(&pool);
 
 					if (caller_profile_override) {
 						new_profile = switch_caller_profile_dup(pool, caller_profile_override);
-						new_profile->destination_number = chan_data;
-						new_profile->uuid = NULL;
-						new_profile->chan_name = NULL;
+						new_profile->destination_number = switch_core_strdup(new_profile->pool, chan_data);
+						new_profile->uuid = SWITCH_BLANK_STRING;
+						new_profile->chan_name = SWITCH_BLANK_STRING;
 					} else {
 						if (!cid_name_override) {
 							cid_name_override = "FreeSWITCH";
@@ -517,7 +518,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				peer_channels[i] = NULL;
 				peer_sessions[i] = NULL;
 				new_session = NULL;
-				
+
 				if ((reason = switch_core_session_outgoing_channel(session, chan_type, new_profile, &new_session, &pool)) != SWITCH_CAUSE_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! cause: %s\n", switch_channel_cause2str(reason));
 					if (pool) {
@@ -602,7 +603,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 											   NULL,
 											   read_codec->implementation->samples_per_second,
 											   read_codec->implementation->microseconds_per_frame / 1000,
-											   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {
+											   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, 
+											   switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 
 
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,

@@ -77,16 +77,24 @@ static void *locked_dup(char *str)
 
 	return dup;
 }
-
 #define ALLOC(size) locked_alloc(size)
 #define DUP(str) locked_dup(str)
 #endif
+
+static char *my_dup (const char *s)
+{
+    size_t len = strlen (s) + 1;
+    void *new = malloc (len);
+	assert(new);
+
+    return (char *) memcpy (new, s, len);
+}
 
 #ifndef ALLOC
 #define ALLOC(size) malloc(size)
 #endif
 #ifndef DUP
-#define DUP(str) strdup(str)
+#define DUP(str) my_dup(str)
 #endif
 #ifndef FREE
 #define FREE(ptr) if (ptr) free(ptr)
@@ -393,6 +401,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 			last = THREAD_RUNNING;
 		}
 	}
+
+	switch_core_hash_destroy(&CUSTOM_HASH);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -494,14 +505,38 @@ SWITCH_DECLARE(char *) switch_event_get_body(switch_event_t *event)
 	return NULL;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_event_del_header(switch_event_t *event, const char *header_name)
+{
+	switch_event_header_t *hp, *lp = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	
+	for (hp = event->headers; hp && hp->next; hp = hp->next) {
+		if (!strcmp(header_name, hp->name)) {
+			if (lp) {
+				lp->next = hp->next;
+			} else {
+				event->headers = hp->next;
+			}
+			FREE(hp->name);
+			FREE(hp->value);
+			FREE(hp);
+			status = SWITCH_STATUS_SUCCESS;
+			break;
+		}
+		lp = hp;
+	}
+	
+	return status;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, switch_stack_t stack, const char *header_name, const char *fmt, ...)
 {
 	int ret = 0;
-	char data[2048];
-
+	char *data;
 	va_list ap;
+
 	va_start(ap, fmt);
-	ret = vsnprintf(data, sizeof(data), fmt, ap);
+	ret = switch_vasprintf(&data, fmt, ap);
 	va_end(ap);
 
 	if (ret == -1) {
@@ -516,7 +551,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, s
 		memset(header, 0, sizeof(*header));
 
 		header->name = DUP(header_name);
-		header->value = DUP(data);
+		header->value = data;
 		if (stack == SWITCH_STACK_TOP) {
 			header->next = event->headers;
 			event->headers = header;

@@ -266,7 +266,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *cmd = switch_event_get_header(event, "call-command");
 	unsigned long cmd_hash;
-	switch_ssize_t hlen = SWITCH_HASH_KEY_STRING;
+	switch_ssize_t hlen = -1;
 	unsigned long CMD_EXECUTE = switch_hashfunc_default("execute", &hlen);
 	unsigned long CMD_HANGUP = switch_hashfunc_default("hangup", &hlen);
 	unsigned long CMD_NOMEDIA = switch_hashfunc_default("nomedia", &hlen);
@@ -856,10 +856,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	char *uuid = NULL;
 
 	assert(session != NULL);
-	assert(extension != NULL);
-
 	switch_core_session_reset(session);
-
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -867,30 +864,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	/* clear all state handlers */
 	switch_channel_clear_state_handler(channel, NULL);
 
+	if (switch_strlen_zero(dialplan)) {
+		dialplan = "XML";
+	}
+	
+	if (switch_strlen_zero(context)) {
+		context = "default";
+	}
+
+	if (switch_strlen_zero(extension)) {
+		extension = "service";
+	}
+	
 	if ((profile = switch_channel_get_caller_profile(channel))) {
 		new_profile = switch_caller_profile_clone(session, profile);
+
+		new_profile->dialplan = switch_core_session_strdup(session, dialplan);
+		new_profile->context = switch_core_session_strdup(session, context);
 		new_profile->destination_number = switch_core_session_strdup(session, extension);
-
-		if (!switch_strlen_zero(dialplan)) {
-			new_profile->dialplan = switch_core_session_strdup(session, dialplan);
-		} else {
-			dialplan = new_profile->dialplan;
-		}
-
-		if (!switch_strlen_zero(context)) {
-			new_profile->context = switch_core_session_strdup(session, context);
-		} else {
-			context = new_profile->context;
-		}
-
-		if (switch_strlen_zero(context)) {
-			context = "default";
-		}
-
-		if (switch_strlen_zero(dialplan)) {
-			context = "XML";
-		}
-
 
 		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, NULL);
 
@@ -898,11 +889,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		 * will not have a value, so we need to check SWITCH_BRIDGE_VARIABLE */
 
 		uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE);
-		
+
 		if(!uuid) {
 			uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE);
 		}
-
+		
 		if (uuid && (other_session = switch_core_session_locate(uuid))) {
 			switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BOND_VARIABLE, NULL);
 			switch_core_session_rwunlock(other_session);
@@ -915,7 +906,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 
 			switch_channel_set_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
 			switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
-
+			
 			switch_channel_set_variable(channel, SWITCH_BRIDGE_VARIABLE, NULL);
 			switch_channel_set_variable(other_channel, SWITCH_BRIDGE_VARIABLE, NULL);
 
@@ -932,7 +923,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		switch_channel_set_flag(channel, CF_TRANSFER);
 
 		switch_channel_set_state(channel, CS_RING);
-
+		
 		msg.message_id = SWITCH_MESSAGE_INDICATE_TRANSFER;
 		msg.from = __FILE__;
 		switch_core_session_receive_message(session, &msg);
@@ -963,13 +954,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session
 			switch_channel_set_variable(chanb, var, val);
 		}
 	} else {
-		switch_hash_index_t *hi;
-		void *vval;
-		const void *vvar;
-
+		switch_event_header_t *hi;
 		if ((hi = switch_channel_variable_first(chana))) {
-			for (; hi; hi = switch_hash_next(hi)) {
-				switch_hash_this(hi, &vvar, NULL, &vval);
+			for (; hi; hi = hi->next) {
+				char *vvar = hi->name;
+				char *vval = hi->value;
 				if (vvar && vval && (!prefix || (var && !strncmp((char *) vvar, var, strlen(var))))) {
 					switch_channel_set_variable(chanb, (char *) vvar, (char *) vval);
 				}
@@ -1044,7 +1033,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_destroy(switch_iv
 
 	if (parser != NULL) {
 		if (parser->hash != NULL) {
-			switch_core_hash_destroy(parser->hash);
+			switch_core_hash_destroy(&parser->hash);
 			parser->hash = NULL;
 		}
 		// free the memory pool if we created it
@@ -1091,7 +1080,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_event(switch_
 
 	if (parser != NULL && digits != NULL && *digits && parser->hash != NULL) {
 
-		status = switch_core_hash_insert_dup(parser->hash, digits, data);
+		status = switch_core_hash_insert(parser->hash, digits, data);
 		if (status == SWITCH_STATUS_SUCCESS) {
 			switch_size_t len = strlen(digits);
 
@@ -1291,13 +1280,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 {
 	switch_channel_t *channel;
 	switch_caller_profile_t *caller_profile;
-	switch_hash_index_t *hi;
-	void *vval;
-	const void *vvar;
 	switch_xml_t variable, variables, cdr, x_caller_profile, x_caller_extension, x_times, time_tag, 
 		x_application, x_callflow, x_inner_extension, x_apps;
 	switch_app_log_t *app_log;
-	
+	switch_event_header_t *hi;
 	char tmp[512];
 	int cdr_off = 0, v_off = 0;
 
@@ -1330,9 +1316,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 		}
 	}
 
-	if (((hi = switch_channel_variable_first(channel)))) {
-		for (; hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, &vvar, NULL, &vval);
+
+	if ((hi = switch_channel_variable_first(channel))) {
+		for (; hi; hi = hi->next) {
+			char *vvar = hi->name;
+			char *vval = hi->value;
 			if (vvar && vval) {
 				if ((variable = switch_xml_add_child_d(variables, (char *) vvar, v_off++))) {
 					char *data;

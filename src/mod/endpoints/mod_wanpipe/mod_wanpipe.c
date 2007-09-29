@@ -41,8 +41,9 @@
 #endif
 
 //#define DOTRACE
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_wanpipe_shutdown)
 SWITCH_MODULE_LOAD_FUNCTION(mod_wanpipe_load);
-SWITCH_MODULE_DEFINITION(mod_wanpipe, mod_wanpipe_load, NULL, NULL);
+SWITCH_MODULE_DEFINITION(mod_wanpipe, mod_wanpipe_load, mod_wanpipe_shutdown, NULL);
 
 #define STRLEN 15
 
@@ -1358,6 +1359,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_wanpipe_load)
 
 	/* indicate that the module should continue to be loaded */
 	return status;
+}
+
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_wanpipe_shutdown)
+{
+	switch_core_hash_destroy(&globals.call_hash);
+	return SWITCH_STATUS_SUCCESS;
 }
 
 /*event Handlers */

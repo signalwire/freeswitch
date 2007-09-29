@@ -104,16 +104,16 @@ SWITCH_STANDARD_API(ctl_function)
 	if ((mydata = strdup(cmd))) {
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
-		if (!strcmp(argv[0], "hupall")) {
+		if (!strcasecmp(argv[0], "hupall")) {
 			arg = 1;
 			switch_core_session_ctl(SCSC_HUPALL, &arg);
-		} else if (!strcmp(argv[0], "pause")) {
+		} else if (!strcasecmp(argv[0], "pause")) {
 			arg = 1;
 			switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
-		} else if (!strcmp(argv[0], "resume")) {
+		} else if (!strcasecmp(argv[0], "resume")) {
 			arg = 0;
 			switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
-		} else if (!strcmp(argv[0], "shutdown")) {
+		} else if (!strcasecmp(argv[0], "shutdown")) {
 			arg = 0;
 			switch_core_session_ctl(SCSC_SHUTDOWN, &arg);
 		} else {
@@ -431,7 +431,7 @@ SWITCH_STANDARD_API(uuid_media_function)
 	if (switch_strlen_zero(cmd) || argc < 1) {
 		stream->write_function(stream, "USAGE: %s\n", MEDIA_SYNTAX);
 	} else {
-		if (!strcmp(argv[0], "off")) {
+		if (!strcasecmp(argv[0], "off")) {
 			status = switch_ivr_nomedia(argv[1], SMF_REBRIDGE);
 		} else {
 			status = switch_ivr_media(argv[0], SMF_REBRIDGE);
@@ -469,11 +469,11 @@ SWITCH_STANDARD_API(uuid_broadcast_function)
 		switch_media_flag_t flags = SMF_NONE;
 
 		if (argv[2]) {
-			if (!strcmp(argv[2], "both")) {
+			if (!strcasecmp(argv[2], "both")) {
 				flags |= (SMF_ECHO_ALEG | SMF_ECHO_BLEG);
-			} else if (!strcmp(argv[2], "aleg")) {
+			} else if (!strcasecmp(argv[2], "aleg")) {
 				flags |= SMF_ECHO_ALEG;
-			} else if (!strcmp(argv[2], "bleg")) {
+			} else if (!strcasecmp(argv[2], "bleg")) {
 				flags |= SMF_ECHO_BLEG;
 			}
 		} else {
@@ -516,11 +516,11 @@ SWITCH_STANDARD_API(sched_broadcast_function)
 		}
 
 		if (argv[3]) {
-			if (!strcmp(argv[3], "both")) {
+			if (!strcasecmp(argv[3], "both")) {
 				flags |= (SMF_ECHO_ALEG | SMF_ECHO_BLEG);
-			} else if (!strcmp(argv[3], "aleg")) {
+			} else if (!strcasecmp(argv[3], "aleg")) {
 				flags |= SMF_ECHO_ALEG;
-			} else if (!strcmp(argv[3], "bleg")) {
+			} else if (!strcasecmp(argv[3], "bleg")) {
 				flags |= SMF_ECHO_BLEG;
 			}
 		} else {
@@ -553,7 +553,7 @@ SWITCH_STANDARD_API(uuid_hold_function)
 	if (switch_strlen_zero(cmd) || argc < 1) {
 		stream->write_function(stream, "USAGE: %s\n", HOLD_SYNTAX);
 	} else {
-		if (!strcmp(argv[0], "off")) {
+		if (!strcasecmp(argv[0], "off")) {
 			status = switch_ivr_unhold_uuid(argv[1]);
 		} else {
 			status = switch_ivr_hold_uuid(argv[0]);
@@ -799,27 +799,28 @@ SWITCH_STANDARD_API(originate_function)
 {
 	switch_channel_t *caller_channel;
 	switch_core_session_t *caller_session = NULL;
-	char *mycmd = NULL, *argv[7] = { 0 };
+	char *mycmd = NULL, *argv[10] = { 0 };
 	int i = 0, x, argc = 0;
 	char *aleg, *exten, *dp, *context, *cid_name, *cid_num;
 	uint32_t timeout = 60;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 	uint8_t machine = 1;
-
-	if (session) {
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	
+	if (session || switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "Illegal Usage\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
-		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-	}
-
-	if (switch_strlen_zero(cmd) || argc < 2 || argc > 7) {
+	mycmd = strdup(cmd);
+	assert(mycmd);
+	argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	
+	if (argc < 2 || argc > 7) {
 		stream->write_function(stream, "USAGE: %s\n", ORIGINATE_SYNTAX);
-		switch_safe_free(mycmd);
-		return SWITCH_STATUS_SUCCESS;
+		goto done;
 	}
+	
 
 	for (x = 0; x < argc; x++) {
 		if (!strcasecmp(argv[x], "undef")) {
@@ -857,14 +858,13 @@ SWITCH_STANDARD_API(originate_function)
 		} else {
 			stream->write_function(stream, "Cannot Create Outgoing Channel! [%s] cause: %s\n", aleg, switch_channel_cause2str(cause));
 		}
-		switch_safe_free(mycmd);
-		return SWITCH_STATUS_SUCCESS;
+		goto done;
 	}
 
 	caller_channel = switch_core_session_get_channel(caller_session);
 	assert(caller_channel != NULL);
 	switch_channel_clear_state_handler(caller_channel, NULL);
-
+	
 	if (*exten == '&' && *(exten + 1)) {
 		switch_caller_extension_t *extension = NULL;
 		char *app_name = switch_core_session_strdup(caller_session, (exten + 1));
@@ -880,9 +880,7 @@ SWITCH_STANDARD_API(originate_function)
 
 		if ((extension = switch_caller_extension_new(caller_session, app_name, arg)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
-			switch_channel_hangup(caller_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			switch_safe_free(mycmd);
-			return SWITCH_STATUS_MEMERR;
+			abort();
 		}
 		switch_caller_extension_add_application(caller_session, extension, app_name, arg);
 		switch_channel_set_caller_extension(caller_channel, extension);
@@ -901,8 +899,9 @@ SWITCH_STANDARD_API(originate_function)
 		switch_core_session_rwunlock(caller_session);
 	}
 
+ done:
 	switch_safe_free(mycmd);
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 static void sch_api_callback(switch_scheduler_task_t *task)
@@ -1140,6 +1139,7 @@ SWITCH_STANDARD_API(show_function)
 	char *mydata = NULL, *argv[6] = {0};
 	int argc;
 	char *command = NULL, *as = NULL;
+	switch_core_flag_t cflags = switch_core_flags();
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
@@ -1159,20 +1159,25 @@ SWITCH_STANDARD_API(show_function)
 
 	holder.print_title = 1;
 
+	if (!(cflags & SCF_USE_SQL) && !strcasecmp(command, "channels")) {
+		stream->write_function(stream, "SQL DISABLED NO CHANNEL DATA AVAILABLE!\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	// If you changes the field qty or order of any of these select
 	// statmements, you must also change show_callback and friends to match!
 	if (!command) {
 		stream->write_function(stream, "USAGE: %s\n", SHOW_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
-	} else if (!strcmp(command, "codec") || !strcmp(command, "dialplan") || !strcmp(command, "file") || !strcmp(command, "timer")) {
+	} else if (!strcasecmp(command, "codec") || !strcasecmp(command, "dialplan") || !strcasecmp(command, "file") || !strcasecmp(command, "timer")) {
 		sprintf(sql, "select type, name from interfaces where type = '%s'", command);
-	} else if (!strcmp(command, "tasks")) {
+	} else if (!strcasecmp(command, "tasks")) {
 		sprintf(sql, "select * from %s", command);
-	} else if (!strcmp(command, "application") || !strcmp(command, "api")) {
+	} else if (!strcasecmp(command, "application") || !strcasecmp(command, "api")) {
 		sprintf(sql, "select name, description, syntax from interfaces where type = '%s' and description != ''", command);
-	} else if (!strcmp(command, "calls")) {
+	} else if (!strcasecmp(command, "calls")) {
 		sprintf(sql, "select * from calls");
-	} else if (!strcmp(command, "channels")) {
+	} else if (!strcasecmp(command, "channels")) {
 		sprintf(sql, "select * from channels");
 	} else if (!strncasecmp(command, "help", 4)) {
 		char *cmdname = NULL;

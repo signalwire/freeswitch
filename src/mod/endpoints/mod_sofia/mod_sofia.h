@@ -83,7 +83,6 @@ typedef struct private_object private_object_t;
 struct sofia_private {
 	char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	sofia_gateway_t *gateway;
-	su_home_t *home;
 };
 
 

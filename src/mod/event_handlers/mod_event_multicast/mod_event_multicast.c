@@ -244,6 +244,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_multicast_shutdown)
 		x++;
 		switch_yield(1000);
 	}
+	switch_core_hash_destroy(&globals.event_hash);
 	return SWITCH_STATUS_SUCCESS;
 }
 

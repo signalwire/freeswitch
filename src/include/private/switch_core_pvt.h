@@ -151,9 +151,7 @@ struct switch_runtime {
 	FILE *console;
 	uint8_t running;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
-	uint32_t no_new_sessions;
-	uint32_t shutting_down;
-	uint32_t crash_prot;
+	uint32_t flags;
 };
 
 extern struct switch_runtime runtime;
@@ -161,5 +159,7 @@ extern struct switch_runtime runtime;
 void switch_core_sqldb_start(switch_memory_pool_t *pool);
 void switch_core_sqldb_stop(void);
 void switch_core_session_init(switch_memory_pool_t *pool);
+void switch_core_session_uninit(void);
 void switch_core_state_machine_init(switch_memory_pool_t *pool);
 switch_memory_pool_t *switch_core_memory_init(void);
+void switch_core_memory_stop(void);
