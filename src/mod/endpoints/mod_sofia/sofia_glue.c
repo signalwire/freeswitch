@@ -572,7 +572,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	SWITCH_STANDARD_STREAM(stream);
 	if ((hi = switch_channel_variable_first(channel))) {
-		for (; hi; hi = hi = hi->next) {
+		for (; hi; hi = hi->next) {
 			const char *name = (char *) hi->name;
 			char *value = (char *) hi->value;
 			
