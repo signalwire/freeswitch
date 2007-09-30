@@ -57,6 +57,7 @@ static switch_memory_pool_t *LOG_POOL = NULL;
 static switch_log_binding_t *BINDINGS = NULL;
 static switch_mutex_t *BINDLOCK = NULL;
 static switch_queue_t *LOG_QUEUE = NULL;
+static switch_queue_t *LOG_RECYCLE_QUEUE = NULL;
 static int8_t THREAD_RUNNING = 0;
 static uint8_t MAX_LEVEL = 0;
 
@@ -133,7 +134,6 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t * thread, void *obj)
 		}
 
 		node = (switch_log_node_t *) pop;
-
 		switch_mutex_lock(BINDLOCK);
 		for (binding = BINDINGS; binding; binding = binding->next) {
 			if (binding->level >= node->level) {
@@ -141,21 +141,9 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t * thread, void *obj)
 			}
 		}
 		switch_mutex_unlock(BINDLOCK);
-		if (node) {
-			if (node->data) {
-				free(node->data);
-			}
-
-			if (node->file) {
-				free(node->file);
-			}
-
-			if (node->func) {
-				free(node->func);
-			}
-
-			free(node);
-		}
+		
+		switch_safe_free(node->data);
+		switch_queue_push(LOG_RECYCLE_QUEUE, node);
 	}
 
 	THREAD_RUNNING = 0;
@@ -177,6 +165,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 	switch_time_t now = switch_time_now();
 	uint32_t len;
 	const char *extra_fmt = "%s [%s] %s:%d %s()%c%s";
+
 	va_start(ap, fmt);
 
 	handle = switch_core_data_channel(channel);
@@ -225,27 +214,28 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 				free(data);
 			} else if (level <= MAX_LEVEL) {
 				switch_log_node_t *node;
+				void *pop = NULL;
 
-				if ((node = malloc(sizeof(*node)))) {
-					node->data = data;
-					node->file = strdup(filep);
-					node->func = strdup(funcp);
-					node->line = line;
-					node->level = level;
-					node->content = content;
-					node->timestamp = now;
-					switch_queue_push(LOG_QUEUE, node);
+				if (switch_queue_trypop(LOG_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
+					node = (switch_log_node_t *) pop;
 				} else {
-					free(data);
+					node = malloc(sizeof(*node));
+					assert(node);			
 				}
+
+				node->data = data;
+				switch_set_string(node->file, filep);
+				switch_set_string(node->func, funcp);
+				node->line = line;
+				node->level = level;
+				node->content = content;
+				node->timestamp = now;
+				switch_queue_push(LOG_QUEUE, node);
 			}
 		}
 	}
 
-	if (new_fmt) {
-		free(new_fmt);
-	}
-
+	switch_safe_free(new_fmt);
 	fflush(handle);
 }
 
@@ -264,6 +254,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool)
 
 
 	switch_queue_create(&LOG_QUEUE, SWITCH_CORE_QUEUE_LEN, LOG_POOL);
+	switch_queue_create(&LOG_RECYCLE_QUEUE, SWITCH_CORE_QUEUE_LEN, LOG_POOL);
 	switch_mutex_init(&BINDLOCK, SWITCH_MUTEX_NESTED, LOG_POOL);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, log_thread, NULL, LOG_POOL);
@@ -276,11 +267,19 @@ SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool)
 
 SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void)
 {
+	void *pop;
+	
 	THREAD_RUNNING = -1;
 	switch_queue_push(LOG_QUEUE, NULL);
 	while (THREAD_RUNNING) {
 		switch_yield(1000);
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled log node(s)\n", switch_queue_size(LOG_RECYCLE_QUEUE));
+	while (switch_queue_trypop(LOG_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
+		free(pop);
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

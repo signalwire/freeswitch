@@ -50,11 +50,11 @@ SWITCH_BEGIN_EXTERN_C
 	/*! The complete log message */
 	char *data;
 	/*! The file where the message originated */
-	char *file;
+	char file[80];
 	/*! The line number where the message originated */
 	uint32_t line;
 	/*! The function where the message originated */
-	char *func;
+	char func[80];
 	/*! The log level of the message */
 	switch_log_level_t level;
 	/*! The time when the log line was sent */
