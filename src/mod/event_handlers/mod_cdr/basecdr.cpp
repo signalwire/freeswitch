@@ -326,49 +326,43 @@ void BaseCDR::process_channel_variables(const std::list<std::string>& stringlist
 // This one is for processing of supplemental chanvars
 void BaseCDR::process_channel_variables(const std::list<std::string>& stringlist, const std::list<std::string>& fixedlist, switch_channel_t *channel,bool repeat)
 {
-	if(stringlist.front() == "*")
-	{
-		switch_hash_index_t *hi;
-		void *val;
-		const void *var;
+	if(stringlist.front() == "*") {
+		switch_event_header_t *hi;
 		switch_memory_pool_t *sessionpool;
 		sessionpool = switch_core_session_get_pool(coresession);
-		for (hi = switch_channel_variable_first(channel); hi; hi = switch_hash_next(hi)) 
-		{
-			switch_hash_this(hi, &var, 0, &val);
-			std::string tempstring_first, tempstring_second;
-			tempstring_first = (char *) var;
-			tempstring_second = (char *) val;
-			chanvars_supp[tempstring_first] = tempstring_second;
+
+		if ((hi = switch_channel_variable_first(channel))) {
+			for (; hi; hi = hi->next) {
+				std::string name, value;
+				name = hi->name;
+				value = hi->value;
+				
+				chanvars_supp[name] = value;
+			}
+			switch_channel_variable_last(channel);
 		}
-		switch_channel_variable_last(channel);
-	}
-	else
-	{
+	} else {
 		std::list<std::string>::const_iterator iItr,iEnd;
 		iEnd = stringlist.end();
 			
-		for(iItr = stringlist.begin(); iItr != iEnd; iItr++)
-		{
+		for (iItr = stringlist.begin(); iItr != iEnd; iItr++) {
 			std::vector<char> tempstringvector(iItr->begin(), iItr->end());
 			tempstringvector.push_back('\0');
 			char* tempstring= &tempstringvector[0];
 
 			char *tempvariable;
 			tempvariable = switch_channel_get_variable(channel,tempstring);
-			if(!switch_strlen_zero(tempvariable))
+			if (!switch_strlen_zero(tempvariable))
 				chanvars_supp[*iItr] = tempvariable;
 		}
 	}
 	
-	if(!repeat)
-	{
+	if (!repeat) {
 		std::map<std::string,std::string>::iterator MapItr;
 		std::list<std::string>::const_iterator iItr,iEnd;
-		for(iItr = fixedlist.begin(), iEnd = fixedlist.end(); iItr != iEnd; iItr++)
-		{
+		for (iItr = fixedlist.begin(), iEnd = fixedlist.end(); iItr != iEnd; iItr++) {
 			MapItr = chanvars_supp.find(*iItr);
-			if(MapItr != chanvars_supp.end() )
+			if (MapItr != chanvars_supp.end() )
 				chanvars_supp.erase(MapItr);
 		}
 	}

@@ -166,6 +166,7 @@ void WINAPI ServiceCtrlHandler(DWORD control)
 /* the main service entry point */
 void WINAPI service_main(DWORD numArgs, char **args)
 {
+	switch_core_flag_t flags = SCF_USE_SQL;
 	const char *err = NULL;		/* error value for return from freeswitch initialization */
 	/*  we have to initialize the service-specific stuff */
 	memset(&status, 0, sizeof(SERVICE_STATUS));
@@ -183,7 +184,7 @@ void WINAPI service_main(DWORD numArgs, char **args)
 	set_high_priority();
 
 	/* attempt to initialize freeswitch and load modules */
-	if (switch_core_init_and_modload(lfile, &err) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_init_and_modload(lfile, flags, &err) != SWITCH_STATUS_SUCCESS) {
 		/* freeswitch did not start sucessfully */
 		status.dwCurrentState = SERVICE_STOPPED;
 	} else {

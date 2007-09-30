@@ -349,8 +349,6 @@ SWITCH_DECLARE(void) switch_channel_variable_last(switch_channel_t *channel)
 
 SWITCH_DECLARE(switch_event_header_t *) switch_channel_variable_first(switch_channel_t *channel)
 {
-	switch_event_header_t *hi;
-
 	assert(channel != NULL);
 	if (channel->vi) {
 		return NULL;
@@ -359,8 +357,6 @@ SWITCH_DECLARE(switch_event_header_t *) switch_channel_variable_first(switch_cha
 	switch_mutex_lock(channel->profile_mutex);
 	channel->vi = 1;
 	return channel->variables->headers;
-	
-	return hi;
 
 }
 

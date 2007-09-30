@@ -66,7 +66,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(switch_hash_t **hash)
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_insert(switch_hash_t * hash, const char *key, const void *data)
 {
-	sqlite3HashInsert(&hash->table, key, strlen(key)+1, (void *)data);
+	sqlite3HashInsert(&hash->table, key, (int)strlen(key)+1, (void *)data);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -76,7 +76,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_locked(switch_hash_t * h
         switch_mutex_lock(mutex);
     }
 
-	sqlite3HashInsert(&hash->table, key, strlen(key)+1, (void *)data);
+	sqlite3HashInsert(&hash->table, key, (int)strlen(key)+1, (void *)data);
 
 	if (mutex) {
         switch_mutex_unlock(mutex);
@@ -87,7 +87,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_locked(switch_hash_t * h
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(switch_hash_t * hash, const char *key)
 {
-	sqlite3HashInsert(&hash->table, key, strlen(key)+1, NULL);
+	sqlite3HashInsert(&hash->table, key, (int)strlen(key)+1, NULL);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -97,7 +97,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(switch_hash_t * h
         switch_mutex_lock(mutex);
     }
 	
-	sqlite3HashInsert(&hash->table, key, strlen(key)+1, NULL);
+	sqlite3HashInsert(&hash->table, key, (int)strlen(key)+1, NULL);
 	
 	if (mutex) {
         switch_mutex_unlock(mutex);
@@ -109,7 +109,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(switch_hash_t * h
 
 SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash_t * hash, const char *key)
 {
-	return sqlite3HashFind(&hash->table, key, strlen(key)+1);
+	return sqlite3HashFind(&hash->table, key, (int)strlen(key)+1);
 }
 
 SWITCH_DECLARE(void *) switch_core_hash_find_locked(switch_hash_t * hash, const char *key, switch_mutex_t *mutex)
@@ -120,7 +120,7 @@ SWITCH_DECLARE(void *) switch_core_hash_find_locked(switch_hash_t * hash, const 
 		switch_mutex_lock(mutex);
 	}
 
-	val = sqlite3HashFind(&hash->table, key, strlen(key)+1);
+	val = sqlite3HashFind(&hash->table, key, (int)strlen(key)+1);
 	
 	if (mutex) {
 		switch_mutex_unlock(mutex);

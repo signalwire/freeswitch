@@ -64,7 +64,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_address, globals.address)
 	char *next, *cur;
 	uint32_t count = 0;
 	uint8_t custom = 0;
-	switch_ssize_t hlen = SWITCH_HASH_KEY_STRING;
+	switch_ssize_t hlen = -1;
 
 	gethostname(globals.hostname, sizeof(globals.hostname));
 	globals.host_hash = switch_hashfunc_default(globals.hostname, &hlen);
@@ -107,7 +107,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_address, globals.address)
 			}
 
 			if (custom) {
-				switch_core_hash_insert_dup(globals.event_hash, cur, MARKER);
+				switch_core_hash_insert(globals.event_hash, cur, MARKER);
 			} else if (switch_name_event(cur, &type) == SWITCH_STATUS_SUCCESS) {
 				globals.key_count++;
 				if (type == SWITCH_EVENT_ALL) {

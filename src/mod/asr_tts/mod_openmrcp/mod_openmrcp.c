@@ -916,7 +916,7 @@ static switch_status_t openmrcp_destroy()
 		openmrcp_module.tts_profile = NULL;
 	}
 
-	switch_core_hash_destroy(openmrcp_module.profile_hash);
+	switch_core_hash_destroy(&openmrcp_module.profile_hash);
 	openmrcp_module.profile_hash = NULL;
 
 	/* one-time mrcp global destroy */
