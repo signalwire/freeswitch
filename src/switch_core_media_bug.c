@@ -119,32 +119,49 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 
 
 	bytes = (datalen > frame->datalen) ? datalen : frame->datalen;
-
+	
 	if (bytes) {
+		int16_t tmp[960], *tp = tmp;
+		
 		dp = (int16_t *) data;
 		fp = (int16_t *) frame->data;
-
 		rlen = frame->datalen / 2;
 		wlen = datalen / 2;
 		blen = bytes / 2;
 
-		for (x = 0; x < blen; x++) {
-			int32_t z = 0;
+		if (switch_test_flag(bug, SMBF_STEREO)) {
+			for (x = 0; x < blen; x++) {
+				if (x < rlen) {
+					*(tp++) = *(fp + x);
+				} else {
+					*(tp++) = 0;
+				}
+				if (x < wlen) {
+					*(tp++) = *(dp + x);
+				} else {
+					*(tp++) = 0;
+				}
+			}
+			memcpy(frame->data, tmp, bytes * 2);
+		} else {
+			for (x = 0; x < blen; x++) {
+				int32_t z = 0;
 
-			if (x < rlen) {
-				z += (int32_t) *(fp + x);
+				if (x < rlen) {
+					z += (int32_t) *(fp + x);
+				}
+				if (x < wlen) {
+					z += (int32_t) *(dp + x);
+				}
+				switch_normalize_to_16bit(z);
+				*(fp + x) = (int16_t) z;
 			}
-			if (x < wlen) {
-				z += (int32_t) *(dp + x);
-			}
-			switch_normalize_to_16bit(z);
-			*(fp + x) = (int16_t) z;
 		}
 
 		frame->datalen = bytes;
 		frame->samples = bytes / sizeof(int16_t);
 		frame->rate = read_codec->implementation->samples_per_second;
-
+		
 		return SWITCH_STATUS_SUCCESS;
 	}
 

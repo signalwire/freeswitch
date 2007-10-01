@@ -302,7 +302,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	switch_media_bug_t *bug;
 	switch_status_t status;
 	time_t to = 0;
-
+	switch_media_bug_flag_t flags = SMBF_READ_STREAM | SMBF_WRITE_STREAM;
+	int channels;
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -317,19 +318,26 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		}
 	}
 
-
 	read_codec = switch_core_session_get_read_codec(session);
 	assert(read_codec != NULL);
 
-	fh->channels = read_codec->implementation->number_of_channels;
+	channels = read_codec->implementation->number_of_channels;
+
+	if ((p = switch_channel_get_variable(channel, "RECORD_STEREO")) && switch_true(p)) {
+		flags |= SMBF_STEREO;
+		channels = 2;
+	}
+	
+	fh->channels = channels;
 	fh->samplerate = read_codec->implementation->samples_per_second;
 
 
 	if (switch_core_file_open(fh,
 							  file,
-							  read_codec->implementation->number_of_channels,
+							  channels,
 							  read_codec->implementation->samples_per_second,
 							  SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", file);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		switch_core_session_reset(session);
 		return SWITCH_STATUS_GENERR;
@@ -376,8 +384,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	if (limit) {
 		to = time(NULL) + limit;
 	}
-
-	if ((status = switch_core_media_bug_add(session, record_callback, fh, to, SMBF_BOTH, &bug)) != SWITCH_STATUS_SUCCESS) {
+	
+	if ((status = switch_core_media_bug_add(session, record_callback, fh, to, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error adding media bug for file %s\n", file);
 		switch_core_file_close(fh);
 		return status;
 	}

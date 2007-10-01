@@ -786,7 +786,8 @@ typedef enum {
 	SMBF_READ_STREAM = (1 << 0),
 	SMBF_WRITE_STREAM = (1 << 1),
 	SMBF_WRITE_REPLACE = (1 << 2),
-	SMBF_READ_REPLACE = (1 << 3)
+	SMBF_READ_REPLACE = (1 << 3),
+	SMBF_STEREO = (1 << 4)
 } switch_media_bug_flag_t;
 
 /*!
