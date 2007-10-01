@@ -713,7 +713,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t * thread, 
 
 		if (conference->perpetual_sound && !conference->fnode) {
 			conference_play_file(conference, conference->perpetual_sound, CONF_DEFAULT_LEADIN, NULL, 1);
-		} else if (conference->moh_sound && conference->count == 1 && !conference->fnode) {
+		} else if (conference->moh_sound && conference->count == 1 && !conference->async_fnode) {
 			conference_play_file(conference, conference->moh_sound, CONF_DEFAULT_LEADIN, NULL, 1);
 		}
 
