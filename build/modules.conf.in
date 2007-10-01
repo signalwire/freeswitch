@@ -4,6 +4,7 @@ applications/mod_commands
 applications/mod_conference
 applications/mod_dptools
 applications/mod_enum
+applications/mode_fifo
 #applications/mod_ivrtest
 #applications/mod_soundtouch
 #applications/mod_rss
@@ -54,4 +55,3 @@ timers/mod_softtimer
 #xml_int/mod_xml_curl
 #xml_int/mod_xml_cdr
 say/mod_say_en
-

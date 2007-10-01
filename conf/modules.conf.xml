@@ -36,6 +36,7 @@
     <load module="mod_commands"/>
     <load module="mod_conference"/>
     <load module="mod_dptools"/>
+    <load module="mod_fifo"/>
 
     <!-- Dialplan Interfaces -->
     <!-- <load module="mod_dialplan_directory"/> -->
