@@ -895,6 +895,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 		}
 		
 		if (uuid && (other_session = switch_core_session_locate(uuid))) {
+			other_channel = switch_core_session_get_channel(other_session);
+			assert(other_channel != NULL);
 			switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BOND_VARIABLE, NULL);
 			switch_core_session_rwunlock(other_session);
 		}

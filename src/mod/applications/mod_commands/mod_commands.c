@@ -218,11 +218,11 @@ SWITCH_STANDARD_API(kill_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define TRANSFER_SYNTAX "<uuid> <dest-exten> [<dialplan>] [<context>]"
+#define TRANSFER_SYNTAX "<uuid> [-bleg|-both] <dest-exten> [<dialplan>] [<context>]"
 SWITCH_STANDARD_API(transfer_function)
 {
-	switch_core_session_t *tsession = NULL;
-	char *mycmd = NULL, *argv[4] = { 0 };
+	switch_core_session_t *tsession = NULL, *other_session = NULL;
+	char *mycmd = NULL, *argv[5] = { 0 };
 	int argc = 0;
 
 	if (session) {
@@ -236,9 +236,38 @@ SWITCH_STANDARD_API(transfer_function)
 			char *dest = argv[1];
 			char *dp = argv[2];
 			char *context = argv[3];
+			char *arg = NULL;
 
 			if ((tsession = switch_core_session_locate(uuid))) {
 
+				if (*dest == '-') {
+					arg = dest;
+					dest = argv[2];
+					dp = argv[3];
+					context = argv[4];
+				}
+
+				if (arg) {
+					switch_channel_t *channel = switch_core_session_get_channel(tsession);
+					arg++;
+					if (!strcasecmp(arg, "bleg")) {
+						char *uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE);
+						if (uuid && (other_session = switch_core_session_locate(uuid))) {
+							switch_core_session_t *tmp = tsession;
+							tsession = other_session;
+							other_session = NULL;
+							switch_core_session_rwunlock(tmp);
+						}
+					} else if (!strcasecmp(arg, "both")) {
+						char *uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE);
+						switch_core_session_t *other_session;
+						if (uuid && (other_session = switch_core_session_locate(uuid))) {
+							switch_ivr_session_transfer(other_session, dest, dp, context);
+							switch_core_session_rwunlock(other_session);
+						}
+					}
+				}
+				
 				if (switch_ivr_session_transfer(tsession, dest, dp, context) == SWITCH_STATUS_SUCCESS) {
 					stream->write_function(stream, "OK\n");
 				} else {
@@ -246,7 +275,7 @@ SWITCH_STANDARD_API(transfer_function)
 				}
 
 				switch_core_session_rwunlock(tsession);
-
+				
 			} else {
 				stream->write_function(stream, "No Such Channel!\n");
 			}
