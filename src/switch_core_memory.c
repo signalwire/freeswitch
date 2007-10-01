@@ -38,6 +38,7 @@
 static struct {
 	switch_mutex_t *mem_lock;
 	switch_queue_t *pool_queue; /* 8 ball break */
+	switch_queue_t *pool_recycle_queue;
 	switch_memory_pool_t *memory_pool;
 	int pool_thread_running;
 } memory_manager;
@@ -249,13 +250,18 @@ SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool_t *pool, const char
 SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memory_pool_t **pool, const char *file, const char *func, int line)
 {
 	char *tmp;
+	void *pop;
 
 	switch_mutex_lock(memory_manager.mem_lock);
 	assert(pool != NULL);
-	
-	apr_pool_create(pool, NULL);
-	assert(*pool != NULL);
-	
+
+	if (switch_queue_trypop(memory_manager.pool_recycle_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+		*pool = (switch_memory_pool_t *) pop;
+	} else {
+		apr_pool_create(pool, NULL);
+		assert(*pool != NULL);
+	}
+
 #ifdef DEBUG_ALLOC2
 	printf("New Pool %s %s:%d\n", file, func, line);
 #endif
@@ -340,7 +346,8 @@ static void *SWITCH_THREAD_FUNC pool_thread(switch_thread_t * thread, void *obj)
 				}
 				
 				pool = (switch_memory_pool_t *) pop;
-				apr_pool_destroy(pool);
+				apr_pool_clear(pool);
+				switch_queue_push(memory_manager.pool_recycle_queue, pool);
 				pool = NULL;
 				x--;
 			}
@@ -354,6 +361,25 @@ static void *SWITCH_THREAD_FUNC pool_thread(switch_thread_t * thread, void *obj)
 	}
 
  done:
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled memory pool(s)\n", 
+					  switch_queue_size(memory_manager.pool_recycle_queue) + switch_queue_size(memory_manager.pool_queue));
+
+	while (switch_queue_trypop(memory_manager.pool_recycle_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+		pool = (switch_memory_pool_t *) pop;
+		if (!pool) {
+			break;
+		}
+		apr_pool_destroy(pool);
+	}
+
+	while (switch_queue_trypop(memory_manager.pool_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+		pool = (switch_memory_pool_t *) pop;
+		if (!pool) {
+			break;
+		}
+		apr_pool_destroy(pool);
+	}
+
 	memory_manager.pool_thread_running = 0;
 	return NULL;
 }
@@ -380,6 +406,7 @@ switch_memory_pool_t *switch_core_memory_init(void)
 	assert(memory_manager.memory_pool != NULL);
 	switch_mutex_init(&memory_manager.mem_lock, SWITCH_MUTEX_NESTED, memory_manager.memory_pool);
 	switch_queue_create(&memory_manager.pool_queue, 50000, memory_manager.memory_pool);
+	switch_queue_create(&memory_manager.pool_recycle_queue, 50000, memory_manager.memory_pool);
 
 	switch_threadattr_create(&thd_attr, memory_manager.memory_pool);
 	switch_threadattr_detach_set(thd_attr, 1);
