@@ -134,7 +134,7 @@ endif
 
 if ADD_ODBC
 libfreeswitch_la_SOURCES += src/switch_odbc.c
-CORE_LIBS     += -lodbc
+libfreeswitch_la_LDFLAGS     += -lodbc
 endif
 
 
