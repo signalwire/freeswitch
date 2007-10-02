@@ -449,6 +449,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			break;
 		}
 
+		if (args && (args->read_frame_callback)) {
+			if (args->read_frame_callback(session, read_frame, args->user_data) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
+		}
+
 		if (fh->thresh) {
 			int16_t *fdata = (int16_t *) read_frame->data;
 			uint32_t samples = read_frame->datalen / sizeof(*fdata);
@@ -562,6 +568,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 
 		if (read_frame->datalen < 2 || switch_test_flag(read_frame, SFF_CNG)) {
 			continue;
+		}
+
+		if (args && (args->read_frame_callback)) {
+			if (args->read_frame_callback(session, read_frame, args->user_data) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
 		}
 
 		if ((write_frame.datalen = (uint32_t) switch_buffer_read_loop(audio_buffer, write_frame.data,
@@ -997,6 +1009,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
 			}
+
+			if (args && (args->read_frame_callback)) {
+				if (args->read_frame_callback(session, read_frame, args->user_data) != SWITCH_STATUS_SUCCESS) {
+					break;
+				}
+			}
 		}
 	}
 
@@ -1266,6 +1284,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 				if (!SWITCH_READ_ACCEPTABLE(status)) {
 					break;
 				}
+
+				if (args && (args->read_frame_callback)) {
+					if (args->read_frame_callback(session, read_frame, args->user_data) != SWITCH_STATUS_SUCCESS) {
+						break;
+					}
+				}
 			}
 			continue;
 		}
@@ -1322,6 +1346,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
+			}
+
+			if (args && (args->read_frame_callback)) {
+				if (args->read_frame_callback(session, read_frame, args->user_data) != SWITCH_STATUS_SUCCESS) {
+					break;
+				}
 			}
 		}
 

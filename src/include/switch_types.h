@@ -1082,11 +1082,14 @@ typedef switch_status_t (*switch_api_function_t) (const char *cmd, switch_core_s
 
 typedef switch_status_t (*switch_input_callback_function_t) (switch_core_session_t *session, void *input,
 															 switch_input_type_t input_type, void *buf, unsigned int buflen);
+typedef switch_status_t (*switch_read_frame_callback_function_t) (switch_core_session_t *session, switch_frame_t *frame, void *user_data);
 typedef struct switch_say_interface switch_say_interface_t;
 typedef struct {
 	switch_input_callback_function_t input_callback;
 	void *buf;
 	uint32_t buflen;
+	switch_read_frame_callback_function_t read_frame_callback;
+	void *user_data;
 } switch_input_args_t;
 typedef switch_status_t (*switch_say_callback_t) (switch_core_session_t *session,
 												  char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args);

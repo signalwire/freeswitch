@@ -119,13 +119,14 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 		if (switch_channel_has_dtmf(chan_a)) {
 			char dtmf[128];
 			switch_channel_dequeue_dtmf(chan_a, dtmf, sizeof(dtmf));
-			switch_core_session_send_dtmf(session_b, dtmf);
 			if (input_callback) {
 				if (input_callback(session_a, dtmf, SWITCH_INPUT_TYPE_DTMF, user_data, 0) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s ended call via DTMF\n", switch_channel_get_name(chan_a));
+					switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 					break;
 				}
 			}
+			switch_core_session_send_dtmf(session_b, dtmf);
 		}
 
 		if (switch_core_session_dequeue_event(session_a, &event) == SWITCH_STATUS_SUCCESS) {
@@ -219,7 +220,6 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BRIDGE THREAD DONE [%s]\n", switch_channel_get_name(chan_a));
 	switch_channel_clear_flag(chan_a, CF_BRIDGED);
 	switch_core_session_rwunlock(session_b);
-
 	return NULL;
 }
 
@@ -245,7 +245,7 @@ static switch_status_t audio_bridge_on_loopback(switch_core_session_t *session)
 
 	if (!switch_channel_test_flag(channel, CF_TRANSFER)) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-	}
+	} 
 
 	return SWITCH_STATUS_FALSE;
 }
