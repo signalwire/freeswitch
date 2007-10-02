@@ -1,2 +1,2 @@
 BASE=../../../..
-include /usr/src/freeswitch.trunk/build/modmake.rules
+include $(BASE)/build/modmake.rules
