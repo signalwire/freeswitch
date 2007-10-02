@@ -404,11 +404,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *ch
 	
 	if (!switch_strlen_zero(varname)) {
 		switch_mutex_lock(channel->profile_mutex);
+		switch_event_del_header(channel->variables, varname);
 		if (value) {
 			switch_event_add_header(channel->variables, SWITCH_STACK_BOTTOM, varname, "%s", value);
-		} else {
-			switch_event_del_header(channel->variables, varname);
-		}
+		} 
 		switch_mutex_unlock(channel->profile_mutex);
 		return SWITCH_STATUS_SUCCESS;
 	}
