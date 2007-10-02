@@ -1523,8 +1523,9 @@ SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml)
 	s = malloc(max);
 	assert(s != NULL);
 	memset(s, 0, max);
-	
+	len = sprintf(s, "<?xml version=\"1.0\"?>\n");
 
+	
 	if (!xml || !xml->name) {
 		if (!(r = realloc(s, len + 1))) {
 			abort();

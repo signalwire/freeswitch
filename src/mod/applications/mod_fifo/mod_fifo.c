@@ -229,12 +229,13 @@ SWITCH_STANDARD_APP(fifo_function)
                 }
 
                 switch_channel_answer(channel);
-				cloned_profile = switch_caller_profile_clone(session, switch_channel_get_caller_profile(channel));
+				cloned_profile = switch_caller_profile_clone(other_session, switch_channel_get_caller_profile(channel));
                 assert(cloned_profile);
                 switch_channel_set_originator_caller_profile(other_channel, cloned_profile);
 
-				cloned_profile = switch_caller_profile_clone(other_session, switch_channel_get_caller_profile(channel));
+				cloned_profile = switch_caller_profile_clone(session, switch_channel_get_caller_profile(other_channel));
                 assert(cloned_profile);
+                assert(cloned_profile->next == NULL);
                 switch_channel_set_originatee_caller_profile(channel, cloned_profile);
 				
                 switch_ivr_multi_threaded_bridge(session, other_session, on_dtmf, other_session, session);

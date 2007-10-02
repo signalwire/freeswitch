@@ -36,8 +36,8 @@
 static struct {
 	char *cred;
 	char *url;
-	char *logDir;
-	char *errLogDir;
+	char *log_dir;
+	char *err_log_dir;
 	uint32_t delay;
 	uint32_t retries;
 	uint32_t shutdown;
@@ -75,7 +75,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
 
 		/* build the XML */
-		if(!(xml_text = switch_mprintf("<?xml version=\"1.0\"?>\n%s",switch_xml_toxml(cdr)) )) {
+		if(!(xml_text = switch_xml_toxml(cdr))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 			goto error;
 		}
@@ -84,11 +84,11 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 		/* all previous functionality is retained */
 
 		if (!(logdir = switch_channel_get_variable(channel, "xml_cdr_base"))) {
-			logdir = globals.logDir;
+			logdir = globals.log_dir;
 		}
 
 		if(!switch_strlen_zero(logdir)) {
-			if ((path = switch_mprintf("%s/xml_cdr/%s.cdr.xml", logdir, switch_core_session_get_uuid(session)))) {
+			if ((path = switch_mprintf("%s/%s.cdr.xml", logdir, switch_core_session_get_uuid(session)))) {
 				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 					int wrote;
 					wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
@@ -101,7 +101,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 #else
 					strerror_r(errno, ebuf, sizeof(ebuf));
 #endif
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error![%s]\n", ebuf);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing [%s][%s]\n", path, ebuf);
 				}
 				switch_safe_free(path);
 			}
@@ -163,7 +163,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			/* if we are here the web post failed for some reason */
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to post to web server, writing to file\n");
 
-			if ((path = switch_mprintf("%s/%s.cdr.xml", globals.errLogDir, switch_core_session_get_uuid(session)))) {
+			if ((path = switch_mprintf("%s/%s.cdr.xml", globals.err_log_dir, switch_core_session_get_uuid(session)))) {
 				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 					int wrote;
 					wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
@@ -229,6 +229,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
+
+	globals.log_dir = switch_mprintf("%s/xml_cdr", SWITCH_GLOBAL_dirs.log_dir);
+	globals.err_log_dir = strdup(globals.log_dir);
 	
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -243,14 +246,20 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				globals.delay = (uint32_t) atoi(val);
 			} else if (!strcasecmp(var, "retries")) {
 				globals.retries = (uint32_t) atoi(val);
-			} else if (!strcasecmp(var, "logDir")) {
-				if (switch_strlen_zero(val)) {
-					globals.logDir = SWITCH_GLOBAL_dirs.log_dir;
+			} else if (!strcasecmp(var, "log-dir")) {
+				switch_safe_free(globals.log_dir);
+				if (switch_is_file_path(val)) {
+					globals.log_dir = strdup(val);
 				} else {
-					globals.logDir = strdup(val);
+					globals.log_dir = switch_mprintf("%s/%s", SWITCH_GLOBAL_dirs.log_dir, val);
 				}
-			} else if (!strcasecmp(var, "errLogDir")) {
-				globals.errLogDir = strdup(val);
+			} else if (!strcasecmp(var, "err-log-dir")) {
+				switch_safe_free(globals.err_log_dir);
+				if (switch_is_file_path(val)) {
+					globals.err_log_dir = strdup(val);
+				} else {
+					globals.err_log_dir = switch_mprintf("%s/%s", SWITCH_GLOBAL_dirs.log_dir, val);
+				}
 			}
 
 		}
@@ -265,17 +274,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "retries set but delay 0 setting to 5000ms\n");
 		globals.delay = 5000;
 	}
-
-	if(!switch_strlen_zero(globals.url) && switch_strlen_zero(globals.errLogDir)) {
-		if ((globals.errLogDir = switch_mprintf("%s/xml_cdr", SWITCH_GLOBAL_dirs.log_dir))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-			status = SWITCH_STATUS_FALSE;
-			goto done;
-		}
-	}
-
-
- done:
+	
 	switch_xml_free(xml);
 	return status;
 }
