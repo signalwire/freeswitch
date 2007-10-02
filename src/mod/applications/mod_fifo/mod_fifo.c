@@ -477,7 +477,7 @@ static void list_node(fifo_node_t *node, switch_xml_t x_report, int *off, int ve
 
 }
 
-#define FIFO_API_SYNTAX "count <fifo name>"
+#define FIFO_API_SYNTAX "list|count [<fifo name>]"
 SWITCH_STANDARD_API(fifo_api_function)
 {
     int len = 0;
