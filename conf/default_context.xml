@@ -150,6 +150,26 @@
     </condition>
   </extension>
 
+  <!-- Push a call into the fifo Queue (Park) -->
+  <extension name="Park Queue">
+    <condition field="destination_number" expression="400">
+      <!-- This will place the call into myqueue and play moh.wav while waiting and announce before bridge -->
+      <action application="fifo" data="in myqueue /tmp/announce.wav /tmp/moh.wav"/>
+      <!-- This is an example with MOH but no announce -->
+      <!-- <action application="fifo" data="in myqueue undef /tmp/moh.wav"/>  -->
+    </condition>
+  </extension>
+
+  <!-- Pop a call out of the fifo Queue (Unpark) -->
+  <extension name="Unpark Queue">
+    <condition field="destination_number" expression="401">
+      <!-- This is "wait" mode which means the caller/agent can press * to go back and wait ending the bridge --> 
+      <action application="fifo" data="out myqueue /tmp/queue-announce.wav /tmp/agent-moh.wav"/>
+      <!-- This is "nowait" which will return to the dial plan if nobody is in queue -->
+      <!-- <action application="fifo" data="out myqueue nowait"/> -->
+    </condition>
+  </extension>
+
   <!-- Call *MUST* originate from mod_iax and also be dialing ext 9999-->
   <extension name="9999">
     <condition field="source" expression="mod_iax"/>
