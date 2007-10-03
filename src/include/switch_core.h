@@ -1443,7 +1443,7 @@ SWITCH_DECLARE(switch_time_t) switch_core_uptime(void);
   \param val the command arguement (if needed)
   \return 0 on success nonzero on error
 */
-SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, uint32_t * val);
+SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_t * val);
 
 /*!
   \brief Get the output console

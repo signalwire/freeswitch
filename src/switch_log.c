@@ -30,7 +30,8 @@
  *
  */
 #include <switch.h>
-
+#include "private/switch_core_pvt.h"
+struct switch_runtime runtime;
 
 static const char *LEVELS[] = {
 	"EMERG",
@@ -165,6 +166,10 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 	switch_time_t now = switch_timestamp_now();
 	uint32_t len;
 	const char *extra_fmt = "%s [%s] %s:%d %s()%c%s";
+
+	if (level < runtime.hard_log_level) {
+		return;
+	}
 
 	va_start(ap, fmt);
 

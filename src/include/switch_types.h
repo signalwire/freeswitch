@@ -1007,7 +1007,8 @@ typedef enum {
 	SCSC_PAUSE_INBOUND,
 	SCSC_HUPALL,
 	SCSC_SHUTDOWN,
-	SCSC_CHECK_RUNNING
+	SCSC_CHECK_RUNNING,
+	SCSC_LOGLEVEL
 } switch_session_ctl_t;
 
 typedef struct apr_pool_t switch_memory_pool_t;

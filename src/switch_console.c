@@ -204,7 +204,7 @@ static void *SWITCH_THREAD_FUNC console_thread(switch_thread_t *thread, void *ob
 	switch_memory_pool_t *pool = (switch_memory_pool_t *) obj;
 
 	while (running) {
-		uint32_t arg;
+		int32_t arg;
 
 		switch_core_session_ctl(SCSC_CHECK_RUNNING, &arg);
 		if (!arg) {
@@ -270,7 +270,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 	switch_thread_create(&thread, thd_attr, console_thread, pool, pool);
 	
 	while (running) {
-		uint32_t arg = 0;
+		int32_t arg = 0;
 		switch_core_session_ctl(SCSC_CHECK_RUNNING, &arg);
 		if (!arg) {
 			break;

@@ -94,7 +94,7 @@ SWITCH_STANDARD_API(ctl_function)
 {
 	int argc;
 	char *mydata, *argv[5];
-	uint32_t arg = 0;
+	int32_t arg = 0;
 
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", CTL_SYNTAX);
@@ -116,6 +116,18 @@ SWITCH_STANDARD_API(ctl_function)
 		} else if (!strcasecmp(argv[0], "shutdown")) {
 			arg = 0;
 			switch_core_session_ctl(SCSC_SHUTDOWN, &arg);
+		} else if (!strcasecmp(argv[0], "loglevel")) {
+			if (argc > 1) {
+				if (*argv[1] > 47 && *argv[1] < 58) {
+					arg = atoi(argv[1]);
+				} else {
+					arg = switch_log_str2level(argv[1]);
+				}
+			} else {
+				arg = -1;
+			}
+			switch_core_session_ctl(SCSC_LOGLEVEL, &arg);
+			stream->write_function(stream, "log level %s [%d]\n", switch_log_level2str(arg), arg);
 		} else {
 			stream->write_function(stream, "INVALID COMMAND\nUSAGE: fsctl [hupall|pause|resume|shutdown]\n");
 			goto end;

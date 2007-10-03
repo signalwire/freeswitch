@@ -623,7 +623,7 @@ SWITCH_DECLARE(switch_time_t) switch_core_uptime(void)
 	return switch_time_now() - runtime.initiated;
 }
 
-SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, uint32_t * val)
+SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_t * val)
 {
 	if (switch_test_flag((&runtime), SCF_SHUTTING_DOWN)) {
 		return -1;
@@ -645,6 +645,18 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, uint32
 		break;
 	case SCSC_CHECK_RUNNING:
 		*val = runtime.running;
+		break;
+	case SCSC_LOGLEVEL:
+		if (*val > -1) {
+			printf("WTF %d\n", *val);
+			runtime.hard_log_level = *val;
+		}
+
+		if (runtime.hard_log_level > SWITCH_LOG_CONSOLE) {
+			printf("WTF %d\n", *val);
+			runtime.hard_log_level = SWITCH_LOG_CONSOLE;
+		}
+		*val = runtime.hard_log_level;
 		break;
 	}
 
