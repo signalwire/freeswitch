@@ -230,9 +230,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 		return SWITCH_STATUS_TERM;
 	}
 
-	globals.log_dir = switch_mprintf("%s/xml_cdr", SWITCH_GLOBAL_dirs.log_dir);
-	globals.err_log_dir = strdup(globals.log_dir);
-	
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -247,21 +244,34 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 			} else if (!strcasecmp(var, "retries")) {
 				globals.retries = (uint32_t) atoi(val);
 			} else if (!strcasecmp(var, "log-dir")) {
-				switch_safe_free(globals.log_dir);
-				if (switch_is_file_path(val)) {
-					globals.log_dir = strdup(val);
+				if (switch_strlen_zero(val)) {
+					globals.log_dir = switch_mprintf("%s/xml_cdr", SWITCH_GLOBAL_dirs.log_dir);
 				} else {
-					globals.log_dir = switch_mprintf("%s/%s", SWITCH_GLOBAL_dirs.log_dir, val);
+					if (switch_is_file_path(val)) {
+						globals.log_dir = strdup(val);
+					} else {
+						globals.log_dir = switch_mprintf("%s/%s", SWITCH_GLOBAL_dirs.log_dir, val);
+					}
 				}
 			} else if (!strcasecmp(var, "err-log-dir")) {
-				switch_safe_free(globals.err_log_dir);
-				if (switch_is_file_path(val)) {
-					globals.err_log_dir = strdup(val);
+				if (switch_strlen_zero(val)) {
+					globals.err_log_dir = switch_mprintf("%s/xml_cdr", SWITCH_GLOBAL_dirs.log_dir);
 				} else {
-					globals.err_log_dir = switch_mprintf("%s/%s", SWITCH_GLOBAL_dirs.log_dir, val);
+					if (switch_is_file_path(val)) {
+						globals.err_log_dir = strdup(val);
+					} else {
+						globals.err_log_dir = switch_mprintf("%s/%s", SWITCH_GLOBAL_dirs.log_dir, val);
+					}
 				}
 			}
 
+			if (switch_strlen_zero(globals.err_log_dir)) {
+				if (!switch_strlen_zero(globals.log_dir)) {
+					globals.err_log_dir = strdup(globals.log_dir);
+				} else {
+					globals.err_log_dir = switch_mprintf("%s/xml_cdr", SWITCH_GLOBAL_dirs.log_dir);
+				}
+			}
 		}
 	}
 	if(globals.retries < 0) {

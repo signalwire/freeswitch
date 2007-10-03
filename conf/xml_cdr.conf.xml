@@ -12,13 +12,13 @@
     <!-- delay between retries in seconds, default is 5 seconds -->
     <!-- <param name="delay" value="1"/> -->
 
-    <!-- optional: full path to the error log dir for failed web posts if not specified its <freeswitch>/logs/xml_cdr_curl -->
-    <!-- <param name="errLogDir" value="/tmp"/> -->
-
     <!-- optional: if not present we do not log every record to disk -->
-    <!-- per original code base /xml_cdr is appended to the directory name -->
-    <!-- defined but blank value will default to freeswitchdir/log -->
-    <param name="logDir" value=""/>
+    <!-- either an absolute path, a relative path assuming ${prefix}/logs or a blank value will default to ${prefix}/logs/xml_cdr -->
+    <param name="log-dir" value=""/>
+
+    <!-- optional: full path to the error log dir for failed web posts if not specified its the same as log-dir -->
+    <!-- either an absolute path, a relative path assuming ${prefix}/logs or a blank or omitted value will default to ${prefix}/logs/xml_cdr -->
+    <!-- <param name="err-log-dir" value="/tmp"/> -->
 
   </settings>
 </configuration>
