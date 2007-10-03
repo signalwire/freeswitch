@@ -58,7 +58,6 @@
     <!--<load module="mod_local_stream"/>-->
 
     <!-- Timers -->
-    <load module="mod_softtimer"/>
 
     <!-- Languages -->
     <!-- <load module="mod_spidermonkey"/> -->
