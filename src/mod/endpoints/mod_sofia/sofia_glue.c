@@ -511,7 +511,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	if (!tech_pvt->nh) {
 		char *d_url = NULL, *url = NULL;
-
+		sofia_private_t *sofia_private;
 		if (switch_strlen_zero(tech_pvt->dest)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "URL Error! [%s]\n", tech_pvt->dest);
 			return SWITCH_STATUS_FALSE;
@@ -534,11 +534,11 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		switch_safe_free(d_url);
 		
-		if (!(tech_pvt->sofia_private = malloc(sizeof(*tech_pvt->sofia_private)))) {
+		if (!(sofia_private = malloc(sizeof(*sofia_private)))) {
 			abort();
 		}
-		memset(tech_pvt->sofia_private, 0, sizeof(*tech_pvt->sofia_private));
-
+		memset(sofia_private, 0, sizeof(*sofia_private));
+		tech_pvt->sofia_private = sofia_private;
 		switch_copy_string(tech_pvt->sofia_private->uuid, switch_core_session_get_uuid(session), sizeof(tech_pvt->sofia_private->uuid));
 		nua_handle_bind(tech_pvt->nh, tech_pvt->sofia_private);
 

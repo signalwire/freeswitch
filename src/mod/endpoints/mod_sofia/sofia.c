@@ -1360,8 +1360,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			}
 			
 			if (tech_pvt->sofia_private) {
-				free(tech_pvt->sofia_private);
+				sofia_private = tech_pvt->sofia_private;
 				tech_pvt->sofia_private = NULL;
+				free(sofia_private);
 			}
 
 			tech_pvt->nh = NULL;		
@@ -1998,7 +1999,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 														 NULL, NULL, NULL, MODNAME, context, destination_number);
 
 	if (tech_pvt->caller_profile) {
-
 		/* Loop thru unknown Headers Here so we can do something with them */
 		for (un = sip->sip_unknown; un; un = un->un_next) {
 			if (!strncasecmp(un->un_name, "Alert-Info", 10)) {
@@ -2031,11 +2031,12 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 	}
 
-	if (!(tech_pvt->sofia_private = malloc(sizeof(*tech_pvt->sofia_private)))) {
+	if (!(sofia_private = malloc(sizeof(*sofia_private)))) {
 		abort();
 	}
-	memset(tech_pvt->sofia_private, 0, sizeof(*tech_pvt->sofia_private));
-
+	memset(sofia_private, 0, sizeof(*sofia_private));
+	tech_pvt->sofia_private = sofia_private;
+	
 	if ((profile->pflags & PFLAG_PRESENCE)) {
 		sofia_presence_set_chat_hash(tech_pvt, sip);
 	}
