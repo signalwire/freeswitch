@@ -65,17 +65,16 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	char *logdir = NULL;
 	char *xml_text_escaped = NULL;
 	int fd = -1;
-	uint32_t curTry;
+	uint32_t cur_try;
 	long httpRes;
 	CURL *curl_handle = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	uint32_t i;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
 
 		/* build the XML */
-		if(!(xml_text = switch_xml_toxml(cdr))) {
+		if (!(xml_text = switch_xml_toxml(cdr))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 			goto error;
 		}
@@ -87,7 +86,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			logdir = globals.log_dir;
 		}
 
-		if(!switch_strlen_zero(logdir)) {
+		if (!switch_strlen_zero(logdir)) {
 			if ((path = switch_mprintf("%s/%s.cdr.xml", logdir, switch_core_session_get_uuid(session)))) {
 				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 					int wrote;
@@ -139,26 +138,21 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1); // 302 recursion level
 			*/
 
-			for (curTry=0;curTry<=globals.retries;curTry++) {
+			for (cur_try = 0; cur_try < globals.retries; cur_try++) {
+				if (cur_try > 0) {
+					sleep(globals.delay);
+				}
 				curl_easy_perform(curl_handle);
-				curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE,&httpRes);
-				if (httpRes==200) {
+				curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
+				if (httpRes == 200) {
 					goto success;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got error [%ld] posting to web server [%s]\n",httpRes, globals.url);
 				}
-
-				/* make sure we dont sleep on the last try */
-				for (i=0;i<globals.delay && (curTry != (globals.retries));i++) {
-					switch_sleep(1000);
-					if(globals.shutdown) {
-						/* we are shutting down so dont try to webpost any more */
-						i=globals.delay;
-						curTry=globals.retries;
-					}
-				}		
+				
 			}
 			curl_easy_cleanup(curl_handle);
+			curl_handle = NULL;
 
 			/* if we are here the web post failed for some reason */
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to post to web server, writing to file\n");
@@ -274,13 +268,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 			}
 		}
 	}
-	if(globals.retries < 0) {
+	if (globals.retries < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "retries is negative, setting to 0\n");
 		globals.retries = 0;
 	}
 
 
-	if(globals.retries && globals.delay<=0) {
+	if (globals.retries && globals.delay<=0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "retries set but delay 0 setting to 5000ms\n");
 		globals.delay = 5000;
 	}
