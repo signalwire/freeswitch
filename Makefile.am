@@ -60,6 +60,7 @@ libs/libteletone/src/libteletone_detect.c\
 libs/libteletone/src/libteletone_generate.c
 
 
+
 library_includedir      = $(PREFIX)/include
 
 library_include_HEADERS = \
@@ -137,6 +138,8 @@ if ADD_ODBC
 libfreeswitch_la_SOURCES += src/switch_odbc.c
 libfreeswitch_la_LDFLAGS     += -lodbc
 endif
+
+
 
 
 libs/libedit/Makefile:
@@ -223,6 +226,8 @@ endif
 
 core:
 	$(MAKE) $(AM_MAKEFLAGS) libfreeswitch.la
+
+clean_core: clean-libLTLIBRARIES
 
 install_core: install-libLTLIBRARIES
 
