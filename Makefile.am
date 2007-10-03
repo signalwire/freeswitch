@@ -53,6 +53,7 @@ src/switch_ivr.c \
 src/switch_stun.c\
 src/switch_log.c\
 src/switch_xml.c\
+src/softtimer.c\
 libs/stfu/stfu.c\
 src/switch_cpp.cpp\
 libs/libteletone/src/libteletone_detect.c\

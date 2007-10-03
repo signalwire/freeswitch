@@ -346,7 +346,7 @@ static switch_status_t en_say_time(switch_core_session_t *session, char *tosay, 
 	if ((t = atoi(tosay)) > 0) {
 		target = switch_time_make(t, 0);
 	} else {
-		target = switch_time_now();
+		target = switch_timestamp_now();
 	}
 	switch_time_exp_lt(&tm, target);
 

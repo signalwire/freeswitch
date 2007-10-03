@@ -1061,18 +1061,18 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 
 	switch_set_flag_locked(tech_pvt, TFLAG_IO);
 
-	started = switch_time_now();
+	started = switch_timestamp_now();
 
 	/* jingle has no ringing indication so we will just pretend that we got one */
 	switch_core_session_queue_indication(session, SWITCH_MESSAGE_INDICATE_RINGING);
 	switch_channel_mark_ring_ready(channel);
 
 	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-		tech_pvt->next_cand = switch_time_now() + DL_CAND_WAIT;
-		tech_pvt->next_desc = switch_time_now();
+		tech_pvt->next_cand = started + DL_CAND_WAIT;
+		tech_pvt->next_desc = started;
 	} else {
-		tech_pvt->next_cand = switch_time_now() + DL_CAND_WAIT;
-		tech_pvt->next_desc = switch_time_now() + DL_CAND_WAIT;
+		tech_pvt->next_cand = started + DL_CAND_WAIT;
+		tech_pvt->next_desc = started + DL_CAND_WAIT;
 	}
 
 	while (!(switch_test_flag(tech_pvt, TFLAG_CODEC_READY) &&
@@ -1080,7 +1080,7 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 			 switch_test_flag(tech_pvt, TFLAG_ANSWER) && switch_test_flag(tech_pvt, TFLAG_TRANSPORT_ACCEPT) &&
 			 tech_pvt->remote_ip && tech_pvt->remote_port
 			 && switch_test_flag(tech_pvt, TFLAG_TRANSPORT))) {
-		now = switch_time_now();
+		now = switch_timestamp_now();
 		elapsed = (unsigned int) ((now - started) / 1000);
 
 		if (switch_channel_get_state(channel) >= CS_HANGUP || switch_test_flag(tech_pvt, TFLAG_BYE)) {
@@ -1365,7 +1365,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 #if 0
 	if (tech_pvt->last_read) {
-		elapsed = (unsigned int) ((switch_time_now() - tech_pvt->last_read) / 1000);
+		elapsed = (unsigned int) ((switch_timestamp_now() - tech_pvt->last_read) / 1000);
 		if (elapsed > 60000) {
 			return SWITCH_STATUS_TIMEOUT;
 		}
@@ -1393,7 +1393,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			payload = tech_pvt->read_frame.payload;
 
 #if 0
-			elapsed = (unsigned int) ((switch_time_now() - started) / 1000);
+			elapsed = (unsigned int) ((switch_timestamp_now() - started) / 1000);
 
 			if (timeout > -1) {
 				if (elapsed >= (unsigned int) timeout) {
@@ -1401,7 +1401,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 				}
 			}
 
-			elapsed = (unsigned int) ((switch_time_now() - last_act) / 1000);
+			elapsed = (unsigned int) ((switch_timestamp_now() - last_act) / 1000);
 			if (elapsed >= hard_timeout) {
 				return SWITCH_STATUS_BREAK;
 			}

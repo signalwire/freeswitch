@@ -37,7 +37,6 @@
 static struct {
 	switch_memory_pool_t *memory_pool;
 	switch_hash_t *session_table;
-	switch_mutex_t *session_table_mutex;
 	uint32_t session_count;
 	uint32_t session_limit;
 	switch_size_t session_id;
@@ -53,7 +52,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(const char *u
 	switch_core_session_t *session = NULL;
 
 	if (uuid_str) {
-		switch_mutex_lock(session_manager.session_table_mutex);
+		switch_mutex_lock(runtime.throttle_mutex);
 		if ((session = switch_core_hash_find(session_manager.session_table, uuid_str))) {
 			/* Acquire a read lock on the session */
 #ifdef SWITCH_DEBUG_RWLOCKS
@@ -65,7 +64,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(const char *u
 				session = NULL;
 			}
 		}
-		switch_mutex_unlock(session_manager.session_table_mutex);
+		switch_mutex_unlock(runtime.throttle_mutex);
 	}
 
 	/* if its not NULL, now it's up to you to rwunlock this */
@@ -80,7 +79,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 	switch_channel_t *channel;
 	uint32_t loops = 0;
 
-	switch_mutex_lock(session_manager.session_table_mutex);
+	switch_mutex_lock(runtime.throttle_mutex);
 	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		if (val) {
@@ -90,7 +89,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 			switch_core_session_kill_channel(session, SWITCH_SIG_KILL);
 		}
 	}
-	switch_mutex_unlock(session_manager.session_table_mutex);
+	switch_mutex_unlock(runtime.throttle_mutex);
 
 	while (session_manager.session_count > 0) {
 		switch_yield(100000);
@@ -107,7 +106,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_message_send(char *uuid_str,
 	switch_core_session_t *session = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	switch_mutex_lock(session_manager.session_table_mutex);
+	switch_mutex_lock(runtime.throttle_mutex);
 	if ((session = switch_core_hash_find(session_manager.session_table, uuid_str)) != 0) {
 		/* Acquire a read lock on the session or forget it the channel is dead */
 		if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
@@ -117,7 +116,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_message_send(char *uuid_str,
 			switch_core_session_rwunlock(session);
 		}
 	}
-	switch_mutex_unlock(session_manager.session_table_mutex);
+	switch_mutex_unlock(runtime.throttle_mutex);
 
 	return status;
 }
@@ -127,7 +126,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(char *uuid_str, s
 	switch_core_session_t *session = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	switch_mutex_lock(session_manager.session_table_mutex);
+	switch_mutex_lock(runtime.throttle_mutex);
 	if ((session = switch_core_hash_find(session_manager.session_table, uuid_str)) != 0) {
 		/* Acquire a read lock on the session or forget it the channel is dead */
 		if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
@@ -137,7 +136,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(char *uuid_str, s
 			switch_core_session_rwunlock(session);
 		}
 	}
-	switch_mutex_unlock(session_manager.session_table_mutex);
+	switch_mutex_unlock(runtime.throttle_mutex);
 
 	return status;
 }
@@ -645,12 +644,12 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	
 	switch_scheduler_del_task_group((*session)->uuid_str);
 
-	switch_mutex_lock(session_manager.session_table_mutex);
+	switch_mutex_lock(runtime.throttle_mutex);
 	switch_core_hash_delete(session_manager.session_table, (*session)->uuid_str);
 	if (session_manager.session_count) {
 		session_manager.session_count--;
 	}
-	switch_mutex_unlock(session_manager.session_table_mutex);
+	switch_mutex_unlock(runtime.throttle_mutex);
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_DESTROY) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data((*session)->channel, event);
@@ -744,18 +743,25 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 	switch_core_session_t *session;
 	switch_uuid_t uuid;
 	uint32_t count = 0;
+	int32_t sps = 0;
 
 	if (!switch_core_ready() || endpoint_interface == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "The system cannot create any sessions at this time.\n");
 		return NULL;
 	}
 
-	switch_mutex_lock(session_manager.session_table_mutex);
+	switch_mutex_lock(runtime.throttle_mutex);
 	count = session_manager.session_count;
-	switch_mutex_unlock(session_manager.session_table_mutex);
+	sps = --runtime.sps;
+	switch_mutex_unlock(runtime.throttle_mutex);
+	
+	if (sps <= 0) {
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Throttle Error!\n");
+		return NULL;
+	}
 
 	if ((count + 1) > session_manager.session_limit) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Limit!\n");
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Limit!\n");
 		return NULL;
 	}
 
@@ -778,6 +784,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 		switch_core_destroy_memory_pool(&usepool);
 		return NULL;
 	}
+
 
 	switch_channel_init(session->channel, session, CS_NEW, 0);
 
@@ -810,11 +817,11 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 	switch_queue_create(&session->private_event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
 
 	snprintf(session->name, sizeof(session->name), "%"SWITCH_SIZE_T_FMT, session->id);
-	switch_mutex_lock(session_manager.session_table_mutex);
+	switch_mutex_lock(runtime.throttle_mutex);
 	session->id = session_manager.session_id++;
 	switch_core_hash_insert(session_manager.session_table, session->uuid_str, session);
 	session_manager.session_count++;
-	switch_mutex_unlock(session_manager.session_table_mutex);
+	switch_mutex_unlock(runtime.throttle_mutex);
 
 	return session;
 }
@@ -871,6 +878,15 @@ SWITCH_DECLARE(uint32_t) switch_core_session_limit(uint32_t new_limit)
 	return session_manager.session_limit;
 }
 
+SWITCH_DECLARE(uint32_t) switch_core_sessions_per_second(uint32_t new_limit)
+{
+	if (new_limit) {
+		runtime.sps_total = new_limit;
+	}
+
+	return runtime.sps_total;
+}
+
 
 void switch_core_session_init(switch_memory_pool_t *pool)
 {
@@ -879,7 +895,6 @@ void switch_core_session_init(switch_memory_pool_t *pool)
 	session_manager.session_id = 1;
 	session_manager.memory_pool = pool;
 	switch_core_hash_init(&session_manager.session_table, session_manager.memory_pool);
-	switch_mutex_init(&session_manager.session_table_mutex, SWITCH_MUTEX_NESTED, session_manager.memory_pool);
 }
 
 void switch_core_session_uninit(void)

@@ -79,6 +79,10 @@ SWITCH_STANDARD_SCHED_FUNC(heartbeat_callback)
 	task->runtime = time(NULL) + 20;
 }
 
+SWITCH_DECLARE(switch_time_t) switch_timestamp_now(void)
+{
+	return runtime.timestamp ? runtime.timestamp : switch_time_now();
+}
 
 SWITCH_DECLARE(switch_status_t) switch_core_set_console(const char *console)
 {
@@ -413,12 +417,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, switch_cor
 		return SWITCH_STATUS_MEMERR;
 	}
 	assert(runtime.memory_pool != NULL);
-
+	switch_mutex_init(&runtime.throttle_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
 	switch_core_set_globals();
 	switch_core_session_init(runtime.memory_pool);
 	switch_core_hash_init(&runtime.global_vars, runtime.memory_pool);
 	runtime.flags = flags;
-
+	runtime.sps_total = 30;
 
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
 		apr_terminate();
@@ -438,6 +442,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, switch_cor
 					if (switch_true(val)) {
 						switch_set_flag((&runtime), SCF_CRASH_PROT);
 					}
+				} else if (!strcasecmp(var, "sessions-per-second")) {
+					switch_core_sessions_per_second(atoi(val));
 				} else if (!strcasecmp(var, "max-sessions")) {
 					switch_core_session_limit(atoi(val));
 				}
@@ -582,9 +588,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(const char *console
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
-					  "\nFreeSWITCH Version %s Started.\nCrash Protection [%s]\nMax Sessions[%u]\nSQL [%s]\n", SWITCH_VERSION_FULL, 
+					  "\nFreeSWITCH Version %s Started.\nCrash Protection [%s]\nMax Sessions[%u]\nSession Rate[%d]\nSQL [%s]\n", SWITCH_VERSION_FULL, 
 					  switch_test_flag((&runtime), SCF_CRASH_PROT) ? "Enabled" : "Disabled",
 					  switch_core_session_limit(0),
+					  switch_core_sessions_per_second(0),
 					  switch_test_flag((&runtime), SCF_USE_SQL) ? "Enabled" : "Disabled"
 					  );
 

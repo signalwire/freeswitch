@@ -162,7 +162,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 	const char *filep = (file ? switch_cut_path(file) : "");
 	const char *funcp = (func ? func : "");
 	char *content = NULL;
-	switch_time_t now = switch_time_now();
+	switch_time_t now = switch_timestamp_now();
 	uint32_t len;
 	const char *extra_fmt = "%s [%s] %s:%d %s()%c%s";
 

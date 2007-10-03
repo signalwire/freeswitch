@@ -26,11 +26,12 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  *
  *
- * mod_softtimer.c -- Software Timer Module
+ * softtimer.c -- Software Timer Module
  *
  */
 #include <switch.h>
 #include <stdio.h>
+#include "private/switch_core_pvt.h"
 
 #ifndef UINT32_MAX
 #define UINT32_MAX 0xffffffff
@@ -38,7 +39,7 @@
 
 #define MAX_TICK UINT32_MAX - 1024
 
-
+struct switch_runtime runtime;
 static switch_memory_pool_t *module_pool = NULL;
 
 static struct {
@@ -47,10 +48,10 @@ static struct {
 	switch_mutex_t *mutex;
 } globals;
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_softtimer_load);
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_softtimer_shutdown);
-SWITCH_MODULE_RUNTIME_FUNCTION(mod_softtimer_runtime);
-SWITCH_MODULE_DEFINITION(mod_softtimer, mod_softtimer_load, mod_softtimer_shutdown, mod_softtimer_runtime);
+SWITCH_MODULE_LOAD_FUNCTION(softtimer_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown);
+SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime);
+SWITCH_MODULE_DEFINITION(softtimer, softtimer_load, softtimer_shutdown, softtimer_runtime);
 
 #define MAX_ELEMENTS 1000
 
@@ -195,51 +196,43 @@ static switch_status_t timer_destroy(switch_timer_t *timer)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_softtimer_load)
-{
-	switch_timer_interface_t *timer_interface;
-	module_pool = pool;
-
-	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	timer_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_TIMER_INTERFACE);
-	timer_interface->interface_name = "soft";
-	timer_interface->timer_init = timer_init;
-	timer_interface->timer_next = timer_next;
-	timer_interface->timer_step = timer_step;
-	timer_interface->timer_check = timer_check;
-	timer_interface->timer_destroy = timer_destroy;
-
-	/* indicate that the module should continue to be loaded */
-	return SWITCH_STATUS_SUCCESS;
-}
-
-/* I cant resist setting this to 10ms, we dont even run anything smaller than 20ms so this is already 
-   twice the granularity we need, we'll change it if we need anything smaller
-*/
 
 #define STEP_MS 1
 #define STEP_MIC 1000
 
-SWITCH_MODULE_RUNTIME_FUNCTION(mod_softtimer_runtime)
+SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 {
 	switch_time_t reference = switch_time_now();
 	uint32_t current_ms = 0;
-	uint32_t x;
-
+	uint32_t x, tick = 0;
+	switch_time_t ts = 0;
+	
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
 	
 	globals.STARTED = globals.RUNNING = 1;
-	
+	switch_mutex_lock(runtime.throttle_mutex);
+	runtime.sps = runtime.sps_total;
+	switch_mutex_unlock(runtime.throttle_mutex);
+
 	while (globals.RUNNING == 1) {
 		reference += STEP_MIC;
-
-		while (switch_time_now() < reference) {
+		while ((ts = switch_time_now()) < reference) {
 			switch_yield(STEP_MIC);
 		}
-
+		runtime.timestamp = ts;
 		current_ms += STEP_MS;
+		tick += STEP_MS;
+
+		if (tick >= 1000) {
+			if (runtime.sps <= 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Rate of %d!\n", runtime.sps_total);
+			}
+			switch_mutex_lock(runtime.throttle_mutex);
+			runtime.sps = runtime.sps_total;
+			switch_mutex_unlock(runtime.throttle_mutex);
+			tick = 0;
+		}
 
 		for (x = 0; x < MAX_ELEMENTS; x++) {
 			int i = x, index;
@@ -270,7 +263,27 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_softtimer_runtime)
 	return SWITCH_STATUS_TERM;
 }
 
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_softtimer_shutdown)
+
+SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
+{
+	switch_timer_interface_t *timer_interface;
+	module_pool = pool;
+
+	/* connect my internal structure to the blank pointer passed to me */
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	timer_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_TIMER_INTERFACE);
+	timer_interface->interface_name = "soft";
+	timer_interface->timer_init = timer_init;
+	timer_interface->timer_next = timer_next;
+	timer_interface->timer_step = timer_step;
+	timer_interface->timer_check = timer_check;
+	timer_interface->timer_destroy = timer_destroy;
+
+	/* indicate that the module should continue to be loaded */
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown)
 {
 
 	if (globals.RUNNING) {
@@ -282,7 +295,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_softtimer_shutdown)
 			switch_yield(10000);
 		}
 	}
-
+	switch_core_destroy_memory_pool(&module_pool);
 	return SWITCH_STATUS_SUCCESS;
 }
 

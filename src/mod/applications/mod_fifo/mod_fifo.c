@@ -112,7 +112,7 @@ SWITCH_STANDARD_APP(fifo_function)
     switch_event_t *event = NULL;
     char date[80] = "";
     switch_time_exp_t tm;
-    switch_time_t ts = switch_time_now();
+    switch_time_t ts = switch_timestamp_now();
     switch_size_t retsize;
 
 
@@ -181,6 +181,7 @@ SWITCH_STANDARD_APP(fifo_function)
         switch_queue_push(node->fifo, uuid);
         switch_mutex_unlock(node->mutex);
 
+        ts = switch_timestamp_now();
         switch_time_exp_lt(&tm, ts);
         switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
         switch_channel_set_variable(channel, "fifo_status", "WAITING");
@@ -208,7 +209,7 @@ SWITCH_STANDARD_APP(fifo_function)
         if (switch_channel_ready(channel)) {
             switch_channel_set_state(channel, CS_HIBERNATE);            
         } else {
-
+            ts = switch_timestamp_now();
             switch_time_exp_lt(&tm, ts);
             switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
             switch_channel_set_variable(channel, "fifo_status", "ABORTED");
@@ -263,7 +264,7 @@ SWITCH_STANDARD_APP(fifo_function)
             switch_event_fire(&event);
         }
 
-
+        ts = switch_timestamp_now();
         switch_time_exp_lt(&tm, ts);
         switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
         switch_channel_set_variable(channel, "fifo_status", "WAITING");
@@ -344,6 +345,7 @@ SWITCH_STANDARD_APP(fifo_function)
                 assert(cloned_profile->next == NULL);
                 switch_channel_set_originatee_caller_profile(channel, cloned_profile);
 				
+                ts = switch_timestamp_now();
                 switch_time_exp_lt(&tm, ts);
                 switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
                 switch_channel_set_variable(channel, "fifo_status", "TALKING");
@@ -355,6 +357,7 @@ SWITCH_STANDARD_APP(fifo_function)
                 switch_channel_set_variable(other_channel, "fifo_target", switch_core_session_get_uuid(session));
                 switch_ivr_multi_threaded_bridge(session, other_session, on_dtmf, other_session, session);
 
+                ts = switch_timestamp_now();
                 switch_time_exp_lt(&tm, ts);
                 switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
                 switch_channel_set_variable(channel, "fifo_status", "WAITING");

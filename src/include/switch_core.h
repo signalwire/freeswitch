@@ -253,6 +253,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(const char *console
 SWITCH_DECLARE(uint32_t) switch_core_session_limit(uint32_t new_limit);
 
 /*! 
+  \brief Set/Get Session Rate Limit
+  \param new_limit new value (if > 0)
+  \return the current session rate limit
+*/
+SWITCH_DECLARE(uint32_t) switch_core_sessions_per_second(uint32_t new_limit);
+
+/*! 
   \brief Destroy the core
   \note to be called at application shutdown
 */
@@ -1464,6 +1471,7 @@ SWITCH_DECLARE(uint8_t) switch_core_session_compare(switch_core_session_t *a, sw
 
 SWITCH_DECLARE(switch_loadable_module_interface_t *) switch_loadable_module_create_module_interface(switch_memory_pool_t *pool, const char *name);
 SWITCH_DECLARE(void *) switch_loadable_module_create_interface(switch_loadable_module_interface_t *mod, switch_module_interface_name_t iname);
+SWITCH_DECLARE(switch_time_t) switch_timestamp_now(void);
 ///\}
 
 /*!

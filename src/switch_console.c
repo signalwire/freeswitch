@@ -151,7 +151,7 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const 
 			switch_size_t retsize;
 			switch_time_exp_t tm;
 			switch_event_t *event;
-			switch_time_exp_lt(&tm, switch_time_now());
+			switch_time_exp_lt(&tm, switch_timestamp_now());
 			switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 
 			if (channel == SWITCH_CHANNEL_ID_LOG) {

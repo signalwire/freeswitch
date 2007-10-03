@@ -120,13 +120,16 @@ SWITCH_DECLARE(switch_dialplan_interface_t *) switch_loadable_module_get_dialpla
   \param switch_module_load the function to call when the module is loaded
   \param switch_module_runtime a function requested to be started in it's own thread once loaded
   \param switch_module_shutdown the function to call when the system is shutdown
+  \param runtime start the runtime thread or not
   \return the resulting status
   \note only use this function if you are making a module that in turn gateways module loading to another technology
  */
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filename,
 																	 switch_module_load_t switch_module_load,
 																	 switch_module_runtime_t switch_module_runtime,
-																	 switch_module_shutdown_t switch_module_shutdown);
+																	 switch_module_shutdown_t switch_module_shutdown,
+																	 switch_bool_t runtime);
+																	 
 
 /*!
   \brief Retrieve the timer interface by it's registered name
@@ -311,6 +314,11 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void);
 	}
 
 ///\}
+
+#define SWITCH_DECLARE_STATIC_MODULE(init, load, run, shut) void init(void) { \
+		switch_loadable_module_build_dynamic(__FILE__, load, run, shut, SWITCH_FALSE); \
+	}
+
 
 SWITCH_END_EXTERN_C
 #endif

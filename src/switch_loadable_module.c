@@ -655,13 +655,18 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 
 	assert(path != NULL);
 
+	switch_core_new_memory_pool(&pool);
 	*new_module = NULL;
-	status = switch_dso_load(&dso, path, loadable_modules.pool);
 
-	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
-		abort();
+	struct_name = switch_core_sprintf(pool, "%s_module_interface", filename);
+
+	status = switch_dso_load(&dso, NULL, loadable_modules.pool);
+	status = switch_dso_sym(&interface_struct_handle, dso, struct_name);
+
+	if (!interface_struct_handle) {
+		status = switch_dso_load(&dso, path, loadable_modules.pool);
 	}
+
 
 	while (loading) {
 		if (status != APR_SUCCESS) {
@@ -670,8 +675,10 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 			break;
 		}
 
-		struct_name = switch_core_sprintf(pool, "%s_module_interface", filename);
-		status = switch_dso_sym(&interface_struct_handle, dso, struct_name);
+		if (!interface_struct_handle) {
+			status = switch_dso_sym(&interface_struct_handle, dso, struct_name);
+		}
+
 		if (interface_struct_handle) {
 			mod_interface_functions = interface_struct_handle;
 			load_func_ptr = mod_interface_functions->load;
@@ -822,7 +829,8 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, 
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filename,
 																	 switch_module_load_t switch_module_load,
 																	 switch_module_runtime_t switch_module_runtime,
-																	 switch_module_shutdown_t switch_module_shutdown)
+																	 switch_module_shutdown_t switch_module_shutdown,
+																	 switch_bool_t runtime)
 {
 	switch_loadable_module_t *module = NULL;
 	switch_module_load_t load_func_ptr = NULL;
@@ -890,7 +898,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filen
 	if (switch_module_runtime) {
 		module->switch_module_runtime = switch_module_runtime;
 	}
-	if (module->switch_module_runtime) {
+	if (runtime && module->switch_module_runtime) {
 		switch_core_launch_thread(switch_loadable_module_exec, module, module->pool);
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Successfully Loaded [%s]\n", module_interface->module_name);
@@ -961,6 +969,8 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 	switch_core_hash_init(&loadable_modules.management_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.dialplan_hash, loadable_modules.pool);
 	switch_mutex_init(&loadable_modules.mutex, SWITCH_MUTEX_NESTED, loadable_modules.pool);
+
+	switch_loadable_module_load_module("", "softtimer", SWITCH_FALSE, &err);
 
 	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_xml_t mods, ld;
@@ -1036,7 +1046,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 		}
 		apr_dir_close(module_dir_handle);
 	}
-
+	
 	switch_loadable_module_runtime();
 
 	return SWITCH_STATUS_SUCCESS;

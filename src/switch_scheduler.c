@@ -1,5 +1,6 @@
 #include <switch.h>
 
+
 struct switch_scheduler_task_container {
 	switch_scheduler_task_t task;
 	int64_t executed;
@@ -71,6 +72,7 @@ static int task_thread_loop(int done)
 
 
 	switch_mutex_lock(globals.task_mutex);
+
 	for (tp = globals.task_list; tp; tp = tp->next) {
 		if (done) {
 			tp->destroyed = 1;

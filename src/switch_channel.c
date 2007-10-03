@@ -855,7 +855,7 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel
 	caller_profile->times->created = switch_time_now();
 
 	if (channel->caller_profile && channel->caller_profile->times) {
-		channel->caller_profile->times->transferred = switch_time_now();
+		channel->caller_profile->times->transferred = caller_profile->times->created;
 		caller_profile->times->answered = channel->caller_profile->times->answered;
 	}
 

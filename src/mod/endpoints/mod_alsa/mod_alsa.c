@@ -180,7 +180,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	assert(channel != NULL);
 
 
-	last = switch_time_now() - waitsec;
+	last = switch_timestamp_now() - waitsec;
 
 
 
@@ -243,7 +243,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		switch_channel_mark_ring_ready(channel);
 
 		while (switch_channel_get_state(channel) == CS_INIT && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
-			if (switch_time_now() - last >= waitsec) {
+			if (switch_timestamp_now() - last >= waitsec) {
 				char buf[512];
 				switch_event_t *event;
 
@@ -257,7 +257,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 				}
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s\n", buf);
-				last = switch_time_now();
+				last = switch_timestamp_now();
 				if (ring_file) {
 					unsigned int pos = 0;
 					switch_core_file_seek(&fh, &pos, 0, SEEK_SET);

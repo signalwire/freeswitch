@@ -179,7 +179,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 	assert(channel != NULL);
 
 
-	last = switch_time_now() - waitsec;
+	last = switch_timestamp_now() - waitsec;
 
 
 
@@ -244,7 +244,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 		while (switch_channel_get_state(channel) == CS_INIT && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
 			switch_size_t olen = globals.timer.samples;
 				
-			if (switch_time_now() - last >= waitsec) {
+			if (switch_timestamp_now() - last >= waitsec) {
 				char buf[512];
 				switch_event_t *event;
 
@@ -257,7 +257,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 					switch_event_fire(&event);
 				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s\n", buf);
-				last = switch_time_now();
+				last = switch_timestamp_now();
 			}
 			
 			if (ring_file) {
