@@ -300,7 +300,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 	gethostname(hostname, sizeof(hostname));
 
 	while (running) {
-		uint32_t arg;
+		int32_t arg;
 #ifndef _MSC_VER
 		fd_set rfds, efds;
 		struct timeval tv = { 0, 20000 };

@@ -156,7 +156,7 @@ struct switch_runtime {
 	switch_mutex_t *throttle_mutex;
 	uint32_t sps_total;
 	int32_t sps;
-	uint32_t hard_log_level;
+	switch_log_level_t hard_log_level;
 };
 
 extern struct switch_runtime runtime;

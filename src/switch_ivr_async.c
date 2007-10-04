@@ -303,7 +303,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	switch_status_t status;
 	time_t to = 0;
 	switch_media_bug_flag_t flags = SMBF_READ_STREAM | SMBF_WRITE_STREAM;
-	int channels;
+	uint8_t channels;
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
