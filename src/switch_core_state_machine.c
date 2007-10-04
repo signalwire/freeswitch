@@ -274,6 +274,44 @@ void switch_core_state_machine_init(switch_memory_pool_t *pool)
 	}
 }
 
+
+
+#define STATE_MACRO(__STATE, __STATE_STR)						do {	\
+		midstate = state;												\
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State %s\n", switch_channel_get_name(session->channel), __STATE_STR);	\
+		if (!driver_state_handler->on_##__STATE || (driver_state_handler->on_##__STATE(session) == SWITCH_STATUS_SUCCESS \
+													&& midstate == switch_channel_get_state(session->channel))) { \
+			while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) { \
+				if (!application_state_handler || !application_state_handler->on_##__STATE \
+					|| (application_state_handler->on_##__STATE			\
+						&& application_state_handler->on_##__STATE(session) == SWITCH_STATUS_SUCCESS \
+						&& midstate == switch_channel_get_state(session->channel))) { \
+					proceed++;											\
+					continue;											\
+				} else {												\
+					proceed = 0;										\
+					break;												\
+				}														\
+			}															\
+			index = 0;													\
+			while (proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) { \
+				if (!application_state_handler || !application_state_handler->on_##__STATE || \
+					(application_state_handler->on_##__STATE &&			\
+					 application_state_handler->on_##__STATE(session) == SWITCH_STATUS_SUCCESS \
+					 && midstate == switch_channel_get_state(session->channel))) { \
+					proceed++;											\
+					continue;											\
+				} else {												\
+					proceed = 0;										\
+					break;												\
+				}														\
+			}															\
+			if (proceed) {												\
+				switch_core_standard_on_##__STATE(session);				\
+			}															\
+		}																\
+	} while (0)
+
 SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 {
 	switch_channel_state_t state = CS_NEW, laststate = CS_HANGUP, midstate = CS_DONE, endstate;
@@ -343,7 +381,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 		if (state != laststate || state == CS_HANGUP || exception) {
 			int index = 0;
 			int proceed = 1;
-			midstate = state;
+
 
 			switch (state) {
 			case CS_NEW:		/* Just created, Waiting for first instructions */
@@ -351,330 +389,35 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				break;
 			case CS_DONE:
 				goto done;
-			case CS_HANGUP:	/* Deactivate and end the thread */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State HANGUP\n", switch_channel_get_name(session->channel));
-				if (!driver_state_handler->on_hangup
-					|| (driver_state_handler->on_hangup
-						&& driver_state_handler->on_hangup(session) == SWITCH_STATUS_SUCCESS && midstate == switch_channel_get_state(session->channel))) {
-					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
-						if (!application_state_handler || !application_state_handler->on_hangup
-							|| (application_state_handler->on_hangup
-								&& application_state_handler->on_hangup(session) == SWITCH_STATUS_SUCCESS
-								&& midstate == switch_channel_get_state(session->channel))) {
-							proceed++;
-							continue;
-						} else {
-							proceed = 0;
-							break;
-						}
-					}
-					index = 0;
-					while (proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
-						if (!application_state_handler || !application_state_handler->on_hangup ||
-							(application_state_handler->on_hangup &&
-							 application_state_handler->on_hangup(session) == SWITCH_STATUS_SUCCESS &&
-							 midstate == switch_channel_get_state(session->channel))) {
-							proceed++;
-							continue;
-						} else {
-							proceed = 0;
-							break;
-						}
-					}
-
-					if (proceed) {
-						switch_core_standard_on_hangup(session);
-					}
-				}
+			case CS_HANGUP:	    /* Deactivate and end the thread */
+				STATE_MACRO(hangup, "HANGUP");
 				goto done;
 			case CS_INIT:		/* Basic setup tasks */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State INIT\n", switch_channel_get_name(session->channel));
-				if (!driver_state_handler->on_init
-					|| (driver_state_handler->on_init && driver_state_handler->on_init(session) == SWITCH_STATUS_SUCCESS
-						&& midstate == switch_channel_get_state(session->channel))) {
-					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
-						if (!application_state_handler || !application_state_handler->on_init
-							|| (application_state_handler->on_init
-								&& application_state_handler->on_init(session) == SWITCH_STATUS_SUCCESS
-								&& midstate == switch_channel_get_state(session->channel))) {
-							proceed++;
-							continue;
-						} else {
-							proceed = 0;
-							break;
-						}
-					}
-					index = 0;
-					while (proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
-						if (!application_state_handler || !application_state_handler->on_init ||
-							(application_state_handler->on_init &&
-							 application_state_handler->on_init(session) == SWITCH_STATUS_SUCCESS
-							 && midstate == switch_channel_get_state(session->channel))) {
-							proceed++;
-							continue;
-						} else {
-							proceed = 0;
-							break;
-						}
-					}
-					if (proceed) {
-						switch_core_standard_on_init(session);
-					}
-				}
+				STATE_MACRO(init, "INIT");
 				break;
 			case CS_RING:		/* Look for a dialplan and find something to do */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State RING\n", switch_channel_get_name(session->channel));
-				if (!driver_state_handler->on_ring
-					|| (driver_state_handler->on_ring && driver_state_handler->on_ring(session) == SWITCH_STATUS_SUCCESS
-						&& midstate == switch_channel_get_state(session->channel))) {
-					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
-						if (!application_state_handler || !application_state_handler->on_ring
-							|| (application_state_handler->on_ring
-								&& application_state_handler->on_ring(session) == SWITCH_STATUS_SUCCESS
-								&& midstate == switch_channel_get_state(session->channel))) {
-							proceed++;
-							continue;
-						} else {
-							proceed = 0;
-							break;
-						}
-					}
-					index = 0;
-					while (proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
-						if (!application_state_handler || !application_state_handler->on_ring ||
-							(application_state_handler->on_ring &&
-							 application_state_handler->on_ring(session) == SWITCH_STATUS_SUCCESS
-							 && midstate == switch_channel_get_state(session->channel))) {
-							proceed++;
-							continue;
-						} else {
-							proceed = 0;
-							break;
-						}
-					}
-					if (proceed) {
-						switch_core_standard_on_ring(session);
-					}
-				}
+				STATE_MACRO(ring, "RING");
 				break;
-			case CS_RESET:		/* Look for a dialplan and find something to do */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State RESET\n", switch_channel_get_name(session->channel));
-				if (!driver_state_handler->on_reset
-					|| (driver_state_handler->on_reset && driver_state_handler->on_reset(session) == SWITCH_STATUS_SUCCESS
-						&& midstate == switch_channel_get_state(session->channel))) {
-					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
-						if (!application_state_handler || !application_state_handler->on_reset
-							|| (application_state_handler->on_reset
-								&& application_state_handler->on_reset(session) == SWITCH_STATUS_SUCCESS
-								&& midstate == switch_channel_get_state(session->channel))) {
-							proceed++;
-							continue;
-						} else {
-							proceed = 0;
-							break;
-						}
-					}
-					index = 0;
-					while (proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
-						if (!application_state_handler || !application_state_handler->on_reset ||
-							(application_state_handler->on_reset &&
-							 application_state_handler->on_reset(session) == SWITCH_STATUS_SUCCESS
-							 && midstate == switch_channel_get_state(session->channel))) {
-							proceed++;
-							continue;
-						} else {
-							proceed = 0;
-							break;
-						}
-					}
-					if (proceed) {
-						switch_core_standard_on_reset(session);
-					}
-				}
+			case CS_RESET:		/* Reset */
+				STATE_MACRO(reset, "RESET");
 				break;
 			case CS_EXECUTE:	/* Execute an Operation */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State EXECUTE\n", switch_channel_get_name(session->channel));
-				if (!driver_state_handler->on_execute
-					|| (driver_state_handler->on_execute
-						&& driver_state_handler->on_execute(session) == SWITCH_STATUS_SUCCESS && midstate == switch_channel_get_state(session->channel))) {
-					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
-						if (!application_state_handler || !application_state_handler->on_execute
-							|| (application_state_handler->on_execute
-								&& application_state_handler->on_execute(session) == SWITCH_STATUS_SUCCESS
-								&& midstate == switch_channel_get_state(session->channel))) {
-							proceed++;
-							continue;
-						} else {
-							proceed = 0;
-							break;
-						}
-					}
-					index = 0;
-					while (proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
-						if (!application_state_handler || !application_state_handler->on_execute ||
-							(application_state_handler->on_execute &&
-							 application_state_handler->on_execute(session) == SWITCH_STATUS_SUCCESS &&
-							 midstate == switch_channel_get_state(session->channel))) {
-							proceed++;
-							continue;
-						} else {
-							proceed = 0;
-							break;
-						}
-					}
-					if (proceed) {
-						switch_core_standard_on_execute(session);
-					}
-				}
+				STATE_MACRO(execute, "EXECUTE");
 				break;
 			case CS_LOOPBACK:	/* loop all data back to source */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State LOOPBACK\n", switch_channel_get_name(session->channel));
-				if (!driver_state_handler->on_loopback
-					|| (driver_state_handler->on_loopback
-						&& driver_state_handler->on_loopback(session) == SWITCH_STATUS_SUCCESS
-						&& midstate == switch_channel_get_state(session->channel))) {
-					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
-						if (!application_state_handler || !application_state_handler->on_loopback
-							|| (application_state_handler->on_loopback
-								&& application_state_handler->on_loopback(session) == SWITCH_STATUS_SUCCESS
-								&& midstate == switch_channel_get_state(session->channel))) {
-							proceed++;
-							continue;
-						} else {
-							proceed = 0;
-							break;
-						}
-					}
-					index = 0;
-					while (proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
-						if (!application_state_handler || !application_state_handler->on_loopback ||
-							(application_state_handler->on_loopback &&
-							 application_state_handler->on_loopback(session) == SWITCH_STATUS_SUCCESS &&
-							 midstate == switch_channel_get_state(session->channel))) {
-							proceed++;
-							continue;
-						} else {
-							proceed = 0;
-							break;
-						}
-					}
-					if (proceed) {
-						switch_core_standard_on_loopback(session);
-					}
-				}
+				STATE_MACRO(loopback, "LOOPBACK");
 				break;
 			case CS_TRANSMIT:	/* send/recieve data to/from another channel */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State TRANSMIT\n", switch_channel_get_name(session->channel));
-				if (!driver_state_handler->on_transmit
-					|| (driver_state_handler->on_transmit
-						&& driver_state_handler->on_transmit(session) == SWITCH_STATUS_SUCCESS
-						&& midstate == switch_channel_get_state(session->channel))) {
-
-					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
-						if (!application_state_handler || !application_state_handler->on_transmit
-							|| (application_state_handler->on_transmit
-								&& application_state_handler->on_transmit(session) == SWITCH_STATUS_SUCCESS
-								&& midstate == switch_channel_get_state(session->channel))) {
-							proceed++;
-							continue;
-						} else {
-							proceed = 0;
-							break;
-						}
-					}
-					index = 0;
-					while (proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
-						if (!application_state_handler || !application_state_handler->on_transmit ||
-							(application_state_handler->on_transmit &&
-							 application_state_handler->on_transmit(session) == SWITCH_STATUS_SUCCESS &&
-							 midstate == switch_channel_get_state(session->channel))) {
-							proceed++;
-							continue;
-						} else {
-							proceed = 0;
-							break;
-						}
-					}
-					if (proceed) {
-						switch_core_standard_on_transmit(session);
-					}
-				}
+				STATE_MACRO(transmit, "TRANSMIT");
 				break;
 			case CS_HOLD:		/* wait in limbo */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State HOLD\n", switch_channel_get_name(session->channel));
-				if (!driver_state_handler->on_hold
-					|| (driver_state_handler->on_hold && driver_state_handler->on_hold(session) == SWITCH_STATUS_SUCCESS
-						&& midstate == switch_channel_get_state(session->channel))) {
-
-					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
-						if (!application_state_handler || !application_state_handler->on_hold
-							|| (application_state_handler->on_hold
-								&& application_state_handler->on_hold(session) == SWITCH_STATUS_SUCCESS
-								&& midstate == switch_channel_get_state(session->channel))) {
-							proceed++;
-							continue;
-						} else {
-							proceed = 0;
-							break;
-						}
-					}
-					index = 0;
-					while (proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
-						if (!application_state_handler || !application_state_handler->on_hold ||
-							(application_state_handler->on_hold &&
-							 application_state_handler->on_hold(session) == SWITCH_STATUS_SUCCESS
-							 && midstate == switch_channel_get_state(session->channel))) {
-							proceed++;
-							continue;
-						} else {
-							proceed = 0;
-							break;
-						}
-					}
-					if (proceed) {
-						switch_core_standard_on_hold(session);
-					}
-				}
+				STATE_MACRO(hold, "HOLD");
 				break;
-			case CS_HIBERNATE:	/* wait in limbo */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State HIBERNATE\n", switch_channel_get_name(session->channel));
-				if (!driver_state_handler->on_hibernate
-					|| (driver_state_handler->on_hibernate
-						&& driver_state_handler->on_hibernate(session) == SWITCH_STATUS_SUCCESS
-						&& midstate == switch_channel_get_state(session->channel))) {
-
-					while ((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
-						if (!application_state_handler || !application_state_handler->on_hibernate
-							|| (application_state_handler->on_hibernate
-								&& application_state_handler->on_hibernate(session) == SWITCH_STATUS_SUCCESS
-								&& midstate == switch_channel_get_state(session->channel))) {
-							proceed++;
-							continue;
-						} else {
-							proceed = 0;
-							break;
-						}
-					}
-					index = 0;
-					while (proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
-						if (!application_state_handler || !application_state_handler->on_hibernate ||
-							(application_state_handler->on_hibernate &&
-							 application_state_handler->on_hibernate(session) == SWITCH_STATUS_SUCCESS &&
-							 midstate == switch_channel_get_state(session->channel))) {
-							proceed++;
-							continue;
-						} else {
-							proceed = 0;
-							break;
-						}
-					}
-					if (proceed) {
-						switch_core_standard_on_hibernate(session);
-					}
-				}
+			case CS_HIBERNATE:	/* sleep */
+				STATE_MACRO(hibernate, "HIBERNATE");
 				break;
 			}
-
+			
 			if (midstate == CS_DONE) {
 				break;
 			}

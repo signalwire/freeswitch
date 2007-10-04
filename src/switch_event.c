@@ -366,8 +366,14 @@ SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(char *own
 SWITCH_DECLARE(void) switch_core_memory_reclaim_events(void)
 {
 	void *pop;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled event node(s) and %d recycled event header node(s)\n",
-					  switch_queue_size(EVENT_RECYCLE_QUEUE),switch_queue_size(EVENT_HEADER_RECYCLE_QUEUE));
+	int size;
+	size = switch_queue_size(EVENT_RECYCLE_QUEUE);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled event(s) %d bytes\n", size, (int) sizeof(switch_event_t) * size);
+	size = switch_queue_size(EVENT_HEADER_RECYCLE_QUEUE);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled event header(s) %d bytes\n", 
+					  size, (int) sizeof(switch_event_header_t) * size);
+
 					  
 	while (switch_queue_trypop(EVENT_HEADER_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
 		free(pop);

@@ -282,7 +282,8 @@ SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool)
 SWITCH_DECLARE(void) switch_core_memory_reclaim_logger(void)
 {
 	void *pop;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled log node(s)\n", switch_queue_size(LOG_RECYCLE_QUEUE));
+	int size = switch_queue_size(LOG_RECYCLE_QUEUE);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled log node(s) %d bytes\n", size, (int)sizeof(switch_log_node_t) * size);
 	while (switch_queue_trypop(LOG_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
 		free(pop);
 	}
