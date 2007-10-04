@@ -64,6 +64,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="advapi32.lib"
 				OutputFile="$(SolutionDir)$(ConfigurationName)/FreeSwitch.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(OutDir)"
@@ -143,6 +144,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="advapi32.lib"
 				OutputFile="$(SolutionDir)$(ConfigurationName)/FreeSwitch.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(OutDir)"
