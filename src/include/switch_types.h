@@ -1008,7 +1008,8 @@ typedef enum {
 	SCSC_HUPALL,
 	SCSC_SHUTDOWN,
 	SCSC_CHECK_RUNNING,
-	SCSC_LOGLEVEL
+	SCSC_LOGLEVEL,
+	SCSC_SPS
 } switch_session_ctl_t;
 
 typedef struct apr_pool_t switch_memory_pool_t;

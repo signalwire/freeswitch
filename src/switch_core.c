@@ -648,15 +648,21 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 		break;
 	case SCSC_LOGLEVEL:
 		if (*val > -1) {
-			printf("WTF %d\n", *val);
 			runtime.hard_log_level = *val;
 		}
 
 		if (runtime.hard_log_level > SWITCH_LOG_CONSOLE) {
-			printf("WTF %d\n", *val);
 			runtime.hard_log_level = SWITCH_LOG_CONSOLE;
 		}
 		*val = runtime.hard_log_level;
+		break;
+	case SCSC_SPS:
+		switch_mutex_lock(runtime.throttle_mutex);
+		if (*val > 0) {
+			runtime.sps_total = *val;
+		}
+		*val = runtime.sps_total;
+		switch_mutex_unlock(runtime.throttle_mutex);
 		break;
 	}
 

@@ -127,7 +127,15 @@ SWITCH_STANDARD_API(ctl_function)
 				arg = -1;
 			}
 			switch_core_session_ctl(SCSC_LOGLEVEL, &arg);
-			stream->write_function(stream, "log level %s [%d]\n", switch_log_level2str(arg), arg);
+			stream->write_function(stream, "log level: %s [%d]\n", switch_log_level2str(arg), arg);
+		} else if (!strcasecmp(argv[0], "sps")) {
+			if (argc > 1) {
+				arg = atoi(argv[1]);
+			} else {
+				arg = 0;
+			}
+			switch_core_session_ctl(SCSC_SPS, &arg);
+			stream->write_function(stream, "sessions per second: %d\n", arg);
 		} else {
 			stream->write_function(stream, "INVALID COMMAND\nUSAGE: fsctl [hupall|pause|resume|shutdown]\n");
 			goto end;
