@@ -140,7 +140,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 
 			for (cur_try = 0; cur_try < globals.retries; cur_try++) {
 				if (cur_try > 0) {
-					sleep(globals.delay);
+					switch_yield(globals.delay * 1000000);
 				}
 				curl_easy_perform(curl_handle);
 				curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
