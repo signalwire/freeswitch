@@ -34,8 +34,7 @@
  */
 #include <switch.h>
 #include <switch_ivr.h>
-
-
+#include "stfu.h"
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session, uint32_t ms)
 {
@@ -1510,6 +1509,55 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 	return SWITCH_STATUS_FALSE;
 }
 
+SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint32_t delay_ms)
+{
+	stfu_instance_t *jb;
+	int qlen = 0;
+	switch_codec_t *read_codec;
+	stfu_frame_t *jb_frame;
+	switch_frame_t *read_frame, write_frame = { 0 };
+	switch_status_t status;
+	switch_channel_t *channel;
+	uint32_t interval, samples;
+	uint32_t ts = 0;
+
+	if (delay_ms < 100 || delay_ms > 10000) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Jitterbuffer spec [%d] myst be between 100 and 10000\n", delay_ms);
+		return;
+	}
+
+	read_codec = switch_core_session_get_read_codec(session);
+	interval = read_codec->implementation->microseconds_per_frame / 1000;
+	samples = switch_bytes_per_frame(read_codec->implementation->samples_per_second, interval);
+
+	qlen = delay_ms / (interval);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting delay to %dms (%d frames)\n", delay_ms, qlen);
+	jb = stfu_n_init(qlen);
+
+	channel = switch_core_session_get_channel(session);
+	write_frame.codec = read_codec;
+
+	while(switch_channel_ready(channel)) {
+		status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			break;
+		}
+
+		stfu_n_eat(jb, ts, read_frame->data, read_frame->datalen);
+		ts += interval;
+
+		if ((jb_frame = stfu_n_read_a_frame(jb))) {
+			write_frame.data = jb_frame->data;
+			write_frame.datalen = jb_frame->dlen;
+			status = switch_core_session_write_frame(session, &write_frame, -1, 0);
+			if (!SWITCH_READ_ACCEPTABLE(status)) {
+				break;
+			}
+		}
+	}
+
+	stfu_n_destroy(&jb);
+}
 
 
 /* For Emacs:
