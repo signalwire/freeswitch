@@ -116,6 +116,8 @@ SWITCH_STANDARD_API(ctl_function)
 		} else if (!strcasecmp(argv[0], "shutdown")) {
 			arg = 0;
 			switch_core_session_ctl(SCSC_SHUTDOWN, &arg);
+		} else if (!strcasecmp(argv[0], "reclaim_mem")) {
+			switch_core_session_ctl(SCSC_RECLAIM, &arg);
 		} else if (!strcasecmp(argv[0], "loglevel")) {
 			if (argc > 1) {
 				if (*argv[1] > 47 && *argv[1] < 58) {

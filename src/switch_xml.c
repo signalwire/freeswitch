@@ -57,7 +57,7 @@
 #ifndef WIN32
 #include <switch_private.h>
 #endif
-
+#undef HAVE_MMAP
 #ifdef HAVE_MMAP
 #include <sys/mman.h>
 #ifdef __sun

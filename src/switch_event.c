@@ -363,10 +363,25 @@ SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(char *own
 
 }
 
+SWITCH_DECLARE(void) switch_core_memory_reclaim_events(void)
+{
+	void *pop;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled event node(s) and %d recycled event header node(s)\n",
+					  switch_queue_size(EVENT_RECYCLE_QUEUE),switch_queue_size(EVENT_HEADER_RECYCLE_QUEUE));
+					  
+	while (switch_queue_trypop(EVENT_HEADER_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
+		free(pop);
+	}
+	while (switch_queue_trypop(EVENT_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
+		free(pop);
+	}
+
+}
+
 SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 {
 	int x = 0, last = 0;
-	void *pop;
+
 
 	if (THREAD_RUNNING > 0) {
 		THREAD_RUNNING = -1;
@@ -405,16 +420,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 	}
 
 	switch_core_hash_destroy(&CUSTOM_HASH);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled event node(s) and %d recycled event header node(s)\n",
-					  switch_queue_size(EVENT_RECYCLE_QUEUE),switch_queue_size(EVENT_HEADER_RECYCLE_QUEUE));
-					  
-
-	while (switch_queue_trypop(EVENT_HEADER_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
-		free(pop);
-	}
-	while (switch_queue_trypop(EVENT_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
-		free(pop);
-	}
+	switch_core_memory_reclaim_events();
 	
 
 	return SWITCH_STATUS_SUCCESS;
@@ -541,7 +547,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header(switch_event_t *event, c
 			}
 			FREE(hp->name);
 			FREE(hp->value);
-			switch_queue_push(EVENT_HEADER_RECYCLE_QUEUE, hp);
+			if (switch_queue_trypush(EVENT_HEADER_RECYCLE_QUEUE, hp) != SWITCH_STATUS_SUCCESS) {
+				FREE(hp);
+			}
 			status = SWITCH_STATUS_SUCCESS;
 			break;
 		}
@@ -629,10 +637,14 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event_t **event)
 			hp = hp->next;
 			FREE(this->name);
 			FREE(this->value);
-			switch_queue_push(EVENT_HEADER_RECYCLE_QUEUE, this);
+			if (switch_queue_trypush(EVENT_HEADER_RECYCLE_QUEUE, this) != SWITCH_STATUS_SUCCESS) {
+				FREE(this);
+			}
 		}
 		FREE(ep->body);
-		switch_queue_push(EVENT_RECYCLE_QUEUE, ep);
+		if (switch_queue_trypush(EVENT_RECYCLE_QUEUE, ep) != SWITCH_STATUS_SUCCESS) {
+			FREE(ep);
+		}
 	}
 	*event = NULL;
 }

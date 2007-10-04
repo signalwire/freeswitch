@@ -215,6 +215,9 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t * thread,
 		}
 	}
 
+	while (switch_queue_trypop(sql_manager.sql_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+		free(pop);
+	}
 
 	free(sqlbuf);
 	return NULL;

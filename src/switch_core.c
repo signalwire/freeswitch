@@ -405,6 +405,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, switch_cor
 	memset(&runtime, 0, sizeof(runtime));
 
 	switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
+	runtime.hard_log_level = SWITCH_LOG_DEBUG;
 
 	/* INIT APR and Create the pool context */
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
@@ -565,10 +566,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(const char *console
 	signal(SIGPIPE, handle_SIGPIPE);
 #endif
 #ifdef SIGPOLL
-	signal(SIGPIPE, handle_SIGPOLL);
+	signal(SIGPOLL, handle_SIGPOLL);
 #endif
 #ifdef SIGIO
-	signal(SIGPIPE, handle_SIGIO);
+	signal(SIGIO, handle_SIGIO);
 #endif
 #ifdef TRAP_BUS
 	signal(SIGBUS, handle_SIGBUS);
@@ -651,8 +652,8 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 			runtime.hard_log_level = *val;
 		}
 
-		if (runtime.hard_log_level > SWITCH_LOG_CONSOLE) {
-			runtime.hard_log_level = SWITCH_LOG_CONSOLE;
+		if (runtime.hard_log_level > SWITCH_LOG_DEBUG) {
+			runtime.hard_log_level = SWITCH_LOG_DEBUG;
 		}
 		*val = runtime.hard_log_level;
 		break;
@@ -663,6 +664,11 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 		}
 		*val = runtime.sps_total;
 		switch_mutex_unlock(runtime.throttle_mutex);
+		break;
+
+	case SCSC_RECLAIM:
+		switch_core_memory_reclaim_all();
+		*val = 0;
 		break;
 	}
 
@@ -739,6 +745,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(void) switch_core_memory_reclaim_all(void)
+{
+	switch_core_memory_reclaim_logger();	
+	switch_core_memory_reclaim_events();
+	switch_core_memory_reclaim();
+}
 
 /* For Emacs:
  * Local Variables:

@@ -1472,6 +1472,11 @@ SWITCH_DECLARE(uint8_t) switch_core_session_compare(switch_core_session_t *a, sw
 SWITCH_DECLARE(switch_loadable_module_interface_t *) switch_loadable_module_create_module_interface(switch_memory_pool_t *pool, const char *name);
 SWITCH_DECLARE(void *) switch_loadable_module_create_interface(switch_loadable_module_interface_t *mod, switch_module_interface_name_t iname);
 SWITCH_DECLARE(switch_time_t) switch_timestamp_now(void);
+SWITCH_DECLARE(void) switch_core_memory_reclaim(void);
+SWITCH_DECLARE(void) switch_core_memory_reclaim_events(void);
+SWITCH_DECLARE(void) switch_core_memory_reclaim_logger(void);
+SWITCH_DECLARE(void) switch_core_memory_reclaim_all(void);
+
 ///\}
 
 /*!

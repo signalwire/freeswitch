@@ -480,7 +480,6 @@ typedef enum {
 \enum switch_log_level_t
 \brief Log Level Enumeration
 <pre>
-    SWITCH_LOG_CONSOLE          - Console
 	SWITCH_LOG_DEBUG            - Debug
 	SWITCH_LOG_INFO             - Info
 	SWITCH_LOG_NOTICE           - Notice
@@ -488,11 +487,10 @@ typedef enum {
 	SWITCH_LOG_ERROR            - Error
 	SWITCH_LOG_CRIT             - Critical
 	SWITCH_LOG_ALERT            - Alert
-	SWITCH_LOG_EMERG            - Emergency
+	SWITCH_LOG_CONSOLE          - Console
 </pre>
  */
 typedef enum {
-	SWITCH_LOG_CONSOLE = 8,
 	SWITCH_LOG_DEBUG = 7,
 	SWITCH_LOG_INFO = 6,
 	SWITCH_LOG_NOTICE = 5,
@@ -500,7 +498,7 @@ typedef enum {
 	SWITCH_LOG_ERROR = 3,
 	SWITCH_LOG_CRIT = 2,
 	SWITCH_LOG_ALERT = 1,
-	SWITCH_LOG_EMERG = 0
+	SWITCH_LOG_CONSOLE = 0
 } switch_log_level_t;
 
 
@@ -1009,7 +1007,8 @@ typedef enum {
 	SCSC_SHUTDOWN,
 	SCSC_CHECK_RUNNING,
 	SCSC_LOGLEVEL,
-	SCSC_SPS
+	SCSC_SPS,
+	SCSC_RECLAIM
 } switch_session_ctl_t;
 
 typedef struct apr_pool_t switch_memory_pool_t;

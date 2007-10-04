@@ -34,7 +34,7 @@
 struct switch_runtime runtime;
 
 static const char *LEVELS[] = {
-	"EMERG",
+	"CONSOLE",
 	"ALERT",
 	"CRIT",
 	"ERR",
@@ -42,7 +42,6 @@ static const char *LEVELS[] = {
 	"NOTICE",
 	"INFO",
 	"DEBUG",
-	"CONSOLE",
 	NULL
 };
 
@@ -64,6 +63,9 @@ static uint8_t MAX_LEVEL = 0;
 
 SWITCH_DECLARE(const char *) switch_log_level2str(switch_log_level_t level)
 {
+	if (level > SWITCH_LOG_DEBUG) {
+		level = SWITCH_LOG_DEBUG;
+	}
 	return LEVELS[level];
 }
 
@@ -71,6 +73,7 @@ SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(const char *str)
 {
 	int x = 0;
 	switch_log_level_t level = SWITCH_LOG_DEBUG;
+
 	for (x = 0;; x++) {
 		if (!LEVELS[x]) {
 			break;
@@ -144,7 +147,9 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t * thread, void *obj)
 		switch_mutex_unlock(BINDLOCK);
 		
 		switch_safe_free(node->data);
-		switch_queue_push(LOG_RECYCLE_QUEUE, node);
+		if (switch_queue_trypush(LOG_RECYCLE_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
+			free(node);
+		}
 	}
 
 	THREAD_RUNNING = 0;
@@ -167,7 +172,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 	uint32_t len;
 	const char *extra_fmt = "%s [%s] %s:%d %s()%c%s";
 
-	if (level < runtime.hard_log_level) {
+	if (level > runtime.hard_log_level) {
 		return;
 	}
 
@@ -185,7 +190,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 
 		len = (uint32_t) (strlen(extra_fmt) + strlen(date) + strlen(filep) + 32 + strlen(funcp) + strlen(fmt));
 		new_fmt = malloc(len + 1);
-		snprintf(new_fmt, len, extra_fmt, date, LEVELS[level], filep, line, funcp, 128, fmt);
+		snprintf(new_fmt, len, extra_fmt, date, switch_log_level2str(level), filep, line, funcp, 128, fmt);
 		fmt = new_fmt;
 	}
 
@@ -235,7 +240,11 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 				node->level = level;
 				node->content = content;
 				node->timestamp = now;
-				switch_queue_push(LOG_QUEUE, node);
+				if (switch_queue_trypush(LOG_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
+					free(node->data);
+					free(node);
+					node = NULL;
+				}
 			}
 		}
 	}
@@ -270,21 +279,25 @@ SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void)
+SWITCH_DECLARE(void) switch_core_memory_reclaim_logger(void)
 {
 	void *pop;
-	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled log node(s)\n", switch_queue_size(LOG_RECYCLE_QUEUE));
+	while (switch_queue_trypop(LOG_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
+		free(pop);
+	}
+}
+
+SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void)
+{
+
 	THREAD_RUNNING = -1;
 	switch_queue_push(LOG_QUEUE, NULL);
 	while (THREAD_RUNNING) {
 		switch_yield(1000);
 	}
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled log node(s)\n", switch_queue_size(LOG_RECYCLE_QUEUE));
-	while (switch_queue_trypop(LOG_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
-		free(pop);
-	}
-
+	switch_core_memory_reclaim_logger();
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
