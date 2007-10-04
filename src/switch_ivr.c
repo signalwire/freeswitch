@@ -1548,7 +1548,7 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 
 		if ((jb_frame = stfu_n_read_a_frame(jb))) {
 			write_frame.data = jb_frame->data;
-			write_frame.datalen = jb_frame->dlen;
+			write_frame.datalen = (uint32_t)jb_frame->dlen;
 			status = switch_core_session_write_frame(session, &write_frame, -1, 0);
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
