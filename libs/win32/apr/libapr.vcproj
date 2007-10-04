@@ -74,7 +74,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib mswsock.lib rpcrt4.lib"
+				AdditionalDependencies="ws2_32.lib mswsock.lib rpcrt4.lib advapi32.lib"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -175,7 +175,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib mswsock.lib rpcrt4.lib"
+				AdditionalDependencies="ws2_32.lib mswsock.lib rpcrt4.lib advapi32.lib"
 				OutputFile="$(OutDir)\$(ProjectName).dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
