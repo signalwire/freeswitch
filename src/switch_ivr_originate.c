@@ -535,6 +535,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				peer_channels[i] = switch_core_session_get_channel(new_session);
 				assert(peer_channels[i] != NULL);
 
+				if (var_event) {
+					switch_event_header_t *header;
+					/* install the vars from the {} params */
+					for (header = var_event->headers; header; header = header->next) {
+						switch_channel_set_variable(peer_channels[i], header->name, header->value);
+					}
+				}
+
 				if (!table) {
 					table = &originate_state_handlers;
 				}
@@ -825,16 +833,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		  done:
 			*cause = SWITCH_CAUSE_UNALLOCATED;
 
-			if (var_event) {
-				if (peer_channel && !caller_channel) {	/* install the vars from the {} params */
-					switch_event_header_t *header;
-					for (header = var_event->headers; header; header = header->next) {
-						switch_channel_set_variable(peer_channel, header->name, header->value);
-					}
-				}
-				switch_event_destroy(&var_event);
-			}
-
 			if (status == SWITCH_STATUS_SUCCESS) {
 				if (caller_channel) {
 					switch_channel_set_variable(caller_channel, "originate_disposition", "call accepted");
@@ -916,6 +914,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	if (bleg && status != SWITCH_STATUS_SUCCESS) {
 		*bleg = NULL;
+	}
+
+	
+	if (var_event) {
+		switch_event_destroy(&var_event);
 	}
 
 	return status;
