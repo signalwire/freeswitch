@@ -657,6 +657,9 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 		}
 		*val = runtime.hard_log_level;
 		break;
+	case SCSC_LAST_SPS:
+		*val = runtime.sps_last;
+		break;
 	case SCSC_SPS:
 		switch_mutex_lock(runtime.throttle_mutex);
 		if (*val > 0) {

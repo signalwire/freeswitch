@@ -206,7 +206,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	uint32_t current_ms = 0;
 	uint32_t x, tick = 0;
 	switch_time_t ts = 0;
-	
+
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
 	
@@ -229,6 +229,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Rate of %d!\n", runtime.sps_total);
 			}
 			switch_mutex_lock(runtime.throttle_mutex);
+			runtime.sps_last = runtime.sps_total - runtime.sps;
 			runtime.sps = runtime.sps_total;
 			switch_mutex_unlock(runtime.throttle_mutex);
 			tick = 0;

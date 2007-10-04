@@ -1008,6 +1008,7 @@ typedef enum {
 	SCSC_CHECK_RUNNING,
 	SCSC_LOGLEVEL,
 	SCSC_SPS,
+	SCSC_LAST_SPS,
 	SCSC_RECLAIM
 } switch_session_ctl_t;
 

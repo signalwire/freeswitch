@@ -156,6 +156,7 @@ struct switch_runtime {
 	switch_mutex_t *throttle_mutex;
 	uint32_t sps_total;
 	int32_t sps;
+	int32_t sps_last;
 	switch_log_level_t hard_log_level;
 };
 

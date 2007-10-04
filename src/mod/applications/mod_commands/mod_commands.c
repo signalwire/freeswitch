@@ -44,6 +44,7 @@ SWITCH_STANDARD_API(status_function)
 	uint8_t html = 0;
 	switch_core_time_duration_t duration;
 	char *http = NULL;
+	int sps, last_sps;
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
@@ -68,7 +69,9 @@ SWITCH_STANDARD_API(status_function)
 						   duration.mms == 1 ? "" : "s");
 
 	stream->write_function(stream, "%"SWITCH_SIZE_T_FMT" sessions since startup\n", switch_core_session_id() - 1 );
-	stream->write_function(stream, "%d sessions\n", switch_core_session_count());
+	switch_core_session_ctl(SCSC_LAST_SPS, &last_sps);
+	switch_core_session_ctl(SCSC_SPS, &sps);
+	stream->write_function(stream, "%d session(s) %d/%d\n", switch_core_session_count(), last_sps, sps);
 
 	if (html) {
 		stream->write_function(stream, "</b>\n");
@@ -130,6 +133,9 @@ SWITCH_STANDARD_API(ctl_function)
 			}
 			switch_core_session_ctl(SCSC_LOGLEVEL, &arg);
 			stream->write_function(stream, "log level: %s [%d]\n", switch_log_level2str(arg), arg);
+		} else if (!strcasecmp(argv[0], "last_sps")) {
+			switch_core_session_ctl(SCSC_LAST_SPS, &arg);
+			stream->write_function(stream, "last sessions per second: %d\n", arg);
 		} else if (!strcasecmp(argv[0], "sps")) {
 			if (argc > 1) {
 				arg = atoi(argv[1]);
