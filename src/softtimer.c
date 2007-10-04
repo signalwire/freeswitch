@@ -39,7 +39,7 @@
 
 #define MAX_TICK UINT32_MAX - 1024
 
-struct switch_runtime runtime;
+
 static switch_memory_pool_t *module_pool = NULL;
 
 static struct {

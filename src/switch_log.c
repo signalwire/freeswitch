@@ -31,7 +31,7 @@
  */
 #include <switch.h>
 #include "private/switch_core_pvt.h"
-struct switch_runtime runtime;
+
 
 static const char *LEVELS[] = {
 	"CONSOLE",
