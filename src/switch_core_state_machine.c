@@ -310,7 +310,7 @@ void switch_core_state_machine_init(switch_memory_pool_t *pool)
 				switch_core_standard_on_##__STATE(session);				\
 			}															\
 		}																\
-	} while (0)
+	} while (silly)
 
 SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 {
@@ -320,7 +320,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 	const switch_state_handler_table_t *application_state_handler = NULL;
 	switch_thread_id_t thread_id;
 	jmp_buf env;
-	int sig;
+	int sig, silly = 0;
 
 	if (switch_test_flag((&runtime), SCF_CRASH_PROT)) {
 		thread_id = switch_thread_self();
