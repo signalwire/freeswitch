@@ -949,7 +949,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt)
 			int len = atoi(val);
 			
 			if (len < 100 || len > 1000) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Jitterbuffer spec [%d] myst be between 100 and 1000\n", len);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Jitterbuffer spec [%d] must be between 100 and 1000\n", len);
 			} else {
 				int qlen;
 

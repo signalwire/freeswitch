@@ -1521,8 +1521,8 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 	uint32_t interval, samples;
 	uint32_t ts = 0;
 
-	if (delay_ms < 100 || delay_ms > 10000) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Jitterbuffer spec [%d] myst be between 100 and 10000\n", delay_ms);
+	if (delay_ms < 1 || delay_ms > 10000) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid delay [%d] must be between 1 and 10000\n", delay_ms);
 		return;
 	}
 
