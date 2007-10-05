@@ -1097,7 +1097,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	}
 	
 
-	if (channel && (status == 180 || status == 183)) {
+	if (channel && (status == 180 || status == 183) && switch_channel_test_flag(channel, CF_OUTBOUND)) {
 		char *val;
 		if ((val = switch_channel_get_variable(channel, "sip_auto_answer")) && switch_true(val)) {
 			nua_notify(nh, NUTAG_NEWSUB(1), NUTAG_SUBSTATE(nua_substate_active), SIPTAG_EVENT_STR("talk"), TAG_END());
