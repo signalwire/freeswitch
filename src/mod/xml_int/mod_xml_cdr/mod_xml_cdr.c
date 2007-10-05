@@ -41,6 +41,7 @@ static struct {
 	uint32_t delay;
 	uint32_t retries;
 	uint32_t shutdown;
+	int ignore_cacert_check;
 } globals;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load);
@@ -132,6 +133,10 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			curl_easy_setopt(curl_handle, CURLOPT_URL, globals.url);
 			curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-xml/1.0");
 			curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, httpCallBack);
+
+			if (globals.ignore_cacert_check) {
+				curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
+			}
 
 			/* these were used for testing, optionally they may be enabled if someone desires
 			curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 120); // tcp timeout
@@ -257,6 +262,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 						globals.err_log_dir = switch_mprintf("%s/%s", SWITCH_GLOBAL_dirs.log_dir, val);
 					}
 				}
+			} else if (!strcasecmp(var, "ignore-cacert-check") && switch_true(val)) {
+				globals.ignore_cacert_check = 1;
 			}
 
 			if (switch_strlen_zero(globals.err_log_dir)) {

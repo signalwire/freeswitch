@@ -20,5 +20,9 @@
     <!-- either an absolute path, a relative path assuming ${prefix}/logs or a blank or omitted value will default to ${prefix}/logs/xml_cdr -->
     <!-- <param name="err-log-dir" value="/tmp"/> -->
 
+    <!-- optional: if enabled this will disable CA root certificate checks by libcurl -->
+    <!-- note: default value is disabled. only enable if you want this! -->
+    <!-- <param name="ignore-cacert-check" value="true" /> -->
+
   </settings>
 </configuration>
