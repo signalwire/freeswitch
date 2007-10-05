@@ -1016,11 +1016,14 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt)
 
 switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, char *r_sdp)
 {
-	sdp_parser_t *parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0);
+	sdp_parser_t *parser = NULL;
 	sdp_session_t *sdp;
 	uint8_t match = 0;
 
 	assert(tech_pvt != NULL);
+	assert(r_sdp != NULL);
+
+	parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0);
 
 	if (switch_strlen_zero(r_sdp)) {
 		return SWITCH_STATUS_FALSE;
