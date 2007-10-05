@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
+ * Justin Cassidy <xachenant@hotmail.com>
  *
  * mod_xml_curl.c -- CURL XML Gateway
  *
@@ -40,6 +41,7 @@ struct xml_binding {
 	char *bindings;
 	char *cred;
 	int disable100continue;
+	uint32_t ignore_cacert_check;
 };
 
 typedef struct xml_binding xml_binding_t;
@@ -126,6 +128,10 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 			curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, slist); 
 		}
 
+		if (binding->ignore_cacert_check) {
+			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
+		}
+
 		curl_easy_perform(curl_handle);
 		curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE,&httpRes);
 		curl_easy_cleanup(curl_handle);
@@ -173,6 +179,7 @@ static switch_status_t do_config(void)
 		char *bind_cred = NULL;
 		char *bind_mask = NULL;
 		int disable100continue = 0;
+		uint32_t ignore_cacert_check = 0;
 
 		for (param = switch_xml_child(binding_tag, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -186,6 +193,8 @@ static switch_status_t do_config(void)
 				bind_cred = val;
 			} else if (!strcasecmp(var, "disable-100-continue") && switch_true(val)) {
 				disable100continue = 1;
+			} else if (!strcasecmp(var, "ignore-cacert-check") && switch_true(val)) {
+				ignore_cacert_check = 1;
 			}
 		}
 
@@ -210,6 +219,7 @@ static switch_status_t do_config(void)
 		}
 
 		binding->disable100continue = disable100continue;
+		binding->ignore_cacert_check = ignore_cacert_check;
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Binding [%s] XML Fetch Function [%s] [%s]\n",
 						  switch_strlen_zero(bname) ? "N/A" : bname, binding->url, binding->bindings ? binding->bindings : "all");

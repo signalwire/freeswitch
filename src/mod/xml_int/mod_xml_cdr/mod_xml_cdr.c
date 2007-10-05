@@ -25,6 +25,7 @@
  * 
  * Brian West <brian.west@mac.com>
  * Bret McDanel <trixter AT 0xdecafbad.com>
+ * Justin Cassidy <xachenant@hotmail.com>
  *
  * mod_xml_cdr.c -- XML CDR Module to files or curl
  *
@@ -41,7 +42,7 @@ static struct {
 	uint32_t delay;
 	uint32_t retries;
 	uint32_t shutdown;
-	int ignore_cacert_check;
+	uint32_t ignore_cacert_check;
 } globals;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load);
