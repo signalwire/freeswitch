@@ -55,11 +55,13 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 			if (session) {
 				channel = switch_core_session_get_channel(session);
 				assert(channel != NULL);
-				switch_channel_answer(channel);
-				switch_channel_set_variable(channel, "auto_answer_destination", switch_channel_get_variable(channel, "destination_number"));
-				switch_ivr_session_transfer(session, "auto_answer", NULL , NULL);
-				nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
-				return;
+				if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
+					switch_channel_answer(channel);
+					switch_channel_set_variable(channel, "auto_answer_destination", switch_channel_get_variable(channel, "destination_number"));
+					switch_ivr_session_transfer(session, "auto_answer", NULL , NULL);
+					nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
+					return;
+				}
 			}
 		}
 	}
