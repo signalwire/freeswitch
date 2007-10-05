@@ -42,12 +42,30 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									 char const *phrase,
 									 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 
-void sofia_handle_sip_i_notify(int status,
-						  char const *phrase,
-						  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
+void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
+							   char const *phrase,
+							   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
 {
-	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua),TAG_END());
-	//nua_handle_destroy(nh);
+	switch_channel_t *channel = NULL;
+
+	if (sip && sip->sip_event) {
+		char *type = (char *)sip->sip_event->o_type;
+		
+		if (!strcasecmp(type, "talk")) {
+			if (session) {
+				channel = switch_core_session_get_channel(session);
+				assert(channel != NULL);
+				switch_channel_answer(channel);
+				switch_channel_set_variable(channel, "auto_answer_destination", switch_channel_get_variable(channel, "destination_number"));
+				switch_ivr_session_transfer(session, "auto_answer", NULL , NULL);
+				nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
+				return;
+			}
+		}
+	}
+
+	nua_respond(nh, 481, "Subscription Does Not Exist", NUTAG_WITH_THIS(nua), TAG_END());
+	
 }
 
 
@@ -166,7 +184,7 @@ void sofia_event_callback(nua_event_t event,
 	case nua_r_set_params:
 		break;
 	case nua_i_notify:
-		sofia_handle_sip_i_notify(status, phrase, nua, profile, nh, sofia_private, sip, tags);
+		sofia_handle_sip_i_notify(session, status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
 	case nua_r_register:
 		sofia_reg_handle_sip_r_register(status, phrase, nua, profile, nh, sofia_private, sip, tags);
