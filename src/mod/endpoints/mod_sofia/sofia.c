@@ -42,6 +42,18 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									 char const *phrase,
 									 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 
+void sofia_handle_sip_i_notify(int status,
+						  char const *phrase,
+						  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
+{
+	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua),TAG_END());
+	//nua_handle_destroy(nh);
+}
+
+
+
+
+
 void sofia_event_callback(nua_event_t event,
 						   int status,
 						   char const *phrase,
@@ -136,15 +148,6 @@ void sofia_event_callback(nua_event_t event,
 		break;
 
 	case nua_r_invite:
-		{
-			if (channel) {
-				char *val;
-				if ((val = switch_channel_get_variable(channel, "sip_auto_answer")) && switch_true(val)) {
-					nua_notify(nh, NUTAG_NEWSUB(1), NUTAG_SUBSTATE(nua_substate_active), SIPTAG_EVENT_STR("talk"), TAG_END());
-				}
-			}
-		}
-		break;
 	case nua_r_get_params:
 	case nua_r_unregister:
 	case nua_r_options:
@@ -155,13 +158,15 @@ void sofia_event_callback(nua_event_t event,
 	case nua_r_unsubscribe:
 	case nua_r_publish:
 	case nua_r_notify:
-	case nua_i_notify:
 	case nua_i_cancel:
 	case nua_i_error:
 	case nua_i_active:
 	case nua_i_ack:
 	case nua_i_terminated:
 	case nua_r_set_params:
+		break;
+	case nua_i_notify:
+		sofia_handle_sip_i_notify(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
 	case nua_r_register:
 		sofia_reg_handle_sip_r_register(status, phrase, nua, profile, nh, sofia_private, sip, tags);
@@ -1072,6 +1077,15 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	if (status == 988) {
 		goto done;
 	}
+	
+
+	if (channel && (status == 180 || status == 183)) {
+		char *val;
+		if ((val = switch_channel_get_variable(channel, "sip_auto_answer")) && switch_true(val)) {
+			nua_notify(nh, NUTAG_NEWSUB(1), NUTAG_SUBSTATE(nua_substate_active), SIPTAG_EVENT_STR("talk"), TAG_END());
+		}
+	}
+
 
 	switch ((enum nua_callstate) ss_state) {
 	case nua_callstate_init:
@@ -2101,6 +2115,7 @@ void sofia_handle_sip_i_options(int status,
 				TAG_END());
 	nua_handle_destroy(nh);
 }
+
 
 
 
