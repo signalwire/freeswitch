@@ -1200,6 +1200,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				} else {
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_NOSDP");
 					switch_set_flag(tech_pvt, TFLAG_LATE_NEGOTIATION);
+					sofia_glue_tech_choose_port(tech_pvt);
 					sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 					
 					nua_respond(tech_pvt->nh, SIP_200_OK,
