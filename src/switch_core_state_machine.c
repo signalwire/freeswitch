@@ -374,6 +374,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 
 	while ((state = switch_channel_get_state(session->channel)) != CS_DONE) {
 		uint8_t exception = 0;
+		midstate = state;
 		if (switch_channel_test_flag(session->channel, CF_REPEAT_STATE)) {
 			switch_channel_clear_flag(session->channel, CF_REPEAT_STATE);
 			exception = 1;
@@ -381,7 +382,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 		if (state != laststate || state == CS_HANGUP || exception) {
 			int index = 0;
 			int proceed = 1;
-
+			
 
 			switch (state) {
 			case CS_NEW:		/* Just created, Waiting for first instructions */
