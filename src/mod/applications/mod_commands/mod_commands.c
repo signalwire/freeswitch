@@ -121,6 +121,12 @@ SWITCH_STANDARD_API(ctl_function)
 			switch_core_session_ctl(SCSC_SHUTDOWN, &arg);
 		} else if (!strcasecmp(argv[0], "reclaim_mem")) {
 			switch_core_session_ctl(SCSC_RECLAIM, &arg);
+		} else if (!strcasecmp(argv[0], "max_sessions")) {
+			if (argc > 1) {
+				arg = atoi(argv[1]);
+			}
+			switch_core_session_ctl(SCSC_MAX_SESSIONS, &arg);
+			stream->write_function(stream, "max sessions: %d\n", arg);
 		} else if (!strcasecmp(argv[0], "loglevel")) {
 			if (argc > 1) {
 				if (*argv[1] > 47 && *argv[1] < 58) {
