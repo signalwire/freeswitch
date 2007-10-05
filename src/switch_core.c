@@ -443,6 +443,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, switch_cor
 					if (switch_true(val)) {
 						switch_set_flag((&runtime), SCF_CRASH_PROT);
 					}
+				} else if (!strcasecmp(var, "loglevel")) {
+                    int level;                                                                                                                                  
+                    if (*val > 47 && *val < 58) {
+                        level = atoi(val);
+                    } else {
+                        level = switch_log_str2level(val);
+                    }
+
+                    switch_core_session_ctl(SCSC_LOGLEVEL, &level);
+					
 				} else if (!strcasecmp(var, "sessions-per-second")) {
 					switch_core_sessions_per_second(atoi(val));
 				} else if (!strcasecmp(var, "max-sessions")) {
