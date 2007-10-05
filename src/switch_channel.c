@@ -645,6 +645,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 	case CS_HIBERNATE:
 		switch (state) {
 		case CS_LOOPBACK:
+		case CS_INIT:
 		case CS_RING:
 		case CS_EXECUTE:
 		case CS_TRANSMIT:
