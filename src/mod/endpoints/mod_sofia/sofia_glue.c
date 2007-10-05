@@ -598,6 +598,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
 			   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), SOATAG_HOLD(holdstr), TAG_END());
 
+
+
 	switch_safe_free(stream.data);
 
 	return SWITCH_STATUS_SUCCESS;

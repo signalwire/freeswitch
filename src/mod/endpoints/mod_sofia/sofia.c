@@ -134,8 +134,18 @@ void sofia_event_callback(nua_event_t event,
 			
 		}
 		break;
-	case nua_r_get_params:
+
 	case nua_r_invite:
+		{
+			if (channel) {
+				char *val;
+				if ((val = switch_channel_get_variable(channel, "sip_auto_answer")) && switch_true(val)) {
+					nua_notify(nh, NUTAG_NEWSUB(1), NUTAG_SUBSTATE(nua_substate_active), SIPTAG_EVENT_STR("talk"), TAG_END());
+				}
+			}
+		}
+		break;
+	case nua_r_get_params:
 	case nua_r_unregister:
 	case nua_r_options:
 	case nua_i_fork:
@@ -305,14 +315,17 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	nua_set_params(profile->nua,
 				   NUTAG_APPL_METHOD("OPTIONS"),
+				   NUTAG_APPL_METHOD("NOTIFY"),
 				   //NUTAG_EARLY_MEDIA(1),                 
 				   NUTAG_AUTOANSWER(0),
 				   NUTAG_AUTOALERT(0),
 				   NUTAG_ALLOW("REGISTER"),
 				   NUTAG_ALLOW("REFER"),
 				   NUTAG_ALLOW("INFO"),
+				   NUTAG_ALLOW("NOTIFY"),
+				   NUTAG_ALLOW_EVENTS("talk"),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("PUBLISH")),
-				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("NOTIFY")),
+				   //TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("NOTIFY")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("SUBSCRIBE")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ENABLEMESSAGE(1)),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence")),
