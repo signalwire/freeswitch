@@ -256,7 +256,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				if (!strcasecmp(val, "base64")) {
 					globals.encode = 2;
 				} else {
-					globals.encode = switch_true(val);
+					globals.encode = switch_true(val) ? 1 : 0;
 				}
 			} else if (!strcasecmp(var, "retries")) {
 				globals.retries = (uint32_t) atoi(val);
