@@ -15,7 +15,10 @@
     <!-- optional: if not present we do not log every record to disk -->
     <!-- either an absolute path, a relative path assuming ${prefix}/logs or a blank value will default to ${prefix}/logs/xml_cdr -->
     <param name="log-dir" value=""/>
-
+    
+    <!-- encode the post data may be 'true' for url encoding, 'false' for no encoding or 'base64' for base64 encoding -->
+    <!--<param name="encode" value="true"/>-->
+    
     <!-- optional: full path to the error log dir for failed web posts if not specified its the same as log-dir -->
     <!-- either an absolute path, a relative path assuming ${prefix}/logs or a blank or omitted value will default to ${prefix}/logs/xml_cdr -->
     <!-- <param name="err-log-dir" value="/tmp"/> -->

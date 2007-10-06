@@ -43,6 +43,7 @@ static struct {
 	uint32_t retries;
 	uint32_t shutdown;
 	uint32_t ignore_cacert_check;
+	int encode;
 } globals;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load);
@@ -81,9 +82,6 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			goto error;
 		}
 
-		/* do we log to the disk no matter what? */
-		/* all previous functionality is retained */
-
 		if (!(logdir = switch_channel_get_variable(channel, "xml_cdr_base"))) {
 			logdir = globals.log_dir;
 		}
@@ -111,15 +109,23 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 		/* try to post it to the web server */
 		if (!switch_strlen_zero(globals.url)) {
 			curl_handle = curl_easy_init();
+			
+			if (globals.encode) {
+				switch_size_t need_bytes = strlen(xml_text) * 3;
 
-			xml_text_escaped = curl_easy_escape(curl_handle, (const char*) xml_text, (int)strlen(xml_text));
-
-			if (switch_strlen_zero(xml_text_escaped)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-				goto error;
-			}
-
-			if (!(curl_xml_text = switch_mprintf("cdr=%s", xml_text_escaped))) {
+				xml_text_escaped = malloc(need_bytes);
+				assert(xml_text_escaped);
+				memset(xml_text_escaped, 0, sizeof(xml_text_escaped));
+				if (globals.encode == 1) {
+					switch_url_encode(xml_text, xml_text_escaped, need_bytes - 1);
+				} else {
+					switch_b64_encode((unsigned char *)xml_text, need_bytes / 3, (unsigned char *)xml_text_escaped, need_bytes);
+				}
+				switch_safe_free(xml_text);
+				xml_text = xml_text_escaped;
+			} 
+			
+			if (!(curl_xml_text = switch_mprintf("cdr=%s", xml_text))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 				goto error;
 			}
@@ -193,9 +199,8 @@ error:
 		curl_easy_cleanup(curl_handle);
 	}
 	switch_safe_free(curl_xml_text);
-	switch_safe_free(xml_text_escaped);
-	switch_safe_free(path);
 	switch_safe_free(xml_text);
+	switch_safe_free(path);
 	switch_xml_free(cdr);
 
 	return status;
@@ -241,6 +246,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				globals.url = strdup(val);
 			} else if (!strcasecmp(var, "delay")) {
 				globals.delay = (uint32_t) atoi(val);
+			} else if (!strcasecmp(var, "encode")) {
+				if (!strcasecmp(val, "base64")) {
+					globals.encode = 2;
+				} else {
+					globals.encode = switch_true(val);
+				}
 			} else if (!strcasecmp(var, "retries")) {
 				globals.retries = (uint32_t) atoi(val);
 			} else if (!strcasecmp(var, "log-dir")) {
@@ -286,7 +297,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "retries set but delay 0 setting to 5000ms\n");
 		globals.delay = 5000;
 	}
-	
+
+	globals.retries++;
+
 	switch_xml_free(xml);
 	return status;
 }

@@ -34,6 +34,40 @@
 #include <arpa/inet.h>
 #endif
 
+static const char switch_b64_table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+#define B64BUFFLEN 1024
+SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size_t ilen, unsigned char *out, switch_size_t olen)
+{
+    int y = 0, bytes = 0;
+    size_t x = 0;
+    unsigned int b = 0,l = 0;
+
+    for(x = 0; x < ilen; x++) {
+        b = (b<<8) + in[x];
+        l += 8;
+        while (l >= 6) {
+            out[bytes++] = switch_b64_table[(b>>(l-=6))%64];
+            if(++y != 72) {
+                continue;
+            }
+            //out[bytes++] = '\n';
+            y=0;
+        }
+    }
+
+    if (l > 0) {
+        out[bytes++] = switch_b64_table[((b%16)<<(6-l))%64];
+    }
+    if (l != 0) {
+		while (l < 6) {
+			out[bytes++] = '=', l += 2;
+		}
+	}
+
+    return SWITCH_STATUS_SUCCESS;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int family)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;

@@ -341,6 +341,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	nua_set_params(profile->nua,
 				   NUTAG_APPL_METHOD("OPTIONS"),
 				   NUTAG_APPL_METHOD("NOTIFY"),
+				   NUTAG_APPL_METHOD("INFO"),
 				   //NUTAG_EARLY_MEDIA(1),                 
 				   NUTAG_AUTOANSWER(0),
 				   NUTAG_AUTOALERT(0),
