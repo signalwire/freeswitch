@@ -75,7 +75,6 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
-
 		/* build the XML */
 		if (!(xml_text = switch_xml_toxml(cdr))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
@@ -108,6 +107,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 
 		/* try to post it to the web server */
 		if (!switch_strlen_zero(globals.url)) {
+			struct curl_slist *headers = NULL;
 			curl_handle = curl_easy_init();
 			
 			if (globals.encode) {
@@ -117,13 +117,17 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 				assert(xml_text_escaped);
 				memset(xml_text_escaped, 0, sizeof(xml_text_escaped));
 				if (globals.encode == 1) {
+					headers = curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
 					switch_url_encode(xml_text, xml_text_escaped, need_bytes - 1);
 				} else {
+					headers = curl_slist_append(headers, "Content-Type: application/x-www-form-base64-encoded");
 					switch_b64_encode((unsigned char *)xml_text, need_bytes / 3, (unsigned char *)xml_text_escaped, need_bytes);
 				}
 				switch_safe_free(xml_text);
 				xml_text = xml_text_escaped;
-			} 
+			} else {
+				headers = curl_slist_append(headers, "Content-Type: application/x-www-form-plaintext");
+			}
 			
 			if (!(curl_xml_text = switch_mprintf("cdr=%s", xml_text))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
@@ -135,12 +139,13 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 				curl_easy_setopt(curl_handle, CURLOPT_USERPWD, globals.cred);
 			}
 
-			curl_easy_setopt(curl_handle, CURLOPT_POST, 1);
+			curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+ 			curl_easy_setopt(curl_handle, CURLOPT_POST, 1);
 			curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, curl_xml_text);
 			curl_easy_setopt(curl_handle, CURLOPT_URL, globals.url);
 			curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-xml/1.0");
 			curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, httpCallBack);
-
+			
 			if (globals.ignore_cacert_check) {
 				curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, FALSE);
 			}
@@ -164,6 +169,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 				
 			}
 			curl_easy_cleanup(curl_handle);
+			curl_slist_free_all(headers);
 			curl_handle = NULL;
 
 			/* if we are here the web post failed for some reason */

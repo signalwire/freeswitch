@@ -1509,21 +1509,29 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 	}
 }
 
+SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml)
+{
+	char *s;
+	s = malloc(SWITCH_XML_BUFSIZE);
+	return switch_xml_toxml_buf(xml, s, SWITCH_XML_BUFSIZE, 0);
+}
+
 // converts an switch_xml structure back to xml, returning a string of xml date that
 // must be freed
-SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml)
+SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_size_t buflen, switch_size_t offset)
 {
 	switch_xml_t p = (xml) ? xml->parent : NULL, o = (xml) ? xml->ordered : NULL;
 	switch_xml_root_t root = (switch_xml_root_t) xml;
-	switch_size_t len = 0, max = SWITCH_XML_BUFSIZE;
+	switch_size_t len = 0, max = buflen;
 	char *s, *t, *n, *r;
 	int i, j, k;
 	uint32_t count = 0;
 	
-	s = malloc(max);
+	s = buf;
 	assert(s != NULL);
 	memset(s, 0, max);
-	len = sprintf(s, "<?xml version=\"1.0\"?>\n");
+	len += offset;
+	len += sprintf(s + len, "<?xml version=\"1.0\"?>\n");
 
 	
 	if (!xml || !xml->name) {

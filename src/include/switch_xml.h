@@ -191,6 +191,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_get(switch_xml_t xml,...);
 ///\param xml the xml node
 ///\return the xml text string
 SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml);
+SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_size_t buflen, switch_size_t offset);
 
 ///\brief returns a NULL terminated array of processing instructions for the given
 ///\ target
