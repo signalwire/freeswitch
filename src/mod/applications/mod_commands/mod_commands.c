@@ -42,10 +42,10 @@ SWITCH_MODULE_DEFINITION(mod_commands, mod_commands_load, NULL, NULL);
 SWITCH_STANDARD_API(status_function)
 {
 	uint8_t html = 0;
-	switch_core_time_duration_t duration;
+	switch_core_time_duration_t duration = {0};
 	char *http = NULL;
-	int sps, last_sps;
-
+	int sps = 0, last_sps = 0;
+	
 	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
