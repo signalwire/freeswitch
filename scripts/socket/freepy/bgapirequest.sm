@@ -1,0 +1,72 @@
+%start MainMap::Startup
+%class BgApiRequest
+
+%map MainMap
+%%
+
+Startup
+{
+        CommandReply
+                ApiResponseStarted
+                {
+                }
+}
+
+ApiResponseStarted
+{
+        ReplyText
+                GotReplyText
+                {
+                }
+
+}
+
+
+GotReplyText
+{
+        BlankLine
+		Startup                
+                {
+		setRequestFinished(); callOrErrback();		
+                }
+
+
+}
+
+
+
+
+
+Default
+{
+    	BlankLine			
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure");		
+		}
+
+    	CommandReply		
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure");		
+		}
+
+    	ReplyText
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure");		
+		}
+
+        ProcessLine(line)
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure");		
+		}
+
+}
+
+%%

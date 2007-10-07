@@ -1,0 +1,3 @@
+
+Socket library to interface w/ freeswitch mod_event_socket from Twisted python applications.
+

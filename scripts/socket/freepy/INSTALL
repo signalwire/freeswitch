@@ -1,0 +1,4 @@
+
+- Add /path/to/freeswitch/scripts/socket to your PYTHONPATH
+- Copy/Paste the code from test1() in fshelper.py to your own test module
+- Adapt code as needed and run

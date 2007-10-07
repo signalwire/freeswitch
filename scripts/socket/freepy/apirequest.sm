@@ -1,0 +1,96 @@
+%start MainMap::Startup
+%class ApiRequest
+
+%map MainMap
+%%
+
+Startup
+{
+        ApiResponse
+                ApiResponseStarted
+                {
+                }
+}
+
+ApiResponseStarted
+{
+        ContentLength
+                ContentPreStarted
+                {
+                }
+
+}
+
+ContentPreStarted
+{
+        BlankLine
+                ContentStarted
+                {
+                }
+
+}
+
+ContentStarted
+{
+        ProcessLine(line)
+           [ctxt.add_content(line) == True]
+                Startup
+                {
+		setRequestFinished(); callbackDeferred(ctxt.getResponse());		
+                }
+
+        ProcessLine(line)
+                nil
+                {
+		// for some reason, have to add doNothing() here or
+                // importing smc will fail.  looks like smc bug.
+		doNothing();
+                }
+
+
+
+}
+
+
+
+
+
+Default
+{
+    	BlankLine			
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure");		
+		}
+
+    	ContentFinished		
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure");		
+		}
+
+    	ContentLength
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure");		
+		}
+
+    	ApiResponse			
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure");		
+		}
+
+        ProcessLine(line)
+		nil			
+		{ 
+		setRequestFinished();
+		errbackDeferred("Protocol failure");		
+		}
+}
+
+%%
