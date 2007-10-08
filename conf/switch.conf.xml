@@ -4,7 +4,7 @@
     <param name="max-sessions" value="1000"/>
     <!--Most channels to create per second -->
     <param name="sessions-per-second" value="30"/>
-    <!--Most channels to create per second -->
+    <!--Default Global Log Level -->
     <param name="loglevel" value="debug"/>
     <!--Try to catch any crashes that can be recoverable (in the context of a call)-->
     <param name="crash-protection" value="false"/>
