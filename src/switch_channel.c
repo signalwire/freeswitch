@@ -341,31 +341,34 @@ SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, co
 SWITCH_DECLARE(void) switch_channel_variable_last(switch_channel_t *channel)
 {
 	assert(channel != NULL);
-	if (channel->vi) {
-		switch_mutex_unlock(channel->profile_mutex);
-		channel->vi = 0;
+	if (!channel->vi) {
+		return;
 	}
+	channel->vi = 0;
+	switch_mutex_unlock(channel->profile_mutex);
+	
 }
 
 SWITCH_DECLARE(switch_event_header_t *) switch_channel_variable_first(switch_channel_t *channel)
 {
+	switch_event_header_t *hi = NULL;
+
 	assert(channel != NULL);
-	if (channel->vi) {
-		return NULL;
+	switch_mutex_lock(channel->profile_mutex);
+	if ((hi = channel->variables->headers)) {
+		channel->vi = 1;
+	} else {
+		switch_mutex_unlock(channel->profile_mutex);
 	}
 
-	switch_mutex_lock(channel->profile_mutex);
-	channel->vi = 1;
-	return channel->variables->headers;
+	return hi;
 
 }
 
 SWITCH_DECLARE(switch_status_t) switch_channel_set_private(switch_channel_t *channel, const char *key, const void *private_info)
 {
 	assert(channel != NULL);
-	switch_mutex_lock(channel->profile_mutex);
 	switch_core_hash_insert_locked(channel->private_hash, key, private_info, channel->profile_mutex);
-	switch_mutex_unlock(channel->profile_mutex);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -373,9 +376,7 @@ SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel_t *channel, con
 {
 	void *val;
 	assert(channel != NULL);
-	switch_mutex_lock(channel->profile_mutex);
-	val = switch_core_hash_find(channel->private_hash, key);
-	switch_mutex_unlock(channel->profile_mutex);
+	val = switch_core_hash_find_locked(channel->private_hash, key, channel->profile_mutex);
 	return val;
 }
 
@@ -870,11 +871,9 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_caller_profile(swit
 {
 	switch_caller_profile_t *profile;
 	assert(channel != NULL);
-
 	switch_mutex_lock(channel->profile_mutex);
 	profile = channel->caller_profile;
 	switch_mutex_unlock(channel->profile_mutex);
-
 	return profile;
 }
 

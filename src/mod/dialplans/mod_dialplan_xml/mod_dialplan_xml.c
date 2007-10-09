@@ -263,10 +263,8 @@ static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switc
 				
 				encode_len = new_len;
 			
-				if (!(tmp = realloc(encode_buf, encode_len))) {
-					goto done;
-				}
-
+				tmp = realloc(encode_buf, encode_len);
+				assert(tmp);
 				encode_buf = tmp;
 			}
 
