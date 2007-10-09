@@ -1,0 +1,1 @@
+shlibs:Depends=libc6 (>= 2.3.6-6), libdb4.4, libgcc1 (>= 1:4.1.1-12), libsasl2-2, libssl0.9.8 (>= 0.9.8c-1), libstdc++6 (>= 4.1.1-12), libuuid1, zlib1g (>= 1:1.2.1)

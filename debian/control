@@ -1,0 +1,11 @@
+Source: freeswitch
+Maintainer: Michael Jerris <mike@jerris.com>
+Section: net
+Priority: optional
+Build-Depends: automake, autoconf, libtool
+
+Package: freeswitch
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: it is the winning
+ lalal fixme
