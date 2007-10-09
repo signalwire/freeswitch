@@ -41,12 +41,13 @@
 #endif
 
 //#define DOTRACE
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_wanpipe_shutdown)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_wanpipe_shutdown);
 SWITCH_MODULE_LOAD_FUNCTION(mod_wanpipe_load);
 SWITCH_MODULE_DEFINITION(mod_wanpipe, mod_wanpipe_load, mod_wanpipe_shutdown, NULL);
 
 #define STRLEN 15
 
+static switch_endpoint_interface_t *wanpipe_endpoint_interface;
 static switch_memory_pool_t *module_pool = NULL;
 
 typedef enum {
@@ -1001,24 +1002,6 @@ static switch_state_handler_table_t wanpipe_state_handlers = {
 	/*.on_transmit */ wanpipe_on_transmit
 };
 
-static switch_endpoint_interface_t wanpipe_endpoint_interface = {
-	/*.interface_name */ "wanpipe",
-	/*.io_routines */ &wanpipe_io_routines,
-	/*.state_handlers */ &wanpipe_state_handlers,
-	/*.private */ NULL,
-	/*.next */ NULL
-};
-
-static switch_loadable_module_interface_t wanpipe_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ &wanpipe_endpoint_interface,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL
-};
-
-
 static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool)
 {
@@ -1339,10 +1322,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_wanpipe_load)
 	pri_set_error(s_pri_error);
 	pri_set_message(s_pri_message);
 
-	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
-		return SWITCH_STATUS_TERM;
-	}
+	module_pool = pool;
 
 	memset(&globals, 0, sizeof(globals));
 	switch_core_hash_init(&globals.call_hash, module_pool);
@@ -1355,7 +1335,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_wanpipe_load)
 	}
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &wanpipe_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	wanpipe_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+	wanpipe_endpoint_interface->interface_name = "wanpipe";
+	wanpipe_endpoint_interface->io_routines = &wanpipe_io_routines;
+	wanpipe_endpoint_interface->state_handler = &wanpipe_state_handlers;
 
 	/* indicate that the module should continue to be loaded */
 	return status;
