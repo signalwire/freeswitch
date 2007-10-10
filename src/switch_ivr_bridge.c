@@ -671,7 +671,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
   done:
 
-	if (switch_channel_test_flag(caller_channel, CF_ANSWERED) && switch_channel_get_state(caller_channel) < CS_HANGUP && 
+	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) && 
+		switch_channel_get_state(caller_channel) < CS_HANGUP && 
 		switch_true(switch_channel_get_variable(caller_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
 		switch_channel_hangup(caller_channel, switch_channel_get_cause(peer_channel));
 	}
