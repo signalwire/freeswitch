@@ -1246,7 +1246,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(char *user_name, char *do
 													   switch_xml_t *root,
 													   switch_xml_t *domain,
 													   switch_xml_t *user,
-													   char *profile_name)
+													   char *xtra_params)
 {
 	char params[1024] = "";
 	switch_status_t status;
@@ -1254,7 +1254,13 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(char *user_name, char *do
 	*user = NULL;
 	*domain = NULL;
 	
-	snprintf(params, sizeof(params), "user=%s&domain=%s&ip=%s&profile=%s", switch_str_nil(user_name), switch_str_nil(domain_name), switch_str_nil(ip), profile_name);
+	if (!switch_strlen_zero(xtra_params)) {
+		snprintf(params, sizeof(params), "user=%s&domain=%s&ip=%s&%s", 
+				 switch_str_nil(user_name), switch_str_nil(domain_name), switch_str_nil(ip), xtra_params);
+	} else {
+		snprintf(params, sizeof(params), "user=%s&domain=%s&ip=%s", 
+				 switch_str_nil(user_name), switch_str_nil(domain_name), switch_str_nil(ip));
+	}
 	if ((status = switch_xml_locate_domain(domain_name, params, root, domain)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}

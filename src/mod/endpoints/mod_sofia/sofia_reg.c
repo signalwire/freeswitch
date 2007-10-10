@@ -749,7 +749,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	char *sql;
 	switch_xml_t domain, xml = NULL, user, param, xparams;	
 	char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1] = "";
-	
+	char *pbuf = NULL;
 	username = realm = nonce = uri = qop = cnonce = nc = response = NULL;
 	
 	if (authorization->au_params) {
@@ -816,7 +816,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 		free(sql);
 	} 
 	
-	if (switch_xml_locate_user(username, realm, ip, &xml, &domain, &user, profile->name) != SWITCH_STATUS_SUCCESS) {
+	pbuf = switch_mprintf("profile=%s", profile->name);
+
+	if (switch_xml_locate_user(username, realm, ip, &xml, &domain, &user, pbuf) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", username, realm);
 		ret = AUTH_FORBIDDEN;
 		goto end;
@@ -964,6 +966,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	if (xml) {
 		switch_xml_free(xml);
 	}
+	switch_safe_free(pbuf);
 	switch_safe_free(input);
 	switch_safe_free(input2);
 	switch_safe_free(username);
