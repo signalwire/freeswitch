@@ -30,6 +30,7 @@ dialplans/mod_dialplan_xml
 endpoints/mod_sofia
 #endpoints/mod_wanpipe
 #endpoints/mod_woomera
+#endpoints/mod_alsa
 #../../libs/openzap/mod_openzap
 #event_handlers/mod_cdr
 #event_handlers/mod_event_multicast
