@@ -431,7 +431,11 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 
 
 		if (midstate == endstate) {
-			switch_thread_cond_wait(session->cond, session->mutex);
+			if (endstate == CS_NEW) {
+				switch_yield(1000);
+			} else {
+				switch_thread_cond_wait(session->cond, session->mutex);
+			}
 		}
 
 	}
