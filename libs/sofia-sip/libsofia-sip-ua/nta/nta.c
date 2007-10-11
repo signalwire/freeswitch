@@ -256,12 +256,6 @@ static int outgoing_recv_reliable(nta_outgoing_t *orq, msg_t *msg, sip_t *sip);
 
 /* Internal message passing */
 union sm_arg_u {
-  struct leg_recv_s {
-    nta_leg_t    *leg;
-    msg_t        *msg;
-    tport_t      *tport;
-  } a_leg_recv[1];
-
   struct outgoing_recv_s {
     nta_outgoing_t *orq;
     msg_t          *msg;
@@ -922,7 +916,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
   unsigned bad_resp_mask = agent->sa_bad_resp_mask;
   usize_t  maxsize    = agent->sa_maxsize;
   unsigned max_forwards = agent->sa_max_forwards->mf_count;
-  usize_t  udp_mtu    = agent->sa_udp_mtu;
+  unsigned udp_mtu    = agent->sa_udp_mtu;
   unsigned sip_t1     = agent->sa_t1;
   unsigned sip_t2     = agent->sa_t2;
   unsigned sip_t4     = agent->sa_t4;
@@ -6651,8 +6645,7 @@ nta_outgoing_t *nta_outgoing_tcancel(nta_outgoing_t *orq,
 
 #if HAVE_SOFIA_SRESOLV
   if (!orq->orq_resolved) {
-    if (orq->orq_resolver)
-      outgoing_cancel_resolver(orq);
+    outgoing_destroy_resolver(orq);
     outgoing_reply(orq, SIP_487_REQUEST_CANCELLED, 1);
     return NULL;		/* XXX - Does anyone care about reply? */
   }
@@ -7742,6 +7735,9 @@ void outgoing_cut_off(nta_outgoing_t *orq)
 su_inline
 void outgoing_reclaim(nta_outgoing_t *orq)
 {
+  if (orq->orq_status2b)
+    *orq->orq_status2b = -1;
+
   if (orq->orq_request)
     msg_destroy(orq->orq_request), orq->orq_request = NULL;
   if (orq->orq_response)
@@ -8726,6 +8722,8 @@ int outgoing_reply(nta_outgoing_t *orq, int status, char const *phrase,
       a->sip = sip;
       a->status = status;
 
+      orq->orq_status2b = &a->status;
+
       if (su_msg_send(su_msg) == SU_SUCCESS) {
 	return 0;
       }
@@ -8744,8 +8742,14 @@ void outgoing_delayed_recv(su_root_magic_t *rm,
 			   union sm_arg_u *u)
 {
   struct outgoing_recv_s *a = u->a_outgoing_recv;
-  if (outgoing_recv(a->orq, a->status, a->msg, a->sip) < 0 && a->msg)
-    msg_destroy(a->msg);
+
+  if (a->status > 0) {
+    a->orq->orq_status2b = 0;
+    if (outgoing_recv(a->orq, a->status, a->msg, a->sip) >= 0)
+      return;
+  }
+
+  msg_destroy(a->msg);
 }
 
 

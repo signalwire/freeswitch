@@ -377,6 +377,7 @@ int test_prack_auth(struct context *ctx)
 
   INVITE(c, c_call, c_call->nh,
 	 TAG_IF(!ctx->proxy_tests, NUTAG_URL(b->contact->m_url)),
+	 SIPTAG_FROM(c->to),
 	 SOATAG_USER_SDP_STR(c_call->sdp),
 	 TAG_END());
 
@@ -420,6 +421,8 @@ int test_prack_auth(struct context *ctx)
   }
   TEST_E(e->data->e_event, nua_r_prack);
   TEST(e->data->e_status, 200);
+  TEST_1(sip = sip_object(e->data->e_msg));
+  TEST_1(sip->sip_from->a_url->url_user);
 
   TEST_1(e = ei); TEST_E(e->data->e_event, nua_r_invite);
   TEST(e->data->e_status, 200);

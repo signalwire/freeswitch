@@ -257,32 +257,32 @@ struct nta_agent_s
 
   /* Statistics */
   struct {
-    uint32_t            as_recv_msg;
-    uint32_t            as_recv_request;
-    uint32_t            as_recv_response;
-    uint32_t            as_bad_message;
-    uint32_t            as_bad_request;
-    uint32_t            as_bad_response;
-    uint32_t            as_drop_request;
-    uint32_t            as_drop_response;
-    uint32_t            as_client_tr;
-    uint32_t            as_server_tr;
-    uint32_t            as_dialog_tr;
-    uint32_t            as_acked_tr;
-    uint32_t            as_canceled_tr;
-    uint32_t            as_trless_request;
-    uint32_t            as_trless_to_tr;
-    uint32_t            as_trless_response;
-    uint32_t            as_trless_200;
-    uint32_t            as_merged_request;
-    uint32_t            as_sent_msg;
-    uint32_t            as_sent_request;
-    uint32_t            as_sent_response;
-    uint32_t            as_retry_request;
-    uint32_t            as_retry_response;
-    uint32_t            as_recv_retry;
-    uint32_t            as_tout_request;
-    uint32_t            as_tout_response;
+    usize_t as_recv_msg;
+    usize_t as_recv_request;
+    usize_t as_recv_response;
+    usize_t as_bad_message;
+    usize_t as_bad_request;
+    usize_t as_bad_response;
+    usize_t as_drop_request;
+    usize_t as_drop_response;
+    usize_t as_client_tr;
+    usize_t as_server_tr;
+    usize_t as_dialog_tr;
+    usize_t as_acked_tr;
+    usize_t as_canceled_tr;
+    usize_t as_trless_request;
+    usize_t as_trless_to_tr;
+    usize_t as_trless_response;
+    usize_t as_trless_200;
+    usize_t as_merged_request;
+    usize_t as_sent_msg;
+    usize_t as_sent_request;
+    usize_t as_sent_response;
+    usize_t as_retry_request;
+    usize_t as_retry_response;
+    usize_t as_recv_retry;
+    usize_t as_tout_request;
+    usize_t as_tout_response;
   }                  sa_stats[1];
 
   /** Hash of dialogs. */
@@ -543,6 +543,8 @@ struct nta_outgoing_s
 
   char const           *orq_branch;	/**< Transaction branch */
   char const           *orq_via_branch;	/**< @Via branch */
+
+  int                  *orq_status2b;   /**< Delayed response */
 
   nta_outgoing_t       *orq_cancel;     /**< CANCEL transaction */
 

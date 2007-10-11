@@ -296,8 +296,6 @@ static void *su_pthread_port_clone_main(void *varg)
   task->sut_port = arg->create();
 
   if (task->sut_port) {
-    task->sut_port->sup_thread = 1;
-
     task->sut_root = su_salloc(su_port_home(task->sut_port),
 			       sizeof *task->sut_root);
     if (task->sut_root) {
@@ -345,8 +343,6 @@ static void *su_pthread_port_clone_main(void *varg)
 	su_root_destroy(task->sut_root);
       }
     }
-
-    task->sut_port->sup_thread = 0;
 
     task->sut_port->sup_base->sup_vtable->
       su_port_decref(task->sut_port, zap, 

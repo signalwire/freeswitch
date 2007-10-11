@@ -445,6 +445,54 @@ int api_test_deinit(agent_t *ag)
   END();
 }  
 
+static int api_test_destroy(agent_t *ag)
+{
+  nta_agent_t *nta;
+  su_root_t *root;
+  su_home_t home[1];
+  nta_outgoing_t *orq;
+  nta_leg_t *leg;
+  int i;
+
+  BEGIN();
+
+  memset(home, 0, sizeof home);
+  home->suh_size = sizeof home;
+  su_home_init(home);
+
+  TEST_1(root = su_root_create(NULL));
+
+  for (i = 0; i < 2; i++) {
+    TEST_1(nta = nta_agent_create(root,
+				  (url_string_t *)"sip:*:*",
+				  NULL,
+				  NULL,
+				  TAG_END()));
+    TEST_1(leg = nta_leg_tcreate(nta, NULL, NULL, 
+				 NTATAG_NO_DIALOG(1),
+				 TAG_END()));
+    /* This creates a delayed response message */
+    orq = nta_outgoing_tcreate(leg, outgoing_callback, ag, NULL,
+			       SIP_METHOD_MESSAGE, 
+			       URL_STRING_MAKE("sip:foo.bar;transport=none"),
+			       SIPTAG_FROM_STR("<sip:bar.foo>"),
+			       SIPTAG_TO_STR("<sip:foo.bar>"),
+			       TAG_END());
+    TEST_1(orq);
+
+    TEST_VOID(nta_outgoing_destroy(orq));
+    TEST_VOID(nta_leg_destroy(leg));
+    TEST_VOID(nta_agent_destroy(nta)); 
+  }
+
+  TEST_VOID(su_root_destroy(root));
+  TEST_VOID(su_home_deinit(home));
+
+  END();
+
+}
+
+
 /* Get and check parameters */
 int api_test_params(agent_t *ag)
 {
@@ -460,7 +508,7 @@ int api_test_params(agent_t *ag)
   unsigned blacklist = -1;
   unsigned debug_drop_prob = -1;
   unsigned max_forwards = -1;
-  unsigned maxsize = -1;
+  usize_t maxsize = -1;
   unsigned preload = -1;
   unsigned progress = -1;
   unsigned sip_t1 = -1;
@@ -1114,22 +1162,9 @@ static int api_test_errors(agent_t *ag)
   TEST_P(nta_outgoing_tcancel(NONE, NULL, NULL, TAG_END()), NULL);
   TEST_VOID(nta_outgoing_destroy(NONE));
 
-#if 0
-nta_reliable_t *nta_reliable_treply(nta_incoming_t *ireq,
-				    nta_prack_f *callback,
-				    nta_reliable_magic_t *rmagic,
-				    int status, char const *phrase, 
-				    tag_type_t tag, 
-				    tag_value_t value, ...);
-
-nta_reliable_t *nta_reliable_mreply(nta_incoming_t *irq, 
-				    nta_prack_f *callback,
-				    nta_reliable_magic_t *rmagic,
-				    msg_t *msg);
-
-void nta_reliable_destroy(nta_reliable_t *);
-
-#endif  
+  TEST_P(nta_reliable_treply(NULL, NULL, NULL, 0, NULL, TAG_END()), NULL);
+  TEST_P(nta_reliable_mreply(NULL, NULL, NULL, NULL), NULL);
+  TEST_VOID(nta_reliable_destroy(NULL));
 
   TEST_VOID(nta_agent_destroy(nta)); 
   TEST_VOID(su_root_destroy(root));
@@ -1382,6 +1417,7 @@ int main(int argc, char *argv[])
   retval |= api_test_init(ag); fflush(stdout); SINGLE_FAILURE_CHECK();
   if (retval == 0) {
     retval |= api_test_errors(ag); SINGLE_FAILURE_CHECK();
+    retval |= api_test_destroy(ag); SINGLE_FAILURE_CHECK();
     retval |= api_test_params(ag); SINGLE_FAILURE_CHECK();
     retval |= api_test_stats(ag); SINGLE_FAILURE_CHECK();
     retval |= api_test_dialog_matching(ag); SINGLE_FAILURE_CHECK();

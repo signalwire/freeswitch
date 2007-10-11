@@ -126,7 +126,8 @@ struct context
 
   int threading, proxy_tests, expensive, quit_on_single_failure, osx_runloop;
   int print_tags;
-  char const *external_proxy;
+
+  url_t *external_proxy;
 
   int proxy_logging;
 

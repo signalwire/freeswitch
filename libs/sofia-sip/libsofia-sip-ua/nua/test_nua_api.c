@@ -198,7 +198,7 @@ int test_nua_destroy(struct context *ctx)
 
 /* ======================================================================== */
 
-int test_stack_errors(struct context *ctx)
+int test_byecancel_without_invite(struct context *ctx)
 {
   BEGIN();
 
@@ -207,9 +207,6 @@ int test_stack_errors(struct context *ctx)
   struct event *e;
 
   int internal_error = 900;
-
-  if (print_headings)
-    printf("TEST NUA-1.2: Stack error handling\n");
 
   if (print_headings)
     printf("TEST NUA-1.2.1: CANCEL without INVITE\n");
@@ -252,8 +249,17 @@ int test_stack_errors(struct context *ctx)
   if (print_headings)
     printf("TEST NUA-1.2.2: PASSED\n");
 
-  if (!ctx->proxy_tests)
-    goto nua_1_2_5;
+  END();
+}
+
+
+int test_unregister_without_register(struct context *ctx)
+{
+  BEGIN();
+
+  struct endpoint *a = &ctx->a, *b = &ctx->b;
+  struct call *a_call = a->call;
+  struct event *e;
 
   /* -Un-register without REGISTER--------------------------------------- */
 
@@ -301,10 +307,22 @@ int test_stack_errors(struct context *ctx)
 
   if (print_headings)
     printf("TEST NUA-1.2.4: PASSED\n");
+  
+  END();
+}
 
-  /* -terminate without notifier--------------------------------------- */
+/* -terminate without notifier--------------------------------------- */
 
- nua_1_2_5:
+int test_terminate_without_notifier(struct context *ctx)
+{
+  BEGIN();
+
+  struct endpoint *a = &ctx->a, *b = &ctx->b;
+  struct call *a_call = a->call;
+  struct event *e;
+
+  int internal_error = 900;
+
   if (print_headings)
     printf("TEST NUA-1.2.5: terminate without notifier\n");
 
@@ -335,8 +353,108 @@ int test_stack_errors(struct context *ctx)
   if (print_headings)
     printf("TEST NUA-1.2.5: PASSED\n");
 
+  END();
+}
+
+int destroy_on_503(CONDITION_PARAMS)
+{
+  save_event_in_list(ctx, event, ep, call);
+
+  if (status == 503) {
+    assert(nh == call->nh);
+    nua_handle_destroy(call->nh), call->nh = NULL;
+  }
+
+  return
+    nua_r_set_params <= event && event < nua_i_network_changed
+    && status >= 200;
+}
+
+
+int test_register_503(struct context *ctx)
+{
+  BEGIN();
+
+  struct endpoint *a = &ctx->a;
+  struct call *a_reg = a->reg;
+  struct event *e;
+
+/* REGISTER test
+
+   A
+   |------REGISTER--\
+   |<-------503-----/
+   |			
+
+*/
+
+  if (print_headings)
+    printf("TEST NUA-1.2.6: REGISTER with bad domain\n");
+
+  TEST_1(a_reg->nh = nua_handle(a->nua, a_reg, TAG_END()));
+
+  REGISTER(a, a_reg, a_reg->nh, 
+	   NUTAG_REGISTRAR(URL_STRING_MAKE("sip:bad.domain")),
+	   SIPTAG_TO_STR("sip:lissu@bad.domain"),
+	   TAG_END());
+  run_a_until(ctx, -1, destroy_on_503);
+
+  TEST_1(e = a->events->head);
+  TEST_E(e->data->e_event, nua_r_register);
+  TEST(e->data->e_status, 503);
+  TEST_1(!e->next);
+  free_events_in_list(ctx, a->events);
+
+  TEST_1(a_reg->nh = nua_handle(a->nua, a_reg, TAG_END()));
+
+  REGISTER(a, a_reg, a_reg->nh, 
+	   NUTAG_REGISTRAR(URL_STRING_MAKE("sip:bad.domain")),
+	   SIPTAG_TO_STR("sip:lissu@bad.domain"),
+	   TAG_END());
+  nua_handle_destroy(a_reg->nh), a_reg->nh = NULL;
+
+  if (print_headings)
+    printf("TEST NUA-1.2.6: PASSED\n");
+
+  END();
+}
+
+int test_stack_errors(struct context *ctx)
+{
+  BEGIN();
+
+  struct endpoint *a = &ctx->a;
+
+  if (print_headings)
+    printf("TEST NUA-1.2: Stack error handling\n");
+
+  TEST_1(ctx->root == NULL);
+  TEST_1(ctx->root = su_root_create(NULL));
+
+  a->nua = nua_create(ctx->root, a_callback, ctx,
+		      NUTAG_URL("sip:0.0.0.0:*"),
+		      TAG_IF(ctx->a.logging, TPTAG_LOG(1)),
+		      TAG_END());
+  TEST_1(a->nua);
+
+  TEST(test_byecancel_without_invite(ctx), 0);
+  if (ctx->proxy_tests)
+    TEST(test_unregister_without_register(ctx), 0);
+  TEST(test_terminate_without_notifier(ctx), 0);
+  TEST(test_register_503(ctx), 0);
+  TEST(test_register_503(ctx), 0);
+
+  nua_shutdown(a->nua);
+
+  run_a_until(ctx, -1, until_final_response);
+  
+  TEST_VOID(nua_destroy(a->nua));
+
+  su_root_destroy(ctx->root), ctx->root = NULL;
+	 
   if (print_headings)
     printf("TEST NUA-1.2: PASSED\n");
 
   END();
 }
+

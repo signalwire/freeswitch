@@ -33,7 +33,7 @@ _tag.c_tag_ref.c:
  ../nua/libnua.la ../sdp/libsdp.la ../sip/libsip.la ../soa/libsoa.la \
  ../sresolv/libsresolv.la ../stun/libstun.la ../su/libsu.la \
  ../tport/libtport.la ../url/liburl.la:
-	$(MAKE) -C $(@D) $(@F)
+	cd $(@D) && $(MAKE) $(@F)
 
 INTERNAL_INCLUDES = \
 	-I$(srcdir)/../features -I../features \

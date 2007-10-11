@@ -304,12 +304,23 @@ int tport_tls_events(tport_t *self, int events)
   }
   
   if ((self->tp_events & SU_WAIT_IN) && !self->tp_closed) {
-    ret = tls_want_read(tlstp->tlstp_context, events);
-    if (ret > 0)
-      tport_recv_event(self);
-    else if (ret == 0)		/* End-of-stream */
+    for (;;) {
+      ret = tls_want_read(tlstp->tlstp_context, events);
+      if (ret > 1) {
+	tport_recv_event(self);
+	if ((events & SU_WAIT_HUP) && !self->tp_closed)
+	  continue;
+      }
+      break;
+    }
+
+    if (ret == 0) { 		/* End-of-stream */
+      if (self->tp_msg)
+	tport_recv_event(self);
       tport_shutdown0(self, 2);
-    else if (ret < 0)
+    }
+
+    if (ret < 0)
       tport_error_report(self, errno, NULL);
   }
 
@@ -363,8 +374,11 @@ int tport_tls_recv(tport_t *self)
 
   SU_DEBUG_7(("%s(%p): tls_read() returned "MOD_ZD"\n", __func__, (void *)self, N));
 
-  if (N == 0) /* End-of-stream */
+  if (N == 0) {
+    if (self->tp_msg)
+      msg_recv_commit(self->tp_msg, 0, 1); /* End-of-stream */
     return 0;
+  }
   else if (N == -1) {
     if (su_is_blocking(su_errno())) {
       tport_tls_set_events(self);

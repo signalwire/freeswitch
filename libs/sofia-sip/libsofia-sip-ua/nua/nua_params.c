@@ -196,6 +196,7 @@ int nua_stack_set_from(nua_t *nua, int initial, tagi_t const *tags)
   sip_from_t const *from = NONE;
   char const *str = NONE;
   sip_from_t *f = NULL,  f0[1];
+  int set;
 
   char const *uicc_name = "default";
 
@@ -220,11 +221,13 @@ int nua_stack_set_from(nua_t *nua, int initial, tagi_t const *tags)
     f0->a_display = from->a_display;
     *f0->a_url = *from->a_url;
     f = sip_from_dup(nua->nua_home, f0);
+    set = 1;
   }
   else if (str && str != NONE) {
     f = sip_from_make(nua->nua_home, str);
     if (f)
       *f0 = *f, f = f0, f->a_params = NULL;
+    set = 1;
   }
   else {
     sip_contact_t const *m;
@@ -236,11 +239,13 @@ int nua_stack_set_from(nua_t *nua, int initial, tagi_t const *tags)
       *f0->a_url = *m->m_url;
       f = sip_from_dup(nua->nua_home, f0);
     }
+    set = 0;
   }
 
   if (!f)
     return -1;
-
+  
+  nua->nua_from_is_set = set;
   *nua->nua_from = *f;
   return 0;
 }
@@ -1148,7 +1153,6 @@ int nua_handle_save_tags(nua_handle_t *nh, tagi_t *tags)
   url_string_t const *url = NULL;
   sip_to_t const *p_to = NULL;
   char const *to_str = NULL;
-  sip_from_t from[1];
   sip_from_t const *p_from = NULL;
   char const *from_str = NULL;
   nua_handle_t *identity = NULL;
@@ -1210,10 +1214,8 @@ int nua_handle_save_tags(nua_handle_t *nh, tagi_t *tags)
     ;
   else if (from_str)
     p_from = sip_from_make(tmphome, from_str);
-  else if (!p_from && nh->nh_nua->nua_from)
-    *from = *nh->nh_nua->nua_from, from->a_params = NULL, p_from = from;
   else
-    p_from = SIP_NONE;    /* XXX - why? */
+    p_from = SIP_NONE;
 
   if (p_to)
     ;
@@ -1553,8 +1555,8 @@ int nua_stack_get_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
 
   if (nh->nh_ds->ds_local)
     has_from = 1, *from = *nh->nh_ds->ds_local, from->a_params = NULL;
-  else
-    has_from = 0;
+  else /* if (nua->nua_from_is_set) */
+    has_from = 1, *from = *nua->nua_from;
 
   media_params = soa_get_paramlist(nh->nh_soa, TAG_END());
 

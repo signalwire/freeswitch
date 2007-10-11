@@ -150,10 +150,10 @@ NTA_DLL extern tag_typedef_t ntatag_maxsize_ref;
 #define NTATAG_MAXSIZE_REF(x) ntatag_maxsize_ref, tag_usize_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_udp_mtu;
-#define NTATAG_UDP_MTU(x) ntatag_udp_mtu, tag_usize_v((x))
+#define NTATAG_UDP_MTU(x) ntatag_udp_mtu, tag_uint_v((x))
 
 NTA_DLL extern tag_typedef_t ntatag_udp_mtu_ref;
-#define NTATAG_UDP_MTU_REF(x) ntatag_udp_mtu_ref, tag_usize_vr(&(x))
+#define NTATAG_UDP_MTU_REF(x) ntatag_udp_mtu_ref, tag_uint_vr(&(x))
 
 NTA_DLL extern tag_typedef_t ntatag_max_forwards;
 #define NTATAG_MAX_FORWARDS(x) ntatag_max_forwards, tag_uint_v((x))

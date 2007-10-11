@@ -46,16 +46,30 @@
 /* ======================================================================== */
 /* Test REGISTER */
 
+int test_clear_registrations(struct context *ctx);
+int test_outbound_cases(struct context *ctx);
+int test_register_a(struct context *ctx);
+int test_register_b(struct context *ctx);
+int test_register_c(struct context *ctx);
+int test_register_refresh(struct context *ctx);
+
 int test_register_to_proxy(struct context *ctx)
+{
+  return
+    test_clear_registrations(ctx) ||
+    test_outbound_cases(ctx) ||
+    test_register_a(ctx) ||
+    test_register_b(ctx) ||
+    test_register_c(ctx) ||
+    test_register_refresh(ctx);
+}
+
+int test_clear_registrations(struct context *ctx)
 {
   BEGIN();
 
-  struct endpoint *a = &ctx->a,  *b = &ctx->b, *c = &ctx->c, *x;
+  struct endpoint *a = &ctx->a,  *b = &ctx->b, *c = &ctx->c;
   struct call *a_reg = a->reg, *b_reg = b->reg, *c_reg = c->reg;
-  struct event *e;
-  sip_t const *sip;
-  sip_cseq_t cseq[1];
-  int seen_401;
 
   if (print_headings)
     printf("TEST NUA-2.3.0.1: un-REGISTER a\n");
@@ -93,7 +107,8 @@ int test_register_to_proxy(struct context *ctx)
     printf("TEST NUA-2.3.0.3: un-REGISTER c\n");
 
   TEST_1(c_reg->nh = nua_handle(c->nua, c_reg, TAG_END()));
-  UNREGISTER(c, c_reg, c_reg->nh, SIPTAG_TO(c->to), 
+  UNREGISTER(c, c_reg, c_reg->nh,
+	     SIPTAG_FROM(c->to), SIPTAG_TO(c->to),
 	     SIPTAG_CONTACT_STR("*"),
 	     TAG_END());
   run_c_until(ctx, -1, until_final_response);  
@@ -105,9 +120,151 @@ int test_register_to_proxy(struct context *ctx)
   if (print_headings)
     printf("TEST NUA-2.3.0.3: PASSED\n");
 
+  END();
+}
+
+int test_outbound_cases(struct context *ctx)
+{
+  BEGIN();
+
+#if 0
+
+  struct endpoint *a = &ctx->a, *x;
+  struct call *a_reg = a->reg;
+  struct event *e;
+  sip_t const *sip;
+  sip_contact_t m[1];
+
 /* REGISTER test
 
-   A			B
+   A			R
+   |------REGISTER----->|
+   |<-------401---------|
+   |------REGISTER----->|
+   |<-------200---------|
+   |			|
+
+*/
+
+  if (print_headings)
+    printf("TEST NUA-2.3.1: REGISTER a\n");
+
+  test_proxy_domain_set_expiration(ctx->a.domain, 5, 5, 10);
+
+  TEST_1(a_reg->nh = nua_handle(a->nua, a_reg, TAG_END()));
+
+  sip_contact_init(m);
+  m->m_display = "Lissu";
+  *m->m_url = *a->contact->m_url;
+  m->m_url->url_user = "a";
+  m->m_url->url_params = "transport=udp";
+
+  REGISTER(a, a_reg, a_reg->nh, SIPTAG_TO(a->to),
+	   NUTAG_OUTBOUND("use-rport no-options-keepalive"),
+	   SIPTAG_CONTACT(m),
+	   TAG_END());
+  run_a_until(ctx, -1, save_until_final_response);
+
+  TEST_1(e = a->events->head);
+  TEST_E(e->data->e_event, nua_r_register);
+  TEST(e->data->e_status, 401);
+  TEST_1(sip = sip_object(e->data->e_msg));
+  TEST(sip->sip_status->st_status, 401);
+  TEST_1(!sip->sip_contact);
+  TEST_1(!e->next);
+  free_events_in_list(ctx, a->events);
+
+  AUTHENTICATE(a, a_reg, a_reg->nh,
+	       NUTAG_AUTH("Digest:\"test-proxy\":alice:secret"), TAG_END());
+  run_a_until(ctx, -1, save_until_final_response);
+
+  TEST_1(e = a->events->head);
+  TEST_E(e->data->e_event, nua_r_register);
+  TEST(e->data->e_status, 200);
+  TEST_1(sip = sip_object(e->data->e_msg));
+  TEST_1(sip->sip_contact);
+  TEST_S(sip->sip_contact->m_display, "Lissu");
+  TEST_S(sip->sip_contact->m_url->url_user, "a");
+  TEST_1(strstr(sip->sip_contact->m_url->url_params, "transport=udp"));
+
+  if (ctx->nat) {
+    TEST_1(e = a->specials->head);
+  }
+
+  test_proxy_domain_set_expiration(ctx->a.domain, 600, 3600, 36000);
+
+  if (print_headings)
+    printf("TEST NUA-2.3.1: PASSED\n");
+
+  if (print_headings)
+    printf("TEST NUA-2.3.4: refresh REGISTER\n");
+
+  if (!ctx->p) {
+    free_events_in_list(ctx, a->events);
+    return 0;
+  }
+
+  /* Wait for A to refresh its registrations */
+
+  /*
+   * Avoid race condition: if X has already refreshed registration
+   * with expiration time of 3600 seconds, do not wait for new refresh
+   */
+  a->next_condition = save_until_final_response;
+
+  for (x = a; x; x = NULL) {
+    for (e = x->events->head; e; e = e->next) {
+      if (e->data->e_event == nua_r_register &&
+	  e->data->e_status == 200 &&
+	  (sip = sip_object(e->data->e_msg)) &&
+	  sip->sip_contact &&
+	  sip->sip_contact->m_expires &&
+	  strcmp(sip->sip_contact->m_expires, "3600") == 0) {
+	x->next_condition = NULL;
+	break;
+      }
+    }
+  }
+
+  run_a_until(ctx, -1, a->next_condition);
+  
+  for (e = a->events->head; e; e = e->next) {
+    TEST_E(e->data->e_event, nua_r_register);
+    TEST(e->data->e_status, 200);
+    TEST_1(sip = sip_object(e->data->e_msg));
+    TEST_1(sip->sip_contact);
+    if (!e->next)
+      break;
+  }
+  TEST_1(e);
+  TEST_1(sip = sip_object(e->data->e_msg));
+  TEST_S(sip->sip_contact->m_expires, "3600");
+  TEST_1(!e->next);
+  free_events_in_list(ctx, a->events);
+
+  if (print_headings)
+    printf("TEST NUA-2.3.4: PASSED\n");
+
+  TEST_1(0);
+
+#endif
+
+  END();
+}
+
+int test_register_a(struct context *ctx)
+{
+  BEGIN();
+
+  struct endpoint *a = &ctx->a;
+  struct call *a_reg = a->reg;
+  struct event *e;
+  sip_t const *sip;
+  sip_cseq_t cseq[1];
+
+/* REGISTER test
+
+   A			R
    |------REGISTER----->|
    |<-------401---------|
    |------REGISTER----->|
@@ -187,6 +344,18 @@ int test_register_to_proxy(struct context *ctx)
   if (print_headings)
     printf("TEST NUA-2.3.1: PASSED\n");
 
+  END();
+}
+
+int test_register_b(struct context *ctx)
+{
+  BEGIN();
+
+  struct endpoint  *b = &ctx->b;
+  struct call *b_reg = b->reg;
+  struct event *e;
+  sip_t const *sip;
+
   if (print_headings)
     printf("TEST NUA-2.3.2: REGISTER b\n");
 
@@ -236,10 +405,22 @@ int test_register_to_proxy(struct context *ctx)
   TEST_S(sip->sip_contact->m_url->url_user, "b");
   free_events_in_list(ctx, b->events);
 
+  test_proxy_domain_set_expiration(ctx->b.domain, 600, 3600, 36000);
+
   if (print_headings)
     printf("TEST NUA-2.3.2: PASSED\n");
 
-  test_proxy_domain_set_expiration(ctx->b.domain, 600, 3600, 36000);
+  END();
+}
+
+int test_register_c(struct context *ctx)
+{
+  BEGIN();
+
+  struct endpoint *c = &ctx->c;
+  struct call *c_reg = c->reg;
+  struct event *e;
+  sip_t const *sip;
 
   if (print_headings)
     printf("TEST NUA-2.3.3: REGISTER c\n");
@@ -249,7 +430,8 @@ int test_register_to_proxy(struct context *ctx)
 
   TEST_1(c_reg->nh = nua_handle(c->nua, c_reg, TAG_END()));
 
-  REGISTER(c, c_reg, c_reg->nh, SIPTAG_TO(c->to), 
+  REGISTER(c, c_reg, c_reg->nh, SIPTAG_TO(c->to),
+	   SIPTAG_FROM(c->to),
 	   NUTAG_OUTBOUND(NULL),
 	   NUTAG_M_DISPLAY("C"),
 	   NUTAG_M_USERNAME("c"),
@@ -300,14 +482,26 @@ int test_register_to_proxy(struct context *ctx)
   if (print_headings)
     printf("TEST NUA-2.3.3: PASSED\n");
 
+  END();
+}
+
+int test_register_refresh(struct context *ctx)
+{
+  BEGIN();
+
+  struct endpoint *a = &ctx->a,  *b = &ctx->b, *x;
+  struct event *e;
+  sip_t const *sip;
+  int seen_401;
+
+  if (print_headings)
+    printf("TEST NUA-2.3.4: refresh REGISTER\n");
+
   if (!ctx->p) {
     free_events_in_list(ctx, a->events);
     free_events_in_list(ctx, b->events);
     return 0;
   }
-
-  if (print_headings)
-    printf("TEST NUA-2.3.4: refresh REGISTER\n");
 
   /* Wait for A and B to refresh their registrations */
 
@@ -343,6 +537,7 @@ int test_register_to_proxy(struct context *ctx)
       break;
   }
   TEST_1(e);
+  TEST_1(sip = sip_object(e->data->e_msg));
   TEST_S(sip->sip_contact->m_expires, "3600");
   TEST_1(!e->next);
   free_events_in_list(ctx, a->events);
@@ -569,6 +764,7 @@ int test_connectivity(struct context *ctx)
   TEST_1(c_call->nh = nua_handle(c->nua, c_call, SIPTAG_TO(a->to), TAG_END()));
 
   OPTIONS(c, c_call, c_call->nh,
+	  SIPTAG_FROM(c->to),
 	  TAG_IF(!ctx->proxy_tests, NUTAG_URL(a->contact->m_url)),
 	  TAG_END());
 
@@ -767,7 +963,7 @@ int test_unregister(struct context *ctx)
   /* Unregister using another handle */
   free_events_in_list(ctx, c->events);
   TEST_1(c->call->nh = nua_handle(c->nua, c->call, TAG_END()));
-  UNREGISTER(c, c->call, c->call->nh, SIPTAG_TO(c->to), 
+  UNREGISTER(c, c->call, c->call->nh, SIPTAG_TO(c->to), SIPTAG_FROM(c->to),
 	     NUTAG_M_DISPLAY("C"),
 	     NUTAG_M_USERNAME("c"),
 	     NUTAG_M_PARAMS("c=1"),
@@ -807,6 +1003,7 @@ int test_unregister(struct context *ctx)
     }
     TEST(e->data->e_status, 200);
     TEST_1(sip = sip_object(e->data->e_msg));
+    TEST_1(sip->sip_from->a_url->url_user);
     TEST_1(!sip->sip_contact);
     TEST_1(!e->next);
     free_events_in_list(ctx, c->events);

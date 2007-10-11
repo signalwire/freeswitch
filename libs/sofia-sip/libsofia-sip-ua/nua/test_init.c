@@ -74,6 +74,7 @@ int test_nua_init(struct context *ctx,
   url_t const *p_uri, *a_uri, *b_uri;		/* Proxy URI */
   char const *initial_route = NULL;	/* Initial route towards internal proxy */
   char const *a_bind, *a_bind2;
+  url_t *e_proxy = NULL;
   int err = -1;
   url_t b_proxy[1];
 
@@ -162,8 +163,13 @@ int test_nua_init(struct context *ctx,
 
   p_uri = a_uri = b_uri = test_proxy_uri(ctx->p);
 
+  if (o_proxy) {
+    TEST_1(e_proxy = url_hdup(ctx->home, (void *)o_proxy));
+    ctx->external_proxy = e_proxy;
+  }
+
   if (start_nat && p_uri == NULL)
-    p_uri = url_hdup(ctx->home, (void *)o_proxy);
+    p_uri = e_proxy;
 
   if (ctx->p)
     initial_route = test_proxy_route_uri(ctx->p, &ctx->lr);
@@ -262,7 +268,7 @@ int test_nua_init(struct context *ctx,
   ctx->a.instance = nua_generate_instance_identifier(ctx->home);
 
   ctx->a.nua = nua_create(ctx->root, a_callback, ctx,
-			  NUTAG_PROXY(a_uri ? a_uri : o_proxy),
+			  NUTAG_PROXY(a_uri ? a_uri : e_proxy),
 			  NUTAG_INITIAL_ROUTE_STR(initial_route),
 			  SIPTAG_FROM_STR("sip:alice@example.com"),
 			  NUTAG_URL(a_bind),
@@ -310,7 +316,7 @@ int test_nua_init(struct context *ctx,
   }
 
   ctx->b.nua = nua_create(ctx->root, b_callback, ctx,
-			  NUTAG_PROXY(b_uri ? b_uri : o_proxy),
+			  NUTAG_PROXY(b_uri ? b_uri : e_proxy),
 			  SIPTAG_FROM_STR("sip:bob@example.org"),
 			  NUTAG_URL("sip:0.0.0.0:*"),
 			  SOATAG_USER_SDP_STR("m=audio 5006 RTP/AVP 8 0"),
@@ -350,9 +356,10 @@ int test_nua_init(struct context *ctx,
 
   /* ctx->c.instance = nua_generate_instance_identifier(ctx->home); */
 
+  ctx->c.to = sip_from_make(ctx->home, "Charlie <sip:charlie@example.net>");
+
   ctx->c.nua = nua_create(ctx->root, c_callback, ctx,
-			  NUTAG_PROXY(p_uri ? p_uri : o_proxy),
-			  SIPTAG_FROM_STR("sip:charlie@example.net"),
+			  NUTAG_PROXY(p_uri ? p_uri : e_proxy),
 			  NUTAG_URL("sip:0.0.0.0:*"),
 			  SOATAG_USER_SDP_STR("m=audio 5400 RTP/AVP 8 0"),
 			  NUTAG_INSTANCE(ctx->c.instance),
@@ -365,15 +372,13 @@ int test_nua_init(struct context *ctx,
   TEST_1(e = ctx->c.specials->head);
   err = tl_gets(e->data->e_tags,
 	            NTATAG_CONTACT_REF(m),
-	            SIPTAG_FROM_REF(sipaddress),
 	            SIPTAG_ALLOW_REF(allow),
 	            NUTAG_APPL_METHOD_REF(appl_method),
 	            SIPTAG_SUPPORTED_REF(supported),
 	            TAG_END());
   
-  TEST(err, 5); TEST_1(m);
+  TEST(err, 4); TEST_1(m);
   TEST_1(ctx->c.contact = sip_contact_dup(ctx->home, m));
-  TEST_1(ctx->c.to = sip_to_dup(ctx->home, sipaddress));
   TEST_1(ctx->c.allow = sip_allow_dup(ctx->home, allow));
   TEST_1(ctx->c.appl_method = su_strdup(ctx->home, appl_method));
   TEST_1(ctx->c.supported = sip_supported_dup(ctx->home, supported));

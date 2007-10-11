@@ -40,8 +40,8 @@ libsofia-sip-ua/iptsec:
 
 libsofia-sip-ua/sip:
 - Added SIPEXTHDRTAG_TYPEDEF() macro and tag class sipexthdrtag_class[]
-- Added SIP headers Alert-Info and Reply-To. Remote-Party-ID,
-  P-Asserted-Identity, P-Preferred-Identity
+- Added SIP headers Alert-Info, Reply-To. Remote-Party-ID,
+  P-Asserted-Identity, and P-Preferred-Identity
 - Added sip_update_default_mclass() and sip_extend_mclass()
 - Added macros SIP_HAVE_XXXX for extra headers, e.g., SIP_HAVE_ALERT_INFO().
 
@@ -102,12 +102,18 @@ Symbian Open C build and packaging (SIS) files for libsofia-sip-ua,
 libsofia-sip-ua-glib and for several test apps have been added under
 sofia-sip/open_c.
 
-New SIP headers are not available by default. Application must enable them
-with sip_update_default_mclass() and sip_extend_mclass().
+The SIP headers Alert-Info, Reply-To. Remote-Party-ID, P-Asserted-Identity,
+and P-Preferred-Identity are not not available by default. Application must
+enable them with sip_update_default_mclass() and sip_extend_mclass().
 
 Bugs fixed in this release
 --------------------------
 
+- Fixed sf.net bug #1804248: nua_prack() now works. 
+  Thanks to Fabio Margarido for sending the patch.
+- Fixed sf.net bug #1810115: crash after failed outgoing request and
+  nta_destroy()
+  Thanks to Mikhail Zabaluev for reporting the problem.
 - Fixed sf.net bug #1804248: nua_prack() now works. 
   Thanks to Fabio Margarido for sending the patch.
 - Fixed sf.net bug 1803686: nua_destroy() can now be called from inside 

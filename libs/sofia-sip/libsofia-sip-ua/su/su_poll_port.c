@@ -669,7 +669,7 @@ int su_poll_clone_start(su_root_t *parent,
 			su_root_init_f init,
 			su_root_deinit_f deinit)
 {
-  return su_pthreaded_port_start(su_default_port_create, 
+  return su_pthreaded_port_start(su_poll_port_create, 
 				 parent, return_clone, magic, init, deinit);
 }
 

@@ -415,7 +415,7 @@ tag_typedef_t ntatag_maxsize = USIZETAG_TYPEDEF(maxsize);
  *    nta_agent_create(), nta_agent_set_params()
  *
  * @par Parameter type
- *    - #usize_t
+ *    - unsigned
  *
  * @par Values
  *    - Maximum size of an outgoing UDP request

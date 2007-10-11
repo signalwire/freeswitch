@@ -222,6 +222,8 @@ struct nua_s {
   /* Engine state flags */
   unsigned             nua_shutdown_started:1; /**< Shutdown initiated */
   unsigned             nua_shutdown_final:1; /**< Shutdown is complete */
+
+  unsigned             nua_from_is_set;
   unsigned :0;
   
   /**< Used by stop-and-wait args calls */

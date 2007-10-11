@@ -1993,7 +1993,13 @@ int nua_client_init_request(nua_client_request_t *cr)
 	url = (url_string_t const *)t->t_value;
     }
 
-    t = nh->nh_tags, sip_add_tagis(msg, sip, &t);
+    t = nh->nh_tags;
+
+    /* Use the From header from the dialog */
+    if (ds->ds_leg && t->t_tag == siptag_from)
+      t++;
+
+    sip_add_tagis(msg, sip, &t);
   }
 
   if (!ds->ds_route) {

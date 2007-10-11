@@ -340,6 +340,8 @@ int main(int argc, char *argv[])
 
   retval |= test_nua_destroy(ctx); SINGLE_FAILURE_CHECK();
 
+  retval |= test_stack_errors(ctx); SINGLE_FAILURE_CHECK();
+
   retval |= test_nua_init(ctx, o_iproxy, o_proxy, o_inat,
 			  TESTNATTAG_SYMMETRIC(o_inat_symmetric),
 			  TESTNATTAG_LOGGING(o_inat_logging),
@@ -353,8 +355,6 @@ int main(int argc, char *argv[])
       ctx->b.printer = print_event;
     if (o_events_c)
       ctx->c.printer = print_event;
-
-    retval |= test_stack_errors(ctx); SINGLE_FAILURE_CHECK();
 
     retval |= test_register(ctx);
 
