@@ -1299,7 +1299,7 @@ int t_size_scan(tag_type_t tt, su_home_t *home,
   }
 }
 
-/** Tag class for tags with size_t value. @NEW_1_12_5 */
+/** Tag class for tags with size_t value. @NEW_1_12_5. */
 tag_class_t size_tag_class[1] = 
   {{
     sizeof(int_tag_class),
@@ -1347,7 +1347,7 @@ int t_usize_scan(tag_type_t tt, su_home_t *home,
   }
 }
 
-/** Tag class for tags with usize_t value. @NEW_1_12_5 */
+/** Tag class for tags with usize_t value. @NEW_1_12_5. */
 tag_class_t usize_tag_class[1] = 
   {{
     sizeof(int_tag_class),

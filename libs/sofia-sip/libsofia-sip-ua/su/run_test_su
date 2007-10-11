@@ -8,7 +8,7 @@ for SU_PORT in select kqueue devpoll epoll poll ; do
 
 export SU_PORT
 
-egrep -q -i '^#define have_(sys_)?'$SU_PORT ../../config.h ||
+egrep -i '^#define have_(sys_)?'$SU_PORT ../../config.h >/dev/null ||
 continue
 
 run=yes

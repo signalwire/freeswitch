@@ -26,7 +26,8 @@
 /** Defined when <iptsec_debug.h> has been included. */
 #define IPTSEC_DEBUG_H
 
-/**@file iptsec_debug.h
+/**@internal
+ * @file iptsec_debug.h
  * @brief Debug log for IPTSEC module.
  * 
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -38,7 +39,7 @@
 
 SOFIA_BEGIN_DECLS
 
-/** Common log for application and srvlib components. */
+/** Common log for client and server components. */
 SOFIAPUBVAR su_log_t iptsec_log[];
 
 SOFIA_END_DECLS

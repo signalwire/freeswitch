@@ -22,7 +22,7 @@
  *
  */
 
-/**@file memcspn.c
+/**@internal @file memcspn.c
  * @brief The memcspn() replacement function.
  *  
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>

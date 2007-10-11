@@ -7,6 +7,8 @@ INPUT 		     = @srcdir@/msg.docs @srcdir@/sofia-sip sofia-sip @srcdir@ .
 @INCLUDE = ../docs/Doxyfile.conf
 @INCLUDE = ../sip/sip.doxyaliases
 
+EXCLUDE_PATTERNS     += msg_test*.h msg_test*.c
+
 TAGFILES             += ../docs/ipt.doxytags=../ipt  \
 			../docs/su.doxytags=../su    \
 			../docs/sip.doxytags=../sip  \

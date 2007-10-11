@@ -26,7 +26,8 @@
 /** Defined when <nta_internal.h> has been included. */
 #define NTA_INTERNAL_H 
 
-/**@IFILE nta_internal.h
+/**@internal @file nta_internal.h
+ *
  * @brief Internals of NTA objects.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>

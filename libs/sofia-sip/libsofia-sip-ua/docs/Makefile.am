@@ -40,7 +40,10 @@ Doxyfile.rfc:
 	from=700 to=4800 \
 	/dev/null > $@
 
-CLEANFILES = Doxyfile.rfc
+CLEANFILES = Doxyfile.rfc *.doxytags
+
+distclean-local:
+	-rm -rf html
 
 # ----------------------------------------------------------------------
 # Sofia specific rules

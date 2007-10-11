@@ -54,24 +54,25 @@ BEGIN {
   split("", NAMES);
   split("", Comments);
   split("", COMMENTS);
-  split("", experimental);
 
   # indexed by the C name of the header
   split("", Since);		# Non-NUL if extra
   split("", Extra);		# Offset in extra headers
 
+  total = 0;
+  ordinary = 0;
+  basic = 0;
+  extra = 0;
   without_experimental = 0;
+
   template="";
   template1="";
   template2="";
   template3="";
   prefix="";
   tprefix="";
-  extra=0;
   failed=0;
   success=0;
-
-  extra_struct = "msg_pub_extra";
 
   ERRNO="error";
 }
@@ -159,7 +160,6 @@ function protos (name, comment, hash, since)
   symbols[name] = comment;
   if (since) {
     Since[name] = since;
-    Extra[name] = extra++;
   }
 
   expr = (without_experimental > 0 && do_hash);
@@ -210,7 +210,7 @@ function replace (p, hash, name, NAME, comment, Comment, COMMENT, since)
 
 # 
 # Repeat each line in the footer containing the magic replacement
-# pattern with a instance of all headers
+# pattern with an instance of all headers
 #
 function process_footer (text)
 { 
@@ -368,9 +368,14 @@ function templates ()
 }
 
 /^#### EXTRA HEADER LIST STARTS HERE ####$/ { HLIST=1; templates(); }
+HLIST && /^#### DEFAULT HEADER LIST ENDS HERE ####$/ { basic=total; }
 HLIST && /^#### EXPERIMENTAL HEADER LIST STARTS HERE ####$/ { 
-  without_experimental=total; }
-HLIST && /^[a-z]/ { protos($1, $0, 0, $2); headers[total++] = $1; }
+  without_experimental = total; }
+
+HLIST && /^[a-z]/ { protos($1, $0, 0, $2); 
+  headers[total++] = $1; 
+  Extra[$1] = extra++;
+}
 /^#### EXTRA HEADER LIST ENDS HERE ####$/ { HLIST=0;  }
 
 /^ *\/\* === Headers start here \*\// { in_header_list=1;  templates(); }
@@ -396,14 +401,116 @@ in_header_list && /^  (sip|rtsp|http|msg|mp)_[a-z_0-9]+_t/ {
   if (!NO_MIDDLE)
     protos(n, $0, 0);
 
-  headers[total++] = n;
+  headers[total] = n; total++; ordinary++;
+}
+
+function print_parser_table(struct, scope, name, N, N_EXPERIMENTAL)
+{
+  if (PT) {
+    if (N > ordinary) {
+      printf("/* Ordinary %u, extra %u, experimental %u */\n",
+	     ordinary, N - ordinary, N_EXPERIMENTAL - N) > PT;
+      printf("struct %s {\n", struct) > PT;
+      printf("  %s_t base;\n", module) > PT;
+      printf("  msg_header_t *extra[%u];\n", N - ordinary) > PT;
+      if (N != N_EXPERIMENTAL) {
+	print "#if SU_HAVE_EXPERIMENTAL" > PT;
+	printf("  msg_header_t *extra[%u];\n", N_EXPERIMENTAL - N) > PT;
+	print "#endif" > PT;
+      }
+      printf("};\n\n") > PT;
+    }
+
+    printf("%s\n", scope) > PT;
+    printf("msg_mclass_t const %s[1] = \n{{\n", name) > PT;
+    printf("# if defined (%s_HCLASS)\n", toupper(module)) > PT;
+    printf("  %s_HCLASS,\n", toupper(module)) > PT;
+    printf("#else\n") > PT;
+    printf("  {{ 0 }},\n") > PT;
+    printf("#endif\n") > PT;
+    printf("  %s_VERSION_CURRENT,\n", toupper(module)) > PT;
+    printf("  %s_PROTOCOL_TAG,\n", toupper(module)) > PT;
+    printf("#if defined (%s_PARSER_FLAGS)\n", toupper(module)) > PT;
+    printf("  %s_PARSER_FLAGS,\n", toupper(module)) > PT;
+    printf("#else\n") > PT;
+    printf("  0,\n") > PT;
+    printf("#endif\n") > PT;
+    if (N > ordinary) {
+      printf("  sizeof (struct %s),\n", struct) > PT;
+    }
+    else {
+      printf("  sizeof (%s_t),\n", module) > PT;
+    }
+    printf("  %s_extract_body,\n", module) > PT;
+
+    len = split("request status separator payload unknown error", unnamed, " ");
+
+    for (i = 1; i <= len; i++) {
+      printf("  {{ %s_%s_class, msg_offsetof(%s_t, %s_%s) }},\n", 
+	     tprefix, unnamed[i], module, prefix, unnamed[i]) > PT;
+    }
+    if (multipart) {
+      printf("  {{ %s_class, msg_offsetof(%s_t, %s_multipart) }},\n",
+	     multipart, module, prefix) > PT;
+    } else {
+      printf("  {{ NULL, 0 }},\n") > PT;
+    }
+    if (MC_SHORT_SIZE) {
+      printf("  %s_short_forms, \n", module) > PT;      
+    }
+    else {
+      printf("  NULL, \n") > PT;
+    }
+    printf("  %d, \n", MC_HASH_SIZE) > PT;
+    if (N != N_EXPERIMENTAL) {
+      print "#if SU_HAVE_EXPERIMENTAL" > PT;
+      printf("  %d,\n", N_EXPERIMENTAL) > PT;
+      print "#else" > PT;
+    }
+    printf("  %d,\n", N) > PT;
+    if (N != N_EXPERIMENTAL) {
+      print "#endif" > PT;
+    }
+
+    printf("  {\n") > PT;
+
+    for (j = 0; j < MC_HASH_SIZE; j++) {
+      c = (j + 1 == MC_HASH_SIZE) ? "" : ",";
+      if (j in header_hash) {
+	n = header_hash[j];
+	i = index_hash[j];
+
+        flags = header_flags[n]; if (flags) flags = ",\n      " flags;
+
+	if (i >= N) {
+	  print "#if SU_HAVE_EXPERIMENTAL" > PT;
+	}
+
+	if (i >= ordinary) {
+	  printf("    { %s_%s_class,\n" \
+		 "      msg_offsetof(struct %s, extra[%u])%s }%s\n", 
+		 tprefix, n, struct, Extra[n], flags, c) > PT;
+	}
+	else {
+	  printf("    { %s_%s_class, msg_offsetof(%s_t, %s_%s)%s }%s\n", 
+		 tprefix, n, module, prefix, n, flags, c) > PT;
+	}
+
+	if (i >= N) {
+	  printf("#else\n    { NULL, 0 }%s\n#endif\n", c) > PT;
+	}
+      }
+      else {
+	printf("    { NULL, 0 }%s\n", c) > PT;
+      }
+    }
+    printf("  }\n}};\n\n") > PT;
+
+    }
 }
 
 END {
   if (failed) { exit };
-
-  if (without_experimental == 0)
-    without_experimental = total;
 
   if (!NO_LAST) {
     protos("unknown", "/**< Unknown headers */", -3);
@@ -429,8 +536,6 @@ END {
     getline footer < TEMPLATE;
     RS=RS0;
 
-    module_struct = module "_t";
-
     sub(/.*[\/]/, "", TEMPLATE);
     gsub(/#AUTO#/, auto, header);
     gsub(/#DATE#/, "@date Generated: " date, header);
@@ -451,9 +556,9 @@ END {
 	  n = shorts[i];
         flags = header_flags[n]; if (flags) flags = ",\n      " flags;
 	  
-	  printf("  { /* %s */ %s_%s_class, msg_offsetof(%s_t, %s_%s)%s }%s\n", 
-		 substr(lower_case, i, 1), 
-		 tprefix, n, module, prefix, n, flags, c)	\
+	printf("  { /* %s */ %s_%s_class, msg_offsetof(%s_t, %s_%s)%s }%s\n", 
+	       substr(lower_case, i, 1), 
+	       tprefix, n, module, prefix, n, flags, c)	\
 	    > PT;
 	}
 	else {
@@ -466,67 +571,13 @@ END {
 
     # printf("extern msg_hclass_t msg_multipart_class[];\n\n") > PT;
 
-    if (extra > 0) {
-      printf("struct %s {\n", extra_struct) > PT;
-      printf("  %s base;\n", module_struct) > PT;
-      if (total - without_experimental < extra) {
-	printf("  msg_header_t *extra[%u];\n", 
-	       extra - (total - without_experimental)) > PT;
-      }
-      if (total - without_experimental > 0) {
-	print "#if SU_HAVE_EXPERIMENTAL" > PT;
-	printf("  msg_header_t *experimental[%u];\n", 
-	       total - without_experimental) > PT;
-	print "#endif" > PT;
-      }
-      printf("};\n\n") > PT;
-      module_struct = "struct " extra_struct;
-    }
+    if (basic == 0) basic = total;
+    if (without_experimental == 0) without_experimental = total;
 
-    printf("msg_mclass_t const %s_mclass[1] = \n{{\n", module) > PT;
-    printf("# if defined (%s_HCLASS)\n", toupper(module)) > PT;
-    printf("  %s_HCLASS,\n", toupper(module)) > PT;
-    printf("#else\n") > PT;
-    printf("  {{ 0 }},\n") > PT;
-    printf("#endif\n") > PT;
-    printf("  %s_VERSION_CURRENT,\n", toupper(module)) > PT;
-    printf("  %s_PROTOCOL_TAG,\n", toupper(module)) > PT;
-    printf("#if defined (%s_PARSER_FLAGS)\n", toupper(module)) > PT;
-    printf("  %s_PARSER_FLAGS,\n", toupper(module)) > PT;
-    printf("#else\n") > PT;
-    printf("  0,\n") > PT;
-    printf("#endif\n") > PT;
-    printf("  sizeof (%s),\n", module_struct) > PT;
-    printf("  %s_extract_body,\n", module) > PT;
+    split("", header_hash);
+    split("", index_hash);
 
-    len = split("request status separator payload unknown error", unnamed, " ");
-
-    for (i = 1; i <= len; i++) {
-      printf("  {{ %s_%s_class, msg_offsetof(%s_t, %s_%s) }},\n", 
-	     tprefix, unnamed[i], module, prefix, unnamed[i]) > PT;
-    }
-    if (multipart) {
-      printf("  {{ %s_class, msg_offsetof(%s_t, %s_multipart) }},\n",
-	     multipart, module, prefix) > PT;
-    } else {
-      printf("  {{ NULL, 0 }},\n") > PT;
-    }
-    if (MC_SHORT_SIZE) {
-      printf("  %s_short_forms, \n", module) > PT;      
-    }
-    else {
-      printf("  NULL, \n") > PT;
-    }
-    printf("  %d, \n", MC_HASH_SIZE) > PT;
-    printf ("#if SU_HAVE_EXPERIMENTAL\n" \
-	    "  %d,\n" \
-	    "#else\n" \
-	    "  %d,\n" \
-	    "#endif\n", \
-	    total, without_experimental) > PT;
-    printf("  {\n") > PT;
-
-    for (i = 0; i < total; i++) {
+    for (i = 0; i < basic; i++) {
       n = headers[i];
       h = hashed[n];
 
@@ -542,38 +593,67 @@ END {
       }
 
       header_hash[j] = n;
-      experimental2[j] = (i >= without_experimental);
+      index_hash[j] = i;
     }
 
-    for (i = 0; i < MC_HASH_SIZE; i++) {
-      c = (i + 1 == MC_HASH_SIZE) ? "" : ",";
-      if (i in header_hash) {
-	n = header_hash[i];
-        flags = header_flags[n]; if (flags) flags = ",\n      " flags;
+    m = module "_mclass";
+    s = "_d_" module "_t";
 
-	if (experimental2[i]) {
+    # Add basic headers
+    if (ordinary == basic) {
+      print_parser_table(s, "", m, basic, basic);
+    }
+    else if (basic < without_experimental) {
+      print_parser_table(s, "", m, basic, basic);
+    }
+    else {
+      print_parser_table(s, "", m, without_experimental, basic);
+   }
+
+   if (0) {
+
+   # Hash extra headers
+   for (i = basic; i < total; i++) {
+      n = headers[i];
+      h = hashed[n];
+
+      if (h < 0)
+	continue;
+
+      j = h % MC_HASH_SIZE; if (j == -0) j = 0;
+
+      for (; j in header_hash;) {
+	if (++j == MC_HASH_SIZE) {
+	  j = 0;
+	}
+      }
+
+      header_hash[j] = n;
+      index_hash[j] = i;
+    }
+
+    if (basic < total) {
+      m = module "_ext_mclass";
+      s = "_e_" module "_s";
+      print_parser_table(s, "static", m, without_experimental, total);
+    }
+
+    printf("msg_mclass_t const * %s_extended_mclass = %s;\n\n", module, m) > PT;
+
+    }
+
+    if (basic < total) {
+      printf("msg_hclass_t * const %s_extensions[] = {\n", module) > PT;
+      for (i = basic; i < total; i++) {
+	if (i == without_experimental) {
 	  print "#if SU_HAVE_EXPERIMENTAL" > PT;
-	}
-
-	if (Since[n]) {
-	  printf("    { %s_%s_class,\n" \
-		 "      msg_offsetof(struct %s, extra[%u])%s }%s\n", 
-		 tprefix, n, extra_struct, Extra[n], flags, c) > PT;
-	}
-	else {
-	  printf("    { %s_%s_class, msg_offsetof(%s_t, %s_%s)%s }%s\n", 
-		 tprefix, n, module, prefix, n, flags, c) > PT;
-	}
-
-	if (experimental2[i]) {
-	  printf("#else\n    { NULL, 0 }%s\n#endif\n", c) > PT;
-	}
+        }
+	printf("  %s_%s_class,\n", module, headers[i]) > PT;
       }
-      else {
-	printf("    { NULL, 0 }%s\n", c) > PT;
-      }
+      if (total != without_experimental)
+	print "#endif" > PT;
+      print "  NULL\n};\n\n" > PT;
     }
-    printf("  }\n}};\n\n") > PT;
   }
 
   exit success;

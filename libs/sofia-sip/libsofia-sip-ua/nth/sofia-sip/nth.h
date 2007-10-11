@@ -50,7 +50,7 @@ typedef struct nth_request_s nth_request_t;
 #ifndef NTH_CLIENT_MAGIC_T
 /** Default type of application context for client NTH requests.
  * Application may define this to appropriate type before including
- * <nth.h>. */
+ * <sofia-sip/nth.h>. */
 #define NTH_CLIENT_MAGIC_T struct nth_client_magic_s
 #endif
 
@@ -60,7 +60,7 @@ typedef NTH_CLIENT_MAGIC_T  nth_client_magic_t;
 #ifndef NTH_SITE_MAGIC_T
 /** Default type of application context for NTH servers.
  * Application may define this to appropriate type before including
- * <nth.h>. */
+ * <sofia-sip/nth.h>. */
 #define NTH_SITE_MAGIC_T struct nth_site_magic_s
 #endif
 

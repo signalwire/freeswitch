@@ -63,25 +63,25 @@ typedef struct nta_incoming_s   nta_incoming_t;
 #ifndef NTA_AGENT_MAGIC_T
 /** Default type of application context for NTA agents.
  * Application may define this to appropriate type before including
- * <nta.h>. */
+ * <sofia-sip/nta.h>. */
 #define NTA_AGENT_MAGIC_T struct nta_agent_magic_s
 #endif
 #ifndef NTA_LEG_MAGIC_T
 /** Default type of application context for NTA call legs.
  * Application may define this to appropriate type before including
- * <nta.h>. */
+ * <sofia-sip/nta.h>. */
 #define NTA_LEG_MAGIC_T struct nta_leg_magic_s
 #endif
 #ifndef NTA_OUTGOING_MAGIC_T
 /** Default type of application context for outgoing NTA requests.
  * Application may define this to appropriate type before including
- * <nta.h>. */
+ * <sofia-sip/nta.h>. */
 #define NTA_OUTGOING_MAGIC_T struct nta_outgoing_magic_s
 #endif
 #ifndef NTA_INCOMING_MAGIC_T
 /** Default type of application context for incoming NTA requests.
  * Application may define this to appropriate type before including
- * <nta.h>. */
+ * <sofia-sip/nta.h>. */
 #define NTA_INCOMING_MAGIC_T struct nta_incoming_magic_s
 #endif
 
@@ -439,13 +439,13 @@ SOFIAPUBFUN int nta_outgoing_setrseq(nta_outgoing_t *orq, uint32_t rseq);
 typedef struct nta_reliable_s   nta_reliable_t;
 
 #ifndef NTA_RELIABLE_MAGIC_T
-/** Default type of application context for reliable NTA responses.
+/** Default type of application context for reliable preliminary responses.
  * Application may define this to appropriate type before including
- * <nta.h>. */
+ * <sofia-sip/nta.h>. */
 #define NTA_RELIABLE_MAGIC_T struct nta_reliable_magic_s
 #endif
 
-/** Application context for reliable NTA requests */
+/** Application context for reliable preliminary responses. */
 typedef NTA_RELIABLE_MAGIC_T  nta_reliable_magic_t;
 
 typedef int nta_prack_f(nta_reliable_magic_t *rmagic,

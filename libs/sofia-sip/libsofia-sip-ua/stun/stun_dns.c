@@ -22,7 +22,7 @@
  *
  */
 
-/**
+/**@internal
  * @file stun_dns.c 
  * @brief Functins to discover STUN server address using DNS-SRV.
  *

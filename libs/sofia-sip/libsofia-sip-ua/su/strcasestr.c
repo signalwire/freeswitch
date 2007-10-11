@@ -22,7 +22,7 @@
  *
  */
 
-/**@file strcasestr.c
+/**@internal @file strcasestr.c
  * @brief Backup implementation of strcasestr()
  *  
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>

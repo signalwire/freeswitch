@@ -22,7 +22,7 @@
  *
  */
 
-/**
+/**@internal
  * @file su_bm.c
  * @brief Search with Boyer-Moore algorithm
  *  

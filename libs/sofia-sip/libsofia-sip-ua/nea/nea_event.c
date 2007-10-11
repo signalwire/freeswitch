@@ -22,7 +22,7 @@
  *
  */
 
-/**
+/**@internal
  * @file nea_event.c
  * @brief Default MIME type for certain events.
  * 

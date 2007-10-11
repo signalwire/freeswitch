@@ -236,9 +236,9 @@ int tport_is_reliable(tport_t const *self)
 
 /** Return 0 if self is local, nonzero otherwise.
  *
- * The return valu is the 
+ * The return valu is the tport_via enum.
  *
- * @sa TPTAG_PUBLIC(), enum #tport_via.
+ * @sa TPTAG_PUBLIC(), enum tport_via.
  */
 int tport_is_public(tport_t const *self)
 {
@@ -312,13 +312,13 @@ su_inline int tport_is_bound(tport_t const *self)
   return self->tp_protoname != NULL;
 }
 
-/** Test if transport connection has been established. @NEW_1_12_5 */
+/** Test if transport connection has been established. @NEW_1_12_5. */
 int tport_is_connected(tport_t const *self)
 {
   return self->tp_is_connected;
 }
 
-/** Test if transport can be used to send message. @NEW_1_12_7 */
+/** Test if transport can be used to send message. @NEW_1_12_7. */
 int tport_is_clear_to_send(tport_t const *self)
 {
   return
@@ -331,7 +331,7 @@ int tport_is_clear_to_send(tport_t const *self)
      !self->tp_send_close);
 }
 
-/** Return true if transport has message in send queue. @NEW_1_12_7  */
+/** Return true if transport has message in send queue. @NEW_1_12_7. */
 int tport_has_queued(tport_t const *self)
 {
   return self && self->tp_queue && self->tp_queue[self->tp_qhead];

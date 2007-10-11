@@ -60,11 +60,84 @@ char const sip_parser_version[] = VERSION;
 char const sip_version_2_0[] = "SIP/2.0";
 
 /** Default message class */
-extern msg_mclass_t const sip_mclass[];
+extern msg_mclass_t sip_mclass[];
 
+static msg_mclass_t const *_default = sip_mclass;
+
+/** Return a built-in SIP parser object. */
 msg_mclass_t const *sip_default_mclass(void)
 {
-  return sip_mclass;
+  return _default;
+}
+
+/** Update the default SIP parser.
+ *
+ * Use the extended SIP parser as default one.
+ *
+ * If the applications want to use headers added after @VERSION_1_12_5,
+ * they should call this function before doing any other initialization, e.g.,
+ * @code
+ *   su_init();
+ *   if (sip_update_default_mclass(sip_extend_mclass(NULL)) < 0) {
+ *     su_deinit();
+ *     exit(2);
+ *   }
+ * @endcode
+ *
+ * The default parser is not extended because it may break the old
+ * applications looking for extension headers from sip_unknown list.
+ *
+ * @retval 0 when successful
+ * @retval -1 upon an error
+ *
+ * @NEW_1_12_7.
+ */
+int sip_update_default_mclass(msg_mclass_t const *mclass)
+{
+  if (mclass == NULL)
+    return -1;
+  _default = mclass;
+  return 0;
+}
+
+/**Extend SIP parser class with extension headers.
+ *
+ * Extend given SIP parser class with extension headers. If the given parser
+ * class is the default one or NULL, make a clone of it before extending it.
+ *
+ * @param input pointer to a SIP message class (may be NULL)
+ *
+ * @return Pointer to extended mclass, or NULL upon an error.
+ *
+ * @NEW_1_12_7.
+ */
+msg_mclass_t *sip_extend_mclass(msg_mclass_t *input)
+{
+  msg_mclass_t *mclass;
+
+  if (input == NULL || input == _default)
+    mclass = msg_mclass_clone(_default, 0, 0);
+  else
+    mclass = input;
+
+  if (mclass) {
+    extern msg_hclass_t * const sip_extensions[];
+    int i;
+
+    for (i = 0; sip_extensions[i]; i++) {
+      msg_hclass_t *hclass = sip_extensions[i];
+      if (mclass->mc_unknown != msg_find_hclass(mclass, hclass->hc_name, NULL))
+	continue;
+
+      if (msg_mclass_insert_header(mclass, hclass, 0) < 0) {
+	if (input != mclass)
+	  free(mclass);
+	return mclass = NULL;
+      }
+    }
+  }
+
+  return mclass;
 }
 
 /** Extract the SIP message body, including separator line. 

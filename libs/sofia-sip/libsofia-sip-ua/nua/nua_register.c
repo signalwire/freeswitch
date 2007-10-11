@@ -116,7 +116,7 @@ static int nua_register_usage_shutdown(nua_handle_t *,
 				       nua_dialog_state_t *,
 				       nua_dialog_usage_t *);
 
-/** REGISTER usage, aka nua_registration_t */
+/** @internal @brief REGISTER usage, aka nua_registration_t. */
 struct register_usage {
   nua_registration_t *nr_next, **nr_prev, **nr_list; /* Doubly linked list and its head */
   sip_from_t *nr_aor;		/**< AoR for this registration, NULL if none */
@@ -293,7 +293,7 @@ outbound_owner_vtable nua_stack_outbound_callbacks = {
  * @par Related tags:
  *     NUTAG_REGISTRAR(), NUTAG_INSTANCE(), NUTAG_OUTBOUND(),
  *     NUTAG_KEEPALIVE(), NUTAG_KEEPALIVE_STREAM(), NUTAG_M_USERNAME(),
- *     NUTAG_M_DISPLAY(), NUTAG_M_PARAMS(), NUTAG_M_FEATURES(), 
+ *     NUTAG_M_DISPLAY(), NUTAG_M_PARAMS(), NUTAG_M_FEATURES()
  *
  * @par Events:
  *     #nua_r_register, #nua_i_outbound

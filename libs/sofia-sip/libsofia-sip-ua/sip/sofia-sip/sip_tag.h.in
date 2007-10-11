@@ -153,7 +153,7 @@ siptag_header_vr(sip_header_t const **vp)
  * Macro is used to include a tag item containing an unknown extension
  * header in the tag list, e.g.,
  * @code
- * SIPTAG_HEADER_STR("Remote-Party-ID: +358718008000")
+ * SIPTAG_HEADER_STR("P-Alternative-URL: <+358718008000>")
  * @endcode
  *
  * It is also possible to include multiple headers at once

@@ -70,11 +70,11 @@ SOFIA_BEGIN_DECLS
 /**Default type of application context for network_changed function.
  *
  * Application may define the typedef ::su_network_changed_magic_t to appropriate type
- * by defining macro #SU_NETWORK_CHANGED_MAGIC_T before including <su_os_nw.h>, for
+ * by defining macro #SU_NETWORK_CHANGED_MAGIC_T before including <sofia-sip/su_os_nw.h>, for
  * example,
  * @code
  * #define SU_NETWORK_CHANGED_MAGIC_T struct context
- * #include <su_os_nw.h>
+ * #include <sofia-sip/su_os_nw.h>
  * @endcode
  *
  * @since New in @VERSION_1_12_2.
@@ -85,11 +85,11 @@ SOFIA_BEGIN_DECLS
 /** <a href="#su_root_t">Root context</a> pointer type.
  *
  * Application may define the typedef ::su_network_changed_magic_t to appropriate type
- * by defining macro #SU_NETWORK_CHANGED_MAGIC_T before including <su_os_nw.h>, for
+ * by defining macro #SU_NETWORK_CHANGED_MAGIC_T before including <sofia-sip/su_os_nw.h>, for
  * example,
  * @code
  * #define SU_NETWORK_CHANGED_MAGIC_T struct context
- * #include <su_os_nw.h>
+ * #include <sofia-sip/su_os_nw.h>
  * @endcode
  *
  * @since New in @VERSION_1_12_2.

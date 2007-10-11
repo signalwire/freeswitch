@@ -315,7 +315,7 @@ int su_task_detach(su_task_r self)
  */
 su_timer_queue_t *su_task_timers(su_task_r const task)
 {
-  return task ? su_port_timers(task->sut_port) : NULL;
+  return task->sut_port ? su_port_timers(task->sut_port) : NULL;
 }
 
 /** Execute the @a function by @a task thread.
@@ -355,7 +355,7 @@ int su_timer_reset_all(su_timer_t **t0, su_task_r);
 #define sur_port sur_task->sut_port
 #define sur_root sur_task->sut_root
 
-#define SU_ROOT_OWN_THREAD(r) (su_port_own_thread(r->sur_port))
+#define SU_ROOT_OWN_THREAD(r) (r->sur_port && su_port_own_thread(r->sur_port))
 
 /** Create a reactor object.
  *
@@ -458,14 +458,14 @@ void su_root_destroy(su_root_t *self)
  *
  * @return Instance name (e.g., "epoll", "devpoll", "select").
  *
- * @NEW_1_12_6
+ * @NEW_1_12_6.
  */
 char const *su_root_name(su_root_t *self)
 {
-  if (self && self->sur_task->sut_port)
-    return su_port_name(self->sur_task->sut_port);
-  else
-    return NULL;
+  if (!self)
+    return (void)(errno = EFAULT), NULL;
+  assert(self->sur_port);
+  return su_port_name(self->sur_task->sut_port);
 }
 
 /** Set the context pointer.
@@ -480,12 +480,10 @@ char const *su_root_name(su_root_t *self)
  */
 int su_root_set_magic(su_root_t *self, su_root_magic_t *magic)
 {
+  if (self == NULL)
+    return (void)(errno = EFAULT), -1;
   assert(SU_ROOT_OWN_THREAD(self));
-
-  if (self) {
-    self->sur_magic = magic;
-  }
-
+  self->sur_magic = magic;
   return 0;
 }
 
@@ -500,16 +498,15 @@ int su_root_set_magic(su_root_t *self, su_root_magic_t *magic)
  */
 int su_root_threading(su_root_t *self, int enable)
 {
-  if (self) {
-    assert(SU_ROOT_OWN_THREAD(self));
-
+  if (self == NULL)
+    return (void)(errno = EFAULT), -1;
+  assert(SU_ROOT_OWN_THREAD(self));
 #if SU_HAVE_PTHREADS
-    self->sur_threading = enable = enable != 0;
-    return enable;
-#endif
-  }
-
+  self->sur_threading = enable = enable != 0;
+  return enable;
+#else
   return 0;
+#endif
 }
 
 /** Get context pointer.
@@ -523,13 +520,20 @@ int su_root_threading(su_root_t *self, int enable)
  */
 su_root_magic_t *su_root_magic(su_root_t *self)
 {
-  return self ? self->sur_magic : NULL;
+  if (!self)
+    return (void)(errno = EFAULT), NULL;
+
+  return self->sur_magic;
 }
 
 /** Get a GSource */
 struct _GSource *su_root_gsource(su_root_t *self)
 {
-  return self ? su_port_gsource(self->sur_port) : NULL;
+  if (!self)
+    return (void)(errno = EFAULT), NULL;
+  assert(self->sur_port);
+
+  return su_port_gsource(self->sur_port);
 }
 
 /** Register a su_wait_t object. 
@@ -557,10 +561,9 @@ int su_root_register(su_root_t *self,
 		     su_wakeup_arg_t *arg,
 		     int priority)
 {
-  assert(self && self->sur_port);
-
-  if (!self || !self->sur_port)
-    return -1;
+  if (!self || !wait)
+    return (void)(errno = EFAULT), -1;
+  assert(self->sur_port);
 
   return su_port_register(self->sur_port, self, wait, callback, arg, priority);
 }
@@ -584,10 +587,9 @@ int su_root_unregister(su_root_t *self,
 		       su_wakeup_f callback, /* XXX - ignored */
 		       su_wakeup_arg_t *arg)
 {
-  assert(self && self->sur_port);
-
-  if (!self || !self->sur_port)
-    return -1;
+  if (!self || !wait)
+    return (void)(errno = EFAULT), -1;
+  assert(self->sur_port);
 
   return su_port_unregister(self->sur_port, self, wait, callback, arg);
 }
@@ -599,21 +601,19 @@ int su_root_unregister(su_root_t *self,
  *  root object. The wait object is destroyed.
  *
  * @param self      pointer to root object
- * @param i         registration index
+ * @param index     registration index
  *
  * @return Index of the wait object, or -1 upon an error.
  */
-int su_root_deregister(su_root_t *self, int i)
+int su_root_deregister(su_root_t *self, int index)
 {
-  if (i == 0 || i == -1)
-    return -1;
+  if (!self)
+    return (void)(errno = EFAULT), -1;
+  if (index == 0 || index == -1)
+    return (void)(errno = EINVAL), -1;
+  assert(self->sur_port);
 
-  assert(self && self->sur_port);
-
-  if (!self || !self->sur_port)
-    return -1;
-
-  return su_port_deregister(self->sur_port, i);
+  return su_port_deregister(self->sur_port, index);
 }
 
 /** Set mask for a registered event.
@@ -631,10 +631,11 @@ int su_root_deregister(su_root_t *self, int i)
  */
 int su_root_eventmask(su_root_t *self, int index, int socket, int events)
 {
-  assert(self && self->sur_port);
-
-  if (!self || !self->sur_port)
-    return -1;
+  if (!self)
+    return (void)(errno = EFAULT), -1;
+  if (index == 0 || index == -1)
+    return (void)(errno = EINVAL), -1;
+  assert(self->sur_port);
 
   return su_port_eventmask(self->sur_port, index, socket, events);
 }
@@ -656,11 +657,10 @@ int su_root_eventmask(su_root_t *self, int index, int socket, int events)
  */
 int su_root_multishot(su_root_t *self, int multishot)
 {
-  if (self && self->sur_port) {
-    return su_port_multishot(self->sur_port, multishot);
-  } else {
-    return (errno = EINVAL), -1;
-  }
+  if (!self)
+    return (void)(errno = EFAULT), -1;
+  assert(self->sur_port);
+  return su_port_multishot(self->sur_port, multishot);
 }
 
 /** Run event and message loop.
@@ -677,10 +677,11 @@ int su_root_multishot(su_root_t *self, int multishot)
  */
 void su_root_run(su_root_t *self)
 {
-  assert(self && self->sur_port);
+  if (!self)
+    return /* (void)(errno = EFAULT), -1 */;
+  assert(self->sur_port);
 
-  if (self && self->sur_port)
-    su_port_run(self->sur_port);
+  /* return */ su_port_run(self->sur_port);
 }
 
 /** Terminate event loop.
@@ -692,10 +693,11 @@ void su_root_run(su_root_t *self)
  */
 void su_root_break(su_root_t *self)
 {
-  assert(self && self->sur_port);
+  if (!self)
+    return /* (void)(errno = EFAULT), -1 */;
+  assert(self->sur_port);
 
-  if (self && self->sur_port)
-    su_port_break(self->sur_port);
+  /* return */ su_port_break(self->sur_port);
 }
 
 /** Process events, timers and messages.
@@ -710,13 +712,14 @@ void su_root_break(su_root_t *self)
  * @param self      pointer to root object
  * @param tout      timeout in milliseconds
  *
- * @return Milliseconds to the next invocation of timer, or SU_WAIT_FOREVER
- *         if there are no active timers.
+ * @return Milliseconds to the next invocation of timer
+ * @retval SU_WAIT_FOREVER if there are no active timers or if there was an error
  */
 su_duration_t su_root_step(su_root_t *self, su_duration_t tout)
 {
-  assert(self && self->sur_port);
-
+  if (self == NULL)
+    return (void)(errno = EFAULT), SU_WAIT_FOREVER;
+  assert(self->sur_port);
   return su_port_step(self->sur_port, tout);
 }
 
@@ -729,13 +732,19 @@ su_duration_t su_root_step(su_root_t *self, su_duration_t tout)
  *
  * @param self      pointer to root object
  * @param duration  milliseconds to run event loop
+ *
+ * @retval milliseconds until next timer expiration
  */
 su_duration_t su_root_sleep(su_root_t *self, su_duration_t duration)
 {
   su_duration_t retval, accrued = 0;
-  su_time_t started = su_now();
+  su_time_t started;
 
-  assert(self && self->sur_port);
+  if (self == NULL)
+    return (void)(errno = EFAULT), SU_WAIT_FOREVER;
+
+  assert(self->sur_port);
+  started = su_now();
 
   do {
     retval = su_port_step(self->sur_port, duration - accrued);
@@ -753,35 +762,20 @@ su_duration_t su_root_sleep(su_root_t *self, su_duration_t duration)
  */
 int su_root_yield(su_root_t *self)
 {
-  if (self && self->sur_task[0].sut_port) {
-    su_virtual_port_t *port = (su_virtual_port_t *)self->sur_task[0].sut_port;
-    /* Make sure we have su_port_wait_events extension */
-    if (port->sup_vtable->su_vtable_size >= 
-	offsetof(su_port_vtable_t, su_port_wait_events) 
-	&& port->sup_vtable->su_port_wait_events)
-      return port->sup_vtable->
-	su_port_wait_events(self->sur_task[0].sut_port, 0);
+  if (self == NULL)
+    return (void)(errno = EFAULT), SU_WAIT_FOREVER;
+  assert(self->sur_port);
 
-    /* Make sure we have su_port_yield extension */
-    if (port->sup_vtable->su_vtable_size >= 
-	offsetof(su_port_vtable_t, su_port_yield) 
-	&& port->sup_vtable->su_port_yield)
-    return port->sup_vtable->
-      su_port_yield(self->sur_task[0].sut_port);
-  }
-  errno = EINVAL;
-  return -1;
+  return su_port_wait_events(self->sur_port, 0);
 }
 
 /** Get task reference.
  *
- *   The function su_root_task() is used to retrieve the task reference
- *   (PId) related with the root object.
+ * Retrieve the task reference related with the root object.
  *
  * @param self      a pointer to a root object
  *
- * @return The function su_root_task() returns a reference to the task
- *         object.
+ * @return A reference to the task object.
  */
 _su_task_r su_root_task(su_root_t const *self)
 {
@@ -793,13 +787,12 @@ _su_task_r su_root_task(su_root_t const *self)
 
 /** Get parent task reference.
  *
- *   The function su_root_parent() is used to retrieve the task reference
- *   (PId) of the parent task.
+ * Retrieve the task reference of the parent task associated with the root
+ * object.
  *
- * @param self      a pointer to a root object
+ * @param self a pointer to a root object
  *
- * @return The function su_root_parent() returns a reference to the parent
- *         task object.
+ * @return A reference to the parent task object.
  */
 _su_task_r su_root_parent(su_root_t const *self)
 {
@@ -814,8 +807,9 @@ int su_root_add_prepoll(su_root_t *root,
 			su_prepoll_f *callback, 
 			su_prepoll_magic_t *magic)
 {
-  if (root == NULL || root->sur_port == NULL)
-    return -1;
+  if (root == NULL)
+    return (void)(errno = EFAULT), -1;
+  assert(root->sur_port);
 
   return su_port_add_prepoll(root->sur_port, root, callback, magic);
 }
@@ -823,10 +817,58 @@ int su_root_add_prepoll(su_root_t *root,
 /** Remove a pre-poll callback */
 int su_root_remove_prepoll(su_root_t *root)
 {
-  if (root == NULL || root->sur_port == NULL)
-    return -1;
+  if (root == NULL)
+    return (void)(errno = EFAULT), -1;
+  assert(root->sur_port);
 
   return su_port_remove_prepoll(root->sur_port, root);
+}
+
+/** Release the root port for other threads.
+ *
+ * @NEW_1_12_7
+ */
+int su_root_release(su_root_t *root)
+{
+  if (root == NULL || root->sur_port == NULL)
+    return (void)(errno = EFAULT), -1;
+  return su_port_release(root->sur_port);
+}
+
+/** Obtain the root port from other thread. 
+ *
+ * @param root pointer to root object
+ *
+ * @retval 0 if successful
+ * @retval -1 upon an error
+ *
+ * @ERRORS
+ * @ERROR EFAULT 
+ * @NEW_1_12_7
+ */
+int su_root_obtain(su_root_t *root)
+{
+  if (root == NULL || root->sur_port == NULL)
+    return (void)(errno = EFAULT), -1;
+  return su_port_obtain(root->sur_port);
+}
+
+/**Check if a thread has obtained the root. 
+ *
+ * @param root a pointer to root object
+ *
+ * @retval 2 if current thread has obtained the root
+ * @retval 1 if an another thread  has obtained the root
+ * @retval 0 if no thread has obtained the root
+ * @retval -1 upon an error
+ *
+ * @NEW_1_12_7
+ */
+int su_root_has_thread(su_root_t *root)
+{
+  if (root == NULL || root->sur_port == NULL)
+    return (void)(errno = EFAULT), -1;
+  return su_port_has_thread(root->sur_port);
 }
 
 /* =========================================================================
@@ -966,16 +1008,10 @@ void su_msg_destroy(su_msg_r rmsg)
   assert(rmsg);
 
   if (rmsg[0]) {
-    /* su_port_t *port = rmsg[0]->sum_to->sut_port; */
-
-    /* su_port_incref(port, "su_msg_destroy"); */
     SU_TASK_ZAP(rmsg[0]->sum_to, su_msg_destroy);
     SU_TASK_ZAP(rmsg[0]->sum_from, su_msg_destroy);
 
-    su_free(NULL /* port->sup_home */, rmsg[0]);
-    /* SU_PORT_UNLOCK(port, su_msg_destroy); */
-
-    /* su_port_decref(port, "su_msg_destroy"); */
+    su_free(NULL, rmsg[0]);
   }
 
   rmsg[0] = NULL;
@@ -1068,8 +1104,13 @@ int su_msg_send(su_msg_r rmsg)
 
   if (rmsg[0]) {
     su_msg_t *msg = rmsg[0];
-    assert(msg->sum_to->sut_port);
-    return su_port_send(msg->sum_to->sut_port, rmsg);
+
+    if (msg->sum_to->sut_port) 
+      return su_port_send(msg->sum_to->sut_port, rmsg);
+
+    su_msg_destroy(rmsg);
+    errno = EINVAL;
+    return -1;
   }
 
   return 0;		

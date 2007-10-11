@@ -117,39 +117,6 @@ static char const *su_osx_port_name(su_port_t const *self)
   return "CFRunLoop";
 }
 
-su_port_vtable_t const su_osx_port_vtable[1] =
-  {{
-      /* su_vtable_size: */ sizeof su_osx_port_vtable,
-      su_pthread_port_lock,
-      su_pthread_port_unlock,
-      su_base_port_incref,
-      su_osx_port_decref,
-      su_base_port_gsource,
-      su_osx_port_send,
-      su_osx_port_register,
-      su_osx_port_unregister,
-      su_osx_port_deregister,
-      su_osx_port_unregister_all,
-      su_osx_port_eventmask,
-      su_osx_port_run,
-      su_osx_port_break,
-      su_osx_port_step,
-      su_pthread_port_own_thread,
-      su_base_port_add_prepoll,
-      su_base_port_remove_prepoll,
-      su_base_port_timers,
-      su_osx_port_multishot,
-      su_base_port_threadsafe,
-      su_base_port_yield,
-      su_osx_port_wait_events,
-      su_base_port_getmsgs,
-      su_base_port_getmsgs_from,
-      su_osx_port_name,
-      su_base_port_start_shared,
-      su_pthread_port_wait,
-      su_pthread_port_execute,
-    }};
-
 /*
  * Port is a per-thread reactor.  
  *
@@ -207,6 +174,37 @@ struct su_osx_port_s {
   su_wait_t       *sup_waits; 
 };
 
+
+su_port_vtable_t const su_osx_port_vtable[1] =
+  {{
+      /* su_vtable_size: */ sizeof su_osx_port_vtable,
+      su_pthread_port_lock,
+      su_pthread_port_unlock,
+      su_base_port_incref,
+      su_osx_port_decref,
+      su_base_port_gsource,
+      su_osx_port_send,
+      su_osx_port_register,
+      su_osx_port_unregister,
+      su_osx_port_deregister,
+      su_osx_port_unregister_all,
+      su_osx_port_eventmask,
+      su_osx_port_run,
+      su_osx_port_break,
+      su_osx_port_step,
+      su_pthread_port_thread,
+      su_base_port_add_prepoll,
+      su_base_port_remove_prepoll,
+      su_base_port_timers,
+      su_osx_port_multishot,
+      su_osx_port_wait_events,
+      su_base_port_getmsgs,
+      su_base_port_getmsgs_from,
+      su_osx_port_name,
+      su_base_port_start_shared,
+      su_pthread_port_wait,
+      su_pthread_port_execute,
+    }};
 
 /* XXX - mela static void su_osx_port_destroy(su_port_t *self); */
 

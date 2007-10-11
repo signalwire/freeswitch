@@ -129,7 +129,7 @@ su_inline int nua_handle_unref_by(nua_handle_t *nh, char const *by)
 
 #endif
 
-/** NUA handle. 
+/** @internal @brief NUA handle. 
  *
  */
 struct nua_handle_s 
@@ -197,6 +197,8 @@ int nh_is_special(nua_handle_t *nh)
   return nh == NULL || nh->nh_special;
 }
 
+typedef struct nua_event_frame_s nua_event_frame_t;
+
 extern char const nua_internal_error[];
 
 #define NUA_INTERNAL_ERROR 900, nua_internal_error
@@ -214,7 +216,7 @@ struct nua_s {
   nua_callback_f       nua_callback;
   nua_magic_t         *nua_magic;
 
-  nua_saved_event_t    nua_current[1];
+  nua_event_frame_t   *nua_current;
   nua_saved_event_t    nua_signal[1];
 
   /* Engine state flags */
@@ -307,7 +309,8 @@ nua_stack_signal_handler
   nua_stack_set_params, nua_stack_get_params,
   nua_stack_register, 
   nua_stack_invite, nua_stack_ack, nua_stack_cancel, 
-  nua_stack_bye, nua_stack_info, nua_stack_update, 
+  nua_stack_bye, nua_stack_info, nua_stack_update,
+  nua_stack_prack,
   nua_stack_options, nua_stack_publish, nua_stack_message, 
   nua_stack_subscribe, nua_stack_notify, nua_stack_refer,
   nua_stack_method;
@@ -336,8 +339,7 @@ nua_handle_t *nua_stack_incoming_handle(nua_t *nua,
 					sip_t const *sip,
 					int create_dialog);
 
-int nua_stack_init_handle(nua_t *nua, nua_handle_t *nh, 
-			  tag_type_t tag, tag_value_t value, ...);
+int nua_stack_init_handle(nua_t *nua, nua_handle_t *nh, tagi_t const *tags);
 
 enum nh_kind {
   nh_has_nothing,

@@ -57,9 +57,15 @@
  * Incoming REGISTER request.
  *
  * In order to receive #nua_i_register events, the application must enable
- * the REGISTER method with NUTAG_ALLOW() tag.
+ * the REGISTER method with NUTAG_ALLOW() tag, e.g.,
+ * @verbatim
+ * nua_set_params(nua;
+ *    NUTAG_APPL_METHOD("REGISTER"),
+ *    NUTAG_ALLOW("REGISTER"),
+ *    TAG_END());
+ * @endverbatim
  *
- * The nua_response() call responding to a REGISTER request must have
+ * The nua_response() call responding to a REGISTER request must include
  * NUTAG_WITH() (or NUTAG_WITH_THIS()/NUTAG_WITH_SAVED()) tag. Note that
  * a successful response to REGISTER @b MUST include the @Contact header
  * bound to the the AoR URI (in @To header).

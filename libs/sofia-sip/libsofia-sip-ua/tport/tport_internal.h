@@ -26,8 +26,9 @@
 /** Defined when <tport_internal.h> has been included. */
 #define TPORT_INTERNAL_H
 
-/**@file tport_internal.h
- * @brief Transport interface
+/**@internal
+ * @file tport_internal.h
+ * @brief Internal implementation of transport interface
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  *
@@ -89,7 +90,7 @@ struct sigcomp_compartment;
 
 typedef long unsigned LU; 	/* for printf() and friends */
 
-/** Transport parameters */
+/** @internal Transport parameters */
 typedef struct {
   unsigned tpp_mtu;		/**< Maximum packet size */
   unsigned tpp_idle;		/**< Allowed connection idle time. */
@@ -116,7 +117,7 @@ typedef struct {
 } tport_params_t;
 
 
-/** Transport object.
+/** @internal Transport object.
  *
  * A transport object can be used in three roles, to represent transport
  * list (aka master transport), to represent available transports (aka
@@ -225,7 +226,7 @@ struct tport_s {
   } tp_stats;
 };
 
-/** Primary structure */
+/** @internal Primary structure */
 struct tport_primary {
   tport_t             pri_primary[1];   /**< Transport part */
 #if DOXYGEN_ONLY
@@ -257,7 +258,7 @@ struct tport_primary {
   tport_params_t      pri_params[1];      /**< Transport parameters */
 };
 
-/** Master structure */
+/** @internal Master structure */
 struct tport_master {
   tport_t             mr_master[1];
 #if DOXYGEN_ONLY
@@ -320,7 +321,7 @@ struct tport_master {
 #endif
 };
 
-/** Virtual function table for transports */
+/** @internal Virtual function table for transports */
 struct tport_vtable
 {
   char const *vtp_name;
@@ -364,13 +365,13 @@ struct tport_vtable
 
 int tport_register_type(tport_vtable_t const *vtp);
 
-/** Test if transport is needs connect() before sending. */
+/** @internal Test if transport is needs connect() before sending. */
 su_inline int tport_is_connection_oriented(tport_t const *self)
 {
   return self->tp_conn_orient;
 }
 
-/** Test if transport involves connection. @NEW_1_12_5 */
+/** @internal Test if transport involves connection. @NEW_1_12_5. */
 su_inline int tport_has_connection(tport_t const *self)
 {
   return self->tp_has_connection;

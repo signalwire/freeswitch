@@ -22,7 +22,7 @@
  *
  */
 
-/**@ingroup su_root_ex
+/**@internal 
  * @file test_poll.c
  * Example code for <sofia-sip/su_wait.h>.
  *

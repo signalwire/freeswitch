@@ -22,9 +22,10 @@
  *
  */
 
-/**@IFILE validator.c  
+/**@internal @IFILE validator.c  
  *
- * SIP parser tester. This uses output
+ * SIP parser tester. This uses output from tport dump where messages are
+ * separated with Control-K ('\v') from each other.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
  *

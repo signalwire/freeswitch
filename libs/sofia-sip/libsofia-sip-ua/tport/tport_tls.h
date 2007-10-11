@@ -25,12 +25,14 @@
 #ifndef TPORT_TLS_H
 /** Defined when <tport_tls.h> has been included. */
 #define TPORT_TLS_H
-/**@IFILE tport_tls.h
- * @brief TLS interface
- * 
+/**@internal 
+ * @file tport_tls.h
+ * @brief Internal TLS interface
+ *
  * @author Mikko Haataja <ext-Mikko.A.Haataja@nokia.com>
  *
  * Copyright 2001, 2002 Nokia Research Center.  All rights reserved.
+ *
  */
 
 #ifndef SU_TYPES_H

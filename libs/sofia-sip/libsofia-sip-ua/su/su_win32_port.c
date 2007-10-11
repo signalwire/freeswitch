@@ -25,7 +25,7 @@
 /**@ingroup su_wait
  * @CFILE su_win32_port.c
  *
- * Port implementation using WSAEVENTs
+ * Port implementation using WSAEVENTs. Incomplete.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @author Kai Vehmanen <kai.vehmanen@nokia.com>
@@ -127,13 +127,11 @@ su_port_vtable_t const su_wsevent_port_vtable[1] =
       su_base_port_run,
       su_base_port_break,
       su_base_port_step,
-      su_pthread_port_own_thread,
+      su_pthread_port_thread,
       su_base_port_add_prepoll,
       su_base_port_remove_prepoll,
       su_base_port_timers,
       su_wsevent_port_multishot,
-      su_base_port_threadsafe,
-      su_base_port_yield,
       su_wsevent_port_wait_events,
       su_base_port_getmsgs,
       su_base_port_getmsgs_from,

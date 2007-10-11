@@ -338,6 +338,8 @@ int main(int argc, char *argv[])
 
   retval |= test_nua_params(ctx); SINGLE_FAILURE_CHECK();
 
+  retval |= test_nua_destroy(ctx); SINGLE_FAILURE_CHECK();
+
   retval |= test_nua_init(ctx, o_iproxy, o_proxy, o_inat,
 			  TESTNATTAG_SYMMETRIC(o_inat_symmetric),
 			  TESTNATTAG_LOGGING(o_inat_logging),

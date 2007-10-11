@@ -51,3 +51,8 @@ include $(top_srcdir)/rules/lcov.am
 endif
 
 .PHONY = $(PHONY)
+
+CLEANFILES = docs/*.doxytags
+
+distclean-local:
+	-rm -rf docs/html

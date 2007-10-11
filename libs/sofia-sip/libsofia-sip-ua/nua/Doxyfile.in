@@ -32,7 +32,7 @@ ALIASES		    += NUA_EVENT="@var nua_event_e::"
 ALIASES		    += END_NUA_EVENT="@par &nbsp;"
 
 ALIASES             += \
-  NUA_HPARAM_CALLS="nua_invite(), nua_respond(), nua_ack(), nua_prack(), nua_update(), nua_info(), nua_bye(), nua_options(), nua_message(), nua_register(), nua_publish(), nua_refer(),nua_subscribe(), nua_notify(), nua_refer(), nua_notifier()"
+  NUA_HPARAM_CALLS="nua_method(), nua_respond(), nua_invite(), nua_ack(), nua_cancel(), nua_prack(), nua_update(), nua_info(), nua_bye(), nua_options(), nua_message(), nua_register(), nua_unregister(), nua_publish(), nua_refer(), nua_subscribe(), nua_unsubscribe(), nua_notify(), nua_notifier()"
 
 VERBATIM_HEADERS     = NO
 

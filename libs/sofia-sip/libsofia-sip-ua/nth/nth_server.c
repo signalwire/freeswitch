@@ -22,7 +22,7 @@
  *
  */
 
-/**@file nth_server.c
+/**@internal @file nth_server.c
  * @brief HTTP server.
  * 
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>

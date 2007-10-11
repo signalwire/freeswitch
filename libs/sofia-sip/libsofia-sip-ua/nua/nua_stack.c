@@ -414,6 +414,9 @@ void nua_stack_signal(nua_t *nua, su_msg_r msg, nua_event_data_t *e)
   case nua_r_info:
     error = nua_stack_info(nua, nh, event, tags);
     break;
+  case nua_r_prack:
+    error = nua_stack_prack(nua, nh, event, tags);
+    break;
   case nua_r_update:
     error = nua_stack_update(nua, nh, event, tags);
     break;
@@ -754,10 +757,8 @@ void nh_destroy(nua_t *nua, nua_handle_t *nh)
  * @retval -1 upon an error
  * @retval 0 when successful
  */
-int nua_stack_init_handle(nua_t *nua, nua_handle_t *nh,
-			  tag_type_t tag, tag_value_t value, ...)
+int nua_stack_init_handle(nua_t *nua, nua_handle_t *nh, tagi_t const *tags)
 {
-  ta_list ta;
   int retval = 0;
 
   if (nh == NULL)
@@ -765,12 +766,8 @@ int nua_stack_init_handle(nua_t *nua, nua_handle_t *nh,
 
   assert(nh != nua->nua_dhandle);
 
-  ta_start(ta, tag, value);
-
-  if (nua_stack_set_params(nua, nh, nua_i_error, ta_args(ta)) < 0)
+  if (nua_stack_set_params(nua, nh, nua_i_error, tags) < 0)
     retval = -1;
-
-  ta_end(ta);
 
   if (retval || nh->nh_init) /* Already initialized? */
     return retval;
@@ -814,7 +811,7 @@ nua_handle_t *nua_stack_incoming_handle(nua_t *nua,
 		 SIPTAG_FROM(from), /* Remote AoR */
 		 TAG_END());
 
-  if (nua_stack_init_handle(nh->nh_nua, nh, TAG_END()) < 0)
+  if (nua_stack_init_handle(nh->nh_nua, nh, NULL) < 0)
     nh_destroy(nua, nh), nh = NULL;
 
   if (nh && create_dialog) {
@@ -1672,7 +1669,9 @@ int nua_base_server_report(nua_server_request_t *sr, tagi_t const *tags)
 
 /* ---------------------------------------------------------------------- */
 
-/** @class nua_client_request
+/**@internal
+ *
+ * @class nua_client_request
  *
  * Each handle has a queue of client-side requests; if a request is pending,
  * a new request from API is added to the queue. After the request is
@@ -1944,7 +1943,7 @@ int nua_client_init_request(nua_client_request_t *cr)
   cr->cr_offer_recv = 0, cr->cr_answer_sent = 0;
   cr->cr_terminated = 0, cr->cr_graceful = 0;
 
-  nua_stack_init_handle(nua, nh, TAG_NEXT(cr->cr_tags));
+  nua_stack_init_handle(nua, nh, cr->cr_tags);
 
   if (cr->cr_method == sip_method_cancel) {
     if (cr->cr_methods->crm_init) {

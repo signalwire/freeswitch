@@ -137,7 +137,7 @@ sip_response_terminates_dialog().
 /* ---------------------------------------------------------------------- */
 /* Session event usage */
 
-/** Session-related state */
+/** @internal @brief Session-related state. */
 typedef struct nua_session_usage
 {
   enum nua_callstate ss_state;		/**< Session status (enum nua_callstate) */
@@ -1591,7 +1591,11 @@ static int nua_prack_client_request(nua_client_request_t *cr,
     else if (answer_sent)
       ss->ss_oa_sent = Answer;
 
-    if (!cr->cr_restarting) /* Restart logic calls nua_prack_client_report */
+    if (cr->cr_restarting) 
+      /* Restart logic calls nua_prack_client_report */;
+    else if (!cr->cr_auto && (!offer_sent || !answer_sent))
+      /* Suppose application know it called nua_prack() */;
+    else
       signal_call_state_change(nh, ss, status, phrase, ss->ss_state);
   }
 

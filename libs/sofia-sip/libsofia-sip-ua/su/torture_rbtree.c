@@ -22,7 +22,7 @@
  *
  */
 
-/**
+/**@internal
  * @file torture_rbtree.c
  * @brief Test red-black tree
  *

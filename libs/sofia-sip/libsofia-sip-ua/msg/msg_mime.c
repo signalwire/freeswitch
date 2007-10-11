@@ -67,36 +67,6 @@ size_t memcspn(const void *mem, size_t memlen,
 /** Protocol version of MIME */
 char const msg_mime_version_1_0[] = "MIME/1.0";
 
-/* Internally used version of msg_header_t */
-union msg_mime_u
-{
-  msg_common_t    sh_common[1];
-  struct {
-    msg_common_t  shn_common;
-    msg_header_t *shn_next;
-  }               sh_header_next[1];
-
-  msg_multipart_t           sh_multipart[1];
-
-  msg_accept_t              sh_accept[1];
-  msg_accept_any_t          sh_accept_any[1];
-  msg_accept_charset_t      sh_accept_charset[1];
-  msg_accept_encoding_t     sh_accept_encoding[1];
-  msg_accept_language_t     sh_accept_language[1];
-  msg_content_disposition_t sh_content_disposition[1];
-  msg_content_encoding_t    sh_content_encoding[1];
-  msg_content_id_t          sh_content_id[1];
-  msg_content_language_t    sh_content_language[1];
-  msg_content_length_t      sh_content_length[1];
-  msg_content_location_t    sh_content_location[1];
-  msg_content_type_t        sh_content_type[1];
-  msg_mime_version_t        sh_mime_version[1];
-  msg_warning_t             sh_warning[1];
-  msg_unknown_t             sh_unknown[1];
-  msg_separator_t           sh_separator[1];
-  msg_payload_t             sh_payload[1];
-};
-
 #include <sofia-sip/msg_parser.h>
 #include <sofia-sip/msg_mime_protos.h>
 

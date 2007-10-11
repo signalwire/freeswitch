@@ -114,6 +114,7 @@ scope int prefix##free(void *, heaptype *); \
 scope int prefix##is_full(heaptype const); \
 scope size_t prefix##size(heaptype const); \
 scope size_t prefix##used(heaptype const); \
+scope void prefix##sort(heaptype); \
 scope int prefix##add(heaptype, type); \
 scope type prefix##remove(heaptype, size_t); \
 scope type prefix##get(heaptype, size_t)
@@ -126,6 +127,7 @@ scope type prefix##get(heaptype, size_t)
  * - prefix ## is_full(heap)
  * - prefix ## size(heap)
  * - prefix ## used(heap)
+ * - prefix ## sort(heap)
  * - prefix ## add(heap, entry)
  * - prefix ## remove(heap, index)
  * - prefix ## get(heap, index)
@@ -240,35 +242,32 @@ scope type prefix##remove(heaptype h, size_t index) \
   struct prefix##priv { size_t _size, _used; type _heap[1];}; \
   struct prefix##priv *_priv = *(void **)&h; \
   type *heap = _priv->_heap - 1; \
-  type retval; \
+  type retval[1]; \
   type e; \
  \
   size_t top, left, right, move; \
- \
-  move = _priv->_used; \
  \
   if (index - 1 >= _priv->_used) \
     return (null); \
  \
   move = _priv->_used--; \
-  retval = heap[top = index]; \
+  set(retval, 0, heap[index]); \
  \
-  for (;;) { \
+  for (top = index;;index = top) { \
     left = 2 * top; \
     right = 2 * top + 1; \
  \
-    if (right >= move) \
+    if (left >= move) \
       break; \
-    if (less(heap[right], heap[left])) \
+    if (right < move && less(heap[right], heap[left])) \
       top = right; \
     else \
       top = left; \
     set(heap, index, heap[top]); \
-    index = top; \
   } \
  \
   if (index == move) \
-    return retval; \
+    return *retval; \
  \
   e = heap[move]; \
   for (; index > 1; index = top) { \
@@ -280,7 +279,7 @@ scope type prefix##remove(heaptype h, size_t index) \
  \
   set(heap, index, e); \
  \
-  return retval; \
+  return *retval; \
 } \
  \
 scope \
@@ -309,6 +308,25 @@ size_t prefix##used(heaptype const h) \
   struct prefix##priv { size_t _size, _used; type _heap[1];}; \
   struct prefix##priv *_priv = *(void **)&h; \
   return _priv ? _priv->_used : 0; \
+} \
+scope int prefix##_less(void *h, size_t a, size_t b) \
+{ \
+  type *_heap = h; return less(_heap[a], _heap[b]);	\
+} \
+scope void prefix##_swap(void *h, size_t a, size_t b) \
+{ \
+  type *_heap = h; type _swap = _heap[a]; \
+  set(_heap, a, _heap[b]); set(_heap, b, _swap); \
+} \
+void su_smoothsort(void *base, size_t r0, size_t N,		\
+		   int (*less)(void *base, size_t a, size_t b), \
+		   void (*swap)(void *base, size_t a, size_t b));	\
+scope void prefix##sort(heaptype h) \
+{ \
+  struct prefix##priv { size_t _size, _used; type _heap[1];}; \
+  struct prefix##priv *_priv = *(void **)&h; \
+  if (_priv) \
+    su_smoothsort(_priv->_heap - 1, 1, _priv->_used, prefix##_less, prefix##_swap); \
 } \
 extern int const prefix##dummy_heap
 

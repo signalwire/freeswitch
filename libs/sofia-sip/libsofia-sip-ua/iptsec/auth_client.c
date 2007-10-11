@@ -205,15 +205,17 @@ int ca_challenge(auth_client_t *ca,
  * processed.
  *
  * @bug
- * The result can be quite unexpected if there are more than one
- * authenticator with the given type (specified by @a crcl). In principle,
- * SIP allows more than one challenge for a single request.
+ * In principle, SIP allows more than one challenge for a single request. 
+ * For example, there can be multiple proxies that each challenge the
+ * client. The result of storing authentication info can be quite unexpected
+ * if there are more than one authenticator with the given type (specified
+ * by @a credential_class).
  *
  * @retval number of challenges to updated
  * @retval 0 when there was no challenge to update
  * @retval -1 upon an error
  *
- * @NEW_1_12_5
+ * @NEW_1_12_5.
  */
 int auc_info(auth_client_t **auc_list,
 	     msg_auth_info_t const *info,
@@ -525,7 +527,7 @@ int ca_clear_credentials(auth_client_t *ca)
  * @retval 1 when authorization can proceed
  * @retval 0 when there is not enough credentials
  *
- * @NEW_1_12_5
+ * @NEW_1_12_5.
  */
 int auc_has_authorization(auth_client_t **auc_list)
 {

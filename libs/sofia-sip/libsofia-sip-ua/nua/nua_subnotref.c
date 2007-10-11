@@ -737,7 +737,10 @@ int nua_notify_server_report(nua_server_request_t *sr, tagi_t const *tags)
  *    #nua_i_notify
  *
  * @sa #nua_r_refer, NUTAG_SUBSTATE(), NUTAG_REFER_EVENT(),#nua_i_refer,
- * @RFC3515, @ReferTo, @RFC3892, @ReferredBy
+ * @RFC3515, @ReferTo, SIPTAG_REFER_TO(), SIPTAG_REFER_TO_STR(),
+ * @RFC3892, @ReferredBy, SIPTAG_REFERRED_BY(), SIPTAG_REFERRED_BY_STR(),
+ * @RFC3891, @Replaces, SIPTAG_REPLACES(), SIPTAG_REPLACES_STR(),
+ * @RFC4488, @ReferSub, SIPTAG_REFER_SUB(), SIPTAG_REFER_SUB_STR()
  */
 
 /**@NUA_EVENT nua_r_refer
@@ -758,7 +761,7 @@ int nua_notify_server_report(nua_server_request_t *sr, tagi_t const *tags)
  *                NUTAG_SUBSTATE()
  *
  * @sa nua_refer(), NUTAG_SUBSTATE(), #nua_i_refer,
- * @RFC3515, @ReferTo, @RFC3892, @ReferredBy
+ * @RFC3515, @RFC4488, @ReferSub
  *
  * @END_NUA_EVENT
  */

@@ -17,7 +17,7 @@ INCLUDES = 	-I$(srcdir)/../bnf -I../bnf \
 
 noinst_LTLIBRARIES = 	liburl.la
 
-check_PROGRAMS = 	torture_url test_urlmap
+check_PROGRAMS = 	torture_url
 
 # ----------------------------------------------------------------------
 # Rules for building the targets
@@ -37,18 +37,22 @@ LDADD = 		liburl.la \
 			../ipt/libipt.la \
 			../su/libsu.la
 
-test_urlmap_SOURCES = 	urlmap.c urlmap.h
-test_urlmap_CFLAGS =	$(CFLAGS) -DTEST_URLMAP=1
-
 # ----------------------------------------------------------------------
 # Install and distribution rules
 
 EXTRA_DIST =		url.docs $(BUILT_SOURCES)
 
 # ----------------------------------------------------------------------
+# urlmap is not used
+#check_PROGRAMS +=	test_urlmap
+#test_urlmap_SOURCES = 	urlmap.c urlmap.h
+#test_urlmap_CFLAGS =	$(CFLAGS) -DTEST_URLMAP=1
+EXTRA_DIST +=		urlmap.c urlmap.h
+
+# ----------------------------------------------------------------------
 # Tests
 
-TESTS = 		torture_url test_urlmap
+TESTS = 		torture_url
 
 # ----------------------------------------------------------------------
 # Sofia specific rules

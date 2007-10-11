@@ -107,7 +107,7 @@ typedef msg_time_t sip_time_t;
 /** Latest time that can be expressed with #sip_time_t. @HIDE */
 #define SIP_TIME_MAX ((sip_time_t)MSG_TIME_MAX)
 
-/** SIP message object. */
+/** Structure for accessing parsed SIP headers. */
 typedef struct sip_s                sip_t;
 
 /** Any SIP header - union of all possible SIP headers. */
@@ -409,7 +409,7 @@ struct sip_accept_s
 /**@ingroup sip_allow
  * @brief Structure for @Allow header field.
  *
- * @NEW_1_12_5 (before used struct msg_list_s with @Allow).
+ * @NEW_1_12_5. (Before used struct msg_list_s with @Allow).
  */
 struct sip_allow_s
 {
@@ -417,7 +417,7 @@ struct sip_allow_s
   msg_list_t        *k_next;	    /**< Link to next */
   msg_param_t       *k_items;	    /**< List of allowed items */
   uint32_t           k_bitmap;	    /**< Bitmap of allowed methods. 
-				       @NEW_1_12_5 */
+				       @NEW_1_12_5. */
 };
 
 /**@ingroup sip_authentication_info
@@ -573,7 +573,7 @@ struct sip_min_expires_s
 };
 
 /**@ingroup sip_rack
- * @brief Structure for @b Rack header.
+ * @brief Structure for @RAck header.
  */
 struct sip_rack_s
 {

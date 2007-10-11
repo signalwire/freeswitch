@@ -1,13 +1,11 @@
-Description of Adding a SIP Header to Sofia SIP
-===============================================
+Adding a SIP Header to Sofia SIP
+================================
 
-by Pekka Pessi (2002-08-16, updated 2006-10-03)
+by Pekka Pessi (2002-08-16, last updated 2007-09-19)
 
-There are three ways to extend the Sofia SIP parser, including a standard
-header in sip_t structure, including a standard header in extra headers or
-putting the extension headers into a separate library.
-
-Probalem with extending #sip_t is that it breaks binary compatibility.
+There are two recommended ways to extend the Sofia SIP parser, including a
+standard header in extra headers or putting the extension headers into a
+separate library.
 
 In the text below, we use "Example" header as our example with following
 ABNF:
@@ -18,30 +16,18 @@ ABNF:
 IF YOUR HEADER IS A STANDARD ONE
 --------------------------------
 
-  * In <sip.h>, add:
+  * In <sofia-sip/sip_extra.h>, add:
 
   - Add typedef to the header structure.
 
-    The typedefs to ordinary headers are in more or less alphabetic
-    order after typedef of sip_unknown_t. You should add a typedef line
-    like this:
+    You should add a typedef line like this:
 
      typedef struct sip_example_s sip_example_t;
 	
     Note that the typedefs are documented together with the
     implementation in the .c file.
 
-  - Add field to the sip_t structure (struct sip_s)
-    - Remember to add a comment containing the header name
-      after field for benefit of the AWK script autmatically generating
-      boilerplate functions and macros:
-      sip_example_t *sip_example; /**< Example */
-    - The AWK script msg_parser.awk automatically creates the default
-      prototypes and tags for the newly created header when the entry in
-      sip_t structure is formatted like to the example above. 
-      It will complain about mismatches between header name and field name.
-
-  * Add the actual header structure:
+ - Add the actual header structure:
 
     The header structure would look like below. The first field MUST be a
     sip_common_t structure, second field MUST be a pointer to next header
@@ -60,6 +46,21 @@ IF YOUR HEADER IS A STANDARD ONE
          sip_error_t   *ex_next;	    /**< Link to next (dummy). */
          unsigned long  ex_value;	    /**< Value of example. */
        };
+
+  * Add entry to sip_extra_headers.txt:
+   - In this case:
+     example @NEW_2_0 /* Example header */
+   - The first is the base C name used for functions and types related to 
+     the type. The AWK script msg_parser.awk automatically creates the
+     default prototypes and tags for the newly created header. It will
+     complain about mismatches between header name and the base name.
+
+   - If the entry is before #### DEFAULT HEADER LIST ENDS HERE #### 
+     the new header is added to the default parser
+   - If after, the new header is added only to the extended parser.
+
+   - The extended parser will be used after call to 
+     sip_update_default_mclass(NULL)
 
   * Write parsing tests for your new headers in torture_sip.c:
 
@@ -86,8 +87,10 @@ IF YOUR HEADER IS A STANDARD ONE
   * Run "make check" after you are ready. Really.
 
 
-IF YOUR HEADERS ARE NON-STANDARD
---------------------------------
+IF YOUR HEADERS ARE COMPLETELY NON-STANDARD
+-------------------------------------------
+
+  * Add a separate library package for them
 
     - There is an example package sofia-sip-2543.tar.gz, available from
       sofia-sip.sourceforge.net
@@ -147,6 +150,3 @@ struct sip_example_dummy_structure {
 
 #endif /** !defined(SIP_EXAMPLE_H) */
 --->8---->8---->8---->8---->8---->8---->8---->8---->8---->8---->8---->8---
-
-
-

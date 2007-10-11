@@ -43,7 +43,7 @@ SOFIA_BEGIN_DECLS
 /**@page tagarg Tagarg Functions
  *
  * A @em tagarg function may be called with a varying number of tagged
- * arguments.  The include file <su_tagarg.h> declares a type ta_list and
+ * arguments.  The include file <sofia-sip/su_tagarg.h> declares a type ta_list and
  * defines four macros (ta_start(), ta_args(), ta_tags() and ta_end()) for
  * accessing the argument list.
  *
@@ -66,10 +66,11 @@ SOFIA_BEGIN_DECLS
  * TAG_NULL() or TAG_NEXT().
  */
 
-/**Object for accessing tagged argument lists.
+/**Structure for accessing tagged argument lists.
  *
- * The called function must declare an object of type ta_list which is
- * used by the macros ta_start(), ta_args(), ta_tags(), and ta_end().
+ * The function called with tagged arguments must declare an object of type
+ * ta_list which is used by the macros ta_start(), ta_args(), ta_tags(), and
+ * ta_end().
  *
  * If a tagged list is not finished with TAG_END(), TAG_NULL(), or
  * TAG_NEXT() items, random errors may occur.

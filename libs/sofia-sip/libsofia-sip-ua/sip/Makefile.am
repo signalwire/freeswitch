@@ -148,4 +148,5 @@ sofia-sip/sip_extra.h: ${srcdir}/sofia-sip/sip_extra.h.in ${EXTRA}
 		PACKAGE_VERSION="${PACKAGE_VERSION}" \
 		TEMPLATE1=${srcdir}/sofia-sip/sip_hclasses.h.in \
 		TEMPLATE2=${srcdir}/sofia-sip/sip_protos.h.in \
+		TEMPLATE3=${srcdir}/sofia-sip/sip_tag.h.in \
 		TEMPLATE=${srcdir}/sofia-sip/sip_extra.h.in ${EXTRA}

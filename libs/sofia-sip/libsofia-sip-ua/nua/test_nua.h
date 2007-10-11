@@ -327,6 +327,7 @@ int test_nua_init(struct context *ctx,
 int test_deinit(struct context *ctx);
 
 int test_nua_api_errors(struct context *ctx);
+int test_nua_destroy(struct context *ctx);
 int test_stack_errors(struct context *ctx);
 int test_tag_filter(void);
 int test_nua_params(struct context *ctx);

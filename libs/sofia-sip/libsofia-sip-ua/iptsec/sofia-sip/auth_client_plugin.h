@@ -91,12 +91,12 @@ struct auth_client_plugin
   int (*auc_info)(auth_client_t *ca, msg_auth_info_t const *ai);
 
 #if SOFIA_EXTEND_AUTH_CLIENT
-  /** Clear credentials (user/pass). @NEW_1_12_6 */
+  /** Clear credentials (user/pass). @NEW_1_12_6. */
   int (*auc_clear)(auth_client_t *ca);
 #endif
 };
 
-/** Check if authentication client has been extended. @NEW_1_12_6 */
+/** Check if authentication client has been extended. @NEW_1_12_6. */
 #define AUTH_CLIENT_IS_EXTENDED(ca)					\
   ((ca)->ca_auc->auc_plugin_size >					\
    (int)offsetof(auth_client_plugin_t, auc_clear)			\

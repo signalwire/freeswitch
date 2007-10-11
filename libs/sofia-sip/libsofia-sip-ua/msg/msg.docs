@@ -142,7 +142,7 @@ separator and the message body are all in their own fragment structure. The
 fragments form a dual-linked list known as @e fragment @e chain as shown in
 the above figure. The memory buffers for the message, the fragment chain,
 and a whole lot of other stuff is held by the generic message type, #msg_t,
-defined in <msg.h>. The internal structure of #msg_t is known only within @b
+defined in <sofia-sip/msg.h>. The internal structure of #msg_t is known only within @b
 msg module and it is opaque to other modules.
 
 The @b msg parser engine also drives the reverse process, invoking the
@@ -262,7 +262,7 @@ header members that are also found in the beginning of a header
 structure. The @e sip_size indicates the size of the structure - the
 application can extend the parser and #sip_t structure beyond the
 original size. The @e sip_flags contains various flags used during the
-parsing and printing process. They are documented in the <msg.h>. These
+parsing and printing process. They are documented in the <sofia-sip/msg.h>. These
 boilerplate members are followed by the pointers to various message
 elements and headers.
 

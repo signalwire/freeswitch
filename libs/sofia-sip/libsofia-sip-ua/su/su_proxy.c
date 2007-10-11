@@ -22,7 +22,7 @@
  *
  */
 
-/**@ingroup su_root_ex
+/**@internal @ingroup su_root_ex
  *
  * @file su_proxy.c 
  *

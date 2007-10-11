@@ -863,11 +863,20 @@ static int response_to_keepalive_options(outbound_t *ob,
     loglevel = 1;		/* XXX ... for now */
 
     if (loglevel >= SU_LOG->log_level) {
-      su_llog(SU_LOG, loglevel,       
-	      "outbound(%p): %s <" URL_PRINT_FORMAT ">\n",
-	      (void *)ob->ob_owner,
-	      failed ? "FAILED to validate" : "validated",
-	      URL_PRINT_ARGS(ob->ob_rcontact->m_url));
+      sip_contact_t const *m = ob->ob_rcontact;
+
+      if  (m)
+	su_llog(SU_LOG, loglevel,       
+		"outbound(%p): %s <" URL_PRINT_FORMAT ">\n",
+		(void *)ob->ob_owner,
+		failed ? "FAILED to validate" : "validated",
+		URL_PRINT_ARGS(m->m_url));
+      else
+	su_llog(SU_LOG, loglevel,       
+		"outbound(%p): %s registration\n",
+		(void *)ob->ob_owner,
+		failed ? "FAILED to validate" : "validated");
+
       if (failed)
 	su_llog(SU_LOG, loglevel, "outbound(%p): FAILED with %u %s\n", 
 		(void *)ob->ob_owner, status, phrase);
@@ -1101,6 +1110,8 @@ int outbound_set_contact(outbound_t *ob,
       previous = ob->ob_rcontact;
   }
   else if (application_contact) {
+    rcontact = sip_contact_dup(home, application_contact);
+
     if (!ob->ob_rcontact || 
 	url_cmp_all(ob->ob_rcontact->m_url, application_contact->m_url)) {
       contact_uri_changed = 1;

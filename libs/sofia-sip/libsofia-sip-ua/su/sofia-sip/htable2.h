@@ -31,7 +31,7 @@
  * Hash tables templates, take 2.
  *
  * Note: this version can handle structures as entries, and it can be used
- * without <su_alloc.h>.
+ * without <sofia-sip/su_alloc.h>.
  * 
  * This file contain a hash table template for C.  The hash tables are
  * resizeable, and they usually contain pointers to entries.  The

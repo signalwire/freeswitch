@@ -49,7 +49,7 @@ SOFIA_BEGIN_DECLS
 #endif
 
 #define TAG_TYPEDEF(t, type) \
-  {{ TAG_NAMESPACE, #t, type ## _tag_class }}
+  {{ TAG_NAMESPACE, #t, type ## _tag_class, 0 }}
 
 #define INTTAG_TYPEDEF(t)      TAG_TYPEDEF(t, int)
 #define UINTTAG_TYPEDEF(t)     TAG_TYPEDEF(t, uint)
@@ -63,7 +63,7 @@ SOFIA_BEGIN_DECLS
 #define NSTAG_TYPEDEF(t)       TAG_TYPEDEF(t, ns)
 
 struct tag_class_s {
-  int             tc_size;
+  int             tc_size;	/**< Size of the tag_class_t structure */
   tagi_t const *(*tc_next)(tagi_t const *t);
   size_t        (*tc_len)(tagi_t const *t);
   tagi_t       *(*tc_move)(tagi_t *dst, tagi_t const *src);

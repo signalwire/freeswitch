@@ -22,7 +22,7 @@
  *
  */
 
-/**@file nua.c High-Level User Agent Library - "nua" Implementation.
+/**@internal @file nua.c High-Level User Agent Library - "nua" Implementation.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @author Kai Vehmanen <Kai.Vehmanen@nokia.com>
@@ -93,19 +93,28 @@ su_log_t nua_log[] = { SU_LOG_INIT("nua", "NUA_DEBUG", SU_DEBUG) };
  * @param magic           Pointer to callback context
  * @param tag, value, ... List of tagged parameters
  *
- * @retval !=NULL a pointer to a @nua stack object \n
+ * @retval !=NULL a pointer to a @nua stack object
  * @retval NULL upon an error
  *
  * @par Related tags:
- *     NUTAG_PROXY()            \n
- *     NUTAG_URL()              \n
- *     NUTAG_SIPS_URL()         \n
- *     NUTAG_SIP_PARSER()       \n
- *     NUTAG_CERTIFICATE_DIR()  \n
- *     all tags listed in nua_set_params(), \n
- *     all NTATAG_* are passed to NTA listed in <sofia-sip/nta_tag.h> \n
- *     all tport tags listed in <sofia-sip/tport_tag.h> \n
- *     STUNTAG_DOMAIN(), STUNTAG_SERVER() \n
+ * - NUTAG_PROXY(), giving the URI of the outbound proxy
+ *   (but see also NUTAG_INITIAL_ROUTE()).
+ * - NUTAG_URL() (and NUTAG_SIPS_URL(), listing URIs describing
+ *   transports)
+ * - NUTAG_CERTIFICATE_DIR(), specifying the location of the 
+ *   root and client/server certificate files
+ * - NUTAG_SIP_PARSER(), providing customized parser used to 
+ *   parse received SIP messages
+ * - All parameter tags, listed with nua_set_params()
+ * - All NTATAG_* are passed to NTA documented in <sofia-sip/nta_tag.h>:
+ *   see NTATAG_EXTRA_100(), 
+ * - All tport tags are passed to tport. 
+ *   They are documented in <sofia-sip/tport_tag.h>
+ * - All SOATAG_* are passed to the default SOA (media session) object which
+ *   is created by nua_create() unless NUTAG_MEDIA_ENABLE(0) is included in
+ *   the tag list
+ * - STUN tags STUNTAG_DOMAIN(), STUNTAG_SERVER().
+ *   STUN is deprecated, however.
  *
  * @note
  * From the @VERSION_1_12_2 all the nua_set_params() tags are processed.
@@ -186,6 +195,13 @@ void nua_shutdown(nua_t *nua)
   nua_signal(nua, NULL, NULL, 1, nua_r_shutdown, 0, NULL, TAG_END());
 }
 
+/** @internal Linked stack frames from nua event callback */
+struct nua_event_frame_s {
+  nua_event_frame_t *nf_next;
+  nua_t *nf_nua;
+  nua_saved_event_t nf_saved[1];
+};
+
 /** Destroy the @nua stack.
  *
  * Before calling nua_destroy() the application
@@ -211,12 +227,21 @@ void nua_destroy(nua_t *nua)
   enter;
 
   if (nua) {
+    nua_event_frame_t *nf;
+
     if (!nua->nua_shutdown_final) {
       SU_DEBUG_0(("nua_destroy(%p): FATAL: nua_shutdown not completed\n",
 		  (void *)nua));
       assert(nua->nua_shutdown);
       return;
     }
+
+    nua->nua_callback = NULL;
+
+    for (nf = nua->nua_current; nf; nf = nf->nf_next) {
+      nf->nf_nua = NULL;
+    }
+    nua->nua_current = NULL;
 
     su_task_deinit(nua->nua_server);
     su_task_deinit(nua->nua_client);
@@ -975,8 +1000,9 @@ void nua_event(nua_t *root_magic, su_msg_r sumsg, event_t *e)
 {
   nua_t *nua;
   nua_handle_t *nh = e->e_nh;
-
   enter;
+
+  e->e_nh = NULL;
 
   if (nh) {
     if (!nh->nh_ref_by_user && nh->nh_valid) {
@@ -1004,40 +1030,40 @@ void nua_event(nua_t *root_magic, su_msg_r sumsg, event_t *e)
 
   nua = nh->nh_nua; assert(nua);
 
-  if (e->e_event == nua_r_shutdown && e->e_status >= 200)
-    nua->nua_shutdown_final = 1;
-
-  if (!nua->nua_callback)
-    return;
-
   if (NH_IS_DEFAULT(nh))
     nh = NULL;
 
-  su_msg_save(nua->nua_current, sumsg);
+  if (e->e_event == nua_r_shutdown && e->e_status >= 200)
+    nua->nua_shutdown_final = 1;
 
-  e->e_nh = NULL;
+  if (nua->nua_callback) {
+    nua_event_frame_t frame[1];
+    
+    su_msg_remove_refs(sumsg);    /* Remove references to tasks */
+    su_msg_save(frame->nf_saved, sumsg);
+    frame->nf_nua = nua;
+    frame->nf_next = nua->nua_current, nua->nua_current = frame;
 
-  nua->nua_callback(e->e_event, e->e_status, e->e_phrase,
-		    nua, nua->nua_magic,
-		    nh, nh ? nh->nh_magic : NULL,
-		    e->e_msg ? sip_object(e->e_msg) : NULL,
-		    e->e_tags);
+    nua->nua_callback(e->e_event, e->e_status, e->e_phrase,
+		      nua, nua->nua_magic,
+		      nh, nh ? nh->nh_magic : NULL,
+		      e->e_msg ? sip_object(e->e_msg) : NULL,
+		      e->e_tags);
 
-  if (nh && !NH_IS_DEFAULT(nh) && nua_handle_unref(nh)) {
+    su_msg_destroy(frame->nf_saved);
+
+    if (frame->nf_nua == NULL)
+      return;
+    nua->nua_current = frame->nf_next;
+  }
+
+  if (nh && nua_handle_unref(nh)) {
 #if HAVE_NUA_HANDLE_DEBUG
     SU_DEBUG_0(("nua(%p): freed by application\n", (void *)nh));
 #else
     SU_DEBUG_9(("nua(%p): freed by application\n", (void *)nh));
 #endif
   }
-
-  if (!su_msg_is_non_null(nua->nua_current))
-    return;
-
-  if (e->e_msg)
-    msg_destroy(e->e_msg), e->e_msg = NULL;
-
-  su_msg_destroy(nua->nua_current);
 }
 
 /** Get current request message. @NEW_1_12_4.
@@ -1048,7 +1074,9 @@ void nua_event(nua_t *root_magic, su_msg_r sumsg, event_t *e)
  */
 msg_t *nua_current_request(nua_t const *nua)
 {
-  return nua && nua->nua_current ? su_msg_data(nua->nua_current)->e_msg : NULL;
+  if (nua && nua->nua_current && su_msg_is_non_null(nua->nua_current->nf_saved))
+    return su_msg_data(nua->nua_current->nf_saved)->e_msg;
+  return NULL;
 }
 
 /** Get request message from saved nua event. @NEW_1_12_4. 
@@ -1066,14 +1094,15 @@ msg_t *nua_saved_event_request(nua_saved_event_t const *saved)
  */
 int nua_save_event(nua_t *nua, nua_saved_event_t return_saved[1])
 {
-  if (nua && return_saved) {
-    su_msg_save(return_saved, nua->nua_current);
-    if (su_msg_is_non_null(return_saved)) {
-      /* Remove references to tasks */
-      su_msg_remove_refs(return_saved);
-      return 1;
+  if (return_saved) {
+    if (nua && nua->nua_current) {
+      su_msg_save(return_saved, nua->nua_current->nf_saved);
+      return su_msg_is_non_null(return_saved);
     }
+    else
+      *return_saved = NULL;
   }
+
   return 0;
 }
 

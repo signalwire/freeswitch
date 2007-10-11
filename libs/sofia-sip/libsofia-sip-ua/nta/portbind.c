@@ -22,8 +22,8 @@
  *
  */
 
-/**@file portbind.c
- * @brief bind a socket to an UDP/TCP port and return the port number
+/**@internal @file portbind.c
+ * @brief Bind a socket to an UDP/TCP port and return the port number
  * 
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * 

@@ -22,7 +22,8 @@
  *
  */
 
-/**@file memmem.c
+/**@internal @file memmem.c
+ *
  * @brief Backup implementation of memmem()
  *  
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>

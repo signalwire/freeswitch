@@ -35,7 +35,7 @@
  * @date Created: Wed Mar  8 11:38:18 EET 2006  ppessi
  */
 
-/** NUA preferences.
+/**@internal @brief NUA preferences. 
  *
  * This structure contains values for various preferences and a separate
  * bitmap (nhp_set) for each preference. Preferences are set using

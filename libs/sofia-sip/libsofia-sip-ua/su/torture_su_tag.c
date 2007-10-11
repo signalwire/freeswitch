@@ -22,8 +22,7 @@
  *
  */
 
-/**@SU_TAG
- * 
+/**@internal
  * @file torture_su_tag.c
  *
  * Testing functions for su_tag module.

@@ -80,7 +80,7 @@ typedef struct {
 
 } nua_server_methods_t;
 
-/** Server side transaction */
+/* Server side transaction */
 struct nua_server_request {
   struct nua_server_request *sr_next, **sr_prev;
 
@@ -147,7 +147,7 @@ int sr_status(nua_server_request_t *sr, int status, char const *phrase)
   return (void)(sr->sr_phrase = phrase), (sr->sr_status = status);
 }
 
-/** Methods for client request */
+/* Methods for client request. @internal */
 typedef struct {
   sip_method_t crm_method;
   char const *crm_method_name;
@@ -367,7 +367,7 @@ struct nua_dialog_state
   } ds_remote_ua[1];
 };
 
-/** Virtual function pointer table for dialog usage. */
+/* Virtual function pointer table for dialog usage. */
 typedef struct {
   unsigned usage_size, usage_class_size;
   int (*usage_add)(nua_owner_t *, 
@@ -387,7 +387,7 @@ typedef struct {
 } nua_usage_class;
 
 
-/** Base structure for dialog usage. */
+/* Base structure for dialog usage. */
 struct nua_dialog_usage {
   nua_dialog_usage_t *du_next;
   nua_usage_class const *du_class;

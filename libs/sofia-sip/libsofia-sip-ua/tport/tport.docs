@@ -4,10 +4,13 @@
 
 The @b tport module contains a generic transport interface used by SIP,
 RTSP, and HTTP protocols. It is an abstraction layer between a protocol
-stack and a transport protocol implementation. The interface is
-implemented via transport objects.
+stack and a transport protocol implementation. The interface is implemented
+via transport objects. The tag parameters for transport objects are defined
+in <sofia-sip/tport_tag.h>.
 
 @CONTACT Pekka.Pessi@nokia.com
+
+@STATUS @SofiaSIP Core library
 
 @LICENSE LGPL
 
@@ -102,7 +105,7 @@ was sent after lost one but did not need any retransmissions.
 Transport magic is a cookie, a piece of data specified by stack that can
 be associated with a transport (e.g., a Via header). The protocol stack
 can change the type of transport magic by defining the macro
-#TP_MAGIC_T before including <tport.h>.
+#TP_MAGIC_T before including <sofia-sip/tport.h>.
 
 @section tp_op Transport Operations
 

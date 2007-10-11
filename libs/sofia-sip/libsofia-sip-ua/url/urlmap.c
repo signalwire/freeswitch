@@ -22,7 +22,7 @@
  *
  */
 
-/**
+/**@internal
  * @file urlmap.c
  * @brief Mapping with hierarchical URLs.
  *

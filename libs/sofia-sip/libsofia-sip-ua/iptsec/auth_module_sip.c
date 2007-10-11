@@ -22,7 +22,7 @@
  *
  */
 
-/**
+/**@internal
  * @file auth_module_sip.c
  * @brief Authenticate SIP request
  * 

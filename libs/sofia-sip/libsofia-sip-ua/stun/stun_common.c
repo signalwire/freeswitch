@@ -22,7 +22,7 @@
  *
  */
 
-/**
+/**@internal
  * @file stun_common.c
  * @brief 
  * 

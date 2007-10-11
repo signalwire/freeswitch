@@ -28,7 +28,7 @@
  * 
  * @b su library configuration
  * 
- * This file includes an appropriate <su_configure*.h> include file.
+ * This file includes an appropriate <sofia-sip/su_configure*.h> include file.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * 

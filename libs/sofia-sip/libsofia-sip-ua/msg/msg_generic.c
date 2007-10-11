@@ -22,7 +22,8 @@
  *
  */
 
-/**@ingroup msg_parser
+/**@internal 
+ * @ingroup msg_parser
  * @file msg_generic.c
  * @brief Functions for generic headers
  * 

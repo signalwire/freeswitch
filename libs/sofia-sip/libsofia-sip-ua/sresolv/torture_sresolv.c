@@ -224,6 +224,10 @@ int test_api_errors(void)
 
 extern void sres_cache_clean(sres_cache_t *cache, time_t now);
 
+#ifndef CLOCK_PROCESS_CPUTIME_ID
+#define CLOCK_PROCESS_CPUTIME_ID CLOCK_REALTIME
+#endif
+
 static
 int test_cache(void)
 {
@@ -282,7 +286,7 @@ int test_cache(void)
     if (t1.tv_nsec < t0.tv_nsec)
       t2.tv_sec--, t2.tv_nsec += 1000000000;
     printf("sres_cache: stored %u entries: %lu.%09lu sec\n", 
-	   N, t2.tv_sec, t2.tv_nsec);
+	   N, (long unsigned)t2.tv_sec, t2.tv_nsec);
   }
 
   for (i = 0, N; i < N; i++)
@@ -299,7 +303,7 @@ int test_cache(void)
     if (t1.tv_nsec < t0.tv_nsec)
       t2.tv_sec--, t2.tv_nsec += 1000000000;
     printf("sres_cache: cleaned %u entries: %lu.%09lu sec\n", 
-	   N, t2.tv_sec, t2.tv_nsec);
+	   N, (long unsigned)t2.tv_sec, t2.tv_nsec);
   }
 
   for (i = 0, N; i < N; i++)
@@ -321,7 +325,7 @@ int test_cache(void)
     if (t1.tv_nsec < t0.tv_nsec)
       t2.tv_sec--, t2.tv_nsec += 1000000000;
     printf("sres_cache: stored %u entries: %lu.%09lu sec\n", 
-	   N, t2.tv_sec, t2.tv_nsec);
+	   N, (long unsigned)t2.tv_sec, t2.tv_nsec);
   }
 
   for (i = 0, N; i < N; i++)
@@ -339,7 +343,7 @@ int test_cache(void)
     if (t1.tv_nsec < t0.tv_nsec)
       t2.tv_sec--, t2.tv_nsec += 1000000000;
     printf("sres_cache: cleaned %u entries: %lu.%09lu sec\n", 
-	   N, t2.tv_sec, t2.tv_nsec);
+	   N, (long unsigned)t2.tv_sec, t2.tv_nsec);
   }
 
   for (i = 0, N; i < N; i++) {

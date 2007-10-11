@@ -143,6 +143,7 @@ int tport_has_compression(tport_t const *self, char const *comp)
     self->tp_name->tpn_comp == tport_canonize_comp(comp);
 }
 
+/** Set the compression protocol as @a comp. */
 int tport_set_compression(tport_t *self, char const *comp)
 {
   tport_comp_vtable_t const *vsc = tport_comp_vtable;
@@ -153,7 +154,7 @@ int tport_set_compression(tport_t *self, char const *comp)
   return (self == NULL || comp) ? -1 : 0;
 }
 
-/** Set options to SigComp */
+/** Set SigComp options. */
 int tport_sigcomp_option(tport_t const *self,
 			 struct sigcomp_compartment *cc,
 			 char const *option)

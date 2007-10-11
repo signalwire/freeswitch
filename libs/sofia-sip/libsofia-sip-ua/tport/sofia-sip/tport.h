@@ -270,16 +270,16 @@ TPORT_DLL int tport_has_tls(tport_t const *tport);
 /** Return true if transport is being updated. */
 TPORT_DLL int tport_is_updating(tport_t const *self);
 
-/** Test if transport has been closed (added to @VERSION_1_12_4 ) */
+/** Test if transport has been closed. @NEW_1_12_4. */
 TPORT_DLL int tport_is_closed(tport_t const *self);
 
-/** Test if transport has been shut down (added to @VERSION_1_12_4 ) */
+/** Test if transport has been shut down. @NEW_1_12_4. */
 TPORT_DLL int tport_is_shutdown(tport_t const *self);
 
-/** Test if transport is connected. @NEW_1_12_5 */
+/** Test if transport is connected. @NEW_1_12_5. */
 TPORT_DLL int tport_is_connected(tport_t const *self);
 
-/** Test if transport can be used to send message. @NEW_1_12_7 */
+/** Test if transport can be used to send message. @NEW_1_12_7. */
 TPORT_DLL int tport_is_clear_to_send(tport_t const *self);
 
 /** Set transport magic. */
@@ -380,12 +380,6 @@ TPORT_DLL struct sigcomp_compartment *
 tport_sigcomp_compartment(tport_t *self,
 			  char const *name, isize_t namelen,
 			  int create_if_needed);
-
-TPORT_DLL struct sigcomp_compartment *
-tport_compartment_incref(struct sigcomp_compartment *cc);
-
-TPORT_DLL void
-tport_compartment_decref(struct sigcomp_compartment **pointer_to_cc);
 
 /** Assign a SigComp compartment to a connection-oriented tport. */
 TPORT_DLL int

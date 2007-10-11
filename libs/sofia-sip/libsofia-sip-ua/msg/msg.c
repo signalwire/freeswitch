@@ -22,7 +22,7 @@
  *
  */
 
-/**@file msg.c Message object implementation.
+/**@internal @file msg.c Message object implementation.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  *

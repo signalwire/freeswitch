@@ -22,7 +22,7 @@
  *
  */
 
-/**
+/**@internal
  * @file torture_su_port.c
  * @brief Test su_poll_port interface
  *
@@ -197,7 +197,7 @@ int test_register(void)
   su_root_size_hint = 16;
 
   TEST_1(port = su_poll_port_create());
-  TEST(su_port_threadsafe(port), 0);
+  TEST(su_home_threadsafe(su_port_home(port)), 0);
   /* Before 1.12.4 su_port_create() had reference count 0 after creation */
   /* su_port_incref(port, "test_register"); */
 

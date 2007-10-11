@@ -22,8 +22,7 @@
  *
  */
 
-/**@ingroup su_root_ex
- * 
+/**@internal
  * @file torture_su_root_osx.c
  *
  * Test su_root_register functionality.

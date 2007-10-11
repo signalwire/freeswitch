@@ -22,7 +22,7 @@
  *
  */
 
-/**
+/**@internal
  * @file auth_module_http.c
  * @brief Authenticate HTTP request
  * 

@@ -22,7 +22,7 @@
  *
  */
 
-/**@CFILE stun_tag.c  Tags and tag lists for Offer/Answer Engine
+/**@internal @CFILE stun_tag.c  Tags and tag lists for Offer/Answer Engine
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @author Martti Mela <Martti.Mela@nokia.com>

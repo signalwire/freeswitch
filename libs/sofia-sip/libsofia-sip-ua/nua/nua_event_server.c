@@ -79,7 +79,7 @@ nua_stack_notifier(nua_t *nua, nua_handle_t *nh, nua_event_t e, tagi_t const *ta
   int status = 900;
   char const *phrase = nua_internal_error;
 
-  nua_stack_init_handle(nua, nh, TAG_NEXT(tags));
+  nua_stack_init_handle(nua, nh, tags);
 
   tl_gets(tags, 
 	  NUTAG_URL_REF(url), 

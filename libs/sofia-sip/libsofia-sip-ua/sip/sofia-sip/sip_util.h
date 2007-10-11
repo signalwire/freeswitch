@@ -138,7 +138,7 @@ union sip_pref
     usize_t spl_length;
   } sp_literal;
 
-  /** String (tag="&lt;foo&gt;"). */
+  /** String (tag="&lt;foo&gt;"). */ /* (tag="<foo>") */
   struct sp_string {
     enum sp_type sps_type;
     char const *sps_value;

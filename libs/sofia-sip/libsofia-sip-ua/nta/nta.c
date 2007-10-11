@@ -4538,7 +4538,7 @@ nta_incoming_t *incoming_create(nta_agent_t *agent,
     irq->irq_home = home = msg_home(msg_ref_create(msg));
     irq->irq_agent = agent;
 
-    irq->irq_received = agent_now(agent);
+    irq->irq_received = agent_now(agent); /* Timestamp originally from tport */
 
     irq->irq_method = method;
     irq->irq_rq = sip_request_copy(home, sip->sip_request);
@@ -5129,7 +5129,12 @@ nta_incoming_magic_t *nta_incoming_magic(nta_incoming_t *irq,
   return irq && irq->irq_callback == callback ? irq->irq_magic : NULL;
 }
 
-/** When received */
+/** When received. 
+ *
+ * Return timestamp from the reception of the initial request.
+ *
+ * @NEW_1_12_7.
+ */
 sip_time_t nta_incoming_received(nta_incoming_t *irq,
 				 su_nanotime_t *return_nano)
 {
@@ -6768,7 +6773,7 @@ unsigned nta_outgoing_delay(nta_outgoing_t const *orq)
   return orq != NULL && orq != NONE ? orq->orq_delay : UINT_MAX;
 }
 
-/** Get the branch parameter. @NEW_1_12_7 */
+/** Get the branch parameter. @NEW_1_12_7. */
 char const *nta_outgoing_branch(nta_outgoing_t const *orq)
 {
   return orq != NULL && orq != NONE && orq->orq_branch

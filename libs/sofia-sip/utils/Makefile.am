@@ -48,3 +48,5 @@ LDADD =			../libsofia-sip-ua/libsofia-sip-ua.la $(GLIB_LIBS)
 # ----------------------------------------------------------------------
 # Dist and install
 EXTRA_DIST = utils.docs
+
+CLEANFILES = utils.doxytags

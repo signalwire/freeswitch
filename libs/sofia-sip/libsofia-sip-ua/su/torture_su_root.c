@@ -22,8 +22,7 @@
  *
  */
 
-/**@ingroup su_root_ex
- * 
+/**@internal
  * @file torture_su_root.c
  *
  * Test su_root_register functionality.
@@ -55,6 +54,10 @@ typedef struct test_ep_s   test_ep_t;
 #include <sofia-sip/su_wait.h>
 #include <sofia-sip/su_alloc.h>
 #include <sofia-sip/su_log.h>
+
+#if SU_HAVE_PTHREADS
+#include <pthread.h>
+#endif
 
 struct test_ep_s {
   test_ep_t     *next, **prev, **list;
@@ -96,7 +99,87 @@ struct root_test_s {
   test_ep_at rt_ep[5];
 
   int rt_sockets, rt_woken;
+
+#if SU_HAVE_PTHREADS
+  struct {
+    /* Used to test su_root_obtain()/su_root_release() */
+    pthread_mutex_t mutex[1];
+    pthread_cond_t cond[1];
+    pthread_t slave;
+    int done;
+    pthread_mutex_t deinit[1];
+  } rt_sr;
+#endif
 };
+
+int test_api(root_test_t *rt)
+{
+  BEGIN();
+  TEST_1(rt->rt_root = su_root_create(NULL));
+  
+  TEST_VOID(su_root_destroy(NULL));
+  TEST_P(su_root_name(NULL), NULL);  
+  TEST_1(su_root_name(rt->rt_root) != NULL);  
+  TEST(su_root_set_magic(NULL, rt), -1);
+  TEST_P(su_root_magic(rt->rt_root), NULL);
+  TEST(su_root_set_magic(rt->rt_root, rt), 0);
+  TEST_P(su_root_magic(rt->rt_root), rt);
+  TEST_P(su_root_magic(NULL), NULL);
+  TEST(su_root_register(NULL, NULL, NULL, NULL, 0), -1);  
+  TEST(su_root_unregister(NULL, NULL, NULL, NULL), -1);  
+  TEST(su_root_deregister(NULL, 0), -1);  
+  TEST(su_root_deregister(rt->rt_root, 0), -1);  
+  TEST(su_root_deregister(rt->rt_root, -1), -1);  
+  TEST(su_root_eventmask(NULL, 0, -1, -1), -1);  
+  TEST((long int)su_root_step(NULL, 0), -1L);  
+  TEST((long int)su_root_sleep(NULL, 0), -1L);  
+  TEST(su_root_multishot(NULL, 0), -1);  
+  TEST_VOID((void)su_root_run(NULL));  
+  TEST_VOID((void)su_root_break(NULL));  
+  TEST_M(su_root_task(NULL), su_task_null, sizeof su_task_null);
+  TEST_M(su_root_parent(NULL), su_task_null, sizeof su_task_null);
+  TEST(su_root_add_prepoll(NULL, NULL, NULL), -1);  
+  TEST(su_root_remove_prepoll(NULL), -1);  
+  TEST_P(su_root_gsource(NULL), NULL);  
+  TEST_VOID((void)su_root_gsource(rt->rt_root));  
+  TEST(su_root_yield(NULL), -1);  
+  TEST(su_root_release(NULL), -1);
+  TEST(su_root_obtain(NULL), -1);
+  TEST(su_root_has_thread(NULL), -1);
+  TEST(su_root_has_thread(rt->rt_root), 2);
+  TEST(su_root_release(rt->rt_root), 0);
+  TEST(su_root_has_thread(rt->rt_root), 0);
+  TEST(su_root_obtain(rt->rt_root), 0);
+  TEST(su_root_has_thread(rt->rt_root), 2);
+  TEST_VOID((void)su_root_destroy(rt->rt_root));
+  rt->rt_root = NULL;
+  END();
+}
+
+
+#if SU_HAVE_PTHREADS
+
+#include <pthread.h>
+
+void *suspend_resume_test_thread(void *_rt) 
+{
+  root_test_t *rt = _rt;
+
+  pthread_mutex_lock(rt->rt_sr.mutex);
+  rt->rt_root = su_root_create(rt);
+  rt->rt_sr.done = 1;
+  pthread_cond_signal(rt->rt_sr.cond);
+  pthread_mutex_unlock(rt->rt_sr.mutex);
+  su_root_release(rt->rt_root);
+
+  pthread_mutex_lock(rt->rt_sr.deinit);
+  su_root_obtain(rt->rt_root);
+  su_root_destroy(rt->rt_root);
+  rt->rt_root = NULL;
+  pthread_mutex_unlock(rt->rt_sr.deinit);
+  return NULL;
+}
+#endif
 
 /** Test root initialization */
 int init_test(root_test_t *rt,
@@ -113,7 +196,26 @@ int init_test(root_test_t *rt,
 
   su_port_prefer(create, start);
 
+#if SU_HAVE_PTHREADS
+  pthread_mutex_init(rt->rt_sr.mutex, NULL);
+  pthread_cond_init(rt->rt_sr.cond, NULL);
+  pthread_mutex_init(rt->rt_sr.deinit, NULL);
+
+  pthread_mutex_lock(rt->rt_sr.deinit);
+
+  pthread_create(&rt->rt_sr.slave, NULL, suspend_resume_test_thread, rt);
+
+  pthread_mutex_lock(rt->rt_sr.mutex);
+  while (rt->rt_sr.done == 0)
+    pthread_cond_wait(rt->rt_sr.cond, rt->rt_sr.mutex);
+  pthread_mutex_unlock(rt->rt_sr.mutex);
+
+  TEST_1(rt->rt_root);
+  TEST(su_root_obtain(rt->rt_root), 0);
+  TEST(su_root_has_thread(rt->rt_root), 2);
+#else  
   TEST_1(rt->rt_root = su_root_create(rt));
+#endif
 
   printf("%s: testing %s (%s) implementation\n",
 	 name, preference, su_root_name(rt->rt_root));
@@ -142,8 +244,18 @@ static int deinit_test(root_test_t *rt)
 {
   BEGIN();
 
+#if SU_HAVE_PTHREADS
+  TEST(su_root_has_thread(rt->rt_root), 2);
+  TEST(su_root_release(rt->rt_root), 0);
+  TEST(su_root_has_thread(rt->rt_root), 0);
+  pthread_mutex_unlock(rt->rt_sr.deinit);
+  pthread_join(rt->rt_sr.slave, NULL);
+  pthread_mutex_destroy(rt->rt_sr.mutex);
+  pthread_cond_destroy(rt->rt_sr.cond);
+  pthread_mutex_destroy(rt->rt_sr.deinit);
+#else
   TEST_VOID(su_root_destroy(rt->rt_root)); rt->rt_root = NULL;
-  TEST_VOID(su_root_destroy(NULL));
+#endif  
 
   su_deinit();
 
@@ -614,6 +726,8 @@ int main(int argc, char *argv[])
 
   do {
     rt = rt1, *rt = *rt0;
+
+    retval |= test_api(rt);
 
     retval |= init_test(rt, prefer[i].name, prefer[i].create, prefer[i].start);
     retval |= register_test(rt);

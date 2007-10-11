@@ -22,7 +22,7 @@
  *
  */
 
-/**
+/**@internal
  * @file torture_su_bm.c
  * @brief Test string search with Boyer-Moore algorithm 
  *  

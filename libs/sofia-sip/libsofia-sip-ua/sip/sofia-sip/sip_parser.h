@@ -137,6 +137,17 @@ SOFIAPUBFUN issize_t sip_name_addr_e(char b[], isize_t bsiz,
 				     msg_param_t const params[], 
 				     char const *comment);
 
+SOFIAPUBFUN isize_t sip_name_addr_xtra(char const *display, url_t const *addr,
+				       msg_param_t const params[],
+				       isize_t offset);
+
+SOFIAPUBFUN char *sip_name_addr_dup(char const **d_display, char const *display,
+				    url_t *d_addr, url_t const *addr,
+				    msg_param_t const **d_params, 
+				    msg_param_t const params[],
+				    char *b, isize_t xtra);
+
+
 /* ---------------------------------------------------------------------------
  * 3) Compatibility macros and functions
  */

@@ -126,6 +126,8 @@ int urltag_scan(tag_type_t tt, su_home_t *home,
   url_t *url;
   char *s;
 
+  (void)tt;
+
   for (len = 0; !IS_EXCLUDED(str[len]); len++)
     ;
   

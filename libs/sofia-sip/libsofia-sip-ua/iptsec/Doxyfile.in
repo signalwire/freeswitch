@@ -20,7 +20,7 @@ TAGFILES           += ../docs/nta.doxytags=../nta
 
 GENERATE_TAGFILE    = ../docs/iptsec.doxytags
 
-ALIASES 	   += 
+ALIASES 	   +=  "iptsec=@ref index \"iptsec\""
 
 PREDEFINED         += SOFIA_EXTEND_AUTH_CLIENT=1
 

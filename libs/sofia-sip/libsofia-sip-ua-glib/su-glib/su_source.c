@@ -88,6 +88,9 @@ GSourceFuncs su_source_funcs[1] = {{
     NULL
   }};
 
+static int su_source_port_init(su_port_t *self, su_port_vtable_t const *vtable);
+static void su_source_port_deinit(su_port_t *self);
+
 static void su_source_lock(su_port_t *self, char const *who);
 static void su_source_unlock(su_port_t *self, char const *who);
 static void su_source_incref(su_port_t *self, char const *who);
@@ -115,7 +118,7 @@ static int su_source_eventmask(su_port_t *self,
 static void su_source_run(su_port_t *self);
 static void su_source_break(su_port_t *self);
 static su_duration_t su_source_step(su_port_t *self, su_duration_t tout);
-static int su_source_own_thread(su_port_t const *port);
+static int su_source_thread(su_port_t *self, enum su_port_thread_op op);
 static int su_source_add_prepoll(su_port_t *port,
 				 su_root_t *root, 
 				 su_prepoll_f *, 
@@ -147,13 +150,11 @@ su_port_vtable_t const su_source_port_vtable[1] =
       su_source_run,
       su_source_break,
       su_source_step,
-      su_source_own_thread,
+      su_source_thread,
       su_source_add_prepoll,
       su_source_remove_prepoll,
       su_base_port_timers,
       su_source_multishot,
-      su_base_port_threadsafe,
-      /*su_source_yield*/ NULL,
       /*su_source_wait_events*/ NULL,
       su_base_port_getmsgs,
       su_base_port_getmsgs_from,
@@ -177,6 +178,8 @@ struct su_source_s {
   su_base_port_t   sup_base[1];
   
   GThread         *sup_tid;
+  GStaticMutex     sup_obtained[1];
+
   GStaticMutex     sup_mutex[1];
 
   GSource         *sup_source;	/**< Backpointer to source */
@@ -258,37 +261,51 @@ GSource *su_glib_root_gsource(su_root_t *root)
 /*=============== Private function definitions ===============*/
 
 /** Initialize source port */
-int su_source_port_init(su_port_t *self,
-			GSource *gs,
-			su_port_vtable_t const *vtable)
+static int su_source_port_init(su_port_t *self,
+			       su_port_vtable_t const *vtable)
 {
-  if (su_base_port_init(self, vtable) < 0)
-    return -1;
+  GSource *gs = (GSource *)((char *)self - offsetof(SuSource, ss_port));
 
   self->sup_source = gs;
-  self->sup_tid = g_thread_self();
+
+  g_static_mutex_init(self->sup_obtained);
 
   g_static_mutex_init(self->sup_mutex);
-  
-  return 0;
+
+  return su_base_port_init(self, vtable);
 }
+
+
+static void su_source_port_deinit(su_port_t *self)
+{
+  su_base_port_deinit(self);
+
+  g_static_mutex_free(self->sup_mutex);
+  g_static_mutex_free(self->sup_obtained);
+
+  if (self->sup_indices)
+    free (self->sup_indices), self->sup_indices = NULL;
+  if (self->sup_waits)
+    free (self->sup_waits), self->sup_waits = NULL;
+  if (self->sup_wait_cbs)
+    free (self->sup_wait_cbs), self->sup_wait_cbs = NULL;
+  if (self->sup_wait_args)
+    free (self->sup_wait_args), self->sup_wait_args = NULL;
+  if (self->sup_wait_roots)
+    free (self->sup_wait_roots), self->sup_wait_roots = NULL;
+
+  su_home_deinit(self->sup_base->sup_home);
+}
+
 
 /** @internal Destroy a port. */
 static 
 void su_source_finalize(GSource *gs)
 {
   SuSource *ss = (SuSource *)gs;
-  su_port_t *self = ss->ss_port;
-
   assert(gs);
-
   SU_DEBUG_9(("su_source_finalize() called\n"));
-
-  g_static_mutex_free(self->sup_mutex);
-
-  su_base_port_deinit(self);
-
-  su_home_deinit(self->sup_base->sup_home);
+  su_source_port_deinit(ss->ss_port);
 }
 
 void su_source_port_lock(su_port_t *self, char const *who)
@@ -330,16 +347,46 @@ int su_source_send(su_port_t *self, su_msg_r rmsg)
 }
 
 /** @internal
- * Checks if the calling thread owns the port object.
+ *
+ * Change or query ownership of the port object.
  *
  * @param self pointer to a port object
+ * @param op operation 
  *
- * @retval true (nonzero) if the calling thread owns the port,
- * @retval false (zero) otherwise.
+ * @ERRORS
+ * @ERROR EALREADY port already has an owner (or has no owner)
  */
-int su_source_own_thread(su_port_t const *self)
+static int su_source_thread(su_port_t *self, enum su_port_thread_op op)
 {
-  return self == NULL || SU_SOURCE_OWN_THREAD(self);
+  GThread *me = g_thread_self();
+
+  switch (op) {
+
+  case su_port_thread_op_is_obtained:
+    if (self->sup_tid == me)
+      return 2;
+    else if (self->sup_tid)
+      return 1;
+    else
+      return 0;
+
+  case su_port_thread_op_release:
+    if (self->sup_tid != me)
+      return errno = EALREADY, -1;
+    self->sup_tid = NULL;
+    g_static_mutex_unlock(self->sup_obtained);
+    return 0;
+
+  case su_port_thread_op_obtain:
+    if (su_home_threadsafe(su_port_home(self)) == -1)
+      return -1;
+    g_static_mutex_lock(self->sup_obtained);
+    self->sup_tid = me;
+    return 0;
+
+  default:
+    return errno = ENOSYS, -1;
+  }
 }
 
 /* -- Registering and unregistering ------------------------------------- */
@@ -1044,7 +1091,7 @@ static su_port_t *su_source_port_create(void)
 
   if (ss) {
     self = ss->ss_port;
-    if (su_source_port_init(self, ss->ss_source, su_source_port_vtable) < 0)
+    if (su_source_port_init(self, su_source_port_vtable) < 0)
       g_source_unref(ss->ss_source), self = NULL;
   } else {
     su_perror("su_source_port_create(): g_source_new");

@@ -30,14 +30,14 @@
 # Author(s): Pekka Pessi <Pekka.Pessi@nokia.com>.
 #
 
-s=${0%/*}
-
-test x$s = x$0 && s=`pwd`
+s=`dirname $0`
+test x$s = x. && s=`pwd`
 
 PATH=/usr/sbin:/usr/local/sbin:/sbin:$PATH
+export PATH
 
 # Test for support for IPv6 on Linux. This probably fails on everything else.
-ipv6='sysctl net.ipv6.conf.default.mtu >& /dev/null'
+ipv6='sysctl net.ipv6.conf.default.mtu >/dev/null 2>&1'
 # Bind not working with IPv6 on RHEL 4:
 # client.c:1325: unexpected error: failed to get request's destination: failure
 #ipv6=false
@@ -46,18 +46,18 @@ port=`expr $$ % \( 65536 - 1024 \) + 1024`
 
 # Try to find a free port
 if netstat --ip >/dev/null 2>&1 ; then
-    while netstat --ip -n -a | fgrep -q ":$port "
+    while netstat --ip -n -a | fgrep ":$port " > /dev/null
     do
-	port=$(($port + 1))
-	if [$port = 65536] ; then
+	port=`expr $port + 1`
+	if test $port = 65536 ; then
 	    port=1024
 	fi
     done
 fi
 
 # No BIND 9, no fun
-{ type -p named >/dev/null &&
-  named -v | grep -q BIND.*9 
+{ type named >/dev/null &&
+  named -v | grep BIND.*9 > /dev/null
 } || {
 echo test_sresolv: there is no BIND 9 named in you path, skipping
 exit 77
@@ -66,10 +66,10 @@ exit 77
 if eval $ipv6
 then
     # Figure out nice IPv6 address for us
-    ns=$(ip addr ls | awk '
+    ns=`ip addr ls | awk '
     /^[0-9]:/ { up = ($3 ~ /UP/) && ($3 !~ /LOOPBACK/); }
     /inet6 fe80::/ { next; } # no link-local 
-    up && $1 ~ /inet6/ { sub(/\/.*$/, "", $2); print $2; exit 0; }')
+    up && $1 ~ /inet6/ { sub(/\/.*$/, "", $2); print $2; exit 0; }'`
 
     # Nothing found, use localnode ::1
     if test -z "$ns"; then ns=::1 ; fi
@@ -113,9 +113,11 @@ search example.com
 port $port
 EOF
 
+absolute=`cd $s; pwd`
+
 cat > $t/named.conf <<EOF
 options {
-	directory "$(cd $s; pwd)";
+	directory "$absolute";
 	pid-file "$t/named.pid";
 	notify no;
 	$listen4
@@ -164,16 +166,16 @@ done
 
 test -r $t/named.pid || { 
     echo $0: cannot start named >&2 ; 
-    if fgrep -q -i -e SELINUX=enforcing /etc/selinux/config 2>&/dev/null ; then
+    if fgrep -i -e SELINUX=enforcing /etc/selinux/config >/dev/null 2>&1 ; then
 	echo $0: perhaps you have to disable SELinux protection for named 
     fi
     exit 77
 }
 
-function kill_named
+kill_named ()
 {
     kill `cat $t/named.pid`
-    rm $t/named.conf $t/resolv.conf $t/error.conf $t/named.pid
+    rm $t/named.conf $t/resolv.conf $t/error.conf $t/named.pid 2>/dev/null
     rmdir $t
 }
 trap kill_named EXIT

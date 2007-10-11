@@ -22,7 +22,7 @@
  *
  */
 
-/**
+/**@internal
  * @file stun_mini.c
  * @brief Minimal stun server 
  * 

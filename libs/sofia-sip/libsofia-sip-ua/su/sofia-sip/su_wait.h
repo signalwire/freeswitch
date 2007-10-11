@@ -213,11 +213,11 @@ typedef struct su_root_s su_root_t;
 /**Default type of application context for <a href="#su_root_t">su_root_t</a>.
  *
  * Application may define the typedef ::su_root_magic_t to appropriate type
- * by defining macro SU_ROOT_MAGIC_T before including <su_wait.h>, for
+ * by defining macro SU_ROOT_MAGIC_T before including <sofia-sip/su_wait.h>, for
  * example,
  * @code
  * #define SU_ROOT_MAGIC_T struct context
- * #include <su_wait.h>
+f * #include <sofia-sip/su_wait.h>
  * @endcode
  */
 #define SU_ROOT_MAGIC_T void
@@ -226,11 +226,11 @@ typedef struct su_root_s su_root_t;
 /** <a href="#su_root_t">Root context</a> pointer type.
  *
  * Application may define the typedef ::su_root_magic_t to appropriate type
- * by defining macro SU_ROOT_MAGIC_T () before including <su_wait.h>, for
+ * by defining macro SU_ROOT_MAGIC_T () before including <sofia-sip/su_wait.h>, for
  * example,
  * @code
  * #define SU_ROOT_MAGIC_T struct context
- * #include <su_wait.h>
+ * #include <sofia-sip/su_wait.h>
  * @endcode
  */
 typedef SU_ROOT_MAGIC_T su_root_magic_t;
@@ -240,10 +240,10 @@ typedef SU_ROOT_MAGIC_T su_root_magic_t;
  * @link ::su_wakeup_arg_t argument type @endlink.  
  *
  * The application can define the typedef ::su_wakeup_arg_t by defining
- * the SU_WAKEUP_ARG_T () before including <su_wait.h>, for example,
+ * the SU_WAKEUP_ARG_T () before including <sofia-sip/su_wait.h>, for example,
  * @code
  * #define SU_WAKEUP_ARG_T struct transport
- * #include <su_wait.h>
+ * #include <sofia-sip/su_wait.h>
  * @endcode
  */
 #define SU_WAKEUP_ARG_T void
@@ -252,10 +252,10 @@ typedef SU_ROOT_MAGIC_T su_root_magic_t;
 /** @link ::su_wakeup_f Wakeup callback @endlink argument type. 
  *
  * The application can define the typedef ::su_wakeup_arg_t by defining
- * the SU_WAKEUP_ARG_T () before including <su_wait.h>, for example,
+ * the SU_WAKEUP_ARG_T () before including <sofia-sip/su_wait.h>, for example,
  * @code
  * #define SU_WAKEUP_ARG_T struct transport
- * #include <su_wait.h>
+ * #include <sofia-sip/su_wait.h>
  * @endcode
  */
 typedef SU_WAKEUP_ARG_T su_wakeup_arg_t;
@@ -287,11 +287,11 @@ SOFIAPUBVAR int su_root_size_hint;
 /**Default type of application context for prepoll function.
  *
  * Application may define the typedef ::su_prepoll_magic_t to appropriate type
- * by defining macro #SU_PREPOLL_MAGIC_T before including <su_wait.h>, for
+ * by defining macro #SU_PREPOLL_MAGIC_T before including <sofia-sip/su_wait.h>, for
  * example,
  * @code
  * #define SU_PREPOLL_MAGIC_T struct context
- * #include <su_wait.h>
+ * #include <sofia-sip/su_wait.h>
  * @endcode
  */
 #define SU_PREPOLL_MAGIC_T void
@@ -300,11 +300,11 @@ SOFIAPUBVAR int su_root_size_hint;
 /** <a href="#su_root_t">Root context</a> pointer type.
  *
  * Application may define the typedef ::su_prepoll_magic_t to appropriate type
- * by defining macro #SU_PREPOLL_MAGIC_T before including <su_wait.h>, for
+ * by defining macro #SU_PREPOLL_MAGIC_T before including <sofia-sip/su_wait.h>, for
  * example,
  * @code
  * #define SU_PREPOLL_MAGIC_T struct context
- * #include <su_wait.h>
+ * #include <sofia-sip/su_wait.h>
  * @endcode
  */
 typedef SU_PREPOLL_MAGIC_T su_prepoll_magic_t;
@@ -326,7 +326,7 @@ typedef void su_prepoll_f(su_prepoll_magic_t *, su_root_t *);
 #ifndef SU_TIMER_ARG_T
 /** Default type of timer expiration callback function argument type.
  * Application may define this to appropriate type before including
- * <su_wait.h>. */
+ * <sofia-sip/su_wait.h>. */
 #define SU_TIMER_ARG_T void 
 #endif
 
@@ -370,7 +370,7 @@ typedef _su_task_t const *_su_task_r;
 /* Messages */
 #ifndef SU_MSG_ARG_T
 /** Default type of su_msg_t message data.  Application may define this to
- * appropriate type before including <su_wait.h>.
+ * appropriate type before including <sofia-sip/su_wait.h>.
  */
 #define SU_MSG_ARG_T void 
 #endif
@@ -476,6 +476,10 @@ SOFIAPUBFUN int su_root_remove_prepoll(su_root_t *root);
 SOFIAPUBFUN struct _GSource *su_root_gsource(su_root_t *self);
 
 SOFIAPUBFUN int su_root_yield(su_root_t *root);
+
+SOFIAPUBFUN int su_root_release(su_root_t *root);
+SOFIAPUBFUN int su_root_obtain(su_root_t *root);
+SOFIAPUBFUN int su_root_has_thread(su_root_t *root);
 
 /* Timers */
 SOFIAPUBFUN su_timer_t *su_timer_create(su_task_r const, su_duration_t msec)

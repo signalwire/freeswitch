@@ -238,7 +238,7 @@ char const *nua_generate_instance_identifier(su_home_t *home)
  *
  * @sa nua_respond(), #nua_event_e, #nua_event_t, nua_event_name()
  *
- * @NEW_1_12_6
+ * @NEW_1_12_6.
  */
 int nua_event_is_incoming_request(nua_event_t event)
 {

@@ -15,6 +15,6 @@
  * @section ipt_overview Overview
  *
  * This module contain some routines useful for IPT applications, like 
- * - <sofia-sip/base64.h> BASE64 encoding/decoding, 
- * - <sofia-sip/token64.h> encoding/decoding binary as SIP/HTTP token, 
+ * - <sofia-sip/base64.h> BASE64 encoding/decoding, and
+ * - <sofia-sip/token64.h> encoding/decoding binary as SIP/HTTP token.
  */

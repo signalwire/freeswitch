@@ -1,4 +1,4 @@
-/**@file sofia-sip/sip_extra.h.in
+`/**@file sofia-sip/sip_extra.h.in
  *  -*- C -*-
  * Template for <sofia-sip/sip_extra.h>.
  *
@@ -116,6 +116,55 @@ struct sip_suppress_notify_if_match_s
   sip_error_t   *snim_next;		/**< Dummy link to next header */
   char const    *snim_tag;		/**< Entity-tag */
 };
+
+typedef struct sip_p_asserted_identity_s sip_p_asserted_identity_t;
+
+/**@ingroup sip_p_asserted_identity
+ * @brief Structure for @PAssertedIdentity header.
+ */
+struct sip_p_asserted_identity_s
+{
+  sip_common_t       paid_common[1];/**< Common fragment info */
+  sip_p_asserted_identity_t
+                    *paid_next;	    /**< Link to next identity */
+  char const        *paid_display;  /**< Display name */
+  url_t              paid_url[1];   /**< SIP, SIPS or TEL URL */
+};
+
+typedef struct sip_p_preferred_identity_s sip_p_preferred_identity_t;
+
+/**@ingroup sip_p_preferred_identity
+ * @brief Structure for @PPreferredIdentity header.
+ */
+struct sip_p_preferred_identity_s
+{
+  sip_common_t       ppid_common[1];/**< Common fragment info */
+  sip_p_preferred_identity_t
+                    *ppid_next;	    /**< Link to next identity */
+  char const        *ppid_display;  /**< Display name */
+  url_t              ppid_url[1];   /**< SIP, SIPS or TEL URL */
+};
+
+
+int sip_p_initialize_remote_party_id_headers(msg_mclass_t *mclass);
+
+typedef struct sip_remote_party_id_s sip_remote_party_id_t;
+
+/**@ingroup sip_remote_party_id
+ * @brief Structure for @RemotePartyID header.
+ */
+struct sip_remote_party_id_s
+{
+  sip_common_t       rpid_common[1];/**< Common fragment info */
+  sip_remote_party_id_t
+                    *rpid_next;	    /**< Link to next identity */
+  char const        *rpid_display;  /**< Display name */
+  url_t              rpid_url[1];   /**< URL */
+  sip_param_t const *rpid_params;   /**< Parameters */
+  /** Shortcuts to screen, party, id-type and privacy parameters */
+  char const        *rpid_screen, *rpid_party, *rpid_id_type, *rpid_privacy;
+};
+
 
 
 /** Defined as 1 if the @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#" is supported */

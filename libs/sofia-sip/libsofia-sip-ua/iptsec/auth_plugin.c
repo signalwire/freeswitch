@@ -22,7 +22,7 @@
  *
  */
 
-/**
+/**@internal
  * @file auth_plugin.c
  * @brief Plugin interface for authentication verification modules.
  * 

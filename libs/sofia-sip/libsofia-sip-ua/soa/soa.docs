@@ -3,7 +3,7 @@
 @section soa_meta Module Information
 
 The Sofia SIP @b soa module consists of an asynchronous SDP Offer/Answer engine
-library. The interface to library is defined in <soa.h>.
+library. The interface to library is defined in <sofia-sip/soa.h>.
 
 @CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
 

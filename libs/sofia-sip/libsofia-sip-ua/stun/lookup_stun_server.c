@@ -22,7 +22,7 @@
  *
  */
 
-/**
+/**@internal
  * @file lookup_stun_server.c 
  * @brief Test app for STUN DNS-SRV lookups.
  *

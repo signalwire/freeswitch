@@ -73,7 +73,7 @@ libsu_la_SOURCES = \
 	su_os_nw.c \
 	su_taglist.c su_tag.c su_tag_io.c \
 	su_log.c su_global_log.c su_default_log.c su_module_debug.h \
-	su_md5.c su_uniqueid.c su_bm.c string0.c $(OSXSOURCES)
+	su_md5.c su_uniqueid.c su_bm.c smoothsort.c string0.c $(OSXSOURCES)
 
 
 EXTRA_libsu_la_SOURCES = \

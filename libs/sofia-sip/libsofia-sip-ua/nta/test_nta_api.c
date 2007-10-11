@@ -534,11 +534,11 @@ int api_test_params(agent_t *ag)
   TEST_1(default_proxy == NULL);
   TEST_1(smime == NULL);
 
-  TEST_1(blacklist != -1);
+  TEST_1(blacklist != (unsigned)-1);
   TEST(debug_drop_prob, 0);
   TEST_1(max_forwards >= 20);
   TEST_1(maxsize >= 65536);
-  TEST_1(preload != -1);
+  TEST_1(preload != (unsigned)-1);
   TEST_1(progress <= 60 * 1000);
   TEST(sip_t1, NTA_SIP_T1);
   TEST(sip_t2, NTA_SIP_T2);

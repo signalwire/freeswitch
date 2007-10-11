@@ -27,7 +27,7 @@
 #define SU_MODULE_DEBUG_H
 
 /**@ingroup su_log
- * @file su_module_debug.h
+ * @internal @file su_module_debug.h
  * @brief Debug log for @b su module
  *
  * The su_module_debug.h defines a common debug log #su_log_global for all

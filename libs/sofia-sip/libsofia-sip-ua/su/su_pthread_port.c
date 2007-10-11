@@ -72,16 +72,9 @@ int su_pthread_port_init(su_port_t *self, su_port_vtable_t const *vtable)
   SU_DEBUG_9(("su_pthread_port_init(%p, %p) called\n",
 	      (void *)self, (void *)vtable));
 
-  self->sup_tid = pthread_self();
+  pthread_mutex_init(self->sup_obtained, NULL);
 
-  if (su_base_port_init(self, vtable) == 0 &&
-      su_base_port_threadsafe(self) == 0) {
-    return 0;
-  }
-  else
-    su_base_port_deinit(self);
-
-  return -1;
+  return su_base_port_init(self, vtable);
 }
 
 
@@ -90,12 +83,13 @@ void su_pthread_port_deinit(su_port_t *self)
 {
   assert(self);
 
+  su_base_port_deinit(self);
+
 #if 0
   pthread_mutex_destroy(self->sup_runlock);
   pthread_cond_destroy(self->sup_resume);
 #endif
-
-  su_base_port_deinit(self);
+  pthread_mutex_destroy(self->sup_obtained);
 }
 
 void su_pthread_port_lock(su_port_t *self, char const *who)
@@ -118,17 +112,46 @@ void su_pthread_port_unlock(su_port_t *self, char const *who)
 }
 
 /** @internal
- * Checks if the calling thread owns the port object.
+ *
+ * Change or query ownership of the port object.
  *
  * @param self pointer to a port object
+ * @param op operation 
  *
- * @retval true (nonzero) if the calling thread owns the port,
- * @retval false (zero) otherwise.
+ * @ERRORS
+ * @ERROR EALREADY port already has an owner (or has no owner)
  */
-int su_pthread_port_own_thread(su_port_t const *self)
+int su_pthread_port_thread(su_port_t *self, enum su_port_thread_op op)
 {
-  return self == NULL || 
-    pthread_equal(self->sup_tid, pthread_self());
+  pthread_t me = pthread_self();
+
+  switch (op) {
+
+  case su_port_thread_op_is_obtained:
+    if (self->sup_thread == 0)
+      return 0;			/* No thread has obtained the port */
+    else if (pthread_equal(self->sup_tid, me))
+      return 2;			/* Current thread has obtained the port */
+    else
+      return 1;			/* A thread has obtained the port */
+
+  case su_port_thread_op_release:
+    if (!self->sup_thread || !pthread_equal(self->sup_tid, me))
+      return errno = EALREADY, -1;
+    self->sup_thread = 0;
+    pthread_mutex_unlock(self->sup_obtained);
+    return 0;
+
+  case su_port_thread_op_obtain:
+    su_home_threadsafe(su_port_home(self));
+    pthread_mutex_lock(self->sup_obtained);
+    self->sup_tid = me;
+    self->sup_thread = 1;
+    return 0;
+
+  default:
+    return errno = ENOSYS, -1;
+  }
 }
 
 /* -- Clones ------------------------------------------------------------ */

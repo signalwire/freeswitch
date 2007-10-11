@@ -6,8 +6,10 @@
  *
  * The Sofia @b bnf module contains macros and functions for parsing
  * text-based formats, for example, for SIP. The interface is described in
- * <bnf.h>, the <bnf.c> contains a #_bnf_table table used to classify
- * characters.
+ * <sofia-sip/bnf.h>.
+ *
+ * The interface used for validating hostnames and IP addresses is in
+ * <sofia-sip/hostdomain.h>.
  * 
  * @CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
  * 

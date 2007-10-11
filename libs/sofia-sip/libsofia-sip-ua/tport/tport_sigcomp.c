@@ -52,13 +52,13 @@
 
 typedef struct tport_sigcomp_handler tport_sigcomp_handler_t;
 
-/** Per end-point SigComp data */
+/** @internal Per end-point SigComp data */
 struct tport_compressor {
   struct sigcomp_state_handler *msc_state_handler;
   struct sigcomp_compartment *msc_compartment;
 };
 
-/** Per-socket SigComp data */
+/** @internal Per-socket SigComp data */
 struct tport_comp {
   struct sigcomp_udvm          *sc_udvm;
   struct sigcomp_compartment   *sc_cc;

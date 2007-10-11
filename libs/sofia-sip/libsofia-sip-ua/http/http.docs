@@ -15,7 +15,7 @@
  *
  * @section http_overview Overview
  *
- * Each HTTP header has a structure defined for it in <http.h>. All the
+ * Each HTTP header has a structure defined for it in <sofia-sip/http.h>. All the
  * variables, objects and functions related to a particular HTTP header are
  * documented in a <a href="modules.html">submodule</a> for the header. In
  * addition to the header structure, there is defined a @em header @em class

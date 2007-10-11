@@ -824,7 +824,7 @@ int soa_get_warning(soa_session_t *ss, char const **return_text)
  * nua_options(), #nua_i_options
  */
 int soa_get_capability_sdp(soa_session_t const *ss,
-			   sdp_session_t const **return_sdp,
+			   struct sdp_session_s const **return_sdp,
 			   char const **return_sdp_str,
 			   isize_t *return_len)
 {
@@ -874,7 +874,7 @@ int soa_get_capability_sdp(soa_session_t const *ss,
  * nua_options(), #nua_i_options
  */
 int soa_set_capability_sdp(soa_session_t *ss, 
-			   sdp_session_t const *sdp,
+			   struct sdp_session_s const *sdp,
 			   char const *str, issize_t len)
 {
   SU_DEBUG_9(("soa_set_capability_sdp(%s::%p, %p, %p, "MOD_ZD") called\n",
@@ -956,7 +956,7 @@ soa_base_set_capability_sdp(soa_session_t *ss,
  * soa_get_capability_sdp()
  */
 int soa_get_user_sdp(soa_session_t const *ss,
-		     sdp_session_t const **return_sdp,
+		     struct sdp_session_s const **return_sdp,
 		     char const **return_sdp_str,
 		     isize_t *return_len)
 {
@@ -1032,7 +1032,7 @@ int soa_get_user_version(soa_session_t const *ss)
  * soa_set_remote_sdp()
  */
 int soa_set_user_sdp(soa_session_t *ss, 
-		     sdp_session_t const *sdp,
+		     struct sdp_session_s const *sdp,
 		     char const *str, issize_t len)
 {
   SU_DEBUG_9(("soa_set_user_sdp(%s::%p, %p, %p, "MOD_ZD") called\n",
@@ -1073,7 +1073,7 @@ int soa_base_set_user_sdp(soa_session_t *ss,
  * soa_get_local_sdp(), soa_get_user_sdp(), soa_get_capability_sdp().
  */
 int soa_get_remote_sdp(soa_session_t const *ss,
-		       sdp_session_t const **return_sdp,
+		       struct sdp_session_s const **return_sdp,
 		       char const **return_sdp_str,
 		       isize_t *return_len)
 {
@@ -1151,7 +1151,7 @@ int soa_get_remote_version(soa_session_t const *ss)
  * soa_set_user_sdp(), soa_set_capability_sdp().
  */
 int soa_set_remote_sdp(soa_session_t *ss, 
-		       sdp_session_t const *sdp,
+		       struct sdp_session_s const *sdp,
 		       char const *str, issize_t len)
 {
   SU_DEBUG_9(("soa_set_remote_sdp(%s::%p, %p, %p, "MOD_ZD") called\n",
@@ -1245,7 +1245,7 @@ int soa_has_received_sdp(soa_session_t const *ss)
  * soa_get_user_sdp(), soa_get_remote_sdp(), soa_get_capability_sdp().
  */
 int soa_get_local_sdp(soa_session_t const *ss,
-		      sdp_session_t const **return_sdp,
+		      struct sdp_session_s const **return_sdp,
 		      char const **return_sdp_str,
 		      isize_t *return_len)
 {
@@ -1412,7 +1412,7 @@ int soa_generate_offer(soa_session_t *ss,
   if (ss == NULL)
     return su_seterrno(EFAULT), -1;
 
-  /** @ERROR An operation is already in progress */
+  /** @ERROR EALREADY An operation is already in progress */
   if (ss->ss_in_progress)
     return su_seterrno(EALREADY), -1;
 
@@ -1500,7 +1500,7 @@ int soa_generate_answer(soa_session_t *ss,
   if (ss == NULL)
     return su_seterrno(EFAULT), -1;
 
-  /** @ERROR An operation is already in progress. */
+  /** @ERROR EALREADY An operation is already in progress. */
   if (ss->ss_in_progress)
     return su_seterrno(EALREADY), -1;
 
@@ -1580,7 +1580,7 @@ int soa_process_answer(soa_session_t *ss,
   if (ss == NULL)
     return su_seterrno(EFAULT), -1;
 
-  /** @ERROR An operation is already in progress. */
+  /** @ERROR EALREADY An operation is already in progress. */
   if (ss->ss_in_progress)
     return su_seterrno(EALREADY), -1;
 
@@ -1661,7 +1661,7 @@ int soa_process_reject(soa_session_t *ss,
   if (ss == NULL)
     return su_seterrno(EFAULT), -1;
 
-  /** @ERROR An operation is already in progress. */
+  /** @ERROR EALREADY An operation is already in progress. */
   if (ss->ss_in_progress)
     return su_seterrno(EALREADY), -1;
 

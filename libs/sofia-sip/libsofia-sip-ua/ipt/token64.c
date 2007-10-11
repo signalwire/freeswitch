@@ -22,7 +22,7 @@
  *
  */
 
-/**@CFILE token64.c  
+/**@internal @file token64.c  
  *
  * Token encoding.
  *
@@ -41,7 +41,7 @@
 static const char code[65] = 
 "0123456789-abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-/** Encode data as an http token. 
+/** Encode data as a SIP/HTTP token. 
  *
  * @note
  * A token is case-independent, so this is really not a good idea.

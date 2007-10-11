@@ -22,8 +22,7 @@
  *
  */
 
-/**@ingroup su_alloc
- *
+/**@internal 
  * @file su_alloc_test.c
  *
  * Testing functions for su_alloc functions.

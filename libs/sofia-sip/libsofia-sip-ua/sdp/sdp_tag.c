@@ -22,7 +22,7 @@
  *
  */
 
-/**
+/**@internal
  * @file sdp_tag.c
  * @brief SDP Tags
  * 

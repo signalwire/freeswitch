@@ -22,14 +22,6 @@
  *
  */
 
-/**@ingroup su_alloc
- * @CFILE su_alloc.c  Home-based memory management.
- *
- * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
- * 
- * @date Created: Thu Aug 19 01:12:25 1999 ppessi
- */
-
 #include "config.h"
 
 /**@defgroup su_alloc Memory Management Tutorial
@@ -179,6 +171,14 @@
  * that was initialized with su_home_auto() must be explicitly deinitialized
  * with su_home_deinit() or su_home_unref() when the program exits the scope
  * where the stack frame used in su_home_auto() was allocated.
+ */
+
+/**@ingroup su_alloc
+ * @CFILE su_alloc.c  Home-based memory management.
+ *
+ * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
+ * 
+ * @date Created: Thu Aug 19 01:12:25 1999 ppessi
  */
 
 #include <sofia-sip/su_config.h>

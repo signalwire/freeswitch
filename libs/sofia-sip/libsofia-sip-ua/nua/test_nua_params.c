@@ -299,7 +299,7 @@ int test_nua_params(struct context *ctx)
     sip_organization_t const *organization = NONE;
     char const *organization_str = "NONE";
 
-    sip_route_t *initial_route = NONE;
+    sip_route_t const *initial_route = NONE;
     char const *initial_route_str = NONE;
 
     char const *outbound = "NONE";

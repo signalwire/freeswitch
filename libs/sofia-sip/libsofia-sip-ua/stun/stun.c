@@ -22,7 +22,7 @@
  *
  */
 
-/**
+/**@internal
  * @file stun.c STUN client module
  *
  * See RFC 3489/3489bis for further information.

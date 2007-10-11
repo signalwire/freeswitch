@@ -230,7 +230,7 @@ typedef enum
   sdp_media_control,			/**< Additional conference control */
   sdp_media_message,			/**< Messaging sessions*/
   sdp_media_image,			/**< Image browsing sessions for JPIP, and T.38 */
-  sdp_media_red				/**< Redundancy. @NEW_1_12_4 */
+  sdp_media_red				/**< Redundancy. @NEW_1_12_4. */
 } sdp_media_e;
 
 /** Media transport protocol. */
@@ -241,7 +241,7 @@ typedef enum
   sdp_proto_udp = 17,			/**< Plain UDP */
   sdp_proto_rtp = 256,			/**< RTP/AVP */
   sdp_proto_srtp = 257,			/**< RTP/SAVP  */
-  sdp_proto_udptl = 258,		/**< UDPTL. @NEW_1_12_4  */
+  sdp_proto_udptl = 258,		/**< UDPTL. @NEW_1_12_4. */
   sdp_proto_tls = 511,			/**< TLS over TCP */
   sdp_proto_any = 512		        /**< * wildcard */
 } sdp_proto_e;

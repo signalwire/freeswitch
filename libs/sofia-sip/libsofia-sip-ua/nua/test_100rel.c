@@ -550,6 +550,7 @@ int ringing_pracked(CONDITION_PARAMS)
 }
 
 int respond_483_to_prack(CONDITION_PARAMS);
+static int prack_100rel(CONDITION_PARAMS);
 
 int test_183rel(struct context *ctx)
 {
@@ -681,13 +682,14 @@ int test_183rel(struct context *ctx)
   if (print_headings)
     printf("TEST NUA-10.2.2: graceful termination because PRACK fails\n");
 
+  nua_set_hparams(a_call->nh, NUTAG_APPL_METHOD("PRACK"), TAG_END());
   nua_set_hparams(b_call->nh, NUTAG_APPL_METHOD("PRACK"),
 		  NUTAG_AUTOANSWER(0), TAG_END());
-  run_b_until(ctx, nua_r_set_params, NULL);
+  run_ab_until(ctx, nua_r_set_params, NULL, nua_r_set_params, NULL);
 
   INVITE(a, a_call, a_call->nh, TAG_END());
 
-  run_ab_until(ctx, -1, until_terminated, -1, respond_483_to_prack);
+  run_ab_until(ctx, -1, prack_100rel, -1, respond_483_to_prack);
 
   /* Client transitions:
      INIT -(C1)-> CALLING: nua_invite(), nua_i_state
@@ -788,6 +790,29 @@ int test_183rel(struct context *ctx)
     printf("TEST NUA-10.2.2: PASSED\n");
 
   END();
+}
+
+static int prack_100rel(CONDITION_PARAMS)
+{
+  if (!check_handle(ep, call, nh, SIP_500_INTERNAL_SERVER_ERROR))
+    return 0;
+
+  save_event_in_list(ctx, event, ep, call);
+
+  if (event == nua_r_invite && 100 < status && status < 200 &&
+      sip_has_feature(sip->sip_require, "100rel")) {
+    sip_rack_t rack[1];
+
+    sip_rack_init(rack);
+    rack->ra_response = sip->sip_rseq->rs_response;
+    rack->ra_cseq = sip->sip_cseq->cs_seq;
+    rack->ra_method = sip->sip_cseq->cs_method;
+    rack->ra_method_name = sip->sip_cseq->cs_method_name;
+
+    nua_prack(nh, SIPTAG_RACK(rack), TAG_END());
+  }
+
+  return event == nua_i_state && callstate(tags) == nua_callstate_terminated;
 }
 
 int respond_483_to_prack(CONDITION_PARAMS)

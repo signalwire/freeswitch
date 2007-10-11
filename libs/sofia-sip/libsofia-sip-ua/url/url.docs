@@ -20,8 +20,7 @@ structure.
 @note 
 Please note that we use terms URL and URI interchangeable.
 
-The formal URI syntax is defined in the 
-<a href="http://www.ietf.org/rfc/rfc2396.txt">RFC2396</a>.
+The formal URI syntax is defined in the @RFC3986.
 
 The URLs consist of a subset of printable ASCII (ECMA-5) characters. The
 subset excludes space and characters commonly used as @e delimiters in
@@ -51,7 +50,7 @@ and @b pres: URLs:
 <i>host</i> [":" <i>port</i> ] ] [";" <i>params</i> ] ["?" <i>query</i> ]
 ["#" <i>fragment</i> ]
 
-Note that also "*" is considered to be a valid URL (with type #url_any).
+Note that url parser also considers "*" to be a valid URL (with type #url_any).
 
 For example: \n
 @code
@@ -103,7 +102,7 @@ newly allocated string.
 
 @subsection url_reference Functions and Macros in URL Module
 
-The include file <url.h> contains the types, function and macros of URL
+The include file <sofia-sip/url.h> contains the types, function and macros of URL
 module. The functions and macros are listed here for the reference, too.
 The most important functions and macros for manipulating URLs are here:
 @code
@@ -123,7 +122,6 @@ int url_cmp_all(url_t const *a, url_t const *b);
 isize_t url_param(char const *params, char const *tag,
 		  char value[], isize_t vlen);
 int url_has_param(url_t const *url, char const *name);
-isize_t url_have_param(char const *params, char const *tag);
 int url_param_add(su_home_t *h, url_t *url, char const *param);
 @endcode
 

@@ -56,7 +56,7 @@
  */
 
 #ifndef SIP_H
-#include <sip.h>
+#include <sofia-sip/sip.h>
 #endif
 
 /**@ingroup sip_also

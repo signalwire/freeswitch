@@ -22,7 +22,7 @@
  *
  */
 
-/**@file nea_server.c
+/**@internal @file nea_server.c
  * @brief Nokia Event API - event notifier implementation.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -65,7 +65,7 @@
 /** Number of primary views (with different MIME type or content) */
 #define NEA_VIEW_MAX (8)
 
-/** Server object, created for every notifier.
+/** @internal Server object, created for every notifier.
  */
 struct nea_server_s {
   su_home_t                 nes_home[1];
@@ -112,7 +112,7 @@ struct nea_server_s {
 };
 
 
-/** Supported events and their subscribers  */
+/** @internal Supported events and their subscribers  */
 struct nea_event_s {
   nea_event_t              *ev_next;
   nea_event_t             **ev_prev;
@@ -141,7 +141,7 @@ struct nea_event_s {
 
 typedef struct nea_event_queue_s nea_event_queue_t;
 
-/** Object representing particular view of event */
+/** @internal Object representing particular view of event */
 struct nea_event_view_s
 {
   nea_event_view_t *evv_next;
@@ -156,7 +156,7 @@ struct nea_event_view_s
   unsigned          evv_reliable:1;     /**< Keep all notifications */
   unsigned:0;
 
-  /** Queued notification */
+  /** @internal Queued notification */
   struct nea_event_queue_s
   {
     nea_event_queue_t  *evq_next;
@@ -173,7 +173,7 @@ struct nea_event_view_s
 #define evv_payload evv_head->evq_payload
 
 
-/** Subscription object 
+/** @internal Subscription object.
  */
 struct nea_sub_s {
   nea_sub_t        *s_next;

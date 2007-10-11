@@ -22,7 +22,7 @@
  *
  */
 
-/**@file memccpy.c
+/**@internal @file memccpy.c
  * @brief The memccpy() replacement function.
  *  
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>

@@ -57,13 +57,16 @@
 
 SOFIA_BEGIN_DECLS
 
-/** Return built-in SIP parser object. */
+/** Return a built-in SIP parser object. */
 SOFIAPUBFUN msg_mclass_t const *sip_default_mclass(void);
 
-/** Check that sip_t is a SIP structure (not RTSP or HTTP). @HIDE */
+SOFIAPUBFUN int sip_update_default_mclass(msg_mclass_t const *mclass);
+SOFIAPUBFUN msg_mclass_t *sip_extend_mclass(msg_mclass_t *input);
+
+/** Check that sip_t is a SIP header structure (not MIME or HTTP). @HIDE */
 #define sip_is_sip(sip) ((sip) && (sip)->sip_ident == SIP_PROTOCOL_TAG)
 
-/** Initializer for a SIP header object. @HIDE */
+/** Initializer for a SIP header structure. @HIDE */
 #define SIP_HDR_INIT(name) {{{ 0, 0, sip_##name##_class }}}
 
 /** Initialize a SIP header structure. @HIDE */
@@ -349,7 +352,7 @@ int sip_has_feature(msg_list_t const *supported, char const *feature);
 SOFIAPUBFUN int sip_is_allowed(sip_allow_t const *allow, 
 			       sip_method_t method, char const *name);
 
-/** Check if the well-known method is listed in @Allow header. @NEW_1_12_6 */
+/** Check if the well-known method is listed in @Allow header. @NEW_1_12_6. */
 #define SIP_IS_ALLOWED(allow, method) \
   (sip_method_unknown < (method) && (method) < 32 && \
    (allow) && ((allow)->k_bitmap & (1 << (method))) != 0)
@@ -447,7 +450,7 @@ enum sip_bad_mask {
 
   /** Bit marking essential headers for PUBLISH servers and clients.
    *
-   * @SIPEtag, and @SIPIfMatch.
+   * @SIPETag, and @SIPIfMatch.
    * 
    * @sa @RFC3903.
    */

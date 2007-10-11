@@ -260,7 +260,7 @@ C 99 standard defines the following fixed length data types:
 - int8_t
 - uint8_t
 
-To use these data types you must include the <su_types.h> header, which
+To use these data types you must include the <sofia-sip/su_types.h> header, which
 takes care of including correct file. If @b su includes are not available,
 you must include the following code segment to each file where you plan to
 use them:
@@ -298,7 +298,7 @@ network byte order to host byte order.
 The ntohs() function converts the unsigned short integer netshort
 from network byte order to host byte order.
 
-You need to include <netinet/in.h> or <su.h> to use these functions.
+You need to include <netinet/in.h> or <sofia-sip/su.h> to use these functions.
 
 @subsection port_struct Packing structures
 
@@ -467,7 +467,7 @@ reference. This simplifies application logic because application code does
 not need to keep track of the allocated memory and free every allocated block 
 separately.
 
-See documentation of <su_alloc.h> and @ref su_alloc "memory managment tutorial"
+See documentation of <sofia-sip/su_alloc.h> and @ref su_alloc "memory managment tutorial"
 for more information of memory management services.
 
 @subsection contextdata Memory management of context data
@@ -532,7 +532,7 @@ controlled by upper level memory management.
 
 @section testing Testing Your Code
 
-See <tstdef.h> for example of how to write module tests with macros provided
+See <sofia-sip/tstdef.h> for example of how to write module tests with macros provided
 by Sofia.
 
 Here are some ideas of what you should test:
