@@ -193,6 +193,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\smoothsort.c"
+					>
+				</File>
+				<File
 					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\string0.c"
 					>
 				</File>

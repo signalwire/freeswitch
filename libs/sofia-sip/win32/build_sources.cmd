@@ -61,12 +61,12 @@
 %CHECK%
 %MSG_AWK% module=sip PR=%PR4% %IN% < NUL
 %CHECK%
-%MSG_AWK% module=sip PR=%PR5% TEMPLATE1=%PR2%.in TEMPLATE2=%PR3%.in TEMPLATE=%PR5%.in NO_FIRST=1 NO_LAST=1 < NUL %SIPEXTRA%
+%MSG_AWK% module=sip PR=%PR5% TEMPLATE1=%PR2%.in TEMPLATE2=%PR3%.in TEMPLATE3=%PR4%.in TEMPLATE=%PR5%.in NO_FIRST=1 NO_LAST=1 < NUL %SIPEXTRA%
 %CHECK%
 
-%MSG_AWK% module=sip MC_HASH_SIZE=127 MC_SHORT_SIZE=26 ^
+%MSG_AWK% module=sip TEMPLATE=%PT%.in MC_HASH_SIZE=127 MC_SHORT_SIZE=26 ^
   FLAGFILE=../libsofia-sip-ua/sip/sip_bad_mask ^
-  PT=%PT% %IN% < NUL
+  PT=%PT% %IN% %SIPEXTRA% < NUL
 %CHECK%
 
 @set IN=../libsofia-sip-ua/http/sofia-sip/http.h

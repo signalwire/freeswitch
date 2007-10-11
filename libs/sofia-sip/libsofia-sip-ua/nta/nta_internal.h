@@ -146,7 +146,7 @@ struct nta_agent_s
   size_t                sa_maxsize;
   
   /** Maximum size of outgoing UDP requests */
-  size_t                sa_udp_mtu;
+  unsigned              sa_udp_mtu;
 
   /** SIP T1 - initial interval of retransmissions (500 ms) */
   unsigned              sa_t1;

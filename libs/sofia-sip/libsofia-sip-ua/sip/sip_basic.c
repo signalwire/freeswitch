@@ -913,8 +913,6 @@ isize_t sip_addr_dup_xtra(sip_header_t const *h, isize_t offset)
 			    a->a_url,
 			    a->a_params,
 			    offset);
-
-  return offset;
 }
 
 /**@internal
