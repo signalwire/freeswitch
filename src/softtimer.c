@@ -48,8 +48,10 @@ static struct {
 	switch_mutex_t *mutex;
 } globals;
 
+#ifdef WIN32
 #undef SWITCH_MOD_DECLARE_DATA
 #define SWITCH_MOD_DECLARE_DATA __declspec(dllexport)
+#endif
 
 SWITCH_MODULE_LOAD_FUNCTION(softtimer_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown);
