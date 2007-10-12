@@ -660,7 +660,13 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 
 	struct_name = switch_core_sprintf(pool, "%s_module_interface", filename);
 
+#ifdef WIN32
+	status = switch_dso_load(&dso, "FreeSwitch.dll", loadable_modules.pool);
+#elif defined(DARWIN)
+	status = switch_dso_load(&dso, "libfreeswitch.dylib", loadable_modules.pool);
+#else
 	status = switch_dso_load(&dso, NULL, loadable_modules.pool);
+#endif
 	status = switch_dso_sym(&interface_struct_handle, dso, struct_name);
 
 	if (!interface_struct_handle) {
