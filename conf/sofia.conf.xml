@@ -52,6 +52,8 @@
 	<param name="rtp-timer-name" value="soft"/>
 	<param name="rtp-ip" value="$${bind_server_ip}"/>
 	<param name="sip-ip" value="$${bind_server_ip}"/>
+	<!--enable to use presense and mwi -->
+	<!--<param name="manage-presence" value="true"/>-->
 	<!--set to 'greedy' if you want your codec list to take precedence -->
 	<param name="inbound-codec-negotiation" value="generous"/>
 	<!-- if you want to send any special bind params of your own -->
