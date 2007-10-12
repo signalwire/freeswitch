@@ -223,17 +223,17 @@ static void add_result(enum_query_t * q, int order, int preference, char *servic
 
 	rp = q->results;
 
-	while (rp && strcmp(rp->service, new_result->service)) {
+	while (rp && strcasecmp(rp->service, new_result->service)) {
 		prev = rp;
 		rp = rp->next;
 	}
 
-	while (rp && !strcmp(rp->service, new_result->service) && new_result->order > rp->order) {
+	while (rp && !strcasecmp(rp->service, new_result->service) && new_result->order > rp->order) {
 		prev = rp;
 		rp = rp->next;
 	}
 
-	while (rp && !strcmp(rp->service, new_result->service) && new_result->preference > rp->preference) {
+	while (rp && !strcasecmp(rp->service, new_result->service) && new_result->preference > rp->preference) {
 		prev = rp;
 		rp = rp->next;
 	}
@@ -541,7 +541,7 @@ SWITCH_STANDARD_DIALPLAN(enum_dialplan_hunt)
 
 		for (rtp = globals.route_order; rtp; rtp = rtp->next) {
 			for (rp = results; rp; rp = rp->next) {
-				if (!strcmp(rtp->service, rp->service)) {
+				if (!strcasecmp(rtp->service, rp->service)) {
 					switch_caller_extension_add_application(session, extension, "bridge", rp->route);
 				}
 			}
@@ -596,7 +596,7 @@ SWITCH_STANDARD_APP(enum_app_function)
 
 			for (rtp = globals.route_order; rtp; rtp = rtp->next) {
 				for (rp = results; rp; rp = rp->next) {
-					if (!strcmp(rtp->service, rp->service)) {
+					if (!strcasecmp(rtp->service, rp->service)) {
 						snprintf(vbuf, sizeof(vbuf), "enum_route_%d", cnt++);
 						switch_channel_set_variable(channel, vbuf, rp->route);
 
@@ -661,7 +661,7 @@ SWITCH_STANDARD_API(enum_function)
 
 		for (rtp = globals.route_order; rtp; rtp = rtp->next) {
 			for (rp = results; rp; rp = rp->next) {
-				if (!strcmp(rtp->service, rp->service)) {
+				if (!strcasecmp(rtp->service, rp->service)) {
 					stream->write_function(stream, "%d\t%d\t%-10s\t%s\n", rp->order, rp->preference, rp->service, rp->route);
 				}
 			}
