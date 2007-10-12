@@ -346,7 +346,7 @@ su_log_t nta_log[] = { SU_LOG_INIT("nta", "NTA_DEBUG", SU_DEBUG) };
  * NTATAG_SIP_T1X64(), NTATAG_SIP_T1(), NTATAG_SIP_T2(), NTATAG_SIP_T4(),
  * NTATAG_STATELESS(),
  * NTATAG_TAG_3261(), NTATAG_TCP_RPORT(), NTATAG_TIMEOUT_408(),
- * NTATAG_TIMER_C(),
+ * NTATAG_TIMER_C(), NTATAG_MAX_PROCEEDING(),
  * NTATAG_UA(), NTATAG_UDP_MTU(), NTATAG_USER_VIA(),
  * NTATAG_USE_NAPTR(), NTATAG_USE_SRV() and NTATAG_USE_TIMESTAMP().
  *
@@ -864,7 +864,7 @@ void agent_kill_terminator(nta_agent_t *agent)
  * INVITE transactions, or how the @Via headers are generated.
  *
  * @note 
- * Setting the parameters NTATAG_MAXSIZE(), NTATAG_UDP_MTU(),
+ * Setting the parameters NTATAG_MAXSIZE(), NTATAG_UDP_MTU(), NTATAG_MAX_PROCEEDING(),
  * NTATAG_SIP_T1X64(), NTATAG_SIP_T1(), NTATAG_SIP_T2(), NTATAG_SIP_T4() to
  * 0 selects the default value.
  *
@@ -882,7 +882,7 @@ void agent_kill_terminator(nta_agent_t *agent)
  * NTATAG_SIP_T1X64(), NTATAG_SIP_T1(), NTATAG_SIP_T2(), NTATAG_SIP_T4(),
  * NTATAG_STATELESS(),
  * NTATAG_TAG_3261(), NTATAG_TCP_RPORT(), NTATAG_TIMEOUT_408(),
- * NTATAG_TIMER_C(),
+ * NTATAG_TIMER_C(), NTATAG_MAX_PROCEEDING(),
  * NTATAG_UA(), NTATAG_UDP_MTU(), NTATAG_USER_VIA(),
  * NTATAG_USE_NAPTR(), NTATAG_USE_SRV() and NTATAG_USE_TIMESTAMP().
  *
@@ -915,6 +915,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
   unsigned bad_req_mask = agent->sa_bad_req_mask;
   unsigned bad_resp_mask = agent->sa_bad_resp_mask;
   usize_t  maxsize    = agent->sa_maxsize;
+  usize_t  max_proceeding = agent->sa_max_proceeding;
   unsigned max_forwards = agent->sa_max_forwards->mf_count;
   unsigned udp_mtu    = agent->sa_udp_mtu;
   unsigned sip_t1     = agent->sa_t1;
@@ -966,6 +967,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
 	      NTATAG_DEFAULT_PROXY_REF(proxy),
 	      NTATAG_EXTRA_100_REF(extra_100),
 	      NTATAG_MAXSIZE_REF(maxsize),
+	      NTATAG_MAX_PROCEEDING_REF(max_proceeding),
 	      NTATAG_MAX_FORWARDS_REF(max_forwards),
 	      NTATAG_MCLASS_REF(mclass),
 	      NTATAG_MERGE_482_REF(merge_482),
@@ -1069,6 +1071,9 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
   if (maxsize == 0) maxsize = 2 * 1024 * 1024;
   if (maxsize > NTA_TIME_MAX) maxsize = NTA_TIME_MAX;
   agent->sa_maxsize = maxsize;
+
+  if (max_proceeding == 0) max_proceeding = SIZE_MAX;
+  agent->sa_max_proceeding = max_proceeding;
 
   if (max_forwards == 0) max_forwards = 70; /* Default value */
   agent->sa_max_forwards->mf_count = max_forwards;
@@ -1178,7 +1183,7 @@ void agent_set_udp_params(nta_agent_t *self, usize_t udp_mtu)
  * NTATAG_DEBUG_DROP_PROB_REF(), NTATAG_DEFAULT_PROXY_REF(),
  * NTATAG_EXTRA_100_REF(),
  * NTATAG_MAXSIZE_REF(), NTATAG_MAX_FORWARDS_REF(), NTATAG_MCLASS_REF(),
- * NTATAG_MERGE_482_REF(), 
+ * NTATAG_MERGE_482_REF(), NTATAG_MAX_PROCEEDING_REF(),
  * NTATAG_PASS_100_REF(), NTATAG_PASS_408_REF(), NTATAG_PRELOAD_REF(),
  * NTATAG_PROGRESS_REF(),
  * NTATAG_REL100_REF(), 
@@ -1226,6 +1231,7 @@ int agent_get_params(nta_agent_t *agent, tagi_t *tags)
 	     NTATAG_DEFAULT_PROXY(agent->sa_default_proxy),
 	     NTATAG_EXTRA_100(agent->sa_extra_100),
 	     NTATAG_MAXSIZE(agent->sa_maxsize),
+		 NTATAG_MAX_PROCEEDING(agent->sa_max_proceeding),
 	     NTATAG_MAX_FORWARDS(agent->sa_max_forwards->mf_count),
 	     NTATAG_MCLASS(agent->sa_mclass),
 	     NTATAG_MERGE_482(agent->sa_merge_482),
@@ -2390,9 +2396,16 @@ void agent_recv_request(nta_agent_t *agent,
     leg_recv(leg, msg, sip, tport);
   }
   else if (!agent->sa_is_stateless && (leg = agent->sa_default_leg)) {
-    SU_DEBUG_5(("nta: %s (%u) %s\n",
-		method_name, cseq, "going to a default leg"));
-    leg_recv(leg, msg, sip, tport);
+	if (method == sip_method_invite && agent->sa_in.proceeding->q_length >= agent->sa_max_proceeding) {
+		SU_DEBUG_5(("nta: proceeding queue full for %s (%u)\n", method_name, cseq));
+		nta_msg_treply(agent, msg, SIP_486_BUSY_HERE,
+			   NTATAG_TPORT(tport), 
+			   TAG_END());
+		return;
+	} else {
+		SU_DEBUG_5(("nta: %s (%u) %s\n", method_name, cseq, "going to a default leg"));
+		leg_recv(leg, msg, sip, tport);
+	}
   }
   else if (agent->sa_callback) {
     /* Stateless processing for request */

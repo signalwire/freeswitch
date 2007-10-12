@@ -400,6 +400,27 @@ tag_typedef_t ntatag_remote_cseq = UINTTAG_TYPEDEF(remote_cseq);
  */
 tag_typedef_t ntatag_maxsize = USIZETAG_TYPEDEF(maxsize);
 
+/**@def NTATAG_MAX_PROCEEDING(x)
+ *
+ * Maximum size of proceeding queue. 
+ *
+ * If the size of the proceedng message queue would exceed the
+ * given limit, the stack will automatically respond with <i>486 
+ * Server Busy</i>.
+ *
+ * @par Used with
+ *    nua_create(), nua_set_params(),
+ *    nta_agent_create(), nta_agent_set_params()
+ *
+ * @par Parameter type
+ *    - #usize_t 
+ *
+ * @par Values
+ *    - Maximum acceptable size of a queue (size_t).
+ *
+ */
+tag_typedef_t ntatag_max_proceeding = USIZETAG_TYPEDEF(max_proceeding);
+
 /**@def NTATAG_UDP_MTU(x)
  *
  * Maximum size of outgoing UDP request. 

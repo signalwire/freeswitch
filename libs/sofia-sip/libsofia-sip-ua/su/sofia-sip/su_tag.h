@@ -216,6 +216,8 @@ su_inline tag_value_t tag_filter_v(tag_filter_f *v) {return(tag_value_t)v;}
 #define tag_uint_vr(v) (tag_value_t)(v)
 #define tag_usize_v(v) (tag_value_t)(v)
 #define tag_usize_vr(v) (tag_value_t)(v)
+#define tag_size_v(v) (tag_value_t)(v)
+#define tag_size_vr(v) (tag_value_t)(v)
 #define tag_bool_v(v)  (tag_value_t)(v != 0)
 #define tag_bool_vr(v) (tag_value_t)(v)
 #define tag_ptr_v(v)   (tag_value_t)(v)

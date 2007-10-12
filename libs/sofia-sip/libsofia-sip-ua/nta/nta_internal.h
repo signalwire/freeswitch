@@ -145,6 +145,9 @@ struct nta_agent_s
   /** Maximum size of incoming messages */
   size_t                sa_maxsize;
   
+  /** Maximum size of proceeding queue */
+  size_t                sa_max_proceeding;
+  
   /** Maximum size of outgoing UDP requests */
   unsigned              sa_udp_mtu;
 
