@@ -12,9 +12,6 @@
       <param name="terminator-key" value="#"/>
       <param name="play-new-messages-key" value="1"/>
       <param name="play-saved-messages-key" value="2"/>
-      <param name="save-message-key" value="8"/>
-      <param name="delete-message-key" value="7"/>
-      <param name="replay-message-key" value="1"/>
       <param name="main-menu-key" value="0"/>
       <param name="config-menu-key" value="5"/>
       <param name="record-greeting-key" value="1"/>
