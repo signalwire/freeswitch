@@ -747,6 +747,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	const char *passwd = NULL;
 	const char *a1_hash = NULL;
 	char *sql;
+	char *mailbox = NULL;
 	switch_xml_t domain, xml = NULL, user, param, xparams;	
 	char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1] = "";
 	char *pbuf = NULL;
@@ -829,7 +830,11 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 		ret = AUTH_FORBIDDEN;
 		goto end;
 	}
-		
+	
+	if (!(mailbox = (char *)switch_xml_attr(user, "mailbox"))) {
+		mailbox = username;
+	}
+
 	for (param = switch_xml_child(xparams, "param"); param; param = param->next) {
 		const char *var = switch_xml_attr_soft(param, "name");
 		const char *val = switch_xml_attr_soft(param, "value");
@@ -899,6 +904,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	if (first && ret == AUTH_OK) {
 		if (v_event && (xparams = switch_xml_child(user, "variables"))) {
 			if (switch_event_create(v_event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, "sip_mailbox", "%s", mailbox);
 				for (param = switch_xml_child(xparams, "variable"); param; param = param->next) {
 					const char *var = switch_xml_attr_soft(param, "name");
 					const char *val = switch_xml_attr_soft(param, "value");

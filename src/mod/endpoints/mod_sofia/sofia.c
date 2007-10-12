@@ -1924,6 +1924,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		from_host = sip->sip_from->a_url->url_host;
 		channel_name = url_set_chanvars(session, sip->sip_from->a_url, sip_from);
 
+		switch_channel_set_variable(channel, "sip_mailbox", from_user);
+
 		if (!switch_strlen_zero(from_user)) {
 			if (*from_user == '+') {
 				switch_channel_set_variable(channel, "sip_from_user_stripped", (const char *) (from_user + 1));

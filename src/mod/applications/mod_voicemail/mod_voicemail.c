@@ -83,136 +83,6 @@ struct vm_profile {
 };
 typedef struct vm_profile vm_profile_t;
 
-
-#define B64BUFFLEN 1024
-static const char c64[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-static int write_buf(int fd, char *buf)
-{
-
-	int len = (int) strlen(buf);
-	if (fd && write(fd, buf, len) != len) {
-		close(fd);
-		return 0;
-	}
-
-	return 1;
-}
-static switch_bool_t vm_email(char *to, char *from, char *headers, char *body, char *file)
-{
-	char *bound = "XXXX_boundary_XXXX";
-	char filename[80], buf[B64BUFFLEN];
-	int fd = 0, ifd = 0;
-	int x = 0, y = 0, bytes = 0, ilen = 0;
-	unsigned int b = 0, l = 0;
-	unsigned char in[B64BUFFLEN];
-	unsigned char out[B64BUFFLEN + 512];
-	char *path = NULL;
-
-    snprintf(filename, 80, "%smail.%ld%04x", SWITCH_GLOBAL_dirs.temp_dir, time(NULL), rand() & 0xffff);
-    
-    if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644))) {
-        if (file) {
-            path = file;
-            if ((ifd = open(path, O_RDONLY)) < 1) {
-                return SWITCH_FALSE;
-            }
-
-            snprintf(buf, B64BUFFLEN, "MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=\"%s\"\n", bound);
-            if (!write_buf(fd, buf)) {
-                return SWITCH_FALSE;
-            }
-        }
-
-        if (headers && !write_buf(fd, headers))
-            return SWITCH_FALSE;
-
-        if (!write_buf(fd, "\n\n"))
-            return SWITCH_FALSE;
-
-        if (file) {
-            snprintf(buf, B64BUFFLEN, "--%s\nContent-Type: text/plain\n\n", bound);
-            if (!write_buf(fd, buf))
-                return SWITCH_FALSE;
-        }
-
-        if (body) {
-            if (!write_buf(fd, body)) {
-                return SWITCH_FALSE;
-            }
-        }
-
-        if (file) {
-            snprintf(buf, B64BUFFLEN, "\n\n--%s\nContent-Type: application/octet-stream\n"
-                     "Content-Transfer-Encoding: base64\n"
-                     "Content-Description: Sound attachment.\n" "Content-Disposition: attachment; filename=\"%s\"\n\n", bound,  switch_cut_path(file));
-            if (!write_buf(fd, buf))
-                return SWITCH_FALSE;
-
-            while ((ilen = read(ifd, in, B64BUFFLEN))) {
-                for (x = 0; x < ilen; x++) {
-                    b = (b << 8) + in[x];
-                    l += 8;
-                    while (l >= 6) {
-                        out[bytes++] = c64[(b >> (l -= 6)) % 64];
-                        if (++y != 72)
-                            continue;
-                        out[bytes++] = '\n';
-                        y = 0;
-                    }
-                }
-                if (write(fd, &out, bytes) != bytes) {
-                    return -1;
-                } else
-                    bytes = 0;
-
-            }
-
-            if (l > 0) {
-                out[bytes++] = c64[((b % 16) << (6 - l)) % 64];
-            }
-            if (l != 0)
-                while (l < 6) {
-                    out[bytes++] = '=', l += 2;
-                }
-            if (write(fd, &out, bytes) != bytes) {
-                return -1;
-            }
-
-        }
-
-
-
-        if (file) {
-            snprintf(buf, B64BUFFLEN, "\n\n--%s--\n.\n", bound);
-            if (!write_buf(fd, buf))
-                return SWITCH_FALSE;
-        }
-    }
-
-    if (fd) {
-        close(fd);
-    }
-    if (ifd) {
-        close(ifd);
-    }
-    snprintf(buf, B64BUFFLEN, "/bin/cat %s | /usr/sbin/sendmail -tf \"%s\" %s", filename, from, to);
-    if(system(buf)) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to execute command: %s\n", buf);
-    }
-
-    unlink(filename);
-
-
-    if (file) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Emailed file [%s] to [%s]\n", filename, to);
-    } else {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Emailed data to [%s]\n", to);
-    }
-
-    return SWITCH_TRUE;
-}
-
 static switch_status_t vm_execute_sql(vm_profile_t *profile, char *sql, switch_mutex_t *mutex)
 {
 	switch_core_db_t *db;
@@ -953,7 +823,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
                     }
 
                     //TBD add better formatting to the body
-                    vm_email(cbt->email, from, headers, body, cbt->file_path);
+                    switch_simple_email(cbt->email, from, headers, body, cbt->file_path);
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending message to %s\n", cbt->email);
                     switch_safe_free(body);
                     TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "emailed", NULL, NULL));
@@ -1532,7 +1402,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
         }
 
         //TBD add better formatting to the body
-        vm_email(email_vm, from, headers, body, file_path);
+        switch_simple_email(email_vm, from, headers, body, file_path);
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending message to %s\n", email_vm);
         switch_safe_free(body);
         unlink(file_path);
