@@ -25,6 +25,7 @@
       <param name="save-file-key" value="2"/>
       <param name="delete-file-key" value="7"/>
       <param name="undelete-file-key" value="8"/>
+      <param name="email-key" value="4"/>
       <!--<param name="odbc-dsn" value="dsn:user:pass"/>-->
     </profile>
   </profiles>
