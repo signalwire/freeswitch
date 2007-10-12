@@ -156,8 +156,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	tts_engine = (char *) switch_xml_attr_soft(language, "tts_engine");
 	tts_voice = (char *) switch_xml_attr_soft(language, "tts_voice");
 
-	old_sound_prefix = switch_channel_get_variable(channel, "sound_prefix");
-	switch_channel_set_variable(channel, "sound_prefix", sound_path);
+	if (sound_path) {
+		old_sound_prefix = switch_channel_get_variable(channel, "sound_prefix");
+		switch_channel_set_variable(channel, "sound_prefix", sound_path);
+	}
 
 	if (!(macro = switch_xml_child(language, "macro"))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "can't find any macro tags.\n");
@@ -269,9 +271,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	}
 
   done:
-
-	switch_channel_set_variable(channel, "sound_prefix", old_sound_prefix);
-
+	if (old_sound_prefix) {
+		switch_channel_set_variable(channel, "sound_prefix", old_sound_prefix);
+	}
 	if (xml) {
 		switch_xml_free(xml);
 	}

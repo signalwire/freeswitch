@@ -211,7 +211,14 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 
 	for (hp = event->headers; hp; hp = hp->next) {
 		if (!strncasecmp(hp->name, "mwi-", 4)) {
-			stream.write_function(&stream, "%s: %s\r\n", hp->name + 4, hp->value);
+			char *tmp = NULL;
+			char *value = hp->value;
+			if (!strcasecmp(hp->name, "mwi-message-account") && strncasecmp(hp->value, "sip:", 4)) {
+				tmp = switch_mprintf("sip:%s", hp->value);
+				value = tmp;
+			} 
+			stream.write_function(&stream, "%s: %s\r\n", hp->name + 4, value);
+			switch_safe_free(tmp);
 		}
 	}
 
@@ -223,7 +230,6 @@ void sofia_presence_mwi_event_handler(switch_event_t *event)
 	switch_safe_free(stream.data);
 
 	assert (sql != NULL);
-
 	sofia_glue_execute_sql_callback(profile,
 									SWITCH_FALSE,
 									profile->ireg_mutex,
@@ -603,6 +609,8 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	contact = sofia_glue_get_url_from_contact(tmp, 0);
 
 	nua_notify(nh,
+			   NUTAG_WITH_THIS(profile->nua),
+			   NUTAG_NEWSUB(1),
 			   NUTAG_URL(contact),
 			   SIPTAG_TO_STR(full_from),
 			   SIPTAG_FROM_STR(id),

@@ -72,6 +72,11 @@ struct vm_profile {
     char delete_file_key[2];
     char undelete_file_key[2];
     char email_key[2];
+    char pause_key[2];
+    char restart_key[2];
+    char ff_key[2];
+    char rew_key[2];
+    char urgent_key[2];
     char file_ext[10];
     char *tone_spec;
     uint32_t digit_timeout;
@@ -200,7 +205,8 @@ static char vm_sql[] =
 	"   cid_number    VARCHAR(255),\n" 
 	"   in_folder     VARCHAR(255),\n" 
 	"   file_path     VARCHAR(255),\n" 
-	"   flags         VARCHAR(255)\n" 
+	"   flags         VARCHAR(255),\n"
+	"   read_flags    VARCHAR(255)\n" 
 	");\n";
 
 
@@ -264,6 +270,11 @@ static switch_status_t load_config(void)
         char *delete_file_key = "7";
         char *undelete_file_key = "8";
         char *email_key = "4";
+        char *pause_key = "0";
+        char *restart_key = "1";
+        char *ff_key = "6";
+        char *rew_key = "4";
+        char *urgent_key = "*";
         char *tone_spec = "%(1000, 0, 640)";
         char *file_ext = "wav";
 
@@ -303,6 +314,16 @@ static switch_status_t load_config(void)
                 undelete_file_key = val;
             } else if (!strcasecmp(var, "email-key") && !switch_strlen_zero(val)) {
                 email_key = val;
+            } else if (!strcasecmp(var, "pause-key") && !switch_strlen_zero(val)) {
+                pause_key = val;
+            } else if (!strcasecmp(var, "restart-key") && !switch_strlen_zero(val)) {
+                restart_key = val;
+            } else if (!strcasecmp(var, "ff-key") && !switch_strlen_zero(val)) {
+                ff_key = val;
+            } else if (!strcasecmp(var, "rew-key") && !switch_strlen_zero(val)) {
+                rew_key = val;
+            } else if (!strcasecmp(var, "urgent-key") && !switch_strlen_zero(val)) {
+                urgent_key = val;
             } else if (!strcasecmp(var, "file-extension")) {
                 file_ext = val;
             } else if (!strcasecmp(var, "tone-spec")) {
@@ -410,6 +431,12 @@ static switch_status_t load_config(void)
             *profile->delete_file_key = *delete_file_key;
             *profile->undelete_file_key = *undelete_file_key;
             *profile->email_key = *email_key;
+            *profile->pause_key = *pause_key;
+            *profile->restart_key = *restart_key;
+            *profile->ff_key = *ff_key;
+            *profile->rew_key = *rew_key;
+            *profile->urgent_key = *urgent_key;
+
             profile->tone_spec = switch_core_strdup(globals.pool, tone_spec);
             switch_copy_string(profile->file_ext, file_ext, sizeof(profile->file_ext));
             switch_mutex_init(&profile->mutex, SWITCH_MUTEX_NESTED, globals.pool);
@@ -451,6 +478,13 @@ static switch_status_t cancel_on_dtmf(switch_core_session_t *session, void *inpu
 }
 
 
+struct call_control {
+    vm_profile_t *profile;
+    switch_file_handle_t *fh;
+    char buf[4];
+};
+typedef struct call_control cc_t;
+
 static switch_status_t control_playback(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
 
@@ -459,47 +493,47 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
 	case SWITCH_INPUT_TYPE_DTMF:
         {
             char *dtmf = (char *) input;
-            switch_file_handle_t *fh = (switch_file_handle_t *) buf;
+            cc_t *cc = (cc_t *) buf;
+            switch_file_handle_t *fh = cc->fh;
             uint32_t pos = 0;
-            
-            switch(*dtmf) {
-            case '0':
-                {
-                    if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
-                        switch_clear_flag(fh, SWITCH_FILE_PAUSE);
-                    } else {
-                        switch_set_flag(fh, SWITCH_FILE_PAUSE);
-                    }
-                    return SWITCH_STATUS_SUCCESS;
-                }
-                break;
-            case '1':
-                {
-                    unsigned int pos = 0;
-                    fh->speed = 0;
-                    switch_core_file_seek(fh, &pos, 0, SEEK_SET);
-                    return SWITCH_STATUS_SUCCESS;
-                }
-                break;
-            case '6':
-                {
-                    int samps = 24000;
-                    switch_core_file_seek(fh, &pos, samps, SEEK_CUR);
-                    return SWITCH_STATUS_SUCCESS;
-                }
-                break;
-            case '4':
-                {
-                    int samps = 24000;
-                    switch_core_file_seek(fh, &pos, fh->pos - samps, SEEK_SET);
-                    return SWITCH_STATUS_SUCCESS;
-                }
-                break;
-            case '#':
+
+            if (*dtmf == *cc->profile->delete_file_key || *dtmf == *cc->profile->save_file_key) {
+                *cc->buf = *dtmf;
                 return SWITCH_STATUS_BREAK;
-            
-            default:
+            }
+            if (!fh) {
                 return SWITCH_STATUS_SUCCESS;
+            }
+            if (*dtmf == *cc->profile->pause_key) {
+                if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
+                    switch_clear_flag(fh, SWITCH_FILE_PAUSE);
+                } else {
+                    switch_set_flag(fh, SWITCH_FILE_PAUSE);
+                }
+                return SWITCH_STATUS_SUCCESS;
+            }
+
+            if (*dtmf == *cc->profile->restart_key) {
+                unsigned int pos = 0;
+                fh->speed = 0;
+                switch_core_file_seek(fh, &pos, 0, SEEK_SET);
+                return SWITCH_STATUS_SUCCESS;
+            }
+
+            if (*dtmf == *cc->profile->ff_key) {
+                int samps = 24000;
+                switch_core_file_seek(fh, &pos, samps, SEEK_CUR);
+                return SWITCH_STATUS_SUCCESS;
+            }
+
+            if (*dtmf == *cc->profile->rew_key) {
+                int samps = 24000;
+                switch_core_file_seek(fh, &pos, fh->pos - samps, SEEK_SET);
+                return SWITCH_STATUS_SUCCESS;
+            }
+
+            if (*dtmf == *cc->profile->terminator_key) {
+                return SWITCH_STATUS_BREAK;
             }
         }
 		break;
@@ -554,6 +588,7 @@ typedef enum {
 #define VM_RECORD_NAME_MACRO "voicemail_record_name"
 #define VM_LISTEN_FILE_CHECK_MACRO "voicemail_listen_file_check"
 #define VM_RECORD_FILE_CHECK_MACRO "voicemail_record_file_check"
+#define VM_RECORD_URGENT_CHECK_MACRO "voicemail_record_urgent_check"
 #define VM_MENU_MACRO "voicemail_menu"
 #define VM_CONFIG_MENU_MACRO "voicemail_config_menu"
 #define VM_ENTER_ID_MACRO "voicemail_enter_id"
@@ -562,8 +597,8 @@ typedef enum {
 #define VM_ABORT_MACRO "voicemail_abort"
 #define VM_HELLO_MACRO "voicemail_hello"
 #define VM_GOODBYE_MACRO "voicemail_goodbye"
-#define VM_NEW_MESSAGE_COUNT_MACRO "voicemail_new_message_count"
-#define VM_SAVED_MESSAGE_COUNT_MACRO "voicemail_saved_message_count"
+#define VM_MESSAGE_COUNT_MACRO "voicemail_message_count"
+
 
 
 static switch_status_t vm_macro_get(switch_core_session_t *session,
@@ -585,7 +620,7 @@ static switch_status_t vm_macro_get(switch_core_session_t *session,
     assert(channel != NULL);
     
     if (buf && buflen) {
-        *buf = '\0';
+        memset(buf, 0, buflen);
         args.input_callback = cancel_on_dtmf;
         args.buf = buf;
         args.buflen = sizeof(buf);
@@ -660,6 +695,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
     switch_input_args_t args = { 0 };
     char term;
     char input[10] = "" , key_buf[80] = "";
+    cc_t cc = { 0 };
 
     channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
@@ -696,14 +732,24 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
     play_file:
         memset(&fh, 0, sizeof(fh));
         args.input_callback = control_playback;
-        args.buf = &fh;
+        memset(&cc, 0, sizeof(cc));
+        cc.profile = profile;
+        cc.fh = &fh;
+        args.buf = &cc;
         switch_ivr_play_file(session, &fh, file_path, &args);
         
         
         while(switch_channel_ready(channel)) {
-            status = vm_macro_get(session, VM_RECORD_FILE_CHECK_MACRO, 
-                                  key_buf, input, sizeof(input), 1, profile->terminator_key, &term, profile->digit_timeout);
-            
+            if (*cc.buf) {
+                *input = *cc.buf;
+                *(input+1) = '\0';
+                status = SWITCH_STATUS_SUCCESS;
+                *cc.buf = '\0';
+            } else {
+                status = vm_macro_get(session, VM_RECORD_FILE_CHECK_MACRO, 
+                                      key_buf, input, sizeof(input), 1, profile->terminator_key, &term, profile->digit_timeout);
+            }
+
             if (!strcmp(input, profile->listen_file_key)) {
                 goto play_file;
             } else if (!strcmp(input, profile->record_file_key)) {
@@ -732,6 +778,7 @@ struct listen_callback {
     char in_folder[255];
     char file_path[255];
     char flags[255];
+    char read_flags[255];
     char *email;
     int index;
     int want;
@@ -757,6 +804,7 @@ static int listen_callback(void *pArg, int argc, char **argv, char **columnNames
 	switch_copy_string(cbt->in_folder, argv[7], 255);
 	switch_copy_string(cbt->file_path, argv[8], 255);
 	switch_copy_string(cbt->flags, argv[9], 255);
+	switch_copy_string(cbt->read_flags, argv[10], 255);
     
     
 	return -1;
@@ -771,6 +819,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
     char term;
     char input[10] = "" , key_buf[80] = "";
     switch_file_handle_t fh = { 0 };
+    cc_t cc = { 0 };
     channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
     
@@ -787,20 +836,37 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
                  profile->email_key);
 
 
-        snprintf(input, sizeof(input), "%s:%d", cbt->type == MSG_NEW ? "new" : "saved", cbt->index);
-        TRY_CODE(switch_ivr_phrase_macro(session, VM_SAY_MESSAGE_NUMBER_MACRO, input, NULL, NULL));
-        TRY_CODE(switch_ivr_phrase_macro(session, VM_SAY_DATE_MACRO, cbt->created_epoch, NULL, NULL));
+        snprintf(input, sizeof(input), "%s:%d", cbt->type == MSG_NEW ? "new" : "saved", cbt->want+1);
+        memset(&cc, 0, sizeof(cc));
+        cc.profile = profile;
+        args.buf = &cc;
+        args.input_callback = control_playback;
+        TRY_CODE(switch_ivr_phrase_macro(session, VM_SAY_MESSAGE_NUMBER_MACRO, input, NULL, &args));
+        if (!*cc.buf) {
+            TRY_CODE(switch_ivr_phrase_macro(session, VM_SAY_DATE_MACRO, cbt->created_epoch, NULL, &args));
+        }
     play_file:
 
-        memset(&fh, 0, sizeof(fh));
-        args.input_callback = control_playback;
-        args.buf = &fh;
-        TRY_CODE(switch_ivr_play_file(session, NULL, cbt->file_path, &args));
-        
+        if (!*cc.buf) {
+            memset(&fh, 0, sizeof(fh));
+            args.input_callback = control_playback;
+            memset(&cc, 0, sizeof(cc));
+            cc.profile = profile;
+            cc.fh = &fh;
+            args.buf = &cc;
+            TRY_CODE(switch_ivr_play_file(session, NULL, cbt->file_path, &args));
+        }
+
         if (switch_channel_ready(channel)) {
-            status = vm_macro_get(session, VM_LISTEN_FILE_CHECK_MACRO, 
-                                  key_buf, input, sizeof(input), 1, profile->terminator_key, &term, profile->digit_timeout);
-            
+            if (*cc.buf) {
+                *input = *cc.buf;
+                *(input+1) = '\0';
+                status = SWITCH_STATUS_SUCCESS;
+                *cc.buf = '\0';
+            } else {
+                status = vm_macro_get(session, VM_LISTEN_FILE_CHECK_MACRO, 
+                                      key_buf, input, sizeof(input), 1, profile->terminator_key, &term, profile->digit_timeout);
+            }
             if (!strcmp(input, profile->listen_file_key)) {
                 goto play_file;
             } else if (!strcmp(input, profile->delete_file_key) || !strcmp(input, profile->email_key)) {
@@ -810,11 +876,16 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
                 if (!strcmp(input, profile->email_key) && !switch_strlen_zero(cbt->email)) {
                     switch_event_t *event;
                     char *from = switch_core_session_sprintf(session, "%s@%s", cbt->user, cbt->domain);
-                    char *headers = switch_core_session_sprintf(session, "From: FreeSWITCH mod_voicemail <%s@%s>\nSubject: Voicemail from %s %s", 
-                                                                cbt->user, cbt->domain, cbt->cid_name, cbt->cid_number);
-                                                                
+                    char *headers;
                     char *body;
-
+                    int priority = 3;
+                    
+                    if (!strcasecmp(cbt->read_flags, "urgent")) {
+                        priority = 1;
+                    }
+                    headers = switch_core_session_sprintf(session, 
+                                                          "From: FreeSWITCH mod_voicemail <%s@%s>\nSubject: Voicemail from %s %s\nX-Priority: %d", 
+                                                          cbt->user, cbt->domain, cbt->cid_name, cbt->cid_number, priority);
                     
                     if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Message-Type", "forwarded-voicemail");
@@ -847,7 +918,8 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
     return status;
 }
 
-static void message_count(vm_profile_t *profile, char *myid, char *domain_name, char *myfolder, int *total_new_messages, int *total_saved_messages)
+static void message_count(vm_profile_t *profile, char *myid, char *domain_name, char *myfolder, 
+                          int *total_new_messages, int *total_saved_messages, int *total_new_urgent_messages, int *total_saved_urgent_messages)
 {
     char msg_count[80] = "";
     callback_t cbt = { 0 };
@@ -866,12 +938,30 @@ static void message_count(vm_profile_t *profile, char *myid, char *domain_name, 
     *total_new_messages = atoi(msg_count);
 
     snprintf(sql, sizeof(sql), 
+             "select count(*) from voicemail_data where user='%s' and domain='%s' and in_folder='%s' and read_epoch=0 and read_flags='urgent'", 
+             myid,
+             domain_name,
+             myfolder);
+    vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &cbt);
+    *total_new_urgent_messages = atoi(msg_count);
+
+    snprintf(sql, sizeof(sql), 
              "select count(*) from voicemail_data where user='%s' and domain='%s' and in_folder='%s' and read_epoch!=0", 
              myid,
              domain_name,
              myfolder);
     vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &cbt);
     *total_saved_messages = atoi(msg_count);
+
+
+    snprintf(sql, sizeof(sql), 
+             "select count(*) from voicemail_data where user='%s' and domain='%s' and in_folder='%s' and read_epoch!=0 and read_flags='urgent'", 
+             myid,
+             domain_name,
+             myfolder);
+    vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &cbt);
+    *total_saved_urgent_messages = atoi(msg_count);
+
 }
 
 
@@ -891,6 +981,8 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
     char *dir_path = NULL, *file_path = NULL;
     int total_new_messages = 0;
     int total_saved_messages = 0;
+    int total_new_urgent_messages = 0;
+    int total_saved_urgent_messages = 0;
     int heard_auto_saved = 0, heard_auto_new = 0;
     char *email_vm = NULL;
     channel = switch_core_session_get_channel(session);
@@ -918,6 +1010,8 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
             {
                 total_new_messages = 0;
                 total_saved_messages = 0;
+                total_new_urgent_messages = 0;
+                total_saved_urgent_messages = 0;
                 heard_auto_saved = 0;
                 heard_auto_new = 0;
                 play_msg_type = MSG_NONE;
@@ -936,22 +1030,41 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
             {
                 char msg_count[80] = "";
                 switch_channel_set_variable(channel, "voicemail_current_folder", myfolder);
-                message_count(profile, myid, domain_name, myfolder, &total_new_messages, &total_saved_messages);
-                snprintf(msg_count, sizeof(msg_count), "%d", total_new_messages);
-                if ((status = switch_ivr_phrase_macro(session, VM_NEW_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL)) != SWITCH_STATUS_SUCCESS) {
-                    goto end;
-                }
+                message_count(profile, myid, domain_name, myfolder, &total_new_messages, &total_saved_messages, 
+                              &total_new_urgent_messages, &total_saved_urgent_messages);
 
+                if (total_new_urgent_messages > 0) {
+                    snprintf(msg_count, sizeof(msg_count), "%d:urgent:new", total_new_messages);
+                    if ((status = switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL)) != SWITCH_STATUS_SUCCESS) {
+                        goto end;
+                    }
+                }
+                if (total_new_messages > 0) {
+                    snprintf(msg_count, sizeof(msg_count), "%d:new", total_new_messages);
+                    if ((status = switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL)) != SWITCH_STATUS_SUCCESS) {
+                        goto end;
+                    }
+                }
+                
                 if (!heard_auto_new && total_new_messages > 0) {
                     heard_auto_new = 1;
                     play_msg_type = MSG_NEW;
                     vm_check_state = VM_CHECK_PLAY_MESSAGES;
                     continue;
                 }
+                
+                if (total_saved_urgent_messages > 0) {
+                    snprintf(msg_count, sizeof(msg_count), "%d:urgent:saved", total_saved_messages);
+                    if ((status = switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL)) != SWITCH_STATUS_SUCCESS) {
+                        goto end;
+                    }
+                }
 
-                snprintf(msg_count, sizeof(msg_count), "%d", total_saved_messages);
-                if ((status = switch_ivr_phrase_macro(session, VM_SAVED_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL)) != SWITCH_STATUS_SUCCESS) {
-                    goto end;
+                if (total_saved_messages > 0) {
+                    snprintf(msg_count, sizeof(msg_count), "%d:saved", total_saved_messages);
+                    if ((status = switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL)) != SWITCH_STATUS_SUCCESS) {
+                        goto end;
+                    }
                 }
                 
                 if (!heard_auto_saved && total_saved_messages > 0) {
@@ -969,7 +1082,8 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
                 listen_callback_t cbt;
                 char sql[256];
                 int cur_message, total_messages;
-                message_count(profile, myid, domain_name, myfolder, &total_new_messages, &total_saved_messages);
+                message_count(profile, myid, domain_name, myfolder, &total_new_messages, &total_saved_messages, 
+                              &total_new_urgent_messages, &total_saved_urgent_messages);
                 memset(&cbt, 0, sizeof(cbt));
                 cbt.email = email_vm;
                 switch(play_msg_type) {
@@ -1018,6 +1132,7 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
                 char key_buf[80] = "";
                 callback_t cbt = { 0 };
                 char msg_count[80] = "";
+                cc_t cc = { 0 };
                 cbt.buf = msg_count;
                 cbt.len = sizeof(msg_count);
                 sql = switch_mprintf("select count(*) from voicemail_prefs where user='%q' and domain = '%q'", myid, domain_name);
@@ -1060,7 +1175,10 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
                         switch_file_handle_t fh = { 0 };
                         memset(&fh, 0, sizeof(fh));
                         args.input_callback = control_playback;
-                        args.buf = &fh;
+                        memset(&cc, 0, sizeof(cc));
+                        cc.profile = profile;
+                        cc.fh = &fh;
+                        args.buf = &cc;
                         status = switch_ivr_play_file(session, NULL, file_path, &args);
                     }
                     if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
@@ -1288,6 +1406,9 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
     switch_input_args_t args = { 0 };
     char *email_vm = NULL;
     int send_mail = 0;
+    cc_t cc = { 0 };
+    char *read_flags = "";
+    int priority = 3;
 
     memset(&cbt, 0, sizeof(cbt));
     if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
@@ -1317,7 +1438,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
         int ok = 1;
         char *xtra = switch_mprintf("mailbox=%s", id);
         switch_xml_t x_domain, x_domain_root, x_user, x_params, x_param;
-        
+
         assert(xtra);
         x_user = x_domain = x_domain_root = NULL;
         if (switch_xml_locate_user(id, domain_name, switch_channel_get_variable(channel, "network_addr"), 
@@ -1358,7 +1479,10 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
 
     memset(&fh, 0, sizeof(fh));
     args.input_callback = control_playback;
-    args.buf = &fh;
+    memset(&cc, 0, sizeof(cc));
+    cc.profile = profile;
+    cc.fh = &fh;
+    args.buf = &cc;
 
     if (!switch_strlen_zero(cbt.greeting_path)) {
         TRY_CODE(switch_ivr_play_file(session, NULL, cbt.greeting_path, NULL));
@@ -1369,29 +1493,64 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
         TRY_CODE(switch_ivr_phrase_macro(session, VM_PLAY_GREETING_MACRO, id, NULL, NULL));
     }
 
-    if(!send_mail && switch_channel_ready(channel)) {
-        char *usql;
         status = create_file(session, profile, VM_RECORD_MESSAGE_MACRO, file_path);
-        if (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK) {
-            usql = switch_mprintf("insert into voicemail_data values(%ld,0,'%q','%q','%q','%q','%q','%q','%q','')", (long)time(NULL),
-                                  id, domain_name, uuid, caller_profile->caller_id_name, caller_profile->caller_id_number, myfolder, file_path);
-            vm_execute_sql(profile, usql, profile->mutex);
-            switch_safe_free(usql);
-        } else {
-            unlink(file_path);
-            goto end;
+
+        if ((status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK) && switch_channel_ready(channel)) {
+            char input[10] = "", key_buf[80] = "", term = 0;
+
+            snprintf(key_buf, sizeof(key_buf), "%s:%s", 
+                     profile->urgent_key,
+                     profile->terminator_key);
+
+            vm_macro_get(session, VM_RECORD_URGENT_CHECK_MACRO, key_buf, input, sizeof(input), 1, profile->terminator_key, &term, profile->digit_timeout);
+            if (*profile->urgent_key == *input) {
+                read_flags = "urgent";
+                priority = 1;
+            }
         }
 
-    }
+        if(!send_mail) {
+            char *usql;
+            switch_event_t *event;
+            char *mwi_id = NULL;
+            int total_new_messages = 0;
+            int total_saved_messages = 0;
+            int total_new_urgent_messages = 0;
+            int total_saved_urgent_messages = 0;
+        
+            usql = switch_mprintf("insert into voicemail_data values(%ld,0,'%q','%q','%q','%q','%q','%q','%q','','%q')", (long)time(NULL),
+                                  id, domain_name, uuid, caller_profile->caller_id_name, caller_profile->caller_id_number, myfolder, file_path, read_flags);
+            vm_execute_sql(profile, usql, profile->mutex);
+            switch_safe_free(usql);
 
+            message_count(profile, id, domain_name, myfolder, &total_new_messages, &total_saved_messages,
+                          &total_new_urgent_messages, &total_saved_urgent_messages);
+
+            if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) {
+                mwi_id = switch_mprintf("%s@%s", id, domain_name);
+                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", "yes");
+                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", mwi_id);
+                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)", 
+                                        total_new_messages, total_saved_messages, total_new_urgent_messages, total_saved_urgent_messages);
+                switch_event_fire(&event);
+                switch_safe_free(mwi_id);
+            }    
+        }
+        
  end:
     
     if (send_mail && !switch_strlen_zero(email_vm)) {
         switch_event_t *event;
         char *from = switch_core_session_sprintf(session, "%s@%s", id, domain_name);
-        char *headers = switch_core_session_sprintf(session, "From: FreeSWITCH mod_voicemail <%s@%s>\nSubject: Voicemail from %s %s", id, domain_name,
-                                                    caller_profile->caller_id_name, caller_profile->caller_id_number);
         char *body;
+        char *headers;
+        
+        headers = switch_core_session_sprintf(session, "From: FreeSWITCH mod_voicemail <%s@%s>\nSubject: Voicemail from %s %s\nX-Priority: %d", 
+                                              id, domain_name,
+                                              caller_profile->caller_id_name, 
+                                              caller_profile->caller_id_number,
+                                              priority);
+
 
         
         if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
@@ -1502,6 +1661,65 @@ SWITCH_STANDARD_APP(voicemail_function)
     }
 }
 
+static void  message_query_handler(switch_event_t *event)
+{
+	char *account = switch_event_get_header(event, "message-account");
+    int sent = 0;
+    switch_event_t *new_event = NULL;
+
+	if (account) {
+        switch_hash_index_t *hi;
+        int total_new_messages = 0;
+        int total_saved_messages = 0;
+        int total_new_urgent_messages = 0;
+        int total_saved_urgent_messages = 0;
+        void *val;
+        vm_profile_t *profile;
+        char *id, *domain;
+
+        if (!strncasecmp(account, "sip:", 4)) {
+            id = strdup(account + 4);
+        } else {
+            id = strdup(account);
+        }
+        assert(id);
+
+        if ((domain = strchr(id, '@'))) {
+            *domain++ = '\0';
+            for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+                switch_hash_this(hi, NULL, NULL, &val);
+                profile = (vm_profile_t *) val;
+                total_new_messages =  total_saved_messages = 0;
+                message_count(profile, id, domain, "inbox", &total_new_messages, &total_saved_messages,
+                              &total_new_urgent_messages, &total_saved_urgent_messages);
+                if (total_new_messages || total_saved_messages) {
+                    if (switch_event_create(&new_event, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) {
+                        switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", "yes");
+                        switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", account);
+                        switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)", 
+                                                total_new_messages, total_saved_messages, total_new_urgent_messages, total_saved_urgent_messages);
+                        switch_event_fire(&new_event);
+                        sent++;
+                    }
+                }
+            }
+        }
+        
+        switch_safe_free(id);
+
+	}
+
+    if (!sent) {
+        if (switch_event_create(&new_event, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) {
+            switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", "no");
+            switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", account);
+            switch_event_fire(&new_event);
+        }
+    }
+
+
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load)
 {
 	switch_application_interface_t *app_interface;
@@ -1513,6 +1731,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_APP(app_interface, "voicemail", "Voicemail", VM_DESC, voicemail_function, VM_USAGE, SAF_NONE);
+
+
+	if (switch_event_bind((char *) modname, SWITCH_EVENT_MESSAGE_QUERY, SWITCH_EVENT_SUBCLASS_ANY, message_query_handler, NULL)
+		!= SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_GENERR;
+	}
     
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;

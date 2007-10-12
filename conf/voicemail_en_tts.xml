@@ -47,22 +47,13 @@
     </input>
   </macro>
 
-  <macro name="voicemail_new_message_count">
-    <input pattern="(.*)">
+  <macro name="voicemail_message_count">
+    <input pattern="^([^:]+):([^:]+):{0,1}(.*)">
       <match>
-	<action function="speak-text" data="you have $1 new messages in folder ${voicemail_current_folder}"/>
+	<action function="speak-text" data="you have $1 $2 $3 messages in folder ${voicemail_current_folder}"/>
       </match>
     </input>
   </macro>
-
-  <macro name="voicemail_saved_message_count">
-    <input pattern="(.*)">
-      <match>
-	<action function="speak-text" data="you have $1 saved messages in folder ${voicemail_current_folder}"/>
-      </match>
-    </input>
-  </macro>
-
 
   <macro name="voicemail_menu">
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
@@ -98,6 +89,15 @@
       <match>
 	<action function="speak-text" 
 		data="press $1 to listen to the recording, press $2 to save the recording, press $3 to re record"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_record_urgent_check">
+    <input pattern="^([0-9#*]):([0-9#*])$">
+      <match>
+	<action function="speak-text" 
+		data="press $1 to mark this message urgent or press $2 to continue"/>
       </match>
     </input>
   </macro>
@@ -202,7 +202,7 @@
   <macro name="voicemail_say_date">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="$strftime($1|%A, %B %d %Y, %I %m %p)"/>
+	<action function="speak-text" data="$strftime($1|%A, %B %d %Y, %I %M %p)"/>
       </match>
     </input>
   </macro>
