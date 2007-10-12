@@ -582,7 +582,7 @@ SWITCH_STANDARD_APP(enum_app_function)
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		dest = argv[0];
 		root = argv[1] ? argv[1] : globals.root;
-		if (enum_lookup(root, data, &results) == SWITCH_STATUS_SUCCESS) {
+		if (enum_lookup(root, dest, &results) == SWITCH_STATUS_SUCCESS) {
 			switch_event_header_t *hi;
 			if ((hi = switch_channel_variable_first(channel))) {
 				for (; hi; hi = hi->next) {
