@@ -662,7 +662,7 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 
 #ifdef WIN32
 	status = switch_dso_load(&dso, "FreeSwitch.dll", loadable_modules.pool);
-#elif defined(DARWIN)
+#elif defined (MACOSX) || defined(DARWIN)
 	status = switch_dso_load(&dso, "libfreeswitch.dylib", loadable_modules.pool);
 #else
 	status = switch_dso_load(&dso, NULL, loadable_modules.pool);
