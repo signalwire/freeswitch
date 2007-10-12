@@ -36,6 +36,7 @@
       <param name="password" value="mypass"/>
       <param name="vm-password" value="1234"/><!--if vm-password is omitted password param is used-->
       <!--<param name="vm-mailto" value="me@mydomain.com"/>-->
+      <!--<param name="vm-email-all-messages" value="true"/>-->
       <!-- optionally use this instead if you want to store the hash of user:domain:pass-->
       <!--<param name="a1-hash" value="c6440e5de50b403206989679159de89a"/>-->
     </params>
