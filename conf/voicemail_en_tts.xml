@@ -1,0 +1,209 @@
+<include><!--This line will be ignored it's here to validate the xml and is optional -->
+  <macro name="voicemail_enter_id">
+    <input pattern="(.*)">
+      <match>
+	<action function="speak-text" data="please enter your i d, followed by $1"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_enter_pass">
+    <input pattern="(.*)">
+      <match>
+	<action function="speak-text" data="please enter your password, followed by $1"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_fail_auth">
+    <input pattern="(.*)">
+      <match>
+	<action function="speak-text" data="login incorrect"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_hello">
+    <input pattern="(.*)">
+      <match>
+	<action function="speak-text" data="welcome to your voicemail"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_goodbye">
+    <input pattern="(.*)">
+      <match>
+	<action function="speak-text" data="goodbye"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_abort">
+    <input pattern="(.*)">
+      <match>
+	<action function="speak-text" data="too many failed attempts"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_new_message_count">
+    <input pattern="(.*)">
+      <match>
+	<action function="speak-text" data="you have $1 new messages in folder ${voicemail_current_folder}"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_saved_message_count">
+    <input pattern="(.*)">
+      <match>
+	<action function="speak-text" data="you have $1 saved messages in folder ${voicemail_current_folder}"/>
+      </match>
+    </input>
+  </macro>
+
+
+  <macro name="voicemail_menu">
+    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*])$">
+      <match>
+	<action function="speak-text" data="press $1 to listen to new messages. press $2 to listen to saved messages. press $3 for advanced options"/>
+      </match>
+    </input>
+  </macro>
+
+
+  <macro name="voicemail_config_menu">
+    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
+      <match>
+	<action function="speak-text" 
+		data="press $1 to record a greeting, press $2 to choose a greeting, press $3 to record your name, press $4 for the main menu"/>
+      </match>
+    </input>
+  </macro>
+
+
+  <macro name="voicemail_record_name">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="at the tone, record your name, press any key or stop talking to end the recording."/>
+
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_record_file_check">
+    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*])$">
+      <match>
+	<action function="speak-text" 
+		data="press $1 to listen to the recording, press $2 to save the recording, press $3 to re record"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_listen_file_check">
+    <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
+      <match>
+	<action function="speak-text" 
+		data="press $1 to listen to the recording again, press $2 to save the recording, press $3 to delete the recording"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_choose_greeting">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="choose a greeting between 1 and 3"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_choose_greeting_fail">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="invalid value"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_record_greeting">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="record your greeting at the tone, press any key or stop talking to end the recording"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_record_message">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="record your message at the tone, press any key or stop talking to end the recording"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_greeting_selected">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="greeting $1 selected"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_play_greeting">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="$1 is not available"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_say_number">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="$1"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_say_message_number">
+    <input pattern="^([a-z]+):(.*)$">
+      <match>
+	<action function="speak-text" data="$1 message number $2"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_say_phone_number">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="$1"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_say_name">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="$1"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_ack">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="message $1"/>
+      </match>
+    </input>
+  </macro>
+
+  <macro name="voicemail_say_date">
+    <input pattern="^(.*)$">
+      <match>
+	<action function="speak-text" data="$strftime($1|%A, %B %d %Y, %I %m %p)"/>
+      </match>
+    </input>
+  </macro>
+
+</include><!--This line will be ignored it's here to validate the xml and is optional -->

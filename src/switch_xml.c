@@ -1241,7 +1241,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(char *domain_name, char
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(char *user_name, char *domain_name, 
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(char *user_name, 
+													   char *domain_name, 
 													   char *ip, 
 													   switch_xml_t *root,
 													   switch_xml_t *domain,
@@ -1272,7 +1273,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(char *user_name, char *do
 	} 
 
 	if (user_name) {
-		if (!(*user = switch_xml_find_child(*domain, "user", "id", user_name))) {
+		if (!(*user = switch_xml_find_child(*domain, "user", "id", user_name)) && strstr(xtra_params, "mailbox") && 
+			!(*user = switch_xml_find_child(*domain, "user", "mailbox", user_name))) {
 			return SWITCH_STATUS_FALSE;
 		}
 		return SWITCH_STATUS_SUCCESS;

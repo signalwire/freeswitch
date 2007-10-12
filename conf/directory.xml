@@ -1,7 +1,7 @@
 <!--the domain or ip (the right hand side of the @ in the addr-->
 <domain name="$${domain}">
   <!--the user id (the left hand side of the @ in the addr-->
-  <user id="stpeter">
+  <user id="stpeter" mailbox="1000"> <!--if id is numeric mailbox param is not necessary-->
     <!-- Outbound Registrations Related to this user -->
     <gateways>
       <!--<gateway name="asterlink.com">-->
@@ -34,6 +34,8 @@
     <params>
       <!-- omit password for authless registration -->
       <param name="password" value="mypass"/>
+      <param name="vm-password" value="1234"/><!--if vm-password is omitted password param is used-->
+      <!--<param name="vm-mailto" value="me@mydomain.com"/>-->
       <!-- optionally use this instead if you want to store the hash of user:domain:pass-->
       <!--<param name="a1-hash" value="c6440e5de50b403206989679159de89a"/>-->
     </params>

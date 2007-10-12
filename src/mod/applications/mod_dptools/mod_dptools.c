@@ -675,9 +675,16 @@ SWITCH_STANDARD_API(strftime_api_function)
 	switch_size_t retsize;
 	switch_time_exp_t tm;
 	char date[80] = "";
-
-	switch_time_exp_lt(&tm, switch_time_now());
-	switch_strftime(date, &retsize, sizeof(date), cmd ? cmd : "%Y-%m-%d %T", &tm);
+	switch_time_t thetime;
+	char *p;
+	if (!switch_strlen_zero(cmd) && (p = strchr(cmd, '|'))) {
+		thetime = switch_time_make(atoi(cmd),0);
+		cmd = p+1;
+	} else {
+		thetime = switch_time_now();
+	}
+	switch_time_exp_lt(&tm, thetime);
+	switch_strftime(date, &retsize, sizeof(date), switch_strlen_zero(cmd) ? "%Y-%m-%d %T" : cmd, &tm);
 	stream->write_function(stream, "%s", date);
 
 	return SWITCH_STATUS_SUCCESS;

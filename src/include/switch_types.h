@@ -253,6 +253,7 @@ struct switch_directories {
 	char *temp_dir;
 	char *htdocs_dir;
 	char *grammar_dir;
+	char *storage_dir;
 };
 
 typedef struct switch_directories switch_directories;

@@ -5,6 +5,7 @@ applications/mod_conference
 applications/mod_dptools
 applications/mod_enum
 applications/mod_fifo
+#applications/mod_voicemail
 #applications/mod_ivrtest
 #applications/mod_soundtouch
 #applications/mod_rss

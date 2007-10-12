@@ -1,0 +1,30 @@
+<configuration name="voicemail.conf" description="Voicemail">
+  <settings>
+  </settings>
+  <profiles>
+    <profile name="demo">
+      <param name="terminator-key" value="#"/>
+      <param name="max-login-attempts" value="3"/>
+      <param name="digit-timeout" value="10000"/>
+      <param name="max-record-len" value="300"/>
+      <param name="tone-spec" value="%(1000, 0, 640)"/>
+      <param name="terminator-key" value="#"/>
+      <param name="play-new-messages-key" value="1"/>
+      <param name="play-saved-messages-key" value="2"/>
+      <param name="save-message-key" value="8"/>
+      <param name="delete-message-key" value="7"/>
+      <param name="replay-message-key" value="1"/>
+      <param name="main-menu-key" value="0"/>
+      <param name="config-menu-key" value="5"/>
+      <param name="record-greeting-key" value="1"/>
+      <param name="choose-greeting-key" value="2"/>
+      <param name="record-name-key" value="3"/>
+      <param name="record-file-key" value="3"/>
+      <param name="listen-file-key" value="1"/>
+      <param name="save-file-key" value="2"/>
+      <param name="delete-file-key" value="7"/>
+      <param name="undelete-file-key" value="8"/>
+      <!--<param name="odbc-dsn" value="dsn:user:pass"/>-->
+    </profile>
+  </profiles>
+</configuration> 

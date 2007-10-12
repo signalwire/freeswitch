@@ -19,6 +19,21 @@
     </condition>
   </extension>
 
+  <extension name="7771">
+    <condition field="destination_number" expression="^7771$">
+      <action application="answer"/>
+      <action application="set" data="voicemail_authorized=${sip_authorized}"/>
+      <action application="voicemail" data="check demo $${domain} ${sip_from_user}"/>
+    </condition>
+  </extension>
+
+  <extension name="7772">
+    <condition field="destination_number" expression="^7772$">
+      <action application="answer"/>
+      <action application="voicemail" data="demo $${domain} ${sip_from_user}"/>
+    </condition>
+  </extension>
+
   <extension name="9193">
     <condition field="destination_number" expression="^9193$">
       <action application="set" data="bridge_pre_execute_bleg_app=soundtouch"/>

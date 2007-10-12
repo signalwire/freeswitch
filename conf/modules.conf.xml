@@ -37,6 +37,7 @@
     <load module="mod_conference"/>
     <load module="mod_dptools"/>
     <load module="mod_fifo"/>
+    <!--<load module="mod_voicemail"/>-->
 
     <!-- Dialplan Interfaces -->
     <!-- <load module="mod_dialplan_directory"/> -->

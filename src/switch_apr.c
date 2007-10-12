@@ -394,6 +394,51 @@ SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename, switch_
 	return status;
 }
 
+/* #define SWITCH_FPROT_USETID      0x8000 /\**< Set user id *\/ */
+/* #define SWITCH_FPROT_UREAD       0x0400 /\**< Read by user *\/ */
+/* #define SWITCH_FPROT_UWRITE      0x0200 /\**< Write by user *\/ */
+/* #define SWITCH_FPROT_UEXECUTE    0x0100 /\**< Execute by user *\/ */
+
+/* #define SWITCH_FPROT_GSETID      0x4000 /\**< Set group id *\/ */
+/* #define SWITCH_FPROT_GREAD       0x0040 /\**< Read by group *\/ */
+/* #define SWITCH_FPROT_GWRITE      0x0020 /\**< Write by group *\/ */
+/* #define SWITCH_FPROT_GEXECUTE    0x0010 /\**< Execute by group *\/ */
+
+/* #define SWITCH_FPROT_WSTICKY     0x2000 /\**< Sticky bit *\/ */
+/* #define SWITCH_FPROT_WREAD       0x0004 /\**< Read by others *\/ */
+/* #define SWITCH_FPROT_WWRITE      0x0002 /\**< Write by others *\/ */
+/* #define SWITCH_FPROT_WEXECUTE    0x0001 /\**< Execute by others *\/ */
+
+/* #define SWITCH_FPROT_OS_DEFAULT  0x0FFF /\**< use OS's default permissions *\/ */
+
+
+/**
+ * Create a new directory on the file system.
+ * @param path the path for the directory to be created. (use / on all systems)
+ * @param perm Permissions for the new direcoty.
+ * @param pool the pool to use.
+ */
+SWITCH_DECLARE(switch_status_t) switch_dir_make(const char *path, switch_fileperms_t perm,
+												switch_memory_pool_t *pool)
+{
+	return apr_dir_make(path, perm, pool);
+}
+
+/** Creates a new directory on the file system, but behaves like
+ * 'mkdir -p'. Creates intermediate directories as required. No error
+ * will be reported if PATH already exists.
+ * @param path the path for the directory to be created. (use / on all systems)
+ * @param perm Permissions for the new direcoty.
+ * @param pool the pool to use.
+ */
+SWITCH_DECLARE(switch_status_t) switch_dir_make_recursive(const char *path,
+														  switch_fileperms_t perm,
+														  switch_memory_pool_t *pool)
+{
+	return apr_dir_make_recursive(path, perm, pool);
+}
+
+
 struct switch_dir {
 	apr_dir_t *dir_handle;
 	apr_finfo_t finfo;

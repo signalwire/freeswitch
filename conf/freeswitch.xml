@@ -102,6 +102,7 @@
     <!--#include "conference.conf.xml"-->
     <!-- ivr.conf is used by mod_dptools -->
     <!--#include "ivr.conf.xml"-->
+    <!--#include "voicemail.conf.xml"-->
 
     <!-- Dialplan Interfaces -->
     <!--#include "dialplan_directory.conf.xml"-->
@@ -145,6 +146,8 @@
     <macros>
       <language name="en" sound_path="/snds" tts_engine="cepstral" tts_voice="david">
 	<!--#include "lang_en.xml"-->
+	<!--voicemail_en_tts is purely implemented with tts, we need a files based implementation too -->
+	<!--#include "voicemail_en_tts.xml"-->
       </language>
       <language name="fr" sound_path="/var/sounds/lang/fr/jean" tts_engine="cepstral" tts_voice="jean-pierre">
 	<!--#include "lang_fr.xml"-->
