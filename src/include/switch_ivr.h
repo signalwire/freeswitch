@@ -139,8 +139,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_session_t *session,
 																char *buf,
-																uint32_t buflen,
-																uint32_t maxdigits, const char *terminators, char *terminator, uint32_t timeout);
+																switch_size_t buflen,
+																switch_size_t maxdigits, const char *terminators, char *terminator, uint32_t timeout);
 
 /*!
   \brief Engage background Speech detection on a session

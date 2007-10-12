@@ -602,10 +602,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_session_t *session,
 																char *buf,
-																uint32_t buflen,
-																uint32_t maxdigits, const char *terminators, char *terminator, uint32_t timeout)
+																switch_size_t buflen,
+																switch_size_t maxdigits, const char *terminators, char *terminator, uint32_t timeout)
 {
-	uint32_t i = 0, x = (uint32_t) strlen(buf);
+	switch_size_t i = 0, x = strlen(buf);
 	switch_channel_t *channel;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_time_t started = 0;
@@ -648,7 +648,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 			char dtmf[128];
 
 			switch_channel_dequeue_dtmf(channel, dtmf, maxdigits);
-			for (i = 0; i < (uint32_t) strlen(dtmf); i++) {
+			for (i = 0; i < strlen(dtmf); i++) {
 
 				if (!switch_strlen_zero(terminators) && strchr(terminators, dtmf[i]) && terminator != NULL) {
 					*terminator = dtmf[i];

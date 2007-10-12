@@ -344,7 +344,7 @@ SWITCH_STANDARD_APP(rss_function)
 #endif
 				char term;
 				char *cp;
-				int blen = sizeof(cmd) - (int) strlen(cmd);
+				switch_size_t blen = sizeof(cmd) - strlen(cmd);
 
 				cp = cmd + blen;
 				switch_ivr_collect_digits_count(session, cp, blen, blen, "#", &term, 5000);

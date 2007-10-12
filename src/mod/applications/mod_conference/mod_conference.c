@@ -4124,8 +4124,8 @@ SWITCH_STANDARD_APP(conference_function)
 
 					status = switch_ivr_collect_digits_count(session,
 															 buf,
-															 sizeof(pin_buf) - (unsigned int) strlen(pin_buf),
-															 (unsigned int) strlen(conference->pin) - (unsigned int) strlen(pin_buf), "#", &term, 10000);
+															 sizeof(pin_buf) - strlen(pin_buf),
+															 strlen(conference->pin) - strlen(pin_buf), "#", &term, 10000);
 				}
 
 				pin_valid = (status == SWITCH_STATUS_SUCCESS && strcmp(pin_buf, conference->pin) == 0);

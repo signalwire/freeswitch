@@ -182,8 +182,8 @@ class CoreSession {
 	 * receiving dtmf digits.  For that, use collectDigits.
 	 */
 	int getDigits(char *dtmf_buf, 
-				  int buflen, 
-				  int maxdigits, 
+				  switch_size_t buflen, 
+				  switch_size_t maxdigits, 
 				  char *terminators, 
 				  char *terminator, 
 				  int timeout);

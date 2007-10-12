@@ -168,8 +168,8 @@ int CoreSession::collectDigits(int timeout) {
 } 
 
 int CoreSession::getDigits(char *dtmf_buf, 
-						   int buflen, 
-						   int maxdigits, 
+						   switch_size_t buflen, 
+						   switch_size_t maxdigits, 
 						   char *terminators, 
 						   char *terminator, 
 						   int timeout)
@@ -180,8 +180,8 @@ int CoreSession::getDigits(char *dtmf_buf,
 
     status = switch_ivr_collect_digits_count(session, 
 											 dtmf_buf,
-											 (uint32_t) buflen,
-											 (uint32_t) maxdigits, 
+											 buflen,
+											 maxdigits, 
 											 terminators, 
 											 terminator, 
 											 (uint32_t) timeout);

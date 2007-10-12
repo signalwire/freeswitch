@@ -35,8 +35,11 @@
 #include <switch_odbc.h>
 #endif
 
-
+#ifdef _MSC_VER /* compilers are stupid sometimes */
+#define TRY_CODE(code) for(;;) {status = code; if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) { goto end; } break;}
+#else
 #define TRY_CODE(code) do {status = code; if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) { goto end; } break;} while(status)
+#endif
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load);
 SWITCH_MODULE_DEFINITION(mod_voicemail, mod_voicemail_load, NULL, NULL);

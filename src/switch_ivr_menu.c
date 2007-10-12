@@ -46,7 +46,7 @@ struct switch_ivr_menu {
 	char *ptr;
 	int max_failures;
 	int timeout;
-	uint32_t inlen;
+	switch_size_t inlen;
 	uint32_t flags;
 	struct switch_ivr_menu_action *actions;
 	struct switch_ivr_menu *next;
@@ -234,7 +234,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_free(switch_ivr_menu_t * s
 	return status;
 }
 
-static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_menu_t * menu, char *sound, uint32_t need)
+static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_menu_t * menu, char *sound, switch_size_t need)
 {
 	char terminator;
 	uint32_t len;
@@ -252,7 +252,7 @@ static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_me
 			len = 1;
 			ptr = NULL;
 		} else {
-			len = menu->inlen;
+			len = (uint32_t) menu->inlen;
 			ptr = menu->ptr;
 		}
 		args.buf = ptr;
