@@ -161,9 +161,11 @@ int sofia_reg_nat_callback(void *pArg, int argc, char **argv, char **columnNames
 
 	nh = nua_handle(profile->nua, NULL, SIPTAG_FROM_STR(profile->url), SIPTAG_TO_STR(to), NUTAG_URL(contact), SIPTAG_CONTACT_STR(profile->url), TAG_END());
 	
-	nua_message(nh, SIPTAG_CONTENT_TYPE_STR("text/plain"),
-				SIPTAG_PAYLOAD_STR("You suffer from Connectile Dysfunction.\nYou should use stun....\n"), TAG_END());
+	//nua_message(nh, SIPTAG_CONTENT_TYPE_STR("text/plain"),
+	//SIPTAG_PAYLOAD_STR("You suffer from Connectile Dysfunction.\nYou should use stun....\n"), TAG_END());
 
+	nua_options(nh, SIPTAG_FROM_STR(profile->url), SIPTAG_TO_STR(to), NUTAG_URL(contact), SIPTAG_CONTACT_STR(profile->url), TAG_END());
+	
 	return 0;
 }
 
