@@ -50,7 +50,7 @@
   <macro name="voicemail_message_count">
     <input pattern="^([^:]+):([^:]+):{0,1}(.*)">
       <match>
-	<action function="speak-text" data="you have $1 $2 $3 messages in folder ${voicemail_current_folder}"/>
+	<action function="speak-text" data="you have $1 $2 message$3 in folder ${voicemail_current_folder}"/>
       </match>
     </input>
   </macro>

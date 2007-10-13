@@ -1037,13 +1037,13 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
                               &total_new_urgent_messages, &total_saved_urgent_messages);
 
                 if (total_new_urgent_messages > 0) {
-                    snprintf(msg_count, sizeof(msg_count), "%d:urgent:new", total_new_messages);
+                    snprintf(msg_count, sizeof(msg_count), "%d:urgent-new:%s", total_new_urgent_messages, total_new_urgent_messages == 1 ? "" : "s");
                     if ((status = switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL)) != SWITCH_STATUS_SUCCESS) {
                         goto end;
                     }
                 }
                 if (total_new_messages > 0) {
-                    snprintf(msg_count, sizeof(msg_count), "%d:new", total_new_messages);
+                    snprintf(msg_count, sizeof(msg_count), "%d:new:%s", total_new_messages, total_new_messages == 1 ? "" : "s");
                     if ((status = switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL)) != SWITCH_STATUS_SUCCESS) {
                         goto end;
                     }
@@ -1057,14 +1057,14 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
                 }
                 
                 if (total_saved_urgent_messages > 0) {
-                    snprintf(msg_count, sizeof(msg_count), "%d:urgent:saved", total_saved_messages);
+                    snprintf(msg_count, sizeof(msg_count), "%d:urgent-saved:%s", total_saved_urgent_messages, total_saved_urgent_messages == 1 ? "" : "s");
                     if ((status = switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL)) != SWITCH_STATUS_SUCCESS) {
                         goto end;
                     }
                 }
 
                 if (total_saved_messages > 0) {
-                    snprintf(msg_count, sizeof(msg_count), "%d:saved", total_saved_messages);
+                    snprintf(msg_count, sizeof(msg_count), "%d:saved:%s", total_saved_messages, total_saved_messages == 1 ? "" : "s");
                     if ((status = switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL)) != SWITCH_STATUS_SUCCESS) {
                         goto end;
                     }
@@ -1509,6 +1509,9 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
             if (*profile->urgent_key == *input) {
                 read_flags = URGENT_FLAG_STRING;
                 priority = 1;
+                TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "marked-urgent", NULL, NULL));
+            } else {
+                TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL));
             }
         }
 
