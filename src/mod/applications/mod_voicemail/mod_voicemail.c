@@ -598,7 +598,8 @@ typedef enum {
 #define VM_HELLO_MACRO "voicemail_hello"
 #define VM_GOODBYE_MACRO "voicemail_goodbye"
 #define VM_MESSAGE_COUNT_MACRO "voicemail_message_count"
-
+#define URGENT_FLAG_STRING "A_URGENT"
+#define NORMAL_FLAG_STRING "B_NORMAL"
 
 
 static switch_status_t vm_macro_get(switch_core_session_t *session,
@@ -880,7 +881,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
                     char *body;
                     int priority = 3;
                     
-                    if (!strcasecmp(cbt->read_flags, "urgent")) {
+                    if (!strcasecmp(cbt->read_flags, URGENT_FLAG_STRING)) {
                         priority = 1;
                     }
                     headers = switch_core_session_sprintf(session, 
@@ -938,10 +939,11 @@ static void message_count(vm_profile_t *profile, char *myid, char *domain_name, 
     *total_new_messages = atoi(msg_count);
 
     snprintf(sql, sizeof(sql), 
-             "select count(*) from voicemail_data where user='%s' and domain='%s' and in_folder='%s' and read_epoch=0 and read_flags='urgent'", 
+             "select count(*) from voicemail_data where user='%s' and domain='%s' and in_folder='%s' and read_epoch=0 and read_flags='%s'", 
              myid,
              domain_name,
-             myfolder);
+             myfolder, 
+             URGENT_FLAG_STRING);
     vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &cbt);
     *total_new_urgent_messages = atoi(msg_count);
 
@@ -955,10 +957,11 @@ static void message_count(vm_profile_t *profile, char *myid, char *domain_name, 
 
 
     snprintf(sql, sizeof(sql), 
-             "select count(*) from voicemail_data where user='%s' and domain='%s' and in_folder='%s' and read_epoch!=0 and read_flags='urgent'", 
+             "select count(*) from voicemail_data where user='%s' and domain='%s' and in_folder='%s' and read_epoch!=0 and read_flags='%s'", 
              myid,
              domain_name,
-             myfolder);
+             myfolder,
+             URGENT_FLAG_STRING);
     vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &cbt);
     *total_saved_urgent_messages = atoi(msg_count);
 
@@ -1090,7 +1093,7 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
                 case MSG_NEW:
                     {
                         snprintf(sql, sizeof(sql),
-                                 "select * from voicemail_data where user='%s' and domain='%s' and read_epoch=0", myid, domain_name);
+                                 "select * from voicemail_data where user='%s' and domain='%s' and read_epoch=0 order by read_flags", myid, domain_name);
                         total_messages = total_new_messages;
                         heard_auto_new = heard_auto_saved = 1;
                     }
@@ -1099,7 +1102,7 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
                 default:
                     {
                         snprintf(sql, sizeof(sql),
-                                 "select * from voicemail_data where user='%s' and domain='%s' and read_epoch!=0", myid, domain_name);
+                                 "select * from voicemail_data where user='%s' and domain='%s' and read_epoch !=0 order by read_flags", myid, domain_name);
                         total_messages = total_saved_messages;
                         heard_auto_new = heard_auto_saved = 1;                        
                     }
@@ -1407,7 +1410,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
     char *email_vm = NULL;
     int send_mail = 0;
     cc_t cc = { 0 };
-    char *read_flags = "";
+    char *read_flags = NORMAL_FLAG_STRING;
     int priority = 3;
 
     memset(&cbt, 0, sizeof(cbt));
@@ -1504,7 +1507,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
 
             vm_macro_get(session, VM_RECORD_URGENT_CHECK_MACRO, key_buf, input, sizeof(input), 1, profile->terminator_key, &term, profile->digit_timeout);
             if (*profile->urgent_key == *input) {
-                read_flags = "urgent";
+                read_flags = URGENT_FLAG_STRING;
                 priority = 1;
             }
         }
