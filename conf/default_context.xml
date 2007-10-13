@@ -115,7 +115,6 @@
     </condition>
   </extension>
 
-
   <extension name="testmusic">
     <condition field="destination_number" expression="^1234$">
       <!-- Request a certain tone/file to be played while you wait for the call to be answered-->
