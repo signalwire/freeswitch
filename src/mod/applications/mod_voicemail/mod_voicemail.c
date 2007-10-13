@@ -482,6 +482,7 @@ struct call_control {
     vm_profile_t *profile;
     switch_file_handle_t *fh;
     char buf[4];
+    int noexit;
 };
 typedef struct call_control cc_t;
 
@@ -497,13 +498,15 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
             switch_file_handle_t *fh = cc->fh;
             uint32_t pos = 0;
 
-            if (*dtmf == *cc->profile->delete_file_key || *dtmf == *cc->profile->save_file_key) {
+            if (!cc->noexit && (*dtmf == *cc->profile->delete_file_key || *dtmf == *cc->profile->save_file_key || *dtmf == *cc->profile->terminator_key)) {
                 *cc->buf = *dtmf;
                 return SWITCH_STATUS_BREAK;
             }
+
             if (!fh) {
                 return SWITCH_STATUS_SUCCESS;
             }
+
             if (*dtmf == *cc->profile->pause_key) {
                 if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
                     switch_clear_flag(fh, SWITCH_FILE_PAUSE);
@@ -532,9 +535,6 @@ static switch_status_t control_playback(switch_core_session_t *session, void *in
                 return SWITCH_STATUS_SUCCESS;
             }
 
-            if (*dtmf == *cc->profile->terminator_key) {
-                return SWITCH_STATUS_BREAK;
-            }
         }
 		break;
 	default:
@@ -1181,6 +1181,7 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
                         memset(&cc, 0, sizeof(cc));
                         cc.profile = profile;
                         cc.fh = &fh;
+                        cc.noexit = 1;
                         args.buf = &cc;
                         status = switch_ivr_play_file(session, NULL, file_path, &args);
                     }
@@ -1485,6 +1486,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
     memset(&cc, 0, sizeof(cc));
     cc.profile = profile;
     cc.fh = &fh;
+    cc.noexit = 1;
     args.buf = &cc;
 
     if (!switch_strlen_zero(cbt.greeting_path)) {
