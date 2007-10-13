@@ -11,11 +11,11 @@ applications/mod_voicemail
 #applications/mod_rss
 #asr_tts/mod_cepstral
 #asr_tts/mod_openmrcp
-#codecs/mod_amr
 codecs/mod_g711
 codecs/mod_g722
-#codecs/mod_g723_1
 codecs/mod_g726
+#codecs/mod_g723_1
+#codecs/mod_amr
 #codecs/mod_g729
 codecs/mod_gsm
 codecs/mod_ilbc
@@ -38,7 +38,6 @@ endpoints/mod_sofia
 event_handlers/mod_event_socket
 #event_handlers/mod_radius_cdr
 #event_handlers/mod_event_test
-#event_handlers/mod_xmpp_event
 #event_handlers/mod_zeroconf
 formats/mod_native_file
 formats/mod_sndfile
