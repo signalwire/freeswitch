@@ -13,7 +13,7 @@ sub init($;$) {
   $self->{_host} = $args->{-host} || "localhost";
   $self->{_port} = $args->{-port} || 8021;
   $self->{_password} = $args->{-password} || undef; 
-  $self->{_tolerant} = $args->{-tolerant} || false;
+  $self->{_tolerant} = $args->{-tolerant} || undef;
 
   $self->{events} = [];
   my $me = bless $self,$class;
@@ -96,8 +96,10 @@ sub readhash($;$) {
 
 sub error($$) {
   my($self,$error) = @_;
+
   if ($self->{"_tolerant"}) {
       print "[DIE CROAKED] $error\n";
+      return 0;
   }
   else {
       die $error;
