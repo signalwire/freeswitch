@@ -917,6 +917,10 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_APP(clear_speech_cache_function)
+{
+	switch_ivr_clear_speech_cache(session);
+}
 
 SWITCH_STANDARD_APP(speak_function)
 {
@@ -939,10 +943,25 @@ SWITCH_STANDARD_APP(speak_function)
 
 	mydata = switch_core_session_strdup(session, data);
 	argc = switch_separate_string(mydata, '|', argv, sizeof(argv) / sizeof(argv[0]));
+	
+	if (argc == 1) {
+		text = argv[0];
+	} else if (argc == 2) {
+		voice = argv[0];
+		text = argv[1];
+	} else {
+		engine = argv[0];
+		voice = argv[1];
+		text = argv[2];
+	}
 
-	engine = argv[0];
-	voice = argv[1];
-	text = argv[2];
+	if (!engine) {
+		engine = switch_channel_get_variable(channel, "tts_engine");
+	}
+
+	if (!voice) {
+		voice = switch_channel_get_variable(channel, "tts_voice");
+	}
 
 	if (!(engine && voice && text)) {
 		if (!engine) {
@@ -1322,6 +1341,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "stop_displace_session", "Stop Displace File", "Stop Displacing to a file", stop_displace_session_function, "<path>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "displace_session", "Displace File", DISPLACE_DESC, displace_session_function, "<path> [+time_limit_ms] [mux]", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "speak", "Speak text", SPEAK_DESC, speak_function, "<engine>|<voice>|<text>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "clear_speech_cache", "Clear Speech Handle Cache", "Clear Speech Handle Cache", clear_speech_cache_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "bridge", "Bridge Audio", "Bridge the audio between two sessions", audio_bridge_function, "<channel_url>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "system", "Execute a system command", "Execute a system command", system_session_function, "<command>", SAF_SUPPORT_NOMEDIA);
 

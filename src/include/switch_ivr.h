@@ -313,7 +313,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session_t *session,
 															 switch_speech_handle_t *sh,
 															 switch_codec_t *codec, switch_timer_t *timer, char *text, switch_input_args_t *args);
-
+SWITCH_DECLARE(void) switch_ivr_clear_speech_cache(switch_core_session_t *session);
 /*!
   \brief Speak given text with given tts engine
   \param session the session to speak on

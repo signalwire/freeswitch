@@ -659,7 +659,7 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	switch_core_media_bug_remove_all(*session);
 	switch_buffer_destroy(&(*session)->raw_read_buffer);
 	switch_buffer_destroy(&(*session)->raw_write_buffer);
-
+	switch_ivr_clear_speech_cache(*session);
 	switch_channel_uninit((*session)->channel);
 
 	pool = (*session)->pool;

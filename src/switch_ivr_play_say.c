@@ -1367,6 +1367,36 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 }
 
 
+struct cached_speech_handle {
+	char tts_name[80];
+	char voice_name[80];
+	switch_speech_handle_t sh;
+	switch_codec_t codec;
+	switch_timer_t timer;
+};
+typedef struct cached_speech_handle cached_speech_handle_t;
+
+SWITCH_DECLARE(void) switch_ivr_clear_speech_cache(switch_core_session_t *session) 
+{
+	cached_speech_handle_t *cache_obj = NULL;
+	switch_channel_t *channel;
+
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+	if ((cache_obj = switch_channel_get_private(channel, SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME))) {
+		switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
+		if (cache_obj->timer.interval) {
+			switch_core_timer_destroy(&cache_obj->timer);
+		}
+		switch_core_speech_close(&cache_obj->sh, &flags);
+		switch_core_codec_destroy(&cache_obj->codec);
+		switch_channel_set_private(channel, SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME, NULL);
+	}
+
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *session,
 													  char *tts_name, char *voice_name, char *text, switch_input_args_t *args)
 {
@@ -1374,20 +1404,49 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	uint32_t rate = 0;
 	int interval = 0;
 	switch_frame_t write_frame = { 0 };
-	switch_timer_t timer;
+	switch_timer_t ltimer, *timer;
 	switch_core_thread_session_t thread_session;
-	switch_codec_t codec;
+	switch_codec_t lcodec, *codec;
 	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
 	char *codec_name;
 	int stream_id = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_speech_handle_t sh;
+	switch_speech_handle_t lsh, *sh;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 	switch_codec_t *read_codec;
-	char *timer_name;
-
+	char *timer_name, *var;
+	cached_speech_handle_t *cache_obj = NULL;
+	int need_create = 1, need_alloc = 1;
+	
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
+
+	sh = &lsh;
+	codec = &lcodec;
+	timer = &ltimer;
+
+	if ((var = switch_channel_get_variable(channel, SWITCH_CACHE_SPEECH_HANDLES_VARIABLE)) && switch_true(var)) {
+		if ((cache_obj = switch_channel_get_private(channel, SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME))) {
+			need_create = 0;
+			if (!strcasecmp(cache_obj->tts_name, tts_name)) {
+				need_alloc = 0;
+			} else {
+				switch_ivr_clear_speech_cache(session);
+			}
+		}
+
+		if (!cache_obj) {
+			cache_obj = switch_core_session_alloc(session, sizeof(*cache_obj));
+		}
+		if (need_alloc) {
+			switch_copy_string(cache_obj->tts_name, tts_name, sizeof(cache_obj->tts_name));
+			switch_copy_string(cache_obj->voice_name, voice_name, sizeof(cache_obj->voice_name));
+			switch_channel_set_private(channel, SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME, cache_obj);
+		}
+		sh = &cache_obj->sh;
+		codec = &cache_obj->codec;
+		timer = &cache_obj->timer;
+	}
 
 	timer_name = switch_channel_get_variable(channel, "timer_name");
 
@@ -1396,13 +1455,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	
 	rate = read_codec->implementation->samples_per_second;
 	interval = read_codec->implementation->microseconds_per_frame / 1000;
-
-	memset(&sh, 0, sizeof(sh));
-	if (switch_core_speech_open(&sh, tts_name, voice_name, (uint32_t) rate, interval, 
-								&flags, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module!\n");
-		switch_core_session_reset(session);
-		return SWITCH_STATUS_FALSE;
+	
+	if (need_create) {
+		memset(sh, 0, sizeof(*sh));
+		if (switch_core_speech_open(sh, tts_name, voice_name, (uint32_t) rate, interval, 
+									&flags, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module!\n");
+			switch_core_session_reset(session);
+			if (cache_obj) {
+				switch_channel_set_private(channel, SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME, NULL);
+			}
+			return SWITCH_STATUS_FALSE;
+		}
+	} else if (cache_obj && strcasecmp(cache_obj->voice_name, voice_name)) {
+		switch_copy_string(cache_obj->voice_name, voice_name, sizeof(cache_obj->voice_name));
+		switch_core_speech_text_param_tts(sh, "voice", voice_name);
 	}
 
 	switch_channel_answer(channel);
@@ -1411,46 +1478,60 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 
 	codec_name = "L16";
 
-	if (switch_core_codec_init(&codec,
-							   codec_name,
-							   NULL, (int) rate, interval, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activated\n");
-		write_frame.codec = &codec;
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed %s@%uhz 1 channel %dms\n", codec_name, rate, interval);
-		flags = 0;
-		switch_core_speech_close(&sh, &flags);
-		switch_core_session_reset(session);
-		return SWITCH_STATUS_GENERR;
-	}
-
-	if (timer_name) {
-		if (switch_core_timer_init(&timer, timer_name, interval, (int) sh.samples, pool) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup timer failed!\n");
-			switch_core_codec_destroy(write_frame.codec);
+	if (need_create) {
+		if (switch_core_codec_init(codec,
+								   codec_name,
+								   NULL, (int) rate, interval, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activated\n");
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed %s@%uhz 1 channel %dms\n", codec_name, rate, interval);
 			flags = 0;
-			switch_core_speech_close(&sh, &flags);
-
+			switch_core_speech_close(sh, &flags);
 			switch_core_session_reset(session);
+			if (cache_obj) {
+				switch_channel_set_private(channel, SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME, NULL);
+			}
 			return SWITCH_STATUS_GENERR;
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer success %u bytes per %d ms!\n", sh.samples * 2, interval);
+	}
+	
+	write_frame.codec = codec;
 
+	if (timer_name) {
+		if (need_create) {
+			if (switch_core_timer_init(timer, timer_name, interval, (int) sh->samples, pool) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup timer failed!\n");
+				switch_core_codec_destroy(write_frame.codec);
+				flags = 0;
+				switch_core_speech_close(sh, &flags);
+				switch_core_session_reset(session);
+				if (cache_obj) {
+					switch_channel_set_private(channel, SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME, NULL);
+				}
+				return SWITCH_STATUS_GENERR;
+			}
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer success %u bytes per %d ms!\n", sh->samples * 2, interval);
+		}
 		/* start a thread to absorb incoming audio */
 		for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
 			switch_core_service_session(session, &thread_session, stream_id);
 		}
 	}
-
-	status = switch_ivr_speak_text_handle(session, &sh, write_frame.codec, timer_name ? &timer : NULL, text, args);
+	
+	status = switch_ivr_speak_text_handle(session, sh, write_frame.codec, timer_name ? timer : NULL, text, args);
 	flags = 0;
-	switch_core_speech_close(&sh, &flags);
-	switch_core_codec_destroy(&codec);
+
+	if (!cache_obj) {
+		switch_core_speech_close(sh, &flags);
+		switch_core_codec_destroy(codec);
+	}
 
 	if (timer_name) {
 		/* End the audio absorbing thread */
 		switch_core_thread_session_end(&thread_session);
-		switch_core_timer_destroy(&timer);
+		if (!cache_obj) {
+			switch_core_timer_destroy(timer);
+		}
 	}
 
 	switch_core_session_reset(session);
