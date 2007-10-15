@@ -307,7 +307,7 @@ static switch_status_t en_say_time(switch_core_session_t *session, char *tosay, 
 		if (hours) {
 			say_num(hours, SSM_PRONOUNCED);
 			if (hours == 1) {
-				say_file("time/hour.wav");	//TODO -- NEED TO GET "hour.wav" recorded
+				say_file("time/hour.wav");
 			} else {
 				say_file("time/hours.wav");
 			}
@@ -407,7 +407,7 @@ static switch_status_t en_say_money(switch_core_session_t *session, char *tosay,
 {
 	switch_channel_t *channel;
 
-	char sbuf[16] = "";			/* enuough for 999,999,999,999.99 (w/o the commas or leading $) */
+	char sbuf[16] = "";			/* enough for 999,999,999,999.99 (w/o the commas or leading $) */
 	char *dollars = NULL;
 	char *cents = NULL;
 
