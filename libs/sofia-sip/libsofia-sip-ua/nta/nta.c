@@ -2398,7 +2398,7 @@ void agent_recv_request(nta_agent_t *agent,
   else if (!agent->sa_is_stateless && (leg = agent->sa_default_leg)) {
 	if (method == sip_method_invite && agent->sa_in.proceeding->q_length >= agent->sa_max_proceeding) {
 		SU_DEBUG_5(("nta: proceeding queue full for %s (%u)\n", method_name, cseq));
-		nta_msg_treply(agent, msg, SIP_486_BUSY_HERE,
+		nta_msg_treply(agent, msg, SIP_503_SERVICE_UNAVAILABLE,
 			   NTATAG_TPORT(tport), 
 			   TAG_END());
 		return;
