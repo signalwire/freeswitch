@@ -1155,10 +1155,9 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	switch_channel_t *caller_channel;
 	switch_core_session_t *peer_session = NULL;
 	unsigned int timelimit = 60;
-	char *var;
+	char *var, *continue_on_fail = NULL;
 	uint8_t no_media_bridge = 0;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
-	uint8_t do_continue = 0;
 
 	if (switch_strlen_zero(data)) {
 		return;
@@ -1171,9 +1170,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 		timelimit = atoi(var);
 	}
 
-	if ((var = switch_channel_get_variable(caller_channel, "continue_on_fail"))) {
-		do_continue = switch_true(var);
-	}
+	continue_on_fail = switch_channel_get_variable(caller_channel, "continue_on_fail");
 
 	if (switch_channel_test_flag(caller_channel, CF_BYPASS_MEDIA)
 		|| ((var = switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_VARIABLE)) && switch_true(var))) {
@@ -1188,12 +1185,33 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 
 	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n", switch_channel_cause2str(cause));
-		if (!do_continue && cause != SWITCH_CAUSE_NO_ANSWER) {
-			/* All Causes besides NO_ANSWER terminate the originating session unless continue_on_fail is set.
-			   We will pass the fail cause on when we hangup. */
-			switch_channel_hangup(caller_channel, cause);
+
+		/* no answer is *always* a reason to continue */
+		if (cause == SWITCH_CAUSE_NO_ANSWER || cause == SWITCH_CAUSE_NO_USER_RESPONSE) {
+			return;
 		}
-		/* Otherwise.. nobody answered.  Go back to the dialplan instructions in case there was more to do. */
+
+		/* 
+		   if the variable continue_on_fail is set it can be:
+		   'true' to continue on all failures.
+		   'false' to not continue.
+		   A list of codes either names or numbers eg "user_busy,normal_temporary_failure"
+		*/
+		if (continue_on_fail) {
+			const char *cause_str;
+			char cause_num[35] = "";
+
+			cause_str = switch_channel_cause2str(cause);
+			snprintf(cause_num, sizeof(cause_num), "%u", cause);
+
+			if (switch_true(continue_on_fail) || strstr(cause_str, continue_on_fail) || strstr(cause_str, cause_num)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Continue on fail [%s]:  Cause: %s\n", continue_on_fail, cause_str);
+				return;
+			}
+
+		}
+
+		switch_channel_hangup(caller_channel, cause);
 		return;
 	} else {
 		if (no_media_bridge) {
