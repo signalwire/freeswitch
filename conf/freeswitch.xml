@@ -144,7 +144,7 @@
   <!-- phrases section (under development still) -->
   <section name="phrases" description="Speech Phrase Management">
     <macros>
-      <language name="en" sound_path="/snds" tts_engine="cepstral" tts_voice="david">
+      <language name="en" sound-path="/snds" tts-engine="cepstral" tts-voice="david">
 	<!--#include "lang_en.xml"-->
 	<!--voicemail_en_tts is purely implemented with tts, we need a files based implementation too -->
 	<!--#include "voicemail_en_tts.xml"-->

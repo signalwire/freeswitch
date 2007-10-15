@@ -152,9 +152,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 		goto done;
 	}
 
-	sound_path = (char *) switch_xml_attr_soft(language, "sound_path");
-	tts_engine = (char *) switch_xml_attr_soft(language, "tts_engine");
-	tts_voice = (char *) switch_xml_attr_soft(language, "tts_voice");
+	
+	if (!(sound_path = (char *) switch_xml_attr(language, "sound-path"))) {
+		sound_path = (char *) switch_xml_attr(language, "sound_path");
+	}
+
+	if (!(tts_engine = (char *) switch_xml_attr(language, "tts-engine"))) {
+		if (!(tts_engine = (char *) switch_xml_attr(language, "tts_engine"))) {
+			tts_engine = switch_channel_get_variable(channel, tts_engine);
+		}
+	}
+	
+	if (!(tts_voice = (char *) switch_xml_attr(language, "tts-voice"))) {
+		if (!(tts_voice = (char *) switch_xml_attr(language, "tts_voice"))) {
+			tts_voice = switch_channel_get_variable(channel, tts_voice);
+		}
+	}
 
 	if (sound_path) {
 		old_sound_prefix = switch_channel_get_variable(channel, "sound_prefix");
@@ -252,7 +265,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid SAY Interface [%s]!\n", chan_lang);
 						}
 					} else if (!strcasecmp(func, "speak-text")) {
-						status = switch_ivr_speak_text(session, tts_engine, tts_voice, odata, args);
+						char *my_tts_engine = (char *) switch_xml_attr(action, "tts-engine");
+						char *my_tts_voice = (char *) switch_xml_attr(action, "tts-voice");
+						
+						if (!my_tts_engine) {
+							my_tts_engine = tts_engine;
+						}
+
+						if (!my_tts_voice) {
+							my_tts_voice = tts_voice;
+						}
+						if (switch_strlen_zero(tts_engine) || switch_strlen_zero(tts_voice)) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "TTS is not configured\n");
+						} else {
+							status = switch_ivr_speak_text(session, my_tts_engine, my_tts_voice, odata, args);
+						}
 					}
 				}
 			}
