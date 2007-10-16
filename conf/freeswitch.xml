@@ -21,7 +21,8 @@
        can be any string.
        used by: sofia.conf.xml enum.conf.xml default_context.xml directory.xml
   --> 
-  <!--#set "sip_profile=mydomain.com"-->
+  <!--#set "domain=mydomain.com"-->
+  <!--#set "sip_profile=$${domain}"-->
   <!-- xmpp_client_profile and xmpp_server_profile
        xmpp_client_profile can be any string. 
        xmpp_server_profile is appended to "dingaling_" to form the database name
