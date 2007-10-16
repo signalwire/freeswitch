@@ -126,12 +126,12 @@
   <macro name="voicemail_record_urgent_check">
     <input pattern="^([0-9#*]):([0-9#*])$">
       <match>
-	<action function="play-file" data="voicemail/vm-press.wav"/>
-	<action function="say" data="$1" method="pronounced" type="items"/>
 	<action function="play-file" data="voicemail/vm-mark_urgent.wav"/>
 	<action function="play-file" data="voicemail/vm-press.wav"/>
-	<action function="say" data="$2" method="pronounced" type="items"/>
+	<action function="say" data="$1" method="pronounced" type="items"/>
 	<action function="play-file" data="voicemail/vm-continue.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
+	<action function="say" data="$2" method="pronounced" type="items"/>
       </match>
     </input>
   </macro>
