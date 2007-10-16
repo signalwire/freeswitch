@@ -197,6 +197,27 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(char *to, char *from, char *he
 }
 
 
+SWITCH_DECLARE(const char *) switch_stristr(const char *str, const char *instr)
+{
+    size_t score = strlen(str), x = 0;
+    const char *a = str, *b = instr, *p = NULL;
+
+    while(*a && *b) {
+        if (tolower(*b) == tolower(*a)) {
+            if (++x == score) {
+                return p;
+            }
+            a++;
+        } else {
+            a = str;
+            p = b+1;
+			x = 0;
+        }
+        b++;
+    }
+	return NULL;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int family)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;

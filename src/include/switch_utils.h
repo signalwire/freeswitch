@@ -298,6 +298,8 @@ if (vname) {free(vname); vname = NULL;}vname = strdup(string);}
 */
 SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char **array, int arraylen);
 
+SWITCH_DECLARE(const char *) switch_stristr(const char *str, const char *instr);
+
 /*!
   \brief Escape a string by prefixing a list of characters with an escape character
   \param pool a memory pool to use
