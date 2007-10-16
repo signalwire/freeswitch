@@ -536,11 +536,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				assert(peer_channels[i] != NULL);
 
 				if (var_event) {
+					switch_event_t *event;
 					switch_event_header_t *header;
 					/* install the vars from the {} params */
 					for (header = var_event->headers; header; header = header->next) {
 						switch_channel_set_variable(peer_channels[i], header->name, header->value);
 					}
+					switch_event_create(&event, SWITCH_EVENT_CHANNEL_ORIGINATE);
+					assert(event);
+					switch_channel_event_set_data(peer_channels[i], event);
+					switch_event_fire(&event);
 				}
 
 				if (!table) {
