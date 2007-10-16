@@ -1,6 +1,8 @@
 <language param="en">
 	<ascii>
 		<prompt phrase="Space" filename="32.wav"/>
+		<prompt phrase="Pound" filename="35.wav"/>
+		<prompt phrase="Star" filename="42.wav"/>
 		<prompt phrase="Dot" filename="46.wav"/>
 		<prompt phrase="A" filename="97.wav"/>
 		<prompt phrase="B" filename="98.wav"/>
