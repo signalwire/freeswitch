@@ -9,7 +9,7 @@
  * the License. You may obtain a copy of the License at
  * http://www.mozilla.org/MPL/
  *
- * Software distributed under the License is distributed on an "AS IS" basis,
+ * Software distributed under the License is distributed on an "AS IS" basis, 
  * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
  * for the specific language governing rights and limitations under the
  * License.
@@ -90,8 +90,8 @@ typedef struct {
 } openmrcp_session_t;
 
 typedef enum {
-	FLAG_HAS_MESSAGE =    (1 << 0),
-	FLAG_FEED_STARTED =   (1 << 1),
+	FLAG_HAS_MESSAGE =    (1 << 0), 
+	FLAG_FEED_STARTED =   (1 << 1), 
 	FLAG_TERMINATING =    (1 << 2)
 } mrcp_flag_t;
 
@@ -116,12 +116,12 @@ static openmrcp_session_t* openmrcp_session_create(openmrcp_profile_t *profile)
 		return NULL;
 	}
 
-	if(apr_pool_create(&session_pool,NULL) != APR_SUCCESS) {
+	if(apr_pool_create(&session_pool, NULL) != APR_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to create session_pool\n");
 		return NULL;
 	}
 
-	openmrcp_session = apr_palloc(session_pool,sizeof(openmrcp_session_t));
+	openmrcp_session = apr_palloc(session_pool, sizeof(openmrcp_session_t));
 	openmrcp_session->pool = session_pool;
 	openmrcp_session->profile = profile;
 	openmrcp_session->client_session = NULL;
@@ -132,10 +132,10 @@ static openmrcp_session_t* openmrcp_session_create(openmrcp_profile_t *profile)
 	switch_mutex_init(&openmrcp_session->flag_mutex, SWITCH_MUTEX_NESTED, openmrcp_session->pool);
 
 	if (switch_thread_cond_create(&openmrcp_session->wait_object, openmrcp_session->pool)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "wait object creation failed\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "wait object creation failed\n");
 	}
 
-	openmrcp_session->client_session = mrcp_client_context_session_create(openmrcp_session->profile->mrcp_context,openmrcp_session);
+	openmrcp_session->client_session = mrcp_client_context_session_create(openmrcp_session->profile->mrcp_context, openmrcp_session);
 	if (!openmrcp_session->client_session) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "session creation FAILED\n");
 		apr_pool_destroy(session_pool);
@@ -148,7 +148,7 @@ static openmrcp_session_t* openmrcp_session_create(openmrcp_profile_t *profile)
 static void openmrcp_session_destroy(openmrcp_session_t *openmrcp_session)
 {
 	if(openmrcp_session && openmrcp_session->pool) {
-		mrcp_client_context_session_destroy(openmrcp_session->profile->mrcp_context,openmrcp_session->client_session);
+		mrcp_client_context_session_destroy(openmrcp_session->profile->mrcp_context, openmrcp_session->client_session);
 		apr_pool_destroy(openmrcp_session->pool);
 	}
 }
@@ -267,7 +267,7 @@ static mrcp_status_t openmrcp_recog_start(mrcp_client_context_t *context, openmr
 	}
 
 	generic_header->content_type = "application/srgs+xml";
-	mrcp_generic_header_property_add(mrcp_message,GENERIC_HEADER_CONTENT_TYPE);
+	mrcp_generic_header_property_add(mrcp_message, GENERIC_HEADER_CONTENT_TYPE);
 	mrcp_message->body = buf1;
 
 	/* send the MRCP RECOGNIZE message to MRCP server */
@@ -290,7 +290,7 @@ static switch_status_t openmrcp_asr_open(switch_asr_handle_t *ah, char *codec, i
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "asr_open called, codec: %s, rate: %d\n", codec, rate);
 
-	if (strcmp(codec,"L16")) {
+	if (strcmp(codec, "L16")) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Sorry, only L16 codec supported\n");
 		return SWITCH_STATUS_GENERR;		
 	}
@@ -316,7 +316,7 @@ static switch_status_t openmrcp_asr_open(switch_asr_handle_t *ah, char *codec, i
 
 	switch_mutex_lock(asr_session->flag_mutex);
 	mrcp_client_context_channel_add(asr_session->profile->mrcp_context, asr_session->client_session, asr_channel, NULL);
-	if(switch_thread_cond_timedwait(asr_session->wait_object,asr_session->flag_mutex,5000*1000) != APR_SUCCESS) {
+	if(switch_thread_cond_timedwait(asr_session->wait_object, asr_session->flag_mutex, 5000*1000) != APR_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No response from client stack\n");
 	}
 	switch_mutex_unlock(asr_session->flag_mutex);
@@ -379,13 +379,13 @@ static switch_status_t openmrcp_asr_feed(switch_asr_handle_t *ah, void *data, un
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "!audio_sink\n");
 			return SWITCH_STATUS_SUCCESS;  
 		}
-		audio_sink->method_set->write_frame(audio_sink,&media_frame);
+		audio_sink->method_set->write_frame(audio_sink, &media_frame);
 		
 		len -= (unsigned int)media_frame.codec_frame.size;
 		media_frame.codec_frame.buffer = (char*)media_frame.codec_frame.buffer + media_frame.codec_frame.size;
 	}
 	if(len > 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "None frame alligned data len [%d]\n",len);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "None frame alligned data len [%d]\n", len);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -444,7 +444,7 @@ static switch_status_t openmrcp_asr_close(switch_asr_handle_t *ah, switch_asr_fl
 /**
  * Freeswitch calls this method from the speech_thread() thread body method
  * in switch_ivr_async.c every time a new frame is received by the media bug
- * attached to the audio channel.  If this method returns SWITCH_STATUS_SUCCESS,
+ * attached to the audio channel.  If this method returns SWITCH_STATUS_SUCCESS, 
  * then Freeswitch will call openmrcp_asr_get_results() to get the result value.
  */
 static switch_status_t openmrcp_asr_check_results(switch_asr_handle_t *ah, switch_asr_flag_t *flags)
@@ -555,7 +555,7 @@ static mrcp_status_t synth_speak(mrcp_client_context_t *context, openmrcp_sessio
 	}
 
 	text2speak = switch_core_sprintf(tts_session->pool, "%s%s%s", xml_head, text, xml_tail);
-	mrcp_message = mrcp_client_context_message_get(context,tts_session->client_session,tts_session->control_channel,SYNTHESIZER_SPEAK);
+	mrcp_message = mrcp_client_context_message_get(context, tts_session->client_session, tts_session->control_channel, SYNTHESIZER_SPEAK);
 
 	if(!mrcp_message) {
 		goto end;
@@ -567,10 +567,10 @@ static mrcp_status_t synth_speak(mrcp_client_context_t *context, openmrcp_sessio
 	}
 
 	generic_header->content_type = "application/synthesis+ssml";
-	mrcp_generic_header_property_add(mrcp_message,GENERIC_HEADER_CONTENT_TYPE);
+	mrcp_generic_header_property_add(mrcp_message, GENERIC_HEADER_CONTENT_TYPE);
 	mrcp_message->body = text2speak;
 
-	status = mrcp_client_context_channel_modify(context,tts_session->client_session,mrcp_message);
+	status = mrcp_client_context_channel_modify(context, tts_session->client_session, mrcp_message);
 
  end:
 
@@ -580,12 +580,12 @@ static mrcp_status_t synth_speak(mrcp_client_context_t *context, openmrcp_sessio
 
 static mrcp_status_t synth_stop(mrcp_client_context_t *context, openmrcp_session_t *tts_session)
 {
-	mrcp_message_t *mrcp_message = mrcp_client_context_message_get(context,tts_session->client_session,tts_session->control_channel,SYNTHESIZER_STOP);
+	mrcp_message_t *mrcp_message = mrcp_client_context_message_get(context, tts_session->client_session, tts_session->control_channel, SYNTHESIZER_STOP);
 	if(!mrcp_message) {
 		return MRCP_STATUS_FAILURE;
 	}
 
-	return mrcp_client_context_channel_modify(context,tts_session->client_session,mrcp_message);
+	return mrcp_client_context_channel_modify(context, tts_session->client_session, mrcp_message);
 }
 
 
@@ -610,7 +610,7 @@ static switch_status_t openmrcp_tts_open(switch_speech_handle_t *sh, char *voice
 	}
 	switch_mutex_lock(tts_session->flag_mutex);
 	mrcp_client_context_channel_add(tts_session->profile->mrcp_context, tts_session->client_session, tts_channel, NULL);
-	if(switch_thread_cond_timedwait(tts_session->wait_object,tts_session->flag_mutex,5000*1000) != APR_SUCCESS) {
+	if(switch_thread_cond_timedwait(tts_session->wait_object, tts_session->flag_mutex, 5000*1000) != APR_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No response from client stack\n");
 	}
 	switch_mutex_unlock(tts_session->flag_mutex);
@@ -632,7 +632,7 @@ static switch_status_t openmrcp_tts_close(switch_speech_handle_t *sh, switch_spe
 	/* terminate tts session */
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "terminate tts_session\n");
 	switch_set_flag_locked(tts_session, FLAG_TERMINATING);
-	mrcp_client_context_session_terminate(context,tts_session->client_session);
+	mrcp_client_context_session_terminate(context, tts_session->client_session);
 	return SWITCH_STATUS_SUCCESS;	
 }
 
@@ -648,7 +648,7 @@ static switch_status_t openmrcp_feed_tts(switch_speech_handle_t *sh, char *text,
 	
 	synth_speak(context, tts_session, text); 
 	
-	switch_clear_flag(tts_session,FLAG_FEED_STARTED);
+	switch_clear_flag(tts_session, FLAG_FEED_STARTED);
 	return SWITCH_STATUS_SUCCESS;	
 }
 
@@ -703,9 +703,9 @@ static switch_status_t openmrcp_read_tts(switch_speech_handle_t *sh, void *data,
 	media_frame.codec_frame.size = 160;
 	while(return_len < *datalen) {
 		media_frame.codec_frame.buffer = (char*)data + return_len;
-		audio_source->method_set->read_frame(audio_source,&media_frame);
+		audio_source->method_set->read_frame(audio_source, &media_frame);
 		if(media_frame.type != MEDIA_FRAME_TYPE_AUDIO) {
-			memset(media_frame.codec_frame.buffer,0,media_frame.codec_frame.size);
+			memset(media_frame.codec_frame.buffer, 0, media_frame.codec_frame.size);
 		}
 		return_len += media_frame.codec_frame.size;
 	}
@@ -720,7 +720,7 @@ static void openmrcp_flush_tts(switch_speech_handle_t *sh)
 	mrcp_client_context_t *context = tts_session->profile->mrcp_context;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "flush_tts called\n");
-	synth_stop(context,tts_session); // TODO
+	synth_stop(context, tts_session); // TODO
 }
 
 static void openmrcp_text_param_tts(switch_speech_handle_t *sh, char *param, char *val)
@@ -774,12 +774,12 @@ static switch_status_t do_config()
 	if ((profiles = switch_xml_child(cfg, "profiles"))) {
 		for (xprofile = switch_xml_child(profiles, "profile"); xprofile; xprofile = xprofile->next) {
 			const char *profile_name = switch_xml_attr_soft(xprofile, "name");
-			mrcp_profile = switch_core_alloc(openmrcp_module.pool,sizeof(openmrcp_profile_t));
+			mrcp_profile = switch_core_alloc(openmrcp_module.pool, sizeof(openmrcp_profile_t));
 			mrcp_profile->mrcp_client = NULL;
 			mrcp_profile->mrcp_context = NULL;
 			mrcp_profile->name = "noname";
 			if(profile_name) {
-				mrcp_profile->name = switch_core_strdup(openmrcp_module.pool,profile_name);
+				mrcp_profile->name = switch_core_strdup(openmrcp_module.pool, profile_name);
 			}
 
 			mrcp_options = openmrcp_client_options_create(openmrcp_module.pool);
@@ -791,9 +791,9 @@ static switch_status_t do_config()
 					mrcp_options->proto_version =(mrcp_version_t) atoi(val);
 				}
 				else if (!strcasecmp(var, "client_ip")) {
-					mrcp_options->client_ip = switch_core_strdup(openmrcp_module.pool,val);
+					mrcp_options->client_ip = switch_core_strdup(openmrcp_module.pool, val);
 				} else if (!strcasecmp(var, "server_ip")) {
-					mrcp_options->server_ip = switch_core_strdup(openmrcp_module.pool,val);
+					mrcp_options->server_ip = switch_core_strdup(openmrcp_module.pool, val);
 				} else if (!strcasecmp(var, "client_port")) {
 					mrcp_options->client_port = (apr_port_t) atoi(val);
 				} else if (!strcasecmp(var, "server_port")) {
@@ -813,7 +813,7 @@ static switch_status_t do_config()
 				/* try to set default asr profile */
 				if (!openmrcp_module.asr_profile) {
 					if (asr_profile_name) {
-						if (!strcasecmp(mrcp_profile->name,asr_profile_name)) {
+						if (!strcasecmp(mrcp_profile->name, asr_profile_name)) {
 							openmrcp_module.asr_profile = mrcp_profile;
 						}
 					}
@@ -824,7 +824,7 @@ static switch_status_t do_config()
 				/* try to set default tts profile */
 				if (!openmrcp_module.tts_profile) {
 					if (tts_profile_name) {
-						if (!strcasecmp(mrcp_profile->name,tts_profile_name)) {
+						if (!strcasecmp(mrcp_profile->name, tts_profile_name)) {
 							openmrcp_module.tts_profile = mrcp_profile;
 						}
 					}
@@ -858,7 +858,7 @@ static switch_status_t openmrcp_profile_run(openmrcp_profile_t *profile)
 	/*!
 	Perform one-time initialization of mrcp client library
 	*/
-	mrcp_event_handler = switch_core_alloc(openmrcp_module.pool,sizeof(mrcp_client_event_handler_t));
+	mrcp_event_handler = switch_core_alloc(openmrcp_module.pool, sizeof(mrcp_client_event_handler_t));
 	mrcp_event_handler->on_session_initiate = openmrcp_on_session_initiate;
 	mrcp_event_handler->on_session_terminate = openmrcp_on_session_terminate;
 	mrcp_event_handler->on_channel_add = openmrcp_on_channel_add;
@@ -866,7 +866,7 @@ static switch_status_t openmrcp_profile_run(openmrcp_profile_t *profile)
 	mrcp_event_handler->on_channel_modify = openmrcp_on_channel_modify;
 
 	// create client context, which must be passed to client engine 
-	mrcp_context = mrcp_client_context_create(&openmrcp_module,mrcp_event_handler);
+	mrcp_context = mrcp_client_context_create(&openmrcp_module, mrcp_event_handler);
 	if(!mrcp_context) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mrcp_client_context creation failed\n");
 		return SWITCH_STATUS_GENERR;
@@ -875,7 +875,7 @@ static switch_status_t openmrcp_profile_run(openmrcp_profile_t *profile)
 
 	// this basically starts a thread that pulls events from the event queue
 	// and handles them 
-	mrcp_client = openmrcp_client_start(profile->mrcp_options,mrcp_context);
+	mrcp_client = openmrcp_client_start(profile->mrcp_options, mrcp_context);
 	if(!mrcp_client) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "openmrcp_client_start FAILED\n");
 		mrcp_client_context_destroy(mrcp_context);
@@ -895,7 +895,7 @@ static switch_status_t openmrcp_init()
 	openmrcp_module.asr_profile = NULL;
 	openmrcp_module.tts_profile = NULL;
 
-	switch_core_hash_init(&openmrcp_module.profile_hash,openmrcp_module.pool);
+	switch_core_hash_init(&openmrcp_module.profile_hash, openmrcp_module.pool);
 
 	/* read config */
 	if (do_config() != SWITCH_STATUS_SUCCESS) {
