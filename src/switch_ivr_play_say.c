@@ -1200,6 +1200,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 	uint32_t rate = 0;
+	int extra = 0;
+	char *p, *tmp = NULL;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -1216,9 +1218,46 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	len = sh->samples * 2;
 	
 	flags = 0;
-	switch_sleep(200000);
+	//switch_sleep(200000);
+	for(p = text; p && *p; p++) {
+		if (*p == '*') {
+			extra += 4;
+		} else if (*p == '#') {
+			extra += 5;
+		}
+	}
+
+	if (extra) {
+		char *tp;
+		switch_size_t mylen = strlen(text) + extra + 1;
+		tmp = malloc(mylen);
+		tp = tmp;
+		for (p = text; p && *p; p++) {
+			if (*p == '*') {
+				*tp++ = 's';
+				*tp++ = 't';
+				*tp++ = 'a';
+				*tp++ = 'r';
+				p++;
+			} else  if (*p == '#') {
+				*tp++ = 'p';
+				*tp++ = 'o';
+				*tp++ = 'u';
+				*tp++ = 'n';
+				*tp++ = 'd';
+				p++;
+			} else {
+				*tp++ = *p;
+			}
+		}
+		*tp = '\0';
+		text = tmp;
+	}
+
 	switch_core_speech_feed_tts(sh, text, &flags);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Speaking text: %s\n", text);
+	switch_safe_free(tmp);
+	text = NULL;
 
 	write_frame.rate = sh->rate;
 
