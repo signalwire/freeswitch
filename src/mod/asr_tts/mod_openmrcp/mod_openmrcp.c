@@ -202,13 +202,13 @@ static mrcp_status_t openmrcp_on_channel_remove(mrcp_client_context_t *context, 
 static mrcp_status_t openmrcp_on_channel_modify(mrcp_client_context_t *context, mrcp_session_t *session, mrcp_message_t *mrcp_message)
 {
 	openmrcp_session_t *openmrcp_session = mrcp_client_context_session_object_get(session);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "on_channel_modify called\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "on_channel_modify called\n");
 	if (!openmrcp_session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "!openmrcp_session\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "!openmrcp_session\n");
 		return MRCP_STATUS_FAILURE;
 	}
 	if (!mrcp_message) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "!mrcp_message\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "!mrcp_message\n");
 		return MRCP_STATUS_FAILURE;
 	}
 
@@ -222,7 +222,7 @@ static mrcp_status_t openmrcp_on_channel_modify(mrcp_client_context_t *context, 
 		return MRCP_STATUS_SUCCESS;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "setting FLAG_HAS_MESSAGE\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setting FLAG_HAS_MESSAGE\n");
 	openmrcp_session->mrcp_message_last_rcvd = mrcp_message;
 	switch_set_flag_locked(openmrcp_session, FLAG_HAS_MESSAGE);
 	return MRCP_STATUS_SUCCESS;
@@ -288,7 +288,7 @@ static switch_status_t openmrcp_asr_open(switch_asr_handle_t *ah, char *codec, i
 	openmrcp_session_t *asr_session;
 	mrcp_client_channel_t *asr_channel;
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "asr_open called, codec: %s, rate: %d\n", codec, rate);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "asr_open called, codec: %s, rate: %d\n", codec, rate);
 
 	if (strcmp(codec, "L16")) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Sorry, only L16 codec supported\n");
@@ -342,12 +342,12 @@ static switch_status_t openmrcp_asr_load_grammar(switch_asr_handle_t *ah, char *
 	openmrcp_session_t *asr_session = (openmrcp_session_t *) ah->private_info;
 	mrcp_client_context_t *context = asr_session->profile->mrcp_context;
 		
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loading grammar\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading grammar\n");
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Start Recognizer\n");
 	openmrcp_recog_start(context, asr_session, path);
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Finished loading grammar\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Finished loading grammar\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -403,7 +403,7 @@ static switch_status_t openmrcp_asr_pause(switch_asr_handle_t *ah)
 static switch_status_t openmrcp_asr_resume(switch_asr_handle_t *ah)
 {
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "openmrcp_asr_resume called\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "openmrcp_asr_resume called\n");
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -602,7 +602,7 @@ static switch_status_t openmrcp_tts_open(switch_speech_handle_t *sh, char *voice
 	}
 
 	/* create synthesizer channel */
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Create Synthesizer Channel\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Create Synthesizer Channel\n");
 	tts_channel = mrcp_client_synthesizer_channel_create(tts_session->profile->mrcp_context, tts_session->client_session, NULL);
 	if (!tts_channel) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create synthesizer channel\n");
@@ -630,7 +630,7 @@ static switch_status_t openmrcp_tts_close(switch_speech_handle_t *sh, switch_spe
 	mrcp_client_context_t *context = tts_session->profile->mrcp_context;
 
 	/* terminate tts session */
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "terminate tts_session\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "terminate tts_session\n");
 	switch_set_flag_locked(tts_session, FLAG_TERMINATING);
 	mrcp_client_context_session_terminate(context, tts_session->client_session);
 	return SWITCH_STATUS_SUCCESS;	
