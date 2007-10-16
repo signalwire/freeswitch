@@ -175,9 +175,9 @@
       <prompt phrase="Aurevoir" filename="vm-goodbye.wav"/>
       <prompt phrase="Trops de tentatives échouées" filename="vm-abort.wav"/>
       <prompt phrase="au bip, enregistrez votre nom, puis appuyez sur une touche ou arretez de parler jusqu'a la fin de l'enregistrement." filename="vm-record_name1.wav"/>
-      <prompt phrase="Choisissez un nombre entre 1 et 3" filename="vm-choose_greeting.wav"/>
+      <prompt phrase="Choisissez un message d'accueil entre 1 et 3" filename="vm-choose_greeting.wav"/>
       <prompt phrase="Valeur incorrecte" filename="vm-choose_greeting_fail.wav"/>
-      <prompt phrase="Enregistrez votre souhait au bip, puis appuyez sur une touche ou arretez de parler jusqu'a la fin de l'enregistrement." filename="vm-record_greeting.wav"/>
+      <prompt phrase="Enregistrez votre message d'accueil au bip, puis appuyez sur une touche ou arretez de parler jusqu'a la fin de l'enregistrement." filename="vm-record_greeting.wav"/>
       <prompt phrase="enregistrez votre message au bip, puis appuyez sur une touche ou arretez de parler jusqu'a la fin de l'enregistrement." filename="vm-record_message.wav"/>
       <prompt phrase="n'est pas joignable" filename="vm-play_greeting.wav"/>
       <prompt phrase="Nouvelle importante" filename="vm-urgent-new.wav"/>
@@ -191,8 +191,8 @@
       <prompt phrase="Pour écouter les messages enregistrés" filename="vm-listen_saved.wav"/>
       <prompt phrase="Pour les options avancées" filename="vm-advanced.wav"/>
       <prompt phrase="Pour terminer" filename="vm-to_exit.wav"/>
-      <prompt phrase="Pour enregistrer un souhait" filename="vm-record_greeting.wav"/>
-      <prompt phrase="to choose greeting" filename="vm-choose_greeting.wav"/>
+      <prompt phrase="Pour enregistrer un message d'accueil" filename="vm-record_greeting.wav"/>
+      <prompt phrase="Pour choisir un message d'acceuil" filename="vm-choose_greeting.wav"/>
       <prompt phrase="Pour enregistrer votre nom" filename="vm-record_name2.wav"/>
       <prompt phrase="Pour le menu principale" filename="vm-main_menu.wav"/>
       <prompt phrase="Pour écouter l'enregistrement" filename="vm-listen_to_recording.wav"/>
@@ -203,7 +203,7 @@
       <prompt phrase="pour réÂécouter l'enregistrement de nouveau" filename="vm-listen_to_recording_again.wav"/>
       <prompt phrase="pour effacer l'enregistrement" filename="vm-delete_recording.wav"/>
       <prompt phrase="Pour transférer l'enregistrement vers votre boite mail" filename="vm-forward_to_email.wav"/>
-      <prompt phrase="souhait" filename="vm-greeting.wav"/>
+      <prompt phrase="Message d'accueil" filename="vm-greeting.wav"/>
       <prompt phrase="Choisissez" filename="vm-selected.wav"/>
       <prompt phrase="N'est pas disponible" filename="vm-not_avaliable.wav"/>
       <prompt phrase="message numéro" filename="vm-message_number.wav"/>
