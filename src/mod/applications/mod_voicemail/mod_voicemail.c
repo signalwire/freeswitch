@@ -748,7 +748,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
                 *cc.buf = '\0';
             } else {
                 status = vm_macro_get(session, VM_RECORD_FILE_CHECK_MACRO, 
-                                      key_buf, input, sizeof(input), 1, profile->terminator_key, &term, profile->digit_timeout);
+                                      key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout);
             }
 
             if (!strcmp(input, profile->listen_file_key)) {
@@ -866,7 +866,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
                 *cc.buf = '\0';
             } else {
                 status = vm_macro_get(session, VM_LISTEN_FILE_CHECK_MACRO, 
-                                      key_buf, input, sizeof(input), 1, profile->terminator_key, &term, profile->digit_timeout);
+                                      key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout);
             }
             if (!strcmp(input, profile->listen_file_key)) {
                 goto play_file;
@@ -1158,8 +1158,7 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
                          profile->main_menu_key);
                 
 
-                TRY_CODE(vm_macro_get(session, VM_CONFIG_MENU_MACRO, key_buf, input, sizeof(input), 1, 
-                                      profile->terminator_key, &term, timeout));
+                TRY_CODE(vm_macro_get(session, VM_CONFIG_MENU_MACRO, key_buf, input, sizeof(input), 1, "", &term, timeout));
                 if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
                     goto end;
                 }
@@ -1171,8 +1170,8 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
                     switch_input_args_t args = { 0 };
                     args.input_callback = cancel_on_dtmf;
                     
-                    TRY_CODE(vm_macro_get(session, VM_CHOOSE_GREETING_MACRO, key_buf, input, sizeof(input), 1, 
-                                          profile->terminator_key, &term, timeout));
+                    TRY_CODE(vm_macro_get(session, VM_CHOOSE_GREETING_MACRO, key_buf, input, sizeof(input), 1, "", &term, timeout));
+                                          
                     
                     num = atoi(input);
                     file_path = switch_mprintf("%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, num, profile->file_ext);
@@ -1200,8 +1199,8 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
                     switch_safe_free(file_path);
                 } else if (!strcmp(input, profile->record_greeting_key)) {
                     int num;
-                    TRY_CODE(vm_macro_get(session, VM_CHOOSE_GREETING_MACRO, key_buf, input, sizeof(input), 1, 
-                                          profile->terminator_key, &term, timeout));
+                    TRY_CODE(vm_macro_get(session, VM_CHOOSE_GREETING_MACRO, key_buf, input, sizeof(input), 1, "", &term, timeout));
+                                          
                     
                     num = atoi(input);
                     if (num < 1 || num > 3) {
@@ -1239,8 +1238,8 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
                          profile->config_menu_key,
                          profile->terminator_key);
                 
-                status = vm_macro_get(session, VM_MENU_MACRO, key_buf, input, sizeof(input), 1, 
-                                      profile->terminator_key, &term, timeout);
+                status = vm_macro_get(session, VM_MENU_MACRO, key_buf, input, sizeof(input), 1, "", &term, timeout);
+                                      
                 if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
                     goto end;
                 }
@@ -1511,7 +1510,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
                      profile->urgent_key,
                      profile->terminator_key);
 
-            vm_macro_get(session, VM_RECORD_URGENT_CHECK_MACRO, key_buf, input, sizeof(input), 1, profile->terminator_key, &term, profile->digit_timeout);
+            vm_macro_get(session, VM_RECORD_URGENT_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout);
             if (*profile->urgent_key == *input) {
                 read_flags = URGENT_FLAG_STRING;
                 priority = 1;
