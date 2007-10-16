@@ -525,7 +525,8 @@ static mrcp_status_t synth_speak(mrcp_client_context_t *context, openmrcp_sessio
 {
 	mrcp_generic_header_t *generic_header;
 	mrcp_message_t *mrcp_message;
-
+	mrcp_status_t status = MRCP_STATUS_FAILURE;
+	
 	char *text2speak;
 	const char v2_xml_head[] = 
 		"<?xml version=\"1.0\"?>\r\n"
@@ -553,28 +554,28 @@ static mrcp_status_t synth_speak(mrcp_client_context_t *context, openmrcp_sessio
 		xml_tail = v2_xml_tail;
 	}
 
-
-	size_t len = sizeof(xml_head) + sizeof(text) + sizeof(xml_tail);
-	text2speak = (char *) switch_core_alloc(tts_session->pool, len);
-	strcat(text2speak, xml_head);
-	strcat(text2speak, text);
-	strcat(text2speak, xml_tail);
-
+	text2speak = switch_core_sprintf(tts_session->pool, "%s%s%s", xml_head, text, xml_tail);
 	mrcp_message = mrcp_client_context_message_get(context,tts_session->client_session,tts_session->control_channel,SYNTHESIZER_SPEAK);
+
 	if(!mrcp_message) {
-		return MRCP_STATUS_FAILURE;
+		goto end;
 	}
 
 	generic_header = mrcp_generic_header_prepare(mrcp_message);
 	if(!generic_header) {
-		return MRCP_STATUS_FAILURE;
+		goto end;
 	}
 
 	generic_header->content_type = "application/synthesis+ssml";
 	mrcp_generic_header_property_add(mrcp_message,GENERIC_HEADER_CONTENT_TYPE);
 	mrcp_message->body = text2speak;
 
-	return mrcp_client_context_channel_modify(context,tts_session->client_session,mrcp_message);
+	status = mrcp_client_context_channel_modify(context,tts_session->client_session,mrcp_message);
+
+ end:
+
+	return status;
+
 }
 
 static mrcp_status_t synth_stop(mrcp_client_context_t *context, openmrcp_session_t *tts_session)
