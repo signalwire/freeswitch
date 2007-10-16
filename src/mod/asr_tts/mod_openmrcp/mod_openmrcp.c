@@ -527,15 +527,32 @@ static mrcp_status_t synth_speak(mrcp_client_context_t *context, openmrcp_sessio
 	mrcp_message_t *mrcp_message;
 
 	char *text2speak;
-	const char xml_head[] = 
+	const char v2_xml_head[] = 
 		"<?xml version=\"1.0\"?>\r\n"
 		"<speak>\r\n"
 		"<paragraph>\r\n"
 		"    <sentence>";
 
-	const char xml_tail[] = "</sentence>\r\n"
+	const char v2_xml_tail[] = "</sentence>\r\n"
 		"</paragraph>\r\n"
 		"</speak>\r\n";
+
+    const char v1_xml_head[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        "<speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\">\n";
+
+
+    const char v1_xml_tail[] = "\n</speak>\n";
+
+	const char *xml_head, *xml_tail;
+
+	if (tts_session->profile->mrcp_options->proto_version == 1) {
+		xml_head = v1_xml_head;
+		xml_tail = v1_xml_tail;
+	} else {
+		xml_head = v2_xml_head;
+		xml_tail = v2_xml_tail;
+	}
+
 
 	size_t len = sizeof(xml_head) + sizeof(text) + sizeof(xml_tail);
 	text2speak = (char *) switch_core_alloc(tts_session->pool, len);
