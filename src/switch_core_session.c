@@ -305,11 +305,11 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 					switch_channel_set_originatee_caller_profile(channel, cloned_profile);
 				}
 			}
+		}
 
-			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_OUTGOING) == SWITCH_STATUS_SUCCESS) {
-				switch_channel_event_set_data(peer_channel, event);
-				switch_event_fire(&event);
-			}
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_OUTGOING) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(peer_channel, event);
+			switch_event_fire(&event);
 		}
 	}
 
