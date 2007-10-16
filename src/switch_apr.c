@@ -561,18 +561,24 @@ SWITCH_DECLARE(switch_status_t) switch_socket_connect(switch_socket_t * sock, sw
 
 SWITCH_DECLARE(switch_status_t) switch_socket_send(switch_socket_t * sock, const char *buf, switch_size_t *len)
 {
-	switch_status_t status;
-	switch_size_t req = *len, wrote = 0, need = 0;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_size_t req = *len, wrote = 0, need = *len;
+	int to_count = 0;
 
-	status = apr_socket_send(sock, buf, len);
-	if (status == SWITCH_STATUS_SUCCESS) {
-		wrote = *len;
-		while (wrote < req && status == SWITCH_STATUS_SUCCESS) {
-			need = req - wrote;
-			status = apr_socket_send(sock, buf + wrote, &need);
-			wrote += need;
+	while ((wrote < req && status == SWITCH_STATUS_SUCCESS) || (need == 0 && status == SWITCH_STATUS_BREAK)) {
+		need = req - wrote;
+		if ((status = apr_socket_send(sock, buf + wrote, &need)) == SWITCH_STATUS_BREAK) {
+			if (++to_count > 10000) {
+				status = SWITCH_STATUS_FALSE;
+				break;
+			}
+			switch_yield(1000);
+		} else {
+			to_count = 0;
 		}
+		wrote += need;
 	}
+	
 	*len = wrote;
 	return status;
 
