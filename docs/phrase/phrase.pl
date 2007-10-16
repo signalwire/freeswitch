@@ -6,7 +6,7 @@
 use XML::Simple;
 use Data::Dumper;
 
-my $ref = XMLin("phrase.xml");
+my $ref = XMLin("phrase_en.xml");
 
 foreach $language ( sort keys %{$ref}) {
   foreach $item ( sort keys %{$ref->{$language}}) {

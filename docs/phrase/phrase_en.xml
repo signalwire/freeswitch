@@ -198,7 +198,7 @@
       <prompt phrase="for the main menu" filename="vm-main_menu.wav"/>
       <prompt phrase="to listen to the recording" filename="vm-listen_to_recording.wav"/>
       <prompt phrase="to save the recording" filename="vm-save_recording.wav"/>
-      <prompt phrase="to re record" filename="vm-rerecord.wav"/>
+      <prompt phrase="to rerecord" filename="vm-rerecord.wav"/>
       <prompt phrase="to mark this message urgent or" filename="vm-mark_urgent.wav"/>
       <prompt phrase="to continue" filename="vm-continue.wav"/>
       <prompt phrase="to listen to the recording again" filename="vm-listen_to_recording_again.wav"/>
@@ -208,6 +208,7 @@
       <prompt phrase="selected" filename="vm-selected.wav"/>
       <prompt phrase="is not available" filename="vm-not_avaliable.wav"/>
       <prompt phrase="message number" filename="vm-message_number.wav"/>
+      <prompt phrase="deleted" filename="vm-deleted.wav"/>
     </voicemail>
   </en>
 </language>
