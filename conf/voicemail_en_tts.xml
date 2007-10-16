@@ -2,7 +2,7 @@
   <macro name="voicemail_enter_id">
     <input pattern="(.*)">
       <match>
-	<action function="speak-text" data="please enter your i d, followed by $1"/>
+	<action function="speak-text" data="please enter your i d, followed by $1."/>
       </match>
     </input>
   </macro>
@@ -10,7 +10,7 @@
   <macro name="voicemail_enter_pass">
     <input pattern="(.*)">
       <match>
-	<action function="speak-text" data="please enter your password, followed by $1"/>
+	<action function="speak-text" data="please enter your password, followed by $1."/>
       </match>
     </input>
   </macro>
@@ -18,7 +18,7 @@
   <macro name="voicemail_fail_auth">
     <input pattern="(.*)">
       <match>
-	<action function="speak-text" data="login incorrect"/>
+	<action function="speak-text" data="login incorrect."/>
       </match>
     </input>
   </macro>
@@ -26,7 +26,7 @@
   <macro name="voicemail_hello">
     <input pattern="(.*)">
       <match>
-	<action function="speak-text" data="welcome to your voicemail"/>
+	<action function="speak-text" data="welcome to your voicemail."/>
       </match>
     </input>
   </macro>
@@ -34,7 +34,7 @@
   <macro name="voicemail_goodbye">
     <input pattern="(.*)">
       <match>
-	<action function="speak-text" data="goodbye"/>
+	<action function="speak-text" data="goodbye."/>
       </match>
     </input>
   </macro>
@@ -42,7 +42,7 @@
   <macro name="voicemail_abort">
     <input pattern="(.*)">
       <match>
-	<action function="speak-text" data="too many failed attempts"/>
+	<action function="speak-text" data="too many failed attempts."/>
       </match>
     </input>
   </macro>
@@ -50,7 +50,7 @@
   <macro name="voicemail_message_count">
     <input pattern="^([^:]+):([^:]+):{0,1}(.*)">
       <match>
-	<action function="speak-text" data="you have $1 $2 message$3 in folder ${voicemail_current_folder}"/>
+	<action function="speak-text" data="you have $1 $2 message$3 in folder ${voicemail_current_folder}."/>
       </match>
     </input>
   </macro>
@@ -59,7 +59,7 @@
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="press $1 to listen to new messages, press $2 to listen to saved messages, press $3 for advanced options, press $4 to exit"/>
+		data="To listen to new messages, press $1, To listen to saved messages, press $2, For advanced options, press $3, to exit, press $4."/>
       </match>
     </input>
   </macro>
@@ -69,7 +69,7 @@
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="press $1 to record a greeting, press $2 to choose a greeting, press $3 to record your name, press $4 for the main menu"/>
+		data="To record a greeting, press $1, To choose a greeting, press $2, To record your name, press $3, to return to the main menu, press $4."/>
       </match>
     </input>
   </macro>
@@ -88,7 +88,7 @@
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="press $1 to listen to the recording, press $2 to save the recording, press $3 to re record"/>
+		data="To listen to the recording, press $1, To save the recording, press $2, To re record, press $3."/>
       </match>
     </input>
   </macro>
@@ -97,7 +97,7 @@
     <input pattern="^([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="press $1 to mark this message urgent or press $2 to continue"/>
+		data="To mark this message urgent, press $1, To continue, press $2."/>
       </match>
     </input>
   </macro>
@@ -106,7 +106,7 @@
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
 	<action function="speak-text" 
-		data="press $1 to listen to the recording again, press $2 to save the recording, press $3 to delete the recording, press $4 to forward the recording to your email"/>
+		data="To listen to the recording again, press $1, To save the recording, press $2,  To delete the recording, press $3, to forward the recording to your email, press $4."/>
       </match>
     </input>
   </macro>
@@ -114,7 +114,7 @@
   <macro name="voicemail_choose_greeting">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="choose a greeting between 1 and 3"/>
+	<action function="speak-text" data="choose a greeting between 1 and 3."/>
       </match>
     </input>
   </macro>
@@ -122,7 +122,7 @@
   <macro name="voicemail_choose_greeting_fail">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="invalid value"/>
+	<action function="speak-text" data="invalid value."/>
       </match>
     </input>
   </macro>
@@ -130,7 +130,7 @@
   <macro name="voicemail_record_greeting">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="record your greeting at the tone, press any key or stop talking to end the recording"/>
+	<action function="speak-text" data="record your greeting at the tone, press any key or stop talking to end the recording."/>
       </match>
     </input>
   </macro>
@@ -138,7 +138,7 @@
   <macro name="voicemail_record_message">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="record your message at the tone, press any key or stop talking to end the recording"/>
+	<action function="speak-text" data="record your message at the tone, press any key or stop talking to end the recording."/>
       </match>
     </input>
   </macro>
@@ -146,7 +146,7 @@
   <macro name="voicemail_greeting_selected">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="greeting $1 selected"/>
+	<action function="speak-text" data="greeting $1 selected."/>
       </match>
     </input>
   </macro>
@@ -154,7 +154,7 @@
   <macro name="voicemail_play_greeting">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="$1 is not available"/>
+	<action function="speak-text" data="$1 is not available."/>
       </match>
     </input>
   </macro>
@@ -170,7 +170,7 @@
   <macro name="voicemail_say_message_number">
     <input pattern="^([a-z]+):(.*)$">
       <match>
-	<action function="speak-text" data="$1 message number $2"/>
+	<action function="speak-text" data="$1 message number $2."/>
       </match>
     </input>
   </macro>
@@ -178,7 +178,7 @@
   <macro name="voicemail_say_phone_number">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="$1"/>
+	<action function="speak-text" data="$1."/>
       </match>
     </input>
   </macro>
@@ -186,7 +186,7 @@
   <macro name="voicemail_say_name">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="$1"/>
+	<action function="speak-text" data="$1."/>
       </match>
     </input>
   </macro>
