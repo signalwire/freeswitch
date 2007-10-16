@@ -183,7 +183,7 @@
       <prompt phrase="is not available" filename="vm-play_greeting.wav"/>
       <prompt phrase="urgent new" filename="vm-urgent-new.wav"/>
       <prompt phrase="new" filename="vm-new.wav"/>
-      <prompt phrase="urgent saved" filename="vm-urgent-saved"/>
+      <prompt phrase="urgent saved" filename="vm-urgent-saved.wav"/>
       <prompt phrase="saved" filename="vm-saved.wav"/>
       <prompt phrase="message" filename="vm-message.wav"/>
       <prompt phrase="messages" filename="vm-messages.wav"/>
