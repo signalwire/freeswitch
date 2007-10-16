@@ -1238,14 +1238,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 				*tp++ = 't';
 				*tp++ = 'a';
 				*tp++ = 'r';
-				p++;
 			} else  if (*p == '#') {
 				*tp++ = 'p';
 				*tp++ = 'o';
 				*tp++ = 'u';
 				*tp++ = 'n';
 				*tp++ = 'd';
-				p++;
 			} else {
 				*tp++ = *p;
 			}
