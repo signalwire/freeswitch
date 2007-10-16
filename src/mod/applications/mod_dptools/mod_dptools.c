@@ -898,15 +898,33 @@ SWITCH_STANDARD_APP(park_function)
 */
 static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
-
+	
 
 	switch (itype) {
-	case SWITCH_INPUT_TYPE_DTMF:{
+	case SWITCH_INPUT_TYPE_DTMF:
+		{
 			char *dtmf = (char *) input;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digits %s\n", dtmf);
+			char *terminators;
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+			char *p;
+			
+			assert(channel);
 
-			if (*dtmf == '*') {
-				return SWITCH_STATUS_BREAK;
+			if (!(terminators = switch_channel_get_variable(channel, SWITCH_PLAYBACK_TERMINATORS_VARIABLE))) {
+				terminators = "*";
+			}
+			if (!strcasecmp(terminators, "none")) {
+				terminators = NULL;
+			}
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digits %s\n", dtmf);
+			
+			for (p = terminators; p && *p; p++) {
+				char *d;
+				for (d = dtmf; d && *d; d++) {
+					if (*p == *d) {
+						return SWITCH_STATUS_BREAK;
+					}
+				}
 			}
 		}
 		break;
