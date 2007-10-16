@@ -254,6 +254,7 @@ SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void 
 
 SWITCH_DECLARE(void) switch_core_set_globals(void)
 {
+	char *dir_path;
 #define BUFSIZE 1024
 #ifdef WIN32
 	char lpPathBuffer[BUFSIZE];
@@ -348,6 +349,12 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 #endif
 	}
 
+	
+	dir_path = switch_mprintf("%s%ssounds", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
+	switch_dir_make_recursive(dir_path,
+							  SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE | SWITCH_FPROT_UEXECUTE | SWITCH_FPROT_GREAD | SWITCH_FPROT_GEXECUTE,
+							  runtime.memory_pool);
+	switch_safe_free(dir_path);
 }
 
 
