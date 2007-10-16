@@ -2,7 +2,7 @@
   <macro name="voicemail_enter_id">
     <input pattern="(.*)">
       <match>
-	<action function="play-file" data="vm-enter_id.wav"/>
+	<action function="play-file" data="voicemail/vm-enter_id.wav"/>
 	<action function="say" data="$1" method="pronounced" type="items"/>
       </match>
     </input>
@@ -11,7 +11,7 @@
   <macro name="voicemail_enter_pass">
     <input pattern="(.*)">
       <match>
-	<action function="play-file" data="vm-enter_pass.wav"/>
+	<action function="play-file" data="voicemail/vm-enter_pass.wav"/>
 	<action function="say" data="$1" method="pronounced" type="items"/>
       </match>
     </input>
@@ -20,7 +20,7 @@
   <macro name="voicemail_fail_auth">
     <input pattern="(.*)">
       <match>
-	<action function="play-file" data="vm-fail_auth.wav"/>
+	<action function="play-file" data="voicemail/vm-fail_auth.wav"/>
       </match>
     </input>
   </macro>
@@ -28,7 +28,7 @@
   <macro name="voicemail_hello">
     <input pattern="(.*)">
       <match>
-	<action function="play-file" data="vm-hello.wav"/>
+	<action function="play-file" data="voicemail/vm-hello.wav"/>
       </match>
     </input>
   </macro>
@@ -36,7 +36,7 @@
   <macro name="voicemail_goodbye">
     <input pattern="(.*)">
       <match>
-	<action function="play-file" data="vm-goodbye.wav"/>
+	<action function="play-file" data="voicemail/vm-goodbye.wav"/>
       </match>
     </input>
   </macro>
@@ -44,7 +44,7 @@
   <macro name="voicemail_abort">
     <input pattern="(.*)">
       <match>
-	<action function="play-file" data="vm-abort.wav"/>
+	<action function="play-file" data="voicemail/vm-abort.wav"/>
       </match>
     </input>
   </macro>
@@ -52,10 +52,10 @@
   <macro name="voicemail_message_count">
     <input pattern="^([^:]+):([^:]+):{0,1}(.*)">
       <match>
-	<action function="play-file" data="vm-you_have.wav"/>
+	<action function="play-file" data="voicemail/vm-you_have.wav"/>
 	<action function="say" data="$1" method="pronounced" type="items"/>
-	<action function="play-file" data="vm-$2.wav"/> <!-- vm-urgent-new.wav, vm-new.wav, vm-urgent-saved, vm-saved.wav -->
-	<action function="play-file" data="vm-message$3.wav"/> <!-- vm-message.wav or vm-messages.wav -->
+	<action function="play-file" data="voicemail/vm-$2.wav"/> <!-- voicemail/vm-urgent-new.wav, voicemail/vm-new.wav, voicemail/vm-urgent-saved, voicemail/vm-saved.wav -->
+	<action function="play-file" data="voicemail/vm-message$3.wav"/> <!-- voicemail/vm-message.wav or voicemail/vm-messages.wav -->
       </match>
     </input>
   </macro>
@@ -63,17 +63,17 @@
   <macro name="voicemail_menu">
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
-	<action function="play-file" data="vm-press.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$1" method="pronounced" type="items"/>
-	<action function="play-file" data="vm-listen_new.wav"/>
-	<action function="play-file" data="vm-press.wav"/>
+	<action function="play-file" data="voicemail/vm-listen_new.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$2" method="pronounced" type="items"/>
-	<action function="play-file" data="vm-listen_saved.wav"/>
-	<action function="play-file" data="vm-press.wav"/>
+	<action function="play-file" data="voicemail/vm-listen_saved.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$3" method="pronounced" type="items"/>
-	<action function="play-file" data="vm-advanced.wav"/>
-	<action function="say" data="$4" method="pronounced" type="items"/>
-	<action function="play-file" data="vm-to_exit.wav"/>
+	<action function="play-file" data="voicemail/vm-advanced.wav"/>
+	<action function="say" data="$4" method="pronounced" type="name_phonetic"/>
+	<action function="play-file" data="voicemail/vm-to_exit.wav"/>
       </match>
     </input>
   </macro>
@@ -82,17 +82,18 @@
   <macro name="voicemail_config_menu">
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
-	<action function="play-file" data="vm-press.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$1" method="pronounced" type="items"/>
-	<action function="play-file" data="vm-record_greeting.wav"/>
-	<action function="play-file" data="vm-press.wav"/>
+	<action function="play-file" data="voicemail/vm-record_greeting.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$2" method="pronounced" type="items"/>
-	<action function="play-file" data="vm-choose_greeting.wav"/>
-	<action function="play-file" data="vm-press.wav"/>
+	<action function="play-file" data="voicemail/vm-choose_greeting.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$3" method="pronounced" type="items"/>
-	<action function="play-file" data="vm-record_name.wav"/>
+	<action function="play-file" data="voicemail/vm-record_name2.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$4" method="pronounced" type="items"/>
-	<action function="play-file" data="vm-main_menu.wav"/>
+	<action function="play-file" data="voicemail/vm-main_menu.wav"/>
       </match>
     </input>
   </macro>
@@ -101,7 +102,7 @@
   <macro name="voicemail_record_name">
     <input pattern="^(.*)$">
       <match>
-	<action function="play-file" data="vm-record_name.wav"/>
+	<action function="play-file" data="voicemail/vm-record_name1.wav"/>
       </match>
     </input>
   </macro>
@@ -109,15 +110,15 @@
   <macro name="voicemail_record_file_check">
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
-	<action function="play-file" data="vm-press.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$1" method="pronounced" type="items"/>
-	<action function="play-file" data="vm-listen_to_recording.wav"/>
-	<action function="play-file" data="vm-press.wav"/>
+	<action function="play-file" data="voicemail/vm-listen_to_recording.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$2" method="pronounced" type="items"/>
-	<action function="play-file" data="vm-save_recording.wav"/>
-	<action function="play-file" data="vm-press.wav"/>
+	<action function="play-file" data="voicemail/vm-save_recording.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$3" method="pronounced" type="items"/>
-	<action function="play-file" data="vm-rerecord.wav"/>
+	<action function="play-file" data="voicemail/vm-rerecord.wav"/>
       </match>
     </input>
   </macro>
@@ -125,12 +126,12 @@
   <macro name="voicemail_record_urgent_check">
     <input pattern="^([0-9#*]):([0-9#*])$">
       <match>
-	<action function="play-file" data="vm-press.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$1" method="pronounced" type="items"/>
-	<action function="play-file" data="vm-mark_urgent.wav"/>
-	<action function="play-file" data="vm-press.wav"/>
+	<action function="play-file" data="voicemail/vm-mark_urgent.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$2" method="pronounced" type="items"/>
-	<action function="play-file" data="vm-continue.wav"/>
+	<action function="play-file" data="voicemail/vm-continue.wav"/>
       </match>
     </input>
   </macro>
@@ -138,17 +139,17 @@
   <macro name="voicemail_listen_file_check">
     <input pattern="^([0-9#*]):([0-9#*]):([0-9#*]):([0-9#*])$">
       <match>
-	<action function="play-file" data="vm-press.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$1" method="pronounced" type="items"/>
-	<action function="play-file" data="vm-listen_to_recording.wav"/>
-	<action function="play-file" data="vm-press.wav"/>
+	<action function="play-file" data="voicemail/vm-listen_to_recording.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$2" method="pronounced" type="items"/>
-	<action function="play-file" data="vm-save_recording.wav"/>
-	<action function="play-file" data="vm-press.wav"/>
+	<action function="play-file" data="voicemail/vm-save_recording.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$3" method="pronounced" type="items"/>
-	<action function="play-file" data="vm-delete_recording.wav"/>
+	<action function="play-file" data="voicemail/vm-delete_recording.wav"/>
 	<action function="say" data="$4" method="pronounced" type="items"/>
-	<action function="play-file" data="vm-forward_to_email.wav"/>
+	<action function="play-file" data="voicemail/vm-forward_to_email.wav"/>
       </match>
     </input>
   </macro>
@@ -156,7 +157,7 @@
   <macro name="voicemail_choose_greeting">
     <input pattern="^(.*)$">
       <match>
-	<action function="play-file" data="vm-choose_greeting.wav"/>
+	<action function="play-file" data="voicemail/vm-choose_greeting.wav"/>
       </match>
     </input>
   </macro>
@@ -164,7 +165,7 @@
   <macro name="voicemail_choose_greeting_fail">
     <input pattern="^(.*)$">
       <match>
-	<action function="play-file" data="vm-choose_greeting_fail.wav"/>
+	<action function="play-file" data="voicemail/vm-choose_greeting_fail.wav"/>
       </match>
     </input>
   </macro>
@@ -172,7 +173,7 @@
   <macro name="voicemail_record_greeting">
     <input pattern="^(.*)$">
       <match>
-	<action function="play-file" data="vm-record_greeting.wav"/>
+	<action function="play-file" data="voicemail/vm-record_greeting.wav"/>
       </match>
     </input>
   </macro>
@@ -180,7 +181,7 @@
   <macro name="voicemail_record_message">
     <input pattern="^(.*)$">
       <match>
-	<action function="play-file" data="vm-record_message.wav"/>
+	<action function="play-file" data="voicemail/vm-record_message.wav"/>
       </match>
     </input>
   </macro>
@@ -188,9 +189,9 @@
   <macro name="voicemail_greeting_selected">
     <input pattern="^(.*)$">
       <match>
-	<action function="play-file" data="vm-greeting.wav"/>
+	<action function="play-file" data="voicemail/vm-greeting.wav"/>
 	<action function="say" data="$1" method="pronounced" type="items"/>
-	<action function="play-file" data="vm-selected.wav"/>
+	<action function="play-file" data="voicemail/vm-selected.wav"/>
       </match>
     </input>
   </macro>
@@ -199,7 +200,7 @@
     <input pattern="^(.*)$">
       <match>
 	<action function="say" data="$1" method="pronounced" type="items"/>
-	<action function="play-file" data="vm-not_avaliable.wav"/>
+	<action function="play-file" data="voicemail/vm-not_avaliable.wav"/>
       </match>
     </input>
   </macro>
@@ -215,8 +216,8 @@
   <macro name="voicemail_say_message_number">
     <input pattern="^([a-z]+):(.*)$">
       <match>
-	<action function="play-file" data="vm-$1.wav"/> <!-- vm-saved.wav or vm-new.wav -->
-	<action function="play-file" data="vm-message_number.wav"/>
+	<action function="play-file" data="voicemail/vm-$1.wav"/> 
+	<action function="play-file" data="voicemail/vm-message_number.wav"/>
 	<action fucntion="say" data="$2" method="pronounced" type="items"/> 
       </match>
     </input>
@@ -233,7 +234,7 @@
   <macro name="voicemail_say_name">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="$1"/> <!-- not used -->
+	<action function="say" data="$1" method="pronounced" type="name_spelled"/>
       </match>
     </input>
   </macro>
@@ -241,8 +242,8 @@
   <macro name="voicemail_ack">
     <input pattern="^(.*)$">
       <match>
-	<action function="play-file" data="vm-message.wav"/>
-	<action function="say" data="$1" method="pronounced" type="items"/>
+	<action function="play-file" data="voicemail/vm-message.wav"/>
+	<action function="play-file" data="voicemail/vm-$1.wav"/>
       </match>
     </input>
   </macro>
