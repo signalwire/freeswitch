@@ -173,12 +173,39 @@
 		<prompt phrase="welcome to your voicemail" filename="vm-hello.wav"/>
 		<prompt phrase="goodbye" filename="vm-goodbye.wav"/>
 		<prompt phrase="too many failed attempts" filename="vm-abort.wav"/>
-		<prompt phrase="at the tone, record your name, press any key or stop talking to end the recording." filename="vm-record_name.wav"/>
+		<prompt phrase="at the tone, record your name, press any key or stop talking to end the recording." filename="vm-record_name1.wav"/>
 		<prompt phrase="choose a greeting between 1 and 3" filename="vm-choose_greeting.wav"/>
 		<prompt phrase="invalid value" filename="vm-choose_greeting_fail.wav"/>
 		<prompt phrase="too many failed attempts" filename="vm-abort.wav"/>
 		<prompt phrase="record your greeting at the tone, press any key or stop talking to end the recording" filename="vm-record_greeting.wav"/>
 		<prompt phrase="record your message at the tone, press any key or stop talking to end the recording" filename="vm-record_message.wav"/>
 		<prompt phrase="is not available" filename="vm-play_greeting.wav"/>
+		<prompt phrase="urgent new" filename="vm-urgent-new.wav"/>
+		<prompt phrase="new" filename="vm-new.wav"/>
+		<prompt phrase="urgent saved" filename="vm-urgent-saved"/>
+		<prompt phrase="saved" filename="vm-saved.wav"/>
+		<prompt phrase="message" filename="vm-message.wav"/>
+		<prompt phrase="messages" filename="vm-messages.wav"/>
+		<prompt phrase="press" filename="vm-press.wav"/>
+		<prompt phrase="to listen to new messages" filename="vm-listen_new.wav"/>
+		<prompt phrase="to listen to saved messages" filename="vm-listen_saved.wav"/>
+		<prompt phrase="for advanced options" filename="vm-advanced.wav"/>
+		<prompt phrase="to exit" filename="vm-to_exit.wav"/>
+		<prompt phrase="to record a greeting" filename="vm-record_greeting.wav"/>
+		<prompt phrase="to choose greeting" filename="vm-choose_greeting.wav"/>
+		<prompt phrase="to record your name" filename="vm-record_name2.wav"/>
+		<prompt phrase="for the main menu" filename="vm-main_menu.wav"/>
+		<prompt phrase="to listen to the recording" filename="vm-listen_to_recording.wav"/>
+		<prompt phrase="to save the recording" filename="vm-save_recording.wav"/>
+		<prompt phrase="to re record" filename="vm-rerecord.wav"/>
+		<prompt phrase="to mark this message urgent or" filename="vm-mark_urgent.wav"/>
+		<prompt phrase="to continue" filename="vm-continue.wav"/>
+		<prompt phrase="to listen to the recording again" filename="vm-listen_to_recording_again.wav"/>
+		<prompt phrase="to delete the recording" filename="vm-delete_recording.wav"/>
+		<prompt phrase="to forward the recording to your email" filename="vm-forward_to_email.wav"/>
+		<prompt phrase="greeting" filename="vm-greeting.wav"/>
+		<prompt phrase="selected" filename="vm-selected.wav"/>
+		<prompt phrase="is not available" filename="vm-not_avaliable.wav"/>
+		<prompt phrase="message number" filename="vm-message_number.wav"/>
 	</voicemail>
 </language>
