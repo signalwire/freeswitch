@@ -1202,7 +1202,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	uint32_t rate = 0;
 	int extra = 0;
 	char *p, *tmp = NULL;
-
+	char *star, *pound;
+	switch_size_t starlen, poundlen;
+	
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -1218,12 +1220,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	len = sh->samples * 2;
 	
 	flags = 0;
-	//switch_sleep(200000);
+	
+	if (!(star = switch_channel_get_variable(channel, "star_replace"))) {
+		star = "star";
+	}
+	if (!(pound = switch_channel_get_variable(channel, "pound_replace"))) {
+		pound = "pound";
+	}
+	starlen = strlen(star);
+	poundlen = strlen(pound);
+
+
 	for(p = text; p && *p; p++) {
 		if (*p == '*') {
-			extra += 4;
+			extra += starlen;
 		} else if (*p == '#') {
-			extra += 5;
+			extra += poundlen;
 		}
 	}
 
@@ -1231,24 +1243,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 		char *tp;
 		switch_size_t mylen = strlen(text) + extra + 1;
 		tmp = malloc(mylen);
+		memset(tmp, 0, mylen);
 		tp = tmp;
 		for (p = text; p && *p; p++) {
 			if (*p == '*') {
-				*tp++ = 's';
-				*tp++ = 't';
-				*tp++ = 'a';
-				*tp++ = 'r';
+				strncat(tp, star, starlen);
+				tp += starlen;
 			} else  if (*p == '#') {
-				*tp++ = 'p';
-				*tp++ = 'o';
-				*tp++ = 'u';
-				*tp++ = 'n';
-				*tp++ = 'd';
+				strncat(tp, pound, poundlen);
+				tp += poundlen;
 			} else {
 				*tp++ = *p;
 			}
 		}
-		*tp = '\0';
+		
 		text = tmp;
 	}
 
