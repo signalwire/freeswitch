@@ -531,17 +531,17 @@ static mrcp_status_t synth_speak(mrcp_client_context_t *context, openmrcp_sessio
 		"<?xml version=\"1.0\"?>\r\n"
 		"<speak>\r\n"
 		"<paragraph>\r\n"
-		"    <sentence>";
+		"    <sentence><break time=\"1000ms\"/>";
 
-	const char v2_xml_tail[] = "</sentence>\r\n"
+	const char v2_xml_tail[] = "<break time=\"1000ms\"/></sentence>\r\n"
 		"</paragraph>\r\n"
 		"</speak>\r\n";
 
     const char v1_xml_head[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-        "<speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\">\n";
+        "<speak version=\"1.0\" xmlns=\"http://www.w3.org/2001/10/synthesis\">\n<break time=\"1000ms\"/>";
 
 
-    const char v1_xml_tail[] = "\n</speak>\n";
+    const char v1_xml_tail[] = "<break time=\"1000ms\"/>\n</speak>\n";
 
 	const char *xml_head, *xml_tail;
 
