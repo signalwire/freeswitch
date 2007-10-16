@@ -218,7 +218,7 @@
       <match>
 	<action function="play-file" data="voicemail/vm-$1.wav"/> 
 	<action function="play-file" data="voicemail/vm-message_number.wav"/>
-	<action fucntion="say" data="$2" method="pronounced" type="items"/> 
+	<action function="say" data="$2" method="pronounced" type="items"/> 
       </match>
     </input>
   </macro>
