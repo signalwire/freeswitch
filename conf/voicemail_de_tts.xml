@@ -48,14 +48,13 @@
   </macro>
 
   <macro name="voicemail_message_count">
-    <input pattern="^([^:]+):([^:]+):{0,1}(.*)">
+    <input pattern="^1:(.*)$">
       <match>
-<!--
-        This would need support from mod_voicemail.c, german plural for messages is "Nachrichten", singular is "Nachricht"
-        numbers are a bit different too,,, "eine Nachricht" vs. "eins" (= the number "one")
-
-	<action function="speak-text" data="Sie haben $1 $2 Nachricht$3 im Ordner ${voicemail_current_folder}."/>
--->
+	<action function="speak-text" data="Sie haben 1 $2 Nachricht im Ordner ${voicemail_current_folder}."/>
+      </match>
+    </input>
+    <input pattern="^([0,2-9]+):(.*)$">
+      <match>
 	<action function="speak-text" data="Sie haben $1 $2 Nachrichten im Ordner ${voicemail_current_folder}."/>
       </match>
     </input>
