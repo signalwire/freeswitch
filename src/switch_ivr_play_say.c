@@ -97,6 +97,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	char *lname = NULL, *mname = NULL, hint_data[1024] = "", enc_hint[1024] = "";
 	switch_status_t status = SWITCH_STATUS_GENERR;
 	char *old_sound_prefix = NULL, *sound_path = NULL, *tts_engine = NULL, *tts_voice = NULL, *chan_lang = NULL;
+	const char *module_name = NULL;
 	switch_channel_t *channel;
 	uint8_t done = 0;
 
@@ -117,6 +118,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	} else {
 		chan_lang = lang;
 	}
+
+	module_name = chan_lang;
 
 	if (!data) {
 		data = "";
@@ -142,6 +145,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 
 	while (language) {
 		if ((lname = (char *) switch_xml_attr(language, "name")) && !strcasecmp(lname, chan_lang)) {
+			const char *tmp;
+
+			if ((tmp = switch_xml_attr(language, "module"))) {
+				module_name = tmp;
+			}
 			break;
 		}
 		language = language->next;
@@ -245,7 +253,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 						odata = expanded;
 					}
 
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Handle %s:[%s] (%s)\n", func, odata, chan_lang);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Handle %s:[%s] (%s:%s)\n", func, odata, chan_lang, module_name);
 
 					if (!strcasecmp(func, "play-file")) {
 						status = switch_ivr_play_file(session, NULL, odata, args);
@@ -256,13 +264,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 
 					} else if (!strcasecmp(func, "say")) {
 						switch_say_interface_t *si;
-						if ((si = switch_loadable_module_get_say_interface(chan_lang))) {
+						if ((si = switch_loadable_module_get_say_interface(module_name))) {
 							char *say_type = (char *) switch_xml_attr_soft(action, "type");
 							char *say_method = (char *) switch_xml_attr_soft(action, "method");
 
 							status = si->say_function(session, odata, get_say_type_by_name(say_type), get_say_method_by_name(say_method), args);
 						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid SAY Interface [%s]!\n", chan_lang);
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid SAY Interface [%s]!\n", module_name);
 						}
 					} else if (!strcasecmp(func, "speak-text")) {
 						char *my_tts_engine = (char *) switch_xml_attr(action, "tts-engine");
