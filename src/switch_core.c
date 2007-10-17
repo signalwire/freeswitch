@@ -417,8 +417,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, switch_cor
 {
 	switch_xml_t xml = NULL, cfg = NULL;
 	switch_uuid_t uuid;
-	memset(&runtime, 0, sizeof(runtime));
 	char guess_ip[256];
+
+	memset(&runtime, 0, sizeof(runtime));
 
 	switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
 	runtime.hard_log_level = SWITCH_LOG_DEBUG;

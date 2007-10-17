@@ -1208,7 +1208,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 	uint32_t rate = 0;
-	int extra = 0;
+	switch_size_t extra = 0;
 	char *p, *tmp = NULL;
 	char *star, *pound;
 	switch_size_t starlen, poundlen;
