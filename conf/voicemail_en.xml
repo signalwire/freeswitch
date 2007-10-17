@@ -50,12 +50,20 @@
   </macro>
 
   <macro name="voicemail_message_count">
-    <input pattern="^([^:]+):([^:]+):{0,1}(.*)">
+    <input pattern="^1:(.*)$">
+      <match>
+	<action function="play-file" data="voicemail/vm-you_have.wav"/>
+	<action function="say" data="1" method="pronounced" type="items"/>
+	<action function="play-file" data="voicemail/vm-$1.wav"/> 
+	<action function="play-file" data="voicemail/vm-message.wav"/>
+      </match>
+    </input>
+    <input pattern="^([0,2-9]+):(.*)$">
       <match>
 	<action function="play-file" data="voicemail/vm-you_have.wav"/>
 	<action function="say" data="$1" method="pronounced" type="items"/>
-	<action function="play-file" data="voicemail/vm-$2.wav"/> <!-- voicemail/vm-urgent-new.wav, voicemail/vm-new.wav, voicemail/vm-urgent-saved, voicemail/vm-saved.wav -->
-	<action function="play-file" data="voicemail/vm-message$3.wav"/> <!-- voicemail/vm-message.wav or voicemail/vm-messages.wav -->
+	<action function="play-file" data="voicemail/vm-$1.wav"/> 
+	<action function="play-file" data="voicemail/vm-messages.wav"/>
       </match>
     </input>
   </macro>
