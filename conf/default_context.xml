@@ -94,14 +94,6 @@
     </condition>
   </extension>
 
-  <!-- Call the FreeSWITCH conference via SIP -->
-  <extension name="FreeSWITCH Conference SIP">
-    <condition field="destination_number" expression="^42$">
-      <action application="set" data="bypass_media=true"/>
-      <action application="bridge" data="sofia/$${sip_profile}/42@conference.freeswitch.org"/>
-    </condition>
-  </extension> 
-
   <!-- Call the FreeSWITCH conference via IAX -->
   <!--<extension name="FreeSWITCH Conference IAX">-->
   <!--<condition field="destination_number" expression="^8888$">-->
