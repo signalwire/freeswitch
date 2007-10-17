@@ -48,7 +48,7 @@
     <load module="mod_g722"/>
     <load module="mod_g726"/>
     <load module="mod_gsm"/>
-    <!-- <load module="mod_ilbc"/> -->
+    <load module="mod_ilbc"/>
     <load module="mod_l16"/>
     <!-- <load module="mod_speex"/> -->
 
