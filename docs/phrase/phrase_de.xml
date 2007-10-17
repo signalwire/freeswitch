@@ -38,7 +38,7 @@
       <prompt phrase="Punkt" filename="46.wav"/>
       <prompt phrase="Anton" filename="97.wav"/>
       <prompt phrase="Berta" filename="98.wav"/>
-      <prompt phrase="Cäsar" filename="99.wav"/>
+      <prompt phrase="CÃ¤sar" filename="99.wav"/>
       <prompt phrase="Dora" filename="100.wav"/>
       <prompt phrase="Emil" filename="101.wav"/>
       <prompt phrase="Friedrich" filename="102.wav"/>
@@ -63,9 +63,9 @@
       <prompt phrase="Ypsilon" filename="121.wav"/>
       <prompt phrase="Zacharias" filename="122.wav"/>
       <!-- additional -->
-      <prompt phrase="Ärger"   filename="200.wav"/>
-      <prompt phrase="Ökonom"  filename="201.wav"/>
-      <prompt phrase="Übermut" filename="202.wav"/>
+      <prompt phrase="Ã„rger"   filename="200.wav"/>
+      <prompt phrase="Ã–konom"  filename="201.wav"/>
+      <prompt phrase="Ãœbermut" filename="202.wav"/>
       <prompt phrase="Eszet"   filename="203.wav"/>
     </phonetic-ascii>
     <digits>
@@ -74,17 +74,17 @@
       <prompt phrase="Zwei" filename="2.wav"/>
       <prompt phrase="Drei" filename="3.wav"/>
       <prompt phrase="Vier" filename="4.wav"/>
-      <prompt phrase="Fünf" filename="5.wav"/>
+      <prompt phrase="FÃ¼nf" filename="5.wav"/>
       <prompt phrase="Sechs" filename="6.wav"/>
       <prompt phrase="Sieben" filename="7.wav"/>
       <prompt phrase="Acht" filename="8.wav"/>
       <prompt phrase="Neun" filename="9.wav"/>
       <prompt phrase="Zehn" filename="10.wav"/>
       <prompt phrase="Elf" filename="11.wav"/>
-      <prompt phrase="Zwölf" filename="12.wav"/>
+      <prompt phrase="ZwÃ¶lf" filename="12.wav"/>
       <prompt phrase="Dreizehn" filename="13.wav"/>
       <prompt phrase="Vierzehn" filename="14.wav"/>
-      <prompt phrase="Fünfzehn" filename="15.wav"/>
+      <prompt phrase="FÃ¼nfzehn" filename="15.wav"/>
       <prompt phrase="Sechzehn" filename="16.wav"/>
       <prompt phrase="Siebzehn" filename="17.wav"/>
       <prompt phrase="Achtzehn" filename="18.wav"/>
@@ -92,7 +92,7 @@
       <prompt phrase="Zwanzig" filename="20.wav"/>
       <prompt phrase="Dreissig" filename="30.wav"/>
       <prompt phrase="Vierzig" filename="40.wav"/>
-      <prompt phrase="Fünfzig" filename="50.wav"/>
+      <prompt phrase="FÃ¼nfzig" filename="50.wav"/>
       <prompt phrase="Sechzig" filename="60.wav"/>
       <prompt phrase="Siebzig" filename="70.wav"/>
       <prompt phrase="Achtzig" filename="80.wav"/>
@@ -102,17 +102,17 @@
       <prompt phrase="Zweites" filename="h-2.wav"/>
       <prompt phrase="Drittes" filename="h-3.wav"/>
       <prompt phrase="Viertes" filename="h-4.wav"/>
-      <prompt phrase="Fünftes" filename="h-5.wav"/>
+      <prompt phrase="FÃ¼nftes" filename="h-5.wav"/>
       <prompt phrase="Sechstes" filename="h-6.wav"/>
       <prompt phrase="Siebtes" filename="h-7.wav"/>
       <prompt phrase="Achtes" filename="h-8.wav"/>
       <prompt phrase="Neuntes" filename="h-9.wav"/>
       <prompt phrase="Zehntes" filename="h-10.wav"/>
       <prompt phrase="Elftes" filename="h-11.wav"/>
-      <prompt phrase="Zwölftes" filename="h-12.wav"/>
+      <prompt phrase="ZwÃ¶lftes" filename="h-12.wav"/>
       <prompt phrase="Dreizehntes" filename="h-13.wav"/>
       <prompt phrase="Vierzehntes" filename="h-14.wav"/>
-      <prompt phrase="Fünfzehntes" filename="h-15.wav"/>
+      <prompt phrase="FÃ¼nfzehntes" filename="h-15.wav"/>
       <prompt phrase="Sechzehntes" filename="h-16.wav"/>
       <prompt phrase="Siebzehntes" filename="h-17.wav"/>
       <prompt phrase="Achtzehntes" filename="h-18.wav"/>
@@ -155,7 +155,7 @@
       <prompt phrase="Minuten" filename="minutes.wav"/>
       <prompt phrase="Januar" filename="mon-0.wav"/>
       <prompt phrase="Febuar" filename="mon-1.wav"/>
-      <prompt phrase="März" filename="mon-2.wav"/>
+      <prompt phrase="MÃ¤rz" filename="mon-2.wav"/>
       <prompt phrase="April" filename="mon-3.wav"/>
       <prompt phrase="Mai" filename="mon-4.wav"/>
       <prompt phrase="Juni" filename="mon-5.wav"/>
@@ -181,41 +181,41 @@
       <prompt phrase="Benutzerdaten falsch" filename="vm-fail_auth.wav"/>
       <prompt phrase="Willkommen in Ihrem Postfach" filename="vm-hello.wav"/>
       <prompt phrase="Auf Wiedersehen" filename="vm-goodbye.wav"/>
-      <prompt phrase="Sagen Sie Ihren Namen nach dem Ton, drücken Sie eine beliebige Taste oder hören Sie auf zu sprechen um die Aufnahme zu beenden." filename="vm-record_name1.wav"/>
-      <prompt phrase="Wählen Sie eine Ansage zwischen 1 und 3" filename="vm-choose_greeting.wav"/>
-      <prompt phrase="Ungültige Eingabe" filename="vm-choose_greeting_fail.wav"/>
+      <prompt phrase="Sagen Sie Ihren Namen nach dem Ton, drÃ¼cken Sie eine beliebige Taste oder hÃ¶ren Sie auf zu sprechen um die Aufnahme zu beenden." filename="vm-record_name1.wav"/>
+      <prompt phrase="WÃ¤hlen Sie eine Ansage zwischen 1 und 3" filename="vm-choose_greeting.wav"/>
+      <prompt phrase="UngÃ¼ltige Eingabe" filename="vm-choose_greeting_fail.wav"/>
       <prompt phrase="Zu viele Fehlversuche" filename="vm-abort.wav"/>
-      <prompt phrase="Sprechen Sie nach dem Ton. Drücken Sie eine beliebige Taste oder hören Sie auf zu sprechen um die Aufnahme zu beenden" filename="vm-record_greeting.wav"/>
-      <prompt phrase="Sprechen Sie nach dem Ton. Drücken Sie eine beliebige Taste oder hören Sie auf zu sprechen um die Aufnahme zu beenden" filename="vm-record_message.wav"/>
-      <prompt phrase="ist nicht verfügbar" filename="vm-play_greeting.wav"/>
+      <prompt phrase="Sprechen Sie nach dem Ton. DrÃ¼cken Sie eine beliebige Taste oder hÃ¶ren Sie auf zu sprechen um die Aufnahme zu beenden" filename="vm-record_greeting.wav"/>
+      <prompt phrase="Sprechen Sie nach dem Ton. DrÃ¼cken Sie eine beliebige Taste oder hÃ¶ren Sie auf zu sprechen um die Aufnahme zu beenden" filename="vm-record_message.wav"/>
+      <prompt phrase="ist nicht verfÃ¼gbar" filename="vm-play_greeting.wav"/>
       <prompt phrase="dringend, neu" filename="vm-urgent-new.wav"/>
       <prompt phrase="neu" filename="vm-new.wav"/>
       <prompt phrase="dringend, gespeichert" filename="vm-urgent-saved.wav"/>
       <prompt phrase="gespeichert" filename="vm-saved.wav"/>
       <prompt phrase="Nachricht" filename="vm-message.wav"/>
       <prompt phrase="Nachrichten" filename="vm-messages.wav"/>
-      <prompt phrase="drücken Sie" filename="vm-press.wav"/>
-      <prompt phrase="zum anhören neuer Nachrichten" filename="vm-listen_new.wav"/>
-      <prompt phrase="zum anhören gespeicherter Nachrichten" filename="vm-listen_saved.wav"/>
-      <prompt phrase="für erweiterte Optionen" filename="vm-advanced.wav"/>
+      <prompt phrase="drÃ¼cken Sie" filename="vm-press.wav"/>
+      <prompt phrase="zum anhÃ¶ren neuer Nachrichten" filename="vm-listen_new.wav"/>
+      <prompt phrase="zum anhÃ¶ren gespeicherter Nachrichten" filename="vm-listen_saved.wav"/>
+      <prompt phrase="fÃ¼r erweiterte Optionen" filename="vm-advanced.wav"/>
       <prompt phrase="zum verlassen" filename="vm-to_exit.wav"/>
       <prompt phrase="zum aufnehmen einer Ansage" filename="vm-record_greeting.wav"/>
-      <prompt phrase="zum auswählen einer Ansage" filename="vm-choose_greeting.wav"/>
+      <prompt phrase="zum auswÃ¤hlen einer Ansage" filename="vm-choose_greeting.wav"/>
       <prompt phrase="zum aufnehmen Ihres Namens" filename="vm-record_name2.wav"/>
-      <prompt phrase="für das Hauptmenü" filename="vm-main_menu.wav"/>
-      <prompt phrase="zum anhören dieser Nachricht" filename="vm-listen_to_recording.wav"/>
+      <prompt phrase="fÃ¼r das HauptmenÃ¼" filename="vm-main_menu.wav"/>
+      <prompt phrase="zum anhÃ¶ren dieser Nachricht" filename="vm-listen_to_recording.wav"/>
       <prompt phrase="zum speichern der Nachricht" filename="vm-save_recording.wav"/>
       <prompt phrase="zum erneuten Aufnehmen" filename="vm-rerecord.wav"/>
       <prompt phrase="um diese Nachricht als dringen zu markieren" filename="vm-mark_urgent.wav"/>
       <prompt phrase="zum Fortfahren" filename="vm-continue.wav"/>
-      <prompt phrase="zum erneuten anhören dieser Nachricht" filename="vm-listen_to_recording_again.wav"/>
-      <prompt phrase="zum löschen dieser Nachricht" filename="vm-delete_recording.wav"/>
+      <prompt phrase="zum erneuten anhÃ¶ren dieser Nachricht" filename="vm-listen_to_recording_again.wav"/>
+      <prompt phrase="zum lÃ¶schen dieser Nachricht" filename="vm-delete_recording.wav"/>
       <prompt phrase="um diese Nachricht an Ihre EMailadresse weiter zu leiten" filename="vm-forward_to_email.wav"/>
       <prompt phrase="Ansage" filename="vm-greeting.wav"/>
-      <prompt phrase="ausgewählt" filename="vm-selected.wav"/>
-      <prompt phrase="ist nicht verfügbar" filename="vm-not_avaliable.wav"/>
+      <prompt phrase="ausgewÃ¤hlt" filename="vm-selected.wav"/>
+      <prompt phrase="ist nicht verfÃ¼gbar" filename="vm-not_avaliable.wav"/>
       <prompt phrase="Nachricht nummer" filename="vm-message_number.wav"/>
-      <prompt phrase="gelöscht" filename="vm-deleted.wav"/>
+      <prompt phrase="gelÃ¶scht" filename="vm-deleted.wav"/>
     </voicemail>
   </de>
 </language>
