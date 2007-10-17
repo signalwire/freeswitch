@@ -49,5 +49,27 @@
     <vcard>
       <!-- insert optional compliant vcard xml here-->
     </vcard>
+    <!-- authless users and mailboxes -->
+    <user id="1000"/>
+    <user id="1001"/>
+    <user id="1002"/>
+    <user id="1003"/>
+    <user id="1004"/>
+    <user id="1005"/>
+    <user id="1006"/>
+    <user id="1007"/>
+    <user id="1008"/>
+    <user id="1009"/>
+    <user id="1010"/>
+    <user id="1011"/>
+    <user id="1012"/>
+    <user id="1013"/>
+    <user id="1014"/>
+    <user id="1015"/>
+    <user id="1016"/>
+    <user id="1017"/>
+    <user id="1018"/>
+    <user id="1019"/>
+
   </user>
 </domain>
