@@ -54,4 +54,9 @@ xml_int/mod_xml_rpc
 #xml_int/mod_xml_curl
 xml_int/mod_xml_cdr
 say/mod_say_en
+#say/mod_say_de
+#say/mod_say_es
+#say/mod_say_fr
+#say/mod_say_it
+#say/mod_say_nl
 

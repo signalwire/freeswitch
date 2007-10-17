@@ -40,7 +40,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  * Michael B. Murdock <mike@mmurdock.org>
  *
- * mod_say_en.c -- Say for English
+ * mod_say_it.c -- Say for English
  *
  */
 
@@ -48,14 +48,14 @@
 #include <math.h>
 #include <ctype.h>
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_say_en_load);
-SWITCH_MODULE_DEFINITION(mod_say_en, mod_say_en_load, NULL, NULL);
+SWITCH_MODULE_LOAD_FUNCTION(mod_say_it_load);
+SWITCH_MODULE_DEFINITION(mod_say_it, mod_say_it_load, NULL, NULL);
 
 #define say_num(num, t) {							\
 		char tmp[80];\
 		switch_status_t status;\
 		snprintf(tmp, sizeof(tmp), "%u", (unsigned)num);				\
-	if ((status = en_say_general_count(session, tmp, SST_ITEMS, t, args)) != SWITCH_STATUS_SUCCESS) {\
+	if ((status = it_say_general_count(session, tmp, SST_ITEMS, t, args)) != SWITCH_STATUS_SUCCESS) {\
 		return status;\
 	}}\
 
@@ -71,7 +71,7 @@ SWITCH_MODULE_DEFINITION(mod_say_en, mod_say_en_load, NULL, NULL);
 		}}\
 
 
-static switch_status_t en_spell(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
+static switch_status_t it_spell(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
 {
 	char *p;
 
@@ -166,7 +166,7 @@ static char *strip_nonnumerics(char *in, char *out, switch_size_t len)
 	return ret;
 }
 
-static switch_status_t en_say_general_count(switch_core_session_t *session,
+static switch_status_t it_say_general_count(switch_core_session_t *session,
 											char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
 {
 	switch_channel_t *channel;
@@ -227,7 +227,7 @@ static switch_status_t en_say_general_count(switch_core_session_t *session,
 }
 
 
-static switch_status_t en_ip(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
+static switch_status_t it_ip(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
 {
 	char *a, *b, *c, *d;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -270,7 +270,7 @@ static switch_status_t en_ip(switch_core_session_t *session, char *tosay, switch
 }
 
 
-static switch_status_t en_say_time(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method,
+static switch_status_t it_say_time(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method,
 								   switch_input_args_t *args)
 {
 	int32_t t;
@@ -417,7 +417,7 @@ static switch_status_t en_say_time(switch_core_session_t *session, char *tosay, 
 }
 
 
-static switch_status_t en_say_money(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method,
+static switch_status_t it_say_money(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method,
 									switch_input_args_t *args)
 {
 	switch_channel_t *channel;
@@ -456,7 +456,7 @@ static switch_status_t en_say_money(switch_core_session_t *session, char *tosay,
 	}
 
 	/* Say dollar amount */
-	en_say_general_count(session, dollars, type, method, args);
+	it_say_general_count(session, dollars, type, method, args);
 	if (atoi(dollars) == 1) {
 		say_file("currency/dollar.wav");
 	} else {
@@ -468,7 +468,7 @@ static switch_status_t en_say_money(switch_core_session_t *session, char *tosay,
 
 	/* Say cents */
 	if (cents) {
-		en_say_general_count(session, cents, type, method, args);
+		it_say_general_count(session, cents, type, method, args);
 		if (atoi(cents) == 1) {
 			say_file("currency/cent.wav");
 		} else {
@@ -484,7 +484,7 @@ static switch_status_t en_say_money(switch_core_session_t *session, char *tosay,
 
 
 
-static switch_status_t en_say(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
+static switch_status_t it_say(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
 {
 
 	switch_say_callback_t say_cb = NULL;
@@ -494,23 +494,23 @@ static switch_status_t en_say(switch_core_session_t *session, char *tosay, switc
 	case SST_ITEMS:
 	case SST_PERSONS:
 	case SST_MESSAGES:
-		say_cb = en_say_general_count;
+		say_cb = it_say_general_count;
 		break;
 	case SST_TIME_MEASUREMENT:
 	case SST_CURRENT_DATE:
 	case SST_CURRENT_TIME:
 	case SST_CURRENT_DATE_TIME:
-		say_cb = en_say_time;
+		say_cb = it_say_time;
 		break;
 	case SST_IP_ADDRESS:
-		say_cb = en_ip;
+		say_cb = it_ip;
 		break;
 	case SST_NAME_SPELLED:
 	case SST_NAME_PHONETIC:
-		say_cb = en_spell;
+		say_cb = it_spell;
 		break;
 	case SST_CURRENCY:
-		say_cb = en_say_money;
+		say_cb = it_say_money;
 		break;
 	default:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown Say type=[%d]\n", type);
@@ -524,14 +524,14 @@ static switch_status_t en_say(switch_core_session_t *session, char *tosay, switc
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_say_en_load)
+SWITCH_MODULE_LOAD_FUNCTION(mod_say_it_load)
 {
 	switch_say_interface_t *say_interface;
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	say_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_SAY_INTERFACE);
-	say_interface->interface_name = "en";
-	say_interface->say_function = en_say;
+	say_interface->interface_name = "it";
+	say_interface->say_function = it_say;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
