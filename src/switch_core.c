@@ -418,6 +418,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, switch_cor
 	switch_xml_t xml = NULL, cfg = NULL;
 	switch_uuid_t uuid;
 	memset(&runtime, 0, sizeof(runtime));
+	char guess_ip[256];
 
 	switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
 	runtime.hard_log_level = SWITCH_LOG_DEBUG;
@@ -439,6 +440,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, switch_cor
 	switch_core_hash_init(&runtime.global_vars, runtime.memory_pool);
 	runtime.flags = flags;
 	runtime.sps_total = 30;
+
+	switch_find_local_ip(guess_ip, sizeof(guess_ip), AF_INET);
+	switch_core_set_variable("local_ip_v4", guess_ip);
+	switch_find_local_ip(guess_ip, sizeof(guess_ip), AF_INET6);
+	switch_core_set_variable("local_ip_v6", guess_ip);
+	
 
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
 		apr_terminate();
