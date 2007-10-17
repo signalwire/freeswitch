@@ -50,8 +50,8 @@
 	<param name="codec-ms" value="20"/>
 	<param name="use-rtp-timer" value="true"/>
 	<param name="rtp-timer-name" value="soft"/>
-	<param name="rtp-ip" value="$${bind_server_ip}"/>
-	<param name="sip-ip" value="$${bind_server_ip}"/>
+	<param name="rtp-ip" value="$${local_ip_v4}"/>
+	<param name="sip-ip" value="$${local_ip_v4}"/>
 	<!--enable to use presense and mwi -->
 	<param name="manage-presence" value="true"/>
 	<!--set to 'greedy' if you want your codec list to take precedence -->
@@ -82,12 +82,11 @@
 	<!--<param name="disable-transcoding" value="true"/>-->
 	<param name="auth-calls" value="true"/>
 	<!-- on authed calls, authenticate *all* the packets not just invite -->
-	<param name="auth-all-packets" value="true"/>
+	<!-- <param name="auth-all-packets" value="true"/> -->
 
 	<param name="ext-rtp-ip" value="$${external_rtp_ip}"/>
 	<param name="ext-sip-ip" value="$${external_sip_ip}"/>
 
-	<!-- <param name="ext-sip-ip" value="100.101.102.103"/> -->
 	<!-- VAD choose one (out is a good choice); -->
 	<!-- <param name="vad" value="in"/> -->
 	<!-- <param name="vad" value="out"/> -->
