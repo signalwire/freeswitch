@@ -80,12 +80,12 @@
 	<!--Uncomment if you want to force the outbound leg of a bridge to only offer the codec 
 	    that the originator is using-->
 	<!--<param name="disable-transcoding" value="true"/>-->
-	<!--<param name="auth-calls" value="true"/>-->
+	<param name="auth-calls" value="true"/>
 	<!-- on authed calls, authenticate *all* the packets not just invite -->
 	<!--<param name="auth-all-packets" value="true"/>-->
 
 	<param name="ext-rtp-ip" value="$${external_rtp_ip}"/>
-	<param name="ext-rtp-ip" value="$${external_sip_ip}"/>
+	<param name="ext-sip-ip" value="$${external_sip_ip}"/>
 
 	<!-- <param name="ext-sip-ip" value="100.101.102.103"/> -->
 	<!-- VAD choose one (out is a good choice); -->
