@@ -71,15 +71,16 @@ static enum dns_class qcls = DNS_C_IN;
 
 static struct {
 	char *root;
+	char *isn_root;
 	switch_hash_t *routes;
 	enum_route_t *route_order;
 	switch_memory_pool_t *pool;
 } globals;
 
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_root, globals.root)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_root, globals.root);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_isn_root, globals.isn_root);
 
-
-	 static void add_route(char *service, char *regex, char *replace)
+static void add_route(char *service, char *regex, char *replace)
 {
 	enum_route_t *route, *rp;
 
@@ -126,6 +127,8 @@ static switch_status_t load_config(void)
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 			if (!strcasecmp(var, "default-root")) {
 				set_global_root(val);
+			} else if (!strcasecmp(var, "default-isn-root")) {
+				set_global_isn_root(val);
 			} else if (!strcasecmp(var, "log-level-trace")) {
 
 			}
@@ -154,6 +157,10 @@ static switch_status_t load_config(void)
 
 	if (!globals.root) {
 		set_global_root("e164.org");
+	}
+
+	if (!globals.isn_root) {
+		set_global_isn_root("freenum.org");
 	}
 
 	return status;
@@ -428,15 +435,21 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t ** result
 	struct timeval tv = { 0 };
 	time_t now = 0;
 	struct dns_ctx *nctx = NULL;
-	char *num, *mnum = NULL;
+	char *num, *mnum = NULL, *mroot = NULL, *p;
 
-	if (*in != '+') {
-		mnum = switch_mprintf("+%s", in);
-		num = mnum;
-	} else {
-		num = in;
+	mnum = switch_mprintf("%s%s", *in == '+' ? "" : "+", in);
+	
+	if ((p = strchr(mnum, '*'))) {
+		*p++ = '\0';
+		mroot = switch_mprintf("%s.%s", p, root ? root : globals.isn_root);
+		root = mroot;
 	}
 
+	if (switch_strlen_zero(root)) {
+		root = globals.root;
+	}
+
+	num = mnum;
 	if (!(name = reverse_number(num, root))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Parse Error!\n");
 		sstatus = SWITCH_STATUS_FALSE;
@@ -510,6 +523,7 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t ** result
 
 	switch_safe_free(name);
 	switch_safe_free(mnum);
+	switch_safe_free(mroot);
 
 	return sstatus;
 }
@@ -531,7 +545,7 @@ SWITCH_STANDARD_DIALPLAN(enum_dialplan_hunt)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ENUM Lookup on %s\n", caller_profile->destination_number);
 
-	if (enum_lookup(switch_strlen_zero(dp) ? globals.root : dp, caller_profile->destination_number, &results) == SWITCH_STATUS_SUCCESS) {
+	if (enum_lookup(dp, caller_profile->destination_number, &results) == SWITCH_STATUS_SUCCESS) {
 		if ((extension = switch_caller_extension_new(session, caller_profile->destination_number, caller_profile->destination_number)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
 			free_results(&results);
@@ -581,7 +595,7 @@ SWITCH_STANDARD_APP(enum_app_function)
 
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		dest = argv[0];
-		root = argv[1] ? argv[1] : globals.root;
+		root = argv[1];
 		if (enum_lookup(root, dest, &results) == SWITCH_STATUS_SUCCESS) {
 			switch_event_header_t *hi;
 			if ((hi = switch_channel_variable_first(channel))) {
@@ -633,13 +647,13 @@ SWITCH_STANDARD_API(enum_function)
 	}
 
 	if (!cmd || !(mydata = strdup(cmd))) {
-		stream->write_function(stream, "Error!\n");
-		return SWITCH_STATUS_FALSE;
+		stream->write_function(stream, "Usage: enum <number> [<root>]\n");
+		return SWITCH_STATUS_SUCCESS;
 	}
 
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		dest = argv[0];
-		root = argv[1] ? argv[1] : globals.root;
+		root = argv[1];
 
 		if (!enum_lookup(root, dest, &results) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "No Match!\n");
