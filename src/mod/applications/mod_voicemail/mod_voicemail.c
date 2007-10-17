@@ -1038,17 +1038,17 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
                               &total_new_urgent_messages, &total_saved_urgent_messages);
 
                 if (total_new_urgent_messages > 0) {
-                    snprintf(msg_count, sizeof(msg_count), "%d:urgent-new:%s", total_new_urgent_messages, total_new_urgent_messages == 1 ? "" : "s");
+                    snprintf(msg_count, sizeof(msg_count), "%d:urgent-new", total_new_urgent_messages);
                     TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL));
                     informed++;
                 }
-                if (total_new_messages > 0) {
-                    snprintf(msg_count, sizeof(msg_count), "%d:new:%s", total_new_messages, total_new_messages == 1 ? "" : "s");
+                if (total_new_messages > 0 && total_new_messages != total_new_urgent_messages) {
+                    snprintf(msg_count, sizeof(msg_count), "%d:new", total_new_messages);
                     TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL));
                     informed++;
                 }
                 
-                if (!heard_auto_new && total_new_messages > 0) {
+                if (!heard_auto_new && total_new_messages + total_new_urgent_messages> 0) {
                     heard_auto_new = 1;
                     play_msg_type = MSG_NEW;
                     vm_check_state = VM_CHECK_PLAY_MESSAGES;
@@ -1056,18 +1056,18 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
                 }
                 
                 if (total_saved_urgent_messages > 0) {
-                    snprintf(msg_count, sizeof(msg_count), "%d:urgent-saved:%s", total_saved_urgent_messages, total_saved_urgent_messages == 1 ? "" : "s");
+                    snprintf(msg_count, sizeof(msg_count), "%d:urgent-saved", total_saved_urgent_messages);
                     TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL));
                     informed++;
                 }
 
-                if (total_saved_messages > 0) {
-                    snprintf(msg_count, sizeof(msg_count), "%d:saved:%s", total_saved_messages, total_saved_messages == 1 ? "" : "s");
+                if (total_saved_messages > 0 && total_saved_messages != total_saved_urgent_messages) {
+                    snprintf(msg_count, sizeof(msg_count), "%d:saved", total_saved_messages);
                     TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL));
                     informed++;
                 }
                 
-                if (!heard_auto_saved && total_saved_messages > 0) {
+                if (!heard_auto_saved && total_saved_messages + total_saved_urgent_messages> 0) {
                     heard_auto_saved = 1;
                     play_msg_type = MSG_SAVED;
                     vm_check_state = VM_CHECK_PLAY_MESSAGES;
@@ -1075,7 +1075,7 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
                 }
                 
                 if (!informed) {
-                    snprintf(msg_count, sizeof(msg_count), "0:new:s");
+                    snprintf(msg_count, sizeof(msg_count), "0:new");
                     TRY_CODE(switch_ivr_phrase_macro(session, VM_MESSAGE_COUNT_MACRO, msg_count, NULL, NULL));
                     informed++;
                 }
@@ -1599,7 +1599,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
 SWITCH_STANDARD_APP(voicemail_function)
 {
 	int argc = 0;
-	char *argv[4] = { 0 };
+	char *argv[6] = { 0 };
 	char *mydata = NULL;
     char *profile_name = NULL;
     char *domain_name = NULL;
@@ -1621,14 +1621,16 @@ SWITCH_STANDARD_APP(voicemail_function)
         argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
     }
 
-    if (argv[x] && !strcasecmp(argv[x], "check")) {
-        check++;
-        x++;
-    }
-
-    if (argv[x] && !strcasecmp(argv[x], "auth")) {
-        auth++;
-        x++;
+    for (;;) {
+        if (argv[x] && !strcasecmp(argv[x], "check")) {
+            check++;
+            x++;
+        } else if (argv[x] && !strcasecmp(argv[x], "auth")) {
+            auth++;
+            x++;
+        } else {
+            break;
+        }
     }
 
     if (argv[x]) {
