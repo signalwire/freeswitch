@@ -21,7 +21,7 @@
        can be any string.
        used by: sofia.conf.xml enum.conf.xml default_context.xml directory.xml
   --> 
-  <!--#set "domain=mydomain.com"-->
+  <!--#set "domain=$${local_ip_v4}"-->
   <!--#set "sip_profile=$${domain}"-->
   <!-- xmpp_client_profile and xmpp_server_profile
        xmpp_client_profile can be any string. 
@@ -46,7 +46,14 @@
        If unspecified, the bind_server_ip value is used.
        Used by: sofia.conf.xml dingaling.conf.xml
   -->
-  <!--#set "external_rtp_ip=stun:stun.server.com"-->
+  <!--#set "external_rtp_ip=stun:stun.fwdnet.net"-->
+  <!-- external_sip_ip
+       Used as the public IP address for SDP.
+       Can be an ip address or a string like "stun:stun.server.com" 
+       If unspecified, the bind_server_ip value is used.
+       Used by: sofia.conf.xml dingaling.conf.xml
+  -->
+  <!--#set "external_sip_ip=stun:stun.fwdnet.net"-->
   <!-- server_name
        A public ip address or DNS name that is used when advertising conference
        presence or registering sip.
