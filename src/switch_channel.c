@@ -1270,10 +1270,15 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 	char *sub_val = NULL, *func_val = NULL;
 	int nv = 0;
 
-	if (!in || !strchr(in, '$')) {
+	if (in && (p = strchr(in, '$'))) {
+		if (!*(p + 1)) {
+			return in;
+		}
+	} else {
 		return in;
 	}
 
+	
 	olen = strlen(in);
 	indup = strdup(in);
 
