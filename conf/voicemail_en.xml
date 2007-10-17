@@ -56,6 +56,7 @@
 	<action function="say" data="1" method="pronounced" type="items"/>
 	<action function="play-file" data="voicemail/vm-$1.wav"/> 
 	<action function="play-file" data="voicemail/vm-message.wav"/>
+	<action function="play-file" data="voicemail/vm-in_folder.wav"/>
       </match>
     </input>
     <input pattern="^([0,2-9]+):(.*)$">
@@ -64,6 +65,7 @@
 	<action function="say" data="$1" method="pronounced" type="items"/>
 	<action function="play-file" data="voicemail/vm-$1.wav"/> 
 	<action function="play-file" data="voicemail/vm-messages.wav"/>
+	<action function="play-file" data="voicemail/vm-in_folder.wav"/>
       </match>
     </input>
   </macro>
