@@ -1295,9 +1295,13 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 			}
 
 			if (*p == '$' && !nv) {
-				vtype = 1;
-				if (*(p + 1) != '{') {
-					vtype = 2;
+				if (*(p+1)) {
+					vtype = 1;
+					if (*(p + 1) != '{') {
+						vtype = 2;
+					}
+				} else {
+					nv = 1;
 				}
 			}
 

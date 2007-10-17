@@ -50,7 +50,8 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 	switch_channel_t *channel;
 	char *exten_name = (char *) switch_xml_attr_soft(xexten, "name");
 	int proceed = 0;
-	switch_stream_handle_t stream = { 0 };
+	char *expression_expanded = NULL, *field_expanded = NULL;
+
 
 	channel = switch_core_session_get_channel(session);
 
@@ -63,9 +64,18 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		int ovector[30];
 		break_t do_break_i = BREAK_ON_FALSE;
 
+		switch_safe_free(field_expanded);
+		switch_safe_free(expression_expanded);
+
 		field = (char *) switch_xml_attr(xcond, "field");
 
 		expression = (char *) switch_xml_attr_soft(xcond, "expression");
+		
+		if ((expression_expanded = switch_channel_expand_variables(channel, expression)) == expression) {
+			expression_expanded = NULL;
+		} else {
+			expression = expression_expanded;
+		}
 
 		if ((do_break_a = (char *) switch_xml_attr(xcond, "break"))) {
 			if (!strcasecmp(do_break_a, "on-true")) {
@@ -80,32 +90,12 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		}
 
 		if (field) {
-			if (*field == '$') {
-				char *cmd = switch_core_session_strdup(session, field + 1);
-				char *e, *arg;
-				field = cmd;
-				field_data = "";
-
-				if (*field == '{') {
-					field++;
-					if ((e = strchr(field, '}'))) {
-						*e = '\0';
-						field_data = switch_channel_get_variable(channel, field);
-					}
+			if (strchr(field, '$')) {
+				if ((field_expanded = switch_channel_expand_variables(channel, field)) == field) {
+					field_expanded = NULL;
+					field_data = field;
 				} else {
-					switch_safe_free(stream.data);
-					memset(&stream, 0, sizeof(stream));
-					SWITCH_STANDARD_STREAM(stream);
-
-					if ((arg = strchr(cmd, '('))) {
-						*arg++ = '\0';
-						if ((e = strchr(arg, ')'))) {
-							*e = '\0';
-							if (switch_api_execute(cmd, arg, session, &stream) == SWITCH_STATUS_SUCCESS) {
-								field_data = stream.data;
-							}
-						}
-					}
+					field_data = field_expanded;
 				}
 			} else {
 				field_data = switch_caller_get_field_by_name(caller_profile, field);
@@ -183,7 +173,8 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 	}
 
   done:
-	switch_safe_free(stream.data);
+	switch_safe_free(field_expanded);
+	switch_safe_free(expression_expanded);
 	return proceed;
 }
 
