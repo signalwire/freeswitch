@@ -49,8 +49,18 @@
     <vcard>
       <!-- insert optional compliant vcard xml here-->
     </vcard>
+
+    <!-- this is an example of a user with auth and various settings -->
+    <user id="1000" mailbox="1000">
+      <params>
+	<param name="password" value="mypass"/>
+	<param name="vm-password" value="1234"/>
+	<!--<param name="vm-mailto" value="me@mydomain.com"/>-->
+	<!--<param name="vm-email-all-messages" value="true"/>-->
+      </params>
+    </user>
+
     <!-- authless users and mailboxes -->
-    <user id="1000"/>
     <user id="1001"/>
     <user id="1002"/>
     <user id="1003"/>
