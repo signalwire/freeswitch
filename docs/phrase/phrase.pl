@@ -6,7 +6,7 @@
 use XML::Simple;
 use Data::Dumper;
 
-my $ref = XMLin("phrase_en.xml");
+my $ref = XMLin("phrase_fr.xml");
 
 foreach $language ( sort keys %{$ref}) {
   foreach $item ( sort keys %{$ref->{$language}}) {
@@ -16,7 +16,7 @@ foreach $language ( sort keys %{$ref}) {
       foreach $foo (@{$ref->{$language}->{$item}->{$element}}) {
 	print "filename: $language/$item/$foo->{filename} contains phrase \"$foo->{phrase}\"\n";
 	# insert command to verify or generate files here
-	system("swift -o $language/$item/$foo->{filename} \"$foo->{phrase}\"");
+	system("swift -n Isabelle -o $language/$item/$foo->{filename} \"$foo->{phrase}\"");
       }
     }
   }
