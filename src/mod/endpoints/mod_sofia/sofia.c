@@ -822,7 +822,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (!strcasecmp(val, "auto")) {
 							profile->extsipip = switch_core_strdup(profile->pool, mod_sofia_globals.guess_ip);
 						} else {
-							char *ip = NULL;
+							char *ip = mod_sofia_globals.guess_ip;
 							switch_port_t port = 0;
 							if (sofia_glue_ext_address_lookup(&ip, &port, val, profile->pool) == SWITCH_STATUS_SUCCESS) {
 
