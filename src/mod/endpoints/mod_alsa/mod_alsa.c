@@ -130,13 +130,13 @@ static struct {
 #define PA_SLAVE 0
 
 
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)//;
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_cid_name, globals.cid_name)//;
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_cid_num, globals.cid_num)//;
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ring_file, globals.ring_file)//;
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_hold_file, globals.hold_file)//;
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_timer_name, globals.timer_name)//;
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_device_name, globals.device_name)//;
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_cid_name, globals.cid_name);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_cid_num, globals.cid_num);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ring_file, globals.ring_file);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_hold_file, globals.hold_file);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_timer_name, globals.timer_name);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_device_name, globals.device_name);
 
 #define is_master(t) switch_test_flag(t, TFLAG_MASTER)
 static void add_pvt(private_t * tech_pvt, int master);

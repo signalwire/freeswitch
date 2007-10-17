@@ -53,10 +53,10 @@ static struct {
 	int running;
 } globals;
 
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_address, globals.address)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_bindings, globals.bindings)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_address, globals.address);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_bindings, globals.bindings);
 #define MULTICAST_EVENT "multicast::event"
-	 static switch_status_t load_config(void)
+static switch_status_t load_config(void)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *cf = "event_multicast.conf";

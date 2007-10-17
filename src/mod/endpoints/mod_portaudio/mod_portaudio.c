@@ -128,41 +128,42 @@ static struct {
 #define PA_SLAVE 0
 
 
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_cid_name, globals.cid_name)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_cid_num, globals.cid_num)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ring_file, globals.ring_file)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_hold_file, globals.hold_file)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_timer_name, globals.timer_name)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_cid_name, globals.cid_name);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_cid_num, globals.cid_num);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ring_file, globals.ring_file);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_hold_file, globals.hold_file);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_timer_name, globals.timer_name);
 #define is_master(t) switch_test_flag(t, TFLAG_MASTER)
-	 static void add_pvt(private_t * tech_pvt, int master);
-	 static void remove_pvt(private_t * tech_pvt);
-	 static switch_status_t channel_on_init(switch_core_session_t *session);
-	 static switch_status_t channel_on_hangup(switch_core_session_t *session);
-	 static switch_status_t channel_on_ring(switch_core_session_t *session);
-	 static switch_status_t channel_on_loopback(switch_core_session_t *session);
-	 static switch_status_t channel_on_transmit(switch_core_session_t *session);
-	 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
-														 switch_caller_profile_t *outbound_profile,
-														 switch_core_session_t **new_session, switch_memory_pool_t **pool);
-	 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id);
-	 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id);
-	 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
-	 static switch_status_t engage_device(int samplerate, int codec_ms);
-	 static switch_status_t engage_ring_device(int sample_rate, int channels);
-	 static void deactivate_ring_device(void);
-	 static int dump_info(void);
-	 static switch_status_t load_config(void);
-	 static int get_dev_by_name(char *name, int in);
-	 static int get_dev_by_number(int number, int in);
-	 static switch_status_t pa_cmd(const char *dest, switch_core_session_t *session, switch_stream_handle_t *stream);
+
+static void add_pvt(private_t * tech_pvt, int master);
+static void remove_pvt(private_t * tech_pvt);
+static switch_status_t channel_on_init(switch_core_session_t *session);
+static switch_status_t channel_on_hangup(switch_core_session_t *session);
+static switch_status_t channel_on_ring(switch_core_session_t *session);
+static switch_status_t channel_on_loopback(switch_core_session_t *session);
+static switch_status_t channel_on_transmit(switch_core_session_t *session);
+static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
+													switch_caller_profile_t *outbound_profile,
+													switch_core_session_t **new_session, switch_memory_pool_t **pool);
+static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id);
+static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id);
+static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
+static switch_status_t engage_device(int samplerate, int codec_ms);
+static switch_status_t engage_ring_device(int sample_rate, int channels);
+static void deactivate_ring_device(void);
+static int dump_info(void);
+static switch_status_t load_config(void);
+static int get_dev_by_name(char *name, int in);
+static int get_dev_by_number(int number, int in);
+static switch_status_t pa_cmd(const char *dest, switch_core_session_t *session, switch_stream_handle_t *stream);
 
 /* 
    State methods they get called when the state changes to the specific state 
    returning SWITCH_STATUS_SUCCESS tells the core to execute the standard state method next
    so if you fully implement the state you can return SWITCH_STATUS_FALSE to skip it.
 */
-	 static switch_status_t channel_on_init(switch_core_session_t *session)
+static switch_status_t channel_on_init(switch_core_session_t *session)
 {
 	switch_channel_t *channel;
 	private_t *tech_pvt = NULL;
@@ -583,12 +584,12 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 			goto hold;
 		}
-	  cng:
+	cng:
 		switch_yield(globals.read_codec.implementation->microseconds_per_frame);
 		*frame = &globals.cng_frame;
 		return SWITCH_STATUS_SUCCESS;
 
-	  hold:
+	hold:
 
 		{
 			switch_size_t olen = globals.read_codec.implementation->samples_per_frame;
@@ -1040,7 +1041,7 @@ static void PrintSupportedStandardSampleRates(const PaStreamParameters * inputPa
 	int i, printCount, cr = 7;
 	PaError err;
 	static double standardSampleRates[] = { 8000.0, 9600.0, 11025.0, 12000.0, 16000.0, 22050.0, 24000.0, 32000.0,
-		44100.0, 48000.0, 88200.0, 96000.0, 192000.0, -1
+											44100.0, 48000.0, 88200.0, 96000.0, 192000.0, -1
 	};
 
 	printCount = cr;
@@ -1184,7 +1185,7 @@ static int dump_info(void)
 
 	return 0;
 
-  error:
+ error:
 	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "An error occured while using the portaudio stream\n");
 	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "Error number: %d\n", err);
 	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "Error message: %s\n", Pa_GetErrorText(err));
@@ -1370,7 +1371,7 @@ static switch_status_t switch_call(char **argv, int argc, switch_stream_handle_t
 		stream->write_function(stream, "NO SUCH CALL\n");
 	}
 
-  done:
+ done:
 	switch_mutex_unlock(globals.pvt_lock);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1436,7 +1437,7 @@ static switch_status_t answer_call(char **argv, int argc, switch_stream_handle_t
 			break;
 		}
 	}
-  done:
+ done:
 	switch_mutex_unlock(globals.pvt_lock);
 
 	stream->write_function(stream, "Answered %d channels.\n", x);
@@ -1490,7 +1491,7 @@ static switch_status_t do_flags(char **argv, int argc, switch_stream_handle_t *s
 		goto bad;
 	}
 
-  desc:
+ desc:
 	x = 0;
 	stream->write_function(stream, "FLAGS: ");
 	if (switch_test_flag((&globals), GFLAG_EAR)) {
@@ -1507,9 +1508,9 @@ static switch_status_t do_flags(char **argv, int argc, switch_stream_handle_t *s
 
 	goto done;
 
-  bad:
+ bad:
 	stream->write_function(stream, "Usage: flags [on|off] <flags>\n");
-  done:
+ done:
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1796,7 +1797,7 @@ SWITCH_STANDARD_API(pa_cmd)
 		}
 	}
 
-  done:
+ done:
 
 	if (http) {
 

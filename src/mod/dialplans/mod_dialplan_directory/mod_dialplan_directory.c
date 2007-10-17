@@ -45,13 +45,13 @@ static struct {
 	char *base;
 } globals;
 
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_directory_name, globals.directory_name)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_host, globals.host)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dn, globals.dn)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_pass, globals.pass)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_base, globals.base)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_directory_name, globals.directory_name);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_host, globals.host);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dn, globals.dn);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_pass, globals.pass);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_base, globals.base);
 
-	 static void load_config(void)
+static void load_config(void)
 {
 	char *cf = "dialplan_directory.conf";
 	switch_xml_t cfg, xml, settings, param;
@@ -138,7 +138,7 @@ SWITCH_STANDARD_DIALPLAN(directory_dialplan_hunt)
 			}
 		}
 	}
-  out:
+ out:
 
 	switch_core_directory_close(&dh);
 

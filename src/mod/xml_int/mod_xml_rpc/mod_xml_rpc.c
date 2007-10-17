@@ -55,11 +55,11 @@ static struct {
 	char *pass;
 } globals;
 
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_realm, globals.realm)
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_user, globals.user)
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_pass, globals.pass)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_realm, globals.realm);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_user, globals.user);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_pass, globals.pass);
 
- static switch_status_t do_config(void)
+static switch_status_t do_config(void)
 {
 	char *cf = "xml_rpc.conf";
 	switch_xml_t cfg, xml, settings, param;
@@ -292,7 +292,7 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env * const envP, xmlrpc_value * cons
 		val = xmlrpc_build_value(envP, "s", "ERROR!");
 	}
 
-done:
+ done:
 	/* xmlrpc-c requires us to free memory it malloced from xmlrpc_decompose_value */
 	switch_safe_free(command);
 	switch_safe_free(arg);
@@ -347,7 +347,7 @@ static xmlrpc_value *freeswitch_man(xmlrpc_env * const envP, xmlrpc_value * cons
 	/* Return our result. */
 	val = xmlrpc_build_value(envP, "s", buf);
 
-done:
+ done:
 	/* xmlrpc-c requires us to free memory it malloced from xmlrpc_decompose_value */
 	switch_safe_free(oid);
 	switch_safe_free(s_action);

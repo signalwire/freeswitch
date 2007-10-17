@@ -101,22 +101,22 @@ struct private_object {
 typedef struct private_object private_t;
 
 
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ip, globals.ip)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ip, globals.ip);
 
 
-	 static char *IAXNAMES[] = { "IAX_EVENT_CONNECT", "IAX_EVENT_ACCEPT", "IAX_EVENT_HANGUP", "IAX_EVENT_REJECT", "IAX_EVENT_VOICE",
-		 "IAX_EVENT_DTMF", "IAX_EVENT_TIMEOUT", "IAX_EVENT_LAGRQ", "IAX_EVENT_LAGRP", "IAX_EVENT_RINGA",
-		 "IAX_EVENT_PING", "IAX_EVENT_PONG", "IAX_EVENT_BUSY", "IAX_EVENT_ANSWER", "IAX_EVENT_IMAGE",
-		 "IAX_EVENT_AUTHRQ", "IAX_EVENT_AUTHRP", "IAX_EVENT_REGREQ", "IAX_EVENT_REGACK",
-		 "IAX_EVENT_URL", "IAX_EVENT_LDCOMPLETE", "IAX_EVENT_TRANSFER", "IAX_EVENT_DPREQ",
-		 "IAX_EVENT_DPREP", "IAX_EVENT_DIAL", "IAX_EVENT_QUELCH", "IAX_EVENT_UNQUELCH",
-		 "IAX_EVENT_UNLINK", "IAX_EVENT_LINKREJECT", "IAX_EVENT_TEXT", "IAX_EVENT_REGREJ",
-		 "IAX_EVENT_LINKURL", "IAX_EVENT_CNG", "IAX_EVENT_REREQUEST", "IAX_EVENT_TXREPLY",
-		 "IAX_EVENT_TXREJECT", "IAX_EVENT_TXACCEPT", "IAX_EVENT_TXREADY"
-	 };
+static char *IAXNAMES[] = { "IAX_EVENT_CONNECT", "IAX_EVENT_ACCEPT", "IAX_EVENT_HANGUP", "IAX_EVENT_REJECT", "IAX_EVENT_VOICE",
+							"IAX_EVENT_DTMF", "IAX_EVENT_TIMEOUT", "IAX_EVENT_LAGRQ", "IAX_EVENT_LAGRP", "IAX_EVENT_RINGA",
+							"IAX_EVENT_PING", "IAX_EVENT_PONG", "IAX_EVENT_BUSY", "IAX_EVENT_ANSWER", "IAX_EVENT_IMAGE",
+							"IAX_EVENT_AUTHRQ", "IAX_EVENT_AUTHRP", "IAX_EVENT_REGREQ", "IAX_EVENT_REGACK",
+							"IAX_EVENT_URL", "IAX_EVENT_LDCOMPLETE", "IAX_EVENT_TRANSFER", "IAX_EVENT_DPREQ",
+							"IAX_EVENT_DPREP", "IAX_EVENT_DIAL", "IAX_EVENT_QUELCH", "IAX_EVENT_UNQUELCH",
+							"IAX_EVENT_UNLINK", "IAX_EVENT_LINKREJECT", "IAX_EVENT_TEXT", "IAX_EVENT_REGREJ",
+							"IAX_EVENT_LINKURL", "IAX_EVENT_CNG", "IAX_EVENT_REREQUEST", "IAX_EVENT_TXREPLY",
+							"IAX_EVENT_TXREJECT", "IAX_EVENT_TXACCEPT", "IAX_EVENT_TXREADY"
+};
 
 
 struct ast_iana {
@@ -127,24 +127,24 @@ struct ast_iana {
 
 //999 means it's wrong nad i dont know the real one 
 static struct ast_iana AST_IANA[] = { {AST_FORMAT_G723_1, 4, "g723.1"},
-{AST_FORMAT_GSM, 3, "gsm"},
-{AST_FORMAT_ULAW, 0, "ulaw"},
-{AST_FORMAT_ALAW, 8, "alaw"},
-{AST_FORMAT_G726, 999, "g726"},
-{AST_FORMAT_ADPCM, 999, "adpcm"},
-{AST_FORMAT_SLINEAR, 10, "slinear"},
-{AST_FORMAT_LPC10, 7, "lpc10"},
-{AST_FORMAT_G729A, 18, "g729"},
-{AST_FORMAT_SPEEX, 97, "speex"},
-{AST_FORMAT_SPEEX, 98, "speex"},
-{AST_FORMAT_ILBC, 102, "ilbc"},
-{AST_FORMAT_MAX_AUDIO, 999, ""},
-{AST_FORMAT_JPEG, 999, ""},
-{AST_FORMAT_PNG, 999, ""},
-{AST_FORMAT_H261, 999, ""},
-{AST_FORMAT_H263, 999, ""},
-{AST_FORMAT_MAX_VIDEO, 999, ""},
-{0, 0}
+									  {AST_FORMAT_GSM, 3, "gsm"},
+									  {AST_FORMAT_ULAW, 0, "ulaw"},
+									  {AST_FORMAT_ALAW, 8, "alaw"},
+									  {AST_FORMAT_G726, 999, "g726"},
+									  {AST_FORMAT_ADPCM, 999, "adpcm"},
+									  {AST_FORMAT_SLINEAR, 10, "slinear"},
+									  {AST_FORMAT_LPC10, 7, "lpc10"},
+									  {AST_FORMAT_G729A, 18, "g729"},
+									  {AST_FORMAT_SPEEX, 97, "speex"},
+									  {AST_FORMAT_SPEEX, 98, "speex"},
+									  {AST_FORMAT_ILBC, 102, "ilbc"},
+									  {AST_FORMAT_MAX_AUDIO, 999, ""},
+									  {AST_FORMAT_JPEG, 999, ""},
+									  {AST_FORMAT_PNG, 999, ""},
+									  {AST_FORMAT_H261, 999, ""},
+									  {AST_FORMAT_H263, 999, ""},
+									  {AST_FORMAT_MAX_VIDEO, 999, ""},
+									  {0, 0}
 };
 
 static char *ast2str(int ast)
@@ -449,9 +449,9 @@ static void tech_init(private_t * tech_pvt, switch_core_session_t *session)
 }
 
 /* 
-State methods they get called when the state changes to the specific state 
-returning SWITCH_STATUS_SUCCESS tells the core to execute the standard state method next
-so if you fully implement the state you can return SWITCH_STATUS_FALSE to skip it.
+   State methods they get called when the state changes to the specific state 
+   returning SWITCH_STATUS_SUCCESS tells the core to execute the standard state method next
+   so if you fully implement the state you can return SWITCH_STATUS_FALSE to skip it.
 */
 static switch_status_t channel_on_init(switch_core_session_t *session)
 {
@@ -695,7 +695,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	return SWITCH_STATUS_FALSE;
 
-  cng:
+ cng:
 	data = (switch_byte_t *) tech_pvt->read_frame.data;
 	data[0] = 65;
 	data[1] = 0;
@@ -784,7 +784,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 }
 
 /* Make sure when you have 2 sessions in the same scope that you pass the appropriate one to the routines
-that allocate memory or you will have 1 channel with memory allocated from another channel's pool!
+   that allocate memory or you will have 1 channel with memory allocated from another channel's pool!
 */
 static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,

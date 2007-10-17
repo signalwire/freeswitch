@@ -91,13 +91,13 @@ static struct {
 	int threads;
 } prefs;
 
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_ip, prefs.ip)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_pass, prefs.password)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_ip, prefs.ip);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_pass, prefs.password);
 
-	 static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj);
-	 static void launch_listener_thread(listener_t * listener);
+static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj);
+static void launch_listener_thread(listener_t * listener);
 
-	 static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_level_t level)
+static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_level_t level)
 {
 	listener_t *l;
 
@@ -565,7 +565,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t * thread, void *obj)
 		switch_thread_rwlock_unlock(acs->listener->rwlock);
 	}
 
-  done:
+ done:
 	if (acs && acs->bg) {
 		switch_memory_pool_t *pool = acs->pool;
 		acs = NULL;
@@ -875,7 +875,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 					}
 				}
 
-			  end:
+			end:
 				cur = next;
 			}
 		}
@@ -964,7 +964,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 		}
 	}
 
-  done:
+ done:
 	if (event) {
 		switch_event_destroy(&event);
 	}
@@ -1102,7 +1102,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t * thread, void *obj
 
 	}
 
-  done:
+ done:
 
 	remove_listener(listener);
 
@@ -1225,7 +1225,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 			goto sock_fail;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Socket up listening on %s:%u\n", prefs.ip, prefs.port);
 		break;
-	  sock_fail:
+	sock_fail:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error!\n");
 		switch_yield(100000);
 	}
@@ -1284,7 +1284,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		switch_core_destroy_memory_pool(&listener_pool);
 	}
 
-  fail:
+ fail:
 	return SWITCH_STATUS_TERM;
 }
 

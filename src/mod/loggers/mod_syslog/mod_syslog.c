@@ -52,23 +52,23 @@ static struct {
 	char *format;
 } globals;
 
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ident, globals.ident)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_level, globals.level)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_format, globals.format)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_facility, globals.facility)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ident, globals.ident);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_level, globals.level);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_format, globals.format);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_facility, globals.facility);
 
-	 static switch_loadable_module_interface_t console_module_interface = {
-		 /*.module_name */ modname,
-		 /*.endpoint_interface */ NULL,
-		 /*.timer_interface */ NULL,
-		 /*.dialplan_interface */ NULL,
-		 /*.codec_interface */ NULL,
-		 /*.application_interface */ NULL,
-		 /*.api_interface */ NULL,
-		 /*.file_interface */ NULL,
-		 /*.speech_interface */ NULL,
-		 /*.directory_interface */ NULL
-	 };
+static switch_loadable_module_interface_t console_module_interface = {
+    /*.module_name */ modname,
+    /*.endpoint_interface */ NULL,
+    /*.timer_interface */ NULL,
+    /*.dialplan_interface */ NULL,
+    /*.codec_interface */ NULL,
+    /*.application_interface */ NULL,
+    /*.api_interface */ NULL,
+    /*.file_interface */ NULL,
+    /*.speech_interface */ NULL,
+    /*.directory_interface */ NULL
+};
 
 static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_log_level_t level)
 {
