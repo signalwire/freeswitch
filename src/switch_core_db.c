@@ -171,7 +171,7 @@ SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(char *filename)
 }
 
 
-SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *test_sql, char *reactive_sql)
+SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *test_sql, char *drop_sql, char *reactive_sql)
 {
 	char *errmsg;
 
@@ -183,6 +183,14 @@ SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *te
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\nAuto Generating Table!\n", errmsg, test_sql);
 				switch_core_db_free(errmsg);
 				errmsg = NULL;
+				if (drop_sql) {
+					switch_core_db_exec(db, drop_sql, NULL, NULL, &errmsg);
+				}
+				if (errmsg) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\n", errmsg, reactive_sql);
+					switch_core_db_free(errmsg);
+					errmsg = NULL;
+				} 
 				switch_core_db_exec(db, reactive_sql, NULL, NULL, &errmsg);
 				if (errmsg) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\n", errmsg, reactive_sql);

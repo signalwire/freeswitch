@@ -45,7 +45,9 @@
     <variables>
       <!--all variables here will be set on all inbound calls that originate from this user -->
       <variable name="testing" value="this"/>
-      <!--<variable name="force-contact" value="nat-connectile-dysfunction"/>-->
+      <!--<variable name="sip-force-contact" value="nat-connectile-dysfunction"/>-->
+      <!--<variable name="sip-force-expires" value="10"/>-->
+      <!--<variable name="sip-register-gateway" value="cluecon.com"/>-->
     </variables>
 
     <vcard>

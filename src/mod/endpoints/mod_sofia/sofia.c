@@ -257,12 +257,11 @@ void event_handler(switch_event_t *event)
 		char *contact_str = switch_event_get_header(event, "orig-contact");
 		char *exp_str = switch_event_get_header(event, "orig-expires");
 		char *rpid = switch_event_get_header(event, "orig-rpid");
+		char *call_id = switch_event_get_header(event, "orig-call-id");
 		long expires = (long) time(NULL) + atol(exp_str);
 		char *profile_name = switch_event_get_header(event, "orig-profile-name");
 		sofia_profile_t *profile = NULL;
-		char *icontact = NULL, *p;
-
-
+		
 		if (!rpid) {
 			rpid = "unknown";
 		}
@@ -272,13 +271,7 @@ void event_handler(switch_event_t *event)
 			return;
 		}
 		if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
-			icontact = sofia_glue_get_url_from_contact(contact_str, 1);
-			
-			if ((p = strchr(icontact, ';'))) {
-				*p = '\0';
-			}
-			sql = switch_mprintf("delete from sip_registrations where user='%q' and host='%q' and contact like '%%%q%%'", from_user, from_host, icontact);
-			switch_safe_free(icontact);
+			sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
 		} else {
 			sql = switch_mprintf("delete from sip_registrations where user='%q' and host='%q'", from_user, from_host);
 		}
@@ -287,8 +280,8 @@ void event_handler(switch_event_t *event)
 		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
 		switch_safe_free(sql);
 		
-		sql = switch_mprintf("insert into sip_registrations values ('%q','%q','%q','Regestered', '%q', %ld)",
-							 from_user, from_host, contact_str, rpid, expires);
+		sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','Regestered', '%q', %ld)",
+							 call_id, from_user, from_host, contact_str, rpid, expires);
 
 		if (sql) {
 			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);

@@ -1077,9 +1077,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute(switch_core_db
   \brief perform a test query then perform a reactive query if the first one fails
   \param db the db handle
   \param test_sql the test sql
+  \param drop_sql the drop sql
   \param reactive_sql the reactive sql
 */
-SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *test_sql, char *reactive_sql);
+SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *test_sql, char *drop_sql, char *reactive_sql);
 
 #define SWITCH_CORE_DB "core"
 /*!

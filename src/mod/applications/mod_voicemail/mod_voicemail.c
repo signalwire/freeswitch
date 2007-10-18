@@ -404,8 +404,8 @@ static switch_status_t load_config(void)
 			} else {
 #endif
 				if ((db = switch_core_db_open_file(profile->dbname))) {
-					switch_core_db_test_reactive(db, "select * from voicemail_data", vm_sql);
-					switch_core_db_test_reactive(db, "select * from voicemail_prefs", vm_pref_sql);
+					switch_core_db_test_reactive(db, "select * from voicemail_data", NULL, vm_sql);
+					switch_core_db_test_reactive(db, "select * from voicemail_prefs", NULL, vm_pref_sql);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
 					continue;

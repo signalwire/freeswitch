@@ -340,6 +340,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	char *register_gateway = NULL;
 	int network_port;
 	int cd = 0;
+	char *call_id = NULL;
 
 	/* all callers must confirm that sip, sip->sip_request and sip->sip_contact are not NULL */
 	assert(sip != NULL && sip->sip_contact != NULL && sip->sip_request != NULL);
@@ -412,9 +413,11 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		}
 		
 		if (v_event && *v_event) {
-			register_gateway = switch_event_get_header(*v_event, "register-gateway");
-				
-			if ((v_contact_str = switch_event_get_header(*v_event, "force-contact"))) {
+			char *exp_var;
+
+			register_gateway = switch_event_get_header(*v_event, "sip-register-gateway");
+			
+			if ((v_contact_str = switch_event_get_header(*v_event, "sip-force-contact"))) {
 				if (!strcasecmp(v_contact_str, "nat-connectile-dysfunction") || !strcasecmp(v_contact_str, "NDLB-connectile-dysfunction")) {
 					if (contact->m_url->url_params) {
 						snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s>",
@@ -423,6 +426,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 						snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d>", display, contact->m_url->url_user, network_ip, network_port);
 					}
 					cd = 1;
+					exptime = 20;
 				} else {
 					char *p;
 					switch_copy_string(contact_str, v_contact_str, sizeof(contact_str));
@@ -431,6 +435,13 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 							*p = '"';
 						}
 					}
+				}
+			}
+			
+			if ((exp_var = switch_event_get_header(*v_event, "sip-force-expires"))) {
+				int tmp = atoi(exp_var);
+				if (tmp > 0) {
+					exptime = tmp;
 				}
 			}
 		}
@@ -459,25 +470,23 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	if (regtype != REG_REGISTER) {
 		return 0;
 	}
+
+	call_id = sip_header_as_string(profile->home, (void *) sip->sip_call_id);
+	assert(call_id);
+
 	
 	if (exptime) {
-	
+
 		if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
-			char *icontact, *p;
-			icontact = sofia_glue_get_url_from_contact(contact_str, 1);
-			if ((p = strchr(icontact, ';'))) {
-				*p = '\0';
-			}
-			
-			sql = switch_mprintf("delete from sip_registrations where user='%q' and host='%q' and contact like '%%%q%%'", to_user, to_host, icontact);
-			switch_safe_free(icontact);
+			sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
 		} else {
 			sql = switch_mprintf("delete from sip_registrations where user='%q' and host='%q'", to_user, to_host);
 		}
 		switch_mutex_lock(profile->ireg_mutex);
 		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
 		switch_safe_free(sql);
-		sql = switch_mprintf("insert into sip_registrations values ('%q','%q','%q','%q', '%q', %ld)",
+		
+		sql = switch_mprintf("insert into sip_registrations values ('%q', '%q','%q','%q','%q', '%q', %ld)", call_id,
 							 to_user, to_host, contact_str, cd ? "Registered(NATHACK)" : "Registered", rpid, (long) time(NULL) + (long) exptime * 2);
 
 		
@@ -493,6 +502,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-user", "%s", to_user);
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-host", "%s", to_host);
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s", contact_str);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "call-id", "%s", call_id);
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "rpid", "%s", rpid);
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
 			switch_event_fire(&s_event);
@@ -509,7 +519,6 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->url);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "%s", rpid);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, to_host);
-
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Registered");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 			switch_event_fire(&event);
@@ -521,13 +530,16 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			if ((p = strchr(icontact, ';'))) {
 				*p = '\0';
 			}
+			if ((p = strchr(icontact + 4, ':'))) {
+				*p = '\0';
+			}
 			if ((sql = switch_mprintf("delete from sip_subscriptions where user='%q' and host='%q' and contact like '%%%q%%'", to_user, to_host, icontact))) {
 				sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 				switch_safe_free(sql);
 				sql = NULL;
 			}
 			
-			if ((sql = switch_mprintf("delete from sip_registrations where user='%q' and host='%q' and contact like '%%%q%%'", to_user, to_host, icontact))) {
+			if ((sql = switch_mprintf("delete from sip_registrations where call_id='%q'", to_user, to_host, call_id))) {
 				sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 				switch_safe_free(sql);
 				sql = NULL;
@@ -565,8 +577,21 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		switch_event_fire(&event);
 	}
 
+	
+	if (call_id) {
+		su_free(profile->home, call_id);
+	}
+
 	if (regtype == REG_REGISTER) {
-		nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT(contact), NUTAG_WITH_THIS(nua), TAG_END());
+		char *new_contact = NULL;
+		if (exptime) {
+			new_contact = switch_mprintf("%s;expires=%ld", contact_str, (long)exptime);
+			nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT_STR(new_contact), NUTAG_WITH_THIS(nua), TAG_END());
+			switch_safe_free(new_contact);
+		} else {
+			nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT(contact), NUTAG_WITH_THIS(nua), TAG_END());
+		}
+
 		return 1;
 	}
 

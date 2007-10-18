@@ -2213,7 +2213,7 @@ static switch_status_t load_config(void)
 			} else {
 #endif
 				if ((db = switch_core_db_open_file(profile->dbname))) {
-					switch_core_db_test_reactive(db, "select * from jabber_subscriptions", sub_sql);
+					switch_core_db_test_reactive(db, "select * from jabber_subscriptions", NULL, sub_sql);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
 					continue;

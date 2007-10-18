@@ -1550,6 +1550,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 	
 	char reg_sql[] =
 		"CREATE TABLE sip_registrations (\n"
+		"   call_id         VARCHAR(255),\n"
 		"   user            VARCHAR(255),\n"
 		"   host            VARCHAR(255),\n"
 		"   contact         VARCHAR(1024),\n" 
@@ -1591,18 +1592,29 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
 			
-		switch_odbc_handle_exec(profile->master_odbc, reg_sql, NULL);
-		switch_odbc_handle_exec(profile->master_odbc, sub_sql, NULL);
-		switch_odbc_handle_exec(profile->master_odbc, auth_sql, NULL);
+		if (switch_odbc_handle_exec(profile->master_odbc, "select call_id from sip_registrations", NULL) != SWITCH_ODBC_SUCCESS) {
+			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_registrations", NULL);
+			switch_odbc_handle_exec(profile->master_odbc, reg_sql, NULL);
+		}
+
+		if (switch_odbc_handle_exec(profile->master_odbc, "select contact from sip_subscriptions", NULL) != SWITCH_ODBC_SUCCESS) {
+			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_subscriptions", NULL);
+			switch_odbc_handle_exec(profile->master_odbc, sub_sql, NULL);
+		}
+
+		if (switch_odbc_handle_exec(profile->master_odbc, "select nonce from sip_authentication", NULL) != SWITCH_ODBC_SUCCESS) {
+			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_authentication", NULL);
+			switch_odbc_handle_exec(profile->master_odbc, auth_sql, NULL);
+		}
 	} else {
 #endif
 		if (!(profile->master_db = switch_core_db_open_file(profile->dbname))) {
 			return 0;
 		}
 
-		switch_core_db_test_reactive(profile->master_db, "select contact from sip_registrations", reg_sql);
-		switch_core_db_test_reactive(profile->master_db, "select contact from sip_subscriptions", sub_sql);
-		switch_core_db_test_reactive(profile->master_db, "select * from sip_authentication", auth_sql);
+		switch_core_db_test_reactive(profile->master_db, "select call_id from sip_registrations", "DROP TABLE sip_registrations", reg_sql);
+		switch_core_db_test_reactive(profile->master_db, "select contact from sip_subscriptions", "DROP TABLE sip_subscriptions", sub_sql);
+		switch_core_db_test_reactive(profile->master_db, "select * from sip_authentication", "DROP TABLE sip_authentication", auth_sql);
 
 #ifdef SWITCH_HAVE_ODBC
 	}
