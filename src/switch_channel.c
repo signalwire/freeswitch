@@ -1301,9 +1301,10 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 
 			if (*p == '$' && !nv) {
 				if (*(p+1)) {
-					vtype = 1;
-					if (*(p + 1) != '{') {
-						vtype = 2;
+					if (*(p+1) == '{') {
+						vtype = 1;
+					} else {
+						nv = 1;
 					}
 				} else {
 					nv = 1;
@@ -1331,31 +1332,26 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 				e = s;
 				vname = s;
 				while (*e) {
-					if (!br && *e == ' ') {
-						*e++ = '\0';
-						sp++;
-						break;
-					}
 					if (br == 1 && *e == '}') {
 						br = 0;
 						*e++ = '\0';
 						break;
 					}
-					if (vtype == 2) {
-						if (*e == '(') {
-							*e++ = '\0';
-							vval = e;
-							br = 2;
-						}
-						if (br == 2 && *e == ')') {
-							*e++ = '\0';
-							br = 0;
-							break;
-						}
-					}
 					e++;
 				}
 				p = e;
+				
+				if ((vval = strchr(vname, '('))) {
+					e = vval - 1;
+					*vval++ = '\0';
+					while(*e == ' ') {
+						*e-- = '\0';
+					}
+					if ((e = strchr(vval, ')'))) {
+						*e = '\0';
+					}
+					vtype = 2;
+				}
 
 				if (vtype == 1) {
 					sub_val = switch_channel_get_variable(channel, vname);
