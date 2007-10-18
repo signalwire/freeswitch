@@ -17,8 +17,6 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
 			CharacterSet="2"
@@ -42,16 +40,12 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\openmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\openmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				WarnAsError="true"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -65,14 +59,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="C:\Program Files\openmrcp\sdk\lib\winnt;..\..\..\..\w32\vsnet\$(OutDir)"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
-				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_openmrcp.lib"
-				TargetMachine="1"
+				AdditionalLibraryDirectories="&quot;C:\Program Files\openmrcp\sdk\lib\winnt&quot;"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -101,8 +88,6 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
 			CharacterSet="2"
@@ -125,14 +110,10 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\openmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\openmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				WarnAsError="true"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -146,17 +127,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="C:\Program Files\openmrcp\sdk\lib\winnt;..\..\..\..\w32\vsnet\$(OutDir)"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
-				SubSystem="2"
+				AdditionalLibraryDirectories="&quot;C:\Program Files\openmrcp\sdk\lib\winnt&quot;"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				LinkTimeCodeGeneration="1"
-				ImportLibrary="$(OutDir)/mod_openmrcp.lib"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -185,8 +159,6 @@
 		</Configuration>
 		<Configuration
 			Name="Debug Static|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
 			CharacterSet="2"
@@ -210,16 +182,12 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\openmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\openmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				WarnAsError="true"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -233,14 +201,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="C:\Program Files\openmrcp\sdk\lib\winnt;..\..\..\..\w32\vsnet\$(OutDir)"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
-				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_openmrcp.lib"
-				TargetMachine="1"
+				AdditionalLibraryDirectories="&quot;C:\Program Files\openmrcp\sdk\lib\winnt&quot;"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -269,8 +230,6 @@
 		</Configuration>
 		<Configuration
 			Name="Release Static|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
 			CharacterSet="2"
@@ -293,14 +252,10 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\openmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\openmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				WarnAsError="true"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -314,17 +269,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="C:\Program Files\openmrcp\sdk\lib\winnt;..\..\..\..\w32\vsnet\$(OutDir)"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
-				SubSystem="2"
+				AdditionalLibraryDirectories="&quot;C:\Program Files\openmrcp\sdk\lib\winnt&quot;"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				LinkTimeCodeGeneration="1"
-				ImportLibrary="$(OutDir)/mod_openmrcp.lib"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"

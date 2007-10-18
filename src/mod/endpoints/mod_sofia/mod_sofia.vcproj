@@ -17,8 +17,6 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
 			CharacterSet="2"
@@ -42,16 +40,12 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\su&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\win32&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\url&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\bnf&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\su&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\win32&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\url&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\bnf&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;LIBSOFIA_SIP_UA_STATIC;PTW32_STATIC_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				WarnAsError="true"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
 				DisableSpecificWarnings="4201"
 			/>
 			<Tool
@@ -66,14 +60,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;..\..\..\..\w32\vsnet\$(OutDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\win32\pthread&quot;"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
-				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_sofia.lib"
-				TargetMachine="1"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\sofia-sip\win32\pthread&quot;"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -102,8 +89,6 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
 			CharacterSet="2"
@@ -126,14 +111,10 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\su&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\win32&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\url&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\bnf&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\su&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\win32&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\url&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\bnf&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;LIBSOFIA_SIP_UA_STATIC;PTW32_STATIC_LIB"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				WarnAsError="true"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
 				DisableSpecificWarnings="4201"
 			/>
 			<Tool
@@ -148,17 +129,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;..\..\..\..\w32\vsnet\$(OutDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\win32\pthread&quot;"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
-				SubSystem="2"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\sofia-sip\win32\pthread&quot;"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				LinkTimeCodeGeneration="1"
-				ImportLibrary="$(OutDir)/mod_sofia.lib"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
