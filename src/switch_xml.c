@@ -1291,6 +1291,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_root(void)
 	return MAIN_XML_ROOT;
 }
 
+static char not_so_threadsafe_error_buffer[256] = "";
+
 SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **err)
 {
 	char path_buf[1024];
@@ -1312,7 +1314,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 	snprintf(path_buf, sizeof(path_buf), "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "freeswitch.xml");
 	if ((new_main = switch_xml_parse_file(path_buf))) {
 		*err = switch_xml_error(new_main);
-
+		switch_copy_string(not_so_threadsafe_error_buffer, *err, sizeof(not_so_threadsafe_error_buffer));
+		*err = not_so_threadsafe_error_buffer;
 		if (!switch_strlen_zero(*err)) {
 			switch_xml_free(new_main);
 			new_main = NULL;
