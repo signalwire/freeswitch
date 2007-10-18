@@ -1307,7 +1307,11 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					if ((tech_pvt->rm_encoding = switch_core_session_strdup(session, (char *) rm_encoding))) {
 						char tmp[50];
 						tech_pvt->pt = (switch_payload_t) map->rm_pt;
-						tech_pvt->rm_rate = map->rm_rate;
+						if (map->rm_pt == 9) {
+							tech_pvt->rm_rate = 16000; /* *stab* *stab* *stab* */
+						} else {
+							tech_pvt->rm_rate = map->rm_rate;
+						}
 						tech_pvt->codec_ms = mimp->microseconds_per_frame / 1000;
 						tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(session, (char *) connection->c_address);
 						tech_pvt->rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);

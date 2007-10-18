@@ -135,7 +135,7 @@ static switch_codec_implementation_t g722_8k_implementation = {
 	/*.init */ switch_g722_init,
 	/*.encode */ switch_g722_encode,
 	/*.decode */ switch_g722_decode,
-	/*.destroy */ switch_g722_destroy,
+	/*.destroy */ switch_g722_destroy
 };
 
 static switch_codec_implementation_t g722_16k_implementation = {
