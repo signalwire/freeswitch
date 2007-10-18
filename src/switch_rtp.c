@@ -846,7 +846,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
 			return -1;
 		}
-#if 0
+#if 1
 		if (rtp_session->recv_msg.header.pt == 9 /* && G722 RFC != LAME */) {
 			uint32_t rfc_sucks = ntohl(rtp_session->recv_msg.header.ts);
 			rfc_sucks *= 2;
@@ -1623,7 +1623,7 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 	}
 
 	send_msg = rtp_session->send_msg;
-#if 0
+#if 1
 	if (payload == 9 /* && G722 RFC != LAME */) {
 		ts /= 2;
 	}
