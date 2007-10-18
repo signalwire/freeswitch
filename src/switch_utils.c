@@ -258,12 +258,13 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int fam
 
 	getaddrinfo(base, NULL, NULL, &address_info);
 
-	if (WSAIoctl(tmp_socket,
+	if (!address_info || WSAIoctl(tmp_socket,
 				 SIO_ROUTING_INTERFACE_QUERY,
 				 address_info->ai_addr, (DWORD) address_info->ai_addrlen, &l_address, sizeof(l_address), (LPDWORD) & l_address_len, NULL, NULL)) {
 
 		closesocket(tmp_socket);
-		freeaddrinfo(address_info);
+		if (address_info)
+			freeaddrinfo(address_info);
 		return status;
 	}
 
