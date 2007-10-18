@@ -305,7 +305,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odb
 {
 	SQLHSTMT stmt = NULL;
 	SQLSMALLINT c = 0, x = 0;
-	SQLINTEGER m = 0;
+	SQLINTEGER m = 0, t = 0;
 	int result;
 
 	assert(callback != NULL);
@@ -333,43 +333,47 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odb
 	SQLRowCount(stmt, &m);
 
 	if (m > 0) {
-		int name_len = 256;
-		char **names;
-		char **vals;
-		int y = 0;
+		for (t = 0; t < m; t++) {
+			int name_len = 256;
+			char **names;
+			char **vals;
+			int y = 0;
 		
-		if (!(result = SQLFetch(stmt)) == SQL_SUCCESS) {
-			goto error;
-		}
+			if (!(result = SQLFetch(stmt)) == SQL_SUCCESS) {
+				goto error;
+			}
 		
-		names = calloc(c, sizeof(*names));
-		vals = calloc(c, sizeof(*names));
+			names = calloc(c, sizeof(*names));
+			vals = calloc(c, sizeof(*vals));
 		
-		assert(names && vals);
-		
-		for (x = 1; x <= c; x++) {
-			SQLSMALLINT NameLength, DataType, DecimalDigits, Nullable;
-			SQLUINTEGER ColumnSize;
-			names[y] = malloc(name_len);
-			memset(names[y], 0, name_len);
+			assert(names && vals);
 
-			SQLDescribeCol(stmt, x, (SQLCHAR *) names[y], (SQLSMALLINT)name_len, &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
-			ColumnSize++;
+			for (x = 1; x <= c; x++) {
+				SQLSMALLINT NameLength, DataType, DecimalDigits, Nullable;
+				SQLUINTEGER ColumnSize;
+				names[y] = malloc(name_len);
+				memset(names[y], 0, name_len);
 
-			vals[y] = malloc(ColumnSize);
-			memset(vals[y], 0, ColumnSize);
-			SQLGetData(stmt, x, SQL_C_CHAR, (SQLCHAR *) vals[y], ColumnSize, NULL);
-			y++;
-		}
+				SQLDescribeCol(stmt, x, (SQLCHAR *) names[y], (SQLSMALLINT)name_len, &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
+				ColumnSize++;
+
+				vals[y] = malloc(ColumnSize);
+				memset(vals[y], 0, ColumnSize);
+				SQLGetData(stmt, x, SQL_C_CHAR, (SQLCHAR *) vals[y], ColumnSize, NULL);
+				y++;
+			}
 		
-		callback(pdata, y, vals, names);
+			if (callback(pdata, y, vals, names)) {
+				break;
+			}
 
-		for (x = 0; x < y; x++) {
-			free(names[x]);
-			free(vals[x]);
+			for (x = 0; x < y; x++) {
+				free(names[x]);
+				free(vals[x]);
+			}
+			free(names);
+			free(vals);
 		}
-		free(names);
-		free(vals);
 	}
 
 	SQLFreeHandle(SQL_HANDLE_STMT, stmt);
