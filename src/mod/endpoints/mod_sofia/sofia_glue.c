@@ -87,12 +87,19 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t por
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->pt);
 	} else if (tech_pvt->num_codecs) {
 		int i;
+		int already_did[256] = { 0 };
 		for (i = 0; i < tech_pvt->num_codecs; i++) {
 			const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
 
 			if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
 				continue;
 			}
+			
+			if (already_did[imp->ianacode]) {
+				continue;
+			}
+
+			already_did[imp->ianacode] = 1;
 
 			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", imp->ianacode);
 			if (!ptime) {
@@ -113,6 +120,9 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t por
 
 	if (tech_pvt->rm_encoding) {
 		rate = tech_pvt->rm_rate;
+		if (tech_pvt->pt == 9) {
+			rate = 8000;
+		}
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", tech_pvt->pt, tech_pvt->rm_encoding, rate);
 		if (tech_pvt->fmtp_out) {
 			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->pt, tech_pvt->fmtp_out);
@@ -123,6 +133,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t por
 
 	} else if (tech_pvt->num_codecs) {
 		int i;
+		int already_did[256] = { 0 };
 		for (i = 0; i < tech_pvt->num_codecs; i++) {
 			const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
 
@@ -130,12 +141,20 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t por
 				continue;
 			}
 
+			if (already_did[imp->ianacode]) {
+				continue;
+			}
+
+			already_did[imp->ianacode] = 1;
+			
 			rate = imp->samples_per_second;
 			
 			if (ptime && ptime != imp->microseconds_per_frame / 1000) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ptime %u != advertised ptime %u\n", imp->microseconds_per_frame / 1000, ptime);
 			}
-
+			if (imp->ianacode == 9) {
+				rate = 8000;
+			}
 			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", imp->ianacode, imp->iananame, rate);
 			if (imp->fmtp) {
 				snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", imp->ianacode, imp->fmtp);
@@ -170,6 +189,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t por
 				snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->video_pt);
 			} else if (tech_pvt->num_codecs) {
 				int i;
+				int already_did[256] = { 0 };
 				for (i = 0; i < tech_pvt->num_codecs; i++) {
 					const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
 				
@@ -177,6 +197,12 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t por
 						continue;
 					}
 				
+					if (already_did[imp->ianacode]) {
+						continue;
+					}
+
+					already_did[imp->ianacode] = 1;
+
 					snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", imp->ianacode);
 					if (!ptime) {
 						ptime = imp->microseconds_per_frame / 1000;
@@ -194,12 +220,19 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t por
 				}
 			} else if (tech_pvt->num_codecs) {
 				int i;
+				int already_did[256] = { 0 };
 				for (i = 0; i < tech_pvt->num_codecs; i++) {
 					const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
 				
 					if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
 						continue;
 					}
+
+					if (already_did[imp->ianacode]) {
+						continue;
+					}
+					
+					already_did[imp->ianacode] = 1;
 
 					if (!rate) {
 						rate = imp->samples_per_second;

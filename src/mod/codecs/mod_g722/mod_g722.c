@@ -143,7 +143,7 @@ static switch_codec_implementation_t g722_16k_implementation = {
 	/*.ianacode */ 9,
 	/*.iananame */ "G722",
 	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
+	/*.samples_per_second */ 16000,
 	/*.bits_per_second */ 64000,
 	/*.microseconds_per_frame */ 20000,
 	/*.samples_per_frame */ 160,
