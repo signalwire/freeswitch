@@ -214,7 +214,7 @@ class FreeswitchEventListenerFactory(ClientFactory):
     
     def clientConnectionFailed(self, connector, reason):
 
-        if self.num_attempts < 100:
+        if self.num_attempts < 10000:
             self.num_attempts += 1            
             print "Connection refused, retrying attempt #%s in 5 seconds" % \
                   (self.num_attempts)
