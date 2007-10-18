@@ -656,7 +656,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 
 			gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s", register_proxy);
 			gateway->register_from = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, from_domain);
-			gateway->register_contact = switch_core_sprintf(gateway->pool, "sip:%s@%s:%d%s", extension,
+			gateway->register_contact = switch_core_sprintf(gateway->pool, "<sip:%s@%s:%d%s>", extension,
 															profile->extsipip ? profile->extsipip : profile->sipip, profile->sip_port, params);
 
 
