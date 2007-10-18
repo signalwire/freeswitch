@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="modules"
+	OutputDirectory="$(ConfigurationName)"
+	IntermediateDirectory="$(ConfigurationName)"
+	>
+	<Tool
+		Name="VCCLCompilerTool"
+		AdditionalIncludeDirectories="&quot;$(SolutionDir)\src\include&quot;"
+		PreprocessorDefinitions="WIN32;_WINDOWS;_USRDLL;MOD_EXPORTS"
+		WarningLevel="4"
+		WarnAsError="true"
+		Detect64BitPortabilityProblems="true"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
+		GenerateDebugInformation="true"
+		ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
+		ImportLibrary="$(OutDir)/$(InputName).lib"
+	/>
+</VisualStudioPropertySheet>
