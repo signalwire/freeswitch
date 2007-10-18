@@ -321,6 +321,10 @@ class FsHelperTest:
 
     def test_dialconf(self):
 
+        # the following parties will be dialed out from the conference
+        # called "freeswitch" on the local freeswitch instance.
+        # one party is actually another conference, just to make
+        # the example more confusing.
         people2dial = [{'name':'freeswitch',
                         'number':'888@conference.freeswitch.org'},
                        {'name':'mouselike',
@@ -333,7 +337,6 @@ class FsHelperTest:
         d.addErrback(failed)
         def worked(*args):
             print "Worked! Dialed user result: %s" % str(args)
-            #reactor.stop()
         d.addCallback(worked)        
         return d
 
@@ -366,7 +369,9 @@ class FsHelperTest:
 
 def test1():
     kick_everyone = False
-    fshelper = FsHelper("mydomain.com")
+    fshelper = FsHelper(host="127.0.0.1",
+                        passwd="ClueCon",
+                        port=8021)
     fsht = FsHelperTest(fshelper)
     fsht.test_dialconf()
     d = fsht.test_listconf()
@@ -391,10 +396,113 @@ def test1():
     reactor.run()
 
 def test2():
-    fshelper = FsHelper("mydomain.com")
+    fshelper = FsHelper(host="127.0.0.1",
+                        passwd="ClueCon",
+                        port=8021)    
     fshelper.sofia_profile_restart("mydomain.com")
     reactor.run()    
+
+def test3():
+    fshelper = FsHelper(host="127.0.0.1",
+                        passwd="ClueCon",
+                        port=8021)        
+    print "Calling originate.."
+    party2dial="sofia/foo/600@192.168.1.202:5080"
+    d = fshelper.originate(party2dial=party2dial,
+                           dest_ext_app="101",
+                           bgapi=True)
+
+    def worked(result):
+        print "Originate succeeded: %s" % result
+        reactor.stop()
+        
+    def failed(failure):
+        print "failed: %s" % str(failure)
+        reactor.stop()
+        
+    d.addCallback(worked)
+    d.addErrback(failed)
+    reactor.run()    
+
+
+def test4():
+    fshelper = FsHelper(host="127.0.0.1",
+                        passwd="ClueCon",
+                        port=8021)        
+
+    def worked(result):
+        print "Originate succeeded: %s" % result
+        #reactor.stop()
+        
+    def failed(failure):
+        print "failed: %s" % str(failure)
+        #reactor.stop()
+
+
+    dest_ext_app = "101"
+    party2dial="sofia/foo/600@192.168.1.202:5080"
+    d = fshelper.originate(party2dial=party2dial,
+                           dest_ext_app=dest_ext_app,
+                           bgapi=True)
+    d.addCallback(worked)
+    d.addErrback(failed)
+    party2dial="sofia/foo/someone@bar.com"    
+    d2 = fshelper.originate(party2dial=party2dial,
+                            dest_ext_app=dest_ext_app,
+                            bgapi=True)
+        
+    d2.addCallback(worked)
+    d2.addErrback(failed)
+    reactor.run()    
+
+
+def test5():
+    fshelper = FsHelper(host="127.0.0.1",
+                        passwd="ClueCon",
+                        port=8021)        
+
+    def worked(result):
+        print "Originate succeeded: %s" % result
+        #reactor.stop()
+        
+    def failed(failure):
+        print "failed: %s" % str(failure)
+        #reactor.stop()
+
+    for i in xrange(20):
+
+        party2dial="sofia/foo/600@192.168.1.202:5080"
+        d = fshelper.originate(party2dial=party2dial,
+                               dest_ext_app="700",
+                               bgapi=True)
+        d.addCallback(worked)
+        d.addErrback(failed)
+
+    reactor.run()    
+
+def test6():
+    """
+    show channels for a given sofia profile
+    """
+    fshelper = FsHelper(host="127.0.0.1",
+                        passwd="ClueCon",
+                        port=8021)
+    from wikipbx import channelsutil
+    def show_chanels(raw_xml):
+        print raw_xml
     
+    def failure(failure):
+        print failure
+        
+    d = fshelper.showchannels(bgapi=False)
+    d.addCallback(show_chanels)
+    d.addErrback(failure)
+    reactor.run()
+                                                                            
+
 if __name__=="__main__":
     #test1()
-    test2()
+    #test2()
+    #test3()
+    test4()
+    #test5()

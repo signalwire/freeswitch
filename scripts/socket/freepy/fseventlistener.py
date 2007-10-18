@@ -213,13 +213,17 @@ class FreeswitchEventListenerFactory(ClientFactory):
         self.protocol = None
     
     def clientConnectionFailed(self, connector, reason):
-        print "clientConnectionFailed! conn=%s, reason=%s" % (connector,
-                                                              reason)
-        #self.protocol = None
+
         if self.num_attempts < 100:
-            self.num_attempts += 1
+            self.num_attempts += 1            
+            print "Connection refused, retrying attempt #%s in 5 seconds" % \
+                  (self.num_attempts)
             return reactor.callLater(5, self.connect)
         else:
+            print "clientConnectionFailed! conn=%s, reason=%s" % (connector,
+                                                                  reason)
+            print ("Retry attempts exhausted, total attempts: %s" % 
+                  self.num_attempts)
             deferred2callback = self.connection_deferred
             deferred2callback.errback(reason)
 
