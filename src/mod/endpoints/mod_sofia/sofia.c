@@ -260,7 +260,8 @@ void event_handler(switch_event_t *event)
 		long expires = (long) time(NULL) + atol(exp_str);
 		char *profile_name = switch_event_get_header(event, "orig-profile-name");
 		sofia_profile_t *profile = NULL;
-		char buf[512];
+		char *icontact = NULL, *p;
+
 
 		if (!rpid) {
 			rpid = "unknown";
@@ -270,26 +271,33 @@ void event_handler(switch_event_t *event)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile\n");
 			return;
 		}
-
-
-		if (!sofia_reg_find_reg_url(profile, from_user, from_host, buf, sizeof(buf))) {
-			sql = switch_mprintf("insert into sip_registrations values ('%q','%q','%q','Regestered', '%q', %ld)",
-								 from_user, from_host, contact_str, rpid, expires);
+		if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
+			icontact = sofia_glue_get_url_from_contact(contact_str, 1);
+			
+			if ((p = strchr(icontact, ';'))) {
+				*p = '\0';
+			}
+			sql = switch_mprintf("delete from sip_registrations where user='%q' and host='%q' and contact like '%%%q%%'", from_user, from_host, icontact);
+			switch_safe_free(icontact);
 		} else {
-			sql =
-				switch_mprintf
-				("update sip_registrations set contact='%q', rpid='%q', expires=%ld where user='%q' and host='%q'",
-				 contact_str, rpid, expires, from_user, from_host);
-
+			sql = switch_mprintf("delete from sip_registrations where user='%q' and host='%q'", from_user, from_host);
 		}
 
+		switch_mutex_lock(profile->ireg_mutex);
+		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
+		switch_safe_free(sql);
+		
+		sql = switch_mprintf("insert into sip_registrations values ('%q','%q','%q','Regestered', '%q', %ld)",
+							 from_user, from_host, contact_str, rpid, expires);
+
 		if (sql) {
-			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
+			sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
 			switch_safe_free(sql);
 			sql = NULL;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Propagating registration for %s@%s->%s\n", from_user, from_host, contact_str);
-
 		}
+		switch_mutex_unlock(profile->ireg_mutex);
+		
 
 		if (profile) {
 			sofia_glue_release_profile(profile);
@@ -843,6 +851,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "manage-presence")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_PRESENCE;
+						}
+					} else if (!strcasecmp(var, "multiple-registrations")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_MULTIREG;
 						}
 					} else if (!strcasecmp(var, "NDLB-to-in-200-contact")) {
 						if (switch_true(val)) {

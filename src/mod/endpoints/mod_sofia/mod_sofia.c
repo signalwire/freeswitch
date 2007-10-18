@@ -1248,6 +1248,96 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static int contact_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct cb_helper *cb = (struct cb_helper *) pArg;
+	char *contact;
+
+	if (!switch_strlen_zero(argv[0]) && (contact = sofia_glue_get_url_from_contact(argv[0], 1))) {
+		cb->stream->write_function(cb->stream, "sofia/%s/%s,", cb->profile->name, contact + 4);
+		free(contact);
+	}
+
+	return 0;
+}
+
+SWITCH_STANDARD_API(sofia_contact_function)
+{
+	char *data;
+	char *user = NULL;
+	char *domain = NULL;
+	char *profile_name = NULL;
+	char *p;
+
+	if (!cmd) {
+		stream->write_function(stream, "%s", "");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	data = strdup(cmd);
+	assert(data);
+
+	if ((p = strchr(data, '/'))) {
+		profile_name = data;
+		*p++ = '\0';
+		user = p;
+	} else {
+		user = data;
+	}
+
+	if ((domain = strchr(user, '@'))) {
+		*domain++ = '\0';
+	}
+	
+	if (!profile_name && domain) {
+		profile_name = domain;
+	}
+
+	if (user && profile_name) {
+		char *sql;
+		sofia_profile_t *profile;
+		
+		if (!(profile = sofia_glue_find_profile(profile_name))) {
+			profile_name = domain;
+			domain = NULL;
+		}
+
+		if (!profile && profile_name) {
+			profile = sofia_glue_find_profile(profile_name);
+		}
+
+		if (profile) {
+			struct cb_helper cb;
+			switch_stream_handle_t mystream = { 0 };
+			if (!domain || !strchr(domain, '.')) {
+				domain = profile->name;
+			}
+
+			SWITCH_STANDARD_STREAM(mystream);
+			cb.profile = profile;
+			cb.stream = &mystream;
+			
+			sql = switch_mprintf("select contact from sip_registrations where user='%q' and host='%q'", user, domain);
+			assert(sql);
+			sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, contact_callback, &cb);
+			switch_safe_free(sql);
+			if (mystream.data) {
+				char *str = mystream.data;
+				*(str + (strlen(str) - 1)) = '\0';
+			}
+			stream->write_function(stream, "%s", mystream.data);
+			switch_safe_free(mystream.data);
+			goto end;
+		}
+	}
+	
+	stream->write_function(stream, "%s", "");
+ end:
+
+	switch_safe_free(data);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(sofia_function)
 {
 	char *argv[1024] = { 0 };
@@ -1589,6 +1679,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	management_interface->management_function = sofia_manage;
 
 	SWITCH_ADD_API(api_interface, "sofia", "Sofia Controls", sofia_function, "<cmd> <args>");
+	SWITCH_ADD_API(api_interface, "sofia_contact", "Sofia Contacts", sofia_contact_function, "[profile/]<user>@<domain>");
 	SWITCH_ADD_CHAT(chat_interface, SOFIA_CHAT_PROTO, sofia_presence_chat_send);
 
 	/* indicate that the module should continue to be loaded */
