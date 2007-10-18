@@ -17,9 +17,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
@@ -40,17 +39,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\codec\libamr\src\include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\codec\libamr\src\include&quot;"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				WarnAsError="true"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -63,15 +53,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libamr.lib FreeSwitchCore.lib"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\$(OutDir)"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
-				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_amr.lib"
-				TargetMachine="1"
+				AdditionalDependencies="libamr.lib"
+				AdditionalLibraryDirectories=""
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -100,9 +83,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
@@ -123,13 +105,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\codec\libamr\src\include&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
-				RuntimeLibrary="2"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\codec\libamr\src\include&quot;"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -142,17 +119,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libamr.lib FreeSwitchCore.lib"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\$(OutDir)"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				ImportLibrary="$(OutDir)/mod_amr.lib"
-				TargetMachine="1"
+				AdditionalDependencies="libamr.lib"
+				AdditionalLibraryDirectories=""
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -181,9 +149,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug Passthrough|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
@@ -204,17 +171,9 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\codec\libamr\src\include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;AMR_PASSTHROUGH"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\codec\libamr\src\include&quot;"
+				PreprocessorDefinitions="AMR_PASSTHROUGH"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				WarnAsError="true"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -227,14 +186,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\$(OutDir)"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
-				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_amr.lib"
-				TargetMachine="1"
+				AdditionalLibraryDirectories=""
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -263,9 +215,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release Passthrough|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
@@ -286,13 +237,9 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\codec\libamr\src\include&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;AMR_PASSTHROUGH"
-				RuntimeLibrary="2"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\codec\libamr\src\include&quot;"
+				PreprocessorDefinitions="AMR_PASSTHROUGH"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -305,16 +252,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\$(OutDir)"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				ImportLibrary="$(OutDir)/mod_amr.lib"
-				TargetMachine="1"
+				AdditionalLibraryDirectories=""
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -345,28 +283,10 @@
 	<References>
 	</References>
 	<Files>
-		<Filter
-			Name="Source Files"
-			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
-			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
+		<File
+			RelativePath="mod_amr.c"
 			>
-			<File
-				RelativePath="mod_amr.c"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="Header Files"
-			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
-			>
-		</Filter>
-		<Filter
-			Name="Resource Files"
-			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"
-			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
-			>
-		</Filter>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
