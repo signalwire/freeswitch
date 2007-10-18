@@ -1,7 +1,7 @@
 <!--the domain or ip (the right hand side of the @ in the addr-->
 <domain name="$${domain}">
   <!--the user id (the left hand side of the @ in the addr-->
-  <user id="stpeter" mailbox="1000"> <!--if id is numeric mailbox param is not necessary-->
+  <user id="brian" mailbox="1000"> <!--if id is numeric mailbox param is not necessary-->
     <!-- Outbound Registrations Related to this user -->
     <gateways>
       <!--<gateway name="asterlink.com">-->
@@ -35,7 +35,7 @@
     </gateways>
     <params>
       <!-- omit password for authless registration -->
-      <param name="password" value="mypass"/>
+      <param name="password" value="1234"/>
       <param name="vm-password" value="1234"/><!--if vm-password is omitted password param is used-->
       <!--<param name="vm-mailto" value="me@mydomain.com"/>-->
       <!--<param name="vm-email-all-messages" value="true"/>-->
@@ -53,37 +53,35 @@
     <vcard>
       <!-- insert optional compliant vcard xml here-->
     </vcard>
-
-    <!-- this is an example of a user with auth and various settings -->
-    <user id="1000" mailbox="1000">
-      <params>
-	<param name="password" value="mypass"/>
-	<param name="vm-password" value="1234"/>
-	<!--<param name="vm-mailto" value="me@mydomain.com"/>-->
-	<!--<param name="vm-email-all-messages" value="true"/>-->
-      </params>
-    </user>
-
-    <!-- authless users and mailboxes -->
-    <user id="1001"/>
-    <user id="1002"/>
-    <user id="1003"/>
-    <user id="1004"/>
-    <user id="1005"/>
-    <user id="1006"/>
-    <user id="1007"/>
-    <user id="1008"/>
-    <user id="1009"/>
-    <user id="1010"/>
-    <user id="1011"/>
-    <user id="1012"/>
-    <user id="1013"/>
-    <user id="1014"/>
-    <user id="1015"/>
-    <user id="1016"/>
-    <user id="1017"/>
-    <user id="1018"/>
-    <user id="1019"/>
-
   </user>
+  <!-- this is an example of a user with auth and various settings -->
+  <user id="1000" mailbox="1000">
+    <params>
+      <param name="password" value="mypass"/>
+      <param name="vm-password" value="1234"/>
+      <!--<param name="vm-mailto" value="me@mydomain.com"/>-->
+      <!--<param name="vm-email-all-messages" value="true"/>-->
+    </params>
+  </user>
+
+  <!-- authless users and mailboxes -->
+  <user id="1001"/>
+  <user id="1002"/>
+  <user id="1003"/>
+  <user id="1004"/>
+  <user id="1005"/>
+  <user id="1006"/>
+  <user id="1007"/>
+  <user id="1008"/>
+  <user id="1009"/>
+  <user id="1010"/>
+  <user id="1011"/>
+  <user id="1012"/>
+  <user id="1013"/>
+  <user id="1014"/>
+  <user id="1015"/>
+  <user id="1016"/>
+  <user id="1017"/>
+  <user id="1018"/>
+  <user id="1019"/>
 </domain>
