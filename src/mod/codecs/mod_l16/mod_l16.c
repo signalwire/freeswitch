@@ -197,7 +197,7 @@ static switch_codec_implementation_t raw_16k_120ms_implementation = {
 	/*.ianacode */ 117,
 	/*.iananame */ "L16",
 	/*.fmtp */ NULL,
-	/*.samples_per_second */ 8000,
+	/*.samples_per_second */ 16000,
 	/*.bits_per_second */ 256000,
 	/*.microseconds_per_frame */ 120000,
 	/*.samples_per_frame */ 1920,
