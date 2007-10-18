@@ -427,7 +427,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Default", "Default", "{3B08
 	ProjectSection(SolutionItems) = preProject
 		conf\conference.conf.xml = conf\conference.conf.xml
 		conf\console.conf.xml = conf\console.conf.xml
-		conf\default_context.xml = conf\default_context.xml
 		conf\dialplan_directory.conf.xml = conf\dialplan_directory.conf.xml
 		conf\dingaling.conf.xml = conf\dingaling.conf.xml
 		conf\directory.xml = conf\directory.xml
@@ -529,6 +528,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Build System", "_Build Sys
 		build\buildlib.sh = build\buildlib.sh
 		configure.in = configure.in
 		Makefile.am = Makefile.am
+		build\modmake.rules.in = build\modmake.rules.in
 		build\modules.conf.in = build\modules.conf.in
 		libs\win32\util.vbs = libs\win32\util.vbs
 	EndProjectSection

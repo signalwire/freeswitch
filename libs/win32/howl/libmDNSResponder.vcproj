@@ -20,7 +20,6 @@
 			OutputDirectory="Debug"
 			IntermediateDirectory="Debug Static"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC70.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
@@ -86,7 +85,6 @@
 			OutputDirectory="Release"
 			IntermediateDirectory="Release Static"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC70.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
