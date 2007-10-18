@@ -38,14 +38,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
 				AdditionalIncludeDirectories="&quot;C:\Program Files\MySQL\MySQL Server 5.0\include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -58,8 +52,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\$(OutDir)"
+				AdditionalLibraryDirectories=""
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -110,10 +103,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;C:\Program Files\MySQL\MySQL Server 5.0\include&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
-				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -126,10 +116,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\$(OutDir)"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
+				AdditionalLibraryDirectories=""
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -179,14 +166,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
 				AdditionalIncludeDirectories="&quot;C:\Program Files\MySQL\MySQL Server 5.0\include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				DebugInformationFormat="4"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -200,8 +181,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="mysqlclient.lib ws2_32.lib"
-				LinkIncremental="2"
-				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\Debug;&quot;C:\Program Files\MySQL\MySQL Server 5.0\lib\debug&quot;"
+				AdditionalLibraryDirectories="&quot;C:\Program Files\MySQL\MySQL Server 5.0\lib\debug&quot;"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -252,10 +232,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;C:\Program Files\MySQL\MySQL Server 5.0\include&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
-				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -269,10 +246,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="mysqlclient.lib ws2_32.lib"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;..\..\..\..\w32\vsnet\Release&quot;;&quot;C:\Program Files\MySQL\MySQL Server 5.0\lib\opt&quot;"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
+				AdditionalLibraryDirectories="&quot;C:\Program Files\MySQL\MySQL Server 5.0\lib\opt&quot;"
 			/>
 			<Tool
 				Name="VCALinkTool"

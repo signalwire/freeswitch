@@ -108,8 +108,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
-				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -124,8 +122,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalLibraryDirectories=""
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 			/>
 			<Tool
 				Name="VCALinkTool"

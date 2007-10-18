@@ -110,8 +110,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\libresample\include&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
-				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -126,8 +124,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\libresample\win&quot;"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 			/>
 			<Tool
 				Name="VCALinkTool"

@@ -17,8 +17,6 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
 			CharacterSet="2"
@@ -41,17 +39,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\speex\include&quot;;&quot;$(InputDir)..\..\..\..\libs\speex\include\speex&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\speex\include&quot;;&quot;$(InputDir)..\..\..\..\libs\speex\include\speex&quot;"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				WarnAsError="true"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -64,14 +53,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="$(InputDir)..\..\..\..\libs\speex-1.1.11.1\win32\libspeex\$(OutDir);..\..\..\..\w32\vsnet\$(OutDir)"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
-				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_speex.lib"
-				TargetMachine="1"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\speex-1.1.11.1\win32\libspeex\$(OutDir)&quot;"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -100,8 +82,6 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
 			CharacterSet="2"
@@ -124,13 +104,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\speex\include&quot;;&quot;$(InputDir)..\..\..\..\libs\speex\include\speex&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
-				RuntimeLibrary="2"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\speex\include&quot;;&quot;$(InputDir)..\..\..\..\libs\speex\include\speex&quot;"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -143,16 +118,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="$(InputDir)..\..\..\..\libs\speex-1.1.11.1\win32\libspeex\$(OutDir);..\..\..\..\w32\vsnet\$(OutDir)"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				ImportLibrary="$(OutDir)/mod_speex.lib"
-				TargetMachine="1"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\speex-1.1.11.1\win32\libspeex\$(OutDir)&quot;"
 			/>
 			<Tool
 				Name="VCALinkTool"

@@ -39,12 +39,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\openmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -111,8 +106,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\openmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
-				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -128,9 +121,6 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
 				AdditionalLibraryDirectories="&quot;C:\Program Files\openmrcp\sdk\lib\winnt&quot;"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				LinkTimeCodeGeneration="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -181,12 +171,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\openmrcp\platform\openmrcpclient\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\client\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\parser\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\media\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mediaframe\include&quot;;&quot;$(InputDir)..\..\..\..\libs\openmrcp\mrcpcore\resource\include&quot;;&quot;$(InputDir)..\..\..\..\libs\apr\include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool

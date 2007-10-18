@@ -16,7 +16,7 @@
 	/>
 	<Tool
 		Name="VCLinkerTool"
-		OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
+		OutputFile=""
 		GenerateDebugInformation="true"
 		ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 		ImportLibrary="$(OutDir)/$(InputName).lib"

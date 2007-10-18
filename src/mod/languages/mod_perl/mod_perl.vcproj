@@ -112,8 +112,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="@compiler.opts"
 				AdditionalIncludeDirectories="."
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;_CRT_SECURE_NO_DEPRECATE;MULTIPLICITY;EMBED_PERL"
-				RuntimeLibrary="2"
+				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;MULTIPLICITY;EMBED_PERL"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -128,9 +127,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalLibraryDirectories=""
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				LinkTimeCodeGeneration="1"
 			/>
 			<Tool
 				Name="VCALinkTool"

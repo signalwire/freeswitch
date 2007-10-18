@@ -17,8 +17,6 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
 			CharacterSet="2"
@@ -41,17 +39,9 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;ABYSS_WIN32;CURL_STATICLIB"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;"
+				PreprocessorDefinitions="ABYSS_WIN32;CURL_STATICLIB"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				WarnAsError="true"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -65,14 +55,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="Winmm.lib Ws2_32.lib"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;..\..\..\..\w32\vsnet\$(OutDir)&quot;;..\..\..\..\libs\xmlrpc\lib;&quot;..\..\..\..\libs\xmlrpc\lib\abyss\src\$(OutDir)&quot;;&quot;..\..\..\..\libs\apr-util\xml\expat\lib\LibD&quot;"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
-				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_xml_rpc.lib"
-				TargetMachine="1"
+				AdditionalLibraryDirectories="..\..\..\..\libs\xmlrpc\lib;&quot;..\..\..\..\libs\xmlrpc\lib\abyss\src\$(OutDir)&quot;;&quot;..\..\..\..\libs\apr-util\xml\expat\lib\LibD&quot;"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -101,8 +84,6 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
 			CharacterSet="2"
@@ -125,14 +106,9 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;ABYSS_WIN32;CURL_STATICLIB"
-				RuntimeLibrary="2"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;"
+				PreprocessorDefinitions="ABYSS_WIN32;CURL_STATICLIB"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				WarnAsError="true"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -146,16 +122,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="Winmm.lib Ws2_32.lib"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;..\..\..\..\w32\vsnet\$(OutDir)&quot;;..\..\..\..\libs\xmlrpc\lib;&quot;..\..\..\..\libs\xmlrpc\lib\abyss\src\$(OutDir)&quot;;&quot;..\..\..\..\libs\apr-util\xml\expat\lib\LibR&quot;"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				ImportLibrary="$(OutDir)/mod_xml_rpc.lib"
-				TargetMachine="1"
+				AdditionalLibraryDirectories="..\..\..\..\libs\xmlrpc\lib;&quot;..\..\..\..\libs\xmlrpc\lib\abyss\src\$(OutDir)&quot;;&quot;..\..\..\..\libs\apr-util\xml\expat\lib\LibR&quot;"
 			/>
 			<Tool
 				Name="VCALinkTool"

@@ -112,8 +112,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\portaudio\include&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;ALLOW_SMP_DANGERS"
-				RuntimeLibrary="2"
+				PreprocessorDefinitions="ALLOW_SMP_DANGERS"
 				UsePrecompiledHeader="0"
 				DisableSpecificWarnings="4100;4101"
 			/>
@@ -130,8 +129,6 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib Winmm.lib"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\portaudio\winvc\Lib&quot;"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
 			/>
 			<Tool
 				Name="VCALinkTool"
