@@ -17,8 +17,6 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
 			CharacterSet="2"
@@ -41,15 +39,12 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;C:\Program Files\MySQL\MySQL Server 5.0\include&quot;"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\MySQL\MySQL Server 5.0\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				WarnAsError="true"
-				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -63,14 +58,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\$(OutDir)"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
-				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_cdr.lib"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -99,8 +88,6 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
 			CharacterSet="2"
@@ -122,13 +109,10 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;C:\Program Files\MySQL\MySQL Server 5.0\include&quot;"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\MySQL\MySQL Server 5.0\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				WarnAsError="true"
-				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -142,16 +126,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\$(OutDir)"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
-				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				ImportLibrary="$(OutDir)/mod_cdr.lib"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -180,8 +158,6 @@
 		</Configuration>
 		<Configuration
 			Name="Debug with MySql|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
 			CharacterSet="2"
@@ -204,15 +180,12 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;C:\Program Files\MySQL\MySQL Server 5.0\include&quot;"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\MySQL\MySQL Server 5.0\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				WarnAsError="true"
-				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -227,14 +200,8 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="mysqlclient.lib ws2_32.lib"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\Debug;&quot;C:\Program Files\MySQL\MySQL Server 5.0\lib\debug&quot;"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
-				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_cdr.lib"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -263,8 +230,6 @@
 		</Configuration>
 		<Configuration
 			Name="Release with MySql|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
 			CharacterSet="2"
@@ -286,13 +251,10 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;C:\Program Files\MySQL\MySQL Server 5.0\include&quot;"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\MySQL\MySQL Server 5.0\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				WarnAsError="true"
-				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -307,16 +269,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="mysqlclient.lib ws2_32.lib"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;..\..\..\..\w32\vsnet\Release&quot;;&quot;C:\Program Files\MySQL\MySQL Server 5.0\lib\opt&quot;"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
-				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				ImportLibrary="$(OutDir)/mod_cdr.lib"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
