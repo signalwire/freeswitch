@@ -551,7 +551,9 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				*expire_seconds = "3600",
 				*retry_seconds = "30",
 				*from_domain = "",
-				*register_proxy = NULL;
+				*register_proxy = NULL,
+				*contact_params = NULL,
+				*params = NULL;
 			
 			gateway->pool = profile->pool;
 			gateway->profile = profile;
@@ -589,6 +591,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					from_domain = val;
 				} else if (!strcmp(var, "register-proxy")) {
 					register_proxy = val;
+				} else if (!strcmp(var, "contact-params")) {
+					contact_params = val;
 				}
 			}
 			
@@ -639,10 +643,21 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			if (switch_true(caller_id_in_from)) {
 				switch_set_flag(gateway, REG_FLAG_CALLERID);
 			}
+			if (contact_params) {
+				if (*contact_params == ';') {
+					params = contact_params;
+				} else {
+					params = switch_core_sprintf(gateway->pool, ";%s", contact_params);
+				}
+			} else {
+				params = "";
+			}
+			
+
 			gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s", register_proxy);
 			gateway->register_from = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, from_domain);
-			gateway->register_contact = switch_core_sprintf(gateway->pool, "sip:%s@%s:%d", extension,
-															profile->extsipip ? profile->extsipip : profile->sipip, profile->sip_port);
+			gateway->register_contact = switch_core_sprintf(gateway->pool, "sip:%s@%s:%d%s", extension,
+															profile->extsipip ? profile->extsipip : profile->sipip, profile->sip_port, params);
 
 
 			if (!strncasecmp(proxy, "sip:", 4)) {

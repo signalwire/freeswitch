@@ -32,6 +32,8 @@
 	  <!--<param name="retry_seconds" value="30"/>-->
 	  <!--Use the callerid of an inbound call in the from field on outbound calls via this gateway -->
 	  <!--<param name="caller-id-in-from" value="false"/>-->
+	  <!--extra sip params to send in the contact-->
+	  <!--<param name="contact-params" value="tport=tcp"/>-->
 	<!--</gateway>-->
       </gateways>
 
