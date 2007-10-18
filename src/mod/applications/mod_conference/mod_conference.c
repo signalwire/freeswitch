@@ -1511,7 +1511,7 @@ static void conference_loop_output(conference_member_t * member)
 	uint32_t interval = read_codec->implementation->microseconds_per_frame / 1000;
 	uint32_t csamples = switch_bytes_per_frame(member->conference->rate, member->conference->interval);
 	uint32_t samples = switch_bytes_per_frame(member->conference->rate, interval);
-	uint32_t tsamples = switch_bytes_per_frame(read_codec->implementation->samples_per_second, interval) / 2;
+	uint32_t tsamples = switch_bytes_per_frame(read_codec->implementation->samples_per_second, interval);
 	uint32_t low_count = 0, bytes = samples * 2;
 	call_list_t *call_list = NULL, *cp = NULL;
 
