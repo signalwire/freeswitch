@@ -2441,7 +2441,8 @@ static JSBool session_construct(JSContext * cx, JSObject * obj, uintN argc, jsva
 {
 	struct js_session *jss = NULL;
 
-	assert((jss = malloc(sizeof(*jss))));
+	jss = malloc(sizeof(*jss));
+	assert(jss);
 	memset(jss, 0, sizeof(*jss));
 	jss->cx = cx;
 	jss->obj = obj;

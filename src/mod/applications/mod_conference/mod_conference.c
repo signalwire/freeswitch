@@ -4331,7 +4331,8 @@ SWITCH_STANDARD_APP(conference_function)
 		char *dfile = NULL;
 
 		if (conference->sound_prefix) {
-			assert((dfile = switch_mprintf("%s/%s", conference->sound_prefix, conference->kicked_sound)));
+			dfile = switch_mprintf("%s/%s", conference->sound_prefix, conference->kicked_sound);
+			assert(dfile);
 			toplay = dfile;
 		} else {
 			toplay = conference->kicked_sound;
