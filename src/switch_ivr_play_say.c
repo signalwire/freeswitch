@@ -341,13 +341,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	assert(read_codec != NULL);
 
 	fh->channels = read_codec->implementation->number_of_channels;
-	fh->samplerate = read_codec->implementation->samples_per_second;
+	fh->samplerate = read_codec->implementation->actual_samples_per_second;
 
 
 	if (switch_core_file_open(fh,
 							  file,
 							  read_codec->implementation->number_of_channels,
-							  read_codec->implementation->samples_per_second,
+							  read_codec->implementation->actual_samples_per_second,
 							  SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		switch_core_session_reset(session);
@@ -396,7 +396,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	if (switch_core_codec_init(&codec,
 							   codec_name,
 							   NULL,
-							   read_codec->implementation->samples_per_second,
+							   read_codec->implementation->actual_samples_per_second,
 							   read_codec->implementation->microseconds_per_frame / 1000,
 							   read_codec->implementation->number_of_channels,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
@@ -563,7 +563,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 	if (switch_core_codec_init(&write_codec,
 							   "L16",
 							   NULL,
-							   read_codec->implementation->samples_per_second,
+							   read_codec->implementation->actual_samples_per_second,
 							   read_codec->implementation->microseconds_per_frame / 1000,
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, 
 							   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
@@ -576,7 +576,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 
 	switch_buffer_create_dynamic(&audio_buffer, 512, 1024, 0);
 	teletone_init_session(&ts, 0, teletone_handler, audio_buffer);
-	ts.rate = read_codec->implementation->samples_per_second;
+	ts.rate = read_codec->implementation->actual_samples_per_second;
 	ts.channels = 1;
 	teletone_run(&ts, script);
 
@@ -722,7 +722,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	if (switch_core_file_open(fh,
 							  file,
 							  read_codec->implementation->number_of_channels,
-							  read_codec->implementation->samples_per_second,
+							  read_codec->implementation->actual_samples_per_second,
 							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_core_session_reset(session);
 		return SWITCH_STATUS_NOTFOUND;

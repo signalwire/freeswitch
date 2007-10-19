@@ -615,7 +615,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					if (switch_core_codec_init(&write_codec,
 											   "L16",
 											   NULL,
-											   read_codec->implementation->samples_per_second,
+											   read_codec->implementation->actual_samples_per_second,
 											   read_codec->implementation->microseconds_per_frame / 1000,
 											   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, 
 											   switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
@@ -623,7 +623,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 										  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
-										  read_codec->implementation->samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
+										  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
 						write_frame.codec = &write_codec;
 						write_frame.datalen = read_codec->implementation->bytes_per_frame;
 						write_frame.samples = write_frame.datalen / 2;
@@ -652,11 +652,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play Ringback File [%s]\n", ringback_data);
 
 								ringback.fhb.channels = read_codec->implementation->number_of_channels;
-								ringback.fhb.samplerate = read_codec->implementation->samples_per_second;
+								ringback.fhb.samplerate = read_codec->implementation->actual_samples_per_second;
 								if (switch_core_file_open(&ringback.fhb,
 														  ringback_data,
 														  read_codec->implementation->number_of_channels,
-														  read_codec->implementation->samples_per_second,
+														  read_codec->implementation->actual_samples_per_second,
 														  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
 														  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing File\n");
@@ -668,7 +668,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 							} else {
 								teletone_init_session(&ringback.ts, 0, teletone_handler, &ringback);
-								ringback.ts.rate = read_codec->implementation->samples_per_second;
+								ringback.ts.rate = read_codec->implementation->actual_samples_per_second;
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play Ringback Tone [%s]\n", ringback_data);
 								//ringback.ts.debug = 1;
 								//ringback.ts.debug_stream = switch_core_get_console();

@@ -112,7 +112,7 @@ static JSBool teletone_construct(JSContext * cx, JSObject * obj, uintN argc, jsv
 	if (switch_core_codec_init(&tto->codec,
 							   "L16",
 							   NULL,
-							   read_codec->implementation->samples_per_second,
+							   read_codec->implementation->actual_samples_per_second,
 							   read_codec->implementation->microseconds_per_frame / 1000,
 							   read_codec->implementation->number_of_channels,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {

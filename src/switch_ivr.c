@@ -202,16 +202,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_
 		if (switch_core_codec_init(&conninfo->read_codec,
 								   "L16",
 								   NULL,
-								   read_codec->implementation->samples_per_second,
+								   read_codec->implementation->actual_samples_per_second,
 								   read_codec->implementation->microseconds_per_frame / 1000,
 								   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 								   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 							  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
-							  read_codec->implementation->samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
+							  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
-							  read_codec->implementation->samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
+							  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
 			goto fail;
 		}
 	}
@@ -445,7 +445,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 					switch_size_t len = 0;
 					uint32_t flags = 0;
 					switch_byte_t decoded[SWITCH_RECOMMENDED_BUFFER_SIZE];
-					uint32_t rate = read_codec->implementation->samples_per_second;
+					uint32_t rate = read_codec->implementation->actual_samples_per_second;
 					uint32_t dlen = sizeof(decoded);
 					switch_status_t status;
 					switch_byte_t *sendbuf = NULL;
@@ -465,7 +465,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 															  &conninfo->read_codec,
 															  read_frame->data,
 															  read_frame->datalen,
-															  read_codec->implementation->samples_per_second,
+															  read_codec->implementation->actual_samples_per_second,
 															  decoded, &dlen, &rate, &flags);
 						}
 						switch (status) {

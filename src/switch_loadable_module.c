@@ -163,7 +163,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					for (impl = ptr->implementations; impl; impl = impl->next) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 										  "Adding Codec '%s' (%s) %dhz %dms\n",
-										  impl->iananame, ptr->interface_name, impl->samples_per_second, impl->microseconds_per_frame / 1000);
+										  impl->iananame, ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_frame / 1000);
 						if (!switch_core_hash_find(loadable_modules.codec_hash, impl->iananame)) {
 							switch_core_hash_insert(loadable_modules.codec_hash, impl->iananame, (const void *) ptr);
 						}
@@ -429,7 +429,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 					for (impl = ptr->implementations; impl; impl = impl->next) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 										  "Deleting Codec '%s' (%s) %dhz %dms\n",
-										  impl->iananame, ptr->interface_name, impl->samples_per_second, impl->microseconds_per_frame / 1000);
+										  impl->iananame, ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_frame / 1000);
 						if (switch_core_hash_find(loadable_modules.codec_hash, impl->iananame)) {
 							switch_core_hash_delete(loadable_modules.codec_hash, impl->iananame);
 						}

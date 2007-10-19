@@ -1343,7 +1343,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 									 rtp_session->vad_data.read_codec,
 									 data,
 									 datalen,
-									 rtp_session->vad_data.read_codec->implementation->samples_per_second,
+									 rtp_session->vad_data.read_codec->implementation->actual_samples_per_second,
 									 decoded, &len, &rate, &flags) == SWITCH_STATUS_SUCCESS) {
 			
 

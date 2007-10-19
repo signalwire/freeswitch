@@ -291,7 +291,7 @@ static void asrtest_function(switch_core_session_t *session, char *data)
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 								  "Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name,
-								  read_codec->implementation->samples_per_second,
+								  ah.rate,
 								  read_codec->implementation->number_of_channels, read_codec->implementation->microseconds_per_frame / 1000);
 				switch_core_session_reset(session);
 				return;

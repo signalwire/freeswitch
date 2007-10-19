@@ -93,11 +93,11 @@ static switch_status_t switch_speex_init(switch_codec_t *codec, switch_codec_fla
 		const SpeexMode *mode = NULL;
 
 		context->codec = codec;
-		if (codec->implementation->samples_per_second == 8000) {
+		if (codec->implementation->actual_samples_per_second == 8000) {
 			mode = &speex_nb_mode;
-		} else if (codec->implementation->samples_per_second == 16000) {
+		} else if (codec->implementation->actual_samples_per_second == 16000) {
 			mode = &speex_wb_mode;
-		} else if (codec->implementation->samples_per_second == 32000) {
+		} else if (codec->implementation->actual_samples_per_second == 32000) {
 			mode = &speex_uwb_mode;
 		}
 
@@ -111,7 +111,7 @@ static switch_status_t switch_speex_init(switch_codec_t *codec, switch_codec_fla
 			speex_encoder_ctl(context->encoder_state, SPEEX_GET_FRAME_SIZE, &context->encoder_frame_size);
 			speex_encoder_ctl(context->encoder_state, SPEEX_SET_COMPLEXITY, &codec->codec_settings.complexity);
 			if (codec->codec_settings.preproc) {
-				context->pp = speex_preprocess_state_init(context->encoder_frame_size, codec->implementation->samples_per_second);
+				context->pp = speex_preprocess_state_init(context->encoder_frame_size, codec->implementation->actual_samples_per_second);
 				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_VAD, &codec->codec_settings.pp_vad);
 				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_AGC, &codec->codec_settings.pp_agc);
 				speex_preprocess_ctl(context->pp, SPEEX_PREPROCESS_SET_AGC_LEVEL, &codec->codec_settings.pp_agc_level);

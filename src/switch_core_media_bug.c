@@ -160,7 +160,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 
 		frame->datalen = bytes;
 		frame->samples = bytes / sizeof(int16_t);
-		frame->rate = read_codec->implementation->samples_per_second;
+		frame->rate = read_codec->implementation->actual_samples_per_second;
 		
 		return SWITCH_STATUS_SUCCESS;
 	}

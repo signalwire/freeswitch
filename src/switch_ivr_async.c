@@ -207,13 +207,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	assert(read_codec != NULL);
 
 	dh->fh.channels = read_codec->implementation->number_of_channels;
-	dh->fh.samplerate = read_codec->implementation->samples_per_second;
+	dh->fh.samplerate = read_codec->implementation->actual_samples_per_second;
 
 
 	if (switch_core_file_open(&dh->fh,
 							  file,
 							  read_codec->implementation->number_of_channels,
-							  read_codec->implementation->samples_per_second,
+							  read_codec->implementation->actual_samples_per_second,
 							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
 							  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -329,13 +329,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	}
 	
 	fh->channels = channels;
-	fh->samplerate = read_codec->implementation->samples_per_second;
+	fh->samplerate = read_codec->implementation->actual_samples_per_second;
 
 
 	if (switch_core_file_open(fh,
 							  file,
 							  channels,
-							  read_codec->implementation->samples_per_second,
+							  read_codec->implementation->actual_samples_per_second,
 							  SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", file);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -470,7 +470,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_session(switch_core_sessi
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	teletone_dtmf_detect_init(&pvt->dtmf_detect, read_codec->implementation->samples_per_second);
+	teletone_dtmf_detect_init(&pvt->dtmf_detect, read_codec->implementation->actual_samples_per_second);
 
 	pvt->session = session;
 
@@ -668,7 +668,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
   }
 
   cont->list[cont->index].up = 1;
-  cont->list[cont->index].mt.sample_rate = read_codec->implementation->samples_per_second;
+  cont->list[cont->index].mt.sample_rate = read_codec->implementation->actual_samples_per_second;
   teletone_multi_tone_init(&cont->list[cont->index].mt, &cont->list[cont->index].map);
   cont->session = session;
   
@@ -952,7 +952,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 	if (switch_core_asr_open(ah,
 							 mod_name,
 							 "L16",
-							 read_codec->implementation->samples_per_second, dest, &flags,
+							 read_codec->implementation->actual_samples_per_second, dest, &flags,
 							 switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 
 		if (switch_core_asr_load_grammar(ah, grammar, path) != SWITCH_STATUS_SUCCESS) {

@@ -4224,7 +4224,7 @@ SWITCH_STANDARD_APP(conference_function)
 	}
 
 	if (read_codec->implementation->actual_samples_per_second != conference->rate) {
-		switch_audio_resampler_t **resampler = read_codec->implementation->samples_per_second > conference->rate ?
+		switch_audio_resampler_t **resampler = read_codec->implementation->actual_samples_per_second > conference->rate ?
 			&member.read_resampler : &member.mux_resampler;
 
 		if (switch_resample_create(resampler,

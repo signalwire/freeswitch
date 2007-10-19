@@ -167,7 +167,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 											  session->read_codec,
 											  read_frame->data,
 											  read_frame->datalen,
-											  session->read_codec->implementation->samples_per_second,
+											  session->read_codec->implementation->actual_samples_per_second,
 											  session->raw_read_frame.data, &session->raw_read_frame.datalen, &session->raw_read_frame.rate, &flag);
 
 			if (do_resample && status == SWITCH_STATUS_SUCCESS) {
@@ -304,7 +304,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 																					session->raw_read_frame.data,
 																					session->read_codec->implementation->bytes_per_frame);
 
-					session->raw_read_frame.rate = session->read_codec->implementation->samples_per_second;
+					session->raw_read_frame.rate = session->read_codec->implementation->actual_samples_per_second;
 					enc_frame = &session->raw_read_frame;
 				}
 				session->enc_read_frame.datalen = session->enc_read_frame.buflen;
@@ -317,7 +317,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 												  enc_frame->codec,
 												  enc_frame->data,
 												  enc_frame->datalen,
-												  session->read_codec->implementation->samples_per_second,
+												  session->read_codec->implementation->actual_samples_per_second,
 												  session->enc_read_frame.data, &session->enc_read_frame.datalen, &session->enc_read_frame.rate, &flag);
 
 
@@ -443,7 +443,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 											  session->write_codec,
 											  frame->data,
 											  frame->datalen,
-											  session->write_codec->implementation->samples_per_second,
+											  session->write_codec->implementation->actual_samples_per_second,
 											  session->raw_write_frame.data, &session->raw_write_frame.datalen, &session->raw_write_frame.rate, &flag);
 
 
@@ -597,7 +597,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 												  frame->codec,
 												  enc_frame->data,
 												  enc_frame->datalen,
-												  session->write_codec->implementation->samples_per_second,
+												  session->write_codec->implementation->actual_samples_per_second,
 												  session->enc_write_frame.data, &session->enc_write_frame.datalen, &session->enc_write_frame.rate, &flag);
 
 				switch (status) {
@@ -650,13 +650,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 							 switch_buffer_read(session->raw_write_buffer, session->raw_write_frame.data, bytes)) != 0) {
 							int rate;
 							enc_frame = &session->raw_write_frame;
-							session->raw_write_frame.rate = session->write_codec->implementation->samples_per_second;
+							session->raw_write_frame.rate = session->write_codec->implementation->actual_samples_per_second;
 							session->enc_write_frame.datalen = session->enc_write_frame.buflen;
 
 							if (frame->codec && frame->codec->implementation) {
-								rate = frame->codec->implementation->samples_per_second;
+								rate = frame->codec->implementation->actual_samples_per_second;
 							} else {
-								rate = session->write_codec->implementation->samples_per_second;
+								rate = session->write_codec->implementation->actual_samples_per_second;
 							} 
 
 							status = switch_core_codec_encode(session->write_codec,
