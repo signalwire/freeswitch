@@ -243,6 +243,7 @@ struct conference_member {
 	switch_mutex_t *flag_mutex;
 	switch_mutex_t *audio_in_mutex;
 	switch_mutex_t *audio_out_mutex;
+	switch_codec_t *orig_read_codec;
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
 	char *rec_path;
@@ -1511,7 +1512,7 @@ static void conference_loop_output(conference_member_t * member)
 	uint32_t interval = read_codec->implementation->microseconds_per_frame / 1000;
 	uint32_t csamples = switch_bytes_per_frame(member->conference->rate, member->conference->interval);
 	uint32_t samples = switch_bytes_per_frame(member->conference->rate, interval);
-	uint32_t tsamples = switch_bytes_per_frame(read_codec->implementation->samples_per_second, interval);
+	uint32_t tsamples;/* = switch_bytes_per_frame(read_codec->implementation->samples_per_second, interval);*/
 	uint32_t low_count = 0, bytes = samples * 2;
 	call_list_t *call_list = NULL, *cp = NULL;
 
@@ -1519,6 +1520,9 @@ static void conference_loop_output(conference_member_t * member)
 
 	assert(channel != NULL);
 	assert(member->conference != NULL);
+
+
+	tsamples = member->orig_read_codec->implementation->samples_per_frame;
 
 	if (switch_core_timer_init(&timer, member->conference->timer_name, interval,
 							   //member->conference->interval, 
@@ -4198,6 +4202,7 @@ SWITCH_STANDARD_APP(conference_function)
 
 	/* Save the original read codec. */
 	read_codec = switch_core_session_get_read_codec(session);
+	member.orig_read_codec = read_codec;
 	member.native_rate = read_codec->implementation->samples_per_second;
 	member.pool = switch_core_session_get_pool(session);
 
@@ -4205,15 +4210,15 @@ SWITCH_STANDARD_APP(conference_function)
 	if (switch_core_codec_init(&member.read_codec,
 							   "L16",
 							   NULL,
-							   read_codec->implementation->samples_per_second,
+							   read_codec->implementation->actual_samples_per_second,
 							   read_codec->implementation->microseconds_per_frame / 1000,
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, member.pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 						  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
-						  read_codec->implementation->samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
+						  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
-						  read_codec->implementation->samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
+						  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
 		flags = 0;
 		goto done;
 	}
@@ -4250,10 +4255,10 @@ SWITCH_STANDARD_APP(conference_function)
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, member.pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 						  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
-						  read_codec->implementation->samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
+						  conference->rate, read_codec->implementation->microseconds_per_frame / 1000);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
-						  read_codec->implementation->samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
+						  conference->rate, read_codec->implementation->microseconds_per_frame / 1000);
 		flags = 0;
 		goto codec_done2;
 	}

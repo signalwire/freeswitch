@@ -149,7 +149,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		goto done;
 	}
 
-	if ((*frame)->codec->implementation->samples_per_second != session->write_codec->implementation->samples_per_second) {
+	if ((*frame)->codec->implementation->actual_samples_per_second != session->write_codec->implementation->actual_samples_per_second) {
 		do_resample = 1;
 	}
 
@@ -431,7 +431,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		need_codec = 1;
 	}
 
-	if (frame->codec->implementation->samples_per_second != session->read_codec->implementation->samples_per_second) {
+	if (frame->codec->implementation->actual_samples_per_second != session->read_codec->implementation->actual_samples_per_second) {
 		need_codec = 1;
 		do_resample = 1;
 	}
