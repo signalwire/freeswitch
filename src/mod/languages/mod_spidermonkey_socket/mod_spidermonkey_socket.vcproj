@@ -20,6 +20,7 @@
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\..\w32\winlibs.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -69,6 +70,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\..\w32\winlibs.vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>

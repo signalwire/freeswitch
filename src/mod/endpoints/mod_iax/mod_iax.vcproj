@@ -31,7 +31,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib Winmm.lib"
 				AdditionalLibraryDirectories="&quot;..\..\..\..\libs\iax\$(OutDir)&quot;"
 			/>
 		</Configuration>
@@ -49,7 +48,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib Winmm.lib"
 				AdditionalLibraryDirectories="&quot;..\..\..\..\libs\iax\$(OutDir)&quot;"
 			/>
 		</Configuration>

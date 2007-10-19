@@ -29,7 +29,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Winmm.lib Ws2_32.lib"
 				AdditionalLibraryDirectories="..\..\..\..\libs\xmlcurl\lib;&quot;..\..\..\..\libs\xmlcurl\lib\abyss\src\$(OutDir)&quot;;&quot;..\..\..\..\libs\apr-util\xml\expat\lib\LibD&quot;"
 			/>
 		</Configuration>
@@ -47,7 +46,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Winmm.lib Ws2_32.lib"
 				AdditionalLibraryDirectories="..\..\..\..\libs\xmlcurl\lib;&quot;..\..\..\..\libs\xmlcurl\lib\abyss\src\$(OutDir)&quot;;&quot;..\..\..\..\libs\apr-util\xml\expat\lib\LibR&quot;"
 			/>
 		</Configuration>

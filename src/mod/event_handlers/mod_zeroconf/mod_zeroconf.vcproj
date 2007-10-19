@@ -28,7 +28,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib  iphlpapi.lib"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\howl\src\lib\howl\Win32\$(OutDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\howl\src\lib\mDNSResponder\Win32\$(OutDir)&quot;"
 			/>
 		</Configuration>
@@ -45,7 +44,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib iphlpapi.lib"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\howl\src\lib\howl\Win32\$(OutDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\howl\src\lib\mDNSResponder\Win32\$(OutDir)&quot;"
 			/>
 		</Configuration>

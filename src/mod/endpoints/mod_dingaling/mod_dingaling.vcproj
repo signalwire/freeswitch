@@ -29,7 +29,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/NODEFAULTLIB:LIMBCTD"
-				AdditionalDependencies="Ws2_32.lib"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\libdingaling\$(OutDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\iksemel\$(OutDir)&quot;"
 			/>
 		</Configuration>
@@ -46,7 +45,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\libdingaling\$(OutDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\iksemel\$(OutDir)&quot;"
 			/>
 		</Configuration>

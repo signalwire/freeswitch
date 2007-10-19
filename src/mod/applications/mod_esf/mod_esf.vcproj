@@ -25,10 +25,6 @@
 				Name="VCCLCompilerTool"
 				UsePrecompiledHeader="0"
 			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib "
-			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
@@ -39,10 +35,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				UsePrecompiledHeader="0"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib "
 			/>
 		</Configuration>
 	</Configurations>

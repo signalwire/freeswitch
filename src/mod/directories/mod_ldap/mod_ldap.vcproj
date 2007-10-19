@@ -33,7 +33,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib olber32.lib oldap_r.lib"
+				AdditionalDependencies="olber32.lib oldap_r.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\openldap\$(OutDir)&quot;"
 			/>
@@ -55,7 +55,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib olber32.lib oldap_r.lib"
+				AdditionalDependencies="olber32.lib oldap_r.lib"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\openldap\$(OutDir)&quot;"
 			/>
 		</Configuration>
@@ -73,7 +73,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Wldap32.lib"
+				AdditionalDependencies="Wldap32.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\openldap\$(OutDir)&quot;"
 			/>
@@ -93,7 +93,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Wldap32.lib"
+				AdditionalDependencies="Wldap32.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\openldap\$(OutDir)&quot;"
 			/>

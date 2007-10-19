@@ -29,7 +29,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Winmm.lib"
 			/>
 		</Configuration>
 		<Configuration
@@ -46,7 +45,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Winmm.lib"
 				AdditionalLibraryDirectories=""
 			/>
 		</Configuration>
