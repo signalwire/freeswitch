@@ -1533,7 +1533,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	switch_core_session_reset(session);
 	read_codec = switch_core_session_get_read_codec(session);
 	
-	rate = read_codec->implementation->samples_per_second;
+	rate = read_codec->implementation->actual_samples_per_second;
 	interval = read_codec->implementation->microseconds_per_frame / 1000;
 	
 	if (need_create) {

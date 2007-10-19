@@ -1663,7 +1663,7 @@ static switch_status_t init_speech_engine(struct js_session *jss, char *engine, 
 	int interval = 0;
 
 	read_codec = switch_core_session_get_read_codec(jss->session);
-	rate = read_codec->implementation->samples_per_second;
+	rate = read_codec->implementation->actual_samples_per_second;
 	interval = read_codec->implementation->microseconds_per_frame / 1000;
 
 	if (switch_core_codec_init(&jss->speech->codec,

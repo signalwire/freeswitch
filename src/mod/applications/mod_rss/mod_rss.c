@@ -236,7 +236,7 @@ SWITCH_STANDARD_APP(rss_function)
 	}
 
 	if (codec) {
-		rate = codec->implementation->samples_per_second;
+		rate = codec->implementation->actual_samples_per_second;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec Error!\n");
 		return;
