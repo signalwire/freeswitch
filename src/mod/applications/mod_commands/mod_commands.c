@@ -68,7 +68,7 @@ SWITCH_STANDARD_API(status_function)
 						   duration.sec, duration.sec == 1 ? "" : "s", duration.ms, duration.ms == 1 ? "" : "s", duration.mms,
 						   duration.mms == 1 ? "" : "s");
 
-	stream->write_function(stream, "%"SWITCH_SIZE_T_FMT" sessions since startup\n", switch_core_session_id() - 1 );
+	stream->write_function(stream, "%"SWITCH_SIZE_T_FMT" session(s) since startup\n", switch_core_session_id() - 1 );
 	switch_core_session_ctl(SCSC_LAST_SPS, &last_sps);
 	switch_core_session_ctl(SCSC_SPS, &sps);
 	stream->write_function(stream, "%d session(s) %d/%d\n", switch_core_session_count(), last_sps, sps);
