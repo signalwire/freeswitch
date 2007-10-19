@@ -420,7 +420,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	for (try = 0; try < retries; try++) {
 		switch_safe_free(loop_data);
-		assert(loop_data = strdup(data));
+		loop_data = strdup(data);
+		assert(loop_data);
 		or_argc = switch_separate_string(loop_data, '|', pipe_names, (sizeof(pipe_names) / sizeof(pipe_names[0])));
 
 		if (caller_channel && or_argc > 1 && !ringback_data) {
