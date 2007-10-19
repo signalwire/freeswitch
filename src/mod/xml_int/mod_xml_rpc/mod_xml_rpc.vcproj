@@ -54,7 +54,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Winmm.lib Ws2_32.lib"
+				AdditionalDependencies="Ws2_32.lib"
 				AdditionalLibraryDirectories="..\..\..\..\libs\xmlrpc\lib;&quot;..\..\..\..\libs\xmlrpc\lib\abyss\src\$(OutDir)&quot;;&quot;..\..\..\..\libs\apr-util\xml\expat\lib\LibD&quot;"
 			/>
 			<Tool
@@ -121,7 +121,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Winmm.lib Ws2_32.lib"
+				AdditionalDependencies="Ws2_32.lib"
 				AdditionalLibraryDirectories="..\..\..\..\libs\xmlrpc\lib;&quot;..\..\..\..\libs\xmlrpc\lib\abyss\src\$(OutDir)&quot;;&quot;..\..\..\..\libs\apr-util\xml\expat\lib\LibR&quot;"
 			/>
 			<Tool

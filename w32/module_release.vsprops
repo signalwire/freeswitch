@@ -7,6 +7,7 @@
 	>
 	<Tool
 		Name="VCCLCompilerTool"
+		WholeProgramOptimization="true"
 		PreprocessorDefinitions="NDEBUG"
 		RuntimeLibrary="2"
 		DebugInformationFormat="3"
@@ -17,5 +18,6 @@
 		LinkIncremental="1"
 		OptimizeReferences="2"
 		EnableCOMDATFolding="2"
+		LinkTimeCodeGeneration="1"
 	/>
 </VisualStudioPropertySheet>
