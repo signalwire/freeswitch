@@ -351,6 +351,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   NUTAG_ALLOW("INFO"),
 				   NUTAG_ALLOW("NOTIFY"),
 				   NUTAG_ALLOW_EVENTS("talk"),
+				   NUTAG_SESSION_TIMER(profile->session_timeout),
+				   NTATAG_MAX_PROCEEDING(profile->max_proceeding),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("PUBLISH")),
 				   //TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("NOTIFY")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("SUBSCRIBE")),
@@ -358,7 +360,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence.winfo")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("message-summary")),
-				   SIPTAG_SUPPORTED_STR("100rel, precondition"), SIPTAG_USER_AGENT_STR(SOFIA_USER_AGENT), TAG_END());
+				   SIPTAG_SUPPORTED_STR("100rel, precondition, timer"), SIPTAG_USER_AGENT_STR(SOFIA_USER_AGENT), TAG_END());
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set params for %s\n", profile->name);
 
@@ -856,6 +858,16 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->timer_name = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "hold-music")) {
 						profile->hold_music = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "session-timeout")) {
+						int v_session_timeout = atoi(val);
+						if (v_session_timeout >= 0) {
+							profile->session_timeout = v_session_timeout;
+						}
+					} else if (!strcasecmp(var, "max-proceeding")) {
+						int v_max_proceeding = atoi(val);
+						if (v_max_proceeding >= 0) {
+							profile->max_proceeding = v_max_proceeding;
+						}
 					} else if (!strcasecmp(var, "manage-presence")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_PRESENCE;

@@ -275,6 +275,8 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	private_object_t *tech_pvt;
 	switch_channel_t *channel = NULL;
 	switch_status_t status;
+	uint32_t session_timeout = 0;
+	char *val;
 
 	assert(session != NULL);
 
@@ -322,7 +324,16 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			}
 		}
 
+
+		if ((val = switch_channel_get_variable(channel, SOFIA_SESSION_TIMEOUT))) {
+			int v_session_timeout = atoi(val);
+			if (v_session_timeout >= 0) {
+				session_timeout = v_session_timeout;
+			}
+		}
+
 		nua_respond(tech_pvt->nh, SIP_200_OK,
+					NUTAG_SESSION_TIMER(session_timeout),
 					SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 					SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
 
@@ -1064,6 +1075,8 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				stream->write_function(stream, "CODECS     \t%s\n", switch_str_nil(profile->codec_string));
 				stream->write_function(stream, "TEL-EVENT  \t%d\n", profile->te);
 				stream->write_function(stream, "CNG        \t%d\n", profile->cng_pt);
+				stream->write_function(stream, "SESSION-TO \t%d\n", profile->session_timeout);
+				stream->write_function(stream, "MAX-DIALOG \t%d\n", profile->max_proceeding);
 				
 
 				stream->write_function(stream, "\nRegistrations:\n%s\n", line);
@@ -1376,7 +1389,7 @@ SWITCH_STANDARD_API(sofia_function)
 		stream->write_function(stream, "%s", usage_string);
 		goto done;
 	}
-
+	
 	if (!strcasecmp(argv[0], "profile")) {
 		func = cmd_profile;
 	} else if (!strcasecmp(argv[0], "status")) {

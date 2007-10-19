@@ -479,6 +479,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	switch_event_header_t *hi;
 	char *extra_headers = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	uint32_t session_timeout = 0;
+	char *val;
 	char *rep;
 
 	channel = switch_core_session_get_channel(session);
@@ -623,8 +625,16 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	if (stream.data) {
 		extra_headers = stream.data;
 	}
+	
+	if ((val = switch_channel_get_variable(channel, SOFIA_SESSION_TIMEOUT))) {
+		int v_session_timeout = atoi(val);
+		if (v_session_timeout >= 0) {
+			session_timeout = v_session_timeout;
+		}
+	}
 
 	nua_invite(tech_pvt->nh,
+			   NUTAG_SESSION_TIMER(session_timeout),
 			   TAG_IF(!switch_strlen_zero(rpid), SIPTAG_HEADER_STR(rpid)),
 			   TAG_IF(!switch_strlen_zero(alert_info), SIPTAG_HEADER_STR(alert_info)),
 			   TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),

@@ -61,6 +61,7 @@ struct private_object;
 typedef struct private_object private_object_t;
 #define NUA_HMAGIC_T sofia_private_t
 
+#define SOFIA_SESSION_TIMEOUT "sofia_session_timeout"
 #define MY_EVENT_REGISTER "sofia::register"
 #define MY_EVENT_EXPIRE "sofia::expire"
 #define MULTICAST_EVENT "multicast::event"
@@ -255,6 +256,8 @@ struct sofia_profile {
 	uint32_t inuse;
 	uint32_t soft_max;
 	time_t started;
+	uint32_t session_timeout;
+	uint32_t max_proceeding;
 #ifdef SWITCH_HAVE_ODBC
 	char *odbc_dsn;
 	char *odbc_user;
