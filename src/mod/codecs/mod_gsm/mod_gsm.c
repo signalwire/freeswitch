@@ -140,6 +140,7 @@ static switch_codec_implementation_t gsm_8k_implementation = {
 	/*.iananame */ "GSM",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
+	/*.actual_samples_per_second */ 8000,
 	/*.bits_per_second */ 13200,
 	/*.microseconds_per_frame */ 20000,
 	/*.samples_per_frame */ 160,

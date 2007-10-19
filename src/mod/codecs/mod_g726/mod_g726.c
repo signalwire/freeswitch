@@ -94,7 +94,7 @@ static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag
 
 		g726_init_state(&handle->context);
 		codec->private_info = handle;
-		handle->bits_per_frame = (switch_byte_t) (codec->implementation->bits_per_second / (codec->implementation->samples_per_second));
+		handle->bits_per_frame = (switch_byte_t) (codec->implementation->bits_per_second / (codec->implementation->actual_samples_per_second));
 		handle->mode = (flags & SWITCH_CODEC_FLAG_AAL2 || strstr(codec->implementation->iananame, "AAL2"))
 			? SWITCH_BITPACK_MODE_AAL2 : SWITCH_BITPACK_MODE_RFC3551;
 		return SWITCH_STATUS_SUCCESS;
@@ -210,6 +210,7 @@ static switch_codec_implementation_t g726_16k_implementation = {
 	/*.iananame */ "G726-16",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
+	/*.actual_samples_per_second */ 8000,
 	/*.bits_per_second */ 16000,
 	/*.microseconds_per_frame */ 20000,
 	/*.samples_per_frame */ 160,
@@ -231,6 +232,7 @@ static switch_codec_implementation_t g726_24k_implementation = {
 	/*.iananame */ "G726-24",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
+	/*.actual_samples_per_second */ 8000,
 	/*.bits_per_second */ 24000,
 	/*.microseconds_per_frame */ 20000,
 	/*.samples_per_frame */ 160,
@@ -251,6 +253,7 @@ static switch_codec_implementation_t g726_32k_implementation = {
 	/*.iananame */ "G726-32",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
+	/*.actual_samples_per_second */ 8000,
 	/*.bits_per_second */ 32000,
 	/*.microseconds_per_frame */ 20000,
 	/*.samples_per_frame */ 160,
@@ -271,6 +274,7 @@ static switch_codec_implementation_t g726_40k_implementation = {
 	/*.iananame */ "G726-40",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
+	/*.actual_samples_per_second */ 8000,
 	/*.bits_per_second */ 40000,
 	/*.microseconds_per_frame */ 20000,
 	/*.samples_per_frame */ 160,
@@ -293,6 +297,7 @@ static switch_codec_implementation_t aal2_g726_16k_implementation = {
 	/*.iananame */ "AAL2-G726-16",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
+	/*.actual_samples_per_second */ 8000,
 	/*.bits_per_second */ 16000,
 	/*.microseconds_per_frame */ 20000,
 	/*.samples_per_frame */ 160,
@@ -314,6 +319,7 @@ static switch_codec_implementation_t aal2_g726_24k_implementation = {
 	/*.iananame */ "AAL2-G726-24",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
+	/*.actual_samples_per_second */ 8000,
 	/*.bits_per_second */ 24000,
 	/*.microseconds_per_frame */ 20000,
 	/*.samples_per_frame */ 160,
@@ -334,6 +340,7 @@ static switch_codec_implementation_t aal2_g726_32k_implementation = {
 	/*.iananame */ "AAL2-G726-32",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
+	/*.actual_samples_per_second */ 8000,
 	/*.bits_per_second */ 32000,
 	/*.microseconds_per_frame */ 20000,
 	/*.samples_per_frame */ 160,
@@ -354,6 +361,7 @@ static switch_codec_implementation_t aal2_g726_40k_implementation = {
 	/*.iananame */ "AAL2-G726-40",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
+	/*.actual_samples_per_second */ 8000,
 	/*.bits_per_second */ 40000,
 	/*.microseconds_per_frame */ 20000,
 	/*.samples_per_frame */ 160,

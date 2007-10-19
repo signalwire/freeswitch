@@ -122,9 +122,6 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t por
 
 	if (tech_pvt->rm_encoding) {
 		rate = tech_pvt->rm_rate;
-		if (tech_pvt->pt == 9) {
-			rate = 8000;
-		}
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", tech_pvt->pt, tech_pvt->rm_encoding, rate);
 		if (tech_pvt->fmtp_out) {
 			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->pt, tech_pvt->fmtp_out);
@@ -155,9 +152,6 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t por
 			
 			if (ptime && ptime != imp->microseconds_per_frame / 1000) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ptime %u != advertised ptime %u\n", imp->microseconds_per_frame / 1000, ptime);
-			}
-			if (imp->ianacode == 9) {
-				rate = 8000;
 			}
 			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", imp->ianacode, imp->iananame, rate);
 			if (imp->fmtp) {
@@ -1251,10 +1245,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 						continue;
 					}
 
-					if (imp->ianacode == 9) {
-						codec_rate = 8000;
-					}
-
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Audio Codec Compare [%s:%d:%u]/[%s:%d:%u]\n",
 									  rm_encoding, map->rm_pt, (int)map->rm_rate, imp->iananame, imp->ianacode, codec_rate);
 					if (map->rm_pt < 96) {
@@ -1307,11 +1297,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					if ((tech_pvt->rm_encoding = switch_core_session_strdup(session, (char *) rm_encoding))) {
 						char tmp[50];
 						tech_pvt->pt = (switch_payload_t) map->rm_pt;
-						if (map->rm_pt == 9) {
-							tech_pvt->rm_rate = 16000; /* *stab* *stab* *stab* */
-						} else {
-							tech_pvt->rm_rate = map->rm_rate;
-						}
+						tech_pvt->rm_rate = map->rm_rate;
 						tech_pvt->codec_ms = mimp->microseconds_per_frame / 1000;
 						tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(session, (char *) connection->c_address);
 						tech_pvt->rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);

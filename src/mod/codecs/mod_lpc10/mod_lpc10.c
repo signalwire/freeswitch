@@ -162,6 +162,7 @@ static switch_codec_implementation_t lpc10_implementation = {
 	/*.iananame */ "LPC",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
+	/*.actual_samples_per_second */ 8000,
 	/*.bits_per_second */ 240,
 	/*.microseconds_per_frame */ 22500,
 	/*.samples_per_frame */ 180,

@@ -502,6 +502,8 @@ struct switch_codec_implementation {
 	char *fmtp;
 	/*! samples transferred per second */
 	uint32_t samples_per_second;
+	/*! actual samples transferred per second for those who are not moron g722 RFC writers*/
+	uint32_t actual_samples_per_second;
 	/*! bits transferred per second */
 	int bits_per_second;
 	/*! number of microseconds that denote one frame */

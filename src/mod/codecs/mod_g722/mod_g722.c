@@ -54,14 +54,14 @@ static switch_status_t switch_g722_init(switch_codec_t *codec, switch_codec_flag
 		return SWITCH_STATUS_FALSE;
 	} else {
 		if (encoding) {
-			if (codec->implementation->samples_per_second == 16000) {
+			if (codec->implementation->actual_samples_per_second == 16000) {
 				g722_encode_init(&context->encoder_object, 64000, G722_PACKED);
 			} else {
 				g722_encode_init(&context->encoder_object, 64000, G722_SAMPLE_RATE_8000);
 			}
 		}
 		if (decoding) {
-			if (codec->implementation->samples_per_second == 16000) {
+			if (codec->implementation->actual_samples_per_second == 16000) {
 				g722_decode_init(&context->decoder_object, 64000, G722_PACKED);
 			} else {
 				g722_decode_init(&context->decoder_object, 64000, G722_SAMPLE_RATE_8000);
@@ -124,6 +124,7 @@ static switch_codec_implementation_t g722_8k_implementation = {
 	/*.iananame */ "G722_8",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
+	/*.actual_samples_per_second */ 8000,
 	/*.bits_per_second */ 64000,
 	/*.microseconds_per_frame */ 20000,
 	/*.samples_per_frame */ 160,
@@ -143,7 +144,8 @@ static switch_codec_implementation_t g722_16k_implementation = {
 	/*.ianacode */ 9,
 	/*.iananame */ "G722",
 	/*.fmtp */ NULL,
-	/*.samples_per_second */ 16000,
+	/*.samples_per_second */ 8000,
+	/*.actual_samples_per_second */ 16000,
 	/*.bits_per_second */ 64000,
 	/*.microseconds_per_frame */ 20000,
 	/*.samples_per_frame */ 160,
@@ -156,7 +158,7 @@ static switch_codec_implementation_t g722_16k_implementation = {
 	/*.encode */ switch_g722_encode,
 	/*.decode */ switch_g722_decode,
 	/*.destroy */ switch_g722_destroy,
-	/*.next */ &g722_8k_implementation
+	/*.next */ 
 };
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_g722_load)
@@ -164,7 +166,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_g722_load)
 	switch_codec_interface_t *codec_interface;
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	SWITCH_ADD_CODEC(codec_interface, "g722", &g722_16k_implementation);
+	SWITCH_ADD_CODEC(codec_interface, "G722", &g722_16k_implementation);
+	SWITCH_ADD_CODEC(codec_interface, "G722_8", &g722_8k_implementation);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

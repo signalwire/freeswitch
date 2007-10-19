@@ -4218,13 +4218,13 @@ SWITCH_STANDARD_APP(conference_function)
 		goto done;
 	}
 
-	if (read_codec->implementation->samples_per_second != conference->rate) {
+	if (read_codec->implementation->actual_samples_per_second != conference->rate) {
 		switch_audio_resampler_t **resampler = read_codec->implementation->samples_per_second > conference->rate ?
 			&member.read_resampler : &member.mux_resampler;
 
 		if (switch_resample_create(resampler,
-								   read_codec->implementation->samples_per_second,
-								   read_codec->implementation->samples_per_second * 20,
+								   read_codec->implementation->actual_samples_per_second,
+								   read_codec->implementation->actual_samples_per_second * 20,
 								   conference->rate,
 								   conference->rate * 20,
 								   member.pool) != SWITCH_STATUS_SUCCESS) {

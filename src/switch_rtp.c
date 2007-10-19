@@ -846,13 +846,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
 			return -1;
 		}
-#if 1
-		if (rtp_session->recv_msg.header.pt == 9 /* && G722 RFC != LAME */) {
-			uint32_t rfc_sucks = ntohl(rtp_session->recv_msg.header.ts);
-			rfc_sucks *= 2;
-			rtp_session->recv_msg.header.ts = htonl(rfc_sucks);
-		}
-#endif
+
 		if (rtp_session->jb && bytes && rtp_session->recv_msg.header.pt == rtp_session->payload) {
 			if (rtp_session->recv_msg.header.m) {
 				stfu_n_reset(rtp_session->jb);
@@ -1623,11 +1617,6 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 	}
 
 	send_msg = rtp_session->send_msg;
-#if 1
-	if (payload == 9 /* && G722 RFC != LAME */) {
-		ts /= 2;
-	}
-#endif
 	send_msg.header.seq = htons(mseq);
 	send_msg.header.ts = htonl(ts);
 	send_msg.header.ssrc = htonl(ssrc);

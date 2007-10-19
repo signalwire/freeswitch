@@ -57,7 +57,7 @@ static switch_status_t switch_raw_encode(switch_codec_t *codec,
 {
 
 	/* NOOP indicates that the audio in is already the same as the audio out, so no conversion was necessary. */
-	if (codec && other_codec && codec->implementation && other_codec->implementation && codec->implementation->samples_per_second != other_codec->implementation->samples_per_second) {
+	if (codec && other_codec && codec->implementation && other_codec->implementation && codec->implementation->actual_samples_per_second != other_codec->implementation->actual_samples_per_second) {
 		memcpy(encoded_data, decoded_data, decoded_data_len);
 		*encoded_data_len = decoded_data_len;
 		return SWITCH_STATUS_RESAMPLE;
@@ -72,7 +72,7 @@ static switch_status_t switch_raw_decode(switch_codec_t *codec,
 										 uint32_t encoded_rate, void *decoded_data, uint32_t * decoded_data_len, uint32_t * decoded_rate,
 										 unsigned int *flag)
 {
-	if (codec && other_codec && codec->implementation && other_codec->implementation && codec->implementation->samples_per_second != other_codec->implementation->samples_per_second) {
+	if (codec && other_codec && codec->implementation && other_codec->implementation && codec->implementation->actual_samples_per_second != other_codec->implementation->actual_samples_per_second) {
 		memcpy(decoded_data, encoded_data, encoded_data_len);
 		*decoded_data_len = encoded_data_len;
 		return SWITCH_STATUS_RESAMPLE;
@@ -93,6 +93,7 @@ static switch_codec_implementation_t raw_32k_60ms_implementation = {
 	/*.iananame */ "L16",
 	/*.fmtp */ NULL,
 	/*.samples_per_second = */ 32000,
+	/*.actual_samples_per_second = */ 32000,
 	/*.bits_per_second = */ 512000,
 	/*.microseconds_per_frame = */ 60000,
 	/*.samples_per_frame = */ 1920,
@@ -114,6 +115,7 @@ static switch_codec_implementation_t raw_32k_30ms_implementation = {
 	/*.iananame */ "L16",
 	/*.fmtp */ NULL,
 	/*.samples_per_second = */ 32000,
+	/*.actual_samples_per_second = */ 32000,
 	/*.bits_per_second = */ 512000,
 	/*.microseconds_per_frame = */ 30000,
 	/*.samples_per_frame = */ 960,
@@ -135,6 +137,7 @@ static switch_codec_implementation_t raw_32k_20ms_implementation = {
 	/*.iananame */ "L16",
 	/*.fmtp */ NULL,
 	/*.samples_per_second = */ 32000,
+	/*.actual_samples_per_second = */ 32000,
 	/*.bits_per_second = */ 512000,
 	/*.microseconds_per_frame = */ 20000,
 	/*.samples_per_frame = */ 640,
@@ -156,6 +159,7 @@ static switch_codec_implementation_t raw_32k_10ms_implementation = {
 	/*.iananame */ "L16",
 	/*.fmtp */ NULL,
 	/*.samples_per_second = */ 32000,
+	/*.actual_samples_per_second = */ 32000,
 	/*.bits_per_second = */ 512000,
 	/*.microseconds_per_frame = */ 10000,
 	/*.samples_per_frame = */ 320,
@@ -177,6 +181,7 @@ static switch_codec_implementation_t raw_22k_20ms_implementation = {
 	/*.iananame */ "L16",
 	/*.fmtp */ NULL,
 	/*.samples_per_second = */ 22050,
+	/*.actual_samples_per_second = */ 22050,
 	/*.bits_per_second = */ 352800,
 	/*.microseconds_per_frame = */ 20000,
 	/*.samples_per_frame = */ 441,
@@ -198,6 +203,7 @@ static switch_codec_implementation_t raw_16k_120ms_implementation = {
 	/*.iananame */ "L16",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 16000,
+	/*.actual_samples_per_second */ 16000,
 	/*.bits_per_second */ 256000,
 	/*.microseconds_per_frame */ 120000,
 	/*.samples_per_frame */ 1920,
@@ -219,6 +225,7 @@ static switch_codec_implementation_t raw_16k_60ms_implementation = {
 	/*.iananame */ "L16",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 16000,
+	/*.actual_samples_per_second */ 16000,
 	/*.bits_per_second */ 256000,
 	/*.microseconds_per_frame */ 60000,
 	/*.samples_per_frame */ 960,
@@ -240,6 +247,7 @@ static switch_codec_implementation_t raw_16k_30ms_implementation = {
 	/*.iananame */ "L16",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 16000,
+	/*.actual_samples_per_second */ 16000,
 	/*.bits_per_second */ 256000,
 	/*.microseconds_per_frame */ 30000,
 	/*.samples_per_frame */ 480,
@@ -261,6 +269,7 @@ static switch_codec_implementation_t raw_16k_20ms_implementation = {
 	/*.iananame */ "L16",
 	/*.fmtp */ NULL,
 	/*.samples_per_second = */ 16000,
+	/*.actual_samples_per_second = */ 16000,
 	/*.bits_per_second = */ 256000,
 	/*.microseconds_per_frame = */ 20000,
 	/*.samples_per_frame = */ 320,
@@ -282,6 +291,7 @@ static switch_codec_implementation_t raw_16k_10ms_implementation = {
 	/*.iananame */ "L16",
 	/*.fmtp */ NULL,
 	/*.samples_per_second = */ 16000,
+	/*.actual_samples_per_second = */ 16000,
 	/*.bits_per_second = */ 256000,
 	/*.microseconds_per_frame = */ 10000,
 	/*.samples_per_frame = */ 160,
@@ -306,6 +316,7 @@ static switch_codec_implementation_t raw_8k_120ms_implementation = {
 	/*.iananame */ "L16",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
+	/*.actual_samples_per_second */ 8000,
 	/*.bits_per_second */ 512000,
 	/*.microseconds_per_frame */ 120000,
 	/*.samples_per_frame */ 960,
@@ -328,6 +339,7 @@ static switch_codec_implementation_t raw_8k_60ms_implementation = {
 	/*.iananame */ "L16",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
+	/*.actual_samples_per_second */ 8000,
 	/*.bits_per_second */ 256000,
 	/*.microseconds_per_frame */ 60000,
 	/*.samples_per_frame */ 480,
@@ -349,6 +361,7 @@ static switch_codec_implementation_t raw_8k_30ms_implementation = {
 	/*.iananame */ "L16",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
+	/*.actual_samples_per_second */ 8000,
 	/*.bits_per_second */ 128000,
 	/*.microseconds_per_frame */ 30000,
 	/*.samples_per_frame */ 240,
@@ -369,6 +382,7 @@ static switch_codec_implementation_t raw_8k_20ms_implementation = {
 	/*.iananame */ "L16",
 	/*.fmtp */ NULL,
 	/*.samples_per_second = */ 8000,
+	/*.actual_samples_per_second = */ 8000,
 	/*.bits_per_second = */ 128000,
 	/*.microseconds_per_frame = */ 20000,
 	/*.samples_per_frame = */ 160,
@@ -392,6 +406,7 @@ static switch_codec_implementation_t raw_8k_10ms_implementation = {
 	/*.iananame */ "L16",
 	/*.fmtp */ NULL,
 	/*.samples_per_second = */ 8000,
+	/*.actual_samples_per_second = */ 8000,
 	/*.bits_per_second = */ 128000,
 	/*.microseconds_per_frame = */ 10000,
 	/*.samples_per_frame = */ 80,

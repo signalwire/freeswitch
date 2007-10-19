@@ -175,6 +175,7 @@ static switch_codec_implementation_t g723_1_implementation = {
 	/*.iananame */ "G723",
 	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
+	/*.actual_samples_per_second */ 8000,
 	/*.bits_per_second */ 6300,
 	/*.microseconds_per_frame */ 30000,
 	/*.samples_per_frame */ 240,
