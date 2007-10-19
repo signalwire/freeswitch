@@ -37,7 +37,20 @@
       <action application="bridge" data="iax/guest@conference.freeswitch.org/888"/>
     </condition>
   </extension>
- 
+
+  <extension name="static-park">
+    <condition field="destination_number" expression="^8192$">
+      <action application="fifo" data="default in undef /ram/swimp.raw"/>
+    </condition>
+  </extension>
+  
+  <extension name="unpark">
+    <condition field="destination_number" expression="^8193$">
+      <action application="answer"/>
+      <action application="fifo" data="default out nowait"/>
+    </condition>
+  </extension>
+  
   <!--
   if the number starts with a *393 then strip the *393 
   and dial the remainder of the number out our "fwd" gateway
