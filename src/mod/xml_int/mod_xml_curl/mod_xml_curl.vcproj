@@ -18,35 +18,33 @@
 		<Configuration
 			Name="Debug|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
+			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops;..\..\..\..\w32\curl.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;"
-				PreprocessorDefinitions="ABYSS_WIN32;CURL_STATICLIB"
+				AdditionalIncludeDirectories=""
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalLibraryDirectories="..\..\..\..\libs\xmlcurl\lib;&quot;..\..\..\..\libs\xmlcurl\lib\abyss\src\$(OutDir)&quot;;&quot;..\..\..\..\libs\apr-util\xml\expat\lib\LibD&quot;"
+				AdditionalLibraryDirectories=""
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
+			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops;..\..\..\..\w32\curl.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;"
-				PreprocessorDefinitions="CURL_STATICLIB"
+				AdditionalIncludeDirectories=""
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalLibraryDirectories="..\..\..\..\libs\xmlcurl\lib;&quot;..\..\..\..\libs\xmlcurl\lib\abyss\src\$(OutDir)&quot;;&quot;..\..\..\..\libs\apr-util\xml\expat\lib\LibR&quot;"
+				AdditionalLibraryDirectories=""
 			/>
 		</Configuration>
 	</Configurations>

@@ -20,6 +20,7 @@
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
+			InheritedPropertySheets="..\winlibs.vsprops"
 			CharacterSet="2"
 			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
 			>
@@ -63,7 +64,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="advapi32.lib"
 				OutputFile="$(SolutionDir)$(ConfigurationName)/FreeSwitch.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(OutDir)"
@@ -102,6 +102,7 @@
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
+			InheritedPropertySheets="..\winlibs.vsprops"
 			CharacterSet="2"
 			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
 			>
@@ -142,7 +143,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="advapi32.lib"
 				OutputFile="$(SolutionDir)$(ConfigurationName)/FreeSwitch.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(OutDir)"

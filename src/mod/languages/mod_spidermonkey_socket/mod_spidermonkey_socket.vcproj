@@ -17,10 +17,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\..\..\..\w32\winlibs.vsprops"
+			InheritedPropertySheets="..\..\..\..\w32\winlibs.vsprops;..\..\..\..\w32\module_debug.vsprops;..\..\..\..\w32\spidermonkey.vsprops"
 			CharacterSet="1"
 			>
 			<Tool
@@ -40,37 +38,19 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\js\src&quot;;&quot;$(InputDir)..\..\..\..\libs\js\nsprpub\pr\include&quot;;&quot;$(InputDir)..\mod_spidermonkey&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;XP_WIN;DEBUG;_X86_=1;JSFILE;EXPORT_JS_API;HAVE_CURL;CURL_STATICLIB;JS_THREADSAFE"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
+				AdditionalIncludeDirectories=""
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
-				WarnAsError="true"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkLibraryDependencies="true"
 				AdditionalOptions="&quot;..\..\..\..\libs\win32\js\debug\js32.lib&quot; &quot;..\..\..\..\libs\win32\apr\debug\libapr-1.lib&quot; &quot;..\..\..\..\w32\library\debug\freeswitchcore.lib&quot; &quot;..\..\..\..\libs\win32\debug\libetpan.lib&quot; &quot;..\mod_spidermonkey\debug\mod_spidermonkey.lib&quot;"
-				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;..\..\..\..\libs\nspr-4.6.1.winnt5.$(OutDir)\nspr-4.6.1\lib&quot;"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_spidermonkey_socket.lib"
-				TargetMachine="1"
+				AdditionalLibraryDirectories=""
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\..\..\..\w32\winlibs.vsprops"
+			InheritedPropertySheets="..\..\..\..\w32\winlibs.vsprops;..\..\..\..\w32\module_release.vsprops;..\..\..\..\w32\spidermonkey.vsprops"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
@@ -91,22 +71,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\js\src&quot;;&quot;$(InputDir)..\..\..\..\libs\js\nsprpub\pr\include&quot;;&quot;$(InputDir)..\mod_spidermonkey&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;XP_WIN;_X86_=1;JSFILE;EXPORT_JS_API;HAVE_CURL;CURL_STATICLIB;JS_THREADSAFE;MOD_SPIDERMONKEY_SOCKET_EXPORTS"
-				RuntimeLibrary="2"
+				AdditionalIncludeDirectories=""
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="2"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				TargetMachine="1"
 			/>
 		</Configuration>
 	</Configurations>

@@ -18,40 +18,36 @@
 		<Configuration
 			Name="Debug|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
+			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops;..\..\..\..\w32\spidermonkey.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\js\src&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;;&quot;$(InputDir)..\..\..\..\libs\js\nsprpub\pr\include&quot;"
-				PreprocessorDefinitions="XP_WIN;DEBUG;_X86_=1;JSFILE;EXPORT_JS_API;HAVE_CURL;CURL_STATICLIB;JS_THREADSAFE;SM_EXPORTS;JS_HAS_FILE_OBJECT=1"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="SM_EXPORTS;JS_HAS_FILE_OBJECT=1"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkLibraryDependencies="true"
-				AdditionalDependencies="ws2_32.lib winmm.lib"
-				AdditionalLibraryDirectories="&quot;..\..\..\..\libs\nspr-4.6.1.winnt5.$(OutDir)\nspr-4.6.1\lib&quot;"
+				AdditionalLibraryDirectories=""
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			ConfigurationType="2"
-			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
+			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops;..\..\..\..\w32\spidermonkey.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\js\src&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;;&quot;$(InputDir)..\..\..\..\libs\js\nsprpub\pr\include&quot;"
-				PreprocessorDefinitions="XP_WIN;_X86_=1;JSFILE;EXPORT_JS_API;HAVE_CURL;CURL_STATICLIB;JS_THREADSAFE;SM_EXPORTS;JS_HAS_FILE_OBJECT=1"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="SM_EXPORTS;JS_HAS_FILE_OBJECT=1"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkLibraryDependencies="true"
-				AdditionalDependencies="ws2_32.lib winmm.lib"
-				AdditionalLibraryDirectories="&quot;..\..\..\..\libs\nspr-4.6.1.winnt5.$(OutDir)\nspr-4.6.1\lib&quot;"
+				AdditionalLibraryDirectories=""
 			/>
 		</Configuration>
 	</Configurations>

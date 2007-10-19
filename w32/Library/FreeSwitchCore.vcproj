@@ -20,6 +20,7 @@
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
+			InheritedPropertySheets="..\winlibs.vsprops"
 			CharacterSet="2"
 			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
 			>
@@ -69,7 +70,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="true"
-				AdditionalDependencies="Ws2_32.lib Mswsock.lib Rpcrt4.lib"
 				OutputFile="$(SolutionDir)$(ConfigurationName)/FreeSwitch.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir) DLL&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\srtp\$(OutDir)&quot;"
@@ -113,6 +113,7 @@
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
+			InheritedPropertySheets="..\winlibs.vsprops"
 			CharacterSet="2"
 			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
 			>
@@ -159,7 +160,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="true"
-				AdditionalDependencies="Ws2_32.lib Mswsock.lib Rpcrt4.lib"
 				OutputFile="$(SolutionDir)$(ConfigurationName)/FreeSwitch.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir) DLL&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\srtp\$(OutDir)&quot;"
@@ -477,11 +477,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\include\private\switch_core.h"
+				RelativePath="..\..\src\include\switch_core.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\include\switch_core.h"
+				RelativePath="..\..\src\include\private\switch_core.h"
 				>
 			</File>
 			<File
