@@ -1760,6 +1760,17 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 	return;
 }
 
+#define check_decode(_var, _session) do {								\
+		assert(_session);												\
+		if (strchr(_var, '%')) {										\
+			char *tmp = switch_core_session_strdup(_session, _var);		\
+			switch_url_decode(tmp);										\
+			_var = tmp;													\
+		}																\
+		if(_session) break;												\
+	} while(!_session)
+	   
+
 #define url_set_chanvars(session, url, varprefix) _url_set_chanvars(session, url, #varprefix "_user", #varprefix "_host", #varprefix "_port", #varprefix "_uri")
 const char *_url_set_chanvars(switch_core_session_t *session, url_t *url, const char *user_var,
 									 const char *host_var, const char *port_var, const char *uri_var)
@@ -1773,6 +1784,8 @@ const char *_url_set_chanvars(switch_core_session_t *session, url_t *url, const 
 		host = url->url_host;
 		port = url->url_port;
 	}
+
+	check_decode(user, session);
 
 	if (user) {
 		switch_channel_set_variable(channel, user_var, user);
@@ -1853,7 +1866,7 @@ void process_rpid(sip_unknown_t *un, private_object_t *tech_pvt)
 					}
 				}
 			}
-			free(mydata);
+		free(mydata);
 		}
 	}
 }
@@ -1944,9 +1957,12 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		from_host = sip->sip_from->a_url->url_host;
 		channel_name = url_set_chanvars(session, sip->sip_from->a_url, sip_from);
 
-		switch_channel_set_variable(channel, "sip_mailbox", from_user);
-
+		check_decode(from_user, session);
+		
+		
 		if (!switch_strlen_zero(from_user)) {
+			switch_channel_set_variable(channel, "sip_mailbox", from_user);
+
 			if (*from_user == '+') {
 				switch_channel_set_variable(channel, "sip_from_user_stripped", (const char *) (from_user + 1));
 			} else {
@@ -1980,6 +1996,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		} else {
 			destination_number = sip->sip_request->rq_url->url_user;
 		}
+		check_decode(destination_number, session);
 	}
 
 	if (sip->sip_to && sip->sip_to->a_url) {
@@ -2044,8 +2061,10 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if (sip->sip_request->rq_url) {
 		sofia_gateway_t *gateway;
+		char *user = (char *) sip->sip_request->rq_url->url_user;
+		check_decode(user, session);
 		char *from_key = switch_core_session_sprintf(session, "sip:%s@%s",
-													 (char *) sip->sip_request->rq_url->url_user,
+													 user,
 													 (char *) sip->sip_request->rq_url->url_host);
 
 		if ((gateway = sofia_reg_find_gateway(from_key))) {
