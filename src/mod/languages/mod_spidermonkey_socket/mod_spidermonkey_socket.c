@@ -200,7 +200,7 @@ static JSBool socket_read(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 	if (argc >= 0)
 	{
 		char* delimiter = "\n";
-		switch_status_t ret;
+		switch_status_t ret = SWITCH_STATUS_FALSE;
 		switch_size_t len = 1;
 		switch_size_t total_length = 0;
 		BOOL can_run = TRUE;
