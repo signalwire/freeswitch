@@ -979,8 +979,8 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 	switch_time_exp_t tm;
 
 
-	if (argv[5]) {
-		switch_time_t etime = atoi(argv[5]);
+	if (argv[6]) {
+		switch_time_t etime = atoi(argv[6]);
 		switch_size_t retsize;
 
 		switch_time_exp_lt(&tm, switch_time_from_sec(etime));
@@ -989,11 +989,12 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 	
 	
 	cb->stream->write_function(cb->stream, 
+							   "Call-ID \t%s\n"
 							   "User    \t%s@%s\n"
 							   "Contact \t%s\n"
 							   "Status  \t%s(%s) EXP(%s)\n\n", 
-							   switch_str_nil(argv[0]), switch_str_nil(argv[1]), switch_str_nil(argv[2]), 
-							   switch_str_nil(argv[3]), switch_str_nil(argv[4]), exp_buf);
+							   switch_str_nil(argv[0]), switch_str_nil(argv[1]), switch_str_nil(argv[2]), switch_str_nil(argv[3]), 
+							   switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf);
 	return 0;
 }
 

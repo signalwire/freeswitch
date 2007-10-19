@@ -156,8 +156,8 @@ int sofia_reg_nat_callback(void *pArg, int argc, char **argv, char **columnNames
 	char *contact;
 	char to[128] = "";
 
-	snprintf(to, sizeof(to), "%s@%s", argv[0], argv[1]);
-	contact = sofia_glue_get_url_from_contact(argv[2], 1);
+	snprintf(to, sizeof(to), "%s@%s", argv[1], argv[2]);
+	contact = sofia_glue_get_url_from_contact(argv[3], 1);
 
 	nh = nua_handle(profile->nua, NULL, SIPTAG_FROM_STR(profile->url), SIPTAG_TO_STR(to), NUTAG_URL(contact), SIPTAG_CONTACT_STR(profile->url), TAG_END());
 	
@@ -176,10 +176,11 @@ int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames
 	if (argc >= 3) {
 		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_EXPIRE) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile-name", "%s", argv[0]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "user", "%s", argv[1]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "host", "%s", argv[2]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s", argv[3]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%s", argv[4]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "call-id", "%s", argv[1]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "user", "%s", argv[2]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "host", "%s", argv[3]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s", argv[4]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%s", argv[5]);
 			switch_event_fire(&s_event);
 		}
 	}
