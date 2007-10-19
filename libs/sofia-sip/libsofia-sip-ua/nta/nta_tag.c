@@ -405,8 +405,8 @@ tag_typedef_t ntatag_maxsize = USIZETAG_TYPEDEF(maxsize);
  * Maximum size of proceeding queue. 
  *
  * If the size of the proceedng message queue would exceed the
- * given limit, the stack will automatically respond with <i>486 
- * Server Busy</i>.
+ * given limit, the stack will automatically respond with <i>503 
+ * Service Unavailable</i>.
  *
  * @par Used with
  *    nua_create(), nua_set_params(),
