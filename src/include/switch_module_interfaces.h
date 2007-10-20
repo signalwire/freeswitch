@@ -327,6 +327,8 @@ struct switch_asr_handle {
 	/*! The Rate */
 	uint32_t rate;
 	char *grammar;
+	/*! module specific param*/
+	char *param;
 	/*! the handle's memory pool */
 	switch_memory_pool_t *memory_pool;
 	/*! private data for the format module to store handle specific info */
@@ -367,7 +369,9 @@ struct switch_speech_handle {
 	uint32_t speed;
 	uint32_t samples;
 	char voice[80];
-	char engine[80];
+	char *engine;
+	/*! module specific param*/
+	char *param;
 	/*! the handle's memory pool */
 	switch_memory_pool_t *memory_pool;
 	/*! private data for the format module to store handle specific info */

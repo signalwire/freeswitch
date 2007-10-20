@@ -44,13 +44,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
 														switch_memory_pool_t *pool)
 {
 	switch_status_t status;
+	char buf[256] = "";
+	char *param = NULL;
+
+	if (strchr(module_name, ':')) {
+		switch_set_string(buf, module_name);
+		if ((param = strchr(buf, ':'))) {
+			*param++ = '\0';
+			module_name = buf;
+		}
+	}
+
 
 	if ((sh->speech_interface = switch_loadable_module_get_speech_interface(module_name)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid speech module [%s]!\n", module_name);
 		return SWITCH_STATUS_GENERR;
 	}
 
-	switch_copy_string(sh->engine, module_name, sizeof(sh->engine));
 	sh->flags = *flags;
 	if (pool) {
 		sh->memory_pool = pool;
@@ -60,6 +70,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
 		}
 		switch_set_flag(sh, SWITCH_SPEECH_FLAG_FREE_POOL);
 	}
+
+	sh->engine = switch_core_strdup(sh->memory_pool, module_name);
+	if (param) {
+		sh->param = switch_core_strdup(sh->memory_pool, param);
+	}
+
+
 	sh->rate = rate;
 	sh->name = switch_core_strdup(pool, module_name);
 	sh->samples = switch_bytes_per_frame(rate, interval);

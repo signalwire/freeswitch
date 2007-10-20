@@ -39,6 +39,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
 													 char *codec, int rate, char *dest, switch_asr_flag_t *flags, switch_memory_pool_t *pool)
 {
 	switch_status_t status;
+	char buf[256] = "";
+	char *param = NULL;
+
+	if (strchr(module_name, ':')) {
+		switch_set_string(buf, module_name);
+		if ((param = strchr(buf, ':'))) {
+			*param++ = '\0';
+			module_name = buf;
+		}
+	}
 
 	assert(ah != NULL);
 
@@ -58,6 +68,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
 		switch_set_flag(ah, SWITCH_ASR_FLAG_FREE_POOL);
 	}
 
+	if (param) {
+		ah->param = switch_core_strdup(ah->memory_pool, param);
+	}
 	ah->rate = rate;
 	ah->name = switch_core_strdup(ah->memory_pool, module_name);
 

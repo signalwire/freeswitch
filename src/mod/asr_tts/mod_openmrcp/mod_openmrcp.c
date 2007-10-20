@@ -98,13 +98,14 @@ typedef enum {
 typedef struct {
 	switch_memory_pool_t *pool;
 	switch_hash_t        *profile_hash;
-
-	openmrcp_profile_t   *asr_profile;
-	openmrcp_profile_t   *tts_profile;
+	char *asr_profile_name;
+	char *tts_profile_name;
+	//openmrcp_profile_t   *asr_profile;
+	//openmrcp_profile_t   *tts_profile;
 } openmrcp_module_t;
 
 static openmrcp_module_t openmrcp_module;
-
+static switch_status_t openmrcp_profile_run(openmrcp_profile_t *profile);
 
 static openmrcp_session_t* openmrcp_session_create(openmrcp_profile_t *profile)
 {
@@ -287,7 +288,9 @@ static switch_status_t openmrcp_asr_open(switch_asr_handle_t *ah, char *codec, i
 {
 	openmrcp_session_t *asr_session;
 	mrcp_client_channel_t *asr_channel;
-	
+	char *profile_name = openmrcp_module.asr_profile_name;
+	openmrcp_profile_t   *asr_profile = NULL;
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "asr_open called, codec: %s, rate: %d\n", codec, rate);
 
 	if (strcmp(codec, "L16")) {
@@ -299,8 +302,19 @@ static switch_status_t openmrcp_asr_open(switch_asr_handle_t *ah, char *codec, i
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Sorry, only 8kz supported\n");
 		return SWITCH_STATUS_GENERR;		
 	}
+
+	if (!switch_strlen_zero(ah->param)) {
+		profile_name = ah->param;
+	}
+
+	if (!(asr_profile = switch_core_hash_find(openmrcp_module.profile_hash, profile_name))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot locate profile %s\n", profile_name);
+		return SWITCH_STATUS_GENERR;		
+	}
+
 	/* create session */
-	asr_session = openmrcp_session_create(openmrcp_module.asr_profile);
+	asr_session = openmrcp_session_create(asr_profile);
+
 	if (!asr_session) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "asr_session creation FAILED\n");
 		return SWITCH_STATUS_GENERR;
@@ -593,9 +607,21 @@ static switch_status_t openmrcp_tts_open(switch_speech_handle_t *sh, char *voice
 {
 	openmrcp_session_t *tts_session;
 	mrcp_client_channel_t *tts_channel;
+	char *profile_name = openmrcp_module.tts_profile_name;
+	openmrcp_profile_t   *tts_profile = NULL;
+
+	if (!switch_strlen_zero(sh->param)) {
+		profile_name = sh->param;
+	}
+
+	if (!(tts_profile = switch_core_hash_find(openmrcp_module.profile_hash, profile_name))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot locate profile %s\n", profile_name);
+		return SWITCH_STATUS_GENERR;		
+	}
 
 	/* create session */
-	tts_session = openmrcp_session_create(openmrcp_module.tts_profile);
+	tts_session = openmrcp_session_create(tts_profile);
+
 	if (!tts_session) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "tts_session creation FAILED\n");
 		return SWITCH_STATUS_GENERR;
@@ -742,8 +768,6 @@ static void openmrcp_float_param_tts(switch_speech_handle_t *sh, char *param, do
 static switch_status_t do_config()
 {
 	char *cf = "mod_openmrcp.conf";
-	const char *asr_profile_name = NULL;
-	const char *tts_profile_name = NULL;
 	switch_xml_t cfg, xml, settings, profiles, xprofile, param;
 	openmrcp_profile_t *mrcp_profile;
 	openmrcp_client_options_t *mrcp_options;
@@ -760,9 +784,9 @@ static switch_status_t do_config()
 			const char *val = switch_xml_attr_soft(param, "value");
 
 			if (!strcasecmp(var, "asr_default_profile")) {
-				asr_profile_name = val;
+				openmrcp_module.asr_profile_name = switch_core_strdup(openmrcp_module.pool, val);
 			} else if (!strcasecmp(var, "tts_default_profile")) {
-				tts_profile_name = val;
+				openmrcp_module.tts_profile_name = switch_core_strdup(openmrcp_module.pool, val);
 			} else if (!strcasecmp(var, "log_level")) {
 				mrcp_logger.priority = atoi(val);
 			}
@@ -805,33 +829,11 @@ static switch_status_t do_config()
 				}
 			}
 			mrcp_profile->mrcp_options = mrcp_options;
-
+			
 			/* add profile */
 			if (!switch_core_hash_find(openmrcp_module.profile_hash, mrcp_profile->name)) {
 				switch_core_hash_insert(openmrcp_module.profile_hash, mrcp_profile->name, mrcp_profile);
-
-				/* try to set default asr profile */
-				if (!openmrcp_module.asr_profile) {
-					if (asr_profile_name) {
-						if (!strcasecmp(mrcp_profile->name, asr_profile_name)) {
-							openmrcp_module.asr_profile = mrcp_profile;
-						}
-					}
-					else {
-						openmrcp_module.asr_profile = mrcp_profile;
-					}
-				}
-				/* try to set default tts profile */
-				if (!openmrcp_module.tts_profile) {
-					if (tts_profile_name) {
-						if (!strcasecmp(mrcp_profile->name, tts_profile_name)) {
-							openmrcp_module.tts_profile = mrcp_profile;
-						}
-					}
-					else {
-						openmrcp_module.tts_profile = mrcp_profile;
-					}
-				}
+				openmrcp_profile_run(mrcp_profile);
 			}
 		}
 	}
@@ -892,22 +894,11 @@ static switch_status_t openmrcp_init()
 	mrcp_global_init();
 
 	openmrcp_module.pool = mrcp_global_pool_get();
-	openmrcp_module.asr_profile = NULL;
-	openmrcp_module.tts_profile = NULL;
-
 	switch_core_hash_init(&openmrcp_module.profile_hash, openmrcp_module.pool);
 
 	/* read config */
 	if (do_config() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
-	}
-
-	/* run default asr/tts profiles */
-	if(openmrcp_module.asr_profile) {
-		openmrcp_profile_run(openmrcp_module.asr_profile);
-	}
-	if(openmrcp_module.tts_profile && openmrcp_module.tts_profile != openmrcp_module.asr_profile) {
-		openmrcp_profile_run(openmrcp_module.tts_profile);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -916,29 +907,24 @@ static switch_status_t openmrcp_init()
 static switch_status_t openmrcp_destroy()
 {
 	/* destroy asr/tts profiles */
-	if(openmrcp_module.asr_profile) {
-		/* shutdown client engine */
-		openmrcp_client_shutdown(openmrcp_module.asr_profile->mrcp_client);
-		/* destroy client context */
-		mrcp_client_context_destroy(openmrcp_module.asr_profile->mrcp_context);
-		if(openmrcp_module.tts_profile == openmrcp_module.asr_profile) {
-			openmrcp_module.tts_profile = NULL;
-		}
-		openmrcp_module.asr_profile = NULL;
-	}
-	if(openmrcp_module.tts_profile) {
-		/* shutdown client engine */
-		openmrcp_client_shutdown(openmrcp_module.tts_profile->mrcp_client);
-		/* destroy client context */
-		mrcp_client_context_destroy(openmrcp_module.tts_profile->mrcp_context);
-		openmrcp_module.tts_profile = NULL;
-	}
+	switch_hash_index_t *hi;
+	void *val;
+	openmrcp_profile_t *mrcp_profile;
 
+	for (hi = switch_hash_first(NULL, openmrcp_module.profile_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, NULL, NULL, &val);
+		mrcp_profile = (openmrcp_profile_t *) val;
+		/* shutdown client engine */
+		openmrcp_client_shutdown(mrcp_profile->mrcp_client);
+		/* destroy client context */
+		mrcp_client_context_destroy(mrcp_profile->mrcp_context);		
+	}
 	switch_core_hash_destroy(&openmrcp_module.profile_hash);
 	openmrcp_module.profile_hash = NULL;
 
 	/* one-time mrcp global destroy */
 	mrcp_global_destroy();
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
