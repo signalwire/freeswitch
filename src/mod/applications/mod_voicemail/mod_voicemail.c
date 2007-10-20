@@ -1548,7 +1548,11 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
             }
         }
 
-        if(!send_mail) {
+        /* TRX a race condition exists where you hang up right as you start to record, the recording subsystem detects there isnt
+         * a channel and refuses to create the file, as a result you get DB entries and MWI entries when there is no voicemail saved
+         * message counts and other things get out of sync
+         */
+        if(!send_mail && switch_file_exists(file_path,switch_core_session_get_pool(session))==SWITCH_STATUS_SUCCESS) {
             char *usql;
             switch_event_t *event;
             char *mwi_id = NULL;
