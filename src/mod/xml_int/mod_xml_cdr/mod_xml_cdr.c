@@ -86,7 +86,10 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 		}
 
 		if (!switch_strlen_zero(logdir)) {
-			if ((path = switch_mprintf("%s/%s.cdr.xml", logdir, switch_core_session_get_uuid(session)))) {
+			if ((path = switch_mprintf("%s%s%s.cdr.xml", 
+									   logdir, 
+									   SWITCH_PATH_SEPARATOR,
+									   switch_core_session_get_uuid(session)))) {
 				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 					int wrote;
 					wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
@@ -175,7 +178,10 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			/* if we are here the web post failed for some reason */
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to post to web server, writing to file\n");
 
-			if ((path = switch_mprintf("%s/%s.cdr.xml", globals.err_log_dir, switch_core_session_get_uuid(session)))) {
+			if ((path = switch_mprintf("%s%s%s.cdr.xml", 
+									   globals.err_log_dir, 
+									   SWITCH_PATH_SEPARATOR,
+									   switch_core_session_get_uuid(session)))) {
 				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 					int wrote;
 					wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
@@ -262,22 +268,32 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				globals.retries = (uint32_t) atoi(val);
 			} else if (!strcasecmp(var, "log-dir")) {
 				if (switch_strlen_zero(val)) {
-					globals.log_dir = switch_mprintf("%s/xml_cdr", SWITCH_GLOBAL_dirs.log_dir);
+					globals.log_dir = switch_mprintf("%s%sxml_cdr", 
+													 SWITCH_GLOBAL_dirs.log_dir,
+													 SWITCH_PATH_SEPARATOR);
 				} else {
 					if (switch_is_file_path(val)) {
 						globals.log_dir = strdup(val);
 					} else {
-						globals.log_dir = switch_mprintf("%s/%s", SWITCH_GLOBAL_dirs.log_dir, val);
+						globals.log_dir = switch_mprintf("%s%s%s", 
+														 SWITCH_GLOBAL_dirs.log_dir, 
+														 SWITCH_PATH_SEPARATOR,
+														 val);
 					}
 				}
 			} else if (!strcasecmp(var, "err-log-dir")) {
 				if (switch_strlen_zero(val)) {
-					globals.err_log_dir = switch_mprintf("%s/xml_cdr", SWITCH_GLOBAL_dirs.log_dir);
+					globals.err_log_dir = switch_mprintf("%s%sxml_cdr", 
+														 SWITCH_GLOBAL_dirs.log_dir,
+														 SWITCH_PATH_SEPARATOR);
 				} else {
 					if (switch_is_file_path(val)) {
 						globals.err_log_dir = strdup(val);
 					} else {
-						globals.err_log_dir = switch_mprintf("%s/%s", SWITCH_GLOBAL_dirs.log_dir, val);
+						globals.err_log_dir = switch_mprintf("%s%s%s", 
+															 SWITCH_GLOBAL_dirs.log_dir, 
+															 SWITCH_PATH_SEPARATOR,
+															 val);
 					}
 				}
 			} else if (!strcasecmp(var, "ignore-cacert-check") && switch_true(val)) {
@@ -288,7 +304,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				if (!switch_strlen_zero(globals.log_dir)) {
 					globals.err_log_dir = strdup(globals.log_dir);
 				} else {
-					globals.err_log_dir = switch_mprintf("%s/xml_cdr", SWITCH_GLOBAL_dirs.log_dir);
+					globals.err_log_dir = switch_mprintf("%s%sxml_cdr", 
+														 SWITCH_GLOBAL_dirs.log_dir,
+														 SWITCH_PATH_SEPARATOR);
 				}
 			}
 		}
