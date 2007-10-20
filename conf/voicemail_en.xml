@@ -158,8 +158,12 @@
 	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$3" method="pronounced" type="items"/>
 	<action function="play-file" data="voicemail/vm-delete_recording.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
 	<action function="say" data="$4" method="pronounced" type="items"/>
 	<action function="play-file" data="voicemail/vm-forward_to_email.wav"/>
+	<action function="play-file" data="voicemail/vm-press.wav"/>
+	<action function="say" data="$4" method="pronounced" type="items"/>
+	<action function="play-file" data="voicemail/vm-return_call.wav"/>
       </match>
     </input>
   </macro>
