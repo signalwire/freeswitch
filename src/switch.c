@@ -221,28 +221,24 @@ int main(int argc, char *argv[])
 		{SERVICENAME, &service_main},
 		{NULL, NULL}
 	};
+#endif
 	usageDesc = "these are the optional arguments you can pass to freeswitch\n"
+#ifdef WIN32
 		"\t-service         -- start freeswitch as a service, cannot be used if loaded as a console app\n"
 		"\t-install         -- install freeswitch as a service\n"
 		"\t-uninstall       -- remove freeswitch as a service\n"
-		"\t-hp              -- enable high priority settings\n"
-		"\t-nosql           -- disable internal sql scoreboard\n"
-		"\t-stop            -- stop freeswitch\n"
-		"\t-nc              -- do not output to a console and background\n"
-		"\t-conf [confdir]  -- specify an alternate config dir\n"
-		"\t-log [logdir]    -- specify an alternate log dir\n" "\t-db [dbdir]      -- specify an alternate db dir\n";
 #else
-	usageDesc = "these are the optional arguments you can pass to freeswitch\n"
-		"\t-help            -- this message\n"
 		"\t-nf              -- no forking\n"
+#endif
+		"\t-help            -- this message\n"
 		"\t-hp              -- enable high priority settings\n"
 		"\t-nosql           -- disable internal sql scoreboard\n"
 		"\t-stop            -- stop freeswitch\n"
 		"\t-nc              -- do not output to a console and background\n"
 		"\t-conf [confdir]  -- specify an alternate config dir\n"
-		"\t-log [logdir]    -- specify an alternate log dir\n" "\t-db [dbdir]      -- specify an alternate db dir\n";
-
-#endif
+		"\t-log [logdir]    -- specify an alternate log dir\n"
+		"\t-db [dbdir]      -- specify an alternate db dir\n"
+		"\t-scripts [scriptsdir]      -- specify an alternate scripts dir\n";
 
 	for (x = 1; x < argc; x++) {
 		known_opt = 0;
@@ -350,7 +346,19 @@ int main(int argc, char *argv[])
 			known_opt++;
 		}
 
-		if ((!known_opt || argv[x]) && !strcmp(argv[x], "-help")) {
+		if (argv[x] && !strcmp(argv[x], "-scripts")) {
+			x++;
+			if (argv[x] && strlen(argv[x])) {
+				SWITCH_GLOBAL_dirs.script_dir = (char *) malloc(strlen(argv[x]) + 1);
+				strcpy(SWITCH_GLOBAL_dirs.script_dir, argv[x]);
+			} else {
+				fprintf(stderr, "When using -scripts you must specify a scripts directory\n");
+				return 255;
+			}
+			known_opt++;
+		}
+
+		if ((!known_opt || argv[x]) && (!strcmp(argv[x], "-help") || !strcmp(argv[x], "-h") || !strcmp(argv[x], "-?"))) {
 			printf("%s\n", usageDesc);
 			exit(0);
 		}
@@ -362,7 +370,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (alt_dirs && alt_dirs != 3) {
-		fprintf(stderr, "You must use -conf, -log, and -db together\n");
+		fprintf(stderr, "You must specify all or none of -conf, -log, and -db\n");
 		return 255;
 	}
 
