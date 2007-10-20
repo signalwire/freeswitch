@@ -72,6 +72,7 @@ struct vm_profile {
     char delete_file_key[2];
     char undelete_file_key[2];
     char email_key[2];
+    char callback_key[2];
     char pause_key[2];
     char restart_key[2];
     char ff_key[2];
@@ -80,6 +81,8 @@ struct vm_profile {
     char file_ext[10];
     char *tone_spec;
     char *storage_dir;
+    char *callback_dialplan;
+    char *callback_context;
     uint32_t digit_timeout;
     uint32_t max_login_attempts;
     uint32_t max_record_len;
@@ -271,6 +274,7 @@ static switch_status_t load_config(void)
         char *delete_file_key = "7";
         char *undelete_file_key = "8";
         char *email_key = "4";
+        char *callback_key = "5";
         char *pause_key = "0";
         char *restart_key = "1";
         char *ff_key = "6";
@@ -279,6 +283,8 @@ static switch_status_t load_config(void)
         char *tone_spec = "%(1000, 0, 640)";
         char *file_ext = "wav";
         char *storage_dir = "";
+        char *callback_dialplan = "XML";
+        char *callback_context = "default";
 
         switch_core_db_t *db;
         uint32_t timeout = 10000, max_login_attempts = 3, max_record_len = 300;
@@ -316,6 +322,8 @@ static switch_status_t load_config(void)
                 undelete_file_key = val;
             } else if (!strcasecmp(var, "email-key") && !switch_strlen_zero(val)) {
                 email_key = val;
+            } else if (!strcasecmp(var, "callback-key") && !switch_strlen_zero(val)) {
+                callback_key = val;
             } else if (!strcasecmp(var, "pause-key") && !switch_strlen_zero(val)) {
                 pause_key = val;
             } else if (!strcasecmp(var, "restart-key") && !switch_strlen_zero(val)) {
@@ -328,6 +336,10 @@ static switch_status_t load_config(void)
                 urgent_key = val;
             } else if (!strcasecmp(var, "storage-dir") && !switch_strlen_zero(val)) {
                 storage_dir = val;
+            } else if (!strcasecmp(var, "callback-dialplan") && !switch_strlen_zero(val)) {
+                callback_dialplan = val;
+            } else if (!strcasecmp(var, "callback-context") && !switch_strlen_zero(val)) {
+                callback_context = val;
             } else if (!strcasecmp(var, "file-extension")) {
                 file_ext = val;
             } else if (!strcasecmp(var, "tone-spec")) {
@@ -435,6 +447,7 @@ static switch_status_t load_config(void)
             *profile->delete_file_key = *delete_file_key;
             *profile->undelete_file_key = *undelete_file_key;
             *profile->email_key = *email_key;
+            *profile->callback_key = *callback_key;
             *profile->pause_key = *pause_key;
             *profile->restart_key = *restart_key;
             *profile->ff_key = *ff_key;
@@ -444,6 +457,8 @@ static switch_status_t load_config(void)
 
             profile->storage_dir = switch_core_strdup(globals.pool, storage_dir);
             profile->tone_spec = switch_core_strdup(globals.pool, tone_spec);
+            profile->callback_dialplan = switch_core_strdup(globals.pool, callback_dialplan);
+            profile->callback_context = switch_core_strdup(globals.pool, callback_context);
             switch_copy_string(profile->file_ext, file_ext, sizeof(profile->file_ext));
             switch_mutex_init(&profile->mutex, SWITCH_MUTEX_NESTED, globals.pool);
             
@@ -836,11 +851,12 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
         args.input_callback = cancel_on_dtmf;
 
 
-        snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s", 
+        snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s:%s", 
                  profile->listen_file_key,
                  profile->save_file_key,
                  profile->delete_file_key,
-                 profile->email_key);
+                 profile->email_key,
+                 profile->callback_key);
 
 
         snprintf(input, sizeof(input), "%s:%d", cbt->type == MSG_NEW ? "new" : "saved", cbt->want+1);
@@ -876,6 +892,8 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
             }
             if (!strcmp(input, profile->listen_file_key)) {
                 goto play_file;
+            } else if (!strcmp(input, profile->callback_key)) {
+                switch_core_session_execute_exten(session, cbt->cid_number, profile->callback_dialplan, profile->callback_context);
             } else if (!strcmp(input, profile->delete_file_key) || !strcmp(input, profile->email_key)) {
                 char *sql = switch_mprintf("update voicemail_data set flags='delete' where uuid='%s'", cbt->uuid);
                 vm_execute_sql(profile, sql, profile->mutex);
