@@ -333,6 +333,11 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 	time_t to = 0;
 	switch_core_session_t *rsession;
 	
+	if (!cmd) {
+		stream->write_function(stream, "USAGE: %s\n", TONE_DETECT_SYNTAX);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	mydata = strdup(cmd);
 	assert(mydata != NULL);
 
@@ -989,6 +994,11 @@ static void sch_api_callback(switch_scheduler_task_t *task)
 SWITCH_STANDARD_API(sched_del_function)
 {
 	uint32_t cnt = 0;
+
+	if (!cmd) {
+		stream->write_function(stream, "Invalid syntax\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
 	
 	if (switch_is_digit_string(cmd)) {
 		int64_t tmp;
@@ -1010,6 +1020,11 @@ SWITCH_STANDARD_API(xml_wrap_api_function)
 	char *dcommand, *edata = NULL, *send = NULL, *command, *arg = NULL;
 	switch_stream_handle_t mystream = { 0 };
 	int encoded = 0, elen = 0;
+
+	if (!cmd) {
+		stream->write_function(stream, "Invalid syntax\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
 	
 	if ((dcommand = strdup(cmd))) {
 		if (!strncasecmp(dcommand, "encoded ", 8)) {
@@ -1059,7 +1074,10 @@ SWITCH_STANDARD_API(sched_api_function)
 	char *tm = NULL, *dcmd, *group;
 	time_t when;
 
-	assert(cmd != NULL);
+	if (!cmd) {
+		stream->write_function(stream, "Invalid syntax\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
 	tm = strdup(cmd);
 	assert(tm != NULL);
 
