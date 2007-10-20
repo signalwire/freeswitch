@@ -79,6 +79,7 @@ struct vm_profile {
     char urgent_key[2];
     char file_ext[10];
     char *tone_spec;
+    char *storage_dir;
     uint32_t digit_timeout;
     uint32_t max_login_attempts;
     uint32_t max_record_len;
@@ -277,6 +278,7 @@ static switch_status_t load_config(void)
         char *urgent_key = "*";
         char *tone_spec = "%(1000, 0, 640)";
         char *file_ext = "wav";
+        char *storage_dir = "";
 
         switch_core_db_t *db;
         uint32_t timeout = 10000, max_login_attempts = 3, max_record_len = 300;
@@ -324,6 +326,8 @@ static switch_status_t load_config(void)
                 rew_key = val;
             } else if (!strcasecmp(var, "urgent-key") && !switch_strlen_zero(val)) {
                 urgent_key = val;
+            } else if (!strcasecmp(var, "storage-dir") && !switch_strlen_zero(val)) {
+                storage_dir = val;
             } else if (!strcasecmp(var, "file-extension")) {
                 file_ext = val;
             } else if (!strcasecmp(var, "tone-spec")) {
@@ -437,6 +441,8 @@ static switch_status_t load_config(void)
             *profile->rew_key = *rew_key;
             *profile->urgent_key = *urgent_key;
 
+
+            profile->storage_dir = switch_core_strdup(globals.pool, storage_dir);
             profile->tone_spec = switch_core_strdup(globals.pool, tone_spec);
             switch_copy_string(profile->file_ext, file_ext, sizeof(profile->file_ext));
             switch_mutex_init(&profile->mutex, SWITCH_MUTEX_NESTED, globals.pool);
@@ -972,6 +978,7 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
 {
     vm_check_state_t vm_check_state = VM_CHECK_START;
     switch_channel_t *channel;
+    switch_caller_profile_t *caller_profile;
     vm_profile_t *profile;
     switch_xml_t x_domain, x_domain_root, x_user, x_params, x_param;
     switch_status_t status;
@@ -1287,7 +1294,13 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
 
                 if (!x_user) {
                     int ok = 1;
-                    char *xtra = switch_mprintf("mailbox=%s", myid);
+                    /* TRX added destination_number and caller_id_number from the session object
+                     * ideally switch_xml_* would do this for any curl request, but that can get tricky
+                     * since curl & the session object arent always present, I will eventually look at it 
+                     * and see what it would take to make it automagically do that
+                     */
+                    caller_profile = switch_channel_get_caller_profile(channel);
+                    char *xtra = switch_mprintf("mailbox=%s&destination_number=%s&caller_id_number=%s", myid,caller_profile->destination_number,caller_profile->caller_id_number);
                     
                     assert(xtra);
 
@@ -1344,14 +1357,21 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
 
                 if (auth || !thepass || (thepass && mypass && !strcmp(thepass, mypass))) {
                     if (!dir_path) {
-                        dir_path = switch_core_session_sprintf(session, "%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir, 
-                                                               SWITCH_PATH_SEPARATOR,
-                                                               SWITCH_PATH_SEPARATOR,
-                                                               profile->name,
-                                                               SWITCH_PATH_SEPARATOR,
-                                                               domain_name,
-                                                               SWITCH_PATH_SEPARATOR,
-                                                               myid);
+                        if(switch_strlen_zero(profile->storage_dir)) {
+                            dir_path = switch_core_session_sprintf(session, "%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir, 
+                                                                   SWITCH_PATH_SEPARATOR,
+                                                                   SWITCH_PATH_SEPARATOR,
+                                                                   profile->name,
+                                                                   SWITCH_PATH_SEPARATOR,
+                                                                   domain_name,
+                                                                   SWITCH_PATH_SEPARATOR,
+                                                                   myid);
+                        } else {
+                            dir_path = switch_core_session_sprintf(session, "%s%s%s",
+                                                                   profile->storage_dir,
+                                                                   SWITCH_PATH_SEPARATOR,
+                                                                   myid);
+                        }
                         
                         
                         if (switch_dir_make_recursive(dir_path, DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
@@ -1427,14 +1447,22 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
     assert(channel != NULL);
     
     caller_profile = switch_channel_get_caller_profile(channel);
-    dir_path = switch_core_session_sprintf(session, "%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir, 
-                                           SWITCH_PATH_SEPARATOR,
-                                           SWITCH_PATH_SEPARATOR,
-                                           profile->name,
-                                           SWITCH_PATH_SEPARATOR,
-                                           domain_name,
-                                           SWITCH_PATH_SEPARATOR,
-                                           id);
+    if(switch_strlen_zero(profile->storage_dir)) {
+        dir_path = switch_core_session_sprintf(session, "%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir, 
+                                               SWITCH_PATH_SEPARATOR,
+                                               SWITCH_PATH_SEPARATOR,
+                                               profile->name,
+                                               SWITCH_PATH_SEPARATOR,
+                                               domain_name,
+                                               SWITCH_PATH_SEPARATOR,
+                                               id);
+    } else {
+        dir_path = switch_core_session_sprintf(session, "%s%s%s",
+                                               profile->storage_dir,
+                                               SWITCH_PATH_SEPARATOR,
+                                               id);
+    }
+
     if (switch_dir_make_recursive(dir_path, DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s", dir_path);
         goto end;
@@ -1610,7 +1638,12 @@ SWITCH_STANDARD_APP(voicemail_function)
 
     channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
-    
+
+    /* TRX this may not be required, every place that a directory is used above, a switch_dir_make_recursive() is called
+     * making this unneeded - the others are required since it involves making a directory for the user account, which
+     * may not exist until that first call, this however appears to be optional and while its 1 call at load time doesnt
+     * appear to do much
+     */
     if (switch_dir_make_recursive(SWITCH_GLOBAL_dirs.storage_dir, DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s", SWITCH_GLOBAL_dirs.storage_dir);
         return;

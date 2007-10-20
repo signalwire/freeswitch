@@ -27,6 +27,7 @@
       <param name="restart-key" value="1"/>
       <param name="ff-key" value="6"/>
       <param name="rew-key" value="4"/>
+      <!--<param name="storage-dir" value="/tmp"/>-->
       <!--<param name="odbc-dsn" value="dsn:user:pass"/>-->
     </profile>
   </profiles>
