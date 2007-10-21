@@ -1311,6 +1311,7 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
                 }
 
                 if (!x_user) {
+					char *xtra;
                     int ok = 1;
                     /* TRX added destination_number and caller_id_number from the session object
                      * ideally switch_xml_* would do this for any curl request, but that can get tricky
@@ -1318,7 +1319,7 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
                      * and see what it would take to make it automagically do that
                      */
                     caller_profile = switch_channel_get_caller_profile(channel);
-                    char *xtra = switch_mprintf("mailbox=%s&destination_number=%s&caller_id_number=%s", myid,caller_profile->destination_number,caller_profile->caller_id_number);
+                    xtra = switch_mprintf("mailbox=%s&destination_number=%s&caller_id_number=%s", myid,caller_profile->destination_number,caller_profile->caller_id_number);
                     
                     assert(xtra);
 

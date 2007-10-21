@@ -2073,9 +2073,10 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if (sip->sip_request->rq_url) {
 		sofia_gateway_t *gateway;
+		char *from_key;
 		char *user = (char *) sip->sip_request->rq_url->url_user;
 		check_decode(user, session);
-		char *from_key = switch_core_session_sprintf(session, "sip:%s@%s",
+		from_key = switch_core_session_sprintf(session, "sip:%s@%s",
 													 user,
 													 (char *) sip->sip_request->rq_url->url_host);
 
