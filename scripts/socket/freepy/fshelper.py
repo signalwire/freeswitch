@@ -290,6 +290,19 @@ class FsHelper(ClientFactory):
         return d
 
 
+    def broadcast(self, uuid, path, legs="both", bgapi=True):
+        """
+        @legs - one of the following strings: aleg|bleg|both 
+        """
+        def broadcast_inner(ignored):
+            df = self.freepyd.broadcast(uuid, path, legs, bgapi)
+            return df
+
+        d = self.connect()
+        d.addCallback(broadcast_inner)
+        return d
+
+
     def sofia_profile_restart(self, profile_name, bgapi=True):
 
         def sofia_profile_restart_inner(ignored):
