@@ -11,6 +11,8 @@ BASE        = $(switch_srcdir)
 OSARCH=`uname -s`
 
 .DEFAULT:
+	@target=`echo $@ | sed -e 's|^.*-||'`; \
+         if test "$$target" = "install"; then $(MAKE) $(AM_MAKEFLAGS) core_install; else $(MAKE) $(AM_MAKEFLAGS) core ; fi;
 	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@
 
 libfreeswitch_la_SOURCES	= \
