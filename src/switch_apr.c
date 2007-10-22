@@ -745,7 +745,13 @@ SWITCH_DECLARE(switch_status_t) switch_queue_pop(switch_queue_t * queue, void **
 
 SWITCH_DECLARE(switch_status_t) switch_queue_push(switch_queue_t * queue, void *data)
 {
-	return apr_queue_push(queue, data);
+	apr_status_t s;
+
+	do {
+		s = apr_queue_push(queue, data);
+	} while (s == APR_EINTR);
+	
+	return s;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_queue_trypop(switch_queue_t * queue, void **data)
@@ -755,7 +761,13 @@ SWITCH_DECLARE(switch_status_t) switch_queue_trypop(switch_queue_t * queue, void
 
 SWITCH_DECLARE(switch_status_t) switch_queue_trypush(switch_queue_t * queue, void *data)
 {
-	return apr_queue_trypush(queue, data);
+	apr_status_t s;
+
+	do {
+		s = apr_queue_trypush(queue, data);
+	} while (s == APR_EINTR);
+
+	return s;
 }
 
 SWITCH_DECLARE(int) switch_vasprintf(char **ret, const char *fmt, va_list ap)
