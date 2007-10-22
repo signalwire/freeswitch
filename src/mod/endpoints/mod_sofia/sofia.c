@@ -1774,7 +1774,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 
 #define check_decode(_var, _session) do {								\
 		assert(_session);												\
-		if (strchr(_var, '%')) {										\
+		if (!switch_strlen_zero(_var) && strchr(_var, '%')) {			\
 			char *tmp = switch_core_session_strdup(_session, _var);		\
 			switch_url_decode(tmp);										\
 			_var = tmp;													\
@@ -1795,6 +1795,14 @@ const char *_url_set_chanvars(switch_core_session_t *session, url_t *url, const 
 		user = url->url_user;
 		host = url->url_host;
 		port = url->url_port;
+	}
+
+	if (switch_strlen_zero(user)) {
+		user = "nobody";
+	}
+
+	if (switch_strlen_zero(host)) {
+		host = "nowhere";
 	}
 
 	check_decode(user, session);
