@@ -632,6 +632,7 @@ SFF_CNG        = (1 <<  0) - Frame represents comfort noise
 SFF_RAW_RTP    = (1 <<  1) - Frame has raw rtp accessible
 SFF_RTP_HEADER = (1 << 2)  - Get the rtp header from the frame header
 SFF_PLC        = (1 << 3)  - Frame has generated PLC data
+SFF_RFC2833    = (1 << 4)  - Frame has rfc2833 dtmf data
 </pre>
  */
 typedef enum {
@@ -639,7 +640,8 @@ typedef enum {
 	SFF_CNG = (1 << 0),
 	SFF_RAW_RTP = (1 << 1),
 	SFF_RTP_HEADER = (1 << 2),
-	SFF_PLC = (1 << 3)
+	SFF_PLC = (1 << 3),
+	SFF_RFC2833 = (1 << 4)
 } switch_frame_flag_t;
 
 

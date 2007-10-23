@@ -1219,6 +1219,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 	frame->packetlen = bytes;
 	frame->source = __FILE__;
 	frame->flags |= SFF_RAW_RTP;
+	if (frame->payload == rtp_session->te) {
+		frame->flags |= SFF_RFC2833;
+	}
 	frame->timestamp = ntohl(rtp_session->recv_msg.header.ts);
 	frame->seq = (uint16_t)ntohs((u_short)rtp_session->recv_msg.header.seq);
 	frame->ssrc = ntohl(rtp_session->recv_msg.header.ssrc);
@@ -1282,8 +1285,15 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 	if (fwd) {
 		bytes = datalen;
 		send_msg = (rtp_msg_t *) data;
+		if (*flags & SFF_RFC2833) {
+			send_msg->header.pt = rtp_session->te;
+		}
 	} else {
 		uint8_t m = 0;
+		
+		if (*flags & SFF_RFC2833) {
+			payload = rtp_session->te;
+		}
 
 		if ((rtp_session->ts > (rtp_session->last_write_ts + (rtp_session->samples_per_interval * 10)))
 			|| rtp_session->ts == rtp_session->samples_per_interval) {
