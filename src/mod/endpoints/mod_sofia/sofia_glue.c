@@ -560,13 +560,29 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			url = tech_pvt->dest;
 		}
 
+		if (switch_strlen_zero(tech_pvt->invite_contact)) {
+			tech_pvt->invite_contact = tech_pvt->profile->url;
+		}
+		
+		if (switch_stristr("port=tcp", url)) {
+			char *tmp;
+
+			if (strchr(tech_pvt->invite_contact, ';')) {
+				tmp = switch_core_session_sprintf(session, "<%s&transport=tcp>", tech_pvt->invite_contact);
+			} else {
+				tmp = switch_core_session_sprintf(session, "<%s;transport=tcp>", tech_pvt->invite_contact);
+			}
+			assert(tmp);
+			tech_pvt->invite_contact = tmp;
+		}
+		
+
 		tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
 								  NUTAG_URL(url),
 								  SIPTAG_TO_STR(tech_pvt->dest_to),
 								  TAG_IF(tech_pvt->gateway_from_str, SIPTAG_FROM_STR(tech_pvt->gateway_from_str)),
 								  TAG_IF(!tech_pvt->gateway_from_str, SIPTAG_FROM_STR(tech_pvt->from_str)),
-								  TAG_IF(tech_pvt->invite_contact, SIPTAG_CONTACT_STR(tech_pvt->invite_contact)),
-								  TAG_IF(!tech_pvt->invite_contact, SIPTAG_CONTACT_STR(tech_pvt->profile->url)),
+								  SIPTAG_CONTACT_STR(tech_pvt->invite_contact),
 								  TAG_END());
 
 		switch_safe_free(d_url);
