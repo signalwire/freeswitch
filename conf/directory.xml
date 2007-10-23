@@ -39,6 +39,9 @@
       <!-- omit password for authless registration -->
       <param name="password" value="1234"/>
       <param name="vm-password" value="1234"/><!--if vm-password is omitted password param is used-->
+      <!--<param name="email-addr" value="me@mydomain.com"/>-->
+      <!--<param name="vm-delete-file" value="true"/>-->
+      <!--<param name="vm-attach-file" value="true"/>-->
       <!--<param name="vm-mailto" value="me@mydomain.com"/>-->
       <!--<param name="vm-email-all-messages" value="true"/>-->
       <!-- optionally use this instead if you want to store the hash of user:domain:pass-->

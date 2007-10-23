@@ -1062,7 +1062,6 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
                         body = switch_channel_expand_variables(channel,profile->email_body);
                     }
 
-                    //TBD add better formatting to the body -- TRX done :)
                     switch_simple_email(cbt->email, from, headers, body, cbt->file_path);
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending message to %s\n", cbt->email);
                     switch_safe_free(body);
@@ -1105,6 +1104,7 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
     int total_saved_urgent_messages = 0;
     int heard_auto_saved = 0, heard_auto_new = 0;
     char *email_vm = NULL;
+
     channel = switch_core_session_get_channel(session);
     assert(channel != NULL);    
 
@@ -1488,7 +1488,6 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
 
 
                     vm_check_state = VM_CHECK_FOLDER_SUMMARY;
-                    //vm_check_state = VM_CHECK_MENU;
                 } else {
                     goto failed;
                 }
@@ -1542,6 +1541,9 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
     cc_t cc = { 0 };
     char *read_flags = NORMAL_FLAG_STRING;
     int priority = 3;
+    int email_attach = 1;
+    int email_delete = 1;
+
 
     memset(&cbt, 0, sizeof(cbt));
     if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
@@ -1579,6 +1581,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
         int ok = 1;
         char *xtra = switch_mprintf("mailbox=%s", id);
         switch_xml_t x_domain, x_domain_root, x_user, x_params, x_param;
+        const char *email_addr = NULL;
 
         assert(xtra);
         x_user = x_domain = x_domain_root = NULL;
@@ -1591,10 +1594,20 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
                     
                     if (!strcasecmp(var, "vm-mailto")) {
                         email_vm = switch_core_session_strdup(session, val);
+                    } else if (!strcasecmp(var, "email-addr")) {
+                        email_addr = val;
                     } else if (!strcasecmp(var, "vm-email-all-messages")) {
                         send_mail = switch_true(val);
+                    } else if (!strcasecmp(var, "vm-delete-file")) {
+                        email_delete = switch_true(val);
+                    } else if (!strcasecmp(var, "vm-attach-file")) {
+                        email_attach = switch_true(val);
                     }
                 }
+            }
+
+            if (send_mail && switch_strlen_zero(email_vm) && !switch_strlen_zero(email_addr)) {
+                email_vm = switch_core_session_strdup(session, email_addr);
             }
 
         } else {
@@ -1760,11 +1773,17 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
             body = switch_channel_expand_variables(channel,profile->email_body);
         }
 
-        //TBD add better formatting to the body -- TRX done :)
-        switch_simple_email(email_vm, from, headers, body, file_path);
+        if(email_attach) {
+            switch_simple_email(email_vm, from, headers, body, file_path);
+        } else {
+            switch_simple_email(email_vm, from, headers, body, NULL);
+        }
+
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending message to %s\n", email_vm);
         switch_safe_free(body);
-        unlink(file_path);
+        if(email_delete) {
+            unlink(file_path);
+        }
     }
 
     switch_safe_free(file_path);
