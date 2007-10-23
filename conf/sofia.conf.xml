@@ -28,6 +28,8 @@
 	  <!--<param name="expire-seconds" value="60"/>-->
 	  <!--/// do not register ///-->
 	  <!--<param name="register" value="false"/>-->
+	  <!-- which transport to use for register -->
+	  <!--<param name="register-transport" value="udp"/>-->
 	  <!--How many seconds before a retry when a failure or timeout occurs -->
 	  <!--<param name="retry_seconds" value="30"/>-->
 	  <!--Use the callerid of an inbound call in the from field on outbound calls via this gateway -->
