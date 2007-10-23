@@ -553,6 +553,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	contact = sofia_glue_get_url_from_contact(tmp, 0);
 
 	nua_notify(nh,
+			   NUTAG_NEWSUB(1),
 			   NUTAG_URL(contact),
 			   SIPTAG_TO_STR(full_from),
 			   SIPTAG_FROM_STR(id),
