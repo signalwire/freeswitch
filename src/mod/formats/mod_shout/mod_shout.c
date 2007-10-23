@@ -786,7 +786,7 @@ static switch_status_t shout_file_read(switch_file_handle_t *handle, void *data,
 static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data, size_t *len)
 {
 	shout_context_t *context = handle->private_info;
-	unsigned char mp3buf[2048] = "";
+	unsigned char mp3buf[8192] = "";
 	int rlen;
 	int16_t *audio = data;
 	int nsamples = *len;
