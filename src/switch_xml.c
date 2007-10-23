@@ -956,9 +956,12 @@ static int preprocess_glob(const char *pattern, int write_fd, int rlevel)
 			*p = '\0';
 		}
 	} else {
-		dir_path = SWITCH_GLOBAL_dirs.conf_dir;
 		p = switch_core_sprintf(pool, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, pattern);
 		pattern = p;
+		dir_path = switch_core_strdup(pool, pattern);
+		if ((p = strrchr(dir_path, *SWITCH_PATH_SEPARATOR))) {
+			*p = '\0';
+		}
 	}
 
 	switch_match_glob(pattern, &result, pool);
@@ -967,7 +970,6 @@ static int preprocess_glob(const char *pattern, int write_fd, int rlevel)
 
     for (i = 0; i < result->nelts; i++) {
 		char *path = list[i];
-
 		if (strcmp(path, ".") && strcmp(path, "..")) {
 			p = switch_core_sprintf(pool, "%s%s%s", dir_path, SWITCH_PATH_SEPARATOR, path);
 			if (preprocess(p, write_fd, rlevel) < 0) {
