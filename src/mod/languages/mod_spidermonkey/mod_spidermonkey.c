@@ -1097,14 +1097,14 @@ static switch_status_t js_stream_input_callback(switch_core_session_t *session, 
 			}
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strcasecmp(ret, "restart")) {
-			unsigned int pos = 0;
+			uint32_t pos = 0;
 			fh->speed = 0;
 			switch_core_file_seek(fh, &pos, 0, SEEK_SET);
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strncasecmp(ret, "seek", 4)) {
 			switch_codec_t *codec;
-			unsigned int samps = 0;
-			unsigned int pos = 0;
+			uint32_t samps = 0;
+			uint32_t pos = 0;
 			char *p;
 			codec = switch_core_session_get_read_codec(jss->session);
 
@@ -1119,7 +1119,7 @@ static switch_status_t js_stream_input_callback(switch_core_session_t *session, 
 						samps = step * (codec->implementation->actual_samples_per_second / 1000);
 						switch_core_file_seek(fh, &pos, samps, SEEK_CUR);
 					} else {
-						samps = step * (codec->implementation->actual_samples_per_second / 1000);
+						samps = abs(step) * (codec->implementation->actual_samples_per_second / 1000);
 						switch_core_file_seek(fh, &pos, fh->pos - samps, SEEK_SET);
 					}
 				} else {
