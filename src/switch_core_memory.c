@@ -282,7 +282,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(switch_m
 	printf("Free Pool %s %s:%d\n", file, func, line);
 #endif
 
-	if (switch_queue_trypush(memory_manager.pool_queue, *pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_queue_push(memory_manager.pool_queue, *pool) != SWITCH_STATUS_SUCCESS) {
 		apr_pool_destroy(*pool);
 	}
 	*pool = NULL;

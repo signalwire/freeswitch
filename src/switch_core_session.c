@@ -768,35 +768,27 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 	if (pool && *pool) {
 		usepool = *pool;
 		*pool = NULL;
-	} else if (switch_core_new_memory_pool(&usepool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not allocate memory pool\n");
-		return NULL;
+	} else {
+		switch_core_new_memory_pool(&usepool);
 	}
 
-	if ((session = switch_core_alloc(usepool, sizeof(switch_core_session_t))) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not allocate session\n");
-		switch_core_destroy_memory_pool(&usepool);
-		return NULL;
-	}
 
-	if (switch_channel_alloc(&session->channel, usepool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate channel structure\n");
-		switch_core_destroy_memory_pool(&usepool);
-		return NULL;
+	session = switch_core_alloc(usepool, sizeof(*session));
+	session->pool = usepool;
+	
+	if (switch_channel_alloc(&session->channel, session->pool) != SWITCH_STATUS_SUCCESS) {
+		abort();
 	}
-
 
 	switch_channel_init(session->channel, session, CS_NEW, 0);
+
 
 	/* The session *IS* the pool you may not alter it because you have no idea how
 	   its all private it will be passed to the thread run function */
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format(session->uuid_str, &uuid);
-
-	session->pool = usepool;
 	session->endpoint_interface = endpoint_interface;
-
 	session->raw_write_frame.data = session->raw_write_buf;
 	session->raw_write_frame.buflen = sizeof(session->raw_write_buf);
 	session->raw_read_frame.data = session->raw_read_buf;
