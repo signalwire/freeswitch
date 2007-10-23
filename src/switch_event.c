@@ -545,7 +545,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header(switch_event_t *event, c
 	switch_event_header_t *hp, *lp = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	
-	for (hp = event->headers; hp && hp->next; hp = hp->next) {
+	for (hp = event->headers; hp; hp = hp->next) {
 		if (!strcmp(header_name, hp->name)) {
 			if (lp) {
 				lp->next = hp->next;
