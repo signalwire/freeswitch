@@ -1264,30 +1264,46 @@ if ((dp = realloc(data, olen))) {\
 
 SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel, char *in)
 {
-	char *p, *c;
+	char *q, *p, *c = NULL;
 	char *data, *indup;
 	size_t sp = 0, len = 0, olen = 0, vtype = 0, br = 0, cpos, block = 128;
 	char *sub_val = NULL, *func_val = NULL;
 	int nv = 0;
 
-	if (in && (p = strchr(in, '$'))) {
-		if (!*(p + 1)) {
-			return in;
+	q = in;
+	while(q && *q) {
+		if (!(p = strchr(q, '$'))) {
+			break;
 		}
-	} else {
+		
+		if (*(p-1) == '\\') {
+			q = p + 1;
+			continue;
+		}
+
+		if (*(p+1) != '{') {
+			q = p + 1;
+			continue;
+		}
+		
+		nv = 1;
+		break;
+	}
+	
+	if (!nv) {
 		return in;
 	}
 
-	
-	olen = strlen(in);
+	nv = 0;
+	olen = strlen(in) + 1;
 	indup = strdup(in);
 
 	if ((data = malloc(olen))) {
 		memset(data, 0, olen);
 		c = data;
-		for (p = indup; *p; p++) {
+		for (p = indup; p && *p; p++) {
 			vtype = 0;
-
+			
 			if (*p == '\\') {
 				if (*(p + 1) == '$') {
 					nv = 1;
