@@ -684,7 +684,7 @@ static switch_status_t vm_macro_get(switch_core_session_t *session,
         memset(buf, 0, buflen);
         args.input_callback = cancel_on_dtmf;
         args.buf = buf;
-        args.buflen = sizeof(buf);
+        args.buflen = buflen;
         ap = &args;
     }
 
@@ -1543,7 +1543,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
     int priority = 3;
     int email_attach = 1;
     int email_delete = 1;
-
+    char buf[2];
 
     memset(&cbt, 0, sizeof(cbt));
     if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
@@ -1582,7 +1582,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
         char *xtra = switch_mprintf("mailbox=%s", id);
         switch_xml_t x_domain, x_domain_root, x_user, x_params, x_param;
         const char *email_addr = NULL;
-
+        
         assert(xtra);
         x_user = x_domain = x_domain_root = NULL;
         if (switch_xml_locate_user(id, domain_name, switch_channel_get_variable(channel, "network_addr"), 
@@ -1631,6 +1631,33 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
     
     file_path = switch_mprintf("%s%smsg_%s.%s", dir_path, SWITCH_PATH_SEPARATOR, uuid, profile->file_ext);
 
+ greet:
+
+    args.input_callback = cancel_on_dtmf;
+    args.buf = buf;
+    args.buflen = sizeof(buf);
+    
+    if (!switch_strlen_zero(cbt.greeting_path)) {
+        memset(buf, 0, sizeof(buf));
+        TRY_CODE(switch_ivr_play_file(session, NULL, cbt.greeting_path, &args));
+    } else {
+        if (!switch_strlen_zero(cbt.name_path)) {
+            memset(buf, 0, sizeof(buf));
+            TRY_CODE(switch_ivr_play_file(session, NULL, cbt.name_path, &args));
+        }
+        if (switch_strlen_zero(buf)) {
+            memset(buf, 0, sizeof(buf));
+            TRY_CODE(switch_ivr_phrase_macro(session, VM_PLAY_GREETING_MACRO, id, NULL, &args));
+        }
+    }
+
+    if (!strcasecmp(buf, profile->main_menu_key)) {
+        voicemail_check_main(session, profile_name, domain_name, id, 0);
+    } else {
+        goto greet;
+    }
+
+    
     memset(&fh, 0, sizeof(fh));
     args.input_callback = control_playback;
     memset(&cc, 0, sizeof(cc));
@@ -1639,14 +1666,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
     cc.noexit = 1;
     args.buf = &cc;
 
-    if (!switch_strlen_zero(cbt.greeting_path)) {
-        TRY_CODE(switch_ivr_play_file(session, NULL, cbt.greeting_path, NULL));
-    } else {
-        if (!switch_strlen_zero(cbt.name_path)) {
-            TRY_CODE(switch_ivr_play_file(session, NULL, cbt.name_path, NULL));
-        }
-        TRY_CODE(switch_ivr_phrase_macro(session, VM_PLAY_GREETING_MACRO, id, NULL, NULL));
-    }
 
     status = create_file(session, profile, VM_RECORD_MESSAGE_MACRO, file_path);
 
@@ -1667,11 +1686,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
         }
     }
 
-    /* TRX a race condition exists where you hang up right as you start to record, the recording subsystem detects there isnt
-     * a channel and refuses to create the file, as a result you get DB entries and MWI entries when there is no voicemail saved
-     * message counts and other things get out of sync
-     */
-    if(!send_mail && switch_file_exists(file_path,switch_core_session_get_pool(session))==SWITCH_STATUS_SUCCESS) {
+    if(!send_mail && switch_file_exists(file_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
         char *usql;
         switch_event_t *event;
         char *mwi_id = NULL;
@@ -1816,11 +1831,6 @@ SWITCH_STANDARD_APP(voicemail_function)
     channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
 
-    /* TRX this may not be required, every place that a directory is used above, a switch_dir_make_recursive() is called
-     * making this unneeded - the others are required since it involves making a directory for the user account, which
-     * may not exist until that first call, this however appears to be optional and while its 1 call at load time doesnt
-     * appear to do much
-     */
     if (switch_dir_make_recursive(SWITCH_GLOBAL_dirs.storage_dir, DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s", SWITCH_GLOBAL_dirs.storage_dir);
         return;

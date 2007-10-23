@@ -207,7 +207,7 @@
   <macro name="voicemail_say_date">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="$strftime($1|%A, %B %d %Y, %I %M %p)"/>
+	<action function="speak-text" data="${strftime($1|%A, %B %d %Y, %I:%M %p)}"/>
       </match>
     </input>
   </macro>
