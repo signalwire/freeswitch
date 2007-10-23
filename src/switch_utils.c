@@ -205,7 +205,7 @@ SWITCH_DECLARE(const char *) switch_stristr(const char *str, const char *instr)
     while(*a && *b) {
         if (tolower(*b) == tolower(*a)) {
             if (++x == score) {
-                return p;
+                return b - x + 1;
             }
             a++;
         } else {
