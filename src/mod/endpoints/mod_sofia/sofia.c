@@ -548,7 +548,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				*from_domain = "",
 				*register_proxy = NULL,
 				*contact_params = NULL,
-				*params = NULL;
+				*params = NULL,
+				*register_transport = "udp";
 			
 			gateway->pool = profile->pool;
 			gateway->profile = profile;
@@ -588,6 +589,13 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					register_proxy = val;
 				} else if (!strcmp(var, "contact-params")) {
 					contact_params = val;
+				} else if (!strcmp(var, "register-transport")) {
+					if (!strcasecmp(val, "udp") || !strcasecmp(val, "tcp")) {
+						register_transport = val;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: unsupported transport\n");
+						goto skip;
+					}
 				}
 			}
 			
@@ -640,21 +648,21 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			}
 			if (contact_params) {
 				if (*contact_params == ';') {
-					params = contact_params;
+					params = switch_core_sprintf(gateway->pool, "%s&transport=%s", contact_params, register_transport);
 				} else {
-					params = switch_core_sprintf(gateway->pool, ";%s", contact_params);
+					params = switch_core_sprintf(gateway->pool, ";%s&transport=%s", contact_params, register_transport);
 				}
 			} else {
-				params = "";
+				params = switch_core_sprintf(gateway->pool, ";transport=%s", register_transport);
 			}
 			
 
-			gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s", register_proxy);
-			gateway->register_from = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, from_domain);
+			gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s;transport=%s", register_proxy,register_transport);
+			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>", username, from_domain, register_transport);
 			gateway->register_contact = switch_core_sprintf(gateway->pool, "<sip:%s@%s:%d%s>", extension,
 															profile->extsipip ? profile->extsipip : profile->sipip, profile->sip_port, params);
 
-
+			
 			if (!strncasecmp(proxy, "sip:", 4)) {
                 gateway->register_proxy = switch_core_strdup(gateway->pool, proxy);
                 gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy + 4);

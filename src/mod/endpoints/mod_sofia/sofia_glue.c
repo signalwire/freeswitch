@@ -549,6 +549,9 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	if (!tech_pvt->nh) {
 		char *d_url = NULL, *url = NULL;
 		sofia_private_t *sofia_private;
+		char *invite_contact = NULL, *to_str, *use_from_str, *from_str, *url_str;
+		char *transport = "udp", *t_var;
+
 		if (switch_strlen_zero(tech_pvt->dest)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "URL Error! [%s]\n", tech_pvt->dest);
 			return SWITCH_STATUS_FALSE;
@@ -560,29 +563,52 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			url = tech_pvt->dest;
 		}
 
+		url_str = url;
+
 		if (switch_strlen_zero(tech_pvt->invite_contact)) {
 			tech_pvt->invite_contact = tech_pvt->profile->url;
 		}
 		
-		if (switch_stristr("port=tcp", url)) {
-			char *tmp;
+		if (!switch_strlen_zero(tech_pvt->gateway_from_str)) {
+			use_from_str = tech_pvt->gateway_from_str;
+		} else {
+			use_from_str = tech_pvt->from_str;
+		}
 
-			if (strchr(tech_pvt->invite_contact, ';')) {
-				tmp = switch_core_session_sprintf(session, "<%s&transport=tcp>", tech_pvt->invite_contact);
-			} else {
-				tmp = switch_core_session_sprintf(session, "<%s;transport=tcp>", tech_pvt->invite_contact);
+		if (switch_stristr("port=tcp", url)) {
+			transport = "tcp";
+		} else {
+			if ((t_var = switch_channel_get_variable(channel, "sip_transport"))) {
+				if (!strcasecmp(t_var, "tcp") || !strcasecmp(t_var, "udp")) {
+					transport = t_var;
+				}
 			}
-			assert(tmp);
-			tech_pvt->invite_contact = tmp;
+			url_str = switch_core_session_sprintf(session, "%s;transport=%s", url, transport);
 		}
 		
+		if (strchr(tech_pvt->invite_contact, ';')) {
+			invite_contact = switch_core_session_sprintf(session, "<%s&transport=%s>", tech_pvt->invite_contact, transport);
+		} else {
+			invite_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", tech_pvt->invite_contact, transport);
+		}
+		
+		if (strchr(use_from_str, '>')) {
+			from_str = switch_core_session_sprintf(session, "%s;transport=%s", use_from_str, transport);
+		} else {
+			from_str = switch_core_session_sprintf(session, "<%s;transport=%s>", use_from_str, transport);
+		}
+
+		if (strchr(tech_pvt->dest_to, '>')) {
+			to_str = switch_core_session_sprintf(session, "%s;transport=%s", tech_pvt->dest_to, transport);
+		} else {
+			to_str = switch_core_session_sprintf(session, "<%s;transport=%s>", tech_pvt->dest_to, transport);
+		}
 
 		tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
-								  NUTAG_URL(url),
-								  SIPTAG_TO_STR(tech_pvt->dest_to),
-								  TAG_IF(tech_pvt->gateway_from_str, SIPTAG_FROM_STR(tech_pvt->gateway_from_str)),
-								  TAG_IF(!tech_pvt->gateway_from_str, SIPTAG_FROM_STR(tech_pvt->from_str)),
-								  SIPTAG_CONTACT_STR(tech_pvt->invite_contact),
+								  NUTAG_URL(url_str),
+								  SIPTAG_TO_STR(to_str),
+								  SIPTAG_FROM_STR(from_str),
+								  SIPTAG_CONTACT_STR(invite_contact),
 								  TAG_END());
 
 		switch_safe_free(d_url);
