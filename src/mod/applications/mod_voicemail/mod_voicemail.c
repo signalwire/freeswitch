@@ -145,10 +145,10 @@ static switch_status_t vm_execute_sql(vm_profile_t *profile, char *sql, switch_m
 
 
 static switch_bool_t vm_execute_sql_callback(vm_profile_t *profile,
-											  switch_mutex_t *mutex,
-											  char *sql,
-											  switch_core_db_callback_func_t callback,
-											  void *pdata)
+                                             switch_mutex_t *mutex,
+                                             char *sql,
+                                             switch_core_db_callback_func_t callback,
+                                             void *pdata)
 {
 	switch_bool_t ret = SWITCH_FALSE;
 	switch_core_db_t *db;
@@ -1648,56 +1648,56 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
         TRY_CODE(switch_ivr_phrase_macro(session, VM_PLAY_GREETING_MACRO, id, NULL, NULL));
     }
 
-        status = create_file(session, profile, VM_RECORD_MESSAGE_MACRO, file_path);
+    status = create_file(session, profile, VM_RECORD_MESSAGE_MACRO, file_path);
 
-        if ((status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK) && switch_channel_ready(channel)) {
-            char input[10] = "", key_buf[80] = "", term = 0;
+    if ((status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK) && switch_channel_ready(channel)) {
+        char input[10] = "", key_buf[80] = "", term = 0;
 
-            snprintf(key_buf, sizeof(key_buf), "%s:%s", 
-                     profile->urgent_key,
-                     profile->terminator_key);
+        snprintf(key_buf, sizeof(key_buf), "%s:%s", 
+                 profile->urgent_key,
+                 profile->terminator_key);
 
-            vm_macro_get(session, VM_RECORD_URGENT_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout);
-            if (*profile->urgent_key == *input) {
-                read_flags = URGENT_FLAG_STRING;
-                priority = 1;
-                TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "marked-urgent", NULL, NULL));
-            } else {
-                TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL));
-            }
+        vm_macro_get(session, VM_RECORD_URGENT_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout);
+        if (*profile->urgent_key == *input) {
+            read_flags = URGENT_FLAG_STRING;
+            priority = 1;
+            TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "marked-urgent", NULL, NULL));
+        } else {
+            TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL));
         }
+    }
 
-        /* TRX a race condition exists where you hang up right as you start to record, the recording subsystem detects there isnt
-         * a channel and refuses to create the file, as a result you get DB entries and MWI entries when there is no voicemail saved
-         * message counts and other things get out of sync
-         */
-        if(!send_mail && switch_file_exists(file_path,switch_core_session_get_pool(session))==SWITCH_STATUS_SUCCESS) {
-            char *usql;
-            switch_event_t *event;
-            char *mwi_id = NULL;
-            int total_new_messages = 0;
-            int total_saved_messages = 0;
-            int total_new_urgent_messages = 0;
-            int total_saved_urgent_messages = 0;
+    /* TRX a race condition exists where you hang up right as you start to record, the recording subsystem detects there isnt
+     * a channel and refuses to create the file, as a result you get DB entries and MWI entries when there is no voicemail saved
+     * message counts and other things get out of sync
+     */
+    if(!send_mail && switch_file_exists(file_path,switch_core_session_get_pool(session))==SWITCH_STATUS_SUCCESS) {
+        char *usql;
+        switch_event_t *event;
+        char *mwi_id = NULL;
+        int total_new_messages = 0;
+        int total_saved_messages = 0;
+        int total_new_urgent_messages = 0;
+        int total_saved_urgent_messages = 0;
         
-            usql = switch_mprintf("insert into voicemail_data values(%ld,0,'%q','%q','%q','%q','%q','%q','%q','','%q')", (long)time(NULL),
-                                  id, domain_name, uuid, caller_profile->caller_id_name, caller_profile->caller_id_number, myfolder, file_path, read_flags);
-            vm_execute_sql(profile, usql, profile->mutex);
-            switch_safe_free(usql);
+        usql = switch_mprintf("insert into voicemail_data values(%ld,0,'%q','%q','%q','%q','%q','%q','%q','','%q')", (long)time(NULL),
+                              id, domain_name, uuid, caller_profile->caller_id_name, caller_profile->caller_id_number, myfolder, file_path, read_flags);
+        vm_execute_sql(profile, usql, profile->mutex);
+        switch_safe_free(usql);
 
-            message_count(profile, id, domain_name, myfolder, &total_new_messages, &total_saved_messages,
-                          &total_new_urgent_messages, &total_saved_urgent_messages);
+        message_count(profile, id, domain_name, myfolder, &total_new_messages, &total_saved_messages,
+                      &total_new_urgent_messages, &total_saved_urgent_messages);
 
-            if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) {
-                mwi_id = switch_mprintf("%s@%s", id, domain_name);
-                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", "yes");
-                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", mwi_id);
-                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)", 
-                                        total_new_messages, total_saved_messages, total_new_urgent_messages, total_saved_urgent_messages);
-                switch_event_fire(&event);
-                switch_safe_free(mwi_id);
-            }    
-        }
+        if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) {
+            mwi_id = switch_mprintf("%s@%s", id, domain_name);
+            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", "yes");
+            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", mwi_id);
+            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)", 
+                                    total_new_messages, total_saved_messages, total_new_urgent_messages, total_saved_urgent_messages);
+            switch_event_fire(&event);
+            switch_safe_free(mwi_id);
+        }    
+    }
         
  end:
 
