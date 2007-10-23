@@ -60,6 +60,19 @@ typedef apr_os_thread_t switch_thread_id_t;
 #include <sys/mman.h>
 #endif
 
+#ifndef WIN32
+/* setuid, setgid */
+#include <unistd.h>
+
+/* getgrnam, getpwnam */
+#include <pwd.h>
+#include <grp.h>
+
+#ifdef HAVE_SYS_RESOURCE_H
+#include <sys/resource.h>
+#endif
+#endif
+
 /* #define DEBUG_ALLOC */
 #define DO_EVENTS
 

@@ -170,7 +170,7 @@ AC_SUBST(DYNAMIC_LIB_EXTEN)
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/types.h])
+AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -185,6 +185,59 @@ AC_FUNC_MALLOC
 AC_TYPE_SIGNAL
 AC_FUNC_STRFTIME
 AC_CHECK_FUNCS([gethostname vasprintf mmap mlock mlockall usleep])
+AC_CHECK_FUNCS([sched_setscheduler setpriority setrlimit setgroups initgroups])
+
+AC_CHECK_DECL([RLIMIT_MEMLOCK],
+	[AC_DEFINE([HAVE_RLIMIT_MEMLOCK],[1],[RLIMIT_MEMLOCK constant for setrlimit])],,
+	[#ifdef HAVE_SYS_RESOURCE_H
+	 #include <sys/resource.h>
+	 #endif])
+
+AC_CHECK_DECL([SCHED_RR],
+	[AC_DEFINE([HAVE_SCHED_RR],[1],[SCHED_RR constant for sched_setscheduler])],,
+	[#ifdef HAVE_SCHED_H
+	 #include <sched.h>
+	 #endif])
+
+#
+# use mlockall only on linux (for now; if available)
+#
+if test "x${ac_cv_func_mlockall}" = "xyes"; then
+	AC_MSG_CHECKING([whether to use mlockall])
+	case "$host" in
+	*-linux-*)
+		AC_DEFINE([USE_MLOCKALL],[1],[Enable mlockall support])
+		AC_MSG_RESULT([yes])
+		USE_MLOCKALL=yes
+		;;
+	*-freebsd*)
+		AC_MSG_RESULT([no, broken for non-root users])
+		;;
+	*)
+		AC_MSG_RESULT([no])
+		;;
+	esac
+
+	#
+	# setrlimit prerequisites
+	#
+	if test "x${USE_MLOCKALL}" = "xyes" -a \
+		"x${ac_cv_func_setrlimit}" = "xyes" -a \
+		"x${ac_cv_have_decl_RLIMIT_MEMLOCK}" = "xyes"
+	then
+		AC_DEFINE([USE_SETRLIMIT],[1],[Use setrlimit to disable mlock limit for non-root users])
+	fi
+fi
+
+#
+# sched_setcheduler + round-robin scheduler prerequisites
+#
+if test "x${ac_cv_func_sched_setscheduler}" = "xyes" -a \
+        "x${ac_cv_have_decl_SCHED_RR}" = "xyes"
+then
+	AC_DEFINE([USE_SCHED_SETSCHEDULER],[1],[Enable round-robin scheduler using sched_setscheduler])
+fi
+
 
 AC_C_BIGENDIAN(AC_DEFINE([SWITCH_BYTE_ORDER],__BIG_ENDIAN,[Big Endian]),AC_DEFINE([SWITCH_BYTE_ORDER],__LITTLE_ENDIAN,[Little Endian]))
 

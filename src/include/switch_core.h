@@ -1414,6 +1414,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_management_exec(char *relative_oid, 
 SWITCH_DECLARE(int32_t) set_high_priority(void);
 
 /*! 
+  \brief Change user and/or group of the running process
+  \long Several possible combinations:
+  - user only (group NULL): switch to user and his primary group (and supplementary groups, if supported)
+  - user and group: switch to user and specified group (only)
+  - group only (user NULL): switch group only
+  \param user name of the user to switch to (or NULL)
+  \param group name of the group to switch to (or NULL)
+  \return 0 on success, -1 otherwise
+*/
+SWITCH_DECLARE(int32_t) change_user_group(const char *user, const char *group);
+
+/*! 
   \brief Run endlessly until the system is shutdown
   \param bg divert console to the background
 */

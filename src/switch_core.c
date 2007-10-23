@@ -360,7 +360,19 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 
 SWITCH_DECLARE(int32_t) set_high_priority(void)
 {
-#ifdef __linux__
+#ifdef WIN32
+	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+#else
+
+#ifdef USE_SETRLIMIT
+	struct rlimit lim = { RLIM_INFINITY, RLIM_INFINITY };
+#endif
+
+#ifdef USE_SCHED_SETSCHEDULER
+	/*
+	 * Try to use a round-robin scheduler
+	 * with a fallback if that does not work
+	 */
 	struct sched_param sched = { 0 };
 	sched.sched_priority = 1;
 	if (sched_setscheduler(0, SCHED_RR, &sched)) {
@@ -371,19 +383,126 @@ SWITCH_DECLARE(int32_t) set_high_priority(void)
 	}
 #endif
 
-#ifdef WIN32
-	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+#ifdef HAVE_SETPRIORITY
+	/*
+	 * setpriority() works on FreeBSD (6.2), nice() doesn't
+	 */
+	if (setpriority(PRIO_PROCESS, getpid(), -10) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not set nice level\n");
+	}
 #else
-	if(nice(-10)!= -10) {
+	if (nice(-10) != -10) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not set nice level\n");
 	}
 #endif
 
-#define USE_MLOCKALL
-#ifdef HAVE_MLOCKALL
+#ifdef USE_SETRLIMIT
+	/*
+	 * The amount of memory which can be mlocked is limited for non-root users.
+	 * FS will segfault (= hitting the limit) soon after mlockall has been called
+	 * and we've switched to a different user.
+	 * So let's try to remove the mlock limit here...
+	 */
+	if (setrlimit(RLIMIT_MEMLOCK, &lim) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
+			 "Failed to disable memlock limit, application may crash if run as non-root user!\n");
+	}
+#endif
+
 #ifdef USE_MLOCKALL
+	/*
+	 * Pin memory pages to RAM to prevent being swapped to disk
+	 */
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 #endif
+
+#endif
+	return 0;
+}
+
+SWITCH_DECLARE(int32_t) change_user_group(const char *user, const char *group)
+{
+#ifndef WIN32
+	uid_t runas_uid = 0;
+	gid_t runas_gid = 0;
+	struct passwd *runas_pw = NULL;
+
+	if (user) {
+		/*
+		 * Lookup user information in the system's db
+		 */
+		runas_pw = getpwnam( user );
+		if (!runas_pw) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unknown user \"%s\"\n", user);
+			return -1;
+		}
+		runas_uid = runas_pw->pw_uid;
+	}
+
+	if (group) {
+		struct group *gr = NULL;
+
+		/*
+		 * Lookup group information in the system's db
+		 */
+		gr = getgrnam( group );
+		if (!gr) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unknown group \"%s\"\n", group);
+			return -1;
+		}
+		runas_gid = gr->gr_gid;
+	}
+
+	if (runas_uid) {
+#ifdef HAVE_SETGROUPS
+		/*
+		 * Drop all group memberships prior to changing anything
+		 * or else we're going to inherit the parent's list of groups
+		 * (which is not what we want...)
+		 */
+		if (setgroups(0, NULL) < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to drop group access list\n");
+			return -1;
+		}
+#endif
+		if (runas_gid) {
+			/*
+			 * A group has been passed, switch to it
+			 * (without loading the user's other groups)
+			 */
+			if (setgid(runas_gid) < 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to change gid!\n");
+				return -1;
+			}
+		} else {
+			/*
+			 * No group has been passed, use the user's primary group in this case
+			 */
+			if (setgid(runas_pw->pw_gid) < 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to change gid!\n");
+				return -1;
+			}
+
+#ifdef HAVE_INITGROUPS
+			/*
+			 * Set all the other groups the user is a member of
+			 * (This can be really useful for fine-grained access control)
+			 */
+			if (initgroups(runas_pw->pw_name, runas_pw->pw_gid) < 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to set group access list for user\n");
+				return -1;
+			}
+#endif
+		}
+
+		/*
+		 * Finally drop all privileges by switching to the new userid
+		 */
+		if (setuid(runas_uid) < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to change uid!\n");
+			return -1;
+		}
+	}
 #endif
 	return 0;
 }

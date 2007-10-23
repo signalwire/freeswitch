@@ -205,6 +205,8 @@ int main(int argc, char *argv[])
 	const char *err = NULL;		/* error value for return from freeswitch initialization */
 #ifndef WIN32
 	int nf = 0;					/* TRUE if we are running in nofork mode */
+	char *runas_user = NULL;
+	char *runas_group = NULL;
 #endif
 	int nc = 0;					/* TRUE if we are running in noconsole mode */
 	FILE *f;					/* file handle to the pid file */
@@ -214,6 +216,7 @@ int main(int argc, char *argv[])
 	char *usageDesc;
 	int alt_dirs = 0;
 	int known_opt;
+ 	int high_prio = 0;
 	switch_core_flag_t flags = SCF_USE_SQL;
 
 #ifdef WIN32
@@ -229,6 +232,8 @@ int main(int argc, char *argv[])
 		"\t-uninstall       -- remove freeswitch as a service\n"
 #else
 		"\t-nf              -- no forking\n"
+		"\t-u [user]        -- specify user to switch to\n"
+		"\t-g [group]       -- specify group to switch to\n"
 #endif
 		"\t-help            -- this message\n"
 		"\t-hp              -- enable high priority settings\n"
@@ -280,6 +285,21 @@ int main(int argc, char *argv[])
 			}
 		}
 #else
+		if (argv[x] && !strcmp(argv[x], "-u")) {
+			x++;
+			if (argv[x] && strlen(argv[x])) {
+				runas_user = argv[x];
+			}
+			known_opt++;
+		}
+
+		if (argv[x] && !strcmp(argv[x], "-g")) {
+			x++;
+			if (argv[x] && strlen(argv[x])) {
+				runas_group = argv[x];
+			}
+			known_opt++;
+		}
 
 		if (argv[x] && !strcmp(argv[x], "-nf")) {
 			nf++;
@@ -287,7 +307,7 @@ int main(int argc, char *argv[])
 		}
 #endif
 		if (argv[x] && !strcmp(argv[x], "-hp")) {
-			set_high_priority();
+			high_prio++;
 			known_opt++;
 		}
 
@@ -388,6 +408,19 @@ int main(int argc, char *argv[])
 		}
 #endif
 	}
+
+	if (high_prio) {
+		set_high_priority();
+	}
+
+#ifndef WIN32
+	if (runas_user || runas_group) {
+		if(change_user_group(runas_user, runas_group) < 0) {
+			fprintf(stderr, "Failed to switch user / group\n" );
+			return 255;
+		}
+	}
+#endif
 
 	if (switch_core_init_and_modload(nc ? lfile : NULL, flags, &err) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Cannot Initilize [%s]\n", err);
