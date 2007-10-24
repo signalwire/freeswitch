@@ -538,13 +538,22 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 						"xmlns:rpid='urn:ietf:params:xml:ns:pidf:rpid'\r\n"
 						"xmlns:c='urn:ietf:params:xml:ns:pidf:cipid'\r\n"
 						"entity='pres:%s'>\r\n"
+						"<presentity uri=\"%s;method=SUBSCRIBE\"/>\r\n"
+						"<atom id=\"1002\">\r\n"
+						"<address uri=\"%s\" priority=\"0.800000\">\r\n"
+						"<status status=\"inuse\"/>\r\n"
+						"<msnsubstatus substatus=\"%s\"/>\r\n"
+						"</address>\r\n"
+						"</atom>\r\n"
 						"<tuple id='t6a5ed77e'>\r\n"
 						"<status>\r\n"
 						"<basic>%s</basic>\r\n"
 						"</status>\r\n"
 						"</tuple>\r\n"
 						"<dm:person id='p06360c4a'>\r\n"
-						"<rpid:activities>\r\n" "<rpid:%s/>\r\n" "</rpid:activities>%s</dm:person>\r\n" "</presence>", id, open, rpid, note);
+						"<rpid:activities>\r\n" "<rpid:%s/>\r\n" "</rpid:activities>%s</dm:person>\r\n" "</presence>", id, 
+						id, contact, rpid,
+						open, rpid, note);
 
 
 
