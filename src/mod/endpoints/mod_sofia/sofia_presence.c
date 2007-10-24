@@ -532,6 +532,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	}
 
 	to = switch_mprintf("sip:%s@%s", user, host);
+	tmp = contact;
+	contact = sofia_glue_get_url_from_contact(tmp, 0);
 	pl = switch_mprintf("<?xml version='1.0' encoding='UTF-8'?>\r\n"
 						"<presence xmlns='urn:ietf:params:xml:ns:pidf'\r\n"
 						"xmlns:dm='urn:ietf:params:xml:ns:pidf:data-model'\r\n"
@@ -558,8 +560,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 
 	nh = nua_handle(profile->nua, NULL, TAG_END());
-	tmp = contact;
-	contact = sofia_glue_get_url_from_contact(tmp, 0);
+
 
 	nua_notify(nh,
 			   NUTAG_NEWSUB(1),
