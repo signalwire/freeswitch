@@ -508,14 +508,10 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	char *to;
 	char *open;
 	char *tmp;
-	char *prpid = rpid;
+	char *prpid = "onthephone";
 
 	if (!rpid) {
 		rpid = "unknown";
-	}
-
-	if (!prpid) {
-		prpid = "onthephone";
 	}
 
 	if (in) {
