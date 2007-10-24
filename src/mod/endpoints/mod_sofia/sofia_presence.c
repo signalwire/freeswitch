@@ -532,8 +532,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	}
 
 	to = switch_mprintf("sip:%s@%s", user, host);
-	tmp = contact;
-	contact = sofia_glue_get_url_from_contact(tmp, 0);
 	pl = switch_mprintf("<?xml version='1.0' encoding='UTF-8'?>\r\n"
 						"<presence xmlns='urn:ietf:params:xml:ns:pidf'\r\n"
 						"xmlns:dm='urn:ietf:params:xml:ns:pidf:data-model'\r\n"
@@ -543,7 +541,9 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 						"<presentity uri=\"%s;method=SUBSCRIBE\"/>\r\n"
 						"<atom id=\"1002\">\r\n"
 						"<address uri=\"%s\" priority=\"0.800000\">\r\n"
-						"<status status=\"inuse\"/>\r\n"
+						"<status status=\"inuse\">\r\n"
+						"<note>%s</note>\r\n"
+						"</status>\r\n"
 						"<msnsubstatus substatus=\"%s\"/>\r\n"
 						"</address>\r\n"
 						"</atom>\r\n"
@@ -554,10 +554,12 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 						"</tuple>\r\n"
 						"<dm:person id='p06360c4a'>\r\n"
 						"<rpid:activities>\r\n" "<rpid:%s/>\r\n" "</rpid:activities>%s</dm:person>\r\n" "</presence>", id, 
-						id, contact, rpid,
+						id, profile->url, note, rpid,
 						open, rpid, note);
 
 
+	tmp = contact;
+	contact = sofia_glue_get_url_from_contact(tmp, 0);
 
 	nh = nua_handle(profile->nua, NULL, TAG_END());
 
