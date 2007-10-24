@@ -42,12 +42,24 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									 char const *phrase,
 									 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 
+void sofia_handle_sip_r_notify(switch_core_session_t *session, int status,
+							   char const *phrase,
+							   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
+{
+#if 0
+	if (status > 299) {
+		nua_handle_destroy(nh);
+		switch_core_hash_delete(profile->sub_hash, sip->sip_call_id->i_id);
+	}
+#endif
+}
+
 void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 							   char const *phrase,
 							   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
 {
 	switch_channel_t *channel = NULL;
-
+	
 	if (sip && sip->sip_event) {
 		char *type = (char *)sip->sip_event->o_type;
 		
@@ -177,13 +189,15 @@ void sofia_event_callback(nua_event_t event,
 	case nua_i_bye:
 	case nua_r_unsubscribe:
 	case nua_r_publish:
-	case nua_r_notify:
 	case nua_i_cancel:
 	case nua_i_error:
 	case nua_i_active:
 	case nua_i_ack:
 	case nua_i_terminated:
 	case nua_r_set_params:
+		break;
+	case nua_r_notify:
+		sofia_handle_sip_r_notify(session, status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
 	case nua_i_notify:
 		sofia_handle_sip_i_notify(session, status, phrase, nua, profile, nh, sofia_private, sip, tags);
@@ -462,6 +476,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	sofia_glue_del_profile(profile);
 	switch_core_hash_destroy(&profile->chat_hash);
+	switch_core_hash_destroy(&profile->sub_hash);
 
 	switch_thread_rwlock_unlock(profile->rwlock);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write unlock %s\n", profile->name);
@@ -789,6 +804,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				
 				profile->dbname = switch_core_strdup(profile->pool, url);
 				switch_core_hash_init(&profile->chat_hash, profile->pool);
+				switch_core_hash_init(&profile->sub_hash, profile->pool);
 				switch_thread_rwlock_create(&profile->rwlock, profile->pool);
 				switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				profile->dtmf_duration = 100;

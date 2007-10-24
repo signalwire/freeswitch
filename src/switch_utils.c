@@ -199,22 +199,21 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(char *to, char *from, char *he
 
 SWITCH_DECLARE(const char *) switch_stristr(const char *str, const char *instr)
 {
-    switch_size_t score = strlen(str), x = 0;
-    const char *a = str, *b = instr, *p = NULL;
-
-    while(*a && *b) {
-        if (tolower(*b) == tolower(*a)) {
-            if (++x == score) {
-                return b - x + 1;
-            }
-            a++;
-        } else {
-            a = str;
-            p = b+1;
+	switch_size_t score = strlen(str), x = 0;
+	const char *a = str, *b = instr, *p = NULL;
+	while(*a && *b) {
+		if (tolower(*b) == tolower(*a)) {
+			if (++x == score) {
+				return b - x + 1;
+			}
+			a++;
+		} else {
+			a = str;
+			p = b+1;
 			x = 0;
-        }
-        b++;
-    }
+		}
+		b++;
+	}
 	return NULL;
 }
 

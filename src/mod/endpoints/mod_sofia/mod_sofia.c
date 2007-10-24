@@ -1710,7 +1710,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 {
 	int sanity = 0;
 	
-	sofia_presence_cancel();
+	//sofia_presence_cancel();
 
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	if (mod_sofia_globals.running == 1) {

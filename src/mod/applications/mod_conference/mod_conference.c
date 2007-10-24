@@ -4424,6 +4424,7 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 	} else {
 		switch_copy_string(name, to, sizeof(name));
 	}
+	
 
 	if (!(conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, name))) {
 		ci->chat_send(CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", "Conference not active.", NULL);
@@ -4433,18 +4434,21 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 	SWITCH_STANDARD_STREAM(stream);
 
 	if (body != NULL && (lbuf = strdup(body))) {
-		int argc;
-		char *argv[25];
+		//int argc;
+		//char *argv[25];
 
-		memset(argv, 0, sizeof(argv));
-		argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-
+		//memset(argv, 0, sizeof(argv));
+		//argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		
 		/* try to find a command to execute */
-		if (argc) {
+		//if (argc) {
 			/* special case list */
-			if (strcasecmp(argv[0], "list") == 0) {
-				conference_list_pretty(conference, &stream);
-				/* provide help */
+		if (switch_stristr("list", lbuf)) {
+			conference_list_pretty(conference, &stream);
+			/* provide help */
+		}
+			else {
+				return SWITCH_STATUS_SUCCESS;
 			}
 #if 0
 			else {
@@ -4456,12 +4460,11 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 				}
 			}
 #endif
-		} else {
-			stream.write_function(&stream, "No parameters specified.\nTry 'help'\n");
-		}
+		//} else {
+		//stream.write_function(&stream, "No parameters specified.\nTry 'help'\n");
+		//}
 	}
 	switch_safe_free(lbuf);
-
 	ci->chat_send(CONF_CHAT_PROTO, to, from, "", stream.data, NULL);
 	switch_safe_free(stream.data);
 

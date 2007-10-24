@@ -344,7 +344,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	char *register_gateway = NULL;
 	int network_port;
 	int cd = 0;
-	char *call_id = NULL;
+	const char *call_id = NULL;
 
 	/* all callers must confirm that sip, sip->sip_request and sip->sip_contact are not NULL */
 	assert(sip != NULL && sip->sip_contact != NULL && sip->sip_request != NULL);
@@ -475,7 +475,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		return 0;
 	}
 
-	call_id = sip_header_as_string(profile->home, (void *) sip->sip_call_id);
+	call_id = sip->sip_call_id->i_id; //sip_header_as_string(profile->home, (void *) sip->sip_call_id);
 	assert(call_id);
 
 	
@@ -582,9 +582,11 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 	}
 
 	
+	/*
 	if (call_id) {
 		su_free(profile->home, call_id);
 	}
+	*/
 
 	if (regtype == REG_REGISTER) {
 		char *new_contact = NULL;
