@@ -31,6 +31,7 @@ AC_LANG([C])
 SHARED_VERSION_INFO="1:17:0"
 
 AC_PROG_CC
+AM_PROG_CC_C_O
 AM_PROG_LIBTOOL
 
 AC_CHECK_PROG(autogen, autogen, yes, no)

@@ -45,6 +45,7 @@ AC_PROG_INSTALL
 m4_defun([_LT_AC_LANG_F77_CONFIG], [:])
 m4_defun([_LT_AC_LANG_GCJ_CONFIG], [:])
 m4_defun([_LT_AC_LANG_RC_CONFIG], [:])
+AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
 
 #Check for compiler vendor
