@@ -508,9 +508,14 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	char *to;
 	char *open;
 	char *tmp;
+	char *prpid = rpid;
 
 	if (!rpid) {
 		rpid = "unknown";
+	}
+
+	if (!prpid) {
+		prpid = "onthephone";
 	}
 
 	if (in) {
@@ -554,7 +559,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 						"</tuple>\r\n"
 						"<dm:person id='p06360c4a'>\r\n"
 						"<rpid:activities>\r\n" "<rpid:%s/>\r\n" "</rpid:activities>%s</dm:person>\r\n" "</presence>", id, 
-						id, profile->url, note, rpid,
+						id, profile->url, status, prpid,
 						open, rpid, note);
 
 
