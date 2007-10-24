@@ -1916,6 +1916,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	uint32_t sess_count = switch_core_session_count();
 	uint32_t sess_max = switch_core_session_limit(0);
 	int is_auth = 0;
+	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
+	
 
 	if ((profile->soft_max && sess_count >= profile->soft_max) || sess_count >= sess_max) {
 		nua_respond(nh, 480, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
@@ -1962,7 +1964,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		tech_pvt->key = switch_core_session_strdup(session, key);
 	}
 
-	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_addr);
+
+	get_addr(network_ip, sizeof(network_ip), &((struct sockaddr_in *) my_addrinfo->ai_addr)->sin_addr);
 
 	channel = switch_core_session_get_channel(session);
 	if (is_auth) {
@@ -2029,16 +2032,30 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if (sip->sip_to && sip->sip_to->a_url) {
 		char *val;
+		char *transport = (my_addrinfo->ai_socktype == SOCK_STREAM) ? "tcp" : "udp";
+		
 		url_set_chanvars(session, sip->sip_to->a_url, sip_to);
 		if ((val = switch_channel_get_variable(channel, "sip_to_uri"))) {
-			tech_pvt->to_uri = switch_core_session_sprintf(session, "sip:%s", val);
+			tech_pvt->to_uri = switch_core_session_sprintf(session, "sip:%s;transport=%s", val, transport);
 			if (profile->ndlb & PFLAG_NDLB_TO_IN_200_CONTACT) {
-				tech_pvt->reply_contact = tech_pvt->to_uri;
+				if (strchr(tech_pvt->to_uri, '>')) {
+					tech_pvt->reply_contact = tech_pvt->to_uri;
+				} else {
+					tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s>", tech_pvt->to_uri);
+				}
 			} else {
-				tech_pvt->reply_contact = switch_core_session_strdup(session, profile->url);
+				if (strchr(profile->url, '>')) {
+					tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;transport=%s", profile->url, transport);
+				} else {
+					tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", profile->url, transport);
+				}
 			}
 		} else {
-			tech_pvt->reply_contact = switch_core_session_strdup(session, profile->url);
+			if (strchr(profile->url, '>')) {
+				tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;transport=%s", profile->url, transport);
+			} else {
+				tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", profile->url, transport);
+			}
 		}
 	}
 

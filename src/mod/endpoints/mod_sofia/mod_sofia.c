@@ -922,6 +922,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				switch_channel_mark_pre_answered(channel);
 				nua_respond(tech_pvt->nh,
 							SIP_183_SESSION_PROGRESS,
+							SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 							SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 							SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), SOATAG_AUDIO_AUX("cn telephone-event"), TAG_END());
 			}
