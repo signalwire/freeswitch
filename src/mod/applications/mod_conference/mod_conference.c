@@ -491,8 +491,9 @@ static switch_status_t conference_add_member(conference_obj_t * conference, conf
 	switch_mutex_lock(member->audio_in_mutex);
 	switch_mutex_lock(member->audio_out_mutex);
 	switch_mutex_lock(member->flag_mutex);
-
 	switch_mutex_lock(conference->member_mutex);
+
+	switch_clear_flag(conference, CFLAG_DESTRUCT);
 	member->conference = conference;
 	member->next = conference->members;
 	member->energy_level = conference->energy_level;
@@ -4149,7 +4150,7 @@ SWITCH_STANDARD_APP(conference_function)
 				goto done;
 			}
 		}
-
+		
 		if (conference->special_announce) {
 			conference_local_play_file(conference, session, conference->special_announce, CONF_DEFAULT_LEADIN);
 		}
@@ -4325,6 +4326,14 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_buffer_destroy(&member.resample_buffer);
 	switch_buffer_destroy(&member.audio_buffer);
 	switch_buffer_destroy(&member.mux_buffer);
+
+	if (conference) {
+		switch_mutex_lock(conference->mutex);
+		if (switch_test_flag(conference, CFLAG_DYNAMIC) && conference->count == 0) {
+			switch_set_flag_locked(conference, CFLAG_DESTRUCT);
+		}
+		switch_mutex_unlock(conference->mutex);
+	}
 
 	/* Release the config registry handle */
 	if (cxml) {
