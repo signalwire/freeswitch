@@ -101,6 +101,8 @@
 	<!-- <param name="vad" value="out"/> -->
 	<!-- <param name="vad" value="both"/> -->
 	<!--<param name="alias" value="sip:10.0.1.251:5555"/>-->
+	<!--all inbound reg will look in this domain for the users -->
+	<!--<param name="force-register-domain" value="cluecon.com"/>-->
       </settings>
     </profile>
   </profiles>
