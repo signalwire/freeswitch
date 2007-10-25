@@ -684,7 +684,7 @@ static switch_status_t vm_macro_get(switch_core_session_t *session,
         memset(buf, 0, buflen);
         args.input_callback = cancel_on_dtmf;
         args.buf = buf;
-        args.buflen = buflen;
+        args.buflen = (uint32_t)buflen;
         ap = &args;
     }
 
