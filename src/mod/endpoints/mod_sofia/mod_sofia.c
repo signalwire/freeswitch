@@ -312,7 +312,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			}
 
 			sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
-			if (sofia_glue_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+			if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			}
 
@@ -804,7 +804,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					a_tech_pvt->remote_sdp_audio_port = b_tech_pvt->remote_sdp_audio_port;
 					a_tech_pvt->local_sdp_audio_ip = switch_core_session_strdup(a_session, b_tech_pvt->local_sdp_audio_ip);
 					a_tech_pvt->local_sdp_audio_port = b_tech_pvt->local_sdp_audio_port;
-					if (sofia_glue_activate_rtp(a_tech_pvt) != SWITCH_STATUS_SUCCESS) {
+					if (sofia_glue_activate_rtp(a_tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
 						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					}
 					b_tech_pvt->kick = switch_core_session_strdup(b_session, tech_pvt->xferto);
@@ -912,7 +912,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						return status;
 					}
 					sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
-					if (sofia_glue_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+					if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
 						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					}
 					if (tech_pvt->local_sdp_str) {

@@ -922,7 +922,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 
 
 
-switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt)
+switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_flag_t myflags)
 {
 	int bw, ms;
 	const char *err = NULL;
@@ -948,7 +948,11 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt)
 	bw = tech_pvt->read_codec.implementation->bits_per_second;
 	ms = tech_pvt->read_codec.implementation->microseconds_per_frame;
 
-	flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT);
+	if (myflags)  {
+		flags = myflags;
+	} else {
+		flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT);
+	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_BUGGY_2833)) {
 		flags |= SWITCH_RTP_FLAG_BUGGY_2833;
@@ -1132,7 +1136,7 @@ switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, char *r_sdp)
 		if (sofia_glue_tech_choose_port(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
 		}
-		if (sofia_glue_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+		if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
 		}
 		switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "EARLY MEDIA");

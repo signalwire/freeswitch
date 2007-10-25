@@ -391,7 +391,7 @@ switch_mutex_unlock(obj->flag_mutex);
 /*************************************************************************************************************************************************************/
 
 
-switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt);
+switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_flag_t myflags);
 
 void sofia_glue_deactivate_rtp(private_object_t *tech_pvt);
 

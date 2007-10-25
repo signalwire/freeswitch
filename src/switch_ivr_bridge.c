@@ -298,6 +298,8 @@ static switch_status_t uuid_bridge_on_reset(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CUSTOM RESET\n");
 
+	switch_channel_clear_flag(channel, CF_TRANSFER);
+
 	if (switch_channel_test_flag(channel, CF_ORIGINATOR)) {
 		switch_channel_set_state(channel, CS_TRANSMIT);
 	}
@@ -708,6 +710,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(char *originator_uuid, ch
 			
 			switch_channel_set_flag(originator_channel, CF_BREAK);
 			switch_channel_set_flag(originatee_channel, CF_BREAK);
+
+			switch_channel_set_flag(originator_channel, CF_TRANSFER);
+			switch_channel_set_flag(originatee_channel, CF_TRANSFER);
 			
 			/* change the states and let the chips fall where they may */
 			switch_channel_set_state(originator_channel, CS_RESET);
