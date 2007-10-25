@@ -1632,7 +1632,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
     file_path = switch_mprintf("%s%smsg_%s.%s", dir_path, SWITCH_PATH_SEPARATOR, uuid, profile->file_ext);
 
  greet:
-
+    memset(buf, 0, sizeof(buf));
     args.input_callback = cancel_on_dtmf;
     args.buf = buf;
     args.buflen = sizeof(buf);
