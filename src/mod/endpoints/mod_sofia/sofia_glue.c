@@ -550,7 +550,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		char *d_url = NULL, *url = NULL;
 		sofia_private_t *sofia_private;
 		char *invite_contact = NULL, *to_str, *use_from_str, *from_str, *url_str;
-		char *transport = "udp", *t_var;
+		char *transport = "udp", *t_var, *d_contact = NULL;
 
 		if (switch_strlen_zero(tech_pvt->dest)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "URL Error! [%s]\n", tech_pvt->dest);
@@ -586,10 +586,16 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			url_str = switch_core_session_sprintf(session, "%s;transport=%s", url, transport);
 		}
 		
-		if (strchr(tech_pvt->invite_contact, ';')) {
-			invite_contact = switch_core_session_sprintf(session, "<%s&transport=%s>", tech_pvt->invite_contact, transport);
+		d_contact = sofia_glue_get_url_from_contact(tech_pvt->invite_contact, 1);
+		
+		if (switch_stristr("port=", d_contact)) {
+			invite_contact = switch_core_session_sprintf(session, "<%s>", d_contact);
 		} else {
-			invite_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", tech_pvt->invite_contact, transport);
+			if (strchr(d_contact, ';')) {
+				invite_contact = switch_core_session_sprintf(session, "<%s&transport=%s>", d_contact, transport);
+			} else {
+				invite_contact = switch_core_session_sprintf(session, "%s;transport=%s", d_contact, transport);
+			}
 		}
 		
 		if (strchr(use_from_str, '>')) {
@@ -612,6 +618,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 								  TAG_END());
 
 		switch_safe_free(d_url);
+		switch_safe_free(d_contact);
 		
 		if (!(sofia_private = malloc(sizeof(*sofia_private)))) {
 			abort();
