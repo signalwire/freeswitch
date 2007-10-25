@@ -1651,10 +1651,12 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
         }
     }
 
-    if (!strcasecmp(buf, profile->main_menu_key)) {
-        voicemail_check_main(session, profile_name, domain_name, id, 0);
-    } else {
-        goto greet;
+    if (!switch_strlen_zero(buf)) {
+        if (!strcasecmp(buf, profile->main_menu_key)) {
+            voicemail_check_main(session, profile_name, domain_name, id, 0);
+        } else {
+            goto greet;
+        }
     }
 
     
