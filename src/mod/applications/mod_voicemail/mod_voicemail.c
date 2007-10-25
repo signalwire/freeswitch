@@ -1544,6 +1544,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
     int email_attach = 1;
     int email_delete = 1;
     char buf[2];
+    char *greet_path = NULL, *voicemail_greeting_number = NULL;
 
     memset(&cbt, 0, sizeof(cbt));
     if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
@@ -1631,15 +1632,24 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
     
     file_path = switch_mprintf("%s%smsg_%s.%s", dir_path, SWITCH_PATH_SEPARATOR, uuid, profile->file_ext);
 
+    if ((voicemail_greeting_number = switch_channel_get_variable(channel, "voicemail_greeting_number"))) {
+        int num = atoi(voicemail_greeting_number);
+        if (num > 0 && num < 3) {
+            greet_path = switch_mprintf("%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, num, profile->file_ext);
+        }
+    } else {
+        greet_path = cbt.greeting_path;
+    }
+
  greet:
     memset(buf, 0, sizeof(buf));
     args.input_callback = cancel_on_dtmf;
     args.buf = buf;
     args.buflen = sizeof(buf);
     
-    if (!switch_strlen_zero(cbt.greeting_path)) {
+    if (!switch_strlen_zero(greet_path)) {
         memset(buf, 0, sizeof(buf));
-        TRY_CODE(switch_ivr_play_file(session, NULL, cbt.greeting_path, &args));
+        TRY_CODE(switch_ivr_play_file(session, NULL, greet_path, &args));
     } else {
         if (!switch_strlen_zero(cbt.name_path)) {
             memset(buf, 0, sizeof(buf));
