@@ -323,7 +323,21 @@ class FreepyDispatcher(LineReceiver):
         print "sending to fs: %s" % msg
         self.transport.write("%s\n\n" % msg)
         return req.getDeferred()
-        
+
+    def transfer(self, uuid, dest_ext, legs, bgapi = False):
+        """
+        transfer <uuid> [-bleg|-both] <dest-exten>
+        """
+        if bgapi == True:
+            msg = "bgapi transfer %s %s %s" % (uuid, legs, dest_ext)
+            req = request.BgApiRequest()
+        else:
+            msg = "api transfer %s %s %s" % (uuid, legs, dest_ext)
+            req = request.ApiRequest()
+        self.requestq.put(req)
+        print "sending to fs: %s" % msg
+        self.transport.write("%s\n\n" % msg)
+        return req.getDeferred()
         
     def lineReceived(self, line):
         if not self.active_request:

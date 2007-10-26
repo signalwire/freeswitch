@@ -302,6 +302,17 @@ class FsHelper(ClientFactory):
         d.addCallback(broadcast_inner)
         return d
 
+    def transfer(self, uuid, dest_ext, legs="-both", bgapi=True):
+        """
+        @legs -bleg|-both
+        """
+        def transfer_inner(ignored):
+            df = self.freepyd.transfer(uuid, dest_ext, legs, bgapi)
+            return df
+
+        d = self.connect()
+        d.addCallback(transfer_inner)
+        return d
 
     def sofia_profile_restart(self, profile_name, bgapi=True):
 
