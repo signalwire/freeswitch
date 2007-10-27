@@ -64,6 +64,7 @@ public:
      *  Method does real initialization of the manager
      */
     bool initialize(
+            const char* i_modName
             switch_memory_pool_t* i_memoryPool,
             switch_endpoint_interface_t *i_endpointInterface,
             );
@@ -78,8 +79,27 @@ public:
     switch_status_t callback_on_loopback(switch_core_session_t *io_session);
     switch_status_t callback_on_transmit(switch_core_session_t *io_session);
     
-private:
+    /** FS io functions 
+     *
+     */
     
+    switch_call_cause_t io_outgoing_channel(switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t **, switch_memory_pool_t **);
+    switch_status_t io_read_frame(switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
+    switch_status_t io_write_frame(switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int);
+    switch_status_t io_kill_channel(switch_core_session_t *, int);
+    switch_status_t io_waitfor_read(switch_core_session_t *, int, int);
+    switch_status_t io_waitfor_write(switch_core_session_t *, int, int);
+    switch_status_t io_send_dtmf(switch_core_session_t *, char *);
+    switch_status_t io_receive_message(switch_core_session_t *, switch_core_session_message_t *);
+    switch_status_t io_receive_event(switch_core_session_t *, switch_event_t *);
+    switch_status_t io_state_change(switch_core_session_t *);
+    switch_status_t io_read_video_frame(switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
+    switch_status_t io_write_video_frame(switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int);
+    
+    
+private:          
+    
+    char                        *m_pModuleName;             /* name of this module */
     bool                        m_isInitilized;             /* true if module has been initialized properly */
     H323Endpoint                *m_pH323Endpoint;           /* h323 endpoint control */
     switch_memory_pool_t        *m_pMemoryPool;             /* FS memory pool */

@@ -157,75 +157,76 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opalh323_load)
  */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_opalh323_shutdown)
 {
-    
     /* deallocate OPAL manager */
-    delete opalh323_manager;
-    
+    delete opalh323_manager;    
     return SWITCH_STATUS_SUCCESS;
 }
-
 
 /*
  * IO routines handlers definitions
  */
-static switch_call_cause_t opalh323_outgoing_channel(switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t **, switch_memory_pool_t **)
+static switch_call_cause_t opalh323_outgoing_channel(
+        switch_core_session_t *session,
+	switch_caller_profile_t *outbound_profile,
+        switch_core_session_t **new_session, 
+        switch_memory_pool_t **pool)
 {
-    return 0;
+     return opalh323_manager->io_outgoing_channel(session,outbound_profile,new_session,pool);
 }
 
-static switch_status_t opalh323_read_frame(switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int)
+static switch_status_t opalh323_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
-    return SWITCH_STATUS_SUCCESS;
+    return opalh323_manager->io_read_frame(session,frame,timeout,flags,stream_id);
 }
 
-static switch_status_t opalh323_write_frame(switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int)
+static switch_status_t opalh323_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
-    return SWITCH_STATUS_SUCCESS;
+    return opalh323_manager->io_write_frame(session,frame,timeout,flag,stream_id);
 }
 
-static switch_status_t opalh323_kill_channel(switch_core_session_t *, int)
+static switch_status_t opalh323_kill_channel(switch_core_session_t *session, int sig)
 {
-    return SWITCH_STATUS_SUCCESS;
+    return opalh323_manager->io_kill_channel(session,sig);
 }
 
-static switch_status_t opalh323_waitfor_read(switch_core_session_t *, int, int)
+static switch_status_t opalh323_waitfor_read(switch_core_session_t *session, int ms, int stream_id)
 {
-    return SWITCH_STATUS_SUCCESS;
+    return opalh323_manager->io_waitfor_read(session,ms,stream_id);
 }
 
-static switch_status_t opalh323_waitfor_write(switch_core_session_t *, int, int)
+static switch_status_t opalh323_waitfor_write(switch_core_session_t *session, int ms, int stream_id)
 {
-    return SWITCH_STATUS_SUCCESS;
+    return opalh323_manager->io_waitfor_write(session,ms,sream_id);
 }
 
-static switch_status_t opalh323_send_dtmf(switch_core_session_t *, char *)
+static switch_status_t opalh323_send_dtmf(switch_core_session_t *session, char *dtmf)
 {
-    return SWITCH_STATUS_SUCCESS;
+    return opalh323_manager->io_send_dtmf(session,dtmf);
 }
 
-static switch_status_t opalh323_receive_message(switch_core_session_t *, switch_core_session_message_t *)
+static switch_status_t opalh323_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
-    return SWITCH_STATUS_SUCCESS;
+    return opalh323_manager->io_receive_message(session,msg);
 }
 
-static switch_status_t opalh323_receive_event(switch_core_session_t *, switch_event_t *)
+static switch_status_t opalh323_receive_event(switch_core_session_t *session, switch_event_t *event)
 {
-    return SWITCH_STATUS_SUCCESS;
+    return opalh323_manager->io_receive_event(session,event);
 }
 
-static switch_status_t opalh323_state_change(switch_core_session_t *)
+static switch_status_t opalh323_state_change(switch_core_session_t *session)
 {
-    return SWITCH_STATUS_SUCCESS;
+    return opalh323_manager->io_state_change(session);
 }
 
-static switch_status_t opalh323_read_video_frame(switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int)
+static switch_status_t opalh323_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flag, int stream_id)
 {
-    return SWITCH_STATUS_SUCCESS;
+    return opalh323_manager->io_read_video_frame(session,frame,timeout,flag,stream_id);
 }
 
-static switch_status_t opalh323_write_video_frame(switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int)
+static switch_status_t opalh323_write_video_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flag, int stream_id)
 {
-    return SWITCH_STATUS_SUCCESS;
+    return opalh323_manager->io_write_vidoe_frame(session,frame,timeout,flag,stream_id);
 }
 
 /*
@@ -234,30 +235,30 @@ static switch_status_t opalh323_write_video_frame(switch_core_session_t *, switc
 
 static switch_status_t opalh323_on_init(switch_core_session_t *session)
 {
-    return SWITCH_STATUS_SUCCESS;
+    return opalh323_manager->callback_on_init(session);
 }
 
 static switch_status_t opalh323_on_ring(switch_core_session_t *session)
 {
-    return SWITCH_STATUS_SUCCESS;
+    return opalh323_manager->callback_on_ring(session);
 }
 
 static switch_status_t opalh323_on_execute(switch_core_session_t *session)
 {
-    return SWITCH_STATUS_SUCCESS;
+    return opalh323_manager->callback_on_execute(session);
 }
 
 static switch_status_t opalh323_on_hangup(switch_core_session_t *session)
 {
-    return SWITCH_STATUS_SUCCESS;
+    return opalh323_manager->callback_on_hangup(session);
 }
 
 static switch_status_t opalh323_on_loopback(switch_core_session_t *session)
 {
-    return SWITCH_STATUS_SUCCESS;
+    return opalh323_manager->callback_on_loopback(session);
 }
 
 static switch_status_t opalh323_on_transmit(switch_core_session_t *session)
 {
-    return SWITCH_STATUS_SUCCESS;
+    return opalh323_manager->callback_on_transmit(session);
 }
