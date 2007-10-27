@@ -26,3 +26,68 @@
  * Revision 1.00  2007/10/24 07:29:52  lzwierko
  * Initial revision
  */
+
+#ifndef __FREESWITCH_OPALH323_BACKEND__
+#define __FREESWITCH_OPALH323_BACKEND__
+
+#include <switch.h>
+#include <opal/manager.h>
+#include <opal/endpoint.h>
+#include <opal/mediastrm.h>
+
+
+class H323EndPoint;
+
+/** This class is OpalManager implementation
+ *  for FreeSWITCH OpalH323 module.
+ *  All methods are inherited from base OpalManagerClass.
+ *  Event callbacks will be filed with valid code
+ *  Additional functions have been implemented to be called, or called by 
+ */
+class FSOpalManager : public OpalManager
+{
+    PCLASSINFO(FSOpalManager, PObject);
+    
+public:
+    
+    /** Default constructor
+     *
+     */
+    FSOpalManager();
+    
+    /** Destructor
+     *
+     */
+    ~FSOpalManager();
+    
+    /** 
+     *  Method does real initialization of the manager
+     */
+    bool initialize(
+            switch_memory_pool_t* i_memoryPool,
+            switch_endpoint_interface_t *i_endpointInterface
+            );
+    
+    /** FS callback handlers declarations
+     *
+     */
+    switch_status_t callback_on_init(switch_core_session_t *io_session);
+    switch_status_t callback_on_ring(switch_core_session_t *io_session);
+    switch_status_t callback_on_execute(switch_core_session_t *io_session);
+    switch_status_t callback_on_hangup(switch_core_session_t *io_session);
+    switch_status_t callback_on_loopback(switch_core_session_t *io_session);
+    switch_status_t callback_on_transmit(switch_core_session_t *io_session);
+    
+private:
+    
+    bool                        m_isInitilized;         /* true if module has been initialized properly */
+    H323Endpoint                *m_pH323Endpoint;       /* h323 endpoint control */
+    switch_memory_pool_t        *m_pMemoryPool;         /* FS memory pool */
+    switch_endpoint_interface_t *m_pEndpointInterface;  /* FS endpoint inerface */
+    
+    
+};
+
+
+
+#endif
