@@ -184,6 +184,29 @@ bool FSOpalManager::initialize(
 }
 
 
+
+switch_core_session_t* FSOpalManager::getSessionToken(PString &i_token)
+{
+    assert(m_pSessionsHashTable);
+    assert(m_pSessionsHashTableMutex);
+    return static_cast<switch_core_session_t*>(switch_core_hash_find_locked(m_pSessionsHashTable,*i_token,m_pSessionsHashTableMutex));
+}
+
+void FSOpalManager::saveSessionToken(PString &i_token,switch_core_session_t* i_session)
+{
+    assert(m_pSessionsHashTable);
+    assert(m_pSessionsHashTableMutex);    
+    switch_core_hash_insert_locked(m_pSessionsHashTable,*i_token,i_session,m_pSessionsHashTableMutex);
+}
+
+void FSOpalManager::deleteToken(PString &i_token)
+{
+    assert(m_pSessionsHashTable);
+    assert(m_pSessionsHashTableMutex);
+    switch_core_hash_delete_locked(m_pSessionsHashTable,*i_token,m_pSessionsHashTableMutex);
+}
+
+
 BOOL FSOpalManager::OnIncomingConnection(
         OpalConnection & connection,   ///<  Connection that is calling
         unsigned options,              ///<  options for new connection (can't use default as overrides will fail)
@@ -240,7 +263,7 @@ BOOL FSOpalManager::OnIncomingConnection(
      */ 
     switch_mutex_lock(tech_pvt->m_mutex);        
     /** insert connection to hash table */
-    switch_core_hash_insert_locked(m_pSessionsHashTable,*(connection.GetToken()),static_cast<void*>(session));  ///save pointer to session in hash table, for later retreival    
+    saveSessionToken(connection.GetToken(),session); ///save pointer to session in hash table, for later retreival    
    
     /** Create calling side profile */
     tech_pvt->m_callerProfile = switch_caller_profile_new(
@@ -260,7 +283,7 @@ BOOL FSOpalManager::OnIncomingConnection(
     
     if(!tech_pvt->m_callerProfile)  /* should never error */
     {       
-        switch_core_hash_delete_locked(m_pSessionsHashTable,*(connection.GetToken()));  
+        deleteSessionToken(connection.GetToken());  
         switch_mutex_unlock(tech_pvt->m_mutex);
         OpalH323Private_Delete(tech_pvt);
         switch_core_session_destroy(&session);              
@@ -284,7 +307,7 @@ BOOL FSOpalManager::OnIncomingConnection(
     if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) 
     {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
-        switch_core_hash_delete_locked(m_pSessionsHashTable,*(connection.GetToken()));        
+        deleteSessionToken(connection.GetToken());       
         switch_mutex_unlock(tech_pvt->m_mutex);
         OpalH323Private_Delete(tech_pvt);        
         switch_core_session_destroy(&session);        
@@ -411,6 +434,68 @@ switch_status_t FSOpalManager::io_send_dtmf(switch_core_session_t *i_session, ch
 switch_status_t FSOpalManager::io_receive_message(switch_core_session_t *i_session, switch_core_session_message_t *i_message)
 {
     assert(m_isInitialized);
+    
+    OpalH323Private_t* tech_prv = switch_core_session_get_private(i_session);
+    assert(tech_prv);
+    
+    switch_mutex_lock(tech_prv->m_mutex);
+    
+    switch(i_message->message_id)
+    {
+    case SWITCH_MESSAGE_REDIRECT_AUDIO:
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_REDIRECT_AUDIO\n");
+    break;
+    case SWITCH_MESSAGE_TRANSMIT_TEXT:
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_TRANSMIT_TEXT\n");
+    break;        
+    case SWITCH_MESSAGE_INDICATE_ANSWER:
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_ANSWER\n");
+        
+        /* set call answer */
+        tech_prv->m_opalConnection->AnsweringCall(AnswerCallNow);        
+    break;        
+    case SWITCH_MESSAGE_INDICATE_PROGRESS:
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_PROGRESS\n");
+    break;        
+    case SWITCH_MESSAGE_INDICATE_BRIDGE:
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_BRIDGE\n");
+    break;        
+    case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_UNBRIDGE\n");
+    break;        
+    case SWITCH_MESSAGE_INDICATE_TRANSFER:
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_TRANSFER\n");
+    break;        
+    case SWITCH_MESSAGE_INDICATE_RINGING:
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_RINGING\n");                                
+    break;        
+    case SWITCH_MESSAGE_INDICATE_MEDIA:
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_MEDIA\n");
+    break;        
+    case SWITCH_MESSAGE_INDICATE_NOMEDIA:
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_NOMEDIA\n");
+    break;        
+    case SWITCH_MESSAGE_INDICATE_HOLD:
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_HOLD\n");
+    break;        
+    case SWITCH_MESSAGE_INDICATE_UNHOLD:
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_UNHOLD\n");
+    break;        
+    case SWITCH_MESSAGE_INDICATE_REDIRECT:
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_REDIRECT\n");
+    break;        
+    case SWITCH_MESSAGE_INDICATE_REJECT:
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_REJECT\n");
+    break;
+    case SWITCH_MESSAGE_INDICATE_BROADCAST:
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_BROADCAST\n");
+    break;        
+    case SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT:
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT\n");
+    break;        
+    }
+    
+    switch_mutex_unlock(tech_prv->m_mutex);
     return SWITCH_STATUS_SUCCESS;
 }
 

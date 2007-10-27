@@ -99,6 +99,11 @@ public:
     
 private:          
     
+    void                   saveSessionToken(PString &i_token,switch_core_session_t* i_session);
+    switch_core_session_t* getSessionToken(PString &i_token);
+    void                   deleteToken(PString &i_token);
+    
+    
     char                        *m_pModuleName;             /* name of this module */
     bool                        m_isInitilized;             /* true if module has been initialized properly */
     H323Endpoint                *m_pH323Endpoint;           /* h323 endpoint control */
