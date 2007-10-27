@@ -65,7 +65,7 @@ public:
      */
     bool initialize(
             switch_memory_pool_t* i_memoryPool,
-            switch_endpoint_interface_t *i_endpointInterface
+            switch_endpoint_interface_t *i_endpointInterface,
             );
     
     /** FS callback handlers declarations
@@ -80,11 +80,12 @@ public:
     
 private:
     
-    bool                        m_isInitilized;         /* true if module has been initialized properly */
-    H323Endpoint                *m_pH323Endpoint;       /* h323 endpoint control */
-    switch_memory_pool_t        *m_pMemoryPool;         /* FS memory pool */
-    switch_endpoint_interface_t *m_pEndpointInterface;  /* FS endpoint inerface */
-    
+    bool                        m_isInitilized;             /* true if module has been initialized properly */
+    H323Endpoint                *m_pH323Endpoint;           /* h323 endpoint control */
+    switch_memory_pool_t        *m_pMemoryPool;             /* FS memory pool */
+    switch_endpoint_interface_t *m_pEndpointInterface;      /* FS endpoint inerface */
+    switch_hash_t               *m_pSessionsHashTable;      /* Stores pointrs to session object for each Opal connection */
+    switch_mutex_t              *m_pSessionsHashTableMutex; /* Protects hash table */
     
 };
 

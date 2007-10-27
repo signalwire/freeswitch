@@ -49,8 +49,11 @@ typedef struct OpalH323Private_s
  */
 FSOpalManager::FSOpalManager() :
     m_isInitialized(false),
-    m_pH323Endpoint(NULL);
-    m_pMemoryPool(NULL)
+    m_pH323Endpoint(NULL),
+    m_pMemoryPool(NULL).
+    m_pEndpointInterface(NULL),
+    m_pSessionsHashTable(NULL),
+    m_pSessionsHashTableMutex(NULL)
 {
     
 }
@@ -66,8 +69,9 @@ FSOpalManager::FSOpalManager() :
     if(m_isInitialized)
     {
         delete m_pH323Endpoint;
-        m_pH323Endpoint = NULL;
-        m_isInitialized = false;
+        switch_mutex_destroy(m_pSessionsHashTableMutex);
+        switch_core_hash_destroy(m_pSessionsHashTable);
+      
     }
 }
 
@@ -85,6 +89,8 @@ bool FSOpalManager::initialize(
     assert(m_isInitialized);
     assert(!m_pH323Endpoint);
     assert(!m_pMemoryPool)
+    assert(!m_pEndpointInterface);
+    assert(!m_pSessionsHashTable);
     
     /* check input parameters */
     assert(i_memoryPool);
@@ -94,12 +100,33 @@ bool FSOpalManager::initialize(
     
     m_pMemoryPool = i_memoryPool;
     m_pEndpointInterface = i_endpointInterface;
+
+    /**
+     * Create hash table for storing pointers to session objects,
+     * Each OpalConnection object will retreive it's session object using
+     * its callToken as a key
+     */
+    
+    if(switch_core_hash_init(&m_pSessionsHashTable,m_pMemoryPool)!=SWITCH_STATUS_SUCCESS)
+    {
+        assert(0);
+        return false;
+    }
+    
+    if(switch_mutex_init(&m_pSessionsHashTableMutex,SWITCH_THREAD_MUTEX_UNNESTED,m_pMemoryPool)!=SWITCH_STATUS_SUCCESS)
+    {
+       assert(0);
+       switch_core_hash_destroy(m_pSessionsHashTable);     
+       return false; 
+    }
     
     /* create h323 endpoint */
     m_pH323Endpoint = new H323EndPoint(this);   ///TODO, replace prefix and signaling port by values from configuration
     if(!m_pH323Endpoint)
     {
         assert(0);
+        switch_core_hash_destroy(m_pSessionsHashTable); 
+        switch_mutex_destroy(m_pSessionsHashTableMutex);
         return false;
     }
     
@@ -117,11 +144,12 @@ bool FSOpalManager::initialize(
     
     ///TODO address should be configurable, should allow creaeing listeners on multiple interfaces
     OpalTransportAddress opalTransportAddress("0.0.0.0",1720); //for time being create listener on all ip's and default port
-    result = m_pH323Endpoint->StartListeners(opalTransportAddress);
-    assert(result);
-    if(!result)
+    if(!m_pH323Endpoint->StartListeners(opalTransportAddress))
     {
-        delete m_pH323Endpoint:
+        assert(0);
+        swith_core_hash_destroy(m_pSessionsHashTable);    
+        switch_mutex_destroy(m_pSessionsHashTableMutex);
+        delete m_pH323Endpoint:            
         return false;
     }                 
     
@@ -176,10 +204,20 @@ BOOL FSOpalManager::OnIncomingConnection(
     }
     tech_pvt->m_opalConnection = &connection;
     switch_mutex_init(&tech_pvt->m_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
-    /** save private data under hash and in session */
     
+    /** Save private data in session private data, and save session in hash tabel, under GetToken() key */
+    switch_core_session_set_private(session,static_cast<void*>(tech_pvt));                                      ///save private data in session context
+    switch_core_hash_insert_locked(m_pSessionsHashTable,*(connection.GetToken()),static_cast<void*>(session));  ///save pointer to session in hash table, for later retreival    
+               
     /***Mark incoming call as AnsweredPending ??? */
-
+    
+    
+    
+    
+    
+    
+    
+    return TRUE;
     
 }
  
