@@ -530,16 +530,10 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	char *sub_to_user = argv[3];
 	char *sub_to_host = argv[4];
 	char *event = argv[5];
-	char *contact = argv[6];
 	char *call_id = argv[7];
-	//char *full_from = argv[8];
-	//char *full_via = argv[9];
-	//char *expires = argv[10];
-
 	nua_handle_t *nh;
 	char *to;
 	char *open;
-	char *tmp;
 	char *prpid;
 	int done = 0;
 
@@ -605,10 +599,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 						id, profile->url, open, status, prpid,
 						open, rpid, note);
 
-
-	tmp = contact;
-	contact = sofia_glue_get_url_from_contact(tmp, 0);
-
 	nua_notify(nh,
 			   SIPTAG_SUBSCRIPTION_STATE_STR("active;expires=3600"),
 			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR("application/pidf+xml"), SIPTAG_PAYLOAD_STR(pl), TAG_END());
@@ -635,7 +625,7 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	char *sub_to_user = argv[3];
 	char *sub_to_host = argv[4];
 	char *event = argv[5];
-	char *contact = argv[6];
+	//char *contact = argv[6];
 	char *call_id = argv[7];
 	//char *full_from = argv[8];
 	//char *full_via = argv[9];
@@ -643,7 +633,7 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	char *body = argv[11];
 	char *exp;
 	sofia_profile_t *profile = NULL;
-	char *tmp, *id = NULL;
+	char *id = NULL;
 	nua_handle_t *nh;
 	int expire_sec = atoi(expires);
 
@@ -663,9 +653,6 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 		expire_sec = 3600;
 	}
 	exp = switch_mprintf("active;expires=%ld", expire_sec);
-
-	tmp = contact;
-	contact = sofia_glue_get_url_from_contact(tmp, 0);
 
 	nua_notify(nh,
 			   SIPTAG_SUBSCRIPTION_STATE_STR(exp),
