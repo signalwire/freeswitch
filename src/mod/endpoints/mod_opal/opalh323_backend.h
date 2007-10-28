@@ -31,6 +31,8 @@
 #define __FREESWITCH_OPALH323_BACKEND__
 
 #include <switch.h>
+#include <ptlib.h>
+#include <opal/buildopts.h>
 #include <opal/manager.h>
 #include <h323/h323ep.h>
 
@@ -100,13 +102,13 @@ private:
     void                   deleteToken(PString &i_token);
     
     
-    char                        *m_pModuleName;             /* name of this module */
-    bool                        m_isInitilized;             /* true if module has been initialized properly */
-    H323EndPoint                *m_pH323Endpoint;           /* h323 endpoint control */
-    switch_memory_pool_t        *m_pMemoryPool;             /* FS memory pool */
-    switch_endpoint_interface_t *m_pEndpointInterface;      /* FS endpoint inerface */
-    switch_hash_t               *m_pSessionsHashTable;      /* Stores pointrs to session object for each Opal connection */
-    switch_mutex_t              *m_pSessionsHashTableMutex; /* Protects hash table */
+    const char                          *m_pModuleName;             /* name of this module */
+    bool                                m_isInitialized;             /* true if module has been initialized properly */
+    H323EndPoint                        *m_pH323Endpoint;           /* h323 endpoint control */
+    switch_memory_pool_t          *m_pMemoryPool;             /* FS memory pool */
+    switch_endpoint_interface_t   *m_pEndpointInterface;      /* FS endpoint inerface */
+    switch_hash_t                       *m_pSessionsHashTable;      /* Stores pointrs to session object for each Opal connection */
+    switch_mutex_t                      *m_pSessionsHashTableMutex; /* Protects hash table */
     
 };
 

@@ -29,7 +29,6 @@
 
 #include <switch.h>
 #include "opalh323_backend.h"
-#include <include/h323/h323ep.h>
 
 /** 
  * Private structre
@@ -52,7 +51,7 @@ static bool OpalH323Private_Create(OpalH323Private_t **o_private, switch_core_se
         assert(0);
         return false;
     }
-    if(SWITCH_STATUS_SUCCESS != switch_mutex_init(&tech_pvt->m_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(i_session))
+    if(SWITCH_STATUS_SUCCESS != switch_mutex_init(&(*o_private)->m_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(i_session)))
     {
         assert(0);
         return false;
@@ -64,7 +63,7 @@ static bool OpalH323Private_Create(OpalH323Private_t **o_private, switch_core_se
 
 static bool OpalH323Private_Delete(OpalH323Private_t *o_private)
 {
-    switch_mutex_destroy(tech_pvt->m_mutex);
+    switch_mutex_destroy(o_private->m_mutex);
 }
 
 /** Default constructor
@@ -84,7 +83,7 @@ FSOpalManager::FSOpalManager() :
 /** Destructor
  *
  */
-~FSOpalManager::FSOpalManager()
+FSOpalManager::~FSOpalManager()
 {    
     /**
      *  Destroy all allocated resources, if any
@@ -93,28 +92,24 @@ FSOpalManager::FSOpalManager() :
     {
         delete m_pH323Endpoint;
         switch_mutex_destroy(m_pSessionsHashTableMutex);
-        switch_core_hash_destroy(m_pSessionsHashTable);
+        switch_core_hash_destroy(&m_pSessionsHashTable);
         
     }
 }
 
  /**
   *  Method does real initialization of the manager
-  */
+  */     
 bool FSOpalManager::initialize(
-        char                        *i_modName,
-        switch_memory_pool_t        *i_memoryPool,
-        switch_endpoint_interface_t *i_endpointInterface
-        )
+            const char* i_modName,
+            switch_memory_pool_t* i_memoryPool,
+            switch_endpoint_interface_t *i_endpointInterface
+            )                
 {
     bool result = true;
     
-    /* check if everything is not initialized */
+    /* check if not initialized */
     assert(m_isInitialized);
-    assert(!m_pH323Endpoint);
-    assert(!m_pMemoryPool)
-    assert(!m_pEndpointInterface);
-    assert(!m_pSessionsHashTable);
     
     /* check input parameters */
     assert(i_modName);
@@ -138,19 +133,19 @@ bool FSOpalManager::initialize(
         return false;
     }
     
-    if(switch_mutex_init(&m_pSessionsHashTableMutex,SWITCH_THREAD_MUTEX_UNNESTED,m_pMemoryPool)!=SWITCH_STATUS_SUCCESS)
+    if(switch_mutex_init(&m_pSessionsHashTableMutex,SWITCH_MUTEX_UNNESTED,m_pMemoryPool)!=SWITCH_STATUS_SUCCESS)
     {
        assert(0);
-       switch_core_hash_destroy(m_pSessionsHashTable);     
+       switch_core_hash_destroy(&m_pSessionsHashTable);     
        return false; 
     }
     
     /* create h323 endpoint */
-    m_pH323Endpoint = new H323EndPoint(this);   ///TODO, replace prefix and signaling port by values from configuration
+    m_pH323Endpoint = new H323EndPoint( *(static_cast<OpalManager*>(this)) );   ///TODO, replace prefix and signaling port by values from configuration
     if(!m_pH323Endpoint)
     {
         assert(0);
-        switch_core_hash_destroy(m_pSessionsHashTable); 
+        switch_core_hash_destroy(&m_pSessionsHashTable); 
         switch_mutex_destroy(m_pSessionsHashTableMutex);
         return false;
     }
@@ -172,9 +167,9 @@ bool FSOpalManager::initialize(
     if(!m_pH323Endpoint->StartListeners(opalTransportAddress))
     {
         assert(0);
-        swith_core_hash_destroy(m_pSessionsHashTable);    
+        switch_core_hash_destroy(&m_pSessionsHashTable);    
         switch_mutex_destroy(m_pSessionsHashTableMutex);
-        delete m_pH323Endpoint:            
+        delete m_pH323Endpoint;            
         return false;
     }                 
     
@@ -189,21 +184,21 @@ switch_core_session_t* FSOpalManager::getSessionToken(PString &i_token)
 {
     assert(m_pSessionsHashTable);
     assert(m_pSessionsHashTableMutex);
-    return static_cast<switch_core_session_t*>(switch_core_hash_find_locked(m_pSessionsHashTable,*i_token,m_pSessionsHashTableMutex));
+    return static_cast<switch_core_session_t*>(switch_core_hash_find_locked(m_pSessionsHashTable,(const char*)i_token,m_pSessionsHashTableMutex));
 }
 
 void FSOpalManager::saveSessionToken(PString &i_token,switch_core_session_t* i_session)
 {
     assert(m_pSessionsHashTable);
     assert(m_pSessionsHashTableMutex);    
-    switch_core_hash_insert_locked(m_pSessionsHashTable,*i_token,i_session,m_pSessionsHashTableMutex);
+    switch_core_hash_insert_locked(m_pSessionsHashTable,(const char*)i_token,i_session,m_pSessionsHashTableMutex);
 }
 
 void FSOpalManager::deleteToken(PString &i_token)
 {
     assert(m_pSessionsHashTable);
     assert(m_pSessionsHashTableMutex);
-    switch_core_hash_delete_locked(m_pSessionsHashTable,*i_token,m_pSessionsHashTableMutex);
+    switch_core_hash_delete_locked(m_pSessionsHashTable,(const char*)i_token,m_pSessionsHashTableMutex);
 }
 
 
