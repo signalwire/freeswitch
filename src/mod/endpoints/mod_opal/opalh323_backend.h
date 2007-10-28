@@ -32,11 +32,7 @@
 
 #include <switch.h>
 #include <opal/manager.h>
-#include <opal/endpoint.h>
-#include <opal/mediastrm.h>
-
-
-class H323EndPoint;
+#include <h323/h323ep.h>
 
 /** This class is OpalManager implementation
  *  for FreeSWITCH OpalH323 module.
@@ -64,9 +60,9 @@ public:
      *  Method does real initialization of the manager
      */
     bool initialize(
-            const char* i_modName
+            const char* i_modName,
             switch_memory_pool_t* i_memoryPool,
-            switch_endpoint_interface_t *i_endpointInterface,
+            switch_endpoint_interface_t *i_endpointInterface
             );
     
     /** FS callback handlers declarations
@@ -106,7 +102,7 @@ private:
     
     char                        *m_pModuleName;             /* name of this module */
     bool                        m_isInitilized;             /* true if module has been initialized properly */
-    H323Endpoint                *m_pH323Endpoint;           /* h323 endpoint control */
+    H323EndPoint                *m_pH323Endpoint;           /* h323 endpoint control */
     switch_memory_pool_t        *m_pMemoryPool;             /* FS memory pool */
     switch_endpoint_interface_t *m_pEndpointInterface;      /* FS endpoint inerface */
     switch_hash_t               *m_pSessionsHashTable;      /* Stores pointrs to session object for each Opal connection */

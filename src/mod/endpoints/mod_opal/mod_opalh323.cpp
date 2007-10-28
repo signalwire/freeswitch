@@ -32,7 +32,7 @@
 
 
 #include "mod_opalh323.h"
-#inlcude "opalh323_backend.h"
+#include "opalh323_backend.h"
 #include <switch.h>
    
 /*
@@ -100,12 +100,6 @@ static switch_state_handler_table_t opalh323_event_handlers = {
 SWITCH_MODULE_LOAD_FUNCTION(mod_opalh323_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_opalh323_shutdown);
 SWITCH_MODULE_DEFINITION(mod_opalh323, mod_opalh323_load, mod_opalh323_shutdown, NULL);
-    
-/*
- * Pointer to endpoint interface descriptor for this module 
- */
-switch_endpoint_interface_t *opalh323_endpoint_interface;
-
 
 /*
  * This function is called on module load
@@ -126,7 +120,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opalh323_load)
     {     
         return SWITCH_STATUS_MEMERR;
     }
-    opalh323_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+    opalh323_endpoint_interface = (switch_endpoint_interface_t*)switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
     opalh323_endpoint_interface->interface_name = "OPALH323";
     opalh323_endpoint_interface->io_routines = &opalh323_io_routines;
     opalh323_endpoint_interface->state_handler = &opalh323_event_handlers;
@@ -139,7 +133,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opalh323_load)
         return SWITCH_STATUS_MEMERR;
     }
     
-    if(!opalh323_manager->initialize(pool))
+    if(!opalh323_manager->initialize(modname,pool,opalh323_endpoint_interface))
     {
         delete opalh323_manager;
         return SWITCH_STATUS_FALSE; /* if can't initialize return general error */
@@ -181,7 +175,7 @@ static switch_status_t opalh323_read_frame(switch_core_session_t *session, switc
 
 static switch_status_t opalh323_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
-    return opalh323_manager->io_write_frame(session,frame,timeout,flag,stream_id);
+    return opalh323_manager->io_write_frame(session,frame,timeout,flags,stream_id);
 }
 
 static switch_status_t opalh323_kill_channel(switch_core_session_t *session, int sig)
@@ -196,7 +190,7 @@ static switch_status_t opalh323_waitfor_read(switch_core_session_t *session, int
 
 static switch_status_t opalh323_waitfor_write(switch_core_session_t *session, int ms, int stream_id)
 {
-    return opalh323_manager->io_waitfor_write(session,ms,sream_id);
+    return opalh323_manager->io_waitfor_write(session,ms,stream_id);
 }
 
 static switch_status_t opalh323_send_dtmf(switch_core_session_t *session, char *dtmf)
@@ -224,9 +218,9 @@ static switch_status_t opalh323_read_video_frame(switch_core_session_t *session,
     return opalh323_manager->io_read_video_frame(session,frame,timeout,flag,stream_id);
 }
 
-static switch_status_t opalh323_write_video_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flag, int stream_id)
+static switch_status_t opalh323_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flag, int stream_id)
 {
-    return opalh323_manager->io_write_vidoe_frame(session,frame,timeout,flag,stream_id);
+    return opalh323_manager->io_write_video_frame(session,frame,timeout,flag,stream_id);
 }
 
 /*
