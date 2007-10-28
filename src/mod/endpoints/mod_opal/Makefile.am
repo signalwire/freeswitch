@@ -14,10 +14,8 @@ MODNAME=mod_opal
 
 OPAL_DIR=$(switch_builddir)/libs/opal
 
-include $(OPAL_DIR)/opal_inc.mak
-
 mod_LTLIBRARIES = mod_opal.la
-mod_opal_la_SOURCES = mod_opalh323.cpp opalh323_backend.cpp
+mod_opal_la_SOURCES = opalh323_backend.cpp mod_opalh323.cpp
 mod_opal_la_CFLAGS  = $(AM_CFLAGS) 
 mod_opal_la_CFLAGS += -I. -I$(OPAL_DIR)/include
 mod_opal_la_CPPFLAGS = $(AM_CPPFLAGS)
@@ -36,3 +34,5 @@ $(DESTDIR)$(PREFIX)/$(moddir)/$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).la
 	else \
 	  $(LIBTOOL) --mode=install $(INSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/$(moddir) >/dev/null  ; \
 	fi
+
+##include $(OPAL_DIR)/opal_inc.mak
