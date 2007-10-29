@@ -1,6 +1,6 @@
 BASE=../../../..
-LIBPRI_HOST=http://ftp.digium.com/pub/libpri
-LIBPRI=libpri-1.2.5
+LIBPRI_HOST=http://downloads.digium.com/pub/libpri
+LIBPRI=libpri-1.2.6
 LIBPRI_FILE=$(LIBPRI).tar.gz
 LIBPRI_DIR=$(BASE)/libs/$(LIBPRI)
 WANPIPE=wanpipe-3.1.1
