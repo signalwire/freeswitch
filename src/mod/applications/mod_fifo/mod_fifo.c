@@ -485,7 +485,7 @@ SWITCH_STANDARD_API(fifo_api_function)
 {
     int len = 0;
     fifo_node_t *node;
-    char *data;
+    char *data = NULL;
     int argc = 0;
     char *argv[5] = { 0 };
     switch_hash_index_t *hi;
