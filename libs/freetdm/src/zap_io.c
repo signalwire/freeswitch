@@ -323,10 +323,6 @@ zap_status_t zap_span_close_all(void)
 			zap_channel_destroy(&span->channels[i]);
 		}
 
-		if (span->mutex) {
-			zap_mutex_destroy(&span->mutex);
-		}
-
 		zap_safe_free(span->signal_data);
 	}
 	zap_mutex_unlock(globals.mutex);
@@ -1945,6 +1941,7 @@ zap_status_t zap_global_destroy(void)
 
 		if (zap_test_flag(cur_span, ZAP_SPAN_CONFIGURED)) {
 			zap_mutex_lock(cur_span->mutex);
+			zap_clear_flag(cur_span, ZAP_SPAN_CONFIGURED);
 			for(j = 1; j <= cur_span->chan_count; j++) {
 				zap_channel_t *cur_chan = &cur_span->channels[j];
 				if (zap_test_flag(cur_chan, ZAP_CHANNEL_CONFIGURED)) {
@@ -1952,6 +1949,10 @@ zap_status_t zap_global_destroy(void)
 				}
 			}
 			zap_mutex_unlock(cur_span->mutex);
+
+			if (cur_span->mutex) {
+				zap_mutex_destroy(&cur_span->mutex);
+			}
 		}
 	}
 
