@@ -199,23 +199,45 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(char *to, char *from, char *he
 
 SWITCH_DECLARE(const char *) switch_stristr(const char *str, const char *instr)
 {
-	switch_size_t score = strlen(str), x = 0;
-	const char *a = str, *b = instr, *p = NULL;
-	while(*a && *b) {
-		if (tolower(*b) == tolower(*a)) {
-			if (++x == score) {
-				return b - x + 1;
-			}
-			a++;
-		} else {
-			a = str;
-			p = b+1;
-			x = 0;
+/*
+** Rev History:  16/07/97  Greg Thayer		Optimized
+**               07/04/95  Bob Stout		ANSI-fy
+**               02/03/94  Fred Cole		Original
+**               09/01/03  Bob Stout		Bug fix (lines 40-41) per Fred Bulback
+**
+** Hereby donated to public domain.
+*/
+
+	const char *pptr, *sptr, *start;
+
+	if (!str || !instr)
+		return NULL;
+
+	for (start = str; *start; start++) {
+		/* find start of pattern in string */
+		for ( ; ((*start) && (toupper(*start) != toupper(*instr))); start++);
+
+		if (!*start)
+			return NULL;
+
+		pptr = instr;
+		sptr = start;
+
+		while (toupper(*sptr) == toupper(*pptr)) {
+			sptr++;
+			pptr++;
+
+			/* if end of pattern then pattern was found */
+			if (!*pptr)
+				return (start);
+
+			if (!*sptr)
+				return NULL;
 		}
-		b++;
 	}
 	return NULL;
 }
+
 
 SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int family)
 {
