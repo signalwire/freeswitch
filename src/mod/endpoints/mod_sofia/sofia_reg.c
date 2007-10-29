@@ -891,8 +891,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	}
 		
 	if (!(xparams = switch_xml_child(user, "params"))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find params for user [%s@%s]\n", username, realm);
-		ret = AUTH_FORBIDDEN;
+		ret = AUTH_OK;
 		goto end;
 	}
 	
