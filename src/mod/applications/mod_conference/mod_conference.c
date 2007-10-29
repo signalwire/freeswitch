@@ -505,7 +505,7 @@ static switch_status_t conference_add_member(conference_obj_t * conference, conf
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *event;
-	char msg[512];				// for conference count anouncement
+	char msg[512];					/* conference count anouncement */
 	call_list_t *call_list = NULL;
 	switch_channel_t *channel;
 
@@ -556,7 +556,7 @@ static switch_status_t conference_add_member(conference_obj_t * conference, conf
 			conference_member_say(member, msg, 0);
 		} else {
 			if (switch_strlen_zero(conference->special_announce)) {
-				// anounce the total number of members in the conference
+				/* anounce the total number of members in the conference */
 				if (conference->count >= conference->anounce_count && conference->anounce_count > 1) {
 					snprintf(msg, sizeof(msg), "There are %d callers", conference->count);
 					conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
@@ -1496,9 +1496,7 @@ static void conference_loop_output(conference_member_t * member)
 
 	tsamples = member->orig_read_codec->implementation->samples_per_frame;
 
-	if (switch_core_timer_init(&timer, member->conference->timer_name, interval,
-							   //member->conference->interval, 
-							   tsamples, NULL) == SWITCH_STATUS_SUCCESS) {
+	if (switch_core_timer_init(&timer, member->conference->timer_name, interval, tsamples, NULL) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer %s success interval: %u  samples: %u\n",
 						  member->conference->timer_name, interval, tsamples);
 	} else {
@@ -1617,8 +1615,6 @@ static void conference_loop_output(conference_member_t * member)
 
 		/* if a caller action has been detected, handle it */
 		if (caller_action != NULL && caller_action->fndesc != NULL && caller_action->fndesc->handler != NULL) {
-			//switch_channel_t *channel      = switch_core_session_get_channel(member->session);
-			//switch_caller_profile_t *profile   = switch_channel_get_caller_profile(channel);
 			char *param = NULL;
 
 			if (caller_action->fndesc->action != CALLER_CONTROL_MENU) {
@@ -1736,7 +1732,6 @@ static void conference_loop_output(conference_member_t * member)
 						if (member->volume_out_level) {
 							switch_change_sln_volume(write_frame.data, write_frame.samples, member->volume_out_level);
 						}
-						//printf("WRITE %d %d\n", write_frame.datalen, ++x);
 						write_frame.timestamp = timer.samplecount;
 						switch_core_session_write_frame(member->session, &write_frame, -1, 0);
 					}
@@ -1795,7 +1790,6 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t * t
 	conference_record_t *rec = (conference_record_t *) obj;
 	conference_obj_t *conference = rec->conference;
 	uint32_t samples = switch_bytes_per_frame(conference->rate, conference->interval);
-	//uint32_t bytes = samples * 2;
 	uint32_t low_count = 0, mux_used;
 	char *vval;
 	switch_timer_t timer = { 0 };
@@ -2384,7 +2378,6 @@ static void conference_list_pretty(conference_obj_t * conference, switch_stream_
 	assert(stream != NULL);
 
 	switch_mutex_lock(conference->member_mutex);
-	//      stream->write_function(stream, "<pre>Current Callers:\n");
 
 	for (member = conference->members; member; member = member->next) {
 		switch_channel_t *channel;
@@ -2735,7 +2728,7 @@ static switch_status_t conf_api_sub_list(conference_obj_t * conference, switch_s
 	void *val;
 	char *d = ";";
 	int pretty = 0;
-	int argofs = (argc >= 2 && strcasecmp(argv[1], "list") == 0);	// detect being called from chat vs. api
+	int argofs = (argc >= 2 && strcasecmp(argv[1], "list") == 0);	/* detect being called from chat vs. api */
 
 	if (argv[1 + argofs]) {
 		if (argv[2 + argofs] && !strcasecmp(argv[1 + argofs], "delim")) {
@@ -3526,7 +3519,6 @@ SWITCH_STANDARD_API(conf_api_main)
 				}
 			} else {
 				stream->write_function(stream, "Conference %s not found\n", argv[0]);
-				//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Conference %s not found\n", argv[0]);
 			}
 		}
 
@@ -4100,7 +4092,7 @@ SWITCH_STANDARD_APP(conference_function)
 
 		/* dont allow more callers than the max_members allows for -- I explicitly didnt allow outbound calls
 		 * someone else can add that (see above) if they feel that outbound calls should be able to violate the
-		 * max_members limit -- TRX
+		 * max_members limit
 		 */
 		if ((conference->max_members > 0) && (conference->count >= conference->max_members)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Conference %s is full.\n", conf_name);
@@ -4182,7 +4174,6 @@ SWITCH_STANDARD_APP(conference_function)
 	if (switch_core_codec_init(&member.write_codec,
 							   "L16",
 							   NULL,
-							   //read_codec->implementation->samples_per_second,
 							   conference->rate,
 							   read_codec->implementation->microseconds_per_frame / 1000,
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, member.pool) == SWITCH_STATUS_SUCCESS) {
@@ -4375,14 +4366,6 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 	SWITCH_STANDARD_STREAM(stream);
 
 	if (body != NULL && (lbuf = strdup(body))) {
-		//int argc;
-		//char *argv[25];
-
-		//memset(argv, 0, sizeof(argv));
-		//argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-		
-		/* try to find a command to execute */
-		//if (argc) {
 			/* special case list */
 		if (switch_stristr("list", lbuf)) {
 			conference_list_pretty(conference, &stream);
@@ -4401,9 +4384,6 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 				}
 			}
 #endif
-		//} else {
-		//stream.write_function(&stream, "No parameters specified.\nTry 'help'\n");
-		//}
 	}
 	switch_safe_free(lbuf);
 	ci->chat_send(CONF_CHAT_PROTO, to, from, "", stream.data, NULL);
