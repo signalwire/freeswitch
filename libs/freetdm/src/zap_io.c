@@ -288,10 +288,13 @@ zap_status_t zap_span_create(zap_io_interface_t *zio, zap_span_t **span)
 	if (globals.span_index < ZAP_MAX_SPANS_INTERFACE) {
 		new_span = &globals.spans[++globals.span_index];
 		memset(new_span, 0, sizeof(*new_span));
+		status = zap_mutex_create(&new_span->mutex);
+		if (status != ZAP_SUCCESS) {
+			goto done;
+		}
 		zap_set_flag(new_span, ZAP_SPAN_CONFIGURED);
 		new_span->span_id = globals.span_index;
 		new_span->zio = zio;
-		zap_mutex_create(&new_span->mutex);
 		zap_copy_string(new_span->tone_map[ZAP_TONEMAP_DIAL], "%(1000,0,350,440)", ZAP_TONEMAP_LEN);
 		zap_copy_string(new_span->tone_map[ZAP_TONEMAP_RING], "%(2000,4000,440,480)", ZAP_TONEMAP_LEN);
 		zap_copy_string(new_span->tone_map[ZAP_TONEMAP_BUSY], "%(500,500,480,620)", ZAP_TONEMAP_LEN);
@@ -301,6 +304,8 @@ zap_status_t zap_span_create(zap_io_interface_t *zio, zap_span_t **span)
 		status = ZAP_SUCCESS;
 	}
 	zap_mutex_unlock(globals.mutex);	
+
+done:
 
 	return status;
 }
