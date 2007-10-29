@@ -1062,7 +1062,7 @@ static switch_call_cause_t wanpipe_outgoing_channel(switch_core_session_t *sessi
 
 	outbound_profile->destination_number = dest;
 
-	if (!(*new_session = switch_core_session_request(&wanpipe_endpoint_interface, pool))) {
+	if (!(*new_session = switch_core_session_request(wanpipe_endpoint_interface, pool))) {
 		cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
         goto error;
 	}
@@ -1510,7 +1510,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 	pri_acknowledge(spri->pri, pevent->ring.call, pevent->ring.channel, 0);
 	switch_mutex_unlock(chanmap->mutex);
 
-	if ((session = switch_core_session_request(&wanpipe_endpoint_interface, NULL))) {
+	if ((session = switch_core_session_request(wanpipe_endpoint_interface, NULL))) {
 		private_object_t *tech_pvt;
 		char ani2str[4] = "";
 		//wanpipe_tdm_api_t tdm_api;
@@ -1817,7 +1817,7 @@ static void handle_call_start(ss7boost_handle_t *ss7boost_handle, ss7boost_clien
 	}
 
 	
-	if ((session = switch_core_session_request(&wanpipe_endpoint_interface, NULL))) {
+	if ((session = switch_core_session_request(wanpipe_endpoint_interface, NULL))) {
 		private_object_t *tech_pvt;
 
 		switch_core_session_add_stream(session, NULL);
