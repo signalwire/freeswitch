@@ -350,11 +350,19 @@ static switch_status_t conference_add_event_data(conference_obj_t * conference, 
 static switch_status_t conference_add_event_member_data(conference_member_t * member, switch_event_t *event)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_channel_t *channel = switch_core_session_get_channel(member->session);
-	switch_channel_event_set_data(channel, event);
+	
+	if (member) {
+		if (member->session) {
+			switch_channel_t *channel = switch_core_session_get_channel(member->session);
+			switch_channel_event_set_data(channel, event);
+		}
 
-	status = conference_add_event_data(member->conference, event);
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
+		if (member->conference) {
+			status = conference_add_event_data(member->conference, event);
+		}
+
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
+	}
 
 	return status;
 }
