@@ -37,7 +37,7 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_openzap_load);
 SWITCH_MODULE_DEFINITION(mod_openzap, mod_openzap_load, NULL, NULL);
 
-static switch_endpoint_interface_t *channel_endpoint_interface;
+switch_endpoint_interface_t *openzap_endpoint_interface;
 
 static switch_memory_pool_t *module_pool = NULL;
 static int running = 1;
@@ -657,7 +657,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	}
 }
 
-static switch_state_handler_table_t channel_state_handlers = {
+switch_state_handler_table_t openzap_state_handlers = {
 	/*.on_init */ channel_on_init,
 	/*.on_ring */ channel_on_ring,
 	/*.on_execute */ channel_on_execute,
@@ -666,7 +666,7 @@ static switch_state_handler_table_t channel_state_handlers = {
 	/*.on_transmit */ channel_on_transmit
 };
 
-static switch_io_routines_t channel_io_routines = {
+switch_io_routines_t openzap_io_routines = {
 	/*.outgoing_channel */ channel_outgoing_channel,
 	/*.read_frame */ channel_read_frame,
 	/*.write_frame */ channel_write_frame,
@@ -731,7 +731,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 
 
-	if ((*new_session = switch_core_session_request(channel_endpoint_interface, pool)) != 0) {
+	if ((*new_session = switch_core_session_request(openzap_endpoint_interface, pool)) != 0) {
 		private_t *tech_pvt;
 		switch_channel_t *channel;
 		switch_caller_profile_t *caller_profile;
@@ -801,7 +801,7 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
 	
 	*sp = NULL;
 	
-	if (!(session = switch_core_session_request(channel_endpoint_interface, NULL))) {
+	if (!(session = switch_core_session_request(openzap_endpoint_interface, NULL))) {
 		return ZAP_FAIL;
 	}
 	
@@ -1208,10 +1208,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_openzap_load)
 	}
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	channel_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
-	channel_endpoint_interface->interface_name = "openzap";
-	channel_endpoint_interface->io_routines = &channel_io_routines;
-	channel_endpoint_interface->state_handler = &channel_state_handlers;
+	openzap_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+	openzap_endpoint_interface->interface_name = "openzap";
+	openzap_endpoint_interface->io_routines = &openzap_io_routines;
+	openzap_endpoint_interface->state_handler = &openzap_state_handlers;
 
 
 	/* indicate that the module should continue to be loaded */
