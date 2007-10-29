@@ -28,6 +28,7 @@
  * Johny Kadarisman <jkr888@gmail.com>
  * Paul Tinsley <jackhammer@gmail.com>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
+ * Bret McDanel <trixter AT 0xdecafbad.com>
  *
  * 
  * mod_commands.c -- Misc. Command Module
@@ -265,7 +266,7 @@ SWITCH_STANDARD_API(transfer_function)
 
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-		if (argc >= 2 && argc <= 4) {
+		if (argc >= 2 && argc <= 5) {
 			char *uuid = argv[0];
 			char *dest = argv[1];
 			char *dp = argv[2];
