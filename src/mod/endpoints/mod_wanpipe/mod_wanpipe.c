@@ -47,7 +47,7 @@ SWITCH_MODULE_DEFINITION(mod_wanpipe, mod_wanpipe_load, mod_wanpipe_shutdown, NU
 
 #define STRLEN 15
 
-static switch_endpoint_interface_t *wanpipe_endpoint_interface;
+switch_endpoint_interface_t *wanpipe_endpoint_interface;
 static switch_memory_pool_t *module_pool = NULL;
 
 typedef enum {
@@ -982,7 +982,7 @@ static switch_status_t wanpipe_kill_channel(switch_core_session_t *session, int 
 }
 
 
-static switch_io_routines_t wanpipe_io_routines = {
+switch_io_routines_t wanpipe_io_routines = {
 	/*.outgoing_channel */ wanpipe_outgoing_channel,
 	/*.read_frame */ wanpipe_read_frame,
 	/*.write_frame */ wanpipe_write_frame,
@@ -993,7 +993,7 @@ static switch_io_routines_t wanpipe_io_routines = {
 	/*.receive_message*/ wanpipe_receive_message
 };
 
-static switch_state_handler_table_t wanpipe_state_handlers = {
+switch_state_handler_table_t wanpipe_state_handlers = {
 	/*.on_init */ wanpipe_on_init,
 	/*.on_ring */ wanpipe_on_ring,
 	/*.on_execute */ NULL,

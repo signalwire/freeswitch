@@ -54,7 +54,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_woomera_runtime);
 SWITCH_MODULE_DEFINITION(mod_woomera, mod_woomera_load, mod_woomera_shutdown, mod_woomera_runtime);
 
 static switch_memory_pool_t *module_pool = NULL;
-static switch_endpoint_interface_t *woomera_endpoint_interface;
+switch_endpoint_interface_t *woomera_endpoint_interface;
 
 #define STRLEN 15
 #define FRAME_LEN 480

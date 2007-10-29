@@ -49,7 +49,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_dingaling_shutdown);
 SWITCH_MODULE_DEFINITION(mod_dingaling, mod_dingaling_load, mod_dingaling_shutdown, NULL);
 
 static switch_memory_pool_t *module_pool = NULL;
-static switch_endpoint_interface_t *channel_endpoint_interface;
+switch_endpoint_interface_t *dingaling_endpoint_interface;
 
 static char sub_sql[] =
 	"CREATE TABLE jabber_subscriptions (\n"
@@ -1571,7 +1571,7 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_state_handler_table_t channel_event_handlers = {
+switch_state_handler_table_t dingaling_event_handlers = {
 	/*.on_init */ channel_on_init,
 	/*.on_ring */ channel_on_ring,
 	/*.on_execute */ channel_on_execute,
@@ -1580,7 +1580,7 @@ static switch_state_handler_table_t channel_event_handlers = {
 	/*.on_transmit */ channel_on_transmit
 };
 
-static switch_io_routines_t channel_io_routines = {
+switch_io_routines_t dingaling_io_routines = {
 	/*.outgoing_channel */ channel_outgoing_channel,
 	/*.read_frame */ channel_read_frame,
 	/*.write_frame */ channel_write_frame,
@@ -1601,7 +1601,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool)
 {
-	if ((*new_session = switch_core_session_request(channel_endpoint_interface, pool)) != 0) {
+	if ((*new_session = switch_core_session_request(dingaling_endpoint_interface, pool)) != 0) {
 		struct private_object *tech_pvt;
 		switch_channel_t *channel;
 		switch_caller_profile_t *caller_profile = NULL;
@@ -1816,10 +1816,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load)
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	channel_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
-	channel_endpoint_interface->interface_name = "dingaling";
-	channel_endpoint_interface->io_routines = &channel_io_routines;
-	channel_endpoint_interface->state_handler = &channel_event_handlers;
+	dingaling_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+	dingaling_endpoint_interface->interface_name = "dingaling";
+	dingaling_endpoint_interface->io_routines = &dingaling_io_routines;
+	dingaling_endpoint_interface->state_handler = &dingaling_event_handlers;
 
 #define PRES_SYNTAX "dl_pres <profile_name>"
 #define LOGOUT_SYNTAX "dl_logout <profile_name>"
@@ -2561,7 +2561,7 @@ static ldl_status handle_signalling(ldl_handle_t * handle, ldl_session_t * dlses
 			status = LDL_STATUS_FALSE;
 			goto done;
 		}
-		if ((session = switch_core_session_request(channel_endpoint_interface, NULL)) != 0) {
+		if ((session = switch_core_session_request(dingaling_endpoint_interface, NULL)) != 0) {
 			switch_core_session_add_stream(session, NULL);
 
 			

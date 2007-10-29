@@ -43,7 +43,7 @@ SWITCH_MODULE_DEFINITION(mod_iax, mod_iax_load, mod_iax_shutdown, mod_iax_runtim
 #include <sys/timeb.h>
 #endif
 
-static switch_endpoint_interface_t *channel_endpoint_interface;
+switch_endpoint_interface_t *iax_endpoint_interface;
 static switch_memory_pool_t *module_pool = NULL;
 static int running = 1;
 
@@ -790,7 +790,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool)
 {
-	if ((*new_session = switch_core_session_request(channel_endpoint_interface, pool)) != 0) {
+	if ((*new_session = switch_core_session_request(iax_endpoint_interface, pool)) != 0) {
 		private_t *tech_pvt;
 		switch_channel_t *channel;
 		switch_caller_profile_t *caller_profile;
@@ -850,7 +850,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 }
 
-static switch_state_handler_table_t channel_state_handlers = {
+switch_state_handler_table_t iax_state_handlers = {
 	/*.on_init */ channel_on_init,
 	/*.on_ring */ channel_on_ring,
 	/*.on_execute */ channel_on_execute,
@@ -859,7 +859,7 @@ static switch_state_handler_table_t channel_state_handlers = {
 	/*.on_transmit */ channel_on_transmit
 };
 
-static switch_io_routines_t channel_io_routines = {
+switch_io_routines_t iax_io_routines = {
 	/*.outgoing_channel */ channel_outgoing_channel,
 	/*.read_frame */ channel_read_frame,
 	/*.write_frame */ channel_write_frame,
@@ -876,10 +876,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_iax_load)
 	module_pool = pool;
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	channel_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
-	channel_endpoint_interface->interface_name = "iax";
-	channel_endpoint_interface->io_routines = &channel_io_routines;
-	channel_endpoint_interface->state_handler = &channel_state_handlers;
+	iax_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+	iax_endpoint_interface->interface_name = "iax";
+	iax_endpoint_interface->io_routines = &iax_io_routines;
+	iax_endpoint_interface->state_handler = &iax_state_handlers;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -1083,7 +1083,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 					switch_core_session_t *session;
 
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New Inbound Channel %s!\n", iaxevent->ies.calling_name);
-					if ((session = switch_core_session_request(channel_endpoint_interface, NULL)) != 0) {
+					if ((session = switch_core_session_request(iax_endpoint_interface, NULL)) != 0) {
 						private_t *tech_pvt;
 						switch_channel_t *channel;
 

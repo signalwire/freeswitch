@@ -44,7 +44,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_portaudio_shutdown);
 SWITCH_MODULE_DEFINITION(mod_portaudio, mod_portaudio_load, mod_portaudio_shutdown, NULL);
 
 static switch_memory_pool_t *module_pool = NULL;
-static switch_endpoint_interface_t *channel_endpoint_interface;
+switch_endpoint_interface_t *portaudio_endpoint_interface;
 
 #define SAMPLE_TYPE  paInt16
 typedef int16_t SAMPLE;
@@ -718,7 +718,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_state_handler_table_t channel_event_handlers = {
+switch_state_handler_table_t portaudio_event_handlers = {
 	/*.on_init */ channel_on_init,
 	/*.on_ring */ channel_on_ring,
 	/*.on_execute */ channel_on_execute,
@@ -727,7 +727,7 @@ static switch_state_handler_table_t channel_event_handlers = {
 	/*.on_transmit */ channel_on_transmit
 };
 
-static switch_io_routines_t channel_io_routines = {
+switch_io_routines_t portaudio_io_routines = {
 	/*.outgoing_channel */ channel_outgoing_channel,
 	/*.read_frame */ channel_read_frame,
 	/*.write_frame */ channel_write_frame,
@@ -746,7 +746,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_core_session_t **new_session, switch_memory_pool_t **pool)
 {
 
-	if ((*new_session = switch_core_session_request(channel_endpoint_interface, pool)) != 0) {
+	if ((*new_session = switch_core_session_request(portaudio_endpoint_interface, pool)) != 0) {
 		private_t *tech_pvt;
 		switch_channel_t *channel;
 		switch_caller_profile_t *caller_profile;
@@ -841,10 +841,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
-	channel_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
-	channel_endpoint_interface->interface_name = "portaudio";
-	channel_endpoint_interface->io_routines = &channel_io_routines;
-	channel_endpoint_interface->state_handler = &channel_event_handlers;
+	portaudio_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+	portaudio_endpoint_interface->interface_name = "portaudio";
+	portaudio_endpoint_interface->io_routines = &portaudio_io_routines;
+	portaudio_endpoint_interface->state_handler = &portaudio_event_handlers;
 
 	SWITCH_ADD_API(api_interface, "pa", "PortAudio", pa_cmd, "<command> [<args>]");
 
@@ -1564,7 +1564,7 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 	}
 	dest = argv[0];
 
-	if ((session = switch_core_session_request(channel_endpoint_interface, NULL)) != 0) {
+	if ((session = switch_core_session_request(portaudio_endpoint_interface, NULL)) != 0) {
 		private_t *tech_pvt;
 		switch_channel_t *channel;
 		char *dialplan = globals.dialplan;

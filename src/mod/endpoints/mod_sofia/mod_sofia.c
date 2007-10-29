@@ -1415,7 +1415,7 @@ SWITCH_STANDARD_API(sofia_function)
 
 }
 
-static switch_io_routines_t sofia_io_routines = {
+switch_io_routines_t sofia_io_routines = {
 	/*.outgoing_channel */ sofia_outgoing_channel,
 	/*.read_frame */ sofia_read_frame,
 	/*.write_frame */ sofia_write_frame,
@@ -1430,7 +1430,7 @@ static switch_io_routines_t sofia_io_routines = {
 	/*.write_video_frame*/ sofia_write_video_frame
 };
 
-static switch_state_handler_table_t sofia_event_handlers = {
+switch_state_handler_table_t sofia_event_handlers = {
 	/*.on_init */ sofia_on_init,
 	/*.on_ring */ sofia_on_ring,
 	/*.on_execute */ sofia_on_execute,
