@@ -55,7 +55,7 @@ int fs_core_init(char *path)
 		path = NULL;
 	}
 
-	status = switch_core_init(path, &err);
+	status = switch_core_init(path, SCF_NONE, &err);
 
 	return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
