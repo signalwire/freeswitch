@@ -258,24 +258,18 @@ static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_me
 		args.buf = ptr;
 		args.buflen = len;
 
-		if (*sound == '/' || *sound == '\\') {
-			status = switch_ivr_play_file(session, NULL, sound, &args);
-		} else {
-			if (strlen(sound) > 4 && strncmp(sound, "say:", 4) == 0) {
-				if (menu->tts_engine && menu->tts_voice) {
-					status = switch_ivr_speak_text(session, menu->tts_engine, menu->tts_voice, sound + 4, &args);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No TTS engine to play sound\n");
-				}
+		if (strlen(sound) > 4 && strncasecmp(sound, "say:", 4) == 0) {
+			if (menu->tts_engine && menu->tts_voice) {
+				status = switch_ivr_speak_text(session, menu->tts_engine, menu->tts_voice, sound + 4, &args);
 			} else {
-				if (strlen(sound) > 7 && strncmp(sound, "phrase:", 7) == 0) {
-					status = switch_ivr_phrase_macro(session, sound + 7, "", menu->phrase_lang, &args);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "play_or_say: no player for [%s]. Use say: or phrase:\n", sound);
-				}
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No TTS engine to play sound\n");
 			}
+		} else if (strlen(sound) > 7 && strncasecmp(sound, "phrase:", 7) == 0) {
+			status = switch_ivr_phrase_macro(session, sound + 7, "", menu->phrase_lang, &args);
+		} else {
+			status = switch_ivr_play_file(session, NULL, sound, &args);
 		}
-
+		
 		if (need) {
 			menu->ptr += strlen(menu->buf);
 			if (strlen(menu->buf) < need) {
