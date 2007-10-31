@@ -1071,11 +1071,10 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		}
 		
 		if (rtp_timeout_sec) {
-			uint32_t packets;
-			packets = (tech_pvt->read_codec.implementation->samples_per_second * rtp_timeout_sec) / 
+			tech_pvt->max_missed_packets = (tech_pvt->read_codec.implementation->samples_per_second * rtp_timeout_sec) / 
 				tech_pvt->read_codec.implementation->samples_per_frame;
 			
-			switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, packets);
+			switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
 		}
 
 		if (tech_pvt->te) {
@@ -1228,6 +1227,9 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 		if (!switch_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
 			char *stream;
 			switch_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+			if (tech_pvt->max_missed_packets) {
+				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets * 10);
+			}
 			if (!(stream = switch_channel_get_variable(tech_pvt->channel, SWITCH_HOLD_MUSIC_VARIABLE))) {
 				stream = tech_pvt->profile->hold_music;
 			}
@@ -1238,6 +1240,9 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 	} else {
 		if (switch_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
 			switch_channel_clear_flag_partner(tech_pvt->channel, CF_BROADCAST);
+			if (tech_pvt->max_missed_packets) {
+				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
+			}
 			switch_channel_set_flag_partner(tech_pvt->channel, CF_BREAK);
 			switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 		}

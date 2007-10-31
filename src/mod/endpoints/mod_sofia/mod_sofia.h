@@ -342,6 +342,7 @@ struct private_object {
 	sip_contact_t *contact;
 	uint32_t owner_id;
 	uint32_t session_id;
+	uint32_t max_missed_packets;
 	/** VIDEO **/
 	switch_frame_t video_read_frame;
 	switch_codec_t video_read_codec;
