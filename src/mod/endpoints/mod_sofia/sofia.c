@@ -1919,6 +1919,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	const char *destination_number = NULL;
 	const char *from_user = NULL, *from_host = NULL;
 	const char *context = NULL;
+	const char *dialplan = NULL;
 	char network_ip[80];
 	switch_event_t *v_event = NULL;
 	uint32_t sess_count = switch_core_session_count();
@@ -2128,6 +2129,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		}
 	}
 
+	if (!context) {
+		context = switch_channel_get_variable(channel, "inbound_context");
+	}
 
 	if (!context) {
 		if (profile->context && !strcasecmp(profile->context, "_domain_")) {
@@ -2137,9 +2141,13 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		}
 	}
 
+	if (!(dialplan = switch_channel_get_variable(channel, "inbound_dialplan"))) {
+		dialplan = profile->dialplan;
+	}
+
 	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 														 from_user,
-														 profile->dialplan,
+														 dialplan,
 														 displayname,
 														 from_user,
 														 network_ip,
