@@ -675,7 +675,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	}
 
 	if (!strstr(file, SWITCH_URL_SEPARATOR)) {
-		if (prefix && *file != '/' && *file != '\\' && *(file + 1) != ':') {
+		if (switch_is_file_path(file)) {
 			char *new_file;
 			uint32_t len;
 			len = (uint32_t) strlen(file) + (uint32_t) strlen(prefix) + 10;
