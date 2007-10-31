@@ -333,10 +333,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 			}
 		}
 	} else if (cmd_hash == CMD_UNICAST) {
-		char *local_ip = switch_event_get_header(event, "local_ip");
-		char *local_port = switch_event_get_header(event, "local_port");
-		char *remote_ip = switch_event_get_header(event, "remote_ip");
-		char *remote_port = switch_event_get_header(event, "remote_port");
+		char *local_ip = switch_event_get_header(event, "local-ip");
+		char *local_port = switch_event_get_header(event, "local-port");
+		char *remote_ip = switch_event_get_header(event, "remote-ip");
+		char *remote_port = switch_event_get_header(event, "remote-port");
 		char *transport = switch_event_get_header(event, "transport");
 		char *flags = switch_event_get_header(event, "flags");
 

@@ -249,10 +249,10 @@ void client_run(int client_socket, char *local_ip, int local_port, char *remote_
 
 	snprintf(sendbuf, sizeof(sendbuf), "sendmsg\n"
 			 "call-command: unicast\n"
-			 "local_ip: %s\n"
-			 "local_port: %d\n"
-			 "remote_ip: %s\n"
-			 "remote_port: %d\n"
+			 "local-ip: %s\n"
+			 "local-port: %d\n"
+			 "remote-ip: %s\n"
+			 "remote-port: %d\n"
 			 "transport: udp\n"
 			 "%s"
 			 "\n",
