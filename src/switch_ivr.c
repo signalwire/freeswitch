@@ -417,12 +417,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 		switch_channel_pre_answer(channel);
 	}
 
+	switch_channel_set_flag(channel, CF_CONTROLLED);
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_PARK) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
 		switch_event_fire(&event);
 	}
 
-	switch_channel_set_flag(channel, CF_CONTROLLED);
 	while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_CONTROLLED)) {
 
 		if ((status = switch_core_session_read_frame(session, &read_frame, -1, stream_id)) == SWITCH_STATUS_SUCCESS) {
