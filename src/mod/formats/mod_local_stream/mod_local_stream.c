@@ -101,7 +101,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 			switch_size_t olen;
 			uint8_t *abuf[SWITCH_RECOMMENDED_BUFFER_SIZE] =  {0};
 
-			snprintf(path_buf, sizeof(path_buf), "%s/%s", source->location, fname);
+			snprintf(path_buf, sizeof(path_buf), "%s%s%s", source->location, SWITCH_PATH_SEPARATOR, fname);
 			fname = path_buf;
 			if (switch_core_file_open(&fh,
 									  (char *)fname,
