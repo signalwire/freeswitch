@@ -680,7 +680,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			uint32_t len;
 			len = (uint32_t) strlen(file) + (uint32_t) strlen(prefix) + 10;
 			new_file = switch_core_session_alloc(session, len);
-			snprintf(new_file, len, "%s/%s", prefix, file);
+			snprintf(new_file, len, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, file);
 			file = new_file;
 		}
 
