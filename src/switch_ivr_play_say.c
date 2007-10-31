@@ -675,25 +675,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	}
 
 	if (!strstr(file, SWITCH_URL_SEPARATOR)) {
-		if (switch_is_file_path(file)) {
-			char *new_file;
-			uint32_t len;
-			len = (uint32_t) strlen(file) + (uint32_t) strlen(prefix) + 10;
-			new_file = switch_core_session_alloc(session, len);
-			snprintf(new_file, len, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, file);
-			file = new_file;
+		if (!switch_is_file_path(file)) {
+			file = switch_core_session_sprintf(session, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, file);
 		}
-
 		if ((ext = strrchr(file, '.'))) {
 			ext++;
 		} else {
-			char *new_file;
-			uint32_t len;
 			ext = read_codec->implementation->iananame;
-			len = (uint32_t) strlen(file) + (uint32_t) strlen(ext) + 2;
-			new_file = switch_core_session_alloc(session, len);
-			snprintf(new_file, len, "%s.%s", file, ext);
-			file = new_file;
+			file = switch_core_session_sprintf(session, "%s.%s", file, ext);
 			asis = 1;
 		}
 	}
