@@ -105,15 +105,13 @@ bool FSOpalManager::initialize(
             switch_memory_pool_t* i_memoryPool,
             switch_endpoint_interface_t *i_endpointInterface
             )                
-{       
+{                       
     /* check if not initialized */
-    assert(m_isInitialized);
-    
+    assert(!m_isInitialized);    
     /* check input parameters */
     assert(i_modName);
     assert(i_memoryPool);
     assert(i_endpointInterface);
-    
     
     m_pModuleName = i_modName;
     m_pMemoryPool = i_memoryPool;
@@ -126,7 +124,7 @@ bool FSOpalManager::initialize(
      */
     
     if(switch_core_hash_init(&m_pSessionsHashTable,m_pMemoryPool)!=SWITCH_STATUS_SUCCESS)
-    {
+    {        
         assert(0);
         return false;
     }

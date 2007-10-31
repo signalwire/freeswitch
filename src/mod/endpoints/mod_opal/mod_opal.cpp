@@ -63,9 +63,196 @@ static switch_status_t opalh323_on_transmit(switch_core_session_t *session);
 /**
  * Declaration of private variables 
  */
-static FSOpalManager *opal_manager = NULL;
 static switch_memory_pool_t *opal_pool = NULL;
-static switch_endpoint_interface_t *opalh323_endpoint_interface;
+static switch_endpoint_interface_t *opalh323_endpoint_interface = NULL;
+
+/** 
+ * Declaration of PProces ancestor for OpalManager starting 
+ *
+ */
+class OpalStartProcess : public PProcess
+{
+  PCLASSINFO(OpalStartProcess, PProcess)
+
+  public:
+    
+      
+    /** 
+     * This dunction creates new instace of 
+     * OpalStartProcess and starts it's task
+     */
+    static void createInstance(
+            const char* i_moduleName,
+            switch_memory_pool_t *i_memoryPool,
+            switch_endpoint_interface_t *i_endpointInterface)
+    {       
+        assert(!s_startProcess);
+        assert(i_moduleName);
+        assert(i_memoryPool);
+        assert(i_endpointInterface);        
+               
+        PProcess::PreInitialise(0, NULL, NULL);
+        s_startProcess = new OpalStartProcess(i_moduleName,i_memoryPool,i_endpointInterface);
+        assert(s_startProcess);
+        if(!s_startProcess)
+        {
+            return;
+        }
+        s_startProcess->_main(); /* run process */    
+        delete s_startProcess;   /* delete opal manager instance */ 
+        s_startProcess = NULL;   /* clear pointer */
+    }
+    
+    static OpalStartProcess* getInstance()
+    {
+        assert(s_startProcess);
+        return s_startProcess;
+    }
+    
+    OpalStartProcess(
+        const char* i_moduleName,
+        switch_memory_pool_t *i_memoryPool,
+        switch_endpoint_interface_t *i_endpointInterface
+    ):             
+        PProcess("FreeSWITCH", "mod_opal"),
+        m_pStopCondition(NULL),  
+        m_pWaitCondition(NULL),
+        m_pModuleName(i_moduleName),
+        m_pMemoryPool(i_memoryPool),
+        m_pEndpointInterface(i_endpointInterface)
+    {                    
+           
+        
+            switch_status_t status = switch_thread_cond_create(&m_pStopCondition, m_pMemoryPool);
+            assert(status==SWITCH_STATUS_SUCCESS);
+            if(status!=SWITCH_STATUS_SUCCESS) 
+            {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can not init stop condition.");
+                return;
+            }
+            
+            status = switch_thread_cond_create(&m_pWaitCondition, m_pMemoryPool);
+            assert(status==SWITCH_STATUS_SUCCESS);
+            if(status!=SWITCH_STATUS_SUCCESS) 
+            {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can not init wait condition.");
+                return;
+            }
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "OpalStartProcess created\n");
+    }
+        
+    ~OpalStartProcess()
+    {
+        switch_thread_cond_destroy(m_pWaitCondition);
+        switch_thread_cond_destroy(m_pStopCondition);
+                
+        m_pModuleName        = NULL;
+        m_pMemoryPool        = NULL;
+        m_pEndpointInterface = NULL; 
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "OpalStartProcess deleted\n");
+    }
+    
+    FSOpalManager *getManager()
+    {
+        assert(!m_pFSOpalManager);
+        return m_pFSOpalManager;
+    }
+      
+    /* main task of this PProcess */
+    void Main()
+    {                
+        /* backend initialization */
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Begin opal backend init\n");
+        m_pFSOpalManager = new FSOpalManager();
+        assert(m_pFSOpalManager);
+        if(!m_pFSOpalManager) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can not create opal manger\n");
+            return;
+        }
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Opal manager created\n");
+        
+        if(!m_pFSOpalManager->initialize(m_pModuleName, m_pMemoryPool, m_pEndpointInterface)) 
+        {
+            delete m_pFSOpalManager;
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can not initialize opal manger\n");
+            return; /* if can't initialize return general error */
+        }
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Opal manager initilaized and running\n");       
+        WaitUntilStopped();        
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "OpalStartProcess received stop signal\n");
+        delete m_pFSOpalManager;
+        m_pFSOpalManager = NULL;        
+        switch_thread_cond_signal(m_pWaitCondition); /* signal task waiting that it's all over ... */        
+    }
+        
+    /** 
+     * Waits until this process is terminated
+     * which means it exits Main() function
+     */
+    void WaitProcess()
+    {
+        switch_mutex_t* mutex = NULL;
+        switch_status_t status = switch_mutex_init(&mutex,SWITCH_MUTEX_NESTED,m_pMemoryPool);
+        if(status!=SWITCH_STATUS_SUCCESS)
+        {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Error acquiring mutex!\n");
+            assert(0);
+            return;
+        }
+        switch_mutex_lock(mutex);
+        switch_thread_cond_wait(m_pWaitCondition,mutex);
+        switch_mutex_unlock(mutex);
+        switch_mutex_destroy(mutex);        
+    }
+    
+    /** 
+     * Waits until this process is terminated
+     * which means it exits Main() function
+     */
+    void StopProcessAndWait()
+    {
+        switch_mutex_lock(m_pStopMutex)
+        switch_thread_cond_signal(m_pStopCondition);
+    }
+    
+  protected:              
+      
+      /*
+       * After entering this functon, process 
+       * locks o condition
+       * and stays there until signalled 
+       */
+      
+      void WaitUntilStopped()
+      {
+          switch_mutex_t* mutex = NULL;
+          switch_status_t status = switch_mutex_init(&mutex, SWITCH_MUTEX_NESTED, m_pMemoryPool);
+          if(status!=SWITCH_STATUS_SUCCESS) 
+          {
+              switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"Error acquiring mutex!\n");
+              assert(0);
+              return;
+          }
+          switch_mutex_lock(mutex);
+          switch_thread_cond_wait(m_pStopCondition, mutex);
+          switch_mutex_unlock(mutex);
+          switch_mutex_destroy(mutex);            
+      }
+      
+      static OpalStartProcess     *s_startProcess;
+      
+      const char                  *m_pModuleName;
+      switch_memory_pool_t        *m_pMemoryPool;
+      switch_endpoint_interface_t *m_pEndpointInterface;              
+      FSOpalManager               *m_pFSOpalManager;
+      switch_thread_cond_t        *m_pStopCondition; /* the main thread waits on this condition until is to be stopped */
+      switch_thread_cond_t        *m_pWaitCondition; /* condition for managing thread to wait on until this process exits */
+      switch_mutex_t              *m_pStopMutex;
+      switch_mutex_t              *m_pWaitMutex;
+      
+        
+};
+OpalStartProcess* OpalStartProcess::s_startProcess = NULL;
 
 /*
  * IO routines handlers set declaration 
@@ -99,19 +286,19 @@ static switch_state_handler_table_t opalh323_event_handlers = {
  */
 SWITCH_MODULE_LOAD_FUNCTION(mod_opal_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_opal_shutdown);
-SWITCH_MODULE_DEFINITION(mod_opal, mod_opal_load, mod_opal_shutdown, NULL);
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_opal_runtime);
+SWITCH_MODULE_DEFINITION(mod_opal, mod_opal_load, mod_opal_shutdown, mod_opal_runtime);
 
 /*
  * This function is called on module load
- * It sets up: 
- * 1. frontend - interface to FreeSWITCH core
- * 2. backend - inerface to OPAL core
+ * It sets up frontend interface to FS
  *
  */
 SWITCH_MODULE_LOAD_FUNCTION(mod_opal_load)
 {
        
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"Starting loading mod_opal\n");
+    opal_pool = pool;
     /* frontend initialization*/
     *module_interface =NULL;
     *module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -123,28 +310,22 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opal_load)
         return SWITCH_STATUS_MEMERR;
     }
     opalh323_endpoint_interface = (switch_endpoint_interface_t*)switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
-    opalh323_endpoint_interface->interface_name = "OPALH323";
+    opalh323_endpoint_interface->interface_name = "OpalH323";
     opalh323_endpoint_interface->io_routines = &opalh323_io_routines;
     opalh323_endpoint_interface->state_handler = &opalh323_event_handlers;
-   
-    /* backend initialization */
-    opal_manager = new FSOpalManager();
-    assert(opal_manager);
-    if(!opal_manager)
-    {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"Can not create opal manger\n");
-        return SWITCH_STATUS_MEMERR;
-    }
-    
-    if(!opal_manager->initialize(modname,pool,opalh323_endpoint_interface))
-    {
-        delete opal_manager;
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"Can not initialize opal manger\n");
-        return SWITCH_STATUS_FALSE; /* if can't initialize return general error */
-    }      
-    
-    /* indicate that the module should continue to be loaded */
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"mod_opal loaded ok!\n");
+       
+    return SWITCH_STATUS_SUCCESS;
+}
+
+/*
+ * This function is called after module initilization
+ * It sets up and run backend interface to opal
+ *
+ */
+
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_opal_runtime)
+{
+    OpalStartProcess::createInstance(modname,opal_pool,opalh323_endpoint_interface);
     return SWITCH_STATUS_SUCCESS;
 }
 
@@ -157,7 +338,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opal_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_opal_shutdown)
 {
     /* deallocate OPAL manager */
-    delete opal_manager;    
+    
+    OpalStartProcess::getInstance()->StopProcess(); /* terminate process */
+    OpalStartProcess::getInstance()->WaitProcess(); /* wait here until stopped */
     return SWITCH_STATUS_SUCCESS;
 }
 
@@ -170,62 +353,62 @@ static switch_call_cause_t opalh323_outgoing_channel(
         switch_core_session_t **new_session, 
         switch_memory_pool_t **pool)
 {
-     return opal_manager->io_outgoing_channel(session,outbound_profile,new_session,pool);
+     return  OpalStartProcess::getInstance()->getManager()->io_outgoing_channel(session,outbound_profile,new_session,pool);
 }
 
 static switch_status_t opalh323_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
-    return opal_manager->io_read_frame(session,frame,timeout,flags,stream_id);
+    return OpalStartProcess::getInstance()->getManager()->io_read_frame(session,frame,timeout,flags,stream_id);
 }
 
 static switch_status_t opalh323_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
-    return opal_manager->io_write_frame(session,frame,timeout,flags,stream_id);
+    return OpalStartProcess::getInstance()->getManager()->io_write_frame(session,frame,timeout,flags,stream_id);
 }
 
 static switch_status_t opalh323_kill_channel(switch_core_session_t *session, int sig)
 {
-    return opal_manager->io_kill_channel(session,sig);
+    return OpalStartProcess::getInstance()->getManager()->io_kill_channel(session,sig);
 }
 
 static switch_status_t opalh323_waitfor_read(switch_core_session_t *session, int ms, int stream_id)
 {
-    return opal_manager->io_waitfor_read(session,ms,stream_id);
+    return OpalStartProcess::getInstance()->getManager()->io_waitfor_read(session,ms,stream_id);
 }
 
 static switch_status_t opalh323_waitfor_write(switch_core_session_t *session, int ms, int stream_id)
 {
-    return opal_manager->io_waitfor_write(session,ms,stream_id);
+    return OpalStartProcess::getInstance()->getManager()->io_waitfor_write(session,ms,stream_id);
 }
 
 static switch_status_t opalh323_send_dtmf(switch_core_session_t *session, char *dtmf)
 {
-    return opal_manager->io_send_dtmf(session,dtmf);
+    return OpalStartProcess::getInstance()->getManager()->io_send_dtmf(session,dtmf);
 }
 
 static switch_status_t opalh323_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
-    return opal_manager->io_receive_message(session,msg);
+    return OpalStartProcess::getInstance()->getManager()->io_receive_message(session,msg);
 }
 
 static switch_status_t opalh323_receive_event(switch_core_session_t *session, switch_event_t *event)
 {
-    return opal_manager->io_receive_event(session,event);
+    return OpalStartProcess::getInstance()->getManager()->io_receive_event(session,event);
 }
 
 static switch_status_t opalh323_state_change(switch_core_session_t *session)
 {
-    return opal_manager->io_state_change(session);
+    return OpalStartProcess::getInstance()->getManager()->io_state_change(session);
 }
 
 static switch_status_t opalh323_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, switch_io_flag_t flag, int stream_id)
 {
-    return opal_manager->io_read_video_frame(session,frame,timeout,flag,stream_id);
+    return OpalStartProcess::getInstance()->getManager()->io_read_video_frame(session,frame,timeout,flag,stream_id);
 }
 
 static switch_status_t opalh323_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flag, int stream_id)
 {
-    return opal_manager->io_write_video_frame(session,frame,timeout,flag,stream_id);
+    return OpalStartProcess::getInstance()->getManager()->io_write_video_frame(session,frame,timeout,flag,stream_id);
 }
 
 /*
@@ -234,30 +417,30 @@ static switch_status_t opalh323_write_video_frame(switch_core_session_t *session
 
 static switch_status_t opalh323_on_init(switch_core_session_t *session)
 {
-    return opal_manager->callback_on_init(session);
+    return OpalStartProcess::getInstance()->getManager()->callback_on_init(session);
 }
 
 static switch_status_t opalh323_on_ring(switch_core_session_t *session)
 {
-    return opal_manager->callback_on_ring(session);
+    return OpalStartProcess::getInstance()->getManager()->callback_on_ring(session);
 }
 
 static switch_status_t opalh323_on_execute(switch_core_session_t *session)
 {
-    return opal_manager->callback_on_execute(session);
+    return OpalStartProcess::getInstance()->getManager()->callback_on_execute(session);
 }
 
 static switch_status_t opalh323_on_hangup(switch_core_session_t *session)
 {
-    return opal_manager->callback_on_hangup(session);
+    return OpalStartProcess::getInstance()->getManager()->callback_on_hangup(session);
 }
 
 static switch_status_t opalh323_on_loopback(switch_core_session_t *session)
 {
-    return opal_manager->callback_on_loopback(session);
+    return OpalStartProcess::getInstance()->getManager()->callback_on_loopback(session);
 }
 
 static switch_status_t opalh323_on_transmit(switch_core_session_t *session)
 {
-    return opal_manager->callback_on_transmit(session);
+    return OpalStartProcess::getInstance()->getManager()->callback_on_transmit(session);
 }
