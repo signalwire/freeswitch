@@ -905,6 +905,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	switch_event_t *event;
 	switch_channel_t *channel;
 
+	if (switch_strlen_zero(arg)) {
+		arg = "_undef_";
+	}
+
 	log = switch_core_session_alloc(session, sizeof(*log));
 
 	assert(log != NULL);
@@ -923,7 +927,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application", "%s", application_interface->interface_name);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", arg);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", "%s", arg);
 		switch_event_fire(&event);
 	}
 
