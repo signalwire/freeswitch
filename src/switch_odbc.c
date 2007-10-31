@@ -185,7 +185,7 @@ static int db_is_up(switch_odbc_handle_t *handle)
 {
 	int ret = 0;
 	SQLHSTMT stmt = NULL;
-	SQLINTEGER m = 0;
+	SQLLEN m = 0;
 	int result;
 	switch_event_t *event;
 	switch_odbc_status_t recon = 0;
@@ -305,7 +305,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odb
 {
 	SQLHSTMT stmt = NULL;
 	SQLSMALLINT c = 0, x = 0;
-	SQLINTEGER m = 0, t = 0;
+	SQLLEN m = 0, t = 0;
 	int result;
 
 	assert(callback != NULL);
