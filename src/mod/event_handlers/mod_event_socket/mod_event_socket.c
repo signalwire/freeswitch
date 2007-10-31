@@ -617,7 +617,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 		if (!strncasecmp(cmd, "connect", 7)) {
 			snprintf(reply, reply_len, "+OK");
 			goto done;
-		} else if (!strncasecmp(cmd, "sendmsg", 4)) {
+		} else if (!strncasecmp(cmd, "sendmsg", 7)) {
 			if (switch_test_flag(listener, LFLAG_ASYNC)) {
 				if ((status = switch_core_session_queue_private_event(listener->session, &event)) == SWITCH_STATUS_SUCCESS) {
 					snprintf(reply, reply_len, "+OK");
