@@ -79,7 +79,7 @@ static switch_loadable_module_interface_t mono_module_interface = {
  */
 SWITCH_MODULE_LOAD_FUNCTION(mod_mono_load)
 {
-	*module_interface = &mono_module_interface;
+	*module_interface = mono_module_interface;
 
 	/* Initialise memory pool */
 	if (switch_core_new_memory_pool(&mono_pool) != SWITCH_STATUS_SUCCESS) {
@@ -99,8 +99,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_mono_load)
 	char *assembly_dir = (char *) switch_core_alloc(mono_pool, assembly_dir_len);
 	char *assembly_file = (char *) switch_core_alloc(mono_pool, assembly_file_len);
 
-	snprintf(assembly_dir, assembly_dir_len, "%s/%s", SWITCH_GLOBAL_dirs.base_dir, SWITCH_MONO_LIBDIR);
-	snprintf(assembly_file, assembly_file_len, "%s/%s%s", SWITCH_GLOBAL_dirs.base_dir, SWITCH_MONO_LIBDIR, SWITCH_MONO_ASSEMBLY);
+	snprintf(assembly_dir, assembly_dir_len, "%s%s%s", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR, SWITCH_MONO_LIBDIR);
+	snprintf(assembly_file, assembly_file_len, "%s%s%s%s", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR, SWITCH_MONO_LIBDIR, SWITCH_MONO_ASSEMBLY);
 
     if (switch_file_exists(assembly_file, mono_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not find FreeSwitch.NET assembly\n");
@@ -122,7 +122,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_mono_load)
 	switch_size_t module_dir_len = strlen(SWITCH_GLOBAL_dirs.mod_dir) + strlen(SWITCH_MONO_MODULES) + 2;	/* Account for / and \0 */
 	char *module_dir = (char *) switch_core_alloc(mono_pool, module_dir_len);
 
-	snprintf(module_dir, module_dir_len, "%s/%s", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_MONO_MODULES);
+	snprintf(module_dir, module_dir_len, "%s%s%s", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_PATH_SEPARATOR, SWITCH_MONO_MODULES);
 
 	/* Initialise the mono domain */
 	if (!(globals.domain = mono_jit_init("freeswitch"))) {
