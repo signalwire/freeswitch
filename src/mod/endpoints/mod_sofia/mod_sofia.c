@@ -387,7 +387,10 @@ static switch_status_t sofia_read_video_frame(switch_core_session_t *session, sw
 
 			status = switch_rtp_zerocopy_read_frame(tech_pvt->video_rtp_session, &tech_pvt->video_read_frame);
 			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
-				return SWITCH_STATUS_FALSE;
+				if (status == SWITCH_STATUS_TIMEOUT) {
+					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
+				}
+				return status;
 			}
 			
 			payload = tech_pvt->video_read_frame.payload;
@@ -492,11 +495,12 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 
 			status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame);
 			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
-				return SWITCH_STATUS_FALSE;
+				if (status == SWITCH_STATUS_TIMEOUT) {
+					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
+				}
+				return status;
 			}
-
-
-
+			
 			payload = tech_pvt->read_frame.payload;
 
 			if (switch_rtp_has_dtmf(tech_pvt->rtp_session)) {

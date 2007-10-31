@@ -906,7 +906,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			do_2833(rtp_session);
 			if (!bytes && rtp_session->max_missed_packets) {
 				if (++rtp_session->missed_count >= rtp_session->max_missed_packets) {
-					return -1;
+					return -2;
 				}
 			}
 			
@@ -1204,7 +1204,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void 
 
 	if (bytes < 0) {
 		*datalen = 0;
-		return SWITCH_STATUS_GENERR;
+		return bytes == -2 ? SWITCH_STATUS_TIMEOUT : SWITCH_STATUS_GENERR;
 	} else if (bytes == 0) {
 		*datalen = 0;
 		return SWITCH_STATUS_BREAK;
@@ -1244,7 +1244,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 
 	if (bytes < 0) {
 		frame->datalen = 0;
-		return SWITCH_STATUS_GENERR;
+		return bytes == -2 ? SWITCH_STATUS_TIMEOUT : SWITCH_STATUS_GENERR;
 	} else if (bytes == 0) {
 		frame->datalen = 0;
 		return SWITCH_STATUS_BREAK;
