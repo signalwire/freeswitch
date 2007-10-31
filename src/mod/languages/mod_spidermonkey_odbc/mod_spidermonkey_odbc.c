@@ -356,7 +356,7 @@ static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval *a
 
 	if (odbc_obj->stmt) {
 		SQLSMALLINT c = 0, x = 0;
-		SQLINTEGER m = 0;
+		SQLLEN m = 0;
 		char code[66560];
 
 		snprintf(code, sizeof(code), "~var _oDbC_dB_RoW_DaTa_ = {}");
@@ -370,7 +370,7 @@ static JSBool odbc_get_data(JSContext * cx, JSObject * obj, uintN argc, jsval *a
 		if (m > 0) {
 			for (x = 1; x <= c; x++) {
 				SQLSMALLINT NameLength, DataType, DecimalDigits, Nullable;
-				SQLUINTEGER ColumnSize;
+				SQLULEN ColumnSize;
 				SQLCHAR name[1024] = "";
 				SQLCHAR *data = odbc_obj->colbuf;
 				SQLCHAR *esc = NULL;
