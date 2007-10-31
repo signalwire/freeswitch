@@ -2027,7 +2027,7 @@ static switch_status_t conference_play_file(conference_obj_t * conference, char 
 
 	if (!switch_is_file_path(file)) {
 		if (conference->sound_prefix) {
-			if (!(dfile = switch_mprintf("%s/%s", conference->sound_prefix, file))) {
+			if (!(dfile = switch_mprintf("%s%s%s", conference->sound_prefix, SWITCH_PATH_SEPARATOR, file))) {
 				goto done;
 			}
 			file = dfile;
@@ -2129,7 +2129,7 @@ static switch_status_t conference_member_play_file(conference_member_t * member,
 
 		if (!switch_is_file_path(file)) {
 			if (member->conference->sound_prefix) {
-				if (!(dfile = switch_mprintf("%s/%s", member->conference->sound_prefix, file))) {
+				if (!(dfile = switch_mprintf("%s%s%s", member->conference->sound_prefix, SWITCH_PATH_SEPARATOR, file))) {
 					goto done;
 				}
 				file = dfile;
@@ -3814,7 +3814,7 @@ static switch_status_t conference_local_play_file(conference_obj_t * conference,
 			
 
 		if (conference->sound_prefix) {
-			if (!(dpath = switch_mprintf("%s/%s", conference->sound_prefix, path))) {
+			if (!(dpath = switch_mprintf("%s%s%s", conference->sound_prefix, SWITCH_PATH_SEPARATOR, path))) {
 				status = SWITCH_STATUS_MEMERR;
 				goto done;
 			}
@@ -4276,7 +4276,7 @@ SWITCH_STANDARD_APP(conference_function)
 		char *dfile = NULL;
 
 		if (conference->sound_prefix) {
-			dfile = switch_mprintf("%s/%s", conference->sound_prefix, conference->kicked_sound);
+			dfile = switch_mprintf("%s%s%s", conference->sound_prefix, SWITCH_PATH_SEPARATOR,  conference->kicked_sound);
 			assert(dfile);
 			toplay = dfile;
 		} else {
