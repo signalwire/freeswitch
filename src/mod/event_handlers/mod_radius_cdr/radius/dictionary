@@ -336,6 +336,8 @@ VALUE		Freeswitch-Hangupcause		Manager-Request			503
 VALUE		Freeswitch-Hangupcause		Blind-Transfer			600
 VALUE		Freeswitch-Hangupcause		Attended-Transfer		601
 VALUE		Freeswitch-Hangupcause		Allotted-Timeout		602
+VALUE		Freeswitch-Hangupcause		User-Challenge			603
+VALUE		Freeswitch-Hangupcause		Media-Timeout			604
 
 
 
