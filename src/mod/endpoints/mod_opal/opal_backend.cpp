@@ -1,7 +1,7 @@
 /*
  * opalh323_backend.cpp
  *
- * Backend for OpalH323 module, implements 
+ * Backend for Opal module, implements 
  * H323 handling via OPAL library
  *
  * Copyright (c) 2007 Lukasz Zwierko (lzwierko@gmail.com)
@@ -21,7 +21,7 @@
  *
  * Contributor(s):
  *
- * $Log: opalh323_backend.cpp,v $
+ * $Log: opal_backend.cpp,v $
  *
  * Revision 1.00  2007/10/24 07:29:52  lzwierko
  * Initial revision
@@ -229,7 +229,7 @@ BOOL FSOpalManager::OnIncomingConnection(
     if(!session)
     {
         ///TODO add cause to the connection
-        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not allocate session object?\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not allocate session object?\n");
         return FALSE;
     }
     
@@ -239,7 +239,7 @@ BOOL FSOpalManager::OnIncomingConnection(
     {
         ///TODO add cause to the connection
         switch_core_session_destroy(&session);
-        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not allocate private object?\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not allocate private object?\n");
         return false;
     }     
     tech_pvt->m_opalConnection = &connection; 
@@ -299,7 +299,7 @@ BOOL FSOpalManager::OnIncomingConnection(
     /** lunch thread */       
     if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) 
     {
-	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
         deleteSessionToken(connection.GetToken());       
         switch_mutex_unlock(tech_pvt->m_mutex);
         OpalH323Private_Delete(tech_pvt);        
@@ -436,55 +436,55 @@ switch_status_t FSOpalManager::io_receive_message(switch_core_session_t *i_sessi
     switch(i_message->message_id)
     {
     case SWITCH_MESSAGE_REDIRECT_AUDIO:
-        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_REDIRECT_AUDIO\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"SWITCH_MESSAGE_REDIRECT_AUDIO\n");
     break;
     case SWITCH_MESSAGE_TRANSMIT_TEXT:
-        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_TRANSMIT_TEXT\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"SWITCH_MESSAGE_TRANSMIT_TEXT\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_ANSWER:
-        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_ANSWER\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"SWITCH_MESSAGE_INDICATE_ANSWER\n");
         
         /* set call answer */
         //tech_prv->m_opalConnection->AnsweringCall(AnswerCallNow);        
     break;        
     case SWITCH_MESSAGE_INDICATE_PROGRESS:
-        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_PROGRESS\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"SWITCH_MESSAGE_INDICATE_PROGRESS\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_BRIDGE:
-        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_BRIDGE\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"SWITCH_MESSAGE_INDICATE_BRIDGE\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
-        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_UNBRIDGE\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"SWITCH_MESSAGE_INDICATE_UNBRIDGE\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_TRANSFER:
-        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_TRANSFER\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"SWITCH_MESSAGE_INDICATE_TRANSFER\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_RINGING:
-        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_RINGING\n");                                
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"SWITCH_MESSAGE_INDICATE_RINGING\n");                                
     break;        
     case SWITCH_MESSAGE_INDICATE_MEDIA:
-        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_MEDIA\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"SWITCH_MESSAGE_INDICATE_MEDIA\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_NOMEDIA:
-        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_NOMEDIA\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"SWITCH_MESSAGE_INDICATE_NOMEDIA\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_HOLD:
-        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_HOLD\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"SWITCH_MESSAGE_INDICATE_HOLD\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_UNHOLD:
-        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_UNHOLD\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"SWITCH_MESSAGE_INDICATE_UNHOLD\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_REDIRECT:
-        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_REDIRECT\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"SWITCH_MESSAGE_INDICATE_REDIRECT\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_REJECT:
-        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_REJECT\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"SWITCH_MESSAGE_INDICATE_REJECT\n");
     break;
     case SWITCH_MESSAGE_INDICATE_BROADCAST:
-        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_BROADCAST\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"SWITCH_MESSAGE_INDICATE_BROADCAST\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT:
-        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT\n");
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT\n");
     break;        
     }
     

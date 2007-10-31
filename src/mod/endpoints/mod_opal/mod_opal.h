@@ -1,7 +1,7 @@
 /*
  * mod_opalh323.h
  *
- * Opal-H323 gluer for Freeswitch header file
+ * Opal gluer for Freeswitch header file
  *
  * Copyright (c) 2007 Lukasz Zwierko (lzwierko@gmail.com)
  *
@@ -20,7 +20,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: mod_opalh323.cpp,v $
+ * $Log: mod_opal.cpp,v $
  *
  * Revision 1.00  2007/10/24 07:29:52  lzwierko
  * Initial revision

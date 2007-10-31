@@ -21,7 +21,7 @@
  *
  * Contributor(s):
  *
- * $Log: opalh323_backend.cpp,v $
+ * $Log: opal_backend.cpp,v $
  *
  * Revision 1.00  2007/10/24 07:29:52  lzwierko
  * Initial revision

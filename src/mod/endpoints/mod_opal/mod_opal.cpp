@@ -1,8 +1,8 @@
 /*
  * mod_opalh323.cpp
  *
- * Opal-H323 gluer for Freeswitch
- * This file implements fontend of OpalH323 module functions
+ * Opal gluer for Freeswitch
+ * This file implements fontend of Opal module functions
  * that is all functions that are used for communication
  * between FreeSWITCH core and this module
  *
@@ -24,7 +24,7 @@
  *
  * Contributor(s):
  *
- * $Log: mod_opalh323.cpp,v $
+ * $Log: mod_opal.cpp,v $
  *
  * Revision 1.00  2007/10/24 07:29:52  lzwierko
  * Initial revision
@@ -111,6 +111,7 @@ SWITCH_MODULE_DEFINITION(mod_opal, mod_opal_load, mod_opal_shutdown, NULL);
 SWITCH_MODULE_LOAD_FUNCTION(mod_opal_load)
 {
        
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"Starting loading mod_opal\n");
     /* frontend initialization*/
     *module_interface =NULL;
     *module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -118,6 +119,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opal_load)
     assert(*module_interface);
     if(!module_interface)
     {     
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"Can not create loadable module interfacer\n");
         return SWITCH_STATUS_MEMERR;
     }
     opalh323_endpoint_interface = (switch_endpoint_interface_t*)switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
@@ -130,16 +132,19 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opal_load)
     assert(opal_manager);
     if(!opal_manager)
     {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"Can not create opal manger\n");
         return SWITCH_STATUS_MEMERR;
     }
     
     if(!opal_manager->initialize(modname,pool,opalh323_endpoint_interface))
     {
         delete opal_manager;
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"Can not initialize opal manger\n");
         return SWITCH_STATUS_FALSE; /* if can't initialize return general error */
     }      
     
     /* indicate that the module should continue to be loaded */
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"mod_opal loaded ok!\n");
     return SWITCH_STATUS_SUCCESS;
 }
 
@@ -149,7 +154,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opal_load)
  * it dealocates OPAL core
  * 
  */
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_opalh323_shutdown)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_opal_shutdown)
 {
     /* deallocate OPAL manager */
     delete opal_manager;    
