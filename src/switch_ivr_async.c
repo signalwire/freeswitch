@@ -70,7 +70,7 @@ SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session)
 	switch_threadattr_t *thd_attr = NULL;
 	
 
-	switch_channel_answer(channel);
+	switch_channel_pre_answer(channel);
 
 	if (switch_channel_test_flag(channel, CF_VIDEO)) {
 		eh.session = session;
@@ -221,7 +221,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 		return SWITCH_STATUS_GENERR;
 	}
 
-	switch_channel_answer(channel);
+	switch_channel_pre_answer(channel);
 
 	if (limit) {
 		to = time(NULL) + limit;
@@ -343,7 +343,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		return SWITCH_STATUS_GENERR;
 	}
 
-	switch_channel_answer(channel);
+	switch_channel_pre_answer(channel);
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_TITLE"))) {
 		vval = (const char *) switch_core_session_strdup(session, p);
@@ -474,13 +474,164 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_session(switch_core_sessi
 
 	pvt->session = session;
 
-	switch_channel_answer(channel);
+	switch_channel_pre_answer(channel);
 
 	if ((status = switch_core_media_bug_add(session, inband_dtmf_callback, pvt, 0, SMBF_READ_STREAM, &bug)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 
 	switch_channel_set_private(channel, "dtmf", bug);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+typedef struct {
+	switch_core_session_t *session;
+	teletone_generation_session_t ts;
+    switch_buffer_t *audio_buffer;
+	switch_mutex_t *mutex;
+	int read;
+} switch_inband_dtmf_generate_t;
+
+static int teletone_dtmf_generate_handler(teletone_generation_session_t * ts, teletone_tone_map_t * map)
+{
+    switch_buffer_t *audio_buffer = ts->user_data;
+    int wrote;
+
+    if (!audio_buffer) {
+        return -1;
+    }
+
+    wrote = teletone_mux_tones(ts, map);
+    switch_buffer_write(audio_buffer, ts->buffer, wrote * 2);
+
+    return 0;
+}
+
+
+static switch_status_t generate_on_dtmf(switch_core_session_t *session, const char *dtmf)
+{
+
+    switch_media_bug_t *bug;
+    switch_channel_t *channel = switch_core_session_get_channel(session);
+    
+    if ((bug = (switch_media_bug_t *) switch_channel_get_private(channel, "dtmf_generate"))) {
+        switch_inband_dtmf_generate_t *pvt = (switch_inband_dtmf_generate_t *) switch_core_media_bug_get_user_data(bug);
+        
+        if (pvt) {
+			switch_mutex_lock(pvt->mutex);
+			teletone_run(&pvt->ts, (char *)dtmf);
+			switch_mutex_unlock(pvt->mutex);
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_bool_t inband_dtmf_generate_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+{
+	switch_inband_dtmf_generate_t *pvt = (switch_inband_dtmf_generate_t *) user_data;
+	switch_frame_t *frame;
+	switch_channel_t *channel = switch_core_session_get_channel(pvt->session);
+	switch_codec_t *read_codec;
+
+	assert(channel != NULL);
+	read_codec = switch_core_session_get_read_codec(pvt->session);
+
+	switch (type) {
+	case SWITCH_ABC_TYPE_INIT:
+		{
+			switch_buffer_create_dynamic(&pvt->audio_buffer, 512, 1024, 0);
+			teletone_init_session(&pvt->ts, 0, teletone_dtmf_generate_handler, pvt->audio_buffer);
+			pvt->ts.rate = read_codec->implementation->actual_samples_per_second;
+			pvt->ts.channels = 1;
+			switch_mutex_init(&pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(pvt->session));
+			switch_core_event_hook_add_recv_dtmf(pvt->session, generate_on_dtmf);
+		}
+		break;
+	case SWITCH_ABC_TYPE_CLOSE:
+		{
+			switch_buffer_destroy(&pvt->audio_buffer);
+			teletone_destroy_session(&pvt->ts);
+			switch_core_event_hook_remove_recv_dtmf(pvt->session, generate_on_dtmf);
+		}
+		break;
+	case SWITCH_ABC_TYPE_READ_REPLACE:
+	case SWITCH_ABC_TYPE_WRITE_REPLACE:
+		{
+			switch_size_t bytes;
+			switch_mutex_lock(pvt->mutex);
+			if (pvt->read) {
+				frame = switch_core_media_bug_get_read_replace_frame(bug);
+			} else {
+				frame = switch_core_media_bug_get_write_replace_frame(bug);
+			}
+			if (switch_buffer_inuse(pvt->audio_buffer) && (bytes = switch_buffer_read(pvt->audio_buffer, frame->data, frame->datalen))) {
+				if (bytes < frame->datalen) {
+					switch_byte_t *dp = frame->data;
+					memset(dp + bytes, 0, frame->datalen - bytes);
+				}
+			}
+			if (pvt->read) {
+				switch_core_media_bug_set_read_replace_frame(bug, frame);
+			} else {
+				switch_core_media_bug_set_write_replace_frame(bug, frame);
+			}
+			switch_mutex_unlock(pvt->mutex);
+		}
+		break;
+	default:
+		break;
+	}
+
+	return SWITCH_TRUE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_stop_inband_dtmf_generate_session(switch_core_session_t *session)
+{
+	switch_media_bug_t *bug;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	assert(channel != NULL);
+	if ((bug = switch_channel_get_private(channel, "dtmf_generate"))) {
+		switch_channel_set_private(channel, "dtmf_generate", NULL);
+		switch_core_media_bug_remove(session, &bug);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_generate_session(switch_core_session_t *session, switch_bool_t read_stream)
+{
+	switch_channel_t *channel;
+	switch_codec_t *read_codec;
+	switch_media_bug_t *bug;
+	switch_status_t status;
+	switch_inband_dtmf_generate_t *pvt;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	read_codec = switch_core_session_get_read_codec(session);
+	assert(read_codec != NULL);
+
+	if (!(pvt = switch_core_session_alloc(session, sizeof(*pvt)))) {
+		return SWITCH_STATUS_MEMERR;
+	}
+
+	pvt->session = session;
+	pvt->read = !!read_stream;
+	switch_channel_pre_answer(channel);
+
+	if ((status = switch_core_media_bug_add(session, inband_dtmf_generate_callback, pvt, 0, 
+											pvt->read ? SMBF_READ_REPLACE : SMBF_WRITE_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
+		return status;
+	}
+
+	switch_channel_set_private(channel, "dtmf_generate", bug);
 
 	return SWITCH_STATUS_SUCCESS;
 }

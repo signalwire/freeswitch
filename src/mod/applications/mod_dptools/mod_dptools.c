@@ -819,6 +819,25 @@ SWITCH_STANDARD_APP(stop_dtmf_session_function)
 	switch_ivr_stop_inband_dtmf_session(session);
 }
 
+SWITCH_STANDARD_APP(dtmf_session_generate_function)
+{
+	switch_bool_t do_read = SWITCH_TRUE;
+	
+	if (!switch_strlen_zero(data)) {
+		if (!strcasecmp(data, "write")) {
+			do_read = SWITCH_FALSE;
+		}
+	}
+	
+	switch_ivr_inband_dtmf_generate_session(session, do_read);
+}
+
+
+SWITCH_STANDARD_APP(stop_dtmf_session_generate_function)
+{
+	switch_ivr_stop_inband_dtmf_generate_session(session);
+}
+
 SWITCH_STANDARD_APP(fax_detect_session_function)
 {
 	switch_ivr_tone_detect_session(session, "fax", "1100.0", "r", 0, NULL, NULL);
@@ -1346,6 +1365,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "execute_extension", "Execute an extension", "Execute an extension", exe_function, EXE_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "stop_dtmf", "stop inband dtmf", "Stop detecting inband dtmf.", stop_dtmf_session_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "start_dtmf", "Detect dtmf", "Detect inband dtmf on the session", dtmf_session_function, "", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "stop_dtmf_generate", "stop inband dtmf generation", "Stop generating inband dtmf.", 
+				   stop_dtmf_session_generate_function, "[write]", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "start_dtmf_generate", "Generate dtmf", "Generate inband dtmf on the session", dtmf_session_generate_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "stop_tone_detect", "stop detecting tones", "Stop detecting tones", stop_fax_detect_session_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "fax_detect", "Detect faxes", "Detect fax send tone", fax_detect_session_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "tone_detect", "Detect tones", "Detect tones", tone_detect_session_function, "", SAF_NONE);

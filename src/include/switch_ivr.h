@@ -227,6 +227,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_session(switch_core_sessi
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_stop_inband_dtmf_session(switch_core_session_t *session);
 
+
+/*!
+  \brief Start generating DTMF inband
+  \param session the session to generate on
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_generate_session(switch_core_session_t *session, switch_bool_t read_stream);
+
+/*!
+  \brief Stop generating DTMF inband
+  \param session the session to stop generating
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_stop_inband_dtmf_generate_session(switch_core_session_t *session);
+
 /*!
   \brief XXX DESCRIBE ME
   \param session the session to act on
