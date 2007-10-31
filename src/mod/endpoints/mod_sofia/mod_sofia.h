@@ -259,6 +259,7 @@ struct sofia_profile {
 	time_t started;
 	uint32_t session_timeout;
 	uint32_t max_proceeding;
+	uint32_t rtp_timeout_sec;
 #ifdef SWITCH_HAVE_ODBC
 	char *odbc_dsn;
 	char *odbc_user;

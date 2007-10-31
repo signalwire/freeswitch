@@ -168,6 +168,8 @@ struct switch_rtp {
 	uint8_t cn;
 	switch_time_t last_time;
 	stfu_instance_t *jb;
+	uint32_t max_missed_packets;
+	uint32_t missed_count;
 };
 
 static int global_init = 0;
@@ -390,6 +392,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 	}
 
 	return status;
+}
+
+SWITCH_DECLARE(void) switch_rtp_set_max_missed_packets(switch_rtp_t *rtp_session, uint32_t max)
+{
+	rtp_session->max_missed_packets = max;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, const char **err)
@@ -897,6 +904,11 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		if (check) {
 			do_2833(rtp_session);
+			if (!bytes && rtp_session->max_missed_packets) {
+				if (++rtp_session->missed_count >= rtp_session->max_missed_packets) {
+					return -1;
+				}
+			}
 			
 			if (rtp_session->jb && (jb_frame = stfu_n_read_a_frame(rtp_session->jb))) {
 				memcpy(rtp_session->recv_msg.body, jb_frame->data, jb_frame->dlen);
@@ -905,9 +917,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				}
 				bytes = jb_frame->dlen + rtp_header_len;
 				rtp_session->recv_msg.header.ts = htonl(jb_frame->ts);
-			} else if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
-				uint8_t *data = (uint8_t *) rtp_session->recv_msg.body;
-				/* We're late! We're Late! */
+			} else if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) { /* We're late! We're Late! */
+				uint8_t *data = (uint8_t *) rtp_session->recv_msg.body;				
+				
 				if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK) && status == SWITCH_STATUS_BREAK) {
 					switch_yield(1000);
 					continue;
@@ -942,7 +954,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			return 2 + rtp_header_len;
 		}
 		
-
+		
 
 
 		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
@@ -959,6 +971,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			bytes = sbytes;
 		}
 
+		if (bytes > 0) {
+			rtp_session->missed_count = 0;
+		}
 
 		if (status == SWITCH_STATUS_BREAK || bytes == 0) {
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_DATAWAIT)) {

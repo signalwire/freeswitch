@@ -95,7 +95,8 @@
 
 	<param name="ext-rtp-ip" value="$${external_rtp_ip}"/>
 	<!-- <param name="ext-sip-ip" value="$${external_sip_ip}"/> -->
-
+	<!-- rtp inactivity timeout -->
+	<!--<param name="rtp-timeout-sec" value="300"/>-->
 	<!-- VAD choose one (out is a good choice); -->
 	<!-- <param name="vad" value="in"/> -->
 	<!-- <param name="vad" value="out"/> -->

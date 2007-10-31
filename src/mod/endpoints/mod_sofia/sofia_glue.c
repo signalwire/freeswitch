@@ -937,6 +937,8 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	switch_rtp_flag_t flags;
 	switch_status_t status;
 	char tmp[50];
+	uint32_t rtp_timeout_sec = tech_pvt->profile->rtp_timeout_sec;
+	
 	assert(tech_pvt != NULL);
 
 
@@ -1061,6 +1063,20 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		}
 
 
+		if ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_timeout_sec"))) {
+			int v = atoi(val);
+			if (v >= 0) {
+				rtp_timeout_sec = v;
+			}
+		}
+		
+		if (rtp_timeout_sec) {
+			uint32_t packets;
+			packets = (tech_pvt->read_codec.implementation->samples_per_second * rtp_timeout_sec) / 
+				tech_pvt->read_codec.implementation->samples_per_frame;
+			
+			switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, packets);
+		}
 
 		if (tech_pvt->te) {
 			switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->te);

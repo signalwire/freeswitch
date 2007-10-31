@@ -893,6 +893,11 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (v_max_proceeding >= 0) {
 							profile->max_proceeding = v_max_proceeding;
 						}
+					} else if (!strcasecmp(var, "rtp-timeout-sec")) {
+						int v = atoi(val);
+						if (v >= 0) {
+							profile->rtp_timeout_sec = v;
+						}
 					} else if (!strcasecmp(var, "manage-presence")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_PRESENCE;
