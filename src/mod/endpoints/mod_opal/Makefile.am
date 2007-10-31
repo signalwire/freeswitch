@@ -12,16 +12,14 @@ moddir=$(prefix)/mod
 
 MODNAME=mod_opal
 
-OPAL_DIR=$(switch_builddir)/libs/opal
+OPALDIR=$(switch_builddir)/libs/opal
 
 mod_LTLIBRARIES = mod_opal.la
 mod_opal_la_SOURCES = opalh323_backend.cpp mod_opalh323.cpp
-mod_opal_la_CFLAGS  = $(AM_CFLAGS) 
-mod_opal_la_CFLAGS += -I. -I$(OPAL_DIR)/include
-mod_opal_la_CPPFLAGS = $(AM_CPPFLAGS)
-mod_opal_la_CPPFLAGS += -I. -I$(OPAL_DIR)/include
+mod_opal_la_CPPFLAGS = $(AM_CPPFLAGS) -D_REENTRANT -fno-exceptions -Wall -DPTRACING -Os -felide-constructors -Wreorder -I$(OPALDIR)/include
+
 mod_opal_la_LIBADD = $(switch_builddir)/libfreeswitch.la    
-mod_opal_la_LDFLAGS = -avoid-version -module -no-undefined
+mod_opal_la_LDFLAGS = -avoid-version -module -no-undefined -export-symbols-regex ^switch_module_.*$ -rpath $(PREFIX)/$(libdir) -L$(OPALDIR)/lib -lopal_linux_x86_r -lpt_linux_x86_r -lpthread -lsasl2 -lssl -lcrypto -lexpat -ldl
 
 #Override the linstall target so we just install the .so/.dylib
 
@@ -34,5 +32,3 @@ $(DESTDIR)$(PREFIX)/$(moddir)/$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).la
 	else \
 	  $(LIBTOOL) --mode=install $(INSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/$(moddir) >/dev/null  ; \
 	fi
-
-##include $(OPAL_DIR)/opal_inc.mak

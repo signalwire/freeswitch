@@ -63,7 +63,7 @@ static bool OpalH323Private_Create(OpalH323Private_t **o_private, switch_core_se
 
 static bool OpalH323Private_Delete(OpalH323Private_t *o_private)
 {
-    switch_mutex_destroy(o_private->m_mutex);
+    return (switch_mutex_destroy(o_private->m_mutex)==SWITCH_STATUS_SUCCESS); 
 }
 
 /** Default constructor
@@ -105,9 +105,7 @@ bool FSOpalManager::initialize(
             switch_memory_pool_t* i_memoryPool,
             switch_endpoint_interface_t *i_endpointInterface
             )                
-{
-    bool result = true;
-    
+{       
     /* check if not initialized */
     assert(m_isInitialized);
     
@@ -180,21 +178,21 @@ bool FSOpalManager::initialize(
 
 
 
-switch_core_session_t* FSOpalManager::getSessionToken(PString &i_token)
+switch_core_session_t* FSOpalManager::getSessionToken(const PString &i_token)
 {
     assert(m_pSessionsHashTable);
     assert(m_pSessionsHashTableMutex);
     return static_cast<switch_core_session_t*>(switch_core_hash_find_locked(m_pSessionsHashTable,(const char*)i_token,m_pSessionsHashTableMutex));
 }
 
-void FSOpalManager::saveSessionToken(PString &i_token,switch_core_session_t* i_session)
+void FSOpalManager::saveSessionToken(const PString &i_token,switch_core_session_t* i_session)
 {
     assert(m_pSessionsHashTable);
     assert(m_pSessionsHashTableMutex);    
     switch_core_hash_insert_locked(m_pSessionsHashTable,(const char*)i_token,i_session,m_pSessionsHashTableMutex);
 }
 
-void FSOpalManager::deleteToken(PString &i_token)
+void FSOpalManager::deleteSessionToken(const PString &i_token)
 {
     assert(m_pSessionsHashTable);
     assert(m_pSessionsHashTableMutex);
@@ -209,7 +207,7 @@ BOOL FSOpalManager::OnIncomingConnection(
         )
 {
     //TODO check if options and stringOptions fields ever apply
-    retrun OnIncomingConnection(connection);
+    return OnIncomingConnection(connection);
 }        
         
 BOOL FSOpalManager::OnIncomingConnection(
@@ -218,7 +216,7 @@ BOOL FSOpalManager::OnIncomingConnection(
         )
 {
     //TODO, check if options field ever applies
-    retrun OnIncomingConnection(connection);
+    return OnIncomingConnection(connection);
 }
 
 BOOL FSOpalManager::OnIncomingConnection(
@@ -228,20 +226,20 @@ BOOL FSOpalManager::OnIncomingConnection(
     /* allocate new session in switch core*/
     switch_core_session_t *session = switch_core_session_request(m_pEndpointInterface , NULL);
     assert(session);
-    if(!sesion)
+    if(!session)
     {
         ///TODO add cause to the connection
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not allocate session object?\n");
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not allocate session object?\n");
         return FALSE;
     }
     
     /* allocate private resources */
     OpalH323Private_t *tech_pvt = NULL;
-    if(!OpalH323Private_Create(&tech_pvt))
+    if(!OpalH323Private_Create(&tech_pvt,session))
     {
         ///TODO add cause to the connection
         switch_core_session_destroy(&session);
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not allocate private object?\n");
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not allocate private object?\n");
         return false;
     }     
     tech_pvt->m_opalConnection = &connection; 
@@ -263,17 +261,17 @@ BOOL FSOpalManager::OnIncomingConnection(
     /** Create calling side profile */
     tech_pvt->m_callerProfile = switch_caller_profile_new(
             switch_core_session_get_pool(session),
-            *connection.GetRemotePartyName(),               /**  username */
+            (const char*)connection.GetRemotePartyName(),               /**  username */
             "default",                                      /** TODO -> this should be configurable by core */
-            *connection.GetRemotePartyName(),               /** caller_id_name */
-            *connection.GetRemotePartyNumber(),             /** caller_id_number */
-            *connection.GetRemotePartyAddress(),            /** network addr */
+            (const char*)connection.GetRemotePartyName(),               /** caller_id_name */
+            (const char*)connection.GetRemotePartyNumber(),             /** caller_id_number */
+            (const char*)connection.GetRemotePartyAddress(),            /** network addr */
             NULL,                                           /** ANI */
             NULL,                                           /** ANI II */
             NULL,                                           /** RDNIS */
             m_pModuleName,                                  /** source */
             NULL,                                           /** TODO -> set context  */
-            *connection.GetCalledDestinationNumber()        /** destination_number */
+            (const char*)connection.GetCalledDestinationNumber()        /** destination_number */
     );
     
     if(!tech_pvt->m_callerProfile)  /* should never error */
@@ -288,7 +286,7 @@ BOOL FSOpalManager::OnIncomingConnection(
     
     /** Set up sessions channel */
     switch_channel_t *channel = switch_core_session_get_channel(session);
-    switch_channel_set_name(channel,*connection.GetToken());
+    switch_channel_set_name(channel,(const char*)connection.GetToken());
     switch_channel_set_caller_profile(channel, tech_pvt->m_callerProfile);
     switch_channel_set_state(channel, CS_INIT);
     
@@ -301,7 +299,7 @@ BOOL FSOpalManager::OnIncomingConnection(
     /** lunch thread */       
     if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) 
     {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
         deleteSessionToken(connection.GetToken());       
         switch_mutex_unlock(tech_pvt->m_mutex);
         OpalH323Private_Delete(tech_pvt);        
@@ -387,7 +385,7 @@ switch_status_t FSOpalManager::callback_on_transmit(switch_core_session_t *io_se
 switch_call_cause_t FSOpalManager::io_outgoing_channel(switch_core_session_t *i_session, switch_caller_profile_t *i_profile, switch_core_session_t **o_newSession, switch_memory_pool_t **o_memPool)
 {
     assert(m_isInitialized);
-    return 0;
+    return SWITCH_CAUSE_SUCCESS;
 }
 
 switch_status_t FSOpalManager::io_read_frame(switch_core_session_t *i_session, switch_frame_t **o_frame, int i_timout, switch_io_flag_t i_flag, int i_streamId)
@@ -430,7 +428,7 @@ switch_status_t FSOpalManager::io_receive_message(switch_core_session_t *i_sessi
 {
     assert(m_isInitialized);
     
-    OpalH323Private_t* tech_prv = switch_core_session_get_private(i_session);
+    OpalH323Private_t* tech_prv = static_cast<OpalH323Private_t*>(switch_core_session_get_private(i_session));
     assert(tech_prv);
     
     switch_mutex_lock(tech_prv->m_mutex);
@@ -438,55 +436,55 @@ switch_status_t FSOpalManager::io_receive_message(switch_core_session_t *i_sessi
     switch(i_message->message_id)
     {
     case SWITCH_MESSAGE_REDIRECT_AUDIO:
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_REDIRECT_AUDIO\n");
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_REDIRECT_AUDIO\n");
     break;
     case SWITCH_MESSAGE_TRANSMIT_TEXT:
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_TRANSMIT_TEXT\n");
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_TRANSMIT_TEXT\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_ANSWER:
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_ANSWER\n");
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_ANSWER\n");
         
         /* set call answer */
-        tech_prv->m_opalConnection->AnsweringCall(AnswerCallNow);        
+        //tech_prv->m_opalConnection->AnsweringCall(AnswerCallNow);        
     break;        
     case SWITCH_MESSAGE_INDICATE_PROGRESS:
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_PROGRESS\n");
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_PROGRESS\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_BRIDGE:
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_BRIDGE\n");
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_BRIDGE\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_UNBRIDGE\n");
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_UNBRIDGE\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_TRANSFER:
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_TRANSFER\n");
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_TRANSFER\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_RINGING:
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_RINGING\n");                                
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_RINGING\n");                                
     break;        
     case SWITCH_MESSAGE_INDICATE_MEDIA:
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_MEDIA\n");
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_MEDIA\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_NOMEDIA:
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_NOMEDIA\n");
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_NOMEDIA\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_HOLD:
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_HOLD\n");
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_HOLD\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_UNHOLD:
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_UNHOLD\n");
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_UNHOLD\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_REDIRECT:
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_REDIRECT\n");
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_REDIRECT\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_REJECT:
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_REJECT\n");
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_REJECT\n");
     break;
     case SWITCH_MESSAGE_INDICATE_BROADCAST:
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_BROADCAST\n");
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_BROADCAST\n");
     break;        
     case SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT:
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT\n");
+        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG "SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT\n");
     break;        
     }
     

@@ -94,12 +94,27 @@ public:
     switch_status_t io_read_video_frame(switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
     switch_status_t io_write_video_frame(switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int);
     
+    virtual BOOL OnIncomingConnection(
+        OpalConnection & connection,   ///<  Connection that is calling
+        unsigned options,              ///<  options for new connection (can't use default as overrides will fail)
+        OpalConnection::StringOptions * stringOptions
+        );
+    virtual BOOL OnIncomingConnection(
+        OpalConnection & connection,   ///<  Connection that is calling
+        unsigned options               ///<  options for new connection (can't use default as overrides will fail)
+        );
+    
+    virtual BOOL OnIncomingConnection(
+        OpalConnection & connection   ///<  Connection that is calling
+        );
+        
+        
     
 private:          
     
-    void                   saveSessionToken(PString &i_token,switch_core_session_t* i_session);
-    switch_core_session_t* getSessionToken(PString &i_token);
-    void                   deleteToken(PString &i_token);
+    void                   saveSessionToken(const PString &i_token,switch_core_session_t* i_session);
+    switch_core_session_t* getSessionToken(const PString &i_token);
+    void                   deleteSessionToken(const PString &i_token);
     
     
     const char                          *m_pModuleName;             /* name of this module */
