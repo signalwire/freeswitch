@@ -1229,11 +1229,11 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_transfer(time_t runtime, const char
 		len += strlen(context) + 1;
 	}
 
-	switch_zmalloc(helper, len);
+	switch_zmalloc(cur, len);
+	helper = (struct transfer_helper *)cur;
 
 	switch_copy_string(helper->uuid_str, uuid, sizeof(helper->uuid_str));
 
-	cur = (char *) helper;
 	cur += sizeof(*helper);
 
 	if (extension) {
@@ -1278,9 +1278,9 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, char *uui
 	size_t len = sizeof(*helper) + strlen(path) + 1;
 	char *cur = NULL;
 
-	switch_zmalloc(helper, len);
+	switch_zmalloc(cur, len);
+	helper = (struct broadcast_helper *)cur;
 	
-	cur = (char *) helper;
 	cur += sizeof(*helper);
 	switch_copy_string(helper->uuid_str, uuid, sizeof(helper->uuid_str));
 	helper->flags = flags;
@@ -1402,3 +1402,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 	return SWITCH_STATUS_SUCCESS;
 
 }
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */
