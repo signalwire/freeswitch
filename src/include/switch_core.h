@@ -1252,8 +1252,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_close(switch_speech_handle_t 
   \return SWITCH_STATUS_SUCCESS if the asr handle was opened
 */
 SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
-													 char *module_name,
-													 char *codec, int rate, char *dest, switch_asr_flag_t *flags, switch_memory_pool_t *pool);
+													 const char *module_name,
+													 const char *codec,
+													 int rate,
+													 const char *dest,
+													 switch_asr_flag_t *flags,
+													 switch_memory_pool_t *pool);
 
 /*!
   \brief Close an asr handle
@@ -1297,7 +1301,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_get_results(switch_asr_handle_t 
   \param path the path to the grammaar file
   \return SWITCH_STATUS_SUCCESS
 */
-SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t *ah, char *grammar, char *path);
+SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t *ah, const char *grammar, const char *path);
 
 /*!
   \brief Unload a grammar from an asr handle
@@ -1305,7 +1309,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t
   \param grammar the grammar to unload
   \return SWITCH_STATUS_SUCCESS
 */
-SWITCH_DECLARE(switch_status_t) switch_core_asr_unload_grammar(switch_asr_handle_t *ah, char *grammar);
+SWITCH_DECLARE(switch_status_t) switch_core_asr_unload_grammar(switch_asr_handle_t *ah, const char *grammar);
 
 /*!
   \brief Pause detection on an asr handle

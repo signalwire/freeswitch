@@ -1042,7 +1042,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_load_grammar(switch_cor
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_unload_grammar(switch_core_session_t *session, char *grammar)
+SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_unload_grammar(switch_core_session_t *session, const char *grammar)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
@@ -1064,7 +1064,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_unload_grammar(switch_c
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *session,
-														 char *mod_name, char *grammar, char *path, char *dest, switch_asr_handle_t *ah)
+														 const char *mod_name,
+														 const char *grammar,
+														 const char *path,
+														 const char *dest,
+														 switch_asr_handle_t *ah)
 {
 	switch_channel_t *channel;
 	switch_codec_t *read_codec;

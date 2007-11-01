@@ -35,8 +35,12 @@
 #include "private/switch_core_pvt.h"
 
 SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
-													 char *module_name,
-													 char *codec, int rate, char *dest, switch_asr_flag_t *flags, switch_memory_pool_t *pool)
+													 const char *module_name,
+													 const char *codec,
+													 int rate,
+													 const char *dest,
+													 switch_asr_flag_t *flags,
+													 switch_memory_pool_t *pool)
 {
 	switch_status_t status;
 	char buf[256] = "";
@@ -77,7 +81,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
 	return ah->asr_interface->asr_open(ah, codec, rate, dest, flags);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t *ah, char *grammar, char *path)
+SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t *ah, const char *grammar, const char *path)
 {
 	char *epath = NULL;
 	switch_status_t status;
@@ -95,7 +99,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_asr_unload_grammar(switch_asr_handle_t *ah, char *grammar)
+SWITCH_DECLARE(switch_status_t) switch_core_asr_unload_grammar(switch_asr_handle_t *ah, const char *grammar)
 {
 	switch_status_t status;
 

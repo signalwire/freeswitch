@@ -294,11 +294,11 @@ struct switch_asr_interface {
 	/*! the name of the interface */
 	const char *interface_name;
 	/*! function to open the asr interface */
-	switch_status_t (*asr_open) (switch_asr_handle_t *ah, char *codec, int rate, char *dest, switch_asr_flag_t *flags);
+	switch_status_t (*asr_open) (switch_asr_handle_t *ah, const char *codec, int rate, const char *dest, switch_asr_flag_t *flags);
 	/*! function to load a grammar to the asr interface */
-	switch_status_t (*asr_load_grammar) (switch_asr_handle_t *ah, char *grammar, char *path);
+	switch_status_t (*asr_load_grammar) (switch_asr_handle_t *ah, const char *grammar, const char *path);
 	/*! function to unload a grammar to the asr interface */
-	switch_status_t (*asr_unload_grammar) (switch_asr_handle_t *ah, char *grammar);
+	switch_status_t (*asr_unload_grammar) (switch_asr_handle_t *ah, const char *grammar);
 	/*! function to close the asr interface */
 	switch_status_t (*asr_close) (switch_asr_handle_t *ah, switch_asr_flag_t *flags);
 	/*! function to feed audio to the ASR */
