@@ -62,6 +62,7 @@
     <!-- ivr.conf is used by mod_dptools -->
     <!--#include "ivr.conf.xml"-->
     <!--#include "voicemail.conf.xml"-->
+    <!--#include "limit.conf.xml"-->
 
     <!-- Dialplan Interfaces -->
     <!--#include "dialplan_directory.conf.xml"-->
