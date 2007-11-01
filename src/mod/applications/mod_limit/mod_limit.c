@@ -24,12 +24,11 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
- * Neal Horman <neal at wanlink dot com>
  *
- *
- * mod_limit.c -- Framework Demo Module
+ * mod_limit.c -- Resource Limit Module
  *
  */
+
 #include <switch.h>
 #ifdef SWITCH_HAVE_ODBC
 #include <switch_odbc.h>
@@ -179,12 +178,13 @@ static switch_status_t do_config()
     
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
-			char *var = (char *) switch_xml_attr_soft(param, "name");
-			char *val = (char *) switch_xml_attr_soft(param, "value");
+			char *var = NULL;
+            char *val = NULL;
             
-			if (!strcasecmp(var, "debug")) {
-                
-            } else if (!strcasecmp(var, "odbc-dsn")) {
+            var = (char *) switch_xml_attr_soft(param, "name");
+            val = (char *) switch_xml_attr_soft(param, "value");
+
+            if (!strcasecmp(var, "odbc-dsn")) {
 #ifdef SWITCH_HAVE_ODBC
                 globals.odbc_dsn = switch_core_strdup(globals.pool, val);
                 if ((odbc_user = strchr(globals.odbc_dsn, ':'))) {
