@@ -109,6 +109,11 @@ class OpalStartProcess : public PProcess
         return s_startProcess;
     }
     
+    static bool checkInstanceExists()
+    {        
+        return s_startProcess!=NULL;
+    }
+    
     OpalStartProcess(
         const char* i_moduleName,
         switch_memory_pool_t *i_memoryPool,
@@ -116,7 +121,6 @@ class OpalStartProcess : public PProcess
     ):             
         PProcess("FreeSWITCH", "mod_opal"),
         m_pStopCondition(NULL),  
-        m_pWaitCondition(NULL),
         m_pModuleName(i_moduleName),
         m_pMemoryPool(i_memoryPool),
         m_pEndpointInterface(i_endpointInterface)
@@ -129,27 +133,17 @@ class OpalStartProcess : public PProcess
             {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can not init stop condition.");
                 return;
-            }
-            
-            status = switch_thread_cond_create(&m_pWaitCondition, m_pMemoryPool);
-            assert(status==SWITCH_STATUS_SUCCESS);
-            if(status!=SWITCH_STATUS_SUCCESS) 
-            {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can not init wait condition.");
-                return;
-            }
+            }                        
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "OpalStartProcess created\n");
     }
         
     ~OpalStartProcess()
     {
-        switch_thread_cond_destroy(m_pWaitCondition);
         switch_thread_cond_destroy(m_pStopCondition);
                 
         m_pModuleName        = NULL;
         m_pMemoryPool        = NULL;
         m_pEndpointInterface = NULL; 
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "OpalStartProcess deleted\n");
     }
     
     FSOpalManager *getManager()
@@ -179,39 +173,16 @@ class OpalStartProcess : public PProcess
         }
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Opal manager initilaized and running\n");       
         WaitUntilStopped();        
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "OpalStartProcess received stop signal\n");
-        delete m_pFSOpalManager;
-        m_pFSOpalManager = NULL;        
-        switch_thread_cond_signal(m_pWaitCondition); /* signal task waiting that it's all over ... */        
-    }
-        
-    /** 
-     * Waits until this process is terminated
-     * which means it exits Main() function
-     */
-    void WaitProcess()
-    {
-        switch_mutex_t* mutex = NULL;
-        switch_status_t status = switch_mutex_init(&mutex,SWITCH_MUTEX_NESTED,m_pMemoryPool);
-        if(status!=SWITCH_STATUS_SUCCESS)
-        {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Error acquiring mutex!\n");
-            assert(0);
-            return;
-        }
-        switch_mutex_lock(mutex);
-        switch_thread_cond_wait(m_pWaitCondition,mutex);
-        switch_mutex_unlock(mutex);
-        switch_mutex_destroy(mutex);        
-    }
+        delete m_pFSOpalManager;        
+        m_pFSOpalManager = NULL;                        
+    }        
     
     /** 
      * Waits until this process is terminated
      * which means it exits Main() function
      */
-    void StopProcessAndWait()
+    void StopProcess()
     {
-        switch_mutex_lock(m_pStopMutex)
         switch_thread_cond_signal(m_pStopCondition);
     }
     
@@ -245,11 +216,7 @@ class OpalStartProcess : public PProcess
       switch_memory_pool_t        *m_pMemoryPool;
       switch_endpoint_interface_t *m_pEndpointInterface;              
       FSOpalManager               *m_pFSOpalManager;
-      switch_thread_cond_t        *m_pStopCondition; /* the main thread waits on this condition until is to be stopped */
-      switch_thread_cond_t        *m_pWaitCondition; /* condition for managing thread to wait on until this process exits */
-      switch_mutex_t              *m_pStopMutex;
-      switch_mutex_t              *m_pWaitMutex;
-      
+      switch_thread_cond_t        *m_pStopCondition; /* the main thread waits on this condition until is to be stopped */      
         
 };
 OpalStartProcess* OpalStartProcess::s_startProcess = NULL;
@@ -325,8 +292,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opal_load)
 
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_opal_runtime)
 {
-    OpalStartProcess::createInstance(modname,opal_pool,opalh323_endpoint_interface);
-    return SWITCH_STATUS_SUCCESS;
+    OpalStartProcess::createInstance(modname,opal_pool,opalh323_endpoint_interface);    
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"Opal runtime fun exit\n");
+    return SWITCH_STATUS_TERM;
 }
 
 /*
@@ -339,8 +307,12 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_opal_shutdown)
 {
     /* deallocate OPAL manager */
     
-    OpalStartProcess::getInstance()->StopProcess(); /* terminate process */
-    OpalStartProcess::getInstance()->WaitProcess(); /* wait here until stopped */
+    OpalStartProcess::getInstance()->StopProcess(); /* terminate process */    
+    while(OpalStartProcess::checkInstanceExists())
+    {
+        switch_yield(1000); /* wait 1s in each loop */
+    }
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,"Opal shutdown succesfully\n");
     return SWITCH_STATUS_SUCCESS;
 }
 

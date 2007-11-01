@@ -87,10 +87,10 @@ FSOpalManager::~FSOpalManager()
 {    
     /**
      *  Destroy all allocated resources, if any
+     *  !! all endpoints are automatically deleted in ~OpalManager, so leave them
      */
     if(m_isInitialized)
-    {
-        delete m_pH323Endpoint;
+    {                
         switch_mutex_destroy(m_pSessionsHashTableMutex);
         switch_core_hash_destroy(&m_pSessionsHashTable);
         
@@ -159,7 +159,7 @@ bool FSOpalManager::initialize(
     ///TODO m_pH323Endpoint->SetVendorIdentifierInfo()
     
     ///TODO address should be configurable, should allow creaeing listeners on multiple interfaces
-    OpalTransportAddress opalTransportAddress("0.0.0.0",1720); //for time being create listener on all ip's and default port
+    OpalTransportAddress opalTransportAddress("localhost",1720); //for time being create listener on all ip's and default port
     if(!m_pH323Endpoint->StartListeners(opalTransportAddress))
     {
         assert(0);
