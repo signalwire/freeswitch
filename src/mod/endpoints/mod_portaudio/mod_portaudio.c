@@ -608,7 +608,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 			tech_pvt->hold_frame.datalen = (uint32_t) (olen * sizeof(int16_t));
 			tech_pvt->hold_frame.samples = (uint32_t) olen;
-			tech_pvt->hold_frame.timestamp = globals.timer.samplecount;
 			*frame = &tech_pvt->hold_frame;
 
 		}
@@ -628,7 +627,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		globals.read_frame.samples = samples;
 
 		switch_core_timer_check(&globals.timer);
-		globals.read_frame.timestamp = globals.timer.samplecount;
 		*frame = &globals.read_frame;
 
 		if (!switch_test_flag((&globals), GFLAG_MOUTH)) {
