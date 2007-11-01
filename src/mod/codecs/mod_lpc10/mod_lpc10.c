@@ -24,14 +24,18 @@
  * Contributor(s):
  * 
  * Brian K. West <brian.west@mac.com>
+ * Bret McDanel <trixter AT 0xdecafbad.com>
  * 
  *
  * mod_lpc10.c -- LPC10 Codec Module
  *
  */
 
-#include "switch.h"
-#include "lpc10.h"
+#include <switch.h>
+#include <lpc10.h>
+
+SWITCH_MODULE_LOAD_FUNCTION(mod_lpc10_load);
+SWITCH_MODULE_DEFINITION(mod_lpc10, mod_lpc10_load, NULL, NULL);
 
 enum {
 	SamplesPerFrame = 180,
@@ -43,8 +47,6 @@ enum {
 #define   SampleValueScale 32768.0
 #define   MaxSampleValue   32767.0
 #define   MinSampleValue   -32767.0
-
-static const char modname[] = "mod_lpc10";
 
 struct lpc10_context {
 	struct lpc10_encoder_state encoder_object;
@@ -177,24 +179,13 @@ static switch_codec_implementation_t lpc10_implementation = {
 	/*.destroy */ switch_lpc10_destroy,
 };
 
-const switch_codec_interface_t lpc10_codec_interface = {
-	/*.interface_name */ "LPC-10 2.4kbps",
-	/*.implementations */ &lpc10_implementation,
-};
-
-static switch_loadable_module_interface_t lpc10_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ &lpc10_codec_interface,
-	/*.application_interface */ NULL
-};
-
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+SWITCH_MODULE_LOAD_FUNCTION(mod_lpc10_load)
 {
+	switch_codec_interface_t *codec_interface;
+
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &lpc10_module_interface;
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	SWITCH_ADD_CODEC(codec_interface, "LPC-10 2.4kbps", &lpc10_implementation);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
