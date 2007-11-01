@@ -126,7 +126,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_cor
 }
 
 
-SWITCH_DECLARE(char *) switch_caller_get_field_by_name(switch_caller_profile_t *caller_profile, const char *name)
+SWITCH_DECLARE(const char *) switch_caller_get_field_by_name(switch_caller_profile_t *caller_profile, const char *name)
 {
 	if (!strcasecmp(name, "dialplan")) {
 		return caller_profile->dialplan;

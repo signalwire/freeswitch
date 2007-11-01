@@ -286,7 +286,7 @@ SWITCH_STANDARD_API(transfer_function)
 					switch_channel_t *channel = switch_core_session_get_channel(tsession);
 					arg++;
 					if (!strcasecmp(arg, "bleg")) {
-						char *uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE);
+						const char *uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE);
 						if (uuid && (other_session = switch_core_session_locate(uuid))) {
 							switch_core_session_t *tmp = tsession;
 							tsession = other_session;
@@ -294,7 +294,7 @@ SWITCH_STANDARD_API(transfer_function)
 							switch_core_session_rwunlock(tmp);
 						}
 					} else if (!strcasecmp(arg, "both")) {
-						char *uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE);
+						const char *uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE);
 						switch_core_session_t *other_session;
 						if (uuid && (other_session = switch_core_session_locate(uuid))) {
 							switch_ivr_session_transfer(other_session, dest, dp, context);

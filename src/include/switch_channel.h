@@ -209,7 +209,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *ch
   \param varname the name of the variable
   \return the value of the requested variable
 */
-SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, const char *varname);
+SWITCH_DECLARE(const char *) switch_channel_get_variable(switch_channel_t *channel, const char *varname);
 
 /*!
  * Start iterating over the entries in the channel variable list.

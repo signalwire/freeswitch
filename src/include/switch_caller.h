@@ -60,25 +60,25 @@ SWITCH_BEGIN_EXTERN_C
  */
 	struct switch_caller_profile {
 	/*! The Call's User Name */
-	char *username;
+	const char *username;
 	/*! The name of the dialplan */
-	char *dialplan;
+	const char *dialplan;
 	/*! Caller ID Name */
-	char *caller_id_name;
+	const char *caller_id_name;
 	/*! Caller ID Number */
-	char *caller_id_number;
+	const char *caller_id_number;
 	uint8_t caller_ton;
 	uint8_t caller_numplan;
 	/*! Caller Network Address (when applicable) */
-	char *network_addr;
+	const char *network_addr;
 	/*! ANI (when applicable) */
-	char *ani;
+	const char *ani;
 	uint8_t ani_ton;
 	uint8_t ani_numplan;
 	/*! ANI II (when applicable) */
-	char *aniii;
+	const char *aniii;
 	/*! RDNIS */
-	char *rdnis;
+	const char *rdnis;
 	uint8_t rdnis_ton;
 	uint8_t rdnis_numplan;
 	/*! Destination Number */
@@ -86,13 +86,13 @@ SWITCH_BEGIN_EXTERN_C
 	uint8_t destination_number_ton;
 	uint8_t destination_number_numplan;
 	/*! channel type */
-	char *source;
+	const char *source;
 	/*! channel name */
 	char *chan_name;
 	/*! unique id */
 	char *uuid;
 	/*! context */
-	char *context;
+	const char *context;
 	/*! flags */
 	switch_caller_profile_flag_t flags;
 	struct switch_caller_profile *originator_caller_profile;
@@ -156,7 +156,7 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session
   \param name the name
   \note this function is meant for situations where the name paramater is the contents of the variable
 */
-SWITCH_DECLARE(char *) switch_caller_get_field_by_name(switch_caller_profile_t *caller_profile, const char *name);
+SWITCH_DECLARE(const char *) switch_caller_get_field_by_name(switch_caller_profile_t *caller_profile, const char *name);
 
 /*!
   \brief Create a new caller profile object

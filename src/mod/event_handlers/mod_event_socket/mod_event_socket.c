@@ -631,7 +631,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 			goto done;
 		} else if (!strncasecmp(cmd, "getvar", 6)) {
 			char *arg;
-			char *val = "";
+			const char *val = "";
 
 			strip_cr(cmd);
 

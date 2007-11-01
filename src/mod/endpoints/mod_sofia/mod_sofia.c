@@ -276,7 +276,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	switch_channel_t *channel = NULL;
 	switch_status_t status;
 	uint32_t session_timeout = 0;
-	char *val;
+	const char *val;
 
 	assert(session != NULL);
 
@@ -289,13 +289,13 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		switch_set_flag_locked(tech_pvt, TFLAG_ANS);
 
 		if (switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
-			char *sdp = NULL;
+			const char *sdp = NULL;
 			if ((sdp = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE))) {
 				tech_pvt->local_sdp_str = switch_core_session_strdup(session, sdp);
 			}
 		} else {
 			if (switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
-				char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
+				const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 				tech_pvt->num_codecs = 0;
 				sofia_glue_tech_prepare_codecs(tech_pvt);
 				if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
@@ -694,7 +694,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_BROADCAST: {
-		char *ip = NULL, *port = NULL;
+		const char *ip = NULL, *port = NULL;
 		ip = switch_channel_get_variable(channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE);
 		port = switch_channel_get_variable(channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE);
 		if (ip && port) {
@@ -708,10 +708,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		break;
 	case SWITCH_MESSAGE_INDICATE_NOMEDIA: 
 		{
-			char *uuid;
+			const char *uuid;
 			switch_core_session_t *other_session;
 			switch_channel_t *other_channel;
-			char *ip = NULL, *port = NULL;
+			const char *ip = NULL, *port = NULL;
 
 			if (switch_channel_get_state(channel) >= CS_HANGUP) {
 				return SWITCH_STATUS_FALSE;
@@ -894,13 +894,13 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 				/* Transmit 183 Progress with SDP */
 				if (switch_channel_test_flag(channel, CF_BYPASS_MEDIA)) {
-					char *sdp = NULL;
+					const char *sdp = NULL;
 					if ((sdp = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE))) {
 						tech_pvt->local_sdp_str = switch_core_session_strdup(session, sdp);
 					}
 				} else {
 					if (switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
-						char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
+						const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 						tech_pvt->num_codecs = 0;
 						sofia_glue_tech_prepare_codecs(tech_pvt);
 						if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {

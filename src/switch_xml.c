@@ -1229,7 +1229,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(char *domain_name, char *params, switch_xml_t *root, switch_xml_t *domain)
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name, char *params, switch_xml_t *root, switch_xml_t *domain)
 {
 	char my_params[512];
 	*domain = NULL;
@@ -1243,13 +1243,13 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(char *domain_name, char
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(char *user_name, 
-													   char *domain_name, 
-													   char *ip, 
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *user_name, 
+													   const char *domain_name, 
+													   const char *ip, 
 													   switch_xml_t *root,
 													   switch_xml_t *domain,
 													   switch_xml_t *user,
-													   char *xtra_params)
+													   const char *xtra_params)
 {
 	char params[1024] = "";
 	switch_status_t status;

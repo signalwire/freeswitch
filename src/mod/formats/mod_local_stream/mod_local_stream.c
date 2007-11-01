@@ -143,7 +143,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	return NULL;
 }
 
-static switch_status_t local_stream_file_open(switch_file_handle_t *handle, char *path)
+static switch_status_t local_stream_file_open(switch_file_handle_t *handle, const char *path)
 {
 	local_stream_context_t *context;
 	local_stream_source_t *source;

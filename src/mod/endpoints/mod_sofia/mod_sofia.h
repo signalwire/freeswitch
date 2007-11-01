@@ -398,7 +398,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 void sofia_glue_deactivate_rtp(private_object_t *tech_pvt);
 
-void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, char *sr, int force);
+void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32_t port, const char *sr, int force);
 
 void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt);
 
@@ -432,7 +432,7 @@ void launch_sofia_profile_thread(sofia_profile_t *profile);
 
 switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint);
 void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt);
-switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, char *r_sdp);
+switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, const char *r_sdp);
 char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const char *host, char *val, switch_size_t len);
 void event_handler(switch_event_t *event);
 void sofia_presence_event_handler(switch_event_t *event);

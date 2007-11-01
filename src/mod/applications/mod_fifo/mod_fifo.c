@@ -107,8 +107,8 @@ SWITCH_STANDARD_APP(fifo_function)
     fifo_node_t *node;
     switch_channel_t *channel;
     int nowait = 0;
-    char *moh = NULL;
-    char *announce = NULL;
+    const char *moh = NULL;
+    const char *announce = NULL;
     switch_event_t *event = NULL;
     char date[80] = "";
     switch_time_exp_t tm;
@@ -153,7 +153,7 @@ SWITCH_STANDARD_APP(fifo_function)
     }
 
     if (!strcasecmp(argv[1], "in")) {
-        char *uuid = strdup(switch_core_session_get_uuid(session));
+        const char *uuid = strdup(switch_core_session_get_uuid(session));
 
         switch_channel_answer(channel);
 
@@ -178,7 +178,7 @@ SWITCH_STANDARD_APP(fifo_function)
         switch_mutex_lock(node->mutex);
         node->caller_count++;
         switch_core_hash_insert(node->caller_hash, uuid, session);
-        switch_queue_push(node->fifo, uuid);
+        switch_queue_push(node->fifo, (void *)uuid);
         switch_mutex_unlock(node->mutex);
 
         ts = switch_timestamp_now();
@@ -418,8 +418,8 @@ static int xml_hash(switch_xml_t xml, switch_hash_t *hash, char *container, char
 
     for (hi = switch_hash_first(NULL, hash); hi; hi = switch_hash_next(hi)) {
         int c_off = 0, d_off = 0;
-        char *status;
-        char *ts;
+        const char *status;
+        const char *ts;
 
         switch_hash_this(hi, &var, NULL, &val);
         session = (switch_core_session_t *) val;

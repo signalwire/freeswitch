@@ -40,7 +40,7 @@ struct native_file_context {
 
 typedef struct native_file_context native_file_context;
 
-static switch_status_t native_file_file_open(switch_file_handle_t *handle, char *path)
+static switch_status_t native_file_file_open(switch_file_handle_t *handle, const char *path)
 {
 	native_file_context *context;
 	char *ext;

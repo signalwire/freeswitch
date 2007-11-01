@@ -603,7 +603,7 @@ static mrcp_status_t synth_stop(mrcp_client_context_t *context, openmrcp_session
 }
 
 
-static switch_status_t openmrcp_tts_open(switch_speech_handle_t *sh, char *voice_name, int rate, switch_speech_flag_t *flags) 
+static switch_status_t openmrcp_tts_open(switch_speech_handle_t *sh, const char *voice_name, int rate, switch_speech_flag_t *flags) 
 {
 	openmrcp_session_t *tts_session;
 	mrcp_client_channel_t *tts_channel;
@@ -749,7 +749,7 @@ static void openmrcp_flush_tts(switch_speech_handle_t *sh)
 	synth_stop(context, tts_session); // TODO
 }
 
-static void openmrcp_text_param_tts(switch_speech_handle_t *sh, char *param, char *val)
+static void openmrcp_text_param_tts(switch_speech_handle_t *sh, char *param, const char *val)
 {
 
 }

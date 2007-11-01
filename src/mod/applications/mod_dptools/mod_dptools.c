@@ -259,7 +259,7 @@ SWITCH_STANDARD_APP(phrase_function)
 	assert(channel != NULL);
 
 	if ((mydata = switch_core_session_strdup(session, data))) {
-		char *lang;
+		const char *lang;
 		char *macro = mydata;
 		char *mdata = NULL;
 
@@ -445,7 +445,8 @@ SWITCH_STANDARD_APP(set_profile_var_function)
 SWITCH_STANDARD_APP(export_function)
 {
 	switch_channel_t *channel;
-	char *exports, *new_exports = NULL, *new_exports_d = NULL, *var, *val = NULL, *var_name = NULL;
+	const char *exports;
+	char *new_exports = NULL, *new_exports_d = NULL, *var, *val = NULL, *var_name = NULL;
 	int local = 1;
 
 	channel = switch_core_session_get_channel(session);
@@ -923,9 +924,9 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 	case SWITCH_INPUT_TYPE_DTMF:
 		{
 			char *dtmf = (char *) input;
-			char *terminators;
+			const char *terminators;
 			switch_channel_t *channel = switch_core_session_get_channel(session);
-			char *p;
+			const char *p;
 			
 			assert(channel);
 
@@ -965,8 +966,8 @@ SWITCH_STANDARD_APP(speak_function)
 	char buf[10];
 	char *argv[4] = { 0 };
 	int argc;
-	char *engine = NULL;
-	char *voice = NULL;
+	const char *engine = NULL;
+	const char *voice = NULL;
 	char *text = NULL;
 	char *mydata = NULL;
 	switch_codec_t *codec;
@@ -1211,7 +1212,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	switch_channel_t *caller_channel;
 	switch_core_session_t *peer_session = NULL;
 	unsigned int timelimit = 60;
-	char *var, *continue_on_fail = NULL;
+	const char *var, *continue_on_fail = NULL;
 	uint8_t no_media_bridge = 0;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 

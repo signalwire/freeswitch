@@ -194,7 +194,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		if (session) {
 			channel = switch_core_session_get_channel(session);
 			if (caller_profile) {
-				char *ecaller_id_name = NULL, *ecaller_id_number = NULL;
+				const char *ecaller_id_name = NULL, *ecaller_id_number = NULL;
 
 				ecaller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name");
 				ecaller_id_number = switch_channel_get_variable(channel, "effective_caller_id_number");
@@ -247,7 +247,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		}
 
 		if (channel && peer_channel) {
-			char *export_vars, *val;
+			const char *export_vars, *val;
 			switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
 
 			if (read_codec) {
@@ -270,7 +270,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 					int x;
 
 					for (x = 0; x < argc; x++) {
-						char *val;
+						const char *val;
 						if ((val = switch_channel_get_variable(channel, argv[x]))) {
 							char *var = argv[x];
 							if (!strncasecmp(var, "nolocal:", 8)) {
@@ -344,7 +344,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_pass_indication(switch_core_
 {
 	switch_core_session_message_t msg = {0};
 	switch_core_session_t *other_session;
-	char *uuid;
+	const char *uuid;
 	switch_channel_t *channel;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
@@ -900,7 +900,7 @@ SWITCH_DECLARE(switch_app_log_t *) switch_core_session_get_app_log(switch_core_s
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *session,
-														 const switch_application_interface_t *application_interface, char *arg) {
+														 const switch_application_interface_t *application_interface, const char *arg) {
 	switch_app_log_t *log, *lp;
 	switch_event_t *event;
 	switch_channel_t *channel;

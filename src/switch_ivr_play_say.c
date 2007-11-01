@@ -90,14 +90,14 @@ static switch_say_type_t get_say_type_by_name(char *name)
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *session, char *macro_name, char *data, char *lang,
+SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *session, const char *macro_name, const char *data, const char *lang,
 														switch_input_args_t *args)
 {
 	switch_xml_t cfg, xml = NULL, language, macros, macro, input, action;
 	char *lname = NULL, *mname = NULL, hint_data[1024] = "", enc_hint[1024] = "";
 	switch_status_t status = SWITCH_STATUS_GENERR;
-	char *old_sound_prefix = NULL, *sound_path = NULL, *tts_engine = NULL, *tts_voice = NULL, *chan_lang = NULL;
-	const char *module_name = NULL;
+	const char *old_sound_prefix = NULL, *sound_path = NULL, *tts_engine = NULL, *tts_voice = NULL;
+	const char *module_name = NULL, *chan_lang = NULL;
 	switch_channel_t *channel;
 	uint8_t done = 0;
 
@@ -273,8 +273,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid SAY Interface [%s]!\n", module_name);
 						}
 					} else if (!strcasecmp(func, "speak-text")) {
-						char *my_tts_engine = (char *) switch_xml_attr(action, "tts-engine");
-						char *my_tts_voice = (char *) switch_xml_attr(action, "tts-voice");
+						const char *my_tts_engine = switch_xml_attr(action, "tts-engine");
+						const char *my_tts_voice = switch_xml_attr(action, "tts-voice");
 						
 						if (!my_tts_engine) {
 							my_tts_engine = tts_engine;
@@ -325,7 +325,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	switch_codec_t codec, *read_codec;
 	char *codec_name;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	char *p;
+	const char *p;
 	const char *vval;
 	time_t start = 0;
 	uint32_t org_silence_hits = 0;
@@ -357,37 +357,37 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	switch_channel_answer(channel);
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_TITLE"))) {
-		vval = (const char *) switch_core_session_strdup(session, p);
+		vval = switch_core_session_strdup(session, p);
 		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_TITLE, vval);
 		switch_channel_set_variable(channel, "RECORD_TITLE", NULL);
 	}
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_COPYRIGHT"))) {
-		vval = (const char *) switch_core_session_strdup(session, p);
+		vval = switch_core_session_strdup(session, p);
 		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_COPYRIGHT, vval);
 		switch_channel_set_variable(channel, "RECORD_COPYRIGHT", NULL);
 	}
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_SOFTWARE"))) {
-		vval = (const char *) switch_core_session_strdup(session, p);
+		vval = switch_core_session_strdup(session, p);
 		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_SOFTWARE, vval);
 		switch_channel_set_variable(channel, "RECORD_SOFTWARE", NULL);
 	}
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_ARTIST"))) {
-		vval = (const char *) switch_core_session_strdup(session, p);
+		vval = switch_core_session_strdup(session, p);
 		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_ARTIST, vval);
 		switch_channel_set_variable(channel, "RECORD_ARTIST", NULL);
 	}
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_COMMENT"))) {
-		vval = (const char *) switch_core_session_strdup(session, p);
+		vval = switch_core_session_strdup(session, p);
 		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_COMMENT, vval);
 		switch_channel_set_variable(channel, "RECORD_COMMENT", NULL);
 	}
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_DATE"))) {
-		vval = (const char *) switch_core_session_strdup(session, p);
+		vval = switch_core_session_strdup(session, p);
 		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_DATE, vval);
 		switch_channel_set_variable(channel, "RECORD_DATE", NULL);
 	}
@@ -637,7 +637,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 #define FILE_BLOCKSIZE 1024 * 8
 #define FILE_BUFSIZE 1024 * 64
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *session, switch_file_handle_t *fh, char *file, switch_input_args_t *args)
+SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *session, switch_file_handle_t *fh, const char *file, switch_input_args_t *args)
 {
 	switch_channel_t *channel;
 	int16_t abuf[FILE_STARTSAMPLES];
@@ -659,9 +659,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	char *title = "", *copyright = "", *software = "", *artist = "", *comment = "", *date = "";
 	uint8_t asis = 0;
 	char *ext;
-	char *prefix;
-	char *timer_name;
-	char *prebuf;
+	const char *prefix;
+	const char *timer_name;
+	const char *prebuf;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -1199,7 +1199,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	uint32_t rate = 0;
 	switch_size_t extra = 0;
 	char *p, *tmp = NULL;
-	char *star, *pound;
+	const char *star, *pound;
 	switch_size_t starlen, poundlen;
 	
 	channel = switch_core_session_get_channel(session);
@@ -1467,7 +1467,7 @@ SWITCH_DECLARE(void) switch_ivr_clear_speech_cache(switch_core_session_t *sessio
 
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *session,
-													  char *tts_name, char *voice_name, char *text, switch_input_args_t *args)
+													  const char *tts_name, const char *voice_name, char *text, switch_input_args_t *args)
 {
 	switch_channel_t *channel;
 	uint32_t rate = 0;
@@ -1483,7 +1483,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	switch_speech_handle_t lsh, *sh;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 	switch_codec_t *read_codec;
-	char *timer_name, *var;
+	const char *timer_name, *var;
 	cached_speech_handle_t *cache_obj = NULL;
 	int need_create = 1, need_alloc = 1;
 	

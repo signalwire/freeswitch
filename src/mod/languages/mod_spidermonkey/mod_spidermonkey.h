@@ -71,12 +71,12 @@ SWITCH_BEGIN_EXTERN_C
 #else //not win32
 #define SWITCH_SM_DECLARE(type) type
 #endif
-int eval_some_js(char *code, JSContext * cx, JSObject * obj, jsval * rval)
+int eval_some_js(const char *code, JSContext * cx, JSObject * obj, jsval * rval)
 {
 	JSScript *script = NULL;
-	char *cptr;
+	const char *cptr;
 	char *path = NULL;
-	char *script_name = NULL;
+	const char *script_name = NULL;
 	int result = 0;
 
 	JS_ClearPendingException(cx);

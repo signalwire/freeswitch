@@ -1524,7 +1524,8 @@ static JSBool session_streamfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	switch_file_handle_t fh = { 0 };
 	JSFunction *function;
 	switch_input_args_t args = { 0 };
-	char *prebuf, posbuf[35] = "";
+	const char *prebuf;
+	char posbuf[35] = "";
 	
 	METHOD_SANITY_CHECK();
 
@@ -1627,7 +1628,7 @@ static JSBool session_get_variable(JSContext * cx, JSObject * obj, uintN argc, j
 	assert(channel != NULL);
 
 	if (argc > 0) {
-		char *var, *val;
+		const char *var, *val;
 
 		var = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		val = switch_channel_get_variable(channel, var);
@@ -2510,16 +2511,16 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		JSObject *session_obj;
 		switch_core_session_t *session = NULL, *peer_session = NULL;
 		switch_caller_profile_t *caller_profile = NULL, *orig_caller_profile = NULL;
-		char *dest = NULL;
-		char *dialplan = NULL;
-		char *cid_name = "";
-		char *cid_num = "";
-		char *network_addr = "";
-		char *ani = "";
-		char *aniii = "";
-		char *rdnis = "";
-		char *context = "";
-		char *username = NULL;
+		const char *dest = NULL;
+		const char *dialplan = NULL;
+		const char *cid_name = "";
+		const char *cid_num = "";
+		const char *network_addr = "";
+		const char *ani = "";
+		const char *aniii = "";
+		const char *rdnis = "";
+		const char *context = "";
+		const char *username = NULL;
 		char *to = NULL;
 		char *tmp;
 			
@@ -3109,10 +3110,11 @@ static int env_init(JSContext * cx, JSObject * javascript_object)
 	return 1;
 }
 
-static void js_parse_and_execute(switch_core_session_t *session, char *input_code, struct request_obj *ro)
+static void js_parse_and_execute(switch_core_session_t *session, const char *input_code, struct request_obj *ro)
 {
 	JSObject *javascript_global_object = NULL;
-	char buf[1024], *script, *arg, *argv[512];
+	char buf[1024], *arg, *argv[512];
+	const char *script;
 	int argc = 0, x = 0, y = 0;
 	unsigned int flags = 0;
 	struct js_session jss;
@@ -3172,9 +3174,9 @@ static void js_parse_and_execute(switch_core_session_t *session, char *input_cod
 	}
 }
 
-static void js_dp_function(switch_core_session_t *session, char *input_code)
+SWITCH_STANDARD_APP(js_dp_function)
 {
-	js_parse_and_execute(session, input_code, NULL);
+	js_parse_and_execute(session, data, NULL);
 }
 
 static void *SWITCH_THREAD_FUNC js_thread_run(switch_thread_t * thread, void *obj)

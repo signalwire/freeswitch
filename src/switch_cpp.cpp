@@ -45,7 +45,7 @@
 
 CoreSession::CoreSession()
 {
-	init_vars();
+	do { session = NULL; channel = NULL; uuid = NULL; tts_name = NULL; voice_name = NULL; memset(&args, 0, sizeof(args)); ap = NULL; caller_profile.source = "mod_unknown";  caller_profile.dialplan = ""; caller_profile.context = ""; caller_profile.caller_id_name = ""; caller_profile.caller_id_number = ""; caller_profile.network_addr = ""; caller_profile.ani = ""; caller_profile.aniii = ""; caller_profile.rdnis = "";  caller_profile.username = ""; on_hangup = NULL; cb_state.function = NULL; } while(0);
 }
 
 CoreSession::CoreSession(char *nuuid)
@@ -113,7 +113,7 @@ void CoreSession::setVariable(char *var, char *val)
     switch_channel_set_variable(channel, var, val);
 }
 
-char *CoreSession::getVariable(char *var)
+const char *CoreSession::getVariable(char *var)
 {
 	sanity_check(NULL);
     return switch_channel_get_variable(channel, var);
@@ -269,7 +269,7 @@ int CoreSession::streamFile(char *file, int starting_sample_count) {
 
     switch_status_t status;
     switch_file_handle_t fh = { 0 };
-	char *prebuf;
+	const char *prebuf;
 
     sanity_check(-1);
     fh.samples = starting_sample_count;

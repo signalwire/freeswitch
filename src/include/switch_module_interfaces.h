@@ -231,7 +231,7 @@ struct switch_file_interface {
 	/*! the name of the interface */
 	const char *interface_name;
 	/*! function to open the file */
-	switch_status_t (*file_open) (switch_file_handle_t *, char *file_path);
+	switch_status_t (*file_open) (switch_file_handle_t *, const char *file_path);
 	/*! function to close the file */
 	switch_status_t (*file_close) (switch_file_handle_t *);
 	/*! function to read from the file */
@@ -340,7 +340,7 @@ struct switch_speech_interface {
 	/*! the name of the interface */
 	const char *interface_name;
 	/*! function to open the speech interface */
-	switch_status_t (*speech_open) (switch_speech_handle_t *sh, char *voice_name, int rate, switch_speech_flag_t *flags);
+	switch_status_t (*speech_open) (switch_speech_handle_t *sh, const char *voice_name, int rate, switch_speech_flag_t *flags);
 	/*! function to close the speech interface */
 	switch_status_t (*speech_close) (switch_speech_handle_t *, switch_speech_flag_t *flags);
 	/*! function to feed audio to the ASR */
@@ -348,7 +348,7 @@ struct switch_speech_interface {
 	/*! function to read audio from the TTS */
 	switch_status_t (*speech_read_tts) (switch_speech_handle_t *sh, void *data, switch_size_t *datalen, uint32_t * rate, switch_speech_flag_t *flags);
 	void (*speech_flush_tts) (switch_speech_handle_t *sh);
-	void (*speech_text_param_tts) (switch_speech_handle_t *sh, char *param, char *val);
+	void (*speech_text_param_tts) (switch_speech_handle_t *sh, char *param, const char *val);
 	void (*speech_numeric_param_tts) (switch_speech_handle_t *sh, char *param, int val);
 	void (*speech_float_param_tts) (switch_speech_handle_t *sh, char *param, double val);
 

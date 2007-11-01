@@ -318,13 +318,13 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 												  const char *key_name, const char *key_value, switch_xml_t * root, switch_xml_t * node,
 												  const char *params);
 
-SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(char *domain_name, char *params, switch_xml_t *root, switch_xml_t *domain);
-SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(char *user_name, char *domain_name, 
-													   char *ip, 
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name, char *params, switch_xml_t *root, switch_xml_t *domain);
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *user_name, const char *domain_name, 
+													   const char *ip, 
 													   switch_xml_t *root,
 													   switch_xml_t *domain,
 													   switch_xml_t *user,
-													   char *xtra_params);
+													   const char *xtra_params);
 
 ///\brief open a config in the core registry
 ///\param file_path the name of the config section e.g. modules.conf

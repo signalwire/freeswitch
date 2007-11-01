@@ -309,7 +309,7 @@ void BaseCDR::process_channel_variables(const std::list<std::string>& stringlist
 		tempstringvector.push_back('\0');
 		char* tempstring= &tempstringvector[0];
 
-		char *tempvariable;
+		const char *tempvariable;
 		tempvariable = switch_channel_get_variable(channel,tempstring);
 		
 		
@@ -350,7 +350,7 @@ void BaseCDR::process_channel_variables(const std::list<std::string>& stringlist
 			tempstringvector.push_back('\0');
 			char* tempstring= &tempstringvector[0];
 
-			char *tempvariable;
+			const char *tempvariable;
 			tempvariable = switch_channel_get_variable(channel,tempstring);
 			if (!switch_strlen_zero(tempvariable))
 				chanvars_supp[*iItr] = tempvariable;

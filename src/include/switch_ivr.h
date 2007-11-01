@@ -203,7 +203,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_unload_grammar(switch_c
 SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t *session, char *file, uint32_t limit, switch_file_handle_t *fh);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_t *session, char *file, uint32_t limit, const char *flags);
-SWITCH_DECLARE(switch_status_t) switch_ivr_stop_displace_session(switch_core_session_t *session, char *file);
+SWITCH_DECLARE(switch_status_t) switch_ivr_stop_displace_session(switch_core_session_t *session, const char *file);
 
 /*!
   \brief Stop Recording a session
@@ -211,7 +211,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_displace_session(switch_core_ses
   \param file the path to the file
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_stop_record_session(switch_core_session_t *session, char *file);
+SWITCH_DECLARE(switch_status_t) switch_ivr_stop_record_session(switch_core_session_t *session, const char *file);
 
 /*!
   \brief Start looking for DTMF inband
@@ -282,7 +282,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
   \param args arguements to pass for callbacks etc
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *session, switch_file_handle_t *fh, char *file, switch_input_args_t *args);
+SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *session, switch_file_handle_t *fh, const char *file, switch_input_args_t *args);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *session, char *script, int32_t loops, switch_input_args_t *args);
 
@@ -339,7 +339,7 @@ SWITCH_DECLARE(void) switch_ivr_clear_speech_cache(switch_core_session_t *sessio
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *session,
-													  char *tts_name, char *voice_name, char *text, switch_input_args_t *args);
+													  const char *tts_name, const char *voice_name, char *text, switch_input_args_t *args);
 
 /*!
   \brief Make an outgoing call
@@ -358,10 +358,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *session,
 													 switch_core_session_t **bleg,
 													 switch_call_cause_t *cause,
-													 char *bridgeto,
+													 const char *bridgeto,
 													 uint32_t timelimit_sec,
 													 const switch_state_handler_table_t *table,
-													 char *cid_name_override, char *cid_num_override, switch_caller_profile_t *caller_profile_override);
+													 const char *cid_name_override, const char *cid_num_override, switch_caller_profile_t *caller_profile_override);
 
 /*!
   \brief Bridge Audio from one session to another
@@ -392,7 +392,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
   \param dialplan the new dialplan (OPTIONAL, may be NULL)
   \param context the new context (OPTIONAL, may be NULL)
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, char *extension, char *dialplan, char *context);
+SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, const char *extension, char *dialplan, char *context);
 
 /*!
   \brief Transfer an existing session to another location in the future
@@ -403,7 +403,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
   \param context the new context (OPTIONAL, may be NULL)
   \return the id of the task
 */
-SWITCH_DECLARE(uint32_t) switch_ivr_schedule_transfer(time_t runtime, char *uuid, char *extension, char *dialplan, char *context);
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_transfer(time_t runtime, const char *uuid, char *extension, char *dialplan, char *context);
 
 
 /*!
@@ -414,7 +414,7 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_transfer(time_t runtime, char *uuid
   \param bleg hangup up the B-Leg if possible
   \return the id of the task
 */
-SWITCH_DECLARE(uint32_t) switch_ivr_schedule_hangup(time_t runtime, char *uuid, switch_call_cause_t cause, switch_bool_t bleg);
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_hangup(time_t runtime, const char *uuid, switch_call_cause_t cause, switch_bool_t bleg);
 
 /*!
   \brief Bridge two existing sessions
@@ -422,7 +422,7 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_hangup(time_t runtime, char *uuid, 
   \param originatee_uuid the uuid of the originator
   \return SWITCH_STATUS_SUCCESS if all is well 
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(char *originator_uuid, char *originatee_uuid);
+SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uuid, const char *originatee_uuid);
 
 /*!
   \brief Signal a session to request direct media access to it's remote end
@@ -430,7 +430,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(char *originator_uuid, ch
   \param flags flags to influence behaviour (SMF_REBRIDGE to rebridge the call in media mode)
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_media(char *uuid, switch_media_flag_t flags);
+SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_flag_t flags);
 
 /*!
   \brief Signal a session to request indirect media allowing it to exchange media directly with another device
@@ -438,21 +438,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(char *uuid, switch_media_flag_t
   \param flags flags to influence behaviour (SMF_REBRIDGE to rebridge the call in no_media mode)
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(char *uuid, switch_media_flag_t flags);
+SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_media_flag_t flags);
 
 /*!
   \brief Signal the session with a protocol specific hold message.
   \param uuid the uuid of the session to hold
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_hold_uuid(char *uuid);
+SWITCH_DECLARE(switch_status_t) switch_ivr_hold_uuid(const char *uuid);
 
 /*!
   \brief Signal the session with a protocol specific unhold message.
   \param uuid the uuid of the session to hold
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_unhold_uuid(char *uuid);
+SWITCH_DECLARE(switch_status_t) switch_ivr_unhold_uuid(const char *uuid);
 
 /*!
   \brief Signal the session with a protocol specific hold message.
@@ -485,7 +485,7 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, char *uui
   \param flags flags to send to the request (SMF_ECHO_BRIDGED to send the broadcast to both sides of the call)
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, switch_media_flag_t flags);
+SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const char *path, switch_media_flag_t flags);
 
 /*!
   \brief Transfer variables from one session to another 
@@ -712,7 +712,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_add_custom(switch_ivr_
  */
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_init(switch_ivr_menu_xml_ctx_t ** xml_menu_ctx, switch_memory_pool_t *pool);
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *session, char *macro_name, char *data, char *lang,
+SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *session, const char *macro_name, const char *data, const char *lang,
 														switch_input_args_t *args);
 SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint32_t delay_ms);
 /** @} */

@@ -59,7 +59,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		char *field = NULL;
 		char *do_break_a = NULL;
 		char *expression = NULL;
-		char *field_data = NULL;
+		const char *field_data = NULL;
 		switch_regex_t *re = NULL;
 		int ovector[30];
 		break_t do_break_i = BREAK_ON_FALSE;
@@ -186,8 +186,8 @@ static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switc
 	switch_stream_handle_t stream = { 0 };
 	switch_size_t encode_len = 1024, new_len = 0;
 	char *encode_buf = NULL;
-	char *prof[12] = { 0 }, *prof_names[12] = {
-	0}, *e = NULL;
+	const char *prof[12] = { 0 }, *prof_names[12] = {0};
+	char *e = NULL;
 	switch_event_header_t *hi;
 	uint32_t x = 0;
 

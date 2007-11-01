@@ -657,9 +657,9 @@ SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t * poll, int ms)
 }
 
 
-SWITCH_DECLARE(size_t) switch_url_encode(char *url, char *buf, size_t len)
+SWITCH_DECLARE(size_t) switch_url_encode(const char *url, char *buf, size_t len)
 {
-	char *p;
+	const char *p;
 	size_t x = 0;
 	const char urlunsafe[] = "\r\n \"#%&+:;<=>?@[\\]^`{|}";
 	const char hex[] = "0123456789ABCDEF";

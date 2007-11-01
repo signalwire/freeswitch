@@ -1614,9 +1614,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		char sess_id[11] = "";
 		char *dnis = NULL;
 		char workspace[1024] = "";
-		char *p, *u, ubuf[512] = "", *user = NULL;
-		char *cid_msg = NULL, *f_cid_msg = NULL;
-
+		char *p, *u, ubuf[512] = "", *user = NULL, *f_cid_msg = NULL;
+		const char *cid_msg = NULL;
 		switch_copy_string(workspace, outbound_profile->destination_number, sizeof(workspace));
 		profile_name = workspace;
 
@@ -1649,7 +1648,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				user = ldl_handle_get_login(mdl_profile->handle);
 			} else {
 				if (!user) {
-					char *id_num;
+					const char *id_num;
 					
 					if (!(id_num = outbound_profile->caller_id_number)) {
 						if (!(id_num = outbound_profile->caller_id_name)) {

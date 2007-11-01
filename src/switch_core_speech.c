@@ -36,8 +36,8 @@
 
 
 SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *sh,
-														char *module_name,
-														char *voice_name, 
+														const char *module_name,
+														const char *voice_name, 
 														unsigned int rate,
 														unsigned int interval,
 														switch_speech_flag_t *flags, 
@@ -101,7 +101,7 @@ SWITCH_DECLARE(void) switch_core_speech_flush_tts(switch_speech_handle_t *sh)
 	}
 }
 
-SWITCH_DECLARE(void) switch_core_speech_text_param_tts(switch_speech_handle_t *sh, char *param, char *val)
+SWITCH_DECLARE(void) switch_core_speech_text_param_tts(switch_speech_handle_t *sh, char *param, const char *val)
 {
 	assert(sh != NULL);
 

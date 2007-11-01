@@ -312,7 +312,7 @@ static switch_status_t conference_outcall(conference_obj_t * conference,
 										  char *bridgeto, uint32_t timeout, char *flags, char *cid_name, char *cid_num, switch_call_cause_t *cause);
 static switch_status_t conference_outcall_bg(conference_obj_t * conference,
 											 char *conference_name,
-											 switch_core_session_t *session, char *bridgeto, uint32_t timeout, char *flags, char *cid_name, char *cid_num);
+											 switch_core_session_t *session, char *bridgeto, uint32_t timeout, const char *flags, const char *cid_name, const char *cid_num);
 SWITCH_STANDARD_APP(conference_function);
 static void launch_conference_thread(conference_obj_t * conference);
 static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t * thread, void *obj);
@@ -1531,11 +1531,11 @@ static void conference_loop_output(conference_member_t * member)
 	
 
 	if ((call_list = switch_channel_get_private(channel, "_conference_autocall_list_"))) {
-		char *cid_name = switch_channel_get_variable(channel, "conference_auto_outcall_caller_id_name");
-		char *cid_num = switch_channel_get_variable(channel, "conference_auto_outcall_caller_id_number");
-		char *toval = switch_channel_get_variable(channel, "conference_auto_outcall_timeout");
-		char *flags = switch_channel_get_variable(channel, "conference_auto_outcall_flags");
-		char *ann = switch_channel_get_variable(channel, "conference_auto_outcall_announce");
+		const char *cid_name = switch_channel_get_variable(channel, "conference_auto_outcall_caller_id_name");
+		const char *cid_num = switch_channel_get_variable(channel, "conference_auto_outcall_caller_id_number");
+		const char *toval = switch_channel_get_variable(channel, "conference_auto_outcall_timeout");
+		const char *flags = switch_channel_get_variable(channel, "conference_auto_outcall_flags");
+		const char *ann = switch_channel_get_variable(channel, "conference_auto_outcall_announce");
 		int to = 60;
 		
 		if (ann) {
@@ -3730,7 +3730,7 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t * thread,
 
 static switch_status_t conference_outcall_bg(conference_obj_t * conference,
 											 char *conference_name,
-											 switch_core_session_t *session, char *bridgeto, uint32_t timeout, char *flags, char *cid_name, char *cid_num)
+											 switch_core_session_t *session, char *bridgeto, uint32_t timeout, const char *flags, const char *cid_name, const char *cid_num)
 {
 	struct bg_call *call = NULL;
 

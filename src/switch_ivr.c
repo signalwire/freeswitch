@@ -696,7 +696,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_hold_uuid(char *uuid)
+SWITCH_DECLARE(switch_status_t) switch_ivr_hold_uuid(const char *uuid)
 {
 	switch_core_session_t *session;
 
@@ -727,7 +727,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unhold(switch_core_session_t *session
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_unhold_uuid(char *uuid)
+SWITCH_DECLARE(switch_status_t) switch_ivr_unhold_uuid(const char *uuid)
 {
 	switch_core_session_t *session;
 
@@ -739,9 +739,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unhold_uuid(char *uuid)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_media(char *uuid, switch_media_flag_t flags)
+SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_flag_t flags)
 {
-	char *other_uuid = NULL;
+	const char *other_uuid = NULL;
 	switch_channel_t *channel, *other_channel = NULL;
 	switch_core_session_t *session, *other_session;
 	switch_core_session_message_t msg = { 0 };
@@ -791,9 +791,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(char *uuid, switch_media_flag_t
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(char *uuid, switch_media_flag_t flags)
+SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_media_flag_t flags)
 {
-	char *other_uuid;
+	const char *other_uuid;
 	switch_channel_t *channel, *other_channel = NULL;
 	switch_core_session_t *session, *other_session = NULL;
 	switch_core_session_message_t msg = { 0 };
@@ -845,14 +845,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(char *uuid, switch_media_flag
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, char *extension, char *dialplan, char *context)
+SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, const char *extension, char *dialplan, char *context)
 {
 	switch_channel_t *channel;
 	switch_caller_profile_t *profile, *new_profile;
 	switch_core_session_message_t msg = { 0 };
 	switch_core_session_t *other_session;
 	switch_channel_t *other_channel = NULL;
-	char *uuid = NULL;
+	const char *uuid = NULL;
 
 	assert(session != NULL);
 	switch_core_session_reset(session);
@@ -941,7 +941,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session
 {
 	switch_channel_t *chana = switch_core_session_get_channel(sessa);
 	switch_channel_t *chanb = switch_core_session_get_channel(sessb);
-	char *val = NULL;
+	const char *val = NULL;
 	uint8_t prefix = 0;
 
 	if (var && *var == '~') {

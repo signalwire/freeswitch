@@ -289,7 +289,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel, s
 
 SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, const char *rpid, const char *status)
 {
-	char *id = switch_channel_get_variable(channel, "presence_id");
+	const char *id = switch_channel_get_variable(channel, "presence_id");
 	switch_event_t *event;
 	switch_event_types_t type = SWITCH_EVENT_PRESENCE_IN;
 
@@ -319,9 +319,9 @@ SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, const ch
 }
 
 
-SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, const char *varname)
+SWITCH_DECLARE(const char *) switch_channel_get_variable(switch_channel_t *channel, const char *varname)
 {
-	char *v = NULL;
+	const char *v = NULL;
 	assert(channel != NULL);
 
 	switch_mutex_lock(channel->profile_mutex);
@@ -425,7 +425,7 @@ SWITCH_DECLARE(int) switch_channel_test_flag(switch_channel_t *channel, switch_c
 
 SWITCH_DECLARE(switch_bool_t) switch_channel_set_flag_partner(switch_channel_t *channel, switch_channel_flag_t flags)
 {
-	char *uuid;
+	const char *uuid;
 
 	assert(channel != NULL);
 
@@ -443,7 +443,7 @@ SWITCH_DECLARE(switch_bool_t) switch_channel_set_flag_partner(switch_channel_t *
 
 SWITCH_DECLARE(switch_bool_t) switch_channel_clear_flag_partner(switch_channel_t *channel, switch_channel_flag_t flags)
 {
-	char *uuid;
+	const char *uuid;
 
 	assert(channel != NULL);
 
@@ -1096,7 +1096,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 	switch_channel_mark_ring_ready(channel);
 
 	if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
-		char *uuid;
+		const char *uuid;
 		switch_core_session_t *other_session;
 
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Pre-Answer %s!\n", channel->name);
@@ -1184,7 +1184,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready(switch_channel
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_channel_t *channel, const char *file, const char *func, int line)
 {
 	switch_event_t *event;
-	char *uuid;
+	const char *uuid;
 	switch_core_session_t *other_session;
 
 	assert(channel != NULL);
@@ -1268,7 +1268,8 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 	char *q, *p, *c = NULL;
 	char *data, *indup;
 	size_t sp = 0, len = 0, olen = 0, vtype = 0, br = 0, cpos, block = 128;
-	char *sub_val = NULL, *func_val = NULL;
+	const char *sub_val = NULL;
+	char *func_val = NULL;
 	int nv = 0;
 
 	q = in;

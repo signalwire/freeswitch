@@ -432,7 +432,7 @@ snprintf(tmp, (int)sizeof(tmp),
 		dump_ies(fh->iedata, datalen);
 }
 
-int iax_ie_append_raw(struct iax_ie_data *ied, unsigned char ie, void *data, int datalen)
+int iax_ie_append_raw(struct iax_ie_data *ied, unsigned char ie, const void *data, int datalen)
 {
 	char tmp[256];
 	if (datalen > ((int)sizeof(ied->buf) - ied->pos)) {
@@ -466,7 +466,7 @@ int iax_ie_append_short(struct iax_ie_data *ied, unsigned char ie, unsigned shor
 	return iax_ie_append_raw(ied, ie, &newval, (int)sizeof(newval));
 }
 
-int iax_ie_append_str(struct iax_ie_data *ied, unsigned char ie, unsigned char *str)
+int iax_ie_append_str(struct iax_ie_data *ied, unsigned char ie, const unsigned char *str)
 {
 	return iax_ie_append_raw(ied, ie, str, (int)strlen((char *) str));
 }

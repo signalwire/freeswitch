@@ -69,7 +69,7 @@ struct switch_core_session_message {
 	/*! optional numeric arg */
 	int numeric_arg;
 	/*! optional string arg */
-	char *string_arg;
+	const char *string_arg;
 	/*! optional string arg */
 	switch_size_t string_arg_size;
 	/*! optional arbitrary pointer arg */
@@ -607,7 +607,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(char *uuid_str, s
 
 SWITCH_DECLARE(switch_app_log_t *) switch_core_session_get_app_log(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *session,
-														 const switch_application_interface_t *application_interface, char *arg);
+														 const switch_application_interface_t *application_interface, const char *arg);
 SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_session_t *session, char *exten, char *dialplan, char *context);
 
 /*! 
@@ -918,7 +918,7 @@ SWITCH_DECLARE(void) switch_hash_this(switch_hash_index_t *hi, const void **key,
   \param pool the memory pool to use for allocation
   \return
 */
-SWITCH_DECLARE(switch_status_t) switch_core_timer_init(switch_timer_t *timer, char *timer_name, int interval, int samples, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_core_timer_init(switch_timer_t *timer, const char *timer_name, int interval, int samples, switch_memory_pool_t *pool);
 
 /*! 
   \brief Wait for one cycle on an existing timer
@@ -1105,7 +1105,7 @@ SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *te
   \note the loadable module used is chosen based on the file extension
 */
 SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh,
-													  char *file_path, uint8_t channels, uint32_t rate, unsigned int flags, switch_memory_pool_t *pool);
+													  const char *file_path, uint8_t channels, uint32_t rate, unsigned int flags, switch_memory_pool_t *pool);
 /*! 
   \brief Read media from a file handle
   \param fh the file handle to read from (must be initilized by you memset all 0 for read, fill in channels and rate for write)
@@ -1176,8 +1176,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
   \return SWITCH_STATUS_SUCCESS if the handle is opened
 */
 SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *sh,
-														char *module_name,
-														char *voice_name, 
+														const char *module_name,
+														const char *voice_name, 
 														unsigned int rate, 
 														unsigned int interval, 
 														switch_speech_flag_t *flags, switch_memory_pool_t *pool);
@@ -1202,7 +1202,7 @@ SWITCH_DECLARE(void) switch_core_speech_flush_tts(switch_speech_handle_t *sh);
   \param param the parameter
   \param val the value
 */
-SWITCH_DECLARE(void) switch_core_speech_text_param_tts(switch_speech_handle_t *sh, char *param, char *val);
+SWITCH_DECLARE(void) switch_core_speech_text_param_tts(switch_speech_handle_t *sh, char *param, const char *val);
 
 /*! 
   \brief Set a numeric parameter on a TTS handle

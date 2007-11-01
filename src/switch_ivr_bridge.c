@@ -56,7 +56,7 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 	switch_frame_t *read_frame;
 	switch_core_session_t *session_a, *session_b;
 	uint32_t loop_count = 0;
-	char *app_name = NULL, *app_arg = NULL;
+	const char *app_name = NULL, *app_arg = NULL;
 
 	session_a = data->session;
 	if (!(session_b = switch_core_session_locate(data->b_uuid))) {
@@ -311,7 +311,7 @@ static switch_status_t uuid_bridge_on_transmit(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	switch_core_session_t *other_session;
-	char *other_uuid = NULL;
+	const char *other_uuid = NULL;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -430,7 +430,7 @@ static switch_status_t signal_bridge_on_hibernate(switch_core_session_t *session
 
 static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 {
-	char *uuid;
+	const char *uuid;
 	switch_channel_t *channel = NULL;
 	switch_core_session_t *other_session;
 	switch_event_t *event;
@@ -595,7 +595,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 		switch_event_t *event;
 		switch_core_session_message_t msg = { 0 };
 		const switch_application_interface_t *application_interface;
-		char *app, *data;
+		const char *app, *data;
 
 		switch_channel_set_state(peer_channel, CS_HOLD);
 
@@ -683,7 +683,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(char *originator_uuid, char *originatee_uuid)
+SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uuid, const char *originatee_uuid)
 {
 	switch_core_session_t *originator_session, *originatee_session;
 	switch_channel_t *originator_channel, *originatee_channel;

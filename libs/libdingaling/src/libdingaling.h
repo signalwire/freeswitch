@@ -309,7 +309,7 @@ char *ldl_session_get_value(ldl_session_t *session, char *key);
   \param key the key to set
   \param val the value of the key
 */
-void ldl_session_set_value(ldl_session_t *session, char *key, char *val);
+void ldl_session_set_value(ldl_session_t *session, const char *key, const char *val);
 
 /*!
   \brief Create a Jingle Session
@@ -473,7 +473,7 @@ void ldl_handle_send_vcard(ldl_handle_t *handle, char *from, char *to, char *id,
   \param subject optional subject
   \param body body of the message
 */
-void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, char *subject, char *body);
+void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, const char *subject, const char *body);
 
 /*!
   \brief Offer candidates to a potential session

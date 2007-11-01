@@ -55,7 +55,7 @@ struct sndfile_context {
 
 typedef struct sndfile_context sndfile_context;
 
-static switch_status_t sndfile_file_open(switch_file_handle_t *handle, char *path)
+static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const char *path)
 {
 	sndfile_context *context;
 	int mode = 0;

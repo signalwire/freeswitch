@@ -257,7 +257,7 @@ char *ldl_session_get_value(ldl_session_t *session, char *key)
 	return apr_hash_get(session->variables, key, APR_HASH_KEY_STRING);
 }
 
-void ldl_session_set_value(ldl_session_t *session, char *key, char *val)
+void ldl_session_set_value(ldl_session_t *session, const char *key, const char *val)
 {
 	apr_hash_set(session->variables, apr_pstrdup(session->pool, key), APR_HASH_KEY_STRING, apr_pstrdup(session->pool, val));
 }
@@ -1789,18 +1789,19 @@ void ldl_handle_send_vcard(ldl_handle_t *handle, char *from, char *to, char *id,
 
 }
 
-void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, char *subject, char *body)
+void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, const char *subject, const char *body)
 {
 	iks *msg;
 	char *t, *e;
 	char *bdup = NULL;
 	int on = 0;
 	int len = 0;
+	char *my_body = strdup(body);
 	assert(handle != NULL);
 	assert(body != NULL);
 	
-	if (strchr(body, '<')) {
-		len = (int) strlen(body);
+	if (strchr(my_body, '<')) {
+		len = (int) strlen(my_body);
 		if (!(bdup = malloc(len))) {
 			return;
 		}
@@ -1808,7 +1809,7 @@ void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, char *subje
 		memset(bdup, 0, len);
 		
 		e = bdup;
-		for(t = body; *t; t++) {
+		for(t = my_body; *t; t++) {
 			if (*t == '<') {
 				on = 1;
 			} else if (*t == '>') {
@@ -1820,10 +1821,10 @@ void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, char *subje
 				*e++ = *t;
 			}
 		}
-		body = bdup;
+		my_body = bdup;
 	}
 	
-	msg = iks_make_msg(IKS_TYPE_NONE, to, body);
+	msg = iks_make_msg(IKS_TYPE_NONE, to, my_body);
 	iks_insert_attrib(msg, "type", "chat");
 
 	if (!from) {
@@ -1839,6 +1840,8 @@ void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, char *subje
 	if (bdup) {	
 		free(bdup);
 	}
+
+	free(my_body);
 
 	apr_queue_push(handle->queue, msg);
 	msg = NULL;

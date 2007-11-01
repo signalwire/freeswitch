@@ -1122,7 +1122,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	switch_channel_t *channel = NULL;
 	private_object_t *tech_pvt = NULL;
 	const char *replaces_str = NULL;
-	char *uuid;
+	const char *uuid;
 	switch_core_session_t *other_session = NULL;
 	switch_channel_t *other_channel = NULL;
 	char st[80] = "";
@@ -1163,7 +1163,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	
 
 	if (channel && (status == 180 || status == 183) && switch_channel_test_flag(channel, CF_OUTBOUND)) {
-		char *val;
+		const char *val;
 		if ((val = switch_channel_get_variable(channel, "sip_auto_answer")) && switch_true(val)) {
 			nua_notify(nh, NUTAG_NEWSUB(1), NUTAG_SUBSTATE(nua_substate_active), SIPTAG_EVENT_STR("talk"), TAG_END());
 		}
@@ -1276,7 +1276,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 								}
 								
 								if ((b_private = nua_handle_magic(bnh))) {
-									char *br_b = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
+									const char *br_b = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
 									char *br_a = b_private->uuid;
 									
 									if (br_b) {
@@ -1544,7 +1544,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 			char *rep;
 
 			if ((rep = strchr(refer_to->r_url->url_headers, '='))) {
-				char *br_a = NULL, *br_b = NULL;
+				const char *br_a = NULL, *br_b = NULL;
 				char *buf;
 
 				rep++;
@@ -1597,7 +1597,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 							} else {
 								switch_core_session_t *t_session;
 								switch_channel_t *hup_channel;
-								char *ext;
+								const char *ext;
 
 								if (br_a && !br_b) {
 									t_session = switch_core_session_locate(br_a);
@@ -1691,7 +1691,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 	if (exten) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
-		char *br;
+		const char *br;
 
 		if ((br = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 			switch_core_session_t *b_session;
@@ -2040,7 +2040,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	}
 
 	if (sip->sip_to && sip->sip_to->a_url) {
-		char *val;
+		const char *val;
 		char *transport = (my_addrinfo->ai_socktype == SOCK_STREAM) ? "tcp" : "udp";
 		
 		url_set_chanvars(session, sip->sip_to->a_url, sip_to);

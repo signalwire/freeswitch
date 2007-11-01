@@ -38,7 +38,7 @@
 switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt);
 switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int force);
 
-void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t port, char *sr, int force)
+void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32_t port, const char *sr, int force)
 {
 	char buf[2048];
 	int ptime = 0;
@@ -256,8 +256,8 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, char *ip, uint32_t por
 
 void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 {
-	char *abs, *codec_string = NULL;
-	char *ocodec = NULL;
+	const char *abs, *codec_string = NULL;
+	const char *ocodec = NULL;
 
 	if (switch_channel_test_flag(tech_pvt->channel, CF_BYPASS_MEDIA)) {
 		goto end;
@@ -466,13 +466,13 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	char *rpid = NULL;
 	char *alert_info = NULL;
 	char *max_forwards = NULL;
-	char *alertbuf;
-	char *forwardbuf;
+	const char *alertbuf;
+	const char *forwardbuf;
 	int forwardval;
 	private_object_t *tech_pvt;
 	switch_channel_t *channel = NULL;
 	switch_caller_profile_t *caller_profile;
-	char *cid_name, *cid_num;
+	const char *cid_name, *cid_num;
 	char *e_dest = NULL;
 	const char *holdstr = "";
 	switch_stream_handle_t stream = { 0 };
@@ -480,8 +480,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	char *extra_headers = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	uint32_t session_timeout = 0;
-	char *val;
-	char *rep;
+	const char *val;
+	const char *rep;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -495,8 +495,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	caller_profile = switch_channel_get_caller_profile(channel);
 
-	cid_name = (char *) caller_profile->caller_id_name;
-	cid_num = (char *) caller_profile->caller_id_number;
+	cid_name = caller_profile->caller_id_name;
+	cid_num = caller_profile->caller_id_number;
 	sofia_glue_tech_prepare_codecs(tech_pvt);
 
 	if (!tech_pvt->from_str) {
@@ -550,7 +550,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		char *d_url = NULL, *url = NULL;
 		sofia_private_t *sofia_private;
 		char *invite_contact = NULL, *to_str, *use_from_str, *from_str, *url_str;
-		char *transport = "udp", *t_var, *d_contact = NULL;
+		const char *transport = "udp", *t_var;
+		char *d_contact = NULL;
 
 		if (switch_strlen_zero(tech_pvt->dest)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "URL Error! [%s]\n", tech_pvt->dest);
@@ -723,7 +724,7 @@ void sofia_glue_do_xfer_invite(switch_core_session_t *session)
 														  (char *) caller_profile->caller_id_number,
 														  tech_pvt->profile->extsipip ? tech_pvt->profile->extsipip : tech_pvt->profile->sipip))) {
 
-		char *rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
+		const char *rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
 
 		tech_pvt->nh2 = nua_handle(tech_pvt->profile->nua, NULL,
 								   SIPTAG_TO_STR(tech_pvt->dest), SIPTAG_FROM_STR(tech_pvt->from_str), SIPTAG_CONTACT_STR(tech_pvt->profile->url),
@@ -744,8 +745,7 @@ void sofia_glue_do_xfer_invite(switch_core_session_t *session)
 
 void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt)
 {
-	char *sdp_str;
-
+	const char *sdp_str;
 
 	if ((sdp_str = switch_channel_get_variable(tech_pvt->channel, SWITCH_B_SDP_VARIABLE))) {
 		sdp_parser_t *parser;
@@ -933,7 +933,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 {
 	int bw, ms;
 	const char *err = NULL;
-	char *val = NULL;
+	const char *val = NULL;
 	switch_rtp_flag_t flags;
 	switch_status_t status;
 	char tmp[50];
@@ -1129,7 +1129,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, char *r_sdp)
+switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, const char *r_sdp)
 {
 	sdp_parser_t *parser = NULL;
 	sdp_session_t *sdp;
@@ -1182,7 +1182,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 	int sendonly = 0;
 	int greedy = 0, x = 0, skip = 0, mine = 0;
 	switch_channel_t *channel = NULL;
-	char *val;
+	const char *val;
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
@@ -1225,7 +1225,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 
 	if (sendonly) {
 		if (!switch_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
-			char *stream;
+			const char *stream;
 			switch_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 			if (tech_pvt->max_missed_packets) {
 				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets * 10);
@@ -1557,7 +1557,7 @@ switch_call_cause_t sofia_glue_sip_cause_to_freeswitch(int status)
 
 void sofia_glue_pass_sdp(private_object_t *tech_pvt, char *sdp)
 {
-	char *val;
+	const char *val;
 	switch_core_session_t *other_session;
 	switch_channel_t *other_channel;
 

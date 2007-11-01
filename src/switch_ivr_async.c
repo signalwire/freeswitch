@@ -163,7 +163,7 @@ static switch_bool_t displace_callback(switch_media_bug_t *bug, void *user_data,
 	return SWITCH_TRUE;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_stop_displace_session(switch_core_session_t *session, char *file)
+SWITCH_DECLARE(switch_status_t) switch_ivr_stop_displace_session(switch_core_session_t *session, const char *file)
 {
 	switch_media_bug_t *bug;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -277,7 +277,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 	return SWITCH_TRUE;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_stop_record_session(switch_core_session_t *session, char *file)
+SWITCH_DECLARE(switch_status_t) switch_ivr_stop_record_session(switch_core_session_t *session, const char *file)
 {
 	switch_media_bug_t *bug;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -297,7 +297,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 {
 	switch_channel_t *channel;
 	switch_codec_t *read_codec;
-	char *p;
+	const char *p;
 	const char *vval;
 	switch_media_bug_t *bug;
 	switch_status_t status;
@@ -1071,7 +1071,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 	switch_status_t status;
 	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
 	struct speech_thread_handle *sth;
-	char *val;
+	const char *val;
 
 	if (!ah) {
 		if (!(ah = switch_core_session_alloc(session, sizeof(*ah)))) {
@@ -1145,7 +1145,7 @@ SWITCH_STANDARD_SCHED_FUNC(sch_hangup_callback)
 {
 	struct hangup_helper *helper;
 	switch_core_session_t *session, *other_session;
-	char *other_uuid;
+	const char *other_uuid;
 
 	assert(task);
 
@@ -1170,7 +1170,7 @@ SWITCH_STANDARD_SCHED_FUNC(sch_hangup_callback)
 	}
 }
 
-SWITCH_DECLARE(uint32_t) switch_ivr_schedule_hangup(time_t runtime, char *uuid, switch_call_cause_t cause, switch_bool_t bleg)
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_hangup(time_t runtime, const char *uuid, switch_call_cause_t cause, switch_bool_t bleg)
 {
 	struct hangup_helper *helper;
 	size_t len = sizeof(*helper);
@@ -1207,7 +1207,7 @@ SWITCH_STANDARD_SCHED_FUNC(sch_transfer_callback)
 
 }
 
-SWITCH_DECLARE(uint32_t) switch_ivr_schedule_transfer(time_t runtime, char *uuid, char *extension, char *dialplan, char *context)
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_transfer(time_t runtime, const char *uuid, char *extension, char *dialplan, char *context)
 {
 	struct transfer_helper *helper;
 	size_t len = sizeof(*helper);
@@ -1283,14 +1283,14 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, char *uui
 	return switch_scheduler_add_task(runtime, sch_broadcast_callback, (char *) __SWITCH_FUNC__, uuid, 0, helper, SSHF_FREE_ARG);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, switch_media_flag_t flags)
+SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const char *path, switch_media_flag_t flags)
 {
 	switch_channel_t *channel;
 	int nomedia;
 	switch_core_session_t *session, *master;
 	switch_event_t *event;
 	switch_core_session_t *other_session = NULL;
-	char *other_uuid = NULL;
+	const char *other_uuid = NULL;
 	char *app = "playback";
 
 	assert(path);

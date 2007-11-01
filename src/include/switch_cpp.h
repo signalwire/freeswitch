@@ -121,7 +121,7 @@ class CoreSession {
 	int preAnswer();
 	virtual void hangup(char *cause);
 	void setVariable(char *var, char *val);
-	char *getVariable(char *var);
+	const char *getVariable(char *var);
 
 
 	/** \brief Record to a file

@@ -1070,8 +1070,8 @@ typedef struct switch_core_port_allocator switch_core_port_allocator_t;
 typedef struct switch_media_bug switch_media_bug_t;
 typedef switch_bool_t (*switch_media_bug_callback_t) (switch_media_bug_t *, void *, switch_abc_type_t);
 
-typedef void (*switch_application_function_t) (switch_core_session_t *, char *);
-#define SWITCH_STANDARD_APP(name) static void name (switch_core_session_t *session, char *data)
+typedef void (*switch_application_function_t) (switch_core_session_t *, const char *);
+#define SWITCH_STANDARD_APP(name) static void name (switch_core_session_t *session, const char *data)
 
 typedef void (*switch_event_callback_t) (switch_event_t *);
 typedef switch_caller_extension_t *(*switch_dialplan_hunt_function_t) (switch_core_session_t *, void *, switch_caller_profile_t *);

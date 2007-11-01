@@ -237,10 +237,10 @@ static int teletone_handler(teletone_generation_session_t * ts, teletone_tone_ma
 SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *session,
 													 switch_core_session_t **bleg,
 													 switch_call_cause_t *cause,
-													 char *bridgeto,
+													 const char *bridgeto,
 													 uint32_t timelimit_sec,
 													 const switch_state_handler_table_t *table,
-													 char *cid_name_override, char *cid_num_override, switch_caller_profile_t *caller_profile_override)
+													 const char *cid_name_override, const char *cid_num_override, switch_caller_profile_t *caller_profile_override)
 {
 	char *pipe_names[MAX_PEERS] = { 0 };
 	char *data = NULL;
@@ -263,7 +263,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	char key[80] = SWITCH_BLANK_STRING, file[512] = SWITCH_BLANK_STRING, *odata, *var;
 	switch_call_cause_t reason = SWITCH_CAUSE_UNALLOCATED;
 	uint8_t to = 0;
-	char *var_val, *vars = NULL, *ringback_data = NULL;
+	char *var_val, *vars = NULL;
+	const char *ringback_data = NULL;
 	switch_codec_t *read_codec = NULL;
 	uint8_t sent_ring = 0, early_ok = 1;
 	switch_core_session_message_t *message = NULL;

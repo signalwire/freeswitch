@@ -65,7 +65,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	char *xml_text = NULL;
 	char *path = NULL;
 	char *curl_xml_text = NULL;
-	char *logdir = NULL;
+	const char *logdir = NULL;
 	char *xml_text_escaped = NULL;
 	int fd = -1;
 	uint32_t cur_try;

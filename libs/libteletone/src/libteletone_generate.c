@@ -314,7 +314,7 @@ static char *my_strdup (const char *s)
 	return (char *) memcpy (new, s, len);
 }
 
-int teletone_run(teletone_generation_session_t *ts, char *cmd)
+int teletone_run(teletone_generation_session_t *ts, const char *cmd)
 {
 	char *data = NULL, *cur = NULL, *end = NULL;
 	int var = 0, LOOPING = 0;

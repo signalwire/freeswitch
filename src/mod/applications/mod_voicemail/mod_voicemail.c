@@ -872,7 +872,7 @@ static int listen_callback(void *pArg, int argc, char **argv, char **columnNames
 }
 
 
-static void message_count(vm_profile_t *profile, char *myid, char *domain_name, char *myfolder, 
+static void message_count(vm_profile_t *profile, const char *myid, const char *domain_name, char *myfolder, 
                           int *total_new_messages, int *total_saved_messages, int *total_new_urgent_messages, int *total_saved_urgent_messages)
 {
     char msg_count[80] = "";
@@ -1083,7 +1083,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
     return status;
 }
 
-static void voicemail_check_main(switch_core_session_t *session, char *profile_name, char *domain_name, char *id, int auth)
+static void voicemail_check_main(switch_core_session_t *session, const char *profile_name, const char *domain_name, const char *id, int auth)
 {
     vm_check_state_t vm_check_state = VM_CHECK_START;
     switch_channel_t *channel;
@@ -1091,8 +1091,8 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
     vm_profile_t *profile;
     switch_xml_t x_domain, x_domain_root, x_user, x_params, x_param;
     switch_status_t status;
-    char pass_buf[80] = "", *mypass = NULL, id_buf[80] = "", *myid = id, *myfolder = NULL;
-    const char *thepass = NULL;
+    char pass_buf[80] = "", *mypass = NULL, id_buf[80] = "", *myfolder = NULL;
+    const char *thepass = NULL, *myid = id;
     char term = 0;
     uint32_t timeout, attempts = 0;
     int failed = 0;
@@ -1522,7 +1522,7 @@ static void voicemail_check_main(switch_core_session_t *session, char *profile_n
 }
     
 
-static switch_status_t voicemail_leave_main(switch_core_session_t *session, char *profile_name, char *domain_name, char *id)
+static switch_status_t voicemail_leave_main(switch_core_session_t *session, const char *profile_name, const char *domain_name, const char *id)
 {
     switch_channel_t *channel;
     char *myfolder = "inbox";
@@ -1544,7 +1544,8 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, char
     int email_attach = 1;
     int email_delete = 1;
     char buf[2];
-    char *greet_path = NULL, *voicemail_greeting_number = NULL;
+    char *greet_path = NULL;
+	const char *voicemail_greeting_number = NULL;
 
     memset(&cbt, 0, sizeof(cbt));
     if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
@@ -1833,10 +1834,10 @@ SWITCH_STANDARD_APP(voicemail_function)
 	int argc = 0;
 	char *argv[6] = { 0 };
 	char *mydata = NULL;
-    char *profile_name = NULL;
-    char *domain_name = NULL;
-    char *id = NULL;
-    char *auth_var = NULL;
+    const char *profile_name = NULL;
+    const char *domain_name = NULL;
+    const char *id = NULL;
+    const char *auth_var = NULL;
     int x = 0, check = 0, auth = 0;
     switch_channel_t *channel;
 

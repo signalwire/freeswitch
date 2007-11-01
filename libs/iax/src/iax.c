@@ -1691,7 +1691,7 @@ int iax_auth_registration(struct iax_session *session)
 	return send_command_final(session, AST_FRAME_IAX, IAX_COMMAND_REGAUTH, 0, NULL, 0, -1);
 }
 
-int iax_reject(struct iax_session *session, char *reason)
+int iax_reject(struct iax_session *session, const char *reason)
 {
 	struct iax_ie_data ied;
 	memset(&ied, 0, sizeof(ied));
@@ -1986,7 +1986,7 @@ void iax_set_samplerate(struct iax_session *session, unsigned short samplemask)
 }
 
 
-int iax_call(struct iax_session *session, char *cidnum, char *cidname, char *ich, char *lang, int wait, int formats, int capabilities)
+int iax_call(struct iax_session *session, const char *cidnum, const char *cidname, char *ich, char *lang, int wait, int formats, int capabilities)
 {
 	char tmp[256]="";
 	char *part1, *part2;
