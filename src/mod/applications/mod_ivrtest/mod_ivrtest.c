@@ -55,7 +55,7 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void disast_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(disast_function)
 {
 	void *x = NULL;
 	memset((void *) x, 0, 1000);
@@ -63,7 +63,7 @@ static void disast_function(switch_core_session_t *session, char *data)
 }
 
 
-static void xml_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(xml_function)
 {
 	switch_xml_t f1 = switch_xml_parse_file("/root/formula1.xml"), team, driver;
 	const char *teamname;
@@ -79,7 +79,7 @@ static void xml_function(switch_core_session_t *session, char *data)
 }
 
 
-static void ivr_application_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(ivr_application_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *params = switch_core_session_strdup(session, data);
@@ -127,7 +127,7 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 	}
 }
 
-static void dirtest_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(dirtest_function)
 {
 	char *var, *val;
 	switch_channel_t *channel;
@@ -173,7 +173,7 @@ static switch_status_t show_dtmf(switch_core_session_t *session, void *input, sw
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void tts_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(tts_function)
 {
 	switch_channel_t *channel;
 	switch_codec_t *codec;
@@ -230,7 +230,7 @@ static switch_bool_t bug_callback(switch_media_bug_t *bug, void *user_data, swit
 }
 #endif
 
-static void bugtest_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(bugtest_function)
 {
 #ifdef BUGTEST
 	switch_media_bug_t *bug;
@@ -250,13 +250,13 @@ static void bugtest_function(switch_core_session_t *session, char *data)
 }
 
 #if 1
-static void asrtest_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(asrtest_function)
 {
 	switch_ivr_detect_speech(session, "lumenvox", "demo", data, "127.0.0.1", NULL);
 }
 
 #else
-static void asrtest_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(asrtest_function)
 {
 	switch_asr_handle_t ah = { 0 };
 	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
@@ -359,7 +359,7 @@ static void asrtest_function(switch_core_session_t *session, char *data)
 
 #endif
 
-static void ivrtest_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(ivrtest_function)
 {
 	switch_channel_t *channel;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
