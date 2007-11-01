@@ -1262,7 +1262,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
                 sql = switch_mprintf("select count(*) from voicemail_prefs where user='%q' and domain = '%q'", myid, domain_name);
                 vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &cbt);
                 switch_safe_free(sql);
-                if (switch_strlen_zero(msg_count) || !atoi(msg_count)) {
+				if (*msg_count == '\0' || !atoi(msg_count)) {
                     sql = switch_mprintf("insert into voicemail_prefs values('%q','%q','','')", myid, domain_name);
                     vm_execute_sql(profile, sql, profile->mutex);
                     switch_safe_free(sql);
@@ -1395,7 +1395,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
                         goto end;
                     }
 
-                    if (switch_strlen_zero(id_buf)) {
+                    if (*id_buf == '\0') {
                         continue;
                     } else {
                         myid = id_buf;
@@ -1432,7 +1432,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
                         if (status != SWITCH_STATUS_SUCCESS) {
                             goto end;
                         }
-                        if (switch_strlen_zero(pass_buf)) {
+                        if (*pass_buf == '\0') {
                             continue;
                         } else {
                             mypass = pass_buf;
@@ -1656,13 +1656,13 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
             memset(buf, 0, sizeof(buf));
             TRY_CODE(switch_ivr_play_file(session, NULL, cbt.name_path, &args));
         }
-        if (switch_strlen_zero(buf)) {
+        if (*buf == '\0') {
             memset(buf, 0, sizeof(buf));
             TRY_CODE(switch_ivr_phrase_macro(session, VM_PLAY_GREETING_MACRO, id, NULL, &args));
         }
     }
 
-    if (!switch_strlen_zero(buf)) {
+    if (*buf != '\0') {
         if (!strcasecmp(buf, profile->main_menu_key)) {
             voicemail_check_main(session, profile_name, domain_name, id, 0);
         } else {

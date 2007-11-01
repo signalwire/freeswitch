@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
+ * Bret McDanel <trixter AT 0xdecafbad.com>
  *
  *
  * mod_rss.c -- RSS Browser
@@ -323,7 +324,7 @@ SWITCH_STANDARD_APP(rss_function)
 				goto finished;
 			}
 		}
-		if (!switch_strlen_zero(cmd)) {
+		if (*cmd != '\0') {
 			int32_t i;
 			char *p;
 
@@ -482,7 +483,7 @@ SWITCH_STANDARD_APP(rss_function)
 			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 				goto finished;
 			}
-			if (!switch_strlen_zero(cmd)) {
+			if (*cmd != '\0') {
 				switch (*cmd) {
 				case '0':
 					switch_set_flag(&dtb, SFLAG_INSTRUCT);
