@@ -159,7 +159,7 @@ bool FSOpalManager::initialize(
     ///TODO m_pH323Endpoint->SetVendorIdentifierInfo()
     
     ///TODO address should be configurable, should allow creaeing listeners on multiple interfaces
-    OpalTransportAddress opalTransportAddress("localhost",1720); //for time being create listener on all ip's and default port
+    OpalTransportAddress opalTransportAddress("192.168.0.1",1720); //for time being create listener on all ip's and default port
     if(!m_pH323Endpoint->StartListeners(opalTransportAddress))
     {
         assert(0);
@@ -173,8 +173,6 @@ bool FSOpalManager::initialize(
     m_isInitialized = true;
     return true;
 }
-
-
 
 switch_core_session_t* FSOpalManager::getSessionToken(const PString &i_token)
 {
@@ -195,6 +193,18 @@ void FSOpalManager::deleteSessionToken(const PString &i_token)
     assert(m_pSessionsHashTable);
     assert(m_pSessionsHashTableMutex);
     switch_core_hash_delete_locked(m_pSessionsHashTable,(const char*)i_token,m_pSessionsHashTableMutex);
+}
+
+switch_call_cause_t FSOpalManager::causeH323ToOpal(OpalConnection::CallEndReason i_cause)
+{
+    //TODO -> fill all causes
+    return SWITCH_CAUSE_NORMAL_CLEARING;
+}
+
+OpalConnection::CallEndReason FSOpalManager::causeOpalToH323(switch_call_cause_t i_cause)
+{
+    //TODO -> fill all causes
+    return OpalConnection::EndedByLocalUser;
 }
 
 
@@ -259,11 +269,11 @@ BOOL FSOpalManager::OnIncomingConnection(
     /** Create calling side profile */
     tech_pvt->m_callerProfile = switch_caller_profile_new(
             switch_core_session_get_pool(session),
-            (const char*)connection.GetRemotePartyName(),               /**  username */
+            (const char*)connection.GetRemotePartyName(),   /**  username */
             "default",                                      /** TODO -> this should be configurable by core */
-            (const char*)connection.GetRemotePartyName(),               /** caller_id_name */
-            (const char*)connection.GetRemotePartyNumber(),             /** caller_id_number */
-            (const char*)connection.GetRemotePartyAddress(),            /** network addr */
+            (const char*)connection.GetRemotePartyName(),   /** caller_id_name */
+            (const char*)connection.GetRemotePartyNumber(), /** caller_id_number */
+            (const char*)connection.GetRemotePartyAddress(),/** network addr */
             NULL,                                           /** ANI */
             NULL,                                           /** ANI II */
             NULL,                                           /** RDNIS */
@@ -292,7 +302,7 @@ BOOL FSOpalManager::OnIncomingConnection(
     
           
     /***Mark incoming call as AnsweredPending ??? */
-    
+   
 
     /** lunch thread */       
     if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) 
@@ -312,8 +322,18 @@ BOOL FSOpalManager::OnIncomingConnection(
     return TRUE;
     
 }
- 
 
+OpalConnection::AnswerCallResponse FSOpalManager::OnAnswerCall(
+            OpalConnection &connection,
+            const PString &caller)
+{
+    switch_core_session_t *session = getSessionToken((const char*)connection.GetToken());
+    if(session==NULL)   /* that can mean that session has been already destroyed by core and we should release it */
+    {
+        return OpalConnection::AnswerCallDenied;
+    }
+    return OpalConnection::AnswerCallDeferred;  //don't send alerting signal yet        
+}
 
 
 
@@ -326,6 +346,22 @@ BOOL FSOpalManager::OnIncomingConnection(
 switch_status_t FSOpalManager::callback_on_init(switch_core_session_t *io_session)
 {
     assert(m_isInitialized);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"callback_on_init\n");
+    
+    OpalH323Private_t* tech_prv = (OpalH323Private_t*)switch_core_session_get_private(io_session);
+    
+    if(tech_prv==NULL)
+    {
+        assert(0);
+        return SWITCH_STATUS_NOTFOUND;        
+    }
+      
+    SLock(tech_prv->m_mutex); /* lock channel */    
+    switch_channel_t *channel = switch_core_session_get_channel(io_session);
+    assert(channel);    
+    /* Move Channel's State Machine to RING */
+    switch_channel_set_state(channel, CS_RING);            
+    
     return SWITCH_STATUS_SUCCESS;
 }
 
@@ -336,6 +372,7 @@ switch_status_t FSOpalManager::callback_on_init(switch_core_session_t *io_sessio
 switch_status_t FSOpalManager::callback_on_ring(switch_core_session_t *io_session)
 {
     assert(m_isInitialized);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"callback_on_ring\n");
     return SWITCH_STATUS_SUCCESS;
 }
 
@@ -346,6 +383,7 @@ switch_status_t FSOpalManager::callback_on_ring(switch_core_session_t *io_sessio
 switch_status_t FSOpalManager::callback_on_execute(switch_core_session_t *io_session)
 {
     assert(m_isInitialized);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"callback_on_execute\n");
     return SWITCH_STATUS_SUCCESS;
 }
 
@@ -356,6 +394,20 @@ switch_status_t FSOpalManager::callback_on_execute(switch_core_session_t *io_ses
 switch_status_t FSOpalManager::callback_on_hangup(switch_core_session_t *io_session)
 {
     assert(m_isInitialized);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"callback_on_hangup\n");
+    
+    OpalH323Private_t* tech_prv = (OpalH323Private_t*)switch_core_session_get_private(io_session);                 
+    switch_mutex_lock(tech_prv->m_mutex); /* lock channel */    
+    deleteSessionToken(tech_prv->m_opalConnection->GetToken()); //delete this connection form connection pool
+    switch_channel_t *channel = switch_core_session_get_channel(io_session);    
+    if(tech_prv->m_opalConnection)
+    {
+        //switch_call_cause_t cause = switch_channel_get_cause(channel);    
+        tech_prv->m_opalConnection->Release(); ///TODO add cause    
+    }
+    switch_mutex_unlock(tech_prv->m_mutex);
+    OpalH323Private_Delete(tech_prv);
+          
     return SWITCH_STATUS_SUCCESS;
 }
 
@@ -367,6 +419,7 @@ switch_status_t FSOpalManager::callback_on_hangup(switch_core_session_t *io_sess
 switch_status_t FSOpalManager::callback_on_loopback(switch_core_session_t *io_session)
 {
     assert(m_isInitialized);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"callback_on_loopback\n");
     return SWITCH_STATUS_SUCCESS;
 }
 
@@ -377,48 +430,56 @@ switch_status_t FSOpalManager::callback_on_loopback(switch_core_session_t *io_se
 switch_status_t FSOpalManager::callback_on_transmit(switch_core_session_t *io_session)
 {
     assert(m_isInitialized);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"callback_on_transmit\n");
     return SWITCH_STATUS_SUCCESS;
 }
 
 switch_call_cause_t FSOpalManager::io_outgoing_channel(switch_core_session_t *i_session, switch_caller_profile_t *i_profile, switch_core_session_t **o_newSession, switch_memory_pool_t **o_memPool)
 {
     assert(m_isInitialized);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"io_outgoing_channel\n");
     return SWITCH_CAUSE_SUCCESS;
 }
 
 switch_status_t FSOpalManager::io_read_frame(switch_core_session_t *i_session, switch_frame_t **o_frame, int i_timout, switch_io_flag_t i_flag, int i_streamId)
 {
     assert(m_isInitialized);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"io_read_frame\n");
     return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status_t FSOpalManager::io_write_frame(switch_core_session_t *i_session, switch_frame_t *i_frame, int i_timeout, switch_io_flag_t i_flag, int i_streamId)
 {
     assert(m_isInitialized);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"io_write_frame\n");
     return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status_t FSOpalManager::io_kill_channel(switch_core_session_t *i_session, int sig)
 {
     assert(m_isInitialized);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"io_kill_channel\n");
     return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status_t FSOpalManager::io_waitfor_read(switch_core_session_t *i_session, int i_ms, int i_streamId)
 {
     assert(m_isInitialized);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"io_waitfor_read\n");
     return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status_t FSOpalManager::io_waitfor_write(switch_core_session_t *i_session, int i_ms, int i_streamId)
 {
     assert(m_isInitialized);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"io_waitfor_write\n");
     return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status_t FSOpalManager::io_send_dtmf(switch_core_session_t *i_session, char *i_dtmf)
 {
     assert(m_isInitialized);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"io_send_dtmf\n");
     return SWITCH_STATUS_SUCCESS;
 }
 
@@ -483,7 +544,9 @@ switch_status_t FSOpalManager::io_receive_message(switch_core_session_t *i_sessi
     break;        
     case SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT:
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT\n");
-    break;        
+    break;  
+    default:
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"SWITCH_MESSAGE_???\n");            
     }
     
     switch_mutex_unlock(tech_prv->m_mutex);
@@ -491,25 +554,29 @@ switch_status_t FSOpalManager::io_receive_message(switch_core_session_t *i_sessi
 }
 
 switch_status_t FSOpalManager::io_receive_event(switch_core_session_t *i_session, switch_event_t *i_event)
-{
+{    
     assert(m_isInitialized);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"io_receive_event\n");
     return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status_t FSOpalManager::io_state_change(switch_core_session_t *)
 {
     assert(m_isInitialized);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"io_state_change\n");
     return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status_t FSOpalManager::io_read_video_frame(switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int)
 {
     assert(m_isInitialized);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"io_read_video_frame\n");
     return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status_t FSOpalManager::io_write_video_frame(switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int)
 {
     assert(m_isInitialized);
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"io_write_video_frame\n");
     return SWITCH_STATUS_SUCCESS;
 }

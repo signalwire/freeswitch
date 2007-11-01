@@ -36,6 +36,35 @@
 #include <opal/manager.h>
 #include <h323/h323ep.h>
 
+
+
+
+/** 
+ * Helper class for mutex use
+ *
+ **/
+class SLock
+{
+public:
+    
+    SLock(switch_mutex_t* i_mutex) :
+        m_mutex(NULL)
+    {
+        assert(i_mutex);
+        m_mutex = i_mutex;
+        switch_mutex_lock(m_mutex);
+    }
+    
+    ~SLock()
+    {
+        switch_mutex_unlock(m_mutex);
+    }
+    
+private:
+    switch_mutex_t* m_mutex;
+    
+};
+
 /** This class is OpalManager implementation
  *  for FreeSWITCH OpalH323 module.
  *  All methods are inherited from base OpalManagerClass.
@@ -94,6 +123,13 @@ public:
     switch_status_t io_read_video_frame(switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
     switch_status_t io_write_video_frame(switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int);
     
+    
+    /**
+     * Following OnIncomingConnection functions 
+     * have been overriden for serving
+     * connections comming from H323 network
+     * They are called on receiving SETUP
+     */
     virtual BOOL OnIncomingConnection(
         OpalConnection & connection,   ///<  Connection that is calling
         unsigned options,              ///<  options for new connection (can't use default as overrides will fail)
@@ -107,6 +143,16 @@ public:
     virtual BOOL OnIncomingConnection(
         OpalConnection & connection   ///<  Connection that is calling
         );
+    
+    /**
+     * OnAnswerCall function is overriden for 
+     * serving a situation where H323 driver has send 
+     * CALL PROCEEDING message
+     */
+    virtual OpalConnection::AnswerCallResponse OnAnswerCall(
+            OpalConnection &connection,
+            const PString &caller);
+    
         
         
     
@@ -115,6 +161,9 @@ private:
     void                   saveSessionToken(const PString &i_token,switch_core_session_t* i_session);
     switch_core_session_t* getSessionToken(const PString &i_token);
     void                   deleteSessionToken(const PString &i_token);
+    
+    switch_call_cause_t             causeH323ToOpal(OpalConnection::CallEndReason i_cause);
+    OpalConnection::CallEndReason   causeOpalToH323(switch_call_cause_t i_cause);
     
     
     const char                          *m_pModuleName;             /* name of this module */
