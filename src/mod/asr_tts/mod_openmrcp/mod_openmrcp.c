@@ -231,7 +231,7 @@ static mrcp_status_t openmrcp_on_channel_modify(mrcp_client_context_t *context, 
 
 /** Read in the grammar and construct an MRCP Recognize message that has
     The grammar attached as the payload */
-static mrcp_status_t openmrcp_recog_start(mrcp_client_context_t *context, openmrcp_session_t *asr_session, char *path)
+static mrcp_status_t openmrcp_recog_start(mrcp_client_context_t *context, openmrcp_session_t *asr_session, const char *path)
 {
 	mrcp_generic_header_t *generic_header;
 	apr_status_t rv;
@@ -284,7 +284,11 @@ static mrcp_status_t openmrcp_recog_start(mrcp_client_context_t *context, openmr
  * This code expects certain one-time initialization of the openmrcp client
  * engine/systeme to have already taken place.function to open the asr interface 
  */
-static switch_status_t openmrcp_asr_open(switch_asr_handle_t *ah, char *codec, int rate, char *dest, switch_asr_flag_t *flags) 
+static switch_status_t openmrcp_asr_open(switch_asr_handle_t *ah,
+										 const char *codec,
+										 int rate,
+										 const char *dest,
+										 switch_asr_flag_t *flags) 
 {
 	openmrcp_session_t *asr_session;
 	mrcp_client_channel_t *asr_channel;
@@ -345,7 +349,7 @@ static switch_status_t openmrcp_asr_open(switch_asr_handle_t *ah, char *codec, i
 }
 
 /* function to load a grammar to the asr interface */
-static switch_status_t openmrcp_asr_load_grammar(switch_asr_handle_t *ah, char *grammar, char *path)
+static switch_status_t openmrcp_asr_load_grammar(switch_asr_handle_t *ah, const char *grammar, const char *path)
 {
 	/** Read grammar from path and create and send and MRCP RECOGNIZE msg
 	    that has the grammar attached to body.   
@@ -424,7 +428,7 @@ static switch_status_t openmrcp_asr_resume(switch_asr_handle_t *ah)
 
 
 /*! function to unload a grammar to the asr interface */
-static switch_status_t openmrcp_asr_unload_grammar(switch_asr_handle_t *ah, char *grammar)
+static switch_status_t openmrcp_asr_unload_grammar(switch_asr_handle_t *ah, const char *grammar)
 {
 
 	return SWITCH_STATUS_SUCCESS;
