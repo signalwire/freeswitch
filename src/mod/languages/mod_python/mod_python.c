@@ -198,7 +198,7 @@ static void eval_some_python(char *uuid, char *args, switch_core_session_t *sess
 
 }
 
-static void python_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(python_function)
 {
 	eval_some_python(switch_core_session_get_uuid(session), (char *)data, session);
 	
