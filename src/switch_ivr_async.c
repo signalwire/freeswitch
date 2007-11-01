@@ -1233,23 +1233,24 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_transfer(time_t runtime, const char
 
 	switch_copy_string(helper->uuid_str, uuid, sizeof(helper->uuid_str));
 
-	cur = (char *) helper + sizeof(*helper);
+	cur = (char *) helper;
+	cur += sizeof(*helper);
 
 	if (extension) {
+		switch_copy_string(cur, extension, strlen(extension) + 1);
 		helper->extension = cur;
-		switch_copy_string(helper->extension, extension, strlen(extension) + 1);
 		cur += strlen(helper->extension) + 1;
 	}
 
 	if (dialplan) {
+		switch_copy_string(cur, dialplan, strlen(dialplan) + 1);
 		helper->dialplan = cur;
-		switch_copy_string(helper->dialplan, dialplan, strlen(dialplan) + 1);
 		cur += strlen(helper->dialplan) + 1;
 	}
 
 	if (context) {
+		switch_copy_string(cur, context, strlen(context) + 1);
 		helper->context = cur;
-		switch_copy_string(helper->context, context, strlen(context) + 1);
 	}
 
 	return switch_scheduler_add_task(runtime, sch_transfer_callback, (char *) __SWITCH_FUNC__, uuid, 0, helper, SSHF_FREE_ARG);
@@ -1275,14 +1276,17 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, char *uui
 {
 	struct broadcast_helper *helper;
 	size_t len = sizeof(*helper) + strlen(path) + 1;
+	char *cur = NULL;
 
 	switch_zmalloc(helper, len);
-
+	
+	cur = (char *) helper;
+	cur += sizeof(*helper);
 	switch_copy_string(helper->uuid_str, uuid, sizeof(helper->uuid_str));
 	helper->flags = flags;
-	helper->path = (char *) helper + sizeof(*helper);
-	switch_copy_string(helper->path, path, len - sizeof(helper));
-
+	
+	switch_copy_string(cur, path, len - sizeof(helper));
+	helper->path = cur;
 
 	return switch_scheduler_add_task(runtime, sch_broadcast_callback, (char *) __SWITCH_FUNC__, uuid, 0, helper, SSHF_FREE_ARG);
 }
