@@ -38,23 +38,10 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_skel_load);
 SWITCH_MODULE_DEFINITION(mod_skel, mod_skel_load, NULL, NULL);
 
-static switch_loadable_module_interface_t skel_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL,
-	/*.api_interface */ NULL,
-	/*.file_interface */ NULL,
-	/*.speech_interface */ NULL,
-	/*.directory_interface */ NULL
-};
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_skel_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &skel_module_interface;
+    *module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hello World!\n");
 
