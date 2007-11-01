@@ -905,8 +905,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	switch_event_t *event;
 	switch_channel_t *channel;
 
-	if (switch_strlen_zero(arg)) {
-		arg = "_undef_";
+	if (!arg) {
+		arg = "";
 	}
 
 	log = switch_core_session_alloc(session, sizeof(*log));
