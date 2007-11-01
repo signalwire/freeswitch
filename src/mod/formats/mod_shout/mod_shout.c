@@ -532,7 +532,7 @@ static void launch_write_stream_thread(shout_context_t * context)
 	switch_thread_create(&thread, thd_attr, write_stream_thread, context, context->memory_pool);
 }
 
-static switch_status_t shout_file_open(switch_file_handle_t *handle, char *path)
+static switch_status_t shout_file_open(switch_file_handle_t *handle, const char *path)
 {
 	shout_context_t *context;
 	char *host, *file;

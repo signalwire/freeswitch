@@ -246,7 +246,7 @@ static switch_bool_t soundtouch_callback(switch_media_bug_t *bug, void *user_dat
 	return SWITCH_TRUE;
 }
 
-static void soundtouch_start_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(soundtouch_start_function)
 {
     switch_media_bug_t *bug;
     switch_status_t status;
