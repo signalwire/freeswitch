@@ -38,7 +38,7 @@
 #ifdef _MSC_VER /* compilers are stupid sometimes */
 #define TRY_CODE(code) for(;;) {status = code; if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) { goto end; } break;}
 #else
-#define TRY_CODE(code) do {status = code; if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) { goto end; } break;} while(status)
+#define TRY_CODE(code) do { status = code; if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) { goto end; } break;} while(status)
 #endif
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load);
@@ -78,7 +78,9 @@ struct vm_profile {
     char ff_key[2];
     char rew_key[2];
     char urgent_key[2];
+    char operator_key[2];
     char file_ext[10];
+    char *operator_ext;
     char *tone_spec;
     char *storage_dir;
     char *callback_dialplan;
@@ -284,6 +286,8 @@ static switch_status_t load_config(void)
         char *ff_key = "6";
         char *rew_key = "4";
         char *urgent_key = "*";
+        char *operator_key = "";
+        char *operator_ext = "";
         char *tone_spec = "%(1000, 0, 640)";
         char *file_ext = "wav";
         char *storage_dir = "";
@@ -368,6 +372,10 @@ static switch_status_t load_config(void)
                 rew_key = val;
             } else if (!strcasecmp(var, "urgent-key") && !switch_strlen_zero(val)) {
                 urgent_key = val;
+            } else if (!strcasecmp(var, "operator-key") && !switch_strlen_zero(val)) {
+                operator_key = val;
+            } else if (!strcasecmp(var, "operator-extension") && !switch_strlen_zero(val)) {
+                operator_ext = val;
             } else if (!strcasecmp(var, "storage-dir") && !switch_strlen_zero(val)) {
                 storage_dir = val;
             } else if (!strcasecmp(var, "callback-dialplan") && !switch_strlen_zero(val)) {
@@ -492,8 +500,10 @@ static switch_status_t load_config(void)
             *profile->ff_key = *ff_key;
             *profile->rew_key = *rew_key;
             *profile->urgent_key = *urgent_key;
+            *profile->operator_key = *operator_key;
 
 
+            profile->operator_ext = switch_core_strdup(globals.pool, operator_ext);
             profile->storage_dir = switch_core_strdup(globals.pool, storage_dir);
             profile->tone_spec = switch_core_strdup(globals.pool, tone_spec);
             profile->callback_dialplan = switch_core_strdup(globals.pool, callback_dialplan);
@@ -1665,6 +1675,20 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
     if (*buf != '\0') {
         if (!strcasecmp(buf, profile->main_menu_key)) {
             voicemail_check_main(session, profile_name, domain_name, id, 0);
+        } else if(!strcasecmp(buf, profile->operator_key) && !switch_strlen_zero(profile->operator_key)) {
+            int argc;
+            char *argv[4];
+            char *mycmd;
+
+            if (!switch_strlen_zero(profile->operator_ext) && (mycmd = switch_core_session_strdup(session, profile->operator_ext))) {
+                argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+                if(argc >= 1 && argc <= 4) {
+                    switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
+                    /* the application still runs after we leave it so we need to make sure that we dont do anything evil */
+                    send_mail=0;
+                    goto end;
+                }
+            }
         } else {
             goto greet;
         }

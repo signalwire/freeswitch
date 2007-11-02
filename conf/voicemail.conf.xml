@@ -29,6 +29,11 @@
       <param name="restart-key" value="1"/>
       <param name="ff-key" value="6"/>
       <param name="rew-key" value="4"/>
+      <!-- the next two both must be set for this to be enabled
+           the extension is in the format of <dest> [<dialplan>] [<context>]
+       -->
+      <param name="operator-extension" value="operator XML default"/>
+      <param name="operator-key" value="9"/>
       <email>
         <body><![CDATA[At ${voicemail_time} you were left a message from ${voicemail_caller_id_name} ${voicemail_caller_id_number}
 to your account ${voicemail_account}@${voicemail_domain}
