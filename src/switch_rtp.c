@@ -1611,11 +1611,10 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 			rtp_session->ts = (uint32_t) frame->timestamp;
 		} else if (rtp_session->timer.timer_interface) {
 			uint32_t sc = rtp_session->timer.samplecount;
-			if (rtp_session->last_write_ts == sc) {
-				rtp_session->ts = sc + rtp_session->samples_per_interval;
-			} else {
-				rtp_session->ts = sc;
+			if (sc <= rtp_session->last_write_ts) {
+				sc = rtp_session->last_write_ts + rtp_session->samples_per_interval;
 			}
+			rtp_session->ts = sc;
 		} else {
 			rtp_session->ts += rtp_session->samples_per_interval;
 		}
