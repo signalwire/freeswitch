@@ -39,6 +39,8 @@ typedef struct OpalH323Private_s
     OpalConnection          *m_opalConnection;   /** pointer to OpalConnection object */
     switch_mutex_t          *m_mutex;            /** mutex for synchonizing access to session object */
     switch_caller_profile_t *m_callerProfile;          /** caller profile */
+    switch_codec_t 			m_readcodec;   /* Read codec*/
+    switch_codec_t 			m_writecodec;  /* Write codec*/
     
 } OpalH323Private_t; 
 
@@ -299,7 +301,25 @@ BOOL FSOpalManager::OnIncomingConnection(
     switch_channel_set_state(channel, CS_INIT);
     
     /** Set up codecs for the channel ??? */   
-    
+	/* Setting up temporary codecs, so that calling to a wav file does not make fs core dump*/
+    if (switch_core_codec_init(&tech_pvt->m_readcodec,
+                               "L16",
+                               NULL,
+                               0, 0, 0, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+                               NULL) != SWITCH_STATUS_SUCCESS){
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error Setting Read Codec\n");
+    }
+	switch_core_session_set_read_codec(session, &tech_pvt->m_readcodec);
+
+	if (switch_core_codec_init(&tech_pvt->m_writecodec,
+                               "L16",
+                               NULL,
+                               0, 0, 0, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+                               NULL) != SWITCH_STATUS_SUCCESS){
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error Setting Write Codec\n");
+    }
+	switch_core_session_set_write_codec(session, &tech_pvt->m_writecodec);
+	
           
     /***Mark incoming call as AnsweredPending ??? */
    
