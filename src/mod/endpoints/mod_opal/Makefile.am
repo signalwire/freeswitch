@@ -12,14 +12,15 @@ moddir=$(prefix)/mod
 
 MODNAME=mod_opal
 
-OPALDIR=$(switch_builddir)/libs/opal
+OPALDIR=$(switch_builddir)/libs/opal/opal
+PWLIBDIR=$(switch_builddir)/libs/opal/pwlib
 
 mod_LTLIBRARIES = mod_opal.la
 mod_opal_la_SOURCES = opal_backend.cpp mod_opal.cpp
-mod_opal_la_CPPFLAGS = $(AM_CPPFLAGS) -D_REENTRANT -fno-exceptions -Wall -DPTRACING -Os -felide-constructors -Wreorder -I$(OPALDIR)/include
+mod_opal_la_CPPFLAGS = $(AM_CPPFLAGS) -D_REENTRANT -fno-exceptions -Wall -DPTRACING -Os -felide-constructors -Wreorder -I$(OPALDIR)/include -I$(PWLIBDIR)/include
 
 mod_opal_la_LIBADD = $(switch_builddir)/libfreeswitch.la    
-mod_opal_la_LDFLAGS = -avoid-version -module -no-undefined -export-symbols-regex ^switch_module_.*$ -rpath $(PREFIX)/$(libdir) -L$(OPALDIR)/lib -lopal_linux_x86_r -lpt_linux_x86_r -lpthread -ldl -fPIC -DPIC
+mod_opal_la_LDFLAGS = -avoid-version -module -no-undefined -export-symbols-regex ^switch_module_.*$ -rpath $(PREFIX)/$(libdir) -L$(PWLIBDIR)/lib -L$(OPALDIR)/lib -lopal_linux_x86_r -lpt_linux_x86_r -lpthread -ldl -fPIC -DPIC
 
 #Override the linstall target so we just install the .so/.dylib
 
