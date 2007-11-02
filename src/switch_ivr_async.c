@@ -1325,8 +1325,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 			switch_ivr_media(uuid, SMF_REBRIDGE);
 		}
 		
-		if ((p = strchr(mypath, ':'))) {
+		if ((p = strchr(mypath, ':')) && *(p+1) == ':') {
 			app = mypath;
+			*p++ = '\0';
 			*p++ = '\0';
 			path = p;
 		}
