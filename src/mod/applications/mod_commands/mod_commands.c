@@ -1396,7 +1396,6 @@ SWITCH_STANDARD_API(uuid_setvar_function)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
 					stream->write_function(stream, "No variable specified\n");
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SET [%s]=[%s]\n", var_name, var_value ? var_value : "UNDEF");
 					switch_channel_set_variable(channel, var_name, var_value);
 					stream->write_function(stream, "OK\n");
 				}
