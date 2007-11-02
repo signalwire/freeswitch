@@ -75,6 +75,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	char *file_url;
 	struct curl_slist *slist = NULL;
 	long httpRes = 0;
+	struct curl_slist *headers = NULL;
 
 	if (!binding) {
 		return NULL;
@@ -105,6 +106,8 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 
 	snprintf(filename, sizeof(filename), "%s%s.tmp.xml", SWITCH_GLOBAL_dirs.temp_dir, uuid_str);
 	curl_handle = curl_easy_init();
+	headers = curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
+
 	if (!strncasecmp(binding->url, "https", 5)) {
 		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
@@ -116,6 +119,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 			curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
 			curl_easy_setopt(curl_handle, CURLOPT_USERPWD, binding->cred);
 		}
+		curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 		curl_easy_setopt(curl_handle, CURLOPT_POST, 1);
 		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, data);
 		curl_easy_setopt(curl_handle, CURLOPT_URL, binding->url);
@@ -135,6 +139,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		curl_easy_perform(curl_handle);
 		curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE,&httpRes);
 		curl_easy_cleanup(curl_handle);
+		curl_slist_free_all(headers);
 		close(config_data.fd);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening temp file!\n");
