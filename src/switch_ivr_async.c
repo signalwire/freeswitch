@@ -533,10 +533,8 @@ static switch_bool_t inband_dtmf_generate_callback(switch_media_bug_t *bug, void
 {
 	switch_inband_dtmf_generate_t *pvt = (switch_inband_dtmf_generate_t *) user_data;
 	switch_frame_t *frame;
-	switch_channel_t *channel = switch_core_session_get_channel(pvt->session);
 	switch_codec_t *read_codec;
 
-	assert(channel != NULL);
 	read_codec = switch_core_session_get_read_codec(pvt->session);
 
 	switch (type) {
