@@ -159,7 +159,7 @@ bool FSOpalManager::initialize(
     ///TODO m_pH323Endpoint->SetVendorIdentifierInfo()
     
     ///TODO address should be configurable, should allow creaeing listeners on multiple interfaces
-    OpalTransportAddress opalTransportAddress("192.168.0.1",1720); //for time being create listener on all ip's and default port
+    OpalTransportAddress opalTransportAddress("10.0.0.1",1726); //for time being create listener on all ip's and default port
     if(!m_pH323Endpoint->StartListeners(opalTransportAddress))
     {
         assert(0);
@@ -270,7 +270,7 @@ BOOL FSOpalManager::OnIncomingConnection(
     tech_pvt->m_callerProfile = switch_caller_profile_new(
             switch_core_session_get_pool(session),
             (const char*)connection.GetRemotePartyName(),   /**  username */
-            "default",                                      /** TODO -> this should be configurable by core */
+            "XML",                                      /** TODO -> this should be configurable by core */
             (const char*)connection.GetRemotePartyName(),   /** caller_id_name */
             (const char*)connection.GetRemotePartyNumber(), /** caller_id_number */
             (const char*)connection.GetRemotePartyAddress(),/** network addr */
@@ -278,7 +278,7 @@ BOOL FSOpalManager::OnIncomingConnection(
             NULL,                                           /** ANI II */
             NULL,                                           /** RDNIS */
             m_pModuleName,                                  /** source */
-            NULL,                                           /** TODO -> set context  */
+            "10.0.0.1",                                           /** TODO -> set context  */
             (const char*)connection.GetCalledDestinationNumber()        /** destination_number */
     );
     
