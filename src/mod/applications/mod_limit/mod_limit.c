@@ -170,6 +170,7 @@ static switch_status_t do_config()
     switch_status_t status = SWITCH_STATUS_SUCCESS;
     char *odbc_user = NULL;
     char *odbc_pass = NULL;
+    char *sql = NULL;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
@@ -237,6 +238,12 @@ static switch_status_t do_config()
 
  done:
 
+    sql = switch_mprintf("delete from limit_data where hostname='%q';", globals.hostname);
+    limit_execute_sql(sql, globals.mutex);
+    switch_safe_free(sql);
+
+    switch_xml_free(xml);
+
     return status;
 
 }
@@ -259,7 +266,6 @@ static switch_status_t hanguphook(switch_core_session_t *session)
         realm = switch_channel_get_variable(channel, "limit_realm");
         sql = switch_mprintf("delete from limit_data where uuid='%q' and hostname='%q' and realm='%q'and id='%q';", 
                              switch_core_session_get_uuid(session), globals.hostname, realm, id);
-        printf("wtf [%s]\n", sql);
         limit_execute_sql(sql, globals.mutex);
         switch_safe_free(sql);
         switch_core_event_hook_remove_state_change(session, hanguphook);
