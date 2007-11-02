@@ -842,8 +842,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 					SIPTAG_CONTACT_STR(contact_str),
 					TAG_END());
 
-		
-		
+		nua_notify(nh, SIPTAG_EVENT_STR(event), TAG_END());
 
 		switch_safe_free(sstr);
 
