@@ -295,15 +295,17 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			}
 		} else {
 			if (switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
-				const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
-				tech_pvt->num_codecs = 0;
-				sofia_glue_tech_prepare_codecs(tech_pvt);
-				if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
-					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
-					nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
-					return SWITCH_STATUS_FALSE;
-				}
 				switch_clear_flag_locked(tech_pvt, TFLAG_LATE_NEGOTIATION);
+				if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
+					const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
+					tech_pvt->num_codecs = 0;
+					sofia_glue_tech_prepare_codecs(tech_pvt);
+					if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
+						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
+						nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+						return SWITCH_STATUS_FALSE;
+					}
+				}
 			}
 
 			if ((status = sofia_glue_tech_choose_port(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
@@ -900,15 +902,17 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					}
 				} else {
 					if (switch_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION)) {
-						const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
-						tech_pvt->num_codecs = 0;
-						sofia_glue_tech_prepare_codecs(tech_pvt);
-						if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
-							switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
-							nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
-							return SWITCH_STATUS_FALSE;
-						}
 						switch_clear_flag_locked(tech_pvt, TFLAG_LATE_NEGOTIATION);
+						if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
+							const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
+							tech_pvt->num_codecs = 0;
+							sofia_glue_tech_prepare_codecs(tech_pvt);
+							if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
+								switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
+								nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+								return SWITCH_STATUS_FALSE;
+							}
+						}
 					}
 
 					if ((status = sofia_glue_tech_choose_port(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
@@ -1591,6 +1595,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	switch_channel_set_caller_profile(nchannel, caller_profile);
 	switch_channel_set_flag(nchannel, CF_OUTBOUND);
 	switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
+	switch_clear_flag_locked(tech_pvt, TFLAG_LATE_NEGOTIATION);
 	switch_channel_set_state(nchannel, CS_INIT);
 	*new_session = nsession;
 	cause = SWITCH_CAUSE_SUCCESS;
