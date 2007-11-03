@@ -153,13 +153,53 @@ public:
             OpalConnection &connection,
             const PString &caller);
     
+       
+    //virtual PString OnRouteConnection (OpalConnection &connection)
+    
+    /** 
+     * OnAlerting function is overriden for
+     * serving callbacks when remote side sent ALERTING message
+     */
+    virtual void OnAlerting (OpalConnection &connection);
+    
+    /** 
+     * OnReleased function is overriden, for
+     * serving callbacks when remote side released the call
+     */
+    virtual void OnReleased (OpalConnection &connection);
+    
+    /**
+     * OnConnected function is overriden for 
+     * serving callbacks when remote side sent CONNECT message
+     */ 
+    virtual void OnConnected (OpalConnection &connection);
+    
+    /**
+     * OnEstablished function is overriden for 
+     * serving callbacks when the call was fully established
+     * It can happen upon receiving/sending CONNECT PDU with
+     * fast start or when logical channels where established
+     */
+    virtual void OnEstablished (OpalConnection &connection);
+    
+    /*
+     * AdjustMediaFormats is overriden so manager can set it's own
+     * media format list. It's great for us, as we want to set,
+     * our private media list from FS codecs
+     */
+    virtual void AdjustMediaFormats(const OpalConnection & connection,
+                                     OpalMediaFormatList & mediaFormats) const;
+    
+    //virtual void OnHold (OpalConnection &connection)
+    //virtual BOOL OnForwarded (OpalConnection &connection, const PString &remoteParty)
+    
         
         
     
 private:          
     
     void                   saveSessionToken(const PString &i_token,switch_core_session_t* i_session);
-    switch_core_session_t* getSessionToken(const PString &i_token);
+    switch_core_session_t* getSessionToken(const PString &i_token) const;
     void                   deleteSessionToken(const PString &i_token);
     
     switch_call_cause_t             causeH323ToOpal(OpalConnection::CallEndReason i_cause);
@@ -171,7 +211,20 @@ private:
     H323EndPoint                        *m_pH323Endpoint;           /* h323 endpoint control */
     switch_memory_pool_t                *m_pMemoryPool;             /* FS memory pool */
     switch_endpoint_interface_t         *m_pH323EndpointInterface;  /* FS endpoint inerface */
-    switch_hash_t                       *m_pSessionsHashTable;      /* Stores pointrs to session object for each Opal connection */
+    switch_hash_t                       *m_pSessionsHashTable;      /* Stores pointrs to session object 
+                                                                     * for each OpalCall. Each OpalCall object
+                                                                     * as used in this module, stores only one
+                                                                     * OpalConnection. Neither OpalCall or 
+                                                                     * OpalConnection have any private data pointer,
+                                                                     * so I can't store pointer to switch session
+                                                                     * with them. Still, each OpalCall has unique 
+                                                                     * Token, so I store all sessions in hash table
+                                                                     * where the token is the key. I could of course
+                                                                     * make custom OpalCall class, which would be
+                                                                     * expanded with private pointer field (which would
+                                                                     * be faster), but I don't want to touch OPAL
+                                                                     * code if I don't have to                                                                                                      
+                                                                     */
     switch_mutex_t                      *m_pSessionsHashTableMutex; /* Protects hash table */
     
 };

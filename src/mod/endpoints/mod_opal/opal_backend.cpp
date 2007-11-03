@@ -31,33 +31,65 @@
 #include "opal_backend.h"
 
 /** 
- * Private structre
+ * Structure definition for private data
+ */
+
+typedef enum 
+{
+	TFLAG_IO = (1 << 0),            /* not used, please fill this comment if you use it */
+	TFLAG_INBOUND = (1 << 1),       /* if set, call was originated in h323 network */
+	TFLAG_OUTBOUND = (1 << 2),      /* if set, call was originated by FS */
+	TFLAG_DTMF = (1 << 3),          /* not used, please fill this comment if you use it */
+	TFLAG_VOICE = (1 << 4),         /* not used, please fill this comment if you use it */
+	TFLAG_H323HANGUP = (1 << 5),    /* if set, call has been cleared by Opal, so no need to destroy it in on_hangup callback */
+	TFLAG_LINEAR = (1 << 6),        /* not used, please fill this comment if you use it */
+	TFLAG_CODEC = (1 << 7),         /* not used, please fill this comment if you use it */
+	TFLAG_BREAK = (1 << 8)          /* not used, please fill this comment if you use it */
+};   
+
+/** 
+ * Structure definition for private data
  */
 
 typedef struct OpalH323Private_s
 {
     OpalConnection          *m_opalConnection;   /** pointer to OpalConnection object */
     switch_mutex_t          *m_mutex;            /** mutex for synchonizing access to session object */
-    switch_caller_profile_t *m_callerProfile;          /** caller profile */
+    switch_caller_profile_t *m_callerProfile;   /** caller profile */
     switch_codec_t 			m_readcodec;   /* Read codec*/
     switch_codec_t 			m_writecodec;  /* Write codec*/
+    /* for next two variables naming convension is changed, to use them with switch_flag.. macros */
+    unsigned int             flags;              /** connection state flags */
+    switch_mutex_t          *flag_mutex;        /** mutex for state flags, I use it in case I decide to not use m_mutex */
     
 } OpalH323Private_t; 
 
 
-static bool OpalH323Private_Create(OpalH323Private_t **o_private, switch_core_session_t *i_session)
+static bool OpalH323Private_Create(OpalH323Private_t **o_private, switch_core_session_t *io_session)
 {    
-    *o_private = (OpalH323Private_t *)switch_core_session_alloc(i_session, sizeof(OpalH323Private_t));
+    assert(io_session);
+    *o_private = (OpalH323Private_t *)switch_core_session_alloc(io_session, sizeof(OpalH323Private_t));
     if(!o_private)
     {
         assert(0);
         return false;
     }
-    if(SWITCH_STATUS_SUCCESS != switch_mutex_init(&(*o_private)->m_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(i_session)))
+    if(SWITCH_STATUS_SUCCESS != switch_mutex_init(&(*o_private)->m_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(io_session)))
     {
         assert(0);
         return false;
-    }
+    }    
+    
+    if(SWITCH_STATUS_SUCCESS != switch_mutex_init(&(*o_private)->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(io_session)))
+    {
+        assert(0);
+        switch_mutex_destroy((*o_private)->m_mutex);
+        return false;
+    } 
+    (*o_private)->m_opalConnection = NULL;
+    (*o_private)->m_callerProfile  = NULL;
+    (*o_private)->flags = 0; //clear all flags
+    switch_core_session_set_private(io_session,static_cast<void*>(*o_private));    //save private data as session private data
     
     return true;
     
@@ -65,7 +97,12 @@ static bool OpalH323Private_Create(OpalH323Private_t **o_private, switch_core_se
 
 static bool OpalH323Private_Delete(OpalH323Private_t *o_private)
 {
-    return (switch_mutex_destroy(o_private->m_mutex)==SWITCH_STATUS_SUCCESS); 
+    assert(o_private);
+    switch_status_t status =  switch_mutex_destroy(o_private->m_mutex);
+    assert(status==SWITCH_STATUS_SUCCESS);
+    status = switch_mutex_destroy(o_private->flag_mutex);
+    assert(status==SWITCH_STATUS_SUCCESS);
+    return true;
 }
 
 /** Default constructor
@@ -161,7 +198,7 @@ bool FSOpalManager::initialize(
     ///TODO m_pH323Endpoint->SetVendorIdentifierInfo()
     
     ///TODO address should be configurable, should allow creaeing listeners on multiple interfaces
-    OpalTransportAddress opalTransportAddress("10.0.0.1",1726); //for time being create listener on all ip's and default port
+    OpalTransportAddress opalTransportAddress("192.168.0.1",1720); //for time being create listener on all ip's and default port
     if(!m_pH323Endpoint->StartListeners(opalTransportAddress))
     {
         assert(0);
@@ -176,7 +213,7 @@ bool FSOpalManager::initialize(
     return true;
 }
 
-switch_core_session_t* FSOpalManager::getSessionToken(const PString &i_token)
+switch_core_session_t* FSOpalManager::getSessionToken(const PString &i_token) const
 {
     assert(m_pSessionsHashTable);
     assert(m_pSessionsHashTableMutex);
@@ -253,26 +290,25 @@ BOOL FSOpalManager::OnIncomingConnection(
         return false;
     }     
     tech_pvt->m_opalConnection = &connection; 
-   
-    
-    /** Save private data in session private data, and save session in hash tabel, under GetToken() key */
-    switch_core_session_set_private(session,static_cast<void*>(tech_pvt));                                      ///save private data in session context
-    
+         
     /** Before adding this session to sessions hash table, 
      * lock he mutex so no concurrent 
-     * callback can be runing for this connection 
+     * callback can be running for this connection 
      * probably other callbacks are called from this task
      * but carfulness wont bite
      */ 
     switch_mutex_lock(tech_pvt->m_mutex);        
-    /** insert connection to hash table */
-    saveSessionToken(connection.GetToken(),session); ///save pointer to session in hash table, for later retreival    
+    /** 
+     * insert connection to hash table, use call token as a key
+     */
+    PString callToken = connection.GetCall().GetToken();
+    saveSessionToken(callToken,session);     
    
     /** Create calling side profile */
     tech_pvt->m_callerProfile = switch_caller_profile_new(
             switch_core_session_get_pool(session),
             (const char*)connection.GetRemotePartyName(),   /**  username */
-            "XML",                                      /** TODO -> this should be configurable by core */
+            "XML",                                          /** TODO -> this should be configurable by core */
             (const char*)connection.GetRemotePartyName(),   /** caller_id_name */
             (const char*)connection.GetRemotePartyNumber(), /** caller_id_number */
             (const char*)connection.GetRemotePartyAddress(),/** network addr */
@@ -280,13 +316,13 @@ BOOL FSOpalManager::OnIncomingConnection(
             NULL,                                           /** ANI II */
             NULL,                                           /** RDNIS */
             m_pModuleName,                                  /** source */
-            "10.0.0.1",                                           /** TODO -> set context  */
+            "default",                                      /** TODO -> set context  */
             (const char*)connection.GetCalledDestinationNumber()        /** destination_number */
     );
     
     if(!tech_pvt->m_callerProfile)  /* should never error */
     {       
-        deleteSessionToken(connection.GetToken());  
+        deleteSessionToken(callToken);  
         switch_mutex_unlock(tech_pvt->m_mutex);
         OpalH323Private_Delete(tech_pvt);
         switch_core_session_destroy(&session);              
@@ -296,9 +332,10 @@ BOOL FSOpalManager::OnIncomingConnection(
     
     /** Set up sessions channel */
     switch_channel_t *channel = switch_core_session_get_channel(session);
-    switch_channel_set_name(channel,(const char*)connection.GetToken());
-    switch_channel_set_caller_profile(channel, tech_pvt->m_callerProfile);
+    switch_channel_set_name(channel,(const char*)callToken);
+    switch_channel_set_caller_profile(channel, tech_pvt->m_callerProfile);    
     switch_channel_set_state(channel, CS_INIT);
+    switch_set_flag_locked(tech_pvt,TFLAG_OUTBOUND);
     
     /** Set up codecs for the channel ??? */   
 	/* Setting up temporary codecs, so that calling to a wav file does not make fs core dump*/
@@ -306,29 +343,30 @@ BOOL FSOpalManager::OnIncomingConnection(
                                "L16",
                                NULL,
                                0, 0, 0, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
-                               NULL) != SWITCH_STATUS_SUCCESS){
+                               NULL) != SWITCH_STATUS_SUCCESS)
+    {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error Setting Read Codec\n");
     }
-	switch_core_session_set_read_codec(session, &tech_pvt->m_readcodec);
+    switch_core_session_set_read_codec(session, &tech_pvt->m_readcodec);
 
-	if (switch_core_codec_init(&tech_pvt->m_writecodec,
+    if (switch_core_codec_init(&tech_pvt->m_writecodec,
                                "L16",
                                NULL,
                                0, 0, 0, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
-                               NULL) != SWITCH_STATUS_SUCCESS){
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error Setting Write Codec\n");
+                               NULL) != SWITCH_STATUS_SUCCESS)
+    {
+       switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error Setting Write Codec\n");
     }
-	switch_core_session_set_write_codec(session, &tech_pvt->m_writecodec);
+    switch_core_session_set_write_codec(session, &tech_pvt->m_writecodec);
 	
           
-    /***Mark incoming call as AnsweredPending ??? */
    
 
     /** lunch thread */       
     if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) 
     {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
-        deleteSessionToken(connection.GetToken());       
+        deleteSessionToken(callToken);       
         switch_mutex_unlock(tech_pvt->m_mutex);
         OpalH323Private_Delete(tech_pvt);        
         switch_core_session_destroy(&session);        
@@ -347,16 +385,171 @@ OpalConnection::AnswerCallResponse FSOpalManager::OnAnswerCall(
             OpalConnection &connection,
             const PString &caller)
 {
-    switch_core_session_t *session = getSessionToken((const char*)connection.GetToken());
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"OnAnswerCall token=%s\n",(const char*)connection.GetCall().GetToken());
+    switch_core_session_t *session = getSessionToken((const char*)connection.GetCall().GetToken());
     if(session==NULL)   /* that can mean that session has been already destroyed by core and we should release it */
     {
         return OpalConnection::AnswerCallDenied;
     }
-    return OpalConnection::AnswerCallDeferred;  //don't send alerting signal yet        
+    return OpalConnection::AnswerCallProgress;  //don't send alerting signal yet        
 }
 
+void FSOpalManager::OnAlerting(OpalConnection &connection)
+{
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"OnAlerting token=%s\n",(const char*)connection.GetCall().GetToken());        
+    
+    switch_core_session_t *session = getSessionToken((const char*)connection.GetCall().GetToken());
+    
+    if(session==NULL)   /* that can mean that session has been already destroyed by core and we should release it */
+    {
+        assert(0);  //should never happen?
+        connection.Release(OpalConnection::EndedByLocalUser);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"OnAlerting::unknown connection\n");    
+        return;
+    }
+    
+    OpalH323Private_t *tech_prv = static_cast<OpalH323Private_t*>(switch_core_session_get_private(session));
+    assert(tech_prv);
+    SLock(tech_prv->m_mutex);
+    
+    switch_channel_t* channel = switch_core_session_get_channel(session);
+    assert(channel);
+    
+    switch_core_session_queue_indication(session, SWITCH_MESSAGE_INDICATE_RINGING);
+    switch_channel_mark_ring_ready(channel);                
+}
 
+void FSOpalManager::OnConnected (OpalConnection &connection)
+{    
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"OnConnected token=%s\n",(const char*)connection.GetCall().GetToken());    
+    switch_core_session_t *session = getSessionToken((const char*)connection.GetCall().GetToken());
+    
+    if(session==NULL)   /* that can mean that session has been already destroyed by core and we should release it */
+    {
+        assert(0);  //should never happen?
+        connection.Release(OpalConnection::EndedByLocalUser);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"OnConnected::unknown connection\n");                 
+        
+        return;
+    }
+    
+    OpalH323Private_t *tech_prv = static_cast<OpalH323Private_t*>(switch_core_session_get_private(session));
+    assert(tech_prv);
+    SLock(tech_prv->m_mutex);
+    
+    switch_channel_t* channel = switch_core_session_get_channel(session);
+    assert(channel);
+            
+   if(!switch_channel_test_flag(channel, CF_ANSWERED))  /* TODO -> synchronize this with callback from core then answered */
+   {
+        switch_channel_mark_answered(channel);
+        /* todo -> mark audio/video channels as established */
+   }
+       
+    
+}
 
+void FSOpalManager::OnEstablished (OpalConnection &connection)
+{
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"OnEstablished token=%s\n",(const char*)connection.GetCall().GetToken());            
+    switch_core_session_t *session = getSessionToken((const char*)connection.GetCall().GetToken());
+    
+    if(session==NULL)   /* that can mean that session has been already destroyed by core and we should release it */
+    {
+        assert(0);  //should never happen?
+        connection.Release(OpalConnection::EndedByLocalUser);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"OnConnected::unknown connection\n");                 
+        
+        return;
+    }
+    
+    OpalH323Private_t *tech_prv = static_cast<OpalH323Private_t*>(switch_core_session_get_private(session));
+    assert(tech_prv);
+    SLock(tech_prv->m_mutex);
+    
+    switch_channel_t* channel = switch_core_session_get_channel(session);
+    assert(channel);
+    
+    if(!switch_channel_test_flag(channel, CF_ANSWERED))  /* TODO -> synchronize this with callback from core then answered */
+    {
+        switch_channel_mark_answered(channel);
+        /* todo -> mark audio/video channels as established */
+    }
+       
+}
+
+void FSOpalManager::OnReleased(OpalConnection &connection)
+{
+    
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"OnReleased\n");     
+    PString callToken = connection.GetCall().GetToken();        
+    
+    switch_core_session_t *session = getSessionToken((const char*)callToken);  
+    
+    /* release this connection within it's call, the connection object is invalid after this line */
+    connection.GetCall().OnReleased(connection);
+    
+    if(session==NULL)
+    {        
+        /* session==NULL, means that FS session has been already destroyed, 
+         * (because core released the connection), so this is just a callback
+         * from opal (following Connection->release)
+         */
+        
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"OnReleased::unknown connection\n");    
+        return;
+    }
+    /* else
+     * we receive this callback, because h323 is releasing connection
+     * so we need to clear the session
+     */
+    
+    OpalH323Private_t *tech_prv = static_cast<OpalH323Private_t*>(switch_core_session_get_private(session));
+    assert(tech_prv);
+    SLock(tech_prv->m_mutex);
+    
+    /* 
+     * this is last place where callToken is available, 
+     * so we have to clean up all the h323 data in this gluer
+     */    
+    switch_set_flag_locked(tech_prv,TFLAG_H323HANGUP);  /* mark that h323 side was released so we don't try to release it again in callback_on_hangup callback*/
+    deleteSessionToken(callToken);                      /* delete token<-> call association */
+    
+    /* start call clearing on FS side */
+    switch_channel_t* channel = switch_core_session_get_channel(session);
+    assert(channel);                
+    switch_channel_hangup(channel,SWITCH_CAUSE_NORMAL_CLEARING);    ///TODO: translate connection clear cause
+    
+}
+
+void FSOpalManager::AdjustMediaFormats(const OpalConnection & connection,
+                                     OpalMediaFormatList & mediaFormats) const
+{
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"AdjustMediaFormats, token=%s\n",(const char*)connection.GetCall().GetToken());     
+    
+    PString callToken = connection.GetCall().GetToken();            
+    switch_core_session_t *session = getSessionToken((const char*)callToken);
+    if(session==NULL)
+    {        
+        assert(0);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"AdjustMediaFormats::unknown connection\n");    
+        return;
+    }
+    
+    OpalH323Private_t *tech_prv = static_cast<OpalH323Private_t*>(switch_core_session_get_private(session));
+    assert(tech_prv);
+    SLock(tech_prv->m_mutex);
+              
+    /* start with removing all codecs */
+    mediaFormats.RemoveAll();
+    
+    ///TODO: check what codecs are supported by FS, and add available to list, temporarly just add basic codecs
+    mediaFormats+=OpalPCM16;
+    mediaFormats+=OpalG711_ULAW_64K;
+    mediaFormats+=OpalG711_ALAW_64K;
+    mediaFormats+=OpalG711uLaw;
+    mediaFormats+=OpalG711ALaw;                
+}
 
 
 /** 
@@ -376,11 +569,15 @@ switch_status_t FSOpalManager::callback_on_init(switch_core_session_t *io_sessio
         return SWITCH_STATUS_NOTFOUND;        
     }
       
-    SLock(tech_prv->m_mutex); /* lock channel */    
+    SLock(tech_prv->m_mutex); /* lock channel */                
     switch_channel_t *channel = switch_core_session_get_channel(io_session);
     assert(channel);    
-    /* Move Channel's State Machine to RING */
-    switch_channel_set_state(channel, CS_RING);            
+    
+    /* for incoming connection set channel state to ring, to make core execute dialplan*/
+    if(!switch_channel_test_flag(channel,CF_OUTBOUND))
+    {            
+        switch_channel_set_state(channel, CS_RING);            
+    }
     
     return SWITCH_STATUS_SUCCESS;
 }
@@ -417,14 +614,22 @@ switch_status_t FSOpalManager::callback_on_hangup(switch_core_session_t *io_sess
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"callback_on_hangup\n");
     
     OpalH323Private_t* tech_prv = (OpalH323Private_t*)switch_core_session_get_private(io_session);                 
-    switch_mutex_lock(tech_prv->m_mutex); /* lock channel */    
-    deleteSessionToken(tech_prv->m_opalConnection->GetToken()); //delete this connection form connection pool
-    switch_channel_t *channel = switch_core_session_get_channel(io_session);    
-    if(tech_prv->m_opalConnection)
-    {
-        //switch_call_cause_t cause = switch_channel_get_cause(channel);    
-        tech_prv->m_opalConnection->Release(); ///TODO add cause    
+    switch_mutex_lock(tech_prv->m_mutex); /* lock channel */  
+
+    
+    /* Check if this callback was not originated, after call cleared from h323 side */
+    if(!switch_test_flag(tech_prv,TFLAG_H323HANGUP))
+    {   
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"clear h323 call\n");
+        deleteSessionToken(tech_prv->m_opalConnection->GetCall().GetToken()); //delete this connection form connection pool
+        if(tech_prv->m_opalConnection)
+        {
+            //switch_call_cause_t cause = switch_channel_get_cause(channel);    
+            tech_prv->m_opalConnection->Release(); ///TODO add cause    
+        }
     }
+       
+    switch_channel_t *channel = switch_core_session_get_channel(io_session);    
     switch_mutex_unlock(tech_prv->m_mutex);
     OpalH323Private_Delete(tech_prv);
           
@@ -454,10 +659,82 @@ switch_status_t FSOpalManager::callback_on_transmit(switch_core_session_t *io_se
     return SWITCH_STATUS_SUCCESS;
 }
 
-switch_call_cause_t FSOpalManager::io_outgoing_channel(switch_core_session_t *i_session, switch_caller_profile_t *i_profile, switch_core_session_t **o_newSession, switch_memory_pool_t **o_memPool)
+switch_call_cause_t FSOpalManager::io_outgoing_channel(switch_core_session_t *i_session, switch_caller_profile_t *i_profile, switch_core_session_t **o_newSession, switch_memory_pool_t **i_memPool)
 {
+    
+    assert(i_session);
+    assert(i_profile);
+    assert(i_memPool);
+    
     assert(m_isInitialized);
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"io_outgoing_channel\n");
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"io_outgoing_channel\n");        
+    
+    /* allocate session*/
+    *o_newSession = switch_core_session_request(m_pH323EndpointInterface,i_memPool);    
+    if(*o_newSession==NULL)
+    {
+        assert(0);
+        return SWITCH_CAUSE_UNALLOCATED;
+    }
+    
+    /* allocate private data */
+    OpalH323Private_t *tech_prv = NULL;
+    if(!OpalH323Private_Create(&tech_prv,*o_newSession))
+    {
+        assert(0);
+        switch_core_session_destroy(o_newSession);
+        return SWITCH_CAUSE_UNALLOCATED;
+    }
+                    
+    switch_mutex_lock(tech_prv->m_mutex);
+    
+    OpalCall *call = CreateCall();          /* init new call
+                                             * this call will be wrapper for a single connection
+                                             * to remote h323 party
+                                             */  
+    PString callToken = call->GetToken(); 
+    
+    saveSessionToken(callToken,*o_newSession);    
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"Token=%s\n",(const char*)callToken);        
+    switch_channel_t *channel = switch_core_session_get_channel(*o_newSession);
+    assert(channel);
+    
+    switch_channel_set_name(channel,(const char*)callToken);
+    tech_prv->m_callerProfile = switch_caller_profile_clone(*o_newSession, i_profile);
+    assert(tech_prv->m_callerProfile);
+    switch_channel_set_caller_profile(channel, tech_prv->m_callerProfile);    
+    
+        
+    /*PString calledParty = PString("h323:")+PString(tech_prv->m_callerProfile->destination_number);*/
+    
+    PString calledParty("h323:192.168.0.2");
+    
+    if(!m_pH323Endpoint->MakeConnection(*call,calledParty,(void*)NULL,0,(OpalConnection::StringOptions*)NULL)) /* attempt start call on h323 endpoint */
+    {
+        assert(0);
+        switch_mutex_unlock(tech_prv->m_mutex);
+        OpalH323Private_Delete(tech_prv);
+        switch_core_session_destroy(o_newSession);
+        ClearCall(callToken);
+        return SWITCH_CAUSE_UNALLOCATED;
+    }
+    
+    /*if(!MakeConnection(*call,calledParty))
+    {
+        assert(0);
+        switch_mutex_unlock(tech_prv->m_mutex);
+        OpalH323Private_Delete(tech_prv);
+        switch_core_session_destroy(o_newSession);
+        ClearCall(callToken);
+        return SWITCH_CAUSE_UNALLOCATED;        
+    }*/
+    
+    
+    
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"new conn created token =%s \n",(const char*)call->GetToken());
+    switch_channel_set_flag(channel, CF_OUTBOUND);
+    switch_channel_set_state(channel, CS_INIT);    
+    switch_mutex_unlock(tech_prv->m_mutex);
     return SWITCH_CAUSE_SUCCESS;
 }
 
@@ -478,7 +755,25 @@ switch_status_t FSOpalManager::io_write_frame(switch_core_session_t *i_session, 
 switch_status_t FSOpalManager::io_kill_channel(switch_core_session_t *i_session, int sig)
 {
     assert(m_isInitialized);
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"io_kill_channel\n");
+    PString signal;
+    switch(sig)
+    {
+    case SWITCH_SIG_NONE:
+        signal = "SWITCH_SIG_NONE";
+    break;
+    case SWITCH_SIG_KILL:
+        signal = "SWITCH_SIG_KILL";
+    break;
+    case SWITCH_SIG_XFER:
+        signal = "SWITCH_SIG_XFER";
+    break;
+    case SWITCH_SIG_BREAK:
+        signal = "SWITCH_SIG_BREAK";
+    break;
+    default:
+        signal = "UNKNOWN";    
+    }
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"io_kill_channel sig = %s\n",(const char*)signal);
     return SWITCH_STATUS_SUCCESS;
 }
 
@@ -583,7 +878,7 @@ switch_status_t FSOpalManager::io_receive_event(switch_core_session_t *i_session
 switch_status_t FSOpalManager::io_state_change(switch_core_session_t *)
 {
     assert(m_isInitialized);
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"io_state_change\n");
+    /*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG ,"io_state_change\n");*/
     return SWITCH_STATUS_SUCCESS;
 }
 
