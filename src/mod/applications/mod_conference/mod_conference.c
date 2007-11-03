@@ -687,6 +687,7 @@ static switch_status_t conference_del_member(conference_obj_t * conference, conf
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_add_event_member_data(member, event);
+			conference_add_event_data(conference, event);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "del-member");
 			switch_event_fire(&event);
 		}
