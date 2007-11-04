@@ -45,10 +45,10 @@ functions whose names all begin with "_pcre_". */
 #ifndef PCRE_INTERNAL_H
 #define PCRE_INTERNAL_H
 
-/* Define DEBUG to get debugging output on stdout. */
+/* Define PCRE_DEBUG to get debugging output on stdout. */
 
 #if 0
-#define DEBUG
+#define PCRE_DEBUG
 #endif
 
 /* Use a macro for debugging printing, 'cause that eliminates the use of #ifdef
@@ -56,7 +56,7 @@ inline, and there are *still* stupid compilers about that don't like indented
 pre-processor statements, or at least there were when I first wrote this. After
 all, it had only been about 10 years then... */
 
-#ifdef DEBUG
+#ifdef PCRE_DEBUG
 #define DPRINTF(p) printf p
 #else
 #define DPRINTF(p) /*nothing*/

@@ -150,7 +150,7 @@ typedef struct stateblock {
 #define INTS_PER_STATEBLOCK  (sizeof(stateblock)/sizeof(int))
 
 
-#ifdef DEBUG
+#ifdef PCRE_DEBUG
 /*************************************************
 *             Print character string             *
 *************************************************/
@@ -439,7 +439,7 @@ for (;;)
   workspace[0] ^= 1;              /* Remember for the restarting feature */
   workspace[1] = active_count;
 
-#ifdef DEBUG
+#ifdef PCRE_DEBUG
   printf("%.*sNext character: rest of subject = \"", rlevel*2-2, SP);
   pchars((uschar *)ptr, strlen((char *)ptr), stdout);
   printf("\"\n");
@@ -486,7 +486,7 @@ for (;;)
     int count, codevalue;
     int chartype, script;
 
-#ifdef DEBUG
+#ifdef PCRE_DEBUG
     printf ("%.*sProcessing state %d c=", rlevel*2-2, SP, state_offset);
     if (c < 0) printf("-1\n");
       else if (c > 32 && c < 127) printf("'%c'\n", c);

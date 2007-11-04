@@ -46,10 +46,10 @@ supporting internal functions that are not used by other modules. */
 #include "pcre_internal.h"
 
 
-/* When DEBUG is defined, we need the pcre_printint() function, which is also
-used by pcretest. DEBUG is not defined when building a production library. */
+/* When PCRE_DEBUG is defined, we need the pcre_printint() function, which is also
+used by pcretest. PCRE_DEBUG is not defined when building a production library. */
 
-#ifdef DEBUG
+#ifdef PCRE_DEBUG
 #include "pcre_printint.src"
 #endif
 
@@ -5154,7 +5154,7 @@ if debugging, leave the test till after things are printed out. */
 
 *code++ = OP_END;
 
-#ifndef DEBUG
+#ifndef PCRE_DEBUG
 if (code - codestart > length) errorcode = ERR23;
 #endif
 
@@ -5223,7 +5223,7 @@ if (reqbyte >= 0 &&
 /* Print out the compiled data if debugging is enabled. This is never the
 case when building a production library. */
 
-#ifdef DEBUG
+#ifdef PCRE_DEBUG
 
 printf("Length = %d top_bracket = %d top_backref = %d\n",
   length, re->top_bracket, re->top_backref);
