@@ -464,15 +464,16 @@ static void list_node(fifo_node_t *node, switch_xml_t x_report, int *off, int ve
 
     switch_xml_t x_fifo;
     int cc_off = 0;
-    char tmp[35];
+    char buffer[35];
+	char *tmp = buffer;
 
     x_fifo = switch_xml_add_child_d(x_report, "fifo", (*off)++);;
     assert(x_fifo);
 
     switch_xml_set_attr_d(x_fifo, "name", node->name);
-    snprintf(tmp, sizeof(tmp), "%d", node->consumer_count);
+    snprintf(tmp, sizeof(buffer), "%d", node->consumer_count);
     switch_xml_set_attr_d(x_fifo, "consumer_count", tmp);
-    snprintf(tmp, sizeof(tmp), "%d", node->caller_count);
+    snprintf(tmp, sizeof(buffer), "%d", node->caller_count);
     switch_xml_set_attr_d(x_fifo, "caller_count", tmp);
     
     cc_off = xml_hash(x_fifo, node->caller_hash, "callers", "caller", cc_off, verbose);
