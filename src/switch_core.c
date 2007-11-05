@@ -542,6 +542,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, switch_cor
 
 	switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
 	runtime.hard_log_level = SWITCH_LOG_DEBUG;
+	runtime.mailer_app = "sendmail";
+	runtime.mailer_app_args = "-t";
 
 	/* INIT APR and Create the pool context */
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
@@ -595,6 +597,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, switch_cor
 
                     switch_core_session_ctl(SCSC_LOGLEVEL, &level);
 					
+				} else if (!strcasecmp(var, "mailer-app")) {
+					runtime.mailer_app = switch_core_strdup(runtime.memory_pool, val);
+				} else if (!strcasecmp(var, "mailer-app-args")) {
+					runtime.mailer_app_args = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "sessions-per-second")) {
 					switch_core_sessions_per_second(atoi(val));
 				} else if (!strcasecmp(var, "max-sessions")) {

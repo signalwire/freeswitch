@@ -171,6 +171,8 @@ struct switch_runtime {
 	int32_t sps;
 	int32_t sps_last;
 	switch_log_level_t hard_log_level;
+	char *mailer_app;
+	char *mailer_app_args;
 };
 
 extern struct switch_runtime runtime;

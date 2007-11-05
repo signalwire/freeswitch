@@ -8,6 +8,8 @@
     <param name="loglevel" value="debug"/>
     <!--Try to catch any crashes that can be recoverable (in the context of a call)-->
     <param name="crash-protection" value="false"/>
+    <param name="mailer-app" value="sendmail"/>
+    <param name="mailer-app-args" value="-t"/>
     <!--RTP port range -->
     <!--<param name="rtp-start-port" value="16384"/>-->
     <!--<param name="rtp-end-port" value="32768"/>-->

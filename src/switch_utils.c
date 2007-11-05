@@ -33,6 +33,7 @@
 #ifndef WIN32
 #include <arpa/inet.h>
 #endif
+#include "private/switch_core_pvt.h"
 
 static const char switch_b64_table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 #define B64BUFFLEN 1024
@@ -179,7 +180,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(char *to, char *from, char *he
     if (ifd) {
         close(ifd);
     }
-    snprintf(buf, B64BUFFLEN, "/bin/cat %s | /usr/sbin/sendmail -tf \"%s\" %s", filename, from, to);
+    snprintf(buf, B64BUFFLEN, "/bin/cat %s | %s %s", filename, runtime.mailer_app, runtime.mailer_app_args);
     if(system(buf)) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to execute command: %s\n", buf);
     }
