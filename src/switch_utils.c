@@ -93,7 +93,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(char *to, char *from, char *he
 	unsigned char out[B64BUFFLEN + 512];
 	char *path = NULL;
 
-    snprintf(filename, 80, "%smail.%ld%04x", SWITCH_GLOBAL_dirs.temp_dir, time(NULL), rand() & 0xffff);
+    snprintf(filename, 80, "%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, (int)time(NULL), rand() & 0xffff);
     
     if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644))) {
         if (file) {
