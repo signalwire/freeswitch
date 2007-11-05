@@ -180,7 +180,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(char *to, char *from, char *he
     if (ifd) {
         close(ifd);
     }
-    snprintf(buf, B64BUFFLEN, "/bin/cat %s | %s %s", filename, runtime.mailer_app, runtime.mailer_app_args);
+    snprintf(buf, B64BUFFLEN, "/bin/cat %s | %s %s %s", filename, runtime.mailer_app, runtime.mailer_app_args, to);
     if(system(buf)) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to execute command: %s\n", buf);
     }
