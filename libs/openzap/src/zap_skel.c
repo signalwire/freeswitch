@@ -103,9 +103,9 @@ static ZIO_GET_ALARMS_FUNCTION(skel_get_alarms)
 	return zap_fail;
 }
 
-static zap_software_interface_t skel_interface;
+static zap_io_interface_t skel_interface;
 
-zap_status_t skel_init(zap_software_interface_t **zint)
+zap_status_t skel_init(zap_io_interface_t **zint)
 {
 	assert(zint != NULL);
 	memset(&skel_interface, 0, sizeof(skel_interface));
