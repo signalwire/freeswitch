@@ -707,7 +707,7 @@ zap_status_t zt_init(zap_io_interface_t **zio)
 
 	if ((CONTROL_FD = open(ctlpath, O_RDWR)) < 0) {
 		zap_log(ZAP_LOG_ERROR, "Cannot open control device\n");
-		return 0;
+		return ZAP_FAIL;
 	}
 
 	zt_globals.codec_ms = 20;
