@@ -53,12 +53,6 @@ static ZIO_CLOSE_FUNCTION(skel_close)
 	return ZAP_FAIL;
 }
 
-static ZIO_SET_CODEC_FUNCTION(skel_set_codec)
-{
-	ZIO_SET_CODEC_MUZZLE;
-	return ZAP_FAIL;
-}
-
 static ZIO_SET_INTERVAL_FUNCTION(skel_set_interval)
 {
 	ZIO_SET_INTERVAL_MUZZLE;
@@ -114,8 +108,6 @@ zap_status_t skel_init(zap_io_interface_t **zint)
 	skel_interface.configure =  skel_configure;
 	skel_interface.open = skel_open;
 	skel_interface.close = skel_close;
-	skel_interface.set_codec = skel_set_codec;
-	skel_interface.set_interval = skel_set_interval;
 	skel_interface.wait = skel_wait;
 	skel_interface.read = skel_read;
 	skel_interface.write = skel_write;
