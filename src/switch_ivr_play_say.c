@@ -674,6 +674,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (!prefix) {
+		prefix = SWITCH_GLOBAL_dirs.base_dir;
+	}
+
 	if (!strstr(file, SWITCH_URL_SEPARATOR)) {
 		if (!switch_is_file_path(file)) {
 			file = switch_core_session_sprintf(session, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, file);
