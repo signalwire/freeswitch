@@ -41,6 +41,11 @@ static ZIO_CONFIGURE_FUNCTION(skel_configure)
 	return ZAP_FAIL;
 }
 
+static ZIO_CONFIGURE_SPAN_FUNCTION(skel_configure_span)
+{
+
+}
+
 static ZIO_OPEN_FUNCTION(skel_open) 
 {
 	ZIO_OPEN_MUZZLE;
@@ -106,6 +111,7 @@ zap_status_t skel_init(zap_io_interface_t **zint)
 
 	skel_interface.name = "skel";
 	skel_interface.configure =  skel_configure;
+	skel_interface.configure_span =  skel_configure_span;
 	skel_interface.open = skel_open;
 	skel_interface.close = skel_close;
 	skel_interface.wait = skel_wait;
