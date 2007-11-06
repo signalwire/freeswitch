@@ -83,6 +83,26 @@ static ZINT_WRITE_FUNCTION(skel_write)
 	return ZAP_FAIL;
 }
 
+static ZIO_SPAN_POLL_EVENT_FUNCTION(skel_poll_event)
+{
+	return ZAP_FAIL;
+}
+
+static ZIO_SPAN_NEXT_EVENT_FUNCTION(skel_next_event)
+{
+	return ZAP_FAIL;
+}
+
+static ZIO_CHANNEL_DESTROY_FUNCTION(skel_channel_destroy)
+{
+	return ZAP_FAIL;
+}
+
+static ZIO_GET_ALARMS_FUNCTION(skel_get_alarms)
+{
+	return zap_fail;
+}
+
 static zap_software_interface_t skel_interface;
 
 zap_status_t skel_init(zap_software_interface_t **zint)
@@ -99,6 +119,10 @@ zap_status_t skel_init(zap_software_interface_t **zint)
 	skel_interface.wait = skel_wait;
 	skel_interface.read = skel_read;
 	skel_interface.write = skel_write;
+	skel_interface.poll_event = skel_poll_event;
+	skel_interface.next_event = skel_next_event;
+	skel_interface.channel_destroy = skel_channel_destroy;
+	skel_interface.get_alarms = skel_get_alarms;
 	*zint = &skel_interface;
 
 	return ZAP_FAIL;
