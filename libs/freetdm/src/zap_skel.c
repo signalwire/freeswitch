@@ -35,51 +35,51 @@
 #include "openzap.h"
 #include "zap_skel.h"
 
-static ZINT_CONFIGURE_FUNCTION(skel_configure)
+static ZIO_CONFIGURE_FUNCTION(skel_configure)
 {
-	ZINT_CONFIGURE_MUZZLE;
+	ZIO_CONFIGURE_MUZZLE;
 	return ZAP_FAIL;
 }
 
-static ZINT_OPEN_FUNCTION(skel_open) 
+static ZIO_OPEN_FUNCTION(skel_open) 
 {
-	ZINT_OPEN_MUZZLE;
+	ZIO_OPEN_MUZZLE;
 	return ZAP_FAIL;
 }
 
-static ZINT_CLOSE_FUNCTION(skel_close)
+static ZIO_CLOSE_FUNCTION(skel_close)
 {
-	ZINT_CLOSE_MUZZLE;
+	ZIO_CLOSE_MUZZLE;
 	return ZAP_FAIL;
 }
 
-static ZINT_SET_CODEC_FUNCTION(skel_set_codec)
+static ZIO_SET_CODEC_FUNCTION(skel_set_codec)
 {
-	ZINT_SET_CODEC_MUZZLE;
+	ZIO_SET_CODEC_MUZZLE;
 	return ZAP_FAIL;
 }
 
-static ZINT_SET_INTERVAL_FUNCTION(skel_set_interval)
+static ZIO_SET_INTERVAL_FUNCTION(skel_set_interval)
 {
-	ZINT_SET_INTERVAL_MUZZLE;
+	ZIO_SET_INTERVAL_MUZZLE;
 	return ZAP_FAIL;
 }
 
-static ZINT_WAIT_FUNCTION(skel_wait)
+static ZIO_WAIT_FUNCTION(skel_wait)
 {
-	ZINT_WAIT_MUZZLE;
+	ZIO_WAIT_MUZZLE;
 	return ZAP_FAIL;
 }
 
-static ZINT_READ_FUNCTION(skel_read)
+static ZIO_READ_FUNCTION(skel_read)
 {
-	ZINT_READ_MUZZLE;
+	ZIO_READ_MUZZLE;
 	return ZAP_FAIL;
 }
 
-static ZINT_WRITE_FUNCTION(skel_write)
+static ZIO_WRITE_FUNCTION(skel_write)
 {
-	ZINT_WRITE_MUZZLE;
+	ZIO_WRITE_MUZZLE;
 	return ZAP_FAIL;
 }
 
