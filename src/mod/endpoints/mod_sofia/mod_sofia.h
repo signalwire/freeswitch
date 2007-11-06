@@ -231,7 +231,6 @@ struct sofia_profile {
 	int sip_port;
 	char *codec_string;
 	int running;
-	int codec_ms;
 	int dtmf_duration;
 	unsigned int flags;
 	unsigned int pflags;

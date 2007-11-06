@@ -808,7 +808,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				switch_thread_rwlock_create(&profile->rwlock, profile->pool);
 				switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				profile->dtmf_duration = 100;
-				profile->codec_ms = 20;
+
 
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -970,8 +970,6 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->max_calls = atoi(val);
 					} else if (!strcasecmp(var, "codec-prefs")) {
 						profile->codec_string = switch_core_strdup(profile->pool, val);
-					} else if (!strcasecmp(var, "codec-ms")) {
-						profile->codec_ms = atoi(val);
 					} else if (!strcasecmp(var, "dtmf-duration")) {
 						int dur = atoi(val);
 						if (dur > 10 && dur < 8000) {

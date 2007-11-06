@@ -51,7 +51,6 @@
 	<param name="dialplan" value="XML,enum"/>
 	<param name="dtmf-duration" value="100"/>
 	<param name="codec-prefs" value="$${global_codec_prefs}"/>
-	<param name="codec-ms" value="20"/>
 	<param name="use-rtp-timer" value="true"/>
 	<param name="rtp-timer-name" value="soft"/>
 	<param name="rtp-ip" value="$${local_ip_v4}"/>
