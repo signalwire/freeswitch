@@ -1355,6 +1355,15 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 						*e++ = '\0';
 						break;
 					}
+
+					if (br > 0) {
+						if (e != s && *e == '{') {
+							br++;
+						} else if (br > 1 && *e == '}') {
+							br--;
+						}
+					}
+					
 					e++;
 				}
 				p = e;
@@ -1380,7 +1389,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 
 					if (stream.data) {
 						char *expanded = NULL;
-						
+
 						if ((expanded = switch_channel_expand_variables(channel, vval)) == vval) {
 							expanded = NULL;
 						} else {

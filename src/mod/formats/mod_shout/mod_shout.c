@@ -37,9 +37,9 @@
 #include <lame.h>
 #include <curl/curl.h>
 
-#define OUTSCALE 8192
-#define MP3_SCACHE 16384
-#define MP3_DCACHE 8192
+#define OUTSCALE 8192 * 2
+#define MP3_SCACHE 16384 * 2
+#define MP3_DCACHE 8192 *2
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_shout_shutdown);
