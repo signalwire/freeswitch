@@ -198,14 +198,31 @@ SWITCH_STANDARD_APP(rss_function)
 	if ((feeds = switch_xml_child(cfg, "feeds"))) {
 		for (feed = switch_xml_child(feeds, "feed"); feed; feed = feed->next) {
 			char *name = (char *) switch_xml_attr_soft(feed, "name");
+			char *expanded = NULL;
+			char *idx = feed->txt;
+
+			if ((expanded = switch_channel_expand_variables(channel, idx)) == idx) {
+				expanded = NULL;
+			} else {
+				idx = expanded;
+			}
 
 			if (!name) {
 				name = "Error No Name.";
 			}
 
+			feed_list[feed_index] = switch_core_session_strdup(session, idx);
+			switch_safe_free(expanded);
+
+			if ((expanded = switch_channel_expand_variables(channel, name)) == name) {
+				expanded = NULL;
+			} else {
+				name = expanded;
+			}
 			feed_names[feed_index] = switch_core_session_strdup(session, name);
-			feed_list[feed_index] = switch_core_session_strdup(session, feed->txt);
+			switch_safe_free(expanded);
 			feed_index++;
+
 		}
 	}
 
