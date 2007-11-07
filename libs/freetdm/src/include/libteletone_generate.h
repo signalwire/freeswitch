@@ -288,7 +288,7 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
   \param cmd the script to execute
   \return 0
 */
-int teletone_run(teletone_generation_session_t *ts, char *cmd);
+int teletone_run(teletone_generation_session_t *ts, const char *cmd);
 
 #ifdef __cplusplus
 }
