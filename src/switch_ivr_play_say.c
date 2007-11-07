@@ -166,15 +166,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	}
 
 	if (!(tts_engine = (char *) switch_xml_attr(language, "tts-engine"))) {
-		if (!(tts_engine = (char *) switch_xml_attr(language, "tts_engine"))) {
-			tts_engine = switch_channel_get_variable(channel, tts_engine);
-		}
+		tts_engine = (char *) switch_xml_attr(language, "tts_engine");
 	}
 	
 	if (!(tts_voice = (char *) switch_xml_attr(language, "tts-voice"))) {
-		if (!(tts_voice = (char *) switch_xml_attr(language, "tts_voice"))) {
-			tts_voice = switch_channel_get_variable(channel, tts_voice);
-		}
+		tts_voice = (char *) switch_xml_attr(language, "tts_voice");
 	}
 
 	if (sound_path) {
