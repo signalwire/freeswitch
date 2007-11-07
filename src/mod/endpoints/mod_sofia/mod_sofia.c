@@ -1182,6 +1182,12 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	if (!strcasecmp(argv[1], "flush_inbound_reg")) {
+		sofia_reg_check_expire(profile, 0);
+		stream->write_function(stream, "+OK\n");
+		goto done;
+	}
+
 	if (!strcasecmp(argv[1], "register")) {
 		char *gname = argv[2];
 		sofia_gateway_t *gateway_ptr;
@@ -1263,7 +1269,11 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 				stream->write_function(stream, "restarting: %s", profile->name);
 			}
 		}
+		goto done;
 	}
+
+	stream->write_function(stream, "-ERR Unknown command!\n");
+
 
  done:
 
