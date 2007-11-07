@@ -332,6 +332,9 @@ static void launch_threads(void)
 		switch_thread_create(&thread, thd_attr, read_stream_thread, source, source->pool);
 		
 	}
+
+	switch_xml_free(xml);
+
 }
 
 
