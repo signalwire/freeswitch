@@ -1160,9 +1160,12 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
             {
                 int informed = 0;
                 char msg_count[80] = "";
+
                 switch_channel_set_variable(channel, "voicemail_current_folder", myfolder);
                 message_count(profile, myid, domain_name, myfolder, &total_new_messages, &total_saved_messages, 
                               &total_new_urgent_messages, &total_saved_urgent_messages);
+
+
 
                 if (total_new_urgent_messages > 0) {
                     snprintf(msg_count, sizeof(msg_count), "%d:urgent-new", total_new_urgent_messages);
@@ -1416,7 +1419,8 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 					char *xtra;
                     int ok = 1;
                     caller_profile = switch_channel_get_caller_profile(channel);
-                    xtra = switch_mprintf("mailbox=%s&destination_number=%s&caller_id_number=%s", myid,caller_profile->destination_number,caller_profile->caller_id_number);
+                    xtra = switch_mprintf("mailbox=%s&destination_number=%s&caller_id_number=%s", 
+                                          myid,caller_profile->destination_number,caller_profile->caller_id_number);
                     
                     assert(xtra);
 

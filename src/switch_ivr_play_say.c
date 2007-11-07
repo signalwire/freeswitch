@@ -100,6 +100,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	const char *module_name = NULL, *chan_lang = NULL;
 	switch_channel_t *channel;
 	uint8_t done = 0;
+	int matches = 0;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -214,6 +215,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 			char *expanded = NULL;
 			switch_xml_t match = NULL;
 
+			status = SWITCH_STATUS_SUCCESS;
+
 			if ((proceed = switch_regex_perform(data, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 				match = switch_xml_child(input, "match");
 			} else {
@@ -221,7 +224,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 			}
 
 			if (match) {
-				status = SWITCH_STATUS_SUCCESS;
+				matches++;
 				for (action = switch_xml_child(match, "action"); action && status == SWITCH_STATUS_SUCCESS; action = action->next) {
 					char *adata = (char *) switch_xml_attr_soft(action, "data");
 					char *func = (char *) switch_xml_attr_soft(action, "function");
@@ -302,12 +305,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	}
 
   done:
+	if (!matches) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "macro [%s] did not match any patterns\n", macro_name);
+	}
+
 	if (old_sound_prefix) {
 		switch_channel_set_variable(channel, "sound_prefix", old_sound_prefix);
 	}
 	if (xml) {
 		switch_xml_free(xml);
 	}
+
 	return status;
 }
 
