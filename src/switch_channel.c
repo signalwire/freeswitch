@@ -1379,12 +1379,21 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 					SWITCH_STANDARD_STREAM(stream);
 
 					if (stream.data) {
+						char *expanded = NULL;
+						
+						if ((expanded = switch_channel_expand_variables(channel, vval)) == vval) {
+							expanded = NULL;
+						} else {
+							vval = expanded;
+						}
+
 						if (switch_api_execute(vname, vval, channel->session, &stream) == SWITCH_STATUS_SUCCESS) {
 							func_val = stream.data;
 							sub_val = func_val;
-						} else {
-							free(stream.data);
 						}
+						
+						switch_safe_free(expanded);
+						free(stream.data);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 						free(data);
