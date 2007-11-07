@@ -1382,7 +1382,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 
 				if (vtype == 1) {
 					char *expanded = NULL;
-
+					
 					if ((expanded = switch_channel_expand_variables(channel, (char *)vname)) == vname) {
 						expanded = NULL;
 					} else {
@@ -1397,7 +1397,13 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 					SWITCH_STANDARD_STREAM(stream);
 
 					if (stream.data) {
-
+						char *expanded_vname = NULL;
+						
+						if ((expanded_vname = switch_channel_expand_variables(channel, (char *)vname)) == vname) {
+							expanded_vname = NULL;
+						} else {
+							vname = expanded_vname;
+						}
 
 						if ((expanded = switch_channel_expand_variables(channel, vval)) == vval) {
 							expanded = NULL;
@@ -1413,6 +1419,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 						}
 						
 						switch_safe_free(expanded);
+						switch_safe_free(expanded_vname);
 						
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
