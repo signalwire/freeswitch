@@ -170,7 +170,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	switch_time_t last;
 	int waitsec = globals.ring_interval * 1000000;
 	switch_file_handle_t fh = { 0 };
-	char *val, *ring_file = NULL, *hold_file = NULL;
+	const char *val, *ring_file = NULL, *hold_file = NULL;
 	int16_t abuf[2048];
 
 	tech_pvt = switch_core_session_get_private(session);
@@ -802,7 +802,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 		if (outbound_profile) {
 			char name[128];
-			char *id = !switch_strlen_zero(outbound_profile->caller_id_number) ? outbound_profile->caller_id_number : "na";
+			const char *id = !switch_strlen_zero(outbound_profile->caller_id_number) ? outbound_profile->caller_id_number : "na";
 			snprintf(name, sizeof(name), "Alsa/%s", id);
 
 			switch_channel_set_name(channel, name);
@@ -1409,8 +1409,8 @@ static switch_status_t list_calls(char **argv, int argc, switch_stream_handle_t 
 {
 	private_t *tp;
 	int x = 0;
-	char *cid_name = "n/a";
-	char *cid_num = "n/a";
+	const char *cid_name = "n/a";
+	const char *cid_num = "n/a";
 
 	switch_mutex_lock(globals.pvt_lock);
 	for (tp = globals.call_list; tp; tp = tp->next) {
