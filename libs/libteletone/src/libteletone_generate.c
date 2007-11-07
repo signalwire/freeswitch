@@ -33,7 +33,7 @@
  * Exception:
  * The author hereby grants the use of this source code under the 
  * following license if and only if the source code is distributed
- * as part of the openzap library.  Any use or distribution of this
+ * as part of the openzap library.	Any use or distribution of this
  * source code outside the scope of the openzap library will nullify the
  * following license and reinact the MPL 1.1 as stated above.
  *
@@ -59,7 +59,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER
+ * A PARTICULAR PURPOSE ARE DISCLAIMED.	 IN NO EVENT SHALL THE COPYRIGHT OWNER
  * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
  * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
  * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
@@ -219,7 +219,8 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
 
 	if (map->freqs[0] > 0) {
 		for (freqlen = 0; map->freqs[freqlen] && freqlen < TELETONE_MAX_TONES; freqlen++) {
-			teletone_dds_state_set_tone(&tones[freqlen], map->freqs[freqlen], ts->rate, vol);
+			teletone_dds_state_set_tone(&tones[freqlen], map->freqs[freqlen], ts->rate, 0);
+			teletone_dds_state_set_tx_level(&tones[freqlen], vol);
 		}
 	
 		if (ts->channels > 1) {
@@ -249,7 +250,7 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
 			sample = 128;
 
 			for (i = 0; i < freqlen; i++) {
-				int32_t s = teletone_dds_modulate_sample(&tones[i]);
+				int32_t s = teletone_dds_state_modulate_sample(&tones[i], 0);
 				sample += s;
 			}
 			sample /= freqlen;
