@@ -1381,14 +1381,23 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 				}
 
 				if (vtype == 1) {
+					char *expanded = NULL;
+
+					if ((expanded = switch_channel_expand_variables(channel, (char *)vname)) == vname) {
+						expanded = NULL;
+					} else {
+						vname = expanded;
+					}
 					sub_val = switch_channel_get_variable(channel, vname);
+					switch_safe_free(expanded);
 				} else {
 					switch_stream_handle_t stream = { 0 };
+					char *expanded = NULL;
 
 					SWITCH_STANDARD_STREAM(stream);
 
 					if (stream.data) {
-						char *expanded = NULL;
+
 
 						if ((expanded = switch_channel_expand_variables(channel, vval)) == vval) {
 							expanded = NULL;
