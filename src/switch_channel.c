@@ -1374,9 +1374,20 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 					while(*e == ' ') {
 						*e-- = '\0';
 					}
-					if ((e = strchr(vval, ')'))) {
-						*e = '\0';
+					e = vval;
+					br = 1;
+					while(e && *e) {
+						if (*e == '(') {
+							br++;
+						} else if (br > 1 && *e == ')') {
+							br--;
+						} else if (br == 1 && *e == ')') {
+							*e = '\0';
+							break;
+						}
+						e++;
 					}
+
 					vtype = 2;
 				}
 
@@ -1398,7 +1409,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 
 					if (stream.data) {
 						char *expanded_vname = NULL;
-						
+
 						if ((expanded_vname = switch_channel_expand_variables(channel, (char *)vname)) == vname) {
 							expanded_vname = NULL;
 						} else {
@@ -1462,6 +1473,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 		}
 	}
 	free(indup);
+	
 	return data;
 }
 

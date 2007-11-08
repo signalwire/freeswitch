@@ -1,0 +1,828 @@
+<html>
+
+<head>
+<title>Expression Help</title>
+<style type="text/css">
+.valid {
+  color: #00AA00;
+}
+.invalid {
+  color: #FF0000;
+}
+.excomment {
+  color: #0000FF;
+}
+.container {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  padding-left: 4px;
+  padding-right: 4px;
+  border-top: 1px solid #000000;
+  border-right: 1px solid #000000;
+  border-bottom: 1px solid #000000;
+  border-left: 1px solid #000000;
+  background-color: #BBBBBB;
+}
+body {
+  background-color: #AAAAAA;
+}
+</style>
+</head>
+
+<body>
+
+<div align="center">
+    <h1>Expression Help</h1>
+    <hr>
+</div>
+
+<div align="left" class="container">
+    <h2>Contents</h2>
+    <h3>
+        <ul>
+            <li><a href="#Syntax">Expression Syntax</a></li>
+            <li><a href="#Operators">Order of Operators</a></li>
+            <li><a href="#InternalFunc">ExprEval Internal Functions</a></li>
+            <li><a href="#InternalConst">ExprEval Internal Constants</a></li>
+            <li><a href="#AppFunc">Application Internal Functions</a></li>
+            <li><a href="#AppConst">Application Internal Constants</a></li>
+            <li><a href="#AppVar">Application Internal Variables</a></li>
+        </ul>
+    </h3>
+</div>
+
+<div align="left" class="container">
+    <h2><a name="Syntax">Expression Syntax</a></h2>
+    <blockquote>
+        <p>Expressions have pretty much the same syntax as they
+            would have on paper, with the following exceptions:
+            <ul>
+                <li>Each expression must end with a semicolon. This
+                    is because the expression string can actually
+                    contain multiple expressions.  The semicolon is
+                    used to mark the end of the expression.<br>
+                    <b>Examples:</b>
+                    <ul>
+                        <li>4*x+5;</li>
+                        <li>y=5+2;g=4+6;</li>
+                        <li>y=r*sin(a);x=r*cos(a);</li>
+                    </ul>
+                </li>
+                <li>The asterisk '*' must be used to multiply.<br>
+                    <b>Examples:</b>
+                    <ul>
+                        <li>y=5*6; <b class="valid">Valid</b></li>
+                        <li>g=(x+1)*(x-1); <b class="valid">Valid</b></li>
+                        <li>g=(x+1)(x-1); <b class="invalid">Invalid</b></li>
+                    </ul>
+                </li>
+            </ul>
+        </p>
+        <p>More than one expression may be contained within an expression string.
+            As shown above, each expression must end with a semicolon, even if
+            only one expression is in the string. The value of an expression
+            string is the value of the last expression in the string.<br>
+            <b>Examlples:</b>
+            <ul>
+                <li>g=7; <b class="excomment">Value: 7</b></li>
+                <li>k=z+1; <b class="excomment">Value: z+1</b></li>
+                <li>r=4;k=6;o=9+r-k; <b class="excomment">Value: 9+r-k</b></li>
+            </ul>
+        </p>
+        <p>Some functions may take reference parameters.  These parameters are
+            references to other variables.  You can mix reference parameters
+            with normal parameters.  The order of the normal parameters must
+            remain the same and the order of the reference parameters must
+            remain the same.<br>
+            <b>Examples:</b>
+            <ul>
+                <li>min(1,2,3,4,&mval); <b class="excomment">&mval is a reference to a variable mval</b></li>
+                <li>min(1,2,&mval,3,4); <b class="excomment">You may mix them inside like this.</b></li>
+                <li>min(1,2,(&mval),3,4); <b class="invalid">You may not nest reference parameters in any way</b></li>
+            </ul>
+        </p>
+        <p>Expressions may also be nested with parenthesis.<br>
+        <b>Examples:</b>
+            <ul>
+                <li>y=sin(x-cos(5+max(4,5,6*x)));</li>
+                <li>6+(5-2*(x+y));</li>
+            </ul>
+        </p>
+        <p>Expressions may also have whitespace characters and comments.
+            Whitespace characters such as newlines, linefeeds, carriage
+            returns, spaces, and tabs are ignored.  Comments begin with
+            the pound sign '#' and end at the end of the line.<br>
+            <b>Example:</b>
+            <ul>
+                <pre>
+#Set the x value
+x = d * cos(r);
+
+#Set the y value
+y = d * sin(r);
+                </pre>
+            </ul>
+        </p>
+        <p>If a variable is used in an expression, but that variable does not exist,
+            it is considered zero.  If it does exist then its value is used instead.
+        </p>
+        <p><b>Notice:</b> An expression can <b>NOT</b> assign to a constant and an
+            expression can <b>NOT</b> use a constant as a reference parameter.
+        </p>
+    </blockquote>
+</div>
+
+<div align="left" class="container">
+    <h2><a name="Operators">Order of operators.</a></h2>
+    <blockquote>
+        <p>The order of operators are processed correctly in ExprEval.
+        The parameters to functions may be evaluated out of order, depending
+        on the function itself.</p>
+
+        The following illustrates the order of operators:
+        <table align="center" border="1" width="75%">
+            <tr>
+                <td align="center"><b>Operator</b></td>
+                <td align="center"><b>Direction</b></td>
+                <td align="center"><b>Example</b></td>
+            </tr>
+            <tr>
+                <td>Functions and Parenthesis</td>
+                <td>N/A</td>
+                <td>(x + 5) * sin(d);</td>
+            </tr>
+            <tr>
+                <td>Negation</td>
+                <td>Right to Left</td>
+                <td>y = -2;</td>
+            </tr>
+            <tr>
+                <td>Exponents</td>
+                <td>Left to Right</td>
+                <td>y = x ^ 2;</td>
+            </tr>
+            <tr>
+                <td>Multiplication and Division</td>
+                <td>Left to Right</td>
+                <td>x * 5 / y;</td>
+            </tr>
+            <tr>
+                <td>Addition and Subtraction</td>
+                <td>Left to Right</td>
+                <td>4 + 5 - 3;</td>
+            </tr>
+            <tr>
+                <td>Assignment</td>
+                <td>Right to Left</td>
+                <td>x = y = z = 0;</td>
+            </tr>
+        </table>
+
+    </blockquote>
+</div>
+
+<div align="left" class="container">
+    <h2><a name="InternalFunc">ExprEval Internal Functions</a></h2>
+    <blockquote>
+        The following functions are provided with ExprEval:
+        <table align="center" border="1" width="75%">
+            <tr>
+                <td align="center"><b>Function</b></td>
+                <td align="center"><b>Min. Args</b></td>
+                <td align="center"><b>Max. Args</b></td>
+                <td align="center"><b>Min. Ref Args</b></td>
+                <td align="center"><b>Max. Ref Args</b></td>
+                <td align="center"><b>Result/Comment</b></td>
+            </tr>
+            <tr>
+                <td>abs(v)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Absolute value of v.<br>
+                    abs(-4.3) returns 4.3</td>
+            </tr>
+            <tr>
+                <td>mod(v,d)</td>
+                <td>2</td>
+                <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Remainder of v/d.<br>
+                    mod(5.2,2.5) return 0.2</td>
+            </tr>
+            <tr>
+                <td>ipart(v)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>The integer part of v.<br>
+                    ipart(3.2) returns 3</td>
+            </tr>
+            <tr>
+                <td>fpart(v)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>The fractional part of v.<br>
+                    fpart(3.2) returns 0.2</td>
+            </tr>
+            <tr>
+                <td>min(v,...)</td>
+                <td>1</td>
+                <td>None</td>
+                <td>0</td>
+                <td>0</td>
+                <td>The minimum number passed.<br>
+                    min(3,2,-5,-2,7) returns -5</td>
+            </tr>
+            <tr>
+                <td>max(v,...)</td>
+                <td>1</td>
+                <td>None</td>
+                <td>0</td>
+                <td>0</td>
+                <td>The maximum number passed.<br>
+                    max(3,2,-5,-2,7) returns 7</td>
+            </tr>
+
+            <tr>
+                <td>pow(a,b)</td>
+                <td>2</td>
+                <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                <td>The value a raised to the power b.<br>
+                    pow(3.2,1.7) returns 3.2<sup>1.7</sup></td>
+            </tr>
+            <tr>
+                <td>sqrt(a)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>The square root of a.</br>
+                    sqrt(16) returns 4</td>
+            </tr>
+
+            <tr>
+                <td>sin(a)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>The sine of a radians.<br>
+                    sin(1.5) returns around 0.997</td>
+            </tr>
+            <tr>
+                <td>sinh(a)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>The hyperbolic sine of a.<br>
+                    sinh(1.5) returns around 2.129</td>
+            </tr>
+            <tr>
+                <td>asin(a)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>The arc-sine of a in radians.<br>
+                    asin(0.5) returns around 0.524</td>
+            </tr>
+
+            <tr>
+                <td>cos(a)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>The cosine of a radians.<br>
+                    cos(1.5) returns around 0.0707</td>
+            </tr>
+            <tr>
+                <td>cosh(a)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>The hyperbolic cosine of a.</br>
+                    cosh(1.5) returns around 2.352</td>
+            </tr>
+            <tr>
+                <td>acos(a)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>The arc-cosine of a in radians.<br>
+                    acos(0.5) returns around 1.047</td>
+            </tr>
+
+            <tr>
+                <td>tan(a)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>The tangent of a radians.<br>
+                    tan(1.5) returns around 14.101</td>
+            </tr>
+            <tr>
+                <td>tanh(a)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>The hyperbolic tangent of a.</br>
+                    tanh(1.5) returns around 0.905</td>
+            </tr>
+            <tr>
+                <td>atan(a)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>The arc-tangent of a in radians.<br>
+                    atan(0.3) returns about 0.291</td>
+            </tr>
+            <tr>
+                <td>atan2(y,x)</td>
+                <td>2</td>
+                <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                <td>The arc-tangent of y/x, with quadrant correction.<br>
+                    atan2(4,3) returns about 0.927</td>
+            </tr>
+
+            <tr>
+                <td>log(a)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>The base 10 logarithm of a.<br>
+                    log(100) returns 2</td>
+            </tr>
+            <tr>
+                <td>pow10(a)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>10 raised to the power of a.<br>
+                    pow10(2) returns 100</td>
+            </tr>
+            <tr>
+                <td>ln(a)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>The base e logarithm of a.<br>
+                    ln(2.8) returns around 1.030</td>
+            </tr>
+            <tr>
+                <td>exp(a)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>e raised to the power of a.<br>
+                    exp(2) returns around 7.389</td>
+            </tr>
+            <tr>
+                <td>logn(a,b)</td>
+                <td>2</td>
+                <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                <td>The base b logarithm of a.<br>
+                    logn(16,2) returns 4</td>
+            </tr>
+
+            <tr>
+                <td>ceil(a)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Rounds a up to the nearest integer.<br>
+                    ceil(3.2) returns 4</td>
+            </tr>
+            <tr>
+                <td>floor(a)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Rounds a down to the nearest integer.<br>
+                    floor(3.2) returns 3</td>
+            </tr>
+
+            <tr>
+                <td>rand(&seed)</td>
+                <td>0</td>
+                <td>0</td>
+                <td>1</td>
+                <td>1</td>
+                <td>Returns a number between 0 up to but not including 1.</td>
+            </tr>
+            <tr>
+                <td>random(a,b,&seed)</td>
+                <td>2</td>
+                <td>2</td>
+                <td>1</td>
+                <td>1</td>
+                <td>Returns a number between a up to and including b.</td>
+            </tr>
+            <tr>
+                <td>randomize(&seed)</td>
+                <td>0</td>
+                <td>0</td>
+                <td>1</td>
+                <td>1</td>
+                <td>Seed the random number generator with a value
+                    based on the current time.<br>
+                    Return value is unknown</td>
+            </tr>
+
+            <tr>
+                <td>deg(a)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Returns a radians converted to degrees.<br>
+                    deg(3.14) returns around 179.909</td>
+            </tr>
+            <tr>
+                <td>rad(a)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Returns a degrees converted to radians.<br>
+                    rad(180) returns around 3.142</td>
+            </tr>
+            <tr>
+                <td>recttopolr(x,y)</td>
+                <td>2</td>
+                <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Returns the polar radius of the rectangular co-ordinates.<br>
+                    recttopolr(2,3) returns around 3.606</td>
+            </tr>
+            <tr>
+                <td>recttopola(x,y)</td>
+                <td>2</td>
+                <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Returns the polar angle (0...2PI) in radians of the rectangular co-ordinates.<br>
+                    recttopola(2,3) returns around 0.588</td>
+            </tr>
+            <tr>
+                <td>poltorectx(r,a)</td>
+                <td>2</td>
+                <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Returns the x rectangular co-ordinate of the polar
+                    co-ordinates.<br>
+                    poltorectx(3,1.5) returns around 0.212</td>
+            </tr>
+            <tr>
+                <td>poltorecty(r,a)</td>
+                <td>2</td>
+                <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Returns the y rectangular co-ordinate of the polar
+                    co-ordinates.<br>
+                    poltorecty(3,1.5) returns around 2.992</td>
+            </tr>
+
+            <tr>
+                <td>if(c,t,f)</td>
+                <td>3</td>
+                <td>3</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Evaluates and returns t if c is not 0.0.
+                    Else evaluates and returns f.<br>
+                    if(0.1,2.1,3.9) returns 2.1</td>
+            </tr>
+            <tr>
+                <td>select(c,n,z[,p])</td>
+                <td>3</td>
+                <td>4</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Returns n if c is less than 0.0.  Returns z
+                    if c is 0.0.  If c is greater than 0.0 and only
+                    three arguments were passed, returns z.  If c
+                    is greater than 0.0 and four arguments were passed,
+                    return p.<br>
+                    select(3,1,4,5) returns 5</td>
+            </tr>
+            <tr>
+                <td>equal(a,b)</td>
+                <td>2</td>
+                <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Returns 1.0 if a is equal to b. Else returns 0.0<br>
+                    equal(3,2) returns 0.0</td>
+            </tr>
+            <tr>
+                <td>above(a,b)</td>
+                <td>2</td>
+                <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Returns 1.0 if a is above b. Else returns 0.0<br>
+                    above(3,2) returns 1.0</td>
+            </tr>
+            <tr>
+                <td>below(a,b)</td>
+                <td>2</td>
+                <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Returns 1.0 if a is below b. Else returns 0.0<br>
+                    below(3,2) returns 0.0</td>
+            </tr>
+
+            <tr>
+                <td>avg(a,...)</td>
+                <td>1</td>
+                <td>None</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Returns the average of the values passed.<br>
+                    avg(3,3,6) returns 4</td>
+            </tr>
+            <tr>
+                <td>clip(v,min,max)</td>
+                <td>3</td>
+                <td>3</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Clips v to the range from min to max.  If v is less
+                    than min, it returns min.  If v is greater than
+                    max it returns max. Otherwise it returns v.<br>
+                    clip(3,1,2) returns 2</td>
+            </tr>
+            <tr>
+                <td>clamp(v,min,max)</td>
+                <td>3</td>
+                <td>3</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Clamps v to the range from min to max, looping
+                    if needed.<br>
+                    clamp(8.2,1.3,4.7) returns 1.4</td>
+            </tr>
+            <tr>
+                <td>pntchange(side1old, side2old, side1new, side2new, oldpnt)</td>
+                <td>5</td>
+                <td>5</td>
+                <td>0</td>
+                <td>0</td>
+                <td>This is used to translate points from different
+                    scale.  It works no matter the orientation as long
+                    as the sides are lined up correctly.<br>
+                    pntchange(-1,1,0,480,-0.5) returns 120 (x example)<br>
+                    pntchange(-1,1,480,0,-0.5) returns 360 (y example)</td>
+            </tr>
+            <tr>
+                <td>poly(x,c1,...)</td>
+                <td>2</td>
+                <td>None</td>
+                <td>0</td>
+                <td>0</td>
+                <td>This function calculates the polynomial.  x is the value
+                    to use in the polynomial. c1 and on are the coefficients.<br>
+                    poly(4,6,9,3,1,4) returns 2168<br>
+                    same as 6*4<sup>4</sup> + 9*4<sup>3</sup> + 3*4<sup>2</sup> + 1*4<sup>1</sup> + 4*4<sup>0</sup></td>
+            </tr>
+
+            <tr>
+                <td>and(a,b)</td>
+                <td>2</td>
+                <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Returns 0.0 if either a or b are 0.0 Else returns 1.0<br>
+                    and(2.1,0.0) returns 0.0</td>
+            </tr>
+            <tr>
+                <td>or(a,b)</td>
+                <td>2</td>
+                <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Returns 0.0 if both a and b are 0.0 Else returns 1.0<br>
+                    or(2.1,0.0) returns 1.0</td>
+            </tr>
+            <tr>
+                <td>not(a)</td>
+                <td>1</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>Returns 1.0 if a is 0.0 Else returns 0.0<br>
+                    not(0.3) returns 0.0</td>
+            </tr>
+            <tr>
+                <td>for(init,test,inc,a1,...)</td>
+                <td>4</td>
+                <td>None</td>
+                <td>0</td>
+                <td>0</td>
+                <td>This function acts like a for loop in C. First init is
+                    evaluated.  Then test is evaluated.  As long as the
+                    test is not 0.0, the action statements (a1 to an) are
+                    evaluated, the inc statement is evaluated, and the test
+                    is evaluated again.  The result is the result of the
+                    final action statement.<br>
+                    for(x=0,below(x,11),x=x+1,y=y+x) returns 55.0 (if y was
+                    initially 0.0)</td>
+            </tr>
+            <tr>
+                <td>many(expr,...)</td>
+                <td>1</td>
+                <td>None</td>
+                <td>0</td>
+                <td>0</td>
+                <td>This function treats many subexpressions as a single object
+                    (function). It is mainly for the 'for' function.<br>
+                    for(many(j=5,k=1),above(j*k,0.001),many(j=j+5,k=k/2),0)</td>
+            </tr>
+
+
+        </table>
+
+    </blockquote>
+</div>
+
+<div align="left" class="container">
+    <h2><a name="InternalConst">ExprEval Internal Constants</a></h2>
+    <blockquote>
+        The following constants are provided with ExprEval:
+        <table align="center" border="1" width="75%">
+            <tr>
+                <td align="center"><b>Constant</b></td>
+                <td align="center"><b>Math Form</b></td>
+                <td align="center"><b>Value</b></td>
+            </tr>
+            <tr>
+                <td>M_E</td>
+                <td>e</td>
+                <td>2.7182818284590452354</td>
+            </tr>
+            <tr>
+                <td>M_LOG2E</td>
+                <td>log<sub>2</sub>(e)</td>
+                <td>1.4426950408889634074</td>
+            </tr>
+            <tr>
+                <td>M_LOG10E</td>
+                <td>log<sub>10</sub>(e)</td>
+                <td>0.43429448190325182765</td>
+            </tr>
+            <tr>
+                <td>M_LN2</td>
+                <td>ln(2)</td>
+                <td>0.69314718055994530942</td>
+            </tr>
+            <tr>
+                <td>M_LN10</td>
+                <td>ln(10)</td>
+                <td>2.30258509299404568402</td>
+            </tr>
+            <tr>
+                <td>M_PI</td>
+                <td>&#960;</td>
+                <td>3.14159265358979323846</td>
+            </tr>
+            <tr>
+                <td>M_PI_2</td>
+                <td>&#960;/2</td>
+                <td>1.57079632679489661923</td>
+            </tr>
+            <tr>
+                <td>M_PI_4</td>
+                <td>&#960;/4</td>
+                <td>0.78539816339744830962</td>
+            </tr>
+            <tr>
+                <td>M_1_PI</td>
+                <td>1/&#960;</td>
+                <td>0.31830988618379067154</td>
+            </tr>
+            <tr>
+                <td>M_2_PI</td>
+                <td>2/&#960;</td>
+                <td>0.63661977236758134308</td>
+            </tr>
+            <tr>
+                <td>M_1_SQRTPI</td>
+                <td>1/&#8730;(&#960;)</td>
+                <td>0.56418958354776</td>
+            </tr>
+            <tr>
+                <td>M_2_SQRTPI</td>
+                <td>2/&#8730;(&#960;)</td>
+                <td>1.12837916709551257390</td>
+            </tr>
+            <tr>
+                <td>M_SQRT2</td>
+                <td>&#8730;(2)</td>
+                <td>1.41421356237309504880</td>
+            </tr>
+            <tr>
+                <td>M_1_SQRT2</td>
+                <td>1/&#8730;(2)</td>
+                <td>0.70710678118654752440</td>
+            </tr>
+        </table>
+    </blockquote>
+</div>
+
+<div align="left" class="container">
+    <h2><a name="AppFunc">Application Internal Functions</a></h2>
+    <blockquote>
+        Application defined expression functions go here.
+        <table align="center" border="1" width="75%">
+            <tr>
+                <td align="center"><b>Function</b></td>
+                <td align="center"><b>Min. Args</b></td>
+                <td align="center"><b>Max. Args</b></td>
+                <td align="center"><b>Min. Ref Args</b></td>
+                <td align="center"><b>Max. Ref Args</b></td>
+                <td align="center"><b>Result/Comment</b></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+        </table>
+    </blockquote>
+</div>
+
+<div align="left" class="container">
+    <h2><a name="AppConst">Application Internal Constants</a></h2>
+    <blockquote>
+        Application defined expression constants go here.
+        <table align="center" border="1" width="75%">
+            <tr>
+                <td align="center"><b>Constant</b></td>
+                <td align="center"><b>Math Form</b></td>
+                <td align="center"><b>Value</b></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+        </table>
+    </blockquote>
+</div>
+
+<div align="left" class="container">
+    <h2><a name="AppVar">Application Internal Variables</a></h2>
+    <blockquote>
+        Application defined expression variables go here.
+        <table align="center" border="1" width="75%">
+            <tr>
+                <td align="center"><b>Variable</b></td>
+                <td align="center"><b>Math Form</b></td>
+                <td align="center"><b>Value</b></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+        </table>
+    </blockquote>
+</div>
+
+</body>
+
+</html>
+
+

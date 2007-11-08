@@ -197,6 +197,67 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(char *to, char *from, char *he
     return SWITCH_TRUE;
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_is_lan_addr(const char *ip)
+{
+
+
+	return (
+			strncmp(ip, "10.", 3) &&
+			strncmp(ip, "192.168.", 8) &&
+			strncmp(ip, "127.", 4) &&
+			strncmp(ip, "255.", 4) &&
+			strncmp(ip, "0.", 2) &&
+			strncmp(ip, "1.", 2) &&
+			strncmp(ip, "2.", 2) &&
+			strncmp(ip, "172.16.", 7) &&
+			strncmp(ip, "172.17.", 7) &&
+			strncmp(ip, "172.18.", 7) &&
+			strncmp(ip, "172.19.", 7) &&
+			strncmp(ip, "172.2", 5) &&
+			strncmp(ip, "172.30.", 7) &&
+			strncmp(ip, "172.31.", 7) &&
+			strncmp(ip, "192.0.2.", 8) &&
+			strncmp(ip, "169.254.", 8)
+			) ? SWITCH_FALSE : SWITCH_TRUE;
+	
+}
+
+
+SWITCH_DECLARE(char *) switch_strip_spaces(const char *str)
+{
+	const char *sp = str;
+	char *p, *s = NULL;
+	
+	while(sp && *sp && *sp == ' ') {
+		sp++;
+	}
+	
+	s = strdup(sp);
+
+	p = s + (strlen(s) - 1);
+
+	while(*p == ' ') {
+		*p-- = '\0';
+	}
+	
+	return s;
+}
+
+SWITCH_DECLARE(switch_bool_t) switch_is_number(const char *str)
+{
+	const char *p;
+	switch_bool_t r = SWITCH_TRUE;
+
+	for (p = str; p && *p; p++) {
+		if (!(*p == '.' || (*p > 47 && *p < 58))) {
+			r = SWITCH_FALSE;
+			break;
+		}
+	}
+
+	return r;
+}
+
 
 SWITCH_DECLARE(const char *) switch_stristr(const char *str, const char *instr)
 {
@@ -536,8 +597,7 @@ SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char 
 	int argc;
 	char *ptr;
 	int quot = 0;
-	char qc = '"';
-	char *e;
+	char qc = '\'';
 	int x;
 
 	if (!buf || !array || !arraylen) {
@@ -568,13 +628,21 @@ SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char 
 		array[argc++] = ptr;
 	}
 
-	/* strip quotes */
+	/* strip quotes and leading / trailing spaces */
 	for (x = 0; x < argc; x++) {
-		if (*(array[x]) == qc) {
+		char *p;
+
+		while(*(array[x]) == ' ') {
 			(array[x])++;
-			if ((e = strchr(array[x], qc))) {
-				*e = '\0';
-			}
+		}
+		p = array[x];
+		while((p = strchr(array[x], qc))) {
+			memmove(p, p+1, strlen(p));
+			p++;
+		}
+		p = array[x] + (strlen(array[x]) - 1);
+		while(*p == ' ') {
+			*p-- = '\0';
 		}
 	}
 

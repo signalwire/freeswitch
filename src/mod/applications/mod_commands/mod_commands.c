@@ -40,6 +40,138 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load);
 SWITCH_MODULE_DEFINITION(mod_commands, mod_commands_load, NULL, NULL);
 
+
+typedef enum {
+    O_NONE,
+    O_EQ,
+    O_NE,
+    O_GT,
+    O_GE,
+    O_LT,
+    O_LE
+} o_t;
+
+SWITCH_STANDARD_API(qq_function)
+{
+    int argc;
+	char *mydata = NULL, *argv[3];
+    char *expr;
+    char *a, *b;
+    float a_f = 0.0, b_f = 0.0;
+    o_t o = O_NONE;
+    int is_true = 0;
+    char *p;
+
+    if (!cmd) {
+        goto error;
+    }
+
+    mydata = strdup(cmd);
+    assert(mydata);
+
+    if ((p = strchr(mydata, '?'))) {
+        *p = ':';
+    } else {
+        goto error;
+    }
+
+    argc = switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0])));
+
+    if (argc != 3) {
+        goto error;
+    }
+
+    a = argv[0];
+    
+    if ((expr = strchr(a, '!'))) {
+        *expr++ = '\0';
+        if (*expr == '=') {
+            o = O_NE;
+        }
+    } else if ((expr = strchr(a, '>'))) {
+        if (*(expr+1) == '=') {
+            *expr++ = '\0';
+            o = O_GE;
+        } else {
+            o = O_GT;
+        }
+    } else if ((expr = strchr(a, '<'))) {
+        if (*(expr+1) == '=') {
+            *expr++ = '\0';
+            o = O_LE;
+        } else {
+            o = O_LT;
+        }
+    } else if ((expr = strchr(a, '='))) {
+        *expr++ = '\0';
+        if (*expr == '=') {
+            o = O_EQ;
+        }
+    }
+
+
+    if (o) {
+        char *s_a = NULL, *s_b = NULL;
+        int a_is_num, b_is_num;
+        *expr++ = '\0';
+        b = expr;
+        s_a = switch_strip_spaces(a);
+        s_b = switch_strip_spaces(b);
+        a_is_num = switch_is_number(s_a);
+        b_is_num = switch_is_number(s_b);
+
+        a_f = a_is_num ? atof(s_a) : (float) strlen(s_a);
+        b_f = b_is_num ? atof(s_b) : (float) strlen(s_b);
+        
+        switch (o) {
+        case O_EQ:
+            if (!a_is_num && !b_is_num) {
+                is_true = !strcmp(s_a, s_b);
+            } else {
+                is_true = a_f == b_f;
+            }
+            break;
+        case O_NE:
+            is_true = a_f != b_f;
+            break;
+        case O_GT:
+            is_true = a_f > b_f;
+            break;
+        case O_GE:
+            is_true = a_f >= b_f;
+            break;
+        case O_LT:
+            is_true = a_f < b_f;
+            break;
+        case O_LE:
+            is_true = a_f <= b_f;
+            break;
+        default:
+            break;
+        }
+        switch_safe_free(s_a);
+        switch_safe_free(s_b);
+        stream->write_function(stream, "%s", is_true ? argv[1] : argv[2]);
+        goto ok;
+    } 
+
+ error:
+    stream->write_function(stream, "!err!");    
+ ok:
+
+    switch_safe_free(mydata);
+    return SWITCH_STATUS_SUCCESS;
+    
+    
+}
+
+
+SWITCH_STANDARD_API(lan_addr_function)
+{
+	stream->write_function(stream, "%s", switch_is_lan_addr(cmd) ? "yes" : "no");
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(status_function)
 {
 	uint8_t html = 0;
@@ -1502,6 +1634,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "sched_api", "Schedule an api command", sched_api_function, "[+]<time> <group_name> <command_string>");
 	SWITCH_ADD_API(commands_api_interface, "sched_del", "Delete a Scheduled task", sched_del_function, "<task_id>|<group_id>");
 	SWITCH_ADD_API(commands_api_interface, "xml_wrap", "Wrap another api command in xml", xml_wrap_api_function, "<command> <args>");
+	SWITCH_ADD_API(commands_api_interface, "is_lan_addr", "see if an ip is a lan addr", lan_addr_function, "<ip>");
+	SWITCH_ADD_API(commands_api_interface, "qq", "Eval a conditional", qq_function, "<expr> ? <true val> : <false val>");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;

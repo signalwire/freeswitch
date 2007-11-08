@@ -298,7 +298,10 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in);
 */
 SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char **array, int arraylen);
 
+SWITCH_DECLARE(switch_bool_t) switch_is_number(const char *str);
+SWITCH_DECLARE(char *) switch_strip_spaces(const char *str);
 SWITCH_DECLARE(const char *) switch_stristr(const char *str, const char *instr);
+SWITCH_DECLARE(switch_bool_t) switch_is_lan_addr(const char *ip);
 
 /*!
   \brief Escape a string by prefixing a list of characters with an escape character

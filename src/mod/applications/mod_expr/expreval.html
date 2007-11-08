@@ -1,0 +1,1334 @@
+<html>
+<head>
+<title>ExprEval Library</title>
+<style type="text/css">
+.valid {
+  color: #00AA00;
+}
+.invalid {
+  color: #FF0000;
+}
+.excomment {
+  color: #0000FF;
+}
+.container {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  padding-left: 4px;
+  padding-right: 4px;
+  border-top: 1px solid #000000;
+  border-right: 1px solid #000000;
+  border-bottom: 1px solid #000000;
+  border-left: 1px solid #000000;
+  background-color: #BBBBBB;
+}
+body {
+  background-color: #AAAAAA;
+}
+</style>
+</head>
+<body>
+
+<div align="center">
+    <h1>ExprEval Library</h1>
+    <hr>
+</div>
+
+<div align="left" class="container">
+    <h2>Contents</h2>
+    <h3>
+        <ul>
+            <a href="#Introduction">Introduction</a><br>
+            <a href="#License">License</a><br>
+            <a href="#Syntax">Expression Syntax</a><br>
+            <a href="#Using">Using ExprEval in an Application</a><br>
+            <a href="#FastVar">Fast Variable Access</a><br>
+            <a href="#InternalFuncConst">Using the Internal Functions and Constants</a><br>
+            <a href="#CustomFunc">Creating Custom Functions</a><br>
+            <a href="#Reference">Reference</a><br>
+            <a href="#Compiling">Compiling the ExprEval Library</a><br>
+            <a href="#Drawbacks">Drawbacks/Problems</a><br>
+            <a href="#Solutions">Problems and Solutions</a><br>
+            <a href="#Example">Example Use</a><br>
+        </ul>
+    </h3>
+</div>
+
+<div align="left" class="container">
+    <h2><a name="Introduction">Introduction</a></h2>
+    <blockquote>
+        <p>ExprEval Help document.  This document is probably full of
+            bugs and mispellings.  I may get around to proofreading
+            it later.</p>
+        <p>ExprEval is a C based expression evaluation library.
+            It is entirely C based, but can be used in C++ programs
+            as well..  The source code is provided for the library
+            so that it can be recompiled for the specific system
+            or compiler.</p>
+        <p>ExprEval makes adding mathematical expression support to
+            an application easy.  It takes an expression string and
+            parses it, and then it can evaluate it over and over.
+            This library also has support for functions, constants,
+            and variables.  All of these items are stored in
+            seperate lists so they can be shared among expressions or
+            they can be private to a single expression or any mix and
+            match.  It is up to the developer how to link them together.
+            You can also create your own custom functions.</p>
+    </blockquote>
+</div>
+
+<div align="left" class="container">
+    <h2><a name="License">License</a></h2>
+    <blockquote>
+        <p>This library is licensed under the
+        <a href="license.txt">ExprEval License.</a>
+        </p>
+    </blockquote>
+</div>
+
+<div align="left" class="container">
+    <h2><a name="Syntax">Expression Syntax</a></h2>
+    <blockquote>
+        <p>Expressions have pretty much the same syntax as they
+            would have on paper, with the following exceptions:
+            <ul>
+                <li>Each expression must end with a semicolon. This
+                    is because the expression string can actually
+                    contain multiple expressions.  The semicolon is
+                    used to mark the end of the expression.<br>
+                    <b>Examples:</b>
+                    <ul>
+                        <li>4*x+5;</li>
+                        <li>y=5+2;g=4+6;</li>
+                        <li>y=r*sin(a);x=r*cos(a);</li>
+                    </ul>
+                </li>
+                <li>The asterisk '*' must be used to multiply.<br>
+                    <b>Examples:</b>
+                    <ul>
+                        <li>y=5*6; <b class="valid">Valid</b></li>
+                        <li>g=(x+1)*(x-1); <b class="valid">Valid</b></li>
+                        <li>g=(x+1)(x-1); <b class="invalid">Invalid</b></li>
+                    </ul>
+                </li>
+            </ul>
+        </p>
+        <p>More than one expression may be contained within an expression string.
+            As shown above, each expression must end with a semicolon, even if
+            only one expression is in the string. The value of an expression
+            string is the value of the last expression in the string.<br>
+            <b>Examlples:</b>
+            <ul>
+                <li>g=7; <b class="excomment">Value: 7</b></li>
+                <li>k=z+1; <b class="excomment">Value: z+1</b></li>
+                <li>r=4;k=6;o=9+r-k; <b class="excomment">Value: 9+r-k</b></li>
+            </ul>
+        </p>
+        <p>Some functions may take reference parameters.  These parameters are
+            references to other variables.  You can mix reference parameters
+            with normal parameters.  The order of the normal parameters must
+            remain the same and the order of the reference parameters must
+            remain the same.<br>
+            <b>Examples:</b>
+            <ul>
+                <li>min(1,2,3,4,&mval); <b class="excomment">&mval is a reference to a variable mval</b></li>
+                <li>min(1,2,&mval,3,4); <b class="excomment">You may mix them inside like this.</b></li>
+                <li>min(1,2,(&mval),3,4); <b class="invalid">You may not nest reference parameters in any way</b></li>
+            </ul>
+        </p>
+        <p>Expressions may also be nested with parenthesis.<br>
+        <b>Examples:</b>
+            <ul>
+                <li>y=sin(x-cos(5+max(4,5,6*x)));</li>
+                <li>6+(5-2*(x+y));</li>
+            </ul>
+        </p>
+        <p>Expressions may also have whitespace characters and comments.
+            Whitespace characters such as newlines, linefeeds, carriage
+            returns, spaces, and tabs are ignored.  Comments begin with
+            the pound sign '#' and end at the end of the line.<br>
+            <b>Example:</b>
+            <ul>
+                <pre>
+#Set the x value
+x = d * cos(r);
+
+#Set the y value
+y = d * sin(r);
+                </pre>
+            </ul>
+        </p>
+        <p>If a variable is used in an expression, but that variable does not exist,
+            it is considered zero.  If it does exist then its value is used instead.
+        </p>
+    </blockquote>
+</div>
+
+<div align="left" class="container">
+    <h2><a name="Using">Using ExprEval in an Application</a></h2>
+    <blockquote>
+        <p>Using ExprEval in an application can be a little difficult.
+            You generally follow these steps:
+            <ul>
+                <li>Create function, variable, and constant lists</li>
+                <li>Create the expression object</li>
+                <li>Parse the expression</li>
+                <li>Evaluate the expression as needed</li>
+                <li>Free the expression object</li>
+                <li>Free the function, variable, and constant lists</li>
+            </ul>
+            You can manipulate the lists in any order after their creation.
+            However, functions are translated during the parse, so after
+            parsing an expression, manipulating the function list will make
+            no change to an expression.  Variables and constants can be
+            manipulated after a parse to change the result of an expression.
+            However, you must add any constants to be used by an expression
+            to the constant list <b>BEFORE</b> parsing the expression,
+            otherwise it will be seen as a variable.  Applications can change
+            both variables and constants, however the expression can only
+            change variables.  Expressions may <b>NOT</b> assign to a constant
+            and expressions may <b>NOT</b> use constants as a reference parameter.</p>
+        <p><b>Function, variable, and constant list example:</b>
+            <ul>
+                <pre>
+exprFuncList *flist;
+exprValList *vlist;
+exprValList *clist;
+exprObj *obj;
+EXPRTYPE result;
+int err;
+
+/* Create function list */
+err = exprFuncListCreate(&amp;flist);
+if(err != EXPR_ERROR_NOERROR)
+    {
+    ...
+    }
+
+/* Initialize internal functions */
+err = exprFuncListInit(flist);
+if(err != EXPR_ERROR_NOERROR)
+    {
+    ...
+    }
+
+/* Create variable list */
+err = exprValListCreate(&amp;vlist);
+if(err != EXPR_ERROR_NOERROR)
+    {
+    ...
+    }
+
+/* Create the constant list */
+err = exprValListCreate(&amp;clist);
+if(err != EXPR_ERROR_NOERROR)
+    {
+    ...
+    }
+
+/* Initialize internal constants */
+err = exprValListInit(clist);
+if(err != EXPR_ERROR_NOERROR)
+    {
+    ...
+    }
+
+/* Add any application defined functions, constants, or variables to the lists here or down below */
+                </pre>
+            </ul>
+        </p>
+        <p><b>Expression object example:</b>
+            <ul>
+                <pre>
+err = exprCreate(&obj, flist, vlist, clist, NULL, 0);
+if(err != EXPR_ERROR_NOERROR)
+    {
+    ...
+    }
+
+/* Add any application defined functions, constants, or variables to the lists here or down below.
+   This is the last time you can for the functions or constants. */
+                </pre>
+            </ul>
+        </p>
+        <p><b>Expression parse example:</b>
+            <ul>
+                <pre>
+/* Functions and constants may be added or changed here */
+
+err = exprParse(obj, "2+sin(M_PI)+3*x;");
+if(err != EXPR_ERROR_NOERROR)
+    {
+    ...
+    }
+
+/* Changes to the function or constant lists do not change the expression now */
+                </pre>
+            </ul>
+        </p>
+        <p><b>Expression evaluation example:</b>
+            <ul>
+                <pre>
+/* Add or change any variables */
+
+err = exprEval(obj, &result);
+if(err != EXPR_ERROR_NOERRO)
+    {
+    ...
+    }
+else
+    {
+    printf("Expression Result: %f\n", result);
+    }
+                </pre>
+            </ul>
+        </p>
+        <p><b>Free the expression object and lists example:</b>
+            <ul>
+                <pre>
+exprFree(obj);
+exprValListFree(vlist);
+exprValListFree(clist);
+exprFuncListFree(flist);
+                </pre>
+            </ul>
+        </p>
+    </blockquote>
+</div>
+
+<div align="left" class="container">
+    <h2><a name="FastVar">Fast Variable Access</a></h2>
+    <blockquote>
+        <p>A new feature in ExprEval is fast variable access.  This
+            is simply a technique of quickly accessing variables
+            by directly accessing their memory locations instead
+            of using the value list functions.  Fast variable access
+            is always used internally in ExprEval.  You must
+            NOT clear a variable list until after all expressions
+            using it are completely finished evaluating.  Then you
+            must reparse the expressions before using them again.
+            The reason is simple. When fast variable access is used,
+            the variable memory location is directly accessed If you
+            clear a variable list and then evaluate an expression,
+            it will access invalid memory.</p>
+        <p>You can also use fast variable access in you application
+            to dramatically speed up loops.  This is accomplished as
+            follows:
+            <ul>
+                <li>Add the desired variable to the variable list</li>
+                <li>Get the address of the variable with exprValListGetAddress</li>
+                <li>In the loop(s), directly set/get the variable any time needed: *var = 0.0;</li>
+            </ul>
+        </p>
+    </blockquote>
+</div>
+
+<div align="left" class="container">
+    <h2><a name="InternalFuncConst">Using the Internal Functions and Constants</a></h2>
+    <blockquote>
+        <p>To use the internal functions, they must first be initialized
+            into a function list with exprFuncListInit.  To use the
+            internal constants, they must first be initialized into a
+            value list with exprValListInit.  For a list of the
+            internal functions and constants, see the application
+            help template file: <a href="exprtmpl.html">ExprTmpl.html</a>
+            You may use this file in your own applications so you don't
+            have to write a detail on the functions in ExprEval.  All
+            you have to do is add you own functions and constants to
+            the file if there are any.
+    </blockquote>
+</div>
+
+<div align="left" class="container">
+    <h2><a name="CustomFunc">Creating Custom Functions</a></h2>
+    <blockquote>
+        <p>Custom functions can be created for use by the library.
+            This is how a function should look
+            <ul>
+                <pre>
+int custom_func(exprObj *obj, exprNode *nodes, int nodecount, EXPRTYPE **refs, int refcount, EXPRTYPE *val)
+    {
+    }
+                </pre>
+            </ul>
+
+            obj is a pointer to the expression object that called
+            the function, nodes is a pointer to an array of nodes
+            that are the parameters of this function, nodecount is
+            the number of items in the array (the number of parameters),
+            refs is an array of pointers to referenced variables,
+            refcount is the number of referenced variables,
+            and val is a pointer to a variable to recieve the result
+            of the function.  The function should return an error value
+            indicating the error status of the function.
+        </p>
+        <p>Solving a function typically goes as follows:
+            <ul>
+                <li>Verifiy the number of arguments, if needed</li>
+                <li>Evaluate the subnodes that you need.  You do not have to
+                    evaluate every subnode if you do not need it</li>
+                <li>Check for possible error conditions (division by zero)</li>
+                <li>Clear math errors (If function uses any math routines)</li>
+                <li>Calculate the result</li>
+                <li>Check for math errors (If the function uses any math routines)</li>
+                <li>return EXPR_ERROR_NOERROR</li>
+            </ul>
+        </p>
+        <p><b>Example:</b>
+            <ul>
+                <pre>
+int custom_func(exprObj *obj, exprNode *nodes, int count, EXPRTYPE **refs, int refcount, EXPRTYPE *val)
+    {
+    int err;
+    EXPRTYPE d1, d2;
+
+    /* Need 2 arguments */
+    if(nodecount != 2)
+        return EXPR_ERROR_BADNUMBERARGUMENTS;
+
+    /* Eval arg 1 */
+    err = exprEvalNode(obj, nodes, 0, &d1);
+    if(err != EXPR_ERROR_NOERROR)
+        return err;
+
+    /* Eval arg 2 */
+    err = exprEvalNode(obj, nodes, 1, &d2);
+    if(err != EXPR_ERROR_NOERROR)
+        return err;
+
+    /* Make sure arg 2 is not 0.0 */
+    if(d2 == 0.0)
+        {
+        *val = 0.0;
+        return EXPR_ERROR_NOERROR;
+        }
+
+    /* Do math */
+    *val = atan(d1 / d2); /* No need to worry about divide by zero */
+
+
+    return EXPR_ERROR_NOERROR;
+    }
+                </pre>
+            </ul>
+        </p>
+        <p>In order to use a custom function, it must be added to
+            a function list before the expression is parsed by using
+            exprFuncListAdd</p>
+    </blockquote>
+</div>
+
+<div align="left" class="container">
+    <h2><a name="Reference">Reference</a></h2>
+    <blockquote>
+        <p><b>Headers:</b>
+            <ul>
+                <li>expreval.h - Include file</li>
+            </ul>
+        <p>
+        <p><b>Defines:</b>
+            <ul>
+                <li>EXPR_MAXIDENTSIZE - Maximum identifier, constant,
+                    or function name size</li>
+                <li>EXPR_ERROR_NOERROR - No error has occurred</li>
+                <li>EXPR_ERROR_MEMORY - A memory allocation error occured.
+                    For function and value lists, the name may have been
+                    invalid</li>
+                <li>EXPR_ERROR_NULLPOINTER - A null pointer was passed to
+                    a function that needed a valid pointer.</li>
+                <li>EXPR_ERROR_NOTFOUND - An item was not found in the
+                    function or value list</li>
+                <li>EXPR_ERROR_UNMATHEDCOMMENT - Comment is missing opening
+                    or closing mark.</li>
+                <li>EXPR_ERROR_INVALIDCHAR - Invalid characters were found
+                    in the expression</li>
+                <li>EXPR_ERROR_ALREADYEXISTS - An item already exists or created.</li>
+                <li>EXPR_ERROR_ALREADYPARSEDBAD - An expression was already
+                    parsed into this object, but unsuccessfully.  Free the
+                    expression before creating and parsing again</li>
+                <li>EXPR_ERROR_ALREADYPARSEDGOOD - An expression was already
+                    parsed into this object successfully.  Free the expression
+                    before creating and parsing again</li>
+                <li>EXPR_ERROR_EMPTYEXPR - An empty expression string was passed
+                    to be parsed</li>
+                <li>EXPR_ERROR_UNMATHEDPAREN - Unmathed opening or closing
+                    parenthesis were found</li>
+                <li>EXPR_ERROR_SYNTAX - A syntax error is in the expression</li>
+                <li>EXPR_ERROR_MISSINGSEMICOLON - An expression is missing a
+                    semicolon</li>
+                <li>EXPR_ERROR_BADIDENTIFIER - A bad identifier was used in
+                    the expression</li>
+                <li>EXPR_ERROR_NOSUCHFUNCTION - Function used in the expression
+                    does not exist in the function list</li>
+                <li>EXPR_ERROR_BADNUMBERARGUMENTS - A bad number of arguments
+                    was passed to the expression function</li>
+                <li>EXPR_ERROR_BADEXPR - Can not evaluate an expression because
+                    it does not exist or has not been parsed successfully.</li>
+                <li>EXPR_ERROR_UNABLETOASSIGN - Unable to do an assignment because
+                    a variable list has not been associated with the expression object</li>
+                <li>EXPR_ERROR_DIVBYZERO - An attemp to divide by zero has occured</li>
+                <li>EXPR_ERROR_NOVARLIST - No variable list for the expression</li>
+                <li>EXPR_ERROR_BREAK - The expression was broken by the break function</li>
+                <li>EXPR_ERROR_CONSTANTASSIGN - The expresion attempted to assign to a constant.</li>
+                <li>EXPR_ERROR_REFCONSTANT - The expression attempted to pass a constant as a
+                    reference parameter.</li>
+                <li>EXPR_ERROR_OUTOFRANGE - A bad value was passed to a function.</li>
+                <li>EXPR_ERROR_USER - Custom error values need to be larger than this.</li>
+            </ul>
+        </p>
+        <p><b>Objects:</b>
+            <ul>
+                <li>exprObj - The expression object</li>
+                <li>exprFuncList - A function lists for the expresions</li>
+                <li>exprValList - A value list for constants or variables</li>
+                <li>exprNode - An individual node in a parsed expression tree</li>
+            </ul>
+        </p>
+        <p><b>Types:</b>
+            <ul>
+                <li>EXPRTYPE - Type for the value of an expression (double)</li>
+                <li>exprFuncType - Custom function type. Defined as:<br>
+                typedef int (*exprFuncType)(exprObj *obj, exprNode *nodes, int nodecount, EXPRTYPE **refs, int refcount, EXPRTYPE *val);</li>
+                <li>exprBreakFuncType  - Breaker function pointer to stop evaluation if the result is nonzero.
+                    Defined as:<br>
+                    typedef int (*exprBreakFuncType)(exprObj *o);</li>
+            </ul>
+        </p>
+        <p><b>Version information functions:</b>
+            <ul>
+                <li>void exprGetVersion(int *major, int *mino);<br>
+                    Comments:
+                    <ul>
+                        <li>Gets the version of the ExprEval library</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*major - Pointer to int to get major version number</li>
+                        <li>*minor - Pointer to int to get minor version number</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Nothing</li>
+                    </ul>
+                </li>
+            </ul>
+        </p>
+        <p><b>Function list functions:</b>
+            <ul>
+                <li>int exprFuncListCreate(exprFuncList **flist);<br>
+                    Comments:
+                    <ul>
+                        <li>Creates a function lists and updates a pointer to point to it</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>**flist - Pointer to a pointer to the function list</li>
+                    </ul>
+                    Returns
+                    <ul>
+                        <li>Error code of the function.  On success, the pointer
+                            passed by address will point to the new function list</li>
+                    </ul>
+                </li><br>
+                <li>int exprFuncListAdd(exprFuncList *flist, exprFuncType ptr, char *name, int min, int max, int refmin, int refmax);<br>
+                    Comments:
+                    <ul>
+                        <li>Adds a function to the function list.  Returns error if
+                            the function already exists.</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*flist - Pointer to an already created function list</li>
+                        <li>ptr - Pointer to a custom function</li>
+                        <li>*name - Name of the custom function</li>
+                        <li>min - Minimum number of arguments for the function, negative for no minimum</li>
+                        <li>max - Maximum number of arguments for the function, negative for no maximum</li>
+                        <li>refmin - Minimum number of ref arguments</li>
+                        <li>refmax - Maxmimum number of ref arguments</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Error code of the function</li>
+                    </ul>
+                </li><br>
+                <li>int exprFuncListFree(exprFuncList *flist);<br>
+                    Comments:
+                    <ul>
+                        <li>Free the function list entirely</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*flist - Pointer to the function list to free</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Error code of the function</li>
+                    </ul>
+                </li><br>
+                <li>int exprFuncListClear(exprFuncList *flist);<br>
+                    Comments:
+                    <ul>
+                        <li>Clear the functions from the function list</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*flist - Pointer to the function list to clear</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Error code of the function</li>
+                    </ul>
+                </li><br>
+                <li>int exprFuncListInit(exprFuncList *flist);<br>
+                    Comments:
+                    <ul>
+                        <li>Initializes internal functions into the funtion list</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*flist - Function list to initialize</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Error code of the function</li>
+                    </ul>
+                </li>
+            </ul>
+        </p>
+        <p><b>Value list functions:</b>
+            <ul>
+                <li>int exprValListCreate(exprValList **vlist);<br>
+                    Comments:
+                    <ul>
+                        <li>Creates a value list for variables or constants</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>**vlist - Pointer to a pointer to the value list.</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Error code of the function.  On success, the pointer will
+                            be updated to point to the value list</li>
+                    </ul>
+                </li><br>
+                <li>int exprValListAdd(exprValList *vlist, char *name, EXPRTYPE val);<br>
+                    Comments:
+                    <ul>
+                        <li>Add a value in a value list.  Returns error if value
+                            already exists.</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*vlist - Value list to add a value to</li>
+                        <li>*name - Name of the value to add</li>
+                        <li>val - Value of the value to add</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Error code of the function</li>
+                    </ul>
+                </li><br>
+                <li>int exprValListSet(exprValList *vlist, char *name, EXPRTYPE val);<br>
+                    Comments:
+                    <ul>
+                        <li>Set a value in a value list.</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*vlist - Value list to set a value in</li>
+                        <li>*name - Name of the value to set</li>
+                        <li>val - Value of the value to set</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Error code of the function</li>
+                    </ul>
+                </li><br>
+                <li>int exprValListGet(exprValList *vlist, char *name, EXPRTYPE *val)<br>
+                    Comment:
+                    <ul>
+                        <li>Get the value of a variable or constant in a value list</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*vlist - Value list to use</li>
+                        <li>*name - Name of the value to get</li>
+                        <li>*val - Pointer to variable to get the value</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Error code of the function</li>
+                    </ul>
+                </li><br>
+                <li>int exprValListAddAddress(exprValList *vlist, char *name, EXPRTYPE *addr)<br>
+                    Comment:
+                    <ul>
+                        <li>This function is used to add a named value to the value list, but
+                            uses an outside variable such as a stack variable to store the
+                            value.  This outside variable is used to set/get the value instead
+                            of the internal list value.  You must ensure that this outside
+                            variable exists as long as the expression is using it's address.</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*vlist - Value list to use</li>
+                        <li>*name - Name of the value to add</li>
+                        <li>*addr - Address of the value being added</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Error code of the function</li>
+                    </ul>
+                </li><br>
+                <li>int exprValListGetAddress(exprValList *vlist, char *name, EXPRTYPE **addr)<br>
+                    Comment:
+                    <ul>
+                        <li>Get the memory address of a variable in a value list</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*vlist - Value list to use</li>
+                        <li>*name - Name of the value to get</li>
+                        <li>**addr - Pointer to a pointer to store the address of the value
+                            This will be NULL if the name is not in the list.</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Error code of the function</li>
+                    </ul>
+                </li><br>
+                <li>void *exprValListGetNext(exprValList *vlist, char **name, EXPRTYPE *value, EXPRTYPE** addr, void *cookie);<br>
+                    Comment:
+                    <ul>
+                        <li>This is used to enumerate the items in the value list.
+                            Do NOT change the list while enumerating the items. Any
+                            of the information items can be NULL if it is not needed.</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*vlist - Value list to use</li>
+                        <li>**name - Address of a pointer that will point to the
+                            name. Do not edit the name.</li>
+                        <li>*value - The current value of the item.</li>
+                        <li>**addr - Address of a pointer to store the address of the value.</li>
+                        <li>*cookie - NULL to find the first item, the return value to find
+                            subsequent items.</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>NULL if the item could not be found.  Otherwise a cookie
+                            to be used to find additional items.</li>
+                    </ul>
+                </li><br>
+                <li>int exprValListFree(exprValList *vlist);<br>
+                    Comments:
+                    <ul>
+                        <li>Completely free the value list</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*vlist - Value list to free</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Error code of the function</li>
+                    </ul>
+                </li><br>
+                <li>int exprValListClear(exprValList *vlist);<br>
+                    Comments:
+                    <ul>
+                        <li>Set the values in the list to 0.0</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*vlist - Value list to reset</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Error code of the function</li>
+                    </ul>
+                </li><br>
+                <li>int exprValListInit(exprValList *vlist);<br>
+                    Comments:
+                    <ul>
+                        <li>Initialize internal constants into a value list</li>
+                    </ul>
+                    Paramters:
+                    <ul>
+                        <li>*vlist - Value list to initialize</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Error code of the function</li>
+                    </ul>
+                </li>
+            </ul>
+        </p>
+        <p><b>Expression functions:</b>
+            <ul>
+                <li>int exprCreate(exprObj **obj, exprFuncList *flist, exprValList *vlist, exprValList *clist, exprBreakFuncType breaker, void *userdata);<br>
+                    Comments:
+                    <ul>
+                        <li>Create an expression object to use</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>**obj - Pointer to a pointer to an expression object</li>
+                        <li>*flist - Function list to associate with the expression</li>
+                        <li>*vlist - Variable value list to associate with the expression</li>
+                        <li>*clist - Constant value list to associate with the expression</li>
+                        <li>breaker - Breaker function callback to associate with the expression.
+                            Used by functions that may be infinite loops (such as the for function)</li>
+                        <li>userdata - User data to associate with the expression</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Error code of the function</li>
+                    </ul>
+                </li><br>
+                <li>int exprFree(exprObj *obj);<br>
+                    Comments:
+                    <ul>
+                        <li>Completely free the expression object</li>
+                    </ul>
+                    Paramters:
+                    <ul>
+                        <li>*obj - Expression object to free</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Error code of the function</li>
+                    </ul>
+                </li><br>
+                <li>int exprClear(exprObj *obj);<br>
+                    Comments:
+                    <ul>
+                        <li>Clear an expression, but keep list and callback associations.
+                            You can then parse another expression without calling create</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*obj - Expression object to clear</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Error code of the function</li>
+                    </ul>
+                </li><br>
+                <li>int exprParse(exprObj *obj, char *expr);<br>
+                    Comments:
+                    <ul>
+                        <li>Parse an expression string into an expression object</li>
+                    </ul>
+                    Paramters:
+                    <ul>
+                        <li>*obj - Expression object to use</li>
+                        <li>*expr - Expression string to parse</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Error code of the function</li>
+                    </ul>
+                </li><br>
+                <li>int exprEval(exprObj *obj, EXPRTYPE *val);<br>
+                    Comments:
+                    <ul>
+                        <li>Evaluate a parsed expression.  This function does not
+                        reset the breaker count at each call, but instead accumulates
+                        the count until the breaker function is called.  Then the count
+                        is reset to the value specified in exprSetBreakerCount.</li>
+                    </ul>
+                    Paramters:
+                    <ul>
+                        <li>*obj - Expression object to evaluate</li>
+                        <li>*val = Pointer to variable to get result of evaluation.
+                            This can be NULL if the result is not needed.</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Error code of the function</li>
+                    </ul>
+                </li><br>
+                <li>int exprEvalNode(exprObj *obj, exprNode *nodes, int curnode, EXPRTYPE *val);<br>
+                    Comments:
+                    <ul>
+                        <li>Evaluate a node of an expression.
+                            Used by custom functions</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*obj - Expression object being used</li>
+                        <li>*nodes - Pointer to a node or list of nodes</li>
+                        <li>curnode - Index to the node to evaluate</li>
+                        <li>*val - Pointer to variable to get evaluation result</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Error code of the function</li>
+                    </ul>
+                </li><br>
+                <li>exprFuncList *exprGetFuncList(exprObj *obj);<br>
+                    Comments:
+                    <ul>
+                        <li>Gets the function list associated with an expression</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*obj - expression object</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Pointer fo an exprFuncList object or NULL</li>
+                    </ul>
+                </li><br>
+                <li>exprValList *exprGetVarList(exprObj *obj);<br>
+                    Comments:
+                    <ul>
+                        <li>Gets the variable list associated with an expression</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*obj - expression object</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Pointer to an exprValList object or NULL</li>
+                    </ul>
+                </li><br>
+                <li>exprValList *exprGetConstList(exprObj *obj);<br>
+                    Comments:
+                    <ul>
+                        <li>Gets the constant list associated with an expression</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*obj - expression object</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Pointer to an exprValList object or NULL</li>
+                    </ul>
+                </li><br>
+                <li>exprBreakFuncType exprGetBreakFunc(exprObj *obj);<br>
+                    Comments:
+                    <ul>
+                        <li>Gets the breaker callback of the expression</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*obj - expression object</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Pointer to the callback function or NULL</li>
+                    </ul>
+                </li><br>
+                <li>int exprGetBreakResult(exprObj *obj);<br>
+                    Comments:
+                    <ul>
+                        <li>Get the result of the breaker function</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*obj - expression object</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>zero to continue, nonzero to break</li>
+                    </ul>
+                </li><br>
+                <li>void* exprGetUserData(exprObj *obj);<br>
+                    Comments:
+                    <ul>
+                        <li>Gets the user data associated with an expression</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*obj - expression object</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>User data</li>
+                    </ul>
+                </li><br>
+                <li>void exprSetUserData(exprObj *obj, void *userdata);<br>
+                    Comments:
+                    <ul>
+                        <li>Sets the user data of an expression</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*obj - expresion object</li>
+                        <li>userdata - user data to set</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Nothing</li>
+                    </ul>
+                </li><br>
+                <li>void exprSetBreakCount(exprObj *obj, int count);<br>
+                    Comments:
+                    <ul>
+                        <li>Set how often the breaker function is tested.
+                            The default is 100000.  This means the breaker
+                            function is tested once every 100000 times the
+                            exprEvalNode function is called for an expression.
+                            A smaller value tests the breaker function more often
+                            and a larger value tests the breaker function less. The
+                            breaker value is NOT reset during each call to exprEval,
+                            but is accumulated across calles to exprEval
+                            until the breaker function is finally called.</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*obj - expression object</li>
+                        <li>count - how many times exprEvalNode gets called before the
+                            breaker function is tested</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Nothing</li>
+                    </ul>
+                </li><br>
+                <li>void exprGetErrorPosition(exprObj *obj, int *start, int *end);<br>
+                    Comments:
+                    <ul>
+                        <li>Gets the start and ending positions in the expression string
+                            of the last parse error.  The positions include any newline
+                            characters that may be in the string.</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*obj - expression object</li>
+                        <li>*start - pointer to an integer to get the start error position,
+                            -1 if unknown</li>
+                        <li>*end - pointer to an integer to get the end error position,
+                            -1 if unknown</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>Nothing</li>
+                    </ul>
+            </ul>
+        </p>
+        <p><b>Some useful functions</b>
+            <ul>
+                <li>int exprValidIdent(char *name);<br>
+                    Comments:
+                    <ul>
+                        <li>Determine if an identifier is valid</li>
+                    </ul>
+                    Parameters:
+                    <ul>
+                        <li>*name - identifier to check</li>
+                    </ul>
+                    Returns:
+                    <ul>
+                        <li>0 on invalid. anything else on valid</li>
+                    </ul>
+                </li><br>
+            </ul>
+        </p>
+    </blockquote>
+</div>
+
+<div align="left" class="container">
+    <h2><a name="Compiling">Compiling the ExprEval library</a></h2>
+    <p>Compiling the ExprEval library is pretty simple.  Just
+        compile all of the source files (*.c) and link them into
+        a library.  You need to keep "expreval.h" for the header file.</p>
+    <p>You may have to make some changes to the library.  I've
+        tried to make doing so as simple as possible.  If you
+        need to change the include files or some macros or whatnot,
+        edit the file "exprincl.h"  This file includes any other files
+        needed.  You should not have to change to much.  I have
+        tried to stick as close to ANSI/ISO C as I can.</p>
+</div>
+
+<div align="left" class="container">
+    <h2><a name="Drawbacks">Drawbacks/Problems</a></h2>
+    <p>The following is a list of some basic drawbacks of this
+        library:
+        <ul>
+            <li>This library is an expression evaluator, and nothing
+                else.  It does not simplify expressions and it
+                does not do advanced math such as calculating the
+                integrals and differentials of expression.</li>
+            <li>This library has no way of detecting overflows
+                except for those caused by the internal math
+                routines.  Adding two very very large numbers
+                may cause an overflow to occur.</li>
+            <li>This library is not super easy to use in an application.
+                It has been designed to give much control to the
+                developer. Because of this, the function/value lists
+                are seperate from the expression objects, allowing
+                the developer to use them however they need.</li>
+            <li>There is no way to delete a single function, variable,
+                or constant from a list.  This is because I see no
+                real need to do so because of the way the library
+                works.  There is no need to delete function from
+                a function list or constants from a constant list.
+                There are are also no decent reasons to delete
+                variables from a variable list until you are completely
+                done and delete all of them.</li>
+        </ul>
+    </p>
+</div>
+
+<div align="left" class="container">
+    <h2><a name="Solutions">Problems and Solutions</a></h2>
+    
+    <ul>
+        <li><b>Variables do not seem to change in a release/optimized build.</b><br>
+            I have noticed a small problem with this.  Rarely, a variable may not
+            appear to change in a release build.  The reason is to do with compiler
+            optimizations.  For example, look at the following code:
+            <blockquote>
+                <pre>
+EXPRTYPE k;
+
+/* Add variable to the list */
+exprValListAddAddress(list, "k", &k);
+
+k = 0.0;
+
+/* Evaluate expression */
+for(int x = 0; x &lt; 100; x++)
+    {
+    exprEval(expr, &result);
+    
+    doSomething(k);
+    }
+                </pre>
+            </blockquote>
+            Inside the loop, the variable 'k' does not appear to be changing, so
+            the compiler may optimize it by loading it into a register before the
+            loop and not accessing it from memory during the loop, even if
+            the expression does change it.  One way to avoid this is to use the
+            'volatile' keyword with the variable.  Then the compiler must
+            accesss it from memory each time it is accessed.
+            <blockquote>
+                <pre>
+volatile EXPRTYPE k;
+
+/* Add variable to the list */
+exprValListAddAddress(list, "k", (EXPRTYPE*)&k);
+
+k = 0.0;
+
+/* Evaluate expression */
+for(int x = 0; x &lt; 100; x++)
+    {
+    exprEval(expr, &result);
+    
+    doSomething(k);
+    }
+                </pre>
+            </blockquote>
+        </li>
+        
+</div>
+
+<div align="left" class="container">
+    <h2><a name="Example">Example Use with Fast Variable Access</a></h2>
+
+    <p>This is an example application of this library.  It is a
+        graphics program that calculates the color value of a
+        pixel based on it's X,Y co-ordinate.  It uses a made-up
+        image library called graphic-lib.  It uses faster variable
+        access by using the exprValListGetAddress function.</p>
+    <p>Note that this codes has not actually been tested.  See the
+        test applications (test and imagegen) for other examples.</p>
+
+    <blockquote>
+        <pre>
+/* Include files */
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;setjmp.h&gt;
+#include "graphiclib.h"
+#include "expreval.h"
+
+char *transerr(int err)
+    {
+    /* Translate error code into message */
+    }
+
+void gen_image(char *name, int w, int h, char *expr);
+    {
+    exprFuncList *f = NULL;
+    exprValList *v = NULL;
+    exprValList *c = NULL;
+    exprObj *o = NULL;
+    int x, y, err;
+    jmp_buf jumper;
+    int image;
+    EXPRTYPE *v_x, *v_y;
+    EXPRTYPE *v_r, *v_g, *v_b;
+    EXPRTYPE global_value;
+
+    /* Error handling */
+    err = setjmp(jumper);
+    if(err)
+        {
+        if(err != ID_IMAGENOERROR)
+            printf("Error %d occurred: %s\n", err, transerr(err));
+
+        exprFree(o);
+        exprFreeFuncList(f);
+        exprFreeValList(v);
+        exprFreeValList(c);
+
+        image_free(image);
+        return;
+        }
+
+    /* Set up lists */
+
+    /* Function list */
+    err = exprFuncListCreate(&f);
+    if(err != EXPR_ERROR_NOERROR)
+        longjmp(jumper, err);
+
+    err = exprFuncListInit(f);
+    if(err != EXPR_ERROR_NOERROR)
+        {
+        printf("Function list init error. Functions may not be available.\n");
+        }
+
+    /* Variable list */
+    err = exprValListCreate(&v);
+    if(err != EXPR_ERROR_NOERROR)
+        longjmp(jumper, err);
+
+    /* Constant list */
+    err = exprValListCreate(&c);
+    if(err != EXPR_ERROR_NOERROR)
+        {
+        printf("Constants not available\n");
+        }
+    else
+        {
+        err = exprValListInit(c);
+        if(err != EXPR_ERROR_NOERROR)
+            printf("Constant list init error. Constants may not be available.\n");
+        }
+
+    /* Create and parse the expression */
+
+    /* Create */
+    err = exprCreate(&o, f, v, c, NULL, 0);
+    if(err != EXPR_ERROR_NOERROR)
+        longjmp(jumper, err);
+
+    /* Parse expression */
+    err = exprParse(o, expr);
+    if(err != EXPR_ERROR_NOERROR)
+        longjmp(jumper, err);
+
+
+    /* Create the image */
+    image = image_create(w, h);
+    if(image == 0)
+        {
+        longjmp(jumper, ID_IMAGECREATEERROR);
+        }
+
+    /* Add width and height to variable list */
+    exprValListAdd(v, "w", (EXPRTYPE)w);
+    exprValListAdd(v, "h", (EXPRTYPE)h);
+
+    /* Add x and y to the list */
+    exprValListAdd(v, "x", 0.0);
+    exprValListAdd(v, "y", 0.0);
+
+    /* Add r, g, and b to the list */
+    exprValListAdd(v, "r", 0.0);
+    exprValListAdd(v, "g", 0.0);
+    exprValListAdd(b, "b", 0.0);
+
+    /* Get addresses.  Assume no error */
+    exprValListGetAddress(v, "x", &v_x);
+    exprValListGetAddress(v, "y", &v_y);
+
+    exprValListGetAddress(v, "r", &v_r);
+    exprValListGetAddress(v, "g", &v_g);
+    exprValListGetAddress(v, "g", &v_b);
+    
+    /* A way to add global variables that can be used by two different lists. */
+    exprValListAddAddress(v, "global", &global_value);
+    /* exprValListAddAddress(v2, "global", &global_value); */
+    
+    /* Also, exprValListAddAddress can be used to add variables directly.
+       Instead of:
+       
+       EXPRTYPE *a;
+       
+       exprValListAdd(v, "a", 0.0);
+       exprValListGetAddresss(v, "a", &a);
+       
+       You can do:
+       
+       EXPRTYPE a;
+       
+       exprValListAddAddresss(v, "a", &a);
+       
+       If you do this, you must ensure that the stack variable exists as long
+       as it is used by expression, otherwise it may cause a memory access
+       violation. */
+    
+
+    for(y = 0; y < h; y++)
+        {
+        for(x = 0; x < w; x++)
+            {
+            /* Directly set the x and y variables */
+            *v_x = (EXPRTYPE)x;
+            *v_y = (EXPRTYPE)y;
+
+            /* Eval expression, ignoring errors */
+            exprEval(o);
+
+            /* Set pixel, using variables directly */
+            image_setpixel(image, x, y, (int)(*v_r), (int)(*v_g), (int)(*v_b));
+            }
+        }
+
+    /* Save image */
+    image_save(image, name);
+
+    /* Done */
+    longjmp(jumper, ID_IMAGENOERROR);
+    }
+
+void main(void)
+    {
+    char name[MAXPATH]
+    char tmp[10];
+    char expr[4096];
+    int sx, sy;
+
+    printf("Image name to save: ");
+    gets(name);
+
+    printf("Image width: ");
+    gets(tmp);
+    sx = atoi(tmp);
+
+    printf("Image height: ");
+    gets(tmp);
+    sy = atoi(tmp);
+
+    printf("Color Expression (Use x, y, w, h Set r, g, b): ");
+    gets(expr);
+
+    gen_image(name, sx, sy, expr);
+    }
+
+        </pre>
+    </blockquote>
+</div>
+
+</body>
+</html>
