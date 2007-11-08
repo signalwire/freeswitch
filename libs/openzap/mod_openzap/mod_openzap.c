@@ -720,7 +720,11 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	}
 	
 	if (chan_id) {
-		status = zap_channel_open(span_id, chan_id, &zchan);
+		if (chan_id > 0) {
+			status = zap_channel_open(span_id, chan_id, &zchan);
+		} else {
+			status = zap_channel_open_any(span_id, ZAP_BOTTOM_UP, &zchan);
+		}
 	} else {
 		status = zap_channel_open_any(span_id, ZAP_TOP_DOWN, &zchan);
 	}
