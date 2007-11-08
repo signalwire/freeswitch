@@ -719,7 +719,7 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, z
 					zap_set_flag(check, ZAP_CHANNEL_INUSE);
 					zap_channel_open_chan(check);
 					*zchan = check;
-					return status;
+					goto done;
 				}
 			}
 			
@@ -740,6 +740,7 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, z
 		}
 	}
 
+ done:
 	zap_mutex_unlock(globals.mutex);
 
 	return status;
