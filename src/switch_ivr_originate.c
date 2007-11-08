@@ -719,25 +719,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				/* read from the channel while we wait if the audio is up on it */
 				if (session && (ringback_data || !switch_channel_test_flag(caller_channel, CF_BYPASS_MEDIA)) &&
-					(switch_channel_test_flag(caller_channel, CF_ANSWERED)
-					 || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA))) {
+					(switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA))) {
 					switch_status_t status = switch_core_session_read_frame(session, &read_frame, 1000, 0);
-
+					
 					if (!SWITCH_READ_ACCEPTABLE(status)) {
 						break;
 					}
-
-					if (ring_ready && read_frame && !pass && !switch_test_flag(read_frame, SFF_CNG)
-						&& read_frame->datalen > 1) {
+					
+					if (ring_ready && read_frame && !pass) {
 						if (ringback.fh) {
 							uint8_t abuf[1024];
 							switch_size_t mlen, olen;
 							unsigned int pos = 0;
 
 							if (ringback.asis) {
-								mlen = read_frame->datalen;
+								mlen = write_frame.codec->implementation->encoded_bytes_per_frame;
 							} else {
-								mlen = read_frame->datalen / 2;
+								mlen = write_frame.codec->implementation->samples_per_frame;
 							}
 
 							olen = mlen;
@@ -754,9 +752,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							}
 							write_frame.data = abuf;
 							write_frame.datalen = (uint32_t) (ringback.asis ? olen : olen * 2);
-							if (switch_core_session_write_frame(session, &write_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
-								break;
-							}
 						} else if (ringback.audio_buffer) {
 							if ((write_frame.datalen = (uint32_t) switch_buffer_read_loop(ringback.audio_buffer,
 																						  write_frame.data,
@@ -764,7 +759,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								break;
 							}
 						}
-
+						
 						if (switch_core_session_write_frame(session, &write_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
 							break;
 						}
