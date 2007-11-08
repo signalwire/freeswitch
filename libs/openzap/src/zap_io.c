@@ -303,10 +303,9 @@ zap_status_t zap_span_create(zap_io_interface_t *zio, zap_span_t **span)
 		*span = new_span;
 		status = ZAP_SUCCESS;
 	}
-	zap_mutex_unlock(globals.mutex);	
 
 done:
-
+	zap_mutex_unlock(globals.mutex);
 	return status;
 }
 
