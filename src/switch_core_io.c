@@ -136,6 +136,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		goto done;
 	}
 
+	assert((*frame)->codec != NULL);
 	if ((session->read_codec && (*frame)->codec && session->read_codec->implementation != (*frame)->codec->implementation)) {
 		need_codec = TRUE;
 	}
