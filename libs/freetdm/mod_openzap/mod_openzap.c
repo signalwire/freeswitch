@@ -167,6 +167,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
 	tech_pvt->cng_frame.data = tech_pvt->cng_databuf;
 	tech_pvt->cng_frame.buflen = sizeof(tech_pvt->cng_databuf);
+	tech_pvt->cng_frame.flags = SFF_CNG;
 	memset(tech_pvt->cng_frame.data, 255, tech_pvt->cng_frame.buflen);
 	switch_mutex_init(&tech_pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
