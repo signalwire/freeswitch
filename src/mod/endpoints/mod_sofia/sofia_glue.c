@@ -1658,9 +1658,27 @@ switch_status_t sofia_glue_add_profile(char *key, sofia_profile_t *profile)
 void sofia_glue_del_profile(sofia_profile_t *profile)
 {
 	sofia_gateway_t *gp;
-
+	char *aliases[512];
+	int i = 0, j = 0;
+	switch_hash_index_t *hi;
+	const void *var;
+	void *val;
+	
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
-	switch_core_hash_delete(mod_sofia_globals.profile_hash, profile->name);
+
+	for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &var, NULL, &val);
+		aliases[i++] = strdup((char *) var);
+		if (i == 512) {
+			abort();
+		}
+	}
+
+	for (j = 0; j < i && j < 512; j++) {
+		switch_core_hash_delete(mod_sofia_globals.profile_hash, aliases[j]);
+		free(aliases[j]);
+	}
+
 	for (gp = profile->gateways; gp; gp = gp->next) {
 		switch_core_hash_delete(mod_sofia_globals.gateway_hash, gp->name);
 	}
