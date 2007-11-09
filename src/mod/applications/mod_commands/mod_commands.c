@@ -57,7 +57,7 @@ SWITCH_STANDARD_API(qq_function)
 	char *mydata = NULL, *argv[3];
     char *expr;
     char *a, *b;
-    float a_f = 0.0, b_f = 0.0;
+    double a_f = 0.0, b_f = 0.0;
     o_t o = O_NONE;
     int is_true = 0;
     char *p;
@@ -132,7 +132,11 @@ SWITCH_STANDARD_API(qq_function)
             }
             break;
         case O_NE:
-            is_true = a_f != b_f;
+            if (!a_is_num && !b_is_num) {
+                is_true = strcmp(s_a, s_b);
+            } else {
+                is_true = a_f != b_f;
+            }
             break;
         case O_GT:
             is_true = a_f > b_f;
