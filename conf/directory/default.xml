@@ -67,6 +67,12 @@
       <!--<param name="vm-mailto" value="me@mydomain.com"/>-->
       <!--<param name="vm-email-all-messages" value="true"/>-->
     </params>
+    <variables>
+      <variable name="numbering_plan" value="US"/>
+      <variable name="default_area_code" value="434"/>
+      <variable name="max_calls" value="2"/>
+      <variable name="presence_id" value="1001@$${domain}"/>
+    </variables>
   </user>
 
   <!-- authless users and mailboxes -->
