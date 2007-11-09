@@ -244,7 +244,8 @@ everything: install
 
 installall: install
 
-sure: clean modwipe uninstall installall
+sure: clean modwipe uninstall
+	$(MAKE) -j install
 
 wayclean: clean
 
