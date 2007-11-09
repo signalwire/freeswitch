@@ -158,11 +158,14 @@ $(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
 
 install-data-local:
 	@echo Installing $(NAME)
-	@for x in conf mod db log log/xml_cdr bin scripts htdocs grammar ; do \
+	@for x in conf conf/dialplan conf/directory conf/sip_profiles mod db log log/xml_cdr bin scripts htdocs grammar ; do \
 		$(mkinstalldirs) $(DESTDIR)$(prefix)/$$x ; \
 	 done
 	@if [ ! -f $(DESTDIR)$(PREFIX)/conf/freeswitch.xml ] ; then \
 		$(INSTALL) conf/*.xml $(DESTDIR)$(PREFIX)/conf ; \
+		$(INSTALL) conf/sip_profiles/*.xml $(DESTDIR)$(PREFIX)/conf/sip_profiles ; \
+		$(INSTALL) conf/dialplan/*.xml $(DESTDIR)$(PREFIX)/conf/dialplan ; \
+		$(INSTALL) conf/directory/*.xml $(DESTDIR)$(PREFIX)/conf/directory ; \
 	 fi
 
 .version:
