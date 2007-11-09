@@ -97,7 +97,7 @@ int exprStringToTokenList(exprObj *obj, char *expr, exprToken **tokens, int *cou
 
 
     /* Check string length */
-    len = strlen(expr);
+    len = (int)strlen(expr);
     if(len == 0)
         return EXPR_ERROR_EMPTYEXPR;
 

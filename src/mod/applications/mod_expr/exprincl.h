@@ -13,6 +13,17 @@
 
 /* Includes and macros and whatnot for building the library */
 
+#ifdef _MSC_VER
+#if (_MSC_VER >= 1400)			// VC8+
+#ifndef _CRT_SECURE_NO_DEPRECATE
+#define _CRT_SECURE_NO_DEPRECATE
+#endif
+#ifndef _CRT_NONSTDC_NO_DEPRECATE
+#define _CRT_NONSTDC_NO_DEPRECATE
+#endif
+#endif // VC8+
+#endif
+
 /* Memory routines.  memory.h for VC++, mem.h for BC++ */
 #ifdef __TURBOC__
 #include <mem.h>
