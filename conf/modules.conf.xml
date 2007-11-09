@@ -44,6 +44,7 @@
     <!-- Dialplan Interfaces -->
     <!-- <load module="mod_dialplan_directory"/> -->
     <load module="mod_dialplan_xml"/>
+    <load module="mod_dialplan_asterisk"/>
 
     <!-- Codec Interfaces -->
     <load module="mod_g711"/>
