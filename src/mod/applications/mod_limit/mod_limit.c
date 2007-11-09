@@ -59,6 +59,15 @@ static char limit_sql[] =
 	");\n";
 
 
+static char db_sql[] =
+	"CREATE TABLE db_data (\n"
+	"   hostname   VARCHAR(255),\n"
+	"   realm      VARCHAR(255),\n"
+	"   data_key   VARCHAR(255),\n" 
+	"   data       VARCHAR(255)\n"
+	");\n";
+
+
 
 static switch_status_t limit_execute_sql(char *sql, switch_mutex_t *mutex)
 {
@@ -221,11 +230,21 @@ static switch_status_t do_config()
         }
         
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", globals.odbc_dsn);
-        switch_odbc_handle_exec(globals.master_odbc, limit_sql, NULL);
+        if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from limit_data", NULL) != SWITCH_STATUS_SUCCESS) {
+            if (switch_odbc_handle_exec(globals.master_odbc, limit_sql, NULL) != SWITCH_STATUS_SUCCESS) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Create SQL Database!\n");
+            }
+        }
+        if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from db_data", NULL) != SWITCH_STATUS_SUCCESS) {
+            if (switch_odbc_handle_exec(globals.master_odbc, db_sql, NULL) != SWITCH_STATUS_SUCCESS) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Create SQL Database!\n");
+            }
+        }
     } else {
 #endif
         if ((db = switch_core_db_open_file(globals.dbname))) {
             switch_core_db_test_reactive(db, "select * from limit_data", NULL, limit_sql);
+            switch_core_db_test_reactive(db, "select * from db_data", NULL, db_sql);
         } else {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
             status = SWITCH_STATUS_FALSE;
@@ -288,6 +307,96 @@ static int sql2str_callback(void *pArg, int argc, char **argv, char **columnName
 	return 0;
 }
 
+
+SWITCH_STANDARD_API(db_api_function)
+{
+    int argc = 0;
+    char *argv[4] = { 0 };
+    char *mydata = NULL;
+    char *sql;
+
+    switch_mutex_lock(globals.mutex);
+
+    if (!switch_strlen_zero(cmd)) {
+        mydata = strdup(cmd);
+        argc = switch_separate_string(mydata, '/', argv, (sizeof(argv) / sizeof(argv[0])));
+    }
+
+    if (argc < 1) {
+        goto error;
+    }
+
+    if (!strcasecmp(argv[0], "set")) {
+        if (argc < 4) {
+            goto error;
+        }
+        sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
+        assert(sql);
+        limit_execute_sql(sql, NULL);
+        switch_safe_free(sql);    
+        sql = switch_mprintf("insert into db_data values('%q','%q','%q','%q');", globals.hostname, argv[1], argv[2], argv[3]);
+        assert(sql);
+        limit_execute_sql(sql, NULL);
+        switch_safe_free(sql);
+        stream->write_function(stream, "+OK");
+        goto done;
+    } else if (!strcasecmp(argv[0], "get")) {
+        char buf[256] = "";
+        callback_t cbt = { 0 };
+        if (argc < 3) {
+            goto error;
+        }
+        cbt.buf = buf;
+        cbt.len = sizeof(buf);
+        sql = switch_mprintf("select data from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
+        limit_execute_sql_callback(NULL, sql, sql2str_callback, &cbt);
+        stream->write_function(stream, "%s", buf);
+        goto done;
+    } 
+
+
+ error:
+    stream->write_function(stream, "!err!");
+    
+ done:
+
+    switch_mutex_unlock(globals.mutex);
+    switch_safe_free(mydata);
+    return SWITCH_STATUS_SUCCESS;
+    
+}
+
+
+#define DB_USAGE "<realm>/<key>/<val>"
+#define DB_DESC "save data"
+
+SWITCH_STANDARD_APP(db_function)
+{
+    switch_channel_t *channel;
+    int argc = 0;
+    char *argv[3] = { 0 };
+    char *mydata = NULL;
+    char *sql;
+
+    channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+    if (!switch_strlen_zero(data)) {
+        mydata = switch_core_session_strdup(session, data);
+        argc = switch_separate_string(mydata, '/', argv, (sizeof(argv) / sizeof(argv[0])));
+    }
+
+    if (argc < 3) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: db_insert %s\n", DB_USAGE);
+        return;
+    }
+
+
+    sql = switch_mprintf("insert into db_data values('%q','%q','%q','%q');", globals.hostname, argv[0], argv[1], argv[2]);
+    assert(sql);
+    limit_execute_sql(sql, globals.mutex);
+    switch_safe_free(sql);
+}
 
 #define LIMIT_USAGE "<realm> <id> <max>"
 #define LIMIT_DESC "limit access to an extension"
@@ -363,6 +472,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 {
     switch_status_t status;
 	switch_application_interface_t *app_interface;
+	switch_api_interface_t *commands_api_interface;
 
     memset(&globals, 0, sizeof(&globals));
     gethostname(globals.hostname, sizeof(globals.hostname));
@@ -378,6 +488,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
     *module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_APP(app_interface, "limit", "Limit", LIMIT_DESC, limit_function, LIMIT_USAGE, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "db_insert", "Insert to the db", DB_DESC, db_function, DB_USAGE, SAF_NONE);
+
+	SWITCH_ADD_API(commands_api_interface, "db", "db get/set", db_api_function, "[get|set]/<realm>/<key>/<value>");
 
     /* indicate that the module should continue to be loaded */
     return SWITCH_STATUS_SUCCESS;
