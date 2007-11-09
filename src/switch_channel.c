@@ -1269,6 +1269,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 	char *data, *indup;
 	size_t sp = 0, len = 0, olen = 0, vtype = 0, br = 0, cpos, block = 128;
 	const char *sub_val = NULL;
+	char *cloned_sub_val = NULL;
 	char *func_val = NULL;
 	int nv = 0;
 
@@ -1393,13 +1394,43 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 
 				if (vtype == 1) {
 					char *expanded = NULL;
-					
+					int offset = 0;
+					int ooffset = 0;
+					char *p;
+
 					if ((expanded = switch_channel_expand_variables(channel, (char *)vname)) == vname) {
 						expanded = NULL;
 					} else {
 						vname = expanded;
 					}
+					if ((p = strchr(vname, ':'))) {
+						*p++ = '\0';
+						offset = atoi(p);
+						if ((p = strchr(p, ':'))) {
+							p++;
+							ooffset = atoi(p);
+						}
+					}
+					
 					sub_val = switch_channel_get_variable(channel, vname);
+					if (offset || ooffset) {
+						cloned_sub_val = strdup(sub_val);
+                        assert(cloned_sub_val);
+						sub_val = cloned_sub_val;
+					}
+
+					if (offset >= 0) {
+						sub_val += offset;
+					} else if (abs(offset) <= strlen(sub_val)) {
+						sub_val = cloned_sub_val + (strlen(cloned_sub_val) + offset);
+					}
+
+					if (ooffset > 0 && ooffset < strlen(sub_val)) {
+						if ((p = (char *)sub_val + ooffset)) {
+							*p = '\0';
+						}
+					}
+
 					switch_safe_free(expanded);
 				} else {
 					switch_stream_handle_t stream = { 0 };
@@ -1450,9 +1481,11 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 				}
 
 				switch_safe_free(func_val);
+				switch_safe_free(cloned_sub_val);
 				sub_val = NULL;
 				vname = NULL;
 				vtype = 0;
+				br = 0;
 			}
 			if (len + 1 >= olen) {
 				resize(1);

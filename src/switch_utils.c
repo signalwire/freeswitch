@@ -222,6 +222,28 @@ SWITCH_DECLARE(switch_bool_t) switch_is_lan_addr(const char *ip)
 	
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_ast2regex(char *pat, char *rbuf, size_t len)
+{
+	char *p = pat;
+	memset(rbuf, 0, len);
+
+	while(p && *p) {
+		if (*p == 'N') {
+			strncat(rbuf, "[2-9]", len - strlen(rbuf));
+		} else if (*p == 'X') {
+			strncat(rbuf, "[0-9]", len - strlen(rbuf));
+		} else if (*p == 'Z') {
+			strncat(rbuf, "[1-9]", len - strlen(rbuf));
+		} else if (*p == '.') {
+			strncat(rbuf, ".*", len - strlen(rbuf));
+		} else if (strlen(rbuf) < len - 1) {
+			*(rbuf + strlen(rbuf)) = *p;
+		}
+		p++;
+	}
+
+	return strcmp(pat,rbuf) ? SWITCH_TRUE : SWITCH_FALSE;
+}
 
 SWITCH_DECLARE(char *) switch_replace_char(char *str, char from, char to, switch_bool_t dup)
 {

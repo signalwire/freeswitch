@@ -105,6 +105,7 @@
 #include <switch_xml.h>
 #include <switch_core_event_hook.h>
 #include <switch_scheduler.h>
+#include <switch_config.h>
 #include <libteletone.h>
 
 /** \mainpage FreeSWITCH
