@@ -152,15 +152,19 @@ SWITCH_DECLARE(void) switch_core_set_variable(const char *varname, const char *v
 {
 	char *val;
 
-	switch_mutex_lock(runtime.throttle_mutex);
-	val = (char *) switch_core_hash_find(runtime.global_vars, varname);
-	if (val) {
-		free(val);
+	if (varname) {
+		switch_mutex_lock(runtime.throttle_mutex);
+		val = (char *) switch_core_hash_find(runtime.global_vars, varname);
+		if (val) {
+			free(val);
+		}
+		if (value) {
+			switch_core_hash_insert(runtime.global_vars, varname, strdup(value));
+		} else {
+			switch_core_hash_delete(runtime.global_vars, varname);
+		}
+		switch_mutex_unlock(runtime.throttle_mutex);
 	}
-	if (value) {
-		switch_core_hash_insert(runtime.global_vars, varname, strdup(value));
-	}
-	switch_mutex_unlock(runtime.throttle_mutex);
 }
 
 SWITCH_DECLARE(char *) switch_core_get_uuid(void)

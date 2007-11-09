@@ -1658,6 +1658,50 @@ SWITCH_STANDARD_API(uuid_getvar_function)
 	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
+
+
+
+#define GLOBAL_SETVAR_SYNTAX "<var> <value>"
+SWITCH_STANDARD_API(global_setvar_function)
+{
+	char *mycmd = NULL, *argv[3] = { 0 };
+	int argc = 0;
+
+	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, '=', argv, (sizeof(argv) / sizeof(argv[0])));
+		if (argc > 0) {
+			char *var_name = argv[0];
+			char *var_value = argv[1];
+
+			if (switch_strlen_zero(var_value)) {
+				var_value = NULL;
+			}
+			switch_core_set_variable(var_name, var_value);
+			stream->write_function(stream, "+OK");
+			goto done;
+		}
+	}
+
+	stream->write_function(stream, "USAGE: %s\n", GLOBAL_SETVAR_SYNTAX);
+
+done:
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+} 
+
+#define GLOBAL_GETVAR_SYNTAX "<var>"
+SWITCH_STANDARD_API(global_getvar_function)
+{
+
+	if (!switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "%s", switch_str_nil(switch_core_get_variable(cmd)));
+		goto done;
+	}
+
+	stream->write_function(stream, "USAGE: %s\n", GLOBAL_GETVAR_SYNTAX);
+ done:
+	return SWITCH_STATUS_SUCCESS;
+}
  
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 {
@@ -1678,6 +1722,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_bridge", "uuid_bridge", uuid_bridge_function, "");
 	SWITCH_ADD_API(commands_api_interface, "uuid_setvar", "uuid_setvar", uuid_setvar_function, SETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_getvar", "uuid_getvar", uuid_getvar_function, GETVAR_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "global_setvar", "global_setvar", global_setvar_function, GLOBAL_SETVAR_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "global_getvar", "global_getvar", global_getvar_function, GLOBAL_GETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "session_displace", "session displace", session_displace_function, "<uuid> [start|stop] <path> [<limit>] [mux]");
 	SWITCH_ADD_API(commands_api_interface, "session_record", "session record", session_record_function, SESS_REC_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "broadcast", "broadcast", uuid_broadcast_function, BROADCAST_SYNTAX);
