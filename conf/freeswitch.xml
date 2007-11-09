@@ -98,7 +98,7 @@
   <!-- mod_dingaling is reliant on the vcard data in the "directory" section. -->
   <!-- mod_sofia is reliant on the user data for authorization --> 
   <section name="directory" description="User Directory">
-    <!--#include "directory.xml"-->
+    <!--#include "directory/*"-->
   </section>
 
   <!-- phrases section (under development still) -->
