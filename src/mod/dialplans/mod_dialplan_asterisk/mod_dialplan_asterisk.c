@@ -156,20 +156,27 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 
 	while (switch_config_next_pair(&cfg, &var, &val)) {
 		if (!strcasecmp(cfg.category, context)) {
-			if (!strcasecmp(var, "exten")) {
+			char *field_expanded = NULL;
+
+			if (!strcasecmp(var, "include")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "param '%s' not implemented at line %d!\n", var, cfg.lineno);
+			} else {
 				int argc;
 				char *argv[3] = { 0 };
 				char *pattern = NULL;
 				char *pri = NULL;
 				char *app = NULL;
 				char *arg = NULL;
-				char expression[1024] = "";
+				char *expression = NULL, expression_buf[1024] = "";
 				char substituted[2048] = "";
 				char *field_data = caller_profile->destination_number;
 				int proceed = 0;
 				switch_regex_t *re = NULL;
 				int ovector[30] = {0};
-				
+				char *cid = NULL;
+
+				expression = expression_buf;
+						
 				argc = switch_separate_string(val, ',', argv, (sizeof(argv) / sizeof(argv[0])));
 				if (argc < 3) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "parse error line %d!\n", cfg.lineno);
@@ -178,23 +185,55 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 
 				pattern = argv[0];
 				
-				if (*pattern == '_') {
-					pattern++;
-					if (switch_ast2regex(pattern, expression, sizeof(expression))) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "converting [%s] to real regex [%s] you should try them!\n", 
-										  pattern, expression);
+				if (!strcasecmp(var, "exten")) {
+					char *p;
+					if ((p = strchr(pattern, '/'))) {
+						*p++ = '\0';
+						cid = pattern;
+						pattern = p;
+					}	
+				} else {
+					if (strchr(var, '$')) {
+						if ((field_expanded = switch_channel_expand_variables(channel, var)) == var) {
+							field_expanded = NULL;
+							field_data = var;
+						} else {
+							field_data = field_expanded;
+						}
+					} else {
+						field_data = (char *)switch_caller_get_field_by_name(caller_profile, var);
 					}
-					if (!(proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
-						switch_regex_safe_free(re);
-						continue;
+				}
+				
+				if (*pattern == '_' || *pattern == '~') {
+					if (*pattern == '_') {
+						pattern++;
+						if (switch_ast2regex(pattern, expression_buf, sizeof(expression_buf))) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "converting [%s] to real regex [%s] you should try them!\n", 
+											  pattern, expression_buf);
+						}
+					} else {
+						pattern++;
+						expression = pattern;
 					}
 					
+					if (!(proceed = switch_regex_perform(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+						switch_regex_safe_free(re);
+						switch_safe_free(field_expanded);
+						continue;
+					}
 				} else {
-					if (strcasecmp(pattern, caller_profile->destination_number)) {
+					if (strcasecmp(pattern, field_data)) {
 						continue;
 					}
 				}
 				
+				if (cid) {
+					if (strcasecmp(cid, caller_profile->caller_id_number)) {
+						continue;
+					}
+				}
+
 				switch_channel_set_variable(channel, "EXTEN", caller_profile->destination_number);
 				switch_channel_set_variable(channel, "CHANNEL", switch_channel_get_name(channel));
 				switch_channel_set_variable(channel, "UNIQUEID", switch_core_session_get_uuid(session));
@@ -217,6 +256,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				}
 
 				switch_replace_char(arg, '|',',', SWITCH_FALSE);
+				
 
 				if (strchr(expression, '(')) {
 					switch_perform_substitution(re, proceed, arg, field_data, substituted, sizeof(substituted), ovector);
@@ -225,17 +265,16 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				switch_regex_safe_free(re);
 
 				if (!extension) {
-					if ((extension = switch_caller_extension_new(session, caller_profile->destination_number,
-																 caller_profile->destination_number)) == 0) {
+					if ((extension = switch_caller_extension_new(session, field_data, field_data)) == 0) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
 						break;
 					}
 				}
 				
 				switch_caller_extension_add_application(session, extension, app, arg);
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "param '%s' not implemented at line %d!\n", var, cfg.lineno);
 			}
+			
+			switch_safe_free(field_expanded);
 		}
 	}
 
@@ -280,6 +319,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_asterisk_load)
 	switch_dialplan_interface_t *dp_interface;
 	switch_application_interface_t *app_interface;
 	char *mykey = NULL;
+	int x = 0;
 
 	if ((mykey = key())) {
 		mykey = NULL;
@@ -287,15 +327,23 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_asterisk_load)
 	
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+	/* add a dialplan interface */
 	SWITCH_ADD_DIALPLAN(dp_interface, "asterisk", asterisk_dialplan_hunt);
+
+	/* a few fake apps for the sake of emulation */
 	SWITCH_ADD_APP(app_interface, "Dial", "Dial", "Dial", dial_function, "Dial", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "Goto", "Goto", "Goto", goto_function, "Goto", SAF_SUPPORT_NOMEDIA);
 
+	/* fake chan_sip facade */
 	sip_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	sip_endpoint_interface->interface_name = "SIP";
 	sip_endpoint_interface->io_routines = &sip_io_routines;
 
-	
+	for (x = 0; x < 10; x++) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Avoiding Deadlock.\n");
+		switch_yield(100000);
+	}
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

@@ -226,6 +226,8 @@ SWITCH_DECLARE(switch_bool_t) switch_ast2regex(char *pat, char *rbuf, size_t len
 {
 	char *p = pat;
 	memset(rbuf, 0, len);
+	
+	*(rbuf + strlen(rbuf)) = '^';
 
 	while(p && *p) {
 		if (*p == 'N') {
@@ -241,6 +243,7 @@ SWITCH_DECLARE(switch_bool_t) switch_ast2regex(char *pat, char *rbuf, size_t len
 		}
 		p++;
 	}
+	*(rbuf + strlen(rbuf)) = '$';
 
 	return strcmp(pat,rbuf) ? SWITCH_TRUE : SWITCH_FALSE;
 }
