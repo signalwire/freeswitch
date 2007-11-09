@@ -1341,12 +1341,12 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 #define SCHED_TRANSF_DESCR "Schedule a transfer in the future"
 #define SCHED_BROADCAST_DESCR "Schedule a broadcast in the future"
 #define SCHED_HANGUP_DESCR "Schedule a hangup in the future"
-#define UNSET_LONG_DESC "Unset a channel varaible for the channel calling the application."
-#define SET_LONG_DESC "Set a channel varaible for the channel calling the application."
-#define SET_GLOBAL_LONG_DESC "Set a global varaible."
-#define SET_PROFILE_VAR_LONG_DESC "Set a caller profile varaible for the channel calling the application."
-#define EXPORT_LONG_DESC "Set and export a channel varaible for the channel calling the application."
-#define LOG_LONG_DESC "Logs a channel varaible for the channel calling the application."
+#define UNSET_LONG_DESC "Unset a channel variable for the channel calling the application."
+#define SET_LONG_DESC "Set a channel variable for the channel calling the application."
+#define SET_GLOBAL_LONG_DESC "Set a global variable."
+#define SET_PROFILE_VAR_LONG_DESC "Set a caller profile variable for the channel calling the application."
+#define EXPORT_LONG_DESC "Set and export a channel variable for the channel calling the application."
+#define LOG_LONG_DESC "Logs a channel variable for the channel calling the application."
 #define TRANSFER_LONG_DESC "Immediatly transfer the calling channel to a new extension"
 #define SLEEP_LONG_DESC "Pause the channel for a given number of milliseconds, consuming the audio for that period of time."
 SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
@@ -1371,14 +1371,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "pre_answer", "Pre-Answer the call", "Pre-Answer the call for a channel.", pre_answer_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "answer", "Answer the call", "Answer the call for a channel.", answer_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "hangup", "Hangup the call", "Hangup the call for a channel.", hangup_function, "[<cause>]", SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_APP(app_interface, "log", "Logs a channel varaible", LOG_LONG_DESC, log_function, "<varname>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "log", "Logs a channel variable", LOG_LONG_DESC, log_function, "<varname>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "info", "Display Call Info", "Display Call Info", info_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "event", "Fire an event", "Fire an event", event_function, "", SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_APP(app_interface, "export", "Export a channel varaible across a bridge", EXPORT_LONG_DESC, export_function, "<varname>=<value>", SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_APP(app_interface, "set", "Set a channel varaible", SET_LONG_DESC, set_function, "<varname>=<value>", SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_APP(app_interface, "set_global", "Set a global varaible", SET_GLOBAL_LONG_DESC, set_global_function, "<varname>=<value>", SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_APP(app_interface, "set_profile_var", "Set a caller profile varaible", SET_PROFILE_VAR_LONG_DESC, set_profile_var_function, "<varname>=<value>", SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_APP(app_interface, "unset", "Unset a channel varaible", UNSET_LONG_DESC, unset_function, "<varname>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "export", "Export a channel variable across a bridge", EXPORT_LONG_DESC, export_function, "<varname>=<value>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "set", "Set a channel variable", SET_LONG_DESC, set_function, "<varname>=<value>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "set_global", "Set a global variable", SET_GLOBAL_LONG_DESC, set_global_function, "<varname>=<value>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "set_profile_var", "Set a caller profile variable", SET_PROFILE_VAR_LONG_DESC, set_profile_var_function, "<varname>=<value>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "unset", "Unset a channel variable", UNSET_LONG_DESC, unset_function, "<varname>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "ring_ready", "Indicate Ring_Ready", "Indicate Ring_Ready on a channel.", ring_ready_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "break", "Break", "Set the break flag.", break_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "detect_speech", "Detect speech", "Detect speech on a channel.", detect_speech_function, DETECT_SPEECH_SYNTAX, SAF_NONE);
