@@ -9,7 +9,7 @@
      <action application="set" data="hangup_after_bridge=true"/>
      <action application="enum" data="1$1"/>
      <action application="bridge" data="${enum_auto_route}"/>
-     <action application="bridge" data="sofia/gateway/$${default_gateway}/011$1"/>
+     <action application="bridge" data="sofia/gateway/${default_gateway}/011$1"/>
    </condition>
  </extension>
 
@@ -22,7 +22,7 @@
      <action application="set" data="hangup_after_bridge=true"/>
      <action application="enum" data="1$1"/>
      <action application="bridge" data="${enum_auto_route}"/>
-     <action application="bridge" data="sofia/gateway/$${default_gateway}/1$1"/>
+     <action application="bridge" data="sofia/gateway/${default_gateway}/1$1"/>
    </condition>
  </extension>
 
@@ -40,7 +40,7 @@
      <action application="set" data="hangup_after_bridge=true"/>
      <action application="enum" data="1$1"/>
      <action application="bridge" data="${enum_auto_route}"/>
-     <action application="bridge" data="sofia/gateway/$${default_gateway}/1${default_area_code}$1"/>
+     <action application="bridge" data="sofia/gateway/${default_gateway}/1${default_area_code}$1"/>
    </condition>
  </extension>
 
@@ -53,7 +53,7 @@
  -->
  <extension name="FCC_Services">
    <condition field="^([4689]11)$">
-     <action application="bridge" data="sofia/gateway/$${default_gateway}/$1"/>
+     <action application="bridge" data="sofia/gateway/${default_gateway}/$1"/>
    </condition>
  </extension>
 </context>

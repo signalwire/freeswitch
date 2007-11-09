@@ -50,6 +50,18 @@
     <variables>
       <!--all variables here will be set on all inbound calls that originate from this user -->
       <variable name="testing" value="this"/>
+
+      <!-- limit the max number of outgoing calls for this user -->
+      <!--<variable name="max_calls" value="2"/>-->
+
+      <!-- send presence information if FS is configured to do so -->
+      <!--<variable name="presence_id" value="1000@$${domain}"/>-->
+
+      <!-- set these to take advantage of a dialplan localized to this user -->
+      <!--<variable name="numbering_plan" value="US"/>-->
+      <!--<variable name="default_area_code" value="434"/>-->
+      <!--<variable name="default_gateway" value="asterlink.com"/>-->
+
       <!--<variable name="sip-force-contact" value="nat-connectile-dysfunction"/>-->
       <!--<variable name="sip-force-expires" value="10"/>-->
       <!--<variable name="sip-register-gateway" value="cluecon.com"/>-->
@@ -67,12 +79,6 @@
       <!--<param name="vm-mailto" value="me@mydomain.com"/>-->
       <!--<param name="vm-email-all-messages" value="true"/>-->
     </params>
-    <variables>
-      <variable name="numbering_plan" value="US"/>
-      <variable name="default_area_code" value="434"/>
-      <variable name="max_calls" value="2"/>
-      <variable name="presence_id" value="1001@$${domain}"/>
-    </variables>
   </user>
 
   <!-- authless users and mailboxes -->
