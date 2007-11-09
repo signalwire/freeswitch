@@ -41,6 +41,61 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load);
 SWITCH_MODULE_DEFINITION(mod_commands, mod_commands_load, NULL, NULL);
 
 
+SWITCH_STANDARD_API(regex_function)
+{
+	switch_regex_t *re = NULL;
+	int ovector[30];
+	int argc;
+    char *mydata = NULL, *argv[3];
+	size_t len = 0;
+	char *substituted = NULL;
+	int proceed = 0;
+
+    if (!cmd) {
+        goto error;
+    }
+
+    mydata = strdup(cmd);
+    assert(mydata);
+	
+    argc = switch_separate_string(mydata, '|', argv, (sizeof(argv) / sizeof(argv[0])));
+
+    if (argc < 2) {
+        goto error;
+    }
+
+
+	if ((proceed = switch_regex_perform(argv[0], argv[1], &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+		if (argc > 2) {
+			len = strlen(argv[0]) * 3;
+			substituted = malloc(len);
+			assert(substituted);
+			memset(substituted, 0, len);
+			switch_replace_char(argv[2], '%','$', SWITCH_FALSE);
+			switch_perform_substitution(re, proceed, argv[2], argv[0], substituted, len, ovector);
+
+			stream->write_function(stream, "%s", substituted);    			
+			free(substituted);
+		} else {
+			stream->write_function(stream, "true");
+		}
+	} else {
+		stream->write_function(stream, "false");
+	}
+
+	goto ok;
+
+ error:
+    stream->write_function(stream, "!err!");    
+ ok:
+
+	switch_regex_safe_free(re);
+    switch_safe_free(mydata);
+	
+    return SWITCH_STATUS_SUCCESS;
+
+}
+
 typedef enum {
     O_NONE,
     O_EQ,
@@ -1640,6 +1695,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "xml_wrap", "Wrap another api command in xml", xml_wrap_api_function, "<command> <args>");
 	SWITCH_ADD_API(commands_api_interface, "is_lan_addr", "see if an ip is a lan addr", lan_addr_function, "<ip>");
 	SWITCH_ADD_API(commands_api_interface, "qq", "Eval a conditional", qq_function, "<expr> ? <true val> : <false val>");
+	SWITCH_ADD_API(commands_api_interface, "regex", "Eval a regex", regex_function, "<data>|<pattern>[|<subst string>]");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;

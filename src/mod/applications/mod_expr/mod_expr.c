@@ -111,7 +111,7 @@ SWITCH_STANDARD_API(expr_function)
 
     /* Parse expression */
     err = exprParse(e, (char *)expr);
-    printf("WTF %s\n", expr);
+
     if(err != EXPR_ERROR_NOERROR)
         goto error;
 

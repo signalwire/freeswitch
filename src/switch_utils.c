@@ -223,6 +223,26 @@ SWITCH_DECLARE(switch_bool_t) switch_is_lan_addr(const char *ip)
 }
 
 
+SWITCH_DECLARE(char *) switch_replace_char(char *str, char from, char to, switch_bool_t dup)
+{
+	char *p;
+
+	if (dup) {
+		p = strdup(str);
+		assert(p);
+	} else {
+		p = str;
+	}
+
+	for(;p && *p; p++) {
+		if (*p == from) {
+			*p = to;
+		}
+	}
+
+	return p;
+}
+
 SWITCH_DECLARE(char *) switch_strip_spaces(const char *str)
 {
 	const char *sp = str;

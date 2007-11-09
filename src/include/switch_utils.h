@@ -302,6 +302,7 @@ SWITCH_DECLARE(switch_bool_t) switch_is_number(const char *str);
 SWITCH_DECLARE(char *) switch_strip_spaces(const char *str);
 SWITCH_DECLARE(const char *) switch_stristr(const char *str, const char *instr);
 SWITCH_DECLARE(switch_bool_t) switch_is_lan_addr(const char *ip);
+SWITCH_DECLARE(char *) switch_replace_char(char *str, char from, char to, switch_bool_t dup);
 
 /*!
   \brief Escape a string by prefixing a list of characters with an escape character
