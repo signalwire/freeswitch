@@ -88,6 +88,25 @@ SWITCH_STANDARD_APP(dial_function)
 
 }
 
+SWITCH_STANDARD_APP(avoid_function)
+{
+    void *y = NULL;
+	int x = 0;
+
+	switch_channel_t *channel;
+
+    channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+	for (x = 0; x < 5; x++) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Avoiding initial deadlock on channel %s.\n", switch_channel_get_name(channel));
+		switch_yield(100000);
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "I should never be called!.\n");
+    memset((void *) y, 0, 1000);
+}
+
 
 
 SWITCH_STANDARD_APP(goto_function)
@@ -333,7 +352,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_asterisk_load)
 	/* a few fake apps for the sake of emulation */
 	SWITCH_ADD_APP(app_interface, "Dial", "Dial", "Dial", dial_function, "Dial", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "Goto", "Goto", "Goto", goto_function, "Goto", SAF_SUPPORT_NOMEDIA);
-
+	SWITCH_ADD_APP(app_interface, "AvoidingDeadlock", "Avoid", "Avoid", avoid_function, "Avoid", SAF_SUPPORT_NOMEDIA);
+	
 	/* fake chan_sip facade */
 	sip_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	sip_endpoint_interface->interface_name = "SIP";
