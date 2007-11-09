@@ -360,6 +360,30 @@ SWITCH_STANDARD_APP(set_function)
 	}
 }
 
+SWITCH_STANDARD_APP(set_global_function)
+{
+	char *var, *val = NULL;
+
+	if (switch_strlen_zero(data)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
+	} else {
+		var = strdup(data);
+		assert(var);
+		val = strchr(var, '=');
+
+		if (val) {
+			*val++ = '\0';
+			if (switch_strlen_zero(val)) {
+				val = NULL;
+			}
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SET GLOBAL [%s]=[%s]\n", var, val ? val : "UNDEF");
+		switch_core_set_variable(var, val);
+		free(var);
+	}
+}
+
 
 SWITCH_STANDARD_APP(set_profile_var_function)
 {
@@ -1319,6 +1343,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 #define SCHED_HANGUP_DESCR "Schedule a hangup in the future"
 #define UNSET_LONG_DESC "Unset a channel varaible for the channel calling the application."
 #define SET_LONG_DESC "Set a channel varaible for the channel calling the application."
+#define SET_GLOBAL_LONG_DESC "Set a global varaible."
 #define SET_PROFILE_VAR_LONG_DESC "Set a caller profile varaible for the channel calling the application."
 #define EXPORT_LONG_DESC "Set and export a channel varaible for the channel calling the application."
 #define LOG_LONG_DESC "Logs a channel varaible for the channel calling the application."
@@ -1351,6 +1376,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "event", "Fire an event", "Fire an event", event_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "export", "Export a channel varaible across a bridge", EXPORT_LONG_DESC, export_function, "<varname>=<value>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "set", "Set a channel varaible", SET_LONG_DESC, set_function, "<varname>=<value>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "set_global", "Set a global varaible", SET_GLOBAL_LONG_DESC, set_global_function, "<varname>=<value>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "set_profile_var", "Set a caller profile varaible", SET_PROFILE_VAR_LONG_DESC, set_profile_var_function, "<varname>=<value>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "unset", "Unset a channel varaible", UNSET_LONG_DESC, unset_function, "<varname>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "ring_ready", "Indicate Ring_Ready", "Indicate Ring_Ready on a channel.", ring_ready_function, "", SAF_SUPPORT_NOMEDIA);

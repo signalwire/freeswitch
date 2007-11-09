@@ -141,12 +141,26 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_core_get_state_handl
 
 SWITCH_DECLARE(char *) switch_core_get_variable(const char *varname)
 {
-	return (char *) switch_core_hash_find(runtime.global_vars, varname);
+	char *val;
+	switch_mutex_lock(runtime.throttle_mutex);
+	val = (char *) switch_core_hash_find(runtime.global_vars, varname);
+	switch_mutex_unlock(runtime.throttle_mutex);
+	return val;
 }
 
 SWITCH_DECLARE(void) switch_core_set_variable(const char *varname, const char *value)
 {
-	switch_core_hash_insert(runtime.global_vars, switch_core_strdup(runtime.memory_pool, varname), switch_core_strdup(runtime.memory_pool, value));
+	char *val;
+
+	switch_mutex_lock(runtime.throttle_mutex);
+	val = (char *) switch_core_hash_find(runtime.global_vars, varname);
+	if (val) {
+		free(val);
+	}
+	if (value) {
+		switch_core_hash_insert(runtime.global_vars, varname, strdup(value));
+	}
+	switch_mutex_unlock(runtime.throttle_mutex);
 }
 
 SWITCH_DECLARE(char *) switch_core_get_uuid(void)
