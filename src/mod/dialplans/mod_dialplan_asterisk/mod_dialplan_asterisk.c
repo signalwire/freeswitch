@@ -36,6 +36,91 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_asterisk_load);
 SWITCH_MODULE_DEFINITION(mod_dialplan_asterisk, mod_dialplan_asterisk_load, NULL, NULL);
 
+static switch_status_t exec_app(switch_core_session_t *session, char *app, char *arg)
+{
+	const switch_application_interface_t *application_interface;
+
+	if ((application_interface = switch_loadable_module_get_application_interface(app))) {
+		return switch_core_session_exec(session, application_interface, arg);
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+
+SWITCH_STANDARD_APP(dial_function)
+{
+	int argc;
+	char *argv[4] = { 0 };
+	char *mydata;
+	switch_channel_t *channel;
+
+
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+	
+	if (data && (mydata = switch_core_session_strdup(session, data))) {
+		if ((argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+			goto error;
+		}
+		
+		if (argc > 1) {
+			switch_channel_set_variable(channel, "call_timeout", argv[1]);
+		}
+		
+		switch_replace_char(argv[0], '&',',', SWITCH_FALSE);
+		
+		if (exec_app(session, "bridge", argv[0]) != SWITCH_STATUS_SUCCESS) {
+			goto error;
+		}
+		
+		goto ok;
+	}
+
+	
+ error:
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!\n");
+
+ ok:
+	
+	return;
+
+}
+
+
+
+SWITCH_STANDARD_APP(goto_function)
+{
+	int argc;
+	char *argv[3] = { 0 };
+	char *mydata;
+	switch_channel_t *channel;
+	
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+	
+	if (data && (mydata = switch_core_session_strdup(session, data))) {
+		if ((argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])))) < 1) {
+			goto error;
+		}
+		
+		switch_ivr_session_transfer(session, argv[1], "asterisk", argv[0]);
+		goto ok;
+	}
+
+	
+ error:
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!\n");
+
+ ok:
+	
+	return;
+
+}
+
+
 SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 {
 	switch_caller_extension_t *extension = NULL;
@@ -73,7 +158,7 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 		if (!strcasecmp(cfg.category, context)) {
 			if (!strcasecmp(var, "exten")) {
 				int argc;
-				char *argv[4] = { 0 };
+				char *argv[3] = { 0 };
 				char *pattern = NULL;
 				char *pri = NULL;
 				char *app = NULL;
@@ -85,8 +170,6 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				switch_regex_t *re = NULL;
 				int ovector[30] = {0};
 				
-
-				switch_replace_char(val, '|',',', SWITCH_FALSE);
 				argc = switch_separate_string(val, ',', argv, (sizeof(argv) / sizeof(argv[0])));
 				if (argc < 3) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "parse error line %d!\n", cfg.lineno);
@@ -119,21 +202,22 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				pri = argv[1];
 				app = argv[2];
 				
-				if (argc == 4) {
-					arg = argv[3];
-				} else {
-					if ((arg = strchr(app, '('))) {
-						*arg++ = '\0';
-						char *p = strrchr(arg, ')');
-						if (p) {
+				if ((arg = strchr(app, '('))) {
+					*arg++ = '\0';
+					char *p = strrchr(arg, ')');
+					if (p) {
 							*p = '\0';
-						}
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "parse error line %d!\n", cfg.lineno);
-						continue;
 					}
+				} else if ((arg = strchr(app, ','))) {
+					*arg++ = '\0';
 				}
 				
+				if (!arg) {
+					arg = "";
+				}
+
+				switch_replace_char(arg, '|',',', SWITCH_FALSE);
+
 				if (strchr(expression, '(')) {
 					switch_perform_substitution(re, proceed, arg, field_data, substituted, sizeof(substituted), ovector);
 					arg = substituted;
@@ -165,14 +249,53 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 }
 
 
+/* fake chan_sip */
+switch_endpoint_interface_t *sip_endpoint_interface;
+static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
+													switch_caller_profile_t *outbound_profile,
+													switch_core_session_t **new_session, switch_memory_pool_t **pool);
+switch_io_routines_t sip_io_routines = {
+	/*.outgoing_channel */ channel_outgoing_channel
+};
+
+static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
+													switch_caller_profile_t *outbound_profile,
+													switch_core_session_t **new_session, switch_memory_pool_t **pool)
+{
+	outbound_profile->destination_number = switch_core_sprintf(outbound_profile->pool, "default/%s", outbound_profile->destination_number);
+	return switch_core_session_outgoing_channel(session, "sofia", outbound_profile, new_session, pool);
+}
+
+#define WE_DONT_NEED_NO_STINKIN_KEY "true"
+static char *key()
+{
+    return WE_DONT_NEED_NO_STINKIN_KEY;
+}
+
+
+
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_asterisk_load)
 {
 	switch_dialplan_interface_t *dp_interface;
+	switch_application_interface_t *app_interface;
+	char *mykey = NULL;
 
+	if ((mykey = key())) {
+		mykey = NULL;
+	}
+	
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_DIALPLAN(dp_interface, "asterisk", asterisk_dialplan_hunt);
+	SWITCH_ADD_APP(app_interface, "Dial", "Dial", "Dial", dial_function, "Dial", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "Goto", "Goto", "Goto", goto_function, "Goto", SAF_SUPPORT_NOMEDIA);
 
+	sip_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+	sip_endpoint_interface->interface_name = "SIP";
+	sip_endpoint_interface->io_routines = &sip_io_routines;
+
+	
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
