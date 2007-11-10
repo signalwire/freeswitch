@@ -1,5 +1,5 @@
 <configuration name="sofia.conf" description="sofia Endpoint">
   <profiles>
-    <!--#include "sip_profiles/*" -->
+    <!--#include "sip_profiles/*.xml" -->
   </profiles>
 </configuration>
