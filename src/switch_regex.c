@@ -98,11 +98,12 @@ SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expressi
 
 
 SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_count, const char *data, const char *field_data,
-												 char *substituted, uint32_t len, int *ovector)
+												 char *substituted, switch_size_t len, int *ovector)
 {
 	char index[10] = "";
 	char replace[1024] = "";
-	uint32_t x, y = 0, z = 0, num = 0;
+	switch_size_t x, y = 0, z = 0;
+	int num = 0;
 
 	for (x = 0; x < (len - 1) && x < strlen(data);) {
 		if (data[x] == '$') {
@@ -122,7 +123,7 @@ SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_c
 			num = atoi(index);
 
 			if (pcre_copy_substring(field_data, ovector, match_count, num, replace, sizeof(replace)) > 0) {
-				unsigned int r;
+				switch_size_t r;
 				for (r = 0; r < strlen(replace); r++) {
 					substituted[y++] = replace[r];
 				}

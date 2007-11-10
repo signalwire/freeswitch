@@ -471,10 +471,10 @@ SWITCH_STANDARD_API(group_api_function)
         goto done;
     } else if (!strcasecmp(argv[0], "call")) {
         char buf[4096] = "";
+        char *how = ",";
         callback_t cbt = { 0 };
         cbt.buf = buf;
         cbt.len = sizeof(buf);
-        char *how = ",";
         
         if (argc > 2) {
             if (!strcasecmp(argv[2], "order")) {

@@ -51,7 +51,7 @@ SWITCH_DECLARE(void) switch_regex_free(void *data);
 
 SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expression, switch_regex_t **new_re, int *ovector, uint32_t olen);
 SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_count, const char *data, const char *field_data,
-												 char *substituted, uint32_t len, int *ovector);
+												 char *substituted, switch_size_t len, int *ovector);
 
 /*!
  \brief Function to evaluate an expression against a string

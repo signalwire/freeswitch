@@ -1421,11 +1421,11 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 
 					if (offset >= 0) {
 						sub_val += offset;
-					} else if (abs(offset) <= strlen(sub_val)) {
+					} else if ((size_t)abs(offset) <= strlen(sub_val)) {
 						sub_val = cloned_sub_val + (strlen(cloned_sub_val) + offset);
 					}
 
-					if (ooffset > 0 && ooffset < strlen(sub_val)) {
+					if (ooffset > 0 && (size_t)ooffset < strlen(sub_val)) {
 						if ((p = (char *)sub_val + ooffset)) {
 							*p = '\0';
 						}
