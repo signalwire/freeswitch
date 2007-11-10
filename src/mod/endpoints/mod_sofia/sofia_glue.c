@@ -498,6 +498,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	cid_name = caller_profile->caller_id_name;
 	cid_num = caller_profile->caller_id_number;
 	sofia_glue_tech_prepare_codecs(tech_pvt);
+	check_decode(cid_name, session);
+	check_decode(cid_num, session);
 
 	if (!tech_pvt->from_str) {
 		tech_pvt->from_str = switch_core_session_sprintf(tech_pvt->session, "\"%s\" <sip:%s%s%s>",

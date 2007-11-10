@@ -506,3 +506,32 @@ sofia_gateway_t *sofia_reg_find_gateway__(const char *file, const char *func, in
 
 void sofia_reg_release_gateway__(const char *file, const char *func, int line, sofia_gateway_t *gateway);
 #define sofia_reg_release_gateway(x) sofia_reg_release_gateway__(__FILE__, __SWITCH_FUNC__, __LINE__, x);
+
+#define check_decode(_var, _session) do {								\
+		assert(_session);												\
+		if (!switch_strlen_zero(_var)) {								\
+			int d = 0;													\
+			char *p;													\
+			if (strchr(_var, '%')) {									\
+				char *tmp = switch_core_session_strdup(_session, _var);	\
+				switch_url_decode(tmp);									\
+				_var = tmp;												\
+				d++;													\
+			}															\
+			if ((p = strchr(_var, '"'))) {								\
+				if (!d) {												\
+					char *tmp = switch_core_session_strdup(_session, _var); \
+					_var = tmp;											\
+				}														\
+				if ((p = strchr(_var, '"'))) {							\
+					_var = p+1;											\
+				}														\
+				if ((p = strrchr(_var, '"'))) {							\
+					*p = '\0';											\
+				}														\
+			}															\
+		}																\
+																		\
+		if(_session) break;												\
+	} while(!_session)
+	   

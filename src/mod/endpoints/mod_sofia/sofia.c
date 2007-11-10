@@ -1787,16 +1787,6 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 	return;
 }
 
-#define check_decode(_var, _session) do {								\
-		assert(_session);												\
-		if (!switch_strlen_zero(_var) && strchr(_var, '%')) {			\
-			char *tmp = switch_core_session_strdup(_session, _var);		\
-			switch_url_decode(tmp);										\
-			_var = tmp;													\
-		}																\
-		if(_session) break;												\
-	} while(!_session)
-	   
 
 #define url_set_chanvars(session, url, varprefix) _url_set_chanvars(session, url, #varprefix "_user", #varprefix "_host", #varprefix "_port", #varprefix "_uri")
 const char *_url_set_chanvars(switch_core_session_t *session, url_t *url, const char *user_var,
@@ -2144,6 +2134,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		dialplan = profile->dialplan;
 	}
 
+	check_decode(displayname, session);
 	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 														 from_user,
 														 dialplan,
