@@ -68,6 +68,14 @@ static char db_sql[] =
 	");\n";
 
 
+static char group_sql[] =
+	"CREATE TABLE group_data (\n"
+	"   hostname   VARCHAR(255),\n"
+	"   groupname  VARCHAR(255),\n"
+	"   url        VARCHAR(255)\n"
+	");\n";
+
+
 
 static switch_status_t limit_execute_sql(char *sql, switch_mutex_t *mutex)
 {
@@ -240,11 +248,17 @@ static switch_status_t do_config()
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Create SQL Database!\n");
             }
         }
+        if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from group_data", NULL) != SWITCH_STATUS_SUCCESS) {
+            if (switch_odbc_handle_exec(globals.master_odbc, group_sql, NULL) != SWITCH_STATUS_SUCCESS) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Create SQL Database!\n");
+            }
+        }
     } else {
 #endif
         if ((db = switch_core_db_open_file(globals.dbname))) {
             switch_core_db_test_reactive(db, "select * from limit_data", NULL, limit_sql);
             switch_core_db_test_reactive(db, "select * from db_data", NULL, db_sql);
+            switch_core_db_test_reactive(db, "select * from group_data", NULL, group_sql);
         } else {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
             status = SWITCH_STATUS_FALSE;
@@ -303,6 +317,15 @@ static int sql2str_callback(void *pArg, int argc, char **argv, char **columnName
 	callback_t *cbt = (callback_t *) pArg;
 
 	switch_copy_string(cbt->buf, argv[0], cbt->len);
+	cbt->matches++;
+	return 0;
+}
+
+
+static int group_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	callback_t *cbt = (callback_t *) pArg;
+    snprintf(cbt->buf + strlen(cbt->buf), cbt->len - strlen(cbt->buf), "%s%c", argv[0], *argv[1]);
 	cbt->matches++;
 	return 0;
 }
@@ -398,6 +421,125 @@ SWITCH_STANDARD_APP(db_function)
     switch_safe_free(sql);
 }
 
+
+
+SWITCH_STANDARD_API(group_api_function)
+{
+    int argc = 0;
+    char *argv[4] = { 0 };
+    char *mydata = NULL;
+    char *sql;
+
+    switch_mutex_lock(globals.mutex);
+
+    if (!switch_strlen_zero(cmd)) {
+        mydata = strdup(cmd);
+        argc = switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0])));
+    }
+
+    if (argc < 2) {
+        goto error;
+    }
+
+    if (!strcasecmp(argv[0], "add")) {
+        if (argc < 3) {
+            goto error;
+        }
+        sql = switch_mprintf("delete from group_data where groupname='%q' and url='%q';", argv[1], argv[2]);
+        assert(sql);
+        limit_execute_sql(sql, NULL);
+        switch_safe_free(sql);
+        sql = switch_mprintf("insert into group_data values('%q','%q','%q');", globals.hostname, argv[1], argv[2]);
+        assert(sql);
+        limit_execute_sql(sql, NULL);
+        switch_safe_free(sql);
+        stream->write_function(stream, "+OK");
+        goto done;
+    } else if (!strcasecmp(argv[0], "del")) {
+        if (argc < 3) {
+            goto error;
+        }
+        if (!strcmp(argv[2], "*")) {
+            sql = switch_mprintf("delete from group_data where groupname='%q';", argv[1]);
+        } else {
+            sql = switch_mprintf("delete from group_data where groupname='%q' and url='%q';", argv[1], argv[2]);
+        }
+        assert(sql);
+        limit_execute_sql(sql, NULL);
+        switch_safe_free(sql);
+        stream->write_function(stream, "+OK");
+        goto done;
+    } else if (!strcasecmp(argv[0], "call")) {
+        char buf[4096] = "";
+        callback_t cbt = { 0 };
+        cbt.buf = buf;
+        cbt.len = sizeof(buf);
+        char *how = ",";
+        
+        if (argc > 2) {
+            if (!strcasecmp(argv[2], "order")) {
+                how = "|";
+            }
+        }
+
+        sql = switch_mprintf("select url,'%q' from group_data where groupname='%q'", how, argv[1]);
+        assert(sql);
+
+        limit_execute_sql_callback(NULL, sql, group_callback, &cbt);
+        *(buf + (strlen(buf) - 1)) = '\0';
+        stream->write_function(stream, "%s", buf);
+        goto done;
+    }
+
+ error:
+    stream->write_function(stream, "!err!");
+    
+ done:
+
+    switch_mutex_unlock(globals.mutex);
+    switch_safe_free(mydata);
+    return SWITCH_STATUS_SUCCESS;
+    
+}
+
+#define GROUP_USAGE "[add|del]:<group name>:<val>"
+#define GROUP_DESC "save data"
+
+SWITCH_STANDARD_APP(group_function)
+{
+    switch_channel_t *channel;
+    int argc = 0;
+    char *argv[3] = { 0 };
+    char *mydata = NULL;
+    char *sql;
+
+    channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+    if (!switch_strlen_zero(data)) {
+        mydata = switch_core_session_strdup(session, data);
+        argc = switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0])));
+    }
+
+    if (argc < 3) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: group %s\n", DB_USAGE);
+        return;
+    }
+
+    if (!strcasecmp(argv[0], "add")) {
+        sql = switch_mprintf("insert into group_data values('%q','%q','%q');", globals.hostname, argv[1], argv[2]);
+        assert(sql);
+        limit_execute_sql(sql, globals.mutex);
+        switch_safe_free(sql);
+    } else if (!strcasecmp(argv[0], "del")) {
+        sql = switch_mprintf("delete from group_data where groupname='%q' and url='%q';", argv[1], argv[2]);
+        assert(sql);
+        limit_execute_sql(sql, globals.mutex);
+        switch_safe_free(sql);
+    }
+
+}
+
 #define LIMIT_USAGE "<realm> <id> <max>"
 #define LIMIT_DESC "limit access to an extension"
 
@@ -489,8 +631,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 
 	SWITCH_ADD_APP(app_interface, "limit", "Limit", LIMIT_DESC, limit_function, LIMIT_USAGE, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "db_insert", "Insert to the db", DB_DESC, db_function, DB_USAGE, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "group", "Manage a group", GROUP_DESC, group_function, GROUP_USAGE, SAF_NONE);
 
 	SWITCH_ADD_API(commands_api_interface, "db", "db get/set", db_api_function, "[get|set]/<realm>/<key>/<value>");
+	SWITCH_ADD_API(commands_api_interface, "group", "group [add|del|call]", group_api_function, "[add|del|call] <group name> <url>");
 
     /* indicate that the module should continue to be loaded */
     return SWITCH_STATUS_SUCCESS;
