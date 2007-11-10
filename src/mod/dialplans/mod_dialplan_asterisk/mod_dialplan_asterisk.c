@@ -61,7 +61,7 @@ SWITCH_STANDARD_APP(dial_function)
 
 	
 	if (data && (mydata = switch_core_session_strdup(session, data))) {
-		if ((argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+		if ((argc = switch_separate_string(mydata, '|', argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
 			goto error;
 		}
 		
@@ -121,7 +121,7 @@ SWITCH_STANDARD_APP(goto_function)
 
 	
 	if (data && (mydata = switch_core_session_strdup(session, data))) {
-		if ((argc = switch_separate_string(mydata, ',', argv, (sizeof(argv) / sizeof(argv[0])))) < 1) {
+		if ((argc = switch_separate_string(mydata, '|', argv, (sizeof(argv) / sizeof(argv[0])))) < 1) {
 			goto error;
 		}
 		
@@ -274,9 +274,6 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 					arg = "";
 				}
 
-				switch_replace_char(arg, '|',',', SWITCH_FALSE);
-				
-
 				if (strchr(expression, '(')) {
 					switch_perform_substitution(re, proceed, arg, field_data, substituted, sizeof(substituted), ovector);
 					arg = substituted;
@@ -320,7 +317,18 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool)
 {
-	outbound_profile->destination_number = switch_core_sprintf(outbound_profile->pool, "default/%s", outbound_profile->destination_number);
+	const char *profile;
+
+	if (session) {
+		profile = switch_channel_get_variable(switch_core_session_get_channel(session), "sip_profile");
+	} else {
+		profile = switch_core_get_variable("sip_profile");
+	}
+	if (switch_strlen_zero(profile)) {
+		profile = "default";
+	}
+
+	outbound_profile->destination_number = switch_core_sprintf(outbound_profile->pool, "%s/%s", profile, outbound_profile->destination_number);
 	return switch_core_session_outgoing_channel(session, "sofia", outbound_profile, new_session, pool);
 }
 
