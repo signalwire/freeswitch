@@ -54,9 +54,9 @@ BOOL FSManager::Initialize(switch_memory_pool_t* MemoryPool)
 		delete sipep;
 		return FALSE;
 	}
-	SetSTUNServer("stun.voxgratia.org");
+	//SetSTUNServer("stun.voxgratia.org");
 	PStringArray routes;
-	routes += "h323:.* = sip:<da>@fwd.pulver.com";
+	routes += "h323:.* = fs:<da>";
 	SetRouteTable(routes);
 	
 	return TRUE;
