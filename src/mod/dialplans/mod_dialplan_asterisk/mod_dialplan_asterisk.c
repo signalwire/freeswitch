@@ -332,6 +332,26 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	return switch_core_session_outgoing_channel(session, "sofia", outbound_profile, new_session, pool);
 }
 
+
+
+
+/* fake chan_iax2 */
+switch_endpoint_interface_t *iax2_endpoint_interface;
+static switch_call_cause_t iax2_outgoing_channel(switch_core_session_t *session,
+													switch_caller_profile_t *outbound_profile,
+													switch_core_session_t **new_session, switch_memory_pool_t **pool);
+switch_io_routines_t iax2_io_routines = {
+	/*.outgoing_channel */ iax2_outgoing_channel
+};
+
+static switch_call_cause_t iax2_outgoing_channel(switch_core_session_t *session,
+													switch_caller_profile_t *outbound_profile,
+													switch_core_session_t **new_session, switch_memory_pool_t **pool)
+{
+	return switch_core_session_outgoing_channel(session, "iax", outbound_profile, new_session, pool);
+}
+
+
 #define WE_DONT_NEED_NO_STINKIN_KEY "true"
 static char *key()
 {
@@ -367,9 +387,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_asterisk_load)
 	sip_endpoint_interface->interface_name = "SIP";
 	sip_endpoint_interface->io_routines = &sip_io_routines;
 
-	for (x = 0; x < 10; x++) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Avoiding Deadlock.\n");
-		switch_yield(100000);
+
+	/* fake chan_iax2 facade */
+	iax2_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+	iax2_endpoint_interface->interface_name = "IAX2";
+	iax2_endpoint_interface->io_routines = &iax2_io_routines;
+	
+	if (getenv("FAITHFUL_EMULATION")) {
+		for (x = 0; x < 10; x++) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Avoiding Deadlock.\n");
+			switch_yield(100000);
+		}
 	}
 
 	/* indicate that the module should continue to be loaded */
