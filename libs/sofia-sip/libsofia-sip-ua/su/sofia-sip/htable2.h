@@ -30,8 +30,9 @@
  *
  * Hash tables templates, take 2.
  *
- * Note: this version can handle structures as entries, and it can be used
- * without <sofia-sip/su_alloc.h>.
+ * Note: this version stores the given element types as entries (instead of
+ * always storing a pointer to element). It can be used without
+ * <sofia-sip/su_alloc.h>.
  * 
  * This file contain a hash table template for C.  The hash tables are
  * resizeable, and they usually contain pointers to entries.  The
@@ -66,21 +67,24 @@ typedef unsigned long hash_value_t;
 
 /** Declare hash table structure type.
  * 
- * The macro HTABLE2_DECLARE() expands to a declaration for hash table
- * structure.  The its typedef will be <em>prefix</em><code>_t</code>, the
- * field names start with @a pr.  The entry type is @a entrytype.
+ * The macro HTABLE2_DECLARE2() expands to a declaration for hash table
+ * structure. The its typedef will be @a type, the field names start with @a
+ * pr. The entry type is @a entrytype.
  *
+ * @param type      hash table typedef
  * @param sname     name of struct
- * @param prefix    hash table type and function prefix
  * @param pr        hash table field prefix
  * @param entrytype entry type
  */
+#define HTABLE2_DECLARE2(type, sname, pr, entrytype, size_t)	\
+typedef struct sname { \
+  size_t pr##size; \
+  size_t pr##used; \
+  entrytype *pr##table; \
+} type
+
 #define HTABLE2_DECLARE(sname, prefix, pr, entrytype)	\
-struct sname { \
-  unsigned pr##size; \
-  unsigned pr##used; \
-  entrytype *pr##table; /**< Hash table itself */ \
-}
+  HTABLE2_DECLARE2(prefix##t, sname, pr, entrytype, unsigned)
 
 #ifndef HTABLE2_SCOPE
 /** Default scope for hash table functions. */
@@ -89,27 +93,30 @@ struct sname { \
 
 /** Prototypes for hash table
  *
- * The macro HTABLE2_PROTOS() expands to the prototypes of hash table
+ * The macro HTABLE2_PROTOS2() expands to the prototypes of hash table
  * functions.  The function and type names start with @a prefix, the field
  * names start with @a pr.  The entry type is @a entrytype.
-
+ *
  * @param type      hash table typedef
  * @param prefix    function prefix
- * @param pr        hash table field prefix
+ * @param pr        hash table field prefix (not used)
  * @param entrytype entry type
  */
-#define HTABLE2_PROTOS(type, prefix, pr, entrytype)			\
-HTABLE2_SCOPE int prefix##_resize(void *a, type pr[1], unsigned); \
+#define HTABLE2_PROTOS2(type, prefix, pr, entrytype, size_t)	    \
+HTABLE2_SCOPE int prefix##_resize(void *a, type *, size_t); \
 HTABLE2_SCOPE int prefix##_is_full(type const *); \
-HTABLE2_SCOPE entrytype *prefix##_hash(type const *, hash_value_t hv); \
-HTABLE2_SCOPE entrytype *prefix##_next(type const *, entrytype *ee); \
-HTABLE2_SCOPE void prefix##_append(type *pr, entrytype e); \
-HTABLE2_SCOPE void prefix##_insert(type *pr, entrytype e); \
-HTABLE2_SCOPE int prefix##_remove(type *, entrytype const e)
+HTABLE2_SCOPE entrytype *prefix##_hash(type const *, hash_value_t); \
+HTABLE2_SCOPE entrytype *prefix##_next(type const *, entrytype *); \
+HTABLE2_SCOPE entrytype *prefix##_append(type *, entrytype); \
+HTABLE2_SCOPE entrytype *prefix##_insert(type *, entrytype); \
+HTABLE2_SCOPE int prefix##_remove(type *, entrytype const)
+
+#define HTABLE2_PROTOS(type, prefix, pr, entrytype) \
+  HTABLE2_PROTOS2(type, prefix, pr, entrytype, unsigned)
 
 /** Hash table implementation.
  *
- * The macro HTABLE2_BODIES() expands the hash table functions.  The function
+ * The macro HTABLE2_BODIES2() expands the hash table functions.  The function
  * and type names start with @a prefix, the field names start with @a pr.
  * The entry type is @a entrytype.  The function (or macro) name returning
  * hash value of each entry is given as @a hfun.
@@ -118,25 +125,26 @@ HTABLE2_SCOPE int prefix##_remove(type *, entrytype const e)
  * @param prefix    function prefix for hash table 
  * @param pr        field prefix for hash table 
  * @param entrytype type of entry element
+ * @param size_t    size_t type
  * @param hfun      function or macro returning hash value of entry
  * @param is_used   function or macro returning true if entry is occupied
  * @param reclaim   function or macro zeroing entry
  * @param is_equal  equality test
  * @param halloc    function allocating or freeing memory
  */
-#define HTABLE2_BODIES(type, prefix, pr, entrytype,			\
-		       hfun, is_used, reclaim, is_equal, halloc)	\
+#define HTABLE2_BODIES2(type, prefix, pr, entrytype, size_t,		\
+		        hfun, is_used, reclaim, is_equal, halloc)	\
 /** Reallocate new hash table */ \
 HTABLE2_SCOPE \
 int prefix##_resize(void *realloc_arg, \
                     type pr[1], \
-		    unsigned new_size) \
+		    usize_t new_size) \
 { \
   entrytype *new_hash; \
   entrytype *old_hash = pr->pr##table; \
-  unsigned old_size; \
-  unsigned i, j, i0; \
-  unsigned again = 0, used = 0, collisions = 0; \
+  usize_t old_size; \
+  usize_t i, j, i0; \
+  usize_t again = 0, used = 0, collisions = 0; \
 \
   (void)realloc_arg; \
 \
@@ -144,11 +152,15 @@ int prefix##_resize(void *realloc_arg, \
     new_size = 2 * pr->pr##size + 1; \
   if (new_size < HTABLE2_MIN_SIZE) \
     new_size = HTABLE2_MIN_SIZE; \
+  if (new_size < 5 * pr->pr##used / 4) \
+    new_size = 5 * pr->pr##used / 4; \
 \
   if (!(new_hash = halloc(realloc_arg, NULL, sizeof(*new_hash) * new_size))) \
     return -1; \
 \
-  memset(new_hash, 0, sizeof(*new_hash) * new_size); \
+  for (i = 0; i < new_size; i++) { \
+    (reclaim(&new_hash[i])); \
+  } \
   old_size = pr->pr##size; \
 \
   do for (j = 0; j < old_size; j++) { \
@@ -202,9 +214,13 @@ entrytype *prefix##_next(type const *pr, entrytype *ee) \
 }  \
 \
 HTABLE2_SCOPE \
-void prefix##_append(type *pr, entrytype e) \
+entrytype *prefix##_append(type *pr, entrytype e) \
 { \
   entrytype *ee; \
+\
+  assert(pr->pr##used < pr->pr##size); \
+  if (pr->pr##used == pr->pr##size) \
+    return (entrytype *)0; \
 \
   pr->pr##used++; \
   for (ee = prefix##_hash(pr, hfun(e)); \
@@ -212,13 +228,19 @@ void prefix##_append(type *pr, entrytype e) \
        ee = prefix##_next(pr, ee)) \
    ; \
   *ee = e; \
+\
+  return ee; \
 } \
 \
 HTABLE2_SCOPE \
-void prefix##_insert(type *pr, entrytype e) \
+entrytype *prefix##_insert(type *pr, entrytype e) \
 { \
   entrytype e0; \
   entrytype *ee; \
+\
+  assert(pr->pr##used < pr->pr##size); \
+  if (pr->pr##used == pr->pr##size) \
+    return (entrytype *)0; \
 \
   pr->pr##used++; \
   /* Insert entry into hash table (before other entries with same hash) */ \
@@ -227,12 +249,14 @@ void prefix##_insert(type *pr, entrytype e) \
        ee = prefix##_next(pr, ee)) \
     *ee = e, e = e0; \
   *ee = e; \
+\
+  return ee; \
 } \
 \
 HTABLE2_SCOPE \
 int prefix##_remove(type *pr, entrytype const e) \
 { \
-  unsigned i, j, k, size = pr->pr##size; \
+  usize_t i, j, k, size = pr->pr##size; \
   entrytype *htable = pr->pr##table; \
 \
   /* Search for entry */ \
@@ -262,5 +286,11 @@ int prefix##_remove(type *pr, entrytype const e) \
   return 0; \
 } \
 extern int const prefix##_dummy
+
+#define HTABLE2_BODIES(type, prefix, pr, entrytype, \
+		        hfun, is_used, reclaim, is_equal, halloc) \
+  HTABLE2_BODIES2(type, prefix, pr, entrytype, unsigned, \
+		        hfun, is_used, reclaim, is_equal, halloc) 
+
 
 #endif /** !defined(HTABLE2_H) */

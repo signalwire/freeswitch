@@ -1003,6 +1003,7 @@ void nua_register_connection_closed(tp_stack_t *sip_stack,
 				    msg_t *msg,
 				    int error)
 {
+  nua_dialog_usage_t *du = nua_dialog_usage_public(nr);
   tp_name_t const *tpn;
   int pending = nr->nr_error_report_id;
 
@@ -1018,7 +1019,7 @@ void nua_register_connection_closed(tp_stack_t *sip_stack,
   tpn = tport_name(nr->nr_tport);
 
   SU_DEBUG_5(("nua_register(%p): tport to %s/%s:%s%s%s closed %s\n", 
-	      nua_dialog_usage_public(nr)->du_dialog->ds_owner,
+	      du->du_dialog->ds_owner,
 	      tpn->tpn_proto, tpn->tpn_host, tpn->tpn_port,
 	      tpn->tpn_comp ? ";comp=" : "",
 	      tpn->tpn_comp ? tpn->tpn_comp : "",
@@ -1027,7 +1028,7 @@ void nua_register_connection_closed(tp_stack_t *sip_stack,
   tport_unref(nr->nr_tport), nr->nr_tport = NULL;
 
   /* Schedule re-REGISTER immediately */
-  nua_dialog_usage_set_refresh_range(nua_dialog_usage_public(nr), 0, 0);
+  nua_dialog_usage_set_refresh_range(du, 0, 0);
 }
 
 

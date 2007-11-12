@@ -330,8 +330,6 @@ int main(int argc, char *argv[])
 
   ctx->a.printer = o_events_init ? print_event : NULL;
 
-  sleep(2);
-
   retval |= test_nua_api_errors(ctx); SINGLE_FAILURE_CHECK();
   
   retval |= test_tag_filter(); SINGLE_FAILURE_CHECK();

@@ -332,15 +332,15 @@ message sequence charts.
 
 @image html SIP_outgoing_operation_with_auth.gif
 
-
 @section nua_simpleapplication Simple Application
 
 The following sections will present code examples from a simple application
 that uses services of NUA. The example is not complete but should present
 all relevant details of the basic use of NUA.
 
-The source distribution of Sofia stack contains in directory nua an example
-application nua_cli.c that can be studied for more complete example.
+On sourceforge.net there is available an example application 
+<a href="http://sourceforge.net/project/showfiles.php?group_id=143636&package_id=179933">
+sofisip_cli.c</a> that can be studied for more complete example.
 
 @subsection nua_datastructures Data Structures & Defines
 

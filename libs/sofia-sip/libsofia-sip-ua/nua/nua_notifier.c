@@ -129,28 +129,6 @@ void nua_notify_usage_remove(nua_handle_t *nh,
  * @b SUBSCRIBE request is used to query SIP event state or establish a SIP
  * event subscription.
  *
- * Initial SUBSCRIBE requests are dropped with <i>489 Bad Event</i>
- * response, unless the application has explicitly included the @Event in
- * the list of allowed events with nua_set_params() tag NUTAG_ALLOW_EVENTS()
- * (or SIPTAG_ALLOW_EVENTS() or SIPTAG_ALLOW_EVENTS_STR()). The application
- * can decide whether to accept the SUBSCRIBE request or reject it. The
- * nua_response() call responding to a SUBSCRIBE request must have
- * NUTAG_WITH() (or NUTAG_WITH_THIS()/NUTAG_WITH_SAVED()) tag.
- *
- * If the application accepts the SUBSCRIBE request, it must immediately
- * send an initial NOTIFY establishing the dialog. This is because the
- * response to the SUBSCRIBE request may be lost because the SUBSCRIBE
- * request was forked by an intermediate proxy. 
- *
- * SUBSCRIBE requests modifying (usually refreshing or terminating) an
- * existing event subscription are accepted by default and a <i>200 OK</i>
- * response along with a copy of previously sent NOTIFY is sent
- * automatically.
- *
- * By default, only event subscriptions accepted are those created
- * implicitly by REFER request. See #nua_i_refer how the application must
- * handle the REFER requests.
- *
  * @param status status code of response sent automatically by stack
  * @param phrase response phrase sent automatically by stack
  * @param nh     operation handle associated with the incoming request
@@ -158,6 +136,46 @@ void nua_notify_usage_remove(nua_handle_t *nh,
  *               (NULL when handle is created by the stack)
  * @param sip    SUBSCRIBE request headers
  * @param tags   NUTAG_SUBSTATE()
+ *
+ * Initial SUBSCRIBE requests are dropped with <i>489 Bad Event</i>
+ * response, unless the application has explicitly included the @Event in
+ * the list of allowed events with nua_set_params() tag NUTAG_ALLOW_EVENTS()
+ * (or SIPTAG_ALLOW_EVENTS() or SIPTAG_ALLOW_EVENTS_STR()).
+ *
+ * If the event has been allowed the application
+ * can decide whether to accept the SUBSCRIBE request or reject it. The
+ * nua_response() call responding to a SUBSCRIBE request must have
+ * NUTAG_WITH() (or NUTAG_WITH_THIS()/NUTAG_WITH_SAVED()) tag.
+ *
+ * If the application accepts the SUBSCRIBE request, it must immediately
+ * send an initial NOTIFY establishing the dialog. This is because the
+ * response to the SUBSCRIBE request may be lost by an intermediate proxy
+ * because it had forked the SUBSCRIBE request.
+ *
+ * SUBSCRIBE requests modifying (usually refreshing or terminating) an
+ * existing event subscription are accepted by default and a <i>200 OK</i>
+ * response along with a copy of previously sent NOTIFY is sent
+ * automatically to the subscriber.
+ *
+ * By default, only event subscriptions accepted are those created
+ * implicitly by REFER request. See #nua_i_refer how the application must
+ * handle the REFER requests.
+ *
+ * @par Subscription Lifetime and Terminating Subscriptions
+ *
+ * Accepting the SUBSCRIBE request creates a dialog with a <i>notifier
+ * dialog usage</i> on the handle. The dialog usage is active, until the
+ * subscriber terminates the subscription, it times out or the application
+ * terminates the usage with nua_notify() call containing the tag
+ * NUTAG_SUBSTATE(nua_substate_terminated) or @SubscriptionState header with
+ * state "terminated" and/or expiration time 0. 
+ *
+ * When the subscriber terminates the subscription, the application is
+ * notified of an termination by a #nua_i_subscribe event with
+ * NUTAG_SUBSTATE(nua_substate_terminated) tag. When the subscription times
+ * out, nua automatically initiates a NOTIFY transaction. When it is
+ * terminated, the application is sent a #nua_r_notify event with
+ * NUTAG_SUBSTATE(nua_substate_terminated) tag. 
  *
  * @sa @RFC3265, nua_notify(), NUTAG_SUBSTATE(), @SubscriptionState,
  * @Event, nua_subscribe(), #nua_r_subscribe, #nua_i_refer, nua_refer()
@@ -351,11 +369,22 @@ int nua_subscribe_server_report(nua_server_request_t *sr, tagi_t const *tags)
  *
  * This function is used when the application implements itself the
  * notifier. The application must provide valid @SubscriptionState and
- * @Event headers using SIP tags. If there is no @SubscriptionState header,
- * the subscription state can be modified with NUTAG_SUBSTATE().
+ * @Event headers using SIP tags. The subscription state can be modified
+ * with NUTAG_SUBSTATE(), however, its effect is overriden by
+ * @SubscriptionState header included in the nua_notify() tags.
  *
  * @bug If the @Event is not given by application, stack uses the @Event
  * header from the first subscription usage on handle.
+ * 
+ * If there is no active <i>notifier dialog usage</i> or no notifier dialog
+ * usage matches the @Event header given by the application the nua_notify()
+ * request is rejected locally by the stack with status code 481. The local
+ * rejection can be bypassed if NUTAG_NEWSUB(1) is included in tags.
+ *
+ * Please note that including NUTAG_NEWSUB(1) in nua_notify() tags if there
+ * is a valid subscription may lead to an extra NOTIFY sent to subscriber if
+ * the subscription had been terminated by the subscriber or by a timeout
+ * before the nua_notify() is processed.
  *
  * @param nh              Pointer to operation handle
  * @param tag, value, ... List of tagged parameters
@@ -365,6 +394,7 @@ int nua_subscribe_server_report(nua_server_request_t *sr, tagi_t const *tags)
  *
  * @par Related Tags:
  *    NUTAG_SUBSTATE() \n
+ *    NUTAG_NEWSUB() \n
  *    Tags of nua_set_hparams() \n
  *    Header tags defined in <sofia-sip/sip_tag.h>
  *
@@ -461,8 +491,11 @@ static int nua_notify_client_init(nua_client_request_t *cr,
       if (now + expires < now)
 	expires = SIP_TIME_MAX - now - 1;
 
-      /* Notifier can only shorten the subscription time */ 
-      if (nu->nu_requested == 0 || nu->nu_requested >= now + expires)
+      /* We can change the lifetime of unsolicited subscription at will */
+      if (nu->nu_requested == 0)
+	nu->nu_expires = nu->nu_requested = now + expires;
+      /* Notifier can only shorten the subscribed time */ 
+      else if (nu->nu_requested >= now + expires)
 	nu->nu_expires = nu->nu_requested = now + expires;
     }
   }
@@ -648,7 +681,12 @@ int nua_notify_client_request(nua_client_request_t *cr,
  * The @b NOTIFY may be sent explicitly by nua_notify() or implicitly by NUA
  * state machine. Implicit @b NOTIFY is sent when an established dialog is
  * refreshed by client or it is terminated (either by client or because of a
- * timeout)
+ * timeout).
+ *
+ * The current subscription state is included in NUTAG_SUBSTATE() tag. The
+ * nua_substate_terminated indicates that the subscription is terminated,
+ * the notifier usage has been removed and when there was no other usages of
+ * the dialog the dialog state is also removed.
  *
  * @param status response status code
  *               (if the request is retried, @a status is 100, the @a
@@ -663,7 +701,7 @@ int nua_notify_client_request(nua_client_request_t *cr,
  * @param tags   NUTAG_SUBSTATE() indicating subscription state
  *               SIPTAG_EVENT() indicating subscription event
  *
- * @sa nua_notify(), @RFC3265, #nua_i_subscribe, #nua_i_refer
+ * @sa nua_notify(), @RFC3265, #nua_i_subscribe, #nua_i_refer, NUTAG_SUBSTATE()
  *
  * @END_NUA_EVENT
  */

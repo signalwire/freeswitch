@@ -172,7 +172,7 @@ enum {
   msg_numeric_hash = 24435
 };
 
-SOFIAPUBVAR msg_hclass_t test_auth_class[1], test_numeric_class[1];
+extern msg_hclass_t test_auth_class[1], test_numeric_class[1];
 
 SOFIA_END_DECLS
 

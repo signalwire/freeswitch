@@ -141,6 +141,8 @@ int prefix##_resize(su_home_t *home, \
     new_size = 2 * pr->pr##_size + 1; \
   if (new_size < HTABLE_MIN_SIZE) \
     new_size = HTABLE_MIN_SIZE; \
+  if (new_size < 5 * pr->pr##_used / 4) \
+    new_size = 5 * pr->pr##_used / 4; \
 \
   if (!(new_hash = su_zalloc(home, sizeof(*new_hash) * new_size))) \
     return -1; \
@@ -169,6 +171,8 @@ int prefix##_resize(su_home_t *home, \
   pr->pr##_table = new_hash, pr->pr##_size = new_size; \
 \
   assert(pr->pr##_used == used); \
+\
+  su_free(home, old_hash); \
 \
   return 0; \
 } \

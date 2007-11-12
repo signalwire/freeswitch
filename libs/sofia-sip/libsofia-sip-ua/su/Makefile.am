@@ -18,7 +18,7 @@ bin_PROGRAMS = 		addrinfo localinfo
 
 check_PROGRAMS = 	torture_su torture_su_port \
 			torture_su_alloc torture_su_time torture_su_tag \
-			test_htable torture_rbtree torture_heap \
+			test_htable test_htable2 torture_rbtree torture_heap \
 			test_memmem torture_su_bm \
 			torture_su_root torture_su_timer \
 			test_su su_proxy test_poll $(OSXPROGS)
@@ -28,7 +28,7 @@ check_PROGRAMS = 	torture_su torture_su_port \
 
 TESTS = 		torture_su torture_su_port \
 			torture_su_alloc torture_su_time torture_su_tag \
-			test_htable torture_rbtree torture_heap \
+			test_htable test_htable2 torture_rbtree torture_heap \
 			test_memmem torture_su_bm \
 			torture_su_root torture_su_timer \
 			run_addrinfo run_localinfo run_test_su \
@@ -80,7 +80,11 @@ EXTRA_libsu_la_SOURCES = \
 			memmem.c strtoull.c strcasestr.c \
 			memspn.c memcspn.c memccpy.c \
 			inet_ntop.c inet_pton.c poll.c getopt.c \
-			su_tag_ref.c su_win32_port.c
+			su_tag_ref.c
+
+# Automake 1.9 complains about missing CXX
+EXTRA_DIST =		su_win32_port.c \
+			su_open_c_localinfo.cpp
 
 libsu_la_LIBADD = 	$(REPLACE_LIBADD)
 libsu_la_DEPENDENCIES = $(REPLACE_LIBADD)
@@ -92,7 +96,7 @@ LDADD = 		libsu.la
 # ----------------------------------------------------------------------
 # Install and distribution rules
 
-EXTRA_DIST = 		su.docs \
+EXTRA_DIST += 		su.docs \
 			run_addrinfo run_localinfo run_test_su
 
 dist_pkgdata_SCRIPTS = 	tag_dll.awk

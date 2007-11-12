@@ -272,6 +272,10 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\..\libsofia-sip-ua\su\smoothsort.c"
+					>
+				</File>
+				<File
 					RelativePath="..\..\libsofia-sip-ua\su\string0.c"
 					>
 				</File>
@@ -3758,10 +3762,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\libsofia-sip-ua\soa\sofia-sip\soa_session.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\libsofia-sip-ua\soa\soa_static.c"
 					>
 					<FileConfiguration
@@ -3837,6 +3837,10 @@
 				Name="su headers"
 				Filter="su*.h"
 				>
+				<File
+					RelativePath="..\..\libsofia-sip-ua\su\sofia-sip\heap.h"
+					>
+				</File>
 				<File
 					RelativePath="..\..\libsofia-sip-ua\su\sofia-sip\htable.h"
 					>
@@ -4370,6 +4374,10 @@
 				</File>
 				<File
 					RelativePath="..\..\libsofia-sip-ua\soa\sofia-sip\soa_add.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\libsofia-sip-ua\soa\sofia-sip\soa_session.h"
 					>
 				</File>
 				<File

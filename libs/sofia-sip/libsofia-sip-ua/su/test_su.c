@@ -52,7 +52,7 @@ struct pinger;
 
 #include <assert.h>
 
-char const name[] = "su_test";
+char const name[] = "test_su";
 
 #if HAVE_FUNC
 #define enter (void)SU_DEBUG_9(("%s: %s: entering\n", name, __func__))
@@ -64,7 +64,7 @@ char const name[] = "su_test";
 #else
 #define enter ((void)0)
 #define nh_enter ((void)0)
-#define __func__ "su_test"
+#define __func__ "test_su"
 #endif
 
 struct pinger {

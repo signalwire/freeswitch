@@ -109,6 +109,10 @@ SOURCE="..\..\libsofia-sip-ua\su\inet_pton.c"
 # End Source File
 # Begin Source File
 
+SOURCE="..\..\libsofia-sip-ua\su\smoothsort.c"
+# End Source File
+# Begin Source File
+
 SOURCE="..\..\libsofia-sip-ua\su\string0.c"
 # End Source File
 # Begin Source File
@@ -837,10 +841,6 @@ SOURCE="..\..\libsofia-sip-ua\soa\soa.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\libsofia-sip-ua\soa\sofia-sip\soa_session.h"
-# End Source File
-# Begin Source File
-
 SOURCE="..\..\libsofia-sip-ua\soa\soa_static.c"
 # End Source File
 # Begin Source File
@@ -859,6 +859,10 @@ SOURCE="..\..\libsofia-sip-ua\soa\soa_tag_ref.c"
 # Begin Group "su headers"
 
 # PROP Default_Filter "su*.h"
+# Begin Source File
+
+SOURCE="..\..\libsofia-sip-ua\su\sofia-sip\heap.h"
+# End Source File
 # Begin Source File
 
 SOURCE="..\..\libsofia-sip-ua\su\sofia-sip\htable.h"
@@ -1386,6 +1390,10 @@ SOURCE="..\..\libsofia-sip-ua\soa\sofia-sip\soa.h"
 # Begin Source File
 
 SOURCE="..\..\libsofia-sip-ua\soa\sofia-sip\soa_add.h"
+# End Source File
+# Begin Source File
+
+SOURCE="..\..\libsofia-sip-ua\soa\sofia-sip\soa_session.h"
 # End Source File
 # Begin Source File
 

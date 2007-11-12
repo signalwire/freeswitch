@@ -21,47 +21,51 @@
 :: Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
 :: 02110-1301 USA
 ::
-tests\torture_su_alloc\Debug\torture_su_alloc.exe
+
+set config=\Debug\
+:: set config=\Release\
+
+tests\torture_su_alloc%config%torture_su_alloc.exe -a
 @if errorlevel 1 ( echo torture_su_alloc: FAIL ) else echo torture_su_alloc: PASS
 
-tests\torture_su_root\Debug\torture_su_root.exe
+tests\torture_su_root%config%torture_su_root.exe -a
 @if errorlevel 1 ( echo torture_su_root: FAIL ) else echo torture_su_root: PASS
 
-tests\torture_su_tag\Debug\torture_su_tag.exe
+tests\torture_su_tag%config%torture_su_tag.exe -a
 @if errorlevel 1 ( echo torture_su_tag: FAIL ) else echo torture_su_tag: PASS
 
-tests\test_su\Debug\test_su.exe
+tests\test_su%config%test_su.exe
 @if errorlevel 1 ( echo test_su: FAIL ) else echo test_su: PASS
 
-tests\torture_su_time\Debug\torture_su_time.exe
+tests\torture_su_time%config%torture_su_time.exe -a
 @if errorlevel 1 ( echo torture_su_time: FAIL ) else echo torture_su_time: PASS
 
-tests\torture_su_timer\Debug\torture_su_timer.exe
+tests\torture_su_timer%config%torture_su_timer.exe
 @if errorlevel 1 ( echo torture_su_timer: FAIL ) else echo torture_su_timer: PASS
 
-tests\torture_su\Debug\torture_su.exe
+tests\torture_su%config%torture_su.exe -a
 @if errorlevel 1 ( echo torture_su: FAIL ) else echo torture_su: PASS
 
-tests\test_memmem\Debug\test_memmem.exe
+tests\test_memmem%config%test_memmem.exe -a
 @if errorlevel 1 ( echo test_memmem: FAIL ) else echo test_memmem: PASS
 
-tests\test_tport\Debug\test_tport.exe
+tests\test_tport%config%test_tport.exe -a
 @if errorlevel 1 ( echo test_tport: FAIL ) else echo test_tport: PASS
 
-tests\test_nta\Debug\test_nta.exe
+tests\test_nta%config%test_nta.exe -a
 @if errorlevel 1 ( echo test_nta: FAIL ) else echo test_nta: PASS
 
-tests\test_nua\Debug\test_nua.exe
+tests\test_nua%config%test_nua.exe -a
 @if errorlevel 1 ( echo test_nua: FAIL ) else echo test_nua: PASS
 
-tests\test_htable\Debug\test_htable.exe
+tests\test_htable%config%test_htable.exe -a
 @if errorlevel 1 ( echo test_htable: FAIL ) else echo test_htable: PASS
 
-tests\torture_rbtree\Debug\torture_rbtree.exe
+tests\torture_rbtree%config%torture_rbtree.exe -a
 @if errorlevel 1 ( echo torture_rbtree: FAIL ) else echo torture_rbtree: PASS
 
-tests\torture_su_bm\Debug\torture_su_bm.exe
+tests\torture_su_bm%config%torture_su_bm.exe -a
 @if errorlevel 1 ( echo torture_su_bm: FAIL ) else echo torture_su_bm: PASS
 
-:: tests\torture_su_port\Debug\torture_su_port.exe
+:: tests\torture_su_port%config%torture_su_port.exe -a
 :: @if errorlevel 1 ( echo torture_su_port: FAIL ) else echo torture_su_port: PASS

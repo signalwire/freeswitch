@@ -8,7 +8,8 @@
 AUTOMAKE_OPTIONS = foreign 1.7
 
 SUBDIRS = libsofia-sip-ua $(GLIB_SUBDIRS) utils packages
-DIST_SUBDIRS = libsofia-sip-ua libsofia-sip-ua-glib utils packages win32
+DIST_SUBDIRS = libsofia-sip-ua libsofia-sip-ua-glib utils packages \
+	win32 open_c
 
 # note: when glib devel files are not available, make should not
 #       enter the libsofia-sip-ua-glib subdir at all

@@ -824,7 +824,7 @@ static int tcp_test(tp_test_t *tt)
   BEGIN();
 
   msg_t *msg = NULL;
-  int i;
+  int i, N;
   tport_t *tp, *tp0;
   char ident[16];
   su_time_t started;
@@ -853,12 +853,15 @@ static int tcp_test(tp_test_t *tt)
   pending_server_close = tport_pend(tp, NULL, server_closed_callback, NULL);
   TEST_1(pending_server_close > 0);
 
+  N = 0; tt->tt_received = 0;
+
 #ifndef WIN32			/* Windows seems to be buffering too much */
 
   /* Create a large message, just to force queueing in sending end */
   TEST(new_test_msg(tt, &msg, "tcp-0", 1, 16 * 64 * 1024), 0);
   test_create_md5(tt, msg);
   TEST_1(tp = tport_tsend(tt->tt_tports, msg, tt->tt_tcp_name, TAG_END()));
+  N++;
   TEST_S(tport_name(tp)->tpn_ident, "client");
   TEST_P(tport_incref(tp), tp0); tport_decref(&tp);
   msg_destroy(msg);
@@ -869,6 +872,7 @@ static int tcp_test(tp_test_t *tt)
 
     TEST(new_test_msg(tt, &msg, ident, 1, 64 * 1024), 0);
     TEST_1(tp = tport_tsend(tt->tt_tports, msg, tt->tt_tcp_name, TAG_END()));
+    N++;
     TEST_S(tport_name(tp)->tpn_ident, "client");
     TEST_P(tport_incref(tp), tp0); tport_decref(&tp);
     msg_destroy(msg);
@@ -878,8 +882,6 @@ static int tcp_test(tp_test_t *tt)
   TEST(new_test_msg(tt, &msg, "tcp-overflow", 1, 1024), 0);
   TEST_1(!tport_tsend(tt->tt_tports, msg, tt->tt_tcp_name, TAG_END()));
   msg_destroy(msg);
-
-  tt->tt_received = 0;
 
   TEST(tport_test_run(tt, 60), 1);
   TEST_1(!check_msg(tt, tt->tt_rmsg, "tcp-0"));
@@ -892,13 +894,15 @@ static int tcp_test(tp_test_t *tt)
     TEST_1(!check_msg(tt, tt->tt_rmsg, ident));
     msg_destroy(tt->tt_rmsg), tt->tt_rmsg = NULL;
   }
-
+#else
+ (void)i; (void)ident;
 #endif
 
   /* This uses a new connection */
   TEST_1(!new_test_msg(tt, &msg, "tcp-no-reuse", 1, 1024));
   TEST_1(tp = tport_tsend(tt->tt_tports, msg, tt->tt_tcp_name, 
        		   TPTAG_REUSE(0), TAG_END()));
+  N++;
   TEST_S(tport_name(tp)->tpn_ident, "client");
   TEST_1(tport_incref(tp) != tp0); tport_decref(&tp);
   msg_destroy(msg);
@@ -907,12 +911,13 @@ static int tcp_test(tp_test_t *tt)
   TEST_1(!new_test_msg(tt, &msg, "tcp-reuse", 1, 1024));
   TEST_1(tp = tport_tsend(tt->tt_tports, msg, tt->tt_tcp_name, 
        		   TPTAG_REUSE(1), TAG_END()));
+  N++;
   TEST_S(tport_name(tp)->tpn_ident, "client");
   TEST_1(tport_incref(tp) == tp0); tport_decref(&tp);
   msg_destroy(msg);
 
   /* Receive every message from queue */
-  while (tt->tt_received < TPORT_QUEUESIZE + 2) {
+  while (tt->tt_received < N) {
     TEST(tport_test_run(tt, 5), 1);
     /* Validate message */
     TEST_1(!check_msg(tt, tt->tt_rmsg, NULL));
@@ -1005,7 +1010,7 @@ static int test_incomplete(tp_test_t *tt)
   s = su_socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
   TEST_1(s != SOCKET_ERROR);
 
-  connected = connect(s, ai->ai_addr, ai->ai_addrlen);
+  connected = connect(s, ai->ai_addr, (socklen_t)ai->ai_addrlen);
 
   su_root_step(tt->tt_root, 50);
   

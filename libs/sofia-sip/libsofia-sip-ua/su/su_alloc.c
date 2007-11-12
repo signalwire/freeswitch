@@ -915,6 +915,11 @@ void su_home_destroy(su_home_t *home)
  * @retval -1 upon an error.
  *
  * @sa SU_HOME_INIT(), su_home_deinit(), su_home_new(), su_home_clone()
+ *
+ * @bug 
+ * Prior to @VERSION_1_12_8 the su_home_t structure should have been
+ * initialized with SU_HOME_INIT() or otherwise zeroed before calling
+ * su_home_init().
  */
 int su_home_init(su_home_t *home)
 {
@@ -924,6 +929,8 @@ int su_home_init(su_home_t *home)
     return -1;
 
   home->suh_blocks = sub = su_hash_alloc(SUB_N);
+  home->suh_lock = NULL;
+
   if (!sub)
     return -1;
 

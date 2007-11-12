@@ -44,6 +44,8 @@
   PT=%PT% %IN% < NUL
 %CHECK%
 
+@set AWK_SIP_AWK=%MSG_AWK% module=sip
+
 @set IN=../libsofia-sip-ua/sip/sofia-sip/sip.h
 @set PR=../libsofia-sip-ua/sip/sip_tag.c
 @set PR2=../libsofia-sip-ua/sip/sofia-sip/sip_hclasses.h
@@ -53,20 +55,25 @@
 @set SIPEXTRA=../libsofia-sip-ua/sip/sip_extra_headers.txt
 @set PT=../libsofia-sip-ua/sip/sip_parser_table.c
 
-%MSG_AWK% module=sip PR=%PR% %IN%  < NUL
+%AWK_SIP_AWK% PR=%PR% %IN% %SIPEXTRA% < NUL
 %CHECK%
-%MSG_AWK% module=sip PR=%PR2% %IN% < NUL
+%AWK_SIP_AWK% PR=%PR2% %IN% < NUL
 %CHECK%
-%MSG_AWK% module=sip PR=%PR3% %IN% < NUL
+%AWK_SIP_AWK% PR=%PR3% %IN% < NUL
 %CHECK%
-%MSG_AWK% module=sip PR=%PR4% %IN% < NUL
+%AWK_SIP_AWK% PR=%PR4% %IN% < NUL
 %CHECK%
-%MSG_AWK% module=sip PR=%PR5% TEMPLATE1=%PR2%.in TEMPLATE2=%PR3%.in TEMPLATE3=%PR4%.in TEMPLATE=%PR5%.in NO_FIRST=1 NO_LAST=1 < NUL %SIPEXTRA%
+%AWK_SIP_AWK% PR=%PR5% NO_FIRST=1 NO_LAST=1 ^
+   TEMPLATE1=%PR2%.in ^
+   TEMPLATE2=%PR3%.in ^
+   TEMPLATE3=%PR4%.in ^
+   TEMPLATE=%PR5%.in %SIPEXTRA% < NUL 
 %CHECK%
 
-%MSG_AWK% module=sip TEMPLATE=%PT%.in MC_HASH_SIZE=127 MC_SHORT_SIZE=26 ^
+%AWK_SIP_AWK% PT=%PT% TEMPLATE=%PT%.in ^
   FLAGFILE=../libsofia-sip-ua/sip/sip_bad_mask ^
-  PT=%PT% %IN% %SIPEXTRA% < NUL
+  MC_HASH_SIZE=127 MC_SHORT_SIZE=26 ^
+  %IN% %SIPEXTRA% < NUL
 %CHECK%
 
 @set IN=../libsofia-sip-ua/http/sofia-sip/http.h

@@ -11,7 +11,7 @@ dnl information on the package
 dnl ---------------------------
 
 dnl update both the version for AC_INIT and the LIBSOFIA_SIP_UA_MAJOR_MINOR
-AC_INIT([sofia-sip], [1.12.6work])
+AC_INIT([sofia-sip], [1.12.7devel])
 AC_CONFIG_SRCDIR([libsofia-sip-ua/sip/sofia-sip/sip.h])
 AC_SUBST(VER_LIBSOFIA_SIP_UA_MAJOR_MINOR, [1.12])
 dnl Includedir specific to this sofia version
@@ -295,6 +295,8 @@ utils/Makefile
 utils/Doxyfile
 win32/Makefile
 win32/config.h
+open_c/Makefile
+open_c/config.h
 ])
 
 AC_CONFIG_COMMANDS([version],,[PACKAGE_VERSION=${PACKAGE_VERSION}])

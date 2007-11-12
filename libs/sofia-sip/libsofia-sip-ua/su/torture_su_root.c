@@ -165,6 +165,8 @@ void *suspend_resume_test_thread(void *_rt)
 {
   root_test_t *rt = _rt;
 
+  su_init();
+
   pthread_mutex_lock(rt->rt_sr.mutex);
   rt->rt_root = su_root_create(rt);
   rt->rt_sr.done = 1;
@@ -177,6 +179,9 @@ void *suspend_resume_test_thread(void *_rt)
   su_root_destroy(rt->rt_root);
   rt->rt_root = NULL;
   pthread_mutex_unlock(rt->rt_sr.deinit);
+
+  su_deinit();
+
   return NULL;
 }
 #endif
@@ -191,8 +196,6 @@ int init_test(root_test_t *rt,
   int i;
 
   BEGIN();
-
-  su_init();
 
   su_port_prefer(create, start);
 
@@ -256,8 +259,6 @@ static int deinit_test(root_test_t *rt)
 #else
   TEST_VOID(su_root_destroy(rt->rt_root)); rt->rt_root = NULL;
 #endif  
-
-  su_deinit();
 
   END();
 }
@@ -724,6 +725,8 @@ int main(int argc, char *argv[])
 
   i = 0;
 
+  su_init();
+
   do {
     rt = rt1, *rt = *rt0;
 
@@ -738,6 +741,8 @@ int main(int argc, char *argv[])
     retval |= clone_test(rt);
     retval |= deinit_test(rt);
   } while (prefer[++i].create);
+
+  su_deinit();
 
   return retval;
 }

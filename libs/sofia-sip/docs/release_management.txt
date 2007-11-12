@@ -79,8 +79,7 @@ Creating the release notes and updating the website
 - update sfnet_www/index.html to mention the latest
   release
 - commit the change to sf.net website CVS, and run the 
-  sfnet_www/put_online.sh script at the sourceforge.net
-  shell server
+  sfnet_www/put_online.sh script 
 
 Uploading the release to sourceforge.net
 ========================================
@@ -106,7 +105,7 @@ After release
 - replace the RELEASE file with RELEASE.template, and
   commit it to master source repository (see sofia-sip/README.developers)
 - change version in configure.ac from "X.Y.Z" to 
-  "X.Y.Zwork" (as it is in many cases unknown what the 
+  "X.Y.Zdevel" (as it is in many cases unknown what the 
   next version will be)
 - make a "tree open for development" commit
 

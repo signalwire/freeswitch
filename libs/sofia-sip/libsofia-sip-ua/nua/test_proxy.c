@@ -86,7 +86,7 @@ STORAGE void PREFIX ##_remove(T *node)			 \
 }							 \
 extern int LIST_DUMMY_VARIABLE
 
-#include <test_proxy.h>
+#include "test_proxy.h"
 #include <sofia-sip/auth_module.h>
 
 struct proxy {

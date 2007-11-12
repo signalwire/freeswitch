@@ -147,7 +147,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..,..\..,..\..\..\libsofia-sip-ua\su,..\..\..\libsofia-sip-ua\features,..\..\..\libsofia-sip-ua\tport,..\..\..\libsofia-sip-ua\iptsec,..\..\..\libsofia-sip-ua\ipt,..\..\..\libsofia-sip-ua\url,..\..\..\libsofia-sip-ua\nta,..\..\..\libsofia-sip-ua\msg,..\..\..\libsofia-sip-ua\sip"
+				AdditionalIncludeDirectories="..;..\..;&quot;..\..\..\libsofia-sip-ua\su&quot;;&quot;..\..\..\libsofia-sip-ua\features&quot;;&quot;..\..\..\libsofia-sip-ua\tport&quot;;&quot;..\..\..\libsofia-sip-ua\iptsec&quot;;&quot;..\..\..\libsofia-sip-ua\ipt&quot;;&quot;..\..\..\libsofia-sip-ua\url&quot;;&quot;..\..\..\libsofia-sip-ua\nta&quot;;&quot;..\..\..\libsofia-sip-ua\msg&quot;;&quot;..\..\..\libsofia-sip-ua\sip&quot;;&quot;..\..\..\libsofia-sip-ua\stun&quot;"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS"
 				StringPooling="true"
 				RuntimeLibrary="2"

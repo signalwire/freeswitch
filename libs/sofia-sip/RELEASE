@@ -4,72 +4,31 @@ Release notes for current version of Sofia-SIP
 
 Changes since last release
 --------------------------
-The stack now compiles and runs on Symbian SDK with Open C support
-enabled.
 
-The stacksupports specifying the outbound proxy by a set of Route
-headers as recommended by RFC3261. It also supports CR-LF-based keepalives
-on TCP connections.
+<changes since last written in freshmeat.net "Changes:" style;
+ and in less than 10 lines, written in 3rd person English, with
+ complete sentences />
 
-Bugs in call state machines, URI and SDP handling has been fixed.
-
+Bugs in blaa and foo have been fixed. The stack now supports
+use of foobar...
 
 API/ABI changes and versioning
 ------------------------------
 
-New features in API are marked with Doxytag macro @VERSION_1_12_7 or
-@NEW_1_12_7.
+<see previous release notes at
+ http://sofia-sip.sourceforge.net/relnotes/ for examples ;
+ - should include all changes to public headers, and 
+   other important information to developers; 
+ - and should be updated _continuously_! />
+
+**template**: New features in API are marked with Doxytag macro @VERSION_1_XX_X.
 
 libsofia-sip-ua:
+- **template**: Added foobar() function (sofia-sip/foobar.h).
 - This release is ABI/API compatible with applications linked against 
   any 1.12.x release. However, applications built against this release won't 
   work against an older library. The ABI has been tested with the nua module 
   unit test (test_nua) built against original 1.12.0 release.
-
-libsofia-sip-ua/nua:
-- Added tag NUTAG_INITIAL_ROUTE(), NUTAG_INITIAL_ROUTE_STR()
-
-libsofia-sip-ua/nta:
-- Added nta_incoming_received()
-- Added accessor function nta_outgoing_branch()
-- Added tag NTATAG_TIMER_C()
-- Deprecated nta_msg_ackbye()
-
-libsofia-sip-ua/iptsec:
-- Added tag AUTHTAG_MAX_NCOUNT()
-
-libsofia-sip-ua/sip:
-- Added SIPEXTHDRTAG_TYPEDEF() macro and tag class sipexthdrtag_class[]
-- Added SIP headers Alert-Info, Reply-To. Remote-Party-ID,
-  P-Asserted-Identity, and P-Preferred-Identity
-- Added sip_update_default_mclass() and sip_extend_mclass()
-- Added macros SIP_HAVE_XXXX for extra headers, e.g., SIP_HAVE_ALERT_INFO().
-
-libsofia-sip-ua/soa:
-- Added tags SOATAG_ORDERED_USER() and SOATAG_REUSE_REJECTED()
-
-libsofia-sip-ua/tport:
-- Updated transport timers
-  - Added TPTAG_KEEPALIVE(), TPTAG_PINGPONG(), TPTAG_PONG2PING()
-  - Added tport_is_clear_to_send(), tport_has_queued()
-- Updated timer handling
-  - Added abstract type su_timer_queue_t (typedef'd to SU_TIMER_QUEUE_T)
-  - Updated su_task_timers() and su_timer_expire() prototypes
-
-libsofia-sip-ua/stun:
-- Removed extra system headers from <sofia-sip/stun_common.h>
-
-libsofia-sip-ua/su:
-- Added su_nanotime_t and functions su_nanotime()/su_monotime()
-- Added function su_getsocktype()
-- Added heap template in <sofia-sip/heap.h>
-- Added configure option --disable-tag-cast and macro SU_INLINE_TAG_CAST
-- Added global variable su_socket_blocking. If it is set to true,
-  sockets are created as blocking.
-- Added access point selection functionality for Open C / Symbian
-- Added functions su_root_release(), su_root_obtain() and
-  su_root_has_thread(). A thread can release a su_root_t and another one can
-  obtain it.
 
 libsofia-sip-ua-glib:
 - No ABI/API changes, compatible with 1.12.0. Note, libsofia-sip-ua-glib
@@ -79,82 +38,36 @@ libsofia-sip-ua-glib:
 Contributors to this release
 ----------------------------
 
-- Mikhail Zabaluev (bug fixes)
-- Fabio Margarido (bug fixes)
-- Martti Mela (Open C port and extra functionality, bug fixes)
-- Kai Vehmanen (fixes to win32 VC6/2005 project files)
-- Pekka Pessi (everything else)
+<list of people who contributed to _this_ release
+ - update as people's patches are added, or when you commit stuff
+ - current development team members (see AUTHORS) may be omitted,
+   or listed at the end of the contribur list (depending on the scope 
+   of the work done since the last release)
+ - name of the contributor should be enough (email addresses in AUTHORS),
+   plus a _brief_ description of what was contributed
+ - roughly sorted by number of patches accepted
+/> 
+
+- **template**: First Surname (patch to nua/soa/msg)
 
 See the AUTHORS file in the distribution package.
 
 Notes on new features
 ---------------------
 
-The route to the outbound proxy can now be specified as an explicit route
-set.
-
-The TCP transport can use CR-LF keepalive and CR-LF PING-PONG messages.
-
-IPv6 support can now be disabled in VC6/VC2005 builds, by
-setting SU_HAVE_IN6 to zero `win32/sofia-sip/su_configure.h'.
-
-Symbian Open C build and packaging (SIS) files for libsofia-sip-ua,
-libsofia-sip-ua-glib and for several test apps have been added under
-sofia-sip/open_c.
-
-The SIP headers Alert-Info, Reply-To. Remote-Party-ID, P-Asserted-Identity,
-and P-Preferred-Identity are not not available by default. Application must
-enable them with sip_update_default_mclass() and sip_extend_mclass().
+<information about major new features
+ - new/changed/removed functionality
+ - links to further documentation
+ - section may be omitted for minor releases
+/> 
 
 Bugs fixed in this release
 --------------------------
 
-- Fixed sf.net bug #1804248: nua_prack() now works. 
-  Thanks to Fabio Margarido for sending the patch.
-- Fixed sf.net bug #1810115: crash after failed outgoing request and
-  nta_destroy()
-  Thanks to Mikhail Zabaluev for reporting the problem.
-- Fixed sf.net bug #1804248: nua_prack() now works. 
-  Thanks to Fabio Margarido for sending the patch.
-- Fixed sf.net bug 1803686: nua_destroy() can now be called from inside 
-  nua event callback.
-  Thanks to Mikhail Zabaluev for reporting the problem.
-- SIP Content-Length structure was casted to one with 64-bit integer instead 
-  of 32-bit, so message body was not parsed on 64-bit big-endian platform.
-  Thanks to Martin Drasar for hunting down the bug.
-- Authentication scheme token was compared as case-sensitive on client side.
-  Thanks to Russell McConnachie for reporting this problem.
-- Fixed sf.net bug #1706629: in-dialog requests not routed according to the
-  dialog route. Problem was because the outbound proxy was not handles as
-  RECOMMENDED by RFC 3261. The new tag NUTAG_INITIAL_ROUTE() allows correct
-  handling of requests.
-- Fixed problems in nua state engines (call setup failing if some messages 
-  were re-ordered or crashing when they were lost)
-  Thanks to Michail Jerris, Anthony Minessale, and others in Freeswitch
-  project for hunting down these bugs and reporting them
-- When nua generates Contact URI, the user-specified URI parameters are now
-  overriden by actual transport parameters (e.g., transport=tcp)
-  Thanks to Mikhail Zabaluev for submitting the patch.
-- Fixed sf.net bug #1750691: used to send ACK&BYE when extra 200 OK is
-  received and the 200 OK did not match any client transaction.
-  Thanks to Mikhail Zabaluev for reporting the problem.
-- Fixed problem of un-escaping reserved characters in URIs 
-  Thanks to Jan van den Bosch, Fabio Margarido and Mikhail Zabaluev for
-  reporting the problem.
-- Fixed missing links in doxygen-generated documentation
-  Thanks to Jerry Richards for reporting this problem.
-- Fixed timing problem with CANCELed INVITE transactions.
-  Thanks to Fabio Margarido for reporting this problem.
-- Fixed sf.net bug #1771243: tport_check_trunc() does not block anymore
-  Thanks to Erland Lwin for reporting the problem
-- Fixed sf.net bug #1733323: extra tag arguments were used by 
-  nta_outgoing_tcancel().
-  Thanks to Fabio Margarido for reporting this problem.
-- Fixed sf.net bug #1747149: sdp_session_cmp() ignored some m= lines
-  (e.g., new SDP in re-INVITE was sometimes ignored)
-  Thanks to Mikhail Zabaluev for reporting the problem.
-- Fixed sf.net bug #1726034: crash in msg_as_string() with too large messages 
-- Fixed sf.net bug #1472682: ACK did not find INVITE server transaction when
-  the To URI had been changed.
-- Do not block when making a TCP connect()ion in tport.
-  Thanks to Mikhail Zabaluev for submitting the patch.
+< notable bugs fixed in this release
+ - check the sf.net bug tracker; see closed bugs,
+   sorted by closing date
+ - other bugs as fixed in CVS/darcs
+/>
+
+- **template**: #9499652 sf.net bug item title

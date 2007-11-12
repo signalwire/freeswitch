@@ -99,6 +99,7 @@ int test_events(struct context *ctx)
   sip_t const *sip;
   tagi_t const *t, *n_tags, *r_tags;
   url_t b_url[1];
+  enum nua_substate substate;
   nea_sub_t *sub = NULL;
 
   char const open[] =
@@ -207,7 +208,7 @@ int test_events(struct context *ctx)
 	    TAG_END());
 
   run_ab_until(ctx, -1, save_until_notified_and_responded,
-	       -1, NULL /* XXX save_until_received */);
+	       -1, save_until_received);
 
   /* Client events:
      nua_subscribe(), nua_i_notify/nua_r_subscribe
@@ -242,6 +243,9 @@ int test_events(struct context *ctx)
   TEST_1(!en->next || !es->next);
   free_events_in_list(ctx, a->events);
 
+  /* XXX --- Do not check server side events */
+  free_events_in_list(ctx, b->events);
+
   if (print_headings)
     printf("TEST NUA-12.2: PASSED\n");
 
@@ -266,8 +270,7 @@ int test_events(struct context *ctx)
 	   SIPTAG_PAYLOAD_STR(open),
 	   TAG_END());
 
-  run_ab_until(ctx, -1, save_until_notified,
-	       -1, NULL /* XXX save_until_received */);
+  run_ab_until(ctx, -1, save_until_notified, -1, save_until_received);
 
   /* subscriber events:
      nua_i_notify
@@ -286,6 +289,9 @@ int test_events(struct context *ctx)
        nua_substate_active);
   TEST_1(!e->next);
   free_events_in_list(ctx, a->events);
+
+  /* XXX --- Do not check server side events */
+  free_events_in_list(ctx, b->events);
 
   if (print_headings)
     printf("TEST NUA-12.3: PASSED\n");
@@ -308,7 +314,7 @@ int test_events(struct context *ctx)
   UNSUBSCRIBE(a, a_call, a_call->nh, TAG_END());
 
   run_ab_until(ctx, -1, save_until_final_response,
-	       -1, NULL /* XXX save_until_received */);
+	       -1, save_until_subscription);
 
   /* Client events:
      nua_unsubscribe(), nua_i_notify/nua_r_unsubscribe
@@ -334,6 +340,19 @@ int test_events(struct context *ctx)
   /* But we don't really care.. */
   /* TEST_1(!e->next); */
   free_events_in_list(ctx, a->events);
+
+  /* Server events: nua_i_subscription with terminated status */
+  TEST_1(e = b->events->head);
+  TEST_E(e->data->e_event, nua_i_subscription);
+  TEST(tl_gets(e->data->e_tags,
+               NEATAG_SUB_REF(sub),
+               NUTAG_SUBSTATE_REF(substate),
+               TAG_END()), 2);
+  TEST_1(sub);
+  TEST(substate, nua_substate_terminated);
+  TEST_1(!e->next);
+
+  free_events_in_list(ctx, b->events);
 
   if (print_headings)
     printf("TEST NUA-12.5: PASSED\n");

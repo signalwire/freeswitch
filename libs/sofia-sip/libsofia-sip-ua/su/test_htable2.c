@@ -45,12 +45,12 @@
 #include <assert.h>
 
 #include "sofia-sip/su_alloc.h"
-#include "sofia-sip/htable.h"
+#include "sofia-sip/htable2.h"
 
 #define TSTFLAGS flags
 #include <sofia-sip/tstdef.h>
 
-char const name[] = "htable_test";
+char const name[] = "test_htable2";
 
 void usage(int exitcode)
 {
@@ -58,7 +58,7 @@ void usage(int exitcode)
   exit(exitcode);
 }
 
-static int table_test(int flags);
+static int table2_test(int flags);
 
 int main(int argc, char *argv[])
 {
@@ -76,29 +76,36 @@ int main(int argc, char *argv[])
       usage(1);
   }
 
-  retval |= table_test(flags); fflush(stdout);
+  retval |= table2_test(flags); fflush(stdout);
 
   return retval;
 }
 
 typedef struct hentry_s entry_t;
-HTABLE_DECLARE(htable, ht, entry_t);
-HTABLE_PROTOS(htable, ht, entry_t);
+
+HTABLE2_DECLARE2(htable2_t, htable2_s, ht2_, entry_t, size_t);
+HTABLE2_PROTOS2(htable2_t, htable2, ht2_, entry_t, size_t);
 
 struct hentry_s 
 {
-  unsigned long e_value;
+  unsigned long e_hash;
   unsigned long e_n;
 };
 
-#define HENTRY_HASH(e) ((e)->e_value)
+#define HENTRY_HASH(e) ((e).e_hash)
+#define HENTRY_IS_USED(e) ((e).e_n != 0)
+#define HENTRY_REMOVE(e) ((e)->e_n = 0, (e)->e_hash = 0)
+#define HENTRY_IS_EQUAL(a, b) ((a).e_n == (b).e_n)
+#define HALLOC(home, old, newsize) (su_realloc(home, old, newsize))
 
-HTABLE_BODIES(htable, ht, entry_t, HENTRY_HASH);
+HTABLE2_BODIES2(htable2_t, htable2, ht2_, entry_t, size_t,
+	       HENTRY_HASH, HENTRY_IS_USED, HENTRY_REMOVE, HENTRY_IS_EQUAL,
+	       HALLOC);
 
 typedef struct context_s
 {
   su_home_t c_home[1];
-  htable_t c_hash[1];
+  htable2_t c_hash[1];
 } context_t;
 
 context_t *context_create(void) 
@@ -106,7 +113,7 @@ context_t *context_create(void)
   context_t *c = su_home_clone(NULL, sizeof(*c));
 
   if (c)
-    htable_resize(c->c_home, c->c_hash, 0);
+    htable2_resize(c->c_home, c->c_hash, 0);
 
   return c;
 }
@@ -114,35 +121,35 @@ context_t *context_create(void)
 static
 entry_t *search(context_t *c, unsigned long value, unsigned long n, int add)
 {
-  htable_t *ht = c->c_hash;
-  entry_t *e, **ee;
+  htable2_t *ht = c->c_hash;
+  entry_t *e;
   unsigned long hash = value;
 
   /* Search for entry in hash table */
-  for (ee = htable_hash(ht, hash);
-       (e = *ee);
-       ee = htable_next(ht, ee)) {
-    if (e->e_value == value &&
-	e->e_n == n)
+  for (e = htable2_hash(ht, hash);
+       e->e_n != 0;
+       e = htable2_next(ht, e)) {
+    if (e->e_hash == value && e->e_n == n)
       return e;
   }
 
   if (add) {
+    entry_t entry;
+
     /* Resize hash table */
-    if (htable_is_full(ht)) {
-      htable_resize(c->c_home, ht, 0);
-      fprintf(stderr, "htable: resized to %u with %u entries\n", 
-	      ht->ht_size, ht->ht_used);
+    if (htable2_is_full(ht)) {
+      htable2_resize(c->c_home, ht, 0);
+      fprintf(stderr, "htable: resized to "MOD_ZU" with "MOD_ZU" entries\n", 
+	      ht->ht2_size, ht->ht2_used);
     }
 
     /* Add an entry */
-    e = su_zalloc(c->c_home, sizeof(*e)); assert(e);
-    e->e_value = value, e->e_n = n;
+    e = &entry, e->e_hash = value, e->e_n = n;
 
-    htable_append(ht, e);
+    return htable2_append(ht, *e);
   }
 
-  return e;
+  return NULL;
 }
 
 static int add(context_t *c, unsigned long value, unsigned long n)
@@ -151,10 +158,9 @@ static int add(context_t *c, unsigned long value, unsigned long n)
 }
 
 static
-void zap(context_t *c, entry_t *e)
+void zap(context_t *c, entry_t e)
 {
-  htable_remove(c->c_hash, e);
-  su_free(c->c_home, e);
+  htable2_remove(c->c_hash, e);
 }
 
 /* 
@@ -164,13 +170,14 @@ void zap(context_t *c, entry_t *e)
  */
 static unsigned long count(context_t *c, hash_value_t h)
 {
-  entry_t *e, **ee;
-  unsigned long n, expect = 1;
+  entry_t *e;
+  unsigned long n;
+  unsigned long expect = 1;
 
-  for (ee = htable_hash(c->c_hash, h), n = 0;
-       (e = *ee); 
-       ee = htable_next(c->c_hash, ee)) {
-    if (e->e_value != h)
+  for (e = htable2_hash(c->c_hash, h), n = 0;
+       e->e_n != 0;
+       e = htable2_next(c->c_hash, e)) {
+    if (e->e_hash != h)
       continue;
     if (e->e_n == expect)
       n++, expect++;
@@ -179,49 +186,53 @@ static unsigned long count(context_t *c, hash_value_t h)
   return n;
 }
 
-int table_test(int flags)
+int table2_test(int flags)
 {
   context_t *c;
-  entry_t *e;
+  entry_t *e, e0;
 
   BEGIN();
 
   TEST_1(c = context_create());
-  TEST_1(add(c, 0, 1)); TEST_1(c->c_hash->ht_table[0]);
-  TEST_1(add(c, 1, 2)); TEST_1(c->c_hash->ht_table[1]);
-  TEST_1(add(c, 2, 3)); TEST_1(c->c_hash->ht_table[2]);
-  TEST_1(add(c, 0, 4)); TEST_1(c->c_hash->ht_table[3]);
-  TEST_1(add(c, 2, 5)); TEST_1(c->c_hash->ht_table[4]);
+  TEST_1(add(c, 0, 1)); TEST_1(c->c_hash->ht2_table[0].e_n == 1);
+  TEST_1(add(c, 1, 2)); TEST_1(c->c_hash->ht2_table[1].e_n == 2);
+  TEST_1(add(c, 2, 3)); TEST_1(c->c_hash->ht2_table[2].e_n == 3);
+  TEST_1(add(c, 0, 4)); TEST_1(c->c_hash->ht2_table[3].e_n == 4);
+  TEST_1(add(c, 2, 5)); TEST_1(c->c_hash->ht2_table[4].e_n == 5);
 
   TEST_1(e = search(c, 1, 2, 0));
-  TEST(htable_remove(c->c_hash, e), 0);
-  TEST(htable_remove(c->c_hash, e), -1);
-  su_free(c->c_home, e);
-  TEST_1(c->c_hash->ht_table[0]);
-  TEST_1(c->c_hash->ht_table[1]);
-  TEST_1(c->c_hash->ht_table[2]);
-  TEST_1(c->c_hash->ht_table[3]);
-  TEST_1(c->c_hash->ht_table[4] == NULL);
+  e0 = *e;
+  TEST(htable2_remove(c->c_hash, e0), 0);
+  TEST(htable2_remove(c->c_hash, e0), -1);
 
-  zap(c, c->c_hash->ht_table[0]);
+  /* after remove , 4 is mode to [1], 5 to [4] */
+  TEST(c->c_hash->ht2_table[0].e_n, 1);
+  TEST(c->c_hash->ht2_table[1].e_n, 4);
+  TEST(c->c_hash->ht2_table[2].e_n, 3);
+  TEST(c->c_hash->ht2_table[3].e_n, 5);
+  TEST(c->c_hash->ht2_table[4].e_n, 0);
 
-  TEST_1(c->c_hash->ht_table[0]);
-  TEST_1(c->c_hash->ht_table[1] == NULL);
-  TEST_1(c->c_hash->ht_table[2]);
-  TEST_1(c->c_hash->ht_table[3]);
-  TEST_1(c->c_hash->ht_table[4] == NULL);
+  zap(c, c->c_hash->ht2_table[0]);
 
-  TEST_1(add(c, 0, 6)); TEST_1(c->c_hash->ht_table[1]);
-  TEST_1(add(c, 1, 7)); TEST_1(c->c_hash->ht_table[4]);
+  /* after remove , 4 is mode to [1], 5 to [4] */
+  TEST(c->c_hash->ht2_table[0].e_n, 4);
+  TEST(c->c_hash->ht2_table[1].e_n, 0);
+  TEST(c->c_hash->ht2_table[2].e_n, 3);
+  TEST(c->c_hash->ht2_table[3].e_n, 5);
+  TEST(c->c_hash->ht2_table[4].e_n, 0);
+
+  TEST_1(add(c, 0, 6)); TEST(c->c_hash->ht2_table[1].e_n, 6);
+  TEST_1(add(c, 1, 7)); TEST(c->c_hash->ht2_table[4].e_n, 7);
 
   /* Test that zapping entry 0 does not move 2 and 3 */
-  zap(c, c->c_hash->ht_table[0]);
-  TEST_1(c->c_hash->ht_table[4] == NULL);
+  zap(c, c->c_hash->ht2_table[0]);
+  TEST(c->c_hash->ht2_table[4].e_n, 0);
 
   {
     /* Insert entries at the end of hash, then resize and check
        for correct ordering */
-    hash_value_t size = c->c_hash->ht_size, h = size - 1;
+    size_t size = c->c_hash->ht2_size;
+    hash_value_t h = (hash_value_t)size - 1;
 
     TEST_1(add(c, h, 1)); TEST_1(add(c, h, 2)); TEST_1(add(c, h, 3));
     TEST_1(add(c, h, 4)); TEST_1(add(c, h, 5)); TEST_1(add(c, h, 6));
@@ -229,23 +240,23 @@ int table_test(int flags)
 
     TEST(count(c, h), 9);
     
-    TEST(htable_resize(c->c_home, c->c_hash, ++size), 0);
+    TEST(htable2_resize(c->c_home, c->c_hash, ++size), 0);
     TEST(count(c, h), 9);
-    TEST(htable_resize(c->c_home, c->c_hash, ++size), 0);
+    TEST(htable2_resize(c->c_home, c->c_hash, ++size), 0);
     TEST(count(c, h), 9);
-    TEST(htable_resize(c->c_home, c->c_hash, ++size), 0);
+    TEST(htable2_resize(c->c_home, c->c_hash, ++size), 0);
     TEST(count(c, h), 9);
-    TEST(htable_resize(c->c_home, c->c_hash, ++size), 0);
+    TEST(htable2_resize(c->c_home, c->c_hash, ++size), 0);
     TEST(count(c, h), 9);
-    TEST(htable_resize(c->c_home, c->c_hash, ++size), 0);
+    TEST(htable2_resize(c->c_home, c->c_hash, ++size), 0);
     TEST(count(c, h), 9);
-    TEST(htable_resize(c->c_home, c->c_hash, ++size), 0);
+    TEST(htable2_resize(c->c_home, c->c_hash, ++size), 0);
     TEST(count(c, h), 9);
-    TEST(htable_resize(c->c_home, c->c_hash, ++size), 0);
+    TEST(htable2_resize(c->c_home, c->c_hash, ++size), 0);
     TEST(count(c, h), 9);
-    TEST(htable_resize(c->c_home, c->c_hash, ++size), 0);
+    TEST(htable2_resize(c->c_home, c->c_hash, ++size), 0);
     TEST(count(c, h), 9);
-    TEST(htable_resize(c->c_home, c->c_hash, ++size), 0);
+    TEST(htable2_resize(c->c_home, c->c_hash, ++size), 0);
     TEST(count(c, h), 9);
   }
 

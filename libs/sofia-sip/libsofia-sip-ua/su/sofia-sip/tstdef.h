@@ -319,13 +319,13 @@ enum {
 /** @HIDE */
 #define TEST_M_(flags, suite, expect, len) do { \
   void const * _value, * _expect; \
-  int _len; \
+  size_t _len; \
   if (flags & tst_verbatim) { \
     printf("%s: %s%stesting %s is %s\n", TSTNAME, #suite, #expect); \
     fflush(stdout); } \
   _value = (suite); \
   _expect = (expect); \
-  _len = (len); \
+  _len = (size_t)(len); \
   if (((_value == NULL || _expect == NULL) && _value == _expect) || \
       memcmp(_value, _expect, _len) == 0) \
   { if (flags & tst_verbatim) \
@@ -333,7 +333,8 @@ enum {
   fprintf(stderr, "%s:%u: %s %s%sFAILED: %s != %s "\
                   "or \"%.*s\" != \"%.*s\"\n", \
 	 __FILE__, __LINE__, TSTNAME, \
-	  #suite, #expect, _len, (char *)_value, _len, (char *)_expect); \
+	  #suite, #expect, (int)_len, \
+          (char *)_value, (int)_len, (char *)_expect); \
   fflush(stderr);							\
   TEST_FAILED(flags);							\
   } while(0)

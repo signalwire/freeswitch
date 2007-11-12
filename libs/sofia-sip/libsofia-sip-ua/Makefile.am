@@ -13,21 +13,25 @@ AUTOMAKE_OPTIONS = foreign
 # in the build
 OPT_LIBADD =
 OPT_SUBDIRS_STUN =
+OPT_SUBDIRS_HTTP =
 OPT_SUBDIRS_NTH =
 if HAVE_STUN
 OPT_LIBADD += stun/libstun.la 
 OPT_SUBDIRS_STUN += stun
 endif
 if HAVE_NTH
-OPT_LIBADD += nth/libnth.la http/libhttp.la
-OPT_SUBDIRS_NTH += nth http
+OPT_LIBADD += http/libhttp.la nth/libnth.la 
+OPT_SUBDIRS_HTTP += http
+OPT_SUBDIRS_NTH += nth 
 endif
 
 # note: order does matter in the subdir list
-SUBDIRS = su features bnf sresolv sdp url msg sip $(OPT_SUBDIRS_STUN) ipt soa \
-	  tport nta nea iptsec $(OPT_SUBDIRS_NTH) nua
-DIST_SUBDIRS = su features bnf sresolv sdp url msg sip stun ipt soa \
-	  tport nta nea iptsec nth http nua docs
+SUBDIRS = su features bnf sresolv ipt sdp url msg sip $(OPT_SUBDIRS_HTTP) \
+	  $(OPT_SUBDIRS_STUN) soa tport nta $(OPT_SUBDIRS_NTH) \
+	  nea iptsec nua
+DIST_SUBDIRS = su features bnf sresolv ipt sdp url msg sip http \
+	  stun soa tport nta nth \
+	  nea iptsec nua docs
 
 DOXYGEN = doxygen
 
