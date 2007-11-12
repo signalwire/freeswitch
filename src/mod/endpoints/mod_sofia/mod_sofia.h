@@ -114,7 +114,8 @@ typedef enum {
 	PFLAG_RUNNING = (1 << 8),
 	PFLAG_RESPAWN = (1 << 9),
 	PFLAG_GREEDY = (1 << 10),
-	PFLAG_MULTIREG = (1 << 11)
+	PFLAG_MULTIREG = (1 << 11),
+	PFLAG_SUPRESS_CNG = (1 << 12)
 } PFLAGS;
 
 

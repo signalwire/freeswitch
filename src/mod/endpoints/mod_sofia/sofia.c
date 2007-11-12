@@ -907,6 +907,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_MULTIREG;
 						}
+					} else if (!strcasecmp(var, "supress-cng")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_SUPRESS_CNG;
+						}
 					} else if (!strcasecmp(var, "NDLB-to-in-200-contact")) {
 						if (switch_true(val)) {
 							profile->ndlb |= PFLAG_NDLB_TO_IN_200_CONTACT;
