@@ -1917,7 +1917,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
 	
 
-	if ((profile->soft_max && sess_count >= profile->soft_max) || sess_count >= sess_max) {
+	if (sess_count >= sess_max) {
 		nua_respond(nh, 480, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 		return;
 	}
@@ -2193,19 +2193,18 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		return;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "LUKE: I'm hit, but not bad.\n");
-					  
-	switch_mutex_lock(profile->flag_mutex);
+	if (sess_count > 110) {
+		switch_mutex_lock(profile->flag_mutex);
+		switch_core_session_limit(sess_count - 10);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "LUKE: I'm hit, but not bad.\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "LUKE'S VOICE: Artoo, see what you can do with it. Hang on back there....\n"
+						  "Green laserfire moves past the beeping little robot as his head turns.  "
+						  "After a few beeps and a twist of his mechanical arm,\n"
+						  "Artoo reduces the max sessions to %d thus, saving the switch from certian doom.\n", 
+						  sess_count < 10);
 
-	profile->soft_max = sess_count - 10;
-	switch_core_session_limit(profile->soft_max);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "LUKE'S VOICE: Artoo, see what you can do with it. Hang on back there....\n"
-					  "Green laserfire moves past the beeping little robot as his head turns.  "
-					  "After a few beeps and a twist of his mechanical arm,\n"
-					  "Artoo reduces the max sessions to %d thus, saving the switch from certian doom.\n", 
-					  profile->soft_max);
-
-	switch_mutex_unlock(profile->flag_mutex);
+		switch_mutex_unlock(profile->flag_mutex);
+	}
 
 	if (tech_pvt->hash_key) {
 		switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->hash_key);

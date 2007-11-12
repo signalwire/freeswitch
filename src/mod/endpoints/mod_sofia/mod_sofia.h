@@ -254,7 +254,6 @@ struct sofia_profile {
 	switch_thread_rwlock_t *rwlock;
 	switch_mutex_t *flag_mutex;
 	uint32_t inuse;
-	uint32_t soft_max;
 	time_t started;
 	uint32_t session_timeout;
 	uint32_t max_proceeding;
