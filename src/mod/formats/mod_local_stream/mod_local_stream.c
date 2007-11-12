@@ -316,7 +316,7 @@ static void launch_threads(void)
 				}
 			} else if (!strcasecmp(var, "interval")) {
 				source->interval = atoi(val);
-			} else if (!strcasecmp(var, "timer_name")) {
+			} else if (!strcasecmp(var, "timer-name")) {
 				source->timer_name = switch_core_strdup(source->pool, val);
 			}
 		}
