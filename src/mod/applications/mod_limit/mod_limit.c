@@ -390,7 +390,7 @@ SWITCH_STANDARD_API(db_api_function)
 }
 
 
-#define DB_USAGE "<realm>/<key>/<val>"
+#define DB_USAGE "[add|del]/<realm>/<key>/<val>"
 #define DB_DESC "save data"
 
 SWITCH_STANDARD_APP(db_function)
@@ -399,26 +399,39 @@ SWITCH_STANDARD_APP(db_function)
     int argc = 0;
     char *argv[3] = { 0 };
     char *mydata = NULL;
-    char *sql;
+    char *sql = NULL;
 
     channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
-
+    
     if (!switch_strlen_zero(data)) {
         mydata = switch_core_session_strdup(session, data);
         argc = switch_separate_string(mydata, '/', argv, (sizeof(argv) / sizeof(argv[0])));
     }
 
-    if (argc < 3) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: db_insert %s\n", DB_USAGE);
-        return;
+    if (argc < 4) {
+        goto error;
+    }
+
+    
+    if (!strcasecmp(argv[0], "add")) {
+        sql = switch_mprintf("insert into db_data values('%q','%q','%q','%q');", globals.hostname, argv[1], argv[2], argv[3]);
+    } else if (!strcasecmp(argv[0], "del")) {
+        sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
     }
 
 
-    sql = switch_mprintf("insert into db_data values('%q','%q','%q','%q');", globals.hostname, argv[0], argv[1], argv[2]);
-    assert(sql);
-    limit_execute_sql(sql, globals.mutex);
-    switch_safe_free(sql);
+    if (sql) {
+        limit_execute_sql(sql, globals.mutex);
+        switch_safe_free(sql);
+        return;
+    }
+    
+ error:
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: db %s\n", DB_USAGE);
+
+    
+
 }
 
 
