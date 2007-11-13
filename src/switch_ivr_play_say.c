@@ -260,7 +260,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 						done = 1;
 						break;
 					} else if (!strcasecmp(func, "execute")) {
+						switch_application_interface_t *app;
+						char *cmd, *cmd_args;
+						status = SWITCH_STATUS_FALSE;
 
+						cmd = switch_core_session_strdup(session, odata);
+						cmd_args = switch_separate_paren_args(cmd);
+
+						if (!cmd_args ) {
+							cmd_args = "";
+						}
+
+						if ((app = switch_loadable_module_get_application_interface(cmd)) != NULL) {
+							status = switch_core_session_exec(session, app, cmd_args);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Application %s\n", cmd);
+						}
 					} else if (!strcasecmp(func, "say")) {
 						switch_say_interface_t *si;
 						if ((si = switch_loadable_module_get_say_interface(module_name))) {

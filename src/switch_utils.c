@@ -288,6 +288,36 @@ SWITCH_DECLARE(char *) switch_strip_spaces(const char *str)
 	return s;
 }
 
+
+SWITCH_DECLARE(char *) switch_separate_paren_args(char *str)
+{
+	char *e, *args;
+	switch_size_t br;
+
+	if ((args = strchr(str, '('))) {
+		e = args - 1;
+		*args++ = '\0';
+		while(*e == ' ') {
+			*e-- = '\0';
+		}
+		e = args;
+		br = 1;
+		while(e && *e) {
+			if (*e == '(') {
+				br++;
+			} else if (br > 1 && *e == ')') {
+				br--;
+			} else if (br == 1 && *e == ')') {
+				*e = '\0';
+				break;
+			}
+			e++;
+		}
+	}
+
+	return args;
+}
+
 SWITCH_DECLARE(switch_bool_t) switch_is_number(const char *str)
 {
 	const char *p;
