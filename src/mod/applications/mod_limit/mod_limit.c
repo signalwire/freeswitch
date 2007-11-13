@@ -408,7 +408,7 @@ SWITCH_STANDARD_APP(db_function)
         mydata = switch_core_session_strdup(session, data);
         argc = switch_separate_string(mydata, '/', argv, (sizeof(argv) / sizeof(argv[0])));
     }
-    printf("WTF [%s] %d\n", argv[0], argc);
+
     if (argc < 4) {
         goto error;
     }
