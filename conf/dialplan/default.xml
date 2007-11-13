@@ -1,7 +1,7 @@
 <context name="default">
   <extension name="global">
     <condition>
-      <action application="set" data="use_profile=${qq(${is_lan_addr(${network_addr})} == yes ? nat : default)}"/>
+      <action application="set" data="use_profile=${cond(${is_lan_addr(${network_addr})} == yes ? nat : default)}"/>
     </condition>
   </extension>
   <!-- 
