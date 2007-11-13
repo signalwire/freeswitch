@@ -349,7 +349,7 @@ SWITCH_STANDARD_API(db_api_function)
         goto error;
     }
 
-    if (!strcasecmp(argv[0], "set")) {
+    if (!strcasecmp(argv[0], "insert")) {
         if (argc < 4) {
             goto error;
         }
@@ -363,7 +363,16 @@ SWITCH_STANDARD_API(db_api_function)
         switch_safe_free(sql);
         stream->write_function(stream, "+OK");
         goto done;
-    } else if (!strcasecmp(argv[0], "get")) {
+    } else if (!strcasecmp(argv[0], "delete")) {
+        if (argc < 2) {
+            goto error;
+        }
+        sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
+        assert(sql);
+        limit_execute_sql(sql, NULL);
+        switch_safe_free(sql);    
+        stream->write_function(stream, "+OK");
+    } else if (!strcasecmp(argv[0], "select")) {
         char buf[256] = "";
         callback_t cbt = { 0 };
         if (argc < 3) {
