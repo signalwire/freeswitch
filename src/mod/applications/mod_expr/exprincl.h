@@ -32,7 +32,7 @@
 #endif
 
 /* Memory allocation */
-#include <malloc.h>
+#include <stdlib.h>
 
 /* String routines */
 #include <string.h>
