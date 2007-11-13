@@ -56,6 +56,7 @@
 #pragma warning (disable:188)
 #endif
 
+#include <switch.h>
 
 #include "openmrcp_client.h"
 #include "mrcp_client_context.h"
@@ -63,7 +64,6 @@
 #include "mrcp_synthesizer.h"
 #include "mrcp_generic_header.h"
 
-#include <switch.h>
 	
 SWITCH_MODULE_LOAD_FUNCTION(mod_openmrcp_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_openmrcp_shutdown);

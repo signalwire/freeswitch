@@ -13,8 +13,9 @@ OPENMRCP_LIBS=$(OPENMRCP_DIR)/platform/openmrcpclient/.libs/libopenmrcpclient.a 
 MRCP_APR_INCLUDES =  -I../../../../libs/apr/include
 MRCP_APU_INCLUDES =  -I../../../../libs/apr-util/include
 
-LOCAL_CFLAGS= -Wno-unused
-LOCAL_CFLAGS+= -Wno-comment -Wno-sign-compare $(OPENMRCP_INCLUDE) $(MRCP_APR_INCLUDES) $(MRCP_APU_INCLUDES) 
+#do not specify gcc specific compiler flags
+#LOCAL_CFLAGS= -Wno-unused -Wno-comment -Wno-sign-compare
+LOCAL_CFLAGS= $(OPENMRCP_INCLUDE) $(MRCP_APR_INCLUDES) $(MRCP_APU_INCLUDES) 
 
 LOCAL_LIBADD=$(OPENMRCP_LIBS)
 
