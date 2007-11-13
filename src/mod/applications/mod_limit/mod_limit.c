@@ -372,6 +372,7 @@ SWITCH_STANDARD_API(db_api_function)
         limit_execute_sql(sql, NULL);
         switch_safe_free(sql);    
         stream->write_function(stream, "+OK");
+        goto done;
     } else if (!strcasecmp(argv[0], "select")) {
         char buf[256] = "";
         callback_t cbt = { 0 };
