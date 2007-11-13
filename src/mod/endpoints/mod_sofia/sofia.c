@@ -1994,8 +1994,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		
 		
 		if (!switch_strlen_zero(from_user)) {
-			switch_channel_set_variable(channel, "sip_mailbox", from_user);
-
 			if (*from_user == '+') {
 				switch_channel_set_variable(channel, "sip_from_user_stripped", (const char *) (from_user + 1));
 			} else {

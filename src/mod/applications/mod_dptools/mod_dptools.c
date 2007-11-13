@@ -86,6 +86,67 @@ SWITCH_STANDARD_APP(exe_function)
 	}
 }
 
+
+#define SET_USER_SYNTAX "<user>@<domain>"
+SWITCH_STANDARD_APP(set_user_function)
+{
+	switch_xml_t x_domain, xml = NULL, x_user, x_param, x_params;	
+	char *user, *mailbox, *domain;
+	switch_channel_t *channel;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	if (switch_strlen_zero(data)) {
+		goto error;
+	}
+
+	user = switch_core_session_strdup(session, data);
+
+	if (!(domain = strchr(user, '@'))) {
+		goto error;
+	}
+
+	*domain++ = '\0';
+	
+	if (switch_xml_locate_user(user, domain, NULL, &xml, &x_domain, &x_user, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", user, domain);
+		goto done;
+	}
+
+	if ((mailbox = (char *)switch_xml_attr(x_user, "mailbox"))) {
+		switch_channel_set_variable(channel, "mailbox", mailbox);
+	}
+	
+	if ((x_params = switch_xml_child(x_user, "variables"))) {
+		for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
+			const char *var = switch_xml_attr(x_param, "name");
+			const char *val = switch_xml_attr(x_param, "value");
+			
+			if (var && val) {
+				switch_channel_set_variable(channel, var, val);
+			}
+		}
+	}
+
+	switch_channel_set_variable(channel, "user_name", user);
+	switch_channel_set_variable(channel, "domain_name", domain);
+
+	goto done;
+
+ error:
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No user@domain specified.\n");
+
+ done:
+	
+	if (xml) {
+		switch_xml_free(xml);
+	}
+
+
+}
+
+
 SWITCH_STANDARD_APP(ring_ready_function)
 {
 	switch_channel_t *channel;
@@ -1390,6 +1451,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "sched_broadcast", SCHED_BROADCAST_DESCR, SCHED_BROADCAST_DESCR, sched_broadcast_function, "[+]<time> <path> [aleg|bleg|both]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "sched_transfer", SCHED_TRANSF_DESCR, SCHED_TRANSF_DESCR, sched_transfer_function, "[+]<time> <extension> <dialplan> <context>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "execute_extension", "Execute an extension", "Execute an extension", exe_function, EXE_SYNTAX, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "set_user", "Set a User", "Set a User", set_user_function, SET_USER_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "stop_dtmf", "stop inband dtmf", "Stop detecting inband dtmf.", stop_dtmf_session_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "start_dtmf", "Detect dtmf", "Detect inband dtmf on the session", dtmf_session_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "stop_dtmf_generate", "stop inband dtmf generation", "Stop generating inband dtmf.", 

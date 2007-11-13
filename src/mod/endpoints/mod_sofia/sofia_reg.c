@@ -981,6 +981,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 			switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, "sip_mailbox", "%s", mailbox);
 			switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, "sip_auth_username", "%s", username);
 			switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, "sip_auth_realm", "%s", realm);
+			switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, "mailbox", "%s", mailbox);
+			switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, "user_name", "%s", username);
+			switch_event_add_header(*v_event, SWITCH_STACK_BOTTOM, "domain_name", "%s", realm);
 			
 			if ((xparams = switch_xml_child(user, "variables"))) {
 				for (param = switch_xml_child(xparams, "variable"); param; param = param->next) {

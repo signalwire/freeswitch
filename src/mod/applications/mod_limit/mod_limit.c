@@ -390,14 +390,14 @@ SWITCH_STANDARD_API(db_api_function)
 }
 
 
-#define DB_USAGE "[add|del]/<realm>/<key>/<val>"
+#define DB_USAGE "[insert|delete]/<realm>/<key>/<val>"
 #define DB_DESC "save data"
 
 SWITCH_STANDARD_APP(db_function)
 {
     switch_channel_t *channel;
     int argc = 0;
-    char *argv[3] = { 0 };
+    char *argv[4] = { 0 };
     char *mydata = NULL;
     char *sql = NULL;
 
@@ -408,15 +408,15 @@ SWITCH_STANDARD_APP(db_function)
         mydata = switch_core_session_strdup(session, data);
         argc = switch_separate_string(mydata, '/', argv, (sizeof(argv) / sizeof(argv[0])));
     }
-
+    printf("WTF [%s] %d\n", argv[0], argc);
     if (argc < 4) {
         goto error;
     }
-
     
-    if (!strcasecmp(argv[0], "add")) {
+    
+    if (!strcasecmp(argv[0], "insert")) {
         sql = switch_mprintf("insert into db_data values('%q','%q','%q','%q');", globals.hostname, argv[1], argv[2], argv[3]);
-    } else if (!strcasecmp(argv[0], "del")) {
+    } else if (!strcasecmp(argv[0], "delete")) {
         sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
     }
 
@@ -454,7 +454,7 @@ SWITCH_STANDARD_API(group_api_function)
         goto error;
     }
 
-    if (!strcasecmp(argv[0], "add")) {
+    if (!strcasecmp(argv[0], "insert")) {
         if (argc < 3) {
             goto error;
         }
@@ -468,7 +468,7 @@ SWITCH_STANDARD_API(group_api_function)
         switch_safe_free(sql);
         stream->write_function(stream, "+OK");
         goto done;
-    } else if (!strcasecmp(argv[0], "del")) {
+    } else if (!strcasecmp(argv[0], "delete")) {
         if (argc < 3) {
             goto error;
         }
@@ -515,7 +515,7 @@ SWITCH_STANDARD_API(group_api_function)
     
 }
 
-#define GROUP_USAGE "[add|del]:<group name>:<val>"
+#define GROUP_USAGE "[insert|delete]:<group name>:<val>"
 #define GROUP_DESC "save data"
 
 SWITCH_STANDARD_APP(group_function)
@@ -539,12 +539,12 @@ SWITCH_STANDARD_APP(group_function)
         return;
     }
 
-    if (!strcasecmp(argv[0], "add")) {
+    if (!strcasecmp(argv[0], "insert")) {
         sql = switch_mprintf("insert into group_data values('%q','%q','%q');", globals.hostname, argv[1], argv[2]);
         assert(sql);
         limit_execute_sql(sql, globals.mutex);
         switch_safe_free(sql);
-    } else if (!strcasecmp(argv[0], "del")) {
+    } else if (!strcasecmp(argv[0], "delete")) {
         sql = switch_mprintf("delete from group_data where groupname='%q' and url='%q';", argv[1], argv[2]);
         assert(sql);
         limit_execute_sql(sql, globals.mutex);
@@ -643,11 +643,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
     *module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_APP(app_interface, "limit", "Limit", LIMIT_DESC, limit_function, LIMIT_USAGE, SAF_NONE);
-	SWITCH_ADD_APP(app_interface, "db_insert", "Insert to the db", DB_DESC, db_function, DB_USAGE, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "db", "Insert to the db", DB_DESC, db_function, DB_USAGE, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "group", "Manage a group", GROUP_DESC, group_function, GROUP_USAGE, SAF_NONE);
 
 	SWITCH_ADD_API(commands_api_interface, "db", "db get/set", db_api_function, "[get|set]/<realm>/<key>/<value>");
-	SWITCH_ADD_API(commands_api_interface, "group", "group [add|del|call]", group_api_function, "[add|del|call] <group name> <url>");
+	SWITCH_ADD_API(commands_api_interface, "group", "group [insert|delete|call]", group_api_function, "[insert|delete|call] <group name> <url>");
 
     /* indicate that the module should continue to be loaded */
     return SWITCH_STATUS_SUCCESS;
