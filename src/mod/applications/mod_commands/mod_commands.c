@@ -106,7 +106,7 @@ typedef enum {
     O_LE
 } o_t;
 
-SWITCH_STANDARD_API(qq_function)
+SWITCH_STANDARD_API(cond_function)
 {
     int argc;
 	char *mydata = NULL, *argv[3];
@@ -1740,7 +1740,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "sched_del", "Delete a Scheduled task", sched_del_function, "<task_id>|<group_id>");
 	SWITCH_ADD_API(commands_api_interface, "xml_wrap", "Wrap another api command in xml", xml_wrap_api_function, "<command> <args>");
 	SWITCH_ADD_API(commands_api_interface, "is_lan_addr", "see if an ip is a lan addr", lan_addr_function, "<ip>");
-	SWITCH_ADD_API(commands_api_interface, "qq", "Eval a conditional", qq_function, "<expr> ? <true val> : <false val>");
+	SWITCH_ADD_API(commands_api_interface, "cond", "Eval a conditional", cond_function, "<expr> ? <true val> : <false val>");
+	// remove me before final release
+	SWITCH_ADD_API(commands_api_interface, "qq", "Eval a conditional", cond_function, "<expr> ? <true val> : <false val>");
 	SWITCH_ADD_API(commands_api_interface, "regex", "Eval a regex", regex_function, "<data>|<pattern>[|<subst string>]");
 
 	/* indicate that the module should continue to be loaded */
