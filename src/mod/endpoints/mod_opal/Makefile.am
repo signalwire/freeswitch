@@ -19,7 +19,7 @@ CC=g++
 
 # enabled the debug compile for opal and pwlib
 mod_LTLIBRARIES = mod_opal.la
-mod_opal_la_SOURCES = mod_opal.cpp fsmanager.cxx fsep.cxx fsmediastream.cxx fscon.cxx opal_h323.cxx opal_sip.cxx opal_h323con.cxx
+mod_opal_la_SOURCES = mod_opal.cpp fsmanager.cxx fsep.cxx fsmediastream.cxx fscon.cxx opal_h323.cxx opal_sip.cxx opal_h323con.cxx fsrtp.cxx
 mod_opal_la_CPPFLAGS = $(AM_CPPFLAGS) -D_REENTRANT -fno-exceptions  -Wall  -g3 -ggdb -O0 -D_DEBUG -I/home/tuyan/CODE/OPAL/pwlib/include -DPTRACING -I/home/tuyan/CODE/OPAL/opal/include   -felide-constructors -Wreorder -I$(OPALDIR)/include -I$(PWLIBDIR)/include
 mod_opal_la_LIBADD = $(switch_builddir)/libfreeswitch.la    
 mod_opal_la_LDFLAGS = -avoid-version -module -no-undefined -export-symbols-regex ^switch_module_.*$ -rpath $(PREFIX)/$(libdir) -L$(PWLIBDIR)/lib -L$(OPALDIR)/lib -lopal_linux_x86_d -lpt_linux_x86_d -lpthread -lexpat -lSDL -lresolv -ldl -fPIC -DPIC
