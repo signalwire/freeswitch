@@ -261,8 +261,9 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 				app = argv[2];
 				
 				if ((arg = strchr(app, '('))) {
+					char *p;
 					*arg++ = '\0';
-					char *p = strrchr(arg, ')');
+					p = strrchr(arg, ')');
 					if (p) {
 							*p = '\0';
 					}

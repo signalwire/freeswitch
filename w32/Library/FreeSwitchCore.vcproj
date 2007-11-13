@@ -263,6 +263,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\switch_config.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_console.c"
 				>
 			</File>
