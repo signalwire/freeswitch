@@ -417,6 +417,15 @@ fi
 dnl socket lib?
 AC_CHECK_FUNC(connect, , [ AC_CHECK_LIB(socket, connect) ])
 
+AC_CHECK_LIB(socket, socket,
+               [HAVE_SOCKET="1"
+               LIBS="$LIBS -lsocket"
+               ])
+
+if test "$HAVE_SOCKET" = "1"; then
+  AC_DEFINE(HAVE_SOCKET, 1, [If you have socket])
+fi
+
 dnl dl lib?
 AC_CHECK_FUNC(dlclose, , [ AC_CHECK_LIB(dl, dlopen) ])
 
