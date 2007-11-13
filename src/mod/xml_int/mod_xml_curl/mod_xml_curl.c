@@ -58,7 +58,10 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	struct config_data *config_data = data;
 	int x;
 	x = write(config_data->fd, ptr, realsize);
-	return realsize;
+	if ( x != (int)realsize) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write! %d out of %d\n", x, realsize);
+	}
+	return x;
 }
 
 
