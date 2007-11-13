@@ -7,6 +7,11 @@ SUBDIRS="codec/g7xx codec/g726 codec/gsm codec/ilbc codec/lpc10 curl iax iksemel
         js js/nsprpub libdingaling libetpan libresample libsndfile pcre sofia-sip \
         speex sqlite srtp xmlrpc-c";
 
+
+if [ ! -f modules.conf ]; then 
+    cp build/modules.conf.in modules.conf
+fi
+
 # keep automake from making us magically GPL, and to stop complaining about missing files.
 cp -f docs/COPYING .
 cp -f docs/AUTHORS .
