@@ -207,10 +207,6 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\src\softtimer.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\libs\stfu\stfu.c"
 				>
 				<FileConfiguration
@@ -427,6 +423,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\switch_time.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_utils.c"
 				>
 			</File>
@@ -477,11 +477,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\include\private\switch_core.h"
+				RelativePath="..\..\src\include\switch_core.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\include\switch_core.h"
+				RelativePath="..\..\src\include\private\switch_core.h"
 				>
 			</File>
 			<File
