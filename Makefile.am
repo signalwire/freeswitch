@@ -56,7 +56,7 @@ src/switch_stun.c\
 src/switch_log.c\
 src/switch_xml.c\
 src/switch_config.c\
-src/softtimer.c\
+src/switch_time.c\
 libs/stfu/stfu.c\
 src/switch_cpp.cpp\
 libs/libteletone/src/libteletone_detect.c\

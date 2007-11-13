@@ -233,7 +233,13 @@ SWITCH_DECLARE(switch_status_t) switch_mutex_trylock(switch_mutex_t * lock)
 
 SWITCH_DECLARE(switch_time_t) switch_time_now(void)
 {
+#ifdef HAVE_CLOCK_GETTIME
+	struct timespec ts;
+	clock_gettime(CLOCK_REALTIME,&ts);
+	return ts.tv_sec * APR_USEC_PER_SEC + (ts.tv_nsec/1000);
+#else
 	return (switch_time_t) apr_time_now();
+#endif
 }
 
 SWITCH_DECLARE(switch_status_t) switch_time_exp_gmt_get(switch_time_t * result, switch_time_exp_t * input)
@@ -254,17 +260,6 @@ SWITCH_DECLARE(switch_status_t) switch_time_exp_lt(switch_time_exp_t * result, s
 SWITCH_DECLARE(switch_status_t) switch_time_exp_gmt(switch_time_exp_t * result, switch_time_t input)
 {
 	return apr_time_exp_gmt((apr_time_exp_t *) result, input);
-}
-
-SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
-{
-#if defined(HAVE_USLEEP)
-	usleep(t);
-#elif defined(WIN32)
-	Sleep((DWORD) ((t) / 1000));
-#else
-	apr_sleep(t);
-#endif
 }
 
 

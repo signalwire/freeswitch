@@ -188,6 +188,9 @@ AC_FUNC_STRFTIME
 AC_CHECK_FUNCS([gethostname vasprintf mmap mlock mlockall usleep])
 AC_CHECK_FUNCS([sched_setscheduler setpriority setrlimit setgroups initgroups])
 
+AC_CHECK_LIB(rt, clock_gettime, [AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Define if you have clock_gettime()])])
+AC_CHECK_LIB(rt, clock_nanosleep, [AC_DEFINE(HAVE_CLOCK_NANOSLEEP, 1, [Define if you have clock_nanosleep()])])
+
 AC_CHECK_DECL([RLIMIT_MEMLOCK],
 	[AC_DEFINE([HAVE_RLIMIT_MEMLOCK],[1],[RLIMIT_MEMLOCK constant for setrlimit])],,
 	[#ifdef HAVE_SYS_RESOURCE_H

@@ -80,6 +80,29 @@ static timer_matrix_t TIMER_MATRIX[MAX_ELEMENTS + 1];
 #define IDLE_SPEED 100
 
 
+SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
+{
+	
+#if defined(HAVE_CLOCK_NANOSLEEP)
+	struct timespec ts;
+	ts.tv_sec = t / APR_USEC_PER_SEC;
+	ts.tv_nsec = (t % APR_USEC_PER_SEC) * 1000;
+	
+	clock_nanosleep(CLOCK_REALTIME, 0, &ts, NULL);
+	
+#elif defined(HAVE_USLEEP)
+	usleep(t);
+#elif defined(WIN32)
+	Sleep((DWORD) ((t) / 1000));
+#else
+	apr_sleep(t);
+#endif
+
+
+}
+
+
+
 static switch_status_t timer_init(switch_timer_t *timer)
 {
 	timer_private_t *private_info;
