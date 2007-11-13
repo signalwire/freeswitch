@@ -79,10 +79,18 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdlib.h>
+
+#if  defined(__SUNPRO_C) || defined(__SUNPRO_CC)
+#ifndef __inline__
+#define __inline__ inline
+#endif
+#endif
+
 #ifdef _MSC_VER
 #ifndef __inline__
 #define __inline__ __inline
 #endif
+
 typedef unsigned __int64 uint64_t;
 typedef unsigned __int32 uint32_t;
 typedef unsigned __int16 uint16_t;
