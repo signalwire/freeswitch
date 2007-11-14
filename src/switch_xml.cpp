@@ -69,7 +69,7 @@ extern int madvise(caddr_t, size_t, int);
 #define SWITCH_XML_ERRL 128		// maximum error string length
 #include "SimpleGlob.h"
 
-static int preprocess(const char *file, int write_fd, int rlevel);
+static int preprocess(const char *cwd, const char *file, int write_fd, int rlevel);
 
 typedef struct switch_xml_root *switch_xml_root_t;
 struct switch_xml_root {		// additional data for the root tag
@@ -938,14 +938,15 @@ static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_
 
 }
 
-static int preprocess_glob(const char *pattern, int write_fd, int rlevel)
+static int preprocess_glob(const char *cwd, const char *pattern, int write_fd, int rlevel)
 {
 	char *argv[1] = {0};
 	int argc = 1;
 	char *full_path = NULL;
+	char *dir_path = NULL, *e = NULL;
 
 	if (!switch_is_file_path(pattern)) {
-		full_path = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, pattern);
+		full_path = switch_mprintf("%s%s%s", cwd, SWITCH_PATH_SEPARATOR, pattern);
 		pattern = full_path;
 	}
 	
@@ -961,14 +962,19 @@ static int preprocess_glob(const char *pattern, int write_fd, int rlevel)
 	}
 
 	for (int n = 0; n < glob.FileCount(); ++n) {
-		if (preprocess(glob.File(n), write_fd, rlevel) < 0) {
+		dir_path = strdup(glob.File(n));
+		assert(dir_path);
+		if ((e = strrchr(dir_path, *SWITCH_PATH_SEPARATOR))) {
+			*e = '\0';
+		}
+		if (preprocess(dir_path, glob.File(n), write_fd, rlevel) < 0) {
 			const char *reason = strerror(errno);
 			if (rlevel > 100) {
 				reason = "Maximum recursion limit reached";
 			}
 			fprintf(stderr, "Error including %s (%s)\n", argv[0], reason);
 		}
-
+		free(dir_path);
 	}
 
  end:
@@ -978,7 +984,7 @@ static int preprocess_glob(const char *pattern, int write_fd, int rlevel)
 	return write_fd;
 }
 
-static int preprocess(const char *file, int write_fd, int rlevel)
+static int preprocess(const char *cwd, const char *file, int write_fd, int rlevel)
 {
 	int read_fd = -1;
 	switch_size_t cur = 0, ml = 0;
@@ -1078,7 +1084,7 @@ static int preprocess(const char *file, int write_fd, int rlevel)
 				}
 				
 			} else if (!strcasecmp(tcmd, "include")) {
-				preprocess_glob(targ, write_fd, rlevel + 1);
+				preprocess_glob(cwd, targ, write_fd, rlevel + 1);
 			}
 
 			continue;
@@ -1134,7 +1140,7 @@ static int preprocess(const char *file, int write_fd, int rlevel)
 					}
 
 				} else if (!strcasecmp(cmd, "include")) {
-					preprocess_glob(arg, write_fd, rlevel + 1);
+					preprocess_glob(cwd, arg, write_fd, rlevel + 1);
 				}
 			}
 
@@ -1192,7 +1198,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 		goto done;
 	}
 
-	if (preprocess(file, write_fd, 0) > -1) {
+	if (preprocess(SWITCH_GLOBAL_dirs.conf_dir, file, write_fd, 0) > -1) {
 		close(write_fd);
 		write_fd = -1;
 		if ((fd = open(new_file, O_RDONLY, 0)) > -1) {
