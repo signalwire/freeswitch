@@ -989,7 +989,7 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 	int read_fd = -1;
 	switch_size_t cur = 0, ml = 0;
 	char *q, *cmd, buf[2048], ebuf[8192];
-	const char *tcmd, *targ;
+	char *tcmd, *targ;
 
 	if ((read_fd = open(file, O_RDONLY, 0)) < 0) {
 		return read_fd;
@@ -1018,7 +1018,7 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 			}
 		}
 
-		if ((tcmd = switch_stristr(bp, "<X-pre-process"))) {
+		if ((tcmd = (char *)switch_stristr(bp, "<X-pre-process"))) {
 			if ((e = strstr(tcmd, "/>"))) {
 				*e += 2;
 				*e = '\0';
@@ -1027,15 +1027,15 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 				}
 			}
 			
-			if (!(tcmd = switch_stristr(tcmd, "cmd"))) {
+			if (!(tcmd = (char *)switch_stristr(tcmd, "cmd"))) {
 				continue;
 			}
 
-			if (!(tcmd = switch_stristr(tcmd, "="))) {
+			if (!(tcmd = (char *)switch_stristr(tcmd, "="))) {
 				continue;
 			}
 
-			if (!(tcmd = switch_stristr(tcmd, "\""))) {
+			if (!(tcmd = (char *)switch_stristr(tcmd, "\""))) {
 				continue;
 			}
 			
@@ -1046,15 +1046,15 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 				*e++ = '\0';
 			}
 
-			if (!(targ = switch_stristr(e, "data"))) {
+			if (!(targ = (char *)switch_stristr(e, "data"))) {
 				continue;
 			}
 
-			if (!(targ = switch_stristr(targ, "="))) {
+			if (!(targ = (char *)switch_stristr(targ, "="))) {
 				continue;
 			}
 
-			if (!(targ = switch_stristr(targ, "\""))) {
+			if (!(targ = (char *)switch_stristr(targ, "\""))) {
 				continue;
 			}
 
