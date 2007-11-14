@@ -1694,7 +1694,9 @@ SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
 	}
 
 	if (xml->free_path) {
-		unlink(xml->free_path);
+		if (!switch_stristr(xml->free_path, ".fsxml")) {
+			unlink(xml->free_path);
+		}
 		switch_safe_free(xml->free_path);
 	}
 
