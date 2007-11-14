@@ -54,6 +54,10 @@
 #include <kernel/OS.h>
 #endif
 
+#ifdef DARWIN 
+#include <signal.h>
+#endif
+
 #ifdef WINNT
 /* Need to force service-pack 3 extensions to be defined by
 ** setting _WIN32_WINNT to NT 4.0 for winsock.h, winbase.h, winnt.h.
