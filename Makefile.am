@@ -54,7 +54,7 @@ src/switch_ivr_menu.c \
 src/switch_ivr.c \
 src/switch_stun.c\
 src/switch_log.c\
-src/switch_xml.c\
+src/switch_xml.cpp\
 src/switch_config.c\
 src/switch_time.c\
 libs/stfu/stfu.c\
