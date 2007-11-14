@@ -107,14 +107,7 @@
   <!-- phrases section (under development still) -->
   <section name="phrases" description="Speech Phrase Management">
     <macros>
-      <language name="en" sound-path="/snds" tts-engine="cepstral" tts-voice="david">
-	<X-PRE-PROCESS cmd="include" data="lang_en.xml"/>
-	<!--voicemail_en_tts is purely implemented with tts, we need a files based implementation too -->
-	<X-PRE-PROCESS cmd="include" data="voicemail_en_tts.xml"/>
-      </language>
-      <language name="fr" sound_path="/var/sounds/lang/fr/jean" tts_engine="cepstral" tts_voice="jean-pierre">
-	<X-PRE-PROCESS cmd="include" data="lang_fr.xml"/>
-      </language>
+      <X-PRE-PROCESS cmd="include" data="lang/*/*.xml"/>
     </macros>
   </section>
 
