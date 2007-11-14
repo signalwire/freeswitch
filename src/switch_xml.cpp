@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  *
  *
- * switch_xml.c -- XML PARSER
+ * switch_xml.cpp -- XML PARSER
  *
  * Derived from ezxml http://ezxml.sourceforge.net
  * Original Copyright
