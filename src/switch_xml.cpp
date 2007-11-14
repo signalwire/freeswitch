@@ -983,6 +983,7 @@ static int preprocess(const char *file, int write_fd, int rlevel)
 	int read_fd = -1;
 	switch_size_t cur = 0, ml = 0;
 	char *q, *cmd, buf[2048], ebuf[8192];
+	const char *tcmd, *targ;
 
 	if ((read_fd = open(file, O_RDONLY, 0)) < 0) {
 		return read_fd;
@@ -1011,6 +1012,78 @@ static int preprocess(const char *file, int write_fd, int rlevel)
 			}
 		}
 
+		if ((tcmd = switch_stristr(bp, "<X-pre-process"))) {
+			if ((e = strstr(tcmd, "/>"))) {
+				*e += 2;
+				*e = '\0';
+				if(write(write_fd, e, (unsigned) strlen(e)) != (int) strlen(e)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write!\n");
+				}
+			}
+			
+			if (!(tcmd = switch_stristr(tcmd, "cmd"))) {
+				continue;
+			}
+
+			if (!(tcmd = switch_stristr(tcmd, "="))) {
+				continue;
+			}
+
+			if (!(tcmd = switch_stristr(tcmd, "\""))) {
+				continue;
+			}
+			
+			tcmd++;
+
+			
+			if ((e = strchr(tcmd, '"'))) {
+				*e++ = '\0';
+			}
+
+			if (!(targ = switch_stristr(e, "data"))) {
+				continue;
+			}
+
+			if (!(targ = switch_stristr(targ, "="))) {
+				continue;
+			}
+
+			if (!(targ = switch_stristr(targ, "\""))) {
+				continue;
+			}
+
+			targ++;
+
+			if ((e = strchr(targ, '"'))) {
+				*e++ = '\0';
+			}
+			
+			if (!strcasecmp(tcmd, "set")) {
+				char *name = (char *)targ;
+				char *val = strchr(name, '=');
+				
+				if (val) {
+					char *ve = val++;
+					while (*val && *val == ' ') {
+							val++;
+					}
+					*ve-- = '\0';
+					while (*ve && *ve == ' ') {
+						*ve-- = '\0';
+					}
+				}
+				
+				if (name && val) {
+					switch_core_set_variable(name, val);
+				}
+				
+			} else if (!strcasecmp(tcmd, "include")) {
+				preprocess_glob(targ, write_fd, rlevel + 1);
+			}
+
+			continue;
+		}
+		
 		if ((cmd = strstr(bp, "<!--#"))) {
 			if(write(write_fd, bp, (unsigned) (cmd - bp)) != (cmd - bp)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write!\n");
