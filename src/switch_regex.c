@@ -68,12 +68,14 @@ SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expressi
 		return 0;
 	}
 
-	if (*expression == '/' && *(expression + (strlen(expression) - 1)) == '/') {
+	if (*expression == '/') {
 		char *opts = NULL;
 		tmp = strdup(expression + 1);
 		assert(tmp);
 		if ((opts = strrchr(tmp, '/'))) {
 			*opts++ = '\0';
+		} else {
+			goto end;
 		}
 		expression = tmp;
 		if (opts) {
@@ -85,6 +87,7 @@ SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expressi
 			}
 		}
 	}
+
 
 	re = pcre_compile(expression,	/* the pattern */
 					  flags,		/* default options */
