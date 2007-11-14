@@ -61,20 +61,40 @@ SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expressi
 	int erroffset = 0;
 	pcre *re = NULL;
 	int match_count = 0;
+	char *tmp = NULL;
+	uint32_t flags = 0;
 
 	if (!(field && expression)) {
 		return 0;
 	}
 
+	if (*expression == '/' && *(expression + (strlen(expression) - 1)) == '/') {
+		char *opts = NULL;
+		tmp = strdup(expression + 1);
+		assert(tmp);
+		if ((opts = strrchr(tmp, '/'))) {
+			*opts++ = '\0';
+		}
+		expression = tmp;
+		if (opts) {
+			if (strchr(opts, 'i')) {
+				flags |= PCRE_CASELESS;
+			}
+			if (strchr(opts, 's')) {
+				flags |= PCRE_DOTALL;
+			}
+		}
+	}
+
 	re = pcre_compile(expression,	/* the pattern */
-					  0,		/* default options */
+					  flags,		/* default options */
 					  &error,	/* for error message */
 					  &erroffset,	/* for error offset */
 					  NULL);	/* use default character tables */
 	if (error) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "COMPILE ERROR: %d [%s]\n", erroffset, error);
 		switch_regex_safe_free(re);
-		return 0;
+		goto end;
 	}
 
 	match_count = pcre_exec(re,	/* result of pcre_compile() */
@@ -93,6 +113,8 @@ SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expressi
 
 	*new_re = (switch_regex_t *) re;
 
+ end:
+	switch_safe_free(tmp);
 	return match_count;
 }
 
