@@ -1,23 +1,23 @@
   <!-- Preprocessor Variables
        These are introduced when configuration strings must be consistent across modules. 
    -->
-  <!--#set "domain=$${local_ip_v4}"-->
+  <X-PRE-PROCESS cmd="set" data="domain=$${local_ip_v4}"/>
   <!-- sip_profile 
        Must be a domain name if you are being a registry server; otherwise
        can be any string.
        used by: sofia.conf.xml enum.conf.xml default_context.xml directory.xml
   --> 
-  <!--#set "sip_profile=$${domain}"-->
-  <!--#set "nat_sip_profile=nat_$${domain}"-->
+  <X-PRE-PROCESS cmd="set" data="sip_profile=$${domain}"/>
+  <X-PRE-PROCESS cmd="set" data="nat_sip_profile=nat_$${domain}"/>
   <!-- xmpp_client_profile and xmpp_server_profile
        xmpp_client_profile can be any string. 
        xmpp_server_profile is appended to "dingaling_" to form the database name
        containing the "subscriptions" table.
        used by: dingaling.conf.xml enum.conf.xml 
   --> 
-  <!--#set "global_codec_prefs=PCMU@20i"-->
-  <!--#set "xmpp_client_profile=xmppc"-->
-  <!--#set "xmpp_server_profile=xmpps"-->
+  <X-PRE-PROCESS cmd="set" data="global_codec_prefs=PCMU@20i"/>
+  <X-PRE-PROCESS cmd="set" data="xmpp_client_profile=xmppc"/>
+  <X-PRE-PROCESS cmd="set" data="xmpp_server_profile=xmpps"/>
   <!-- bind_server_ip
        Can be an ip address, a dns name, or "auto". 
        This determines an ip address available on this host to bind.
@@ -25,21 +25,21 @@
        use different addresses where this variable appears.
        Used by: sofia.conf.xml dingaling.conf.xml
   -->
-  <!--#set "bind_server_ip=auto"-->
+  <X-PRE-PROCESS cmd="set" data="bind_server_ip=auto"/>
   <!-- external_rtp_ip
        Used as the public IP address for SDP.
        Can be an ip address or a string like "stun:stun.server.com" 
        If unspecified, the bind_server_ip value is used.
        Used by: sofia.conf.xml dingaling.conf.xml
   -->
-  <!--#set "external_rtp_ip=stun:stun.fwdnet.net"-->
+  <X-PRE-PROCESS cmd="set" data="external_rtp_ip=stun:stun.fwdnet.net"/>
   <!-- external_sip_ip
        Used as the public IP address for SDP.
        Can be an ip address or a string like "stun:stun.server.com" 
        If unspecified, the bind_server_ip value is used.
        Used by: sofia.conf.xml dingaling.conf.xml
   -->
-  <!--#set "external_sip_ip=stun:stun.fwdnet.net"-->
+  <X-PRE-PROCESS cmd="set" data="external_sip_ip=stun:stun.fwdnet.net"/>
   <!-- server_name
        A public ip address or DNS name that is used when advertising conference
        presence or registering sip.
@@ -49,6 +49,6 @@
        The caller ID telephone number we should use when calling out.
        Used by: conference.conf.xml
   -->
-  <!--#set "outbound_caller_name=FreeSWITCH"-->
-  <!--#set "outbound_caller_id=8777423583"-->
+  <X-PRE-PROCESS cmd="set" data="outbound_caller_name=FreeSWITCH"/>
+  <X-PRE-PROCESS cmd="set" data="outbound_caller_id=8777423583"/>
 

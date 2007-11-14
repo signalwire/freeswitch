@@ -9,63 +9,66 @@
                    (note the double $$ which denotes preprocessor variables)
       #comment ==> A general comment such as this
       
-      The preprocessor will compile the full xml document to ${prefix}/log/freeswitch.registry
+      The preprocessor will compile the full xml document to ${prefix}/log/freeswitch.xml.fsxml
       Don't modify it while freeswitch is running cos it is mem mapped in most cases =D
+      
+      The same can be achieved with the <X-PRE-PROCESS> tag where the attrs 'cmd' and 'data' are
+      parsed in the same way.
   -->
   <!--#comment
       vars.xml contains all the #set directives for the preprocessor.
   -->
-  <!--#include "vars.xml"-->
+  <X-PRE-PROCESS cmd="include" data="vars.xml"/>
 
   <section name="configuration" description="Various Configuration">
-    <!--#include "switch.conf.xml"-->
-    <!--#include "modules.conf.xml"-->
+    <X-PRE-PROCESS cmd="include" data="switch.conf.xml"/>
+    <X-PRE-PROCESS cmd="include" data="modules.conf.xml"/>
 
     <!-- Order doesn't matter, but for clarity these are in same order as modules.conf.xml. 
          If they aren't loaded by modules.conf.xml, then they are ignored.
     --> 
     <!-- Loggers -->
-    <!--#include "console.conf.xml"-->
-    <!--#include "syslog.conf.xml"-->
+    <X-PRE-PROCESS cmd="include" data="console.conf.xml"/>
+    <X-PRE-PROCESS cmd="include" data="syslog.conf.xml"/>
 
     <!-- Multi-Faceted -->
-    <!--#include "enum.conf.xml"-->
+    <X-PRE-PROCESS cmd="include" data="enum.conf.xml"/>
 
     <!-- XML Interfaces --> 
-    <!--#include "xml_rpc.conf.xml"-->
-    <!--#include "xml_cdr.conf.xml"-->
-    <!--#include "xml_curl.conf.xml"-->
+    <X-PRE-PROCESS cmd="include" data="xml_rpc.conf.xml"/>
+    <X-PRE-PROCESS cmd="include" data="xml_cdr.conf.xml"/>
+    <X-PRE-PROCESS cmd="include" data="xml_curl.conf.xml"/>
     <!-- none for mod_xml_cdr -->
 
     <!-- Event Handlers -->
-    <!--#include "cdr.conf.xml"-->
-    <!--#include "event_multicast.conf.xml"-->
-    <!--#include "event_socket.conf.xml"-->
-    <!--#include "xmpp_event.conf.xml"-->
-    <!--#include "zeroconf.conf.xml"-->
+    <X-PRE-PROCESS cmd="include" data="cdr.conf.xml"/>
+    <X-PRE-PROCESS cmd="include" data="event_multicast.conf.xml"/>
+    <X-PRE-PROCESS cmd="include" data="event_socket.conf.xml"/>
+    <X-PRE-PROCESS cmd="include" data="xmpp_event.conf.xml"/>
+    <X-PRE-PROCESS cmd="include" data="zeroconf.conf.xml"/>
 
     <!-- Directory Interfaces -->
     <!-- none for mod_ldap; dialplan_directory.conf.xml has ldap connection info -->
 
     <!-- Endpoints -->
-    <!--#include "dingaling.conf.xml"-->
-    <!--#include "iax.conf.xml"-->
-    <!--#include "portaudio.conf.xml"-->
-    <!--#include "alsa.conf.xml"-->
-    <!--#include "sofia.conf.xml"-->
-    <!--#include "wanpipe.conf.xml"-->
-    <!--#include "woomera.conf.xml"-->
+    <X-PRE-PROCESS cmd="include" data="dingaling.conf.xml"/>
+    <X-PRE-PROCESS cmd="include" data="iax.conf.xml"/>
+    <X-PRE-PROCESS cmd="include" data="portaudio.conf.xml"/>
+    <X-PRE-PROCESS cmd="include" data="alsa.conf.xml"/>
+    <X-PRE-PROCESS cmd="include" data="sofia.conf.xml"/>
+    <X-PRE-PROCESS cmd="include" data="wanpipe.conf.xml"/>
+    <X-PRE-PROCESS cmd="include" data="woomera.conf.xml"/>
 
     <!-- Applications -->
     <!-- none for mod_bridgecall, mod_commands, mod_echo, mod_park, mod_playback --> 
-    <!--#include "conference.conf.xml"-->
+    <X-PRE-PROCESS cmd="include" data="conference.conf.xml"/>
     <!-- ivr.conf is used by mod_dptools -->
-    <!--#include "ivr.conf.xml"-->
-    <!--#include "voicemail.conf.xml"-->
-    <!--#include "limit.conf.xml"-->
+    <X-PRE-PROCESS cmd="include" data="ivr.conf.xml"/>
+    <X-PRE-PROCESS cmd="include" data="voicemail.conf.xml"/>
+    <X-PRE-PROCESS cmd="include" data="limit.conf.xml"/>
 
     <!-- Dialplan Interfaces -->
-    <!--#include "dialplan_directory.conf.xml"-->
+    <X-PRE-PROCESS cmd="include" data="dialplan_directory.conf.xml"/>
     <!-- mod_dialplan_xml is configured in the separate "dialplan" section. -->
 
     <!-- Codec Interfaces -->
@@ -76,41 +79,41 @@
     <!-- no configuration needed -->
 
     <!-- Languages -->
-    <!--#include "spidermonkey.conf.xml"-->
+    <X-PRE-PROCESS cmd="include" data="spidermonkey.conf.xml"/>
     <!-- none for mod_perl -->
-    <!--#include "java.conf.xml"-->
+    <X-PRE-PROCESS cmd="include" data="java.conf.xml"/>
 
     <!-- ASR /TTS -->
     <!-- none for mod_cepstral -->
-    <!--#include "rss.conf.xml"-->
-    <!--#include "mod_openmrcp.conf.xml"-->
+    <X-PRE-PROCESS cmd="include" data="rss.conf.xml"/>
+    <X-PRE-PROCESS cmd="include" data="mod_openmrcp.conf.xml"/>
 
     <!-- Say -->
     <!-- none for mod_say_en -->
-    <!--#include "mod_cdr.conf.xml"-->
-    <!--#include "mod_local_stream.conf.xml"-->
+    <X-PRE-PROCESS cmd="include" data="mod_cdr.conf.xml"/>
+    <X-PRE-PROCESS cmd="include" data="mod_local_stream.conf.xml"/>
   </section>
   
   <section name="dialplan" description="Regex/XML Dialplan">
-    <!--#include "dialplan/*.xml"-->
+    <X-PRE-PROCESS cmd="include" data="dialplan/*.xml"/>
   </section>
 
   <!-- mod_dingaling is reliant on the vcard data in the "directory" section. -->
   <!-- mod_sofia is reliant on the user data for authorization --> 
   <section name="directory" description="User Directory">
-    <!--#include "directory/*.xml"-->
+    <X-PRE-PROCESS cmd="include" data="directory/*.xml"/>
   </section>
 
   <!-- phrases section (under development still) -->
   <section name="phrases" description="Speech Phrase Management">
     <macros>
       <language name="en" sound-path="/snds" tts-engine="cepstral" tts-voice="david">
-	<!--#include "lang_en.xml"-->
+	<X-PRE-PROCESS cmd="include" data="lang_en.xml"/>
 	<!--voicemail_en_tts is purely implemented with tts, we need a files based implementation too -->
-	<!--#include "voicemail_en_tts.xml"-->
+	<X-PRE-PROCESS cmd="include" data="voicemail_en_tts.xml"/>
       </language>
       <language name="fr" sound_path="/var/sounds/lang/fr/jean" tts_engine="cepstral" tts_voice="jean-pierre">
-	<!--#include "lang_fr.xml"-->
+	<X-PRE-PROCESS cmd="include" data="lang_fr.xml"/>
       </language>
     </macros>
   </section>
