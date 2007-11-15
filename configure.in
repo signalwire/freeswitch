@@ -138,7 +138,6 @@ if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
     APR_ADDTO(SWITCH_AM_LDFLAGS, -R${prefix}/lib)
     if test "${enable_64}" = "yes"; then
         APR_ADDTO(SWITCH_AM_CFLAGS, -m64)
-        APR_ADDTO(SWITCH_AM_LDFLAGS, -L/opt/csw/lib/amd64)
     fi
 elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     APR_ADDTO(SWITCH_AM_CFLAGS, -fPIC)
