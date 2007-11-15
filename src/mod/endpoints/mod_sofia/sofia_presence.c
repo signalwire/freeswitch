@@ -155,7 +155,7 @@ char *sofia_presence_translate_rpid(char *in, char *ext)
 {
 	char *r = in;
 
-	if (in && (switch_stristr(in, "null"))) {
+	if (in && (switch_stristr("null", in))) {
 		in = NULL;
 	}
 	

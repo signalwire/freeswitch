@@ -470,6 +470,34 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char *uri, const char *transport)
+{
+	char *stripped = switch_core_session_strdup(session, uri);
+	char *new_uri = NULL;
+
+	stripped = sofia_glue_get_url_from_contact(stripped, 0);
+	if (transport && strcasecmp(transport, "udp")) {
+		if (switch_stristr("port=", stripped)) {
+			new_uri = switch_core_session_sprintf(session, "<%s>", stripped);
+		} else {
+			if (strchr(stripped, ';')) {
+				new_uri = switch_core_session_sprintf(session, "<%s&transport=%s>", stripped, transport);
+			} else {
+				new_uri = switch_core_session_sprintf(session, "<%s;transport=%s>", stripped, transport);
+			}
+		}
+	} else {
+		char *p;
+		if ((p = strrchr(stripped, ';'))) {
+			*p = '\0';
+		}
+		new_uri = stripped;
+	}
+
+	return new_uri;
+}
+
+
 switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 {
 	char *rpid = NULL;
@@ -562,7 +590,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		sofia_private_t *sofia_private;
 		char *invite_contact = NULL, *to_str, *use_from_str, *from_str, *url_str;
 		const char *transport = "udp", *t_var;
-		char *d_contact = NULL;
 
 		if (switch_strlen_zero(tech_pvt->dest)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "URL Error! [%s]\n", tech_pvt->dest);
@@ -586,7 +613,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		} else {
 			use_from_str = tech_pvt->from_str;
 		}
-
+		
 		if (switch_stristr("port=tcp", url)) {
 			transport = "tcp";
 		} else {
@@ -595,33 +622,13 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 					transport = t_var;
 				}
 			}
-			url_str = switch_core_session_sprintf(session, "%s;transport=%s", url, transport);
-		}
-		
-		d_contact = sofia_glue_get_url_from_contact(tech_pvt->invite_contact, 1);
-		
-		if (switch_stristr("port=", d_contact)) {
-			invite_contact = switch_core_session_sprintf(session, "<%s>", d_contact);
-		} else {
-			if (strchr(d_contact, ';')) {
-				invite_contact = switch_core_session_sprintf(session, "<%s&transport=%s>", d_contact, transport);
-			} else {
-				invite_contact = switch_core_session_sprintf(session, "%s;transport=%s", d_contact, transport);
-			}
-		}
-		
-		if (strchr(use_from_str, '>')) {
-			from_str = switch_core_session_sprintf(session, "%s;transport=%s", use_from_str, transport);
-		} else {
-			from_str = switch_core_session_sprintf(session, "<%s;transport=%s>", use_from_str, transport);
 		}
 
-		if (strchr(tech_pvt->dest_to, '>')) {
-			to_str = switch_core_session_sprintf(session, "%s;transport=%s", tech_pvt->dest_to, transport);
-		} else {
-			to_str = switch_core_session_sprintf(session, "<%s;transport=%s>", tech_pvt->dest_to, transport);
-		}
-
+		url_str = sofia_overcome_sip_uri_weakness(session, url, transport);
+		invite_contact = sofia_overcome_sip_uri_weakness(session, tech_pvt->invite_contact, transport);
+		from_str = sofia_overcome_sip_uri_weakness(session, use_from_str, NULL);
+		to_str = sofia_overcome_sip_uri_weakness(session, tech_pvt->dest_to, NULL);
+		
 		tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
 								  NUTAG_URL(url_str),
 								  SIPTAG_TO_STR(to_str),
@@ -630,7 +637,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 								  TAG_END());
 
 		switch_safe_free(d_url);
-		switch_safe_free(d_contact);
 		
 		if (!(sofia_private = malloc(sizeof(*sofia_private)))) {
 			abort();

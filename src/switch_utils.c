@@ -334,7 +334,7 @@ SWITCH_DECLARE(switch_bool_t) switch_is_number(const char *str)
 }
 
 
-SWITCH_DECLARE(const char *) switch_stristr(const char *str, const char *instr)
+SWITCH_DECLARE(const char *) switch_stristr(const char *instr, const char *str)
 {
 /*
 ** Rev History:  16/07/97  Greg Thayer		Optimized

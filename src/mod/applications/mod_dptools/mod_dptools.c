@@ -1337,7 +1337,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 		   if the variable continue_on_fail is set it can be:
 		   'true' to continue on all failures.
 		   'false' to not continue.
-		   A list of codes either names or numbers eg "user_busy,normal_temporary_failure"
+		   A list of codes either names or numbers eg "user_busy,normal_temporary_failure,603"
 		*/
 		if (continue_on_fail) {
 			const char *cause_str;
@@ -1346,7 +1346,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 			cause_str = switch_channel_cause2str(cause);
 			snprintf(cause_num, sizeof(cause_num), "%u", cause);
 
-			if (switch_true(continue_on_fail) || switch_stristr(cause_str, continue_on_fail) || strstr(cause_str, cause_num)) {
+			if (switch_true(continue_on_fail) || switch_stristr(cause_str, continue_on_fail) || strstr(cause_num, continue_on_fail)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Continue on fail [%s]:  Cause: %s\n", continue_on_fail, cause_str);
 				return;
 			}

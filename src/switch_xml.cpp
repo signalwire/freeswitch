@@ -1018,7 +1018,7 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 			}
 		}
 
-		if ((tcmd = (char *)switch_stristr(bp, "<X-pre-process"))) {
+		if ((tcmd = (char *)switch_stristr("<X-pre-process", bp))) {
 			if ((e = strstr(tcmd, "/>"))) {
 				*e += 2;
 				*e = '\0';
@@ -1027,15 +1027,15 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 				}
 			}
 			
-			if (!(tcmd = (char *)switch_stristr(tcmd, "cmd"))) {
+			if (!(tcmd = (char *)switch_stristr("cmd", tcmd))) {
 				continue;
 			}
 
-			if (!(tcmd = (char *)switch_stristr(tcmd, "="))) {
+			if (!(tcmd = (char *)switch_stristr("=", tcmd))) {
 				continue;
 			}
 
-			if (!(tcmd = (char *)switch_stristr(tcmd, "\""))) {
+			if (!(tcmd = (char *)switch_stristr("\"", tcmd))) {
 				continue;
 			}
 			
@@ -1046,15 +1046,15 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 				*e++ = '\0';
 			}
 
-			if (!(targ = (char *)switch_stristr(e, "data"))) {
+			if (!(targ = (char *)switch_stristr("data", e))) {
 				continue;
 			}
 
-			if (!(targ = (char *)switch_stristr(targ, "="))) {
+			if (!(targ = (char *)switch_stristr("=", targ))) {
 				continue;
 			}
 
-			if (!(targ = (char *)switch_stristr(targ, "\""))) {
+			if (!(targ = (char *)switch_stristr("\"", targ))) {
 				continue;
 			}
 
@@ -1694,7 +1694,7 @@ SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
 	}
 
 	if (xml->free_path) {
-		if (!switch_stristr(xml->free_path, ".fsxml")) {
+		if (!switch_stristr(".fsxml", xml->free_path)) {
 			unlink(xml->free_path);
 		}
 		switch_safe_free(xml->free_path);
