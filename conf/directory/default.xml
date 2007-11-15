@@ -18,6 +18,8 @@
       <!--<param name="username" value="cluecon"/>-->
       <!--/// auth realm: *optional* same as gateway name, if blank ///-->
       <!--<param name="realm" value="asterlink.com"/>-->
+      <!--/// username to use in from: *optional* same as  username, if blank ///-->
+      <!--<param name="from-user" value="cluecon"/>-->
       <!--/// domain to use in from: *optional* same as  realm, if blank ///-->
       <!--<param name="from-domain" value="asterlink.com"/>-->
       <!--/// account password *required* ///-->

@@ -561,6 +561,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				*context = "default",
 				*expire_seconds = "3600",
 				*retry_seconds = "30",
+				*from_user = "",
 				*from_domain = "",
 				*register_proxy = NULL,
 				*contact_params = NULL,
@@ -599,6 +600,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					expire_seconds = val;
 				} else if (!strcmp(var, "retry-seconds")) {
 					retry_seconds = val;
+				} else if (!strcmp(var, "from-user")) {
+					from_user = val;
 				} else if (!strcmp(var, "from-domain")) {
 					from_domain = val;
 				} else if (!strcmp(var, "register-proxy")) {
@@ -627,6 +630,10 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			if (switch_strlen_zero(password)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: password param is REQUIRED!\n");
 				goto skip;
+			}
+
+			if (switch_strlen_zero(from_user)) {
+				from_user = username;
 			}
 
 			if (switch_strlen_zero(extension)) {
@@ -672,9 +679,9 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				params = switch_core_sprintf(gateway->pool, ";transport=%s", register_transport);
 			}
 			
-
+			
 			gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s;transport=%s", register_proxy,register_transport);
-			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>", username, from_domain, register_transport);
+			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>", from_user, from_domain, register_transport);
 			gateway->register_contact = switch_core_sprintf(gateway->pool, "<sip:%s@%s:%d%s>", extension,
 															profile->extsipip ? profile->extsipip : profile->sipip, profile->sip_port, params);
 
