@@ -48,7 +48,7 @@ CDRContainer::CDRContainer(switch_memory_pool_t *module_pool)
 	
 	queue_paused = 0;
 	
-	strcpy(configfile,"mod_cdr.conf");
+	strcpy(configfile,"cdr.conf");
 	
 	switch_mod_cdr_newchannel_t *newchannel; // = new switch_mod_cdr_newchannel_t;
 	newchannel = 0;

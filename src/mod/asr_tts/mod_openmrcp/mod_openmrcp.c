@@ -771,7 +771,7 @@ static void openmrcp_float_param_tts(switch_speech_handle_t *sh, char *param, do
 
 static switch_status_t do_config()
 {
-	char *cf = "mod_openmrcp.conf";
+	char *cf = "openmrcp.conf";
 	switch_xml_t cfg, xml, settings, profiles, xprofile, param;
 	openmrcp_profile_t *mrcp_profile;
 	openmrcp_client_options_t *mrcp_options;
