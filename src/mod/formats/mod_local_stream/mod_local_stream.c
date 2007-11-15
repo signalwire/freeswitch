@@ -97,7 +97,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "open directory: %s\n", source->location);
 		switch_yield(1000000);
 
-		while((fname = switch_dir_next_file(source->dir_handle, file_buf, sizeof(file_buf)))) {
+		while(RUNNING && (fname = switch_dir_next_file(source->dir_handle, file_buf, sizeof(file_buf)))) {
 			switch_size_t olen;
 			uint8_t *abuf[SWITCH_RECOMMENDED_BUFFER_SIZE] =  {0};
 
