@@ -1,5 +1,5 @@
 <configuration name="local_stream.conf" description="stream files from local dir">
-<directory name="foo" path="/var/lib/asterisk/moh">
+<directory name="foo" path="/path/to/moh/files">
   <param name="rate" value="8000"/>
   <param name="channels" value="1"/>
   <param name="interval" value="2"/>
