@@ -21,6 +21,9 @@
   <X-PRE-PROCESS cmd="include" data="vars.xml"/>
 
   <section name="configuration" description="Various Configuration">
+    <!-- drop in configs -->
+    <X-PRE-PROCESS cmd="include" data="autoload_configs/*.xml"/>
+
     <X-PRE-PROCESS cmd="include" data="switch.conf.xml"/>
     <X-PRE-PROCESS cmd="include" data="modules.conf.xml"/>
 
