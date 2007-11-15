@@ -97,9 +97,6 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_disconnect(switch_odbc_h
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Disconnectiong [%s]\n", handle->dsn);
 		}
 	} 
-	//else {
-	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "[%s] already disconnected\n", handle->dsn);
-	//}
 
 	handle->state = SWITCH_ODBC_STATE_DOWN;
 
@@ -163,17 +160,16 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 	}
 
 	result = SQLGetInfo(handle->con, SQL_DRIVER_NAME, (SQLCHAR*)handle->odbc_driver, 255, &valueLength);
-	if ( result == SQL_SUCCESS || result == SQL_SUCCESS_WITH_INFO)
-	{
+	if ( result == SQL_SUCCESS || result == SQL_SUCCESS_WITH_INFO) {
 		for (i = 0; i < valueLength; ++i)
 			handle->odbc_driver[i] = (char)toupper(handle->odbc_driver[i]);
 	}
 
-	//Firebird do not support "SELECT 1"
-	if (strstr(handle->odbc_driver, "FIREBIRD") != 0 || strstr(handle->odbc_driver, "FB32") != 0 || strstr(handle->odbc_driver, "FB64") != 0)
+	if (strstr(handle->odbc_driver, "FIREBIRD") != 0 || strstr(handle->odbc_driver, "FB32") != 0 || strstr(handle->odbc_driver, "FB64") != 0) {
 		handle->is_firebird = TRUE;
-	else
+	} else {
 		handle->is_firebird = FALSE;
+	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connected to [%s]\n", handle->dsn);
 	handle->state = SWITCH_ODBC_STATE_CONNECTED;
@@ -190,18 +186,20 @@ static int db_is_up(switch_odbc_handle_t *handle)
 	switch_event_t *event;
 	switch_odbc_status_t recon = 0;
 	char *err_str = NULL;
-	SQLCHAR sql[255];
+	SQLCHAR sql[255] = "";
+	int max_tries = 120;
 
-	//Firebird do not support "SELECT 1"
-	sql[0] = 0;
-	if (handle->is_firebird)
-		strcpy((char*)sql, "select first 1 * from RDB$RELATIONS");
-	else
-		strcpy((char*)sql, "select 1");
-
+ top:
+	
 	if (!handle) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No DB Handle\n");
 		goto done;
+	}
+
+	if (handle->is_firebird) {
+		strcpy((char*)sql, "select first 1 * from RDB$RELATIONS");
+	} else {
+		strcpy((char*)sql, "select 1");
 	}
 
     if (SQLAllocHandle(SQL_HANDLE_STMT, handle->con, &stmt) != SQL_SUCCESS) {
@@ -217,17 +215,18 @@ static int db_is_up(switch_odbc_handle_t *handle)
 	SQLRowCount(stmt, &m);
 	ret = (int) m;
 
+	if (result < 0 || m < 0) {
+		goto error;
+	}
+
 	goto done;
 
  error:
 	err_str = switch_odbc_handle_get_error(handle, stmt);
+	recon = switch_odbc_handle_connect(handle);
 
-	// No need to reconnect if we can get the string anyway.
-	if (err_str == 0)
-	{
-		recon = switch_odbc_handle_connect(handle);
-		err_str = switch_odbc_handle_get_error(handle, stmt);
-	}
+	
+	max_tries--;
 
 	if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Failure-Message", "The sql server is not responding for DSN %s [%s]", 
@@ -242,8 +241,21 @@ static int db_is_up(switch_odbc_handle_t *handle)
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Additional-Info", "The connection could not be re-established");
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "The connection could not be re-established\n");
 		}
+		if (!max_tries) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Additional-Info", "Giving up!");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Giving up!\n");
+		}
+
 		switch_event_fire(&event);
 	}
+
+	if (!max_tries) {
+		goto done;
+	}
+
+	switch_safe_free(err_str);
+	switch_yield(1000000);
+	goto top;
 	
  done:
 
