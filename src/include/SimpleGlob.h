@@ -366,7 +366,9 @@ struct SimpleGlobBase
     int FindFirstFileS(const char * a_pszFileSpec, unsigned int a_uiFlags) {
         int nFlags = GLOB_MARK | GLOB_NOSORT;
         if (a_uiFlags & SG_GLOB_ERR)    nFlags |= GLOB_ERR;
+#ifdef GLOB_TILDE
         if (a_uiFlags & SG_GLOB_TILDE)  nFlags |= GLOB_TILDE;
+#endif
         int rc = glob(a_pszFileSpec, nFlags, NULL, &m_glob);
         if (rc == GLOB_NOSPACE) return SG_ERR_MEMORY;
         if (rc == GLOB_ABORTED) return SG_ERR_FAILURE;
