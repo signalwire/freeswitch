@@ -41,7 +41,7 @@
     <!-- none for mod_xml_cdr -->
 
     <!-- Event Handlers -->
-    <X-PRE-PROCESS cmd="include" data="cdr.conf.xml"/>
+    <XX-PRE-PROCESS cmd="include" data="mod_cdr.conf.xml"/>
     <X-PRE-PROCESS cmd="include" data="event_multicast.conf.xml"/>
     <X-PRE-PROCESS cmd="include" data="event_socket.conf.xml"/>
     <X-PRE-PROCESS cmd="include" data="xmpp_event.conf.xml"/>
@@ -90,7 +90,6 @@
 
     <!-- Say -->
     <!-- none for mod_say_en -->
-    <X-PRE-PROCESS cmd="include" data="mod_cdr.conf.xml"/>
     <X-PRE-PROCESS cmd="include" data="mod_local_stream.conf.xml"/>
   </section>
   
