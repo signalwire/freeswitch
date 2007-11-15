@@ -1018,7 +1018,10 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 			}
 		}
 
-		if ((tcmd = (char *)switch_stristr("<X-pre-process", bp))) {
+		if ((tcmd = (char *)switch_stristr("X-pre-process", bp))) {
+			if (*(tcmd-1) != '<') {
+				continue;
+			}
 			if ((e = strstr(tcmd, "/>"))) {
 				*e += 2;
 				*e = '\0';
