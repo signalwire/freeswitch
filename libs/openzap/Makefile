@@ -98,18 +98,29 @@ $(SRC)/isdn/include/Q932.h
 
 PWD=$(shell pwd)
 INCS=-I$(PWD)/$(SRC)//include -I$(PWD)/$(SRC)//isdn/include
-CFLAGS=$(ZAP_CFLAGS) $(INCS)
+CFLAGS= $(INCS) $(ZAP_CFLAGS)
 MYLIB=libopenzap.a
 LIBPRIA=libpri.a
 LIBPRI=./libpri
 TMP=-I$(LIBPRI) -I$(SRC)/include -I./src -w
+
+PIKA_DIR=$(shell ls -d /usr/include/pika)
+PIKA_LIB=$(shell ls /usr/lib/libpikahmpapi.so)
+
+ifneq ($(PIKA_DIR),)
+ifneq ($(PIKA_LIB),)
+OBJS += $(SRC)/zap_pika.o
+CFLAGS += -DZAP_PIKA_SUPPORT -I$(PIKA_DIR)
+ADD_OBJS = $(PIKA_LIB)
+endif
+endif
 
 include general.makefile
 
 all: $(MYLIB)
 
 $(MYLIB): $(OBJS) $(HEADERS)
-	ar rcs $(MYLIB) $(OBJS) 
+	ar rcs $(MYLIB) $(OBJS) $(ADD_OBJS)
 	ranlib $(MYLIB)
 
 testapp: $(SRC)/testapp.c $(MYLIB)
@@ -119,13 +130,16 @@ testcid: $(SRC)/testcid.c $(MYLIB)
 	$(CC) $(INCS) -L. -g -ggdb $(SRC)/testcid.c -o testcid -lopenzap -lm -lpthread
 
 testtones: $(SRC)/testtones.c $(MYLIB)
-	$(CC) $(INCS) -L. $(SRC)/testtones.c -o testtones -lopenzap -lm -lpthread
+	$(CC) $(INCS) -L. $(SRC)/testtones.c -o testtones -lopenzap -lm
+
+detect_tones: $(SRC)/detect_tones.c $(MYLIB)
+	$(CC) $(INCS) -L. $(SRC)/detect_tones.c -o detect_tones -lopenzap -lm
 
 testisdn: $(SRC)/testisdn.c $(MYLIB)
 	$(CC) $(INCS) $(ZAP_CFLAGS) -L. $(SRC)/testisdn.c -o testisdn -lopenzap -lm -lpthread
 
 testanalog: $(SRC)/testanalog.c $(MYLIB)
-	$(CC) $(INCS) -L. $(SRC)/testanalog.c -o testanalog -lopenzap -lm -lpthread
+	$(CC) $(INCS) -L. $(SRC)/testanalog.c -o testanalog -lopenzap -lm -lpthread 
 
 $(SRC)/priserver.o: $(SRC)/priserver.c
 	$(CC) $(INCS) $(TMP) -c $(SRC)/priserver.c -o $(SRC)/priserver.o 
@@ -160,6 +174,6 @@ mod_openzap-clean:
 	@if [ -f mod_openzap/mod_openzap.so ] ; then cd mod_openzap && make clean ; fi
 
 clean: mod_openzap-clean
-	rm -f $(SRC)/*.o $(SRC)/isdn/*.o $(MYLIB) *~ \#* testapp testcid testtones priserver testisdn testanalog
+	rm -f $(SRC)/*.o $(SRC)/isdn/*.o $(MYLIB) *~ \#* testapp testcid testtones detect_tones priserver testisdn testanalog
 	@if [ -f $(LIBPRI)/$(LIBPRIA) ] ; then cd $(LIBPRI) && make clean ; fi
 
