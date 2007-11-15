@@ -1,6 +1,15 @@
 <!--the domain or ip (the right hand side of the @ in the addr-->
 <domain name="$${domain}">
   <!--the user id (the left hand side of the @ in the addr-->
+  <user id="default"> <!--if id is numeric mailbox param is not necessary-->
+    <variables>
+      <!--all variables here will be set on all inbound calls that originate from this user -->
+      <!-- set these to take advantage of a dialplan localized to this user -->
+      <variable name="numbering_plan" value="US"/>
+      <!-- <variable name="default_area_code" value="434"/> -->
+    </variables>
+  </user>
+
   <user id="brian" mailbox="1000"> <!--if id is numeric mailbox param is not necessary-->
     <!-- Outbound Registrations Related to this user -->
     <gateways>
@@ -71,6 +80,7 @@
       <!-- insert optional compliant vcard xml here-->
     </vcard>
   </user>
+
   <!-- this is an example of a user with auth and various settings -->
   <user id="1000" mailbox="1000">
     <params>
