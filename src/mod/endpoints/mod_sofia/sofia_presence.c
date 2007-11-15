@@ -136,7 +136,7 @@ void sofia_presence_establish_presence(sofia_profile_t *profile)
 {
 
 	if (sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, 
-										"select user,host,'Registered','unknown','' from sip_registrations", 
+										"select sip_user,sip_host,'Registered','unknown','' from sip_registrations", 
 										sofia_presence_resub_callback, profile) != SWITCH_TRUE) {
 		return;
 	}
@@ -364,7 +364,7 @@ void sofia_presence_event_handler(switch_event_t *event)
 			}
 
 			if (euser && host &&
-				(sql = switch_mprintf("select user,host,status,rpid,'' from sip_registrations where user='%q' and host='%q'",
+				(sql = switch_mprintf("select user,host,status,rpid,'' from sip_registrations where sip_user='%q' and sip_host='%q'",
 									  euser, host)) && (profile = sofia_glue_find_profile(host))) {
 				
 				sofia_glue_execute_sql_callback(profile,
@@ -846,7 +846,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		switch_safe_free(sstr);
 
-		if ((sql = switch_mprintf("select * from sip_subscriptions where user='%q' and host='%q'", to_user, to_host, to_user, to_host))) {
+		if ((sql = switch_mprintf("select * from sip_subscriptions where sip_user='%q' and sip_host='%q'", to_user, to_host, to_user, to_host))) {
 			sofia_glue_execute_sql_callback(profile,
 											SWITCH_FALSE,
 											profile->ireg_mutex,
@@ -941,7 +941,7 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 				}
 
 				if ((sql =
-					 switch_mprintf("update sip_registrations set status='%q',rpid='%q' where user='%q' and host='%q'",
+					 switch_mprintf("update sip_registrations set status='%q',rpid='%q' where sip_user='%q' and sip_host='%q'",
 									note_txt, rpid, from_user, from_host))) {
 					sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 					switch_safe_free(sql);

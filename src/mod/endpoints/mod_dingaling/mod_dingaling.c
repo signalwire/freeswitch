@@ -1918,14 +1918,14 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 		profile->password = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "avatar")) {
 		profile->avatar = switch_core_strdup(module_pool, val);
-	} else if (!strcasecmp(var, "odbc-dsn")) {
+	} else if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
 #ifdef SWITCH_HAVE_ODBC
 		profile->odbc_dsn = switch_core_strdup(module_pool, val);
 		if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
 			*profile->odbc_user++ = '\0';
-		}
-		if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
-			*profile->odbc_pass++ = '\0';
+			if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
+				*profile->odbc_pass++ = '\0';
+			}
 		}
 		
 		

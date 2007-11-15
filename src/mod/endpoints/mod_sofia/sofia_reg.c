@@ -269,9 +269,9 @@ char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const c
 	cbt.len = len;
 
 	if (host) {
-		snprintf(val, len, "select contact from sip_registrations where user='%s' and host='%s'", user, host);
+		snprintf(val, len, "select contact from sip_registrations where sip_user='%s' and sip_host='%s'", user, host);
 	} else {
-		snprintf(val, len, "select contact from sip_registrations where user='%s'", user);
+		snprintf(val, len, "select contact from sip_registrations where sip_user='%s'", user);
 	}
 
 
@@ -483,7 +483,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 		if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
 			sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
 		} else {
-			sql = switch_mprintf("delete from sip_registrations where user='%q' and host='%q'", to_user, to_host);
+			sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", to_user, to_host);
 		}
 		switch_mutex_lock(profile->ireg_mutex);
 		sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, NULL);
@@ -536,7 +536,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			if ((p = strchr(icontact + 4, ':'))) {
 				*p = '\0';
 			}
-			if ((sql = switch_mprintf("delete from sip_subscriptions where user='%q' and host='%q' and contact like '%%%q%%'", to_user, to_host, icontact))) {
+			if ((sql = switch_mprintf("delete from sip_subscriptions where sip_user='%q' and sip_host='%q' and contact like '%%%q%%'", to_user, to_host, icontact))) {
 				sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 				switch_safe_free(sql);
 				sql = NULL;
@@ -549,13 +549,13 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 			}
 			switch_safe_free(icontact);
 		} else {
-			if ((sql = switch_mprintf("delete from sip_subscriptions where user='%q' and host='%q'", to_user, to_host))) {
+			if ((sql = switch_mprintf("delete from sip_subscriptions where sip_user='%q' and sip_host='%q'", to_user, to_host))) {
 				sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 				switch_safe_free(sql);
 				sql = NULL;
 			}
 			
-			if ((sql = switch_mprintf("delete from sip_registrations where user='%q' and host='%q'", to_user, to_host))) {
+			if ((sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", to_user, to_host))) {
 				sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 				switch_safe_free(sql);
 				sql = NULL;

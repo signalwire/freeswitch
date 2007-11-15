@@ -416,14 +416,14 @@ static switch_status_t load_config(void)
                 } else {
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid attempts [%s] must be between 1 and 10000s\n", val);
                 }
-            } else if (!strcasecmp(var, "odbc-dsn")) {
+            } else if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
 #ifdef SWITCH_HAVE_ODBC
                 odbc_dsn = switch_core_strdup(globals.pool, val);
                 if ((odbc_user = strchr(odbc_dsn, ':'))) {
                     *odbc_user++ = '\0';
-                }
-                if ((odbc_pass = strchr(odbc_user, ':'))) {
-                    *odbc_pass++ = '\0';
+                    if ((odbc_pass = strchr(odbc_user, ':'))) {
+                        *odbc_pass++ = '\0';
+                    }
                 }
 #else
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");

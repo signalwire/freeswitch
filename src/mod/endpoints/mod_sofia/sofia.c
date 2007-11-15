@@ -167,7 +167,7 @@ void sofia_event_callback(nua_event_t event,
 					user = sip->sip_to->a_url->url_user;
 					host = sip->sip_to->a_url->url_host;
 					
-					sql = switch_mprintf("delete from sip_registrations where user='%q' and host='%q'", user, host);
+					sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", user, host);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Deleting registration for %s@%s\n", user, host);
 					sofia_glue_execute_sql(profile, SWITCH_TRUE, sql, NULL);
 					switch_safe_free(sql);
@@ -287,7 +287,7 @@ void event_handler(switch_event_t *event)
 		if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
 			sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
 		} else {
-			sql = switch_mprintf("delete from sip_registrations where user='%q' and host='%q'", from_user, from_host);
+			sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q'", from_user, from_host);
 		}
 
 		switch_mutex_lock(profile->ireg_mutex);
@@ -820,14 +820,14 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "use-rtp-timer") && switch_true(val)) {
 						switch_set_flag(profile, TFLAG_TIMER);
 
-					} else if (!strcasecmp(var, "odbc-dsn")) {
+					} else if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
 #ifdef SWITCH_HAVE_ODBC
 						profile->odbc_dsn = switch_core_strdup(profile->pool, val);
 						if ((profile->odbc_user = strchr(profile->odbc_dsn, ':'))) {
 							*profile->odbc_user++ = '\0';
-						}
-						if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
-							*profile->odbc_pass++ = '\0';
+							if ((profile->odbc_pass = strchr(profile->odbc_user, ':'))) {
+								*profile->odbc_pass++ = '\0';
+							}
 						}
 				
 #else

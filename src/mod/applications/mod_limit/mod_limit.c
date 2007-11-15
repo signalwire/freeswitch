@@ -202,14 +202,14 @@ static switch_status_t do_config()
             var = (char *) switch_xml_attr_soft(param, "name");
             val = (char *) switch_xml_attr_soft(param, "value");
 
-            if (!strcasecmp(var, "odbc-dsn")) {
+            if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
 #ifdef SWITCH_HAVE_ODBC
                 globals.odbc_dsn = switch_core_strdup(globals.pool, val);
                 if ((odbc_user = strchr(globals.odbc_dsn, ':'))) {
                     *odbc_user++ = '\0';
-                }
-                if ((odbc_pass = strchr(odbc_user, ':'))) {
-                    *odbc_pass++ = '\0';
+                    if ((odbc_pass = strchr(odbc_user, ':'))) {
+                        *odbc_pass++ = '\0';
+                    }
                 }
 #else
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");

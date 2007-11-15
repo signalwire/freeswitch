@@ -1353,7 +1353,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 			cb.profile = profile;
 			cb.stream = &mystream;
 			
-			sql = switch_mprintf("select contact from sip_registrations where user='%q' and host='%q'", user, domain);
+			sql = switch_mprintf("select contact from sip_registrations where sip_user='%q' and sip_host='%q'", user, domain);
 			assert(sql);
 			sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, contact_callback, &cb);
 			switch_safe_free(sql);

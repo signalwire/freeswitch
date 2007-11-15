@@ -1716,19 +1716,20 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 	char reg_sql[] =
 		"CREATE TABLE sip_registrations (\n"
 		"   call_id         VARCHAR(255),\n"
-		"   user            VARCHAR(255),\n"
-		"   host            VARCHAR(255),\n"
+		"   sip_user        VARCHAR(255),\n"
+		"   sip_host        VARCHAR(255),\n"
 		"   contact         VARCHAR(1024),\n" 
 		"   status          VARCHAR(255),\n" 
 		"   rpid            VARCHAR(255),\n" 
-		"   expires         INTEGER(8)" ");\n";
+		"   expires         INTEGER" 
+		");\n";
 
 
 	char sub_sql[] =
 		"CREATE TABLE sip_subscriptions (\n"
 		"   proto           VARCHAR(255),\n"
-		"   user            VARCHAR(255),\n"
-		"   host            VARCHAR(255),\n"
+		"   sip_user        VARCHAR(255),\n"
+		"   sip_host        VARCHAR(255),\n"
 		"   sub_to_user     VARCHAR(255),\n"
 		"   sub_to_host     VARCHAR(255),\n"
 		"   event           VARCHAR(255),\n"
@@ -1736,13 +1737,14 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   call_id         VARCHAR(255),\n" 
 		"   full_from       VARCHAR(255),\n" 
 		"   full_via        VARCHAR(255),\n" 
-		"   expires         INTEGER(8)" ");\n";
+		"   expires         INTEGER" 
+		");\n";
 
 
 	char auth_sql[] =
 		"CREATE TABLE sip_authentication (\n"
 		"   nonce           VARCHAR(255),\n" 
-		"   expires         INTEGER(8)"
+		"   expires         INTEGER"
 		");\n";
 	
 #ifdef SWITCH_HAVE_ODBC
@@ -1757,12 +1759,12 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
 			
-		if (switch_odbc_handle_exec(profile->master_odbc, "select call_id from sip_registrations", NULL) != SWITCH_ODBC_SUCCESS) {
+		if (switch_odbc_handle_exec(profile->master_odbc, "select sip_user from sip_registrations", NULL) != SWITCH_ODBC_SUCCESS) {
 			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_registrations", NULL);
 			switch_odbc_handle_exec(profile->master_odbc, reg_sql, NULL);
 		}
 
-		if (switch_odbc_handle_exec(profile->master_odbc, "delete from sip_subscriptions", NULL) != SWITCH_ODBC_SUCCESS) {
+		if (switch_odbc_handle_exec(profile->master_odbc, "delete from sip_subscriptions where sip_user != ''", NULL) != SWITCH_ODBC_SUCCESS) {
 			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_subscriptions", NULL);
 			switch_odbc_handle_exec(profile->master_odbc, sub_sql, NULL);
 		}
@@ -1777,8 +1779,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 			return 0;
 		}
 
-		switch_core_db_test_reactive(profile->master_db, "select call_id from sip_registrations", "DROP TABLE sip_registrations", reg_sql);
-		switch_core_db_test_reactive(profile->master_db, "delete from sip_subscriptions", "DROP TABLE sip_subscriptions", sub_sql);
+		switch_core_db_test_reactive(profile->master_db, "select sip_user from sip_registrations", "DROP TABLE sip_registrations", reg_sql);
+		switch_core_db_test_reactive(profile->master_db, "delete from sip_subscriptions where sip_user != ''", "DROP TABLE sip_subscriptions", sub_sql);
 		switch_core_db_test_reactive(profile->master_db, "select * from sip_authentication", "DROP TABLE sip_authentication", auth_sql);
 
 #ifdef SWITCH_HAVE_ODBC
