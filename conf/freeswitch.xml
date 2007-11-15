@@ -44,7 +44,6 @@
     <XX-PRE-PROCESS cmd="include" data="mod_cdr.conf.xml"/>
     <X-PRE-PROCESS cmd="include" data="event_multicast.conf.xml"/>
     <X-PRE-PROCESS cmd="include" data="event_socket.conf.xml"/>
-    <X-PRE-PROCESS cmd="include" data="xmpp_event.conf.xml"/>
     <X-PRE-PROCESS cmd="include" data="zeroconf.conf.xml"/>
 
     <!-- Directory Interfaces -->
