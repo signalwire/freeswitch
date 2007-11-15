@@ -180,6 +180,24 @@ if test "$hints" != ""; then
   . $hints
 fi
 
+AC_DEFUN([AX_COMPILER_VENDOR],
+[
+AC_CACHE_CHECK([for _AC_LANG compiler vendor], ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor,
+ [ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor=unknown
+  # note: don't check for gcc first since some other compilers define __GNUC__
+  for ventest in intel:__ICC,__ECC,__INTEL_COMPILER ibm:__xlc__,__xlC__,__IBMC__,__IBMCPP__ gnu:__GNUC__ sun:__SUNPRO_C,__SUNPRO_CC hp:__HP_cc,__HP_aCC dec:__DECC,__DECCXX,__DECC_VER,__DECCXX_VER borland:__BORLANDC__,__TURBOC__ comeau:__COMO__ cray:_CRAYC kai:__KCC lcc:__LCC__ metrowerks:__MWERKS__ sgi:__sgi,sgi microsoft:_MSC_VER watcom:__WATCOMC__ portland:__PGI; do
+    vencpp="defined("`echo $ventest | cut -d: -f2 | sed 's/,/) || defined(/g'`")"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[
+#if !($vencpp)
+      thisisanerror;
+#endif
+])], [ax_cv_]_AC_LANG_ABBREV[_compiler_vendor=`echo $ventest | cut -d: -f1`; break])
+  done
+ ])
+])
+
+AX_COMPILER_VENDOR
+
 #########
 # Locate a compiler for the build machine.  This compiler should
 # generate command-line programs that run on the build machine.
@@ -213,6 +231,11 @@ AC_SUBST(BUILD_CC)
 AC_SUBST(BUILD_CFLAGS)
 AC_SUBST(BUILD_LIBS)
 
+
+#  Enable 64 bit build
+AC_ARG_ENABLE(64,
+[AC_HELP_STRING([--enable-64],[build with 64 bit support])],[enable_64="$enable_64"],[enable_64="no"])
+
 ##########
 # Locate a compiler that converts C code into *.o files that run on
 # the target machine.
@@ -229,6 +252,11 @@ if test "$config_TARGET_CFLAGS" != ""; then
   TARGET_CFLAGS=$config_TARGET_CFLAGS
 else
   TARGET_CFLAGS=$BUILD_CFLAGS
+fi
+if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
+    if test "${enable_64}" = "yes"; then
+        TARGET_CFLAGS="$TARGET_CFLAGS -m64"
+    fi
 fi
 AC_MSG_RESULT($TARGET_CFLAGS)
 AC_MSG_CHECKING([target linker])
