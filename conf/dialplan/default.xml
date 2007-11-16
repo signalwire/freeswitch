@@ -2,6 +2,7 @@
   <extension name="global" continue="true">
     <condition>
       <action application="set" data="use_profile=${cond(${is_lan_addr(${network_addr})} == yes ? nat : default)}"/>
+      <action application="info"/>
     </condition>
     <!-- This will setup some variables if the user isn't authenticated.
          numbering_plan is required for the demo to function properly. 

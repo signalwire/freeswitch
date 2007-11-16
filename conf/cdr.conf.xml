@@ -1,4 +1,4 @@
-<configuration name="mod_cdr.conf" description="CDR Configuration">
+<configuration name="cdr.conf" description="CDR Configuration">
   <pddcdr>
     <param name="path" value="/work/temp/pddcdr"/>
     <!-- <param name="chanvars" value="username,accountcode"/> -->
