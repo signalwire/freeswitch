@@ -850,6 +850,29 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 }
 
+static switch_status_t channel_receive_event(switch_core_session_t *session, switch_event_t *event)
+{
+	switch_channel_t *channel;
+	struct private_object *tech_pvt;
+	char *body;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+
+
+	if (!(body = switch_event_get_body(event))) {
+		body = "";
+	}
+
+	iax_send_text(tech_pvt->iax_session, body);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 switch_state_handler_table_t iax_state_handlers = {
 	/*.on_init */ channel_on_init,
 	/*.on_ring */ channel_on_ring,
@@ -867,7 +890,8 @@ switch_io_routines_t iax_io_routines = {
 	/*.waitfor_read */ channel_waitfor_read,
 	/*.waitfor_write */ channel_waitfor_write,
 	/*.send_dtmf */ channel_send_dtmf,
-	/*.receive_message*/ channel_receive_message
+	/*.receive_message*/ channel_receive_message,
+	/*.receive_event */ channel_receive_event
 };
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_iax_load)
