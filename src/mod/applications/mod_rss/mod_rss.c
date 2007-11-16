@@ -179,16 +179,20 @@ SWITCH_STANDARD_APP(rss_function)
 	char *argv[3], *feed_list[TTS_MAX_ENTRIES] = { 0 }, *feed_names[TTS_MAX_ENTRIES] = {
 	0};
 	int argc, feed_index = 0;
-	char *cf = "rss.conf";
+	const char *cf = "rss.conf";
 	switch_xml_t cfg, cxml, feeds, feed;
 	char buf[1024];
 	int32_t jumpto = -1;
 	uint32_t matches = 0;
 	switch_input_args_t args = { 0 };
+	const char *vcf = NULL;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
+	if ((vcf = switch_channel_get_variable(channel, "rss_alt_config"))) {
+		cf = vcf;
+	}
 
 	if (!(cxml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
