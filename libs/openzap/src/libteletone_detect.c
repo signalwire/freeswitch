@@ -130,6 +130,10 @@ void teletone_goertzel_update(teletone_goertzel_state_t *goertzel_state,
 	}
 }
 
+#ifdef _MSC_VER
+#pragma warning(disable:4244)
+#endif
+
 #define teletone_goertzel_result(gs) (double)(((gs)->v3 * (gs)->v3 + (gs)->v2 * (gs)->v2 - (gs)->v2 * (gs)->v3 * (gs)->fac))
 
 void teletone_dtmf_detect_init (teletone_dtmf_detect_state_t *dtmf_detect_state, int sample_rate)
