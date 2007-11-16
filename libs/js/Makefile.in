@@ -159,7 +159,7 @@ $(LIB_NAME): $(LIB_OBJS)
 	@$(LIBTOOL) --mode=link $(CC) -o $(LIB_NAME) $(LIB_OBJS) -rpath $(libdir) -version-info 1:6
 
 $(CLI_NAME): $(CLI_OBJS) $(LIB_NAME)
-	@$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) $(CLI_LDFLAGS) -o $(CLI_NAME) $(CLI_OBJS) $(LIB_NAME) $(LIBS) $(CLI_LIBS)
+	@$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) $(CLI_LDFLAGS) $(CFLAGS) -o $(CLI_NAME) $(CLI_OBJS) $(LIB_NAME) $(LIBS) $(CLI_LIBS)
 src/js.o: src/js.c
 	$(CC) $(CPPFLAGS) $(CLI_CPPFLAGS) $(CFLAGS) $(CLI_CFLAGS) -o $@ -c $<
 src/perlconnect/jsperl.o: src/perlconnect/jsperl.c
@@ -172,7 +172,7 @@ src/jsautocfg.h: jscpucfg
 jscpucfg.o: src/jscpucfg.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
 jscpucfg: jscpucfg.o
-	@$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) -o jscpucfg jscpucfg.o $(LIBS)
+	@$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) $(CFLAGS) -o jscpucfg jscpucfg.o $(LIBS)
 src/jsopcode.h src/jsopcode.c: src/jsopcode.tbl
 
 .PHONY: install
