@@ -181,102 +181,15 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switch_caller_profile_t *caller_profile, switch_xml_t * root,
 										   switch_xml_t * node)
 {
-	switch_status_t status = SWITCH_STATUS_GENERR;
+	char *data;
 	switch_channel_t *channel;
-	switch_stream_handle_t stream = { 0 };
-	switch_size_t encode_len = 1024, new_len = 0;
-	char *encode_buf = NULL;
-	const char *prof[12] = { 0 }, *prof_names[12] = {0};
-	char *e = NULL;
-	switch_event_header_t *hi;
-	uint32_t x = 0;
+	switch_status_t status = SWITCH_STATUS_GENERR;
 
 	channel = switch_core_session_get_channel(session);
+	data = switch_channel_build_param_string(channel, caller_profile);
 
-	SWITCH_STANDARD_STREAM(stream);
-
-	if (!(encode_buf = malloc(encode_len))) {
-		goto done;
-	}
-
-	prof[0] = caller_profile->context;
-	prof[1] = caller_profile->destination_number;
-	prof[2] = caller_profile->caller_id_name;
-	prof[3] = caller_profile->caller_id_number;
-	prof[4] = caller_profile->network_addr;
-	prof[5] = caller_profile->ani;
-	prof[6] = caller_profile->aniii;
-	prof[7] = caller_profile->rdnis;
-	prof[8] = caller_profile->source;
-	prof[9] = caller_profile->chan_name;
-	prof[10] = caller_profile->uuid;
-
-	prof_names[0] = "context";
-	prof_names[1] = "destination_number";
-	prof_names[2] = "caller_id_name";
-	prof_names[3] = "caller_id_number";
-	prof_names[4] = "network_addr";
-	prof_names[5] = "ani";
-	prof_names[6] = "aniii";
-	prof_names[7] = "rdnis";
-	prof_names[8] = "source";
-	prof_names[9] = "chan_name";
-	prof_names[10] = "uuid";
-
-	for (x = 0; prof[x]; x++) {
-		if (switch_strlen_zero(prof[x])) {
-			continue;
-		}
-		new_len = (strlen(prof[x]) * 3) + 1;
-		if (encode_len < new_len) {
-			char *tmp;
-
-			encode_len = new_len;
-
-			if (!(tmp = realloc(encode_buf, encode_len))) {
-				goto done;
-			}
-
-			encode_buf = tmp;
-		}
-		switch_url_encode(prof[x], encode_buf, encode_len - 1);
-		stream.write_function(&stream, "%s=%s&", prof_names[x], encode_buf);
-	}
-
-	if ((hi = switch_channel_variable_first(channel))) {
-		for (; hi; hi = hi->next) {
-			char *var = hi->name;
-			char *val = hi->value;
-			
-			new_len = (strlen((char *) var) * 3) + 1;
-			if (encode_len < new_len) {
-				char *tmp;
-				
-				encode_len = new_len;
-			
-				tmp = realloc(encode_buf, encode_len);
-				assert(tmp);
-				encode_buf = tmp;
-			}
-
-			switch_url_encode((char *) val, encode_buf, encode_len - 1);
-			stream.write_function(&stream, "%s=%s&", (char *) var, encode_buf);
-
-		}
-		switch_channel_variable_last(channel);
-	}
-
-	e = (char *) stream.data + (strlen((char *) stream.data) - 1);
-
-	if (e && *e == '&') {
-		*e = '\0';
-	}
-
-	status = switch_xml_locate("dialplan", NULL, NULL, NULL, root, node, stream.data);
-
-  done:
-	switch_safe_free(stream.data);
-	switch_safe_free(encode_buf);
+	status = switch_xml_locate("dialplan", NULL, NULL, NULL, root, node, data);
+	switch_safe_free(data);
 	return status;
 }
 
