@@ -1758,7 +1758,7 @@ SWITCH_DECLARE(const char *) switch_xml_error(switch_xml_t xml)
 // returns a new empty switch_xml structure with the given root tag name
 SWITCH_DECLARE(switch_xml_t) switch_xml_new(const char *name)
 {
-	static char *ent[] = { "lt;", "&#60;", "gt;", "&#62;", "quot;", "&#34;",
+	static const char *ent[] = { "lt;", "&#60;", "gt;", "&#62;", "quot;", "&#34;",
 		"apos;", "&#39;", "amp;", "&#38;", NULL
 	};
 	switch_xml_root_t root = (switch_xml_root_t) memset(malloc(sizeof(struct switch_xml_root)),
