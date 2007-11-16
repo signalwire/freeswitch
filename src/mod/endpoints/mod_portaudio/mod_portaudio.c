@@ -1568,6 +1568,7 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 		char *dialplan = globals.dialplan;
 		char *cid_name = globals.cid_name;
 		char *cid_num = globals.cid_num;
+		char ip[25] = "0.0.0.0";
 
 		switch_core_session_add_stream(session, NULL);
 		if ((tech_pvt = (private_t *) switch_core_session_alloc(session, sizeof(private_t))) != 0) {
@@ -1602,10 +1603,12 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 		if (!switch_strlen_zero(argv[5])) {
 			tech_pvt->codec_ms = atoi(argv[5]);
 		}
+		
+		switch_find_local_ip(ip, sizeof(ip), AF_INET);
 
 		if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																  NULL, dialplan, cid_name, cid_num,
-																  NULL, NULL, NULL, NULL, modname, NULL,
+																  ip, NULL, NULL, NULL, modname, NULL,
 																  dest)) != 0) {
 			char name[128];
 			snprintf(name, sizeof(name), "PortAudio/%s",
