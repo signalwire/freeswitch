@@ -1375,7 +1375,7 @@ SWITCH_DECLARE(switch_loadable_module_interface_t *) switch_loadable_module_crea
 	return mod;
 }
 
-#define ALLOC_INTERFACE(_TYPE_)	for(;;) {									\
+#define ALLOC_INTERFACE(_TYPE_)	{									\
 		switch_##_TYPE_##_interface_t *i, *ptr;							\
 		i = switch_core_alloc(mod->pool, sizeof(switch_##_TYPE_##_interface_t)); \
 		assert(i != NULL);												\
@@ -1394,43 +1394,43 @@ SWITCH_DECLARE(void *) switch_loadable_module_create_interface(switch_loadable_m
 
 	switch(iname) {
 	case SWITCH_ENDPOINT_INTERFACE:
-		ALLOC_INTERFACE(endpoint);
+		ALLOC_INTERFACE(endpoint)
 
 	case SWITCH_TIMER_INTERFACE:
-		ALLOC_INTERFACE(timer);
+		ALLOC_INTERFACE(timer)
 		
 	case SWITCH_DIALPLAN_INTERFACE:
-		ALLOC_INTERFACE(dialplan);
+		ALLOC_INTERFACE(dialplan)
 		
 	case SWITCH_CODEC_INTERFACE:
-		ALLOC_INTERFACE(codec);
+		ALLOC_INTERFACE(codec)
 		
 	case SWITCH_APPLICATION_INTERFACE:
-		ALLOC_INTERFACE(application);
+		ALLOC_INTERFACE(application)
 		
 	case SWITCH_API_INTERFACE:
-		ALLOC_INTERFACE(api);
+		ALLOC_INTERFACE(api)
 		
 	case SWITCH_FILE_INTERFACE:
-		ALLOC_INTERFACE(file);
+		ALLOC_INTERFACE(file)
 		
 	case SWITCH_SPEECH_INTERFACE:
-		ALLOC_INTERFACE(speech);
+		ALLOC_INTERFACE(speech)
 		
 	case SWITCH_DIRECTORY_INTERFACE:
-		ALLOC_INTERFACE(directory);
+		ALLOC_INTERFACE(directory)
 		
 	case SWITCH_CHAT_INTERFACE:
-		ALLOC_INTERFACE(chat);
+		ALLOC_INTERFACE(chat)
 		
 	case SWITCH_SAY_INTERFACE:
-		ALLOC_INTERFACE(say);
+		ALLOC_INTERFACE(say)
 		
 	case SWITCH_ASR_INTERFACE:
-		ALLOC_INTERFACE(asr);
+		ALLOC_INTERFACE(asr)
 		
 	case SWITCH_MANAGEMENT_INTERFACE:
-		ALLOC_INTERFACE(management);
+		ALLOC_INTERFACE(management)
 		
 	default:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid Module Type!\n");
