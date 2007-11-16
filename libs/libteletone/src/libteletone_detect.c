@@ -129,6 +129,9 @@ void teletone_goertzel_update(teletone_goertzel_state_t *goertzel_state,
 		goertzel_state->v3 = (float)(goertzel_state->fac*goertzel_state->v2 - v1 + sample_buffer[i]);
 	}
 }
+#ifdef _MSC_VER
+#pragma warning(disable:4244)
+#endif
 
 #define teletone_goertzel_result(gs) (double)(((gs)->v3 * (gs)->v3 + (gs)->v2 * (gs)->v2 - (gs)->v2 * (gs)->v3 * (gs)->fac))
 
