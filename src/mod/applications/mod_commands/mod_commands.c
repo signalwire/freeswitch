@@ -583,6 +583,43 @@ SWITCH_STANDARD_API(uuid_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define UUID_CHAT_SYNTAX "<uuid> <text>"
+SWITCH_STANDARD_API(uuid_chat)
+{
+	switch_core_session_t *tsession = NULL;
+	char *uuid = NULL, *text = NULL;
+
+	if (!switch_strlen_zero(cmd) && (uuid = strdup(cmd))) {
+		if ((text = strchr(uuid, ' '))) {
+			*text++ = '\0';
+		}
+	}
+
+	if (switch_strlen_zero(uuid) || switch_strlen_zero(text)) {
+		stream->write_function(stream, "USAGE: %s\n", UUID_CHAT_SYNTAX);
+	} else {
+		if ((tsession = switch_core_session_locate(uuid))) {
+			switch_event_t *event;
+			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_body(event, "%s", text);
+				if (switch_core_session_receive_event(tsession, &event) != SWITCH_STATUS_SUCCESS) {
+					switch_event_destroy(&event);
+					stream->write_function(stream, "Send Failed\n");
+				} else {
+					stream->write_function(stream, "OK\n");
+				}
+			}
+			switch_core_session_rwunlock(tsession);
+		} else {
+			stream->write_function(stream, "No Such Channel %s!\n", uuid);
+		}
+	}
+
+	switch_safe_free(uuid);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 
 #define SCHED_TRANSFER_SYNTAX "[+]<time> <uuid> <extension> [<dialplan>] [<context>]"
 SWITCH_STANDARD_API(sched_transfer_function)
@@ -1744,6 +1781,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	// remove me before final release
 	SWITCH_ADD_API(commands_api_interface, "qq", "Eval a conditional", cond_function, "<expr> ? <true val> : <false val>");
 	SWITCH_ADD_API(commands_api_interface, "regex", "Eval a regex", regex_function, "<data>|<pattern>[|<subst string>]");
+	SWITCH_ADD_API(commands_api_interface, "uuid_chat", "Send a chat message", uuid_chat, UUID_CHAT_SYNTAX);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
