@@ -46,7 +46,7 @@
   <!-- dial the freeswitch conference via SIP-->
   <extension name="FS_Conf_SIP">
     <condition field="destination_number" expression="^888$">
-      <action application="bridge" data="sofia/default/888@conference.freeswitch.org"/>
+      <action application="bridge" data="sofia/${use_profile}/888@conference.freeswitch.org"/>
     </condition>
   </extension>
 
