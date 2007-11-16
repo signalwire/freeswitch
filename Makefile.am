@@ -162,10 +162,12 @@ install-data-local:
 		$(mkinstalldirs) $(DESTDIR)$(prefix)/$$x ; \
 	 done
 	@if [ ! -f $(DESTDIR)$(PREFIX)/conf/freeswitch.xml ] ; then \
-		$(INSTALL) conf/*.xml $(DESTDIR)$(PREFIX)/conf ; \
-		$(INSTALL) conf/sip_profiles/*.xml $(DESTDIR)$(PREFIX)/conf/sip_profiles ; \
-		$(INSTALL) conf/dialplan/*.xml $(DESTDIR)$(PREFIX)/conf/dialplan ; \
-		$(INSTALL) conf/directory/*.xml $(DESTDIR)$(PREFIX)/conf/directory ; \
+		for conffile in `find conf -name \*.xml && find conf -name \*.conf` ; do \
+			dir=`echo $$conffile | sed -e 's|/[^/]*$$||'`; \
+			filename=`echo $$conffile | sed -e 's|^.*/||'`; \
+			test -d $(DESTDIR)$(PREFIX)/$$dir || $(mkinstalldirs) $(DESTDIR)$(prefix)/$$dir ; \
+			$(INSTALL) $$dir/$$filename $(DESTDIR)$(PREFIX)/$$dir; \
+		done ; \
 	 fi
 
 .version:
