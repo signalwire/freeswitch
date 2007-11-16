@@ -465,6 +465,10 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\..\src\include\SimpleGlob.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\libs\stfu\stfu.h"
 				>
 			</File>
@@ -501,11 +505,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\include\switch_core.h"
+				RelativePath="..\..\src\include\private\switch_core.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\include\private\switch_core.h"
+				RelativePath="..\..\src\include\switch_core.h"
 				>
 			</File>
 			<File
