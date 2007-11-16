@@ -40,6 +40,6 @@ gennmtab.o:%.o:%.c
 	$(CC) -c $< -o $@ $(CFLAGS) $(INCLUDES)
 
 gennmtab:%:%.o
-	$(LINK) -o $@ $(LDFLAGS) $^
+	$(LINK) -o $@ $(LDFLAGS) $(CFLAGS) $^
 
 include Makefile.depend

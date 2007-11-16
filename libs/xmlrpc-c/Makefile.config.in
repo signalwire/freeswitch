@@ -57,6 +57,8 @@ INSTALL = @INSTALL@
 
 C_COMPILER_GNU = @C_COMPILER_GNU@
 CXX_COMPILER_GNU = @CXX_COMPILER_GNU@
+COMPILER_CFLAGS = @COMPILER_CFLAGS@
+COMPILER_CXXFLAGS = @COMPILER_CXXFLAGS@
 
 # Here are the commands 'make install' uses to install various kinds of files:
 

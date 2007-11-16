@@ -27,7 +27,11 @@ typedef double va_double;
 #if VA_LIST_IS_ARRAY
 #define VA_LIST_COPY(dest,src) memcpy((dest), (src), sizeof(va_list))
 #else
+#if __sun
+#define VA_LIST_COPY(dest,src) (*(dest) = *(src))
+#else
 #define VA_LIST_COPY(dest,src) ((dest) = (src))
+#endif
 #endif
 
 /*=========================================================================
