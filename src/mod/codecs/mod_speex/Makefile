@@ -8,5 +8,5 @@ LOCAL_LIBADD=$(SPEEXLA)
 include $(BASE)/build/modmake.rules
 
 $(SPEEXLA): $(SPEEX_DIR) $(SPEEX_DIR)/.update
-	cd $(SPEEX_DIR) && $(MAKE)
+	cd $(SPEEX_DIR)/libspeex && $(MAKE)
 	$(TOUCH_TARGET)
