@@ -42,6 +42,8 @@ struct pika_channel_profile {
 	char name[80];
 	PKH_TRecordConfig record_config;
 	PKH_TPlayConfig play_config;
+	int ec_enabled;
+	PKH_TECConfig ec_config;
 };
 typedef struct pika_channel_profile pika_channel_profile_t;
 
@@ -71,6 +73,8 @@ struct pika_chan_data {
 	PKH_TPikaEvent last_oob_event;
 	PKH_TRecordConfig record_config;
 	PKH_TPlayConfig play_config;
+	int ec_enabled;
+	PKH_TECConfig ec_config;
 	zap_buffer_t *digit_buffer;
 	zap_mutex_t *digit_mutex;
 	zap_size_t dtmf_len;
@@ -147,6 +151,20 @@ static ZIO_CONFIGURE_FUNCTION(pika_configure)
 		profile->play_config.AGC.decayRate = atoi(val);
 	} else if (!strcasecmp(var, "tx-agc-speechThreshold")) {
 		profile->play_config.AGC.speechThreshold = (PK_FLOAT)atof(val);
+	} else if (!strcasecmp(var, "ec-enabled")) {
+		profile->ec_enabled = zap_true(val);
+	} else if (!strcasecmp(var, "ec-doubleTalkerThreshold")) {
+		profile->ec_config.doubleTalkerThreshold = (PK_FLOAT)atof(val);
+	} else if (!strcasecmp(var, "ec-speechPresentThreshold")) {
+		profile->ec_config.speechPresentThreshold = (PK_FLOAT)atof(val);
+	} else if (!strcasecmp(var, "ec-echoSuppressionThreshold")) {
+		profile->ec_config.echoSuppressionThreshold = (PK_FLOAT)atof(val);
+	} else if (!strcasecmp(var, "ec-echoSuppressionEnabled")) {
+		profile->ec_config.echoSuppressionEnabled = zap_true(val);
+	} else if (!strcasecmp(var, "ec-comfortNoiseEnabled")) {
+		profile->ec_config.comfortNoiseEnabled = zap_true(val);
+	} else if (!strcasecmp(var, "ec-adaptationModeEnabled")) {
+		profile->ec_config.adaptationModeEnabled = zap_true(val);
 	} else {
 		ok = 0;
 	}
@@ -415,27 +433,12 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 		if (profile) {
 			zap_log(ZAP_LOG_INFO, "applying config profile %s to device %d:%d\n", profile->name, chan->span_id, chan->chan_id);
 			chan_data->record_config.gain = profile->record_config.gain;
-			chan_data->record_config.AGC.enabled = profile->record_config.AGC.enabled;
-			chan_data->record_config.AGC.targetPower = profile->record_config.AGC.targetPower;
-			chan_data->record_config.AGC.minGain = profile->record_config.AGC.minGain;
-			chan_data->record_config.AGC.maxGain = profile->record_config.AGC.maxGain;
-			chan_data->record_config.AGC.attackRate = profile->record_config.AGC.attackRate;
-			chan_data->record_config.AGC.decayRate = profile->record_config.AGC.decayRate;
-			chan_data->record_config.AGC.speechThreshold = profile->record_config.AGC.speechThreshold;
-			chan_data->record_config.VAD.enabled = profile->record_config.VAD.enabled;
-			chan_data->record_config.VAD.activationThreshold = profile->record_config.VAD.activationThreshold;
-			chan_data->record_config.VAD.activationDebounceTime = profile->record_config.VAD.activationDebounceTime;
-			chan_data->record_config.VAD.deactivationThreshold = profile->record_config.VAD.deactivationThreshold;
-			chan_data->record_config.VAD.deactivationDebounceTime = profile->record_config.VAD.deactivationDebounceTime;
-			chan_data->record_config.VAD.preSpeechBufferSize = profile->record_config.VAD.preSpeechBufferSize;
+			chan_data->record_config.AGC = profile->record_config.AGC;
+			chan_data->record_config.VAD = profile->record_config.VAD;
 			chan_data->play_config.gain = profile->play_config.gain;
-			chan_data->play_config.AGC.enabled = profile->play_config.AGC.enabled;
-			chan_data->play_config.AGC.targetPower = profile->play_config.AGC.targetPower;
-			chan_data->play_config.AGC.minGain = profile->play_config.AGC.minGain;
-			chan_data->play_config.AGC.maxGain = profile->play_config.AGC.maxGain;
-			chan_data->play_config.AGC.attackRate = profile->play_config.AGC.attackRate;
-			chan_data->play_config.AGC.decayRate = profile->play_config.AGC.decayRate;
-			chan_data->play_config.AGC.speechThreshold = profile->play_config.AGC.speechThreshold;
+			chan_data->play_config.AGC = profile->play_config.AGC;
+			chan_data->ec_enabled = profile->ec_enabled;
+			chan_data->ec_config = profile->ec_config;
 		}
 		
 		status = PKH_RECORD_SetConfig(chan_data->media_in, &chan_data->record_config);
@@ -452,8 +455,9 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 
 		PKH_RECORD_Start(chan_data->media_in);
 		PKH_PLAY_Start(chan_data->media_out);
-
-		PKH_EC_Start(chan_data->media_in, chan_data->media_in, chan_data->media_out);
+		if (chan_data->ec_enabled) {
+			PKH_EC_Start(chan_data->media_in, chan_data->media_in, chan_data->media_out);
+		}
 
 		if (!zap_strlen_zero(name)) {
 			zap_copy_string(chan->chan_name, name, sizeof(chan->chan_name));
