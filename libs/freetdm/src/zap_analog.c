@@ -44,7 +44,8 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj);
 static ZIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_fxo_outgoing_call)
 {
 	if (!zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK) && !zap_test_flag(zchan, ZAP_CHANNEL_INTHREAD)) {		
-		//zap_channel_command(zchan, ZAP_COMMAND_TRACE_INPUT, "/tmp/inbound.ul");
+		zap_channel_command(zchan, ZAP_COMMAND_TRACE_INPUT, "/tmp/inbound.ul");
+		zap_channel_command(zchan, ZAP_COMMAND_TRACE_OUTPUT, "/tmp/outbound.ul");
 		zap_channel_clear_needed_tones(zchan);
 		zap_channel_clear_detected_tones(zchan);
 
@@ -281,13 +282,14 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 			case ZAP_CHANNEL_STATE_HANGUP:
 				{
 					if (state_counter > 500) {
-
+						if (zap_test_flag(zchan, ZAP_CHANNEL_RINGING)) {
+							zap_channel_command(zchan, ZAP_COMMAND_GENERATE_RING_OFF, NULL);
+						}
+						
 						if (zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK) && zchan->last_state >= ZAP_CHANNEL_STATE_IDLE) {
 							zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_BUSY);
 						} else {
-							if (zap_test_flag(zchan, ZAP_CHANNEL_RINGING)) {
-								zap_channel_command(zchan, ZAP_COMMAND_GENERATE_RING_OFF, NULL);
-							}
+							zchan->caller_data.hangup_cause = ZAP_CAUSE_NORMAL_CLEARING;
 							zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
 						}
 					}
@@ -346,7 +348,9 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 			zap_clear_flag_locked(zchan->span, ZAP_SPAN_STATE_CHANGE);
 			indicate = 0;
 			state_counter = 0;
-			zap_log(ZAP_LOG_DEBUG, "Executing state handler for %s\n", zap_channel_state2str(zchan->state));
+			zap_log(ZAP_LOG_DEBUG, "Executing state handler on %d:%d for %s\n", 
+					zchan->span_id, zchan->chan_id,
+					zap_channel_state2str(zchan->state));
 			switch(zchan->state) {
 			case ZAP_CHANNEL_STATE_UP:
 				{
@@ -399,9 +403,9 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				break;
 			case ZAP_CHANNEL_STATE_DOWN:
 				{
-					zap_channel_done(zchan);
 					sig.event_id = ZAP_SIGEVENT_STOP;
 					analog_data->sig_cb(&sig);
+					zap_channel_done(zchan);
 					goto done;
 				}
 				break;
@@ -453,18 +457,27 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				break;
 			case ZAP_CHANNEL_STATE_BUSY:
 				{
-					zap_channel_done(zchan);
-					zap_buffer_zero(dt_buffer);
-					teletone_run(&ts, zchan->span->tone_map[ZAP_TONEMAP_BUSY]);
-					indicate = 1;
+					zchan->caller_data.hangup_cause = ZAP_CAUSE_NORMAL_CIRCUIT_CONGESTION;
+					if (zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK) && !zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
+						zap_channel_done(zchan);
+						zap_buffer_zero(dt_buffer);
+						teletone_run(&ts, zchan->span->tone_map[ZAP_TONEMAP_BUSY]);
+						indicate = 1;
+					} else {
+						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+					}
 				}
 				break;
 			case ZAP_CHANNEL_STATE_ATTN:
 				{
-					zap_channel_done(zchan);
-					zap_buffer_zero(dt_buffer);
-					teletone_run(&ts, zchan->span->tone_map[ZAP_TONEMAP_ATTN]);
-					indicate = 1;
+					if (zap_test_flag(zchan, ZAP_CHANNEL_OFFHOOK) && !zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
+						zap_channel_done(zchan);
+						zap_buffer_zero(dt_buffer);
+						teletone_run(&ts, zchan->span->tone_map[ZAP_TONEMAP_ATTN]);
+						indicate = 1;
+					} else {
+						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
+					}
 				}
 				break;
 			default:
@@ -514,25 +527,42 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 			
 			for (i = 1; i < ZAP_TONEMAP_INVALID; i++) {
 				if (zchan->detected_tones[i]) {
-					zap_log(ZAP_LOG_DEBUG, "Detected tone %s\n", zap_tonemap2str(zchan->detected_tones[i]));
+					zap_log(ZAP_LOG_DEBUG, "Detected tone %s on %d:%d\n", zap_tonemap2str(i), zchan->span_id, zchan->chan_id);
 					sig.raw_data = &i;
-					analog_data->sig_cb(&sig);
+					if (analog_data->sig_cb) {
+						analog_data->sig_cb(&sig);
+					}
 				}
 			}
 			
-			if (zchan->detected_tones[ZAP_TONEMAP_DIAL]) {
-				zap_channel_command(zchan, ZAP_COMMAND_SEND_DTMF, zchan->caller_data.ani);
-				state_counter = 0;
-				zchan->needed_tones[ZAP_TONEMAP_RING] = 1;
-				zchan->needed_tones[ZAP_TONEMAP_BUSY] = 1;
-				zchan->needed_tones[ZAP_TONEMAP_FAIL1] = 1;
-				zchan->needed_tones[ZAP_TONEMAP_FAIL2] = 1;
-				zchan->needed_tones[ZAP_TONEMAP_FAIL3] = 1;
-				dial_timeout = (zchan->dtmf_on + zchan->dtmf_off) * strlen(zchan->caller_data.ani) + 50;
+			if (zchan->detected_tones[ZAP_TONEMAP_BUSY] || 
+				zchan->detected_tones[ZAP_TONEMAP_FAIL1] ||
+				zchan->detected_tones[ZAP_TONEMAP_FAIL2] ||
+				zchan->detected_tones[ZAP_TONEMAP_FAIL3] ||
+				zchan->detected_tones[ZAP_TONEMAP_ATTN]
+				) {
+				zap_log(ZAP_LOG_ERROR, "Failure indication detected!\n");
+				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_BUSY);
+			} else if (zchan->detected_tones[ZAP_TONEMAP_DIAL]) {
+				if (zap_strlen_zero(zchan->caller_data.ani)) {
+					zap_log(ZAP_LOG_ERROR, "No Digits to send!\n");
+					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_BUSY);
+				} else {
+					if (zap_channel_command(zchan, ZAP_COMMAND_SEND_DTMF, zchan->caller_data.ani) != ZAP_SUCCESS) {
+						zap_log(ZAP_LOG_ERROR, "Send Digits Failed [%s]\n", zchan->last_error);
+						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_BUSY);
+					} else {
+						state_counter = 0;
+						zchan->needed_tones[ZAP_TONEMAP_RING] = 1;
+						zchan->needed_tones[ZAP_TONEMAP_BUSY] = 1;
+						zchan->needed_tones[ZAP_TONEMAP_FAIL1] = 1;
+						zchan->needed_tones[ZAP_TONEMAP_FAIL2] = 1;
+						zchan->needed_tones[ZAP_TONEMAP_FAIL3] = 1;
+						dial_timeout = ((zchan->dtmf_on + zchan->dtmf_off) * strlen(zchan->caller_data.ani)) + 3000;
+					}
+				}
 			} else if (zchan->detected_tones[ZAP_TONEMAP_RING]) {
 				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_UP);
-			} else if (zchan->detected_tones[ZAP_TONEMAP_BUSY]) {
-				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_BUSY);
 			}
 			
 			zap_channel_clear_detected_tones(zchan);
@@ -580,6 +610,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 	}
 
  done:
+
 	zap_channel_done(zchan);
 
 
@@ -647,7 +678,10 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 			if (zap_test_flag(event->channel, ZAP_CHANNEL_RINGING)) {
 				zap_channel_command(event->channel, ZAP_COMMAND_GENERATE_RING_OFF, NULL);
 			}
-			zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_DOWN);
+
+			if (event->channel->state != ZAP_CHANNEL_STATE_DOWN) {
+				zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_DOWN);
+			}
 		}
 		break;
 	case ZAP_OOB_FLASH:

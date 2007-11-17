@@ -20,8 +20,8 @@ int main(int argc, char *argv[])
 	teletone_generation_session_t ts;
 	struct ttmp tmp;
 
-	if (argc < 2) {
-		fprintf(stderr, "Arg Error!\n");
+	if (argc < 3) {
+		fprintf(stderr, "Arg Error! <file> <tones>\n");
 		exit(-1);
 	}
 

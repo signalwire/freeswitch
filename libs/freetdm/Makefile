@@ -135,6 +135,9 @@ testtones: $(SRC)/testtones.c $(MYLIB)
 detect_tones: $(SRC)/detect_tones.c $(MYLIB)
 	$(CC) $(INCS) -L. $(SRC)/detect_tones.c -o detect_tones -lopenzap -lm
 
+detect_dtmf: $(SRC)/detect_dtmf.c $(MYLIB)
+	$(CC) $(INCS) -L. $(SRC)/detect_dtmf.c -o detect_dtmf -lopenzap -lm
+
 testisdn: $(SRC)/testisdn.c $(MYLIB)
 	$(CC) $(INCS) $(ZAP_CFLAGS) -L. $(SRC)/testisdn.c -o testisdn -lopenzap -lm -lpthread
 
@@ -174,6 +177,6 @@ mod_openzap-clean:
 	@if [ -f mod_openzap/mod_openzap.so ] ; then cd mod_openzap && make clean ; fi
 
 clean: mod_openzap-clean
-	rm -f $(SRC)/*.o $(SRC)/isdn/*.o $(MYLIB) *~ \#* testapp testcid testtones detect_tones priserver testisdn testanalog
+	rm -f $(SRC)/*.o $(SRC)/isdn/*.o $(MYLIB) *~ \#* testapp testcid testtones detect_tones detect_dtmf priserver testisdn testanalog
 	@if [ -f $(LIBPRI)/$(LIBPRIA) ] ; then cd $(LIBPRI) && make clean ; fi
 

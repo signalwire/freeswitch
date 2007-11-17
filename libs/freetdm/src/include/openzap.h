@@ -211,12 +211,12 @@
 
 
 #define zap_set_state_locked(obj, s) if ( obj->state == s ) {			\
-		zap_log(ZAP_LOG_WARNING, "Why bother changing state from %s to %s\n", zap_channel_state2str(obj->state), zap_channel_state2str(s)); \
+		zap_log(ZAP_LOG_WARNING, "Why bother changing state on %d:%dfrom %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(obj->state), zap_channel_state2str(s)); \
 	} else if (zap_test_flag(obj, ZAP_CHANNEL_READY)) {									\
 		int st = obj->state;											\
 		zap_channel_set_state(obj, s);									\
-		if (obj->state == s) zap_log(ZAP_LOG_DEBUG, "Changing state from %s to %s\n", zap_channel_state2str(st), zap_channel_state2str(s)); \
-		else zap_log(ZAP_LOG_WARNING, "VETO Changing state from %s to %s\n", zap_channel_state2str(st), zap_channel_state2str(s)); \
+		if (obj->state == s) zap_log(ZAP_LOG_DEBUG, "Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(st), zap_channel_state2str(s)); \
+		else zap_log(ZAP_LOG_WARNING, "VETO Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(st), zap_channel_state2str(s)); \
 	}
 
 
@@ -344,7 +344,6 @@ struct zap_channel {
 	zap_event_t event_header;
 	char last_error[256];
 	zio_event_cb_t event_callback;
-	void *mod_data;
 	uint32_t skip_read_frames;
 	zap_buffer_t *dtmf_buffer;
 	zap_buffer_t *digit_buffer;
@@ -365,6 +364,7 @@ struct zap_channel {
 	zap_fsk_data_state_t fsk;
 	uint8_t fsk_buf[80];
 	uint32_t ring_count;
+	void *mod_data;
 	struct zap_caller_data caller_data;
 	struct zap_span *span;
 	struct zap_io_interface *zio;
@@ -416,7 +416,8 @@ struct zap_span {
 	teletone_multi_tone_t tone_finder[ZAP_TONEMAP_INVALID+1];
 	zap_channel_t channels[ZAP_MAX_CHANNELS_SPAN];
 	zio_channel_outgoing_call_t outgoing_call;
-	void *app_data;
+	void *mod_data;
+	char *type;
 };
 
 
@@ -429,6 +430,7 @@ struct zap_io_interface {
 	zio_open_t open;
 	zio_close_t close;
 	zio_channel_destroy_t channel_destroy;
+	zio_span_destroy_t span_destroy;
 	zio_get_alarms_t get_alarms;
 	zio_command_t command;
 	zio_wait_t wait;
@@ -505,6 +507,8 @@ void zap_global_set_default_logger(int level);
 uint32_t zap_separate_string(char *buf, char delim, char **array, int arraylen);
 void print_bits(uint8_t *b, int bl, char *buf, int blen, int e, uint8_t ss);
 void print_hex_bytes(uint8_t *data, zap_size_t dlen, char *buf, zap_size_t blen);
+int zap_hash_equalkeys(void *k1, void *k2);
+uint32_t zap_hash_hashfromstring(void *ky);
 ZIO_CODEC_FUNCTION(zio_slin2ulaw);
 ZIO_CODEC_FUNCTION(zio_ulaw2slin);
 ZIO_CODEC_FUNCTION(zio_slin2alaw);

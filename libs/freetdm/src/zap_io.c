@@ -47,6 +47,9 @@
 #ifdef ZAP_ZT_SUPPORT
 #include "zap_zt.h"
 #endif
+#ifdef ZAP_PIKA_SUPPORT
+#include "zap_pika.h"
+#endif
 
 static int time_is_init = 0;
 
@@ -192,12 +195,12 @@ void zap_global_set_default_logger(int level)
 	zap_log_level = level;
 }
 
-static int equalkeys(void *k1, void *k2)
+int zap_hash_equalkeys(void *k1, void *k2)
 {
     return strcmp((char *) k1, (char *) k2) ? 0 : 1;
 }
 
-static uint32_t hashfromstring(void *ky)
+uint32_t zap_hash_hashfromstring(void *ky)
 {
 	unsigned char *str = (unsigned char *) ky;
 	uint32_t hash = 0;
@@ -210,6 +213,19 @@ static uint32_t hashfromstring(void *ky)
     return hash;
 }
 
+
+static zap_status_t zap_span_destroy(zap_span_t *span)
+{
+	zap_status_t status = ZAP_FAIL;
+	
+	if (zap_test_flag(span, ZAP_SPAN_CONFIGURED) && span->zio && span->zio->span_destroy) {
+		zap_log(ZAP_LOG_INFO, "Destroying span %u type (%s)\n", span->span_id, span->type);
+		status = span->zio->span_destroy(span);
+		zap_safe_free(span->type);
+	}
+
+	return status;
+}
 
 static zap_status_t zap_channel_destroy(zap_channel_t *zchan)
 {
@@ -227,7 +243,7 @@ static zap_status_t zap_channel_destroy(zap_channel_t *zchan)
 
 		
 		if (zchan->span->zio->channel_destroy) {
-			zap_log(ZAP_LOG_INFO, "Closing channel %u:%u fd:%d\n", zchan->span_id, zchan->chan_id, zchan->sockfd);
+			zap_log(ZAP_LOG_INFO, "Closing channel %s:%u:%u fd:%d\n", zchan->span->type, zchan->span_id, zchan->chan_id, zchan->sockfd);
 			if (zchan->span->zio->channel_destroy(zchan) == ZAP_SUCCESS) {
 				zap_clear_flag_locked(zchan, ZAP_CHANNEL_CONFIGURED);
 			} else {
@@ -315,14 +331,13 @@ zap_status_t zap_span_close_all(void)
 	uint32_t i, j;
 
 	zap_mutex_lock(globals.mutex);
-	for(i = 0; i < globals.span_index; i++) {
+	for(i = 1; i <= globals.span_index; i++) {
 		span = &globals.spans[i];
-
-		for(j = 0; j < span->chan_count; j++) {
-			zap_channel_destroy(&span->channels[i]);
-		}
-
-		zap_safe_free(span->signal_data);
+		if (zap_test_flag(span, ZAP_SPAN_CONFIGURED)) {
+			for(j = 0; j < span->chan_count; j++) {
+				zap_channel_destroy(&span->channels[i]);
+			}
+		} 
 	}
 	zap_mutex_unlock(globals.mutex);
 
@@ -938,6 +953,7 @@ static zap_status_t zchan_activate_dtmf_buffer(zap_channel_t *zchan)
 			zap_log(ZAP_LOG_DEBUG, "Created DTMF Buffer!\n");
 		}
 	}
+
 	
 	if (!zchan->tone_session.buffer) {
 		memset(&zchan->tone_session, 0, sizeof(zchan->tone_session));
@@ -947,6 +963,8 @@ static zap_status_t zchan_activate_dtmf_buffer(zap_channel_t *zchan)
 	zchan->tone_session.rate = zchan->rate;
 	zchan->tone_session.duration = zchan->dtmf_on * (zchan->tone_session.rate / 1000);
 	zchan->tone_session.wait = zchan->dtmf_off * (zchan->tone_session.rate / 1000);
+	zchan->tone_session.volume = -7;
+
 	/*
 	  zchan->tone_session.debug = 1;
 	  zchan->tone_session.debug_stream = stdout;
@@ -1083,6 +1101,8 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 	case ZAP_COMMAND_ENABLE_PROGRESS_DETECT:
 		{
 			/* if they don't have thier own, use ours */
+			zap_channel_clear_detected_tones(zchan);
+			zap_channel_clear_needed_tones(zchan);
 			teletone_multi_tone_init(&zchan->span->tone_finder[ZAP_TONEMAP_DIAL], &zchan->span->tone_detect_map[ZAP_TONEMAP_DIAL]);
 			teletone_multi_tone_init(&zchan->span->tone_finder[ZAP_TONEMAP_RING], &zchan->span->tone_detect_map[ZAP_TONEMAP_RING]);
 			teletone_multi_tone_init(&zchan->span->tone_finder[ZAP_TONEMAP_BUSY], &zchan->span->tone_detect_map[ZAP_TONEMAP_BUSY]);
@@ -1101,7 +1121,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 	case ZAP_COMMAND_ENABLE_DTMF_DETECT:
 		{
 			/* if they don't have thier own, use ours */
-			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF)) {
+			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF_DETECT)) {
 				zap_tone_type_t tt = ZAP_COMMAND_OBJ_INT;
 				if (tt == ZAP_TONE_DTMF) {
 					teletone_dtmf_detect_init (&zchan->dtmf_detect, zchan->rate);
@@ -1117,7 +1137,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 		break;
 	case ZAP_COMMAND_DISABLE_DTMF_DETECT:
 		{
-			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF)) {
+			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF_DETECT)) {
 				zap_tone_type_t tt = ZAP_COMMAND_OBJ_INT;
                 if (tt == ZAP_TONE_DTMF) {
                     teletone_dtmf_detect_init (&zchan->dtmf_detect, zchan->rate);
@@ -1132,7 +1152,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 		}
 	case ZAP_COMMAND_GET_DTMF_ON_PERIOD:
 		{
-			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF)) {
+			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF_GENERATE)) {
 				ZAP_COMMAND_OBJ_INT = zchan->dtmf_on;
 				GOTO_STATUS(done, ZAP_SUCCESS);
 			}
@@ -1140,7 +1160,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 		break;
 	case ZAP_COMMAND_GET_DTMF_OFF_PERIOD:
 		{
-			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF)) {
+			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF_GENERATE)) {
 				ZAP_COMMAND_OBJ_INT = zchan->dtmf_on;
 				GOTO_STATUS(done, ZAP_SUCCESS);
 			}
@@ -1148,7 +1168,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 		break;
 	case ZAP_COMMAND_SET_DTMF_ON_PERIOD:
 		{
-			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF)) {
+			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF_GENERATE)) {
 				int val = ZAP_COMMAND_OBJ_INT;
 				if (val > 10 && val < 1000) {
 					zchan->dtmf_on = val;
@@ -1162,7 +1182,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 		break;
 	case ZAP_COMMAND_SET_DTMF_OFF_PERIOD:
 		{
-			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF)) {
+			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF_GENERATE)) {
 				int val = ZAP_COMMAND_OBJ_INT;
 				if (val > 10 && val < 1000) {
 					zchan->dtmf_off = val;
@@ -1176,7 +1196,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 		break;
 	case ZAP_COMMAND_SEND_DTMF:
 		{
-			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF)) {
+			if (!zap_channel_test_feature(zchan, ZAP_CHANNEL_FEATURE_DTMF_GENERATE)) {
 				char *cur;
 				char *digits = ZAP_COMMAND_OBJ_CHAR_P;
 				int x = 0;
@@ -1523,7 +1543,7 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 					*(str+mlen) = '\0';
 					zap_copy_string(str, sp, ++mlen);
 					zap_clean_string(str);
-					zap_log(ZAP_LOG_ERROR, "FSK: TYPE %s LEN %d VAL [%s]\n", zap_mdmf_type2str(type), mlen-1, str);
+					zap_log(ZAP_LOG_DEBUG, "FSK: TYPE %s LEN %d VAL [%s]\n", zap_mdmf_type2str(type), mlen-1, str);
 					
 					switch(type) {
 					case MDMF_DDN:
@@ -1570,13 +1590,14 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 
 		if (zap_test_flag(zchan, ZAP_CHANNEL_PROGRESS_DETECT)) {
 			uint32_t i;
-			
+
 			for (i = 1; i < ZAP_TONEMAP_INVALID; i++) {
 				if (zchan->span->tone_finder[i].tone_count) {
 					if (zchan->needed_tones[i] && teletone_multi_tone_detect(&zchan->span->tone_finder[i], sln, (int)slen)) {
-						zchan->detected_tones[i] = 1;
-						zchan->needed_tones[i] = 0;
-						zchan->detected_tones[0]++;
+						if (++zchan->detected_tones[i]) {
+							zchan->needed_tones[i] = 0;
+							zchan->detected_tones[0]++;
+						}
 					}
 				}
 			}
@@ -1713,6 +1734,7 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t data
 static struct {
 	zap_io_interface_t *wanpipe_interface;
 	zap_io_interface_t *zt_interface;
+	zap_io_interface_t *pika_interface;
 } interfaces;
 
 
@@ -1760,7 +1782,14 @@ static zap_status_t load_config(void)
 					continue;
 				}
 
+				if (!zio->configure_span) {
+					zap_log(ZAP_LOG_CRIT, "failure creating span, no configure_span method for '%s'\n", type);
+					span = NULL;
+					continue;
+				}
+
 				if (zap_span_create(zio, &span) == ZAP_SUCCESS) {
+					span->type = strdup(type);
 					zap_log(ZAP_LOG_DEBUG, "created span %d of type %s\n", span->span_id, type);
 					d = 0;
 				} else {
@@ -1886,7 +1915,7 @@ zap_status_t zap_global_init(void)
 	zap_isdn_init();
 	
 	memset(&interfaces, 0, sizeof(interfaces));
-	globals.interface_hash = create_hashtable(16, hashfromstring, equalkeys);
+	globals.interface_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
 	modcount = 0;
 	zap_mutex_create(&globals.mutex);
 	
@@ -1913,6 +1942,19 @@ zap_status_t zap_global_init(void)
 		zap_log(ZAP_LOG_ERROR, "Error initilizing zt.\n");	
 	}
 #endif
+
+#ifdef ZAP_PIKA_SUPPORT
+    if (pika_init(&interfaces.pika_interface) == ZAP_SUCCESS) {
+        zap_mutex_lock(globals.mutex);
+        hashtable_insert(globals.interface_hash, (void *)interfaces.pika_interface->name, interfaces.pika_interface);
+        process_module_config(interfaces.pika_interface);
+        zap_mutex_unlock(globals.mutex);
+        modcount++;
+    } else {
+        zap_log(ZAP_LOG_ERROR, "Error initilizing pika.\n");
+    }
+#endif
+
 
 	if (!modcount) {
 		zap_log(ZAP_LOG_ERROR, "Error initilizing anything.\n");	
@@ -1953,6 +1995,10 @@ zap_status_t zap_global_destroy(void)
 			if (cur_span->mutex) {
 				zap_mutex_destroy(&cur_span->mutex);
 			}
+
+			zap_safe_free(cur_span->signal_data);
+			zap_span_destroy(cur_span);
+
 		}
 	}
 
@@ -1962,6 +2008,13 @@ zap_status_t zap_global_destroy(void)
 		zt_destroy();		
 	}
 #endif
+
+#ifdef ZAP_PIKA_SUPPORT
+	if (interfaces.pika_interface) {
+		pika_destroy();		
+	}
+#endif
+
 #ifdef ZAP_WANPIPE_SUPPORT
 	if (interfaces.wanpipe_interface) {
 		wanpipe_destroy();

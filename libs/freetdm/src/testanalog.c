@@ -14,7 +14,8 @@ static void *test_call(zap_thread_t *me, void *obj)
 	zap_log(ZAP_LOG_DEBUG, "answer call and start echo test\n");
 
 	zap_set_state_locked(chan, ZAP_CHANNEL_STATE_UP);
-	
+	zap_channel_command(chan, ZAP_COMMAND_SEND_DTMF, "5551212");
+
 	while (chan->state == ZAP_CHANNEL_STATE_UP) {
 		zap_wait_flag_t flags = ZAP_READ;
 		
