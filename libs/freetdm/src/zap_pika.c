@@ -73,7 +73,7 @@ struct pika_chan_data {
 	PKH_TPlayConfig play_config;
 	zap_buffer_t *digit_buffer;
 	zap_mutex_t *digit_mutex;
-	int dtmf_len;
+	zap_size_t dtmf_len;
 };
 typedef struct pika_chan_data pika_chan_data_t;
 
@@ -104,49 +104,49 @@ static ZIO_CONFIGURE_FUNCTION(pika_configure)
 	}
 
 	if (!strcasecmp(var, "rx-gain")) {
-		profile->record_config.gain = atof(val);
+		profile->record_config.gain = (PK_FLOAT)atof(val);
 	} else if (!strcasecmp(var, "rx-agc-enabled")) {
 		profile->record_config.AGC.enabled = zap_true(val);
 	} else if (!strcasecmp(var, "rx-agc-targetPower")) {
-		profile->record_config.AGC.targetPower = atof(val);
+		profile->record_config.AGC.targetPower = (PK_FLOAT)atof(val);
 	} else if (!strcasecmp(var, "rx-agc-minGain")) {
-		profile->record_config.AGC.minGain = atof(val);
+		profile->record_config.AGC.minGain = (PK_FLOAT)atof(val);
 	} else if (!strcasecmp(var, "rx-agc-maxGain")) {
-		profile->record_config.AGC.maxGain = atof(val);
+		profile->record_config.AGC.maxGain = (PK_FLOAT)atof(val);
 	} else if (!strcasecmp(var, "rx-agc-attackRate")) {
 		profile->record_config.AGC.attackRate = atoi(val);
 	} else if (!strcasecmp(var, "rx-agc-decayRate")) {
 		profile->record_config.AGC.decayRate = atoi(val);
 	} else if (!strcasecmp(var, "rx-agc-speechThreshold")) {
-		profile->record_config.AGC.speechThreshold = atof(val);
+		profile->record_config.AGC.speechThreshold = (PK_FLOAT)atof(val);
 	} else if (!strcasecmp(var, "rx-vad-enabled")) {
 		profile->record_config.VAD.enabled = zap_true(val);
 	} else if (!strcasecmp(var, "rx-vad-activationThreshold")) {
-		profile->record_config.VAD.activationThreshold = atof(val);
+		profile->record_config.VAD.activationThreshold = (PK_FLOAT)atof(val);
 	} else if (!strcasecmp(var, "rx-vad-activationDebounceTime")) {
 		profile->record_config.VAD.activationDebounceTime = atoi(val);
 	} else if (!strcasecmp(var, "rx-vad-deactivationThreshold")) {
-		profile->record_config.VAD.deactivationThreshold = atof(val);
+		profile->record_config.VAD.deactivationThreshold = (PK_FLOAT)atof(val);
 	} else if (!strcasecmp(var, "rx-vad-deactivationDebounceTime")) {
 		profile->record_config.VAD.deactivationDebounceTime = atoi(val);
 	} else if (!strcasecmp(var, "rx-vad-preSpeechBufferSize")) {
 		profile->record_config.VAD.preSpeechBufferSize = atoi(val);
 	} else if (!strcasecmp(var, "tx-gain")) {
-		profile->play_config.gain = atof(val);
+		profile->play_config.gain = (PK_FLOAT)atof(val);
 	} else if (!strcasecmp(var, "tx-agc-enabled")) {
 		profile->play_config.AGC.enabled = zap_true(val);
 	} else if (!strcasecmp(var, "tx-agc-targetPower")) {
-		profile->play_config.AGC.targetPower = atof(val);
+		profile->play_config.AGC.targetPower = (PK_FLOAT)atof(val);
 	} else if (!strcasecmp(var, "tx-agc-minGain")) {
-		profile->play_config.AGC.minGain = atof(val);
+		profile->play_config.AGC.minGain = (PK_FLOAT)atof(val);
 	} else if (!strcasecmp(var, "tx-agc-maxGain")) {
-		profile->play_config.AGC.maxGain = atof(val);
+		profile->play_config.AGC.maxGain = (PK_FLOAT)atof(val);
 	} else if (!strcasecmp(var, "tx-agc-attackRate")) {
 		profile->play_config.AGC.attackRate = atoi(val);
 	} else if (!strcasecmp(var, "tx-agc-decayRate")) {
 		profile->play_config.AGC.decayRate = atoi(val);
 	} else if (!strcasecmp(var, "tx-agc-speechThreshold")) {
-		profile->play_config.AGC.speechThreshold = atof(val);
+		profile->play_config.AGC.speechThreshold = (PK_FLOAT)atof(val);
 	} else {
 		ok = 0;
 	}
