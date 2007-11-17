@@ -3,23 +3,17 @@
 
 int main(int argc, char *argv[])
 {
-	teletone_generation_session_t ts;
-	teletone_multi_tone_t mt = {0};
-	teletone_tone_map_t map = {0};
-
 	int fd, b;
 	short sln[512] = {0};
+	teletone_dtmf_detect_state_t dtmf_detect = {0};
+	char digit_str[128] = "";
 
 	if (argc < 2) {
 		fprintf(stderr, "Arg Error!\n");
 		exit(-1);
 	}
 
-
-	map.freqs[0] = atof("350");
-	map.freqs[1] = atof("440");
-	teletone_multi_tone_init(&mt, &map);
-
+	teletone_dtmf_detect_init (&dtmf_detect, 8000);
 
 	if ((fd = open(argv[1], O_RDONLY)) < 0) {
 		fprintf(stderr, "File Error!\n", strerror(errno));
@@ -27,7 +21,11 @@ int main(int argc, char *argv[])
 	}
 
 	while((b = read(fd, sln, 320)) > 0) {
-		printf("TEST %d %d\n", b, teletone_multi_tone_detect(&mt, sln, b / 2));
+		teletone_dtmf_detect(&dtmf_detect, sln, b / 2);
+		teletone_dtmf_get(&dtmf_detect, digit_str, sizeof(digit_str));
+		if (*digit_str) {
+			printf("digit: %s\n", digit_str);
+		}
 	}
 	close(fd);
 }

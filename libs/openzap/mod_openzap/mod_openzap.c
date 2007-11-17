@@ -304,14 +304,14 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	switch (tech_pvt->zchan->type) {
 	case ZAP_CHAN_TYPE_FXO:
 		{
-			if (tech_pvt->zchan->state != ZAP_CHANNEL_STATE_DOWN) {
-				zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_HANGUP);
-			}
+
+			zap_set_state_locked(tech_pvt->zchan, ZAP_CHANNEL_STATE_HANGUP);
+
 		}
 		break;
 	case ZAP_CHAN_TYPE_FXS:
 		{
-			if (tech_pvt->zchan->state != ZAP_CHANNEL_STATE_DOWN) {
+			if (tech_pvt->zchan->state != ZAP_CHANNEL_STATE_BUSY && tech_pvt->zchan->state != ZAP_CHANNEL_STATE_DOWN) {
 				if (tech_pvt->zchan->token_count) {
 					cycle_foreground(tech_pvt->zchan, 0);
 				} else {
@@ -466,20 +466,21 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 	
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
-		return SWITCH_STATUS_FALSE;
+		goto fail;
 	}
 
+	wflags = ZAP_READ;	
 	status = zap_channel_wait(tech_pvt->zchan, &wflags, chunk);
-
+	
 	if (status == ZAP_FAIL) {
-		return SWITCH_STATUS_GENERR;
+		goto fail;
 	}
 	
 	if (status == ZAP_TIMEOUT) {
 		if (timeout > 0 && !switch_test_flag(tech_pvt, TFLAG_HOLD)) {
 			total_to -= chunk;
 			if (total_to <= 0) {
-				return SWITCH_STATUS_BREAK;
+				goto fail;
 			}
 		}
 
@@ -487,12 +488,12 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 
 	if (!(wflags & ZAP_READ)) {
-		return SWITCH_STATUS_GENERR;
+		goto fail;
 	}
 
 	len = tech_pvt->read_frame.buflen;
 	if (zap_channel_read(tech_pvt->zchan, tech_pvt->read_frame.data, &len) != ZAP_SUCCESS) {
-		return SWITCH_STATUS_GENERR;
+		goto fail;
 	}
 
 	*frame = &tech_pvt->read_frame;
@@ -508,6 +509,12 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 
 	return SWITCH_STATUS_SUCCESS;
+
+ fail:
+	
+	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
+	return SWITCH_STATUS_GENERR;
+	
 
 }
 
@@ -530,19 +537,24 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	}
 
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
-		return SWITCH_STATUS_FALSE;
+		goto fail;
 	}
 	
 	len = frame->datalen;
 	if (zap_channel_write(tech_pvt->zchan, frame->data, frame->buflen, &len) != ZAP_SUCCESS) {
 		if (++tech_pvt->wr_error > 10) {
-			return SWITCH_STATUS_GENERR;
+			goto fail;
 		}
 	} else {
 		tech_pvt->wr_error = 0;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
+
+ fail:
+	
+	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
+	return SWITCH_STATUS_GENERR;
 
 }
 
@@ -833,7 +845,7 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
 			switch_set_string(sigmsg->channel->caller_data.cid_num, sigmsg->channel->chan_number);
 		}
 	}
-	
+
 	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 														 "OpenZAP",
 														 SPAN_CONFIG[sigmsg->channel->span_id].dialplan,
@@ -875,9 +887,29 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 	switch_channel_t *channel = NULL;
 	zap_status_t status;
 
-	zap_log(ZAP_LOG_DEBUG, "got FXO sig [%s]\n", zap_signal_event2str(sigmsg->event_id));
+	zap_log(ZAP_LOG_DEBUG, "got FXO sig %d:%d [%s]\n", sigmsg->channel->span_id, sigmsg->channel->chan_id, zap_signal_event2str(sigmsg->event_id));
 
     switch(sigmsg->event_id) {
+
+    case ZAP_SIGEVENT_PROGRESS_MEDIA:
+		{
+			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				channel = switch_core_session_get_channel(session);
+				switch_channel_mark_pre_answered(channel);
+				switch_core_session_rwunlock(session);
+			}
+		}
+		break;
+    case ZAP_SIGEVENT_STOP:
+		{
+			while((session = zap_channel_get_session(sigmsg->channel, 0))) {
+				zap_channel_clear_token(sigmsg->channel, 0);
+				channel = switch_core_session_get_channel(session);
+				switch_channel_hangup(channel, sigmsg->channel->caller_data.hangup_cause);
+				switch_core_session_rwunlock(session);
+			}
+		}
+		break;
     case ZAP_SIGEVENT_UP:
 		{
 			if ((session = zap_channel_get_session(sigmsg->channel, 0))) {
