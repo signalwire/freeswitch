@@ -34,9 +34,12 @@
 
 #include "openzap.h"
 #include "zap_pika.h"
+
 #define MAX_NUMBER_OF_TRUNKS 64
 #define PIKA_BLOCK_SIZE 160
 #define PIKA_BLOCK_LEN 20
+#define TRY_OR_DIE(__code, __status, __label) if ((status = __code ) != __status) goto __label
+#define pk_atof(__a) (PK_FLOAT) atof(__a)
 
 struct pika_channel_profile {
 	char name[80];
@@ -52,6 +55,9 @@ static struct {
 	TPikaHandle open_boards[MAX_NUMBER_OF_TRUNKS];
 	TPikaHandle system_handle;
 	PKH_TSystemConfig system_config;
+	PKH_TRecordConfig record_config;
+	PKH_TPlayConfig play_config;
+	PKH_TECConfig ec_config;
 	zap_hash_t *profile_hash;
 } globals;
 
@@ -103,62 +109,65 @@ static ZIO_CONFIGURE_FUNCTION(pika_configure)
 		profile = malloc(sizeof(*profile));
 		memset(profile, 0, sizeof(*profile));
 		zap_set_string(profile->name, category);
+		profile->ec_config = globals.ec_config;
+		profile->record_config = globals.record_config;
+		profile->play_config = globals.play_config;
 		hashtable_insert(globals.profile_hash, (void *)profile->name, profile);
 		zap_log(ZAP_LOG_INFO, "creating profile [%s]\n", category);
 	}
 
 	if (!strcasecmp(var, "rx-gain")) {
-		profile->record_config.gain = (PK_FLOAT)atof(val);
+		profile->record_config.gain = pk_atof(val);
 	} else if (!strcasecmp(var, "rx-agc-enabled")) {
 		profile->record_config.AGC.enabled = zap_true(val);
 	} else if (!strcasecmp(var, "rx-agc-targetPower")) {
-		profile->record_config.AGC.targetPower = (PK_FLOAT)atof(val);
+		profile->record_config.AGC.targetPower = pk_atof(val);
 	} else if (!strcasecmp(var, "rx-agc-minGain")) {
-		profile->record_config.AGC.minGain = (PK_FLOAT)atof(val);
+		profile->record_config.AGC.minGain = pk_atof(val);
 	} else if (!strcasecmp(var, "rx-agc-maxGain")) {
-		profile->record_config.AGC.maxGain = (PK_FLOAT)atof(val);
+		profile->record_config.AGC.maxGain = pk_atof(val);
 	} else if (!strcasecmp(var, "rx-agc-attackRate")) {
 		profile->record_config.AGC.attackRate = atoi(val);
 	} else if (!strcasecmp(var, "rx-agc-decayRate")) {
 		profile->record_config.AGC.decayRate = atoi(val);
 	} else if (!strcasecmp(var, "rx-agc-speechThreshold")) {
-		profile->record_config.AGC.speechThreshold = (PK_FLOAT)atof(val);
+		profile->record_config.AGC.speechThreshold = pk_atof(val);
 	} else if (!strcasecmp(var, "rx-vad-enabled")) {
 		profile->record_config.VAD.enabled = zap_true(val);
 	} else if (!strcasecmp(var, "rx-vad-activationThreshold")) {
-		profile->record_config.VAD.activationThreshold = (PK_FLOAT)atof(val);
+		profile->record_config.VAD.activationThreshold = pk_atof(val);
 	} else if (!strcasecmp(var, "rx-vad-activationDebounceTime")) {
 		profile->record_config.VAD.activationDebounceTime = atoi(val);
 	} else if (!strcasecmp(var, "rx-vad-deactivationThreshold")) {
-		profile->record_config.VAD.deactivationThreshold = (PK_FLOAT)atof(val);
+		profile->record_config.VAD.deactivationThreshold = pk_atof(val);
 	} else if (!strcasecmp(var, "rx-vad-deactivationDebounceTime")) {
 		profile->record_config.VAD.deactivationDebounceTime = atoi(val);
 	} else if (!strcasecmp(var, "rx-vad-preSpeechBufferSize")) {
 		profile->record_config.VAD.preSpeechBufferSize = atoi(val);
 	} else if (!strcasecmp(var, "tx-gain")) {
-		profile->play_config.gain = (PK_FLOAT)atof(val);
+		profile->play_config.gain = pk_atof(val);
 	} else if (!strcasecmp(var, "tx-agc-enabled")) {
 		profile->play_config.AGC.enabled = zap_true(val);
 	} else if (!strcasecmp(var, "tx-agc-targetPower")) {
-		profile->play_config.AGC.targetPower = (PK_FLOAT)atof(val);
+		profile->play_config.AGC.targetPower = pk_atof(val);
 	} else if (!strcasecmp(var, "tx-agc-minGain")) {
-		profile->play_config.AGC.minGain = (PK_FLOAT)atof(val);
+		profile->play_config.AGC.minGain = pk_atof(val);
 	} else if (!strcasecmp(var, "tx-agc-maxGain")) {
-		profile->play_config.AGC.maxGain = (PK_FLOAT)atof(val);
+		profile->play_config.AGC.maxGain = pk_atof(val);
 	} else if (!strcasecmp(var, "tx-agc-attackRate")) {
 		profile->play_config.AGC.attackRate = atoi(val);
 	} else if (!strcasecmp(var, "tx-agc-decayRate")) {
 		profile->play_config.AGC.decayRate = atoi(val);
 	} else if (!strcasecmp(var, "tx-agc-speechThreshold")) {
-		profile->play_config.AGC.speechThreshold = (PK_FLOAT)atof(val);
+		profile->play_config.AGC.speechThreshold = pk_atof(val);
 	} else if (!strcasecmp(var, "ec-enabled")) {
 		profile->ec_enabled = zap_true(val);
 	} else if (!strcasecmp(var, "ec-doubleTalkerThreshold")) {
-		profile->ec_config.doubleTalkerThreshold = (PK_FLOAT)atof(val);
+		profile->ec_config.doubleTalkerThreshold = pk_atof(val);
 	} else if (!strcasecmp(var, "ec-speechPresentThreshold")) {
-		profile->ec_config.speechPresentThreshold = (PK_FLOAT)atof(val);
+		profile->ec_config.speechPresentThreshold = pk_atof(val);
 	} else if (!strcasecmp(var, "ec-echoSuppressionThreshold")) {
-		profile->ec_config.echoSuppressionThreshold = (PK_FLOAT)atof(val);
+		profile->ec_config.echoSuppressionThreshold = pk_atof(val);
 	} else if (!strcasecmp(var, "ec-echoSuppressionEnabled")) {
 		profile->ec_config.echoSuppressionEnabled = zap_true(val);
 	} else if (!strcasecmp(var, "ec-comfortNoiseEnabled")) {
@@ -277,65 +286,29 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 		chan_data = malloc(sizeof *chan_data);
 		assert(chan_data);
 		memset(chan_data, 0, sizeof(*chan_data));
-		
+
+
 		if (type == ZAP_CHAN_TYPE_FXO) {
 			PKH_TTrunkConfig trunkConfig;
 			
-			if((status = PKH_TRUNK_Open(globals.open_boards[boardno], x, &chan_data->handle)) != PK_SUCCESS) {
-				goto fail_fxo;
-			}
-		
-			if ((status = PKH_TRUNK_Seize(chan_data->handle) != PK_SUCCESS)) {
-				goto fail_fxo;
-			}
+			TRY_OR_DIE(PKH_TRUNK_Open(globals.open_boards[boardno], x, &chan_data->handle), PK_SUCCESS, fail_fxo);
+			TRY_OR_DIE(PKH_TRUNK_Seize(chan_data->handle), PK_SUCCESS, fail_fxo);
+			TRY_OR_DIE(zap_span_add_channel(span, 0, type, &chan), ZAP_SUCCESS, fail_fxo);
+			TRY_OR_DIE(PKH_TRUNK_GetConfig(chan_data->handle, &trunkConfig), PK_SUCCESS, fail_fxo);
 
-			if (zap_span_add_channel(span, 0, type, &chan) != ZAP_SUCCESS) {
-				goto fail_fxo;
-			}
-
-			if ((status = PKH_TRUNK_GetConfig(chan_data->handle, &trunkConfig) != PK_SUCCESS)) {
-				goto fail_fxo;
-			}
-			
 			trunkConfig.internationalControl = PKH_TRUNK_NA;
 			trunkConfig.audioFormat = PKH_AUDIO_MULAW;
 
-			if ((status = PKH_TRUNK_SetConfig(chan_data->handle, &trunkConfig) != PK_SUCCESS)) {
-				goto fail_fxo;
-			}
+			TRY_OR_DIE(PKH_TRUNK_SetConfig(chan_data->handle, &trunkConfig), PK_SUCCESS, fail_fxo);
+			TRY_OR_DIE(PKH_QUEUE_Attach(span_data->event_queue, chan_data->handle, (PK_VOID*) chan), PK_SUCCESS, fail_fxo);
+			TRY_OR_DIE(PKH_TRUNK_GetMediaStreams(chan_data->handle, &chan_data->media_in, &chan_data->media_out), PK_SUCCESS, fail_fxo);
+			TRY_OR_DIE(PKH_QUEUE_Create(PKH_QUEUE_TYPE_NORMAL, &chan_data->media_in_queue), PK_SUCCESS, fail_fxo);
+			TRY_OR_DIE(PKH_QUEUE_Attach(chan_data->media_in_queue, chan_data->media_in, (PK_VOID*) chan), PK_SUCCESS, fail_fxo);
+			TRY_OR_DIE(PKH_QUEUE_Create(PKH_QUEUE_TYPE_CALLBACK, &chan_data->media_out_queue), PK_SUCCESS, fail_fxo);
+			TRY_OR_DIE(PKH_QUEUE_SetEventHandler(chan_data->media_out_queue, media_out_callback), PK_SUCCESS, fail_fxo);
+			TRY_OR_DIE(PKH_QUEUE_Attach(chan_data->media_out_queue, chan_data->media_out, (PK_VOID*) chan), PK_SUCCESS, fail_fxo);
+			TRY_OR_DIE(PKH_TRUNK_Start(chan_data->handle), PK_SUCCESS, fail_fxo);
 			
-			if ((status = PKH_QUEUE_Attach(span_data->event_queue, chan_data->handle, (PK_VOID*) chan)) != PK_SUCCESS) {
-				goto fail_fxo;
-			}
-
-			if ((status = PKH_TRUNK_GetMediaStreams(chan_data->handle, &chan_data->media_in, &chan_data->media_out)) != ZAP_SUCCESS) {
-				goto fail_fxo;
-			}
-
-			if ((status = PKH_QUEUE_Create(PKH_QUEUE_TYPE_NORMAL, &chan_data->media_in_queue)) != PK_SUCCESS) {
-				goto fail_fxo;
-			}
-
-			if ((status = PKH_QUEUE_Attach(chan_data->media_in_queue, chan_data->media_in, (PK_VOID*) chan)) != PK_SUCCESS) {
-				goto fail_fxo;
-			}
-
-			if ((status = PKH_QUEUE_Create(PKH_QUEUE_TYPE_CALLBACK, &chan_data->media_out_queue)) != PK_SUCCESS) {
-				goto fail_fxo;
-			}
-
-			if ((status = PKH_QUEUE_SetEventHandler(chan_data->media_out_queue, media_out_callback)) != PK_SUCCESS) {
-				goto fail_fxo;
-			}
-		
-			if ((status = PKH_QUEUE_Attach(chan_data->media_out_queue, chan_data->media_out, (PK_VOID*) chan)) != PK_SUCCESS) {
-				goto fail_fxo;
-			}
-			
-			if ((status = PKH_TRUNK_Start(chan_data->handle)) != PK_SUCCESS) {
-				goto fail_fxo;
-			}
-
 			goto ok;
 
 		fail_fxo:
@@ -351,50 +324,18 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 			continue;
 			
 		} else if (type == ZAP_CHAN_TYPE_FXS) {
-			if((status = PKH_PHONE_Open(globals.open_boards[boardno], x, &chan_data->handle)) != PK_SUCCESS) {
-				goto fail_fxs;
-			}
+			TRY_OR_DIE(PKH_PHONE_Open(globals.open_boards[boardno], x, &chan_data->handle), PK_SUCCESS, fail_fxs);
+			TRY_OR_DIE(PKH_PHONE_Seize(chan_data->handle), PK_SUCCESS, fail_fxs);
+			TRY_OR_DIE(zap_span_add_channel(span, 0, type, &chan), ZAP_SUCCESS, fail_fxs);
+			TRY_OR_DIE(PKH_PHONE_GetMediaStreams(chan_data->handle, &chan_data->media_in, &chan_data->media_out), PK_SUCCESS, fail_fxs);
+			TRY_OR_DIE(PKH_QUEUE_Attach(span_data->event_queue, chan_data->handle, (PK_VOID*) chan), PK_SUCCESS, fail_fxs);
+			TRY_OR_DIE(PKH_QUEUE_Create(PKH_QUEUE_TYPE_NORMAL, &chan_data->media_in_queue), PK_SUCCESS, fail_fxs);
+			TRY_OR_DIE(PKH_QUEUE_Attach(chan_data->media_in_queue, chan_data->media_in, (PK_VOID*) chan), PK_SUCCESS, fail_fxs);
+			TRY_OR_DIE(PKH_QUEUE_Create(PKH_QUEUE_TYPE_CALLBACK, &chan_data->media_out_queue), PK_SUCCESS, fail_fxs);
+			TRY_OR_DIE(PKH_QUEUE_SetEventHandler(chan_data->media_out_queue, media_out_callback), PK_SUCCESS, fail_fxs);
+			TRY_OR_DIE(PKH_QUEUE_Attach(chan_data->media_out_queue, chan_data->media_out, (PK_VOID*) chan), PK_SUCCESS, fail_fxs);
+			TRY_OR_DIE(PKH_PHONE_Start(chan_data->handle), PK_SUCCESS, fail_fxs);
 			
-			if ((status = PKH_PHONE_Seize(chan_data->handle) != PK_SUCCESS)) {
-				goto fail_fxs;
-			}
-
-			if (zap_span_add_channel(span, 0, type, &chan) != ZAP_SUCCESS) {
-				goto fail_fxs;
-			}
-			
-			if ((status = PKH_PHONE_GetMediaStreams(chan_data->handle, &chan_data->media_in, &chan_data->media_out)) != ZAP_SUCCESS) {
-				goto fail_fxs;
-			}
-			
-			if ((status = PKH_QUEUE_Attach(span_data->event_queue, chan_data->handle, (PK_VOID*) chan)) != PK_SUCCESS) {
-				goto fail_fxs;
-			}
-			
-			if ((status = PKH_QUEUE_Create(PKH_QUEUE_TYPE_NORMAL, &chan_data->media_in_queue)) != PK_SUCCESS) {
-				goto fail_fxs;
-			}
-
-			if ((status = PKH_QUEUE_Attach(chan_data->media_in_queue, chan_data->media_in, (PK_VOID*) chan)) != PK_SUCCESS) {
-				goto fail_fxs;
-			}
-
-			if ((status = PKH_QUEUE_Create(PKH_QUEUE_TYPE_CALLBACK, &chan_data->media_out_queue)) != PK_SUCCESS) {
-				goto fail_fxs;
-			}
-
-			if ((status = PKH_QUEUE_SetEventHandler(chan_data->media_out_queue, media_out_callback)) != PK_SUCCESS) {
-				goto fail_fxs;
-			}
-		
-			if ((status = PKH_QUEUE_Attach(chan_data->media_out_queue, chan_data->media_out, (PK_VOID*) chan)) != PK_SUCCESS) {
-				goto fail_fxs;
-			}
-
-			if ((status = PKH_PHONE_Start(chan_data->handle)) != PK_SUCCESS) {
-				goto fail_fxs;
-			}
-
 			goto ok;
 
 
@@ -407,8 +348,6 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 			}
 			PKH_QUEUE_Destroy(chan_data->media_in_queue);
 			free(chan_data);
-
-
 		}
 
 	ok:
@@ -421,8 +360,6 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 		chan_data->record_config.VAD.enabled = PK_FALSE;
 		//chan_data->record_config.speechSegmentEventsEnabled = PK_FALSE;
 		//chan_data->record_config.gain = rxgain;
-
-
 
 		status = PKH_PLAY_GetConfig(chan_data->media_out, &chan_data->play_config);
 		chan_data->play_config.encoding = PKH_RECORD_ENCODING_MU_LAW;
@@ -909,7 +846,7 @@ zap_status_t pika_init(zap_io_interface_t **zint)
 	uint32_t i;
 	int ok = 0;
 	PKH_TLogMasks m;
-
+	TPikaHandle tmpHandle;
 
 	assert(zint != NULL);
 	memset(&pika_interface, 0, sizeof(pika_interface));
@@ -938,6 +875,12 @@ zap_status_t pika_init(zap_io_interface_t **zint)
 	globals.system_config.recordBufferSize = PIKA_BLOCK_SIZE;
 	globals.system_config.recordNumberOfBuffers = 8;
 	PKH_SYSTEM_SetConfig(globals.system_handle, &globals.system_config);
+
+	status = PKH_MEDIA_STREAM_Create(&tmpHandle);
+	status = PKH_RECORD_GetConfig(tmpHandle, &globals.record_config);
+	status = PKH_PLAY_GetConfig(tmpHandle, &globals.play_config);
+	status = PKH_EC_GetConfig(tmpHandle, &globals.ec_config);
+	status = PKH_MEDIA_STREAM_Destroy(tmpHandle);
 
 	zap_log(ZAP_LOG_DEBUG, "Found %u board%s\n", globals.board_list.numberOfBoards, globals.board_list.numberOfBoards == 1 ? "" : "s");
 	for(i = 0; i < globals.board_list.numberOfBoards; ++i) {
