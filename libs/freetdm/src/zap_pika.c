@@ -393,6 +393,7 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 		PKH_RECORD_Start(chan_data->media_in);
 		PKH_PLAY_Start(chan_data->media_out);
 		if (chan_data->ec_enabled) {
+			PKH_EC_SetConfig(chan_data->media_in, &chan_data->ec_config);
 			PKH_EC_Start(chan_data->media_in, chan_data->media_in, chan_data->media_out);
 		}
 
