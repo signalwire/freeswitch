@@ -21,78 +21,7 @@
   <X-PRE-PROCESS cmd="include" data="vars.xml"/>
 
   <section name="configuration" description="Various Configuration">
-    <!-- drop in configs -->
     <X-PRE-PROCESS cmd="include" data="autoload_configs/*.xml"/>
-
-    <X-PRE-PROCESS cmd="include" data="switch.conf.xml"/>
-    <X-PRE-PROCESS cmd="include" data="modules.conf.xml"/>
-
-    <!-- Order doesn't matter, but for clarity these are in same order as modules.conf.xml. 
-         If they aren't loaded by modules.conf.xml, then they are ignored.
-    --> 
-    <!-- Loggers -->
-    <X-PRE-PROCESS cmd="include" data="console.conf.xml"/>
-    <X-PRE-PROCESS cmd="include" data="syslog.conf.xml"/>
-
-    <!-- Multi-Faceted -->
-    <X-PRE-PROCESS cmd="include" data="enum.conf.xml"/>
-
-    <!-- XML Interfaces --> 
-    <X-PRE-PROCESS cmd="include" data="xml_rpc.conf.xml"/>
-    <X-PRE-PROCESS cmd="include" data="xml_cdr.conf.xml"/>
-    <X-PRE-PROCESS cmd="include" data="xml_curl.conf.xml"/>
-    <!-- none for mod_xml_cdr -->
-
-    <!-- Event Handlers -->
-    <XX-PRE-PROCESS cmd="include" data="cdr.conf.xml"/>
-    <X-PRE-PROCESS cmd="include" data="event_multicast.conf.xml"/>
-    <X-PRE-PROCESS cmd="include" data="event_socket.conf.xml"/>
-    <X-PRE-PROCESS cmd="include" data="zeroconf.conf.xml"/>
-
-    <!-- Directory Interfaces -->
-    <!-- none for mod_ldap; dialplan_directory.conf.xml has ldap connection info -->
-
-    <!-- Endpoints -->
-    <X-PRE-PROCESS cmd="include" data="dingaling.conf.xml"/>
-    <X-PRE-PROCESS cmd="include" data="iax.conf.xml"/>
-    <X-PRE-PROCESS cmd="include" data="portaudio.conf.xml"/>
-    <X-PRE-PROCESS cmd="include" data="alsa.conf.xml"/>
-    <X-PRE-PROCESS cmd="include" data="sofia.conf.xml"/>
-    <X-PRE-PROCESS cmd="include" data="wanpipe.conf.xml"/>
-    <X-PRE-PROCESS cmd="include" data="woomera.conf.xml"/>
-
-    <!-- Applications -->
-    <!-- none for mod_bridgecall, mod_commands, mod_echo, mod_park, mod_playback --> 
-    <X-PRE-PROCESS cmd="include" data="conference.conf.xml"/>
-    <!-- ivr.conf is used by mod_dptools -->
-    <X-PRE-PROCESS cmd="include" data="ivr.conf.xml"/>
-    <X-PRE-PROCESS cmd="include" data="voicemail.conf.xml"/>
-    <X-PRE-PROCESS cmd="include" data="limit.conf.xml"/>
-
-    <!-- Dialplan Interfaces -->
-    <X-PRE-PROCESS cmd="include" data="dialplan_directory.conf.xml"/>
-    <!-- mod_dialplan_xml is configured in the separate "dialplan" section. -->
-
-    <!-- Codec Interfaces -->
-    <!-- no configuration needed -->
-    <!-- File Format Interfaces -->
-    <!-- no configuration needed -->
-    <!-- Timers -->
-    <!-- no configuration needed -->
-
-    <!-- Languages -->
-    <X-PRE-PROCESS cmd="include" data="spidermonkey.conf.xml"/>
-    <!-- none for mod_perl -->
-    <X-PRE-PROCESS cmd="include" data="java.conf.xml"/>
-
-    <!-- ASR /TTS -->
-    <!-- none for mod_cepstral -->
-    <X-PRE-PROCESS cmd="include" data="rss.conf.xml"/>
-    <X-PRE-PROCESS cmd="include" data="openmrcp.conf.xml"/>
-
-    <!-- Say -->
-    <!-- none for mod_say_en -->
-    <X-PRE-PROCESS cmd="include" data="local_stream.conf.xml"/>
   </section>
   
   <section name="dialplan" description="Regex/XML Dialplan">
