@@ -417,7 +417,7 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 		chan_data->record_config.encoding = PKH_RECORD_ENCODING_MU_LAW;
 		chan_data->record_config.samplingRate = PKH_RECORD_SAMPLING_RATE_8KHZ;
 		chan_data->record_config.bufferSize = PIKA_BLOCK_SIZE;
-		chan_data->record_config.numberOfBuffers = chan_data->record_config.bufferSize;
+		chan_data->record_config.numberOfBuffers = (PK_UINT)chan_data->record_config.bufferSize;
 		chan_data->record_config.VAD.enabled = PK_FALSE;
 		//chan_data->record_config.speechSegmentEventsEnabled = PK_FALSE;
 		//chan_data->record_config.gain = rxgain;
@@ -450,7 +450,7 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 		chan->physical_chan_id = x;
 
 		chan->rate = 8000;
-		chan->packet_len = chan_data->record_config.bufferSize;
+		chan->packet_len = (uint32_t)chan_data->record_config.bufferSize;
 		chan->effective_interval = chan->native_interval = chan->packet_len / 8;
 
 		PKH_RECORD_Start(chan_data->media_in);
@@ -694,8 +694,8 @@ static ZIO_COMMAND_FUNCTION(pika_command)
 			int interval = ZAP_COMMAND_OBJ_INT;
 			int len = interval * 8;
 			chan_data->record_config.bufferSize = len;
-			chan_data->record_config.numberOfBuffers = chan_data->record_config.bufferSize;
-			zchan->packet_len = chan_data->record_config.bufferSize;
+			chan_data->record_config.numberOfBuffers = (PK_UINT)chan_data->record_config.bufferSize;
+			zchan->packet_len = (uint32_t)chan_data->record_config.bufferSize;
 			zchan->effective_interval = zchan->native_interval = zchan->packet_len / 8;
 			PKH_RECORD_SetConfig(chan_data->media_in, &chan_data->record_config);
 			GOTO_STATUS(done, ZAP_SUCCESS);
