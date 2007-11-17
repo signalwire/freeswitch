@@ -2034,8 +2034,7 @@ uint32_t zap_separate_string(char *buf, char delim, char **array, int arraylen)
 	int argc;
 	char *ptr;
 	int quot = 0;
-	char qc = '"';
-	char *e;
+	char qc = '\'';
 	int x;
 
 	if (!buf || !array || !arraylen) {
@@ -2066,13 +2065,21 @@ uint32_t zap_separate_string(char *buf, char delim, char **array, int arraylen)
 		array[argc++] = ptr;
 	}
 
-	/* strip quotes */
+	/* strip quotes and leading / trailing spaces */
 	for (x = 0; x < argc; x++) {
-		if (*(array[x]) == qc) {
+		char *p;
+
+		while(*(array[x]) == ' ') {
 			(array[x])++;
-			if ((e = strchr(array[x], qc))) {
-				*e = '\0';
-			}
+		}
+		p = array[x];
+		while((p = strchr(array[x], qc))) {
+			memmove(p, p+1, strlen(p));
+			p++;
+		}
+		p = array[x] + (strlen(array[x]) - 1);
+		while(*p == ' ') {
+			*p-- = '\0';
 		}
 	}
 
