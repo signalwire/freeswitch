@@ -49,12 +49,15 @@
 
     <!-- Codec Interfaces -->
     <load module="mod_g711"/>
+    <load module="mod_g723_1"/>
+    <load module="mod_g729"/>
     <load module="mod_g722"/>
     <load module="mod_g726"/>
     <load module="mod_gsm"/>
+    <load module="mod_amr"/>
     <load module="mod_ilbc"/>
     <load module="mod_l16"/>
-    <!-- <load module="mod_speex"/> -->
+    <load module="mod_speex"/>
 
     <!-- File Format Interfaces -->
     <load module="mod_sndfile"/>
