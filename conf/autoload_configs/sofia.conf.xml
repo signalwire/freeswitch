@@ -1,5 +1,5 @@
 <configuration name="sofia.conf" description="sofia Endpoint">
   <profiles>
-    <X-PRE-PROCESS cmd="include" data="sip_profiles/*.xml"/>
+    <X-PRE-PROCESS cmd="include" data="../sip_profiles/*.xml"/>
   </profiles>
 </configuration>
