@@ -542,7 +542,7 @@ uint8_t sofia_reg_handle_register(nua_t * nua, sofia_profile_t *profile, nua_han
 				sql = NULL;
 			}
 			
-			if ((sql = switch_mprintf("delete from sip_registrations where call_id='%q'", to_user, to_host, call_id))) {
+			if ((sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id))) {
 				sofia_glue_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 				switch_safe_free(sql);
 				sql = NULL;
@@ -1109,6 +1109,7 @@ switch_status_t sofia_reg_add_gateway(char *key, sofia_gateway_t *gateway)
 
 	return status;
 }
+
 
 
 

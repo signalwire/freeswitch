@@ -809,7 +809,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 							 from_user,
 							 from_host,
 							 to_user,
-							 to_host, event, proto
+							 to_host, event
 							 );
 
 		assert(sql != NULL);
@@ -846,7 +846,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		switch_safe_free(sstr);
 
-		if ((sql = switch_mprintf("select * from sip_subscriptions where sip_user='%q' and sip_host='%q'", to_user, to_host, to_user, to_host))) {
+		if ((sql = switch_mprintf("select * from sip_subscriptions where sip_user='%q' and sip_host='%q'", to_user, to_host))) {
 			sofia_glue_execute_sql_callback(profile,
 											SWITCH_FALSE,
 											profile->ireg_mutex,
@@ -1145,3 +1145,13 @@ void sofia_presence_set_chat_hash(private_object_t *tech_pvt, sip_t const *sip)
 	switch_core_hash_insert(tech_pvt->profile->chat_hash, tech_pvt->hash_key, tech_pvt);
 
 }
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */
