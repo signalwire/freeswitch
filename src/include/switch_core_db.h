@@ -539,7 +539,7 @@ SWITCH_DECLARE(int) switch_core_db_changes(switch_core_db_t *db);
  * should always use %q instead of %s when inserting text into a string 
  * literal.
  */
-SWITCH_DECLARE(char *) switch_mprintf(const char *zFormat, ...) PRINTF_FUNCTION(1, 2);
+SWITCH_DECLARE(char *) switch_mprintf(const char *zFormat, ...);
 
 SWITCH_END_EXTERN_C
 #endif
