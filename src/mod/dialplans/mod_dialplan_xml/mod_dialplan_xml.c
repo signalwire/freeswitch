@@ -186,7 +186,7 @@ static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switc
 	switch_status_t status = SWITCH_STATUS_GENERR;
 
 	channel = switch_core_session_get_channel(session);
-	data = switch_channel_build_param_string(channel, caller_profile);
+	data = switch_channel_build_param_string(channel, caller_profile, NULL);
 
 	status = switch_xml_locate("dialplan", NULL, NULL, NULL, root, node, data);
 	switch_safe_free(data);

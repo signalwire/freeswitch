@@ -456,7 +456,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
   \note it's necessary to test if the return val is the same as the input and free the string if it is not.
 */
 SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel, char *in);
-SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *channel, switch_caller_profile_t *caller_profile);
+SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *channel, switch_caller_profile_t *caller_profile, const char *prefix);
 
 /** @} */
 

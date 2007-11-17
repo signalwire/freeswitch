@@ -1510,7 +1510,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 	return data;
 }
 
-SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *channel, switch_caller_profile_t *caller_profile)
+SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *channel, switch_caller_profile_t *caller_profile, const char *prefix)
 {
 	switch_stream_handle_t stream = { 0 };
 	switch_size_t encode_len = 1024, new_len = 0;
@@ -1521,6 +1521,10 @@ SWITCH_DECLARE(char *) switch_channel_build_param_string(switch_channel_t *chann
 	uint32_t x = 0;
 
 	SWITCH_STANDARD_STREAM(stream);
+
+	if (prefix) {
+		stream.write_function(&stream, "%s&", prefix);
+	}
 
 	encode_buf = malloc(encode_len);
 	assert(encode_buf);
