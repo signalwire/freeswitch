@@ -912,7 +912,37 @@ zap_status_t pika_init(zap_io_interface_t **zint)
 	pika_interface.get_alarms = pika_get_alarms;
 	*zint = &pika_interface;
 
-	
+
+	zap_log(ZAP_LOG_INFO, "Dumping Default configs:\n");
+	zap_log(ZAP_LOG_INFO, "rx-gain => %0.2f\n", (float)globals.record_config.gain);
+	zap_log(ZAP_LOG_INFO, "rx-agc-enabled => %s\n", globals.record_config.AGC.enabled ? "true" : "false");
+	zap_log(ZAP_LOG_INFO, "rx-agc-targetPower => %0.2f\n", (float)globals.record_config.AGC.targetPower);
+	zap_log(ZAP_LOG_INFO, "rx-agc-minGain => %0.2f\n", (float)globals.record_config.AGC.minGain);
+	zap_log(ZAP_LOG_INFO, "rx-agc-maxGain => %0.2f\n", (float)globals.record_config.AGC.maxGain);
+	zap_log(ZAP_LOG_INFO, "rx-agc-attackRate => %d\n", (int)globals.record_config.AGC.attackRate);
+	zap_log(ZAP_LOG_INFO, "rx-agc-decayRate => %d\n", (int)globals.record_config.AGC.decayRate);
+	zap_log(ZAP_LOG_INFO, "rx-agc-speechThreshold => %0.2f\n", (float)globals.record_config.AGC.speechThreshold);
+	zap_log(ZAP_LOG_INFO, "rx-vad-enabled => %s\n", globals.record_config.VAD.enabled ? "true" : "false");
+	zap_log(ZAP_LOG_INFO, "rx-vad-activationThreshold => %0.2f\n", (float)globals.record_config.VAD.activationThreshold);
+	zap_log(ZAP_LOG_INFO, "rx-vad-activationDebounceTime => %d\n", (int)globals.record_config.VAD.activationDebounceTime);
+	zap_log(ZAP_LOG_INFO, "rx-vad-deactivationThreshold => %0.2f\n", (float)globals.record_config.VAD.deactivationThreshold);
+	zap_log(ZAP_LOG_INFO, "rx-vad-deactivationDebounceTime => %d\n", (int)globals.record_config.VAD.deactivationDebounceTime);
+	zap_log(ZAP_LOG_INFO, "rx-vad-preSpeechBufferSize => %d\n", (int)globals.record_config.VAD.preSpeechBufferSize);
+	zap_log(ZAP_LOG_INFO, "tx-gain => %0.2f\n", (float)globals.play_config.gain);
+	zap_log(ZAP_LOG_INFO, "tx-agc-enabled => %s\n", globals.play_config.AGC.enabled ? "true" : "false");
+	zap_log(ZAP_LOG_INFO, "tx-agc-targetPower => %0.2f\n", (float)globals.play_config.AGC.targetPower);
+	zap_log(ZAP_LOG_INFO, "tx-agc-minGain => %0.2f\n", (float)globals.play_config.AGC.minGain);
+	zap_log(ZAP_LOG_INFO, "tx-agc-maxGain => %0.2f\n", (float)globals.play_config.AGC.maxGain);
+	zap_log(ZAP_LOG_INFO, "tx-agc-attackRate => %d\n", (int)globals.play_config.AGC.attackRate);
+	zap_log(ZAP_LOG_INFO, "tx-agc-decayRate => %d\n", (int)globals.play_config.AGC.decayRate);
+	zap_log(ZAP_LOG_INFO, "tx-agc-speechThreshold => %0.2f\n", (float)globals.play_config.AGC.speechThreshold);
+	zap_log(ZAP_LOG_INFO, "ec-doubleTalkerThreshold => %0.2f\n", (float)globals.ec_config.doubleTalkerThreshold);
+	zap_log(ZAP_LOG_INFO, "ec-speechPresentThreshold => %0.2f\n", (float)globals.ec_config.speechPresentThreshold);
+	zap_log(ZAP_LOG_INFO, "ec-echoSuppressionThreshold => %0.2f\n", (float)globals.ec_config.echoSuppressionThreshold);
+	zap_log(ZAP_LOG_INFO, "ec-echoSuppressionEnabled => %s\n", globals.ec_config.echoSuppressionEnabled ? "true" : "false");
+	zap_log(ZAP_LOG_INFO, "ec-comfortNoiseEnabled => %s\n", globals.ec_config.comfortNoiseEnabled ? "true" : "false");
+	zap_log(ZAP_LOG_INFO, "ec-adaptationModeEnabled => %s\n", globals.ec_config.adaptationModeEnabled ? "true" : "false");
+
 	
 
 	memset(&m, 0, sizeof(m));
