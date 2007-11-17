@@ -300,6 +300,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\src\include\zap_pika.h"
+					>
+				</File>
+				<File
 					RelativePath="..\src\include\zap_skel.h"
 					>
 				</File>
@@ -315,6 +319,30 @@
 			<Filter
 				Name="Source Files"
 				>
+				<File
+					RelativePath="..\src\zap_pika.c"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories="&quot;c:\Program Files\PIKA\AoH\inc&quot;"
+							DisableSpecificWarnings="4214"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories="&quot;c:\Program Files\PIKA\AoH\inc&quot;"
+							DisableSpecificWarnings="4214"
+						/>
+					</FileConfiguration>
+				</File>
 				<File
 					RelativePath="..\src\zap_skel.c"
 					>
