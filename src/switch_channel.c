@@ -179,7 +179,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
 	if (((*channel) = switch_core_alloc(pool, sizeof(switch_channel_t))) == 0) {
 		return SWITCH_STATUS_MEMERR;
 	}
-
+	
 	switch_event_create(&(*channel)->variables, SWITCH_EVENT_MESSAGE);
 	
 	switch_core_hash_init(&(*channel)->private_hash, pool);
@@ -189,6 +189,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
 	switch_mutex_init(&(*channel)->flag_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&(*channel)->profile_mutex, SWITCH_MUTEX_NESTED, pool);
 	(*channel)->hangup_cause = SWITCH_CAUSE_UNALLOCATED;
+	(*channel)->name = "N/A";
 
 	return SWITCH_STATUS_SUCCESS;
 }

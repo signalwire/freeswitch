@@ -396,7 +396,7 @@ static switch_status_t woomera_read_frame(switch_core_session_t *session, switch
 	assert(tech_pvt != NULL);
 
 	for(;;) {
-		if (!switch_test_flag(tech_pvt, TFLAG_ABORT) || !tech_pvt->udp_socket) {
+		if (switch_test_flag(tech_pvt, TFLAG_ABORT) || !tech_pvt->udp_socket) {
 			return SWITCH_STATUS_GENERR;
 		}
 
@@ -441,7 +441,7 @@ static switch_status_t woomera_write_frame(switch_core_session_t *session, switc
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 	
-	if (!switch_test_flag(tech_pvt, TFLAG_ABORT) || !tech_pvt->udp_socket) {
+	if (switch_test_flag(tech_pvt, TFLAG_ABORT) || !tech_pvt->udp_socket) {
 		return SWITCH_STATUS_GENERR;
 	}
 
