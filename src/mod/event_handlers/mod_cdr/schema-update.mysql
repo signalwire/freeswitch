@@ -1,4 +1,0 @@
-ALTER TABLE freeswitchcdr modify callid bigint unsigned auto_increment;
-ALTER TABLE freeswitchcdr Engine=InnoDB;
-
-ALTER TABLE chanvars Engine=InnoDB;
