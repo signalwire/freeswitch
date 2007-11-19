@@ -38,6 +38,7 @@
 #define MAX_NUMBER_OF_TRUNKS 64
 #define PIKA_BLOCK_SIZE 160
 #define PIKA_BLOCK_LEN 20
+#define PIKA_NUM_BUFFERS 8
 #define TRY_OR_DIE(__code, __status, __label) if ((status = __code ) != __status) goto __label
 #define pk_atof(__a) (PK_FLOAT) atof(__a)
 
@@ -356,7 +357,7 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 		chan_data->record_config.encoding = PKH_RECORD_ENCODING_MU_LAW;
 		chan_data->record_config.samplingRate = PKH_RECORD_SAMPLING_RATE_8KHZ;
 		chan_data->record_config.bufferSize = PIKA_BLOCK_SIZE;
-		chan_data->record_config.numberOfBuffers = (PK_UINT)chan_data->record_config.bufferSize;
+		chan_data->record_config.numberOfBuffers = PIKA_NUM_BUFFERS;
 		chan_data->record_config.VAD.enabled = PK_FALSE;
 		//chan_data->record_config.speechSegmentEventsEnabled = PK_FALSE;
 		//chan_data->record_config.gain = rxgain;
@@ -874,7 +875,7 @@ zap_status_t pika_init(zap_io_interface_t **zint)
 	globals.system_config.maxAudioProcessBlockSize = PIKA_BLOCK_LEN;
 	globals.system_config.playBufferSize = PIKA_BLOCK_SIZE;
 	globals.system_config.recordBufferSize = PIKA_BLOCK_SIZE;
-	globals.system_config.recordNumberOfBuffers = 8;
+	globals.system_config.recordNumberOfBuffers = PIKA_NUM_BUFFERS;
 	PKH_SYSTEM_SetConfig(globals.system_handle, &globals.system_config);
 
 	status = PKH_MEDIA_STREAM_Create(&tmpHandle);
