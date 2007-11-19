@@ -37,6 +37,7 @@
 #include <sofia-sip/su_log.h>
 #include <sofia-sip/su_errno.h>
 
+#include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <assert.h>

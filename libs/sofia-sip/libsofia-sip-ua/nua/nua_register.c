@@ -1426,6 +1426,7 @@ nua_registration_t *nua_registration_by_aor(nua_registration_t const *list,
   int sips_uri = remote_uri && remote_uri->url_type == url_sips;
 
   nua_registration_t const *nr, *public = NULL, *any = NULL;
+  nua_registration_t const *registered = NULL;
   nua_registration_t const *namewise = NULL, *sipswise = NULL;
 
   int ip4 = remote_uri && host_is_ip4_address(remote_uri->url_host);
@@ -1444,11 +1445,15 @@ nua_registration_t *nua_registration_by_aor(nua_registration_t const *list,
 	continue;
       if (sips_uri ? nr->nr_secure : !nr->nr_secure) 
 	return (nua_registration_t *)nr;
+      if (!registered && nr->nr_aor)
+	registered = nr;
       if (!public && nr->nr_public)
 	public = nr;
       if (!any)
 	any = nr;
     }
+    if (registered)
+      return (nua_registration_t *)registered;
     if (public)
       return (nua_registration_t *)public;
     if (any)
@@ -1456,8 +1461,11 @@ nua_registration_t *nua_registration_by_aor(nua_registration_t const *list,
     return NULL;
   }
 
-  if (!sips_aor && aor)
+  if (!sips_aor && aor) {
     alt_aor = memcpy(_alt_aor, aor, sizeof _alt_aor);
+    alt_aor->a_url->url_type = url_sips;
+    alt_aor->a_url->url_scheme = "sips";
+  }
 
   for (nr = list; nr; nr = nr->nr_next) {
     if (!nr->nr_ready || !nr->nr_contact)
@@ -1468,11 +1476,12 @@ nua_registration_t *nua_registration_by_aor(nua_registration_t const *list,
       if (!namewise && alt_aor && url_cmp(nr->nr_aor->a_url, aor->a_url) == 0)
 	namewise = nr;
     }
-    else {
-      if (!sipswise && ((sips_aor || sips_uri) ? 
-			nr->nr_secure : !nr->nr_secure))
-	sipswise = nr;
-    }
+
+    if (!sipswise && ((sips_aor || sips_uri) ? 
+		      nr->nr_secure : !nr->nr_secure))
+      sipswise = nr;
+    if (!registered)
+      registered = nr;
     if (!public && nr->nr_public)
       public = nr;
     if (!any)
@@ -1483,7 +1492,9 @@ nua_registration_t *nua_registration_by_aor(nua_registration_t const *list,
     return (nua_registration_t *)namewise;
   if (sipswise)
     return (nua_registration_t *)sipswise;
-
+  if (registered)
+    return (nua_registration_t *)registered;
+    
   /* XXX - 
      should we do some policing whether sips_aor or sips_uri can be used
      with sip contact?
@@ -1594,7 +1605,7 @@ int nua_registration_add_contact_to_request(nua_handle_t *nh,
  *
  * @param nh
  * @param msg response message
- * @param sip response headers
+ * @param sip headers in response message
  * @param record_route record-route from request
  * @param remote_contact Contact from request
  */

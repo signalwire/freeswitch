@@ -97,7 +97,7 @@ void su_pthread_port_lock(su_port_t *self, char const *who)
   PORT_LOCK_DEBUG(("%p at %s locking(%p)...",
 		   (void *)pthread_self(), who, self));
 
-  su_home_mutex_lock(self->sup_base->sup_home);
+  su_home_lock(self->sup_base->sup_home);
 
   PORT_LOCK_DEBUG((" ...%p at %s locked(%p)...", 
 		   (void *)pthread_self(), who, self));
@@ -105,7 +105,7 @@ void su_pthread_port_lock(su_port_t *self, char const *who)
 
 void su_pthread_port_unlock(su_port_t *self, char const *who)
 {
-  su_home_mutex_unlock(self->sup_base->sup_home);
+  su_home_unlock(self->sup_base->sup_home);
 
   PORT_LOCK_DEBUG((" ...%p at %s unlocked(%p)\n", 
 		   (void *)pthread_self(), who, self));

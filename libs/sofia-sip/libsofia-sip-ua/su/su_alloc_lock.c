@@ -41,25 +41,32 @@
 #include <assert.h>
 #include <stdlib.h>
 
-extern void (*su_home_locker)(void *mutex);
-extern void (*su_home_unlocker)(void *mutex);
+extern int (*_su_home_locker)(void *mutex);
+extern int (*_su_home_unlocker)(void *mutex);
 
-extern void (*su_home_mutex_locker)(void *mutex);
-extern void (*su_home_mutex_unlocker)(void *mutex);
+extern int (*_su_home_mutex_locker)(void *mutex);
+extern int (*_su_home_mutex_trylocker)(void *mutex);
+extern int (*_su_home_mutex_unlocker)(void *mutex);
 
-extern void (*su_home_destroy_mutexes)(void *mutex);
+extern void (*_su_home_destroy_mutexes)(void *mutex);
 
 /** Mutex */
-static void mutex_locker(void *_mutex)
+static int mutex_locker(void *_mutex)
 {
   pthread_mutex_t *mutex = _mutex;
-  pthread_mutex_lock(mutex + 1);
+  return pthread_mutex_lock(mutex + 1);
 }
 
-static void mutex_unlocker(void *_mutex)
+int mutex_trylocker(void *_mutex)
 {
   pthread_mutex_t *mutex = _mutex;
-  pthread_mutex_unlock(mutex + 1);
+  return pthread_mutex_trylock(mutex + 1);
+}
+
+static int mutex_unlocker(void *_mutex)
+{
+  pthread_mutex_t *mutex = _mutex;
+  return pthread_mutex_unlock(mutex + 1);
 }
 
 static void mutex_destroy(void *_mutex)
@@ -69,7 +76,6 @@ static void mutex_destroy(void *_mutex)
   pthread_mutex_destroy(mutex + 1);
   free(_mutex);
 }
-
 #endif
 
 
@@ -100,13 +106,14 @@ int su_home_threadsafe(su_home_t *home)
 #endif
 
 #if SU_HAVE_PTHREADS
-  if (!su_home_unlocker) {
+  if (!_su_home_unlocker) {
     /* Avoid linking pthread library just for memory management */
-    su_home_mutex_locker = mutex_locker;
-    su_home_mutex_unlocker = mutex_unlocker;
-    su_home_locker = (void (*)(void *))pthread_mutex_lock;
-    su_home_unlocker = (void (*)(void *))pthread_mutex_unlock;
-    su_home_destroy_mutexes = mutex_destroy;
+    _su_home_mutex_locker = mutex_locker;
+    _su_home_mutex_trylocker = mutex_trylocker;
+    _su_home_mutex_unlocker = mutex_unlocker;
+    _su_home_locker = (int (*)(void *))pthread_mutex_lock;
+    _su_home_unlocker = (int (*)(void *))pthread_mutex_unlock;
+    _su_home_destroy_mutexes = mutex_destroy;
   }
 
   mutex = calloc(1, 2 * (sizeof *mutex));

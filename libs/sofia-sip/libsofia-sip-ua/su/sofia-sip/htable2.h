@@ -138,13 +138,13 @@ HTABLE2_SCOPE int prefix##_remove(type *, entrytype const)
 HTABLE2_SCOPE \
 int prefix##_resize(void *realloc_arg, \
                     type pr[1], \
-		    usize_t new_size) \
+		    size_t new_size) \
 { \
   entrytype *new_hash; \
   entrytype *old_hash = pr->pr##table; \
-  usize_t old_size; \
-  usize_t i, j, i0; \
-  usize_t again = 0, used = 0, collisions = 0; \
+  size_t old_size; \
+  size_t i, j, i0; \
+  size_t again = 0, used = 0, collisions = 0; \
 \
   (void)realloc_arg; \
 \
@@ -256,7 +256,7 @@ entrytype *prefix##_insert(type *pr, entrytype e) \
 HTABLE2_SCOPE \
 int prefix##_remove(type *pr, entrytype const e) \
 { \
-  usize_t i, j, k, size = pr->pr##size; \
+  size_t i, j, k, size = pr->pr##size; \
   entrytype *htable = pr->pr##table; \
 \
   /* Search for entry */ \

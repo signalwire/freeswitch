@@ -37,6 +37,7 @@
 #include "sofia-sip/auth_common.h"
 #include "sofia-sip/msg_header.h"
 
+#include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
 #include <assert.h>

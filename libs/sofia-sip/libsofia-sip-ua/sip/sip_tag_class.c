@@ -42,6 +42,7 @@
 #include <sofia-sip/su_tagarg.h>
 #include <sofia-sip/su_strlst.h>
 
+#include <stdio.h>
 #include <ctype.h>
 #include <assert.h>
 #include <stddef.h>

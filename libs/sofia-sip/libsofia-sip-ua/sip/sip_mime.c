@@ -40,6 +40,7 @@
 #include "sofia-sip/sip_parser.h"
 #include "sofia-sip/msg_mime_protos.h"
 
+#include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>

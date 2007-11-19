@@ -107,6 +107,10 @@ SU_DLL int su_home_mutex_lock(su_home_t *home);
 
 SU_DLL int su_home_mutex_unlock(su_home_t *home);
 
+SU_DLL int su_home_lock(su_home_t *home);
+SU_DLL int su_home_trylock(su_home_t *home);
+SU_DLL int su_home_unlock(su_home_t *home);
+
 SU_DLL void *su_alloc(su_home_t *h, isize_t size)
      __attribute__((__malloc__));
 SU_DLL void *su_zalloc(su_home_t *h, isize_t size)

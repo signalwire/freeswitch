@@ -35,6 +35,7 @@
 
 #include "sofia-sip/bnf.h"
 
+#include <stdio.h>
 #include <assert.h>
 
 #define ws    bnf_ws

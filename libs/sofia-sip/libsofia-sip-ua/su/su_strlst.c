@@ -79,6 +79,7 @@
 #include "sofia-sip/su_config.h"
 #include "sofia-sip/su_strlst.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <memory.h>

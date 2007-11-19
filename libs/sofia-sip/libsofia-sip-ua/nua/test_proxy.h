@@ -64,8 +64,9 @@ void test_proxy_get_session_timer(struct proxy *p,
 				  sip_time_t *return_session_expires,
 				  sip_time_t *return_min_se);
 
-void test_proxy_domain_set_authorize(struct domain *d, int authorize);
-void test_proxy_domain_get_authorize(struct domain *d, int *return_authorize);
+int test_proxy_domain_set_authorize(struct domain *, char const *realm);
+int test_proxy_domain_get_authorize(struct domain *,
+				    char const **return_realm);
 
 void test_proxy_domain_set_outbound(struct domain *d,
 				    int use_outbound);

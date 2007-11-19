@@ -387,7 +387,7 @@ int ca_credentials(auth_client_t *ca,
 
   if ((scheme != NULL && strcasecmp(scheme, ca->ca_scheme)) ||
       (realm != NULL && strcmp(realm, ca->ca_realm)))
-    return -1;
+    return 0;
 
   old_user = ca->ca_user, old_pass = ca->ca_pass;
 

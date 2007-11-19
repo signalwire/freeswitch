@@ -186,6 +186,7 @@
 #include "sofia-sip/su_alloc_stat.h"
 #include "sofia-sip/su_errno.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <memory.h>
@@ -193,17 +194,18 @@
 
 #include <assert.h>
 
-void (*su_home_locker)(void *mutex);
-void (*su_home_unlocker)(void *mutex);
+int (*_su_home_locker)(void *mutex);
+int (*_su_home_unlocker)(void *mutex);
 
-void (*su_home_mutex_locker)(void *mutex);
-void (*su_home_mutex_unlocker)(void *mutex);
+int (*_su_home_mutex_locker)(void *mutex);
+int (*_su_home_mutex_trylocker)(void *mutex);
+int (*_su_home_mutex_unlocker)(void *mutex);
 
-void (*su_home_destroy_mutexes)(void *mutex);
+void (*_su_home_destroy_mutexes)(void *mutex);
 
 #define MEMLOCK(h)   \
-  (((h) && (h)->suh_lock ? su_home_locker((h)->suh_lock) : (void)0), (h)->suh_blocks)
-#define UNLOCK(h) (((h) && (h)->suh_lock ? su_home_unlocker((h)->suh_lock) : (void)0), NULL)
+  ((void)((h) && (h)->suh_lock ? _su_home_locker((h)->suh_lock) : 0), (h)->suh_blocks)
+#define UNLOCK(h) ((void)((h) && (h)->suh_lock ? _su_home_unlocker((h)->suh_lock) : 0), NULL)
 
 #ifdef NDEBUG
 #define MEMCHECK 0
@@ -987,7 +989,7 @@ void _su_home_deinit(su_home_t *home)
     home->suh_blocks = NULL;
 
     if (home->suh_lock)
-      su_home_destroy_mutexes(home->suh_lock);
+      _su_home_destroy_mutexes(home->suh_lock);
   }
 
   home->suh_lock = NULL;
@@ -1462,39 +1464,105 @@ int su_home_is_threadsafe(su_home_t const *home)
   return home && home->suh_lock;
 }
 
-/** Obtain exclusive lock on home (if home is threadsafe). */
+/** Increase refcount and obtain exclusive lock on home. 
+ *
+ * @note The #su_home_t structure must be created with su_home_new() or
+ * su_home_clone(), or initialized with su_home_init() before using this
+ * function. 
+ *
+ * In order to enable actual locking, use su_home_threadsafe(), too. 
+ * Otherwise the su_home_mutex_lock() will just increase the reference
+ * count.
+ */
 int su_home_mutex_lock(su_home_t *home)
 {
+  int error;
+
   if (home == NULL)
     return su_seterrno(EFAULT);
 
-  if (home->suh_lock) {
-    su_home_ref(home);
-    su_home_mutex_locker(home->suh_lock);
-  }
-  else if (home->suh_blocks) {
-    if (!su_home_ref(home))
-      return -1;
-  }
+  if (home->suh_blocks == NULL || !su_home_ref(home))
+    return su_seterrno(EINVAL);  /* Uninitialized home */
+
+  if (!home->suh_lock)
+    return 0;			/* No-op */
+
+  error = _su_home_mutex_locker(home->suh_lock);
+  if (error)
+    return su_seterrno(error);
 
   return 0;
 }
 
-/** Release exclusive lock on home (if home is threadsafe) */
+/** Release exclusive lock on home and decrease refcount (if home is threadsafe) */
 int su_home_mutex_unlock(su_home_t *home)
 {
   if (home == NULL)
     return su_seterrno(EFAULT);
 
   if (home->suh_lock) {
-    su_home_mutex_unlocker(home->suh_lock);
-    su_home_unref(home);
-  }
-  else if (home->suh_blocks) {
-    su_home_unref(home);
+    int error = _su_home_mutex_unlocker(home->suh_lock);
+    if (error)
+      return su_seterrno(error);
   }
 
+  if (home->suh_blocks == NULL)
+    return su_seterrno(EINVAL), -1; /* Uninitialized home */
+
+  su_home_unref(home);
+
   return 0;
+}
+
+
+/** Obtain exclusive lock on home without increasing refcount. 
+ *
+ * @return 0 if successful, -1 if not threadsafe, error code otherwise.
+ *
+ */
+int su_home_lock(su_home_t *home)
+{
+  if (home == NULL)
+    return EFAULT;
+
+  if (home->suh_lock == NULL)
+    return -1;			/* No-op */
+
+  return _su_home_mutex_locker(home->suh_lock);
+}
+
+
+/** Try to obtain exclusive lock on home without increasing refcount. 
+ *
+ * @return 0 if successful, -1 if not threadsafe, 
+ * EBUSY if already locked, error code otherwise.
+ *
+ */
+int su_home_trylock(su_home_t *home)
+{
+  if (home == NULL)
+    return EFAULT;
+
+  if (home->suh_lock == NULL)
+    return -1;			/* No-op */
+
+  return _su_home_mutex_trylocker(home->suh_lock);
+}
+
+
+/** Release exclusive lock on home. 
+ *
+ * @return 0 if successful, -1 if not threadsafe, error code otherwise.
+ */
+int su_home_unlock(su_home_t *home)
+{
+  if (home == NULL)
+    return EFAULT;
+
+  if (home->suh_lock == NULL)
+    return -1;			/* No-op */
+
+  return _su_home_mutex_unlocker(home->suh_lock);
 }
 
 

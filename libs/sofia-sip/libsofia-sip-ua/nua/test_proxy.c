@@ -134,7 +134,7 @@ struct domain {
   struct {
     sip_time_t min_expires, expires, max_expires;
     int outbound_tcp;		/**< Use inbound TCP connection as outbound */
-    int authorize;
+    char const *authorize;	/**< Authorization realm to use */
   } prefs;  
 
   tagi_t *tags;
@@ -216,6 +216,7 @@ struct proxy_tr
 
   auth_mod_t *am;		/* Authentication module */
   auth_status_t *as;		/* Authentication status */
+  char const *realm;		/* Authentication realm to use */
   unsigned use_auth;		/* Authentication method (401/407) to use */
 
   unsigned rr:1;
@@ -473,20 +474,33 @@ void test_proxy_domain_get_outbound(struct domain *d,
   }
 }
 
-void test_proxy_domain_set_authorize(struct domain *d, int authorize)
+int test_proxy_domain_set_authorize(struct domain *d, 
+				     char const *realm)
 {
   if (d) {
-    d->prefs.authorize = authorize;
+    if (realm) {
+      realm = su_strdup(d->home, realm);
+      if (!realm)
+	return -1;
+    }
+
+    d->prefs.authorize = realm;
+
+    return 0;
   }
+  return -1;
 }
 
-void test_proxy_domain_get_authorize(struct domain *d,
-				     int *return_authorize)
+int test_proxy_domain_get_authorize(struct domain *d,
+				     char const **return_realm)
 {
   if (d) {
-    if (return_authorize)
-      *return_authorize = d->prefs.authorize;
+    if (return_realm) {
+      *return_realm = d->prefs.authorize;
+      return 0;
+    }
   }
+  return -1;
 }
 
 int test_proxy_close_tports(struct proxy *p)
@@ -533,7 +547,7 @@ struct domain *test_proxy_add_domain(struct proxy *p,
     d->prefs.expires = 3600;
     d->prefs.max_expires = 36000;
     d->prefs.outbound_tcp = 0;
-    d->prefs.authorize = 0;
+    d->prefs.authorize = NULL;
 
     if (d->uri && d->tags && 
 	!su_task_execute(su_clone_task(p->clone), _domain_init, d, &init)) {
@@ -795,6 +809,7 @@ static int originating_transaction(struct proxy_tr *t)
 
   if (o && o->auth && o->prefs.authorize) {
     t->am = o->auth;
+    t->realm = o->prefs.authorize;
     t->use_auth = 407;
   }
 
@@ -966,6 +981,7 @@ static int challenge_transaction(struct proxy_tr *t)
 
   as->as_method = sip->sip_request->rq_method_name;
   as->as_source = msg_addrinfo(t->msg);
+  as->as_realm = t->realm;
 
   as->as_user_uri = sip->sip_from->a_url;
   as->as_display = sip->sip_from->a_display;
@@ -1110,6 +1126,8 @@ int process_register(struct proxy_tr *t)
 
   if (t->domain->auth) {
     t->am = t->domain->auth, t->use_auth = 401;
+    if (t->domain->prefs.authorize)
+      t->realm = t->domain->prefs.authorize;
     if (challenge_transaction(t))
       return t->status;
   }

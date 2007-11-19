@@ -457,8 +457,14 @@ int test_basic_call_2(struct context *ctx)
   TEST_S(sip->sip_content_type->c_type, "application/sdp");
   TEST_1(sip->sip_payload);	/* there is sdp in 200 OK */
   TEST_1(sip->sip_contact);
+#if nomore
   /* Test that B does not use application-specific contact */
   TEST_1(!sip->sip_contact->m_url->url_user);
+#else
+  /* sf.net bug #1816647: Outbound contact does not make it to dialogs */
+  /* Now we use first registered contact if aor does not match */
+  TEST_S(sip->sip_contact->m_url->url_user, "b");
+#endif
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_ready); /* READY */
   TEST_1(!is_answer_recv(e->data->e_tags)); /* but it is ignored */
@@ -989,6 +995,9 @@ int change_uri_in_ack(CONDITION_PARAMS)
 }
 
 /* Test changing from/to within dialog */
+/* Test that a proper Contact gets selected in response 
+ * regardless of the To URI. 
+ */
 int test_basic_call_5(struct context *ctx)
 {
   BEGIN();
@@ -1004,13 +1013,15 @@ int test_basic_call_5(struct context *ctx)
   a_call->sdp = "m=audio 5008 RTP/AVP 8";
   b_call->sdp = "m=audio 5010 RTP/AVP 0 8";
 
-  TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
+  TEST_1(a_call->nh = nua_handle(a->nua, a_call, 
+				 SIPTAG_TO_STR("<sips:b@x.org>"),
+				 TAG_END()));
 
   TEST_1(!nua_handle_has_active_call(a_call->nh));
   TEST_1(!nua_handle_has_call_on_hold(a_call->nh));
 
   INVITE(a, a_call, a_call->nh,
-	 TAG_IF(!ctx->proxy_tests, NUTAG_URL(b->contact->m_url)),
+	 NUTAG_URL(b->contact->m_url),
 	 SOATAG_USER_SDP_STR(a_call->sdp),
 	 NUTAG_AUTOACK(0),
 	 TAG_END());
@@ -1032,6 +1043,7 @@ int test_basic_call_5(struct context *ctx)
   TEST(e->data->e_status, 200);
   TEST_1(sip = sip_object(e->data->e_msg));
   TEST_1(sip->sip_contact);
+  TEST_S(sip->sip_contact->m_url->url_user, "b");
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_completing); /* COMPLETING */
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
