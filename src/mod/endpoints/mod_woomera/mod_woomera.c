@@ -90,7 +90,7 @@ typedef enum {
 	TFLAG_DESTROY = (1 << 7),
 	TFLAG_ABORT = (1 << 8),
 	TFLAG_SWITCH = (1 << 9),
-	TFLAG_ANSWER = (1 << 10),
+	TFLAG_ANSWER = (1 << 10)
 } TFLAGS;
 
 struct woomera_message {
@@ -395,6 +395,18 @@ static switch_status_t woomera_read_frame(switch_core_session_t *session, switch
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	for(;;) {
+		if (!switch_test_flag(tech_pvt, TFLAG_ABORT) || !tech_pvt->udp_socket) {
+			return SWITCH_STATUS_GENERR;
+		}
+
+		if (switch_test_flag(tech_pvt, TFLAG_MEDIA)) {
+			break;
+		}
+		switch_yield(1000);
+	}
+
+
 	if (!tech_pvt->udp_socket) {
 		return SWITCH_STATUS_GENERR;
 	}
@@ -428,10 +440,15 @@ static switch_status_t woomera_write_frame(switch_core_session_t *session, switc
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
-
-	if (!tech_pvt->udp_socket) {
+	
+	if (!switch_test_flag(tech_pvt, TFLAG_ABORT) || !tech_pvt->udp_socket) {
 		return SWITCH_STATUS_GENERR;
 	}
+
+	if (!switch_test_flag(tech_pvt, TFLAG_MEDIA)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	//pframe = &tech_pvt->frame;
 	len = frame->datalen;
 	if (switch_socket_sendto(tech_pvt->udp_socket, tech_pvt->udpwrite, 0, frame->data, &len) == SWITCH_STATUS_SUCCESS) {
@@ -875,8 +892,11 @@ static int tech_create_read_socket(private_object * tech_pvt)
 		switch_socket_bind(tech_pvt->udp_socket, tech_pvt->udpread);
 		switch_socket_create_pollfd(&tech_pvt->read_poll, tech_pvt->udp_socket, SWITCH_POLLIN | SWITCH_POLLERR, pool);
 		switch_socket_create_pollfd(&tech_pvt->write_poll, tech_pvt->udp_socket, SWITCH_POLLOUT | SWITCH_POLLERR, pool);
+		switch_set_flag_locked(tech_pvt, TFLAG_MEDIA);
+	} else {
+		switch_set_flag_locked(tech_pvt, TFLAG_ABORT);
 	}
-
+	
 	return 0;
 }
 
