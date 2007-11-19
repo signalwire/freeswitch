@@ -8,7 +8,6 @@ applications/mod_fifo
 applications/mod_voicemail
 applications/mod_limit
 applications/mod_expr
-#applications/mod_ivrtest
 #applications/mod_soundtouch
 #applications/mod_rss
 #asr_tts/mod_cepstral
@@ -46,13 +45,11 @@ formats/mod_native_file
 formats/mod_sndfile
 #formats/mod_shout
 #formats/mod_local_stream
-#languages/mod_perl
 #languages/mod_python
 languages/mod_spidermonkey
 languages/mod_spidermonkey_teletone
 languages/mod_spidermonkey_core_db
 #languages/mod_spidermonkey_odbc
-#languages/mod_spidermonkey_etpan
 xml_int/mod_xml_rpc
 #xml_int/mod_xml_curl
 xml_int/mod_xml_cdr
