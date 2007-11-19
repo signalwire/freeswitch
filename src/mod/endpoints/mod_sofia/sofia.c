@@ -35,6 +35,7 @@
  */
 #include "mod_sofia.h"
 #include "sofia-sip/msg_parser.h"
+#include "sofia-sip/sip_extra.h"
 
 extern su_log_t tport_log[];
 
@@ -740,6 +741,13 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 	if (!reload) {
 		su_init();
+#if 0
+		if (sip_update_default_mclass(sip_extend_mclass(NULL)) < 0) {
+			su_deinit();
+			return SWITCH_STATUS_FALSE;
+		}
+#endif
+
 		su_log_redirect(NULL, logger, NULL);
 		su_log_redirect(tport_log, logger, NULL);
 	}
@@ -1852,9 +1860,9 @@ void process_rpid(const char *val, private_object_t *tech_pvt)
 
 	if (!switch_strlen_zero(val)) {
 		if ((mydata = strdup(val))) {
-			argc = switch_separate_string(mydata, ';', argv, (sizeof(argv) / sizeof(argv[0])));
 			char *name = argv[0];
 			char *num;
+			argc = switch_separate_string(mydata, ';', argv, (sizeof(argv) / sizeof(argv[0])));
 
 			if ((num = strchr(argv[0], '<'))) {
 				char *end;
@@ -1927,6 +1935,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	switch_core_session_t *session = NULL;
 	char key[128] = "";
 	sip_unknown_t *un;
+#if 0
+	sip_remote_party_id_t *rpid = NULL;
+#endif
 	private_object_t *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
 	const char *channel_name = NULL;
@@ -2157,6 +2168,10 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	if (!(dialplan = switch_channel_get_variable(channel, "inbound_dialplan"))) {
 		dialplan = profile->dialplan;
 	}
+
+#if 0
+	rpid = sip_remote_party_id(sip);
+#endif
 
 	check_decode(displayname, session);
 	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
