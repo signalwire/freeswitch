@@ -629,6 +629,13 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		from_str = sofia_overcome_sip_uri_weakness(session, use_from_str, NULL);
 		to_str = sofia_overcome_sip_uri_weakness(session, tech_pvt->dest_to, NULL);
 		
+		/* 
+		   Does the "genius" who wanted SIP to be "text-based" so it was "easier to read" even use it now,
+		   or did he just suggest it to make our lives miserable?
+		*/
+		use_from_str = from_str;
+		from_str = switch_core_session_sprintf(session, "\"%s\" <%s>", tech_pvt->caller_profile->caller_id_name, use_from_str);
+
 		tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
 								  NUTAG_URL(url_str),
 								  SIPTAG_TO_STR(to_str),

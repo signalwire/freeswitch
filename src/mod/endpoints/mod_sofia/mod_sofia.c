@@ -1607,6 +1607,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 	switch_clear_flag_locked(tech_pvt, TFLAG_LATE_NEGOTIATION);
 	switch_channel_set_state(nchannel, CS_INIT);
+	tech_pvt->caller_profile = caller_profile;
 	*new_session = nsession;
 	cause = SWITCH_CAUSE_SUCCESS;
 	if (session) {
