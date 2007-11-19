@@ -364,7 +364,7 @@ void sofia_presence_event_handler(switch_event_t *event)
 			}
 
 			if (euser && host &&
-				(sql = switch_mprintf("select user,host,status,rpid,'' from sip_registrations where sip_user='%q' and sip_host='%q'",
+				(sql = switch_mprintf("select sip_user,sip_host,status,rpid,'' from sip_registrations where sip_user='%q' and sip_host='%q'",
 									  euser, host)) && (profile = sofia_glue_find_profile(host))) {
 				
 				sofia_glue_execute_sql_callback(profile,
