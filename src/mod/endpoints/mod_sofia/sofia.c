@@ -1845,31 +1845,46 @@ const char *_url_set_chanvars(switch_core_session_t *session, url_t *url, const 
 	return uri;
 }
 
-void process_rpid(sip_unknown_t *un, private_object_t *tech_pvt)
+void process_rpid(const char *val, private_object_t *tech_pvt)
 {
 	int argc, x, screen = 1;
 	char *mydata, *argv[10] = { 0 };
-	char *display = NULL;
-	size_t n = 0;
-	
-	if (!switch_strlen_zero(un->un_value)) {
-		if ((mydata = strdup(un->un_value))) {
-			argc = switch_separate_string(mydata, ';', argv, (sizeof(argv) / sizeof(argv[0])));
 
-			/* FIXME: This is completely insufficient parsing code, and should use the parsers from sofia-sip */ 
-			if (*argv[0] == '"') {
-				if (msg_quoted_d(&argv[0], &display) != -1)
-					tech_pvt->caller_profile->caller_id_name = switch_core_session_strdup(tech_pvt->session, display);
-			}
-			if (*argv[0] == '<') {
+	if (!switch_strlen_zero(val)) {
+		if ((mydata = strdup(val))) {
+			argc = switch_separate_string(mydata, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+			char *name = argv[0];
+			char *num;
+
+			if ((num = strchr(argv[0], '<'))) {
 				char *end;
-				argv[0]++;
-				n = strcspn(argv[0], ":");
-				argv[0] += (n + 1);
-				n = strcspn(argv[0], "@");
-				end = argv[0] + n;
-				if (*end) *end++ = '\0';
-				tech_pvt->caller_profile->caller_id_number = switch_core_session_strdup(tech_pvt->session, argv[0]);
+				*num++ = '\0';
+				
+				if (!strncasecmp(num, "sip:", 4)) {
+					num += 4;
+				}
+
+				if ((end = strchr(num, '@'))) {
+					*end = '\0';
+				}
+				
+				if (*name == '"') {
+					name++;
+				}
+
+				if ((end = strchr(name, '"'))) {
+					*end = '\0';
+				}
+
+				if (name) {
+					check_decode(name, tech_pvt->session);
+					tech_pvt->caller_profile->caller_id_number = switch_core_session_strdup(tech_pvt->session, name);
+				}
+
+				if (num) {
+					check_decode(num, tech_pvt->session);
+					tech_pvt->caller_profile->caller_id_number = switch_core_session_strdup(tech_pvt->session, num);
+				}
 			}
 
 			for (x = 1; x < argc && argv[x]; x++) {
@@ -2160,7 +2175,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 					switch_channel_set_variable(channel, "alert_info", un->un_value);
 				}
 			} else if (!strncasecmp(un->un_name, "Remote-Party-ID", 15)) {
-				process_rpid(un, tech_pvt);
+				process_rpid(un->un_value, tech_pvt);
 			} else if (!strncasecmp(un->un_name, "Diversion", 9)) {
 				// Basic Diversion Support for Diversion Indication in SIP
 				// draft-levy-sip-diversion-08
