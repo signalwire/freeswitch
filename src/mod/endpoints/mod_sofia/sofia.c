@@ -741,12 +741,10 @@ switch_status_t config_sofia(int reload, char *profile_name)
 
 	if (!reload) {
 		su_init();
-#if 0
 		if (sip_update_default_mclass(sip_extend_mclass(NULL)) < 0) {
 			su_deinit();
 			return SWITCH_STATUS_FALSE;
 		}
-#endif
 
 		su_log_redirect(NULL, logger, NULL);
 		su_log_redirect(tport_log, logger, NULL);
@@ -1853,91 +1851,14 @@ const char *_url_set_chanvars(switch_core_session_t *session, url_t *url, const 
 	return uri;
 }
 
-void process_rpid(const char *val, private_object_t *tech_pvt)
-{
-	int argc, x, screen = 1;
-	char *mydata, *argv[10] = { 0 };
-
-	if (!switch_strlen_zero(val)) {
-		if ((mydata = strdup(val))) {
-			char *name = argv[0];
-			char *num;
-			argc = switch_separate_string(mydata, ';', argv, (sizeof(argv) / sizeof(argv[0])));
-
-			if ((num = strchr(argv[0], '<'))) {
-				char *end;
-				*num++ = '\0';
-				
-				if (!strncasecmp(num, "sip:", 4)) {
-					num += 4;
-				}
-
-				if ((end = strchr(num, '@'))) {
-					*end = '\0';
-				}
-				
-				if (*name == '"') {
-					name++;
-				}
-
-				if ((end = strchr(name, '"'))) {
-					*end = '\0';
-				}
-
-				if (name) {
-					check_decode(name, tech_pvt->session);
-					tech_pvt->caller_profile->caller_id_number = switch_core_session_strdup(tech_pvt->session, name);
-				}
-
-				if (num) {
-					check_decode(num, tech_pvt->session);
-					tech_pvt->caller_profile->caller_id_number = switch_core_session_strdup(tech_pvt->session, num);
-				}
-			}
-
-			for (x = 1; x < argc && argv[x]; x++) {
-				// we dont need to do anything with party yet we should only be seeing party=calling here anyway
-				// maybe thats a dangerous assumption bit oh well yell at me later
-				// if (!strncasecmp(argv[x], "party", 5)) {
-				//  party = argv[x];
-				// } else 
-				if (!strncasecmp(argv[x], "privacy=", 8)) {
-					char *arg = argv[x] + 8;
-
-					if (!strcasecmp(arg, "yes")) {
-						switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
-					} else if (!strcasecmp(arg, "full")) {
-						switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
-					} else if (!strcasecmp(arg, "name")) {
-						switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME);
-					} else if (!strcasecmp(arg, "number")) {
-						switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NUMBER);
-					} else {
-						switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME);
-						switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NUMBER);
-					}
-
-				} else if (!strncasecmp(argv[x], "screen=", 7) && screen > 0) {
-					char *arg = argv[x] + 8;
-					if (!strcasecmp(arg, "no")) {
-						screen = 0;
-						switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_SCREEN);
-					}
-				}
-			}
-		free(mydata);
-		}
-	}
-}
 
 void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
 {
 	switch_core_session_t *session = NULL;
 	char key[128] = "";
 	sip_unknown_t *un;
-#if 0
 	sip_remote_party_id_t *rpid = NULL;
-#endif
+	sip_alert_info_t *alert_info = NULL;
 	private_object_t *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
 	const char *channel_name = NULL;
@@ -2037,19 +1958,21 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		switch_channel_set_variable(channel, "sofia_profile_name", profile->name);
 
 		if (!switch_strlen_zero(sip->sip_from->a_display)) {
-			char *tmp;
-			tmp = switch_core_session_strdup(session, sip->sip_from->a_display);
-			if (*tmp == '"') {
-				char *p;
-
-				tmp++;
-				if ((p = strchr(tmp, '"'))) {
-					*p = '\0';
-				}
-			}
-			displayname = tmp;
+			displayname = sip->sip_from->a_display;
 		} else {
 			displayname = switch_strlen_zero(from_user) ? "unknown" : from_user;
+		}
+	}
+
+
+	if ((rpid = sip_remote_party_id(sip))) {
+		if (rpid->rpid_url && rpid->rpid_url->url_user) {
+			from_user = rpid->rpid_url->url_user;
+			check_decode(from_user, session);
+		}
+
+		if (rpid->rpid_display) {
+			displayname = rpid->rpid_display;
 		}
 	}
 
@@ -2169,9 +2092,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		dialplan = profile->dialplan;
 	}
 
-#if 0
-	rpid = sip_remote_party_id(sip);
-#endif
+	if ((alert_info = sip_alert_info(sip))) {
+		switch_channel_set_variable(channel, "alert_info", sip_header_as_string(profile->home, (void *) alert_info));
+	}
 
 	check_decode(displayname, session);
 	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
@@ -2183,15 +2106,30 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 														 NULL, NULL, NULL, MODNAME, context, destination_number);
 
 	if (tech_pvt->caller_profile) {
+
+		if (rpid) {
+			if (rpid->rpid_privacy) {
+				if (!strcasecmp(rpid->rpid_privacy, "yes")) {
+					switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
+				} else if (!strcasecmp(rpid->rpid_privacy, "full")) {
+					switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
+				} else if (!strcasecmp(rpid->rpid_privacy, "name")) {
+					switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME);
+				} else if (!strcasecmp(rpid->rpid_privacy, "number")) {
+					switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NUMBER);
+				} else {
+					switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME);
+					switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NUMBER);
+				}
+			} 
+			
+			if (rpid->rpid_screen && !strcasecmp(rpid->rpid_screen, "no")) {
+				switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_SCREEN);
+			}
+		}
 		/* Loop thru unknown Headers Here so we can do something with them */
 		for (un = sip->sip_unknown; un; un = un->un_next) {
-			if (!strncasecmp(un->un_name, "Alert-Info", 10)) {
-				if (!switch_strlen_zero(un->un_value)) {
-					switch_channel_set_variable(channel, "alert_info", un->un_value);
-				}
-			} else if (!strncasecmp(un->un_name, "Remote-Party-ID", 15)) {
-				process_rpid(un->un_value, tech_pvt);
-			} else if (!strncasecmp(un->un_name, "Diversion", 9)) {
+			if (!strncasecmp(un->un_name, "Diversion", 9)) {
 				// Basic Diversion Support for Diversion Indication in SIP
 				// draft-levy-sip-diversion-08
 				if (!switch_strlen_zero(un->un_value)) {
