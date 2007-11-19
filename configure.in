@@ -404,7 +404,6 @@ AM_CONDITIONAL([HAVE_MYSQL],[test "$found_mysql" = "yes"])
 AC_CONFIG_FILES([Makefile
                 src/Makefile
                 src/mod/Makefile
-                src/mod/event_handlers/mod_cdr/Makefile
                 src/mod/endpoints/mod_sofia/Makefile
                 src/mod/event_handlers/mod_radius_cdr/Makefile
                 src/mod/languages/mod_java/Makefile
