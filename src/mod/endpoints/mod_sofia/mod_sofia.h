@@ -87,8 +87,6 @@ struct sofia_private {
 	sofia_gateway_t *gateway;
 };
 
-
-
 #define set_param(ptr,val) if (ptr) {free(ptr) ; ptr = NULL;} if (val) {ptr = strdup(val);}
 #define set_anchor(t,m) if (t->Anchor) {delete t->Anchor;} t->Anchor = new SipMessage(m);
 
@@ -117,7 +115,6 @@ typedef enum {
 	PFLAG_MULTIREG = (1 << 11),
 	PFLAG_SUPRESS_CNG = (1 << 12)
 } PFLAGS;
-
 
 typedef enum {
 	PFLAG_NDLB_TO_IN_200_CONTACT = (1 << 0),
@@ -166,7 +163,6 @@ struct mod_sofia_globals {
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 
-
 typedef enum {
 	REG_FLAG_AUTHED = (1 << 0),
 	REG_FLAG_CALLERID = (1 << 1)
@@ -209,7 +205,6 @@ struct sofia_gateway {
 	switch_memory_pool_t *pool;
 	struct sofia_gateway *next;
 };
-
 
 struct sofia_profile {
 	int debug;
@@ -272,7 +267,6 @@ struct sofia_profile {
 #endif
 };
 
-
 struct private_object {
 	sofia_private_t *sofia_private;
 	uint32_t flags;
@@ -289,10 +283,8 @@ struct private_object {
 	uint32_t codec_ms;
 	switch_caller_profile_t *caller_profile;
 	uint32_t timestamp_send;
-	//int32_t timestamp_recv;
 	switch_rtp_t *rtp_session;
 	int ssrc;
-	//switch_time_t last_read;
 	sofia_profile_t *profile;
 	char *local_sdp_audio_ip;
 	switch_port_t local_sdp_audio_port;
@@ -378,7 +370,6 @@ typedef enum {
 	AUTH_STALE,
 } auth_res_t;
 
-
 #define sofia_test_pflag(obj, flag) ((obj)->pflags & flag)
 #define sofia_set_pflag(obj, flag) (obj)->pflags |= (flag)
 #define sofia_set_pflag_locked(obj, flag) assert(obj->flag_mutex != NULL);\
@@ -391,7 +382,6 @@ switch_mutex_unlock(obj->flag_mutex);
 
 /* Function Prototypes */
 /*************************************************************************************************************************************************************/
-
 
 switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_flag_t myflags);
 
@@ -423,7 +413,6 @@ void sofia_event_callback(nua_event_t event,
 					int status,
 					char const *phrase,
 					nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
-
 
 void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void *obj);
 
@@ -460,7 +449,6 @@ void sofia_presence_handle_sip_r_subscribe(int status,
 void sofia_presence_handle_sip_i_subscribe(int status,
 					 char const *phrase,
 					 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
-
 
 void sofia_glue_execute_sql(sofia_profile_t *profile, switch_bool_t master, char *sql, switch_mutex_t *mutex);
 void sofia_reg_check_expire(sofia_profile_t *profile, time_t now);
@@ -499,11 +487,9 @@ void sofia_glue_release_profile__(const char *file, const char *func, int line, 
 sofia_profile_t *sofia_glue_find_profile__(const char *file, const char *func, int line, char *key);
 #define sofia_glue_find_profile(x) sofia_glue_find_profile__(__FILE__, __SWITCH_FUNC__, __LINE__,  x)
 
-
 switch_status_t sofia_reg_add_gateway(char *key, sofia_gateway_t *gateway);
 sofia_gateway_t *sofia_reg_find_gateway__(const char *file, const char *func, int line, char *key);
 #define sofia_reg_find_gateway(x) sofia_reg_find_gateway__(__FILE__, __SWITCH_FUNC__, __LINE__,  x)
-
 
 void sofia_reg_release_gateway__(const char *file, const char *func, int line, sofia_gateway_t *gateway);
 #define sofia_reg_release_gateway(x) sofia_reg_release_gateway__(__FILE__, __SWITCH_FUNC__, __LINE__, x);
