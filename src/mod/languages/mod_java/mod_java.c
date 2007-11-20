@@ -45,7 +45,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_java_shutdown);
 SWITCH_MODULE_DEFINITION(mod_java, mod_java_load, mod_java_shutdown, NULL);
 
 
-static void launch_java(switch_core_session_t *session, char *data, JNIEnv *env)
+static void launch_java(switch_core_session_t *session, const char *data, JNIEnv *env)
 {
     jclass Launcher = NULL;
     jmethodID launch = NULL;
@@ -93,7 +93,7 @@ done:
         (*env)->DeleteLocalRef(env, Launcher);
 }
 
-static void java_function(switch_core_session_t *session, char *data)
+SWITCH_STANDARD_APP(java_function)
 {
     JNIEnv *env;
     jint res;
