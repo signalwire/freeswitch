@@ -2140,7 +2140,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 						  "Green laserfire moves past the beeping little robot as his head turns.  "
 						  "After a few beeps and a twist of his mechanical arm,\n"
 						  "Artoo reduces the max sessions to %d thus, saving the switch from certian doom.\n", 
-						  sess_count < 10);
+						  sess_count - 10);
 
 		switch_mutex_unlock(profile->flag_mutex);
 	}
