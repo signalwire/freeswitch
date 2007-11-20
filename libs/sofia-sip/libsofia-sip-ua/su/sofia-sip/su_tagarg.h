@@ -142,8 +142,11 @@ typedef struct {
     if (ta_start__tag != NULL &&					\
 	ta_start__tag != tag_null &&					\
 	ta_start__tag != tag_next) {					\
+      va_list ta_start__ap;						\
+      va_copy(ta_start__ap, (ta).ap);					\
       (ta).tl[1].t_tag = tag_next;					\
-      (ta).tl[1].t_value = (tag_value_t)tl_vlist((ta).ap);		\
+      (ta).tl[1].t_value = (tag_value_t)tl_vlist(ta_start__ap);		\
+      va_end(ta_start__ap);						\
     } else {								\
       (ta).tl[1].t_value = 0; (ta).tl[1].t_value = (tag_value_t)0;	\
     }									\
