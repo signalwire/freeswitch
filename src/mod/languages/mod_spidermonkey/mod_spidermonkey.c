@@ -2366,7 +2366,7 @@ static JSBool js_fetchurl(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, config_data.buffer));
 		} else {
 			char errmsg[256];
-			snprintf(errmsg, 256, "~throw new Error(\"Curl returned error %d.\");", code);
+			snprintf(errmsg, 256, "~throw new Error(\"Curl returned error %u.\");", (unsigned)code);
 			eval_some_js(errmsg, cx, obj, rval);
 		}
 
