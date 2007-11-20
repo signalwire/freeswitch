@@ -853,13 +853,14 @@ static switch_ivr_action_t menu_handler(switch_ivr_menu_t * menu, char *param, c
 SWITCH_STANDARD_APP(ivr_application_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	char *params;
+	char *params,*chanvars;
 
 	if (channel && data && (params = switch_core_session_strdup(session, data))) {
 		switch_xml_t cxml = NULL, cfg = NULL, xml_menus = NULL, xml_menu = NULL;
 
 		// Open the config from the xml registry
-		if ((cxml = switch_xml_open_cfg(ivr_cf_name, &cfg, NULL)) != NULL) {
+		chanvars = switch_channel_build_param_string(channel, NULL, NULL);
+		if ((cxml = switch_xml_open_cfg(ivr_cf_name, &cfg, chanvars)) != NULL) {
 			if ((xml_menus = switch_xml_child(cfg, "menus"))) {
 				xml_menu = switch_xml_find_child(xml_menus, "menu", "name", params);
 
@@ -890,6 +891,7 @@ SWITCH_STANDARD_APP(ivr_application_function)
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", ivr_cf_name);
 		}
+		switch_safe_free(chanvars);
 	}
 }
 

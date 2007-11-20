@@ -186,6 +186,7 @@ SWITCH_STANDARD_APP(rss_function)
 	uint32_t matches = 0;
 	switch_input_args_t args = { 0 };
 	const char *vcf = NULL;
+	char *chanvars = NULL;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -194,10 +195,12 @@ SWITCH_STANDARD_APP(rss_function)
 		cf = vcf;
 	}
 
+    chanvars = switch_channel_build_param_string(channel, NULL, NULL);
 	if (!(cxml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return;
 	}
+	switch_safe_free(chanvars);
 
 	if ((feeds = switch_xml_child(cfg, "feeds"))) {
 		for (feed = switch_xml_child(feeds, "feed"); feed; feed = feed->next) {

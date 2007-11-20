@@ -3127,7 +3127,7 @@ static switch_status_t conf_api_sub_bgdial(conference_obj_t * conference, switch
 static switch_status_t conf_api_sub_transfer(conference_obj_t * conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	switch_status_t ret_status = SWITCH_STATUS_SUCCESS;
-	char *params = NULL;
+	char *params = NULL, *chanvars = NULL;
 	assert(conference != NULL);
 	assert(stream != NULL);
 
@@ -3170,8 +3170,9 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t * conference, swit
 					profile_name = "default";
 				}
 				params = switch_mprintf("conf_name=%s&profile_name=%s", conf_name, profile_name);
+				chanvars = switch_channel_build_param_string(channel, NULL, params);
 				/* Open the config from the xml registry  */
-				if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, params))) {
+				if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, chanvars))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
 					goto done;
 				}
@@ -3243,6 +3244,8 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t * conference, swit
 
   done:
 	switch_safe_free(params);
+	switch_safe_free(chanvars);
+
 	return ret_status;
 }
 
