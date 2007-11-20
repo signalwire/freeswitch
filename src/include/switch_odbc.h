@@ -54,7 +54,6 @@ typedef enum {
 	SWITCH_ODBC_STATE_CONNECTED,
 	SWITCH_ODBC_STATE_ERROR
 } switch_odbc_state_t;
-typedef struct switch_odbc_handle switch_odbc_handle_t;
 
 typedef enum {
 	SWITCH_ODBC_SUCCESS = 0,

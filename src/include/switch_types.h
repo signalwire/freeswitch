@@ -1047,7 +1047,7 @@ typedef struct switch_core_thread_session switch_core_thread_session_t;
 typedef struct switch_codec_implementation switch_codec_implementation_t;
 typedef struct switch_buffer switch_buffer_t;
 typedef struct switch_codec_settings switch_codec_settings_t;
-
+typedef struct switch_odbc_handle switch_odbc_handle_t;
 
 typedef struct switch_io_routines switch_io_routines_t;
 typedef struct switch_speech_handle switch_speech_handle_t;
