@@ -718,7 +718,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 					: (char *)malloc(2);	// mem for list of maloced vals
 				strcpy(attr[l + 3] + (l / 2), " ");	// value is not malloced
 				attr[l + 2] = NULL;	// null terminate list
-				attr[l + 1] = "";	// temporary attribute value
+				attr[l + 1] = (char *)"";	// temporary attribute value
 				attr[l] = s;	// set attribute name
 
 				s += strcspn(s, SWITCH_XML_WS "=/>");
@@ -1765,7 +1765,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_new(const char *name)
 														'\0', sizeof(struct switch_xml_root));
 	root->xml.name = (char *) name;
 	root->cur = &root->xml;
-	strcpy(root->err, root->xml.txt = "");
+	strcpy(root->err, root->xml.txt = (char *)"");
 	root->ent = (char **)memcpy(malloc(sizeof(ent)), ent, sizeof(ent));
 	root->attr = root->pi = (char ***) (root->xml.attr = SWITCH_XML_NIL);
 	return &root->xml;
@@ -1824,7 +1824,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_add_child(switch_xml_t xml, const char *
 	child->attr = SWITCH_XML_NIL;
 	child->off = off;
 	child->parent = xml;
-	child->txt = "";
+	child->txt = (char *)"";
 
 	return switch_xml_insert(child, xml, off);
 }
