@@ -419,7 +419,7 @@ AM_CONDITIONAL(IS64BITLINUX, [test `uname -m` = x86_64])
 #LIBS+=> core.log || error="yes";if test -n "$(VERBOSE)" -o "$$error" = "yes";then cat core.log;fi;if test "$$error" = "yes";then exit 1;fi
 LIBTOOL='`if test -z "$(VERBOSE)" ; then echo $(SHELL) $(switch_builddir)/quiet_libtool ;else echo $(switch_builddir)/libtool; fi;`'
 TOUCH_TARGET='if test -f "$@";then touch "$@";fi;'
-CONF_MODULES='\`grep -v "\#" $(switch_builddir)/modules.conf | sed -e "s|^.*/||" \`'
+CONF_MODULES='\`grep -v "\#" $(switch_builddir)/modules.conf | sed -e "s|^.*/||" | sort | uniq \`'
 OUR_MODS='`if test -z "$(MODULES)" ; then tmp_mods="$(CONF_MODULES)"; else tmp_mods="$(MODULES)" ; fi ; mods=\`for i in $$tmp_mods ; do echo $$i-all ; done \`; echo $$mods `'
 OUR_CLEAN_MODS='`if test -z "$(MODULES)" ; then tmp_mods="$(CONF_MODULES)"; else tmp_mods="$(MODULES)" ; fi ; mods=\`for i in $$tmp_mods ; do echo $$i-clean ; done \`; echo $$mods `'
 OUR_INSTALL_MODS='`if test -z "$(MODULES)" ; then tmp_mods="$(CONF_MODULES)"; else tmp_mods="$(MODULES)" ; fi ; mods=\`for i in $$tmp_mods ; do echo $$i-install ; done\`; echo $$mods `'
