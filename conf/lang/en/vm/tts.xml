@@ -83,7 +83,7 @@
   <macro name="voicemail_record_name">
     <input pattern="^(.*)$">
       <match>
-	<action function="speak-text" data="at the tone, record your name, press any key or stop talking to end the recording."/>
+	<action function="speak-text" data="at the tone, please record your name, press any key or stop talking to end the recording."/>
 
       </match>
     </input>
