@@ -2054,7 +2054,9 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	}
 
 	if ((alert_info = sip_alert_info(sip))) {
-		switch_channel_set_variable(channel, "alert_info", sip_header_as_string(profile->home, (void *) alert_info));
+		char *tmp = sip_header_as_string(profile->home, (void *) alert_info);
+		switch_channel_set_variable(channel, "alert_info", tmp);
+		su_free(profile->home, tmp);
 	}
 
 	check_decode(displayname, session);
