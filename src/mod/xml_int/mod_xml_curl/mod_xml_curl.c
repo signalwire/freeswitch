@@ -45,12 +45,42 @@ struct xml_binding {
 	uint32_t ignore_cacert_check;
 };
 
+static int keep_files_around = 0;
+
 typedef struct xml_binding xml_binding_t;
 
 struct config_data {
 	char *name;
 	int fd;
 };
+
+#define XML_CURL_SYNTAX "[debug_on|debug_off]"
+SWITCH_STANDARD_API(xml_curl_function)
+{
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_strlen_zero(cmd)) {
+		goto usage;
+	}
+
+	if (!strcasecmp(cmd, "debug_on")) {
+		keep_files_around = 1;
+	} else if (!strcasecmp(cmd, "debug_off")) {
+		keep_files_around = 0;
+	} else {
+		goto usage;
+	}
+
+	stream->write_function(stream, "OK\n");
+	return SWITCH_STATUS_SUCCESS;
+
+usage:
+	stream->write_function(stream, "USAGE: %s\n", XML_CURL_SYNTAX);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
@@ -160,7 +190,12 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		xml=NULL;
 	}
 
-	unlink(filename);
+	/* Debug by leaving the file behind for review */
+	if(keep_files_around) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "XML response is in %s\n", filename);
+	} else {
+		unlink(filename);
+	}
 
 	return xml;
 }
@@ -246,8 +281,12 @@ static switch_status_t do_config(void)
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_curl_load)
 {
+	switch_api_interface_t *xml_curl_api_interface;
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+
+	SWITCH_ADD_API(xml_curl_api_interface, "xml_curl", "XML Curl", xml_curl_function, XML_CURL_SYNTAX);
 
 	if (do_config() == SWITCH_STATUS_SUCCESS) {
 		curl_global_init(CURL_GLOBAL_ALL);
