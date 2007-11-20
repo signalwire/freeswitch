@@ -2125,6 +2125,14 @@ struct config_data {
 	int fd;
 };
 
+struct fetch_url_data {
+	JSContext *cx;
+	JSObject *obj;
+	switch_size_t buffer_size;
+	switch_size_t data_len;
+	char* buffer;
+};
+
 static size_t hash_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
 	register size_t realsize = size * nmemb;
@@ -2184,17 +2192,39 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	return realsize;
 }
 
+static size_t fetch_url_callback(void *ptr, size_t size, size_t nmemb, void *data)
+{
+	register unsigned int realsize = (unsigned int) (size * nmemb);
+	struct fetch_url_data *config_data = data;
+
+	/* Too much data. Do not increase buffer, but abort fetch instead. */
+	if (config_data->data_len + realsize >= config_data->buffer_size) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Data do not fit in the allocated buffer\n");
+		return 0;
+	}
+
+	memcpy(config_data->buffer + config_data->data_len, ptr, realsize);
+	config_data->data_len += realsize;
+	config_data->buffer[config_data->data_len] = 0;
+
+	return realsize;
+}
+
 
 static JSBool js_fetchurl_hash(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	char *url = NULL, *name = NULL;
 	CURL *curl_handle = NULL;
 	struct config_data config_data;
+	int saveDepth = 0;
+	int32 disable_wait = 0;
 
 	if (argc > 1) {
 		url = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		name = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
-
+		if (argc > 2) {
+			JS_ValueToInt32(cx, argv[2], &disable_wait);
+		}
 
 		curl_handle = curl_easy_init();
 		if (!strncasecmp(url, "https", 5)) {
@@ -2210,7 +2240,15 @@ static JSBool js_fetchurl_hash(JSContext * cx, JSObject * obj, uintN argc, jsval
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, hash_callback);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
 		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-js/1.0");
-		curl_easy_perform(curl_handle);
+
+		if (disable_wait) {
+			saveDepth = JS_SuspendRequest(cx);
+			curl_easy_perform(curl_handle);
+			JS_ResumeRequest(cx, saveDepth);
+		} else {
+			curl_easy_perform(curl_handle);
+		}
+
 		curl_easy_cleanup(curl_handle);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!\n");
@@ -2227,10 +2265,15 @@ static JSBool js_fetchurl_file(JSContext * cx, JSObject * obj, uintN argc, jsval
 	char *url = NULL, *filename = NULL;
 	CURL *curl_handle = NULL;
 	struct config_data config_data;
+	int saveDepth = 0;
+	int32 disable_wait = 0;
 
 	if (argc > 1) {
 		url = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		filename = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		if (argc > 2) {
+			JS_ValueToInt32(cx, argv[2], &disable_wait);
+		}
 
 		curl_global_init(CURL_GLOBAL_ALL);
 		curl_handle = curl_easy_init();
@@ -2247,12 +2290,88 @@ static JSBool js_fetchurl_file(JSContext * cx, JSObject * obj, uintN argc, jsval
 			curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
 			curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
 			curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-js/1.0");
-			curl_easy_perform(curl_handle);
+
+			if (disable_wait) {
+				saveDepth = JS_SuspendRequest(cx);
+				curl_easy_perform(curl_handle);
+				JS_ResumeRequest(cx, saveDepth);
+			} else {
+				curl_easy_perform(curl_handle);
+			}
+
 			curl_easy_cleanup(curl_handle);
 			close(config_data.fd);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!\n");
 		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!\n");
+	}
+
+	return JS_TRUE;
+}
+
+
+static JSBool js_fetchurl(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	char *url = NULL;
+	CURL *curl_handle = NULL;
+	struct fetch_url_data config_data;
+	int32 buffer_size = 65535;
+	CURLcode code = 0;
+	int saveDepth = 0;
+	int32 disable_wait = 0;
+
+	if (argc >= 1) {
+		url = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		if (argc > 1) {
+			JS_ValueToInt32(cx, argv[1], &buffer_size);
+			if (argc > 2) {
+				JS_ValueToInt32(cx, argv[2], &disable_wait);
+			}
+		}
+
+		curl_global_init(CURL_GLOBAL_ALL);
+		curl_handle = curl_easy_init();
+		if (!strncasecmp(url, "https", 5)) {
+			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+		}
+
+		config_data.buffer_size = buffer_size;
+		config_data.buffer = malloc(config_data.buffer_size);
+		config_data.data_len = 0;
+		if (config_data.buffer == NULL) {
+			eval_some_js("~throw new Error(\"Failed to allocate data buffer.\");", cx, obj, rval);
+			return JS_TRUE;
+		}
+
+		curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, fetch_url_callback);
+		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
+		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-js/1.0");
+
+		if (disable_wait) {
+			saveDepth = JS_SuspendRequest(cx);
+			code = curl_easy_perform(curl_handle);
+			JS_ResumeRequest(cx, saveDepth);
+		} else {
+			code = curl_easy_perform(curl_handle);
+		}
+
+		curl_easy_cleanup(curl_handle);
+
+		if (code != CURLE_WRITE_ERROR) {
+			config_data.buffer[config_data.data_len] = 0;
+			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, config_data.buffer));
+		} else {
+			char errmsg[256];
+			snprintf(errmsg, 256, "~throw new Error(\"Curl returned error %s.\");", code);
+			eval_some_js(errmsg, cx, obj, rval);
+		}
+
+		free(config_data.buffer);
+
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!\n");
 	}
@@ -3085,8 +3204,12 @@ static JSFunctionSpec fs_functions[] = {
 	{"fileDelete", js_file_unlink, 1},
 	{"system", js_system, 1},
 #ifdef HAVE_CURL
+	{"fetchURL", js_fetchurl, 1},
 	{"fetchURLHash", js_fetchurl_hash, 1},
 	{"fetchURLFile", js_fetchurl_file, 1},
+	{"fetchUrl", js_fetchurl, 1},
+	{"fetchUrlHash", js_fetchurl_hash, 1},
+	{"fetchUrlFile", js_fetchurl_file, 1},
 #endif
 	{0}
 };
