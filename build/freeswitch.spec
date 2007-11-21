@@ -2,7 +2,7 @@ Name:         freeswitch-snapshot
 Summary:      FreeSWITCH open source telephony platform
 License:      MPL
 Group:        Productivity/Telephony/Servers
-Version:      6012
+Version:      6365
 Release:      0
 URL:          http://www.freeswitch.org/
 Packager:     Peter Nixon
@@ -181,7 +181,35 @@ rm -rf $RPM_BUILD_ROOT
 %dir %attr(750,root,root) /opt/freeswitch/scripts
 #%dir %attr(750,root,root) /opt/freeswitch/grammer
 %dir %attr(750,root,root) /opt/freeswitch/conf
+%dir %attr(750,root,root) /opt/freeswitch/conf/autoload_configs
+%dir %attr(750,root,root) /opt/freeswitch/conf/dialplan
+%dir %attr(750,root,root) /opt/freeswitch/conf/directory
+%dir %attr(750,root,root) /opt/freeswitch/conf/lang
+%dir %attr(750,root,root) /opt/freeswitch/conf/lang/en
+%dir %attr(750,root,root) /opt/freeswitch/conf/lang/en/demo
+%dir %attr(750,root,root) /opt/freeswitch/conf/lang/en/vm
+%dir %attr(750,root,root) /opt/freeswitch/conf/lang/de
+%dir %attr(750,root,root) /opt/freeswitch/conf/lang/de/demo
+%dir %attr(750,root,root) /opt/freeswitch/conf/lang/de/vm
+%dir %attr(750,root,root) /opt/freeswitch/conf/lang/fr
+%dir %attr(750,root,root) /opt/freeswitch/conf/lang/fr/demo
+%dir %attr(750,root,root) /opt/freeswitch/conf/lang/fr/vm
+%dir %attr(750,root,root) /opt/freeswitch/conf/sip_profiles
 %config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/*.xml
+%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/*.conf
+%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/autoload_configs/*.xml
+%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/dialplan/*.xml
+%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/directory/*.xml
+%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/lang/en/*.xml
+%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/lang/en/demo/*.xml
+%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/lang/en/vm/*.xml
+%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/lang/de/*.xml
+%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/lang/de/demo/*.xml
+%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/lang/de/vm/*.xml
+%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/lang/fr/*.xml
+%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/lang/fr/demo/*.xml
+%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/lang/fr/vm/*.xml
+%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/sip_profiles/*.xml
 /etc/ld.so.conf.d/*
 %{_bindir}/freeswitch
 #/opt/freeswitch/bin/freeswitch
