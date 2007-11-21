@@ -299,6 +299,7 @@ struct private_object {
 	char *rpid;
 	char *gateway_from_str;
 	char *rm_encoding;
+	char *iananame;
 	char *rm_fmtp;
 	char *fmtp_out;
 	char *remote_sdp_str;

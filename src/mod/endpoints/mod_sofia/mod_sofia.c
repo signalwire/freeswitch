@@ -327,7 +327,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			session_timeout = v_session_timeout;
 		}
 	}
-
+	printf("GRRXXXXXXXXXXXXX\n%s\n", tech_pvt->local_sdp_str);
 	nua_respond(tech_pvt->nh, SIP_200_OK,
 				NUTAG_SESSION_TIMER(session_timeout),
 				SIPTAG_CONTACT_STR(tech_pvt->reply_contact),

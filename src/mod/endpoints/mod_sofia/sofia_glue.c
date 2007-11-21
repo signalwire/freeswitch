@@ -868,7 +868,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 		if (!force) {
 			return SWITCH_STATUS_SUCCESS;
 		}
-		if (strcasecmp(tech_pvt->read_codec.implementation->iananame, tech_pvt->rm_encoding) ||
+		if (strcasecmp(tech_pvt->read_codec.implementation->iananame, tech_pvt->iananame) ||
 			tech_pvt->read_codec.implementation->samples_per_second != tech_pvt->rm_rate) {
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Changing Codec from %s to %s\n",
@@ -882,13 +882,13 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 		}
 	}
 
-	if (!tech_pvt->rm_encoding) {
+	if (!tech_pvt->iananame) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec with no name?\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (switch_core_codec_init(&tech_pvt->read_codec,
-							   tech_pvt->rm_encoding,
+							   tech_pvt->iananame,
 							   tech_pvt->rm_fmtp,
 							   tech_pvt->rm_rate,
 							   tech_pvt->codec_ms,
@@ -899,7 +899,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 		return SWITCH_STATUS_FALSE;
 	} else {
 		if (switch_core_codec_init(&tech_pvt->write_codec,
-								   tech_pvt->rm_encoding,
+								   tech_pvt->iananame,
 								   tech_pvt->rm_fmtp,
 								   tech_pvt->rm_rate,
 								   tech_pvt->codec_ms,
@@ -913,7 +913,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 			tech_pvt->read_frame.rate = tech_pvt->rm_rate;
 			ms = tech_pvt->write_codec.implementation->microseconds_per_frame / 1000;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Codec %s %s/%ld %d ms %d samples\n",
-							  switch_channel_get_name(tech_pvt->channel), tech_pvt->rm_encoding, tech_pvt->rm_rate, tech_pvt->codec_ms,
+							  switch_channel_get_name(tech_pvt->channel), tech_pvt->iananame, tech_pvt->rm_rate, tech_pvt->codec_ms,
 							  tech_pvt->read_codec.implementation->samples_per_frame
 							  );
 			tech_pvt->read_frame.codec = &tech_pvt->read_codec;
@@ -1371,21 +1371,20 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 				}
 
 				if (mimp) {
-					if ((tech_pvt->rm_encoding = switch_core_session_strdup(session, (char *) rm_encoding))) {
-						char tmp[50];
-						tech_pvt->pt = (switch_payload_t) map->rm_pt;
-						tech_pvt->rm_rate = map->rm_rate;
-						tech_pvt->codec_ms = mimp->microseconds_per_frame / 1000;
-						tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(session, (char *) connection->c_address);
-						tech_pvt->rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
-						tech_pvt->remote_sdp_audio_port = (switch_port_t) m->m_port;
-						tech_pvt->agreed_pt = (switch_payload_t) map->rm_pt;
-						snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
-						switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
-						switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
-					} else {
-						match = 0;
-					}
+					char tmp[50];
+					tech_pvt->rm_encoding = switch_core_session_strdup(session, (char *) map->rm_encoding);
+					tech_pvt->iananame = switch_core_session_strdup(session, (char *) mimp->iananame);
+					tech_pvt->pt = (switch_payload_t) map->rm_pt;
+					tech_pvt->rm_rate = map->rm_rate;
+					tech_pvt->codec_ms = mimp->microseconds_per_frame / 1000;
+					tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(session, (char *) connection->c_address);
+					tech_pvt->rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
+					tech_pvt->remote_sdp_audio_port = (switch_port_t) m->m_port;
+					tech_pvt->agreed_pt = (switch_payload_t) map->rm_pt;
+					snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
+					switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
+					switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
+
 				}
 
 				if (match) {
