@@ -316,6 +316,7 @@ zap_status_t zap_span_create(zap_io_interface_t *zio, zap_span_t **span)
 		zap_copy_string(new_span->tone_map[ZAP_TONEMAP_BUSY], "%(500,500,480,620)", ZAP_TONEMAP_LEN);
 		zap_copy_string(new_span->tone_map[ZAP_TONEMAP_ATTN], "%(100,100,1400,2060,2450,2600)", ZAP_TONEMAP_LEN);
 		new_span->trunk_type = ZAP_TRUNK_NONE;
+		new_span->data_type = ZAP_TYPE_SPAN;
 		*span = new_span;
 		status = ZAP_SUCCESS;
 	}
@@ -421,6 +422,7 @@ zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_cha
 		new_chan->span = span;
 		new_chan->fds[0] = -1;
 		new_chan->fds[1] = -1;
+		new_chan->data_type = ZAP_TYPE_CHANNEL;
 		if (!new_chan->dtmf_on) {
 			new_chan->dtmf_on = ZAP_DEFAULT_DTMF_ON;
 		}
@@ -605,6 +607,7 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 			switch(state) {
 			case ZAP_CHANNEL_STATE_DOWN:
 			case ZAP_CHANNEL_STATE_BUSY:
+			case ZAP_CHANNEL_STATE_RESTART:
 				ok = 1;
 				break;
 			default:
