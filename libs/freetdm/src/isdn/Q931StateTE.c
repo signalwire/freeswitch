@@ -784,7 +784,7 @@ L3INT Q931ProcReleaseCompleteTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT i
     Q931mes_Generic *pMes = (Q931mes_Generic *)&buf[Q931L4HeaderSpace];
     L3INT state = Q931GetCallState(pTrunk, pMes->CRV);
     L3INT ret = Q931E_NO_ERROR;
-    if(state == Q931_U0 && iFrom == 2)
+    if(iFrom == 2)
     {
         /* TODO Add proc here*/
 		ret = Q931Tx34(pTrunk,buf,pMes->Size);
