@@ -1485,6 +1485,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 
 		profile = gateway_ptr->profile;
+
 		if (!switch_test_flag(gateway_ptr, REG_FLAG_CALLERID)) {
 			tech_pvt->gateway_from_str = switch_core_session_strdup(nsession, gateway_ptr->register_from);
 		}

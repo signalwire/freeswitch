@@ -476,7 +476,6 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 
 switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 {
-	char *rpid = NULL;
 	char *alert_info = NULL;
 	char *max_forwards = NULL;
 	const char *alertbuf;
@@ -539,30 +538,12 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	switch_set_flag_locked(tech_pvt, TFLAG_READY);
 
-	/* TODO: We should use the new tags for making an rpid and add profile options to turn this on/off */
-	if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
-		const char *priv = "off";
-		const char *screen = "no";
-		if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
-			priv = "name";
-			if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
-				priv = "full";
-			}
-		} else if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
-			priv = "full";
-		}
-		if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
-			screen = "yes";
-		}
-
-		rpid = switch_core_session_sprintf(tech_pvt->session, "Remote-Party-ID: %s;screen=%s;privacy=%s", tech_pvt->from_str, screen, priv);
-	}
-
 	if (!tech_pvt->nh) {
 		char *d_url = NULL, *url = NULL;
 		sofia_private_t *sofia_private;
 		char *invite_contact = NULL, *to_str, *use_from_str, *from_str, *url_str;
 		const char *transport = "udp", *t_var;
+		char *rpid_domain = "cluecon.com", *p;
 
 		if (switch_strlen_zero(tech_pvt->dest)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "URL Error! [%s]\n", tech_pvt->dest);
@@ -587,6 +568,19 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			use_from_str = tech_pvt->from_str;
 		}
 		
+		rpid_domain = switch_core_session_strdup(session, use_from_str);
+		sofia_glue_get_url_from_contact(rpid_domain, 0);
+		if ((rpid_domain = strchr(rpid_domain, '@'))) {
+			rpid_domain++;
+			if ((p = strchr(rpid_domain, ';'))) {
+				*p = '\0';
+			}
+		}
+
+		if (!rpid_domain) {
+			rpid_domain = "cluecon.com";
+		}
+
 		if (switch_stristr("port=tcp", url)) {
 			transport = "tcp";
 		} else {
@@ -615,6 +609,30 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 								  SIPTAG_FROM_STR(from_str),
 								  SIPTAG_CONTACT_STR(invite_contact),
 								  TAG_END());
+
+
+		/* TODO: We should use the new tags for making an rpid and add profile options to turn this on/off */
+		if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
+			const char *priv = "off";
+			const char *screen = "no";
+			if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
+				priv = "name";
+				if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
+					priv = "full";
+				}
+			} else if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
+				priv = "full";
+			}
+			if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
+				screen = "yes";
+			}
+
+			tech_pvt->rpid = switch_core_session_sprintf(tech_pvt->session, "Remote-Party-ID: \"%s\"<%s@%s>;screen=%s;privacy=%s", 
+														 tech_pvt->caller_profile->caller_id_name, 
+														 tech_pvt->caller_profile->caller_id_number, 
+														 rpid_domain,
+														 screen, priv);
+		}
 
 		switch_safe_free(d_url);
 		
@@ -680,7 +698,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	nua_invite(tech_pvt->nh,
 			   NUTAG_SESSION_TIMER(session_timeout),
-			   TAG_IF(!switch_strlen_zero(rpid), SIPTAG_HEADER_STR(rpid)),
+			   TAG_IF(!switch_strlen_zero(tech_pvt->rpid), SIPTAG_HEADER_STR(tech_pvt->rpid)),
 			   TAG_IF(!switch_strlen_zero(alert_info), SIPTAG_HEADER_STR(alert_info)),
 			   TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 			   TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
