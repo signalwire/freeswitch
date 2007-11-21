@@ -405,7 +405,8 @@ L3INT Q931ProcSetupTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 
         Q931StartTimer(pTrunk, callIndex, 303);
 
-        Q931SetState(pTrunk, callIndex, Q931_U1);
+		/* TODO: Add this back when we get the state stuff more filled out */
+        //Q931SetState(pTrunk, callIndex, Q931_U1);
     }
 	/* incoming call */
     else 
