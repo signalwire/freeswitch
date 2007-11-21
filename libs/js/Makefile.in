@@ -178,25 +178,25 @@ src/jsopcode.h src/jsopcode.c: src/jsopcode.tbl
 .PHONY: install
 install: all
 	$(SHTOOL) mkdir -f -p -m 755 $(DESTDIR)$(prefix)
-	$(SHTOOL) mkdir -f -p -m 755 $(DESTDIR)$(bindir)
-	$(SHTOOL) mkdir -f -p -m 755 $(DESTDIR)$(mandir)/man1
-	$(SHTOOL) mkdir -f -p -m 755 $(DESTDIR)$(mandir)/man3
-	$(SHTOOL) mkdir -f -p -m 755 $(DESTDIR)$(includedir)/js
-	$(SHTOOL) mkdir -f -p -m 755 $(DESTDIR)$(libdir)/pkgconfig
-	$(SHTOOL) install -c -m 644 js.1 $(DESTDIR)$(mandir)/man1/
-	$(SHTOOL) install -c -m 644 js-config.1 $(DESTDIR)$(mandir)/man1/
-	$(SHTOOL) install -c -m 644 js.3 $(DESTDIR)$(mandir)/man3/
-	$(SHTOOL) install -c -m 644 src/js*.h $(DESTDIR)$(includedir)/js/
-	$(SHTOOL) install -c -m 644 src/jsopcode.tbl $(DESTDIR)$(includedir)/js/
-	$(SHTOOL) install -c -m 644 src/js.msg $(DESTDIR)$(includedir)/js/
+#	$(SHTOOL) mkdir -f -p -m 755 $(DESTDIR)$(bindir)
+#	$(SHTOOL) mkdir -f -p -m 755 $(DESTDIR)$(mandir)/man1
+#	$(SHTOOL) mkdir -f -p -m 755 $(DESTDIR)$(mandir)/man3
+#	$(SHTOOL) mkdir -f -p -m 755 $(DESTDIR)$(includedir)/js
+#	$(SHTOOL) mkdir -f -p -m 755 $(DESTDIR)$(libdir)/pkgconfig
+#	$(SHTOOL) install -c -m 644 js.1 $(DESTDIR)$(mandir)/man1/
+#	$(SHTOOL) install -c -m 644 js-config.1 $(DESTDIR)$(mandir)/man1/
+#	$(SHTOOL) install -c -m 644 js.3 $(DESTDIR)$(mandir)/man3/
+#	$(SHTOOL) install -c -m 644 src/js*.h $(DESTDIR)$(includedir)/js/
+#	$(SHTOOL) install -c -m 644 src/jsopcode.tbl $(DESTDIR)$(includedir)/js/
+#	$(SHTOOL) install -c -m 644 src/js.msg $(DESTDIR)$(includedir)/js/
 	@$(LIBTOOL) --mode=install $(SHTOOL) install -c -m 644 $(LIB_NAME) $(DESTDIR)$(libdir)/
-	$(SHTOOL) install -c -m 644 js.pc $(DESTDIR)$(libdir)/pkgconfig/
-	$(SHTOOL) install -c -m 755 js-config.sh $(DESTDIR)$(bindir)/js-config
-	@$(LIBTOOL) --mode=install $(SHTOOL) install -c -m 755 js $(DESTDIR)$(bindir)/
-	$(SHTOOL) install -e 's;#!\./js;#!$(bindir)/js;' -c -m 755 jslint.js $(DESTDIR)$(bindir)/jslint
-	@if [ ".$(WITH_PERL)" = ".yes" ]; then \
-	    (cd src/perlconnect; $(MAKE) $(MFLAGS) install DESTDIR=$(DESTDIR)); \
-	fi
+#	$(SHTOOL) install -c -m 644 js.pc $(DESTDIR)$(libdir)/pkgconfig/
+#	$(SHTOOL) install -c -m 755 js-config.sh $(DESTDIR)$(bindir)/js-config
+#	@$(LIBTOOL) --mode=install $(SHTOOL) install -c -m 755 js $(DESTDIR)$(bindir)/
+#	$(SHTOOL) install -e 's;#!\./js;#!$(bindir)/js;' -c -m 755 jslint.js $(DESTDIR)$(bindir)/jslint
+#	@if [ ".$(WITH_PERL)" = ".yes" ]; then \
+#	    (cd src/perlconnect; $(MAKE) $(MFLAGS) install DESTDIR=$(DESTDIR)); \
+#	fi
 
 .PHONY: clean
 clean:
