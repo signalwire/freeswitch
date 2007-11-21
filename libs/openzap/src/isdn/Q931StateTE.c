@@ -783,7 +783,7 @@ L3INT Q931ProcReleaseTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 L3INT Q931ProcReleaseCompleteTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 {
     Q931mes_Generic *pMes = (Q931mes_Generic *)&buf[Q931L4HeaderSpace];
-    L3INT state = Q931GetCallState(pTrunk, pMes->CRV);
+    //L3INT state = Q931GetCallState(pTrunk, pMes->CRV);
     L3INT ret = Q931E_NO_ERROR;
     if(iFrom == 2)
     {
