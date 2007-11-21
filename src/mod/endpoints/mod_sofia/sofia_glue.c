@@ -555,7 +555,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			screen = "yes";
 		}
 
-		rpid = switch_core_session_sprintf(tech_pvt->session, "Remote-Party-ID: %s;party=calling;screen=%s;privacy=%s", tech_pvt->from_str, screen, priv);
+		rpid = switch_core_session_sprintf(tech_pvt->session, "Remote-Party-ID: %s;screen=%s;privacy=%s", tech_pvt->from_str, screen, priv);
 	}
 
 	if (!tech_pvt->nh) {
