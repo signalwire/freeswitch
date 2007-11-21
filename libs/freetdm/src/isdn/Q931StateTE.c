@@ -765,6 +765,7 @@ L3INT Q931ProcReleaseTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 		/* TODO Add proc here*/
 		ret = Q931Tx32(pTrunk,buf,pMes->Size);
 	} else if(state == Q931_U0 && iFrom == 2) {
+		Q931Tx34(pTrunk,buf,pMes->Size);
         ret = Q931ReleaseComplete(pTrunk, buf);
     } else {
         ret = Q931ProcUnexpectedMessage(pTrunk, buf, iFrom);
