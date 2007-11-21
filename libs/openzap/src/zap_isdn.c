@@ -42,7 +42,7 @@
 #endif
 
 #define LINE "--------------------------------------------------------------------------------"
-#define IODEBUG
+//#define IODEBUG
 
 static L2ULONG zap_time_now()
 {
@@ -141,6 +141,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 				}
 			}
 			break;
+		case Q931mes_RELEASE:
 		case Q931mes_RELEASE_COMPLETE:
 			{
 				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
@@ -151,6 +152,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 				Q931ie_Cause *cause = Q931GetIEPtr(gen->Cause, gen->buf);
 				zchan->caller_data.hangup_cause = cause->Value;
 				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_TERMINATING);
+
 			}
 			break;
 		case Q931mes_ALERTING:
@@ -196,7 +198,6 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 						zchan->caller_data.raw_data_len = cplen;
 						zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RING);
 						fail = 0;
-						zap_log(ZAP_LOG_CRIT, "hi %s\n", zchan->caller_data.cid_num);
 					} 
 				} 
 
@@ -235,10 +236,10 @@ static int zap_isdn_921_21(void *pvt, L2UCHAR *msg, L2INT mlen)
 	zap_isdn_data_t *isdn_data = span->signal_data;
 
 #ifdef IODEBUG
-	//char bb[4096] = "";
-	//print_hex_bytes(msg, len, bb, sizeof(bb));
-	//print_bits(msg, (int)len, bb, sizeof(bb), ZAP_ENDIAN_LITTLE, 0);
-	//zap_log(ZAP_LOG_DEBUG, "WRITE %d\n%s\n%s\n\n", (int)len, LINE, bb);
+	char bb[4096] = "";
+	print_hex_bytes(msg, len, bb, sizeof(bb));
+	print_bits(msg, (int)len, bb, sizeof(bb), ZAP_ENDIAN_LITTLE, 0);
+	zap_log(ZAP_LOG_DEBUG, "WRITE %d\n%s\n%s\n\n", (int)len, LINE, bb);
 
 #endif
 
@@ -563,11 +564,11 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 					len = sizeof(buf);
 					if (zap_channel_read(isdn_data->dchan, buf, &len) == ZAP_SUCCESS) {
 #ifdef IODEBUG
-						//char bb[4096] = "";
-						//print_hex_bytes(buf, len, bb, sizeof(bb));
+						char bb[4096] = "";
+						print_hex_bytes(buf, len, bb, sizeof(bb));
 
-						//print_bits(buf, (int)len, bb, sizeof(bb), ZAP_ENDIAN_LITTLE, 0);
-						//zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", (int)len, LINE, bb);
+						print_bits(buf, (int)len, bb, sizeof(bb), ZAP_ENDIAN_LITTLE, 0);
+						zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", (int)len, LINE, bb);
 #endif
 						
 						Q921QueueHDLCFrame(&isdn_data->q921, buf, (int)len);

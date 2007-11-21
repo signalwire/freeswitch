@@ -42,12 +42,40 @@
 #define TRY_OR_DIE(__code, __status, __label) if ((status = __code ) != __status) goto __label
 #define pk_atof(__a) (PK_FLOAT) atof(__a)
 
+ZAP_ENUM_NAMES(PIKA_SPAN_NAMES, PIKA_SPAN_STRINGS)
+ZAP_STR2ENUM(pika_str2span, pika_span2str, PIKA_TSpanFraming, PIKA_SPAN_NAMES, PIKA_SPAN_INVALID)
+
+ZAP_ENUM_NAMES(PIKA_SPAN_ENCODING_NAMES, PIKA_SPAN_ENCODING_STRINGS)
+ZAP_STR2ENUM(pika_str2span_encoding, pika_span_encoding2str, PIKA_TSpanEncoding, PIKA_SPAN_ENCODING_NAMES, PIKA_SPAN_ENCODING_INVALID)
+
+ZAP_ENUM_NAMES(PIKA_LL_NAMES, PIKA_LL_STRINGS)
+ZAP_STR2ENUM(pika_str2loop_length, pika_loop_length2str, PIKA_TSpanLoopLength, PIKA_LL_NAMES, PIKA_SPAN_LOOP_INVALID)
+
+ZAP_ENUM_NAMES(PIKA_LBO_NAMES, PIKA_LBO_STRINGS)
+ZAP_STR2ENUM(pika_str2lbo, pika_lbo2str, PIKA_TSpanBuildOut, PIKA_LBO_NAMES, PIKA_SPAN_LBO_INVALID)
+
+ZAP_ENUM_NAMES(PIKA_SPAN_COMMAND_MODE_NAMES, PIKA_SPAN_COMMAND_MODE_STRINGS)
+ZAP_STR2ENUM(pika_str2command_mode, pika_command_mode2str, PIKA_TSpanCompandMode, PIKA_SPAN_COMMAND_MODE_NAMES, PIKA_SPAN_COMMAND_MODE_INVALID)
+
+
+typedef enum {
+	PK_FLAG_READY = (1 << 0),
+	PK_FLAG_LOCKED = (1 << 1)
+} pk_flag_t;
+
+struct general_config {
+	uint32_t region;
+};
+typedef struct general_config general_config_t;
+
 struct pika_channel_profile {
 	char name[80];
 	PKH_TRecordConfig record_config;
 	PKH_TPlayConfig play_config;
 	int ec_enabled;
 	PKH_TECConfig ec_config;
+	PKH_TSpanConfig span_config;
+	general_config_t general_config;
 };
 typedef struct pika_channel_profile pika_channel_profile_t;
 
@@ -59,7 +87,9 @@ static struct {
 	PKH_TRecordConfig record_config;
 	PKH_TPlayConfig play_config;
 	PKH_TECConfig ec_config;
+	PKH_TSpanConfig span_config;
 	zap_hash_t *profile_hash;
+	general_config_t general_config;
 } globals;
 
 
@@ -67,6 +97,9 @@ struct pika_span_data {
 	TPikaHandle event_queue;
 	PKH_TPikaEvent last_oob_event;
 	uint32_t boardno;
+	PKH_TSpanConfig span_config;
+	TPikaHandle handle;
+	uint32_t flags;
 };
 typedef struct pika_span_data pika_span_data_t;
 
@@ -82,9 +115,12 @@ struct pika_chan_data {
 	PKH_TPlayConfig play_config;
 	int ec_enabled;
 	PKH_TECConfig ec_config;
+	PKH_THDLCConfig hdlc_config;
 	zap_buffer_t *digit_buffer;
 	zap_mutex_t *digit_mutex;
 	zap_size_t dtmf_len;
+	uint32_t flags;
+	uint32_t hdlc_bytes;
 };
 typedef struct pika_chan_data pika_chan_data_t;
 
@@ -111,6 +147,7 @@ static ZIO_CONFIGURE_FUNCTION(pika_configure)
 		memset(profile, 0, sizeof(*profile));
 		zap_set_string(profile->name, category);
 		profile->ec_config = globals.ec_config;
+		profile->span_config = globals.span_config;
 		profile->record_config = globals.record_config;
 		profile->play_config = globals.play_config;
 		hashtable_insert(globals.profile_hash, (void *)profile->name, profile);
@@ -175,6 +212,20 @@ static ZIO_CONFIGURE_FUNCTION(pika_configure)
 		profile->ec_config.comfortNoiseEnabled = zap_true(val);
 	} else if (!strcasecmp(var, "ec-adaptationModeEnabled")) {
 		profile->ec_config.adaptationModeEnabled = zap_true(val);
+	} else if (!strcasecmp(var, "framing")) {
+		profile->span_config.framing = pika_str2span(val);
+	} else if (!strcasecmp(var, "encoding")) {
+		profile->span_config.encoding = pika_str2span_encoding(val);
+	} else if (!strcasecmp(var, "loopLength")) {
+		profile->span_config.loopLength = pika_str2loop_length(val);
+	} else if (!strcasecmp(var, "buildOut")) {
+		profile->span_config.buildOut = pika_str2lbo(val);
+	} else if (!strcasecmp(var, "region")) {
+		if (!strcasecmp(val, "eu")) {
+			profile->general_config.region = PKH_TRUNK_EU;
+		} else {
+			profile->general_config.region = PKH_TRUNK_NA;
+		}
 	} else {
 		ok = 0;
 	}
@@ -194,9 +245,9 @@ PK_VOID PK_CALLBACK media_out_callback(PKH_TPikaEvent *event)
 	zap_channel_t *zchan = event->userData;
 	pika_chan_data_t *chan_data = (pika_chan_data_t *) zchan->mod_data;
 
-	//PK_CHAR g_EventText[PKH_EVENT_MAX_NAME_LENGTH];
-	//PKH_EVENT_GetText(event->id, g_EventText, sizeof(g_EventText));
-	//zap_log(ZAP_LOG_DEBUG, "Event: %s\n", g_EventText);
+	//PK_CHAR event_text[PKH_EVENT_MAX_NAME_LENGTH];
+	//PKH_EVENT_GetText(event->id, event_text, sizeof(event_text));
+	//zap_log(ZAP_LOG_DEBUG, "Event: %s\n", event_text);
 	
 	switch (event->id) {
 	case PKH_EVENT_PLAY_IDLE:
@@ -259,7 +310,9 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 		
 	}
 
-	if (!span->mod_data) {
+	if (span->mod_data) {
+		span_data = span->mod_data;
+	} else {
 		span_data = malloc(sizeof(*span_data));
 		assert(span_data != NULL);
 		memset(span_data, 0, sizeof(*span_data));
@@ -274,12 +327,16 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 			return 0;
 		}
 
-		PKH_QUEUE_Attach(span_data->event_queue, globals.open_boards[boardno], NULL);
+		//PKH_QUEUE_Attach(span_data->event_queue, globals.open_boards[boardno], NULL);
 
 		span->mod_data = span_data;
 	}
-	start--;
-	end--;
+
+	if (type == ZAP_CHAN_TYPE_FXS || type == ZAP_CHAN_TYPE_FXO) {
+		start--;
+		end--;
+	}
+
 	for(x = start; x < end; x++) {
 		zap_channel_t *chan;
 		pika_chan_data_t *chan_data = NULL;
@@ -287,72 +344,99 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 		chan_data = malloc(sizeof *chan_data);
 		assert(chan_data);
 		memset(chan_data, 0, sizeof(*chan_data));
+		zap_span_add_channel(span, 0, type, &chan);
+		chan->mod_data = chan_data;
 
+		if ((type == ZAP_CHAN_TYPE_B || type == ZAP_CHAN_TYPE_DQ921) && !span_data->handle) {
+			PKH_TBoardConfig boardConfig;
+			
+			TRY_OR_DIE(PKH_SPAN_Open(globals.open_boards[boardno], spanno, NULL, &span_data->handle), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_SPAN_GetConfig(span_data->handle, &span_data->span_config), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_Attach(span_data->event_queue, span_data->handle, (PK_VOID*) span), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_BOARD_GetConfig(globals.open_boards[boardno], &boardConfig), PK_SUCCESS, error);
+
+			if (span->trunk_type == ZAP_TRUNK_T1) {
+				if (zap_test_flag(span_data, PK_FLAG_LOCKED)) {
+					zap_log(ZAP_LOG_WARNING, "Already locked into E1 mode!\n");
+				}
+			} else if (span->trunk_type == ZAP_TRUNK_E1) {
+				boardConfig.specific.DigitalGateway.interfaceType = PKH_BOARD_INTERFACE_TYPE_E1;
+				PKH_BOARD_SetConfig(globals.open_boards[boardno], &boardConfig);
+				zap_set_flag(span_data, PK_FLAG_LOCKED);
+			}
+		}
 
 		if (type == ZAP_CHAN_TYPE_FXO) {
 			PKH_TTrunkConfig trunkConfig;
 			
-			TRY_OR_DIE(PKH_TRUNK_Open(globals.open_boards[boardno], x, &chan_data->handle), PK_SUCCESS, fail_fxo);
-			TRY_OR_DIE(PKH_TRUNK_Seize(chan_data->handle), PK_SUCCESS, fail_fxo);
-			TRY_OR_DIE(zap_span_add_channel(span, 0, type, &chan), ZAP_SUCCESS, fail_fxo);
-			TRY_OR_DIE(PKH_TRUNK_GetConfig(chan_data->handle, &trunkConfig), PK_SUCCESS, fail_fxo);
+			TRY_OR_DIE(PKH_TRUNK_Open(globals.open_boards[boardno], x, &chan_data->handle), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_TRUNK_Seize(chan_data->handle), PK_SUCCESS, error);
 
-			trunkConfig.internationalControl = PKH_TRUNK_NA;
-			trunkConfig.audioFormat = PKH_AUDIO_MULAW;
-
-			TRY_OR_DIE(PKH_TRUNK_SetConfig(chan_data->handle, &trunkConfig), PK_SUCCESS, fail_fxo);
-			TRY_OR_DIE(PKH_QUEUE_Attach(span_data->event_queue, chan_data->handle, (PK_VOID*) chan), PK_SUCCESS, fail_fxo);
-			TRY_OR_DIE(PKH_TRUNK_GetMediaStreams(chan_data->handle, &chan_data->media_in, &chan_data->media_out), PK_SUCCESS, fail_fxo);
-			TRY_OR_DIE(PKH_QUEUE_Create(PKH_QUEUE_TYPE_NORMAL, &chan_data->media_in_queue), PK_SUCCESS, fail_fxo);
-			TRY_OR_DIE(PKH_QUEUE_Attach(chan_data->media_in_queue, chan_data->media_in, (PK_VOID*) chan), PK_SUCCESS, fail_fxo);
-			TRY_OR_DIE(PKH_QUEUE_Create(PKH_QUEUE_TYPE_CALLBACK, &chan_data->media_out_queue), PK_SUCCESS, fail_fxo);
-			TRY_OR_DIE(PKH_QUEUE_SetEventHandler(chan_data->media_out_queue, media_out_callback), PK_SUCCESS, fail_fxo);
-			TRY_OR_DIE(PKH_QUEUE_Attach(chan_data->media_out_queue, chan_data->media_out, (PK_VOID*) chan), PK_SUCCESS, fail_fxo);
-			TRY_OR_DIE(PKH_TRUNK_Start(chan_data->handle), PK_SUCCESS, fail_fxo);
-			
-			goto ok;
-
-		fail_fxo:
-			zap_log(ZAP_LOG_ERROR, "failure configuring device s%dc%d\n", spanno, x);
-			zap_log(ZAP_LOG_ERROR, "Error: PKH_TRUNK_Open %u failed(%s)!\n", x,
-					PKH_ERROR_GetText(status, error_text, sizeof(error_text)));
-			if (chan_data->handle) {
-				PKH_TRUNK_Close(chan_data->handle);
+			if (profile && profile->general_config.region == PKH_TRUNK_EU) {
+				TRY_OR_DIE(PKH_TRUNK_GetConfig(chan_data->handle, &trunkConfig), PK_SUCCESS, error);
+				trunkConfig.internationalControl = PKH_PHONE_INTERNATIONAL_CONTROL_EU;
+				trunkConfig.audioFormat = PKH_AUDIO_ALAW;
+				trunkConfig.compandMode = PKH_PHONE_AUDIO_ALAW;
+				TRY_OR_DIE(PKH_TRUNK_SetConfig(chan_data->handle, &trunkConfig), PK_SUCCESS, error);
 			}
-			PKH_QUEUE_Destroy(chan_data->media_in_queue);
 
-			free(chan_data);
-			continue;
 			
+			TRY_OR_DIE(PKH_QUEUE_Attach(span_data->event_queue, chan_data->handle, (PK_VOID*) chan), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_TRUNK_GetMediaStreams(chan_data->handle, &chan_data->media_in, &chan_data->media_out), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_Create(PKH_QUEUE_TYPE_NORMAL, &chan_data->media_in_queue), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_Attach(chan_data->media_in_queue, chan_data->media_in, (PK_VOID*) chan), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_Create(PKH_QUEUE_TYPE_CALLBACK, &chan_data->media_out_queue), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_SetEventHandler(chan_data->media_out_queue, media_out_callback), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_Attach(chan_data->media_out_queue, chan_data->media_out, (PK_VOID*) chan), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_TRUNK_Start(chan_data->handle), PK_SUCCESS, error);
 		} else if (type == ZAP_CHAN_TYPE_FXS) {
-			TRY_OR_DIE(PKH_PHONE_Open(globals.open_boards[boardno], x, &chan_data->handle), PK_SUCCESS, fail_fxs);
-			TRY_OR_DIE(PKH_PHONE_Seize(chan_data->handle), PK_SUCCESS, fail_fxs);
-			TRY_OR_DIE(zap_span_add_channel(span, 0, type, &chan), ZAP_SUCCESS, fail_fxs);
-			TRY_OR_DIE(PKH_PHONE_GetMediaStreams(chan_data->handle, &chan_data->media_in, &chan_data->media_out), PK_SUCCESS, fail_fxs);
-			TRY_OR_DIE(PKH_QUEUE_Attach(span_data->event_queue, chan_data->handle, (PK_VOID*) chan), PK_SUCCESS, fail_fxs);
-			TRY_OR_DIE(PKH_QUEUE_Create(PKH_QUEUE_TYPE_NORMAL, &chan_data->media_in_queue), PK_SUCCESS, fail_fxs);
-			TRY_OR_DIE(PKH_QUEUE_Attach(chan_data->media_in_queue, chan_data->media_in, (PK_VOID*) chan), PK_SUCCESS, fail_fxs);
-			TRY_OR_DIE(PKH_QUEUE_Create(PKH_QUEUE_TYPE_CALLBACK, &chan_data->media_out_queue), PK_SUCCESS, fail_fxs);
-			TRY_OR_DIE(PKH_QUEUE_SetEventHandler(chan_data->media_out_queue, media_out_callback), PK_SUCCESS, fail_fxs);
-			TRY_OR_DIE(PKH_QUEUE_Attach(chan_data->media_out_queue, chan_data->media_out, (PK_VOID*) chan), PK_SUCCESS, fail_fxs);
-			TRY_OR_DIE(PKH_PHONE_Start(chan_data->handle), PK_SUCCESS, fail_fxs);
-			
-			goto ok;
+			PKH_TPhoneConfig phoneConfig;
 
-
-		fail_fxs:
-			zap_log(ZAP_LOG_ERROR, "failure configuring device s%dc%d\n", spanno, x);
-			zap_log(ZAP_LOG_ERROR, "Error: PKH_PHONE_Open %u failed(%s)!\n", x,
-					PKH_ERROR_GetText(status, error_text, sizeof(error_text)));
-			if (chan_data->handle) {
-				PKH_PHONE_Close(chan_data->handle);
+			if (profile && profile->general_config.region == PKH_TRUNK_EU) {
+				TRY_OR_DIE(PKH_PHONE_GetConfig(chan_data->handle, &phoneConfig), PK_SUCCESS, error);
+				phoneConfig.internationalControl = PKH_PHONE_INTERNATIONAL_CONTROL_EU;
+				phoneConfig.compandMode = PKH_PHONE_AUDIO_ALAW;
+				TRY_OR_DIE(PKH_PHONE_SetConfig(chan_data->handle, &phoneConfig), PK_SUCCESS, error);
 			}
-			PKH_QUEUE_Destroy(chan_data->media_in_queue);
-			free(chan_data);
-		}
 
-	ok:
+			TRY_OR_DIE(PKH_PHONE_Open(globals.open_boards[boardno], x, &chan_data->handle), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_PHONE_Seize(chan_data->handle), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_PHONE_GetMediaStreams(chan_data->handle, &chan_data->media_in, &chan_data->media_out), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_Attach(span_data->event_queue, chan_data->handle, (PK_VOID*) chan), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_Create(PKH_QUEUE_TYPE_NORMAL, &chan_data->media_in_queue), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_Attach(chan_data->media_in_queue, chan_data->media_in, (PK_VOID*) chan), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_Create(PKH_QUEUE_TYPE_CALLBACK, &chan_data->media_out_queue), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_SetEventHandler(chan_data->media_out_queue, media_out_callback), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_Attach(chan_data->media_out_queue, chan_data->media_out, (PK_VOID*) chan), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_PHONE_Start(chan_data->handle), PK_SUCCESS, error);
+		} else if (type == ZAP_CHAN_TYPE_B) {
+			TRY_OR_DIE(PKH_SPAN_SeizeChannel(span_data->handle, x), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_SPAN_GetMediaStreams(span_data->handle, x, &chan_data->media_in, &chan_data->media_out), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_Create(PKH_QUEUE_TYPE_NORMAL, &chan_data->media_in_queue), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_Attach(chan_data->media_in_queue, chan_data->media_in, (PK_VOID*) chan), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_Create(PKH_QUEUE_TYPE_CALLBACK, &chan_data->media_out_queue), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_SetEventHandler(chan_data->media_out_queue, media_out_callback), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_Attach(chan_data->media_out_queue, chan_data->media_out, (PK_VOID*) chan), PK_SUCCESS, error);
+		} else if (type == ZAP_CHAN_TYPE_DQ921) {
+			TRY_OR_DIE(PKH_SPAN_HDLC_Open(span_data->handle, PKH_SPAN_HDLC_MODE_NORMAL, &chan_data->handle), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_SPAN_HDLC_GetConfig(chan_data->handle, &chan_data->hdlc_config), PK_SUCCESS, error);
+			chan_data->hdlc_config.channelId = x;
+			TRY_OR_DIE(PKH_SPAN_HDLC_SetConfig(chan_data->handle, &chan_data->hdlc_config), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_Create(PKH_QUEUE_TYPE_NORMAL, &chan_data->media_in_queue), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_Attach(chan_data->media_in_queue, chan_data->handle, (PK_VOID*) chan), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_Attach(span_data->event_queue, chan_data->handle, (PK_VOID*) chan), PK_SUCCESS, error);
+			PKH_SPAN_SetConfig(span_data->handle, &span_data->span_config);
+			TRY_OR_DIE(PKH_SPAN_Start(span_data->handle), PK_SUCCESS, error);
+		}
 		
+		goto ok;
+
+	error:
+		PKH_ERROR_GetText(status, error_text, sizeof(error_text));
+		zap_log(ZAP_LOG_ERROR, "failure configuring device b%ds%dc%d [%s]\n", boardno, spanno, x, error_text);
+		continue;
+	ok:
+		zap_set_flag(chan_data, PK_FLAG_READY);
 		status = PKH_RECORD_GetConfig(chan_data->media_in, &chan_data->record_config);
 		chan_data->record_config.encoding = PKH_RECORD_ENCODING_MU_LAW;
 		chan_data->record_config.samplingRate = PKH_RECORD_SAMPLING_RATE_8KHZ;
@@ -377,13 +461,16 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 			chan_data->play_config.AGC = profile->play_config.AGC;
 			chan_data->ec_enabled = profile->ec_enabled;
 			chan_data->ec_config = profile->ec_config;
+			span_data->span_config.framing = profile->span_config.framing;
+			span_data->span_config.encoding = profile->span_config.encoding;
+			span_data->span_config.loopLength = profile->span_config.loopLength;
+			span_data->span_config.buildOut = profile->span_config.buildOut;
 		}
 		
 		status = PKH_RECORD_SetConfig(chan_data->media_in, &chan_data->record_config);
 		status = PKH_PLAY_SetConfig(chan_data->media_out, &chan_data->play_config);
 
 
-		chan->mod_data = chan_data;
 		chan->physical_span_id = spanno;
 		chan->physical_chan_id = x;
 
@@ -448,10 +535,9 @@ static ZIO_CONFIGURE_SPAN_FUNCTION(pika_configure_span)
 		bd = item_list[i];
 		if ((sp = strchr(bd, ':'))) {
 			*sp++ = '\0';
-		}
-
-		if ((ch = strchr(sp, ':'))) {
-			*ch++ = '\0';
+			if ((ch = strchr(sp, ':'))) {
+				*ch++ = '\0';
+			}
 		}
 		
 		if (!(bd && sp && ch)) {
@@ -504,8 +590,18 @@ static ZIO_CONFIGURE_SPAN_FUNCTION(pika_configure_span)
 static ZIO_OPEN_FUNCTION(pika_open) 
 {
 	pika_chan_data_t *chan_data = (pika_chan_data_t *) zchan->mod_data;
-	PKH_QUEUE_Flush(chan_data->media_in_queue);
-	PKH_PLAY_Start(chan_data->media_out);
+
+	if (!chan_data && !zap_test_flag(chan_data, PK_FLAG_READY)) {
+		return ZAP_FAIL;
+	}
+
+	if (chan_data->media_in_queue) {
+		PKH_QUEUE_Flush(chan_data->media_in_queue);
+	}
+
+	if (zchan->type == ZAP_CHAN_TYPE_FXS || zchan->type == ZAP_CHAN_TYPE_FXO || zchan->type == ZAP_CHAN_TYPE_B) {
+		PKH_PLAY_Start(chan_data->media_out);
+	}
 	return ZAP_SUCCESS;
 }
 
@@ -519,11 +615,15 @@ static ZIO_WAIT_FUNCTION(pika_wait)
 	pika_chan_data_t *chan_data = (pika_chan_data_t *) zchan->mod_data;
 	PK_STATUS status;
 	zap_wait_flag_t myflags = *flags;
-	PK_CHAR g_EventText[PKH_EVENT_MAX_NAME_LENGTH];
+	PK_CHAR event_text[PKH_EVENT_MAX_NAME_LENGTH];
 
 	*flags = ZAP_NO_FLAGS;	
 
 	if (myflags & ZAP_READ) {
+		if (chan_data->hdlc_bytes) {
+			*flags |= ZAP_READ;
+			return ZAP_SUCCESS;
+		}
 		status = PKH_QUEUE_WaitOnEvent(chan_data->media_in_queue, to, &chan_data->last_media_event);
 		
 		if (status == PK_SUCCESS) {
@@ -535,8 +635,8 @@ static ZIO_WAIT_FUNCTION(pika_wait)
 			return ZAP_SUCCESS;
 		}
 
-		PKH_EVENT_GetText(chan_data->last_media_event.id, g_EventText, sizeof(g_EventText));
-		zap_log(ZAP_LOG_DEBUG, "Event: %s\n", g_EventText);
+		PKH_EVENT_GetText(chan_data->last_media_event.id, event_text, sizeof(event_text));
+		zap_log(ZAP_LOG_DEBUG, "Event: %s\n", event_text);
 	}
 
 	return ZAP_SUCCESS;
@@ -546,7 +646,16 @@ static ZIO_READ_FUNCTION(pika_read)
 {
 	pika_chan_data_t *chan_data = (pika_chan_data_t *) zchan->mod_data;
 	PK_STATUS status;
-	PK_CHAR g_EventText[PKH_EVENT_MAX_NAME_LENGTH];
+	PK_CHAR event_text[PKH_EVENT_MAX_NAME_LENGTH];
+
+	if (zchan->type == ZAP_CHAN_TYPE_DQ921) {
+		if ((status = PKH_SPAN_HDLC_GetMessage(chan_data->handle, data, *datalen)) == PK_SUCCESS) {
+			*datalen = chan_data->hdlc_bytes;
+			chan_data->hdlc_bytes = 0;
+			return ZAP_SUCCESS;
+		}
+		return ZAP_FAIL;
+	}
 
 	if (zchan->packet_len < *datalen) {
 		*datalen = zchan->packet_len;
@@ -557,14 +666,22 @@ static ZIO_READ_FUNCTION(pika_read)
 	}
 
 
-	PKH_ERROR_GetText(status, g_EventText, sizeof(g_EventText));
-	zap_log(ZAP_LOG_DEBUG, "ERR: %s\n", g_EventText);
+	PKH_ERROR_GetText(status, event_text, sizeof(event_text));
+	zap_log(ZAP_LOG_DEBUG, "ERR: %s\n", event_text);
 	return ZAP_FAIL;
 }
 
 static ZIO_WRITE_FUNCTION(pika_write)
 {
 	pika_chan_data_t *chan_data = (pika_chan_data_t *) zchan->mod_data;
+	PK_STATUS status;
+
+	if (zchan->type == ZAP_CHAN_TYPE_DQ921) {
+		if ((status = PKH_SPAN_HDLC_SendMessage(chan_data->handle, data, *datalen)) == PK_SUCCESS) {
+			return ZAP_SUCCESS;
+		}
+		return ZAP_FAIL;
+	}
 
 	if (PKH_PLAY_AddData(chan_data->media_out, 0, data, *datalen) == PK_SUCCESS) {
 		return ZAP_SUCCESS;
@@ -706,22 +823,93 @@ static ZIO_SPAN_POLL_EVENT_FUNCTION(pika_poll_event)
 {
 	pika_span_data_t *span_data = (pika_span_data_t *) span->mod_data;
 	PK_STATUS status;
+	PK_CHAR event_text[PKH_EVENT_MAX_NAME_LENGTH];
 
 	status = PKH_QUEUE_WaitOnEvent(span_data->event_queue, ms, &span_data->last_oob_event);
 
 	if (status == PK_SUCCESS) {
-		zap_channel_t *zchan = span_data->last_oob_event.userData;
-		//PK_CHAR g_EventText[PKH_EVENT_MAX_NAME_LENGTH];
+		zap_channel_t *zchan = NULL;
+		uint32_t *data = (uint32_t *) span_data->last_oob_event.userData;
+		zap_data_type_t data_type = ZAP_TYPE_NONE;
 
 		if (span_data->last_oob_event.id == PKH_EVENT_QUEUE_TIMEOUT) {
 			return ZAP_TIMEOUT;
 		}
-		
-		//PKH_EVENT_GetText(span_data->last_oob_event.id, g_EventText, sizeof(g_EventText));
-		//zap_log(ZAP_LOG_DEBUG, "Event: %s\n", g_EventText);
 
+		if (data) {
+			data_type = *data;
+		}
+
+		if (data_type == ZAP_TYPE_CHANNEL) {
+			zchan = span_data->last_oob_event.userData;
+		} else if (data_type == ZAP_TYPE_SPAN) {
+            zap_time_t last_event_time = zap_current_time_in_ms();
+			uint32_t event_id = 0;
+
+			switch (span_data->last_oob_event.id) {
+			case PKH_EVENT_SPAN_ALARM_T1_RED:
+			case PKH_EVENT_SPAN_ALARM_T1_YELLOW:
+			case PKH_EVENT_SPAN_ALARM_T1_AIS:
+			case PKH_EVENT_SPAN_ALARM_E1_RED:
+			case PKH_EVENT_SPAN_ALARM_E1_RAI:
+			case PKH_EVENT_SPAN_ALARM_E1_AIS:
+			case PKH_EVENT_SPAN_ALARM_E1_RMAI:
+			case PKH_EVENT_SPAN_ALARM_E1_TS16AIS:
+			case PKH_EVENT_SPAN_ALARM_E1_TS16LOS:
+			case PKH_EVENT_SPAN_OUT_OF_SYNC:
+			case PKH_EVENT_SPAN_FRAMING_ERROR:
+			case PKH_EVENT_SPAN_LOSS_OF_SIGNAL:
+			case PKH_EVENT_SPAN_OUT_OF_CRC_MF_SYNC:
+			case PKH_EVENT_SPAN_OUT_OF_CAS_MF_SYNC:
+				event_id = ZAP_OOB_ALARM_TRAP;
+				break;
+			case PKH_EVENT_SPAN_ALARM_T1_RED_CLEAR:
+			case PKH_EVENT_SPAN_ALARM_T1_YELLOW_CLEAR:
+			case PKH_EVENT_SPAN_ALARM_T1_AIS_CLEAR:
+			case PKH_EVENT_SPAN_ALARM_E1_RED_CLEAR:
+			case PKH_EVENT_SPAN_ALARM_E1_RAI_CLEAR:
+			case PKH_EVENT_SPAN_ALARM_E1_AIS_CLEAR:
+			case PKH_EVENT_SPAN_ALARM_E1_RMAI_CLEAR:
+			case PKH_EVENT_SPAN_ALARM_E1_TS16AIS_CLEAR:
+			case PKH_EVENT_SPAN_ALARM_E1_TS16LOS_CLEAR:
+			case PKH_EVENT_SPAN_IN_SYNC:
+			case PKH_EVENT_SPAN_LOSS_OF_SIGNAL_CLEAR:
+			case PKH_EVENT_SPAN_IN_CRC_MF_SYNC:
+			case PKH_EVENT_SPAN_IN_CAS_MF_SYNC:
+				event_id = ZAP_OOB_ALARM_CLEAR;
+				break;
+			case PKH_EVENT_SPAN_MESSAGE:
+			case PKH_EVENT_SPAN_ABCD_SIGNAL_CHANGE:
+				break;
+			}
+
+			if (event_id) {
+				uint32_t x = 0;
+				zap_channel_t *zchan;
+				pika_chan_data_t *chan_data;
+				for(x = 1; x <= span->chan_count; x++) {
+					zchan = &span->channels[x];
+					assert(zchan != NULL);
+					chan_data = (pika_chan_data_t *) zchan->mod_data;
+					assert(chan_data != NULL);
+					
+
+					zap_set_flag(zchan, ZAP_CHANNEL_EVENT);
+					zchan->last_event_time = last_event_time;
+					chan_data->last_oob_event = span_data->last_oob_event;
+				}
+
+			}
+
+		}
+		
+		PKH_EVENT_GetText(span_data->last_oob_event.id, event_text, sizeof(event_text));
+		//zap_log(ZAP_LOG_DEBUG, "Event: %s\n", event_text);
+		
 		if (zchan) {
 			pika_chan_data_t *chan_data = (pika_chan_data_t *) zchan->mod_data;
+
+			assert(chan_data != NULL);
 			zap_set_flag(zchan, ZAP_CHANNEL_EVENT);
             zchan->last_event_time = zap_current_time_in_ms();
 			chan_data->last_oob_event = span_data->last_oob_event;
@@ -740,18 +928,16 @@ static ZIO_SPAN_NEXT_EVENT_FUNCTION(pika_next_event)
 	for(i = 1; i <= span->chan_count; i++) {
 		if (zap_test_flag((&span->channels[i]), ZAP_CHANNEL_EVENT)) {
 			pika_chan_data_t *chan_data = (pika_chan_data_t *) span->channels[i].mod_data;
-			PK_CHAR g_EventText[PKH_EVENT_MAX_NAME_LENGTH];
+			PK_CHAR event_text[PKH_EVENT_MAX_NAME_LENGTH];
 			
 			zap_clear_flag((&span->channels[i]), ZAP_CHANNEL_EVENT);
 			
-			PKH_EVENT_GetText(chan_data->last_oob_event.id, g_EventText, sizeof(g_EventText));
-			zap_log(ZAP_LOG_DEBUG, "Event %d on channel %d:%d [%s]\n", 
-					chan_data->last_oob_event.id,
-					span->channels[i].span_id,
-					span->channels[i].chan_id,
-					g_EventText);
+			PKH_EVENT_GetText(chan_data->last_oob_event.id, event_text, sizeof(event_text));
 
 			switch(chan_data->last_oob_event.id) {
+			case PKH_EVENT_HDLC_MESSAGE:
+				chan_data->hdlc_bytes = chan_data->last_oob_event.p2;
+				continue;
 			case PKH_EVENT_TRUNK_HOOKFLASH:
 				event_id = ZAP_OOB_FLASH;
 				break;
@@ -774,6 +960,79 @@ static ZIO_SPAN_NEXT_EVENT_FUNCTION(pika_next_event)
 				event_id = ZAP_OOB_ONHOOK;
 				break;
 
+
+
+			case PKH_EVENT_SPAN_ALARM_T1_RED:
+				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_RED);
+				snprintf(span->channels[i].last_error, sizeof(span->channels[i].last_error), "RED ALARM");
+				event_id = ZAP_OOB_ALARM_TRAP;
+				break;
+			case PKH_EVENT_SPAN_ALARM_T1_YELLOW:
+				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_YELLOW);
+				snprintf(span->channels[i].last_error, sizeof(span->channels[i].last_error), "YELLOW ALARM");
+				event_id = ZAP_OOB_ALARM_TRAP;
+				break;
+			case PKH_EVENT_SPAN_ALARM_T1_AIS:
+				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_AIS);
+				snprintf(span->channels[i].last_error, sizeof(span->channels[i].last_error), "AIS ALARM");
+				event_id = ZAP_OOB_ALARM_TRAP;
+				break;
+			case PKH_EVENT_SPAN_ALARM_E1_RED:
+				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_RED);
+				snprintf(span->channels[i].last_error, sizeof(span->channels[i].last_error), "RED ALARM");
+				event_id = ZAP_OOB_ALARM_TRAP;
+				break;
+			case PKH_EVENT_SPAN_ALARM_E1_RAI:
+				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_RAI);
+				snprintf(span->channels[i].last_error, sizeof(span->channels[i].last_error), "RAI ALARM");
+				event_id = ZAP_OOB_ALARM_TRAP;
+				break;
+			case PKH_EVENT_SPAN_ALARM_E1_AIS:
+				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_AIS);
+				snprintf(span->channels[i].last_error, sizeof(span->channels[i].last_error), "AIS ALARM");
+				event_id = ZAP_OOB_ALARM_TRAP;
+				break;
+			case PKH_EVENT_SPAN_ALARM_E1_RMAI:
+			case PKH_EVENT_SPAN_ALARM_E1_TS16AIS:
+			case PKH_EVENT_SPAN_ALARM_E1_TS16LOS:
+			case PKH_EVENT_SPAN_OUT_OF_SYNC:
+			case PKH_EVENT_SPAN_FRAMING_ERROR:
+			case PKH_EVENT_SPAN_LOSS_OF_SIGNAL:
+			case PKH_EVENT_SPAN_OUT_OF_CRC_MF_SYNC:
+			case PKH_EVENT_SPAN_OUT_OF_CAS_MF_SYNC:
+				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_GENERAL);
+				snprintf(span->channels[i].last_error, sizeof(span->channels[i].last_error), "GENERAL ALARM");
+				event_id = ZAP_OOB_ALARM_TRAP;
+				break;
+			case PKH_EVENT_SPAN_ALARM_T1_RED_CLEAR:
+				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_RED);
+			case PKH_EVENT_SPAN_ALARM_T1_YELLOW_CLEAR:
+				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_YELLOW);
+			case PKH_EVENT_SPAN_ALARM_T1_AIS_CLEAR:
+				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_AIS);
+			case PKH_EVENT_SPAN_ALARM_E1_RED_CLEAR:
+				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_RED);
+			case PKH_EVENT_SPAN_ALARM_E1_RAI_CLEAR:
+				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_RAI);
+			case PKH_EVENT_SPAN_ALARM_E1_AIS_CLEAR:
+				zap_set_alarm_flag((&span->channels[i]), ZAP_ALARM_AIS);
+			case PKH_EVENT_SPAN_ALARM_E1_RMAI_CLEAR:
+			case PKH_EVENT_SPAN_ALARM_E1_TS16AIS_CLEAR:
+			case PKH_EVENT_SPAN_ALARM_E1_TS16LOS_CLEAR:
+			case PKH_EVENT_SPAN_IN_SYNC:
+			case PKH_EVENT_SPAN_LOSS_OF_SIGNAL_CLEAR:
+			case PKH_EVENT_SPAN_IN_CRC_MF_SYNC:
+			case PKH_EVENT_SPAN_IN_CAS_MF_SYNC:
+				zap_clear_alarm_flag((&span->channels[i]), ZAP_ALARM_GENERAL);
+				event_id = ZAP_OOB_ALARM_CLEAR;
+				break;
+			case PKH_EVENT_SPAN_MESSAGE:
+			case PKH_EVENT_SPAN_ABCD_SIGNAL_CHANGE:
+				break;
+
+
+
+
 			case PKH_EVENT_TRUNK_ONHOOK:
 			case PKH_EVENT_TRUNK_OFFHOOK:				
 			case PKH_EVENT_TRUNK_DIALED :
@@ -783,7 +1042,7 @@ static ZIO_SPAN_NEXT_EVENT_FUNCTION(pika_next_event)
 			case PKH_EVENT_TRUNK_LOF:
 			case PKH_EVENT_TRUNK_RX_OVERLOAD:
 			default:
-				zap_log(ZAP_LOG_DEBUG, "Unhandled event %d on channel %d [%s]\n", chan_data->last_oob_event.id, i, g_EventText);
+				zap_log(ZAP_LOG_DEBUG, "Unhandled event %d on channel %d [%s]\n", chan_data->last_oob_event.id, i, event_text);
 				event_id = ZAP_OOB_INVALID;
 				break;
 			}
@@ -816,16 +1075,34 @@ static ZIO_CHANNEL_DESTROY_FUNCTION(pika_channel_destroy)
 {
 	pika_chan_data_t *chan_data = (pika_chan_data_t *) zchan->mod_data;
 	pika_span_data_t *span_data = (pika_span_data_t *) zchan->span->mod_data;
-
-	if (zchan->type == ZAP_CHAN_TYPE_FXS || zchan->type == ZAP_CHAN_TYPE_FXO) {
-		PKH_QUEUE_Detach(span_data->event_queue, chan_data->handle);
-		PKH_TRUNK_Close(chan_data->handle);
+	
+	if (!chan_data) {
+		return ZAP_FAIL;
 	}
+
 
 	PKH_RECORD_Stop(chan_data->media_in);
 	PKH_PLAY_Stop(chan_data->media_out);
 	PKH_QUEUE_Destroy(chan_data->media_in_queue);
 	PKH_QUEUE_Destroy(chan_data->media_out_queue);
+	
+	switch(zchan->type) {
+	case ZAP_CHAN_TYPE_FXS:
+		PKH_QUEUE_Detach(span_data->event_queue, chan_data->handle);
+		PKH_PHONE_Close(chan_data->handle);
+		break;
+	case ZAP_CHAN_TYPE_FXO:
+		PKH_QUEUE_Detach(span_data->event_queue, chan_data->handle);
+		PKH_TRUNK_Close(chan_data->handle);
+		break;
+	case ZAP_CHAN_TYPE_DQ921:
+		PKH_SPAN_Stop(span_data->handle);
+		break;
+	default:
+		break;
+	}
+
+
 	zap_mutex_destroy(&chan_data->digit_mutex);
 	zap_buffer_destroy(&chan_data->digit_buffer);
 	zap_safe_free(chan_data);
@@ -853,6 +1130,7 @@ zap_status_t pika_init(zap_io_interface_t **zint)
 	assert(zint != NULL);
 	memset(&pika_interface, 0, sizeof(pika_interface));
 	memset(&globals, 0, sizeof(globals));
+	globals.general_config.region = PKH_TRUNK_NA;
 
 	globals.profile_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
 
@@ -884,12 +1162,22 @@ zap_status_t pika_init(zap_io_interface_t **zint)
 	status = PKH_EC_GetConfig(tmpHandle, &globals.ec_config);
 	status = PKH_MEDIA_STREAM_Destroy(tmpHandle);
 
+	
+
 	zap_log(ZAP_LOG_DEBUG, "Found %u board%s\n", globals.board_list.numberOfBoards, globals.board_list.numberOfBoards == 1 ? "" : "s");
 	for(i = 0; i < globals.board_list.numberOfBoards; ++i) {
 		zap_log(ZAP_LOG_INFO, "Found PIKA board type:[%s] id:[%u] serno:[%u]\n", 
 				pika_board_type_string(globals.board_list.board[i].type), globals.board_list.board[i].id, (uint32_t)
 				globals.board_list.board[i].serialNumber);
 
+		if (globals.board_list.board[i].type == PKH_BOARD_TYPE_DIGITAL_GATEWAY) {
+			TPikaHandle tmp, tmp2;
+			PKH_BOARD_Open(globals.board_list.board[i].id, NULL, &tmp);
+			PKH_SPAN_Open(tmp, 0, NULL, &tmp2);
+			PKH_SPAN_GetConfig(tmp2, &globals.span_config);
+			PKH_SPAN_Close(tmp2);
+			PKH_BOARD_Close(tmp);
+		}
 		ok++;
 
 	}

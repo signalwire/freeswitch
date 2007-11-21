@@ -81,10 +81,10 @@
 #pragma comment(lib, "Winmm")
 #endif
 
-#define ZAP_ENUM_NAMES(_NAME, _STRINGS) static char * _NAME [] = { _STRINGS , NULL };
-#define ZAP_STR2ENUM_P(_FUNC1, _FUNC2, _TYPE) _TYPE _FUNC1 (char *name); char * _FUNC2 (_TYPE type);
+#define ZAP_ENUM_NAMES(_NAME, _STRINGS) static const char * _NAME [] = { _STRINGS , NULL };
+#define ZAP_STR2ENUM_P(_FUNC1, _FUNC2, _TYPE) _TYPE _FUNC1 (const char *name); const char * _FUNC2 (_TYPE type);
 #define ZAP_STR2ENUM(_FUNC1, _FUNC2, _TYPE, _STRINGS, _MAX)	\
-	_TYPE _FUNC1 (char *name)								\
+	_TYPE _FUNC1 (const char *name)							\
 	{														\
 		int i;												\
 		_TYPE t = _MAX ;									\
@@ -98,7 +98,7 @@
 															\
 		return t;											\
 	}														\
-	char * _FUNC2 (_TYPE type)								\
+	const char * _FUNC2 (_TYPE type)						\
 	{														\
 		if (type > _MAX) {									\
 			type = _MAX;									\
@@ -319,7 +319,15 @@ struct zap_caller_data {
 	uint32_t raw_data_len;
 };
 
+typedef enum {
+	ZAP_TYPE_NONE,
+	ZAP_TYPE_SPAN = 0xFF,
+	ZAP_TYPE_CHANNEL
+} zap_data_type_t;
+
+
 struct zap_channel {
+	zap_data_type_t data_type;
 	uint32_t span_id;
 	uint32_t chan_id;
 	uint32_t physical_span_id;
@@ -399,6 +407,7 @@ struct zap_analog_data {
 };
 
 struct zap_span {
+	zap_data_type_t data_type;
 	uint32_t span_id;
 	uint32_t chan_count;
 	zap_span_flag_t flags;

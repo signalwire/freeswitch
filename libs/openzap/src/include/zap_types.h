@@ -153,7 +153,10 @@ typedef enum {
 	ZAP_ALARM_YELLOW = (1 << 3),
 	ZAP_ALARM_RED = (1 << 4),
 	ZAP_ALARM_BLUE = (1 << 5),
-	ZAP_ALARM_NOTOPEN = ( 1 << 6)
+	ZAP_ALARM_NOTOPEN = ( 1 << 6),
+	ZAP_ALARM_AIS = ( 1 << 7),
+	ZAP_ALARM_RAI = ( 1 << 8),
+	ZAP_ALARM_GENERAL = ( 1 << 31)
 } zap_alarm_flag_t;
 
 typedef enum {
