@@ -1356,6 +1356,22 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t * thread, 
 		}
 
 		if (switch_test_flag(read_frame, SFF_CNG)) {
+			if (hangunder_hits) {
+				hangunder_hits--;
+			}
+			if (talking) {
+				switch_event_t *event;
+				if (++hangover_hits >= hangover) {
+					hangover_hits = hangunder_hits = 0;
+					talking = 0;
+
+					if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+						conference_add_event_member_data(member, event);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "stop-talking");
+						switch_event_fire(&event);
+					}
+				}
+			}
 			continue;
 		}
 
