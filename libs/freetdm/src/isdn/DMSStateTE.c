@@ -1,8 +1,8 @@
 /*****************************************************************************
 
-  FileName:		nationalStateTE.c
+  FileName:		DMSStateTE.c
 
-  Contents:		National ISDN State Engine for TE (User Mode).
+  Contents:		DMS-100 ISDN State Engine for TE (User Mode).
 
 				The controlling state engine for Q.931 is the state engine
 				on the NT side. The state engine on the TE side is a slave 

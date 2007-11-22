@@ -61,6 +61,9 @@ $(SRC)/isdn/nationalStateTE.o \
 $(SRC)/isdn/DMSmes.o \
 $(SRC)/isdn/DMSStateNT.o \
 $(SRC)/isdn/DMSStateTE.o \
+$(SRC)/isdn/5ESSmes.o \
+$(SRC)/isdn/5ESSStateNT.o \
+$(SRC)/isdn/5ESSStateTE.o \
 $(SRC)/isdn/Q932mes.o \
 $(SRC)/zap_zt.o \
 $(SRC)/zap_wanpipe.o
@@ -90,6 +93,8 @@ $(SRC)/include/zap_wanpipe.h \
 $(SRC)/include/zap_zt.h \
 $(SRC)/isdn/include/mfifo.h \
 $(SRC)/isdn/include/national.h \
+$(SRC)/isdn/include/DMS.h \
+$(SRC)/isdn/include/5ESS.h \
 $(SRC)/isdn/include/Q921.h \
 $(SRC)/isdn/include/Q931.h \
 $(SRC)/isdn/include/Q931ie.h \
@@ -179,4 +184,5 @@ mod_openzap-clean:
 clean: mod_openzap-clean
 	rm -f $(SRC)/*.o $(SRC)/isdn/*.o $(MYLIB) *~ \#* testapp testcid testtones detect_tones detect_dtmf priserver testisdn testanalog
 	@if [ -f $(LIBPRI)/$(LIBPRIA) ] ; then cd $(LIBPRI) && make clean ; fi
+
 

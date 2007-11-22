@@ -163,6 +163,10 @@
 					Name="Header Files"
 					>
 					<File
+						RelativePath="..\src\isdn\include\5ESS.h"
+						>
+					</File>
+					<File
 						RelativePath="..\src\isdn\include\DMS.h"
 						>
 					</File>
@@ -194,6 +198,18 @@
 				<Filter
 					Name="Source Files"
 					>
+					<File
+						RelativePath="..\src\isdn\5ESSmes.c"
+						>
+					</File>
+					<File
+						RelativePath="..\src\isdn\5ESSStateNT.c"
+						>
+					</File>
+					<File
+						RelativePath="..\src\isdn\5ESSStateTE.c"
+						>
+					</File>
 					<File
 						RelativePath="..\src\isdn\DMSmes.c"
 						>

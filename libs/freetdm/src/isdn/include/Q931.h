@@ -3,75 +3,75 @@
   FileName:         Q931.h
 
   Contents:         Header and definition for the ITU-T Q.931 stack. The 
-					header contents the following parts:
+                    header contents the following parts:
 
-					- Definition of codes
+                    - Definition of codes
                     - Definition of information elements (Q931ie_).
                     - Definition of messages (Q931mes_).
                     - Definitian of variables (var_).
-					- Function prototypes.
+                    - Function prototypes.
 
   Description:		The Q.931 stack provided here covers ITU-T Q.931 w/Q.932
-					supplementary services for both PRI, BRI and variants. 
-					The stack is generic and designed to deal with variants as
-					needed.
+                    supplementary services for both PRI, BRI and variants. 
+                    The stack is generic and designed to deal with variants as
+                    needed.
 
-					The stack uses the following interface functions:
+                    The stack uses the following interface functions:
 
-					- Q931Initialize	Initialize the Q.931 stack.
-					- Q931Rx23			Receive a message from layer 2
-					- Q931Tx32			Send a message to layer 2
-					- Q931Rx43			Receive a message from layer 4 or above.
-					- Q931Tx34			Send a message to layer 4 or above.
-					- Q931TimeTick		Periodical timer processing.
-					- Q931ErrorProc		Callback for stack error message.
+                    - Q931Initialize	Initialize the Q.931 stack.
+                    - Q931Rx23			Receive a message from layer 2
+                    - Q931Tx32			Send a message to layer 2
+                    - Q931Rx43			Receive a message from layer 4 or above.
+                    - Q931Tx34			Send a message to layer 4 or above.
+                    - Q931TimeTick		Periodical timer processing.
+                    - Q931ErrorProc		Callback for stack error message.
 
-					The protocol is a module with no external dependencies and
-					can easely be ported to any operating system like Windows,
-					Linux, rtos and others.
+                    The protocol is a module with no external dependencies and
+                    can easely be ported to any operating system like Windows,
+                    Linux, rtos and others.
 
   Related Files:	Q931.h				Q.931 Definitions
-					Q931.c				Q.931 Interface Functions.
-					Q931api.c			Low level L4 API functions.
+                    Q931.c				Q.931 Interface Functions.
+                    Q931api.c			Low level L4 API functions.
 
-					Q932.h				Q.932 Suplementary Services
-					Q932mes.c			Q.932 encoders/coders
+                    Q932.h				Q.932 Suplementary Services
+                    Q932mes.c			Q.932 encoders/coders
 
-					Q931mes.c			Q.931 Message encoders/coders
-					Q931ie.c			Q.931 IE encoders/coders
-					Q931StateTE.c		Generic Q.931 TE State Engine
-					Q931StateNT.c		Generic Q.931 NT State Engine
+                    Q931mes.c			Q.931 Message encoders/coders
+                    Q931ie.c			Q.931 IE encoders/coders
+                    Q931StateTE.c		Generic Q.931 TE State Engine
+                    Q931StateNT.c		Generic Q.931 NT State Engine
 
   Design Note 1:	For each variant please add separate files starting with 
-					the	variant short-name as follows:
+                    the	variant short-name as follows:
 
-					<variant>.h			Spesific headers needed.
-					<variant>mes.c		Message encoders/decores.
-					<variant>ie.c		IE encoders/decoders.
-					<variant>StateTE.c	TE side state engine.
-					<variant>StateNT.c	NT side state engine.
+                    <variant>.h			Spesific headers needed.
+                    <variant>mes.c		Message encoders/decores.
+                    <variant>ie.c		IE encoders/decoders.
+                    <variant>StateTE.c	TE side state engine.
+                    <variant>StateNT.c	NT side state engine.
 
   Design Note 2:	The stack is deliberatly made non-threading. Use 1 
-					thread per Trunk, but lock access from the timertick
-					and rx, tx functions. And make sure the callbacks only
-					dump messages to a queue, no time-consuming processing
-					inside stack processing. 
+                    thread per Trunk, but lock access from the timertick
+                    and rx, tx functions. And make sure the callbacks only
+                    dump messages to a queue, no time-consuming processing
+                    inside stack processing. 
 
-					All stack processing is async 'fire and forget', meaning
-					that there are not, and should not be any time-consuming
-					processing within the stack-time. The best way to thread 
-					a stack is to use one single thread that signal 5 queues.
-					
-					- Incoming L2 queue.
-					- Incoming L4 queue.
-					- Outgoing L2 queue.
-					- Outgoing L4 queue.
-					- Error/Trace queue.
+                    All stack processing is async 'fire and forget', meaning
+                    that there are not, and should not be any time-consuming
+                    processing within the stack-time. The best way to thread 
+                    a stack is to use one single thread that signal 5 queues.
+                    
+                    - Incoming L2 queue.
+                    - Incoming L4 queue.
+                    - Outgoing L2 queue.
+                    - Outgoing L4 queue.
+                    - Error/Trace queue.
 
   Design Note 3:	DSP optimization. The L3 (Rx23) can be called directly
-					from a hdlc receiver without usage of queues for optimized 
-					processing. But keep in mind that Q.931 calls Tx34 or Tx32 
-					as part	of receiving a message from Layer 2.
+                    from a HDLC receiver without usage of queues for optimized 
+                    processing. But keep in mind that Q.931 calls Tx34 or Tx32 
+                    as part	of receiving a message from Layer 2.
 
   License/Copyright:
 
@@ -123,7 +123,7 @@
 
 /*****************************************************************************
 
-  Enum helper macros
+  Enum helper macros  <Need description of these macros>
 
 *****************************************************************************/
 #define Q931_ENUM_NAMES(_NAME, _STRINGS) static char * _NAME [] = { _STRINGS , NULL };
@@ -200,11 +200,11 @@ const char *q931_error_to_name(q931_error_t error);
 /*****************************************************************************
 
 	Some speed optimization can be achieved by changing all variables to the 
-	word size of your processor. A 32 bit processor have to do a lot of extra 
+	word size of your processor. A 32 bit processor has to do a lot of extra 
 	work to read a packed 8 bit integer. Changing all fields to 32 bit integer 
-	will ressult in usage of some extra space, but speed up the stack.
+	will result in usage of some extra space, but will speed up the stack.
 
-	The stack have been designed to allow L3UCHAR etc. to be any size of 8 bit
+	The stack has been designed to allow L3UCHAR etc. to be any size of 8 bit
 	or larger.
 
 *****************************************************************************/
@@ -233,7 +233,7 @@ typedef L3USHORT ie;                /* Special data type to hold a dynamic  */
                                     /* value for single octet ) to the      */
                                     /* struct holding the ie. Offset = 0    */
                                     /* is buf[1] etc.                       */
-                                    /* ie == 0xffff indicate error          */
+                                    /* ie == 0xffff indicates error         */
 
 /*****************************************************************************
 	
@@ -268,8 +268,8 @@ typedef L3USHORT ie;                /* Special data type to hold a dynamic  */
   changed when a new dialect needs to be inserted into the stack.   
 
   This stack uses an array of functions to know which function to call as   
-  it receives a SETUP message etc. A new dialect can when schoose to use
-  the proc etc for standard Q.931 or insert a modified proc.
+  it receives a SETUP message etc. A new dialect can when choose to use
+  the proc etc. for standard Q.931 or insert a modified proc.
 
   This technique has also been used to distinguish between user and network
   mode to make the code as easy to read and maintainable as possible.
@@ -283,7 +283,7 @@ typedef L3USHORT ie;                /* Special data type to hold a dynamic  */
 /* WARNING! Initialize Q931CreateDialectCB[] will NULL when increasing the  */
 /* Q931MAXDLCT value to avoid Q931Initialize from crashing if one entry is  */
 /* not used.																*/
-#define Q931MAXDLCT 6           /* Max dialects included in this        */
+#define Q931MAXDLCT 8           /* Max dialects included in this        */
                                 /* compile. User and Network count as   */
                                 /* one dialect each.                    */
 
@@ -294,9 +294,9 @@ typedef L3USHORT ie;                /* Special data type to hold a dynamic  */
 
 #define Q931MAXUSEDIE 50		/* Maximum number of ie types per Dialect		*/
 
-#define Q931MAXCODESETS 7		/* Maximum number of codests (by spec, 0-7		*/
+#define Q931MAXCODESETS 7		/* Maximum number of codests (by spec, 0-7)		*/
 
-#define Q931MAXSTATE 100			/* Size of state tables					*/
+#define Q931MAXSTATE 100		/* Size of state tables					        */
 
 
 /*****************************************************************************
@@ -336,14 +336,14 @@ typedef L3USHORT ie;                /* Special data type to hold a dynamic  */
 #define Q931_N7     (0x0100 | 7)
 #define Q931_N8     (0x0100 | 8)
 #define Q931_N9     (0x0100 | 9)
-#define Q931_N10     (0x0100 | 11)
-#define Q931_N11     (0x0100 | 11)
-#define Q931_N12     (0x0100 | 12)
-#define Q931_N15     (0x0100 | 15)
-#define Q931_N17     (0x0100 | 17)
-#define Q931_N19     (0x0100 | 19)
-#define Q931_N22     (0x0100 | 22)
-#define Q931_N25     (0x0100 | 25)
+#define Q931_N10    (0x0100 | 11)
+#define Q931_N11    (0x0100 | 11)
+#define Q931_N12    (0x0100 | 12)
+#define Q931_N15    (0x0100 | 15)
+#define Q931_N17    (0x0100 | 17)
+#define Q931_N19    (0x0100 | 19)
+#define Q931_N22    (0x0100 | 22)
+#define Q931_N25    (0x0100 | 25)
 
 /*****************************************************************************
 
@@ -469,12 +469,12 @@ typedef struct
   Struct:       Q931_TrunkInfo
 
   Description:  TrunkInfo is the struct entry used to store Q.931 related 
-                information and state for E1/T1/J1 trunks and assosiated 
+                information and state for E1/T1/J1 trunks and associated 
                 channels in the system. 
 
 				The user should store this information outside this stack
-				and need to feed the interface functions with a pointer to
-				the trunk Info entry.
+				and needs to feed the interface functions with a pointer to
+				the TrunkInfo entry.
 
 *****************************************************************************/
 typedef struct Q931_TrunkInfo Q931_TrunkInfo_t;
@@ -490,14 +490,15 @@ typedef enum						/* Network/User Mode.                   */
 
 typedef enum						/* Dialect enum                         */
 {
-	Q931_Dialect_Q931 = 0,
+	Q931_Dialect_Q931     = 0,
 	Q931_Dialect_National = 2,
-	Q931_Dialect_DMS = 4,
+	Q931_Dialect_DMS      = 4,
+	Q931_Dialect_5ESS     = 6,      /* Coming soon to a PRI stack near you! */
 
 	Q931_Dialect_Count
 } Q931Dialect_t;
-#define DIALECT_STRINGS "q931", "", "national", "", "dms"
-Q931_STR2ENUM_P(q931_str2Q931Diaelct_type, q931_Q931Diaelct_type2str, Q931Dialect_t)
+#define DIALECT_STRINGS "q931", "", "national", "", "dms","","5ess",""
+Q931_STR2ENUM_P(q931_str2Q931Dialect_type, q931_Q931Dialect_type2str, Q931Dialect_t)
 
 typedef enum						/* Trunk Line Type.                     */
 {
@@ -516,7 +517,7 @@ typedef enum						/* Trunk State							*/
 
 typedef enum {
 	Q931_ChType_NotUsed=0,			/* Unused Channel						*/
-	Q931_ChType_B=1,				/* B Channel (Voice)					*/		
+	Q931_ChType_B=1,				/* B Channel (Voice)					*/
 	Q931_ChType_D=2,				/* D Channel (Signalling)				*/
 	Q931_ChType_Sync=3				/* Sync Channel							*/
 } Q931_ChanType_t;
@@ -525,7 +526,7 @@ struct Q931_TrunkInfo
 {
 	Q931NetUser_t NetUser;			/* Network/User Mode.                   */
 
-    Q931Dialect_t Dialect;			/* Q.931 Based dielact index.           */
+    Q931Dialect_t Dialect;			/* Q.931 Based dialect index.           */
 
 	Q931_TrunkType_t TrunkType;		/* Trunk Line Type.                     */
 
@@ -549,7 +550,7 @@ struct Q931_TrunkInfo
     L3UCHAR L2Buf[Q931L2BUF];		/* buffer for messages send to L2.      */
 
 	/* The auto flags below switch on/off automatic Ack messages. SETUP ACK */
-	/* as an example can be send by the stack in response to SETUP to buy   */
+	/* as an example can be sent by the stack in response to SETUP to buy   */
 	/* time in processing on L4. Setting this to true will cause the stack  */
 	/* to automatically send this.											*/
 
@@ -618,8 +619,8 @@ struct Q931_TrunkInfo
 
   Description:	Define a Q931 State, legal events and next state for each
 				event. Used to simplify the state engine logic. Each state
-				engine define it's own state table and the logic only need
-				to call a helper function to check if the message is legal
+				engine defines its own state table and the logic need only
+				call a helper function to check if the message is legal
 				at this stage.
 
 *****************************************************************************/
