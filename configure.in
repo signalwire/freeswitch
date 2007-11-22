@@ -393,6 +393,12 @@ AC_ARG_ENABLE(core-odbc-support,
 AC_ARG_ENABLE(core-libedit-support,     
 	[  --enable-core-libedit-support         Compile with libedit Support],,[enable_core_libedit_support="no"])
 
+if test "$enable_core_libedit_support" = "yes" ; then
+    AC_CHECK_LIB(ncurses, tgetent,,
+       [AC_CHECK_LIB(curses, tgetent,,
+          [AC_MSG_ERROR([libtermcap, libcurses or libncurses are required!])] )] )
+fi
+
 #AX_LIB_MYSQL([MINIMUM-VERSION]) 
 AX_LIB_MYSQL
 AX_CHECK_JAVA

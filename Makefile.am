@@ -134,7 +134,6 @@ freeswitch_LDADD = libfreeswitch.la libs/apr/libapr-1.la
 if ADD_LIBEDIT
 CORE_CFLAGS    += -Ilibs/libedit/src -DSWITCH_HAVE_LIBEDIT
 CORE_LIBS      += libs/libedit/src/.libs/libedit.a
-freeswitch_LDADD += -lcurses
 endif
 
 if ADD_ODBC
