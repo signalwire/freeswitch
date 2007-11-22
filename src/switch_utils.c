@@ -127,9 +127,9 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(char *to, char *from, char *he
         }
 
         if (file) {
-            snprintf(buf, B64BUFFLEN, "\n\n--%s\nContent-Type: application/octet-stream\n"
+			snprintf(buf, B64BUFFLEN, "\n\n--%s\nContent-Type: audio/x-WAV; name=\"%s\"\n"
                      "Content-Transfer-Encoding: base64\n"
-                     "Content-Description: Sound attachment.\n" "Content-Disposition: attachment; filename=\"%s\"\n\n", bound,  switch_cut_path(file));
+					 "Content-Description: Sound attachment.\n" "Content-Disposition: attachment; filename=\"%s\"\n\n", bound, switch_cut_path(file), switch_cut_path(file));
             if (!write_buf(fd, buf))
                 return SWITCH_FALSE;
 
