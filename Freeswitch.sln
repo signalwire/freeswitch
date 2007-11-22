@@ -617,6 +617,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sip_profiles", "sip_profile
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lang", "lang", "{09455AA9-C243-4F16-A1A1-A016881A2765}"
+	ProjectSection(SolutionItems) = preProject
+		conf\directory\default.xml = conf\directory\default.xml
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "en", "en", "{57199684-EC63-4A60-9DC6-11815AF6B413}"
 	ProjectSection(SolutionItems) = preProject
