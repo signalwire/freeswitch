@@ -578,4 +578,4 @@ L3INT Q931AckService(Q931_TrunkInfo_t *pTrunk, L3UCHAR *buf)
 }
 
 Q931_ENUM_NAMES(DIALECT_TYPE_NAMES, DIALECT_STRINGS)
-Q931_STR2ENUM(q931_str2Q931Diaelct_type, q931_Q931Diaelct_type2str, Q931Dialect_t, DIALECT_TYPE_NAMES, Q931_Dialect_Count)
+Q931_STR2ENUM(q931_str2Q931Dialect_type, q931_Q931Dialect_type2str, Q931Dialect_t, DIALECT_TYPE_NAMES, Q931_Dialect_Count)
