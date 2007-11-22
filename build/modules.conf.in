@@ -35,12 +35,9 @@ endpoints/mod_sofia
 #endpoints/mod_woomera
 #endpoints/mod_alsa
 #../../libs/openzap/mod_openzap
-#event_handlers/mod_cdr
 #event_handlers/mod_event_multicast
 event_handlers/mod_event_socket
 #event_handlers/mod_radius_cdr
-#event_handlers/mod_event_test
-#event_handlers/mod_zeroconf
 formats/mod_native_file
 formats/mod_sndfile
 #formats/mod_shout
