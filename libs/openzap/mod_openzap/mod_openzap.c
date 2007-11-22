@@ -1182,7 +1182,7 @@ static switch_status_t load_config(void)
 				} else if (!strcasecmp(var, "mode")) {
 					mode = strcasecmp(val, "net") ? Q931_TE : Q931_NT;
 				} else if (!strcasecmp(var, "dialect")) {
-					dialect = q931_str2Q931Diaelct_type(val);
+					dialect = q931_str2Q931Dialect_type(val);
 					if (dialect == Q931_Dialect_Count) {
 						dialect = Q931_Dialect_National;
 					}
