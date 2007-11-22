@@ -64,9 +64,9 @@ else
 endif
 
 install::
-	$(NSINSTALL) -D $(DESTDIR)$(includedir)/md
-	cp $(srcdir)/$(MDCPUCFG_H) $(DESTDIR)$(includedir)/prcpucfg.h
-	$(NSINSTALL) -t -m 644 $(CONFIGS) $(DESTDIR)$(includedir)/md
+#	$(NSINSTALL) -D $(DESTDIR)$(includedir)/md
+#	cp $(srcdir)/$(MDCPUCFG_H) $(DESTDIR)$(includedir)/prcpucfg.h
+#	$(NSINSTALL) -t -m 644 $(CONFIGS) $(DESTDIR)$(includedir)/md
 
 release:: export
 	@echo "Copying machine-dependent prcpucfg.h"

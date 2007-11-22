@@ -94,10 +94,10 @@ include $(topsrcdir)/config/rules.mk
 export:: $(TARGETS)
 	$(INSTALL) -m 444 $(TARGETS) $(dist_libdir)
 ifdef SHARED_LIBRARY
-	$(INSTALL) -m 444 $(SHARED_LIBRARY) $(dist_bindir)
+#	$(INSTALL) -m 444 $(SHARED_LIBRARY) $(dist_bindir)
 endif
 ifeq ($(MOZ_BITS),16)
 	$(INSTALL) -m 444 $(TARGETS) $(MOZ_DIST)/lib
-	$(INSTALL) -m 444 $(TARGETS) $(MOZ_DIST)/bin
+#	$(INSTALL) -m 444 $(TARGETS) $(MOZ_DIST)/bin
 endif	
 

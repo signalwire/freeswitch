@@ -57,4 +57,4 @@ include_subdir = obsolete
 include $(topsrcdir)/config/rules.mk
 
 export:: $(RELEASE_HEADERS)
-	$(INSTALL) -m 444 $(RELEASE_HEADERS) $(dist_includedir)/obsolete
+#	$(INSTALL) -m 444 $(RELEASE_HEADERS) $(dist_includedir)/obsolete
