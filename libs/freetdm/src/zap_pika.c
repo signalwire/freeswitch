@@ -54,8 +54,8 @@ ZAP_STR2ENUM(pika_str2loop_length, pika_loop_length2str, PIKA_TSpanLoopLength, P
 ZAP_ENUM_NAMES(PIKA_LBO_NAMES, PIKA_LBO_STRINGS)
 ZAP_STR2ENUM(pika_str2lbo, pika_lbo2str, PIKA_TSpanBuildOut, PIKA_LBO_NAMES, PIKA_SPAN_LBO_INVALID)
 
-ZAP_ENUM_NAMES(PIKA_SPAN_COMMAND_MODE_NAMES, PIKA_SPAN_COMMAND_MODE_STRINGS)
-ZAP_STR2ENUM(pika_str2command_mode, pika_command_mode2str, PIKA_TSpanCompandMode, PIKA_SPAN_COMMAND_MODE_NAMES, PIKA_SPAN_COMMAND_MODE_INVALID)
+ZAP_ENUM_NAMES(PIKA_SPAN_COMPAND_MODE_NAMES, PIKA_SPAN_COMPAND_MODE_STRINGS)
+ZAP_STR2ENUM(pika_str2compand_mode, pika_compand_mode2str, PIKA_TSpanCompandMode, PIKA_SPAN_COMPAND_MODE_NAMES, PIKA_SPAN_COMPAND_MODE_INVALID)
 
 
 typedef enum {
@@ -220,6 +220,8 @@ static ZIO_CONFIGURE_FUNCTION(pika_configure)
 		profile->span_config.loopLength = pika_str2loop_length(val);
 	} else if (!strcasecmp(var, "buildOut")) {
 		profile->span_config.buildOut = pika_str2lbo(val);
+	} else if (!strcasecmp(var, "compandMode")) {
+		profile->span_config.compandMode = pika_str2compand_mode(val);
 	} else if (!strcasecmp(var, "region")) {
 		if (!strcasecmp(val, "eu")) {
 			profile->general_config.region = PKH_TRUNK_EU;
@@ -377,7 +379,10 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 				trunkConfig.internationalControl = PKH_PHONE_INTERNATIONAL_CONTROL_EU;
 				trunkConfig.audioFormat = PKH_AUDIO_ALAW;
 				trunkConfig.compandMode = PKH_PHONE_AUDIO_ALAW;
+				chan->native_codec = chan->effective_codec = ZAP_CODEC_ALAW;
 				TRY_OR_DIE(PKH_TRUNK_SetConfig(chan_data->handle, &trunkConfig), PK_SUCCESS, error);
+			} else {
+				chan->native_codec = chan->effective_codec = ZAP_CODEC_ULAW;
 			}
 
 			
@@ -396,7 +401,10 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 				TRY_OR_DIE(PKH_PHONE_GetConfig(chan_data->handle, &phoneConfig), PK_SUCCESS, error);
 				phoneConfig.internationalControl = PKH_PHONE_INTERNATIONAL_CONTROL_EU;
 				phoneConfig.compandMode = PKH_PHONE_AUDIO_ALAW;
+				chan->native_codec = chan->effective_codec = ZAP_CODEC_ALAW;
 				TRY_OR_DIE(PKH_PHONE_SetConfig(chan_data->handle, &phoneConfig), PK_SUCCESS, error);
+			} else {
+				chan->native_codec = chan->effective_codec = ZAP_CODEC_ULAW;
 			}
 
 			TRY_OR_DIE(PKH_PHONE_Open(globals.open_boards[boardno], x, &chan_data->handle), PK_SUCCESS, error);
@@ -465,11 +473,19 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 			span_data->span_config.encoding = profile->span_config.encoding;
 			span_data->span_config.loopLength = profile->span_config.loopLength;
 			span_data->span_config.buildOut = profile->span_config.buildOut;
+			span_data->span_config.compandMode = profile->span_config.compandMode;
 		}
 		
+		if (type == ZAP_CHAN_TYPE_B) {
+			if (span_data->span_config.compandMode == PKH_SPAN_COMPAND_MODE_MU_LAW) {
+				chan->native_codec = chan->effective_codec = ZAP_CODEC_ULAW;
+			} else {
+				chan->native_codec = chan->effective_codec = ZAP_CODEC_ALAW;
+			}
+		}
+
 		status = PKH_RECORD_SetConfig(chan_data->media_in, &chan_data->record_config);
 		status = PKH_PLAY_SetConfig(chan_data->media_out, &chan_data->play_config);
-
 
 		chan->physical_span_id = spanno;
 		chan->physical_chan_id = x;
@@ -647,6 +663,7 @@ static ZIO_READ_FUNCTION(pika_read)
 	pika_chan_data_t *chan_data = (pika_chan_data_t *) zchan->mod_data;
 	PK_STATUS status;
 	PK_CHAR event_text[PKH_EVENT_MAX_NAME_LENGTH];
+	uint32_t len;
 
 	if (zchan->type == ZAP_CHAN_TYPE_DQ921) {
 		if ((status = PKH_SPAN_HDLC_GetMessage(chan_data->handle, data, *datalen)) == PK_SUCCESS) {
@@ -657,8 +674,12 @@ static ZIO_READ_FUNCTION(pika_read)
 		return ZAP_FAIL;
 	}
 
-	if (zchan->packet_len < *datalen) {
-		*datalen = zchan->packet_len;
+	if (!(len = chan_data->last_media_event.p0)) {
+		len = zchan->packet_len;
+	}
+	
+	if (len < *datalen) {
+		*datalen = len;
 	}
 
 	if ((status = PKH_RECORD_GetData(chan_data->media_in, data, *datalen)) == PK_SUCCESS) {
