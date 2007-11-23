@@ -158,6 +158,14 @@ SWITCH_DECLARE(void) switch_core_media_bug_set_write_replace_frame(switch_media_
 SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_read_replace_frame(switch_media_bug_t *bug);
 
 /*!
+  \brief Obtain the session from a media bug
+  \param bug the bug to get the data from
+*/
+SWITCH_DECLARE(switch_core_session_t *) switch_core_media_bug_get_session(switch_media_bug_t *bug);
+
+SWITCH_DECLARE(uint32_t) switch_core_media_bug_test_flag(switch_media_bug_t *bug, uint32_t flag);
+
+/*!
   \brief Set a return replace frame
   \param bug the bug to set the frame on
   \param frame the frame to set

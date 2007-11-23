@@ -783,6 +783,8 @@ SMBF_READ_STREAM - Include the Read Stream
 SMBF_WRITE_STREAM - Include the Write Stream
 SMBF_WRITE_REPLACE - Replace the Write Stream
 SMBF_READ_REPLACE - Replace the Read Stream
+SMBF_STEREO - Record in stereo
+SMBF_ANSWER_RECORD_REQ - Don't record until the channel is answered
 </pre>
 */
 typedef enum {
@@ -791,7 +793,8 @@ typedef enum {
 	SMBF_WRITE_STREAM = (1 << 1),
 	SMBF_WRITE_REPLACE = (1 << 2),
 	SMBF_READ_REPLACE = (1 << 3),
-	SMBF_STEREO = (1 << 4)
+	SMBF_STEREO = (1 << 4),
+	SMBF_RECORD_ANSWER_REQ = (1 << 5)
 } switch_media_bug_flag_t;
 
 /*!

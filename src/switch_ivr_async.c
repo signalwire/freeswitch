@@ -262,10 +262,24 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 	case SWITCH_ABC_TYPE_READ:
 		if (fh) {
 			switch_size_t len;
-
+			switch_core_session_t *session;
+			switch_channel_t *channel;
+			
+			session = switch_core_media_bug_get_session(bug);
+			assert(session != NULL);
+			channel = switch_core_session_get_channel(session);
+			assert(channel != NULL);
+			
 			if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
-				len = (switch_size_t) frame.datalen / 2;
-				switch_core_file_write(fh, frame.data, &len);
+				int doit = 1;
+				if (!switch_channel_test_flag(channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bug, SMBF_RECORD_ANSWER_REQ)) {
+					doit = 0;
+				}
+
+				if (doit) {
+					len = (switch_size_t) frame.datalen / 2;
+					switch_core_file_write(fh, frame.data, &len);
+				}
 			}
 		}
 		break;
@@ -326,6 +340,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	if ((p = switch_channel_get_variable(channel, "RECORD_STEREO")) && switch_true(p)) {
 		flags |= SMBF_STEREO;
 		channels = 2;
+	}
+
+	if ((p = switch_channel_get_variable(channel, "RECORD_ANSWER_REQ")) && switch_true(p)) {
+		flags |= SMBF_RECORD_ANSWER_REQ;
 	}
 	
 	fh->channels = channels;

@@ -40,6 +40,15 @@ static void switch_core_media_bug_destroy(switch_media_bug_t *bug)
 	switch_buffer_destroy(&bug->raw_write_buffer);
 }
 
+SWITCH_DECLARE(uint32_t) switch_core_media_bug_test_flag(switch_media_bug_t *bug, uint32_t flag)
+{
+	return switch_test_flag(bug, flag);
+}
+
+SWITCH_DECLARE(switch_core_session_t *) switch_core_media_bug_get_session(switch_media_bug_t *bug)
+{
+	return bug->session;
+}
 
 SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_write_replace_frame(switch_media_bug_t *bug)
 {
