@@ -156,5 +156,5 @@ else
 endif
 
 install:: nspr.m4
-	$(NSINSTALL) -D $(DESTDIR)$(datadir)/aclocal
-	$(NSINSTALL) -t -m 0644 $< $(DESTDIR)$(datadir)/aclocal
+#	$(NSINSTALL) -D $(DESTDIR)$(datadir)/aclocal
+#	$(NSINSTALL) -t -m 0644 $< $(DESTDIR)$(datadir)/aclocal

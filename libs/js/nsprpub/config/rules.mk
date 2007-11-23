@@ -225,12 +225,12 @@ distclean::
 	+$(LOOP_OVER_DIRS)
 
 install:: $(RELEASE_BINS) $(RELEASE_HEADERS) $(RELEASE_LIBS)
-ifdef RELEASE_BINS
-	$(NSINSTALL) -t -m 0755 $(RELEASE_BINS) $(DESTDIR)$(bindir)
-endif
-ifdef RELEASE_HEADERS
-	$(NSINSTALL) -t -m 0644 $(RELEASE_HEADERS) $(DESTDIR)$(includedir)/$(include_subdir)
-endif
+#ifdef RELEASE_BINS
+#	$(NSINSTALL) -t -m 0755 $(RELEASE_BINS) $(DESTDIR)$(bindir)
+#endif
+#ifdef RELEASE_HEADERS
+#	$(NSINSTALL) -t -m 0644 $(RELEASE_HEADERS) $(DESTDIR)$(includedir)/$(include_subdir)
+#endif
 ifdef RELEASE_LIBS
 	$(NSINSTALL) -t -m 0755 $(RELEASE_LIBS) $(DESTDIR)$(libdir)/$(lib_subdir)
 endif
