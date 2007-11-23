@@ -76,6 +76,7 @@ struct pika_channel_profile {
 	PKH_TECConfig ec_config;
 	PKH_TSpanConfig span_config;
 	general_config_t general_config;
+	int cust_span;
 };
 typedef struct pika_channel_profile pika_channel_profile_t;
 
@@ -87,7 +88,8 @@ static struct {
 	PKH_TRecordConfig record_config;
 	PKH_TPlayConfig play_config;
 	PKH_TECConfig ec_config;
-	PKH_TSpanConfig span_config;
+	PKH_TSpanConfig t1_span_config;
+	PKH_TSpanConfig e1_span_config;
 	zap_hash_t *profile_hash;
 	general_config_t general_config;
 } globals;
@@ -147,7 +149,6 @@ static ZIO_CONFIGURE_FUNCTION(pika_configure)
 		memset(profile, 0, sizeof(*profile));
 		zap_set_string(profile->name, category);
 		profile->ec_config = globals.ec_config;
-		profile->span_config = globals.span_config;
 		profile->record_config = globals.record_config;
 		profile->play_config = globals.play_config;
 		hashtable_insert(globals.profile_hash, (void *)profile->name, profile);
@@ -214,14 +215,19 @@ static ZIO_CONFIGURE_FUNCTION(pika_configure)
 		profile->ec_config.adaptationModeEnabled = zap_true(val);
 	} else if (!strcasecmp(var, "framing")) {
 		profile->span_config.framing = pika_str2span(val);
+		profile->cust_span++;
 	} else if (!strcasecmp(var, "encoding")) {
 		profile->span_config.encoding = pika_str2span_encoding(val);
+		profile->cust_span++;
 	} else if (!strcasecmp(var, "loopLength")) {
 		profile->span_config.loopLength = pika_str2loop_length(val);
+		profile->cust_span++;
 	} else if (!strcasecmp(var, "buildOut")) {
 		profile->span_config.buildOut = pika_str2lbo(val);
+		profile->cust_span++;
 	} else if (!strcasecmp(var, "compandMode")) {
 		profile->span_config.compandMode = pika_str2compand_mode(val);
+		profile->cust_span++;
 	} else if (!strcasecmp(var, "region")) {
 		if (!strcasecmp(val, "eu")) {
 			profile->general_config.region = PKH_TRUNK_EU;
@@ -352,10 +358,13 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 		if ((type == ZAP_CHAN_TYPE_B || type == ZAP_CHAN_TYPE_DQ921) && !span_data->handle) {
 			PKH_TBoardConfig boardConfig;
 			
-			TRY_OR_DIE(PKH_SPAN_Open(globals.open_boards[boardno], spanno, NULL, &span_data->handle), PK_SUCCESS, error);
-			TRY_OR_DIE(PKH_SPAN_GetConfig(span_data->handle, &span_data->span_config), PK_SUCCESS, error);
-			TRY_OR_DIE(PKH_QUEUE_Attach(span_data->event_queue, span_data->handle, (PK_VOID*) span), PK_SUCCESS, error);
 			TRY_OR_DIE(PKH_BOARD_GetConfig(globals.open_boards[boardno], &boardConfig), PK_SUCCESS, error);
+			if ((profile && profile->general_config.region == PKH_TRUNK_EU) || zap_test_flag(span_data, PK_FLAG_LOCKED)) {
+				if (span->trunk_type == ZAP_TRUNK_T1) {
+					zap_log(ZAP_LOG_WARNING, "Changing trunk type to E1 based on previous config.\n");
+				}
+				span->trunk_type = ZAP_TRUNK_E1;
+			}
 
 			if (span->trunk_type == ZAP_TRUNK_T1) {
 				if (zap_test_flag(span_data, PK_FLAG_LOCKED)) {
@@ -363,9 +372,16 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 				}
 			} else if (span->trunk_type == ZAP_TRUNK_E1) {
 				boardConfig.specific.DigitalGateway.interfaceType = PKH_BOARD_INTERFACE_TYPE_E1;
-				PKH_BOARD_SetConfig(globals.open_boards[boardno], &boardConfig);
+				if ((status = PKH_BOARD_SetConfig(globals.open_boards[boardno], &boardConfig)) != PK_SUCCESS) {
+					zap_log(ZAP_LOG_ERROR, "Error: [%s]\n",
+							PKH_ERROR_GetText(status, error_text, sizeof(error_text)));
+				}
 				zap_set_flag(span_data, PK_FLAG_LOCKED);
 			}
+			
+			TRY_OR_DIE(PKH_SPAN_Open(globals.open_boards[boardno], spanno, NULL, &span_data->handle), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_SPAN_GetConfig(span_data->handle, &span_data->span_config), PK_SUCCESS, error);
+			TRY_OR_DIE(PKH_QUEUE_Attach(span_data->event_queue, span_data->handle, (PK_VOID*) span), PK_SUCCESS, error);
 		}
 
 		if (type == ZAP_CHAN_TYPE_FXO) {
@@ -433,6 +449,29 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 			TRY_OR_DIE(PKH_QUEUE_Create(PKH_QUEUE_TYPE_NORMAL, &chan_data->media_in_queue), PK_SUCCESS, error);
 			TRY_OR_DIE(PKH_QUEUE_Attach(chan_data->media_in_queue, chan_data->handle, (PK_VOID*) chan), PK_SUCCESS, error);
 			TRY_OR_DIE(PKH_QUEUE_Attach(span_data->event_queue, chan_data->handle, (PK_VOID*) chan), PK_SUCCESS, error);
+
+			if (profile) {
+				if (profile->cust_span) {
+					span_data->span_config.framing = profile->span_config.framing;
+					span_data->span_config.encoding = profile->span_config.encoding;
+					span_data->span_config.loopLength = profile->span_config.loopLength;
+					span_data->span_config.buildOut = profile->span_config.buildOut;
+					span_data->span_config.compandMode = profile->span_config.compandMode;
+				} else {
+					if (profile->general_config.region == PKH_TRUNK_EU) {
+						span_data->span_config = globals.e1_span_config;
+					} else {
+						span_data->span_config = globals.t1_span_config;
+					}
+				}
+			} else {
+				if (span->trunk_type == ZAP_TRUNK_E1) {
+					span_data->span_config = globals.e1_span_config;
+				} else {
+					span_data->span_config = globals.t1_span_config;
+				}
+			}
+			
 			PKH_SPAN_SetConfig(span_data->handle, &span_data->span_config);
 			TRY_OR_DIE(PKH_SPAN_Start(span_data->handle), PK_SUCCESS, error);
 		}
@@ -469,18 +508,13 @@ static unsigned pika_open_range(zap_span_t *span, unsigned boardno, unsigned spa
 			chan_data->play_config.AGC = profile->play_config.AGC;
 			chan_data->ec_enabled = profile->ec_enabled;
 			chan_data->ec_config = profile->ec_config;
-			span_data->span_config.framing = profile->span_config.framing;
-			span_data->span_config.encoding = profile->span_config.encoding;
-			span_data->span_config.loopLength = profile->span_config.loopLength;
-			span_data->span_config.buildOut = profile->span_config.buildOut;
-			span_data->span_config.compandMode = profile->span_config.compandMode;
 		}
 		
 		if (type == ZAP_CHAN_TYPE_B) {
-			if (span_data->span_config.compandMode == PKH_SPAN_COMPAND_MODE_MU_LAW) {
-				chan->native_codec = chan->effective_codec = ZAP_CODEC_ULAW;
-			} else {
+			if (span_data->span_config.compandMode == PKH_SPAN_COMPAND_MODE_A_LAW) {
 				chan->native_codec = chan->effective_codec = ZAP_CODEC_ALAW;
+			} else {
+				chan->native_codec = chan->effective_codec = ZAP_CODEC_ULAW;
 			}
 		}
 
@@ -1192,12 +1226,21 @@ zap_status_t pika_init(zap_io_interface_t **zint)
 				globals.board_list.board[i].serialNumber);
 
 		if (globals.board_list.board[i].type == PKH_BOARD_TYPE_DIGITAL_GATEWAY) {
-			TPikaHandle tmp, tmp2;
-			PKH_BOARD_Open(globals.board_list.board[i].id, NULL, &tmp);
-			PKH_SPAN_Open(tmp, 0, NULL, &tmp2);
-			PKH_SPAN_GetConfig(tmp2, &globals.span_config);
-			PKH_SPAN_Close(tmp2);
-			PKH_BOARD_Close(tmp);
+			TPikaHandle board_handle, span_handle;
+			PKH_TBoardConfig boardConfig;
+			PKH_BOARD_GetConfig(board_handle, &boardConfig);
+			PKH_BOARD_Open(globals.board_list.board[i].id, NULL, &board_handle);
+			PKH_SPAN_Open(board_handle, 0, NULL, &span_handle);
+			PKH_SPAN_GetConfig(span_handle, &globals.t1_span_config);
+			PKH_SPAN_Close(span_handle);
+			boardConfig.specific.DigitalGateway.interfaceType = PKH_BOARD_INTERFACE_TYPE_E1;
+			PKH_BOARD_SetConfig(board_handle, &boardConfig);
+			PKH_SPAN_Open(board_handle, 0, NULL, &span_handle);
+			PKH_SPAN_GetConfig(span_handle, &globals.e1_span_config);
+			PKH_SPAN_Close(span_handle);
+			boardConfig.specific.DigitalGateway.interfaceType = PKH_BOARD_INTERFACE_TYPE_T1;
+			PKH_BOARD_SetConfig(board_handle, &boardConfig);
+			PKH_BOARD_Close(board_handle);
 		}
 		ok++;
 
