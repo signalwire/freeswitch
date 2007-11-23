@@ -2,17 +2,13 @@ Name:         freeswitch-snapshot
 Summary:      FreeSWITCH open source telephony platform
 License:      MPL
 Group:        Productivity/Telephony/Servers
-Version:      6365
+Version:      6382
 Release:      0
 URL:          http://www.freeswitch.org/
 Packager:     Peter Nixon
 Vendor:       http://peternixon.net/
 Source0:      %{name}-%{version}.tar.bz2
-Source1:      freeswitch.ld.so.conf
-Source2:      freeswitch.init
-Source3:      freeswitch.sysconfig
-Source4:      modules.conf
-Patch0:       curses.patch
+Source1:      modules.conf
 
 #AutoReqProv:  no
 
@@ -22,7 +18,6 @@ BuildRequires: automake
 BuildRequires: curl-devel
 BuildRequires: gcc-c++
 BuildRequires: gnutls-devel
-#BuildRequires: libogg-devel
 BuildRequires: libtool >= 1.5.14
 BuildRequires: lzo-devel
 BuildRequires: freeradius-client-snapshot-devel
@@ -35,7 +30,6 @@ BuildRequires: pkgconfig
 BuildRequires: python-devel
 BuildRequires: termcap
 #BuildRequires: unixODBC-devel
-#BuildRequires: sqlite-devel
 
 %if %{?suse_version:1}0
 %if 0%{?suse_version} > 910
@@ -104,8 +98,6 @@ Pass-through g729 Codec support for FreeSWITCH open source telephony platform
 
 %prep
 %setup -q
-%patch0
-
 
 %build
 #export CFLAGS="$RPM_OPT_FLAGS -fno-strict-aliasing -DLDAP_DEPRECATED -fPIC -DPIC"
@@ -114,15 +106,11 @@ export CFLAGS="$RPM_OPT_FLAGS -fPIC -DPIC"
 export CFLAGS="$CFLAGS -fstack-protector"
 %endif
 
-
 export VERBOSE=yes
-export CFLAGS="$CFLAGS -g -ggdb"
-export MOD_CFLAGS="-g -ggdb"
 export DESTDIR=$RPM_BUILD_ROOT/
 export PKG_CONFIG_PATH=/usr/bin/pkg-config:$PKG_CONFIG_PATH
 export ACLOCAL_FLAGS="-I /usr/share/aclocal"
 ./bootstrap.sh
-#./configure -C \
 %configure -C \
                 --prefix=/opt/freeswitch \
                 --sysconfdir=%{_sysconfdir} \
@@ -135,29 +123,24 @@ export ACLOCAL_FLAGS="-I /usr/share/aclocal"
 cat src/include/switch_version.h.in | sed "s/@SVN_VERSION@/%{version}/g" > src/include/switch_version.h
 touch .noversion
 
-cp %{SOURCE4} .
+cp %{SOURCE1} .
 
 make
 
 %install
 make DESTDIR=$RPM_BUILD_ROOT install
-#make DESTDIR=$RPM_BUILD_ROOT -C src/mod/event_handlers/mod_cdr install
-#make DESTDIR=$RPM_BUILD_ROOT -C src/mod/codecs/mod_speex install
-#make DESTDIR=$RPM_BUILD_ROOT -C src/mod/codecs/mod_g729 install
-#make DESTDIR=$RPM_BUILD_ROOT -C src/mod/xml_int/mod_xml_rpc install
 
 # Create a log dir
 mkdir -p $RPM_BUILD_ROOT/opt/freeswitch/log
+
 #Install the library path config so the system can find the modules
 mkdir -p $RPM_BUILD_ROOT/etc/ld.so.conf.d
-cp %{SOURCE1} $RPM_BUILD_ROOT/etc/ld.so.conf.d/
+cp build/freeswitch.ld.so.conf $RPM_BUILD_ROOT/etc/ld.so.conf.d/
 
-#install    -m 744 suse/freeswitch.init $RPM_BUILD_ROOT/etc/init.d/freeswitch
-install -D -m 744 %{SOURCE2} $RPM_BUILD_ROOT/etc/init.d/freeswitch
+install -D -m 744 build/freeswitch.init $RPM_BUILD_ROOT/etc/init.d/freeswitch
 mkdir -p $RPM_BUILD_ROOT/usr/sbin
 ln -sf /etc/init.d/freeswitch $RPM_BUILD_ROOT/usr/sbin/rcfreeswitch
-install -D -m 744 %{SOURCE3} $RPM_BUILD_ROOT/etc/sysconfig/freeswitch
-
+install -D -m 744 build/freeswitch.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/freeswitch
 
 %pre
 /usr/sbin/groupadd -r freeswitch 2> /dev/null || :
