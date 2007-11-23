@@ -826,7 +826,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 
 
 	if (switch_event_reserve_subclass(MY_EVENT_RINGING) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 

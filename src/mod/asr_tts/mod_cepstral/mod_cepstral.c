@@ -140,7 +140,7 @@ static switch_status_t cepstral_speech_open(switch_speech_handle_t *sh, char *vo
 
 	/* Open a Swift Port through which to make TTS calls */
 	if (SWIFT_FAILED(cepstral->port = swift_port_open(engine, cepstral->params))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open Swift Port.");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open Swift Port.\n");
 		goto all_done;
 	}
 

@@ -1778,17 +1778,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load)
 	load_config();
 
 	if (switch_event_reserve_subclass(DL_EVENT_LOGIN_SUCCESS) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!", DL_EVENT_LOGIN_SUCCESS);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", DL_EVENT_LOGIN_SUCCESS);
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (switch_event_reserve_subclass(DL_EVENT_LOGIN_FAILURE) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!", DL_EVENT_LOGIN_FAILURE);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", DL_EVENT_LOGIN_FAILURE);
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (switch_event_reserve_subclass(DL_EVENT_CONNECTED) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!", DL_EVENT_CONNECTED);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", DL_EVENT_CONNECTED);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -2089,7 +2089,7 @@ SWITCH_STANDARD_API(dl_login)
 
 		if (profile) {
 			if (switch_test_flag(profile, TFLAG_IO)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile already exists.");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile already exists.\n");
 				stream->write_function(stream, "Profile already exists\n");
 				return SWITCH_STATUS_SUCCESS;
 			}

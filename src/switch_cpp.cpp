@@ -67,7 +67,7 @@ CoreSession::CoreSession(switch_core_session_t *new_session)
 
 CoreSession::~CoreSession()
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::~CoreSession desctructor");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::~CoreSession desctructor\n");
 	switch_channel_t *channel = NULL;
 
 	if (session) {
@@ -164,12 +164,12 @@ int CoreSession::speak(char *text)
 	store_file_handle(&fh);
 
 	if (!tts_name) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No TTS engine specified");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No TTS engine specified\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
 	if (!voice_name) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No TTS voice specified");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No TTS voice specified\n");
 		return SWITCH_STATUS_FALSE;
 	}
 

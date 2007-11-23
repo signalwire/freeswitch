@@ -566,7 +566,7 @@ static void woomera_printf(woomera_profile * profile, switch_socket_t * socket, 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Out of memory\n");
 	} else {
 		if (profile && globals.debug) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send Message: {%s} [%s/%d]\n%s\n%s", profile->name,
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send Message: {%s} [%s/%d]\n%s\n%s\n", profile->name,
 							  profile->woomera_host, profile->woomera_port, WOOMERA_DEBUG_LINE, stuff);
 		}
 		len = strlen(stuff);
@@ -682,7 +682,7 @@ static int woomera_message_parse(switch_socket_t * fd, woomera_message * wmsg, i
 	next = buf;
 
 	if (globals.debug) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Receive Message: {%s} [%s/%d]\n%s\n%s", profile->name,
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Receive Message: {%s} [%s/%d]\n%s\n%s\n", profile->name,
 						  profile->woomera_host, profile->woomera_port, WOOMERA_DEBUG_LINE, buf);
 	}
 

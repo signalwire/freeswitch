@@ -1124,7 +1124,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 		args.buflen = digit_buffer_length;
 		//Play the file
 		status = switch_ivr_play_file(session, NULL, prompt_audio_file, &args);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "play gave up %s", (char *) digit_buffer);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "play gave up %s\n", (char *) digit_buffer);
 
 		//Make sure we made it out alive
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
