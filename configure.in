@@ -6,8 +6,8 @@
 AC_INIT([freeswitch], [1.0.pre1], BUG-REPORT-ADDRESS)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [0])
-AC_SUBST(SWITCH_VERSION_MICRO, [pre1])
-#AC_SUBST(SWITCH_VERSION_REVISION, [svn-revision-here])
+AC_SUBST(SWITCH_VERSION_MICRO, [beta2])
+#AC_SUBST(SWITCH_VERSION_REVISION, [6386])
 
 AC_CONFIG_FILES([src/include/switch_version.h.in:src/include/switch_version.h.template])
 
