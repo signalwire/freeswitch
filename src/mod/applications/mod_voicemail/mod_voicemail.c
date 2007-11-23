@@ -1120,7 +1120,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 
     
     if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error invalid profile %s", profile_name);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error invalid profile %s\n", profile_name);
         return;
     }
     
@@ -1495,7 +1495,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
                         
                         
                         if (switch_dir_make_recursive(dir_path, DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s", dir_path);
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", dir_path);
                             return;
                         }
                     }
@@ -1563,7 +1563,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 
     memset(&cbt, 0, sizeof(cbt));
     if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error invalid profile %s", profile_name);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error invalid profile %s\n", profile_name);
         return SWITCH_STATUS_FALSE;
     }
 
@@ -1588,7 +1588,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
     }
 
     if (switch_dir_make_recursive(dir_path, DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s", dir_path);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", dir_path);
         goto end;
     }
 
@@ -1873,7 +1873,7 @@ SWITCH_STANDARD_APP(voicemail_function)
     assert(channel != NULL);
 
     if (switch_dir_make_recursive(SWITCH_GLOBAL_dirs.storage_dir, DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s", SWITCH_GLOBAL_dirs.storage_dir);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", SWITCH_GLOBAL_dirs.storage_dir);
         return;
     }
     
