@@ -106,7 +106,7 @@ int teletone_set_tone(teletone_generation_session_t *ts, int index, ...)
 	teletone_process_t x = 0;
 
 	va_start(ap, index);
-	while (i <= TELETONE_MAX_TONES && (x = va_arg(ap, teletone_process_t))) {
+	while (i < TELETONE_MAX_TONES && (x = va_arg(ap, teletone_process_t))) {
 		ts->TONES[index].freqs[i++] = x;
 	}
 	va_end(ap);
@@ -122,7 +122,7 @@ int teletone_set_map(teletone_tone_map_t *map, ...)
 	teletone_process_t x = 0;
 
 	va_start(ap, map);
-	while (i <= TELETONE_MAX_TONES && (x = va_arg(ap, teletone_process_t))) {
+	while (i < TELETONE_MAX_TONES && (x = va_arg(ap, teletone_process_t))) {
 		map->freqs[i++] = x;
 	}
 	va_end(ap);
