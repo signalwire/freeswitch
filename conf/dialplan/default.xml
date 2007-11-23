@@ -121,7 +121,7 @@
   <!--
   <extension name="catchall">
     <condition>
-      <action application="set" data="effective_callerid_name=another noob"/>
+      <action application="set" data="effective_caller_id_name=another noob"/>
       <action application="bridge" data="sofia/$${domain}/888@conference.freeswitch.org"/>
     </condition>
   </extension>
