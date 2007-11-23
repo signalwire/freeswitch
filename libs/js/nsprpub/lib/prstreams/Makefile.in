@@ -195,10 +195,10 @@ endif
 #
 
 export:: $(TARGETS) $(HEADERS)
-#	$(INSTALL) -m 444 $(HEADERS) $(dist_includedir)
+	$(INSTALL) -m 444 $(HEADERS) $(dist_includedir)
 	$(INSTALL) -m 444 $(TARGETS) $(dist_libdir)
 ifeq ($(OS_ARCH),OS2)
-#	$(INSTALL) -m 444 $(TARGETS) $(dist_bindir)
+	$(INSTALL) -m 444 $(TARGETS) $(dist_bindir)
 endif
 ifeq ($(OS_ARCH),HP-UX)
 ifdef SHARED_LIBRARY
