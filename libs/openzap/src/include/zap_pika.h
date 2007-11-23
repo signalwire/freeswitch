@@ -87,12 +87,12 @@ typedef enum {
 ZAP_STR2ENUM_P(pika_str2lbo, pika_lbo2str, PIKA_TSpanBuildOut)
 
 typedef enum {
-	PIKA_SPAN_COMMAND_MODE_MU_LAW = 1,
-	PIKA_SPAN_COMMAND_MODE_A_LAW,
-	PIKA_SPAN_COMMAND_MODE_INVALID
+	PIKA_SPAN_COMPAND_MODE_MU_LAW = 1,
+	PIKA_SPAN_COMPAND_MODE_A_LAW,
+	PIKA_SPAN_COMPAND_MODE_INVALID
 } PIKA_TSpanCompandMode;
-#define PIKA_SPAN_COMMAND_MODE_STRINGS "MU_LAW", "A_LAW"
-ZAP_STR2ENUM_P(pika_str2command_mode, pika_command_mode2str, PIKA_TSpanCompandMode)
+#define PIKA_SPAN_COMPAND_MODE_STRINGS "MU_LAW", "A_LAW"
+ZAP_STR2ENUM_P(pika_str2compand_mode, pika_compand_mode2str, PIKA_TSpanCompandMode)
 
 
 /* Openzap PIKA hardware interface functions */
