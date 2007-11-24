@@ -93,6 +93,8 @@ struct vm_profile {
     uint32_t max_login_attempts;
     uint32_t max_record_len;
     switch_mutex_t *mutex;
+    uint32_t record_threshold;
+    uint32_t record_silence_hits;
 #ifdef SWITCH_HAVE_ODBC
 	switch_odbc_handle_t *master_odbc;
 #else
@@ -297,6 +299,8 @@ static switch_status_t load_config(void)
         char *email_headers = "";
         char *email_from = "";
         char *date_fmt = "%A, %B %d %Y, %I %M %p";
+        uint32_t record_threshold = 200;
+        uint32_t record_silence_hits = 2;
 
         switch_core_db_t *db;
         uint32_t timeout = 10000, max_login_attempts = 3, max_record_len = 300;
@@ -384,6 +388,26 @@ static switch_status_t load_config(void)
                 callback_context = val;
             } else if (!strcasecmp(var, "file-extension")) {
                 file_ext = val;
+            } else if (!strcasecmp(var, "record-silence-threshold")) {
+                int tmp = 0;
+                if (!switch_strlen_zero(val)) {
+                    tmp = atoi(val);
+                }
+                if (tmp >= 0 && tmp <= 10000) {
+                    record_threshold = tmp;
+                } else {
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid threshold value [%s] must be between 0 and 10000 ms\n", val);
+                }
+            } else if (!strcasecmp(var, "record-silence-hits")) {
+                int tmp = 0;
+                if (!switch_strlen_zero(val)) {
+                    tmp = atoi(val);
+                }
+                if (tmp >= 0 && tmp <= 1000) {
+                    record_silence_hits = tmp;
+                } else {
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid threshold value [%s] must be between 0 and 1000 ms\n", val);
+                }
             } else if (!strcasecmp(var, "tone-spec")) {
                 tone_spec = val;
             } else if (!strcasecmp(var, "digit-timeout")) {
@@ -501,7 +525,8 @@ static switch_status_t load_config(void)
             *profile->rew_key = *rew_key;
             *profile->urgent_key = *urgent_key;
             *profile->operator_key = *operator_key;
-
+            profile->record_threshold = record_threshold;
+            profile->record_silence_hits = record_silence_hits;
 
             profile->operator_ext = switch_core_strdup(globals.pool, operator_ext);
             profile->storage_dir = switch_core_strdup(globals.pool, storage_dir);
@@ -793,8 +818,8 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
         TRY_CODE(switch_ivr_gentones(session, profile->tone_spec, 0, NULL));
 
         memset(&fh, 0, sizeof(fh));
-        fh.thresh = 200;
-        fh.silence_hits = 2;
+        fh.thresh = profile->record_threshold;
+        fh.silence_hits = profile->record_silence_hits;
 
 
         switch_ivr_record_file(session, &fh, file_path, &args, profile->max_record_len);

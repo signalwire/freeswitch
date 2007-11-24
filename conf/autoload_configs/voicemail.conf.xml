@@ -29,6 +29,8 @@
       <param name="restart-key" value="1"/>
       <param name="ff-key" value="6"/>
       <param name="rew-key" value="4"/>
+      <param name="record-silence-threshold" value="200"/>
+      <param name="record-silence-hits" value="2"/>
       <!-- the next two both must be set for this to be enabled
            the extension is in the format of <dest> [<dialplan>] [<context>]
        -->
