@@ -518,6 +518,8 @@ void print_bits(uint8_t *b, int bl, char *buf, int blen, int e, uint8_t ss);
 void print_hex_bytes(uint8_t *data, zap_size_t dlen, char *buf, zap_size_t blen);
 int zap_hash_equalkeys(void *k1, void *k2);
 uint32_t zap_hash_hashfromstring(void *ky);
+uint32_t zap_running(void);
+
 ZIO_CODEC_FUNCTION(zio_slin2ulaw);
 ZIO_CODEC_FUNCTION(zio_ulaw2slin);
 ZIO_CODEC_FUNCTION(zio_slin2alaw);

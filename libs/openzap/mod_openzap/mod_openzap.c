@@ -35,7 +35,8 @@
 #include "zap_isdn.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_openzap_load);
-SWITCH_MODULE_DEFINITION(mod_openzap, mod_openzap_load, NULL, NULL);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_openzap_shutdown);
+SWITCH_MODULE_DEFINITION(mod_openzap, mod_openzap_load, mod_openzap_shutdown, NULL);
 
 switch_endpoint_interface_t *openzap_endpoint_interface;
 
@@ -46,6 +47,9 @@ struct span_config {
 	zap_span_t *span;
 	char dialplan[80];
 	char context[80];
+	char dial_regex[256];
+	char fail_dial_regex[256];
+
 };
 
 static struct span_config SPAN_CONFIG[ZAP_MAX_SPANS_INTERFACE] = {0};
@@ -974,6 +978,42 @@ static ZIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
 			cycle_foreground(sigmsg->channel, 1);
 		}
 		break;
+
+    case ZAP_SIGEVENT_COLLECTED_DIGIT:
+		{
+			char *dtmf = sigmsg->raw_data;
+			char *regex = SPAN_CONFIG[sigmsg->channel->span->span_id].dial_regex;
+			char *fail_regex = SPAN_CONFIG[sigmsg->channel->span->span_id].fail_dial_regex;
+			
+			if (switch_strlen_zero(regex)) {
+				regex = NULL;
+			}
+
+			if (switch_strlen_zero(fail_regex)) {
+				fail_regex = NULL;
+			}
+
+			if ((regex || fail_regex) && !switch_strlen_zero(dtmf)) {
+				switch_regex_t *re = NULL;
+				int ovector[30];
+				int match = 0;
+
+				if (fail_regex) {
+					match = switch_regex_perform(dtmf, fail_regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+					status = match ? ZAP_SUCCESS : ZAP_BREAK;
+					switch_regex_safe_free(re);
+				}
+
+				if (status == ZAP_SUCCESS && regex) {
+					match = switch_regex_perform(dtmf, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+					status = match ? ZAP_BREAK : ZAP_SUCCESS;
+				}
+				
+				switch_regex_safe_free(re);
+			}
+
+		}
+		break;
 	}
 
 	return status;
@@ -1036,15 +1076,17 @@ static ZIO_SIGNAL_CB_FUNCTION(on_isdn_signal)
 
 static ZIO_SIGNAL_CB_FUNCTION(on_analog_signal)
 {
+	switch_status_t status;
+	
 	switch (sigmsg->channel->type) {
 	case ZAP_CHAN_TYPE_FXO:
 		{
-			on_fxo_signal(sigmsg);
+			status = on_fxo_signal(sigmsg);
 		}
 		break;
 	case ZAP_CHAN_TYPE_FXS:
 		{
-			on_fxs_signal(sigmsg);
+			status = on_fxs_signal(sigmsg);
 		}
 		break;
 	default: 
@@ -1055,7 +1097,7 @@ static ZIO_SIGNAL_CB_FUNCTION(on_analog_signal)
 		break;
 	}
 
-	return ZAP_SUCCESS;
+	return status;
 }
 
 static void zap_logger(char *file, const char *func, int line, int level, char *fmt, ...)
@@ -1105,6 +1147,8 @@ static switch_status_t load_config(void)
 			char *tonegroup = NULL;
 			char *digit_timeout = NULL;
 			char *max_digits = NULL;
+			char *dial_regex = NULL;
+			char *fail_dial_regex = NULL;
 			uint32_t span_id = 0, to = 0, max = 0;
 			zap_span_t *span = NULL;
 
@@ -1114,13 +1158,17 @@ static switch_status_t load_config(void)
 
 				if (!strcasecmp(var, "tonegroup")) {
 					tonegroup = val;
-				} else if (!strcasecmp(var, "digit_timeout")) {
+				} else if (!strcasecmp(var, "digit_timeout") || !strcasecmp(var, "digit-timeout")) {
 					digit_timeout = val;
 				} else if (!strcasecmp(var, "context")) {
 					context = val;
 				} else if (!strcasecmp(var, "dialplan")) {
 					dialplan = val;
-				} else if (!strcasecmp(var, "max_digits")) {
+				} else if (!strcasecmp(var, "dial-regex")) {
+					dial_regex = val;
+				} else if (!strcasecmp(var, "fail-dial-regex")) {
+					fail_dial_regex = val;
+				} else if (!strcasecmp(var, "max_digits") || !strcasecmp(var, "max-digits")) {
 					digit_timeout = val;
 				}
 			}
@@ -1154,10 +1202,17 @@ static switch_status_t load_config(void)
 			}
 
 			SPAN_CONFIG[span->span_id].span = span;
-			switch_copy_string(SPAN_CONFIG[span->span_id].context, context, sizeof(SPAN_CONFIG[span->span_id].context));
-			switch_copy_string(SPAN_CONFIG[span->span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span->span_id].dialplan));
+			switch_set_string(SPAN_CONFIG[span->span_id].context, context);
+			switch_set_string(SPAN_CONFIG[span->span_id].dialplan, dialplan);
 
-			
+			if (dial_regex) {
+				switch_set_string(SPAN_CONFIG[span->span_id].dial_regex, dial_regex);
+			}
+
+			if (fail_dial_regex) {
+				switch_set_string(SPAN_CONFIG[span->span_id].fail_dial_regex, fail_dial_regex);
+			}
+
 			zap_analog_start(span);
 		}
 	}
@@ -1255,7 +1310,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_openzap_load)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_openzap_shutdown)
+{
+	zap_global_destroy();
+	return SWITCH_STATUS_SUCCESS;
+}
 
 /* For Emacs:
  * Local Variables:

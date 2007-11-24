@@ -508,7 +508,7 @@ static __inline__ void check_events(zap_span_t *span)
 		break;
 	case ZAP_FAIL:
 		{
-			zap_log(ZAP_LOG_DEBUG, "Event Failure!\n");
+			zap_log(ZAP_LOG_DEBUG, "Event Failure! %d\n", zap_running());
 		}
 		break;
 	default:
@@ -532,7 +532,7 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 
 	Q921Start(&isdn_data->q921);
 
-	while(zap_test_flag(isdn_data, ZAP_ISDN_RUNNING)) {
+	while(zap_running() && zap_test_flag(isdn_data, ZAP_ISDN_RUNNING)) {
 		zap_wait_flag_t flags = ZAP_READ;
 		zap_status_t status = zap_channel_wait(isdn_data->dchan, &flags, 100);
 

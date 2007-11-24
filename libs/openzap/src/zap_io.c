@@ -85,6 +85,7 @@ static struct {
 	zap_mutex_t *mutex;
 	struct zap_span spans[ZAP_MAX_SPANS_INTERFACE];
 	uint32_t span_index;
+	uint32_t running;
 } globals;
 
 
@@ -1965,6 +1966,7 @@ zap_status_t zap_global_init(void)
 	}
 
 	if (load_config() == ZAP_SUCCESS) {
+		globals.running = 1;
 		return ZAP_SUCCESS;
 	}
 
@@ -1972,6 +1974,10 @@ zap_status_t zap_global_init(void)
 	return ZAP_FAIL;
 }
 
+uint32_t zap_running(void)
+{
+	return globals.running;
+}
 
 
 zap_status_t zap_global_destroy(void)
@@ -1980,6 +1986,8 @@ zap_status_t zap_global_destroy(void)
 	time_end();
 	
 	zap_span_close_all();
+	globals.running = 0;
+	zap_sleep(200);
 
 	for(i = 1; i <= globals.span_index; i++) {
 		zap_span_t *cur_span = &globals.spans[i];

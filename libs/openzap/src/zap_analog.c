@@ -177,7 +177,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 	zap_size_t dtmf_offset = 0;
 	zap_analog_data_t *analog_data = zchan->span->signal_data;
 	zap_channel_t *closed_chan;
-	uint32_t state_counter = 0, elapsed = 0, interval = 0, last_digit = 0, indicate = 0, dial_timeout = 30000;
+	uint32_t state_counter = 0, elapsed = 0, collecting = 0, interval = 0, last_digit = 0, indicate = 0, dial_timeout = 30000;
 	zap_sigmsg_t sig;
 	zap_status_t status;
 	
@@ -490,17 +490,24 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 				zap_log(ZAP_LOG_DEBUG, "DTMF %s\n", dtmf + dtmf_offset);
 				if (zchan->state == ZAP_CHANNEL_STATE_DIALTONE) {
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_COLLECT);
+					collecting = 1;
 				}
 				dtmf_offset = strlen(dtmf);
 				last_digit = elapsed;
+				sig.event_id = ZAP_SIGEVENT_COLLECTED_DIGIT;
+				sig.raw_data = dtmf;
+				if (analog_data->sig_cb(&sig) == ZAP_BREAK) {
+					collecting = 0;
+				}
 			}
 		}
 
 
-		if (last_digit && ((elapsed - last_digit > analog_data->digit_timeout) || strlen(dtmf) > analog_data->max_dialstr)) {
+		if (last_digit && (!collecting || ((elapsed - last_digit > analog_data->digit_timeout) || strlen(dtmf) > analog_data->max_dialstr))) {
 			zap_log(ZAP_LOG_DEBUG, "Number obtained [%s]\n", dtmf);
 			zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_IDLE);
 			last_digit = 0;
+			collecting = 0;
 		}
 
 		if (zap_channel_wait(zchan, &flags, interval * 2) != ZAP_SUCCESS) {
@@ -741,7 +748,7 @@ static void *zap_analog_run(zap_thread_t *me, void *obj)
 
 	zap_log(ZAP_LOG_DEBUG, "ANALOG thread starting.\n");
 
-	while(zap_test_flag(analog_data, ZAP_ANALOG_RUNNING)) {
+	while(zap_running() && zap_test_flag(analog_data, ZAP_ANALOG_RUNNING)) {
 		int waitms = 10;
 		zap_status_t status;
 
