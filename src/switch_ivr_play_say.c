@@ -516,13 +516,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			uint32_t samples = read_frame->datalen / sizeof(*fdata);
 			uint32_t score, count = 0, j = 0;
 			double energy = 0;
-
+			int divisor = 0;
+			
 			for (count = 0; count < samples; count++) {
 				energy += abs(fdata[j]);
 				j += read_codec->implementation->number_of_channels;
 			}
 
-			score = (uint32_t) (energy / samples);
+			if (!(divisor = read_codec->implementation->actual_samples_per_second / 8000)) {
+				divisor = 1;
+			}
+			
+			score = (uint32_t) (energy / (samples / divisor));
 			if (score < fh->thresh) {
 				if (!--fh->silence_hits) {
 					break;

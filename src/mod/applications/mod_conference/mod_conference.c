@@ -1382,17 +1382,23 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t * thread, 
 		if (switch_test_flag(member, MFLAG_CAN_SPEAK) && energy_level) {
 			uint32_t energy = 0, i = 0, samples = 0, j = 0, score = 0;
 			int16_t *data;
+			int divisor = 0;
 
 			data = read_frame->data;
+
+			if (!(divisor = read_codec->implementation->actual_samples_per_second / 8000)) {
+				divisor = 1;
+			}
+			
 			if ((samples = read_frame->datalen / sizeof(*data))) {
 
 				for (i = 0; i < samples; i++) {
 					energy += abs(data[j]);
 					j += read_codec->implementation->number_of_channels;
 				}
-				score = energy / samples;
+				score = energy / (samples / divisor);
 			}
-
+			
 			if (score > energy_level) {
 				uint32_t diff = score - energy_level;
 				if (hangover_hits) {
