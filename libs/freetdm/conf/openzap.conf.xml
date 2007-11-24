@@ -5,10 +5,14 @@
   <analog_spans>
     <span id="1">
       <param name="tonegroup" value="us"/>
-      <param name="digit_timeout" value="2000"/>
-      <param name="max_digits" value="11"/>
+      <param name="digit-timeout" value="2000"/>
+      <param name="max-digits" value="11"/>
       <param name="dialplan" value="XML"/>
       <param name="context" value="default"/>
+      <!-- regex to stop dialing when it matches -->
+      <!--<param name="dial-regex" value="5555"/>-->
+      <!-- regex to stop dialing when it does not match -->
+      <!--<param name="fail-dial-regex" value="^5"/>-->
     </span>
   </analog_spans>
 </configuration>
