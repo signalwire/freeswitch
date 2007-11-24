@@ -26,5 +26,5 @@ switch_swig.o: $(SWIGCFILE) Makefile
 	$(CC)  -w $(CFLAGS) -c $< -o $@
 
 local_install:
-	cp -f freeswitch.py $(PREFIX)/lib/python2.5/site-packages/
+	cp -f freeswitch.py $(DESTDIR)$(PREFIX)/lib/python2.5/site-packages/
 

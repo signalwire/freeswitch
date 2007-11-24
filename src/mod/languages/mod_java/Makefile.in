@@ -26,5 +26,5 @@ reswig:
 	swig -java -c++ -I../../../include -package org.freeswitch.swig -outdir src/org/freeswitch/swig -o switch_swig_wrap.cpp mod_java.i
 
 local_install:
-	cp freeswitch.jar $(PREFIX)/scripts
+	cp freeswitch.jar $(DESTDIR)$(PREFIX)/scripts
 
