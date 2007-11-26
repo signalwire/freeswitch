@@ -804,7 +804,7 @@ typedef enum {
 static uint32_t DEFAULT_DIR_PERMS = SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE | SWITCH_FPROT_UEXECUTE | SWITCH_FPROT_GREAD | SWITCH_FPROT_GEXECUTE;
 
 
-static switch_status_t create_file(switch_core_session_t *session, vm_profile_t *profile, char *macro_name, char *file_path, uint32_t *message_len)
+static switch_status_t create_file(switch_core_session_t *session, vm_profile_t *profile, char *macro_name, char *file_path, switch_size_t *message_len)
 {
     switch_channel_t *channel;
     switch_status_t status = SWITCH_STATUS_SUCCESS;

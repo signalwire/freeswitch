@@ -554,8 +554,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		}
 
 		if (!switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
-			len = (switch_size_t) read_frame->datalen / 2;
 			int16_t *data = read_frame->data;
+			len = (switch_size_t) read_frame->datalen / 2;
 			
 			if (resampler) {
 				resampler->from_len = switch_short_to_float(read_frame->data, resampler->from, (int) len);

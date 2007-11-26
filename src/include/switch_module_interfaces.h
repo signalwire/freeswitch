@@ -270,7 +270,7 @@ struct switch_file_handle {
 	/*! is the file seekable */
 	int seekable;
 	/*! the sample count of the file */
-	unsigned int sample_count;
+	switch_size_t sample_count;
 	/*! the speed of the file playback */
 	int speed;
 	/*! the handle's memory pool */
