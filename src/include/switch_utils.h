@@ -336,7 +336,7 @@ SWITCH_DECLARE(switch_status_t) switch_string_match(const char *string, size_t s
 #define SWITCH_READ_ACCEPTABLE(status) (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK)
 SWITCH_DECLARE(size_t) switch_url_encode(const char *url, char *buf, size_t len);
 SWITCH_DECLARE(char *) switch_url_decode(char *s);
-SWITCH_DECLARE(switch_bool_t) switch_simple_email(char *to, char *from, char *headers, char *body, char *file);
+SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *from, const char *headers, const char *body, const char *file);
 
 /* malloc or DIE macros */
 #ifdef NDEBUG

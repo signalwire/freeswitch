@@ -70,7 +70,7 @@ SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size
 
 
 
-static int write_buf(int fd, char *buf)
+static int write_buf(int fd, const char *buf)
 {
 
 	int len = (int) strlen(buf);
@@ -82,23 +82,22 @@ static int write_buf(int fd, char *buf)
 	return 1;
 }
 
-SWITCH_DECLARE(switch_bool_t) switch_simple_email(char *to, char *from, char *headers, char *body, char *file)
+SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *from, const char *headers, const char *body, const char *file)
 {
 	char *bound = "XXXX_boundary_XXXX";
+	char *mime_type = "audio/x-WAV";
 	char filename[80], buf[B64BUFFLEN];
 	int fd = 0, ifd = 0;
 	int x = 0, y = 0, bytes = 0, ilen = 0;
 	unsigned int b = 0, l = 0;
 	unsigned char in[B64BUFFLEN];
 	unsigned char out[B64BUFFLEN + 512];
-	char *path = NULL;
 
     snprintf(filename, 80, "%smail.%d%04x", SWITCH_GLOBAL_dirs.temp_dir, (int)time(NULL), rand() & 0xffff);
     
     if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644))) {
         if (file) {
-            path = file;
-            if ((ifd = open(path, O_RDONLY)) < 1) {
+            if ((ifd = open(file, O_RDONLY)) < 1) {
                 return SWITCH_FALSE;
             }
 
@@ -127,9 +126,13 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(char *to, char *from, char *he
         }
 
         if (file) {
-			snprintf(buf, B64BUFFLEN, "\n\n--%s\nContent-Type: audio/x-WAV; name=\"%s\"\n"
-                     "Content-Transfer-Encoding: base64\n"
-					 "Content-Description: Sound attachment.\n" "Content-Disposition: attachment; filename=\"%s\"\n\n", bound, switch_cut_path(file), switch_cut_path(file));
+			const char *filename = switch_cut_path(file);
+			snprintf(buf, B64BUFFLEN,
+					 "\n\n--%s\nContent-Type: %s; name=\"%s\"\n"
+					 "Content-Transfer-Encoding: base64\n"
+					 "Content-Description: Sound attachment.\n"
+					 "Content-Disposition: attachment; filename=\"%s\"\n\n",
+					 bound, mime_type, filename, filename);
             if (!write_buf(fd, buf))
                 return SWITCH_FALSE;
 
