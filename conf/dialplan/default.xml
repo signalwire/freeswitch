@@ -34,8 +34,15 @@
       <anti-action application="bridge" data="sofia/$${domain}/${dialed_ext}"/>
       <anti-action application="voicemail" data="default $${domain} ${dialed_ext}"/>
     </condition>
-  </extension>                                                                                                                                                 
- 
+  </extension>
+
+  <!-- dial via SIP uri -->
+  <extension name="SIP_URI">
+    <condition field="destination_number" expression="^sip:(.*)$">
+      <action application="bridge" data="sofia/${use_profile}/$1"/>
+    </condition>
+  </extension>
+
   <!--
   start a dynamic conference with the settings of the 
   "default" conference profile in conference.conf.xml
