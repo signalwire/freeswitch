@@ -544,6 +544,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		char *invite_contact = NULL, *to_str, *use_from_str, *from_str, *url_str;
 		const char *transport = "udp", *t_var;
 		char *rpid_domain = "cluecon.com", *p;
+		const char *priv = "off";
+		const char *screen = "no";
 
 		if (switch_strlen_zero(tech_pvt->dest)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "URL Error! [%s]\n", tech_pvt->dest);
@@ -612,27 +614,23 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 
 		/* TODO: We should use the new tags for making an rpid and add profile options to turn this on/off */
-		if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
-			const char *priv = "off";
-			const char *screen = "no";
-			if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
-				priv = "name";
-				if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
-					priv = "full";
-				}
-			} else if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
+		if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
+			priv = "name";
+			if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
 				priv = "full";
 			}
-			if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
-				screen = "yes";
-			}
-
-			tech_pvt->rpid = switch_core_session_sprintf(tech_pvt->session, "Remote-Party-ID: \"%s\"<%s@%s>;screen=%s;privacy=%s", 
-														 tech_pvt->caller_profile->caller_id_name, 
-														 tech_pvt->caller_profile->caller_id_number, 
-														 rpid_domain,
-														 screen, priv);
+		} else if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
+			priv = "full";
 		}
+		if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
+			screen = "yes";
+		}
+
+		tech_pvt->rpid = switch_core_session_sprintf(tech_pvt->session, "Remote-Party-ID: \"%s\"<%s@%s>;screen=%s;privacy=%s", 
+													 tech_pvt->caller_profile->caller_id_name, 
+													 tech_pvt->caller_profile->caller_id_number, 
+													 rpid_domain,
+													 screen, priv);
 
 		switch_safe_free(d_url);
 		
