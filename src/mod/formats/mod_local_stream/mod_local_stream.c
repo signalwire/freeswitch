@@ -237,6 +237,7 @@ static switch_status_t local_stream_file_read(switch_file_handle_t *handle, void
 		*len = need / 2;
 	}
 	switch_mutex_unlock(context->audio_mutex);
+	handle->sample_count += *len;
 	return SWITCH_STATUS_SUCCESS;
 }
 

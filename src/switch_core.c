@@ -549,6 +549,87 @@ SWITCH_DECLARE(void) switch_core_runtime_loop(int bg)
 	}
 }
 
+SWITCH_DECLARE(const char *) switch_core_mime_ext2type(const char *ext)
+{
+	return (const char *) switch_core_hash_find(runtime.mime_types, ext);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_mime_add_type(const char *type, const char *ext)
+{
+	const char *check = (const char *) switch_core_hash_find(runtime.mime_types, ext);
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	assert(type);
+	assert(ext);
+
+	if (!check) {
+		char *ptype = switch_core_permanent_strdup(type);
+		char *ext_list = strdup(ext);
+		int argc = 0;
+		char *argv[20] = { 0 };
+		int x;
+
+		assert(ext_list);
+
+		if ((argc = switch_separate_string(ext_list, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+
+			for (x = 0; x < argc; x++) {
+				switch_core_hash_insert(runtime.mime_types, argv[x], ptype);
+			}
+			
+			status = SWITCH_STATUS_SUCCESS;
+		}
+		
+		free(ext_list);
+	}
+
+	return status;
+}
+
+static void load_mime_types(void) 
+{
+	char *cf = "mime.types";
+	int fd = -1;
+	char line_buf[1024] = "";
+	char *mime_path = NULL;
+
+	mime_path = switch_mprintf("%s/%s", SWITCH_GLOBAL_dirs.conf_dir, cf);
+	assert(mime_path);
+
+	if (!(fd = open(mime_path, O_RDONLY))) {
+		return;
+	}
+
+	while((switch_fd_read_line(fd, line_buf, sizeof(line_buf)))) {
+		char *p;
+		char *type = line_buf;
+
+		if (*line_buf == '#') {
+			continue;
+		}
+
+		if ((p = strchr(line_buf, '\r')) || (p = strchr(line_buf, '\n'))) {
+			*p = '\0';
+		}
+
+		if ((p = strchr(type, '\t')) || (p = strchr(type, ' '))) {
+			*p++ = '\0';
+
+			while(*p == ' ' || *p == '\t') {
+				p++;
+			}
+
+			switch_core_mime_add_type(type, p);
+		}
+		
+	}
+
+	if (fd > -1) {
+		close(fd);
+		fd = -1;
+	}
+
+}	
 
 SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, switch_core_flag_t flags, const char **err)
 {
@@ -578,6 +659,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, switch_cor
 	switch_core_set_globals();
 	switch_core_session_init(runtime.memory_pool);
 	switch_core_hash_init(&runtime.global_vars, runtime.memory_pool);
+	switch_core_hash_init(&runtime.mime_types, runtime.memory_pool);
+	load_mime_types();
 	runtime.flags = flags;
 	runtime.sps_total = 30;
 
@@ -591,8 +674,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, switch_cor
 		apr_terminate();
 		return SWITCH_STATUS_MEMERR;
 	}
-
-
+	
 	if ((xml = switch_xml_open_cfg("switch.conf", &cfg, NULL))) {
 		switch_xml_t settings, param;
 
@@ -918,6 +1000,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 
 
 	switch_core_hash_destroy(&runtime.global_vars);
+	switch_core_hash_destroy(&runtime.mime_types);
 
 	if (runtime.memory_pool) {
 		apr_pool_destroy(runtime.memory_pool);

@@ -65,6 +65,7 @@ struct shout_context {
 	uint8_t thread_running;
 	uint8_t shout_init;
     uint32_t prebuf;
+    int lame_ready;
 };
 
 typedef struct shout_context shout_context_t;
@@ -91,6 +92,7 @@ static inline void free_context(shout_context_t * context)
 			}
 
 			lame_mp3_tags_fid(context->gfp, context->fp);
+
 			fclose(context->fp);
 			context->fp = NULL;
 		}
@@ -576,18 +578,22 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 			goto error;
 		}
 
+        if (!handle->handler) {
+            id3tag_init(context->gfp);
+            id3tag_v2_only(context->gfp);
+            id3tag_pad_v2(context->gfp);
+
+        }
+
 		lame_set_num_channels(context->gfp, handle->channels);
 		lame_set_in_samplerate(context->gfp, handle->samplerate);
-		lame_set_brate(context->gfp, 64);
+		lame_set_brate(context->gfp, 24);
 		lame_set_mode(context->gfp, 3);
 		lame_set_quality(context->gfp, 2);	/* 2=high  5 = medium  7=low */
-
+        
 		lame_set_errorf(context->gfp, log_error);
 		lame_set_debugf(context->gfp, log_debug);
 		lame_set_msgf(context->gfp, log_msg);
-
-		lame_init_params(context->gfp);
-		lame_print_config(context->gfp);
 
 		if (handle->handler) {
 			if (switch_buffer_create_dynamic(&context->audio_buffer, MY_BLOCK_SIZE, MY_BUF_LEN, 0) != SWITCH_STATUS_SUCCESS) {
@@ -674,7 +680,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 				goto error;
 			}
 
-			if (shout_set_audio_info(context->shout, "bitrate", "64000") != SHOUTERR_SUCCESS) {
+			if (shout_set_audio_info(context->shout, "bitrate", "24000") != SHOUTERR_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting user: %s\n", shout_get_error(context->shout));
 				goto error;
 			}
@@ -780,6 +786,8 @@ static switch_status_t shout_file_read(switch_file_handle_t *handle, void *data,
 		*len = bytes / sizeof(int16_t);
 	}
 
+	handle->sample_count += *len;
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -817,6 +825,13 @@ static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data
 			return SWITCH_STATUS_FALSE;
 		}
 	} else {
+
+        if (!context->lame_ready) {
+            lame_init_params(context->gfp);
+            lame_print_config(context->gfp);
+            context->lame_ready = 1;
+        }
+
 		if ((rlen = lame_encode_buffer(context->gfp, audio, NULL, nsamples, mp3buf, sizeof(mp3buf))) < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
 			return SWITCH_STATUS_FALSE;
@@ -828,26 +843,63 @@ static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data
 		}
 	}
 
+	handle->sample_count += *len;
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t shout_file_set_string(switch_file_handle_t *handle, switch_audio_col_t col, const char *string)
 {
 	shout_context_t *context = handle->private_info;
-
+    switch_status_t status = SWITCH_STATUS_FALSE;
+    
+    if (!context->shout) {
+        switch (col) {
+        case SWITCH_AUDIO_COL_STR_TITLE:
+            id3tag_set_title(context->gfp, string);
+            break;
+        case SWITCH_AUDIO_COL_STR_COMMENT:
+            id3tag_set_comment(context->gfp, string);
+            break;
+        case SWITCH_AUDIO_COL_STR_ARTIST:
+            id3tag_set_artist(context->gfp, string);
+            break;
+        case SWITCH_AUDIO_COL_STR_DATE:
+            id3tag_set_year(context->gfp, string);
+            break;
+        case SWITCH_AUDIO_COL_STR_SOFTWARE:
+            break;
+            id3tag_set_album(context->gfp, string);
+        case SWITCH_AUDIO_COL_STR_COPYRIGHT:
+            id3tag_set_genre(context->gfp, string);
+            break;
+        default:
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Value Ignored\n");
+            break;
+        }
+        
+        return status;
+    }
+    
 	switch (col) {
 	case SWITCH_AUDIO_COL_STR_TITLE:
-		if (shout_set_name(context->shout, string) != SHOUTERR_SUCCESS) {
+		if (shout_set_name(context->shout, string) == SHOUTERR_SUCCESS) {
+            status = SWITCH_STATUS_SUCCESS;
+        } else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n", shout_get_error(context->shout));
 		}
 		break;
 	case SWITCH_AUDIO_COL_STR_COMMENT:
-		if (shout_set_url(context->shout, string) != SHOUTERR_SUCCESS) {
+		if (shout_set_url(context->shout, string) == SHOUTERR_SUCCESS) {
+            status = SWITCH_STATUS_SUCCESS;
+        } else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n", shout_get_error(context->shout));
 		}
 		break;
 	case SWITCH_AUDIO_COL_STR_ARTIST:
-		if (shout_set_description(context->shout, string) != SHOUTERR_SUCCESS) {
+		if (shout_set_description(context->shout, string) == SHOUTERR_SUCCESS) {
+            status = SWITCH_STATUS_SUCCESS;
+        } else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error setting name: %s\n", shout_get_error(context->shout));
 		}
 		break;
@@ -855,7 +907,8 @@ static switch_status_t shout_file_set_string(switch_file_handle_t *handle, switc
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Value Ignored\n");
 		break;
 	}
-	return SWITCH_STATUS_FALSE;
+
+	return status;
 }
 
 static switch_status_t shout_file_get_string(switch_file_handle_t *handle, switch_audio_col_t col, const char **string)

@@ -2,7 +2,7 @@
   <settings>
   </settings>
   <profiles>
-    <profile name="default">
+    <profile name="demo">
       <param name="file-extension" value="wav"/>
       <param name="terminator-key" value="#"/>
       <param name="max-login-attempts" value="3"/>
@@ -31,18 +31,20 @@
       <param name="rew-key" value="4"/>
       <param name="record-silence-threshold" value="200"/>
       <param name="record-silence-hits" value="2"/>
+      <!-- if you need to change the sample rate of the recorded files e.g. gmail voicemail player -->
+      <!--<param name="record-sample-rate" value="11025"/>-->
       <!-- the next two both must be set for this to be enabled
            the extension is in the format of <dest> [<dialplan>] [<context>]
        -->
       <param name="operator-extension" value="operator XML default"/>
       <param name="operator-key" value="9"/>
       <email>
-        <body><![CDATA[At ${voicemail_time} you were left a message from ${voicemail_caller_id_name} ${voicemail_caller_id_number}
+        <body><![CDATA[At ${voicemail_time} you were left a ${voicemail_message_len} second message from ${voicemail_caller_id_name} ${voicemail_caller_id_number}
 to your account ${voicemail_account}@${voicemail_domain}
 ]]></body>
         <headers><![CDATA[From: FreeSWITCH mod_voicemail <${voicemail_account}@${voicemail_domain}>
 To: <${voicemail_email}>
-Subject: Voicemail from ${voicemail_caller_id_name} ${voicemail_caller_id_number}
+Subject: ${voicemail_message_len} sec Voicemail from ${voicemail_caller_id_name} ${voicemail_caller_id_number}
 X-Priority: ${voicemail_priority}
 X-Mailer: FreeSWITCH
 ]]></headers>

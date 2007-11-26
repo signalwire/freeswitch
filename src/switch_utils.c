@@ -35,6 +35,28 @@
 #endif
 #include "private/switch_core_pvt.h"
 
+
+switch_size_t switch_fd_read_line(int fd, char *buf, switch_size_t len)
+{
+	char c, *p;
+	int cur;
+	switch_size_t total = 0;
+
+	p = buf;
+	while (total + sizeof(c) < len && (cur = read(fd, &c, sizeof(c))) > 0) {
+		total += cur;
+		*p++ = c;
+		if (c == '\r' || c == '\n') {
+			break;
+		}
+	}
+
+	*p++ = '\0';
+	return total;
+}
+
+
+
 static const char switch_b64_table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 #define B64BUFFLEN 1024
 SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size_t ilen, unsigned char *out, switch_size_t olen)
@@ -85,7 +107,7 @@ static int write_buf(int fd, const char *buf)
 SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *from, const char *headers, const char *body, const char *file)
 {
 	char *bound = "XXXX_boundary_XXXX";
-	char *mime_type = "audio/x-WAV";
+	const char *mime_type = "audio/inline";
 	char filename[80], buf[B64BUFFLEN];
 	int fd = 0, ifd = 0;
 	int x = 0, y = 0, bytes = 0, ilen = 0;
@@ -127,6 +149,16 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 
         if (file) {
 			const char *filename = switch_cut_path(file);
+			const char *new_type;
+			char *ext;
+
+			if ((ext = strrchr(filename, '.'))) {
+				ext++;
+				if ((new_type = switch_core_mime_ext2type(ext))) {
+					mime_type = new_type;
+				}
+			}
+
 			snprintf(buf, B64BUFFLEN,
 					 "\n\n--%s\nContent-Type: %s; name=\"%s\"\n"
 					 "Content-Transfer-Encoding: base64\n"
@@ -188,7 +220,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to execute command: %s\n", buf);
     }
 
-    unlink(filename);
+    //unlink(filename);
 
 
     if (file) {

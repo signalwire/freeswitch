@@ -95,6 +95,7 @@ struct vm_profile {
     switch_mutex_t *mutex;
     uint32_t record_threshold;
     uint32_t record_silence_hits;
+    uint32_t record_sample_rate;
 #ifdef SWITCH_HAVE_ODBC
 	switch_odbc_handle_t *master_odbc;
 #else
@@ -208,8 +209,8 @@ static switch_bool_t vm_execute_sql_callback(vm_profile_t *profile,
 
 static char vm_sql[] =
 	"CREATE TABLE voicemail_data (\n"
-	"   created_epoch INTEGER(8),\n"
-	"   read_epoch    INTEGER(8),\n" 
+	"   created_epoch INTEGER,\n"
+	"   read_epoch    INTEGER,\n" 
 	"   user          VARCHAR(255),\n" 
 	"   domain        VARCHAR(255),\n" 
 	"   uuid          VARCHAR(255),\n" 
@@ -217,6 +218,7 @@ static char vm_sql[] =
 	"   cid_number    VARCHAR(255),\n" 
 	"   in_folder     VARCHAR(255),\n" 
 	"   file_path     VARCHAR(255),\n" 
+	"   message_len   INTEGER,\n" 
 	"   flags         VARCHAR(255),\n"
 	"   read_flags    VARCHAR(255)\n" 
 	");\n";
@@ -301,6 +303,7 @@ static switch_status_t load_config(void)
         char *date_fmt = "%A, %B %d %Y, %I %M %p";
         uint32_t record_threshold = 200;
         uint32_t record_silence_hits = 2;
+        uint32_t record_sample_rate = 0;
 
         switch_core_db_t *db;
         uint32_t timeout = 10000, max_login_attempts = 3, max_record_len = 300;
@@ -398,6 +401,16 @@ static switch_status_t load_config(void)
                 } else {
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid threshold value [%s] must be between 0 and 10000 ms\n", val);
                 }
+            } else if (!strcasecmp(var, "record-sample-rate")) {
+                int tmp = 0;
+                if (!switch_strlen_zero(val)) {
+                    tmp = atoi(val);
+                }
+                if (tmp == 8000 || tmp == 16000 || tmp == 32000 || tmp == 11025 || tmp == 22050 || tmp == 44100) {
+                    record_sample_rate = tmp;
+                } else {
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid samplerate %s\n", val);
+                }
             } else if (!strcasecmp(var, "record-silence-hits")) {
                 int tmp = 0;
                 if (!switch_strlen_zero(val)) {
@@ -481,13 +494,20 @@ static switch_status_t load_config(void)
 				}
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
-				switch_odbc_handle_exec(profile->master_odbc, vm_sql, NULL);
-				switch_odbc_handle_exec(profile->master_odbc, vm_pref_sql, NULL);
+				if (switch_odbc_handle_exec(profile->master_odbc, "select count(message_len) from voicemail_data", NULL) != SWITCH_ODBC_SUCCESS) {
+                    switch_odbc_handle_exec(profile->master_odbc, "drop table voicemail_data", NULL);
+                    switch_odbc_handle_exec(profile->master_odbc, vm_sql, NULL);
+                }
+
+				if (switch_odbc_handle_exec(profile->master_odbc, "select count(user) from voicemail_prefs", NULL) != SWITCH_ODBC_SUCCESS) {
+                    switch_odbc_handle_exec(profile->master_odbc, "drop table voicemail_data", NULL);
+                    switch_odbc_handle_exec(profile->master_odbc, vm_pref_sql, NULL);
+                }
 			} else {
 #endif
 				if ((db = switch_core_db_open_file(profile->dbname))) {
-					switch_core_db_test_reactive(db, "select * from voicemail_data", NULL, vm_sql);
-					switch_core_db_test_reactive(db, "select * from voicemail_prefs", NULL, vm_pref_sql);
+					switch_core_db_test_reactive(db, "select count(message_len) from voicemail_data", "drop table voicemail_data", vm_sql);
+					switch_core_db_test_reactive(db, "select count(user) from voicemail_prefs", "drop table voicemail_data", vm_pref_sql);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
 					continue;
@@ -527,6 +547,7 @@ static switch_status_t load_config(void)
             *profile->operator_key = *operator_key;
             profile->record_threshold = record_threshold;
             profile->record_silence_hits = record_silence_hits;
+            profile->record_sample_rate = record_sample_rate;
 
             profile->operator_ext = switch_core_strdup(globals.pool, operator_ext);
             profile->storage_dir = switch_core_strdup(globals.pool, storage_dir);
@@ -783,7 +804,7 @@ typedef enum {
 static uint32_t DEFAULT_DIR_PERMS = SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE | SWITCH_FPROT_UEXECUTE | SWITCH_FPROT_GREAD | SWITCH_FPROT_GEXECUTE;
 
 
-static switch_status_t create_file(switch_core_session_t *session, vm_profile_t *profile, char *macro_name, char *file_path)
+static switch_status_t create_file(switch_core_session_t *session, vm_profile_t *profile, char *macro_name, char *file_path, uint32_t *message_len)
 {
     switch_channel_t *channel;
     switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -792,19 +813,13 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
     char term;
     char input[10] = "" , key_buf[80] = "";
     cc_t cc = { 0 };
-
+    switch_codec_t *read_codec;
     channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
     
+    read_codec = switch_core_session_get_read_codec(session);
 
     while(switch_channel_ready(channel)) {
-
-        
-        switch_channel_set_variable(channel, "RECORD_COMMENT", macro_name);
-
-
-
-
         
         snprintf(key_buf, sizeof(key_buf), "%s:%s:%s", 
                  profile->listen_file_key,
@@ -820,9 +835,9 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
         memset(&fh, 0, sizeof(fh));
         fh.thresh = profile->record_threshold;
         fh.silence_hits = profile->record_silence_hits;
-
-
+        fh.samplerate = profile->record_sample_rate;
         switch_ivr_record_file(session, &fh, file_path, &args, profile->max_record_len);
+        *message_len = fh.sample_count / read_codec->implementation->actual_samples_per_second;
         status = SWITCH_STATUS_SUCCESS;
 
     play_file:
@@ -873,6 +888,7 @@ struct listen_callback {
     char cid_number[255];
     char in_folder[255];
     char file_path[255];
+    char message_len[255];
     char flags[255];
     char read_flags[255];
     char *email;
@@ -899,8 +915,9 @@ static int listen_callback(void *pArg, int argc, char **argv, char **columnNames
 	switch_copy_string(cbt->cid_number, argv[6], 255);
 	switch_copy_string(cbt->in_folder, argv[7], 255);
 	switch_copy_string(cbt->file_path, argv[8], 255);
-	switch_copy_string(cbt->flags, argv[9], 255);
-	switch_copy_string(cbt->read_flags, argv[10], 255);
+	switch_copy_string(cbt->message_len, argv[9], 255);
+	switch_copy_string(cbt->flags, argv[10], 255);
+	switch_copy_string(cbt->read_flags, argv[11], 255);
     
     
 	return -1;
@@ -1024,7 +1041,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
                 if (!strcmp(input, profile->email_key) && !switch_strlen_zero(cbt->email)) {
                     switch_event_t *event;
                     char *from;
-                    char *headers;
+                    char *headers, *header_string;
                     char *body;
                     int priority = 3;
                     switch_size_t retsize;
@@ -1035,12 +1052,14 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
                     int total_saved_messages = 0;
                     int total_new_urgent_messages = 0;
                     int total_saved_urgent_messages = 0;
-                    
+                    int32_t message_len = 0;
+                    char *p;
+
                     if (!strcasecmp(cbt->read_flags, URGENT_FLAG_STRING)) {
                         priority = 1;
                     }
 
-
+                    
                     message_count(profile, cbt->user, cbt->domain, cbt->in_folder, &total_new_messages, &total_saved_messages,
                                   &total_new_urgent_messages, &total_saved_urgent_messages);
 
@@ -1065,8 +1084,10 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
                     switch_channel_set_variable(channel, "voicemail_time", date);
                     snprintf(tmp,sizeof(tmp), "%d", priority);
                     switch_channel_set_variable(channel, "voicemail_priority", tmp);
-
-
+                    message_len = atoi(cbt->message_len);
+                    switch_channel_set_variable(channel, "voicemail_message_len", cbt->message_len);
+                    switch_channel_set_variable(channel, "voicemail_email", cbt->email);
+                    
                     if(switch_strlen_zero(profile->email_headers)) {
                         from = switch_core_session_sprintf(session, "%s@%s", cbt->user, cbt->domain);
                     } else {
@@ -1081,6 +1102,15 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
                         headers = switch_channel_expand_variables(channel,profile->email_headers);
                     }
 
+                    p = headers + (strlen(headers) - 1);
+                    if (*p == '\n') {
+                        if (*(p-1) == '\r') {
+                            p--;
+                        }
+                        *p = '\0';
+                    }
+
+                    header_string = switch_core_session_sprintf(session, "%s\nX-Voicemail-Length: %u", headers, message_len);
                     
                     if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
                         /* this isnt done?  it was in the other place
@@ -1097,7 +1127,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
                         body = switch_channel_expand_variables(channel,profile->email_body);
                     }
 
-                    switch_simple_email(cbt->email, from, headers, body, cbt->file_path);
+                    switch_simple_email(cbt->email, from, header_string, body, cbt->file_path);
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending message to %s\n", cbt->email);
                     switch_safe_free(body);
                     TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "emailed", NULL, NULL));
@@ -1295,6 +1325,8 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
                 callback_t cbt = { 0 };
                 char msg_count[80] = "";
                 cc_t cc = { 0 };
+                uint32_t message_len = 0;
+
                 cbt.buf = msg_count;
                 cbt.len = sizeof(msg_count);
                 sql = switch_mprintf("select count(*) from voicemail_prefs where user='%q' and domain = '%q'", myid, domain_name);
@@ -1362,7 +1394,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
                         TRY_CODE(switch_ivr_phrase_macro(session, VM_CHOOSE_GREETING_FAIL_MACRO, NULL, NULL, NULL));
                     } else {
                         file_path = switch_mprintf("%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, num, profile->file_ext);
-                        TRY_CODE(create_file(session, profile, VM_RECORD_GREETING_MACRO, file_path));
+                        TRY_CODE(create_file(session, profile, VM_RECORD_GREETING_MACRO, file_path, &message_len));
                         sql = switch_mprintf("update voicemail_prefs set greeting_path='%s' where user='%s' and domain='%s'", file_path, myid, domain_name);
                         vm_execute_sql(profile, sql, profile->mutex);
                         switch_safe_free(sql);
@@ -1371,7 +1403,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 
                 } else if (!strcmp(input, profile->record_name_key)) {
                     file_path = switch_mprintf("%s%srecorded_name.%s", dir_path, SWITCH_PATH_SEPARATOR, profile->file_ext);
-                    TRY_CODE(create_file(session, profile, VM_RECORD_NAME_MACRO, file_path));
+                    TRY_CODE(create_file(session, profile, VM_RECORD_NAME_MACRO, file_path, &message_len));
                     sql = switch_mprintf("update voicemail_prefs set name_path='%s' where user='%s' and domain='%s'", file_path, myid, domain_name);
                     vm_execute_sql(profile, sql, profile->mutex);
                     switch_safe_free(file_path);
@@ -1585,6 +1617,12 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
     char buf[2];
     char *greet_path = NULL;
 	const char *voicemail_greeting_number = NULL;
+    uint32_t message_len = 0;
+	switch_time_exp_t tm;
+	char date[80] = "";
+	switch_size_t retsize;
+	switch_time_t ts = switch_timestamp_now();
+    char *dbuf = NULL;
 
     memset(&cbt, 0, sizeof(cbt));
     if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
@@ -1732,8 +1770,19 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
     cc.noexit = 1;
     args.buf = &cc;
 
+    dbuf = switch_mprintf("%s (%s)", caller_profile->caller_id_name, caller_profile->caller_id_number);
+    switch_channel_set_variable(channel, "RECORD_ARTIST", dbuf);
+    free(dbuf);
 
-    status = create_file(session, profile, VM_RECORD_MESSAGE_MACRO, file_path);
+	switch_time_exp_lt(&tm, ts);
+	switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
+    switch_channel_set_variable(channel, "RECORD_DATE", date);
+    switch_channel_set_variable(channel, "RECORD_SOFTWARE", "FreeSWITCH");
+    switch_channel_set_variable(channel, "RECORD_TITLE", "FreeSWITCH Voicemail");
+    switch_channel_set_variable(channel, "RECORD_COMMENT", "FreeSWITCH Voicemail");
+    switch_channel_set_variable(channel, "RECORD_COPYRIGHT", "http://www.freeswitch.org");
+
+    status = create_file(session, profile, VM_RECORD_MESSAGE_MACRO, file_path, &message_len);
 
     if ((status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK) && switch_channel_ready(channel)) {
         char input[10] = "", key_buf[80] = "", term = 0;
@@ -1761,8 +1810,9 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
         int total_new_urgent_messages = 0;
         int total_saved_urgent_messages = 0;
         
-        usql = switch_mprintf("insert into voicemail_data values(%ld,0,'%q','%q','%q','%q','%q','%q','%q','','%q')", (long)time(NULL),
-                              id, domain_name, uuid, caller_profile->caller_id_name, caller_profile->caller_id_number, myfolder, file_path, read_flags);
+        usql = switch_mprintf("insert into voicemail_data values(%ld,0,'%q','%q','%q','%q','%q','%q','%q','%u','','%q')", (long)time(NULL),
+                              id, domain_name, uuid, caller_profile->caller_id_name, caller_profile->caller_id_number, 
+                              myfolder, file_path, message_len, read_flags);
         vm_execute_sql(profile, usql, profile->mutex);
         switch_safe_free(usql);
 
@@ -1788,6 +1838,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
         char *from;
         char *body;
         char *headers;
+        char *header_string;
         switch_size_t retsize;
         switch_time_exp_t tm;
         char date[80] = "";
@@ -1796,7 +1847,8 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
         int total_saved_messages = 0;
         int total_new_urgent_messages = 0;
         int total_saved_urgent_messages = 0;
-
+        char *p;
+        
         message_count(profile, id, domain_name, myfolder, &total_new_messages, &total_saved_messages,
                       &total_new_urgent_messages, &total_saved_urgent_messages);
 
@@ -1821,25 +1873,39 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
         switch_channel_set_variable(channel, "voicemail_time", date);
         snprintf(tmp,sizeof(tmp), "%d", priority);
         switch_channel_set_variable(channel, "voicemail_priority", tmp);
+        switch_channel_set_variable(channel, "voicemail_email", email_vm);
 
+        snprintf(tmp,sizeof(tmp), "%d", message_len);
+        switch_channel_set_variable(channel, "voicemail_message_len", tmp);
 
-        if(switch_strlen_zero(profile->email_from)) {
+        if (switch_strlen_zero(profile->email_from)) {
             from = switch_core_session_sprintf(session, "%s@%s", id, domain_name);
         } else {
             from = switch_channel_expand_variables(channel, profile->email_headers);
         }
 
-        if(switch_strlen_zero(profile->email_headers)) {
-            headers = switch_core_session_sprintf(session, "From: FreeSWITCH mod_voicemail <%s@%s>\nSubject: Voicemail from %s %s\nX-Priority: %d", 
+        if (switch_strlen_zero(profile->email_headers)) {
+            headers = switch_core_session_sprintf(session, 
+                                                  "From: FreeSWITCH mod_voicemail <%s@%s>\n"
+                                                  "Subject: Voicemail from %s %s\nX-Priority: %d", 
                                                   id, domain_name,
                                                   caller_profile->caller_id_name, 
                                                   caller_profile->caller_id_number,
                                                   priority);
         } else {
-            headers = switch_channel_expand_variables(channel,profile->email_headers);
+            headers = switch_channel_expand_variables(channel, profile->email_headers);
         }
 
+        p = headers + (strlen(headers) - 1);
 
+        if (*p == '\n') {
+            if (*(p-1) == '\r') {
+                p--;
+            }
+            *p = '\0';
+        }
+
+        header_string = switch_core_session_sprintf(session, "%s\nX-Voicemail-Length: %u", headers, message_len);
 
         
         if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
@@ -1847,22 +1913,22 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
             switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Message-Type", "voicemail");
             switch_event_fire(&event);
         }
-        if(!switch_strlen_zero(profile->email_headers)) {
+        if (!switch_strlen_zero(profile->email_headers)) {
             body = switch_mprintf("Voicemail from %s %s", 
                                   caller_profile->caller_id_name, caller_profile->caller_id_number);
         } else {
             body = switch_channel_expand_variables(channel,profile->email_body);
         }
 
-        if(email_attach) {
-            switch_simple_email(email_vm, from, headers, body, file_path);
+        if (email_attach) {
+            switch_simple_email(email_vm, from, header_string, body, file_path);
         } else {
-            switch_simple_email(email_vm, from, headers, body, NULL);
+            switch_simple_email(email_vm, from, header_string, body, NULL);
         }
 
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending message to %s\n", email_vm);
         switch_safe_free(body);
-        if(email_delete) {
+        if (email_delete) {
             unlink(file_path);
         }
     }

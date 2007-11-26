@@ -878,25 +878,6 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
 	return &root->xml;
 }
 
-static switch_size_t read_line(int fd, char *buf, switch_size_t len)
-{
-	char c, *p;
-	int cur;
-	switch_size_t total = 0;
-
-	p = buf;
-	while (total + sizeof(c) < len && (cur = read(fd, &c, sizeof(c))) > 0) {
-		total += cur;
-		*p++ = c;
-		if (c == '\n') {
-			break;
-		}
-	}
-
-	*p++ = '\0';
-	return total;
-}
-
 static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_t *newlen)
 {
 	char *var, *val;
@@ -999,7 +980,7 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 		return -1;
 	}
 
-	while ((cur = read_line(read_fd, buf, sizeof(buf))) > 0) {
+	while ((cur = switch_fd_read_line(read_fd, buf, sizeof(buf))) > 0) {
 		char *arg, *e;
 		char *bp = expand_vars(buf, ebuf, sizeof(ebuf), &cur);
 
