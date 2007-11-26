@@ -1875,7 +1875,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
         switch_channel_set_variable(channel, "voicemail_priority", tmp);
         switch_channel_set_variable(channel, "voicemail_email", email_vm);
 
-        snprintf(tmp,sizeof(tmp), "%d", message_len);
+        snprintf(tmp,sizeof(tmp), "%"SWITCH_SIZE_T_FMT, message_len);
         switch_channel_set_variable(channel, "voicemail_message_len", tmp);
 
         if (switch_strlen_zero(profile->email_from)) {
