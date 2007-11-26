@@ -1325,7 +1325,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
                 callback_t cbt = { 0 };
                 char msg_count[80] = "";
                 cc_t cc = { 0 };
-                uint32_t message_len = 0;
+                switch_size_t message_len = 0;
 
                 cbt.buf = msg_count;
                 cbt.len = sizeof(msg_count);
@@ -1617,7 +1617,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
     char buf[2];
     char *greet_path = NULL;
 	const char *voicemail_greeting_number = NULL;
-    uint32_t message_len = 0;
+    switch_size_t message_len = 0;
 	switch_time_exp_t tm;
 	char date[80] = "";
 	switch_size_t retsize;
