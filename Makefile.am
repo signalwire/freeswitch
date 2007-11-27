@@ -160,7 +160,7 @@ install-data-local:
 	@for x in conf conf/dialplan conf/directory conf/sip_profiles mod db log log/xml_cdr bin scripts htdocs grammar ; do \
 		$(mkinstalldirs) $(DESTDIR)$(prefix)/$$x ; \
 	 done
-	for conffile in `find conf -name \*.xml && find conf -name \*.conf && find conf -name mime.types` ; do \
+	for conffile in `find conf -name \*.xml && find conf -name \*.conf && find conf -name \*.tpl && find conf -name mime.types` ; do \
 		dir=`echo $$conffile | sed -e 's|/[^/]*$$||'`; \
 		filename=`echo $$conffile | sed -e 's|^.*/||'`; \
 		test -d $(DESTDIR)$(PREFIX)/$$dir || $(mkinstalldirs) $(DESTDIR)$(prefix)/$$dir ; \

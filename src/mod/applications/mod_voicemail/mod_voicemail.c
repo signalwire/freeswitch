@@ -330,6 +330,39 @@ static switch_status_t load_config(void)
                     date_fmt = val;
                 } else if (!strcasecmp(var, "email-from") && !switch_strlen_zero(val)) {
                     email_from = val;
+                } else if (!strcasecmp(var, "template-file") && !switch_strlen_zero(val)) {
+                    switch_stream_handle_t stream = { 0 };
+                    int fd;
+                    char *dpath = NULL;
+                    char *path;
+                    
+                    if (switch_is_file_path(val)) {
+                        path = val;
+                    } else {
+                        dpath = switch_mprintf("%s%s%s", 
+                                               SWITCH_GLOBAL_dirs.conf_dir, 
+                                               SWITCH_PATH_SEPARATOR,
+                                               val);
+                        path = dpath;
+                    }
+                    
+                    if ((fd = open(path, O_RDONLY)) > -1) {
+                        char buf[2048];
+                        SWITCH_STANDARD_STREAM(stream);
+                        while(switch_fd_read_line(fd, buf, sizeof(buf))) {
+                            stream.write_function(&stream, "%s", buf);
+                        }
+                        close(fd);
+                        email_headers = stream.data;
+                        if ((email_body = strstr(email_headers, "\n\n"))) {
+                            *email_body = '\0';
+                            email_body += 2;
+                        } else if ((email_body = strstr(email_headers, "\r\n\r\n"))) {
+                            *email_body = '\0';
+                            email_body += 4;
+                        }
+                    }
+                    switch_safe_free(dpath);
                 }
             }
         }
