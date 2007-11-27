@@ -1,0 +1,15 @@
+<configuration name="logfile.conf" description="File Logging">
+  <settings>
+   <!-- File to log to -->
+   <param name="logfile" value="/var/log/freeswitch.log"/>
+   <!-- At this length in bytes rotate the log file -->
+   <param name="rollover" value="12000"/>
+   <!-- The level of the message to log -->
+   <!--<param name="level" value="debug,info,warning,notice,error,crit,alert"/>-->
+    <param name="level" value="all"/>
+    <!-- Format of the log messages -->
+  <!-- ${time} ${file} ${func} ${message} -->
+  <param name="format"   value="${time} ${file} ${func} ${message}"/>  
+</settings>
+</configuration>
+

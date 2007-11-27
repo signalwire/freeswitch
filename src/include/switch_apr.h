@@ -602,6 +602,21 @@ SWITCH_DECLARE(switch_status_t) switch_queue_trypush(switch_queue_t * queue, voi
 	 typedef int32_t switch_fileperms_t;
 	 typedef int switch_seek_where_t;
 
+	 /**
+ * @defgroup apr_file_seek_flags File Seek Flags
+ * @{
+ */
+
+/* flags for apr_file_seek */
+/** Set the file position */
+#define SWITCH_SEEK_SET SEEK_SET
+/** Current */
+#define SWITCH_SEEK_CUR SEEK_CUR
+/** Go to end of file */
+#define SWITCH_SEEK_END SEEK_END
+/** @} */
+
+
 /**
  * @defgroup switch_file_permissions File Permissions flags 
  * @ingroup switch_file_io
