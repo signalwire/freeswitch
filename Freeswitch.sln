@@ -712,6 +712,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "directory", "directory", "{
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sip_profiles", "sip_profiles", "{4DF5199E-F7F5-4347-97DD-22078FCDB371}"
+	ProjectSection(SolutionItems) = preProject
+		debug\conf\sip_profiles\default.xml = debug\conf\sip_profiles\default.xml
+		debug\conf\sip_profiles\nat.xml = debug\conf\sip_profiles\nat.xml
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lang", "lang", "{B487BEBE-4A5C-434F-8D30-39465412F84F}"
 EndProject
