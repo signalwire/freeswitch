@@ -1,11 +1,19 @@
 Source: freeswitch
 Maintainer: Michael Jerris <mike@jerris.com>
 Section: net
-Priority: optional
-Build-Depends: automake, autoconf, libtool
+Priority: extra
+Build-Depends: debhelper (>= 5), automake1.9, autoconf, libtool, unixodbc-dev, libasound2-dev, libcurl3-dev, libssl-dev 
+Standards-Version: 3.7.2
 
 Package: freeswitch
 Architecture: any
-Depends: ${shlibs:Depends}
-Description: it is the winning
- lalal fixme
+Depends: ${shlibs:Depends}, unixodbc, libasound2, libcurl3, openssl
+Suggests: monit
+Description: A telephony platform that really kicks some ass...
+ FreeSWITCH is an open source telephony platform designed to facilitate the
+ creation of voice and chat driven products scaling from a soft-phone up to
+ a soft-switch.  It can be used as a simple switching engine, a media gateway
+ or a media server to host IVR applications using simple scripts or XML to
+ control the callflow.
+ .
+ Homepage: http://some-project.some-place.org/

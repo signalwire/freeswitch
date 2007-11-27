@@ -1,0 +1,2 @@
+#!/bin/bash
+adduser --home /opt/freeswitch --ingroup daemon --disabled-password --disabled-login --gecos "The FreeSwitch Voice Switching System" --no-create-home freeswitch 

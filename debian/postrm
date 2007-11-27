@@ -1,0 +1,2 @@
+#!/bin/bash
+userdel -r freeswitch

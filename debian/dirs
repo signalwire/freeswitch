@@ -1,0 +1,4 @@
+opt/freeswitch
+etc/opt
+etc/monit
+etc/default

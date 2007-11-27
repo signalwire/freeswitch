@@ -1,3 +1,21 @@
+freeswitch (1.0~beta2-2) unstable; urgency=low
+
+  * Additional scripts for changing the user to freeswitch
+    Added Startup Scripts
+    Monit integration
+    Settings file for integration into init 
+    init.d file
+    added user freeswitch to own and run all off freeswitch
+    cleaned up config file control
+
+ -- Michal Bielicki <michal.bielicki@voiceworks.pl>  Tue, 27 Nov 2007 13:20:21 +0100
+
+freeswitch (1.0~beta2-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Paul van Genderen <paulvg@member.fsf.org>  Wed, 17 Oct 2007 19:32:09 +0200
+
 freeswitch (1.0~beta1-1) unstable; urgency=low
 
   * New packages.

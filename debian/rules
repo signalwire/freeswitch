@@ -5,35 +5,69 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
+export MODULES ?= mod_console mod_syslog mod_commands mod_conference mod_dptools mod_enum mod_fifo mod_openmrcp mod_amr mod_g711 mod_g722 mod_g723_1 mod_g726 mod_g729 mod_gsm mod_ilbc mod_l16 mod_speex mod_dialplan_xml mod_dialplan_asterisk mod_dingaling mod_iax mod_portaudio mod_sofia mod_woomera mod_openzap mod_event_multicast mod_event_socket mod_native_file mod_sndfile mod_local_stream mod_spidermonkey mod_spidermonkey_teletone mod_spidermonkey_core_db mod_spidermonkey_odbc mod_xml_rpc mod_xml_curl mod_xml_cdr mod_say_en mod_say_fr mod_say_de
+ifndef AUTOCONF
+	AUTOCONFS := $(wildcard /usr/bin/autoconf*)
+	AUTOCONF = $(shell which autoconf)
+ifneq (,$(findstring 2.50,${AUTOCONFS}))
+	AUTOCONF = /usr/bin/autoconf2.50
+endif
+endif
+
+# These are used for cross-compiling and for saving the configure script
+# from having to guess our platform (since we know it already)
+DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+
+
+FEATURES = --enable-core-libedit-support --enable-core-odbc-support --with-libcurl --with-openssl
+
+ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+	FEATURES += --disable-optimization
+endif
+
+config.status: configure
+	dh_testdir
+	./configure --prefix=/opt/freeswitch \
+		--host=$(DEB_HOST_GNU_TYPE) \
+		--build=$(DEB_BUILD_GNU_TYPE) \
+		CFLAGS="-D__VIA_HACK__" ${FEATURES}
+
+configure: bootstrap.sh
+	AUTOCONF=${AUTOCONF} ./bootstrap.sh
+
 build: build-stamp
-build-stamp:
+build-stamp:  config.status
 	dh_testdir
 
-	# Add here commands to compile the package.
-	./bootstrap.sh
-	./configure
 	$(MAKE)
 
-	touch build-stamp
+	touch $@
 
 clean:
 	dh_testdir
 	dh_testroot
-	rm -f build-stamp
+	rm -f build-stamp 
 
-	# Add here commands to clean up after the build process.
 	-$(MAKE) clean megaclean
+ifneq "$(wildcard /usr/share/misc/config.sub)" ""
+	cp -f /usr/share/misc/config.sub build/config/config.sub
+endif
+ifneq "$(wildcard /usr/share/misc/config.guess)" ""
+	cp -f /usr/share/misc/config.guess build/config/config.guess
+endif
 
-	dh_clean
+
+	dh_clean 
 
 install: build
 	dh_testdir
 	dh_testroot
-	dh_clean -k
+	dh_clean -k 
 	dh_installdirs
 
-	# Add here commands to install the package into debian/<packagename>
-	$(MAKE) install DESTDIR=`pwd`/debian/tmp
+	$(MAKE) DESTDIR=$(CURDIR)/debian/freeswitch install
+
 
 # Build architecture-independent files here.
 binary-indep: build install
@@ -43,9 +77,9 @@ binary-indep: build install
 binary-arch: build install
 	dh_testdir
 	dh_testroot
-	dh_installchangelogs
-	dh_installdocs
-	dh_installexamples
+#	dh_installchangelogs
+#	dh_installdocs
+#	dh_installexamples
 #	dh_install
 #	dh_installmenu
 #	dh_installdebconf	
@@ -54,23 +88,27 @@ binary-arch: build install
 #	dh_installcatalogs
 #	dh_installpam
 #	dh_installmime
-#	dh_installinit
+	dh_installinit
 #	dh_installcron
 #	dh_installinfo
 #	dh_undocumented
-	dh_installman
-	dh_link
+#	dh_installman
+	dh_install debian/freeswitch.monitrc etc/monit
+	dh_install debian/default/freeswitch etc/default
+	dh_install debian/freeswitch.1 opt/man
+	dh_link opt/freeswitch/conf etc/opt/freeswitch
 	dh_strip
 	dh_compress
-	dh_fixperms
+	dh_fixperms --exclude /opt/freeswitch/conf
 #	dh_perl
 #	dh_python
 #	dh_makeshlibs
 	dh_installdeb
-	dh_shlibdeps
+	dh_shlibdeps --exclude=/opt/freeswitch
 	dh_gencontrol
 	dh_md5sums
 	dh_builddeb
 
 binary: binary-indep binary-arch
-.PHONY: build clean binary-indep binary-arch binary install
+.PHONY: build clean binary-indep binary-arch binary install 
+# vim:set ai et sts=2 sw=2 tw=0:
