@@ -94,26 +94,26 @@ static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_l
 	snprintf(line_no, sizeof(line_no), "%d", node->line);
 	message = switch_string_replace(message, "${line}", line_no);
 
-	case (level) {
-		SWITCH_LOG_DEBUG:
+	switch (level) {
+		case SWITCH_LOG_DEBUG:
 			syslog_level = LOG_DEBUG;
 			break;
-		SWITCH_LOG_INFO:
+		case SWITCH_LOG_INFO:
 			syslog_level = LOG_INFO;
 			break;
-		SWITCH_LOG_NOTICE:
+		case SWITCH_LOG_NOTICE:
 			syslog_level = LOG_NOTICE;
 			break;
-		SWITCH_LOG_WARNING:
+		case SWITCH_LOG_WARNING:
 			syslog_level = LOG_WARNING;
 			break;
-		SWITCH_LOG_ERROR:
+		case SWITCH_LOG_ERROR:
 			syslog_level = LOG_ERR;
 			break;
-		SWITCH_LOG_CRIT:
+		case SWITCH_LOG_CRIT:
 			syslog_level = LOG_CRIT;
 			break;
-		SWITCH_LOG_ALERT:
+		case SWITCH_LOG_ALERT:
 			syslog_level = LOG_ALERT;
 			break;
 		default:

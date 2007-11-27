@@ -10,8 +10,6 @@
   <!-- debug   - debug-level message -->
   <settings>
     <param name="ident" value="freeswitch"/>
-    <param name="facility" value="user"/>
     <param name="format" value="${time} - ${message}"/>
-    <param name="level" value="debug,info,warning-alert"/>
   </settings>
 </configuration>
