@@ -297,8 +297,8 @@ static switch_status_t load_config(void)
         char *storage_dir = "";
         char *callback_dialplan = "XML";
         char *callback_context = "default";
-        char *email_body = "";
-        char *email_headers = "";
+        char *email_body = NULL;
+        char *email_headers = NULL;
         char *email_from = "";
         char *date_fmt = "%A, %B %d %Y, %I %M %p";
         uint32_t record_threshold = 200;
@@ -311,12 +311,12 @@ static switch_status_t load_config(void)
         db = NULL;
 
         if ((x_email = switch_xml_child(x_profile, "email"))) {
-            if ((param = switch_xml_child(x_email,"body"))) {
-                email_body = switch_core_strdup(globals.pool,param->txt);
+            if ((param = switch_xml_child(x_email, "body"))) {
+                email_body = switch_core_strdup(globals.pool, param->txt);
             }
 
-            if ((param = switch_xml_child(x_email,"headers"))) {
-                email_headers = switch_core_strdup(globals.pool,param->txt);
+            if ((param = switch_xml_child(x_email, "headers"))) {
+                email_headers = switch_core_strdup(globals.pool, param->txt);
             }
 
 
@@ -1120,11 +1120,11 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
                         switch_event_fire(&event);
                     }
 
-                    if(!switch_strlen_zero(profile->email_headers)) {
-                        body = switch_mprintf("Voicemail from %s %s", 
-                                              cbt->cid_name, cbt->cid_number);
+                    if (profile->email_body) {
+                        body = switch_channel_expand_variables(channel, profile->email_body);
                     } else {
-                        body = switch_channel_expand_variables(channel,profile->email_body);
+                        body = switch_mprintf("%u second Voicemail from %s %s", message_len, 
+                                              cbt->cid_name, cbt->cid_number);
                     }
 
                     switch_simple_email(cbt->email, from, header_string, body, cbt->file_path);
@@ -1913,11 +1913,12 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
             switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Message-Type", "voicemail");
             switch_event_fire(&event);
         }
-        if (!switch_strlen_zero(profile->email_headers)) {
-            body = switch_mprintf("Voicemail from %s %s", 
-                                  caller_profile->caller_id_name, caller_profile->caller_id_number);
+
+        if (profile->email_body) {
+            body = switch_channel_expand_variables(channel, profile->email_body);
         } else {
-            body = switch_channel_expand_variables(channel,profile->email_body);
+            body = switch_mprintf("%u second Voicemail from %s %s", message_len,
+                                  caller_profile->caller_id_name, caller_profile->caller_id_number);
         }
 
         if (email_attach) {
