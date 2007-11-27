@@ -165,7 +165,7 @@ install-data-local:
 		filename=`echo $$conffile | sed -e 's|^.*/||'`; \
 		test -d $(DESTDIR)$(PREFIX)/$$dir || $(mkinstalldirs) $(DESTDIR)$(prefix)/$$dir ; \
 		test -f $(DESTDIR)$(PREFIX)/$$dir/$$filename || $(INSTALL) $$dir/$$filename $(DESTDIR)$(PREFIX)/$$dir; \
-	done ; \
+	done ; 
 
 .version:
 	touch .version
