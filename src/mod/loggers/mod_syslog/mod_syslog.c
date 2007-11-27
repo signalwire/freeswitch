@@ -47,15 +47,11 @@ static switch_status_t load_config(void);
 
 static struct {
 	char *ident;
-	char *facility;
-	char *level;
 	char *format;
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ident, globals.ident);
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_level, globals.level);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_format, globals.format);
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_facility, globals.facility);
 
 static switch_loadable_module_interface_t console_module_interface = {
     /*.module_name */ modname,
@@ -77,6 +73,7 @@ static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_l
 	char date[80] = "";
 	switch_time_exp_t time;
 	switch_size_t retsize;
+	int syslog_level;
 
 	message = (char *) malloc(strlen(globals.format) + 2);
 
@@ -97,8 +94,35 @@ static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_l
 	snprintf(line_no, sizeof(line_no), "%d", node->line);
 	message = switch_string_replace(message, "${line}", line_no);
 
+	case (level) {
+		SWITCH_LOG_DEBUG:
+			syslog_level = LOG_DEBUG;
+			break;
+		SWITCH_LOG_INFO:
+			syslog_level = LOG_INFO;
+			break;
+		SWITCH_LOG_NOTICE:
+			syslog_level = LOG_NOTICE;
+			break;
+		SWITCH_LOG_WARNING:
+			syslog_level = LOG_WARNING;
+			break;
+		SWITCH_LOG_ERROR:
+			syslog_level = LOG_ERR;
+			break;
+		SWITCH_LOG_CRIT:
+			syslog_level = LOG_CRIT;
+			break;
+		SWITCH_LOG_ALERT:
+			syslog_level = LOG_ALERT;
+			break;
+		default:
+			syslog_level = LOG_NOTICE;
+			break;
+	}
+
 	if (!switch_strlen_zero(message)) {
-		syslog(LOG_ERR, "%s", message);
+		syslog(syslog_level, "%s", message);
 	}
 
 	free(message);
@@ -121,12 +145,8 @@ static switch_status_t load_config(void)
 
 				if (!strcmp(var, "ident")) {
 					set_global_ident(val);
-				} else if (!strcmp(var, "facility")) {
-					set_global_facility(val);
 				} else if (!strcmp(var, "format")) {
 					set_global_format(val);
-				} else if (!strcmp(var, "level")) {
-					set_global_level(val);;
 				}
 
 			}
@@ -137,16 +157,9 @@ static switch_status_t load_config(void)
 	if (switch_strlen_zero(globals.ident)) {
 		set_global_ident(DEFAULT_IDENT);
 	}
-	if (switch_strlen_zero(globals.facility)) {
-		set_global_facility(DEFAULT_FACILITY);
-	}
 	if (switch_strlen_zero(globals.format)) {
 		set_global_format(DEFAULT_FORMAT);
 	}
-	if (switch_strlen_zero(globals.level)) {
-		set_global_level(DEFAULT_LEVEL);
-	}
-
 
 	return 0;
 }
