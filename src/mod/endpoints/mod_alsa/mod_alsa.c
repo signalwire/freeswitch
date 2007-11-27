@@ -1566,6 +1566,8 @@ SWITCH_STANDARD_API(pa_cmd)
 		stream->write_function(stream, "</pre>");
 #endif
 
+		stream->write_function(stream, "Content-type: text/html\n\n");
+
 		wcmd = switch_str_nil(switch_event_get_header(stream->event, "wcmd"));
 		action = switch_event_get_header(stream->event, "action");
 

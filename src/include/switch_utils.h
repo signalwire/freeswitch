@@ -56,6 +56,7 @@ SWITCH_BEGIN_EXTERN_C
 #endif
 
 SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size_t ilen, unsigned char *out, switch_size_t olen);
+SWITCH_DECLARE(switch_status_t) switch_b64_decode(char *in, char *out, switch_size_t olen);
 
 static inline switch_bool_t switch_is_digit_string(const char *s) {
 

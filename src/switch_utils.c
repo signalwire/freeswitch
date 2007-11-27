@@ -91,6 +91,46 @@ SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size
 }
 
 
+SWITCH_DECLARE(switch_status_t) switch_b64_decode(char *in, char *out, switch_size_t olen)
+{
+
+	char l64[256];
+	int b = 0, c, l = 0, i;
+	char *ip, *op = out;
+	size_t ol = 0;
+
+	for (i=0; i<256; i++) {
+		l64[i] = -1;
+	}
+
+	for (i=0; i<64; i++) {
+		l64[(int)switch_b64_table[i]] = i;
+	}
+
+	for (ip = in; ip && *ip; ip++) {
+		c = l64[(int)*ip];
+		if (c == -1) {
+			continue;
+		}
+
+		b = (b << 6) + c;
+		l += 6;
+
+		while (l >= 8) {
+			op[ol++] = (b >> (l -= 8)) % 256;
+			if (ol >= olen -2) {
+				goto end;
+			}
+		}
+	}
+
+ end:
+
+	op[ol++] = '\0';
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 static int write_buf(int fd, const char *buf)
 {

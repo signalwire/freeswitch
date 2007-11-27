@@ -41,6 +41,7 @@
 #include <xmlrpc-c/abyss.h>
 #include <xmlrpc-c/server.h>
 #include <xmlrpc-c/server_abyss.h>
+#include "../../libs/xmlrpc-c/lib/abyss/src/token.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_rpc_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown);
@@ -137,26 +138,186 @@ static switch_status_t http_stream_write(switch_stream_handle_t *handle, const c
 }
 
 
-abyss_bool HandleHook(TSession * r)
+static abyss_bool http_directory_auth(TSession *r, char *domain_name) 
 {
-	char *m = "text/html";
+    char *p, *x;
+    char z[80], t[80];
+	char user[512];
+	char *pass;
+	const char *mypass1 = NULL, *mypass2 = NULL;
+	switch_xml_t x_domain, x_domain_root = NULL, x_user, x_params, x_param;
+
+    p = RequestHeaderValue(r, "authorization");
+
+    if (p) {
+        NextToken(&p);
+        x = GetToken(&p);
+        if (x) {
+            if (!strcasecmp(x,"basic")) {
+
+
+                NextToken(&p);
+				switch_b64_decode(p, user, sizeof(user));
+				if ((pass = strchr(user, ':'))) {
+					*pass++ = '\0';
+				}
+				
+				if (switch_xml_locate_user(user, domain_name, NULL, &x_domain_root, &x_domain, &x_user, NULL) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", user, domain_name);
+					goto fail;
+				}
+
+				if (!(x_params = switch_xml_child(x_user, "params"))) {
+					goto authed;
+                }
+
+
+                for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
+                    const char *var = switch_xml_attr_soft(x_param, "name");
+                    const char *val = switch_xml_attr_soft(x_param, "value");
+                    
+                    if (!strcasecmp(var, "password")) {
+                        mypass1 = val;
+                    } else if (!strcasecmp(var, "vm-password")) {
+                        mypass2 = val;
+                    } else if (!strncasecmp(var, "http-", 5)) {
+						ResponseAddField(r, (char *)var, (char *)val);
+                    } 
+				}
+
+				sprintf(z, "%s:%s", user, mypass1);
+                Base64Encode(z, t);
+				
+				if (!strcmp(p, t)) {
+                    r->user=strdup(user);
+					goto authed;
+				}
+
+				sprintf(z, "%s:%s", user, mypass2);
+                Base64Encode(z, t);
+				
+				if (!strcmp(p, t)) {
+                    r->user=strdup(user);
+					goto authed;
+				}
+				
+				goto fail;
+
+
+			authed:
+				
+				if (x_domain_root) {
+					switch_xml_free(x_domain_root);
+				}
+				
+				return TRUE;
+            }
+        }
+    }
+
+ fail:
+
+	if (x_domain_root) {
+		switch_xml_free(x_domain_root);
+	}
+
+    sprintf(z, "Basic realm=\"%s\"", domain_name);
+    ResponseAddField(r, "WWW-Authenticate", z);
+    ResponseStatus(r, 401);
+    return FALSE;
+}
+
+abyss_bool auth_hook(TSession * r)
+{
+	char *domain_name, *e;
+	abyss_bool ret = FALSE;
+
+
+
+	if (!strncmp(r->uri, "/domains/", 9)) {
+		domain_name = strdup(r->uri + 9);
+		assert(domain_name);
+		
+		if ((e = strchr(domain_name, '/'))) {
+			*e++ = '\0';
+		}
+
+		ret = !http_directory_auth(r, domain_name);
+
+		free(domain_name);
+	} else {
+		if (globals.realm) {
+			if (!RequestAuth(r, globals.realm, globals.user, globals.pass)) {
+				ret = TRUE;
+			}
+		}
+	}
+
+	return ret;
+}
+
+abyss_bool handler_hook(TSession * r)
+{
+	//char *mime = "text/html";
+	char buf[512] = "HTTP/1.1 200 OK\n";
 	switch_stream_handle_t stream = { 0 };
 	char *command;
+	int i, j = 0;
+	TTableItem *ti;
+	char *dup = NULL;
 
 	stream.data = r;
 	stream.write_function = http_stream_write;
 
-	if (globals.realm) {
-		if (!RequestAuth(r, globals.realm, globals.user, globals.pass)) {
-			return TRUE;
+	if ((command = strstr(r->uri, "/api/"))) {
+		command += 5;
+	} else {
+		return FALSE;
+	}
+
+	for (i=0;i<r->response_headers.size;i++) {
+		ti=&r->response_headers.item[i];
+		if (!strcasecmp(ti->name, "http-allowed-api")) {
+			int argc, x;
+			char *argv[256] = { 0 };
+			j++;
+			
+			if (!strcasecmp(ti->value, "any")) {
+				goto auth;
+			}
+
+			if (!strcasecmp(ti->value, "none")) {
+				goto unauth;
+			}
+
+			dup = strdup(ti->value);
+			argc = switch_separate_string(dup, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+
+			for (x = 0; x < argc; x++) {
+				if (!strcasecmp(command, argv[x])) {
+					goto auth;
+				}
+			}
+
+			goto unauth;
 		}
 	}
 
-
-
-	if (strncmp(r->uri, "/api/", 5)) {
-		return FALSE;
+	if (r->user && !j) {
+		goto unauth;
 	}
+
+	goto auth;
+
+ unauth:
+	ResponseStatus(r, 403);
+	ResponseError(r);
+	switch_safe_free(dup);
+
+	return TRUE;
+
+ auth:
+
 
 	if (switch_event_create(&stream.event, SWITCH_EVENT_API) == SWITCH_STATUS_SUCCESS) {
 		const char * const content_length = RequestHeaderValue(r, "content-length");
@@ -258,14 +419,40 @@ abyss_bool HandleHook(TSession * r)
 		}
 	}
 
-	command = r->uri + 5;
 
-	ResponseChunked(r);
-	ResponseStatus(r, 200);
-	ResponseContentType(r, m);
-	ResponseWrite(r);
-	switch_api_execute(command, r->query, NULL, &stream);
-	HTTPWriteEnd(r);
+
+	//ResponseChunked(r);
+	
+	//ResponseContentType(r, mime);
+	//ResponseWrite(r);
+
+	HTTPWrite(r, buf, (uint32_t) strlen(buf));
+
+	/* generation of the date field */
+	if (DateToString(&r->date, buf)) {
+		ResponseAddField(r,"Date", buf);
+	}
+	
+	/* Generation of the server field */
+	ResponseAddField(r,"Server", SERVER_HVERSION);
+
+	for (i=0;i<r->response_headers.size;i++) {
+		ti=&r->response_headers.item[i];
+		ConnWrite(r->conn,ti->name,strlen(ti->name));
+		ConnWrite(r->conn,": ",2);
+		ConnWrite(r->conn,ti->value,strlen(ti->value));
+		ConnWrite(r->conn,CRLF,2);
+	}
+
+	
+	if (switch_api_execute(command, r->query, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
+		r->done = TRUE;
+	} else {
+		ResponseStatus(r, 404);
+		ResponseError(r);
+	} 
+	
+	//HTTPWriteEnd(r);
 	return TRUE;
 }
 
@@ -387,8 +574,9 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 		return SWITCH_STATUS_TERM;
 	}
 
-	ServerAddHandler(&abyssServer, HandleHook);
 
+	ServerAddHandler(&abyssServer, handler_hook);
+	ServerAddHandler(&abyssServer, auth_hook);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Starting HTTP Port %d, DocRoot [%s]\n", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir);
 	while (globals.running) {
 		ServerRunOnce2(&abyssServer, ABYSS_FOREGROUND);

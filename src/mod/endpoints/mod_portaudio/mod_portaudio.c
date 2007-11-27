@@ -1673,6 +1673,8 @@ SWITCH_STANDARD_API(pa_cmd)
 
 
 	if (http) {
+		stream->write_function(stream, "Content-type: text/html\n\n");
+
 #if 0
 		switch_event_header_t *hp;
 		stream->write_function(stream, "<pre>");

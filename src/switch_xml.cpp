@@ -1316,6 +1316,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *user_name,
 	} else {
 		snprintf(params, sizeof(params), "user=%s&domain=%s&ip=%s", 
 				 switch_str_nil(user_name), switch_str_nil(domain_name), switch_str_nil(ip));
+		xtra_params = "";
 	}
 	if ((status = switch_xml_locate_domain(domain_name, params, root, domain)) != SWITCH_STATUS_SUCCESS) {
 		return status;
@@ -1328,11 +1329,17 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *user_name,
 	} 
 
 	if (user_name) {
-		if (!(*user = switch_xml_find_child(*domain, "user", "id", user_name)) && strstr(xtra_params, "mailbox") && 
-			!(*user = switch_xml_find_child(*domain, "user", "mailbox", user_name))) {
-			return SWITCH_STATUS_FALSE;
+		
+		if (strstr(xtra_params, "mailbox")) {
+			if ((*user = switch_xml_find_child(*domain, "user", "mailbox", user_name))) {
+				return SWITCH_STATUS_SUCCESS;
+			}
 		}
-		return SWITCH_STATUS_SUCCESS;
+
+		if ((*user = switch_xml_find_child(*domain, "user", "id", user_name))) {
+			return SWITCH_STATUS_SUCCESS;
+		}
+		
 	}
 
 	return SWITCH_STATUS_FALSE;
