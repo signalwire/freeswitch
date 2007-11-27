@@ -367,7 +367,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence.winfo")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("message-summary")),
-				   SIPTAG_SUPPORTED_STR("100rel, precondition, timer"), SIPTAG_USER_AGENT_STR(SOFIA_USER_AGENT), TAG_END());
+				   SIPTAG_SUPPORTED_STR("100rel, precondition, timer"), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set params for %s\n", profile->name);
 
@@ -387,7 +387,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 					   NUTAG_ALLOW("INFO"),
 					   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("PUBLISH")),
 					   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ENABLEMESSAGE(1)),
-					   SIPTAG_SUPPORTED_STR("100rel, precondition"), SIPTAG_USER_AGENT_STR(SOFIA_USER_AGENT), TAG_END());
+					   SIPTAG_SUPPORTED_STR("100rel, precondition"), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
 
 	}
 
@@ -786,6 +786,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				}
 
 				profile->pool = pool;
+				profile->user_agent = SOFIA_USER_AGENT;
 
 				profile->name = switch_core_strdup(profile->pool, xprofilename);
 				snprintf(url, sizeof(url), "sofia_reg_%s", xprofilename);
@@ -820,6 +821,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 #endif
 						
+					} else if (!strcasecmp(var, "user-agent-string")) {
+						profile->user_agent = switch_core_strdup(profile->pool, val);;
 					} else if (!strcasecmp(var, "inbound-no-media") && switch_true(val)) {
 						switch_set_flag(profile, TFLAG_INB_NOMEDIA);
 					} else if (!strcasecmp(var, "inbound-late-negotiation") && switch_true(val)) {
