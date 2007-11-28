@@ -36,7 +36,7 @@
 #include "private/switch_core_pvt.h"
 
 
-switch_size_t switch_fd_read_line(int fd, char *buf, switch_size_t len)
+SWITCH_DECLARE(switch_size_t) switch_fd_read_line(int fd, char *buf, switch_size_t len)
 {
 	char c, *p;
 	int cur;
@@ -104,7 +104,7 @@ SWITCH_DECLARE(switch_status_t) switch_b64_decode(char *in, char *out, switch_si
 	}
 
 	for (i=0; i<64; i++) {
-		l64[(int)switch_b64_table[i]] = i;
+		l64[(int)switch_b64_table[i]] = (char)i;
 	}
 
 	for (ip = in; ip && *ip; ip++) {
@@ -117,7 +117,7 @@ SWITCH_DECLARE(switch_status_t) switch_b64_decode(char *in, char *out, switch_si
 		l += 6;
 
 		while (l >= 8) {
-			op[ol++] = (b >> (l -= 8)) % 256;
+			op[ol++] = (char)((b >> (l -= 8)) % 256);
 			if (ol >= olen -2) {
 				goto end;
 			}

@@ -64,12 +64,13 @@ SWITCH_DECLARE(void) switch_console_loop(void);
 SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const char *file, const char *func, int line,
 										   const char *fmt, ...) PRINTF_FUNCTION(5, 6);
 
-SWITCH_DECLARE(switch_status_t) switch_console_stream_raw_write(switch_stream_handle_t *handle, uint8_t *data, switch_size_t datalen);
+SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_raw_write(switch_stream_handle_t *handle, uint8_t *data, switch_size_t datalen);
 
 /*!
   \brief A method akin to printf for dealing with api streams
 */
-SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle_t *handle, const char *fmt, ...) PRINTF_FUNCTION(2, 3);
+SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_write(switch_stream_handle_t *handle, const char *fmt, ...) PRINTF_FUNCTION(2, 3);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

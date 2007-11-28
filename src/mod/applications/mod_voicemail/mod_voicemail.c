@@ -2494,7 +2494,9 @@ SWITCH_STANDARD_API(voicemail_api_function)
         for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
             switch_hash_this(hi, NULL, NULL, &val);
             profile = (vm_profile_t *) val;
-            break;
+			if (profile) {
+	            break;
+			}
         }
     }
 

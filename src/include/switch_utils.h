@@ -70,7 +70,7 @@ static inline switch_bool_t switch_is_digit_string(const char *s) {
 	return SWITCH_TRUE;
 }
 
-switch_size_t switch_fd_read_line(int fd, char *buf, switch_size_t len);
+SWITCH_DECLARE(switch_size_t) switch_fd_read_line(int fd, char *buf, switch_size_t len);
 
 /*!
   \brief Evaluate the truthfullness of a string expression

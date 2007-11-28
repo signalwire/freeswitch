@@ -552,9 +552,9 @@ abyss_bool handler_hook(TSession * r)
 
 	for (i=0;i<r->response_headers.size;i++) {
 		ti=&r->response_headers.item[i];
-		ConnWrite(r->conn,ti->name,strlen(ti->name));
+		ConnWrite(r->conn, ti->name, (uint32_t)strlen(ti->name));
 		ConnWrite(r->conn,": ",2);
-		ConnWrite(r->conn,ti->value,strlen(ti->value));
+		ConnWrite(r->conn, ti->value, (uint32_t)strlen(ti->value));
 		ConnWrite(r->conn,CRLF,2);
 	}
 

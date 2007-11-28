@@ -34,7 +34,7 @@
 #include <switch_version.h>
 #define CMD_BUFLEN 1024;
 
-SWITCH_DECLARE(switch_status_t) switch_console_stream_raw_write(switch_stream_handle_t *handle, uint8_t *data, switch_size_t datalen)
+SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_raw_write(switch_stream_handle_t *handle, uint8_t *data, switch_size_t datalen)
 {
 	FILE *out = switch_core_get_console();
 
@@ -46,7 +46,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_stream_raw_write(switch_stream_ha
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle_t *handle, const char *fmt, ...)
+SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_write(switch_stream_handle_t *handle, const char *fmt, ...)
 {
 	va_list ap;
 	char *buf = handle->data;
