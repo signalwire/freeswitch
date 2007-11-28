@@ -551,6 +551,9 @@ SWITCH_DECLARE(void) switch_core_runtime_loop(int bg)
 
 SWITCH_DECLARE(const char *) switch_core_mime_ext2type(const char *ext)
 {
+	if (!ext) {
+		return NULL;
+	}
 	return (const char *) switch_core_hash_find(runtime.mime_types, ext);
 }
 

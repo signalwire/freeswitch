@@ -49,6 +49,7 @@ SWITCH_BEGIN_EXTERN_C
 	s.end = s.data;														\
 	s.data_size = SWITCH_CMD_CHUNK_LEN;									\
 	s.write_function = switch_console_stream_write;						\
+	s.raw_write_function = switch_console_stream_raw_write;				\
 	s.alloc_len = SWITCH_CMD_CHUNK_LEN;									\
 	s.alloc_chunk = SWITCH_CMD_CHUNK_LEN
 
@@ -62,6 +63,8 @@ SWITCH_DECLARE(void) switch_console_loop(void);
 */
 SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const char *file, const char *func, int line,
 										   const char *fmt, ...) PRINTF_FUNCTION(5, 6);
+
+SWITCH_DECLARE(switch_status_t) switch_console_stream_raw_write(switch_stream_handle_t *handle, uint8_t *data, switch_size_t datalen);
 
 /*!
   \brief A method akin to printf for dealing with api streams

@@ -3339,7 +3339,16 @@ static void js_thread_launch(const char *text)
 SWITCH_STANDARD_API(jsapi_function)
 {
 	struct request_obj ro = {0};
+	char *path_info = NULL;
 
+    if (stream->event) {
+		path_info = switch_event_get_header(stream->event, "http-path-info");
+	}
+
+	if (switch_strlen_zero(cmd) && path_info) {
+		cmd = path_info;
+	}
+	
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", jsapi_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;

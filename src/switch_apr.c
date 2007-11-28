@@ -364,6 +364,28 @@ SWITCH_DECLARE(switch_size_t) switch_file_get_size(switch_file_t *thefile)
 	return apr_file_info_get(&finfo, APR_FINFO_SIZE, thefile) == SWITCH_STATUS_SUCCESS ? (switch_size_t)finfo.size : 0;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_directory_exists(const char *dirname, switch_memory_pool_t *pool)
+{
+	apr_dir_t *dir_handle;
+	switch_memory_pool_t *our_pool = NULL;
+	switch_status_t status;
+
+	if (!pool) {
+		switch_core_new_memory_pool(&our_pool);
+		pool = our_pool;
+	}
+
+	if ((status = apr_dir_open(&dir_handle, dirname, pool)) == APR_SUCCESS) {
+		apr_dir_close(dir_handle);
+	}
+	
+	if (our_pool) {
+		switch_core_destroy_memory_pool(&our_pool);
+	}
+
+	return status;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename, switch_memory_pool_t *pool)
 {
 	int32_t wanted = APR_FINFO_TYPE;

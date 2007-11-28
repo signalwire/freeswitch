@@ -2119,9 +2119,423 @@ static void  message_query_handler(switch_event_t *event)
 
 }
 
+#define VOICEMAIL_SYNTAX "rss [<host> <port> <uri> <user> <domain>]"
+
+struct holder {
+    vm_profile_t *profile;
+    switch_memory_pool_t *pool;
+	switch_stream_handle_t *stream;
+	switch_xml_t xml;
+    switch_xml_t x_item;
+    switch_xml_t x_channel;
+    int items;
+    char *user;
+    char *domain;
+    char *host;
+    char *port;
+    char *uri;
+};
+
+
+static int del_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+    if (argc > 8) {
+        unlink(argv[8]);
+    }
+    return 0;
+}
+
+static int play_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+    switch_file_t *fd;
+    struct holder *holder = (struct holder *) pArg;
+    char *fname, *ext;
+    switch_size_t flen;
+    uint8_t chunk[1024];
+	const char *mime_type = "audio/inline", *new_type;
+
+    if ((fname = strrchr(argv[8], '/'))) {
+        fname++;
+    } else {
+        fname = argv[8];
+    }
+
+    if ((ext = strrchr(fname, '.'))) {
+        ext++;
+        if ((new_type = switch_core_mime_ext2type(ext))) {
+            mime_type = new_type;
+        }
+    }
+
+    if (switch_file_open(&fd, argv[8], SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, holder->pool) == SWITCH_STATUS_SUCCESS) {
+        flen = switch_file_get_size(fd);
+        holder->stream->write_function(holder->stream, "Content-type: %s\n", mime_type);
+        holder->stream->write_function(holder->stream, "Content-length: %ld\n\n", (long)flen);
+        for(;;) {
+            switch_status_t status;
+
+            flen = sizeof(chunk);
+            status = switch_file_read(fd, chunk, &flen);
+            if (status != SWITCH_STATUS_SUCCESS || flen == 0) {
+                break;
+            }
+            
+            holder->stream->raw_write_function(holder->stream, chunk, flen);
+            
+        }
+        
+        switch_file_close(fd);
+    }
+    
+    return 0;
+}
+
+static void do_play(vm_profile_t *profile, char *user, char *domain, char *file, switch_stream_handle_t *stream)
+{
+    char *sql;
+    struct holder holder;
+
+    sql = switch_mprintf("update voicemail_data set read_epoch=%ld where user='%s' and domain='%s' and file_path like '%%%s'", 
+                         (long)time(NULL), user, domain, file);
+                         
+    vm_execute_sql(profile, sql, profile->mutex);
+    free(sql);
+
+    sql = switch_mprintf("select * from voicemail_data where user='%s' and domain='%s' and file_path like '%%%s'", user, domain, file);
+    memset(&holder, 0, sizeof(holder));
+    holder.profile = profile;
+    holder.stream = stream;
+    switch_core_new_memory_pool(&holder.pool);
+    vm_execute_sql_callback(profile, profile->mutex, sql, play_callback, &holder);
+    switch_core_destroy_memory_pool(&holder.pool);
+    switch_safe_free(sql);
+
+    
+}
+
+
+static void do_del(vm_profile_t *profile, char *user, char *domain, char *file, switch_stream_handle_t *stream)
+{
+    char *sql;
+    struct holder holder;
+    char *uri, *host, *port;
+
+    host = port = uri = NULL;
+
+    if (stream->event) {
+        host = switch_event_get_header(stream->event, "http-host");
+        port = switch_event_get_header(stream->event, "http-port");
+        uri = switch_event_get_header(stream->event, "http-uri");
+    }
+
+    sql = switch_mprintf("select * from voicemail_data where user='%s' and domain='%s' and file_path like '%%%s'", user, domain, file);
+    memset(&holder, 0, sizeof(holder));
+    holder.profile = profile;
+    holder.stream = stream;
+    vm_execute_sql_callback(profile, profile->mutex, sql, del_callback, &holder);
+
+    switch_safe_free(sql);
+    sql = switch_mprintf("delete from voicemail_data where user='%s' and domain='%s' and file_path like '%%%s'", user, domain, file);
+    vm_execute_sql(profile, sql, profile->mutex);
+    free(sql);
+
+    if (host && port && uri) {
+        stream->write_function(stream,"Content-type: text/html\n\n<h2>Message Deleted</h2>\n"
+                               "<META http-equiv=\"refresh\" content=\"1;URL=http://%s:%s%s/rss\">",  host, port, uri);
+    } 
+    
+}
+
+static int rss_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+    struct holder *holder = (struct holder *) pArg;
+    switch_xml_t x_tmp, x_link;
+    char *tmp, *del;
+    switch_time_exp_t tm;
+	char create_date[80] = "";
+	char read_date[80] = "";
+	char rss_date[80] = "";
+	switch_size_t retsize;
+	const char *mime_type = "audio/inline", *new_type;
+    char *ext;
+    char *fname;
+    switch_size_t flen;
+    switch_file_t *fd;
+    long l_created = 0;
+    long l_read = 0;
+    long l_duration = 0;
+    switch_core_time_duration_t duration;
+    char duration_str[80];
+    const char *fmt = "%a, %e %b %Y %T %z";
+    char heard[80];
+    
+    if (argc > 0) {
+        l_created = atol(argv[0]) * 1000000;
+    }
+
+    if (argc > 1) {
+        l_read = atol(argv[1]) * 1000000;
+    }
+
+    if (argc > 9) {
+        l_duration = atol(argv[9]) * 1000000;
+    }
+    
+	switch_core_measure_time(l_duration, &duration);
+    duration.day += duration.yr * 365;
+    duration.hr += duration.day * 24;
+
+    snprintf(duration_str, sizeof(duration_str), "%.2u:%.2u:%.2u", 
+             duration.hr,
+             duration.min,
+             duration.sec
+             );
+
+    if (l_created) {
+        switch_time_exp_lt(&tm, l_created);
+        switch_strftime(create_date, &retsize, sizeof(create_date), fmt, &tm);
+        switch_strftime(rss_date, &retsize, sizeof(create_date), fmt, &tm);
+    }
+
+    if (l_read) {
+        switch_time_exp_lt(&tm, l_read);
+        switch_strftime(read_date, &retsize, sizeof(read_date), fmt, &tm);
+    }
+
+    holder->x_item = switch_xml_add_child_d(holder->x_channel, "item", holder->items++);
+
+    x_tmp = switch_xml_add_child_d(holder->x_item, "title", 0);
+    tmp = switch_mprintf("Message from %s %s on %s", argv[5], argv[6], create_date);
+    switch_xml_set_txt_d(x_tmp, tmp);
+    free(tmp);
+
+    x_tmp = switch_xml_add_child_d(holder->x_item, "description", 0);
+
+    snprintf(heard, sizeof(heard), switch_strlen_zero(read_date) ? "never" : read_date);
+    
+    if ((fname = strrchr(argv[8], '/'))) {
+        fname++;
+    } else {
+        fname = argv[8];
+    }
+
+    del = switch_mprintf("http://%s:%s%s/del/%s", holder->host, holder->port, holder->uri, fname);
+    x_link = switch_xml_add_child_d(holder->x_item, "fsvm:rmlink", 0);
+    switch_xml_set_txt_d(x_link, del);
+
+
+    tmp = switch_mprintf("<![CDATA[Priority: %s<br>Last Heard: %s<br>Duration: %s<br><a href=%s>Delete This Message</a>]]>", 
+                         strcmp(argv[10], URGENT_FLAG_STRING) ? "normal" : "urgent", heard, duration_str, del);
+
+
+    switch_xml_set_txt_d(x_tmp, tmp);
+    free(tmp);
+    free(del);
+
+    x_tmp = switch_xml_add_child_d(holder->x_item, "pubDate", 0);
+    switch_xml_set_txt_d(x_tmp, rss_date);
+
+    x_tmp = switch_xml_add_child_d(holder->x_item, "itunes:duration", 0);
+    switch_xml_set_txt_d(x_tmp, duration_str);
+
+
+    tmp = switch_mprintf("http://%s:%s%s/get/%s", holder->host, holder->port, holder->uri, fname);
+
+    x_tmp = switch_xml_add_child_d(holder->x_item, "guid", 0);
+    switch_xml_set_txt_d(x_tmp, tmp);
+
+    x_link = switch_xml_add_child_d(holder->x_item, "link", 0);
+    switch_xml_set_txt_d(x_link, tmp);
+
+    x_tmp = switch_xml_add_child_d(holder->x_item, "enclosure", 0);
+    switch_xml_set_attr_d(x_tmp, "url", tmp);
+    free(tmp);
+
+    
+
+    if (switch_file_open(&fd, argv[8], SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, holder->pool) == SWITCH_STATUS_SUCCESS) {
+        flen = switch_file_get_size(fd);
+        tmp = switch_mprintf("%ld", (long) flen);
+        switch_xml_set_attr_d(x_tmp, "length", tmp);
+        free(tmp);
+        switch_file_close(fd);
+    }
+
+    if ((ext = strrchr(fname, '.'))) {
+        ext++;
+        if ((new_type = switch_core_mime_ext2type(ext))) {
+            mime_type = new_type;
+        }
+    }
+    switch_xml_set_attr_d(x_tmp, "type", mime_type);
+    
+    return 0;
+}
+
+
+static void do_rss(vm_profile_t *profile, char *user, char *domain, char *host, char *port, char *uri, switch_stream_handle_t *stream)
+{
+
+    struct holder holder;
+    switch_xml_t x_tmp;
+    char *sql, *xmlstr;
+    char *tmp = NULL;
+
+    stream->write_function(stream, "Content-type: text/xml\n\n");
+    memset(&holder, 0, sizeof(holder));
+    holder.profile = profile;
+    holder.stream = stream;
+    holder.xml = switch_xml_new("rss");
+    holder.user = user;
+    holder.domain = domain;
+    holder.host = host;
+    holder.port = port;
+    holder.uri = uri;
+
+    switch_core_new_memory_pool(&holder.pool);
+    assert(holder.xml);
+    
+    switch_xml_set_attr_d(holder.xml, "xmlns:itunes", "http://www.itunes.com/dtds/podcast-1.0.dtd");
+    switch_xml_set_attr_d(holder.xml, "xmlns:fsvm", "http://www.freeswitch.org/dtd/fsvm.dtd");
+    switch_xml_set_attr_d(holder.xml, "version", "2.0");
+    holder.x_channel = switch_xml_add_child_d(holder.xml, "channel", 0);
+    
+    x_tmp = switch_xml_add_child_d(holder.x_channel, "title", 0);
+    tmp = switch_mprintf("FreeSWITCH Voicemail for %s@%s", user, domain);
+    switch_xml_set_txt_d(x_tmp, tmp);
+    free(tmp);
+
+    x_tmp = switch_xml_add_child_d(holder.x_channel, "link", 0);
+    switch_xml_set_txt_d(x_tmp, "http://www.freeswitch.org");
+
+    x_tmp = switch_xml_add_child_d(holder.x_channel, "description", 0);
+    switch_xml_set_txt_d(x_tmp, "http://www.freeswitch.org");
+    
+    x_tmp = switch_xml_add_child_d(holder.x_channel, "ttl", 0);
+    switch_xml_set_txt_d(x_tmp, "15");
+    
+
+    sql = switch_mprintf("select * from voicemail_data where user='%s' and domain='%s' order by read_flags", user, domain);
+    vm_execute_sql_callback(profile, profile->mutex, sql, rss_callback, &holder);
+
+    xmlstr = switch_xml_toxml(holder.xml);
+
+    stream->write_function(stream, "%s", xmlstr);
+
+    switch_safe_free(sql);
+    switch_safe_free(xmlstr);
+    switch_xml_free(holder.xml);
+    switch_core_destroy_memory_pool(&holder.pool);
+}
+
+SWITCH_STANDARD_API(voicemail_api_function)
+{
+    int argc = 0;
+    char *mydata = NULL, *argv[6];
+    char *host = NULL, *port = NULL, *uri = NULL;
+    char *user = NULL, *domain = NULL;
+    int ct = 0;
+    vm_profile_t *profile = NULL;
+    char *path_info = NULL;
+    int rss = 0, xarg = 0;
+    
+    if (stream->event) {
+        host = switch_event_get_header(stream->event, "http-host");
+        port = switch_event_get_header(stream->event, "http-port");
+        uri = switch_event_get_header(stream->event, "http-uri");
+        user = switch_event_get_header(stream->event, "freeswitch-user");
+        domain = switch_event_get_header(stream->event, "freeswitch-domain");
+        path_info = switch_event_get_header(stream->event, "http-path-info");
+    }
+    
+    if (!switch_strlen_zero(cmd)) {
+        mydata = strdup(cmd);
+        assert(mydata);
+        argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+    }
+    
+    if (argc > 0) {
+        if (!strcasecmp(argv[0], "rss")) {
+            rss++;
+            xarg++;
+        }
+    }
+
+    if (!host) {
+        if (argc - rss < 5) {
+            goto error;
+        }
+        host = argv[xarg++];
+        port = argv[xarg++];
+        uri = argv[xarg++];
+        user = argv[xarg++];
+        domain = argv[xarg++];
+    }
+
+    if (!(host && port && uri && user && domain)) {
+        goto error;
+    }
+
+    profile = switch_core_hash_find(globals.profile_hash, domain);
+    
+    if (!profile) {
+        profile = switch_core_hash_find(globals.profile_hash, "default");
+    }
+    
+    if (!profile) {
+        switch_hash_index_t *hi;
+        void *val;
+        
+        for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+            switch_hash_this(hi, NULL, NULL, &val);
+            profile = (vm_profile_t *) val;
+            break;
+        }
+    }
+
+    if (!profile) {
+        stream->write_function(stream, "Can't find profile.\n");
+        goto error;
+    }
+
+
+    if (path_info) {
+        if (!strncasecmp(path_info, "get/", 4)) {
+            do_play(profile, user, domain, path_info + 4, stream);        
+        } else if (!strncasecmp(path_info, "del/", 4)) {
+            do_del(profile, user, domain, path_info + 4, stream);        
+        }
+    }
+
+    if (rss || (path_info && !strncasecmp(path_info, "rss", 3))) {
+        do_rss(profile, user, domain, host, port, uri, stream);
+    }
+
+    goto done;
+
+ error:
+    if (host) {
+        if (!ct) {
+            stream->write_function(stream, "Content-type: text/html\n\n<h2>");
+        }
+    }
+    stream->write_function(stream, "Error: %s\n", VOICEMAIL_SYNTAX);
+    
+ done:
+
+    switch_safe_free(mydata);
+
+
+    return SWITCH_STATUS_SUCCESS;
+
+
+}
+
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load)
 {
 	switch_application_interface_t *app_interface;
+    switch_api_interface_t *commands_api_interface;
     switch_status_t status;
 
     if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
@@ -2137,6 +2551,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
+
+	SWITCH_ADD_API(commands_api_interface, "voicemail", "voicemail", voicemail_api_function, VOICEMAIL_SYNTAX);
     
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;

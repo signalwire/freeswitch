@@ -1457,7 +1457,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_x
 static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, switch_size_t *dlen, switch_size_t *max, short a)
 {
 	const char *e = NULL;
-
+	int immune = 0;
+	
 	if (len) {
 		e = s + len;
 	}
@@ -1466,13 +1467,24 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
 		while (*dlen + 10 > *max)
 			*dst = (char *)realloc(*dst, *max += SWITCH_XML_BUFSIZE);
 
-		switch (*s) {
+		if (immune) {
+			if (*s == '\0') {
+				return *dst;
+			}
+			(*dst)[(*dlen)++] = *s;
+		} else 
+			switch (*s) {
 		case '\0':
 			return *dst;
 		case '&':
 			*dlen += sprintf(*dst + *dlen, "&amp;");
 			break;
 		case '<':
+			if (*(s+1) == '!') {
+				(*dst)[(*dlen)++] = *s;
+				immune++;
+				break;
+			}
 			*dlen += sprintf(*dst + *dlen, "&lt;");
 			break;
 		case '>':

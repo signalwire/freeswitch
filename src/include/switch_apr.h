@@ -763,6 +763,8 @@ SWITCH_DECLARE(switch_size_t) switch_file_get_size(switch_file_t *thefile);
 
 SWITCH_DECLARE(switch_status_t) switch_file_exists(const char *filename, switch_memory_pool_t *pool);
 
+SWITCH_DECLARE(switch_status_t) switch_directory_exists(const char *dirname, switch_memory_pool_t *pool);
+
 SWITCH_DECLARE(switch_status_t) switch_dir_make(const char *path, switch_fileperms_t perm,
 												switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_status_t) switch_dir_make_recursive(const char *path, switch_fileperms_t perm,

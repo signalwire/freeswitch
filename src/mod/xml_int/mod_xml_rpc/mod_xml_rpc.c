@@ -30,6 +30,7 @@
  *
  */
 #include <switch.h>
+#include <switch_version.h>
 #ifdef _MSC_VER
 #pragma warning(disable:4142)
 #endif
@@ -117,6 +118,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_rpc_load)
 }
 
 
+static switch_status_t http_stream_raw_write(switch_stream_handle_t *handle, uint8_t *data, switch_size_t datalen)
+{
+	TSession *r = handle->data;
+
+	return HTTPWrite(r, (char *)data, (uint32_t) datalen) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+	
+}
+
 static switch_status_t http_stream_write(switch_stream_handle_t *handle, const char *fmt, ...)
 {
 	va_list ap;
@@ -146,7 +155,8 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 	char *pass;
 	const char *mypass1 = NULL, *mypass2 = NULL;
 	switch_xml_t x_domain, x_domain_root = NULL, x_user, x_params, x_param;
-
+	const char *box;
+	
     p = RequestHeaderValue(r, "authorization");
 
     if (p) {
@@ -162,16 +172,21 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 					*pass++ = '\0';
 				}
 				
-				if (switch_xml_locate_user(user, domain_name, NULL, &x_domain_root, &x_domain, &x_user, NULL) != SWITCH_STATUS_SUCCESS) {
+				if (switch_xml_locate_user(user, domain_name, NULL, &x_domain_root, &x_domain, &x_user, "mailbox=check") != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", user, domain_name);
 					goto fail;
 				}
-
+				
+				ResponseAddField(r, "freeswitch-user", user);
+				ResponseAddField(r, "freeswitch-domain", domain_name);
+				
+				box = switch_xml_attr_soft(x_user, "mailbox");
+				
 				if (!(x_params = switch_xml_child(x_user, "params"))) {
 					goto authed;
                 }
 
-
+				
                 for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
                     const char *var = switch_xml_attr_soft(x_param, "name");
                     const char *val = switch_xml_attr_soft(x_param, "value");
@@ -184,23 +199,53 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 						ResponseAddField(r, (char *)var, (char *)val);
                     } 
 				}
-
-				sprintf(z, "%s:%s", user, mypass1);
-                Base64Encode(z, t);
 				
-				if (!strcmp(p, t)) {
-                    r->user=strdup(user);
+				if (!(mypass1 && mypass2)) {
+					r->user=strdup(user);
 					goto authed;
-				}
+				} else {
+					if (mypass1) {
+						sprintf(z, "%s:%s", user, mypass1);
+						Base64Encode(z, t);
+				
+						if (!strcmp(p, t)) {
+							r->user=strdup(user);
+							goto authed;
+						}
+					}
 
-				sprintf(z, "%s:%s", user, mypass2);
-                Base64Encode(z, t);
+					if (mypass2) {
+						sprintf(z, "%s:%s", user, mypass2);
+						Base64Encode(z, t);
 				
-				if (!strcmp(p, t)) {
-                    r->user=strdup(user);
-					goto authed;
+						if (!strcmp(p, t)) {
+							r->user=strdup(user);
+							goto authed;
+						}
+					}
+
+					if (box) {
+						if (mypass1) {
+							sprintf(z, "%s:%s", box, mypass1);
+							Base64Encode(z, t);
+					
+							if (!strcmp(p, t)) {
+								r->user=strdup(box);
+								goto authed;
+							}
+						}
+					
+						if (mypass2) {
+							sprintf(z, "%s:%s", box, mypass2);
+							Base64Encode(z, t);
+					
+							if (!strcmp(p, t)) {
+								r->user=strdup(box);
+								goto authed;
+							}
+						}
+					}
 				}
-				
 				goto fail;
 
 
@@ -242,15 +287,64 @@ abyss_bool auth_hook(TSession * r)
 			*e++ = '\0';
 		}
 
+		if (!strcmp(domain_name, "this")) {
+			free(domain_name);
+			domain_name = strdup(r->host);
+		}
+
 		ret = !http_directory_auth(r, domain_name);
 
 		free(domain_name);
 	} else {
-		if (globals.realm) {
-			if (!RequestAuth(r, globals.realm, globals.user, globals.pass)) {
-				ret = TRUE;
+		char tmp[512];
+		const char *list[2] = {"index.html", "index.txt"};
+		int x;
+
+		if (!strncmp(r->uri, "/pub", 4)) {
+			char *p = r->uri;
+			char *new_uri = p + 4;
+			if (!new_uri) {
+				new_uri = "/";
+			}
+
+			snprintf(tmp, sizeof(tmp), "%s%s", 
+					 SWITCH_GLOBAL_dirs.htdocs_dir, 
+					 new_uri
+					 );
+			
+
+			if (switch_directory_exists(tmp, NULL) == SWITCH_STATUS_SUCCESS) {
+				for (x = 0; x < 2; x++) {
+					snprintf(tmp, sizeof(tmp), "%s%s%s%s", 
+							 SWITCH_GLOBAL_dirs.htdocs_dir, 
+							 new_uri,
+							 end_of(new_uri) == *SWITCH_PATH_SEPARATOR ? "" : SWITCH_PATH_SEPARATOR,
+							 list[x]
+							 );
+				
+					if (switch_file_exists(tmp, NULL) == SWITCH_STATUS_SUCCESS) {
+						snprintf(tmp, sizeof(tmp), "%s%s%s", 
+								 new_uri,
+								 end_of(new_uri) == '/' ? "" : "/",
+								 list[x]
+								 );
+						new_uri = tmp;
+						break;
+					}
+				}
+			}
+
+			r->uri = strdup(new_uri);
+			free(p);
+
+		} else {
+			if (globals.realm && strncmp(r->uri, "/pub", 4)) {
+				if (!RequestAuth(r, globals.realm, globals.user, globals.pass)) {
+					ret = TRUE;
+				}
 			}
 		}
+
 	}
 
 	return ret;
@@ -265,56 +359,71 @@ abyss_bool handler_hook(TSession * r)
 	int i, j = 0;
 	TTableItem *ti;
 	char *dup = NULL;
+	int auth = 0;
+	char *fs_user = NULL, *fs_domain = NULL;
+	char *path_info = NULL;
+	abyss_bool ret = TRUE;
 
 	stream.data = r;
 	stream.write_function = http_stream_write;
+	stream.raw_write_function = http_stream_raw_write;
 
 	if ((command = strstr(r->uri, "/api/"))) {
 		command += 5;
 	} else {
-		return FALSE;
+		ret = FALSE;
+		goto end;
+	}
+
+	if ((path_info = strchr(command, '/'))) {
+		*path_info++ = '\0';
+	}
+	
+	if (strncmp(r->uri, "/domains/", 9)) {
+        goto auth;
 	}
 
 	for (i=0;i<r->response_headers.size;i++) {
 		ti=&r->response_headers.item[i];
-		if (!strcasecmp(ti->name, "http-allowed-api")) {
+		if (!strcasecmp(ti->name, "freeswitch-user")) {
+			fs_user = ti->value;
+		} else if (!strcasecmp(ti->name, "freeswitch-domain")) {
+			fs_domain = ti->value;
+		} else if (!strcasecmp(ti->name, "http-allowed-api")) {
 			int argc, x;
 			char *argv[256] = { 0 };
 			j++;
 			
 			if (!strcasecmp(ti->value, "any")) {
-				goto auth;
-			}
-
-			if (!strcasecmp(ti->value, "none")) {
-				goto unauth;
+				auth++;
 			}
 
 			dup = strdup(ti->value);
 			argc = switch_separate_string(dup, ',', argv, (sizeof(argv) / sizeof(argv[0])));
-
+			
 			for (x = 0; x < argc; x++) {
 				if (!strcasecmp(command, argv[x])) {
-					goto auth;
+					auth++;
 				}
 			}
-
-			goto unauth;
 		}
 	}
 
-	if (r->user && !j) {
-		goto unauth;
+	if (!switch_strlen_zero(r->user) && !j) {
+		auth = 0;
+	}
+	
+	if (auth) {
+		goto auth;
 	}
 
-	goto auth;
-
- unauth:
+	//unauth:
 	ResponseStatus(r, 403);
 	ResponseError(r);
 	switch_safe_free(dup);
 
-	return TRUE;
+	ret = TRUE;
+	goto end;
 
  auth:
 
@@ -322,7 +431,12 @@ abyss_bool handler_hook(TSession * r)
 	if (switch_event_create(&stream.event, SWITCH_EVENT_API) == SWITCH_STATUS_SUCCESS) {
 		const char * const content_length = RequestHeaderValue(r, "content-length");
 			
-
+		if (fs_user)
+			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "FreeSWITCH-User", "%s", fs_user);
+		if (fs_domain)
+			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Domain", "%s", fs_domain);
+		if (path_info)
+			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-Path-Info", "%s", path_info);
 		if (r->uri)
 			switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-URI", "%s", r->uri);
 		if (r->query)
@@ -434,7 +548,7 @@ abyss_bool handler_hook(TSession * r)
 	}
 	
 	/* Generation of the server field */
-	ResponseAddField(r,"Server", SERVER_HVERSION);
+	ResponseAddField(r,"Server", "FreeSWITCH-" SWITCH_VERSION_FULL "-mod_xml_rpc");
 
 	for (i=0;i<r->response_headers.size;i++) {
 		ti=&r->response_headers.item[i];
@@ -453,7 +567,10 @@ abyss_bool handler_hook(TSession * r)
 	} 
 	
 	//HTTPWriteEnd(r);
-	return TRUE;
+
+ end:
+
+	return ret;
 }
 
 
