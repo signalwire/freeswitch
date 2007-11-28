@@ -2250,7 +2250,7 @@ static int rss_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
     struct holder *holder = (struct holder *) pArg;
     switch_xml_t x_tmp, x_link;
-    char *tmp, *del;
+    char *tmp, *del, *get;
     switch_time_exp_t tm;
 	char create_date[80] = "";
 	char read_date[80] = "";
@@ -2319,18 +2319,23 @@ static int rss_callback(void *pArg, int argc, char **argv, char **columnNames)
         fname = argv[8];
     }
 
+    get = switch_mprintf("http://%s:%s%s/get/%s", holder->host, holder->port, holder->uri, fname);
     del = switch_mprintf("http://%s:%s%s/del/%s", holder->host, holder->port, holder->uri, fname);
     x_link = switch_xml_add_child_d(holder->x_item, "fsvm:rmlink", 0);
     switch_xml_set_txt_d(x_link, del);
 
 
-    tmp = switch_mprintf("<![CDATA[Priority: %s<br>Last Heard: %s<br>Duration: %s<br><a href=%s>Delete This Message</a>]]>", 
-                         strcmp(argv[10], URGENT_FLAG_STRING) ? "normal" : "urgent", heard, duration_str, del);
 
+    tmp = switch_mprintf("<![CDATA[Priority: %s<br>"
+                         "Last Heard: %s<br>Duration: %s<br>"
+                         "<a href=%s>Delete This Message</a><br>"
+                         "]]>", 
+                         strcmp(argv[10], URGENT_FLAG_STRING) ? "normal" : "urgent", heard, duration_str, del);
 
     switch_xml_set_txt_d(x_tmp, tmp);
     free(tmp);
     free(del);
+
 
     x_tmp = switch_xml_add_child_d(holder->x_item, "pubDate", 0);
     switch_xml_set_txt_d(x_tmp, rss_date);
@@ -2339,17 +2344,17 @@ static int rss_callback(void *pArg, int argc, char **argv, char **columnNames)
     switch_xml_set_txt_d(x_tmp, duration_str);
 
 
-    tmp = switch_mprintf("http://%s:%s%s/get/%s", holder->host, holder->port, holder->uri, fname);
+    
 
     x_tmp = switch_xml_add_child_d(holder->x_item, "guid", 0);
-    switch_xml_set_txt_d(x_tmp, tmp);
+    switch_xml_set_txt_d(x_tmp, get);
 
     x_link = switch_xml_add_child_d(holder->x_item, "link", 0);
-    switch_xml_set_txt_d(x_link, tmp);
+    switch_xml_set_txt_d(x_link, get);
 
     x_tmp = switch_xml_add_child_d(holder->x_item, "enclosure", 0);
-    switch_xml_set_attr_d(x_tmp, "url", tmp);
-    free(tmp);
+    switch_xml_set_attr_d(x_tmp, "url", get);
+    free(get);
 
     
 

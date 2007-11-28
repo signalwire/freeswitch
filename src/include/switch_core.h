@@ -1493,7 +1493,7 @@ SWITCH_DECLARE(void) switch_core_set_globals(void);
 */
 SWITCH_DECLARE(uint8_t) switch_core_session_compare(switch_core_session_t *a, switch_core_session_t *b);
 
-
+SWITCH_DECLARE(switch_hash_index_t *) switch_core_mime_index(void);
 SWITCH_DECLARE(const char *) switch_core_mime_ext2type(const char *ext);
 SWITCH_DECLARE(switch_status_t) switch_core_mime_add_type(const char *type, const char *ext);
 

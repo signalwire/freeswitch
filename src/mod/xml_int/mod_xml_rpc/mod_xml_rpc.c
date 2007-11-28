@@ -665,6 +665,9 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 	xmlrpc_registry *registryP;
 	xmlrpc_env env;
 	char logfile[512];
+	switch_hash_index_t *hi;
+	const void *var;
+	void *val;
 
 	globals.running = 1;
 
@@ -679,6 +682,12 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 
 	MIMETypeInit();
 	MIMETypeAdd("text/html", "html");
+	for(hi = switch_core_mime_index(); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &var, NULL, &val);
+		if (var && val) {
+			MIMETypeAdd((char *) val, (char *) var);
+		}
+	}
 
 	snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "freeswitch_http.log");
 	ServerCreate(&abyssServer, "XmlRpcServer", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir, logfile);
