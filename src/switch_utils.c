@@ -176,7 +176,11 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
             return SWITCH_FALSE;
 
         if (file) {
-            snprintf(buf, B64BUFFLEN, "--%s\nContent-Type: text/plain\n\n", bound);
+			if (body && switch_stristr("content-type", body)) {
+				snprintf(buf, B64BUFFLEN, "--%s\n", bound);
+			} else {
+				snprintf(buf, B64BUFFLEN, "--%s\nContent-Type: text/plain\n\n", bound);
+			}
             if (!write_buf(fd, buf))
                 return SWITCH_FALSE;
         }
