@@ -205,6 +205,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 
 			snprintf(buf, B64BUFFLEN,
 					 "\n\n--%s\nContent-Type: %s; name=\"%s\"\n"
+					 "Content-ID: <ATTACHED@freeswitch.org>\n"
 					 "Content-Transfer-Encoding: base64\n"
 					 "Content-Description: Sound attachment.\n"
 					 "Content-Disposition: attachment; filename=\"%s\"\n\n",
