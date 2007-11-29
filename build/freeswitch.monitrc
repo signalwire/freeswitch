@@ -2,7 +2,7 @@
    group voice
    start program = "/etc/init.d/freeswitch start"
    stop  program = "/etc/init.d/freeswitch stop"
-   if failed port 5060 type UDP than restart
+   if failed port 5060 type UDP then restart
    if 5 restarts within 5 cycles then timeout
    depends on freeswitch_bin
    depends on freeswitch_rc
