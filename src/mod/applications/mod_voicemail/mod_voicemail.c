@@ -2385,7 +2385,7 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
         switch_strftime(read_date, &retsize, sizeof(read_date), fmt, &tm);
     }
 
-    snprintf(heard, sizeof(heard), switch_strlen_zero(read_date) ? "never" : read_date);
+    snprintf(heard, sizeof(heard), *read_date == '\0' ? "never" : read_date);
 
     get = switch_mprintf("http://%s:%s%s/get/%s", holder->host, holder->port, holder->uri, fname);
     del = switch_mprintf("http://%s:%s%s/del/%s", holder->host, holder->port, holder->uri, fname);
@@ -2483,7 +2483,7 @@ static int rss_callback(void *pArg, int argc, char **argv, char **columnNames)
 
     x_tmp = switch_xml_add_child_d(holder->x_item, "description", 0);
 
-    snprintf(heard, sizeof(heard), switch_strlen_zero(read_date) ? "never" : read_date);
+    snprintf(heard, sizeof(heard), *read_date == '\0' ? "never" : read_date);
     
     if ((fname = strrchr(argv[8], '/'))) {
         fname++;
