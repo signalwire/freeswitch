@@ -36,10 +36,14 @@
 
 SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_stream_raw_write(switch_stream_handle_t *handle, uint8_t *data, switch_size_t datalen)
 {
+	switch_size_t nwrite;
 	FILE *out = switch_core_get_console();
 
 	if (out) {
-		fwrite(data, datalen, 1, out);
+		nwrite = fwrite(data, datalen, 1, out);
+		if (nwrite != datalen) {
+			return SWITCH_STATUS_FALSE;
+		}
 		return SWITCH_STATUS_SUCCESS;
 	}
 
