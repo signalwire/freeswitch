@@ -1128,7 +1128,10 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
                     int total_saved_urgent_messages = 0;
                     int32_t message_len = 0;
                     char *p;
-
+                    long l_duration = 0;
+                    switch_core_time_duration_t duration;
+                    char duration_str[80];
+                    
                     if (!strcasecmp(cbt->read_flags, URGENT_FLAG_STRING)) {
                         priority = 1;
                     }
@@ -1159,7 +1162,19 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
                     snprintf(tmp,sizeof(tmp), "%d", priority);
                     switch_channel_set_variable(channel, "voicemail_priority", tmp);
                     message_len = atoi(cbt->message_len);
-                    switch_channel_set_variable(channel, "voicemail_message_len", cbt->message_len);
+
+                    l_duration = atol(cbt->message_len) * 1000000;
+                    switch_core_measure_time(l_duration, &duration);
+                    duration.day += duration.yr * 365;
+                    duration.hr += duration.day * 24;
+                    
+                    snprintf(duration_str, sizeof(duration_str), "%.2u:%.2u:%.2u", 
+                             duration.hr,
+                             duration.min,
+                             duration.sec
+                             );
+
+                    switch_channel_set_variable(channel, "voicemail_message_len", duration_str);
                     switch_channel_set_variable(channel, "voicemail_email", cbt->email);
                     
                     if(switch_strlen_zero(profile->email_headers)) {
@@ -1922,7 +1937,10 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
         int total_new_urgent_messages = 0;
         int total_saved_urgent_messages = 0;
         char *p;
-        
+        long l_duration = 0;
+        switch_core_time_duration_t duration;
+        char duration_str[80];
+
         message_count(profile, id, domain_name, myfolder, &total_new_messages, &total_saved_messages,
                       &total_new_urgent_messages, &total_saved_urgent_messages);
 
@@ -1949,8 +1967,21 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
         switch_channel_set_variable(channel, "voicemail_priority", tmp);
         switch_channel_set_variable(channel, "voicemail_email", email_vm);
 
-        snprintf(tmp,sizeof(tmp), "%"SWITCH_SIZE_T_FMT, message_len);
-        switch_channel_set_variable(channel, "voicemail_message_len", tmp);
+
+        
+        l_duration = (long)message_len * 1000000;
+        switch_core_measure_time(l_duration, &duration);
+        duration.day += duration.yr * 365;
+        duration.hr += duration.day * 24;
+        snprintf(duration_str, sizeof(duration_str), "%.2u:%.2u:%.2u",
+                 duration.hr,
+                 duration.min,
+                 duration.sec
+                 );
+        
+
+        
+        switch_channel_set_variable(channel, "voicemail_message_len", duration_str);
 
         if (switch_strlen_zero(profile->email_from)) {
             from = switch_core_session_sprintf(session, "%s@%s", id, domain_name);
@@ -2378,8 +2409,8 @@ static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
                                    "type=\"application/x-shockwave-flash\" \n"
                                    "data=\"http://%s:%s/pub/slim.swf?song_url=%s&player_title=%s\">\n"
                                    "<param name=movie value=\"http://%s:%s/pub/slim.swf?song_url=%s&player_title=%s\"></object><br><br>\n"
-                                   "[<a href=%s>delete</a>] [<a href=%s>download</a>] <br><br><br></font>\n",
-                                   holder->host, holder->port, get, title_aft, holder->host, holder->port, get, title_aft, del, get);
+                                   "[<a href=%s>delete</a>] [<a href=%s>download</a>] [<a href=tel:%s>call</a>] <br><br><br></font>\n",
+                                   holder->host, holder->port, get, title_aft, holder->host, holder->port, get, title_aft, del, get, argv[6]);
 
     free(get);
     free(del);
