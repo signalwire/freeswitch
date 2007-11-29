@@ -133,6 +133,10 @@ struct input_callback_state {
 	JSObject *obj;
 	jsrefcount saveDepth;
 	void *extra;
+	struct js_session *jss_a;
+	struct js_session *jss_b;
+	JSObject *session_obj_a;
+	JSObject *session_obj_b;
 };
 
 struct fileio_obj {
@@ -1017,6 +1021,12 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 
 	if (cb_state->arg) {
 		argv[argc++] = cb_state->arg;
+	}
+
+	if (cb_state->jss_a && cb_state->jss_a->session && cb_state->jss_a->session == session) {
+		argv[argc++] = OBJECT_TO_JSVAL(cb_state->session_obj_a);
+	} else if (cb_state->jss_b && cb_state->jss_b->session && cb_state->jss_b->session == session) {
+		argv[argc++] = OBJECT_TO_JSVAL(cb_state->session_obj_b);
 	}
 
 	if (jss->stack_depth > MAX_STACK_DEPTH) {
@@ -3145,7 +3155,10 @@ static JSBool js_bridge(JSContext * cx, JSObject * obj, uintN argc, jsval * argv
 
 			cb_state.cx = cx;
 			cb_state.obj = obj;
-
+			cb_state.jss_a = jss_a;
+			cb_state.jss_b = jss_b;
+			cb_state.session_obj_a = session_obj_a;
+			cb_state.session_obj_b = session_obj_b;
 			cb_state.session_state = jss_a;
 			dtmf_func = js_collect_input_callback;
 			bp = &cb_state;
