@@ -87,6 +87,8 @@ struct vm_profile {
     char *callback_context;
     char *email_body;
     char *email_headers;
+    char *web_head;
+    char *web_tail;
     char *email_from;
     char *date_fmt;
     uint32_t digit_timeout;
@@ -301,6 +303,8 @@ static switch_status_t load_config(void)
         char *email_headers = NULL;
         char *email_from = "";
         char *date_fmt = "%A, %B %d %Y, %I %M %p";
+        char *web_head = NULL;
+        char *web_tail = NULL;
         uint32_t record_threshold = 200;
         uint32_t record_silence_hits = 2;
         uint32_t record_sample_rate = 0;
@@ -376,6 +380,39 @@ static switch_status_t load_config(void)
 
             if (!strcasecmp(var, "terminator-key") && !switch_strlen_zero(val)) {
                 terminator_key = val;
+            } else if (!strcasecmp(var, "web-template-file") && !switch_strlen_zero(val)) {
+                switch_stream_handle_t stream = { 0 };
+                int fd;
+                char *dpath = NULL;
+                char *path;
+                
+                if (switch_is_file_path(val)) {
+                    path = val;
+                } else {
+                    dpath = switch_mprintf("%s%s%s", 
+                                           SWITCH_GLOBAL_dirs.conf_dir, 
+                                           SWITCH_PATH_SEPARATOR,
+                                           val);
+                    path = dpath;
+                }
+                    
+                if ((fd = open(path, O_RDONLY)) > -1) {
+                    char buf[2048];
+                    SWITCH_STANDARD_STREAM(stream);
+                    while(switch_fd_read_line(fd, buf, sizeof(buf))) {
+                        stream.write_function(&stream, "%s", buf);
+                    }
+                    close(fd);
+                    web_head = stream.data;
+                    if ((web_tail = strstr(web_head, "<!break>\n"))) {
+                        *web_tail = '\0';
+                        web_tail += 9;
+                    } else if ((web_tail = strstr(web_head, "<!break>\r\n"))) {
+                        *web_tail = '\0';
+                        web_tail += 10;
+                    }
+                }
+                switch_safe_free(dpath);
             } else if (!strcasecmp(var, "play-new-messages-key") && !switch_strlen_zero(val)) {
                 play_new_messages_key = val;
             } else if (!strcasecmp(var, "play-saved-messages-key") && !switch_strlen_zero(val)) {
@@ -549,6 +586,10 @@ static switch_status_t load_config(void)
 #ifdef SWITCH_HAVE_ODBC
 			}            
 #endif
+
+            profile->web_head = web_head;
+            profile->web_tail = web_tail;
+
             profile->email_body = email_body;
             profile->email_headers = email_headers;
             profile->email_from = email_from;
@@ -2218,14 +2259,16 @@ static void do_del(vm_profile_t *profile, char *user, char *domain, char *file, 
 {
     char *sql;
     struct holder holder;
-    char *uri, *host, *port;
-
-    host = port = uri = NULL;
+    //char *uri, *host, *port;
+    char *ref = NULL;
+    
+    //host = port = uri = NULL;
 
     if (stream->event) {
-        host = switch_event_get_header(stream->event, "http-host");
-        port = switch_event_get_header(stream->event, "http-port");
-        uri = switch_event_get_header(stream->event, "http-uri");
+        //host = switch_event_get_header(stream->event, "http-host");
+        //port = switch_event_get_header(stream->event, "http-port");
+        //uri = switch_event_get_header(stream->event, "http-uri");
+        ref = switch_event_get_header(stream->event, "http-referer");
     }
 
     sql = switch_mprintf("select * from voicemail_data where user='%s' and domain='%s' and file_path like '%%%s'", user, domain, file);
@@ -2239,11 +2282,109 @@ static void do_del(vm_profile_t *profile, char *user, char *domain, char *file, 
     vm_execute_sql(profile, sql, profile->mutex);
     free(sql);
 
-    if (host && port && uri) {
+    if (ref) {
         stream->write_function(stream,"Content-type: text/html\n\n<h2>Message Deleted</h2>\n"
-                               "<META http-equiv=\"refresh\" content=\"1;URL=http://%s:%s%s/rss\">",  host, port, uri);
+                               "<META http-equiv=\"refresh\" content=\"1;URL=%s\">",  ref);
     } 
     
+}
+
+
+
+static int web_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+    struct holder *holder = (struct holder *) pArg;
+    char *del, *get, *fname, *ext;
+    switch_time_exp_t tm;
+	char create_date[80] = "";
+	char read_date[80] = "";
+	char rss_date[80] = "";
+	switch_size_t retsize;
+    long l_created = 0;
+    long l_read = 0;
+    long l_duration = 0;
+    switch_core_time_duration_t duration;
+    char duration_str[80];
+    const char *fmt = "%a, %e %b %Y %T %z";
+    char heard[80];
+    char title_b4[128] = "";
+    char title_aft[128*3] = "";
+
+    if (argc > 0) {
+        l_created = atol(argv[0]) * 1000000;
+    }
+
+    if (argc > 1) {
+        l_read = atol(argv[1]) * 1000000;
+    }
+
+    if (argc > 9) {
+        l_duration = atol(argv[9]) * 1000000;
+    }
+
+
+    if ((fname = strrchr(argv[8], '/'))) {
+        fname++;
+    } else {
+        fname = argv[8];
+    }
+
+    if ((ext = strrchr(fname, '.'))) {
+        ext++;
+    }
+    
+	switch_core_measure_time(l_duration, &duration);
+    duration.day += duration.yr * 365;
+    duration.hr += duration.day * 24;
+
+    snprintf(duration_str, sizeof(duration_str), "%.2u:%.2u:%.2u", 
+             duration.hr,
+             duration.min,
+             duration.sec
+             );
+
+    if (l_created) {
+        switch_time_exp_lt(&tm, l_created);
+        switch_strftime(create_date, &retsize, sizeof(create_date), fmt, &tm);
+        switch_strftime(rss_date, &retsize, sizeof(create_date), "%D %T", &tm);
+    }
+
+    if (l_read) {
+        switch_time_exp_lt(&tm, l_read);
+        switch_strftime(read_date, &retsize, sizeof(read_date), fmt, &tm);
+    }
+
+    snprintf(heard, sizeof(heard), switch_strlen_zero(read_date) ? "never" : read_date);
+
+    get = switch_mprintf("http://%s:%s%s/get/%s", holder->host, holder->port, holder->uri, fname);
+    del = switch_mprintf("http://%s:%s%s/del/%s", holder->host, holder->port, holder->uri, fname);
+
+    holder->stream->write_function(holder->stream, "<font face=tahoma><div class=title><b>Message from %s %s</b></div><hr noshade size=1>\n", 
+                                   argv[5], argv[6]);
+    holder->stream->write_function(holder->stream, "Priority: %s<br>\n"
+                                   "Created: %s<br>\n"
+                                   "Last Heard: %s<br>\n"
+                                   "Duration: %s<br>\n",
+                                   //"<a href=%s>Delete This Message</a><br><hr noshade size=1>", 
+                                   strcmp(argv[10], URGENT_FLAG_STRING) ? "normal" : "urgent", create_date, heard, duration_str);
+
+    snprintf(title_b4, sizeof(title_b4), "%s <%s> %s", argv[5], argv[6], rss_date);
+    switch_url_encode(title_b4, title_aft, sizeof(title_aft)-1);
+
+
+    
+    holder->stream->write_function(holder->stream,
+                                   "<br><object width=550 height=15 \n"
+                                   "type=\"application/x-shockwave-flash\" \n"
+                                   "data=\"http://%s:%s/pub/slim.swf?song_url=%s&player_title=%s\">\n"
+                                   "<param name=movie value=\"http://%s:%s/pub/slim.swf?song_url=%s&player_title=%s\"></object><br><br>\n"
+                                   "[<a href=%s>delete</a>] [<a href=%s>download</a>] <br><br><br></font>\n",
+                                   holder->host, holder->port, get, title_aft, holder->host, holder->port, get, title_aft, del, get);
+
+    free(get);
+    free(del);
+
+    return 0;
 }
 
 static int rss_callback(void *pArg, int argc, char **argv, char **columnNames)
@@ -2324,7 +2465,7 @@ static int rss_callback(void *pArg, int argc, char **argv, char **columnNames)
     x_link = switch_xml_add_child_d(holder->x_item, "fsvm:rmlink", 0);
     switch_xml_set_txt_d(x_link, del);
 
-
+    
 
     tmp = switch_mprintf("<![CDATA[Priority: %s<br>"
                          "Last Heard: %s<br>Duration: %s<br>"
@@ -2433,6 +2574,50 @@ static void do_rss(vm_profile_t *profile, char *user, char *domain, char *host, 
     switch_core_destroy_memory_pool(&holder.pool);
 }
 
+
+static void do_web(vm_profile_t *profile, char *user, char *domain, char *host, char *port, char *uri, switch_stream_handle_t *stream)
+{
+    char buf[80] = "";
+    struct holder holder;
+    char *sql;
+    callback_t cbt = { 0 };
+    int ttl = 0;
+
+    stream->write_function(stream, "Content-type: text/html\n\n");
+    memset(&holder, 0, sizeof(holder));
+    holder.profile = profile;
+    holder.stream = stream;
+    holder.user = user;
+    holder.domain = domain;
+    holder.host = host;
+    holder.port = port;
+    holder.uri = uri;
+
+    
+    if (profile->web_head) {
+        stream->raw_write_function(stream, (uint8_t *)profile->web_head, strlen(profile->web_head));
+    }
+    
+    cbt.buf = buf;
+    cbt.len = sizeof(buf);
+    
+    sql = switch_mprintf("select * from voicemail_data where user='%s' and domain='%s' order by read_flags", user, domain);
+    vm_execute_sql_callback(profile, profile->mutex, sql, web_callback, &holder);
+    switch_safe_free(sql);
+
+    sql = switch_mprintf("select count(*) from voicemail_data where user='%s' and domain='%s' order by read_flags", user, domain);
+    vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &cbt);
+    switch_safe_free(sql);
+
+    ttl = atoi(buf);
+    stream->write_function(stream, "%d message%s<br>", ttl, ttl == 1 ? "" : "s");
+
+    if (profile->web_tail) {
+        stream->raw_write_function(stream, (uint8_t *)profile->web_tail, strlen(profile->web_tail));
+    }
+
+}
+
 SWITCH_STANDARD_API(voicemail_api_function)
 {
     int argc = 0;
@@ -2505,12 +2690,13 @@ SWITCH_STANDARD_API(voicemail_api_function)
         goto error;
     }
 
-
     if (path_info) {
         if (!strncasecmp(path_info, "get/", 4)) {
             do_play(profile, user, domain, path_info + 4, stream);        
         } else if (!strncasecmp(path_info, "del/", 4)) {
             do_del(profile, user, domain, path_info + 4, stream);        
+        } else if (!strncasecmp(path_info, "web", 3)) {
+            do_web(profile, user, domain, host, port, uri, stream);
         }
     }
 
