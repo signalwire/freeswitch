@@ -43,7 +43,7 @@ SWITCH_MODULE_DEFINITION(mod_commands, mod_commands_load, NULL, NULL);
 
 SWITCH_STANDARD_API(find_user_function)
 {
-	switch_xml_t x_domain, x_user, xml = NULL;
+	switch_xml_t x_domain = NULL, x_user = NULL, xml = NULL;
 	int argc;
     char *mydata = NULL, *argv[3];
 	char *key, *user, *domain;
@@ -81,7 +81,7 @@ SWITCH_STANDARD_API(find_user_function)
 
  end:
 
-	if (xml) {
+	if (xml && x_user) {
 		xmlstr = switch_xml_toxml(x_user);
 		assert(xmlstr);
 		if ((xs = strstr(xmlstr, "?>"))) {
