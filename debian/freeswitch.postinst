@@ -21,7 +21,7 @@
 
 case "$1" in
 	configure)
-		if ! getent passwd openfire >/dev/null; then
+		if ! getent passwd freeswitch >/dev/null; then
 			adduser --disabled-password  --quiet --system \
 			--home /opt/freeswitch \
 			--gecos "FreeSwitch Voice Platform" --group daemon
