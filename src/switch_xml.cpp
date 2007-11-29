@@ -1296,7 +1296,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *user_name, 
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
+													   const char *user_name,
 													   const char *domain_name, 
 													   const char *ip, 
 													   switch_xml_t *root,
@@ -1311,10 +1312,10 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *user_name,
 	*domain = NULL;
 	
 	if (!switch_strlen_zero(xtra_params)) {
-		snprintf(params, sizeof(params), "user=%s&domain=%s&ip=%s&%s", 
+		snprintf(params, sizeof(params), "key=%s&user=%s&domain=%s&ip=%s&%s", key,
 				 switch_str_nil(user_name), switch_str_nil(domain_name), switch_str_nil(ip), xtra_params);
 	} else {
-		snprintf(params, sizeof(params), "user=%s&domain=%s&ip=%s", 
+		snprintf(params, sizeof(params), "key=%s&user=%s&domain=%s&ip=%s", key,
 				 switch_str_nil(user_name), switch_str_nil(domain_name), switch_str_nil(ip));
 		xtra_params = "";
 	}
@@ -1336,7 +1337,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *user_name,
 			}
 		}
 
-		if ((*user = switch_xml_find_child(*domain, "user", "id", user_name))) {
+		if ((*user = switch_xml_find_child(*domain, "user", key, user_name))) {
 			return SWITCH_STATUS_SUCCESS;
 		}
 		

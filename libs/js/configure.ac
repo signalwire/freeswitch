@@ -141,6 +141,15 @@ if test ".$ac_cv_with_file" = ".yes"; then
     CPPFLAGS="$CPPFLAGS -DJS_HAS_FILE_OBJECT=1"
 fi
 
+dnl #   configure option --without-xml
+AC_ARG_WITH([xml],
+	AS_HELP_STRING([--without-xml], [build without XML object]),
+	[ac_cv_with_xml=$withval], [ac_cv_with_xml=yes])
+AC_CACHE_CHECK([whether to build with the XML object], [ac_cv_with_xml], [ac_cv_with_xml=yes])
+if test ".$ac_cv_with_xml" = ".yes"; then
+    CPPFLAGS="$CPPFLAGS -DJS_HAS_XML_SUPPORT=1"
+fi
+
 dnl #   configure option --with-dso
 AC_ARG_WITH([dso],
 	AS_HELP_STRING([--with-dso], [build without DSO object (allows run-time process extending)]),

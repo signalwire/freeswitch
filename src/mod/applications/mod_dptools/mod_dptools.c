@@ -109,7 +109,7 @@ SWITCH_STANDARD_APP(set_user_function)
 
 	*domain++ = '\0';
 	
-	if (switch_xml_locate_user(user, domain, NULL, &xml, &x_domain, &x_user, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", user, domain);
 		goto done;
 	}

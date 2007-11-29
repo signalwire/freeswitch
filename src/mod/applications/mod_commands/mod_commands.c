@@ -41,6 +41,66 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load);
 SWITCH_MODULE_DEFINITION(mod_commands, mod_commands_load, NULL, NULL);
 
 
+SWITCH_STANDARD_API(find_user_function)
+{
+	switch_xml_t x_domain, x_user, xml = NULL;
+	int argc;
+    char *mydata = NULL, *argv[3];
+	char *key, *user, *domain;
+	char *xmlstr, *xs;
+
+    if (!cmd) {
+		stream->write_function(stream,  "bad args\n");
+        goto end;
+    }
+
+    mydata = strdup(cmd);
+    assert(mydata);
+	
+    argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+    if (argc < 3) {
+		stream->write_function(stream,  "bad args\n");
+        goto end;
+    }
+
+	key = argv[0];
+	user = argv[1];
+	domain = argv[2];
+
+    if (!(key && user && domain)) {
+		stream->write_function(stream,  "bad args\n");
+        goto end;
+    }
+
+	if (switch_xml_locate_user(key, user, domain, NULL, &xml, &x_domain, &x_user, NULL) != SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream,  "can't find user [%s@%s]\n", user, domain);
+		goto end;
+	}
+
+
+ end:
+
+	if (xml) {
+		xmlstr = switch_xml_toxml(x_user);
+		assert(xmlstr);
+		if ((xs = strstr(xmlstr, "?>"))) {
+			xs += 2;
+		} else {
+			xs = xmlstr;
+		}
+		stream->write_function(stream,  "%s", xs);
+		free(xmlstr);
+		switch_xml_free(xml);
+		
+	}
+
+	free(mydata);
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+
 SWITCH_STANDARD_API(regex_function)
 {
 	switch_regex_t *re = NULL;
@@ -1782,6 +1842,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "qq", "Eval a conditional", cond_function, "<expr> ? <true val> : <false val>");
 	SWITCH_ADD_API(commands_api_interface, "regex", "Eval a regex", regex_function, "<data>|<pattern>[|<subst string>]");
 	SWITCH_ADD_API(commands_api_interface, "uuid_chat", "Send a chat message", uuid_chat, UUID_CHAT_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "find_user_xml", "find a usere", find_user_function, "<key> <user>@<domain>");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;

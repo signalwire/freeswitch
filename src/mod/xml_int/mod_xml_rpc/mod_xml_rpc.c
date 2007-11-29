@@ -172,7 +172,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 					*pass++ = '\0';
 				}
 				
-				if (switch_xml_locate_user(user, domain_name, NULL, &x_domain_root, &x_domain, &x_user, "mailbox=check") != SWITCH_STATUS_SUCCESS) {
+				if (switch_xml_locate_user("id", user, domain_name, NULL, &x_domain_root, &x_domain, &x_user, "mailbox=check") != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", user, domain_name);
 					goto fail;
 				}

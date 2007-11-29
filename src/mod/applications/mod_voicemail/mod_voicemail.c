@@ -1570,7 +1570,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
                     
                     assert(xtra);
 
-                    if (switch_xml_locate_user(myid, domain_name, switch_channel_get_variable(channel, "network_addr"), 
+                    if (switch_xml_locate_user("id", myid, domain_name, switch_channel_get_variable(channel, "network_addr"), 
                                                &x_domain_root, &x_domain, &x_user, xtra) != SWITCH_STATUS_SUCCESS) {
                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", myid, domain_name);
                         ok = 0;
@@ -1753,7 +1753,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
         
         assert(xtra);
         x_user = x_domain = x_domain_root = NULL;
-        if (switch_xml_locate_user(id, domain_name, switch_channel_get_variable(channel, "network_addr"), 
+        if (switch_xml_locate_user("id", id, domain_name, switch_channel_get_variable(channel, "network_addr"), 
                                    &x_domain_root, &x_domain, &x_user, xtra) == SWITCH_STATUS_SUCCESS) {
             if ((x_params = switch_xml_child(x_user, "params"))) {
                 for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {

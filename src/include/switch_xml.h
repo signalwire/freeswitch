@@ -319,7 +319,9 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 												  const char *params);
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name, char *params, switch_xml_t *root, switch_xml_t *domain);
-SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *user_name, const char *domain_name, 
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
+													   const char *user_name, 
+													   const char *domain_name, 
 													   const char *ip, 
 													   switch_xml_t *root,
 													   switch_xml_t *domain,
