@@ -166,6 +166,12 @@ install-data-local:
 		test -d $(DESTDIR)$(PREFIX)/$$dir || $(mkinstalldirs) $(DESTDIR)$(prefix)/$$dir ; \
 		test -f $(DESTDIR)$(PREFIX)/$$dir/$$filename || $(INSTALL) $$dir/$$filename $(DESTDIR)$(PREFIX)/$$dir; \
 	done ; 
+	for htdocsfile in `find htdocs -name \* | grep -v .svn` ; do \
+		dir=`echo $$htdocsfile | sed -e 's|/[^/]*$$||'`; \
+		filename=`echo $$htdocsfile | sed -e 's|^.*/||'`; \
+		test -d $(DESTDIR)$(PREFIX)/$$dir || $(mkinstalldirs) $(DESTDIR)$(prefix)/$$dir ; \
+		test -f $(DESTDIR)$(PREFIX)/$$dir/$$filename || $(INSTALL) $$dir/$$filename $(DESTDIR)$(PREFIX)/$$dir; \
+	done ; 
 
 .version:
 	touch .version
