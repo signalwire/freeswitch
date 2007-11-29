@@ -203,7 +203,7 @@ static JSBool socket_read(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 		switch_status_t ret = SWITCH_STATUS_FALSE;
 		switch_size_t len = 1;
 		switch_size_t total_length = 0;
-		BOOL can_run = TRUE;
+		int can_run = TRUE;
 		char tempbuf[2];
 
 		if (argc == 1)
