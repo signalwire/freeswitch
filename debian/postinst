@@ -1,2 +1,0 @@
-#!/bin/bash
-chown -R freeswitch:daemon /opt/freeswitch

@@ -2,12 +2,12 @@ Source: freeswitch
 Maintainer: Michael Jerris <mike@jerris.com>
 Section: net
 Priority: extra
-Build-Depends: debhelper (>= 5), automake1.9, autoconf, libtool, unixodbc-dev, libasound2-dev, libcurl3-dev, libssl-dev 
+Build-Depends: debhelper (>= 5), automake1.9, autoconf, libtool, unixodbc-dev, libasound2-dev, libcurl3-dev, libssl-dev, ncurses-dev
 Standards-Version: 3.7.2
 
 Package: freeswitch
 Architecture: any
-Depends: ${shlibs:Depends}, unixodbc, libasound2, libcurl3, openssl
+Depends: ${shlibs:Depends}, unixodbc, libasound2, libcurl3, openssl, libncurses5
 Suggests: monit
 Description: A telephony platform that really kicks some ass...
  FreeSWITCH is an open source telephony platform designed to facilitate the
