@@ -115,8 +115,6 @@ typedef struct sm_loadable_module sm_loadable_module_t;
 
 typedef enum {
 	S_HUP = (1 << 0),
-	S_FREE = (1 << 1),
-	S_RDLOCK = (1 << 2)
 } session_flag_t;
 
 struct input_callback_state {
@@ -2545,19 +2543,29 @@ JSClass session_class = {
 };
 
 
-static JSObject *new_js_session(JSContext * cx, JSObject * obj, switch_core_session_t *session, struct js_session *jss, char *name, int flags)
+static JSObject *new_js_session(JSContext * cx, JSObject * obj, switch_core_session_t *session, struct js_session **jss, char *name, int flags)
 {
 	JSObject *session_obj;
 	if ((session_obj = JS_DefineObject(cx, obj, name, &session_class, NULL, 0))) {
-		memset(jss, 0, sizeof(struct js_session));
-		jss->session = session;
-		jss->flags = flags;
-		jss->cx = cx;
-		jss->obj = session_obj;
-		jss->stack_depth = 0;
-		if ((JS_SetPrivate(cx, session_obj, jss) &&
+		*jss = malloc(sizeof(**jss));
+		assert(*jss);
+		memset(*jss, 0, sizeof(**jss));
+		
+		(*jss)->session = session;
+		(*jss)->flags = flags;
+		(*jss)->cx = cx;
+		(*jss)->obj = session_obj;
+		(*jss)->stack_depth = 0;
+		if ((JS_SetPrivate(cx, session_obj, *jss) &&
 			 JS_DefineProperties(cx, session_obj, session_props) && JS_DefineFunctions(cx, session_obj, session_methods))) {
+			if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Failure.\n");
+				free(*jss);
+				return NULL;
+			}
 			return session_obj;
+		} else {
+			free(*jss);
 		}
 	}
 
@@ -2576,8 +2584,6 @@ static JSBool session_construct(JSContext * cx, JSObject * obj, uintN argc, jsva
 	memset(jss, 0, sizeof(*jss));
 	jss->cx = cx;
 	jss->obj = obj;
-	switch_set_flag(jss, S_FREE);
-
 	JS_SetPrivate(cx, obj, jss);
 
 	return JS_TRUE;
@@ -2708,8 +2714,6 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		}
 
 		jss->session = peer_session;
-		jss->flags = S_RDLOCK;
-
 		*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
 
 	} else {
@@ -2720,29 +2724,26 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 	return JS_TRUE;
 }
 
-
-
-
 static void session_destroy(JSContext * cx, JSObject * obj)
 {
 	struct js_session *jss;
-	switch_channel_t *channel = NULL;
-
+	
 	if (cx && obj) {
 		if ((jss = JS_GetPrivate(cx, obj))) {
-			destroy_speech_engine(jss);
+			JS_SetPrivate(cx, obj, NULL);
+			if (jss->speech && *jss->speech->sh.name) {
+				destroy_speech_engine(jss);
+			}
 			
 			if (jss->session) {
-				channel = switch_core_session_get_channel(jss->session);
+				switch_core_session_t *session = jss->session;
+				switch_channel_t *channel = switch_core_session_get_channel(session);
+				
 				switch_channel_set_private(channel, "jss", NULL);
-				switch_core_event_hook_remove_state_change(jss->session, hanguphook);
+				switch_core_event_hook_remove_state_change(session, hanguphook);
 
 				if (switch_test_flag(jss, S_HUP)) {
 					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-				}
-
-				if (switch_test_flag(jss, S_RDLOCK)) {
-					switch_core_session_rwunlock(jss->session);
 				}
 
 				switch_safe_free(jss->dialplan);
@@ -2755,11 +2756,11 @@ static void session_destroy(JSContext * cx, JSObject * obj)
 				switch_safe_free(jss->rdnis);
 				switch_safe_free(jss->destination_number);
 				switch_safe_free(jss->context);
+				switch_core_session_rwunlock(session);
 			}
 
-			if (switch_test_flag(jss, S_FREE)) {
-				free(jss);
-			}
+			free(jss);
+			
 		}
 	}
 
@@ -3253,7 +3254,7 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 	const char *script;
 	int argc = 0, x = 0, y = 0;
 	unsigned int flags = 0;
-	struct js_session jss;
+	struct js_session *jss;
 	JSContext *cx = NULL;
 	jsval rval;
 
@@ -3266,9 +3267,7 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 		JS_SetGlobalObject(cx, javascript_global_object);
 
 		/* Emaculent conception of session object into the script if one is available */
-		if (session && new_js_session(cx, javascript_global_object, session, &jss, "session", flags)) {
-			JS_SetPrivate(cx, javascript_global_object, session);
-		} else {
+		if (!(session && new_js_session(cx, javascript_global_object, session, &jss, "session", flags))) {
 			snprintf(buf, sizeof(buf), "~var session = false;");
 			eval_some_js(buf, cx, javascript_global_object, &rval);
 		}
