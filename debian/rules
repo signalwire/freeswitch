@@ -3,7 +3,7 @@
 # This file is public domain software, originally written by Joey Hess. 
 
 # Uncomment this to turn on verbose mode.
-#export DH_VERBOSE=1
+export DH_VERBOSE=1
 
 export MODULES ?= mod_console mod_syslog mod_commands mod_conference mod_dptools mod_enum mod_fifo mod_openmrcp mod_amr mod_g711 mod_g722 mod_g723_1 mod_g726 mod_g729 mod_gsm mod_ilbc mod_l16 mod_speex mod_dialplan_directory mod_dialplan_xml mod_dialplan_asterisk mod_dingaling mod_iax mod_portaudio mod_sofia mod_woomera mod_openzap mod_event_multicast mod_event_socket mod_native_file mod_sndfile mod_local_stream mod_spidermonkey mod_spidermonkey_teletone mod_spidermonkey_core_db mod_spidermonkey_odbc mod_xml_rpc mod_xml_curl mod_xml_cdr mod_say_en mod_say_fr mod_say_de
 ifndef AUTOCONF
@@ -67,7 +67,7 @@ install: build
 	dh_clean -k 
 	dh_installdirs
 
-	$(MAKE) DESTDIR=$(CURDIR)/debian/freeswitch install
+	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
 
 
 # Build architecture-independent files here.
@@ -94,10 +94,11 @@ binary-arch: build install
 #	dh_installinfo
 #	dh_undocumented
 #	dh_installman
-	dh_install debian/freeswitch.monitrc etc/monit
-	dh_install debian/default/freeswitch etc/default
-	dh_install debian/freeswitch.1 opt/man
-	dh_link opt/freeswitch/conf etc/opt/freeswitch
+	dh_install --sourcedir=debian/tmp --autodest debian/monit/freeswitch.monitrc
+	dh_install --sourcedir=debian/tmp --autodest debian/default/freeswitch
+	dh_install --sourcedir=/debian/tmp --autodest debian/man/man1/freeswitch.1
+	dh_link --sourcedir=debian/tmp opt/freeswitch/conf etc/opt/freeswitch
+	dh_install --sourcedir=debian/tmp
 	dh_strip
 	dh_compress
 	dh_fixperms --exclude /opt/freeswitch/conf

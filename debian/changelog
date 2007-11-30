@@ -1,4 +1,4 @@
-freeswitch (1.0~beta2-2) unstable; urgency=low
+freeswitch (1.0~beta3-1) unstable; urgency=low
 
   * Additional scripts for changing the user to freeswitch
     Added Startup Scripts
@@ -7,6 +7,9 @@ freeswitch (1.0~beta2-2) unstable; urgency=low
     init.d file
     added user freeswitch to own and run all off freeswitch
     cleaned up config file control
+    new upstream release
+    split off codec pakcages
+    split off spidermonkey packages
 
  -- Michal Bielicki <michal.bielicki@voiceworks.pl>  Tue, 27 Nov 2007 13:20:21 +0100
 

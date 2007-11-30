@@ -1,0 +1,5 @@
+opt/freeswitch/mod/mod_spidermonkey*so*
+opt/freeswitch/lib/libnspr4.so*
+opt/freeswitch/lib/libjs.so*
+opt/freeswitch/lib/libplds4.so*
+opt/freeswitch/lib/libplc4.so*

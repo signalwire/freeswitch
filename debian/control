@@ -7,7 +7,7 @@ Standards-Version: 3.7.2
 
 Package: freeswitch
 Architecture: any
-Depends: ${shlibs:Depends}, unixodbc, libasound2, libcurl3, openssl, libncurses5
+Depends: ${shlibs:Depends}, ${misc:Depends}, unixodbc, libasound2, libcurl3, openssl, libncurses5
 Suggests: monit
 Description: A telephony platform that really kicks some ass...
  FreeSWITCH is an open source telephony platform designed to facilitate the
@@ -16,4 +16,34 @@ Description: A telephony platform that really kicks some ass...
  or a media server to host IVR applications using simple scripts or XML to
  control the callflow.
  .
- Homepage: http://some-project.some-place.org/
+Homepage: http://www.freeswitch.org/
+
+Package: freeswitch-spidermonkey
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: A Javascript engine for freeswitch
+Homepage: http://www.freeswitch.org/
+
+Package: freeswitch-dev
+Architecture: any
+Depends: ${shlibs:Depends} freswitch
+Description: Development Package for the FreeSwitch open source telephony platform
+Homepage: http://www.freeswitch.org/
+
+Package: freeswitch-codec-passthru-g723_1
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: Pass through g723.1 Codec support for the FreeSWITCH open source telephony platform
+Homepage: http://www.freeswitch.org/
+
+Package: freeswitch-codec-passthru-amr
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: Pass through AMR Codec support for the FreeSWITCH open source telephony platform
+Homepage: http://www.freeswitch.org/
+
+Package: freeswitch-codec-passthru-g729
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: Pass through g729 Codec support for the FreeSWITCH open source telephony platform
+Homepage: http://www.freeswitch.org/

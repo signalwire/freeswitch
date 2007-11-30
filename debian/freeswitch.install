@@ -1,0 +1,36 @@
+opt/freeswitch/htdocs/*
+opt/freeswitch/bin/freeswitch
+opt/freeswitch/lib/libfreeswitch*.so*
+etc/init.d/freeswitch
+etc/monit/freeswitch.monitrc
+etc/default/freeswitch
+opt/freeswitch/man/man1/freeswitch.1
+opt/freeswitch/mod/mod_console.so*
+opt/freeswitch/mod/mod_syslog.so*
+opt/freeswitch/mod/mod_commands.so*
+opt/freeswitch/mod/mod_conference.so*
+opt/freeswitch/mod/mod_dptools.so*
+opt/freeswitch/mod/mod_enum.so*
+opt/freeswitch/mod/mod_fifo.so*
+opt/freeswitch/mod/mod_openmrcp.so*
+# Codecs
+opt/freeswitch/mod/mod_g711.so*
+opt/freeswitch/mod/mod_g722.so*
+opt/freeswitch/mod/mod_g726.so*
+opt/freeswutch/mod/mod_speex.so*
+# Dialplan
+opt/freeswitch/mod/mod_dialplan*.so*
+# Endpoints
+opt/freeswitch/mod/mod_dingaling.so*
+opt/freeswitch/mod/mod_iax.so*
+opt/freeswitch/mod/mod_portaudio.so*
+opt/freeswitch/mod/mod_sofia.so*
+opt/freeswitch/mod/mod_woomera.so*
+opt/freeswitch/mod/mod_openzap.so
+# event engines
+opt/freeswitch/mod/mod_event_*.so*
+opt/freeswitch/mod/mod_native_file.so*
+opt/freeswitch/mod/mod_sndfile.so*
+opt/freeswitch/mod/mod_local_stream.so*
+opt/freeswitch/mod/mod_xml_*.so*
+opt/freeswitch/mod/mod_say_*.so*
