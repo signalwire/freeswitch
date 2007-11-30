@@ -237,7 +237,7 @@ static JSBool request_dump_env(JSContext *cx, JSObject *obj, uintN argc, jsval *
 		switch_xml_t xml;
 		char *xmlstr;
 		if ((xml = switch_event_xmlize(ro->stream->event, SWITCH_VA_NONE))) {
-            xmlstr = switch_xml_toxml(xml);
+            xmlstr = switch_xml_toxml(xml, SWITCH_FALSE);
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, xmlstr));
 			return JS_TRUE;
         } 
@@ -646,7 +646,7 @@ static JSBool event_serialize(JSContext * cx, JSObject * obj, uintN argc, jsval 
 		switch_xml_t xml;
 		char *xmlstr;
 		if ((xml = switch_event_xmlize(eo->event, SWITCH_VA_NONE))) {
-			xmlstr = switch_xml_toxml(xml);
+			xmlstr = switch_xml_toxml(xml, SWITCH_FALSE);
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, xmlstr));
 			switch_xml_free(xml);
 			free(xmlstr);
@@ -1898,7 +1898,7 @@ static JSBool session_cdr(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 
 	if (switch_ivr_generate_xml_cdr(jss->session, &cdr) == SWITCH_STATUS_SUCCESS) {
 		char *xml_text;
-		if ((xml_text = switch_xml_toxml(cdr))) {
+		if ((xml_text = switch_xml_toxml(cdr, SWITCH_FALSE))) {
 			*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, xml_text));
 		}
 		switch_safe_free(xml_text);

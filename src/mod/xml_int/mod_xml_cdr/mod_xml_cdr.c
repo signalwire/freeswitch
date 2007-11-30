@@ -76,7 +76,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 
 	if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
 		/* build the XML */
-		if (!(xml_text = switch_xml_toxml(cdr))) {
+		if (!(xml_text = switch_xml_toxml(cdr, SWITCH_TRUE))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 			goto error;
 		}

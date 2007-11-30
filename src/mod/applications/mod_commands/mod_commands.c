@@ -47,7 +47,7 @@ SWITCH_STANDARD_API(find_user_function)
 	int argc;
     char *mydata = NULL, *argv[3];
 	char *key, *user, *domain;
-	char *xmlstr, *xs;
+	char *xmlstr;
 
     if (!cmd) {
 		stream->write_function(stream,  "bad args\n");
@@ -82,14 +82,10 @@ SWITCH_STANDARD_API(find_user_function)
  end:
 
 	if (xml && x_user) {
-		xmlstr = switch_xml_toxml(x_user);
+		xmlstr = switch_xml_toxml(x_user, SWITCH_FALSE);
 		assert(xmlstr);
-		if ((xs = strstr(xmlstr, "?>"))) {
-			xs += 2;
-		} else {
-			xs = xmlstr;
-		}
-		stream->write_function(stream,  "%s", xs);
+
+		stream->write_function(stream,  "%s", xmlstr);
 		free(xmlstr);
 		switch_xml_free(xml);
 		
@@ -1607,7 +1603,7 @@ SWITCH_STANDARD_API(show_function)
 			snprintf(count, sizeof(count), "%d", holder.count);
 
 			switch_xml_set_attr(switch_xml_set_flag(holder.xml, SWITCH_XML_DUP), strdup("row_count"), strdup(count));
-			xmlstr = switch_xml_toxml(holder.xml);
+			xmlstr = switch_xml_toxml(holder.xml, SWITCH_FALSE);
 
 			if (xmlstr) {
 				holder.stream->write_function(holder.stream, "%s", xmlstr);

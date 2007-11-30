@@ -527,7 +527,7 @@ SWITCH_STANDARD_API(fifo_api_function)
                 switch_mutex_unlock(node->mutex);
             }
         }
-        xml_text = switch_xml_toxml(x_report);
+        xml_text = switch_xml_toxml(x_report, SWITCH_FALSE);
         assert(xml_text);
         stream->write_function(stream, "%s\n", xml_text);
         switch_xml_free(x_report);

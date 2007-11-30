@@ -731,7 +731,7 @@ static void dl_logger(char *file, const char *func, int line, int level, char *f
 					*xmltxt++ = '\0';
 					if (strlen(xmltxt) > 2) {
 						xml = switch_xml_parse_str(xmltxt, strlen(xmltxt));
-						form = switch_xml_toxml(xml);
+						form = switch_xml_toxml(xml, SWITCH_FALSE);
 						switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, level,
 										  "%s:\n-------------------------------------------------------------------------------\n"
 										  "%s\n", ll, form);
@@ -2301,7 +2301,7 @@ static void do_vcard(ldl_handle_t *handle, char *to, char *from, char *id)
 
 	switch_xml_set_attr(vcard, "xmlns", "vcard-tmp");
 
-	if ((xmlstr = switch_xml_toxml(vcard))) {
+	if ((xmlstr = switch_xml_toxml(vcard, SWITCH_FALSE))) {
 		ldl_handle_send_vcard(handle, to, from, id, xmlstr);
 		sent = 1;
 	} else {

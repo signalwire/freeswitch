@@ -2595,7 +2595,7 @@ static void do_rss(vm_profile_t *profile, char *user, char *domain, char *host, 
     sql = switch_mprintf("select * from voicemail_data where user='%s' and domain='%s' order by read_flags", user, domain);
     vm_execute_sql_callback(profile, profile->mutex, sql, rss_callback, &holder);
 
-    xmlstr = switch_xml_toxml(holder.xml);
+    xmlstr = switch_xml_toxml(holder.xml, SWITCH_TRUE);
 
     stream->write_function(stream, "%s", xmlstr);
 

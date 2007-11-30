@@ -1595,16 +1595,16 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 	}
 }
 
-SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml)
+SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml, switch_bool_t prn_header)
 {
 	char *s;
 	s = (char *)malloc(SWITCH_XML_BUFSIZE);
-	return switch_xml_toxml_buf(xml, s, SWITCH_XML_BUFSIZE, 0);
+	return switch_xml_toxml_buf(xml, s, SWITCH_XML_BUFSIZE, 0, prn_header);
 }
 
 // converts an switch_xml structure back to xml, returning a string of xml date that
 // must be freed
-SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_size_t buflen, switch_size_t offset)
+SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_size_t buflen, switch_size_t offset, switch_bool_t prn_header)
 {
 	switch_xml_t p = (xml) ? xml->parent : NULL, o = (xml) ? xml->ordered : NULL;
 	switch_xml_root_t root = (switch_xml_root_t) xml;
@@ -1617,8 +1617,9 @@ SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_
 	assert(s != NULL);
 	memset(s, 0, max);
 	len += offset;
-	len += sprintf(s + len, "<?xml version=\"1.0\"?>\n");
-
+	if (prn_header) {
+		len += sprintf(s + len, "<?xml version=\"1.0\"?>\n");
+	}
 	
 	if (!xml || !xml->name) {
 		if (!(r = (char *)realloc(s, len + 1))) {

@@ -471,7 +471,7 @@ static switch_status_t read_packet(listener_t * listener, switch_event_t **event
 						etype = "xml";
 
 						if ((xml = switch_event_xmlize(event, "%s", ""))) {
-							listener->ebuf = switch_xml_toxml(xml);
+							listener->ebuf = switch_xml_toxml(xml, SWITCH_FALSE);
 							switch_xml_free(xml);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "XML ERROR!\n");
