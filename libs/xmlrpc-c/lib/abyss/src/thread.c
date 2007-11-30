@@ -41,7 +41,7 @@
 #include "xmlrpc_config.h"
 
 /* 16K is the minimum size of stack on Win32 */
-#define  THREAD_STACK_SIZE    (16*1024)
+#define  THREAD_STACK_SIZE    (240*1024)
 
 /*********************************************************************
 ** Thread

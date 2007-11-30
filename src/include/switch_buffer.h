@@ -70,6 +70,11 @@ SWITCH_DECLARE(switch_status_t) switch_buffer_create(switch_memory_pool_t *pool,
 SWITCH_DECLARE(switch_status_t) switch_buffer_create_dynamic(switch_buffer_t **buffer, switch_size_t blocksize, switch_size_t start_len,
 															 switch_size_t max_len);
 
+SWITCH_DECLARE(void) switch_buffer_add_mutex(switch_buffer_t *buffer, switch_mutex_t *mutex);
+SWITCH_DECLARE(void) switch_buffer_lock(switch_buffer_t *buffer);
+SWITCH_DECLARE(switch_status_t) switch_buffer_trylock(switch_buffer_t *buffer);
+SWITCH_DECLARE(void) switch_buffer_unlock(switch_buffer_t *buffer);
+
 /*! \brief Get the length of a switch_buffer_t 
  * \param buffer any buffer of type switch_buffer_t
  * \return int size of the buffer.
@@ -136,6 +141,8 @@ SWITCH_DECLARE(void) switch_buffer_zero(switch_buffer_t *buffer);
  * \note only neccessary on dynamic buffers (noop on pooled ones)
  */
 SWITCH_DECLARE(void) switch_buffer_destroy(switch_buffer_t **buffer);
+
+SWITCH_DECLARE(switch_size_t) switch_buffer_zwrite(switch_buffer_t *buffer, const void *data, switch_size_t datalen);
 
 /** @} */
 

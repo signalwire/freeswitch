@@ -150,7 +150,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		goto done;
 	}
 
-	if ((*frame)->codec->implementation->actual_samples_per_second != session->write_codec->implementation->actual_samples_per_second) {
+	if ((*frame)->codec->implementation->actual_samples_per_second != session->read_codec->implementation->actual_samples_per_second) {
 		do_resample = 1;
 	}
 
@@ -246,7 +246,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 						}
 					}
 					switch_mutex_unlock(bp->read_mutex);
-				} else if (switch_test_flag(bp, SMBF_READ_REPLACE)) {
+				} 
+
+				if (switch_test_flag(bp, SMBF_READ_REPLACE)) {
 					do_bugs = 0;
 					if (bp->callback) {
 						bp->read_replace_frame_in = read_frame;
@@ -432,7 +434,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		need_codec = 1;
 	}
 
-	if (frame->codec->implementation->actual_samples_per_second != session->read_codec->implementation->actual_samples_per_second) {
+	if (frame->codec->implementation->actual_samples_per_second != session->write_codec->implementation->actual_samples_per_second) {
 		need_codec = 1;
 		do_resample = 1;
 	}
@@ -489,6 +491,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				return status;
 			}
 		}
+
 		if (session->write_resampler) {
 			short *data = write_frame->data;
 
@@ -509,6 +512,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			write_frame->rate = session->write_resampler->to_rate;
 		}
 
+		if (do_bugs) {
+			do_write = 1;
+			write_frame = frame;
+			goto done;
+		}
+
 		if (session->bugs) {
 			switch_media_bug_t *bp, *dp, *last = NULL;
 
@@ -525,7 +534,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					if (bp->callback) {
 						ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_WRITE);
 					}
-				} else if (switch_test_flag(bp, SMBF_WRITE_REPLACE)) {
+				} 
+
+				if (switch_test_flag(bp, SMBF_WRITE_REPLACE)) {
 					do_bugs = 0;
 					if (bp->callback) {
 						bp->write_replace_frame_in = write_frame;
@@ -559,12 +570,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				last = bp;
 			}
 			switch_thread_rwlock_unlock(session->bug_rwlock);
-		}
-
-		if (do_bugs) {
-			do_write = 1;
-			write_frame = frame;
-			goto done;
 		}
 
 		if (session->write_codec) {

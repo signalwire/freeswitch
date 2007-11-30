@@ -2660,6 +2660,10 @@ SWITCH_STANDARD_API(voicemail_api_function)
     char *path_info = NULL;
     int rss = 0, xarg = 0;
     
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
     if (stream->event) {
         host = switch_event_get_header(stream->event, "http-host");
         port = switch_event_get_header(stream->event, "http-port");

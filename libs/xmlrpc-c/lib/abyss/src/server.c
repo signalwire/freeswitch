@@ -770,8 +770,8 @@ ServerRunThreaded(TServer *srv)
         c[i].inUse = FALSE;
 
     s=srv->listensock;
-
-    while( 1 )
+	srv->running = 1;
+    while( srv->running )
     {
         /* collect all threads resources for closed connections */
         for (i=0;i<MAX_CONN;i++)

@@ -130,6 +130,12 @@ SWITCH_BEGIN_EXTERN_C
 typedef uint8_t switch_byte_t;
 
 typedef enum {
+	ED_MUX_READ = (1 << 0),
+	ED_MUX_WRITE = (1 << 1),
+	ED_DTMF = (1 << 2)
+} switch_eavesdrop_flag_t;
+
+typedef enum {
 	SCF_NONE = 0,
 	SCF_USE_SQL = ( 1 << 0),
 	SCF_NO_NEW_SESSIONS = (1 << 1),

@@ -55,6 +55,7 @@ static struct {
 	char *realm;
 	char *user;
 	char *pass;
+	TServer abyssServer;
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_realm, globals.realm);
@@ -353,7 +354,7 @@ abyss_bool auth_hook(TSession * r)
 abyss_bool handler_hook(TSession * r)
 {
 	//char *mime = "text/html";
-	char buf[512] = "HTTP/1.1 200 OK\n";
+	char buf[80] = "HTTP/1.1 200 OK\n";
 	switch_stream_handle_t stream = { 0 };
 	char *command;
 	int i, j = 0;
@@ -542,6 +543,9 @@ abyss_bool handler_hook(TSession * r)
 
 	HTTPWrite(r, buf, (uint32_t) strlen(buf));
 
+	//HTTPWrite(r, "<pre>\n\n", 7);
+
+
 	/* generation of the date field */
 	if (DateToString(&r->date, buf)) {
 		ResponseAddField(r,"Date", buf);
@@ -559,14 +563,21 @@ abyss_bool handler_hook(TSession * r)
 	}
 
 	
+	snprintf(buf, sizeof(buf), "Connection: close\r\n");
+	ConnWrite(r->conn, buf, (uint32_t) strlen(buf));
+	
+
 	if (switch_api_execute(command, r->query, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
+		ResponseStatus(r, 200);
 		r->done = TRUE;
 	} else {
 		ResponseStatus(r, 404);
 		ResponseError(r);
 	} 
 	
-	//HTTPWriteEnd(r);
+	SocketClose(&(r->conn->socket));
+	HTTPWriteEnd(r);
+	ConnClose(r->conn);
 
  end:
 
@@ -661,7 +672,7 @@ static xmlrpc_value *freeswitch_man(xmlrpc_env * const envP, xmlrpc_value * cons
 
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 {
-	TServer abyssServer;
+
 	xmlrpc_registry *registryP;
 	xmlrpc_env env;
 	char logfile[512];
@@ -690,22 +701,23 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 	}
 
 	snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "freeswitch_http.log");
-	ServerCreate(&abyssServer, "XmlRpcServer", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir, logfile);
+	ServerCreate(&globals.abyssServer, "XmlRpcServer", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir, logfile);
 
-	xmlrpc_server_abyss_set_handler(&env, &abyssServer, "/RPC2", registryP);
+	xmlrpc_server_abyss_set_handler(&env, &globals.abyssServer, "/RPC2", registryP);
 
-	if (ServerInit(&abyssServer) != TRUE) {
+	if (ServerInit(&globals.abyssServer) != TRUE) {
 		globals.running = 0;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to start HTTP Port %d\n", globals.port);
 		return SWITCH_STATUS_TERM;
 	}
 
 
-	ServerAddHandler(&abyssServer, handler_hook);
-	ServerAddHandler(&abyssServer, auth_hook);
+	ServerAddHandler(&globals.abyssServer, handler_hook);
+	ServerAddHandler(&globals.abyssServer, auth_hook);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Starting HTTP Port %d, DocRoot [%s]\n", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir);
 	while (globals.running) {
-		ServerRunOnce2(&abyssServer, ABYSS_FOREGROUND);
+		//ServerRunOnce2(&globals.abyssServer, ABYSS_FOREGROUND);
+		ServerRun(&globals.abyssServer);
 	}
 
 
@@ -716,7 +728,9 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown)
 {
+	globals.abyssServer.running = 0;
 	globals.running = 0;
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 

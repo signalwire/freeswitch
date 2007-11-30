@@ -215,6 +215,27 @@ SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples
 	}
 }
 
+SWITCH_DECLARE(uint32_t) switch_merge_sln(int16_t *data, uint32_t samples, int16_t *other_data, uint32_t other_samples)
+{
+	int i;
+	int32_t x, z;
+
+	if (samples > other_samples) {
+		x = other_samples;
+	} else {
+		x = samples;
+	}
+
+	for(i = 0; i < x; i++) {
+		z = data[i] + other_data[i];
+		switch_normalize_to_16bit(z);
+		data[i] = (int16_t) z;
+	}
+
+	return x;
+
+}
+
 
 SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, int32_t vol)
 {

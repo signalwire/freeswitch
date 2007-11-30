@@ -130,7 +130,8 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 
 	while (switch_channel_get_state(session->channel) == CS_EXECUTE && extension->current_application) {
 		char *expanded = NULL;
-
+		int nomedia = 0;
+		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Execute %s(%s)\n",
 						  extension->current_application->application_name, switch_str_nil(extension->current_application->application_data));
 		if ((application_interface = switch_loadable_module_get_application_interface(extension->current_application->application_name)) == 0) {
@@ -138,18 +139,18 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 			switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			return;
 		}
-
-		if (switch_channel_test_flag(session->channel, CF_BYPASS_MEDIA) && !switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Application %s Cannot be used with NO_MEDIA mode!\n",
-							  extension->current_application->application_name);
-			switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			return;
-		}
-
+		
 		if (!application_interface->application_function) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Function for %s\n", extension->current_application->application_name);
 			switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			return;
+		}
+		
+		if (switch_channel_test_flag(session->channel, CF_BYPASS_MEDIA) && !switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA)) {
+			switch_ivr_media(session->uuid_str, SMF_NONE);
+			nomedia++;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Application %s Requires media!\n",
+							  extension->current_application->application_name);
 		}
 
 		if ((expanded =
@@ -175,6 +176,12 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 
 		if (switch_channel_test_flag(session->channel, CF_RESET)) {
 			goto top;
+		}
+
+		if (nomedia) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Application %s Releasing media\n",
+							  extension->current_application->application_name);
+			switch_ivr_nomedia(session->uuid_str, SMF_NONE);
 		}
 
 		extension->current_application = extension->current_application->next;

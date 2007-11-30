@@ -46,6 +46,7 @@ struct switch_buffer {
 	switch_size_t datalen;
 	switch_size_t max_len;
 	switch_size_t blocksize;
+	switch_mutex_t *mutex;
 	uint32_t flags;
 	uint32_t id;
 	int32_t loops;
@@ -93,6 +94,33 @@ SWITCH_DECLARE(switch_status_t) switch_buffer_create_dynamic(switch_buffer_t **b
 	}
 
 	return SWITCH_STATUS_MEMERR;
+}
+
+SWITCH_DECLARE(void) switch_buffer_add_mutex(switch_buffer_t *buffer, switch_mutex_t *mutex)
+{
+	buffer->mutex = mutex;
+}
+
+SWITCH_DECLARE(void) switch_buffer_lock(switch_buffer_t *buffer)
+{
+	if (buffer->mutex) {
+		switch_mutex_lock(buffer->mutex);
+	}
+}
+
+SWITCH_DECLARE(switch_status_t) switch_buffer_trylock(switch_buffer_t *buffer)
+{
+	if (buffer->mutex) {
+		return switch_mutex_lock(buffer->mutex);
+	}
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(void) switch_buffer_unlock(switch_buffer_t *buffer)
+{
+	if (buffer->mutex) {
+		switch_mutex_unlock(buffer->mutex);
+	}
 }
 
 SWITCH_DECLARE(switch_size_t) switch_buffer_len(switch_buffer_t *buffer)
@@ -224,7 +252,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, const
 	   }
 	 */
 	if (switch_test_flag(buffer, SWITCH_BUFFER_FLAG_DYNAMIC)) {
-		if (freespace < datalen) {
+		if (freespace < datalen && (!buffer->max_len || (buffer->datalen + datalen <= buffer->max_len))) {
 			switch_size_t new_size, new_block_size;
 
 			new_size = buffer->datalen + datalen;
@@ -264,6 +292,18 @@ SWITCH_DECLARE(void) switch_buffer_zero(switch_buffer_t *buffer)
 	buffer->used = 0;
 	buffer->actually_used = 0;
 	buffer->head = buffer->data;
+}
+
+SWITCH_DECLARE(switch_size_t) switch_buffer_zwrite(switch_buffer_t *buffer, const void *data, switch_size_t datalen)
+{
+	switch_size_t w;
+	
+	if (!(w = switch_buffer_write(buffer, data, datalen))) {
+		switch_buffer_zero(buffer);
+		return switch_buffer_write(buffer, data, datalen);
+	}
+
+	return w;
 }
 
 SWITCH_DECLARE(void) switch_buffer_destroy(switch_buffer_t **buffer)

@@ -48,7 +48,7 @@ extern "C" {
 ** Maximum numer of simultaneous connections
 *********************************************************************/
 
-#define MAX_CONN    16
+#define MAX_CONN    4000
 
 /*********************************************************************
 ** Server Info Definitions
@@ -443,6 +443,7 @@ typedef struct _TServer
     TList defaultfilenames;
     void *defaulthandler;
     abyss_bool advertise;
+	int running;
 #ifndef _WIN32
     uid_t uid;
     gid_t gid;
