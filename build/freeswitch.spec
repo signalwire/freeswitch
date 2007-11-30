@@ -1,35 +1,36 @@
-Name:         freeswitch-snapshot
+Name:         freeswitch
 Summary:      FreeSWITCH open source telephony platform
 License:      MPL
 Group:        Productivity/Telephony/Servers
-Version:      6382
-Release:      0
+Version:      1.0.beta3
+Release:      1
 URL:          http://www.freeswitch.org/
-Packager:     Peter Nixon
-Vendor:       http://peternixon.net/
+Packager:     Michal Bielicki
+Vendor:       http://www.voiceworks.pl/
 Source0:      %{name}-%{version}.tar.bz2
-Source1:      modules.conf
 
 #AutoReqProv:  no
 
+%if 0%{?suse_version} > 100
 BuildRequires: alsa-devel
+#BuildRequires: openldap2-devel
+BuildRequires: lzo-devel
+%else
+BuildRequires: alsa-lib-devel
+BuildRequires: openldap-devel
+%endif
 BuildRequires: autoconf
 BuildRequires: automake
 BuildRequires: curl-devel
 BuildRequires: gcc-c++
 BuildRequires: gnutls-devel
 BuildRequires: libtool >= 1.5.14
-BuildRequires: lzo-devel
-BuildRequires: freeradius-client-snapshot-devel
-BuildRequires: mysql-devel
 BuildRequires: ncurses-devel
-BuildRequires: openldap2-devel
 BuildRequires: openssl-devel
 BuildRequires: perl
 BuildRequires: pkgconfig
-BuildRequires: python-devel
 BuildRequires: termcap
-#BuildRequires: unixODBC-devel
+BuildRequires: unixODBC-devel
 
 %if %{?suse_version:1}0
 %if 0%{?suse_version} > 910
@@ -60,7 +61,10 @@ FreeSWITCH runs on several operating systems including Windows, Max OS X, Linux,
 
 Our developers are heavily involved in open source and have donated code and other resources to other telephony projects including sipX, Asterisk and OpenPBX.
 
+%if 0%{?suse_version} > 100
 %debug_package
+%endif
+
 %package devel
 Summary:        Development package for FreeSWITCH open source telephony platform
 Group:          System/Libraries
@@ -96,34 +100,65 @@ Conflicts:	codec-g729
 %description codec-passthru-g729
 Pass-through g729 Codec support for FreeSWITCH open source telephony platform
 
+%package spidermonkey
+Summary:	JavaScript support for the FreeSWITCH open source telephony platform
+Group:		System/Libraries
+Requires:	 %{name} = %{version}-%{release}
+
+%description spidermonkey
+
 %prep
 %setup -q
 
 %build
 #export CFLAGS="$RPM_OPT_FLAGS -fno-strict-aliasing -DLDAP_DEPRECATED -fPIC -DPIC"
-export CFLAGS="$RPM_OPT_FLAGS -fPIC -DPIC"
+#export CFLAGS="$RPM_OPT_FLAGS -fPIC -DPIC"
 %if 0%{?suse_version} > 1000 && 0%{?suse_version} < 1030
 export CFLAGS="$CFLAGS -fstack-protector"
 %endif
+PASSTHRU_CODEC_MODULES="codecs/mod_g729 codecs/mod_g723_1 codecs/mod_amr"
+SPIDERMONKEY_MODULES="languages/mod_spidermonkey languages/mod_spidermonkey_core_db languages/mod_spidermonkey_odbc languages/mod_spidermonkey_socket languages/mod_spidermonkey_teletone"
+APPLICATIONS_MODULES="applications/mod_commands applications/mod_conference applications/mod_dptools applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_limit applications/mod_rss applications/mod_voicemail"
+ASR_TTS_MODULES="asr_tts/mod_openmrcp"
+CODECS_MODULES="codecs/mod_g711 codecs/mod_g722 codecs/mod_g726 codecs/mod_gsm codecs/mod_ilbc codecs/mod_h26x codecs/mod_l16 codecs/mod_speex"
+DIALPLANS_MODULES="dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml"
+DIRECTORIES_MODULES=
+DOTNET_MODULES=
+ENDPOINTS_MODULES="endpoints/mod_dingaling endpoints/mod_iax endpoints/mod_portaudio endpoints/mod_sofia endpoints/mod_woomera ../../libs/openzap/mod_openzap"
+EVENT_HANDLERS_MODULES="event_handlers/mod_event_multicast event_handlers/mod_event_socket"
+FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_sndfile"
+LANGUAGES_MODULES=
+LOGGERS_MODULES="loggers/mod_console loggers/mod_logfile loggers/mod_syslog"
+SAY_MODULES="say/mod_say_de say/mod_say_en say/mod_say_fr say/mod_say_es say/mod_say_it say/mod_say_nl"
+TIMERS_MODULES=
+DISABLED_MODULES="applications/mod_sountouch directories/mod_ldap languages/mod_java languages/mod_python languages/mod_spidermonkey_skel ast_tts/mod_cepstral asr_tts/mod_lumenvox endpoints/mod_wanpipe event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf formats/mod_shout"
+XML_INT_MODULES="xml_int/mod_xml_rpc  xml_int/mod_xml_curl xml_int/mod_xml_cdr"
+MYMODULES="$PASSTHRU_CODEC_MODULES $SPIDERMONKEY_MODULES $APPLICATIONS_MODULES $ASR_TTS_MODULES $CODECS_MODULES $DIALPLANS_MODULES $DIRECTORIES_MODULES $DOTNET_MODULES $ENDPOINTS_MODULES $EVENT_HANDLERS_MODULES $FORMATS_MODULES $LANGUAGES_MODULES $LOGGERS_MODULES $SAY_MODULES $TIMERS_MODULES $XML_INT_MODULES"
 
+export MODULES=$MYMODULES
+touch modules.conf
+for i in $MODULES; do echo $i >> modules.conf; done
 export VERBOSE=yes
 export DESTDIR=$RPM_BUILD_ROOT/
 export PKG_CONFIG_PATH=/usr/bin/pkg-config:$PKG_CONFIG_PATH
 export ACLOCAL_FLAGS="-I /usr/share/aclocal"
+
 ./bootstrap.sh
 %configure -C \
                 --prefix=/opt/freeswitch \
+		--bindir=/opt/freeswitch/bin \
+		--libdir=/opt/freeswitch/lib \
                 --sysconfdir=%{_sysconfdir} \
                 --infodir=%{_infodir} \
                 --mandir=%{_mandir} \
-		--enable-core-libedit-support
-#		--enable-core-odbc-support
+		--enable-core-libedit-support \
+		--enable-core-odbc-support \
+                --with-openssl \
+                --with-libcurl 
 
 #Create the version header file here
 cat src/include/switch_version.h.in | sed "s/@SVN_VERSION@/%{version}/g" > src/include/switch_version.h
 touch .noversion
-
-cp %{SOURCE1} .
 
 make
 
@@ -137,14 +172,19 @@ mkdir -p $RPM_BUILD_ROOT/opt/freeswitch/log
 mkdir -p $RPM_BUILD_ROOT/etc/ld.so.conf.d
 cp build/freeswitch.ld.so.conf $RPM_BUILD_ROOT/etc/ld.so.conf.d/
 
+# Install init files
 install -D -m 744 build/freeswitch.init $RPM_BUILD_ROOT/etc/init.d/freeswitch
+
+# Make /usr/sbin/rcfreeswitch a link to /etc/init,d/freeswitch
 mkdir -p $RPM_BUILD_ROOT/usr/sbin
 ln -sf /etc/init.d/freeswitch $RPM_BUILD_ROOT/usr/sbin/rcfreeswitch
+
+# Add the sysconfiguration file
 install -D -m 744 build/freeswitch.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/freeswitch
 
+# Add a freeswitch user with group daemon
 %pre
-/usr/sbin/groupadd -r freeswitch 2> /dev/null || :
-/usr/sbin/useradd -r -g freeswitch -s /bin/false -c "Freeswitch daemon" -d /opt/freeswitch/var freeswitch 2> /dev/null || :
+/usr/sbin/useradd -r -g daemon -s /bin/false -c "The FreeSWITCH Open Source Voice Platform" -d /opt/freeswitch/var freeswitch 2> /dev/null || :
 
 %post
 %{?run_ldconfig:%run_ldconfig}
@@ -156,71 +196,142 @@ install -D -m 744 build/freeswitch.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/frees
 rm -rf $RPM_BUILD_ROOT
 
 %files
-%defattr(-,root,root)
-%dir %attr(750,root,root) /opt/freeswitch/db
-%dir %attr(750,root,root) /opt/freeswitch/log
-%dir %attr(750,root,root) /opt/freeswitch/log/xml_cdr
-%dir %attr(750,root,root) /opt/freeswitch/htdocs
-%dir %attr(750,root,root) /opt/freeswitch/scripts
-#%dir %attr(750,root,root) /opt/freeswitch/grammer
-%dir %attr(750,root,root) /opt/freeswitch/conf
-%dir %attr(750,root,root) /opt/freeswitch/conf/autoload_configs
-%dir %attr(750,root,root) /opt/freeswitch/conf/dialplan
-%dir %attr(750,root,root) /opt/freeswitch/conf/directory
-%dir %attr(750,root,root) /opt/freeswitch/conf/lang
-%dir %attr(750,root,root) /opt/freeswitch/conf/lang/en
-%dir %attr(750,root,root) /opt/freeswitch/conf/lang/en/demo
-%dir %attr(750,root,root) /opt/freeswitch/conf/lang/en/vm
-%dir %attr(750,root,root) /opt/freeswitch/conf/lang/de
-%dir %attr(750,root,root) /opt/freeswitch/conf/lang/de/demo
-%dir %attr(750,root,root) /opt/freeswitch/conf/lang/de/vm
-%dir %attr(750,root,root) /opt/freeswitch/conf/lang/fr
-%dir %attr(750,root,root) /opt/freeswitch/conf/lang/fr/demo
-%dir %attr(750,root,root) /opt/freeswitch/conf/lang/fr/vm
-%dir %attr(750,root,root) /opt/freeswitch/conf/sip_profiles
-%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/*.xml
-%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/*.conf
-%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/autoload_configs/*.xml
-%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/dialplan/*.xml
-%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/directory/*.xml
-%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/lang/en/*.xml
-%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/lang/en/demo/*.xml
-%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/lang/en/vm/*.xml
-%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/lang/de/*.xml
-%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/lang/de/demo/*.xml
-%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/lang/de/vm/*.xml
-%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/lang/fr/*.xml
-%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/lang/fr/demo/*.xml
-%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/lang/fr/vm/*.xml
-%config(noreplace) %attr(750,root,root) /opt/freeswitch/conf/sip_profiles/*.xml
+%defattr(-,freeswitch,daemon)
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/db
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/log
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/log/xml_cdr
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/htdocs
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/scripts
+#%dir %attr(750,freeswitch,daemon) /opt/freeswitch/grammer
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/dialplan
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/directory
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/en
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/en/demo
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/en/vm
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/de
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/de/demo
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/de/vm
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/fr
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/fr/demo
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/fr/vm
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/sip_profiles
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/mime.types
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/*.tpl
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/*.conf
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/dialplan/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/directory/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/en/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/en/demo/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/en/vm/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/de/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/de/demo/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/de/vm/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/fr/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/fr/demo/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/fr/vm/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/sip_profiles/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/htdocs/*
 /etc/ld.so.conf.d/*
-%{_bindir}/freeswitch
-#/opt/freeswitch/bin/freeswitch
+/opt/freeswitch/bin/freeswitch
 /etc/init.d/freeswitch
 /etc/sysconfig/freeswitch
 /usr/sbin/rcfreeswitch
-#/opt/freeswitch/lib/*.so*
-%{_libdir}/*.so*
-/opt/freeswitch/mod/*.so*
+/opt/freeswitch/lib/libfreeswitch*.so*
+/opt/freeswitch/mod/mod_console.so*
+/opt/freeswitch/mod/mod_logfile.so*
+/opt/freeswitch/mod/mod_syslog.so*
+/opt/freeswitch/mod/mod_commands.so*
+/opt/freeswitch/mod/mod_conference.so*
+/opt/freeswitch/mod/mod_dptools.so*
+/opt/freeswitch/mod/mod_enum.so*
+/opt/freeswitch/mod/mod_esf.so*
+/opt/freeswitch/mod/mod_expr.so*
+/opt/freeswitch/mod/mod_fifo.so*
+/opt/freeswitch/mod/mod_limit.so*
+/opt/freeswitch/mod/mod_rss.so*
+#/opt/freeswitch/mod/mod_soundtouch.so*
+/opt/freeswitch/mod/mod_voicemail.so*
+/opt/freeswitch/mod/mod_openmrcp.so*
+/opt/freeswitch/mod/mod_g711.so*
+/opt/freeswitch/mod/mod_g722.so*
+/opt/freeswitch/mod/mod_g726.so*
+/opt/freeswitch/mod/mod_gsm.so*
+/opt/freeswitch/mod/mod_ilbc.so* 
+/opt/freeswitch/mod/mod_h26x.so*
+/opt/freeswitch/mod/mod_l16.so* 
+/opt/freeswitch/mod/mod_speex.so* 
+/opt/freeswitch/mod/mod_dialplan_directory.so* 
+/opt/freeswitch/mod/mod_dialplan_xml.so* 
+/opt/freeswitch/mod/mod_dialplan_asterisk.so* 
+/opt/freeswitch/mod/mod_dingaling.so* 
+/opt/freeswitch/mod/mod_iax.so* 
+/opt/freeswitch/mod/mod_portaudio.so* 
+/opt/freeswitch/mod/mod_sofia.so* 
+/opt/freeswitch/mod/mod_woomera.so* 
+/opt/freeswitch/mod/mod_openzap.so* 
+/opt/freeswitch/mod/mod_event_multicast.so* 
+/opt/freeswitch/mod/mod_event_socket.so* 
+/opt/freeswitch/mod/mod_native_file.so* 
+/opt/freeswitch/mod/mod_sndfile.so* 
+/opt/freeswitch/mod/mod_local_stream.so* 
+/opt/freeswitch/mod/mod_xml_rpc.so* 
+/opt/freeswitch/mod/mod_xml_curl.so* 
+/opt/freeswitch/mod/mod_xml_cdr.so* 
+/opt/freeswitch/mod/mod_say_en.so*
+/opt/freeswitch/mod/mod_say_fr.so*
+/opt/freeswitch/mod/mod_say_de.so*
+/opt/freeswitch/mod/mod_say_es.so*
+/opt/freeswitch/mod/mod_say_it.so*
+/opt/freeswitch/mod/mod_say_nl.so*
 
 %files codec-passthru-amr
+%defattr(-,freeswitch,daemon)
 /opt/freeswitch/mod/mod_amr.so*
 
 %files codec-passthru-g723_1
+%defattr(-,freeswitch,daemon)
 /opt/freeswitch/mod/mod_g723_1.so*
 
 %files codec-passthru-g729
+%defattr(-,freeswitch,daemon)
 /opt/freeswitch/mod/mod_g729.so*
 
+%files spidermonkey
+%defattr(-,freeswitch,daemon)
+/opt/freeswitch/mod/mod_spidermonkey*.so*
+/opt/freeswitch/lib/libjs.so*
+/opt/freeswitch/lib/libnspr4.so
+/opt/freeswitch/lib/libplds4.so
+/opt/freeswitch/lib/libplc4.so
+
 %files devel
-%defattr(-,root,root)
-%{_libdir}/*.a
-%{_libdir}/*.la
+%defattr(-,freeswitch,daemon)
+/opt/freeswitch/lib/*.a
+/opt/freeswitch/lib/*.la
 /opt/freeswitch/mod/*.a
 /opt/freeswitch/mod/*.la
 /opt/freeswitch/include/*.h
 
 %changelog
+* Thu Nov 29 2007 - michal.bielicki+rpmspam@voiceworks.pl
+- Added ifdefs for susealities
+- Added specifics for centos/redhat
+- Added specifics for fedora
+- Preparing to use it for adding it to SFE packaging for solaris
+- Added odbc stuff back in
+- made curl default
+- Separate package for mod_spidermonkey
+- got rid of modules.conf and stuffed everything in MODULES env var
+- got rid of handmade Cflags peter added ;)
+- fixed bin and libpaths
+- fixed locationof nspr and js libs
+- fixed odbc requirements
+- added all buildable modules
 * Tue Apr 24 2007 - peter+rpmspam@suntel.com.tr
 - Added a debug package
 - Split the passthrough codecs into separate packages
