@@ -231,7 +231,7 @@ int teletone_multi_tone_detect (teletone_multi_tone_t *mt,
 			
 			mt->energy += famp*famp;
 
-			for(x = 0; x < mt->tone_count; x++) {
+			for(x = 0; x < TELETONE_MAX_TONES && x < mt->tone_count; x++) {
 				v1 = mt->gs[x].v2;
 				mt->gs[x].v2 = mt->gs[x].v3;
 				mt->gs[x].v3 = (float)(mt->gs[x].fac * mt->gs[x].v2 - v1 + famp);
@@ -248,13 +248,13 @@ int teletone_multi_tone_detect (teletone_multi_tone_t *mt,
 		}
 
 		eng_sum = 0;
-		for(x = 0; x < mt->tone_count; x++) {
+		for(x = 0; x < TELETONE_MAX_TONES && x < mt->tone_count; x++) {
 			eng_all[x] = (float)(teletone_goertzel_result (&mt->gs[x]));
 			eng_sum += eng_all[x];
 		}
 
 		gtest = 0;
-		for(x = 0; x < mt->tone_count; x++) {
+		for(x = 0; x < TELETONE_MAX_TONES && x < mt->tone_count; x++) {
 			gtest += teletone_goertzel_result (&mt->gs2[x]) < eng_all[x] ? 1 : 0;
 		}
 
@@ -282,7 +282,7 @@ int teletone_multi_tone_detect (teletone_multi_tone_t *mt,
 		}
 
 		/* Reinitialise the detector for the next block */
-		for(x = 0; x < mt->tone_count; x++) {
+		for(x = 0; x < TELETONE_MAX_TONES && x < mt->tone_count; x++) {
 			goertzel_init (&mt->gs[x], &mt->tdd[x]);
 			goertzel_init (&mt->gs2[x], &mt->tdd[x]);
 		}
