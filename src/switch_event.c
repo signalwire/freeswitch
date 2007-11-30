@@ -34,6 +34,9 @@
 #include <switch.h>
 #include <switch_event.h>
 
+static char hostname[128] = "";
+static char guess_ip_v4[80] = "";
+static char guess_ip_v6[80] = "";
 static switch_event_node_t *EVENT_NODES[SWITCH_EVENT_ALL + 1] = { NULL };
 static switch_mutex_t *BLOCK = NULL;
 static switch_mutex_t *POOL_LOCK = NULL;
@@ -433,12 +436,17 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+
 SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;;
 	switch_threadattr_create(&thd_attr, pool);
 	switch_threadattr_detach_set(thd_attr, 1);
+	gethostname(hostname, sizeof(hostname));
+	switch_find_local_ip(guess_ip_v4, sizeof(guess_ip_v4), AF_INET);
+	switch_find_local_ip(guess_ip_v6, sizeof(guess_ip_v6), AF_INET6);
 
 	assert(pool != NULL);
 	THRUNTIME_POOL = RUNTIME_POOL = pool;
@@ -906,6 +914,11 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *fun
 
 	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Name", "%s", switch_event_name((*event)->event_id));
 	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Core-UUID", "%s", switch_core_get_uuid());
+	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Hostname", "%s", hostname);
+	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv4", "%s", guess_ip_v4);
+	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv6", "%s", guess_ip_v6);
+
+
 	switch_time_exp_lt(&tm, ts);
 	switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Date-Local", "%s", date);
