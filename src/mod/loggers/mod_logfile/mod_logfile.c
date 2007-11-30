@@ -43,7 +43,6 @@ SWITCH_MODULE_DEFINITION(mod_logfile, mod_logfile_load, mod_logfile_shutdown, NU
 static const uint8_t STATIC_LEVELS[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
 
 static switch_status_t load_config(void);
-static switch_status_t mod_logfile_check(void);
 static switch_memory_pool_t *module_pool = NULL;
 
 static struct {
