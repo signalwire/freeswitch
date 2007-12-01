@@ -112,42 +112,48 @@ Summary:	Provides english language dependand modules and sounds for the FreeSwit
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
-%description English language phrases module and directory structure for say module and voicemail
+%description lang-en
+English language phrases module and directory structure for say module and voicemail
 
 %package lang-it
 Summary:        Provides italian language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
-%description Italian language phrases module and directory structure for say module and voicemail
+%description lang-it
+Italian language phrases module and directory structure for say module and voicemail
 
 %package lang-es
 Summary:        Provides spanish language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
-%description Spanish language phrases module and directory structure for say module and voicemail
+%description lang-es
+Spanish language phrases module and directory structure for say module and voicemail
 
 %package lang-de
 Summary:        Provides german language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
-%description German language phrases module and directory structure for say module and voicemail
+%description lang-de
+German language phrases module and directory structure for say module and voicemail
 
 %package lang-nl
 Summary:        Provides dutch language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
-%description Dutch language phrases module and directory structure for say module and voicemail
+%description lang-nl
+Dutch language phrases module and directory structure for say module and voicemail
 
 %package lang-fr
 Summary:        Provides french language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
-%description French language phrases module and directory structure for say module and voicemail
+%description lang-fr
+French language phrases module and directory structure for say module and voicemail
 
 %prep
 %setup -q
