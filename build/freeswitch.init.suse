@@ -42,84 +42,13 @@
 # Default-Start:     3 5
 # Default-Stop:      0 1 2 6
 # Short-Description: FREESWITCH XYZ daemon providing ZYX
-# Description:       Start FREESWITCH to allow XY and provide YZ
-#	continued on second line by '#<TAB>'
-#	should contain enough info for the runlevel editor
-#	to give admin some idea what this service does and
-#	what it's needed for ...
-#	(The Short-Description should already be a good hint.)
+# Description:       Start FREESWITCH the Open Source
+#	Voice Platform
 ### END INIT INFO
 # 
-# Any extensions to the keywords given above should be preceeded by 
-# X-VendorTag- (X-UnitedLinux- X-SuSE- for us) according to LSB.
-# 
-# Notes on Required-Start/Should-Start:
-# * There are two different issues that are solved by Required-Start
-#    and Should-Start
-# (a) Hard dependencies: This is used by the runlevel editor to determine
-#     which services absolutely need to be started to make the start of
-#     this service make sense. Example: nfsserver should have
-#     Required-Start: $portmap
-#     Also, required services are started before the dependent ones.
-#     The runlevel editor will warn about such missing hard dependencies
-#     and suggest enabling. During system startup, you may expect an error,
-#     if the dependency is not fulfilled.
-# (b) Specifying the init script ordering, not real (hard) dependencies.
-#     This is needed by insserv to determine which service should be
-#     started first (and at a later stage what services can be started
-#     in parallel). The tag Should-Start: is used for this.
-#     It tells, that if a service is available, it should be started
-#     before. If not, never mind.
-# * When specifying hard dependencies or ordering requirements, you can 
-#   use names of services (contents of their Provides: section)
-#   or pseudo names starting with a $. The following ones are available
-#   according to LSB (1.1):
-#	$local_fs		all local file systems are mounted
-#				(most services should need this!)
-#	$remote_fs		all remote file systems are mounted
-#				(note that /usr may be remote, so
-#				 many services should Require this!)
-#	$syslog			system logging facility up
-#	$network		low level networking (eth card, ...)
-#	$named			hostname resolution available
-#	$netdaemons		all network daemons are running
-#   The $netdaemons pseudo service has been removed in LSB 1.2.
-#   For now, we still offer it for backward compatibility.
-#   These are new (LSB 1.2):
-#	$time			the system time has been set correctly	
-#	$portmap		SunRPC portmapping service available
-#   UnitedLinux extensions:
-#	$ALL			indicates that a script should be inserted
-#				at the end
-# * The services specified in the stop tags 
-#   (Required-Stop/Should-Stop)
-#   specify which services need to be still running when this service
-#   is shut down. Often the entries there are just copies or a subset 
-#   from the respective start tag.
-# * Should-Start/Stop are now part of LSB as of 2.0,
-#   formerly SUSE/Unitedlinux used X-UnitedLinux-Should-Start/-Stop.
-#   insserv does support both variants.
-# * X-UnitedLinux-Default-Enabled: yes/no is used at installation time
-#   (%fillup_and_insserv macro in %post of many RPMs) to specify whether
-#   a startup script should default to be enabled after installation.
-#   It's not used by insserv.
-#
-# Note on runlevels:
-# 0 - halt/poweroff 			6 - reboot
-# 1 - single user			2 - multiuser without network exported
-# 3 - multiuser w/ network (text mode)  5 - multiuser w/ network and X11 (xdm)
-# 
-# Note on script names:
-# http://www.linuxbase.org/spec/refspecs/LSB_1.3.0/gLSB/gLSB/scrptnames.html
-# A registry has been set up to manage the init script namespace.
-# http://www.lanana.org/
-# Please use the names already registered or register one or use a
-# vendor prefix.
-
-
 # Check for missing binaries (stale symlinks should not happen)
 # Note: Special treatment of stop for LSB conformance
-FREESWITCH_BIN=/usr/bin/freeswitch
+FREESWITCH_BIN=/opt/freeswitch/bin/freeswitch
 test -x $FREESWITCH_BIN || { echo "$FREESWITCH_BIN not installed"; 
 	if [ "$1" = "stop" ]; then exit 0;
 	else exit 5; fi; }
