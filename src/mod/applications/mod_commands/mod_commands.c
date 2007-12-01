@@ -97,6 +97,69 @@ SWITCH_STANDARD_API(find_user_function)
 }
 
 
+SWITCH_STANDARD_API(xml_locate_function)
+{
+	switch_xml_t xml = NULL, obj = NULL;
+	int argc;
+    char *mydata = NULL, *argv[4];
+	char *section, *tag, *tag_attr_name, *tag_attr_val, *params = NULL;
+	char *xmlstr;
+
+    if (!cmd) {
+		stream->write_function(stream,  "bad args\n");
+        goto end;
+    }
+
+    mydata = strdup(cmd);
+    assert(mydata);
+	
+    argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+    if (argc == 1 && !strcasecmp(argv[0], "root")) {
+		const char *err;
+		xml = switch_xml_open_root(0, &err);
+		obj = xml;
+        goto end;
+    }
+
+    if (argc < 4) {
+		stream->write_function(stream,  "bad args\n");
+        goto end;
+    }
+
+	section = argv[0];
+	tag = argv[1];
+	tag_attr_name = argv[2];
+	tag_attr_val = argv[3];
+	
+	params = switch_mprintf("section=%s&tag=%s&tag_attr_name=%s&tag_attr_val=%s", section, tag, tag_attr_name, tag_attr_val);
+	assert(params);
+	if (switch_xml_locate(section, tag, tag_attr_name, tag_attr_val, &xml, &obj, params) != SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream,  "can't find anything\n");
+		goto end;
+	}
+
+
+ end:
+
+	switch_safe_free(params);
+
+	if (xml && obj) {
+		xmlstr = switch_xml_toxml(obj, SWITCH_FALSE);
+		assert(xmlstr);
+
+		stream->write_function(stream,  "%s", xmlstr);
+		free(xmlstr);
+		switch_xml_free(xml);
+		
+	}
+
+	free(mydata);
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+
 SWITCH_STANDARD_API(regex_function)
 {
 	switch_regex_t *re = NULL;
@@ -1838,7 +1901,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "qq", "Eval a conditional", cond_function, "<expr> ? <true val> : <false val>");
 	SWITCH_ADD_API(commands_api_interface, "regex", "Eval a regex", regex_function, "<data>|<pattern>[|<subst string>]");
 	SWITCH_ADD_API(commands_api_interface, "uuid_chat", "Send a chat message", uuid_chat, UUID_CHAT_SYNTAX);
-	SWITCH_ADD_API(commands_api_interface, "find_user_xml", "find a usere", find_user_function, "<key> <user>@<domain>");
+	SWITCH_ADD_API(commands_api_interface, "find_user_xml", "find a user", find_user_function, "<key> <user>@<domain>");
+	SWITCH_ADD_API(commands_api_interface, "xml_locate", "find some xml", xml_locate_function, "[root | <section> <tag> <tag_attr_name> <tag_attr_val>]");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
