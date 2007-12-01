@@ -115,18 +115,18 @@ Requires:        %{name} = %{version}-%{release}
 %description lang-en
 English language phrases module and directory structure for say module and voicemail
 
-%package lang-it
-Summary:        Provides italian language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
-Group:          System/Libraries
-Requires:        %{name} = %{version}-%{release}
+#%package lang-it
+#Summary:        Provides italian language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
+#Group:          System/Libraries
+#Requires:        %{name} = %{version}-%{release}
 
-%description lang-it
-Italian language phrases module and directory structure for say module and voicemail
+#%description lang-it
+#Italian language phrases module and directory structure for say module and voicemail
 
-%package lang-es
-Summary:        Provides spanish language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
-Group:          System/Libraries
-Requires:        %{name} = %{version}-%{release}
+#%package lang-es
+#Summary:        Provides spanish language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
+#Group:          System/Libraries
+#Requires:        %{name} = %{version}-%{release}
 
 %description lang-es
 Spanish language phrases module and directory structure for say module and voicemail
@@ -139,13 +139,13 @@ Requires:        %{name} = %{version}-%{release}
 %description lang-de
 German language phrases module and directory structure for say module and voicemail
 
-%package lang-nl
-Summary:        Provides dutch language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
-Group:          System/Libraries
-Requires:        %{name} = %{version}-%{release}
+#%package lang-nl
+#Summary:        Provides dutch language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
+#Group:          System/Libraries
+#Requires:        %{name} = %{version}-%{release}
 
-%description lang-nl
-Dutch language phrases module and directory structure for say module and voicemail
+#%description lang-nl
+#Dutch language phrases module and directory structure for say module and voicemail
 
 %package lang-fr
 Summary:        Provides french language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
@@ -222,7 +222,7 @@ cp build/freeswitch.ld.so.conf $RPM_BUILD_ROOT/etc/ld.so.conf.d/
 
 # Install init files
 # On SuSE:
-%if 0%{suse_version} > 100
+%if 0%{?suse_version} > 100
 install -D -m 744 build/freeswitch.init.suse $RPM_BUILD_ROOT/etc/init.d/freeswitch
 %else
 # On RedHat like
@@ -230,7 +230,7 @@ install -D -m 744 build/freeswitch.init.redhat $RPM_BUILD_ROOT/etc/init.d/freesw
 %endif
 
 # On SuSE make /usr/sbin/rcfreeswitch a link to /etc/init.d/freeswitch
-%if 0%{suse_version} > 100
+%if 0%{?suse_version} > 100
 mkdir -p $RPM_BUILD_ROOT/usr/sbin
 ln -sf /etc/init.d/freeswitch $RPM_BUILD_ROOT/usr/sbin/rcfreeswitch
 %endif
@@ -278,7 +278,7 @@ rm -rf $RPM_BUILD_ROOT
 /opt/freeswitch/bin/freeswitch
 /etc/init.d/freeswitch
 /etc/sysconfig/freeswitch
-%if 0%{suse_version} > 100
+%if 0%{?suse_version} > 100
 /usr/sbin/rcfreeswitch
 %endif
 /opt/freeswitch/lib/libfreeswitch*.so*
@@ -360,23 +360,23 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/en/vm/*.xml
 /opt/freeswitch/mod/mod_say_en.so*
 
-%files lang-it
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/it
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/it/demo
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/it/vm
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/it/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/it/demo/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/it/vm/*.xml
-/opt/freeswitch/mod/mod_say_it.so*
+#%files lang-it
+#%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/it
+#%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/it/demo
+#%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/it/vm
+#%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/it/*.xml
+#%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/it/demo/*.xml
+#%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/it/vm/*.xml
+#/opt/freeswitch/mod/mod_say_it.so*
 
-%files lang-es
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/es
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/es/demo
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/es/vm
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/es/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/es/demo/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/es/vm/*.xml
-/opt/freeswitch/mod/mod_say_es.so*
+#%files lang-es
+#%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/es
+#%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/es/demo
+#%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/es/vm
+#%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/es/*.xml
+#%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/es/demo/*.xml
+#%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/es/vm/*.xml
+#/opt/freeswitch/mod/mod_say_es.so*
 
 
 %files lang-de
@@ -388,14 +388,14 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/de/vm/*.xml
 /opt/freeswitch/mod/mod_say_de.so*
 
-%files lang-nl
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/nl
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/nl/demo
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/nl/vm
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/nl/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/nl/demo/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/nl/vm/*.xml
-/opt/freeswitch/mod/mod_say_nl.so*
+#%files lang-nl
+#%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/nl
+#%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/nl/demo
+#%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/nl/vm
+#%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/nl/*.xml
+#%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/nl/demo/*.xml
+#%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/nl/vm/*.xml
+#/opt/freeswitch/mod/mod_say_nl.so*
 
 %files lang-fr
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/fr
@@ -423,6 +423,7 @@ rm -rf $RPM_BUILD_ROOT
 - added all buildable modules
 - added redhat style init file
 - splitted off language dependant stuff into separate language files
+- disable non complete language modules
 * Tue Apr 24 2007 - peter+rpmspam@suntel.com.tr
 - Added a debug package
 - Split the passthrough codecs into separate packages
