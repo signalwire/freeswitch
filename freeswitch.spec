@@ -107,6 +107,37 @@ Requires:	 %{name} = %{version}-%{release}
 
 %description spidermonkey
 
+%package lang-en
+Summary:	Provides english language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
+Group:          System/Libraries
+Requires:        %{name} = %{version}-%{release}
+
+%package lang-it
+Summary:        Provides italian language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
+Group:          System/Libraries
+Requires:        %{name} = %{version}-%{release}
+
+%package lang-es
+Summary:        Provides spanish language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
+Group:          System/Libraries
+Requires:        %{name} = %{version}-%{release}
+
+%package lang-de
+Summary:        Provides german language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
+Group:          System/Libraries
+Requires:        %{name} = %{version}-%{release}
+
+%package lang-nl
+Summary:        Provides dutch language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
+Group:          System/Libraries
+Requires:        %{name} = %{version}-%{release}
+
+%package lang-fr
+Summary:        Provides french language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
+Group:          System/Libraries
+Requires:        %{name} = %{version}-%{release}
+
+
 %prep
 %setup -q
 
@@ -173,11 +204,19 @@ mkdir -p $RPM_BUILD_ROOT/etc/ld.so.conf.d
 cp build/freeswitch.ld.so.conf $RPM_BUILD_ROOT/etc/ld.so.conf.d/
 
 # Install init files
-install -D -m 744 build/freeswitch.init $RPM_BUILD_ROOT/etc/init.d/freeswitch
+# On SuSE:
+%if 0%{suse_version} > 100
+install -D -m 744 build/freeswitch.init.suse $RPM_BUILD_ROOT/etc/init.d/freeswitch
+%else
+# On RedHat like
+install -D -m 744 build/freeswitch.init.redhat $RPM_BUILD_ROOT/etc/init.d/freeswitch
+%endif
 
-# Make /usr/sbin/rcfreeswitch a link to /etc/init,d/freeswitch
+# On SuSE make /usr/sbin/rcfreeswitch a link to /etc/init.d/freeswitch
+%if 0%{suse_version} > 100
 mkdir -p $RPM_BUILD_ROOT/usr/sbin
 ln -sf /etc/init.d/freeswitch $RPM_BUILD_ROOT/usr/sbin/rcfreeswitch
+%endif
 
 # Add the sysconfiguration file
 install -D -m 744 build/freeswitch.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/freeswitch
@@ -208,15 +247,6 @@ rm -rf $RPM_BUILD_ROOT
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/dialplan
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/directory
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/en
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/en/demo
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/en/vm
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/de
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/de/demo
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/de/vm
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/fr
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/fr/demo
-%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/fr/vm
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/sip_profiles
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/mime.types
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/*.tpl
@@ -225,22 +255,15 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/*.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/dialplan/*.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/directory/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/en/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/en/demo/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/en/vm/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/de/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/de/demo/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/de/vm/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/fr/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/fr/demo/*.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/fr/vm/*.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/sip_profiles/*.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/htdocs/*
 /etc/ld.so.conf.d/*
 /opt/freeswitch/bin/freeswitch
 /etc/init.d/freeswitch
 /etc/sysconfig/freeswitch
+%if 0%{suse_version} > 100
 /usr/sbin/rcfreeswitch
+%endif
 /opt/freeswitch/lib/libfreeswitch*.so*
 /opt/freeswitch/mod/mod_console.so*
 /opt/freeswitch/mod/mod_logfile.so*
@@ -282,12 +305,6 @@ rm -rf $RPM_BUILD_ROOT
 /opt/freeswitch/mod/mod_xml_rpc.so* 
 /opt/freeswitch/mod/mod_xml_curl.so* 
 /opt/freeswitch/mod/mod_xml_cdr.so* 
-/opt/freeswitch/mod/mod_say_en.so*
-/opt/freeswitch/mod/mod_say_fr.so*
-/opt/freeswitch/mod/mod_say_de.so*
-/opt/freeswitch/mod/mod_say_es.so*
-/opt/freeswitch/mod/mod_say_it.so*
-/opt/freeswitch/mod/mod_say_nl.so*
 
 %files codec-passthru-amr
 %defattr(-,freeswitch,daemon)
@@ -317,6 +334,61 @@ rm -rf $RPM_BUILD_ROOT
 /opt/freeswitch/mod/*.la
 /opt/freeswitch/include/*.h
 
+%files lang-en
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/en
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/en/demo
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/en/vm
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/en/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/en/demo/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/en/vm/*.xml
+/opt/freeswitch/mod/mod_say_en.so*
+
+%files lang-it
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/it
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/it/demo
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/it/vm
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/it/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/it/demo/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/it/vm/*.xml
+/opt/freeswitch/mod/mod_say_it.so*
+
+%files lang-es
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/es
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/es/demo
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/es/vm
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/es/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/es/demo/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/es/vm/*.xml
+/opt/freeswitch/mod/mod_say_es.so*
+
+
+%files lang-de
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/de
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/de/demo
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/de/vm
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/de/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/de/demo/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/de/vm/*.xml
+/opt/freeswitch/mod/mod_say_de.so*
+
+%files lang-nl
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/nl
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/nl/demo
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/nl/vm
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/nl/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/nl/demo/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/nl/vm/*.xml
+/opt/freeswitch/mod/mod_say_nl.so*
+
+%files lang-fr
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/fr
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/fr/demo
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang/fr/vm
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/fr/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/fr/demo/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/lang/fr/vm/*.xml
+/opt/freeswitch/mod/mod_say_fr.so*
+
 %changelog
 * Thu Nov 29 2007 - michal.bielicki+rpmspam@voiceworks.pl
 - Added ifdefs for susealities
@@ -332,6 +404,8 @@ rm -rf $RPM_BUILD_ROOT
 - fixed locationof nspr and js libs
 - fixed odbc requirements
 - added all buildable modules
+- added redhat style init file
+- splitted off language dependant stuff into separate language files
 * Tue Apr 24 2007 - peter+rpmspam@suntel.com.tr
 - Added a debug package
 - Split the passthrough codecs into separate packages
