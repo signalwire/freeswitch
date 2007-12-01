@@ -535,7 +535,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 			
             if (switch_buffer_inuse(ep.buffer) >= len) {
                 switch_buffer_lock(ep.buffer);				
-                write_frame.datalen = switch_buffer_read(ep.buffer, buf, len);
+                write_frame.datalen = (uint32_t)switch_buffer_read(ep.buffer, buf, len);
 				write_frame.samples = write_frame.datalen / 2;
 				if (switch_core_session_write_frame(session, &write_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
 					goto end;
