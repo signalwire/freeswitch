@@ -128,8 +128,8 @@ English language phrases module and directory structure for say module and voice
 #Group:          System/Libraries
 #Requires:        %{name} = %{version}-%{release}
 
-%description lang-es
-Spanish language phrases module and directory structure for say module and voicemail
+#%description lang-es
+#Spanish language phrases module and directory structure for say module and voicemail
 
 %package lang-de
 Summary:        Provides german language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
