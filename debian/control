@@ -1,5 +1,5 @@
 Source: freeswitch
-Maintainer: Michael Jerris <mike@jerris.com>
+Maintainer: Michal Bielicki <michal.bielicki@voiceworks.pl>
 Section: net
 Priority: extra
 Build-Depends: debhelper (>= 5), automake1.9, autoconf, libtool, unixodbc-dev, libasound2-dev, libcurl3-dev, libssl-dev, ncurses-dev
@@ -15,7 +15,6 @@ Description: A telephony platform that really kicks some ass...
  a soft-switch.  It can be used as a simple switching engine, a media gateway
  or a media server to host IVR applications using simple scripts or XML to
  control the callflow.
- .
 Homepage: http://www.freeswitch.org/
 
 Package: freeswitch-spidermonkey
@@ -26,11 +25,11 @@ Homepage: http://www.freeswitch.org/
 
 Package: freeswitch-dev
 Architecture: any
-Depends: ${shlibs:Depends} freswitch
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
 Description: Development Package for the FreeSwitch open source telephony platform
 Homepage: http://www.freeswitch.org/
 
-Package: freeswitch-codec-passthru-g723_1
+Package: freeswitch-codec-passthru-g7231
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
 Description: Pass through g723.1 Codec support for the FreeSWITCH open source telephony platform
@@ -46,4 +45,22 @@ Package: freeswitch-codec-passthru-g729
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
 Description: Pass through g729 Codec support for the FreeSWITCH open source telephony platform
+Homepage: http://www.freeswitch.org/
+
+Package: freeswitch-lang-en
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: English language files for the FreeSWITCH open source telephony platform
+Homepage: http://www.freeswitch.org/
+
+Package: freeswitch-lang-de
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: German language files for the FreeSWITCH open source telephony platform
+Homepage: http://www.freeswitch.org/
+
+Package: freeswitch-lang-fr
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, freeswitch
+Description: Frencch language files for the FreeSWITCH open source telephony platform
 Homepage: http://www.freeswitch.org/

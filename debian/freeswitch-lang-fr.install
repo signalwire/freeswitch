@@ -1,0 +1,4 @@
+opt/freeswitch/conf/lang/fr/*.xml
+opt/freeswitch/conf/lang/fr/demo/*.xml
+opt/freeswitch/conf/lang/fr/vm/*.xml
+opt/freeswitch/mod/mod_say_fr.so*

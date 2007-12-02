@@ -23,7 +23,6 @@
 /opt/freeswitch/conf/autoload_configs/post_load_modules.conf.xml
 /opt/freeswitch/conf/autoload_configs/rss.conf.xml
 /opt/freeswitch/conf/autoload_configs/sofia.conf.xml
-/opt/freeswitch/conf/autoload_configs/spidermonkey.conf.xml
 /opt/freeswitch/conf/autoload_configs/switch.conf.xml
 /opt/freeswitch/conf/autoload_configs/syslog.conf.xml
 /opt/freeswitch/conf/autoload_configs/voicemail.conf.xml
@@ -36,15 +35,5 @@
 /opt/freeswitch/conf/dialplan/default.xml
 /opt/freeswitch/conf/dialplan/US.conf.xml
 /opt/freeswitch/conf/directory/default.xml
-/opt/freeswitch/conf/lang/de/de.xml
-/opt/freeswitch/conf/lang/de/demo/demo.xml
-/opt/freeswitch/conf/lang/de/vm/tts.xml
-/opt/freeswitch/conf/lang/en/en.xml
-/opt/freeswitch/conf/lang/en/demo/demo.xml
-/opt/freeswitch/conf/lang/en/vm/sounds.xml
-/opt/freeswitch/conf/lang/en/vm/tts.xml
-/opt/freeswitch/conf/lang/fr/fr.xml
-/opt/freeswitch/conf/lang/fr/demo/demo.xml
-/opt/freeswitch/conf/lang/fr/vm/sounds.xml
 /opt/freeswitch/conf/sip_profiles/default.xml
 /opt/freeswitch/conf/sip_profiles/nat.xml
