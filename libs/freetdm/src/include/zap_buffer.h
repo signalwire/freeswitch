@@ -124,6 +124,7 @@ void zap_buffer_destroy(zap_buffer_t **buffer);
 
 /** @} */
 
+zap_size_t zap_buffer_zwrite(zap_buffer_t *buffer, const void *data, zap_size_t datalen);
 
 #endif
 /* For Emacs:
