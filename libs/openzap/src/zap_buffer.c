@@ -187,8 +187,7 @@ zap_size_t zap_buffer_write(zap_buffer_t *buffer, const void *data, zap_size_t d
 	}
 
 	actual_freespace = buffer->datalen - buffer->actually_used;
-
-	if (actual_freespace < datalen) {
+	if (actual_freespace < datalen && (!buffer->max_len || (buffer->datalen + datalen <= buffer->max_len))) {
 		memmove(buffer->data, buffer->head, buffer->used);
 		buffer->head = buffer->data;
 		buffer->actually_used = buffer->used;
@@ -244,6 +243,18 @@ void zap_buffer_zero(zap_buffer_t *buffer)
 	buffer->used = 0;
 	buffer->actually_used = 0;
 	buffer->head = buffer->data;
+}
+
+zap_size_t zap_buffer_zwrite(zap_buffer_t *buffer, const void *data, zap_size_t datalen)
+{
+	zap_size_t w;
+	
+	if (!(w = zap_buffer_write(buffer, data, datalen))) {
+		zap_buffer_zero(buffer);
+		return zap_buffer_write(buffer, data, datalen);
+	}
+
+	return w;
 }
 
 void zap_buffer_destroy(zap_buffer_t **buffer)
