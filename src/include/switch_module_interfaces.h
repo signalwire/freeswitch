@@ -279,6 +279,7 @@ struct switch_file_handle {
 	/*! pre-buffer x bytes for streams */
 	uint32_t prebuf;
 	/*! private data for the format module to store handle specific info */
+	uint32_t interval;
 	void *private_info;
 	char *handler;
 	int64_t pos;

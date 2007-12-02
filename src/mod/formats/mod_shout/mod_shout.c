@@ -1123,6 +1123,7 @@ void do_broadcast(switch_stream_handle_t *stream)
     uint8_t buf[1024];
     int rlen;
     int is_local = 0;
+    uint32_t interval = 20000;
 
     if (strstr(path_info + 7, "://")) {
         file = strdup(path_info + 7);
@@ -1171,14 +1172,17 @@ void do_broadcast(switch_stream_handle_t *stream)
                            path_info + 7);
 
 
-            
+    if (fh.interval) {
+        interval = fh.interval;
+    }
+
     for(;;) {
         switch_size_t samples = sizeof(buf) / 2;
 
         switch_core_file_read(&fh, buf, &samples);
 
         if (is_local) {
-            switch_yield(20000);
+            switch_yield(interval);
         }
 
         if (!samples) {
