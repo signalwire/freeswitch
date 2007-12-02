@@ -1,8 +1,8 @@
 <profile name="default">
   <!--aliases are other names that will work as a valid profile name for this profile-->
-  <!-- <aliases> -->
-  <!--  <alias name="default"/> -->
-  <!-- </aliases> -->
+  <aliases>
+    <alias name="$${domain}"/> -->
+  </aliases>
   <!-- Outbound Registrations -->
   <gateways>
     <!--<gateway name="asterlink.com">-->
