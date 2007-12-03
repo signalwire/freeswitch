@@ -40,10 +40,12 @@ AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
 
 case "$host" in
                 *-solaris2*)
-                        if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then                                SOLINK="-Bdynamic -dy -G"
+                        if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
+                                SOLINK="-Bdynamic -dy -G"
                                 new_AM_CFLAGS="-KPIC -DPIC"
-                                new_AM_LDFLAGS="-L${prefix}/lib -R${prefix}/lib"
-                        elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then                                SOLINK="-Bdynamic -dy -G"
+                                new_AM_LDFLAGS="-R${prefix}/lib"
+                        elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
+                                SOLINK="-Bdynamic -dy -G"
                                 new_AM_CFLAGS="-fPIC"
                                 new_AM_LDFLAGS=""
                                 IN_LINE=inline
@@ -62,7 +64,7 @@ case "$host" in
                         if test "x${ax_cv_c_compiler_vendor}" = "xsun" ; then
                                 SOLINK="-Bdynamic -dy -G"
                                 new_AM_CFLAGS="-KPIC -DPIC"
-                                new_AM_LDFLAGS="-L${prefix}/lib -R${prefix}/lib"
+                                new_AM_LDFLAGS="-R${prefix}/lib"
                         elif test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
                                 SOLINK="-shared -Xlinker -x"
                                 new_AM_CFLAGS="-fPIC"
@@ -74,12 +76,24 @@ case "$host" in
                         if test "x${ax_cv_c_compiler_vendor}" = "xsun" ; then
                                 SOLINK="-Bdynamic -dy -G"
                                 new_AM_CFLAGS="-KPIC -DPIC"
-                                new_AM_LDFLAGS="-L${prefix}/lib -R${prefix}/lib"
+                                new_AM_LDFLAGS="-R${prefix}/lib"
                         elif test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
                                 SOLINK="-shared -Xlinker -x"
                                 new_AM_CFLAGS="-fpic"
                                 new_AM_LDFLAGS=""
                         fi
+                        DYNAMIC_LIB_EXTEN="so"
+                ;;
+                x86_64-*-freebsd*|amd64-*-freebsd*)
+                        SOLINK="-shared -Xlinker -x"
+                        new_AM_CFLAGS="-fPIC"
+                        new_AM_LDFLAGS=""
+                        DYNAMIC_LIB_EXTEN="so"
+                ;;
+                i*6-*-freebsd*)
+                        SOLINK="-shared -Xlinker -x"
+                        new_AM_CFLAGS="-fpic"
+                        new_AM_LDFLAGS=""
                         DYNAMIC_LIB_EXTEN="so"
                 ;;
 esac

@@ -39,7 +39,7 @@ case "$host" in
         *-solaris2*)
                 if test "x${ax_cv_c_compiler_vendor}" = "xsun" ; then
                         new_AM_CFLAGS="-KPIC -DPIC"
-                        new_AM_LDFLAGS="-L${prefix}/lib -R${prefix}/lib"
+                        new_AM_LDFLAGS="-R${prefix}/lib"
                 fi
         ;;
         *-darwin*)
@@ -52,6 +52,14 @@ case "$host" in
                 new_AM_LDFLAGS=""
         ;;
         i*6-unknown-linux-gnu)
+                new_AM_CFLAGS="-fpic"
+                new_AM_LDFLAGS=""
+        ;;
+        x86_64-*-freebsd*|amd64-*-freebsd*)
+                new_AM_CFLAGS="-fpic"
+                new_AM_LDFLAGS=""
+        ;;
+        i*6-*-freebsd*)
                 new_AM_CFLAGS="-fpic"
                 new_AM_LDFLAGS=""
         ;;

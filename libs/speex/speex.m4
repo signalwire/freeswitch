@@ -21,7 +21,7 @@ AC_ARG_ENABLE(speextest, [  --disable-speextest       Do not try to compile and 
   elif test "x$speex_prefix" != "x" ; then
     SPEEX_LIBS="-L$speex_prefix/lib"
   elif test "x$prefix" != "xNONE" ; then
-    SPEEX_LIBS="-L$prefix/lib"
+    SPEEX_LIBS=""
   fi
 
   SPEEX_LIBS="$SPEEX_LIBS -lspeex"

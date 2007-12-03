@@ -1125,7 +1125,7 @@ tools are selected during the Xcode/Developer Tools installation.])
     AC_DEFINE(FREEBSD)
     AC_DEFINE(HAVE_BSD_FLOCK)
     AC_DEFINE(HAVE_SOCKLEN_T)
-    CFLAGS="$CFLAGS $(DSO_CFLAGS) -ansi -Wall"
+    CFLAGS="$CFLAGS -ansi -Wall"
     MOZ_OBJFORMAT=`test -x /usr/bin/objformat && /usr/bin/objformat || echo aout`
     if test "$MOZ_OBJFORMAT" = "elf"; then
         DLL_SUFFIX=so
@@ -1137,7 +1137,7 @@ tools are selected during the Xcode/Developer Tools installation.])
     DSO_LDOPTS='-shared -Wl,-soname -Wl,$(notdir $@)'
     MDCPUCFG_H=_freebsd.cfg
     PR_MD_CSRCS=freebsd.c
-    ;;
+   ;;
 
 *-hpux*)
     AC_DEFINE(XP_UNIX)

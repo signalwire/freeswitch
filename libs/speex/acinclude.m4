@@ -19,7 +19,7 @@ AC_ARG_ENABLE(oggtest, [  --disable-oggtest       Do not try to compile and run 
   elif test "x$ogg_prefix" != "x" ; then
     OGG_LIBS="-L$ogg_prefix/lib"
   elif test "x$prefix" != "xNONE" ; then
-    OGG_LIBS="-L$prefix/lib"
+    OGG_LIBS=""
   fi
 
   OGG_LIBS="$OGG_LIBS -logg"
