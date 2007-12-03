@@ -605,7 +605,8 @@ static void load_mime_types(void)
 	mime_path = switch_mprintf("%s/%s", SWITCH_GLOBAL_dirs.conf_dir, cf);
 	assert(mime_path);
 
-	if (!(fd = open(mime_path, O_RDONLY))) {
+	fd = open(mime_path, O_RDONLY);
+	if (fd <= 0) {
 		return;
 	}
 
