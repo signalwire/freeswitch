@@ -683,7 +683,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 
 		ename = cmd + 9;
 
-		while (ename && *ename == '\t' || *ename == ' ') {
+		while (ename && (*ename == '\t' || *ename == ' ')) {
 			++ename;
 		}
 
