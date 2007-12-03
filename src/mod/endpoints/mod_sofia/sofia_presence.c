@@ -784,7 +784,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		switch_mutex_lock(profile->ireg_mutex);
 
 		sql = switch_mprintf("delete from sip_subscriptions where "
-							 "proto='%q' and user='%q' and host='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q'",
+							 "proto='%q' and sip_user='%q' and sip_host='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q'",
 							 proto,
 							 from_user,
 							 from_host,
