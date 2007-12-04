@@ -55,6 +55,53 @@ SWITCH_DECLARE(switch_size_t) switch_fd_read_line(int fd, char *buf, switch_size
 	return total;
 }
 
+SWITCH_DECLARE(char *) switch_amp_encode(char *s, char *buf, switch_size_t len)
+{
+	char *p, *q;
+	int x = 0;
+	assert(s);
+
+	q = buf;
+
+	for(p = s; x < len; p++) {
+		switch(*p) {
+		case '<':
+			if (x + 4 > len -1) {
+				goto end;
+			}
+			*q++ = '&';
+			*q++ = 'l';
+			*q++ = 't';
+			*q++ = ';';
+			x += 4;
+			break;
+		case '>':
+			if (x + 4 > len -1) {
+				goto end;
+			}
+			*q++ = '&';
+			*q++ = 'g';
+			*q++ = 't';
+			*q++ = ';';
+			x += 4;
+			break;
+		default:
+			if (x + 1 > len -1) {
+				goto end;
+			}
+			*q++ = *p;
+			x++;
+			if (*p == '\0') {
+				goto end;
+			}
+			break;
+		}
+	}
+
+ end:
+
+	return buf;
+}
 
 
 static const char switch_b64_table[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

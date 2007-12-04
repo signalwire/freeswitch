@@ -364,6 +364,7 @@ abyss_bool handler_hook(TSession * r)
 	char *fs_user = NULL, *fs_domain = NULL;
 	char *path_info = NULL;
 	abyss_bool ret = TRUE;
+	int html = 0;
 
 	stream.data = r;
 	stream.write_function = http_stream_write;
@@ -371,6 +372,9 @@ abyss_bool handler_hook(TSession * r)
 
 	if ((command = strstr(r->uri, "/api/"))) {
 		command += 5;
+	} else if ((command = strstr(r->uri, "/webapi/"))) {
+		command += 8;
+		html++;
 	} else {
 		ret = FALSE;
 		goto end;
@@ -554,6 +558,10 @@ abyss_bool handler_hook(TSession * r)
 	/* Generation of the server field */
 	ResponseAddField(r,"Server", "FreeSWITCH-" SWITCH_VERSION_FULL "-mod_xml_rpc");
 
+	if (html) {
+		ResponseAddField(r, "Content-Type", "text/html");
+	}
+
 	for (i=0;i<r->response_headers.size;i++) {
 		ti=&r->response_headers.item[i];
 		ConnWrite(r->conn, ti->name, (uint32_t)strlen(ti->name));
@@ -566,6 +574,10 @@ abyss_bool handler_hook(TSession * r)
 	snprintf(buf, sizeof(buf), "Connection: close\r\n");
 	ConnWrite(r->conn, buf, (uint32_t) strlen(buf));
 	
+	if (html) {
+		ConnWrite(r->conn, "\r\n", 2);
+	}
+
 
 	if (switch_api_execute(command, r->query, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
 		ResponseStatus(r, 200);

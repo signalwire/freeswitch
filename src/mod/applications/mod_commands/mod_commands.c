@@ -1545,9 +1545,13 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames)
 	for (x = 0; x < argc; x++) {
 		char *val = switch_str_nil(argv[x]);
 
+
 		if (holder->http) {
+			char aval[512];
+
+			switch_amp_encode(argv[x], aval, sizeof(aval));
 			holder->stream->write_function(holder->stream, "<td>");
-			holder->stream->write_function(holder->stream, "%s%s", val, x == (argc - 1) ? "</td></tr>\n" : "</td><td>");
+			holder->stream->write_function(holder->stream, "%s%s", aval, x == (argc - 1) ? "</td></tr>\n" : "</td><td>");
 		} else {
 			holder->stream->write_function(holder->stream, "%s%s", val, x == (argc - 1) ? "\n" : holder->delim);
 		}
@@ -1582,7 +1586,7 @@ SWITCH_STANDARD_API(show_function)
 		}
 	}
 	
-	if (!as && stream->event) {
+	if (stream->event) {
 		holder.http = switch_event_get_header(stream->event, "http-host");
 	}
 
