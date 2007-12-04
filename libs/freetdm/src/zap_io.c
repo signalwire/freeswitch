@@ -33,8 +33,8 @@
 
 #ifndef WIN32
 #define ZAP_ZT_SUPPORT
-#endif
 #define ZAP_WANPIPE_SUPPORT
+#endif
 #include "openzap.h"
 #include "zap_isdn.h"
 #include <stdarg.h>
