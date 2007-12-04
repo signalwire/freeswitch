@@ -36,8 +36,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_logfile_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_logfile_shutdown);
 SWITCH_MODULE_DEFINITION(mod_logfile, mod_logfile_load, mod_logfile_shutdown, NULL);
 
-#define DEFAULT_FORMAT   "${data}" 
-#define DEFAULT_LIMIT    0x7FFFFFFF
+#define DEFAULT_LIMIT    0xA00000 /* About 10 MB */
 #define WARM_FUZZY_OFFSET 256
 #define MAX_ROT 4096 /* why not */
 static const uint8_t STATIC_LEVELS[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
@@ -50,12 +49,10 @@ static struct {
 	switch_size_t log_size;   /* keep the log size in check for rotation */
 	switch_size_t roll_size;  /* the size that we want to rotate the file at */
 	char *logfile;
-	char *format;
 	switch_file_t    *log_afd;
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_logfile, globals.logfile);
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_format, globals.format);
 
 /* i know this is strange but it's the fastest way i could think of managing log levels. */
 /* i'd rather not try to search something each time we get a message to log */
@@ -136,7 +133,6 @@ static switch_status_t mod_logfile_openlogfile(switch_bool_t check)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
 /* rotate the log file */
 static switch_status_t mod_logfile_rotate(void)
 {
@@ -179,40 +175,11 @@ static switch_status_t mod_logfile_rotate(void)
 	}
 
 	free(p);
-    
 
     switch_core_destroy_memory_pool(&pool);
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
-
-#if 0
-/* write to the actual logfile */
-static switch_status_t mod_logfile_write(char *fmt, ...) 
-{
-	char *log_data;
-	switch_status_t stat;
-	switch_size_t len;
-	va_list args;
-	va_start(args, fmt);
-
-	len = switch_vasprintf(&log_data, fmt, args);
-
-	if (len <= 0)
-		return SWITCH_STATUS_FALSE;
-
-	stat = switch_file_write(globals.log_afd, log_data, &len);
-
-	globals.log_size += len;
-
-	if (globals.log_size >= globals.roll_size) {
-		mod_logfile_rotate();
-	}
-
-	return SWITCH_STATUS_SUCCESS;
-}
-#endif
 
 /* write to the actual logfile */
 static switch_status_t mod_logfile_raw_write(char *log_data) 
@@ -261,8 +228,6 @@ static switch_status_t load_config(void)
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 				if (!strcmp(var, "logfile")) {
 					set_global_logfile(val);
-				} else if (!strcmp(var, "format")) {
-					set_global_format(val);
 				} else if (!strcmp(var, "level")) {
 					process_levels(val);
 				} else if (!strcmp(var, "rollover")) {
@@ -280,9 +245,7 @@ static switch_status_t load_config(void)
 		snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "freeswitch.log");
 		set_global_logfile(logfile);
 	}
-	if (switch_strlen_zero(globals.format)) {
-		set_global_format(DEFAULT_FORMAT);
-	}
+
 	return 0;
 }
 
