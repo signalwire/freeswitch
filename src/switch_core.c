@@ -641,7 +641,7 @@ static void load_mime_types(void)
 
 }	
 
-SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, switch_core_flag_t flags, const char **err)
+SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, const char **err)
 {
 	switch_xml_t xml = NULL, cfg = NULL;
 	switch_uuid_t uuid;
@@ -743,20 +743,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, switch_cor
 
 	*err = NULL;
 
-	if (console) {
-		if (*console != '/') {
-			char path[265];
-			snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, console);
-			console = path;
-		}
-		if (switch_core_set_console(console) != SWITCH_STATUS_SUCCESS) {
-			*err = "FATAL ERROR! Could not open console\n";
-			apr_terminate();
-			return SWITCH_STATUS_GENERR;
-		}
-	} else {
-		runtime.console = stdout;
-	}
+	runtime.console = stdout;
 
 	assert(runtime.memory_pool != NULL);
 	switch_log_init(runtime.memory_pool);
@@ -821,10 +808,10 @@ static void handle_SIGINT(int sig)
 	if (sig);
 	return;
 }
-SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(const char *console, switch_core_flag_t flags, const char **err)
+SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t flags, const char **err)
 {
 	switch_event_t *event;
-	if (switch_core_init(console, flags, err) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_init(flags, err) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
 	}
 

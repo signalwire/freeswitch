@@ -242,7 +242,7 @@ SWITCH_DECLARE(void) switch_core_port_allocator_destroy(switch_core_port_allocat
   \param err a pointer to set any errors to
   \note to be called at application startup
 */
-SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, switch_core_flag_t flags, const char **err);
+SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, const char **err);
 
 /*! 
   \brief Initilize the core and load modules
@@ -251,7 +251,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(const char *console, switch_cor
   \param err a pointer to set any errors to
   \note to be called at application startup instead of switch_core_init.  Includes module loading.
 */
-SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(const char *console, switch_core_flag_t flags, const char **err);
+SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t flags, const char **err);
 
 /*! 
   \brief Set/Get Session Limit
