@@ -328,6 +328,11 @@ SWITCH_DECLARE(switch_status_t) switch_file_close(switch_file_t * thefile)
 	return apr_file_close(thefile);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_file_rename(const char *from_path, const char *to_path, switch_memory_pool_t *pool)
+{
+	return apr_file_rename(from_path, to_path, pool);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_file_remove(const char *path, switch_memory_pool_t *pool)
 {
 	return apr_file_remove(path, pool);

@@ -720,6 +720,8 @@ SWITCH_DECLARE(switch_status_t) switch_file_close(switch_file_t * thefile);
  */
 SWITCH_DECLARE(switch_status_t) switch_file_remove(const char *path, switch_memory_pool_t *pool);
 
+SWITCH_DECLARE(switch_status_t) switch_file_rename(const char *from_path, const char *to_path, switch_memory_pool_t *pool);
+
 /**
  * Read data from the specified file.
  * @param thefile The file descriptor to read from.
