@@ -54,7 +54,7 @@ SWITCH_STANDARD_API(find_user_function)
 	}
 
     if (!cmd) {
-		stream->write_function(stream,  "bad args\n");
+		stream->write_function(stream,  "-ERR bad args\n");
         goto end;
     }
 
@@ -64,7 +64,7 @@ SWITCH_STANDARD_API(find_user_function)
     argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
     if (argc < 3) {
-		stream->write_function(stream,  "bad args\n");
+		stream->write_function(stream,  "-ERR bad args\n");
         goto end;
     }
 
@@ -73,12 +73,12 @@ SWITCH_STANDARD_API(find_user_function)
 	domain = argv[2];
 
     if (!(key && user && domain)) {
-		stream->write_function(stream,  "bad args\n");
+		stream->write_function(stream,  "-ERR bad args\n");
         goto end;
     }
 
 	if (switch_xml_locate_user(key, user, domain, NULL, &xml, &x_domain, &x_user, NULL) != SWITCH_STATUS_SUCCESS) {
-		stream->write_function(stream,  "can't find user [%s@%s]\n", user, domain);
+		stream->write_function(stream,  "-ERR can't find user [%s@%s]\n", user, domain);
 		goto end;
 	}
 
@@ -110,7 +110,7 @@ SWITCH_STANDARD_API(xml_locate_function)
 	char *xmlstr;
 
     if (!cmd) {
-		stream->write_function(stream,  "bad args\n");
+		stream->write_function(stream,  "-ERR bad args\n");
         goto end;
     }
 
@@ -132,7 +132,7 @@ SWITCH_STANDARD_API(xml_locate_function)
     }
 
     if (argc < 4) {
-		stream->write_function(stream,  "bad args\n");
+		stream->write_function(stream,  "-ERR bad args\n");
         goto end;
     }
 
@@ -144,7 +144,7 @@ SWITCH_STANDARD_API(xml_locate_function)
 	params = switch_mprintf("section=%s&tag=%s&tag_attr_name=%s&tag_attr_val=%s", section, tag, tag_attr_name, tag_attr_val);
 	assert(params);
 	if (switch_xml_locate(section, tag, tag_attr_name, tag_attr_val, &xml, &obj, params) != SWITCH_STATUS_SUCCESS) {
-		stream->write_function(stream,  "can't find anything\n");
+		stream->write_function(stream,  "-ERR can't find anything\n");
 		goto end;
 	}
 
@@ -214,7 +214,7 @@ SWITCH_STANDARD_API(regex_function)
 	goto ok;
 
  error:
-    stream->write_function(stream, "!err!");    
+    stream->write_function(stream, "-ERR");    
  ok:
 
 	switch_regex_safe_free(re);
@@ -343,7 +343,7 @@ SWITCH_STANDARD_API(cond_function)
     } 
 
  error:
-    stream->write_function(stream, "!err!");    
+    stream->write_function(stream, "-ERR");    
  ok:
 
     switch_safe_free(mydata);
@@ -420,7 +420,7 @@ SWITCH_STANDARD_API(ctl_function)
 	int32_t arg = 0;
 
 	if (switch_strlen_zero(cmd)) {
-		stream->write_function(stream, "USAGE: %s\n", CTL_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", CTL_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -446,7 +446,7 @@ SWITCH_STANDARD_API(ctl_function)
 				arg = atoi(argv[1]);
 			}
 			switch_core_session_ctl(SCSC_MAX_SESSIONS, &arg);
-			stream->write_function(stream, "max sessions: %d\n", arg);
+			stream->write_function(stream, "+OK max sessions: %d\n", arg);
 		} else if (!strcasecmp(argv[0], "loglevel")) {
 			if (argc > 1) {
 				if (*argv[1] > 47 && *argv[1] < 58) {
@@ -458,10 +458,10 @@ SWITCH_STANDARD_API(ctl_function)
 				arg = -1;
 			}
 			switch_core_session_ctl(SCSC_LOGLEVEL, &arg);
-			stream->write_function(stream, "log level: %s [%d]\n", switch_log_level2str(arg), arg);
+			stream->write_function(stream, "+OK log level: %s [%d]\n", switch_log_level2str(arg), arg);
 		} else if (!strcasecmp(argv[0], "last_sps")) {
 			switch_core_session_ctl(SCSC_LAST_SPS, &arg);
-			stream->write_function(stream, "last sessions per second: %d\n", arg);
+			stream->write_function(stream, "+OK last sessions per second: %d\n", arg);
 		} else if (!strcasecmp(argv[0], "sps")) {
 			if (argc > 1) {
 				arg = atoi(argv[1]);
@@ -469,17 +469,17 @@ SWITCH_STANDARD_API(ctl_function)
 				arg = 0;
 			}
 			switch_core_session_ctl(SCSC_SPS, &arg);
-			stream->write_function(stream, "sessions per second: %d\n", arg);
+			stream->write_function(stream, "+OK sessions per second: %d\n", arg);
 		} else {
-			stream->write_function(stream, "INVALID COMMAND\nUSAGE: fsctl [hupall|pause|resume|shutdown]\n");
+			stream->write_function(stream, "-ERR INVALID COMMAND\nUSAGE: fsctl [hupall|pause|resume|shutdown]\n");
 			goto end;
 		}
 
-		stream->write_function(stream, "OK\n");
+		stream->write_function(stream, "+OK\n");
 	  end:
 		free(mydata);
 	} else {
-		stream->write_function(stream, "MEM ERR\n");
+		stream->write_function(stream, "-ERR Memory error\n");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -496,14 +496,14 @@ SWITCH_STANDARD_API(load_function)
 	}
 
 	if (switch_strlen_zero(cmd)) {
-		stream->write_function(stream, "USAGE: %s\n", LOAD_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", LOAD_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) cmd, SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS) {
-		stream->write_function(stream, "OK\n");
+		stream->write_function(stream, "+OK\n");
 	} else {
-		stream->write_function(stream, "ERROR [%s]\n", err);
+		stream->write_function(stream, "-ERR [%s]\n", err);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -518,14 +518,14 @@ SWITCH_STANDARD_API(unload_function)
 	}
 
 	if (switch_strlen_zero(cmd)) {
-		stream->write_function(stream, "USAGE: %s\n", LOAD_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", LOAD_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	if (switch_loadable_module_unload_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) cmd, &err) == SWITCH_STATUS_SUCCESS) {
-		stream->write_function(stream, "OK\n");
+		stream->write_function(stream, "+OK\n");
 	} else {
-		stream->write_function(stream, "ERROR [%s]\n", err);
+		stream->write_function(stream, "-ERR [%s]\n", err);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -544,7 +544,7 @@ SWITCH_STANDARD_API(reload_function)
 		switch_xml_free(xml_root);
 	}
 
-	stream->write_function(stream, "OK [%s]\n", err);
+	stream->write_function(stream, "+OK [%s]\n", err);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -559,14 +559,14 @@ SWITCH_STANDARD_API(kill_function)
 	}
 
 	if (!cmd) {
-		stream->write_function(stream, "USAGE: %s\n", KILL_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", KILL_SYNTAX);
 	} else if ((ksession = switch_core_session_locate(cmd))) {
 		switch_channel_t *channel = switch_core_session_get_channel(ksession);
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		switch_core_session_rwunlock(ksession);
-		stream->write_function(stream, "OK\n");
+		stream->write_function(stream, "+OK\n");
 	} else {
-		stream->write_function(stream, "No Such Channel!\n");
+		stream->write_function(stream, "-ERR No Such Channel!\n");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -623,21 +623,21 @@ SWITCH_STANDARD_API(transfer_function)
 				}
 				
 				if (switch_ivr_session_transfer(tsession, dest, dp, context) == SWITCH_STATUS_SUCCESS) {
-					stream->write_function(stream, "OK\n");
+					stream->write_function(stream, "+OK\n");
 				} else {
-					stream->write_function(stream, "ERROR\n");
+					stream->write_function(stream, "-ERR\n");
 				}
 
 				switch_core_session_rwunlock(tsession);
 				
 			} else {
-				stream->write_function(stream, "No Such Channel!\n");
+				stream->write_function(stream, "-ERR No Such Channel!\n");
 			}
 			goto done;
 		}
 	}
 
-	stream->write_function(stream, "USAGE: %s\n", TRANSFER_SYNTAX);
+	stream->write_function(stream, "-USAGE: %s\n", TRANSFER_SYNTAX);
 
 done:
 	switch_safe_free(mycmd);
@@ -654,7 +654,7 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 	switch_core_session_t *rsession;
 	
 	if (!cmd) {
-		stream->write_function(stream, "USAGE: %s\n", TONE_DETECT_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", TONE_DETECT_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -662,11 +662,11 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 	assert(mydata != NULL);
 
 	if ((argc = switch_separate_string(mydata, ' ', argv, sizeof(argv) / sizeof(argv[0]))) < 3) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID ARGS!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "-ERR INVALID ARGS!\n");
 	}
 
 	if (!(rsession = switch_core_session_locate(argv[0]))) {
-		stream->write_function(stream, "-Error Cannot locate session!\n");
+		stream->write_function(stream, "-ERR Error Cannot locate session!\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -689,7 +689,7 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 	}
 
 	switch_ivr_tone_detect_session(rsession, argv[1], argv[2], argv[3], to, argv[5], argv[6]);
-	stream->write_function(stream, "Enabling tone detection '%s' '%s' '%s'\n", argv[1], argv[2], argv[3]);
+	stream->write_function(stream, "+OK Enabling tone detection '%s' '%s' '%s'\n", argv[1], argv[2], argv[3]);
 
  done:
 
@@ -724,7 +724,7 @@ SWITCH_STANDARD_API(uuid_chat)
 	}
 
 	if (switch_strlen_zero(uuid) || switch_strlen_zero(text)) {
-		stream->write_function(stream, "USAGE: %s\n", UUID_CHAT_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", UUID_CHAT_SYNTAX);
 	} else {
 		if ((tsession = switch_core_session_locate(uuid))) {
 			switch_event_t *event;
@@ -732,14 +732,14 @@ SWITCH_STANDARD_API(uuid_chat)
 				switch_event_add_body(event, "%s", text);
 				if (switch_core_session_receive_event(tsession, &event) != SWITCH_STATUS_SUCCESS) {
 					switch_event_destroy(&event);
-					stream->write_function(stream, "Send Failed\n");
+					stream->write_function(stream, "-ERR Send Failed\n");
 				} else {
-					stream->write_function(stream, "OK\n");
+					stream->write_function(stream, "+OK\n");
 				}
 			}
 			switch_core_session_rwunlock(tsession);
 		} else {
-			stream->write_function(stream, "No Such Channel %s!\n", uuid);
+			stream->write_function(stream, "-ERR No Such Channel %s!\n", uuid);
 		}
 	}
 
@@ -765,7 +765,7 @@ SWITCH_STANDARD_API(sched_transfer_function)
 	}
 
 	if (switch_strlen_zero(cmd) || argc < 2 || argc > 5) {
-		stream->write_function(stream, "USAGE: %s\n", SCHED_TRANSFER_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", SCHED_TRANSFER_SYNTAX);
 	} else {
 		char *uuid = argv[1];
 		char *dest = argv[2];
@@ -781,10 +781,10 @@ SWITCH_STANDARD_API(sched_transfer_function)
 
 		if ((tsession = switch_core_session_locate(uuid))) {
 			switch_ivr_schedule_transfer(when, uuid, dest, dp, context);
-			stream->write_function(stream, "OK\n");
+			stream->write_function(stream, "+OK\n");
 			switch_core_session_rwunlock(tsession);
 		} else {
-			stream->write_function(stream, "No Such Channel!\n");
+			stream->write_function(stream, "-ERR No Such Channel!\n");
 		}
 	}
 
@@ -808,7 +808,7 @@ SWITCH_STANDARD_API(sched_hangup_function)
 	}
 
 	if (switch_strlen_zero(cmd) || argc < 1) {
-		stream->write_function(stream, "USAGE: %s\n", SCHED_HANGUP_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", SCHED_HANGUP_SYNTAX);
 	} else {
 		char *uuid = argv[1];
 		char *cause_str = argv[2];
@@ -827,10 +827,10 @@ SWITCH_STANDARD_API(sched_hangup_function)
 
 		if ((hsession = switch_core_session_locate(uuid))) {
 			switch_ivr_schedule_hangup(when, uuid, cause, SWITCH_FALSE);
-			stream->write_function(stream, "OK\n");
+			stream->write_function(stream, "+OK\n");
 			switch_core_session_rwunlock(hsession);
 		} else {
-			stream->write_function(stream, "No Such Channel!\n");
+			stream->write_function(stream, "-ERR No Such Channel!\n");
 		}
 	}
 
@@ -854,7 +854,7 @@ SWITCH_STANDARD_API(uuid_media_function)
 	}
 
 	if (switch_strlen_zero(cmd) || argc < 1) {
-		stream->write_function(stream, "USAGE: %s\n", MEDIA_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", MEDIA_SYNTAX);
 	} else {
 		if (!strcasecmp(argv[0], "off")) {
 			status = switch_ivr_nomedia(argv[1], SMF_REBRIDGE);
@@ -889,7 +889,7 @@ SWITCH_STANDARD_API(uuid_broadcast_function)
 	}
 
 	if (switch_strlen_zero(cmd) || argc < 2) {
-		stream->write_function(stream, "USAGE: %s\n", BROADCAST_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", BROADCAST_SYNTAX);
 	} else {
 		switch_media_flag_t flags = SMF_NONE;
 
@@ -929,7 +929,7 @@ SWITCH_STANDARD_API(sched_broadcast_function)
 	}
 
 	if (switch_strlen_zero(cmd) || argc < 3) {
-		stream->write_function(stream, "USAGE: %s\n", SCHED_BROADCAST_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", SCHED_BROADCAST_SYNTAX);
 	} else {
 		switch_media_flag_t flags = SMF_NONE;
 		time_t when;
@@ -976,7 +976,7 @@ SWITCH_STANDARD_API(uuid_hold_function)
 	}
 
 	if (switch_strlen_zero(cmd) || argc < 1) {
-		stream->write_function(stream, "USAGE: %s\n", HOLD_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", HOLD_SYNTAX);
 	} else {
 		if (!strcasecmp(argv[0], "off")) {
 			status = switch_ivr_unhold_uuid(argv[1]);
@@ -1010,10 +1010,10 @@ SWITCH_STANDARD_API(uuid_bridge_function)
 	}
 
 	if (switch_strlen_zero(cmd) || argc != 2) {
-		stream->write_function(stream, "USAGE: %s\n", UUID_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", UUID_SYNTAX);
 	} else {
 		if (switch_ivr_uuid_bridge(argv[0], argv[1]) != SWITCH_STATUS_SUCCESS) {
-			stream->write_function(stream, "Invalid uuid\n");
+			stream->write_function(stream, "-ERR Invalid uuid\n");
 		}
 	}
 
@@ -1052,7 +1052,7 @@ SWITCH_STANDARD_API(session_record_function)
 	limit = argv[3] ? atoi(argv[3]) : 0;
 	
 	if (!(rsession = switch_core_session_locate(uuid))) {
-		stream->write_function(stream, "-Error Cannot locate session!\n");
+		stream->write_function(stream, "-ERR Cannot locate session!\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 	
@@ -1072,7 +1072,7 @@ SWITCH_STANDARD_API(session_record_function)
 
   usage:
 
-	stream->write_function(stream, "USAGE: %s\n", SESS_REC_SYNTAX);
+	stream->write_function(stream, "-USAGE: %s\n", SESS_REC_SYNTAX);
 	switch_safe_free(mycmd);
 
 
@@ -1119,7 +1119,7 @@ SWITCH_STANDARD_API(session_displace_function)
 	flags = argv[4];
 
 	if (!(rsession = switch_core_session_locate(uuid))) {
-		stream->write_function(stream, "-Error Cannot locate session!\n");
+		stream->write_function(stream, "-ERR Cannot locate session!\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 	
@@ -1139,7 +1139,7 @@ SWITCH_STANDARD_API(session_displace_function)
 
   usage:
 
-	stream->write_function(stream, "INVALID SYNTAX\n");
+	stream->write_function(stream, "-ERR INVALID SYNTAX\n");
 	switch_safe_free(mycmd);
 
 
@@ -1163,14 +1163,14 @@ SWITCH_STANDARD_API(break_function)
 	}
 
 	if (switch_strlen_zero(cmd)) {
-		stream->write_function(stream, "USAGE: %s\n", BREAK_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", BREAK_SYNTAX);
 	} else {
 		if ((psession = switch_core_session_locate(cmd))) {
 			switch_channel_t *channel = switch_core_session_get_channel(psession);
 			switch_channel_set_flag(channel, CF_BREAK);
 			switch_core_session_rwunlock(psession);
 		} else {
-			stream->write_function(stream, "No Such Channel!\n");
+			stream->write_function(stream, "-ERR No Such Channel!\n");
 		}
 	}
 
@@ -1194,7 +1194,7 @@ SWITCH_STANDARD_API(pause_function)
 	}
 
 	if (switch_strlen_zero(cmd) || argc < 2) {
-		stream->write_function(stream, "USAGE: %s\n", PAUSE_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", PAUSE_SYNTAX);
 	} else {
 		char *uuid = argv[0];
 		char *dest = argv[1];
@@ -1211,7 +1211,7 @@ SWITCH_STANDARD_API(pause_function)
 			switch_core_session_rwunlock(psession);
 
 		} else {
-			stream->write_function(stream, "No Such Channel!\n");
+			stream->write_function(stream, "-ERR No Such Channel!\n");
 		}
 	}
 
@@ -1233,7 +1233,7 @@ SWITCH_STANDARD_API(originate_function)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	
 	if (session || switch_strlen_zero(cmd)) {
-		stream->write_function(stream, "Illegal Usage\n");
+		stream->write_function(stream, "-ERR Illegal Usage\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1242,7 +1242,7 @@ SWITCH_STANDARD_API(originate_function)
 	argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	
 	if (argc < 2 || argc > 7) {
-		stream->write_function(stream, "USAGE: %s\n", ORIGINATE_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", ORIGINATE_SYNTAX);
 		goto done;
 	}
 	
@@ -1279,9 +1279,9 @@ SWITCH_STANDARD_API(originate_function)
 
 	if (switch_ivr_originate(NULL, &caller_session, &cause, aleg, timeout, NULL, cid_name, cid_num, NULL) != SWITCH_STATUS_SUCCESS) {
 		if (machine) {
-			stream->write_function(stream, "fail: %s\n", switch_channel_cause2str(cause));
+			stream->write_function(stream, "-ERR %s\n", switch_channel_cause2str(cause));
 		} else {
-			stream->write_function(stream, "Cannot Create Outgoing Channel! [%s] cause: %s\n", aleg, switch_channel_cause2str(cause));
+			stream->write_function(stream, "-ERR Cannot Create Outgoing Channel! [%s] cause: %s\n", aleg, switch_channel_cause2str(cause));
 		}
 		goto done;
 	}
@@ -1315,9 +1315,9 @@ SWITCH_STANDARD_API(originate_function)
 	}
 
 	if (machine) {
-		stream->write_function(stream, "success: %s\n", switch_core_session_get_uuid(caller_session));
+		stream->write_function(stream, "+OK %s\n", switch_core_session_get_uuid(caller_session));
 	} else {
-		stream->write_function(stream, "Created Session: %s\n", switch_core_session_get_uuid(caller_session));
+		stream->write_function(stream, "+OK Created Session: %s\n", switch_core_session_get_uuid(caller_session));
 	}
 
 	if (caller_session) {
@@ -1353,7 +1353,7 @@ SWITCH_STANDARD_API(sched_del_function)
 	uint32_t cnt = 0;
 
 	if (!cmd) {
-		stream->write_function(stream, "Invalid syntax\n");
+		stream->write_function(stream, "-ERR Invalid syntax\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 	
@@ -1367,7 +1367,7 @@ SWITCH_STANDARD_API(sched_del_function)
 		cnt = switch_scheduler_del_task_group(cmd);
 	}
 
-	stream->write_function(stream, "DELETED: %u\n", cnt);
+	stream->write_function(stream, "+OK Deleted: %u\n", cnt);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1379,7 +1379,7 @@ SWITCH_STANDARD_API(xml_wrap_api_function)
 	int encoded = 0, elen = 0;
 
 	if (!cmd) {
-		stream->write_function(stream, "Invalid syntax\n");
+		stream->write_function(stream, "-ERR Invalid syntax\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 	
@@ -1432,7 +1432,7 @@ SWITCH_STANDARD_API(sched_api_function)
 	time_t when;
 
 	if (!cmd) {
-		stream->write_function(stream, "Invalid syntax\n");
+		stream->write_function(stream, "-ERR Invalid syntax\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 	tm = strdup(cmd);
@@ -1453,12 +1453,12 @@ SWITCH_STANDARD_API(sched_api_function)
 			}
 		
 			id = switch_scheduler_add_task(when, sch_api_callback, (char *) __SWITCH_FUNC__, group, 0, strdup(dcmd), SSHF_FREE_ARG);
-			stream->write_function(stream, "ADDED: %u\n", id);
+			stream->write_function(stream, "+OK Added: %u\n", id);
 			goto good;
 		} 
 	}
 
-	stream->write_function(stream, "Invalid syntax\n");
+	stream->write_function(stream, "-ERR Invalid syntax\n");
 
  good:
 
@@ -1602,14 +1602,14 @@ SWITCH_STANDARD_API(show_function)
 	holder.print_title = 1;
 
 	if (!(cflags & SCF_USE_SQL) && !strcasecmp(command, "channels")) {
-		stream->write_function(stream, "SQL DISABLED NO CHANNEL DATA AVAILABLE!\n");
+		stream->write_function(stream, "-ERR SQL DISABLED NO CHANNEL DATA AVAILABLE!\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	// If you changes the field qty or order of any of these select
 	// statmements, you must also change show_callback and friends to match!
 	if (!command) {
-		stream->write_function(stream, "USAGE: %s\n", SHOW_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", SHOW_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	} else if (!strcasecmp(command, "codec") || !strcasecmp(command, "dialplan") || !strcasecmp(command, "file") || !strcasecmp(command, "timer")) {
 		sprintf(sql, "select type, name from interfaces where type = '%s'", command);
@@ -1633,7 +1633,7 @@ SWITCH_STANDARD_API(show_function)
 			snprintf(sql, sizeof(sql) - 1, "select name, syntax, description from interfaces where type = 'api'");
 		}
 	} else {
-		stream->write_function(stream, "USAGE: %s\n", SHOW_SYNTAX);
+		stream->write_function(stream, "-USAGE: %s\n", SHOW_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1661,12 +1661,12 @@ SWITCH_STANDARD_API(show_function)
 		}
 
 		if (errmsg) {
-			stream->write_function(stream, "SQL ERR [%s]\n", errmsg);
+			stream->write_function(stream, "-ERR SQL Error [%s]\n", errmsg);
 			switch_core_db_free(errmsg);
 			errmsg = NULL;
 		} else if (help) {
 			if (holder.count == 0)
-				stream->write_function(stream, "No such command.\n");
+				stream->write_function(stream, "-ERR No such command.\n");
 		} else {
 			stream->write_function(stream, "\n%u total.\n", holder.count);
 		}
@@ -1691,7 +1691,7 @@ SWITCH_STANDARD_API(show_function)
 			holder.stream->write_function(holder.stream, "<result row_count=\"0\"/>\n");
 		}
 	} else {
-		holder.stream->write_function(holder.stream, "Cannot find format %s\n", as);
+		holder.stream->write_function(holder.stream, "-ERR Cannot find format %s\n", as);
 	}
 
 	switch_safe_free(mydata);
@@ -1754,22 +1754,22 @@ SWITCH_STANDARD_API(uuid_setvar_function)
 
 				if (switch_strlen_zero(var_name)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
-					stream->write_function(stream, "No variable specified\n");
+					stream->write_function(stream, "-ERR No variable specified\n");
 				} else {
 					switch_channel_set_variable(channel, var_name, var_value);
-					stream->write_function(stream, "OK\n");
+					stream->write_function(stream, "+OK\n");
 				}
 
 				switch_core_session_rwunlock(psession);
 
 			} else {
-				stream->write_function(stream, "No Such Channel!\n");
+				stream->write_function(stream, "-ERR No Such Channel!\n");
 			}
 			goto done;
 		}
 	}
 
-	stream->write_function(stream, "USAGE: %s\n", SETVAR_SYNTAX);
+	stream->write_function(stream, "-USAGE: %s\n", SETVAR_SYNTAX);
 
 done:
 	switch_safe_free(mycmd);
@@ -1801,7 +1801,7 @@ SWITCH_STANDARD_API(uuid_getvar_function)
 				assert(channel != NULL);
 
 				if (switch_strlen_zero(var_name)) {
-					stream->write_function(stream, "No variable name specified!\n");
+					stream->write_function(stream, "-ERR No variable name specified!\n");
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
 				} else {
 					var_value = switch_channel_get_variable(channel, var_name);
@@ -1815,13 +1815,13 @@ SWITCH_STANDARD_API(uuid_getvar_function)
 				switch_core_session_rwunlock(psession);
 
 			} else {
-				stream->write_function(stream, "No Such Channel!\n");
+				stream->write_function(stream, "-ERR No Such Channel!\n");
 			}
 			goto done;
 		}
 	}
 
-	stream->write_function(stream, "USAGE: %s\n", GETVAR_SYNTAX);
+	stream->write_function(stream, "-USAGE: %s\n", GETVAR_SYNTAX);
 
  done:
 	switch_safe_free(mycmd);
@@ -1851,7 +1851,7 @@ SWITCH_STANDARD_API(global_setvar_function)
 		}
 	}
 
-	stream->write_function(stream, "USAGE: %s\n", GLOBAL_SETVAR_SYNTAX);
+	stream->write_function(stream, "-USAGE: %s\n", GLOBAL_SETVAR_SYNTAX);
 
 done:
 	switch_safe_free(mycmd);
@@ -1867,7 +1867,7 @@ SWITCH_STANDARD_API(global_getvar_function)
 		goto done;
 	}
 
-	stream->write_function(stream, "USAGE: %s\n", GLOBAL_GETVAR_SYNTAX);
+	stream->write_function(stream, "-USAGE: %s\n", GLOBAL_GETVAR_SYNTAX);
  done:
 	return SWITCH_STATUS_SUCCESS;
 }
