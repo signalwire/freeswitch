@@ -46,6 +46,7 @@ if (session) {
 	exit();
 }
 
+request.write("Content-Type: text/html\n\n");
 request.write("<title>FreeSWITCH Command Portal</title>");
 request.write("<h2>FreeSWITCH Command Portal</h2>");
 request.write("<form method=post><input name=command size=40> ");
