@@ -2,6 +2,7 @@
   <settings>
     <param name="default-root" value="e164.org"/>
     <param name="default-isn-root" value="freenum.org"/>
+    <param name="query-timeout" value="10"/>
   </settings>
 
   <routes>

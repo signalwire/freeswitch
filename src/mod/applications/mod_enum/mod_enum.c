@@ -75,6 +75,7 @@ static struct {
 	switch_hash_t *routes;
 	enum_route_t *route_order;
 	switch_memory_pool_t *pool;
+	int timeout;
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_root, globals.root);
@@ -127,6 +128,8 @@ static switch_status_t load_config(void)
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 			if (!strcasecmp(var, "default-root")) {
 				set_global_root(val);
+			} else if (!strcasecmp(var, "query-timeout")) {
+				globals.timeout = atoi(val);
 			} else if (!strcasecmp(var, "default-isn-root")) {
 				set_global_isn_root(val);
 			} else if (!strcasecmp(var, "log-level-trace")) {
@@ -486,7 +489,7 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t ** result
 	FD_ZERO(&fds);
 	now = 0;
 
-	while ((i = dns_timeouts(nctx, -1, now)) > 0) {
+	while ((i = dns_timeouts(nctx, globals.timeout, now)) > 0) {
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable: 4389 4127)
@@ -702,7 +705,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_enum_load)
 
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
-
+	globals.timeout = 10;
 	load_config();
 
 	/* connect my internal structure to the blank pointer passed to me */
