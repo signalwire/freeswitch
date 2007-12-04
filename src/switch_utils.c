@@ -670,17 +670,9 @@ static char RFC2833_CHARS[] = "0123456789*#ABCDF";
 
 SWITCH_DECLARE(char *) get_addr(char *buf, switch_size_t len, struct in_addr *in)
 {
-	uint8_t x, *i;
-	char *p = buf;
-
-
-	i = (uint8_t *) in;
-
-	memset(buf, 0, len);
-	for (x = 0; x < 4; x++) {
-		sprintf(p, "%u%s", i[x], x == 3 ? "" : ".");
-		p = buf + strlen(buf);
-	}
+	assert(buf);
+	*buf = '\0';
+	inet_ntop(AF_INET, in, buf, len);
 	return buf;
 }
 
