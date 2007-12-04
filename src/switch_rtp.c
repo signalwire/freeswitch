@@ -329,7 +329,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 	switch_socket_t *new_sock = NULL, *old_sock = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char o[5] = "TEST", i[5] = "";
-	switch_size_t len;
+	switch_size_t len, ilen = 0;
+	int x;
+
 	*err = NULL;
 
 	if (switch_sockaddr_info_get(&rtp_session->local_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS) {
@@ -357,10 +359,28 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 	}
 
 	len = sizeof(i);
-	switch_socket_sendto(new_sock, rtp_session->local_addr, 0, (void *) o, &len);
-	switch_socket_recvfrom(rtp_session->from_addr, new_sock, 0, (void *) i, &len);
+	switch_socket_opt_set(new_sock, SWITCH_SO_NONBLOCK, TRUE);
 
-	if (!len) {
+	switch_socket_sendto(new_sock, rtp_session->local_addr, 0, (void *) o, &len);
+
+	x = 0;
+	while(!ilen) {
+		ilen = len;
+		switch_status_t status = switch_socket_recvfrom(rtp_session->from_addr, new_sock, 0, (void *) i, &ilen);
+
+		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+			break;
+		}
+
+		if (++x > 500) {
+			break;
+		}
+		switch_yield(1000);
+	}
+	switch_socket_opt_set(new_sock, SWITCH_SO_NONBLOCK, FALSE);
+
+	if (!ilen) {
+		*err = "Send myself a packet failed!";
 		goto done;
 	}
 
