@@ -307,14 +307,14 @@ SWITCH_STANDARD_DIALPLAN(asterisk_dialplan_hunt)
 
 /* fake chan_sip */
 switch_endpoint_interface_t *sip_endpoint_interface;
-static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
+static switch_call_cause_t sip_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool);
 switch_io_routines_t sip_io_routines = {
-	/*.outgoing_channel */ channel_outgoing_channel
+	/*.outgoing_channel */ sip_outgoing_channel
 };
 
-static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *session,
+static switch_call_cause_t sip_outgoing_channel(switch_core_session_t *session,
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool)
 {
