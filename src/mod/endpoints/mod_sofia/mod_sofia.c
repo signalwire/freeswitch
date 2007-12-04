@@ -1452,6 +1452,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	data = switch_core_session_strdup(nsession, outbound_profile->destination_number);
 	profile_name = data;
 
+	nchannel = switch_core_session_get_channel(nsession);
+
 	if (!strncasecmp(profile_name, "gateway", 7)) {
 		char *gw;
 		sofia_gateway_t *gateway_ptr = NULL;
@@ -1485,7 +1487,9 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 
 		profile = gateway_ptr->profile;
-
+		tech_pvt->gateway_name = switch_core_session_strdup(nsession, gateway_ptr->name);
+		switch_channel_set_variable(nchannel, "sip_gateway_name", gateway_ptr->name);
+		
 		if (!switch_test_flag(gateway_ptr, REG_FLAG_CALLERID)) {
 			tech_pvt->gateway_from_str = switch_core_session_strdup(nsession, gateway_ptr->register_from);
 		}
@@ -1559,7 +1563,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 	sofia_glue_attach_private(nsession, profile, tech_pvt, dest);
 	
-	nchannel = switch_core_session_get_channel(nsession);
+
 	if (tech_pvt->local_url) {
 		switch_channel_set_variable(nchannel, "sip_local_url", tech_pvt->local_url);
 	}

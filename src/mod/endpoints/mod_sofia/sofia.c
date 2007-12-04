@@ -111,6 +111,9 @@ void sofia_event_callback(nua_event_t event,
 					tech_pvt->call_id = switch_core_session_strdup(session, sip->sip_call_id->i_id);
 					switch_channel_set_variable(channel, "sip_call_id", tech_pvt->call_id);
 				}
+				if (tech_pvt->gateway_name) {
+					gateway = sofia_reg_find_gateway(tech_pvt->gateway_name);
+				}
 			} else {
 				/* too late */
 				return;

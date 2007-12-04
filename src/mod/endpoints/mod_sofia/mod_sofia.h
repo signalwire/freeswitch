@@ -318,6 +318,7 @@ struct private_object {
 	char *call_id;
 	char *invite_contact;
 	char *local_url;
+	char *gateway_name;
 	unsigned long rm_rate;
 	switch_payload_t pt;
 	switch_mutex_t *flag_mutex;
