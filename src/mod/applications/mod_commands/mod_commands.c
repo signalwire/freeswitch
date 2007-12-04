@@ -110,6 +110,11 @@ SWITCH_STANDARD_API(xml_locate_function)
         goto end;
     }
 
+
+	if (stream->event && switch_event_get_header(stream->event, "http-host")) {
+		stream->write_function(stream,  "Content-Type: text/xml\r\n\r\n");
+	}
+
     mydata = strdup(cmd);
     assert(mydata);
 	

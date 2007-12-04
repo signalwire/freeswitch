@@ -51,7 +51,13 @@ SWITCH_STANDARD_API(expr_function)
 	int err;
     char val[512] = "", *p;
     char *m_cmd = NULL;
-    size_t len = strlen(cmd) + 3;
+    size_t len;
+
+    if (switch_strlen_zero(cmd)) {
+        goto error;
+    }
+
+    len = strlen(cmd) + 3;
 
 
     m_cmd = malloc(len);
