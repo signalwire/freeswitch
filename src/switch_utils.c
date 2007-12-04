@@ -58,7 +58,7 @@ SWITCH_DECLARE(switch_size_t) switch_fd_read_line(int fd, char *buf, switch_size
 SWITCH_DECLARE(char *) switch_amp_encode(char *s, char *buf, switch_size_t len)
 {
 	char *p, *q;
-	int x = 0;
+	switch_size_t x = 0;
 	assert(s);
 
 	q = buf;
