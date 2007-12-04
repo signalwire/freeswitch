@@ -1140,7 +1140,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
                     message_count(profile, cbt->user, cbt->domain, cbt->in_folder, &total_new_messages, &total_saved_messages,
                                   &total_new_urgent_messages, &total_saved_urgent_messages);
 
-                    switch_time_exp_lt(&tm, atoi(cbt->created_epoch));
+                    switch_time_exp_lt(&tm, atoi(cbt->created_epoch) * 1000000);
                     switch_strftime(date, &retsize, sizeof(date), profile->date_fmt, &tm);
 
                     snprintf(tmp,sizeof(tmp), "%d", total_new_messages);

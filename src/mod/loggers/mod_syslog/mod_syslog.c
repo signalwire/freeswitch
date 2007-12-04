@@ -69,30 +69,7 @@ static switch_loadable_module_interface_t console_module_interface = {
 static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_log_level_t level)
 {
 	char *message = NULL;
-	char line_no[sizeof(int) * 8 + 1];
-	char date[80] = "";
-	switch_time_exp_t time;
-	switch_size_t retsize;
 	int syslog_level;
-
-	message = (char *) malloc(strlen(globals.format) + 2);
-
-	switch_copy_string(message, globals.format, strlen(globals.format) + 1);
-
-	message = switch_string_replace(message, "${message}", node->content);
-
-	if (switch_time_exp_lt(&time, node->timestamp) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &time);
-	message = switch_string_replace(message, "${time}", date);
-
-	message = switch_string_replace(message, "${file}", node->file);
-	message = switch_string_replace(message, "${func}", node->func);
-
-	snprintf(line_no, sizeof(line_no), "%d", node->line);
-	message = switch_string_replace(message, "${line}", line_no);
 
 	switch (level) {
 		case SWITCH_LOG_DEBUG:
@@ -122,10 +99,10 @@ static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_l
 	}
 
 	if (!switch_strlen_zero(message)) {
-		syslog(syslog_level, "%s", message);
+		syslog(syslog_level, "%s", node->data);
 	}
 
-	free(message);
+
 
 	return SWITCH_STATUS_SUCCESS;
 }

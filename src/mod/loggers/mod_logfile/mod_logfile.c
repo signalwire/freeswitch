@@ -38,7 +38,7 @@ SWITCH_MODULE_DEFINITION(mod_logfile, mod_logfile_load, mod_logfile_shutdown, NU
 
 #define DEFAULT_FORMAT   "${data}" 
 #define DEFAULT_LIMIT    0x7FFFFFFF
-#define WARM_FUZZY_OFFSET 64
+#define WARM_FUZZY_OFFSET 256
 #define MAX_ROT 4096 /* why not */
 static const uint8_t STATIC_LEVELS[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
 
@@ -107,85 +107,20 @@ void process_levels(char *p)
 	return;
 }
 
-/* rotate the log file */
-static switch_status_t mod_logfile_rotate(void)
-{
-	unsigned int i = 0;
-	unsigned int flags = 0;
-	char *p = NULL;
-	char *q = NULL;
-	switch_status_t stat = 0;
-	switch_size_t   nbytes = 1024;
-	switch_file_t *l_afd = NULL;
-	switch_memory_pool_t *pool = NULL;
-	int64_t offset = 0;
+static switch_status_t mod_logfile_rotate(void);
 
-	globals.log_size = 0;
-	switch_core_new_memory_pool(&pool);   
-
-	stat = switch_file_seek(globals.log_afd, SWITCH_SEEK_SET, &offset);
-
-	if (stat != SWITCH_STATUS_SUCCESS)
-		return SWITCH_STATUS_FALSE;
-
-	p = malloc(strlen(globals.logfile)+WARM_FUZZY_OFFSET);
-	if (!p) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	q = malloc(1024);
-	if (!q) {
-		free(p);
-		return SWITCH_STATUS_FALSE;
-	}
-
-	memset(p, '\0', strlen(globals.logfile)+WARM_FUZZY_OFFSET);
-
-	for (i=1; i < MAX_ROT; i++) {
-		sprintf((char *)p, "%s.%i", globals.logfile, i);
-
-		stat = switch_file_open(&l_afd, p, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD, pool);
-
-		if (stat == SWITCH_STATUS_SUCCESS) {
-			switch_file_close(l_afd);
-			continue;
-		}
-		flags |= SWITCH_FOPEN_READ;
-		flags |= SWITCH_FOPEN_WRITE;
-		flags |= SWITCH_FOPEN_CREATE;
-
-		stat = switch_file_open(&l_afd, p, flags , SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE ,pool);
-		if (stat == SWITCH_STATUS_SUCCESS)
-			break;
-	}
-
-	while ((stat = switch_file_read(globals.log_afd, q, &nbytes)) == SWITCH_STATUS_SUCCESS) {
-		switch_file_write(l_afd, q, &nbytes);
-		memset(q, '\0', 1024);
-		nbytes = 1024;
-	}
-
-	offset = 0;
-	stat = switch_file_seek(globals.log_afd, SWITCH_SEEK_SET, &offset);
-	free(p);
-	free(q);
-	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t mod_logfile_openlogfile(void)
+static switch_status_t mod_logfile_openlogfile(switch_bool_t check)
 {
 	unsigned int flags = 0;
 	switch_file_t *afd;
 	switch_status_t stat;
-	switch_memory_pool_t *pool;
 
 	flags |= SWITCH_FOPEN_CREATE;
 	flags |= SWITCH_FOPEN_READ;
 	flags |= SWITCH_FOPEN_WRITE;
 	flags |= SWITCH_FOPEN_APPEND;
 
-	switch_core_new_memory_pool(&pool);       
-	stat = switch_file_open(&afd, globals.logfile,flags,SWITCH_FPROT_UREAD|SWITCH_FPROT_UWRITE, pool);
+	stat = switch_file_open(&afd, globals.logfile, flags, SWITCH_FPROT_UREAD|SWITCH_FPROT_UWRITE, module_pool);
 	if (stat != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -194,13 +129,65 @@ static switch_status_t mod_logfile_openlogfile(void)
 
 	globals.log_size = switch_file_get_size(globals.log_afd);
 
-	if (globals.log_size >= globals.roll_size) {
+	if (check && globals.log_size >= globals.roll_size) {
 		mod_logfile_rotate();
 	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+/* rotate the log file */
+static switch_status_t mod_logfile_rotate(void)
+{
+	unsigned int i = 0;
+	char *p = NULL;
+	switch_status_t stat = 0;
+	int64_t offset = 0;
+    switch_memory_pool_t *pool;
+    switch_time_exp_t tm;
+    char date[80] = "";
+    switch_size_t retsize;
+
+    switch_time_exp_lt(&tm, switch_time_now());
+    switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d-%H-%M-%S", &tm);
+
+	globals.log_size = 0;
+
+	stat = switch_file_seek(globals.log_afd, SWITCH_SEEK_SET, &offset);
+
+	if (stat != SWITCH_STATUS_SUCCESS)
+		return SWITCH_STATUS_FALSE;
+
+	p = malloc(strlen(globals.logfile)+WARM_FUZZY_OFFSET);
+    assert(p);
+
+	memset(p, '\0', strlen(globals.logfile)+WARM_FUZZY_OFFSET);
+
+    switch_core_new_memory_pool(&pool);
+    
+	for (i=1; i < MAX_ROT; i++) {
+		sprintf((char *)p, "%s.%s.%i", globals.logfile, date, i);
+        if (switch_file_exists(p, pool) == SWITCH_STATUS_SUCCESS) {
+            continue;
+        }
+        
+        switch_file_close(globals.log_afd);
+        switch_file_rename(globals.logfile, p, pool);
+        mod_logfile_openlogfile(SWITCH_FALSE);
+        break;
+	}
+
+	free(p);
+    
+
+    switch_core_destroy_memory_pool(&pool);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+#if 0
 /* write to the actual logfile */
 static switch_status_t mod_logfile_write(char *fmt, ...) 
 {
@@ -219,7 +206,30 @@ static switch_status_t mod_logfile_write(char *fmt, ...)
 
 	globals.log_size += len;
 
-	/* we may want to hold back on this for preformance reasons */
+	if (globals.log_size >= globals.roll_size) {
+		mod_logfile_rotate();
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+#endif
+
+/* write to the actual logfile */
+static switch_status_t mod_logfile_raw_write(char *log_data) 
+{
+	switch_size_t len;
+	len = strlen(log_data);
+
+	if (len <= 0)
+		return SWITCH_STATUS_FALSE;
+
+	if (switch_file_write(globals.log_afd, log_data, &len) != SWITCH_STATUS_SUCCESS) {
+        switch_file_close(globals.log_afd);
+        mod_logfile_openlogfile(SWITCH_TRUE);
+    }
+    
+	globals.log_size += len;
+
 	if (globals.log_size >= globals.roll_size) {
 		mod_logfile_rotate();
 	}
@@ -229,37 +239,10 @@ static switch_status_t mod_logfile_write(char *fmt, ...)
 
 static switch_status_t mod_logfile_logger(const switch_log_node_t *node, switch_log_level_t level)
 {
-	char line_no[sizeof(int)*8+1];
-	char date[80] = "";
-	switch_time_exp_t time;
-	switch_size_t retsize;
-	char *message = NULL;
 
-	if (!levels[node->level].on) {
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	message = (char *)malloc(strlen(globals.format)+2);
-	switch_copy_string(message, globals.format, strlen(globals.format)+1);
-
-	message = switch_string_replace(message, "${message}", node->content);
-
-	if (switch_time_exp_lt(&time, node->timestamp) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &time);
-
-	message = switch_string_replace(message, "${time}", date);
-	message = switch_string_replace(message, "${file}", node->file);
-	message = switch_string_replace(message, "${func}", node->func);
-
-	snprintf(line_no, sizeof(line_no), "%d", node->line);
-	message = switch_string_replace(message, "${line}", line_no);
-
-	if (!switch_strlen_zero(message)) {
-		mod_logfile_write("%s", message);
-	}
+	if (levels[node->level].on) {
+        mod_logfile_raw_write(node->data);
+    }
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -316,7 +299,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_logfile_load)
 		return status;
 	}
 
-	mod_logfile_openlogfile();
+	mod_logfile_openlogfile(SWITCH_TRUE);
 
 	switch_log_bind_logger(mod_logfile_logger, SWITCH_LOG_DEBUG);
 
