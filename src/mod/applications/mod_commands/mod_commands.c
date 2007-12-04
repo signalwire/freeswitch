@@ -48,23 +48,31 @@ SWITCH_STANDARD_API(find_user_function)
     char *mydata = NULL, *argv[3];
 	char *key, *user, *domain;
 	char *xmlstr;
-
-	if (stream->event && switch_event_get_header(stream->event, "http-host")) {
+	char *path_info = NULL;
+	char delim = ' ';
+	char *host = NULL;
+	const char *err = NULL;
+	
+	if (stream->event && (host = switch_event_get_header(stream->event, "http-host"))) {
 		stream->write_function(stream,  "Content-Type: text/xml\r\n\r\n");
+		if ((path_info = switch_event_get_header(stream->event, "http-path-info"))) {
+			cmd = path_info;
+			delim = '/';
+		}
 	}
-
+	
     if (!cmd) {
-		stream->write_function(stream,  "-ERR bad args\n");
+		err = "bad args";
         goto end;
     }
 
     mydata = strdup(cmd);
     assert(mydata);
 	
-    argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+    argc = switch_separate_string(mydata, delim, argv, (sizeof(argv) / sizeof(argv[0])));
 
     if (argc < 3) {
-		stream->write_function(stream,  "-ERR bad args\n");
+		err = "bad args";
         goto end;
     }
 
@@ -73,17 +81,25 @@ SWITCH_STANDARD_API(find_user_function)
 	domain = argv[2];
 
     if (!(key && user && domain)) {
-		stream->write_function(stream,  "-ERR bad args\n");
+		err = "bad args";
         goto end;
     }
 
 	if (switch_xml_locate_user(key, user, domain, NULL, &xml, &x_domain, &x_user, NULL) != SWITCH_STATUS_SUCCESS) {
-		stream->write_function(stream,  "-ERR can't find user [%s@%s]\n", user, domain);
+		err = "can't find user";
 		goto end;
 	}
 
 
  end:
+
+	if (err) {
+		if (host) {
+			stream->write_function(stream,  "<error>%s</error>\n", err);
+		} else {
+			stream->write_function(stream,  "-Error %s\n", err);
+		}
+	}
 
 	if (xml && x_user) {
 		xmlstr = switch_xml_toxml(x_user, SWITCH_FALSE);
@@ -108,21 +124,28 @@ SWITCH_STANDARD_API(xml_locate_function)
     char *mydata = NULL, *argv[4];
 	char *section, *tag, *tag_attr_name, *tag_attr_val, *params = NULL;
 	char *xmlstr;
+	char *path_info, delim = ' ';
+	char *host = NULL;
+	const char *err = NULL;
+
+	if (stream->event && (host = switch_event_get_header(stream->event, "http-host"))) {
+		stream->write_function(stream,  "Content-Type: text/xml\r\n\r\n");
+		if ((path_info = switch_event_get_header(stream->event, "http-path-info"))) {
+			cmd = path_info;
+			delim = '/';
+		}
+	}
 
     if (!cmd) {
-		stream->write_function(stream,  "-ERR bad args\n");
+		err = "bad args";
         goto end;
     }
 
 
-	if (stream->event && switch_event_get_header(stream->event, "http-host")) {
-		stream->write_function(stream,  "Content-Type: text/xml\r\n\r\n");
-	}
-
     mydata = strdup(cmd);
     assert(mydata);
 	
-    argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+    argc = switch_separate_string(mydata, delim, argv, (sizeof(argv) / sizeof(argv[0])));
 
     if (argc == 1 && !strcasecmp(argv[0], "root")) {
 		const char *err;
@@ -132,7 +155,7 @@ SWITCH_STANDARD_API(xml_locate_function)
     }
 
     if (argc < 4) {
-		stream->write_function(stream,  "-ERR bad args\n");
+		err = "bad args";
         goto end;
     }
 
@@ -144,12 +167,20 @@ SWITCH_STANDARD_API(xml_locate_function)
 	params = switch_mprintf("section=%s&tag=%s&tag_attr_name=%s&tag_attr_val=%s", section, tag, tag_attr_name, tag_attr_val);
 	assert(params);
 	if (switch_xml_locate(section, tag, tag_attr_name, tag_attr_val, &xml, &obj, params) != SWITCH_STATUS_SUCCESS) {
-		stream->write_function(stream,  "-ERR can't find anything\n");
+		stream->write_function(stream,  "can't find anything\n");
 		goto end;
 	}
 
 
  end:
+
+	if (err) {
+		if (host) {
+			stream->write_function(stream,  "<error>%s</error>\n", err);
+		} else {
+			stream->write_function(stream,  "-Error %s\n", err);
+		}
+	}
 
 	switch_safe_free(params);
 
@@ -167,7 +198,6 @@ SWITCH_STANDARD_API(xml_locate_function)
 	return SWITCH_STATUS_SUCCESS;
 
 }
-
 
 SWITCH_STANDARD_API(regex_function)
 {
@@ -652,7 +682,8 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 	char *mydata = NULL;
 	time_t to = 0;
 	switch_core_session_t *rsession;
-	
+
+
 	if (!cmd) {
 		stream->write_function(stream, "-USAGE: %s\n", TONE_DETECT_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
@@ -665,10 +696,12 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "-ERR INVALID ARGS!\n");
 	}
 
+
 	if (!(rsession = switch_core_session_locate(argv[0]))) {
 		stream->write_function(stream, "-ERR Error Cannot locate session!\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
+
 
 	if (argv[4]) {
 		uint32_t mto;

@@ -37,8 +37,11 @@
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_session_t *session, switch_codec_t *codec)
 {
 	switch_event_t *event;
+	switch_channel_t *channel;
+	char tmp[30];
 
 	assert(session != NULL);
+	channel = switch_core_session_get_channel(session);
 
 	if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);
@@ -49,6 +52,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 		}
 		switch_event_fire(&event);
 	}
+
+	switch_channel_set_variable(channel, "read_codec", codec->implementation->iananame);
+	snprintf(tmp, sizeof(tmp), "%d", codec->implementation->actual_samples_per_second);
+	switch_channel_set_variable(channel, "read_rate", tmp);
 
 	session->read_codec = codec;
 	session->raw_read_frame.codec = session->read_codec;
@@ -67,7 +74,12 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_read_codec(switch_core_
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_session_t *session, switch_codec_t *codec)
 {
 	switch_event_t *event;
+	switch_channel_t *channel;
+	char tmp[30];
+
 	assert(session != NULL);
+	channel = switch_core_session_get_channel(session);
+
 
 	if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);
@@ -78,6 +90,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 		}
 		switch_event_fire(&event);
 	}
+
+	switch_channel_set_variable(channel, "write_codec", codec->implementation->iananame);
+	snprintf(tmp, sizeof(tmp), "%d", codec->implementation->actual_samples_per_second);
+	switch_channel_set_variable(channel, "write_rate", tmp);
 
 	session->write_codec = codec;
 	return SWITCH_STATUS_SUCCESS;
