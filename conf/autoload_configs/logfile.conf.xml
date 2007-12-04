@@ -2,7 +2,9 @@
   <settings>
    <!-- File to log to -->
    <!--<param name="logfile" value="/var/log/freeswitch.log"/>-->
-   <!-- At this length in bytes rotate the log file -->
+   <!-- true to auto rotate on HUP, false to open/close -->
+   <param name="rotate" value="true"/>
+   <!-- At this length in bytes rotate the log file (0 for never) -->
    <!--<param name="rollover" value="10485760"/>-->
    <!-- The level of the message to log -->
    <!--<param name="level" value="debug,info,warning,notice,error,crit,alert"/>-->

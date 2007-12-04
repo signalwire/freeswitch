@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  *
  * Version: MPL 1.1
@@ -21,7 +21,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony LaMantia <anthony@petabit.net>
  * Michael Jerris <mike@jerris.com>
  *
@@ -36,7 +36,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_logfile_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_logfile_shutdown);
 SWITCH_MODULE_DEFINITION(mod_logfile, mod_logfile_load, mod_logfile_shutdown, NULL);
 
-#define DEFAULT_LIMIT    0xA00000 /* About 10 MB */
+#define DEFAULT_LIMIT	 0xA00000 /* About 10 MB */
 #define WARM_FUZZY_OFFSET 256
 #define MAX_ROT 4096 /* why not */
 static const uint8_t STATIC_LEVELS[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
@@ -46,10 +46,12 @@ static switch_memory_pool_t *module_pool = NULL;
 
 static struct {
 	unsigned int log_fd;
-	switch_size_t log_size;   /* keep the log size in check for rotation */
+	switch_size_t log_size;	  /* keep the log size in check for rotation */
 	switch_size_t roll_size;  /* the size that we want to rotate the file at */
 	char *logfile;
-	switch_file_t    *log_afd;
+    int rotate;
+    switch_mutex_t *mutex;
+	switch_file_t *log_afd;
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_logfile, globals.logfile);
@@ -126,7 +128,7 @@ static switch_status_t mod_logfile_openlogfile(switch_bool_t check)
 
 	globals.log_size = switch_file_get_size(globals.log_afd);
 
-	if (check && globals.log_size >= globals.roll_size) {
+	if (check && globals.roll_size && globals.log_size >= globals.roll_size) {
 		mod_logfile_rotate();
 	}
 
@@ -144,6 +146,9 @@ static switch_status_t mod_logfile_rotate(void)
     switch_time_exp_t tm;
     char date[80] = "";
     switch_size_t retsize;
+    switch_status_t status = SWITCH_STATUS_SUCCESS;
+    
+    switch_mutex_lock(globals.mutex);
 
     switch_time_exp_lt(&tm, switch_time_now());
     switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d-%H-%M-%S", &tm);
@@ -152,22 +157,25 @@ static switch_status_t mod_logfile_rotate(void)
 
 	stat = switch_file_seek(globals.log_afd, SWITCH_SEEK_SET, &offset);
 
-	if (stat != SWITCH_STATUS_SUCCESS)
-		return SWITCH_STATUS_FALSE;
+	if (stat != SWITCH_STATUS_SUCCESS) {
+		status = SWITCH_STATUS_FALSE;
+        goto end;
+    }
 
+    
 	p = malloc(strlen(globals.logfile)+WARM_FUZZY_OFFSET);
     assert(p);
 
 	memset(p, '\0', strlen(globals.logfile)+WARM_FUZZY_OFFSET);
 
     switch_core_new_memory_pool(&pool);
-    
+
 	for (i=1; i < MAX_ROT; i++) {
 		sprintf((char *)p, "%s.%s.%i", globals.logfile, date, i);
         if (switch_file_exists(p, pool) == SWITCH_STATUS_SUCCESS) {
             continue;
         }
-        
+
         switch_file_close(globals.log_afd);
         switch_file_rename(globals.logfile, p, pool);
         mod_logfile_openlogfile(SWITCH_FALSE);
@@ -178,26 +186,39 @@ static switch_status_t mod_logfile_rotate(void)
 
     switch_core_destroy_memory_pool(&pool);
 
-	return SWITCH_STATUS_SUCCESS;
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New log started.\n");
+
+ end:
+
+    switch_mutex_unlock(globals.mutex);
+
+	return status;
 }
 
 /* write to the actual logfile */
-static switch_status_t mod_logfile_raw_write(char *log_data) 
+static switch_status_t mod_logfile_raw_write(char *log_data)
 {
 	switch_size_t len;
 	len = strlen(log_data);
 
-	if (len <= 0)
+	if (len <= 0) {
 		return SWITCH_STATUS_FALSE;
+    }
+    
+    switch_mutex_lock(globals.mutex);
 
 	if (switch_file_write(globals.log_afd, log_data, &len) != SWITCH_STATUS_SUCCESS) {
         switch_file_close(globals.log_afd);
         mod_logfile_openlogfile(SWITCH_TRUE);
+        len = strlen(log_data);
+        switch_file_write(globals.log_afd, log_data, &len);
     }
     
+    switch_mutex_unlock(globals.mutex);
+
 	globals.log_size += len;
 
-	if (globals.log_size >= globals.roll_size) {
+	if (globals.roll_size && globals.log_size >= globals.roll_size) {
 		mod_logfile_rotate();
 	}
 
@@ -228,18 +249,21 @@ static switch_status_t load_config(void)
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 				if (!strcmp(var, "logfile")) {
 					set_global_logfile(val);
+				} else if (!strcmp(var, "rotate")) {
+                    globals.rotate = switch_true(val);
 				} else if (!strcmp(var, "level")) {
 					process_levels(val);
 				} else if (!strcmp(var, "rollover")) {
 					globals.roll_size = atoi(val);
-				}  
+                    if (globals.roll_size < 0) {
+                        globals.roll_size = 0;
+                    }
+				}
 			}
 		}
 		switch_xml_free(xml);
 	}
-	if (globals.roll_size == 0) {
-		globals.roll_size = DEFAULT_LIMIT;
-	}
+    
 	if (switch_strlen_zero(globals.logfile)) {
 		char logfile[512];
 		snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "freeswitch.log");
@@ -249,11 +273,37 @@ static switch_status_t load_config(void)
 	return 0;
 }
 
+
+static void event_handler(switch_event_t *event)
+{
+    const char *sig = switch_event_get_header(event, "Trapped-Signal");
+
+    if (sig && !strcmp(sig, "HUP")) {
+        if (globals.rotate) {
+            mod_logfile_rotate();
+        } else {
+            switch_mutex_lock(globals.mutex);
+            switch_file_close(globals.log_afd);
+            mod_logfile_openlogfile(SWITCH_TRUE);
+            switch_mutex_unlock(globals.mutex);
+        }
+    }
+
+}
+
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_logfile_load)
 {
 	switch_status_t status;
 
 	module_pool = pool;
+    memset(&globals, 0, sizeof(globals));
+    switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
+
+	if (switch_event_bind((char *) modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_GENERR;
+	}
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -273,17 +323,17 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_logfile_shutdown)
 {
 	/* TODO:  Need to finish processing pending log messages before we close the file handle */
 
-	//switch_file_close(globals.log_afd);	
+	//switch_file_close(globals.log_afd);
 	return SWITCH_STATUS_SUCCESS;
 }
 
 /* For Emacs:
-* Local Variables:
-* mode:c
-* indent-tabs-mode:nil
-* tab-width:4
-* c-basic-offset:4
-* End:
-* For VIM:
-* vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
-*/
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:nil
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */
