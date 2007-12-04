@@ -1063,7 +1063,7 @@ abyss_bool SessionLog(TSession *s)
 
     DateToLogString(&s->date,z+n);
 
-    sprintf(z+n+26,"] \"%s\" %d %d",s->requestline,s->status,s->conn->outbytes);
+    sprintf(z+n+20,"] \"%s\" %d %d",s->requestline,s->status,s->conn->outbytes);
 
     LogWrite(s->server,z);
     return TRUE;
