@@ -49,6 +49,10 @@ SWITCH_STANDARD_API(find_user_function)
 	char *key, *user, *domain;
 	char *xmlstr;
 
+	if (stream->event && switch_event_get_header(stream->event, "http-host")) {
+		stream->write_function(stream,  "Content-Type: text/xml\r\n\r\n");
+	}
+
     if (!cmd) {
 		stream->write_function(stream,  "bad args\n");
         goto end;
