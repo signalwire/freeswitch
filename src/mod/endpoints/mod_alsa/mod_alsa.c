@@ -1551,7 +1551,6 @@ SWITCH_STANDARD_API(pa_cmd)
 	const char *usage_string = "USAGE:\n"
 		"--------------------------------------------------------------------------------\n"
 		"alsa help\n"
-		"alsa dump\n"
 		"alsa call <dest> [<dialplan> <cid_name> <cid_num> <rate>]\n"
 		"alsa answer [<call_id>]\n"
 		"alsa hangup [<call_id>]\n"
