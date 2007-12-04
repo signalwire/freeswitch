@@ -95,18 +95,26 @@ void sofia_event_callback(nua_event_t event,
 	auth_res_t auth_res = AUTH_FORBIDDEN;
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
+	sofia_gateway_t *gateway = NULL;
 
-	if (sofia_private  && !switch_strlen_zero(sofia_private->uuid)) {
-		if ((session = switch_core_session_locate(sofia_private->uuid))) {
-			tech_pvt = switch_core_session_get_private(session);
-			channel = switch_core_session_get_channel(tech_pvt->session);
-			if (!tech_pvt->call_id && sip && sip->sip_call_id && sip->sip_call_id->i_id) {
-				tech_pvt->call_id = switch_core_session_strdup(session, sip->sip_call_id->i_id);
-				switch_channel_set_variable(channel, "sip_call_id", tech_pvt->call_id);
+	if (sofia_private) {
+		if ((gateway = sofia_private->gateway)) {
+			if (switch_thread_rwlock_tryrdlock(gateway->profile->rwlock) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile %s is locked\n", gateway->profile->name);
+				return;
 			}
-		} else {
-			/* too late */
-			return;
+		} else if (!switch_strlen_zero(sofia_private->uuid)) {
+			if ((session = switch_core_session_locate(sofia_private->uuid))) {
+				tech_pvt = switch_core_session_get_private(session);
+				channel = switch_core_session_get_channel(tech_pvt->session);
+				if (!tech_pvt->call_id && sip && sip->sip_call_id && sip->sip_call_id->i_id) {
+					tech_pvt->call_id = switch_core_session_strdup(session, sip->sip_call_id->i_id);
+					switch_channel_set_variable(channel, "sip_call_id", tech_pvt->call_id);
+				}
+			} else {
+				/* too late */
+				return;
+			}
 		}
 	}
 	
@@ -143,7 +151,7 @@ void sofia_event_callback(nua_event_t event,
 	}
 
 	if (sip && (status == 401 || status == 407)) {
-		sofia_reg_handle_sip_r_challenge(status, phrase, nua, profile, nh, session, sip, tags);
+		sofia_reg_handle_sip_r_challenge(status, phrase, nua, profile, nh, session, gateway, sip, tags);
 		goto done;
 	}
 
@@ -250,6 +258,10 @@ void sofia_event_callback(nua_event_t event,
 	}
 
   done:
+
+	if (gateway) {
+		sofia_reg_release_gateway(gateway);
+	}
 
 	if (session) {
 		switch_core_session_rwunlock(session);
@@ -686,18 +698,10 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			if ((gp = sofia_reg_find_gateway(gateway->name))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate gateway '%s'\n", gateway->name);
 				sofia_reg_release_gateway(gp);
-			} else if ((gp=sofia_reg_find_gateway(gateway->register_from))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate uri '%s'\n", gateway->register_from);
-				sofia_reg_release_gateway(gp);
-			} else if ((gp=sofia_reg_find_gateway(gateway->register_contact))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring duplicate contact '%s'\n", gateway->register_contact);
-				sofia_reg_release_gateway(gp);
 			} else {
 				gateway->next = profile->gateways;
 				profile->gateways = gateway;
 				sofia_reg_add_gateway(gateway->name, gateway);
-				sofia_reg_add_gateway(gateway->register_from, gateway);
-				sofia_reg_add_gateway(gateway->register_contact, gateway);
 			}
 		}
 

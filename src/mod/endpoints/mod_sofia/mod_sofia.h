@@ -428,8 +428,9 @@ void sofia_reg_auth_challange(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, 
 								const char *regstr, char *np, size_t nplen, char *ip, switch_event_t **v_event, long exptime);
 void sofia_reg_handle_sip_r_challenge(int status,
-					 char const *phrase,
-					 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[]);
+									  char const *phrase,
+									  nua_t *nua, sofia_profile_t *profile, 
+									  nua_handle_t *nh, switch_core_session_t *session, sofia_gateway_t *gateway, sip_t const *sip, tagi_t tags[]);
 void sofia_reg_handle_sip_r_register(int status,
 					char const *phrase,
 					nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);

@@ -352,9 +352,15 @@ static switch_status_t read_packet(listener_t * listener, switch_event_t **event
 	char *ptr;
 	uint8_t crcount = 0;
 	uint32_t max_len = sizeof(mbuf);
+	switch_channel_t *channel = NULL;
 	*event = NULL;
 	start = time(NULL);
 	ptr = mbuf;
+
+
+	if (listener->session) {
+		channel = switch_core_session_get_channel(listener->session);
+	}
 
 	while (listener->sock && !prefs.done) {
 		uint8_t do_sleep = 1;
@@ -365,7 +371,7 @@ static switch_status_t read_packet(listener_t * listener, switch_event_t **event
 			return SWITCH_STATUS_FALSE;
 		}
 
-		if (listener->session && !switch_channel_ready(switch_core_session_get_channel(listener->session))) {
+		if (channel && !switch_channel_ready(channel)) {
 			status = SWITCH_STATUS_FALSE;
 			break;
 		}

@@ -660,13 +660,12 @@ void sofia_reg_handle_sip_r_register(int status,
 }
 
 void sofia_reg_handle_sip_r_challenge(int status,
-							char const *phrase,
-							nua_t * nua, sofia_profile_t *profile, nua_handle_t * nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[])
+									  char const *phrase,
+									  nua_t * nua, sofia_profile_t *profile, nua_handle_t * nh, 
+									  switch_core_session_t *session, sofia_gateway_t *gateway, sip_t const *sip, tagi_t tags[])
 {
-	sofia_gateway_t *gateway = NULL;
 	sip_www_authenticate_t const *authenticate = NULL;
 	char const *realm = NULL;
-	char *p = NULL, *duprealm = NULL, *qrealm = NULL;
 	char const *scheme = NULL;
 	int indexnum;
 	char *cur;
@@ -705,68 +704,9 @@ void sofia_reg_handle_sip_r_challenge(int status,
 		return;
 	}
 
-	if (profile) {
-		sofia_gateway_t *gateway_ptr = NULL;
-
-		if ((duprealm = strdup(realm))) {
-			qrealm = duprealm;
-
-			while (*qrealm && *qrealm == '"') {
-				qrealm++;
-			}
-
-			if ((p = strchr(qrealm, '"'))) {
-				*p = '\0';
-			}
-
-			if (sip->sip_from) {
-				char *from_key = switch_mprintf("sip:%s@%s",
-												(char *) sip->sip_from->a_url->url_user,
-												(char *) sip->sip_from->a_url->url_host);
-
-				if (!(gateway = sofia_reg_find_gateway(from_key))) {
-					gateway = sofia_reg_find_gateway(qrealm);
-				}
-
-				switch_safe_free(from_key);
-			}
-
-			if (!gateway) {
-				switch_mutex_lock(mod_sofia_globals.hash_mutex);
-				for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
-					if (scheme && qrealm && !strcasecmp(gateway_ptr->register_scheme, scheme)
-						&& !strcasecmp(gateway_ptr->register_realm, qrealm)) {
-						gateway = gateway_ptr;
-
-						if (switch_thread_rwlock_tryrdlock(gateway->profile->rwlock) != SWITCH_STATUS_SUCCESS) {
-#ifdef SOFIA_DEBUG_RWLOCKS
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile %s is locked\n", gateway->profile->name);
-#endif
-							gateway = NULL;
-						}
-#ifdef SOFIA_DEBUG_RWLOCKS
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "XXXXXXXXXXXXXX GW LOCK %s\n", gateway->profile->name);
-#endif
-						break;
-					}
-				}
-				switch_mutex_unlock(mod_sofia_globals.hash_mutex);
-			}
-			
-			if (!gateway) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Match for Scheme [%s] Realm [%s]\n", scheme, qrealm);
-			}
-			
-			switch_safe_free(duprealm);
-
-			if (!gateway) {
-				goto cancel;
-			}
-
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
-			goto cancel;
-		}
+	if (!gateway) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Matching gateway found\n");
+		goto cancel;
 	}
 
 	snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, gateway->register_username, gateway->register_password);
@@ -779,16 +719,11 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	tl_gets(tags, NUTAG_CALLSTATE_REF(ss_state), SIPTAG_WWW_AUTHENTICATE_REF(authenticate), TAG_END());
 
 	nua_authenticate(nh, SIPTAG_EXPIRES_STR(gateway->expires_str), NUTAG_AUTH(authentication), TAG_END());
-	if (gateway) {
-		sofia_reg_release_gateway(gateway);
-		gateway = NULL;
-	}
+
 	return;
 
  cancel:
-	if (gateway) {
-		sofia_reg_release_gateway(gateway);
-	}
+
 	if (session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		switch_channel_hangup(channel, SWITCH_CAUSE_MANDATORY_IE_MISSING);
