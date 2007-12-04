@@ -1420,6 +1420,78 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 }
 
 
+
+/* fake chan_user */
+switch_endpoint_interface_t *user_endpoint_interface;
+static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
+												 switch_caller_profile_t *outbound_profile,
+												 switch_core_session_t **new_session, switch_memory_pool_t **pool);
+switch_io_routines_t user_io_routines = {
+	/*.outgoing_channel */ user_outgoing_channel
+};
+
+static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
+												 switch_caller_profile_t *outbound_profile,
+												 switch_core_session_t **new_session, switch_memory_pool_t **pool)
+{
+	switch_xml_t x_domain, xml = NULL, x_user, x_param, x_params;	
+	char *user = NULL, *domain = NULL;
+	const char *dest = NULL;
+	static switch_call_cause_t cause;
+	unsigned int timelimit = 60;
+
+	user = switch_core_session_strdup(session, outbound_profile->destination_number);
+
+	if (!(domain = strchr(user, '@'))) {
+		goto done;
+	}
+
+	*domain++ = '\0';
+	
+	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, "as_channel=true") != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", user, domain);
+		goto done;
+	}
+
+	if ((x_params = switch_xml_child(x_user, "params"))) {
+		for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
+			const char *var = switch_xml_attr(x_param, "name");
+			const char *val = switch_xml_attr(x_param, "value");
+			
+			if (!strcasecmp(var, "dial-string")) {
+				dest = val;
+				break;
+			}
+
+		}
+	}
+
+ done:
+
+	if (dest) {
+		const char *var;
+		switch_channel_t *channel;
+
+		channel = switch_core_session_get_channel(session);
+		if ((var = switch_channel_get_variable(channel, "call_timeout"))) {
+			timelimit = atoi(var);
+		}
+
+		if (switch_ivr_originate(session, new_session, &cause, dest, timelimit, NULL, NULL, NULL, NULL) == SWITCH_STATUS_SUCCESS) {
+			switch_core_session_rwunlock(*new_session);
+		}
+	}
+
+	if (xml) {
+		switch_xml_free(xml);
+	}
+	
+
+	return cause;
+
+}
+
+
 #define SPEAK_DESC "Speak text to a channel via the tts interface"
 #define DISPLACE_DESC "Displace audio from a file to the channels input"
 #define SESS_REC_DESC "Starts a background recording of the entire session"
@@ -1442,6 +1514,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+
+	user_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+    user_endpoint_interface->interface_name = "USER";
+    user_endpoint_interface->io_routines = &user_io_routines;
+
 
  	SWITCH_ADD_API(api_interface, "strepoch", "Convert a date string into epoch time", strepoch_api_function, "<string>");
 	SWITCH_ADD_API(api_interface, "chat", "chat", chat_api_function, "<proto>|<from>|<to>|<message>");

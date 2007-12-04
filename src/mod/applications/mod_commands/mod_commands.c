@@ -41,6 +41,84 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load);
 SWITCH_MODULE_DEFINITION(mod_commands, mod_commands_load, NULL, NULL);
 
 
+SWITCH_STANDARD_API(user_data_function)
+{
+	switch_xml_t x_domain, xml = NULL, x_user, x_param, x_params;	
+	int argc;
+    char *mydata = NULL, *argv[3];
+	char *key = NULL, *type = NULL, *user, *domain;
+	char delim = ' ';
+	const char *err = NULL;
+	const char *container = "params", *elem = "param";
+	char *params = NULL;
+
+    if (!cmd) {
+		err = "bad args";
+        goto end;
+    }
+
+    mydata = strdup(cmd);
+    assert(mydata);
+	
+    argc = switch_separate_string(mydata, delim, argv, (sizeof(argv) / sizeof(argv[0])));
+
+    if (argc < 3) {
+		err = "bad args";
+        goto end;
+    }
+
+	user = argv[0];
+	type = argv[1];
+	key = argv[2];
+
+	if ((domain = strchr(user, '@'))) {
+		*domain++ = '\0';
+	} else {
+		domain = "cluecon.com";
+	}
+	
+	params = switch_mprintf("user=%s&domain=%s&type=%s&key=%s", user, domain, type, key);
+
+	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, params) != SWITCH_STATUS_SUCCESS) {
+		err = "can't find user";
+		goto end;
+	}
+
+
+ end:
+
+	if (xml) {
+		if (err) {
+			//stream->write_function(stream,  "-Error %s\n", err);
+		} else {
+			if (!strcmp(type, "var")) {
+				container = "variables";
+				elem = "variable";
+			}
+
+			if ((x_params = switch_xml_child(x_user, container))) {
+				for (x_param = switch_xml_child(x_params, elem); x_param; x_param = x_param->next) {
+					const char *var = switch_xml_attr(x_param, "name");
+					const char *val = switch_xml_attr(x_param, "value");
+				
+					if (!strcasecmp(var, key)) {
+						stream->write_function(stream, "%s", val);
+						break;
+					}
+				
+				}
+			}
+		}
+		switch_xml_free(xml);
+	}
+
+	free(mydata);
+	switch_safe_free(params);
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
 SWITCH_STANDARD_API(find_user_function)
 {
 	switch_xml_t x_domain = NULL, x_user = NULL, xml = NULL;
@@ -1949,6 +2027,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_chat", "Send a chat message", uuid_chat, UUID_CHAT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "find_user_xml", "find a user", find_user_function, "<key> <user>@<domain>");
 	SWITCH_ADD_API(commands_api_interface, "xml_locate", "find some xml", xml_locate_function, "[root | <section> <tag> <tag_attr_name> <tag_attr_val>]");
+	SWITCH_ADD_API(commands_api_interface, "user_data", "find user data", user_data_function, "<user>@<domain> [var|param] <name>");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
