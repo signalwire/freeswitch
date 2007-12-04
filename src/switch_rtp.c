@@ -365,8 +365,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 
 	x = 0;
 	while(!ilen) {
+		switch_status_t status;
 		ilen = len;
-		switch_status_t status = switch_socket_recvfrom(rtp_session->from_addr, new_sock, 0, (void *) i, &ilen);
+		status = switch_socket_recvfrom(rtp_session->from_addr, new_sock, 0, (void *) i, &ilen);
 
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 			break;
