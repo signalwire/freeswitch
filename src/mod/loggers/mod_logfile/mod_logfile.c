@@ -290,6 +290,9 @@ static switch_status_t load_profile(logfile_profile_t *profile, switch_xml_t xml
 		profile->logfile = strdup(logfile);
 	}
 
+	/* TODO: add mapping parsing from config */
+	add_mapping("all", profile);
+
 	return 0;
 }
 
