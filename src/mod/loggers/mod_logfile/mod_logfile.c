@@ -297,16 +297,26 @@ static switch_status_t load_profile(logfile_profile_t *profile, switch_xml_t xml
 static void event_handler(switch_event_t *event)
 {
 	const char *sig = switch_event_get_header(event, "Trapped-Signal");
+    switch_hash_index_t *hi;
+	void *val;
+	const void *var;
+	logfile_profile_t *profile;
 
 	if (sig && !strcmp(sig, "HUP")) {
 		if (globals.rotate) {
-			/* TODO: loop through all profiles */
-			mod_logfile_rotate(default_profile);
+		    for (hi = switch_hash_first(NULL, profile_hash); hi; hi = switch_hash_next(hi)) {
+		        switch_hash_this(hi, &var, NULL, &val);
+				profile = val;
+				mod_logfile_rotate(profile);
+			}
 		} else {
 			switch_mutex_lock(globals.mutex);
-			/* TODO: loop through all profiles */
-			switch_file_close(default_profile->log_afd);
-			mod_logfile_openlogfile(default_profile, SWITCH_TRUE);
+		    for (hi = switch_hash_first(NULL, profile_hash); hi; hi = switch_hash_next(hi)) {
+		        switch_hash_this(hi, &var, NULL, &val);
+				profile = val;
+				switch_file_close(profile->log_afd);
+				mod_logfile_openlogfile(profile, SWITCH_TRUE);
+			}
 			switch_mutex_unlock(globals.mutex);
 		}
 	}
@@ -362,11 +372,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_logfile_load)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Settings, check the new config!\n");
 				} else {
 					logfile_profile_t *profile;
-					profile = switch_core_alloc(module_pool, sizeof(*default_profile));
+					profile = switch_core_alloc(module_pool, sizeof(*profile));
 					memset(profile, 0, sizeof(*profile));
 					profile->name = switch_core_strdup(module_pool, switch_str_nil(name));
 					load_profile(profile, settings);
 					switch_core_hash_insert(profile_hash, profile->name, (void *) profile);
+					if (mod_logfile_openlogfile(profile, SWITCH_TRUE) != SWITCH_STATUS_SUCCESS) {
+						return SWITCH_STATUS_GENERR;
+					}
 					/* TODO: remove default_profile */
 					default_profile = profile;
 				}
@@ -374,11 +387,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_logfile_load)
 		}
 
 		switch_xml_free(xml);
-	}
-
-	/* TODO: do this for all profiles */
-	if (mod_logfile_openlogfile(default_profile, SWITCH_TRUE) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_GENERR;
 	}
 
 	switch_log_bind_logger(mod_logfile_logger, SWITCH_LOG_DEBUG);
