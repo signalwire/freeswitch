@@ -44,8 +44,8 @@ static const uint8_t STATIC_LEVELS[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
 static switch_memory_pool_t *module_pool = NULL;
 
 static struct {
-    int rotate;
-    switch_mutex_t *mutex;
+	int rotate;
+	switch_mutex_t *mutex;
 } globals;
 
 struct level_set {
@@ -72,7 +72,7 @@ void process_levels(logfile_profile_t *profile, char *p)
 {
 	int x, i, argc = 0;
 	char *argv[10] = { 0 };
-	
+
 	profile->levels[0].level = SWITCH_LOG_CONSOLE;
 	profile->levels[1].level = SWITCH_LOG_ALERT;
 	profile->levels[2].level = SWITCH_LOG_CRIT;
@@ -86,7 +86,7 @@ void process_levels(logfile_profile_t *profile, char *p)
 		profile->levels[i].on = 0;
 	}
 
-		if ((argc = switch_separate_string(p, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+	if ((argc = switch_separate_string(p, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		for (x = 0; x < argc; x++) {
 			if (!strncasecmp(argv[x], "alert", strlen(argv[x]))) {
 				profile->levels[SWITCH_LOG_ALERT].on = 1;
@@ -150,16 +150,16 @@ static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 	char *p = NULL;
 	switch_status_t stat = 0;
 	int64_t offset = 0;
-    switch_memory_pool_t *pool;
-    switch_time_exp_t tm;
-    char date[80] = "";
-    switch_size_t retsize;
-    switch_status_t status = SWITCH_STATUS_SUCCESS;
-    
-    switch_mutex_lock(globals.mutex);
+	switch_memory_pool_t *pool;
+	switch_time_exp_t tm;
+	char date[80] = "";
+	switch_size_t retsize;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-    switch_time_exp_lt(&tm, switch_time_now());
-    switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d-%H-%M-%S", &tm);
+	switch_mutex_lock(globals.mutex);
+
+	switch_time_exp_lt(&tm, switch_time_now());
+	switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d-%H-%M-%S", &tm);
 
 	profile->log_size = 0;
 
@@ -167,38 +167,38 @@ static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 
 	if (stat != SWITCH_STATUS_SUCCESS) {
 		status = SWITCH_STATUS_FALSE;
-        goto end;
-    }
+		goto end;
+	}
 
-    
+
 	p = malloc(strlen(profile->logfile)+WARM_FUZZY_OFFSET);
-    assert(p);
+	assert(p);
 
 	memset(p, '\0', strlen(profile->logfile)+WARM_FUZZY_OFFSET);
 
-    switch_core_new_memory_pool(&pool);
+	switch_core_new_memory_pool(&pool);
 
 	for (i=1; i < MAX_ROT; i++) {
 		sprintf((char *)p, "%s.%s.%i", profile->logfile, date, i);
-        if (switch_file_exists(p, pool) == SWITCH_STATUS_SUCCESS) {
-            continue;
-        }
+		if (switch_file_exists(p, pool) == SWITCH_STATUS_SUCCESS) {
+			continue;
+		}
 
-        switch_file_close(profile->log_afd);
-        switch_file_rename(profile->logfile, p, pool);
-        mod_logfile_openlogfile(profile, SWITCH_FALSE);
-        break;
+		switch_file_close(profile->log_afd);
+		switch_file_rename(profile->logfile, p, pool);
+		mod_logfile_openlogfile(profile, SWITCH_FALSE);
+		break;
 	}
 
 	free(p);
 
-    switch_core_destroy_memory_pool(&pool);
+	switch_core_destroy_memory_pool(&pool);
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New log started.\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New log started.\n");
 
- end:
+end:
 
-    switch_mutex_unlock(globals.mutex);
+	switch_mutex_unlock(globals.mutex);
 
 	return status;
 }
@@ -211,19 +211,19 @@ static switch_status_t mod_logfile_raw_write(logfile_profile_t *profile, char *l
 
 	if (len <= 0) {
 		return SWITCH_STATUS_FALSE;
-    }
-    
-    switch_mutex_lock(globals.mutex);
+	}
+
+	switch_mutex_lock(globals.mutex);
 
 	/* TODO: handle null log_afd */
 	if (switch_file_write(profile->log_afd, log_data, &len) != SWITCH_STATUS_SUCCESS) {
-        switch_file_close(profile->log_afd);
-        mod_logfile_openlogfile(profile, SWITCH_TRUE);
-        len = strlen(log_data);
-        switch_file_write(profile->log_afd, log_data, &len);
-    }
-    
-    switch_mutex_unlock(globals.mutex);
+		switch_file_close(profile->log_afd);
+		mod_logfile_openlogfile(profile, SWITCH_TRUE);
+		len = strlen(log_data);
+		switch_file_write(profile->log_afd, log_data, &len);
+	}
+
+	switch_mutex_unlock(globals.mutex);
 
 	profile->log_size += len;
 
@@ -236,11 +236,10 @@ static switch_status_t mod_logfile_raw_write(logfile_profile_t *profile, char *l
 
 static switch_status_t mod_logfile_logger(const switch_log_node_t *node, switch_log_level_t level)
 {
-
 	/* TODO: Handle multiple profiles */
 	if (default_profile->levels[node->level].on) {
-        mod_logfile_raw_write(default_profile, node->data);
-    }
+		mod_logfile_raw_write(default_profile, node->data);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -258,12 +257,12 @@ static switch_status_t load_config(logfile_profile_t *profile, switch_xml_t xml)
 			process_levels(profile, val);
 		} else if (!strcmp(var, "rollover")) {
 			profile->roll_size = atoi(val);
-            if (profile->roll_size < 0) {
-                profile->roll_size = 0;
-            }
+			if (profile->roll_size < 0) {
+				profile->roll_size = 0;
+			}
 		}
 	}
-    
+
 	if (switch_strlen_zero(profile->logfile)) {
 		char logfile[512];
 		snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "freeswitch.log");
@@ -276,20 +275,20 @@ static switch_status_t load_config(logfile_profile_t *profile, switch_xml_t xml)
 
 static void event_handler(switch_event_t *event)
 {
-    const char *sig = switch_event_get_header(event, "Trapped-Signal");
+	const char *sig = switch_event_get_header(event, "Trapped-Signal");
 
-    if (sig && !strcmp(sig, "HUP")) {
-        if (globals.rotate) {
+	if (sig && !strcmp(sig, "HUP")) {
+		if (globals.rotate) {
 			/* TODO: loop through all profiles */
-            mod_logfile_rotate(default_profile);
-        } else {
-            switch_mutex_lock(globals.mutex);
+			mod_logfile_rotate(default_profile);
+		} else {
+			switch_mutex_lock(globals.mutex);
 			/* TODO: loop through all profiles */
-            switch_file_close(default_profile->log_afd);
-            mod_logfile_openlogfile(default_profile, SWITCH_TRUE);
-            switch_mutex_unlock(globals.mutex);
-        }
-    }
+			switch_file_close(default_profile->log_afd);
+			mod_logfile_openlogfile(default_profile, SWITCH_TRUE);
+			switch_mutex_unlock(globals.mutex);
+		}
+	}
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_logfile_load)
@@ -298,9 +297,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_logfile_load)
 	switch_xml_t cfg, xml, settings, param, profiles, xprofile;
 
 	module_pool = pool;
-	 
+
 	memset(&globals, 0, sizeof(globals));
-    switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
+	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
 
 	if (switch_event_bind((char *) modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
@@ -318,7 +317,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_logfile_load)
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 				if (!strcmp(var, "rotate")) {
-                    globals.rotate = switch_true(val);
+					globals.rotate = switch_true(val);
 				}
 			}
 		}
