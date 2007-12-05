@@ -48,12 +48,18 @@ static struct {
     switch_mutex_t *mutex;
 } globals;
 
+struct level_set {
+	int level;
+	int on;
+};
+
 struct logfile_profile {
 	unsigned int log_fd;
 	switch_size_t log_size;	  /* keep the log size in check for rotation */
 	switch_size_t roll_size;  /* the size that we want to rotate the file at */
 	char *logfile;
 	switch_file_t *log_afd;
+	struct level_set levels[8];
 };
 
 typedef struct logfile_profile logfile_profile_t;
@@ -64,49 +70,45 @@ static switch_status_t load_config(logfile_profile_t *profile, switch_xml_t xml)
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_logfile, default_profile->logfile);
 
-/* i know this is strange but it's the fastest way i could think of managing log levels. */
-/* i'd rather not try to search something each time we get a message to log */
-struct level_set {
-	int level;
-	int on;
-} static levels[] = {
-	{SWITCH_LOG_CONSOLE, 0},   /* 0 */
-	{SWITCH_LOG_ALERT,   0},   /* 1 */
-	{SWITCH_LOG_CRIT,    0},   /* 2 */
-	{SWITCH_LOG_ERROR,   0},   /* 3 */
-	{SWITCH_LOG_WARNING, 0},   /* 4 */
-	{SWITCH_LOG_NOTICE,  0},   /* 5 */
-	{SWITCH_LOG_INFO,    0},   /* 6 */
-	{SWITCH_LOG_DEBUG,   0},   /* 7 */
-};
-
-void process_levels(char *p)
+void process_levels(logfile_profile_t *profile, char *p)
 {
-	int x, argc = 0;
+	int x, i, argc = 0;
 	char *argv[10] = { 0 };
+	
+	profile->levels[0].level = SWITCH_LOG_CONSOLE;
+	profile->levels[1].level = SWITCH_LOG_ALERT;
+	profile->levels[2].level = SWITCH_LOG_CRIT;
+	profile->levels[3].level = SWITCH_LOG_ERROR;
+	profile->levels[4].level = SWITCH_LOG_WARNING;
+	profile->levels[5].level = SWITCH_LOG_NOTICE;
+	profile->levels[6].level = SWITCH_LOG_INFO;
+	profile->levels[7].level = SWITCH_LOG_DEBUG;
 
-	if ((argc = switch_separate_string(p, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+	for (i=0; i < (sizeof(profile->levels) / sizeof(struct level_set)); i++) {
+		profile->levels[i].on = 0;
+	}
+
+		if ((argc = switch_separate_string(p, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		for (x = 0; x < argc; x++) {
 			if (!strncasecmp(argv[x], "alert", strlen(argv[x]))) {
-				levels[SWITCH_LOG_ALERT].on = 1;
+				profile->levels[SWITCH_LOG_ALERT].on = 1;
 			} else if (!strncasecmp(argv[x], "crit", strlen(argv[x]))) {
-				levels[SWITCH_LOG_CRIT].on = 1;
+				profile->levels[SWITCH_LOG_CRIT].on = 1;
 			} else if (!strncasecmp(argv[x], "error", strlen(argv[x]))) {
-				levels[SWITCH_LOG_ERROR].on = 1;
+				profile->levels[SWITCH_LOG_ERROR].on = 1;
 			} else if (!strncasecmp(argv[x], "warn", strlen(argv[x]))) {
-				levels[SWITCH_LOG_WARNING].on = 1;
+				profile->levels[SWITCH_LOG_WARNING].on = 1;
 			} else if (!strncasecmp(argv[x], "notice", strlen(argv[x]))) {
-				levels[SWITCH_LOG_NOTICE].on = 1;
+				profile->levels[SWITCH_LOG_NOTICE].on = 1;
 			} else if (!strncasecmp(argv[x], "info", strlen(argv[x]))) {
-				levels[SWITCH_LOG_INFO].on = 1;
+				profile->levels[SWITCH_LOG_INFO].on = 1;
 			} else if (!strncasecmp(argv[x], "debug", strlen(argv[x]))) {
-				levels[SWITCH_LOG_DEBUG].on = 1;
+				profile->levels[SWITCH_LOG_DEBUG].on = 1;
 			} else if (!strncasecmp(argv[x], "console", strlen(argv[x]))) {
-				levels[SWITCH_LOG_CONSOLE].on = 1;
+				profile->levels[SWITCH_LOG_CONSOLE].on = 1;
 			} else if (!strncasecmp(argv[x], "all", strlen(argv[x]))) {
-				int i;
-				for (i=0; i < (sizeof(levels) / sizeof(struct level_set)); i++) {
-					levels[i].on = 1;
+				for (i=0; i < (sizeof(profile->levels) / sizeof(struct level_set)); i++) {
+					profile->levels[i].on = 1;
 				}
 			}
 		}
@@ -238,7 +240,7 @@ static switch_status_t mod_logfile_logger(const switch_log_node_t *node, switch_
 {
 
 	/* TODO: Handle multiple profiles */
-	if (levels[node->level].on) {
+	if (default_profile->levels[node->level].on) {
         mod_logfile_raw_write(default_profile, node->data);
     }
 
@@ -256,7 +258,7 @@ static switch_status_t load_config(logfile_profile_t *profile, switch_xml_t xml)
 			set_global_logfile(val);
 		/* TODO: do this for multiple profiles */
 		} else if (!strcmp(var, "level")) {
-			process_levels(val);
+			process_levels(profile, val);
 		} else if (!strcmp(var, "rollover")) {
 			profile->roll_size = atoi(val);
             if (profile->roll_size < 0) {
