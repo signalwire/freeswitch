@@ -1470,15 +1470,22 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 	if (dest) {
 		const char *var;
+		char *d_dest = NULL;
 		switch_channel_t *channel;
-
+		
 		channel = switch_core_session_get_channel(session);
 		if ((var = switch_channel_get_variable(channel, "call_timeout"))) {
 			timelimit = atoi(var);
 		}
+		
+		d_dest = switch_channel_expand_variables(channel, dest);
 
-		if (switch_ivr_originate(session, new_session, &cause, dest, timelimit, NULL, NULL, NULL, NULL) == SWITCH_STATUS_SUCCESS) {
+		if (switch_ivr_originate(session, new_session, &cause, d_dest, timelimit, NULL, NULL, NULL, NULL) == SWITCH_STATUS_SUCCESS) {
 			switch_core_session_rwunlock(*new_session);
+		}
+
+		if (d_dest != dest) {
+			switch_safe_free(d_dest);
 		}
 	}
 
