@@ -1264,12 +1264,12 @@ if ((dp = realloc(data, olen))) {\
     memset(c, 0, olen - cpos);\
  }}                           \
 
-SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel, char *in)
+SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel, const char *in)
 {
-	char *q, *p, *c = NULL;
+	char *p, *c = NULL;
 	char *data, *indup;
 	size_t sp = 0, len = 0, olen = 0, vtype = 0, br = 0, cpos, block = 128;
-	const char *sub_val = NULL;
+	const char *q, *sub_val = NULL;
 	char *cloned_sub_val = NULL;
 	char *func_val = NULL;
 	int nv = 0;
@@ -1295,7 +1295,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 	}
 	
 	if (!nv) {
-		return in;
+		return (char *)in;
 	}
 
 	nv = 0;
@@ -1468,7 +1468,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 						free(data);
 						free(indup);
-						return in;
+						return (char *)in;
 					}
 				}
 				if ((nlen = sub_val ? strlen(sub_val) : 0)) {
