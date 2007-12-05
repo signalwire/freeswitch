@@ -391,7 +391,7 @@ AC_ARG_ENABLE(core-odbc-support,
 	[  --enable-core-odbc-support         Compile with ODBC Support],,[enable_core_odbc_support="no"])
 
 AC_ARG_ENABLE(core-libedit-support,     
-	[  --enable-core-libedit-support         Compile with libedit Support],,[enable_core_libedit_support="no"])
+	[  --disable-core-libedit-support         Compile without libedit Support],,[enable_core_libedit_support="yes"])
 
 if test "$enable_core_libedit_support" = "yes" ; then
     AC_CHECK_LIB(ncurses, tgetent,,
