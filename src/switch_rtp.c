@@ -463,13 +463,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	rtp_session->pool = pool;
 	rtp_session->te = 101;
 
-	switch_mutex_init(&rtp_session->flag_mutex, SWITCH_MUTEX_NESTED, rtp_session->pool);
-	switch_mutex_init(&rtp_session->dtmf_data.dtmf_mutex, SWITCH_MUTEX_NESTED, rtp_session->pool);
+	switch_mutex_init(&rtp_session->flag_mutex, SWITCH_MUTEX_NESTED, pool);
+	switch_mutex_init(&rtp_session->dtmf_data.dtmf_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_buffer_create_dynamic(&rtp_session->dtmf_data.dtmf_buffer, 128, 128, 0);
 	switch_rtp_set_flag(rtp_session, flags);
 
 	/* for from address on recvfrom calls */
-	switch_sockaddr_info_get(&rtp_session->from_addr, NULL, SWITCH_UNSPEC, 0, 0, rtp_session->pool);
+	switch_sockaddr_info_get(&rtp_session->from_addr, NULL, SWITCH_UNSPEC, 0, 0, pool);
 
 	memset(&policy, 0, sizeof(policy));
 	if (crypto_key) {
@@ -535,7 +535,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	rtp_session->payload = payload;
 	rtp_session->ms_per_packet = ms_per_packet;
 	rtp_session->samples_per_interval = rtp_session->conf_samples_per_interval = samples_per_interval;
-	rtp_session->timer_name = switch_core_strdup(rtp_session->pool, timer_name);
+	rtp_session->timer_name = switch_core_strdup(pool, timer_name);
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
 		err_status_t stat;
@@ -561,7 +561,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	}
 
 	if (!switch_strlen_zero(timer_name)) {
-		if (switch_core_timer_init(&rtp_session->timer, timer_name, ms_per_packet / 1000, samples_per_interval, rtp_session->pool) ==
+		if (switch_core_timer_init(&rtp_session->timer, timer_name, ms_per_packet / 1000, samples_per_interval, pool) ==
 			SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting timer [%s] %d bytes per %dms\n", timer_name, samples_per_interval,
 							  ms_per_packet);
