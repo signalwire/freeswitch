@@ -69,6 +69,33 @@ SWITCH_DECLARE(const char *) switch_log_level2str(switch_log_level_t level)
 	return LEVELS[level];
 }
 
+SWITCH_DECLARE(uint32_t) switch_log_str2mask(const char *str)
+{
+	int argc = 0, x = 0;
+	char *argv[10] = { 0 };
+	uint32_t mask = 0;
+	char *p = strdup(str);
+
+	assert(p);
+
+	if ((argc = switch_separate_string(p, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+		for (x = 0; x < argc; x++) {
+			if (!strcasecmp(argv[x], "all")) {
+				mask = 0xFF;
+				break;
+			} else {
+				mask |= (1 << switch_log_str2level(argv[x]));
+			}
+		}
+	}
+
+	free(p);
+
+	return mask;
+}
+
+
+
 SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(const char *str)
 {
 	int x = 0;

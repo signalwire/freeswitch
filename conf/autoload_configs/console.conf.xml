@@ -2,11 +2,14 @@
   <!-- pick a file name, a function name or 'all' -->
   <!-- map as many as you need for specific debugging -->
   <mappings>
-    <!-- <param name="log_event" value="DEBUG"/> -->
-    <param name="all" value="DEBUG"/>
+    <!-- 
+	 name can be a file name, function name or 'all' 
+	 value is one or more of debug,info,notice,warning,error,crit,alert,all
+    -->
+    <map name="all" value="debug,info,notice,warning,error,crit,alert"/>
   </mappings>
   <settings>
-    <!-- uncomment for color logging (for debugging) -->
-    <!--<param name="colorize" value="true"/>-->
+    <!-- comment or set to false for no color logging -->
+    <param name="colorize" value="true"/>
   </settings>
 </configuration>

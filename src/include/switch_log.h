@@ -117,6 +117,9 @@ SWITCH_DECLARE(const char *) switch_log_level2str(switch_log_level_t level);
 */
 SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(const char *str);
 
+SWITCH_DECLARE(uint32_t) switch_log_str2mask(const char *str);
+#define switch_log_check_mask(_mask, _level) (_mask & (1 << _level))
+
 ///\}
 SWITCH_END_EXTERN_C
 #endif

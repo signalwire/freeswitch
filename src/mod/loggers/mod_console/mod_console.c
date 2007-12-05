@@ -35,7 +35,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_console_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_console_shutdown);
 SWITCH_MODULE_DEFINITION(mod_console, mod_console_load, mod_console_shutdown, NULL);
 
-static const uint8_t STATIC_LEVELS[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
 static int RUNNING = 0;
 
 static int COLORIZE = 0;
@@ -61,34 +60,38 @@ static const char *COLORS[] = { SWITCH_SEQ_FRED, SWITCH_SEQ_FRED, SWITCH_SEQ_FRE
 
 static switch_memory_pool_t *module_pool = NULL;
 static switch_hash_t *log_hash = NULL;
-static switch_hash_t *name_hash = NULL;
-static int8_t all_level = -1;
+static uint32_t all_level = 0;
+static int32_t hard_log_level = SWITCH_LOG_DEBUG;
 
 static void del_mapping(char *var)
 {
-	if (!strcasecmp(var, "all")) {
-		all_level = -1;
-		return;
-	}
 	switch_core_hash_insert(log_hash, var, NULL);
 }
 
-static void add_mapping(char *var, char *val)
+static void add_mapping(char *var, char *val, int cumlative)
 {
-	char *name;
+	uint32_t m = 0;
 
+	if (cumlative) {
+		uint32_t l = switch_log_str2level(val);
+		int i;
+
+		assert(l < 10);
+		
+		for (i = 0; i <= l; i++) {
+			m |= (1 << i);
+		}
+	} else {
+		m = switch_log_str2mask(val);
+	}
+	
 	if (!strcasecmp(var, "all")) {
-		all_level = (int8_t) switch_log_str2level(val);
+		all_level |= m;
 		return;
 	}
 
-	if (!(name = switch_core_hash_find(name_hash, var))) {
-		name = switch_core_strdup(module_pool, var);
-		switch_core_hash_insert(name_hash, name, name);
-	}
-
-	del_mapping(name);
-	switch_core_hash_insert(log_hash, name, (void *) &STATIC_LEVELS[(uint8_t) switch_log_str2level(val)]);
+	del_mapping(var);
+	switch_core_hash_insert(log_hash, var, (void *)(intptr_t) m);
 }
 
 static switch_status_t config_logger(void)
@@ -104,18 +107,19 @@ static switch_status_t config_logger(void)
 	if (log_hash) {
 		switch_core_hash_destroy(&log_hash);
 	}
-	if (name_hash) {
-		switch_core_hash_destroy(&name_hash);
-	}
+
 	switch_core_hash_init(&log_hash, module_pool);
-	switch_core_hash_init(&name_hash, module_pool);
 
 	if ((settings = switch_xml_child(cfg, "mappings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
-
-			add_mapping(var, val);
+			add_mapping(var, val, 1);
+		}
+		for (param = switch_xml_child(settings, "map"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+			add_mapping(var, val, 0);
 		}
 	}
 
@@ -146,30 +150,34 @@ static switch_status_t config_logger(void)
 static switch_status_t switch_console_logger(const switch_log_node_t *node, switch_log_level_t level)
 {
 	FILE *handle;
-	/*
+	
 	if (!RUNNING) {
-		return SWITCH_STATUS_FALSE;
+		return SWITCH_STATUS_SUCCESS;
 	}
-	*/
+
+	if (level > hard_log_level) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if ((handle = switch_core_data_channel(SWITCH_CHANNEL_ID_LOG))) {
-		uint8_t *lookup = NULL;
-		switch_log_level_t level = SWITCH_LOG_DEBUG;
-
+        size_t mask = 0;
+        int ok = 0;
+    
+        ok = switch_log_check_mask(all_level, level);
+        
 		if (log_hash) {
-			lookup = switch_core_hash_find(log_hash, node->file);
+			if (!ok) {
+				mask = (size_t) switch_core_hash_find(log_hash, node->file);
+				ok = switch_log_check_mask(mask, level);
+			}
 
-			if (!lookup) {
-				lookup = switch_core_hash_find(log_hash, node->func);
+			if (!ok) {
+				mask = (size_t) switch_core_hash_find(log_hash, node->func);
+				ok = switch_log_check_mask(mask, level);
 			}
 		}
 
-		if (lookup) {
-			level = (switch_log_level_t) *lookup;
-		} else if (all_level > -1) {
-			level = (switch_log_level_t) all_level;
-		}
-
-		if (!log_hash || (((all_level > -1) || lookup) && level >= node->level)) {
+		if (ok) {
 			if (COLORIZE) {
 #ifdef WIN32
 				SetConsoleTextAttribute(hStdout, COLORS[node->level]);
@@ -190,12 +198,77 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(console_api_function)
+{
+	int argc;
+    char *mydata = NULL, *argv[3];
+	const char *err = NULL;
+
+	if (!cmd) {
+		err = "bad args";
+        goto end;
+    }
+
+    mydata = strdup(cmd);
+    assert(mydata);
+	
+    argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc > 0) {
+
+		if (argc < 2) {
+			err = "missing arg";
+			goto end;
+		}
+
+		if (!strcasecmp(argv[0], "loglevel")) {
+			int level;
+			
+			if (*argv[1] > 47 && *argv[1] < 58) {
+				level = atoi(argv[1]);
+			} else {
+				level = switch_log_str2level(argv[1]);
+			}
+
+			hard_log_level = level;
+			stream->write_function(stream,  "+OK console log level set to %s\n", switch_log_level2str(hard_log_level));
+			goto end;
+		} else if (!strcasecmp(argv[0], "colorize")) {
+			COLORIZE = switch_true(argv[1]);
+			stream->write_function(stream,  "+OK console color %s\n", COLORIZE ? "enabled" : "disabled");
+			goto end;
+		}
+		
+		err = "invalid command";
+
+	}
+
+
+ end:
+	
+	if (err) {
+		stream->write_function(stream,  "-Error %s\n", err);
+	}
+
+
+	free(mydata);
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_console_load)
 {
-	module_pool = pool;
+	switch_api_interface_t *api_interface;
+	
 
+	module_pool = pool;
+	
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+
+	SWITCH_ADD_API(api_interface, "console", "Console", console_api_function, "");
+
 
 	/* setup my logger function */
 	switch_log_bind_logger(switch_console_logger, SWITCH_LOG_DEBUG);

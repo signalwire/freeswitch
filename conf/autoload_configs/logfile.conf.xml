@@ -2,19 +2,22 @@
   <settings>
    <!-- true to auto rotate on HUP, false to open/close -->
    <param name="rotate" value="true"/>
-</settings>
+  </settings>
   <profiles>
     <profile name="default">
       <settings>
         <!-- File to log to -->
-        <!--<param name="logfile" value="/var/log/freeswitch.log"/>-->
+	<!--<param name="logfile" value="/var/log/freeswitch.log"/>-->
         <!-- At this length in bytes rotate the log file (0 for never) -->
         <!--<param name="rollover" value="10485760"/>-->
-        <!-- The level of the message to log -->
-        <!--<param name="level" value="debug,info,warning,notice,error,crit,alert"/>-->
-        <param name="level" value="all"/>
       </settings>
+      <mappings>
+	<!-- 
+	     name can be a file name, function name or 'all' 
+	     value is one or more of debug,info,notice,warning,error,crit,alert,all
+	-->
+	<map name="all" value="debug,info,notice,warning,error,crit,alert"/>
+      </mappings>
     </profile>
   </profiles>
 </configuration>
-
