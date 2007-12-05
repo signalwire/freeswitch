@@ -42,6 +42,9 @@ SWITCH_MODULE_DEFINITION(mod_logfile, mod_logfile_load, mod_logfile_shutdown, NU
 static const uint8_t STATIC_LEVELS[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
 
 static switch_memory_pool_t *module_pool = NULL;
+static switch_hash_t *log_hash = NULL;
+static switch_hash_t *name_hash = NULL;
+static switch_hash_t *profile_hash = NULL;
 
 static struct {
 	int rotate;
@@ -54,6 +57,7 @@ struct level_set {
 };
 
 struct logfile_profile {
+	char *name;
 	unsigned int log_fd;
 	switch_size_t log_size;	  /* keep the log size in check for rotation */
 	switch_size_t roll_size;  /* the size that we want to rotate the file at */
@@ -66,7 +70,25 @@ typedef struct logfile_profile logfile_profile_t;
 
 static logfile_profile_t *default_profile;
 
-static switch_status_t load_config(logfile_profile_t *profile, switch_xml_t xml);
+static switch_status_t load_profile(logfile_profile_t *profile, switch_xml_t xml);
+
+static void del_mapping(char *var)
+{
+	switch_core_hash_insert(log_hash, var, NULL);
+}
+
+static void add_mapping(char *var, logfile_profile_t *profile)
+{
+	char *name;
+
+	if (!(name = switch_core_hash_find(name_hash, var))) {
+		name = switch_core_strdup(module_pool, var);
+		switch_core_hash_insert(name_hash, name, name);
+	}
+
+	del_mapping(name);
+	switch_core_hash_insert(log_hash, name, (void *) profile);
+}
 
 void process_levels(logfile_profile_t *profile, char *p)
 {
@@ -244,7 +266,7 @@ static switch_status_t mod_logfile_logger(const switch_log_node_t *node, switch_
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t load_config(logfile_profile_t *profile, switch_xml_t xml)
+static switch_status_t load_profile(logfile_profile_t *profile, switch_xml_t xml)
 {
 	switch_xml_t param;
 
@@ -301,6 +323,19 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_logfile_load)
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
 
+	if (log_hash) {
+		switch_core_hash_destroy(&log_hash);
+	}
+	if (name_hash) {
+		switch_core_hash_destroy(&name_hash);
+	}
+	if (profile_hash) {
+		switch_core_hash_destroy(&profile_hash);
+	}
+	switch_core_hash_init(&log_hash, module_pool);
+	switch_core_hash_init(&name_hash, module_pool);
+	switch_core_hash_init(&profile_hash, module_pool);
+
 	if (switch_event_bind((char *) modname, SWITCH_EVENT_TRAP, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
@@ -323,13 +358,18 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_logfile_load)
 		}
 		if ((profiles = switch_xml_child(cfg, "profiles"))) {
 			for (xprofile = switch_xml_child(profiles, "profile"); xprofile; xprofile = xprofile->next) {
+				char *name = (char *) switch_xml_attr_soft(xprofile, "name");
 				if (!(settings = switch_xml_child(xprofile, "settings"))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Settings, check the new config!\n");
 				} else {
-					/* TODO: handle alloc of profile for multiple profiles*/
-					default_profile = switch_core_alloc(module_pool, sizeof(*default_profile));
-					memset(default_profile, 0, sizeof(*default_profile));
-					load_config(default_profile, settings);
+					logfile_profile_t *profile;
+					profile = switch_core_alloc(module_pool, sizeof(*default_profile));
+					memset(profile, 0, sizeof(*profile));
+					profile->name = switch_core_strdup(module_pool, switch_str_nil(name));
+					load_profile(profile, settings);
+					switch_core_hash_insert(profile_hash, profile->name, (void *) profile);
+					/* TODO: remove default_profile */
+					default_profile = profile;
 				}
 			}
 		}
