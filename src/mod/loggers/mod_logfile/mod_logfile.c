@@ -94,15 +94,6 @@ void process_levels(logfile_profile_t *profile, char *p)
 	int x, i, argc = 0;
 	char *argv[10] = { 0 };
 
-	profile->levels[0].level = SWITCH_LOG_CONSOLE;
-	profile->levels[1].level = SWITCH_LOG_ALERT;
-	profile->levels[2].level = SWITCH_LOG_CRIT;
-	profile->levels[3].level = SWITCH_LOG_ERROR;
-	profile->levels[4].level = SWITCH_LOG_WARNING;
-	profile->levels[5].level = SWITCH_LOG_NOTICE;
-	profile->levels[6].level = SWITCH_LOG_INFO;
-	profile->levels[7].level = SWITCH_LOG_DEBUG;
-
 	for (i=0; i < (sizeof(profile->levels) / sizeof(struct level_set)); i++) {
 		profile->levels[i].on = 0;
 	}
@@ -268,6 +259,15 @@ static switch_status_t mod_logfile_logger(const switch_log_node_t *node, switch_
 static switch_status_t load_profile(logfile_profile_t *profile, switch_xml_t xml)
 {
 	switch_xml_t param;
+
+	profile->levels[0].level = SWITCH_LOG_CONSOLE;
+	profile->levels[1].level = SWITCH_LOG_ALERT;
+	profile->levels[2].level = SWITCH_LOG_CRIT;
+	profile->levels[3].level = SWITCH_LOG_ERROR;
+	profile->levels[4].level = SWITCH_LOG_WARNING;
+	profile->levels[5].level = SWITCH_LOG_NOTICE;
+	profile->levels[6].level = SWITCH_LOG_INFO;
+	profile->levels[7].level = SWITCH_LOG_DEBUG;
 
 	for (param = switch_xml_child(xml, "param"); param; param = param->next) {
 		char *var = (char *) switch_xml_attr_soft(param, "name");
