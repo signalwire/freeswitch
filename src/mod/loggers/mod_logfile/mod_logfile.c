@@ -68,8 +68,6 @@ static logfile_profile_t *default_profile;
 
 static switch_status_t load_config(logfile_profile_t *profile, switch_xml_t xml);
 
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_logfile, default_profile->logfile);
-
 void process_levels(logfile_profile_t *profile, char *p)
 {
 	int x, i, argc = 0;
@@ -255,8 +253,7 @@ static switch_status_t load_config(logfile_profile_t *profile, switch_xml_t xml)
 		char *var = (char *) switch_xml_attr_soft(param, "name");
 		char *val = (char *) switch_xml_attr_soft(param, "value");
 		if (!strcmp(var, "logfile")) {
-			set_global_logfile(val);
-		/* TODO: do this for multiple profiles */
+			profile->logfile = strdup(val);
 		} else if (!strcmp(var, "level")) {
 			process_levels(profile, val);
 		} else if (!strcmp(var, "rollover")) {
@@ -270,8 +267,7 @@ static switch_status_t load_config(logfile_profile_t *profile, switch_xml_t xml)
 	if (switch_strlen_zero(profile->logfile)) {
 		char logfile[512];
 		snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "freeswitch.log");
-		/* TODO: Make this not global */
-		set_global_logfile(logfile);
+		profile->logfile = strdup(logfile);
 	}
 
 	return 0;
