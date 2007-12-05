@@ -58,7 +58,6 @@ struct level_set {
 
 struct logfile_profile {
 	char *name;
-	unsigned int log_fd;
 	switch_size_t log_size;	  /* keep the log size in check for rotation */
 	switch_size_t roll_size;  /* the size that we want to rotate the file at */
 	char *logfile;
