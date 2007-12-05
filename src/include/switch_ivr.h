@@ -395,7 +395,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
   \param dialplan the new dialplan (OPTIONAL, may be NULL)
   \param context the new context (OPTIONAL, may be NULL)
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, const char *extension, char *dialplan, char *context);
+SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, const char *extension, const char *dialplan, const char *context);
 
 /*!
   \brief Transfer an existing session to another location in the future

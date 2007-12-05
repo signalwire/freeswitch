@@ -846,7 +846,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(const char *uuid, switch_medi
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, const char *extension, char *dialplan, char *context)
+SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, const char *extension, const char *dialplan, const char *context)
 {
 	switch_channel_t *channel;
 	switch_caller_profile_t *profile, *new_profile;
@@ -864,24 +864,33 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	/* clear all state handlers */
 	switch_channel_clear_state_handler(channel, NULL);
 
-	if (switch_strlen_zero(dialplan)) {
-		dialplan = "XML";
-	}
-	
-	if (switch_strlen_zero(context)) {
-		context = "default";
-	}
-
-	if (switch_strlen_zero(extension)) {
-		extension = "service";
-	}
-	
 	if ((profile = switch_channel_get_caller_profile(channel))) {
+
+		if (switch_strlen_zero(dialplan)) {
+			dialplan = profile->dialplan;
+		}
+	
+		if (switch_strlen_zero(context)) {
+			context = profile->context;
+		}
+
+		if (switch_strlen_zero(dialplan)) {
+			dialplan = "XML";
+		}
+	
+		if (switch_strlen_zero(context)) {
+			context = "default";
+		}
+
+		if (switch_strlen_zero(extension)) {
+			extension = "service";
+		}
+		
 		new_profile = switch_caller_profile_clone(session, profile);
 
-		new_profile->dialplan = switch_core_session_strdup(session, dialplan);
-		new_profile->context = switch_core_session_strdup(session, context);
-		new_profile->destination_number = switch_core_session_strdup(session, extension);
+		new_profile->dialplan = switch_core_strdup(profile->pool, dialplan);
+		new_profile->context = switch_core_strdup(profile->pool, context);
+		new_profile->destination_number = switch_core_strdup(profile->pool, extension);
 
 		switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, NULL);
 
