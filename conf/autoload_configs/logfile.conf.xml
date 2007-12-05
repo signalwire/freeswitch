@@ -1,14 +1,20 @@
 <configuration name="logfile.conf" description="File Logging">
   <settings>
-   <!-- File to log to -->
-   <!--<param name="logfile" value="/var/log/freeswitch.log"/>-->
    <!-- true to auto rotate on HUP, false to open/close -->
    <param name="rotate" value="true"/>
-   <!-- At this length in bytes rotate the log file (0 for never) -->
-   <!--<param name="rollover" value="10485760"/>-->
-   <!-- The level of the message to log -->
-   <!--<param name="level" value="debug,info,warning,notice,error,crit,alert"/>-->
-   <param name="level" value="all"/>
 </settings>
+  <profiles>
+    <profile name="default">
+      <settings>
+        <!-- File to log to -->
+        <!--<param name="logfile" value="/var/log/freeswitch.log"/>-->
+        <!-- At this length in bytes rotate the log file (0 for never) -->
+        <!--<param name="rollover" value="10485760"/>-->
+        <!-- The level of the message to log -->
+        <!--<param name="level" value="debug,info,warning,notice,error,crit,alert"/>-->
+        <param name="level" value="all"/>
+      </settings>
+    </profile>
+  </profiles>
 </configuration>
 
