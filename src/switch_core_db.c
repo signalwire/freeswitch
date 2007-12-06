@@ -39,7 +39,7 @@ static void db_pick_path(char *dbname, char *buf, switch_size_t size)
 {
 
 	memset(buf, 0, size);
-	if (strchr(dbname, '/')) {
+	if (switch_is_file_path(dbname)) {
 		strncpy(buf, dbname, size);
 	} else {
 		snprintf(buf, size, "%s%s%s.db", SWITCH_GLOBAL_dirs.db_dir, SWITCH_PATH_SEPARATOR, dbname);

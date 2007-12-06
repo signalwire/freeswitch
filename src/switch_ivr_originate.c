@@ -635,10 +635,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 							switch_buffer_create_dynamic(&ringback.audio_buffer, 512, 1024, 0);
 							switch_buffer_set_loops(ringback.audio_buffer, -1);
-
-							if (*ringback_data == '/') {
+							
+							if (switch_is_file_path(ringback_data)) {
 								char *ext;
-
+								
 								if ((ext = strrchr(ringback_data, '.'))) {
 									switch_core_session_set_read_codec(session, &write_codec);
 									ext++;

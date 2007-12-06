@@ -88,7 +88,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t
 
 	assert(ah != NULL);
 
-	if (*path != '/') {
+	if (!switch_is_file_path(path)) {
 		epath = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR, path);
 		path = epath;
 	}

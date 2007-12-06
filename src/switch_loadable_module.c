@@ -770,7 +770,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, ch
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (*file == '/') {
+	if (switch_is_file_path(file)) {
 		path = switch_core_strdup(loadable_modules.pool, file);
 		file = (char *)switch_cut_path(file);
 		if ((dot = strchr(file, '.'))) {
