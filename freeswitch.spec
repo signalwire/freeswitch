@@ -238,6 +238,9 @@ ln -sf /etc/init.d/freeswitch $RPM_BUILD_ROOT/usr/sbin/rcfreeswitch
 # Add the sysconfiguration file
 install -D -m 744 build/freeswitch.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/freeswitch
 
+# Add monit file
+install -D -m 644 -u root -g root build/freeswitch.monitrc $RPM_BUILD_ROOT/etc/monit.d/freeswitch.monitrc
+
 # Add a freeswitch user with group daemon
 %pre
 /usr/sbin/useradd -r -g daemon -s /bin/false -c "The FreeSWITCH Open Source Voice Platform" -d /opt/freeswitch/var freeswitch 2> /dev/null || :
@@ -250,13 +253,15 @@ ln -sf /opt/freeswitch/conf /etc/opt/freeswitch
 
 %postun
 %{?run_ldconfig:%run_ldconfig}
+rm -rf /opt/freeswitch
+userdel freeswitch
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,freeswitch,daemon)
-%dir %attr(755,root,root) /etc/opt/
+%dir %attr(755,root,root) /etc/monit.d
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/db
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/log
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/log/xml_cdr
@@ -269,6 +274,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/directory
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/sip_profiles
+%config(noreplace) %attr(644,root,root) /etc/monit.d/freeswitch.monitrc
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/mime.types
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/*.tpl
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/*.xml

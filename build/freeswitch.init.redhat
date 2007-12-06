@@ -30,7 +30,7 @@ RETVAL=0
 start() {
         echo -n "Starting $prog: "
         if [ -e $lockfile ]; then
-            if [ -e $pidfile && [ -e /proc/`$pidfile` ]; then
+            if [ -e $pidfile ] && [ -e /proc/`$pidfile` ]; then
                 echo -n $"cannot start freeswitch: freeswitch is already running.";
                 failure $"cannot start freeswitch: freeswitch already running.";
                 echo
