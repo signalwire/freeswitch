@@ -899,7 +899,9 @@ SWITCH_DECLARE(char *) get_addr(char *buf, switch_size_t len, struct in_addr *in
 {
 	assert(buf);
 	*buf = '\0';
-	inet_ntop(AF_INET, in, buf, len);
+	if (in) {
+		inet_ntop(AF_INET, in, buf, len);
+	}
 	return buf;
 }
 

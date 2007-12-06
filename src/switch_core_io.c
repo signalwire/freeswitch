@@ -131,6 +131,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	assert(session != NULL);
 	assert(*frame != NULL);
 
+	
 	if (switch_test_flag(*frame, SFF_CNG)) {
 		status = SWITCH_STATUS_SUCCESS;
 		goto done;
@@ -367,6 +368,40 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		if (flag & SFF_CNG) {
 			switch_set_flag((*frame), SFF_CNG);
 		}
+		if (session->bugs) {
+			switch_media_bug_t *bp, *dp, *last = NULL;
+			switch_bool_t ok = SWITCH_TRUE;
+			switch_thread_rwlock_rdlock(session->bug_rwlock);
+			for (bp = session->bugs; bp; bp = bp->next) {
+				if (bp->ready && switch_test_flag(bp, SMBF_READ_PING)) {
+					switch_mutex_lock(bp->read_mutex);
+					if (bp->callback) {
+						if (bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ_PING) == SWITCH_FALSE || (bp->stop_time && bp->stop_time <= time(NULL))) {
+							ok = SWITCH_FALSE;
+						}
+					}
+					switch_mutex_unlock(bp->read_mutex);
+				}
+
+				if (ok == SWITCH_FALSE) {
+					bp->ready = 0;
+					if (last) {
+						last->next = bp->next;
+					} else {
+						session->bugs = bp->next;
+					}
+					dp = bp;
+					bp = last;
+					switch_core_media_bug_close(&dp);
+					if (!bp) {
+						break;
+					}
+					continue;
+				}
+				last = bp;
+			}
+			switch_thread_rwlock_unlock(session->bug_rwlock);
+		}
 	}
 
 	return status;
@@ -512,7 +547,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			write_frame->rate = session->write_resampler->to_rate;
 		}
 
-		if (do_bugs) {
+		if (!do_bugs) {
 			do_write = 1;
 			write_frame = frame;
 			goto done;
@@ -528,6 +563,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					continue;
 				}
 				if (switch_test_flag(bp, SMBF_WRITE_STREAM)) {
+					
 					switch_mutex_lock(bp->write_mutex);
 					switch_buffer_write(bp->raw_write_buffer, write_frame->data, write_frame->datalen);
 					switch_mutex_unlock(bp->write_mutex);

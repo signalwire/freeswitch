@@ -646,8 +646,11 @@ SWITCH_DECLARE(switch_status_t) switch_mcast_join(switch_socket_t * sock, switch
 
 /* socket functions */
 
-SWITCH_DECLARE(char *) switch_get_addr(char *buf, switch_size_t len, switch_sockaddr_t * in)
+SWITCH_DECLARE(const char *) switch_get_addr(char *buf, switch_size_t len, switch_sockaddr_t * in)
 {
+	if (!in) {
+		return "";
+	}
 	return get_addr(buf, len, &in->sa.sin.sin_addr);
 }
 

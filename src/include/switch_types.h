@@ -239,6 +239,7 @@ typedef enum {
 	SWITCH_ABC_TYPE_WRITE,
 	SWITCH_ABC_TYPE_WRITE_REPLACE,
 	SWITCH_ABC_TYPE_READ_REPLACE,
+	SWITCH_ABC_TYPE_READ_PING,
 	SWITCH_ABC_TYPE_CLOSE
 } switch_abc_type_t;
 
@@ -806,8 +807,9 @@ typedef enum {
 	SMBF_WRITE_STREAM = (1 << 1),
 	SMBF_WRITE_REPLACE = (1 << 2),
 	SMBF_READ_REPLACE = (1 << 3),
-	SMBF_STEREO = (1 << 4),
-	SMBF_RECORD_ANSWER_REQ = (1 << 5)
+	SMBF_READ_PING = (1 << 4),
+	SMBF_STEREO = (1 << 5),
+	SMBF_RECORD_ANSWER_REQ = (1 << 6)
 } switch_media_bug_flag_t;
 
 /*!

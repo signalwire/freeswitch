@@ -964,7 +964,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_accept(switch_socket_t ** new_sock
 SWITCH_DECLARE(switch_status_t) switch_socket_connect(switch_socket_t * sock, switch_sockaddr_t * sa);
 
 SWITCH_DECLARE(uint16_t) switch_sockaddr_get_port(switch_sockaddr_t * sa);
-SWITCH_DECLARE(char *) switch_get_addr(char *buf, switch_size_t len, switch_sockaddr_t * in);
+SWITCH_DECLARE(const char *) switch_get_addr(char *buf, switch_size_t len, switch_sockaddr_t * in);
 SWITCH_DECLARE(int32_t) switch_sockaddr_get_family(switch_sockaddr_t * sa);
 SWITCH_DECLARE(switch_status_t) switch_sockaddr_ip_get(char **addr, switch_sockaddr_t * sa);
 

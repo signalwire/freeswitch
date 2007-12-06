@@ -168,6 +168,10 @@ static void *audio_bridge_thread(switch_thread_t * thread, void *obj)
 		status = switch_core_session_read_frame(session_a, &read_frame, -1, stream_id);
 
 		if (SWITCH_READ_ACCEPTABLE(status)) {
+			if (switch_test_flag(read_frame, SFF_CNG)) {
+				continue;
+			}
+
 			if (status != SWITCH_STATUS_BREAK && !switch_channel_test_flag(chan_a, CF_HOLD)) {
 				if (switch_core_session_write_frame(session_b, read_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "write: %s Bad Frame....[%u] Bubye!\n",

@@ -242,7 +242,7 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 	if ((packet->header.type == SWITCH_STUN_BINDING_REQUEST) && !strcmp(rtp_session->user_ice, username)) {
 		uint8_t buf[512];
 		switch_stun_packet_t *rpacket;
-		char *remote_ip;
+		const char *remote_ip;
 		switch_size_t bytes;
 		char ipbuf[25];
 
@@ -253,8 +253,8 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 
 		remote_ip = switch_get_addr(ipbuf, sizeof(ipbuf), rtp_session->from_addr);
 
-
-		switch_stun_packet_attribute_add_binded_address(rpacket, remote_ip, switch_sockaddr_get_port(rtp_session->from_addr));
+		
+		switch_stun_packet_attribute_add_binded_address(rpacket, (char *)remote_ip, switch_sockaddr_get_port(rtp_session->from_addr));
 		bytes = switch_stun_packet_length(rpacket);
 		switch_socket_sendto(rtp_session->sock, rtp_session->from_addr, 0, (void *) rpacket, &bytes);
 	}
@@ -424,7 +424,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 {
 	*err = "Success";
 
-	if (switch_sockaddr_info_get(&rtp_session->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_sockaddr_info_get(&rtp_session->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool) 
+		!= SWITCH_STATUS_SUCCESS || !rtp_session->remote_addr) {
 		*err = "Remote Address Error!";
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1005,8 +1006,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		
 		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && switch_sockaddr_get_port(rtp_session->from_addr)) {
-			char *tx_host;
-			char *old_host;
+			const char *tx_host;
+			const char *old_host;
 			char bufa[30], bufb[30];
 			tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->from_addr);
 			old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);

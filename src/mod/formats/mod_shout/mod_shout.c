@@ -932,7 +932,7 @@ static switch_bool_t telecast_callback(switch_media_bug_t *bug, void *user_data,
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
 		break;
-	case SWITCH_ABC_TYPE_WRITE:
+	case SWITCH_ABC_TYPE_READ_PING:
 		if (buffer) {
 			if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
                 switch_buffer_lock(buffer);
@@ -943,7 +943,10 @@ static switch_bool_t telecast_callback(switch_media_bug_t *bug, void *user_data,
             return SWITCH_FALSE;
         }
 		break;
+
 	case SWITCH_ABC_TYPE_READ:
+	case SWITCH_ABC_TYPE_WRITE:
+        
 	default:
 		break;
 	}
@@ -1052,8 +1055,9 @@ void do_telecast(switch_stream_handle_t *stream)
         switch_mutex_init(&mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
         switch_buffer_create_dynamic(&buffer, 1024, 2048, 0);
         switch_buffer_add_mutex(buffer, mutex);
-            
-        if (switch_core_media_bug_add(tsession, telecast_callback, buffer, 0, SMBF_READ_STREAM | SMBF_WRITE_STREAM, &bug) != SWITCH_STATUS_SUCCESS) {
+        
+        if (switch_core_media_bug_add(tsession, telecast_callback, buffer, 0, 
+                                      SMBF_READ_STREAM | SMBF_WRITE_STREAM | SMBF_READ_PING, &bug) != SWITCH_STATUS_SUCCESS) {
             goto end;
         }
 
@@ -1073,8 +1077,13 @@ void do_telecast(switch_stream_handle_t *stream)
                 bytes = switch_buffer_read(buffer, buf, sizeof(buf));
                 switch_buffer_unlock(buffer);
             } else {
+                if (!bytes) {
+                    switch_yield(1000);
+                    continue;
+                }
                 memset(buf, 0, bytes);
             }
+            
 
             if ((rlen = lame_encode_buffer(gfp, (void *)buf, NULL, bytes / 2, mp3buf, sizeof(mp3buf))) < 0) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
