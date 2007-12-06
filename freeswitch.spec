@@ -245,6 +245,7 @@ install -D -m 744 build/freeswitch.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/frees
 %post
 %{?run_ldconfig:%run_ldconfig}
 # Make FHS2.0 happy
+mkdir -p /etc/opt
 ln -sf /opt/freeswitch/conf /etc/opt/freeswitch
 
 %postun
@@ -375,7 +376,7 @@ rm -rf $RPM_BUILD_ROOT
 /opt/freeswitch/lib/libplds4.so
 /opt/freeswitch/lib/libplc4.so
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/spidermonkey_conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/spidermonkey.conf.xml
 
 %files devel
 %defattr(-,freeswitch,daemon)
