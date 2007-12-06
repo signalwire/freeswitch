@@ -334,6 +334,8 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 	case SWITCH_ABC_TYPE_CLOSE:
 		break;
 	case SWITCH_ABC_TYPE_WRITE:
+		break;
+	case SWITCH_ABC_TYPE_READ_PING:
 		if (ep->buffer) {
 			if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
                 switch_buffer_lock(ep->buffer);
