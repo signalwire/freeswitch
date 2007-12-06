@@ -1556,7 +1556,7 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *dest = NULL;
 
-	if (!argv[0]) {
+	if (switch_strlen_zero(argv[0])) {
 		stream->write_function(stream, "FAIL:Usage: call <dest>\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
