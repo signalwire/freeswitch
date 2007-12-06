@@ -1173,7 +1173,7 @@ void do_broadcast(switch_stream_handle_t *stream)
 
 
     if (fh.interval) {
-        interval = fh.interval;
+        interval = fh.interval * 1000;
     }
 
     for(;;) {
