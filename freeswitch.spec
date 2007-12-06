@@ -261,7 +261,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,freeswitch,daemon)
-%dir %attr(755,root,root) /etc/monit.d
+%dir %attr(775,root,daemon) /etc/monit.d
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/db
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/log
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/log/xml_cdr
@@ -274,7 +274,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/directory
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/lang
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/sip_profiles
-%config(noreplace) %attr(644,root,root) /etc/monit.d/freeswitch.monitrc
+%config(noreplace) %attr(644,freeswitch,daemon) /etc/monit.d/freeswitch.monitrc
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/mime.types
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/*.tpl
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/*.xml
