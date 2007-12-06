@@ -1,7 +1,7 @@
 <configuration name="logfile.conf" description="File Logging">
   <settings>
    <!-- true to auto rotate on HUP, false to open/close -->
-   <param name="rotate" value="true"/>
+   <param name="rotate-on-hup" value="true"/>
   </settings>
   <profiles>
     <profile name="default">
