@@ -129,8 +129,8 @@ static void write_cdr(const char *path, const char *log_line)
 	}
 
 	if (fd) {
-		size_t bytes_in, bytes_out;
-		bytes_out = strlen(log_line);
+		unsigned int bytes_in, bytes_out;
+		bytes_out = (unsigned)strlen(log_line);
 		
 		if (fd->bytes + bytes_out > UINT_MAX) {
 			do_rotate(fd);
