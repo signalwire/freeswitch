@@ -43,7 +43,7 @@ SWITCH_MODULE_DEFINITION(mod_commands, mod_commands_load, NULL, NULL);
 
 SWITCH_STANDARD_API(user_data_function)
 {
-	switch_xml_t x_domain, xml = NULL, x_user, x_param, x_params;	
+	switch_xml_t x_domain, xml = NULL, x_user = NULL, x_param, x_params;	
 	int argc;
     char *mydata = NULL, *argv[3];
 	char *key = NULL, *type = NULL, *user, *domain;
