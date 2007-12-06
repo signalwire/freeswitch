@@ -1,4 +1,5 @@
 loggers/mod_console
+loggers/mod_logfile
 loggers/mod_syslog
 #loggers/mod_logfile
 applications/mod_commands
