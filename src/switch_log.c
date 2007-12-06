@@ -247,7 +247,9 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 			}
 		} else {
 			if (level == SWITCH_LOG_CONSOLE || !LOG_QUEUE || !THREAD_RUNNING) {
-				fprintf(handle, "%s", data);
+				if (handle) {
+					fprintf(handle, "%s", data);
+				}
 				free(data);
 			} else if (level <= MAX_LEVEL) {
 				switch_log_node_t *node;

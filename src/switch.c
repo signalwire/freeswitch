@@ -180,7 +180,7 @@ void WINAPI service_main(DWORD numArgs, char **args)
 	set_high_priority();
 
 	/* attempt to initialize freeswitch and load modules */
-	if (switch_core_init_and_modload(flags, &err) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_init_and_modload(flags, SWITCH_FALSE, &err) != SWITCH_STATUS_SUCCESS) {
 		/* freeswitch did not start sucessfully */
 		status.dwCurrentState = SERVICE_STOPPED;
 	} else {
@@ -416,7 +416,7 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	if (switch_core_init_and_modload(flags, &err) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_init_and_modload(flags, nc ? SWITCH_FALSE : SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Cannot Initilize [%s]\n", err);
 		return 255;
 	}

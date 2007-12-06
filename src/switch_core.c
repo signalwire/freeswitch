@@ -641,7 +641,7 @@ static void load_mime_types(void)
 
 }	
 
-SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, const char **err)
+SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switch_bool_t console, const char **err)
 {
 	switch_xml_t xml = NULL, cfg = NULL;
 	switch_uuid_t uuid;
@@ -743,7 +743,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, const
 
 	*err = NULL;
 
-	runtime.console = stdout;
+	if (console) {
+		runtime.console = stdout;
+	}
 
 	assert(runtime.memory_pool != NULL);
 	switch_log_init(runtime.memory_pool);
@@ -808,10 +810,10 @@ static void handle_SIGINT(int sig)
 	if (sig);
 	return;
 }
-SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t flags, const char **err)
+SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t flags, switch_bool_t console, const char **err)
 {
 	switch_event_t *event;
-	if (switch_core_init(flags, err) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_init(flags, console, err) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
 	}
 
