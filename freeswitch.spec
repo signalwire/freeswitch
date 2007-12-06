@@ -244,6 +244,8 @@ install -D -m 744 build/freeswitch.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/frees
 
 %post
 %{?run_ldconfig:%run_ldconfig}
+# Make FHS2.0 happy
+ln -sf /opt/freeswitch/conf /etc/opt/freeswitch
 
 %postun
 %{?run_ldconfig:%run_ldconfig}
@@ -253,6 +255,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,freeswitch,daemon)
+%dir %attr(755,root,root) /etc/opt/
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/db
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/log
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/log/xml_cdr
@@ -269,7 +272,36 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/*.tpl
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/*.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/*.conf
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/*.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/alsa.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/cdr.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/conference.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/console.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/dialplan_directory.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/dingaling.conf.xml 
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/enum.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/event_multicast.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/event_socket.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/iax.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/ivr.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/java.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/limit.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/local_stream.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/logfile.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/modules.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/openmrcp.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/portaudio.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/post_load_modules.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/rss.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/sofia.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/switch.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/syslog.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/voicemail.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/wanpipe.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/woomera.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/xml_cdr.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/xml_curl.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/xml_rpc.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/zeroconf.conf.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/dialplan/*.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/directory/*.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/sip_profiles/*.xml
@@ -342,6 +374,8 @@ rm -rf $RPM_BUILD_ROOT
 /opt/freeswitch/lib/libnspr4.so
 /opt/freeswitch/lib/libplds4.so
 /opt/freeswitch/lib/libplc4.so
+%dir %attr(750,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/spidermonkey_conf.xml
 
 %files devel
 %defattr(-,freeswitch,daemon)
@@ -407,7 +441,10 @@ rm -rf $RPM_BUILD_ROOT
 /opt/freeswitch/mod/mod_say_fr.so*
 
 %changelog
-* Thu Nov 29 2007 - michal.bielicki+rpmspam@voiceworks.pl
+* Thu Dec 5 2007 - michal.bielicki@voiceworks.pl
+- put in detail configfiles in to split of spidermonkey configs
+- created link from /opt/freesxwitch/conf to /etc/opt/freeswitch
+* Thu Nov 29 2007 - michal.bielicki@voiceworks.pl
 - Added ifdefs for susealities
 - Added specifics for centos/redhat
 - Added specifics for fedora
