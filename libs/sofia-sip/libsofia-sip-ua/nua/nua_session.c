@@ -1089,8 +1089,13 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
   char const *phrase = "OK", *reason = NULL;
   char const *invite_branch;
 
-  assert(ds->ds_leg);
   assert(cr->cr_orq);
+
+  if (!ds->ds_leg) {
+	  nta_outgoing_destroy(cr->cr_orq);
+	  return -1;
+  }
+
 
   msg = nta_outgoing_getrequest(cr->cr_orq);
   sip = sip_object(msg);
