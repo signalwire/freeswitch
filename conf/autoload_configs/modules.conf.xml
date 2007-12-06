@@ -3,6 +3,7 @@
     
     <!-- Loggers (I'd load these first) -->
     <load module="mod_console"/>
+    <load module="mod_logfile"/>
     <!-- <load module="mod_syslog"/> -->
 
     <!-- Multi-Faceted -->
