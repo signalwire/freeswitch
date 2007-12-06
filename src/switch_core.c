@@ -678,6 +678,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_core_set_variable("local_ip_v4", guess_ip);
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), AF_INET6);
 	switch_core_set_variable("local_ip_v6", guess_ip);
+	switch_core_set_variable("base_dir", SWITCH_GLOBAL_dirs.base_dir);
 	
 
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
@@ -810,6 +811,20 @@ static void handle_SIGINT(int sig)
 	if (sig);
 	return;
 }
+
+static void handle_SIGHUP(int sig)
+{
+	if (sig) {
+		switch_event_t *event;
+		
+		if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Trapped-Signal", "HUP");
+			switch_event_fire(&event);
+		}
+	}
+	return;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t flags, switch_bool_t console, const char **err)
 {
 	switch_event_t *event;
@@ -831,6 +846,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 #ifdef TRAP_BUS
 	signal(SIGBUS, handle_SIGBUS);
 #endif
+
+	signal(SIGHUP, handle_SIGHUP);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bringing up environment.\n");
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Loading Modules.\n");

@@ -356,7 +356,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_logfile_load)
 			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
-				if (!strcmp(var, "rotate")) {
+				if (!strcmp(var, "rotate-on-hup")) {
 					globals.rotate = switch_true(val);
 				}
 			}

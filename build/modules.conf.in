@@ -40,6 +40,7 @@ endpoints/mod_sofia
 #../../libs/openzap/mod_openzap
 #event_handlers/mod_event_multicast
 event_handlers/mod_event_socket
+event_handlers/mod_cdr_csv
 #event_handlers/mod_radius_cdr
 formats/mod_native_file
 formats/mod_sndfile

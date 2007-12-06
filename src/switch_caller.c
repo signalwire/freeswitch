@@ -21,7 +21,7 @@
  * Portions created by the Initial Developer are Copyright (C)
  * the Initial Developer. All Rights Reserved.
  *
- * Contributor(s):
+
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
  *

@@ -875,8 +875,6 @@ typedef enum {
     MSG_SAVED
 } msg_type_t;
 
-static uint32_t DEFAULT_DIR_PERMS = SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE | SWITCH_FPROT_UEXECUTE | SWITCH_FPROT_GREAD | SWITCH_FPROT_GEXECUTE;
-
 
 static switch_status_t create_file(switch_core_session_t *session, vm_profile_t *profile, char *macro_name, char *file_path, switch_size_t *message_len)
 {
@@ -1640,7 +1638,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
                         }
                         
                         
-                        if (switch_dir_make_recursive(dir_path, DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+                        if (switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
                             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", dir_path);
                             return;
                         }
@@ -1739,7 +1737,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
                                                id);
     }
 
-    if (switch_dir_make_recursive(dir_path, DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+    if (switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", dir_path);
         goto end;
     }
@@ -2069,7 +2067,7 @@ SWITCH_STANDARD_APP(voicemail_function)
     channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
 
-    if (switch_dir_make_recursive(SWITCH_GLOBAL_dirs.storage_dir, DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+    if (switch_dir_make_recursive(SWITCH_GLOBAL_dirs.storage_dir, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", SWITCH_GLOBAL_dirs.storage_dir);
         return;
     }

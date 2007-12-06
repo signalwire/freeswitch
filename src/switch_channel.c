@@ -327,12 +327,20 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable(switch_channel_t *chann
 
 	switch_mutex_lock(channel->profile_mutex);
 	if (!(v = switch_event_get_header(channel->variables, (char*)varname))) {
-		if (!channel->caller_profile || !(v = switch_caller_get_field_by_name(channel->caller_profile, varname))) {
-			if (!strcmp(varname, "base_dir")) {
-				v = SWITCH_GLOBAL_dirs.base_dir;
-			} else {
-				v = switch_core_get_variable(varname);
+		switch_caller_profile_t *cp = channel->caller_profile;
+		
+		if (cp) {
+			if (!strncmp(varname, "aleg_", 5)) {
+				cp = cp->originator_caller_profile;
+				varname += 5;
+			} else if (!strncmp(varname, "bleg_", 5)) {
+				cp = cp->originatee_caller_profile;
+				varname += 5;
 			}
+		}
+
+		if (!cp || !(v = switch_caller_get_field_by_name(cp, varname))) {
+			v = switch_core_get_variable(varname);
 		}
 	}
 	switch_mutex_unlock(channel->profile_mutex);
@@ -389,6 +397,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_name(switch_channel_t *channe
 	if (name) {
 		char *uuid = switch_core_session_get_uuid(channel->session);
 		channel->name = switch_core_session_strdup(channel->session, name);
+		switch_channel_set_variable(channel, SWITCH_CHANNEL_NAME_VARIABLE, name);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New Chan %s [%s]\n", name, uuid);
 	}
 	return SWITCH_STATUS_SUCCESS;
