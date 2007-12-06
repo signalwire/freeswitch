@@ -641,6 +641,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			}
 
 
+			switch_channel_set_variable(caller_channel, SWITCH_BRIDGE_CHANNEL_VARIABLE, switch_channel_get_name(peer_channel));
+			switch_channel_set_variable(caller_channel, SWITCH_BRIDGE_UUID_VARIABLE, switch_core_session_get_uuid(peer_session));
+			switch_channel_set_variable(peer_channel, SWITCH_BRIDGE_CHANNEL_VARIABLE, switch_channel_get_name(caller_channel));
+			switch_channel_set_variable(peer_channel, SWITCH_BRIDGE_UUID_VARIABLE, switch_core_session_get_uuid(session));
+			
 			switch_channel_set_private(peer_channel, "_bridge_", b_leg);
 			switch_channel_set_state(peer_channel, CS_LOOPBACK);
 			audio_bridge_thread(NULL, (void *) a_leg);
@@ -708,6 +713,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			switch_channel_add_state_handler(originatee_channel, &uuid_bridge_state_handlers);
 			switch_channel_set_variable(originator_channel, SWITCH_UUID_BRIDGE, switch_core_session_get_uuid(originatee_session));
 			
+			
+			switch_channel_set_variable(originator_channel, SWITCH_BRIDGE_CHANNEL_VARIABLE, switch_channel_get_name(originatee_channel));
+			switch_channel_set_variable(originator_channel, SWITCH_BRIDGE_UUID_VARIABLE, switch_core_session_get_uuid(originatee_session));
+			switch_channel_set_variable(originatee_channel, SWITCH_BRIDGE_CHANNEL_VARIABLE, switch_channel_get_name(originator_channel));
+			switch_channel_set_variable(originatee_channel, SWITCH_BRIDGE_UUID_VARIABLE, switch_core_session_get_uuid(originator_session));
+
 			switch_channel_set_flag(originator_channel, CF_BREAK);
 			switch_channel_set_flag(originatee_channel, CF_BREAK);
 

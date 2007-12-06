@@ -97,6 +97,8 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_PATH_SEPARATOR "/"
 #endif
 #define SWITCH_URL_SEPARATOR "://"
+#define SWITCH_BRIDGE_CHANNEL_VARIABLE "bridge_channel"
+#define SWITCH_BRIDGE_UUID_VARIABLE "bridge_uuid"
 #define SWITCH_PLAYBACK_TERMINATORS_VARIABLE "playback_terminators"
 #define SWITCH_CACHE_SPEECH_HANDLES_VARIABLE "cache_speech_handles"
 #define SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME "__cache_speech_handles_obj__"
