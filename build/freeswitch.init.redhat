@@ -7,10 +7,10 @@
 #  chkconfig: - 89 14
 #  processname: freeswitch
 #  config: /opt/freeswitch/conf/freeswitch.conf
-#  pidfile: /opt/freeswitch/log/freeswitch/pid
+#  pidfile: /opt/freeswitch/log/freeswitch.pid
 #
 
-
+export PATH=$PATH:/opt/freeswitch/bin
 # Source function library.
 . /etc/init.d/functions
 
@@ -38,7 +38,7 @@ start() {
             fi
         fi
 
-        daemon --user $FS_USER --pidfile $pidfile $prog $FREESWITCH_ARGS
+        daemon --user $FS_USER --pidfile $pidfile $prog $FREESWITCH_PARAMS
 	RETVAL=$?
         [ $RETVAL -eq 0 ] && touch $lockfile;
         return $RETVAL
