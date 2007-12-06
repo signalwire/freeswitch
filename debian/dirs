@@ -1,4 +1,5 @@
 opt/freeswitch
+opt/freeswitch/log
 etc/opt
 etc/monit
 etc/default

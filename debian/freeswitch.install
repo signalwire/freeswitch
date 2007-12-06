@@ -2,6 +2,7 @@ opt/freeswitch/htdocs/*
 opt/freeswitch/bin/freeswitch
 opt/freeswitch/lib/libfreeswitch*.so*
 opt/freeswitch/mod/mod_console.so*
+opt/freeswitch/mod/mod_logfile.so*
 opt/freeswitch/mod/mod_syslog.so*
 opt/freeswitch/mod/mod_commands.so*
 opt/freeswitch/mod/mod_conference.so*
@@ -52,6 +53,7 @@ opt/freeswitch/conf/autoload_configs/rss.conf.xml
 opt/freeswitch/conf/autoload_configs/sofia.conf.xml
 opt/freeswitch/conf/autoload_configs/switch.conf.xml
 opt/freeswitch/conf/autoload_configs/syslog.conf.xml
+opt/freeswitch/conf/autoload_configs/logfile.conf.xml
 opt/freeswitch/conf/autoload_configs/voicemail.conf.xml
 opt/freeswitch/conf/autoload_configs/wanpipe.conf.xml
 opt/freeswitch/conf/autoload_configs/woomera.conf.xml
