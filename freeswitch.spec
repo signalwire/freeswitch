@@ -239,7 +239,7 @@ ln -sf /etc/init.d/freeswitch $RPM_BUILD_ROOT/usr/sbin/rcfreeswitch
 install -D -m 744 build/freeswitch.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/freeswitch
 
 # Add monit file
-install -D -m 644 -o root -g root build/freeswitch.monitrc $RPM_BUILD_ROOT/etc/monit.d/freeswitch.monitrc
+install -D -m 644 build/freeswitch.monitrc $RPM_BUILD_ROOT/etc/monit.d/freeswitch.monitrc
 
 # Add a freeswitch user with group daemon
 %pre
@@ -261,7 +261,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,freeswitch,daemon)
-%dir %attr(775,root,daemon) /etc/monit.d
+%dir %attr(750,freeswitch,daemon) /etc/monit.d
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/db
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/log
 %dir %attr(750,freeswitch,daemon) /opt/freeswitch/log/xml_cdr
@@ -288,7 +288,7 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/enum.conf.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/event_multicast.conf.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/event_socket.conf.xml
-%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_conf/cdr_csv.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/cdr_csv.conf.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/iax.conf.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/ivr.conf.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/java.conf.xml
