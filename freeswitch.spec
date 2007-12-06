@@ -173,7 +173,7 @@ DIALPLANS_MODULES="dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_direct
 DIRECTORIES_MODULES=
 DOTNET_MODULES=
 ENDPOINTS_MODULES="endpoints/mod_dingaling endpoints/mod_iax endpoints/mod_portaudio endpoints/mod_sofia endpoints/mod_woomera ../../libs/openzap/mod_openzap"
-EVENT_HANDLERS_MODULES="event_handlers/mod_event_multicast event_handlers/mod_event_socket"
+EVENT_HANDLERS_MODULES="event_handlers/mod_event_multicast event_handlers/mod_event_socket event_handlers/mod_cdr_csv"
 FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_sndfile"
 LANGUAGES_MODULES=
 LOGGERS_MODULES="loggers/mod_console loggers/mod_logfile loggers/mod_syslog"
@@ -239,7 +239,7 @@ ln -sf /etc/init.d/freeswitch $RPM_BUILD_ROOT/usr/sbin/rcfreeswitch
 install -D -m 744 build/freeswitch.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/freeswitch
 
 # Add monit file
-install -D -m 644 -u root -g root build/freeswitch.monitrc $RPM_BUILD_ROOT/etc/monit.d/freeswitch.monitrc
+install -D -m 644 -o root -g root build/freeswitch.monitrc $RPM_BUILD_ROOT/etc/monit.d/freeswitch.monitrc
 
 # Add a freeswitch user with group daemon
 %pre
@@ -288,6 +288,7 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/enum.conf.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/event_multicast.conf.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/event_socket.conf.xml
+%config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_conf/cdr_csv.conf.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/iax.conf.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/ivr.conf.xml
 %config(noreplace) %attr(640,freeswitch,daemon) /opt/freeswitch/conf/autoload_configs/java.conf.xml
@@ -353,6 +354,7 @@ rm -rf $RPM_BUILD_ROOT
 /opt/freeswitch/mod/mod_sofia.so* 
 /opt/freeswitch/mod/mod_woomera.so* 
 /opt/freeswitch/mod/mod_openzap.so* 
+/opt/freeswitch/mod/mod_cdr_csv.so*
 /opt/freeswitch/mod/mod_event_multicast.so* 
 /opt/freeswitch/mod/mod_event_socket.so* 
 /opt/freeswitch/mod/mod_native_file.so* 
