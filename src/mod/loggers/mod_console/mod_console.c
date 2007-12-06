@@ -74,7 +74,7 @@ static void add_mapping(char *var, char *val, int cumlative)
 
 	if (cumlative) {
 		uint32_t l = switch_log_str2level(val);
-		int i;
+		uint32_t i;
 
 		assert(l < 10);
 		
@@ -161,7 +161,7 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 
 	if ((handle = switch_core_data_channel(SWITCH_CHANNEL_ID_LOG))) {
         size_t mask = 0;
-        int ok = 0;
+        size_t ok = 0;
     
         ok = switch_log_check_mask(all_level, level);
         
@@ -190,9 +190,6 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 				fprintf(handle, "%s", node->data);
 			}
 		}
-	} else {
-		fprintf(stderr, "HELP I HAVE NO CONSOLE TO LOG TO!\n");
-		fflush(stderr);
 	}
 
 	return SWITCH_STATUS_SUCCESS;

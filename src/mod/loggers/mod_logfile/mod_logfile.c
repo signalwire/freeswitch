@@ -214,7 +214,7 @@ static switch_status_t process_node(const switch_log_node_t *node, switch_log_le
     
     for (hi = switch_hash_first(NULL, profile_hash); hi; hi = switch_hash_next(hi)) {
         size_t mask = 0;
-        int ok = 0;
+        size_t ok = 0;
     
         switch_hash_this(hi, &var, NULL, &val);
         profile = val;
