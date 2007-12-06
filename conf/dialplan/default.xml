@@ -32,7 +32,7 @@
       <anti-action application="set" data="call_timeout=30000"/>
       <anti-action application="set" data="hangup_after_bridge=true"/>
       <anti-action application="set" data="continue_on_fail=true"/>
-      <anti-action application="bridge" data="USER/${dialed_ext}@$${domain}"/>
+      <anti-action application="bridge" data="sofia/$${domain}/${dialed_ext}"/>
       <anti-action application="voicemail" data="default $${domain} ${dialed_ext}"/>
     </condition>
   </extension>
