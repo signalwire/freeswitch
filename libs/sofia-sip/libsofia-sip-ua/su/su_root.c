@@ -876,6 +876,30 @@ int su_root_has_thread(su_root_t *root)
  */
 
 /**
+ * Allocate a su message of given size.
+ *
+ * Allocate a su message with given data size. 
+ *
+ * @param  rmsg   handle to the new message (may be uninitialized prior calling)
+ * @param  size   size of the message data
+ *
+ * @retval  0 if successful,
+ * @retval -1 if message allocation fails.  
+ */
+int su_msg_new(su_msg_r rmsg, size_t size)
+{
+  su_msg_t *msg;
+  size_t total = sizeof(*msg) + (size_t)size;
+
+  *rmsg = msg = su_zalloc(NULL, (isize_t)total);
+  if (!*rmsg)
+    return -1;
+
+  msg->sum_size = total;
+  return 0;
+}
+
+/**
  * Allocates a message of given size.
  *
  * The function @c su_msg_create() allocates a message with given data size.
@@ -896,20 +920,13 @@ int su_msg_create(su_msg_r        rmsg,
 		  su_msg_f        wakeup,
 		  isize_t         size)
 {
-  su_msg_t *msg;
-
-  msg = su_zalloc(NULL, sizeof(*msg) + size);
-
-  if (msg) {
-    msg->sum_size = sizeof(*msg) + size;
-    SU_TASK_COPY(msg->sum_to, to, su_msg_create);
-    SU_TASK_COPY(msg->sum_from, from, su_msg_create);
-    msg->sum_func = wakeup;
-    *rmsg = msg;
+  if (su_msg_new(rmsg, (size_t) size) == 0) {
+    SU_TASK_COPY(rmsg[0]->sum_to, to, su_msg_create);
+    SU_TASK_COPY(rmsg[0]->sum_from, from, su_msg_create);
+    rmsg[0]->sum_func = wakeup;
     return 0;
   } 
 
-  *rmsg = NULL;
   return -1;
 }
 
@@ -931,11 +948,31 @@ int su_msg_report(su_msg_r msg,
   return -1;
 }
 
+/** Add a deinitializer function to a message.
+ *
+ * The deinitializer function is called when the message gets destroyed. It
+ * is called even if the message was never delivered. Note that the thread
+ * destroying the message and calling the deinit function is not necessarily
+ * the same that sent the message nor the original recipient.
+ *
+ * @param rmsg   message reference
+ * @param deinit pointer to deinitializer function
+ */
+int su_msg_deinitializer(su_msg_r rmsg,
+			 su_msg_deinit_func *deinit)
+{
+  if (rmsg && rmsg[0]) {
+    rmsg[0]->sum_deinit = deinit;
+    return 0;
+  }
+  return -1;
+}
+
 /**
  * Allocates a reply message of given size.
  *
  * @param reply     handle to the new message (may be uninitialized prior calling)
- * @param msg       the incoming message
+ * @param rmsg       the incoming message
  * @param wakeup    function that is called when message is delivered
  * @param size      size of the message data
  *
@@ -943,17 +980,17 @@ int su_msg_report(su_msg_r msg,
  * @retval -1 otherwise.
  */
 
-int su_msg_reply(su_msg_r reply, su_msg_cr msg,
+int su_msg_reply(su_msg_r reply, su_msg_cr rmsg,
 		 su_msg_f wakeup, isize_t size)
 {
-  su_msg_r msg0;
+  su_msg_r rmsg0;
 
-  assert(msg != reply);
+  assert(rmsg != reply);
 
-  *msg0 = *(su_msg_t **) msg;
+  *rmsg0 = *(su_msg_t **) rmsg;
   *reply = NULL;
 
-  return su_msg_create(reply, su_msg_from(msg0), su_msg_to(msg0), wakeup, size);
+  return su_msg_create(reply, su_msg_from(rmsg0), su_msg_to(rmsg0), wakeup, size);
 }
 
 
@@ -964,38 +1001,38 @@ int su_msg_reply(su_msg_r reply, su_msg_cr msg,
  * sending task. The sending task calls the delivery report function when it
  * has received the message.
  */
-void su_msg_delivery_report(su_msg_r msg)
+void su_msg_delivery_report(su_msg_r rmsg)
 {
   su_task_r swap;
 
-  if (!msg || !msg[0])
+  if (!rmsg || !rmsg[0])
     return;
 
-  if (!msg[0]->sum_report) {
-    su_msg_destroy(msg);
+  if (!rmsg[0]->sum_report) {
+    su_msg_destroy(rmsg);
     return;
   }
 
-  *swap = *msg[0]->sum_from;
-  *msg[0]->sum_from = *msg[0]->sum_to;
-  *msg[0]->sum_to = *swap;
+  *swap = *rmsg[0]->sum_from;
+  *rmsg[0]->sum_from = *rmsg[0]->sum_to;
+  *rmsg[0]->sum_to = *swap;
 
-  msg[0]->sum_func = msg[0]->sum_report;
-  msg[0]->sum_report = NULL;
-  su_msg_send(msg);
+  rmsg[0]->sum_func = rmsg[0]->sum_report;
+  rmsg[0]->sum_report = NULL;
+  su_msg_send(rmsg);
 }
 
 /** Save a message. */
-void su_msg_save(su_msg_r save, su_msg_r msg)
+void su_msg_save(su_msg_r save, su_msg_r rmsg)
 {
   if (save) {
-    if (msg)
-      save[0] = msg[0];
+    if (rmsg)
+      save[0] = rmsg[0];
     else
       save[0] = NULL;
   }
-  if (msg)
-    msg[0] = NULL;
+  if (rmsg)
+    rmsg[0] = NULL;
 }
 
 /**
@@ -1010,6 +1047,9 @@ void su_msg_destroy(su_msg_r rmsg)
   if (rmsg[0]) {
     SU_TASK_ZAP(rmsg[0]->sum_to, su_msg_destroy);
     SU_TASK_ZAP(rmsg[0]->sum_from, su_msg_destroy);
+
+    if (rmsg[0]->sum_deinit)
+      rmsg[0]->sum_deinit(rmsg[0]->sum_data);
 
     su_free(NULL, rmsg[0]);
   }
@@ -1048,13 +1088,13 @@ isize_t su_msg_size(su_msg_cr rmsg)
  * If the message handle contains NULL the function @c su_msg_from
  * returns NULL.
  *
- * @param msg       message handle
+ * @param rmsg       message handle
  *
  * @return The task handle of the sender is returned.  
  */
-_su_task_r su_msg_from(su_msg_cr msg)
+_su_task_r su_msg_from(su_msg_cr rmsg)
 {
-  return msg[0] ? msg[0]->sum_from : NULL;
+  return rmsg[0] ? rmsg[0]->sum_from : NULL;
 }
 
 /** Get destination task.
@@ -1065,24 +1105,24 @@ _su_task_r su_msg_from(su_msg_cr msg)
  * If the message handle contains NULL the function @c su_msg_to
  * returns NULL.
  *
- * @param msg       message handle
+ * @param rmsg       message handle
  *
  * @return The task handle of the recipient is returned.  
  */
-_su_task_r su_msg_to(su_msg_cr msg)
+_su_task_r su_msg_to(su_msg_cr rmsg)
 {
-  return msg[0] ? msg[0]->sum_to : NULL;
+  return rmsg[0] ? rmsg[0]->sum_to : NULL;
 }
 
 /** Remove references to 'from' and 'to' tasks from a message. 
  *
- * @param msg       message handle
+ * @param rmsg       message handle
  */
-void su_msg_remove_refs(su_msg_cr msg)
+void su_msg_remove_refs(su_msg_cr rmsg)
 {
-  if (msg[0]) {
-    su_task_deinit(msg[0]->sum_to);
-    su_task_deinit(msg[0]->sum_from);
+  if (rmsg[0]) {
+    su_task_deinit(rmsg[0]->sum_to);
+    su_task_deinit(rmsg[0]->sum_from);
   }
 }
 
@@ -1114,4 +1154,37 @@ int su_msg_send(su_msg_r rmsg)
   }
 
   return 0;		
+}
+
+/** Send message to the @a to_task and mark @a from_task as sender */
+SOFIAPUBFUN int su_msg_send_to(su_msg_r rmsg,
+			       su_task_r const to_task,
+			       su_msg_f wakeup)
+{
+  assert(rmsg); assert(to_task);
+
+  if (rmsg[0]) {
+    su_msg_t *msg = rmsg[0];
+
+    if (wakeup)
+      msg->sum_func = wakeup;
+
+    if (msg->sum_to->sut_port && 
+	msg->sum_to->sut_port != to_task->sut_port) {
+      SU_TASK_ZAP(msg->sum_to, "su_msg_send_to"); 
+    }
+
+    if (to_task->sut_port != NULL) {
+      msg->sum_to->sut_port = NULL;
+      msg->sum_to->sut_root = to_task->sut_root;
+
+      return su_port_send(to_task->sut_port, rmsg);
+    }
+
+    su_msg_destroy(rmsg);
+    errno = EINVAL;
+    return -1;
+  }
+
+  return 0;
 }

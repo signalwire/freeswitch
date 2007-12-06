@@ -45,10 +45,11 @@
 #include <sofia-sip/su_tag_io.h>
 
 #define SU_ROOT_MAGIC_T   struct nua_s
-#define SU_MSG_ARG_T      struct event_s
+#define SU_MSG_ARG_T      struct nua_ee_data
 #define SU_TIMER_ARG_T    struct nua_client_request
 
 #define NUA_SAVED_EVENT_T su_msg_t *
+#define NUA_SAVED_SIGNAL_T su_msg_t *
 
 #define NTA_AGENT_MAGIC_T    struct nua_s
 #define NTA_LEG_MAGIC_T      struct nua_handle_s
@@ -83,6 +84,26 @@
  *                       Protocol stack side
  *
  * ======================================================================== */
+
+/* ---------------------------------------------------------------------- */
+/* Internal types */
+
+/** Extended event data. */
+typedef struct nua_ee_data {
+  nua_t *ee_nua;
+  nua_event_data_t ee_data[1];
+} nua_ee_data_t;		
+
+/** @internal Linked stack frames from nua event callback */
+struct nua_event_frame_s {
+  nua_event_frame_t *nf_next;
+  nua_saved_event_t nf_saved[1];
+};
+
+
+static void nua_event_deinit(nua_ee_data_t *ee);
+static void nua_application_event(nua_t *, su_msg_r, nua_ee_data_t *ee);
+static void nua_stack_signal(nua_t *nua, su_msg_r, nua_ee_data_t *ee);
 
 nua_handle_t *nh_create(nua_t *nua, tag_type_t t, tag_value_t v, ...);
 static void nh_append(nua_t *nua, nua_handle_t *nh);
@@ -279,18 +300,18 @@ int nua_stack_event(nua_t *nua, nua_handle_t *nh, msg_t *msg,
   }
 
   if (tags) {
-    e_len = offsetof(event_t, e_tags);
+    e_len = offsetof(nua_ee_data_t, ee_data[0].e_tags);
     len = tl_len(tags);
     xtra = tl_xtra(tags, len);
   }
   else {
-    e_len = sizeof(event_t), len = 0, xtra = 0;
+    e_len = sizeof(nua_ee_data_t), len = 0, xtra = 0;
   }
   p_len = phrase ? strlen(phrase) + 1 : 1;
 
-  if (su_msg_create(sumsg, nua->nua_client, su_task_null,
-		    nua_event, e_len + len + xtra + p_len) == 0) {
-    event_t *e = su_msg_data(sumsg);
+  if (su_msg_new(sumsg, e_len + len + xtra + p_len) == 0) {
+    nua_ee_data_t *ee = su_msg_data(sumsg);
+    nua_event_data_t *e = ee->ee_data;
     void *p;
 
     if (tags) {
@@ -303,21 +324,138 @@ int nua_stack_event(nua_t *nua, nua_handle_t *nh, msg_t *msg,
     else
       p = e + 1;
 
+    ee->ee_nua = nua_stack_ref(nua);
     e->e_event = event;
-    e->e_nh = nh ? nua_handle_ref(nh) : nua->nua_dhandle;
+    e->e_nh = nh ? nua_handle_ref(nh) : NULL;
     e->e_status = status;
     e->e_phrase = strcpy(p, phrase ? phrase : "");
     if (msg)
       e->e_msg = msg, su_home_threadsafe(msg_home(msg));
 
-    if (su_msg_send(sumsg) != 0 && nh)
-      nua_handle_unref(nh);
+    su_msg_deinitializer(sumsg, nua_event_deinit);
+
+    su_msg_send_to(sumsg, nua->nua_client, nua_application_event);
   }
 
   return event;
 }
 
-/* ----------------------------------------------------------------------
+static
+void nua_event_deinit(nua_ee_data_t *ee)
+{
+  nua_t *nua = ee->ee_nua;
+  nua_event_data_t *e = ee->ee_data;
+  nua_handle_t *nh = e->e_nh;
+
+  if (e->e_msg)
+    msg_destroy(e->e_msg), e->e_msg = NULL;
+
+  if (nh)
+    nua_handle_unref(nh), e->e_nh = NULL;
+
+  if (nua)
+    nua_stack_unref(nua), ee->ee_nua = NULL;
+}
+
+/*# Receive event from protocol machine and hand it over to application */
+static
+void nua_application_event(nua_t *dummy, su_msg_r sumsg, nua_ee_data_t *ee)
+{
+  nua_t *nua = ee->ee_nua;
+  nua_event_data_t *e = ee->ee_data;
+  nua_handle_t *nh = e->e_nh;
+
+  enter;
+
+  ee->ee_nua = NULL;
+  e->e_nh = NULL;
+
+  if (nh == NULL) {
+    /* Xyzzy */
+  }
+  else if (nh->nh_valid) {
+    if (!nh->nh_ref_by_user) {
+      /* Application must now call nua_handle_destroy() */
+      nh->nh_ref_by_user = 1;
+      nua_handle_ref(nh);	
+    }
+  }
+  else if (!nh->nh_valid) {	/* Handle has been destroyed */
+    if (nua_log->log_level >= 7) {
+      char const *name = nua_event_name(e->e_event) + 4;
+      SU_DEBUG_7(("nua(%p): event %s dropped\n", (void *)nh, name));
+    }
+    nua_handle_unref(nh);
+    nua_stack_unref(nua);
+    return;
+  }
+
+  if (e->e_event == nua_r_shutdown && e->e_status >= 200)
+    nua->nua_shutdown_final = 1;
+
+  if (nua->nua_callback) {
+    nua_event_frame_t frame[1];
+    
+    su_msg_save(frame->nf_saved, sumsg);
+    frame->nf_next = nua->nua_current, nua->nua_current = frame;
+
+    nua->nua_callback(e->e_event, e->e_status, e->e_phrase,
+		      nua, nua->nua_magic,
+		      nh, nh ? nh->nh_magic : NULL,
+		      e->e_msg ? sip_object(e->e_msg) : NULL,
+		      e->e_tags);
+
+    su_msg_destroy(frame->nf_saved);
+    nua->nua_current = frame->nf_next;
+  }
+
+  nua_handle_unref(nh);
+  nua_stack_unref(nua);
+}
+
+/** Get current request message. @NEW_1_12_4.
+ *
+ * @note A response message is returned when processing response message.
+ *
+ * @sa #nua_event_e, nua_respond(), NUTAG_WITH_CURRENT()
+ */
+msg_t *nua_current_request(nua_t const *nua)
+{
+  if (nua && nua->nua_current && su_msg_is_non_null(nua->nua_current->nf_saved))
+    return su_msg_data(nua->nua_current->nf_saved)->ee_data->e_msg;
+  return NULL;
+}
+
+/** Get request message from saved nua event. @NEW_1_12_4. 
+ *
+ * @sa nua_save_event(), nua_respond(), NUTAG_WITH_SAVED(), 
+ */
+msg_t *nua_saved_event_request(nua_saved_event_t const *saved)
+{
+  return saved && saved[0] ? su_msg_data(saved)->ee_data->e_msg : NULL;
+}
+
+/** Save nua event and its arguments.
+ *
+ * @sa #nua_event_e, nua_event_data() nua_saved_event_request(), nua_destroy_event()
+ */
+int nua_save_event(nua_t *nua, nua_saved_event_t return_saved[1])
+{
+  if (return_saved) {
+    if (nua && nua->nua_current) {
+      su_msg_save(return_saved, nua->nua_current->nf_saved);
+      return su_msg_is_non_null(return_saved);
+    }
+    else
+      *return_saved = NULL;
+  }
+
+  return 0;
+}
+
+/* ---------------------------------------------------------------------- */
+
+/** @internal
  * Post signal to stack itself
  */
 void nua_stack_post_signal(nua_handle_t *nh, nua_event_t event,
@@ -325,27 +463,79 @@ void nua_stack_post_signal(nua_handle_t *nh, nua_event_t event,
 {
   ta_list ta;
   ta_start(ta, tag, value);
-  nua_signal((nh)->nh_nua, nh, NULL, 1, event, 0, NULL, ta_tags(ta));
+  nua_signal((nh)->nh_nua, nh, NULL, event, 0, NULL, ta_tags(ta));
   ta_end(ta);
 }
 
 
+/*# Send a request to the protocol thread */
+int nua_signal(nua_t *nua, nua_handle_t *nh, msg_t *msg,
+	       nua_event_t event,
+	       int status, char const *phrase,
+	       tag_type_t tag, tag_value_t value, ...)
+{
+  su_msg_r sumsg = SU_MSG_R_INIT;
+  size_t len, xtra, ee_len, l_len = 0, l_xtra = 0;
+  ta_list ta;
+  int retval = -1;
+
+  if (nua == NULL)
+    return -1;
+
+  if (nua->nua_shutdown_started && event != nua_r_shutdown)
+    return -1;
+
+  ta_start(ta, tag, value);
+
+  ee_len = offsetof(nua_ee_data_t, ee_data[0].e_tags);
+  len = tl_len(ta_args(ta));
+  xtra = tl_xtra(ta_args(ta), len);
+
+  if (su_msg_new(sumsg, ee_len + len + l_len + xtra + l_xtra) == 0) {
+    nua_ee_data_t *ee = su_msg_data(sumsg);
+    nua_event_data_t *e = ee->ee_data;
+    tagi_t *t = e->e_tags;
+    void *b = (char *)t + len + l_len;
+
+    tagi_t *tend = (tagi_t *)b;
+    char *bend = (char *)b + xtra + l_xtra;
+
+    t = tl_dup(t, ta_args(ta), &b);
+
+    assert(tend == t); (void)tend; assert(b == bend); (void)bend;
+
+    e->e_always = event == nua_r_destroy || event == nua_r_shutdown;
+    e->e_event = event;
+    e->e_nh = nh ? nua_handle_ref(nh) : NULL;
+    e->e_status = status;
+    e->e_phrase = phrase;
+
+    SU_DEBUG_7(("nua(%p): signal %s\n", (void *)nh,
+		nua_event_name(event) + 4));
+
+    su_msg_deinitializer(sumsg, nua_event_deinit);
+      
+    retval = su_msg_send_to(sumsg, nua->nua_server, nua_stack_signal);
+  }
+
+  ta_end(ta);
+
+  return retval;
+}
+
 /* ----------------------------------------------------------------------
  * Receiving events from client
  */
-void nua_stack_signal(nua_t *nua, su_msg_r msg, nua_event_data_t *e)
+static
+void nua_stack_signal(nua_t *nua, su_msg_r msg, nua_ee_data_t *ee)
 {
+  nua_event_data_t *e = ee->ee_data;
   nua_handle_t *nh = e->e_nh;
   tagi_t *tags = e->e_tags;
   nua_event_t event;
   int error = 0;
 
   assert(tags);
-
-  if (nua_log->log_level >= 7) {
-    char const *name = nua_event_name(e->e_event) + 4;
-    SU_DEBUG_7(("nua(%p): recv %s\n", (void *)nh, name));
-  }
 
   if (nh) {
     if (!nh->nh_prev)
@@ -359,6 +549,7 @@ void nua_stack_signal(nua_t *nua, su_msg_r msg, nua_event_data_t *e)
 
   if (nua_log->log_level >= 5) {
     char const *name = nua_event_name(e->e_event);
+
     if (e->e_status == 0)
       SU_DEBUG_5(("nua(%p): signal %s\n", (void *)nh, name + 4));
     else
@@ -377,8 +568,7 @@ void nua_stack_signal(nua_t *nua, su_msg_r msg, nua_event_data_t *e)
 		    901, "Stack is going down",
 		    NULL);
   }
-
- switch (event) {
+  else switch (event) {
   case nua_r_get_params:
     nua_stack_get_params(nua, nh ? nh : nua->nua_dhandle, event, tags);
     break;
@@ -463,11 +653,44 @@ void nua_stack_signal(nua_t *nua, su_msg_r msg, nua_event_data_t *e)
     nua_stack_event(nh->nh_nua, nh, NULL, event, NUA_INTERNAL_ERROR, NULL);
   }
 
-  if (su_msg_is_non_null(nua->nua_signal))
-    su_msg_destroy(nua->nua_signal);
+  su_msg_destroy(nua->nua_signal);
+}
 
-  if (nh != nua->nua_dhandle)
-    nua_handle_unref(nh);
+/* ====================================================================== */
+/* Signal and event handling */
+
+/** Get event data.
+ *
+ * @sa #nua_event_e, nua_event_save(), nua_saved_event_request(), nua_destroy_event().
+ */
+nua_event_data_t const *nua_event_data(nua_saved_event_t const saved[1])
+{
+  return saved && saved[0] ? su_msg_data(saved)->ee_data : NULL;
+}
+
+/** Destroy saved event.
+ *
+ * @sa #nua_event_e, nua_event_save(), nua_event_data(), nua_saved_event_request().
+ */
+void nua_destroy_event(nua_saved_event_t saved[1])
+{
+  if (saved) su_msg_destroy(saved);
+}
+
+/** @internal Move signal. */
+void nua_move_signal(nua_saved_signal_t a[1], nua_saved_signal_t b[1])
+{
+  su_msg_save(a, b);
+}
+
+void nua_destroy_signal(nua_saved_signal_t saved[1])
+{
+  if (saved) su_msg_destroy(saved);
+}
+
+nua_signal_data_t const *nua_signal_data(nua_saved_signal_t const saved[1])
+{
+  return nua_event_data(saved);
 }
 
 /* ====================================================================== */
@@ -1114,6 +1337,8 @@ int nua_stack_process_request(nua_handle_t *nh,
        (Call/Transaction Does Not Exist) status code and pass that to the
        server transaction.
     */
+    if (method == sip_method_info)
+      /* accept out-of-dialog info */; else
     if (method != sip_method_message || !NH_PGET(nh, win_messenger_enable))
       sm = NULL;
   }
@@ -1242,10 +1467,11 @@ void nua_server_request_destroy(nua_server_request_t *sr)
   if (sr == NULL)
     return;
 
+  if (SR_HAS_SAVED_SIGNAL(sr))
+    nua_destroy_signal(sr->sr_signal);
+
   if (sr->sr_irq)
     nta_incoming_destroy(sr->sr_irq), sr->sr_irq = NULL;
-
-  su_msg_destroy(sr->sr_signal);
 
   if (sr->sr_request.msg)
     msg_destroy(sr->sr_request.msg), sr->sr_request.msg = NULL;
@@ -1379,8 +1605,9 @@ nua_stack_respond(nua_t *nua, nua_handle_t *nh,
     sr->sr_application = status;
     if (tags && nua_stack_set_params(nua, nh, nua_i_none, tags) < 0)
       SR_STATUS1(sr, SIP_500_INTERNAL_SERVER_ERROR);
-    else
+    else {
       sr->sr_status = status, sr->sr_phrase = phrase;
+    }
   }
 
   nua_server_params(sr, tags);
@@ -1771,12 +1998,12 @@ int nua_client_create(nua_handle_t *nh,
   cr->cr_auto = 1;
 
   if (su_msg_is_non_null(nh->nh_nua->nua_signal)) {
-    nua_event_data_t const *e = su_msg_data(nh->nh_nua->nua_signal);
+    nua_event_data_t const *e = su_msg_data(nh->nh_nua->nua_signal)->ee_data;
 
     if (tags == e->e_tags && event == e->e_event) {
       cr->cr_auto = 0;
       if (tags) {
-	su_msg_save(cr->cr_signal, nh->nh_nua->nua_signal);
+	nua_move_signal(cr->cr_signal, nh->nh_nua->nua_signal);
 	cr->cr_tags = tags;
       }
     }
@@ -1860,7 +2087,7 @@ void nua_client_request_destroy(nua_client_request_t *cr)
 
   nh = cr->cr_owner;
 
-  su_msg_destroy(cr->cr_signal);
+  nua_destroy_signal(cr->cr_signal);
 
   nua_client_request_remove(cr);
   nua_client_bind(cr, NULL);
@@ -2575,9 +2802,11 @@ int nua_base_client_check_restart(nua_client_request_t *cr,
 
       cr->cr_challenged = 1;
 
-      if (invalid)
+      if (invalid) {
 	/* Bad username/password */
+	SU_DEBUG_7(("nua(%p): bad credentials, clearing them\n", (void *)nh));
 	auc_clear_credentials(&nh->nh_auth, NULL, NULL);
+      }
       else if (auc_has_authorization(&nh->nh_auth)) 
 	return nua_client_restart(cr, 100, "Request Authorized by Cache");
 
@@ -2594,7 +2823,7 @@ int nua_base_client_check_restart(nua_client_request_t *cr,
   if (500 <= status && status < 600 && 
       sip->sip_retry_after && 
       sip->sip_retry_after->af_delta < 32) {
-    char phrase[18];		/* Retry-After: XXXX\0 */
+    char phrase[18];		/* Retry After XXXX\0 */
 
     if (cr->cr_timer == NULL)
       cr->cr_timer = su_timer_create(su_root_task(nh->nh_nua->nua_root), 0);

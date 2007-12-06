@@ -281,6 +281,8 @@ int tport_recv_stream(tport_t *self)
 
     N -= n, self->tp_ping += n;
 
+    tport_recv_bytes(self, n, n);
+
     if (N == 0) {
       /* outbound-10 section 3.5.1  - send pong */
       if (self->tp_ping >= 4)
@@ -304,6 +306,8 @@ int tport_recv_stream(tport_t *self)
     return tport_recv_error_report(self);
 
   assert(n <= N);
+
+  tport_recv_bytes(self, n, n);
 
   /* Check if message contains only whitespace */
   /* This can happen if multiple PINGs are received at once */

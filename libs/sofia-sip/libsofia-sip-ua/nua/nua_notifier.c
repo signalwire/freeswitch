@@ -890,7 +890,18 @@ int nua_refer_server_respond(nua_server_request_t *sr, tagi_t const *tags)
 
 /** @NUA_EVENT nua_i_refer
  *
- * Incoming @b REFER request used to transfer calls.
+ * Incoming @b REFER request used to transfer calls. The tag list will
+ * contain tag NUTAG_REFER_EVENT() with the @Event header constructed from
+ * the REFER request. It will also contain the SIPTAG_REFERRED_BY() tag with
+ * the @ReferredBy header containing the identity of the party sending the
+ * REFER. The @ReferredBy structure contained in the tag is constructed from
+ * the @From header if the @ReferredBy header was not present in the REFER
+ * request.
+ * 
+ * The application can let the nua to send NOTIFYs from the call it
+ * initiates with nua_invite() if it includes in the nua_invite() arguments
+ * both the NUTAG_NOTIFY_REFER() with the handle with which nua_i_refer was
+ * received and the NUTAG_REFER_EVENT() from #nua_i_refer event tags.
  *
  * @param status status code of response sent automatically by stack
  * @param phrase a short textual description of @a status code

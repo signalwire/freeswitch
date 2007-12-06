@@ -798,7 +798,7 @@ static int udp_test(tp_test_t *tt)
 int pending_server_close, pending_client_close;
 
 void server_closed_callback(tp_stack_t *tt, tp_client_t *client,
-       		     tport_t *tp, msg_t *msg, int error)
+			    tport_t *tp, msg_t *msg, int error)
 {
   assert(msg == NULL);
   assert(client == NULL);
@@ -809,7 +809,7 @@ void server_closed_callback(tp_stack_t *tt, tp_client_t *client,
 }
 
 void client_closed_callback(tp_stack_t *tt, tp_client_t *client,
-       		     tport_t *tp, msg_t *msg, int error)
+			    tport_t *tp, msg_t *msg, int error)
 {
   assert(msg == NULL);
   assert(client == NULL);
@@ -1232,6 +1232,26 @@ static int sctp_test(tp_test_t *tt)
   END();
 }
 
+struct called {
+  int n, error, pending, released;
+};
+
+static
+void tls_error_callback(tp_stack_t *tt, tp_client_t *client,
+			tport_t *tp, msg_t *msg, int error)
+{
+  struct called *called = (struct called *)client;
+
+  tt->tt_status = -1;
+
+  called->n++, called->error = error;
+
+  if (called->pending) {
+    called->released = tport_release(tp, called->pending, msg, NULL, client, 0);
+    called->pending = 0;
+  }
+}
+
 static int tls_test(tp_test_t *tt)
 {
   BEGIN(); 
@@ -1242,6 +1262,7 @@ static int tls_test(tp_test_t *tt)
   int i;
   char ident[16];
   tport_t *tp, *tp0;
+  struct called called[1] = {{ 0, 0, 0, 0 }};
 
   TEST_S(dst->tpn_proto, "tls");
 
@@ -1249,9 +1270,21 @@ static int tls_test(tp_test_t *tt)
   TEST_1(!new_test_msg(tt, &msg, "tls-first", 1, 1024));
   TEST_1(tp = tport_tsend(tt->tt_tports, msg, dst, TAG_END()));
   TEST_1(tp0 = tport_ref(tp));
+  TEST_1(called->pending = tport_pend(tp, msg, tls_error_callback, (tp_client_t *)called));
+
+  i = tport_test_run(tt, 5);
   msg_destroy(msg);
 
-  TEST(tport_test_run(tt, 5), 1);
+  if (i < 0) {
+    if (called->n) {
+      TEST(called->released, 0);
+      puts("test_tport: skipping TLS tests");
+      tport_unref(tp0);
+      return 0;
+    }
+  }
+
+  TEST(i, 1);
 
   TEST_1(!check_msg(tt, tt->tt_rmsg, "tls-first"));
   msg_destroy(tt->tt_rmsg), tt->tt_rmsg = NULL;

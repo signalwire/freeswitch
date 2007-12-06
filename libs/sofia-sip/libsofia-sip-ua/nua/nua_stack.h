@@ -75,7 +75,7 @@ SOFIA_BEGIN_DECLS
 #include "nua_params.h"
 #endif
 
-typedef struct event_s event_t;
+typedef struct event_s event_t, nua_signal_data_t;
 
 #define       NONE ((void *)-1)
 
@@ -109,7 +109,7 @@ typedef struct register_usage nua_registration_t;
 #define nua_handle_unref(nh) nua_handle_unref_by((nh), __func__)
 
 su_inline nua_handle_t *nua_handle_ref_by(nua_handle_t *nh,
-					      char const *by)
+					  char const *by)
 {
   if (nh)
     SU_DEBUG_0(("nua_handle_ref(%p) => "MOD_ZU" by %s\n", nh, 
@@ -120,11 +120,16 @@ su_inline nua_handle_t *nua_handle_ref_by(nua_handle_t *nh,
 
 su_inline int nua_handle_unref_by(nua_handle_t *nh, char const *by)
 {
-  if (nh)
-    SU_DEBUG_0(("nua_handle_unref(%p) => "MOD_ZU" by %s\n", nh, 
-		su_home_refcount((su_home_t *)nh) - 1,
-		by));
-  return su_home_unref((su_home_t *)nh);
+  if (nh) {
+    size_t refcount = su_home_refcount((su_home_t *)nh) - 1;
+    int freed =  su_home_unref((su_home_t *)nh);
+    if (freed) refcount = 0;
+    SU_DEBUG_0(("nua_handle_unref(%p) => "MOD_ZU" by %s\n",
+		nh, refcount, by));
+    return freed;
+  }
+
+  return 0; 
 }
 
 #endif
@@ -197,6 +202,8 @@ int nh_is_special(nua_handle_t *nh)
   return nh == NULL || nh->nh_special;
 }
 
+typedef struct nua_event_frame_s nua_event_frame_t;
+
 extern char const nua_internal_error[];
 
 #define NUA_INTERNAL_ERROR 900, nua_internal_error
@@ -214,7 +221,7 @@ struct nua_s {
   nua_callback_f       nua_callback;
   nua_magic_t         *nua_magic;
 
-  nua_saved_event_t    nua_current[1];
+  nua_event_frame_t   *nua_current;
   nua_saved_event_t    nua_signal[1];
 
   /* Engine state flags */
@@ -277,10 +284,19 @@ struct nua_s {
 #define __func__ "nua"
 #endif
 
+su_inline nua_t *nua_stack_ref(nua_t *nua)
+{ 
+  return (nua_t *)su_home_ref(nua->nua_home);
+}
+
+su_inline void nua_stack_unref(nua_t *nua)
+{ 
+  su_home_unref(nua->nua_home);
+}
+
 /* Internal prototypes */
 int  nua_stack_init(su_root_t *root, nua_t *nua);
 void nua_stack_deinit(su_root_t *root, nua_t *nua);
-void nua_stack_signal(nua_t *nua, su_msg_r msg, event_t *e);
 
 int nua_stack_init_transport(nua_t *nua, tagi_t const *tags);
 
@@ -304,6 +320,10 @@ typedef int nua_stack_signal_handler(nua_t *,
 				     nua_handle_t *, 
 				     nua_event_t, 
 				     tagi_t const *);
+
+void nua_move_signal(nua_saved_signal_t a[1], nua_saved_signal_t b[1]);
+nua_signal_data_t const *nua_signal_data(nua_saved_signal_t const saved[1]);
+void nua_destroy_signal(nua_saved_signal_t saved[1]);
 
 nua_stack_signal_handler 
   nua_stack_set_params, nua_stack_get_params,
@@ -331,6 +351,8 @@ int nua_stack_tevent(nua_t *nua, nua_handle_t *nh, msg_t *msg,
 int nua_stack_event(nua_t *nua, nua_handle_t *nh, msg_t *msg,
 		    nua_event_t event, int status, char const *phrase,
 		    tagi_t const *tags);
+
+void nua_move_event(nua_saved_event_t a[1], nua_saved_event_t b[1]);
 
 nua_handle_t *nh_create_handle(nua_t *nua, nua_hmagic_t *hmagic, tagi_t *tags);
 
@@ -431,11 +453,9 @@ typedef unsigned longlong ull;
 /* ---------------------------------------------------------------------- */
 /* Application side prototypes */
 
-void nua_signal(nua_t *nua, nua_handle_t *nh, msg_t *msg, int always,
-		nua_event_t event, int status, char const *phrase,
-		tag_type_t tag, tag_value_t value, ...);
-
-void nua_event(nua_t *root_magic, su_msg_r sumsg, event_t *e);
+int nua_signal(nua_t *nua, nua_handle_t *nh, msg_t *msg,
+	       nua_event_t event, int status, char const *phrase,
+	       tag_type_t tag, tag_value_t value, ...);
 
 SOFIA_END_DECLS
 

@@ -46,6 +46,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <string.h>
+#include <sofia-sip/string0.h>
 
 /* ---------------------------------------------------------------------- */
 /* TLS */

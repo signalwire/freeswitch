@@ -204,7 +204,7 @@ SOFIAPUBFUN char *url_unescape(char *d, char const *s);
  * @endcode
  */
 #define URL_INIT_AS(type)  \
-{ { 0 }, url_##type, 0, url_##type != url_any ? #type : "*" }
+  { "\0", url_##type, 0, url_##type != url_any ? #type : "*" }
 
 /** Init a url structure as given type */
 SOFIAPUBFUN void url_init(url_t *url, enum url_type_e type);

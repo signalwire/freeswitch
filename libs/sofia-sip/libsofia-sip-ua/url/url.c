@@ -802,8 +802,8 @@ int url_d(url_t *url, char *s)
   if (s && !url_canonize(s, s, SIZE_MAX, 
 			 /* Allow all URI characters but ? */
 			 /* Allow unescaped /;?@, - but do not convert */
-			 (unsigned)(SYN33('/') | SYN33(';') | SYN33('=') | SYN33('@') |
-			 SYN33(',')),
+			 SYN33('/') | SYN33(';') | SYN33('=') | SYN33('@') |
+			 SYN33(','),
 			 /* Convert escaped :&+$ to unescaped */
 			 ":&+$"))
     return -1;
@@ -812,7 +812,7 @@ int url_d(url_t *url, char *s)
   if (s && !url_canonize(s, s, SIZE_MAX,
 			 /* Allow all URI characters but ? */
 			 /* Allow unescaped ;=@, - but do not convert */
-			 (unsigned)(SYN33(';') | SYN33('=') | SYN33('@') | SYN33(',')),
+			 SYN33(';') | SYN33('=') | SYN33('@') | SYN33(','),
 			 /* Convert escaped /:&+$ to unescaped */
 			 "/:&+$"))
     return -1;

@@ -1,6 +1,9 @@
 # common Makefile targets for libsofia-sip-ua(-glib) modules
 # ----------------------------------------------------------
 
+sofiasrcdir = ${top_srcdir}/libsofia-sip-ua
+sofiabuilddir = ${top_builddir}/libsofia-sip-ua
+
 AM_CFLAGS = $(CWFLAG) $(SOFIA_COVERAGE) $(SOFIA_CFLAGS) $(openssl_CFLAGS)
 
 SOFIA_COVERAGE = $(COVERAGE_FLAGS)
@@ -19,7 +22,7 @@ clean-built-sources:
 
 # rules for building tag files
 
-TAG_AWK=$(top_srcdir)/libsofia-sip-ua/su/tag_dll.awk
+TAG_AWK=${sofiasrcdir}/su/tag_dll.awk
 
 *_tag_ref.c: $(TAG_AWK)
 
@@ -36,25 +39,25 @@ _tag.c_tag_ref.c:
 	cd $(@D) && $(MAKE) $(@F)
 
 INTERNAL_INCLUDES = \
-	-I$(srcdir)/../features -I../features \
-	-I$(srcdir)/../ipt -I../ipt \
-	-I$(srcdir)/../iptsec -I../iptsec \
-	-I$(srcdir)/../bnf -I../bnf \
-	-I$(srcdir)/../http -I../http \
-	-I$(srcdir)/../msg -I../msg \
-	-I$(srcdir)/../nth -I../nth \
-	-I$(srcdir)/../nta -I../nta \
-	-I$(srcdir)/../nea -I../nea \
-	-I$(srcdir)/../nua -I../nua \
-	-I$(srcdir)/../soa -I../soa \
-	-I$(srcdir)/../sdp -I../sdp \
-	-I$(srcdir)/../sip -I../sip \
-	-I$(srcdir)/../soa -I../soa \
-	-I$(srcdir)/../sresolv -I../sresolv \
-	-I$(srcdir)/../tport -I../tport \
-	-I$(srcdir)/../stun -I../stun \
-	-I$(srcdir)/../url -I../url \
-	-I$(srcdir)/../su -I../su
+    -I${sofiasrcdir}/features -I${sofiabuilddir}/features \
+    -I${sofiasrcdir}/ipt -I${sofiabuilddir}/ipt \
+    -I${sofiasrcdir}/iptsec -I${sofiabuilddir}/iptsec \
+    -I${sofiasrcdir}/bnf -I${sofiabuilddir}/bnf \
+    -I${sofiasrcdir}/http -I${sofiabuilddir}/http \
+    -I${sofiasrcdir}/msg -I${sofiabuilddir}/msg \
+    -I${sofiasrcdir}/nth -I${sofiabuilddir}/nth \
+    -I${sofiasrcdir}/nta -I${sofiabuilddir}/nta \
+    -I${sofiasrcdir}/nea -I${sofiabuilddir}/nea \
+    -I${sofiasrcdir}/nua -I${sofiabuilddir}/nua \
+    -I${sofiasrcdir}/soa -I${sofiabuilddir}/soa \
+    -I${sofiasrcdir}/sdp -I${sofiabuilddir}/sdp \
+    -I${sofiasrcdir}/sip -I${sofiabuilddir}/sip \
+    -I${sofiasrcdir}/soa -I${sofiabuilddir}/soa \
+    -I${sofiasrcdir}/sresolv -I${sofiabuilddir}/sresolv \
+    -I${sofiasrcdir}/tport -I${sofiabuilddir}/tport \
+    -I${sofiasrcdir}/stun -I${sofiabuilddir}/stun \
+    -I${sofiasrcdir}/url -I${sofiabuilddir}/url \
+    -I${sofiasrcdir}/su -I${sofiabuilddir}/su
 
 PHONY = built-sources clean-built-sources
 
@@ -63,4 +66,3 @@ include $(top_srcdir)/rules/valcheck.am
 if HAVE_LCOV
 include $(top_srcdir)/rules/lcov.am
 endif
-

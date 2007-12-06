@@ -50,7 +50,11 @@ typedef struct nua_server_request nua_server_request_t;
 typedef struct nua_client_request nua_client_request_t; 
 typedef struct nua_dialog_peer_info nua_dialog_peer_info_t;
 
-typedef su_msg_r nua_saved_signal_t;
+#ifndef NUA_SAVED_SIGNAL_T
+#define NUA_SAVED_SIGNAL_T struct nua_saved_signal *
+#endif
+
+typedef NUA_SAVED_SIGNAL_T nua_saved_signal_t;
 
 typedef struct {
   sip_method_t sm_method; 
@@ -79,6 +83,7 @@ typedef struct {
   int (*sm_report)(nua_server_request_t *sr, tagi_t const *tags);
 
 } nua_server_methods_t;
+
 
 /* Server side transaction */
 struct nua_server_request {
@@ -132,7 +137,7 @@ struct nua_server_request {
   size_t sr_sdp_len;		/**< SDP length */
 
   /**< Save 200 OK nua_respond() signal until PRACK has been received */
-  nua_saved_signal_t sr_signal;	
+  nua_saved_signal_t sr_signal[1];
 };
 
 #define SR_STATUS(sr, status, phrase) \
@@ -140,6 +145,8 @@ struct nua_server_request {
 
 #define SR_STATUS1(sr, statusphrase)					\
   sr_status(sr, statusphrase)
+
+#define SR_HAS_SAVED_SIGNAL(sr) ((sr)->sr_signal[0] != NULL)
 
 su_inline 
 int sr_status(nua_server_request_t *sr, int status, char const *phrase)
@@ -261,7 +268,7 @@ struct nua_client_request
   nua_owner_t        *cr_owner;
   nua_dialog_usage_t *cr_usage;
 
-  nua_saved_signal_t cr_signal;
+  nua_saved_signal_t cr_signal[1];
   tagi_t const      *cr_tags;
 
   nua_client_methods_t const *cr_methods;

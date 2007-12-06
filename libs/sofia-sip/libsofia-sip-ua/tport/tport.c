@@ -405,7 +405,8 @@ static int
   tport_base_wakeup(tport_t *self, int events),
   tport_connected(su_root_magic_t *m, su_wait_t *w, tport_t *self),
   tport_resolve(tport_t *self, msg_t *msg, tp_name_t const *tpn),
-  tport_send_error(tport_t *, msg_t *, tp_name_t const *),
+  tport_send_error(tport_t *, msg_t *, tp_name_t const *, char const *who),
+  tport_send_fatal(tport_t *, msg_t *, tp_name_t const *, char const *who),
   tport_queue(tport_t *self, msg_t *msg),
   tport_queue_rest(tport_t *self, msg_t *msg, msg_iovec_t iov[], size_t iovused),
   tport_pending_error(tport_t *self, su_sockaddr_t const *dst, int error),
@@ -469,7 +470,12 @@ msg_t *tport_destroy_alloc(tp_stack_t *stack, int flags,
 /** Name for "any" transport. @internal */
 static char const tpn_any[] = "*";
 
-/** Create the master transport. 
+/** Create the master transport.
+ *
+ * Master transport object is used to bind the protocol using transport with
+ * actual transport objects corresponding to TCP, UDP, etc. 
+ *
+ * @sa tport_tbind()
  *
  * @TAGS
  * TPTAG_LOG(), TPTAG_DUMP(), tags used with tport_set_params(), especially
@@ -2985,6 +2991,7 @@ void tport_deliver(tport_t *self,
 
   ref = tport_incref(self);
 
+
   if (self->tp_pri->pri_vtable->vtp_deliver) {
     self->tp_pri->pri_vtable->vtp_deliver(self, msg, now);
   }
@@ -3405,28 +3412,28 @@ int tport_send_msg(tport_t *self, msg_t *msg,
       if (tport_is_connection_oriented(self)) {
 	iov[i].mv_len -= (su_ioveclen_t)(n - total);
 	iov[i].mv_base = (char *)iov[i].mv_base + (n - total);
-	if (tport_queue_rest(self, msg, &iov[i], iovused - i) >= 0)
+	if (tport_queue_rest(self, msg, &iov[i], iovused - i) < 0)
+	  return tport_send_fatal(self, msg, tpn, "tport_queue_rest");
+	else
 	  return 0;
       }
       else {
 	char const *comp = tpn->tpn_comp;
 	
-	SU_DEBUG_1(("tport(%p): send truncated for %s/%s:%s%s%s\n", 
-		    (void *)self, tpn->tpn_proto, tpn->tpn_host, tpn->tpn_port,
+	SU_DEBUG_1(("%s(%p): send truncated for %s/%s:%s%s%s\n", 
+		    "tport_vsend", (void *)self, tpn->tpn_proto, tpn->tpn_host, tpn->tpn_port,
 		    comp ? ";comp=" : "", comp ? comp : ""));
 
-	su_seterrno(EIO);
+	msg_set_errno(msg, EIO);
+	return /* tport_send_fatal(self, msg, tpn, "tport_send") */ -1;
       }
-
-      return -1;
     }
+
     total += iov[i].mv_len;
   }
 
   /* We have sent a complete message */
-
-  self->tp_slogged = NULL;
-  self->tp_stats.sent_msgs ++;
+  tport_sent_message(self, msg, 0);
 
   if (!tport_is_secondary(self))
     return 0;
@@ -3465,9 +3472,9 @@ ssize_t tport_vsend(tport_t *self,
     return 0;
 
   if (n == -1) 
-    return tport_send_error(self, msg, tpn);
+    return tport_send_error(self, msg, tpn, "tport_vsend");
 
-  self->tp_stats.sent_bytes += n;
+  tport_sent_bytes(self, n, n);	/* Sigcomp will decrease on_line accodingly */
 
   if (n > 0 && self->tp_master->mr_dump_file)
     tport_dump_iovec(self, msg, n, iov, iovused, "sent", "to");
@@ -3481,8 +3488,8 @@ ssize_t tport_vsend(tport_t *self,
     if (tpn == NULL || tport_is_connection_oriented(self))
       tpn = self->tp_name;
     
-    SU_DEBUG_7(("tport_vsend(%p): "MOD_ZU" bytes of "MOD_ZU" to %s/%s:%s%s\n", 
-		(void *)self, n, m, tpn->tpn_proto, tpn->tpn_host, 
+    SU_DEBUG_7(("%s(%p): "MOD_ZU" bytes of "MOD_ZU" to %s/%s:%s%s\n", 
+		"tport_vsend", (void *)self, n, m, tpn->tpn_proto, tpn->tpn_host, 
 		tpn->tpn_port, 
 		(ai->ai_flags & TP_AI_COMPRESSED) ? ";comp=sigcomp" : ""));
   }
@@ -3491,45 +3498,56 @@ ssize_t tport_vsend(tport_t *self,
 }
 
 static
-int tport_send_error(tport_t *self, msg_t *msg, 
-		     tp_name_t const *tpn)
+int tport_send_error(tport_t *self, msg_t *msg, tp_name_t const *tpn,
+		     char const *who)
 {
   int error = su_errno();
-  su_addrinfo_t *ai = msg_addrinfo(msg);
-  char const *comp = (ai->ai_flags & TP_AI_COMPRESSED) ? ";comp=sigcomp" : "";
 
   if (error == EPIPE) {
     /*Xyzzy*/
   }
 
   if (su_is_blocking(error)) {
-    SU_DEBUG_5(("tport_vsend(%p): %s with (s=%d %s/%s:%s%s)\n", 
-				(void *)self, "EAGAIN", (int)self->tp_socket, 
+    su_addrinfo_t *ai = msg_addrinfo(msg);
+    char const *comp = (ai->ai_flags & TP_AI_COMPRESSED) ? ";comp=sigcomp" : "";
+    SU_DEBUG_5(("%s(%p): %s with (s=%d %s/%s:%s%s)\n", 
+		who, (void *)self, "EAGAIN", (int)self->tp_socket, 
 		tpn->tpn_proto, tpn->tpn_host, tpn->tpn_port, comp));
     return 0;
   }
 
   msg_set_errno(msg, error);
 
+  return tport_send_fatal(self, msg, tpn, who);
+}
+
+static
+int tport_send_fatal(tport_t *self, msg_t *msg, tp_name_t const *tpn,
+		     char const *who)
+{
+  su_addrinfo_t *ai = msg_addrinfo(msg);
+  char const *comp = (ai->ai_flags & TP_AI_COMPRESSED) ? ";comp=sigcomp" : "";
+
+  int error = msg_errno(msg);
+  
   if (self->tp_addrinfo->ai_family == AF_INET) {
-    SU_DEBUG_3(("tport_vsend(%p): %s with (s=%d %s/%s:%s%s)\n", 
-		(void *)self, su_strerror(error), (int)self->tp_socket, 
+    SU_DEBUG_3(("%s(%p): %s with (s=%d %s/%s:%s%s)\n", 
+		who, (void *)self, su_strerror(error), (int)self->tp_socket, 
 		tpn->tpn_proto, tpn->tpn_host, tpn->tpn_port, comp));
   }
 #if SU_HAVE_IN6
   else if (self->tp_addrinfo->ai_family == AF_INET6) {
     su_sockaddr_t const *su = (su_sockaddr_t const *)ai->ai_addr;
-    SU_DEBUG_3(("tport_vsend(%p): %s with "
-		"(s=%d, IP6=%s/%s:%s%s (scope=%i) addrlen=%u)\n", 
-		(void *)self, su_strerror(error), (int)self->tp_socket, 
+    SU_DEBUG_3(("%s(%p): %s with (s=%d, IP6=%s/%s:%s%s"
+		" (scope=%i) addrlen=%u)\n",
+		who, (void *)self, su_strerror(error), (int)self->tp_socket, 
 		tpn->tpn_proto, tpn->tpn_host, tpn->tpn_port, comp,
 		su->su_scope_id, (unsigned)ai->ai_addrlen));
   }
 #endif
   else {
-    SU_DEBUG_3(("\ttport_vsend(%p): %s with "
-		"(s=%d, AF=%u addrlen=%u)%s\n", 
-		(void *)self, su_strerror(error), 
+    SU_DEBUG_3(("%s(%p): %s with (s=%d, AF=%u addrlen=%u)%s\n", 
+		who, (void *)self, su_strerror(error), 
 		(int)self->tp_socket, ai->ai_family, (unsigned)ai->ai_addrlen, comp));
   }
 
@@ -3856,9 +3874,8 @@ void tport_send_queue(tport_t *self)
     /* We have sent a complete message */
     
     self->tp_queue[qhead] = NULL;
+    tport_sent_message(self, msg, 0);
     msg_destroy(msg);
-    self->tp_stats.sent_msgs++;
-    self->tp_slogged = NULL;
 
     qhead = (qhead + 1) % N;
   }
@@ -4403,7 +4420,7 @@ tport_t *tport_by_name(tport_t const *self, tp_name_t const *tpn)
       su->su_len = sulen = (socklen_t) sizeof (struct sockaddr_in6);
       su->su_family = AF_INET6;
     }
-    else if (host_is_ip_address(host)) {
+    else if (host_is_ip6_address(host)) {
       su->su_len = sulen = (socklen_t) sizeof (struct sockaddr_in6);
       su->su_family = AF_INET6;
     }
@@ -4613,27 +4630,10 @@ int tport_name_by_url(su_home_t *home,
 /** Check if transport named is already resolved */
 int tport_name_is_resolved(tp_name_t const *tpn)
 {
-  size_t n;
-
   if (!tpn->tpn_host)
     return 0;
-  
-  if (tpn->tpn_host[0] == '[')
-    return 1;
 
-  n = strspn(tpn->tpn_host, ".0123456789");
-
-  if (tpn->tpn_host[n] == '\0')
-    return 1;
-
-  if (strchr(tpn->tpn_host, ':')) {
-    n = strspn(tpn->tpn_host, ":0123456789abcdefABCDEF");
-
-    if (tpn->tpn_host[n] == '\0')
-      return 1;
-  }
-
-  return 0;
+  return host_is_ip_address(tpn->tpn_host);
 }
 
 /** Duplicate name.
@@ -4741,4 +4741,80 @@ char *tport_hostport(char buf[], isize_t bufsize,
     *b++ = 0;
 
   return buf;
+}
+
+/** @internal Update receive statistics. */
+void tport_recv_bytes(tport_t *self, ssize_t bytes, ssize_t on_line)
+{
+  self->tp_stats.recv_bytes += bytes;
+  self->tp_stats.recv_on_line += on_line;
+
+  if (self != self->tp_pri->pri_primary) {
+    self = self->tp_pri->pri_primary;
+    self->tp_stats.recv_bytes += bytes;
+    self->tp_stats.recv_on_line += on_line;
+  }
+  self = self->tp_master->mr_master;
+  self->tp_stats.recv_bytes += bytes;
+  self->tp_stats.recv_on_line += on_line;
+}
+
+/** @internal Update message-based receive statistics. */
+void tport_recv_message(tport_t *self, msg_t *msg, int error)
+{
+  error = error != 0;
+
+  self->tp_stats.recv_msgs++;
+  self->tp_stats.recv_errors += error;
+
+  if (self != self->tp_pri->pri_primary) {
+    self = self->tp_pri->pri_primary;
+    self->tp_stats.recv_msgs++;
+    self->tp_stats.recv_errors += error;
+  }
+
+  self = self->tp_master->mr_master;
+
+  self->tp_stats.recv_msgs++;
+  self->tp_stats.recv_errors += error;
+}
+
+/** @internal Update send statistics. */
+void tport_sent_bytes(tport_t *self, ssize_t bytes, ssize_t on_line)
+{
+  self->tp_stats.sent_bytes += bytes;
+  self->tp_stats.sent_on_line += on_line;
+
+  if (self != self->tp_pri->pri_primary) {
+    self = self->tp_pri->pri_primary;
+    self->tp_stats.sent_bytes += bytes;
+    self->tp_stats.sent_on_line += on_line;
+  }
+
+  self = self->tp_master->mr_master;
+  self->tp_stats.sent_bytes += bytes;
+  self->tp_stats.sent_on_line += on_line;
+}
+
+/** @internal Update message-based send statistics. */
+void tport_sent_message(tport_t *self, msg_t *msg, int error)
+{
+  self->tp_slogged = NULL;
+
+  error = error != 0;
+
+  self->tp_stats.sent_msgs++;
+  self->tp_stats.sent_errors += error;
+
+  if (self != self->tp_pri->pri_primary) {
+    self = self->tp_pri->pri_primary;
+    self->tp_stats.sent_msgs++;
+    self->tp_stats.sent_errors += error;
+  }
+
+  self = self->tp_master->mr_master;
+
+  self->tp_stats.sent_msgs++;
+  self->tp_stats.sent_errors += error;
+
 }

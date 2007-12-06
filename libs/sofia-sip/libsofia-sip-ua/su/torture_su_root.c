@@ -41,6 +41,7 @@ char const *name = "torture_su_root";
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #define TSTFLAGS rt->rt_flags
 #include <sofia-sip/tstdef.h>
@@ -50,6 +51,7 @@ typedef struct test_ep_s   test_ep_t;
 
 #define SU_ROOT_MAGIC_T  root_test_t
 #define SU_WAKEUP_ARG_T  test_ep_t
+#define SU_MSG_ARG_T     root_test_t *
 
 #include <sofia-sip/su_wait.h>
 #include <sofia-sip/su_alloc.h>
@@ -82,6 +84,9 @@ struct root_test_s {
   int        rt_wakeup;
 
   su_clone_r rt_clone;
+
+  unsigned   rt_msg_received;
+  unsigned   rt_msg_destroyed;
 
   unsigned   rt_fail_init:1;
   unsigned   rt_fail_deinit:1;
@@ -591,6 +596,22 @@ static int set_execute_bit_and_return_3(void *void_rt)
   return 3;
 }
 
+static void deinit_simple_msg(su_msg_arg_t *arg)
+{
+  root_test_t *rt = *arg;
+  rt->rt_msg_destroyed++;
+}
+
+static void receive_simple_msg(root_test_t *rt, 
+			       su_msg_r msg,
+			       su_msg_arg_t *arg)
+{
+  assert(rt == *arg);
+  rt->rt_msg_received = 
+    su_task_cmp(su_msg_from(msg), su_task_null) == 0 &&
+    su_task_cmp(su_msg_to(msg), su_task_null) == 0;
+}
+
 static int clone_test(root_test_t rt[1])
 {
   BEGIN();
@@ -629,7 +650,21 @@ static int clone_test(root_test_t rt[1])
 		       &retval), 0);
   TEST(retval, 3);
   TEST_1(rt->rt_executed);
-       
+
+  /* Deliver message with su_msg_send() */
+  TEST(su_msg_new(m, sizeof &rt), 0);
+  *su_msg_data(m) = rt;
+
+  rt->rt_msg_received = 0;
+  rt->rt_msg_destroyed = 0;
+  
+  TEST(su_msg_deinitializer(m, deinit_simple_msg), 0);
+  TEST(su_msg_send_to(m, su_clone_task(rt->rt_clone), receive_simple_msg), 0);
+  
+  while (rt->rt_msg_destroyed == 0)
+    su_root_step(rt->rt_root, 1);
+
+  TEST(rt->rt_msg_received, 1);
 
   /* Make sure 3-way handshake is done as expected */
   TEST(su_msg_create(m,

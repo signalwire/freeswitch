@@ -293,6 +293,8 @@ int tport_recv_dgram(tport_t *self)
     return 0;
   }
 
+  tport_recv_bytes(self, n, n);
+
   SU_CANONIZE_SOCKADDR(from);
 
   if (self->tp_master->mr_dump_file)

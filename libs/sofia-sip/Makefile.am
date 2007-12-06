@@ -7,7 +7,7 @@
 
 AUTOMAKE_OPTIONS = foreign 1.7
 
-SUBDIRS = libsofia-sip-ua $(GLIB_SUBDIRS) utils packages
+SUBDIRS = libsofia-sip-ua $(GLIB_SUBDIRS) utils packages tests
 DIST_SUBDIRS = libsofia-sip-ua libsofia-sip-ua-glib utils packages \
 	win32 open_c
 

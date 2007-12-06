@@ -221,8 +221,8 @@ struct tport_s {
   /* ==== Statistics  ===================================================== */
   
   struct {
-    uint64_t sent_bytes, sent_on_line, recv_bytes, recv_on_line;
-    uint64_t sent_msgs, recv_msgs;
+    uint64_t sent_msgs, sent_errors, sent_bytes, sent_on_line;
+    uint64_t recv_msgs, recv_errors, recv_bytes, recv_on_line;
   } tp_stats;
 };
 
@@ -527,6 +527,12 @@ int tport_recv_stun_dgram(tport_t const *self, msg_t **in_out_msg,
 
 int tport_stun_server_add_socket(tport_t *tp);
 int tport_stun_server_remove_socket(tport_t *tp);
+
+void tport_recv_bytes(tport_t *self, ssize_t bytes, ssize_t on_line);
+void tport_recv_message(tport_t *self, msg_t *msg, int error);
+
+void tport_sent_bytes(tport_t *self, ssize_t bytes, ssize_t on_line);
+void tport_sent_message(tport_t *self, msg_t *msg, int error);
 
 /* ---------------------------------------------------------------------- */
 /* Compressor plugin */

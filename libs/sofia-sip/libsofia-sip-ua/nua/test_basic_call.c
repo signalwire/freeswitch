@@ -463,7 +463,8 @@ int test_basic_call_2(struct context *ctx)
 #else
   /* sf.net bug #1816647: Outbound contact does not make it to dialogs */
   /* Now we use first registered contact if aor does not match */
-  TEST_S(sip->sip_contact->m_url->url_user, "b");
+  if (ctx->proxy_tests)
+    TEST_S(sip->sip_contact->m_url->url_user, "b");
 #endif
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_ready); /* READY */
@@ -1043,7 +1044,8 @@ int test_basic_call_5(struct context *ctx)
   TEST(e->data->e_status, 200);
   TEST_1(sip = sip_object(e->data->e_msg));
   TEST_1(sip->sip_contact);
-  TEST_S(sip->sip_contact->m_url->url_user, "b");
+  if (ctx->proxy_tests)		/* Use Contact from registration? */
+    TEST_S(sip->sip_contact->m_url->url_user, "b");
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_completing); /* COMPLETING */
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);

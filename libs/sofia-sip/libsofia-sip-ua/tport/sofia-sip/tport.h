@@ -166,7 +166,7 @@ typedef struct {
   (n)->tpn_comp ? ";comp=" : "", (n)->tpn_comp ? (n)->tpn_comp : "",    \
   (n)->tpn_ident ? "/" : "", (n)->tpn_ident ? (n)->tpn_ident : ""
 
-/** Create first primary transport. */
+/**Create master transport. */
 TPORT_DLL tport_t *tport_tcreate(tp_stack_t *stack,
 				 tport_stack_class_t const *tpac,
 				 su_root_t *root,

@@ -96,7 +96,7 @@ struct hentry_s
 #define HENTRY_IS_USED(e) ((e).e_n != 0)
 #define HENTRY_REMOVE(e) ((e)->e_n = 0, (e)->e_hash = 0)
 #define HENTRY_IS_EQUAL(a, b) ((a).e_n == (b).e_n)
-#define HALLOC(home, old, newsize) (su_realloc(home, old, newsize))
+#define HALLOC(home, old, newsize) (su_realloc(home, old, (isize_t)newsize))
 
 HTABLE2_BODIES2(htable2_t, htable2, ht2_, entry_t, size_t,
 	       HENTRY_HASH, HENTRY_IS_USED, HENTRY_REMOVE, HENTRY_IS_EQUAL,

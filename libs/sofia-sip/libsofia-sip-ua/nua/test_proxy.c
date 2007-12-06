@@ -206,6 +206,7 @@ struct proxy_tr
   sip_t *sip;			/* request headers */
 
   sip_method_t method;		/* request method */
+  char const *method_name;
   int status;			/* best status */
   url_t *target;		/* request-URI */
 
@@ -342,6 +343,9 @@ static void
 test_proxy_deinit(su_root_t *root, struct proxy *proxy)
 {
   struct proxy_tr *t;
+
+  while (proxy->transactions)
+    proxy_tr_destroy(proxy->transactions);
 
   if ((t = proxy->stateless)) {
     proxy->stateless = NULL;
@@ -698,7 +702,7 @@ static int domain_request(union proxy_or_domain *pod,
 {
   int (*process)(struct proxy_tr *) = NULL;
   sip_method_t method = sip->sip_request->rq_method;
-
+  
   assert(pod->domain->magic = domain_init);
 
   if (leg == pod->domain->uleg)
@@ -732,6 +736,7 @@ static int proxy_tr_with(struct proxy *proxy,
     t->sip = sip_object(t->msg);
 
     t->method = sip->sip_request->rq_method;
+    t->method_name = sip->sip_request->rq_method_name;
     t->target = sip->sip_request->rq_url;
     t->now = nta_incoming_received(irq, NULL);
 
@@ -767,7 +772,7 @@ static int proxy_transaction(struct proxy_tr *t)
 
   return target_transaction(t, t->target, NULL);
 }
-  
+
 static int respond_transaction(struct proxy_tr *t,
 			       int status, char const *phrase,
 			       tag_type_t tag, tag_value_t value,
@@ -925,6 +930,7 @@ static int target_transaction(struct proxy_tr *t,
 			      tport_t *tport)
 {
   struct client_tr *c = su_zalloc(t->proxy->home, sizeof *c);
+  int stateless = t->method == sip_method_ack;
 
   if (c == NULL)
     return 500;
@@ -935,8 +941,7 @@ static int target_transaction(struct proxy_tr *t,
 
   if (c->msg)
     c->rq = sip_request_create(msg_home(c->msg),
-			       c->sip->sip_request->rq_method,
-			       c->sip->sip_request->rq_method_name,
+			       t->method, t->method_name,
 			       (url_string_t *)target,
 			       NULL);
 
@@ -957,15 +962,18 @@ static int target_transaction(struct proxy_tr *t,
 				     NULL,
 				     msg_ref_create(c->msg),
 				     NTATAG_TPORT(tport),
+				     NTATAG_STATELESS(stateless),
 				     TAG_END());
 
-  if (c->client)
-    return client_tr_insert(&t->clients, c), 0;
+  if (!c->client) {
+    msg_destroy(c->msg);
+    su_free(t->proxy->home, c);
+    return 500;
+  }
 
-  msg_destroy(c->msg);
-  su_free(t->proxy->home, c);
+  client_tr_insert(&t->clients, c);
 
-  return 500;
+  return stateless ? 200 : 0;
 }
 
 static int challenge_transaction(struct proxy_tr *t)
@@ -1094,6 +1102,8 @@ void proxy_tr_destroy(struct proxy_tr *t)
     msg_destroy(c->msg), c->msg = NULL;
     su_free(t->proxy->home, c);
   }
+
+  msg_destroy(t->msg);
 
   nta_incoming_destroy(t->server);
 

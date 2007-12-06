@@ -268,8 +268,14 @@ static int su_base_port_execute_msgs(su_msg_t *queue)
 
     queue = msg->sum_next, msg->sum_next = NULL;
 
-    if (f) 
-      f(SU_ROOT_MAGIC(msg->sum_to->sut_root), &msg, msg->sum_data);
+    if (f) {
+      su_root_t *root = msg->sum_to->sut_root;
+
+      if (msg->sum_to->sut_port == NULL)
+	msg->sum_to->sut_root = NULL;
+      f(SU_ROOT_MAGIC(root), &msg, msg->sum_data);
+    }
+
     su_msg_delivery_report(&msg);
     n++;
   }

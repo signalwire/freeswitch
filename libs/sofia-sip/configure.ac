@@ -100,6 +100,10 @@ SAC_SOFIA_SU
 SAC_OPENSSL
 SAC_TPORT
 
+dnl Check is used for testing
+PKG_CHECK_MODULES(CHECK, check >= 0.9.4, have_check="yes", have_check="no")
+AM_CONDITIONAL(HAVE_CHECK, test x"$have_check" = "xyes")
+
 ### internal modules
 ### ----------------
 AC_DEFINE([HAVE_SOFIA_SIP], 1, [Define to 1 always])
@@ -122,11 +126,12 @@ fi
 AM_CONDITIONAL([HAVE_STUN], [test "x$enable_stun" = xyes])
 
 AC_ARG_ENABLE(nth,
-[  --disable-nth           disable nth and http modules (enabled)],
+[  --disable-nth           disable HTTP-related modules nth and http (enabled)],
  , enable_nth=yes)
 AM_CONDITIONAL([HAVE_NTH], [test "x$enable_nth" = xyes])
 if test x$enable_nth = xyes ; then
   AC_DEFINE([HAVE_SOFIA_NTH], 1, [Define to 1 if we use NTH library])
+  AC_DEFINE([HAVE_SOFIA_HTTP], 1, [Define to 1 if we use HTTP parser library])
 fi
 
 dnl Disable NTLM support by default
@@ -325,6 +330,7 @@ libsofia-sip-ua-glib/su-glib/Makefile
 libsofia-sip-ua-glib/su-glib/Doxyfile
 utils/Makefile
 utils/Doxyfile
+tests/Makefile
 win32/Makefile
 win32/config.h
 open_c/Makefile

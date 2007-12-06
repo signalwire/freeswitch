@@ -61,12 +61,13 @@ SOFIA_BEGIN_DECLS
 
 /** @internal Message */
 struct su_msg_s {
-  isize_t        sum_size;
+  size_t         sum_size;
   su_msg_t      *sum_next;
   su_task_r      sum_to;
   su_task_r      sum_from;
   su_msg_f       sum_func;
   su_msg_f       sum_report;
+  su_msg_deinit_func *sum_deinit;
   su_msg_arg_t   sum_data[1];		/* minimum size, may be extended */
 };
 
@@ -101,11 +102,11 @@ typedef struct su_port_vtable {
   struct _GSource *(*su_port_gsource)(su_port_t *port);
   int (*su_port_send)(su_port_t *self, su_msg_r rmsg);
   int (*su_port_register)(su_port_t *self,
-		       su_root_t *root, 
-		       su_wait_t *wait, 
-		       su_wakeup_f callback,
-		       su_wakeup_arg_t *arg,
-		       int priority);
+			  su_root_t *root, 
+			  su_wait_t *wait, 
+			  su_wakeup_f callback,
+			  su_wakeup_arg_t *arg,
+			  int priority);
   int (*su_port_unregister)(su_port_t *port,
 			    su_root_t *root, 
 			    su_wait_t *wait,	

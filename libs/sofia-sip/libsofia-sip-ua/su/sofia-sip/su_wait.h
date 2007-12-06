@@ -398,6 +398,9 @@ typedef void su_msg_function(su_root_magic_t *magic,
 			     su_msg_r msg,
 			     su_msg_arg_t *arg);
 
+/** Message deinitialize. */
+typedef void su_msg_deinit_func(su_msg_arg_t *arg);
+
 /** Message delivery function pointer type. */
 typedef su_msg_function *su_msg_f;
 
@@ -526,6 +529,7 @@ SOFIAPUBFUN int su_msg_create(su_msg_r msg,
 			      su_task_r const to, su_task_r const from, 
 			      su_msg_f wakeup, isize_t size);
 SOFIAPUBFUN int su_msg_report(su_msg_r msg, su_msg_f report);
+SOFIAPUBFUN int su_msg_deinitializer(su_msg_r msg, su_msg_deinit_func *);
 SOFIAPUBFUN int su_msg_reply(su_msg_r reply, su_msg_cr msg,
 			     su_msg_f wakeup, isize_t size);
 SOFIAPUBFUN void su_msg_destroy(su_msg_r msg);
@@ -536,6 +540,11 @@ SOFIAPUBFUN isize_t su_msg_size(su_msg_cr msg);
 SOFIAPUBFUN _su_task_r su_msg_from(su_msg_cr msg);
 SOFIAPUBFUN _su_task_r su_msg_to(su_msg_cr msg);
 SOFIAPUBFUN int su_msg_send(su_msg_r msg);
+
+SOFIAPUBFUN int su_msg_new(su_msg_r msg, size_t size);
+SOFIAPUBFUN int su_msg_send_to(su_msg_r msg,
+			       su_task_r const to, 
+			       su_msg_f wakeup);
 
 /** Does reference contain a message? */
 #if SU_HAVE_INLINE

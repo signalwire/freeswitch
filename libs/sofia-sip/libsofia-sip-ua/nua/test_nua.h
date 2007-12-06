@@ -22,7 +22,8 @@
  *
  */
 
-/**@CFILE test_nua.h
+/**@@internal
+ * @file test_nua.h
  * @brief High-level tester framework for Sofia SIP User Agent Engine
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>

@@ -242,6 +242,8 @@ int tport_recv_sctp(tport_t *self)
     return 0;    /* End of stream */
   }
 
+  tport_recv_bytes(self, n, n);
+
   veclen = tport_recv_iovec(self, &self->tp_msg, iovec, N, 0);
   if (veclen < 0)
     return -1;

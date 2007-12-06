@@ -1018,6 +1018,15 @@ int test_unregister(struct context *ctx)
       TEST_1(e = e->next);
       TEST_E(e->data->e_event, nua_r_unregister);
     }
+    if (e->data->e_status == 401) {
+      TEST_1(!e->next);
+      free_events_in_list(ctx, c->events);
+      AUTHENTICATE(c, NULL, c->reg->nh,
+		   NUTAG_AUTH("Digest:\"test-proxy\":charlie:secret"), TAG_END());
+      run_c_until(ctx, -1, save_until_final_response);
+      TEST_1(e = c->events->head);
+      TEST_E(e->data->e_event, nua_r_unregister);
+    }
     TEST(e->data->e_status, 200);
     TEST_1(sip = sip_object(e->data->e_msg));
     TEST_1(sip->sip_from->a_url->url_user);

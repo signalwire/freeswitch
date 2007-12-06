@@ -43,8 +43,6 @@
 #include <sofia-sip/su_debug.h>
 
 #define SU_ROOT_MAGIC_T   struct nua_s
-#define SU_MSG_ARG_T      struct event_s
-#define NUA_SAVED_EVENT_T su_msg_t *
 
 #include <sofia-sip/sip_status.h>
 #include <sofia-sip/sip_header.h>
@@ -192,7 +190,7 @@ void nua_shutdown(nua_t *nua)
 
   if (nua)
     nua->nua_shutdown_started = 1;
-  nua_signal(nua, NULL, NULL, 1, nua_r_shutdown, 0, NULL, TAG_END());
+  nua_signal(nua, NULL, NULL, nua_r_shutdown, 0, NULL, TAG_END());
 }
 
 /** Destroy the @nua stack.
@@ -226,6 +224,8 @@ void nua_destroy(nua_t *nua)
       assert(nua->nua_shutdown);
       return;
     }
+
+    nua->nua_callback = NULL;
 
     su_task_deinit(nua->nua_server);
     su_task_deinit(nua->nua_client);
@@ -574,7 +574,7 @@ void nua_set_params(nua_t *nua, tag_type_t tag, tag_value_t value, ...)
 
   enter;
 
-  nua_signal(nua, NULL, NULL, 0, nua_r_set_params, 0, NULL, ta_tags(ta));
+  nua_signal(nua, NULL, NULL, nua_r_set_params, 0, NULL, ta_tags(ta));
 
   ta_end(ta);
 }
@@ -587,7 +587,7 @@ void nua_get_params(nua_t *nua, tag_type_t tag, tag_value_t value, ...)
 
   enter;
 
-  nua_signal(nua, NULL, NULL, 0, nua_r_get_params, 0, NULL, ta_tags(ta));
+  nua_signal(nua, NULL, NULL, nua_r_get_params, 0, NULL, ta_tags(ta));
 
   ta_end(ta);
 }
@@ -597,7 +597,7 @@ void nua_get_params(nua_t *nua, tag_type_t tag, tag_value_t value, ...)
   if (NH_IS_VALID((nh))) { \
     ta_list ta; \
     ta_start(ta, tag, value); \
-    nua_signal((nh)->nh_nua, nh, NULL, 0, event, 0, NULL, ta_tags(ta));	\
+    nua_signal((nh)->nh_nua, nh, NULL, event, 0, NULL, ta_tags(ta));	\
     ta_end(ta); \
   } \
   else { \
@@ -881,7 +881,7 @@ void nua_respond(nua_handle_t *nh,
   if (NH_IS_VALID(nh)) {
     ta_list ta;
     ta_start(ta, tag, value);
-    nua_signal(nh->nh_nua, nh, NULL, 0, nua_r_respond,
+    nua_signal(nh->nh_nua, nh, NULL, nua_r_respond,
 	       status, phrase, ta_tags(ta));
     ta_end(ta);
   }
@@ -922,197 +922,7 @@ void nua_handle_destroy(nua_handle_t *nh)
 
   if (NH_IS_VALID(nh) && !NH_IS_DEFAULT(nh)) {
     nh->nh_valid = NULL;	/* Events are no more delivered to appl. */
-    nua_signal(nh->nh_nua, nh, NULL, 1, nua_r_destroy, 0, NULL, TAG_END());
-  }
-}
-
-/*# Send a request to the protocol thread */
-void nua_signal(nua_t *nua, nua_handle_t *nh, msg_t *msg, int always,
-		nua_event_t event,
-		int status, char const *phrase,
-		tag_type_t tag, tag_value_t value, ...)
-{
-  su_msg_r sumsg = SU_MSG_R_INIT;
-  size_t len, xtra, e_len, l_len = 0, l_xtra = 0;
-  ta_list ta;
-
-  if (nua == NULL)
-    return;
-
-  ta_start(ta, tag, value);
-
-  e_len = offsetof(event_t, e_tags);
-  len = tl_len(ta_args(ta));
-  xtra = tl_xtra(ta_args(ta), len);
-
-  if (su_msg_create(sumsg, nua->nua_server, su_task_null,
-		    nua_stack_signal,
-		    e_len + len + l_len + xtra + l_xtra) == 0) {
-    event_t *e = su_msg_data(sumsg);
-    tagi_t *t = e->e_tags;
-    void *b = (char *)t + len + l_len;
-
-    tagi_t *tend = (tagi_t *)b;
-    char *bend = (char *)b + xtra + l_xtra;
-
-    t = tl_dup(t, ta_args(ta), &b);
-
-    assert(tend == t); (void)tend; assert(b == bend); (void)bend;
-
-    e->e_always = always;
-    e->e_event = event;
-    e->e_nh = event == nua_r_destroy ? nh : nua_handle_ref(nh);
-    e->e_status = status;
-    e->e_phrase = phrase;
-
-    SU_DEBUG_7(("nua(%p): signal %s\n", (void *)nh,
-		nua_event_name(event) + 4));
-
-    if (su_msg_send(sumsg) != 0 && event != nua_r_destroy)
-      nua_handle_unref(nh);
-  }
-  else {
-    /* XXX  - we should return error code to application but we just abort() */
-    assert(ENOMEM == 0);
-  }
-
-  ta_end(ta);
-}
-
-/*# Receive event from protocol machine and hand it over to application */
-void nua_event(nua_t *root_magic, su_msg_r sumsg, event_t *e)
-{
-  nua_t *nua;
-  nua_handle_t *nh = e->e_nh;
-
-  enter;
-
-  if (nh) {
-    if (!nh->nh_ref_by_user && nh->nh_valid) {
-      nh->nh_ref_by_user = 1;
-      nua_handle_ref(nh);
-    }
-  }
-
-  if (!nh || !nh->nh_valid) {	/* Handle has been destroyed */
-    if (nua_log->log_level >= 7) {
-      char const *name = nua_event_name(e->e_event) + 4;
-      SU_DEBUG_7(("nua(%p): event %s dropped\n", (void *)nh, name));
-    }
-    if (nh && !NH_IS_DEFAULT(nh) && nua_handle_unref(nh)) {
-#if HAVE_NUA_HANDLE_DEBUG
-      SU_DEBUG_0(("nua(%p): freed by application\n", (void *)nh));
-#else
-      SU_DEBUG_9(("nua(%p): freed by application\n", (void *)nh));
-#endif
-    }
-    if (e->e_msg)
-      msg_destroy(e->e_msg), e->e_msg = NULL;
-    return;
-  }
-
-  nua = nh->nh_nua; assert(nua);
-
-  if (e->e_event == nua_r_shutdown && e->e_status >= 200)
-    nua->nua_shutdown_final = 1;
-
-  if (!nua->nua_callback)
-    return;
-
-  if (NH_IS_DEFAULT(nh))
-    nh = NULL;
-
-  su_msg_save(nua->nua_current, sumsg);
-
-  e->e_nh = NULL;
-
-  nua->nua_callback(e->e_event, e->e_status, e->e_phrase,
-		    nua, nua->nua_magic,
-		    nh, nh ? nh->nh_magic : NULL,
-		    e->e_msg ? sip_object(e->e_msg) : NULL,
-		    e->e_tags);
-
-  if (nh && !NH_IS_DEFAULT(nh) && nua_handle_unref(nh)) {
-#if HAVE_NUA_HANDLE_DEBUG
-    SU_DEBUG_0(("nua(%p): freed by application\n", (void *)nh));
-#else
-    SU_DEBUG_9(("nua(%p): freed by application\n", (void *)nh));
-#endif
-  }
-
-  if (!su_msg_is_non_null(nua->nua_current))
-    return;
-
-  if (e->e_msg)
-    msg_destroy(e->e_msg), e->e_msg = NULL;
-
-  su_msg_destroy(nua->nua_current);
-}
-
-/** Get current request message. @NEW_1_12_4.
- *
- * @note A response message is returned when processing response message.
- *
- * @sa #nua_event_e, nua_respond(), NUTAG_WITH_CURRENT()
- */
-msg_t *nua_current_request(nua_t const *nua)
-{
-  return nua && nua->nua_current ? su_msg_data(nua->nua_current)->e_msg : NULL;
-}
-
-/** Get request message from saved nua event. @NEW_1_12_4. 
- *
- * @sa nua_save_event(), nua_respond(), NUTAG_WITH_SAVED(), 
- */
-msg_t *nua_saved_event_request(nua_saved_event_t const *saved)
-{
-  return saved && saved[0] ? su_msg_data(saved)->e_msg : NULL;
-}
-
-/** Save nua event and its arguments.
- *
- * @sa #nua_event_e, nua_event_data() nua_saved_event_request(), nua_destroy_event()
- */
-int nua_save_event(nua_t *nua, nua_saved_event_t return_saved[1])
-{
-  if (nua && return_saved) {
-    su_msg_save(return_saved, nua->nua_current);
-    if (su_msg_is_non_null(return_saved)) {
-      /* Remove references to tasks */
-      su_msg_remove_refs(return_saved);
-      return 1;
-    }
-  }
-  return 0;
-}
-
-/** Get event data.
- *
- * @sa #nua_event_e, nua_event_save(), nua_saved_event_request(), nua_destroy_event().
- */
-nua_event_data_t const *nua_event_data(nua_saved_event_t const saved[1])
-{
-  return saved ? su_msg_data(saved) : NULL;
-}
-
-/** Destroy saved event.
- *
- * @sa #nua_event_e, nua_event_save(), nua_event_data(), nua_saved_event_request().
- */
-void nua_destroy_event(nua_saved_event_t saved[1])
-{
-  if (su_msg_is_non_null(saved)) {
-    event_t *e = su_msg_data(saved);
-    nua_handle_t *nh = e->e_nh;
-
-    if (e->e_msg)
-      msg_destroy(e->e_msg), e->e_msg = NULL;
-
-    if (nh && !NH_IS_DEFAULT(nh) && nua_handle_unref(nh)) {
-      SU_DEBUG_9(("nua(%p): freed by application\n", (void *)nh));
-    }
-
-    su_msg_destroy(saved);
+    nua_signal(nh->nh_nua, nh, NULL, nua_r_destroy, 0, NULL, TAG_END());
   }
 }
 

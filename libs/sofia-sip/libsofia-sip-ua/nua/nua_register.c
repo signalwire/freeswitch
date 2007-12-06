@@ -1941,7 +1941,9 @@ sip_contact_t *nua_handle_contact_by_via(nua_handle_t *nh,
   char _transport[16];
   va_list va;
   sip_contact_t *m;
-  url_t url = URL_INIT_AS(sip);
+  url_t url;
+
+  url_init(&url, url_sip);
 
   if (!v) return NULL;
 

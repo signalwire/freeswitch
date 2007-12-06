@@ -408,6 +408,7 @@ int test_deinit(struct context *ctx)
 
     nua_shutdown(ctx->a.nua);
     run_a_until(ctx, nua_r_shutdown, until_final_response);
+    free_events_in_list(ctx, ctx->a.events);
     free_events_in_list(ctx, ctx->a.specials);
     nua_destroy(ctx->a.nua), ctx->a.nua = NULL;
   }
@@ -418,6 +419,7 @@ int test_deinit(struct context *ctx)
 
     nua_shutdown(ctx->b.nua);
     run_b_until(ctx, nua_r_shutdown, until_final_response);
+    free_events_in_list(ctx, ctx->b.events);
     free_events_in_list(ctx, ctx->b.specials);
     nua_destroy(ctx->b.nua), ctx->b.nua = NULL;
   }
@@ -428,6 +430,7 @@ int test_deinit(struct context *ctx)
 
     nua_shutdown(ctx->c.nua);
     run_c_until(ctx, nua_r_shutdown, until_final_response);
+    free_events_in_list(ctx, ctx->c.events);
     free_events_in_list(ctx, ctx->c.specials);
     nua_destroy(ctx->c.nua), ctx->c.nua = NULL;
   }
@@ -436,7 +439,7 @@ int test_deinit(struct context *ctx)
 
   test_nat_destroy(ctx->nat), ctx->nat = NULL;
 
-  su_root_destroy(ctx->root);
+  su_root_destroy(ctx->root), ctx->root = NULL;
 
   END();
 }

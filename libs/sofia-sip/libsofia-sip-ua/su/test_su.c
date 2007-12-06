@@ -559,15 +559,9 @@ int main(int argc, char *argv[])
     su_perror("su_timer_create"), exit(1);
   su_timer_set(t, (su_timer_f)do_exit, NULL);
 
-  su_clone_pause(ping);
-  su_clone_pause(pong);
-
   su_msg_create(start_msg, su_clone_task(ping), su_clone_task(pong), 
 		init_ping, 0);
   su_msg_send(start_msg);
-
-  su_clone_resume(ping);
-  su_clone_resume(pong);
 
   su_root_run(root);
 
