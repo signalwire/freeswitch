@@ -15,7 +15,7 @@
        containing the "subscriptions" table.
        used by: dingaling.conf.xml enum.conf.xml 
   --> 
-  <X-PRE-PROCESS cmd="set" data="global_codec_prefs=G722@20i,PCMU@20i,PCMA@20i"/>
+  <X-PRE-PROCESS cmd="set" data="global_codec_prefs=PCMU@20i,PCMA@20i"/>
   <X-PRE-PROCESS cmd="set" data="xmpp_client_profile=xmppc"/>
   <X-PRE-PROCESS cmd="set" data="xmpp_server_profile=xmpps"/>
   <!-- bind_server_ip
