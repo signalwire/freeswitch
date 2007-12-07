@@ -214,6 +214,7 @@ int main(int argc, char *argv[])
 	int known_opt;
  	int high_prio = 0;
 	switch_core_flag_t flags = SCF_USE_SQL;
+	int status;
 
 #ifdef WIN32
 	SERVICE_TABLE_ENTRY dispatchTable[] = {
@@ -428,11 +429,16 @@ int main(int argc, char *argv[])
 	}
 
 	fprintf(f, "%d", pid = getpid());
-	fclose(f);
+	fflush(f);
 
 	switch_core_runtime_loop(nc);
 
-	return switch_core_destroy();
+	status = switch_core_destroy();
+
+	fclose(f);
+	unlink(pid_path);
+
+	return status;
 }
 
 /* For Emacs:
