@@ -999,7 +999,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 
 
 
-	if (runtime.console != stdout && runtime.console != stderr) {
+	if (runtime.console && runtime.console != stdout && runtime.console != stderr) {
 		fclose(runtime.console);
 		runtime.console = NULL;
 	}
