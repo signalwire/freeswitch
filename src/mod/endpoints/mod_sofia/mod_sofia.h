@@ -468,7 +468,7 @@ char *sofia_glue_get_url_from_contact(char *buf, uint8_t to_dup);
 void sofia_presence_set_hash_key(char *hash_key, int32_t len, sip_t const *sip);
 void sofia_glue_sql_close(sofia_profile_t *profile);
 int sofia_glue_init_sql(sofia_profile_t *profile);
-char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char *uri, const char *transport);
+char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char *uri, const char *transport, switch_bool_t uri_only);
 switch_bool_t sofia_glue_execute_sql_callback(sofia_profile_t *profile,
 											  switch_bool_t master,
 											  switch_mutex_t *mutex,

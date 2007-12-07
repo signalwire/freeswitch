@@ -447,7 +447,7 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char *uri, const char *transport)
+char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char *uri, const char *transport, switch_bool_t uri_only)
 {
 	char *stripped = switch_core_session_strdup(session, uri);
 	char *new_uri = NULL;
@@ -455,12 +455,12 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 	stripped = sofia_glue_get_url_from_contact(stripped, 0);
 	if (transport && strcasecmp(transport, "udp")) {
 		if (switch_stristr("port=", stripped)) {
-			new_uri = switch_core_session_sprintf(session, "<%s>", stripped);
+			new_uri = switch_core_session_sprintf(session, "%s%s%s", uri_only ? "" : "<", stripped, uri_only ? "" : ">");
 		} else {
 			if (strchr(stripped, ';')) {
-				new_uri = switch_core_session_sprintf(session, "<%s&transport=%s>", stripped, transport);
+				new_uri = switch_core_session_sprintf(session, "%s%s&transport=%s%s", uri_only ? "" : "<", stripped, transport, uri_only ? "" : ">");
 			} else {
-				new_uri = switch_core_session_sprintf(session, "<%s;transport=%s>", stripped, transport);
+				new_uri = switch_core_session_sprintf(session, "%s%s;transport=%s%s", uri_only ? "" : "<", stripped, transport, uri_only ? "" : ">");
 			}
 		}
 	} else {
@@ -593,10 +593,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			}
 		}
 
-		url_str = sofia_overcome_sip_uri_weakness(session, url, transport);
-		invite_contact = sofia_overcome_sip_uri_weakness(session, tech_pvt->invite_contact, transport);
-		from_str = sofia_overcome_sip_uri_weakness(session, use_from_str, NULL);
-		to_str = sofia_overcome_sip_uri_weakness(session, tech_pvt->dest_to, NULL);
+		url_str = sofia_overcome_sip_uri_weakness(session, url, transport, SWITCH_TRUE);
+		invite_contact = sofia_overcome_sip_uri_weakness(session, tech_pvt->invite_contact, transport, SWITCH_FALSE);
+		from_str = sofia_overcome_sip_uri_weakness(session, use_from_str, NULL, SWITCH_FALSE);
+		to_str = sofia_overcome_sip_uri_weakness(session, tech_pvt->dest_to, NULL, SWITCH_FALSE);
 		
 		/* 
 		   Does the "genius" who wanted SIP to be "text-based" so it was "easier to read" even use it now,
