@@ -1755,6 +1755,8 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 			from->a_display ? " " : "",
 			URL_PRINT_ARGS(from->a_url),
 			sip->sip_payload->pl_data);
+		/* Send 415 Unsupported Media response */
+		nua_respond(nh, SIP_415_UNSUPPORTED_MEDIA, NUTAG_WITH_THIS(nua), TAG_END());
 		return;
 	}
 
@@ -1781,6 +1783,9 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 
 	/* print debug info */
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "INFO DTMF(%s)\n", dtmf_digit);
+
+	/* Send 200 OK response */
+	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
 
 	return;
 }
