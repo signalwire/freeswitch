@@ -39,7 +39,7 @@ typedef struct cdr_fd cdr_fd_t;
 
 const char *default_template = 
 	"\"${caller_id_name}\",\"${caller_id_number}\",\"${destination_number}\",\"${context}\",\"${start_stamp}\","
-	"\"${answer_stamp}\",\"${end_stamp}\",\"${duration}\",\"${billsec}\",\"${hangup_cause}\",\"${uuid}\",\"${bleg_uuid}\", \"${accountcode}\"";
+	"\"${answer_stamp}\",\"${end_stamp}\",\"${duration}\",\"${billsec}\",\"${hangup_cause}\",\"${uuid}\",\"${bleg_uuid}\", \"${accountcode}\"\n";
 
 static struct {
 	switch_memory_pool_t *pool;
@@ -157,7 +157,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	const char *log_dir = NULL, *accountcode = NULL, *cid_buf = NULL, *template = NULL, *template_str = NULL;
+	const char *log_dir = NULL, *accountcode = NULL, *cid_buf = NULL, *a_template_str = NULL, *g_template_str = NULL;
 	char *log_line, *path = NULL;	
 	switch_caller_profile_t *caller_profile, *ocp;
 	
@@ -194,7 +194,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 		last_app = ap->app;
 		last_arg = ap->arg;
 	}
-
+	
 	if (caller_profile->times) {
 		switch_time_exp_t tm;
 		switch_size_t retsize;
@@ -234,63 +234,41 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	snprintf(tmp, sizeof(tmp), "%d", billsec);
 	switch_channel_set_variable(channel, "billsec", tmp);
 
-
-	if (!(template = switch_channel_get_variable(channel, "cdr_template"))) {
-		template = globals.default_template;
-	}
-
-	if (!(template_str = (const char *) switch_core_hash_find(globals.template_hash, template))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error finding template %s substituting default\n", template);
-		template_str = (const char *) switch_core_hash_find(globals.template_hash, globals.default_template);
-	}
+	g_template_str = (const char *) switch_core_hash_find(globals.template_hash, globals.default_template);
 	
-
-
-	log_line = switch_channel_expand_variables(channel, template_str);
-#if 0	
-	log_line = switch_core_session_sprintf(session,
-										   "\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\","
-										   "\"%s\",\"%s\",\"%d\",\"%d\",\"%s\",\"%s\",\"%s\",\"%s\"\n",
-										   switch_str_nil(accountcode),
-										   switch_str_nil(caller_profile->caller_id_number),
-										   switch_str_nil(caller_profile->destination_number),
-										   switch_str_nil(caller_profile->context),
-										   cid_buf,
-										   switch_channel_get_name(channel),
-										   switch_str_nil(switch_channel_get_variable(channel, SWITCH_BRIDGE_CHANNEL_VARIABLE)),
-										   switch_str_nil(last_app),
-										   switch_str_nil(last_arg),
-										   start,
-										   answer,
-										   end,
-										   duration,
-										   billsec,
-										   switch_str_nil(switch_channel_cause2str(switch_channel_get_cause(channel))),
-										   switch_str_nil(switch_channel_get_variable(channel, "AMAFLAGS")),
-										   switch_str_nil(caller_profile->uuid),
-										   switch_str_nil(switch_channel_get_variable(channel, "USERFIELD"))
-										   );
-
-#endif
-
-	
-		
-
-
 	if ((accountcode = switch_channel_get_variable(channel, "ACCOUNTCODE"))) {
+		a_template_str = (const char *) switch_core_hash_find(globals.template_hash, accountcode);
+	}
+	
+	if (!a_template_str) {
+		a_template_str = g_template_str;
+	}
+	
+	log_line = switch_channel_expand_variables(channel, a_template_str);
+
+	if (accountcode) {
 		path = switch_mprintf("%s%s%s.csv", log_dir, SWITCH_PATH_SEPARATOR, accountcode);
 		assert(path);
 		write_cdr(path, log_line);
 		free(path);
 	}
-							  
+		
+	if (g_template_str != a_template_str) {
+		if (log_line && log_line != a_template_str) {
+			switch_safe_free(log_line);
+		}
+		log_line = switch_channel_expand_variables(channel, g_template_str);
+	}
+	
+		
+
 	path = switch_mprintf("%s%sMaster.csv", log_dir, SWITCH_PATH_SEPARATOR);
 	assert(path);
 	write_cdr(path, log_line);
 	free(path);
 	
 
-	if (log_line && log_line != template_str) {
+	if (log_line && log_line != g_template_str) {
 		free(log_line);
 	}
 
