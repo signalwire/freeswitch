@@ -183,6 +183,19 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 				
 				box = switch_xml_attr_soft(x_user, "mailbox");
 				
+                for (x_param = switch_xml_child(x_domain, "param"); x_param; x_param = x_param->next) {
+                    const char *var = switch_xml_attr_soft(x_param, "name");
+                    const char *val = switch_xml_attr_soft(x_param, "value");
+					
+                    if (!strcasecmp(var, "password")) {
+                        mypass1 = val;
+                    } else if (!strcasecmp(var, "vm-password")) {
+                        mypass2 = val;
+                    } else if (!strncasecmp(var, "http-", 5)) {
+						ResponseAddField(r, (char *)var, (char *)val);
+                    } 
+				}
+
 				if (!(x_params = switch_xml_child(x_user, "params"))) {
 					goto authed;
                 }
