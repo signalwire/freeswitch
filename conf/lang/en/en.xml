@@ -1,5 +1,5 @@
 <include>
-  <language name="en" sound-path="/snds" tts-engine="cepstral" tts-voice="david">
+  <language name="en" sound-path="/snds" tts-engine="cepstral" tts-voice="callie">
     <X-PRE-PROCESS cmd="include" data="demo/demo.xml"/>
     <!--voicemail_en_tts is purely implemented with tts, we need a files based implementation too -->
     <X-PRE-PROCESS cmd="include" data="vm/tts.xml"/>
