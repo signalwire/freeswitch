@@ -1,10 +1,5 @@
 <include>
   <context name="public">
-    <extension name="blah">
-      <condition>
-	<action application='info'/>
-      </condition>
-    </extension>
 
     <extension name="public_extensions">
       <condition field="destination_number" expression="^(10[01][0-9])$">
