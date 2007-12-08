@@ -64,6 +64,7 @@ typedef struct switch_channel_timetable switch_channel_timetable_t;
   \return current state of channel
 */
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_state(switch_channel_t *channel);
+SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_running_state(switch_channel_t *channel);
 
 /*!
   \brief Determine if a channel is ready for io
@@ -72,9 +73,14 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_state(switch_channel_t
 */
 SWITCH_DECLARE(uint8_t) switch_channel_ready(switch_channel_t *channel);
 
+SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, switch_channel_t *other_channel, switch_channel_state_t want_state);
 
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_channel_t *channel,
 																		const char *file, const char *func, int line, switch_channel_state_t state);
+
+SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(switch_channel_t *channel,
+																				const char *file, const char *func, int line);
+#define switch_channel_set_running_state(channel) switch_channel_perform_set_running_state(channel, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 /*!
   \brief Set the current state of a channel

@@ -1,4 +1,26 @@
 <context name="default">
+  <extension name="intercept">
+    <condition field="destination_number" expression="^886$">
+      <action application="answer"/>
+      <action application="intercept" data="${db(select/last_dial/global)}"/>
+      <action application="sleep" data="2000"/>
+    </condition>
+  </extension>
+
+  <extension name="intercept-ext">
+    <condition field="destination_number" expression="^886(\d+)$">
+      <action application="answer"/>
+      <action application="intercept" data="${db(select/last_dial_ext/$1)}"/>
+      <action application="sleep" data="2000"/>
+    </condition>
+  </extension>
+
+  <extension name="redial">
+    <condition field="destination_number" expression="^870$">
+      <action application="transfer" data="${db(select/last_dial/${caller_id_number})}"/>
+    </condition>
+  </extension>
+
   <extension name="global" continue="true">
     <condition field="${network_addr}" condition="^$">
       <action application="set" data="use_profile=${cond(${is_lan_addr($${local_ip_v4})} == yes ? nat : default)}"/>
@@ -12,8 +34,55 @@
     </condition>
     <condition>
       <action application="info"/>
+      <action application="db" data="insert/spymap/${caller_id_number}/${uuid}"/>
+      <action application="db" data="insert/last_dial/${caller_id_number}/${destination_number}"/>
+      <action application="db" data="insert/last_dial/global/${uuid}"/>
     </condition>
   </extension>
+
+
+  <extension name="eavesdrop">
+    <condition field="destination_number" expression="^88(.*)$|^*0(.*)$">
+      <action application="answer"/>
+      <action application="eavesdrop" data="${db(select/spymap/$1)}"/>
+    </condition>
+  </extension>
+
+  <extension name="star-69">
+    <condition field="destination_number" expression="^\*69$|^869$">
+      <action application="transfer" data="${db(select/call_return/${caller_id_number})}"/>
+    </condition>
+  </extension>
+
+  <extension name="add-group">
+    <condition field="destination_number" expression="^81(\d{2})$">
+      <action application="answer"/>
+      <action application="group" data="insert:$1:${sofia_contact(${sip_from_user}@${domain})}"/>
+      <action application="gentones" data="%(1000, 0, 640)"/>
+    </condition>
+  </extension>
+
+  <extension name="del-group">
+    <condition field="destination_number" expression="^80(\d{2})$">
+      <action application="answer"/>
+      <action application="group" data="delete:$1:${sofia_contact(${sip_from_user}@${domain})}"/>
+      <action application="gentones" data="%(1000, 0, 320)"/>
+    </condition>
+  </extension>
+
+  <extension name="call-group-simo">
+    <condition field="destination_number" expression="^82(\d{2})$">
+      <action application="bridge" data="${group(call:$1)}"/>
+    </condition>
+  </extension>
+
+  <extension name="call-group-order">
+    <condition field="destination_number" expression="^83(\d{2})$">
+      <action application="set" data="call_timeout=10"/>
+      <action application="bridge" data="${group(call:$1:order)}"/>
+    </condition>
+  </extension>
+
 
   <!-- 
   if the calling party is the called party, go to their VM
@@ -32,6 +101,8 @@
       <anti-action application="set" data="call_timeout=30000"/>
       <anti-action application="set" data="hangup_after_bridge=true"/>
       <anti-action application="set" data="continue_on_fail=true"/>
+      <anti-action application="db" data="insert/call_return/${dialed_ext}/${caller_id_number}"/>
+      <anti-action application="db" data="insert/last_dial_ext/${dialed_ext}/${uuid}"/>
       <anti-action application="bridge" data="sofia/$${domain}/${dialed_ext}"/>
       <anti-action application="voicemail" data="default $${domain} ${dialed_ext}"/>
     </condition>
@@ -120,7 +191,6 @@
     </condition>
   </extension>
 
-		       
 
   <!-- 
   this is a "catchall" extension that will match anything that's 

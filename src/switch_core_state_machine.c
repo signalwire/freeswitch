@@ -390,6 +390,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			int index = 0;
 			int proceed = 1;
 			
+			switch_channel_set_running_state(session->channel);
 
 			switch (state) {
 			case CS_NEW:		/* Just created, Waiting for first instructions */

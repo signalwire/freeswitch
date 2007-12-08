@@ -98,6 +98,7 @@ static struct switch_cause_table CAUSE_CHART[] = {
 	{"ALLOTTED_TIMEOUT", SWITCH_CAUSE_ALLOTTED_TIMEOUT},
 	{"USER_CHALLENGE", SWITCH_CAUSE_USER_CHALLENGE},
 	{"MEDIA_TIMEOUT", SWITCH_CAUSE_MEDIA_TIMEOUT},
+	{"PICKED_OFF", SWITCH_CAUSE_PICKED_OFF},
 	{NULL, 0}
 };
 
@@ -109,6 +110,7 @@ struct switch_channel {
 	switch_mutex_t *profile_mutex;
 	switch_core_session_t *session;
 	switch_channel_state_t state;
+	switch_channel_state_t running_state;
 	uint32_t flags;
 	uint32_t state_flags;
 	switch_caller_profile_t *caller_profile;
@@ -469,6 +471,22 @@ SWITCH_DECLARE(switch_bool_t) switch_channel_clear_flag_partner(switch_channel_t
 	return SWITCH_FALSE;
 }
 
+SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, switch_channel_t *other_channel, switch_channel_state_t want_state)
+{
+	switch_channel_state_t state, mystate, ostate;
+	ostate = switch_channel_get_state(channel);
+	
+	for(;;) {
+		state = switch_channel_get_running_state(other_channel);
+		mystate = switch_channel_get_running_state(channel);
+		
+		if (mystate != ostate || state >= CS_HANGUP || state == want_state) {
+			break;
+		}
+		switch_yield(1000);
+	}
+}
+
 SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_channel_flag_t flags)
 {
 	assert(channel != NULL);
@@ -497,6 +515,18 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_state(switch_channel_t
 
 	switch_mutex_lock(channel->flag_mutex);
 	state = channel->state;
+	switch_mutex_unlock(channel->flag_mutex);
+
+	return state;
+}
+
+SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_running_state(switch_channel_t *channel)
+{
+	switch_channel_state_t state;
+	assert(channel != NULL);
+
+	switch_mutex_lock(channel->flag_mutex);
+	state = channel->running_state;
 	switch_mutex_unlock(channel->flag_mutex);
 
 	return state;
@@ -547,6 +577,38 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_name_state(const char *nam
 	}
 
 	return CS_DONE;
+}
+
+SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(switch_channel_t *channel,
+																				const char *file, const char *func, int line)
+{
+	switch_mutex_lock(channel->flag_mutex);
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "%s Running State Change %s\n",
+					  channel->name, state_names[channel->state]);
+	channel->running_state = channel->state;
+	
+
+	if (channel->state < CS_HANGUP) {
+		switch_event_t *event;
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
+			if (channel->state == CS_RING) {
+				switch_channel_event_set_data(channel, event);
+			} else {
+				char state_num[25];
+				snprintf(state_num, sizeof(state_num), "%d", channel->state);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State", "%s", (char *) switch_channel_state_name(channel->state));
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", "%s", (char *) state_num);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", "%s", channel->name);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID", "%s", switch_core_session_get_uuid(channel->session));
+			}
+			switch_event_fire(&event);
+		}
+	}
+
+
+	switch_mutex_unlock(channel->flag_mutex);
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_channel_t *channel,
@@ -725,22 +787,6 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 
 		if (state == CS_HANGUP && !channel->hangup_cause) {
 			channel->hangup_cause = SWITCH_CAUSE_NORMAL_CLEARING;
-		}
-		if (state < CS_HANGUP) {
-			switch_event_t *event;
-			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
-				if (state == CS_RING) {
-					switch_channel_event_set_data(channel, event);
-				} else {
-					char state_num[25];
-					snprintf(state_num, sizeof(state_num), "%d", channel->state);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State", "%s", (char *) switch_channel_state_name(channel->state));
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", "%s", (char *) state_num);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", "%s", channel->name);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID", "%s", switch_core_session_get_uuid(channel->session));
-				}
-				switch_event_fire(&event);
-			}
 		}
 
 		if (state < CS_DONE) {
