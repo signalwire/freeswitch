@@ -3,7 +3,7 @@
     <param name="debug" value="1"/>
     <param name="rfc2833-pt" value="101"/>
     <param name="sip-port" value="5070"/>
-    <param name="dialplan" value="XML,enum"/>
+    <param name="dialplan" value="XML"/>
     <param name="context" value="public"/>
     <param name="dtmf-duration" value="100"/>
     <param name="codec-prefs" value="$${global_codec_prefs}"/>
