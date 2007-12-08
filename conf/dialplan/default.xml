@@ -121,9 +121,9 @@
 	"default" conference profile in conference.conf.xml
     -->                                                                                                                                                       
     <extension name="Conferences">                                                                                                                           
-      <condition field="destination_number" expression="^(3\d{3})$">                                                                                             
-	<action application="conference" data="$1@default"/>                                                                                                     
-      </condition>                                                                                                                                               
+      <condition field="destination_number" expression="^(3\d{3})$">
+	<action application="conference" data="$1@default"/>
+      </condition>
     </extension>           
     
     <!-- dial the freeswitch conference via SIP-->
