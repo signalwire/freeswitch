@@ -183,7 +183,7 @@
 	<action application="fifo" data="default out nowait"/>
       </condition>
     </extension> 
-    
+    <!--
     <extension name="Localized_Dialplan">
       <condition field="${numbering_plan}" expression="^[[:alnum:]]+$"/>
       <condition field="${default_gateway}" expression="[[:alnum:]]"/>
@@ -191,19 +191,15 @@
 	<action application="transfer" data="$1 XML ${numbering_plan}-Numbering-Plan"/>
       </condition>
     </extension>
-
-
-    <!-- 
-	 this is a "catchall" extension that will match anything that's 
-	 unmatched thus far.... uncomment and reloadxml to activate it
     -->
-    <!--
-	<extension name="catchall">
-	<condition>
-	<action application="set" data="effective_caller_id_name=another noob"/>
-	<action application="bridge" data="sofia/$${domain}/888@conference.freeswitch.org"/>
-	</condition>
-	</extension>
-    -->
+
+    <!-- Catchall ENUM -->
+    <extension name="enum">
+      <condition field="destination_number" expression="^(.*)$">
+	<action application="enum" data="$1"/>
+	<action application="bridge" data="${enum_auto_route}"/>
+      </condition>
+    </extension>
+    
   </context>
 </include>
