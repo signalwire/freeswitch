@@ -1,4 +1,7 @@
 <profile name="nat">
+  <gateways>
+    <X-PRE-PROCESS cmd="include" data="nat/*.xml"/>
+  </gateways>
   <settings>
     <param name="debug" value="1"/>
     <param name="rfc2833-pt" value="101"/>
