@@ -126,7 +126,7 @@ BUILT_SOURCES  = src/include/switch_version.h
 bin_PROGRAMS = freeswitch
 freeswitch_SOURCES = src/switch.c
 nodist_freeswitch_SOURCES = src/include/switch_version.h
-freeswitch_CFLAGS = $(AM_CFLAGS)
+freeswitch_CFLAGS = $(AM_CFLAGS) $(CORE_CFLAGS)
 freeswitch_LDFLAGS = $(AM_LDFLAGS) -rpath $(libdir)
 freeswitch_LDADD = libfreeswitch.la libs/apr/libapr-1.la
 
