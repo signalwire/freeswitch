@@ -38,6 +38,7 @@
 #endif
 
 #include <switch.h>
+#include "private/switch_core_pvt.h"
 
 /* pid filename: Stores the process id of the freeswitch process */
 #define PIDFILE "freeswitch.pid"
@@ -198,6 +199,8 @@ void WINAPI service_main(DWORD numArgs, char **args)
 int main(int argc, char *argv[])
 {
 	char pid_path[256] = "";	/* full path to the pid file */
+	char pid_buffer[32] = "";	/* pid string */
+	switch_size_t pid_len;
 	const char *err = NULL;		/* error value for return from freeswitch initialization */
 #ifndef WIN32
 	int nf = 0;					/* TRUE if we are running in nofork mode */
@@ -205,7 +208,6 @@ int main(int argc, char *argv[])
 	char *runas_group = NULL;
 #endif
 	int nc = 0;					/* TRUE if we are running in noconsole mode */
-	FILE *f;					/* file handle to the pid file */
 	pid_t pid = 0;
 	int x;
 	int die = 0;
@@ -215,6 +217,9 @@ int main(int argc, char *argv[])
  	int high_prio = 0;
 	switch_core_flag_t flags = SCF_USE_SQL;
 	int status;
+    switch_file_t *fd;
+	switch_memory_pool_t *pool = NULL;
+
 
 #ifdef WIN32
 	SERVICE_TABLE_ENTRY dispatchTable[] = {
@@ -417,25 +422,46 @@ int main(int argc, char *argv[])
 	}
 #endif
 
+	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
+		fprintf(stderr, "FATAL ERROR! Could not initilize APR\n");
+		return 255;
+	}
+
+	switch_core_set_globals();
+
+	pid = getpid();
+
+	snprintf(pid_path, sizeof(pid_path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
+	snprintf(pid_buffer, sizeof(pid_buffer), "%d", pid);
+	pid_len = strlen(pid_buffer);
+
+	apr_pool_create(&pool, NULL);
+    if (switch_file_open(&fd,
+						pid_path,
+						SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE,
+						SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE,
+						pool) != SWITCH_STATUS_SUCCESS) {
+		fprintf(stderr, "Cannot open pid file %s.\n", pid_path);
+		return 255;
+	}
+
+	if (switch_file_lock(fd, SWITCH_FLOCK_EXCLUSIVE | SWITCH_FLOCK_NONBLOCK) != SWITCH_STATUS_SUCCESS) {
+		fprintf(stderr, "Cannot lock pid file %s.\n", pid_path);
+		return 255;
+	}
+
+	switch_file_write(fd, pid_buffer, &pid_len);
+
 	if (switch_core_init_and_modload(flags, nc ? SWITCH_FALSE : SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Cannot Initilize [%s]\n", err);
 		return 255;
 	}
 
-	snprintf(pid_path, sizeof(pid_path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
-	if ((f = fopen(pid_path, "w")) == 0) {
-		fprintf(stderr, "Cannot open pid file %s.\n", pid_path);
-		return 255;
-	}
-
-	fprintf(f, "%d", pid = getpid());
-	fflush(f);
-
 	switch_core_runtime_loop(nc);
 
 	status = switch_core_destroy();
 
-	fclose(f);
+	switch_file_close(fd);
 	unlink(pid_path);
 
 	return status;

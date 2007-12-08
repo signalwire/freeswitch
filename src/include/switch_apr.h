@@ -644,6 +644,29 @@ SWITCH_DECLARE(switch_status_t) switch_queue_trypush(switch_queue_t * queue, voi
 #define SWITCH_FPROT_FILE_SOURCE_PERMS 0x1000	/**< Copy source file's permissions */
 /** @} */
 
+/* File lock types/flags */
+/**
+ * @defgroup switch_file_lock_types File Lock Types
+ * @{
+ */
+
+#define SWITCH_FLOCK_SHARED        1       /**< Shared lock. More than one process
+                                           or thread can hold a shared lock
+                                           at any given time. Essentially,
+                                           this is a "read lock", preventing
+                                           writers from establishing an
+                                           exclusive lock. */
+#define SWITCH_FLOCK_EXCLUSIVE     2       /**< Exclusive lock. Only one process
+                                           may hold an exclusive lock at any
+                                           given time. This is analogous to
+                                           a "write lock". */
+
+#define SWITCH_FLOCK_TYPEMASK      0x000F  /**< mask to extract lock type */
+#define SWITCH_FLOCK_NONBLOCK      0x0010  /**< do not block while acquiring the
+                                           file lock */
+
+ /** @} */
+
 /**
  * @defgroup switch_file_open_flags File Open Flags/Routines
  * @ingroup switch_file_io
@@ -710,6 +733,8 @@ SWITCH_DECLARE(switch_status_t) switch_file_seek(switch_file_t * thefile, switch
  * @param thefile The file descriptor to close.
  */
 SWITCH_DECLARE(switch_status_t) switch_file_close(switch_file_t * thefile);
+
+SWITCH_DECLARE(switch_status_t) switch_file_lock(switch_file_t * thefile, int type);
 
 /**
  * Delete the specified file.
