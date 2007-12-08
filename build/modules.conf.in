@@ -30,7 +30,7 @@ dialplans/mod_dialplan_xml
 dialplans/mod_dialplan_asterisk
 #directories/mod_ldap
 #endpoints/mod_dingaling
-#endpoints/mod_iax
+endpoints/mod_iax
 #endpoints/mod_portaudio
 endpoints/mod_sofia
 #endpoints/mod_wanpipe

@@ -27,7 +27,7 @@
 
     <!-- Endpoints -->
     <!-- <load module="mod_dingaling"/> -->
-    <!-- <load module="mod_iax"/> -->
+    <load module="mod_iax"/>
     <!-- <load module="mod_portaudio"/> -->
     <!-- <load module="mod_alsa"/> -->
     <load module="mod_sofia"/>
