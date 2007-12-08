@@ -4,6 +4,7 @@
     <param name="rfc2833-pt" value="101"/>
     <param name="sip-port" value="5070"/>
     <param name="dialplan" value="XML,enum"/>
+    <param name="context" value="public"/>
     <param name="dtmf-duration" value="100"/>
     <param name="codec-prefs" value="$${global_codec_prefs}"/>
     <param name="use-rtp-timer" value="true"/>

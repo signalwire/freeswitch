@@ -12,6 +12,7 @@
     <param name="login" value="myjid@myserver.com/talk"/>
     <param name="password" value="mypass"/>
     <param name="dialplan" value="XML"/>
+    <param name="context" value="public"/>
     <param name="message" value="Jingle all the way"/>
     <param name="rtp-ip" value="$${bind_server_ip}"/>
     <!-- <param name="ext-rtp-ip" value="$${external_rtp_ip"/> -->
@@ -38,6 +39,7 @@
     <param name="name" value="$${xmpp_server_profile}"/>
     <param name="password" value="secret"/>
     <param name="dialplan" value="XML"/>
+    <param name="context" value="public"/>
     <param name="rtp-ip" value="$${bind_server_ip}"/>
     <param name="server" value="jabber.server.org:5347"/>
     <!-- disable to trade async for more calls -->

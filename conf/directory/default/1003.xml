@@ -1,3 +1,10 @@
 <include>
-	<user id="1003"/>
+  <user id="1003" mailbox="1003">
+    <params>
+      <param name="password" value="1234"/>
+    </params>
+    <variables>
+      <variable name="inbound_context" value="default"/>
+    </variables>
+  </user>
 </include>

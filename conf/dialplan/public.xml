@@ -1,0 +1,22 @@
+<include>
+  <context name="public">
+    <extension name="blah">
+      <condition>
+	<action application='info'/>
+      </condition>
+    </extension>
+
+    <extension name="public_extensions">
+      <condition field="destination_number" expression="^(10[01][0-9])$">
+	<action application="transfer" data="$1 XML default"/>
+      </condition>
+    </extension>
+
+    <extension name="public_did">
+      <condition field="destination_number" expression="^(5551212)$">
+	<action application="transfer" data="$1 XML default"/>
+      </condition>
+    </extension>
+
+  </context>
+</include>

@@ -49,7 +49,7 @@
     </params>
     <variables>
       <!--all variables here will be set on all inbound calls that originate from this user -->
-      <variable name="testing" value="this"/>
+      <variable name="inbound_context" value="default"/>
 
       <!-- limit the max number of outgoing calls for this user -->
       <!--<variable name="max_calls" value="2"/>-->
