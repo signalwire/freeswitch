@@ -1,0 +1,21 @@
+<!-- Working Asterlink.com in and outbound -->
+
+<include>
+  <user id="%ALUSERNAME%">
+    <gateways>
+      <gateway name="asterlink.com">
+	<param name="username" value="%ALUSERNAME%"/>
+	<param name="password" value="%ALPASSWORD%"/>
+	<param name="expire-seconds" value="600"/>
+	<param name="register" value="true"/>
+	<param name="retry_seconds" value="30"/>
+	<param name="extension" value="%ALEXTENSION%"/>
+	<param name="context" value="public"/>
+      </gateway>
+    </gateways>
+    <params>
+      <param name="password" value="%ALPASSWORD%"/>
+    </params>
+  </user>
+</include>
+
