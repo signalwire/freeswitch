@@ -10,10 +10,21 @@ AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS)
 BASE        = $(switch_srcdir)
 OSARCH=`uname -s`
 
+DEFAULT_SOUNDS=en-us-callie-8000
+
 .DEFAULT:
 	@target=`echo $@ | sed -e 's|^.*-||'`; \
-         if test "$$target" = "install"; then $(MAKE) $(AM_MAKEFLAGS) core_install; else $(MAKE) $(AM_MAKEFLAGS) core ; fi;
-	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@
+	 target_prefix=`echo $@ | sed -e 's|-.*$$||'`; \
+	 sound_perfix=`echo $@ | sed -e 's|-.*||'`; \
+	 full_sound_dir=`echo $@ | sed -e 's|^sounds-||' | sed -e 's|-install$$||'`; \
+	 test -z "$$full_sound_dir" || full_sound_dir=`echo $(DEFAULT_SOUNDS)`; \
+	 soundfile=`echo freeswitch-sounds-$$full_sound_dir-$(PACKAGE_VERSION).tar.gz`; \
+         if test "$$target" = "install"; then $(MAKE) $(AM_MAKEFLAGS) core_install; else $(MAKE) $(AM_MAKEFLAGS) core ; fi; \
+         if test "$$target_prefix" = "sounds"; then \
+	   if test "$$target" = "install"; then $(GETSOUNDS) $$soundfile $(PREFIX)/sounds/; else $(GETSOUNDS) $$soundfile ; fi; \
+	 else \
+	   cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@ ;\
+	 fi
 
 libfreeswitch_la_SOURCES	= \
 src/switch_apr.c \

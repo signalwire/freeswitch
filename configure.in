@@ -382,6 +382,8 @@ AC_PATH_PROGS(WGET, wget)
 AC_PATH_PROGS(CURL, curl)
 GETLIB="cd $switch_srcdir/libs && ${SHELL} $switch_srcdir/build/getlib.sh"
 AC_SUBST(GETLIB)
+GETSOUNDS="${SHELL} $switch_srcdir/build/getsounds.sh"
+AC_SUBST(GETSOUNDS)
 
 
 LIBCURL_CHECK_CONFIG([yes], [7.13.0], [LIBCURL_DEPS=''], [LIBCURL_DEPS='${switch_srcdir}/libs/curl/lib/libcurl.la';LIBCURL='${switch_srcdir}/libs/curl/lib/libcurl.la';LIBCURL_CPPFLAGS='-I${switch_srcdir}/libs/curl/include'])
@@ -414,6 +416,7 @@ AC_CONFIG_FILES([Makefile
                 src/mod/event_handlers/mod_radius_cdr/Makefile
                 src/mod/languages/mod_java/Makefile
                 src/include/switch_am_config.h
+                build/getsounds.sh
                 build/getlib.sh
                 build/modmake.rules])
 
