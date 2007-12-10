@@ -156,7 +156,7 @@ static void write_cdr(const char *path, const char *log_line)
 static switch_status_t my_on_hangup(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	const char *log_dir = NULL, *accountcode = NULL, *cid_buf = NULL, *a_template_str = NULL, *g_template_str = NULL;
 	char *log_line, *path = NULL;	
 	switch_caller_profile_t *caller_profile, *ocp;
