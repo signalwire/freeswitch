@@ -432,7 +432,7 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t ** result
 	char *name = NULL;
 	enum_query_t query = { 0 };
 	enum dns_type l_qtyp = DNS_T_NAPTR;
-	int i = 0, abs = 0;
+	int i = 0, abs = 0, j = 0;
 	dns_socket fd = (dns_socket) - 1;
 	fd_set fds;
 	struct timeval tv = { 0 };
@@ -489,7 +489,7 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t ** result
 	FD_ZERO(&fds);
 	now = 0;
 
-	while ((i = dns_timeouts(nctx, globals.timeout, now)) > 0) {
+	while ((i = dns_timeouts(nctx, 1, now)) > 0) {
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable: 4389 4127)
@@ -498,6 +498,13 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t ** result
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
+
+		j += i;
+
+		if (j > globals.timeout || query.results) {
+			break;
+		}
+
 		tv.tv_sec = i;
 		tv.tv_usec = 0;
 		i = select((int) (fd + 1), &fds, 0, 0, &tv);
