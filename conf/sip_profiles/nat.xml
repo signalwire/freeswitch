@@ -3,11 +3,6 @@
     <X-PRE-PROCESS cmd="include" data="nat/*.xml"/>
   </gateways>
 
-  <domains>
-    <!-- If you are behind nat and you have gateways to register please uncomment the line below -->
-    <!--<domain name="$${domain}" parse="true"/>-->
-  </domains>
-
   <settings>
     <param name="debug" value="1"/>
     <param name="rfc2833-pt" value="101"/>
@@ -21,7 +16,7 @@
     <param name="manage-presence" value="true"/>
     <param name="inbound-codec-negotiation" value="generous"/>
     <param name="nonce-ttl" value="60"/>
-    <param name="auth-calls" value="false"/>
+    <param name="auth-calls" value="true"/>
     <param name="rtp-ip" value="$${local_ip_v4}"/>
     <param name="sip-ip" value="$${local_ip_v4}"/>
     <param name="ext-rtp-ip" value="$${external_rtp_ip}"/>
