@@ -76,10 +76,10 @@ static void add_mapping(char *var, char *val, int cumlative)
 		uint32_t l = switch_log_str2level(val);
 		uint32_t i;
 
-		assert(l < 10);
-		
-		for (i = 0; i <= l; i++) {
-			m |= (1 << i);
+		if (l < 10) {
+			for (i = 0; i <= l; i++) {
+				m |= (1 << i);
+			}
 		}
 	} else {
 		m = switch_log_str2mask(val);
@@ -227,8 +227,12 @@ SWITCH_STANDARD_API(console_api_function)
 				level = switch_log_str2level(argv[1]);
 			}
 
-			hard_log_level = level;
-			stream->write_function(stream,  "+OK console log level set to %s\n", switch_log_level2str(hard_log_level));
+			if (level == SWITCH_LOG_INVALID) {
+				stream->write_function(stream, "-ERR syntax error, console log level not set!\n");
+			} else {
+				hard_log_level = level;
+				stream->write_function(stream,  "+OK console log level set to %s\n", switch_log_level2str(hard_log_level));
+			}
 			goto end;
 		} else if (!strcasecmp(argv[0], "colorize")) {
 			COLORIZE = switch_true(argv[1]);

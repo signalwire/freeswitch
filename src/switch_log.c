@@ -75,6 +75,7 @@ SWITCH_DECLARE(uint32_t) switch_log_str2mask(const char *str)
 	char *argv[10] = { 0 };
 	uint32_t mask = 0;
 	char *p = strdup(str);
+	switch_log_level_t level;
 
 	assert(p);
 
@@ -84,7 +85,10 @@ SWITCH_DECLARE(uint32_t) switch_log_str2mask(const char *str)
 				mask = 0xFF;
 				break;
 			} else {
-				mask |= (1 << switch_log_str2level(argv[x]));
+				level = switch_log_str2level(argv[x]);
+				if (level != SWITCH_LOG_INVALID) {
+					mask |= (1 << level);
+				}
 			}
 		}
 	}
@@ -99,7 +103,7 @@ SWITCH_DECLARE(uint32_t) switch_log_str2mask(const char *str)
 SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(const char *str)
 {
 	int x = 0;
-	switch_log_level_t level = SWITCH_LOG_DEBUG;
+	switch_log_level_t level = SWITCH_LOG_INVALID;
 
 	for (x = 0;; x++) {
 		if (!LEVELS[x]) {

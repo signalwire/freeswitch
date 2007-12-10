@@ -635,6 +635,9 @@ SWITCH_STANDARD_APP(log_function)
 		} else {
 			log_str = level;
 		}
+		if (ltype == SWITCH_LOG_INVALID) {
+			ltype = SWITCH_LOG_DEBUG;
+		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, ltype, "%s\n", log_str);
 		switch_safe_free(level);

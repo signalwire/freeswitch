@@ -14,9 +14,9 @@
       <mappings>
 	<!-- 
 	     name can be a file name, function name or 'all' 
-	     value is one or more of debug,info,notice,warning,error,crit,alert,all
+	     value is one or more of debug,info,notice,warning,err,crit,alert,all
 	-->
-	<map name="all" value="debug,info,notice,warning,error,crit,alert"/>
+	<map name="all" value="debug,info,notice,warning,err,crit,alert"/>
       </mappings>
     </profile>
   </profiles>

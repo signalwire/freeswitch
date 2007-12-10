@@ -811,6 +811,7 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 	} else if (!strncasecmp(cmd, "log", 3)) {
 
 		char *level_s;
+		switch_log_level_t ltype = SWITCH_LOG_DEBUG;
 
 		//pull off the first newline/carriage return
 		strip_cr(cmd);
@@ -824,11 +825,12 @@ static switch_status_t parse_command(listener_t * listener, switch_event_t *even
 			level_s++;
 		}
 		//see if we lined up on an argument or not
-		if (switch_strlen_zero(level_s)) {
-			level_s = "debug";
+		if (!switch_strlen_zero(level_s)) {
+			ltype = switch_log_str2level(level_s);
 		}
 
-		if ((listener->level = switch_log_str2level(level_s))) {
+		if (ltype && ltype != SWITCH_LOG_INVALID) {
+			listener->level = ltype;
 			switch_set_flag(listener, LFLAG_LOG);
 			snprintf(reply, reply_len, "+OK log level %s [%d]", level_s, listener->level);
 		} else {

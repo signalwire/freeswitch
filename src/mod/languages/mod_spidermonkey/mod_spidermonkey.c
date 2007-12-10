@@ -3002,6 +3002,9 @@ static JSBool js_log(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, j
 	if (argc > 1) {
 		if ((level_str = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
 			level = switch_log_str2level(level_str);
+			if (level == SWITCH_LOG_INVALID) {
+				level = SWITCH_LOG_DEBUG;
+			}
 		}
 
 		if ((msg = JS_GetStringBytes(JS_ValueToString(cx, argv[1])))) {

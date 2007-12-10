@@ -706,7 +706,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
                         level = switch_log_str2level(val);
                     }
 
-                    switch_core_session_ctl(SCSC_LOGLEVEL, &level);
+					if (level != SWITCH_LOG_INVALID) {
+	                    switch_core_session_ctl(SCSC_LOGLEVEL, &level);
+					}
 					
 				} else if (!strcasecmp(var, "mailer-app")) {
 					runtime.mailer_app = switch_core_strdup(runtime.memory_pool, val);

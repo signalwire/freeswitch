@@ -516,7 +516,8 @@ typedef enum {
 	SWITCH_LOG_ERROR = 3,
 	SWITCH_LOG_CRIT = 2,
 	SWITCH_LOG_ALERT = 1,
-	SWITCH_LOG_CONSOLE = 0
+	SWITCH_LOG_CONSOLE = 0,
+	SWITCH_LOG_INVALID = 64
 } switch_log_level_t;
 
 
