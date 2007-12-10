@@ -193,11 +193,12 @@
     </extension>
     -->
 
-    <!-- Catchall ENUM -->
+
+    <X-PRE-PROCESS cmd="include" data="extensions/*.xml"/>
+
     <extension name="enum">
       <condition field="destination_number" expression="^(.*)$">
-	<action application="enum" data="$1"/>
-	<action application="bridge" data="${enum_auto_route}"/>
+	<action application="transfer" data="$1 enum"/>
       </condition>
     </extension>
     
