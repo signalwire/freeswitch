@@ -341,6 +341,7 @@ SWITCH_DECLARE(switch_status_t) switch_string_match(const char *string, size_t s
 SWITCH_DECLARE(size_t) switch_url_encode(const char *url, char *buf, size_t len);
 SWITCH_DECLARE(char *) switch_url_decode(char *s);
 SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *from, const char *headers, const char *body, const char *file);
+SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char close);
 
 /* malloc or DIE macros */
 #ifdef NDEBUG

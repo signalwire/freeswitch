@@ -36,6 +36,33 @@
 #include "private/switch_core_pvt.h"
 
 
+SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char close)
+{
+	const char *e = NULL;
+	int depth = 0;
+	
+	while (s && *s && *s == ' ') {
+		s++;
+	}
+
+	if (*s == open) {
+		depth++;
+		for (e = s + 1; e && *e; e++) {
+			if (*e == open) {
+				depth++;
+			} else if (*e == close) {
+				depth--;
+				if (!depth) {
+					break;
+				}
+			}
+		}
+	}
+
+	return (char *)e;
+}
+
+
 SWITCH_DECLARE(switch_size_t) switch_fd_read_line(int fd, char *buf, switch_size_t len)
 {
 	char c, *p;
