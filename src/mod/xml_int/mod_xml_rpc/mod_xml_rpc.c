@@ -151,13 +151,14 @@ static switch_status_t http_stream_write(switch_stream_handle_t *handle, const c
 static abyss_bool http_directory_auth(TSession *r, char *domain_name) 
 {
     char *p, *x;
-    char z[80], t[80];
+    char z[256], t[80];
 	char user[512];
 	char *pass;
 	const char *mypass1 = NULL, *mypass2 = NULL;
 	switch_xml_t x_domain, x_domain_root = NULL, x_user, x_params, x_param;
 	const char *box;
-	
+	int at = 0;
+
     p = RequestHeaderValue(r, "authorization");
 
     if (p) {
@@ -173,13 +174,27 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 					*pass++ = '\0';
 				}
 				
+				if (!domain_name) {
+					if ((domain_name = strchr(user, '@'))) {
+						*domain_name++ = '\0';
+						at++;
+					} else {
+						domain_name = r->host;
+						if (!strncasecmp(domain_name, "www.", 3)) {
+							domain_name += 4;
+						}
+					}
+				}
+
+				if (!domain_name) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s] no domain!\n", user);
+					goto fail;
+				}
+
 				if (switch_xml_locate_user("id", user, domain_name, NULL, &x_domain_root, &x_domain, &x_user, "mailbox=check") != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", user, domain_name);
 					goto fail;
 				}
-				
-				ResponseAddField(r, "freeswitch-user", user);
-				ResponseAddField(r, "freeswitch-domain", domain_name);
 				
 				box = switch_xml_attr_soft(x_user, "mailbox");
 				
@@ -219,28 +234,40 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 					goto authed;
 				} else {
 					if (mypass1) {
-						sprintf(z, "%s:%s", user, mypass1);
+						if (at) {
+							snprintf(z, sizeof(z), "%s@%s:%s", user, domain_name, mypass1);
+						} else {
+							snprintf(z, sizeof(z), "%s:%s", user, mypass1);
+						}
 						Base64Encode(z, t);
 				
 						if (!strcmp(p, t)) {
-							r->user=strdup(user);
+							r->user=strdup(box ? box : user);
 							goto authed;
 						}
 					}
 
 					if (mypass2) {
-						sprintf(z, "%s:%s", user, mypass2);
+						if (at) {
+							snprintf(z, sizeof(z), "%s@%s:%s", user, domain_name, mypass2);
+						} else {
+							snprintf(z, sizeof(z), "%s:%s", user, mypass2);
+						}
 						Base64Encode(z, t);
 				
 						if (!strcmp(p, t)) {
-							r->user=strdup(user);
+							r->user=strdup(box ? box : user);
 							goto authed;
 						}
 					}
 
 					if (box) {
 						if (mypass1) {
-							sprintf(z, "%s:%s", box, mypass1);
+							if (at) {
+								snprintf(z, sizeof(z), "%s@%s:%s", box, domain_name, mypass1);
+							} else {
+								snprintf(z, sizeof(z), "%s:%s", box, mypass1);
+							}
 							Base64Encode(z, t);
 					
 							if (!strcmp(p, t)) {
@@ -250,7 +277,12 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 						}
 					
 						if (mypass2) {
-							sprintf(z, "%s:%s", box, mypass2);
+							if (at) {
+								snprintf(z, sizeof(z), "%s@%s:%s", box, domain_name, mypass2);
+							} else {
+								snprintf(z, sizeof(z), "%s:%s", box, mypass2);
+							}
+
 							Base64Encode(z, t);
 					
 							if (!strcmp(p, t)) {
@@ -264,6 +296,9 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 
 
 			authed:
+				
+				ResponseAddField(r, "freeswitch-user", r->user);
+				ResponseAddField(r, "freeswitch-domain", domain_name);
 				
 				if (x_domain_root) {
 					switch_xml_free(x_domain_root);
@@ -280,7 +315,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 		switch_xml_free(x_domain_root);
 	}
 
-    sprintf(z, "Basic realm=\"%s\"", domain_name);
+    snprintf(z, sizeof(z), "Basic realm=\"%s\"", domain_name);
     ResponseAddField(r, "WWW-Authenticate", z);
     ResponseStatus(r, 401);
     return FALSE;
@@ -353,8 +388,9 @@ abyss_bool auth_hook(TSession * r)
 
 		} else {
 			if (globals.realm && strncmp(r->uri, "/pub", 4)) {
-				if (!RequestAuth(r, globals.realm, globals.user, globals.pass)) {
-					ret = TRUE;
+				ret = !http_directory_auth(r, NULL);
+				if (ret) {
+					ret = !RequestAuth(r, globals.realm, globals.user, globals.pass);
 				}
 			}
 		}
@@ -397,9 +433,6 @@ abyss_bool handler_hook(TSession * r)
 		*path_info++ = '\0';
 	}
 	
-	if (strncmp(r->uri, "/domains/", 9)) {
-        goto auth;
-	}
 
 	for (i=0;i<r->response_headers.size;i++) {
 		ti=&r->response_headers.item[i];
@@ -427,7 +460,7 @@ abyss_bool handler_hook(TSession * r)
 		}
 	}
 
-	if (!switch_strlen_zero(r->user) && !j) {
+	if (fs_user && fs_domain && !j) {
 		auth = 0;
 	}
 	
