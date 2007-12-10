@@ -1,0 +1,21 @@
+<!-- Working FWD dialup in and outbound -->
+
+<include>
+  <user id="%FWDNUMBER%">
+    <gateways>
+      <gateway name="fwd.pulver.com">
+	<param name="username" value="%FWDNUMBER%"/>
+	<param name="password" value="%FWDPASSWORD%"/>
+	<param name="expire-seconds" value="600"/>
+	<param name="register" value="true"/>
+	<param name="retry_seconds" value="30"/>
+	<param name="extension" value="%FWDEXTENSION%"/>
+	<param name="context" value="public"/>
+      </gateway>
+    </gateways>
+    <params>
+      <param name="password" value="%FWDPASSWORD%"/>
+    </params>
+  </user>
+</include>
+
