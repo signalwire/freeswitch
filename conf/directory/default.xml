@@ -1,6 +1,6 @@
 <include>
   <!--the domain or ip (the right hand side of the @ in the addr-->
   <domain name="$${domain}">
-    <X-PRE-PROCESS cmd="include" data="*/*.xml"/>
+    <X-PRE-PROCESS cmd="include" data="default/*.xml"/>
   </domain>
 </include>
